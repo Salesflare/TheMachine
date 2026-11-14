@@ -54,10 +54,10 @@ import enrichment
 import graph_joins
 import graph_publish
 import mail_senders
-from mail_senders import AUTOMATED_PRECEDENCE, BULK, RELAY, addresses, automated, bulk, list_unsubscribes, mass_mail, owner_kept, relay  # noqa: F401
-from mail_senders import address_name, shared_inbox
+from mail_senders import AUTOMATED_PRECEDENCE, BULK, RELAY, address_name, addresses, automated, bulk, list_unsubscribes, mass_mail, owner_kept, relay, shared_inbox  # noqa: F401
 import person_summary
 from machine import stamps, todo_states
+from machine.owner_error import OwnerError
 from machine.store import graph_history, graph_identifiers
 
 SCHEMA = '''
@@ -2792,7 +2792,7 @@ def set_role(db, node_id, role, source, now, event_id=None, quote=None):
         raise ValueError('role needs a person or organization node_id from graph results')
     role = ' '.join(str(role or '').split())
     if len(role) > 60 or (not role and source != 'owner'):
-        raise ValueError('A role is a few words (up to 60 characters): "accountant", "investor", "customer at Globex", "accounting firm"')
+        raise OwnerError('A role is a few words (up to 60 characters): "accountant", "investor", "customer at Globex", "accounting firm"')
     info = json.loads(row['info'] or '{}')
     identities = info.get('identifiers') or [row['id']]
     current = db.execute('SELECT * FROM person_roles WHERE identifier IN (' + ','.join('?' for _ in identities) + ') '
@@ -3055,7 +3055,7 @@ def rename(db, node_id, name, now):
         if not row:
             raise ValueError('Unknown project')
         if not name or len(name) > 60:
-            raise ValueError('A project name is a short label (up to 60 characters), like "Acme VAT" or "Q4 board deck"')
+            raise OwnerError('A project name is a short label (up to 60 characters), like "Acme VAT" or "Q4 board deck"')
         other = db.execute('SELECT id,name FROM projects WHERE name=? COLLATE NOCASE AND id!=?', (name, row['id'])).fetchone()
         try:  # cards keep their project by name
             db.execute('UPDATE suggestions SET project=? WHERE project=? COLLATE NOCASE', (other['name'] if other else name, row['name']))
@@ -3073,9 +3073,9 @@ def rename(db, node_id, name, now):
         db.execute('DELETE FROM projects WHERE id=?', (row['id'],))
         return {'node_id': 'project:' + str(other['id']), 'name': other['name'], 'merged': True}
     if not db.execute("SELECT 1 FROM graph_nodes WHERE id=? AND kind IN ('person','org')", (node_id,)).fetchone():
-        raise ValueError('Rename a person, organization or project from graph results')
+        raise OwnerError('Rename a person, organization or project from graph results')
     if len(name) > 100:
-        raise ValueError('A name is up to 100 characters')
+        raise OwnerError('A name is up to 100 characters')
     if name:
         db.execute('INSERT OR REPLACE INTO graph_names(node_id,name,created_at) VALUES(?,?,?)', (node_id, name, now))
     else:
@@ -3108,16 +3108,16 @@ def create_record(db, kind, args, now, owner=None):
     args = args if isinstance(args, dict) else {}
     name = ' '.join(str(args.get('name') or '').split())
     if not name:
-        raise ValueError('Give them a name')
+        raise OwnerError('Give them a name')
     if len(name) > 100:
-        raise ValueError('A name is up to 100 characters')
+        raise OwnerError('A name is up to 100 characters')
     if kind == 'person':
         email = str(args.get('email') or '').strip().lower()
         if email and not EMAIL.fullmatch(email):
-            raise ValueError(f'{email} is not an email address')
+            raise OwnerError(f'{email} is not an email address')
         org = ' '.join(str(args.get('org') or '').split())
         if len(org) > 100:
-            raise ValueError('An organization name is up to 100 characters')
+            raise OwnerError('An organization name is up to 100 characters')
         identifier = 'email:' + email if email else 'manual:' + secrets.token_hex(8)
         if email and (owner or Owner({}, db)).has(identifier):
             return {'node_id': ME, 'name': ABOUT_YOU, 'existing': True, 'yours': True}
@@ -3140,13 +3140,13 @@ def create_record(db, kind, args, now, owner=None):
         site = str(args.get('website') or '').strip()
         domain = website_domain(site)
         if site and not domain:
-            raise ValueError(f'{site} is not a website, like acme.com')
+            raise OwnerError(f'{site} is not a website, like acme.com')
         if domain and personal_mail(db, domain):
-            raise ValueError(f'{domain} is personal email, not an organization')
+            raise OwnerError(f'{domain} is personal email, not an organization')
         domain = own_website_domain(site)  # a page on a shared host: an organization by its name
         identifier = 'org:' + domain if domain else 'org:named:' + '-'.join(folded_words(name).split())[:80]
         if identifier == 'org:named:':
-            raise ValueError('Give it a name with letters or digits')
+            raise OwnerError('Give it a name with letters or digits')
         found = db.execute("SELECT id,name FROM graph_nodes WHERE kind='org' AND (id=? OR name=? COLLATE NOCASE) ORDER BY id=? DESC LIMIT 1",
                            (identifier, name, identifier)).fetchone()
         if found:
@@ -3240,9 +3240,9 @@ def delete_org(db, node_id):
     comes from their messages, so it stays."""
     node_id = str(node_id or '')
     if not db.execute("SELECT 1 FROM manual_nodes WHERE identifier=? AND kind='org'", (node_id,)).fetchone():
-        raise ValueError('Only an organization you added yourself can be deleted')
+        raise OwnerError('Only an organization you added yourself can be deleted')
     if db.execute("SELECT 1 FROM graph_links WHERE b=? AND kind='member'", (node_id,)).fetchone():
-        raise ValueError('People are in it: change their organization first')
+        raise OwnerError('People are in it: change their organization first')
     name = db.execute('SELECT name FROM graph_nodes WHERE id=?', (node_id,)).fetchone()
     db.execute('DELETE FROM manual_nodes WHERE identifier=?', (node_id,))
     db.execute('DELETE FROM graph_names WHERE node_id=?', (node_id,))
@@ -3266,7 +3266,7 @@ def org_domain(db, node_id):
     if row and str(node_id).startswith('org:named:'):
         return str(node_id)  # one with no website: its details are kept under its id
     if not row or not json.loads(row['info']).get('domain'):
-        raise ValueError('Edit an organization from graph results')
+        raise OwnerError('Edit an organization from graph results')
     return json.loads(row['info'])['domain']
 
 
@@ -3284,10 +3284,10 @@ def org_edit(db, node_id, fields, now):
         text = notes_text(fields[field]) if field == 'notes' else ' '.join(str(fields[field] or '').split())
         if field == 'founded' and text:
             if not re.fullmatch(r'1[5-9]\d\d|20\d\d', text):
-                raise ValueError('Founded is a year, like 2014')
+                raise OwnerError('Founded is a year, like 2014')
             text = int(text)
         elif len(text) > limit:
-            raise ValueError(f"{field.replace('_url', '').replace('_', ' ').capitalize()} is up to {limit} characters")
+            raise OwnerError(f"{field.replace('_url', '').replace('_', ' ').capitalize()} is up to {limit} characters")
         elif field in ('website', 'linkedin_url') and text and not re.match(r'https?://', text):
             text = 'https://' + text
         if text:
@@ -3337,12 +3337,12 @@ def set_picture(db, node_id, data=None, now=None, reset=False):
     node_id = str(node_id or '')
     row = db.execute("SELECT kind,info FROM graph_nodes WHERE id=? AND kind IN ('person','org')", (node_id,)).fetchone()
     if not row:
-        raise ValueError('Change a picture from graph results')
+        raise OwnerError('Change a picture from graph results')
     link = None if reset else ''
     if data is not None and not reset:
         kind = enrichment.image_type(bytes(data))
         if not kind or len(data) > enrichment.PHOTO_BYTES:
-            raise ValueError('A picture is a JPEG, PNG or WebP image, up to 200 kB')
+            raise OwnerError('A picture is a JPEG, PNG or WebP image, up to 200 kB')
         key = secrets.token_hex(16)  # a new key each time, so no browser shows the one before
         db.execute('INSERT INTO person_photos(identifier,key,type,data,saved_at) VALUES(?,?,?,?,?)', ('pic:' + key, key, kind, bytes(data), now))
         link = 'api/person-photo?p=' + key
@@ -3454,7 +3454,7 @@ def person_edit(db, node_id, fields, now):
     node_id, fields = str(node_id or ''), fields if isinstance(fields, dict) else {}
     row = db.execute("SELECT info FROM graph_nodes WHERE id=? AND kind='person'", (node_id,)).fetchone()
     if not row:
-        raise ValueError('Edit a person from graph results')
+        raise OwnerError('Edit a person from graph results')
     group = set(json.loads(row['info']).get('identifiers') or ()) | {node_id}
     rows = {r['identifier']: json.loads(r['fields']) for r in db.execute(
         f"SELECT identifier,fields FROM person_edits WHERE identifier IN ({','.join('?' for _ in group)})", sorted(group))}
@@ -3474,12 +3474,12 @@ def person_edit(db, node_id, fields, now):
                 if not text:
                     continue
                 if len(text) > limit or not (PHONE if field == 'phones' else EMAIL).fullmatch(text):
-                    raise ValueError(f'{text[:60]} is not {"a phone number" if field == "phones" else "an email address"}')
+                    raise OwnerError(f'{text[:60]} is not {"a phone number" if field == "phones" else "an email address"}')
                 if contact_key(field, text) not in keys:
                     keys.add(contact_key(field, text))
                     values.append(text)
             if len(values) > 10:
-                raise ValueError(f'Up to 10 {field}')
+                raise OwnerError(f'Up to 10 {field}')
             known = {contact_key(field, v) for v in found[field]}
             value = {'added': [v for v in values if contact_key(field, v) not in known],
                      'removed': [v for v in found[field] if contact_key(field, v) not in keys]}
@@ -3488,13 +3488,13 @@ def person_edit(db, node_id, fields, now):
             value = notes_text(fields[field]) if field == 'notes' else ' '.join(str(fields[field] or '').split())
             if field == 'side':
                 if value not in ('', 'work', 'personal'):
-                    raise ValueError('Work or Personal')
+                    raise OwnerError('Work or Personal')
             elif len(value) > limit:
-                raise ValueError(f"{'LinkedIn' if field == 'linkedin_url' else field.capitalize()} is up to {limit} characters")
+                raise OwnerError(f"{'LinkedIn' if field == 'linkedin_url' else field.capitalize()} is up to {limit} characters")
             elif field == 'linkedin_url' and value:
                 value = value if re.match(r'https?://', value) else 'https://' + value
                 if not re.match(r'https://([a-z]{2,3}\.)?linkedin\.com/', value):
-                    raise ValueError('LinkedIn is a linkedin.com address, like linkedin.com/in/their-name')
+                    raise OwnerError('LinkedIn is a linkedin.com address, like linkedin.com/in/their-name')
             value = value or None
         for other, kept in rows.items():  # one place per field: the page it was last saved on
             if other != node_id:
@@ -3571,7 +3571,7 @@ def edits_restore(db, state):
 def project_id(db, name, now):
     name = re.sub(r'\s+', ' ', str(name or '')).strip()
     if not name or len(name) > 60:
-        raise ValueError('A project name is a short label (up to 60 characters), like "Acme VAT" or "Q4 board deck"')
+        raise OwnerError('A project name is a short label (up to 60 characters), like "Acme VAT" or "Q4 board deck"')
     row = db.execute('SELECT id,closed_at FROM projects WHERE name=? COLLATE NOCASE', (name,)).fetchone()
     if row:
         if row['closed_at']:
@@ -3605,7 +3605,7 @@ def board_row(db, name, stages, source, now):
     its last row. A board keeps the stages it was made with; its projects stand in them."""
     name = one_line(name, 60)
     if not name:
-        raise ValueError('A board name is a short label (up to 60 characters), like "Partner listings"')
+        raise OwnerError('A board name is a short label (up to 60 characters), like "Partner listings"')
     row = db.execute('SELECT * FROM boards WHERE name=? COLLATE NOCASE', (name,)).fetchone()
     if row:
         return row
@@ -3616,10 +3616,10 @@ def board_row(db, name, stages, source, now):
         item = stage if isinstance(stage, dict) else {'name': stage}
         title, hint = one_line(item.get('name'), 30), one_line(item.get('hint'), 80)
         if not title or title.casefold() == STALLED.casefold() or title.casefold() in {c['name'].casefold() for c in cleaned}:
-            raise ValueError(f'Stages are distinct short names (up to 30 characters); "{STALLED}" is always there')
+            raise OwnerError(f'Stages are distinct short names (up to 30 characters); "{STALLED}" is always there')
         cleaned.append({'name': title, **({'hint': hint} if hint else {})})
     if not 2 <= len(cleaned) <= 7:
-        raise ValueError(f'A new board needs stages: 2 to 7 names in order, like ["Contacted", "Agreed", "Live"]; "{STALLED}" is always there')
+        raise OwnerError(f'A new board needs stages: 2 to 7 names in order, like ["Contacted", "Agreed", "Live"]; "{STALLED}" is always there')
     board_id = db.execute('INSERT INTO boards(name,stages,source,created_at) VALUES(?,?,?,?)', (name, json.dumps(cleaned), source, now)).lastrowid
     return db.execute('SELECT * FROM boards WHERE id=?', (board_id,)).fetchone()
 
@@ -3654,13 +3654,13 @@ def set_stage(db, project, stage, source, now, board=None, stages=None, reason=N
     else:
         target = None
     if not target:
-        raise ValueError('Say which board the project is on (board; with stages when the board is new)')
+        raise OwnerError('Say which board the project is on (board; with stages when the board is new)')
     names = stage_names(target)
     wanted = one_line(stage, 40) or ''
     match = next((n for n in names if n.casefold() == wanted.casefold()), None) if wanted else (
         row['stage'] if row['board_id'] == target['id'] and row['stage'] else names[0])
     if not match:
-        raise ValueError(f"Stages on {target['name']}: " + ', '.join(names))
+        raise OwnerError(f"Stages on {target['name']}: " + ', '.join(names))
     at = now
     if not owner:
         found = db.execute('SELECT occurred_at FROM events WHERE id=? AND deleted=0', (int(event_id),)).fetchone() \
@@ -3971,10 +3971,10 @@ def clean_stages(stages):
         item = stage if isinstance(stage, dict) else {'name': stage}
         title, hint = one_line(item.get('name'), 30), one_line(item.get('hint'), 80)
         if not title or title.casefold() == STALLED.casefold() or title.casefold() in {c['name'].casefold() for c in cleaned}:
-            raise ValueError(f'Stages are distinct short names (up to 30 characters); "{STALLED}" is its own option')
+            raise OwnerError(f'Stages are distinct short names (up to 30 characters); "{STALLED}" is its own option')
         cleaned.append({'name': title, **({'hint': hint} if hint else {}), **({'was': str(item['was'])} if item.get('was') else {})})
     if not 1 <= len(cleaned) <= MAX_STAGES:
-        raise ValueError(f'A board has 1 to {MAX_STAGES} stages, in order')
+        raise OwnerError(f'A board has 1 to {MAX_STAGES} stages, in order')
     return cleaned
 
 
@@ -3998,9 +3998,9 @@ def suggest_board(db, args, source, now):
         raise ValueError('name: what the projects are, a short label like "Partner listings"')
     if db.execute('SELECT 1 FROM boards WHERE name=? COLLATE NOCASE', (name,)).fetchone() or \
             db.execute('SELECT 1 FROM board_suggestions WHERE name=? COLLATE NOCASE', (name,)).fetchone():
-        raise ValueError(f'"{name}" is a board or was suggested already')
+        raise OwnerError(f'"{name}" is a board or was suggested already')
     if db.execute("SELECT count(*) FROM board_suggestions WHERE state='open'").fetchone()[0] >= MAX_OPEN_SUGGESTIONS:
-        raise ValueError(f'{MAX_OPEN_SUGGESTIONS} board suggestions are open already: wait until the owner decides')
+        raise OwnerError(f'{MAX_OPEN_SUGGESTIONS} board suggestions are open already: wait until the owner decides')
     if args.get('visibility') is None:
         raise ValueError('visibility: "only_you" for sensitive work (M&A, investors, legal, health, hiring a named person), "team" for '
                          'customer, partner and other shared pipelines')
@@ -4052,7 +4052,7 @@ def board_suggestions(db):
 def dismiss_board_suggestion(db, suggestion_id, now):
     found = db.execute("UPDATE board_suggestions SET state='dismissed',decided_at=? WHERE id=? AND state='open'", (now, int(suggestion_id or 0))).rowcount
     if not found:
-        raise ValueError('That suggestion is gone')
+        raise OwnerError('That suggestion is gone')
     return {'status': 'dismissed'}
 
 
@@ -4064,15 +4064,15 @@ def save_board(db, args, now):
     its projects leave the board. Returns the board and what moved, to tell the owner."""
     name = one_line(args.get('name'), 60)
     if not name:
-        raise ValueError('Give the board a name (up to 60 characters)')
+        raise OwnerError('Give the board a name (up to 60 characters)')
     stages, side = clean_stages(args.get('stages')), args.get('side') is not False
     about = one_line(args.get('about'), 200)
     if about is None:
-        raise ValueError('Say which projects belong in one sentence (up to 200 characters)')
+        raise OwnerError('Say which projects belong in one sentence (up to 200 characters)')
     board_id = int(args.get('board_id') or 0)
     old = db.execute('SELECT * FROM boards WHERE id=?', (board_id,)).fetchone() if board_id else None
     if board_id and not old:
-        raise ValueError('That board is gone')
+        raise OwnerError('That board is gone')
     if args.get('visibility') == 'people' and old and old['visibility'] == 'people':
         visibility = 'people'  # shared with chosen teammates: changed from its Share board sheet
     elif args.get('visibility') is not None:  # who sees it; else as it was, as suggested, or the team
@@ -4084,7 +4084,7 @@ def save_board(db, args, now):
         visibility = (sug and sug['visibility']) or 'team'
     clash = db.execute('SELECT id FROM boards WHERE name=? COLLATE NOCASE', (name,)).fetchone()
     if clash and clash['id'] != board_id:
-        raise ValueError(f'There is a board called "{name}" already')
+        raise OwnerError(f'There is a board called "{name}" already')
     plain = [{k: v for k, v in s.items() if k != 'was'} for s in stages]
     notes = []
     if old:
@@ -4141,7 +4141,7 @@ def delete_board(db, board_id, now):
     """The board goes; its projects stay, on no board, with their history."""
     row = db.execute('SELECT * FROM boards WHERE id=?', (int(board_id or 0),)).fetchone()
     if not row:
-        raise ValueError('That board is gone')
+        raise OwnerError('That board is gone')
     kept = db.execute('UPDATE projects SET board_id=NULL,stage=NULL,stage_reason=NULL,stage_event_id=NULL,stage_by=NULL,stage_at=NULL '
                       'WHERE board_id=?', (row['id'],)).rowcount
     db.execute('DELETE FROM boards WHERE id=?', (row['id'],))
@@ -4155,7 +4155,7 @@ def project_row(db, node_id):
     ref = str(node_id or '')
     row = db.execute('SELECT * FROM projects WHERE id=?', (ref.split(':', 1)[1],)).fetchone() if ref.startswith('project:') and ref[8:].isdigit() else None
     if not row:
-        raise ValueError('That project is gone')
+        raise OwnerError('That project is gone')
     return row
 
 
@@ -4169,16 +4169,16 @@ def owner_org(db, said):
     if said.startswith('org:'):
         if not db.execute("SELECT 1 FROM graph_nodes WHERE id=? AND kind='org' UNION SELECT 1 FROM manual_nodes WHERE identifier=? AND kind='org'",
                           (said, said)).fetchone():
-            raise ValueError('That organization is gone; pick another')
+            raise OwnerError('That organization is gone; pick another')
         return crm.canonical_key(db, said[4:])
     domain = website_domain(said)
     if domain:
         if personal_mail(db, domain):
-            raise ValueError(f'{domain} is personal email, not an organization')
+            raise OwnerError(f'{domain} is personal email, not an organization')
         return crm.canonical_key(db, domain)
     found = db.execute("SELECT id FROM graph_nodes WHERE kind='org' AND name=? COLLATE NOCASE ORDER BY strength DESC LIMIT 1", (said,)).fetchone()
     if not found:
-        raise ValueError('Organization: pick one from the list, or add it as new')
+        raise OwnerError('Organization: pick one from the list, or add it as new')
     return crm.canonical_key(db, found['id'][4:])
 
 
@@ -4194,9 +4194,9 @@ def save_project(db, args, now):
     else:
         name = re.sub(r'\s+', ' ', str(args.get('name') or '')).strip()
         if not name or len(name) > 60:
-            raise ValueError('Give the project a name (up to 60 characters)')
+            raise OwnerError('Give the project a name (up to 60 characters)')
         if db.execute('SELECT 1 FROM projects WHERE name=? COLLATE NOCASE', (name,)).fetchone():
-            raise ValueError(f'There is a project called "{name}" already')
+            raise OwnerError(f'There is a project called "{name}" already')
         pid = db.execute("INSERT INTO projects(name,created_at,made_by) VALUES(?,?,'owner')", (name, now)).lastrowid
         row = db.execute('SELECT * FROM projects WHERE id=?', (pid,)).fetchone()
     pid, node = row['id'], 'project:' + str(row['id'])
@@ -4208,7 +4208,7 @@ def save_project(db, args, now):
         else:
             board = db.execute('SELECT * FROM boards WHERE id=?', (board_id,)).fetchone()
             if not board:
-                raise ValueError('That board is gone')
+                raise OwnerError('That board is gone')
             if row['board_id'] != board_id or args.get('stage'):
                 set_stage(db, node, args.get('stage') or stage_names(board)[0], 'owner', now, board=board['name'])
                 db.execute("DELETE FROM board_fits WHERE project_id=? AND state='open'", (pid,))
@@ -4224,16 +4224,16 @@ def save_project(db, args, now):
         try:
             value = round(float(raw), 2) if raw else None
         except ValueError:
-            raise ValueError('Value: a number, like 12000') from None
+            raise OwnerError('Value: a number, like 12000') from None
         if value is not None and not 0 <= value < 1e12:
-            raise ValueError('Value: a number, like 12000')
+            raise OwnerError('Value: a number, like 12000')
         db.execute('UPDATE projects SET value=? WHERE id=?', (value, pid))
     if 'close_date' in args:
         close = str(args.get('close_date') or '').strip()
         try:
             close = dt.date.fromisoformat(close).isoformat() if close else None
         except ValueError:
-            raise ValueError('Expected close: a date, like 2026-12-15') from None
+            raise OwnerError('Expected close: a date, like 2026-12-15') from None
         db.execute('UPDATE projects SET close_date=? WHERE id=?', (close, pid))
     if 'condition' in args:  # done when (project_success.py): the owner's word stays
         import project_success
@@ -4241,13 +4241,13 @@ def save_project(db, args, now):
     if 'notes' in args:
         notes = str(args.get('notes') or '').strip()
         if len(notes) > 4000:
-            raise ValueError('Notes fit in 4000 characters')
+            raise OwnerError('Notes fit in 4000 characters')
         db.execute('UPDATE projects SET notes=? WHERE id=?', (notes or None, pid))
     if 'people' in args:
         wanted = [str(x) for x in args.get('people') or [] if str(x).strip()]
         known = {r[0] for r in db.execute(f"SELECT id FROM graph_nodes WHERE kind='person' AND id IN ({','.join('?' * len(wanted))})", wanted)} if wanted else set()
         if set(wanted) - known:
-            raise ValueError('Pick people from the list')
+            raise OwnerError('Pick people from the list')
         db.execute('DELETE FROM project_people WHERE project_id=?', (pid,))
         db.executemany('INSERT OR IGNORE INTO project_people(project_id,node_id,created_at) VALUES(?,?,?)', [(pid, n, now) for n in wanted])
         if wanted:  # the people the owner took off stay off until the messages link them again
@@ -4261,7 +4261,7 @@ def set_outcome(db, node_id, outcome, reason, now):
     row = project_row(db, node_id)
     reason = one_line(reason, 160)
     if reason is None:
-        raise ValueError('Why, in one short line (up to 160 characters)')
+        raise OwnerError('Why, in one short line (up to 160 characters)')
     if outcome not in ('won', 'lost', None):
         raise ValueError('outcome is won or lost')
     board = db.execute('SELECT * FROM boards WHERE id=?', (row['board_id'],)).fetchone() if row['board_id'] else None
@@ -4304,7 +4304,7 @@ def delete_project(db, node_id):
 def default_board(db, board_id):
     """The board Projects opens on, on every device."""
     if not db.execute('SELECT 1 FROM boards WHERE id=?', (int(board_id or 0),)).fetchone():
-        raise ValueError('That board is gone')
+        raise OwnerError('That board is gone')
     db.execute('UPDATE boards SET is_default=(id=?)', (int(board_id),))
     return {'default': int(board_id)}
 
@@ -4404,17 +4404,17 @@ def merge(db, a, b, same, now, source='agent', keep=None):
     answers with the id that stays (keep: that one, when it is one of the two), or None until the rebuild joins them."""
     a, b = sorted((str(a).strip(), str(b).strip()))
     if not all(PERSON_ID.fullmatch(i) for i in (a, b)):
-        raise ValueError('Pick two people')
+        raise OwnerError('Pick two people')
     if a == b:
         if same:
             return  # one person already: nothing to merge (a double click, or a page from before the merge)
-        raise ValueError('Pick two people')
+        raise OwnerError('Pick two people')
     gone = forgotten(db)
     if gone(a) or gone(b):
-        raise ValueError('That person was deleted permanently')
+        raise OwnerError('That person was deleted permanently')
     said = db.execute('SELECT source FROM graph_merges WHERE a=? AND b=?', (a, b)).fetchone()
     if said and said['source'] == 'owner' and source != 'owner':
-        raise ValueError('The owner already decided about these two; their word stays')
+        raise OwnerError('The owner already decided about these two; their word stays')
     db.execute('INSERT OR REPLACE INTO graph_merges(a,b,same,created_at,source) VALUES(?,?,?,?,?)', (a, b, int(bool(same)), now, source))
     db.execute('DELETE FROM graph_same WHERE a=? AND b=?', (a, b))
     for node, other in ((a, b), (b, a)):  # their pages stop asking too, before the rebuild that joins them (graph_later)

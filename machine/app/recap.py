@@ -33,6 +33,7 @@ import still_needed
 import team_learnings
 from timeutil import local_tz, now
 from machine import todo_states
+from machine.owner_error import OwnerError
 
 
 def recap_escape(text):
@@ -533,11 +534,11 @@ class RecapApp:
         once for new signals. Signals already stored stay; only new ones are skipped."""
         import onboarding
         if not getattr(self, 'config_path', None):
-            raise ValueError('This can’t be changed on this Machine.')
+            raise OwnerError('This can’t be changed on this Machine.')
         config = onboarding.load(self.config_path)
         account = next((x for x in config.get('accounts', []) if x.get('id') == data.get('account')), None)
         if not account or not isinstance(data.get('rule'), dict):
-            raise ValueError('That source is no longer connected')
+            raise OwnerError('That source is no longer connected')
         rules = account.setdefault('exclude', [])
         if add and data['rule'] not in rules:
             rules.append(data['rule'])
@@ -556,19 +557,19 @@ class RecapApp:
         message that offered it."""
         item_id, choice = str(args.get('id') or ''), str(args.get('choice') or '')
         if not owner_dashboard and args.get('source') != 'telegram':
-            raise ValueError('Recap choices come from the recap message')
+            raise OwnerError('Recap choices come from the recap message')
         with self.store.connect() as db:
             item = db.execute('SELECT i.*,r.message_id recap_message_id,r.week recap_week FROM recap_items i LEFT JOIN recaps r ON r.week=i.week WHERE i.id=?',
                               (item_id,)).fetchone()
         if not item or (item['kind'] != still_needed.KIND and item['recap_week'] is None):  # a recap's line needs its recap
-            raise ValueError('That recap line is no longer known')
+            raise OwnerError('That recap line is no longer known')
         item = dict(item)
         on_todo = item['kind'] == still_needed.KIND  # asked on the to-do, not in a recap message
         if on_todo and not owner_dashboard:
-            raise ValueError('Still needed? is answered on the to-do')
+            raise OwnerError('Still needed? is answered on the to-do')
         offered_in = item['message_id'] or item['recap_message_id']  # its own message, or the whole recap (sent before each choice had one)
         if not owner_dashboard and str(offered_in or '') != str(args.get('message_id') or ''):
-            raise ValueError('That Telegram message is not the recap this line was sent in')
+            raise OwnerError('That Telegram message is not the recap this line was sent in')
         if choice not in RECAP_CHOICES[item['kind']]:
             raise ValueError('Unknown choice')
         decision = str(args.get('decision_id') or '') or 'recap:' + secrets.token_hex(8)

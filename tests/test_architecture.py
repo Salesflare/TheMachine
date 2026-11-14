@@ -138,6 +138,7 @@ MACHINE_LAYERS = {
     'config': 0,
     'names': 0,        # what the owner calls a service, app or agent (never the tool underneath)
     'omarchy': 0,      # the Omarchy desktop theme's colors, read only (a leaf)
+    'owner_error': 0,  # OwnerError: a message for the owner, not a bug (a leaf)
     'stamps': 0,       # change counters per table, so a request's answer is kept until its tables change
     'system_logs': 0,  # the computer's own logs: journald and crash dumps, read only
     'text': 0,         # message parsing

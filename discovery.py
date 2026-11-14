@@ -41,6 +41,7 @@ import re
 import secrets
 
 from machine.store.graph_history import live
+from machine.owner_error import OwnerError
 
 # The Network's group (cloud/discovery.py has the same): RFC 3526's 2048-bit MODP prime, its subgroup of squares.
 P = int(
@@ -554,7 +555,7 @@ class Discovery:
         a, items, buckets = blind(emails)
         answer = self.relay.call('POST', '/discover', {'action': 'match', 'items': items, 'buckets': buckets}, timeout=120)
         if not isinstance(answer, dict) or not isinstance(answer.get('items'), list) or len(answer['items']) != len(items) or not isinstance(answer.get('found'), list):
-            raise ValueError('The Network match response was incomplete; contacts remain pending')
+            raise OwnerError('The Network match response was incomplete; contacts remain pending')
         hits = matches(emails, items, a, answer)
         with self.connect() as db:
             known = {r[0] for r in db.execute('SELECT email FROM network_people')}
@@ -627,7 +628,7 @@ class Discovery:
             return {'find': do == 'find_on'}
         if do in ('address_on', 'address_off'):
             if email not in self.own_addresses() and email not in self.own_numbers():
-                raise ValueError('Not one of your connected addresses or numbers')
+                raise OwnerError('Not one of your connected addresses or numbers')
             found = self.network_settings()  # the owner's word on this address, kept whatever it looks like
             off = set(found.get('address_off') or []) - {email} | ({email} if do == 'address_off' else set())
             on = set(found.get('address_on') or []) - {email} | ({email} if do == 'address_on' else set())
@@ -668,7 +669,7 @@ class Discovery:
             ensure(db)
             row = db.execute('SELECT * FROM network_people WHERE email=?', (email,)).fetchone()
         if not row:
-            raise ValueError('Not someone found on the Network')
+            raise OwnerError('Not someone found on the Network')
         if do == 'connect':
             relation = relation if relation in ('friend', 'family', 'colleague') else ('colleague' if row['hint'] == 'colleague' else 'friend')
             if row['username'] in self.network_friends():

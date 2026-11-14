@@ -43,6 +43,7 @@ import urllib.request
 import zipfile
 from pathlib import Path
 from machine import todo_states
+from machine.owner_error import OwnerError
 
 LOG = logging.getLogger('personal-assistant')
 SCHEMA = '''
@@ -174,11 +175,11 @@ def from_skill_md(text):
 def validate(name, description, body):
     name, description, body = one_line(name, NAME_CHARS + 1), one_line(description, DESCRIPTION_CHARS + 1), clean_body(body)
     if not 3 <= len(name) <= NAME_CHARS:
-        raise ValueError(f'Give the skill a name of 3 to {NAME_CHARS} characters')
+        raise OwnerError(f'Give the skill a name of 3 to {NAME_CHARS} characters')
     if not 10 <= len(description) <= DESCRIPTION_CHARS:
-        raise ValueError(f'Say when to use it, in 10 to {DESCRIPTION_CHARS} characters')
+        raise OwnerError(f'Say when to use it, in 10 to {DESCRIPTION_CHARS} characters')
     if not 20 <= len(body) <= BODY_CHARS:
-        raise ValueError(f'Write the instructions: 20 to {BODY_CHARS} characters')
+        raise OwnerError(f'Write the instructions: 20 to {BODY_CHARS} characters')
     return name, description, body
 
 
@@ -253,9 +254,9 @@ def check_against(on_hand, update=None, related=None, relation=None, new=False):
     if update:
         target = find(update)
         if target and target['origin'] == 'shared':
-            raise ValueError("That skill is a teammate's: theirs are never changed. Suggest a new one, related to it")
+            raise OwnerError("That skill is a teammate's: theirs are never changed. Suggest a new one, related to it")
         if not target:
-            raise ValueError('Update one of the owner\'s own skills: ' + ', '.join(s['name'] for s in on_hand if s['origin'] != 'shared')
+            raise OwnerError('Update one of the owner\'s own skills: ' + ', '.join(s['name'] for s in on_hand if s['origin'] != 'shared')
                              + ' (or suggest a new one)')
         return target, None, None
     if related:
@@ -264,10 +265,10 @@ def check_against(on_hand, update=None, related=None, relation=None, new=False):
             raise ValueError('related is one of the skills here: ' + ', '.join(s['name'] for s in on_hand))
         relation = one_line(relation, RELATION_CHARS + 1)
         if not 5 <= len(relation) <= RELATION_CHARS:
-            raise ValueError(f"Say how it relates to {linked['name']} in one short line: relation=<up to {RELATION_CHARS} characters>")
+            raise OwnerError(f"Say how it relates to {linked['name']} in one short line: relation=<up to {RELATION_CHARS} characters>")
         return None, linked, relation
     if on_hand and new is not True:
-        raise ValueError('First check the skills here by what each is for: '
+        raise OwnerError('First check the skills here by what each is for: '
                          + '; '.join(f"{s['name']}: {s['description']}" for s in on_hand)[:3000]
                          + '. Update one of the owner\'s own when it does the same job, name a related one with a one-line relation '
                            'when it is a separate job next to it, or say it is new when none is')
@@ -295,11 +296,11 @@ def check_rewrite(before, after):
             twice.append(m.group(0).strip())
         seen.add(key)
     if twice:
-        raise ValueError(f'"{twice[0]}" comes twice: merge what is new into the section that is already there')
+        raise OwnerError(f'"{twice[0]}" comes twice: merge what is new into the section that is already there')
     if after.strip() == before.strip():
-        raise ValueError('That changes nothing in the skill')
+        raise OwnerError('That changes nothing in the skill')
     if len(after) < len(before) // 2:
-        raise ValueError('Keep what the skill says now: the rewrite is less than half as long')
+        raise OwnerError('Keep what the skill says now: the rewrite is less than half as long')
 
 
 def changes(before, after):
@@ -463,16 +464,16 @@ class Skills:
 
     def installed_get(self, name):
         if not self.catalog:
-            raise ValueError('Skills aren\'t available on this Machine')
+            raise OwnerError('Skills aren\'t available on this Machine')
         if str(name) in self.mine():
-            raise ValueError('Open it from your own skills')
+            raise OwnerError('Open it from your own skills')
         return self.catalog.read(str(name))
 
     def installed_toggle(self, name, on):
         if not self.catalog:
-            raise ValueError('Skills aren\'t available on this Machine')
+            raise OwnerError('Skills aren\'t available on this Machine')
         if str(name) in self.mine():
-            raise ValueError('Turn your own skills on or off above')
+            raise OwnerError('Turn your own skills on or off above')
         self.catalog.toggle(str(name), bool(on))
         if on:
             self.hints.close(str(name))
@@ -480,17 +481,17 @@ class Skills:
 
     def hub_search(self, query):
         if not self.catalog:
-            raise ValueError('Skills aren\'t available on this Machine')
+            raise OwnerError('Skills aren\'t available on this Machine')
         return {'results': self.catalog.search(query)}
 
     def hub_get(self, ref):
         if not self.catalog:
-            raise ValueError('Skills aren\'t available on this Machine')
+            raise OwnerError('Skills aren\'t available on this Machine')
         return self.catalog.hub(ref)
 
     def hub_install(self, ref, version, sha):
         if not self.catalog:
-            raise ValueError('Skills aren\'t available on this Machine')
+            raise OwnerError('Skills aren\'t available on this Machine')
         shown = self.catalog.install(str(ref), str(version), str(sha))
         self.hints.close(shown['ref'])
         LOG.info('skills installed from clawhub ref=%s version=%s', shown['ref'], shown['version'])
@@ -504,10 +505,10 @@ class Skills:
         sites, again = [s for s in (sites if isinstance(sites, list) else []) if s in IMPORT_FROM], bool(token)
         if again:
             if not sites:
-                raise ValueError('Which account?')
+                raise OwnerError('Which account?')
             scan = self.importer.scan(token)
             if (scan['finding'] or {}).get('status') == 'running':
-                raise ValueError('Still looking in your accounts; a moment')
+                raise OwnerError('Still looking in your accounts; a moment')
             items = list(scan['items'].values())
         else:
             items, errors = self.importer.find()
@@ -583,7 +584,7 @@ class Skills:
     def row(self, db, skill_id):
         row = db.execute('SELECT * FROM skills WHERE id=?', (str(skill_id or ''),)).fetchone()
         if not row:
-            raise ValueError('That skill is gone')
+            raise OwnerError('That skill is gone')
         return row
 
     # -- the owner's own
@@ -596,7 +597,7 @@ class Skills:
             if skill_id:
                 row = self.row(db, skill_id)
                 if row['status'] not in ('on', 'off'):
-                    raise ValueError('Install or approve it first')
+                    raise OwnerError('Install or approve it first')
                 if row['sha'] == sha:
                     return row['id'] if _db is not None else self.view()
                 slug = row['slug'] if row['name'] == name else self._slug(db, name, keep_id=row['id'])
@@ -605,7 +606,7 @@ class Skills:
                            (name, slug, description, body, sha, stamp, row['id']))
             else:
                 if db.execute("SELECT COUNT(*) FROM skills WHERE status IN ('on','off')").fetchone()[0] >= MAX_SKILLS:
-                    raise ValueError(f'At most {MAX_SKILLS} skills')
+                    raise OwnerError(f'At most {MAX_SKILLS} skills')
                 saved_id = 'sk_' + secrets.token_hex(8)
                 db.execute("INSERT INTO skills(id,slug,name,description,body,status,origin,sha,created_at,updated_at) VALUES(?,?,?,?,?,'on','mine',?,?,?)",
                            (saved_id, self._slug(db, name), name, description, body, sha, stamp, stamp))
@@ -618,7 +619,7 @@ class Skills:
         with self.connect() as db:
             row = self.row(db, skill_id)
             if row['status'] not in ('on', 'off'):
-                raise ValueError('Install or approve it first')
+                raise OwnerError('Install or approve it first')
             db.execute('UPDATE skills SET status=?,updated_at=? WHERE id=?', ('on' if on else 'off', now(), row['id']))
         self.sync()
         return self.view()
@@ -627,7 +628,7 @@ class Skills:
         with self.connect() as db:
             row = self.row(db, skill_id)
             if row['status'] == 'incoming':
-                raise ValueError('Decline it instead')
+                raise OwnerError('Decline it instead')
             db.execute('DELETE FROM skills WHERE id=?', (row['id'],))
         self.sync()
         return self.view()
@@ -642,7 +643,7 @@ class Skills:
     def example(self, key='customer-inquiries'):
         found = EXAMPLES.get(key)
         if not found:
-            raise ValueError('No such example')
+            raise OwnerError('No such example')
         return dict(found)
 
     # -- proposed by the agent
@@ -664,7 +665,7 @@ class Skills:
                 db.execute("DELETE FROM skills WHERE status='proposed' AND origin='proposed' AND task=?", (task,))
                 db.execute('DELETE FROM skill_task_decided WHERE task=?', (task,))  # a new proposal: the to-do offers it again
             if db.execute("SELECT COUNT(*) FROM skills WHERE status='proposed'").fetchone()[0] >= OPEN_PROPOSALS:
-                raise ValueError(f'{OPEN_PROPOSALS} proposed skills already wait for the owner')
+                raise OwnerError(f'{OPEN_PROPOSALS} proposed skills already wait for the owner')
             on_hand = self.on_hand(db)
             if not update and db.execute('SELECT 1 FROM skills WHERE sha=? OR (name=? AND status IN (\'on\',\'off\',\'proposed\'))',
                                          (digest(name, description, body), name)).fetchone():
@@ -708,20 +709,20 @@ class Skills:
 
     def share(self, skill_id, fleet_ref, to=None, note=''):
         if not self.fleet:
-            raise ValueError('Join a Fleet or add a friend first')
+            raise OwnerError('Join a Fleet or add a friend first')
         target = next((t for t in self.targets() if t['fleet'] == fleet_ref), None)
         if not target:
-            raise ValueError('Pick a Fleet or a friend')
+            raise OwnerError('Pick a Fleet or a friend')
         if to is not None:
             to = [m for m in to if any(p['member_id'] == m for p in target['members'])] if isinstance(to, list) else []
             if not to:
-                raise ValueError('Pick who gets it')
+                raise OwnerError('Pick who gets it')
         if target['kind'] == 'friends' and (not to or len(to) != 1):
-            raise ValueError('Pick one friend')
+            raise OwnerError('Pick one friend')
         with self.connect() as db:
             row = self.row(db, skill_id)
             if row['status'] not in ('on', 'off'):
-                raise ValueError('Install or approve it first')
+                raise OwnerError('Install or approve it first')
         question = {'name': row['name'], 'slug': row['slug'], 'description': row['description'], 'body': row['body'],
                     'version': row['version'], 'sha': row['sha'], **({'note': one_line(note, NOTE_CHARS)} if one_line(note, NOTE_CHARS) else {})}
         sent = self.fleet.ask('skill', question, context=f"skill:{row['id']}:{row['version']}", fleet=fleet_ref, to=to)
@@ -768,18 +769,18 @@ class Skills:
             db.execute('BEGIN IMMEDIATE')
             row = self.row(db, skill_id)
             if row['status'] not in ('incoming', 'proposed'):
-                raise ValueError('Already decided')
+                raise OwnerError('Already decided')
             if choice in ('install', 'approve') and row['status'] == 'proposed' and row['replaces']:
                 target = db.execute("SELECT * FROM skills WHERE id=? AND status IN ('on','off') AND origin!='shared'", (row['replaces'],)).fetchone()
                 if not target:
-                    raise ValueError('That skill is gone')
+                    raise OwnerError('That skill is gone')
                 shown = update_view(row['id'], dict(target), row['body'], row['base_sha'])
                 if shown.get('stale'):
-                    raise ValueError(f"{target['name']} changed after this was suggested. Dismiss it; the next suggestion starts from the new version")
+                    raise OwnerError(f"{target['name']} changed after this was suggested. Dismiss it; the next suggestion starts from the new version")
                 if not reviewed:
-                    raise ValueError('See the before and after first')
+                    raise OwnerError('See the before and after first')
                 if reviewed != shown['review']:
-                    raise ValueError(f"{target['name']} changed since. Look at the before and after again")
+                    raise OwnerError(f"{target['name']} changed since. Look at the before and after again")
                 db.execute('UPDATE skills SET body=?,sha=?,version=version+1,updated_at=? WHERE id=?',
                            (row['body'], digest(target['name'], target['description'], row['body']), now(), target['id']))
                 db.execute('DELETE FROM skills WHERE id=?', (row['id'],))
@@ -792,13 +793,13 @@ class Skills:
                     db.execute('DELETE FROM skills WHERE id=?', (row['id'],))
                 else:
                     if db.execute("SELECT COUNT(*) FROM skills WHERE status IN ('on','off')").fetchone()[0] >= MAX_SKILLS:
-                        raise ValueError(f'At most {MAX_SKILLS} skills')
+                        raise OwnerError(f'At most {MAX_SKILLS} skills')
                     db.execute("UPDATE skills SET status='on',slug=?,updated_at=? WHERE id=?", (self._slug(db, row['name']), now(), row['id']))
             elif choice in ('decline', 'dismiss'):
                 db.execute('DELETE FROM skills WHERE id=?', (row['id'],))
                 self._task_decided(db, row, 'dismissed')
             else:
-                raise ValueError('Choose install or decline')
+                raise OwnerError('Choose install or decline')
         if row['status'] == 'incoming' and row['ask_id'] and self.fleet:
             installed = choice in ('install', 'approve')
             try:
@@ -1040,7 +1041,7 @@ class Catalog:
                     raise error from None
             found = data.get('skills') if isinstance(data, dict) else None
             if not isinstance(found, list):
-                raise ValueError('The answer could not be read. Try again.')
+                raise OwnerError('The answer could not be read. Try again.')
             with self.lock:
                 self.raw = [r for r in found if isinstance(r, dict) and isinstance(r.get('name'), str)][:500]
                 self.at, self.error, self.stale = self.clock(), '', False
@@ -1114,7 +1115,7 @@ class Catalog:
     def read(self, name):
         """One installed skill's SKILL.md, to read. Only read; nothing is written."""
         if not self.find(name):
-            raise ValueError('No skill by that name')
+            raise OwnerError('No skill by that name')
         info = self._json(['skills', 'info', name])
         path = Path(str(info.get('filePath') or '')) if isinstance(info, dict) else Path()
         body = ''
@@ -1129,11 +1130,11 @@ class Catalog:
     def toggle(self, name, on):
         """OpenClaw's own on/off for a skill (skills.entries.<key>.enabled): applied without a Gateway restart."""
         if not self.find(name):
-            raise ValueError('No skill by that name')
+            raise OwnerError('No skill by that name')
         info = self._json(['skills', 'info', name])
         key = str(info.get('skillKey') or name) if isinstance(info, dict) else name
         if not KEY.fullmatch(key):
-            raise ValueError('That skill can\'t be turned on or off from here')
+            raise OwnerError('That skill can\'t be turned on or off from here')
         done = self._cli(['config', 'set', f'skills.entries.{key}.enabled', 'true' if on else 'false', '--strict-json'])
         if done.returncode:
             raise ValueError(self._reason(done))
@@ -1143,7 +1144,7 @@ class Catalog:
     def search(self, query):
         query = one_line(query, 80)
         if len(query) < 2:
-            raise ValueError('Type what the skill should help with')
+            raise OwnerError('Type what the skill should help with')
         cached = self.searches.get(query.lower())
         if cached and self.clock() - cached[0] < SEARCH_SECONDS:
             return cached[1]
@@ -1176,37 +1177,37 @@ class Catalog:
         try:
             return self.fetch(url)
         except (OSError, urllib.error.URLError, ValueError, http.client.HTTPException):
-            raise ValueError('ClawHub did not answer; try again in a minute') from None
+            raise OwnerError('ClawHub did not answer; try again in a minute') from None
 
     def hub(self, ref):
         """A ClawHub skill, read before installing: its SKILL.md as published, its files (so scripts show), whether it
         has install steps or asks for keys, and ClawHub's own scan. The sha is what an install must still match."""
         found = REF.fullmatch(str(ref or ''))
         if not found:
-            raise ValueError('That isn\'t a ClawHub skill')
+            raise OwnerError('That isn\'t a ClawHub skill')
         owner, slug = found.group(1), found.group(2)
         try:
             detail = json.loads(self._get(f'/api/v1/skills/{slug}', ownerHandle=owner))
         except ValueError:
-            raise ValueError('ClawHub doesn\'t have that skill') from None
+            raise OwnerError('ClawHub doesn\'t have that skill') from None
         skill = detail.get('skill') if isinstance(detail, dict) else None
         if not isinstance(skill, dict) or skill.get('slug') != slug or ((detail.get('owner') or {}).get('handle') not in (None, owner)):
-            raise ValueError('ClawHub doesn\'t have that skill')
+            raise OwnerError('ClawHub doesn\'t have that skill')
         version = str((detail.get('latestVersion') or {}).get('version') or '')
         if not VERSION.fullmatch(version):
-            raise ValueError('That skill has no release to install')
+            raise OwnerError('That skill has no release to install')
         try:
             release = json.loads(self._get(f'/api/v1/skills/{slug}/versions/{version}', ownerHandle=owner)).get('version') or {}
         except (ValueError, AttributeError):
-            raise ValueError('ClawHub release files are unavailable; try again in a minute') from None
+            raise OwnerError('ClawHub release files are unavailable; try again in a minute') from None
         if not isinstance(release, dict) or not isinstance(release.get('files'), list):
-            raise ValueError('ClawHub release files are unavailable; try again in a minute')
+            raise OwnerError('ClawHub release files are unavailable; try again in a minute')
         raw = self._get(f'/api/v1/skills/{slug}/file', path='SKILL.md', version=version, ownerHandle=owner)
         if len(raw) > 2 * 1024 * 1024:
-            raise ValueError('That skill is too large to read here')
+            raise OwnerError('That skill is too large to read here')
         listed = next((f.get('sha256') for f in release.get('files') or [] if isinstance(f, dict) and f.get('path') == 'SKILL.md'), None)
         if listed and listed != hashlib.sha256(raw).hexdigest():
-            raise ValueError('ClawHub sent a SKILL.md that doesn\'t match its release; not shown')
+            raise OwnerError('ClawHub sent a SKILL.md that doesn\'t match its release; not shown')
         text = raw.decode('utf-8', errors='replace')
         moderation = detail.get('moderation')
         files = [{'path': one_line(f.get('path'), 200), 'size': int(f.get('size') or 0)} for f in release.get('files') or [] if isinstance(f, dict)][:200]
@@ -1230,9 +1231,9 @@ class Catalog:
         """OpenClaw's own install of exactly the release the owner read. Never forced, never past a policy warning."""
         shown = self.hub(ref)
         if shown['version'] != version or shown['sha'] != sha:
-            raise ValueError('It changed since you read it; read it again first')
+            raise OwnerError('It changed since you read it; read it again first')
         if shown['slug'] in {r.get('name') for r in self.installed()}:
-            raise ValueError('A skill with that name is already here')
+            raise OwnerError('A skill with that name is already here')
         done = self._cli(['skills', 'install', shown['ref'], '--version', version], timeout=240)
         if done.returncode:
             raise ValueError(self._reason(done))
@@ -1327,7 +1328,7 @@ class Hints:
         with self.connect() as db:
             row = db.execute("SELECT skill FROM skill_hints WHERE id=?", (str(hint_id or ''),)).fetchone()
         if not row:
-            raise ValueError('That hint is gone')
+            raise OwnerError('That hint is gone')
         self.close(row['skill'], 'dismissed')
 
     def open(self):
@@ -1433,7 +1434,7 @@ def unzip(raw):
         archive = zipfile.ZipFile(io.BytesIO(raw))
         entries = archive.infolist()
     except (zipfile.BadZipFile, ValueError):
-        raise ValueError('That isn\'t a .skill or .zip file') from None
+        raise OwnerError('That isn\'t a .skill or .zip file') from None
     files, total = {}, 0
     for info in entries[:TREE_FILES * 3]:
         path = clean_path(info.filename)
@@ -1487,7 +1488,7 @@ def convert(files, frm, folder=''):
     md_path = next((p for p in files if p.lower() == 'skill.md'), None)
     text = files.get(md_path) if md_path else None
     if not isinstance(text, bytes):
-        raise ValueError('No readable SKILL.md')
+        raise OwnerError('No readable SKILL.md')
     text = text.decode('utf-8', errors='replace')
     fields = header(text)
     name = one_line(fields.get('name') or folder or 'Imported skill', NAME_CHARS)
@@ -1686,7 +1687,7 @@ class Importer:
         with self.lock:
             found = self.scans.get(str(token or ''))
         if not found or time.time() - found['at'] > SCAN_SECONDS:
-            raise ValueError('That list is out of date; look again')
+            raise OwnerError('That list is out of date; look again')
         return found
 
     def view(self, token):
@@ -1742,15 +1743,15 @@ class Importer:
     def upload(self, frm, data):
         """An export the owner uploaded: a .skill or .zip (base64), or a folder's files ([{path, data}] in base64)."""
         if frm not in IMPORT_FROM:
-            raise ValueError('Choose Claude or ChatGPT')
+            raise OwnerError('Choose Claude or ChatGPT')
         if not isinstance(data, dict):
-            raise ValueError('Nothing was uploaded')
+            raise OwnerError('Nothing was uploaded')
         label = one_line(data.get('name'), 120) or 'Upload'
         try:
             if isinstance(data.get('zip'), str):
                 raw = base64.b64decode(data['zip'], validate=True)
                 if len(raw) > UPLOAD_BYTES:
-                    raise ValueError('That file is too big (6 MB at most)')
+                    raise OwnerError('That file is too big (6 MB at most)')
                 files = unzip(raw)
             elif isinstance(data.get('files'), list):
                 files, total = {}, 0
@@ -1761,15 +1762,15 @@ class Importer:
                     raw = base64.b64decode(f['data'], validate=True)
                     total += len(raw)
                     if total > UPLOAD_BYTES:
-                        raise ValueError('That folder is too big (6 MB at most)')
+                        raise OwnerError('That folder is too big (6 MB at most)')
                     files[path] = raw
             else:
-                raise ValueError('Nothing was uploaded')
+                raise OwnerError('Nothing was uploaded')
         except (ValueError, TypeError) as error:
             raise ValueError(str(error) if 'big' in str(error) or 'skill' in str(error) else 'That upload couldn\'t be read') from None
         found = split_skills(files)
         if not found:
-            raise ValueError('No SKILL.md in it')
+            raise OwnerError('No SKILL.md in it')
         items, errors, taken = [], [], self.taken()
         for root, tree in list(found.items())[:50]:
             folder = root.rsplit('/', 1)[-1] if root else label.rsplit('.', 1)[0]
@@ -1779,9 +1780,9 @@ class Importer:
 
     def paste(self, frm, text):
         if frm not in IMPORT_FROM:
-            raise ValueError('Choose Claude or ChatGPT')
+            raise OwnerError('Choose Claude or ChatGPT')
         if not isinstance(text, str) or not FRONTMATTER.match(text.strip() + '\n'):
-            raise ValueError('Paste a whole SKILL.md, starting with its --- header')
+            raise OwnerError('Paste a whole SKILL.md, starting with its --- header')
         text = text.strip() + '\n'
         item, error = self.item(f'{frm}:paste:{hashlib.sha256(text.encode()).hexdigest()[:16]}', frm, {'SKILL.md': text.encode()}, source='Pasted SKILL.md')
         if not item:
@@ -1792,7 +1793,7 @@ class Importer:
     def read(self, token, key):
         found = self.scan(token)['items'].get(str(key))
         if not found:
-            raise ValueError('That skill isn\'t in this list')
+            raise OwnerError('That skill isn\'t in this list')
         name, description, body = found['converted']
         public = found['public']
         installable = bool(public['script_count'] and not public['blocked'] and self.keeper.catalog and (found.get('path') or self.complete(found)))
@@ -1808,7 +1809,7 @@ class Importer:
         owner's own is updated in place instead (same id, next version)."""
         found = self.scan(token)
         if not isinstance(keys, list) or not keys:
-            raise ValueError('Tick the skills to import')
+            raise OwnerError('Tick the skills to import')
         results, stamp = [], now()
         for key in [str(k) for k in keys][:CANDIDATES]:
             item = found['items'].get(key)
@@ -1861,23 +1862,23 @@ class Importer:
         exactly as the owner read it: never forced, never past a policy warning, never one whose license says no."""
         found = self.scan(token)['items'].get(str(key))
         if not found:
-            raise ValueError('That skill isn\'t in this list')
+            raise OwnerError('That skill isn\'t in this list')
         public, catalog = found['public'], self.keeper.catalog
         if public['blocked']:
             raise ValueError(public['blocked'])
         if not catalog:
-            raise ValueError('Skills aren\'t available on this Machine')
+            raise OwnerError('Skills aren\'t available on this Machine')
         if found['sha'] != str(sha):
-            raise ValueError('Read it first')
+            raise OwnerError('Read it first')
         slug = slug_of(public['name'])
         if slug == FOLDER or slug in {str(r.get('name') or '') for r in catalog.installed()} or slug in other_names(self.keeper.workspace / 'skills'):
-            raise ValueError('A skill with that name is already here')
+            raise OwnerError('A skill with that name is already here')
         temporary = None
         try:
             if found.get('path'):
                 folder = Path(found['path'])
                 if tree_digest(read_tree(folder)) != found['sha']:
-                    raise ValueError('It changed since you read it; look again')
+                    raise OwnerError('It changed since you read it; look again')
             elif self.complete(found):
                 temporary = tempfile.mkdtemp(prefix='skill-import-')
                 folder = Path(temporary) / slug
@@ -1886,7 +1887,7 @@ class Importer:
                     target.parent.mkdir(parents=True, exist_ok=True)
                     target.write_bytes(data)
             else:
-                raise ValueError('Upload the whole skill to install it with its files')
+                raise OwnerError('Upload the whole skill to install it with its files')
             done = catalog._cli(['skills', 'install', str(folder), '--as', slug], timeout=240)
             if done.returncode:
                 raise ValueError(catalog._reason(done))

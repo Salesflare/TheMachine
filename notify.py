@@ -46,6 +46,7 @@ import clear_pace
 from i18n import t
 import timeutil
 from machine import todo_states
+from machine.owner_error import OwnerError
 
 LOG = logging.getLogger('personal-assistant')
 
@@ -130,7 +131,7 @@ def allowed(db, kind, channel):
 
 def set_pref(db, kind, channel, on):
     if kind not in DEFAULTS or channel not in DEFAULTS[kind]:
-        raise ValueError('That notification can’t go there')
+        raise OwnerError('That notification can’t go there')
     ensure(db)
     db.execute('INSERT INTO notify_prefs(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value',
                (f'{kind}.{channel}', 'on' if on else 'off'))

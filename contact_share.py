@@ -18,6 +18,7 @@ import hashlib
 import json
 import re
 import secrets
+from machine.owner_error import OwnerError
 
 KIND = 'contact'
 FIELDS = ('emails', 'phones', 'org', 'role')
@@ -150,12 +151,12 @@ class ContactShare:
             name = line(about.get('owner_name'), NAME_CHARS) or next((line(m.get('name'), NAME_CHARS) for f in self.fleets().values()
                                                                        for m in f.get('members') or () if m.get('me') and m.get('name')), '')
             if not name:
-                raise ValueError('Add your name first, in Settings')
+                raise OwnerError('Add your name first, in Settings')
             return {'name': name, 'emails': _list([e.get('value') for e in about.get('emails') or []], EMAIL, 200),
                     'phones': _list([p.get('value') for p in about.get('phones') or []], PHONE, 40), 'org': '', 'role': '', 'own': True, 'confirm': None}
         row = graph.resolve(db, source)
         if not row or row['kind'] != 'person':
-            raise ValueError('Share a person from their page')
+            raise OwnerError('Share a person from their page')
         view = graph.node_view(row)
         org = ''
         if view.get('org'):
@@ -208,7 +209,7 @@ class ContactShare:
     def _contact_target(self, fleet_ref, member_id):
         target = next((t for t in self.contact_targets() if t['fleet'] == fleet_ref and t['member_id'] == member_id), None)
         if not target:
-            raise ValueError('Pick a teammate, friend or Family member')
+            raise OwnerError('Pick a teammate, friend or Family member')
         return target
 
     def contact_send(self, source, pick, note, fleet_ref, member_id, shown, confirmed=False):
@@ -217,7 +218,7 @@ class ContactShare:
         card, have = self.contact_card(source, pick, note)
         target = self._contact_target(fleet_ref, member_id)
         if not shown or shown != digest(card):
-            raise ValueError('That changed since the preview. Look it over again')
+            raise OwnerError('That changed since the preview. Look it over again')
         if have['confirm'] and confirmed is not True:
             raise ValueError('This is a Personal contact. Confirm to share it anyway' if have['confirm'] == 'personal'
                              else 'You keep this contact private. Confirm to share it anyway')
@@ -287,7 +288,7 @@ class ContactShare:
     def contact_decide(self, share_id, choice):
         """Add (made, or merged into the person who has one of its emails or phones) or Dismiss."""
         if choice not in ('add', 'dismiss'):
-            raise ValueError('Choose add or dismiss')
+            raise OwnerError('Choose add or dismiss')
         import graph
         import graph_show
         stamp = now()
@@ -296,7 +297,7 @@ class ContactShare:
             db.execute('BEGIN IMMEDIATE')
             row = db.execute("SELECT * FROM contact_shares WHERE id=? AND status='waiting'", (str(share_id),)).fetchone()
             if not row:
-                raise ValueError('That one was added or dismissed already')
+                raise OwnerError('That one was added or dismissed already')
             card = json.loads(row['card'])
             node_id, stage = None, 'dismissed'
             if choice == 'add':
@@ -307,7 +308,7 @@ class ContactShare:
                 else:
                     made = graph.create_record(db, 'person', {'name': card['name'], 'email': (card.get('emails') or [''])[0], 'org': card.get('org', '')}, stamp)
                     if made.get('yours'):
-                        raise ValueError('That’s your own address: it’s in About you')
+                        raise OwnerError('That’s your own address: it’s in About you')
                     node_id, stage = made['node_id'], 'added' if made.get('created') else 'merged'
                     if made.get('created'):
                         fields = {}

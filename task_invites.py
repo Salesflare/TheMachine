@@ -27,6 +27,7 @@ import re
 import urllib.error
 import urllib.parse
 import urllib.request
+from machine.owner_error import OwnerError
 
 KINDS = ('handoff', 'followup', 'schedule', 'intro')
 LINK = re.compile(r'https://[A-Za-z0-9.-]+(?::\d+)?/t/([A-Za-z0-9_-]{22})#k=([A-Za-z0-9_-]{43})')
@@ -64,11 +65,11 @@ def seal(task, key=None):
 def _open(sealed, key):
     raw, key = _unb64(sealed), _unb64(key)
     if len(raw) < 49 or raw[0] != 1 or len(key) != 32:
-        raise ValueError('That task link is not one this Machine can open')
+        raise OwnerError('That task link is not one this Machine can open')
     enc, mac = _keys(key)
     nonce, body, tag = raw[1:17], raw[17:-32], raw[-32:]
     if not hmac.compare_digest(hmac.new(mac, nonce + body, hashlib.sha256).digest(), tag):
-        raise ValueError('That task link is not one this Machine can open')
+        raise OwnerError('That task link is not one this Machine can open')
     return json.loads(bytes(a ^ b for a, b in zip(body, _stream(enc, nonce, len(body)))))
 
 
@@ -90,7 +91,7 @@ def open_answer(sealed, key):
     Their words, shown quoted on the card, never read as instructions."""
     found = _open(sealed, derived(key, 'reply'))
     if not isinstance(found, dict) or found.get('answer') not in ANSWERS:
-        raise ValueError('That answer is not one this Machine can open')
+        raise OwnerError('That answer is not one this Machine can open')
     note = ' '.join(str(found.get('note') or '').split())[:NOTE_CHARS] if isinstance(found.get('note'), str) else ''
     return {'answer': found['answer'], 'note': note}
 
@@ -142,13 +143,13 @@ def without_link(body):
 def clean(task):
     """A task kept to its fixed form: short plain fields, nothing else."""
     if not isinstance(task, dict):
-        raise ValueError('That task link holds no task')
+        raise OwnerError('That task link holds no task')
     out = {k: ' '.join(str(task[k]).split())[:n] for k, n in FIELDS.items() if isinstance(task.get(k), str) and task[k].strip()}
     out['kind'] = task.get('kind') if task.get('kind') in KINDS else 'handoff'
     if 'due' in out and not re.fullmatch(r'\d{4}-\d{2}-\d{2}', out['due']):
         out.pop('due')
     if not out.get('title'):
-        raise ValueError('That task link holds no task')
+        raise OwnerError('That task link holds no task')
     return out
 
 
@@ -157,7 +158,7 @@ def parse_link(text):
     text = str(text or '').strip()
     found = LINK.search(text) or REF.fullmatch(text.removeprefix('#task='))
     if not found:
-        raise ValueError('Paste the whole task link, with the part after the #')
+        raise OwnerError('Paste the whole task link, with the part after the #')
     return found.group(1), found.group(2)
 
 
@@ -214,4 +215,4 @@ def claim(base_url, invite_id, token=None, timeout=20):
                 message = ''
         raise ValueError(message or f'The Network said {error.code}') from None
     except urllib.error.URLError:
-        raise ValueError('The Network is not reachable right now; try again in a minute') from None
+        raise OwnerError('The Network is not reachable right now; try again in a minute') from None

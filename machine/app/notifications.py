@@ -24,6 +24,7 @@ import still_needed
 import todo_areas
 from timeutil import clock, in_hours, is_work_day, local_tz, next_work_day, now, WORK_HOURS
 from machine import todo_states
+from machine.owner_error import OwnerError
 
 
 def done_today(db, start, current):
@@ -63,7 +64,7 @@ class NotificationsApp:
         # To-dos, the Digest row opened or its × tapped: hidden on every device until the next digest goes out (or the
         # next day, for today's digest so far) (notify.digest_row, the status's digest_row). The owner's own dashboard only
         if not owner_dashboard:
-            raise ValueError('The digest is read in the dashboard')
+            raise OwnerError('The digest is read in the dashboard')
         with self.store.connect() as db:
             notify.digest_row_hide(db, now())
         return {'digest_row': None}
@@ -78,7 +79,7 @@ class NotificationsApp:
         # (notify.digest_shown), {} when none is kept or the kind is neither. The owner's own dashboard only, as the
         # area digest
         if not owner_dashboard:
-            raise ValueError('The digest is read in the dashboard')
+            raise OwnerError('The digest is read in the dashboard')
         with self.store.connect() as db:
             return notify.digest_shown(db, str(args.get('kind') or ''))
 
@@ -86,13 +87,13 @@ class NotificationsApp:
         # To-dos, Digest: each area's digest to read and copy (area_digests). The owner's own dashboard only: Personal
         # never reaches anyone else
         if not owner_dashboard:
-            raise ValueError('The digest is read in the dashboard')
+            raise OwnerError('The digest is read in the dashboard')
         return self.area_digests()
 
     def notify_action(self, name, args, owner_dashboard=False):
         # Settings, Notifications (notify.py)
         if not owner_dashboard:
-            raise ValueError('Notifications are set in the dashboard')
+            raise OwnerError('Notifications are set in the dashboard')
         if name == 'notify_active':  # a page says whether it is in use (visible, in focus, touched lately) or not
             client = str(args.get('client') or 'page')
             if not re.fullmatch(r'[a-z0-9]{1,16}', client):
@@ -117,33 +118,33 @@ class NotificationsApp:
     def push_test_action(self, name, args, owner_dashboard=False):
         # Settings or the nudge: one test notification to this device's own subscription
         if not owner_dashboard:
-            raise ValueError('Phone notifications are turned on in the dashboard app')
+            raise OwnerError('Phone notifications are turned on in the dashboard app')
         if 'app_device' in args:  # the mobile app: a test wakeup to that phone only
             device = str(args.get('app_device') or '')
             with self.store.connect() as db:
                 known = notify.APP_ID.fullmatch(device) and any(d['id'] == device for d in notify.app_devices(db))
             if not known:
-                raise ValueError('Notifications are off on this device. Turn them on first.')
+                raise OwnerError('Notifications are off on this device. Turn them on first.')
             if not app_wake(self.store, self.config, 'test', 'push-test', device):
-                raise ValueError('The test didn’t go through. Turn notifications off and on again.')
+                raise OwnerError('The test didn’t go through. Turn notifications off and on again.')
             return {'sent': True}
         with self.store.connect() as db:
             row = db.execute('SELECT endpoint,p256dh,auth FROM push_subscriptions WHERE endpoint=?', (str(args.get('endpoint') or ''),)).fetchone()
         if not row:
-            raise ValueError('Notifications are off on this device. Turn them on first.')
+            raise OwnerError('Notifications are off on this device. Turn them on first.')
         results = push_send(self.store, self.config, [dict(row)], {'title': i18n.t('Notifications are on'), 'body': i18n.t('This is how a new to-do shows up.'), 'url': '.', 'tag': 'push-test'}, 'test')
         if not any(200 <= r.get('status', 0) < 300 for r in results):
-            raise ValueError('The test didn’t go through. Turn notifications off and on again.')
+            raise OwnerError('The test didn’t go through. Turn notifications off and on again.')
         return {'sent': True}
 
     def app_push_action_handler(self, name, args, owner_dashboard=False):
         if not owner_dashboard:
-            raise ValueError('Phone notifications are turned on in the dashboard app')
+            raise OwnerError('Phone notifications are turned on in the dashboard app')
         return self.app_push_action(name, args)
 
     def push_subscribe_action(self, name, args, owner_dashboard=False):
         if not owner_dashboard:
-            raise ValueError('Phone notifications are turned on in the dashboard app')
+            raise OwnerError('Phone notifications are turned on in the dashboard app')
         endpoint = str(args.get('endpoint') or '')
         if not re.fullmatch(r'https://[^\s]{1,2000}', endpoint):
             raise ValueError('Invalid push subscription')
@@ -415,7 +416,7 @@ class NotificationsApp:
             target = cloud_target(self.config)
             answer = notify.app_push(*target, {'action': 'unregister', 'id': device}) if target else {'missing': True}
             if not answer:
-                raise ValueError('Couldn’t remove this phone. Try again.')
+                raise OwnerError('Couldn’t remove this phone. Try again.')
             with self.store.connect() as db:
                 notify.app_device_remove(db, [device])
             return {'removed': True}
@@ -433,7 +434,7 @@ class NotificationsApp:
                                            'sandbox': args.get('sandbox') is True, 'fetch': args.get('fetch') is True})
         device = str((answer or {}).get('id') or '')
         if not notify.APP_ID.fullmatch(device):
-            raise ValueError('Couldn’t turn on notifications for this phone. Try again.')
+            raise OwnerError('Couldn’t turn on notifications for this phone. Try again.')
         with self.store.connect() as db:
             notify.app_device_add(db, device, platform, label, now())
         LOG.info('app push registered platform=%s', platform)

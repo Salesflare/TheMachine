@@ -28,6 +28,7 @@ import shared_graph
 import team_learnings
 from timeutil import local_tz, now
 from machine import todo_states
+from machine.owner_error import OwnerError
 
 
 def evidence_pages(items, budget=None, first=0):
@@ -249,7 +250,7 @@ class ProfileStore:
                 if run:  # legacy active requests get one snapshot, never changing pages afterward
                     db.execute('UPDATE profile_runs SET evidence=? WHERE run_id=?', (json.dumps(evidence), run['run_id']))
         if 'token' in evidence:
-            raise ValueError('A Find my skills run has no profile evidence')
+            raise OwnerError('A Find my skills run has no profile evidence')
         if 'import' in evidence:  # a CSV import's columns and unclear cells (crm_import.ai_evidence), one page
             return {'page': 1, 'pages': 1, **evidence['import']}
         if 'threads' in evidence:  # the Shared Graph's history pass
@@ -296,7 +297,7 @@ class ProfileStore:
         evidence = {'messages': self.own_messages(), 'frequent_unanswered_senders': self.frequent_unanswered()}
         counts = collections.Counter(i['source'] for i in evidence['messages'])
         if sum(counts.values()) < PROFILE_MIN:
-            raise ValueError(f'Only {sum(counts.values())} of your own messages are collected so far; that says too little about how you write. '
+            raise OwnerError(f'Only {sum(counts.values())} of your own messages are collected so far; that says too little about how you write. '
                              'Try again in a few days: assistant profile')
         run_id, started = uuid.uuid4().hex, now()
         with self.connect() as db:
@@ -462,13 +463,13 @@ class ProfileStore:
             if voices:  # most used channel first
                 clean['voices'] = dict(sorted(voices.items(), key=lambda v: (-counts[v[0]], v[0])))
         if not clean:
-            raise ValueError('The profile is empty')
+            raise OwnerError('The profile is empty')
         # What it read, counted here rather than taken from the model.
         clean['based_on'] = ', '.join(f'{counts[k]} {"email" if k == "Email" else k}' for k in sorted(counts, key=lambda k: (-counts[k], k)))
         with self.connect() as db:
             if not db.execute("UPDATE profile_runs SET draft=?,updated_at=? WHERE run_id=? AND kind='profile' AND status IN ('starting','running')",
                               (json.dumps(clean), now(), run_id)).rowcount:
-                raise ValueError('This profile run is no longer active')
+                raise OwnerError('This profile run is no longer active')
         return {'saved': True, 'fields': sorted(clean)}
 
     def save_import_check(self, profile, run_id):
@@ -476,7 +477,7 @@ class ProfileStore:
         with self.connect() as db:
             run = db.execute("SELECT evidence FROM profile_runs WHERE run_id=? AND kind='import' AND status IN ('starting','running')", (run_id,)).fetchone()
             if not run:
-                raise ValueError('This import check is no longer active')
+                raise OwnerError('This import check is no longer active')
             evidence = json.loads(run['evidence'])
             draft = crm_import.ai_draft(evidence['kind'], evidence['import'], profile)
             db.execute('UPDATE profile_runs SET draft=?,updated_at=? WHERE run_id=?', (json.dumps(draft), now(), run_id))
@@ -490,7 +491,7 @@ class ProfileStore:
         with self.connect() as db:
             run = db.execute("SELECT evidence FROM profile_runs WHERE run_id=? AND kind='share' AND status IN ('starting','running')", (run_id,)).fetchone()
             if not run:
-                raise ValueError('This history pass is no longer active')
+                raise OwnerError('This history pass is no longer active')
             given = {t['event_id'] for t in json.loads(run['evidence']).get('threads', [])}
             if not {int(t['event_id']) for t in team} <= given:
                 raise ValueError('An event_id must be one of this pass\'s threads')
@@ -515,13 +516,13 @@ class ProfileStore:
                 problems.append(f'{channel} is {len(text)} characters in {text.count(chr(10)) + 1} lines')
             clean[channel] = text
         if problems:
-            raise ValueError(f'Each block is at most {VOICE_LINES} lines and {VOICE_CHARS} characters: ' + '; '.join(problems) + '. Make them shorter and save again.')
+            raise OwnerError(f'Each block is at most {VOICE_LINES} lines and {VOICE_CHARS} characters: ' + '; '.join(problems) + '. Make them shorter and save again.')
         if not clean:
-            raise ValueError('No channel block to save')
+            raise OwnerError('No channel block to save')
         with self.connect() as db:
             if not db.execute("UPDATE profile_runs SET draft=?,updated_at=? WHERE run_id=? AND kind='voices' AND status IN ('starting','running')",
                               (json.dumps({'voices': clean}), now(), run_id)).rowcount:
-                raise ValueError('This voice study is no longer active')
+                raise OwnerError('This voice study is no longer active')
         return {'saved': True, 'channels': sorted(clean)}
 
     def profile_status(self, run_id):

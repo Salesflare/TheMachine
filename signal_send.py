@@ -3,6 +3,7 @@ check() validates a draft (next_actions.validate); SignalTransport hands an appr
 (signal_store.py), which alone runs signal-cli and sends it, paced, once. Never a new chat, never media."""
 import contextlib
 import time
+from machine.owner_error import OwnerError
 
 FIELDS = {'kind', 'label', 'account_id', 'chat_id', 'to_name', 'body'}
 MAX_LENGTH = 4000
@@ -14,14 +15,14 @@ def check(value, config, signal_chats, reply_spots=None):
     where WhatsApp's would (next_actions.reply_spot)."""
     from next_actions import whatsapp_quote
     if set(value) - FIELDS:
-        raise ValueError('Unsupported Signal fields; plain text only, no media')
+        raise OwnerError('Unsupported Signal fields; plain text only, no media')
     account = next((a for a in config['accounts'] if a['id'] == value.get('account_id') and a.get('service') == 'signal'), None)
     if not account or account.get('shared'):
-        raise ValueError('Use one of the owner’s Signal accounts')
+        raise OwnerError('Use one of the owner’s Signal accounts')
     result = {'kind': 'signal', 'account_id': account['id']}
     if value.get('label'):
         if value['label'] != 'Send' and not value['label'].startswith('Send '):
-            raise ValueError('Signal button labels must say Send, such as Send reply')
+            raise OwnerError('Signal button labels must say Send, such as Send reply')
         result['label'] = value['label']
     chat = (signal_chats or {}).get(str(value.get('chat_id') or ''))
     if not chat or chat.get('account_id') != account['id']:
@@ -30,7 +31,7 @@ def check(value, config, signal_chats, reply_spots=None):
     result.update(chat_id=str(value['chat_id']), to_name=chat.get('name') or 'Signal chat', max_length=MAX_LENGTH)
     body = value.get('body')
     if not isinstance(body, str) or not body.strip() or len(body) > MAX_LENGTH or '\x00' in body:
-        raise ValueError(f'Provide the concrete Signal message, at most {MAX_LENGTH} characters')
+        raise OwnerError(f'Provide the concrete Signal message, at most {MAX_LENGTH} characters')
     result['body'] = body.strip()
     quote = whatsapp_quote(result, reply_spots)
     author, _, sent = str((quote or {}).get('message_id') or '').rpartition(':')
@@ -56,20 +57,20 @@ class SignalTransport:
         try:
             return signal_store, signal_store.connect(self.account(action)['store'], readonly=readonly)
         except Exception:
-            raise ValueError('I couldn’t reach Signal on this computer. Nothing was sent; tap Send again.') from None
+            raise OwnerError('I couldn’t reach Signal on this computer. Nothing was sent; tap Send again.') from None
 
     def preflight(self, action):
         if action['kind'] != 'signal':
-            raise ValueError('Only an owner-approved Signal message can use the Signal transport')
+            raise OwnerError('Only an owner-approved Signal message can use the Signal transport')
         ss, db = self.open(action)
         with contextlib.closing(db):
             state = ss.get_state(db)
             if state.get('error') == 'outdated':
-                raise ValueError('Signal no longer accepts this Machine’s Signal client. Nothing was sent.')
+                raise OwnerError('Signal no longer accepts this Machine’s Signal client. Nothing was sent.')
             if state.get('error') or state.get('identity') != self.account(action).get('identity_sha256'):
-                raise ValueError('Signal is unlinked, or linked to another account. Nothing was sent.')
+                raise OwnerError('Signal is unlinked, or linked to another account. Nothing was sent.')
             if not ss.known_chat(db, action['chat_id']):
-                raise ValueError('I couldn’t find that Signal chat. Nothing was sent.')
+                raise OwnerError('I couldn’t find that Signal chat. Nothing was sent.')
 
     def send(self, action, job):
         ss, db = self.open(action, readonly=False)

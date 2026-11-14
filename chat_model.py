@@ -26,6 +26,7 @@ import re
 import subprocess
 import time
 from pathlib import Path
+from machine.owner_error import OwnerError
 
 # Every thinking level OpenClaw knows, from none to most; a model supports some of them.
 LEVELS = ('off', 'minimal', 'low', 'medium', 'high', 'xhigh', 'adaptive', 'max', 'ultra')
@@ -324,20 +325,20 @@ def turn_args(config, models, own=None):
 def check(choice, models, config=None):
     """A choice from the dashboard, checked against what the sign-in offers. Raises ValueError otherwise."""
     if models is None:
-        raise ValueError('The model list isn’t loaded yet. Try again in a minute.')
+        raise OwnerError('The model list isn’t loaded yet. Try again in a minute.')
     choice = choice if isinstance(choice, dict) else {}
     out = {}
     by_ref = {m['ref']: m for m in models}
     model = choice.get('model')
     if model not in (None, ''):
         if not isinstance(model, str) or model not in by_ref:
-            raise ValueError('That model isn’t available with your sign-in.')
+            raise OwnerError('That model isn’t available with your sign-in.')
         out['model'] = model
     thinking = choice.get('thinking')
     if thinking not in (None, ''):
         target = by_ref.get(resolve(config, models, out)['model'])
         if not target or thinking not in target['levels']:
-            raise ValueError('That model has no such thinking level.')
+            raise OwnerError('That model has no such thinking level.')
         out['thinking'] = thinking
     return out
 

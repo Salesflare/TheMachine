@@ -16,6 +16,7 @@ import os
 import re
 from html.parser import HTMLParser
 from pathlib import Path
+from machine.owner_error import OwnerError
 
 MAX_HTML = 20000
 MAX_PASTED = 60000  # what the owner may send to be cleaned (the dashboard's own check is the same)
@@ -208,7 +209,7 @@ def save(config, account_id, value, source):
     Returns the stored entry."""
     where = path(config)
     if not where:
-        raise ValueError('This can’t be changed on this Machine.')
+        raise OwnerError('This can’t be changed on this Machine.')
     where.parent.mkdir(parents=True, exist_ok=True)
     with open(where.with_name(where.name + '.lock'), 'w') as lock:
         portable.lock(lock)

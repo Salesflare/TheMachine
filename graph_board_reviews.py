@@ -10,6 +10,7 @@ import sqlite3
 
 import graph
 import timeutil
+from machine.owner_error import OwnerError
 
 SORT_TRIES = 3          # reviews that get an unplaced project before its tile says sorting failed
 SORT_BATCH = 12         # projects to sort per review
@@ -313,7 +314,7 @@ def _place(db, board, pid, steps, strict):
         return False
     if row['board_id'] and row['board_id'] != board['id'] and not row['closed_at']:
         if strict:
-            raise ValueError('It is on another board already')
+            raise OwnerError('It is on another board already')
         return False
     _remember(db, steps, pid)
     db.execute('UPDATE projects SET board_id=?,stage=?,stage_reason=NULL,stage_event_id=NULL,stage_by=NULL,stage_at=NULL,closed_at=NULL,' + graph.SORT_RESET + ' WHERE id=?',
@@ -352,13 +353,13 @@ def _decide(db, board, node_id, add, now, steps, strict=True):
     if not node_id.startswith('project:'):
         ask = db.execute("SELECT * FROM board_backfill_asks WHERE board_id=? AND key=? AND fit='maybe'", (board['id'], node_id)).fetchone()
         if not ask:
-            raise ValueError('That suggestion is gone')
+            raise OwnerError('That suggestion is gone')
         steps.append(('ask', board['id'], ask['key'], ask['state'], ask['project_id'], ask['decided_at']))
         pid = ask['project_id']
         if add and not pid:
             same = db.execute('SELECT board_id FROM projects WHERE name=? COLLATE NOCASE AND closed_at IS NULL', (ask['name'],)).fetchone()
             if same and same['board_id'] and same['board_id'] != board['id']:
-                raise ValueError('A project by that name is on another board already')
+                raise OwnerError('A project by that name is on another board already')
             ids = [r[0] for r in db.execute('SELECT e.id FROM events e JOIN json_each(?) j ON j.value=e.id WHERE e.deleted=0', (ask['event_ids'],))]
             pid = _attach(db, ask['name'], ids, now, steps)
             if counterpart_org(db, ask['key']):
@@ -389,11 +390,11 @@ def decide_fit(db, board_id, node_id, add, now):
     how many projects it put on the board and an undo token."""
     board = db.execute('SELECT * FROM boards WHERE id=?', (int(board_id or 0),)).fetchone()
     if not board:
-        raise ValueError('That board is gone')
+        raise OwnerError('That board is gone')
     many = isinstance(node_id, list)
     ids = list(dict.fromkeys(str(n) for n in node_id)) if many else [node_id]
     if not ids or len(ids) > 200:
-        raise ValueError('Decide 1 to 200 at once')
+        raise OwnerError('Decide 1 to 200 at once')
     steps, placed, skipped, pid = [], 0, [], None
     for n in ids:
         if not many:
@@ -424,7 +425,7 @@ def undo_fit(db, token):
     were, made ones go, split messages return to the bundle and the suggestions are open again."""
     row = db.execute('SELECT * FROM board_fit_undo WHERE token=?', (str(token or ''),)).fetchone()
     if not row:
-        raise ValueError('Too late to undo that')
+        raise OwnerError('Too late to undo that')
     steps = json.loads(row['steps'])
     for step in reversed(steps):
         kind = step[0]

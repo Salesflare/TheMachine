@@ -41,6 +41,7 @@ import skills
 from timeutil import local_tz, now
 import todo_areas
 from machine import todo_states
+from machine.owner_error import OwnerError
 
 
 LOOKS_DONE_HOURS = 24  # how long a to-do looks done before it closes by itself (Store.close_looks_done)
@@ -419,13 +420,13 @@ def skill_update_reviewed(db, suggestion_id, source, reviewed):
         return
     shown = skill_update_view(db, cluster)
     if not shown:
-        raise ValueError('That skill is gone')
+        raise OwnerError('That skill is gone')
     if shown.get('stale'):
-        raise ValueError(f"{shown['skill']} changed after this was suggested. Not now, or wait: the next check suggests it on the new version")
+        raise OwnerError(f"{shown['skill']} changed after this was suggested. Not now, or wait: the next check suggests it on the new version")
     if source != 'dashboard' or not reviewed:
-        raise ValueError('Open it on the dashboard to see the before and after first')
+        raise OwnerError('Open it on the dashboard to see the before and after first')
     if reviewed != shown['review']:
-        raise ValueError(f"{shown['skill']} changed since. Look at the before and after again")
+        raise OwnerError(f"{shown['skill']} changed since. Look at the before and after again")
     sha = db.execute('SELECT sha FROM skills WHERE id=?', (cluster['target_id'],)).fetchone()['sha']
     db.execute('UPDATE skill_clusters SET reviewed_sha=? WHERE id=?', (sha, cluster['id']))
 
@@ -491,7 +492,7 @@ def _not_done(db, row, feedback, decision_id, source):
     if row['status'] in todo_states.CLOSED_OR_SNOOZED or not looks_done(dict(row)):
         if source == 'telegram':
             return {'status': row['status'], 'duplicate': True, 'skipped': True, 'reason': 'stale_not_done'}
-        raise ValueError('This to-do no longer looks done')
+        raise OwnerError('This to-do no longer looks done')
     try:
         said = json.loads(row['handled_hint'] or 'null') or {}
     except ValueError:
@@ -547,7 +548,7 @@ class DecisionsStore:
                 return {'skipped': 'already closed'}
             found = db.execute('SELECT count(*) FROM events WHERE deleted=0 AND id IN (' + ','.join('?' for _ in event_ids) + ')', event_ids).fetchone()[0]
             if found != len(set(event_ids)):
-                raise ValueError('Every event must exist and be live')
+                raise OwnerError('Every event must exist and be live')
             # The owner said Not done: only a signal that came in after that can say it is handled after all
             said = db.execute("SELECT max(created_at) FROM decisions WHERE suggestion_id=? AND choice='not_done'", (suggestion_id,)).fetchone()[0]
             newest = db.execute('SELECT max(ingested_at) FROM events WHERE id IN (' + ','.join('?' for _ in event_ids) + ')', event_ids).fetchone()[0]
@@ -577,7 +578,7 @@ class DecisionsStore:
             marks = ','.join('?' * len(ids))
             found = db.execute(f'SELECT count(*),max(ingested_at) FROM events WHERE deleted=0 AND id IN ({marks})', ids).fetchone()
             if found[0] != len(ids):
-                raise ValueError('Every event must exist and be live')
+                raise OwnerError('Every event must exist and be live')
             newest = found[1] or ''
             said = db.execute("SELECT max(created_at) FROM decisions WHERE suggestion_id=? AND source IN ('dashboard','telegram')", (suggestion_id,)).fetchone()[0]
             decision_id = 'paid:' + hashlib.sha256(f'{suggestion_id}:{ids}'.encode()).hexdigest()[:32]
@@ -610,7 +611,7 @@ class DecisionsStore:
             marks = ','.join('?' * len(ids))
             found = db.execute(f'SELECT count(*),max(ingested_at) FROM events WHERE deleted=0 AND id IN ({marks})', ids).fetchone()
             if found[0] != len(ids):
-                raise ValueError('Every event must exist and be live')
+                raise OwnerError('Every event must exist and be live')
             newest = found[1] or ''
             if newest <= row['created_at']:
                 return {'skipped': 'the to-do was made after these messages: update it with suggest and card_id instead'}
@@ -768,9 +769,9 @@ class DecisionsStore:
         if choice not in ['accept', 'reject', 'snooze', 'other', 'complete', 'reopen', 'undo', 'retry', 'not_done'] or not decision_id:
             raise ValueError('Invalid decision')
         if choice == 'reopen' and source not in ('dashboard', 'fleet'):  # fleet: a declined handoff (handoff_back), never a request
-            raise ValueError('Reopen is available only through the owner dashboard')
+            raise OwnerError('Reopen is available only through the owner dashboard')
         if choice == 'other' and not feedback.strip():
-            raise ValueError('Change requires written instructions')
+            raise OwnerError('Change requires written instructions')
         if db.execute('SELECT 1 FROM decisions WHERE id=?', (decision_id,)).fetchone():
             current = db.execute('SELECT status,snoozed_until FROM suggestions WHERE id=?',(suggestion_id,)).fetchone()
             return {'duplicate': True, **dict(current)}
@@ -791,12 +792,12 @@ class DecisionsStore:
                 # A stale owner callback is a no-op, not a new decision.
                 if source == 'telegram':
                     return {'status':row['status'],'duplicate':True,'skipped':True,'reason':'stale_undo'}
-                raise ValueError('Undo has expired; use Reopen for a completed item')
+                raise OwnerError('Undo has expired; use Reopen for a completed item')
             if not row['closed_decision_id'] or row['closed_decision_id'] != db.execute(
                     'SELECT id FROM decisions WHERE suggestion_id=? ORDER BY rowid DESC LIMIT 1', (suggestion_id,)).fetchone()[0]:
                 if source == 'telegram':
                     return {'status':row['status'],'duplicate':True,'skipped':True,'reason':'stale_undo'}
-                raise ValueError('A newer decision replaced this action')
+                raise OwnerError('A newer decision replaced this action')
             restored = row['closed_from'] or 'pending'
             db.execute('INSERT INTO decisions VALUES(?,?,?,?,?,?)',(decision_id,suggestion_id,choice,feedback[:5000],source,now()))
             previous=json.loads(row['closed_state'] or '{}')
@@ -851,12 +852,12 @@ class DecisionsStore:
             if choice == 'complete':
                 return {'status': 'completed', 'duplicate': True}
             if choice != 'reopen':
-                raise ValueError('This item is already done')
+                raise OwnerError('This item is already done')
         if choice == 'reopen':
             if row['status'] != 'completed':
                 if row['completed_from'] and row['status'] == row['completed_from']:
                     return {'status': row['status'], 'duplicate': True}
-                raise ValueError('Only a completed item can be reopened')
+                raise OwnerError('Only a completed item can be reopened')
             restored = row['completed_from'] or 'accepted'
             if restored not in todo_states.OPEN_NOT_SNOOZED:
                 restored = 'accepted'
@@ -877,7 +878,7 @@ class DecisionsStore:
             return {'status':restored, 'note':'Back in Outstanding. Telegram will update too.'}
         # The owner may already have handled it without asking for preparation.
         if choice == 'complete' and row['status'] not in todo_states.OPEN:
-            raise ValueError('Mark done only an open item')
+            raise OwnerError('Mark done only an open item')
         status = {'accept': 'accepted', 'reject': 'rejected', 'snooze': 'snoozed', 'other': 'instructions', 'complete': 'completed'}[choice]
         until = snooze_time(snooze_option, snoozed_until, snooze_hours, work) if choice == 'snooze' else None
         resume = row['resume_status'] if row['status'] == 'snoozed' else row['status']
@@ -1222,7 +1223,7 @@ class DecisionsStore:
 
     def prepare(self, suggestion_id, body, job_id=None, next_action=None, outcome=None, note_kind=None, require_note=False, finish_state=None, title=None, send_now=False):
         if not body.strip():
-            raise ValueError('A concrete local preparation is required')
+            raise OwnerError('A concrete local preparation is required')
         if title is not None and title_kept(outcome, finish_state, send_now):
             title = None  # a result that only finishes it keeps the title; the result and status line say how it ended
         if title is not None:
@@ -1230,7 +1231,7 @@ class DecisionsStore:
             if not title or len(title) > 90:
                 raise ValueError('title is the card\'s new short title, under 90 characters, or left out to keep the current one')
         if len(body) > 1000:
-            raise ValueError('Keep the preparation short: at most 1000 characters. Put longer drafts in a local document, not a wall of Telegram text.')
+            raise OwnerError('Keep the preparation short: at most 1000 characters. Put longer drafts in a local document, not a wall of Telegram text.')
         with self.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             job=db.execute('SELECT * FROM preparations WHERE suggestion_id=?',(suggestion_id,)).fetchone()
@@ -1241,15 +1242,15 @@ class DecisionsStore:
             if job_id and job and job['job_id']==job_id and job['status']=='done' and row and row['status']=='snoozed' and row['body']==body and (outcome or {}).get('state')=='snoozed':
                 return {'status':'snoozed','replayed':True}
             if job and job['status'] in ('starting','running') and job_id != job['job_id']:
-                raise ValueError('This preparation is owned by its already-running turn')
+                raise OwnerError('This preparation is owned by its already-running turn')
             if job_id and (not job or job['job_id'] != job_id or job['status'] not in ('starting','running')):
-                raise ValueError('Preparation canceled or replaced by newer owner feedback')
+                raise OwnerError('Preparation canceled or replaced by newer owner feedback')
             if not row or row['status'] not in todo_states.TAKEN_ON:
-                raise ValueError('Prepare only an owner-accepted suggestion or written instruction')
+                raise OwnerError('Prepare only an owner-accepted suggestion or written instruction')
             if row['status'] == 'prepared' and row['body'] == body and row['next_action']==action_json:
                 return {'status': 'prepared', 'replayed': True}
             if db.execute("SELECT 1 FROM action_jobs WHERE suggestion_id=? AND status IN ('sending','uncertain')",(suggestion_id,)).fetchone():
-                raise ValueError('An earlier send is still being checked. Resolve that outcome before replacing its draft.')
+                raise OwnerError('An earlier send is still being checked. Resolve that outcome before replacing its draft.')
             if job_id and (note_kind or require_note):
                 self.tag_note(suggestion_id, note_kind, db)
             db.execute("UPDATE action_jobs SET status='cancelled',updated_at=? WHERE suggestion_id=? AND status IN ('queued','blocked')",(now(),suggestion_id))
@@ -1296,7 +1297,7 @@ class DecisionsStore:
             done = db.execute(f"UPDATE suggestions SET body=? WHERE id=? AND status IN ({','.join('?' * len(fleet.OPEN_CARD))})",
                               (str(body)[:5000], suggestion_id, *fleet.OPEN_CARD)).rowcount
         if not done:
-            raise ValueError('This to-do is closed')
+            raise OwnerError('This to-do is closed')
         return {'status': 'revised'}
 
     def revise_draft(self,suggestion_id,revision,source,subject=None,body=None,agent_job=None):
@@ -1309,17 +1310,17 @@ class DecisionsStore:
                 if (not job or job['suggestion_id'] != suggestion_id or job['status'] not in ((*agent_jobs.ACTIVE, 'result') if job['place'] == 'remote' else agent_jobs.ACTIVE)
                         or job['turns'] != agent_job['turns'] or job['outcome'] is not None
                         or job['draft_revision'] != revision):
-                    raise ValueError('This agent job stopped or the draft changed. Its result stays on the card without replacing the draft.')
+                    raise OwnerError('This agent job stopped or the draft changed. Its result stays on the card without replacing the draft.')
             row=db.execute('SELECT * FROM suggestions WHERE id=?',(suggestion_id,)).fetchone()
             action=next_actions.selected(row['next_action'],revision) if row else None
             if not row or row['status']!='prepared' or not action or action['kind'] not in ('email','linkedin','slack','x','whatsapp','telegram','signal','intercom','doc_reply','finish'):
-                raise ValueError('This draft changed or is no longer ready. Use its current buttons.')
+                raise OwnerError('This draft changed or is no longer ready. Use its current buttons.')
             lock=send_lock(db,suggestion_id,revision,action['kind'])
             if lock:raise ValueError(lock)
             # A final step that ran, or whose outcome is still unknown, may already have gone out:
             # its text stays as confirmed, so a retry checks the source instead of posting other text.
             if action['kind']=='finish' and db.execute("SELECT 1 FROM action_jobs WHERE suggestion_id=? AND revision=? AND status IN ('local_preparation','paused','finish_uncertain','done')",(suggestion_id,revision)).fetchone():
-                raise ValueError('This step already ran or is being checked. Use its current buttons.')
+                raise OwnerError('This step already ran or is being checked. Use its current buttons.')
             if action['kind']=='finish':subject=None
             revised=next_actions.revise(action,subject,body)
             if revised['revision']==revision:
@@ -1354,26 +1355,26 @@ class DecisionsStore:
                 return {'status':done['status'],'duplicate':True}
             # A review to-do (fleet_reviews.py) never sends or acts for anyone: the review goes back to the one who asked.
             if row and str(row['dedupe_key']).startswith('fleet-review:'):
-                raise ValueError('A review to-do never sends anything. Your review goes back to its owner, who sends it themselves.')
+                raise OwnerError('A review to-do never sends anything. Your review goes back to its owner, who sends it themselves.')
             if not row or row['status']!='prepared' or not action or action['kind'] not in ('email','linkedin','slack','x','whatsapp','telegram','signal','intercom','doc_reply','merge','prepare','finish','calendar','doc_write'):
-                raise ValueError('This result changed or is no longer ready. Use its current buttons.')
+                raise OwnerError('This result changed or is no longer ready. Use its current buttons.')
             off=abilities.refuse(self.config,action.get('account_id'))  # its Can do things was turned off since the draft
             if off:raise ValueError(off)
             if action.get('to_options'):
                 # The owner picked who gets it, only from the addresses the service found in the thread.
                 if not isinstance(recipients,list) or not recipients or len(set(recipients))!=len(recipients) or not set(recipients)<=set(action['to_options']):
-                    raise ValueError('Choose who gets this email from the addresses offered.')
+                    raise OwnerError('Choose who gets this email from the addresses offered.')
                 action={**{k:v for k,v in action.items() if k!='to_options'},'to':list(recipients)}
             elif recipients:
-                raise ValueError('This draft already has its recipients.')
+                raise OwnerError('This draft already has its recipients.')
             if sender is not None:
                 # The owner picked the From in the review, only from the addresses the draft offered (own_addresses.senders).
                 options=[a.lower() for a in action.get('from_options') or ()] if action['kind']=='email' else []
                 if not isinstance(sender,str) or sender.lower() not in options and sender.lower()!=str(action.get('from') or '').lower():
-                    raise ValueError(i18n.t('Send it from one of the addresses offered.'))
+                    raise OwnerError(i18n.t('Send it from one of the addresses offered.'))
                 action={**action,'from':next((a for a in action.get('from_options') or () if a.lower()==sender.lower()),action['from'])}
             if action['kind'] in ('prepare','finish') and db.execute("SELECT 1 FROM action_jobs WHERE suggestion_id=? AND status IN ('sending','uncertain')",(suggestion_id,)).fetchone():
-                raise ValueError('An earlier send is still being checked. Wait for that outcome before changing the result.')
+                raise OwnerError('An earlier send is still being checked. Wait for that outcome before changing the result.')
             previous=db.execute('SELECT * FROM action_jobs WHERE suggestion_id=? AND revision=?',(suggestion_id,revision)).fetchone()
             if previous and action['kind'] in ('prepare','finish') and previous['status'] in ('needs_input','finish_uncertain','cancelled','failed','blocked','paused') and previous['approval_id']!=approval_id:
                 # The same approved step resumes, not a new operation. An unknown outcome
@@ -1422,11 +1423,11 @@ class DecisionsStore:
             db.execute('BEGIN IMMEDIATE')
             job=db.execute("SELECT id,status,retry_at FROM action_jobs WHERE suggestion_id=? AND approval_id=? AND source='voice'",(str(suggestion_id or ''),str(approval_id or ''))).fetchone()
             if not job:
-                raise ValueError('Nothing to undo.')
+                raise OwnerError('Nothing to undo.')
             if job['status']=='cancelled':
                 return {'status':'cancelled'}
             if job['status']!='queued' or not job['retry_at'] or job['retry_at']<=now():
-                raise ValueError('It’s already on its way.')
+                raise OwnerError('It’s already on its way.')
             db.execute("UPDATE action_jobs SET status='cancelled',updated_at=? WHERE id=?",(now(),job['id']))
         return {'status':'cancelled'}
 
@@ -1496,7 +1497,7 @@ class DecisionsStore:
             since=(dt.datetime.fromisoformat(now())-UNDO_MERGE).isoformat()
             job=db.execute("SELECT * FROM action_jobs WHERE suggestion_id=? AND json_extract(payload,'$.kind')='merge' AND status IN ('sent','undoing','undone') ORDER BY updated_at DESC LIMIT 1",(suggestion_id,)).fetchone()
             if job and job['status'] in ('undoing','undone'):return {'status':job['status'],'duplicate':True}
-            if not job or job['updated_at']<since:raise ValueError('There is no merged fix to undo here (Undo lasts 24 hours).')
+            if not job or job['updated_at']<since:raise OwnerError('There is no merged fix to undo here (Undo lasts 24 hours).')
             db.execute("UPDATE action_jobs SET status='undoing',error=?,retry_at=NULL WHERE id=?",(reason,job['id']))  # updated_at stays the merge time
             db.execute('INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)',(approval_id,suggestion_id,'undo_merge',reason or '',source,now()))
             db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=?',(suggestion_id,))
@@ -1583,9 +1584,9 @@ class DecisionsStore:
         Connections, and carries on by itself once it is connected (resume_connected); Try again stays in its menu.
         Refused for one that is connected: the run reads it through that connection."""
         if not reason.strip() or len(reason)>400:
-            raise ValueError('Give a short, specific blocker')
+            raise OwnerError('Give a short, specific blocker')
         if details is not None and (not isinstance(details,str) or len(details)>2000):
-            raise ValueError('Keep blocker details under 2000 characters')
+            raise OwnerError('Keep blocker details under 2000 characters')
         if connect is not None:
             if move_to is not None or use_event_ids is not None:
                 raise ValueError('Give connect, move_to or use_event_ids, one of them')
@@ -1598,7 +1599,7 @@ class DecisionsStore:
         with self.connect() as db:
             job=db.execute('SELECT * FROM preparations WHERE suggestion_id=?',(suggestion_id,)).fetchone()
             if not job or job['job_id']!=job_id or job['status'] not in ('starting','running'):
-                raise ValueError('Preparation canceled or replaced')
+                raise OwnerError('Preparation canceled or replaced')
             if use_event_ids is not None:
                 if move_to is not None:
                     raise ValueError('Give move_to or use_event_ids, not both')

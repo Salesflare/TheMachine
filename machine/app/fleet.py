@@ -39,6 +39,7 @@ import team_learnings
 from timeutil import in_hours, is_work_day, local_tz, now, WORK_HOURS
 import work_removal
 from machine import todo_states
+from machine.owner_error import OwnerError
 
 
 def fleet_served(config):
@@ -250,9 +251,9 @@ class FleetApp:
         """The owner's Fleet controls. From the owner's own dashboard; the one exception is a tap on the Telegram
         message sent for that very question (the plugin's owner key). Never an agent or a teammate."""
         if not owner_dashboard and not (name in ('fleet_decide', 'fleet_notice_decide') and args.get('source') == 'telegram'):
-            raise ValueError('The Fleet is set from the dashboard')
+            raise OwnerError('The Fleet is set from the dashboard')
         if not getattr(self, 'fleet', None):
-            raise ValueError('This Machine is not in a Fleet')
+            raise OwnerError('This Machine is not in a Fleet')
         if not owner_dashboard and name == 'fleet_notice_decide':
             return self.fleet.decide_notice_from_telegram(str(args.get('id') or ''), args.get('choice'), args.get('message_id'))
         if not owner_dashboard:
@@ -266,7 +267,7 @@ class FleetApp:
             kind = args.get('kind')
             question = fleet.parse_question(kind, args.get('question'))
             if not question:
-                raise ValueError('Ask about a company, a domain, an email address or a name')
+                raise OwnerError('Ask about a company, a domain, an email address or a name')
             return self.fleet.ask(kind, question, fleet=args.get('fleet') or 'work')
         if name == 'fleet_decide':  # text: a free question's answer as the owner edited it
             done = self.fleet.decide(args.get('id'), args.get('choice'), text=args.get('text') if isinstance(args.get('text'), str) else None,
@@ -295,7 +296,7 @@ class FleetApp:
             if args.get('do') == 'ask':
                 return self.fleet.brief_todo_ask(card, str(args.get('text') or ''))
             if args.get('do') != 'skip':
-                raise ValueError('Pick Ask or Not needed')
+                raise OwnerError('Pick Ask or Not needed')
             done = self.fleet.brief_todo_skip(card)
             if done['close']:  # the brief's own to-do: closed as the owner's Not needed; one it only joined stays
                 self.store.decide(card, 'reject', i18n.t('Not needed'), 'fleet-brief-skip-' + secrets.token_hex(6), 'dashboard')
@@ -445,7 +446,7 @@ class FleetApp:
     def fleet_save_config(self, change, restart):
         """A shared connector changed (shared_connectors.py): the same change to config.json, then a restart when asked."""
         if not getattr(self, 'config_path', None):
-            raise ValueError('This service cannot save its settings')
+            raise OwnerError('This service cannot save its settings')
         import onboarding
         saved = onboarding.load(self.config_path)
         change(saved)
@@ -457,7 +458,7 @@ class FleetApp:
         """Reads a token's own profile once (Intercom: GET /me), as connecting does; ValueError when it doesn't work."""
         plugin = load_connector(service)
         if not plugin or not hasattr(plugin, 'Source'):
-            raise ValueError('That connector cannot be checked here')
+            raise OwnerError('That connector cannot be checked here')
         helpers = types.SimpleNamespace(**{**vars(CONNECTOR_HELPERS), 'credential': lambda config, name: token})
         try:
             plugin.Source(self.config, account, helpers).connect()
@@ -481,7 +482,7 @@ class FleetApp:
     def fleet_remove_work(self, item):
         """The control plane, through the Network: remove a Work Fleet's company data (work_removal.py), then restart."""
         if not getattr(self, 'config_path', None):
-            raise ValueError('This service cannot save its settings')
+            raise OwnerError('This service cannot save its settings')
         result = work_removal.remove(self.config_path, item.get('domains') or [], item.get('companies') or [], store=self.store)
         LOG.info('work removal accounts=%s events=%s cards=%s', len(result['accounts']), result['events'], result['cards'])
         if result['accounts']:
@@ -615,7 +616,7 @@ class FleetApp:
         """Undo on a Family plan "I'm in" added: its event goes from the owner's calendar (nobody told), their yes stays,
         and the to-do shows the "Add to my calendar" link again. Only the event that tap made; not one with guests now."""
         if not self.calendar_write_undo(family.plan_request(ask_id), transport):
-            raise ValueError(i18n.t('That plan isn’t on your calendar.'))
+            raise OwnerError(i18n.t('That plan isn’t on your calendar.'))
         self.family_plan_on(ask_id)
         return {'removed': True}
 
@@ -711,11 +712,11 @@ class FleetApp:
 
     def learnings_share(self, args):
         if not getattr(self, 'fleet', None):
-            raise ValueError('Sharing needs The Machine Network. Nothing was sent.')
+            raise OwnerError('Sharing needs The Machine Network. Nothing was sent.')
         if args.get('auto') is True:  # "Send automatically from now on", ticked in the offer: checked before anything goes
             with self.store.connect() as db:
                 if team_learnings.careful_floor(db):
-                    raise ValueError('A Careful Work Fleet keeps asking each time.')
+                    raise OwnerError('A Careful Work Fleet keeps asking each time.')
         result = team_learnings.share(self.store.connect, self.config, str(args.get('id') or ''), args.get('items'), args.get('named') is True,
                                       self.fleet.relay.call, code_version())
         if args.get('auto') is True:
@@ -738,7 +739,7 @@ class FleetApp:
 
     def learnings_withdraw(self, args):
         if not getattr(self, 'fleet', None):
-            raise ValueError('Withdrawing needs The Machine Network.')
+            raise OwnerError('Withdrawing needs The Machine Network.')
         return team_learnings.withdraw(self.store.connect, self.config, str(args.get('id') or ''), args.get('n'), self.fleet.relay.call)
 
     def graph_fleet_marks(self, db):
@@ -753,7 +754,7 @@ class FleetApp:
 
     def learning_undo_action(self, name, args, owner_dashboard=False):
         if not owner_dashboard:
-            raise ValueError('Only the owner undoes a learned change, on the dashboard')
+            raise OwnerError('Only the owner undoes a learned change, on the dashboard')
         done = self.store.undo_learning(args.get('id'))
         if done.pop('graph', False):  # a fix in the Graph put back (corrections.py)
             self.correction_refresh()

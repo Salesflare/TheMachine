@@ -81,6 +81,7 @@ import fleet_trust
 import fleet_learnings
 import embeddings
 from machine import todo_states
+from machine.owner_error import OwnerError
 
 LOG = logging.getLogger('personal-assistant')
 SCHEMA = '''
@@ -403,7 +404,7 @@ def pair(code, label, emails, timeout=30):
             if base == RELAY:
                 raise
     if not isinstance(found.get('token'), str) or not found['token']:
-        raise ValueError('The Network gave no token')
+        raise OwnerError('The Network gave no token')
     return found
 
 
@@ -2103,19 +2104,19 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
         if self.is_request(ask_id):
             return self.decide_request(ask_id, choice, retell=retell, note=note)
         if choice not in ('once', 'always', 'decline', 'never'):
-            raise ValueError('Choose once, always, decline or never')
+            raise OwnerError('Choose once, always, decline or never')
         with self.connect() as db:
             row = db.execute("SELECT * FROM fleet_in WHERE id=? AND status='waiting'", (str(ask_id),)).fetchone()
             if not row:
-                raise ValueError('That question was answered or has expired')
+                raise OwnerError('That question was answered or has expired')
             question = json.loads(row['question'])
             if choice not in KIND_RULES.get(row['kind'], RULES) + ('once', 'decline'):
-                raise ValueError('Free questions are answered one at a time: send this answer, or decline')
+                raise OwnerError('Free questions are answered one at a time: send this answer, or decline')
             answer = None
             if row['kind'] == 'anything' and choice == 'once':
                 said = free_text(text if text is not None else json.loads(row['draft'] or '{}').get('text'), FREE_ANSWER_CHARS)
                 if not said:
-                    raise ValueError('Write an answer first, or decline')
+                    raise OwnerError('Write an answer first, or decline')
                 answer = {'text': said}
             if choice in ('always', 'never'):
                 _, details = self.rule(db, row['fleet'], row['member_id'], row['kind'])
@@ -2186,11 +2187,11 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
         """A tap on the Telegram message this Machine sent for that question, and only that message.
         Never is for the dashboard. A question decided elsewhere or expired just shows its outcome."""
         if choice not in ('once', 'always', 'decline'):
-            raise ValueError('Choose once, always or decline')
+            raise OwnerError('Choose once, always or decline')
         with self.connect() as db:
             row = db.execute('SELECT telegram_message_id FROM fleet_in WHERE id=?', (str(ask_id),)).fetchone()
         if not row or not message_id or str(row['telegram_message_id'] or '') != str(message_id):
-            raise ValueError('That Telegram message is not the one sent for this question')
+            raise OwnerError('That Telegram message is not the one sent for this question')
         try:
             status = self.decide(ask_id, choice, retell=False)['status']
         except ValueError as error:
@@ -2276,10 +2277,10 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
         holds: it may come back stale (already settled, withdrawn, no longer the owner) or changed (new terms), and then
         nothing was done. Returns {status, reason, notice}."""
         if choice not in ('confirm', 'decline'):
-            raise ValueError('Choose confirm or decline')
+            raise OwnerError('Choose confirm or decline')
         row = self.notice(nid)
         if not row or row['kind'] not in ('seat_request', 'friend_request'):
-            raise ValueError('No such request')
+            raise OwnerError('No such request')
         found = self.relay.call('POST', '/decide', {'id': row['id'], 'choice': choice, 'key': key or '', 'via': via}, timeout=timeout)
         view = notice_clean(found.get('notice')) or json.loads(row['view'])
         status = found.get('status') if found.get('status') in ('confirmed', 'declined', 'stale', 'changed') else 'stale'
@@ -2310,9 +2311,9 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
         buttons to tap again. It answers well within the bridge's wait, also when the Network is away."""
         row = self.notice(nid)
         if not row:
-            raise ValueError('That request is no longer here, so nothing was done. Open the Fleet tab to see your requests.')
+            raise OwnerError('That request is no longer here, so nothing was done. Open the Fleet tab to see your requests.')
         if not message_id or str(row['telegram_message_id'] or '') != str(message_id):
-            raise ValueError('That Telegram message is not the one sent for this request')
+            raise OwnerError('That Telegram message is not the one sent for this request')
         try:
             result = self.decide_notice(nid, choice, row['telegram_key'], via='telegram', timeout=TAP_TIMEOUT)
         except ValueError as error:  # a refusal, or the Network away (Unavailable)
@@ -2373,7 +2374,7 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
         if kind not in RULE_KINDS.get(self.kind_of(fleet), ()):
             raise ValueError('Unknown kind of question')
         if member_id != ALL and not self.member(fleet, member_id):
-            raise ValueError('Not in your Fleet')
+            raise OwnerError('Not in your Fleet')
         with self.connect() as db:
             if clear and member_id != ALL:  # an exception goes: they follow the Fleet's rule again
                 db.execute('DELETE FROM fleet_rules WHERE fleet=? AND member_id=? AND kind=?', (fleet, member_id, kind))
@@ -2383,13 +2384,13 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
             current, current_details = self.rule(db, fleet, member_id, kind, raw=True)
             rule = current if rule is None else rule
             if rule not in self.kind_rules(fleet, kind):
-                raise ValueError('A rule is ' + ' or '.join(self.kind_rules(fleet, kind)))
+                raise OwnerError('A rule is ' + ' or '.join(self.kind_rules(fleet, kind)))
             details = current_details if details is None else bool(details)
             db.execute('INSERT OR REPLACE INTO fleet_rules(fleet,member_id,kind,rule,details,updated_at) VALUES(?,?,?,?,?,?)',
                        (fleet, member_id, kind, rule, int(details), now()))
             if scope is not None:
                 if kind not in SCOPED:
-                    raise ValueError('This kind of question has no Only about yet')
+                    raise OwnerError('This kind of question has no Only about yet')
                 scope = scope_of(scope if isinstance(scope, dict) else None)
                 db.execute('INSERT OR REPLACE INTO fleet_scopes(fleet,member_id,kind,scope,updated_at) VALUES(?,?,?,?,?)',
                            (fleet, member_id, kind, json.dumps(scope), now()))
@@ -2414,9 +2415,9 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
                 return sent
         fleet = self.ref(fleet)
         if kind not in ASKS.get(self.kind_of(fleet), ()):
-            raise ValueError('Your Fleet does not ask that')
+            raise OwnerError('Your Fleet does not ask that')
         if not self.teammates(fleet):
-            raise ValueError('Nobody in your Fleet to ask yet')
+            raise OwnerError('Nobody in your Fleet to ask yet')
         proposal = {'fleet': fleet, 'kind': kind, 'question': question, **({'to': to} if to else {})}
         pending_key = 'pending_ask:' + hashlib.sha256(json.dumps([proposal, context], sort_keys=True).encode()).hexdigest()
         # Commit the operation identity before the remote write. A lost response or
@@ -2445,9 +2446,9 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
         """A free question to one Fleet (in several Work Fleets, say which). The relay limits how often."""
         question = parse_question('anything', {'text': text})
         if not question:
-            raise ValueError('Ask a question of at least a few words')
+            raise OwnerError('Ask a question of at least a few words')
         if fleet in FLEET_NAMES and len([r for r in self.work_fleets() if self.teammates(r)]) > 1:
-            raise ValueError('Pick the Fleet to ask')
+            raise OwnerError('Pick the Fleet to ask')
         sent, context = self.ask_context('anything', question, 'free:', fleet)
         self.brief_todo_asked(self.ref(fleet), question['text'], context)  # a brief line's own question: on its to-do
         return sent
@@ -2536,7 +2537,7 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
         found = self.brief_settings()
         if every is not None:
             if every not in BRIEF_EVERY:
-                raise ValueError('A brief is off, daily (day) or weekly (week)')
+                raise OwnerError('A brief is off, daily (day) or weekly (week)')
             found['every'] = every
         if tell is not None:
             found['tell'] = bool(tell)
@@ -2721,7 +2722,7 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
         with self.connect() as db:
             row = db.execute('SELECT period,view FROM fleet_briefs WHERE fleet=? ORDER BY built_at DESC LIMIT 1', (fleet,)).fetchone()
         if not row or not key:
-            raise ValueError('That brief is gone')
+            raise OwnerError('That brief is gone')
         found = self.meta('brief_hidden') or {}
         kept = {f: {p: v for p, v in periods.items() if p == row['period'] or f != fleet} for f, periods in found.items()}
         mine = kept.setdefault(fleet, {}).setdefault(row['period'], [])
@@ -2841,7 +2842,7 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
         with self.connect() as db:
             row = db.execute('SELECT key, fleet FROM fleet_claims WHERE suggestion_id=?', (str(card_id),)).fetchone()
         if not row:
-            raise ValueError('Nobody else is on this one')
+            raise OwnerError('Nobody else is on this one')
         fleet = self.ref(row['fleet'] or 'work')
         result = self.relay.call('POST', '/claim', {'fleet': fleet, 'key': row['key'], 'take': True})
         self.store_claim(card_id, row['key'], result, fleet)
@@ -3217,19 +3218,19 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
         start link, signed with this Machine's own key. Returns that link for the person to open, signed in as its owner.
         The dashboard follows it with signin_state. SigninUnavailable when the control plane has no app for it."""
         if source not in SIGNIN_SOURCES:
-            raise ValueError('That source signs in another way')
+            raise OwnerError('That source signs in another way')
         private = getattr(self.relay, 'private', None)
         if not private:
-            raise ValueError('This Machine has no Network keys yet. Pick it as your Machine in a Fleet first.')
+            raise OwnerError('This Machine has no Network keys yet. Pick it as your Machine in a Fleet first.')
         kept = self.__dict__.get('signins_kept')
         if kept and kept[1] is not None and source not in kept[1]:
             raise SigninUnavailable(SIGNIN_REFUSED)  # known already: no request that is refused anyway
         try:
             found = self.relay.call('POST', '/connect-start', connect_start_request(private, source, another), timeout=30)
         except Off:
-            raise ValueError('The control plane does not take this yet. Try again later.') from None
+            raise OwnerError('The control plane does not take this yet. Try again later.') from None
         except (Unavailable, OSError):
-            raise ValueError('The Network did not answer. Try again in a minute.') from None
+            raise OwnerError('The Network did not answer. Try again in a minute.') from None
         except ValueError as error:
             if str(error) != SIGNIN_REFUSED:
                 raise
@@ -3241,7 +3242,7 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
         # only the control plane this Machine is paired with, and only its start page
         hosts = set(MAIN_HOSTS) if home.hostname in MAIN_HOSTS else {home.hostname}
         if link.scheme != ('http' if home.scheme == 'http' and home.hostname == '127.0.0.1' else 'https') or link.hostname not in hosts or not re.fullmatch(r'/connect/start/[A-Za-z0-9_-]{32}', link.path) or link.query:
-            raise ValueError('The control plane gave no start link. Try again.')
+            raise OwnerError('The control plane gave no start link. Try again.')
         import time
         self.set_meta('signin:' + source, {'state': 'started', 'at': time.time()})
         LOG.info('connect start source=%s', source)
@@ -3585,7 +3586,7 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
         """The owner removes a team learning, theirs or a teammate's: gone for the whole Fleet on the next Team Graph round."""
         ref = self.ref(fleet)
         if self.kind_of(ref) != 'work':
-            raise ValueError('Team learnings are in Work Fleets only')
+            raise OwnerError('Team learnings are in Work Fleets only')
         with self.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             text = fleet_learnings.remove(db, ref, fp)

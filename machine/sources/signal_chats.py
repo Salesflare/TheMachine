@@ -13,6 +13,7 @@ from machine.sources.rows import Skips
 from machine.text import encoded
 from sources import SourceError
 from timeutil import now
+from machine.owner_error import OwnerError
 
 
 class Signal:
@@ -153,7 +154,7 @@ def owner_signal_chats(config, db, raw, task_chats, source=None):
         try:
             chats = reader.chats(limit=100000) if item.get('chat_id') else reader.chats(str(item.get('to_name') or '').strip() or None)
         except SourceError:
-            raise ValueError('Signal can’t be read right now, so I can’t find the chat. Put the message in the body and say '
+            raise OwnerError('Signal can’t be read right now, so I can’t find the chat. Put the message in the body and say '
                              'in one line that they can send it on Signal themselves.') from None
         chats = [c for c in chats if c['id'] not in excluded]
         if item.get('chat_id'):

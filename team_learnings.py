@@ -45,6 +45,7 @@ import uuid
 from pathlib import Path
 
 import network_crypto as nc
+from machine.owner_error import OwnerError
 
 SCHEMA = '''
 CREATE TABLE IF NOT EXISTS team_learnings(id TEXT PRIMARY KEY,run_id TEXT,status TEXT NOT NULL,items TEXT NOT NULL,created_at TEXT NOT NULL,
@@ -579,7 +580,7 @@ def save_draft(db, run_id, profile, config=None):
         raise ValueError('args.profile.learnings is a list of {"text", "example", "area", "fault"}, or [] when nothing general stands out')
     run = db.execute("SELECT evidence FROM profile_runs WHERE run_id=? AND kind='learnings' AND status IN ('starting','running')", (run_id,)).fetchone()
     if not run:
-        raise ValueError('This learnings run is no longer active')
+        raise OwnerError('This learnings run is no longer active')
     evidence = json.loads(run[0] or '{}')
     faults = {f['fingerprint']: f for f in evidence.get('faults') or []}
     names = known_names(db, config)
@@ -679,7 +680,7 @@ def waiting(db):
 def later(db, batch_id):
     ensure(db)
     if not db.execute("UPDATE team_learnings SET status='later',decided_at=? WHERE id=? AND status='ready'", (now(), batch_id)).rowcount:
-        raise ValueError('These learnings are no longer waiting')
+        raise OwnerError('These learnings are no longer waiting')
     return {'status': 'later'}
 
 
@@ -705,9 +706,9 @@ def set_auto(db, on):
     Work Fleet."""
     ensure(db)
     if on and not offer_on(db):
-        raise ValueError('Turn on Offer to share learnings first.')
+        raise OwnerError('Turn on Offer to share learnings first.')
     if on and careful_floor(db):
-        raise ValueError('A Careful Work Fleet keeps asking each time.')
+        raise OwnerError('A Careful Work Fleet keeps asking each time.')
     if on:
         set_pref(db, 'auto', 'on')
     else:
@@ -720,7 +721,7 @@ def set_vote(db, mode):
     ensure(db)
     mode = {True: 'on', False: 'off'}.get(mode, mode) if isinstance(mode, bool) else mode
     if mode not in VOTE_MODES:
-        raise ValueError('Voting is on, ask or off')
+        raise OwnerError('Voting is on, ask or off')
     set_pref(db, 'vote', mode)
     if mode == 'off':  # what waits to be judged, approved or sent goes: nothing more leaves for it
         db.execute("UPDATE team_learning_votes SET status='skipped' WHERE status IN ('pending','judged','approved','abstained')")
@@ -732,11 +733,11 @@ def final_items(stored, chosen, names):
     edit the strip check would change is refused, so nothing is sent that differs from what they saw."""
     by_n = {i['n']: i for i in stored}
     if not isinstance(chosen, list) or not chosen:
-        raise ValueError('Keep at least one learning to send, or tap Not now')
+        raise OwnerError('Keep at least one learning to send, or tap Not now')
     out, seen = [], set()
     for c in chosen:
         if not isinstance(c, dict):
-            raise ValueError('Each learning is {n, text, example, log}')
+            raise OwnerError('Each learning is {n, text, example, log}')
         try:
             n = int(c.get('n'))
         except (TypeError, ValueError):
@@ -748,25 +749,25 @@ def final_items(stored, chosen, names):
                 'example': ' '.join(str(c.get('example') if c.get('example') is not None else by_n[n].get('example') or '').split())[:EXAMPLE_MAX],
                 'area': by_n[n].get('area') or 'other'}
         if len(item['text']) < 5:
-            raise ValueError(f'Learning {n} is empty: remove it instead')
+            raise OwnerError(f'Learning {n} is empty: remove it instead')
         for key in ('text', 'example'):
             clean, taken = strip(item[key], names)
             if taken:
-                raise ValueError(f'Learning {n}: take out {taken_line(taken)[len("Took out "):].rstrip(".")} first')
+                raise OwnerError(f'Learning {n}: take out {taken_line(taken)[len("Took out "):].rstrip(".")} first')
         stored_cases = by_n[n].get('use_cases') or []
         chosen_cases = c.get('use_cases') if isinstance(c.get('use_cases'), list) else stored_cases
         if stored_cases and not chosen_cases:
-            raise ValueError(f'Learning {n}: keep at least one use case')
+            raise OwnerError(f'Learning {n}: keep at least one use case')
         cases = []
         for k, raw in enumerate(chosen_cases[:USE_CASES], 1):
             case, problems = check_case(raw, names)
             if case is None:
-                raise ValueError(f'Learning {n}, use case {k}: fill in all three parts')
+                raise OwnerError(f'Learning {n}, use case {k}: fill in all three parts')
             stripped = [p for p in problems if p not in ('quote', 'name')]
             if stripped:
-                raise ValueError(f'Learning {n}, use case {k}: take out {taken_line(stripped)[len("Took out "):].rstrip(".")} first')
+                raise OwnerError(f'Learning {n}, use case {k}: take out {taken_line(stripped)[len("Took out "):].rstrip(".")} first')
             if problems:
-                raise ValueError(f'Learning {n}, use case {k}: write it generically, without names or quotes')
+                raise OwnerError(f'Learning {n}, use case {k}: write it generically, without names or quotes')
             cases.append(case)
         if cases:
             item['use_cases'] = cases
@@ -779,7 +780,7 @@ def final_items(stored, chosen, names):
 def keys_path(config):
     found = config.get('learnings_keys') or (Path(config['database']).expanduser().parent / KEY_FILE if config.get('database') else None)
     if not found:
-        raise ValueError('This Machine has no data folder for its learnings key')
+        raise OwnerError('This Machine has no data folder for its learnings key')
     return Path(found).expanduser()
 
 
@@ -788,9 +789,9 @@ def team_keys(call):
     team = call('POST', '/learnings', {'action': 'key'}) or {}
     checked = nc.check_keys(team.get('keys'))
     if not checked:
-        raise ValueError('The Machine team can’t take learnings yet. Nothing was sent.')
+        raise OwnerError('The Machine team can’t take learnings yet. Nothing was sent.')
     if not TEAM_KEY_FINGERPRINT or checked['fingerprint'] != TEAM_KEY_FINGERPRINT:
-        raise ValueError('That isn’t the team’s key, so nothing was sent. Update The Machine and try again.')
+        raise OwnerError('That isn’t the team’s key, so nothing was sent. Update The Machine and try again.')
     return team['keys'], checked['fingerprint']
 
 
@@ -799,24 +800,24 @@ def share(db_connect, config, batch_id, chosen, named, call, version=None, auto=
     it never records edited items as delivered under a batch the relay may already have accepted. With auto (the
     owner chose Send automatically), it goes only while that still holds, and never with the owner's email."""
     if auto and named:
-        raise ValueError('Your email is never added automatically')
+        raise OwnerError('Your email is never added automatically')
     with db_connect() as db:
         ensure(db)
         row = db.execute('SELECT items,status,sent FROM team_learnings WHERE id=?', (batch_id,)).fetchone()
         if not row or row[1] not in ('ready', 'sending'):
-            raise ValueError('These learnings are no longer waiting')
+            raise OwnerError('These learnings are no longer waiting')
         items = final_items(json.loads(row[0]), chosen, known_names(db, config))
         previous = json.loads(row[2] or '{}')
     def same(record):
         if record['items'] != items or record['named'] != bool(named):
-            raise ValueError('Delivery is not confirmed yet. Retry the same items before changing them.')
+            raise OwnerError('Delivery is not confirmed yet. Retry the same items before changing them.')
         return record
     if row[1] == 'sending' and previous.get('request'):
         record = same(previous)
         if auto:
             with db_connect() as db:
                 if not auto_on(db):
-                    raise ValueError('Sending automatically is off')
+                    raise OwnerError('Sending automatically is off')
     else:
         keys, team_fp = team_keys(call)
         mine = nc.load_or_make(keys_path(config))
@@ -831,9 +832,9 @@ def share(db_connect, config, batch_id, chosen, named, call, version=None, auto=
             db.execute('BEGIN IMMEDIATE')
             current = db.execute('SELECT items,status,sent FROM team_learnings WHERE id=?', (batch_id,)).fetchone()
             if not current or current[1] not in ('ready', 'sending') or current[0] != row[0]:
-                raise ValueError('These learnings are no longer waiting')
+                raise OwnerError('These learnings are no longer waiting')
             if auto and not auto_on(db):
-                raise ValueError('Sending automatically is off')
+                raise OwnerError('Sending automatically is off')
             held = json.loads(current[2] or '{}')
             if current[1] == 'sending' and held.get('request'):
                 record = same(held)
@@ -846,7 +847,7 @@ def share(db_connect, config, batch_id, chosen, named, call, version=None, auto=
     except Exception as error:
         with db_connect() as db:
             db.execute("UPDATE team_learnings SET error='delivery_unknown' WHERE id=? AND status='sending'", (batch_id,))
-        raise ValueError('Delivery is not confirmed yet. Try again to confirm the same items, without duplicates.') from error
+        raise OwnerError('Delivery is not confirmed yet. Try again to confirm the same items, without duplicates.') from error
     with db_connect() as db:
         db.execute("UPDATE team_learnings SET status='sent',decided_at=?,sent=?,error=NULL WHERE id=? AND status='sending'",
                    (now(), json.dumps(record), batch_id))
@@ -904,12 +905,12 @@ def withdraw(db_connect, config, batch_id, n, call):
     public = nc.public_keys(mine)
     me = nc.check_keys(public)['fingerprint']
     if record.get('from') and record['from'] != me:
-        raise ValueError('This Machine’s learnings key changed since, so it can’t withdraw this one.')
+        raise OwnerError('This Machine’s learnings key changed since, so it can’t withdraw this one.')
     sealed = nc.seal({'v': 1, 'id': batch_id, 'n': n, 'withdraw': True, 'at': now()}, mine, keys,
                      {**CONTEXT, 'f': me, 't': team_fp, 'r': f'withdraw:{batch_id}:{n}'})
     receipt = call('POST', '/learnings', {'action': 'withdraw', 'id': batch_id, 'n': n, 'from': public, 'sealed': sealed})
     if not isinstance(receipt, dict) or receipt.get('ok') is not True:
-        raise ValueError('The team didn’t confirm it. Try again.')
+        raise OwnerError('The team didn’t confirm it. Try again.')
     with db_connect() as db:
         db.execute('BEGIN IMMEDIATE')
         record = json.loads(db.execute('SELECT sent FROM team_learnings WHERE id=?', (batch_id,)).fetchone()[0] or '{}')
@@ -1045,7 +1046,7 @@ def save_votes(db, run_id, profile, config=None):
         raise ValueError('args.profile.votes is a list of {"id", "vote", "reason"}')
     run = db.execute("SELECT evidence FROM profile_runs WHERE run_id=? AND kind='team_votes' AND status IN ('starting','running')", (run_id,)).fetchone()
     if not run:
-        raise ValueError('This voting run is no longer active')
+        raise OwnerError('This voting run is no longer active')
     asked = {r['id'] for r in json.loads(run[0] or '{}').get('learnings') or []}
     names, votes = known_names(db, config), {}
     for v in found[:VOTE_BATCH * 2]:
@@ -1139,13 +1140,13 @@ def decide_votes(db, ids, send):
     """The owner's choice under Ask first: these votes may go (send) or never will (skip). Returns how many changed."""
     ensure(db)
     if vote_mode(db) != 'ask':
-        raise ValueError('Votes only wait for you under Ask first')
+        raise OwnerError('Votes only wait for you under Ask first')
     if not isinstance(ids, list) or not ids or not all(isinstance(i, str) for i in ids):
-        raise ValueError('Which votes?')
+        raise OwnerError('Which votes?')
     n = 0
     for cid in ids[:VOTE_BATCH * 4]:
         n += db.execute("UPDATE team_learning_votes SET status=?,decided_at=? WHERE candidate_id=? AND status='judged'",
                         ('approved' if send else 'skipped', now(), cid[:80])).rowcount
     if not n:
-        raise ValueError('These votes are no longer waiting')
+        raise OwnerError('These votes are no longer waiting')
     return n

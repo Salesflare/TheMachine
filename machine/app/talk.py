@@ -34,6 +34,7 @@ import talk_live
 from timeutil import local_tz, now
 import voice_input
 from machine import todo_states
+from machine.owner_error import OwnerError
 
 
 class TalkApp:
@@ -602,5 +603,5 @@ class TalkApp:
 
     def talk_actions_action(self, name, args, owner_dashboard=False):
         if not owner_dashboard:
-            raise ValueError('Only the owner talks live, on the dashboard')
+            raise OwnerError('Only the owner talks live, on the dashboard')
         return self.talk_action(name, args)

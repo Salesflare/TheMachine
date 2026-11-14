@@ -39,6 +39,7 @@ import routine_changes
 import skills
 import task_invites
 from timeutil import local_tz, now
+from machine.owner_error import OwnerError
 
 
 # A final step that goes to someone (a message, an invite, sharing) is a send: the owner sees and approves it on the
@@ -166,7 +167,7 @@ class CardActionsApp:
     def task_import_action(self, name, args, owner_dashboard=False):
         # a task link someone sent this owner by email (task_invites.py)
         if not owner_dashboard:
-            raise ValueError('Add a task link from the dashboard')
+            raise OwnerError('Add a task link from the dashboard')
         return self.task_import(str(args.get('link') or ''))
 
     def prepare_action(self, name, args, owner_dashboard=False):
@@ -178,7 +179,7 @@ class CardActionsApp:
         if args.get('reply') is not None and (not isinstance(args['reply'],str) or len(args['reply'])>1000):
             raise ValueError('reply is your short answer to their message, at most 1000 characters')
         if not str(args.get('body') or '').strip():
-            if not str(args.get('reply') or '').strip():raise ValueError('A concrete local preparation is required')
+            if not str(args.get('reply') or '').strip():raise OwnerError('A concrete local preparation is required')
             args={**args,'body':row['body'] or args['reply']}
         # The card's status and title stay true on later days: "tomorrow" is saved as that day (undated_card)
         (body,title),_=undated_card(str(args['body']),args['title'] if isinstance(args.get('title'),str) else None)
@@ -239,19 +240,19 @@ class CardActionsApp:
         action=next_actions.validate(args.get('next_actions',args.get('next_action')),self.config,json.loads(row['account_ids']),options,threads,x_threads,whatsapp_chats,intercom_conversations,calendar_events,docs,senders,replied_to(emails),telegram_chats,doc_context,spots,signal_chats)
         for item in next_actions.actions(action):
             if item['kind']=='handoff' and not (getattr(self,'fleet',None) and self.fleet.teammate(item)):
-                raise ValueError('Hand off through The Machine only to a teammate in a Work Fleet (their email as listed); use a Slack message or email for anyone else')
+                raise OwnerError('Hand off through The Machine only to a teammate in a Work Fleet (their email as listed); use a Slack message or email for anyone else')
         if any(item['kind']=='email_demo' for item in next_actions.actions(action)):
             with self.store.connect() as db:
                 evidence=db.execute('SELECT e.kind,e.metadata FROM events e JOIN suggestions s ON s.id=? JOIN json_each(s.event_ids) ids ON ids.value=e.id',(args['suggestion_id'],)).fetchall()
             if not evidence or any(e['kind']!='assistant.test' or json.loads(e['metadata']).get('test') is not True for e in evidence):
-                raise ValueError('Demo previews are only available on explicitly labeled assistant test tasks')
+                raise OwnerError('Demo previews are only available on explicitly labeled assistant test tasks')
         problems=next_actions.check(action,args['body'],[a.get('email','') for a in self.config['accounts']])
         problems+=next_actions.reply_context(next_actions.actions(action),spots)
         # The to-do names the place the doc goes, never the other one (Google Docs vs Word)
         problems+=doc_writes.wording(next_actions.actions(action),[args.get('body'),args.get('needs'),args.get('title')])
         if problems and args.get('checked') is not True:
             # The run fixes these itself; checked:true saves anyway when one is deliberate.
-            raise ValueError('Check before saving: '+'; '.join(problems)+'. Fix and save again, or add checked:true if this is intended.')
+            raise OwnerError('Check before saving: '+'; '.join(problems)+'. Fix and save again, or add checked:true if this is intended.')
         outcome=None
         if args.get('outcome') is not None or args.get('job_id'):
             # Every result says plainly whether the job is finished.
@@ -382,7 +383,7 @@ class CardActionsApp:
         if args.get('send_now') is True and not saved.get('replayed'):
             with self.store.connect() as db:
                 if db.execute('SELECT early FROM suggestions WHERE id=?',(args['suggestion_id'],)).fetchone()[0]:
-                    raise ValueError('Prepared ahead: the draft is saved; the owner sends it themselves')
+                    raise OwnerError('Prepared ahead: the draft is saved; the owner sends it themselves')
             # The owner asked for it to be sent: queue the draft exactly as their Send tap would
             # (same sender, signature and attachments), without a second confirmation.
             ready=[a for a in next_actions.actions(action) if a['kind'] in ('email','linkedin','slack','x') and not a.get('to_options')]
@@ -404,13 +405,13 @@ class CardActionsApp:
         return saved
 
     def revise_draft_action(self, name, args, owner_dashboard=False):
-        if not owner_dashboard:raise ValueError('Drafts are edited in the dashboard')
+        if not owner_dashboard:raise OwnerError('Drafts are edited in the dashboard')
         return self.store.revise_draft(args['suggestion_id'],args['revision'],'dashboard',args.get('subject'),args.get('body'))
 
     def confirm_action_action(self, name, args, owner_dashboard=False):
         if owner_dashboard and re.fullmatch(r'[A-Za-z0-9_.:-]{1,200}',str(args.get('approval_id',''))):source='dashboard'
         elif not owner_dashboard and re.fullmatch(r'telegram:[A-Za-z0-9_.:-]{1,200}',str(args.get('approval_id',''))):source='telegram'
-        else:raise ValueError('Sending approval must come from the owner’s controls')
+        else:raise OwnerError('Sending approval must come from the owner’s controls')
         return self.store.confirm_action(args['suggestion_id'],args['revision'],args['approval_id'],source,args.get('recipients'),args.get('sender'))
 
     def refresh_card_action(self, name, args, owner_dashboard=False):
@@ -432,7 +433,7 @@ class CardActionsApp:
 
     def decide_action(self, name, args, owner_dashboard=False):
         if args.get('choice') == 'reopen' and not owner_dashboard:
-            raise ValueError('Use the owner dashboard to reopen a completed item')
+            raise OwnerError('Use the owner dashboard to reopen a completed item')
         # The source is set here, never taken from the request: an agent must not be
         # able to label its own decision as the owner's Telegram click.
         if owner_dashboard:
@@ -440,24 +441,24 @@ class CardActionsApp:
         elif re.fullmatch(r'(?:telegram|feedback)[:-][A-Za-z0-9_.:-]{1,200}', str(args.get('decision_id', ''))):
             source = 'telegram'  # the bridge's verified callback / owner-only command
         else:
-            raise ValueError('Decisions must come from the owner’s Telegram buttons or dashboard')
+            raise OwnerError('Decisions must come from the owner’s Telegram buttons or dashboard')
         args = {**args, 'source': source}
         if str(args.get('decision_id', '')).startswith(NOTICE_DECISION):
             with self.store.connect() as db:
                 refused = notice_decision_refused(db, args.get('suggestion_id'), args.get('choice'))
             if refused:
-                raise ValueError(i18n.t(refused))
+                raise OwnerError(i18n.t(refused))
         if args.get('choice') in ('accept','other','retry'):
             with self.store.connect() as db:
                 if mail_cleanup.is_cleanup(db, args.get('suggestion_id')):
-                    raise ValueError(i18n.t('Pick for each one on the to-do, then confirm.'))
+                    raise OwnerError(i18n.t('Pick for each one on the to-do, then confirm.'))
                 if subscriptions.is_subs(db, args.get('suggestion_id')):  # Cancel only drafts; the owner sends it
-                    raise ValueError(i18n.t('Pick Keep or Cancel it for each one on the to-do.'))
+                    raise OwnerError(i18n.t('Pick Keep or Cancel it for each one on the to-do.'))
                 if reading_digest.is_digest(db, args.get('suggestion_id')):
-                    raise ValueError(i18n.t('A digest is only for reading.'))
+                    raise OwnerError(i18n.t('A digest is only for reading.'))
                 briefing = db.execute('SELECT dedupe_key FROM suggestions WHERE id=?', (args.get('suggestion_id'),)).fetchone()
                 if briefing and meeting_prep.is_briefing(briefing[0]):
-                    raise ValueError(i18n.t('A briefing is only for reading.'))
+                    raise OwnerError(i18n.t('A briefing is only for reading.'))
         terminal_job=None
         files=args.get('files') if owner_dashboard and args.get('choice')=='other' else None  # added in the chat's composer
         feedback=args.get('feedback', '')
@@ -527,7 +528,7 @@ class CardActionsApp:
         cells), when it can run now: signed in, with room in its limits and no other agent pass going. Else the
         rules' guess stands and {'ai': False, 'why'} says why."""
         if kind not in crm_import.FIELDS:
-            raise ValueError('Import people, organizations or projects')
+            raise OwnerError('Import people, organizations or projects')
         if self.config.get('import_check') is False:
             return {'ai': False, 'why': 'off'}
         if model_ready(self.config) is False or not self.model_room():
@@ -566,7 +567,7 @@ class CardActionsApp:
     def card_owner_action(self, name, args, owner_dashboard=False):
         # a to-do added, renamed, moved or merged by the owner (CARD_ACTIONS)
         if not owner_dashboard:
-            raise ValueError('Cards are added, renamed and merged by the owner, on the dashboard')
+            raise OwnerError('Cards are added, renamed and merged by the owner, on the dashboard')
         if name == 'card_new':
             return self.card_new_repeating(args)  # recurring_app.py: Repeats, or a rhythm in the words
         if name == 'card_project':  # the to-do's project, by hand ('' for none): graph.set_card_project

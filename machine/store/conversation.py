@@ -13,6 +13,7 @@ import datetime as dt
 import json
 
 from timeutil import local_tz
+from machine.owner_error import OwnerError
 
 # kind -> the plain (unsealed, message_seal.PLAIN_METADATA) metadata key its conversation is matched on in SQL
 CONTEXT_KEYS = {'slack.message': 'channel_id', 'whatsapp.message': 'chat_id', 'telegram.message': 'chat_id',
@@ -144,7 +145,7 @@ class ConversationStore:
                         or _meta(cursor).get(key) != _meta(anchor).get(key) \
                         or anchor['kind'] == 'slack.message' and cursor['id'] != anchor['id'] and not slack_member(_meta(anchor), _meta(cursor)) \
                         and not (start and slack_member(_meta(start), _meta(cursor))):
-                    raise ValueError('Original not available')  # only a message of this same conversation pages it
+                    raise OwnerError('Original not available')  # only a message of this same conversation pages it
                 thread = set()
                 if start and (cursor['id'] == start['id'] or not thread_reply(cursor)):  # past the thread: the channel before it
                     rows = self.conversation_ids(db, start, 'before', cursor)

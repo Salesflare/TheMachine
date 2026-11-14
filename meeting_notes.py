@@ -22,6 +22,7 @@ import datetime as dt
 import hashlib
 import json
 import re
+from machine.owner_error import OwnerError
 
 NOTES, TRANSCRIPT = 'meeting.notes', 'meeting.transcript'
 ADDED = NOTES
@@ -206,8 +207,8 @@ def plan(db, event_id, text, by, at, append=False, field='notes', written_from=N
         text = old['body'].rstrip() + '\n\n' + text
     if len(text) > MAX_CHARS:
         if kind == TRANSCRIPT:
-            raise ValueError(f'A transcript can be up to {MAX_CHARS:,} characters')
-        raise ValueError(f'Notes can be up to {MAX_CHARS:,} characters')
+            raise OwnerError(f'A transcript can be up to {MAX_CHARS:,} characters')
+        raise OwnerError(f'Notes can be up to {MAX_CHARS:,} characters')
     source_id = PREFIX[kind] + str(event['id'])
     result = {'event_id': event['id'], 'title': event['title'], 'field': 'transcript' if kind == TRANSCRIPT else 'notes'}
     if not text:

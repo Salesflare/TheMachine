@@ -31,6 +31,7 @@ import tempfile
 import time
 import unicodedata
 from urllib.parse import urlsplit
+from machine.owner_error import OwnerError
 
 SEND_SCOPES = {'https://www.googleapis.com/auth/gmail.send',
                'https://www.googleapis.com/auth/gmail.compose',
@@ -89,18 +90,18 @@ def granted_scopes(config, credential, account):
         try:
             return ms_graph.scopes(config, credential, account)
         except ms_graph.GraphError:
-            raise ValueError('I could not verify Outlook permissions. Nothing was sent.') from None
+            raise OwnerError('I could not verify Outlook permissions. Nothing was sent.') from None
     if account.get('transport') == 'broker':
         try:
             return google_api.scopes(config, credential, account)
         except google_api.BrokerError:
-            raise ValueError('I could not verify Gmail permissions. Nothing was sent.') from None
+            raise OwnerError('I could not verify Gmail permissions. Nothing was sent.') from None
     env = os.environ.copy()
     env.update(GOG_KEYRING_BACKEND='file', GOG_KEYRING_PASSWORD=credential(config, 'gog-password'))
     env.pop('DBUS_SESSION_BUS_ADDRESS', None)
     result = subprocess.run([config['gog'], 'auth', 'list', '--json', '--no-input'], env=env, capture_output=True, text=True, timeout=20)
     if result.returncode:
-        raise ValueError('I could not verify Gmail permissions. Nothing was sent.')
+        raise OwnerError('I could not verify Gmail permissions. Nothing was sent.')
     auth = next((a for a in json.loads(result.stdout).get('accounts', [])
                  if a['email'].lower() == account['email'].lower() and a.get('client') == account['client']), None)
     return set(auth.get('scopes', [])) if auth else set()
@@ -137,14 +138,14 @@ def store_attachments(paths, config):
     store, records, total = attachment_store(config), [], 0
     for path in paths:
         if not isinstance(path, str) or '\x00' in path:
-            raise ValueError('Attachment paths must be file paths')
+            raise OwnerError('Attachment paths must be file paths')
         real = Path(path.replace('~', str(Path.home()), 1) if path.startswith('~/') else path).resolve()
         if not any(real.is_relative_to(source) for source in sources) or not real.is_file():
-            raise ValueError('Attach only files you saved in workspace/data/assistant-attachments/<job id>/ or memory/assistant/')
+            raise OwnerError('Attach only files you saved in workspace/data/assistant-attachments/<job id>/ or memory/assistant/')
         data = mail_attachments.read(real, config)  # an email attachment kept sealed opens with the message key
         total += len(data)
         if not data or total > MAX_ATTACHMENT_BYTES:
-            raise ValueError('Attachments must be non-empty and at most 18 MB together')
+            raise OwnerError('Attachments must be non-empty and at most 18 MB together')
         name = real.name
         if (problem := mail_attachments.outgoing_problem(real, data)):  # a plain name, not a working one; it opens
             raise ValueError(problem)
@@ -154,14 +155,14 @@ def store_attachments(paths, config):
         records.append({'name': name, 'sha256': digest, 'size': len(data),
                         'type': mimetypes.guess_type(name)[0] or 'application/octet-stream'})
     if len({r['name'] for r in records}) != len(records):
-        raise ValueError('Attachments need distinct file names')
+        raise OwnerError('Attachments need distinct file names')
     return records
 
 
 def attachment_bytes(record, config):
     data = mail_attachments.read(attachment_store(config) / record['sha256'], config)
     if hashlib.sha256(data).hexdigest() != record['sha256']:
-        raise ValueError('An attachment changed after you reviewed it. Nothing was sent.')
+        raise OwnerError('An attachment changed after you reviewed it. Nothing was sent.')
     return data
 
 
@@ -518,18 +519,18 @@ def validate(value, config, allowed_accounts, recipient_options=None, linkedin_t
     if value is None or value == []:  # none: a briefing or a finished task may have no buttons (PREPARATION.md)
         return None
     if isinstance(value,list):
-        if len(value)>3:raise ValueError('Offer one to three useful next actions, not a menu of everything')
-        if any(not isinstance(item,dict) for item in value):raise ValueError('Each next action must be one concrete choice')
+        if len(value)>3:raise OwnerError('Offer one to three useful next actions, not a menu of everything')
+        if any(not isinstance(item,dict) for item in value):raise OwnerError('Each next action must be one concrete choice')
         choices=[validate(item,config,allowed_accounts,recipient_options,linkedin_threads,x_threads,whatsapp_chats,intercom_conversations,calendar_events,doc_comments,senders,replied,telegram_chats,doc_write_context,reply_spots,signal_chats) for item in value]
         if len({item['revision'] for item in choices})!=len(choices) or len({label(item).lower() for item in choices})!=len(choices):
-            raise ValueError('Next actions must be distinct concrete choices')
+            raise OwnerError('Next actions must be distinct concrete choices')
         return {'kind':'menu','actions':choices}
     if not isinstance(value, dict):
-        raise ValueError('Next action must be an email draft, local preparation or original-page link')
+        raise OwnerError('Next action must be an email draft, local preparation or original-page link')
     if value.get('label') is not None and (not isinstance(value['label'],str) or not 1<=len(value['label'])<=28
             or not re.fullmatch(r'[A-Za-z][A-Za-z0-9 ,’\-/]+',value['label'])
             or value['label'].lower() in ('done','mark done','dismiss','reject','snooze','change','prepare','continue','do it','yes')):
-        raise ValueError('Use a short specific action label, not a generic or owner-status button')
+        raise OwnerError('Use a short specific action label, not a generic or owner-status button')
     for field in ('body', 'message', 'preview'):  # the paragraph breaks the card shows are the ones that go out
         if isinstance(value.get(field), str):
             value = {**value, field: paragraphs(value[field])}
@@ -543,35 +544,35 @@ def validate(value, config, allowed_accounts, recipient_options=None, linkedin_t
         result = doc_writes.validate(value, doc_write_context)
     elif value.get('kind') == 'open':
         if set(value) - {'kind', 'url', 'label'} or urlsplit(str(value.get('url', ''))).scheme != 'https':
-            raise ValueError('Use an HTTPS original-page link, not executable instructions')
+            raise OwnerError('Use an HTTPS original-page link, not executable instructions')
         if not value.get('label','').startswith(('Open ','View ','Read ')):
-            raise ValueError('Link labels must say Open, View or Read, never pretend to execute a change')
+            raise OwnerError('Link labels must say Open, View or Read, never pretend to execute a change')
         if len(value['url']) > 2000 or urlsplit(value['url']).username or not urlsplit(value['url']).hostname:
             raise ValueError('Invalid original-page link')
         result = dict(value)
     elif value.get('kind') == 'prepare':
         if set(value)-{'kind','label','instructions'} or not value.get('label'):
-            raise ValueError('A follow-up preparation needs a specific label and instructions')
+            raise OwnerError('A follow-up preparation needs a specific label and instructions')
         # A follow-up is another Do it turn under the same limits so it may
         # apply a change; it can never pay, send or create calendar events.
         if not value['label'].startswith(tuple(v + ' ' for v in FOLLOW_UP_VERBS)):
-            raise ValueError('Follow-up labels describe drafting, checking, research or applying the task’s change')  # its words: PREPARATION.md
+            raise OwnerError('Follow-up labels describe drafting, checking, research or applying the task’s change')  # its words: PREPARATION.md
         if not isinstance(value.get('instructions'),str) or not value['instructions'].strip() or len(value['instructions'])>2000:
-            raise ValueError('Provide the concrete next preparation, at most 2000 characters')
+            raise OwnerError('Provide the concrete next preparation, at most 2000 characters')
         result=dict(value)
     elif value.get('kind') == 'finish':
         # Everything up to the final click is done; the owner confirms that click. Its run
         # repeats the step from these instructions, since a tab or session may have expired.
         if set(value)-{'kind','label','instructions','preview','url','message','to_name','attachments','via','via_login'} or not value.get('label'):
-            raise ValueError('A final step needs a label, the exact instructions and a preview of what goes out')
+            raise OwnerError('A final step needs a label, the exact instructions and a preview of what goes out')
         if value['label'].split()[0] not in FINISH_VERBS:
-            raise ValueError('A final step label starts with what it does: ' + ', '.join(FINISH_VERBS[:8]) + '…')
+            raise OwnerError('A final step label starts with what it does: ' + ', '.join(FINISH_VERBS[:8]) + '…')
         for field in ('instructions', 'preview'):
             if not isinstance(value.get(field),str) or not value[field].strip() or len(value[field])>2000 or '\x00' in value[field]:
-                raise ValueError('Give the exact final step and what it submits, each at most 2000 characters')
+                raise OwnerError('Give the exact final step and what it submits, each at most 2000 characters')
         if 'url' in value and (not isinstance(value['url'],str) or len(value['url'])>2000 or urlsplit(value['url']).scheme!='https'
                                or urlsplit(value['url']).username or not urlsplit(value['url']).hostname):
-            raise ValueError('The final step’s page is an HTTPS link')
+            raise OwnerError('The final step’s page is an HTTPS link')
         # A message the step posts (a reply in a support inbox, a chat or DM in a web app): its exact
         # text, which the card shows and the owner can edit like a draft; Confirm types exactly that.
         if 'message' in value and (not isinstance(value['message'],str) or not value['message'].strip()
@@ -591,10 +592,10 @@ def validate(value, config, allowed_accounts, recipient_options=None, linkedin_t
         result=github_route.route(result,config)
     elif value.get('kind') == 'email_demo':
         if set(value)-{'kind','label','subject','body'} or value.get('label','Send')!='Send':
-            raise ValueError('The Send demo is preview-only with fixed fictional addresses')
+            raise OwnerError('The Send demo is preview-only with fixed fictional addresses')
         for field,limit in [('subject',250),('body',12000)]:
             if not isinstance(value.get(field),str) or not value[field].strip() or len(value[field])>limit or '\x00' in value[field]:
-                raise ValueError('Provide the concrete demo email')
+                raise OwnerError('Provide the concrete demo email')
         if '\r' in value['subject'] or '\n' in value['subject']:raise ValueError('Invalid demo subject')
         result={'kind':'email_demo','label':'Send','from':'the-machine@example.invalid',
                 'to':['alex@example.invalid'],'cc':[],'bcc':[],'subject':value['subject'],'body':value['body']}
@@ -604,7 +605,7 @@ def validate(value, config, allowed_accounts, recipient_options=None, linkedin_t
         if 'by_email' in value and value['by_email'] is not True:
             raise ValueError('by_email is true (the owner asked for email), or left out')
         if set(value) - fields:
-            raise ValueError('Unsupported email fields')
+            raise OwnerError('Unsupported email fields')
         if not isinstance(value.get('signature', True), bool):
             raise ValueError('signature is true (default: your signature is added) or false')
         # Any of the owner's Gmail or Outlook accounts for the same company (or the same address) as the task's signals: a task
@@ -616,17 +617,17 @@ def validate(value, config, allowed_accounts, recipient_options=None, linkedin_t
         if not account or (account['id'] not in allowed_accounts and account.get('boundary') not in boundaries
                            and str(account.get('email') or '').lower() not in emails
                            and not reply_home(account, value, replied)):
-            raise ValueError('Use a Gmail or Outlook account of this task’s company')
+            raise OwnerError('Use a Gmail or Outlook account of this task’s company')
         result = {'kind': 'email', 'account_id': account['id'], 'from': account['email']}
         if value.get('label'):
-            if value['label']!='Send' and not value['label'].startswith('Send '):raise ValueError('Email button labels must say Send, such as Send reply')
+            if value['label']!='Send' and not value['label'].startswith('Send '):raise OwnerError('Email button labels must say Send, such as Send reply')
             result['label']=value['label']
         for field in ('to', 'cc', 'bcc'):
             addresses = value.get(field, [])
             if not isinstance(addresses, list) or len(addresses) > 20 or any(
                     not isinstance(a, str) or len(a)>254 or not re.fullmatch(r'[^\s<>@,;\r\n]+@[^\s<>@,;\r\n]+\.[^\s<>@,;\r\n]+', a)
                     for a in addresses):
-                raise ValueError('Recipients must be explicit email addresses')
+                raise OwnerError('Recipients must be explicit email addresses')
             result[field] = addresses
         fallback = intercom_channel(value, result, config, allowed_accounts, intercom_conversations)
         if fallback:
@@ -638,14 +639,14 @@ def validate(value, config, allowed_accounts, recipient_options=None, linkedin_t
             # service supplies. The model cannot add options.
             options = [a for a in (recipient_options or []) if a not in result['cc'] + result['bcc']][:6]
             if not options:
-                raise ValueError('An email needs a recipient, and the task’s emails have no address to offer instead')
+                raise OwnerError('An email needs a recipient, and the task’s emails have no address to offer instead')
             result['to_options'] = options
         for field, limit in [('subject', 250), ('body', 12000)]:
             text = value.get(field)
             if not isinstance(text, str) or not text.strip() or len(text) > limit or '\x00' in text:
-                raise ValueError('Provide a concrete subject and draft body within the size limit')
+                raise OwnerError('Provide a concrete subject and draft body within the size limit')
             if field == 'subject' and ('\r' in text or '\n' in text):
-                raise ValueError('Subject cannot contain another header')
+                raise OwnerError('Subject cannot contain another header')
             result[field] = closing_spaced(text) if field == 'body' else text
         # The real signature (Gmail's own, or the one set or found for this account) is added at send time; the body ends at the name.
         result['signature'] = value.get('signature', True)
@@ -660,7 +661,7 @@ def validate(value, config, allowed_accounts, recipient_options=None, linkedin_t
                     raise ValueError('Invalid email thread header')
                 result[field] = text
         if result.get('thread_id') and not result.get('in_reply_to'):
-            raise ValueError('Thread replies need the original RFC Message-ID, not only a Gmail thread ID')
+            raise OwnerError('Thread replies need the original RFC Message-ID, not only a Gmail thread ID')
         reply_origin(result, account, config, replied)
         # From: the mailbox address, or an alias of the owner's that Gmail confirms this mailbox sends as (senders,
         # own_addresses.senders). The service picks it, never the draft; the owner can change it in the review.
@@ -673,12 +674,12 @@ def validate(value, config, allowed_accounts, recipient_options=None, linkedin_t
         if isinstance(days, bool) or not isinstance(days, int) or not 0 <= days <= 14:
             raise ValueError('snooze_days is a whole number of days from 0 (no snooze) to 14')
         if days and not result.get('thread_id'):
-            raise ValueError('Only a reply in an existing thread can be snoozed after sending')
+            raise OwnerError('Only a reply in an existing thread can be snoozed after sending')
         if days:
             # After sending, the thread leaves the inbox until then; a reply brings it back sooner.
             result['snooze_days'] = days
         if value.get('delegate') and len(result['to']) != 1:
-            raise ValueError('Hand a task to one person: delegate needs exactly one To address')
+            raise OwnerError('Hand a task to one person: delegate needs exactly one To address')
         if 'to_name' in value and not value.get('delegate'):
             raise ValueError('to_name goes with delegate:true')
         name = value.get('to_name')
@@ -689,21 +690,21 @@ def validate(value, config, allowed_accounts, recipient_options=None, linkedin_t
         # A LinkedIn message: a reply in a conversation from this task's own signals, or a new
         # message to a profile slug the owner gave. Sent only after the owner's approval.
         if set(value) - {'kind', 'label', 'account_id', 'conversation_id', 'profile', 'to_name', 'body'}:
-            raise ValueError('Unsupported LinkedIn message fields')
+            raise OwnerError('Unsupported LinkedIn message fields')
         account = next((a for a in config['accounts'] if a['id'] == value.get('account_id') and a.get('service') == 'linkedin'), None)
         if not account or account['id'] not in allowed_accounts:
-            raise ValueError('Use the LinkedIn account belonging to this task')
+            raise OwnerError('Use the LinkedIn account belonging to this task')
         result = {'kind': 'linkedin', 'account_id': account['id']}
         if value.get('label'):
             if value['label'] != 'Send' and not value['label'].startswith('Send '):
-                raise ValueError('LinkedIn button labels must say Send, such as Send reply')
+                raise OwnerError('LinkedIn button labels must say Send, such as Send reply')
             result['label'] = value['label']
         threads = linkedin_threads or {}
         if bool(value.get('conversation_id')) == bool(value.get('profile')):
             raise ValueError('A LinkedIn message needs either the conversation_id from this task or a profile slug, not both')
         if value.get('conversation_id'):
             if value['conversation_id'] not in threads:
-                raise ValueError('Reply only in a LinkedIn conversation from this task’s own messages')
+                raise OwnerError('Reply only in a LinkedIn conversation from this task’s own messages')
             result.update(conversation_id=value['conversation_id'], to_name=threads[value['conversation_id']])
         else:
             if not isinstance(value['profile'], str) or not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_%-]{1,99}', value['profile']):
@@ -714,20 +715,20 @@ def validate(value, config, allowed_accounts, recipient_options=None, linkedin_t
             result.update(profile=value['profile'], to_name=name.strip())
         body = value.get('body')
         if not isinstance(body, str) or not body.strip() or len(body) > 8000 or '\x00' in body:
-            raise ValueError('Provide the concrete LinkedIn message, at most 8000 characters')
+            raise OwnerError('Provide the concrete LinkedIn message, at most 8000 characters')
         result['body'] = body.strip()
     elif value.get('kind') == 'x':
         # An X reply to a post, or a DM, from this task's own X signals; integrations/x_inbox.py sends it
         # through the owner's signed-in x.com session in the OpenClaw browser, only after their Send now.
         if set(value) - {'kind', 'label', 'account_id', 'reply_to', 'conversation_id', 'body'}:
-            raise ValueError('Unsupported X fields; plain text only, no media')
+            raise OwnerError('Unsupported X fields; plain text only, no media')
         account = next((a for a in config['accounts'] if a['id'] == value.get('account_id') and a.get('service') == 'x'), None)
         if not account or account['id'] not in allowed_accounts:
-            raise ValueError('Use the X account belonging to this task')
+            raise OwnerError('Use the X account belonging to this task')
         result = {'kind': 'x', 'account_id': account['id'], 'handle': account['handle']}
         if value.get('label'):
             if not re.match(r'(?:Send|Reply)\b', value['label']):
-                raise ValueError('X button labels must say Send or Reply, such as Reply on X')
+                raise OwnerError('X button labels must say Send or Reply, such as Reply on X')
             result['label'] = value['label']
         threads = x_threads or {}
         if bool(value.get('reply_to')) == bool(value.get('conversation_id')):
@@ -741,25 +742,25 @@ def validate(value, config, allowed_accounts, recipient_options=None, linkedin_t
         else:
             chat = (threads.get('dms') or {}).get(str(value['conversation_id']))
             if not chat or chat.get('account_id') != account['id']:
-                raise ValueError('Send DMs only in an X conversation from this task’s own messages')
+                raise OwnerError('Send DMs only in an X conversation from this task’s own messages')
             result.update(conversation_id=str(value['conversation_id']), to_name=chat['name'], max_length=10000)
         body = value.get('body')
         if not isinstance(body, str) or not body.strip() or '\x00' in body or text_length(result, body.strip()) > result['max_length']:
-            raise ValueError(f"Provide the concrete X {'reply' if value.get('reply_to') else 'message'}, at most {result['max_length']} characters (links count 23)")
+            raise OwnerError(f"Provide the concrete X {'reply' if value.get('reply_to') else 'message'}, at most {result['max_length']} characters (links count 23)")
         result['body'] = body.strip()
     elif value.get('kind') == 'slack':
         # A Slack direct message from the owner's own Slack account, mostly to hand a task to a
         # colleague. Any Slack account in the task's boundary; sent only after the owner's Send now.
         if set(value) - {'kind', 'label', 'account_id', 'user_id', 'to_email', 'to_name', 'body', 'delegate', 'wait_days'}:
-            raise ValueError('Unsupported Slack message fields')
+            raise OwnerError('Unsupported Slack message fields')
         boundaries = {a.get('boundary') for a in config['accounts'] if a['id'] in allowed_accounts}
         account = next((a for a in config['accounts'] if a['id'] == value.get('account_id') and a.get('service') == 'slack'), None)
         if not account or (account['id'] not in allowed_accounts and account.get('boundary') not in boundaries):
-            raise ValueError('Use the Slack account of this task’s company')
+            raise OwnerError('Use the Slack account of this task’s company')
         result = {'kind': 'slack', 'account_id': account['id']}
         if value.get('label'):
             if value['label'] != 'Send' and not value['label'].startswith('Send '):
-                raise ValueError('Slack button labels must say Send, such as Send to Sam')
+                raise OwnerError('Slack button labels must say Send, such as Send to Sam')
             result['label'] = value['label']
         if bool(value.get('user_id')) == bool(value.get('to_email')):
             raise ValueError('A Slack message needs either the person’s Slack user_id (from a Slack signal) or their work email as to_email')
@@ -777,7 +778,7 @@ def validate(value, config, allowed_accounts, recipient_options=None, linkedin_t
         result['to_name'] = name.strip()
         body = value.get('body')
         if not isinstance(body, str) or not body.strip() or len(body) > 8000 or '\x00' in body:
-            raise ValueError('Provide the concrete Slack message, at most 8000 characters')
+            raise OwnerError('Provide the concrete Slack message, at most 8000 characters')
         result['body'] = body.strip()
         delegation(value, result)
         thread = slack_thread(result, reply_spots)
@@ -789,14 +790,14 @@ def validate(value, config, allowed_accounts, recipient_options=None, linkedin_t
         # talks to this person on WhatsApp although the task came in another way, their existing chat that the
         # service looked up in that account (whatsapp_chats marks it so): the card switches to it.
         if set(value) - {'kind', 'label', 'account_id', 'chat_id', 'to_name', 'body'}:
-            raise ValueError('Unsupported WhatsApp fields; plain text only, no media')
+            raise OwnerError('Unsupported WhatsApp fields; plain text only, no media')
         account = next((a for a in config['accounts'] if a['id'] == value.get('account_id') and a.get('service') == 'whatsapp'), None)
         if not account:
-            raise ValueError('Use one of the owner’s WhatsApp accounts')
+            raise OwnerError('Use one of the owner’s WhatsApp accounts')
         result = {'kind': 'whatsapp', 'account_id': account['id']}
         if value.get('label'):
             if value['label'] != 'Send' and not value['label'].startswith('Send '):
-                raise ValueError('WhatsApp button labels must say Send, such as Send reply')
+                raise OwnerError('WhatsApp button labels must say Send, such as Send reply')
             result['label'] = value['label']
         chat = (whatsapp_chats or {}).get(str(value.get('chat_id') or ''))
         if not chat or chat.get('account_id') != account['id']:
@@ -805,7 +806,7 @@ def validate(value, config, allowed_accounts, recipient_options=None, linkedin_t
         result.update(chat_id=str(value['chat_id']), to_name=chat.get('name') or 'WhatsApp chat', max_length=4000)
         body = value.get('body')
         if not isinstance(body, str) or not body.strip() or len(body) > 4000 or '\x00' in body:
-            raise ValueError('Provide the concrete WhatsApp message, at most 4000 characters')
+            raise OwnerError('Provide the concrete WhatsApp message, at most 4000 characters')
         result['body'] = body.strip()
         quote = whatsapp_quote(result, reply_spots)
         if quote:
@@ -817,14 +818,14 @@ def validate(value, config, allowed_accounts, recipient_options=None, linkedin_t
         # Telegram mirror only after the owner's Send on this exact text. Text only. The chat is one from this task's
         # own Telegram messages, or the person's chat in that account that the service looked up (telegram_chats).
         if set(value) - {'kind', 'label', 'account_id', 'chat_id', 'to_name', 'body'}:
-            raise ValueError('Unsupported Telegram fields; plain text only, no media')
+            raise OwnerError('Unsupported Telegram fields; plain text only, no media')
         account = next((a for a in config['accounts'] if a['id'] == value.get('account_id') and a.get('service') == 'telegram'), None)
         if not account or account.get('shared'):
-            raise ValueError('Use one of the owner’s Telegram accounts')
+            raise OwnerError('Use one of the owner’s Telegram accounts')
         result = {'kind': 'telegram', 'account_id': account['id']}
         if value.get('label'):
             if value['label'] != 'Send' and not value['label'].startswith('Send '):
-                raise ValueError('Telegram button labels must say Send, such as Send reply')
+                raise OwnerError('Telegram button labels must say Send, such as Send reply')
             result['label'] = value['label']
         chat = (telegram_chats or {}).get(str(value.get('chat_id') or ''))
         if not chat or chat.get('account_id') != account['id']:
@@ -833,17 +834,17 @@ def validate(value, config, allowed_accounts, recipient_options=None, linkedin_t
         result.update(chat_id=str(value['chat_id']), to_name=chat.get('name') or 'Telegram chat', max_length=4096)
         body = value.get('body')
         if not isinstance(body, str) or not body.strip() or len(body) > 4096 or '\x00' in body:
-            raise ValueError('Provide the concrete Telegram message, at most 4096 characters')
+            raise OwnerError('Provide the concrete Telegram message, at most 4096 characters')
         result['body'] = body.strip()
     elif value.get('kind') == 'intercom':
         # A reply in an Intercom conversation from this task's own messages, as the owner's own Intercom admin (the one
         # who signed in with Intercom for replies). It goes out only after the owner's Send on this exact text. A plain
         # comment: never a note, an assignment, a close or a tag. A token shared through a Fleet only reads.
         if set(value) - {'kind', 'label', 'account_id', 'conversation_id', 'body'}:
-            raise ValueError('Unsupported Intercom fields; a plain reply only: no notes, assigning, closing or tags')
+            raise OwnerError('Unsupported Intercom fields; a plain reply only: no notes, assigning, closing or tags')
         account = next((a for a in config['accounts'] if a['id'] == value.get('account_id') and a.get('service') == 'intercom'), None)
         if not account or account['id'] not in allowed_accounts:
-            raise ValueError('Use the Intercom account belonging to this task')
+            raise OwnerError('Use the Intercom account belonging to this task')
         if not intercom_replies_on(account):
             raise ValueError('Replies are not on for this Intercom account: the owner turns them on by signing in with Intercom '
                              'themselves (a Fleet-shared token only reads). Offer an email to the customer instead (kind email, '
@@ -852,7 +853,7 @@ def validate(value, config, allowed_accounts, recipient_options=None, linkedin_t
                   'as_name': account.get('reply_admin_name') or 'your Intercom admin'}
         if value.get('label'):
             if not re.match(r'(?:Send|Reply)\b', value['label']):
-                raise ValueError('Intercom button labels must say Send or Reply, such as Send reply')
+                raise OwnerError('Intercom button labels must say Send or Reply, such as Send reply')
             result['label'] = value['label']
         conversation = (intercom_conversations or {}).get(str(value.get('conversation_id') or ''))
         if not conversation or conversation.get('account_id') != account['id']:
@@ -860,44 +861,44 @@ def validate(value, config, allowed_accounts, recipient_options=None, linkedin_t
         result.update(conversation_id=str(value['conversation_id']), to_name=conversation.get('name') or 'Intercom conversation', max_length=10000)
         body = value.get('body')
         if not isinstance(body, str) or not body.strip() or len(body) > 10000 or '\x00' in body:
-            raise ValueError('Provide the concrete Intercom reply, at most 10000 characters')
+            raise OwnerError('Provide the concrete Intercom reply, at most 10000 characters')
         result['body'] = body.strip()
     elif value.get('kind') == 'doc_reply':
         # A reply to a comment on a Google Doc from this task's own doc events (connectors/docs.py), as the owner, posted
         # only after their Post on this exact text, and only with the separate reply consent. Word comments can't be
         # answered through Microsoft Graph: there the reply stays text for the owner to post.
         if set(value) - {'kind', 'label', 'account_id', 'comment_id', 'body'}:
-            raise ValueError('Unsupported doc reply fields; a plain reply to one comment only')
+            raise OwnerError('Unsupported doc reply fields; a plain reply to one comment only')
         account = next((a for a in config['accounts'] if a['id'] == value.get('account_id') and a.get('service') == 'docs'), None)
         if not account or account['id'] not in allowed_accounts:
-            raise ValueError('Use the Docs account belonging to this task')
+            raise OwnerError('Use the Docs account belonging to this task')
         comment = (doc_comments or {}).get(str(value.get('comment_id') or ''))
         if not comment or comment.get('account_id') != account['id']:
             raise ValueError('Reply only to a comment from this task’s own doc events (comment_id is its metadata.comment_id)')
         if not comment.get('replies'):
-            raise ValueError('Posting doc replies is not on for this account (Google needs its separate reply consent; Word '
+            raise OwnerError('Posting doc replies is not on for this account (Google needs its separate reply consent; Word '
                              'comments can’t be answered from here). Give the reply text in the body and an Open link instead.')
         result = {'kind': 'doc_reply', 'account_id': account['id'], 'comment_id': str(value['comment_id']),
                   'file_id': str(comment['file_id']), 'to_name': comment.get('name') or 'the commenter',
                   'doc_title': comment.get('doc_title') or 'the doc', 'max_length': 4000}
         if value.get('label'):
             if not re.match(r'(?:Post|Reply|Send)\b', value['label']):
-                raise ValueError('Doc reply button labels say Post, Reply or Send, such as Post reply')
+                raise OwnerError('Doc reply button labels say Post, Reply or Send, such as Post reply')
             result['label'] = value['label']
         body = value.get('body')
         if not isinstance(body, str) or not body.strip() or len(body) > 4000 or '\x00' in body:
-            raise ValueError('Provide the concrete reply, at most 4000 characters')
+            raise OwnerError('Provide the concrete reply, at most 4000 characters')
         result['body'] = body.strip()
     elif value.get('kind') == 'handoff':
         # Hand the task to a teammate in the owner's Work Fleet, through The Machine (docs/fleet.md): their
         # Machine gets it as a handoff to accept. Nothing goes by itself: the button opens the Fleet handoff
         # form with this text, for the owner to read, edit and send. The caller checks they are a teammate.
         if set(value) - {'kind', 'label', 'to_email', 'to_name', 'body'}:
-            raise ValueError('Unsupported handoff fields')
+            raise OwnerError('Unsupported handoff fields')
         result = {'kind': 'handoff'}
         if value.get('label'):
             if not value['label'].startswith('Hand off'):
-                raise ValueError('Handoff button labels say Hand off, such as Hand off to Sam')
+                raise OwnerError('Handoff button labels say Hand off, such as Hand off to Sam')
             result['label'] = value['label']
         if not isinstance(value.get('to_email'), str) or len(value['to_email']) > 254 or not re.fullmatch(r'[^\s<>@,;]+@[^\s<>@,;]+\.[^\s<>@,;]+', value['to_email']):
             raise ValueError('to_email is the teammate’s work email, as in the Fleet')
@@ -908,12 +909,12 @@ def validate(value, config, allowed_accounts, recipient_options=None, linkedin_t
         result['to_name'] = name.strip()
         body = value.get('body')
         if not isinstance(body, str) or not body.strip() or len(body.strip()) > 1000 or '\x00' in body:
-            raise ValueError('Provide the handoff message itself (what they need to know), at most 1000 characters')
+            raise OwnerError('Provide the handoff message itself (what they need to know), at most 1000 characters')
         result['body'] = body.strip()
     elif value.get('kind') == 'merge':
         result = merge_action(value, config)
     else:
-        raise ValueError('Only email drafts, LinkedIn, Slack, X, WhatsApp and Telegram messages, Fleet handoffs, local preparation and original-page links are supported; no payments or arbitrary writes')
+        raise OwnerError('Only email drafts, LinkedIn, Slack, X, WhatsApp and Telegram messages, Fleet handoffs, local preparation and original-page links are supported; no payments or arbitrary writes')
     off = abilities.refuse(config, result.get('account_id'))  # its Can do things is off: no draft through it
     if off:
         raise ValueError(off)
@@ -981,7 +982,7 @@ def revise(action, subject=None, body=None):
         result = {k: v for k, v in action.items() if k != 'revision'}
         if body is not None:
             if not isinstance(body, str) or not body.strip() or '\x00' in body or len(body.strip()) > (8000 if field == 'message' else 2000):
-                raise ValueError('The text needs some words, within the size limit')
+                raise OwnerError('The text needs some words, within the size limit')
             body = paragraphs(body).strip()
             if body != action[field]:
                 result[field] = body
@@ -989,17 +990,17 @@ def revise(action, subject=None, body=None):
         result['revision'] = hashlib.sha256(canonical(result).encode()).hexdigest()[:12]
         return result
     if action['kind'] not in ('email',) + TEXT_KINDS:
-        raise ValueError('Only email, LinkedIn, Slack, X, WhatsApp, Telegram, Intercom and doc reply drafts and final steps can be edited')
+        raise OwnerError('Only email, LinkedIn, Slack, X, WhatsApp, Telegram, Intercom and doc reply drafts and final steps can be edited')
     result = {k: v for k, v in action.items() if k != 'revision'}
     if body is not None:
         if (not isinstance(body, str) or not body.strip() or '\x00' in body
                 or text_length(action, body.strip()) > action.get('max_length', 8000 if action['kind'] in TEXT_KINDS else 12000)):
-            raise ValueError('The draft needs some text, within the size limit')
+            raise OwnerError('The draft needs some text, within the size limit')
         body = paragraphs(body)
         result['body'] = body.strip() if action['kind'] in TEXT_KINDS else closing_spaced(body)
     if subject is not None and action['kind'] not in TEXT_KINDS:
         if not isinstance(subject, str) or not subject.strip() or len(subject) > 250 or '\r' in subject or '\n' in subject or '\x00' in subject:
-            raise ValueError('The subject needs one line of text')
+            raise OwnerError('The subject needs one line of text')
         result['subject'] = subject
     result['revision'] = hashlib.sha256(canonical(result).encode()).hexdigest()[:12]
     return result
@@ -1235,12 +1236,12 @@ class EmailTransport:
         self.signatures = {}
 
     def account(self, action):
-        if action['kind']!='email':raise ValueError('Only a real owner-approved email can use the email transport')
+        if action['kind']!='email':raise OwnerError('Only a real owner-approved email can use the email transport')
         account = next(a for a in self.config['accounts'] if a['id'] == action['account_id'])
         # The mailbox address, or one of the aliases the draft offered (Gmail only; preflight checks it with Gmail again)
         if account['email'].lower() != action['from'].lower() and (outlook(account) or action['from'].lower() not in
                                                                   [a.lower() for a in action.get('from_options') or ()]):
-            raise ValueError('The sender account changed; review the draft again')
+            raise OwnerError('The sender account changed; review the draft again')
         return account
 
     def alias_check(self, action, account):
@@ -1256,7 +1257,7 @@ class EmailTransport:
         user = str(smtp.get('username') or '').strip().lower()
         if (not isinstance(entry, dict) or str(entry.get('sendAsEmail') or '').lower() != address
                 or entry.get('verificationStatus') != 'accepted' or (user and user != address)):
-            raise ValueError(i18n.t('Gmail couldn’t confirm this mailbox can send as {}. Nothing was sent.', address))
+            raise OwnerError(i18n.t('Gmail couldn’t confirm this mailbox can send as {}. Nothing was sent.', address))
 
     def env(self):
         env = os.environ.copy()
@@ -1267,28 +1268,28 @@ class EmailTransport:
     def preflight(self, action):
         account = self.account(action)
         if reads_as_reply(action) and not action.get('in_reply_to'):
-            raise ValueError(i18n.t(UNLINKED_REPLY))  # never a reply quietly sent as a new thread
+            raise OwnerError(i18n.t(UNLINKED_REPLY))  # never a reply quietly sent as a new thread
         if account.get('service') in ('outlook', 'imap'):  # Other email: through its own mail server (smtp_mail.py)
             return self.outlook_preflight(action, account) if outlook(account) else smtp_mail.preflight(self, action, account)
         if not (granted_scopes(self.config, self.credential, account) & SEND_SCOPES):
-            raise ValueError('Gmail is connected read-only. Sending permission needs to be enabled for this account; nothing was sent.')
+            raise OwnerError('Gmail is connected read-only. Sending permission needs to be enabled for this account; nothing was sent.')
         profile = self.read(self.config, account, 'gmail', 'v1', 'gmail.users.getProfile',
                             {'userId': 'me'}, 'https://www.googleapis.com/auth/gmail.readonly')
         if profile.get('emailAddress', '').lower() != account['email'].lower():
-            raise ValueError('Gmail sender identity could not be verified. Nothing was sent.')
+            raise OwnerError('Gmail sender identity could not be verified. Nothing was sent.')
         if action['from'].lower() != account['email'].lower():
             self.alias_check(action, account)
         for record in action.get('attachments', []):
             try:
                 attachment_bytes(record, self.config)
             except OSError:
-                raise ValueError(f"The attachment {record['name']} is missing. Nothing was sent.")
+                raise OwnerError(f"The attachment {record['name']} is missing. Nothing was sent.")
         if action.get('signature'):
             self.signatures.pop(action['from'].lower(), None)  # read fresh: the owner may have changed it
             try:
                 self.signature(action, account)
             except Exception:
-                raise ValueError('I could not load your Gmail signature. Nothing was sent; tap Send again.')
+                raise OwnerError('I could not load your Gmail signature. Nothing was sent; tap Send again.')
 
     def signature(self, action, account):
         if not action.get('signature'):
@@ -1321,15 +1322,15 @@ class EmailTransport:
 
     def outlook_preflight(self, action, account):
         if 'Mail.Send' not in granted_scopes(self.config, self.credential, account):
-            raise ValueError('Outlook is connected read-only. Connect it again with sending on; nothing was sent.')
+            raise OwnerError('Outlook is connected read-only. Connect it again with sending on; nothing was sent.')
         profile = self.read(self.config, account, 'gmail', 'v1', 'gmail.users.getProfile', {'userId': 'me'}, 'User.Read')
         if profile.get('emailAddress', '').lower() != action['from'].lower():
-            raise ValueError('Outlook sender identity could not be verified. Nothing was sent.')
+            raise OwnerError('Outlook sender identity could not be verified. Nothing was sent.')
         for record in action.get('attachments', []):
             try:
                 attachment_bytes(record, self.config)
             except OSError:
-                raise ValueError(f"The attachment {record['name']} is missing. Nothing was sent.")
+                raise OwnerError(f"The attachment {record['name']} is missing. Nothing was sent.")
         if action.get('signature'):
             self.signatures.pop(action['from'].lower(), None)
             self.signature(action, account)  # set or found now; none found means none added
@@ -1489,7 +1490,7 @@ class LinkedInTransport:
 
     def preflight(self, action):
         if action['kind'] != 'linkedin':
-            raise ValueError('Only an owner-approved LinkedIn message can use the LinkedIn transport')
+            raise OwnerError('Only an owner-approved LinkedIn message can use the LinkedIn transport')
         result = self.run(action, ['send', *self.target(action), '--text', action['body'], '--json'])
         if result.returncode:
             err = result.stderr.lower()
@@ -1499,9 +1500,9 @@ class LinkedInTransport:
         try:
             name = json.loads(result.stdout)['preview']['name']
         except (ValueError, KeyError, TypeError):
-            raise ValueError('I couldn’t check the LinkedIn recipient. Nothing was sent.') from None
+            raise OwnerError('I couldn’t check the LinkedIn recipient. Nothing was sent.') from None
         if action.get('profile') and ' '.join(name.lower().split()) != ' '.join(action['to_name'].lower().split()):
-            raise ValueError(f'That LinkedIn profile belongs to {name}, not {action["to_name"]}. Nothing was sent.')
+            raise OwnerError(f'That LinkedIn profile belongs to {name}, not {action["to_name"]}. Nothing was sent.')
 
     def send(self, action, job):
         try:
@@ -1560,7 +1561,7 @@ class XTransport:
 
     def preflight(self, action):
         if action['kind'] != 'x':
-            raise ValueError('Only an owner-approved X reply or message can use the X transport')
+            raise OwnerError('Only an owner-approved X reply or message can use the X transport')
         result = self.run(action, [*self.args(action), '--json'])
         if result.returncode:
             err = result.stderr.lower()
@@ -1578,7 +1579,7 @@ class XTransport:
         except (ValueError, KeyError, TypeError):
             ok = False
         if not ok:
-            raise ValueError('I couldn’t check the X ' + ('post' if action.get('reply_to') else 'conversation') + '. Nothing was sent.')
+            raise OwnerError('I couldn’t check the X ' + ('post' if action.get('reply_to') else 'conversation') + '. Nothing was sent.')
 
     def send(self, action, job):
         try:
@@ -1633,20 +1634,20 @@ class WhatsAppTransport:
         except (subprocess.TimeoutExpired, ValueError):
             data = {}
         if not isinstance(data, dict) or data.get('success') is not True or not isinstance(data.get('data'), dict):
-            raise ValueError('I couldn’t reach WhatsApp on this computer. Nothing was sent; tap Send again.')
+            raise OwnerError('I couldn’t reach WhatsApp on this computer. Nothing was sent; tap Send again.')
         return data['data']
 
     def preflight(self, action):
         if action['kind'] != 'whatsapp':
-            raise ValueError('Only an owner-approved WhatsApp message can use the WhatsApp transport')
+            raise OwnerError('Only an owner-approved WhatsApp message can use the WhatsApp transport')
         status = self.read(action, ['auth', 'status'])
         linked = status.get('linked_jid')
         if (status.get('authenticated') is not True or not isinstance(linked, str)
                 or hashlib.sha256(linked.encode()).hexdigest() != self.account(action).get('identity_sha256')):
-            raise ValueError('WhatsApp is signed out, or linked to another number. Nothing was sent.')
+            raise OwnerError('WhatsApp is signed out, or linked to another number. Nothing was sent.')
         rows = self.read(action, ['messages', 'list', '--chat', action['chat_id'], '--limit', '50']).get('messages')
         if not rows:
-            raise ValueError('I couldn’t find that WhatsApp chat. Nothing was sent.')
+            raise OwnerError('I couldn’t find that WhatsApp chat. Nothing was sent.')
         action['proof'] = {'whatsapp_before_ids': [r['MsgID'] for r in rows if r.get('MsgID')]}
 
     def send(self, action, job):
@@ -1723,21 +1724,21 @@ class TelegramTransport:
         try:
             return telegram_store, telegram_store.connect(store, readonly=readonly)
         except Exception:
-            raise ValueError('I couldn’t reach Telegram on this computer. Nothing was sent; tap Send again.') from None
+            raise OwnerError('I couldn’t reach Telegram on this computer. Nothing was sent; tap Send again.') from None
 
     def preflight(self, action):
         if action['kind'] != 'telegram':
-            raise ValueError('Only an owner-approved Telegram message can use the Telegram transport')
+            raise OwnerError('Only an owner-approved Telegram message can use the Telegram transport')
         ts, db = self.open(action)
         with contextlib.closing(db):
             state = ts.get_state(db)
             if state.get('error') == 'app_blocked':
-                raise ValueError('Telegram stopped accepting this Machine’s app ID. Nothing was sent.')
+                raise OwnerError('Telegram stopped accepting this Machine’s app ID. Nothing was sent.')
             if state.get('error') or state.get('identity') != self.account(action).get('identity_sha256'):
-                raise ValueError('Telegram is logged out, or logged in to another account. Nothing was sent.')
+                raise OwnerError('Telegram is logged out, or logged in to another account. Nothing was sent.')
             chat = db.execute('SELECT skipped FROM chats WHERE id=?', (action['chat_id'],)).fetchone()
         if not chat or chat['skipped']:
-            raise ValueError('I couldn’t find that Telegram chat. Nothing was sent.')
+            raise OwnerError('I couldn’t find that Telegram chat. Nothing was sent.')
 
     def send(self, action, job):
         ts, db = self.open(action, readonly=False)
@@ -1788,9 +1789,9 @@ class IntercomTransport:
     def replier(self, action):
         account = next((a for a in self.config['accounts'] if a['id'] == action['account_id'] and a.get('service') == 'intercom'), None)
         if not account:
-            raise ValueError('That Intercom account is no longer connected. Nothing was sent.')
+            raise OwnerError('That Intercom account is no longer connected. Nothing was sent.')
         if str(action.get('admin_id') or '') != str(account.get('reply_admin_id') or ''):
-            raise ValueError('This reply would go as someone else in Intercom. Nothing was sent.')
+            raise OwnerError('This reply would go as someone else in Intercom. Nothing was sent.')
         try:
             return self.connector.Replier(self.config, account, self.helpers)
         except self.helpers.SourceError as error:
@@ -1798,7 +1799,7 @@ class IntercomTransport:
 
     def preflight(self, action):
         if action['kind'] != 'intercom':
-            raise ValueError('Only an owner-approved Intercom reply can use the Intercom transport')
+            raise OwnerError('Only an owner-approved Intercom reply can use the Intercom transport')
         replier = self.replier(action)
         try:
             replier.me()
@@ -1963,20 +1964,20 @@ class SlackTransport:
         reply = (self.call(action, 'users.info', {'user': action['user_id']}) if action.get('user_id')
                  else self.call(action, 'users.lookupByEmail', {'email': action['to_email']}))
         if not reply.get('ok'):
-            raise ValueError('I couldn’t find ' + action['to_name'] + ' in Slack. Nothing was sent.')
+            raise OwnerError('I couldn’t find ' + action['to_name'] + ' in Slack. Nothing was sent.')
         user = reply['user']
         if user.get('deleted') or user.get('is_bot'):
             raise ValueError(action['to_name'] + '’s Slack account is deactivated or a bot. Nothing was sent.')
         found = user.get('real_name') or user.get('name') or user.get('id')
         if not user.get('id') or (action.get('user_id') and user['id'] != action['user_id']):  # the identity, never just a name
-            raise ValueError(f"That Slack user is {found}, not {action['to_name']}. Nothing was sent.")
+            raise OwnerError(f"That Slack user is {found}, not {action['to_name']}. Nothing was sent.")
         if not same_person(action['to_name'], user, graph_names_of(self.config.get('database'), user)):
-            raise ValueError(f"That Slack user is {found}, not {action['to_name']}. Nothing was sent.")
+            raise OwnerError(f"That Slack user is {found}, not {action['to_name']}. Nothing was sent.")
         return user['id']
 
     def preflight(self, action):
         if action['kind'] != 'slack':
-            raise ValueError('Only an owner-approved Slack message can use the Slack transport')
+            raise OwnerError('Only an owner-approved Slack message can use the Slack transport')
         self.person(action)
 
     def channel(self, action, user_id):
@@ -2072,20 +2073,20 @@ def merge_action(value, config):
     if set(value) - {'kind', 'label', 'clone', 'summary', 'bug'}:
         raise ValueError('A merge needs only clone (the fixed copy), summary (what the fix changes) and bug (why it is a bug)')
     if value.get('label') and not value['label'].startswith('Merge'):
-        raise ValueError('Merge button labels start with Merge, such as Merge fix')
+        raise OwnerError('Merge button labels start with Merge, such as Merge fix')
     summary = value.get('summary')
     if not isinstance(summary, str) or not 10 <= len(summary.strip()) <= 500 or '\x00' in summary:
         raise ValueError('summary says in plain words what the fix changes, at most 500 characters')
     clone = Path(str(value.get('clone') or '')).expanduser().resolve()
     if not clone.is_relative_to(fix_dir(config)) or clone == fix_dir(config) or not (clone / '.git').exists():
-        raise ValueError(f'Fix a clone of The Machine under {fix_dir(config)}/<job id>, made with git clone, not the running code')
+        raise OwnerError(f'Fix a clone of The Machine under {fix_dir(config)}/<job id>, made with git clone, not the running code')
     app = app_dir(config)
     try:
         base, head = git(app, 'rev-parse', 'HEAD').strip(), git(clone, 'rev-parse', 'HEAD').strip()
         if git(clone, 'status', '--porcelain'):
-            raise ValueError('Commit the fix in the clone first: it has uncommitted changes')
+            raise OwnerError('Commit the fix in the clone first: it has uncommitted changes')
         if subprocess.run(['git', '-C', str(clone), 'merge-base', '--is-ancestor', base, head], capture_output=True, timeout=30).returncode:
-            raise ValueError('The fix is not on top of the running code: git pull in the clone, test again and commit')
+            raise OwnerError('The fix is not on top of the running code: git pull in the clone, test again and commit')
         commits = int(git(clone, 'rev-list', '--count', f'{base}..{head}').strip())
         files = git(clone, 'diff', '--name-only', base, head).split()
         stat = git(clone, 'diff', '--stat', base, head).rstrip()
@@ -2094,7 +2095,7 @@ def merge_action(value, config):
     except (OSError, subprocess.TimeoutExpired):
         raise ValueError('git is not available to check the fix') from None
     if not 1 <= commits <= 20 or not files:
-        raise ValueError('Commit the fix in the clone: there is nothing to merge yet')
+        raise OwnerError('Commit the fix in the clone: there is nothing to merge yet')
     result = {'kind': 'merge', 'label': value.get('label') or 'Merge fix', 'clone': str(clone), 'summary': ' '.join(summary.split()), 'bug': bug_gate.evidence(value, clone, base, app),
               'base': base, 'head': head, 'commits': commits, 'files': files[:200], 'stat': stat[-4000:],
               'diff': diff if len(diff) <= MAX_DIFF else diff[:MAX_DIFF] + '\n… preview shortened; download the complete diff.',
@@ -2144,10 +2145,10 @@ def merge_preview(action):
 
 def full_merge_diff(action):
     """Read the immutable proposal, independent of the clone's current branch/worktree."""
-    if action.get('kind')!='merge':raise ValueError('This is not a merge proposal')
+    if action.get('kind')!='merge':raise OwnerError('This is not a merge proposal')
     diff=git(Path(action['clone']),'diff',action['base'],action['head'])
     checksum=action.get('diff_sha256')
-    if checksum and hashlib.sha256(diff.encode()).hexdigest()!=checksum:raise ValueError('The saved diff is no longer available')
+    if checksum and hashlib.sha256(diff.encode()).hexdigest()!=checksum:raise OwnerError('The saved diff is no longer available')
     return diff
 
 
@@ -2175,26 +2176,26 @@ class MergeTransport:
             tests = subprocess.run(test_command(self.config, Path(action['clone'])), cwd=action['clone'], env=env, capture_output=True, text=True,
                                    timeout=int(self.config.get('self_test_seconds', 1200)))
         except (OSError, subprocess.TimeoutExpired):
-            raise ValueError('The tests did not finish on this fix. Nothing was merged.') from None
+            raise OwnerError('The tests did not finish on this fix. Nothing was merged.') from None
         if tests.returncode:
-            raise ValueError('The tests fail on this fix. Nothing was merged; tap Change to have it fixed.')
+            raise OwnerError('The tests fail on this fix. Nothing was merged; tap Change to have it fixed.')
         if action.get('auto'):  # merging by itself: the new test proves the fix, then a second check that it only fixes a bug (last: it costs tokens)
             action['proof']=self.proves(action, env);action['bug_check']=bug_gate.second_check(action, self.judge or bug_gate.ask(self.config))
         self.check(action)  # tests may take minutes; never activate edits made meanwhile
 
     def check(self, action):
         if action['kind'] != 'merge':
-            raise ValueError('Only an owner-approved fix can use the merge transport')
+            raise OwnerError('Only an owner-approved fix can use the merge transport')
         app, clone = app_dir(self.config), Path(action['clone'])
         try:
             if git(app, 'rev-parse', 'HEAD').strip() != action['base']:
-                raise ValueError('The Machine’s code changed since this fix was made. Nothing was merged; tap Change and ask to redo it on the current code.')
+                raise OwnerError('The Machine’s code changed since this fix was made. Nothing was merged; tap Change and ask to redo it on the current code.')
             if git(app, 'status', '--porcelain', '--untracked-files=no'):
-                raise ValueError('The Machine’s code has uncommitted changes here. Nothing was merged.')
+                raise OwnerError('The Machine’s code has uncommitted changes here. Nothing was merged.')
             if not clone.is_dir() or git(clone, 'rev-parse', 'HEAD').strip() != action['head'] or git(clone, 'status', '--porcelain'):
-                raise ValueError('The fix changed after you reviewed it. Nothing was merged; tap Change to get it again.')
+                raise OwnerError('The fix changed after you reviewed it. Nothing was merged; tap Change to get it again.')
         except (OSError, subprocess.TimeoutExpired):
-            raise ValueError('I could not check the fix. Nothing was merged.') from None
+            raise OwnerError('I could not check the fix. Nothing was merged.') from None
 
     @contextmanager
     def custody(self):
@@ -2202,7 +2203,7 @@ class MergeTransport:
         lock=Path(git(app,'rev-parse','--absolute-git-dir').strip())/'machine-deploy.lock'
         with lock.open('a') as handle:
             try:portable.lock(handle,blocking=False)
-            except BlockingIOError:raise ValueError('Another merge or undo is running. Try this step again.') from None
+            except BlockingIOError:raise OwnerError('Another merge or undo is running. Try this step again.') from None
             try:yield
             finally:portable.unlock(handle)
 
@@ -2228,7 +2229,7 @@ print('MACHINE_PROOF='+json.dumps({'ran':result.testsRun,'failed':result.failed,
 '''
         def run_tests(root):
             run=subprocess.run(['python3','-c',runner,*tests],cwd=root,env=env,capture_output=True,text=True,timeout=int(self.config.get('self_test_seconds',1200)))
-            if run.returncode:raise ValueError('The regression test runner did not finish')
+            if run.returncode:raise OwnerError('The regression test runner did not finish')
             return json.loads(run.stdout.rsplit('MACHINE_PROOF=',1)[1].splitlines()[0])
         with tempfile.TemporaryDirectory(prefix='machine-proof-') as tmp:
             try:
@@ -2238,16 +2239,16 @@ print('MACHINE_PROOF='+json.dumps({'ran':result.testsRun,'failed':result.failed,
                 before=run_tests(tmp)
                 after=run_tests(action['clone'])
             except (ValueError, IndexError, OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
-                raise ValueError('I could not check that the new test catches the bug. Not merged by itself.') from None
+                raise OwnerError('I could not check that the new test catches the bug. Not merged by itself.') from None
         if not before['failed']:
-            raise ValueError('The new test also passes without the fix, so it doesn’t prove the fix. Not merged by itself.')
+            raise OwnerError('The new test also passes without the fix, so it doesn’t prove the fix. Not merged by itself.')
         expected={(f['file'],f['function']) for f in action.get('fault_frames',[]) if f.get('file') and f.get('function')}
         def exercises_fault(failure):
             frames=[f for f in failure['frames'] if not is_test(f['file'])]
             return not failure['collection'] and bool(frames) and (not action.get('fault_kind') or failure['kind']==action['fault_kind']) and (
                 not expected or bool(expected & {(f['file'],f['function']) for f in frames}))
         if after['failed'] or not after['ran'] or any(f['collection'] for f in before['failed']) or not any(exercises_fault(f) for f in before['failed']):
-            raise ValueError('The test did not exercise the recorded bug on the old code and pass on the fix. Not merged by itself.')
+            raise OwnerError('The test did not exercise the recorded bug on the old code and pass on the fix. Not merged by itself.')
         return {'base':action['base'],'head':action['head'],'ran':after['ran'],'failures':before['failed']}
 
     def revert(self, action):
@@ -2270,15 +2271,15 @@ print('MACHINE_PROOF='+json.dumps({'ran':result.testsRun,'failed':result.failed,
         name = ['-c', 'user.name=The Machine', '-c', 'user.email=the-machine@localhost']
         try:
             if git(app, 'status', '--porcelain', '--untracked-files=no'):
-                raise ValueError('The Machine’s code has uncommitted changes here. Nothing was undone.')
+                raise OwnerError('The Machine’s code has uncommitted changes here. Nothing was undone.')
             if self.merged(action) is not True:
-                raise ValueError('The fix is no longer in the running code. Nothing to undo.')
+                raise OwnerError('The fix is no longer in the running code. Nothing to undo.')
             before = git(app, 'rev-parse', 'HEAD').strip()
             try:
                 git(app, *name, 'revert', '--no-edit', '--no-commit', f"{action['base']}..{action['head']}", timeout=120)
             except ValueError:
                 subprocess.run(['git', '-C', str(app), 'revert', '--abort'], capture_output=True, timeout=60)
-                raise ValueError('Later changes touch the same lines, so I could not undo it by itself. Nothing was undone.') from None
+                raise OwnerError('Later changes touch the same lines, so I could not undo it by itself. Nothing was undone.') from None
             git(app, *name, 'commit', '--quiet', '-m', 'Undo: ' + action['summary'][:200]+'\n\nMachine-Undo: '+action['head'], timeout=60)
         except (OSError, subprocess.TimeoutExpired):
             raise ValueError('git did not finish undoing it. Check The Machine’s code.') from None
@@ -2360,24 +2361,24 @@ class DocReplyTransport:
     def replier(self, action):
         account = next((a for a in self.config['accounts'] if a['id'] == action['account_id'] and a.get('service') == 'docs'), None)
         if not account:
-            raise ValueError('That Docs account is no longer connected. Nothing was posted.')
+            raise OwnerError('That Docs account is no longer connected. Nothing was posted.')
         if not self.connector.replies_on(self.config, account, self.helpers):
-            raise ValueError('Posting doc replies needs the reply permission for this account. Nothing was posted.')
+            raise OwnerError('Posting doc replies needs the reply permission for this account. Nothing was posted.')
         try:
             return self.connector.Replier(self.config, account, self.helpers)
         except self.helpers.SourceError:
-            raise ValueError('Doc replies are off for this account. Nothing was posted.') from None
+            raise OwnerError('Doc replies are off for this account. Nothing was posted.') from None
 
     def preflight(self, action):
         if action['kind'] != 'doc_reply':
-            raise ValueError('Only an owner-approved doc reply can use the Docs transport')
+            raise OwnerError('Only an owner-approved doc reply can use the Docs transport')
         replier = self.replier(action)
         try:
             found = replier.comment(action['file_id'], action['comment_id'])
         except self.helpers.SourceError:
-            raise ValueError('I couldn’t reach the doc. Nothing was posted; tap Post again.') from None
+            raise OwnerError('I couldn’t reach the doc. Nothing was posted; tap Post again.') from None
         if not isinstance(found, dict) or found.get('deleted'):
-            raise ValueError('That comment is gone from the doc. Nothing was posted.')
+            raise OwnerError('That comment is gone from the doc. Nothing was posted.')
         action['proof'] = {'doc_before_ids': [part for part, _, _ in replier.mine(found)]}
 
     def find(self, replier, action, comment):
@@ -2418,35 +2419,35 @@ class ActionTransport:
     def pick(self, action):
         if action['kind'] == 'doc_write':
             if not self.doc_writes:
-                raise ValueError('Doc writes aren’t set up. Nothing was changed.')
+                raise OwnerError('Doc writes aren’t set up. Nothing was changed.')
             return self.doc_writes
         if action['kind'] == 'calendar':
             if not self.calendar:
-                raise ValueError('Calendar changes aren’t set up. Nothing was changed.')
+                raise OwnerError('Calendar changes aren’t set up. Nothing was changed.')
             return self.calendar
         if action['kind'] == 'merge':
             if not self.merge:
-                raise ValueError('Merging fixes isn’t set up. Nothing was merged.')
+                raise OwnerError('Merging fixes isn’t set up. Nothing was merged.')
             return self.merge
         if action['kind'] == 'slack':
             if not self.slack:
-                raise ValueError('Slack sending isn’t set up. Nothing was sent.')
+                raise OwnerError('Slack sending isn’t set up. Nothing was sent.')
             return self.slack
         if action['kind'] == 'x':
             if not self.x:
-                raise ValueError('X sending isn’t set up. Nothing was sent.')
+                raise OwnerError('X sending isn’t set up. Nothing was sent.')
             return self.x
         if action['kind'] in ('whatsapp', 'telegram', 'signal'):
             if not getattr(self, action['kind']):
-                raise ValueError({'whatsapp': 'WhatsApp', 'telegram': 'Telegram', 'signal': 'Signal'}[action['kind']] + ' sending isn’t set up. Nothing was sent.')
+                raise OwnerError({'whatsapp': 'WhatsApp', 'telegram': 'Telegram', 'signal': 'Signal'}[action['kind']] + ' sending isn’t set up. Nothing was sent.')
             return getattr(self, action['kind'])
         if action['kind'] == 'intercom':
             if not self.intercom:
-                raise ValueError('Intercom replies aren’t set up. Nothing was sent.')
+                raise OwnerError('Intercom replies aren’t set up. Nothing was sent.')
             return self.intercom
         if action['kind'] == 'doc_reply':
             if not self.docs:
-                raise ValueError('Doc replies aren’t set up. Nothing was posted.')
+                raise OwnerError('Doc replies aren’t set up. Nothing was posted.')
             return self.docs
         return self.linkedin if action['kind'] == 'linkedin' else self.email
 

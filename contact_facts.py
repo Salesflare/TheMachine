@@ -29,6 +29,7 @@ import re
 import fact_links
 import graph
 import learning_loop
+from machine.owner_error import OwnerError
 
 KIND = 'contact'           # learning_changes.kind of a move
 MOVED = 'record:'          # facts.merged_into of a moved fact, then the record's id
@@ -165,7 +166,7 @@ def undo(db, row):
     before = json.loads(row['before'])
     fact = db.execute('SELECT merged_into FROM facts WHERE id=?', (int(row['target']),)).fetchone()
     if not fact or fact['merged_into'] != MOVED + before['node'] or _edits(db, before['ids']) != before['edits_after']:
-        raise ValueError('That changed since. Change it where it is now')
+        raise OwnerError('That changed since. Change it where it is now')
     graph.edits_restore(db, {'kind': 'person', 'ids': before['ids'], 'rows': before['edits']})
     if before.get('other'):
         graph.unmerge(db, before['node'], before['other'], before['merged_at'])

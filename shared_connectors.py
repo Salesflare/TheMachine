@@ -35,6 +35,7 @@ from pathlib import Path
 
 import fleet_trust as ft
 import network_crypto as nc
+from machine.owner_error import OwnerError
 
 LOG = logging.getLogger('personal-assistant')
 # name: the field the Fleet tab shows. lapses: a signed-in Stripe account's token is an access token for an hour (its
@@ -216,25 +217,25 @@ class SharedConnectors:
         """Shares this Machine's connected account with one Work Fleet: every confirmed admin, and the members ticked."""
         account = next((a for a in self.config.get('accounts', []) if a.get('id') == account_id), None)
         if not account or account.get('service') not in SHAREABLE or account.get('retired'):
-            raise ValueError('Only a connected Intercom or Stripe account can be shared')
+            raise OwnerError('Only a connected Intercom or Stripe account can be shared')
         if not shareable(account):
-            raise ValueError('This connection can’t be shared: connect it for the team first')
+            raise OwnerError('This connection can’t be shared: connect it for the team first')
         if isinstance(account.get('shared'), dict) and not account['shared'].get('origin'):
-            raise ValueError('This account is shared with you; only an admin of that Fleet can share it')
+            raise OwnerError('This account is shared with you; only an admin of that Fleet can share it')
         group = self._group(fleet)
         me = group and self._me_in(group)
         if not group or group.get('kind') != 'work' or not me:
-            raise ValueError('Share with one of your Work Fleets')
+            raise OwnerError('Share with one of your Work Fleets')
         trusted, _ = self.trust(group)
         if me['member_id'] not in trusted:
-            raise ValueError('Only a confirmed admin of the Fleet can share a connector')
+            raise OwnerError('Only a confirmed admin of the Fleet can share a connector')
         service = account['service']
         if self._held(fleet, service) and self._held(fleet, service) is not account:
-            raise ValueError(f'{group.get("name") or "That Fleet"} already shares {SHAREABLE[service]["label"]}')
+            raise OwnerError(f'{group.get("name") or "That Fleet"} already shares {SHAREABLE[service]["label"]}')
         identity = account.get(SHAREABLE[service]['identity'])
         token = self._sendable(account, FRESH_LEFT)[0]
         if not identity or not token:
-            raise ValueError('Connect it first, so its account is known')
+            raise OwnerError('Connect it first, so its account is known')
         chosen = {str(m) for m in members or ()}
         approved = {}
         for m in group.get('members', []):
@@ -277,7 +278,7 @@ class SharedConnectors:
         group = self._group(fleet)
         me = group and self._me_in(group)
         if not group or not me or me['member_id'] not in self.trust(group)[0]:
-            raise ValueError('Only a confirmed admin of the Fleet can stop sharing')
+            raise OwnerError('Only a confirmed admin of the Fleet can stop sharing')
         self.relay.call('POST', '/shared', {'op': 'off', 'fleet': fleet, 'service': service}, timeout=30)
         held = self._held(fleet, service)
         if held and held['shared'].get('origin'):
@@ -291,9 +292,9 @@ class SharedConnectors:
         """The owner on a prompt: yes or no. Share with someone, confirm an admin or the next owner, or a key change."""
         prompt = next((p for p in self._prompts() if p['id'] == prompt_id), None)
         if not prompt:
-            raise ValueError('That was answered already')
+            raise OwnerError('That was answered already')
         if choice not in ('yes', 'no'):
-            raise ValueError('Choose yes or no')
+            raise OwnerError('Choose yes or no')
         group = self._group(prompt['fleet'])
         me = group and self._me_in(group)
         member = group and next((m for m in group.get('members', []) if m.get('member_id') == prompt['member']), None)
@@ -310,10 +311,10 @@ class SharedConnectors:
             return {'ok': True, 'done': False}
         keys = ft.keys_of(member)
         if not keys or keys['fp'] != prompt.get('fp'):
-            raise ValueError('Their Machine has new keys since this was asked; it asks again')
+            raise OwnerError('Their Machine has new keys since this was asked; it asks again')
         trusted, _ = self.trust(group)
         if me['member_id'] not in trusted:
-            raise ValueError('Only a confirmed admin can do that')
+            raise OwnerError('Only a confirmed admin can do that')
         if prompt['kind'] == 'optout':  # they asked to stop sharing their Work with the team (shared_graph.py)
             return self.optout_ok(prompt, group, me, member, keys)
         if prompt['kind'] in ('admin', 'successor', 'member'):  # member: their Machine gets the team's Graph (shared_graph.py)
@@ -342,7 +343,7 @@ class SharedConnectors:
         if not asks:
             return {'ok': True, 'done': 0, 'names': []}
         if not me or me['member_id'] not in self.trust(group)[0]:
-            raise ValueError('Only a confirmed admin can do that')
+            raise OwnerError('Only a confirmed admin can do that')
         members = {m.get('member_id'): m for m in group.get('members', [])}
         names, gone = [], set()
         for prompt in asks:
@@ -401,21 +402,21 @@ class SharedConnectors:
         workspace, saved privately, and sent under a new grant to everyone still approved."""
         token = str(token or '').strip()
         if not TOKEN.fullmatch(token):
-            raise ValueError('Paste the new access token')
+            raise OwnerError('Paste the new access token')
         group = self._group(fleet)
         me = group and self._me_in(group)
         held = self._held(fleet, service)
         if not group or not me or me['member_id'] not in self.trust(group)[0]:
-            raise ValueError('Only a confirmed admin of the Fleet can replace the token')
+            raise OwnerError('Only a confirmed admin of the Fleet can replace the token')
         if not held:
-            raise ValueError('This Machine does not hold that connector')
+            raise OwnerError('This Machine does not hold that connector')
         if not self.connector_profile:
-            raise ValueError('This Machine cannot check a token')
+            raise OwnerError('This Machine cannot check a token')
         probe = {k: held.get(k) for k in ('id', 'service', 'transport', 'region', *SHAREABLE[service]['fields'])}
         self.connector_profile(service, probe, token)  # the same workspace, or refused (account_identity_mismatch)
         path = (self.config.get('credentials') or {}).get(held.get('credential') or '')
         if not path:
-            raise ValueError('That account has no credential file')
+            raise OwnerError('That account has no credential file')
         _write_private(Path(path).expanduser(), token + '\n')
         grant_id, stamp = secrets.token_hex(16), _now()
         identity = held.get(SHAREABLE[service]['identity'])

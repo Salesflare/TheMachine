@@ -29,6 +29,7 @@ from pathlib import Path
 import moving
 import portable
 from machine.export import staged as staged_import
+from machine.owner_error import OwnerError
 
 LOG = logging.getLogger('personal-assistant')
 
@@ -75,7 +76,7 @@ class ExportApp:
 
     def _export_root(self):
         if not getattr(self, 'config_path', None):
-            raise ValueError('Export needs a Machine with its own data folder.')
+            raise OwnerError('Export needs a Machine with its own data folder.')
         data = Path(self.config_path).expanduser().parent
         root = data.parent / f'.{data.name}.export'
         root.mkdir(mode=0o700, parents=True, exist_ok=True)
@@ -100,7 +101,7 @@ class ExportApp:
     @staticmethod
     def _owner_only(owner_dashboard):
         if not owner_dashboard:
-            raise ValueError('Export and import are only in your own dashboard.')
+            raise OwnerError('Export and import are only in your own dashboard.')
 
     # --- export ----------------------------------------------------------------------------------------------------
 
@@ -130,13 +131,13 @@ class ExportApp:
         """Export everything: a passphrase the owner picks (or none: an export code is made), keys only with one."""
         self._owner_only(owner_dashboard)
         if self._hosted():
-            raise ValueError('On a hosted Machine, export everything from your account page.')
+            raise OwnerError('On a hosted Machine, export everything from your account page.')
         passphrase = args.get('passphrase') or None
         keys = bool(args.get('keys'))
         if passphrase is not None and (not isinstance(passphrase, str) or len(passphrase) < moving.MIN_PASSPHRASE):
-            raise ValueError(f'Pick a passphrase of at least {moving.MIN_PASSPHRASE} characters.')
+            raise OwnerError(f'Pick a passphrase of at least {moving.MIN_PASSPHRASE} characters.')
         if keys and not passphrase:
-            raise ValueError('Keys and tokens need a passphrase you pick.')
+            raise OwnerError('Keys and tokens need a passphrase you pick.')
         with self._export_lock():
             job = self._export_job()
             if job.get('state') == 'running':
@@ -214,7 +215,7 @@ class ExportApp:
         self._owner_only(owner_dashboard)
         with self._export_lock():
             if self._export_job().get('state') == 'running':
-                raise ValueError('The export is still running. Delete it once it’s done.')
+                raise OwnerError('The export is still running. Delete it once it’s done.')
             self._export_shred()
             self._export_job().clear()
         return self.export_status()
@@ -266,13 +267,13 @@ class ExportApp:
         try:
             self._owner_only(dashboard)
             if size <= 0:
-                raise ValueError('Pick an export file.')
+                raise OwnerError('Pick an export file.')
             if self._import_job().get('state') == 'checking':
-                raise ValueError('An export is being checked. Wait for it, or discard it.')
+                raise OwnerError('An export is being checked. Wait for it, or discard it.')
             target = self._upload_path()
             free = shutil.disk_usage(target.parent).free
             if free < size * UPLOAD_ROOM + UPLOAD_SPARE:
-                raise ValueError(f'Not enough free disk space for this export. It needs about {human(size * UPLOAD_ROOM + UPLOAD_SPARE)} free.')
+                raise OwnerError(f'Not enough free disk space for this export. It needs about {human(size * UPLOAD_ROOM + UPLOAD_SPARE)} free.')
         except ValueError as error:
             handler.close_connection = True  # the body is not read
             handler.output(400, {'error': str(error)})
@@ -311,13 +312,13 @@ class ExportApp:
         self._owner_only(owner_dashboard)
         passphrase = args.get('passphrase')
         if not isinstance(passphrase, str) or not passphrase.strip():
-            raise ValueError('Type the passphrase or export code of this export.')
+            raise OwnerError('Type the passphrase or export code of this export.')
         with self._export_lock():
             job = self._import_job()
             if job.get('state') == 'checking':
                 return self.export_status()
             if not self._upload_path().is_file():
-                raise ValueError('Upload the export file again.')
+                raise OwnerError('Upload the export file again.')
             job.update(state='checking', error='')
             threading.Thread(target=self._import_check, args=(passphrase.strip(), job), name='import-check', daemon=True).start()
         return self.export_status()
@@ -364,7 +365,7 @@ class ExportApp:
         self._owner_only(owner_dashboard)
         with self._export_lock():
             if self._import_job().get('state') == 'checking':
-                raise ValueError('The export is being checked. Discard it once that’s done.')
+                raise OwnerError('The export is being checked. Discard it once that’s done.')
             moving.discard_staged(self.config_path)
             staged_import.forget(self.config_path)
             portable.shred(self._upload_path())
@@ -378,7 +379,7 @@ class ExportApp:
         self._owner_only(owner_dashboard)
         hosted = self._hosted()
         if not hosted and not staged_import.can_restart():
-            raise ValueError('Run the commands below to finish the import.')
+            raise OwnerError('Run the commands below to finish the import.')
         with self._export_lock():
             try:
                 staged_import.confirm(self.config_path)
@@ -386,6 +387,6 @@ class ExportApp:
                 raise ValueError(str(error)) from None
             if not hosted and not staged_import.restart(3):
                 staged_import.unconfirm(self.config_path)
-                raise ValueError('The Machine couldn’t restart itself. Run the commands below to finish the import.')
+                raise OwnerError('The Machine couldn’t restart itself. Run the commands below to finish the import.')
         LOG.info('import confirmed hosted=%s', hosted)
         return {**self.export_status(), 'restarting': not hosted}

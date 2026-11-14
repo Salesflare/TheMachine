@@ -32,6 +32,7 @@ from pathlib import Path
 import file_text
 import mail_attachments
 import message_seal
+from machine.owner_error import OwnerError
 
 IMAGE_BYTES = 5 * 1024 * 1024
 FILE_BYTES = 10 * 1024 * 1024
@@ -127,22 +128,22 @@ def save(db, config, suggestion_id, name, data_b64, stamp):
         raise ValueError('Unknown suggestion')
     name = plain_name(name)
     if not name or not isinstance(data_b64, str):
-        raise ValueError('That file has no name')
+        raise OwnerError('That file has no name')
     if len(data_b64) > REQUEST_BYTES:
-        raise ValueError(f'That file is too big. Files can be up to {human(FILE_BYTES)}.')
+        raise OwnerError(f'That file is too big. Files can be up to {human(FILE_BYTES)}.')
     try:
         data = base64.b64decode(data_b64, validate=True)
     except (binascii.Error, ValueError):
-        raise ValueError('That file didn’t upload. Try again.') from None
+        raise OwnerError('That file didn’t upload. Try again.') from None
     if not data:
-        raise ValueError('That file is empty')
+        raise OwnerError('That file is empty')
     mime = kind(name, data)
     if not mime:
-        raise ValueError('I can’t read that type of file. Add an image, a PDF, a text or an Office file.')
+        raise OwnerError('I can’t read that type of file. Add an image, a PDF, a text or an Office file.')
     if (why := too_big(mime, len(data))):
         raise ValueError(why)
     if db.execute('SELECT count(*) FROM chat_files WHERE suggestion_id=? AND decision_id IS NULL', (suggestion_id,)).fetchone()[0] >= MAX_FILES * (1 if draft else 4):
-        raise ValueError('Too many files waiting. Send or remove some first.')
+        raise OwnerError('Too many files waiting. Send or remove some first.')
     root = folder(config)
     root.mkdir(parents=True, exist_ok=True, mode=0o700)
     file_id = 'cf_' + secrets.token_hex(10)
@@ -162,17 +163,17 @@ def check(db, suggestion_id, ids, decision_id=None):
     if not ids:
         return []
     if not isinstance(ids, list) or len(ids) > MAX_FILES or len(set(map(str, ids))) != len(ids):
-        raise ValueError(f'A message can carry up to {MAX_FILES} files')
+        raise OwnerError(f'A message can carry up to {MAX_FILES} files')
     rows = []
     for file_id in ids:
         row = db.execute('SELECT * FROM chat_files WHERE id=? AND suggestion_id=? AND (decision_id IS NULL OR decision_id=?)',
                          (str(file_id), suggestion_id, decision_id)).fetchone() \
             if ID.fullmatch(str(file_id)) else None
         if not row:
-            raise ValueError('A file is gone. Add it again.')
+            raise OwnerError('A file is gone. Add it again.')
         rows.append(row)
     if sum(r['size'] for r in rows if r['mime'].startswith('image/')) > IMAGES_BYTES:
-        raise ValueError(f'The images are too big together. A message can carry up to {human(IMAGES_BYTES)} of images.')
+        raise OwnerError(f'The images are too big together. A message can carry up to {human(IMAGES_BYTES)} of images.')
     return rows
 
 
@@ -182,18 +183,18 @@ def adopt(db, draft, suggestion_id, ids):
     if not ids:
         return []
     if not DRAFT.fullmatch(str(draft or '')):
-        raise ValueError('A file is gone. Add it again.')
+        raise OwnerError('A file is gone. Add it again.')
     if not isinstance(ids, list) or len(ids) > MAX_FILES or len(set(map(str, ids))) != len(ids):
-        raise ValueError(f'A to-do can carry up to {MAX_FILES} files.')
+        raise OwnerError(f'A to-do can carry up to {MAX_FILES} files.')
     rows = []
     for file_id in ids:
         row = db.execute('SELECT * FROM chat_files WHERE id=? AND suggestion_id=? AND decision_id IS NULL', (str(file_id), draft)).fetchone() \
             if ID.fullmatch(str(file_id)) else None
         if not row:
-            raise ValueError('A file is gone. Add it again.')
+            raise OwnerError('A file is gone. Add it again.')
         rows.append(row)
     if sum(r['size'] for r in rows if r['mime'].startswith('image/')) > IMAGES_BYTES:
-        raise ValueError(f'The images are too big together. A to-do can carry up to {human(IMAGES_BYTES)} of images.')
+        raise OwnerError(f'The images are too big together. A to-do can carry up to {human(IMAGES_BYTES)} of images.')
     for r in rows:
         db.execute('UPDATE chat_files SET suggestion_id=?,decision_id=? WHERE id=?', (suggestion_id, CARD + suggestion_id, r['id']))
     return [{'id': r['id'], 'name': r['name'], 'type': r['mime'], 'size': r['size']} for r in rows]

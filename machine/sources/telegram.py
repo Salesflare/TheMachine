@@ -13,6 +13,7 @@ from machine.text import encoded
 import message_seal
 from sources import SourceError
 from timeutil import now
+from machine.owner_error import OwnerError
 
 
 class Telegram:
@@ -183,7 +184,7 @@ def owner_telegram_chats(config, db, raw, task_chats, source=None):
         try:
             chats = reader.chats(limit=100000) if item.get('chat_id') else reader.chats(str(item.get('to_name') or '').strip() or None)
         except SourceError:
-            raise ValueError('Telegram can’t be read right now, so I can’t find the chat. Put the message in the body and say '
+            raise OwnerError('Telegram can’t be read right now, so I can’t find the chat. Put the message in the body and say '
                              'in one line that they can send it on Telegram themselves.') from None
         chats = [c for c in chats if c['id'] not in excluded]
         if item.get('chat_id'):

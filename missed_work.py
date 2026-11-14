@@ -39,6 +39,7 @@ import re
 import subprocess
 import uuid
 from pathlib import Path
+from machine.owner_error import OwnerError
 
 SCHEMA = '''
 CREATE TABLE IF NOT EXISTS missed_audits(id TEXT PRIMARY KEY,started_at TEXT NOT NULL,finished_at TEXT,status TEXT NOT NULL,
@@ -583,12 +584,12 @@ def begin(db):
 def label(db, event_id, value):
     """The owner's label on a miss the audit found: 'real', 'not', or None to clear it. Kept here, never sent."""
     if value not in ('real', 'not', None):
-        raise ValueError('Pick Real miss or Not a miss')
+        raise OwnerError('Pick Real miss or Not a miss')
     ensure(db)
     changed = db.execute('UPDATE missed_audit_items SET label=?,labeled_at=? WHERE event_id=? AND work=1',
                          (value, now() if value else None, int(event_id))).rowcount
     if not changed:
-        raise ValueError('That signal is not one of the misses found')
+        raise OwnerError('That signal is not one of the misses found')
     # Real miss keeps it for the learning loop, with what the audit saw and the review's own line; taken back, it goes
     # (with the to-do it made, which the caller takes away: the one it gives back as 'made')
     was = miss(db, event_id)

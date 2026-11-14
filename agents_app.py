@@ -10,6 +10,7 @@ import re
 import urllib.parse
 
 import agent_jobs
+from machine.owner_error import OwnerError
 
 
 class AgentsApp:
@@ -28,12 +29,12 @@ class AgentsApp:
     def agents_dashboard_action(self, name, args, owner_dashboard):
         # Hand to Claude Code / Codex: the owner's own, from the dashboard only
         if not owner_dashboard:
-            raise ValueError('Hand off to Claude Code or Codex from the dashboard')
+            raise OwnerError('Hand off to Claude Code or Codex from the dashboard')
         return self.agent_action(name, args)
 
     def agent_action(self, name, args):
         if not self.agents:
-            raise ValueError('Handing off to Claude Code or Codex is off on this Machine')
+            raise OwnerError('Handing off to Claude Code or Codex is off on this Machine')
         if name == 'agent_draft':
             return self.agents.draft(args['suggestion_id'])
         if name == 'agent_send':

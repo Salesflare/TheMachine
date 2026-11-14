@@ -28,6 +28,7 @@ import i18n
 import mail_cleanup
 from machine.store.review_wait import People, mail_wait
 from machine import todo_states
+from machine.owner_error import OwnerError
 
 KIND = 'routine.digest'
 LOOK_DAYS = 30  # how far back the owner's habits with each sender are read
@@ -220,9 +221,9 @@ def feedback(db, suggestion_id, n, value, stamp):
     list as learned (a topic the owner set stays theirs); taking it back takes off what it learned. Returns the row."""
     row = db.execute('SELECT * FROM digest_items WHERE suggestion_id=? AND item=?', (suggestion_id, n)).fetchone()
     if not row:
-        raise ValueError(i18n.t('That item is gone'))
+        raise OwnerError(i18n.t('That item is gone'))
     if value not in (*FEEDBACK, None):
-        raise ValueError(i18n.t('Pick More like this or Less like this'))
+        raise OwnerError(i18n.t('Pick More like this or Less like this'))
     if row['feedback'] and row['topic']:
         db.execute("DELETE FROM digest_interests WHERE topic=? AND kind=? AND source='learned'", (row['topic'], row['feedback']))
     db.execute('UPDATE digest_items SET feedback=?,updated_at=? WHERE suggestion_id=? AND item=?', (value, stamp, suggestion_id, n))

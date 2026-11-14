@@ -55,6 +55,7 @@ import shared_graph_photos as photos
 from shared_graph_logos import team_logo
 import shared_graph_boards
 import shared_graph_takeback
+from machine.owner_error import OwnerError
 
 LOG = logging.getLogger('personal-assistant')
 TAG = b'tm-shared-graph/1\n'
@@ -383,7 +384,7 @@ def groups(db, limit=20):
 def set_hand(db, event_id, choice):
     """The owner's choice for a thread: team, private, or None for the review's call again."""
     if choice not in (*HANDS, None):
-        raise ValueError('Choose team or private')
+        raise OwnerError('Choose team or private')
     row = db.execute('SELECT id,kind,metadata FROM events WHERE id=?', (int(event_id),)).fetchone()
     if not row:
         raise ValueError('Unknown message')
@@ -399,7 +400,7 @@ def set_hand(db, event_id, choice):
         todo = sorted(todo.items())
     if choice == 'team' and db.execute("SELECT 1 FROM share_threads WHERE thread IN (SELECT value FROM json_each(?)) AND verdict='personal'",
                                        (json.dumps([t for t, _ in todo]),)).fetchone():
-        raise ValueError('Personal threads are never shared')
+        raise OwnerError('Personal threads are never shared')
     for key, event_id in todo:
         db.execute('INSERT INTO share_threads(thread,hand,hand_at,event_id,at) VALUES(?,?,?,?,?) ON CONFLICT(thread) DO UPDATE SET '
                    'hand=excluded.hand,hand_at=excluded.hand_at', (key, choice, now() if choice else None, event_id, now()))
@@ -410,7 +411,7 @@ def keep_private(db, node_id, on=True):
     node = str(node_id)  # a project made a moment ago (project_split.py) counts before the next build puts it in the graph
     if not (node[:8] == 'project:' and node[8:].isdigit() and db.execute('SELECT 1 FROM projects WHERE id=?', (int(node[8:]),)).fetchone()) \
             and not db.execute('SELECT 1 FROM graph_nodes WHERE id=?', (node,)).fetchone():
-        raise ValueError('Not in the graph')
+        raise OwnerError('Not in the graph')
     if on:
         db.execute('INSERT OR REPLACE INTO share_private(node_id,at) VALUES(?,?)', (str(node_id), now()))
     else:
@@ -422,7 +423,7 @@ def share_with(db, kind, key, fleet, members):
     """The owner shares a board ('board', its id) or a thread ('thread', its id) with chosen teammates of one Fleet, by
     name: they replace whoever had it; none for nobody. What goes to them: grants."""
     if kind not in ('board', 'thread'):
-        raise ValueError('A board or a thread')
+        raise OwnerError('A board or a thread')
     db.execute('DELETE FROM share_people WHERE kind=? AND key=? AND fleet=?', (kind, str(key), fleet))
     db.executemany('INSERT INTO share_people(kind,key,fleet,member,at) VALUES(?,?,?,?,?)',
                    [(kind, str(key), fleet, str(m), now()) for m in sorted(set(members))])
@@ -1166,12 +1167,12 @@ def set_rule(db, key, choice, name=''):
     of; a sensitive or personal call still holds). None removes the rule."""
     key = str(key or '').lower().strip()
     if not (ADDRESS.fullmatch(key) or re.fullmatch(r'@[a-z0-9.-]+\.[a-z]{2,}', key)):
-        raise ValueError('A rule is about an address or a domain')
+        raise OwnerError('A rule is about an address or a domain')
     if choice is None:
         db.execute('DELETE FROM share_rules WHERE key=?', (key,))
         return None
     if choice not in HANDS:
-        raise ValueError('Choose team or private')
+        raise OwnerError('Choose team or private')
     db.execute('INSERT OR REPLACE INTO share_rules(key,choice,name,at) VALUES(?,?,?,?)', (key, choice, str(name or '')[:120], now()))
     return choice
 
@@ -1380,17 +1381,17 @@ class SharedGraph(shared_graph_takeback.TakeBack, shared_graph_boards.TeamBoards
         group = next((g for g in (self.directory().get('fleets') or []) if g.get('id') == fleet and g.get('kind') == 'work'), None)
         me = group and self._me_in(group)
         if not me:
-            raise ValueError('Not a Work Fleet of yours')
+            raise OwnerError('Not a Work Fleet of yours')
         trusted, _ = self.trust(group)
         if me['member_id'] not in trusted:
-            raise ValueError('Only a confirmed admin can do that')
+            raise OwnerError('Only a confirmed admin can do that')
         if member == me['member_id']:
-            raise ValueError('Use Stop sharing my Work for yourself')
+            raise OwnerError('Use Stop sharing my Work for yourself')
         m = next((x for x in group.get('members', []) if x.get('member_id') == member), None)
         if back:
             keys = ft.keys_of(m) if m else None
             if not keys:
-                raise ValueError('Their Machine is not in the Fleet now')
+                raise OwnerError('Their Machine is not in the Fleet now')
             item = ft.sign(self._private(), ft.statement('member', fleet, member, keys['sign'], me['member_id'],
                                                            at=after(self.graph_gone(group, trusted).get(member))))
             self.relay.call('POST', '/trust', {'fleet': fleet, 'item': item}, timeout=30)
@@ -1562,7 +1563,7 @@ class SharedGraph(shared_graph_takeback.TakeBack, shared_graph_boards.TeamBoards
         """An admin's owner: that new Machine isn't theirs. Its key is never vouched for."""
         seen = (self.meta('graph_rekey:' + fleet) or {}).get(member)
         if not seen:
-            raise ValueError('That was answered already')
+            raise OwnerError('That was answered already')
         self.set_meta('trust_declined', (self.meta('trust_declined', []) or [])[-200:] + [[fleet, member, seen['fp']]])
         self.set_meta('graph_rekey:' + fleet, {m: r for m, r in (self.meta('graph_rekey:' + fleet) or {}).items() if m != member})
         return {'ok': True}
@@ -1644,10 +1645,10 @@ class SharedGraph(shared_graph_takeback.TakeBack, shared_graph_boards.TeamBoards
         group = next((g for g in (self.directory().get('fleets') or []) if g.get('id') == fleet and g.get('kind') == 'work'), None)
         me = group and self._me_in(group)
         if not me:
-            raise ValueError('Not a Work Fleet of yours')
+            raise OwnerError('Not a Work Fleet of yours')
         trusted, _ = self.trust(group)
         if me['member_id'] not in trusted:
-            raise ValueError('Only a confirmed admin can do that')
+            raise OwnerError('Only a confirmed admin can do that')
         return group, me, trusted
 
     def _account_kind(self, account):
@@ -1722,9 +1723,9 @@ class SharedGraph(shared_graph_takeback.TakeBack, shared_graph_boards.TeamBoards
         if not found:
             raise ValueError('Unknown connection')
         if found['required'] and not on:
-            raise ValueError('Required by your Fleet: an admin decides this one')
+            raise OwnerError('Required by your Fleet: an admin decides this one')
         if found['personal'] and on:
-            raise ValueError('Personal connections are never shared')
+            raise OwnerError('Personal connections are never shared')
         chosen = self.meta('graph_conn:' + fleet) or {}
         chosen[account] = bool(on)
         self.set_meta('graph_conn:' + fleet, chosen)
@@ -1737,10 +1738,10 @@ class SharedGraph(shared_graph_takeback.TakeBack, shared_graph_boards.TeamBoards
         group = next((g for g in (self.directory().get('fleets') or []) if g.get('id') == fleet and g.get('kind') == 'work'), None)
         me = group and self._me_in(group)
         if not me:
-            raise ValueError('Not a Work Fleet of yours')
+            raise OwnerError('Not a Work Fleet of yours')
         trusted, _ = self.trust(group)
         if me['member_id'] not in trusted:
-            raise ValueError('Only a confirmed admin can pause sharing for everyone')
+            raise OwnerError('Only a confirmed admin can pause sharing for everyone')
         at = after((ft.paused(group, trusted, self.meta('graph_pause:' + fleet)) or {}).get('at'))
         before = ft.purged(group, trusted, self.meta('graph_purged:' + fleet))
         statement = ft.pause(fleet, me['member_id'], trusted[me['member_id']], on, at, at if on and remove else before)
@@ -1825,7 +1826,7 @@ class SharedGraph(shared_graph_takeback.TakeBack, shared_graph_boards.TeamBoards
         """What's shared with one Work Fleet, in one place (overview), with the first share's look-over when it waits."""
         group = next((g for g in self._kept_groups() if g.get('id') == fleet and g.get('kind') == 'work'), None)
         if not group or not self._me_in(group):
-            raise ValueError('Not a Work Fleet of yours')
+            raise OwnerError('Not a Work Fleet of yours')
         with self.connect() as db:
             ensure(db)
             at = stamps.stamp(db, shared_graph_kept.OVERVIEW_TABLES)  # before anything it is made from is read
@@ -1874,7 +1875,7 @@ class SharedGraph(shared_graph_takeback.TakeBack, shared_graph_boards.TeamBoards
         teammates = self.graph_teammates()
         chosen = {(str(p.get('fleet') or ''), str(p.get('member') or '')) for p in people or [] if isinstance(p, dict)}
         if chosen - set(teammates):
-            raise ValueError('Choose teammates whose Machines are confirmed in your Work Fleet')
+            raise OwnerError('Choose teammates whose Machines are confirmed in your Work Fleet')
         return chosen, teammates
 
     def _share_named(self, db, kind, key, chosen):
@@ -1890,7 +1891,7 @@ class SharedGraph(shared_graph_takeback.TakeBack, shared_graph_boards.TeamBoards
             ensure(db)
             board = db.execute('SELECT id,visibility FROM boards WHERE id=?', (int(board_id or 0),)).fetchone()
             if not board:
-                raise ValueError('That board is gone')
+                raise OwnerError('That board is gone')
             self._share_named(db, 'board', board['id'], chosen)
             if chosen:
                 db.execute("UPDATE boards SET visibility='people' WHERE id=?", (board['id'],))
@@ -1908,13 +1909,13 @@ class SharedGraph(shared_graph_takeback.TakeBack, shared_graph_boards.TeamBoards
             row = db.execute('SELECT id,account_id,kind,metadata FROM events WHERE id=?', (int(event_id or 0),)).fetchone()
             label = self.thread_labels(db, [dict(row)]).get(row['id']) if row else None
             if not label:
-                raise ValueError('Only messages in a Work account are shared with your team')
+                raise OwnerError('Only messages in a Work account are shared with your team')
             if label['fixed'] and chosen:
                 raise ValueError('Personal threads are never shared' if label.get('view') == 'personal'
                                  else 'Only colleagues are on this thread, so it stays with the people on it')
             thread = thread_of(row['kind'], json.loads(row['metadata'] or '{}'), row['id'])
             if chosen and db.execute("SELECT 1 FROM share_threads WHERE thread=? AND verdict='personal'", (thread,)).fetchone():
-                raise ValueError('Personal threads are never shared')
+                raise OwnerError('Personal threads are never shared')
             self._share_named(db, 'thread', thread, chosen)
             return {'ok': True, 'label': self.thread_labels(db, [dict(row)]).get(row['id']), 'shared_with': sorted(teammates[c] for c in chosen)}
 
@@ -1924,10 +1925,10 @@ class SharedGraph(shared_graph_takeback.TakeBack, shared_graph_boards.TeamBoards
         only: those are skipped. {done, skipped}."""
         chosen, teammates = self._chosen(people)
         if not chosen:
-            raise ValueError('Choose who gets them')
+            raise OwnerError('Choose who gets them')
         ids = [int(i) for i in event_ids or [] if str(i).isdigit()][:500]
         if not ids:
-            raise ValueError('Choose threads')
+            raise OwnerError('Choose threads')
         done = skipped = 0
         with self.connect() as db:
             ensure(db)
@@ -2641,7 +2642,7 @@ class SharedGraph(shared_graph_takeback.TakeBack, shared_graph_boards.TeamBoards
         needed). Keep private on a record works any time, without asking."""
         group = next((g for g in (self.directory().get('fleets') or []) if g.get('id') == fleet and g.get('kind') == 'work'), None)
         if not group or not self._me_in(group):
-            raise ValueError('Not a Work Fleet of yours')
+            raise OwnerError('Not a Work Fleet of yours')
         if off:
             if not self.meta('graph_off:' + fleet):
                 self.set_meta('graph_off:' + fleet, {'at': now()})
@@ -2979,7 +2980,7 @@ class SharedGraph(shared_graph_takeback.TakeBack, shared_graph_boards.TeamBoards
         """A record only teammates have, opened from the Team view."""
         entry, section = self.team_for(db, key)
         if not entry:
-            raise ValueError('Not in the graph')
+            raise OwnerError('Not in the graph')
         rec = resolve(entry)
         org = rec.get('org') or {}
         return {'id': entry['key'], 'kind': entry['kind'], 'name': rec['name'] or '?', 'role': rec['role'], 'team_only': True, 'links': [], 'recent': [],
@@ -3003,10 +3004,10 @@ class SharedGraph(shared_graph_takeback.TakeBack, shared_graph_boards.TeamBoards
         fleet, member, tag = (str(thread_id).split(':') + ['', '', ''])[:3]
         row = db.execute('SELECT body FROM team_mail WHERE fleet=? AND member=? AND tag=?', (fleet, member, tag)).fetchone()
         if not row:
-            raise ValueError('Not shared with you')
+            raise OwnerError('Not shared with you')
         body = json.loads(row['body'])
         if body.get('private'):
-            raise ValueError('Only the people on it read this one')
+            raise OwnerError('Only the people on it read this one')
         source = db.execute('SELECT name,left_at FROM team_sources WHERE fleet=? AND member=?', (fleet, member)).fetchone()
         here = {r['tag'] for r in db.execute('SELECT tag FROM team_files WHERE fleet=? AND member=?', (fleet, member))}
         for m in body.get('messages') or []:
@@ -3019,11 +3020,11 @@ class SharedGraph(shared_graph_takeback.TakeBack, shared_graph_boards.TeamBoards
         """(bytes, mime, name) of an attachment that came with a client thread a teammate shared; only one its thread lists."""
         thread = self.team_thread(db, thread_id)
         if not HEX.fullmatch(str(tag)) or not any(a.get('file') == tag for m in thread.get('messages') or [] for a in m.get('attachments') or []):
-            raise ValueError('Not shared with you')
+            raise OwnerError('Not shared with you')
         fleet, member = str(thread_id).split(':')[:2]
         row = db.execute('SELECT name,mime,data FROM team_files WHERE fleet=? AND member=? AND tag=?', (fleet, member, tag)).fetchone()
         if not row:
-            raise ValueError('Not here yet')
+            raise OwnerError('Not here yet')
         return nc.unb64(row['data']), row['mime'] or 'application/octet-stream', row['name'] or 'attachment'
 
     def held_back(self, db, days=7):
@@ -3052,10 +3053,10 @@ class SharedGraph(shared_graph_takeback.TakeBack, shared_graph_boards.TeamBoards
         import fleet_requests
         group = next((g for g in (self.directory().get('fleets') or []) if g.get('id') == fleet_ref and g.get('kind') == 'work'), None)
         if not group or not self.member(fleet_ref, member_id):
-            raise ValueError('Not someone in that Fleet')
+            raise OwnerError('Not someone in that Fleet')
         question = fleet_requests.parse('handoff', {'title': 'About ' + str(about or '')[:80], 'summary': str(note or '').strip()[:1000], 'contact': ''})
         if not question:
-            raise ValueError('Say what you need from them')
+            raise OwnerError('Say what you need from them')
         return self.ask('handoff', question, context='graph:' + secrets.token_hex(8), fleet=fleet_ref, to=[member_id])
 
 def via(sources):

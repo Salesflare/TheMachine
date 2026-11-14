@@ -19,6 +19,7 @@ from machine.text import encoded
 from sources import SourceError
 from timeutil import local_tz, now
 import whatsapp_images
+from machine.owner_error import OwnerError
 
 
 class WhatsApp:
@@ -193,7 +194,7 @@ def owner_whatsapp_chats(config, db, raw, task_chats, source=None):
             try:
                 chats = reader.read(['chats', 'list', '--query', item['to_name'].strip(), '--limit', '10'])
             except SourceError:
-                raise ValueError('WhatsApp can’t be read right now, so I can’t find the chat. Put the message in the body and say '
+                raise OwnerError('WhatsApp can’t be read right now, so I can’t find the chat. Put the message in the body and say '
                                  'in one line that they can send it on WhatsApp themselves.') from None
             chats = [c for c in chats if isinstance(c, dict) and isinstance(c.get('jid'), str) and re.fullmatch(WHATSAPP_JID, c['jid'])
                      and c['jid'] not in excluded] if isinstance(chats, list) else []

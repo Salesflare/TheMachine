@@ -10,6 +10,7 @@ from machine.actions import VOICE_ACTIONS
 from machine.config import ROOT
 from machine.model_usage import node_bin
 import voice_input
+from machine.owner_error import OwnerError
 
 LOG = logging.getLogger('personal-assistant')
 
@@ -81,7 +82,7 @@ class VoiceApp:
         try:
             data = base64.b64decode(str(args.get('data') or ''), validate=True)
         except (ValueError, TypeError) as error:
-            raise ValueError('That recording couldn’t be read. Try again.') from error
+            raise OwnerError('That recording couldn’t be read. Try again.') from error
         began = time.monotonic()
         frames, seconds = voice_input.pcm(data)
         if not prefs['language'] and args.get('language') in voice_input.LANGUAGES:   # a later part: the language heard first
@@ -115,7 +116,7 @@ class VoiceApp:
 
     def voice_actions_action(self, name, args, owner_dashboard=False):
         if not owner_dashboard:
-            raise ValueError('Only the owner uses voice input, on the dashboard')
+            raise OwnerError('Only the owner uses voice input, on the dashboard')
         return self.voice_action(name, args)
 
     def voice_warm_worker(self):

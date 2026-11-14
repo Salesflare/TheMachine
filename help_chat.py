@@ -25,6 +25,7 @@ from pathlib import Path
 import i18n
 import locale_prefs
 from i18n import t
+from machine.owner_error import OwnerError
 
 ROOT = Path(__file__).resolve().parent
 HELP = ROOT / 'docs' / 'help'
@@ -131,7 +132,7 @@ def article(slug, lang=None, folder=HELP):
     lang = lang or locale_prefs.language()
     path = Path(folder) / f'{slug}.md'
     if not re.fullmatch(r'[a-z0-9-]{1,80}', str(slug or '')) or not path.is_file():
-        raise ValueError(t('That help page doesn’t exist.'))
+        raise OwnerError(t('That help page doesn’t exist.'))
     fields, parts, english = _article(path, lang)
     local = parts is not english
     body = _front((path.parent / lang / path.name if local else path).read_text(encoding='utf-8'))[1]
@@ -368,7 +369,7 @@ def ask(question, history=(), run=None, config=None, model=None, folder=HELP, ro
     lang = lang or locale_prefs.language()
     question = ' '.join(str(question or '').split())[:QUESTION_CHARS]
     if not question:
-        raise ValueError(t('Type a question first.'))
+        raise OwnerError(t('Type a question first.'))
     history = clean_history(history)
     sections, snippets = retrieve(question, history, folder, root, lang)
     if limited():

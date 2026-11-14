@@ -35,6 +35,7 @@ import sqlite3
 import graph
 import person_summary
 import timeutil
+from machine.owner_error import OwnerError
 
 COLUMNS = graph.PROJECT_ABOUT_COLUMNS
 PER_PASS = 8           # projects in one turn
@@ -286,7 +287,7 @@ def edit(db, node_id, text, current=None):
         raise ValueError('text is the description')
     words = re.sub(r'\s*[—–]\s*', ', ', ' '.join(text.split())).strip()
     if len(words) > OWNER_CHARS:
-        raise ValueError(f'A description fits in {OWNER_CHARS} characters')
+        raise OwnerError(f'A description fits in {OWNER_CHARS} characters')
     db.execute("UPDATE projects SET about=?,about_sources=?,about_by='owner',about_at=? WHERE id=?",
                (words or None, json.dumps(['owner']) if words else None, current or now(), row['id']))
     return {'about': view(db, row['id'])}

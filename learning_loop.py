@@ -23,6 +23,7 @@ from __future__ import annotations
 import datetime as dt
 import json
 import re
+from machine.owner_error import OwnerError
 
 SCHEMA = '''
 CREATE TABLE IF NOT EXISTS learning_changes(id INTEGER PRIMARY KEY,run_id TEXT NOT NULL,at TEXT NOT NULL,kind TEXT NOT NULL,
@@ -256,7 +257,7 @@ def save_draft(db, run_id, profile):
     if not isinstance(found, list):
         raise ValueError('args.profile.changes is a list of {"kind", "text", "why", "channel" or "replaces"}, or [] when nothing new holds')
     if not db.execute("SELECT 1 FROM profile_runs WHERE run_id=? AND kind='tune' AND status IN ('starting','running')", (run_id,)).fetchone():
-        raise ValueError('This learning pass is no longer active')
+        raise OwnerError('This learning pass is no longer active')
     clean = []
     for raw in found[:MAX_CHANGES * 2]:
         if not isinstance(raw, dict) or raw.get('kind') not in KINDS:
@@ -405,7 +406,7 @@ def undo(db, change_id, unlink=None):
     ensure(db)
     row = db.execute("SELECT * FROM learning_changes WHERE id=? AND status='applied'", (change_id,)).fetchone()
     if not row:
-        raise ValueError('That change is already undone')
+        raise OwnerError('That change is already undone')
     before = json.loads(row['before']) if row['before'] else None
     done = {'undone': change_id}
     if row['kind'] == 'contact':  # a contact detail moved onto someone's record (contact_facts.py)
@@ -423,9 +424,9 @@ def undo(db, change_id, unlink=None):
     elif row['kind'] == 'forgot':  # the owner asked their main chat to forget it (Store.forget_fact said): it comes back
         fact = db.execute('SELECT kind,text,removed_at,merged_into FROM facts WHERE id=?', (int(row['target']),)).fetchone()
         if not fact or not fact['removed_at'] or fact['merged_into'] or fact['text'] != row['after']:
-            raise ValueError('That changed since. Change it where it is now')
+            raise OwnerError('That changed since. Change it where it is now')
         if db.execute('SELECT 1 FROM facts WHERE removed_at IS NULL AND kind=? AND lower(text)=lower(?)', (fact['kind'], fact['text'])).fetchone():
-            raise ValueError('That is already in what I’ve learned')
+            raise OwnerError('That is already in what I’ve learned')
         db.execute('UPDATE facts SET removed_at=NULL WHERE id=?', (int(row['target']),))  # its vector is stored again when a preparation needs it
     elif row['kind'] == 'learned':  # an item the owner left off the first look's old summary (learned_fixes)
         db.execute("DELETE FROM learned_fixes WHERE key=? AND state='removed'", (row['target'],))
@@ -434,7 +435,7 @@ def undo(db, change_id, unlink=None):
         ref = row['run_id'] if row['run_id'].startswith('learned:') else 'tune:' + row['run_id']
         current = db.execute('SELECT text,ref FROM voices WHERE channel=?', (row['target'],)).fetchone()
         if current and (current['text'] != row['after'] or current['ref'] != ref):
-            raise ValueError(f"The {row['target']} voice changed since. Edit it in Settings instead")
+            raise OwnerError(f"The {row['target']} voice changed since. Edit it in Settings instead")
         if before:
             db.execute('INSERT INTO voices(channel,text,source,ref,updated_at) VALUES(?,?,?,?,?) ON CONFLICT(channel) DO UPDATE SET '
                        'text=excluded.text,source=excluded.source,ref=excluded.ref,updated_at=excluded.updated_at',
@@ -445,7 +446,7 @@ def undo(db, change_id, unlink=None):
     else:
         fact = db.execute('SELECT text,removed_at FROM facts WHERE id=?', (int(row['target']),)).fetchone()
         if not fact or fact['text'] != row['after']:
-            raise ValueError('That was edited since. Change it under What I’ve learned instead')
+            raise OwnerError('That was edited since. Change it under What I’ve learned instead')
         db.execute('UPDATE facts SET removed_at=coalesce(removed_at,?) WHERE id=?', (now(), int(row['target'])))
         if before:
             db.execute('UPDATE facts SET removed_at=NULL WHERE id=?', (before['id'],))

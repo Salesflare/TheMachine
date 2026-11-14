@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
+from machine.owner_error import OwnerError
 
 LEVELS = ('standard', 'careful')
 # The owner's own settings a level sets: key -> (Standard, Careful). Standard is exactly today's default.
@@ -166,7 +167,7 @@ def apply(db, level):
     [(group id, kind, rule)]: the caller sets them the way the dashboard does (fleet.Fleet.set_rule), after this
     transaction, so waiting questions settle as they would."""
     if level not in LEVELS:
-        raise ValueError('A level is Standard or Careful')
+        raise OwnerError('A level is Standard or Careful')
     now = current(db)
     want = values(level, now)
     network_follow(db)

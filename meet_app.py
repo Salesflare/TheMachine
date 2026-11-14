@@ -16,6 +16,7 @@ import i18n
 import meet
 import meet_link
 import next_actions
+from machine.owner_error import OwnerError
 
 LOG = logging.getLogger('personal-assistant')
 EMAIL = re.compile(r'[^@\s<>(),;:"\[\]]{1,64}@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+')
@@ -40,18 +41,18 @@ class MeetApp:
     def meet_decide_action(self, name, args, owner_dashboard):
         """Book it, Other time or Not needed on a scheduling to-do: the owner's own tap, from the dashboard only."""
         if not owner_dashboard:
-            raise ValueError('Book it, Other time and Not needed are your own taps, in the dashboard')
+            raise OwnerError('Book it, Other time and Not needed are your own taps, in the dashboard')
         if not getattr(self, 'fleet', None):
-            raise ValueError('This Machine is not on The Machine Network')
+            raise OwnerError('This Machine is not on The Machine Network')
         return self.fleet.meet_decide(str(args.get('suggestion_id') or ''), str(args.get('choice') or ''))
 
     def meet_setting_action(self, name, args, owner_dashboard):
         """What other Machines may ask this one, and the meeting preferences. Read with no args; set from the dashboard."""
         if not getattr(self, 'fleet', None):
-            raise ValueError('This Machine is not on The Machine Network')
+            raise OwnerError('This Machine is not on The Machine Network')
         change = {k: args[k] for k in ('allow', 'minutes', 'buffer', 'prefer', 'brand') if args.get(k) is not None}
         if change and not owner_dashboard:
-            raise ValueError('This setting is changed in the dashboard')
+            raise OwnerError('This setting is changed in the dashboard')
         return self.fleet.meet_set(**change) if change else self.fleet.meet_setting()
 
     # -- the review's meeting request (suggest with `meet`)
@@ -107,7 +108,7 @@ class MeetApp:
         accounts = self.config.get('accounts', [])
         account = next((a for a in accounts if a.get('service') == 'calendar'), accounts[0] if accounts else None)
         if not account:
-            raise ValueError('No account here for this')
+            raise OwnerError('No account here for this')
         name = session.get('name') or session.get('email') or i18n.t('someone')
         key = 'meet:' + str(session['id'])
         body = session.get('body') or i18n.t('{}’s Machine found a time that suits you both. The invite goes out once you both tap Book it.', name)

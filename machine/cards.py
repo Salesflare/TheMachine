@@ -11,6 +11,7 @@ from machine.sources.slack import SLACK_ID
 import next_actions
 from timeutil import WORK_HOURS, clock, in_hours, is_work_day, local_tz, morning_label, next_work_day, now
 from machine import todo_states
+from machine.owner_error import OwnerError
 
 
 def snooze_time(option=None, explicit=None, hours=24, work=False, start=None):
@@ -19,9 +20,9 @@ def snooze_time(option=None, explicit=None, hours=24, work=False, start=None):
         try:
             due = dt.datetime.fromisoformat(explicit)
         except (TypeError, ValueError):
-            raise ValueError('Choose a valid date and time') from None
+            raise OwnerError('Choose a valid date and time') from None
         if due.tzinfo is None:
-            raise ValueError('The selected time needs a time zone')
+            raise OwnerError('The selected time needs a time zone')
     elif option == '2h':
         due = current + dt.timedelta(hours=2)
     elif option in ['tomorrow','1d','3d','1w']:
@@ -34,12 +35,12 @@ def snooze_time(option=None, explicit=None, hours=24, work=False, start=None):
         if work:
             due = next_work_day(due)  # work comes back on a work day, not the weekend
     elif option is not None:
-        raise ValueError('Choose one of the snooze times')
+        raise OwnerError('Choose one of the snooze times')
     else:
         due = current + dt.timedelta(hours=min(max(int(hours),1),720))
     due = due.astimezone(dt.timezone.utc)
     if due <= current or due > current + dt.timedelta(days=366):
-        raise ValueError('Choose a future time within the next year')
+        raise OwnerError('Choose a future time within the next year')
     return due.isoformat()
 
 

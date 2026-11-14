@@ -50,6 +50,7 @@ import re
 
 import i18n
 from machine import names
+from machine.owner_error import OwnerError
 
 LOG = logging.getLogger('personal-assistant')
 KINDS = ('messages', 'docs', 'calendar', 'web', 'fixes', 'agents', 'fleet', 'learnings', 'skills', 'graph', 'connections',
@@ -355,7 +356,7 @@ def page(db, config=None, kind='', offset=0, limit=PAGE, outcome='', actor=''):
         offset = max(0, min(int(offset or 0), MAX_OFFSET))
         limit = max(1, min(int(limit or PAGE), 200))
     except (TypeError, ValueError):
-        raise ValueError('Not a page') from None
+        raise OwnerError('Not a page') from None
     chosen = {k for k in str(kind or '').split(',') if k}
     if chosen - set(KINDS):
         raise ValueError('Unknown activity kind')

@@ -27,6 +27,7 @@ from pathlib import Path
 import fleet
 import network
 import onboarding
+from machine.owner_error import OwnerError
 
 LOG = logging.getLogger('personal-assistant')
 nc = network.nc
@@ -44,7 +45,7 @@ def keys(config):
     """This Machine's private keys (the Network's: network.keys_path), made once when missing."""
     path = network.keys_path(config)
     if not path:
-        raise ValueError('This Machine has no place to keep its keys')
+        raise OwnerError('This Machine has no place to keep its keys')
     return nc.load_or_make(path)
 
 
@@ -89,13 +90,13 @@ def _post(path, body, timeout=20):
                     found = {}
             found = found if isinstance(found, dict) else {}
             if error.code == 404:
-                raise ValueError('Your account can’t pair this way yet. Try again later.') from None
+                raise OwnerError('Your account can’t pair this way yet. Try again later.') from None
             if error.code == 429:
                 raise fleet.Limited(str(found.get('error') or 'Not now; try again later.')) from None
             raise ValueError(str(found.get('error') or f'The Network said {error.code}')) from None
         except (urllib.error.URLError, OSError):
             if base == fleet.RELAY:
-                raise ValueError('The Network did not answer. Try again in a minute.') from None
+                raise OwnerError('The Network did not answer. Try again in a minute.') from None
     return {}
 
 
@@ -111,7 +112,7 @@ def start(config, label, post=None, clock=None):
     found = (post or _post)('/pair-request', request_body(private, label, fleet.account_emails(config), clock))
     request_id = str(found.get('id') or '')
     if not REQUEST_ID.fullmatch(request_id) or not page_ok(found.get('url'), request_id):
-        raise ValueError('Your account gave no pair page. Try again.')
+        raise OwnerError('Your account gave no pair page. Try again.')
     mine = code(nc.unb64(nc.public_keys(private)['sign'], 32))
     try:
         wait = max(30, min(int(found.get('expires_in') or EXPIRES), EXPIRES))

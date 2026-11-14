@@ -23,6 +23,7 @@ import ssl
 import time
 
 import imap_mail
+from machine.owner_error import OwnerError
 
 SECURITY = imap_mail.SECURITY
 TIMEOUT = 60  # seconds per server answer; a big attachment takes a while
@@ -289,11 +290,11 @@ def preflight(transport, action, account):
         try:
             next_actions.attachment_bytes(record, transport.config)
         except OSError:
-            raise ValueError(f"The attachment {record['name']} is missing. Nothing was sent.") from None
+            raise OwnerError(f"The attachment {record['name']} is missing. Nothing was sent.") from None
     try:
         check(transport.config, transport.credential, account)
     except SmtpError as error:
-        raise ValueError(i18n.t(STOPPED.get(error.category, UNREACHABLE))) from None
+        raise OwnerError(i18n.t(STOPPED.get(error.category, UNREACHABLE))) from None
     if action.get('signature'):
         transport.signatures.pop(action['from'].lower(), None)  # read fresh: the owner may have changed it
         transport.signature(action, account)

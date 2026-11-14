@@ -23,6 +23,7 @@ import uuid
 
 import next_actions
 import task_invites
+from machine.owner_error import OwnerError
 
 LOG = logging.getLogger('personal-assistant')
 SCHEMA = 'CREATE TABLE IF NOT EXISTS task_pages(card_id TEXT PRIMARY KEY, state TEXT NOT NULL, record TEXT NOT NULL, updated_at TEXT NOT NULL)'
@@ -90,7 +91,7 @@ class TaskPages:
     def relay(self):
         network = getattr(self.app, 'fleet', None)
         if not network:
-            raise ValueError('Task pages need The Machine Network. Turn it on in Settings.')
+            raise OwnerError('Task pages need The Machine Network. Turn it on in Settings.')
         return network.relay
 
     # -- the offer, made with a handoff by email
@@ -104,7 +105,7 @@ class TaskPages:
     def dismiss(self, card_id):
         state, record = self.load(card_id)
         if state != 'offered':
-            raise ValueError('There is no task page to skip on this to-do.')
+            raise OwnerError('There is no task page to skip on this to-do.')
         self.save(card_id, 'dismissed', {'task': {'title': record['task']['title']}})
         return {'state': 'dismissed'}
 
@@ -132,14 +133,14 @@ class TaskPages:
         if state != 'offered':
             raise ValueError('This to-do has no task page to add.' if state not in LIVE else 'This to-do already has a task page.')
         if days not in DAYS:
-            raise ValueError('A task page works for 7, 14 or 30 days.')
+            raise OwnerError('A task page works for 7, 14 or 30 days.')
         leave_out = sorted({p for p in (leave_out or ()) if p in task_invites.PAGE_PARTS})
         revision, action = self.draft_action(card_id)
         if not action:
-            raise ValueError('The email already went out or changed. A task page goes in with an email still to send.')
+            raise OwnerError('The email already went out or changed. A task page goes in with an email still to send.')
         task = record['task']
         if 'summary' not in leave_out and task.get('summary') and task_invites.quotes(task['summary'], self.sources(card_id)):
-            raise ValueError('The details repeat the original email, which never goes on a task page. Leave them out, or shorten them.')
+            raise OwnerError('The details repeat the original email, which never goes on a task page. Leave them out, or shorten them.')
         updates = [{'who': 'owner', 'what': 'shared', 'at': today()}]
         page = task_invites.page(task, leave_out, 'waiting', updates)
         pending = record.get('pending') or {}
@@ -177,7 +178,7 @@ class TaskPages:
         """Stop sharing: deleted from the Network now; the key goes too; an unsent draft loses its link line."""
         state, record = self.load(card_id)
         if state not in LIVE:
-            raise ValueError('This to-do has no task page to stop.')
+            raise OwnerError('This to-do has no task page to stop.')
         self.relay().call('POST', '/task-invite', {'action': 'revoke', 'id': record['invite_id']})
         revision, action = self.draft_action(card_id)
         if action and 'Status and replies: ' in next_actions.draft_text(action):
@@ -188,7 +189,7 @@ class TaskPages:
     def done(self, card_id):
         state, record = self.load(card_id)
         if state != 'shared':
-            raise ValueError('This to-do has no open task page.')
+            raise OwnerError('This to-do has no open task page.')
         record['status'] = 'done'
         record['updates'].append({'who': 'owner', 'what': 'closed', 'at': today()})
         self.save(card_id, 'done', self.push(card_id, record, done=True))

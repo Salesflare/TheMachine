@@ -14,6 +14,7 @@ import time
 from models import claude_plan_route, openclaw_model
 import portable
 from timeutil import now
+from machine.owner_error import OwnerError
 
 
 def usage_status(config, run=subprocess.run):
@@ -164,11 +165,11 @@ def use_model_reset(config, reply, key, server_factory=None):
     account OpenClaw uses. `key` makes a repeated click the same request. Returns the outcome Codex reports."""
     with (server_factory or CodexAppServer)(config) as server:
         if not codex_same_account(server, reply):
-            raise ValueError('Use a reset in ChatGPT: this computer cannot check it is the same account')
+            raise OwnerError('Use a reset in ChatGPT: this computer cannot check it is the same account')
         result = server.call('account/rateLimitResetCredit/consume', {'idempotencyKey': key})
     outcome = (result or {}).get('outcome')
     if outcome not in ('reset', 'nothingToReset', 'noCredit', 'alreadyRedeemed'):
-        raise ValueError('ChatGPT did not confirm the reset; check it in ChatGPT')
+        raise OwnerError('ChatGPT did not confirm the reset; check it in ChatGPT')
     return outcome
 
 

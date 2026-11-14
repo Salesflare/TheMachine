@@ -31,6 +31,7 @@ import uuid
 
 import public_holidays
 from machine import todo_states
+from machine.owner_error import OwnerError
 
 UNITS = ('day', 'weekday', 'week', 'month', 'year')
 N_MAX = 52
@@ -66,22 +67,22 @@ def clean_rule(rule):
     if isinstance(rule, str):
         rule = PRESETS.get(rule) or (json.loads(rule) if rule.startswith('{') else None)
     if not isinstance(rule, dict) or rule.get('unit') not in UNITS:
-        raise ValueError('Pick how often it repeats')
+        raise OwnerError('Pick how often it repeats')
     n = rule.get('n', 1)
     if not isinstance(n, int) or isinstance(n, bool) or not 1 <= n <= N_MAX:
-        raise ValueError('Repeat every 1 to 52')
+        raise OwnerError('Repeat every 1 to 52')
     out = {'unit': rule['unit'], 'n': 1 if rule['unit'] in ('weekday', 'year') else n}
     if rule['unit'] == 'month' and rule.get('workday') is not None:
         nth = rule['workday']
         if not isinstance(nth, int) or isinstance(nth, bool) or not (nth == -1 or 1 <= nth <= WORKDAY_MAX):
-            raise ValueError('Pick the 1st to 20th, or the last, workday of the month')
+            raise OwnerError('Pick the 1st to 20th, or the last, workday of the month')
         out['workday'] = nth
         region = str(rule.get('region') or '').upper()
         if re.fullmatch(r'[A-Z]{2}', region) and public_holidays.known(region):
             out['region'] = region
     elif rule['unit'] == 'month' and rule.get('nth') is not None:
         if rule['nth'] not in (1, 2, 3, 4, -1):
-            raise ValueError('Pick the first to fourth, or the last, weekday of the month')
+            raise OwnerError('Pick the first to fourth, or the last, weekday of the month')
         out['nth'] = rule['nth']
     return out
 
@@ -475,7 +476,7 @@ def undo_method(db, suggestion_id, stamp):
     """Undo on the to-do's line: the series goes back to the way it had before this to-do changed it (or none)."""
     s = series_of(db, suggestion_id)
     if not s or s['method_card'] != str(suggestion_id) or s['method_undone']:
-        raise ValueError('Nothing to undo.')
+        raise OwnerError('Nothing to undo.')
     db.execute('UPDATE recurring_series SET method=?,method_undone=1,updated_at=? WHERE id=?', (s['method_prev'], stamp, s['id']))
 
 
@@ -606,7 +607,7 @@ def answer_offer(db, key, yes, stamp):
     """The owner's Yes or No thanks on an open offer (never asked again either way): the offer's row."""
     offer = db.execute("SELECT * FROM recurring_offers WHERE key=? AND status='open'", (key,)).fetchone()
     if not offer:
-        raise ValueError('That suggestion is gone')
+        raise OwnerError('That suggestion is gone')
     db.execute('UPDATE recurring_offers SET status=?,decided_at=? WHERE key=?', ('accepted' if yes else 'declined', stamp, key))
     return offer
 

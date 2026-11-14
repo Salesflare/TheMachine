@@ -8,6 +8,7 @@ import datetime as dt
 import os
 import re
 from zoneinfo import ZoneInfo
+from machine.owner_error import OwnerError
 
 # Local time for quiet hours, snoozes, weekly recaps and file-name dates. Set `timezone` in
 # config.json (applied by App) or ASSISTANT_TIMEZONE.
@@ -45,7 +46,7 @@ def clock(value, what='time'):
     """'8:30' or '08:30' as (8, 30); anything else is a ValueError naming `what`."""
     match = re.fullmatch(r'\s*([01]?\d|2[0-3]):([0-5]\d)\s*', str(value or ''))
     if not match:
-        raise ValueError(f'{what} must be a time like 09:00')
+        raise OwnerError(f'{what} must be a time like 09:00')
     return int(match[1]), int(match[2])
 
 
@@ -76,7 +77,7 @@ def work_hours(value=None):
         else:
             raise ValueError('work days are weekday numbers 1 (Monday) to 7 (Sunday) or names like mon')
     if not picked:
-        raise ValueError('Pick at least one work day')
+        raise OwnerError('Pick at least one work day')
     hours = {'days': sorted(picked)}
     for key, what in (('start', 'The start'), ('end', 'The end'), ('morning', 'The morning time')):
         hours[key] = '%02d:%02d' % clock(value.get(key, WORK_HOURS_DEFAULT[key]), what)

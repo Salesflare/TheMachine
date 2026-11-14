@@ -30,6 +30,7 @@ import i18n
 import todo_areas
 from machine.browser import browser_lease_script
 from machine import todo_states
+from machine.owner_error import OwnerError
 
 LOG = logging.getLogger('personal-assistant')
 OFFERED = 'birthdays_facebook:offered'  # enrich_prefs: the to-do was offered once (also when the owner said Not needed)
@@ -94,7 +95,7 @@ class BirthdaysFacebookApp:
         """The owner's tap on the to-do: step read (Import, Try again, Import again), save (Save on the preview), add (Add
         them as people: the friends nobody in the Graph has, also after Save) or undo_add (its Undo)."""
         if not owner_dashboard:
-            raise ValueError('Only the owner imports birthdays, on the dashboard')
+            raise OwnerError('Only the owner imports birthdays, on the dashboard')
         sid, step = str(args.get('suggestion_id') or ''), args.get('step')
         stamp = self.routines_stamp()
         picks = seen = photos = None
@@ -108,7 +109,7 @@ class BirthdaysFacebookApp:
             got = birthdays_facebook.get(db, sid)
             row = db.execute('SELECT status FROM suggestions WHERE id=?', (sid,)).fetchone()
             if not got or not row or row['status'] == 'rejected':
-                raise ValueError('That to-do is gone')
+                raise OwnerError('That to-do is gone')
             state = birthdays_facebook.view(db, sid)['state']
             if step == 'read':
                 if state == 'reading':
@@ -116,7 +117,7 @@ class BirthdaysFacebookApp:
                 birthdays_facebook.put(db, sid, 'reading', birthdays_facebook.carried(got[1]), stamp)  # Undo keeps who Add added
             elif step == 'save':
                 if state != 'preview':
-                    raise ValueError('Import again first')
+                    raise OwnerError('Import again first')
                 if picks is None or got[2] != seen:  # the preview changed in between: worked out again
                     picks, photos = birthdays_facebook.to_save(db, got[1]), birthdays_facebook.to_photos(db, got[1])
                 people = birthdays_facebook.write_saved(db, picks, stamp)  # one short write
@@ -127,16 +128,16 @@ class BirthdaysFacebookApp:
                                                           'added': got[1].get('added') or [], **kept}, stamp)
             elif step in ('add', 'undo_add'):
                 if state not in ('preview', 'saved'):
-                    raise ValueError('Import again first')
+                    raise OwnerError('Import again first')
                 data = got[1]
                 if step == 'add':
                     if data.get('added'):
-                        raise ValueError('They were added already')
+                        raise OwnerError('They were added already')
                     data['added'] = [p['node_id'] for p in birthdays_facebook.add(db, data, stamp)]
                     done = {'added': len(data['added'])}
                 else:
                     if not data.get('added'):
-                        raise ValueError('Nothing to undo.')
+                        raise OwnerError('Nothing to undo.')
                     done = {'undone': birthdays_facebook.remove(db, data.pop('added'))}
                 birthdays_facebook.put(db, sid, state, data, stamp)
             else:

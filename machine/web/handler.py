@@ -33,7 +33,7 @@ from machine.actions import DASHBOARD_ACTIONS, OWNER_ACTIONS, UPLOAD_ACTIONS
 from machine.browser import browser_link, PANE_QUERY
 from machine.config import BRAND_ASSETS, LOG, ROOT
 from machine.delivery.push import app_notice, push_key
-from machine.faults import source_url
+from machine.faults import fault_frames, fault_message, fault_where, source_url
 from machine import omarchy
 from machine.sources.calendar import calendar_account_owner, company_domains, invite_people, team_people
 from machine.sources.connectors import writable_calendars
@@ -72,6 +72,7 @@ from sources import SourceError
 from timeutil import now
 import voice_input
 import whatsapp_images
+from machine.owner_error import OwnerError
 
 
 UPLOAD_REQUEST_BYTES = 9 * 1024 * 1024
@@ -85,6 +86,22 @@ PAGE_CSP = ("default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 's
 
 # What the dashboard says when an action fails on something other than a ValueError (which says what to do itself)
 ACTION_FAILED = 'That didn’t go through. Reload the page and try again.'
+
+
+def unmarked_error(store, action, error):
+    """A ValueError that isn't an OwnerError (machine/owner_error.py) reached the dashboard: a bug, a request the page
+    shouldn't have sent, or an owner message still raised as a plain ValueError. Report only for now: the owner still
+    sees its text, and this logs it and counts it for the error reports (error_feed.py), so a missed owner message shows
+    up before only OwnerError text reaches the owner."""
+    try:
+        LOG.warning('action error is no OwnerError action=%s error=%s where=%s message=%s', action, type(error).__name__,
+                    fault_where(error), fault_message(error))
+        frames = fault_frames(error.__traceback__)
+        if frames and hasattr(store, 'record_error'):
+            store.record_error('service', type(error).__name__, str(error), frames[-1]['file'], frames[-1]['function'],
+                               frames[-1]['line'])
+    except Exception:
+        pass  # reporting an error must never cause one
 
 
 # Email, whatever brought it in: api/events?kind=email (New to-do's Message chip searches every kind: new_cards.ATTACH_KINDS)
@@ -498,7 +515,7 @@ def make_handler(app):
                 with app.store.connect() as db:
                     row=db.execute('SELECT next_action FROM suggestions WHERE id=?',(args.get('id',[''])[0],)).fetchone()
                 action=next_actions.selected(row['next_action'],args.get('revision',[''])[0]) if row else None
-                if not action:raise ValueError('Merge proposal not found')
+                if not action:raise OwnerError('Merge proposal not found')
                 self.output(200,next_actions.full_merge_diff(action),'text/plain')
             except (ValueError,OSError,subprocess.TimeoutExpired):
                 self.output(404,{'error':'The complete diff for this proposal is not available'})
@@ -880,7 +897,7 @@ def make_handler(app):
             try:
                 if path.path == '/api/team-file':  # an attachment of a client thread a teammate shared (shared_graph.py)
                     if not app.fleet:
-                        raise ValueError('No Fleet')
+                        raise OwnerError('No Fleet')
                     with app.store.connect() as db:
                         data, mime, name = app.fleet.team_file(db, args.get('thread', [''])[0], args.get('file', [''])[0])
                 elif path.path == '/api/draft-attachment':
@@ -1085,10 +1102,10 @@ def make_handler(app):
                                     else voice_input.REQUEST_BYTES if voice else 65536):
                     if voice and size > 0:
                         self.close_connection = True
-                        raise ValueError(f'Recordings can be up to {voice_input.MAX_SECONDS // 60} minutes.')
+                        raise OwnerError(f'Recordings can be up to {voice_input.MAX_SECONDS // 60} minutes.')
                     if chat_file and size > 0:
                         self.close_connection = True
-                        raise ValueError(f'That file is too big. Files can be up to {chat_files.human(chat_files.FILE_BYTES)}.')
+                        raise OwnerError(f'That file is too big. Files can be up to {chat_files.human(chat_files.FILE_BYTES)}.')
                     raise ValueError('Invalid request size')
                 try:
                     request = json.loads(self.rfile.read(size))
@@ -1123,5 +1140,7 @@ def make_handler(app):
                 if isinstance(error, KeyError) and not dashboard and error.args:  # an agent's call: the argument to add
                     self.output(400, {'error': f'Missing argument {str(error.args[0])[:60]}: add it and call again.'})
                     return
+                if dashboard and isinstance(error, ValueError) and not isinstance(error, OwnerError):
+                    unmarked_error(getattr(app, 'store', None), str(request.get('action') if isinstance(request, dict) else '')[:60], error)
                 self.output(400, {'error': str(error) if isinstance(error, ValueError) else ACTION_FAILED})
     return Handler

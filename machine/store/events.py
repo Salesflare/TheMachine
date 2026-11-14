@@ -37,6 +37,7 @@ import meeting_notes
 import message_seal
 from sources import transient
 from timeutil import local_tz, now
+from machine.owner_error import OwnerError
 
 
 # Mail a run's search finds (Store.keep_found) that is this close to, or newer than, the account's last sync is left for
@@ -178,7 +179,7 @@ class EventsStore:
                 return {'observations_before':0, 'signals_after':0, 'removed':0}
             original_ids = {row['id'] for row in originals}
             if any(original_ids & set(json.loads(row['event_ids'])) for row in db.execute('SELECT event_ids FROM suggestions')):
-                raise ValueError('Notification history has suggestion references; reconcile those before merging')
+                raise OwnerError('Notification history has suggestion references; reconcile those before merging')
             queued = []
             for row in originals:
                 meta = json.loads(row['metadata'])
@@ -286,7 +287,7 @@ class EventsStore:
             for event in events:
                 settled = history_store.from_before(event.get('occurred_at'), line)
                 if event['account_id'] != account:
-                    raise ValueError('Event account does not match the checkpoint boundary')
+                    raise OwnerError('Event account does not match the checkpoint boundary')
                 if os.environ.get('MESSAGE_SEAL_AUDIT') and (leaks := message_seal.plain_leaks(event, state)):
                     raise AssertionError(f"{event['kind']} keeps message text in the clear in {', '.join(leaks)}")
                 digest_event = event
@@ -527,7 +528,7 @@ class EventsStore:
         can change (`writable` account ids) without other people on it carries `edit`: its times for the form."""
         start, end = (dt.datetime.fromisoformat(str(v).replace('Z', '+00:00')) for v in (start, end))
         if start.tzinfo is None or end.tzinfo is None or not dt.timedelta(0) < end - start <= dt.timedelta(days=43):
-            raise ValueError('Use a window of at most 43 days, with time zones')  # a month's view (six weeks) in one ask
+            raise OwnerError('Use a window of at most 43 days, with time zones')  # a month's view (six weeks) in one ask
         start, end = start.astimezone(dt.timezone.utc).isoformat(), end.astimezone(dt.timezone.utc).isoformat()
         if not account_ids:
             return []

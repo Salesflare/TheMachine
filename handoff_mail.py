@@ -37,6 +37,7 @@ import task_invites
 from fleet_requests import card_reason
 from i18n import t
 from machine import todo_states
+from machine.owner_error import OwnerError
 
 LOG = logging.getLogger('personal-assistant')
 NO_MAILBOX = 'No Gmail or Outlook account to send it from. Connect one in Connections.'
@@ -126,9 +127,9 @@ class HandoffMail:
         with self.app.store.connect() as db:
             card = db.execute('SELECT * FROM suggestions WHERE id=?', (str(card_id),)).fetchone()
         if not card:
-            raise ValueError('No such to-do')
+            raise OwnerError('No such to-do')
         if not work_card(card['account_ids'], self.app.config.get('accounts', [])):
-            raise ValueError('Hand off by email is for Work to-dos')
+            raise OwnerError('Hand off by email is for Work to-dos')
         return card
 
     def team_events(self, card):
@@ -205,7 +206,7 @@ class HandoffMail:
         ticked (all of them when left out); take: the take line (the setting when left out)."""
         email = str(email or '').strip()
         if not task_invites.EMAIL.fullmatch(email) or len(email) > 254:
-            raise ValueError('Give their email address')
+            raise OwnerError('Give their email address')
         offered = self.parts(card_id)
         card = self.card(card_id)
         keys = {x['key'] for x in [*offered['lines'], *offered['links'], *offered['files'], *([offered['draft']] if offered['draft'] else [])]}

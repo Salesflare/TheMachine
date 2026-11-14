@@ -30,6 +30,7 @@ from machine.sources.whatsapp import sync_whatsapp, WhatsApp
 from sources import CALENDAR_SERVICES, gog_signed_in_since, MAIL_SERVICES, rate_limited, SourceError, transient, upstream_busy
 from timeutil import now
 import whatsapp_images
+from machine.owner_error import OwnerError
 
 
 SALESFLARE_RESTART_SPREAD = 180  # seconds: team Machines restarted together start their Salesflare rounds apart
@@ -635,13 +636,13 @@ class SyncApp:
         week again now (a round stuck on slow or failing accounts). What it brought in stays either way."""
         account = next((a for a in self.config['accounts'] if a['id'] == args.get('account')), None)
         if not account or account.get('service') != 'salesflare':
-            raise ValueError('Only a Salesflare connection can be stopped or restarted here')
+            raise OwnerError('Only a Salesflare connection can be stopped or restarted here')
         do = args.get('do')
         if do not in ('stop', 'start', 'restart'):
-            raise ValueError('Choose stop, start or restart')
+            raise OwnerError('Choose stop, start or restart')
         lock = self.sync_lock(account['id'])
         if not lock.acquire(timeout=20):
-            raise ValueError('It is reading a batch of accounts. Try again in a minute')
+            raise OwnerError('It is reading a batch of accounts. Try again in a minute')
         try:
             with self.store.connect() as db:
                 row = db.execute('SELECT state FROM checkpoints WHERE account_id=?', (account['id'],)).fetchone()
@@ -669,21 +670,21 @@ class SyncApp:
         import crm_sync
         account = next((a for a in self.config['accounts'] if a['id'] == args.get('account')), None)
         if not account or account.get('service') != 'salesforce':
-            raise ValueError('Only a Salesforce connection updates contact details')
+            raise OwnerError('Only a Salesforce connection updates contact details')
         if account.get('shared'):
-            raise ValueError('A connection your Fleet shares only reads')
+            raise OwnerError('A connection your Fleet shares only reads')
         do = args.get('do')
         if do not in ('preview', 'on', 'off'):
-            raise ValueError('Choose preview, on or off')
+            raise OwnerError('Choose preview, on or off')
         plugin = load_connector('salesforce')
         if do == 'preview':
             try:
                 shown, _ = plugin.preview(self.store, self.config, account, CONNECTOR_HELPERS)
             except SourceError as error:
-                raise ValueError(f'Salesforce did not answer ({error.category}). Try again in a minute') from None
+                raise OwnerError(f'Salesforce did not answer ({error.category}). Try again in a minute') from None
         lock = self.sync_lock(account['id'])
         if not lock.acquire(timeout=20):
-            raise ValueError('It is reading Salesforce. Try again in a minute')
+            raise OwnerError('It is reading Salesforce. Try again in a minute')
         try:
             with self.store.connect() as db:
                 row = db.execute('SELECT state FROM checkpoints WHERE account_id=?', (account['id'],)).fetchone()
@@ -692,7 +693,7 @@ class SyncApp:
                     state['contact_preview_at'] = now()
                 elif do == 'on':
                     if not crm_sync.preview_fresh(state, now()):
-                        raise ValueError('Look at what would change first')
+                        raise OwnerError('Look at what would change first')
                     state.update(contact_sync=now())
                     state.pop('contact_sync_at', None)  # the first round goes now
                 else:

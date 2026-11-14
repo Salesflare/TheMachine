@@ -12,6 +12,7 @@ as "signals": false or "actions": false in config.json; a key that isn't there i
 keeps what it did (no migration step). A connection with signals off is action-only: no sync runs, and its card shows no
 sync counts."""
 from __future__ import annotations
+from machine.owner_error import OwnerError
 
 SIGNALS, ACTIONS = 'signals', 'actions'
 ABILITIES = (SIGNALS, ACTIONS)
@@ -71,13 +72,13 @@ def check(account, values):
     at least one on. Returns the account's new fields (False where off, None to drop the key: on). Raises ValueError."""
     switches = switchable(account)
     if not switches:
-        raise ValueError('This connection has one ability. To stop it, disconnect it.')
+        raise OwnerError('This connection has one ability. To stop it, disconnect it.')
     if not isinstance(values, dict) or set(values) != set(ABILITIES) or not all(isinstance(values[a], bool) for a in ABILITIES):
         raise ValueError('Give signals and actions, each on or off')
     if not any(values.values()):
-        raise ValueError('Keep one on. To stop it, disconnect it.')
+        raise OwnerError('Keep one on. To stop it, disconnect it.')
     if any(not values[a] for a in ABILITIES if a not in switches):
-        raise ValueError('Its replies answer what it brings in, so Brings in signals stays on')
+        raise OwnerError('Its replies answer what it brings in, so Brings in signals stays on')
     return {a: None if values[a] else False for a in ABILITIES}
 
 

@@ -9,7 +9,8 @@ signatures only:
 - how often: a count, first and last seen.
 
 Never: message content, names, addresses, tokens or values. Errors come from the service's own code (assistant.FaultLog:
-logged errors and threads that die of one), the dashboard (window errors, unhandled rejections and bugs in its code a
+logged errors and threads that die of one, and a ValueError a dashboard action hit that isn't an OwnerError:
+machine/web/handler.py), the dashboard (window errors, unhandled rejections and bugs in its code a
 try caught and showed, posted by the page), its service worker (source sw: its own errors and a failed shell update,
 passed on by the page), failed API calls the dashboard saw (source api: the endpoint and an action's name, a 5xx or a
 timeout, never the query or what was sent), failed reviews and coding-agent jobs (their error codes) and syncs that

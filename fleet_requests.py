@@ -33,6 +33,7 @@ import locale_prefs
 from i18n import t
 import next_actions
 from machine import todo_states
+from machine.owner_error import OwnerError
 
 LOG = logging.getLogger('personal-assistant')
 SCHEMA = '''
@@ -386,11 +387,11 @@ class Requests:
         the stage; never by a rule. (Accept with a change, 'adjust', was the retired follow-up split's: only its old
         rows still say it.)"""
         if choice not in ACCEPTED or choice == 'adjust':
-            raise ValueError('Choose accept, always, decline or never')
+            raise OwnerError('Choose accept, always, decline or never')
         with self.connect() as db:
             row = db.execute("SELECT * FROM fleet_in WHERE id=? AND status='waiting'", (str(ask_id),)).fetchone()
         if not row:
-            raise ValueError('That request was answered or has expired')
+            raise OwnerError('That request was answered or has expired')
         question = json.loads(row['question'])
         if choice in ('always', 'never') and not by_rule:
             with self.connect() as db:
@@ -423,7 +424,7 @@ class Requests:
     def request_card(self, row, question):
         """The card for an accepted request, made from this Machine's own data. The teammate's words are shown quoted."""
         if not self.make_card:
-            raise ValueError('This Machine makes no to-dos')
+            raise OwnerError('This Machine makes no to-dos')
         sender = fleet.clean((self.member(row['fleet'], row['member_id']) or {}).get('name') or row['name'], 80)
         if row['kind'] in family.REQUESTS:  # a Family's to-do or plan: never the work accounts
             return self.family_card(row, question, sender)
@@ -472,15 +473,15 @@ class Requests:
             return self.make_card(kind='handoff', ask_id=row['id'], name=sender, title=question['title'][:90],
                                   body=t('{} asks you to take this on: “{}”', first, summary),
                                   evidence=evidence, due=question.get('when'), **({'carried': carried} if carried else {}))
-        raise ValueError('That request was answered or has expired')  # a retired kind: its waiting ones lapsed (retire_splits)
+        raise OwnerError('That request was answered or has expired')  # a retired kind: its waiting ones lapsed (retire_splits)
 
     # -- asking a teammate
     def ask_intro(self, fleet_ref, member_id, about, note=''):
         question = parse('intro', {'about': about, 'note': note})
         if not self.member(fleet_ref, member_id):
-            raise ValueError('Not someone in that Fleet')
+            raise OwnerError('Not someone in that Fleet')
         if not question:
-            raise ValueError('Say who you would like to be introduced to')
+            raise OwnerError('Say who you would like to be introduced to')
         return self.ask('intro', question, fleet=fleet_ref, to=[member_id])
 
     def handoff_draft(self, card_id):
@@ -490,9 +491,9 @@ class Requests:
         with self.connect() as db:
             card = db.execute('SELECT * FROM suggestions WHERE id=?', (str(card_id),)).fetchone()
             if not card:
-                raise ValueError('No such to-do')
+                raise OwnerError('No such to-do')
             if 'area' in card.keys() and card['area'] == 'personal':  # Personal (todo_areas.py), also on a work mailbox
-                raise ValueError(t('A personal to-do goes only to your Family'))
+                raise OwnerError(t('A personal to-do goes only to your Family'))
             ids = json.loads(card['event_ids'] or '[]')
             mails = db.execute("SELECT metadata FROM events WHERE kind='gmail.message' AND id IN (SELECT value FROM json_each(?)) "
                                'ORDER BY occurred_at DESC', (json.dumps(ids),)).fetchall()
@@ -759,16 +760,16 @@ class Requests:
             raise ValueError(fleet.clean(hint.get('reason'), 120) or 'A teammate already handled this')
         draft = self.handoff_draft(card_id)
         if not self.member(fleet_ref, member_id):
-            raise ValueError('Not someone in that Fleet')
+            raise OwnerError('Not someone in that Fleet')
         title = self.asked_title(card_id, fleet_ref, member_id, title, draft['title'])
         question = parse('handoff', {'title': title, 'summary': summary, 'contact': contact or '',
                                      **({'when': draft['due']} if draft.get('due') else {})})
         if not question:
-            raise ValueError('Give it a title and a short summary')
+            raise OwnerError('Give it a title and a short summary')
         if contact and contact != draft['contact']:
-            raise ValueError('Only the contact on this to-do can go along')
+            raise OwnerError('Only the contact on this to-do can go along')
         if not any(m['member_id'] == member_id for f in draft['fleets'] if f['id'] == fleet_ref for m in f['members']):
-            raise ValueError('Not someone to hand this to')
+            raise OwnerError('Not someone to hand this to')
         keys = self.message_keys(card_id, fleet_ref)
         if keys:
             question['messages'] = keys
@@ -785,7 +786,7 @@ class Requests:
         with self.connect() as db:
             held = self.open_handoffs(db, card_id)
             if any((r['fleet'], r['member_id']) == (fleet_ref, member_id) for r in held):  # one open handoff per teammate
-                raise ValueError(t('{} already has this to-do', first_name(fleet.label(self.member(fleet_ref, member_id)))))
+                raise OwnerError(t('{} already has this to-do', first_name(fleet.label(self.member(fleet_ref, member_id)))))
             earlier = [r for r in held if (r['fleet'], r['member_id']) != (fleet_ref, member_id)] if replace else []
         taken_at = fleet.now()
         try:
@@ -822,7 +823,7 @@ class Requests:
             rows = self.open_handoffs(db, str(card_id))
             title = db.execute('SELECT title FROM suggestions WHERE id=?', (str(card_id),)).fetchone()
         if not rows:
-            raise ValueError('Nobody has this to-do now')
+            raise OwnerError('Nobody has this to-do now')
         taken_at = fleet.now()
         with self.connect() as db:
             for r in rows:
@@ -871,13 +872,13 @@ class Requests:
         try:
             if card and card['status'] in OPEN:
                 if not self.drop_card:
-                    raise ValueError('To-do cleanup is not ready')
+                    raise OwnerError('To-do cleanup is not ready')
                 self.drop_card(card_id, line, 'fleet-withdrawn-' + ask_id)
             if row['telegram_message_id'] and self.retell:
                 self.retell(row['telegram_message_id'])
         except Exception as error:
             LOG.warning('fleet withdrawn cleanup error=%s', type(error).__name__)
-            raise ValueError('Withdrawal cleanup will be retried') from error
+            raise OwnerError('Withdrawal cleanup will be retried') from error
         with self.connect() as db:
             db.execute('INSERT OR REPLACE INTO fleet_meta(key,value) VALUES(?,?)', (done_key, json.dumps(fleet.now())))
         return line
@@ -1037,7 +1038,7 @@ class Requests:
         with self.connect() as db:
             row = db.execute("SELECT id FROM fleet_out WHERE context=? ORDER BY at DESC LIMIT 1", ('handoff:' + str(card_id),)).fetchone()
         if not row:
-            raise ValueError('That to-do was not handed off')
+            raise OwnerError('That to-do was not handed off')
         self.set_meta('handoff_mine:' + row['id'], fleet.now())
         return {'ok': True}
 
@@ -1066,16 +1067,16 @@ class Requests:
             event = db.execute('SELECT id,kind,occurred_at,title,metadata,account_id FROM events WHERE id=? AND deleted=0', (event_id,)).fetchone() \
                 if isinstance(event_id, int) and not isinstance(event_id, bool) else None
         if not row:
-            raise ValueError('That handoff is not waiting for the owner (answered, expired or unknown); their own answer stands')
+            raise OwnerError('That handoff is not waiting for the owner (answered, expired or unknown); their own answer stands')
         # What a Work Fleet hears comes only from its own accounts: a message from a personal account, or another
         # company's, never tells a teammate anything (not where, when or to whom).
         if not event or event['kind'] not in ON_IT or event['account_id'] not in self.fleet_accounts(row['fleet']):
             raise ValueError('event_id is the email, chat message or calendar call that shows the owner acting on it')
         event = dict(event)
         if not (self.own_event and self.own_event(event)):
-            raise ValueError("Only a message the owner sent or a call they joined shows they took it on; a message they received doesn't")
+            raise OwnerError("Only a message the owner sent or a call they joined shows they took it on; a message they received doesn't")
         if dt.datetime.fromisoformat(event['occurred_at']) < dt.datetime.fromisoformat(row['at']):
-            raise ValueError('That was before the handoff came; only what the owner did after it counts')
+            raise OwnerError('That was before the handoff came; only what the owner did after it counts')
         question = json.loads(row['question'])
         where = ON_IT[event['kind']]
         who, _ = self.other_party(event)
@@ -1083,7 +1084,7 @@ class Requests:
         with self.connect() as db:
             if not db.execute("UPDATE fleet_in SET status='answered',decided_at=?,choice='silent' WHERE id=? AND status='waiting'",
                               (fleet.now(), row['id'])).rowcount:
-                raise ValueError('That handoff is not waiting for the owner (answered, expired or unknown); their own answer stands')
+                raise OwnerError('That handoff is not waiting for the owner (answered, expired or unknown); their own answer stands')
         card_id = joined = None
         try:  # the card first (it can't be made without a work account), then the teammate is told
             joined = bool(self.same_card(row['fleet'], question))  # it joins a card the owner already had: Not mine leaves that card
@@ -1147,7 +1148,7 @@ class Requests:
         """Not mine on a card that became the owner's silently: undone, and the teammate is told, so it comes back to them."""
         note = self.silent_note(card_id)
         if not note:
-            raise ValueError('That to-do did not become yours by itself')
+            raise OwnerError('That to-do did not become yours by itself')
         with self.connect() as db:
             row = db.execute('SELECT * FROM fleet_requests WHERE id=?', (note['ask_id'],)).fetchone()
         self.relay.call('POST', '/answer', {'id': row['id'], 'status': 'answered', 'answer': {'stage': 'declined', 'note': 'Not mine'}})

@@ -21,6 +21,7 @@ import json
 import re
 
 import meeting_notes
+from machine.owner_error import OwnerError
 
 # One model turn's share of a transcript, in UTF-8 bytes: the prompt goes to the model as one program argument, which
 # Linux caps at 128 KiB, and this leaves room for the instructions. A 2-hour meeting is two or three parts.
@@ -121,11 +122,11 @@ def source(db, event_id):
     the meeting has notes already (added, or the meeting app's)."""
     found = meeting_notes.read(db, event_id, 0, meeting_notes.MAX_CHARS)
     if has_notes(found):
-        raise ValueError('This meeting has notes already.')
+        raise OwnerError('This meeting has notes already.')
     transcript = found.get('transcript') or next((found[app]['transcript'] for app in meeting_notes.SOURCES
                                                     if (found.get(app) or {}).get('transcript')), None)
     if not transcript or not str(transcript.get('text') or '').strip():
-        raise ValueError('This meeting has no transcript to write notes from.')
+        raise OwnerError('This meeting has no transcript to write notes from.')
     event = meeting_notes.meeting(db, event_id)
     em = json.loads(event['metadata'] or '{}')
     meeting = {'title': found['title'], 'start': found['start'], 'attendees': em.get('attendees') or []}

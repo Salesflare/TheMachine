@@ -17,6 +17,7 @@ from timeutil import local_tz
 from machine.sources.calendar import (
     CALENDAR_BACK_DAYS,
 )
+from machine.owner_error import OwnerError
 
 CALENDARS = ('calendar', 'outlook_calendar', 'icloud_calendar', 'caldav', 'proton_calendar', 'ics', 'exchange')  # assistant.CALENDAR_SERVICES
 
@@ -41,7 +42,7 @@ class CalendarApp:
     def calendar_write_action(self, name, args, owner_dashboard):
         # the Calendar's New event and edit form: the owner's own tap, from the dashboard only
         if not owner_dashboard:
-            raise ValueError('Calendar changes come from your tap in the dashboard')
+            raise OwnerError('Calendar changes come from your tap in the dashboard')
         return self.calendar_write(args)
 
     def meeting_notes_action(self, name, args, owner_dashboard):
@@ -50,7 +51,7 @@ class CalendarApp:
     def meeting_notes_write_action(self, name, args, owner_dashboard):
         # Generate notes on a meeting in the Calendar (meeting_writer.py)
         if not owner_dashboard:
-            raise ValueError('Only the owner asks for notes to be written, in the Calendar')
+            raise OwnerError('Only the owner asks for notes to be written, in the Calendar')
         return self.meeting_write(args)
 
     def calendar_starts(self):

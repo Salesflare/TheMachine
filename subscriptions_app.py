@@ -31,6 +31,7 @@ import todo_areas
 from machine import todo_states
 from machine.store import outcomes
 from models import background_model
+from machine.owner_error import OwnerError
 
 LOG = logging.getLogger('personal-assistant')
 SUBS_TIMEOUT = 120  # seconds the model call may take
@@ -49,12 +50,12 @@ class SubscriptionsApp:
         """Keep, Cancel, or none to take it back, on a row. Cancel returns the draft to show (subscriptions.draft):
         nothing is sent or changed."""
         if not owner_dashboard:
-            raise ValueError('Only the owner decides this, on the dashboard')
+            raise OwnerError('Only the owner decides this, on the dashboard')
         choice = args.get('choice') or None
         try:
             n = int(args.get('item'))
         except (TypeError, ValueError):
-            raise ValueError(i18n.t('That subscription is gone')) from None
+            raise OwnerError(i18n.t('That subscription is gone')) from None
         sid = str(args.get('suggestion_id') or '')
         with self.store.connect() as db:
             db.execute('BEGIN IMMEDIATE')

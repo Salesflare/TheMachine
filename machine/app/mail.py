@@ -28,6 +28,7 @@ import own_addresses
 from sources import credential, gog_read, MAIL_SERVICES, SourceError
 import task_pages
 import todo_areas
+from machine.owner_error import OwnerError
 
 COMPOSE_ADDRESS = re.compile(r'[^\s<>@,;"]+@[^\s<>@,;"]+\.[^\s<>@,;"]+')
 
@@ -185,7 +186,7 @@ class MailApp:
         """The HTML of one source email, read live (read-only), with its embedded images."""
         source = self.gmail_source(suggestion_id, event_id)
         if not source:
-            raise ValueError('Email not available')
+            raise OwnerError('Email not available')
         payload = self.gmail_message(source['account_id'], source['message_id'])[1].get('payload')
         return {'html': message_html(payload), 'images': message_images(payload)}
 
@@ -200,18 +201,18 @@ class MailApp:
         record = next((r for action in next_actions.actions(row['next_action'] if row else None)
                        for r in action.get('attachments', []) if r['sha256'] == sha256), None)
         if not record:
-            raise ValueError('Attachment not available')
+            raise OwnerError('Attachment not available')
         return next_actions.attachment_bytes(record, self.config), record['type'], record['name']
 
     def attachment(self, suggestion_id, event_id, part):
         source = self.gmail_source(suggestion_id, event_id)
         if not source:
-            raise ValueError('Attachment not available')
+            raise OwnerError('Attachment not available')
         account, message = self.gmail_message(source['account_id'], source['message_id'])
         payload = message.get('payload') or {}
         # Only this message's real attachments and its embedded images are served.
         if part not in [a['part'] for a in message_attachments(payload)] + list(message_images(payload).values()):
-            raise ValueError('Attachment not available')
+            raise OwnerError('Attachment not available')
         found = []
         def walk(node):
             if str(node.get('partId', '')) == part:
@@ -220,7 +221,7 @@ class MailApp:
                 walk(child)
         walk(payload)
         if not found:
-            raise ValueError('Attachment not available')
+            raise OwnerError('Attachment not available')
         node = found[0];body = node.get('body') or {}
         data = body.get('data') or gog_read(self.config, account, 'gmail', 'v1', 'gmail.users.messages.attachments.get',
                                             {'userId': 'me', 'messageId': source['message_id'], 'id': body['attachmentId']},
@@ -254,7 +255,7 @@ class MailApp:
         if not args.get('save'):
             return {'attachments': found}
         if len(data) > next_actions.MAX_ATTACHMENT_BYTES:
-            raise ValueError('That attachment is larger than 18 MB')
+            raise OwnerError('That attachment is larger than 18 MB')
         job = str(args.get('job_id') or '')
         if not re.fullmatch(r'[A-Za-z0-9_-]{1,80}', job):
             raise ValueError('Give the job_id of this preparation')
@@ -268,7 +269,7 @@ class MailApp:
         try:
             message = self.gmail_message(account['id'], message_id)[1]
         except Exception as error:
-            raise ValueError(f'Gmail could not give the message ({type(error).__name__})') from None
+            raise OwnerError(f'Gmail could not give the message ({type(error).__name__})') from None
         payload = message.get('payload') or {}
         found = [{'id': a['part'], 'name': a['name'], 'mime': a['mime'], 'size': a['size'], 'inline': False, 'kind': 'file'}
                  for a in message_attachments(payload)]
@@ -276,9 +277,9 @@ class MailApp:
             return found, None
         chosen = next((a for a in found if save in (a['id'], a['name'])), None)
         if not chosen:
-            raise ValueError('No attachment with that id or name')
+            raise OwnerError('No attachment with that id or name')
         if chosen['size'] > next_actions.MAX_ATTACHMENT_BYTES:
-            raise ValueError('That attachment is larger than 18 MB')
+            raise OwnerError('That attachment is larger than 18 MB')
         nodes = []
         def walk(node):
             if str(node.get('partId', '')) == chosen['id']:
@@ -303,14 +304,14 @@ class MailApp:
                         for a in found], None
             chosen = next((a for a in found if save in (a['id'], a['name'])), None)
             if not chosen:
-                raise ValueError('No attachment with that id or name')
+                raise OwnerError('No attachment with that id or name')
             if chosen['kind'] != 'file':
-                raise ValueError('Only file attachments can be saved; ' + ('open this cloud link in the browser' if chosen['kind'] == 'link' else 'this is an attached email or event'))
+                raise OwnerError('Only file attachments can be saved; ' + ('open this cloud link in the browser' if chosen['kind'] == 'link' else 'this is an attached email or event'))
             if chosen['size'] > next_actions.MAX_ATTACHMENT_BYTES:
-                raise ValueError('That attachment is larger than 18 MB')
+                raise OwnerError('That attachment is larger than 18 MB')
             return chosen, ms_graph.attachment(self.config, credential, account, message_id, chosen['id'])
         except ms_graph.GraphError as error:
-            raise ValueError(f'Outlook could not give the attachment ({error})') from None
+            raise OwnerError(f'Outlook could not give the attachment ({error})') from None
 
     def share_files(self, event_id, part=None):
         """A Work email's attachments for the Shared Graph, read-only (Gmail and Outlook): the list, or (part) one file's
@@ -341,7 +342,7 @@ class MailApp:
     def compose_address(value):
         address = str(value or '').strip()
         if len(address) > 254 or not COMPOSE_ADDRESS.fullmatch(address):
-            raise ValueError(t('Give their email address'))
+            raise OwnerError(t('Give their email address'))
         return address
 
     @staticmethod
@@ -357,7 +358,7 @@ class MailApp:
         Work for a work contact, Personal for a personal one), and their name from the Graph. No mailbox: no choices,
         and the dashboard opens the mail app instead."""
         if not owner_dashboard:
-            raise ValueError(t('Only the owner writes an email, from the dashboard'))
+            raise OwnerError(t('Only the owner writes an email, from the dashboard'))
         address = self.compose_address(args.get('to'))
         able = self.compose_mailboxes()
         accounts = self.config.get('accounts', [])
@@ -388,16 +389,16 @@ class MailApp:
         any draft (next_actions.validate). Nothing is sent here: the dashboard then confirms exactly this revision
         (confirm_action), with the alias picked as its sender."""
         if not owner_dashboard:
-            raise ValueError(t('Only the owner writes an email, from the dashboard'))
+            raise OwnerError(t('Only the owner writes an email, from the dashboard'))
         address = self.compose_address(args.get('to'))
         account = next((a for a in self.compose_mailboxes() if a['id'] == args.get('account_id')), None)
         if not account:
-            raise ValueError(t('Pick a mailbox to send it from.'))
+            raise OwnerError(t('Pick a mailbox to send it from.'))
         subject, body = ' '.join(str(args.get('subject') or '').split()), str(args.get('body') or '').strip()
         if not subject:
-            raise ValueError(t('Add a subject first.'))
+            raise OwnerError(t('Add a subject first.'))
         if not body:
-            raise ValueError(t('Write the message first.'))
+            raise OwnerError(t('Write the message first.'))
         with self.store.connect() as db:
             node, person = self.compose_person(db, address)
             senders = own_addresses.senders(db, self.config)
@@ -415,5 +416,5 @@ class MailApp:
     def task_page_action(self, name, args, owner_dashboard=False):
         # a task page for an email handoff: add, skip, stop sharing, mark done (task_pages.py)
         if not owner_dashboard:
-            raise ValueError('Task pages are shared from the dashboard')
+            raise OwnerError('Task pages are shared from the dashboard')
         return self.task_pages.action(name, args)

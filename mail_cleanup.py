@@ -38,6 +38,7 @@ from machine.cards import group_sender
 from machine.sources.gmail import phone_link
 from machine.store.review_wait import People, mail_wait
 from machine import todo_states
+from machine.owner_error import OwnerError
 
 KINDS = ('newsletters', 'spam')
 MAIL_KINDS = ('gmail.message', 'ms_graph.message', 'outlook.message')
@@ -538,7 +539,7 @@ def pick(db, suggestion_id, picks, stamp):
     ones to do turn 'working'. Only open items change. Returns the item numbers to do."""
     have, todo = items_of(db, suggestion_id), []
     if not have:
-        raise ValueError('That to-do is gone')
+        raise OwnerError('That to-do is gone')
     for key, choice in (picks or {}).items():
         try:
             n = int(key)
