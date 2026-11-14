@@ -198,8 +198,8 @@ After fixture tests, the owner can run `assistant connect <service>`: setup veri
 
 A connector is a feature people see, so it ships with what every feature ships with (see [CONTRIBUTING](../CONTRIBUTING.md#pull-requests)):
 
-- A help article, `docs/help/<service>.md` (dashes for underscores), in the form of [`docs/help/rss.md`](help/rss.md): `covers: connector:<service>` and `code: connectors/<service>.py` in its front matter, then what it reads, what it can do, how to connect it and how to remove it. The same article in every other language, under `docs/help/<language>/`.
-- Every text it shows (`SETUP` and `KINDS`) in every string catalog in `i18n/`: `python3 scripts/i18n_extract.py --add` adds the English, then translate it in each language following `i18n/glossary.md`, and run `python3 scripts/i18n_extract.py --sort`. Add strings only; never change one that is there.
+- A help article, `docs/help/<service>.md` (dashes for underscores), in the form of [`docs/help/rss.md`](help/rss.md): `covers: connector:<service>` and `code: connectors/<service>.py` in its front matter, then what it reads, what it can do, how to connect it and how to remove it. In English only: the daily translator writes the other languages (`docs/help/<language>/`).
+- Every text it shows (`SETUP` and `KINDS`) in `i18n/en.json`: `python3 scripts/i18n_extract.py --add` adds the English, then run `python3 scripts/i18n_extract.py --sort`. The daily translator (`scripts/translate.py`) writes the other catalogs; a new product term goes in `i18n/glossary.md` in the same pull request.
 
 Before you open the pull request, run the checks it would fail on, not only your own tests:
 
@@ -220,4 +220,4 @@ python3 scripts/test.py test_connector_<service>.py test_connectors.py test_new_
 - [ ] `SETUP` with what `assistant connect` should ask, plus a supported read-only setup check.
 - [ ] Reading notes in `source-notes/<service>.md` when reviews need to know more than the event says.
 - [ ] A one-color mark in `dashboard/logos/mono/` and `MONO` (`test_source_icons.py`).
-- [ ] A help article in every language and every text it shows in every catalog, with `test_i18n.py` and `test_help.py` passing.
+- [ ] A help article and every text it shows in `i18n/en.json`, with `test_i18n.py` and `test_help.py` passing.

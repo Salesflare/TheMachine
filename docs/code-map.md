@@ -263,7 +263,7 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   `dashboard.html` itself holds the head (with its small theme script, which runs before paint), the page's
   elements that wrap the parts, and the include lines in order: what the page is made of, at a glance. A new top-level
   statement goes in a part only whole (each part parses on its own). Parts run in the page's order, as they were in
-  the one file, so a part may use what an earlier one declares. New UI strings go in every catalog in `i18n/`.
+  the one file, so a part may use what an earlier one declares. New UI strings go in `i18n/en.json`; the daily translator writes the other catalogs.
 - **Dashboard styles and markup:** the same way, in parts: a stylesheet part `dashboard/<area>-<what>.css` fills a
   line `/*@include dashboard/<name>.css*/` inside the page's `<style>`, a markup part `dashboard/<area>-<what>.html` a
   line `<!--@include dashboard/<name>.html-->` in the markup (`base` is the area of the shared design layer). A

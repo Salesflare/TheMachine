@@ -335,6 +335,22 @@ class Releases(unittest.TestCase):
         self.assertEqual(release.releases(), tags)
         self.gate.assert_called_once()
 
+    def test_cut_refuses_a_commit_with_translations_missing(self):
+        # the commit's own translator decides, run on its own files: here one that finds a help article missing
+        (self.origin / 'scripts').mkdir()
+        (self.origin / 'scripts' / 'translate.py').write_text(
+            "import sys\nprint('nl: docs/help/gmail.md not translated')\nsys.exit(1)\n")
+        sha = self.commit('two')
+        with self.assertRaisesRegex(SystemExit, 'not every language is translated yet(.|\n)*nl: docs/help/gmail.md not translated'):
+            release.main(['cut', '--key', str(self.key), '--no-push'])
+        self.assertEqual(release.releases(), [])
+        self.green.assert_not_called()
+        self.assertEqual(run('git', 'worktree', 'list', '--porcelain', cwd=self.app).count('worktree '), 1, 'the worktree is gone')
+        (self.origin / 'scripts' / 'translate.py').write_text('import sys\nsys.exit(0)\n')
+        sha = self.commit('three')
+        release.main(['cut', '--key', str(self.key), '--no-push'])
+        self.assertEqual(release.verify(release.releases()[-1])[1], sha)
+
     def test_failed_scan_never_creates_or_pushes_a_release(self):
         self.commit('two')
         self.gate.side_effect = RuntimeError('scan did not pass')

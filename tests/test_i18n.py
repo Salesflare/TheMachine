@@ -49,15 +49,18 @@ def term_in(term, english):
 
 
 class CatalogTest(unittest.TestCase):
-    def test_every_language_has_every_string_with_the_same_placeholders(self):
+    def test_every_translation_keeps_the_placeholders(self):
+        # Pull requests change the English only: a key another language doesn't have yet (or has in another shape, or
+        # still has after the English changed) is the daily translator's (scripts/translate.py), and main may show
+        # English there for a day. scripts/release.py cut refuses a release with anything missing.
         en = load('en.json')
+        self.assertTrue(en)
         for lang in LANGS:
             cat = load(f'{lang}.json')
             with self.subTest(lang=lang):
-                self.assertEqual(sorted(set(en) - set(cat)), [], f'{lang}.json misses these')
-                self.assertEqual(sorted(set(cat) - set(en)), [], f'{lang}.json has keys en.json lacks')
                 for key, value in cat.items():
-                    self.assertEqual(type(value), type(en[key]), key)
+                    if key not in en or type(value) is not type(en[key]):
+                        continue
                     for form in forms(value):
                         self.assertEqual(len(HOLE.findall(form)), len(HOLE.findall(key)), f'{lang}: {key!r} -> {form!r}')
                         self.assertNotIn('—', form, f'{lang}: no em dashes ({key!r})')
@@ -137,8 +140,8 @@ class CatalogTest(unittest.TestCase):
         self.assertEqual(sorted(allowed - found), [], 'no longer in en.json: take it off the list')
 
     def test_the_moved_areas_have_no_english_outside_the_catalog(self):
-        # A new string in a moved area: add it with `python3 scripts/i18n_extract.py --add`, translate it in every
-        # language, or list it in i18n/not-ui.json when nobody reads it as is.
+        # A new string in a moved area: add it with `python3 scripts/i18n_extract.py --add` (the daily translator
+        # writes the other languages), or list it in i18n/not-ui.json when nobody reads it as is.
         self.assertEqual(i18n_extract.missing(), {})
 
 
@@ -148,9 +151,17 @@ class CatalogTest(unittest.TestCase):
         self.assertLessEqual({'{} organization', '{} organizations', '{} person', '{} people'}, set(i18n_extract.dashboard_strings()))
         self.assertTrue(all(load(f'{lang}.json').get('{} organizations') for lang in ('en', 'de', 'es', 'fr', 'it', 'nl', 'pt-BR')))
 
+    def test_the_stale_key_report_names_keys_no_code_reads(self):
+        # python3 scripts/i18n_extract.py --stale: pruned by hand once a month, since each key lives in every catalog
+        from unittest import mock
+        fake = {'Language': 'Language', 'A key no code reads': 'A key no code reads',
+                '{} meetings': {'one': '{} meeting', 'other': '{} meetings'}}
+        with mock.patch.object(i18n_extract, 'catalog', lambda lang: fake):
+            self.assertEqual(i18n_extract.stale(), ['A key no code reads'])
+
     def test_no_words_are_glued_to_a_value(self):
         # "'Hand to '+name" reads English in every language: the page translates a line only when a catalog entry
-        # frames it, so write t('Hand to {}', name) and add "Hand to {}" in every language.
+        # frames it, so write t('Hand to {}', name) and add "Hand to {}" to en.json.
         found = i18n_extract.glued()
         self.assertEqual(found, [], '\n'.join(f'{lit!r} in {ctx}' for lit, ctx in found[:30]))
 

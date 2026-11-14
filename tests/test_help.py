@@ -86,21 +86,31 @@ class HelpArticles(unittest.TestCase):
         self.assertIn('lists "Connect it now" under site: but does not use it',
                       ' '.join(self.problems(GOOD.replace('code: onboarding.py', 'code: onboarding.py\nsite: Connect it now'))))
 
-    def test_every_german_article_is_there_and_has_every_paragraph(self):
-        self.assertEqual(help_check.COMPLETE, ('de',))
+    def test_a_current_translation_has_every_paragraph_and_an_older_one_waits_for_the_translator(self):
+        import sys
+        sys.path.insert(0, str(HERE / 'scripts'))
+        import translate
         de = GOOD.replace('Open **Connections**.', 'Öffne **Verbindungen**.')
+        english = GOOD + '\n## Remove it\n\nOpen it.\n\n- One.\n- Two.\n'
         with tempfile.TemporaryDirectory() as d:
             folder = Path(d)
             gmail = lambda: [p for p in help_check.check_translations(help_check.articles(folder), folder) if 'gmail' in p]
-            self.write(d, 'gmail.md', GOOD + '\n## Remove it\n\nOpen it.\n\n- One.\n- Two.\n')
+            self.write(d, 'gmail.md', english)
             self.write(d, 'slack.md', GOOD.replace('connector:gmail', 'connector:slack'))
             (folder / 'de').mkdir()
-            self.assertEqual(gmail(), ['docs/help/de/gmail.md is missing: translate docs/help/gmail.md'])
-            self.write(folder / 'de', 'gmail.md', de + '\n## Entfernen\n\nÖffne es.\n\n- Eins.\n')  # a list item short
+            self.assertEqual(gmail(), [], 'not translated yet: Help shows the English one, the translator adds it')
+            stamped = lambda text: text.replace('---\nOpen', f'translated: {translate.stamp(folder / "gmail.md")}\n---\nOpen', 1).replace('---\nÖffne', f'translated: {translate.stamp(folder / "gmail.md")}\n---\nÖffne', 1)
+            self.write(folder / 'de', 'gmail.md', stamped(de + '\n## Entfernen\n\nÖffne es.\n\n- Eins.\n'))  # a list item short
             self.assertEqual(gmail(), ['docs/help/de/gmail.md: section 1 has 2 paragraphs and list items, the English article has 3'])
-            self.write(folder / 'de', 'gmail.md', de + '\n## Entfernen\n\nÖffne es.\n\n- Eins.\n- Zwei.\n')
+            self.write(folder / 'de', 'gmail.md', stamped(de + '\n## Entfernen\n\nÖffne es.\n\n- Eins.\n- Zwei.\n'))
             self.assertEqual(gmail(), [])
-            (folder / 'nl').mkdir()  # other languages may still miss an article: Help shows the English one
+            # a pull request changes the English only: the translation is out of date, not wrong
+            self.write(d, 'gmail.md', english + '\n## Reconnect\n\nOpen it again.\n')
+            self.assertEqual(gmail(), [])
+            self.write(folder / 'de', 'gmail.md', de + 'Schnell — und ruhig.\n')
+            self.assertEqual(gmail(), ['docs/help/de/gmail.md: an em dash'], 'never an em dash')
+            (folder / 'gmail.md').unlink()  # English no longer has it: the translator removes it
+            self.write(folder / 'de', 'gmail.md', de)
             self.assertEqual(gmail(), [])
 
 if __name__ == '__main__':

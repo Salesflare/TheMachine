@@ -10,7 +10,7 @@
 # the checks pass. When a run fails or leaves something in English, the issue "Daily translation failed" says where;
 # the next good run closes it.
 # The model key is the secret AZ_TRANSLATE_KEY of the environment "translate", which only main can use: branches
-# (contrib/ ones included) never see it.
+# (contrib/ ones included) never see it. Until it is set, a run skips with a notice and stays green.
 name: Daily translation
 on:
   schedule:
@@ -37,12 +37,20 @@ jobs:
           persist-credentials: false
           fetch-depth: 0  # each help article's history: a translation from before stamps is current when its English didn't change after it
           filter: blob:none
-      - name: Translate what is missing
-        id: translate
+      - name: The model key
+        id: key
         env:
           AZ_TRANSLATE_KEY: ${{ secrets.AZ_TRANSLATE_KEY }}
         run: |
-          if [ -z "$AZ_TRANSLATE_KEY" ]; then echo "::error::The secret AZ_TRANSLATE_KEY of the environment translate is not set (Settings, Environments)."; exit 1; fi
+          # Not set yet (a fork, or before the owner adds it): skip with a notice, not a red run or a failure issue
+          if [ -z "$AZ_TRANSLATE_KEY" ]; then echo "::notice::Skipped: the secret AZ_TRANSLATE_KEY of the environment translate is not set (Settings, Environments)."; exit 0; fi
+          echo "ready=1" >> "$GITHUB_OUTPUT"
+      - name: Translate what is missing
+        id: translate
+        if: steps.key.outputs.ready
+        env:
+          AZ_TRANSLATE_KEY: ${{ secrets.AZ_TRANSLATE_KEY }}
+        run: |
           # a second pass asks only what the first left out; what is still left stays English (the last step says so)
           python3 scripts/translate.py all || python3 scripts/translate.py all || true
           python3 scripts/help_check.py
@@ -98,12 +106,13 @@ jobs:
           pr=$(gh pr list --repo "$GITHUB_REPOSITORY" --head translate/daily --state open --json number --jq '.[0].number // empty')
           if [ -n "$pr" ]; then gh pr close "$pr" --repo "$GITHUB_REPOSITORY" --delete-branch --comment "Main has these translations already."; fi
       - name: Nothing left in English
+        if: steps.key.outputs.ready
         run: |
           # What failed twice stays English (the rest goes in the pull request above): fail here so the issue below
           # says so, rather than closing it as if all were translated.
           if ! python3 scripts/translate.py all --check; then echo "::error::Some catalog keys or help articles are still in English; the next run tries them again."; exit 1; fi
       - name: Close the failure issue
-        if: success()
+        if: success() && steps.key.outputs.ready
         env:
           GH_TOKEN: ${{ github.token }}
         run: |

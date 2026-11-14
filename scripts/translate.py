@@ -579,9 +579,14 @@ def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument('what', choices=('catalog', 'help', 'all'))
     p.add_argument('--lang', action='append', choices=languages(), help='only this language (repeat for more)')
-    p.add_argument('--check', action='store_true', help='list what is missing or out of date, call nothing (exit 1 when something is)')
+    p.add_argument('--check', action='store_true', help='count what is missing or out of date, call nothing (exit 1 when something is)')
+    p.add_argument('--list', action='store_true', help='with --check and all: one line per language and article left, for scripts/release.py')
     args = p.parse_args(argv)
     langs = args.lang or languages()
+    if args.check and args.list and args.what == 'all':
+        lines = problems(langs)
+        print('\n'.join(lines))
+        return 1 if lines else 0
     left = 0
     if args.what in ('catalog', 'all'):
         left += run_catalog(langs, check=args.check)
