@@ -53,7 +53,7 @@ Eine Person, die du hinzufügst, bleibt auch dann erhalten, wenn es noch keine N
 
 ## Person bearbeiten
 
-Mit **Bearbeiten** oben auf der Seite kannst du Name, Titel, Organisation, Ort, LinkedIn, Telefonnummern und E-Mail-Adressen, die Rolle der Person für dich sowie Arbeit oder Privat ändern. Im Feld **Notizen** kannst du alles festhalten, woran du dich erinnern möchtest. Notizen bleiben bei Zusammenführungen erhalten. Mit **Speichern** werden die Änderungen übernommen. **Abbrechen** verwirft sie.
+Mit **Bearbeiten** oben auf der Seite kannst du Name, Titel, Organisation, Ort, Telefonnummern, LinkedIn und E-Mail-Adressen, die Rolle der Person für dich sowie Arbeit oder Privat ändern. Im Feld **Notizen** kannst du alles festhalten, woran du dich erinnern möchtest. Notizen bleiben bei Zusammenführungen erhalten. Mit **Speichern** werden die Änderungen übernommen. **Abbrechen** verwirft sie.
 
 Deine Änderungen bleiben bestehen, auch wenn die Angaben erneut nachgeschlagen werden und wenn Personen über **Zusammenführen** und **Rückgängig** zusammengeführt oder wieder getrennt werden. Leere ein Feld, um wieder den nachgeschlagenen Wert zu verwenden. Ist der Name leer, wird wieder der Name aus den Nachrichten angezeigt.
 
