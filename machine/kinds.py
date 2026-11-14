@@ -8,6 +8,8 @@ An event kind's row:
   note the owner wrote, notes added to a meeting)
 - name: what a to-do's source line calls it ("signal from Slack"), None for a kind it never names
   (machine/store/cards.source_label)
+- via: the Graph's word for where someone was in touch ("last talked via LinkedIn"), None where it says the service's
+  key: mostly its name, but a CRM's copy of an email is "email" and an X message "X" (graph.VIA)
 - view: how the message viewer reads it: email, chat, notification or card (machine/store/message_view.py)
 - family: what it is: mail, chat, meeting, notification or card
 - timeline: its group on a person's Graph timeline: email, meetings, intercom, chats or other (graph.TIMELINE_SOURCES)
@@ -23,30 +25,30 @@ FAMILIES = (MAIL, CHAT, MEETING, NOTIFICATION, CARD)
 VIEWS = ('email', 'chat', 'notification', 'card')
 TIMELINE_GROUPS = ('email', 'meetings', 'intercom', 'chats', 'other')
 
-_NO = {'send': None, 'timeline': 'other', 'markdown': False, 'media': False, 'messenger': False}
+_NO = {'via': None, 'send': None, 'timeline': 'other', 'markdown': False, 'media': False, 'messenger': False}
 
 KINDS = {
     # mail
-    'gmail.message': {**_NO, 'service': 'gmail', 'name': 'email', 'view': 'email', 'family': MAIL, 'timeline': 'email', 'send': 'email', 'mark': 'mail'},
+    'gmail.message': {**_NO, 'via': 'email', 'service': 'gmail', 'name': 'email', 'view': 'email', 'family': MAIL, 'timeline': 'email', 'send': 'email', 'mark': 'mail'},
     'outlook.message': {**_NO, 'service': 'outlook', 'name': None, 'view': 'email', 'family': MAIL, 'send': 'email', 'mark': 'outlook'},
     'ms_graph.message': {**_NO, 'service': 'outlook', 'name': None, 'view': 'email', 'family': MAIL, 'send': 'email', 'mark': 'source'},
     'imap.message': {**_NO, 'service': 'imap', 'name': None, 'view': 'email', 'family': MAIL, 'mark': 'imap'},
-    'salesflare.email': {**_NO, 'service': 'salesflare', 'name': 'CRM email', 'view': 'email', 'family': MAIL, 'timeline': 'email', 'send': 'email', 'mark': 'salesflare'},
+    'salesflare.email': {**_NO, 'via': 'email', 'service': 'salesflare', 'name': 'CRM email', 'view': 'email', 'family': MAIL, 'timeline': 'email', 'send': 'email', 'mark': 'salesflare'},
     'fleet.email': {**_NO, 'service': None, 'name': 'email', 'view': 'email', 'family': MAIL, 'mark': 'mail'},
     # chat
-    'slack.message': {**_NO, 'service': 'slack', 'name': 'Slack', 'view': 'chat', 'family': CHAT, 'timeline': 'chats', 'send': 'slack', 'mark': 'slack', 'markdown': True},
-    'teams.message': {**_NO, 'service': 'teams', 'name': 'Teams', 'view': 'chat', 'family': CHAT, 'timeline': 'chats', 'mark': 'teams', 'markdown': True, 'messenger': True},
-    'whatsapp.message': {**_NO, 'service': 'whatsapp', 'name': 'WhatsApp', 'view': 'chat', 'family': CHAT, 'timeline': 'chats', 'send': 'whatsapp', 'mark': 'whatsapp', 'markdown': True, 'media': True, 'messenger': True},
-    'telegram.message': {**_NO, 'service': 'telegram', 'name': 'Telegram', 'view': 'chat', 'family': CHAT, 'timeline': 'chats', 'send': 'telegram', 'mark': 'telegram', 'markdown': True, 'media': True, 'messenger': True},
-    'signal.message': {**_NO, 'service': 'signal', 'name': 'Signal', 'view': 'chat', 'family': CHAT, 'timeline': 'chats', 'send': 'signal', 'mark': 'signal', 'media': True, 'messenger': True},
-    'linkedin.message': {**_NO, 'service': 'linkedin', 'name': 'LinkedIn', 'view': 'chat', 'family': CHAT, 'timeline': 'chats', 'send': 'linkedin', 'mark': 'linkedin', 'messenger': True},
-    'x.dm': {**_NO, 'service': 'x', 'name': 'X message', 'view': 'chat', 'family': CHAT, 'timeline': 'chats', 'send': 'x', 'mark': 'x', 'messenger': True},
-    'x.mention': {**_NO, 'service': 'x', 'name': 'X', 'view': 'card', 'family': CARD, 'timeline': 'chats', 'send': 'x', 'mark': 'x'},
-    'intercom.conversation': {**_NO, 'service': 'intercom', 'name': 'Intercom', 'view': 'chat', 'family': CHAT, 'timeline': 'intercom', 'send': 'intercom', 'mark': 'intercom'},
+    'slack.message': {**_NO, 'via': 'Slack', 'service': 'slack', 'name': 'Slack', 'view': 'chat', 'family': CHAT, 'timeline': 'chats', 'send': 'slack', 'mark': 'slack', 'markdown': True},
+    'teams.message': {**_NO, 'via': 'Teams', 'service': 'teams', 'name': 'Teams', 'view': 'chat', 'family': CHAT, 'timeline': 'chats', 'mark': 'teams', 'markdown': True, 'messenger': True},
+    'whatsapp.message': {**_NO, 'via': 'WhatsApp', 'service': 'whatsapp', 'name': 'WhatsApp', 'view': 'chat', 'family': CHAT, 'timeline': 'chats', 'send': 'whatsapp', 'mark': 'whatsapp', 'markdown': True, 'media': True, 'messenger': True},
+    'telegram.message': {**_NO, 'via': 'Telegram', 'service': 'telegram', 'name': 'Telegram', 'view': 'chat', 'family': CHAT, 'timeline': 'chats', 'send': 'telegram', 'mark': 'telegram', 'markdown': True, 'media': True, 'messenger': True},
+    'signal.message': {**_NO, 'via': 'Signal', 'service': 'signal', 'name': 'Signal', 'view': 'chat', 'family': CHAT, 'timeline': 'chats', 'send': 'signal', 'mark': 'signal', 'media': True, 'messenger': True},
+    'linkedin.message': {**_NO, 'via': 'LinkedIn', 'service': 'linkedin', 'name': 'LinkedIn', 'view': 'chat', 'family': CHAT, 'timeline': 'chats', 'send': 'linkedin', 'mark': 'linkedin', 'messenger': True},
+    'x.dm': {**_NO, 'via': 'X', 'service': 'x', 'name': 'X message', 'view': 'chat', 'family': CHAT, 'timeline': 'chats', 'send': 'x', 'mark': 'x', 'messenger': True},
+    'x.mention': {**_NO, 'via': 'X', 'service': 'x', 'name': 'X', 'view': 'card', 'family': CARD, 'timeline': 'chats', 'send': 'x', 'mark': 'x'},
+    'intercom.conversation': {**_NO, 'via': 'Intercom', 'service': 'intercom', 'name': 'Intercom', 'view': 'chat', 'family': CHAT, 'timeline': 'intercom', 'send': 'intercom', 'mark': 'intercom'},
     'fleet.message': {**_NO, 'service': None, 'name': 'message', 'view': 'chat', 'family': CHAT, 'mark': 'chat', 'markdown': True},
     'fleet.intercom': {**_NO, 'service': None, 'name': 'Intercom', 'view': 'chat', 'family': CHAT, 'mark': 'intercom'},
     # meetings
-    'calendar.event': {**_NO, 'service': 'calendar', 'name': 'calendar', 'view': 'card', 'family': MEETING, 'timeline': 'meetings', 'mark': 'cal'},
+    'calendar.event': {**_NO, 'via': 'calendar', 'service': 'calendar', 'name': 'calendar', 'view': 'card', 'family': MEETING, 'timeline': 'meetings', 'mark': 'cal'},
     'outlook.event': {**_NO, 'service': 'outlook', 'name': None, 'view': 'card', 'family': MEETING, 'mark': 'outlook'},
     'ms_graph.event': {**_NO, 'service': 'outlook', 'name': None, 'view': 'card', 'family': MEETING, 'mark': 'source'},
     'salesflare.meeting': {**_NO, 'service': 'salesflare', 'name': 'CRM meeting', 'view': 'card', 'family': MEETING, 'timeline': 'meetings', 'mark': 'salesflare'},
@@ -67,7 +69,7 @@ KINDS = {
     'docs.mention': {**_NO, 'service': 'docs', 'name': 'Doc mention', 'view': 'card', 'family': CARD, 'send': 'doc_reply', 'mark': 'docs', 'markdown': True},
     'docs.suggestion': {**_NO, 'service': 'docs', 'name': 'Suggested edit', 'view': 'card', 'family': CARD, 'send': 'doc_reply', 'mark': 'docs', 'markdown': True},
     'docs.shared': {**_NO, 'service': 'docs', 'name': 'Shared doc', 'view': 'card', 'family': CARD, 'mark': 'docs'},
-    'github.notification': {**_NO, 'service': 'github', 'name': 'GitHub', 'view': 'card', 'family': CARD, 'mark': 'github', 'markdown': True},
+    'github.notification': {**_NO, 'via': 'GitHub', 'service': 'github', 'name': 'GitHub', 'view': 'card', 'family': CARD, 'mark': 'github', 'markdown': True},
     'github.ci': {**_NO, 'service': 'github', 'name': 'GitHub CI', 'view': 'card', 'family': CARD, 'mark': 'github', 'markdown': True},
     'shortcut.move': {**_NO, 'service': 'shortcut', 'name': 'Shortcut', 'view': 'card', 'family': CARD, 'mark': 'shortcut', 'markdown': True},
     'trello.action': {**_NO, 'service': 'trello', 'name': 'Trello', 'view': 'card', 'family': CARD, 'mark': 'trello', 'markdown': True},

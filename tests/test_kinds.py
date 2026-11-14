@@ -33,7 +33,6 @@ JS_KEY = re.compile(r"(?:^|[,{\s])'?([a-z_]+(?:\.[a-z_]+)?)'?\s*:")
 
 # The hand-written lists of kinds each file has today: these only come down.
 KIND_LISTS = {
-    'activity_log.py': 1,
     'ai_access.py': 1,
     'birthdays.py': 2,
     'check_now.py': 4,
@@ -51,7 +50,7 @@ KIND_LISTS = {
     'fleet_requests.py': 4,
     'follow_ups.py': 2,
     'gap_note.py': 1,
-    'graph.py': 19,
+    'graph.py': 18,
     'graph_board_reviews.py': 1,
     'machine/app/action_runs.py': 2,
     'machine/app/card_actions.py': 2,
@@ -71,7 +70,7 @@ KIND_LISTS = {
     'machine/sources/mail_senders.py': 1,
     'machine/sources/suggest.py': 1,
     'machine/sources/whatsapp.py': 2,
-    'machine/store/cards.py': 4,
+    'machine/store/cards.py': 3,
     'machine/store/conversation.py': 1,
     'machine/store/core.py': 2,
     'machine/store/message_view.py': 8,
@@ -168,7 +167,7 @@ def kind_lists():
 
 class Registry(unittest.TestCase):
     def test_every_row_is_complete_and_known(self):
-        fields = {'service', 'name', 'view', 'family', 'timeline', 'send', 'mark', 'markdown', 'media', 'messenger'}
+        fields = {'service', 'name', 'via', 'view', 'family', 'timeline', 'send', 'mark', 'markdown', 'media', 'messenger'}
         for kind, row in kinds.KINDS.items():
             with self.subTest(kind):
                 self.assertRegex(kind, r'^[a-z][a-z0-9_]*\.[a-z][a-z0-9_]*$')
@@ -185,7 +184,6 @@ class Registry(unittest.TestCase):
 
     def test_it_says_what_the_code_says_today(self):
         """Until each list moves here, the registry and the list it replaces agree, kind by kind."""
-        import assistant  # noqa: F401 - adds the Fleet kinds to SOURCE_KIND, as the running app has them
         import follow_ups
         import graph
         import next_actions
@@ -220,6 +218,21 @@ class Registry(unittest.TestCase):
         self.assertEqual(handled_check.REACHES, push.NUDGE_KINDS)
         for row in kinds.SENDS.values():
             self.assertEqual(set(row), {'name', 'text_only', 'to_person', 'send_now'})
+        # The names that ask the registry now say what they spelled out before it (PR 3 moved them)
+        self.assertEqual(cards.SOURCE_KIND, {
+            'gmail.message': 'email', 'calendar.event': 'calendar', 'slack.message': 'Slack', 'teams.message': 'Teams',
+            'salesflare.email': 'CRM email', 'salesflare.meeting': 'CRM meeting', 'android.notification': 'phone',
+            'whatsapp.message': 'WhatsApp', 'telegram.message': 'Telegram', 'signal.message': 'Signal',
+            'gateway.alert': 'The Machine', 'machine.system_log': 'The Machine', 'machine.fault': 'The Machine',
+            'meeting.notes': 'meeting notes', 'meeting.transcript': 'transcript', 'fleet.request': 'Fleet', 'fleet.email': 'email',
+            'owner.card': 'note', 'fleet.message': 'message', 'fleet.intercom': 'Intercom'})
+        self.assertEqual(graph.VIA, {
+            'linkedin.message': 'LinkedIn', 'gmail.message': 'email', 'salesflare.email': 'email', 'calendar.event': 'calendar',
+            'slack.message': 'Slack', 'teams.message': 'Teams', 'whatsapp.message': 'WhatsApp', 'telegram.message': 'Telegram',
+            'signal.message': 'Signal', 'x.dm': 'X', 'x.mention': 'X', 'intercom.conversation': 'Intercom', 'github.notification': 'GitHub'})
+        self.assertEqual(__import__('activity_log').MESSAGE_KINDS, {
+            'email': 'Email', 'email_demo': 'Email', 'linkedin': 'LinkedIn', 'slack': 'Slack', 'x': 'X', 'whatsapp': 'WhatsApp',
+            'telegram': 'Telegram', 'signal': 'Signal', 'intercom': 'Intercom', 'doc_reply': 'Docs'})
         # every connector kind is here, with its connector's view
         from machine.sources.connectors import load_connector
         for path in sorted((ROOT / 'connectors').glob('*.py')):

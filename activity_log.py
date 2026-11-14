@@ -50,6 +50,7 @@ import re
 
 import i18n
 from machine import names
+from machine.kinds import SENDS
 from machine.owner_error import OwnerError
 
 LOG = logging.getLogger('personal-assistant')
@@ -62,8 +63,7 @@ SCHEMA = ('CREATE TABLE IF NOT EXISTS activity_accounts(account_id TEXT PRIMARY 
           'added_at TEXT,removed_at TEXT,seen INTEGER NOT NULL DEFAULT 1)')
 BLOCKS = ('CREATE TABLE IF NOT EXISTS activity_blocks(job_id TEXT NOT NULL,at TEXT NOT NULL,reason TEXT,'
           'PRIMARY KEY(job_id,at))')
-MESSAGE_KINDS = {'email': 'Email', 'email_demo': 'Email', 'linkedin': 'LinkedIn', 'slack': 'Slack', 'x': 'X',
-                 'whatsapp': 'WhatsApp', 'telegram': 'Telegram', 'signal': 'Signal', 'intercom': 'Intercom', 'doc_reply': 'Docs'}
+MESSAGE_KINDS = {**{kind: send['name'] for kind, send in SENDS.items()}, 'email_demo': 'Email'}  # machine/kinds.py, and the demo's
 # action_jobs.status -> outcome; anything else (queued, sending, local_preparation, undoing) is still on its way
 JOB_OUTCOME = {'sent': 'done', 'done': 'done', 'blocked': 'refused', 'failed': 'failed', 'uncertain': 'failed', 'finish_uncertain': 'failed',
                'cancelled': 'undone', 'undone': 'undone'}
