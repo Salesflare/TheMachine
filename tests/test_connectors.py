@@ -1,6 +1,7 @@
 """Connector plugins: one file in connectors/ per service, loaded by name, never by path."""
 import gzip
 import importlib.util
+import io
 import json
 import re
 from pathlib import Path
@@ -24,6 +25,15 @@ RSS = b"""<?xml version="1.0"?><rss version="2.0"><channel><title>Example</title
 ATOM = b"""<?xml version="1.0"?><feed xmlns="http://www.w3.org/2005/Atom"><title>Example</title>
 <entry><title>Post</title><link href="https://example.com/post"/><id>tag:example.com,2026:post</id>
 <updated>2026-10-15T08:30:00Z</updated><summary>Hello</summary></entry></feed>"""
+
+
+class Response(io.BytesIO):
+    """A urlopen response with a body and headers: the other connectors' tests import it from here."""
+    def __init__(self, body, headers=None):
+        super().__init__(body)
+        self.headers = headers or {}
+    def __enter__(self): return self
+    def __exit__(self, *_): self.close()
 
 
 def served(body=b'', headers=None, status=200, asked=None):
