@@ -331,7 +331,7 @@ A doc The Machine made for a to-do (its sent `doc_write` create) is one of that 
 
 ### RSS/Atom
 
-The example plugin; see [Adding a source](adding-a-source.md).
+The example plugin; see [Adding a source](adding-a-source.md). One feed per connection (`connectors/rss.py`), on a hosted Machine or your own computer, read every 30 minutes and never more than once every 15 minutes. Each read goes through the watched pages' reader: a plain HTTPS GET of at most 5 MB in 10 seconds, only to public addresses (each redirect too, checked on the connection itself), with `If-None-Match`/`If-Modified-Since` when the feed gives them. Feeds with a DTD or entities are refused.
 
 ### Watched pages
 
