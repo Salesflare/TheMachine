@@ -52,7 +52,9 @@ from machine.store.review import (BOARDS_CHARS, PREVIEW_DAYS, REVIEW_PAGE_CHARS,
                                   service_review_ended, service_run)
 from machine.text import clamp, encoded, fold_previews
 import next_actions
+import notify
 import shared_graph
+from machine import night_pause
 from timeutil import now
 from machine.owner_error import OwnerError
 import timeutil
@@ -498,6 +500,10 @@ class ReviewApp:
                 quick = 0 if recovery else self.quick_first_review(db)
                 # One usage check before every background turn (model_budget). New signals are not paced per day, only
                 # at the week's WEEK_CAP and the 5-hour window; the owner's Review now goes like their own chat.
+                # The night pause (machine/night_pause.py): new signals wait for the catch-up before morning. Never a run
+                # to recover, the first look or its digging, or the owner's Check now.
+                if not (recovery or quick or dig or asked) and self.night_hold(db, stamp):
+                    return None
                 self.review_paused = self.background_pause(first=bool(quick or dig), owner=asked, job='review', db=db, signals=True)
                 if self.review_paused:
                     return None
@@ -719,6 +725,9 @@ class ReviewApp:
                     'why': 'mail', 'first': first}
         if not waiting:
             return None
+        night = self.night_hold(db, current)
+        if night:  # paused for the night: they wait for the catch-up
+            return {'waiting': waiting, 'planned': min(waiting, RUN_SIGNAL_BUDGET), 'starts_at': night.isoformat(), 'why': 'night', 'first': first}
         last = db.execute('SELECT finished_at FROM review_runs WHERE finished_at IS NOT NULL ORDER BY finished_at DESC LIMIT 1').fetchone()
         after_gap = dt.datetime.fromisoformat(last[0]) + dt.timedelta(seconds=settings.get('gap_seconds', 600)) if last else current
         full = waiting >= settings.get('min_signals', 40) or bool(mail['fresh'])
@@ -726,6 +735,43 @@ class ReviewApp:
         return {'waiting': waiting, 'planned': min(waiting, RUN_SIGNAL_BUDGET), 'starts_at': max(after_gap, batch, current).isoformat(),
                 'why': 'mail_in' if mail['fresh'] and after_gap <= current else 'batch' if batch >= after_gap and not full else 'gap',
                 'first': first}
+
+    def night_hold(self, db, current=None):
+        """While the night pause holds the reviews of new signals (machine/night_pause.py): when it ends, the catch-up
+        (an aware UTC datetime); else None. Never before the first review finished, on a new install's first day, with
+        review_worker night_pause false, or within night_pause.IDLE_SECONDS of the owner's last use."""
+        if (self.config.get('review_worker') or {}).get('night_pause') is False:
+            return None
+        current = current or timeutil.clock()
+        hours = timeutil.WORK_HOURS
+        summary = notify.digest_time(self.config.get('digest_at', '08:30'), hours['morning'], hours['start'], hours['end'])
+        until = night_pause.held_until(current.astimezone(timeutil.local_tz()), timeutil.quiet_hours(), summary, hours)
+        if not until or not db.execute("SELECT 1 FROM review_runs WHERE status='ok' LIMIT 1").fetchone():
+            return None
+        since = (db.execute("SELECT at FROM milestones WHERE name='tracking_since'").fetchone() or [''])[0]
+        if since and since > (current - dt.timedelta(hours=night_pause.NEW_INSTALL_HOURS)).isoformat():
+            return None  # setup and the first look's day go on
+        if night_pause.used_lately(self.owner_last_use(db), current.timestamp()):
+            return None
+        return until.astimezone(dt.timezone.utc)
+
+    def owner_last_use(self, db):
+        """When the owner last used The Machine (epoch seconds, 0 when unknown): a dashboard or the app in use (notify's
+        presence and its kept visit), a message in their own chat or on Telegram (owner_wrote_at), a tap on a to-do
+        (a decision from the dashboard, Telegram, chat or voice)."""
+        times = [notify.last_seen(), getattr(self, 'owner_wrote_at', 0) or 0]
+        try:
+            row = db.execute("SELECT value FROM notify_prefs WHERE key='_visit_last'").fetchone()
+            times.append(float(row[0] or 0) if row else 0)
+        except (sqlite3.Error, ValueError, TypeError):
+            pass  # no notify_prefs yet
+        try:  # the newest first: it stops at the owner's last decision
+            row = db.execute('SELECT created_at FROM decisions WHERE source IN (' + ','.join('?' * len(notify.OWNER_SOURCES))
+                             + ') ORDER BY rowid DESC LIMIT 1', notify.OWNER_SOURCES).fetchone()
+            times.append(dt.datetime.fromisoformat(row[0]).timestamp() if row else 0)
+        except (sqlite3.Error, ValueError, TypeError):
+            pass
+        return max(times)
 
     def review_tick(self):
         """Seconds until the review worker looks again: FIRST_LOOK_TICK_SECONDS while a first look's batch runs or it

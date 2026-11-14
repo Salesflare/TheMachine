@@ -63,6 +63,8 @@ Una tarea que te pregunta algo queda fuera de ambos: necesita tu respuesta, no u
 
 Tu Machine lee cada fuente cada pocos minutos, de día y de noche, y revisa lo que llegó en busca de tareas en cuanto hay 40 mensajes esperando o el mensaje más antiguo de una persona lleva 15 minutos esperando. Los boletines, las notificaciones y los recibos entran en la siguiente revisión, en menos de una hora.
 
+De noche, de 00:00 a 06:30, las revisiones se pausan: los mensajes nuevos se siguen leyendo y guardando, y se revisan juntos a las 06:30, así tus tareas están listas antes de tu resumen de la mañana. Las revisiones en Conexiones dicen "En pausa por la noche, se pone al día a las 06:30". Si de noche abres la app, escribes en el chat o tocas una tarea, las revisiones vuelven a ir como siempre hasta que lleves una hora sin usarla. **Revisar ahora** siempre revisa al momento.
+
 **Revisar ahora** lee al momento cada fuente. Si no hay nada abierto, toca la línea de tu Machine para verlo, con **Detalles**, que abre Revisiones en Conexiones. Con tareas abiertas, está arriba en un ordenador. Ahí solo aparece una línea corta mientras una revisión está en marcha, o cuando una falló o va con retraso. También puedes pedirlo en el chat.
 
 LinkedIn, X y Salesflare siguen su propio ritmo.

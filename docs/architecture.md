@@ -125,6 +125,17 @@ oldest signal from a person has waited `max_wait_minutes` (15), it starts one is
   The owner's own mail, every reply, someone in the Graph, chats, calendar changes, a time-sensitive title and
   anything unsure go as before.
 
+- **A night pause.** In the quiet hours (`ASSISTANT_QUIET_HOURS`, 00:00 to 07:00 by default, the ones the nightly
+  update uses) no review of new signals starts: they are read and stored, and reviewed together 30 minutes before the
+  quiet hours end (or an hour before the morning summary, or at the start of the owner's hours, when that comes
+  first), so the to-dos are there for the morning. A chat's earlier message that a newer one in the same batch shows in
+  full (`earlier_in_conversation`) reaches the review as one line next to it, so a chat that went on all night costs
+  little more than its last message. Never paused: the first look and its first batches, a new install's first day,
+  a review running or recovering, Check now, and anything outside the reviews (chat, Do it, routines, outward
+  safety). Any use of the Machine at night (a dashboard or the app in use, a chat or Telegram message, a tap on a
+  to-do) lets reviews run as usual until it has been unused for an hour, and what waited goes right away. The owner's
+  own hours (`work_hours`) are never night. Time-sensitive titles wait too: nothing reaches the owner outside their
+  hours anyway. `review_worker.night_pause: false` turns it off (`machine/night_pause.py`).
 - **A new mailbox first.** A newly connected mailbox (Gmail or Outlook, on a new install or added later) doesn't wait:
   its first review starts as soon as its first import of the last 7 days is in, as one review. None starts halfway
   through the import, and never later than `max_wait_minutes`. Meanwhile the dashboard says "First review starts when

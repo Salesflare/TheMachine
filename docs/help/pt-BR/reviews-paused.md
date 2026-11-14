@@ -29,6 +29,10 @@ Enquanto as verificações esperam, o topo do painel diz até quando, como "As v
 
 Nada se perde enquanto espera: o que chegou é verificado assim que for possível.
 
+## À noite
+
+Das 00:00 às 06:30, as verificações pausam e as mensagens novas esperam. Elas são verificadas juntas às 06:30, antes do seu resumo da manhã. **Verificações** diz então "Em pausa durante a noite, põe tudo em dia às 06:30". Se você usar o app, escrever no chat ou tocar numa tarefa, as verificações voltam até você ficar uma hora sem usar. **Verificar agora** verifica na hora.
+
 ## Uma execução falhou
 
 **Execuções recentes** em **Verificações** mostra cada execução. Um lote que falhou é tentado de novo sozinho.

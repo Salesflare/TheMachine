@@ -3786,6 +3786,7 @@
  "Pause for a year at most": "Pausa como máximo un año",
  "Paused": "En pausa",
  "Paused for a moment; it retries by itself.": "En pausa un momento; se reintenta solo.",
+ "Paused for the night, catches up at {}.": "En pausa por la noche, se pone al día a las {}.",
  "Payment is being retried": "Se está reintentando el pago",
  "Pending: {} hasn’t confirmed. Retrying": "Pendiente: {} no ha confirmado. Reintentando",
  "People": "Personas",

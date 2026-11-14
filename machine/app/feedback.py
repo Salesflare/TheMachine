@@ -98,6 +98,7 @@ class FeedbackApp:
                             reply_to=reply_to or message.get('reply_to_message',{}).get('message_id')
             except (sqlite3.Error,ValueError,TypeError):
                 pass
+        self.owner_wrote_at=time.time()  # the owner is around: the night pause lets go (App.owner_last_use)
         result=self.store.feedback_reply(args['text'],args['message_id'],timestamp,reply_to)
         if result.get('handled') and not result.get('cancelled'):
             result.update(duplicate=True,card_confirmation_only=True)
@@ -118,6 +119,7 @@ class FeedbackApp:
         if not re.fullmatch(r'[A-Za-z0-9_.:-]{1,120}', message_id):
             raise ValueError('A web chat message id')
         self.owner_said_last = ('webchat-said:' + message_id, time.time())
+        self.owner_wrote_at = self.owner_said_last[1]
         self.owner_said_text = (self.owner_said_last[0], str(args['text'])[:20000] if isinstance(args.get('text'), str) else None)
         return {'noted': True}
 

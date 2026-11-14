@@ -29,6 +29,10 @@ Terwijl checks wachten, staat bovenaan het dashboard tot wanneer, zoals "Checks 
 
 Er gaat niets verloren terwijl het wacht: wat binnenkwam, wordt gecheckt zodra het kan.
 
+## 's Nachts
+
+Van 00:00 tot 06:30 pauzeren de checks en wachten nieuwe berichten. Om 06:30 worden ze samen gecheckt, voor je ochtendoverzicht. **Checks** zegt dan "Pauze voor de nacht, om 06:30 wordt alles ingehaald". Gebruik je de app, schrijf je in de chat of tik je op een to-do, dan lopen de checks weer tot je een uur weg bent. **Nu checken** checkt meteen.
+
 ## Een run is mislukt
 
 **Recente runs** onder **Checks** toont elke run. Een mislukte portie wordt vanzelf opnieuw geprobeerd.

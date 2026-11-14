@@ -29,6 +29,10 @@ Mentre i controlli aspettano, in cima alla dashboard compare fino a quando, per 
 
 Mentre aspetta non si perde nulla: quello che è arrivato viene controllato appena possibile.
 
+## Di notte
+
+Dalle 00:00 alle 06:30 i controlli vanno in pausa e i nuovi messaggi aspettano. Vengono controllati insieme alle 06:30, prima del riepilogo del mattino. **Controlli** dice allora “In pausa per la notte, recupera alle 06:30”. Se usi l’app, scrivi in chat o tocchi un’attività, i controlli ripartono finché non resti inattivo per un’ora. **Controlla ora** controlla subito.
+
 ## Un’esecuzione non è riuscita
 
 **Esecuzioni recenti** sotto **Controlli** mostra ogni esecuzione. Un gruppo non riuscito viene ritentato da solo.

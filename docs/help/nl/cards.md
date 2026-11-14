@@ -63,6 +63,8 @@ Een to-do die je iets vraagt, telt bij geen van beide mee: die heeft je antwoord
 
 Je Machine leest elke bron om de paar minuten, dag en nacht, en checkt wat er binnenkwam op to-do’s zodra er 40 berichten wachten of het oudste bericht van een persoon 15 minuten wacht. Nieuwsbrieven, meldingen en bonnetjes gaan mee met de volgende check, binnen het uur.
 
+'s Nachts, van 00:00 tot 06:30, pauzeren de checks: nieuwe berichten worden nog gelezen en bewaard, en om 06:30 samen gecheckt, zodat je to-do’s klaarstaan voor je ochtendoverzicht. Checks onder Verbindingen zegt dan "Pauze voor de nacht, om 06:30 wordt alles ingehaald". Open je 's nachts de app, schrijf je in de chat of tik je op een to-do, dan lopen de checks weer gewoon tot je een uur weg bent. **Nu checken** checkt altijd meteen.
+
 **Nu checken** leest meteen elke bron. Staat er niets open, tik dan op de regel van je Machine om het te zien, met **Details**, dat Checks onder Koppelingen opent. Staan er to-do's open, dan staat het op een computer bovenaan. Een korte regel verschijnt daar alleen terwijl een check loopt, of als er een mislukt of laat is. Je kunt het ook in de chat vragen.
 
 LinkedIn, X en Salesflare houden hun eigen tempo.

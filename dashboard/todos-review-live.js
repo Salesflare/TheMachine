@@ -23,9 +23,9 @@ if(!(live.runs||[]).length&&state.reviews_on===false){const on=turnOn(),fl=live.
  rows.push(make('div',{class:'review-live queued'},chipNode('Off','orange'),make('span',{class:'grow'},t('Checks are off.'),fl?.state==='waiting'?` ${t('A first look at your last {} days comes first.',firstLookDays(fl))} ${flWait(fl)}`:''),
   on.url?make('a',{class:'head-link',href:on.url},on.action):make('code',{},'./install.sh --activate')));return rows}
 if(!(live.runs||[]).length&&live.queue){const q=live.queue,n=()=>q.waiting.toLocaleString(DL);
- rows.push(make('div',{class:'review-live queued'},chipNode(q.first?'First':'Next','lavender'),
+ rows.push(make('div',{class:'review-live queued'},chipNode(q.why==='night'?'Paused':q.first?'First':'Next','lavender'),
   make('span',{class:'grow'},q.why==='mail'?(q.first?t('First check starts when your mail is in'):t('Next check starts when your new mail is in')):q.first?t(['{} message waiting for its first check','{} messages waiting for their first check'],n()):t(['{} message waiting for the next check','{} messages waiting for the next check'],n())),
-  make('small',{},q.why==='mail'?(q.waiting?t(['{} message so far','{} messages so far'],n()):'Importing your mail'):q.why==='mail_in'?'Your mail is in. Starting now':`Starts ${ago(q.starts_at)}`)))}
+  make('small',{},q.why==='night'?fmtHM(new Date(q.starts_at)):q.why==='mail'?(q.waiting?t(['{} message so far','{} messages so far'],n()):'Importing your mail'):q.why==='mail_in'?'Your mail is in. Starting now':`Starts ${ago(q.starts_at)}`)))}
 if(!(live.runs||[]).length&&live.first_look?.state==='waiting')rows.push(make('div',{class:'review-live queued'},chipNode('First look','lavender'),make('span',{class:'grow'},`A first check of your last ${live.first_look.days} days`),make('small',{},flWait(live.first_look))));
 return rows}
 // The first look (a review of the last days, right after setup): while there are no cards yet it is the empty

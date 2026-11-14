@@ -29,6 +29,10 @@ Während Prüfungen warten, steht oben im Dashboard, bis wann, etwa „Die Prüf
 
 Während es wartet, geht nichts verloren: Was reingekommen ist, wird geprüft, sobald es geht.
 
+## Nachts
+
+Von 00:00 bis 06:30 pausieren die Prüfungen und neue Nachrichten warten. Um 06:30 werden sie zusammen geprüft, vor deiner Morgenübersicht. **Prüfungen** zeigt dann „Pause über Nacht, um 06:30 wird alles nachgeholt“. Nutzt du die App, schreibst im Chat oder tippst auf eine Aufgabe, laufen die Prüfungen wieder, bis du eine Stunde weg warst. **Jetzt prüfen** prüft sofort.
+
 ## Ein Durchlauf ist fehlgeschlagen
 
 **Letzte Durchläufe** unter **Prüfungen** zeigt jeden Durchlauf. Ein fehlgeschlagenes Paket wird von selbst erneut versucht.

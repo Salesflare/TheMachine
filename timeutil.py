@@ -161,6 +161,22 @@ def in_hours(local, hours=None):
     return start <= minute < end if start < end else minute >= start or minute < end
 
 
+# The quiet hours: the local hours ("from-to" in ASSISTANT_QUIET_HOURS, 00:00 to 07:00 by default) when the owner's
+# chats and to-dos rest. The nightly update puts a changed bridge in only then (installer.quiet_hours reads the same
+# setting: the installer runs before a time zone is checked, so it keeps its own copy), and the reviews of new signals
+# pause in them (machine/night_pause.py).
+QUIET_HOURS = (0, 7)
+
+
+def quiet_hours():
+    """The quiet hours as (start, end) local hours; end may be past midnight (22-6)."""
+    try:
+        start, end = (int(part) % 24 for part in os.environ.get('ASSISTANT_QUIET_HOURS', '').split('-'))
+    except ValueError:
+        return QUIET_HOURS
+    return start, end
+
+
 def morning_label(hours=None):
     hour, minute = hour_minute((hours or WORK_HOURS)['morning'])
     return f'{hour}:{minute:02d}'

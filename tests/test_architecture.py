@@ -141,6 +141,7 @@ MACHINE_LAYERS = {
     'config': 0,
     'kinds': 0,        # every kind of event and of message, with what the code knows of each (a leaf)
     'names': 0,        # what the owner calls a service, app or agent (never the tool underneath)
+    'night_pause': 0,  # when the reviews of new signals pause for the night (a leaf)
     'omarchy': 0,      # the Omarchy desktop theme's colors, read only (a leaf)
     'owner_error': 0,  # OwnerError: a message for the owner, not a bug (a leaf)
     'stamps': 0,       # change counters per table, so a request's answer is kept until its tables change

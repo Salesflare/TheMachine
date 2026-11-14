@@ -3786,6 +3786,7 @@
  "Pause for a year at most": "Pauzeer hooguit een jaar",
  "Paused": "Gepauzeerd",
  "Paused for a moment; it retries by itself.": "Even gepauzeerd; het probeert vanzelf opnieuw.",
+ "Paused for the night, catches up at {}.": "Pauze voor de nacht, om {} wordt alles ingehaald.",
  "Payment is being retried": "De betaling wordt opnieuw geprobeerd",
  "Pending: {} hasn’t confirmed. Retrying": "In afwachting: {} heeft nog niet bevestigd. Opnieuw proberen",
  "People": "Personen",
