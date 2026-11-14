@@ -130,7 +130,7 @@ def build(folder):
         facts = (('Prefers meetings after 10:00.', 'fact', 'preference', None, 'done', None),
                  ('Prefers a call over email.', 'fact', 'preference', AVERY, 'pricing', None),
                  ('Needs the pricing sheet before the board meets.', 'fact', 'fact', AVERY, 'pricing', None),
-                 ('Is moving offices in December.', 'fact', 'event', AVERY, 'pricing', '2026-12-31'),
+                 ('Is moving offices in December.', 'fact', 'event', AVERY, 'pricing', ago(-30)[:10]),  # still ahead, whatever today is
                  ('Promised to review the contract this month.', 'fact', 'commitment', BO, 'done', None),
                  ('Wants the merger kept quiet.', 'fact', 'fact', AVERY, 'merger', None),
                  ('Keep drafts under five sentences.', 'draft', None, None, 'done', None))

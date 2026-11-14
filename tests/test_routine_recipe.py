@@ -61,7 +61,7 @@ class Runs(unittest.TestCase):
                             ('routine_spawn', lambda s, target, run_id: target(run_id))):
             p = patch.object(a.App, name, value); p.start(); self.addCleanup(p.stop)
         self.sent = []
-        stamp = dt.datetime.now(dt.timezone.utc)
+        stamp = self.now.replace(tzinfo=dt.timezone.utc)  # the routine's clock, so "40 days back" stays past since_days
         self.store.commit_page('w', {}, [
             {'account_id': 'w', 'source_id': f'm{i}', 'kind': 'gmail.message', 'occurred_at': (stamp - dt.timedelta(days=d)).isoformat(),
              'title': title, 'body': body, 'metadata': {'from': 'billing@example.org'}, 'deleted': False}

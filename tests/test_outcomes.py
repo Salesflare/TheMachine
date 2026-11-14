@@ -142,7 +142,8 @@ class Outcomes(unittest.TestCase):
         self.store.commit_page('work', {}, [email('m3', '2026-10-17T08:00:00+00:00', body='Will sign tomorrow')])
         with self.store.connect() as db:
             rows = [dict(r) for r in db.execute("SELECT * FROM events WHERE source_id='m3'")]
-        replies = self.store.card_replies(rows)  # matched by thread: the review gets what result to look for
+        with patch_everywhere(a, 'now', return_value='2026-10-17T09:00:00+00:00'):  # the day after the send, not the real clock
+            replies = self.store.card_replies(rows)  # matched by thread: the review gets what result to look for
         self.assertEqual(replies[rows[0]['id']]['done_when'], RESULT)
 
     def test_a_teammates_accept_waits_for_the_result_and_their_done_closes_it(self):
