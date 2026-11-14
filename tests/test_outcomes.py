@@ -13,6 +13,7 @@ from seams import patch_everywhere  # noqa: E402
 a = ux.a
 from machine.store import outcomes  # noqa: E402  (on the path once test_ux loaded the app)
 from machine.store.cards import return_waiting  # noqa: E402
+from machine.store import todo_moves  # noqa: E402
 
 GMAIL = {'id': 'work', 'email': 'owner@example.com', 'service': 'gmail', 'transport': 'gog', 'boundary': 'work:Example'}
 RESULT = 'Sam signed the order form'
@@ -119,6 +120,8 @@ class Outcomes(unittest.TestCase):
         row = self.suggestion()
         self.assertEqual((row['status'], json.loads(row['outcome'])['state']), ('pending', 'still_waiting'))
         self.assertIn('Write a short nudge', json.loads(row['chat_asks']))
+        with self.store.connect() as db:
+            self.assertEqual(todo_moves.history(db, self.sid)[-1], {'at': '2026-12-01T09:00:00+00:00', 'from': 'prepared', 'to': 'pending', 'reason': 'chase_time'})
         # Sam's signed form arrives; the review sees the result: closed by itself, Undo for a day
         self.store.commit_page('work', {}, [email('m2', '2026-12-02T08:00:00+00:00', body='Signed form attached.')])
         with self.store.connect() as db:

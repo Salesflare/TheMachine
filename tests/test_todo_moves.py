@@ -79,6 +79,16 @@ class TodoMoves(unittest.TestCase):
         for before in ts.CLOSED:
             self.assertIn(ts.PENDING, ts.MOVES[before])
 
+    def test_a_move_outside_moves_is_allowed_only_for_its_named_reason(self):
+        for (before, after), reasons in ts.ALSO.items():
+            with self.subTest(move=(before, after)):
+                self.assertNotIn(after, ts.MOVES[before])
+                self.assertTrue(reasons and all(why.strip() for why in reasons.values()))
+                self.assertFalse(ts.allowed(before, after))
+                self.assertFalse(ts.allowed(before, after, 'other'))
+                for reason in reasons:
+                    self.assertTrue(ts.allowed(before, after, reason))
+
     def test_the_store_makes_the_history_table(self):
         from test_assistant import assistant
         with tempfile.TemporaryDirectory() as tmp:

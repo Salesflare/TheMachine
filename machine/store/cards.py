@@ -215,7 +215,8 @@ def return_waiting(db):
             if '' < str(json.loads(row['outcome']).get('until') or '') <= stamp]
     for row in rows:
         who = str(json.loads(row['outcome']).get('waiting_on') or '')[:200]
-        db.execute("UPDATE suggestions SET status='pending',outcome=? WHERE id=?", (encoded({'state': 'still_waiting', 'waiting_on': who}), row['id']))
+        db.execute('UPDATE suggestions SET outcome=? WHERE id=?', (encoded({'state': 'still_waiting', 'waiting_on': who}), row['id']))
+        todo_moves.transition(db, row['id'], todo_states.PENDING, 'chase_time', at=stamp)
         if row['done_when']:  # still no result (outcomes.py): a nudge is one tap in its chat, drafted only when they ask
             db.execute('UPDATE suggestions SET chat_asks=? WHERE id=?', (encoded([outcomes.nudge_ask()]), row['id']))
         db.execute('INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)',
@@ -460,7 +461,8 @@ def settle_ahead(db):
     (preparation blocked): the to-do shows "Needs your help" with the reason and questions, and Answer or Try
     again accepts it first and carries on (_decide)."""
     for row in db.execute("SELECT s.id FROM suggestions s JOIN preparations p ON p.suggestion_id=s.id WHERE s.early=1 AND s.status='accepted' AND p.status='blocked'").fetchall():
-        db.execute("UPDATE suggestions SET status='pending',early=0 WHERE id=?", (row['id'],))
+        db.execute('UPDATE suggestions SET early=0 WHERE id=?', (row['id'],))
+        todo_moves.transition(db, row['id'], todo_states.PENDING, 'ahead_stuck')
         # It goes out as the card itself, not as a reminder: also when an earlier notification exists (a card reopened by a new signal).
         db.execute("UPDATE deliveries SET reminder=0 WHERE suggestion_id=?", (row['id'],))
 
@@ -647,7 +649,8 @@ class CardsStore:
                 decision_id = 'ahead:' + suggestion_id
                 db.execute('INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)',
                            (decision_id, suggestion_id, 'prepare_ahead', '', 'assistant', now()))
-                db.execute("UPDATE suggestions SET status='accepted',early=1 WHERE id=?", (suggestion_id,))
+                db.execute('UPDATE suggestions SET early=1 WHERE id=?', (suggestion_id,))
+                todo_moves.transition(db, suggestion_id, todo_states.ACCEPTED, 'prepare_ahead')
                 self.queue_preparation(db, suggestion_id, decision_id)
         return {'id': suggestion_id, 'status': 'accepted' if ahead else 'pending', 'duplicate': False, 'deliver_after': deliver_after,
                 **({'prepared_ahead': True} if ahead else {}), **({'preview': True} if preview else {}),
@@ -664,10 +667,11 @@ class CardsStore:
         # the card's time of day (an owner's "tomorrow 9:00") belongs to the card's own deadline only
         until = wait_until(deadline, digest_at, due_at=card['due_at'] if deadline and deadline == card['due'] else None)
         db.execute('UPDATE suggestions SET ' + KEEP_OWNER_TITLE + ',body=?,event_ids=?,account_ids=?,source_line=?,'
-                   + ('due=coalesce(due,?)' if own else 'due=coalesce(?,due)') + ",status='prepared',outcome=?,next_action=NULL,early=0,deliver_after=NULL,"
+                   + ('due=coalesce(due,?)' if own else 'due=coalesce(?,due)') + ",outcome=?,next_action=NULL,early=0,deliver_after=NULL,"
                    'snoozed_until=NULL,resume_status=NULL,awaiting=NULL,handled_hint=NULL,undo_until=NULL,completed_from=NULL,feedback_until=NULL WHERE id=?',
                    (title[:300], title[:300], body[:5000], encoded(ids), encoded(accounts), source_line(evidence, db), due,
                     encoded({'state': 'waiting', 'waiting_on': waiting_on, 'until': until}), sid))
+        todo_moves.transition(db, sid, todo_states.PREPARED, 'waits_on_others', at=stamp)
         db.execute('INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)',
                    ('update:' + uuid.uuid4().hex, sid, 'update', f'Updated with a new signal. Waiting on: {waiting_on}', 'assistant', stamp))
         db.execute("UPDATE action_jobs SET status='cancelled',updated_at=? WHERE suggestion_id=? AND status IN ('queued','blocked')", (stamp, sid))
@@ -743,12 +747,13 @@ class CardsStore:
         status = 'accepted' if ahead else 'pending' if waiting or closed or card['status'] in todo_states.WAITING_ON_OWNER else card['status']
         # A title the owner gave (a rename) stays: the review's goes to title_suggested. On their own card, their due date stays.
         db.execute('UPDATE suggestions SET ' + KEEP_OWNER_TITLE + ',body=?,event_ids=?,account_ids=?,source_line=?,deliver_after=?,urgent=?,'
-                   + ('due=coalesce(due,?)' if own else 'due=coalesce(?,due)') + ',status=?,'
+                   + ('due=coalesce(due,?)' if own else 'due=coalesce(?,due)') + ','
                    "early=?,outcome=CASE WHEN status=? AND coalesce(json_extract(outcome,'$.state'),'')!='still_waiting' THEN outcome ELSE NULL END,"
                    'snoozed_until=NULL,resume_status=NULL,awaiting=NULL,handled_hint=NULL,undo_until=NULL,completed_from=NULL,'
                    'feedback_until=NULL,expires_at=CASE WHEN expired_at IS NULL THEN expires_at END,expired_at=NULL WHERE id=?',
                    (suggested[:300], suggested[:300], body[:5000], encoded(ids), encoded(accounts), source_line([evidence[i] for i in ids if i in evidence], db),
-                    deliver_after, int(urgent or bool(card['urgent'])), due, status, int(bool(ahead)), status, sid))
+                    deliver_after, int(urgent or bool(card['urgent'])), due, int(bool(ahead)), status, sid))
+        todo_moves.transition(db, sid, status, 'new_signal', at=stamp)
         was = (f"Updated with a new signal{' and brought back' if waiting else ' and reopened' if closed else ''}."
                + (f" Before: {card['title'][:150]}" if title[:300] != card['title'] else ''))
         db.execute('INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)',
@@ -795,7 +800,8 @@ class CardsStore:
                 decision_id = 'ahead:' + uuid.uuid4().hex
                 db.execute('INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)',
                            (decision_id, sid, 'prepare_ahead', '', 'assistant', now()))
-                db.execute("UPDATE suggestions SET status='accepted',early=1 WHERE id=?", (sid,))
+                db.execute('UPDATE suggestions SET early=1 WHERE id=?', (sid,))
+                todo_moves.transition(db, sid, todo_states.ACCEPTED, 'prepare_ahead')
                 self.queue_preparation(db, sid, decision_id)
                 started += 1
         return started
@@ -865,7 +871,8 @@ class CardsStore:
             decision_id = 'ahead:' + uuid.uuid4().hex
             db.execute('INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)',
                        (decision_id, sid, 'prepare_ahead', '', 'assistant', stamp))
-            db.execute("UPDATE suggestions SET status='accepted',early=1 WHERE id=?", (sid,))
+            db.execute('UPDATE suggestions SET early=1 WHERE id=?', (sid,))
+            todo_moves.transition(db, sid, todo_states.ACCEPTED, 'prepare_ahead', at=stamp)
             self.queue_preparation(db, sid, decision_id)
             # Ready, it reaches the owner like any card prepared ahead.
             db.execute("UPDATE deliveries SET status='queued',updated_at=? WHERE suggestion_id=? AND status='not_sent'", (stamp, sid))
@@ -1136,7 +1143,8 @@ class CardsStore:
                 if meta.get('card_id') == own['id']:
                     db.execute('UPDATE events SET metadata=? WHERE id=?', (json.dumps({**meta, 'card_id': other['id']}), event['id']))
             chat_files.move(db, own['id'], other['id'])  # the files the owner made their to-do with
-            db.execute("UPDATE suggestions SET status='rejected',closed_from=status,merge_offer=NULL WHERE id=?", (own['id'],))
+            db.execute('UPDATE suggestions SET closed_from=status,merge_offer=NULL WHERE id=?', (own['id'],))
+            todo_moves.transition(db, own['id'], todo_states.REJECTED, 'merged', at=stamp)
             db.execute('INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)',
                        (decision_id, own['id'], 'merge', '', source, stamp))
             db.execute("UPDATE preparations SET status='cancelled',updated_at=? WHERE suggestion_id=? AND status!='done'", (stamp, own['id']))
@@ -1172,7 +1180,8 @@ class CardsStore:
             if not answer:
                 continue
             stamp = now()
-            db.execute("UPDATE suggestions SET status='completed',early=0 WHERE id=?", (row['id'],))
+            db.execute('UPDATE suggestions SET early=0 WHERE id=?', (row['id'],))
+            todo_moves.transition(db, row['id'], todo_states.COMPLETED, 'they_wrote_again', at=stamp)
             db.execute("INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)",
                        ('followed-up:' + row['id'], row['id'], 'complete', f"They followed up: {answer['title'][:150]} (signal {answer['id']})", 'assistant', stamp))
             db.execute("UPDATE deliveries SET status='cancelled',reminder=0,updated_at=? WHERE suggestion_id=?", (stamp, row['id']))
@@ -1190,8 +1199,9 @@ class CardsStore:
             if row['done_when']:
                 outcomes.handoff_reply(db, row, watch, answer, stamp)
                 continue
-            db.execute("UPDATE suggestions SET status='completed',completed_from='prepared',snoozed_until=NULL,resume_status=NULL,awaiting=? WHERE id=?",
+            db.execute("UPDATE suggestions SET completed_from='prepared',snoozed_until=NULL,resume_status=NULL,awaiting=? WHERE id=?",
                        (encoded({**watch, 'answered': answer['title'][:150]}), row['id']))
+            todo_moves.transition(db, row['id'], todo_states.COMPLETED, 'delegate_answered', at=stamp)
             db.execute("INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)",
                        ('answered:' + row['id'], row['id'], 'complete', f"{watch['name']} replied: {answer['title'][:150]} (signal {answer['id']})", 'assistant', stamp))
             db.execute("UPDATE deliveries SET reminder=0,needs_edit=1,updated_at=? WHERE suggestion_id=?", (stamp, row['id']))
