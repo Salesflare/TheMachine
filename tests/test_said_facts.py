@@ -68,8 +68,25 @@ class SaidFacts(unittest.TestCase):
         self.assertEqual(hers['about'], ['email:ann@client.com'])
         known = [f['text'] for f in self.app.graph_action({'node_id': 'email:ann@client.com'})['open'].get('known', [])]
         self.assertEqual(known, ['Ann prefers calls before 10.'])
-        with self.assertRaisesRegex(ValueError, 'not a person, organization or project'):
-            self.save('Someone else entirely.', about=['email:nobody@x.com'])
+        # Who it is about never costs what the owner said: the owner themselves (never a record), a first name the
+        # graph can't place or someone it never met is left off, and the fact is kept with the record that matched
+        self.says('Ann and I agreed: quotes to her go out on Mondays', '504')
+        kept = self.save('Quotes to Ann go out on Mondays.', about=['Sam Owner', 'email:ann@client.com', 'email:nobody@x.com'])
+        self.assertEqual(kept['about'], ['email:ann@client.com'])
+        self.assertEqual(kept['about_skipped'], ['Sam Owner', 'email:nobody@x.com'])
+        self.says('my sister Mila swims on Saturdays', '505')
+        alone = self.save('Mila has swimming lessons on Saturdays.', about=['Mila'])
+        self.assertEqual((alone.get('about') or [], alone['about_skipped']), ([], ['Mila']))
+        self.assertIn('Mila has swimming lessons on Saturdays.', [f['text'] for f in self.store.facts()])
+        # Outside the owner's chat a wrong about still stops the save: a review names records it read
+        with self.store.connect() as db, self.assertRaisesRegex(ValueError, 'not a person, organization or project'):
+            self.store.fact_subjects(db, ['email:nobody@x.com'])
+
+    def test_code_modes_guess_of_the_argument_is_the_fact(self):
+        """In Code Mode the model never sees the tool's description and writes the sentence as fact, not text."""
+        self.says('the team offsite moved to March', '506')
+        saved = self.app.action('remember_fact', {'fact': 'The team offsite moved to March.', '_owner_chat': True})
+        self.assertEqual([f['text'] for f in self.store.facts() if f['id'] == saved['id']], ['The team offsite moved to March.'])
 
     def test_only_the_owners_own_chat_and_only_what_they_just_said(self):
         self.says('we stopped using TranslateCo', '503')
