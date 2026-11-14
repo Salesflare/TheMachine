@@ -83,6 +83,8 @@ from machine.store.review import ReviewStore
 from machine.store.views import ViewsStore
 from machine.store.voices import VoicesStore
 from machine.store.whats_new import WhatsNewStore
+from machine.store import todo_moves
+from machine import todo_states
 from meet_app import MeetApp
 from mail_cleanup_app import CleanupTemplate
 from reading_digest_app import DigestTemplate
@@ -291,7 +293,7 @@ class App(*APP_MIXINS):
         if action and not card.get('duplicate'):
             with self.store.connect() as db:
                 row = db.execute('SELECT account_ids FROM suggestions WHERE id=?', (card['id'],)).fetchone()
-                db.execute("UPDATE suggestions SET status='accepted' WHERE id=? AND status='pending'", (card['id'],))
+                todo_moves.transition(db, card['id'], todo_states.ACCEPTED, 'intro_draft', only=todo_states.PENDING)
             draft = next_actions.validate(action, self.config, json.loads(row['account_ids']))
             self.store.prepare(card['id'], f"A double-opt-in email to {action['to'][0]}: it asks them first whether they want the "
                                            f"introduction. Read it, change it if you like, and send it yourself.", next_action=draft,

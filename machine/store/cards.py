@@ -29,6 +29,7 @@ from machine.text import _address, body_after_title, clamp, encoded
 from timeutil import local_tz, now
 import todo_areas
 from machine import todo_states
+from machine.store import todo_moves
 from machine.owner_error import OwnerError
 
 
@@ -960,7 +961,7 @@ class CardsStore:
             db.execute('UPDATE suggestions SET origin=?,owner_words=?,deliver_after=NULL,due_at=? WHERE id=?', ('owner', words, due_at, sid))
             db.execute("UPDATE deliveries SET status='not_sent',updated_at=? WHERE suggestion_id=?", (stamp, sid))
             if accepted:
-                db.execute("UPDATE suggestions SET status='accepted' WHERE id=? AND status='pending'", (sid,))
+                todo_moves.transition(db, sid, todo_states.ACCEPTED, 'owner_do_it', only=todo_states.PENDING, at=stamp)
         return {'id': sid, 'status': saved['status'], 'title': title, 'event_id': cursor.lastrowid, **({'files': kept} if kept else {})}
 
     def report_seen(self, ids):

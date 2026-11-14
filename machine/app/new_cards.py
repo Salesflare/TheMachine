@@ -16,6 +16,8 @@ from machine.config import WORKSPACE
 from machine.store.cards import owner_title
 from machine.store.facts import suggestion_scope
 from machine.store.views import source_lines_shown
+from machine.store import todo_moves
+from machine import todo_states
 from machine.text import body_after_title
 import missed_work
 import next_actions
@@ -283,6 +285,6 @@ class NewCardsApp:
             action = next_actions.validate({'kind': 'email', 'label': 'Send', 'account_id': account, 'to': draft['to'],
                                             'subject': draft['subject'], 'body': draft['body']}, self.config, [account])
             with self.store.connect() as db:
-                db.execute("UPDATE suggestions SET status='accepted' WHERE id=? AND status='pending'", (card['id'],))
+                todo_moves.transition(db, card['id'], todo_states.ACCEPTED, 'email_draft', only=todo_states.PENDING)
             self.store.prepare(card['id'], body[:1000], next_action=action, outcome={'state': 'needs_you', 'needs': 'read and send the email'})
         return card['id']
