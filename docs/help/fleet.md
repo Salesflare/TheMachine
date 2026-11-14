@@ -12,12 +12,12 @@ A Fleet lets your Machine work with the Machines of your team, family or friends
 ## Kinds of Fleet
 
 - **Work Fleet**: your team. Hand off work, ask who knows someone, get intros and a team brief.
-- **Family Fleet**: up to 6 people. When everyone's free, shared to-dos and plans. Free. See [Family](family.md).
+- **Family Fleet**: up to 6 people. When everyone's free, shared to-dos and plans. Free; hosted Machines in it have a family price. See [Family](family.md).
 - **Friends**: anyone on The Machine, one by one. Free. See [Friends](friends.md).
 
 ## The Fleet tab
 
-It shows once you're in a Fleet, with a pane for each Fleet, Family, Friends, Network, Sharing and Activity.
+It shows once you're in a Fleet, with a pane for each Fleet, then Friends, Network, Sharing and Activity. Owners and admins also get **Manage**, and a Work Fleet that shares its Graph gets **What's shared**.
 
 ## What it costs, leaving and starting a Fleet
 
@@ -28,6 +28,8 @@ Each opens that step of your account, and a change in price shows the amount to 
 ## Ask your Fleet
 
 Ask "who knows someone at Acme?" from the Fleet tab, or **Ask the Fleet** on an organization in the [Graph](graph.md). Each teammate's Machine answers by their own sharing rules, and asks them first when the rule says so.
+
+For anything else, use **Ask anything** in your Work Fleet's pane. Each teammate gets a draft answer from their own work accounts, and nothing comes back until they send it.
 
 ## Answered by itself in a Work Fleet
 

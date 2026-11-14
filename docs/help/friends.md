@@ -20,7 +20,7 @@ In **Fleet**, under **Network**:
 
 Both are on by default, and off at the Careful security level. Turn either off any time; your choice stays. People can find you by your sign-in email (always on) and your connected addresses, each with its own switch under **Findable by**, except shared ones like info@, which stay off until you turn them on.
 
-People you know show up right away when you turn it on, and as they join later. Each one comes with Connect, Not now or **Never suggest**. Once you're friends, they're no longer suggested. **Leave the Network** takes you off it.
+People you know show up as a to-do right away when you turn it on, and as they join later. Each one comes with **Friend** and **Family** (**Connect** for a colleague), **Not now**, and **Never suggest** in the ⋯ menu. Once you're friends, they're no longer suggested. **Leave the Network** takes you off it.
 
 People it finds say **Has a Machine** in your People list. It checks the addresses in your messages and the ones you added to a person with **Edit**: if someone signed up with another address, add it to them. On the page of someone it found, **Add as a friend** sends the same request as Connect (**Add as family** is in the ⋯ menu).
 
@@ -36,7 +36,7 @@ Only free or busy goes over, sealed end to end, for at most 14 days and rounded 
 
 No Machine there, or no answer: the email draft gets a link where they pick one of your free times. Their pick is a to-do with **Book it**; nothing is booked before you tap it.
 
-The link shows only free times, by the same rules, and nothing else about you. It ends once the meeting is booked, or after 14 days. The email shows it as "Pick a time". At the bottom, the page says "Your Machine found these times. Get yours." with your first name. Turn that off with **Footer on booking links**. Each link and pick shows in Activity.
+The link shows only free times, by the same rules, and nothing else about you. It ends once the meeting is booked, or after 14 days. The email shows it as "Pick a time". At the bottom, the page says "Alex's Machine found these times. Get yours.", with your first name. Turn that off with **Footer on booking links**. Each link and pick shows in Activity.
 
 ## A Machine on your own computer
 

@@ -22,6 +22,7 @@ A level is a starting point. Change any setting after, and the level shows **Cus
 - **Look up work contacts**, **Offer to share learnings** and **Share what Help is asked** off.
 - **Check which of my contacts have a Machine** and **Let people who have my email find me** off.
 - **Keep Do it details 90 days** off: they're kept 30 days.
+- **What other Machines may ask mine** set to **Off**: no scheduling with other Machines. See [Friends and the Network](friends.md#scheduling-with-other-machines).
 - In a Family, free/busy times ask you first. With Friends, meeting context is declined.
 
 ## A Work Fleet's level
