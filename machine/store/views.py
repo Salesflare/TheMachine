@@ -57,7 +57,7 @@ from machine.store import graph_identifiers
 from machine import names, stamps
 from machine.store.cards import source_kind, source_lead, SOURCE_KIND, use_view
 from machine.store.conversation import ConversationStore
-from machine.store.decisions import checking_in, handoff_wait, owner_area_open, send_retry_ok, skill_update_view, UNDO_MERGE
+from machine.store.decisions import checking_in, handoff_wait, handoffs_of, owner_area_open, send_retry_ok, skill_update_view, UNDO_MERGE
 from machine.store.events import SET_ASIDE_AFTER
 from machine.store.facts import suggestion_scope
 from machine.store import message_view
@@ -352,16 +352,18 @@ def source_leads(db, cards):
     return {cid: next((i for i in v if i in kinds and kinds[i] not in ('owner.card', 'machine.parked_fix')), None) for cid, v in held.items()}
 
 
-def stopped_step(db, suggestion):
+def stopped_step(db, suggestion, pre=None):
     """One true line for a card whose confirmed step stopped without going through (paused: its run was blocked, timed
     out, or a snooze or close canceled it). It replaces the card's earlier result text, which still reads as if the step
     were ready or done: what didn't happen, why in a few words, and when it carries on. None otherwise.
     A final step that new work replaced before its result was saved (finish_uncertain, see queue_preparation) counts too
     while that work has no result yet: the card still shows the step's preview. One that was paused then is not done;
-    one without that record may have gone through, so it is not confirmed."""
-    prep = db.execute('SELECT status,reason,error FROM preparations WHERE suggestion_id=?', (suggestion['id'],)).fetchone()
+    one without that record may have gone through, so it is not confirmed. pre: card_reads for a list of cards."""
+    prep = pre['preparations'].get(suggestion['id']) if pre else \
+        db.execute('SELECT status,reason,error FROM preparations WHERE suggestion_id=?', (suggestion['id'],)).fetchone()
     step, prefix = None, ''
-    for row in db.execute("SELECT status,payload FROM action_jobs WHERE suggestion_id=? AND status IN ('paused','finish_uncertain') ORDER BY updated_at DESC", (suggestion['id'],)):
+    for row in (db.execute("SELECT status,payload FROM action_jobs WHERE suggestion_id=? AND status IN ('paused','finish_uncertain') ORDER BY updated_at DESC", (suggestion['id'],))
+                if not pre or suggestion['id'] in pre['jobs'] else ()):
         payload = json.loads(row['payload'])
         if row['status'] == 'paused':
             step, prefix = payload, 'Not done yet: ' if payload.get('kind') == 'finish' else 'Not prepared yet: '
@@ -448,10 +450,25 @@ def card_reads(db, cards):
     pre = {'events': {r['id']: r['metadata'] for r in db.execute('SELECT id,metadata FROM events WHERE id IN (SELECT value FROM json_each(?))', (json.dumps(sorted(events, key=str)),))},
            'clusters': {r[0] for r in db.execute('SELECT DISTINCT suggestion_id FROM skill_clusters WHERE suggestion_id IN (SELECT value FROM json_each(?))', (ids,))},
            'jobs': {r[0] for r in db.execute('SELECT DISTINCT suggestion_id FROM action_jobs WHERE suggestion_id IN (SELECT value FROM json_each(?))', (ids,))},
-           'preparations': {r['suggestion_id']: r for r in db.execute('SELECT suggestion_id,job_id,status,reason FROM preparations WHERE suggestion_id IN (SELECT value FROM json_each(?))', (ids,))}}
+           'preparations': {r['suggestion_id']: r for r in db.execute('SELECT suggestion_id,job_id,status,reason,error FROM preparations WHERE suggestion_id IN (SELECT value FROM json_each(?))', (ids,))}}
     try:  # skills.for_task reads these two; before their columns exist it looks per card as before
         pre['skills'] = {r[0] for r in db.execute("SELECT task FROM skills WHERE task IN (SELECT value FROM json_each(?)) AND status='proposed' AND origin='proposed' "
                                                   "UNION SELECT task FROM skill_task_decided WHERE task IN (SELECT value FROM json_each(?))", (ids, ids))}
+    except sqlite3.OperationalError:
+        pass
+    # A mail cleanup's and a digest's items, and the newest handoff of each (handoff_wait): before their tables exist
+    # (a Machine without them yet, or without a Fleet) each card looks as before
+    for key, sql in (('cleanup', 'SELECT * FROM mail_cleanup_items WHERE suggestion_id IN (SELECT value FROM json_each(?))'),
+                     ('digest', 'SELECT suggestion_id,item,feedback FROM digest_items WHERE suggestion_id IN (SELECT value FROM json_each(?))')):
+        try:
+            found = {}
+            for r in db.execute(sql, (ids,)):
+                found.setdefault(r['suggestion_id'], {})[r['item']] = dict(r) if key == 'cleanup' else r
+            pre[key] = found
+        except sqlite3.OperationalError:
+            pass
+    try:
+        pre['handoffs'] = handoffs_of(db, [c['id'] for c in cards])
     except sqlite3.OperationalError:
         pass
     return pre
@@ -548,9 +565,9 @@ class ViewsStore(ConversationStore):
             act=routine.pop('act')
             extra['routine']=routine
             if act and suggestion.get('status')=='pending':extra['labels']={'accept':ROUTINE_ACT[act]}
-        cleanup=mail_cleanup.view(db,suggestion['id'],[row['metadata'] for row in rows])
+        cleanup=mail_cleanup.view(db,suggestion['id'],[row['metadata'] for row in rows],**({'have':pre['cleanup'].get(suggestion['id'],{})} if pre and 'cleanup' in pre else {}))
         if cleanup:extra['cleanup']=cleanup  # a routine template's to-do: Keep or Unsubscribe, Spam or Not spam, per item (mail_cleanup.py)
-        digest=reading_digest.view(db,suggestion['id'],[row['metadata'] for row in rows])
+        digest=reading_digest.view(db,suggestion['id'],[row['metadata'] for row in rows],**({'rows':pre['digest'].get(suggestion['id'],{})} if pre and 'digest' in pre else {}))
         if digest:extra['digest']=digest  # the Daily digest: why each one matters, More or Less like this (reading_digest.py)
         if meeting_prep.is_briefing(suggestion.get('dedupe_key')):extra['briefing']=True  # a meeting briefing: only for reading (meeting_prep.py)
         facebook=birthdays_facebook.view(db,suggestion['id'])
@@ -597,7 +614,7 @@ class ViewsStore(ConversationStore):
             shown=card_draft({**suggestion,**extra})
             if shown and shown['full']:extra['card_send']=shown['action']['revision']
         if suggestion.get('status') not in ('completed','rejected'):
-            stopped=stopped_step(db,suggestion)
+            stopped=stopped_step(db,suggestion,pre)
             if stopped:extra['step_stopped']=stopped
         prompt=suggestion.get('feedback_request_id') and db.execute('SELECT status,error FROM feedback_prompts WHERE request_id=?',(suggestion['feedback_request_id'],)).fetchone()
         if prompt:extra['change_prompt']=dict(prompt)
@@ -617,9 +634,10 @@ class ViewsStore(ConversationStore):
             if extra['area'] and suggestion.get('status') in gap_note.OPEN_STATUSES:
                 hint=area_hint(db,suggestion,self.accounts,extra['area'])  # Change area starts on where its people point
                 if hint:extra['area_hint']=hint
-        wait=handoff_wait(db,suggestion)
+        handoffs={'handoffs':pre['handoffs']} if pre and 'handoffs' in pre else {}
+        wait=handoff_wait(db,suggestion,**handoffs)
         if wait:extra['handoff_wait']=wait
-        still=handoff_wait(db,suggestion,awake=True)
+        still=handoff_wait(db,suggestion,awake=True,**handoffs)
         if still:extra['handoff_still']=still  # back on the list, still with them: the card says so, not "Needs you"
         if still and checking_in(db,suggestion):extra['handoff_checkin']=True  # Check in now: its nudge is drafted like any Do it
         return extra
@@ -870,10 +888,12 @@ class ViewsStore(ConversationStore):
             result = {table: [dict(r) for r in db.execute('SELECT * FROM ' + table + ' ORDER BY ' + column + ' DESC LIMIT 100')]
                       for table, column in [('suggestions', 'created_at'), ('decisions', 'created_at'), ('analyses', 'started_at')]}
             result['promises'] = promises
+            annotations={r['decision_id']:r for r in db.execute('SELECT decision_id,status,reason,superseded_by FROM decision_annotations WHERE decision_id IN (SELECT value FROM json_each(?))',
+                                                                 (json.dumps([d['id'] for d in result['decisions']]),))}  # one read, not one per decision
             for decision in result['decisions']:
-                annotation=db.execute('SELECT status,reason,superseded_by FROM decision_annotations WHERE decision_id=?',(decision['id'],)).fetchone()
+                annotation=annotations.get(decision['id'])
                 if annotation:
-                    decision.update(annotation=dict(annotation),feedback='')
+                    decision.update(annotation={k:annotation[k] for k in ('status','reason','superseded_by')},feedback='')
             # Each decision carries its to-do's title: an older done to-do is past the suggestions list below, and
             # Learning, Decisions showed its id instead.
             ids = sorted({d['suggestion_id'] for d in result['decisions'] if d.get('suggestion_id')})

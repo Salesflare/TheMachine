@@ -173,12 +173,34 @@ def _schema_key(db):
 def once(db, name, make, sentinel):
     """make(db) (a module's CREATE ... IF NOT EXISTS and its column checks) once per database and schema version, not on
     each of the dozens of calls a request makes: again when the schema changed since or the sentinel (a table make
-    creates) is missing, as in a new database at the same path."""
+    creates) is missing, as in a new database at the same path. On a connection that made it current already at this
+    schema version, one read: no schema change since means its tables are all still there (a status build asked 70 times,
+    three reads each)."""
+    current = getattr(db, '__dict__', {}).get('_once_made')
+    if current and name in current:
+        try:
+            if db.execute('PRAGMA schema_version').fetchone()[0] == current[name]:
+                return
+        except sqlite3.Error:
+            pass
     key = _schema_key(db)
     if key is not None and (name, *key) in _MADE and db.execute(
             "SELECT 1 FROM sqlite_master WHERE name=?", (sentinel,)).fetchone():
+        _made_on(db, name, key[2])
         return
     make(db)
     key = _schema_key(db)  # its tables and triggers changed the schema version
     if key is not None:
         _MADE.add((name, *key))
+        _made_on(db, name, key[2])
+
+
+def _made_on(db, name, version):
+    """Noted on the connection itself (the Store's, message_seal.Connection); a plain sqlite3 one keeps nothing. Only
+    outside a transaction: one rolled back takes its tables with it and its schema version back."""
+    if db.in_transaction:
+        return
+    try:
+        db.__dict__.setdefault('_once_made', {})[name] = version
+    except AttributeError:
+        pass

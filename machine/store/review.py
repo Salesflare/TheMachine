@@ -863,10 +863,11 @@ class ReviewStore:
 
     answered = staticmethod(answered)  # the function above
 
-    def waiting_since(self, db, rows):
+    def waiting_since(self, db, rows, own=None):
         """(when, row) of the earliest of these signals someone still waits on the owner for (need_rank 0, a mail not
-        answered in its thread since), or None: who has waited longest. Read from who wrote to whom, never the words."""
-        own, current = self.review_own_addresses(db), now()
+        answered in its thread since), or None: who has waited longest. Read from who wrote to whom, never the words.
+        own: review_own_addresses, read once for many calls."""
+        own, current = self.review_own_addresses(db) if own is None else own, now()
         for row in sorted(rows, key=lambda r: r['occurred_at']):
             if row['occurred_at'] <= current and self.need_rank(row, own) == 0 and not (row['kind'] == 'gmail.message' and self.answered(db, row)):
                 return row['occurred_at'], row

@@ -351,11 +351,12 @@ def open_todos(db, area):
                                      "AND status NOT IN ('completed','rejected')", (area, area))]
 
 
-def view(db, suggestion_id, metas):
+def view(db, suggestion_id, metas, rows=None):
     """What a digest to-do shows, or None: {'items': [{n, from, title, why, topic, event, url, feedback}]}; event: its
-    mail's id while that mail is kept (to read it in the viewer), url: the mail in Gmail or Outlook."""
+    mail's id while that mail is kept (to read it in the viewer), url: the mail in Gmail or Outlook. rows: its items
+    ({item: row with feedback}), read once for a list of to-dos (views.card_reads)."""
     try:
-        rows = {r['item']: r for r in db.execute('SELECT item,feedback FROM digest_items WHERE suggestion_id=?', (suggestion_id,))}
+        rows = {r['item']: r for r in db.execute('SELECT item,feedback FROM digest_items WHERE suggestion_id=?', (suggestion_id,))} if rows is None else rows
     except Exception:
         return None
     if not rows:

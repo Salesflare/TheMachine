@@ -97,6 +97,55 @@ class StatusCost(unittest.TestCase):
         self.assertLessEqual(many.asked('PRAGMA secure_delete'), 2)  # the connection setup, not once per helper
         self.assertLessEqual(len(many.statements) - len(few.statements), 30 * 9)  # a bound per to-do; was over 20
 
+    def busy(self, start, count):
+        """count more to-dos, each with what the status looks up for it: a cleanup's and a digest's items, a decision
+        with its annotation, a preparation, a paused step and a handoff to a teammate (half of them snoozed)."""
+        self.todos(count, start)
+        with self.store.connect() as db:
+            db.execute("CREATE TABLE IF NOT EXISTS fleet_out(id TEXT PRIMARY KEY,fleet TEXT NOT NULL,member_id TEXT NOT NULL,name TEXT NOT NULL,kind TEXT NOT NULL,"
+                       "question TEXT NOT NULL,context TEXT,status TEXT NOT NULL,answer TEXT,at TEXT NOT NULL,answered_at TEXT)")
+            db.execute('CREATE TABLE IF NOT EXISTS fleet_meta(key TEXT PRIMARY KEY,value TEXT NOT NULL)')
+            for n, (card,) in enumerate(db.execute("SELECT id FROM suggestions WHERE dedupe_key IN (SELECT value FROM json_each(?))",
+                                                   (json.dumps([f'todo-{i}' for i in range(start, start + count)]),)).fetchall()):
+                db.execute("INSERT INTO mail_cleanup_items(suggestion_id,item,kind,account_id,address,updated_at) VALUES(?,0,'unsubscribe','work','news@list.example',?)", (card, NOW))
+                db.execute("INSERT INTO digest_items(suggestion_id,item,event_id,account_id,address,updated_at) VALUES(?,0,NULL,'work','news@list.example',?)", (card, NOW))
+                db.execute("INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,'other','Shorter','dashboard',?)", ('d' + card, card, NOW))
+                db.execute("INSERT INTO decision_annotations(decision_id,status,reason) VALUES(?,'superseded','newer')", ('d' + card,))
+                db.execute("INSERT INTO preparations(suggestion_id,decision_id,job_id,status,reason,created_at,updated_at) VALUES(?,?,?,'done','',?,?)",
+                           (card, 'd' + card, 'j' + card, NOW, NOW))
+                db.execute("INSERT INTO action_jobs(id,suggestion_id,revision,status,payload,approval_id,source,rfc_message_id,created_at,updated_at) "
+                           "VALUES(?,?,'r1','paused',?,?,'dashboard','',?,?)", ('a' + card, card, json.dumps({'kind': 'finish', 'label': 'Send it'}), 'ap' + card, NOW, NOW))
+                db.execute("INSERT INTO fleet_out(id,fleet,member_id,name,kind,question,context,status,at) VALUES(?,'f','m','Robin Vale','handoff','Book it',?,'asked',?)",
+                           ('q' + card, 'handoff:' + card, NOW))
+                if n % 2:
+                    db.execute("UPDATE suggestions SET status='snoozed' WHERE id=?", (card,))
+
+    def test_what_status_looks_up_per_to_do_is_read_once_for_the_list(self):
+        """A cleanup's and a digest's items, decision annotations, a to-do's preparation and stopped step, its handoff,
+        and each module's table check (stamps.once) were read once per to-do or decision: 52, 52, 43, 22, 22, 22 and over
+        200 reads in a 1,270-statement build. Now once per build, however many to-dos there are."""
+        self.busy(0, 3)
+        self.status()  # a new database's first: its tables made
+        _, few = self.status()
+        self.busy(3, 9)
+        _, many = self.status()
+        for read in ('FROM mail_cleanup_items', 'FROM digest_items', 'FROM decision_annotations WHERE', 'FROM preparations',
+                     "FROM action_jobs WHERE suggestion_id=? AND status IN ('paused'", 'FROM fleet_out', 'PRAGMA database_list', 'FROM sqlite_master WHERE name=?'):
+            self.assertLessEqual(many.asked(read), few.asked(read), read)
+        self.assertGreater(few.asked('FROM fleet_out'), 0)
+        self.assertLessEqual(many.asked('PRAGMA schema_version'), few.asked('PRAGMA schema_version') + 9 * 4)  # one a check, not three
+
+    def test_the_lists_reads_show_what_each_to_do_read_on_its_own(self):
+        self.busy(0, 4)
+        with self.store.connect() as db:
+            cards = [dict(r) for r in db.execute("SELECT * FROM suggestions")]
+            listed, alone = [dict(c) for c in cards], [dict(c) for c in cards]
+            pre = self.store.card_reads(db, listed)
+            for one, two in zip(listed, alone):
+                with patch_everywhere(a, 'now', return_value=NOW):
+                    self.assertEqual(self.store.suggestion_result(one, db, pre), self.store.suggestion_result(two, db))
+        self.assertTrue(any(c.get('status') == 'snoozed' for c in cards))
+
     def test_the_failed_reads_and_signal_counts_come_from_an_index(self):
         """Status asks each connection for its last failed read and its failures today; most never fail, so this walked
         every read of the connection (167,000 for a phone feed, half a second a poll) to find none."""

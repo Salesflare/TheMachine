@@ -385,9 +385,10 @@ class FirstLookStore:
             if row['detail'] != 'on' or decided(row['at']) or now() >= ends:
                 return None
             # A ready to-do (its draft prepared) before one still to decide or preparing; within each, the longest wait
-            best = None
+            best, own = None, None
             for card in db.execute('SELECT id,status,event_ids FROM suggestions WHERE ' + activity.SHOWN, (now(),)).fetchall():
-                found = self.greeting_wait(db, card)
+                own = self.review_own_addresses(db) if own is None else own  # once, not per to-do
+                found = self.greeting_wait(db, card, own)
                 m = found and found[1]['metadata']
                 m = found and (m if isinstance(m, dict) else json.loads(m or '{}'))
                 if found and owners_name(m.get('sender_display') or m.get('from'), owner_name):
@@ -399,7 +400,7 @@ class FirstLookStore:
         line = best and best[1]
         return {'name': first, **({'line': line} if line else {})} if first or line else None
 
-    def greeting_wait(self, db, card):
+    def greeting_wait(self, db, card, own=None):
         """(since, row) for the hello: the earliest unanswered message someone waits on the owner for in the to-do's own
         conversation (its first evidence, and the rest of that thread among its evidence), or None. Another message the
         to-do also carries (its "+1 more", from someone else) never names it."""
@@ -413,7 +414,7 @@ class FirstLookStore:
         lead, thread = rows[0], meta(rows[0]).get('thread_id')
         same = [r for r in rows if r is lead or (thread and r['kind'] == lead['kind'] and r['account_id'] == lead['account_id']
                                                  and meta(r).get('thread_id') == thread)]
-        return self.waiting_since(db, same)
+        return self.waiting_since(db, same, own)
 
     greeting_name = staticmethod(greeting_name)  # a function of db, at the top of this module
 
