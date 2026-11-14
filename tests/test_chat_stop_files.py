@@ -333,6 +333,18 @@ class ChatStopFiles(unittest.TestCase):
         with self.store.connect() as db:
             self.assertEqual(chat_files.of_cards(db, [self.sid])[self.sid][0]['id'], doc['id'])
 
+    def test_a_done_to_do_merged_closes_as_not_needed_with_the_move_in_its_history(self):
+        from machine.store import todo_moves
+        made = self.new_card([self.draft_upload('Quote.pdf', PDF)['id']])
+        with self.store.connect() as db:
+            db.execute("UPDATE suggestions SET status='completed',merge_offer=? WHERE id=?", (json.dumps({'card_id': self.sid}), made['id']))
+        self.store.merge_answer(made['id'], True, 'merge-2')
+        with self.store.connect() as db:
+            row = db.execute('SELECT status,closed_from,merge_offer FROM suggestions WHERE id=?', (made['id'],)).fetchone()
+            self.assertEqual(tuple(row), ('rejected', 'completed', None))
+            self.assertEqual([(m['from'], m['to'], m['reason']) for m in todo_moves.history(db, made['id'])],
+                             [('completed', 'rejected', 'merged')])
+
     def test_the_actions_are_the_owners_from_the_dashboard(self):
         for name in ('chat_stop', 'chat_upload', 'chat_file_remove'):
             self.assertIn(name, a.OWNER_ACTIONS)

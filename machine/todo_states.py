@@ -38,10 +38,17 @@ MOVES = {
     REJECTED: (PENDING, ACCEPTED, PREPARED, INSTRUCTIONS),
 }
 
+# Moves outside MOVES that one writer makes today, kept on purpose: (from, to) -> {reason: why}. Only that reason may.
+ALSO = {
+    (COMPLETED, REJECTED): {
+        'merged': 'Merge folds the owner\'s to-do into the one it repeats; a done one closes as Not needed there too',
+    },
+}
 
-def allowed(before, after):
-    """Whether a to-do may move from status before to status after (MOVES; staying put is allowed)."""
-    return after in ALL and (before == after or after in MOVES.get(before, ()))
+
+def allowed(before, after, reason=None):
+    """Whether a to-do may move from status before to status after (MOVES, or ALSO for its reason; staying put is allowed)."""
+    return after in ALL and (before == after or after in MOVES.get(before, ()) or reason in ALSO.get((before, after), {}))
 
 
 def sql(*states):

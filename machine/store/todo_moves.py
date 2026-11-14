@@ -37,7 +37,7 @@ def transition(db, suggestion_id, to, reason, *, only=None, at=None):
     before = row[0]
     if only is not None and before not in ((only,) if isinstance(only, str) else only):
         return 0
-    if not todo_states.allowed(before, to):
+    if not todo_states.allowed(before, to, reason):
         raise MoveNotAllowed(f'to-do move not declared in todo_states.MOVES: {before} -> {to} ({reason})')
     if before == to:
         return 1

@@ -10,6 +10,7 @@ import next_actions as n
 import test_ux as ux
 from seams import patch_everywhere  # noqa: E402
 import timeutil
+from machine.store import todo_moves  # noqa: E402
 a = ux.a
 
 
@@ -162,6 +163,9 @@ class Delegate(unittest.TestCase):
         with self.store.connect() as db:
             self.store.settle_awaiting(db)
         self.assertEqual(self.suggestion()['status'], 'completed')
+        with self.store.connect() as db:
+            last = todo_moves.history(db, self.sid)[-1]
+        self.assertEqual((last['from'], last['to'], last['reason']), ('snoozed', 'completed', 'delegate_answered'))
 
     def test_without_delegate_a_send_closes_the_card_with_one_status(self):
         self.ready(self.slack_action(delegate=None))
