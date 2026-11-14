@@ -38,6 +38,42 @@ def slack_limits(account):
     return SLACK_LIMITS['broker' if (account or {}).get('transport') == 'broker' else 'maton']
 
 
+def slack_rounds_path(config):
+    return Path(config['database']).expanduser().parent / 'slack-rounds.json' if config.get('database') else None
+
+
+def slack_rounds_kept(config):
+    """{account id: its round and minute} as Slack.keep_round saved them."""
+    path = slack_rounds_path(config)
+    try:
+        found = json.loads(path.read_text()) if path else {}
+    except (OSError, ValueError):
+        return {}
+    return found if isinstance(found, dict) else {}
+
+
+# A run waiting on its asked reads (slack_read 'reading') sleeps at most this long before it asks again, and READ_WAIT_MARGIN
+# on top of the reads it waits for: a read already under way, and the collector's turn after its pause.
+READ_WAIT_MAX, READ_WAIT_MARGIN = 300, 30
+
+
+def slack_read_wait(config, account, waiting):
+    """Seconds a to-do's run waits before it asks again for its Slack conversations (slack_read 'reading'). The
+    connection reads one conversation every slack_read_seconds (3 minutes by default), or every round it learned after
+    Slack's 429s (Slack.read_went), the asked ones first: `waiting` asked conversations take about that many reads. A
+    run that waited 195 seconds for two of them found both still reading and stopped with "paste the update here"
+    (2026-11-14): two take two reads."""
+    limits = slack_limits(account)
+    every = max(limits['floor'], int(config.get('slack_read_seconds', limits['read_seconds'])))
+    kept = slack_rounds_kept(config).get(str((account or {}).get('id')))
+    if isinstance(kept, dict) and kept.get('base') == every:
+        try:
+            every = max(every, min(int(kept.get('round') or every), Slack.SLACK_ROUND_MAX))
+        except (TypeError, ValueError):
+            pass
+    return min(READ_WAIT_MAX, max(1, waiting) * every + READ_WAIT_MARGIN)
+
+
 class Slack:
     METHODS = {'auth.test', 'users.info', 'users.conversations', 'conversations.history',
                'conversations.replies', 'conversations.info'}
@@ -99,15 +135,10 @@ class Slack:
         return self.read_seconds * rounds
 
     def rounds_path(self):
-        return Path(self.config['database']).expanduser().parent / 'slack-rounds.json' if self.config.get('database') else None
+        return slack_rounds_path(self.config)
 
     def rounds_kept(self):
-        path = self.rounds_path()
-        try:
-            found = json.loads(path.read_text()) if path else {}
-        except (OSError, ValueError):
-            return {}
-        return found if isinstance(found, dict) else {}
+        return slack_rounds_kept(self.config)
 
     def keep_round(self):
         """Save this connection's round and minute, so a restart reads in the same minute."""

@@ -15,6 +15,7 @@ ROOT = Path(__file__).parent.parent
 spec = importlib.util.spec_from_file_location('slack_read_now_assistant', ROOT / 'assistant.py')
 a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
 from machine.sources import slack as slack_source  # noqa: E402
+from machine.app import sync as app_sync  # noqa: E402
 
 DAY = 86400
 SLACK = {'id': 'work-slack', 'service': 'slack', 'user_id': 'U0RILEY01', 'email': 'riley@studio.example',
@@ -75,7 +76,7 @@ class ReadNow(Base):
         self.assertEqual(self.slack.calls, [])  # nothing due: Leo's message would wait until tomorrow
         asked = self.read()
         self.assertEqual((asked['status'], asked['channel'], asked['account_id']), ('reading', 'proj-halvorsen', 'work-slack'))
-        self.assertIn('again in about a minute', asked['note'])
+        self.assertIn('call slack_read again', asked['note'])
         self.assertEqual(self.read()['status'], 'reading')  # asking again changes nothing until the read is in
         a.sync_slack(self.store, {}, SLACK, self.slack)
         self.assertEqual([(m, p['channel']) for m, p in self.slack.calls], [('conversations.history', 'C0HALVORS1')])  # first, before #general
@@ -176,6 +177,98 @@ class Connected(Blocker):
             self.store.preparation_blocked(sid, job, "Slack isn't connected.", connect='slack')
 
     test_a_run_that_needs_slack_offers_connect_slack_and_never_a_setting = None
+
+
+class TwoReads(Blocker):
+    """A run asked for two group DMs with teammates before it wrote anything (so it wouldn't redo their work), slept one
+    read's time, found both still reading and stopped: "paste any update here", and the to-do showed Stuck. Slack reads
+    one conversation every few minutes, asked ones first, so two take two reads. Now the wait counts them, a blocker
+    while they are still coming is refused, and one that stands anyway carries on by itself once they are in."""
+    accounts = [SLACK, MAIL]
+    GROUPS = ('G0TEAMA001', 'G0TEAMB002')
+    test_a_run_that_needs_slack_offers_connect_slack_and_never_a_setting = None
+
+    def setUp(self):
+        super().setUp()
+        now = time.time()
+        self.store.commit_page('work-slack', {
+            'mode': 'incremental', 'phase': 'scan', 'index': 0, 'after': f'{now - 7 * DAY:.6f}', 'next_discovery': now + DAY,
+            'titles_named': True, 'channels': [
+                {'id': g, 'name': 'mpdm-team-' + g[-1], 'type': 'group', 'threads': [], 'last_scan': f'{now - DAY:.6f}',
+                 'due': now + DAY, 'next_full': now + DAY} for g in self.GROUPS]}, [])
+        self.slack = Fake({g: [{'type': 'message', 'ts': f'{now - 30:.6f}', 'user': 'U0SAM00002', 'text': 'On it, replying today.'}]
+                           for g in self.GROUPS})
+
+    def read(self, job, channel):
+        return self.app.action('slack_read', {'channel': channel, 'job_id': job})
+
+    def block(self, sid, job, reason='I need the price they agreed on.'):
+        return self.app.action('preparation_blocked', {'suggestion_id': sid, 'job_id': job, 'reason': reason, 'questions': []})
+
+    def test_the_wait_counts_the_reads_still_to_come(self):
+        sid, job, _ = self.start()
+        first, second = self.read(job, self.GROUPS[0]), self.read(job, self.GROUPS[1])
+        self.assertEqual((first['status'], second['status']), ('reading', 'reading'))
+        self.assertEqual(first['wait_seconds'], 180 + slack_source.READ_WAIT_MARGIN)  # one read every 3 minutes
+        self.assertEqual(second['wait_seconds'], slack_source.READ_WAIT_MAX)  # two reads, at most READ_WAIT_MAX before asking again
+        self.assertIn('never a blocker', second['note'])
+        self.assertEqual(slack_source.slack_read_wait({'slack_read_seconds': 65}, SLACK, 2), 2 * 65 + slack_source.READ_WAIT_MARGIN)
+
+    def test_reads_still_coming_are_a_wait_never_a_blocker(self):
+        sid, job, _ = self.start()
+        for g in self.GROUPS:
+            self.assertEqual(self.read(job, g)['status'], 'reading')
+        with self.assertRaisesRegex(ValueError, r'Not recorded: Slack is still reading mpdm-team-1, mpdm-team-2.*never a question for the owner'):
+            self.block(sid, job, 'I still could not read the team discussion; paste any update here.')
+        self.assertNotEqual(self.card(sid)['preparation_status'], 'blocked')
+        a.sync_slack(self.store, {}, SLACK, self.slack)  # one read: the first group
+        with self.assertRaisesRegex(ValueError, r'still reading mpdm-team-2 for'):
+            self.block(sid, job)
+        a.sync_slack(self.store, {}, SLACK, self.slack)  # the second, ahead of anything due
+        self.assertEqual([p['channel'] for _, p in self.slack.calls], list(self.GROUPS))
+        self.assertEqual([self.read(job, g)['status'] for g in self.GROUPS], ['read', 'read'])
+        self.assertEqual(self.block(sid, job)['status'], 'blocked')  # a real blocker, once nothing is coming
+        self.assertEqual(self.app.__dict__.get('_slack_read_resumes') or {}, {})  # and no resume for it
+
+    def test_a_blocker_after_the_long_wait_carries_on_by_itself_once_the_reads_are_in(self):
+        sid, job, _ = self.start()
+        for g in self.GROUPS:
+            self.read(job, g)
+        asked = self.app.run_slack_reads()[job]
+        for key in asked:
+            asked[key] -= app_sync.RUN_READ_WAIT + 1
+        self.assertEqual(self.block(sid, job)['status'], 'blocked')  # waited long enough: it may stand
+        self.app.preparation_step(lambda req: {'status': 'admitted'})
+        self.assertEqual(self.card(sid)['preparation_status'], 'blocked')  # still coming: it waits
+        a.sync_slack(self.store, {}, SLACK, self.slack); a.sync_slack(self.store, {}, SLACK, self.slack)
+        self.app.preparation_step(lambda req: {'status': 'admitted'})  # both in: no Try again to find
+        self.assertNotEqual(self.card(sid)['preparation_status'], 'blocked')
+        with self.store.connect() as db:
+            self.assertEqual(db.execute("SELECT source FROM decisions WHERE suggestion_id=? AND choice='retry'", (sid,)).fetchone()['source'], 'slack_read')
+        self.assertEqual(self.app.resume_slack_reads(), [])  # once
+
+    def test_reads_that_never_came_leave_try_again_to_the_owner(self):
+        sid, job, _ = self.start()
+        self.read(job, self.GROUPS[0])
+        asked = self.app.run_slack_reads()[job]
+        for key in asked:
+            asked[key] -= app_sync.RUN_READ_WAIT + 1
+        self.assertEqual(self.block(sid, job)['status'], 'blocked')
+        for key in asked:
+            asked[key] -= slack_source.READ_NOW_MAX
+        self.assertEqual(self.app.resume_slack_reads(), [])  # given up: no run started on reads that never came
+        self.assertEqual(self.app.__dict__['_slack_read_resumes'], {})
+        self.assertEqual(self.card(sid)['preparation_status'], 'blocked')
+
+    def test_a_refused_read_is_a_plain_blocker(self):
+        class Refusing(Fake):
+            def get(self, method, params=None):
+                raise a.SourceError('slack_not_in_channel:' + method)
+        sid, job, _ = self.start()
+        self.read(job, self.GROUPS[0])
+        a.sync_slack(self.store, {}, SLACK, Refusing({}))
+        self.assertEqual(self.read(job, self.GROUPS[0])['status'], 'cannot_read')
+        self.assertEqual(self.block(sid, job, "Slack wouldn't let me read the team's group message, so paste its latest update here.")['status'], 'blocked')
 
 
 if __name__ == '__main__':

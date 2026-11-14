@@ -185,8 +185,8 @@ const handled=await beforeDispatch({content:'I fixed it already',timestamp:17916
 {
  const saved=globalThis.fixtureCall,calls=[];const run='d'.repeat(32),key='agent:main:assistant-review-preparation-'+run;
  globalThis.fixtureRuns={[key]:run};globalThis.fixtureCall=async(action,args)=>{calls.push([action,args]);return {status:'reading'};};
- await toolFactory({agentId:'main',sessionKey:key}).execute('t',{action:'slack_read',args:{channel:'#proj-halvorsen'}});
- assert.deepEqual(calls,[['slack_read',{channel:'#proj-halvorsen'}]]);
+ await toolFactory({agentId:'main',sessionKey:key}).execute('t',{action:'slack_read',args:{channel:'#proj-halvorsen',job_id:'e'.repeat(32)}});
+ assert.deepEqual(calls,[['slack_read',{channel:'#proj-halvorsen',job_id:run}]]);  // its own run's job, never one the model gives
  for(const c of [{agentId:'main',sessionKey:'agent:main:main',messageChannel:'telegram',nativeChannelId:'1000001'},{agentId:'main',sessionKey:'agent:main:assistant-review-preparation-'+'c'.repeat(32)}])
   await assert.rejects(toolFactory(c).execute('t',{action:'slack_read',args:{channel:'general'}}),/to-do’s own run/);
  assert.equal(calls.length,1);globalThis.fixtureCall=saved;delete globalThis.fixtureRuns;
