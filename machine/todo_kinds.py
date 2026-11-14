@@ -61,6 +61,10 @@ KINDS = (
              reads='SELECT suggestion_id,item,feedback FROM digest_items WHERE suggestion_id IN (SELECT value FROM json_each(?))', read_as='rows'),
     # Birthdays' import from Facebook (birthdays_facebook.py): Import, the preview, Save. Only its view is its own.
     TodoKind('facebook_birthdays', 'birthdays_facebook', metas=False, table='facebook_birthdays'),
+    # Second-hand finds (secondhand.py): new listings, each with its verdict, photo and link, or a search a site stopped.
+    # It buzzes like any to-do (a good listing goes fast); the listings open on the site, so no Do it.
+    TodoKind('secondhand', 'secondhand', test='is_secondhand', table='secondhand_todos', close_only=True,
+             refused=lambda: i18n.t('Open it on the site from the to-do. The Machine never contacts a seller or buys.')),
 )
 
 

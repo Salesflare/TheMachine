@@ -90,6 +90,7 @@ from mail_cleanup_app import CleanupTemplate
 from reading_digest_app import DigestTemplate
 from subscriptions_app import SubscriptionsTemplate
 from stay_in_touch_app import StayInTouch
+from secondhand_app import SecondhandTemplate
 from birthdays_app import Birthdays
 from birthdays_facebook_app import BirthdaysFacebook
 from bring_in_app import BringInApp
@@ -151,7 +152,7 @@ class BirthdaysTemplate(BirthdaysFacebook, Birthdays):
 
 # Routine templates: each one's code is a routine_templates.Template, not an App mixin. The routines worker, the
 # service's start and App.action load them from this list (App.template)
-ROUTINE_TEMPLATES = (CleanupTemplate, DigestTemplate, BirthdaysTemplate, SubscriptionsTemplate, StayInTouch)
+ROUTINE_TEMPLATES = (CleanupTemplate, DigestTemplate, BirthdaysTemplate, SubscriptionsTemplate, StayInTouch, SecondhandTemplate)
 
 
 class App(*APP_MIXINS):

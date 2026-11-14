@@ -4,7 +4,7 @@ A routine is not a recurring to-do. A recurring to-do (recurring.py) reminds the
 The Machine doing something by itself, like "every Monday at 9, sum up last week's open deals". Only the rhythm math is
 shared: a routine's `rule` and `anchor` are recurring.py's (clean_rule, occurrence, next_after, parse), plus a time of
 day, `at` ('HH:MM' on the owner's clock). One rhythm is a routine's own, never a recurring to-do's: hourly (HOURLY), each
-hour at `at`'s minute. Its period is that hour ('YYYY-MM-DDTHH:MM') and its next_due a local time, not a date.
+hour at `at`'s minute, or every n hours counted from `at`'s hour (Second-hand finds: every 3). Its period is that hour ('YYYY-MM-DDTHH:MM') and its next_due a local time, not a date.
 
 Each routine runs once per period: a run's key is (routine, period), so a restart, a retry or a second worker never
 makes a second result. A scheduled period is its date (its hour when hourly); Run now is 'now:<stamp>'. Periods
@@ -70,6 +70,7 @@ STEP_TIMEOUT = {'get': 60, 'check': 30}  # seconds a step may take unless the ow
 STEP_TIMEOUT_MAX = 600
 COMMAND_MAX = 1000
 HOURLY = {'unit': 'hour', 'n': 1}  # a routine's own rhythm (Spam cleanup): every hour at at's minute
+HOURS_MAX = 12  # every n hours, n at most this (Second-hand finds: every 3)
 
 
 def ensure(db):
@@ -139,7 +140,8 @@ def read(text, today):
     if not words:
         raise OwnerError('Say what it should do and when, like every Monday at 9, sum up my open deals')
     at, rest = read_at(words)
-    got = recurring.parse(rest, today)
+    every = read_hours(rest)
+    got = {'rule': {'unit': 'hour', 'n': every}, 'anchor': today, 'rest': _HOURS.sub(' ', rest, count=1)} if every else recurring.parse(rest, today)
     if not got:
         raise OwnerError('Say when it should run, like every Monday at 9 or every weekday morning')
     instructions = re.sub(r'^(?:(?:in the|on|at) )?(?:morning|noon|afternoon|evening|night)\b|\b(?:in the |at )?(?:morning|noon|afternoon|evening|night)$',
@@ -179,22 +181,50 @@ def hourly(rule):
     return isinstance(rule, dict) and rule.get('unit') == 'hour'
 
 
+def hours(rule):
+    """Hours between two runs of an hourly rhythm (1 to HOURS_MAX)."""
+    try:
+        n = int(rule.get('n') or 1)
+    except (TypeError, ValueError, AttributeError):
+        n = 1
+    return min(max(n, 1), HOURS_MAX)
+
+
 def clean_rule(rule):
-    """recurring.clean_rule, and the routine's own hourly rhythm ('hourly' or HOURLY)."""
-    return dict(HOURLY) if rule == 'hourly' or hourly(rule) else recurring.clean_rule(rule)
+    """recurring.clean_rule, and the routine's own hourly rhythm ('hourly' or HOURLY, or every n hours)."""
+    if rule == 'hourly':
+        return dict(HOURLY)
+    return {'unit': 'hour', 'n': hours(rule)} if hourly(rule) else recurring.clean_rule(rule)
 
 
-def _slot(now_local, at):
-    """The newest hourly slot at or before now: this hour's at-minute, or the last hour's."""
+_HOURS = re.compile(r'\b(?:every|each|elke|elk|alle|jede|toutes les|tous les|cada|a cada|ogni)\s+(?:(\d{1,2})\s+)?'
+                    r'(?:hours?|uur|uren|stunden?|heures?|horas?|ore|ora)\b|\bhourly\b|\bstündlich\b', re.I)
+
+
+def read_hours(text):
+    """Every n hours in the owner's words ("every 3 hours", "hourly", "elke 2 uur"): n, or None."""
+    m = _HOURS.search(str(text or ''))
+    if not m:
+        return None
+    n = int(m.group(1) or 1)
+    return n if 1 <= n <= HOURS_MAX else None
+
+
+def _slot(now_local, at, n=1):
+    """The newest slot at or before now: this hour's at-minute, or the last hour's; every n hours, counted from at's
+    hour (every 3 hours at 7:30: 7:30, 10:30, 13:30, ...)."""
     slot = now_local.replace(minute=int(at[3:5]), second=0, microsecond=0)
-    return slot if slot <= now_local else slot - dt.timedelta(hours=1)
+    slot = slot if slot <= now_local else slot - dt.timedelta(hours=1)
+    while (slot.hour - int(at[:2])) % n:
+        slot -= dt.timedelta(hours=1)
+    return slot
 
 
 def first_due(rule, anchor, at, now_local):
     """The routine's first date: its anchor, or the next date of its rhythm when the anchor's time already passed. An
     hourly one: its next slot, a local time."""
     if hourly(rule):
-        return _slot(now_local, at) + dt.timedelta(hours=1)
+        return _slot(now_local, at, hours(rule)) + dt.timedelta(hours=hours(rule))
     today = now_local.date()
     if anchor > today or (anchor == today and not _past(now_local, at)):
         return anchor
@@ -214,7 +244,7 @@ def due_period(row, now_local):
     if hourly(json.loads(row['rule'])):  # its newest slot once due: missed hours don't stack either
         if 'T' in row['next_due'] and now_local < dt.datetime.fromisoformat(row['next_due']):
             return None
-        return _slot(now_local, row['at']).isoformat(timespec='minutes')
+        return _slot(now_local, row['at'], hours(json.loads(row['rule']))).isoformat(timespec='minutes')
     rule, anchor, due = json.loads(row['rule']), dt.date.fromisoformat(row['anchor']), dt.date.fromisoformat(row['next_due'][:10])  # [:10]: from hourly
     today = now_local.date()
     if due > today or (due == today and not _past(now_local, row['at'])):
@@ -313,8 +343,8 @@ def get(db, routine_id, states=LIVE):
 
 def change_when(db, routine_id, rule, anchor, at, now_local, stamp):
     row = get(db, routine_id, OWN)
-    rule, at = recurring.clean_rule(rule), clean_at(at)
-    anchor = recurring.anchor_for(rule, anchor)
+    rule, at = clean_rule(rule), clean_at(at)
+    anchor = anchor if hourly(rule) else recurring.anchor_for(rule, anchor)
     db.execute('UPDATE routines SET rule=?,anchor=?,at=?,next_due=?,updated_at=? WHERE id=?',
                (json.dumps(rule), anchor.isoformat(), at, first_due(rule, anchor, at, now_local).isoformat(), stamp, row['id']))
 
@@ -400,7 +430,7 @@ def begin(db, routine_id, period, stamp, now_local=None):
     made = db.execute('INSERT OR IGNORE INTO routine_runs(id,routine_id,period,version,state,started_at,steps) VALUES(?,?,?,?,?,?,?)',
                       (run_id, row['id'], period, row['version'], 'running', stamp, row['steps'])).rowcount
     if not period.startswith(('now:', 'sort:', 'test:')) and 'T' in period:  # an hourly slot: the next one
-        nxt = (dt.datetime.fromisoformat(period) + dt.timedelta(hours=1)).isoformat()
+        nxt = (dt.datetime.fromisoformat(period) + dt.timedelta(hours=hours(json.loads(row['rule'])))).isoformat()
         db.execute('UPDATE routines SET next_due=? WHERE id=? AND (next_due IS NULL OR next_due<?)', (nxt, row['id'], nxt))
     elif not period.startswith(('now:', 'sort:', 'test:')):
         after = dt.date.fromisoformat(period)
