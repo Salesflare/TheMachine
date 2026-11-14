@@ -293,7 +293,8 @@ def check_translations(found, folder=HELP):
             if fields is None:
                 problems.append(f'{where}: no front matter')
                 continue
-            other = {k for k in set(fields) | set(en[0]) if k not in ('title', 'summary') and fields.get(k) != en[0].get(k)}
+            # translated: the hash of the English it was made from (scripts/translate.py)
+            other = {k for k in set(fields) | set(en[0]) if k not in ('title', 'summary', 'translated') and fields.get(k) != en[0].get(k)}
             problems += [f'{where}: {k} differs from the English article' for k in sorted(other)]
             heads = lambda text: re.findall(r'^#{2,3} ', text, re.M)
             if len(heads(body)) != len(heads(en[1])):

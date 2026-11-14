@@ -1,0 +1,101 @@
+# Translates what English has and the other languages don't yet, once a day: catalog keys (i18n/<code>.json) and help
+# articles (docs/help/<code>/), with scripts/translate.py (gpt-6-luna behind Salesflare's Azure API gateway, the
+# glossary in every request). Pull requests change the English; this run writes every other language, so main may
+# show English for a day, and scripts/release.py cut refuses a commit with anything left.
+# There is at most one pull request (branch translate/daily): a newer run replaces it. It runs the language checks
+# itself before pushing (a pull request this workflow opens starts no other workflow), and merges itself when the
+# required checks pass. When a run fails or leaves something in English, the issue "Daily translation failed" says
+# where; the next good run closes it.
+# The model key is the secret AZ_TRANSLATE_KEY of the environment "translate", which only main can use: branches
+# (contrib/ ones included) never see it.
+name: Daily translation
+on:
+  schedule:
+    - cron: '37 4 * * *'  # after the night's test runs and heavy jobs (01:30-03:30 UTC), before Europe's morning
+  workflow_dispatch:
+permissions: {}  # none by default; the job below asks for what it needs
+concurrency:
+  group: translate
+  cancel-in-progress: false
+jobs:
+  translate:
+    # Our own runner. Fallback: the repository variable CI_PR_RUNNER set to "ubuntu-24.04" (with the quotes).
+    runs-on: ${{ fromJSON(vars.CI_PR_RUNNER || '["self-hosted","linux","themachine-ci"]') }}
+    environment: translate
+    permissions:
+      contents: write  # the translate/daily branch
+      pull-requests: write  # its pull request, merged when the checks pass
+      issues: write  # closing the "Daily translation failed" issue after a good run
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0  # each help article's history: a translation from before stamps is current when its English didn't change after it
+          filter: blob:none
+      - name: Translate what is missing
+        id: translate
+        env:
+          AZ_TRANSLATE_KEY: ${{ secrets.AZ_TRANSLATE_KEY }}
+        run: |
+          if [ -z "$AZ_TRANSLATE_KEY" ]; then echo "::error::The secret AZ_TRANSLATE_KEY of the environment translate is not set (Settings, Environments)."; exit 1; fi
+          # a second pass asks only what the first left out; what is still left stays English (the last step says so)
+          python3 scripts/translate.py all || python3 scripts/translate.py all || true
+          python3 scripts/help_check.py
+          python3 -m unittest discover -s tests -p 'test_i18n.py'
+          git add -A i18n docs/help
+          if git diff --cached --quiet; then echo "Everything is translated already."; else echo "changed=1" >> "$GITHUB_OUTPUT"; fi
+      - name: Open or update the pull request
+        if: steps.translate.outputs.changed
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git switch --quiet -C translate/daily
+          summary=$(git diff --cached --stat | tail -1)
+          git commit --quiet -m "Languages: the day's translations" -m "Made by .github/workflows/translate.yml (scripts/translate.py)."
+          git push --quiet --force "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:refs/heads/translate/daily
+          title="Languages: the day's translations"
+          body="Catalog keys and help articles that English has and another language did not, translated by the Daily translation workflow (scripts/translate.py, with i18n/glossary.md): $summary. The language checks passed in the run. It merges itself when the required checks pass."
+          pr=$(gh pr list --repo "$GITHUB_REPOSITORY" --head translate/daily --state open --json number --jq '.[0].number // empty')
+          if [ -n "$pr" ]; then gh pr edit "$pr" --repo "$GITHUB_REPOSITORY" --title "$title" --body "$body"
+          else gh pr create --repo "$GITHUB_REPOSITORY" --base main --head translate/daily --title "$title" --body "$body" \
+            || { echo "::error::The branch translate/daily is pushed, but no pull request: allow GitHub Actions to create pull requests (Settings, Actions, General)."; exit 1; }
+          fi
+          gh pr merge translate/daily --repo "$GITHUB_REPOSITORY" --auto --squash --match-head-commit "$(git rev-parse HEAD)"
+      - name: Nothing left in English
+        run: |
+          # What failed twice stays English (the rest goes in the pull request above): fail here so the issue below
+          # says so, rather than closing it as if all were translated.
+          if ! python3 scripts/translate.py all --check; then echo "::error::Some catalog keys or help articles are still in English; the next run tries them again."; exit 1; fi
+      - name: Close the failure issue
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for n in $(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search 'in:title "Daily translation failed"' --json number --jq '.[].number'); do
+            gh issue close "$n" --repo "$GITHUB_REPOSITORY" --comment "Fixed: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }} ran through."
+          done
+  failed:
+    # On GitHub's runner, so the issue opens even when our runner goes away mid-job. It runs, and costs, only on a failure.
+    needs: translate
+    if: failure()
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write  # the "Daily translation failed" issue
+      actions: read  # which step failed
+    timeout-minutes: 5
+    steps:
+      - name: Open or update the failure issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN: ${{ github.run_id }}
+        run: |
+          log="${{ github.server_url }}/$GH_REPO/actions/runs/$RUN"
+          failed=$(gh api "repos/$GH_REPO/actions/runs/$RUN/jobs" --jq '[.jobs[] | select(.name == "translate") | .steps[] | select(.conclusion == "failure") | .name] | join(", ")')
+          text="Failed step: ${failed:-none, the runner stopped during the job (dispatch the workflow again)}. Log: $log"
+          n=$(gh issue list --state open --search 'in:title "Daily translation failed"' --json number --jq '.[0].number // empty')
+          if [ -n "$n" ]; then gh issue comment "$n" --body "$text"
+          else gh issue create --title "Daily translation failed" --body "$text"; fi
