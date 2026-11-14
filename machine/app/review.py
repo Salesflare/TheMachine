@@ -41,7 +41,7 @@ from machine.browser import STEP_NAMES, transcript_tool_calls
 from machine.config import LOG, RULE_FILES
 from machine.faults import loop_failed
 from machine.prompts.profile import VOICE_TEXT
-from machine.prompts.review import FACT_KIND_HINT, review_prompt, source_notes
+from machine.prompts.review import FACT_KIND_HINT, FACT_QUOTE_HINT, review_prompt, source_notes
 from machine.sources.connectors import companies_prompt
 from machine.store import review_backoff, review_wait
 from machine.store.cards import active_preview
@@ -594,7 +594,7 @@ class ReviewApp:
                     voices = self.store.voices_text()
                     block = ("\n\nNotes where the owner said how a draft should have been written, not learned from yet, shown once. When one holds beyond "
                              "its card, work it into that channel's voice: remember_fact kind=voice, channel, " + VOICE_TEXT + ", "
-                             "decision_id; how a kind of task is done is kind=draft. Skip notes that only fit that one message.\n"
+                             "decision_id; how a kind of task is done is kind=draft, with decision_id and " + FACT_QUOTE_HINT + ". Skip notes that only fit that one message.\n"
                              + (f"Current voices:\n{voices}\n" if voices else '') + lines)
                     if len(request['message']) + len(block) < PROMPT_LIMIT - 2000:
                         request['message'] += block

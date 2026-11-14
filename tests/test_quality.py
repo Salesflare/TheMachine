@@ -289,7 +289,8 @@ class NotesRulesAndOutcome(Base):
 
     def test_draft_rules_reach_drafts_and_mark_the_chart(self):
         self.store.decide(self.sid, 'other', 'Always use my HTML signature. Sam left Example Corp by the way', 'n1', 'telegram')
-        rule = self.app.action('remember_fact', {'text': 'Use the HTML signature in every reply.', 'decision_id': 'n1', 'kind': 'draft'})
+        rule = self.app.action('remember_fact', {'text': 'Use the HTML signature in every reply.', 'decision_id': 'n1', 'kind': 'draft',
+                                                 'quote': 'Always use my HTML signature'})
         fact = self.app.action('remember_fact', {'text': 'Sam left Example Corp.', 'decision_id': 'n1', 'quote': 'Sam left Example Corp'})
         with self.assertRaises(ValueError):
             self.app.action('remember_fact', {'text': 'Something else here', 'decision_id': 'n1', 'kind': 'mood'})
