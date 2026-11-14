@@ -26,11 +26,12 @@ const cards=[
   next_actions:[{kind:'email',revision:'e2',label:'Send reply',to:['robin@example.com'],subject:'Re',body:'Hi',state:{status:'sent',sent_at:ago(0.5),message_id:'gmail:1'}}],
   agent_job:{id:'j1',name:'Codex',place:'local',status:'result',turns:2,summary:'Deployed. PR #14 is merged.\n\nThe reply is in reply.md.',files:[{path:'reply.md'},...Array.from({length:12},(_,i)=>({path:`out/f${i}.json`}))]}}];
 const actions=[];
+let holdProjects=null;  // a promise: /api/graph answers once it settles
 const server=createServer(async(req,res)=>{let body='';for await(const c of req)body+=c;const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
  if(url.pathname==='/api/status'){res.end(JSON.stringify({suggestions:cards,promises:[],suggestion_counts:{},done_counts:{all:1,work:1,personal:0},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],review_live:{runs:[]},connectors:[],fleet:{on:false,fleets:[]}}));return}
  if(url.pathname==='/api/cards/done'){res.end(JSON.stringify({cards:[],next:null,total:1}));return}
- if(url.pathname==='/api/graph'){res.end(JSON.stringify({projects:[{id:'proj:listing',name:'Editorial listing exchange'},{id:'proj:other',name:'Other'}]}));return}
+ if(url.pathname==='/api/graph'){if(holdProjects)await holdProjects;res.end(JSON.stringify({projects:[{id:'proj:listing',name:'Editorial listing exchange'},{id:'proj:other',name:'Other'}]}));return}
  if(url.pathname==='/api/action'){actions.push(JSON.parse(body||'{}'));res.end('{}');return}
  res.statusCode=url.pathname.startsWith('/brand/')?404:200;res.end('{}')});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
@@ -102,6 +103,12 @@ try{
   // In the chat, Change project sits in its ⋯ menu; the picker opens in the chat and the menu closes
   if(width>600){await page.goto('http://127.0.0.1:'+server.address().port+'/#chat=a1a1a1a1a1a1a1a1');await page.locator('.chat-layout .chat-head').waitFor();
    await page.locator('#chat-menu>summary').click();await page.locator('#chat-menu [data-card-project]').click();
+   await page.locator('.chat-main .project-picker select').waitFor();assert.equal(await page.locator('#chat-menu').evaluate(d=>d.open),false);
+   await page.locator('.project-picker [data-pp="cancel"]').click();
+   // The chat drawn again while the projects load (a status poll, a slow machine): the picker still opens in the chat
+   let release;holdProjects=new Promise(r=>release=r);
+   await page.locator('#chat-menu>summary').click();await page.locator('#chat-menu [data-card-project]').click();
+   await page.evaluate(()=>{document.querySelector('#suggestions').replaceChildren();render()});await page.locator('.chat-layout .chat-head').waitFor();release();holdProjects=null;
    await page.locator('.chat-main .project-picker select').waitFor();assert.equal(await page.locator('#chat-menu').evaluate(d=>d.open),false);
    await page.locator('.project-picker [data-pp="cancel"]').click()}
   await context.close()}
