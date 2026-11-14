@@ -42,6 +42,7 @@ import skills
 from timeutil import local_tz, now
 import todo_areas
 from machine import todo_states
+from machine.store import todo_moves
 from machine.owner_error import OwnerError
 from machine.kinds import SEND
 
@@ -288,12 +289,13 @@ def close_by_itself(db, row, decision_id, feedback, source, stamp, undo_hours, l
     resume = row['resume_status'] if row['status'] == 'snoozed' else row['status']
     db.execute('INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)',
                (decision_id, sid, 'complete', feedback, source, stamp))
-    db.execute("UPDATE suggestions SET status='completed',completed_from=?,closed_from=?,closed_decision_id=?,undo_until=?,closed_state=?,"
+    db.execute("UPDATE suggestions SET completed_from=?,closed_from=?,closed_decision_id=?,undo_until=?,closed_state=?,"
                'snoozed_until=NULL,resume_status=NULL,feedback_until=NULL' + (',expired_at=?' if lapsed else '') + ' WHERE id=?',
                (resume if resume in todo_states.OPEN_NOT_SNOOZED else 'pending', row['status'], decision_id,
                 (dt.datetime.fromisoformat(stamp) + dt.timedelta(hours=undo_hours)).isoformat(),
                 encoded({**{k: row[k] for k in ('snoozed_until', 'resume_status')}, 'preparation': dict(prior_job) if prior_job else None}),
                 *((stamp,) if lapsed else ()), sid))
+    todo_moves.transition(db, sid, todo_states.COMPLETED, 'by_itself_' + str(source), at=stamp)
     db.execute("UPDATE preparations SET status='cancelled',updated_at=? WHERE suggestion_id=? AND status!='done'", (stamp, sid))
     pause_idle_steps(db, sid)
     db.execute("UPDATE action_jobs SET status='cancelled',updated_at=? WHERE suggestion_id=? AND status IN ('queued','blocked')", (stamp, sid))
@@ -451,8 +453,8 @@ def rewait_handoffs(db):
         except ValueError:
             continue
         if until > now():
-            db.execute("UPDATE suggestions SET status='snoozed',snoozed_until=?,resume_status='pending' WHERE id=? AND status='pending'",
-                       (until, row['id']))
+            if todo_moves.transition(db, row['id'], todo_states.SNOOZED, 'handoff_rewait', only=todo_states.PENDING):
+                db.execute('UPDATE suggestions SET snoozed_until=?,resume_status=? WHERE id=?', (until, todo_states.PENDING, row['id']))
             moved += 1
     return moved
 
@@ -503,8 +505,9 @@ def _not_done(db, row, feedback, decision_id, source):
     note = ' '.join(str(feedback or '').split()) or 'Not done yet. It looked done because: ' + why
     db.execute('INSERT INTO decisions VALUES(?,?,?,?,?,?)', (decision_id, row['id'], 'not_done', note[:5000], source, now()))
     status = 'pending' if row['status'] == 'prepared' and outcome_state(row) == 'already_done' else row['status']
-    db.execute("UPDATE suggestions SET handled_hint=NULL,status=?,outcome=CASE WHEN ?='pending' THEN NULL ELSE outcome END,undo_until=NULL WHERE id=?",
-               (status, status, row['id']))
+    db.execute("UPDATE suggestions SET handled_hint=NULL,outcome=CASE WHEN ?='pending' THEN NULL ELSE outcome END,undo_until=NULL WHERE id=?",
+               (status, row['id']))
+    todo_moves.transition(db, row['id'], status, 'not_done')
     db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=? AND message_id IS NOT NULL', (row['id'],))
     return {'status': status, 'not_done': True}
 
@@ -761,9 +764,10 @@ class DecisionsStore:
             # The prepared text described the handoff ("Prepared a short handoff to Sam"): it goes. With a draft of its
             # own left, that draft is still ready for the owner; else it is the owner's own step again, under Needs you,
             # with Mark done leading (owner_step) and nothing prepared to read.
-            db.execute("UPDATE suggestions SET body='',outcome=?,next_action=?,status=?,owner_step=CASE WHEN ? THEN owner_step ELSE 1 END WHERE id=?",
-                       (row['outcome'] if action and not waiting else None, encoded(action) if action else None, 'prepared' if action else 'pending',
+            db.execute("UPDATE suggestions SET body='',outcome=?,next_action=?,owner_step=CASE WHEN ? THEN owner_step ELSE 1 END WHERE id=?",
+                       (row['outcome'] if action and not waiting else None, encoded(action) if action else None,
                         1 if action else 0, suggestion_id))
+            todo_moves.transition(db, suggestion_id, todo_states.PREPARED if action else todo_states.PENDING, 'handoff_mine')
             return True
 
     def _decide(self, db, suggestion_id, choice, feedback, decision_id, source, snooze_hours=24, snoozed_until=None, snooze_option=None, verified_terminal_job=None, work=False):
@@ -1105,11 +1109,12 @@ class DecisionsStore:
             resume = row['resume_status'] if row['status'] == 'snoozed' else row['status']
             db.execute('INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)',
                        (decision_id, suggestion_id, 'complete', ' '.join(str(reason or '').split())[:200], 'handled', stamp))
-            db.execute("UPDATE suggestions SET status='completed',completed_from=?,closed_from=?,closed_decision_id=?,undo_until=?,closed_state=?,"
+            db.execute("UPDATE suggestions SET completed_from=?,closed_from=?,closed_decision_id=?,undo_until=?,closed_state=?,"
                        'snoozed_until=NULL,resume_status=NULL,feedback_until=NULL,early=0 WHERE id=?',
                        (resume if resume in todo_states.OPEN_NOT_SNOOZED else 'pending', row['status'], decision_id,
                         (dt.datetime.fromisoformat(stamp) + dt.timedelta(hours=undo_hours)).isoformat(),
                         encoded({**{k: row[k] for k in ('snoozed_until', 'resume_status')}, 'preparation': dict(prior_job) if prior_job else None}), suggestion_id))
+            todo_moves.transition(db, suggestion_id, todo_states.COMPLETED, 'by_itself_handled', at=stamp)
             db.execute("UPDATE preparations SET status='cancelled',updated_at=? WHERE suggestion_id=? AND status NOT IN ('done','cancelled')", (stamp, suggestion_id))
             pause_idle_steps(db, suggestion_id)
             db.execute("UPDATE action_jobs SET status='cancelled',updated_at=? WHERE suggestion_id=? AND status IN ('queued','blocked')", (stamp, suggestion_id))
@@ -1125,7 +1130,8 @@ class DecisionsStore:
             rows = db.execute("SELECT id,resume_status FROM suggestions WHERE status='snoozed' AND snoozed_until<=?",(now(),)).fetchall()
             for row in rows:
                 status = row['resume_status'] if row['resume_status'] in todo_states.OPEN_NOT_SNOOZED else 'pending'
-                db.execute('UPDATE suggestions SET status=?,snoozed_until=NULL,resume_status=NULL WHERE id=?',(status,row['id']))
+                db.execute('UPDATE suggestions SET snoozed_until=NULL,resume_status=NULL WHERE id=?',(row['id'],))
+                todo_moves.transition(db, row['id'], status, 'snooze_over')
                 if status in todo_states.PREPARING:
                     self.queue_preparation(db,row['id'],'snooze-resumed:'+now(),resume_action=True)
                 # Exactly one new outbox intent per elapsed snooze. An unknown
@@ -1207,7 +1213,8 @@ class DecisionsStore:
                 # intervening Accept must not turn an unrelated chat into feedback.
                 db.execute('INSERT INTO decisions VALUES(?,?,?,?,?,?)',
                            (decision_id, suggestion_id, 'other', text[:5000], 'telegram', now()))
-                db.execute("UPDATE suggestions SET status='instructions',snoozed_until=NULL,feedback_until=NULL WHERE id=?", (suggestion_id,))
+                db.execute('UPDATE suggestions SET snoozed_until=NULL,feedback_until=NULL WHERE id=?', (suggestion_id,))
+                todo_moves.transition(db, suggestion_id, todo_states.INSTRUCTIONS, 'chat_feedback')
                 db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=? AND message_id IS NOT NULL', (suggestion_id,))
                 db.execute("UPDATE preparations SET status='cancelled' WHERE suggestion_id=?",(suggestion_id,))
                 self.queue_preparation(db,suggestion_id,decision_id)
@@ -1264,7 +1271,8 @@ class DecisionsStore:
                 db.execute('UPDATE action_jobs SET status=?,payload=?,updated_at=? WHERE id=?',
                            ({'completed':'done','not_performed':'needs_input','uncertain':'finish_uncertain'}[state],encoded(payload),now(),chosen['id']))
             db.execute("UPDATE action_jobs SET status='done',updated_at=? WHERE suggestion_id=? AND status IN ('local_preparation','paused') AND json_extract(payload,'$.kind')='prepare'",(now(),suggestion_id))
-            db.execute("UPDATE suggestions SET body=?,status='prepared',next_action=?,outcome=? WHERE id=?", (body[:5000],action_json,encoded(outcome) if outcome else None,suggestion_id))
+            db.execute('UPDATE suggestions SET body=?,next_action=?,outcome=? WHERE id=?', (body[:5000],action_json,encoded(outcome) if outcome else None,suggestion_id))
+            todo_moves.transition(db, suggestion_id, todo_states.PREPARED, 'prepared')
             if (outcome or {}).get('state')!='snoozed':  # a result the owner can use (first_cards_report); a draft when there is something to approve
                 note_first(db,'first_prepared','draft' if any(a['kind'] in next_actions.APPROVE_KINDS+next_actions.FINISH_KINDS for a in next_actions.visible_actions(action_json)) else 'result')
             if chosen and json.loads(chosen['payload'])['kind']=='finish' and state=='completed':
@@ -1391,7 +1399,7 @@ class DecisionsStore:
                 # starts with reconciliation of that exact step, never a blind new submission.
                 db.execute("UPDATE action_jobs SET status='local_preparation',approval_id=?,source=?,updated_at=?,basis=? WHERE id=?",(approval_id,source,now(),self.based(db,basis,source,approval_id),previous['id']))
                 db.execute('INSERT INTO decisions VALUES(?,?,?,?,?,?)',(approval_id,suggestion_id,'prepare_next' if action['kind']=='prepare' else 'send','',source,now()))
-                db.execute("UPDATE suggestions SET status='accepted' WHERE id=?",(suggestion_id,))
+                todo_moves.transition(db, suggestion_id, todo_states.ACCEPTED, 'step_resumed')
                 self.queue_preparation(db,suggestion_id,approval_id,action_id=previous['id'])
                 db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=?',(suggestion_id,))
                 return {'status':'queued'}
@@ -1421,7 +1429,7 @@ class DecisionsStore:
             if source in ('telegram','dashboard'):db.execute('UPDATE suggestions SET early=0 WHERE id=?',(suggestion_id,))
             if action['kind'] in ('prepare','finish'):
                 # A local turn: a next preparation, or the final step the owner just confirmed.
-                db.execute("UPDATE suggestions SET status='accepted' WHERE id=?",(suggestion_id,))
+                todo_moves.transition(db, suggestion_id, todo_states.ACCEPTED, 'next_step', at=stamp)
                 db.execute("UPDATE action_jobs SET status='cancelled',updated_at=? WHERE suggestion_id=? AND status IN ('queued','blocked')",(stamp,suggestion_id))
                 self.queue_preparation(db,suggestion_id,approval_id,action_id=job_id)
             db.execute('UPDATE suggestions SET feedback_until=NULL WHERE id=?',(suggestion_id,))
@@ -1575,7 +1583,7 @@ class DecisionsStore:
                 decision_id = 'intercom-replies:' + row['id']
                 db.execute('INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)',
                            (decision_id, row['id'], 'prepare_ahead', '', 'intercom_replies', now()))
-                db.execute("UPDATE suggestions SET status='accepted' WHERE id=?", (row['id'],))
+                todo_moves.transition(db, row['id'], todo_states.ACCEPTED, 'intercom_reply')
                 db.execute("UPDATE preparations SET status='cancelled',updated_at=? WHERE suggestion_id=? AND status='done'", (now(), row['id']))
                 self.queue_preparation(db, row['id'], decision_id)
                 db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=? AND message_id IS NOT NULL', (row['id'],))
