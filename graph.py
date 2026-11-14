@@ -1236,8 +1236,10 @@ def _build_in(db, config, now, team, kin, locked, history=False):
     from machine.graph.org_nodes import org_and_project_nodes
     from machine.graph.relations import relation_links
     from machine.graph.rows import event_and_unnamed_rows
+    from machine.graph.laps import Laps
     import own_addresses
     started = dt.datetime.now(dt.timezone.utc)
+    lap = Laps()
     current = parse_time(now)
     tz = owner_tz(config)
     horizon = (current - dt.timedelta(days=HORIZON_DAYS)).isoformat()
@@ -1264,29 +1266,35 @@ def _build_in(db, config, now, team, kin, locked, history=False):
         db.execute('BEGIN')  # deferred: its first read below is the snapshot all of this build is computed from
         seen = _edits(db)
         db.execute('PRAGMA query_only=ON')  # computing writes nothing: no lock is taken until the publish
-    # The passes (machine/graph/), in the order they run: each one reads what the ones before it found.
+    lap('setup')
+    # The passes (machine/graph/), in the order they run: each one reads what the ones before it found; lap times each.
     (kept, mailings, listed, warmup, gone, per_event, names, x_names, crm_names, paying_names, said_orgs, appears,
-     owner_events, headlines, keys, senders) = read_identities(db, signals, old, owner, current, config, past)
-    union, manual, manual_people, joined = join_identities(db, per_event, gone, names, keys, senders)
+     owner_events, headlines, keys, senders) = lap('identities', read_identities(db, signals, old, owner, current, config, past))
+    union, manual, manual_people, joined = lap('joins', join_identities(db, per_event, gone, names, keys, senders))
     (roles, live_roles, pair_day, node_events, event_people, direct_people, next_meeting, accounts, history_events,
-     last_day, age, strength, live, signal_events) = weigh_contact(per_event, union, current, tz, past)
+     last_day, age, strength, live, signal_events) = lap('strength', weigh_contact(per_event, union, current, tz, past))
     (projects, spread, probable, heat_day, project_events, project_people, project_people_last,
-     unnamed) = place_on_projects(db, signals, config, signal_events, event_people, current, age, owner_events)
-    weigh_decisions(db, current, projects, direct_people, age, heat_day, strength, live, manual_people, union)
-    side_of_account, project_side, thread_sides, on_projects = read_sides(config, db, spread, per_event, projects, direct_people)
+     unnamed) = lap('projects', place_on_projects(db, signals, config, signal_events, event_people, current, age, owner_events))
+    lap('decisions', weigh_decisions(db, current, projects, direct_people, age, heat_day, strength, live, manual_people, union))
+    side_of_account, project_side, thread_sides, on_projects = lap('sides', read_sides(config, db, spread, per_event, projects,
+                                                                                       direct_people))
     (nodes, links, members, inboxes, named, said, related, profiles, wrong, site_logos, edits, stated, named_orgs,
-     alike) = person_nodes(db, owner, names, strength, union, keys, x_names, roles, last_day, current, tz, listed, kept,
-                           node_events, mailings, appears, kin, thread_sides, on_projects, project_side, accounts,
-                           side_of_account, headlines, live_roles, next_meeting, manual_people, history_events, live, joined)
-    org_name, infos = place_in_organizations(manual, named_orgs, owner, warmup, members, crm_names, edits, named, paying_names,
-                                             profiles, said_orgs, inboxes, mailings, nodes, stated, strength)
-    same_rows, nodes, kept = find_same_people(event_people, node_events, project_people, alike, union, infos, x_names, nodes)
-    org_and_project_nodes(heat_day, history_events, live, named_orgs, said, manual, nodes, named, last_day, edits, links,
-                          members, inboxes, profiles, site_logos, org_name, paying_names, wrong, current, projects,
-                          project_events, tz, kept, project_people, project_people_last)
-    relation_links(pair_day, age, related, union, kept, links, nodes)
-    nodes, links, kept, event_rows, history_rows, unnamed_rows = event_and_unnamed_rows(
-        db, nodes, links, kept, node_events, project_events, direct_people, history_events, unnamed)
+     alike) = lap('people', person_nodes(db, owner, names, strength, union, keys, x_names, roles, last_day, current, tz, listed,
+                                         kept, node_events, mailings, appears, kin, thread_sides, on_projects, project_side,
+                                         accounts, side_of_account, headlines, live_roles, next_meeting, manual_people,
+                                         history_events, live, joined))
+    org_name, infos = lap('organizations', place_in_organizations(manual, named_orgs, owner, warmup, members, crm_names, edits,
+                                                                  named, paying_names, profiles, said_orgs, inboxes, mailings,
+                                                                  nodes, stated, strength))
+    same_rows, nodes, kept = lap('same_person', find_same_people(event_people, node_events, project_people, alike, union, infos,
+                                                                 x_names, nodes))
+    lap('org_nodes', org_and_project_nodes(heat_day, history_events, live, named_orgs, said, manual, nodes, named, last_day,
+                                           edits, links, members, inboxes, profiles, site_logos, org_name, paying_names,
+                                           wrong, current, projects, project_events, tz, kept, project_people,
+                                           project_people_last))
+    lap('relations', relation_links(pair_day, age, related, union, kept, links, nodes))
+    nodes, links, kept, event_rows, history_rows, unnamed_rows = lap('rows', event_and_unnamed_rows(
+        db, nodes, links, kept, node_events, project_events, direct_people, history_events, unnamed))
     took = int((dt.datetime.now(dt.timezone.utc) - started).total_seconds() * 1000)
     if not locked:  # the publish: a moment under the write lock, and only when nothing it was computed from changed
         db.execute('PRAGMA query_only=OFF')
@@ -1306,9 +1314,11 @@ def _build_in(db, config, now, team, kin, locked, history=False):
     db.execute('INSERT OR REPLACE INTO graph_state(id,built_at,signals,took_ms) VALUES(1,?,?,?)', (now, len(signals), took))
     fill_orgs(db, now)  # projects with no organization yet get their people's, where that is clear
     db.execute('COMMIT')
+    lap('publish')
     return {'people': sum(1 for n in nodes if n[1] == 'person'), 'projects': sum(1 for n in nodes if n[1] == 'project'),
             'links': len(links), 'signals': len(signals), 'history': len(old), 'probable': len(probable), 'unnamed': len(unnamed_rows), 'same': len(same_rows),
-            'joined': sum(1 for _, _, why in union.edges if why in ('message', 'thread', 'profile', 'signature', 'name')), 'took_ms': took}
+            'joined': sum(1 for _, _, why in union.edges if why in ('message', 'thread', 'profile', 'signature', 'name')), 'took_ms': took,
+            'passes_ms': lap.ms}
 
 
 # Reading.
