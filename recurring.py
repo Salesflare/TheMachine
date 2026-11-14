@@ -30,11 +30,12 @@ import re
 import uuid
 
 import public_holidays
+from machine import todo_states
 
 UNITS = ('day', 'weekday', 'week', 'month', 'year')
 N_MAX = 52
 WORKDAY_MAX = 20  # "the 20th workday of the month" is about as late as a month has
-CLOSED = ('completed', 'rejected')  # anything else still open (pending, accepted, prepared, instructions, snoozed)
+CLOSED = todo_states.CLOSED  # anything else still open (pending, accepted, prepared, instructions, snoozed)
 OFFER_DAYS = 200  # how far back a rhythm in closed to-dos is looked for
 
 
@@ -563,7 +564,7 @@ def find_offers(db, today, stamp, tz):
         added += 1
     since = (today - dt.timedelta(days=OFFER_DAYS)).isoformat()
     groups = {}
-    for r in db.execute("SELECT id,title,status,created_at FROM suggestions WHERE created_at>=? AND status IN ('completed','pending','accepted','prepared','instructions','snoozed') "
+    for r in db.execute(f"SELECT id,title,status,created_at FROM suggestions WHERE created_at>=? AND status IN {todo_states.sql(todo_states.COMPLETED, todo_states.OPEN)} "
                         'ORDER BY created_at', (since,)):
         groups.setdefault(title_key(r['title']), []).append(r)
     for key_text, cards in groups.items():

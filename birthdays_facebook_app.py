@@ -29,6 +29,7 @@ import enrichment
 import i18n
 import todo_areas
 from machine.browser import browser_lease_script
+from machine import todo_states
 
 LOG = logging.getLogger('personal-assistant')
 OFFERED = 'birthdays_facebook:offered'  # enrich_prefs: the to-do was offered once (also when the owner said Not needed)
@@ -146,7 +147,7 @@ class BirthdaysFacebookApp:
         if step in ('add', 'undo_add'):
             self.graph_later()  # their pages show already; the rest of the Graph follows in one build, in the worker
             return {'state': state, **done}
-        if row['status'] not in ('completed', 'rejected'):
+        if row['status'] not in todo_states.CLOSED:
             self.store.decide(sid, 'complete', '', 'facebook-birthdays-saved:' + sid + ':' + stamp, 'dashboard')
         if photos:  # the pictures after, in a thread of their own: one at a time with a pause
             self.birthdays_facebook_spawn(self.birthdays_facebook_photos, sid, photos, stamp)

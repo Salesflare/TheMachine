@@ -19,6 +19,7 @@ from machine.store.voices import OWN_KINDS
 from machine.text import _address, encoded
 import memory_use
 from timeutil import local_tz, now
+from machine import todo_states
 
 
 # When an open promise is checked without a date: the owner's own after 3 days, someone else's after a week.
@@ -108,7 +109,7 @@ def promise_open_card(db, row):
 def card_looks_done(card):
     """The Machine's word that a promise's open to-do is done (a later message showed it, or its run found it done):
     its reason, else None."""
-    if not card or card['status'] in ('completed', 'rejected', 'snoozed'):
+    if not card or card['status'] in todo_states.CLOSED_OR_SNOOZED:
         return None
     try:
         hint = json.loads(card['handled_hint'] or 'null')
@@ -370,7 +371,7 @@ class PromisesStore:
         if card['body'] == old_body:  # still the line it was made with: "Promised on ... for <the old date>"
             db.execute('UPDATE suggestions SET body=? WHERE id=?', (new_body, card['id']))
         db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=? AND message_id IS NOT NULL', (card['id'],))
-        if row['direction'] == 'theirs' and not row.get('together') and card['status'] in ('pending', 'prepared') and check_at > now():
+        if row['direction'] == 'theirs' and not row.get('together') and card['status'] in todo_states.WAITING_ON_OWNER and check_at > now():
             self._decide(db, card['id'], 'snooze', i18n.t('Moved to {}', locale_prefs.day_text(dt.date.fromisoformat(due))),
                          'promise-moved:' + uuid.uuid4().hex, 'assistant', snoozed_until=check_at)
         return check_at
@@ -416,7 +417,7 @@ class PromisesStore:
         """The owner's Done or Drop on a promise that is a to-do now: its to-do closes with it (Done, or Not needed), so
         the two never disagree. One whose to-do is gone closes by itself."""
         card = promise_card(db, row['suggestion_id'])
-        if card and card['status'] not in ('completed', 'rejected'):
+        if card and card['status'] not in todo_states.CLOSED:
             self._decide(db, card['id'], 'complete' if status == 'kept' else 'reject', '', 'promise-close:' + uuid.uuid4().hex, 'dashboard')
         elif card and {'completed': 'kept', 'rejected': 'dropped'}[card['status']] != status:
             raise ValueError('Its to-do is closed already. Open the to-do to change that.')

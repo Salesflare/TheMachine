@@ -37,6 +37,7 @@ import i18n
 from machine.cards import group_sender
 from machine.sources.gmail import phone_link
 from machine.store.review_wait import People, mail_wait
+from machine import todo_states
 
 KINDS = ('newsletters', 'spam')
 MAIL_KINDS = ('gmail.message', 'ms_graph.message', 'outlook.message')
@@ -269,7 +270,7 @@ def asked(db, kind):
     another to-do."""
     out = {r[0] for r in db.execute('SELECT address FROM mail_cleanup_senders WHERE kind=?' + (" AND choice='keep'" if kind == 'spam' else ''), (kind,))}
     out |= {r[0] for r in db.execute("SELECT i.address FROM mail_cleanup_items i JOIN suggestions s ON s.id=i.suggestion_id "
-                                     "WHERE i.kind=? AND i.state='open' AND s.status NOT IN ('completed','rejected')", (kind,))}
+                                     f"WHERE i.kind=? AND i.state='open' AND s.status NOT IN {todo_states.sql(todo_states.CLOSED)}", (kind,))}
     return out
 
 
@@ -510,7 +511,7 @@ def open_todo(db, kind, area):
     """The newest routine to-do of this kind for an area (cleanup_todos' source routine-cleanup:<run>:<area>) that is
     still open with an item still open, as (suggestion id, its cleanup event id), or None."""
     for row in db.execute("SELECT s.id,s.event_ids FROM suggestions s WHERE s.dedupe_key LIKE 'routine-cleanup:%' "
-                          "AND substr(s.dedupe_key,-length(?)-1)=':'||? AND s.status NOT IN ('completed','rejected') "
+                          f"AND substr(s.dedupe_key,-length(?)-1)=':'||? AND s.status NOT IN {todo_states.sql(todo_states.CLOSED)} "
                           "AND EXISTS(SELECT 1 FROM mail_cleanup_items i WHERE i.suggestion_id=s.id AND i.kind=? AND i.state='open') "
                           "ORDER BY s.created_at DESC", (area, area, kind)):
         for event in json.loads(row['event_ids'] or '[]'):

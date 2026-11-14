@@ -30,6 +30,7 @@ import datetime as dt
 import hashlib
 import json
 import sqlite3
+from machine import todo_states
 
 SCHEMA = ('CREATE TABLE IF NOT EXISTS calendar_clashes(dedupe_key TEXT PRIMARY KEY,suggestion_id TEXT,event_id INTEGER NOT NULL,'
           'other_id INTEGER NOT NULL,side TEXT NOT NULL,starts_at TEXT NOT NULL,created_at TEXT NOT NULL)')
@@ -183,7 +184,7 @@ def annotate(db, cards):
     """card['clash'] on each open clash to-do, for the owner's own dashboard: the other side in full
     {'title', 'start', 'end', 'side'}. Read here, never stored on the to-do, so nothing that reads the to-do
     (a Fleet, a handoff, its preparation) sees it."""
-    live = {c['id']: c for c in cards if c.get('status') not in ('completed', 'rejected') and str(c.get('dedupe_key') or '').startswith('clash:')}
+    live = {c['id']: c for c in cards if c.get('status') not in todo_states.CLOSED and str(c.get('dedupe_key') or '').startswith('clash:')}
     if not live:
         return
     try:

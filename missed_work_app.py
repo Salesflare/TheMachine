@@ -14,6 +14,7 @@ import uuid
 
 import i18n
 import missed_work
+from machine import todo_states
 
 LOG = logging.getLogger('personal-assistant')
 
@@ -51,7 +52,7 @@ class MissedWorkApp:
             touched = db.execute("SELECT 1 FROM decisions WHERE suggestion_id=? AND source IN ('dashboard','telegram')", (card_id,)).fetchone()
         if not row or row['status'] == 'rejected':
             return {'removed': card_id}
-        if touched or row['status'] not in ('pending', 'accepted', 'prepared'):
+        if touched or row['status'] not in (todo_states.PENDING, todo_states.ACCEPTED, todo_states.PREPARED):
             return {'kept': card_id}
         self.store.decide(card_id, 'reject', '', 'missed-undo:' + uuid.uuid4().hex[:12], 'missed_work')
         return {'removed': card_id}

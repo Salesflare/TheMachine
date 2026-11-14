@@ -27,6 +27,7 @@ import uuid
 
 import i18n
 from machine.text import encoded
+from machine import todo_states
 
 MAX = 140  # one short line, like a project's condition
 BY = ('review', 'run', 'promise', 'project')  # who set it; the run's (and the owner's through it) word stands
@@ -119,7 +120,7 @@ def result_seen(db, row, reason, event_ids, stamp, undo_hours=24):
     """A signal shows the result. A to-do that waits for it closes by itself (Done, "Closed by itself: <reason>", Undo
     for a day), once for the same messages; any other open one looks done (handled_hint), for the owner to close.
     Not while a send of it is under way. Returns 'closed', 'hint' or None."""
-    if row['status'] in ('completed', 'rejected'):
+    if row['status'] in todo_states.CLOSED:
         return None
     ids = list(event_ids)
     if waits_for_result(row) and not db.execute("SELECT 1 FROM action_jobs WHERE suggestion_id=? AND status IN ('sending','uncertain')",
@@ -151,7 +152,7 @@ def close_replaced(db, row, decision_id, reason, stamp):
 def project_proof(db, todo_id, condition, event_id, stamp):
     """A project's proof came in: the to-do made for its blocker has its result (result_seen)."""
     row = db.execute('SELECT * FROM suggestions WHERE id=?', (todo_id,)).fetchone() if todo_id else None
-    if row and row['status'] not in ('completed', 'rejected'):
+    if row and row['status'] not in todo_states.CLOSED:
         if not row['done_when']:
             return None
         return result_seen(db, row, condition, [event_id], stamp)
@@ -162,7 +163,7 @@ def follow_project(db, todo_id, before, after):
     """The project's Done when changed: its blocker to-do, which carries it (set by 'project'), tracks the new one while
     open, and its "Done when:" body with it. One a review or the run set since stays theirs. True when it changed."""
     row = db.execute('SELECT status,done_when,done_when_by,body FROM suggestions WHERE id=?', (todo_id,)).fetchone()
-    if not row or row['status'] in ('completed', 'rejected') or row['done_when_by'] != 'project':
+    if not row or row['status'] in todo_states.CLOSED or row['done_when_by'] != 'project':
         return False
     after = clean(after)
     db.execute('UPDATE suggestions SET done_when=?,done_when_by=? WHERE id=?', (after or None, 'project' if after else None, todo_id))

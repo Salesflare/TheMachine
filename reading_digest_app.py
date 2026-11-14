@@ -19,6 +19,7 @@ import routines
 import todo_areas
 from machine.store import outcomes
 from models import background_model
+from machine import todo_states
 
 LOG = logging.getLogger('personal-assistant')
 DIGEST_TIMEOUT = 120  # seconds the model call may take
@@ -187,7 +188,7 @@ class ReadingDigestApp:
                 # the area's older digest closes by itself, not as the owner's Done: "Closed by itself: newer digest", with Undo
                 reason, stamp = i18n.t('newer digest'), self.routines_stamp()
                 for old in older:
-                    row = db.execute("SELECT * FROM suggestions WHERE id=? AND status NOT IN ('completed','rejected')", (old,)).fetchone()
+                    row = db.execute(f"SELECT * FROM suggestions WHERE id=? AND status NOT IN {todo_states.sql(todo_states.CLOSED)}", (old,)).fetchone()
                     if old == sid or not row or db.execute('SELECT 1 FROM decisions WHERE id=?', ('digest-replaced:' + old,)).fetchone():
                         continue
                     outcomes.close_replaced(db, row, 'digest-replaced:' + old, reason, stamp)

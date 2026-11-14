@@ -18,6 +18,7 @@ from machine.timing import answering, aside
 import next_actions
 import still_needed
 from timeutil import local_tz, now
+from machine import todo_states
 
 
 # First-use tips on the dashboard (Store.first_tips): 'change' on a new person's first to-do (Ask for changes and
@@ -180,7 +181,7 @@ def still_needed_ask(db, stamp, skip=lambda row: False, tz=dt.timezone.utc):
     (dropped when it was rejected), then asks once on each to-do still_needed.due names. Returns the ids asked now."""
     db.execute("UPDATE recap_items SET status=CASE WHEN (SELECT status FROM suggestions WHERE id=recap_items.ref)='rejected' THEN 'dropped' "
                "ELSE 'closed' END,decided_at=? WHERE kind=? AND status='open' AND COALESCE((SELECT status FROM suggestions WHERE id=recap_items.ref),"
-               "'rejected') IN ('completed','rejected')", (stamp, still_needed.KIND))
+               f"'rejected') IN {todo_states.sql(todo_states.CLOSED)}", (stamp, still_needed.KIND))
     rows = still_needed.due(db, stamp, skip, tz)
     for r in rows:
         db.execute("INSERT INTO recap_items(id,week,n,kind,ref,line,data,status) VALUES(?,'',0,?,?,?,?,'open')",
@@ -307,7 +308,7 @@ class FirstLookStore:
             if db.execute('SELECT 1 FROM suggestions WHERE created_at<?', (since,)).fetchone():
                 self._card_shown = True  # cards from before: not a new install's first
                 return
-            shown = db.execute("SELECT count(*) FROM suggestions WHERE status IN ('pending','accepted','instructions','prepared')").fetchone()[0]
+            shown = db.execute(f"SELECT count(*) FROM suggestions WHERE status IN {todo_states.sql(todo_states.OPEN_NOT_SNOOZED)}").fetchone()[0]
             if shown:
                 db.execute("INSERT OR IGNORE INTO milestones(name,at,detail) VALUES('first_card_shown',?,?)", (now(), str(shown)))
                 self._card_shown = True

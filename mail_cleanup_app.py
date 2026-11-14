@@ -59,6 +59,7 @@ from machine.browser import browser_lease_script
 from machine.sources.gmail import Gmail
 from models import background_model
 from sources import credential, gog_read
+from machine import todo_states
 
 LOG = logging.getLogger('personal-assistant')
 # The list's unsubscribe, and who sent the mail: a list that relayed it (a Google Group, a Microsoft 365 group,
@@ -597,7 +598,7 @@ class MailCleanupApp:
         with self.store.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             row = db.execute('SELECT status FROM suggestions WHERE id=?', (sid,)).fetchone()
-            if not row or row['status'] in ('completed', 'rejected'):
+            if not row or row['status'] in todo_states.CLOSED:
                 raise ValueError('That to-do is gone')
             todo = mail_cleanup.pick(db, sid, picks, stamp)
         if todo:
@@ -640,7 +641,7 @@ class MailCleanupApp:
         with self.store.connect() as db:
             done = mail_cleanup.all_settled(db, sid)
             status = db.execute('SELECT status FROM suggestions WHERE id=?', (sid,)).fetchone()
-        if done and status and status['status'] not in ('completed', 'rejected'):
+        if done and status and status['status'] not in todo_states.CLOSED:
             self.store.decide(sid, 'complete', '', 'cleanup-done:' + sid, 'dashboard')
 
     def cleanup_unsubscribe(self, account, item):

@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import datetime as dt
 import uuid
+from machine import todo_states
 
 DAYS = 7
 KEEP_DAYS = 8
@@ -35,7 +36,7 @@ CHOICES = {'accept': 'do_it', 'prepare_next': 'do_it', 'send': 'send', 'complete
 OWNER_SOURCES = ('dashboard', 'telegram')
 SEND_KINDS = ('email', 'linkedin', 'slack', 'x', 'whatsapp', 'telegram', 'signal', 'intercom', 'doc_reply')
 KINDS = ('shown', 'opened', 'do_it', 'send', 'sent', 'done', 'dismissed', 'snoozed', 'chat', 'visits', 'active_hours')
-SHOWN = "status IN ('pending','accepted','instructions','prepared') AND (deliver_after IS NULL OR deliver_after<=?)"
+SHOWN = f"status IN {todo_states.sql(todo_states.OPEN_NOT_SNOOZED)} AND (deliver_after IS NULL OR deliver_after<=?)"
 
 
 def ensure(db):

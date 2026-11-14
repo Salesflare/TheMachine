@@ -23,6 +23,7 @@ import json
 import sqlite3
 
 import graph
+from machine import todo_states
 
 # Message signals that count as contact, and the channel each is on (the words the card and the prompt use).
 CHANNELS = {'gmail.message': 'email', 'ms_graph.message': 'email', 'outlook.message': 'email', 'salesflare.email': 'email',
@@ -38,7 +39,7 @@ ELSEWHERE = (('WhatsApp', ('whatsapp',), ('wa:',), ('phone',)),
              ('X', ('x',), ('x:',), ('x',)))
 WAITING_DAYS = 3  # the owner wrote last: the card says so after this many days without an answer
 STALE_DAYS = 14  # the last contact either way: the card says so after this many days
-OPEN_STATUSES = ('pending', 'accepted', 'prepared', 'instructions')
+OPEN_STATUSES = todo_states.OPEN_NOT_SNOOZED
 
 
 def _time(value):

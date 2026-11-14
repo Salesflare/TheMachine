@@ -21,6 +21,7 @@ import sqlite3
 from machine.store import review_wait
 from machine.store.events import SET_ASIDE_AFTER
 from timeutil import now
+from machine import todo_states
 
 LAST_LOOK_DAYS = 3        # the one more look: this long after the message came in
 LAST_LOOK_MAX_DAYS = 30   # older set-aside messages stay as they are
@@ -32,7 +33,7 @@ LISTED = 10               # rows in the list under the count
 RULE = ('Last look: set aside twice before. Judge it now on what is here; left out of reviewed_ids it is closed for good.')
 
 CUSTOMER_KINDS = frozenset({'intercom.conversation', 'fleet.intercom'})
-DECIDED = ('rejected', 'snoozed')  # the owner's Not needed, dismissed or snoozed to-dos
+DECIDED = (todo_states.REJECTED, todo_states.SNOOZED)  # the owner's Not needed, dismissed or snoozed to-dos
 THREAD_KEYS = ('thread_id', 'conversation_id', 'chat_id', 'channel_id')
 
 

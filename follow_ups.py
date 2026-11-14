@@ -113,6 +113,7 @@ import re
 
 import activity_log
 import bounces
+from machine import todo_states
 
 SCHEMA = '''
 CREATE TABLE IF NOT EXISTS follow_up_rules(scope TEXT NOT NULL,ref INTEGER NOT NULL,settings TEXT NOT NULL,updated_at TEXT NOT NULL,
@@ -1537,7 +1538,7 @@ def close(db, suggestion_id, why, now, state='stopped', source='assistant', deci
     db.execute("UPDATE follow_up_cards SET state=?,why=?,closed_at=? WHERE suggestion_id=? AND state='open'", (state, why, now, suggestion_id))
     # The owner's own close keeps where it was (closed_from: its draft can come back, can_bring_back)
     if db.execute("UPDATE suggestions SET closed_from=CASE WHEN ? THEN status ELSE closed_from END,status='rejected',early=0 "
-                  "WHERE id=? AND status NOT IN ('completed','rejected')", (int(source == 'dashboard'), suggestion_id)).rowcount:
+                  f"WHERE id=? AND status NOT IN {todo_states.sql(todo_states.CLOSED)}", (int(source == 'dashboard'), suggestion_id)).rowcount:
         db.execute('INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)',
                    (decision_id or 'follow-up-' + why + ':' + suggestion_id, suggestion_id, 'reject', WHY.get(why, why), source, now))
         db.execute("UPDATE preparations SET status='cancelled',updated_at=? WHERE suggestion_id=? AND status IN ('queued','starting','running','blocked')",
@@ -1559,7 +1560,7 @@ def settle(db, now, mine=mine_default):
         if 'sent' in jobs:
             db.execute("UPDATE follow_up_cards SET state='sent',closed_at=? WHERE suggestion_id=?", (now, sid))
             continue
-        if f['status'] in ('completed', 'rejected'):
+        if f['status'] in todo_states.CLOSED:
             db.execute("UPDATE follow_up_cards SET state='skipped',closed_at=? WHERE suggestion_id=?", (now, sid))
             continue
         if any(s in ('queued', 'sending', 'uncertain') for s in jobs):

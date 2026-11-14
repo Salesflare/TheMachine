@@ -36,10 +36,11 @@ import moving
 import person_summary
 import security_levels
 import signatures
+from machine import todo_states
 
 SCHEMA_VERSION = 1
 FOLDER = 'the-machine-knowledge'
-OPEN_TODOS = ('pending', 'accepted', 'prepared', 'instructions', 'snoozed')
+OPEN_TODOS = todo_states.OPEN
 FACT_SORTS = ('event', 'commitment', 'preference', 'fact')  # assistant.FACT_SORTS (tests check they agree)
 SKILL_STATUSES = ('on', 'off')  # the owner's own skills; proposed and incoming ones were never taken on
 LINKS = {'member': 'works at', 'project': 'works on', 'together': 'often together with', 'relation': 'related to'}

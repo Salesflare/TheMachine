@@ -7,6 +7,7 @@ split up. Static checks of the source only; nothing is imported or run.
 - each table is created by one module, its owner, and written only by its owner, apart from the writers listed in
   OTHER_WRITERS as they are today;
 - modules in machine/ import only from their own layer or the ones below it (MACHINE_LAYERS), never `*`;
+- to-do statuses are named from machine/todo_states.py, never spelled out as a list in code or SQL;
 - Python files stay under PY_LINE_BUDGET lines and PY_BYTE_BUDGET bytes, apart from today's bigger ones in
   PY_OVER_BUDGET, whose ceilings only come down;
 - i18n_extract's dashboard AREAS all resolve.
@@ -139,6 +140,7 @@ MACHINE_LAYERS = {
     'system_logs': 0,  # the computer's own logs: journald and crash dumps, read only
     'text': 0,         # message parsing
     'timing': 0,       # request timing, shared by web and store
+    'todo_states': 0,  # every to-do status and its named groups (a leaf)
     'browser': 1,
     'cards': 1,
     'chat': 1,
@@ -203,6 +205,30 @@ def machine_layer_problems(rel, source):
                                               f'(layer {MACHINE_LAYERS[area]}): move what it needs down a layer, or '
                                               'pass it in'))
     return sorted(problems)
+
+
+# --- to-do statuses --------------------------------------------------------------------------------------------------
+
+# machine/todo_states.py declares every to-do status and the groups the code asks about. Two or more of them spelled
+# out somewhere else, as a tuple, list or set, or as an SQL IN list in a string, is a second definition that can drift
+# from the first: name a group from todo_states there (a new one, with its reason, when a module means something else).
+TODO_STATES_FILE = 'machine/todo_states.py'
+TODO_STATUSES = {'pending', 'accepted', 'prepared', 'instructions', 'snoozed', 'completed', 'rejected'}
+SQL_WORD_LIST = re.compile(r"\(\s*'[a-z_]+'(?:\s*,\s*'[a-z_]+')+\s*\)")
+
+
+def todo_status_literals(source, filename='<module>'):
+    """[(line, literal)] of to-do status lists spelled out in a module's code or its SQL strings."""
+    found = []
+    for node in ast.walk(ast.parse(source, filename)):
+        if isinstance(node, (ast.Tuple, ast.List, ast.Set)) and len(node.elts) >= 2 and all(
+                isinstance(e, ast.Constant) and isinstance(e.value, str) and e.value in TODO_STATUSES for e in node.elts):
+            found.append((node.lineno, ast.unparse(node)))
+        elif isinstance(node, ast.Constant) and isinstance(node.value, str):
+            for match in SQL_WORD_LIST.finditer(node.value):
+                if set(re.findall(r"'([a-z_]+)'", match.group(0))) <= TODO_STATUSES:
+                    found.append((node.lineno, match.group(0)))
+    return sorted(found)
 
 
 # --- tables ----------------------------------------------------------------------------------------------------------
@@ -766,6 +792,28 @@ class Architecture(unittest.TestCase):
         self.assertIn('no layer', machine_layer_problems('machine/newthing.py', 'x = 1\n')[0][1])
         self.assertTrue(machine_layer_problems('machine/__init__.py', 'from . import store\n'))
         self.assertEqual(machine_layer_problems('machine/__init__.py', ''), [])
+
+    def test_todo_statuses_are_named_from_todo_states(self):
+        for name in python_files(tests=False):
+            if name != TODO_STATES_FILE:
+                with self.subTest(module=name):
+                    self.assertEqual(todo_status_literals((ROOT / name).read_text(encoding='utf-8'), name), [],
+                                     f'{name}: name a group from {TODO_STATES_FILE} instead')
+
+    def test_the_todo_status_check_finds_spelled_out_lists(self):
+        found = todo_status_literals(
+            "OPEN = ('pending', 'snoozed')\nif s in ['completed', 'rejected']:\n    pass\n"
+            "db.execute(\"SELECT id FROM suggestions WHERE status IN ('accepted','instructions')\")\n"
+            "db.execute(f\"SELECT 1 WHERE s.status NOT IN ('completed','rejected') AND x={x}\")\n"
+            "ok = ('snoozed',), ('queued', 'running'), (todo_states.PENDING, todo_states.PREPARED)\n"
+            "db.execute(\"SELECT 1 WHERE status IN ('pending','declined')\")\n")
+        self.assertEqual([line for line, _ in found], [1, 2, 4, 5], found)
+        sys.path.insert(0, str(ROOT))
+        from machine import todo_states
+        self.assertEqual(set(todo_states.ALL), TODO_STATUSES)
+        self.assertEqual(todo_states.sql(todo_states.NOT_STARTED, todo_states.REJECTED), "('pending','snoozed','rejected')")
+        with self.assertRaises(ValueError):
+            todo_states.sql('pending', "x') OR 1=1 --")
 
     def test_the_tools_that_read_the_code_see_machine(self):
         """The help chat, help_check and the string extractor read the app's code in machine/ too."""

@@ -25,6 +25,7 @@ import memory_use
 import next_actions
 import team_learnings
 from timeutil import now
+from machine import todo_states
 
 
 def similar(a, b, cutoff=0.5):
@@ -533,7 +534,7 @@ class VoicesStore:
         with self.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             rows = db.execute("SELECT s.id,s.next_action,p.updated_at ready FROM suggestions s JOIN preparations p ON p.suggestion_id=s.id "
-                              "WHERE p.updated_at>=? AND s.next_action IS NOT NULL AND s.status IN ('prepared','completed') "
+                              f"WHERE p.updated_at>=? AND s.next_action IS NOT NULL AND s.status IN {todo_states.sql(todo_states.PREPARED, todo_states.COMPLETED)} "
                               "AND NOT EXISTS(SELECT 1 FROM action_jobs j WHERE j.suggestion_id=s.id AND j.status NOT IN ('cancelled','blocked')) "
                               "AND NOT EXISTS(SELECT 1 FROM draft_edits d WHERE d.suggestion_id=s.id AND d.source='elsewhere')", (since,)).fetchall()
             sent = authorship.MachineSent.load(db) if rows else None  # another to-do's send in that conversation isn't theirs
@@ -576,7 +577,7 @@ class VoicesStore:
         ids, marked = sorted(self.owner_user_ids), []
         with self.connect() as db:
             db.execute('BEGIN IMMEDIATE')
-            rows = db.execute("SELECT s.* FROM suggestions s WHERE s.status IN ('pending','prepared') "
+            rows = db.execute(f"SELECT s.* FROM suggestions s WHERE s.status IN {todo_states.sql(todo_states.WAITING_ON_OWNER)} "
                               'AND s.handled_hint IS NULL AND s.next_action IS NOT NULL '
                               "AND NOT EXISTS(SELECT 1 FROM action_jobs j WHERE j.suggestion_id=s.id AND j.status NOT IN ('cancelled','blocked'))").fetchall()
             sent = None

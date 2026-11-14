@@ -150,6 +150,7 @@ def seed_ai(app):
     Work with Read (each signed in twice, shown once), and a key
     for a script that only reads, with a few calls each and one refused. Writes only through ai_access."""
     import ai_access
+    from machine import todo_states
     now = dt.datetime.now(dt.timezone.utc)
     with app.store.connect() as db:
         if ai_access.connections(db):
@@ -171,7 +172,7 @@ def seed_ai(app):
                  (cid, 15, 'create_draft', 'ok', 'To buyer@client.example: “Renewal quote”'),
                  (chatgpt, 30, 'list_promises', 'ok', '4 promises'), (key, 14, 'list_todos', 'ok', '9 to-dos'), (key, 13, 'create_todo', 'refused', 'Refused: this connection can only read')]
         # A to-do read links to it in Activity (ai_activity.todo_id): the newest open one here
-        todo = (db.execute("SELECT id FROM suggestions WHERE status IN ('pending','accepted','prepared') ORDER BY created_at DESC LIMIT 1").fetchone() or [None])[0]
+        todo = (db.execute(f"SELECT id FROM suggestions WHERE status IN {todo_states.sql(todo_states.PENDING, todo_states.ACCEPTED, todo_states.PREPARED)} ORDER BY created_at DESC LIMIT 1").fetchone() or [None])[0]
         lines.append((chatgpt, 29, 'get_todo', 'ok', ''))
         for connection, hours, tool, outcome, detail in lines:
             read = todo if tool == 'get_todo' else None

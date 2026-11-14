@@ -32,6 +32,7 @@ import graph
 import locale_prefs
 from i18n import t
 import next_actions
+from machine import todo_states
 
 LOG = logging.getLogger('personal-assistant')
 SCHEMA = '''
@@ -69,7 +70,7 @@ INTERCOM_REGIONS = ('us', 'eu', 'au')
 # is then the list's inbox, never the sender; the name before " via " is who wrote.
 VIA = re.compile(r"^\s*['\"]?(.+?)['\"]?\s+via\s+\S.*$", re.I)
 DAY = re.compile(r'\d{4}-\d{2}-\d{2}')
-OPEN = ('pending', 'accepted', 'prepared', 'instructions', 'snoozed')
+OPEN = todo_states.OPEN
 # Silent acceptance: the owner acts on a waiting handoff (a message they sent, a call they joined) before they tap
 # Accept. The review judges that by meaning (handoff_on_it); the teammate hears "on it", where and when, and the first
 # name of who they talked to ("talked to Sam on Slack"), never what was said. It travels as an accept with a `silent`
@@ -540,7 +541,7 @@ class Requests:
         # already the Machine's own outcome (prepared). A handoff text the preparation wrote stands as it is.
         why, links = '', ''
         if not ready and allowed and set(json.loads(card['account_ids'] or '[]')) <= set(allowed):
-            why = card_reason(card['body']) if card['status'] in ('pending', 'snoozed', 'accepted', 'instructions') else ''
+            why = card_reason(card['body']) if card['status'] in todo_states.OPEN_UNPREPARED else ''
             links = '; '.join(f"{t} ({u})" if t else u for t, u in self.handoff_links(card['id'], allowed))
         summary = sentences(task, why, ('Source: ' + links) if links else '', mine_note)
         # The teammate that text is for comes first, so it's the default; else the one the to-do itself offers it to
@@ -905,7 +906,7 @@ class Requests:
         if not (keys and secret) and not contact:
             return None
         with self.connect() as db:
-            cards = db.execute("SELECT id,title,body,event_ids FROM suggestions WHERE status IN ('pending','accepted','instructions','prepared','snoozed') "
+            cards = db.execute(f"SELECT id,title,body,event_ids FROM suggestions WHERE status IN {todo_states.sql(todo_states.OPEN)} "
                                'ORDER BY created_at DESC LIMIT 300').fetchall()
             near = []
             for card in cards:
@@ -1166,7 +1167,7 @@ class Requests:
         since = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=BACK_DAYS)).isoformat(timespec='seconds')
         with self.connect() as db:
             back = db.execute("SELECT o.* FROM fleet_out o JOIN suggestions s ON s.id=substr(o.context,9) WHERE o.kind='handoff' "
-                              "AND o.context LIKE 'handoff:%' AND o.answered_at>=? AND s.status IN ('snoozed','completed') "
+                              f"AND o.context LIKE 'handoff:%' AND o.answered_at>=? AND s.status IN {todo_states.sql(todo_states.SNOOZED, todo_states.COMPLETED)} "
                               "AND o.status IN ('declined','expired','answered') "
                               "AND NOT EXISTS (SELECT 1 FROM decisions d WHERE d.id='fleet-handoff-back-'||o.id)", (since,)).fetchall()
         for row in back:  # answers may be sealed at rest: their stage is read here, never in SQL

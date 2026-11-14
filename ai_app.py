@@ -31,8 +31,9 @@ import next_actions
 import pairing
 import person_summary
 import shared_graph
+from machine import todo_states
 
-OPEN = ('pending', 'accepted', 'prepared', 'instructions')
+OPEN = todo_states.OPEN_NOT_SNOOZED
 EMAIL = re.compile(r'[^@\s<>",;]{1,64}@[A-Za-z0-9.-]{1,190}\.[A-Za-z]{2,24}')
 EXPIRY_LABEL = {'1d': '1 day', '7d': '7 days', '30d': '30 days', '1y': '1 year'}
 MCP_DOMAIN = 'mcp.themachine.computer'  # each Machine's address for AIs: https://<name>.<this>/mcp (docs/ai-connections.md)
@@ -434,7 +435,7 @@ class AiApp:
                 rows = db.execute(f"SELECT * FROM (SELECT {columns},{done_at} done_at FROM suggestions s WHERE status='completed') "
                                   'WHERE done_at>=? ORDER BY done_at DESC LIMIT 600', (since,)).fetchall()
             else:
-                statuses = ('snoozed',) if status == 'snoozed' else OPEN
+                statuses = (todo_states.SNOOZED,) if status == 'snoozed' else OPEN
                 rows = db.execute(f"SELECT {columns} FROM suggestions WHERE status IN ({','.join('?' * len(statuses))}) "
                                   'ORDER BY created_at DESC LIMIT 600', statuses).fetchall()
         out = []
@@ -494,7 +495,7 @@ class AiApp:
         ids, want = self.ai_accounts(connection, None)
         with self.store.connect() as db:
             r = db.execute('SELECT * FROM suggestions WHERE id=?', (str(args.get('id') or ''),)).fetchone()
-            if not r or r['status'] in ('rejected',) or not self.ai_visible(r['account_ids'], ids, want, r['area']):
+            if not r or r['status'] in (todo_states.REJECTED,) or not self.ai_visible(r['account_ids'], ids, want, r['area']):
                 raise ValueError('No such to-do here')
             events = [int(e) for e in json.loads(r['event_ids'] or '[]') if str(e).isdigit()][:20]
             rows = db.execute(f"SELECT id,kind,occurred_at,title,metadata FROM events WHERE deleted=0 AND id IN ({','.join('?' * len(events)) or 'NULL'})",

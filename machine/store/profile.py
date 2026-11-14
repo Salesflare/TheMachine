@@ -27,6 +27,7 @@ from machine.text import clamp, encoded
 import shared_graph
 import team_learnings
 from timeutil import local_tz, now
+from machine import todo_states
 
 
 def evidence_pages(items, budget=None, first=0):
@@ -547,13 +548,13 @@ class ProfileStore:
         with self.connect() as db:
             rows = [dict(r) for r in db.execute('SELECT id,title,status,snoozed_until,early FROM suggestions WHERE created_at>=? ORDER BY created_at DESC', (since,))]
             for r in rows:
-                if r['early'] and r['status'] in ('accepted', 'prepared'):
+                if r['early'] and r['status'] in (todo_states.ACCEPTED, todo_states.PREPARED):
                     r['status'] = 'ahead'
             notes = {}
             for d in db.execute("SELECT suggestion_id,feedback FROM decisions WHERE feedback!='' AND source IN ('telegram','dashboard') "
                                 "AND id NOT IN (SELECT decision_id FROM decision_annotations) AND created_at>=? ORDER BY created_at", (since,)):
                 notes.setdefault(d['suggestion_id'], []).append(d['feedback'][:200])
-        groups = {'Dismissed': ['rejected'], 'Done': ['completed'], 'Accepted or prepared': ['accepted', 'prepared', 'instructions'],
+        groups = {'Dismissed': ['rejected'], 'Done': ['completed'], 'Accepted or prepared': todo_states.TAKEN_ON,
                   'Snoozed (already in the owner\'s list)': ['snoozed'], 'Waiting for the owner\'s decision': ['pending'],
                   'Prepared ahead, waiting for the owner\'s approval': ['ahead']}
         lines, shown = [], []  # shown: (line, its to-do), for the use log (memory_use.py)
@@ -665,7 +666,7 @@ class ProfileStore:
             return {'start': start.isoformat(), **{k: q[k] for k in ('worth_it', 'dismissed', 'open', 'hit_rate', 'do_it', 'first_time_rate', 'finished_rate')}}
         with self.connect() as db:  # decided as quality() counts it: dismissed, done, or Do it or Send by the owner
             first = db.execute(
-                "SELECT min(s.created_at) FROM suggestions s WHERE (s.status IN ('rejected','completed') OR EXISTS(SELECT 1 FROM decisions d "
+                f"SELECT min(s.created_at) FROM suggestions s WHERE (s.status IN {todo_states.sql(todo_states.CLOSED)} OR EXISTS(SELECT 1 FROM decisions d "
                 "WHERE d.suggestion_id=s.id AND d.choice IN ('accept','send') AND d.source IN ('telegram','dashboard'))) "
                 "AND s.id NOT IN (SELECT suggestion_id FROM decisions WHERE id LIKE 'followed-up:%' OR id LIKE 'expired:%') "
                 "AND coalesce((SELECT e.kind FROM events e WHERE e.id=json_extract(s.event_ids,'$[0]')),'')!='assistant.test'").fetchone()[0]

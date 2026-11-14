@@ -25,6 +25,7 @@ import security_levels
 from sources import credential
 import still_needed
 from timeutil import local_tz, now
+from machine import todo_states
 
 
 @functools.lru_cache(maxsize=4)
@@ -402,7 +403,7 @@ def quick_web(which, t=None):
 APP_BODY = 120
 
 
-APP_GONE = ('completed', 'rejected', 'snoozed')  # no longer waiting: its phone notification goes
+APP_GONE = todo_states.CLOSED_OR_SNOOZED  # no longer waiting: its phone notification goes
 
 
 APP_EMPTY = 'Tap to open.'  # the body when there is nothing to say under the title, or Text in notifications is off
@@ -684,7 +685,7 @@ def waiting_count(db):
     """To-dos that need the owner now, for the app icon's badge (not the ones that look done or wait on others, nor a
     Still needed? left unanswered: folded into Coming back later)."""
     current = now()
-    rows = db.execute("SELECT id FROM suggestions WHERE status IN ('pending','prepared') AND NOT " + NOT_FOR_OWNER_SQL + " "
+    rows = db.execute(f"SELECT id FROM suggestions WHERE status IN {todo_states.sql(todo_states.WAITING_ON_OWNER)} AND NOT " + NOT_FOR_OWNER_SQL + " "
                       "AND (deliver_after IS NULL OR deliver_after<=?)", (current,)).fetchall()
     later = still_needed.folded(db, current, local_tz()) if rows else set()
     return sum(1 for r in rows if r[0] not in later)

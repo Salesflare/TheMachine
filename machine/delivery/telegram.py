@@ -12,6 +12,7 @@ from machine.delivery.push import QUICK, QUICK_LABELS, QUICK_OPENS, quick_kind, 
 from machine.model_usage import node_bin, node_env, telegram_account, telegram_on
 from machine.text import encoded
 import notify
+from machine import todo_states
 
 
 # A result notice's quick buttons as the plugin's callbacks: only these two run from the notice itself
@@ -71,7 +72,7 @@ def telegram(config, row, action, message_id=None):
         if row['status']=='prepared':body['body']+='\n\n['+i18n.t('Read result')+']('+notify.todo_link(root,row['id'])+')'
         elif row.get('original_urls'):body['body']+='\n\n['+i18n.t('Open original')+']('+row['original_urls'][0]+')'
     args = {'action':action,'channel':'telegram','accountId':telegram_account(config),'target':config.get('telegram_owner'),
-            'message':(i18n.t('Your update')+'\n\n' if action=='send' and row.get('reminder') and (row['status'] in ('prepared','instructions') or row.get('preparation_status')=='blocked') else i18n.t('Reminder')+'\n\n' if action=='send' and row.get('reminder') else '')+card(body),'presentation':controls(row,root)}
+            'message':(i18n.t('Your update')+'\n\n' if action=='send' and row.get('reminder') and (row['status'] in (todo_states.PREPARED, todo_states.INSTRUCTIONS) or row.get('preparation_status')=='blocked') else i18n.t('Reminder')+'\n\n' if action=='send' and row.get('reminder') else '')+card(body),'presentation':controls(row,root)}
     if message_id:
         args['messageId'] = str(message_id)
     elif row.get('_silent'):

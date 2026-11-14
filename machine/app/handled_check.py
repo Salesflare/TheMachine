@@ -30,6 +30,7 @@ from machine.sources.calendar import company_domains
 from machine.sources.slack import slack_limits, slack_read_asked, slack_read_drop, slack_read_now
 from models import background_model, openclaw_model
 from timeutil import now
+from machine import todo_states
 
 
 # Steps that reach someone: before one shows, its people's conversations are checked
@@ -293,7 +294,7 @@ class HandledCheckApp:
         pages = []
         with self.store.connect() as db:
             # Open, not looking done already, not waiting on someone else (the review reads their answer)
-            rows = db.execute("SELECT id,title,event_ids,next_action,created_at FROM suggestions WHERE status IN ('pending','prepared','snoozed') "
+            rows = db.execute(f"SELECT id,title,event_ids,next_action,created_at FROM suggestions WHERE status IN {todo_states.sql(todo_states.PENDING, todo_states.PREPARED, todo_states.SNOOZED)} "
                               "AND handled_hint IS NULL AND ifnull(json_extract(outcome,'$.state'),'') NOT IN ('waiting','already_done') "
                               'AND created_at>=? ORDER BY created_at DESC LIMIT 120', (since,)).fetchall()
             for row in rows:

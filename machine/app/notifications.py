@@ -23,6 +23,7 @@ import security_levels
 import still_needed
 import todo_areas
 from timeutil import clock, in_hours, is_work_day, local_tz, next_work_day, now, WORK_HOURS
+from machine import todo_states
 
 
 def done_today(db, start, current):
@@ -173,7 +174,7 @@ class NotificationsApp:
         with self.store.connect() as db:
             meetings = recap_meetings(db, utc(start), utc(end), {})
             meetings = [m for m in meetings if m['at'] >= utc(local)] or []
-            open_states = "('pending','accepted','prepared','instructions')"
+            open_states = todo_states.sql(todo_states.OPEN_NOT_SNOOZED)
             due = [dict(r) for r in db.execute(
                 f"SELECT id,title FROM suggestions WHERE (status IN {open_states} AND due=? AND NOT {NOT_FOR_OWNER_SQL}) OR (status='snoozed' AND snoozed_until>=? AND snoozed_until<?) "
                 "ORDER BY created_at LIMIT 20", (local.date().isoformat(), utc(local), utc(end)))]
@@ -185,7 +186,7 @@ class NotificationsApp:
             # what an earlier part already listed (notify.compose), so a pile still gets one
             later = still_needed.folded(db, utc(current), local_tz())  # a Still needed? left unanswered waits in Later
             top = notify.open_order([dict(r) for r in db.execute(
-                "SELECT id,title,status,due,due_at,created_at,event_ids,next_action,outcome FROM suggestions WHERE status IN ('pending','prepared') AND NOT " + NOT_FOR_OWNER_SQL + " "
+                f"SELECT id,title,status,due,due_at,created_at,event_ids,next_action,outcome FROM suggestions WHERE status IN {todo_states.sql(todo_states.WAITING_ON_OWNER)} AND NOT " + NOT_FOR_OWNER_SQL + " "
                 "AND (deliver_after IS NULL OR deliver_after<=?) LIMIT 2000", (utc(current),)) if r['id'] not in later], local)
             ready = [r for r in top if r['status'] == 'prepared']
             # The ones that wait on the owner's answer (a run that stopped to ask, a result that asks): in the count, not
@@ -227,7 +228,7 @@ class NotificationsApp:
             skip = to_read(db) | still_needed.folded(db, utc(current), local_tz())
             done = [r for r in done_today(db, utc(start), utc(current)) if r['id'] not in skip]
             open_rows = notify.open_order([dict(r) for r in db.execute(
-                "SELECT id,title,status,due,due_at,created_at,account_ids,area FROM suggestions WHERE status IN ('pending','accepted','prepared','instructions') "
+                f"SELECT id,title,status,due,due_at,created_at,account_ids,area FROM suggestions WHERE status IN {todo_states.sql(todo_states.OPEN_NOT_SNOOZED)} "
                 "AND NOT " + NOT_FOR_OWNER_SQL + " AND (deliver_after IS NULL OR deliver_after<=?) LIMIT 2000", (utc(current),)) if r['id'] not in skip], local)
 
         def area(r):
@@ -312,7 +313,7 @@ class NotificationsApp:
             held = [{**m, 'named': (m['at'], m['title']) in named} for m in recap_meetings(db, utc(start), utc(current), {}, routine=True)]
             ahead = recap_meetings(db, utc(following), utc(ahead_end), {})[:2]
             due = [dict(r) for r in db.execute(
-                "SELECT id,title,account_ids,area FROM suggestions WHERE status IN ('pending','accepted','prepared','instructions') AND due=? AND NOT " + NOT_FOR_OWNER_SQL + " "
+                f"SELECT id,title,account_ids,area FROM suggestions WHERE status IN {todo_states.sql(todo_states.OPEN_NOT_SNOOZED)} AND due=? AND NOT " + NOT_FOR_OWNER_SQL + " "
                 "ORDER BY urgent DESC,created_at LIMIT 20", (following.date().isoformat(),))]
             waiting = waiting_count(db)
             show = security_levels.notify_text(db, False)
@@ -454,7 +455,7 @@ class NotificationsApp:
             if what == 'suggestion':
                 row = db.execute('SELECT s.status,s.handled_hint,s.outcome,p.status prep FROM suggestions s LEFT JOIN preparations p ON p.suggestion_id=s.id '
                                  'WHERE s.id=?', (key,)).fetchone()
-                return bool(row) and not looks_done(dict(row)) and not waits_on_others(dict(row)) and (row['status'] in ('pending', 'prepared', 'instructions')
+                return bool(row) and not looks_done(dict(row)) and not waits_on_others(dict(row)) and (row['status'] in (todo_states.PENDING, todo_states.PREPARED, todo_states.INSTRUCTIONS)
                                                                   or (row['status'] == 'accepted' and row['prep'] == 'blocked'))
             if what == 'fleet':
                 try:

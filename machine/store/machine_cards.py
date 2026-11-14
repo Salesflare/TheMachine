@@ -10,6 +10,7 @@ import ms_graph
 import parked_fixes
 from machine import system_logs
 from timeutil import now
+from machine import todo_states
 
 # A sign-in from before a newer feature (machine/app/reconnect_asks.py): its to-do's signal, one per account and ask
 RECONNECT_KIND = 'machine.reconnect_ask'
@@ -38,13 +39,13 @@ def reconnect_lead(db, suggestion_id):
 
 def reconnect_reword(db, suggestion_id, title, body):
     """An open reconnect to-do's words, made again to fit what reconnecting brings now (reconnect_asks.reword)."""
-    db.execute("UPDATE suggestions SET title=?,body=? WHERE id=? AND status IN ('pending','snoozed')", (title[:90], body[:699], suggestion_id))
+    db.execute(f"UPDATE suggestions SET title=?,body=? WHERE id=? AND status IN {todo_states.sql(todo_states.NOT_STARTED)}", (title[:90], body[:699], suggestion_id))
 
 
 def reconnected(db, account, ask, at):
     """The account's reconnect to-do, if open, closes itself as done: its sign-in has what it asked for now."""
     for row in db.execute("SELECT s.id FROM suggestions s JOIN events e ON e.id=json_extract(s.event_ids,'$[0]') WHERE e.kind=? "
-                          "AND e.source_id=? AND s.status IN ('pending','snoozed')", (RECONNECT_KIND, reconnect_source(account, ask))).fetchall():
+                          f"AND e.source_id=? AND s.status IN {todo_states.sql(todo_states.NOT_STARTED)}", (RECONNECT_KIND, reconnect_source(account, ask))).fetchall():
         db.execute("UPDATE suggestions SET status='completed',completed_from='pending',snoozed_until=NULL,resume_status=NULL,early=0 WHERE id=?", (row[0],))
         db.execute('INSERT OR IGNORE INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)',
                    ('reconnected:' + row[0], row[0], 'complete', 'Reconnected: the sign-in has it now.', 'assistant', at))
@@ -112,7 +113,7 @@ class MachineCardsStore:
             key = 'syslog:' + finding['key']
             with self.connect() as db:
                 seen = db.execute("SELECT 1 FROM events e WHERE e.kind='machine.system_log' AND substr(e.source_id,1,?)=? AND (e.ingested_at>=? "
-                                  "OR EXISTS(SELECT 1 FROM suggestions s, json_each(s.event_ids) i WHERE i.value=e.id AND s.status IN ('pending','snoozed','rejected')))",
+                                  f"OR EXISTS(SELECT 1 FROM suggestions s, json_each(s.event_ids) i WHERE i.value=e.id AND s.status IN {todo_states.sql(todo_states.PENDING, todo_states.SNOOZED, todo_states.REJECTED)}))",
                                   (len(key) + 1, key + ':', since)).fetchone()
             if seen:
                 continue
@@ -143,18 +144,18 @@ class MachineCardsStore:
                 if card['id'] in logs:
                     card['machine_log'] = True
         for card in cards:
-            if card.get('origin') == 'machine' and card.get('status') in ('pending', 'prepared'):
+            if card.get('origin') == 'machine' and card.get('status') in todo_states.WAITING_ON_OWNER:
                 finding = self.machine_fix_finding(db, card['id'])
                 argv = system_logs.fix_command(finding) if finding else None
                 if argv and (card['status'] == 'pending' or json.loads(card.get('outcome') or '{}').get('state') == 'answered'):
                     card['machine_fix'] = ' '.join(argv)
             # a fix an update set aside, still open: Redo it starts the usual self-fix run (cards.controls says when).
             # 'redo' while nothing runs on it (pending, or a result that only answered): the dashboard offers Redo it then
-            if card.get('origin') == 'machine' and card.get('status') in ('pending', 'accepted', 'instructions', 'prepared') \
+            if card.get('origin') == 'machine' and card.get('status') in todo_states.OPEN_NOT_SNOOZED \
                     and not card.get('machine_log') and parked_redo(db, card['id']):
                 card['parked_redo'] = 'redo' if card['status'] == 'pending' or json.loads(card.get('outcome') or '{}').get('state') == 'answered' else True
             # a sign-in from before a newer feature, still open: Reconnect leads (reconnect_asks.py), Not needed closes it for good
-            if card.get('origin') == 'machine' and card.get('status') in ('pending', 'snoozed'):
+            if card.get('origin') == 'machine' and card.get('status') in todo_states.NOT_STARTED:
                 lead = reconnect_lead(db, card['id'])
                 if lead:
                     # personal: an Outlook.com account, which has no admin: its sign-in step shows no admin's approval link

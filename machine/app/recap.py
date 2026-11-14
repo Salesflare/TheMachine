@@ -32,6 +32,7 @@ import security_levels
 import still_needed
 import team_learnings
 from timeutil import local_tz, now
+from machine import todo_states
 
 
 def recap_escape(text):
@@ -260,7 +261,7 @@ def weekly_recap_message(store, config, current=None):
         backlog = db.execute('SELECT count(*) FROM events WHERE analyzed_version<version').fetchone()[0]
         noise = recap_noise(db, since)
         open_cards = {r['id']: dict(r) for r in db.execute(
-            "SELECT id,title,status,due,event_ids FROM suggestions WHERE status IN ('pending','accepted','instructions','prepared','snoozed')")}
+            f"SELECT id,title,status,due,event_ids FROM suggestions WHERE status IN {todo_states.sql(todo_states.OPEN)}")}
         on_event = {}
         for card in open_cards.values():
             for e in json.loads(card['event_ids']):
@@ -268,7 +269,7 @@ def weekly_recap_message(store, config, current=None):
         meetings = recap_meetings(db, start_ahead, ahead, on_event)
         snoozed = [dict(r) for r in db.execute(
             "SELECT d.suggestion_id id,count(*) n,max(d.created_at) last FROM decisions d JOIN suggestions s ON s.id=d.suggestion_id WHERE d.choice='snooze' "
-            "AND d.source IN ('telegram','dashboard') AND d.created_at>=? AND s.status IN ('snoozed','pending') GROUP BY d.suggestion_id HAVING n>=2 ORDER BY n DESC,last DESC",
+            f"AND d.source IN ('telegram','dashboard') AND d.created_at>=? AND s.status IN {todo_states.sql(todo_states.NOT_STARTED)} GROUP BY d.suggestion_id HAVING n>=2 ORDER BY n DESC,last DESC",
             (since,))]
         # A source or card the owner said Keep to in an earlier recap isn't offered again (a card only until it is snoozed again).
         kept = [dict(r) for r in db.execute("SELECT kind,ref,data,decided_at FROM recap_items WHERE status='kept'")]
@@ -586,7 +587,7 @@ class RecapApp:
             card = item['ref']
             with self.store.connect() as db:
                 row = db.execute('SELECT status FROM suggestions WHERE id=?', (card,)).fetchone()
-            if not row or row['status'] in ('completed', 'rejected'):
+            if not row or row['status'] in todo_states.CLOSED:
                 status = 'dropped' if row and row['status'] == 'rejected' else 'kept'
                 reason = 'That to-do is already closed.'
             else:
