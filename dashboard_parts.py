@@ -117,11 +117,32 @@ def expand(source, folder, kinds=KINDS):
     return ''.join(out)
 
 
+# The page's <script id="source-kinds" type="application/json">: every kind of event and of message the app knows
+# (machine/kinds.py), for the page's scripts to read instead of lists of their own. The same for every owner, so it's
+# filled in here, where the demo and the tests get it too.
+KINDS_MARK = '__SOURCE_KINDS__'
+
+
+def kinds_json(root=None):
+    """machine/kinds.py of the app in root as the page's JSON: {"kinds": {...}, "sends": {...}}. Read from that
+    folder's own file (a leaf with no imports), so a page assembled from another checkout gets that checkout's kinds;
+    a folder with only the page and its parts (a copy a test makes) gets the kinds beside this file."""
+    import importlib.util
+    path = Path(root or ROOT) / 'machine' / 'kinds.py'
+    if not path.is_file():
+        path = ROOT / 'machine' / 'kinds.py'
+    spec = importlib.util.spec_from_file_location('app_machine_kinds', path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    # </ can't end the script element early: no kind or name has one, and < keeps it so if one ever did
+    return json.dumps({'kinds': module.KINDS, 'sends': module.SENDS}, separators=(',', ':'), sort_keys=True).replace('<', '\\u003c')
+
+
 def assemble(root=None, page=None):
     """The dashboard page's source as served (before the service fills in __BASE__ and the like). root: the app's
     folder (default: this one); page: another dashboard.html to assemble instead (its parts beside it, in dashboard/)."""
     path = Path(page) if page else Path(root or ROOT) / PAGE
-    return expand(path.read_text(encoding='utf-8'), path.parent / FOLDER)
+    return expand(path.read_text(encoding='utf-8'), path.parent / FOLDER).replace(KINDS_MARK, kinds_json(path.parent), 1)
 
 
 def files(root=None):
@@ -151,4 +172,5 @@ def assemble_split(root=None):
         if css:
             lazy[group].insert(0, 'for(const [n,c] of ' + json.dumps(css, ensure_ascii=False) + ')'
                                '{const s=document.querySelector(`style[data-lazy-css="${n}"]`);if(s)s.textContent=c}\n')
-    return expand(''.join(out), path.parent / FOLDER), {group: ''.join(parts) for group, parts in lazy.items()}
+    return (expand(''.join(out), path.parent / FOLDER).replace(KINDS_MARK, kinds_json(path.parent), 1),
+            {group: ''.join(parts) for group, parts in lazy.items()})
