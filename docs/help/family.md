@@ -36,4 +36,4 @@ When you both get the same email, bill or form and one of you marks their to-do 
 
 By default, free and busy times are shared, and to-dos and plans ask you first. Change it on the Sharing pane: see [Sharing rules](sharing-rules.md).
 
-A Family Fleet is free. A hosted Machine in it costs the same as any hosted Machine: see [Plans and billing](plans-and-billing.md).
+A Family Fleet is free. Hosted Machines in it cost {price.family_pair} a month for the first two together, then {price.family_seat} each, excl. VAT. See [Plans and billing](plans-and-billing.md).

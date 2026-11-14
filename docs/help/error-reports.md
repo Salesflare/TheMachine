@@ -19,7 +19,7 @@ Only this, per kind of error:
 - where in The Machine's own code it happened, never a folder on your computer;
 - the app version, how often it happened, and when first and last.
 
-A real one: `IndexError`, `list index out of range`, at `assistant.py:fault_event:7899`, version `05b17ee6ac79`, 1 time.
+For example: `IndexError`, `list index out of range`, at `machine/faults.py:fault_event:246`, version `05b17ee6ac79`, 1 time.
 
 ## What never goes
 

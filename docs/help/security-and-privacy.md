@@ -13,7 +13,7 @@ keywords: private, privacy, data, gdpr, encrypted, who can see, safe, stored, ke
 - We don't read your email: messages are stored encrypted, and our support tools can't open them.
 - Nothing is sent without your OK: it reads and drafts; you decide what goes out. See [Do it](do-it.md).
 - Not used to train AI: we have no AI of our own. Your provider works under your account and their terms.
-- Learnings for the team only with your OK: now and then it asks to send a few general tips, nothing personal. See [Share learnings](share-learnings.md).
+- Learnings for the team, unless you turn them off: now and then a few general tips, nothing personal, checked before they go. See [Share learnings](share-learnings.md).
 - Error reports, unless you turn them off: when something breaks, the type of error and where in the code. Never your messages, names or addresses. See [Error reports](error-reports.md).
 - Usage counts on a hosted Machine: daily counts of what you did (like to-dos opened or emails sent), never their content.
 - Take it with you, or delete it: export everything from **Settings** › **General**, or delete your Machine and its backups with one button. See [Cancel or delete](cancel-and-delete.md).
@@ -25,7 +25,7 @@ keywords: private, privacy, data, gdpr, encrypted, who can see, safe, stored, ke
 
 ## Sign-in
 
-A hosted dashboard needs Google or Microsoft sign-in, plus an authenticator code or a passkey.
+A hosted dashboard needs a passkey, or Google or Microsoft sign-in plus an authenticator code.
 
 ## Connections
 
