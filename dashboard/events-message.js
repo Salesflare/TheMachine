@@ -87,7 +87,7 @@ const THREAD_VIA={Slack:'slack',WhatsApp:'whatsapp',Telegram:'telegram',Signal:'
 // Messenger chats (convo-im, events-message.css) read like their app: the other side's bubbles on the left under their
 // name and avatar, the owner's on the right in the accent, each bubble with its own time. Slack and Intercom keep a
 // run's time on its name line.
-const THREAD_IM=new Set(['WhatsApp','Telegram','Signal','LinkedIn','X message','Teams']);
+const THREAD_IM=new Set(Object.values(SOURCE_KINDS.kinds).filter(r=>r.messenger).map(r=>r.name));  // machine/kinds.py messenger
 const isChat=o=>typeof o?.chat==='string';
 const chatTitle=o=>o.dm&&o.chat?t('DM with {}',o.chat):o.chat||'';
 const THREAD_PAUSE=10*6e4;

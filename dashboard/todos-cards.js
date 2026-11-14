@@ -159,7 +159,7 @@ const kindService=k=>({'calendar.event':'calendar','meeting.notes':'calendar','s
 // The team brief's to-dos (fleet-brief-todo.js, LAZY 'brief'): loaded when one is on screen
 const briefOwn=s=>!!s.fleet_brief?.own&&!closed(s)&&s.status!=='snoozed',briefIn=s=>!!s.fleet_brief&&(lazyIn('brief')||(lazyRun('brief',render),false));
 const changing=new Set(),dismissing=new Set(),askPicks=new Map(),askMissing=new Map();  // by to-do: each question's answer so far; those Answer found without one
-const taskActions=s=>{const choices=s?.next_actions||(s?.next_action?.kind==='menu'?s.next_action.actions:s?.next_action?[s.next_action]:[]);const ready=choices.some(a=>['email','email_demo','linkedin','slack','x','whatsapp','telegram','signal','intercom','doc_reply','merge','finish','handoff','calendar','doc_write'].includes(a.kind));return choices.filter(a=>a.kind!=='prepare'||(!ready&&!/^Draft (shorter|longer|another|alternative|follow-up)\b/i.test(a.label||'')))};
+const taskActions=s=>{const choices=s?.next_actions||(s?.next_action?.kind==='menu'?s.next_action.actions:s?.next_action?[s.next_action]:[]);const ready=choices.some(a=>[...SENDS,'email_demo','merge','finish','handoff','calendar','doc_write'].includes(a.kind));return choices.filter(a=>a.kind!=='prepare'||(!ready&&!/^Draft (shorter|longer|another|alternative|follow-up)\b/i.test(a.label||'')))};
 // Messages to send: several go out together (openSendAll)
 const sendReady=s=>s?.status!=='prepared'?[]:taskActions(s).filter(a=>CHAT_SENDS.includes(a.kind)&&!sendBusy(a.state));
 // Who its messages go (or went) to, names and addresses: a search finds a to-do by recipient too (assistant.card_recipients)
@@ -228,7 +228,7 @@ const day=localDay(target)===today?t('Today'):localDay(target)===localDay(tomorr
 const when=day+' · '+fmtHM(target);
 return tg&&push?t('Telegram and notification {}',when):tg?t('Telegram {}',when):t('Notification {}',when);
 }
-const DRAFT_KINDS=['email','email_demo','linkedin','slack','x','whatsapp','telegram','signal','intercom','doc_reply','handoff','finish','calendar','doc_write'];
+const DRAFT_KINDS=[...SENDS,'email_demo','handoff','finish','calendar','doc_write'];
 // A calendar change on a card (kind calendar): what it adds, changes or deletes, on which calendar. Nobody is invited.
 const CAL_DO={create:'Add to {}',update:'Change on {}',delete:'Delete from {}'},CAL_DID={create:'Added to {}',update:'Changed on {}',delete:'Deleted from {}'};
 const CAL_DID_DOT={create:'Added to {}.',update:'Changed on {}.',delete:'Deleted from {}.'},CAL_DID_AT={create:'Added to {} at {}.',update:'Changed on {} at {}.',delete:'Deleted from {} at {}.'},CAL_DID_INV={create:'Added to {}, invited {}.',update:'Changed on {}, invited {}.',delete:'Deleted from {}, invited {}.'};
@@ -505,7 +505,7 @@ const askQuestion=(s,smart,hint)=>{if(closed(s)||s.status==='snoozed'||hint)retu
 // A result that needs the owner and says so with a question ("What is the new link?"): it waits on their answer, not on a tap
 const needsAsk=s=>{try{const o=JSON.parse(s.outcome||'{}'),q=String(o.needs||'').trim();return o.state==='needs_you'&&/\?$/.test(q)?q:''}catch{return ''}};
 // A draft's Send opens the preview first: the button says so.
-const sendLabel=a=>a.kind==='calendar'?CAL_LABEL[a.op]:a.kind==='doc_write'?DOC_LABEL[a.op]:a.kind==='doc_reply'?'Review and post':['email','email_demo','linkedin','slack','x','whatsapp','telegram','signal','intercom'].includes(a.kind)&&/^Send\b/.test(a.label||'')?reviewSend(a.label):a.label;
+const sendLabel=a=>a.kind==='calendar'?CAL_LABEL[a.op]:a.kind==='doc_write'?DOC_LABEL[a.op]:a.kind==='doc_reply'?'Review and post':[...PERSON_SENDS,'email_demo'].includes(a.kind)&&/^Send\b/.test(a.label||'')?reviewSend(a.label):a.label;
 // "Send reply" reads "Review and send reply": a known label whole, "to Sam" by its pattern, else the start translated
 function reviewSend(label){const whole=label.replace(/^Send\b/,'Review and send'),rest=label.replace(/^Send\b\s*/,''),to=/^to (.+)$/.exec(rest);
  return !rest?t('Review and send'):I18N.cat?.[whole]!=null||I18N.en[whole]!=null?t(whole):to?t('Review and send to {}',to[1]):t('Review and send')+' '+rest}
@@ -582,7 +582,7 @@ const projectTodos=n=>n.kind==='project'&&n.todos?.length?html`<div class="secti
 // for good, on every device, once its button is used or × closes it. render() picks the to-do (tipSend, tipChange).
 let tipSend='',tipChange='';const tipsGone=new Set();
 const firstTips=()=>(state.first_tips||[]).filter(x=>!tipsGone.has(x));
-const TIP_SEND_KINDS=['email','email_demo','linkedin','slack','x','whatsapp','telegram','signal','intercom','doc_reply'];
+const TIP_SEND_KINDS=[...SENDS,'email_demo'];
 const sendTipFits=s=>s.status==='prepared'&&!closed(s)&&!s.handled_hint&&!withTeammate(s)&&taskActions(s).some(a=>TIP_SEND_KINDS.includes(a.kind)&&draftText(a)&&!sendBusy(a.state||s.action_status));
 function tipDone(tip){if(!firstTips().includes(tip))return;tipsGone.add(tip);
  request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'tip_done',args:{tip}})})

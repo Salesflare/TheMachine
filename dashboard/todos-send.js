@@ -1,7 +1,7 @@
 // A lazy part (dashboard_parts.LAZY 'compose'): the send dialog. todos-list.js opens it through openSend(), nothing here until it's in.
 let sendTask=null,sendRevision=null,sendDraft=null,sendHeader=null,sendBatch=null;
 // Review and send opens on the draft itself, ready to edit, with Ask for changes (an instruction I redo the draft from) beside Send.
-const SEND_CHATS=['linkedin','slack','x','whatsapp','telegram','signal','intercom','doc_reply'],SEND_EDITABLE=['email',...SEND_CHATS];
+const SEND_CHATS=TEXT_SENDS,SEND_EDITABLE=SENDS;
 function sendShow(){const edit=SEND_EDITABLE.includes(sendDraft?.kind);$('#send-ask').hidden=true;$('#send-act').hidden=false;$('#send-ask-text').value='';$('#send-ask-open').hidden=!edit;
  sendStep();if(!$('#send-dialog').open)$('#send-dialog').showModal();$('#send-dialog').scrollTop=0;if(edit)editSend(matchMedia('(pointer:fine)').matches)}
 // Several ready: each shows in turn, the last Send sends all
@@ -164,7 +164,7 @@ $('#send-subject').oninput=e=>{const x=e.target,v=x.value.replace(/[ \t]*[\r\n]+
 addEventListener('resize',()=>{if($('#send-dialog').open)subjectFit()});
 $('#send-confirm').onclick=async()=>{const b=$('#send-confirm');b.disabled=true;try{
 if(sendDraft?.compose){await composeSend(b);return}  // a new email (todos-compose.js, there while it's open)
-if(!$('#send-editor').hidden){const mail=sendDraft.kind==='email',typed=$('#send-body').value,body=mail?mailOut(draftText(sendDraft)):typed===plainDraft(draftText(sendDraft))?draftText(sendDraft):unplainDraft(typed,draftText(sendDraft)),subject=['linkedin','slack','x','whatsapp','telegram','signal','intercom','doc_reply','finish'].includes(sendDraft.kind)?undefined:$('#send-subject').value;
+if(!$('#send-editor').hidden){const mail=sendDraft.kind==='email',typed=$('#send-body').value,body=mail?mailOut(draftText(sendDraft)):typed===plainDraft(draftText(sendDraft))?draftText(sendDraft):unplainDraft(typed,draftText(sendDraft)),subject=[...TEXT_SENDS,'finish'].includes(sendDraft.kind)?undefined:$('#send-subject').value;
 if(body==null){b.disabled=false;return}
 if(body!==draftText(sendDraft)||subject!==sendDraft.subject){const r=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'revise_draft',args:{suggestion_id:sendTask,revision:sendRevision,body,subject}})});sendRevision=r.revision;
  // The saved text is what goes out. When saving changed it (a blank line before the name), it shows first and Send waits.

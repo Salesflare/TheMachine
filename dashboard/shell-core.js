@@ -1,5 +1,12 @@
 // The page's own script came (dashboard.html shows "The page didn’t load" otherwise), also when it came late
 self.appStarted=true;document.getElementById('load-failed')?.setAttribute('hidden','');
+// machine/kinds.py as the page carries it (dashboard_parts.kinds_json): every kind of event and of message, with what the
+// code knows of each. Lists ask it instead of spelling kinds out (tests/test_kinds.py counts the ones that still do).
+const SOURCE_KINDS=(()=>{try{return JSON.parse(document.getElementById('source-kinds').textContent)}catch{return {kinds:{},sends:{}}}})();
+// The kinds of message a to-do can send (kinds.SEND), those without a subject (TEXT_ONLY) and those that reach a person
+// (TO_PERSON): sets to ask with includes, in no particular order
+const SENDS=Object.keys(SOURCE_KINDS.sends),TEXT_SENDS=SENDS.filter(k=>SOURCE_KINDS.sends[k].text_only),
+  PERSON_SENDS=SENDS.filter(k=>SOURCE_KINDS.sends[k].to_person);
 // Dates and times follow Settings, General (locale_prefs.py): DL is the date locale (Sat, Oct 24 or Sat 24 Oct), H12 the
 // clock (2:05 PM or 14:05). A Machine without a region keeps US dates and 24-hour times.
 let DL='en-US',H12=false;
