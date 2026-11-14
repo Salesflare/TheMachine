@@ -17,8 +17,8 @@ no change to the English after its last change. Each answer is checked before it
 names and glossary terms, the same headings, paragraphs and list items, no em dash); an answer that fails is asked
 again once with what was wrong, then left out, so the app shows English there until the next run.
 The key is read from the environment only (never a flag or a file), and never printed.
-.github/workflows/translate.yml runs `all` once a day and opens one pull request; scripts/release.py cut refuses a
-commit where `all --check` finds anything."""
+.github/workflows/translate.yml runs `all` once a day on main as it is then, opens or replaces one pull request and
+starts its tests; scripts/release.py cut refuses a commit where `all --check` finds anything."""
 from __future__ import annotations
 
 import argparse
