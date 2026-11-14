@@ -31,7 +31,7 @@ About the test runner:
   closed dialog runs the tests of the code that opens it. A rule with only a tag (`option`) goes by where code makes
   that element; an entry of a name-to-method table (`ACTIONS`) by the tests that send that name or ran that method; a
   change inside a page function no test ran, by the quickest page tests (it still has to parse).
-  A function more than 60 tests run past their start (a render every page does) runs, on a pull request, the 12
+  A function more than 30 tests run past their start (a render every page does) runs, on a pull request, the 12
   quickest of them and those that name it; a push to main (`--wide`) runs them all.
   Whatever the map can't place runs as without it: every test that imports or names a changed file. `scripts/test_select.py --why test_x.py changed.txt`
   says why a test was picked. A push to main runs the tests every change since the newest commit whose full run

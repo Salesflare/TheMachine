@@ -20,7 +20,7 @@ in your life, keeps up with the future, and is for everyone: simple from the sta
 Ultimately, The Machine Network should be independently operable and community-governed.
 What we believe, in order, and how every change is judged: [Product vision](docs/vision.md).
 
-Website: [themachine.computer](https://themachine.computer). Rather not run it yourself? The same Machine is also [hosted for you](https://themachine.computer/pricing) on a private server in the EU (beta). Export and import move everything between the two.
+Website: [themachine.computer](https://themachine.computer). Rather not run it yourself? The same Machine is also [hosted for you](https://themachine.computer/pricing) on a private server in the EU. Export and import move everything between the two.
 
 **Early release.** One owner per installation. Runs on Linux; macOS and Windows are in beta. The core assistant needs no cloud account. Fleets and Friends connect through The Machine Network.
 
@@ -72,6 +72,7 @@ The full walkthrough: [Getting started](docs/getting-started.md).
 | Where The Machine is going, and what "best" means | [Product vision](docs/vision.md) |
 | First install, sources, phone and preview | [Getting started](docs/getting-started.md) |
 | Install flags, updates, backups, moving and recovery | [Operations](docs/operations.md) |
+| Export everything, or what it learned for another AI | [Export and import](docs/moving.md), [Knowledge for another AI](docs/knowledge-export.md) |
 | Settings and defaults | [Configuration](docs/configuration.md), [example JSON](config.example.json) |
 | Sources and their limits | [Sources](docs/sources.md) |
 | Storage, reviews and promises | [Architecture](docs/architecture.md) |
