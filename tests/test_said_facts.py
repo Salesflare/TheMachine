@@ -49,8 +49,10 @@ class SaidFacts(unittest.TestCase):
         self.app.action('forget_fact', {'id': saved['id']}, owner_dashboard=True)
         self.assertEqual(self.store.snapshot([])['facts'], [])
         # One message can hold several; a sort and an end day are kept
-        trip = self.save('You are in Lisbon until Friday.', kind='event', until='2026-11-13')
-        self.assertEqual((trip['kind'], trip['until']), ('event', '2026-11-13'))
+        # The end day is checked against the real clock (timeutil.now), so it sits a few days from today
+        friday = (dt.date.fromisoformat(a.now()[:10]) + dt.timedelta(days=4)).isoformat()
+        trip = self.save('You are in Lisbon until Friday.', kind='event', until=friday)
+        self.assertEqual((trip['kind'], trip['until']), ('event', friday))
 
     def test_it_is_tied_to_the_person_it_is_about(self):
         mail = {'account_id': 'work', 'source_id': 'm1', 'kind': 'gmail.message', 'occurred_at': (NOW - dt.timedelta(days=2)).isoformat(),
