@@ -945,7 +945,7 @@ class FactsStore:
         if not missing:
             return 0
         try:
-            vectors = embeddings.embed(settings, [embeddings.document('none', f['text']) for f in missing], timeout)
+            vectors = embeddings.embed(settings, [embeddings.document('none', f['text']) for f in missing], timeout, background=True)
         except embeddings.EmbeddingError as error:  # the embedding server is down or busy: the next pass tries again
             if getattr(self, '_fact_vector_error', None) != str(error):
                 LOG.info('fact vectors wait error=%s', error)

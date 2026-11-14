@@ -417,6 +417,41 @@ class Embeddings(unittest.TestCase):
         self.assertEqual(sumprod.call_count, 2, 'every score is one math.sumprod call, never a Python loop')
         self.assertEqual(sumprod.call_args.args, ([1.0, 2.0], [1.0, 1.0]))
 
+    def test_the_background_sends_few_inputs_a_request_and_lets_a_search_go_first(self):
+        # A local server queues a request's inputs behind its slots: a query sent while the worker embedded sixteen
+        # waited for all of them. The worker's requests stay under the slots; a search's are never split for it.
+        self.store.commit_page('work', {}, [event(f'more{i}', f'Note {i}', f'Body {i}') for i in range(11)])
+        self.assertEqual(emb.embed_pending(self.store.connect, SETTINGS, 16), 16)
+        self.assertEqual([len(c.args[1]) for c in self.calls.call_args_list], [3, 3, 3, 3, 3, 1])
+        self.calls.reset_mock()
+        emb.embed(SETTINGS, ['a'] * 8)
+        self.assertEqual([len(c.args[1]) for c in self.calls.call_args_list], [8])
+        self.calls.reset_mock()
+        emb.embed({**SETTINGS, 'url': 'https://api.openai.com/v1'}, ['a'] * 8, background=True)  # no slots to keep free there
+        self.assertEqual([len(c.args[1]) for c in self.calls.call_args_list], [8])
+        # While a search waits for its vector the worker starts no request, and goes on once it has it
+        import threading
+        sent, release, started = [], threading.Event(), threading.Event()
+        def search_request(settings, texts, timeout=120):
+            if texts == ['query']:
+                started.set(); release.wait(5)
+            sent.append(texts[0])
+            return fake_request(settings, texts)
+        self.calls.side_effect = search_request
+        search = threading.Thread(target=emb.embed, args=(SETTINGS, ['query'])); search.start()
+        self.assertTrue(started.wait(5))
+        worker = threading.Thread(target=emb.embed, args=(SETTINGS, ['background']), kwargs={'background': True}); worker.start()
+        worker.join(0.3)
+        self.assertTrue(worker.is_alive())  # held back
+        self.assertEqual(sent, [])
+        release.set(); search.join(5); worker.join(5)
+        self.assertEqual(sent, ['query', 'background'])
+        # held back at most YIELD_SECONDS a request: never starved by a search that hangs
+        with emb.asking(), patch.object(emb, 'YIELD_SECONDS', 0.2):
+            emb.embed(SETTINGS, ['late'], background=True)
+        self.assertEqual(sent[-1], 'late')
+        self.assertEqual(emb.ASKING, [0])
+
 
 if __name__ == '__main__':
     unittest.main()

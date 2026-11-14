@@ -498,7 +498,8 @@ class MemoryReach(unittest.TestCase):
         with patch.object(a.embeddings, 'embed', side_effect=plane):
             self.assertNotIn('KLM', self.chat('plane trip next week')['found'])  # no vector yet: words only
         sent = []
-        def embed(settings, texts, timeout=120):
+        def embed(settings, texts, timeout=120, background=False):
+            self.assertTrue(background)  # the worker's pass: a search's vector goes first (embeddings.wait_turn)
             sent.append(list(texts))
             return plane(settings, texts, timeout)
         with patch.object(a.embeddings, 'embed', side_effect=embed), patch.object(a.embeddings, 'embed_pending', return_value=0), \

@@ -18,10 +18,12 @@ so it never blocks the others."""
 from __future__ import annotations
 
 import http.client
+import contextlib
 import json
 import math
 import re
 import struct
+import threading
 import time
 import unicodedata
 import urllib.error
@@ -67,6 +69,13 @@ QUERY_PREFIX = 'task: search result | query: '
 # OpenAI's /v1/embeddings takes 8,191 tokens per input and 300,000 per request.
 LIMITS = {'local': (2048, 8192, 64), 'openai': (8191, 300000, 2048)}  # input, request, inputs per request
 SPECIAL_TOKENS = 16  # room for BOS/EOS and the like the server adds
+# A search's vector goes first on a local server. llama-server takes a request's inputs one slot each and queues the
+# rest, so a query sent while the background embedded sixteen long messages waited for all of them (seconds). The
+# background passes (embed_pending, passage_pass, Store.embed_new_facts) send at most BACKGROUND_INPUTS inputs a request,
+# fewer than the server's slots (-np 4 in deploy/embeddinggemma.service), and start none while a search waits for its
+# vector: at most YIELD_SECONDS a request, so they are held back, never stopped.
+BACKGROUND_INPUTS, YIELD_SECONDS = 3, 10
+ASKING, ASKED = [0], threading.Condition()  # requests of searches out now; told when one ends
 
 
 def settings(config):
@@ -183,9 +192,12 @@ def tokens(text, bytes_per_token=1.0):
     return math.ceil(len(text.encode()) / bytes_per_token) + SPECIAL_TOKENS
 
 
-def batches(texts, settings):
-    """The (fitted) texts in consecutive groups, each within the request limits."""
+def batches(texts, settings, background=False):
+    """The (fitted) texts in consecutive groups, each within the request limits (for the background, BACKGROUND_INPUTS
+    at most on a local server)."""
     per_input, per_request, inputs, per_token = limits(settings)
+    if background and (urllib.parse.urlsplit(settings.get('url', '')).hostname or '') != 'api.openai.com':
+        inputs = min(inputs, BACKGROUND_INPUTS)
     group, used = [], 0
     for text in (fit(t, per_input, per_token) for t in texts):
         cost = tokens(text, per_token)
@@ -240,13 +252,35 @@ def request(settings, texts, timeout=120):
     return [item['embedding'] for item in sorted(data, key=lambda d: d.get('index', 0))]
 
 
-def embed(settings, texts, timeout=120):
+@contextlib.contextmanager
+def asking():
+    """A search's request is out: the background waits (wait_turn)."""
+    with ASKED:
+        ASKING[0] += 1
+    try:
+        yield
+    finally:
+        with ASKED:
+            ASKING[0] -= 1
+            ASKED.notify_all()
+
+
+def wait_turn():
+    """Before a background request: while a search waits for its vector, at most YIELD_SECONDS."""
+    with ASKED:
+        ASKED.wait_for(lambda: not ASKING[0], YIELD_SECONDS)
+
+
+def embed(settings, texts, timeout=120, background=False):
     """Normalized vectors at the configured Matryoshka size; long texts are cut to fit the server and
-    big lists go in several requests."""
+    big lists go in several requests. background: a pass of the embedding worker, which lets searches go first."""
     dims = int(settings.get('dims', 256))
     raw = []
-    for group in batches(texts, settings):
-        raw += request(settings, group, timeout)
+    with contextlib.nullcontext() if background else asking():
+        for group in batches(texts, settings, background):
+            if background:
+                wait_turn()
+            raw += request(settings, group, timeout)
     result = []
     for vector in raw:
         if len(vector) < dims:
@@ -297,9 +331,9 @@ def refused(error):
 
 def embed_isolating(settings, rows, texts, timeout=120):
     """([(row, vector)], [(row, error class)]): a refused request is split in halves until each
-    refused input stands alone, so one bad input never holds back the rest."""
+    refused input stands alone, so one bad input never holds back the rest. The background's: searches go first."""
     try:
-        return list(zip(rows, embed(settings, texts, timeout))), []
+        return list(zip(rows, embed(settings, texts, timeout, background=True))), []
     except EmbeddingError as error:
         if not refused(error):
             raise
@@ -336,7 +370,7 @@ def blame(settings, done, failed):
     """Nothing went through: an input, or the server? A tiny probe tells; the server's failure is raised."""
     if failed and not done:
         try:
-            embed(settings, [document('none', 'ok')])
+            embed(settings, [document('none', 'ok')], background=True)
         except EmbeddingError:
             raise EmbeddingError(failed[0][1]) from None
 
