@@ -61,8 +61,10 @@ try{
  }
  // Connect on the line opens that source in Connections, + Add (its own form when this install has it there)
  {const [context,page]=await open();
+  // Connections shows first and asks for its sources after: wait for that request before reading what was asked
+  const sources=page.waitForResponse(r=>r.url().endsWith('/api/action')&&r.request().postDataJSON()?.action==='connect_sources');
   await page.locator('#task-g2 .gap-line [data-connect-open="whatsapp"]').click();
-  await page.waitForFunction(()=>!document.querySelector('#health').hidden);
+  await page.waitForFunction(()=>!document.querySelector('#health').hidden);await sources;
   assert.ok(asked.includes('connect_sources'),asked.join());
   assert.equal(await page.locator('#task-g1 [data-connect-open]').count(),0,'nothing unsynced: no Connect');
   await context.close()}
