@@ -9,6 +9,7 @@ from unittest.mock import patch
 
 import assistant as a
 from seams import patch_everywhere  # noqa: E402
+import served  # noqa: E402
 
 
 class SlowRequests(unittest.TestCase):
@@ -23,17 +24,7 @@ class SlowRequests(unittest.TestCase):
         self.app.config = {'accounts': [], 'tailscale_owner': 'owner@example.com', 'dashboard_host': 'machine.example:8443', 'port': 0, 'http_timeout': 1}
 
     def serve(self):
-        servers, real = [], a.http.server.ThreadingHTTPServer
-        def capture(*args, **kwargs):
-            servers.append(real(*args, **kwargs)); return servers[-1]
-        for patcher in (patch.object(a.http.server, 'ThreadingHTTPServer', side_effect=capture), patch.object(a.signal, 'signal'),
-                        patch.object(a.App, 'preparation_worker'), patch.object(a.App, 'delivery_worker')):
-            patcher.start(); self.addCleanup(patcher.stop)
-        thread = threading.Thread(target=self.app.serve, daemon=True); thread.start()
-        while not servers:
-            time.sleep(0.01)
-        self.addCleanup(lambda: (self.app.stop.set(), thread.join(5)))
-        return servers[0].server_address[1]
+        return served.serve(self, a)
 
     def slow_action(self, *_args, **_kwargs):
         with self.app.store.connect() as db:

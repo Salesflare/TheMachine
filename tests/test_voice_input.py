@@ -18,6 +18,7 @@ import wave
 from pathlib import Path
 from unittest.mock import patch
 import dashboard_parts
+import served
 
 ROOT = Path(__file__).parent.parent
 spec = importlib.util.spec_from_file_location('voice_assistant', ROOT / 'assistant.py')
@@ -646,23 +647,7 @@ class Api(unittest.TestCase):
     # Over HTTP: the larger body is only for voice_transcribe, and only up to a 2-minute clip
 
     def serve(self):
-        servers = []
-        real = a.http.server.ThreadingHTTPServer
-
-        def capture(*args, **kwargs):
-            servers.append(real(*args, **kwargs))
-            return servers[-1]
-        for patcher in (patch.object(a.http.server, 'ThreadingHTTPServer', side_effect=capture),
-                        patch.object(a.signal, 'signal'), patch.object(a.App, 'preparation_worker'),
-                        patch.object(a.App, 'delivery_worker')):
-            patcher.start()
-            self.addCleanup(patcher.stop)
-        thread = threading.Thread(target=self.app.serve, daemon=True)
-        thread.start()
-        while not servers:
-            time.sleep(0.01)
-        self.addCleanup(lambda: (self.app.stop.set(), thread.join(5)))
-        return servers[0].server_address[1]
+        return served.serve(self, a)
 
     def post(self, port, body, upload, length=None):
         """Status and answer; with length, only the headers go (the size check comes before the body is read)."""
