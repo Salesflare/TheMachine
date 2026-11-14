@@ -6,6 +6,8 @@ import json
 
 import error_feed
 from machine.faults import FAULT_STEPS
+from machine import todo_states
+from machine.store import todo_moves
 from timeutil import now
 
 
@@ -68,7 +70,8 @@ class FaultsStore:
                 if any(db.execute('SELECT 1 FROM faults WHERE fingerprint=? AND last_at>=?', (fp, cutoff)).fetchone()
                        or db.execute('SELECT 1 FROM fault_versions WHERE fingerprint=? AND version=?', (fp, version)).fetchone() for fp in prints):
                     continue
-                db.execute("UPDATE suggestions SET status='completed',completed_from='pending',early=0 WHERE id=?", (row['id'],))
+                db.execute("UPDATE suggestions SET completed_from='pending',early=0 WHERE id=?", (row['id'],))
+                todo_moves.transition(db, row['id'], todo_states.COMPLETED, 'fault_stopped', at=stamp)
                 db.execute('INSERT OR IGNORE INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)',
                            ('fault-stopped:' + row['id'], row['id'], 'complete', 'The error stopped after an update: not seen for a day.', 'assistant', stamp))
                 db.execute("UPDATE deliveries SET status='cancelled',reminder=0,updated_at=? WHERE suggestion_id=? AND message_id IS NULL", (stamp, row['id']))

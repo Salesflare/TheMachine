@@ -266,6 +266,8 @@ class FaultCardsSettle(unittest.TestCase):
         with self.store.connect() as db:
             self.assertEqual(db.execute('SELECT feedback,source FROM decisions WHERE suggestion_id=?', (self.sid,)).fetchone()[:],
                              ('The error stopped after an update: not seen for a day.', 'assistant'))
+            self.assertEqual([tuple(r) for r in db.execute('SELECT from_status,to_status,reason FROM todo_moves WHERE suggestion_id=?', (self.sid,))],
+                             [('pending', 'completed', 'fault_stopped')])
 
     def test_a_recent_error_or_a_card_about_more_stays_open(self):
         with self.store.connect() as db:

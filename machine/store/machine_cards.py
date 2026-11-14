@@ -13,6 +13,7 @@ from machine import bridge_wait
 from machine import system_logs
 from timeutil import now
 from machine import todo_states
+from machine.store import todo_moves
 
 # A sign-in from before a newer feature (machine/app/reconnect_asks.py): its to-do's signal, one per account and ask
 RECONNECT_KIND = 'machine.reconnect_ask'
@@ -51,7 +52,8 @@ def reconnected(db, account, ask, at):
     """The account's reconnect to-do, if open, closes itself as done: its sign-in has what it asked for now."""
     for row in db.execute("SELECT s.id FROM suggestions s JOIN events e ON e.id=json_extract(s.event_ids,'$[0]') WHERE e.kind=? "
                           f"AND e.source_id=? AND s.status IN {todo_states.sql(todo_states.NOT_STARTED)}", (RECONNECT_KIND, reconnect_source(account, ask))).fetchall():
-        db.execute("UPDATE suggestions SET status='completed',completed_from='pending',snoozed_until=NULL,resume_status=NULL,early=0 WHERE id=?", (row[0],))
+        db.execute("UPDATE suggestions SET completed_from='pending',snoozed_until=NULL,resume_status=NULL,early=0 WHERE id=?", (row[0],))
+        todo_moves.transition(db, row[0], todo_states.COMPLETED, 'reconnected', at=at)
         db.execute('INSERT OR IGNORE INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)',
                    ('reconnected:' + row[0], row[0], 'complete', 'Reconnected: the sign-in has it now.', 'assistant', at))
         db.execute("UPDATE deliveries SET status='cancelled',reminder=0,updated_at=? WHERE suggestion_id=? AND message_id IS NULL", (at, row[0]))
@@ -60,8 +62,8 @@ def reconnected(db, account, ask, at):
 def close_by_itself(db, suggestion_id, why, at):
     """An open to-do of The Machine's own closes itself as done: what it was about is over. `why` is its decision's
     note; anything not sent yet is not sent, and a sent message is marked for an edit."""
-    db.execute("UPDATE suggestions SET status='completed',completed_from='pending',snoozed_until=NULL,resume_status=NULL,early=0 WHERE id=?",
-               (suggestion_id,))
+    db.execute("UPDATE suggestions SET completed_from='pending',snoozed_until=NULL,resume_status=NULL,early=0 WHERE id=?", (suggestion_id,))
+    todo_moves.transition(db, suggestion_id, todo_states.COMPLETED, 'over', at=at)
     db.execute('INSERT OR IGNORE INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)',
                ('over:' + suggestion_id, suggestion_id, 'complete', why, 'assistant', at))
     db.execute("UPDATE deliveries SET status='cancelled',reminder=0,updated_at=? WHERE suggestion_id=? AND message_id IS NULL", (at, suggestion_id))

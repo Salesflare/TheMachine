@@ -395,7 +395,9 @@ class ToDos(unittest.TestCase):
         self.assertEqual(todos['sync failed 3 times in a day']['status'], 'pending')  # about the past day, not about now
         with self.store.connect() as db:
             note = db.execute("SELECT feedback FROM decisions WHERE suggestion_id=?", (closed[0],)).fetchone()[0]
+            moves = db.execute('SELECT suggestion_id,from_status,to_status,reason FROM todo_moves').fetchall()
         self.assertIn('no longer down', note)
+        self.assertEqual([tuple(m) for m in moves], [(closed[0], 'pending', 'completed', 'over')])
         class NoJournal:
             def read(self, cursor=None, since=None):
                 return []
