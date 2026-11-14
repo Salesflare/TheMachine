@@ -11,7 +11,10 @@ choice per item (mail_cleanup.py), and nothing changes until the owner confirms 
 (birthdays.py, birthdays_app.py): a to-do per close contact with a birthday today, its greeting drafted on their usual
 channel and sent only when the owner says so. Daily digest (reading_digest.py, reading_digest_app.py): plain code lists
 the new unread newsletters, and only when there are any does one small model call pick the few worth reading, for the
-interests the owner sees and edits on its card. A rename alone keeps this cheap path.
+interests the owner sees and edits on its card. Subscriptions and trials runs every month (MONTHLY;
+subscriptions.py, subscriptions_app.py): plain code finds recurring charges and trial, renewal and price notices in the
+mail, and only when there are any does one small model call confirm them; a daily plain-code check between runs warns
+about a charge within 7 days. A rename alone keeps this cheap path.
 
 Once the owner edits its words (or adds script steps), it runs as a normal routine on them: a read-only turn each run.
 Its origin still names the template, so Templates shows it as added. An edited Newsletter or Spam cleanup still sees
@@ -26,6 +29,7 @@ import i18n
 AT = '07:30'  # before the morning summary, so the to-do waits there; an hourly one runs at :30
 DAILY = 'daily'  # recurring.PRESETS
 HOURLY = 'hourly'  # routines.HOURLY: often enough to be there before the owner marks spam by hand
+MONTHLY = 'monthly'  # recurring.PRESETS: on the day it was added; the 7-day warning in between is daily plain code
 
 # key -> its name, what it does (the Templates list) and its words (its routine's words, what Edit shows), in the
 # owner's language at view time (scripts/i18n_extract.py SERVER_TEXT)
@@ -44,6 +48,11 @@ TEMPLATES = {
     'birthdays': {'name': 'Birthdays', 'what': 'Every morning, a to-do with a short greeting for each close contact who has a birthday.',
                   'words': 'Find my close contacts who have a birthday today. For each one, write a short greeting in their '
                            'language, where I usually talk with them, for me to send.'},
+    'subscriptions': {'name': 'Subscriptions and trials', 'rule': MONTHLY,
+                      'what': 'Every month, your subscriptions and trials and what they cost, plus a heads-up before one charges. Keep or cancel each one.',
+                      'words': 'Find my subscriptions and free trials in receipts, invoices and renewal notices in my mail: what each '
+                               'costs, when it charges next, trials that end and prices that go up. Put them in one to-do where I pick '
+                               'Keep or Cancel for each, and warn me when one charges within 7 days.'},
 }
 CLEANUP = ('newsletters', 'spam')  # an edited one may still end in the cleanup to-do (routines_app.routine_cleanup_lines)
 

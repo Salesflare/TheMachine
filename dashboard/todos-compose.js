@@ -4,14 +4,15 @@
 // (compose_from: Work for a work contact). Nothing goes out until Send: that makes the email a draft on a to-do of its own
 // (compose_email) and sends exactly that revision (sendConfirmed, Store.confirm_action), so it goes out, shows and settles
 // like any sent draft. Without a mailbox that can send, the address opens the mail app as before; Open in email in the
-// composer does too, with what was typed.
+// composer does too, with what was typed. body: a draft to start from (a subscription's Cancel, todos-subs.js), sent only
+// on the owner's Send like any other.
 let composeBusy=false;
-async function openCompose(to,subject,href){if(composeBusy)return;composeBusy=true;let r=null;
+async function openCompose(to,subject,href,body){if(composeBusy)return;composeBusy=true;let r=null;
  try{r=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'compose_from',args:{to}})})}
  catch(e){errCaught(e)}finally{composeBusy=false}
  if(!r?.from?.length){location.href=href;return}
  if($('#send-dialog').open)$('#send-dialog').close();
- sendBatch=null;sendTask=null;sendRevision=null;sendDraft={kind:'email',compose:true,to:[to],to_name:r.to_name||'',subject:subject||'',body:'',from:r.from};
+ sendBatch=null;sendTask=null;sendRevision=null;sendDraft={kind:'email',compose:true,to:[to],to_name:r.to_name||'',subject:subject||'',body:body||'',from:r.from};
  sendFrom=r.from.some(c=>c.from===r.default)?r.default:r.from[0].from;
  for(const id of ['send-step','send-recipients','send-bounce','send-files','send-ask','send-ask-open','send-edit','send-subject-label'])$('#'+id).hidden=id!=='send-subject-label';
  $('#send-title').textContent=t('New email');$('#send-act').hidden=false;$('#send-confirm').hidden=false;$('#send-confirm').disabled=false;$('#send-confirm').textContent=t('Send now');
@@ -27,7 +28,7 @@ function composeHead(){const d=sendDraft;if(!d?.compose)return;const froms=d.fro
  setHTML($('#send-head dd'),cmTrigger('from','from',sendFrom,'from-pick',html` id="send-from" translate="no"`))}
 // Send: the subject and the message first; then the draft on its to-do, and that exact revision confirmed. When the
 // confirm doesn't go through, the email waits on its to-do, ready to send from there.
-async function composeSend(b){const d=sendDraft,subject=$('#send-subject').value.trim(),body=mailOut('');
+async function composeSend(b){const d=sendDraft,subject=$('#send-subject').value.trim(),body=mailOut(d.body);
  if(body==null){b.disabled=false;return}
  const miss=!subject?t('Add a subject first.'):!body.trim()?t('Write the message first.'):'';
  if(miss){$('#send-error').textContent=miss;(subject?mailRich():$('#send-subject')).focus();b.disabled=false;return}

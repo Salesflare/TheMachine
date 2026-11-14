@@ -68,6 +68,7 @@ import birthdays_facebook
 import mail_cleanup
 import meeting_prep
 import reading_digest
+import subscriptions
 import bring_in
 import missed_work
 import next_actions
@@ -570,6 +571,8 @@ class ViewsStore(ConversationStore):
         if cleanup:extra['cleanup']=cleanup  # a routine template's to-do: Keep or Unsubscribe, Spam or Not spam, per item (mail_cleanup.py)
         digest=reading_digest.view(db,suggestion['id'],[row['metadata'] for row in rows],**({'rows':pre['digest'].get(suggestion['id'],{})} if pre and 'digest' in pre else {}))
         if digest:extra['digest']=digest  # the Daily digest: why each one matters, More or Less like this (reading_digest.py)
+        subs=subscriptions.view(db,suggestion['id'],[row['metadata'] for row in rows])
+        if subs:extra['subs']=subs  # Subscriptions and trials: Keep or Cancel per subscription (subscriptions.py)
         if meeting_prep.is_briefing(suggestion.get('dedupe_key')):extra['briefing']=True  # a meeting briefing: only for reading (meeting_prep.py)
         facebook=birthdays_facebook.view(db,suggestion['id'])
         if facebook:extra['facebook_birthdays']=facebook  # Birthdays' import from Facebook: Import, the preview, Save (birthdays_facebook.py)

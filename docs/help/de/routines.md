@@ -3,9 +3,9 @@ title: Routinen
 area: cards
 summary: Arbeit, die deine Machine von selbst in einem Rhythmus erledigt, wie eine Montagsübersicht deiner offenen Deals. Sie liest nur.
 covers: tab:routines
-code: routines.py, routines_app.py, routine_recipe.py, routine_imports.py, routine_patterns.py, routine_changes.py, routine_templates.py, mail_cleanup.py, mail_cleanup_app.py, birthdays.py, birthdays_app.py, birthdays_facebook.py, birthdays_facebook_app.py, reading_digest.py, reading_digest_app.py, dashboard/routines-page.js, dashboard/todos-digest.js, dashboard/todos-cleanup.js, dashboard/todos-facebook-birthdays.js, dashboard/todos-facebook-people.js
+code: routines.py, routines_app.py, routine_recipe.py, routine_imports.py, routine_patterns.py, routine_changes.py, routine_templates.py, mail_cleanup.py, mail_cleanup_app.py, birthdays.py, birthdays_app.py, birthdays_facebook.py, birthdays_facebook_app.py, reading_digest.py, reading_digest_app.py, subscriptions.py, subscriptions_app.py, dashboard/routines-page.js, dashboard/todos-digest.js, dashboard/todos-cleanup.js, dashboard/todos-facebook-birthdays.js, dashboard/todos-facebook-people.js, dashboard/todos-subs.js
 order: 10
-keywords: routine, daily digest, interests, automation, scheduled, every week, every morning, report, suggested, digest, newsletter, birthday, facebook birthdays, import birthdays
+keywords: routine, daily digest, interests, automation, scheduled, every week, every morning, report, suggested, digest, newsletter, birthday, facebook birthdays, import birthdays, subscriptions, free trial, renewal, cancel subscription
 ---
 ## Eine anlegen
 
@@ -17,7 +17,7 @@ Ohne Uhrzeit läuft sie um 8:00. Die Uhrzeit gilt auf der Uhr deiner Machine. Ih
 
 ## Vorlagen
 
-Unter **Vorlagen** unten auf Routinen schaltet **Hinzufügen** eine fertige Routine ein. Sie läuft sofort einmal und dann jeden Morgen um 7:30 (Spam aufräumen jede Stunde). Ihre Karte zeigt ihre Worte wie jede Routine, und **Bearbeiten** ändert sie oder ihren Namen.
+Unter **Vorlagen** unten auf Routinen schaltet **Hinzufügen** eine fertige Routine ein. Sie läuft sofort einmal und dann jeden Morgen um 7:30 (Spam aufräumen jede Stunde, Abos und Testphasen einmal im Monat). Ihre Karte zeigt ihre Worte wie jede Routine, und **Bearbeiten** ändert sie oder ihren Namen.
 
 Kommen viele Newsletter an, während Newsletter aufräumen aus ist (25 oder mehr in einer Woche, von mindestens 5 Absendern), sagt eine Zeile über deinen To-dos, wie viele kamen und was es tun würde, mit **Einschalten** und **Nein danke**.
 
@@ -56,6 +56,10 @@ Sie liest nie von selbst neu: Das macht **Erneut importieren** in der Aufgabe. D
 Freunde, die niemand in deinem Graph hat, werden gezählt, mit ein paar Namen. **… als persönliche Kontakte hinzufügen** fügt sie alle auf einmal hinzu, auch nach Speichern: jede mit Name und Geburtstag, nie mit einer Work Fleet geteilt. Einen Namen, den schon jemand in deinem Graph hat oder jemand hatte, den du endgültig gelöscht hast, überspringt sie. Geburtstagserinnerungen kommen weiterhin nur für Leute, denen du schreibst.
 
 **Rückgängig** in der Aufgabe entfernt genau diese Personen wieder, auch nach **Erneut importieren**.
+
+**Abos und Testphasen** liest einmal im Monat deine Belege, Rechnungen und Verlängerungshinweise und fasst deine Abos in einer Aufgabe zusammen: was jedes kostet, wann es als Nächstes abgebucht wird und ein Hinweis, wenn eine Testphase endet oder ein Preis steigt. Nur sichere Funde stehen darin. Findet sie nichts, gibt es keine Aufgabe.
+
+Wähle für jedes **Behalten** oder **Kündigen**. Ein behaltenes wird nicht erneut gefragt, außer sein Preis ändert sich. **Kündigen** gibt ihre Kündigungsseite oder einen Entwurf, der um die Kündigung bittet und erst rausgeht, wenn du ihn sendest. Zwischen den Läufen prüft sie täglich und macht eine Aufgabe, wenn eine Testphase oder Verlängerung innerhalb von 7 Tagen abgebucht wird.
 
 Solange ihre Worte die der Vorlage sind, läuft sie mit eigenem Code, ohne dein KI-Abo (Spam aufräumen listet neue Mail von unbekannten Absendern zuerst per Code und stellt deiner KI nur dann eine kurze Frage, wenn es welche gibt). Ein neuer Name ändert daran nichts. Änderst du ihre Worte, läuft sie wie jede Routine mit deinen Worten.
 

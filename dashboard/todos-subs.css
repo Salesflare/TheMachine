@@ -1,0 +1,17 @@
+/*@lazy*/
+/* Subscriptions and trials (todos-subs.js): a row per subscription with its price, next charge, a flag for a trial's end
+   or a price going up, and Keep or Cancel; a canceled one shows its way out */
+.sb-lead{margin:8px 0 0}
+.sb-list{list-style:none;margin:10px 0 0;padding:0;border-top:1px solid var(--c-line)}
+.sb-row{padding:10px 0;border-bottom:1px solid var(--c-line)}
+.sb-line{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 12px}
+.sb-what{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1 1 220px}.sb-what b{overflow-wrap:anywhere}
+.sb-sub{color:var(--c-text-2);font-size:var(--fs-sm)}
+.sb-flag{align-self:flex-start;margin-top:2px;padding:1px 8px;border-radius:999px;background:color-mix(in srgb,var(--c-amber) 20%,transparent);color:var(--text);font-size:var(--fs-sm)}
+.sb-open{align-items:stretch;padding:0;margin:0;border:0;background:none;box-shadow:none;color:inherit;font:inherit;text-align:start;cursor:pointer}.sb-open:hover b,.sb-open:focus-visible b{text-decoration:underline;text-underline-offset:3px}
+.sb-pick{display:flex;gap:6px;flex:none}
+.sb-pick button{min-height:32px;margin:0;padding:4px 12px;border:1px solid var(--c-line-strong);border-radius:999px;background:transparent;box-shadow:none;color:var(--text);font-size:var(--fs-sm)}
+.sb-pick button:hover{border-color:var(--mint)}
+.sb-end{flex:none;color:var(--c-text-2);font-size:var(--fs-sm)}.sb-end .link{margin-inline-start:6px;font-size:var(--fs-sm)}
+.sb-draft{margin:8px 0 0;padding:8px 12px;border-radius:var(--r-md);background:var(--c-sunken);font-size:var(--fs-sm)}.sb-draft p{margin:0}
+.sb-acts{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;margin:6px 0 0}.sb-acts .primary{min-height:32px;padding:4px 14px}
