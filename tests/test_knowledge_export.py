@@ -214,7 +214,8 @@ class KnowledgeExport(unittest.TestCase):
         self.assertEqual(knowledge.FACT_SORTS, a.FACT_SORTS)
         self.assertEqual(set(a.FACT_KINDS), {'fact', 'draft'}, 'a new kind of fact: export it (facts or rules) in collect()')
         self.assertEqual(set(brain.KINDS), set(knowledge.KIND_FOLDERS))
-        built = set(re.findall(r"links\.append\(\([^\n]*?'([a-z_]+)', round", (ROOT / 'graph.py').read_text()))
+        build = [ROOT / 'graph.py', *sorted((ROOT / 'machine' / 'graph').glob('*.py'))]  # the build and its passes
+        built = set(re.findall(r"links\.append\(\([^\n]*?'([a-z_]+)', round", ''.join(p.read_text() for p in build)))
         self.assertTrue(built and built <= set(knowledge.LINKS), f'link kinds without a label: {built - set(knowledge.LINKS)}')
         self.assertEqual(set(skills.STATUSES) - set(knowledge.SKILL_STATUSES), {'proposed', 'incoming'})
         exported = {f['sort'] for f in self.bundle['facts']}
