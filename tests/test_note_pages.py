@@ -1,6 +1,7 @@
 """Notes in the Graph (note_pages.py, note_pages_app.py): the tree, links and Linked from, the owner's edits and how
 The Machine's own notes keep them (sync), merges and Undo, and a line from a fact that edits the fact."""
 import importlib.util
+import sqlite3
 import tempfile
 import unittest
 from pathlib import Path
@@ -46,6 +47,23 @@ class NotePagesTests(unittest.TestCase):
         self.assertEqual([p['name'] for p in page['path']], ['Home', 'Appliances'])
         self.assertEqual(page['parent'], appliances)
         self.assertEqual(note_pages.count(self.db), 4)
+
+    def test_their_words_are_sealed_at_rest(self):
+        temp = tempfile.TemporaryDirectory()
+        self.addCleanup(temp.cleanup)
+        self.store = a.Store(Path(temp.name) / 'events.sqlite', protect=True)
+        self.db = self.enterContext(self.store.connect())
+        note_pages.sync(self.db, 'trip', [trip()], LATER)
+        self.db.commit()
+        raw = sqlite3.connect(self.store.path)
+        stored = [*raw.execute('SELECT title FROM note_pages'), *raw.execute('SELECT text FROM note_page_lines')]
+        raw.close()
+        for (value,) in stored:
+            self.assertNotIn(b'Lisbon', value if isinstance(value, bytes) else value.encode())
+            self.assertNotIn(b'ABC123', value if isinstance(value, bytes) else value.encode())
+        found = note_pages.find(self.db, 'lisbon')
+        self.assertEqual([x['name'] for x in found], ['Lisbon'])
+        self.assertIn('ABC123', note_pages.page(self.db, found[0]['id'])['lines'][0]['text'])
 
     def test_a_note_never_goes_under_itself_or_one_under_it(self):
         home = self.new('Home')
