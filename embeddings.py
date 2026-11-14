@@ -17,11 +17,13 @@ the server still refuses is set aside per event version (`event_vector_skips`, w
 so it never blocks the others."""
 from __future__ import annotations
 
+import array
 import http.client
 import json
 import math
 import re
 import struct
+import sys
 import time
 import unicodedata
 import urllib.error
@@ -263,6 +265,12 @@ def pack(vector):
 
 def unpack(blob):
     return struct.unpack('<%df' % (len(blob) // 4), blob)
+
+
+def floats(blob):
+    """A blob's vector as one float32 array where floats are stored little-endian, as pack writes them, else unpack. For
+    a vector compared once: a copy of its bytes, not a tuple of floats, about 20% quicker to read and score."""
+    return array.array('f', blob) if sys.byteorder == 'little' and len(blob) % 4 == 0 else unpack(blob)
 
 
 def pending(db, settings, limit, newest=True, history=False):
@@ -524,18 +532,26 @@ def related(connect, settings, accounts, event_ids=(), query='', limit=8, floor=
             live_probes = [vector for event_id, version, vector in probes if versions.get(event_id) == version]
             # CROSS JOIN: each vector, then its event by id. A plain join walked every event of the accounts (most have no
             # vector) by events_account_time and looked each vector up: a search took twice as long.
+            alone, size = bool(asked) and not live_probes, len(asked) if asked else 0
+
+            def compare(blob):
+                """(margin over its floor, similarity) of the vector's best comparison, None without any. A search by its
+                query alone (Messages, the palette) compares each vector once: read as an array (floats), one sumprod, no
+                lists; this per-vector work was most of its time. Nothing is kept between searches."""
+                if alone:
+                    vector = floats(blob)
+                    c = math.sumprod(asked, vector) if len(vector) == size else cosine(asked, vector)
+                    return c - query_floor, c
+                vector = unpack(blob)
+                return max([(c - floor, c) for c in (cosine(p, vector) for p in live_probes)] + [(c - query_floor, c) for c in ([cosine(asked, vector)] if asked else [])], default=None)
             for event_id, blob in db.execute(
                     'SELECT v.event_id,v.vector FROM event_vectors v CROSS JOIN events e ON e.id=v.event_id '
                     'WHERE e.account_id IN (' + marks + ') AND e.deleted=0 AND v.version=e.version AND v.model=? AND v.dims=?'
                     + (' AND e.history=0' if signals_only else ''), (*accounts, model, dims)):
                 if event_id in skip:
                     continue
-                vector = unpack(blob)
-                comparisons = [(c - floor, c) for c in (cosine(p, vector) for p in live_probes)] + [(c - query_floor, c) for c in ([cosine(asked, vector)] if asked else [])]
-                if not comparisons:
-                    continue
-                best = max(comparisons)
-                if best[0] >= 0:
+                best = compare(blob)
+                if best and best[0] >= 0:
                     scored.append((*best, event_id))
             for event_id, start, chars, blob in db.execute(
                     'SELECT p.event_id,p.start,p.chars,p.vector FROM event_passages p CROSS JOIN events e ON e.id=p.event_id '
@@ -543,10 +559,8 @@ def related(connect, settings, accounts, event_ids=(), query='', limit=8, floor=
                     + (' AND e.history=0' if signals_only else ''), (*accounts, model, dims)):
                 if event_id in skip:
                     continue
-                vector = unpack(blob)
-                comparisons = [(c - floor, c) for c in (cosine(p, vector) for p in live_probes)] + [(c - query_floor, c) for c in ([cosine(asked, vector)] if asked else [])]
-                best = max(comparisons, default=(-1, 0))
-                if best[0] >= 0 and best > part.get(event_id, (-1, 0))[:2]:
+                best = compare(blob)
+                if best and best[0] >= 0 and best > part.get(event_id, (-1, 0))[:2]:
                     part[event_id] = (*best, start, chars)
     if part:  # one line per signal: its best part
         whole = {i: (m, s) for m, s, i in scored}

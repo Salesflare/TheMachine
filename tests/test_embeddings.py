@@ -417,6 +417,33 @@ class Embeddings(unittest.TestCase):
         self.assertEqual(sumprod.call_count, 2, 'every score is one math.sumprod call, never a Python loop')
         self.assertEqual(sumprod.call_args.args, ([1.0, 2.0], [1.0, 1.0]))
 
+    def test_vectors_read_in_place_rank_as_unpacked_ones(self):
+        # A search by its query reads each stored vector as a float32 array (floats) with one sumprod, instead of
+        # unpacking it into a tuple: the same hits in the same order, with the same similarity and passage.
+        import random
+        rnd = random.Random(5)
+        words = 'invoice lunch offsite hotel budget agenda roses tulips contract renewal pricing travel flight review'.split()
+        self.store.commit_page('work', {}, [event(f'r{i}', ' '.join(rnd.sample(words, 2)), ' '.join(rnd.choices(words, k=12)),
+                                                  kind='meeting.transcript' if i % 7 == 0 else 'gmail.message') for i in range(120)])
+        self.embed_all()
+        with self.store.connect() as db:  # a few later passages, as passage_pass leaves them
+            for n, (i,) in enumerate(db.execute("SELECT id FROM events WHERE kind='meeting.transcript'").fetchall()):
+                db.execute('INSERT INTO event_passages(event_id,seq,version,model,dims,start,chars,vector) VALUES(?,1,1,?,256,?,50,?)',
+                           (i, SETTINGS['model'], 100 + n, emb.pack(emb.embed(SETTINGS, [f'title: x | text: {words[n % len(words)]} flight'])[0])))
+        searches = [(['work', 'home'], (), 'invoice budget'), (['work'], (), 'hotel flight'), (['work', 'home'], (self.ids('work', '1'),), ''),
+                    (['work'], (self.ids('work', 'r3'),), 'tulips')]
+        found = lambda: [[(*h, h.start, h.chars) for h in emb.related(self.store.connect, SETTINGS, accounts, seeds, query, 40)] for accounts, seeds, query in searches]
+        with patch.object(emb, 'floats', emb.unpack):
+            rows = found()
+        self.assertTrue(all(rows) and any(h[2] for f in rows for h in f))  # hits, some of them in a later passage
+        with patch.object(emb, 'floats', wraps=emb.floats) as floats, patch.object(emb, 'unpack', wraps=emb.unpack) as unpack:
+            self.assertEqual(found(), rows)
+        self.assertTrue(floats.call_count and unpack.call_count)  # by its query alone: an array; by seeds: unpacked
+        blob = emb.pack([.5, -.25, 1.0 / 3])
+        self.assertEqual(list(emb.floats(blob)), list(emb.unpack(blob)))
+        with patch.object(emb.sys, 'byteorder', 'big'):  # stored little-endian: unpacked as before
+            self.assertEqual(emb.floats(blob), emb.unpack(blob))
+
 
 if __name__ == '__main__':
     unittest.main()
