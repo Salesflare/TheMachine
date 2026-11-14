@@ -38,6 +38,7 @@ import fleet_trust as ft
 import graph
 from i18n import t
 from machine import stamps
+from machine.kinds import of
 import shared_graph_private
 from shared_graph_private import (ADDRESS, AUTOMATED_LABELS, ITEM_KINDS, MAIL_KINDS, addresses, automated_message, conversation_of,  # noqa: F401
                                   item_people, thread_of, unit_of, _kept_conversations)
@@ -93,13 +94,14 @@ TIMELINE = 12               # lines per record
 TIMELINE_PROJECT = 40       # lines per project: its full timeline (messages, meetings, chats, cards and moves)
 # A chat (not a meeting, its notes or a doc): one the review judged colleagues only stays with the owner, also on a
 # team board (the owner's choice, 2026-10-31): a chat carries no addresses to tell, so the review's call is what decides.
-CHAT_KINDS = ('whatsapp.message', 'slack.message', 'teams.message', 'linkedin.message', 'x.dm', 'x.mention', 'telegram.message', 'signal.message')
+CHAT_KINDS = of(timeline='chats')  # machine/kinds.py
+MEETING_KINDS = of(timeline='meetings')
 ITEM_WORDS = {'meetings': 'Meeting', 'intercom': 'Intercom', 'chats': 'Chat', 'email': 'Email', 'docs': 'Doc'}
 
 
 def _source(kind):
     """What a shared item is, for its label: meetings, intercom, chats or email."""
-    return ('meetings' if kind in ('calendar.event', 'salesflare.meeting', 'zoom.summary', 'meeting.notes', 'meeting.transcript') else 'intercom' if kind == 'intercom.conversation'
+    return ('meetings' if kind in MEETING_KINDS else 'intercom' if kind == 'intercom.conversation'
             else 'email' if kind in MAIL_KINDS else 'docs' if kind in graph.DOC_KINDS else 'chats')
 HEX = re.compile(r'[a-f0-9]{32}')
 ISO_AT = re.compile(r'\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\+00:00')  # now()'s form

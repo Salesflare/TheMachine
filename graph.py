@@ -57,7 +57,7 @@ import mail_senders
 from mail_senders import AUTOMATED_PRECEDENCE, BULK, RELAY, address_name, addresses, automated, bulk, list_unsubscribes, mass_mail, owner_kept, relay, shared_inbox  # noqa: F401
 import person_summary
 from machine import stamps, todo_states
-from machine.kinds import KINDS
+from machine.kinds import KINDS, of
 from machine.names import SERVICES
 from machine.owner_error import OwnerError
 from machine.store import graph_history, graph_identifiers
@@ -154,7 +154,7 @@ DECISION_WEIGHT = {'accept': 1.0, 'send': 1.0, 'complete': 1.0, 'other': 0.5, 'r
 PROBABLE = 0.72
 UNNAMED = 0.75
 UNNAMED_DAYS = 45
-DOC_KINDS = ('docs.comment', 'docs.mention', 'docs.suggestion', 'docs.shared')
+DOC_KINDS = of(service='docs')  # machine/kinds.py
 UNNAMED_KINDS = {'gmail.message', 'calendar.event', 'salesflare.email', 'salesflare.meeting', 'intercom.conversation', 'github.notification'}
 OPEN_CARD = todo_states.OPEN
 # Boards: projects of one kind (partner listings, buyers, onboardings) in stages. Every board ends in this row too.
@@ -1773,10 +1773,7 @@ def detail(db, node_id, events=12):
 # their address, their Intercom contact or their organization's domain, a Zoom summary of a meeting they were in, the
 # cards and promises that came from their signals, and their projects' moves. The owner's own view only: the team's
 # Graph (shared_graph.py) never reads it.
-TIMELINE_SOURCES = (('email', ('gmail.message', 'salesflare.email')),
-                    ('meetings', ('calendar.event', 'salesflare.meeting', 'zoom.summary', 'meeting.notes', 'meeting.transcript')),
-                    ('intercom', ('intercom.conversation',)),
-                    ('chats', ('whatsapp.message', 'slack.message', 'teams.message', 'linkedin.message', 'x.dm', 'x.mention', 'telegram.message', 'signal.message')))
+TIMELINE_SOURCES = tuple((group, of(timeline=group)) for group in ('email', 'meetings', 'intercom', 'chats'))  # machine/kinds.py
 TIMELINE_GROUPS = ('email', 'meetings', 'intercom', 'chats', 'cards', 'projects', 'other')
 TIMELINE_CARDS = (*OPEN_CARD, 'completed')  # a dismissed card is not part of the story
 ZOOM_NEAR = dt.timedelta(minutes=30)       # a Zoom summary within this of one of their meetings is that meeting's

@@ -7,20 +7,20 @@ import json
 import re
 
 import graph
+from machine.kinds import of
 
 ADDRESS = re.compile(r'[^@\s<>",;]+@[^@\s<>",;]+\.[^@\s<>",;]+')
 MAIL_KINDS = ('gmail.message', 'ms_graph.message', 'outlook.message', 'salesflare.email', 'intercom.conversation')
 # A project's timeline beyond its email threads: meetings and their notes, Intercom conversations and chats. On a board
 # the team sees, or one shared with chosen teammates, they count as shared by being on it (visibility).
-ITEM_KINDS = ('calendar.event', 'salesflare.meeting', 'zoom.summary', 'meeting.notes', 'meeting.transcript', 'intercom.conversation', 'whatsapp.message', 'slack.message', 'teams.message',
-              'linkedin.message', 'x.dm', 'x.mention', 'telegram.message', 'signal.message', *graph.DOC_KINDS)
+ITEM_KINDS = (*of(timeline='meetings'), *of(timeline='intercom'), *of(timeline='chats'), *graph.DOC_KINDS)  # machine/kinds.py
 MAIL, ITEMS = frozenset(MAIL_KINDS), frozenset(ITEM_KINDS)
 # Where a message's people are, for what SQLite can see of a sealed message (message_seal.PLAIN_METADATA: from, to, the
 # member who wrote it, and the thread, chat and channel it is in; cc, a meeting's guests and what kind of chat it is are
 # sealed). A chat's people are its sender and recipients, a Slack message's the member who wrote it (and, in a direct
 # message, the other one: sealed, so visibility reads that from the message itself); everything else can have someone
 # in a sealed part and is opened.
-CHATS = frozenset({'whatsapp.message', 'telegram.message', 'signal.message', 'teams.message', 'linkedin.message', 'x.dm', 'x.mention'})
+CHATS = frozenset(of(timeline='chats')) - {'slack.message'}
 CHATS_SQL = '(' + ','.join(f"'{k}'" for k in sorted(CHATS)) + ')'
 # The domain of every address in a message's metadata (JSON text, lowercased): what follows an @ up to where
 # ADDRESS stops. ESCAPED: text that may hold one in another form (an escaped ASCII character, a Kelvin sign).

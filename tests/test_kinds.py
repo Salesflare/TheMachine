@@ -50,7 +50,7 @@ KIND_LISTS = {
     'fleet_requests.py': 4,
     'follow_ups.py': 2,
     'gap_note.py': 1,
-    'graph.py': 18,
+    'graph.py': 14,
     'graph_board_reviews.py': 1,
     'machine/app/action_runs.py': 2,
     'machine/app/card_actions.py': 2,
@@ -88,10 +88,9 @@ KIND_LISTS = {
     'missed_work.py': 3,
     'next_actions.py': 1,
     'project_about.py': 1,
-    'record_log.py': 1,
     'sandbox/fixture.py': 2,
-    'shared_graph.py': 3,
-    'shared_graph_private.py': 7,
+    'shared_graph.py': 1,
+    'shared_graph_private.py': 5,
     'talk_live.py': 1,
     'dashboard/events-list.js': 1,
     'dashboard/graph-followups-settings.js': 1,
@@ -233,6 +232,24 @@ class Registry(unittest.TestCase):
         self.assertEqual(__import__('activity_log').MESSAGE_KINDS, {
             'email': 'Email', 'email_demo': 'Email', 'linkedin': 'LinkedIn', 'slack': 'Slack', 'x': 'X', 'whatsapp': 'WhatsApp',
             'telegram': 'Telegram', 'signal': 'Signal', 'intercom': 'Intercom', 'doc_reply': 'Docs'})
+        # The timeline groups that ask the registry now hold what they spelled out before it (PR 4 moved them)
+        meetings = {'calendar.event', 'salesflare.meeting', 'zoom.summary', 'meeting.notes', 'meeting.transcript'}
+        chats = {'whatsapp.message', 'slack.message', 'teams.message', 'linkedin.message', 'x.dm', 'x.mention', 'telegram.message', 'signal.message'}
+        self.assertEqual({group: set(found) for group, found in graph.TIMELINE_SOURCES}, {
+            'email': {'gmail.message', 'salesflare.email'}, 'meetings': meetings, 'intercom': {'intercom.conversation'}, 'chats': chats})
+        self.assertEqual(graph.DOC_KINDS, ('docs.comment', 'docs.mention', 'docs.suggestion', 'docs.shared'))
+        import record_log
+        import shared_graph
+        import shared_graph_private
+        self.assertEqual(set(shared_graph.CHAT_KINDS), chats)
+        self.assertEqual(set(shared_graph.MEETING_KINDS), meetings)
+        self.assertEqual(set(shared_graph_private.ITEM_KINDS), meetings | {'intercom.conversation'} | chats | set(graph.DOC_KINDS))
+        self.assertEqual(shared_graph_private.CHATS, chats - {'slack.message'})
+        self.assertEqual(record_log.SERVICES, {
+            'gmail.message': 'email', 'salesflare.email': 'email', 'calendar.event': 'meeting', 'salesflare.meeting': 'meeting',
+            'zoom.summary': 'meeting', 'meeting.notes': 'meeting', 'meeting.transcript': 'meeting', 'whatsapp.message': 'WhatsApp',
+            'slack.message': 'Slack', 'teams.message': 'Teams', 'linkedin.message': 'LinkedIn', 'telegram.message': 'Telegram',
+            'signal.message': 'Signal', 'x.dm': 'X', 'x.mention': 'X', 'intercom.conversation': 'Intercom', 'github.notification': 'GitHub'})
         # every connector kind is here, with its connector's view
         from machine.sources.connectors import load_connector
         for path in sorted((ROOT / 'connectors').glob('*.py')):

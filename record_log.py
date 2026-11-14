@@ -22,12 +22,13 @@ import json
 import re
 import sqlite3
 
+from machine.kinds import KINDS
+
 LIMIT = 20   # lines per record, newest first; the page shows a few and the rest under Show more
 SLACK_ID = re.compile(r'\b[UW][A-Z0-9]{8,}\b')
-SERVICES = {'gmail.message': 'email', 'salesflare.email': 'email', 'calendar.event': 'meeting', 'salesflare.meeting': 'meeting',
-            'zoom.summary': 'meeting', 'meeting.notes': 'meeting', 'meeting.transcript': 'meeting', 'whatsapp.message': 'WhatsApp',
-            'slack.message': 'Slack', 'teams.message': 'Teams', 'linkedin.message': 'LinkedIn', 'telegram.message': 'Telegram', 'signal.message': 'Signal',
-            'x.dm': 'X', 'x.mention': 'X', 'intercom.conversation': 'Intercom', 'github.notification': 'GitHub'}
+# Where a line came in: "meeting" for one on a person's meetings timeline, else the Graph's word (graph.VIA, machine/kinds.py)
+SERVICES = {kind: 'meeting' if row['timeline'] == 'meetings' else row['via'] for kind, row in KINDS.items()
+            if row['timeline'] == 'meetings' or row['via']}
 
 
 def _json(text, default):
