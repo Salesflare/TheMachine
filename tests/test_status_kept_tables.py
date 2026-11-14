@@ -155,6 +155,26 @@ class StatusKeptByTable(unittest.TestCase):
         self.status()
         self.assertEqual((self.builds, made), ([], []))
 
+    def test_a_page_load_keeps_it_and_opening_a_to_do_builds_it_again(self):
+        """activity_seen: the page's own load (a visit) and the list's poll (to-dos shown, the active hour) are never read
+        by the status and keep it; an open of a to-do is (Still needed?) and builds it again."""
+        self.store.note_activity('visit')  # activity_seen is made: the status is kept by its opens from here on
+        with patch('machine.app.status.now', return_value=NOW.isoformat()):  # the minute stands still
+            self.status(); self.status(); self.builds.clear()
+            self.store.note_activity('visit')
+            self.store._activity_at = 0
+            self.store.note_activity('dashboard')
+            self.status()
+            self.assertEqual(self.builds, [])
+            with self.store.connect() as db:
+                card = db.execute('SELECT id FROM suggestions LIMIT 1').fetchone()[0]
+            self.store.note_activity('opened', card)
+            self.status()
+            self.assertEqual(len(self.builds), 1)
+            self.store.note_activity('opened', card)  # the same open again that day: nothing new
+            self.status()
+            self.assertEqual(len(self.builds), 1)
+
     def test_what_it_reads_outside_the_database_builds_it_again(self):
         """Preparations held back in memory, USER.md (Learning's "You corrected …") and the disconnect receipts."""
         self.app.config['openclaw_workspace'] = self.temp.name

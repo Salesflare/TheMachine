@@ -88,6 +88,29 @@ def watch_events_shared(db):
         db.execute(sql)
 
 
+# activity_opened: activity_seen as the status reads it, the owner's opens of a to-do (still_needed.last_touch). The
+# rest of activity_seen (a page visit, the to-dos shown, the active hour) is written by the page's own load and poll and
+# never read by the status, so each load made the next status build again in full.
+ACTIVITY_OPENED = (
+    "CREATE TRIGGER IF NOT EXISTS stamp_activity_opened_insert AFTER INSERT ON activity_seen WHEN new.kind='opened' BEGIN "
+    "UPDATE data_stamps SET n=n+1 WHERE name='activity_opened'; END",
+    "CREATE TRIGGER IF NOT EXISTS stamp_activity_opened_update AFTER UPDATE ON activity_seen WHEN old.kind='opened' "
+    "OR new.kind='opened' BEGIN UPDATE data_stamps SET n=n+1 WHERE name='activity_opened'; END",
+    "CREATE TRIGGER IF NOT EXISTS stamp_activity_opened_delete AFTER DELETE ON activity_seen WHEN old.kind='opened' BEGIN "
+    "UPDATE data_stamps SET n=n+1 WHERE name='activity_opened'; END",
+)
+
+
+def watch_activity_opened(db):
+    """activity_opened's counter and triggers (when activity_seen exists), once."""
+    if not db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='activity_seen'").fetchone():
+        return
+    db.execute('CREATE TABLE IF NOT EXISTS data_stamps(name TEXT PRIMARY KEY,n INTEGER NOT NULL)')
+    db.execute("INSERT OR IGNORE INTO data_stamps(name,n) VALUES('activity_opened',0)")
+    for sql in ACTIVITY_OPENED:
+        db.execute(sql)
+
+
 # fleet_view: one counter for what the Fleet's view (fleet.Fleet.view, shared_view: api/fleet) reads, the fleet_ and
 # network_ tables. The dashboard fetches api/fleet for the Fleet's to-dos only once the status says this changed, not every
 # 20 seconds. Not counted: fleet_claims (the to-dos' claims, which the status itself carries), and fleet_meta's Team Graph
