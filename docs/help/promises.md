@@ -31,4 +31,6 @@ One without a date gets a **follow-up** day: three days after you made it, a wee
 
 Promises from Slack show the person's name.
 
+A promise by email from someone you've never written to is kept too, marked **unverified sender**: it's their word only. Its to-do starts with "Unverified: you haven't written to them before."
+
 The [weekly recap](weekly-recap.md) counts kept and open ones. On your own computer, `assistant promises` lists them in a terminal.

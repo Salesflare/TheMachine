@@ -191,6 +191,36 @@ def identifier_named(db, who):
     return '+' + phone[1] if phone else who
 
 
+def unknown_sender(db, event, own):
+    """True when an email's sender is someone the owner doesn't know: they never wrote to them (mail_cleanup.Known: getting
+    mail is not knowing someone), they are no colleague (the owner's own domain) and the owner gave them no role. Their
+    promise is kept, marked unverified: their word only, like a role a review read in their own message."""
+    import mail_cleanup  # here, not at the top: it reads the store's review_wait
+    import mail_senders
+    m = event['metadata'] if isinstance(event['metadata'], dict) else json.loads(event['metadata'] or '{}')
+    address = _address(m.get('from')) if event['kind'] == 'gmail.message' else ''
+    if not address or '@' not in address:
+        return False
+    domain = address.rsplit('@', 1)[1]
+    if domain not in graph.FREEMAIL and any(a.endswith('@' + domain) for a in own):
+        return False
+    if mail_cleanup.Known(db).wrote_to(address):
+        return False
+    # Mail they sent it before the Graph caught up: the rows are read and opened here (message protection seals the
+    # recipients, so SQL can't search them), the newest first
+    to = lambda m: {x for _, x in mail_senders.addresses([m[k] for k in ('to', 'cc', 'bcc') if m.get(k)])}
+    sent = db.execute("SELECT e.metadata FROM events e WHERE e.kind='gmail.message' AND e.deleted=0 AND "
+                      + mail_cleanup._BY_OWNER.format('e') + ' ORDER BY e.occurred_at DESC LIMIT 2000')
+    if any(address in to(r[0] if isinstance(r[0], dict) else json.loads(r[0] or '{}')) for r in sent):
+        return False
+    try:
+        roles = db.execute("SELECT json_extract(n.info,'$.role_by') FROM graph_identifiers i JOIN graph_nodes n ON n.id=i.node_id WHERE i.identifier=?",
+                           ('email:' + address,)).fetchall()
+    except sqlite3.OperationalError:
+        roles = []  # no graph yet
+    return not any(r[0] == 'owner' for r in roles)
+
+
 def who_named(db, who):
     """who as the dashboard and to-dos say it: by name, whatever the review knew them by (a Slack member id, a number)."""
     return identifier_named(db, slack_ids_named(db, who))
@@ -227,6 +257,8 @@ def promise_text(p):
             title = t('Waiting on {}: {}', first, p['what'])  # the person chip says who in full
         body = (t('Promised on {} for {}. Nothing has come in yet, so a short nudge may help.', said, by) if by else
                 t('Promised on {}. Nothing has come in yet, so a short nudge may help.', said))
+        if p.get('unverified'):  # a sender the owner doesn't know (unknown_sender): their word only, said first so a phone shows it
+            body = t('Unverified: you haven’t written to {} before.', p['who']) + ' ' + body
     return title, body
 
 
@@ -307,11 +339,13 @@ class PromisesStore:
                                (promise_check_at('mine', row['due'], row['made_at'], digest_at), stamp, row['id']))
                     promise_logged(db, row['id'], 'together', event['id'])
                 return {'id': row['id'], 'status': row['status'], 'duplicate': True}
-            cursor = db.execute('INSERT INTO promises(direction,who,what,due,check_at,event_id,account_id,watch,status,created_at,updated_at,owner_step) '
-                                "VALUES(?,?,?,?,?,?,?,?,'open',?,?,?) ON CONFLICT(event_id,direction,who,what) DO NOTHING",
+            # From a sender the owner doesn't know: kept, marked unverified (their word only), never dropped
+            unverified = int(direction == 'theirs' and unknown_sender(db, dict(event), self.review_own_addresses(db)))
+            cursor = db.execute('INSERT INTO promises(direction,who,what,due,check_at,event_id,account_id,watch,status,created_at,updated_at,owner_step,unverified) '
+                                "VALUES(?,?,?,?,?,?,?,?,'open',?,?,?,?) ON CONFLICT(event_id,direction,who,what) DO NOTHING",
                                 (direction, who, what, due, check_at, event['id'], event['account_id'], encoded({**watch, 'promise': True}) if watch else None, stamp, stamp,
-                                 int(direction == 'mine' and args.get('owner_step') is True)))
-        return {'id': cursor.lastrowid, 'status': 'open', 'check_at': check_at,
+                                 int(direction == 'mine' and args.get('owner_step') is True), unverified))
+        return {'id': cursor.lastrowid, 'status': 'open', 'check_at': check_at, **({'unverified': True} if unverified else {}),
                 'note': 'Recorded, no card. It is checked when due; if still open then, a card comes.'}
 
     def update_promise(self, args, digest_at='08:30', source='assistant'):
@@ -494,7 +528,7 @@ class PromisesStore:
         since = (dt.datetime.fromisoformat(now()) - dt.timedelta(days=days)).isoformat()
         with self.connect() as db:
             rows = [dict(r) for r in db.execute(
-                'SELECT p.id,p.direction,p.who,p.what,p.due,p.check_at,p.status,p.note,p.suggestion_id,p.account_id,p.event_id,p.created_at,p.updated_at,p.together,'
+                'SELECT p.id,p.direction,p.who,p.what,p.due,p.check_at,p.status,p.note,p.suggestion_id,p.account_id,p.event_id,p.created_at,p.updated_at,p.together,p.unverified,'
                 'e.occurred_at made_at,s.status card_status FROM promises p JOIN events e ON e.id=p.event_id LEFT JOIN suggestions s ON s.id=p.suggestion_id '
                 "WHERE p.status IN ('open','carded') OR p.updated_at>=? ORDER BY coalesce(p.due,substr(p.check_at,1,10)),p.id", (since,))]
             for row in rows:
@@ -536,7 +570,7 @@ class PromisesStore:
         if p['suggestion_id'] and not any(h['kind'] == 'carded' for h in log):
             history.append({'at': p['updated_at'], 'kind': 'carded'})
         card = {'id': p['suggestion_id'], 'title': p['card_title'], 'status': p['card_status']} if p['suggestion_id'] and p['card_title'] else None
-        keep = ('id', 'direction', 'together', 'who', 'what', 'due', 'check_at', 'status', 'state', 'note', 'made_at', 'event_id', 'account_id', 'created_at', 'updated_at')
+        keep = ('id', 'direction', 'together', 'unverified', 'who', 'what', 'due', 'check_at', 'status', 'state', 'note', 'made_at', 'event_id', 'account_id', 'created_at', 'updated_at')
         return {**{k: p[k] for k in keep}, 'card': card, 'links': links, 'sources': sources, 'history': sorted(history, key=lambda h: h['at'] or '')}
 
     def promises_text(self, limit=30):
@@ -547,7 +581,7 @@ class PromisesStore:
             made = dt.datetime.fromisoformat(p['made_at']).astimezone(local_tz())
             due = 'due ' + dt.date.fromisoformat(p['due']).strftime('%a, %b ') + str(dt.date.fromisoformat(p['due']).day) if p['due'] else 'no date'
             who = f"you with {p['who']}" if p.get('together') else f"you → {p['who']}" if p['direction'] == 'mine' else f"{p['who']} → you"
-            todo = '; a to-do now' if p['state'] == 'card' else ''
+            todo = ('; a to-do now' if p['state'] == 'card' else '') + ('; unverified: a sender the owner doesn’t know' if p.get('unverified') else '')
             lines.append(f"- #{p['id']} {who}: {p['what']} ({due}; said {made:%a, %b} {made.day}, event {p['event_id']}{todo})")
             memory_use.note('promise', p['id'], lines[-1], 'always', source='signal', at=p['made_at'])
         return '\n'.join(lines)
