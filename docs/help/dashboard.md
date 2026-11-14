@@ -10,12 +10,13 @@ order: 4
 
 - **To-dos**: your to-dos and promises. See [To-dos](cards.md).
 - **Calendar**: the week ahead with your meetings, due to-dos and promises. See [Calendar](calendar.md).
-- **Graph**: the people, organizations and projects in your messages. See [Graph](graph.md).
+- **Routines**: work your Machine does on a rhythm, like a Monday summary. See [Routines](routines.md).
+- **Graph**: the people, organizations and projects in your messages, each with its own page under it in the sidebar. See [Graph](graph.md).
 - **Fleet**: your team, family and friends on The Machine Network, once you have one. See [Fleet](fleet.md).
 - **Learning**: how the to-dos are doing, and what it learned.
 - **Connections**: your sources and how they're doing. See [Connections](connections.md).
 
-**Search**, at the top of the sidebar, finds to-dos, people, messages and more. **Browser**, **Help** and **Settings** sit at the bottom. On a phone, the menu button in the top bar opens the sidebar.
+**Search or ask**, at the top of the sidebar, finds to-dos, people, messages and more, with **New to-do** right under it. **Browser**, **Help** and **Settings** sit at the bottom. On a phone, the menu button in the top bar opens the sidebar.
 
 The sidebar lists your to-dos the way the page does. Requests from your Fleet are under **For you** too, so its count matches the one at the top. Tap one to bring it up.
 

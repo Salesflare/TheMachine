@@ -18,7 +18,7 @@ Type a question, like “what did Kim say about the pilot?”, and a short answe
 
 Ask about someone and a time, like “what did Kim say last week?”, and it reads only the messages from or with that person on those days, in your time zone. If they sent nothing then, it says so and gives their latest message with its date.
 
-It also reads what the Machine already keeps on the question: promises (open, or closed in the last 30 days), what it learned, the summary of the person, project or organization you ask about, and meeting notes. Each one the answer used shows under it, named as what it is (Promise, Learned, Summary, Meeting notes), and opens where it lives. Only what matches is read, from the area you're viewing.
+It also reads what the Machine already keeps on the question: promises (open, or closed in the last 30 days), what it learned, the summary of the person, project or organization you ask about, and meeting notes. Each one the answer used shows under it, named as what it is (like Promise, Learned, Summary or Meeting notes), and opens where it lives. Only what matches is read, from the area you're viewing.
 
 If several people have that name, it says which one it means. The other messages it read show under Messages. The question an empty search suggests is only one it has messages for. The answer never sends anything or adds a to-do, and it needs a model (Settings, Model).
 
@@ -26,7 +26,7 @@ If several people have that name, it says which one it means. The other messages
 
 Press `?` for **Keyboard shortcuts**, the full list for your computer.
 
-- Go to a page: `G` then `T` To-dos, `C` Calendar, `P` People, `O` Organizations, `J` Projects, `F` Fleet, `L` Learning, `N` Connections, `,` Settings. `G` then `E` opens the message search results.
+- Go to a page: `G` then `T` To-dos, `C` Calendar, `R` Routines, `P` People, `O` Organizations, `J` Projects, `F` Fleet, `L` Learning, `N` Connections, `,` Settings. `G` then `E` opens the message search results.
 - `N` adds a new to-do. `T` starts Talk, or ends it while it's live. `J` and `K` (or `↓` and `↑`) move through a list, Enter opens.
 - On a to-do: `E` renames it, `S` snoozes it, `D` marks it done, `R` writes in its chat.
 - On the Calendar: `T` goes to today, `J` and `K` (or `→` and `←`) to the next or previous week or month. `A`, `W` and `M` switch to Agenda, Week and Month.
