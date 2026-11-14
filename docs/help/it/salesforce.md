@@ -1,55 +1,55 @@
 ---
 title: Salesforce
 area: connections
-summary: Trattative, attività e cronologia da Salesforce sulle tue persone e sui tuoi progetti. Se lo attivi, tiene aggiornati lì i dati di contatto.
+summary: Offerte, compiti e attività di Salesforce sulle persone e sui progetti. Se attivi l’opzione, può tenere aggiornati i dati di contatto lì.
 covers: connector:salesforce
 code: connectors/salesforce.py, crm_sync.py, onboarding.py
 site: Connect Salesforce, More sources, Remove, Sign in with Salesforce
-translated: e2394748e0a676b1
+translated: eee5e084bac6dbd1
 ---
 ## Cosa legge
 
-Le nuove trattative, e quelle che passano a un’altra fase o cambiano importo. Le tue attività aperte, chiamate e altre attività registrate come fatte con note, e riunioni con una descrizione. Gli ultimi 7 giorni quando colleghi, poi le nuove ogni 15 minuti.
+Le nuove offerte e quelle che passano a un’altra fase o cambiano importo. I tuoi compiti aperti, le chiamate e gli altri compiti registrati come completati con note, oltre alle riunioni con una descrizione. I dati degli ultimi 7 giorni al momento della connessione, poi quelli nuovi ogni 15 minuti.
 
-Ogni trattativa diventa un progetto nel tuo Graph, e i suoi contatti compaiono sulle loro persone, come contatto Salesforce presso il loro account.
+Ogni offerta diventa un progetto nel tuo Graph e i contatti associati compaiono nelle rispettive schede delle persone, come contatti Salesforce collegati alla loro azienda.
 
-## Cosa può cambiare
+## Cosa può modificare
 
-Niente, finché non attivi **Aggiorna dati di contatto**. Il tuo accesso a Salesforce resta sulla tua Machine.
+Niente, finché non attivi **Aggiorna i dati di contatto**. Le credenziali di accesso a Salesforce restano sulla tua Machine.
 
-## Collegalo
+## Collegarlo
 
-Su una Machine in hosting:
+Su una Machine ospitata:
 
-1. Apri la tua pagina di configurazione su app.themachine.computer/setup e vai su **Altre fonti**.
-2. Apri Salesforce e premi **Collega Salesforce**.
-3. Accedi a Salesforce e consenti The Machine (fatta da Salesflare).
+1. Apri la pagina di configurazione su app.themachine.computer/setup e vai su **Altre fonti**.
+2. Apri Salesforce e premi **Connetti Salesforce**.
+3. Accedi a Salesforce e autorizza The Machine (creata da Salesflare).
 
-Oppure nella dashboard: **Connessioni**, **Clienti**, scegli Salesforce e premi **Accedi con Salesforce**.
+Oppure, nella dashboard: **Connessioni**, **Clienti**, seleziona Salesforce e premi **Accedi con Salesforce**. Sul tuo computer, prima associala al tuo account.
 
-Il tuo utente Salesforce ha bisogno dell’accesso API, incluso nella maggior parte delle edizioni.
+Il tuo utente Salesforce deve avere accesso API, incluso nella maggior parte delle edizioni.
 
-## Aggiorna dati di contatto
+## Aggiornare i dati di contatto
 
-Quando la tua Machine conosce dati più recenti di uno dei tuoi contatti Salesforce, può aggiornare quel contatto lì: ruolo, telefono, e il link LinkedIn se la tua org ha un campo LinkedIn sui contatti.
+Quando la tua Machine trova dati più aggiornati per uno dei tuoi contatti Salesforce, può aggiornarli lì: qualifica, telefono e link LinkedIn, se la tua organizzazione ha un campo LinkedIn nei contatti.
 
 1. In **Connessioni**, apri Salesforce e premi **Mostra cosa cambierebbe**.
-2. Controlla l’elenco, poi premi **Attiva** o **Non ora**.
+2. Controlla l’elenco, poi premi **Attiva** oppure **Non ora**.
 
-Cosa rispetta:
+Ecco cosa tiene in considerazione:
 
-- Solo dati nelle parole della persona stessa, come il suo profilo LinkedIn o Slack, o quelli che hai messo tu sulla sua pagina. Mai un’ipotesi.
-- Solo quando il dato è più recente dell’ultima modifica del contatto in Salesforce. Una modifica fatta lì vince.
-- Solo i campi diversi, e mai un valore vuoto. Non cambia mai l’indirizzo email né l’account.
-- Ogni modifica è una riga datata sulla pagina della persona.
+- Solo i dati che la persona ha condiviso direttamente, per esempio sul suo profilo LinkedIn o Slack, o quelli che hai inserito nella sua scheda. Mai supposizioni.
+- Solo i dati più recenti dell’ultima modifica del contatto in Salesforce. Le modifiche fatte lì hanno la precedenza.
+- Solo i campi diversi, mai quelli vuoti. Non modifica mai l’indirizzo email né l’azienda.
+- Ogni modifica appare come una riga datata nella scheda della persona.
 
-Premi **Disattiva** per smettere. Una connessione condivisa dal tuo Fleet legge soltanto.
+Premi **Disattiva** per interrompere. Una connessione condivisa dalla tua Fleet consente solo la lettura.
 
-## Rimuovilo
+## Rimuoverlo
 
-- Nella dashboard: **Connessioni**, apri Salesforce, **Dettagli**, poi **Disconnetti**. Quello che ha già portato resta.
-- Su una Machine in hosting puoi anche premere **Rimuovi** accanto nella tua pagina di configurazione.
+- Nella dashboard: **Connessioni**, apri Salesforce, **Dettagli**, poi **Disconnetti**. I dati già importati restano.
+- Su una Machine ospitata, **Disconnetti ↗** apre la pagina di configurazione: premi **Rimuovi** accanto a Salesforce.
 
-## Revocalo in Salesforce
+## Revocare l’accesso in Salesforce
 
-In Salesforce, apri le tue impostazioni personali, poi Connected Apps OAuth Usage, o chiedi al tuo admin, e revoca The Machine. Non può più leggere né cambiare nulla.
+In Salesforce, apri le impostazioni personali, poi Connected Apps OAuth Usage, oppure chiedi all’amministratore di revocare l’accesso di The Machine. A quel punto non potrà più leggere né modificare nulla.

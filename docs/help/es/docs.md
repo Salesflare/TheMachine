@@ -1,83 +1,83 @@
 ---
-title: Microsoft OneDrive: archivos de Word en OneDrive y SharePoint
+title: Microsoft OneDrive
 area: connections
-summary: Comentarios, menciones, cambios con seguimiento y archivos compartidos en tus archivos de Word en OneDrive y SharePoint, además de documentos nuevos privados, y cambios que apruebas.
+summary: Comentarios, menciones, cambios registrados y archivos compartidos en tus documentos de Word en OneDrive y SharePoint. Los documentos nuevos y los cambios esperan tu OK.
 covers: connector:docs
 code: connectors/docs.py, doc_writes.py, next_actions.py, onboarding.py
 site: Sign in with Microsoft
-translated: 6db75e46d29fc2e3
+translated: b06d8ca4f35e5a38
 ---
 ## Qué lee
 
-La conexión **Microsoft OneDrive** lee archivos de Word en OneDrive y SharePoint. Inicias sesión con Microsoft para ella, con o sin Outlook conectado. Funciona en una Machine alojada y en tu propio ordenador vinculado a tu cuenta. Para Google Docs, consulta más abajo. Trae:
+**Microsoft OneDrive** lee tus documentos de Word en OneDrive y SharePoint, tanto en una Machine alojada como en tu propio equipo. No hace falta conectar Outlook. Para Google Docs, consulta la sección de abajo. Trae:
 
 - Documentos que alguien comparte contigo.
-- Comentarios y respuestas en documentos tuyos, y comentarios que te mencionan.
-- Control de cambios en archivos de Word tuyos.
+- Comentarios y respuestas en tus documentos, y comentarios que te mencionan.
+- Cambios controlados en tus documentos de Word.
 
-La primera sincronización mira 30 días atrás. Cada cosa se convierte en un evento, vinculado a las personas y proyectos de tu [Graph](graph.md). Cuando un comentario te necesita, se convierte en una tarea.
+La primera sincronización incluye los últimos 7 días. Cada elemento enlaza con las personas y los proyectos de tu [Graph](graph.md). Un comentario que requiere tu atención se convierte en una tarea.
 
 ## Qué puede hacer
 
-Cuando una tarea necesita el texto de un documento, tu Machine lee ese documento, y solo mientras trabaja en esa tarea.
+Cuando una tarea necesita el texto de un documento, tu Machine lee ese documento, solo mientras trabaja en esa tarea.
 
-Puede redactar una respuesta a un comentario. Los archivos de Word no permiten publicar una respuesta desde fuera de Word, así que la respuesta se queda como borrador para que la copies en Word.
+Puede preparar un borrador de respuesta a un comentario. Word no permite publicar respuestas desde fuera, así que tienes que copiar el borrador en Word.
 
-Nunca acepta una sugerencia, resuelve un comentario, comparte un archivo ni cambia un documento sin tu OK.
+Nunca acepta una sugerencia, resuelve un comentario, comparte un archivo ni modifica un documento sin tu OK.
 
-Una conexión de documentos puede solo hacer cosas: desactiva **Trae señales** en **Detalles**, y solo busca y lee los documentos que tus to-dos necesitan, y crea nuevos. Una de Google sin acceso a todo Drive lee documentos por su enlace, y los que tu Machine creó.
+Para usarla solo para realizar acciones, desactiva **Trae señales** en **Detalles**. Así solo busca y lee los documentos que necesitan tus tareas, y crea documentos nuevos.
 
 ## Crear y editar documentos
 
-Tu Machine puede escribir un documento nuevo o cambiar un documento del que trata una de tus tareas:
+Tu Machine puede crear un documento nuevo o modificar uno relacionado con una tarea:
 
-- Un documento nuevo lo crea enseguida, cuando la tarea o una habilidad dice que hay que crearlo: un documento privado en tu propio Google Drive o OneDrive, sin compartir con nadie. La tarea lo muestra con **Abrir el documento**. Compartirlo, o enviar su enlace a alguien, espera tu OK.
-- Un cambio en un documento existente solo lo prepara, cada párrafo antes y después. Toca **Revisar cambios**, léelo y luego **Guardar**. Un cambio que pides en el chat de la tarea lo hace enseguida.
-- Escribe un cambio una sola vez, y solo en el documento tal como lo viste. Si alguien lo cambió entretanto, no se escribe nada y la tarea lo dice. Pide un borrador nuevo.
-- En Talk, lee el cambio completo en voz alta y espera un sí claro.
-- Si Google o Microsoft rechaza un documento nuevo, la tarea dice qué se rechazó y muestra **Revisar y crear** para volver a intentarlo.
+- Crea un documento nuevo de inmediato cuando la tarea o una habilidad lo solicita. Es privado y se guarda en tu OneDrive o Google Drive. La tarea muestra **Abrir el documento**. Compartirlo o enviar su enlace espera tu OK.
+- Solo prepara los cambios en un documento existente. Pulsa **Revisar cambios** para ver cada párrafo antes y después, y luego **Guardar**. Si pides un cambio en el chat de la tarea, lo hace de inmediato.
+- Solo escribe en el documento tal como lo viste. Si alguien lo modificó mientras tanto, no escribe nada y la tarea te lo indica. Pide un borrador nuevo.
+- En Talk, lee en voz alta todo el cambio y espera un sí claro.
+- Si Microsoft o Google no permite crear un documento, la tarea explica por qué y muestra **Revisar y crear** para volver a intentarlo.
 
-Reemplaza texto, añade texto y añade párrafos y títulos. No toca tablas, imágenes, cambios con seguimiento ni campos. Un documento nuevo queda en tu Google Drive o OneDrive y es privado hasta que lo compartas.
+Puede reemplazar y añadir texto, párrafos y encabezados. Las tablas, imágenes, cambios controlados y campos se mantienen tal como están.
 
-Un documento nuevo va a una cuenta del área de la tarea: el documento de una tarea de Trabajo a la cuenta de esa empresa, la de la conversación cuando se puede, nunca a una personal. En tu propio ordenador, una cuenta de Google conectada para Gmail que ya tiene acceso a Drive también puede recibir un Google Doc nuevo. Si ninguna cuenta encaja, la tarea dice qué conectar para Trabajo: Microsoft OneDrive, o Google Docs donde tu Machine puede usarlo.
+El documento de una tarea de Trabajo se guarda en la cuenta de esa empresa, nunca en una cuenta personal. En tu propio equipo, una cuenta de Google conectada para Gmail con acceso a Drive también puede crear documentos nuevos de Google Docs. Si no hay ninguna cuenta adecuada, la tarea te indica qué conectar para Trabajo: Microsoft OneDrive o Google Docs, si tu Machine puede usarlo.
 
-Cuando el documento no es el final de la tarea, como una respuesta con su enlace, la tarea sigue abierta y prepara ese siguiente paso para tu OK.
+Si el documento no es el último paso, por ejemplo, si hay que responder con su enlace, la tarea sigue abierta y prepara ese paso para que des tu OK.
 
-Conectar Microsoft OneDrive ya lo permite: no hay un paso aparte. Una conexión de Microsoft OneDrive anterior que solo lee muestra **Permitir cambios** en su tarjeta en **Conexiones**. Tócalo una vez y acepta.
+La edición se incluye al conectar. Una conexión antigua que solo permite leer muestra **Permitir cambios** en **Conexiones**. Pulsa esa opción una vez y acepta.
 
-## Qué pide
+## Qué permisos solicita
 
-Microsoft OneDrive pide a Microsoft un solo OK, aparte del inicio de sesión de tu correo: leer y cambiar tus archivos, incluidos los que se comparten contigo en OneDrive y SharePoint. Cada cambio sigue esperando tu OK en su tarea. Tu acceso al correo y al calendario se queda como está. Sin Outlook, el inicio de sesión solo cubre tus archivos, nunca tu correo ni tu calendario.
+Microsoft te pide una sola autorización para leer y modificar tus archivos, incluidos los que se comparten contigo. Cada cambio sigue esperando tu OK en la tarea correspondiente. El acceso al correo y al calendario no cambia.
 
-Si más tarde se retira ese OK, la tarjeta de Microsoft OneDrive dice **Esperando tu OK para leer documentos**.
+Si más adelante retiras esa autorización, Microsoft OneDrive muestra **Esperando tu OK para leer documentos** en **Conexiones**.
 
-## Conéctalo
+## Conectarlo
 
-No necesitas tener Outlook conectado.
+En una Machine alojada o en tu propio equipo vinculado a tu cuenta:
 
-- Machine alojada: en el panel, abre **Conexiones**, **Documentos y archivos**, elige **Microsoft OneDrive** y pulsa **Iniciar sesión con Microsoft**. Microsoft te pide permitir que lea y edite tus archivos y luego vuelves al panel.
-- Tu propio ordenador, vinculado a tu cuenta: abre **Conexiones**, **Documentos y archivos**, elige **Microsoft OneDrive** y pulsa **Iniciar sesión con Microsoft**.
+- Abre **Conexiones**, luego **Documentos y archivos** y elige **Microsoft OneDrive**.
+- Pulsa **Iniciar sesión con Microsoft** y permite que lea y edite tus archivos.
 
-Comprueba que el inicio de sesión puede leer documentos. Sin ese OK no se añade. Si tocas **Permitir cambios** y Microsoft no permite cambios, lo dice en lugar de mostrar Conectado.
+Si Microsoft no permite la lectura, no se añade. Si pulsas **Permitir cambios** y Microsoft no permite la edición, te lo indica.
 
 ## Google Docs
 
-En una Machine alojada, abre **Conexiones**, luego **Documentos y archivos**, y elige **Google Docs**. Google te pide permitir que vea y edite los documentos que le indicas, y que cree otros nuevos. No hace falta tener Gmail conectado, y tu acceso a Gmail no cambia.
+En una Machine alojada, abre **Conexiones**, luego **Documentos y archivos** y elige **Google Docs**. Google te pide permiso para ver y editar los documentos que le indiques y crear documentos nuevos. No hace falta conectar Gmail y el acceso a Gmail no cambia.
 
-Después tu Machine:
+Entonces tu Machine:
 
-- Lee un documento de Google enlazado en los mensajes de una tarea, solo mientras trabaja en esa tarea.
-- Prepara cambios en ese documento. Cada uno espera tu OK, como arriba.
-- Crea documentos privados nuevos en tu Google Drive.
+- Lee un documento de Google Docs enlazado en los mensajes de una tarea, solo mientras trabaja en esa tarea.
+- Prepara cambios en ese documento. Cada cambio espera tu OK, como se explicó arriba.
+- Crea documentos nuevos y privados en tu Google Drive.
 
-No busca en tu Drive. Ve comentarios, accesos compartidos y sugerencias solo en los documentos que ella creó. Para más necesitaría acceso a todo tu Drive, y no lo pide.
+No busca en tu Drive. Solo ve comentarios, archivos compartidos y sugerencias en los documentos que creó. Para acceder a más documentos necesitaría acceso a todo tu Drive, y no lo solicita.
 
-En tu propio ordenador, tu Machine puede crear un documento de Google nuevo en una cuenta de Gmail con sesión iniciada allí que ya tenga acceso a Drive. No lee tus otros Google Docs ni sus comentarios. **Documentos y archivos** lo muestra como Google Docs, con esa cuenta. También puede cambiar un documento que creó allí para una tarea.
+En tu propio equipo, tu Machine puede crear un documento nuevo de Google Docs en una cuenta de Gmail que tenga la sesión iniciada allí y ya tenga acceso a Drive. No lee tus otros documentos de Google Docs ni sus comentarios. **Documentos y archivos** la muestra como Google Docs, en esa cuenta. También puede modificar allí un documento que haya creado para una tarea.
 
 ## Trabajo o personal
 
-Microsoft OneDrive sigue la etiqueta de trabajo o personal de su conexión, como el correo. Los documentos de trabajo pueden llegar al Graph de tu equipo según tus [reglas para compartir](sharing-rules.md). Los personales nunca.
+La Machine sigue la etiqueta Trabajo o Personal de su conexión, igual que con el correo. Los documentos de Trabajo pueden llegar al Graph de tu equipo según tus [reglas para compartir](sharing-rules.md). Los documentos personales nunca llegan.
 
-## Quítalo
+## Desconectarlo
 
-En el panel: **Conexiones**, abre Microsoft OneDrive o Google Docs, **Detalles** y luego **Desconectar**. Deja de leer. Lo que ya trajo se queda.
+Abre **Conexiones**, luego Microsoft OneDrive o Google Docs, **Detalles** y **Desconectar**. Deja de leer documentos. Lo que ya había incorporado se conserva. En una Machine alojada, **Desconectar ↗** abre la página de configuración, donde se guarda el inicio de sesión.

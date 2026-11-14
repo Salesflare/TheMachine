@@ -1,56 +1,56 @@
 ---
 title: Microsoft Outlook e Calendario
 area: connections
-summary: Email e riunioni di Outlook, per Microsoft 365 e Outlook.com. Invia un'email solo dopo la tua approvazione.
+summary: Email e riunioni di Outlook, per Microsoft 365 e Outlook.com. Le email vengono inviate solo dopo la tua approvazione.
 covers: connector:outlook, connector:outlook_calendar
 code: ms_graph.py, ms_photos.py, onboarding.py
 site: Connect Microsoft, Copy link, I'm the admin: approve now, Disconnect, Sign in with Microsoft, Use your own app
 order: 12
-translated: 41c9c0174a2a21c7
+translated: c10bf70a327b8ec0
 ---
 ## Cosa legge
 
-- **Outlook**: tutta la tua posta, gli ultimi 7 giorni quando lo colleghi, poi tutto ciò che arriva.
+- **Outlook**: tutte le tue email degli ultimi 7 giorni quando lo colleghi, poi tutte le nuove email.
 - **Calendario Outlook**: le tue riunioni, in sola lettura.
 
-La posta in Altra e le newsletter ricevono prima una rapida occhiata: mittente, oggetto e qualche parola, molte alla volta. Quando una conta, viene letta per intero e può diventare un'attività. Niente viene saltato senza essere visto.
+Le email in Altro e le newsletter vengono prima controllate rapidamente: mittente, oggetto e poche parole. Se una è importante, viene letta per intero e può diventare un'attività.
 
-## Cosa può inviare e cambiare
+## Cosa può inviare e modificare
 
-- Un'email da un'attività, solo dopo che l'hai approvata nell'anteprima.
-- Una risposta finisce nella conversazione Outlook dell’email a cui risponde.
-- Quando posticipi un'attività su un'email, i messaggi del thread vanno in una cartella Posticipati in Outlook e tornano quando torna l'attività.
+- Un'email da un'attività, solo dopo la tua approvazione. Viene inviata dall'indirizzo della casella di posta, non da un alias.
+- Una risposta viene aggiunta alla conversazione di Outlook dell'email a cui risponde.
+- Dopo l'invio di una risposta, i messaggi della conversazione vengono spostati in una cartella Posticipati in Outlook per alcuni giorni (3, a meno che l'attività non indichi diversamente), poi tornano nella Posta in arrivo o prima se qualcuno risponde. La revisione te lo segnala prima dell'invio.
 
-Il calendario non viene mai cambiato.
+Il calendario non viene mai modificato.
 
 ## Foto di colleghi e contatti
 
-A Microsoft viene chiesto anche di leggere i profili di base della tua organizzazione (nome, email e foto) e i tuoi contatti di Outlook. La tua Machine li usa solo per foto, ruoli e aziende delle persone già nel tuo Graph, fino a 200 foto al giorno. Chi non ha una foto viene ricontrollato dopo 30 giorni.
+Viene chiesto anche a Microsoft di leggere i profili di base delle persone della tua organizzazione (nome, email e foto) e i tuoi contatti di Outlook. La tua Machine li usa solo per recuperare foto, ruoli e aziende delle persone già presenti nel tuo Graph, fino a 200 foto al giorno. Le persone senza foto vengono ricontrollate dopo 30 giorni.
 
-Potrebbe servire l’approvazione dell’admin della tua organizzazione per le foto dei colleghi. Senza, Outlook si collega comunque, solo senza queste foto. Un account collegato prima riceve un’attività: premi **Riconnetti**, oppure **Non serve** per chiuderla per sempre. Un account personale (Outlook.com, Hotmail) non ha colleghi, quindi la sua attività chiede solo le foto dei contatti.
+L'amministratore della tua organizzazione potrebbe dover approvare le foto dei colleghi. Se non lo fa, Outlook si collega comunque, ma senza queste foto. Un account collegato in precedenza riceve un'attività: premi **Riconnetti** oppure **Non serve** per chiuderla definitivamente. Un account personale (Outlook.com, Hotmail) non ha colleghi, quindi la sua attività riguarda solo le foto dei contatti.
 
 ## Collegalo
 
 Su una Machine ospitata:
 
-1. Apri la tua pagina di configurazione su app.themachine.computer/setup.
+1. Apri la pagina di configurazione all'indirizzo app.themachine.computer/setup.
 2. Premi **Collega Microsoft** e accedi.
-3. Se Microsoft chiede l'approvazione di un admin, manda questo link all'amministratore del tuo Microsoft 365: themachine.computer/m365-admin-consent. **Copia link** lo copia. Appena approva, tutti nella tua organizzazione possono collegarsi. Se sei tu, premi **Sono l'admin: approva ora**.
+3. Se Microsoft chiede l'approvazione di un amministratore, invia il link al tuo amministratore di Microsoft 365 (**Copia link**). Dopo l'approvazione, tutti i membri della tua organizzazione potranno collegarsi. Se sei l'amministratore, premi **Sono l'amministratore: approva ora**.
 
-Oppure nella dashboard: **Connessioni**, **Email**, scegli Outlook e premi **Accedi con Microsoft**. Quando hai finito, torni alla dashboard. Serve l'approvazione del tuo amministratore? Lo stesso link è sotto il pulsante, con **Copia link**.
+Oppure, nella dashboard: **Connessioni**, **Email**, scegli Outlook e premi **Accedi con Microsoft**. Il link per l'amministratore si trova subito sotto il pulsante.
 
-Sul tuo computer, quando è [abbinato al tuo account](friends.md#a-machine-on-your-own-computer): apri **Connessioni**, poi **Email**, scegli Outlook e premi **Accedi con Microsoft**. Posta e calendario si collegano insieme.
+Sul tuo computer, dopo averlo [abbinato al tuo account](friends.md#a-machine-on-your-own-computer): apri **Connessioni**, poi **Email**, scegli Outlook e premi **Accedi con Microsoft**. La posta e il calendario si collegano insieme. Dopo aver completato l'accesso a Microsoft, torni in **Connessioni** nella dashboard.
 
-Con la tua app: apri **Usa la tua app** lì, oppure esegui `assistant connect outlook` o `assistant connect outlook_calendar`. Usa la registrazione della tua app in Microsoft Entra e un codice di accesso. Ti chiede se inviare anche ciò che approvi.
+Per i team IT che usano una propria app Microsoft Entra: apri **Usa la tua app** oppure esegui `assistant connect outlook`.
 
 ## Rimuovilo
 
-- Su una Machine ospitata: premi **Disconnetti** accanto all'account nella tua pagina di configurazione. Nella dashboard, **Disconnetti ↗** in Connessioni ti porta lì. **Riconnetti** lì ti fa accedere di nuovo senza lasciare la dashboard.
+- Su una Machine ospitata: premi **Disconnetti** accanto all'account nella pagina di configurazione. **Disconnetti ↗** in Connessioni ti porta lì.
 - Sul tuo computer: **Connessioni**, apri l'account, **Dettagli**, poi **Disconnetti**.
 
-## Disinstallalo su Microsoft
+## Disinstalla l'app da Microsoft
 
-Microsoft non ci permette di revocare un accesso, quindi rimuovilo anche lì:
+Microsoft non ci permette di revocare un accesso, quindi rimuovilo anche da lì:
 
-- Account di lavoro o scuola: myapps.microsoft.com
+- Account aziendale o dell'istituto di istruzione: myapps.microsoft.com
 - Account personale: account.live.com/consent/Manage

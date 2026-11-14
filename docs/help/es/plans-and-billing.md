@@ -6,26 +6,26 @@ covers: settings:account
 code: docs/fleet.md
 site: Manage subscription
 order: 1
-translated: 457d70baa1c81785
+translated: b9c28b75591c7f62
 ---
 ## Tu Machine
 
 - En tu propio ordenador: gratis. Todo lo que hace The Machine, con tu propio modelo.
-- Alojada: {price.standard} al mes por una Machine estándar o {price.big} por una de mayor tamaño, sin IVA. Los primeros {trial_days} días son gratis, una vez por persona, y no se te cobrará nada hasta que terminen. Si la tuya empezó sin tarjeta, añade una en la página de tu cuenta antes de que terminen.
+- Alojada: {price.standard} al mes por una Machine Standard o {price.big} por una más grande, sin IVA. Los primeros {trial_days} días son gratis, una vez por persona, y no se te cobra nada hasta que terminen. Si la tuya empezó sin tarjeta, añade una en la página de tu cuenta antes de que termine el periodo.
 
-Tu plan de IA te lo cobra tu proveedor, como OpenAI. No añadimos ningún cargo.
+Tu plan de IA te lo factura tu proveedor, como OpenAI. Nosotros no añadimos nada.
 
-## En The Machine Network
+## En Network
 
-- Amigos y familia: gratis, con cualquier Machine. En una Fleet familiar, las Machines alojadas cuestan {price.family_pair} por las dos primeras en conjunto y luego {price.family_seat} cada una, sin IVA.
-- Fleet de trabajo: {price.seat} al mes por persona, o {price.seat_big} por una Machine de mayor tamaño, sin IVA. Si un compañero usa su propia Machine, cuesta {price.network} al mes; si ya tiene una Machine alojada, es gratis. Cada Fleet tiene su propia tarjeta y sus propias facturas, y el propietario confirma cada importe antes de que se cobre.
+- Amigos y familia: gratis, con cualquier Machine. En una Fleet familiar, las Machines alojadas cuestan {price.family_pair} por las dos primeras en conjunto y, después, {price.family_seat} por cada una, sin IVA.
+- Fleet de trabajo: {price.seat} al mes por puesto o {price.seat_big} por una Machine más grande, sin IVA. Un compañero que use su propia Machine paga {price.network} al mes. Si un compañero ya paga por una Machine alojada, al unirse puede pedir que Fleet se haga cargo de su plan y lo convierta en un puesto. Cuando el propietario lo confirme, su plan actual se cancelará. Hasta entonces, o si el propietario lo rechaza, seguirá pagando como hasta ahora. Cada Fleet tiene su propia tarjeta y sus propias facturas, y el propietario confirma cada importe antes de que se cobre.
 
 Todos los precios son mensuales y no incluyen IVA. Consulta [Precios](/pricing).
 
-¿Empezaste una Network para amigos antes de que Network fuera gratis? Aparece en **Ajustes** › **Cuenta** hasta que la canceles. **Gestionar** la abre en tu cuenta, donde puedes cancelarla o cambiar la tarjeta. Tu nombre de usuario y tus amigos se mantienen.
+¿Empezaste a pagar Network para amigos antes de que Network fuera gratis? Aparece en **Ajustes** › **Cuenta** hasta que lo canceles. **Gestionar** lo abre en tu cuenta, donde puedes cancelarlo o cambiar la tarjeta. Tu nombre de usuario y tus amigos se mantienen.
 
 ## Tarjeta y facturas
 
-En **Ajustes** › **Cuenta**, pulsa **Facturación** y luego **Gestionar suscripción**. Se abrirá Stripe, donde puedes cambiar la tarjeta y descargar facturas. Nunca recibimos los datos de tu tarjeta.
+En **Ajustes** › **Cuenta**, pulsa **Facturación** y luego **Gestionar suscripción**. Se abrirá Stripe, donde puedes cambiar la tarjeta y descargar las facturas. Nunca recibimos los datos de tu tarjeta.
 
 Puedes cambiar el tamaño de tu Machine cuando quieras: en **Ajustes** › **Cuenta**, pulsa **Cambiar plan**.

@@ -1,40 +1,40 @@
 ---
 title: Família
 area: fleet
-summary: Um Fleet de Família grátis para até 6 pessoas: quando todos estão livres, tarefas e planos em comum.
+summary: Uma Fleet da família gratuita para até 6 pessoas, com tarefas e planos compartilhados quando todos estiverem disponíveis.
 covers: family
 code: family.py, dashboard.html
 order: 6
-translated: 3af87ad0b491b336
+translated: 2afbe215fa387999
 ---
-## O que ele faz
+## O que ela faz
 
-- Quando todos estão livres: "Quando todos nós estamos livres no sábado?" Só os horários ocupados.
-- Tarefas: peça para alguém da sua família fazer algo. A pessoa aceita ou recusa.
-- Planos: proponha um plano. Cada pessoa responde Eu topo ou Não vou conseguir. Eu topo adiciona à sua própria agenda do Google, sem convidar ninguém; Desfazer tira de novo. Sem uma agenda que a The Machine possa alterar, você recebe um link para adicionar por conta própria.
+- Encontre um horário: "Quando todo mundo está livre no sábado?" Só os horários ocupados são compartilhados.
+- Tarefas: peça a alguém da família para fazer algo. A pessoa aceita ou recusa.
+- Planos: proponha um plano. Todos respondem "Vou" ou "Não posso". "Vou" adiciona o plano à sua agenda do Google, sem convidar ninguém; **Desfazer** remove o plano. Se não houver uma agenda que a Machine possa alterar, você recebe um link para adicionar o plano por conta própria.
 
-Nenhuma pergunta de trabalho passa por um Fleet de Família.
+Nenhuma pergunta de trabalho passa por uma Fleet da família.
 
 ## Sugestões de convite
 
-Quando uma tarefa é sobre planos de família com alguém que ainda não está na sua Família, como "Quem busca as crianças na quarta?", ela pode perguntar: "Convidar Sasha? Suas Machines podem resolver isso sem vocês precisarem perguntar um ao outro."
+Quando uma tarefa envolve planos em família com alguém que ainda não faz parte da sua Família, como "Quem busca as crianças na quarta-feira?", a assistente pode sugerir que você convide essa pessoa.
 
-- **Convidar** abre o formulário de convite na sua página da conta, com o endereço já preenchido. Você vê o e-mail que a pessoa receberia antes de qualquer envio. Nada é enviado sem você.
-- **Agora não** esconde por 90 dias.
-- Só para pessoas que são da família segundo seu Graph ou suas próprias palavras. Nunca para contatos de trabalho, quem já está na sua Família ou alguém com um convite aberto. No máximo uma vez por pessoa.
-- Desative em Configurações, Geral, em Fleet: **Sugerir convidar a família**.
+- **Convidar** abre o formulário de convite com o endereço da pessoa preenchido e mostra o e-mail que ela receberia. Nada é enviado sem a sua autorização.
+- **Agora não** oculta a sugestão por 90 dias.
+- A sugestão aparece apenas para pessoas que, segundo seu Graph ou o que você disse, são da família. Nunca aparece para contatos de trabalho, pessoas que já fazem parte da sua Família ou alguém com um convite pendente. No máximo uma vez por pessoa.
+- Desative a opção em Configurações, Geral, na seção Fleet: **Sugerir convidar a família**.
 
-## Já feito
+## Já fez isso
 
-Quando vocês dois recebem o mesmo e-mail, conta ou formulário e um marca a tarefa como feita, a do outro mostra “Robin já fez isso · sáb, 7 de nov”.
+Quando vocês dois recebem o mesmo e-mail, cobrança ou formulário e uma pessoa marca a tarefa como concluída, a tarefa da outra pessoa mostra "Robin fez isso · sáb., 7 de nov.".
 
-- **Feito** fecha a sua. **Ainda precisa** mantém a tarefa e esconde a linha.
-- Nada fecha sozinho.
+- **Feito** conclui a sua tarefa. **Ainda precisa** mantém a tarefa aberta e oculta essa mensagem.
+- Nada é concluído automaticamente.
 - Um lembrete com o mesmo link de formulário conta como a mesma tarefa.
-- Só um código é compartilhado, nunca a tarefa. Desligue no painel Compartilhar: Tarefas que você já fez.
+- Apenas um código é compartilhado, nunca a tarefa. Desative isso no painel Compartilhamento: Tarefas que você já concluiu.
 
 ## Regras
 
-Por padrão, os horários livres e ocupados são compartilhados. Tarefas e planos perguntam antes. Mude isso no painel de compartilhamento: veja [Regras de compartilhamento](sharing-rules.md).
+Por padrão, os horários livres e ocupados são compartilhados, e as tarefas e os planos pedem sua confirmação primeiro. Altere isso no painel Compartilhamento: veja [Regras de compartilhamento](sharing-rules.md).
 
-Um Fleet de Família é grátis. Machines hospedadas nele são pagas como qualquer Machine hospedada: veja [Planos e cobrança](plans-and-billing.md).
+Uma Fleet da família é gratuita. As Machines hospedadas nela custam {price.family_pair} por mês para as duas primeiras em conjunto, depois {price.family_seat} cada, sem IVA. Veja [Planos e cobrança](plans-and-billing.md).

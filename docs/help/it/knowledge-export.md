@@ -1,38 +1,38 @@
 ---
 title: Conoscenze per un’altra IA
 area: settings
-summary: Porta ciò che la tua Machine ha imparato a qualsiasi altra IA, in semplici file Markdown, JSONL e CSV.
+summary: Porta ciò che la tua Machine ha imparato su qualsiasi altra IA, in file semplici che ogni IA può leggere.
 covers: knowledge-export
 code: machine/export/knowledge.py, machine/app/knowledge_export.py, cli.py
 order: 6
 translated: 6a917f8ee2aabaa9
 ---
-Tutto ciò che la tua Machine impara è tuo. Portalo a un’altra IA, o tienilo, anche se smetti di usare The Machine.
+Tutto ciò che la tua Machine impara è tuo. Puoi condividerlo con un’altra IA, come ChatGPT o Claude, oppure conservarlo.
 
-## Esportare
+## Esporta
 
-1. In **Impostazioni** › **Generale**, premi **Esporta** accanto a **Conoscenze per un’altra IA**.
-2. Lascia **Testo dei messaggi** disattivato per esportare solo da dove viene ogni cosa, e quando. Attivalo per aggiungere il testo.
-3. **Privato e Prudente** resta disattivato, a meno che tu non voglia anche i progetti solo per te, le conversazioni private e le Fleet in modalità Prudente.
-4. Se vuoi, imposta una **Passphrase** di almeno 10 caratteri per cifrare il file.
-5. Premi **Scarica**. Il file viene creato sulla tua Machine e si può scaricare una volta.
+1. In **Impostazioni** › **Generale** › **Esporta**, premi **Esporta** accanto a **Conoscenze per un’altra IA**.
+2. **Testo dei messaggi** è disattivato per impostazione predefinita: vengono incluse solo la provenienza di ogni elemento e la data. Attivalo per includere anche il testo.
+3. Attiva **Privato e Prudente** solo per includere i progetti solo per te, le chat private e le Fleet prudenti.
+4. Se vuoi, imposta una **Passphrase** (di almeno 10 caratteri) per crittografare il file.
+5. Premi **Scarica**. Il file può essere scaricato una sola volta.
 
-Su una Machine in hosting funziona allo stesso modo, dalle Impostazioni della tua Machine. Sul tuo computer, `assistant export-knowledge` crea lo stesso file.
+Funziona allo stesso modo con una Machine ospitata e sul tuo computer.
 
-## Cosa contiene
+## Cosa include
 
-- Persone, organizzazioni e progetti: una pagina Markdown ciascuno, con i loro legami.
-- Fatti e preferenze: ciò che la tua Machine sa, su di te e su di loro.
-- Fatti passati: ciò che non vale più (finito, messo da parte o sostituito), con ciò che lo ha sostituito. I fatti che hai rimosso restano fuori.
-- Regole, come scrivi e firme: ciò che seguono le tue bozze.
-- Skill: le tue guide, attive e no.
-- Contesto: brief del team, righe di riepilogo, promesse e attività aperte.
-- Fonti: da dove viene ogni cosa, con id e data.
+- Persone, organizzazioni e progetti: una pagina Markdown per ciascuno, con le relazioni tra loro.
+- Fatti e preferenze: ciò che la tua Machine sa di te e di loro.
+- Fatti passati: ciò che non è più valido (terminato, accantonato o sostituito) e cosa lo ha sostituito. I fatti che hai rimosso non vengono inclusi.
+- Regole, stile di scrittura e firme: ciò che seguono le tue bozze.
+- Skill: le tue guide pratiche, attivate o disattivate.
+- Contesto: briefing del team, righe di riepilogo, promesse e attività aperte.
+- Fonti: la provenienza di ogni elemento, con ID e data.
 
-I record sono JSONL, contatti e attività anche CSV. Un README.md in cima spiega la struttura e dice a un’IA come usarlo. Dai la cartella, o lo zip, all’IA come file di conoscenza o progetto.
+I contatti e le attività sono inclusi anche in fogli di calcolo (CSV). All’inizio trovi un README che spiega all’IA come leggere tutti i file. Carica lo zip nell’IA come file di conoscenze o progetto.
 
-## Cosa resta fuori
+## Cosa non include
 
-Password, chiavi e accessi non entrano mai. Ciò che sembra una chiave viene sostituito. Anche i dati dei colleghi e di altre Machine, le impostazioni e le foto restano fuori. Per una copia completa con cui spostare la tua Machine, vedi [Passa al tuo computer](moving.md).
+Le password, le chiavi e i dati di accesso non vengono mai inclusi. Sono esclusi anche i dati, le impostazioni e le foto dei compagni di team. Per trasferire tutta la tua Machine, consulta [Passare a un altro computer](moving.md).
 
-Il formato è aperto e con versioni: vedi [lo schema](https://github.com/Salesflare/TheMachine/blob/main/docs/knowledge-export.md).
+Per gli sviluppatori: [il formato dei file](https://github.com/Salesflare/TheMachine/blob/main/docs/knowledge-export.md).

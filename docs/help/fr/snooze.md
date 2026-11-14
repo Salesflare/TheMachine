@@ -1,7 +1,7 @@
 ---
 title: Mettre en attente
 area: cards
-summary: Faites revenir une tâche plus tard. Un jour de travail, à l’heure que vous choisissez.
+summary: Faites réapparaître une tâche plus tard. Un jour ouvré, à l’heure de votre choix.
 covers: snooze
 code: dashboard.html, assistant.py
 order: 3
@@ -9,18 +9,18 @@ translated: e6681ab225810e81
 ---
 ## Mettre une tâche en attente
 
-Appuyez sur **Mettre en attente** sur une tâche. Le menu propose quelques moments, comme dans 2 heures, demain, dans 3 jours ou dans une semaine, ou **Choisir une date** pour un autre jour et une **Heure**, puis **Enregistrer l’heure**. Mise en attente par erreur ? **Annuler** dans le message la ramène tout de suite.
+Appuyez sur **Mettre en attente** sur une tâche. Le menu propose plusieurs délais, comme dans 2 heures, demain ou dans une semaine. Pour choisir un autre moment, sélectionnez **Choisir une date** et **Heure**, puis **Enregistrer l’heure**. Vous l’avez mise en attente par erreur ? Appuyez sur **Annuler** dans le message pour la faire réapparaître immédiatement.
 
-Les mises en attente d’un jour ou plus reviennent à votre heure « Les mises en attente reviennent à », et les tâches de travail attendent un jour de travail. Réglez les deux dans [Heures de travail](work-hours.md).
+Les tâches mises en attente pour une journée ou plus réapparaissent à l’heure définie dans « Heure de retour des tâches en attente », et les tâches professionnelles attendent un jour ouvré. Réglez ces deux options dans [Heures de travail](work-hours.md).
 
-Un **Demander des modifications** comme « rappelle-moi ça mardi prochain » la met aussi en attente.
+Vous pouvez aussi le demander avec **Demander des modifications**, par exemple : « rappelle-moi cette tâche mardi prochain ».
 
-## Quand elle revient
+## Quand elle réapparaît
 
-Elle revient sur Telegram s’il est activé, et en notification sur chaque appareil où les notifications sont activées, selon ce que permettent les **Rappels** dans [Notifications](notifications.md). Après une mise en attente, le message indique lesquels. Sans l’un ni l’autre, elle revient sur le tableau de bord, et **Activer les notifications** est juste là. Sur iPhone et iPad, ajoutez d’abord The Machine à votre écran d’accueil.
+Elle réapparaît sous forme de notification sur chaque appareil où les notifications sont activées, et sur Telegram si vous l’utilisez, selon les réglages de **Rappels** dans [Notifications](notifications.md). Le message de mise en attente indique où la retrouver. Si aucune de ces options n’est activée, elle réapparaît sur le tableau de bord, où vous trouverez **Activer les notifications**. Sur iPhone et iPad, installez [l’application mobile](mobile-app.md) pour recevoir des notifications.
 
-## Pendant l’attente
+## Pendant la mise en attente
 
-La tâche se trouve sous **Revient plus tard**, et à sa date dans l’[Agenda](calendar.md). **Sortir de l’attente** la fait revenir tout de suite, **Changer l’heure** choisit un autre moment.
+La tâche se trouve sous **Revient plus tard**, et apparaît dans le [Calendrier](calendar.md) le jour prévu. **Sortir de l’attente** la fait réapparaître immédiatement, et **Changer l’heure** permet de choisir un autre moment.
 
-Sur Outlook, le fil d’e-mails passe dans un dossier Snoozed jusqu’au retour de la tâche. Voir [Microsoft](microsoft.md).
+Dans Outlook, le fil de discussion de l’e-mail est déplacé dans un dossier de mise en attente jusqu’au retour de la tâche. Voir [Microsoft](microsoft.md).

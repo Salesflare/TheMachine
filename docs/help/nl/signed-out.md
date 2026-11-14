@@ -1,28 +1,28 @@
 ---
-title: Uitgelogd op een site
+title: Afgemeld bij een site
 area: troubleshooting
-summary: LinkedIn of X heeft je Machine uitgelogd. Log hem opnieuw in, één keer of voorgoed.
+summary: LinkedIn of X heeft je Machine afgemeld. Log opnieuw in, eenmalig of blijvend.
 covers: 
 code: browser_login.py, dashboard.html, dashboard/connections-signin.js
 order: 2
-translated: b77b372b9332ca2b
+translated: da165847c9a9d091
 ---
-Sites zoals LinkedIn en X worden gelezen in de eigen browser van je Machine. Soms logt een site hem uit.
+Je Machine leest sites zoals LinkedIn en X in zijn eigen browser. Soms meldt een site hem af.
 
 ## Opnieuw inloggen
 
-De bron op **Koppelingen** en de bovenkant van je To-do's melden dat hij is uitgelogd. Druk op **Opnieuw inloggen** en log in, in een klein venster op het dashboard.
+Bij **Koppelingen** en bovenaan je to-do's zie je dat hij is afgemeld. Kies **Log hier in** en log in via een klein venster op het dashboard.
 
-Vink **Bewaren voor de volgende keer** aan als je inlogt. De volgende keer dat de site je Machine uitlogt, logt hij met één tik opnieuw in. Het wachtwoord blijft versleuteld op je Machine; de AI ziet het nooit.
+Vink **Bewaren voor de volgende keer** aan om de volgende keer met één tik weer in te loggen. Het wachtwoord blijft versleuteld op je Machine en de AI ziet het nooit.
 
 ## Wachtwoorden en codes
 
-Typ wachtwoorden zelf. Codes voor tweestapsverificatie vul je ook zelf in.
+Voer wachtwoorden zelf in. Tweestapscodes moet je ook zelf invoeren.
 
-Opgeslagen logins staan onder **Koppelingen**, **Logins**. **Vergeten** verwijdert er een.
+Opgeslagen logins vind je onder **Koppelingen**, **Logins**. Met **Vergeten** verwijder je een login.
 
-## Als de site weigert of een robotcheck wil
+## Als de site je niet binnenlaat of een robotcheck vraagt
 
-LinkedIn, X en sites achter een Cloudflare-check weigeren vaak logins vanuit een browser in de cloud. Op een gehoste Machine toont de login dan **Inloggen via je thuisverbinding**. Dat opent je setuppagina, waar de browser van je Machine via je internet thuis naar buiten kan met Tailscale, of via je eigen proxy. Log daarna opnieuw in.
+LinkedIn, X en sites met een Cloudflare-controle weigeren vaak inloggen via een browser in de cloud. Op een gehoste Machine zie je dan **Inloggen via je thuisverbinding**. Hiermee open je de instellingenpagina, waar de browser van je Machine via Tailscale of je eigen proxy verbinding kan maken met internet via je thuisverbinding. Log daarna opnieuw in.
 
-Op je eigen computer heb je dit niet nodig: die browser staat al thuis.
+Op je eigen computer heb je dit niet nodig: de browser is daar al thuis.

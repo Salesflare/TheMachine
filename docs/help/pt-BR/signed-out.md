@@ -1,28 +1,28 @@
 ---
-title: Desconectado de um site
+title: Você saiu de um site
 area: troubleshooting
-summary: O LinkedIn ou o X desconectou sua Machine. Entre de novo, uma vez ou de vez.
+summary: LinkedIn ou X desconectou sua Machine. Entre de novo, uma vez ou para sempre.
 covers: 
 code: browser_login.py, dashboard.html, dashboard/connections-signin.js
 order: 2
-translated: b77b372b9332ca2b
+translated: da165847c9a9d091
 ---
-Sites como LinkedIn e X são lidos no navegador da própria Machine. Às vezes um site a desconecta.
+Sites como LinkedIn e X são acessados pelo navegador da sua própria Machine. Às vezes, um site desconecta sua Machine.
 
-## Entrar de novo
+## Entre de novo
 
-A fonte em **Conexões** e o topo das suas Tarefas mostram que ela está desconectada. Clique em **Entrar de novo** e faça login em uma pequena janela no painel.
+**Conexões** e o topo das suas tarefas indicam que você saiu da conta. Clique em **Entre aqui** e faça login em uma janela pequena no painel.
 
-Marque **Salvar para a próxima vez** quando entrar. Na próxima vez que o site desconectar sua Machine, ela entra de novo com um toque. A senha fica criptografada na sua Machine. A IA nunca a vê.
+Marque **Salvar para a próxima vez** para entrar com um toque se isso acontecer de novo. A senha fica criptografada na sua Machine, e a IA nunca a vê.
 
 ## Senhas e códigos
 
-Digite as senhas você mesmo. Os códigos de verificação em duas etapas também ficam por sua conta.
+Digite as senhas você mesma. Você também precisa inserir os códigos de verificação em duas etapas.
 
-Os logins salvos ficam em **Conexões**, **Logins**. **Esquecer** remove um deles.
+Os logins salvos ficam em **Conexões**, **Logins**. **Esquecer** remove um login.
 
-## Se o site recusar ou pedir uma verificação de robô
+## Se o site recusar o login ou pedir uma verificação de robô
 
-LinkedIn, X e sites atrás de uma verificação da Cloudflare costumam recusar logins de um navegador na nuvem. Em uma Machine hospedada, o login mostra então **Entrar pela sua conexão de casa**. Isso abre sua página de configuração, onde o navegador da sua Machine pode sair pela internet da sua casa com o Tailscale, ou pelo seu próprio proxy. Depois, entre de novo.
+LinkedIn, X e sites com uma verificação da Cloudflare muitas vezes recusam logins feitos por um navegador na nuvem. Em uma Machine hospedada, aparece a opção **Entrar pela sua conexão de casa**. Ela abre a página de configuração, onde o navegador da sua Machine pode acessar a internet pela sua conexão de casa com o Tailscale ou por meio do seu próprio proxy. Depois, entre de novo.
 
-No seu próprio computador isso não é necessário: o navegador dele já está em casa.
+No seu próprio computador, você não precisa fazer isso: o navegador já está na sua conexão de casa.

@@ -1,43 +1,43 @@
 ---
 title: Segurança e privacidade
 area: security
-summary: Sua própria Machine privada, e-mails guardados com criptografia e nada enviado sem o seu OK. A versão curta, com links.
+summary: Sua Machine particular, e-mails armazenados com criptografia e nada enviado sem sua aprovação. O resumo, com links.
 covers: 
 code: message_seal.py, next_actions.py, SECURITY.md
 order: 1
 keywords: private, privacy, data, gdpr, encrypted, who can see, safe, stored, keep
-translated: 237400429e8be40b
+translated: edaba74e38b8ef79
 ---
 ## Em resumo
 
-- Sua própria Machine: uma hospedada roda na nuvem da UE, só para você, nunca compartilhada. Ou rode no seu próprio computador.
-- Não lemos seus e-mails: as mensagens são guardadas com criptografia, e nossas ferramentas de suporte não conseguem abri-las.
-- Nada é enviado sem o seu OK: ela lê e escreve rascunhos, e você decide o que sai. Veja [Fazer](do-it.md).
-- Não é usado para treinar IA: não temos IA própria. Seu provedor trabalha na sua conta e sob os termos dele.
-- Aprendizados para a equipe só com o seu OK: de vez em quando ela pede para enviar algumas dicas gerais, nada pessoal. Veja [Compartilhar aprendizados](share-learnings.md).
-- Relatórios de erro, a menos que você os desative: quando algo quebra, o tipo de erro e onde no código. Nunca suas mensagens, nomes ou endereços. Veja [Relatórios de erro](error-reports.md).
-- Contagens de uso em uma Machine hospedada: contagens diárias do que você fez (como tarefas abertas ou e-mails enviados), nunca o conteúdo.
-- Leve com você ou exclua: exporte tudo em um arquivo ou exclua sua Machine e os backups com um botão.
-- Nosso acesso fica registrado: cada vez que nossa equipe lê o relatório ou os logs da sua Machine hospedada. Donos e admins de um Fleet veem isso em **Atividade**. Veja [Fleets](fleet.md).
+- Sua própria Machine: uma versão hospedada funciona na nuvem da UE, só para você, nunca compartilhada. Ou execute-a no seu computador.
+- Não lemos seus e-mails: as mensagens são armazenadas com criptografia, e nossas ferramentas de suporte não conseguem acessá-las.
+- Nada é enviado sem sua aprovação: ela lê e cria rascunhos; você decide o que enviar. Veja [Fazer](do-it.md).
+- Não usamos seus dados para treinar IA: não temos uma IA própria. Seu provedor opera na sua conta e segue os próprios termos.
+- Aprendizados para a equipe, a menos que você desative essa opção: de vez em quando, compartilhamos algumas dicas gerais, nada pessoal, depois de verificá-las. Veja [Compartilhar aprendizados](share-learnings.md).
+- Relatórios de erro, a menos que você desative essa opção: quando algo dá errado, registramos o tipo de erro e onde ele ocorreu no código. Nunca registramos suas mensagens, nomes ou endereços. Veja [Relatórios de erro](error-reports.md).
+- Contagens de uso em uma Machine hospedada: contagens diárias do que você fez (como tarefas abertas ou e-mails enviados), nunca do conteúdo.
+- Leve seus dados com você ou exclua-os: exporte tudo em **Configurações** › **Geral**, ou exclua sua Machine e os backups dela com um botão. Veja [Cancelar ou excluir](cancel-and-delete.md).
+- Nosso acesso fica registrado: sempre que alguém da nossa equipe lê o relatório ou os registros da sua Machine hospedada. Quem é proprietário ou administra uma Fleet pode ver esses registros em **Atividade**. Veja [Fleets](fleet.md).
 
 ## Níveis de segurança
 
-**Padrão** mantém os padrões atuais. **Cuidadoso** não mostra texto nas notificações, não salva logins e guarda menos. O admin de um Fleet de Trabalho pode deixar o Fleet como Cuidadoso. Veja [Níveis de segurança](security-levels.md).
+**Padrão** mantém as configurações atuais. **Cuidadoso** não mostra texto nas notificações, não salva logins e guarda menos dados. Quem administra uma Work Fleet pode definir a Fleet como **Cuidadoso**. Veja [Níveis de segurança](security-levels.md).
 
-## Login
+## Entrar
 
-O painel pede login com Google ou Microsoft, mais um código de autenticador ou uma passkey.
+Para acessar um painel hospedado, você precisa de uma chave de acesso ou entrar com Google ou Microsoft e informar um código do autenticador.
 
 ## Conexões
 
-O artigo de cada conexão diz o que ela lê e o que pode enviar. Desconecte qualquer uma quando quiser: veja [Conexões](connections.md).
+O artigo de cada conexão explica o que ela lê e o que pode enviar. Você pode desconectar qualquer uma delas quando quiser: veja [Conexões](connections.md).
 
 ## Ajuda
 
-A Ajuda roda na sua própria Machine e não vê seus dados. Só o assunto de cada pergunta vai para a equipe de The Machine, nunca as suas palavras. Veja [Pergunte à Ajuda](help-chat.md#what-the-team-sees).
+A Ajuda funciona na sua própria Machine e não consegue ver seus dados. Só o assunto de cada pergunta é enviado à equipe da The Machine, nunca o que você escreveu. Veja [Perguntar à Ajuda](help-chat.md#what-the-team-sees).
 
 ## Mais
 
-- [Segurança](/security): como é construída, o que nossa equipe pode e não pode ver e como procuramos problemas.
-- [Aviso de privacidade](/privacy) e [termos de tratamento de dados](/dpa).
+- [Segurança](/security): como ela é criada, o que nossa equipe pode ou não ver e como procuramos problemas.
+- [Aviso de privacidade](/privacy) e [termos de processamento de dados](/dpa).
 - Encontrou um problema de segurança? Veja a [política de segurança](https://github.com/Salesflare/TheMachine/blob/main/SECURITY.md).

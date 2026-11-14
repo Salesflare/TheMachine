@@ -1,56 +1,56 @@
 ---
 title: Microsoft Outlook en agenda
 area: connections
-summary: Mail en afspraken in Outlook, voor Microsoft 365 en Outlook.com. Verstuurt een e-mail pas nadat je hem goedkeurt.
+summary: Outlook-mail en vergaderingen voor Microsoft 365 en Outlook.com. Er wordt pas een e-mail verstuurd nadat je die hebt goedgekeurd.
 covers: connector:outlook, connector:outlook_calendar
 code: ms_graph.py, ms_photos.py, onboarding.py
 site: Connect Microsoft, Copy link, I'm the admin: approve now, Disconnect, Sign in with Microsoft, Use your own app
 order: 12
-translated: 41c9c0174a2a21c7
+translated: c10bf70a327b8ec0
 ---
-## Wat het leest
+## Wat hij leest
 
-- **Outlook**: al je mail, de laatste 7 dagen als je koppelt, daarna alles wat nieuw is.
-- **Outlook-agenda**: je afspraken, alleen lezen.
+- **Outlook**: al je e-mail. Bij het verbinden leest hij de laatste 7 dagen en daarna alle nieuwe berichten.
+- **Outlook-agenda**: je vergaderingen, alleen-lezen.
 
-Mail in Overige en nieuwsbrieven krijgen eerst een snelle blik: afzender, onderwerp en een paar woorden, veel tegelijk. Als er een belangrijk is, wordt die volledig gelezen en kan die een to-do worden. Niets wordt ongezien overgeslagen.
+E-mail in Overige en nieuwsbrieven worden eerst kort bekeken: de afzender, het onderwerp en een paar woorden. Als een bericht belangrijk is, wordt het volledig gelezen en kan het een to-do worden.
 
-## Wat het kan versturen en wijzigen
+## Wat hij kan versturen en wijzigen
 
-- Een e-mail vanuit een to-do, pas nadat je hem goedkeurt in het voorbeeld.
-- Een antwoord komt in het Outlook-gesprek van de e-mail waarop het antwoordt.
-- Als je een to-do over een e-mail snoozet, gaan de berichten van de thread naar een map Snoozed in Outlook en komen ze terug wanneer de to-do terugkomt.
+- Een e-mail vanuit een to-do, maar alleen nadat je die hebt goedgekeurd. De e-mail wordt verstuurd vanaf het adres van de mailbox zelf, niet vanaf een alias.
+- Een antwoord komt terecht in het Outlook-gesprek van de e-mail waarop je antwoordt.
+- Nadat een antwoord is verstuurd, worden de berichten in de thread een paar dagen verplaatst naar een map met gesnoozede berichten in Outlook (3 dagen, tenzij de to-do iets anders aangeeft). Daarna komen ze terug in het Postvak IN, of eerder als iemand antwoordt. Je ziet dit in de controle voordat je het bericht verstuurt.
 
 De agenda wordt nooit gewijzigd.
 
-## Foto’s van collega’s en contacten
+## Foto's van collega's en contacten
 
-Microsoft wordt ook gevraagd om de basisprofielen in je organisatie (naam, e-mail en foto) en je Outlook-contacten te lezen. Je Machine gebruikt ze alleen voor foto’s, functies en bedrijven van mensen die al in je Graph staan, tot 200 foto’s per dag. Wie geen foto heeft, wordt na 30 dagen opnieuw bekeken.
+Microsoft wordt ook gevraagd om basisprofielen in je organisatie te lezen (naam, e-mailadres en foto) en je Outlook-contacten. Je Machine gebruikt deze gegevens alleen voor foto's, functietitels en bedrijven van mensen die al in je Graph staan, tot 200 foto's per dag. Van iemand zonder foto wordt na 30 dagen opnieuw gecontroleerd of er een foto is.
 
-Mogelijk moet de admin van je organisatie de foto’s van collega’s goedkeuren. Doet die dat niet, dan koppelt Outlook toch, alleen zonder die foto’s. Een account dat al eerder gekoppeld was, krijgt één to-do: druk op **Opnieuw verbinden**, of op **Niet nodig** om die voorgoed te sluiten. Een persoonlijk account (Outlook.com, Hotmail) heeft geen collega’s, dus die to-do vraagt alleen om de foto’s van contacten.
+De beheerder van je organisatie moet mogelijk toestemming geven voor foto's van collega's. Zo niet, dan wordt Outlook nog steeds verbonden, maar zonder deze foto's. Een account dat eerder is verbonden, krijgt hiervoor één to-do: druk op **Opnieuw verbinden** of op **Niet nodig** om de to-do definitief te sluiten. Een persoonlijk account (Outlook.com, Hotmail) heeft geen collega's, dus vraagt de to-do alleen om foto's van contacten.
 
-## Koppelen
+## Verbinden
 
 Op een gehoste Machine:
 
-1. Open je setuppagina op app.themachine.computer/setup.
-2. Druk op **Microsoft koppelen** en log in.
-3. Vraagt Microsoft om goedkeuring van een beheerder, stuur de beheerder van je Microsoft 365 dan deze link: themachine.computer/m365-admin-consent. **Link kopiëren** kopieert hem. Zodra die goedkeurt, kan iedereen in je organisatie koppelen. Ben jij de beheerder, druk dan op **Ik ben de beheerder: nu goedkeuren**.
+1. Open je installatiepagina op app.themachine.computer/setup.
+2. Druk op **Microsoft verbinden** en meld je aan.
+3. Vraagt Microsoft om toestemming van een beheerder? Stuur je Microsoft 365-beheerder dan de link (**Link kopiëren**). Zodra die toestemming geeft, kan iedereen in je organisatie verbinding maken. Ben je zelf de beheerder, druk dan op **Ik ben de beheerder: nu goedkeuren**.
 
-Of in het dashboard: **Koppelingen**, **E-mail**, kies Outlook en druk op **Inloggen met Microsoft**. Als je klaar bent, ben je terug in het dashboard. Goedkeuring van je beheerder nodig? Dezelfde link staat onder de knop, met **Link kopiëren**.
+Of ga in het dashboard naar **Koppelingen**, **E-mail**, kies Outlook en druk op **Aanmelden met Microsoft**. De link voor de beheerder staat direct onder de knop.
 
-Op je eigen computer, zodra hij [aan je account gekoppeld is](friends.md#a-machine-on-your-own-computer): open **Koppelingen**, dan **E-mail**, kies Outlook en druk op **Inloggen met Microsoft**. Mail en agenda worden samen gekoppeld.
+Op je eigen computer: zodra die [aan je account is gekoppeld](friends.md#a-machine-on-your-own-computer), open je **Koppelingen**, daarna **E-mail**, kies je Outlook en druk je op **Aanmelden met Microsoft**. Mail en agenda worden samen verbonden. Na Microsoft keer je terug naar **Koppelingen** in je dashboard.
 
-Met je eigen app: open daar **Je eigen app gebruiken**, of voer `assistant connect outlook` of `assistant connect outlook_calendar` uit. Het gebruikt je eigen app-registratie in Microsoft Entra en een inlogcode. Hij vraagt of hij ook moet versturen wat je goedkeurt.
+Voor IT-teams met een eigen Microsoft Entra-app: open daar **Je eigen app gebruiken** of voer `assistant connect outlook` uit.
 
 ## Verwijderen
 
-- Op een gehoste Machine: druk op **Ontkoppelen** naast het account op je setuppagina. In het dashboard brengt **Ontkoppelen ↗** op Koppelingen je daarheen. **Opnieuw verbinden** daar logt opnieuw in zonder het dashboard te verlaten.
-- Op je eigen computer: **Koppelingen**, open het account, **Details**, dan **Ontkoppelen**.
+- Op een gehoste Machine: druk op **Ontkoppelen** naast het account op je installatiepagina. Met **Ontkoppelen ↗** bij Koppelingen ga je naar die pagina.
+- Op je eigen computer: ga naar **Koppelingen**, open het account, kies **Details** en daarna **Ontkoppelen**.
 
 ## Verwijderen bij Microsoft
 
-Microsoft geeft ons geen manier om een login in te trekken, dus verwijder hem daar ook:
+Microsoft biedt ons geen optie om een aanmelding in te trekken, dus verwijder de koppeling daar ook:
 
 - Werk- of schoolaccount: myapps.microsoft.com
 - Persoonlijk account: account.live.com/consent/Manage

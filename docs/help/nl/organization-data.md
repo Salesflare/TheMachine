@@ -1,27 +1,27 @@
 ---
-title: Gegevens van organisaties
+title: Organisatiegegevens
 area: graph
-summary: Sector, grootte, locatie en een logo bij elke organisatie, opgezocht via het webadres.
+summary: Branche, grootte, locatie en een logo bij elke organisatie, opgezocht op basis van het webadres.
 covers: enrichment
 code: enrichment.py, graph.py, dashboard.html
 order: 5
-translated: a759d8e2c6274792
+translated: f403410953e50582
 ---
 ## Waar ze vandaan komen
 
-- Op een gehoste Machine worden de gegevens van organisaties gratis voor je opgezocht.
-- Op je eigen computer staat het uit tot je een sleutel toevoegt voor een opzoekdienst die je gebruikt, zoals Apollo, People Data Labs of Hunter. Zie de [configuratiegids](https://github.com/Salesflare/TheMachine/blob/main/docs/configuration.md).
+- Op een gehoste Machine worden organisatiegegevens gratis voor je opgezocht.
+- Op je eigen computer is dit uitgeschakeld totdat je een sleutel toevoegt voor een opzoekdienst, zoals Apollo, People Data Labs of Hunter. Bekijk de [configuratiehandleiding](https://github.com/Salesflare/TheMachine/blob/main/docs/configuration.md).
 
-Alleen het webadres van een organisatie wordt verstuurd, nooit je berichten of wie je daar kent. Er worden er een paar tegelijk opgezocht, maximaal 50 per dag, en ze worden elke 90 dagen ververst. Personen worden apart opgezocht: zie [Functie en foto](people.md#job-title-and-photo). Gedeelde hosts en mailproviders, zoals google.com, sites.google.com of gmail.com, worden nooit opgezocht: ze zijn niet de website van één bedrijf.
+Er wordt alleen het webadres van een organisatie verstuurd, nooit je berichten of wie je daar kent. Een gehoste Machine of een Machine op The Machine Network zoekt maximaal 1,000 organisaties per dag op. In andere gevallen zijn dat er maximaal 50. Elke organisatie wordt elke 90 dagen opnieuw opgezocht. Gedeelde websites en e-mailproviders, zoals gmail.com, worden nooit opgezocht. Voor mensen is er een aparte zoekfunctie: zie [Functietitel en foto](people.md#job-title-and-photo).
 
-Heeft de opzoeking geen logo, of is er geen opzoeking, dan komt het logo van de eigen website van de organisatie: het icoon dat de homepage noemt. Het wordt op je Machine bewaard, zodat geen logodienst te weten komt met wie je te maken hebt. Een site zonder icoon wordt na 30 dagen opnieuw gevraagd. Vond de opzoeking de organisatie maar geen logo, dan wordt ze na een week nog één keer gedaan, en een logo dat ze dan vindt, vervangt het icoon van de site. Kleine plekken, zoals de regel van een to-do, tonen dan nog het vierkante icoon.
+Als er bij het opzoeken geen logo wordt gevonden, gebruikt The Machine het pictogram van de eigen website van de organisatie, opgeslagen op je Machine. Geen enkele logoservice komt te weten met wie je contact hebt. Als beide beschikbaar zijn, wordt op kleine plekken, zoals de regel van een to-do, het vierkante pictogram getoond.
 
-Als de opzoeking ze kent, staan tot 5 specialisaties van de organisatie onder haar beschrijving, en de lijst met organisaties kan erop gefilterd worden: **Filteren**, dan **Specialisatie**. Brengt de opzoeking van een persoon de gegevens van hun bedrijf mee, dan vullen die ook de organisatie aan, die dan geen eigen opzoeking nodig heeft. Gegevens die in de laatste 90 dagen opgezocht zijn, blijven zoals ze zijn.
+Als de gegevens beschikbaar zijn, worden maximaal 5 specialisaties van de organisatie onder de beschrijving getoond. Je kunt de lijst met organisaties filteren op een specialisatie: **Filteren** en dan **Specialisatie**. Als bij het opzoeken van een persoon ook de gegevens van diens bedrijf worden opgehaald, worden die ook bij de organisatie ingevuld. Die hoeft dan niet apart te worden opgezocht. Gegevens die in de afgelopen 90 dagen zijn opgezocht, blijven ongewijzigd.
 
-## Een foute corrigeren
+## Een verkeerde organisatie corrigeren
 
 Op de pagina van de organisatie:
 
-- **Bewerken** om de naam, sector, grootte, locatie, oprichtingsjaar, beschrijving, website, LinkedIn en wat ze voor jou is te wijzigen. Je wijzigingen blijven. Maak een veld leeg om weer de opgezochte waarde te gebruiken.
-- **Verkeerd bedrijf, details wissen** als het verkeerde bedrijf gekozen is.
-- **Opnieuw opzoeken** om verse gegevens op te halen.
+- Kies **Bewerken** om de naam, branche, grootte, locatie, het oprichtingsjaar, de beschrijving, website, LinkedIn, notities en je relatie met de organisatie te wijzigen. Je wijzigingen blijven behouden. Maak een veld leeg om de opgezochte waarde weer te gebruiken.
+- Kies **Verkeerd bedrijf, details wissen** onder **Bewerken** als de verkeerde organisatie is gevonden.
+- **Opnieuw opzoeken** haalt nieuwe gegevens op nadat de huidige gegevens zijn gewist.

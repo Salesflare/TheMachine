@@ -1,70 +1,68 @@
 ---
 title: App installieren und Benachrichtigungen einschalten
 area: getting-started
-summary: Installiere The Machine auf deinem Handy oder Computer und bekomm für jede Aufgabe eine Benachrichtigung. Telegram ist optional.
+summary: Installiere The Machine auf deinem Handy oder Computer und lass dich bei jeder Aufgabe benachrichtigen. Telegram ist optional.
 covers: phone-app
 code: manifest.webmanifest, sw.js, dashboard.html
 order: 3
-translated: 3e2919603c5efa9a
+translated: 94a8cc809a2ef08e
 ---
-Das Dashboard lässt sich als App auf einem Handy oder Computer installieren. Dann schickt es für jede Aufgabe, jedes Ergebnis und jede Erinnerung eine Benachrichtigung, wenn du nicht am Dashboard bist, innerhalb deiner [Arbeitszeiten](work-hours.md). Was es schickt, wählst du unter [Benachrichtigungen](notifications.md).
+Installiere The Machine als App auf deinem Handy oder Computer, damit du während deiner [Arbeitszeiten](work-hours.md) bei jeder Aufgabe, jedem Ergebnis und jeder Erinnerung eine Benachrichtigung bekommst. Unter [Benachrichtigungen](notifications.md) legst du fest, was gesendet wird.
 
-Ein dezenter Hinweis oben in Aufgaben bietet sie eins nach dem anderen an, sobald du deine erste Aufgabe erledigt hast: zuerst die [mobile App](mobile-app.md), dann Benachrichtigungen, dann die App. Im Browser auf dem Handy bietet er nur die mobile App mit ihren eigenen Benachrichtigungen an, bis du zweimal **Nicht jetzt** dazu gesagt hast. Was auf dem Gerät schon erledigt ist, erscheint nie.
+Die Aufgabe **Hol mehr aus The Machine heraus** oben in den Aufgaben enthält je eine Zeile für **Hol dir die App fürs Handy** (siehe [Die mobile App](mobile-app.md)), **Benachrichtigungen einschalten** und **Auf diesem Computer installieren**. Angezeigt werden nur die Optionen, die auf dem jeweiligen Gerät noch fehlen. Mit × schließt du eine Zeile. Dieselben Steuerelemente findest du unter **Einstellungen**, **Allgemein**, **Dieses Gerät**.
 
-**Nicht jetzt** blendet ihn 14 Tage aus, und ein zweites **Nicht jetzt** beendet ihn auf diesem Gerät. Dieselben Schalter bleiben in **Einstellungen**, **Allgemein**, **Dieses Gerät**.
-
-In der Handy-App steht oben eine kurze Zeile **Erhalte einen Hinweis, wenn etwas dich braucht.**, solange ihre Benachrichtigungen aus sind. **Einschalten** fragt das Handy oder öffnet seine Einstellungen, wenn es nicht mehr fragt. Das **×** blendet sie 7 Tage aus. Bei deiner ersten Anmeldung fragt das Handy einmal von selbst.
+In der Handy-App wird **Lass dich benachrichtigen, wenn etwas deine Aufmerksamkeit braucht.** angezeigt, solange Benachrichtigungen ausgeschaltet sind. Mit **Einschalten** kannst du Benachrichtigungen auf dem Handy erlauben oder die Einstellungen dafür öffnen. Mit **×** blendest du den Hinweis 7 Tage lang aus.
 
 ## Auf einem Computer (Chrome oder Edge)
 
-1. Öffne dein Dashboard und klick in diesem Hinweis auf **Installieren**, in den Einstellungen unter **Allgemein** auf **App installieren** oder unter **Apps** neben **Computer** auf **Installieren**.
-2. The Machine öffnet sich in einem eigenen Fenster. Hefte sie an deine Taskleiste oder dein Dock.
-3. Klick im Hinweis auf **Einschalten** und erlaube Benachrichtigungen. Eine Testbenachrichtigung erscheint sofort.
+1. Öffne dein Dashboard und klicke in der entsprechenden Aufgabenzeile auf **Installieren**, unter **Einstellungen**, **Allgemein** auf **App installieren** oder unter **Einstellungen**, **Apps** neben **Computer** auf **Installieren**.
+2. The Machine wird in einem eigenen Fenster geöffnet. Heft sie an die Taskleiste oder das Dock an.
+3. Klicke in der Zeile auf **Einschalten** und erlaube Benachrichtigungen. Sofort wird eine Testbenachrichtigung angezeigt.
 
 ## Auf einem Mac (Safari)
 
-1. Wähle in der Menüleiste von Safari Ablage, dann Zum Dock hinzufügen.
-2. Öffne The Machine aus dem Dock und klick auf **Einschalten**.
+1. Wähle in der Menüleiste von Safari **Ablage** und dann **Zum Dock hinzufügen**.
+2. Öffne The Machine über das Dock und klicke auf **Einschalten**.
 
 ## In Firefox
 
-Firefox kann sie nicht als App installieren. Benachrichtigungen funktionieren im Tab: Klick in diesem Hinweis auf **Einschalten**, oder auf die Glocke neben **Benachrichtigungen** in den Einstellungen.
+Firefox kann The Machine nicht als App installieren. Benachrichtigungen funktionieren im Tab: Klicke in der Zeile auf **Einschalten** oder unter **Einstellungen** neben **Benachrichtigungen** auf die Glocke.
 
 ## Auf einem iPhone oder iPad
 
 1. Öffne dein Dashboard in Safari. Du brauchst iOS 16.4 oder neuer.
-2. Tippe auf Teilen, dann Zum Home-Bildschirm.
-3. Öffne The Machine von deinem Home-Bildschirm und tippe auf **Einschalten**.
+2. Tippe auf **Teilen** und dann auf **Zum Home-Bildschirm**.
+3. Öffne The Machine über den Home-Bildschirm und tippe auf **Einschalten**.
 
-Benachrichtigungen funktionieren nur in der App vom Home-Bildschirm, nicht in einem Safari-Tab.
+Benachrichtigungen funktionieren nur über die App auf dem Home-Bildschirm, nicht in einem Safari-Tab.
 
 ## Auf Android
 
-1. Öffne dein Dashboard in Chrome und tippe in diesem Hinweis auf **Installieren**, oder öffne das Menü und tippe auf App installieren.
-2. Öffne sie von deinem Startbildschirm und tippe auf **Einschalten**.
+1. Öffne dein Dashboard in Chrome, öffne das Menü und tippe auf **App installieren**.
+2. Öffne die App über den Startbildschirm und tippe auf **Einschalten**.
 
 ## Prüfen oder ändern
 
-In **Einstellungen**, **Allgemein**, **Dieses Gerät** schaltet die Glocke neben **Benachrichtigungen** sie nur für dieses Gerät ein oder aus, und **Test senden** schickt eine Testbenachrichtigung dorthin.
+Unter **Einstellungen**, **Allgemein**, **Dieses Gerät** kannst du mit der Glocke neben **Benachrichtigungen** die Benachrichtigungen nur für dieses Gerät ein- oder ausschalten. Über **Test senden** schickst du eine Testbenachrichtigung an dieses Gerät.
 
-Wenn Benachrichtigungen blockiert sind, sagt die Zeile, wo du sie wieder erlaubst: Auf einem Computer klickst du auf das Symbol links neben der Adresse und erlaubst Benachrichtigungen. Auf einem iPhone öffnest du die App Einstellungen, Mitteilungen, The Machine.
+Blockiert? Klicke auf einem Computer links neben der Adressleiste auf das Symbol und erlaube Benachrichtigungen. Öffne auf einem iPhone die App **Einstellungen** und dann **Mitteilungen** > The Machine.
 
 ## Schnell öffnen
 
-Die App öffnet sich sofort mit deinen letzten Aufgaben und aktualisiert sie dann. Ohne Verbindung zeigt sie, was sie hatte, markiert mit **Offline** und dem Zeitpunkt der letzten Aktualisierung. Diese Kopie bleibt höchstens 7 Tage verschlüsselt auf dem Gerät und verschwindet, wenn du dich abmeldest.
+Die App öffnet sofort deine zuletzt angezeigten Aufgaben und aktualisiert sie anschließend. Diese Kopie bleibt höchstens 7 Tage lang verschlüsselt auf dem Gerät gespeichert und wird gelöscht, wenn du dich abmeldest.
 
-## Offline und wackliges WLAN
+## Offline und bei schlechtem WLAN
 
-Im Flugzeug oder im Zug arbeitet das Dashboard weiter. Eine Leiste oben zeigt **Offline** und wann das Angezeigte zuletzt aktualisiert wurde. Deine Aufgaben, ihre Chats, der Kalender und die Listen im Graph öffnen sich vom Gerät.
+Im Flugzeug oder Zug funktioniert das Dashboard weiterhin. Oben wird eine Leiste mit **Offline** und dem Zeitpunkt der letzten Aktualisierung angezeigt. Deine Aufgaben, die zugehörigen Chats, der Kalender und die Listen in Graph lassen sich auf dem Gerät öffnen.
 
-- **Zurückstellen**, **Nicht nötig**, **Als erledigt markieren**, **Wieder öffnen** und Notizen oder Chatnachrichten an The Machine warten auf dem Gerät. Die Aufgabe zeigt, dass es gespeichert wird, sobald du wieder online bist, mit **Abbrechen** bis dahin. Sobald deine Machine wieder antwortet, gehen sie von selbst raus, der Reihe nach, jede nur einmal.
-- Nachrichten an andere warten nie. **Senden** sagt, dass du offline bist: sende erneut, wenn du zurück bist.
-- Was du in einem Chat tippst, bleibt bis zum Senden auf dem Gerät, auch nach einem Neuladen.
-- Die App versucht es von selbst erneut, jedes Mal etwas später. **Jetzt versuchen** versucht es sofort.
-- Eine beschäftigte Machine braucht manchmal etwas länger. Die App zeigt dann **Deine Machine antwortet gerade langsam** und behält, was du siehst. Das ist nicht offline.
+- **Zurückstellen**, **Nicht nötig**, **Als erledigt markieren**, **Wieder öffnen** und Chatnachrichten an The Machine werden zusammen mit der Option **Abbrechen** auf dem Gerät gespeichert. Sobald du wieder online bist, werden sie automatisch gesendet.
+- Nachrichten an andere Personen werden nie zwischengespeichert. Sende sie erneut, wenn du wieder online bist.
+- Was du in einen Chat schreibst, bleibt bis zum Senden auf dem Gerät gespeichert, auch wenn du die Seite neu lädst.
+- Die App versucht es automatisch weiter. Mit **Jetzt versuchen** wird sofort ein neuer Versuch gestartet.
+- Wenn deine Machine ausgelastet ist, kann es eine Weile dauern, bis sie antwortet. Die App zeigt dann **Deine Machine antwortet langsam** an und behält deine Ansicht bei. Das bedeutet nicht, dass du offline bist.
 
 ## Weitere Geräte
 
-Melde dich auf jedem Gerät genauso an. Auf einer gehosteten Machine macht ein Passkey pro Gerät die Anmeldung schneller: Tippe in **Einstellungen** › **Konto** bei Anmeldung auf **Verwalten**.
+Melde dich auf jedem Gerät auf dieselbe Weise an. Bei einer gehosteten Machine kannst du dich schneller anmelden, wenn du pro Gerät einen Passkey einrichtest: Gehe zu **Einstellungen** › **Konto** und klicke neben **Anmeldung** auf **Verwalten**.
 
-Um die Benachrichtigungen deines Android-Handys als Quelle zu lesen, siehe [Android-Benachrichtigungen](android.md).
+Wenn du die Benachrichtigungen deines Android-Handys als Quelle lesen möchtest, lies [Android-Benachrichtigungen](android.md).

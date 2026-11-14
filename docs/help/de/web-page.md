@@ -4,6 +4,7 @@ area: connections
 summary: Eine Webseite, die du beobachtest. Eine Aufgabe nur, wenn sich dort etwas Wichtiges ändert.
 covers: connector:web_page
 code: connectors/web_page.py
+translated: d40b156b37cc9bc5
 ---
 ## Was es liest
 

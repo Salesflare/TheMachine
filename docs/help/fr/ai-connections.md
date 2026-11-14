@@ -1,7 +1,7 @@
 ---
 title: Connecter d’autres IA
 area: connections
-summary: Laissez Claude, ChatGPT, Cursor, Codex ou GBrain lire vos tâches et votre Graph via MCP, chacun avec son accès et sa durée.
+summary: Permettez à Claude, ChatGPT, Cursor, Codex ou GBrain de lire vos tâches et votre Graph. Avec Lecture et modification, elles peuvent aussi apporter des changements que vous pouvez annuler.
 covers: ai-connections, settings:apps
 code: ai_access.py, ai_app.py, pairing.py, ai_reach.py
 keywords: MCP, Claude, ChatGPT, Cursor, Codex, GBrain, connector, AI, OAuth
@@ -10,72 +10,72 @@ translated: ac5a894df13907fd
 ---
 ## Ce qu’une autre IA peut faire
 
-D’autres IA peuvent se connecter à votre Machine via MCP : Claude, ChatGPT, Cursor, Codex, GBrain et d’autres. Elles peuvent lire vos tâches, vos promesses, les briefings d’équipe et les personnes et entreprises de votre Graph.
+Claude, ChatGPT, Cursor, Codex, GBrain et d’autres IA peuvent se connecter à votre Machine. Elles peuvent lire vos tâches, vos promesses, les briefs d’équipe, ainsi que les personnes et les entreprises de votre Graph.
 
-Avec **Lecture et modification**, elles peuvent aussi ajouter une tâche, ou une tâche avec un brouillon d’e-mail, et modifier votre Graph : enregistrer un fait sur une personne ou une entreprise, corriger ses détails, champs et tags, ou ajouter une ligne au résumé d’une personne.
+Avec **Lecture et modification**, elles peuvent aussi ajouter une tâche ou un brouillon d’e-mail, et mettre à jour votre Graph : enregistrer un fait, corriger des détails, des champs et des tags, ou ajouter une ligne au résumé d’une personne.
 
-Chaque modification apparaît dans **Activité** avec **Annuler**. Elles ne fusionnent, ne suppriment et ne partagent jamais de fiches. Ce qu’elles enregistrent affiche **IA :** et leur nom, dans leur périmètre. Vous pouvez le modifier ou le retirer, et The Machine peut réécrire une ligne de résumé plus tard. Votre Machine le traite comme leur affirmation, jamais comme votre instruction.
+Chaque changement apparaît dans **Activité**, avec l’option **Annuler**. Elles ne fusionnent, ne suppriment et ne partagent jamais de fiches. Ce qu’elles enregistrent est marqué **AI:** et indique leur nom. Votre Machine le considère comme une affirmation de leur part, jamais comme une instruction de votre part.
 
-Un brouillon attend dans votre Machine jusqu’à ce que vous le lisiez et appuyiez vous-même sur **Envoyer**. Une IA connectée n’envoie jamais rien et n’agit jamais à votre place. Do it et les agents de votre Machine n’en font pas partie.
+Un brouillon attend que vous le lisiez et appuyiez vous-même sur Envoyer. Une IA connectée n’envoie jamais rien et n’agit jamais à votre place.
 
 ## En connecter une
 
-Ouvrez **Paramètres**, **Applis**. Sous **Les applis The Machine** viennent **Ajouter dans ChatGPT** et **Ajouter dans Claude**. Sous **Ou ajoutez-la avec une adresse** se trouvent l’adresse de l’app officielle pour toutes les Machines, `https://mcp.themachine.computer/mcp`, et **Votre adresse**, `https://<votre nom>.mcp.themachine.computer/mcp`, chacune avec **Copier**.
+Ouvrez **Paramètres**, puis **Applis**. Sous **Les applis The Machine**, vous trouverez **Ajouter dans ChatGPT** et **Ajouter dans Claude**. Sous **Ou ajoutez-la avec une adresse**, vous trouverez l’adresse de l’app officielle, la même pour chaque Machine, `https://mcp.themachine.computer/mcp`, ainsi que **Votre adresse**, `https://<your name>.mcp.themachine.computer/mcp`, chacune avec l’option **Copier**.
 
-Sur une Machine installée sur votre ordinateur, appuyez d’abord sur **Configurer** sous **Obtenir votre adresse**. Une page de votre compte s’ouvre : vérifiez qu’elle affiche le même code, confirmez et choisissez un nom. Votre Machine s’associe d’elle-même, sans redémarrage. Les deux façons en ont besoin.
+Si votre Machine est sur votre propre ordinateur, appuyez d’abord sur **Configurer**, sous **Obtenir votre adresse**. Une page s’ouvre dans votre compte : vérifiez que le même code s’affiche, confirmez et choisissez un nom. Votre Machine s’associe automatiquement, sans redémarrer. Cette étape est nécessaire dans les deux cas.
 
-Elle obtient ensuite son propre certificat pour l’adresse. Cela prend quelques minutes et demande le paquet `cryptography` pour Python.
+Votre Machine configure ensuite automatiquement son adresse sécurisée. Cela prend quelques minutes.
 
-Pour Claude, appuyez sur **Ajouter dans Claude**, ou ouvrez [The Machine dans l’annuaire de Claude](https://claude.ai/directory/the-machine), puis appuyez sur Connect. Sur Team et Enterprise, un propriétaire l’ajoute dans Organization settings.
+Pour Claude, appuyez sur **Ajouter dans Claude** ou ouvrez [The Machine dans le répertoire de Claude](https://claude.ai/directory/the-machine), puis appuyez sur Connect. Avec Team et Enterprise, un propriétaire doit l’ajouter dans les paramètres de l’organisation.
 
-Pour utiliser plutôt une adresse dans Claude, ouvrez Customize, Connectors, appuyez sur + Add, puis sur Add custom connector. Nommez-le The Machine, collez l’adresse, appuyez sur Continue, puis sur Add.
+Pour utiliser une adresse dans Claude à la place, ouvrez Customize, puis Connectors, appuyez sur + Add, puis sur Add custom connector. Nommez-la The Machine, collez l’adresse, appuyez sur Continue, puis sur Add.
 
-Pour ChatGPT, appuyez sur **Ajouter dans ChatGPT**, ou ouvrez [The Machine dans ChatGPT](https://chatgpt.com/plugins/plugin_asdk_app_6ae74ac637d0819199400cd3750138b4), puis appuyez sur Install plugin. Sur Business et Enterprise, un administrateur doit peut-être l’autoriser d’abord.
+Pour ChatGPT, appuyez sur **Ajouter dans ChatGPT** ou ouvrez [The Machine dans ChatGPT](https://chatgpt.com/plugins/plugin_asdk_app_6ae74ac637d0819199400cd3750138b4), puis appuyez sur Install plugin. Avec Business et Enterprise, un administrateur devra peut-être d’abord l’autoriser.
 
-L’app officielle atteint une Machine hébergée, et une Machine sur votre ordinateur dès qu’elle a son adresse.
+L’app officielle se connecte à une Machine hébergée, et à une Machine sur votre propre ordinateur une fois qu’elle a son adresse.
 
-Pour votre adresse privée, ou une Machine sans le Network, ajoutez plutôt un serveur MCP personnalisé dans ChatGPT : ouvrez chatgpt.com/plugins, appuyez sur +, puis sur Add custom MCP server. Nommez-le The Machine, collez l’adresse et choisissez OAuth. Confirmez l’avertissement et appuyez sur Create as a plugin. Votre forfait ou votre espace de travail doit autoriser les serveurs MCP personnalisés.
+Pour utiliser votre adresse privée, ou une Machine qui n’est pas sur le Network, ajoutez plutôt un serveur MCP personnalisé dans ChatGPT : ouvrez chatgpt.com/plugins, appuyez sur +, puis sur Add custom MCP server. Nommez-le The Machine, collez l’adresse et choisissez OAuth. Confirmez l’avertissement, puis appuyez sur Create as a plugin. Votre forfait ou espace de travail doit autoriser les serveurs MCP personnalisés.
 
-Avec l’app officielle, l’IA vous demande de vous connecter avec votre compte The Machine. Choisissez cette Machine si vous en avez plusieurs, puis approuvez l’IA sur la page de votre Machine. Avec l’adresse privée, l’IA vient directement à votre Machine.
+Avec l’app officielle, l’IA vous demande de vous connecter avec votre compte The Machine. Si vous avez plusieurs Machines, choisissez celle-ci, puis autorisez la connexion sur sa propre page. Avec l’adresse privée, l’IA se connecte directement à votre Machine.
 
-Les IA d’un appareil de votre tailnet, comme Claude Code ou Cursor, peuvent aussi utiliser l’adresse de votre tableau de bord suivie de `/mcp`. **Dissocier cette Machine**, en bas de **Paramètres**, **Compte**, retire de votre compte une Machine installée sur votre ordinateur.
+Les IA installées sur un appareil de votre réseau privé (Tailscale), comme Claude Code ou Cursor, peuvent aussi utiliser l’adresse de votre tableau de bord, suivie de `/mcp`. L’option **Dissocier cette Machine**, en bas de **Paramètres**, puis **Compte**, retire de nouveau de votre compte une Machine installée sur votre propre ordinateur.
 
-Votre Machine montre de quelle IA il s’agit. Une IA qu’elle ne reconnaît pas montre l’adresse d’où elle vient : connectez seulement si vous venez de lancer cela vous-même.
+Votre Machine vous indique quelle IA essaie de se connecter. Si elle ne peut pas l’identifier, elle indique l’origine de la demande : connectez-vous uniquement si vous venez de lancer cette action vous-même.
 
-Choisissez ce qu’elle peut faire, **Lire** ou **Lecture et modification**. Avec des comptes Travail et personnels, choisissez aussi ce qu’elle peut voir. Puis choisissez la durée : **1 jour**, **7 jours**, **30 jours** ou **1 an**. Appuyez sur **Se connecter**, ou sur **Annuler** pour la renvoyer sans rien.
+Choisissez ce qu’elle peut faire : **Lire** ou **Lecture et modification**. Si vous avez des comptes Travail et Personnel, choisissez ce qu’elle peut voir. Choisissez ensuite la durée : **1 jour**, **7 jours**, **30 jours** ou **1 an**. Appuyez sur **Se connecter**, ou sur **Annuler** pour refuser la connexion.
 
 ## App officielle ou adresse privée
 
-L’app officielle est la voie la plus simple : une adresse pour tout le monde, et votre compte trouve votre Machine. Le cloud achemine ses requêtes en chemin mais ne conserve rien.
+L’app officielle est la solution la plus simple : une seule adresse pour tout le monde, et votre compte trouve votre Machine. Notre cloud transmet les demandes et ne stocke rien.
 
-Avec votre adresse privée, tout est chiffré jusqu’à votre Machine. Le cloud ne fait que le transmettre et ne peut pas le lire.
+Avec votre adresse privée, tout est chiffré jusqu’à votre Machine. Le cloud se contente de transmettre les demandes et ne peut pas les lire.
 
-Dans tous les cas, c’est votre Machine qui décide. Seule une IA que vous avez approuvée sur sa page entre, avec l’accès que vous avez choisi. Dans **Paramètres**, **Applis**, une IA venue par l’app officielle affiche **App officielle**.
+Dans les deux cas, c’est votre Machine qui décide. Seule une IA que vous avez autorisée sur sa page peut accéder à votre Machine, avec les droits que vous avez choisis. Dans **Paramètres**, puis **Applis**, une IA connectée par l’app officielle porte la mention **App officielle**.
 
-## Ce qu’elle voit
+## Ce qu’elle peut voir
 
-Une connexion ne voit que son domaine. Travail couvre les tâches et promesses de vos comptes de travail, les contacts de travail, les entreprises, les projets et le briefing d’équipe de votre Work Fleet. Personnel couvre le reste. Le texte des messages reste sur votre Machine, sauf si vous activez **Messages** : sans cela, une IA voit les sources d’une tâche seulement par expéditeur, objet et date.
+Une connexion ne voit que son espace. Travail comprend les tâches et les promesses de vos comptes professionnels, les personnes, les entreprises et les projets professionnels, ainsi que le brief d’équipe de votre Fleet Travail. Personnel comprend tout le reste. Le texte des messages reste sur votre Machine, sauf si vous activez **Messages** : sans cette option, une IA voit seulement l’expéditeur, l’objet et la date des messages associés à une tâche.
 
-Les données Team Graph de vos coéquipiers ne vont jamais à une IA extérieure.
+Les fiches du Graph d’équipe de vos collègues ne sont jamais transmises à une IA externe.
 
 ## Messages
 
-**Messages** permet à une IA de chercher et lire vos e-mails, Slack, WhatsApp et autres chats. C’est désactivé tant que vous ne l’activez pas, sur la page où vous la connectez ou plus tard dans **Paramètres**, **Applis**. Elle lit seulement : elle n’envoie, ne supprime et ne marque jamais rien.
+L’option **Messages** permet à une IA de rechercher et de lire vos e-mails, vos messages Slack, WhatsApp et vos autres chats. Elle est désactivée jusqu’à ce que vous l’activiez, soit sur la page de connexion, soit plus tard dans **Paramètres**, puis **Applis**. L’IA peut uniquement lire les messages : elle ne les envoie, ne les supprime et ne les marque jamais.
 
-Elle ne lit que les messages de son domaine. Certains ne sortent jamais : codes à usage unique et liens de connexion, messages d’un tableau ou projet **Vous seul**, conversations que The Machine a jugées sensibles (affaires, RH, juridique, santé, argent), conversations que vous avez gardées privées, et messages supprimés.
+Elle ne lit que les messages de son espace. Certains messages ne sont jamais transmis : les codes à usage unique et les liens de connexion, les messages d’un tableau ou d’un projet **Vous seul**, les fils que The Machine a jugés sensibles (transactions, RH, questions juridiques, santé, argent), les fils que vous avez gardés privés et les messages supprimés.
 
-Chaque lecture apparaît dans son **Activité**, avec le nombre de messages et les conversations, jamais le texte. Votre Machine transmet le texte marqué comme des données, pour que l’IA ne suive pas d’instructions écrites dans un message.
+Chaque lecture apparaît dans son **Activité**, avec le nombre de messages et les fils concernés, jamais leur contenu. Votre Machine transmet le texte comme une donnée, pour que l’IA ne suive pas les instructions écrites dans un message.
 
-Tant que Messages est activé, les modifications du Graph d’une IA en **Lecture et modification** attendent votre accord. Appuyez sur **Appliquer** ou **Ignorer** sur la modification dans **Activité**.
+Tant que Messages est activé, les changements apportés au Graph par une IA avec **Lecture et modification** attendent votre accord. Appuyez sur **Appliquer** ou **Écarter** pour accepter ou écarter le changement dans **Activité**.
 
 ## Dans Paramètres
 
-Ouvrez **Paramètres**, **Applis** pour voir chaque IA connectée une seule fois, avec son accès, son domaine, sa date de fin et sa dernière utilisation. **Messages** s’active et se désactive directement là. Appuyez sur **Modifier** pour changer son accès, son domaine ou sa durée. L’appel suivant en tient compte. **Activité** liste chaque appel, les refusés aussi. **Désactiver maintenant** la met en pause : toutes ses connexions se ferment, son historique reste. **Retirer** la supprime avec son historique.
+Ouvrez **Paramètres**, puis **Applis**, pour voir chaque IA qui s’est connectée, avec ses droits, son espace, sa date d’expiration et sa dernière utilisation. Vous pouvez activer ou désactiver **Messages** au même endroit. Appuyez sur **Modifier** pour changer ses droits, son espace ou la durée d’accès. Le prochain appel utilisera ces nouveaux paramètres. **Activité** répertorie tous les appels, y compris ceux qui ont été refusés. **Désactiver maintenant** suspend l’accès : toutes les connexions sont interrompues, mais l’historique est conservé. **Retirer** supprime l’IA ainsi que son historique.
 
-Si vous vous reconnectez à la même IA, la nouvelle autorisation remplace l’ancienne.
+Si vous vous reconnectez à la même IA, la nouvelle autorisation remplace la précédente.
 
-Une IA qui ne peut pas se connecter seule peut utiliser une clé. Sous **Ajouter une clé**, nommez-la, choisissez l’accès et la durée, puis appuyez sur **Créer la clé**. Copiez la clé tout de suite : elle ne s’affiche qu’une fois. L’IA l’envoie comme `Authorization: Bearer <key>`.
+Une IA qui ne peut pas se connecter seule peut utiliser une clé. Sous **Ajouter une clé**, donnez-lui un nom, choisissez les droits et la durée, puis appuyez sur **Créer la clé**. Copiez la clé tout de suite : elle ne s’affiche qu’une seule fois. L’IA l’envoie sous la forme `Authorization: Bearer <key>`.
 
-## Sécurité
+## Protéger votre compte
 
-Chaque appel est noté, les refusés aussi. Une connexion expirée ou désactivée est refusée jusqu’à ce que vous la modifiiez. La connexion utilise OAuth avec PKCE. Votre Machine ne garde qu’une empreinte de chaque jeton, donc une copie de ses données n’ouvre rien.
+Tous les appels sont consignés, y compris ceux qui sont refusés. Une connexion expirée ou désactivée est refusée jusqu’à ce que vous la modifiiez. Votre Machine ne conserve qu’une empreinte de chaque connexion, donc une copie de ces données ne permet pas d’accéder à quoi que ce soit.

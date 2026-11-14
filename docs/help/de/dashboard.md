@@ -1,84 +1,85 @@
 ---
-title: Dich zurechtfinden
+title: So findest du dich zurecht
 area: getting-started
-summary: Wofür jeder Teil des Dashboards da ist, von Aufgaben bis Verbindungen.
+summary: Wofür die einzelnen Bereiche des Dashboards da sind, von Aufgaben bis Verbindungen.
 covers: tab:events, tab:feedback
 code: dashboard.html
 order: 4
-translated: d41a4a0017765f9e
+translated: 840dba810f3190d9
 ---
 ## Die Tabs
 
-- **Aufgaben**: deine Aufgaben und Versprechen. Siehe [Aufgaben](cards.md).
-- **Kalender**: die kommende Woche mit deinen Meetings, fälligen Aufgaben und Versprechen. Siehe [Kalender](calendar.md).
-- **Graph**: die Personen, Organisationen und Projekte in deinen Nachrichten. Siehe [Graph](graph.md).
-- **Fleet**: dein Team, deine Familie und deine Freunde in The Machine Network, sobald du eine hast. Siehe [Fleet](fleet.md).
-- **Lernen**: wie es den Aufgaben geht und was sie gelernt hat.
-- **Verbindungen**: deine Quellen und wie es ihnen geht. Siehe [Verbindungen](connections.md).
+- **Aufgaben**: Deine Aufgaben und Versprechen. Mehr dazu unter [Aufgaben](cards.md).
+- **Kalender**: Die kommende Woche mit deinen Terminen, fälligen Aufgaben und Versprechen. Mehr dazu unter [Kalender](calendar.md).
+- **Routinen**: Aufgaben, die deine Machine regelmäßig erledigt, zum Beispiel eine Zusammenfassung am Montag. Mehr dazu unter [Routinen](routines.md).
+- **Graph**: Die Personen, Organisationen und Projekte in deinen Nachrichten. Jede und jeder hat eine eigene Seite in der Seitenleiste. Mehr dazu unter [Graph](graph.md).
+- **Fleet**: Dein Team, deine Familie und deine Freunde im The Machine Network, sobald du dort eine Fleet hast. Mehr dazu unter [Fleet](fleet.md).
+- **Lernen**: Wie deine Aufgaben laufen und was deine Machine gelernt hat.
+- **Verbindungen**: Deine Quellen und wie sie laufen. Mehr dazu unter [Verbindungen](connections.md).
 
-**Suchen**, oben in der Seitenleiste, findet zuerst Aufgaben, dann Personen, Nachrichten und mehr. **Browser**, **Hilfe** und **Einstellungen** sind unten in der Seitenleiste. Auf dem Handy öffnet die Menütaste in der oberen Leiste die Seitenleiste.
+Mit **Suchen oder fragen** oben in der Seitenleiste findest du Aufgaben, Personen, Nachrichten und mehr. Direkt darunter findest du **Neue Aufgabe**. **Browser**, **Hilfe** und **Einstellungen** sind ganz unten. Auf dem Smartphone öffnet die Menüschaltfläche in der oberen Leiste die Seitenleiste.
 
-Die Seitenleiste listet deine Aufgaben wie die Seite. Anfragen aus deiner Fleet stehen auch unter **Für dich**, so stimmt die Zahl mit der oben überein. Tippe auf eine, um sie zu zeigen.
+In der Seitenleiste stehen deine Aufgaben genauso wie auf der Seite. Anfragen aus deiner Fleet findest du auch unter **Für dich**, damit die Anzahl dort mit der oben übereinstimmt. Tippe auf eine Aufgabe, um sie zu öffnen.
 
-Für das Menü einer Aufgabe fahre mit der Maus darüber und klicke auf **⋯**, klicke sie mit der rechten Maustaste an oder halte sie auf dem Handy gedrückt. Mit der Tastatur drücke `Shift F10` darauf. Neben **Umbenennen** und **Öffnen** hat das Menü die eigenen Knöpfe der Aufgabe: **Als erledigt markieren**, **Zurückstellen** und **Nicht nötig**, jeweils mit **Rückgängig**.
+Um das Menü einer Aufgabe zu öffnen, bewege den Mauszeiger darüber und klicke auf **⋯**, klicke mit der rechten Maustaste darauf oder halte die Aufgabe auf dem Smartphone gedrückt. Mit der Tastatur drückst du `Shift F10`, während die Aufgabe ausgewählt ist. Neben **Umbenennen** und **Öffnen** enthält das Menü die Optionen **Als erledigt markieren**, **Zurückstellen** und **Nicht nötig**. Jede davon lässt sich mit **Rückgängig** rückgängig machen.
 
-**Browser** zeigt den eigenen Browser deiner Machine. Auf einem Computer öffnet er sich neben der Seitenleiste, ebenso **Im Browser ansehen** bei einer Aufgabe und **Browser öffnen**, wenn eine Website eine Anmeldung braucht. Ein schmales Fenster, etwa die App auf dem halben Bildschirm, zeigt ihn unter der oberen Leiste, nicht in einem zweiten Fenster. Auf dem Handy öffnet er sich in einem neuen Tab.
+Unter **Browser** siehst du den Browser deiner Machine, den sie für Websites wie LinkedIn verwendet. Am Computer öffnet er sich neben der Seitenleiste. Das gilt auch für **Im Browser ansehen** bei einer Aufgabe und **Browser öffnen**, wenn du dich auf einer Website anmelden musst. Im Browser deines Smartphones öffnet er sich in einem neuen Tab. In der Smartphone-App oder im Dashboard, das du zum Startbildschirm hinzugefügt hast, füllt er den Bildschirm aus. Über das X kommst du zurück.
 
-Das vordere Fenster des Browsers steht in der Mitte, und der Rest des Bildschirms ist dunkel. Ein Button in der Ecke zeigt den ganzen Bildschirm. Ändert sich die Größe des Fensters, passt sich die Ansicht wieder an. **Vergrößern** gibt ihm das ganze Fenster; ein zweiter Druck geht zurück. Die Anmeldung aus einer Aufgabe hat auch **Vergrößern**.
+Mit **Vergrößern** füllt der Browser das ganze Fenster aus. Drück die Schaltfläche noch einmal, um zurückzuwechseln.
 
-**Stopp** steht oben, solange eine Aufgabe den Browser nutzt, mit dem Namen dieser Aufgabe neben **Browser**. Ein Druck beendet den Lauf sofort, ohne Rückfrage: Es wird nichts mehr geklickt, getippt oder gesendet, und der Chat der Aufgabe sagt „Im Browser gestoppt“.
+Wenn eine Aufgabe den Browser verwendet, erscheint oben **Stopp**. Einmal tippen beendet den Vorgang sofort: Es wird nichts mehr angeklickt, eingegeben oder gesendet. Im Chat der Aufgabe steht dann „Im Browser gestoppt“.
 
-Bei mehreren Läufen stoppt er den auf dem vorderen Tab. Auf dem Handy hat der Tab des Browsers dasselbe **Stopp** oben. Um weiterzumachen, schreib in den Chat oder drück **Erneut versuchen**.
+Wenn mehrere Vorgänge laufen, wird der gerade aktive beendet. Schreib in den Chat der Aufgabe oder tippe auf **Erneut versuchen**, um fortzufahren.
 
-Passen die Aufgaben nicht hin, scrollt die ganze Seitenleiste als eine Spalte, Aufgaben eingeschlossen, wie das Menü auf dem Handy. Die installierte App macht es genauso.
+Wenn nicht alle Aufgaben in die Seitenleiste passen, kannst du die gesamte Seitenleiste als eine Spalte durchscrollen.
 
-Auf dem Handy füllt ein Dialog wie **Diese E-Mail senden?** den ganzen Bildschirm: Titel und × bleiben oben, die Knöpfe unten, und nur, was dazwischen steht, scrollt. Das Nachrichtenfeld wächst in den freien Platz, und die Knöpfe bleiben beim Tippen erreichbar.
+Auf dem Smartphone füllt ein Dialog wie **Diese E-Mail senden?** den ganzen Bildschirm aus. Die Schaltflächen bleiben immer erreichbar, auch während du tippst.
 
-## Hol mehr heraus
+## Mehr herausholen
 
-Ab deinem ersten Besuch, sobald der erste Blick fertig ist, zeigt eine kleine Aufgabe oben in Aufgaben, was The Machine nützlicher macht: die App fürs Handy, Benachrichtigungen, WhatsApp, die App auf diesem Computer, ein weiteres Konto und weitere Verbindungen. Jede Zeile hat einen Knopf, der diesen Schritt erledigt, und verschwindet, sobald er erledigt ist, so zeigt die Aufgabe nur, was noch fehlt. Sie zeigt bis zu fünf Zeilen, offene Schritte zuerst, sodass ein Tool, das deine Mails nahelegen, etwa GitHub,, eine Zeile bekommt, sobald frühere Schritte erledigt sind.
+Eine kleine Aufgabe oben im Bereich „Aufgaben“ zeigt dir, was The Machine noch nützlicher macht: die Smartphone-App, Benachrichtigungen, WhatsApp, die App auf diesem Computer, ein weiteres Konto und zusätzliche Verbindungen. Für jeden Schritt gibt es eine Schaltfläche. Sobald du ihn erledigt hast, verschwindet er aus der Liste, sodass nur noch offen ist, was du tun musst. Es werden bis zu fünf Schritte angezeigt, offene zuerst. Ein Tool, das in deinen E-Mails erwähnt wird, zum Beispiel GitHub, erscheint also erst, wenn die vorherigen Schritte erledigt sind.
 
-Zeilen erscheinen nur, wo sie passen: keine Handy-App in der App selbst, kein Installieren auf dem Handy. Das × einer Zeile schließt sie auf jedem Gerät, und das × oben schließt die ganze Aufgabe.
+Die Schritte werden nur dort angezeigt, wo sie sinnvoll sind. Mit dem × neben einem Schritt schließt du ihn auf allen Geräten. Mit dem × oben schließt du die gesamte Aufgabe.
 
-Nach deinem ersten Tag wird sie zu einer ruhigen Zeile über **Für dich**, etwa „Noch 2 Schritte · Weiter“. Tippe darauf, um die Aufgabe zu öffnen, und auf den Pfeil, um sie wieder einzuklappen.
+Nach deinem ersten Tag wird die Aufgabe zu einer unauffälligen Zeile über **Für dich**, zum Beispiel „2 Schritte übrig · Fortsetzen“. Tippe darauf, um die Aufgabe zu öffnen. Mit dem Pfeil klappst du sie wieder ein.
 
-**Rückgängig** in der Meldung danach holt sie zurück, ebenso **1 ausgeblendeten Schritt zeigen** unten in der Aufgabe. Ist die ganze Aufgabe geschlossen, holt **Einstellungen**, **Allgemein**, **Einrichtungs-Aufgabe** sie zurück. **Einstellungen**, **Allgemein**, **Dieses Gerät** hat dieselben Schalter, und **Einstellungen**, **Apps** hat immer die Handy-App.
+Mit **Rückgängig** oder **1 ausgeblendeten Schritt anzeigen** holst du einen Schritt zurück. Um die gesamte Aufgabe zurückzuholen, geh zu **Einstellungen**, **Allgemein**, **Einrichtungs-Aufgabe**. Unter **Einstellungen**, **Allgemein**, **Dieses Gerät** findest du dieselben Optionen. Unter **Einstellungen**, **Apps** findest du immer die Smartphone-App.
 
 ## Neue Versionen
 
-Wenn eine neue Version des Dashboards bereit ist, lädt es nie neu, während du es benutzt. Beim Öffnen oder Neuladen lädt die App die neueste Version. Ein offenes Fenster lädt sie, sobald das Fenster im Hintergrund ist oder nach ein paar Minuten ohne Eingabe, und nie, solange etwas Getipptes noch nicht gespeichert oder gesendet ist oder ein Dialog offen ist. **Update bereit** oben lädt sie sofort. Ein Neustart deiner Machine verbindet nur neu.
+Das Dashboard wird nie neu geladen, während du es verwendest. Eine neue Version wird geladen, wenn du die App öffnest oder wenn das Fenster einige Minuten im Hintergrund oder inaktiv war. Nicht gespeicherter Text und offene Dialoge werden dabei nicht unterbrochen. Mit **Update bereit** oben wird die neue Version sofort geladen.
 
-Kommt eine größere Funktion oder Verbesserung dazu, sagt dir ein kleiner Hinweis **Was ist neu** Bescheid, höchstens einmal am Tag. Blättere mit **Zurück** und **Weiter** oder wische. Die Schaltfläche einer Neuigkeit öffnet die Funktion. **Erledigt** oder **×** schließt ihn. Er erscheint nie über etwas, das du gerade tust, und einmal geschlossen ist er auf jedem Gerät weg. Du siehst nur, was dazukam, nachdem du angefangen hast.
+Wenn eine größere Funktion oder Verbesserung erscheint, informiert dich ein kurzer Hinweis unter **Neuigkeiten** darüber, höchstens einmal am Tag. Mit **Zurück** und **Weiter** oder durch Wischen gehst du die Hinweise durch. Über eine Schaltfläche im Hinweis öffnest du die Funktion. Mit **Erledigt** oder **×** schließt du den Hinweis. Er erscheint nie über einer laufenden Aktion. Sobald du ihn schließt, ist er auf allen Geräten ausgeblendet. Du siehst nur Neuigkeiten zu Funktionen, die nach deinem Einstieg veröffentlicht wurden.
 
 ## Nachrichten
 
-Öffne die Suche mit `⌘K` auf einem Mac oder `Ctrl K` unter Windows und Linux, oder auf dem Handy mit dem Suchsymbol oben. Tippe zwei Buchstaben oder mehr: **Nachrichten** zeigt die besten Treffer aus allem, was deine Machine gelesen hat, nach Bedeutung oder nach Wörtern. Älterer [Verlauf](history.md) erscheint nach Wörtern.
+Öffne die Suche auf einem Mac mit `⌘K` oder unter Windows und Linux mit `Ctrl K`. Auf dem Smartphone tippst du auf das Suchsymbol. Gib mindestens zwei Buchstaben ein: Unter **Nachrichten** erscheinen die besten Treffer aus allem, was deine Machine gelesen hat, nach Bedeutung oder Wortlaut. In älteren [Verläufen](history.md) wird nach Wörtern gesucht.
 
-Du kannst auch eine Frage stellen, etwa die, die eine leere Suche vorschlägt, und bekommst eine kurze Antwort aus deinen eigenen Nachrichten ([Tastatur und Befehlspalette](keyboard.md)).
+Du kannst dort auch eine Frage stellen, zum Beispiel die, die bei einer leeren Suche vorgeschlagen wird. Du bekommst eine kurze Antwort aus deinen eigenen Nachrichten. Mehr dazu unter [Tastatur und Befehlspalette](keyboard.md).
 
-**Alle Ergebnisse** öffnet die ganze Liste, für alle Konten oder ein einzelnes. Jedes Ergebnis öffnet sich in einer Leseansicht, mit einem Link dorthin, wo es herkommt. Eine leere Suche zeigt die neuesten Nachrichten.
+Mit **Alle Ergebnisse ansehen** öffnest du die vollständige Liste für alle Konten oder ein einzelnes Konto. Jeder Treffer wird in einer Leseansicht mit einem Link zur Quelle geöffnet. Bei einer leeren Suche werden die neuesten Nachrichten angezeigt.
 
-Eine Suche zeigt den besten Treffer zuerst, und eine Handy-Vorschau einer Nachricht, die ganz da ist, erscheint nur einmal, als diese Nachricht. Eine Frage mit allen Konten bekommt oben eine kurze Antwort, mit der Nachricht, aus der sie stammt. Wenn deine Nachrichten es nicht sagen, erscheint keine Antwort.
+Die besten Treffer stehen in der Suche ganz oben. Eine Nachricht, die in der Vorschau auf dem Smartphone vollständig angezeigt wird, erscheint nur einmal, als diese Nachricht. Bei einer Frage über alle Konten steht oben eine kurze Antwort mit der Nachricht, aus der sie stammt. Wenn deine Nachrichten keine Antwort enthalten, wird keine angezeigt.
 
 ## Lernen
 
-Lernen hat eine Reihe von Tabs. Ein Tab, in dem noch nichts steht, wird weggelassen.
+Unter „Lernen“ siehst du, was The Machine von dir gelernt hat und wie gut ihre Aufgaben funktionieren. Leere Tabs werden ausgeblendet.
 
-- **Was ich gelernt habe**: wie du schreibst, Fakten und wie du Dinge gern erledigt hast, aus deinen Notizen. **Bearbeite** alles davon in deinen eigenen Worten und **Entferne**, was nicht mehr stimmt. Du kannst auch deinen Chat bitten, etwas zu vergessen („vergiss, dass ich umgezogen bin“): Passt ein Fakt eindeutig, ist er weg, mit **Rückgängig** in Einstellungen, **Aktivität** und unter **Änderungen**. Passen mehrere, fragt der Chat, welcher. Wenn eine Notiz zu einer Aufgabe einen Fakt oder eine Regel beibringt, sagt der Chat der Aufgabe das unter der Antwort (**Im Gelernten gespeichert**, mit **Bearbeiten** und **Rückgängig**). Diese Zeile kommt aus dem, was gespeichert wurde, also behauptet eine Antwort das nie einfach so.
-- Ein Fakt kann sagen, was er ist (**Vorübergehend**, **Zusage**, **Vorliebe**), und **Bis** wann er gilt. Ein vorübergehender Fakt verblasst in Wochen, eine Vorliebe oder Zusage in Monaten, andere Fakten in einem Jahr. Nach dem Datum, oder sobald eine neuere Nachricht zeigt, dass er nicht mehr gilt, kommt ein Fakt zu **Abgelaufen**, wo **Zurückholen** ihn wiederherstellt.
-- **Fakten** behält die allgemeinen: über dich und wie du arbeitest. Ein Fakt über eine Person, eine Organisation oder ein Projekt steht auf deren Seite im Graph, unter **Bekannt über**, wo du ihn bearbeitest. Ein Fakt, der jemanden beim vollen Namen nennt, kommt beim Speichern dorthin, und der Chat der Aufgabe sagt **Bei** ihnen **im Graph gespeichert**. Eine ruhige Zeile unter **Fakten** sagt, wie viele auf Graph-Seiten stehen; öffne sie, um zu jeder Seite zu gehen. Ein Fakt aus deiner eigenen Nachricht zeigt die Worte, aus denen er stammt, in Anführungszeichen.
-- Eine Telefonnummer oder E-Mail-Adresse, die du für jemanden nennst, kommt auf die Seite dieser Person im Graph, nicht zu den Fakten. Steht die Nummer schon bei einem Eintrag und hat genau ein anderer Eintrag denselben Namen, werden die beiden zusammengeführt. Der Chat der Aufgabe zeigt **Zu … hinzugefügt** mit dem Namen und **Rückgängig**. Ist nicht klar, für wen sie ist, bleibt sie ein Fakt.
-- Die Liste wird nie voll. Wird sie lang, kommen Fakten und Regeln, die drei Wochen nicht gebraucht wurden, zu **Zurückgestellt**, wo **Zurückholen** einen wiederherstellt. Was du bearbeitet oder zurückgeholt hast, bleibt. Ein zurückgestellter Fakt hilft weiter, wenn es in einer Aufgabe oder einem Chat darum geht, ein abgelaufener nur als Vorgeschichte, nie als aktueller Stand.
-- Eine Notiz, die etwas schon Gelerntes mit anderen Worten sagt, ersetzt es, damit nichts doppelt steht. **Merge rückgängig machen** holt die alte Fassung zurück. Deine eigenen Bearbeitungen werden nie ersetzt.
-- **Diese übernehmen**: Schon vorher OpenClaw genutzt? Zeilen aus dessen Notizen (`MEMORY.md`, `USER.md`), die sich zu behalten lohnen, stehen oben, jede mit der Datei, aus der sie stammt. Hake an, was bleiben soll, dann **Angehakte behalten**: Sie werden Fakten oder Regeln wie alle anderen. Mit **Rest verwerfen** kommen die übrigen nicht wieder. Die Dateien werden nie geändert, und es erscheint nichts, wenn sie nichts Behaltenswertes enthalten.
-- **Änderungen**: was sie aus deinen Bearbeitungen, Ablehnungen und Chats übernommen hat, jeweils mit **Rückgängig**. Siehe [Schreiben](writing.md#it-keeps-learning).
-- **Entscheidungen**: ein Verlauf deiner Entscheidungen zu Aufgaben.
-- **Geteilt**: Erkenntnisse zum Teilen mit dem Team von The Machine und Stimmen, die auf dich warten. Erscheint nur, wenn etwas wartet. Siehe [Erkenntnisse teilen](share-learnings.md).
-- **Wie es läuft**: die letzten 30 Tage, und höher ist besser.
-  - **Lohnend**: von den Aufgaben, über die du entschieden hast, wie viele du erledigt hast (**Ausführen**, gesendet oder erledigt), statt sie zu verwerfen.
-  - **Beim ersten Mal**: von den Aufgaben, die du mit **Ausführen** gestartet hast, wie viele danach keine Korrektur brauchten.
-  - **Abgeschlossen**: von den Aufgaben, die du mit **Ausführen** gestartet hast, wie viele fertig wurden, ohne dass du sie weitermachen oder es erneut versuchen lassen musstest.
-  - **Unverändert gesendet**: von den Entwürfen, die du gesendet hast, wie viele ohne Bearbeitung oder **Änderungen anfragen** vorher rausgingen.
-  - Jede Zahl zeigt den Vergleich mit den 30 Tagen davor. Das Diagramm beginnt bei deiner ersten entschiedenen Aufgabe: in den ersten zwei Wochen ein Balken pro Tag, danach einer pro Woche, bis zu den letzten 8 Wochen.
-  - **Lohnend pro Quelle**: woher die Aufgaben kamen, etwa **E-Mail**, **Von dir hinzugefügt** (erstellt mit **Neue Aufgabe**), **Handy-Benachrichtigungen** oder **The Machine selbst** (Probleme in The Machine, etwa ein Fehler), und wie viele du erledigt hast.
-  - **Verpasste Aufgaben**: einmal pro Woche prüft The Machine eine Stichprobe von Nachrichten ohne Aufgabe und zeigt, welcher Anteil wohl eine gebraucht hätte, mit seiner Spanne. Die gefundenen stehen darunter: **Öffnen**, oder die Zeile selbst, zeigt die Nachricht, und **Echt verpasst** oder **Nicht verpasst** sagt ihr, ob sie richtig lag. **Echt verpasst** legt auch die Aufgabe an, mit **Rückgängig** (**Aufgabe öffnen** führt dorthin), und The Machine lernt daraus, damit sie solche Nachrichten künftig erkennt. Deine Antworten bleiben auf deiner Machine und machen die Zahl genauer. Die Zahl berücksichtigt auch, wie oft die Prüfung selbst falschliegt, gemessen an erfundenen Beispielen und deinen Antworten. Sichtbar nach der ersten wöchentlichen Prüfung.
+- **Was ich gelernt habe**: wie du schreibst, Fakten und wie du Dinge gern erledigst, basierend auf deinen Notizen. Mit **Bearbeiten** kannst du alles in deinen eigenen Worten anpassen. Mit **Entfernen** löschst du, was nicht mehr stimmt. Du kannst deinen Chat auch bitten, etwas zu vergessen, zum Beispiel „Vergiss, dass ich umgezogen bin“. Wenn eine Tatsache eindeutig passt, wird sie gelöscht. Mit **Rückgängig** unter **Einstellungen**, **Aktivität** und **Änderungen** kannst du das rückgängig machen. Wenn mehrere Tatsachen passen, fragt der Chat, welche gemeint ist. Wenn eine Notiz eine Tatsache oder Regel vermittelt, steht im Chat der Aufgabe **Im Gelernten gespeichert**, mit **Bearbeiten** und **Rückgängig**.
+- Eine Tatsache kann **Vorübergehend**, eine **Zusage** oder eine **Vorliebe** sein. Unter **Bis** steht, wie lange sie gilt. Vorübergehende Tatsachen laufen nach einigen Wochen ab, Vorlieben und Zusagen nach einigen Monaten und andere Tatsachen nach einem Jahr. Nach dem angegebenen Datum oder sobald eine neuere Nachricht zeigt, dass sie nicht mehr gilt, wird eine Tatsache unter **Abgelaufen** abgelegt. Mit **Zurückholen** kannst du sie wiederherstellen.
+- Unter **Fakten** stehen allgemeine Tatsachen über dich und deine Arbeitsweise. Eine Tatsache über eine Person, Organisation oder ein Projekt steht auf der jeweiligen Graph-Seite unter **Bekanntes**. Dort kannst du sie bearbeiten. Eine Tatsache, in der eine Person mit vollem Namen genannt wird, wird beim Speichern auf ihre Seite verschoben. Im Chat der Aufgabe steht dann **Gespeichert bei** der Person **im Graph**. Eine unauffällige Zeile unter **Fakten** zeigt, wie viele Tatsachen auf Graph-Seiten stehen. Öffne sie, um zu den jeweiligen Seiten zu gehen. Bei einer Tatsache aus deiner eigenen Nachricht werden die zitierten Wörter angezeigt, aus denen sie stammt.
+- Eine Telefonnummer oder E-Mail-Adresse, die du für jemanden angibst, wird auf der Graph-Seite der Person gespeichert und nicht unter den Fakten. Steht die Nummer bereits in einem Datensatz und hat ein weiterer Datensatz denselben Namen, werden die beiden zusammengeführt. Im Chat der Aufgabe steht dann **Hinzugefügt zu** mit dem Namen der Person und **Rückgängig**. Ist nicht klar, für wen die Nummer gedacht ist, bleibt sie eine Tatsache.
+- Die Liste wird nie voll. Wenn sie lang wird, werden Tatsachen und Regeln, die deine Machine seit drei Wochen nicht verwendet hat, unter **Zurückgestellt** abgelegt. Mit **Zurückholen** kannst du sie wiederherstellen. Was du bearbeitet oder zurückgeholt hast, bleibt erhalten. Zurückgestellte Tatsachen helfen deiner Machine weiterhin, wenn es in einer Aufgabe oder einem Chat darum geht. Abgelaufene Tatsachen dienen nur noch als Verlauf und werden nicht mehr als aktuell behandelt.
+- Eine Notiz, die bereits Gelerntes mit anderen Worten wiedergibt, ersetzt es, damit nichts doppelt aufgeführt wird. Mit **Merge rückgängig machen** stellst du den alten Wortlaut wieder her. Deine eigenen Änderungen werden nie ersetzt.
+- **Diese übernehmen**: Hast du OpenClaw schon verwendet? Zeilen aus den Notizen (`MEMORY.md`, `USER.md`), die es sich zu behalten lohnt, erscheinen oben. Daneben steht jeweils die Datei, aus der sie stammen. Markiere, was du behalten möchtest, und tippe auf **Angehakte behalten**. Die Zeilen werden wie alle anderen zu Fakten oder Regeln. Eine Tatsache über jemanden in deinem Graph wird auf die entsprechende Seite verschoben. Ein Geburtstag wird außerdem an die Routine „Geburtstage“ übergeben. Eine Tatsache über dich selbst bleibt unter „Fakten“. Mit **Rest verwerfen** werden die übrigen Zeilen dauerhaft ausgeblendet. Die Dateien werden nicht geändert. Wenn sie nichts enthalten, was sich zu behalten lohnt, wird nichts angezeigt.
+- **Änderungen**: Was deine Machine durch deine Bearbeitungen, verworfenen Vorschläge und Chats gelernt hat. Bei jedem Eintrag gibt es **Rückgängig**. Mehr dazu unter [Schreiben](writing.md#it-keeps-learning).
+- **Entscheidungen**: Eine Zeitleiste deiner Entscheidungen zu Aufgaben.
+- **Geteilt**: Erkenntnisse, die du mit dem Team von The Machine teilen kannst, und ausstehende Abstimmungen, falls vorhanden. Mehr dazu unter [Erkenntnisse teilen](share-learnings.md).
+- **So läuft’s**: Vier Kennzahlen für die letzten 30 Tage. Je höher, desto besser. Sie werden angezeigt, sobald du über drei Aufgaben entschieden hast, indem du sie ausgeführt oder verworfen hast. Bis dahin siehst du, über wie viele Aufgaben du bisher entschieden hast.
+  - **Lohnend**: Wie viele der Aufgaben, über die du entschieden hast, du ausgeführt hast (**Ausführen**, gesendet oder erledigt), statt sie zu verwerfen.
+  - **Beim ersten Mal**: Wie viele der Aufgaben, die du mit **Ausführen** begonnen hast, anschließend keine Korrektur benötigten.
+  - **Abgeschlossen**: Wie viele der Aufgaben, die du mit **Ausführen** begonnen hast, abgeschlossen wurden, ohne dass du deine Machine bitten musstest, weiterzumachen oder es erneut zu versuchen.
+  - **Unverändert gesendet**: Wie viele der Entwürfe, die du gesendet hast, ohne vorherige Bearbeitung oder **Änderungen anfragen** versendet wurden.
+  - Jede Kennzahl wird mit den 30 Tagen davor verglichen. Im Diagramm gibt es für die ersten zwei Wochen einen Balken pro Tag, danach einen pro Woche, bis zu acht Wochen lang.
+  - **Lohnend pro Quelle**: Wie viele Aufgaben du pro Quelle ausgeführt hast, zum Beispiel **E-Mail**, **Von dir hinzugefügt** (über **Neue Aufgabe**), **Handy-Benachrichtigungen** oder **The Machine selbst** (Probleme wie ein Fehler).
+  - **Verpasste Aufgaben**: Einmal pro Woche prüft The Machine eine Auswahl von Nachrichten, zu denen keine Aufgabe erstellt wurde, und schätzt, wie viele davon wahrscheinlich eine Aufgabe gebraucht hätten. Die gefundenen Nachrichten werden aufgelistet. Mit **Öffnen** oder durch Tippen auf die Zeile zeigst du die Nachricht an. Mit **Echt verpasst** oder **Nicht verpasst** gibst du an, ob die Einschätzung stimmt. **Echt verpasst** erstellt auch die Aufgabe. Mit **Rückgängig** machst du das rückgängig. **Aufgabe öffnen** führt dich zur Aufgabe. The Machine lernt daraus und erkennt ähnliche Nachrichten von da an besser. Deine Antworten machen die Kennzahl genauer und bleiben auf deiner Machine. Die Funktion wird nach der ersten wöchentlichen Prüfung angezeigt.

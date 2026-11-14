@@ -1,34 +1,34 @@
 ---
-title: Demander de l’aide
+title: Poser une question à l’aide
 area: getting-started
-summary: Demandez comment fonctionne The Machine. Les réponses s’appuient sur ces pages d’aide et comprennent des liens.
+summary: Découvrez comment fonctionne The Machine. Les réponses s’appuient sur ces pages d’aide et contiennent des liens.
 covers: help-chat
 code: help_chat.py, dashboard.html
 order: 6
-translated: 6313f73729cfba18
+translated: d99f5fc9b9ac3a95
 ---
-Touchez **Aide** en haut, à côté de **Paramètres**, et posez votre question avec vos propres mots, par exemple : « Comment mettre une tâche en attente ? ». Appuyez sur Enter pour envoyer votre question, ou sur Shift+Enter pour ajouter une ligne. Aide répond dans la langue de votre application ou dans celle que vous utilisez pour écrire. Les liens vers les pages d’aide s’ouvrent directement dans le panneau, dans cette langue.
+Touchez **Aide** en bas de la barre latérale, au-dessus de **Paramètres**, puis posez votre question avec vos propres mots, par exemple : « Comment mettre une tâche en attente ? ». Appuyez sur Entrée pour envoyer votre question, ou sur Maj+Entrée pour ajouter une ligne. L’aide répond dans la langue de votre application ou dans celle que vous utilisez pour écrire. Les liens vers les pages d’aide s’ouvrent directement dans le panneau, dans cette langue.
 
 ## D’où viennent les réponses
 
-Aide consulte les pages d’aide qui correspondent à votre question, puis le code de l’application pour les sujets qu’elles ne couvrent pas. Chaque réponse contient des liens vers les pages utilisées.
+L’aide consulte les pages qui correspondent à votre question, ainsi que le code de l’application pour les sujets qu’elles ne couvrent pas. Chaque réponse renvoie aux pages utilisées.
 
-Aide utilise le modèle de votre Machine dans un chat court et distinct. Sous la zone de message, vous pouvez choisir un autre modèle ou un autre niveau de réflexion pour ce chat avec Aide (voir [Modèle](model.md)). Seuls votre question et les pages correspondantes sont transmis : aucun de vos messages, de vos contacts ni de vos paramètres.
+Elle utilise le modèle de votre Machine dans un chat court et séparé. Sous la zone de message, vous pouvez choisir un autre modèle ou un autre niveau de réflexion pour ce chat d’aide (voir [Modèle](model.md)). Seuls votre question et les pages correspondantes sont utilisés : aucun de vos messages, aucune information sur les personnes ni aucun paramètre.
 
-Aide adapte ses réponses à votre niveau : des mots simples pour la plupart des gens, et plus de détails si vos questions sont techniques. Aide estime votre niveau à partir de votre configuration, de votre rôle et de la façon dont vous posez vos questions. Seule cette estimation est transmise.
+Les réponses s’adaptent à votre niveau : elles utilisent des mots simples pour la plupart des gens et donnent plus de détails si vos questions sont techniques. L’aide estime votre niveau à partir de votre configuration, de votre rôle et de votre façon de poser vos questions. Seule cette estimation est utilisée.
 
-Aide indique d’abord ce que The Machine sait déjà faire, et ne suggère une compétence que si aucune fonction intégrée ne répond à votre besoin. Voir [Personnaliser The Machine](personalize.md).
+Elle vous indique d’abord ce que The Machine peut déjà faire et ne suggère une compétence que si aucune fonction intégrée ne convient. Voir [Personnaliser The Machine](personalize.md).
 
 ## Ce que l’équipe voit
 
-Pour améliorer l’aide, votre Machine compte quelques mots qui indiquent le sujet de chaque question, par exemple « mettre une tâche en attente ». Jamais votre question ni la réponse, et aucun nom, adresse ou numéro : uniquement des mots provenant de ces pages d’aide. Une fois par jour, les décomptes sont envoyés à l’équipe The Machine, sans être associés à votre compte.
+Pour améliorer l’aide, votre Machine compte quelques mots qui indiquent le sujet de chaque question, par exemple « mettre une tâche en attente ». Elle ne transmet jamais votre question ni la réponse, et n’envoie aucun nom, adresse ou numéro : uniquement des mots tirés de ces pages d’aide. Une fois par jour, les comptes sont envoyés à L’équipe The Machine, sans être associés à votre compte.
 
-Pour désactiver cette option, désactivez **Partager ce qu’on demande à l’aide** dans **Paramètres**, **Sécurité**, sous **L’équipe The Machine**, ou choisissez le niveau de sécurité [**Prudent**](security-levels.md). Cette option nécessite [The Machine Network](/network). Les données qui n’ont pas encore été envoyées sont supprimées.
+Pour désactiver cette option, désactivez **Partager ce qu’on demande à l’aide** dans **Paramètres**, sous **Sécurité**, dans la section **L’équipe The Machine**, ou choisissez le niveau de sécurité **Prudent** ([niveaux de sécurité](security-levels.md)). Cette option nécessite [The Machine Network](/network). Les données qui n’ont pas encore été envoyées sont supprimées.
 
-## Ce qu’Aide ne peut pas faire
+## Ce que l’aide ne peut pas faire
 
-Aide répond à vos questions. Elle ne peut pas consulter vos données et ne modifie rien : elle vous indique où appuyer.
+L’aide répond à vos questions. Elle ne peut pas voir vos données et ne modifie rien : elle vous indique où appuyer.
 
-Si votre description évoque plutôt un problème qu’une question sur l’utilisation de l’application, la réponse se termine par **Signaler ce bug**. Ce bouton ouvre **Signaler un bug** avec un bref résumé de ce que vous avez fait, de ce à quoi vous vous attendiez et de ce qui s’est passé. Le rapport d’assistance est déjà coché. Vous pouvez modifier ce que vous voulez. Rien n’est envoyé tant que vous n’appuyez pas sur **Envoyer**.
+Si ce que vous décrivez ressemble à un problème plutôt qu’à une question sur la marche à suivre, la réponse se termine par **Signaler ce bug**. Ce bouton ouvre **Signaler un bug** avec un bref compte rendu de ce que vous avez fait, de ce à quoi vous vous attendiez et de ce qui s’est passé. Le rapport d’assistance est également sélectionné. Vous pouvez modifier ce que vous voulez. Rien n’est envoyé avant que vous appuyiez sur **Envoyer**.
 
-**Signaler un bug** est également un onglet à part entière dans le même panneau. Voir [Obtenir de l’aide](get-support.md#report-a-bug).
+**Signaler un bug** est aussi un onglet à part dans le même panneau. Voir [Obtenir de l’aide](get-support.md#report-a-bug).

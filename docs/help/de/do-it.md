@@ -1,49 +1,49 @@
 ---
-title: Ausführen, und was gesendet wird
+title: Ausführen und was dabei gesendet wird
 area: cards
-summary: Ausführen bereitet die Arbeit vor. Nichts wird gesendet, bezahlt oder geändert, bis du diesen Schritt freigibst.
+summary: Ausführen bereitet die Aufgabe vor. Nichts wird gesendet, bezahlt oder geändert, bis du den jeweiligen Schritt freigibst.
 covers: do-it
 code: dashboard.html, next_actions.py, assistant.py
 order: 2
-translated: 6284dddb10c7b332
+translated: b1a9272a7629b74f
 ---
 ## Was Ausführen macht
 
-**Ausführen** bittet deine Machine, die Aufgabe vorzubereiten: die Antwort entwerfen, Dinge nachschlagen, ein Formular ausfüllen. Sie arbeitet mit deinen eigenen Konten und ihrem eigenen Browser, so wie du es tun würdest.
+**Ausführen** bittet deine Machine, die Aufgabe vorzubereiten: eine Antwort zu entwerfen, etwas nachzuschlagen oder ein Formular auszufüllen. Sie nutzt deine Konten und ihren eigenen Browser, so, als würdest du selbst damit arbeiten.
 
-Während sie in ihrem Browser arbeitet, zeigen die Aufgabe und ihr Chat diese Seite live, auch zwischen den Schritten, bis sie dort fertig ist. Klicke auf das Bild, um den Browser zu öffnen. In der Aufgabe öffnet es sich größer, mit **Stopp**: Ein Druck beendet den Lauf sofort.
+Während sie im Browser arbeitet, zeigen die Aufgabe und ihr Chat die aktuelle Seite live an, auch zwischen den einzelnen Schritten, bis sie dort fertig ist. Klicke auf das Bild, um den Browser zu öffnen. In der Aufgabe wird der Browser größer angezeigt. Dort kannst du auf **Stopp** drücken, um den Vorgang sofort zu beenden.
 
-Bevor sie eine Nachfrage entwirft oder etwas übergibt, prüft sie den Verlauf auf neuere Antworten, auch von Teammitgliedern. Ist es schon erledigt, sagt die Aufgabe das stattdessen. Hat sie ein Dokument oder eine Seite erstellt oder geändert, verlinkt die Aufgabe direkt darauf.
+Vor einer Folgeaktion oder Übergabe prüft sie, ob es neuere Antworten gibt, auch von Teammitgliedern. Wenn die Aufgabe schon erledigt ist, sagt sie das. Wenn sie ein Dokument oder eine Seite geändert hat, verlinkt die Aufgabe darauf.
 
-## Nichts geht raus vor deinem Ja
+## Nichts wird ohne dein Okay gesendet
 
-- Eine Antwort kommt als Entwurf zurück. **Prüfen und senden** öffnet ihn, bereit zum Bearbeiten. Er geht erst raus, wenn du auf **Jetzt senden** tippst.
-- Zwei E-Mails oder mehr bei einer Aufgabe: Im Chat prüfst du sie mit einem Button alle. Jede kommt mit **Weiter** dran, und der letzte Schritt sendet alle. Jede steht erst als gesendet da, wenn sie wirklich raus ist.
-- Eine E-Mail öffnet sich so, wie sie aussehen wird, mit Fettdruck, Listen und Links. Eine Slack- oder Chat-Nachricht ist reiner Text: Ein Link erscheint als seine Wörter mit der Adresse in Klammern und geht wieder als Link raus.
-- **Änderungen anfragen** im selben Fenster: Sag, was anders sein soll, und deine Machine macht den Entwurf neu.
-- Eine Antwort antwortet auf die neueste E-Mail des Verlaufs, und die Quelle der Aufgabe öffnet diese E-Mail.
-- Ein Schritt, der etwas verbindlich macht, etwa absenden, bezahlen oder buchen, wartet auf deine Bestätigung, oder darauf, dass du im Chat darum bittest. Bestätigst du einen Schritt, warten die anderen weiter: Die Aufgabe schließt sich erst, wenn jeder Schritt erledigt ist.
-- Im Chat einer Aufgabe wird ein Entwurf nie in derselben Nachricht gesendet, die ihn geschrieben hat.
-- Bis du freigibst, wartet die Aufgabe unter **Für dich** als **Vorbereitet**, und die Liste sagt einmal, dass nichts rausgeht, bevor du freigibst. Eine, die noch etwas von dir braucht, sagt **Braucht dich**, nie fertig. Dass ein Entwurf rausging, steht dort erst, wenn er raus ist.
-- Ein langer Entwurf zeigt seine ersten 3 Zeilen. **Mehr anzeigen** öffnet den Rest; **Prüfen und senden** zeigt immer alles.
+- Eine Antwort kommt als Entwurf zurück. **Prüfen und senden** öffnet ihn, damit du ihn bearbeiten kannst. Gesendet wird er erst, wenn du auf **Jetzt senden** drückst.
+- Bei mindestens zwei E-Mails in einer Aufgabe kannst du sie mit einer Schaltfläche im Chat der Aufgabe alle prüfen. Sie werden nacheinander angezeigt. Mit **Weiter** kommst du zur nächsten, und im letzten Schritt werden alle gesendet. Jede E-Mail wird erst dann als gesendet angezeigt, wenn sie tatsächlich rausgegangen ist.
+- Eine E-Mail wird so angezeigt, wie sie aussehen wird, einschließlich Fettdruck, Listen und Links. Eine Slack- oder Chatnachricht ist reiner Text.
+- Mit **Änderungen anfragen** kannst du im selben Fenster sagen, was geändert werden soll. Deine Machine erstellt den Entwurf dann neu.
+- Eine Antwort bezieht sich auf die neueste E-Mail im Thread. Über die Quelle der Aufgabe öffnest du diese E-Mail.
+- Ein Schritt, der etwas verbindlich macht, etwa etwas einzureichen, zu bezahlen oder zu buchen, wartet auf deine Bestätigung oder darauf, dass du im Chat darum bittest. Wenn du einen Schritt bestätigst, bleiben die anderen offen. Die Aufgabe wird erst geschlossen, wenn alle Schritte erledigt sind.
+- In einem Chat zur Aufgabe wird ein Entwurf nie mit derselben Nachricht gesendet, in der er erstellt wurde.
+- Bis du ihn freigibst, wartet der Entwurf unter **Für dich** mit dem Status **Vorbereitet**. In der Liste steht dann, dass nichts gesendet wird, bis du ihn freigibst. Wenn noch etwas von dir gebraucht wird, steht dort **Braucht dich**. Erst nach dem Versand wird angezeigt, dass der Entwurf gesendet wurde.
+- Bei einem langen Entwurf werden die ersten drei Zeilen angezeigt. Mit **Mehr anzeigen** oder durch Tippen auf den Text öffnest du den Rest. **Prüfen und senden** zeigt immer den ganzen Entwurf.
 
-Was sie senden kann, hängt von der Quelle ab: eine E-Mail, eine Slack-Direktnachricht, eine Nachricht über WhatsApp, Telegram, LinkedIn oder X. Der Artikel jeder Verbindung sagt, was sie senden kann.
+Je nach Quelle kann sie eine E-Mail, eine Slack-Direktnachricht oder eine Nachricht über WhatsApp, Telegram, LinkedIn oder X senden. Im Artikel zu jeder Verbindung steht, was sie senden kann.
 
 ## Eine E-Mail bearbeiten
 
-- Nimm die Knöpfe über dem Text, oder `Ctrl B` für fett, `Ctrl I` für kursiv und `Ctrl K` für einen Link (`⌘` auf einem Mac). Es gibt auch Knöpfe für eine Aufzählung und eine nummerierte Liste.
-- Ein Link braucht eine Adresse, die mit https:// beginnt. Eingefügter Text kommt als reiner Text, ohne Farben oder Bilder.
-- Formatierung, die eine E-Mail nicht tragen kann, wird vor dem Senden entfernt, und die Nachricht zeigt, wie sie rausgeht. Tippe noch einmal auf **Jetzt senden**, um sie zu senden.
-- Die E-Mail geht genau so raus, wie sie angezeigt wird, mit einer Kopie als reiner Text für Mail-Apps ohne Formatierung.
+- Nutze die Schaltflächen über dem Text oder `Ctrl B` für Fettdruck, `Ctrl I` für Kursivschrift und `Ctrl K` für einen Link (`⌘` auf einem Mac). Außerdem gibt es Schaltflächen für Aufzählungen und nummerierte Listen.
+- Ein Link braucht eine Adresse, die mit https:// beginnt. Eingefügter Text wird als reiner Text übernommen, ohne Farben oder Bilder.
+- Formatierungen, die eine E-Mail nicht unterstützt, werden zuerst entfernt. Anschließend wird die Nachricht so angezeigt, wie sie gesendet wird. Drücke erneut auf **Jetzt senden**, um sie zu senden.
+- Die E-Mail wird genau so gesendet, wie sie angezeigt wird, zusätzlich mit einer Nur-Text-Kopie für Mail-Apps, die keine Formatierung anzeigen.
 
-## Wenn es nicht geht
+## Wenn es nicht klappt
 
-- „Das kann nicht von hier gesendet werden.“ heißt, dass du den Entwurf mit **Entwurf kopieren** kopierst und selbst sendest.
-- **Braucht deine Hilfe** heißt, dass sie dich etwas fragt: **Antworten**. **Hängt fest** heißt, dass sie ohne Frage angehalten hat oder zu lange lief und gestoppt wurde. Die Aufgabe sagt, warum.
-- Fragt sie mehr als eine Sache? Jede Frage hat ihre eigene Auswahl oder ein kurzes Feld, manchmal schon mit der Antwort vom letzten Mal ausgefüllt. **Antworten** schickt alle zusammen.
-- Fehlt ihr etwas, das nur du hast? Dann fragt sie dich danach und entwirft nur, was ohne es gehen kann, etwa eine Antwort, die einen Termin bestätigt. Eine Antwort, die nur sagt, dass es noch kommt, entwirft sie nicht.
-- **Erneut versuchen** führt sie noch einmal aus. **Änderungen anfragen** bittet um etwas anderes. Bei einer festgefahrenen Aufgabe steht **Erneut versuchen** vorn, und **Details** zeigt, was sie versucht hat.
-- Während der Vorbereitung sagt die Aufgabe in einer einfachen Zeile, was deine Machine gerade tut, etwa „Die Mail wird gelesen“, „Das PDF wird gelesen“ oder „Der Entwurf wird geschrieben“. Die genauen Schritte bleiben im Chat der Aufgabe.
-- Eine Aufgabe in Vorbereitung startet innerhalb von Sekunden. Muss sie warten, sagt sie, warum und ungefähr wann: „Startet nach der aktuellen“, ein Nutzungslimit, das sich zurücksetzt, oder Nutzung, die für später aufgespart wird.
-- Eine Website will, dass du dich anmeldest: Tippe auf **Anmelden** oder auf **Browser öffnen** und melde dich dort an. Sobald du drin bist, macht sie von selbst weiter, und die Aufgabe sagt „Angemeldet. Ich fange gleich an.“ Schließt du den Browser, wird sofort geprüft. Macht sie nicht weiter, tippe auf **Weiter**.
-- Ein Code auf deinem Handy oder eine fehlende Berechtigung hält sie an. Die Aufgabe sagt in einer Zeile, was sie braucht, etwa den Code in ihrem Browser oder Zugriff auf eine Datei, dann **Weiter** oder **Erneut versuchen**. Eine Quelle, die nicht verbunden ist, etwa Slack: **Slack verbinden** steht vorne auf der Aufgabe, und sie macht von selbst weiter, sobald Slack verbunden ist.
+- „Das kann hier nicht gesendet werden.“ bedeutet, dass du den Entwurf mit **Entwurf kopieren** kopierst und selbst sendest.
+- **Braucht deine Hilfe** bedeutet, dass die Aufgabe eine Frage hat: **Antworten**. **Hängt fest** bedeutet, dass sie ohne Frage angehalten wurde. In der Aufgabe steht, warum.
+- Wurden mehrere Fragen gestellt? Jede Frage hat eigene Auswahlmöglichkeiten oder ein kurzes Eingabefeld, das manchmal schon mit deiner letzten Antwort ausgefüllt ist. Mit **Antworten** sendest du alle Antworten zusammen.
+- Fehlt etwas, das nur du hast? Die Aufgabe fragt danach und erstellt nur Entwürfe, die ohne diese Information auskommen, zum Beispiel eine Antwort, die einen Termin bestätigt. Sie erstellt keinen Entwurf, der nur sagt, dass die Information noch kommt.
+- **Erneut versuchen** führt die Aufgabe noch einmal aus. Mit **Änderungen anfragen** bittest du um etwas anderes. Bei einer angehaltenen Aufgabe steht **Erneut versuchen** an erster Stelle. Unter **Details** siehst du, was sie versucht hat.
+- Während der Vorbereitung steht in der Aufgabe in einer einfachen Zeile, was deine Machine gerade macht, zum Beispiel „Liest die E-Mail“, „Liest das PDF“ oder „Schreibt den Entwurf“. Die ausführlichen Schritte stehen im Chat der Aufgabe.
+- Eine Aufgabe mit dem Status **Wird vorbereitet…** beginnt innerhalb weniger Sekunden. Wenn sie warten muss, sagt sie warum und ungefähr wie lange, zum Beispiel „Beginnt, sobald die aktuelle Aufgabe abgeschlossen ist“.
+- Eine Website fordert dich auf, dich anzumelden: Drücke auf **Anmelden** oder auf **Browser öffnen** und melde dich dort an. Anschließend macht die Aufgabe selbstständig weiter. Falls nicht, drücke auf **Weiter**.
+- Ein an dein Smartphone gesendeter Code oder eine fehlende Berechtigung hält die Aufgabe an. Sie sagt dir, was sie braucht. Drücke dann auf **Weiter** oder **Erneut versuchen**. Wenn eine Quelle nicht verbunden ist, zum Beispiel Slack, führt dich **Slack verbinden** direkt zur Verbindung in der Aufgabe. Sobald Slack verbunden ist, macht sie selbstständig weiter.

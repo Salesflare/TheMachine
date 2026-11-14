@@ -1,43 +1,43 @@
 ---
 title: Salesflare CRM
 area: connections
-summary: Accounts, contacten en deals, zodat hij weet wie belangrijk is. Het leest met je API-sleutel.
+summary: Accounts, contactpersonen en deals, zodat hij weet wie belangrijk is. Hij leest ze via je API-sleutel.
 covers: connector:salesflare
 code: assistant.py, onboarding.py
 site: More sources, Connect, Remove
-translated: 697e6d60b69bb1cd
+translated: 3d6041d568843d96
 ---
-## Wat het leest
+## Wat hij leest
 
-Je accounts, contacten en deals in Salesflare, en de feeds van de accounts: e-mails van collega's waar jij niet bij betrokken bent, en afspraken met notities.
+Je accounts, contactpersonen en deals in Salesflare, plus de tijdlijn van elke account: e-mails van collega's waarbij je niet in de cc stond en vergaderingen met notities.
 
-## Wat het kan wijzigen
+## Wat hij kan wijzigen
 
-Niets, tenzij je `join_pipelines` instelt in het instellingenbestand van je Machine. Dan voegt hij je zelf toe aan accounts in die pipelines. Standaard is het leeg.
+Niets. (Op je eigen computer kan de instelling `join_pipelines` ervoor zorgen dat je wordt toegevoegd aan accounts in geselecteerde pipelines. Deze optie staat standaard uit.)
 
-## Koppelen
+## Verbinden
 
-1. Open in Salesflare [Settings, API keys](https://app.salesflare.com/#/settings/apikeys) en maak een sleutel aan.
-2. Op een gehoste Machine: open je setuppagina op app.themachine.computer/setup, ga naar **Meer bronnen**, open Salesflare CRM, plak de sleutel en druk op **Verbinden**.
-3. Op je eigen computer: voer `assistant connect crm` uit, of **Koppelingen**, **Klanten**, Salesflare CRM. Na **Verbinden** herstart je Machine en opent hij de Salesflare-kaart. Die zegt eerst dat hij de accounts met recente e-mails en afspraken zoekt, en daarna hoeveel hij er gelezen heeft.
+1. Open in Salesflare [Instellingen, API-sleutels](https://app.salesflare.com/#/settings/apikeys) en maak een sleutel aan.
+2. Op een gehoste Machine: open je installatiepagina op app.themachine.computer/setup, ga naar **Meer bronnen**, open Salesflare CRM, plak de sleutel en klik op **Verbinden**.
+3. In het dashboard: **Koppelingen**, **Klanten**, Salesflare CRM. Plak de sleutel en klik op **Verbinden**. Op de kaart zie je hoever de synchronisatie is.
 
-## Details van de sync
+## Synchronisatiedetails
 
-De kaart onder **Koppelingen**, **Andere bronnen** toont hoe ver hij is: hoeveel accounts hij in deze ronde gelezen heeft, en hoeveel hij overgeslagen heeft omdat Salesflare te traag antwoordde. Een ronde die uren duurt, meldt dat ze misschien vastzit.
+Bij **Koppelingen**, **Klanten**, zie je bij Salesflare hoever de synchronisatie is: hoeveel accounts deze ronde zijn gelezen en hoeveel zijn overgeslagen omdat Salesflare te traag was. Duurt een ronde uren, dan wordt aangegeven dat de synchronisatie misschien is vastgelopen.
 
-De tegels tellen de accounts die hij kon openen en de e-mails en meetings die hij binnenhaalde. Laat Salesflare je API-sleutel geen enkel account openen, dan zegt de kaart **Heeft je hulp nodig**: gebruik de sleutel van een gebruiker die ze kan zien. Loopt Salesflare telkens vast maar lukt elke nieuwe poging, dan zegt hij dat Salesflare **soms traag** is.
+De tegels tonen hoeveel accounts hij kon openen en hoeveel e-mails en vergaderingen hij heeft opgehaald. Kan je API-sleutel in Salesflare geen enkele account openen, dan staat er op de kaart **Heeft je hulp nodig**: gebruik de sleutel van een gebruiker die deze accounts wel kan zien. Loopt Salesflare steeds vast, maar lukt het bij elke nieuwe poging wel, dan staat er dat Salesflare **soms traag is**.
 
-Heeft Salesflare feed-toegang voor API-sleutels niet aangezet voor je team, dan zegt de kaart dat: er komen geen e-mails of meetings binnen tot de support van Salesflare het aanzet. Hij kijkt de eerste dag elke 10 minuten opnieuw, daarna ongeveer elk uur, en gaat vanzelf verder zodra het werkt.
+Heeft Salesflare toegang tot de tijdlijn voor API-sleutels voor je team nog niet ingeschakeld, dan staat dat op de kaart. Er worden pas e-mails en vergaderingen opgehaald zodra Salesflare Support dit inschakelt. De kaart wordt de eerste dag elke 10 minuten bijgewerkt, daarna ongeveer elk uur. Zodra het werkt, gaat de synchronisatie vanzelf verder.
 
-- **Stoppen**: er komt niets nieuws binnen tot je op **Begin** drukt. Hij gaat verder waar hij was.
-- **Sync herstarten**: laat de huidige ronde vallen, met de fouten, en leest nu de afgelopen week opnieuw. Er gaat niets verloren van wat hij binnengehaald heeft.
-- **API-sleutels**: opent de pagina met API-sleutels van Salesflare, om een nieuwe sleutel te maken.
+- **Stoppen**: er worden geen nieuwe gegevens opgehaald totdat je op **Begin** klikt. De synchronisatie gaat verder waar hij was gebleven.
+- **Sync herstarten**: de synchronisatie begint opnieuw en leest de afgelopen week opnieuw. Er gaat niets verloren van wat hij al heeft opgehaald.
+- **API-sleutels**: opent de pagina met API-sleutels van Salesflare, waar je een nieuwe sleutel kunt maken.
 
 ## Verwijderen
 
-- In het dashboard: **Koppelingen**, open Salesflare, **Details**, dan **Ontkoppelen**. Wat al binnengehaald is, blijft.
-- Op een gehoste Machine kun je ook op **Verwijderen** ernaast drukken op je setuppagina.
+- In het dashboard: **Koppelingen**, open Salesflare, **Details** en klik daarna op **Ontkoppelen**. Wat hij al heeft opgehaald, blijft behouden.
+- Op een gehoste Machine kun je ook op **Verwijderen** naast Salesflare klikken op je installatiepagina.
 
-## Intrekken in Salesflare
+## De toegang in Salesflare intrekken
 
-Verwijder de API-sleutel in Salesflare, onder Settings, API keys.
+Verwijder de API-sleutel in Salesflare, onder Instellingen, API-sleutels.

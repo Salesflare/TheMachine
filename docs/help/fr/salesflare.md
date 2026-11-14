@@ -1,43 +1,43 @@
 ---
 title: Salesflare CRM
 area: connections
-summary: Comptes, contacts et deals, pour savoir qui compte. Il lit avec votre clé API.
+summary: Comptes, contacts et opportunités pour savoir qui compte. La lecture se fait avec votre clé API.
 covers: connector:salesflare
 code: assistant.py, onboarding.py
 site: More sources, Connect, Remove
-translated: 697e6d60b69bb1cd
+translated: 3d6041d568843d96
 ---
-## Ce qu’il lit
+## Ce qu’elle lit
 
-Vos comptes, contacts et deals dans Salesflare, et les fils des comptes : les e-mails de collègues qui ne vous concernent pas, et les réunions avec leurs notes.
+Vos comptes, vos contacts et vos opportunités dans Salesflare, ainsi que le fil d’activité de chaque compte : les e-mails de vos collègues auxquels vous n’étiez pas en copie et les réunions avec leurs notes.
 
-## Ce qu’il peut changer
+## Ce qu’elle peut modifier
 
-Rien, sauf si vous définissez `join_pipelines` dans le fichier de paramètres de votre Machine. Il vous ajoute alors de lui-même aux comptes de ces pipelines. C’est vide par défaut.
+Rien. (Sur votre ordinateur, le paramètre `join_pipelines` peut l’autoriser à vous ajouter aux comptes des pipelines sélectionnés. Cette option est désactivée par défaut.)
 
-## Le connecter
+## La connecter
 
-1. Dans Salesflare, ouvrez [Settings, API keys](https://app.salesflare.com/#/settings/apikeys) et créez une clé.
-2. Sur une Machine hébergée : ouvrez votre page de configuration sur app.themachine.computer/setup, allez dans **Plus de sources**, ouvrez Salesflare CRM, collez la clé et appuyez sur **Se connecter**.
-3. Sur votre propre ordinateur : lancez `assistant connect crm`, ou **Connexions**, **Clients**, Salesflare CRM. Après **Se connecter**, votre Machine redémarre et ouvre la carte Salesflare, qui indique d’abord qu’elle cherche les comptes avec des e-mails et des réunions récents, puis combien elle en a lu.
+1. Dans Salesflare, ouvrez [Paramètres, clés API](https://app.salesflare.com/#/settings/apikeys) et créez une clé.
+2. Sur une Machine hébergée : ouvrez votre page de configuration à l’adresse app.themachine.computer/setup, allez dans **Plus de sources**, ouvrez Salesflare CRM, collez la clé et cliquez sur **Se connecter**.
+3. Dans le tableau de bord : **Connexions**, **Clients**, Salesflare CRM, collez la clé et cliquez sur **Se connecter**. La carte indique ensuite l’avancement.
 
-## Détails de la synchro
+## Détails de la synchronisation
 
-Sa carte sous **Connexions**, **Autres sources** montre où il en est : combien de comptes il a lus dans ce tour, et combien il en a sautés parce que Salesflare répondait trop lentement. Un tour qui dure des heures indique qu’il est peut-être bloqué.
+Dans **Connexions**, **Clients**, Salesflare indique l’avancement : le nombre de comptes lus lors de cette synchronisation et ceux qui ont été ignorés parce que Salesflare a répondu trop lentement. Si une synchronisation dure plusieurs heures, un message indique qu’elle est peut-être bloquée.
 
-Ses tuiles comptent les comptes qu’il a pu ouvrir et les e-mails et réunions qu’il a récupérés. Si Salesflare ne laisse votre clé API ouvrir aucun compte, la carte indique **Attend votre aide** : utilisez la clé d’un utilisateur qui peut les voir. Si Salesflare expire souvent mais que chaque nouvel essai passe, elle indique que Salesflare est **parfois lent**.
+Les compteurs indiquent le nombre de comptes auxquels elle a pu accéder et le nombre d’e-mails et de réunions importés. Si votre clé API ne permet d’accéder à aucun compte dans Salesflare, la carte affiche **Attend votre aide** : utilisez la clé d’un utilisateur qui peut les consulter. Si Salesflare dépasse régulièrement le délai d’attente, mais que chaque nouvelle tentative aboutit, la carte indique que Salesflare est **parfois lent**.
 
-Si Salesflare n’a pas activé l’accès au feed par clé API pour votre équipe, la carte le dit : aucun e-mail ni réunion n’arrive tant que le support de Salesflare ne l’a pas activé. Il revérifie toutes les 10 minutes le premier jour, puis environ toutes les heures, et reprend tout seul dès que ça marche.
+Si Salesflare n’a pas activé l’accès au fil d’activité pour les clés API de votre équipe, la carte vous l’indique : aucun e-mail ni aucune réunion n’est importé tant que le support de Salesflare ne l’a pas activé. Une nouvelle vérification a lieu toutes les 10 minutes le premier jour, puis environ toutes les heures. La synchronisation reprend automatiquement dès que l’accès fonctionne.
 
-- **Arrêter** : plus rien de nouveau n’arrive jusqu’à ce que vous appuyiez sur **Démarrer**. Il reprend là où il en était.
-- **Relancer la synchro** : abandonne le tour en cours, avec ses erreurs, et relit tout de suite la dernière semaine. Rien de ce qu’il a récupéré n’est perdu.
-- **Clés API** : ouvre la page des clés API de Salesflare, pour créer une nouvelle clé.
+- **Arrêter** : aucun nouvel élément n’est importé jusqu’à ce que vous cliquiez sur **Début**. La synchronisation reprend là où elle en était.
+- **Relancer la synchro** : recommence la synchronisation et lit à nouveau les données de la dernière semaine. Rien de ce qui a déjà été importé n’est perdu.
+- **Clés API** : ouvre la page des clés API de Salesflare pour en créer une nouvelle.
 
-## Le retirer
+## La supprimer
 
-- Dans le tableau de bord : **Connexions**, ouvrez Salesflare, **Détails**, puis **Déconnecter**. Ce qu’il a déjà récupéré reste.
-- Sur une Machine hébergée, vous pouvez aussi appuyer sur **Retirer** à côté de lui sur votre page de configuration.
+- Dans le tableau de bord : **Connexions**, ouvrez Salesflare, puis **Détails** et **Déconnecter**. Les données déjà importées sont conservées.
+- Sur une Machine hébergée, vous pouvez aussi cliquer sur **Retirer** à côté de Salesflare sur votre page de configuration.
 
-## Le révoquer dans Salesflare
+## Révoquer l’accès dans Salesflare
 
-Supprimez la clé API dans Salesflare, sous Settings, API keys.
+Supprimez la clé API dans Salesflare, sous Paramètres, clés API.

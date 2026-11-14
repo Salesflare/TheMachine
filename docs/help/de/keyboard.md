@@ -1,48 +1,48 @@
 ---
 title: Tastatur und Befehlspalette
 area: getting-started
-summary: Erreiche alles im Dashboard per Tastatur: die Palette, Sprungtasten und Tasten für eine Aufgabe.
+summary: Über die Tastatur erreichst du alles im Dashboard: die Palette, Tastenkürzel zum Navigieren, zum Durchgehen von Aufgaben und für Aktionen an einer Aufgabe.
 covers: keyboard
 code: dashboard.html
 order: 5
-translated: 9d9a056e308ced41
+translated: ebf5345474689237
 ---
 ## Die Palette
 
-Drück `⌘K` auf einem Mac oder `Ctrl K` unter Windows und Linux, oder `/`, um **Suche und Befehle** zu öffnen. Tippe einen Teil eines Namens: eine Aktion, eine Seite, eine Aufgabe, eine Person, eine Organisation, ein Projekt oder eine Nachricht. Unter **Nachrichten** stehen die besten Treffer, und **Alle Ergebnisse** öffnet die ganze Liste. Nutze die Pfeiltasten und Enter, oder Esc zum Schließen. Letzte Befehle stehen zuerst.
+Drücke auf dem Mac `⌘K`, unter Windows und Linux `Ctrl K` oder `/`, um **Suche und Befehle** zu öffnen. Gib einen Teil eines Namens ein: eine Aktion, eine Seite, eine Aufgabe, eine Person, eine Organisation, ein Projekt oder eine Nachricht. Navigiere mit den Pfeiltasten und Enter durch die Treffer oder schließe die Palette mit Esc. Zuletzt verwendete Befehle stehen zuerst. **Alle Ergebnisse anzeigen** öffnet alle passenden Nachrichten.
 
-Auf dem Handy tippst du auf das Suchsymbol in der oberen Leiste.
+Auf dem Smartphone tippst du oben in der Leiste auf das Suchsymbol.
 
 ## Eine Frage stellen
 
-Tippe eine Frage, etwa „Was hat Kim über das Pilotprojekt gesagt?“, und über den Ergebnissen erscheint eine kurze Antwort aus deinen eigenen Mails und Nachrichten, mit einem Link zu jeder verwendeten Nachricht. Sie antwortet in der Sprache deiner Frage, nur aus dem Bereich, den du gerade ansiehst (Alle, Arbeit oder Privat). Ein Name oder ein paar Stichwörter suchen einfach. Die Antwort sendet nie etwas und legt kein To-do an, und sie braucht ein Modell (Einstellungen, Modell).
+Gib eine Frage ein, zum Beispiel „Was hat Kim über das Pilotprojekt gesagt?“. Über den Ergebnissen wird eine kurze Antwort aus deinen eigenen Mails und Nachrichten angezeigt, mit einem Link zu jeder Nachricht, die dafür verwendet wurde. Die Antwort erscheint in der Sprache deiner Frage und bezieht sich nur auf den Bereich, den du gerade ansiehst (**Alle**, **Arbeit** oder **Privat**). Ein Name oder ein paar Stichwörter lösen einfach eine Suche aus.
 
-Fragst du nach einer Person und einer Zeit, etwa „Was hat Kim letzte Woche gesagt?“, liest sie nur die Nachrichten von oder mit dieser Person an diesen Tagen, in deiner Zeitzone. Hat sie damals nichts geschickt, sagt die Antwort das und nennt ihre letzte Nachricht mit Datum.
+Frag nach einer Person und einem Zeitraum, zum Beispiel „Was hat Kim letzte Woche gesagt?“. Dann liest die Machine nur Nachrichten, die an diesen Tagen von dieser Person stammen oder mit ihr ausgetauscht wurden, und berücksichtigt dabei deine Zeitzone. Wenn die Person in diesem Zeitraum nichts gesendet hat, sagt die Machine das und zeigt ihre neueste Nachricht mit Datum an.
 
-Sie liest auch, was die Machine zur Frage schon festhält: Versprechen, die offen sind oder in den letzten 30 Tagen abgeschlossen wurden, Gelerntes, die Zusammenfassung der Person, des Projekts oder der Organisation, nach der du fragst, und Meeting-Notizen. Alles, was die Antwort verwendet hat, steht darunter, benannt als das, was es ist (Versprechen, Gelernt, Zusammenfassung, Meeting-Notizen), und öffnet sich dort, wo es hingehört. Gelesen wird nur, was zur Frage passt, und nur aus dem Bereich, den du gerade ansiehst.
+Die Machine berücksichtigt auch, was sie bereits zu deiner Frage gespeichert hat: Versprechen (offene oder in den letzten 30 Tagen geschlossene), Erkenntnisse, die Zusammenfassung der Person, des Projekts oder der Organisation, nach der du fragst, sowie Besprechungsnotizen. Jede davon verwendete Quelle wird darunter mit ihrer Art angezeigt, zum Beispiel „Versprechen“, „Erkenntnis“, „Zusammenfassung“ oder „Besprechungsnotizen“, und lässt sich an ihrem Speicherort öffnen. Es werden nur passende Inhalte aus dem Bereich gelesen, den du gerade ansiehst.
 
-Haben mehrere Personen diesen Namen, sagt sie, welche gemeint ist. Die anderen gelesenen Nachrichten stehen unter Nachrichten. Die Frage, die eine leere Suche vorschlägt, ist immer eine, zu der es Nachrichten gibt.
+Wenn mehrere Personen denselben Namen haben, sagt die Machine, welche Person gemeint ist. Andere gelesene Nachrichten werden unter „Nachrichten“ angezeigt. Bei einer leeren Suche wird nur eine Frage vorgeschlagen, zu der es Nachrichten gibt. Die Antwort sendet nichts und erstellt keine Aufgabe. Dafür muss ein Modell eingerichtet sein (**Einstellungen**, **Modell**).
 
 ## Tastenkürzel
 
-Drück `?` für **Tastenkürzel**, die vollständige Liste für deinen Computer.
+Drücke `?`, um **Tastenkürzel** zu öffnen. Dort findest du die vollständige Liste für deinen Computer.
 
-- Zu einer Seite springen: `G`, dann `T` Aufgaben, `C` Kalender, `P` Personen, `O` Organisationen, `J` Projekte, `F` Fleet, `L` Lernen, `N` Verbindungen, `,` Einstellungen. `G`, dann `E` öffnet die Ergebnisse der Nachrichtensuche. Die alten Kürzel `G`, dann `S` und `G`, dann `B` funktionieren weiter.
-- `N` legt eine neue Aufgabe an. `T` startet Sprechen oder beendet es, während es läuft. `J` und `K` (oder `↓` und `↑`) bewegen sich durch eine Liste, Enter öffnet.
-- Bei einer Aufgabe: `E` benennt sie um, `S` stellt sie zurück, `D` markiert sie als erledigt, `R` schreibt in ihren Chat.
-- Im Kalender: `T` springt zu heute, `J` und `K` (oder `→` und `←`) zur nächsten oder vorherigen Woche oder zum nächsten oder vorherigen Monat. `A`, `W` und `M` wechseln zu Agenda, Woche und Monat.
-- Am Computer klappt `⌘B` auf einem Mac oder `Ctrl B` unter Windows und Linux die Seitenleiste zu Symbolen ein und wieder aus.
+- Zu einer Seite wechseln: `G`, dann `T` für **Aufgaben**, `C` für **Kalender**, `R` für **Routinen**, `P` für **Personen**, `O` für **Organisationen**, `J` für **Projekte**, `F` für **Fleet**, `L` für **Erkenntnisse**, `N` für **Verbindungen** und `,` für **Einstellungen**. Mit `G` und dann `E` öffnest du die Suchergebnisse für Nachrichten.
+- Mit `N` erstellst du eine neue Aufgabe. Mit `T` startest du Talk oder beendest es, wenn es gerade läuft. Mit `J` und `K` (oder `↓` und `↑`) bewegst du dich durch eine Liste. Mit Enter öffnest du einen Eintrag.
+- Bei einer Aufgabe: Mit `E` benennst du sie um, mit `S` stellst du sie zurück, mit `D` markierst du sie als erledigt und mit `R` schreibst du in ihren Chat.
+- Im **Kalender**: Mit `T` wechselst du zu heute, mit `J` und `K` (oder `→` und `←`) zur nächsten oder vorherigen Woche oder zum nächsten oder vorherigen Monat. Mit `A`, `W` und `M` wechselst du zu **Agenda**, **Woche** und **Monat**.
+- Am Computer klappst du mit `⌘B` auf dem Mac oder `Ctrl B` unter Windows und Linux die Seitenleiste zu Symbolen ein und wieder aus.
 
-Tasten funktionieren nicht, während du in ein Feld tippst.
+Während du in ein Feld schreibst, funktionieren die Tastenkürzel nicht.
 
-## Sich bewegen
+## Navigieren
 
-- Jede Seite setzt den Fokus auf ihr erstes Element, wenn du mit der Tastatur hinkommst. Bei Aufgaben ist das die erste Aufgabe, oder die erste Liste, wenn alle Listen eingeklappt sind.
-- `J` oder `↓` geht zur nächsten Aufgabe, `K` oder `↑` zur vorherigen. Der Kopf einer eingeklappten Liste ist auch ein Halt: Enter oder `→` öffnet sie, `←` klappt sie wieder ein.
-- Enter auf einer Aufgabe öffnet ihren Chat, bereit zum Schreiben. Esc verlässt das Feld, das nächste Esc schließt den Chat und geht zurück zur Aufgabe. Bei leerem Feld schließt ein Esc ihn.
-- Esc schließt auch einen Dialog, die Palette und die Liste der Tastenkürzel und setzt den Fokus dahin zurück, wo er war.
-- Tab geht durch die Knöpfe. Was den Fokus hat, zeigt einen Ring.
+- Wenn du eine Seite mit der Tastatur öffnest, wird ihr erster Eintrag ausgewählt.
+- Mit `J` oder `↓` wechselst du zur nächsten Aufgabe, mit `K` oder `↑` zur vorherigen. Auch der Kopf einer eingeklappten Liste ist ein Halt: Mit Enter oder `→` öffnest du sie, mit `←` klappst du sie wieder ein.
+- Wenn du bei einer Aufgabe Enter drückst, öffnet sich ihr Chat und du kannst sofort schreiben. Mit Esc verlässt du das Textfeld. Drückst du noch einmal Esc, schließt sich der Chat und du kehrst zur Aufgabe zurück. Ist das Textfeld leer, schließt ein Druck auf Esc den Chat.
+- Mit Esc schließt du auch Dialoge, die Palette und die Liste der Tastenkürzel. Der Fokus kehrt an seine vorherige Stelle zurück.
+- Mit Tab wechselst du zwischen den Schaltflächen. Das aktuell ausgewählte Element ist durch einen Rahmen hervorgehoben.
 
-## Keine Taste sendet etwas
+## Mit einer Taste wird nichts gesendet
 
-Senden, Freigeben oder Posten passiert nie über eine Taste oder direkt aus der Palette. Einträge wie E-Mail prüfen öffnen nur den Entwurf, wo du ihn lesen, ändern und mit seinem eigenen Button senden kannst. Die einzige Ausnahme ist [Durchgehen](cards.md): Dort sendet Enter den Entwurf, den es vollständig zeigt.
+Keine Taste und kein Eintrag in der Palette sendet, bestätigt oder veröffentlicht etwas. Einträge wie „E-Mail überprüfen“ öffnen nur den Entwurf. Du kannst ihn lesen, ändern und über die zugehörige Schaltfläche senden. Die einzige Ausnahme ist [Durchgehen](cards.md): Dort wird mit Enter der vollständig angezeigte Entwurf gesendet.

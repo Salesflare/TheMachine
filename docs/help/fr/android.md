@@ -1,36 +1,36 @@
 ---
 title: Notifications Android
 area: connections
-summary: Les notifications de votre téléphone Android, via l’app OpenClaw. Il se contente de lire.
+summary: Les notifications de votre téléphone Android, via l’application OpenClaw. Elle se contente de les lire.
 covers: connector:android
 code: onboarding.py, android-notifications.mjs
 site: Show a setup code, Approve, Remove
-translated: 344d64dafc75a0a9
+translated: 5b08b093662393a1
 ---
-## Ce qu’il lit
+## Ce qu’elle lit
 
-Les notifications qui arrivent sur votre téléphone Android, via l’app OpenClaw. Les codes à usage unique sont exclus, ainsi que les notifications WhatsApp, Telegram, Signal et Discord.
+Les notifications de votre téléphone Android, via l’application OpenClaw. Les codes à usage unique sont exclus, tout comme les notifications de WhatsApp, Telegram, Signal et Discord.
 
-## Ce qu’il peut faire
+## Ce qu’elle peut faire
 
-Rien sur votre téléphone. Il se contente de lire les notifications.
+Rien sur votre téléphone. Elle se contente de lire les notifications.
 
-## Le connecter
+## La connecter
 
 Sur une Machine hébergée :
 
-1. Installez l’app OpenClaw sur votre téléphone.
-2. Dans le tableau de bord, ouvrez **Connexions**, puis **Autres**, choisissez Téléphone Android et appuyez sur **Afficher un code de configuration**.
-3. Scannez-le dans l’app OpenClaw, puis appuyez sur **Approuver** pour l’association.
-4. Dans l’app OpenClaw, activez Forward Notification Events, et autorisez l’accès aux notifications quand Android le demande.
+1. Installez OpenClaw depuis Google Play sur votre téléphone.
+2. Dans le tableau de bord, ouvrez **Connexions**, puis **Autres**, choisissez Notifications Android et appuyez sur **Afficher un code de configuration**.
+3. Dans l’application OpenClaw, ajoutez un Gateway et scannez le code. De retour dans le tableau de bord, appuyez sur **Approuver**.
+4. Autorisez l’accès aux notifications lorsque l’application vous le demande. Activez ensuite Transférer les événements de notification dans les paramètres de l’application, pour recevoir les notifications au fur et à mesure, et pas seulement lors de la vérification toutes les 10 minutes.
 
-Sur votre propre ordinateur, associez le téléphone à votre OpenClaw Gateway, puis lancez `assistant connect android`.
+Sur votre propre ordinateur, associez le téléphone dans l’application OpenClaw, puis exécutez `assistant connect android`.
 
-## Le retirer
+## La retirer
 
 - Dans le tableau de bord : **Connexions**, ouvrez Android, **Détails**, puis **Déconnecter**.
-- Sur une Machine hébergée, vous pouvez aussi appuyer sur **Retirer** à côté sur votre page de configuration.
+- Sur une Machine hébergée, vous pouvez aussi appuyer sur **Retirer** à côté de l’appareil sur votre page de configuration.
 
-## Le retirer sur le téléphone
+## La retirer du téléphone
 
-Désactivez l’accès aux notifications pour l’app OpenClaw dans les paramètres d’Android, ou dissociez le téléphone dans l’app OpenClaw.
+Désactivez l’accès aux notifications de l’application OpenClaw dans les paramètres Android, ou dissociez le téléphone dans l’application OpenClaw.

@@ -1,45 +1,46 @@
 ---
 title: Sicherheitsstufen
 area: security
-summary: Ein Schalter, Standard oder Vorsichtig, legt deine Einstellungen für Sicherheit und Datenschutz fest. Der Admin einer Work Fleet wählt eine für die Fleet.
+summary: Mit einem Schalter legst du über Standard oder Vorsichtig deine Sicherheits- und Datenschutzeinstellungen fest. Die Admins einer Work Fleet wählen die Einstellung für die Fleet aus.
 covers: settings:security
 code: security_levels.py, dashboard.html, fleet.py
 order: 2
-translated: f8e82f192dd70e3a
+translated: cf3ba86c8c1a23f3
 ---
 ## Zwei Stufen
 
-Öffne **Einstellungen**, dann **Sicherheit**.
+Öffne **Einstellungen** und dann **Sicherheit**.
 
-- **Standard**: die heutigen Voreinstellungen. Nichts ändert sich.
-- **Vorsichtig**: strenger, wenn du weniger auf deinem Handy haben und weniger aufbewahren willst.
+- **Standard**: die aktuellen Standardeinstellungen. Es ändert sich nichts.
+- **Vorsichtig**: strengere Einstellungen, wenn du weniger auf deinem Smartphone und kürzere Zeit speichern möchtest.
 
-Eine Stufe ist ein Ausgangspunkt. Änderst du danach eine Einstellung, zeigt die Stufe **Eigene**. Wähle eine Stufe erneut, um sie zurückzusetzen.
+Eine Stufe ist ein Ausgangspunkt. Wenn du danach eine Einstellung änderst, wird **Eigene** angezeigt. Wähle erneut eine Stufe aus, um die Einstellungen zurückzusetzen.
 
-## Was Vorsichtig für dich ändert
+## Was sich für dich mit „Vorsichtig“ ändert
 
-- **Text in Benachrichtigungen** aus: Eine Benachrichtigung sagt „Neue Aufgabe“ oder „Bereit“, nicht, was in der Aufgabe steht.
-- **Speichern von Anmeldungen anbieten** aus. Websites mit gespeicherter Anmeldung bleiben, bis du auf **Alle gespeicherten Anmeldungen vergessen** tippst.
-- **Arbeitskontakte nachschlagen**, **Anbieten, Erkenntnisse zu teilen** und **Teilen, was die Hilfe gefragt wird** aus.
-- **Prüfen, welche meiner Kontakte eine Machine haben** und **Leute, die meine E-Mail-Adresse haben, dürfen mich finden** aus.
-- **Ausführen-Details 90 Tage behalten** aus: Sie werden 30 Tage aufbewahrt.
-- In einer Familie wirst du bei freien und belegten Zeiten zuerst gefragt. Bei Freunden wird Kontext zu Meetings abgelehnt.
+- **Text in Benachrichtigungen** ist aus: In einer Benachrichtigung steht „Neue Aufgabe“ oder „Bereit“, aber nicht, worum es bei der Aufgabe geht.
+- **Speichern von Anmeldungen anbieten** ist aus. Deine gespeicherten Anmeldungen für Websites bleiben bestehen, bis du auf **Alle gespeicherten Anmeldungen vergessen** tippst.
+- **Arbeitskontakte nachschlagen**, **Anbieten, Erkenntnisse zu teilen** und **Teilen, was die Hilfe gefragt wird** sind aus.
+- **Prüfen, welche meiner Kontakte eine Machine haben** und **Leute, die meine E-Mail-Adresse haben, dürfen mich finden** sind aus.
+- **Ausführen-Details 90 Tage behalten** ist aus: Sie werden 30 Tage lang aufbewahrt.
+- **Was andere Machines meine fragen dürfen** ist auf **Aus** gesetzt: Es ist keine Terminplanung mit anderen Machines möglich. Weitere Informationen findest du unter [Freunde und das Network](friends.md#scheduling-with-other-machines).
+- In einer Familie musst du der Abfrage deiner Verfügbarkeit erst zustimmen. Bei Freunden wird der Meeting-Kontext abgelehnt.
 
 ## Die Stufe einer Work Fleet
 
-Der Owner der Fleet oder ein Admin wählt sie unter Fleet-Einstellungen: Tippe in **Einstellungen** › **Konto** auf **Fleet**. Alle in der Fleet sehen sie. Bei Vorsichtig gilt:
+Der Besitzer oder ein Admin der Fleet wählt die Stufe in den Fleet-Einstellungen aus: Öffne **Einstellungen** › **Konto** und tippe auf **Fleet**. Alle Mitglieder der Fleet sehen die Auswahl. Wenn „Vorsichtig“ eingestellt ist:
 
-- Antworten an Teammitglieder warten auf dein OK, ohne Namen, und nur zu Personen aus deinen Arbeitskonten.
-- Vorstellungen und Übergaben warten ebenfalls auf dich.
-- Der Team-Graph teilt Kunden-E-Mails ohne ihre Anhänge.
-- Benachrichtigungen zu Arbeitsaufgaben zeigen keinen Text.
+- Antworten an Teammitglieder werden erst nach deiner Zustimmung gesendet, ohne Namen und nur zu Personen aus deinen Arbeitskonten.
+- Auch Vorstellungen und Übergaben warten auf deine Zustimmung.
+- Der Graph des Teams teilt E-Mails von Kunden ohne Anhänge.
+- In Benachrichtigungen zu Arbeitsaufgaben wird kein Text angezeigt.
 - Arbeitskontakte werden nicht nachgeschlagen.
-- Deine Machine prüft deine Kontakte nicht im Network und macht dich nicht per E-Mail auffindbar, außer du hast das selbst eingeschaltet.
-- Alle melden sich alle 7 Tage neu an.
-- Ein Einladungslink funktioniert nur für die E-Mail-Adresse, an die er geschickt wurde.
+- Deine Machine prüft deine Kontakte nicht im Network und macht dich nicht über deine E-Mail-Adresse auffindbar, es sei denn, du hast das selbst aktiviert.
+- Alle müssen sich alle 7 Tage erneut anmelden.
+- Ein Einladungslink funktioniert nur mit der E-Mail-Adresse, an die er gesendet wurde.
 
-Mitglieder können strenger sein als die Fleet, nicht lockerer. Ihre eigenen Einstellungen bleiben erhalten und kommen zurück, wenn die Fleet wieder auf Standard geht.
+Mitglieder können strengere, aber keine weniger strengen Einstellungen als die Fleet wählen. Ihre eigenen Einstellungen bleiben erhalten und gelten wieder, wenn die Fleet zu Standard zurückkehrt.
 
-## In beiden gleich
+## In beiden Stufen gleich
 
-Nichts wird ohne dein OK gesendet: Du siehst jeden Entwurf und tippst auf Senden. Ausführen und Coding-Agents funktionieren gleich. Die Anmeldung braucht immer einen Code aus einer Authenticator-App oder einen Passkey.
+Ohne deine Zustimmung wird nichts gesendet: Du siehst jeden Entwurf und tippst auf „Senden“. Ausführen und Coding-Agenten funktionieren unverändert. Für die Anmeldung ist immer ein Authenticator-Code oder ein Passkey erforderlich.

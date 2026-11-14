@@ -5,20 +5,20 @@ summary: Optioneel. Houd het geheugen van je eigen GBrain-agent synchroon met Th
 covers: gbrain
 code: gbrain.py, dashboard.html
 order: 90
-translated: d51536212d3ae14f
+translated: b97197b9121b3618
 ---
 ## Inschakelen
 
-GBrain is een open-sourcegeheugen voor agents dat sommige mensen al gebruiken. Het staat standaard uit en werkt alleen op een Machine op je eigen computer. Installeer eerst GBrain en open daarna **Koppelingen**, **Andere**, **GBrain**.
+GBrain is open-sourcesoftware voor agentgeheugen die sommige mensen al gebruiken. Het staat standaard uit en werkt alleen op een Machine op je eigen computer. Installeer GBrain eerst en open daarna **Koppelingen**, **Andere**, **GBrain**.
 
-De Machine bepaalt wat erin komt: personen en projecten uit je Graph, met een link terug, en wat hij heeft geleerd over hoe je werkt. Berichtteksten worden nooit toegevoegd. GBrain kan deze gegevens naar zijn eigen AI-aanbieders sturen. Vink **Akkoord** aan en klik op **GBrain koppelen**.
+Je Machine bepaalt wat erin komt: personen en projecten uit je Graph, met een link terug, en informatie over hoe je werkt die hij heeft geleerd. Berichttekst wordt nooit toegevoegd. GBrain kan dit naar zijn eigen AI-providers sturen. Vink **Akkoord** aan en kies **GBrain koppelen**.
 
 ## Wat het doet
 
-Controles kunnen je geheugen doorzoeken en pagina's lezen, maar er nooit in schrijven, om betere to-do's te maken. De Machine schrijft zijn deel van elke pagina tussen duidelijke markeringen. Pas dat deel aan of verwijder het, dan laat De Machine het staan zoals jij het hebt gemaakt. Notities die je in GBrain over iemand schrijft, verschijnen naast die persoon in je Graph.
+Controles kunnen je geheugen doorzoeken en pagina's lezen, maar nooit schrijven. Zo kunnen ze betere to-do's maken. Je Machine schrijft zijn deel van elke pagina tussen duidelijke markeringen. Pas dat deel aan of verwijder het, dan laat hij het zoals jij het hebt gemaakt. Notities die je in GBrain over iemand schrijft, komen terug op je Machine. Zo kunnen controles en chat ze bij die persoon zien. Ze blijven op je Machine.
 
-Werk-personen en -bedrijven worden alleen toegevoegd als je **Werk-personen en -bedrijven meenemen** aanvinkt. Gegevens uit de Team Graph van teamgenoten worden nooit toegevoegd.
+Personen en bedrijven uit Werk worden alleen toegevoegd als je **Werk-personen en -bedrijven meenemen** aanvinkt. Gegevens uit Team Graph van teamgenoten worden nooit toegevoegd.
 
 ## Uitzetten
 
-Open **GBrain** opnieuw en klik op **Uitzetten**. Je geheugen en de pagina's blijven staan. De Machine verwijdert alleen zijn eigen koppeling met GBrain en de notities die hij heeft teruggehaald.
+Open **GBrain** opnieuw en kies **Uitzetten**. Je geheugen en de bijbehorende pagina's blijven staan. Je Machine verwijdert alleen zijn eigen koppeling met GBrain en de notities die hij heeft teruggebracht.

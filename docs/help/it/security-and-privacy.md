@@ -1,43 +1,43 @@
 ---
 title: Sicurezza e privacy
 area: security
-summary: La tua Machine privata, la posta conservata cifrata e niente inviato senza il tuo OK. La versione breve, con i link.
+summary: La tua Machine privata, email salvate in forma crittografata e niente viene inviato senza il tuo OK. Ecco i punti principali, con link di approfondimento.
 covers: 
 code: message_seal.py, next_actions.py, SECURITY.md
 order: 1
 keywords: private, privacy, data, gdpr, encrypted, who can see, safe, stored, keep
-translated: 237400429e8be40b
+translated: edaba74e38b8ef79
 ---
 ## In breve
 
-- La tua Machine: una Machine ospitata gira nel cloud UE, solo per te, mai condivisa. Oppure falla girare sul tuo computer.
-- Non leggiamo la tua email: i messaggi sono conservati cifrati e i nostri strumenti di supporto non possono aprirli.
-- Niente viene inviato senza il tuo OK: legge e scrive bozze; decidi tu cosa parte. Vedi [Fallo](do-it.md).
-- Non usata per addestrare l'IA: non abbiamo un'IA nostra. Il tuo provider lavora con il tuo account e alle sue condizioni.
-- Apprendimenti per il team solo con il tuo OK: ogni tanto chiede di inviare qualche consiglio generale, niente di personale. Vedi [Condividi gli apprendimenti](share-learnings.md).
-- Segnalazioni di errore, a meno che tu non le disattivi: quando qualcosa si rompe, il tipo di errore e in che punto del codice. Mai i tuoi messaggi, nomi o indirizzi. Vedi [Segnalazioni di errore](error-reports.md).
-- Conteggi d’uso su una Machine in hosting: conteggi giornalieri di ciò che hai fatto (come attività aperte o email inviate), mai il loro contenuto.
-- Portala con te o eliminala: esporta tutto in un unico file, oppure elimina la tua Machine e i suoi backup con un pulsante.
-- Il nostro accesso viene registrato: ogni volta che il nostro team legge il report o i log della tua Machine ospitata. I proprietari e gli admin della Fleet lo vedono in **Registro attività**. Vedi [Fleet](fleet.md).
+- La tua Machine: se ospitata, è nel cloud dell'UE, solo per te e mai condivisa. Oppure puoi eseguirla sul tuo computer.
+- Non leggiamo le tue email: i messaggi sono salvati in forma crittografata e i nostri strumenti di assistenza non possono aprirli.
+- Niente viene inviato senza il tuo OK: la tua assistente legge e prepara bozze, ma decidi tu cosa inviare. Vedi [Fallo](do-it.md).
+- I tuoi dati non vengono usati per addestrare l'IA: non abbiamo una nostra IA. Il tuo fornitore opera con il tuo account e secondo i suoi termini.
+- Apprendimenti per il team, a meno che tu non li disattivi: ogni tanto condividiamo alcuni consigli generali, niente di personale, e li controlliamo prima di inviarli. Vedi [Condividi gli apprendimenti](share-learnings.md).
+- Segnalazioni di errore, a meno che tu non le disattivi: quando qualcosa si rompe, includono il tipo di errore e il punto del codice in cui si è verificato. Mai i tuoi messaggi, nomi o indirizzi. Vedi [Segnalazioni di errore](error-reports.md).
+- Conteggi di utilizzo su una Machine ospitata: conteggi giornalieri delle tue attività, come le attività aperte o le email inviate, mai il loro contenuto.
+- Porta i tuoi dati con te o eliminali: esporta tutto da **Impostazioni** › **Generale**, oppure elimina la tua Machine e i relativi backup con un solo pulsante. Vedi [Annullare o eliminare](cancel-and-delete.md).
+- I nostri accessi vengono registrati: ogni volta che il nostro team legge il report o i log della tua Machine ospitata. I proprietari e gli amministratori della Fleet li vedono in **Movimenti**. Vedi [Fleet](fleet.md).
 
 ## Livelli di sicurezza
 
-**Standard** mantiene le impostazioni predefinite di oggi. **Prudente** non mostra testo nelle notifiche, non salva accessi e conserva meno. L'admin di una Fleet di Lavoro può rendere la Fleet Prudente. Vedi [Livelli di sicurezza](security-levels.md).
+**Standard** mantiene le impostazioni predefinite attuali. **Prudente** non mostra testo nelle notifiche, non salva gli accessi e conserva meno dati. L'amministratore di una Work Fleet può impostare la Fleet come Prudente. Vedi [Livelli di sicurezza](security-levels.md).
 
 ## Accesso
 
-La dashboard richiede l'accesso con Google o Microsoft più un codice di autenticazione o una passkey.
+Per accedere a una dashboard ospitata serve una passkey oppure l'accesso con Google o Microsoft e un codice di autenticazione.
 
 ## Connessioni
 
-L'articolo di ogni connessione dice cosa legge e cosa può inviare. Puoi disconnetterle quando vuoi: vedi [Connessioni](connections.md).
+L'articolo di ogni connessione spiega cosa legge e cosa può inviare. Puoi disconnetterla in qualsiasi momento: vedi [Connessioni](connections.md).
 
-## Aiuto
+## Assistenza
 
-Aiuto funziona sulla tua Machine e non può vedere i tuoi dati. Al team di The Machine va solo l'argomento di ogni domanda, mai le tue parole. Vedi [Chiedi aiuto](help-chat.md#what-the-team-sees).
+L'assistenza funziona sulla tua Machine e non può vedere i tuoi dati. Al team di The Machine viene inviato solo l'argomento di ogni domanda, mai le tue parole. Vedi [Chiedi all'assistenza](help-chat.md#what-the-team-sees).
 
 ## Altro
 
-- [Sicurezza](/security): come è costruita, cosa il nostro staff può e non può vedere, e come cerchiamo i problemi.
-- [Informativa sulla privacy](/privacy) e [condizioni sul trattamento dei dati](/dpa).
-- Hai trovato un problema di sicurezza? Vedi la [policy di sicurezza](https://github.com/Salesflare/TheMachine/blob/main/SECURITY.md).
+- [Sicurezza](/security): come è stata realizzata, cosa il nostro personale può e non può vedere e come cerchiamo eventuali problemi.
+- [Informativa sulla privacy](/privacy) e [termini sul trattamento dei dati](/dpa).
+- Hai trovato un problema di sicurezza? Consulta le [norme di sicurezza](https://github.com/Salesflare/TheMachine/blob/main/SECURITY.md).

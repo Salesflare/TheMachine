@@ -1,58 +1,51 @@
 ---
 title: LinkedIn
 area: connections
-summary: Deine LinkedIn-Nachrichten, gelesen im eigenen angemeldeten Browser deiner Machine. Antworten erst nach deiner Freigabe.
+summary: Lies deine LinkedIn-Nachrichten im eigenen Browser deiner Machine, in dem du angemeldet bist. Antworten werden erst nach deiner Freigabe gesendet.
 covers: connector:linkedin
 code: connectors/linkedin.py, integrations/linkedin_inbox.py, linkedin_connections.py
 site: Connect, More sources, Remove
-translated: 850b91f79b9e23fc
+translated: bc67fbc21c77a97a
 ---
-## Was es liest
+## Was gelesen wird
 
-Deine LinkedIn-Nachrichten. Es liest sie in einem Tab des eigenen Browsers deiner Machine, mit dir angemeldet, ab und zu während deiner wachen Stunden. Es nutzt keinen API-Schlüssel und markiert nichts als gelesen. Antworten in Unterhaltungen, die du archiviert hast, und Nachrichtenanfragen kommen auch an; Spam bleibt draußen.
+Deine LinkedIn-Nachrichten. Deine Machine liest sie von Zeit zu Zeit in ihrem eigenen Browser, während du dort angemeldet bist. Sie markiert nichts als gelesen. Auch Antworten in archivierten Unterhaltungen und Nachrichtenanfragen werden gelesen. Spam bleibt außen vor.
 
-## Positionen und Firmen
+## Titel und Unternehmen
 
-Es hält auch die Positionen und Firmen deiner LinkedIn-Kontakte bei den Personen aktuell, die schon in deinem Graph sind, aus deiner Kontaktliste. Es öffnet keine Profile und legt keine neuen Personen an. Ändert sich die Position oder Firma von jemandem, steht das in der Zeitleiste, etwa "Jetzt Head of Sales bei Acme, vorher Sales Lead bei Acme".
+Deine Machine hält auch die Titel und Unternehmen deiner LinkedIn-Verbindungen aktuell, sofern diese Personen bereits in deinem Graph sind. Dafür nutzt sie deine Kontaktliste. Sie öffnet keine Profile und fügt keine neuen Personen hinzu. Wenn sich der Titel oder das Unternehmen einer Person ändert, wird das in ihrem Verlauf angezeigt, zum Beispiel: „Jetzt Head of Sales bei Acme, zuvor Sales Lead bei Acme“.
 
-Die Position kommt aus ihrem Profilslogan, etwa "Head of Sales bei Acme" oder "VP Sales and Strategy", nie aus einem Werbespruch. Es findet sie über ihren Profillink oder über Name und Firma. Gibt es keine Firma zum Vergleichen, reicht ein vollständiger Name, den nur eine Person in deinem Graph hat. Ihre Seite zeigt auch, seit wann ihr vernetzt seid.
+Der Titel stammt aus der Profilüberschrift, zum Beispiel „Head of Sales bei Acme“ oder „VP Sales and Strategy“, niemals aus einem Slogan. Deine Machine findet Personen über den Link zu ihrem Profil oder anhand ihres Namens und Unternehmens. Wenn es kein Unternehmen zum Abgleichen gibt, reicht ein vollständiger Name, den nur eine Person in deinem Graph hat. Auf der jeweiligen Seite siehst du auch, seit wann ihr verbunden seid.
 
-Es liest sehr langsam: eine Seite auf einmal, Minuten auseinander, ein paar Dutzend Seiten am Tag, nur tagsüber. Rund 3.000 Kontakte dauern etwa vier Tage. Bremst LinkedIn, hört es bis zum nächsten Tag auf.
+Deine Machine liest sehr langsam: eine Seite nach der anderen, mit mehreren Minuten Abstand und nur einige Dutzend Seiten pro Tag, ausschließlich tagsüber. Bei etwa 3.000 Verbindungen dauert es ungefähr vier Tage. Wenn LinkedIn sich querstellt, wartet deine Machine bis zum nächsten Tag.
 
-## Was es senden kann
+## Was gesendet werden kann
 
-Eine Antwort auf eine Nachricht oder eine neue Nachricht an ein Profil, das du nennst, und nur, nachdem du sie bei der Aufgabe freigegeben hast. Bis dahin entwirft es nur.
+Eine Antwort auf eine Nachricht oder eine neue Nachricht an ein Profil, das du nennst. Gesendet wird nur, wenn du die Aufgabe freigibst. Bis dahin wird nur ein Entwurf erstellt.
 
-LinkedIn bietet dafür keinen offiziellen Weg. Lesen und ab und zu eine Nachricht, die du freigegeben hast, machen so gut wie nie Probleme; massenhaftes oder automatisches Senden kann zur Sperrung eines Kontos führen.
+LinkedIn bietet keine offizielle Möglichkeit dafür. Das Lesen und gelegentliche Senden einer von dir freigegebenen Nachricht führen sehr wahrscheinlich zu keinen Problemen. Massenhaftes oder automatisiertes Senden kann dazu führen, dass ein Konto gesperrt wird.
 
 ## Verbinden
 
-Auf einer gehosteten Machine:
+1. Öffne im Dashboard **Verbindungen** und dann **Chat**. Wähle LinkedIn aus.
+2. Wähle **Arbeit** (mit dem Unternehmen) oder **Privat** und drücke **Verbinden**.
+3. Drücke **Bei LinkedIn anmelden** und melde dich im Browser deiner Machine an. Sobald du angemeldet bist, wird die Verbindung automatisch hergestellt.
 
-1. Öffne deine Einrichtungsseite unter app.themachine.computer/setup und geh zu **Weitere Quellen**.
-2. Öffne LinkedIn, melde dich bei LinkedIn im Browser deiner Machine an, wenn es danach fragt, und tippe dann auf **Verbinden**.
+Auf einer gehosteten Machine kannst du auch die Einrichtungsseite unter app.themachine.computer/setup verwenden: Gehe zu **Weitere Quellen**, öffne LinkedIn und melde dich an, wenn du dazu aufgefordert wirst. Drücke anschließend **Verbinden**. Auf deinem eigenen Computer erledigt `assistant connect linkedin` dasselbe im Terminal.
 
-Auf deinem eigenen Computer:
+Für ein zweites LinkedIn-Konto wird ein eigener Browser verwendet. Wenn LinkedIn deine Machine abmeldet, lies den Artikel [Von einer Website abgemeldet](signed-out.md).
 
-1. Öffne im Dashboard **Verbindungen**, dann **Chat**, und wähle LinkedIn.
-2. Wähle **Arbeit** mit ihrer Firma oder **Privat** und tippe auf **Verbinden**.
-3. Tippe auf **Bei LinkedIn anmelden** und melde dich im Browser deiner Machine an. Sobald du drin bist, verbindet es sich von selbst.
+## Wenn LinkedIn einen Code anfordert
 
-Oder führe `assistant connect linkedin` aus.
+Wenn deine Machine sich zum ersten Mal anmeldet, schickt LinkedIn häufig einen Code per E-Mail. Gib ihn im Anmeldedialog unter **Code** ein und drücke **Anmelden**. Während du den Code eingibst, bleibt die Seite geöffnet.
 
-Ein zweites LinkedIn-Konto bekommt einen eigenen Browser. Wenn LinkedIn deine Machine abmeldet, siehe [Von einer Website abgemeldet](signed-out.md).
+Wenn LinkedIn wieder zum Anfang zurückkehrt oder nach zwei Minuten nichts passiert, warte eine Minute und drücke **Erneut versuchen**. Wenn LinkedIn eine Roboterprüfung anzeigt, schließe sie im Browser deiner Machine ab.
 
-## Wenn LinkedIn nach einem Code fragt
+## Verbindung entfernen
 
-Beim ersten Anmelden schickt LinkedIn oft einen Code per E-Mail. Gib ihn im Anmeldefenster unter **Code** ein und drück auf **Anmelden**. Die Seite bleibt stehen, während du tippst.
-
-Geht LinkedIn zurück zum Anfang oder passiert zwei Minuten lang nichts, hat LinkedIn die Anmeldung gestoppt. Warte eine Minute und drück auf **Erneut versuchen**. Zeigt LinkedIn eine Roboterprüfung, erledige sie im Browser deiner Machine.
-
-## Entfernen
-
-- Im Dashboard: **Verbindungen**, LinkedIn öffnen, **Details**, dann **Trennen**. Es hört auf zu lesen. Was es schon reingebracht hat, bleibt.
-- Auf einer gehosteten Machine kannst du auch auf deiner Einrichtungsseite daneben auf **Entfernen** tippen.
+- Im Dashboard: Öffne **Verbindungen**, wähle LinkedIn und dann **Details** und drücke **Trennen**. Deine Machine liest dann keine Nachrichten mehr. Bereits übernommene Inhalte bleiben erhalten.
+- Auf einer gehosteten Machine kannst du auf der Einrichtungsseite auch neben LinkedIn auf **Entfernen** drücken.
 
 ## Bei LinkedIn abmelden
 
-Öffne in LinkedIn Einstellungen, Anmelden und Sicherheit, Wo du angemeldet bist, und melde die Sitzung des Browsers deiner Machine ab.
+Öffne bei LinkedIn **Einstellungen**, **Anmelden und Sicherheit** und **Wo du angemeldet bist**. Melde dort die Sitzung des Browsers deiner Machine ab.

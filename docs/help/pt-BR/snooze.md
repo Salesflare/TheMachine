@@ -9,18 +9,18 @@ translated: e6681ab225810e81
 ---
 ## Adiar uma tarefa
 
-Clique em **Adiar** em uma tarefa. O menu oferece alguns horários, como em 2 horas, amanhã, em 3 dias ou em uma semana, ou **Escolher data** para outro dia e **Hora**, depois **Salvar horário**. Adiou sem querer? **Desfazer** na mensagem traz ela de volta na hora.
+Toque em **Adiar** em uma tarefa. O menu oferece alguns horários, como daqui a 2 horas, amanhã ou daqui a uma semana. Para outro horário, escolha **Escolher data** e **Hora**, depois **Salvar horário**. Adiou por engano? Toque em **Desfazer** na mensagem para trazer a tarefa de volta na hora.
 
-Tarefas adiadas por um dia ou mais voltam no seu horário de "Itens adiados voltam às", e as tarefas de trabalho esperam um dia de trabalho. Defina os dois em [Horário de trabalho](work-hours.md).
+Adiamentos de um dia ou mais voltam no horário definido em “Os adiamentos voltam às”, e tarefas de trabalho aguardam até um dia útil. Defina essas duas opções em [Horário de trabalho](work-hours.md).
 
-Um **Pedir mudanças** como "me lembre disso na próxima terça" também adia a tarefa.
+Ou peça isso em **Pedir mudanças**, por exemplo: “me lembre desta tarefa na próxima terça-feira”.
 
-## Quando ela volta
+## Quando a tarefa volta
 
-Ela volta pelo Telegram quando ele está ativado, e como notificação em cada dispositivo com notificações ativadas, conforme os **Lembretes** em [Notificações](notifications.md) permitirem. Depois de adiar, a mensagem diz por onde. Sem nenhum dos dois, ela volta ao painel, e **Ativar notificações** está bem ali. No iPhone e no iPad, adicione The Machine à Tela de Início primeiro.
+Ela volta como uma notificação em cada dispositivo com notificações ativadas e no Telegram, se você usar o app, conforme as opções de **Lembretes** em [Notificações](notifications.md). A mensagem de adiamento informa onde ela voltou. Se nenhuma dessas opções estiver disponível, a tarefa volta ao painel, com **Ativar notificações** logo ali. No iPhone e no iPad, baixe o [app para celular](mobile-app.md) para receber notificações.
 
-## Enquanto está adiada
+## Enquanto a tarefa está adiada
 
-A tarefa fica em **Volta mais tarde**, e no dia dela no [Calendário](calendar.md). **Cancelar adiamento** traz a tarefa de volta agora, **Mudar horário** escolhe outro horário.
+A tarefa fica em **Volta mais tarde** e aparece no dia correspondente do [Calendário](calendar.md). **Cancelar adiamento** traz a tarefa de volta agora. **Mudar horário** permite escolher outro horário.
 
-No Outlook, a conversa de e-mail vai para uma pasta de adiados até a tarefa voltar. Veja [Microsoft](microsoft.md).
+No Outlook, a conversa de e-mail vai para uma pasta de itens adiados até a tarefa voltar. Veja [Microsoft](microsoft.md).

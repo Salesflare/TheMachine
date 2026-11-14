@@ -1,36 +1,36 @@
 ---
 title: Notifiche Android
 area: connections
-summary: Le notifiche del tuo telefono Android, tramite l’app OpenClaw. Legge soltanto.
+summary: Le notifiche del tuo telefono Android, tramite l’app OpenClaw. Legge soltanto le notifiche.
 covers: connector:android
 code: onboarding.py, android-notifications.mjs
 site: Show a setup code, Approve, Remove
-translated: 344d64dafc75a0a9
+translated: 5b08b093662393a1
 ---
 ## Cosa legge
 
-Le notifiche che arrivano sul tuo telefono Android, tramite l’app OpenClaw. I codici monouso restano fuori, così come le notifiche di WhatsApp, Telegram, Signal e Discord.
+Le notifiche del tuo telefono Android, tramite l’app OpenClaw. I codici monouso non vengono inclusi, così come le notifiche di WhatsApp, Telegram, Signal e Discord.
 
 ## Cosa può fare
 
-Niente sul tuo telefono. Legge solo le notifiche.
+Non fa nulla sul tuo telefono. Legge soltanto le notifiche.
 
-## Collegalo
+## Connettila
 
-Su una Machine in hosting:
+Su una Machine ospitata:
 
-1. Installa l’app OpenClaw sul telefono.
-2. Nella dashboard, apri **Connessioni**, poi **Altro**, scegli Telefono Android e premi **Mostra un codice di configurazione**.
-3. Scansionalo nell’app OpenClaw, poi premi **Approva** per l’abbinamento.
-4. Nell’app OpenClaw, attiva Forward Notification Events e consenti l’accesso alle notifiche quando Android lo chiede.
+1. Installa OpenClaw da Google Play sul tuo telefono.
+2. Nella dashboard, apri **Connessioni**, poi **Altro**, seleziona Android notifications e tocca **Mostra un codice di configurazione**.
+3. Nell’app OpenClaw, aggiungi un Gateway e scansiona il codice. Torna alla dashboard e tocca **Approva**.
+4. Quando l’app te lo chiede, consenti l’accesso alle notifiche. Poi attiva **Inoltra eventi di notifica** nelle impostazioni dell’app, così le notifiche arrivano appena vengono ricevute e non solo durante il controllo ogni 10 minuti.
 
-Sul tuo computer, abbina il telefono al tuo OpenClaw Gateway, poi esegui `assistant connect android`.
+Sul tuo computer, associa il telefono nell’app OpenClaw, poi esegui `assistant connect android`.
 
-## Rimuovilo
+## Rimuovila
 
-- Nella dashboard: **Connessioni**, apri Android, **Dettagli**, poi **Disconnetti**.
-- Su una Machine in hosting puoi anche premere **Rimuovi** accanto ad Android nella tua pagina di configurazione.
+- Nella dashboard: apri **Connessioni**, seleziona Android, tocca **Dettagli**, poi **Disconnetti**.
+- Su una Machine ospitata, puoi anche toccare **Rimuovi** accanto alla connessione nella pagina di configurazione.
 
-## Rimuovilo dal telefono
+## Rimuovila dal telefono
 
-Disattiva l’accesso alle notifiche per l’app OpenClaw nelle impostazioni di Android, oppure dissocia il telefono nell’app OpenClaw.
+Disattiva l’accesso alle notifiche per l’app OpenClaw nelle impostazioni di Android, oppure scollega il telefono nell’app OpenClaw.

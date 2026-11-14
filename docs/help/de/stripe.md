@@ -1,56 +1,56 @@
 ---
 title: Stripe
 area: connections
-summary: Fehlgeschlagene Zahlungen, Rückbuchungen, Kündigungen und große neue Abos. Es liest nur.
+summary: Fehlgeschlagene Zahlungen, Zahlungsanfechtungen, Kündigungen und große neue Abos. Sie liest nur.
 covers: connector:stripe
 code: connectors/stripe.py, shared_connectors.py
 site: Sign in with Stripe, Connect, More sources, Share Stripe, Connect Stripe, Remove
-translated: 99a14108376ddcc1
+translated: 6e7ca235dc502297
 ---
-## Was es liest
+## Was sie liest
 
-Ereignisse in deinem Stripe-Konto, die dich brauchen könnten: fehlgeschlagene Zahlungen, Rückbuchungen, Kündigungen und große neue Abos, mit dem Kunden, zu dem sie gehören. Die E-Mail eines Kunden verknüpft das Ereignis mit dieser Person und ihrer Organisation im [Graph](graph.md).
+Ereignisse in deinem Stripe-Konto, die deine Aufmerksamkeit erfordern könnten: fehlgeschlagene Zahlungen, Zahlungsanfechtungen, Kündigungen und große neue Abos, jeweils mit dem zugehörigen Kunden. Die E-Mail-Adresse eines Kunden verknüpft das Ereignis mit der Person und ihrem Unternehmen im [Graph](graph.md).
 
-## Was es tun kann
+## Was sie kann
 
-Nichts in Stripe. Es schreibt nie, erstattet nichts und wiederholt keine Zahlung. Die Stripe-App von The Machine bittet Stripe nur um Leserechte, und Stripe zeigt sie dir, bevor du sie installierst.
+In Stripe kann sie nichts tun. Sie erstattet nie Zahlungen, versucht Zahlungen nicht erneut und ändert nichts. Sie fordert nur Lesezugriff an. Stripe zeigt dir das, bevor du sie installierst.
 
 ## Verbinden
 
-Mit Stripe anmelden, der einfache Weg:
+Melde dich ganz einfach mit Stripe an:
 
-1. Im Dashboard: **Verbindungen**, **Kunden**, Stripe. Oder auf der Einrichtungsseite einer gehosteten Machine unter app.themachine.computer/setup: **Weitere Quellen**, Stripe. Auf deinem eigenen Computer koppelst du ihn zuerst mit deinem Konto.
-2. Tippe auf **Mit Stripe anmelden**. Stripe fragt, welches Konto, und zeigt, was The Machine lesen darf.
-3. Tippe auf **Installieren**. Du bist zurück, wo du angefangen hast, und Stripe ist verbunden.
+1. Im Dashboard: **Verbindungen**, **Kunden**, Stripe. Oder auf der Einrichtungsseite einer gehosteten Machine unter app.themachine.computer/setup: **Weitere Quellen**, Stripe. Auf deinem eigenen Computer musst du sie zuerst mit deinem Konto koppeln.
+2. Klicke auf **Mit Stripe anmelden**. Stripe fragt, welches Konto du verbinden möchtest, und zeigt dir, was The Machine lesen darf.
+3. Klicke auf **Installieren**. Du kehrst zur vorherigen Seite zurück und Stripe ist verbunden.
 
-Oder füge stattdessen einen eingeschränkten Schlüssel ein:
+Auf deinem eigenen Computer kannst du stattdessen einen eingeschränkten Schlüssel einfügen:
 
-1. Erstelle in Stripe einen eingeschränkten Schlüssel mit Read für Events, Customers und Account und None für alles andere.
-2. Deine Konto-ID (acct_...) findest du unter Settings, Business details.
-3. Öffne Stripe wie oben (oder führe `assistant connect stripe` aus), öffne **Oder einen eingeschränkten Schlüssel einfügen**, füge die Konto-ID und den Schlüssel ein und tippe dann auf **Verbinden**.
+1. Erstelle in Stripe einen eingeschränkten Schlüssel mit Leseberechtigung für **Ereignisse**, **Kunden** und **Konto** und ohne Berechtigungen für alles andere.
+2. Deine Konto-ID (acct_...) findest du unter **Einstellungen**, **Unternehmensdaten**.
+3. Öffne Stripe wie oben beschrieben (oder führe `assistant connect stripe` aus), öffne **Oder einen eingeschränkten Schlüssel einfügen**, füge die Konto-ID und den Schlüssel ein und klicke auf **Verbinden**.
 
-Auf deinem eigenen Computer: Ist die Anmeldung mit Stripe noch nicht verfügbar, sagt + Add das und öffnet direkt dieses Formular.
+Auf deinem eigenen Computer weist dich **Verbindungen** darauf hin, wenn **Mit Stripe anmelden** noch nicht verfügbar ist, und öffnet direkt dieses Formular.
 
 ## Einmal für dein Team verbinden
 
-In einer Work Fleet verbindet ein Owner oder Admin Stripe einmal und teilt es mit dem Team:
+In einer Fleet für dein Team verbindet ein Owner oder Admin Stripe einmal und teilt die Verbindung mit dem Team:
 
-1. Verbinde Stripe auf deiner eigenen Machine (siehe oben). Der Kasten **Geteilte Verbindungen** im Fleet-Tab hat auch **Stripe verbinden**.
-2. Öffne im Fleet-Tab **Stripe teilen**. Alle sind angehakt. Nimm den Haken bei denen weg, die es nicht bekommen sollen. Tippe auf **Teilen**.
+1. Verbinde Stripe mit deiner eigenen Machine (siehe oben). Im Feld **Geteilte Verbindungen** auf dem Fleet-Tab findest du auch **Stripe verbinden**.
+2. Öffne auf dem Fleet-Tab **Stripe teilen**. Alle sind ausgewählt. Entferne die Auswahl für alle, die keinen Zugriff erhalten sollen. Klicke auf **Teilen**.
 
-Die Machines der Teammitglieder lesen es auch, nur lesend. Unter Verbindungen steht, wer es geteilt hat, und nur die Admins der Fleet können es ändern oder stoppen. Deine Machine erneuert ihren Zugriff jede Stunde. Ist sie länger aus, pausiert ihr Stripe, bis sie wieder da ist. Niemand bekommt je deine Anmeldung selbst. Details: [Fleets](fleet.md).
+Die Machines deiner Teammitglieder können Stripe dann ebenfalls lesen. Unter **Verbindungen** siehst du, wer die Verbindung geteilt hat. Nur die Admins der Fleet können sie ändern oder beenden. Deine Machine erneuert den Zugriff für die anderen stündlich. Ist sie ausgeschaltet, wird der Stripe-Zugriff für sie pausiert. Niemand erhält deine Anmeldedaten. Weitere Informationen: [Fleet](fleet.md).
 
-Ein Teammitglied, das dasselbe Stripe-Konto auch selbst verbindet, liest es einmal: Das geteilte ruht.
+Wenn ein Teammitglied dasselbe Stripe-Konto selbst verbindet, wird es nur einmal gelesen. Die geteilte Verbindung bleibt ungenutzt.
 
-Eine Stripe-Verbindung über einen anderen Dienst mit einem Schlüssel für viele Verbindungen kann nicht geteilt werden: Dieser Schlüssel öffnet mehr als Stripe. Verbinde Stripe stattdessen einzeln für das Team.
+Eine Stripe-Verbindung über einen Dienst, dessen einzelner Schlüssel auch andere Apps öffnet, kann nicht geteilt werden. Verbinde Stripe stattdessen direkt mit der Fleet.
 
-## Entfernen
+## Verbindung entfernen
 
-- Im Dashboard: **Verbindungen**, Stripe öffnen, **Details**, dann **Trennen**. Was es schon reingebracht hat, bleibt.
-- Auf einer gehosteten Machine kannst du auch auf deiner Einrichtungsseite daneben auf **Entfernen** tippen.
-- Mit einer Fleet geteilt: zuerst **Nicht mehr teilen** im Fleet-Tab.
+- Im Dashboard: **Verbindungen** öffnen, Stripe auswählen und auf **Details** und dann **Trennen** klicken. Was bereits importiert wurde, bleibt erhalten.
+- Auf einer gehosteten Machine wird bei einer Stripe-Verbindung, für die du dich angemeldet hast, **Trennen ↗** angezeigt. Damit öffnest du deine Einrichtungsseite. Klicke dort daneben auf **Entfernen**.
+- Wird die Verbindung mit einer Fleet geteilt, musst du zuerst auf dem Fleet-Tab auf **Nicht mehr teilen** klicken.
 
-## In Stripe widerrufen
+## Zugriff in Stripe widerrufen
 
-- Mit Stripe angemeldet: Öffne in Stripe Settings, Installed apps und entferne The Machine.
-- Eingeschränkter Schlüssel: Öffne in Stripe Developers, API keys und lösche oder erneuere den Schlüssel.
+- Wenn du dich mit Stripe angemeldet hast: Öffne in Stripe **Einstellungen**, **Installierte Apps** und entferne The Machine.
+- Bei einem eingeschränkten Schlüssel: Öffne in Stripe **Entwickler**, **API-Schlüssel** und lösche oder erneuere den Schlüssel.

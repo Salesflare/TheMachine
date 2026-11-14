@@ -1,43 +1,43 @@
 ---
 title: Salesflare CRM
 area: connections
-summary: Contas, contatos e negócios, para ela saber quem importa. Ela lê com sua chave de API.
+summary: Contas, contatos e negócios para ela saber quem é importante. Ela lê os dados usando sua chave de API.
 covers: connector:salesflare
 code: assistant.py, onboarding.py
 site: More sources, Connect, Remove
-translated: 697e6d60b69bb1cd
+translated: 3d6041d568843d96
 ---
 ## O que ela lê
 
-Suas contas, contatos e negócios no Salesflare, e os feeds das contas: e-mails de colegas que não envolvem você e reuniões com notas.
+Suas contas, contatos e negócios no Salesflare, além do feed de cada conta: e-mails de colegas dos quais você não participou e reuniões com anotações.
 
-## O que ela pode mudar
+## O que ela pode alterar
 
-Nada, a menos que você defina `join_pipelines` no arquivo de configurações da sua Machine. Aí ela adiciona você sozinha às contas desses pipelines. Por padrão, ele fica vazio.
+Nada. (No seu próprio computador, a configuração `join_pipelines` pode fazer com que ela adicione você a contas em pipelines escolhidos. Essa opção vem desativada por padrão.)
 
-## Conecte
+## Conectar
 
-1. No Salesflare, abra [Configurações, Chaves de API](https://app.salesflare.com/#/settings/apikeys) e crie uma chave.
-2. Em uma Machine hospedada: abra sua página de configuração em app.themachine.computer/setup, vá para **Mais fontes**, abra Salesflare CRM, cole a chave e clique em **Conectar**.
-3. No seu próprio computador: rode `assistant connect crm`, ou **Conexões**, **Clientes**, Salesflare CRM. Depois de **Conectar**, sua Machine reinicia e abre o cartão do Salesflare, que primeiro diz que está encontrando as contas com e-mails e reuniões recentes, e depois quantas já leu.
+1. No Salesflare, acesse [Configurações, chaves de API](https://app.salesflare.com/#/settings/apikeys) e crie uma chave.
+2. Em uma Machine hospedada: abra sua página de configuração em app.themachine.computer/setup, acesse **Mais fontes**, abra Salesflare CRM, cole a chave e pressione **Conectar**.
+3. No painel: **Conexões**, **Clientes**, Salesflare CRM, cole a chave e pressione **Conectar**. O cartão mostra o andamento da sincronização.
 
 ## Detalhes da sincronização
 
-O cartão dele em **Conexões**, **Outras fontes** mostra o andamento: quantas contas ela leu nesta rodada e quantas pulou porque o Salesflare demorou demais para responder. Uma rodada que dura horas avisa que pode estar travada.
+Em **Conexões**, **Clientes**, o Salesflare mostra o andamento: quantas contas foram lidas nesta rodada e quantas foram ignoradas porque o Salesflare estava lento demais. Se uma rodada durar horas, isso significa que ela pode ter travado.
 
-Os blocos contam as contas que ela conseguiu abrir e os e-mails e reuniões que trouxe. Se o Salesflare não deixa sua chave de API abrir nenhuma conta, o cartão diz **Precisa da sua ajuda**: use a chave de um usuário que consiga vê-las. Se o Salesflare demora demais com frequência, mas cada nova tentativa funciona, ele diz que o Salesflare **às vezes fica lento**.
+Os cartões mostram quantas contas ela conseguiu abrir e quantos e-mails e reuniões importou. Se sua chave de API não permitir abrir nenhuma conta no Salesflare, o cartão mostrará **Precisa da sua ajuda**: use a chave de um usuário que tenha acesso a elas. Se o Salesflare continuar excedendo o tempo limite, mas cada nova tentativa funcionar, o cartão mostrará que o Salesflare **fica lento às vezes**.
 
-Se o Salesflare não ativou o acesso ao feed com chaves de API para a sua equipe, o cartão diz isso: não chegam e-mails nem reuniões até o suporte do Salesflare ativar. Ela verifica de novo a cada 10 minutos no primeiro dia, depois mais ou menos a cada hora, e continua sozinha assim que funcionar.
+Se o Salesflare ainda não tiver ativado o acesso ao feed por chaves de API para sua equipe, o cartão avisará. Nenhum e-mail ou reunião será importado até que o suporte do Salesflare ative o acesso. A Machine verifica novamente a cada 10 minutos no primeiro dia e, depois, a cada hora. Quando tudo estiver funcionando, a sincronização continua automaticamente.
 
-- **Parar**: nada novo chega até você clicar em **Início**. Ela continua de onde estava.
-- **Reiniciar sincronização**: descarta a rodada atual, com os erros dela, e lê a última semana de novo agora. Nada do que ela já trouxe se perde.
-- **Chaves de API**: abre a página de chaves de API do Salesflare, para criar uma chave nova.
+- **Parar**: nada novo será importado até você pressionar **Início**. A sincronização continua de onde parou.
+- **Reiniciar sincronização**: começa de novo e lê os dados da última semana. Nada do que ela já importou será perdido.
+- **Chaves de API**: abre a página de chaves de API do Salesflare para você criar uma nova chave.
 
-## Remova
+## Remover
 
-- No painel: **Conexões**, abra Salesflare, **Detalhes** e depois **Desconectar**. O que já foi trazido continua lá.
-- Em uma Machine hospedada, você também pode clicar em **Remover** ao lado dele na sua página de configuração.
+- No painel: acesse **Conexões**, abra Salesflare, selecione **Detalhes** e depois **Desconectar**. O que ela já importou será mantido.
+- Em uma Machine hospedada, você também pode pressionar **Remover** ao lado dela na página de configuração.
 
-## Revogue no Salesflare
+## Revogar o acesso no Salesflare
 
-Exclua a chave de API no Salesflare, em Configurações, Chaves de API.
+Exclua a chave de API no Salesflare, em Configurações, chaves de API.
