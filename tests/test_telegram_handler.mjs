@@ -273,10 +273,13 @@ const handled=await beforeDispatch({content:'I fixed it already',timestamp:17916
 {
  assert.ok(promptBuild,'the memory habit hook is registered');
  const web=await promptBuild({},{agentId:'main',sessionKey:'agent:main:main',messageProvider:'webchat'});
- assert.match(web.appendSystemContext,/assistant_remember.*don't say "remember".*assistant_memory.*forget or stop using something learned, call assistant_forget\..*Small talk/s);
+ assert.match(web.appendSystemContext,/assistant_remember.*don't say "remember".*assistant_memory.*forget or stop using something learned, call assistant_forget\(\{words\}\)\..*Small talk/s);
  assert.doesNotMatch(web.appendSystemContext,/remember_fact/);
+ // Code Mode shows no descriptions: the calls are spelled out, so the save is text (not fact), about the owner has
+ // no about, the lookup is a topic's few words, and a save that failed is never reported as saved
+ assert.match(web.appendSystemContext,/assistant_remember\(\{text, kind\}\).*one about the owner says "you" and has no about.*not the whole question.*correct or change something saved before.*first forget the old one.*then save the new one.*never say it was saved when it was not/s);
  for(const c of [{agentId:'main',sessionKey:'agent:main:main',channel:'telegram',senderId:'1000001',chatId:'1000001'},{agentId:'main',sessionKey:'agent:main:main'}])
-  assert.match((await promptBuild({},c)).appendSystemContext,/assistant_signals remember_fact.*assistant_memory.*call assistant_forget\./s);
+  assert.match((await promptBuild({},c)).appendSystemContext,/assistant_signals\(\{action: "remember_fact", args: \{text, kind\}\}\).*assistant_memory\(\{words\}\).*call assistant_forget\(\{words\}\)\./s);
  for(const c of [{agentId:'main',sessionKey:'agent:main:main',channel:'telegram',senderId:'1000002'},{agentId:'main',sessionKey:'agent:main:main',messageProvider:'whatsapp'},
    {agentId:'main',sessionKey:'agent:main:assistant-review-preparation-'+'a'.repeat(32)},{agentId:'work',sessionKey:'agent:main:main',messageProvider:'webchat'},
    {agentId:'main',sessionKey:'agent:main:main',messageProvider:'webchat',sandboxed:true}])assert.equal(await promptBuild({},c),undefined);
