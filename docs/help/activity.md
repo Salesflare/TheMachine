@@ -12,7 +12,7 @@ keywords: log, history, audit, what did it do, sent, refused, blocked
 Open **Settings**, **Activity**. Each line is one thing The Machine did, newest first, by day:
 
 - what it did, and how it ended: sent, refused, failed or undone
-- when, the account or app it used, and [what allowed it](#what-allowed-it)
+- when, the account or app it used, and [what allowed it](activity.md#what-allowed-it)
 - a link to its to-do, when there is one
 - for an AI you connected, like ChatGPT or Claude: its name with **(connected AI)**, so you can tell it from The Machine itself
 
