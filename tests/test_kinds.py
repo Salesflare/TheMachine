@@ -246,10 +246,11 @@ class Page(unittest.TestCase):
             tmp = pathlib.Path(tmp)
             (tmp / 'machine').mkdir()
             (tmp / 'dashboard').mkdir()
-            (tmp / 'dashboard.html').write_text('<script id="source-kinds" type="application/json">__SOURCE_KINDS__</script>\n')
-            self.assertIn('"gmail.message"', dashboard_parts.assemble(tmp), 'a copy of the page alone: these kinds')
+            page = tmp / 'page.html'
+            page.write_text('<script id="source-kinds" type="application/json">__SOURCE_KINDS__</script>\n')
+            self.assertIn('"gmail.message"', dashboard_parts.assemble(page=page), 'a copy of the page alone: these kinds')
             (tmp / 'machine' / 'kinds.py').write_text("KINDS = {'a.b': {'name': '</script>'}}\nSENDS = {}\n")
-            page = dashboard_parts.assemble(tmp)
+            page = dashboard_parts.assemble(page=page)
             self.assertIn('"a.b"', page)
             self.assertEqual(page.count('</script>'), 1, 'a name never ends the script element')
 

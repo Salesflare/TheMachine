@@ -376,7 +376,8 @@ def dashboard_strings(source=None):
     """Every string in dashboard.html: the whole markup after the stylesheet (outside its scripts) and every script."""
     source = source if source is not None else dashboard_parts.assemble(ROOT)
     body = source[source.index('</style>', source.index('<style>')) + len('</style>'):]
-    scripts = re.findall(r'<script\b[^>]*>(.*?)</script>', body, re.S)
+    # code only: a data element (<script type="application/json">, the page's kinds from machine/kinds.py) isn't read
+    scripts = re.findall(r'<script\b(?![^>]*application/json)[^>]*>(.*?)</script>', body, re.S)
     parser = _Whole()
     parser.feed(re.sub(r'<script\b[^>]*>.*?</script>', '', body, flags=re.S))
     out = list(parser.found)

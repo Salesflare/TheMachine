@@ -50,7 +50,7 @@ INERT_FILES = {'LICENSE', 'README.md', 'CONTRIBUTING.md', 'SECURITY.md', 'TRADEM
 ALWAYS = {
     'test_architecture.py', 'test_dashboard_parts.py', 'test_message_seal.py', 'test_export_complete.py', 'test_error_feed.py',
     'test_seams.py', 'test_owner_boundary.py', 'test_us_english.py', 'test_owner_names.py', 'test_connectors.py',
-    'test_test_select.py', 'test_source_icons.py',
+    'test_test_select.py', 'test_source_icons.py', 'test_kinds.py',
     # every module's tables (export entries), every source file's English (catalogs), every help article against the code
     'test_knowledge_export.py', 'test_i18n.py', 'test_help.py',
 }
