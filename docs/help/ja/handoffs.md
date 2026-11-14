@@ -5,6 +5,7 @@ summary: 必要な情報と一緒に、ToDoをチームメンバーのMachineに
 covers: handoffs
 code: fleet_requests.py, dashboard.html
 order: 3
+translated: acb60a24ef374625
 ---
 ## ToDoを引き継ぐ
 

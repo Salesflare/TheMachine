@@ -5,6 +5,7 @@ summary: The Machineからのメッセージを受け取る時間、スヌーズ
 code: dashboard.html, assistant.py
 order: 3
 keywords: quiet hours, weekend, evening, night, do not disturb, time zone
+translated: 062ccef1310f228a
 ---
 The Machineからメッセージを受け取る時間を選べます。**設定**の**通知**にある**勤務時間**で設定します。
 

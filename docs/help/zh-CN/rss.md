@@ -4,6 +4,7 @@ area: connections
 summary: 你关注的RSS或Atom订阅源中的帖子。只能在自己的电脑上使用。
 covers: connector:rss
 code: connectors/rss.py
+translated: 99fdd904c9ff558f
 ---
 ## 它会读取什么
 

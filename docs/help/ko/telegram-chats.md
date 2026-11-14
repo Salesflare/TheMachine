@@ -4,6 +4,7 @@ area: connections
 summary: 내 Telegram 계정의 로그인 기기로 Telegram 채팅과 소규모 그룹을 읽어요. 답장은 승인한 뒤에만 보내요.
 covers: connector:telegram
 code: onboarding.py, telegram_mirror.py, telegram_store.py, next_actions.py
+translated: da17aef29a380002
 ---
 ## 읽는 내용
 

@@ -5,6 +5,7 @@ summary: 在属于某个待办的聊天中，询问待办相关问题或修改�
 covers: card-chat
 code: dashboard.html, assistant.py, chat_files.py, corrections.py
 order: 4
+translated: ba1206b5165695ce
 ---
 ## 打开聊天
 

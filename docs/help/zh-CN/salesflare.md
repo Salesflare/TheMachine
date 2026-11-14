@@ -5,6 +5,7 @@ summary: 读取客户、联系人和交易，了解哪些人最重要。使用�
 covers: connector:salesflare
 code: assistant.py, onboarding.py
 site: More sources, Connect, Remove
+translated: 697e6d60b69bb1cd
 ---
 ## 读取的内容
 

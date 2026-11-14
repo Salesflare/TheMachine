@@ -5,6 +5,7 @@ summary: Верните задачу позже, в выбранное врем�
 covers: snooze
 code: dashboard.html, assistant.py
 order: 3
+translated: e6681ab225810e81
 ---
 ## Отложить задачу
 

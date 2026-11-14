@@ -5,6 +5,7 @@ summary: The Machine会遵循的操作指南。你可以自己编写、从Claude
 covers: settings:skills
 code: skills.py, dashboard.html
 order: 4
+translated: 98fe851d553ed3dc
 ---
 技能会教The Machine如何完成某一类任务，比如“回答价格问题”。技能只有说明，不会改变The Machine可以做什么。
 

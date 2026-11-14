@@ -5,6 +5,7 @@ summary: 同僚や友人、家族に、誰かの連絡先や自分の連絡先�
 covers: share-contact
 code: contact_share.py, fleet.py, dashboard.html
 order: 6
+translated: 66412d1dc4e965c2
 ---
 ## 誰かの連絡先を共有する
 

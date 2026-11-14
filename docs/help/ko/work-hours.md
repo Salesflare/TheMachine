@@ -5,6 +5,7 @@ summary: The Machine이 메시지를 보낼 수 있는 시간, 미뤄 둔 항목
 code: dashboard.html, assistant.py
 order: 3
 keywords: quiet hours, weekend, evening, night, do not disturb, time zone
+translated: 062ccef1310f228a
 ---
 The Machine이 연락할 수 있는 시간을 선택해요. **설정**, **알림** 아래의 **근무 시간**에서 설정해요:
 

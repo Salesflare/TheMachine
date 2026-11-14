@@ -6,6 +6,7 @@ covers: moving
 code: moving.py, cli.py, machine/app/export.py
 site: Export everything, Delete it now, Download
 order: 5
+translated: a08d8cd091c7d47b
 ---
 你的Machine学到的一切都属于你：消息、待办、草稿、Graph、记忆和技能。你可以把这些内容全部迁移到另一台Machine，也可以留一份副本。
 

@@ -5,6 +5,7 @@ summary: ToDoについて質問したり、下書きを変更したりできま�
 covers: card-chat
 code: dashboard.html, assistant.py, chat_files.py, corrections.py
 order: 4
+translated: ba1206b5165695ce
 ---
 ## 開く
 

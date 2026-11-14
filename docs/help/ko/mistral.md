@@ -5,6 +5,7 @@ summary: Mistral API 키로 The Machine에서 Mistral 모델을 사용해요. Le
 covers: mistral
 code: docs/models.md, dashboard/settings-models.js
 site: Other AI services, Save key, Keys, Remove
+translated: 5d782f28fb69efef
 ---
 ## 용도
 

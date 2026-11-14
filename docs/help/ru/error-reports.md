@@ -5,6 +5,7 @@ summary: Когда что-то ломается, ваша Machine сообща�
 covers: error-reports
 code: error_feed.py, pacing.py, dashboard.html, sw.js
 order: 4
+translated: fd3e1c2d68b93a35
 ---
 ## Что это такое
 

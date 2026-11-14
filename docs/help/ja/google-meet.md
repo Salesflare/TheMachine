@@ -5,6 +5,7 @@ summary: 開催したGoogle Meetの会議の文字起こしとGeminiのメモを
 covers: connector:google_meet
 code: connectors/google_meet.py, onboarding.py
 site: Sign in with Google
+translated: cea7230915b5a536
 ---
 ## 読み込む内容
 

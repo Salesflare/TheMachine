@@ -5,6 +5,7 @@ summary: 휴대폰에 연결된 기기로서 신호 채팅과 그룹을 읽어�
 covers: connector:signal
 code: onboarding.py, signal_setup.py, signal_mirror.py, signal_store.py, signal_send.py
 keywords: Signal, linked device, QR code
+translated: b85609009f246615
 ---
 ## 읽는 내용
 

@@ -5,6 +5,7 @@ summary: 每周了解一次 The Machine 的表现：待办、承诺、联系人�
 covers: weekly-recap
 code: assistant.py, machine/app/recap_settings.py, config.example.json
 order: 1
+translated: 936df3d624aba2d7
 ---
 ## 包含哪些内容
 

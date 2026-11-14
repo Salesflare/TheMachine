@@ -5,6 +5,7 @@ summary: スイッチひとつで「標準」または「慎重」を選び、�
 covers: settings:security
 code: security_levels.py, dashboard.html, fleet.py
 order: 2
+translated: f8e82f192dd70e3a
 ---
 ## 2つのレベル
 

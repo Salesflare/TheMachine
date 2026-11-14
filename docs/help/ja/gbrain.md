@@ -5,6 +5,7 @@ summary: 任意で設定できます。GBrainのエージェントメモリをTh
 covers: gbrain
 code: gbrain.py, dashboard.html
 order: 90
+translated: d51536212d3ae14f
 ---
 ## 有効にする
 

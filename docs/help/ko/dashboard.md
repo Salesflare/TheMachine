@@ -5,6 +5,7 @@ summary: 할 일부터 연결까지, 대시보드의 각 부분이 어떤 기능
 covers: tab:events, tab:feedback
 code: dashboard.html
 order: 4
+translated: d41a4a0017765f9e
 ---
 ## 탭
 

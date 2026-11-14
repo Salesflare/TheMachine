@@ -4,6 +4,7 @@ area: connections
 summary: フォローしているRSSまたはAtomフィードの投稿を取得します。自分のコンピューター上でのみ利用できます。
 covers: connector:rss
 code: connectors/rss.py
+translated: 99fdd904c9ff558f
 ---
 ## 読み取る内容
 

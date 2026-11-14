@@ -5,6 +5,7 @@ summary: 每完成一定数量的待办，就会在待办页面显示一张小�
 covers: milestones
 code: machine/store/done_milestones.py, dashboard/todos-milestone.js
 order: 11
+translated: 77c10c7e5e38e386
 ---
 ## 显示时机
 

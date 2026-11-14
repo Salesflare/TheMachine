@@ -5,6 +5,7 @@ summary: Открывайте всё на панели управления с �
 covers: keyboard
 code: dashboard.html
 order: 5
+translated: 9d9a056e308ced41
 ---
 ## Палитра
 

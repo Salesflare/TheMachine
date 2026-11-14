@@ -5,6 +5,7 @@ summary: The Machineが学んだ内容を、どのAIでも読めるファイル�
 covers: knowledge-export
 code: machine/export/knowledge.py, machine/app/knowledge_export.py, cli.py
 order: 6
+translated: 6a917f8ee2aabaa9
 ---
 The Machineが学んだことはすべて、所有者のものです。ChatGPTやClaudeなどの別のAIに渡したり、手元に残したりできます。
 

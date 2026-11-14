@@ -5,6 +5,7 @@ summary: 状態が変わったストーリーと、その担当者や期限を�
 covers: connector:shortcut
 code: connectors/shortcut.py
 site: Connect, More sources, Remove
+translated: 2298e2fcb1af74b3
 ---
 ## 読み取る情報
 

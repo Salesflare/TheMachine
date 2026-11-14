@@ -5,6 +5,7 @@ summary: The Machine 사용법을 물어보세요. 도움말 페이지를 바탕
 covers: help-chat
 code: help_chat.py, dashboard.html
 order: 6
+translated: 6313f73729cfba18
 ---
 상단에서 **도움말**을 **설정** 옆에서 누르고, “할 일을 어떻게 미루나요?”처럼 편하게 질문해 보세요. Enter를 누르면 질문을 보내고, Shift+Enter를 누르면 줄을 바꿔요. 앱 언어나 질문을 작성한 언어로 답변해요. 도움말 페이지 링크를 누르면 같은 언어로 패널에서 바로 열려요.
 

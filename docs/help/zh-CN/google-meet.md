@@ -5,6 +5,7 @@ summary: 你组织的Meet会议转录稿和Gemini笔记。只读取内容。
 covers: connector:google_meet
 code: connectors/google_meet.py, onboarding.py
 site: Sign in with Google
+translated: cea7230915b5a536
 ---
 ## 它会读取什么
 

@@ -5,6 +5,7 @@ summary: 회사 또는 학교 계정의 Teams 채팅, 회의 채팅, 회의 메�
 covers: connector:teams
 code: connectors/teams.py, ms_graph.py, onboarding.py
 site: Connect Microsoft Teams
+translated: 864f9e6e98309439
 ---
 ## 읽는 항목
 

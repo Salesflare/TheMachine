@@ -5,6 +5,7 @@ summary: 최대 6명이 함께 쓰는 무료 가족 Fleet예요. 모두 시간�
 covers: family
 code: family.py, dashboard.html
 order: 6
+translated: 3af87ad0b491b336
 ---
 ## 기능
 

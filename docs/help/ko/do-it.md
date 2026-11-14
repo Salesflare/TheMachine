@@ -5,6 +5,7 @@ summary: 실행하면 작업을 준비해요. 승인하기 전에는 아무것�
 covers: do-it
 code: dashboard.html, next_actions.py, assistant.py
 order: 2
+translated: 6284dddb10c7b332
 ---
 ## 실행하면 하는 일
 

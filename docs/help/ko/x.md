@@ -5,6 +5,7 @@ summary: X에서 멘션, 답글, 쪽지를 Machine 브라우저에서 확인해�
 covers: connector:x
 code: connectors/x.py, integrations/x_inbox.py
 site: Connect, More sources, Remove
+translated: 5cbe43055458daf4
 ---
 ## 읽을 수 있는 내용
 

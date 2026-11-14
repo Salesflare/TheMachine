@@ -5,6 +5,7 @@ summary: Androidスマートフォンの通知をOpenClawアプリ経由で読�
 covers: connector:android
 code: onboarding.py, android-notifications.mjs
 site: Show a setup code, Approve, Remove
+translated: 344d64dafc75a0a9
 ---
 ## 読み取る内容
 

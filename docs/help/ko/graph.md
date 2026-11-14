@@ -5,6 +5,7 @@ summary: 메시지에 등장하는 사람, 조직, 프로젝트를 자동으로 
 covers: tab:people
 code: graph.py, graph_updates.py, crm.py, crm_import.py, crm_fixes.py, crm_fields.py, dashboard.html
 order: 1
+translated: 4dbe1a4e1702b1c1
 ---
 The Machine은 메시지, 회의, 결정에서 누구와 연락하고 어떤 일이 진행 중인지 파악해 지도로 정리해요. 따로 설정할 필요가 없고, 정보는 The Machine에만 저장돼요.
 

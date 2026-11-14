@@ -5,6 +5,7 @@ summary: Где найти нужную настройку: от светлой 
 covers: settings:general
 code: dashboard.html
 order: 1
+translated: 4b0cf1cc99529e64
 ---
 Откройте **Настройки** с помощью значка шестерёнки вверху. Вкладки:
 

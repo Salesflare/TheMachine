@@ -6,6 +6,7 @@ covers: settings:writing
 code: dashboard.html, signatures.py, authorship.py, learning_loop.py
 order: 3
 keywords: tone, style, voice, write like me, sound like me, my style, wording, formal, informal
+translated: c6c475c8005473c3
 ---
 ## 邮件签名
 

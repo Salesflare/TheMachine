@@ -5,6 +5,7 @@ summary: ToDoを後で再表示します。勤務日なら、選んだ時刻に�
 covers: snooze
 code: dashboard.html, assistant.py
 order: 3
+translated: e6681ab225810e81
 ---
 ## ToDoをスヌーズする
 

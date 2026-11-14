@@ -5,6 +5,7 @@ summary: 팀원의 Machine에 필요한 내용과 함께 할 일을 넘겨요. �
 covers: handoffs
 code: fleet_requests.py, dashboard.html
 order: 3
+translated: acb60a24ef374625
 ---
 ## 할 일 넘기기
 

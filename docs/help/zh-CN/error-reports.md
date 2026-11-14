@@ -5,6 +5,7 @@ summary: 出问题时，你的Machine会告诉The Machine团队出了什么错�
 covers: error-reports
 code: error_feed.py, pacing.py, dashboard.html, sw.js
 order: 4
+translated: fd3e1c2d68b93a35
 ---
 ## 错误报告是什么
 

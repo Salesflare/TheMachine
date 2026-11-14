@@ -5,6 +5,7 @@ summary: 某个来源显示“需要你帮忙”，或不再同步内容。看�
 covers: 
 code: onboarding.py, dashboard.html, assistant.py
 order: 1
+translated: 1c530fc2b291d640
 ---
 ## 查看状态
 

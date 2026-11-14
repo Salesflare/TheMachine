@@ -5,6 +5,7 @@ summary: これからの1週間をひと目で確認できます。会議、期�
 covers: tab:calendar
 code: dashboard.html, meeting_notes.py, meeting_writer.py, calendar_clashes.py, meeting_prep.py
 order: 1
+translated: 0f6b54ba94a7cdcc
 ---
 ## 表示内容
 

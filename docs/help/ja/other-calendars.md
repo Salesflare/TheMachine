@@ -5,6 +5,7 @@ summary: iCloud CalendarやFastmail、Nextcloud、ZohoなどのCalDAVカレン�
 covers: connector:icloud_calendar, connector:caldav
 code: caldav_calendar.py, ical.py, machine/sources/calendar_setup.py
 order: 14
+translated: 0ff916ed2bb877e1
 ---
 ## 読み込む内容
 

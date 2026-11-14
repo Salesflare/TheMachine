@@ -5,6 +5,7 @@ summary: 使用Mistral的API密钥，让你的Machine运行Mistral模型。Le Ch
 covers: mistral
 code: docs/models.md, dashboard/settings-models.js
 site: Other AI services, Save key, Keys, Remove
+translated: 5d782f28fb69efef
 ---
 ## 适用场景
 

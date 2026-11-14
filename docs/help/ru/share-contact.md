@@ -5,6 +5,7 @@ summary: Отправьте контакт другого человека ил�
 covers: share-contact
 code: contact_share.py, fleet.py, dashboard.html
 order: 6
+translated: 66412d1dc4e965c2
 ---
 ## Поделиться контактом другого человека
 

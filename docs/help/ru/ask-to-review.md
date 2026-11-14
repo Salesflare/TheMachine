@@ -5,6 +5,7 @@ summary: Попросите коллегу или кого-то из семьи 
 covers: ask-to-review
 code: fleet_reviews.py, dashboard/todos-review.js
 order: 4
+translated: 58823adef1b1f51b
 ---
 ## Попросить кого-то проверить задачу
 

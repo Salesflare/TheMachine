@@ -5,6 +5,7 @@ summary: どのAIモデルが回答するか、どれくらい深く考えるか
 covers: settings:model, chat-model
 code: dashboard.html, docs/models.md, chat_model.py
 order: 5
+translated: eee77413a4bdbf0b
 ---
 **設定**の**モデル**では、**バックグラウンド処理**に使うAIモデルと、ChatGPTなどのサインイン方法を確認できます。
 

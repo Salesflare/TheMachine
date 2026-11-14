@@ -5,6 +5,7 @@ summary: Люди, организации и проекты из ваших со
 covers: tab:people
 code: graph.py, graph_updates.py, crm.py, crm_import.py, crm_fixes.py, crm_fields.py, dashboard.html
 order: 1
+translated: 4dbe1a4e1702b1c1
 ---
 Ваша Machine составляет карту ваших контактов и происходящего на основе сообщений, встреч и принятых решений. Ничего не нужно настраивать, а данные остаются на вашей Machine.
 

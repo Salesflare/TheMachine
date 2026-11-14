@@ -6,6 +6,7 @@ covers: friends
 code: friends.py, network.py, meet.py, meet_app.py, dashboard.html
 site: Pair a self-hosted Machine
 order: 5
+translated: 3565b3898b234575
 ---
 ## 友達
 

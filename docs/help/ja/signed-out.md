@@ -5,6 +5,7 @@ summary: LinkedInやXによってMachineからログアウトされた場合は�
 covers: 
 code: browser_login.py, dashboard.html, dashboard/connections-signin.js
 order: 2
+translated: b77b372b9332ca2b
 ---
 LinkedInやXなどのサイトは、Machine専用のブラウザーで表示されます。サイトからログアウトされることがあります。
 

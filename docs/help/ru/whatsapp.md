@@ -5,6 +5,7 @@ summary: Ваши чаты WhatsApp доступны как подключённ
 covers: connector:whatsapp
 code: onboarding.py, next_actions.py, whatsapp_images.py
 site: Show the QR code, Get a code, On your phone? Link with a code instead, Remove
+translated: 881c555219a98f0f
 ---
 ## Что она читает
 

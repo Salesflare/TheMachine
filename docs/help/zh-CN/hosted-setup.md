@@ -5,6 +5,7 @@ summary: 登录、开始免费试用、连接邮箱并选择AI，只需几分钟
 code: onboarding.py, dashboard.html
 site: Mail and Calendar, Your AI, Continue with Google, Continue with Microsoft, Turn on, Add more any time, More sources, Open your dashboard, Sources, Ask for a source, Build it, Add a passkey, Use an authenticator app instead, Add to Claude, First to-dos, Back
 order: 1
+translated: 0be6044113aaaa39
 ---
 托管版The Machine在欧盟的云端运行，只供你使用。我们会让它持续运行并保持更新。
 

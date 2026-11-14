@@ -6,6 +6,7 @@ covers: mobile-app
 code: notify.py, assistant.py, file_text.py, dashboard/new-todo.js, dashboard/settings-device.js, dashboard/setup-card.js, dashboard/settings-apps.js, sw.js, manifest.webmanifest
 order: 3
 keywords: ios, android, app store, play store, share sheet, share, phone, mobile, push
+translated: 3865fe910a5427fb
 ---
 Мобильное приложение открывает вашу панель управления, где вы вошли в тот же аккаунт, что и в веб-версии. Установите его из [App Store](https://apps.apple.com/app/id6829875215) на iPhone и iPad или из [Google Play](https://play.google.com/store/apps/details?id=computer.themachine.app) на Android.
 

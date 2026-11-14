@@ -5,6 +5,7 @@ summary: 約1年分の過去のメール、会議、WhatsApp、Slack、Teamsの�
 covers: history
 code: machine/app/history.py, machine/store/history.py, machine/store/graph_history.py
 keywords: older messages, backfill, archive, past emails
+translated: 42069e80e6f85bdb
 ---
 ## 保存する内容
 

@@ -5,6 +5,7 @@ summary: Необязательно. Синхронизируйте память
 covers: gbrain
 code: gbrain.py, dashboard.html
 order: 90
+translated: d51536212d3ae14f
 ---
 ## Включить
 

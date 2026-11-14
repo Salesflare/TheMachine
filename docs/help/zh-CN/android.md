@@ -5,6 +5,7 @@ summary: 通过OpenClaw应用获取Android手机上的通知。它只读取通�
 covers: connector:android
 code: onboarding.py, android-notifications.mjs
 site: Show a setup code, Approve, Remove
+translated: 344d64dafc75a0a9
 ---
 ## 它会读取什么
 

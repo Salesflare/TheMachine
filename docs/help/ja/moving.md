@@ -6,6 +6,7 @@ covers: moving
 code: moving.py, cli.py, machine/app/export.py
 site: Export everything, Delete it now, Download
 order: 5
+translated: a08d8cd091c7d47b
 ---
 The Machineが学んだことはすべて自分のものです。メッセージ、ToDo、下書き、Graph、記憶、スキルを、別のThe Machineに移すことも、コピーを保存することもできます。
 

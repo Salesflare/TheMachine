@@ -6,6 +6,7 @@ covers: settings:notify
 code: notify.py, dashboard.html, assistant.py, sw.js
 order: 2
 keywords: alerts, notify, ping, buzz, quiet, too many, push, sound, interrupt
+translated: 334224e0b479ef47
 ---
 알림을 줄이거나 다른 알림을 받고 싶으신가요? **설정**의 **알림**에서 알림 종류별로 받을 곳을 선택해 보세요.
 

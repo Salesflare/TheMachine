@@ -5,6 +5,7 @@ summary: Вся предстоящая неделя в одном месте: в
 covers: tab:calendar
 code: dashboard.html, meeting_notes.py, meeting_writer.py, calendar_clashes.py, meeting_prep.py
 order: 1
+translated: 0f6b54ba94a7cdcc
 ---
 ## Что здесь отображается
 

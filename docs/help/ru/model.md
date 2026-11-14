@@ -5,6 +5,7 @@ summary: Какая модель ИИ отвечает вам, наскольк�
 covers: settings:model, chat-model
 code: dashboard.html, docs/models.md, chat_model.py
 order: 5
+translated: eee77413a4bdbf0b
 ---
 В разделе **Настройки** на странице **Модель** указано, какая модель ИИ выполняет задачи в разделе **Работа в фоновом режиме** и как вы вошли в аккаунт, например через ChatGPT.
 

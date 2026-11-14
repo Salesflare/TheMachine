@@ -5,6 +5,7 @@ summary: 선택 사항. 직접 운영하는 GBrain 에이전트 메모리를 The
 covers: gbrain
 code: gbrain.py, dashboard.html
 order: 90
+translated: d51536212d3ae14f
 ---
 ## 사용 설정
 

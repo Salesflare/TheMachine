@@ -5,6 +5,7 @@ summary: 1つのTrelloボードのカードの変更、コメント、アクテ�
 covers: connector:trello
 code: connectors/trello.py
 site: Sign in with Trello, Connect, More sources, Remove
+translated: 7fc2a596ef58bd93
 ---
 ## 読み取る内容
 

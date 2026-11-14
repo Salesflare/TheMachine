@@ -4,6 +4,7 @@ area: connections
 summary: 구독 중인 RSS 또는 Atom 피드의 게시물을 가져와요. 내 컴퓨터에서만 사용할 수 있어요.
 covers: connector:rss
 code: connectors/rss.py
+translated: 99fdd904c9ff558f
 ---
 ## 읽는 내용
 

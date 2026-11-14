@@ -4,6 +4,7 @@ area: graph
 summary: 메시지에서 찾거나 직접 추가한 내용을 CRM의 거래처럼 단계별 보드에서 관리해요.
 code: graph.py, crm.py, dashboard.html
 order: 4
+translated: b42abbf107368175
 ---
 The Machine은 메시지 내용을 바탕으로 프로젝트 이름을 정해요. 관련 있어 보이는 메시지는 "관련 있을 가능성이 높음"으로 표시돼요. 프로젝트 이름을 다른 프로젝트와 똑같이 바꾸면 두 프로젝트가 합쳐져요. CRM의 거래처럼 직접 관리할 수도 있어요.
 

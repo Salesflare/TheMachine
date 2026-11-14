@@ -5,6 +5,7 @@ summary: 为 Network 外的人提供一个简洁页面，并通过邮件链接�
 covers: task-pages
 code: task_pages.py, task_invites.py, dashboard.html
 order: 4
+translated: f5a3d79bc2168432
 ---
 ## 添加一个
 

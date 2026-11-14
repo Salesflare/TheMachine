@@ -5,6 +5,7 @@ summary: 1日最大1回、一般化した学びをいくつかThe Machineチー�
 covers: share-learnings
 code: team_learnings.py, dashboard.html
 order: 3
+translated: 8a7418cb4cb27e7b
 ---
 ## 共有される内容
 

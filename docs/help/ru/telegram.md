@@ -5,6 +5,7 @@ summary: Получайте задачи в Telegram от собственног
 covers: telegram
 code: assistant.py, onboarding.py, cli.py
 site: Add my bot, Add more any time, Disconnect Telegram
+translated: a2b74e4831832977
 ---
 ## Что она делает
 

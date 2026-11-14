@@ -6,6 +6,7 @@ covers: mobile-app
 code: notify.py, assistant.py, file_text.py, dashboard/new-todo.js, dashboard/settings-device.js, dashboard/setup-card.js, dashboard/settings-apps.js, sw.js, manifest.webmanifest
 order: 3
 keywords: ios, android, app store, play store, share sheet, share, phone, mobile, push
+translated: 3865fe910a5427fb
 ---
 移动应用会打开你的专属仪表盘，登录状态与你在网页上的相同。iPhone和iPad用户可以从[App Store](https://apps.apple.com/app/id6829875215)获取，Android用户可以从[Google Play](https://play.google.com/store/apps/details?id=computer.themachine.app)获取。
 

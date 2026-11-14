@@ -5,6 +5,7 @@ summary: 職場または学校のアカウントのTeamsチャット、会議チ
 covers: connector:teams
 code: connectors/teams.py, ms_graph.py, onboarding.py
 site: Connect Microsoft Teams
+translated: 864f9e6e98309439
 ---
 ## 読み込む内容
 

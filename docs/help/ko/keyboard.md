@@ -5,6 +5,7 @@ summary: 대시보드의 모든 기능에 키보드로 접근하세요. 팔레�
 covers: keyboard
 code: dashboard.html
 order: 5
+translated: 9d9a056e308ced41
 ---
 ## 명령 팔레트
 

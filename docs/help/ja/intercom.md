@@ -5,6 +5,7 @@ summary: Intercomワークスペースでの顧客とのやり取りを読み込
 covers: connector:intercom
 code: connectors/intercom.py, onboarding.py
 site: Sign in with Intercom, More sources, Remove
+translated: 2cbee87e6d24c0a9
 ---
 ## 読み込む内容
 

@@ -6,6 +6,7 @@ covers: connector:calendar
 code: onboarding.py, google_api.py
 site: Connect Google, Mail and Calendar, Disconnect, Sign in with Google
 order: 11
+translated: 7ff20ade2206d43f
 ---
 ## Что она читает
 

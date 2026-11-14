@@ -5,6 +5,7 @@ summary: 把别人的联系方式或你自己的联系方式发送给队友、�
 covers: share-contact
 code: contact_share.py, fleet.py, dashboard.html
 order: 6
+translated: 66412d1dc4e965c2
 ---
 ## 分享他人的联系方式
 

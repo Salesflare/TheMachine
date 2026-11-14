@@ -5,6 +5,7 @@ summary: Бесплатный семейный Fleet для 6 человек: о
 covers: family
 code: family.py, dashboard.html
 order: 6
+translated: 3af87ad0b491b336
 ---
 ## Что умеет
 

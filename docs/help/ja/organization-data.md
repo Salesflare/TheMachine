@@ -5,6 +5,7 @@ summary: Webアドレスから検索した業種、規模、所在地、組織�
 covers: enrichment
 code: enrichment.py, graph.py, dashboard.html
 order: 5
+translated: a759d8e2c6274792
 ---
 ## 情報の取得元
 

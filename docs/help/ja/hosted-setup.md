@@ -5,6 +5,7 @@ summary: サインインして無料期間を開始し、メールを接続し�
 code: onboarding.py, dashboard.html
 site: Mail and Calendar, Your AI, Continue with Google, Continue with Microsoft, Turn on, Add more any time, More sources, Open your dashboard, Sources, Ask for a source, Build it, Add a passkey, Use an authenticator app instead, Add to Claude, First to-dos, Back
 order: 1
+translated: 0be6044113aaaa39
 ---
 ホスト型のMachineは、EU内のクラウドで専用に動作します。The Machineが稼働を維持し、更新します。
 

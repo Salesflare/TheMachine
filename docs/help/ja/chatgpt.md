@@ -5,6 +5,7 @@ summary: ChatGPTのプランでThe Machineを動かし、ChatGPTのスキルを�
 covers: chatgpt
 code: docs/models.md, docs/skills.md, skills.py
 site: Sign in with ChatGPT, Reconnect ChatGPT
+translated: fc97be60c0b68336
 ---
 ## 目的
 

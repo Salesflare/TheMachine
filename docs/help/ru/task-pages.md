@@ -5,6 +5,7 @@ summary: Удобная страница для человека вне Network,
 covers: task-pages
 code: task_pages.py, task_invites.py, dashboard.html
 order: 4
+translated: f5a3d79bc2168432
 ---
 ## Добавить страницу
 

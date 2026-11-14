@@ -5,6 +5,7 @@ summary: 주최한 회의의 AI Companion 요약과 대화록을 읽어요. 읽�
 covers: connector:zoom
 code: connectors/zoom.py, meeting_notes.py, onboarding.py
 site: Connect Zoom, More sources, Remove, Sign in with Zoom
+translated: 9533caa1429fb3fc
 ---
 ## 읽는 항목
 

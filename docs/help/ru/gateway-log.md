@@ -5,6 +5,7 @@ summary: Собственный журнал Machine, чтобы она заме
 covers: connector:gateway
 code: onboarding.py
 site: More sources, Remove
+translated: 3a06400a28396465
 ---
 ## Что она читает
 

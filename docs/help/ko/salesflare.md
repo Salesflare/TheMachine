@@ -5,6 +5,7 @@ summary: Salesflare의 계정, 연락처, 거래를 읽어 누가 중요한지 �
 covers: connector:salesflare
 code: assistant.py, onboarding.py
 site: More sources, Connect, Remove
+translated: 697e6d60b69bb1cd
 ---
 ## 읽는 데이터
 

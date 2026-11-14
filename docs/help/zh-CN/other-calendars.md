@@ -5,6 +5,7 @@ summary: 同步iCloud日历或任何CalDAV日历中的会议，例如Fastmail、
 covers: connector:icloud_calendar, connector:caldav
 code: caldav_calendar.py, ical.py, machine/sources/calendar_setup.py
 order: 14
+translated: 0ff916ed2bb877e1
 ---
 ## 可读取的内容
 

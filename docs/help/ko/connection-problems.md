@@ -5,6 +5,7 @@ summary: 소스에 '도움이 필요해요'가 표시되거나 새 항목을 가
 covers: 
 code: onboarding.py, dashboard.html, assistant.py
 order: 1
+translated: 1c530fc2b291d640
 ---
 ## 상태 확인하기
 

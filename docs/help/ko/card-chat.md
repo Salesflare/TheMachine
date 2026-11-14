@@ -5,6 +5,7 @@ summary: 할 일에 관해 질문하거나 초안을 수정해 보세요. 채팅
 covers: card-chat
 code: dashboard.html, assistant.py, chat_files.py, corrections.py
 order: 4
+translated: ba1206b5165695ce
 ---
 ## 열기
 

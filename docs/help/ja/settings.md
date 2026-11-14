@@ -5,6 +5,7 @@ summary: ライトモードからセキュリティ、アカウントまで、�
 covers: settings:general
 code: dashboard.html
 order: 1
+translated: 4b0cf1cc99529e64
 ---
 上部の歯車を選ぶと、**設定**が開きます。タブは次のとおりです。
 

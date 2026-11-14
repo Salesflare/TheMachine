@@ -5,6 +5,7 @@ summary: 実験的な機能です。Work Fleetで顧客対応の情報をCRMの�
 covers: team-graph
 code: shared_graph.py, fleet_trust.py, dashboard.html
 order: 2
+translated: fc842bc761a3ab17
 ---
 Work Fleetでは、CRMのように顧客対応の情報をチームメンバーのMachineと共有できます。この機能は**実験的**で、初期状態ではオフです。
 

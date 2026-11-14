@@ -5,6 +5,7 @@ summary: Xでのメンション、返信、ダイレクトメッセージを、T
 covers: connector:x
 code: connectors/x.py, integrations/x_inbox.py
 site: Connect, More sources, Remove
+translated: 5cbe43055458daf4
 ---
 ## 読み取る内容
 

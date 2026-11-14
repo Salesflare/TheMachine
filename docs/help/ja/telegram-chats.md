@@ -4,6 +4,7 @@ area: connections
 summary: 自分のTelegramアカウントにログインしたデバイスとして、Telegramのチャットや小規模グループを読み取ります。返信は承認後にのみ送信されます。
 covers: connector:telegram
 code: onboarding.py, telegram_mirror.py, telegram_store.py, next_actions.py
+translated: da17aef29a380002
 ---
 ## 読み取る内容
 

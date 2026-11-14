@@ -5,6 +5,7 @@ summary: Нажмите на адрес электронной почты, чт�
 covers: email-composer
 code: machine/app/mail.py, dashboard/todos-compose.js
 order: 12
+translated: 568ac451673bc141
 ---
 ## Открыть
 

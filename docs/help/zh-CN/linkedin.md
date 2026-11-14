@@ -5,6 +5,7 @@ summary: 在 The Machine 自己登录的浏览器中读取你的 LinkedIn 消息
 covers: connector:linkedin
 code: connectors/linkedin.py, integrations/linkedin_inbox.py, linkedin_connections.py
 site: Connect, More sources, Remove
+translated: 850b91f79b9e23fc
 ---
 ## 会读取哪些内容
 

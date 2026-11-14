@@ -6,6 +6,7 @@ covers: voice-input
 code: voice_input.py, voice_worker.py, dashboard.html
 order: 7
 keywords: voice, dictate, dictation, speak, talk, microphone, mic, speech, transcribe
+translated: f311b21bb4996eb4
 ---
 ## 入力する代わりに話す
 

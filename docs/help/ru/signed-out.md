@@ -5,6 +5,7 @@ summary: LinkedIn или X завершили сеанс The Machine. Войди
 covers: 
 code: browser_login.py, dashboard.html, dashboard/connections-signin.js
 order: 2
+translated: b77b372b9332ca2b
 ---
 Сайты вроде LinkedIn и X The Machine открывает в собственном браузере. Иногда сайт завершает её сеанс.
 

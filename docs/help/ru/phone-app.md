@@ -5,6 +5,7 @@ summary: Установите The Machine на телефон или компь�
 covers: phone-app
 code: manifest.webmanifest, sw.js, dashboard.html
 order: 3
+translated: 3e2919603c5efa9a
 ---
 Установите The Machine как приложение на телефон или компьютер, чтобы получать уведомления о каждой задаче, результате и напоминании в течение [рабочих часов](work-hours.md). Выберите, что она будет отправлять, в разделе [Уведомления](notifications.md).
 

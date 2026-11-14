@@ -5,6 +5,7 @@ summary: 표준 또는 신중 중 하나를 선택하면 보안 및 개인정보
 covers: settings:security
 code: security_levels.py, dashboard.html, fleet.py
 order: 2
+translated: f8e82f192dd70e3a
 ---
 ## 두 가지 수준
 

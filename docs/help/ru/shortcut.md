@@ -5,6 +5,7 @@ summary: Истории, которые меняют статус, с ответ
 covers: connector:shortcut
 code: connectors/shortcut.py
 site: Connect, More sources, Remove
+translated: 2298e2fcb1af74b3
 ---
 ## Что она читает
 

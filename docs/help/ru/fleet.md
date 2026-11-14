@@ -6,6 +6,7 @@ covers: tab:fleet, network
 code: fleet.py, network.py, dashboard.html
 site: Company sign-in, Ask to join, Approve, Removed lately, Activity, Download CSV, Ask me before starting a member's Machine
 order: 1
+translated: c9650fc4ffe00e16
 ---
 Fleet позволяет вашей Machine работать вместе с Machine команды, семьи или друзей через The Machine Network. Всё, чем они обмениваются, защищено сквозным шифрованием, а ваша Machine отвечает только по заданным вами правилам.
 

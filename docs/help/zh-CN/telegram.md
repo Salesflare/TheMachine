@@ -5,6 +5,7 @@ summary: 通过自己的机器人在Telegram接收待办，按钮与仪表板上
 covers: telegram
 code: assistant.py, onboarding.py, cli.py
 site: Add my bot, Add more any time, Disconnect Telegram
+translated: a2b74e4831832977
 ---
 ## 功能
 

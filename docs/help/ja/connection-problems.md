@@ -5,6 +5,7 @@ summary: 接続元に「サポートが必要です」と表示される、ま�
 covers: 
 code: onboarding.py, dashboard.html, assistant.py
 order: 1
+translated: 1c530fc2b291d640
 ---
 ## 状態を確認する
 

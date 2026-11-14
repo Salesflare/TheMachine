@@ -6,6 +6,7 @@ covers: settings:notify
 code: notify.py, dashboard.html, assistant.py, sw.js
 order: 2
 keywords: alerts, notify, ping, buzz, quiet, too many, push, sound, interrupt
+translated: 334224e0b479ef47
 ---
 想减少通知，还是换一种通知方式？在**设置**中的**通知**里，选择每种通知通过什么方式发送给你：
 

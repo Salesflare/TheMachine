@@ -5,6 +5,7 @@ summary: 어떤 AI 모델이 답변하는지, 얼마나 깊이 사고하는지, 
 covers: settings:model, chat-model
 code: dashboard.html, docs/models.md, chat_model.py
 order: 5
+translated: eee77413a4bdbf0b
 ---
 **설정**에서 **모델**을 누르면 **백그라운드 작업**에 어떤 AI 모델을 사용하는지, ChatGPT처럼 어떤 방식으로 로그인했는지 확인할 수 있어요.
 

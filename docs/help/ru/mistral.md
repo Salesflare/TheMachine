@@ -5,6 +5,7 @@ summary: Запустите The Machine на моделях Mistral с API-кл�
 covers: mistral
 code: docs/models.md, dashboard/settings-models.js
 site: Other AI services, Save key, Keys, Remove
+translated: 5d782f28fb69efef
 ---
 ## Для чего это нужно
 

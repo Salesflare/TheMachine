@@ -5,6 +5,7 @@ summary: Network 외부 사람을 위한 차분한 페이지예요. 이메일에
 covers: task-pages
 code: task_pages.py, task_invites.py, dashboard.html
 order: 4
+translated: f5a3d79bc2168432
 ---
 ## 추가하기
 

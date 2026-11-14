@@ -5,6 +5,7 @@ summary: Linux, macOS 또는 Windows에 오픈 소스 앱을 설치해요. 무�
 covers: self-hosted
 code: install.sh, install.ps1, docs/getting-started.md
 order: 2
+translated: 73526b82818f009d
 ---
 내 컴퓨터에서 The Machine을 무료로 실행해요. 오픈 소스(AGPL)이며, 데이터는 계속 직접 관리해요. 설치하려면 터미널이 필요하지만, 계정 연결에는 필요하지 않아요.
 

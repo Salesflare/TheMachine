@@ -5,6 +5,7 @@ summary: 라이트 모드부터 보안과 계정까지, 각 설정을 찾는 방
 covers: settings:general
 code: dashboard.html
 order: 1
+translated: 4b0cf1cc99529e64
 ---
 위쪽의 톱니바퀴 아이콘을 눌러 **설정**을 열어요. 탭은 다음과 같아요.
 

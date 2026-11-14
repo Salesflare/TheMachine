@@ -5,6 +5,7 @@ summary: 在Linux、macOS或Windows上安装这款开源应用。免费使用，
 covers: self-hosted
 code: install.sh, install.ps1, docs/getting-started.md
 order: 2
+translated: 73526b82818f009d
 ---
 在自己的电脑上免费运行The Machine。它采用开源协议（AGPL），你的数据也会留在自己手中。安装需要使用终端，连接账号则不需要。
 

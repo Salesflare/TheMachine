@@ -5,6 +5,7 @@ summary: 它会自动学习你的写作方式和偏好。了解你可以设置�
 keywords: personalize, customize, tailor, adapt, preferences, style, tone, voice, sound like me, write like me, my way, learn, train, teach
 code: learning_loop.py, authorship.py, dashboard.html
 order: 5
+translated: 05455d7e4b5fc29a
 ---
 大部分事情都会自动完成。你的Machine会从你的操作中学习，所以你几乎不需要设置，也不用从头搭建。
 

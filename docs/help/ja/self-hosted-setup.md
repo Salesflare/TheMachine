@@ -5,6 +5,7 @@ summary: オープンソースアプリをLinux、macOS、Windowsにインスト
 covers: self-hosted
 code: install.sh, install.ps1, docs/getting-started.md
 order: 2
+translated: 73526b82818f009d
 ---
 The Machineは無料で自分のコンピューターで実行できます。オープンソース（AGPL）で、データは手元に残ります。インストールにはターミナルが必要ですが、アカウントの接続には必要ありません。
 

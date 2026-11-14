@@ -5,6 +5,7 @@ summary: 할 일을 나중에 다시 표시해요. 근무일에 원하는 시간
 covers: snooze
 code: dashboard.html, assistant.py
 order: 3
+translated: e6681ab225810e81
 ---
 ## 할 일 미루기
 

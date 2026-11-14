@@ -5,6 +5,7 @@ summary: 询问The Machine的使用方法。答案来自这些帮助页面，并
 covers: help-chat
 code: help_chat.py, dashboard.html
 order: 6
+translated: 6313f73729cfba18
 ---
 点击顶部、**设置**旁边的**帮助**，然后用自己的话提问，比如“如何推迟待办？”。按Enter发送问题，按Shift+Enter换行。助手会使用应用的语言回答；如果你用其他语言提问，也会使用你提问的语言回答。帮助页面的链接会以对应语言直接在面板中打开。
 

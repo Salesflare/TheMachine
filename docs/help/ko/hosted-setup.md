@@ -5,6 +5,7 @@ summary: 로그인하고 무료 이용 기간을 시작한 다음, 메일을 연
 code: onboarding.py, dashboard.html
 site: Mail and Calendar, Your AI, Continue with Google, Continue with Microsoft, Turn on, Add more any time, More sources, Open your dashboard, Sources, Ask for a source, Build it, Add a passkey, Use an authenticator app instead, Add to Claude, First to-dos, Back
 order: 1
+translated: 0be6044113aaaa39
 ---
 호스팅 Machine은 EU의 클라우드에서 전용으로 실행돼요. 계속 실행되고 최신 상태로 유지되도록 관리해 드려요.
 

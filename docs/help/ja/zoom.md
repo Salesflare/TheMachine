@@ -5,6 +5,7 @@ summary: 主催したミーティングのAI Companionによる要約と文字�
 covers: connector:zoom
 code: connectors/zoom.py, meeting_notes.py, onboarding.py
 site: Connect Zoom, More sources, Remove, Sign in with Zoom
+translated: 9533caa1429fb3fc
 ---
 ## 読み取る情報
 

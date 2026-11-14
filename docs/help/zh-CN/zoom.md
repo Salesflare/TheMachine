@@ -5,6 +5,7 @@ summary: The Machine会总结你主持的会议并生成文字记录。它只会
 covers: connector:zoom
 code: connectors/zoom.py, meeting_notes.py, onboarding.py
 site: Connect Zoom, More sources, Remove, Sign in with Zoom
+translated: 9533caa1429fb3fc
 ---
 ## 它会读取什么
 

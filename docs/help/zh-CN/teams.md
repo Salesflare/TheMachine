@@ -5,6 +5,7 @@ summary: 适用于工作或学校账号的Teams聊天、会议聊天和会议笔
 covers: connector:teams
 code: connectors/teams.py, ms_graph.py, onboarding.py
 site: Connect Microsoft Teams
+translated: 864f9e6e98309439
 ---
 ## 它会读取什么
 

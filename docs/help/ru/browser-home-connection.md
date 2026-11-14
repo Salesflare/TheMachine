@@ -6,6 +6,7 @@ code: browser_login.py
 site: Tailscale, Sign in to Tailscale, Use this exit node, Open it in Tailscale, Test it, Sign in again, Stop using it, Sign it out of Tailscale too
 keywords: tailscale, exit node, home internet, ip address, cloudflare, linkedin
 order: 4
+translated: 9935ac3c09fa5c00
 ---
 Некоторые сайты, например LinkedIn, X и сайты с проверкой Cloudflare, не принимают вход из браузера в облаке. На странице настройки можно направить трафик браузера размещённой The Machine через домашний интернет с помощью Tailscale. Это бесплатно и займёт около 10 минут. Почти всё произойдёт автоматически.
 

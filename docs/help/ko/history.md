@@ -5,6 +5,7 @@ summary: 검색하고 읽을 수 있는 약 1년치 과거 메일, 회의, Whats
 covers: history
 code: machine/app/history.py, machine/store/history.py, machine/store/graph_history.py
 keywords: older messages, backfill, archive, past emails
+translated: 42069e80e6f85bdb
 ---
 ## 보관하는 내용
 

@@ -5,6 +5,7 @@ summary: Инструкции, которым следует The Machine. Соз
 covers: settings:skills
 code: skills.py, dashboard.html
 order: 4
+translated: 98fe851d553ed3dc
 ---
 Навык учит The Machine выполнять определённый тип заданий, например «отвечать на вопросы о ценах». Это только инструкции: они никак не меняют, что The Machine может делать.
 

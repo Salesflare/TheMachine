@@ -5,6 +5,7 @@ summary: 書き方や希望を自動で学習します。設定できる項目�
 keywords: personalize, customize, tailor, adapt, preferences, style, tone, voice, sound like me, write like me, my way, learn, train, teach
 code: learning_loop.py, authorship.py, dashboard.html
 order: 5
+translated: 05455d7e4b5fc29a
 ---
 ほとんどは自動で行われます。The Machineは操作から学習するため、設定はほとんど必要なく、何かを作る必要もありません。
 

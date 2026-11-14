@@ -5,6 +5,7 @@ summary: 완료한 할 일이 일정 개수에 도달할 때마다 할 일에 �
 covers: milestones
 code: machine/store/done_milestones.py, dashboard/todos-milestone.js
 order: 11
+translated: 77c10c7e5e38e386
 ---
 ## 표시되는 시점
 

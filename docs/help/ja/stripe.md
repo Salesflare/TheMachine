@@ -5,6 +5,7 @@ summary: 決済失敗、異議申し立て、キャンセル、大口の新規�
 covers: connector:stripe
 code: connectors/stripe.py, shared_connectors.py
 site: Sign in with Stripe, Connect, More sources, Share Stripe, Connect Stripe, Remove
+translated: 99a14108376ddcc1
 ---
 ## 読み取る情報
 

@@ -5,6 +5,7 @@ summary: The Machineが作業に使う手順です。自分で作成したり、
 covers: settings:skills
 code: skills.py, dashboard.html
 order: 4
+translated: 98fe851d553ed3dc
 ---
 スキルは、「料金についての質問に答える」など、特定の種類のタスクをThe Machineに教える手順です。指示のみで、The Machineに許可されている操作が変わることはありません。
 

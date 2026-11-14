@@ -5,6 +5,7 @@ summary: Все ваши источники в одном месте: их со�
 covers: tab:health, saved-signins
 code: dashboard.html, onboarding.py
 order: 1
+translated: 1ca62ab8f65b77ff
 ---
 ## Состояние подключений
 

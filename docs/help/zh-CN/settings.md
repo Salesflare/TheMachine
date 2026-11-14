@@ -5,6 +5,7 @@ summary: 了解各项设置的位置，从浅色模式到安全和账号设置�
 covers: settings:general
 code: dashboard.html
 order: 1
+translated: 4b0cf1cc99529e64
 ---
 点击顶部的齿轮图标打开**设置**。其中包含这些标签页：
 

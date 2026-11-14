@@ -5,6 +5,7 @@ summary: 회사에서 운영하는 Exchange Server(2013~2019 또는 Subscription
 covers: connector:exchange
 code: ews_calendar.py, machine/sources/calendar_setup.py
 order: 16
+translated: a437b18fcb879c1b
 ---
 ## 가져오는 정보
 

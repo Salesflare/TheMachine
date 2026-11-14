@@ -5,6 +5,7 @@ summary: カレンダーの共有リンクから予定を取得します。Proto
 covers: connector:proton_calendar, connector:ics
 code: ics_feed.py, ical.py, machine/sources/calendar_setup.py
 order: 15
+translated: b3bcf33b5c027baf
 ---
 ## 読み取る内容
 

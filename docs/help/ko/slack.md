@@ -5,6 +5,7 @@ summary: 참여 중인 채널과 다이렉트 메시지예요. 승인한 후에�
 covers: connector:slack
 code: assistant.py, next_actions.py, onboarding.py, slack_api.py
 site: Connect, Remove
+translated: 8d275e75083292ba
 ---
 ## 읽는 내용
 

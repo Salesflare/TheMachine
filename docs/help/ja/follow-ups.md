@@ -5,6 +5,7 @@ summary: 返信がないとき、ボード全体または個別のプロジェ�
 covers: follow-ups
 code: follow_ups.py, assistant.py, dashboard.html
 order: 7
+translated: db4d60eb468a206d
 ---
 ボード上の相手から返信がなくなると、The Machineが同じ会話で、普段の文体に合わせたフォローアップを下書きします。オンにするまではオフです。ボードに合うスキルがある場合は、そのスキルに従って下書きします。メールの書き出しも同様です。
 

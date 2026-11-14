@@ -5,6 +5,7 @@ summary: 点击邮箱地址，即可从自己的邮箱给对方写邮件；邮�
 covers: email-composer
 code: machine/app/mail.py, dashboard/todos-compose.js
 order: 12
+translated: 568ac451673bc141
 ---
 ## 打开
 

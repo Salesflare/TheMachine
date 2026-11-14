@@ -6,6 +6,7 @@ covers: computer-logs
 code: machine/system_logs.py, machine/sources/gateway.py, onboarding.py
 keywords: logs, journal, journalctl, crash, coredump, systemd, Hyprland, Omarchy, bar
 order: 3
+translated: 1a191d8433bfba2a
 ---
 ## 読み取る情報
 

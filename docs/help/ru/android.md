@@ -5,6 +5,7 @@ summary: Уведомления с телефона Android через прил�
 covers: connector:android
 code: onboarding.py, android-notifications.mjs
 site: Show a setup code, Approve, Remove
+translated: 344d64dafc75a0a9
 ---
 ## Что она читает
 

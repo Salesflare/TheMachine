@@ -5,6 +5,7 @@ summary: 캘린더 공유 링크에서 회의 정보를 가져와요. Proton Cal
 covers: connector:proton_calendar, connector:ics
 code: ics_feed.py, ical.py, machine/sources/calendar_setup.py
 order: 15
+translated: b3bcf33b5c027baf
 ---
 ## 읽어오는 정보
 

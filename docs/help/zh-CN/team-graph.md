@@ -5,6 +5,7 @@ summary: 实验性功能。像CRM一样，与你的工作Fleet共享客户工作
 covers: team-graph
 code: shared_graph.py, fleet_trust.py, dashboard.html
 order: 2
+translated: fc842bc761a3ab17
 ---
 在工作Fleet中，你的Machine可以像共享CRM一样，与你队友的Machine共享客户工作。这项功能目前是**实验性**，默认关闭。
 

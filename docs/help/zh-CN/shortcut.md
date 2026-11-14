@@ -5,6 +5,7 @@ summary: 会改变状态的故事及其负责人和截止日期。它只读取�
 covers: connector:shortcut
 code: connectors/shortcut.py
 site: Connect, More sources, Remove
+translated: 2298e2fcb1af74b3
 ---
 ## 读取内容
 

@@ -5,6 +5,7 @@ summary: Один переключатель уровня, Standard или Caref
 covers: settings:security
 code: security_levels.py, dashboard.html, fleet.py
 order: 2
+translated: f8e82f192dd70e3a
 ---
 ## Два уровня
 

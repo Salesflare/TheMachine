@@ -4,6 +4,7 @@ area: connections
 summary: Ваши чаты и небольшие группы в Telegram. The Machine читает их как устройство, подключённое к вашему аккаунту. Ответы отправляются только после вашего одобрения.
 covers: connector:telegram
 code: onboarding.py, telegram_mirror.py, telegram_store.py, next_actions.py
+translated: da17aef29a380002
 ---
 ## Что она читает
 

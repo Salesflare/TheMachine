@@ -5,6 +5,7 @@ summary: 이메일 주소를 클릭하면 할 일의 초안과 같은 창에서 
 covers: email-composer
 code: machine/app/mail.py, dashboard/todos-compose.js
 order: 12
+translated: 568ac451673bc141
 ---
 ## 열기
 

@@ -5,6 +5,7 @@ summary: 用键盘访问仪表盘中的所有内容：命令面板、页面快�
 covers: keyboard
 code: dashboard.html
 order: 5
+translated: 9d9a056e308ced41
 ---
 ## 命令面板
 

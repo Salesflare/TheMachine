@@ -5,6 +5,7 @@ summary: 查看公司运行的Exchange Server（2013至2019版或Subscription Ed
 covers: connector:exchange
 code: ews_calendar.py, machine/sources/calendar_setup.py
 order: 16
+translated: a437b18fcb879c1b
 ---
 ## 读取的内容
 

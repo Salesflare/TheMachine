@@ -5,6 +5,7 @@ summary: 使用ChatGPT登录，即可按你的ChatGPT套餐运行The Machine，�
 covers: chatgpt
 code: docs/models.md, docs/skills.md, skills.py
 site: Sign in with ChatGPT, Reconnect ChatGPT
+translated: fc97be60c0b68336
 ---
 ## 用途
 

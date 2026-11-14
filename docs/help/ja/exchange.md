@@ -5,6 +5,7 @@ summary: 会社で運用している Exchange Server（2013～2019 または Sub
 covers: connector:exchange
 code: ews_calendar.py, machine/sources/calendar_setup.py
 order: 16
+translated: a437b18fcb879c1b
 ---
 ## 読み込む情報
 

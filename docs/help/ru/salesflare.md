@@ -5,6 +5,7 @@ summary: Аккаунты, контакты и сделки, чтобы она �
 covers: connector:salesflare
 code: assistant.py, onboarding.py
 site: More sources, Connect, Remove
+translated: 697e6d60b69bb1cd
 ---
 ## Что она читает
 

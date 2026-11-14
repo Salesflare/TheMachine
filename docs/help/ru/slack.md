@@ -5,6 +5,7 @@ summary: Каналы и личные сообщения, в которых вы
 covers: connector:slack
 code: assistant.py, next_actions.py, onboarding.py, slack_api.py
 site: Connect, Remove
+translated: 8d275e75083292ba
 ---
 ## Что она читает
 

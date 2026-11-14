@@ -5,6 +5,7 @@ summary: Machine会读取自己的日志，发现自身问题。它只读取，�
 covers: connector:gateway
 code: onboarding.py
 site: More sources, Remove
+translated: 3a06400a28396465
 ---
 ## 读取的内容
 

@@ -5,6 +5,7 @@ summary: Network外の相手にメールで共有する、落ち着いた雰囲�
 covers: task-pages
 code: task_pages.py, task_invites.py, dashboard.html
 order: 4
+translated: f5a3d79bc2168432
 ---
 ## 追加する
 

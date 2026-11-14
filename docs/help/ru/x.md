@@ -5,6 +5,7 @@ summary: Ваши упоминания, ответы и личные сообщ�
 covers: connector:x
 code: connectors/x.py, integrations/x_inbox.py
 site: Connect, More sources, Remove
+translated: 5cbe43055458daf4
 ---
 ## Что она читает
 

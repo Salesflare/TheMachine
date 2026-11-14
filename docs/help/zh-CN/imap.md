@@ -5,6 +5,7 @@ summary: 通过IMAP收取任何服务商的邮件，例如iCloud、Yahoo、Fastm
 covers: connector:imap
 code: imap_mail.py, smtp_mail.py, imap_presets.py, machine/sources/imap_setup.py
 order: 13
+translated: 85e7bf625f96964a
 ---
 ## 它会读取什么
 

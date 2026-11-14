@@ -6,6 +6,7 @@ covers:
 code: message_seal.py, next_actions.py, SECURITY.md
 order: 1
 keywords: private, privacy, data, gdpr, encrypted, who can see, safe, stored, keep
+translated: 237400429e8be40b
 ---
 ## Кратко
 

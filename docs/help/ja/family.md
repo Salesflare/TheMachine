@@ -5,6 +5,7 @@ summary: 最大6人で使える無料の家族用Fleet。全員の空き時間�
 covers: family
 code: family.py, dashboard.html
 order: 6
+translated: 3af87ad0b491b336
 ---
 ## できること
 

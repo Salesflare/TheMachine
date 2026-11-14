@@ -5,6 +5,7 @@ summary: 可选。让你自己的GBrain智能体记忆与The Machine保持同步
 covers: gbrain
 code: gbrain.py, dashboard.html
 order: 90
+translated: d51536212d3ae14f
 ---
 ## 开启
 

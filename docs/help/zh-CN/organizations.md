@@ -4,6 +4,7 @@ area: graph
 summary: 消息中提到的公司：公司主页、人员和项目，以及如何添加、编辑或合并公司。
 code: graph.py, crm.py, enrichment.py, dashboard.html
 order: 3
+translated: a69ae21b14edaf94
 ---
 根据消息中的地址和名称整理公司信息。行业、规模、所在地和徽标会自动查找，详见[组织详情](organization-data.md)。
 

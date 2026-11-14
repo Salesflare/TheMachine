@@ -5,6 +5,7 @@ summary: 把你的来源集中在一处：查看各来源状态、添加新来�
 covers: tab:health, saved-signins
 code: dashboard.html, onboarding.py
 order: 1
+translated: 1ca62ab8f65b77ff
 ---
 ## 查看状态
 

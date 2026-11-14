@@ -6,6 +6,7 @@ code: browser_login.py
 site: Tailscale, Sign in to Tailscale, Use this exit node, Open it in Tailscale, Test it, Sign in again, Stop using it, Sign it out of Tailscale too
 keywords: tailscale, exit node, home internet, ip address, cloudflare, linkedin
 order: 4
+translated: 9935ac3c09fa5c00
 ---
 LinkedIn、X、Cloudflareのチェックがあるサイトなどでは、クラウド上のブラウザからのサインインが拒否されることがあります。設定ページでは、Tailscaleを使って、ホストされているThe Machineのブラウザを自宅のインターネット経由で接続できます。無料で、所要時間は約10分です。ほとんどの手順は自動で進みます。
 

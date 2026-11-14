@@ -5,6 +5,7 @@ summary: 消息中的联系人、组织和项目会自动保持最新。
 covers: tab:people
 code: graph.py, graph_updates.py, crm.py, crm_import.py, crm_fixes.py, crm_fields.py, dashboard.html
 order: 1
+translated: 4dbe1a4e1702b1c1
 ---
 你的Machine会根据你的消息、会议和决策，整理出你联系的人以及正在进行的事。无需设置，数据也会留在你的Machine上。
 

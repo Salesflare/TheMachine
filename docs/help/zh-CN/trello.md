@@ -5,6 +5,7 @@ summary: 单个Trello看板上的卡片变更、评论和动态。仅可读取�
 covers: connector:trello
 code: connectors/trello.py
 site: Sign in with Trello, Connect, More sources, Remove
+translated: 7fc2a596ef58bd93
 ---
 ## 读取的内容
 

@@ -5,6 +5,7 @@ summary: Заберите знания, которые получила ваша
 covers: knowledge-export
 code: machine/export/knowledge.py, machine/app/knowledge_export.py, cli.py
 order: 6
+translated: 6a917f8ee2aabaa9
 ---
 Всё, чему учится ваша Machine, принадлежит вам. Передайте эти знания другому ИИ, например ChatGPT или Claude, или сохраните их у себя.
 

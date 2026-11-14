@@ -6,6 +6,7 @@ covers: ai-connections, settings:apps
 code: ai_access.py, ai_app.py, pairing.py, ai_reach.py
 keywords: MCP, Claude, ChatGPT, Cursor, Codex, GBrain, connector, AI, OAuth
 order: 95
+translated: ac5a894df13907fd
 ---
 ## Что может делать другой ИИ
 

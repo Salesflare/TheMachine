@@ -5,6 +5,7 @@ summary: 执行会准备好待办内容。未经你批准，不会发送、付�
 covers: do-it
 code: dashboard.html, next_actions.py, assistant.py
 order: 2
+translated: 6284dddb10c7b332
 ---
 ## 执行会做什么
 

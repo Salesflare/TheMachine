@@ -5,6 +5,7 @@ summary: レビュー依頼、メンション、割り当て、CIの失敗を確
 covers: connector:github
 code: connectors/github.py, onboarding.py
 site: Sign in with GitHub, More sources, Remove
+translated: e97127e156e56f7d
 ---
 ## 読み取る内容
 

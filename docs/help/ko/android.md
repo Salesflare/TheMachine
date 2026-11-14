@@ -5,6 +5,7 @@ summary: OpenClaw 앱을 통해 Android 휴대전화의 알림을 확인해요. 
 covers: connector:android
 code: onboarding.py, android-notifications.mjs
 site: Show a setup code, Approve, Remove
+translated: 344d64dafc75a0a9
 ---
 ## 읽는 항목
 

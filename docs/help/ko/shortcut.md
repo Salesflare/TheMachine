@@ -5,6 +5,7 @@ summary: 상태가 바뀌는 스토리와 담당자, 마감일을 읽어요. 읽
 covers: connector:shortcut
 code: connectors/shortcut.py
 site: Connect, More sources, Remove
+translated: 2298e2fcb1af74b3
 ---
 ## 읽는 항목
 

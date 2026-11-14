@@ -5,6 +5,7 @@ summary: Intercom 작업 공간의 고객 대화를 확인해요. 보내기를 �
 covers: connector:intercom
 code: connectors/intercom.py, onboarding.py
 site: Sign in with Intercom, More sources, Remove
+translated: 2cbee87e6d24c0a9
 ---
 ## 읽는 내용
 

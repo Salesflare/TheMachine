@@ -5,6 +5,7 @@ summary: 글 쓰는 방식과 원하는 것을 스스로 배워요. 직접 설�
 keywords: personalize, customize, tailor, adapt, preferences, style, tone, voice, sound like me, write like me, my way, learn, train, teach
 code: learning_loop.py, authorship.py, dashboard.html
 order: 5
+translated: 05455d7e4b5fc29a
 ---
 대부분은 자동으로 이뤄져요. The Machine은 하는 일을 바탕으로 배워서, 설정할 것이 많지 않고 따로 만들 것도 없어요.
 

@@ -5,6 +5,7 @@ summary: ToDoから接続まで、ダッシュボードの各部分の使い方�
 covers: tab:events, tab:feedback
 code: dashboard.html
 order: 4
+translated: d41a4a0017765f9e
 ---
 ## タブ
 

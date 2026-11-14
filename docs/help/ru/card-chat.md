@@ -5,6 +5,7 @@ summary: Задавайте вопросы о задаче или меняйте
 covers: card-chat
 code: dashboard.html, assistant.py, chat_files.py, corrections.py
 order: 4
+translated: ba1206b5165695ce
 ---
 ## Откройте чат
 

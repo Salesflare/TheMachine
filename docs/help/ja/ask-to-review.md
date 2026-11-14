@@ -5,6 +5,7 @@ summary: チームメイトやFamilyのメンバーにToDoを確認してもら�
 covers: ask-to-review
 code: fleet_reviews.py, dashboard/todos-review.js
 order: 4
+translated: 58823adef1b1f51b
 ---
 ## ToDoのレビューを依頼する
 

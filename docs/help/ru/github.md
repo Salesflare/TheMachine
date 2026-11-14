@@ -5,6 +5,7 @@ summary: Просматривает запросы на проверку, упо
 covers: connector:github
 code: connectors/github.py, onboarding.py
 site: Sign in with GitHub, More sources, Remove
+translated: e97127e156e56f7d
 ---
 ## Что она читает
 

@@ -5,6 +5,7 @@ summary: 从日历共享链接读取会议，包括Proton Calendar、已发布�
 covers: connector:proton_calendar, connector:ics
 code: ics_feed.py, ical.py, machine/sources/calendar_setup.py
 order: 15
+translated: b3bcf33b5c027baf
 ---
 ## 读取内容
 

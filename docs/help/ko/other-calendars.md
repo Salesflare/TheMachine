@@ -5,6 +5,7 @@ summary: iCloud Calendar 또는 Fastmail, Nextcloud, Zoho 같은 CalDAV 캘린�
 covers: connector:icloud_calendar, connector:caldav
 code: caldav_calendar.py, ical.py, machine/sources/calendar_setup.py
 order: 14
+translated: 0ff916ed2bb877e1
 ---
 ## 읽어오는 항목
 

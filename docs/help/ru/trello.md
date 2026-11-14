@@ -5,6 +5,7 @@ summary: Изменения карточек, комментарии и акти
 covers: connector:trello
 code: connectors/trello.py
 site: Sign in with Trello, Connect, More sources, Remove
+translated: 7fc2a596ef58bd93
 ---
 ## Что она читает
 

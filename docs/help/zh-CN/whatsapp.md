@@ -5,6 +5,7 @@ summary: 像关联设备一样读取你的WhatsApp聊天记录。只有你批准
 covers: connector:whatsapp
 code: onboarding.py, next_actions.py, whatsapp_images.py
 site: Show the QR code, Get a code, On your phone? Link with a code instead, Remove
+translated: 881c555219a98f0f
 ---
 ## 读取内容
 

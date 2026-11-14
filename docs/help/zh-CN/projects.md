@@ -4,6 +4,7 @@ area: graph
 summary: 在看板上管理项目，按阶段跟进消息中发现或手动添加的事项，就像在CRM中管理交易一样。
 code: graph.py, crm.py, dashboard.html
 order: 4
+translated: b42abbf107368175
 ---
 The Machine会根据消息内容为项目命名。看起来可能属于某个项目的消息会显示为“可能属于此项目”。把项目重命名为另一个项目的名称，就会将两个项目合并。你也可以像在CRM中管理交易一样，手动管理项目。
 

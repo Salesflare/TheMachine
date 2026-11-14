@@ -5,6 +5,7 @@ summary: アカウント、連絡先、商談を読み込み、誰が重要か�
 covers: connector:salesflare
 code: assistant.py, onboarding.py
 site: More sources, Connect, Remove
+translated: 697e6d60b69bb1cd
 ---
 ## 読み込む内容
 

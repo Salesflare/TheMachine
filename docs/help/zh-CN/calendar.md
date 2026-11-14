@@ -5,6 +5,7 @@ summary: 一览未来一周：会议、到期的待办、稍后处理的待办�
 covers: tab:calendar
 code: dashboard.html, meeting_notes.py, meeting_writer.py, calendar_clashes.py, meeting_prep.py
 order: 1
+translated: 0f6b54ba94a7cdcc
 ---
 ## 显示内容
 

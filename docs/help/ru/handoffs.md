@@ -5,6 +5,7 @@ summary: Передайте задачу участнику команды в е
 covers: handoffs
 code: fleet_requests.py, dashboard.html
 order: 3
+translated: acb60a24ef374625
 ---
 ## Передать задачу
 

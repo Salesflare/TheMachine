@@ -5,6 +5,7 @@ summary: 查看Salesforce中的交易、待办和人物与项目活动。开启�
 covers: connector:salesforce
 code: connectors/salesforce.py, crm_sync.py, onboarding.py
 site: Connect Salesforce, More sources, Remove, Sign in with Salesforce
+translated: e2394748e0a676b1
 ---
 ## 可以读取的内容
 

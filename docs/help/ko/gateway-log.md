@@ -5,6 +5,7 @@ summary: Machine 자체 로그를 읽고 문제를 찾아내요. 읽기만 해�
 covers: connector:gateway
 code: onboarding.py
 site: More sources, Remove
+translated: 3a06400a28396465
 ---
 ## 읽는 항목
 

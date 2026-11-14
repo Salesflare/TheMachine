@@ -5,6 +5,7 @@ summary: 다른 사람이나 내 연락처를 팀원, 친구 또는 가족에게
 covers: share-contact
 code: contact_share.py, fleet.py, dashboard.html
 order: 6
+translated: 66412d1dc4e965c2
 ---
 ## 다른 사람의 연락처 공유
 

@@ -5,6 +5,7 @@ summary: Trello 보드 하나의 카드 변경 사항, 댓글, 활동을 읽어�
 covers: connector:trello
 code: connectors/trello.py
 site: Sign in with Trello, Connect, More sources, Remove
+translated: 7fc2a596ef58bd93
 ---
 ## 읽는 항목
 

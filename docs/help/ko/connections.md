@@ -5,6 +5,7 @@ summary: 소스를 한곳에서 확인하세요. 각 소스의 상태를 보고,
 covers: tab:health, saved-signins
 code: dashboard.html, onboarding.py
 order: 1
+translated: 1ca62ab8f65b77ff
 ---
 ## 상태 확인
 

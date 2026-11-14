@@ -5,6 +5,7 @@ summary: 在手机或电脑上安装The Machine，每有一条待办就会收到
 covers: phone-app
 code: manifest.webmanifest, sw.js, dashboard.html
 order: 3
+translated: 3e2919603c5efa9a
 ---
 在手机或电脑上将The Machine安装为应用，这样每有一条待办、结果或提醒，你都会在[工作时间](work-hours.md)内收到通知。你可以在[通知](notifications.md)中选择要接收的内容。
 

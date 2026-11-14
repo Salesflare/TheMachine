@@ -5,6 +5,7 @@ summary: 把待办和所需信息转交给团队成员的Machine。之后可以�
 covers: handoffs
 code: fleet_requests.py, dashboard.html
 order: 3
+translated: acb60a24ef374625
 ---
 ## 转交待办
 

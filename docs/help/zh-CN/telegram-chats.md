@@ -4,6 +4,7 @@ area: connections
 summary: 像使用自己账号的设备一样读取你的Telegram聊天和小群组。只有你批准后才会回复。
 covers: connector:telegram
 code: onboarding.py, telegram_mirror.py, telegram_store.py, next_actions.py
+translated: da17aef29a380002
 ---
 ## 读取哪些内容
 

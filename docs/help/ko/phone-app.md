@@ -5,6 +5,7 @@ summary: 휴대폰이나 컴퓨터에 The Machine을 설치하고 할 일마다 
 covers: phone-app
 code: manifest.webmanifest, sw.js, dashboard.html
 order: 3
+translated: 3e2919603c5efa9a
 ---
 휴대폰이나 컴퓨터에 The Machine을 앱으로 설치하면 [근무 시간](work-hours.md)에 할 일, 결과, 알림을 받아 볼 수 있어요. 알림으로 받을 항목은 [알림](notifications.md)에서 선택하세요.
 

@@ -5,6 +5,7 @@ summary: 팀원이나 가족 구성원에게 할 일을 검토하고 초안을 �
 covers: ask-to-review
 code: fleet_reviews.py, dashboard/todos-review.js
 order: 4
+translated: 58823adef1b1f51b
 ---
 ## 다른 사람에게 할 일 검토 요청하기
 

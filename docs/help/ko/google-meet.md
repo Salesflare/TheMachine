@@ -5,6 +5,7 @@ summary: 직접 주최한 Meet 회의의 대본과 Gemini 메모를 가져와요
 covers: connector:google_meet
 code: connectors/google_meet.py, onboarding.py
 site: Sign in with Google
+translated: cea7230915b5a536
 ---
 ## 읽는 항목
 

@@ -5,6 +5,7 @@ summary: 付款失败、争议、取消和大额新订阅。只能读取。
 covers: connector:stripe
 code: connectors/stripe.py, shared_connectors.py
 site: Sign in with Stripe, Connect, More sources, Share Stripe, Connect Stripe, Remove
+translated: 99a14108376ddcc1
 ---
 ## 它会读取什么
 

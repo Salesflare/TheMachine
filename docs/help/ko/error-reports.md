@@ -5,6 +5,7 @@ summary: 문제가 발생하면 The Machine이 무엇이 어디서 실패했는�
 covers: error-reports
 code: error_feed.py, pacing.py, dashboard.html, sw.js
 order: 4
+translated: fd3e1c2d68b93a35
 ---
 ## 오류 보고서란
 

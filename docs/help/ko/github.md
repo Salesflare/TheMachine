@@ -5,6 +5,7 @@ summary: 검토 요청, 멘션, 할당, 실패한 CI 실행을 확인해요. 확
 covers: connector:github
 code: connectors/github.py, onboarding.py
 site: Sign in with GitHub, More sources, Remove
+translated: e97127e156e56f7d
 ---
 ## 읽는 항목
 

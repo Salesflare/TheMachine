@@ -5,6 +5,7 @@ summary: 让待办稍后回来。工作日会在你选定的时间回来。
 covers: snooze
 code: dashboard.html, assistant.py
 order: 3
+translated: e6681ab225810e81
 ---
 ## 稍后处理待办
 

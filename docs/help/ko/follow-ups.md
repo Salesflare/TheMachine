@@ -5,6 +5,7 @@ summary: 보드 전체나 프로젝트 하나에서 답장이 없을 때 자동�
 covers: follow-ups
 code: follow_ups.py, assistant.py, dashboard.html
 order: 7
+translated: db4d60eb468a206d
 ---
 보드에서 상대방이 답장을 멈추면 The Machine이 같은 대화에서 평소 말투로 후속 연락 초안을 작성해요. 직접 켜기 전까지는 꺼져 있어요. 보드에 맞는 스킬이 있으면 초안에 적용하고, 이메일에서 어떤 내용을 먼저 쓸지도 반영해요.
 

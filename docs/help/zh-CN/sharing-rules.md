@@ -6,6 +6,7 @@ covers:
 code: fleet.py, dashboard.html
 order: 2
 keywords: share, sharing, colleagues, teammates, team, what others see, answer for me
+translated: 8c6f3bda9dfdbe8e
 ---
 ## 设置规则
 

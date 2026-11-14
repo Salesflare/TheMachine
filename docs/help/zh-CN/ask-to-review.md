@@ -5,6 +5,7 @@ summary: 请队友或家庭成员查看待办、编辑草稿并发回给你。�
 covers: ask-to-review
 code: fleet_reviews.py, dashboard/todos-review.js
 order: 4
+translated: 58823adef1b1f51b
 ---
 ## 请其他人审核待办
 

@@ -5,6 +5,7 @@ summary: ChatGPT로 로그인하면 ChatGPT 요금제로 Machine을 실행하고
 covers: chatgpt
 code: docs/models.md, docs/skills.md, skills.py
 site: Sign in with ChatGPT, Reconnect ChatGPT
+translated: fc97be60c0b68336
 ---
 ## 용도
 

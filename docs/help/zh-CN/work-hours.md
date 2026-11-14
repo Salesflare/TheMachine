@@ -5,6 +5,7 @@ summary: 设置The Machine何时可以联系你、推迟的待办何时返回，
 code: dashboard.html, assistant.py
 order: 3
 keywords: quiet hours, weekend, evening, night, do not disturb, time zone
+translated: 062ccef1310f228a
 ---
 选择The Machine可以联系你的时间。在**设置**中的**通知**下，找到**工作时间**：
 

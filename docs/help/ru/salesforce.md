@@ -5,6 +5,7 @@ summary: Сделки, задачи и активность из Salesforce по
 covers: connector:salesforce
 code: connectors/salesforce.py, crm_sync.py, onboarding.py
 site: Connect Salesforce, More sources, Remove, Sign in with Salesforce
+translated: e2394748e0a676b1
 ---
 ## Что она читает
 

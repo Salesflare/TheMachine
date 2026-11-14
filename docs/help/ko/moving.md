@@ -6,6 +6,7 @@ covers: moving
 code: moving.py, cli.py, machine/app/export.py
 site: Export everything, Delete it now, Download
 order: 5
+translated: a08d8cd091c7d47b
 ---
 The Machine이 익히는 모든 내용은 사용자 소유예요. 메시지, 할 일, 초안, Graph, 기억, 스킬까지 전부 다른 The Machine으로 옮기거나 사본으로 보관할 수 있어요.
 

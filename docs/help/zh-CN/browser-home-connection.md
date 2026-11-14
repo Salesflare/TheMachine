@@ -6,6 +6,7 @@ code: browser_login.py
 site: Tailscale, Sign in to Tailscale, Use this exit node, Open it in Tailscale, Test it, Sign in again, Stop using it, Sign it out of Tailscale too
 keywords: tailscale, exit node, home internet, ip address, cloudflare, linkedin
 order: 4
+translated: 9935ac3c09fa5c00
 ---
 有些网站（例如LinkedIn、X，以及需要通过Cloudflare检查的网站）会拒绝来自云端浏览器的登录。你可以在设置页面通过Tailscale，让托管的Machine浏览器改用家里的网络。Tailscale免费，设置大约需要10分钟，大部分步骤会自动完成。
 

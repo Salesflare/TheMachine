@@ -5,6 +5,7 @@ summary: Экспериментальная функция. Делитесь р�
 covers: team-graph
 code: shared_graph.py, fleet_trust.py, dashboard.html
 order: 2
+translated: fc842bc761a3ab17
 ---
 В Fleet для работы ваша Machine может делиться работой с клиентами с The Machine ваших коллег, как в общей CRM. Функция **Экспериментальная** и изначально отключена.
 

@@ -5,6 +5,7 @@ summary: 每天最多一次，The Machine会向团队分享一些通用心得，
 covers: share-learnings
 code: team_learnings.py, dashboard.html
 order: 3
+translated: 8a7418cb4cb27e7b
 ---
 ## 内容说明
 

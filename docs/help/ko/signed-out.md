@@ -5,6 +5,7 @@ summary: LinkedIn이나 X에서 Machine이 로그아웃됐어요. 다시 로그�
 covers: 
 code: browser_login.py, dashboard.html, dashboard/connections-signin.js
 order: 2
+translated: b77b372b9332ca2b
 ---
 LinkedIn이나 X 같은 사이트는 Machine 자체 브라우저에서 열려요. 사이트에서 로그아웃되는 경우도 있어요.
 

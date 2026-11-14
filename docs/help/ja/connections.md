@@ -5,6 +5,7 @@ summary: 情報源を一か所で確認できます。状態の確認、新し�
 covers: tab:health, saved-signins
 code: dashboard.html, onboarding.py
 order: 1
+translated: 1ca62ab8f65b77ff
 ---
 ## 状態を確認する
 

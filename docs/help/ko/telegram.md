@@ -5,6 +5,7 @@ summary: 내 봇을 통해 대시보드와 같은 버튼으로 할 일을 Telegr
 covers: telegram
 code: assistant.py, onboarding.py, cli.py
 site: Add my bot, Add more any time, Disconnect Telegram
+translated: a2b74e4831832977
 ---
 ## 기능
 

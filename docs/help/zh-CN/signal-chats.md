@@ -5,6 +5,7 @@ summary: 读取你的信号聊天和群组，就像手机的关联设备一样�
 covers: connector:signal
 code: onboarding.py, signal_setup.py, signal_mirror.py, signal_store.py, signal_send.py
 keywords: Signal, linked device, QR code
+translated: b85609009f246615
 ---
 ## 读取的内容
 

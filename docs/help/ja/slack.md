@@ -5,6 +5,7 @@ summary: 参加しているチャンネルとダイレクトメッセージを�
 covers: connector:slack
 code: assistant.py, next_actions.py, onboarding.py, slack_api.py
 site: Connect, Remove
+translated: 8d275e75083292ba
 ---
 ## 読み取る内容
 

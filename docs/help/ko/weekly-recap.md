@@ -5,6 +5,7 @@ summary: 일주일에 한 번, The Machine이 한 일과 할 일, 약속, 사람
 covers: weekly-recap
 code: assistant.py, machine/app/recap_settings.py, config.example.json
 order: 1
+translated: 936df3d624aba2d7
 ---
 ## 주간 요약에 포함되는 내용
 

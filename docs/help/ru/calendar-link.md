@@ -5,6 +5,7 @@ summary: Встречи по ссылке общего доступа к кал�
 covers: connector:proton_calendar, connector:ics
 code: ics_feed.py, ical.py, machine/sources/calendar_setup.py
 order: 15
+translated: b3bcf33b5c027baf
 ---
 ## Что она читает
 

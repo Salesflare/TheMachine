@@ -5,6 +5,7 @@ summary: 앞으로 한 주의 회의, 마감일이 된 할 일, 미룬 할 일�
 covers: tab:calendar
 code: dashboard.html, meeting_notes.py, meeting_writer.py, calendar_clashes.py, meeting_prep.py
 order: 1
+translated: 0f6b54ba94a7cdcc
 ---
 ## 표시 내용
 

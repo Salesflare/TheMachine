@@ -5,6 +5,7 @@ summary: 最多可供6人使用的免费家庭 Fleet：大家都有空时，可�
 covers: family
 code: family.py, dashboard.html
 order: 6
+translated: 3af87ad0b491b336
 ---
 ## 功能介绍
 

@@ -5,6 +5,7 @@ summary: 하루 최대 한 번, 일반적인 배운 점 몇 가지를 The Machin
 covers: share-learnings
 code: team_learnings.py, dashboard.html
 order: 3
+translated: 8a7418cb4cb27e7b
 ---
 ## 어떤 기능인가요?
 

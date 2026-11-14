@@ -5,6 +5,7 @@ summary: 由哪个AI模型为你作答、它的思考强度，以及它用了多
 covers: settings:model, chat-model
 code: dashboard.html, docs/models.md, chat_model.py
 order: 5
+translated: eee77413a4bdbf0b
 ---
 **设置**、**模型**会显示哪个AI模型负责**后台任务**，以及你的登录方式，例如通过ChatGPT登录。
 

@@ -5,6 +5,7 @@ summary: Источник показывает статус «Ждёт ваше�
 covers: 
 code: onboarding.py, dashboard.html, assistant.py
 order: 1
+translated: 1c530fc2b291d640
 ---
 ## Проверьте статус
 

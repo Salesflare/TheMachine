@@ -5,6 +5,7 @@ summary: 你加入的频道和私信。只有你批准后才会发送私信。
 covers: connector:slack
 code: assistant.py, next_actions.py, onboarding.py, slack_api.py
 site: Connect, Remove
+translated: 8d275e75083292ba
 ---
 ## 它会读取什么
 

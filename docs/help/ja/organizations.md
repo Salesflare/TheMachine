@@ -4,6 +4,7 @@ area: graph
 summary: メッセージに登場する会社のページ、人、プロジェクトと、追加、編集、統合の方法を紹介します。
 code: graph.py, crm.py, enrichment.py, dashboard.html
 order: 3
+translated: a69ae21b14edaf94
 ---
 メッセージに含まれる住所や名前をもとに会社を表示します。業種、規模、所在地、ロゴは検索して表示します。詳しくは[組織の詳細](organization-data.md)をご覧ください。
 

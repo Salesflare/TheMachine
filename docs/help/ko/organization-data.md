@@ -5,6 +5,7 @@ summary: 웹 주소로 조회한 업종, 규모, 위치와 로고를 각 조직 
 covers: enrichment
 code: enrichment.py, graph.py, dashboard.html
 order: 5
+translated: a759d8e2c6274792
 ---
 ## 어디서 가져오나요
 

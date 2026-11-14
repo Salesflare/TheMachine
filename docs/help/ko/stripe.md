@@ -5,6 +5,7 @@ summary: 실패한 결제, 분쟁, 취소, 큰 규모의 신규 구독을 확인
 covers: connector:stripe
 code: connectors/stripe.py, shared_connectors.py
 site: Sign in with Stripe, Connect, More sources, Share Stripe, Connect Stripe, Remove
+translated: 99a14108376ddcc1
 ---
 ## 읽는 내용
 

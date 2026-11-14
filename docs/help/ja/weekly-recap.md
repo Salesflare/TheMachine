@@ -5,6 +5,7 @@ summary: 週に一度、ToDoや約束、人やプロジェクト、気づいた�
 covers: weekly-recap
 code: assistant.py, machine/app/recap_settings.py, config.example.json
 order: 1
+translated: 936df3d624aba2d7
 ---
 ## 内容
 

@@ -5,6 +5,7 @@ summary: Не чаще раза в день она предлагает кома
 covers: share-learnings
 code: team_learnings.py, dashboard.html
 order: 3
+translated: 8a7418cb4cb27e7b
 ---
 ## Что это
 

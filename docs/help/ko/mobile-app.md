@@ -6,6 +6,7 @@ covers: mobile-app
 code: notify.py, assistant.py, file_text.py, dashboard/new-todo.js, dashboard/settings-device.js, dashboard/setup-card.js, dashboard/settings-apps.js, sw.js, manifest.webmanifest
 order: 3
 keywords: ios, android, app store, play store, share sheet, share, phone, mobile, push
+translated: 3865fe910a5427fb
 ---
 모바일 앱을 열면 웹에서와 같은 계정으로 로그인된 대시보드가 표시돼요. iPhone과 iPad에서는 [App Store](https://apps.apple.com/app/id6829875215)에서, Android에서는 [Google Play](https://play.google.com/store/apps/details?id=computer.themachine.app)에서 받을 수 있어요.
 

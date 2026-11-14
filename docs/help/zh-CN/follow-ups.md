@@ -5,6 +5,7 @@ summary: 对方不回复时，可为整个看板或单个项目自动跟进。�
 covers: follow-ups
 code: follow_ups.py, assistant.py, dashboard.html
 order: 7
+translated: db4d60eb468a206d
 ---
 当看板中的某人不再回复时，你的Machine会用你的语气，在同一对话中为你起草跟进消息。此功能默认关闭，需要你手动开启。如果有适用于此看板的技能，草稿会遵循该技能，包括邮件开头的写法。
 

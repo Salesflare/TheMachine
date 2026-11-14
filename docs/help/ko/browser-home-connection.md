@@ -6,6 +6,7 @@ code: browser_login.py
 site: Tailscale, Sign in to Tailscale, Use this exit node, Open it in Tailscale, Test it, Sign in again, Stop using it, Sign it out of Tailscale too
 keywords: tailscale, exit node, home internet, ip address, cloudflare, linkedin
 order: 4
+translated: 9935ac3c09fa5c00
 ---
 LinkedIn, X, Cloudflare 확인 절차가 있는 사이트처럼 클라우드의 브라우저에서는 로그인을 허용하지 않는 사이트가 있어요. 설정 페이지에서 Tailscale을 사용하면 호스팅된 Machine의 브라우저가 집의 인터넷을 통해 연결되게 할 수 있어요. 무료이고 10분 정도 걸리며, 대부분의 과정은 자동으로 진행돼요.
 

@@ -5,6 +5,7 @@ summary: Войдите через ChatGPT, чтобы пользоваться 
 covers: chatgpt
 code: docs/models.md, docs/skills.md, skills.py
 site: Sign in with ChatGPT, Reconnect ChatGPT
+translated: fc97be60c0b68336
 ---
 ## Для чего это нужно
 

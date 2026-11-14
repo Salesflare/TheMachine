@@ -5,6 +5,7 @@ summary: 了解控制面板各部分的用途，从待办到连接。
 covers: tab:events, tab:feedback
 code: dashboard.html
 order: 4
+translated: d41a4a0017765f9e
 ---
 ## 标签页
 

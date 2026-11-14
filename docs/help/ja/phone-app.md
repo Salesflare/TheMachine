@@ -5,6 +5,7 @@ summary: スマートフォンやパソコンにThe Machineをインストール
 covers: phone-app
 code: manifest.webmanifest, sw.js, dashboard.html
 order: 3
+translated: 3e2919603c5efa9a
 ---
 スマートフォンやパソコンにThe Machineをアプリとしてインストールすると、[勤務時間](work-hours.md)内にToDo、結果、リマインダーごとの通知を受け取れます。通知の内容は[通知](notifications.md)で選べます。
 

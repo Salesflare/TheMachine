@@ -5,6 +5,7 @@ summary: 把The Machine学到的内容带给其他AI，导出为任何AI都能�
 covers: knowledge-export
 code: machine/export/knowledge.py, machine/app/knowledge_export.py, cli.py
 order: 6
+translated: 6a917f8ee2aabaa9
 ---
 The Machine学到的一切都归你所有。你可以把这些内容交给ChatGPT或Claude等其他AI，也可以留着自己用。
 

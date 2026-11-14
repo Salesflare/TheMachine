@@ -5,6 +5,7 @@ summary: メッセージに登場する人、組織、プロジェクトを自�
 covers: tab:people
 code: graph.py, graph_updates.py, crm.py, crm_import.py, crm_fixes.py, crm_fields.py, dashboard.html
 order: 1
+translated: 4dbe1a4e1702b1c1
 ---
 The Machineが、メッセージ、ミーティング、決定事項をもとに、関わりのある人や進行中のことをまとめます。設定は不要で、情報はThe Machine内に保存されます。
 

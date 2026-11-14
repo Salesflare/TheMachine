@@ -5,6 +5,7 @@ summary: LinkedIn或X将你的Machine退出了登录。重新登录一次，或�
 covers: 
 code: browser_login.py, dashboard.html, dashboard/connections-signin.js
 order: 2
+translated: b77b372b9332ca2b
 ---
 LinkedIn和X等网站会在你的Machine自带的浏览器中打开。有时，网站会将它退出登录。
 

@@ -5,6 +5,7 @@ summary: The Machine의 로그인된 브라우저에서 LinkedIn 메시지를 �
 covers: connector:linkedin
 code: connectors/linkedin.py, integrations/linkedin_inbox.py, linkedin_connections.py
 site: Connect, More sources, Remove
+translated: 850b91f79b9e23fc
 ---
 ## 읽는 내용
 

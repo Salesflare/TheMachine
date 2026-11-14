@@ -5,6 +5,7 @@ summary: OneDrive和SharePoint中的Word文件评论、提及、跟踪修订和�
 covers: connector:docs
 code: connectors/docs.py, doc_writes.py, next_actions.py, onboarding.py
 site: Sign in with Microsoft
+translated: 6db75e46d29fc2e3
 ---
 ## 读取的内容
 

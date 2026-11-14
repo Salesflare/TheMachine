@@ -5,6 +5,7 @@ summary: 在你Machine自己的浏览器中读取你在X上的提及、回复和
 covers: connector:x
 code: connectors/x.py, integrations/x_inbox.py
 site: Connect, More sources, Remove
+translated: 5cbe43055458daf4
 ---
 ## 可读取的内容
 

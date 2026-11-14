@@ -5,6 +5,7 @@ summary: 你在Intercom工作区中的客户对话。只有你发送后，它才
 covers: connector:intercom
 code: connectors/intercom.py, onboarding.py
 site: Sign in with Intercom, More sources, Remove
+translated: 2cbee87e6d24c0a9
 ---
 ## 它会读取什么
 

@@ -6,6 +6,7 @@ covers: moving
 code: moving.py, cli.py, machine/app/export.py
 site: Export everything, Delete it now, Download
 order: 5
+translated: a08d8cd091c7d47b
 ---
 Всё, чему учится ваша The Machine, принадлежит вам: сообщения, задачи, черновики, Graph, воспоминания и навыки. Перенесите всё в другую The Machine или сохраните копию.
 

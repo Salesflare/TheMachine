@@ -5,6 +5,7 @@ summary: The Machineの使い方を質問できます。回答はヘルプペー
 covers: help-chat
 code: help_chat.py, dashboard.html
 order: 6
+translated: 6313f73729cfba18
 ---
 上部の **ヘルプ** をタップしてください。**設定** の隣にあります。「ToDoをスヌーズするには？」のように、自分の言葉で質問できます。Enterで質問を送信し、Shift+Enterで改行できます。ヘルプはアプリの言語、または入力した言語で回答します。ヘルプページへのリンクをタップすると、その言語のページがパネル内で開きます。
 

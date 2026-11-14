@@ -5,6 +5,7 @@ summary: 실험용 기능이에요. Work Fleet과 고객 업무를 CRM처럼 공
 covers: team-graph
 code: shared_graph.py, fleet_trust.py, dashboard.html
 order: 2
+translated: fc842bc761a3ab17
 ---
 Work Fleet에서는 Machine이 고객 업무를 동료들의 Machine과 공유할 수 있어요. 공유 CRM처럼 사용할 수 있어요. **실험용** 기능이며 기본적으로 꺼져 있어요.
 

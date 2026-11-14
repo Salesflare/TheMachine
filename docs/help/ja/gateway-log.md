@@ -5,6 +5,7 @@ summary: Machine 自身のログを読み取り、問題を検知します。読
 covers: connector:gateway
 code: onboarding.py
 site: More sources, Remove
+translated: 3a06400a28396465
 ---
 ## 読み取る内容
 

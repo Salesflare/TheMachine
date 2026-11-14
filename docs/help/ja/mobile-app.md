@@ -6,6 +6,7 @@ covers: mobile-app
 code: notify.py, assistant.py, file_text.py, dashboard/new-todo.js, dashboard/settings-device.js, dashboard/setup-card.js, dashboard/settings-apps.js, sw.js, manifest.webmanifest
 order: 3
 keywords: ios, android, app store, play store, share sheet, share, phone, mobile, push
+translated: 3865fe910a5427fb
 ---
 モバイルアプリを開くと、ウェブと同じアカウントでサインインした状態で、自分のダッシュボードが表示されます。iPhoneとiPadでは[App Store](https://apps.apple.com/app/id6829875215)、Androidでは[Google Play](https://play.google.com/store/apps/details?id=computer.themachine.app)から入手できます。
 

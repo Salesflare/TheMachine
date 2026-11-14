@@ -5,6 +5,7 @@ summary: The Machine이 따르는 작업 방식이에요. 직접 만들거나 Cl
 covers: settings:skills
 code: skills.py, dashboard.html
 order: 4
+translated: 98fe851d553ed3dc
 ---
 스킬은 The Machine이 "가격 관련 질문에 답하기" 같은 특정 작업을 하는 방법을 알려줘요. 안내만 담겨 있어요. The Machine이 할 수 있는 일의 범위는 바꾸지 않아요.
 
