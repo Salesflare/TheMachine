@@ -39,7 +39,7 @@ When nothing needs you, your Machine naps on an empty list. While it checks, it 
 
 **All**, **Work** and **Personal** at the top of the sidebar list show all to-dos or only one kind. Your phone and computer show the same choice. While Work or Personal is on, **Show all** goes back. An alert about your Machine itself, like a part that keeps restarting, is neither Work nor Personal and shows under All only.
 
-The line at the top of the list also switches straight to the other one: **Personal only · Work · Show all**.
+The line at the top of the list also switches straight to the other one: under **Personal only**, tap **Work** or **Show all**.
 
 The row at the top of the list names your last morning or evening digest and what it counted, like **Yesterday evening’s digest** · 12 done, 3 open. Tap it to read that digest again, with **Copy** to paste it anywhere. Once you open it or tap its **×**, it goes on all your devices until the next digest.
 
@@ -131,7 +131,7 @@ An email's **Details** show only what its header doesn't, like full Cc addresses
 
 A reply in a Slack thread also shows what was said before the thread started. A to-do's link to its own message opens it here too, with **Open in Slack** at the bottom.
 
-**Details** shows its name, project and area (tap one to change it), your last note and a coding agent's result. **Chat ›** opens the chat. A done to-do stays short; the message it came from is under **Details**.
+**Details** shows its name, project and area (tap one to change it), your last note and a coding agent's result. Its title opens the chat. A done to-do stays short; the message it came from is under **Details**.
 
 A "Waiting on" to-do links your last message to them, the one you're waiting on: "Email to Pat · Tue".
 

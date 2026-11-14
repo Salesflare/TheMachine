@@ -62,6 +62,16 @@ class HelpArticles(unittest.TestCase):
         self.assertEqual(self.problems(GOOD.replace('code: onboarding.py', 'code: onboarding.py\nsite: Connect it now')
                                        .replace('**Connections**', '**Connect it now**')), [])  # hosted pages' text
 
+    def test_a_label_only_a_comment_still_names_fails(self):
+        # a button that is gone stays in comments and docstrings for a while: only text the app can show counts
+        code = '"""Connections, + Add, then Codex."""\n# Chat › opens it\nLABEL = "Sign in with {}"\nSHOW = "Show {} more"\n'
+        js = '// the + Add button\nconst b=`<button>Add and invite ${n}</button>`;<!-- Old tab -->'
+        text = help_check._py_strings(code) + '\n' + help_check._uncommented(js)
+        templates = help_check.label_templates(text)
+        shows = lambda phrase: help_check.shows_label(phrase, text, templates)
+        self.assertFalse(any(map(shows, ['+ Add', 'Chat ›', 'Old tab', 'Connections'])))
+        self.assertTrue(all(map(shows, ['Sign in with Slack', 'Show N more', 'Show 4 more', 'Add and invite 2', '×'])))
+
     def test_a_feature_or_path_that_is_gone_fails(self):
         self.assertIn('connector:fax', ' '.join(self.problems(GOOD.replace('connector:gmail', 'connector:fax'))))
         self.assertIn('gone.py does not exist', ' '.join(self.problems(GOOD.replace('onboarding.py', 'gone.py'))))

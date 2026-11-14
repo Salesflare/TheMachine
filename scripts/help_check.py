@@ -18,8 +18,8 @@ It fails when:
   some article's `covers`, unless PENDING says why not yet;
 - an article covers a feature that no longer exists, or names a `code` path that is gone, or the dashboard's Help link
   (HELP_FOR and GRAPH_HELP in dashboard.html) points at an article that doesn't exist;
-- an article names app text that no longer exists: every **bold** phrase is button or label text and must appear in
-  the app's code; a `/route` in backticks must appear in the code; `assistant <command>` must be a CLI command.
+- an article names app text that no longer exists: every **bold** phrase is button or label text and must be text
+  the app can show (its string literals and markup, not a comment or docstring; label_text()); a `/route` in backticks must appear in the code; `assistant <command>` must be a CLI command.
   Text the hosted control plane shows (its setup and account pages) goes in `site:`, and its own test checks it
   (also that the article uses each one: the site's daily help sync stops on one it doesn't);
 - the copy breaks the house style: an em dash, a line that starts with "You", a paragraph over 420 characters,
@@ -36,6 +36,7 @@ It fails when:
     python3 scripts/help_check.py          # prints what is wrong, exit code 1 if anything is
 """
 import ast
+import functools
 import re
 import sys
 from pathlib import Path
@@ -160,6 +161,65 @@ def app_text():
     return '\n'.join(source(p) for pattern in TEXT_FILES for p in ROOT.glob(pattern) if not p.name.startswith('test_'))
 
 
+def _py_strings(text):
+    """A Python file's string constants, without its docstrings: what it can show, never what a comment says."""
+    try:
+        tree = ast.parse(text)
+    except SyntaxError:
+        return text
+    docs = {id(node.body[0].value) for node in ast.walk(tree)
+            if isinstance(node, (ast.Module, ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)) and node.body
+            and isinstance(node.body[0], ast.Expr) and isinstance(node.body[0].value, ast.Constant)}
+    return '\n'.join(node.value for node in ast.walk(tree)
+                     if isinstance(node, ast.Constant) and isinstance(node.value, str) and id(node) not in docs)
+
+
+def _uncommented(text):
+    """Script and markup without their comments (a // in a string, like a URL, stays)."""
+    text = re.sub(r'<!--.*?-->', '', text, flags=re.S)
+    return '\n'.join('' if line.lstrip().startswith('//') else re.sub(r'(^|[;{}),\s])//(?:\s|$).*$', r'\1', line)
+                     for line in text.split('\n'))
+
+
+@functools.lru_cache(maxsize=1)
+def label_text():
+    """The text the app can show: its string literals and markup, not its comments and docstrings. A **label** in an
+    article must be in here, so a button that is gone fails even while a comment still names it. Read once a run."""
+    return '\n'.join(_py_strings(source(p)) if p.suffix == '.py' else _uncommented(source(p))
+                     for pattern in TEXT_FILES for p in ROOT.glob(pattern) if not p.name.startswith('test_'))
+
+
+# Bold text in an article that isn't the app's own words, each with why. Keep it short: a label the app shows goes in
+# its code; one the hosted pages show goes in the article's site:.
+NOT_APP_TEXT = {
+    'Cedar': 'a voice name, from voice_input.TALK_VOICES',
+    'Sign in to Facebook': "Facebook's own page, in the browser the Birthdays template opens",
+    'Get a code for your phone number': "Telegram's own sign-in screen",
+    'Scan a QR code with Telegram on another device': "Telegram's own sign-in screen",
+}
+# A placeholder in the app's text ({}, {name} or ${...}), and the stand-ins articles write for one (a number, N, …, <x>)
+PLACEHOLDER = re.compile(r'\$\{[^{}]*\}|\{\w*\}')
+STAND_IN = re.compile(r'(?<!\w)(?:\d+|N|…|<[^>]+>)(?!\w)')
+
+
+@functools.lru_cache(maxsize=2)
+def label_templates(text):
+    """(head, tail) around each placeholder in the app's text ("Sign in with ${s.label}"): a label made from one."""
+    return {(m[1], m[2].rstrip()) for m in re.finditer(r'([A-Z][^\'"`<>\n{}$]{3,60}?)(?:\$\{[^{}]*\}|\{\w*\})([^\'"`<>\n{}$]{0,40})', text)}
+
+
+def shows_label(phrase, text, templates):
+    """Whether the app can show this **label**: as it is, made from a template, or around a stand-in for a value."""
+    if phrase in text or phrase in NOT_APP_TEXT or not re.search(r'[A-Za-z]', phrase):  # a symbol: ×, ⋯, +
+        return True
+    # what fills the template is a name or a number ("Sign in with Slack"), never plain words ("Connect it now")
+    if any(phrase.startswith(head) and phrase.endswith(tail) and len(phrase) > len(head) + len(tail)
+           and re.match(r'[A-Z0-9]', phrase[len(head):]) for head, tail in templates):
+        return True
+    pieces = [p.strip() for p in STAND_IN.split(phrase) if p.strip()]
+    return len(pieces) > 0 and STAND_IN.search(phrase) is not None and all(p in text for p in pieces)
+
+
 def commands():
     return set(re.findall(r"\badd\('([a-z-]+)'", (ROOT / 'cli.py').read_text(encoding='utf-8')))
 
@@ -231,7 +291,8 @@ def check(folder=HELP):
     """The problems found, as 'article: what' lines."""
     found = articles(folder)
     exist, gone = features()
-    text, cli = app_text(), commands()
+    text, labels, cli = app_text(), label_text(), commands()
+    templates = label_templates(labels)
     problems = [f'FEATURES: {f} is gone from {FEATURES[f][0]}: update or delete its article, and this entry' for f in gone]
     covered = {}
     for name, (fields, body) in found.items():
@@ -249,7 +310,7 @@ def check(folder=HELP):
                 problems.append(f'{where}: covers {f}, which the code no longer has')
             covered.setdefault(f, name)
         for phrase in set(re.findall(r'\*\*(.+?)\*\*', body)):
-            if phrase not in text and phrase not in fields['site']:
+            if phrase not in fields['site'] and not shows_label(phrase, labels, templates):
                 problems.append(f'{where}: names "{phrase}", which the app no longer shows (or add it to site: if the hosted pages show it)')
         for code in set(re.findall(r'`([^`]+)`', body)):
             if code.startswith('/') and not code.startswith('//') and code.split('?')[0].rstrip('/') not in text and code not in fields['site']:
