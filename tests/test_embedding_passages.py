@@ -129,8 +129,10 @@ class Passages(unittest.TestCase):
         self.assertTrue(all(text.split('| text: ')[1].startswith(('Ann Example:', 'Ben Sample:')) for _, _, text in parts))  # whole turns
         sent = self.calls.call_count
         self.assertEqual(emb.passage_pass(self.store.connect, SETTINGS), (emb.PASSAGE_BATCH, True))
-        self.assertEqual(self.calls.call_count - sent, 1)
-        self.assertEqual(len(self.calls.call_args.args[1]), emb.PASSAGE_BATCH)  # one small request
+        # small requests: a search's query finds a slot free (emb.BACKGROUND_INPUTS)
+        sizes = [len(call.args[1]) for call in self.calls.call_args_list[sent:]]
+        self.assertEqual(sum(sizes), emb.PASSAGE_BATCH)
+        self.assertLessEqual(max(sizes), emb.BACKGROUND_INPUTS)
         self.assertEqual([(p['event_id'], p['seq']) for p in self.stored()], [(new, n) for n in range(emb.PASSAGE_BATCH)])  # the newest first
         self.assertIsNone(self.vectors()[new]['passages'])
         self.assertEqual(emb.passage_pass(self.store.connect, SETTINGS, 7), (7, True))
