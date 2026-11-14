@@ -104,10 +104,6 @@ def last(db):
     return found if isinstance(found, dict) else None
 
 
-def save(db, found):
-    db.execute('INSERT OR REPLACE INTO milestones(name,at,detail) VALUES(?,?,?)', (NAME, found['at'], json.dumps(found, sort_keys=True)))
-
-
 def passed(db, model):
     """The main model `model` answered its last check."""
     found = last(db)

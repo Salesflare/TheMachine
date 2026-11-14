@@ -6,11 +6,9 @@ const FIRST_LOOK_WAIT={model:'It starts once your main model can run: sign in fo
 // A first look whose tries keep failing (first_look.failing / first_dig.failing: tries in a row that failed, from the
 // third on, as FIRST_LOOK_TRIES) says so in one line instead of "tries again shortly" or "Reading on"
 const FL_KEEPS_FAILING=3,flFailing=f=>(+f?.failing|0)>=FL_KEEPS_FAILING;
-const flWait=fl=>fl?.why==='retry'&&flFailing(fl)?t('The last tries did not finish. Still trying.'):aiFailed(fl)?t(AI_FAILED):t(FIRST_LOOK_WAIT[fl?.why]||'');
-// The AI's real check failed (model_check.py): the first look waits, with the provider's own error behind Details
-const AI_FAILED='Your AI didn’t answer a short test. Sign in again or use another AI.';
-const aiFailed=fl=>fl?.why==='model_check'&&typeof fl.error==='string';
-const flDetail=i=>i?.detail?make('details',{class:'fl-detail'},make('summary',{},t('Details')),make('p',{translate:'no'},i.detail)):'';
+const flWait=fl=>fl?.why==='retry'&&flFailing(fl)?t('The last tries did not finish. Still trying.'):aiFailed(fl)&&!setupStep()?t(AI_FAILED):t(FIRST_LOOK_WAIT[fl?.why]||'');
+const AI_FAILED='Your AI didn’t answer a short test. Sign in again or use another AI.',aiFailed=fl=>fl?.why=='model_check'&&'error'in fl;
+const flDetail=i=>i.detail?make('details',{class:'fl-detail'},make('summary',{},t('Details')),make('p',{translate:'no'},i.detail)):'';
 const firstLookDays=(fl,run)=>{const hours=run?run.window_hours:fl?.quick&&fl.hours;return hours?Math.max(1,Math.round(hours/24)):fl?.days||7};
 function reviewLiveRows(live){const rows=[];const name=id=>{const c=(state.connectors||[]).find(c=>c.id===id);return c?(c.display_name||c.email||id):id};
 for(const r of live.runs||[]){const total=r.planned||r.claimed_count||0,done=Math.min(r.done_count||0,total||Infinity);const steps=r.steps||[],[latest,...earlier]=steps;
@@ -60,7 +58,7 @@ if(dig&&dig.total){const total=flTotal=Math.max(flTotal,0,+dig.total|0),todos=+d
 if(run&&state.first_look_done&&!(run.started_at>state.first_look_done.at))return null;
 if(run){const total=run.planned||run.claimed_count||0;flMark();return{title:t('Taking a first look at your last {} days',firstLookDays(fl,run)),done:flRunDone(run,6),read:Math.min(total,flInt(run.done_count)),batch:flLeft(run),total}}
 if(startsByItself()&&fl?.state!=='due')return setupStep()?{title:t('Your first to-dos show up here'),wait:false}:flBack()?{title:t('Taking a first look at your last {} days',firstLookDays(fl))}:{title:setupLine(),working:!!aiConnecting()};  // not "All clear" before the first read ends
-if((fl?.state==='waiting'&&fl.why!=='model')||fl?.state==='due')return{title:t('A first look at your last {} days starts soon',firstLookDays(fl)),wait:fl.state==='due'?t(FIRST_LOOK_WAIT.due):aiFailed(fl)&&setupStep()?t(FIRST_LOOK_WAIT.model_check):flWait(fl),detail:aiFailed(fl)?fl.error:''};return null}  // hosted: the needs-you line says what failed, once
+if((fl?.state==='waiting'&&fl.why!=='model')||fl?.state==='due')return{title:t('A first look at your last {} days starts soon',firstLookDays(fl)),wait:fl.state==='due'?t(FIRST_LOOK_WAIT.due):flWait(fl),detail:fl.error};return null}
 // the counts are whole numbers before they reach the page, whatever the status says
 // How far it read, in the robot's voice (messages when not every source is mail). read is what its batches saved
 // (i.read; a bar drawn without one reads its done), batch the size of the one it reads now: "Reading the first 20 of 132
@@ -120,11 +118,10 @@ let reviewWasLive=false,cardWaiting=false;
 // While a review runs, or the first look is about to start, look every 5 s; a card a running review just saved shows at once
 // A hosted Machine waiting for its AI is looked at too: the sign-in on its setup page ends any moment, and the page
 // moves on by itself (a full refresh once the model can run, so reviews turning on shows as well)
-const waitingForAI=()=>!!state?.manage_url&&state.reviews_on===false&&AI_WAITS.includes(state.review_live?.first_look?.why);
-const AI_WAITS=['model','model_check'];  // no AI yet, or one that hasn't answered its check yet
+const waitingForAI=()=>!!state?.manage_url&&state.reviews_on===false&&/^model/.test(state.review_live?.first_look?.why);
 const firstLookPending=()=>['due','waiting'].includes(state?.review_live?.first_look?.state)&&state.review_live.first_look.why!=='model'||!!state?.review_live?.first_dig||waitingForAI();
 setInterval(async()=>{if(document.hidden||!state||!((state.review_live?.runs||[]).length||reviewWasLive||cardWaiting||firstLookPending()))return;try{const live=await request('api/reviews/live');const running=(live.runs||[]).length;
 const before=state.review_live?.cards,fresh=live.cards&&before&&(live.cards.newest!==before.newest||live.cards.count!==before.count);
 if(fresh&&!canRefresh()){reviewWasLive=!!running;cardWaiting=true;state.review_live={...live,cards:before};renderReviewLive();return}  // typing: on the next look, also once the review ended
-const aiReady=waitingForAI()&&!AI_WAITS.includes(live.first_look?.why),aiChanged=(live.ai_connecting?.name||null)!==(state.review_live?.ai_connecting?.name||null);
+const aiReady=waitingForAI()&&!/^model/.test(live.first_look?.why),aiChanged=(live.ai_connecting?.name||null)!==(state.review_live?.ai_connecting?.name||null);
 if((!running&&reviewWasLive)||fresh||aiReady){reviewWasLive=!!running;cardWaiting=false;state.review_live=live;refresh();return}cardWaiting=false;reviewWasLive=!!running;state.review_live=live;renderReviewLive();if(aiChanged)renderNeedsYou()}catch(e){}},5000);

@@ -14,7 +14,7 @@ from machine.config import LOG
 from machine.delivery.push import mailing_sources
 from machine.sources.suggest import suggestions
 from machine.store.events import RUN_SIGNAL_BUDGET, SET_ASIDE_AFTER
-from machine.store.first_look import FIRST_ACTIONS, TIP_SOURCES
+from machine.store.first_look import FIRST_ACTIONS, TIP_SOURCES, note_model_check
 from machine.store.review import FIRST_LOOK_READ, PREVIEW_DAYS
 from machine.text import encoded
 import model_check
@@ -261,7 +261,7 @@ class FirstLookApp:
             if main:
                 found = model_check.check(found, self.config, model, now(), run)
                 with self.store.connect() as db:
-                    model_check.save(db, found)
+                    note_model_check(db, found)
                 LOG.info('model check ok=%s failed=%s', found['ok'], found['failed'])
             with self.store.connect() as db:
                 look = not self.first_look_over(db) and (not found['ok'] or self.first_look_failing(db))
@@ -272,7 +272,7 @@ class FirstLookApp:
             other = model_check.look_for_fallback(found, self.config, model, models, now(), dt.datetime.fromisoformat(now()), run)
             if other is not None:
                 with self.store.connect() as db:
-                    model_check.save(db, other)
+                    note_model_check(db, other)
                 LOG.info('model check fallback=%s', bool(other.get('fallback')))
                 found = other
             return found

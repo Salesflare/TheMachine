@@ -151,6 +151,7 @@ NOT_EXPORTED_HOME = [
     ('.openclaw/browser', 'browser profiles: sign-ins tied to this computer'),
     ('.local/share/wacli', "WhatsApp's device link and its own copy of your chats (your messages are in the export)"),
     ('.openclaw/credentials', 'keys; included only with keys'),
+    ('.claude/.credentials.json', "Claude Code's sign-in, tied to this computer (only its date is read, to notice a new sign-in)"),
 ]
 
 DATA_HOME = '.local/share/personal-assistant'  # the data folder's usual place: exported whole, whatever is in it

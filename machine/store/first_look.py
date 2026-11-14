@@ -130,6 +130,12 @@ def note_first_look(db, look):
         db.execute("INSERT OR REPLACE INTO milestones(name,at,detail) VALUES('first_look_state',?,?)", (now(), detail))
 
 
+def note_model_check(db, found):
+    """The AI's last real check (model_check.py: {model, ok, at, error, ...}), for the first look's gate and the health
+    report."""
+    db.execute('INSERT OR REPLACE INTO milestones(name,at,detail) VALUES(?,?,?)', ('model_check', found['at'], json.dumps(found, sort_keys=True)))
+
+
 def first_magic_done(db):
     """The first look has done its job, so the rest of onboarding (profile, voices, roles, organizations, drafts
     beyond the first) may start: the first card was shown, or a review finished a while ago (one that found no card,
