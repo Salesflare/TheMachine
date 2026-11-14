@@ -11,7 +11,7 @@ it, and Google ends the whole grant for every one of them when any one token is 
 ends this Machine's access; the owner can remove the app at Google or Microsoft too.
 
 Each disconnect leaves a receipt (`revocations.json` next to it: provider, address, when, no token), which Connections
-shows as "Removed, confirmed" once no copy is left here. Older versions kept a sign-in whose revoke Google hadn't
+shows under Disconnected lately once no copy is left here, one row per account (machine/names.py disconnected_rows). Older versions kept a sign-in whose revoke Google hadn't
 confirmed under `revoke:<provider>:<address>`; `retry` now drops those without asking Google.
 
 An account connected before this has its sign-in at the control plane until it is moved here; until then the app asks

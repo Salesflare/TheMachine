@@ -52,7 +52,7 @@ With **Brings in signals** off, it doesn't sync. With **Can do things** off, you
 
 Open the source, **Details**, then **Disconnect**. It stops reading. What it already brought in stays. On a hosted Machine, Google, Microsoft, Microsoft OneDrive, Zoom and Stripe show **Disconnect ↗**, which opens your setup page.
 
-**Disconnected lately** lists Google, Microsoft and Zoom sign-ins you removed. **Removed, confirmed** means the sign-in is gone everywhere. **Pending** says why, and your Machine keeps trying.
+**Disconnected lately** lists the Google, Microsoft, Zoom, Slack, Stripe and Salesforce accounts you removed in the last 30 days, and when. A Google account shows once, also when Google Meet or Docs had a sign-in of its own.
 
 ## Saved sign-ins
 

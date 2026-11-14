@@ -168,6 +168,56 @@ class NeverTheSame(unittest.TestCase):
         self.assertEqual(names.account_card(named, [named], {'account_name': 'Sam Example'}, LABELS)['card_subtitle'], 'Work · Acme · @robin-x')
 
 
+class DisconnectedRows(unittest.TestCase):
+    """Disconnected lately (mail_grants.py receipts) names its rows like the cards above: every sign-in provider there
+    is, kept under an address or under ids (Slack's team and user, Stripe's account), never reads as a key."""
+
+    def receipts(self, provider):
+        return [{'provider': provider, 'email': 'sam@acme.com', 'at': '2026-11-07T10:00:00+00:00', 'state': 'removed'},
+                {'provider': provider, 'email': 'tabc1234:uabc1234', 'at': '2026-11-06T10:00:00+00:00', 'state': 'removed'},
+                {'provider': provider, 'email': 'acct_1abc234', 'at': '2026-11-05T10:00:00+00:00', 'state': 'pending'}]
+
+    def test_every_provider_reads_as_a_name_and_its_kind(self):
+        import mail_grants
+        for provider in mail_grants.PROVIDERS:
+            with self.subTest(provider=provider):
+                rows = names.disconnected_rows(self.receipts(provider))
+                self.assertTrue(rows)
+                for row in rows:
+                    title, subtitle = row['card_title'], row['card_subtitle']
+                    self.assertTrue(title.strip())
+                    self.assertFalse(SLUG.fullmatch(title) and '@' not in title, f'{title!r} reads as a key')
+                    self.assertNotIn(provider if '_' in provider else '\0', title + subtitle)
+                    for value in (title, subtitle, row['provider_name']):
+                        self.assertNotRegex(value, r'tabc1234|uabc1234|acct_|_', f'{value!r} shows an id or a key')
+                    self.assertFalse(names.words(title) & names.words(subtitle), f'{title!r} / {subtitle!r} repeat')
+                    self.assertIn(row['mark'], names.SIGNIN_NAMES)
+                    self.assertIn(row['state'], ('removed', 'pending'))
+
+    def test_a_google_account_shows_once_by_its_provider(self):
+        # the owner removed a Gmail address that had Google Meet signed in too: one row, Google, never google_meet
+        rows = names.disconnected_rows([
+            {'provider': 'google_meet', 'email': 'sam@acme.com', 'at': '2026-11-07T10:00:05+00:00', 'state': 'removed'},
+            {'provider': 'google', 'email': 'Sam@acme.com', 'at': '2026-11-07T10:00:00+00:00', 'state': 'removed'},
+            {'provider': 'microsoft', 'email': 'sam@contoso.com', 'at': '2026-11-01T10:00:00+00:00', 'state': 'removed'},
+            {'provider': 'slack', 'email': 'tabc1234:uabc1234', 'at': '2026-11-02T10:00:00+00:00', 'state': 'removed'},
+            {'provider': 'unknown', 'email': 'x@acme.com', 'at': '2026-11-02T10:00:00+00:00', 'state': 'removed'}])
+        self.assertEqual([(r['card_title'], r['card_subtitle'], r['mark']) for r in rows],
+                         [('sam@acme.com', 'Google account', 'google'), ('Slack', '', 'slack'),
+                          ('sam@contoso.com', 'Microsoft account', 'microsoft')])
+        self.assertEqual(rows[0]['at'], '2026-11-07T10:00:05+00:00')
+
+    def test_the_page_shows_the_row_like_a_connection(self):
+        js = (ROOT / 'dashboard' / 'connections-cards.js').read_text(encoding='utf-8')
+        row = js[js.index('function renderDisconnected'):].split('\n', 2)
+        row = row[0] + row[1]
+        for part in ('connLogo({service:r.mark})', '<span class="conn-name">${r.card_title}</span>', "htmlT('Removed {}',time(r.at,true))"):
+            self.assertIn(part, row)
+        for gone in ('r.email', 'r.provider}', 'Removed, confirmed', 'time(r.at)}'):
+            self.assertNotIn(gone, row)
+        self.assertIn('names.disconnected_rows(', (ROOT / 'machine' / 'store' / 'views.py').read_text(encoding='utf-8'))
+
+
 class StatusCarriesThem(unittest.TestCase):
     def test_the_card_shows_what_the_machine_named_it(self):
         js = (ROOT / 'dashboard' / 'connections-cards.js').read_text(encoding='utf-8')
