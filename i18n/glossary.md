@@ -66,6 +66,7 @@ ClawHub, Claude, Claude Code, Codex, ChatGPT, Trello, Shortcut.
 | learning | inzicht, inzichten, Leren | apprentissage, apprentissages | Erkenntnis, Erkenntnisse, Lernen | aprendizaje, aprendizajes | apprendimento, apprendimenti | aprendizado, aprendizados |
 | error report | foutrapport, foutrapporten | rapport d’erreur, rapports d’erreur | Fehlerbericht, Fehlerberichte | informe de errores, informes de errores | segnalazione di errore, segnalazioni di errore | relatório de erro, relatórios de erro |
 | routine | routine, routines | routine, routines | Routine, Routinen | rutina, rutinas | routine | rotina, rotinas |
+| Stay in touch | Contact houden | Garder le contact | In Kontakt bleiben | Mantenerse en contacto | Restare in contatto | Manter contato |
 
 ## Exceptions
 

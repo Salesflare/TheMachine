@@ -3,9 +3,9 @@ title: Routines
 area: cards
 summary: Work your Machine does on its own, on a rhythm, like a Monday summary of your open deals. It only reads.
 covers: tab:routines
-code: routines.py, routines_app.py, routine_recipe.py, routine_imports.py, routine_patterns.py, routine_changes.py, routine_templates.py, mail_cleanup.py, mail_cleanup_app.py, birthdays.py, birthdays_app.py, birthdays_facebook.py, birthdays_facebook_app.py, reading_digest.py, reading_digest_app.py, subscriptions.py, subscriptions_app.py, dashboard/routines-page.js, dashboard/todos-digest.js, dashboard/todos-cleanup.js, dashboard/todos-facebook-birthdays.js, dashboard/todos-facebook-people.js, dashboard/todos-subs.js
+code: routines.py, routines_app.py, routine_recipe.py, routine_imports.py, routine_patterns.py, routine_changes.py, routine_templates.py, mail_cleanup.py, mail_cleanup_app.py, birthdays.py, birthdays_app.py, birthdays_facebook.py, birthdays_facebook_app.py, reading_digest.py, reading_digest_app.py, subscriptions.py, subscriptions_app.py, stay_in_touch.py, stay_in_touch_app.py, dashboard/routines-page.js, dashboard/todos-digest.js, dashboard/todos-cleanup.js, dashboard/todos-facebook-birthdays.js, dashboard/todos-facebook-people.js, dashboard/todos-subs.js
 order: 10
-keywords: routine, daily digest, interests, automation, scheduled, every week, every morning, report, suggested, digest, newsletter, birthday, facebook birthdays, import birthdays, subscriptions, free trial, renewal, cancel subscription
+keywords: routine, daily digest, interests, automation, scheduled, every week, every morning, report, suggested, digest, newsletter, birthday, facebook birthdays, import birthdays, subscriptions, free trial, renewal, cancel subscription, stay in touch, keep in touch, reach out, check in
 ---
 ## Make one
 
@@ -61,7 +61,13 @@ Friends nobody in your Graph has are counted, with a few names. **Add … as per
 
 Pick **Keep** or **Cancel it** for each. A kept one isn’t asked about again unless its price changes. **Cancel it** gives their cancel page or a draft asking them to cancel, which goes only when you send it. Between runs it checks each day and makes a to-do when a trial or renewal charges within 7 days.
 
-While a template’s routine keeps the template’s words, it runs on its own code, without your AI plan (Spam cleanup first lists new mail from unknown senders in code, and asks your AI one short question only when there is some). A new name keeps that. Once you change its words, it runs like any routine on your words.
+**Stay in touch** nudges you now and then to reach out to someone close, only when there is a real reason. On its card, pick who is in it from a short list of people you write with yourself, both ways, over months. Remove someone with ×.
+
+A nudge comes only when you haven’t talked in much longer than usual and there is something specific to say: news they shared, a promise still open or a message you never answered. It is one to-do with the reason and a short message drafted where you usually talk, in their language. It goes out only when you send it. Nothing to say means no to-do.
+
+It sends at most two nudges a week, one per person a month, and none to someone you talked with lately. **Not needed** on a nudge makes it wait longer for that person, and longer again each time. It never sends a notification, and it stays Personal: never shared with a Work Fleet.
+
+While a template’s routine keeps the template’s words, it runs on its own code, without your AI plan (Spam cleanup first lists new mail from unknown senders in code, and asks your AI one short question only when there is some; Stay in touch asks only about the one or two people it picked). A new name keeps that. Once you change its words, it runs like any routine on your words.
 
 Newsletter cleanup and Spam cleanup still end in the same to-do with a choice per mail. An edited Birthdays gives its result and at most one draft, not a to-do per person. **Back to the template** in **Edit** puts its words back.
 

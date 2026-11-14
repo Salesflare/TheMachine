@@ -62,7 +62,7 @@ LEFT_OUT = {
     'settings, kept by the full export': {
         'enrich_prefs', 'error_feed_prefs', 'follow_up_rules', 'handoff_mail_prefs', 'meet_prefs', 'notify_prefs', 'pacing_prefs',
         'security_prefs', 'team_learning_prefs', 'voice_prefs', 'whatsapp_photo_prefs', 'own_address_choices', 'own_addresses',
-        'own_domains', 'own_address_fetched', 'chat_models', 'digest_interests', 'subs_kept',
+        'own_domains', 'own_address_fetched', 'chat_models', 'digest_interests', 'subs_kept', 'touch_people',
     },
     'photos and logos (images, not knowledge)': {
         'contact_photo_links', 'contact_photo_runs', 'org_logo_retries', 'org_logo_tries', 'person_photo_tries', 'person_photos',

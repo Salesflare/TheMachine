@@ -286,6 +286,8 @@ class RoutinesApp:
                 routine['instructions'] = routine_templates.words(key)
             if key == 'digest':  # what it picks for, on its card to see and edit (reading_digest_app.py)
                 routine['interests'] = self.template('digest').digest_interests()
+            if key == 'touch':  # who is in it and who to add, on its card (stay_in_touch_app.py)
+                routine['touch'] = self.template('touch').touch_view()
             routine['from_openclaw'] = str(routine.pop('origin') or '').startswith('openclaw:')
             routine.pop('accepted_at', None)
             for run in routine['runs'] + ([routine['test']] if routine['test'] else []):  # a run that didn't work says why
