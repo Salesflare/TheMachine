@@ -22,19 +22,21 @@ A quiet line on top of each list says what your Machine updated today, like **Up
 
 The filters you picked show above the list, with **Clear**. On Projects, the list and the board share one Filter. On a phone they open as a sheet.
 
-The order menu sorts the list. People and Organizations go by closeness, newest or oldest contact and name, and Organizations also by size. Projects also go by **Value** and **Close date**. **Download CSV**, under the order menu, saves the tab you're on as a spreadsheet.
+The order menu sorts the list. People and Organizations go by closeness, newest or oldest contact and name, and Organizations also by size. Projects go by last activity, name, stage, **Value** and **Close date**. **Download CSV**, under the order menu, saves the tab you're on as a spreadsheet.
 
 ## Fields and tags
 
 Under Fields on a person, organization or project, click a value to change it: **Save** or Enter keeps it, **Cancel** or Escape leaves it, **Remove** empties it.
 
-**Manage fields** adds or removes fields for all records of that kind. **New field** adds one: text, number, date or a choice from a list.
+**Manage fields** (**Add a field** while there are none) adds or removes fields for all records of that kind. **New field** adds one: text, number, date or a choice from a list.
 
 **+ Tag** adds a tag, like VIP or partner; **×** takes it off. Tags show in the lists and **Filter** finds them.
 
 ## Birthday
 
-A person's birthday shows under Contact, with where it came from: their Google contact, a birthday on Google Calendar (the Birthdays routine saves it for a close contact), a Facebook import, or you. **Edit** sets or corrects it: a month and a day, and the year if you know it (then their age shows too). Yours wins over every source and stays. **Remove** takes it off; a contact or an import doesn't bring it back.
+A person's birthday shows under Contact, with where it came from: their Google contact, a birthday on Google Calendar (the Birthdays routine saves it for a close contact), a Facebook import, your notes, or you. **Edit** sets or corrects it: a month and a day, and the year if you know it (then their age shows too).
+
+Yours wins over every source and stays. **Remove** takes it off; a contact or an import doesn't bring it back.
 
 Without one, **Add birthday** under Fields adds it. The Birthdays routine reads the same birthday the page shows. A birthday is personal: it never goes to your team, also on a shared record.
 

@@ -11,7 +11,7 @@ order: 5
 - On a hosted Machine, organization details are looked up for you, at no cost.
 - On your own computer, it's off until you add a key for a look-up service, like Apollo, People Data Labs or Hunter. See the [configuration guide](https://github.com/Salesflare/TheMachine/blob/main/docs/configuration.md).
 
-Only an organization's web address is sent, never your messages or who you know there. Up to 50 are looked up a day, and each is refreshed every 90 days. Shared sites and mail providers, like gmail.com, are never looked up. People have their own look-up: see [Job title and photo](people.md#job-title-and-photo).
+Only an organization's web address is sent, never your messages or who you know there. A hosted Machine, or one on The Machine Network, looks up to 1,000 a day; otherwise up to 50. Each is refreshed every 90 days. Shared sites and mail providers, like gmail.com, are never looked up. People have their own look-up: see [Job title and photo](people.md#job-title-and-photo).
 
 Without a logo from the look-up, The Machine uses the icon from the organization's own website, saved on your Machine. No logo service learns who you deal with. When it has both, small spots like a to-do's line show the square icon.
 
@@ -21,6 +21,6 @@ When the look-up has them, up to 5 of the organization's specialties show under 
 
 On the organization's page:
 
-- **Edit** to change the name, industry, size, location, founding year, description, website, LinkedIn and what it is to you. Your edits stay. Empty a field to use the looked-up value again.
-- **Wrong company, clear details** if it picked the wrong company.
-- **Look it up again** to fetch fresh details.
+- **Edit** to change the name, industry, size, location, founding year, description, website, LinkedIn, notes and what it is to you. Your edits stay. Empty a field to use the looked-up value again.
+- **Wrong company, clear details**, in **Edit**, if it picked the wrong company.
+- **Look it up again**, shown once they're cleared, fetches fresh details.
