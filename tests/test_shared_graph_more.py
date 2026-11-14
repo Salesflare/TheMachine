@@ -12,6 +12,7 @@ from unittest.mock import patch
 import fleet_trust as ft
 import network_crypto as nc
 import shared_graph as sg
+import shared_graph_kept as sg_kept
 import test_shared_graph as base  # by module: its test classes run in its own file, not again here
 from test_shared_graph import BODY, DEAL, FLEET, HEALTH, PERSONAL, a, ago, fleet, graph, mail
 
@@ -454,6 +455,37 @@ class SharedGraphMore(base.SharedGraph):
             self.assertEqual(sg.groups(db), ['Partner and listing exchanges', 'Investors and buyers'])  # for the next review to reuse
         self.assertEqual(sg.unsure_groups([{'group': 'G', 'suggest': 'team'}, {'group': 'G', 'suggest': 'private'}]),
                          [{'name': 'G', 'suggest': 'private', 'count': 2}])  # a tie: the cautious choice
+
+    def test_what_s_shared_is_worked_out_again_only_when_what_it_reads_changed(self):
+        self.olive_mail()
+        self.own.graph_overview(FLEET)  # the first makes the change counters (in its transaction: nothing kept yet)
+        made, real = [], sg.threads_by_view
+        titles = lambda view: [x['title'] for x in view['threads']]
+        with patch.object(sg, 'threads_by_view', side_effect=lambda db, scope: made.append(1) or real(db, scope)):
+            first = self.own.graph_overview(FLEET)
+            first['threads'].clear()  # each caller's own copy
+            again = self.own.graph_overview(FLEET)
+            self.assertEqual((len(made), titles(again)), (1, ['Re: Renewal quote']))
+            sg_kept.OVERVIEWS.clear()
+            self.assertEqual(self.own.graph_overview(FLEET), again)  # the same as worked out anew
+            with self.own.store.connect() as db:  # the review's bookkeeping on each message: never shown there
+                db.execute('UPDATE events SET analyzed_version=analyzed_version+1,deferrals=deferrals+1')
+            self.own.graph_overview(FLEET)
+            self.assertEqual(len(made), 2)
+            self.add(self.own, mail('work', 20, 'Lee Park <lee@client.example>', 'own1@acme.example', 'Second order', 'Forty more seats.', 0, 't-order'))
+            self.assertEqual(self.own.graph_overview(FLEET)['unsorted'], again['unsorted'] + 1)  # a new message
+            sg.HOLD = 3600
+            self.judge(self.own, ('work-20', 'client', 'Lee asked for more seats'))  # the review's call: within the hold
+            view = self.own.graph_overview(FLEET)
+            self.assertEqual((view['waiting'], view['threads'][0]['why'][:22]), (2, 'Shares within the hour'))  # both called just now
+            self.assertEqual(len(made), 4)
+            sg.HOLD = 0  # the hold is over, nothing else changed
+            view = self.own.graph_overview(FLEET)
+            self.assertEqual((len(made), view['waiting'], titles(view)), (5, 0, ['Second order', 'Re: Renewal quote']))
+            with self.own.store.connect() as db:
+                sg.set_hand(db, self.event_id(self.own, 'work-20'), 'private')  # by hand
+            view = self.own.graph_overview(FLEET)
+            self.assertEqual((len(made), titles(view), [x['title'] for x in view['by_hand']]), (6, ['Re: Renewal quote'], ['Second order']))
 
     def test_share_with_chosen_teammates_from_share_these_reaches_only_them(self):
         self.peers()

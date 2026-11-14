@@ -33,6 +33,7 @@ const overview={sorted:{client:1113,sensitive:265,internal:41,personal:262,unsur
  by_hand:[{...T(71,'Board pack draft','Vandelay','Only you: you chose this','private'),share:'only_you',shared_with:['Kim Lee']}],records:[{node_id:'org:initech',name:'Initech',kind:'org'}],
  rules:[{key:'@stark.example',choice:'private',name:'Stark',at}],preview:{threads:1113,orgs:[{name:'Northwind',key:'@northwind.example',threads:84},{name:'Globex',key:'@globex.example',threads:61},{name:'Umbrella',key:'@umbrella.example',threads:12}],more:212}};
 let noTeam=false;  // nobody OK'd yet: nothing from the team, and nothing goes
+let overviewHeld=null;  // a slow What's shared overview: answered once this resolves
 let fleetStamp=null;  // the status's Fleet change marker: it moves when an admin's OK reached this Machine
 const TID=FL+':m_ada:'+'e'.repeat(32),FILE='f'.repeat(32);
 const thread={subject:'Rollout timeline',at,via:'Ada',messages:[{at,from:'Ada <ada@acme.example>',body:'Here is the plan.',attachments:[{name:'rollout-plan.pdf',size:182000,file:FILE},{name:'all-hands.mp4',size:48000000,too_large:true}]}]};
@@ -58,7 +59,7 @@ const server=createServer(async(req,res)=>{const url=new URL(req.url,'http://fix
  if(url.pathname==='/api/graph'){
   if(url.searchParams.get('node'))return res.end(JSON.stringify(detail()));
   if(url.searchParams.get('thread')===TID)return res.end(JSON.stringify(thread));
-  if(url.searchParams.get('view')==='shared'){assert.equal(url.searchParams.get('fleet'),FL);return res.end(JSON.stringify(overview))}
+  if(url.searchParams.get('view')==='shared'){assert.equal(url.searchParams.get('fleet'),FL);await overviewHeld;return res.end(JSON.stringify(overview))}
   const team=url.searchParams.get('view')==='team';
   return res.end(JSON.stringify({projects:[],quiet:[],new:[],orgs:[],boards:[],sharing,people:team?(noTeam?[]:[lee,robin]):[{...lee,via:undefined}],...(team?{team:true,held:[]}:{})}))}
  if(url.pathname==='/api/fleet')return res.end(JSON.stringify(fleet));
@@ -236,9 +237,21 @@ try{
   assert.match(await page.locator('.graph-own').innerText(),/Acme requires your Work email\./);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
   // What's shared: one place with counts, the first share's look-over, Share these?, what went with why and Unshare, and what stays
+  // drawn before the overview comes: the status, the tiles at their size and the connections, its lists one Loading… box;
+  // once it is here, the numbers fill in and nothing above the lists moves
+  let release;overviewHeld=new Promise(r=>{release=r});
   await page.goto('http://127.0.0.1:'+server.address().port+'/#shared='+FL);
   const pane=page.locator('[data-shared-fleet="'+FL+'"]');
-  await pane.locator('.shared-tile').first().waitFor();
+  await pane.locator('.shared-tiles[aria-busy="true"]').waitFor();
+  assert.equal(await pane.locator('.shared-conns').count(),1);
+  assert.match(await pane.locator('.shared-first[aria-busy="true"]').innerText(),/^Before the first share\s+Loading…$/);
+  assert.match(await pane.locator('[aria-busy="true"]').last().innerText(),/^Loading…$/);
+  // where each box sits in the pane and how tall it is, read at once (the page may still be scrolling to the pane)
+  const rects=()=>pane.evaluate(p=>{const top=p.getBoundingClientRect().top;return ['.shared-status','.shared-conns'].map(s=>{const r=p.querySelector(s).getBoundingClientRect();return [Math.round(r.top-top),Math.round(r.height)]})});
+  const placed=await rects();
+  release();overviewHeld=null;
+  await pane.locator('.shared-tiles:not([aria-busy])').waitFor();
+  assert.deepEqual(await rects(),placed);
   assert.match(await pane.locator('.shared-status .sub').innerText(),/^Starts within the hour\. Keep anything private first\.$/);
   assert.deepEqual(await pane.locator('.shared-tile span').allInnerTexts(),['Client','Sensitive','Not sure','Personal','Internal','Not client','Not sorted yet','Sent']);
   assert.match(await pane.locator('.shared-tile').first().innerText(),/1,113|1\.113|1113/);

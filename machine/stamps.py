@@ -65,6 +65,29 @@ def watch_graph_who(db):
         db.execute(sql)
 
 
+# events_shared: events as the Shared Graph's What's shared reads them (shared_graph_kept.overview): a message in, out, or
+# changed in what it shows (its account, kind, time, title, body, metadata, or deleted or history). Not counted: the
+# review's own bookkeeping on each message (analyzed_version, deferrals), which changes all the time and is never read there.
+EVENTS_SHARED = (
+    "CREATE TRIGGER IF NOT EXISTS stamp_events_shared_insert AFTER INSERT ON events BEGIN "
+    "UPDATE data_stamps SET n=n+1 WHERE name='events_shared'; END",
+    "CREATE TRIGGER IF NOT EXISTS stamp_events_shared_update AFTER UPDATE OF id,account_id,kind,occurred_at,title,body,metadata,"
+    "deleted,history ON events BEGIN UPDATE data_stamps SET n=n+1 WHERE name='events_shared'; END",
+    "CREATE TRIGGER IF NOT EXISTS stamp_events_shared_delete AFTER DELETE ON events BEGIN "
+    "UPDATE data_stamps SET n=n+1 WHERE name='events_shared'; END",
+)
+
+
+def watch_events_shared(db):
+    """events_shared's counter and triggers (when events exists), once."""
+    if not db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='events'").fetchone():
+        return
+    db.execute('CREATE TABLE IF NOT EXISTS data_stamps(name TEXT PRIMARY KEY,n INTEGER NOT NULL)')
+    db.execute("INSERT OR IGNORE INTO data_stamps(name,n) VALUES('events_shared',0)")
+    for sql in EVENTS_SHARED:
+        db.execute(sql)
+
+
 # fleet_view: one counter for what the Fleet's view (fleet.Fleet.view, shared_view: api/fleet) reads, the fleet_ and
 # network_ tables. The dashboard fetches api/fleet for the Fleet's to-dos only once the status says this changed, not every
 # 20 seconds. Not counted: fleet_claims (the to-dos' claims, which the status itself carries), and fleet_meta's Team Graph
