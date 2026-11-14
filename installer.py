@@ -1216,6 +1216,17 @@ def local_rebuild():
     return reindex_running() and local_memory_search()
 
 
+def rebuild_stuck():
+    """A rebuild on local embeddings that does not end by itself (machine/upkeep/memory_rebuild.py: its index in an
+    older input format than its model wants, or tries that keep being cut off): no wait sees it end. None when not."""
+    from machine.upkeep import memory_rebuild
+    try:
+        settings = onboarding.openclaw_settings()
+        return memory_rebuild.stuck(settings, memory_rebuild.agent_dirs(settings, onboarding.openclaw_dir()))
+    except Exception:  # noqa: BLE001 - unknown: waited for as before
+        return None
+
+
 def index_busy():
     """Whether OpenClaw's memory index is running right now: rebuilding (reindex_running) or embedding. None when
     nothing here can tell (no rebuild, no Gateway embedding server and none named in ASSISTANT_EMBEDDING_PORTS, or one
@@ -1253,6 +1264,11 @@ def gateway_idle(before, indent=''):
         if busy:
             quiet_since = None
             rebuilding = local_rebuild()
+            if rebuilding and rebuild_stuck():
+                REBUILD_OUTLASTED = True  # no later wait in this run either
+                say(f"{indent}OpenClaw's memory index rebuild keeps starting over and does not end by itself: not waiting for it before"
+                    f' {before}. The Machine lets it finish on a quiet night (memory_rebuild_hours); the bridge goes in after that.')
+                return False
             if rebuilding and told:
                 told = False
                 say(f'{indent}OpenClaw is rebuilding its memory index on local embeddings; waiting up to {swap_minutes(True)} for it'

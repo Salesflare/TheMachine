@@ -1,6 +1,6 @@
 """install.sh / installer.py against a temporary HOME with stub openclaw and systemctl.
 Nothing here touches the real user's systemd, OpenClaw or data directory."""
-import builtins, json, os, re, shutil, socket, stat, subprocess, sys, tempfile, unittest
+import builtins, json, os, re, shutil, socket, sqlite3, stat, subprocess, sys, tempfile, unittest
 from pathlib import Path
 from unittest import mock
 
@@ -8,6 +8,7 @@ import installer
 
 ROOT = Path(__file__).resolve().parent.parent
 REINDEX_RUNNING = installer.reindex_running  # the real one: InstallerTest.setUp turns it off for every other test
+REBUILD_STUCK = installer.rebuild_stuck  # the same
 STUB = '''#!/bin/sh
 echo "{name} $*" >> "{log}"
 if [ "$*" = "$ASSISTANT_TEST_FAIL" ]; then echo "Synthetic failure" >&2; exit 1; fi
@@ -641,6 +642,41 @@ class InstallerTest(unittest.TestCase):
             ok, took, said, seen = self.idle(lambda t: True)  # outlasted once in this run: not waited for again
             self.assertEqual((ok, took, seen), (False, 0, []))
 
+    def test_a_rebuild_that_never_ends_is_not_waited_for(self):
+        # A real Machine, 2026-11: every try of a full rebuild was cut off by the next turn and started over, so every
+        # update with a changed bridge waited the whole 20 minutes for it, night after night.
+        self.addCleanup(setattr, installer, 'REBUILD_OUTLASTED', False)
+        with mock.patch.object(installer, 'local_rebuild', return_value=True), mock.patch.dict(os.environ, {'ASSISTANT_REBUILD_WAIT': '1200'}), \
+                mock.patch.object(installer, 'rebuild_stuck', return_value={'format_behind': True, 'interrupted': 29}):
+            ok, took, said, seen = self.idle(lambda t: True)
+            self.assertEqual((ok, took, len(seen)), (False, 0, 1))
+            self.assertIn('does not end by itself: not waiting for it before the bridge goes in', said)
+            self.assertNotIn('waiting up to', said)
+            ok, took, said, seen = self.idle(lambda t: True)  # nor before the reload in the same run
+            self.assertEqual((ok, took, seen), (False, 0, []))
+        installer.REBUILD_OUTLASTED = False
+        with mock.patch.object(installer, 'local_rebuild', return_value=False), \
+                mock.patch.object(installer, 'rebuild_stuck', return_value={'format_behind': True, 'interrupted': 29}) as stuck:
+            ok, took, _, _ = self.idle(lambda t: t < 30)  # an index run that is no rebuild: waited for as before
+            self.assertEqual((ok, took), (True, 90))
+            stuck.assert_not_called()
+
+    def test_rebuild_stuck_reads_this_openclaw(self):
+        state = self.tmp / 'state'
+        folder = state / 'agents' / 'main' / 'agent'
+        folder.mkdir(parents=True)
+        with sqlite3.connect(folder / 'openclaw-agent.sqlite') as db:
+            db.execute('CREATE TABLE memory_index_meta (key TEXT PRIMARY KEY, value TEXT NOT NULL)')
+            db.execute('INSERT INTO memory_index_meta VALUES (?, ?)', ('memory_index_meta_v1', json.dumps(
+                {'provider': 'local', 'model': '/models/embeddinggemma-300M-Q8_0.gguf', 'embeddingInputFormatVersion': 0})))
+        (state / 'openclaw.json').write_text(json.dumps({'memory': {'search': {'provider': 'local'}}}))
+        with mock.patch.dict(os.environ, {'OPENCLAW_STATE_DIR': str(state), 'ASSISTANT_OPENCLAW_LOG_DIR': str(self.tmp / 'logs')}), \
+                mock.patch.object(installer, 'rebuild_stuck', REBUILD_STUCK):
+            os.environ.pop('OPENCLAW_CONFIG_PATH', None)
+            self.assertEqual(installer.rebuild_stuck(), {'format_behind': True, 'interrupted': 0})
+            (state / 'openclaw.json').write_text(json.dumps({'memory': {'search': {'provider': 'openai'}}}))
+            self.assertIsNone(installer.rebuild_stuck())
+
     def test_a_rebuild_on_local_embeddings_is_never_swapped_into_or_restarted_through(self):
         # A real Machine, 2026-11-10: the swap went on after the wait, failed on "plugin service stop timed out ...
         # memory-core-index", and the Gateway restart after it hung for its whole TimeoutStopSec and was killed.
@@ -1034,6 +1070,9 @@ class InstallerTest(unittest.TestCase):
         rebuild = mock.patch.object(installer, 'reindex_running', return_value=False)
         rebuild.start()
         self.addCleanup(rebuild.stop)
+        stuck = mock.patch.object(installer, 'rebuild_stuck', return_value=None)  # nor its log of rebuild tries
+        stuck.start()
+        self.addCleanup(stuck.stop)
         for name in ('openclaw', 'systemctl', 'journalctl'):
             path = self.bin / name
             path.write_text(STUB.format(log=self.log, name=name))

@@ -100,6 +100,10 @@ class ModelPacingApp:
             return max(full, key=lambda f: f['until'] or 0)
         if owner:
             return None
+        hold = getattr(self, 'memory_rebuild_hold', None)  # a quiet night for OpenClaw's memory rebuild (memory_rebuild.py)
+        held = hold() if hold else None
+        if held:
+            return held
         found = model_budget.pause(usage, now_s, first=first, signals=signals)
         tracker = getattr(self, 'pacing', None)
         if tracker is None and getattr(self, 'store', None) is not None:
@@ -137,7 +141,8 @@ class ModelPacingApp:
         which window, until when, the sign-in's name. None when they don't wait, or a usage limit holds them (model_pause
         says that)."""
         found = getattr(self, 'review_paused', None)
-        if not found or found.get('limited') or not (self.config.get('review_worker') or {}).get('enabled') or self.fallback_covers():
+        if not found or found.get('limited') or found.get('window') == 'memory' or not (self.config.get('review_worker') or {}).get('enabled') \
+                or self.fallback_covers():
             return None
         if found.get('until') and found['until'] <= time.time():
             return None
