@@ -51,8 +51,9 @@ KINDS = (
              refused=lambda: i18n.t('Pick for each one on the to-do, then confirm.'),
              reads='SELECT * FROM mail_cleanup_items WHERE suggestion_id IN (SELECT value FROM json_each(?))', read_as='have', read_dict=True),
     # Subscriptions and trials (subscriptions.py): Keep or Cancel per subscription. Cancel only drafts; the owner sends it.
-    # Unlike the other two, its Telegram card keeps every choice (close_only no) and an area's digest keeps it (reading no).
-    TodoKind('subs', 'subscriptions', test='is_subs', table='subs_items', quiet=True,
+    # Keep and Cancel live on the dashboard's rows, so its Telegram card has only Mark done, Snooze and Not needed. Unlike
+    # the other two, an area's digest keeps it (reading no): a trial about to charge needs the owner.
+    TodoKind('subs', 'subscriptions', test='is_subs', table='subs_items', quiet=True, close_only=True,
              refused=lambda: i18n.t('Pick Keep or Cancel it for each one on the to-do.')),
     # The Daily digest (reading_digest.py): why each one matters, More or Less like this. Reading, never urgent.
     TodoKind('digest', 'reading_digest', test='is_digest', table='digest_items', quiet=True, reading=True, close_only=True,

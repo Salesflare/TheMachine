@@ -234,6 +234,37 @@ class Subs(unittest.TestCase):
 
     # --- Keep and Cancel -----------------------------------------------------------------------------------------------
 
+    def test_its_card_offers_only_done_snooze_and_not_needed(self):
+        """Keep and Cancel live on the dashboard's rows: the Telegram card has no Do it, Answer or Edit, like a cleanup's."""
+        from machine.cards import controls
+        self.fixture()
+        self.add()
+        row, extra = self.view(self.todos()[0]['id'])
+        shown = [b['action']['value'].rsplit(':', 1)[1] for block in controls({**row, **extra, 'next_action': None})['blocks']
+                 for b in block['buttons'] if b['action']['type'] == 'callback']
+        self.assertEqual(sorted(shown), ['complete', 'reject', 'snooze'])
+
+    def test_a_pick_shows_at_once_on_the_kept_todo_list(self):
+        """The to-dos' views are kept between status polls until a table they read changes (views.CARD_TABLES): a Keep
+        or Cancel on a row shows on the next poll."""
+        self.fixture()
+        self.add()
+        self.store = self.app.store = a.Store(self.store.path)  # a restart: subs_items, made by the first run, is watched now
+        self.store.accounts = self.app.config['accounts']
+        sid = self.todos()[0]['id']
+
+        def listed():
+            with self.store.connect() as db:
+                cards = [dict(db.execute('SELECT * FROM suggestions WHERE id=?', (sid,)).fetchone())]
+                self.store.card_views(db, cards, jobs=False)
+                self.store.card_views(db, cards, jobs=True)
+            return {r['n']: r['choice'] for r in cards[0]['subs']['rows']}
+        first = listed()
+        self.assertEqual(set(first.values()), {None})
+        n = min(first)
+        self.act('subs_pick', suggestion_id=sid, item=n, choice='keep')
+        self.assertEqual(listed()[n], 'keep')
+
     def test_keep_is_remembered_until_the_price_changes(self):
         self.fixture()
         self.add()

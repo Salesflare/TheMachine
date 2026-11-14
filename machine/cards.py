@@ -631,7 +631,7 @@ def controls(row, root=''):
     actions=next_actions.visible_actions({'kind':'menu','actions':row['next_actions']}) if row.get('next_actions') is not None else next_actions.visible_actions(row.get('next_action'))
     if ask_question(row,actions):choices=[('Answer','other'),*([(retry_label(row.get('preparation_reason')),'retry')] if row.get('preparation_status')=='blocked' and not retry_pointless(row) else []),('Mark done','complete'),('Snooze','snooze'),('Not needed','reject')]
     if todo_kinds.close_only(row) and row['status'] not in todo_states.CLOSED:
-        # A kind whose picks and their confirm are on the to-do (todo_kinds.py: a cleanup, the digest); nothing to Do
+        # A kind whose picks and their confirm are on the to-do (todo_kinds.py: a cleanup, the digest, Subscriptions); nothing to Do
         choices = [(label, choice) for label, choice in choices if choice in ('complete','snooze','reject')]
     choices = [(t(label), choice) for label, choice in choices]
     if row['status'] == 'pending' and row.get('labels'):
