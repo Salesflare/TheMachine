@@ -145,6 +145,7 @@ MACHINE_LAYERS = {
     'system_logs': 0,  # the computer's own logs: journald and crash dumps, read only
     'text': 0,         # message parsing
     'timing': 0,       # request timing, shared by web and store
+    'todo_kinds': 0,   # the to-do kinds the core paths ask about; their modules load on first use
     'todo_states': 0,  # every to-do status and its named groups (a leaf)
     'browser': 1,
     'cards': 1,

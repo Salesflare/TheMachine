@@ -64,11 +64,7 @@ from machine.store import message_view
 from machine.store import review_last_look
 from machine.store.review import own_message, REVIEW_SESSION_PREFIX
 from machine.text import _address
-import birthdays_facebook
-import mail_cleanup
 import meeting_prep
-import reading_digest
-import subscriptions
 import bring_in
 import missed_work
 import next_actions
@@ -84,7 +80,7 @@ from timeutil import local_tz, now
 import todo_areas
 import todo_org
 import whatsapp_images
-from machine import todo_states
+from machine import todo_kinds, todo_states
 from machine.owner_error import OwnerError
 import timeutil
 
@@ -460,17 +456,9 @@ def card_reads(db, cards):
                                                   "UNION SELECT task FROM skill_task_decided WHERE task IN (SELECT value FROM json_each(?))", (ids, ids))}
     except sqlite3.OperationalError:
         pass
-    # A mail cleanup's and a digest's items, and the newest handoff of each (handoff_wait): before their tables exist
-    # (a Machine without them yet, or without a Fleet) each card looks as before
-    for key, sql in (('cleanup', 'SELECT * FROM mail_cleanup_items WHERE suggestion_id IN (SELECT value FROM json_each(?))'),
-                     ('digest', 'SELECT suggestion_id,item,feedback FROM digest_items WHERE suggestion_id IN (SELECT value FROM json_each(?))')):
-        try:
-            found = {}
-            for r in db.execute(sql, (ids,)):
-                found.setdefault(r['suggestion_id'], {})[r['item']] = dict(r) if key == 'cleanup' else r
-            pre[key] = found
-        except sqlite3.OperationalError:
-            pass
+    # A kind's items (todo_kinds.reads: a mail cleanup's, a digest's), and the newest handoff of each (handoff_wait):
+    # before their tables exist (a Machine without them yet, or without a Fleet) each card looks as before
+    pre.update(todo_kinds.reads(db, ids))
     try:
         pre['handoffs'] = handoffs_of(db, [c['id'] for c in cards])
     except sqlite3.OperationalError:
@@ -569,15 +557,9 @@ class ViewsStore(ConversationStore):
             act=routine.pop('act')
             extra['routine']=routine
             if act and suggestion.get('status')=='pending':extra['labels']={'accept':ROUTINE_ACT[act]}
-        cleanup=mail_cleanup.view(db,suggestion['id'],[row['metadata'] for row in rows],**({'have':pre['cleanup'].get(suggestion['id'],{})} if pre and 'cleanup' in pre else {}))
-        if cleanup:extra['cleanup']=cleanup  # a routine template's to-do: Keep or Unsubscribe, Spam or Not spam, per item (mail_cleanup.py)
-        digest=reading_digest.view(db,suggestion['id'],[row['metadata'] for row in rows],**({'rows':pre['digest'].get(suggestion['id'],{})} if pre and 'digest' in pre else {}))
-        if digest:extra['digest']=digest  # the Daily digest: why each one matters, More or Less like this (reading_digest.py)
-        subs=subscriptions.view(db,suggestion['id'],[row['metadata'] for row in rows])
-        if subs:extra['subs']=subs  # Subscriptions and trials: Keep or Cancel per subscription (subscriptions.py)
+        # its kind's part (todo_kinds.py): a cleanup's or Subscriptions' picks per item, the digest's pieces, Facebook's import
+        extra.update(todo_kinds.views(db,suggestion['id'],[row['metadata'] for row in rows],pre))
         if meeting_prep.is_briefing(suggestion.get('dedupe_key')):extra['briefing']=True  # a meeting briefing: only for reading (meeting_prep.py)
-        facebook=birthdays_facebook.view(db,suggestion['id'])
-        if facebook:extra['facebook_birthdays']=facebook  # Birthdays' import from Facebook: Import, the preview, Save (birthdays_facebook.py)
         proposal = (not pre or suggestion['id'] in pre['clusters']) and db.execute("SELECT * FROM skill_clusters WHERE suggestion_id=?", (suggestion['id'],)).fetchone()
         if proposal:
             extra['skill_proposal'] = {'name': proposal['name'], 'body': proposal['body'],
