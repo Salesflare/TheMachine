@@ -917,6 +917,7 @@ class NothingOutsideTheSealedFields(unittest.TestCase):
             'voices.text': 'how the owner writes on a channel, learned like a fact',
             'voice_merges.merged_text': 'the same learned channel voice, retained only for undo',
             'suggestions.title_source': 'who wrote the title: auto or user',
+            'todo_moves.reason': "a code word for why a to-do's status moved (machine/store/todo_moves.py)",
             'event_vector_skips.reason': 'a redacted error class (embeddings.EmbeddingError, like http_500)',
             'skill_clusters.description': 'a skill suggested from learned notes', 'skill_clusters.body': 'a skill suggested from learned notes',
             'skill_clusters.reviewed_sha': 'the content hash of the skill the owner saw before and after',
