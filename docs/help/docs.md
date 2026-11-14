@@ -14,7 +14,7 @@ site: Sign in with Microsoft
 - Comments and replies on your docs, and comments that mention you.
 - Tracked changes in your Word files.
 
-The first sync goes back 30 days. Each item links to the people and projects in your [Graph](graph.md). A comment that needs you becomes a to-do.
+The first sync goes back 7 days. Each item links to the people and projects in your [Graph](graph.md). A comment that needs you becomes a to-do.
 
 ## What it can do
 
@@ -79,4 +79,4 @@ It follows its connection's Work or Personal label, like mail. Work docs can rea
 
 ## Remove it
 
-Open **Connections**, then Microsoft OneDrive or Google Docs, **Details** and **Disconnect**. It stops reading. What it already brought in stays.
+Open **Connections**, then Microsoft OneDrive or Google Docs, **Details** and **Disconnect**. It stops reading. What it already brought in stays. On a hosted Machine, **Disconnect ↗** opens your setup page, which holds the sign-in.

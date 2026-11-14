@@ -28,11 +28,15 @@ Microsoft Teams shows twice: under **Chat** for its chats and under **Meetings**
 
 A source you already connected says so in the list, with its account. Pick it to add another one next to it: its form says so and links to the one you have.
 
-Fill in what it needs (a key, an address), pick **Work** with its company or **Personal** (mail and calendars ask only when their address doesn't say), and press **Connect**. A site like LinkedIn or X opens its sign-in in your Machine's browser and goes on by itself once you're in. GitHub, WhatsApp and Codex show a code to enter, and Telegram chats a QR code to scan.
+Fill in what it needs (a key, an address), pick **Work** with its company or **Personal** (mail and calendars ask only when their address doesn't say), and press **Connect**. A site like LinkedIn or X opens its sign-in in your Machine's browser and goes on by itself once you're in. GitHub, WhatsApp and Codex show a code to enter, and Telegram chats and Signal chats a QR code to scan.
 
 **Cancel** stops adding it. Left before it finished? Open **Connections** again, on any device, and it picks up at the same step. Once connected, your Machine starts reading it right away and shows how its first sync goes.
 
-On a hosted Machine, Google, Microsoft, Microsoft OneDrive, Zoom, Stripe and Intercom sign in right here: pick **Work** or **Personal** and press **Sign in**. You come back to this form, which shows how it went. GitHub, WhatsApp, Codex, Telegram chats and your Android phone show their code here too.
+On a hosted Machine, sources with a sign-in of their own sign in right here: Google, Microsoft (Outlook, OneDrive and Teams), Google Meet, Google Docs, Slack, Zoom, Stripe, Intercom, Salesforce and Trello.
+
+Pick **Work** or **Personal** and press its sign-in button, like **Sign in with Google**. You come back to this form, which shows how it went. GitHub, WhatsApp, Codex, Telegram chats and your Android phone show their code here too.
+
+On your own computer, the same sources sign in once your Machine is paired with your account: press **Pair this Machine** the first time. Some also have another way, like your own app or a key.
 
 **Reconnect** on a source and in **Needs you** opens the same form. On your own computer, `assistant connect` does the same in a terminal.
 
@@ -50,9 +54,9 @@ With **Brings in signals** off, it doesn't sync. With **Can do things** off, you
 
 ## Remove one
 
-Open the source, **Details**, then **Disconnect**. It stops reading. What it already brought in stays. On a hosted Machine, Google, Microsoft, Microsoft OneDrive, Zoom and Stripe show **Disconnect ↗**, which opens your setup page.
+Open the source, **Details**, then **Disconnect**. It stops reading. What it already brought in stays. On a hosted Machine, a source whose sign-in your setup page holds (Google, Microsoft, Google Meet, Slack, Zoom, Stripe and Salesforce) shows **Disconnect ↗**, which opens your setup page.
 
-**Disconnected lately** lists the Google, Microsoft, Zoom, Slack, Stripe and Salesforce accounts you removed in the last 30 days, and when. A Google account shows once, also when Google Meet or Docs had a sign-in of its own. Each shows under its own kind: a Google or Microsoft account under **Email**, Slack under **Chat**.
+**Disconnected lately** lists the Google, Microsoft, Zoom, Slack, Stripe and Salesforce accounts you removed in the last 30 days, and when. Until the service confirms, it says Pending and keeps trying. A Google account shows once, also when Google Meet or Docs had a sign-in of its own. Each shows under its own kind: a Google or Microsoft account under **Email**, Slack under **Chat**.
 
 ## Saved sign-ins
 

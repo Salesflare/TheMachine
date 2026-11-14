@@ -22,7 +22,7 @@ Sign in with Stripe, the easy way:
 2. Press **Sign in with Stripe**. Stripe asks which account, and shows what The Machine may read.
 3. Press **Install**. You're back where you started, and Stripe is connected.
 
-Or paste a restricted key instead:
+On your own computer, you can paste a restricted key instead:
 
 1. In Stripe, create a restricted key with Read on Events, Customers and Account, and None on everything else.
 2. Find your account ID (acct_...) under Settings, Business details.
@@ -46,7 +46,7 @@ Stripe connected through a service whose one key opens other apps too can't be s
 ## Remove it
 
 - In the dashboard: **Connections**, open Stripe, **Details**, then **Disconnect**. What it already brought in stays.
-- On a hosted Machine you can also press **Remove** next to it on your setup page.
+- On a hosted Machine, Stripe you signed in to shows **Disconnect ↗**, which opens your setup page: press **Remove** next to it.
 - Shared with a Fleet: **Stop sharing** on the Fleet tab first.
 
 ## Revoke it in Stripe

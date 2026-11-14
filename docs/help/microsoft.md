@@ -18,7 +18,7 @@ Mail in Other and newsletters get a quick look first: sender, subject and a few 
 
 - An email from a to-do, only after you approve it. It goes out from the mailbox's own address, not an alias.
 - A reply goes into the Outlook conversation of the email it answers.
-- When you snooze a to-do about an email, the thread's messages move to a Snoozed folder in Outlook and come back when the to-do does.
+- After a reply goes out, the thread's messages move to a Snoozed folder in Outlook for a few days (3 unless the to-do says otherwise) and come back to the Inbox then, or sooner when someone answers. The review says so before you send.
 
 The calendar is never changed.
 

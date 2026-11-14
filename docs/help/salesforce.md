@@ -24,7 +24,7 @@ On a hosted Machine:
 2. Open Salesforce and press **Connect Salesforce**.
 3. Sign in to Salesforce and allow The Machine (made by Salesflare).
 
-Or in the dashboard: **Connections**, **Customers**, pick Salesforce and press **Sign in with Salesforce**.
+Or in the dashboard: **Connections**, **Customers**, pick Salesforce and press **Sign in with Salesforce**. On your own computer, pair it with your account first.
 
 Your Salesforce user needs API access, which most editions include.
 
@@ -47,7 +47,7 @@ Press **Turn off** to stop. A connection your Fleet shares only reads.
 ## Remove it
 
 - In the dashboard: **Connections**, open Salesforce, **Details**, then **Disconnect**. What it already brought in stays.
-- On a hosted Machine you can also press **Remove** next to it on your setup page.
+- On a hosted Machine, **Disconnect ↗** there opens your setup page: press **Remove** next to it.
 
 ## Revoke it in Salesforce
 
