@@ -27,7 +27,7 @@ Nothing. It only reads the log on your own Machine.
 ## Connect it
 
 - On a hosted Machine it is on your setup page, under **More sources**, as Machine health. One per Machine.
-- On your own computer: run `assistant connect gateway`.
+- On your own computer: **Connections**, **Other**, Machine health. Or run `assistant connect gateway`.
 
 ## Remove it
 
