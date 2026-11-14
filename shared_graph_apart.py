@@ -25,7 +25,7 @@ TIMEOUT = 900  # seconds: a child that takes longer is stopped, and this round c
 
 class _Plain(pickle.Unpickler):
     def find_class(self, module, name):
-        raise pickle.UnpicklingError(f'not a plain value: {module}.{name}')
+        raise pickle.UnpicklingError(module, name)  # never shown: run() logs only the error's type
 
 
 def _loads(data):
