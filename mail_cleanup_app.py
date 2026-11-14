@@ -217,6 +217,8 @@ class MailCleanupApp:
             return True
         if key == 'digest':  # reading_digest_app.py: plain code first, one small model call only over new newsletters
             return self.digest_template_run(run)
+        if key == 'subscriptions':  # subscriptions_app.py: plain code first, one small model call only over candidates
+            return self.subs_template_run(run)
         if key == 'birthdays':  # plain code too (birthdays_app.py); Outlook's Birthdays calendar is read in it
             self.routine_spawn(lambda _: self.birthdays_run(run), run['id'])
             self.birthdays_facebook_spawn(self.birthdays_facebook_offer, run)  # once: Import birthdays from Facebook (birthdays_facebook_app.py)

@@ -29,6 +29,7 @@ from machine.sources.whatsapp import owner_whatsapp_chats, reply_spots
 import mail_cleanup
 import meeting_prep
 import reading_digest
+import subscriptions
 from models import model_ready
 import next_actions
 from machine.store import outcomes
@@ -450,6 +451,8 @@ class CardActionsApp:
             with self.store.connect() as db:
                 if mail_cleanup.is_cleanup(db, args.get('suggestion_id')):
                     raise ValueError(i18n.t('Pick for each one on the to-do, then confirm.'))
+                if subscriptions.is_subs(db, args.get('suggestion_id')):  # Cancel only drafts; the owner sends it
+                    raise ValueError(i18n.t('Pick Keep or Cancel it for each one on the to-do.'))
                 if reading_digest.is_digest(db, args.get('suggestion_id')):
                     raise ValueError(i18n.t('A digest is only for reading.'))
                 briefing = db.execute('SELECT dedupe_key FROM suggestions WHERE id=?', (args.get('suggestion_id'),)).fetchone()

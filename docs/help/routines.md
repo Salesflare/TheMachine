@@ -3,9 +3,9 @@ title: Routines
 area: cards
 summary: Work your Machine does on its own, on a rhythm, like a Monday summary of your open deals. It only reads.
 covers: tab:routines
-code: routines.py, routines_app.py, routine_recipe.py, routine_imports.py, routine_patterns.py, routine_changes.py, routine_templates.py, mail_cleanup.py, mail_cleanup_app.py, birthdays.py, birthdays_app.py, birthdays_facebook.py, birthdays_facebook_app.py, reading_digest.py, reading_digest_app.py, dashboard/routines-page.js, dashboard/todos-digest.js, dashboard/todos-cleanup.js, dashboard/todos-facebook-birthdays.js, dashboard/todos-facebook-people.js
+code: routines.py, routines_app.py, routine_recipe.py, routine_imports.py, routine_patterns.py, routine_changes.py, routine_templates.py, mail_cleanup.py, mail_cleanup_app.py, birthdays.py, birthdays_app.py, birthdays_facebook.py, birthdays_facebook_app.py, reading_digest.py, reading_digest_app.py, subscriptions.py, subscriptions_app.py, dashboard/routines-page.js, dashboard/todos-digest.js, dashboard/todos-cleanup.js, dashboard/todos-facebook-birthdays.js, dashboard/todos-facebook-people.js, dashboard/todos-subs.js
 order: 10
-keywords: routine, daily digest, interests, automation, scheduled, every week, every morning, report, suggested, digest, newsletter, birthday, facebook birthdays, import birthdays
+keywords: routine, daily digest, interests, automation, scheduled, every week, every morning, report, suggested, digest, newsletter, birthday, facebook birthdays, import birthdays, subscriptions, free trial, renewal, cancel subscription
 ---
 ## Make one
 
@@ -17,7 +17,7 @@ Without a time it runs at 8:00. The time is on your Machine's clock. Its first r
 
 ## Templates
 
-Under **Templates** at the bottom of Routines, **Add** turns on a ready-made routine. It runs once right away, then every morning at 7:30 (Spam cleanup every hour). Its card shows its words like any routine, and **Edit** changes them or its name.
+Under **Templates** at the bottom of Routines, **Add** turns on a ready-made routine. It runs once right away, then every morning at 7:30 (Spam cleanup every hour, Subscriptions and trials once a month). Its card shows its words like any routine, and **Edit** changes them or its name.
 
 When a lot of newsletters come in and Newsletter cleanup is off (25 or more in a week, from at least 5 senders), a line above your to-dos says how many came and what it would do, with **Turn it on** and **No thanks**.
 
@@ -56,6 +56,10 @@ It never reads again by itself: **Import again** on the to-do does. The browser 
 Friends nobody in your Graph has are counted, with a few names. **Add … as personal contacts** adds them all at once, also after Save: each with their name and birthday, never shared with a Work Fleet. A name someone in your Graph already has, or someone you deleted permanently had, is skipped. Birthday reminders still only come for people you write to.
 
 **Undo** on the to-do takes exactly those people away again, also after **Import again**.
+
+**Subscriptions and trials** reads your receipts, invoices and renewal notices once a month and puts your subscriptions in one to-do: what each costs, when it charges next, and a flag when a trial ends or a price goes up. Only ones it is sure of are listed. When nothing is found, there is no to-do.
+
+Pick **Keep** or **Cancel it** for each. A kept one isn’t asked about again unless its price changes. **Cancel it** gives their cancel page or a draft asking them to cancel, which goes only when you send it. Between runs it checks each day and makes a to-do when a trial or renewal charges within 7 days.
 
 While a template’s routine keeps the template’s words, it runs on its own code, without your AI plan (Spam cleanup first lists new mail from unknown senders in code, and asks your AI one short question only when there is some). A new name keeps that. Once you change its words, it runs like any routine on your words.
 

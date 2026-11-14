@@ -569,8 +569,8 @@ class Cleanup(unittest.TestCase):
         # hosted Gmail reads only: Spam cleanup still adds, reads the mail, and Spam on its to-do is the owner's own step
         # in Gmail, with the mail's link; nothing is written to the mailbox and no permission is asked for
         templates = self.app.routines_view()['templates']
-        self.assertEqual([x['key'] for x in templates], ['newsletters', 'spam', 'digest', 'birthdays'])
-        self.assertEqual([x.get('needs') for x in templates], [None, None, None, None])
+        self.assertEqual([x['key'] for x in templates], ['newsletters', 'spam', 'digest', 'birthdays', 'subscriptions'])
+        self.assertEqual([x.get('needs') for x in templates], [None, None, None, None, None])
         self.add('spam')
         self.mail('Growth Team <seo@ranks.example>', 'Page one on Google in 30 days', hours_ago=-0.01)
         with self.store.connect() as db:

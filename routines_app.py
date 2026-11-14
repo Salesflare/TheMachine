@@ -986,6 +986,10 @@ class RoutinesApp:
                 self.routine_offers_step()  # a few times a day: offer a mail cleanup template (mail_cleanup_app.py)
             except Exception as error:
                 loop_failed(LOG, 'routine offers', error)
+            try:
+                self.subs_soon_step()  # once a day: a trial or renewal within 7 days (subscriptions_app.py)
+            except Exception as error:
+                loop_failed(LOG, 'subscriptions soon', error)
 
     @staticmethod
     def routine_why(error):
