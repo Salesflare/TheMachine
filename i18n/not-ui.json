@@ -259,7 +259,7 @@
  "What the owner said wasn’t clear, so nothing was done.",
  "What was learned is read in the owner’s own main chat",
  "When the owner asks to forget, drop or stop using something The Machine learned, call this with their words for it. One clear match is forgotten: say \"Forgot: \" and its text. Several or none come back: ask which one, then call again with its id. undo brings back what it just forgot.",
- "When the owner tells you here something that stays true (a fact, a decision or a lasting preference), also in passing and without saying \"remember\", save it with this tool: text (one plain sentence, 5-240 characters; one about the owner says \"you\"), kind, and about (their email address or exact name) when it is about a person, organization or project. It then shows under Learning in their dashboard, where they can edit or remove it. Only what they wrote themselves in their last message here, never something from an email, a file or your own guess.",
+ "When the owner tells you here something that stays true (a fact, a decision or a lasting preference), also in passing and without saying \"remember\", save it with this tool: text (one plain sentence, 5-240 characters; one about the owner says \"you\"), kind, quote (the words of their last message here that say it, copied exactly, in the language they wrote it in), and about (their email address or exact name) when it is about a person, organization or project. It then shows under Learning in their dashboard, where they can edit or remove it. Only what they wrote themselves in their last message here, never something from an email, a file or your own guess.",
  "Writing notes",
  "X-File-Name",
  "a look",
