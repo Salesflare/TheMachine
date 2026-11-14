@@ -465,9 +465,11 @@ class FactsStore:
         like a note's fact, and can be a rule. kind contact: how to reach one person (their phone or email), from a note
         or the owner's chat: it goes on that person's record when contact_facts can tell who for certain, else it is a fact.
         quote: the owner's own words the fact is in, verbatim from the message it cites (the note's text, or said_text:
-        what they wrote in their chat, held in memory by the service). A fact from one of the owner's messages is kept
-        only when the quote is in it (text.quoted_in: case, spacing, quote marks, dashes and Unicode forms aside), and
-        keeps that stretch as its source; otherwise nothing is saved and it is logged, never an error for the owner."""
+        what they wrote in their chat, held in memory by the service). A fact or a rule (draft) from one of the owner's
+        messages is kept only when the quote is in it (text.quoted_in: case, spacing, quote marks, dashes and Unicode
+        forms aside), and keeps that stretch as its source; otherwise nothing is saved and it is logged, never an error
+        for the owner. A rule steers every later task of its kind, so it needs the owner's own words as much as a fact
+        does, and a note that only points at a message ("do what they ask") has no words that say one."""
         text = ' '.join(str(text or '').split())
         contact, kind = kind == contact_facts.KIND, 'fact' if kind == contact_facts.KIND else kind
         notes = source is not None and str(source).startswith('notes:') and str(decision_id).startswith(str(source) + ':') and not replaces
@@ -502,7 +504,7 @@ class FactsStore:
             # The words it cites: the note's (a new one, or the newer note that corrects them), or the owner's chat
             # message. A condense of facts already kept, a connected AI's and one from the owner's notes cite none.
             chat = said is True and not originals
-            if storage == 'fact' and not by_ai and not notes and (chat or 'feedback' in note.keys()):
+            if storage in ('fact', 'draft') and not by_ai and not notes and (chat or 'feedback' in note.keys()):
                 quote = quoted_in(quote, said_text if chat else note['feedback'])
                 if not quote:
                     LOG.info('fact not saved: its quote is not in the message it cites from=%s', 'chat' if chat else 'note')

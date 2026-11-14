@@ -31,10 +31,11 @@ class SkillsFromNotes(unittest.TestCase):
         self.notes = []
         for i in range(12):
             sid = self.store.suggest(f'swap{i}', f'Answer listing swap {i}', 'They agreed.', [i + 1])['id']
-            self.store.decide(sid, 'other', f'note {i}', f'n{i}', 'dashboard')
+            self.store.decide(sid, 'other', f'for listing exchanges rule number {i} holds', f'n{i}', 'dashboard')
             with self.store.connect() as db:
                 decision = db.execute("SELECT id FROM decisions WHERE suggestion_id=? AND feedback!=''", (sid,)).fetchone()['id']
-            self.notes.append(self.store.remember_fact(f'For listing exchanges, rule number {i} holds.', decision, 'draft')['id'])
+            self.notes.append(self.store.remember_fact(f'For listing exchanges, rule number {i} holds.', decision, 'draft',
+                                                         quote=f'rule number {i} holds')['id'])
 
     def propose(self, ids, **more):
         return self.app.action('remember_fact', {'kind': 'skill', 'name': 'Listing exchanges', 'description': 'When a listing exchange is agreed.',

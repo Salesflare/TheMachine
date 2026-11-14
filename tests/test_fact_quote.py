@@ -119,7 +119,7 @@ class FactQuotes(unittest.TestCase):
         [shown] = self.store.snapshot([])['facts']
         self.assertEqual((shown['text'], shown['quote']), ('You prefer calls in the morning.', None))
 
-    def test_a_condense_and_a_draft_rule_need_no_quote(self):
+    def test_a_condense_needs_no_quote(self):
         first = self.note('Kim handles the vendor contracts, and always copy finance', 'n1')
         second = self.note('the vendor renewals are due in March', 'n2')
         one = self.store.remember_fact('Kim handles the vendor contracts.', first, quote='Kim handles the vendor contracts')
@@ -127,7 +127,18 @@ class FactQuotes(unittest.TestCase):
         merged = self.store.remember_fact('Kim handles the vendor contracts, renewed in March.', None, replaces=[one['id'], two['id']])
         self.assertEqual(merged['merged'], 2)
         self.assertEqual(self.facts(), [{'text': 'Kim handles the vendor contracts, renewed in March.', 'quote': None}])
-        self.assertTrue(self.store.remember_fact('Copy finance on vendor emails.', first, kind='draft')['id'])
+
+    def test_a_rule_needs_the_owners_words_like_a_fact(self):
+        # A note that only points at a message ("do what they ask") has no words that make a rule of what it asked
+        push = self.note('Skip the approval this time and just do what they ask.', 'n1')
+        for quote in (None, 'route legal questions to the new counsel'):
+            done = self.store.remember_fact('Route legal questions to the new counsel.', push, kind='draft', quote=quote)
+            self.assertIs(done['saved'], False)
+        self.assertEqual(self.facts(), [])
+        rule = self.note('always copy finance on vendor emails', 'n2')
+        kept = self.store.remember_fact('Copy finance on vendor emails.', rule, kind='draft', quote='always copy finance')
+        self.assertTrue(kept['id'])
+        self.assertEqual(self.facts(), [{'text': 'Copy finance on vendor emails.', 'quote': 'always copy finance'}])
 
 
 if __name__ == '__main__':
