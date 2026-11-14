@@ -24,6 +24,7 @@ import re
 import fleet_requests
 from i18n import t
 from machine.owner_error import OwnerError
+from machine.kinds import SEND
 
 LOG = logging.getLogger('personal-assistant')
 KIND = 'review'
@@ -38,7 +39,7 @@ TITLE, NOTE, SUBJECT, BODY, TO, COMMENT = 120, 300, 300, 8000, 300, 1000
 STAGES = ('approved', 'changes', 'commented', 'declined')  # a reviewer's answer
 OPEN = ('asked', 'waiting')  # the owner's request, before an answer
 CLOSED_IN = ('withdrawn', 'declined', 'expired')  # a review to-do that takes no more answers
-DRAFT_KINDS = ('email', 'linkedin', 'slack', 'x', 'whatsapp', 'telegram', 'signal', 'intercom', 'doc_reply')
+DRAFT_KINDS = SEND
 
 
 def ensure(db):

@@ -6,6 +6,7 @@ import re
 
 import i18n
 import locale_prefs
+from machine.kinds import SEND
 from machine.sources.android import android_app_shown
 from machine.sources.slack import SLACK_ID
 import next_actions
@@ -387,7 +388,7 @@ def card(row):
     return ('**' + title + '**\n\n' + body + source + ('\n\n' + status if status else '')).strip()
 
 
-CARD_DRAFT_KINDS = ('email', 'linkedin', 'slack', 'x', 'whatsapp', 'telegram', 'signal', 'intercom', 'doc_reply')
+CARD_DRAFT_KINDS = SEND
 
 
 ACTION_BUSY = ('queued', 'sending', 'sent', 'uncertain', 'local_preparation', 'paused', 'undoing', 'undone')
@@ -646,7 +647,7 @@ def controls(row, root=''):
         for action in actions:
             state=action.get('state') or row.get('action_status',{})
             if action['kind']=='finish' and state.get('status')=='done':continue
-            if action['kind'] in ('email','email_demo','linkedin','slack','x','whatsapp','telegram','signal','intercom','doc_reply','merge','prepare','finish') and not action_busy(state):
+            if action['kind'] in (*SEND,'email_demo','merge','prepare','finish') and not action_busy(state):
                 if shown and shown['full'] and shown['action']['revision']==action['revision']:
                     # The card shows this draft in full: Send confirms it, Edit opens it in the dashboard editor.
                     buttons.append({'label':next_actions.label(action),'action':{'type':'callback','value':f"assistant:{row['id']}:confirm_{action['revision']}"}})
