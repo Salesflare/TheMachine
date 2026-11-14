@@ -136,6 +136,7 @@ def loads_module(found, wanted):
 # it. Lazy imports inside a function count too.
 MACHINE_LAYERS = {
     'action_basis': 0,  # what allowed each outward step, recorded for Activity (never a check)
+    'ai_training': 0,  # whether the owner's AI plan trains on chats, and where to turn that off (a leaf)
     'actions': 0,      # the *_ACTIONS sets, the security boundary
     'bridge_wait': 0,  # a changed bridge the nightly update could not put in yet (a leaf, shared with installer.py)
     'config': 0,

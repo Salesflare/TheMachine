@@ -62,4 +62,7 @@ function renderModelPanel(){const m=state.model_status,box=$('#settings-model');
  // "unknown" count, only the way to ChatGPT's usage page; a team plan's resets are under its workspace there.
  const team=/team|business|enterprise|edu/i.test(m.plan||''),resets=r?html`<div class="list settings-list"><div><span class="grow"><strong>${t('Resets available: {}',r.available)}</strong><small>${r.available?t('A reset starts your ChatGPT usage limits over.')+(expiry?' '+t('The first one expires {}.',localeDate(new Date(expiry*1000),DL,{month:'short',day:'numeric',year:'numeric'})):''):t('Your plan has no usage limit resets right now.')}</small></span>${resetAction(m)}</div></div>`
   :m.usage_page?html`<div class="list settings-list"><div><span class="grow"><strong>Usage limit resets</strong><small>${t(team?'ChatGPT shows them under your team workspace.':'ChatGPT shows them.')}</small></span>${resetAction(m)}</div></div>`:'';
- setHTML($('#model-panel'),html`${head}${limitNote(m)}${m.claude_plan||own?(m.windows||[]).length?bars:'':html`${bars}${resets}`}`)}
+ // A personal plan that trains on chats by default (machine/ai_training.py): one quiet line to the provider's own
+ // switch, and Done, which hides it for good. Nothing for any other plan, a key or an unknown plan.
+ const tr=state.ai_training,train=tr?.state==='todo'&&safeURL(tr.url)?html`<p class="ai-train"><a href="${safeURL(tr.url)}" target="_blank" rel="noopener">${t('Turn off training with your data')} ↗</a><button type="button" class="link" data-ai-train-done="${tr.provider}">${t('Done')}</button></p>`:'';
+ setHTML($('#model-panel'),html`${head}${train}${limitNote(m)}${m.claude_plan||own?(m.windows||[]).length?bars:'':html`${bars}${resets}`}`)}

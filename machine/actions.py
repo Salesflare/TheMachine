@@ -28,6 +28,7 @@ CONNECT_ACTIONS = (
 
 OWNER_ACTIONS = {
     *CONNECT_ACTIONS,
+    'ai_training_done',
     'bind_feedback_prompt',
     'board_default',
     'board_delete',
@@ -461,6 +462,7 @@ DASHBOARD_ACTIONS = frozenset({
     *SUPPORT_ACTIONS,
     *TALK_ACTIONS,
     *VOICE_ACTIONS,
+    'ai_training_done',
     'app_push_register',
     'app_push_unregister',
     'area_digest',

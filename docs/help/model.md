@@ -8,6 +8,8 @@ order: 5
 ---
 **Settings**, **Model** shows which AI model does your **Background work** and how you're signed in, like with ChatGPT.
 
+A personal ChatGPT or Claude plan may train on your chats by default: **Turn off training with your data** opens that setting at the provider, and **Done** hides the line.
+
 ## Model and thinking for chats
 
 Under **Chats**, pick the model and thinking level for your to-do chats and Help. You only see the models and levels your sign-in offers.
