@@ -5,6 +5,7 @@ summary: Dove trovare ogni impostazione, dalla modalità chiara alla sicurezza e
 covers: settings:general
 code: dashboard.html
 order: 1
+translated: 00e42f9aeb395d21
 ---
 Apri **Impostazioni** con l’ingranaggio in alto. Le sue schede:
 

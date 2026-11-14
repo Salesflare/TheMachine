@@ -5,6 +5,7 @@ summary: Reuniones del enlace para compartir de un calendario: Proton Calendar, 
 covers: connector:proton_calendar, connector:ics
 code: ics_feed.py, ical.py, machine/sources/calendar_setup.py
 order: 15
+translated: b3bcf33b5c027baf
 ---
 ## Qué lee
 

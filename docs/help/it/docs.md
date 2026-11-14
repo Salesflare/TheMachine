@@ -5,6 +5,7 @@ summary: Commenti, menzioni, revisioni e condivisioni sui tuoi file Word in OneD
 covers: connector:docs
 code: connectors/docs.py, doc_writes.py, next_actions.py, onboarding.py
 site: Sign in with Microsoft
+translated: 6db75e46d29fc2e3
 ---
 ## Cosa legge
 

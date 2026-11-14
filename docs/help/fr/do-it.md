@@ -5,6 +5,7 @@ summary: Faire prépare le travail. Rien n’est envoyé, payé ou modifié tant
 covers: do-it
 code: dashboard.html, next_actions.py, assistant.py
 order: 2
+translated: 6284dddb10c7b332
 ---
 ## Ce que fait Faire
 

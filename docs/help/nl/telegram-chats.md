@@ -4,6 +4,7 @@ area: connections
 summary: Je Telegram-chats en kleine groepen, gelezen als een apparaat van je eigen account. Antwoordt pas na je goedkeuring.
 covers: connector:telegram
 code: onboarding.py, telegram_mirror.py, telegram_store.py, next_actions.py
+translated: da17aef29a380002
 ---
 ## Wat hij leest
 

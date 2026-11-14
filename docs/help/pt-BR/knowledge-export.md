@@ -5,6 +5,7 @@ summary: Leve o que sua Machine aprendeu para qualquer outra IA, em arquivos sim
 covers: knowledge-export
 code: machine/export/knowledge.py, machine/app/knowledge_export.py, cli.py
 order: 6
+translated: 6a917f8ee2aabaa9
 ---
 Tudo o que sua Machine aprende é seu. Leve para outra IA, ou guarde, mesmo que pare de usar The Machine.
 

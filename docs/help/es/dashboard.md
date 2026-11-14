@@ -5,6 +5,7 @@ summary: Para qué sirve cada parte del panel, de Tareas a Conexiones.
 covers: tab:events, tab:feedback
 code: dashboard.html
 order: 4
+translated: d41a4a0017765f9e
 ---
 ## Las pestañas
 

@@ -5,6 +5,7 @@ summary: I canali e i messaggi diretti di cui fai parte. Invia un messaggio dire
 covers: connector:slack
 code: assistant.py, next_actions.py, onboarding.py, slack_api.py
 site: Connect, Remove
+translated: 8d275e75083292ba
 ---
 ## Cosa legge
 

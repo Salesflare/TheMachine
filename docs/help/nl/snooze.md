@@ -5,6 +5,7 @@ summary: Laat een to-do later terugkomen. Op een werkdag, op het tijdstip dat ji
 covers: snooze
 code: dashboard.html, assistant.py
 order: 3
+translated: e6681ab225810e81
 ---
 ## Een to-do snoozen
 

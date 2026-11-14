@@ -5,6 +5,7 @@ summary: Receba suas tarefas no Telegram, com os mesmos botões do painel, por u
 covers: telegram
 code: assistant.py, onboarding.py, cli.py
 site: Add my bot, Add more any time, Disconnect Telegram
+translated: a2b74e4831832977
 ---
 ## O que ele faz
 

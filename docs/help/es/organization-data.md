@@ -5,6 +5,7 @@ summary: Sector, tamaño, ubicación y un logo junto a cada organización, busca
 covers: enrichment
 code: enrichment.py, graph.py, dashboard.html
 order: 5
+translated: a759d8e2c6274792
 ---
 ## De dónde salen
 

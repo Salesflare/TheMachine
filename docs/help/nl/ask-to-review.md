@@ -5,6 +5,7 @@ summary: Vraag een teamgenoot of iemand in je Familie om naar een to-do te kijke
 covers: ask-to-review
 code: fleet_reviews.py, dashboard/todos-review.js
 order: 4
+translated: 58823adef1b1f51b
 ---
 ## Vraag iemand om een to-do te reviewen
 

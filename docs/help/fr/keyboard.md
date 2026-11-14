@@ -5,6 +5,7 @@ summary: Accédez à tout le tableau de bord au clavier : la palette, les touche
 covers: keyboard
 code: dashboard.html
 order: 5
+translated: 9d9a056e308ced41
 ---
 ## La palette
 

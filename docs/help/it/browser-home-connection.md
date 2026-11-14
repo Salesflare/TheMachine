@@ -6,6 +6,7 @@ code: browser_login.py
 site: Tailscale, Sign in to Tailscale, Use this exit node, Open it in Tailscale, Test it, Sign in again, Stop using it, Sign it out of Tailscale too
 keywords: tailscale, exit node, home internet, ip address, cloudflare, linkedin
 order: 4
+translated: 9935ac3c09fa5c00
 ---
 Alcuni siti, come LinkedIn, X e quelli dietro un controllo Cloudflare, rifiutano gli accessi da un browser nel cloud. La tua pagina di configurazione può far uscire il browser della tua Machine ospitata dalla tua internet di casa, con Tailscale. È gratis, richiede circa 10 minuti e quasi tutto succede da solo.
 

@@ -5,6 +5,7 @@ summary: Um Fleet de Família grátis para até 6 pessoas: quando todos estão l
 covers: family
 code: family.py, dashboard.html
 order: 6
+translated: 3af87ad0b491b336
 ---
 ## O que ele faz
 

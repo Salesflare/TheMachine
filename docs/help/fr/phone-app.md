@@ -5,6 +5,7 @@ summary: Installez The Machine sur votre téléphone ou votre ordinateur et rece
 covers: phone-app
 code: manifest.webmanifest, sw.js, dashboard.html
 order: 3
+translated: 3e2919603c5efa9a
 ---
 Le tableau de bord s’installe comme une app sur un téléphone ou un ordinateur. Il envoie alors une notification pour chaque tâche, résultat et rappel quand vous n’êtes pas sur le tableau de bord, pendant vos [heures de travail](work-hours.md). Choisissez ce qu’il envoie dans [Notifications](notifications.md).
 

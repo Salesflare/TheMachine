@@ -5,6 +5,7 @@ summary: As verificações estão desativadas, esperando ou paradas no limite de
 covers: 
 code: dashboard.html, assistant.py
 order: 3
+translated: 39b4aa749445dfba
 ---
 As tarefas vêm das verificações: sua Machine lê o que chegou, em pequenos lotes, em cerca de 15 minutos.
 

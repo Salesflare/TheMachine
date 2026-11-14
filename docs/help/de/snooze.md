@@ -5,6 +5,7 @@ summary: Hol eine Aufgabe später zurück. An einem Arbeitstag, zu der Uhrzeit, 
 covers: snooze
 code: dashboard.html, assistant.py
 order: 3
+translated: e6681ab225810e81
 ---
 ## Eine Aufgabe zurückstellen
 

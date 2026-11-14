@@ -5,6 +5,7 @@ summary: Installa The Machine sul telefono o sul computer e ricevi una notifica 
 covers: phone-app
 code: manifest.webmanifest, sw.js, dashboard.html
 order: 3
+translated: 3e2919603c5efa9a
 ---
 La dashboard si installa come app su un telefono o un computer. Poi invia una notifica per ogni attività, risultato e promemoria quando non sei sulla dashboard, nel tuo [orario di lavoro](work-hours.md). Scegli cosa invia in [Notifiche](notifications.md).
 

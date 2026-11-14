@@ -5,6 +5,7 @@ summary: Llega a todo el panel desde el teclado: la paleta, las teclas para ir a
 covers: keyboard
 code: dashboard.html
 order: 5
+translated: 9d9a056e308ced41
 ---
 ## La paleta
 

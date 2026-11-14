@@ -5,6 +5,7 @@ summary: Die Channels und Direktnachrichten, in denen du bist. Sendet eine Direk
 covers: connector:slack
 code: assistant.py, next_actions.py, onboarding.py, slack_api.py
 site: Connect, Remove
+translated: 8d275e75083292ba
 ---
 ## Was es liest
 

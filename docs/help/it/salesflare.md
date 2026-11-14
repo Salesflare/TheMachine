@@ -5,6 +5,7 @@ summary: Account, contatti e trattative, così sa chi conta. Legge con la tua ch
 covers: connector:salesflare
 code: assistant.py, onboarding.py
 site: More sources, Connect, Remove
+translated: 697e6d60b69bb1cd
 ---
 ## Cosa legge
 

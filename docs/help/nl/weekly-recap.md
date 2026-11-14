@@ -5,6 +5,7 @@ summary: Eén keer per week hoe je Machine het deed: to-do's, beloftes, personen
 covers: weekly-recap
 code: assistant.py, machine/app/recap_settings.py, config.example.json
 order: 1
+translated: 936df3d624aba2d7
 ---
 ## Wat erin staat
 

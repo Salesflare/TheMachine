@@ -1,104 +1,105 @@
 ---
 title: Fleets
 area: fleet
-summary: Een Werk-Fleet voor je team, een Familie-Fleet voor thuis. Machines die elkaar helpen, volgens je deelregels.
+summary: Een Work Fleet voor je team, een Family Fleet voor thuis. Machines die elkaar helpen, volgens jouw deelregels.
 covers: tab:fleet, network
 code: fleet.py, network.py, dashboard.html
 site: Company sign-in, Ask to join, Approve, Removed lately, Activity, Download CSV, Ask me before starting a member's Machine
 order: 1
+translated: c9650fc4ffe00e16
 ---
-The Machine Network verbindt Machines. Wat ze elkaar vertellen, is end-to-end versleuteld, en elke Machine antwoordt alleen volgens jouw regels.
+Met een Fleet kan je Machine via The Machine Network samenwerken met de Machines van je team, familie of vrienden. Wat ze elkaar vertellen, is end-to-end versleuteld. Je Machine antwoordt alleen volgens jouw regels.
 
 ## Soorten Fleet
 
-- **Werk-Fleet**: je team. Draag werk over, vraag wie iemand kent, krijg introducties en een teambriefing.
-- **Familie-Fleet**: maximaal 6 mensen. Wanneer iedereen vrij is, gedeelde to-do's en plannen. Gratis. Zie [Familie](family.md).
-- **Vrienden**: iedereen op The Machine, een voor een. Gratis. Zie [Vrienden](friends.md).
+- **Work Fleet**: je team. Draag werk over, vraag wie iemand kent, krijg introducties en een teambrief.
+- **Family Fleet**: maximaal 6 mensen. Gedeelde to-do's en plannen voor wanneer iedereen tijd heeft. Gratis. Bekijk [Family](family.md).
+- **Vrienden**: één voor één iedereen op The Machine. Gratis. Bekijk [Vrienden](friends.md).
 
 ## Het tabblad Fleet
 
-Het verschijnt zodra je in een Fleet zit, met een paneel voor elke Fleet, Familie, Vrienden, Network, Delen en Activiteit.
+Dit tabblad verschijnt zodra je lid bent van een Fleet. Elke Fleet heeft een eigen paneel, met Family, Vrienden, Network, Delen en Activiteit.
 
-## Wat het kost, verlaten en een Fleet starten
+## Wat het kost, een Fleet verlaten en een Fleet starten
 
-Onder de naam van elke Fleet toont **Wat het kost** de plaatsen, wie je Machine betaalt en, voor de eigenaar, de kaart en facturen van de Fleet. **Deze Fleet verlaten** haalt je eruit; een eigenaar draagt hem eerst over aan iemand anders. **Nog een Fleet starten** start een nieuwe.
+Onder de naam van elke Fleet toont **Wat het kost** het aantal plekken, wie voor je Machine betaalt en, voor de eigenaar, de betaalkaart en facturen van de Fleet. Met **Deze Fleet verlaten** verlaat je de Fleet. Een eigenaar moet de Fleet eerst aan iemand anders overdragen. Met **Nog een Fleet starten** start je een nieuwe Fleet.
 
-Elk opent die stap van je account, en een prijswijziging toont eerst het bedrag om te bevestigen. Op een zelf gehoste Machine openen ze je account in een nieuw tabblad, waar je inlogt.
+Elk van deze opties opent het bijbehorende onderdeel van je account. Als de prijs verandert, zie je eerst het bedrag dat je moet bevestigen. Op een zelf gehoste Machine openen ze je account in een nieuw tabblad, waar je inlogt.
 
-## Vraag het je Fleet
+## Je Fleet iets vragen
 
-Vraag "wie kent iemand bij Acme?" vanuit het tabblad Fleet, of met **Vraag het de Fleet** op een organisatie in de [Graph](graph.md). De Machine van elke teamgenoot antwoordt volgens diens eigen deelregels, en vraagt het die teamgenoot eerst als de regel dat zegt.
+Vraag in het tabblad Fleet 'wie kent iemand bij Acme?' of kies **De Fleet vragen** bij een organisatie in de [Graph](graph.md). De Machine van elk teamlid antwoordt volgens diens eigen deelregels en vraagt het teamlid eerst om toestemming als de regel dat voorschrijft.
 
-## Zelf beantwoord in een Werk-Fleet
+## Automatische antwoorden in een Work Fleet
 
-In een standaard Werk-Fleet beantwoordt je Machine zelf vragen van een teamgenoot over **wie iemand kent**, **context over afspraken** ("wie is deze gast?") en **wie gedeelde e-mails afhandelt**. Hij gebruikt alleen wat de [Team-Graph](team-graph.md) al met je team deelt. Privé-, persoonlijke en gevoelige threads tellen nooit mee, en hij noemt alleen mensen die de Team-Graph al deelt.
+In een Standard Work Fleet beantwoordt je Machine zelf drie soorten vragen van teamgenoten: **wie iemand kent**, **context over afspraken** ('wie is deze gast?') en **wie gedeelde e-mails afhandelt**. Hij gebruikt alleen wat de [Team Graph](team-graph.md) al met je team deelt, nooit privé-, persoonlijke of gevoelige gesprekken. Elk antwoord verschijnt in het tabblad Fleet, onder **Activiteit**.
 
-Elk antwoord staat in het tabblad Fleet, onder **Activiteit**. Om er een te stoppen, zet je het op **Nooit** onder **Delen**. Een regel die bewaard is als **Vraag het me eerst**, werkt nu als **Altijd**. Zolang delen via de Team-Graph van je Fleet uit staat, blijven wie iemand kent en context over afspraken het je eerst vragen.
+Je kunt een antwoordtype uitschakelen door het onder **Delen** op **Nooit** te zetten. Een regel die is ingesteld op **Vraag het me eerst**, werkt als **Altijd**. Zolang delen via Team Graph is uitgeschakeld, vraagt je Machine je eerst wie iemand kent en naar context over afspraken.
 
-Voorzichtige Werk-Fleets, Vrienden en Familie vragen het je nog steeds eerst. Warme introducties, overdrachten en vrije vragen houden hun eigen regels.
+In voorzichtige Work Fleets, Vrienden en Family vraagt je Machine je nog steeds eerst. Voor warme introducties, overdrachten en gratis vragen gelden hun eigen regels.
 
 ## Inzichten van het team
 
-Hooguit één keer per dag leest je Machine een paar klantthreads die de Team-Graph al met je team deelt, en schrijft op hoe het team werkt. Bijvoorbeeld: "Terugbetalingen worden beantwoord vanuit de supportinbox met de sjabloon voor terugbetalingen." Ze staan in het paneel van je Werk-Fleet onder **Inzichten van het team**, voor de hele Fleet, en elk ook onder **Activiteit**. Niemand wordt eerst iets gevraagd.
+Je Machine noteert hoe je team werkt op basis van klantgesprekken die de Team Graph al deelt, hooguit één keer per dag. Bijvoorbeeld: 'Terugbetalingsverzoeken worden beantwoord vanuit de supportinbox met de terugbetalingssjabloon.' De inzichten verschijnen in het paneel van je Work Fleet, onder **Inzichten van het team**, en zijn zichtbaar voor iedereen in de Fleet. Elk inzicht wordt ook geregistreerd onder **Activiteit**. Er wordt niemand eerst om toestemming gevraagd.
 
-- Alleen threads waarin iemand van je team schreef. Nooit privé-, persoonlijke of gevoelige.
-- Alleen wat geldt over meerdere klanten heen: een werkwijze, een tool, een schrijfstijl, of wie wat afhandelt. Nooit iets over één klant, nooit feedback op je eigen product, en nooit namen, adressen, nummers of citaten.
-- Elk ervan heeft een label: wat voor soort het is, dat het uit gesprekken van het team komt, en dat het voor deze Fleet is. Inzichten waar hij niet zeker van is, vallen weg.
+- Alleen gesprekken waaraan iemand uit je team heeft bijgedragen. Nooit privé-, persoonlijke of gevoelige gesprekken.
+- Alleen informatie die voor meerdere klanten geldt: een proces, tool, schrijfstijl of wie wat afhandelt. Nooit iets over één klant, feedback op je eigen product, namen, adressen, nummers of citaten.
+- Inzichten waar je Machine niet zeker van is, worden weggelaten.
 
-Als één persoon iets leert, leert iedereen het. Als je Machine een werk-to-do voor dit bedrijf opstelt of voorbereidt, gebruikt hij de inzichten van het team die passen, na je eigen feiten, regels en skills. Nooit bij persoonlijke to-do's. Een to-do die er een gebruikte, zegt dat, bijvoorbeeld "Een inzicht van het team gebruikt: terugbetalingen gaan uit vanuit de supportinbox." Tik daar op **Verwijderen** om het voor de hele Fleet weg te halen.
+Je Machine gebruikt relevante inzichten wanneer hij een Work-to-do voor dit bedrijf maakt. Je eigen feiten, regels en skills gaan voor, en persoonlijke to-do's maken er nooit gebruik van. Bij een to-do waarin een inzicht is gebruikt, staat dat erbij, bijvoorbeeld: 'Teaminzicht gebruikt: terugbetalingen worden afgehandeld vanuit de supportinbox.' Tik daar op **Verwijderen** om het inzicht voor de hele Fleet te verwijderen.
 
-Iedereen in de Fleet kan een inzicht **Verwijderen**. Het is dan weg voor iedereen en wordt niet opnieuw gemaakt. Om te stoppen, zet je **Aanbieden om inzichten te delen** uit in Instellingen, Beveiliging. Voorzichtige Werk-Fleets krijgen er geen.
+Iedereen in de Fleet kan een inzicht **Verwijderen**. Het is dan voor iedereen weg en wordt niet opnieuw aangemaakt. Je kunt dit uitschakelen met **Aanbieden om inzichten te delen** onder Instellingen, Beveiliging. Voorzichtige Work Fleets ontvangen geen inzichten.
 
-## Teambriefing
+## Teambrief
 
-Kies **Dagelijks** of **Wekelijks** bij **Teambriefing** in het Fleet-tabblad, onder **Delen**. Je Machine vraagt dan de Machines van je team om aantallen en datums. Wat jou nodig heeft, komt in To-do's, onder Werk: een klant die op antwoord wacht, een bedrijf dat stil werd, twee van jullie die dezelfde mensen mailen, of een gedeelde meeting.
+Kies **Dagelijks** of **Wekelijks** voor **Teambrief** in het tabblad Fleet, onder **Delen**. Je Machine vraagt dan de Machines van je teamgenoten om aantallen en datums. Zaken die je aandacht nodig hebben, verschijnen bij To-do's onder Werk: een klant die op een teamgenoot wacht, een bedrijf waar twee weken of langer niets is gebeurd, twee teamleden die dezelfde mensen mailen of een gedeelde afspraak.
 
-- Een to-do zegt op wie het wacht, sinds wanneer, wat ze vroegen en wat er speelt, zoals een open project. Is er niets concreets te zeggen, dan blijft het een regel in de briefing, geen to-do.
-- Het bedrijf en je teamgenoten linken naar hun pagina. **Details** toont wat ze schreven (tik om het te lezen), wat er speelt, wie van het team contact heeft en hun laatste threads, alleen wat de [Team Graph](team-graph.md) deelt.
-- Staat wat ze schreven alleen in de mail van een teamgenoot, dan zegt de to-do wie je het vraagt.
-- **Het team vragen** stuurt hun een vraag erover. Hun antwoorden staan op de to-do.
-- **Niet nodig** sluit hem, en de briefing leert ervan. Hij komt alleen terug met iets nieuws.
-- Antwoordt iemand of neemt iemand het op zich, dan sluit de to-do vanzelf. Heb je al een to-do over dat bedrijf, dan komt het daarbij.
+- In een to-do staat op wie je wacht, sinds wanneer, wat diegene heeft gevraagd en wat er op het spel staat, bijvoorbeeld een lopend project. Als er niets specifieks te melden is, blijft het bij een regel in de briefing en wordt het geen to-do.
+- Het bedrijf en de teamgenoten linken naar hun pagina's. **Details** toont wat ze hebben geschreven (tik erop om het te lezen), wat er op het spel staat, wie van het team contact heeft en hun recentste gesprekken. Alleen informatie die de [Team Graph](team-graph.md) deelt.
+- Staat wat ze hebben geschreven alleen in de e-mail van een teamgenoot, dan staat in de to-do wie je ernaar kunt vragen.
+- Met **Het team vragen** stuur je ze een vooraf ingevulde vraag. Hun antwoorden verschijnen bij de to-do.
+- Met **Niet nodig** sluit je de to-do. De briefing leert hiervan. De to-do verschijnt alleen opnieuw als er iets nieuws is.
+- Zodra iemand antwoordt of de taak oppakt, wordt de to-do automatisch gesloten. Een to-do over een bedrijf waarvoor je al een to-do hebt, wordt daaraan toegevoegd.
 
 ## Briefverzoeken
 
-Een teamgenoot met de teambrief aan vraagt je Machine elke ochtend om aantallen en datums. In een Werk-Fleet antwoordt hij zelf, met alleen wat de [Team-Graph](team-graph.md) al met je team deelt. Privé- en persoonlijke threads tellen nooit mee, en er gaat niets weg zolang delen via de Team-Graph uit staat. Elk antwoord staat in het tabblad Fleet, onder **Activiteit**. Het wordt nooit een to-do of een melding.
+Een teamgenoot met de teambrief ingeschakeld vraagt je Machine elke ochtend om aantallen en datums. In een Work Fleet antwoordt je Machine zelf, met alleen informatie die de [Team Graph](team-graph.md) al deelt. Zolang delen via Team Graph is uitgeschakeld, antwoordt je Machine niet. Elk antwoord verschijnt in het tabblad Fleet, onder **Activiteit**, nooit als to-do of melding.
 
-Om te stoppen, zet je **Mijn briefingfeiten delen met het team** uit in het tabblad Fleet, onder **Delen**. Hun brief toont jou dan als niet beantwoord.
+Je kunt dit uitschakelen met **Mijn briefingfeiten delen met het team** in het tabblad Fleet, onder **Delen**. In de briefing staat dan dat je niet hebt geantwoord.
 
-In een voorzichtige Fleet wachten vragen op je in het tabblad Fleet onder **Briefverzoeken**: **Eén keer delen**, **Altijd delen**, **Weigeren** of **Nooit**. Alleen de laatste vraag per teamgenoot wacht, en onbeantwoorde vragen verlopen. Er wordt niets gedeeld tot je kiest.
+In een voorzichtige Fleet verschijnen verzoeken in het tabblad Fleet, onder **Briefverzoeken**. Kies **Eén keer delen**, **Altijd delen**, **Weigeren** of **Nooit**. Er wordt niets gedeeld tot je een keuze maakt. Verzoeken waarop je niet reageert, verlopen.
 
-## Team-Graph
+## Team Graph
 
-In een Werk-Fleet wordt werk voor klanten gedeeld met je team, nadat je het hebt nagekeken. Zie [Team-Graph](team-graph.md).
+In een Work Fleet wordt klantwerk met je team gedeeld nadat je het hebt bekeken. Bekijk [Team Graph](team-graph.md).
 
 ## Gedeelde koppelingen
 
-Een eigenaar of beheerder kan Stripe of Intercom één keer koppelen en met het team delen, vanuit het vak **Gedeelde koppelingen** in het tabblad Fleet. De Machines van teamgenoten lezen het, alleen lezen, en zien wie het deelde. Alleen beheerders wijzigen of stoppen het. Zie [Stripe](stripe.md) en [Intercom](intercom.md).
+Een eigenaar of beheerder kan Stripe of Intercom eenmalig koppelen en delen met het team, via **Gedeelde koppelingen** in het tabblad Fleet. Teamgenoten kunnen de koppeling bekijken, maar niet wijzigen. Ze zien ook wie hem heeft gedeeld. Alleen beheerders kunnen de koppeling wijzigen of het delen stopzetten. Bekijk [Stripe](stripe.md) en [Intercom](intercom.md).
 
-## Wat je Machine antwoordt
+## Wat je Machine beantwoordt
 
-Stel het per Fleet in, in het paneel Delen. Zie [Deelregels](sharing-rules.md). **Instellingen** heeft een snelkoppeling: **Fleet-regels**.
+Stel dit per Fleet in via het paneel Delen. Bekijk [Deelregels](sharing-rules.md). **Instellingen** bevat een snelkoppeling: **Fleet-regels**.
 
-## Bedrijfslogin
+## Inloggen met je bedrijfsaccount
 
-Voor een gehoste Werk-Fleet. Een eigenaar of beheerder die ingelogd is met een Google Workspace- of Microsoft 365-account van het bedrijf, kan **Bedrijfslogin** aanzetten op de pagina Account. Het gebruikt het domein van dat account.
+Laat teamgenoten deelnemen met hun bedrijfsaccount. In een gehoste Work Fleet kan een eigenaar of beheerder die is ingelogd met Google Workspace of Microsoft 365 **Inloggen met bedrijfsaccount** inschakelen op de Accountpagina.
 
-Teamgenoten die inloggen met een account op dat domein, zien dan **Vragen om lid te worden**. Een eigenaar of beheerder moet elk verzoek **Goedkeuren**. Persoonlijke Gmail- en Outlook.com-accounts tellen nooit mee.
+Teamgenoten die inloggen met het domein van hun bedrijf zien **Aanvragen om deel te nemen**. Een eigenaar of beheerder moet elk verzoek **Goedkeuren**. Persoonlijke Gmail- en Outlook.com-accounts tellen nooit mee.
 
-Wie je uit de Fleet verwijdert, wordt overal uitgelogd.
+Als je iemand uit de Fleet verwijdert, wordt diegene overal uitgelogd.
 
-Om lid te worden van een Fleet, er een te starten of een Machine op je eigen computer te koppelen, zie [Abonnementen en facturatie](plans-and-billing.md) en [Vrienden en het Network](friends.md).
+Bekijk [Abonnementen en facturering](plans-and-billing.md) en [Vrienden en het Network](friends.md) om lid te worden van een Fleet, er een te starten of een Machine op je eigen computer te koppelen.
 
-## Voor eigenaars en beheerders
+## Voor eigenaren en beheerders
 
-**Beheren** in het tabblad Fleet toont elke Fleet die je beheert: de mensen, hun rollen en de uitnodigingen. Op een gehoste Machine nodig je daar meteen uit, wijzig je rollen, verwijder je mensen en beantwoord je verzoeken om lid te worden. Een wijziging die de prijs raakt, opent eerst je account om ze te bevestigen. Op een zelf gehoste Machine zie je wie erin zit, met een link naar de instellingen van die Fleet op je account, waar je de mensen en uitnodigingen beheert.
+Met **Beheren** in het tabblad Fleet zie je elke Fleet die je beheert, met de leden, hun rollen en de uitnodigingen. Op een gehoste Machine kun je daar mensen uitnodigen, rollen wijzigen, mensen verwijderen en verzoeken om deel te nemen afhandelen. Als een wijziging invloed heeft op de prijs, wordt eerst je account geopend om de wijziging te bevestigen. Op een zelf gehoste Machine zie je wie er lid is, met een link naar de instellingen van die Fleet in je account. Daar beheer je de leden en uitnodigingen.
 
-**Fleet-instellingen**, onder de naam van elke Fleet in haar paneel en in Beheren, opent de instellingen van die Fleet op je account: gedeelde connectors, beveiliging, bedrijfsaanmelding, welke Machine antwoordt, en deze twee:
+**Fleet-instellingen**, onder de naam van elke Fleet in het paneel en bij Beheren, opent de instellingen van die Fleet in je account. Daar vind je gedeelde koppelingen, beveiliging, inloggen met je bedrijfsaccount, welke Machine antwoordt en deze twee onderdelen:
 
-- **Onlangs verwijderd**: elke persoon die verwijderd is of vertrokken is. Er staat **Verwijderd, bevestigd** zodra hun Machine de werkgegevens verwijderd heeft, Google het uitloggen bevestigd heeft en elk gedeeld token dat ze hadden vervangen is. Tot dan staat er **In behandeling** en waarom.
-- **Activiteit**: wie wat deed en wanneer. Uitnodigingen, nieuwe leden, verwijderingen, rollen, gehoste Machines en facturatie, gedeelde connectors en goedkeuringen. Het toont ook elke keer dat ons team het rapport of de logboeken van de Machine van een lid gelezen heeft. Nooit de inhoud van berichten. **CSV downloaden** exporteert het. 12 maanden bewaard.
+- **Recent verwijderd**: iedereen die is verwijderd of de Fleet heeft verlaten. 'Verwijderd, bevestigd' betekent dat hun Machine de werkgegevens heeft verwijderd en dat ze overal zijn uitgelogd. Tot die tijd staat er **In behandeling**, met de reden.
+- **Activiteit**: wie wat heeft gedaan en wanneer: uitnodigingen, deelname, verwijderingen, rollen, gehoste Machines, facturering, gedeelde koppelingen en goedkeuringen. Ook elke keer dat ons supportteam een rapport van een lid z'n Machine of de logboeken ervan heeft bekeken. Nooit de inhoud van berichten. Met **CSV downloaden** exporteer je de gegevens. Ze worden 12 maanden bewaard.
 
-**Vraag het me voor de Machine van een lid start**, voor de eigenaar: aan, dan wacht de nieuwe Machine van een lid op jouw OK, ook in een gratis Fleet. Uit, dan start hij in een gratis Fleet meteen en krijg je bericht. Een Machine die geld kost, wacht altijd tot je het bedrag bevestigt.
+**Vraag het me voordat je de Machine van een lid start**, voor de eigenaar: staat dit aan, dan wacht de Machine van een nieuw lid op je toestemming, ook in een gratis Fleet. Staat het uit, dan start de Machine in een gratis Fleet meteen en krijg je een melding. Voor een Machine die geld kost, moet je altijd eerst het bedrag bevestigen.
 
-Na **Stoppen met delen** toont een gedeelde connector **Verwijderd, bevestigd** zodra elke Machine het token verwijderd heeft.
+Na **Stoppen met delen** staat er bij een gedeelde koppeling 'Verwijderd, bevestigd' zodra geen enkele Machine er meer toegang toe heeft.

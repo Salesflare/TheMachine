@@ -5,6 +5,7 @@ summary: Como mucho una vez al día ofrece algunos aprendizajes generales al equ
 covers: share-learnings
 code: team_learnings.py, dashboard.html
 order: 3
+translated: 8a7418cb4cb27e7b
 ---
 ## Qué es
 
@@ -55,4 +56,3 @@ El equipo ve los aprendizajes ordenados por votos y elige lo que entra en The Ma
 - **Activado**, la opción por defecto: vota ella sola.
 - **Preguntar antes**: cada voto te espera en un recuadro en **Aprendizaje**, **Compartido**, con el aprendizaje y el voto tal como se enviaría. Envíalo u omítelo, uno a uno o todos a la vez. No hay tarea ni notificación para ello. Un voto que dejas sin tocar no se envía pasados 14 días.
 - **Desactivado**: no vota, y no se envía nada de lo que espera.
-

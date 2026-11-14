@@ -5,6 +5,7 @@ summary: Fai domande su un'attività o cambia la sua bozza, in una chat che appa
 covers: card-chat
 code: dashboard.html, assistant.py, chat_files.py, corrections.py
 order: 4
+translated: ba1206b5165695ce
 ---
 ## Aprila
 

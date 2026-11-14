@@ -5,6 +5,7 @@ summary: Was du zugesagt hast und was andere dir versprochen haben. Wird von sel
 covers: promises
 code: dashboard.html, assistant.py
 order: 6
+translated: 0779d3fc9d3f3407
 ---
 Deine Machine erkennt Versprechen in deinen Nachrichten, in beide Richtungen, ohne dass du etwas einrichten musst.
 

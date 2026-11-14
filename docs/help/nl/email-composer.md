@@ -5,6 +5,7 @@ summary: Klik op een e-mailadres om te schrijven vanuit je eigen mailbox, in het
 covers: email-composer
 code: machine/app/mail.py, dashboard/todos-compose.js
 order: 12
+translated: 568ac451673bc141
 ---
 ## Openen
 

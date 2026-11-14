@@ -1,61 +1,66 @@
 ---
 title: Conexões
 area: connections
-summary: Suas fontes em um só lugar: como cada uma está, adicionar uma nova ou desconectar uma.
+summary: Suas fontes em um só lugar: veja como estão, adicione uma nova ou desconecte uma.
 covers: tab:health, saved-signins
 code: dashboard.html, onboarding.py
 order: 1
+translated: 1ca62ab8f65b77ff
 ---
-## Como elas estão
+## Como estão
 
-A aba **Conexões** lista suas fontes por tipo (**E-mail**, **Calendário**, **Chat** e mais), com **Logins** e **Verificações** abaixo de uma linha. No celular, toque em um tipo para abri-lo e em **Conexões** para voltar. Cada fonte é uma linha; toque nela para ver o cartão. Cada uma diz como está: Conectada, Aguardando a primeira sincronização, Reconectando automaticamente ou Precisa da sua ajuda. Abra **Detalhes** para ver **Sincronizações recentes**, onde a sincronização aparece em palavras simples (como "Em dia" ou "Primeira leitura"), e o que fazer.
+A aba **Conexões** mostra suas fontes por tipo, com **Logins** e **Verificações** abaixo de uma linha. No celular, toque em um tipo para abri-lo e em **Conexões** para voltar. O tipo que tiver uma fonte que precisa de você aparece primeiro. Cada fonte é uma linha: mostra como está (Conectada, Aguardando a primeira sincronização, Reconectando automaticamente ou Precisa da sua ajuda) e o que recebeu recentemente. Toque nela para abrir o cartão e ver **Detalhes**.
 
-Uma sincronização que falhou e que uma posterior já compensou aparece em cinza; só uma falha que ainda é a mais recente aparece como problema, com quando tenta de novo.
+Uma sincronização que falhou, mas foi compensada por uma posterior, aparece em cinza. Só uma falha que ainda é a mais recente aparece como problema, com a data da próxima tentativa.
 
-Seus números mostram tudo o que ela trouxe, inclusive o [histórico](history.md), o que chegou nas últimas 24 h e o que ainda não foi verificado. Uma agenda conta eventos: todos, os dos próximos 7 dias e os das últimas 24 h.
+As contagens mostram tudo o que a fonte trouxe, incluindo o [histórico](history.md), o que chegou nas últimas 24 horas e o que ainda não foi verificado. Um calendário conta os eventos.
 
-Cada fonte tem o nome da conta, do jeito que o serviço a chama: seu endereço, um perfil do X, um workspace do Slack ou de quem é o Signal ou o Telegram. Embaixo: **Trabalho** ou **Pessoal**, com o endereço ou o usuário quando o nome ainda não diz. Se duas fontes na mesma aba têm o mesmo nome, cada uma diz também o que as diferencia, como Slack ou X, ou o endereço do workspace.
+Cada fonte recebe o nome da conta, como o serviço a identifica: seu endereço, um perfil no X, um workspace do Slack ou de quem é a conta no Signal ou no Telegram. Abaixo do nome, aparece primeiro **Trabalho** ou **Pessoal**, seguido do endereço ou nome de usuário quando o nome não deixa isso claro. Se duas fontes do mesmo tipo tiverem o mesmo nome, elas também mostram o que as diferencia, como Slack ou X, ou o endereço do workspace.
 
-Abaixo do status, cada fonte diz em uma linha o que traz e, quando pode agir, que só faz isso depois que você toca em **Enviar** ou dá o seu OK.
+Cada fonte também informa em uma linha o que traz e, se puder realizar ações, que só fará isso depois que você tocar em **Enviar** ou aprovar.
 
-## Adicionar uma
+## Adicionar uma fonte
 
-Abra o tipo dela e escolha uma fonte em **Adicionar outro**, ou abaixo da lista se nenhuma estiver conectada ainda. Ela pede o que precisa, uma pergunta por vez. **Cancelar** para de adicionar a fonte. Saiu antes de terminar? Abra **Conexões** de novo, em qualquer dispositivo, e continua no mesmo passo. Depois de conectada, sua Machine começa a ler a fonte na hora e abre o novo cartão, que mostra como vai a primeira sincronização. Em uma Machine hospedada, Google, Microsoft, Microsoft OneDrive, Zoom, Stripe e Intercom entram por aqui: escolha **Trabalho** ou **Pessoal**, entre e você volta para este formulário, que mostra como a conexão está indo. O GitHub, o WhatsApp, o Codex, os Chats do Telegram e seu celular Android mostram o código direto neste formulário.
+Abra um tipo (**E-mail**, **Calendário**, **Chat**, **Reuniões**, **Documentos e arquivos**, **Clientes**, **Projetos e código**, **Outras**) e escolha uma fonte em **Adicionar outro**, ou abaixo da lista se ainda não houver nenhuma conectada. As opções genéricas aparecem no final: **Outro e-mail** em E-mail, **Link de calendário (ICS)** e **Outro calendário** em Calendário. O Exchange Server lê reuniões, por isso fica em Calendário.
 
-Uma fonte que você já conectou mostra isso na lista, com a conta. Escolha-a para adicionar outra ao lado: o formulário avisa e leva até a que você já tem.
+**Sugerido para você** aparece no topo de **Conexões** quando sua Machine identifica um motivo para sugerir uma fonte. O motivo é explicado em uma linha: e-mails da Stripe, reuniões do Zoom no seu calendário, mensagens com links para o Google Docs ou uma configuração que não foi concluída. A fonte também continua no grupo correspondente, marcada como **Sugerido**. Essa contagem é feita na sua Machine; nada sai dela. Uma fonte conectada nunca é sugerida.
 
-A lista é agrupada (**E-mail**, **Calendário**, **Chat**, **Reuniões**, **Documentos e arquivos**, **Clientes**, **Projetos e código**, **Outras**), de A a Z em cada grupo. Uma opção geral como **Outro e-mail** fica por último no grupo.
+O Microsoft Teams aparece duas vezes: em **Chat**, para as conversas, e em **Reuniões**, como **Reuniões do Teams**, para as anotações das reuniões. Ambos usam o mesmo login da Microsoft, então conectar um também conecta o outro.
 
-**Sugerido para você** aparece no topo quando sua Machine vê um motivo para uma fonte, com esse motivo em uma linha: e-mails da Stripe, reuniões no Zoom na sua agenda, mensagens com link para o Google Docs ou uma configuração que não terminou. A fonte também continua no próprio grupo, marcada como **Sugerido**. Ela conta isso na sua Machine; nada sai dela. Uma fonte conectada nunca é sugerida.
+A lista mostra quando você já conectou uma fonte, junto com a conta usada. Selecione-a para adicionar outra ao lado: o formulário informa isso e inclui um link para a que você já tem.
 
-O Microsoft Teams aparece duas vezes: em **Chat** para os chats e em **Reuniões** como **Reuniões do Teams** para as notas de reuniões. Os dois usam o mesmo login da Microsoft, então conectar um conecta o outro.
+Preencha as informações necessárias, como uma chave ou um endereço, escolha **Trabalho** com o nome da empresa ou **Pessoal** e toque em **Conectar**. Para e-mails e calendários, essa escolha só é solicitada quando o endereço não deixa isso claro. Um site como LinkedIn ou X abre a tela de login no navegador da sua Machine e continua automaticamente depois que você entra. GitHub, WhatsApp e Codex mostram um código para inserir. Os chats do Telegram mostram um código QR para escanear.
 
-**Reconectar** em uma fonte e em **Precisa de você** abre o mesmo formulário. No seu próprio computador, `assistant connect` faz o mesmo em um terminal.
+**Cancelar** interrompe a adição. Saiu antes de terminar? Abra **Conexões** novamente, em qualquer dispositivo, e o processo continua na mesma etapa. Depois que a fonte é conectada, sua Machine começa a lê-la na hora e mostra o andamento da primeira sincronização.
+
+Em uma Machine hospedada, o login do Google, Microsoft, Microsoft OneDrive, Zoom, Stripe e Intercom é feito aqui mesmo: escolha **Trabalho** ou **Pessoal** e toque em **Entrar**. Você volta ao formulário, que mostra o resultado. GitHub, WhatsApp, Codex, os chats do Telegram e seu celular Android também mostram o código aqui.
+
+**Reconectar**, na fonte ou em **Precisa de você**, abre o mesmo formulário. No seu próprio computador, `assistant connect` faz o mesmo em um terminal.
 
 ## Trabalho ou pessoal
 
-Cada fonte conta como trabalho (para uma empresa que você informa) ou pessoal. Mude isso em **Detalhes**. Ela só diz **Palpite** quando sua Machine escolheu pelo endereço. Depois que você escolhe, a escolha é sua. Tarefas de trabalho esperam pelos seus dias de trabalho.
+Cada fonte é classificada como de trabalho, para uma empresa que você identifica, ou pessoal. Mude essa opção em **Detalhes**. **Estimado** significa que sua Machine identificou a categoria pelo endereço. As tarefas de trabalho aguardam seus dias úteis.
 
-E-mail e agendas do Google e da Microsoft seguem o endereço quando ele é claro: um provedor como Gmail ou Outlook.com é Pessoal, o domínio da sua equipe é Trabalho. Se não, ela pergunta uma vez, logo depois de entrar. **Mudar** deixa você escolher. Se depois o e-mail disser o contrário, a tarefa **Aproveite mais a The Machine** pergunta uma vez se você quer mudar.
+O Google e a Microsoft identificam se e-mails e calendários são de trabalho ou pessoais pelo endereço, quando isso fica claro: um provedor de e-mail como Gmail ou Outlook.com indica uso pessoal; o domínio da sua equipe indica uso de trabalho. Se não ficar claro, a Machine pergunta uma vez, logo depois que você entra. **Mudar** permite escolher por conta própria. Se os e-mails indicarem depois a outra opção, a tarefa **Aproveite mais a The Machine** pergunta uma vez se você quer mudar.
 
-## Habilidades
+## Recursos
 
-Uma fonte pode trazer sinais (o que chega vira to-dos), fazer coisas para seus to-dos (ler um documento quando um precisa, ou enviar, responder ou mudar algo depois do seu OK), ou ambos. Com ambos, **Detalhes** tem uma chave para cada um: **Traz sinais** e **Pode fazer coisas**. Uma fica ligada. Para parar ambas, desconecte a fonte. As respostas de um chat respondem ao que ele traz, então um chat só tem **Pode fazer coisas**.
+Uma fonte pode trazer sinais, que se transformam em tarefas, realizar ações para suas tarefas, como ler um documento, enviar, responder ou alterar algo depois da sua aprovação, ou fazer as duas coisas. Quando faz as duas coisas, **Detalhes** tem uma opção para cada recurso: **Traz sinais** e **Pode fazer coisas**. Uma delas precisa continuar ativada. Para desativar as duas, desconecte a fonte. Um chat só tem **Pode fazer coisas**.
 
-Com **Traz sinais** desligado, ela não sincroniza e seu cartão não mostra números. Com **Pode fazer coisas** desligado, sua Machine nunca lê nada sob demanda, não redige nem muda nada com ela. Fontes de antes têm ambas ligadas.
+Com **Traz sinais** desativado, a fonte não sincroniza. Com **Pode fazer coisas** desativado, sua Machine nunca lê, cria rascunhos nem altera nada usando essa fonte.
 
-## Remover uma
+## Remover uma fonte
 
-Abra a fonte, **Detalhes** e depois **Desconectar**. Ela para de ler. O que ela já trouxe continua. Em uma Machine hospedada, Google, Microsoft, Microsoft OneDrive, Zoom e Stripe mostram **Desconectar ↗**, que abre sua página de configuração.
+Abra a fonte, toque em **Detalhes** e depois em **Desconectar**. Ela para de ser lida. O que já trouxe continua disponível. Em uma Machine hospedada, Google, Microsoft, Microsoft OneDrive, Zoom e Stripe mostram **Desconectar ↗**, que abre a página de configuração.
 
-**Desconectado recentemente** lista os logins do Google, da Microsoft e do Zoom que você removeu. **Removido, confirmado** quer dizer que o Google confirmou a saída, ou, no caso da Microsoft e do Zoom, que não sobrou nenhuma cópia. **Pendente** diz o motivo, e sua Machine continua tentando.
+**Desconectado recentemente** mostra as contas do Google, Microsoft, Zoom, Slack, Stripe e Salesforce que você removeu nos últimos 30 dias, e quando foram removidas. Uma conta do Google aparece uma vez, mesmo quando o Google Meet ou o Docs tinham um login próprio. Cada conta aparece no tipo correspondente: uma conta do Google ou Microsoft em **E-mail**, e uma conta do Slack em **Chat**.
 
 ## Logins salvos
 
-Sites que o navegador da sua Machine usa, como LinkedIn ou X, podem guardar um login salvo: marque **Salvar para a próxima vez** quando entrar. Depois, **Logins** mostra a lista. Quando um site desconecta sua Machine, ela entra de novo com um toque. As senhas ficam criptografadas na sua Machine. **Esquecer** remove um login.
+Para sites como LinkedIn ou X, marque **Salvar para a próxima vez** ao entrar. Depois, eles aparecem em **Logins**. Se um site desconectar sua Machine, ela entra novamente com um toque. As senhas ficam criptografadas na sua Machine. Toque em **Esquecer** para remover um login.
 
 ## Verificações
 
-**Verificações** mostra como sua Machine está lendo o que chega: execuções recentes e o que cada uma encontrou. Veja [Nenhuma tarefa nova](reviews-paused.md).
+**Verificações** mostra como sua Machine lê o que chega: as verificações recentes e o que cada uma encontrou. Consulte [Sem novas tarefas](reviews-paused.md).
 
-Cada conexão tem seu próprio artigo nesta seção, com o que ela lê e o que pode enviar.
+Cada conexão tem seu próprio artigo nesta seção, que explica o que ela lê e o que pode enviar.

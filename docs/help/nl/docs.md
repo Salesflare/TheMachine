@@ -5,6 +5,7 @@ summary: Reacties, vermeldingen, bijgehouden wijzigingen en gedeelde bestanden i
 covers: connector:docs
 code: connectors/docs.py, doc_writes.py, next_actions.py, onboarding.py
 site: Sign in with Microsoft
+translated: 6db75e46d29fc2e3
 ---
 ## Wat het leest
 

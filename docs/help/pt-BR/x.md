@@ -5,6 +5,7 @@ summary: Suas menções, respostas e mensagens diretas no X, lidas no próprio n
 covers: connector:x
 code: connectors/x.py, integrations/x_inbox.py
 site: Connect, More sources, Remove
+translated: 5cbe43055458daf4
 ---
 ## O que ele lê
 

@@ -5,6 +5,7 @@ summary: Las notificaciones de tu teléfono Android, a través de la app OpenCla
 covers: connector:android
 code: onboarding.py, android-notifications.mjs
 site: Show a setup code, Approve, Remove
+translated: 344d64dafc75a0a9
 ---
 ## Qué lee
 

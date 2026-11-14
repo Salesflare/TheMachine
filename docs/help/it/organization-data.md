@@ -5,6 +5,7 @@ summary: Settore, dimensioni, sede e un logo accanto a ogni organizzazione, cerc
 covers: enrichment
 code: enrichment.py, graph.py, dashboard.html
 order: 5
+translated: a759d8e2c6274792
 ---
 ## Da dove vengono
 

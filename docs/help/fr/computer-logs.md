@@ -1,46 +1,47 @@
 ---
 title: Problèmes sur votre ordinateur
 area: troubleshooting
-summary: Votre Machine lit les journaux de son ordinateur et vous signale les vrais problèmes, avec la cause et une solution. Une solution ne s’exécute que si vous touchez Do it.
+summary: Votre Machine lit ses propres journaux système et vous signale les vrais problèmes, avec leur cause et une solution. Une solution ne s’exécute que si vous appuyez sur **Faire**.
 covers: computer-logs
 code: machine/system_logs.py, machine/sources/gateway.py, onboarding.py
 keywords: logs, journal, journalctl, crash, coredump, systemd, Hyprland, Omarchy, bar
 order: 3
+translated: 1a191d8433bfba2a
 ---
-## Ce qu’elle lit
+## Ce que votre Machine lit
 
-Sous Linux avec systemd, votre Machine lit le journal de votre propre session : vos propres services et les rapports de plantage de vos propres programmes. Sous Omarchy, elle vérifie aussi Hyprland et la barre. Elle ne lit jamais le journal de tout le système et ne demande jamais plus d’accès.
+Sous Linux avec systemd, votre Machine lit le journal de votre propre session utilisateur : vos services et les rapports de plantage de vos programmes. Sur Omarchy, elle vérifie aussi Hyprland et la barre. Elle ne lit jamais le journal système complet et ne demande jamais d’accès supplémentaire.
 
-Elle lit quel service s’est arrêté, comment il s’est terminé et quel programme a planté. Jamais le contenu d’une ligne de journal : aucun texte de journal n’est gardé ni ne quitte votre ordinateur.
+Elle lit quel service s’est arrêté, comment il s’est terminé et quel programme a planté. Elle ne lit jamais le contenu des lignes du journal, qui n’est donc ni conservé ni transmis depuis votre ordinateur.
 
-## Ce qui compte comme problème
+## Ce qui est considéré comme un problème
 
-Un service qui redémarre sans cesse, un service qui a échoué plusieurs fois dans la journée ou reste arrêté, un service à court de mémoire, et un programme qui a planté. Sous Omarchy aussi un plantage de Hyprland ou de la barre, et des erreurs dans vos réglages Hyprland.
+Un service qui redémarre sans cesse, qui a échoué plusieurs fois dans la journée ou qui reste arrêté, qui a manqué de mémoire, ainsi qu’un programme qui a planté. Sur Omarchy, cela inclut aussi les plantages de Hyprland ou de la barre, ainsi que les erreurs dans vos paramètres Hyprland.
 
-Un seul redémarrage ou une seule exécution ratée, c’est normal : rien ne s’affiche. Pareil pour un service qui a échoué quelques fois puis s’est de nouveau bien exécuté.
+Un seul redémarrage ou un seul échec est normal et ne donne lieu à aucune alerte. Il en va de même pour un service qui échoue quelques fois, puis fonctionne à nouveau correctement.
 
-Les navigateurs que pilotent les tests et les agents (headless, Playwright, Puppeteer, CI) restent silencieux, tout comme un programme qui s’arrête pendant que son service est arrêté ou redémarré. De même pour les exécutions de développement : ce que lance un agent de code, les tests et les programmes lancés depuis un dossier temporaire ou de cache. Un programme qui plante encore et encore donne une seule tâche, qui dit combien de fois et quand.
+Les navigateurs pilotés par des tests et des agents (headless, Playwright, Puppeteer, CI) ne donnent lieu à aucune alerte. Il en va de même pour un programme qui s’arrête pendant l’arrêt ou le redémarrage de son service. Les exécutions de développement restent également silencieuses : ce qu’exécute un agent de programmation, les tests et les programmes lancés depuis un dossier temporaire ou de cache. Un programme qui plante à répétition donne lieu à une seule tâche indiquant combien de fois et quand cela s’est produit.
 
-Un script porte son propre nom, comme backup.py, et non python3 ou node.
+Un script est nommé d’après son propre nom, comme backup.py, et non d’après python3 ou node.
 
 ## Ce que vous recevez
 
-Une tâche qui dit en mots simples ce qui s’est passé, pourquoi c’est important et ce que vous pouvez faire. Les commandes qui montrent pourquoi sont sous Afficher plus. Demandez dans son chat et The Machine s’en occupe. Tout ce qu’elle modifie attend votre accord, comme avec Do it.
+Une tâche qui explique en termes simples ce qui s’est passé, pourquoi c’est important et ce que vous pouvez faire. Les commandes qui permettent de comprendre pourquoi se trouvent sous **Afficher plus**. Posez une question dans le chat associé et The Machine cherchera à en savoir plus. Tout changement attend votre accord, comme avec **Faire**.
 
-Quand il existe un correctif sûr, la tâche propose Do it. Un de vos services resté arrêté est relancé, et sur Omarchy la barre revient. Do it lance seulement cette commande, et le résultat s’affiche dans le chat de la tâche. Il ne touche jamais aux services de The Machine ni à l’OpenClaw Gateway.
+Lorsqu’une solution sans risque est disponible, la tâche comporte le bouton **Faire**. Si l’un de vos services reste arrêté, elle le redémarre. Sur Omarchy, elle relance aussi la barre. **Faire** n’exécute que cette commande, et le résultat s’affiche dans le chat de la tâche. Elle ne touche jamais aux propres services de The Machine ni à l’OpenClaw Gateway.
 
-Un même problème donne au plus une tâche toutes les deux semaines, et jamais tant que sa tâche est ouverte. Au plus deux nouvelles par jour.
+Un même problème donne lieu à une seule tâche au maximum toutes les deux semaines, et jamais tant que sa tâche est encore ouverte. Vous ne recevrez pas plus de deux nouvelles tâches par jour. Une tâche concernant un service arrêté se ferme automatiquement dès que le service redémarre ou que son état est effacé.
 
 ## Dans un terminal
 
-`assistant doctor` liste les mêmes problèmes du dernier jour.
+`assistant doctor` répertorie les mêmes problèmes survenus au cours de la dernière journée.
 
 ## Autres ordinateurs
 
-Sous macOS, Windows et sur les ordinateurs sans systemd, elle ne lit rien et le dit dans `assistant doctor`.
+Sur macOS, Windows et les ordinateurs sans systemd, votre Machine ne lit rien et vous l’indique dans `assistant doctor`.
 
-Sur une Machine hébergée, c’est à nous de faire tourner le serveur : ses problèmes vont à l’équipe The Machine, pas à vous sous forme de tâches.
+Sur une Machine hébergée, c’est à notre serveur de rester opérationnel : ses problèmes sont transmis à l’équipe The Machine, et non à vous sous forme de tâches.
 
-## La désactiver
+## Désactiver cette fonction
 
-Mettez `"computer_logs": false` dans config.json et redémarrez le service.
+Définissez `"computer_logs": false` dans config.json, puis redémarrez le service.

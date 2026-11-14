@@ -6,6 +6,7 @@ covers: settings:account
 code: docs/fleet.md
 site: Manage subscription
 order: 1
+translated: 457d70baa1c81785
 ---
 ## Votre Machine
 

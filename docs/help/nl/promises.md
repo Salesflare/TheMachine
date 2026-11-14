@@ -5,6 +5,7 @@ summary: Wat je zei dat je zou doen, en wat anderen jou beloofden. Houdt zichzel
 covers: promises
 code: dashboard.html, assistant.py
 order: 6
+translated: 0779d3fc9d3f3407
 ---
 Je Machine ziet beloftes in je berichten, in beide richtingen, zonder dat je iets hoeft in te stellen.
 

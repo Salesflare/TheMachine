@@ -5,6 +5,7 @@ summary: Traga uma tarefa de volta mais tarde. Em um dia de trabalho, no horári
 covers: snooze
 code: dashboard.html, assistant.py
 order: 3
+translated: e6681ab225810e81
 ---
 ## Adiar uma tarefa
 

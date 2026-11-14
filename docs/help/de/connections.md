@@ -5,6 +5,7 @@ summary: Deine Quellen an einem Ort: wie es jeder geht, eine neue hinzufügen od
 covers: tab:health, saved-signins
 code: dashboard.html, onboarding.py
 order: 1
+translated: 1ca62ab8f65b77ff
 ---
 ## Wie es ihnen geht
 

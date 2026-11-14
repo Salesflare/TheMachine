@@ -5,6 +5,7 @@ summary: Installa l'app open source su Linux, macOS o Windows. Gratis, con il tu
 covers: self-hosted
 code: install.sh, install.ps1, docs/getting-started.md
 order: 2
+translated: 73526b82818f009d
 ---
 The Machine è open source (AGPL). Sul tuo computer è gratis, e i tuoi dati restano lì.
 

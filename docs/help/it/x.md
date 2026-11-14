@@ -5,6 +5,7 @@ summary: Le tue menzioni, risposte e messaggi diretti su X, letti nel browser de
 covers: connector:x
 code: connectors/x.py, integrations/x_inbox.py
 site: Connect, More sources, Remove
+translated: 5cbe43055458daf4
 ---
 ## Cosa legge
 

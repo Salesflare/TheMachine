@@ -1,104 +1,105 @@
 ---
 title: Fleet
 area: fleet
-summary: Una Fleet di Lavoro per il tuo team, una Fleet di Famiglia per casa. Machine che si aiutano a vicenda, secondo le tue regole di condivisione.
+summary: Una Work Fleet per il tuo team, una Family Fleet per casa. Le Machine si aiutano seguendo le regole di condivisione che hai scelto.
 covers: tab:fleet, network
 code: fleet.py, network.py, dashboard.html
 site: Company sign-in, Ask to join, Approve, Removed lately, Activity, Download CSV, Ask me before starting a member's Machine
 order: 1
+translated: c9650fc4ffe00e16
 ---
-The Machine Network collega le Machine. Ciò che si dicono è cifrato end-to-end, e ogni Machine risponde solo secondo le tue regole.
+Una Fleet permette alla tua Machine di collaborare con le Machine del tuo team, della tua famiglia o dei tuoi amici tramite The Machine Network. Quello che si comunicano è crittografato end-to-end e la tua Machine risponde solo secondo le tue regole.
 
 ## Tipi di Fleet
 
-- **Fleet di Lavoro**: il tuo team. Passa il lavoro, chiedi chi conosce qualcuno, ottieni presentazioni e un brief del team.
-- **Fleet di Famiglia**: fino a 6 persone. Quando sono tutti liberi, attività e piani condivisi. Gratis. Vedi [Famiglia](family.md).
-- **Amici**: chiunque usi The Machine, uno per uno. Gratis. Vedi [Amici](friends.md).
+- **Work Fleet**: il tuo team. Passa il lavoro, chiedi **chi conosce qualcuno**, ricevi presentazioni e un brief del team.
+- **Family Fleet**: fino a 6 persone. Quando tutti sono liberi, attività e programmi condivisi. Gratis. Vedi [Family](family.md).
+- **Amici**: chiunque usi The Machine, una persona alla volta. Gratis. Vedi [Friends](friends.md).
 
 ## La scheda Fleet
 
-Compare quando sei in una Fleet, con un pannello per ogni Fleet, Famiglia, Amici, Network, Condivisione e Registro attività.
+La vedi quando entri in una Fleet. Contiene un riquadro per ogni Fleet, oltre a Family, Amici, Network, Condivisione e Movimenti.
 
-## Quanto costa, uscire e creare una Fleet
+## Quanto costa, come lasciare e creare una Fleet
 
-Sotto il nome di ogni Fleet, **Quanto costa** mostra i suoi posti, chi paga la tua Machine e, per il proprietario, la carta e le fatture della Fleet. **Lascia questa Fleet** ti fa uscire; un proprietario prima la passa a qualcun altro. **Crea un’altra Fleet** ne crea una nuova.
+Sotto il nome di ogni Fleet, **Quanto costa** mostra i posti, chi paga la tua Machine e, per il proprietario, la carta e le fatture della Fleet. **Lascia questa Fleet** ti fa uscire dalla Fleet; il proprietario deve prima passare la proprietà a qualcun altro. **Crea un’altra Fleet** ne crea una nuova.
 
-Ognuno apre quel passaggio del tuo account, e un cambio di prezzo ti mostra prima l'importo da confermare. Su una Machine self-hosted aprono il tuo account in una nuova scheda, dove accedi.
+Ogni opzione apre la sezione corrispondente del tuo account. Se il prezzo cambia, prima ti mostra l’importo da confermare. Su una Machine ospitata da te, si apre il tuo account in una nuova scheda, dove devi accedere.
 
 ## Chiedi alla tua Fleet
 
-Chiedi "chi conosce qualcuno in Acme?" dalla scheda Fleet, oppure **Chiedi alla Fleet** su un'organizzazione nel [Graph](graph.md). La Machine di ogni collega risponde secondo le sue regole di condivisione, e prima chiede al collega quando la regola lo prevede.
+Chiedi «chi conosce qualcuno in Acme?» dalla scheda Fleet, oppure seleziona **Chiedi alla Fleet** su un’organizzazione nel [Graph](graph.md). La Machine di ogni collega risponde secondo le proprie regole di condivisione e, se la regola lo prevede, prima chiede a quella persona.
 
-## Risposte da sola in una Fleet di lavoro
+## Risposte automatiche in una Work Fleet
 
-In una Fleet di lavoro Standard, la tua Machine risponde da sola su **chi conosce qualcuno**, **contesto delle riunioni** ("chi è questo ospite?") e **chi gestisce le email condivise**. Usa solo ciò che il [Graph del team](team-graph.md) già condivide con il team. Mai thread privati, personali o sensibili, e solo nomi che il Graph del team già condivide. Ogni risposta compare nella scheda Fleet, sotto **Movimenti**.
+In una Work Fleet Standard, la tua Machine risponde automaticamente a tre tipi di domande dei colleghi: **chi conosce qualcuno**, **contesto delle riunioni** («chi è questo ospite?») e **chi gestisce le email condivise**. Usa solo le informazioni che il [Graph del team](team-graph.md) condivide già con il team, mai conversazioni private, personali o sensibili. Ogni risposta appare nella scheda Fleet, in **Movimenti**.
 
-Per fermarne una, impostala su **Mai** sotto **Condivisione**. Una regola salvata come **Chiedimi prima** ora funziona come **Sempre**. Finché la condivisione del Graph del team della tua Fleet è disattivata, chi conosce qualcuno e contesto delle riunioni continuano a chiedere prima a te.
+Per disattivare una risposta, imposta **Mai** in **Condivisione**. Una regola salvata come **Chiedimi prima** funziona come **Sempre**. Se la condivisione del Graph del team è disattivata, prima ti chiede chi conosce qualcuno e il contesto delle riunioni.
 
-Le Fleet di lavoro Prudenti, Amici e Famiglia chiedono ancora prima a te. Presentazioni, passaggi di lavoro e domande libere mantengono le loro regole.
+Le Fleet di lavoro con regole prudenti, Amici e Family continuano a chiederti prima. Le presentazioni, i passaggi di lavoro e le domande gratuite seguono le proprie regole.
 
 ## Apprendimenti del team
 
-Al massimo una volta al giorno, la tua Machine legge alcuni thread con i clienti che il Graph del team già condivide, e annota come lavorate. Per esempio: "Ai rimborsi si risponde dalla casella del supporto con il modello per i rimborsi." Compaiono nel riquadro della Fleet di lavoro sotto **Apprendimenti del team**, per tutta la Fleet, e ognuno è registrato sotto **Movimenti**. Non si chiede prima a nessuno.
+La tua Machine annota come lavora il team, usando le conversazioni con i clienti che il Graph del team condivide già, al massimo una volta al giorno. Per esempio: «Le richieste di rimborso ricevono risposta dalla casella di supporto usando il modello per i rimborsi». Gli apprendimenti appaiono nel riquadro della tua Work Fleet, in **Apprendimenti del team**, dove tutti possono vederli. Ogni apprendimento viene registrato anche in **Movimenti**. Non viene chiesto prima a nessuno.
 
-- Solo thread in cui ha scritto qualcuno del tuo team. Mai quelli privati, personali o sensibili.
-- Solo ciò che vale per più clienti: un processo, uno strumento, uno stile di scrittura, o chi gestisce cosa. Mai qualcosa su un solo cliente, mai feedback sul tuo prodotto, e mai nomi, indirizzi, numeri o citazioni.
-- Ognuno ha un'etichetta: di che tipo è, che viene da conversazioni del team, e che è per questa Fleet. Quelli di cui non è sicura vengono scartati.
+- Solo conversazioni a cui ha partecipato qualcuno del team. Mai conversazioni private, personali o sensibili.
+- Solo informazioni valide per più clienti: un processo, uno strumento, uno stile di scrittura o chi si occupa di cosa. Mai informazioni su un singolo cliente, feedback sul tuo prodotto o nomi, indirizzi, numeri e citazioni.
+- Gli apprendimenti di cui non è sicura vengono scartati.
 
-Quando una persona impara, imparano tutti. Quando la tua Machine scrive o prepara un'attività di lavoro per questa azienda, usa gli apprendimenti del team adatti, dopo i tuoi fatti, regole e skill. Mai nelle attività personali. Un'attività che ne ha usato uno lo dice, per esempio "Usato un apprendimento del team: i rimborsi partono dalla casella del supporto." Premi **Rimuovi** lì per toglierlo a tutta la Fleet.
+La tua Machine usa gli apprendimenti pertinenti quando prepara un’attività di lavoro per questa azienda. Le tue informazioni, regole e skill hanno la precedenza. Le attività personali non li usano mai. Se un’attività usa un apprendimento, te lo dice, per esempio: «Usato un apprendimento del team: i rimborsi partono dalla casella di supporto». Tocca **Rimuovi** per eliminarlo da tutta la Fleet.
 
-Chiunque nella Fleet può premere **Rimuovi** su un apprendimento. Sparisce per tutti e non viene creato di nuovo. Per fermarli, disattiva **Proponi di condividere apprendimenti** in Impostazioni, Sicurezza. Le Fleet di lavoro Prudenti non ne ricevono.
+Chiunque nella Fleet può **Rimuovi** un apprendimento: viene eliminato per tutti e non verrà creato di nuovo. Per impedire che ne vengano proposti, disattiva **Proponi di condividere apprendimenti** in Impostazioni, Sicurezza. Le Work Fleet con regole prudenti non ne ricevono.
 
 ## Brief del team
 
-Scegli **Giornaliero** o **Settimanale** per **Brief del team** nella scheda Fleet, sotto **Condivisione**. La tua Machine chiede allora alle Machine del team conteggi e date. Ciò che ha bisogno di te arriva in Attività, sotto Lavoro: un cliente che aspetta una risposta, un’azienda che si è fatta silenziosa, due di voi che scrivono alle stesse persone o una riunione in comune.
+Seleziona **Giornaliero** o **Settimanale** per **Brief del team** nella scheda Fleet, in **Condivisione**. La tua Machine chiede quindi alle Machine dei colleghi conteggi e date. Ciò di cui devi occuparti appare in Attività, in Lavoro: un cliente in attesa di un collega, un’azienda senza attività da almeno due settimane, due persone del team che scrivono agli stessi contatti o una riunione condivisa.
 
-- Un’attività dice chi deve rispondere, da quando, cosa hanno chiesto e cosa c’è in gioco, come un progetto aperto. Se non c’è niente di concreto da dire, resta una riga del brief, non un’attività.
-- L’azienda e i colleghi rimandano alle loro pagine. **Dettagli** mostra cosa hanno scritto (tocca per leggerlo), cosa c’è in gioco, chi nel team è in contatto e i loro ultimi thread, solo ciò che il [Team Graph](team-graph.md) condivide.
-- Se quello che hanno scritto è solo nella posta di un collega, l’attività dice a chi chiedere.
-- **Chiedi al team** gli manda una domanda al riguardo. Le risposte compaiono sull’attività.
-- **Non serve** la chiude, e il brief ne tiene conto. Torna solo con qualcosa di nuovo.
-- Quando qualcuno risponde o se ne occupa, l’attività si chiude da sola. Se hai già un’attività su quell’azienda, si unisce a quella.
+- L’attività indica chi deve occuparsene, da quando, cosa ha chiesto e cosa c’è in gioco, per esempio un progetto in corso. Se non c’è niente di specifico da segnalare, resta una voce nel brief e non diventa un’attività.
+- L’azienda e i colleghi rimandano alle rispettive pagine. **Dettagli** mostra cosa hanno scritto, così puoi leggerlo toccandolo, cosa c’è in gioco, chi del team è in contatto e le conversazioni più recenti, solo quelle condivise dal [Graph del team](team-graph.md).
+- Se ciò che hanno scritto è solo nella posta di un collega, l’attività ti dice a chi chiedere.
+- **Chiedi al team** invia una domanda precompilata sull’argomento. Le risposte appaiono nell’attività.
+- **Non serve** chiude l’attività e il brief ne tiene conto. Riapparirà solo se ci saranno novità.
+- Quando qualcuno risponde o se ne occupa, l’attività si chiude da sola. Se riguarda un’azienda per cui hai già un’attività, viene aggiunta a quella.
 
 ## Richieste di brief
 
-Un collega con il brief del team attivo chiede ogni mattina numeri e date alla tua Machine. In una Fleet di lavoro la tua Machine risponde da sola, solo con ciò che il [Graph del team](team-graph.md) già condivide. Mai thread privati o personali, e non parte niente se la condivisione del Graph del team è disattivata. Ogni risposta compare sotto **Movimenti**. Non diventa mai un’attività né una notifica.
+Ogni mattina, la Machine di un collega che ha attivato il brief del team chiede alla tua Machine conteggi e date. In una Work Fleet, la tua Machine risponde automaticamente usando solo le informazioni già condivise dal [Graph del team](team-graph.md), e non risponde se la condivisione del Graph del team è disattivata. Ogni risposta appare nella scheda Fleet, in **Movimenti**, mai come attività o notifica.
 
-Per fermarlo, disattiva **Condividi i miei dati del brief con il team** nella scheda Fleet, sotto **Condivisione**. Il loro brief ti indica allora come senza risposta.
+Per disattivare questa opzione, disattiva **Condividi i miei dati del brief con il team** nella scheda Fleet, in **Condivisione**. Nel brief dei colleghi risulterai come persona che non ha risposto.
 
-In una Fleet Prudente, le richieste ti aspettano nella scheda Fleet sotto **Richieste di brief**: **Condividi una volta**, **Condividi sempre**, **Rifiuta** o **Mai**. Aspetta solo l’ultima richiesta di ogni collega, e quelle senza risposta scadono. Non viene condiviso nulla finché non scegli.
+In una Fleet con regole prudenti, le richieste restano nella scheda Fleet, in **Richieste di brief**: **Condividi una volta**, **Condividi sempre**, **Rifiuta** o **Mai**. Non viene condiviso nulla finché non scegli un’opzione e le richieste senza risposta scadono.
 
 ## Graph del team
 
-In una Fleet di Lavoro, il lavoro con i clienti viene condiviso con il tuo team, dopo che l'hai controllato. Vedi [Graph del team](team-graph.md).
+In una Work Fleet, il lavoro con i clienti viene condiviso con il team dopo che l’hai controllato. Vedi [Graph del team](team-graph.md).
 
 ## Connessioni condivise
 
-Un proprietario o un admin può collegare Stripe o Intercom una volta e condividerlo con il team, dal riquadro **Connessioni condivise** della scheda Fleet. Le Machine dei colleghi lo leggono, in sola lettura, e vedono chi l'ha condiviso. Solo gli admin lo cambiano o lo fermano. Vedi [Stripe](stripe.md) e [Intercom](intercom.md).
+Un proprietario o un amministratore può collegare Stripe o Intercom una volta e condividerli con il team da **Connessioni condivise** nella scheda Fleet. I colleghi possono consultare la connessione, ma non modificarla, e possono vedere chi l’ha condivisa. Solo gli amministratori possono modificarla o interromperla. Vedi [Stripe](stripe.md) e [Intercom](intercom.md).
 
-## Cosa risponde la tua Machine
+## A cosa risponde la tua Machine
 
-Impostalo per ogni Fleet, nel pannello Condivisione. Vedi [Regole di condivisione](sharing-rules.md). **Impostazioni** ha una scorciatoia: **Regole Fleet**.
+Imposta le regole per ogni Fleet nel riquadro Condivisione. Vedi [Regole di condivisione](sharing-rules.md). In **Impostazioni** trovi una scorciatoia: **Regole Fleet**.
 
-## Accesso aziendale
+## Accesso con l’account aziendale
 
-Per una Fleet di Lavoro ospitata. Un proprietario o un admin che ha fatto l'accesso con un account aziendale Google Workspace o Microsoft 365 può attivare **Accesso aziendale** nella pagina Account. Usa il dominio di quell'account.
+Consenti ai colleghi di entrare con il loro account aziendale. In una Work Fleet ospitata, il proprietario o un amministratore che ha effettuato l’accesso con Google Workspace o Microsoft 365 può attivare **Accesso con l’account aziendale** nella pagina Account.
 
-I colleghi che accedono con un account di quel dominio vedono allora **Chiedi di entrare**. Un proprietario o un admin deve approvare ogni richiesta con **Approva**. Gli account Gmail personali e Outlook.com non contano mai.
+I colleghi che accedono con il dominio aziendale vedono **Chiedi di entrare**. Il proprietario o un amministratore deve **Approva** ogni richiesta. Gli account Gmail personali e Outlook.com non sono mai validi.
 
-Togliere qualcuno dalla Fleet lo disconnette ovunque.
+Quando rimuovi una persona dalla Fleet, viene disconnessa ovunque.
 
-Per entrare in una Fleet, crearne una o abbinare una Machine sul tuo computer, vedi [Piani e fatturazione](plans-and-billing.md) e [Amici e il Network](friends.md).
+Per entrare in una Fleet, crearne una o associare una Machine sul tuo computer, vedi [Piani e fatturazione](plans-and-billing.md) e [Amici e Network](friends.md).
 
-## Per proprietari e admin
+## Per proprietari e amministratori
 
-**Gestisci**, nella scheda Fleet, elenca ogni Fleet che gestisci: le persone, i loro ruoli e gli inviti. Su una Machine in hosting inviti, cambi ruoli, rimuovi persone e rispondi alle richieste di ingresso direttamente lì. Una modifica che tocca il prezzo apre prima il tuo account per confermarla. Su una Machine self-hosted vedi chi ne fa parte, con un link alle impostazioni di quella Fleet sul tuo account, dove gestisci persone e inviti.
+**Gestisci** nella scheda Fleet mostra tutte le Fleet che gestisci, con le persone, i rispettivi ruoli e gli inviti. Su una Machine ospitata puoi invitare persone, modificare i ruoli, rimuovere persone e rispondere alle richieste di accesso direttamente da qui. Se una modifica incide sul prezzo, si apre il tuo account per permetterti di confermarla. Su una Machine ospitata da te, puoi vedere chi ne fa parte e trovare un link alle impostazioni della Fleet nel tuo account, dove puoi gestire persone e inviti.
 
-**Impostazioni della Fleet**, sotto il nome di ogni Fleet nel suo pannello e in Gestisci, apre le impostazioni di quella Fleet sul tuo account: connessioni condivise, sicurezza, accesso aziendale, quale Machine risponde, e queste due:
+**Impostazioni della Fleet**, sotto il nome di ogni Fleet nel relativo riquadro e in Gestisci, apre le impostazioni di quella Fleet nel tuo account: connessioni condivise, sicurezza, accesso aziendale, quale Machine risponde e queste due opzioni:
 
-- **Rimossi di recente**: ogni persona rimossa o che è uscita. Dice **Rimosso, confermato** quando la sua Machine ha rimosso i dati di lavoro, Google ha confermato la disconnessione e ogni token condiviso che aveva è stato sostituito. Fino ad allora dice **In sospeso** e perché.
-- **Registro attività**: chi ha fatto cosa e quando. Inviti, ingressi, rimozioni, ruoli, Machine ospitate e fatturazione, connettori condivisi e approvazioni. Elenca anche ogni volta che il nostro team ha letto il report o i log della Machine di un membro. Mai il contenuto dei messaggi. **Scarica CSV** lo esporta. Conservato 12 mesi.
+- **Rimossi di recente**: ogni persona rimossa o che ha lasciato la Fleet. «Rimosso, confermato» significa che la sua Machine ha eliminato i dati di lavoro e che la persona è disconnessa ovunque. Fino a quel momento appare **In attesa**, con il motivo.
+- **Movimenti**: chi ha fatto cosa e quando, per esempio inviti, ingressi, rimozioni, ruoli, Machine ospitate, fatturazione, connessioni condivise e approvazioni. Include anche ogni volta che il nostro team di assistenza ha letto il rapporto della Machine di un membro o i suoi log. Non include mai il contenuto dei messaggi. **Scarica CSV** esporta i dati. Conservati per 12 mesi.
 
-**Chiedimi prima di avviare la Machine di un membro**, per il proprietario: attivo, la nuova Machine di un membro aspetta il tuo OK, anche in una Fleet gratuita. Disattivo, in una Fleet gratuita parte subito e ti avvisiamo. Una Machine che costa denaro aspetta sempre che tu ne confermi l’importo.
+**Chiedimi prima di avviare la Machine di un membro**, per il proprietario: se attivata, la Machine di un nuovo membro aspetta la tua conferma, anche in una Fleet gratuita. Se disattivata, in una Fleet gratuita la Machine si avvia subito e ricevi una notifica. Una Machine a pagamento aspetta sempre che tu confermi l’importo.
 
-Dopo **Interrompi condivisione**, un connettore condiviso mostra **Rimosso, confermato** quando ogni Machine ha eliminato il token.
+Dopo **Interrompi condivisione**, una connessione condivisa mostra «Rimosso, confermato» quando tutte le Machine hanno perso l’accesso.

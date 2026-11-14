@@ -5,6 +5,7 @@ summary: Eine Aufgabe für jede Sache, die dich braucht, bereit für dein Ja. Wa
 covers: tab:inbox
 code: dashboard.html, assistant.py
 order: 1
+translated: 645c40350e70a0c9
 ---
 Deine Machine liest alles Neue und erstellt nur dann eine Aufgabe, wenn etwas dich braucht. Eine Aufgabe pro Angelegenheit, egal über wie viele Nachrichten sie geht.
 

@@ -5,6 +5,7 @@ summary: Ce que vous avez dit que vous feriez, et ce que les autres vous ont pro
 covers: promises
 code: dashboard.html, assistant.py
 order: 6
+translated: 0779d3fc9d3f3407
 ---
 Votre Machine repère les promesses dans vos messages, dans les deux sens, sans rien à configurer.
 

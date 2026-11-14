@@ -5,6 +5,7 @@ summary: Pergunte sobre uma tarefa ou mude o rascunho dela, em um chat que perte
 covers: card-chat
 code: dashboard.html, assistant.py, chat_files.py, corrections.py
 order: 4
+translated: ba1206b5165695ce
 ---
 ## Abrir
 

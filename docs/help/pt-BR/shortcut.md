@@ -5,6 +5,7 @@ summary: Stories que mudam de estado, com seus responsáveis e prazos. Ele só l
 covers: connector:shortcut
 code: connectors/shortcut.py
 site: Connect, More sources, Remove
+translated: 2298e2fcb1af74b3
 ---
 ## O que ele lê
 

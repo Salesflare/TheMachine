@@ -5,6 +5,7 @@ summary: I riepiloghi e le trascrizioni di AI Companion delle riunioni che organ
 covers: connector:zoom
 code: connectors/zoom.py, meeting_notes.py, onboarding.py
 site: Connect Zoom, More sources, Remove, Sign in with Zoom
+translated: 9533caa1429fb3fc
 ---
 ## Cosa legge
 

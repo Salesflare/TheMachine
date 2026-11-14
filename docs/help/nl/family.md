@@ -5,6 +5,7 @@ summary: Een gratis Familie-Fleet voor maximaal 6 mensen: wanneer iedereen vrij 
 covers: family
 code: family.py, dashboard.html
 order: 6
+translated: 3af87ad0b491b336
 ---
 ## Wat het doet
 

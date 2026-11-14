@@ -5,6 +5,7 @@ summary: Modifications de cartes, commentaires et activité sur un tableau Trell
 covers: connector:trello
 code: connectors/trello.py
 site: Sign in with Trello, Connect, More sources, Remove
+translated: 7fc2a596ef58bd93
 ---
 ## Ce qu’il lit
 

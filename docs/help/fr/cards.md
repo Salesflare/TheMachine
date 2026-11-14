@@ -5,6 +5,7 @@ summary: Une tâche par chose qui a besoin de vous, prête pour votre accord. Ce
 covers: tab:inbox
 code: dashboard.html, assistant.py
 order: 1
+translated: 645c40350e70a0c9
 ---
 Votre Machine lit tout ce qui est nouveau et ne crée une tâche que si quelque chose a besoin de vous. Une tâche par sujet, peu importe le nombre de messages.
 

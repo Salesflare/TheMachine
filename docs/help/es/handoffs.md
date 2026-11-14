@@ -1,49 +1,54 @@
 ---
 title: Traspasos
 area: fleet
-summary: Pasa una tarea a la Machine de un compañero, con lo que necesita. Haz seguimiento más tarde, o recupérala.
+summary: Pasa una tarea a la Machine de un compañero con todo lo que necesita. Pregunta cómo va más tarde o recupérala.
 covers: handoffs
 code: fleet_requests.py, dashboard.html
 order: 3
+translated: acb60a24ef374625
 ---
-## Pasa una tarea
+## Pasar una tarea
 
-1. En la tarea, abre **…**, luego **Pasar…**, y elige **Un compañero**.
-2. Elige a quién, revisa lo que va con ella (quita cualquier parte con ×) y añade una nota. El texto empieza con la tarea y por qué importa, sacado de la tarea, y de dónde viene (su enlace). No va nada de una cuenta Personal ni de otra empresa.
+1. En la tarea, abre **…**, luego **Pasar…** y elige **Un compañero**.
+2. Elige a quién, revisa qué se incluye (× deja fuera una parte) y añade una nota. No se incluye nada de una cuenta Personal ni de otra empresa.
 3. Envíala. Su Machine se la muestra como una tarea.
 
-Una conversación de Intercom va con su lugar en Intercom. Si su Machine lee el mismo espacio de trabajo de Intercom, su tarea queda en esa conversación: **Leer mensaje** la abre, el cliente aparece en ella y su respuesta vuelve a Intercom. Si no, la tarea igualmente enlaza la conversación en Intercom.
+Su Machine le envía una notificación al teléfono o por Telegram. Si no tiene configurado ninguno de los dos, le manda un único correo con quién se la pasó, el título y un enlace. Consulta [Notificaciones](notifications.md).
 
-Mientras esperas, la tarea queda en **Vuelve más tarde**, "Con Pat · esperando", con una fecha de seguimiento. **Hacer seguimiento ahora** pregunta cómo va; **Cambiar hora** mueve el seguimiento.
+También se incluye la conversación de Intercom. Si su Machine tiene acceso al mismo espacio de trabajo de Intercom, **Leer mensaje** la abre y su respuesta se envía a Intercom. Si no, la tarea incluye un enlace a la conversación.
 
-Solo vuelve arriba cuando hay algo que decidir: Pat respondió, la rechazó o la marcó como hecha, el traspaso falló, o llegó una fecha límite. Una tarea que vence hoy hace el seguimiento unas horas después, una que vence pronto el día laborable anterior, una urgente sin fecha a la mañana laborable siguiente, y cualquier otra a los 3 días laborables.
+Mientras esperas, la tarea indica lo que pediste y cuándo («Se lo pediste a Pat el mar 3 nov: …»), solo si eso aporta algo al título. Aparece en **Vuelve más tarde**, con el estado «Con Pat · esperando» y una fecha para preguntar cómo va. **Hacer seguimiento ahora** prepara un breve recordatorio para que se lo envíes a Pat; **Cambiar hora** cambia cuándo preguntar.
 
-De vuelta para un seguimiento, dice "Sigue con Pat · ¿hacer seguimiento?": Pat aún la tiene y no ha vuelto nada. **Hacer seguimiento ahora** abre el chat; **Recuperar** y **Pasar a otra persona** están en **…**, luego **Pasar…**.
+Si la Machine de Pat no puede enviarle notificaciones, la tarea dice «Pat no recibirá una notificación. Avísale». Díselo tú a Pat. El mensaje desaparece cuando active las notificaciones.
 
-El chat de la tarea muestra cuándo salió ("Pasada a la Machine de Pat · 14:02") y lo que volvió: aceptada, rechazada (con su nota) o hecha. Si vuelve para un seguimiento sin respuesta aún, "Aún sin respuesta de Pat" aparece bajo esa línea, con **Marcar como hecha**, **Posponer** y **No hace falta** (sin Hazlo: la tiene esa persona). Para recordárselo o recuperarla, dilo en el chat.
+La tarea vuelve a aparecer arriba solo cuando hay algo que decidir: Pat respondió, la rechazó o la terminó, el traspaso falló o llegó una fecha límite. La fecha para preguntar cómo va depende de la fecha de vencimiento: unas horas si vence hoy, el día laborable anterior si vence pronto, a la mañana siguiente si es urgente y, en los demás casos, en 3 días laborables.
 
-Si el traspaso no salió, la tarea y su chat lo dicen, con **Reintentar**.
+Cuando vuelve para preguntar cómo va, dice «Sigue con Pat». **Hacer seguimiento ahora** prepara un breve recordatorio para Pat en el mismo canal donde se lo pediste (Slack, WhatsApp, Telegram o correo), desde la tarea. No se envía nada hasta que elijas **Enviar**; después, vuelve a quedar pendiente de Pat. Si ninguno de los canales que conectaste puede enviarle un mensaje a Pat, se abre el chat y se indica. **Recuperar** y **Pasar a otra persona** están en **…**, luego **Pasar…**.
 
-## Pásala mejor a otra persona
+El chat de la tarea muestra cuándo se envió («Pasada a la Machine de Pat · 14:02») y qué respuesta llegó: aceptada, rechazada (con su nota) o terminada. Si todavía no hay respuesta, ofrece **Marcar como hecha**, **Posponer** y **No hace falta**. Para recordárselo o recuperarla, dilo en el chat.
 
-Mientras la tiene un compañero, la tarea lo dice en una línea ("Con Pat · esperando"), con **Recuperar** y **Pasar a otra persona** en **…**, luego **Pasar…**. **Recuperar** hace que vuelva a ser tuya: se avisa a la Machine de Pat, y su respuesta ya no la mueve.
+Si no se pudo enviar el traspaso, la tarea y su chat lo indican y muestran **Reintentar**.
 
-**Pasar a otra persona** abre el formulario de traspaso, para alguien que aún no la tiene. O dilo en el chat de la tarea ("esto debería ir a Kim"). El nuevo traspaso espera en la tarea a que lo leas: "Sigue con Pat hasta que se la envíes a Kim", con **Revisar traspaso a** Kim. Eso abre el formulario con el texto, para Kim.
+## Pasársela a otra persona
 
-Una tarea va a cada compañero una sola vez: mientras Pat la tiene, pasársela otra vez a Pat dice "Pat ya tiene esta tarea".
+Mientras la tiene un compañero, la tarea lo indica en una línea («Con Pat · esperando») y muestra **Recuperar** y **Pasar a otra persona** en **…**, luego **Pasar…**. **Recuperar** hace que vuelva a ser tuya: se avisa a la Machine de Pat y su respuesta ya no la cambia.
 
-**Recuperarla de** Pat está activado por defecto; desactívalo para que la tengan los dos. No sale nada hasta que elijas **Pasar**. Entonces el chat dice "Recuperada de Pat" y "Pasada a la Machine de Kim". También se avisa a la Machine de Pat, y la tarea que le creó desaparece.
+**Pasar a otra persona** abre el formulario de traspaso. También puedes decirlo en el chat de la tarea («esta debería ir a Kim»): entonces la tarea dice «Sigue con Pat hasta que se la pases a Kim» y muestra **Revisar traspaso a** Kim.
 
-## Cuando la rechazan
+Cada tarea se pasa una sola vez a cada compañero: mientras Pat la tenga, si vuelves a elegir a Pat en el formulario de traspaso, se inicia un seguimiento. **Preguntar cómo va** prepara el mismo recordatorio, con una línea tuya si añades una.
 
-Pueden decir por qué: no es suya, ya está hecha o no tienen tiempo esta semana. Entonces elige **Lo hago yo**, **Pasar a otra persona** o **Marcar como hecha**.
+**Recuperar de** Pat está activado de forma predeterminada; desactívalo para que ambos tengan la tarea. No se envía nada hasta que elijas **Pasar**. Se avisa a la Machine de Pat y su copia de la tarea desaparece.
 
-## Alguien fuera de la Network
+## Si la rechaza
 
-Elige **Por correo**: tu Machine redacta un correo para que lo envíes tú. Mientras escribes su dirección, sugiere primero a compañeros: personas de tu Fleet, luego personas del dominio de tu empresa, y luego lo que escribiste con ese dominio. Añade una página de tarea para que puedan responder con un toque: consulta [Páginas de tarea](task-pages.md).
+Puede explicar por qué: no le corresponde, ya está hecha o no tiene tiempo esta semana. Después, elige **Lo hago yo**, **Pasar a otra persona** o **Marcar como hecha**. Lo mismo ocurre si no responde a tiempo. **Lo hago yo** hace que la tarea vuelva a ser tuya y aparezca en Para ti.
 
-Solo para tareas de Trabajo. Marca lo que va en el correo: unas líneas sobre la tarea, su borrador listo, enlaces y archivos. Solo se ofrece lo que tu Team Graph comparte con el equipo, así que lo Personal y Solo tú se queda fuera. **Preparar correo** deja el correo en la tarea: léelo y luego envíalo desde tu propio buzón como cualquier correo. Sin píxeles de seguimiento.
+## Alguien fuera de Network
 
-Una tarea de Intercom o Slack no tiene buzón propio, así que su correo sale de tu buzón de Trabajo.
+Elige **Por correo**: tu Machine prepara un correo para que lo envíes. Mientras escribes, primero te sugiere personas de tu Fleet y luego de tu empresa. Añade una página de tarea para que puedan responder con un toque: consulta [Páginas de tareas](task-pages.md).
 
-La tarea muestra entonces "Pasada a <nombre> por correo" y lo sigue como una promesa hasta que respondan que está hecho, o hasta que la marques como hecha. El correo termina con "Encárgate de esto en tu propia Machine": si se registran con ese enlace, pueden unirse a tu Fleet y la tarea pasa a su Machine como un traspaso normal. Desactiva esa línea en **Ajustes**, en Fleet.
+Solo para tareas de Trabajo. Marca qué quieres incluir: unas líneas sobre la tarea, su borrador, enlaces y archivos. El contenido Personal y Solo tú no se incluye. **Preparar correo** añade el correo a la tarea: léelo y envíalo desde tu propio buzón. No se hace seguimiento.
+
+Las tareas de Intercom o Slack no tienen un buzón propio, así que sus correos se envían desde tu buzón de Trabajo.
+
+Luego, la tarea sigue la promesa hasta que respondan que está hecha o la marques como hecha. El correo termina con «Hazte cargo en tu propia Machine»: si se registran desde ese enlace, pueden unirse a tu Fleet y la tarea pasa a su Machine. Desactiva esa frase en **Ajustes**, en Fleet.

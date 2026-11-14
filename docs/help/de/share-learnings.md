@@ -5,6 +5,7 @@ summary: Höchstens einmal am Tag bietet sie dem Team von The Machine ein paar a
 covers: share-learnings
 code: team_learnings.py, dashboard.html
 order: 3
+translated: 8a7418cb4cb27e7b
 ---
 ## Was das ist
 

@@ -5,6 +5,7 @@ summary: Afspraken uit iCloud-agenda of elke CalDAV-agenda, zoals Fastmail, Next
 covers: connector:icloud_calendar, connector:caldav
 code: caldav_calendar.py, ical.py, machine/sources/calendar_setup.py
 order: 14
+translated: 0ff916ed2bb877e1
 ---
 ## Wat het leest
 

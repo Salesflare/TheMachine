@@ -5,6 +5,7 @@ summary: Os canais e as mensagens diretas de que você participa. Envia uma mens
 covers: connector:slack
 code: assistant.py, next_actions.py, onboarding.py, slack_api.py
 site: Connect, Remove
+translated: 8d275e75083292ba
 ---
 ## O que ele lê
 

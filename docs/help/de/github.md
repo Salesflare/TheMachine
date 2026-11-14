@@ -5,6 +5,7 @@ summary: Review-Anfragen, Erwähnungen, Zuweisungen und fehlgeschlagene CI-Läuf
 covers: connector:github
 code: connectors/github.py, onboarding.py
 site: Sign in with GitHub, More sources, Remove
+translated: e97127e156e56f7d
 ---
 ## Was es liest
 

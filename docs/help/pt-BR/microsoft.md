@@ -6,6 +6,7 @@ covers: connector:outlook, connector:outlook_calendar
 code: ms_graph.py, ms_photos.py, onboarding.py
 site: Connect Microsoft, Copy link, I'm the admin: approve now, Disconnect, Sign in with Microsoft, Use your own app
 order: 12
+translated: 41c9c0174a2a21c7
 ---
 ## O que ele lê
 

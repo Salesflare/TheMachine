@@ -5,6 +5,7 @@ summary: Lo que dijiste que harías y lo que otros te prometieron. Se lleva el s
 covers: promises
 code: dashboard.html, assistant.py
 order: 6
+translated: 0779d3fc9d3f3407
 ---
 Tu Machine detecta las promesas en tus mensajes, en ambos sentidos, sin nada que configurar.
 

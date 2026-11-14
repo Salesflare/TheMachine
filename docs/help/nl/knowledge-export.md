@@ -5,6 +5,7 @@ summary: Neem wat je Machine geleerd heeft mee naar elke andere AI, als gewone M
 covers: knowledge-export
 code: machine/export/knowledge.py, machine/app/knowledge_export.py, cli.py
 order: 6
+translated: 6a917f8ee2aabaa9
 ---
 Alles wat je Machine leert, is van jou. Neem het mee naar een andere AI, of bewaar het, ook als je The Machine niet meer gebruikt.
 

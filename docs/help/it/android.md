@@ -5,6 +5,7 @@ summary: Le notifiche del tuo telefono Android, tramite l’app OpenClaw. Legge 
 covers: connector:android
 code: onboarding.py, android-notifications.mjs
 site: Show a setup code, Approve, Remove
+translated: 344d64dafc75a0a9
 ---
 ## Cosa legge
 

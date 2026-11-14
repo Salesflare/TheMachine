@@ -5,6 +5,7 @@ summary: Checks staan uit, wachten, of zijn gestopt op de gebruikslimiet van je 
 covers: 
 code: dashboard.html, assistant.py
 order: 3
+translated: 39b4aa749445dfba
 ---
 To-do's komen uit checks: je Machine leest wat er binnenkwam, in kleine porties, binnen ongeveer 15 minuten.
 

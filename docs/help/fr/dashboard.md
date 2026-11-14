@@ -5,6 +5,7 @@ summary: À quoi sert chaque partie du tableau de bord, de Tâches à Connexions
 covers: tab:events, tab:feedback
 code: dashboard.html
 order: 4
+translated: d41a4a0017765f9e
 ---
 ## Les onglets
 

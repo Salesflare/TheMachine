@@ -5,6 +5,7 @@ summary: Una tarea por cada cosa que te necesita, lista para tu sí. Qué signif
 covers: tab:inbox
 code: dashboard.html, assistant.py
 order: 1
+translated: 645c40350e70a0c9
 ---
 Tu Machine lee todo lo nuevo y solo crea una tarea cuando algo te necesita. Una tarea por asunto, por muchos mensajes que abarque.
 

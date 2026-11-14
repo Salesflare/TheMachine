@@ -5,6 +5,7 @@ summary: Les stories qui changent d’état, avec leurs responsables et leurs é
 covers: connector:shortcut
 code: connectors/shortcut.py
 site: Connect, More sources, Remove
+translated: 2298e2fcb1af74b3
 ---
 ## Ce qu’il lit
 

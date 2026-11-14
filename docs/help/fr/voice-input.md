@@ -1,47 +1,48 @@
 ---
 title: Saisie vocale
 area: cards
-summary: Parlez au lieu de taper. Ce que vous dites arrive dans la zone de message pour que vous le vérifiiez. Rien n’est envoyé.
+summary: Parlez au lieu de taper. Vos paroles s’affichent dans le champ de message pour que vous puissiez les vérifier. Rien n’est envoyé.
 covers: voice-input
 code: voice_input.py, voice_worker.py, dashboard.html
 order: 7
 keywords: voice, dictate, dictation, speak, talk, microphone, mic, speech, transcribe
+translated: f311b21bb4996eb4
 ---
-## Parler au lieu de taper
+## Parlez au lieu de taper
 
-Touchez le micro dans une zone de message : le chat d’une tâche, **Nouvelle tâche**, **Aide**, ou la zone pour modifier un brouillon. Parlez, puis touchez la coche. Ou maintenez le micro pendant que vous parlez et relâchez quand vous avez fini.
+Touchez le micro dans un champ de message : le chat d’une tâche, **Nouvelle tâche**, **Aide** ou le champ où modifier un brouillon. Parlez, puis touchez la coche. Vous pouvez aussi maintenir le micro enfoncé pendant que vous parlez, puis le relâcher quand vous avez terminé.
 
-Pendant qu’elle écoute, la zone affiche un minuteur. Touchez la croix pour arrêter sans rien garder. Un enregistrement dure au plus 2 minutes ; à 2 minutes, il s’arrête tout seul et elle écrit ce que vous avez dit. Ce qu’elle a déjà entendu s’affiche dans la barre pendant que vous parlez, pour que le texte soit là peu après l’arrêt.
+Pendant l’écoute, un minuteur et le texte reconnu s’affichent dans le champ. Touchez la croix pour arrêter sans rien conserver. L’enregistrement s’arrête automatiquement au bout de 2 minutes.
 
-Ce que vous avez dit arrive dans la zone, là où était votre curseur. Rien n’est envoyé : relisez, modifiez ce que vous voulez et envoyez-le vous-même.
+Le texte s’affiche dans le champ, à l’endroit où se trouvait le curseur. Rien n’est envoyé : relisez-le, modifiez-le à votre guise, puis envoyez-le vous-même.
 
-## Où va votre voix
+## Où votre voix est traitée
 
-Dans **Paramètres**, **Général**, sous **Saisie vocale**, une courte ligne indique lequel est utilisé.
+Choisissez cette option dans **Paramètres**, **Général**, sous **Saisie vocale**. Une courte phrase indique laquelle est utilisée.
 
-- **Automatique** (par défaut) : quand OpenAI est configuré sur votre Machine, votre enregistrement est transcrit par OpenAI. C’est une clé API, ou une connexion ChatGPT si votre forfait permet l’audio. Sans OpenAI, il est transcrit sur votre Machine elle-même et ne la quitte jamais.
-- **Sur cette Machine** : toujours sur votre Machine, même quand OpenAI est configuré.
-- **Avec OpenAI** : toujours OpenAI.
+- **Automatique** (par défaut) : OpenAI transcrit l’enregistrement lorsque votre Machine utilise OpenAI (avec une clé OpenAI ou un forfait ChatGPT qui permet le traitement audio). Sinon, votre Machine le fait elle-même et l’enregistrement ne la quitte jamais.
+- **Sur cette Machine** : toujours sur votre Machine, même si OpenAI est configuré.
+- **Avec OpenAI** : toujours avec OpenAI.
 
-Un enregistrement est supprimé dès que le texte est revenu.
+L’enregistrement est supprimé dès que le texte est récupéré.
 
 ## Préparation
 
-Pour transcrire elle-même la parole, votre Machine a besoin d’un modèle vocal de 150 à 500 Mo. Elle le télécharge en arrière-plan, en priorité basse, une fois configurée, sa première vérification terminée et après un moment de calme. Pendant ce temps, les paramètres affichent **Préparation en cours (en arrière-plan)**. Elle ne le fait jamais quand OpenAI est utilisé.
+Pour transcrire la parole elle-même, votre Machine télécharge d’abord un modèle vocal (150 à 500 MB) en arrière-plan, lorsque l’activité est faible. Pendant ce temps, les Paramètres affichent **Préparation en arrière-plan**. Cette étape est ignorée si OpenAI est utilisé.
 
-Tant qu’elle n’est pas prête, **Automatique** utilise la reconnaissance vocale de votre navigateur s’il en a une, et l’indique sous la zone. Certains navigateurs l’envoient à leur éditeur. Avec **Sur cette Machine**, votre enregistrement attend, et la zone affiche « Préparation de la voix… » avec le temps restant.
+En attendant, **Automatique** utilise la reconnaissance vocale intégrée à votre navigateur, si celui-ci en propose une, et l’indique sous le champ. Certains navigateurs envoient l’enregistrement à leur éditeur. Si vous choisissez **Sur cette Machine**, votre enregistrement est mis en attente. Le champ affiche alors « Préparation de la saisie vocale… » avec le temps restant.
 
 ## Paramètres
 
 - **Transcrit** : **Automatique**, **Sur cette Machine** ou **Avec OpenAI**.
-- **Précision** (sur votre Machine uniquement) : **Plus précis** fonctionne le mieux pour la plupart des langues. **Plus rapide** va plus vite mais se trompe sur plus de mots. Sur une Machine Standard, qui a moins de mémoire, **Plus rapide** est le réglage par défaut.
-- **Langue** : **Détecter** fonctionne pour toutes les langues de l’app. Choisir la vôtre est un peu plus rapide.
+- **Précision** (sur votre Machine uniquement) : **Plus précis** donne les meilleurs résultats pour la plupart des langues. **Plus rapide** est plus rapide, mais fait davantage d’erreurs. C’est l’option par défaut sur une Machine Standard.
+- **Langue** : **Détecter** fonctionne avec toutes les langues de l’application. Choisir la vôtre est légèrement plus rapide.
 
-Pour parler à voix haute avec The Machine, voyez [Parler en direct](talk-live.md).
+Pour parler à The Machine à voix haute, consultez [Parler en direct](talk-live.md).
 
-## Quand ça ne marche pas
+## En cas de problème
 
-- **Le micro est bloqué** : autorisez le micro pour ce site dans les paramètres de votre navigateur. Dans l’app sur téléphone, c’est dans les autorisations de l’app.
-- **Aucun micro trouvé** : branchez-en un et réessayez.
-- **Impossible de joindre votre Machine** : votre enregistrement est gardé et transcrit quand votre Machine est de retour. Pour essayer plus tôt, touchez **Essayer maintenant**.
-- **Je n’ai rien compris** : parlez un peu plus près du micro, ou plus longtemps.
+- **Le microphone est bloqué** : autorisez l’accès au microphone pour ce site dans les paramètres de votre navigateur. Dans l’application mobile, cette autorisation se trouve dans les réglages de l’application.
+- **Aucun microphone détecté** : connectez-en un, puis réessayez.
+- **Impossible de joindre votre Machine** : votre enregistrement est conservé et transcrit lorsque votre Machine est de nouveau disponible. Pour réessayer plus tôt, touchez **Essayer maintenant**.
+- **Aucune parole détectée** : rapprochez-vous du micro ou parlez un peu plus longtemps.

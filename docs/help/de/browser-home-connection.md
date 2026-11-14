@@ -6,6 +6,7 @@ code: browser_login.py
 site: Tailscale, Sign in to Tailscale, Use this exit node, Open it in Tailscale, Test it, Sign in again, Stop using it, Sign it out of Tailscale too
 keywords: tailscale, exit node, home internet, ip address, cloudflare, linkedin
 order: 4
+translated: 9935ac3c09fa5c00
 ---
 Manche Websites, wie LinkedIn, X und Seiten hinter einer Cloudflare-Prüfung, lehnen Anmeldungen von einem Browser in der Cloud ab. Deine Einrichtungsseite kann den Browser deiner gehosteten Machine stattdessen über dein Internet zu Hause schicken, mit Tailscale. Das ist kostenlos, dauert etwa 10 Minuten, und das meiste passiert von selbst.
 

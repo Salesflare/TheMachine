@@ -5,6 +5,7 @@ summary: Onde encontrar cada configuração, do modo claro à segurança e à su
 covers: settings:general
 code: dashboard.html
 order: 1
+translated: 00e42f9aeb395d21
 ---
 Abra **Configurações** pela engrenagem no topo. As abas:
 

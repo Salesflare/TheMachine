@@ -5,6 +5,7 @@ summary: Haz clic en una direcci√≥n de correo para escribir desde tu propio buz√
 covers: email-composer
 code: machine/app/mail.py, dashboard/todos-compose.js
 order: 12
+translated: 568ac451673bc141
 ---
 ## Abrirlo
 

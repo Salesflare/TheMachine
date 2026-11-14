@@ -5,6 +5,7 @@ summary: Optional. Halte dein eigenes GBrain-Agentengedächtnis mit The Machine 
 covers: gbrain
 code: gbrain.py, dashboard.html
 order: 90
+translated: d51536212d3ae14f
 ---
 ## Einschalten
 

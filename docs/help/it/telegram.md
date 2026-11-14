@@ -5,6 +5,7 @@ summary: Ricevi le tue attività su Telegram, con gli stessi pulsanti della dash
 covers: telegram
 code: assistant.py, onboarding.py, cli.py
 site: Add my bot, Add more any time, Disconnect Telegram
+translated: a2b74e4831832977
 ---
 ## Cosa fa
 

@@ -5,6 +5,7 @@ summary: Die Personen, Organisationen und Projekte in deinen Nachrichten, die si
 covers: tab:people
 code: graph.py, graph_updates.py, crm.py, crm_import.py, crm_fixes.py, crm_fields.py, dashboard.html
 order: 1
+translated: 4dbe1a4e1702b1c1
 ---
 Deine Machine baut eine Karte davon, mit wem du zu tun hast und was los ist, aus deinen Nachrichten, Meetings und Entscheidungen. Nichts einzurichten, und alles bleibt auf deiner Machine.
 

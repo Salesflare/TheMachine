@@ -5,6 +5,7 @@ summary: Los resúmenes y transcripciones de AI Companion de las reuniones que o
 covers: connector:zoom
 code: connectors/zoom.py, meeting_notes.py, onboarding.py
 site: Connect Zoom, More sources, Remove, Sign in with Zoom
+translated: 9533caa1429fb3fc
 ---
 ## Qué lee
 

@@ -5,6 +5,7 @@ summary: Deine Erwähnungen, Antworten und Direktnachrichten auf X, gelesen im e
 covers: connector:x
 code: connectors/x.py, integrations/x_inbox.py
 site: Connect, More sources, Remove
+translated: 5cbe43055458daf4
 ---
 ## Was es liest
 

@@ -5,6 +5,7 @@ summary: De kanalen en directe berichten waarin je zit. Stuurt een direct berich
 covers: connector:slack
 code: assistant.py, next_actions.py, onboarding.py, slack_api.py
 site: Connect, Remove
+translated: 8d275e75083292ba
 ---
 ## Wat het leest
 

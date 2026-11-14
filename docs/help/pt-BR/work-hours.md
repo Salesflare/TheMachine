@@ -5,6 +5,7 @@ summary: Quando a sua Machine pode mandar mensagens para você, quando os itens 
 code: dashboard.html, assistant.py
 order: 3
 keywords: quiet hours, weekend, evening, night, do not disturb, time zone
+translated: 062ccef1310f228a
 ---
 Em **Configurações**, **Notificações**, em **Horário de trabalho**:
 

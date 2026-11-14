@@ -5,6 +5,7 @@ summary: Les réunions d’un Exchange Server géré par votre entreprise (2013 
 covers: connector:exchange
 code: ews_calendar.py, machine/sources/calendar_setup.py
 order: 16
+translated: a437b18fcb879c1b
 ---
 ## Ce qu’il lit
 

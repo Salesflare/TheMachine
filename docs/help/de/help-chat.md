@@ -5,6 +5,7 @@ summary: Frag, wie The Machine funktioniert. Die Antworten kommen aus diesen Hil
 covers: help-chat
 code: help_chat.py, dashboard.html
 order: 6
+translated: 6313f73729cfba18
 ---
 Tippe oben auf **Hilfe**, neben **Einstellungen**, und frag in deinen eigenen Worten, etwa „Wie stelle ich eine Aufgabe zurück?“. Drück Enter zum Fragen oder Shift+Enter für eine neue Zeile. Hilfe antwortet in der Sprache deiner App, oder in der Sprache, in der du schreibst, wenn das eine andere ist. Links zu Hilfeseiten öffnen sich direkt hier, in deiner Sprache.
 

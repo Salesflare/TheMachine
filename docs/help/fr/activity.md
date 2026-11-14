@@ -6,6 +6,7 @@ covers: settings:activity
 code: activity_log.py, dashboard/settings-activity.js
 order: 2
 keywords: log, history, audit, what did it do, sent, refused, blocked
+translated: 1b5a54aa775234bd
 ---
 ## Ce qu’elle montre
 

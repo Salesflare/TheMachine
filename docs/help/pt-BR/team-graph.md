@@ -5,6 +5,7 @@ summary: Experimental. Compartilhe o trabalho com clientes com seu Fleet de Trab
 covers: team-graph
 code: shared_graph.py, fleet_trust.py, dashboard.html
 order: 2
+translated: fc842bc761a3ab17
 ---
 Em um Fleet de Trabalho, sua Machine pode compartilhar seu trabalho com clientes com as Machines dos seus colegas, como um CRM compartilhado. É **Experimental**: novo e ainda mudando, por isso começa desligado.
 

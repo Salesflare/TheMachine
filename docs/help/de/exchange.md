@@ -5,6 +5,7 @@ summary: Meetings aus einem Exchange Server, den deine Firma betreibt (2013 bis 
 covers: connector:exchange
 code: ews_calendar.py, machine/sources/calendar_setup.py
 order: 16
+translated: a437b18fcb879c1b
 ---
 ## Was es liest
 

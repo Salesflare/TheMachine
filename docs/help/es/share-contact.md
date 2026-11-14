@@ -5,6 +5,7 @@ summary: Envía el contacto de alguien, o el tuyo, a un compañero, un amigo o a
 covers: share-contact
 code: contact_share.py, fleet.py, dashboard.html
 order: 6
+translated: 66412d1dc4e965c2
 ---
 ## Comparte a alguien
 

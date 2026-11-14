@@ -1,50 +1,51 @@
 ---
 title: Amigos y la Network
 area: fleet
-summary: Añade amigos por nombre de usuario, encuentra a gente que conoces que tiene una Machine y vincula una Machine en tu propio ordenador.
+summary: Añade amigos por nombre de usuario, encuentra a gente que conoces y que tiene una Machine, y empareja una Machine en tu propio ordenador.
 covers: friends
 code: friends.py, network.py, meet.py, meet_app.py, dashboard.html
 site: Pair a self-hosted Machine
 order: 5
+translated: 3565b3898b234575
 ---
 ## Amigos
 
-Añade a alguien por su nombre de usuario exacto, en la pestaña **Fleet**, en Amigos. Los amigos pueden preguntar quién conoce a alguien, recibir contexto para reuniones y presentaciones cercanas, y ver cuándo estás ocupado (solo las horas ocupadas, nunca qué haces). Quita o bloquea a un amigo cuando quieras.
+Añade a alguien con su nombre de usuario exacto, en la pestaña **Fleet**, dentro de Amigos. Tus amigos pueden preguntar quién conoce a alguien, obtener contexto sobre reuniones y presentaciones, y ver cuándo tienes la agenda ocupada (solo los horarios, nunca los detalles). Puedes eliminar o bloquear a un amigo cuando quieras.
 
 ## Encuentra a gente que conoces
 
-En el panel Network:
+En **Fleet**, dentro de **Network**:
 
-- "Ver cuáles de mis contactos tienen una Machine" te sugiere gente que conoces.
-- "Dejar que me encuentren quienes tienen mi correo" permite que te encuentren.
+- «Comprobar cuáles de mis contactos tienen una Machine» te sugiere personas que conoces.
+- «Permitir que me encuentren quienes tienen mi correo» permite que te encuentren.
 
-Los dos están activados por defecto, y desactivados en el nivel de seguridad Prudente. Desactiva cualquiera cuando quieras; tu elección se mantiene. Te pueden encontrar por el correo con el que inicias sesión y tus direcciones conectadas, salvo las compartidas como info@, que siguen desactivadas hasta que las actives.
+Ambas opciones están activadas de forma predeterminada y desactivadas en el nivel de seguridad Cuidadoso. Puedes desactivar cualquiera cuando quieras y tu elección se mantiene. Pueden encontrarte por el correo con el que inicias sesión (siempre activado) y por tus direcciones conectadas, cada una con su propio interruptor en **Localizable por**. Las direcciones compartidas, como info@, permanecen desactivadas hasta que las actives.
 
-La gente que conoces y está en la Network se te sugiere en cuanto la activas, y cuando alguien se une más tarde. Cada coincidencia viene con Conectar, Ahora no o **No sugerir nunca**. **Salir de la Network** te saca de ella.
+Las personas que conoces aparecen enseguida cuando activas la opción y también cuando se unen más adelante. Para cada una puedes elegir Conectar, Ahora no o **No sugerir nunca**. Cuando ya sois amigos, dejan de aparecer como sugerencia. **Salir de la Network** te elimina de la Network.
 
-Las personas que encuentra muestran **Tiene una Machine** en tu lista Personas. Revisa las direcciones de tus mensajes y las que añadiste a alguien con **Editar**: si alguien se registró con otra dirección, añádesela. En la página de alguien que encontró, **Añadir como amigo** envía la misma solicitud que Conectar (**Añadir como familia** está en el menú ⋯).
+Las personas que encuentra aparecen como **Tiene una Machine** en tu lista de Personas. Comprueba las direcciones de tus mensajes y las que hayas añadido a una persona con **Editar**. Si alguien se registró con otra dirección, añádela a su perfil. En la página de alguien que haya encontrado, **Añadir como amigo** envía la misma solicitud que Conectar (**Añadir como familia** está en el menú ⋯).
 
-Para alguien sin Machine, **Invitar a The Machine** abre el correo que recibirá en **¿Enviar este correo?**, como en cualquier tarea, para cambiarlo si quieres. No sale nada antes de **Enviar ahora**. Si lo cierras, la invitación espera como tarea. Sin un buzón que pueda enviar: **Copiar** o **Abrir en tu correo**.
+Para alguien que no tiene una Machine, aparece **Invitar a The Machine**. Se abre el correo que recibirá en **¿Enviar este correo?**, el mismo que para cualquier tarea, para que lo edites si quieres. No se envía nada hasta que pulses **Enviar ahora**. Si cierras la ventana, la invitación queda pendiente como tarea. Si no tienes un buzón desde el que enviar: **Copiar** o **Abrir en tu correo**.
 
-Los números de teléfono también cuentan: los de tus chats de WhatsApp con personas a las que escribiste o con las que te reuniste, y los que añadiste con **Editar**. Tu número de WhatsApp vinculado y los números de Sobre ti hacen que te encuentren, cada uno con su interruptor en **Localizable por**. Un número solo encuentra a alguien si esa persona también te buscó, o si sois amigos, así que nadie puede probar números para ver quién tiene una Machine.
+También se tienen en cuenta los números de teléfono: los de tus chats de WhatsApp con personas a las que hayas escrito o con las que te hayas reunido, y los que hayas añadido con **Editar**. Tu número de WhatsApp vinculado y los números de la sección Sobre ti permiten que te encuentren, cada uno con su propio interruptor en **Localizable por**. Un número solo permite encontrar a alguien si esa persona también te ha buscado o si sois amigos. Así nadie puede probar números para ver quién tiene una Machine.
 
 ## Agendar con otras Machines
 
-Cuando alguien con una Machine escribe «veámonos la semana que viene», tu Machine pide a la suya sus horas libres y encuentra una que os vaya bien a los dos, dentro de tu horario laboral. Cada uno recibe un solo to-do, como «Reunión con Alex Example», con la hora debajo. Toca **Reservar**, **Otra hora** o **No hace falta**. La invitación solo sale cuando los dos habéis tocado Reservar.
+Cuando alguien con una Machine te escribe «quedemos la semana que viene», tu Machine le pregunta a la suya por los horarios disponibles y busca uno que les venga bien a ambos, dentro de tu horario laboral. Cada uno recibe una tarea, como «Quedar con Alex Example», con la hora debajo. Pulsa **Reservar**, **Otra hora** o **No hace falta**. La invitación solo se envía cuando ambos hayáis pulsado Reservar.
 
-Solo se envía libre u ocupado, cifrado de extremo a extremo, para 14 días como mucho y redondeado a 15 minutos. Los eventos privados cuentan como ocupados. Una Machine solo puede preguntar si os habéis escrito en ambos sentidos. Configúralo en el panel Network en **Qué pueden preguntar otras Machines a la mía**: **Libre/ocupado para agendar** o **Desactivado**, con la duración, el margen y las horas preferidas. Cada solicitud aparece en Actividad, en Calendario.
+Solo se comparte si estás libre u ocupado, con cifrado de extremo a extremo, durante un máximo de 14 días y en intervalos de 15 minutos. Los eventos privados cuentan como ocupados. Una Machine solo puede preguntar si os habéis enviado correos mutuamente. Configúralo en **Qué pueden preguntar otras Machines a la mía**: **Libre/ocupado para agendar** o **Desactivada**, junto con la duración de la reunión, el margen entre reuniones y tus horarios preferidos. Cada solicitud aparece en Actividad, dentro de Calendario.
 
-Sin Machine o sin respuesta: el borrador del email recibe un enlace donde la otra persona elige una de tus horas libres. Su elección es un to-do con **Reservar**; no se reserva nada antes de que lo toques.
+Si la otra persona no tiene una Machine o no responde, el borrador del correo incluye un enlace para que elija uno de tus horarios disponibles. Su elección aparece como una tarea con **Reservar**. No se agenda nada hasta que pulses esa opción.
 
-El enlace solo muestra horas libres, con las mismas reglas, y nada más sobre ti. Termina en cuanto la reunión se reserva, o a los 14 días. En el email aparece como "Pick a time". Abajo, la página dice que tu Machine encontró estas horas, con "Get yours." y tu nombre. Desactívalo con **Pie en los enlaces de reserva**. Cada enlace y elección aparece en Actividad.
+El enlace muestra solo los horarios disponibles, según las mismas reglas, y no revela nada más sobre ti. Deja de funcionar cuando se agenda la reunión o después de 14 días. En el correo aparece como «Elegir una hora». Al pie de la página dice «Tu Machine encontró estos horarios. Consigue la tuya», junto con tu nombre. Puedes desactivar ese texto con **Pie en los enlaces de reserva**. Cada enlace y cada elección aparecen en Actividad.
 
 ## Una Machine en tu propio ordenador
 
-Para unirte a la Network desde una Machine que gestionas tú:
+Para unirte a la Network desde una Machine que ejecutas tú:
 
-1. En el panel de tu Machine, abre **Ajustes** y pulsa **Unirte a la Network**.
-2. En la página que se abre, inicia sesión (o crea tu cuenta) y confirma. Tu Machine lo recoge sola, sin reiniciar.
+1. En el panel de control de tu Machine, abre **Ajustes** y pulsa **Unirte a la Network**.
+2. En la página que se abre, inicia sesión (o crea tu cuenta) y confirma. Tu Machine se conecta automáticamente, sin reiniciarse.
 
-La forma con código sigue funcionando: pulsa **Vincular una Machine autoalojada** en la página de tu cuenta en app.themachine.computer, luego ejecuta `assistant fleet-pair` con el código en tu ordenador y reinicia. El código funciona una vez, durante 15 minutos.
+También puedes hacerlo con el código: pulsa **Emparejar una Machine autoalojada** en la página de tu cuenta en app.themachine.computer. Luego ejecuta `assistant fleet-pair` con el código en tu ordenador y reinicia. El código se puede usar una sola vez y dura 15 minutos.
 
-Hasta 5 Machines por cuenta. Cada una se puede desconectar desde ahí.
+Puedes tener hasta 5 Machines por cuenta. Puedes desconectar cada una desde esa página.

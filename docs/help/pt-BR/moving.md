@@ -1,35 +1,36 @@
 ---
 title: Mudar para outro computador
 area: getting-started
-summary: Exporte tudo o que sua Machine sabe em um único arquivo criptografado e importe em outra Machine, hospedada ou a sua.
+summary: Exporte tudo que sua Machine sabe em um único arquivo criptografado e importe em outra Machine, hospedada ou sua.
 covers: moving
 code: moving.py, cli.py, machine/app/export.py
 site: Export everything, Delete it now, Download
 order: 5
+translated: a08d8cd091c7d47b
 ---
-Tudo o que sua IA aprende é seu: mensagens, conversas, tarefas com histórico, rascunhos, o Graph, memórias, habilidades e trabalhos de agentes. Você pode levar tudo, mesmo se parar de usar The Machine.
+Tudo que sua Machine aprende pertence a você: mensagens, tarefas, rascunhos, o Graph, memórias e habilidades. Leve tudo para outra Machine ou guarde uma cópia.
 
 ## Exportar
 
 No seu próprio computador:
 
-1. Em **Configurações** › **Geral** › **Exportar**, clique em **Exportar** ao lado de Tudo.
-2. Se quiser, escolha uma frase secreta. Sem ela, você recebe um código de exportação: anote, a importação precisa dele.
-3. Se quiser, ative **Incluir chaves e tokens** (precisa de uma frase secreta), para não precisar conectar suas fontes de novo.
-4. Clique em **Iniciar exportação** e depois em **Baixar**. O arquivo é excluído depois de 24 horas, ou na hora com **Excluir**.
+1. Em **Configurações** › **Geral** › **Exportar**, pressione **Exportar** ao lado de Tudo.
+2. Se quiser, escolha uma senha. Sem ela, você recebe um código de exportação. Anote-o, pois vai precisar dele para importar.
+3. Se quiser, ative **Incluir chaves e tokens** (é necessário definir uma senha) para não precisar conectar suas fontes novamente.
+4. Pressione **Iniciar exportação** e depois **Baixar**. O arquivo é excluído após 24 horas ou imediatamente com **Excluir**.
 
-Em uma Machine hospedada, **Exportar** ao lado de Tudo abre a página da sua conta. Clique em **Exportar tudo** e depois em **Baixar**. Sua Machine exclui o arquivo depois de 24 horas, ou na hora com **Excluir agora**.
+Em uma Machine hospedada, **Exportar** ao lado de Tudo abre a página da sua conta. Pressione **Exportar tudo** e depois **Baixar**. Sua Machine exclui o arquivo após 24 horas ou imediatamente com **Excluir agora**.
 
-O arquivo é sempre criptografado. Depois de uma exportação, Configurações mostra o que está nela, com contagens, e o que não está e por quê. Logins no Google e na Microsoft pelo serviço hospedado sempre pedem um novo login do outro lado.
+O arquivo é sempre criptografado. Em seguida, Configurações mostra o que está incluído e o que não está. Você vai precisar fazer login novamente nas contas do Google e da Microsoft conectadas pelo nosso login hospedado.
 
 ## Importar
 
-1. Em **Configurações** › **Geral** › **Exportar**, clique em **Escolher arquivo** ao lado de Importar e escolha a exportação.
-2. Digite a frase secreta ou o código de exportação e clique em **Abrir**. The Machine confere o arquivo inteiro primeiro.
-3. Hospedada: clique em **Importar agora**. The Machine reinicia com ela em alguns minutos. No seu próprio computador: clique em **Substituir por esta exportação** e depois em **Substituir**. The Machine reinicia com ela em um ou dois minutos, e as Configurações mostram **Importada**.
+1. Em **Configurações** › **Geral** › **Exportar**, pressione **Escolher arquivo** ao lado de Importar e selecione o arquivo de exportação.
+2. Digite a senha ou o código de exportação e pressione **Abrir**. A Machine verifica o arquivo inteiro primeiro.
+3. Em uma Machine hospedada, pressione **Importar agora**. No seu próprio computador, pressione **Substituir por esta exportação** e depois **Substituir**. Em alguns minutos, a Machine reinicia com os dados importados e Configurações mostra **Importada**.
 
-A importação substitui o que essa Machine tem agora e guarda uma cópia antes. Nada que estava esperando sai sozinho: envios na fila esperam até você enviar de novo.
+A importação substitui o que está na Machine, mas antes guarda uma cópia. Nada é enviado automaticamente: os envios na fila aguardam sua ação.
 
-Avançado: num computador em que The Machine roda sem gerenciador de serviços, as Configurações mostram os comandos. Você também pode rodá-los: `assistant service stop`, `assistant import --staged --force`, `assistant service start`.
+Se Configurações não conseguir reiniciar The Machine no seu computador, ela mostra os comandos que você precisa executar.
 
-Em um computador novo, [instale The Machine primeiro](self-hosted-setup.md). Depois cancele seu plano hospedado se não precisar mais dele: veja [Cancelar ou excluir](cancel-and-delete.md).
+Em um computador novo, [instale The Machine](self-hosted-setup.md) primeiro. Depois, cancele seu plano hospedado se não precisar mais dele: veja [Cancelar ou excluir](cancel-and-delete.md).

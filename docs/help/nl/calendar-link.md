@@ -5,6 +5,7 @@ summary: Afspraken uit de deellink van een agenda: Proton Calendar, gepubliceerd
 covers: connector:proton_calendar, connector:ics
 code: ics_feed.py, ical.py, machine/sources/calendar_setup.py
 order: 15
+translated: b3bcf33b5c027baf
 ---
 ## Wat het leest
 

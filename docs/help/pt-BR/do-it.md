@@ -5,6 +5,7 @@ summary: Fazer prepara o trabalho. Nada é enviado, pago ou alterado até você 
 covers: do-it
 code: dashboard.html, next_actions.py, assistant.py
 order: 2
+translated: 6284dddb10c7b332
 ---
 ## O que Fazer faz
 

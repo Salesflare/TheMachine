@@ -1,37 +1,38 @@
 ---
-title: Saúde da sua Machine
+title: Saúde da Machine
 area: connections
-summary: O log da sua própria Machine, para ela notar os próprios problemas. Ele só lê.
+summary: O próprio registro da sua Machine, para ela detectar problemas. Só leitura.
 covers: connector:gateway
 code: onboarding.py
 site: More sources, Remove
+translated: 3a06400a28396465
 ---
-## O que ele lê
+## O que ela lê
 
-O próprio log da sua Machine: execuções que falharam, repasses recusados, mensagens do Telegram que não saíram e os próprios erros da The Machine. Uma tarefa avisa quando algo precisa de conserto.
+O registro da sua própria Machine: execuções com falha, repasses recusados, mensagens do Telegram que não foram enviadas e erros da própria The Machine. Uma tarefa avisa quando algo precisa de correção. No seu computador, isso inclui **Terminar de instalar a última atualização**: uma parte da atualização precisa de uma reinicialização rápida à noite, mas isso não foi possível em algumas noites. Peça no chat dela e The Machine termina a instalação. Ela se fecha sozinha assim que essa parte estiver instalada.
 
-## Correções que uma atualização deixou de lado
+## Correções deixadas de lado por uma atualização
 
-Quando a The Machine se atualiza e uma das suas próprias correções não serve mais na nova versão, a atualização deixa essa correção de lado e segue, para que sua Machine nunca fique numa versão antiga. Uma tarefa, **Refazer uma correção que a atualização deixou de lado**, nomeia a correção.
+Quando The Machine se atualiza e uma das correções dela não é mais compatível com a nova versão, a atualização deixa essa correção de lado e continua, para sua Machine nunca ficar em uma versão antiga. Uma tarefa, **Refazer uma correção que a atualização deixou de lado**, identifica a correção.
 
-Com **Refazer**, sua Machine a refaz na nova versão, como qualquer correção dela: você vê a mudança e toca em **Merge fix**. Depois de mesclada, a cópia antiga é descartada. Ou feche a tarefa.
+**Refazer** faz sua Machine criar a correção novamente na nova versão, como em qualquer correção própria: você vê a mudança e toca em **Mesclar correção**. Depois que ela é mesclada, a cópia antiga é descartada. Ou feche a tarefa.
 
-## Seus próprios arquivos que uma atualização manteve
+## Seus arquivos mantidos por uma atualização
 
-Quando uma nova versão traz um arquivo com o mesmo nome de um que você mesmo adicionou, a atualização renomeia o seu em vez de sobrescrevê-lo e segue. Uma tarefa diz quantos ela manteve e mostra cada nome antigo e novo. Feche-a depois de conferi-los.
+Quando uma nova versão traz um arquivo com o mesmo nome de um arquivo que você adicionou, a atualização renomeia o seu em vez de substituí-lo e continua. Uma tarefa informa quantos arquivos foram mantidos e lista cada nome antigo e novo. Feche a tarefa depois de conferir os nomes.
 
-## O que ele pode fazer
+## O que ela pode fazer
 
-Nada. Ele só lê o log na sua própria Machine.
+Nada. Ela só lê o registro da sua própria Machine.
 
 ## Conectar
 
-- Em uma Machine hospedada, ele fica na sua página de configuração, em **Mais fontes**, como Saúde da sua Machine. Um por Machine.
-- No seu próprio computador: execute `assistant connect gateway`.
+- Em uma Machine hospedada, ela aparece na página de configuração, em **Mais fontes**, como Saúde da Machine. Uma por Machine.
+- No seu computador: execute `assistant connect gateway`.
 
 ## Remover
 
-- No painel: **Conexões**, abra o log, **Detalhes** e depois **Desconectar**.
-- Em uma Machine hospedada, você também pode clicar em **Remover** ao lado dele na sua página de configuração.
+- No painel: **Conexões**, abra a conexão, toque em **Detalhes** e depois em **Desconectar**.
+- Em uma Machine hospedada, você também pode tocar em **Remover** ao lado dela na página de configuração.
 
-Não há nada para desinstalar em outro lugar.
+Não há nada para desinstalar em nenhum outro lugar.

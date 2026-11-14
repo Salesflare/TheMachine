@@ -5,6 +5,7 @@ summary: Les conversations clients de votre espace de travail Intercom. Elle ne 
 covers: connector:intercom
 code: connectors/intercom.py, onboarding.py
 site: Sign in with Intercom, More sources, Remove
+translated: 2cbee87e6d24c0a9
 ---
 ## Ce qu’il lit
 

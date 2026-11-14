@@ -5,6 +5,7 @@ summary: Deine LinkedIn-Nachrichten, gelesen im eigenen angemeldeten Browser dei
 covers: connector:linkedin
 code: connectors/linkedin.py, integrations/linkedin_inbox.py, linkedin_connections.py
 site: Connect, More sources, Remove
+translated: 850b91f79b9e23fc
 ---
 ## Was es liest
 

@@ -5,6 +5,7 @@ summary: Historias que cambian de estado, con sus responsables y fechas límite.
 covers: connector:shortcut
 code: connectors/shortcut.py
 site: Connect, More sources, Remove
+translated: 2298e2fcb1af74b3
 ---
 ## Qué lee
 

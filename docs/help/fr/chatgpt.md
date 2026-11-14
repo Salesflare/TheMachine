@@ -1,33 +1,34 @@
 ---
 title: ChatGPT
 area: connections
-summary: Connectez-vous avec ChatGPT pour faire tourner votre Machine sur votre abonnement ChatGPT, et importez vos compétences ChatGPT.
+summary: Connectez-vous avec ChatGPT pour utiliser votre Machine avec votre forfait ChatGPT et importer vos compétences ChatGPT.
 covers: chatgpt
 code: docs/models.md, docs/skills.md, skills.py
 site: Sign in with ChatGPT, Reconnect ChatGPT
+translated: fc97be60c0b68336
 ---
 ## À quoi ça sert
 
-ChatGPT est le modèle qui lit et rédige pour vous, sur votre propre abonnement ChatGPT. The Machine n’a pas d’IA à elle. Les requêtes de votre Machine vont directement à OpenAI, sous votre compte et selon ses conditions.
+Connectez-vous avec ChatGPT : votre Machine lit et rédige avec lui, avec votre propre forfait ChatGPT. The Machine n’a pas d’IA propre : les requêtes sont envoyées directement à OpenAI, sous votre compte et selon leurs conditions.
 
 ## Se connecter
 
-Sur une Machine hébergée, sur votre page de configuration, appuyez sur **Se connecter avec ChatGPT** et saisissez chez ChatGPT le code affiché. Déconnecté plus tard ? Appuyez sur **Reconnecter ChatGPT**.
+Sur une Machine hébergée, appuyez sur **Se connecter avec ChatGPT** sur votre page de configuration, puis saisissez le code affiché sur ChatGPT. Vous vous êtes déconnecté depuis ? Appuyez sur **Reconnecter ChatGPT**.
 
-OpenAI refuse le code ? Ouvrez vos [paramètres de sécurité ChatGPT](https://chatgpt.com/settings/security), descendez tout en bas et activez l’option "Enable device code sign-in for Codex, Excel, PowerPoint, and Word". Puis saisissez à nouveau le code.
+OpenAI refuse le code ? Ouvrez vos [paramètres de sécurité ChatGPT](https://chatgpt.com/settings/security), faites défiler jusqu’en bas et activez l’option **Activer la connexion par code d’appareil pour Codex, Excel, PowerPoint et Word**. Saisissez ensuite le code à nouveau.
 
-Elle n’y est pas ? Sur un compte professionnel (Business, Enterprise ou Edu), un administrateur de l’espace de travail l’active dans [Permissions & roles](https://chatgpt.com/admin/permissions), sous « Codex and Work Local ». Une seule option vaut pour les deux codes : si le code de votre modèle a fonctionné, celui de Codex fonctionne aussi.
+Vous ne voyez pas cette option ? Si vous utilisez un compte professionnel (Business, Enterprise ou Edu), l’administrateur ChatGPT doit l’activer dans [Autorisations et rôles](https://chatgpt.com/admin/permissions), sous **Codex et travail local**.
 
-Sur votre propre ordinateur, connectez OpenClaw à ChatGPT avec `openclaw models auth login`.
+Sur votre propre ordinateur, exécutez `openclaw models auth login` dans un terminal.
 
 ## Limites d’utilisation
 
-Un abonnement ChatGPT a une limite sur 5 heures et une limite hebdomadaire. **Paramètres**, puis **Modèle**, montre la part utilisée de chacune et quand elle se réinitialise. Le travail en arrière-plan s’arrête bien avant une limite, pour garder de la place pour vos propres chats. Quand une limite est atteinte, le haut du tableau de bord indique laquelle et quand elle se réinitialise, puis le travail reprend. Voir [Modèle](model.md).
+Un forfait ChatGPT comporte une limite sur 5 heures et une limite hebdomadaire. **Paramètres**, **Modèle** indique la part utilisée pour chacune et la date de leur réinitialisation. Les tâches en arrière-plan s’interrompent bien avant d’atteindre une limite, pour vous laisser de la marge pour vos propres chats. Lorsqu’une limite est atteinte, le haut du tableau de bord indique quand elle est réinitialisée. Voir [Modèle](model.md).
 
 ## Importer vos compétences ChatGPT
 
-Dans **Paramètres**, **Compétences**, appuyez sur **Importer**, choisissez **Depuis ChatGPT** et appuyez sur **Trouver mes compétences**. Elle lit les compétences que vous avez créées, dans le navigateur de votre Machine. Seules les instructions sont importées. Voir [Compétences](skills.md).
+Dans **Paramètres**, **Compétences**, appuyez sur **Importer**, choisissez **Depuis ChatGPT**, puis appuyez sur **Trouver mes compétences**. Seules leurs instructions sont importées. Voir [Compétences](skills.md).
 
-## La retirer
+## Le retirer
 
-Choisissez un autre modèle sur votre page de configuration, ou connectez OpenClaw à un autre fournisseur. Pour couper son accès côté OpenAI, déconnectez la session dans vos paramètres de sécurité ChatGPT.
+Choisissez un autre modèle sur votre page de configuration (ou, sur votre propre ordinateur, connectez-vous de la même manière à un autre fournisseur). Pour révoquer son accès auprès d’OpenAI, déconnectez-vous de la session dans vos paramètres de sécurité ChatGPT.

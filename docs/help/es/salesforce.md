@@ -5,6 +5,7 @@ summary: Oportunidades, tareas y actividad de Salesforce en tus personas y proye
 covers: connector:salesforce
 code: connectors/salesforce.py, crm_sync.py, onboarding.py
 site: Connect Salesforce, More sources, Remove, Sign in with Salesforce
+translated: e2394748e0a676b1
 ---
 ## Qué lee
 

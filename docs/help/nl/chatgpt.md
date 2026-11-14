@@ -1,33 +1,34 @@
 ---
 title: ChatGPT
 area: connections
-summary: Log in met ChatGPT om je Machine op je ChatGPT-abonnement te laten draaien, en importeer je ChatGPT-skills.
+summary: Meld je aan met ChatGPT om The Machine op je ChatGPT-abonnement te gebruiken en je ChatGPT-skills te importeren.
 covers: chatgpt
 code: docs/models.md, docs/skills.md, skills.py
 site: Sign in with ChatGPT, Reconnect ChatGPT
+translated: fc97be60c0b68336
 ---
-## Waarvoor het dient
+## Waarvoor het bedoeld is
 
-ChatGPT is het model dat voor je leest en concepten schrijft, op je eigen ChatGPT-abonnement. The Machine heeft geen eigen AI. De verzoeken van je Machine gaan rechtstreeks naar OpenAI, onder jouw account en hun voorwaarden.
+Meld je aan met ChatGPT en The Machine leest en maakt concepten met ChatGPT, op je eigen ChatGPT-abonnement. The Machine heeft geen eigen AI: verzoeken gaan rechtstreeks naar OpenAI, via jouw account en onder hun voorwaarden.
 
-## Inloggen
+## Aanmelden
 
-Druk op een gehoste Machine op je setuppagina op **Inloggen met ChatGPT** en typ de code die je ziet in bij ChatGPT. Later uitgelogd? Druk op **ChatGPT opnieuw koppelen**.
+Klik op een gehoste Machine op **Aanmelden met ChatGPT** op de installatiepagina en voer de code die daar wordt getoond in bij ChatGPT. Later uitgelogd? Klik op **Opnieuw verbinden met ChatGPT**.
 
-Weigert OpenAI de code? Open je [beveiligingsinstellingen van ChatGPT](https://chatgpt.com/settings/security), scrol naar beneden en zet de schakelaar "Enable device code sign-in for Codex, Excel, PowerPoint, and Word" aan. Vul de code dan opnieuw in.
+Wijst OpenAI de code af? Open je [ChatGPT-beveiligingsinstellingen](https://chatgpt.com/settings/security), scrol naar beneden en zet de schakelaar "Aanmelden met een apparaatcode inschakelen voor Codex, Excel, PowerPoint en Word" aan. Voer de code daarna opnieuw in.
 
-Staat die er niet? Bij een werkaccount (Business, Enterprise of Edu) zet een beheerder van de workspace hem aan in [Permissions & roles](https://chatgpt.com/admin/permissions), onder "Codex and Work Local". Eén schakelaar geldt voor beide codes: werkte de code voor je model, dan werkt die voor Codex ook.
+Zie je die schakelaar niet? Bij een werkaccount (Business, Enterprise of Edu) moet je ChatGPT-beheerder deze inschakelen via [Machtigingen en rollen](https://chatgpt.com/admin/permissions), onder "Codex en Work Local".
 
-Log op je eigen computer OpenClaw in bij ChatGPT met `openclaw models auth login`.
+Voer op je eigen computer `openclaw models auth login` uit in een terminal.
 
 ## Gebruikslimieten
 
-Een ChatGPT-abonnement heeft een 5-uurslimiet en een weeklimiet. **Instellingen**, dan **Model**, toont hoeveel van elke limiet gebruikt is en wanneer die weer vrijkomt. Werk op de achtergrond stopt ruim voor een limiet, zodat er ruimte blijft voor je eigen chats. Als een limiet bereikt is, staat bovenaan het dashboard welke en wanneer die weer vrijkomt, en daarna gaat het werk verder. Zie [Model](model.md).
+Een ChatGPT-abonnement heeft een limiet van 5 uur en een wekelijkse limiet. **Instellingen**, **Model** toont hoeveel je van elke limiet hebt gebruikt en wanneer die wordt gereset. Werk op de achtergrond wordt ruim voordat je een limiet bereikt gepauzeerd, zodat er ruimte blijft voor je eigen chats. Wanneer je een limiet bereikt, zie je bovenaan het dashboard wanneer die wordt gereset. Zie [Model](model.md).
 
 ## Je ChatGPT-skills importeren
 
-Druk in **Instellingen**, **Skills** op **Importeren**, kies **Van ChatGPT** en druk op **Zoek mijn skills**. Hij leest de skills die je gemaakt hebt, in de browser van je Machine. Alleen instructies komen binnen. Zie [Skills](skills.md).
+Klik in **Instellingen** op **Skills**, klik op **Importeren**, kies **Van ChatGPT** en klik op **Zoek mijn skills**. Alleen de instructies ervan worden geïmporteerd. Zie [Skills](skills.md).
 
 ## Verwijderen
 
-Kies een ander model op je setuppagina, of log OpenClaw in bij een andere provider. Om de toegang aan de kant van OpenAI te beëindigen, log je de sessie uit in je beveiligingsinstellingen van ChatGPT.
+Kies een ander model op de installatiepagina (of meld je op je eigen computer op dezelfde manier aan bij een andere provider). Als je de toegang aan de kant van OpenAI wilt intrekken, meld je je af bij de sessie in je ChatGPT-beveiligingsinstellingen.

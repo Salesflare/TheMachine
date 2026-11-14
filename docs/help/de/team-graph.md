@@ -5,6 +5,7 @@ summary: Experimentell. Teile Kundenarbeit mit deiner Work Fleet, wie in einem C
 covers: team-graph
 code: shared_graph.py, fleet_trust.py, dashboard.html
 order: 2
+translated: fc842bc761a3ab17
 ---
 In einer Work Fleet kann deine Machine deine Kundenarbeit mit den Machines deiner Teammitglieder teilen, wie ein gemeinsames CRM. Das ist **Experimentell**: neu und noch in Bewegung, deshalb ist es anfangs aus.
 

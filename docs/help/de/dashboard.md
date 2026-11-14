@@ -5,6 +5,7 @@ summary: Wofür jeder Teil des Dashboards da ist, von Aufgaben bis Verbindungen.
 covers: tab:events, tab:feedback
 code: dashboard.html
 order: 4
+translated: d41a4a0017765f9e
 ---
 ## Die Tabs
 

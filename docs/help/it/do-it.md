@@ -5,6 +5,7 @@ summary: Fallo prepara il lavoro. Niente viene inviato, pagato o cambiato finch√
 covers: do-it
 code: dashboard.html, next_actions.py, assistant.py
 order: 2
+translated: 6284dddb10c7b332
 ---
 ## Cosa fa Fallo
 

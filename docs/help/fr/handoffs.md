@@ -1,49 +1,54 @@
 ---
 title: Transferts
 area: fleet
-summary: Transférez une tâche à la Machine d’un collègue, avec ce dont il a besoin. Relancez plus tard, ou reprenez-la.
+summary: Transférez une tâche à la Machine d’un coéquipier avec les informations dont il a besoin. Faites le point plus tard ou reprenez-la.
 covers: handoffs
 code: fleet_requests.py, dashboard.html
 order: 3
+translated: acb60a24ef374625
 ---
 ## Transférer une tâche
 
-1. Sur la tâche, ouvrez **…**, puis **Transférer…**, et choisissez **Un coéquipier**.
-2. Choisissez à qui, vérifiez ce qui part avec (retirez une partie avec ×) et ajoutez une note. Le texte commence par la tâche et son importance, tirées de la tâche, puis par sa provenance (son lien). Rien d’un compte Perso ou d’une autre entreprise ne part avec.
-3. Envoyez-la. Sa Machine la lui montre comme une tâche.
+1. Dans la tâche, ouvrez **…**, puis **Transférer…**, et choisissez **Un coéquipier**.
+2. Choisissez la personne, vérifiez ce qui est inclus (× exclut une partie) et ajoutez une note. Rien provenant d’un compte personnel ou d’une autre entreprise n’est transmis.
+3. Envoyez la tâche. Sa Machine la lui présente comme une tâche.
 
-Une conversation Intercom part avec sa place dans Intercom. Si leur Machine lit le même espace de travail Intercom, leur tâche est liée à cette conversation : **Lire le message** l’ouvre, le client y figure, et leur réponse repart dans Intercom. Sinon, la tâche renvoie quand même vers la conversation dans Intercom.
+Sa Machine lui envoie une notification sur son téléphone ou dans Telegram. Si aucune de ces options n’est configurée, un e-mail lui est envoyé une seule fois, avec le nom de la personne qui lui a transféré la tâche, son titre et un lien. Consultez [Notifications](notifications.md).
 
-Pendant que vous attendez, la tâche se trouve sous **Revient plus tard**, « Chez Pat · en attente », avec une date de relance. **Relancer maintenant** demande où ça en est ; **Changer l’heure** déplace la relance.
+Une conversation Intercom est également transmise. Si sa Machine lit le même espace de travail Intercom, **Lire le message** l’ouvre et sa réponse est renvoyée dans Intercom. Sinon, un lien vers la conversation apparaît dans sa tâche.
 
-Elle ne revient en haut que s’il y a quelque chose à décider : Pat a répondu, a refusé ou l’a marquée comme faite, le transfert a échoué, ou une échéance est arrivée. Une tâche due aujourd’hui est relancée quelques heures plus tard, une tâche due bientôt la veille ouvrée, une tâche urgente sans date le matin ouvré suivant, et toute autre après 3 jours ouvrés.
+En attendant, la tâche indique ce que vous avez demandé et quand (« Demande envoyée à Pat le mar. 3 nov. : … »), uniquement si cela apporte une précision par rapport à son titre. Elle se trouve dans **Revient plus tard**, avec la mention « Avec Pat · en attente » et une date de relance. **Relancer maintenant** prépare un petit rappel pour Pat que vous pouvez envoyer. **Changer l’heure** modifie la date de relance.
 
-De retour pour une relance, elle indique « Toujours chez Pat · relancer ? » : Pat l’a encore, rien n’est revenu. **Relancer maintenant** ouvre le chat ; **Reprendre** et **Transférer à quelqu’un d’autre** sont sous **…**, puis **Transférer…**.
+Si la Machine de Pat ne peut pas lui envoyer de notification, la tâche indique « Pat ne recevra pas de notification. Prévenez-le. » Prévenez Pat vous-même. Ce message disparaît dès que Pat active les notifications.
 
-Le chat de la tâche indique quand elle est partie (« Transférée à la Machine de Pat · 14:02 ») et ce qui est revenu : acceptée, refusée (avec sa note) ou faite. Quand elle revient pour une relance sans réponse, « Pas encore de réponse de Pat » s’affiche sous cette ligne, avec **Marquer comme fait**, **Mettre en attente** et **Pas nécessaire** (pas de Faire : Pat l’a déjà). Pour lui faire signe ou la reprendre, dites-le dans le chat.
+La tâche revient en haut uniquement lorsqu’une décision est nécessaire : Pat a répondu, refusé ou terminé la tâche, le transfert a échoué ou une échéance est arrivée. La date de relance dépend de l’échéance : quelques heures pour une tâche à échéance aujourd’hui, le jour ouvré précédent si elle est proche, le lendemain matin si elle est urgente, et sinon dans 3 jours ouvrés.
 
-Si le transfert n’est pas parti, la tâche et son chat l’indiquent, avec **Réessayer**.
+Lorsqu’elle revient pour une relance, la tâche indique « Toujours chez Pat ». **Relancer maintenant** prépare un petit rappel pour Pat, dans le chat où vous lui avez écrit (Slack, WhatsApp, Telegram ou e-mail), directement depuis la tâche. Rien n’est envoyé tant que vous n’avez pas choisi **Envoyer**. La tâche reste alors en attente de Pat. Si aucun des services que vous avez connectés ne permet de lui écrire, le chat s’ouvre et vous l’indique. **Reprendre** et **Transférer à quelqu’un d’autre** se trouvent sous **…**, puis **Transférer…**.
 
-## La transférer plutôt à quelqu’un d’autre
+Le chat de la tâche indique quand elle a été transférée (« Transférée à la Machine de Pat · 14:02 ») et la réponse reçue : acceptée, refusée (avec sa note) ou terminée. En l’absence de réponse, les options **Marquer comme fait**, **Mettre en attente** et **Pas nécessaire** sont proposées. Pour lui envoyer un rappel ou reprendre la tâche, dites-le dans le chat.
 
-Tant qu’un collègue l’a, la tâche l’indique en une ligne (« Chez Pat · en attente »), avec **Reprendre** et **Transférer à quelqu’un d’autre** sous **…**, puis **Transférer…**. **Reprendre** vous la rend : la Machine de Pat est prévenue, et une réponse de Pat ne la déplace plus.
+Si le transfert n’a pas été envoyé, la tâche et son chat l’indiquent, avec l’option **Réessayer**.
 
-**Transférer à quelqu’un d’autre** ouvre le formulaire de transfert, pour quelqu’un qui ne l’a pas encore. Ou dites-le dans le chat de la tâche (« ça devrait aller à Kim »). Le nouveau transfert attend sur la tâche que vous le lisiez : « Toujours chez Pat jusqu’à l’envoi à Kim », avec **Vérifier le transfert à** Kim. Cela ouvre le formulaire avec le texte, au nom de Kim.
+## La transférer à quelqu’un d’autre
 
-Une tâche va une seule fois à chaque coéquipier : tant que Pat l’a, la transférer de nouveau à Pat affiche « Pat a déjà cette tâche ».
+Tant qu’un coéquipier s’en occupe, la tâche l’indique sur une ligne (« Avec Pat · en attente »). **Reprendre** et **Transférer à quelqu’un d’autre** se trouvent sous **…**, puis **Transférer…**. **Reprendre** vous rend la tâche : la Machine de Pat en est informée et sa réponse ne la fera plus avancer.
 
-**Reprendre à** Pat est activé par défaut ; désactivez-le pour que les deux l’aient. Rien ne part avant que vous choisissiez **Transférer**. Le chat indique alors « Reprise à Pat » et « Transférée à la Machine de Kim ». La Machine de Pat est prévenue aussi, et la tâche qu’elle avait créée pour Pat disparaît.
+**Transférer à quelqu’un d’autre** ouvre le formulaire de transfert. Vous pouvez aussi le dire dans le chat de la tâche (« cette tâche devrait être confiée à Kim »). La tâche indique alors « Toujours chez Pat jusqu’à ce que vous la transfériez à Kim », avec l’option **Vérifier le transfert à** Kim.
 
-## Quand la personne refuse
+Chaque tâche ne peut être transférée qu’une seule fois à chaque coéquipier : tant que Pat s’en occupe, choisir Pat à nouveau dans le formulaire de transfert permet de faire le point. **Faire le point** prépare le même rappel, avec une ligne de votre part si vous en ajoutez une.
 
-Elle peut dire pourquoi : ce n’est pas pour elle, c’est déjà fait, ou pas le temps cette semaine. Choisissez alors **Le faire moi-même**, **Transférer à quelqu’un d’autre** ou **Marquer comme fait**.
+L’option **Reprendre** à Pat est activée par défaut. Désactivez-la pour que les deux personnes s’en occupent. Rien n’est envoyé tant que vous n’avez pas choisi **Transférer**. La Machine de Pat en est informée et sa copie de la tâche est retirée.
 
-## Quelqu’un en dehors du Network
+## S’ils refusent
 
-Choisissez **Par e-mail** : votre Machine rédige un e-mail que vous envoyez. Pendant que vous tapez l’adresse, elle propose d’abord des collègues : les personnes de votre Fleet, puis celles du domaine de votre entreprise, puis ce que vous avez tapé avec ce domaine. Ajoutez une page de tâche pour qu’on puisse répondre en un geste : voir [Pages de tâche](task-pages.md).
+Ils peuvent expliquer pourquoi : la tâche ne leur revient pas, elle est déjà terminée ou ils n’ont pas le temps cette semaine. Choisissez ensuite **Le faire moi-même**, **Transférer à quelqu’un d’autre** ou **Marquer comme fait**. La même chose s’applique s’ils ne répondent pas à temps. **Le faire moi-même** vous rend la tâche, qui réapparaît dans Pour vous.
 
-Uniquement pour les tâches Travail. Cochez ce qui va dans l’e-mail : quelques lignes sur la tâche, son brouillon prêt, ses liens et fichiers. Seul ce que votre Team Graph partage avec l’équipe est proposé : le contenu Perso et Vous seul reste en dehors. **Préparer l’e-mail** place l’e-mail sur la tâche : lisez-le, puis envoyez-le depuis votre propre boîte comme tout e-mail. Aucun pixel de suivi.
+## Une personne en dehors du Network
 
-Une tâche venue d’Intercom ou de Slack n’a pas de boîte à elle : son e-mail part de votre boîte Travail.
+Choisissez **Par e-mail** : votre Machine prépare un e-mail à envoyer. Au fil de votre saisie, elle vous suggère d’abord les membres de votre Fleet, puis les personnes de votre entreprise. Ajoutez une page de tâche pour qu’ils puissent répondre en un seul geste : consultez [Pages de tâche](task-pages.md).
 
-La tâche indique alors "Transféré à <nom> par e-mail" et le suit comme une promesse jusqu’à ce que la personne réponde que c’est fait, ou que vous la marquiez faite. L’e-mail se termine par "Reprenez ceci dans votre propre Machine" : en s’inscrivant par ce lien, la personne peut rejoindre votre Fleet et la tâche passe sur sa Machine comme un transfert normal. Désactivez cette ligne dans **Paramètres**, sous Fleet.
+Cette option est disponible uniquement pour les tâches Work. Cochez les éléments à inclure : quelques lignes sur la tâche, son brouillon, des liens et des fichiers. Le contenu Personnel et Vous uniquement reste exclu. **Préparer l’e-mail** ajoute l’e-mail à la tâche. Lisez-le, puis envoyez-le depuis votre propre boîte mail. Aucun suivi n’est effectué.
+
+Une tâche provenant d’Intercom ou de Slack n’a pas de boîte mail associée. L’e-mail est donc envoyé depuis votre boîte mail Work.
+
+La tâche suit ensuite la promesse jusqu’à ce que la personne réponde qu’elle l’a terminée ou que vous la marquiez comme faite. L’e-mail se termine par « Confiez cette tâche à votre propre Machine » : si la personne s’inscrit avec ce lien, elle peut rejoindre votre Fleet et la tâche est transférée à sa Machine. Désactivez cette ligne dans **Paramètres**, sous Fleet.

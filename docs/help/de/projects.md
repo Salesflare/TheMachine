@@ -4,6 +4,7 @@ area: graph
 summary: Was los ist, aus deinen Nachrichten oder von Hand angelegt, auf Boards mit Phasen wie Deals in einem CRM.
 code: graph.py, crm.py, dashboard.html
 order: 4
+translated: b42abbf107368175
 ---
 Deine Machine benennt Projekte danach, worum es in deinen Nachrichten geht. Nachrichten, die dazuzugehören scheinen, erscheinen als „wahrscheinlich Teil davon“. Wenn du ein Projekt in den Namen eines anderen umbenennst, werden die beiden zusammengeführt. Oder führe sie von Hand, wie Deals in einem CRM.
 

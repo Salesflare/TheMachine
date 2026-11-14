@@ -5,6 +5,7 @@ summary: Les marches à suivre de votre Machine. Écrivez les vôtres, importez-
 covers: settings:skills
 code: skills.py, dashboard.html
 order: 4
+translated: 98fe851d553ed3dc
 ---
 Une compétence explique à votre Machine comment faire quelque chose, comme « répondre aux questions sur les prix ». Ce ne sont que des instructions : une compétence ne change jamais ce que votre Machine a le droit de faire.
 

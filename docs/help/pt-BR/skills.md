@@ -5,6 +5,7 @@ summary: Instruções que sua Machine segue. Escreva as suas, importe do Claude 
 covers: settings:skills
 code: skills.py, dashboard.html
 order: 4
+translated: 98fe851d553ed3dc
 ---
 Uma habilidade diz à sua Machine como fazer algo, como "responder perguntas sobre preços". São só instruções: uma habilidade nunca muda o que sua Machine tem permissão para fazer.
 

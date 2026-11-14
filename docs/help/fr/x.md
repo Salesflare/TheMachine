@@ -5,6 +5,7 @@ summary: Vos mentions, réponses et messages privés sur X, lus dans le navigate
 covers: connector:x
 code: connectors/x.py, integrations/x_inbox.py
 site: Connect, More sources, Remove
+translated: 5cbe43055458daf4
 ---
 ## Ce qu’il lit
 

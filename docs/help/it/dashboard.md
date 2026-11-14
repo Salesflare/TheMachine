@@ -5,6 +5,7 @@ summary: A cosa serve ogni parte della dashboard, da Attività a Connessioni.
 covers: tab:events, tab:feedback
 code: dashboard.html
 order: 4
+translated: d41a4a0017765f9e
 ---
 ## Le schede
 

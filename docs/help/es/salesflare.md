@@ -5,6 +5,7 @@ summary: Cuentas, contactos y oportunidades, para saber quién importa. Lee con 
 covers: connector:salesflare
 code: assistant.py, onboarding.py
 site: More sources, Connect, Remove
+translated: 697e6d60b69bb1cd
 ---
 ## Qué lee
 

@@ -5,6 +5,7 @@ summary: Cerca de um ano de e-mails, reuniões e mensagens do WhatsApp, Slack e 
 covers: history
 code: machine/app/history.py, machine/store/history.py, machine/store/graph_history.py
 keywords: older messages, backfill, archive, past emails
+translated: 42069e80e6f85bdb
 ---
 ## O que ele guarda
 

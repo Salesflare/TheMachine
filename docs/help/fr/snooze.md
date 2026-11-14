@@ -5,6 +5,7 @@ summary: Faites revenir une tâche plus tard. Un jour de travail, à l’heure q
 covers: snooze
 code: dashboard.html, assistant.py
 order: 3
+translated: e6681ab225810e81
 ---
 ## Mettre une tâche en attente
 

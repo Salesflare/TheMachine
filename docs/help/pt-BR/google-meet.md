@@ -5,6 +5,7 @@ summary: Transcrições e notas do Gemini das reuniões do Meet que você organi
 covers: connector:google_meet
 code: connectors/google_meet.py, onboarding.py
 site: Sign in with Google
+translated: cea7230915b5a536
 ---
 ## O que ele lê
 

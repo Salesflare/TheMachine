@@ -5,6 +5,7 @@ summary: LinkedIn o X cerró la sesión de tu Machine. Vuelve a iniciarla, una v
 covers: 
 code: browser_login.py, dashboard.html, dashboard/connections-signin.js
 order: 2
+translated: b77b372b9332ca2b
 ---
 Sitios como LinkedIn y X se leen en el navegador propio de tu Machine. A veces un sitio cierra su sesión.
 

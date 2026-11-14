@@ -5,6 +5,7 @@ summary: Waarvoor elk deel van het dashboard dient, van To-do's tot Koppelingen.
 covers: tab:events, tab:feedback
 code: dashboard.html
 order: 4
+translated: d41a4a0017765f9e
 ---
 ## De tabbladen
 

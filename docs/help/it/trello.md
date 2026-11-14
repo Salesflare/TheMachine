@@ -5,6 +5,7 @@ summary: Modifiche alle schede, commenti e attività su una bacheca Trello. Legg
 covers: connector:trello
 code: connectors/trello.py
 site: Sign in with Trello, Connect, More sources, Remove
+translated: 7fc2a596ef58bd93
 ---
 ## Cosa legge
 

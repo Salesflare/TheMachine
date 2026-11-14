@@ -5,6 +5,7 @@ summary: Au plus une fois par jour, elle propose quelques apprentissages génér
 covers: share-learnings
 code: team_learnings.py, dashboard.html
 order: 3
+translated: 8a7418cb4cb27e7b
 ---
 ## De quoi il s’agit
 
@@ -55,4 +56,3 @@ L’équipe voit les apprentissages classés par votes et choisit ce qui entre d
 - **Activé**, par défaut : elle vote toute seule.
 - **Demander d’abord** : chaque vote vous attend dans un seul encadré sous **Apprentissage**, **Partagé**, avec l’apprentissage et le vote tel qu’il partirait. Envoyez-le ou passez-le, un par un ou tous à la fois. Ni tâche ni notification pour cela. Un vote laissé de côté n’est pas envoyé après 14 jours.
 - **Désactivé** : pas de vote, et rien de ce qui attend ne part.
-

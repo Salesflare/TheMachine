@@ -5,6 +5,7 @@ summary: Installiere The Machine auf deinem Handy oder Computer und bekomm für 
 covers: phone-app
 code: manifest.webmanifest, sw.js, dashboard.html
 order: 3
+translated: 3e2919603c5efa9a
 ---
 Das Dashboard lässt sich als App auf einem Handy oder Computer installieren. Dann schickt es für jede Aufgabe, jedes Ergebnis und jede Erinnerung eine Benachrichtigung, wenn du nicht am Dashboard bist, innerhalb deiner [Arbeitszeiten](work-hours.md). Was es schickt, wählst du unter [Benachrichtigungen](notifications.md).
 

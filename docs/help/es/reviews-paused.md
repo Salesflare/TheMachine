@@ -5,6 +5,7 @@ summary: Las revisiones están desactivadas, esperando o paradas por el límite 
 covers: 
 code: dashboard.html, assistant.py
 order: 3
+translated: 39b4aa749445dfba
 ---
 Las tareas salen de las revisiones: tu Machine lee lo que ha llegado, en lotes pequeños, en unos 15 minutos.
 

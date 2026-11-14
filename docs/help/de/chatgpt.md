@@ -1,33 +1,34 @@
 ---
 title: ChatGPT
 area: connections
-summary: Melde dich mit ChatGPT an, um deine Machine über deinen ChatGPT-Tarif laufen zu lassen, und importiere deine ChatGPT-Skills.
+summary: Melde dich mit ChatGPT an, damit deine Machine mit deinem ChatGPT-Tarif läuft, und importiere deine ChatGPT-Skills.
 covers: chatgpt
 code: docs/models.md, docs/skills.md, skills.py
 site: Sign in with ChatGPT, Reconnect ChatGPT
+translated: fc97be60c0b68336
 ---
-## Wofür es da ist
+## Wofür es gedacht ist
 
-ChatGPT ist das Modell, das für dich liest und Entwürfe schreibt, über deinen eigenen ChatGPT-Tarif. The Machine hat keine eigene KI. Die Anfragen deiner Machine gehen direkt an OpenAI, unter deinem Konto und deren Bedingungen.
+Melde dich bei ChatGPT an. Deine Machine nutzt ChatGPT, um damit zu lesen und Entwürfe zu erstellen, und zwar über deinen eigenen ChatGPT-Tarif. The Machine hat keine eigene KI: Anfragen gehen direkt an OpenAI, über dein Konto und gemäß deren Nutzungsbedingungen.
 
 ## Anmelden
 
-Auf einer gehosteten Machine tippst du auf deiner Einrichtungsseite auf **Mit ChatGPT anmelden** und gibst den angezeigten Code bei ChatGPT ein. Später abgemeldet? Tippe auf **ChatGPT neu verbinden**.
+Klicke auf einer gehosteten Machine auf deiner Einrichtungsseite auf **Mit ChatGPT anmelden** und gib den Code, den ChatGPT anzeigt, dort ein. Später abgemeldet? Klicke auf **ChatGPT erneut verbinden**.
 
-OpenAI lehnt den Code ab? Öffne deine [ChatGPT-Sicherheitseinstellungen](https://chatgpt.com/settings/security), scrolle ganz nach unten und schalte "Enable device code sign-in for Codex, Excel, PowerPoint, and Word" ein. Gib den Code dann noch einmal ein.
+Lehnt OpenAI den Code ab? Öffne deine [ChatGPT-Sicherheitseinstellungen](https://chatgpt.com/settings/security), scrolle ganz nach unten und aktiviere den Schalter „Gerätecode-Anmeldung für Codex, Excel, PowerPoint und Word aktivieren“. Gib den Code anschließend noch einmal ein.
 
-Nicht da? Bei einem Arbeitskonto (Business, Enterprise oder Edu) schaltet ein Admin des Workspace es unter [Permissions & roles](https://chatgpt.com/admin/permissions) ein, bei "Codex and Work Local". Ein Schalter gilt für beide Codes: Hat der Code für dein Modell funktioniert, funktioniert auch der für Codex.
+Du siehst den Schalter nicht? Bei einem Arbeitskonto (Business, Enterprise oder Edu) muss dein ChatGPT-Admin ihn unter [Berechtigungen und Rollen](https://chatgpt.com/admin/permissions) unter „Codex and Work Local“ aktivieren.
 
-Auf deinem eigenen Computer meldest du OpenClaw mit `openclaw models auth login` bei ChatGPT an.
+Führe auf deinem eigenen Computer `openclaw models auth login` in einem Terminal aus.
 
 ## Nutzungslimits
 
-Ein ChatGPT-Tarif hat ein 5-Stunden-Limit und ein Wochenlimit. **Einstellungen**, dann **Modell** zeigt, wie viel davon verbraucht ist und wann es zurückgesetzt wird. Hintergrundarbeit stoppt deutlich vor einem Limit, damit Platz für deine eigenen Chats bleibt. Ist ein Limit erreicht, steht oben im Dashboard, welches und wann es zurückgesetzt wird. Danach geht die Arbeit weiter. Siehe [Modell](model.md).
+Ein ChatGPT-Tarif hat ein 5-Stunden-Limit und ein Wochenlimit. Unter **Einstellungen** > **Modell** siehst du, wie viel von beiden Limits verbraucht ist und wann sie zurückgesetzt werden. Hintergrundaufgaben werden schon lange vor Erreichen eines Limits angehalten, damit genug Spielraum für deine eigenen Chats bleibt. Wenn ein Limit erreicht ist, wird oben im Dashboard angezeigt, wann es zurückgesetzt wird. Weitere Informationen findest du unter [Modell](model.md).
 
-## Deine ChatGPT-Skills importieren
+## ChatGPT-Skills importieren
 
-Tippe in **Einstellungen**, **Skills** auf **Importieren**, wähle **Aus ChatGPT** und tippe auf **Meine Skills finden**. Es liest die Skills, die du erstellt hast, im Browser deiner Machine. Nur Anweisungen werden übernommen. Siehe [Skills](skills.md).
+Klicke unter **Einstellungen** > **Skills** auf **Importieren**, wähle **Aus ChatGPT** und klicke auf **Meine Skills finden**. Es werden nur die Anweisungen importiert. Weitere Informationen findest du unter [Skills](skills.md).
 
 ## Entfernen
 
-Wähle auf deiner Einrichtungsseite ein anderes Modell, oder melde OpenClaw bei einem anderen Anbieter an. Um den Zugriff auf Seiten von OpenAI zu beenden, meldest du die Sitzung in deinen ChatGPT-Sicherheitseinstellungen ab.
+Wähle auf deiner Einrichtungsseite ein anderes Modell aus. (Auf deinem eigenen Computer kannst du dich genauso bei einem anderen Anbieter anmelden.) Um den Zugriff auf OpenAI-Seite zu entziehen, melde dich in deinen ChatGPT-Sicherheitseinstellungen von der Sitzung ab.

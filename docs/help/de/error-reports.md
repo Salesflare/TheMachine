@@ -1,47 +1,48 @@
 ---
 title: Fehlerberichte
 area: security
-summary: Wenn etwas kaputtgeht, sagt deine Machine dem Team von The Machine, was fehlgeschlagen ist und wo im Code. Nie deine Nachrichten, Namen oder Adressen.
+summary: Wenn etwas schiefläuft, teilt deine Machine dem Team von The Machine mit, was fehlgeschlagen ist und wo im Code. Niemals deine Nachrichten, Namen oder Adressen.
 covers: error-reports
 code: error_feed.py, pacing.py, dashboard.html, sw.js
 order: 4
+translated: fd3e1c2d68b93a35
 ---
-## Was es ist
+## Was das ist
 
-Wenn in The Machine etwas kaputtgeht, sendet deine Machine dem Team eine kurze Signatur des Fehlers, damit wir ihn beheben können, bevor ihn jemand melden muss. Das ist standardmäßig an und braucht [The Machine Network](/network).
+Wenn in The Machine etwas schiefläuft, sendet deine Machine unserem Team eine kurze, anonyme Meldung zum Fehler, damit wir ihn beheben können, bevor ihn jemand meldet. Fehlerberichte sind standardmäßig aktiviert und erfordern [The Machine Network](/network).
 
-## Was gesendet wird
+## Welche Daten gesendet werden
 
-Nur das, für jede Art von Fehler:
+Nur diese Daten, je nach Fehlerart:
 
-- die Art des Fehlers, etwa `KeyError` oder `TypeError`;
-- seine Meldung ohne alles Spezifische: Zahlen, IDs, zitierter Text, E-Mail-Adressen, Links, Dateipfade und alles, was wie ein Schlüssel aussieht. Jedes andere Wort, das ein Name sein könnte, wird auch entfernt;
-- wo es im eigenen Code von The Machine passiert ist: Datei, Funktion und Zeile, nie ein Ordner auf deinem Computer;
-- die App-Version, wie oft es passiert ist und wann zum ersten und zum letzten Mal.
+- die Fehlerart, zum Beispiel `KeyError`;
+- die Fehlermeldung, aus der alle spezifischen Angaben entfernt wurden: Zahlen, IDs, zitierter Text, E-Mail-Adressen, Links, Dateipfade, Schlüssel und alle Wörter, die Namen sein könnten;
+- die Stelle im Code von The Machine, an der der Fehler auftrat, niemals ein Ordner auf deinem Computer;
+- die App-Version, wie oft der Fehler auftrat sowie den Zeitpunkt des ersten und letzten Auftretens.
 
 Ein echtes Beispiel: `IndexError`, `list index out of range`, bei `assistant.py:fault_event:7899`, Version `05b17ee6ac79`, 1 Mal.
 
-## Was nie gesendet wird
+## Was niemals gesendet wird
 
-Was in deinen Nachrichten, Aufgaben, Entwürfen oder Chats steht. Namen, E-Mail-Adressen, Telefonnummern, Links, Tokens oder Passwörter. Um welches Konto oder welche Person es ging.
+Was in deinen Nachrichten, Aufgaben, Entwürfen oder Chats steht. Namen, E-Mail-Adressen, Telefonnummern, Links oder Passwörter. Um welches Konto oder welche Person es ging.
 
 ## Woher Fehler kommen
 
-- der Dienst und seine Jobs: Prüfungen neuer Nachrichten, Aufgaben vorbereiten, Chat, Verbindungen und Syncs;
-- das Dashboard in deinem Browser, auch Fehler, die es abgefangen und dir gezeigt hat, und seine App-Kopie auf deinem Gerät;
-- Aufrufe vom Dashboard an deine Machine, die fehlschlagen oder zu lange dauern: welcher Aufruf, nie was er gefragt oder gesendet hat;
-- fehlgeschlagene Jobs von Claude Code und Codex: nur das Tool und die Art des Fehlers.
+- Hintergrundaufgaben: neue Nachrichten prüfen, Aufgaben vorbereiten, Chat, Verbindungen und Synchronisierungen;
+- das Dashboard in deinem Browser oder in der App, einschließlich der Fehler, die es dir angezeigt hat;
+- Anfragen vom Dashboard, die fehlschlagen oder in einen Timeout laufen: welche Anfrage, niemals was sie gesendet hat;
+- fehlgeschlagene Aufträge von Coding-Agenten: nur das Tool und die Art des Fehlers.
 
-Derselbe Fehler zählt einmal, mit einer Anzahl. Höchstens ein Paket alle 10 Minuten. Das Team bewahrt sie 30 Tage auf.
+Wiederholungen desselben Fehlers werden gezählt, aber nicht erneut gesendet. Höchstens alle 10 Minuten wird ein Datenpaket gesendet. Wir speichern die Daten 30 Tage lang.
 
-## Drosselung
+## Zeitliche Begrenzung
 
-Hintergrundarbeit wartet, wenn die Limits deines KI-Tarifs knapp werden, damit Platz für deine eigenen Chats bleibt (siehe [Modell](model.md)). Prüfungen dessen, was reingekommen ist, warten nur kurz vor den Limits; schwerere Arbeit, etwa das Durchgehen deines Verlaufs, wird über die Woche verteilt.
+Hintergrundaufgaben werden angehalten, wenn die Limits deines KI-Tarifs knapp werden, damit genug Spielraum für deine eigenen Chats bleibt (siehe [Dein KI-Modell](model.md)).
 
-Mit eingeschalteten Fehlerberichten sagt deine Machine dem Team außerdem einmal am Tag, wie oft das passiert ist: für jedes Mal die Stunde, in der es begann, welches Limit, wie viele Minuten es dauerte und wie viele Jobs warteten. Nur Anzahlen und Minuten, nichts darüber, was die Jobs waren.
+Wenn Fehlerberichte aktiviert sind, teilt deine Machine uns außerdem einmal täglich mit, wie oft das passiert ist: pro Pause die Stunde, welches Limit, wie lange und wie viele Aufträge gewartet haben. Keine Angaben dazu, worum es bei den Aufträgen ging.
 
 ## Ausschalten
 
-Schalte in Einstellungen, Sicherheit **Fehlerberichte senden** aus. Dann wird nichts mehr erfasst oder gesendet, auch keine Drosselungs-Zahlen, und was noch wartete, wird gelöscht. Fehler erscheinen weiterhin auf deiner eigenen Machine, die eine Lösung anbieten kann.
+Deaktiviere unter **Einstellungen** > **Sicherheit** die Option **Fehlerberichte senden**. Es werden keine weiteren Daten erfasst oder gesendet, und ausstehende Daten werden gelöscht. Fehler werden weiterhin auf deiner Machine angezeigt. Sie kann dir eine Lösung anbieten.
 
 Siehe [Sicherheit und Datenschutz](security-and-privacy.md).

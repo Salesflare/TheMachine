@@ -4,6 +4,7 @@ area: connections
 summary: Berichten uit een RSS- of Atom-feed die je volgt. Alleen op je eigen computer.
 covers: connector:rss
 code: connectors/rss.py
+translated: 99fdd904c9ff558f
 ---
 ## Wat het leest
 

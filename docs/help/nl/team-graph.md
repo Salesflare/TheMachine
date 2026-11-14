@@ -5,6 +5,7 @@ summary: Experimenteel. Deel werk voor klanten met je Werk-Fleet, zoals een CRM.
 covers: team-graph
 code: shared_graph.py, fleet_trust.py, dashboard.html
 order: 2
+translated: fc842bc761a3ab17
 ---
 In een Werk-Fleet kan je Machine je werk voor klanten delen met de Machines van je teamgenoten, zoals een gedeeld CRM. Het is **Experimenteel**: nieuw en nog in beweging, dus het staat eerst uit.
 

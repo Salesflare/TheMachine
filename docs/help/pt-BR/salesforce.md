@@ -5,6 +5,7 @@ summary: Negócios, tarefas e atividade do Salesforce nas suas pessoas e projeto
 covers: connector:salesforce
 code: connectors/salesforce.py, crm_sync.py, onboarding.py
 site: Connect Salesforce, More sources, Remove, Sign in with Salesforce
+translated: e2394748e0a676b1
 ---
 ## O que ele lê
 

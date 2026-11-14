@@ -5,6 +5,7 @@ summary: Afspraken uit een Exchange Server die je bedrijf zelf draait (2013 tot 
 covers: connector:exchange
 code: ews_calendar.py, machine/sources/calendar_setup.py
 order: 16
+translated: a437b18fcb879c1b
 ---
 ## Wat het leest
 

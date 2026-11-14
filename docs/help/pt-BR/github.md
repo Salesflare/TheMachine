@@ -5,6 +5,7 @@ summary: Pedidos de revisão, menções, atribuições e execuções de CI que f
 covers: connector:github
 code: connectors/github.py, onboarding.py
 site: Sign in with GitHub, More sources, Remove
+translated: e97127e156e56f7d
 ---
 ## O que ele lê
 

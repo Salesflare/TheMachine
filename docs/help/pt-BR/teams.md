@@ -5,6 +5,7 @@ summary: Chats do Teams, chats de reuniões e notas de reuniões para uma conta 
 covers: connector:teams
 code: connectors/teams.py, ms_graph.py, onboarding.py
 site: Connect Microsoft Teams
+translated: 864f9e6e98309439
 ---
 ## O que ele lê
 

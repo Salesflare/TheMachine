@@ -1,47 +1,48 @@
 ---
 title: Informes de errores
 area: security
-summary: Cuando algo falla, tu Machine le dice al equipo de The Machine qué falló y en qué parte del código. Nunca tus mensajes, nombres ni direcciones.
+summary: Cuando algo falla, tu Machine le cuenta al equipo de The Machine qué falló y en qué parte del código. Nunca comparte tus mensajes, nombres ni direcciones.
 covers: error-reports
 code: error_feed.py, pacing.py, dashboard.html, sw.js
 order: 4
+translated: fd3e1c2d68b93a35
 ---
 ## Qué es
 
-Cuando algo falla en The Machine, tu Machine envía al equipo una firma breve del error, para que podamos arreglarlo antes de que nadie tenga que informar de él. Está activado por defecto y necesita [The Machine Network](/network).
+Cuando algo falla en The Machine, tu Machine envía a nuestro equipo una nota breve y anónima sobre el error, para que podamos corregirlo antes de que alguien lo reporte. Está activado de forma predeterminada y requiere [The Machine Network](/network).
 
 ## Qué se envía
 
-Solo esto, para cada tipo de error:
+Solo esto, según el tipo de error:
 
-- el tipo de error, como `KeyError` o `TypeError`;
-- su mensaje sin nada concreto: números, identificadores, texto entre comillas, direcciones de correo, enlaces, rutas de archivos y cualquier cosa que parezca una clave. Cualquier otra palabra que pueda ser un nombre también se quita;
-- dónde pasó en el propio código de The Machine: archivo, función y línea, nunca una carpeta de tu ordenador;
-- la versión de la app, cuántas veces pasó, y cuándo fue la primera y la última.
+- el tipo de error, como `KeyError`;
+- su mensaje, después de quitar cualquier dato específico: números, identificadores, texto entre comillas, direcciones de correo electrónico, enlaces, rutas de archivos, claves y cualquier palabra que pueda ser un nombre;
+- dónde ocurrió en el código propio de The Machine, nunca en una carpeta de tu computadora;
+- la versión de la app, cuántas veces ocurrió y cuándo ocurrió la primera y la última vez.
 
-Uno real: `IndexError`, `list index out of range`, en `assistant.py:fault_event:7899`, versión `05b17ee6ac79`, 1 vez.
+Un ejemplo real: `IndexError`, `list index out of range`, en `assistant.py:fault_event:7899`, versión `05b17ee6ac79`, 1 vez.
 
-## Qué no se envía nunca
+## Qué nunca se envía
 
-Lo que dicen tus mensajes, tareas, borradores o chats. Nombres, direcciones de correo, números de teléfono, enlaces, tokens ni contraseñas. De qué cuenta o persona se trataba.
+Lo que dicen tus mensajes, tareas, borradores o chats. Nombres, direcciones de correo electrónico, números de teléfono, enlaces o contraseñas. Ni la cuenta ni la persona de la que se trataba.
 
 ## De dónde vienen los errores
 
-- el servicio y sus trabajos: revisiones de mensajes nuevos, preparación de tareas, chat, conexiones y sincronizaciones;
-- el panel en tu navegador, también los errores que detectó y te mostró, y su copia de la app en tu dispositivo;
-- las llamadas del panel a tu Machine que fallan o tardan demasiado: qué llamada, nunca lo que pidió o envió;
-- los trabajos de Claude Code y Codex que fallan: solo la herramienta y el tipo de fallo.
+- del trabajo en segundo plano: revisiones de mensajes nuevos, preparación de tareas, chats, conexiones y sincronizaciones;
+- del panel, en tu navegador o en la app, incluidos los errores que te mostró;
+- de solicitudes del panel que fallan o agotan el tiempo de espera: cuál fue la solicitud, nunca lo que envió;
+- de trabajos de agentes de programación que fallan: solo la herramienta y el tipo de fallo.
 
-El mismo error cuenta una vez, con un recuento. Como mucho, un lote cada 10 minutos. El equipo los guarda 30 días.
+Los errores repetidos se cuentan, pero no se vuelven a enviar. Como máximo, se envía un lote cada 10 minutos. Los conservamos durante 30 días.
 
-## Ritmo
+## Ritmo de trabajo
 
-El trabajo en segundo plano espera cuando los límites de tu plan de IA se están agotando, para dejar sitio a tus propios chats (consulta [Tu modelo de IA](model.md)). Las revisiones de lo que llegó solo esperan cerca de los límites; el trabajo más pesado, como recorrer tu historial, se reparte a lo largo de la semana.
+El trabajo en segundo plano se pausa cuando estás cerca de alcanzar los límites de tu plan de IA, para dejar espacio para tus propios chats (consulta [Tu modelo de IA](model.md)).
 
-Con los informes de errores activados, tu Machine también le dice al equipo, una vez al día, cuántas veces pasó: para cada vez, la hora en que empezó, qué límite, cuántos minutos duró y cuántos trabajos esperaron. Solo recuentos y minutos, nada sobre qué eran los trabajos.
+Si los informes de errores están activados, tu Machine también nos indica una vez al día con qué frecuencia ocurrió: por cada pausa, la hora, el límite alcanzado, cuánto duró y cuántos trabajos esperaron. No incluye información sobre lo que hacían los trabajos.
 
-## Desactívalo
+## Desactivarlos
 
-En Ajustes, Seguridad, desactiva **Enviar informes de errores**. No se registra ni se envía nada más, recuentos de ritmo incluidos, y lo que estaba esperando se elimina. Los errores se siguen viendo en tu propia Machine, que puede ofrecerte un arreglo.
+En **Ajustes**, **Seguridad**, desactiva **Enviar informes de errores**. No se registra ni se envía nada más, y se elimina lo que estaba pendiente. Los errores seguirán apareciendo en tu Machine, que puede ofrecerte una solución.
 
 Consulta [Seguridad y privacidad](security-and-privacy.md).

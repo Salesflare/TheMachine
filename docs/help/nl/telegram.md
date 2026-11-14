@@ -5,6 +5,7 @@ summary: Krijg je to-do's op Telegram, met dezelfde knoppen als op het dashboard
 covers: telegram
 code: assistant.py, onboarding.py, cli.py
 site: Add my bot, Add more any time, Disconnect Telegram
+translated: a2b74e4831832977
 ---
 ## Wat het doet
 

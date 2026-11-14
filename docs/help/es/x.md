@@ -5,6 +5,7 @@ summary: Tus menciones, respuestas y mensajes directos en X, leídos en el naveg
 covers: connector:x
 code: connectors/x.py, integrations/x_inbox.py
 site: Connect, More sources, Remove
+translated: 5cbe43055458daf4
 ---
 ## Qué lee
 

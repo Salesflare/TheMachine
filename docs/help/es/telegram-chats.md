@@ -4,6 +4,7 @@ area: connections
 summary: Tus chats y grupos pequeños de Telegram, leídos como un dispositivo de tu propia cuenta. Responde solo después de que lo apruebes.
 covers: connector:telegram
 code: onboarding.py, telegram_mirror.py, telegram_store.py, next_actions.py
+translated: da17aef29a380002
 ---
 ## Qué lee
 

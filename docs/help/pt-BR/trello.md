@@ -5,6 +5,7 @@ summary: Mudanças em cartões, comentários e atividade em um quadro do Trello.
 covers: connector:trello
 code: connectors/trello.py
 site: Sign in with Trello, Connect, More sources, Remove
+translated: 7fc2a596ef58bd93
 ---
 ## O que ela lê
 

@@ -5,6 +5,7 @@ summary: LinkedIn of X heeft je Machine uitgelogd. Log hem opnieuw in, één kee
 covers: 
 code: browser_login.py, dashboard.html, dashboard/connections-signin.js
 order: 2
+translated: b77b372b9332ca2b
 ---
 Sites zoals LinkedIn en X worden gelezen in de eigen browser van je Machine. Soms logt een site hem uit.
 

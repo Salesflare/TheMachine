@@ -5,6 +5,7 @@ summary: Waar je elke instelling vindt, van de lichte modus tot beveiliging en j
 covers: settings:general
 code: dashboard.html
 order: 1
+translated: 00e42f9aeb395d21
 ---
 Open **Instellingen** met het tandwiel bovenaan. De tabbladen:
 

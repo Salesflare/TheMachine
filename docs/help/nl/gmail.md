@@ -6,6 +6,7 @@ covers: connector:gmail
 code: onboarding.py, google_api.py, next_actions.py
 site: Connect Google, Mail and Calendar, Disconnect, Sign in with Google, Use your own app
 order: 10
+translated: e06946aaa6ad0e1a
 ---
 ## Wat het leest
 

@@ -1,31 +1,32 @@
 ---
 title: Deelregels
 area: fleet
-summary: Per Fleet en per soort vraag: wat je Machine mag beantwoorden. Eerst vragen, Altijd, Nooit of Alleen namen.
+summary: Wat je Machine per Fleet en per soort vraag mag antwoorden. Vraag het me eerst, Altijd, Nooit of alleen Namen.
 covers: 
 code: fleet.py, dashboard.html
 order: 2
 keywords: share, sharing, colleagues, teammates, team, what others see, answer for me
+translated: 8c6f3bda9dfdbe8e
 ---
-## Instellen
+## Stel de regels in
 
-Open Delen in het tabblad **Fleet**. Elke soort vraag heeft een regel:
+Bepaal wat je Machine aan je Fleet vertelt. Open het tabblad **Fleet** en ga naar **Delen**. Voor elke soort vraag geldt een regel:
 
-- Eerst vragen: je ziet elke vraag en beslist zelf.
-- Altijd: je Machine antwoordt zelf.
-- Nooit: hij weigert.
-- Namen: alleen namen, geen details.
+- **Vraag het me eerst**: je krijgt elke vraag te zien en beslist zelf.
+- **Altijd**: je Machine antwoordt zelf.
+- **Nooit**: je Machine weigert.
+- **Namen**: hiermee bepaal je of het antwoord namen mag noemen, zoals die van een gast, of namen juist weglaat.
 
-Hij deelt nooit de inhoud van e-mails, of waar je afspraken over gaan. "Anders voor iemand? Voeg een uitzondering toe" stelt een regel in voor één persoon.
+Je Machine deelt nooit de inhoud van e-mails of waar je vergaderingen over gaan. Met **Anders voor iemand? Voeg een uitzondering toe** stel je een regel in voor één persoon.
 
-Regels wijzig je alleen op het dashboard, nooit via een bericht.
+Je kunt regels alleen aanpassen in het dashboard, nooit via een bericht.
 
-## In een Werk-Fleet
+## In een Work Fleet
 
-In een standaard Werk-Fleet hebben wie iemand kent, context over afspraken en wie gedeelde e-mails afhandelt twee regels: **Altijd** en **Nooit**. Altijd antwoordt met alleen wat de [Team-Graph](team-graph.md) met je team deelt, en noemt alleen namen van mensen die hij al deelt. Een regel die bewaard is als Eerst vragen, werkt als Altijd.
+In een Standard Work Fleet kun je voor wie iemand kent, de context van vergaderingen en wie gedeelde e-mails afhandelt alleen **Altijd** of **Nooit** kiezen. Met **Altijd** antwoordt je Machine alleen met informatie die de [Team Graph](team-graph.md) al met je team deelt, en noemt hij alleen mensen die daarin staan. Een regel die is opgeslagen als **Vraag het me eerst**, werkt als **Altijd**.
 
-Zolang de Team-Graph niet deelt, houden wie iemand kent en context over afspraken alle drie de regels. Een voorzichtige Fleet houdt Eerst vragen. Zie [Fleets](fleet.md#answered-by-itself-in-a-work-fleet).
+Zolang de Team Graph niets deelt, blijft voor wie iemand kent en de context van vergaderingen ook **Vraag het me eerst** beschikbaar. Dat geldt ook voor een Careful Fleet. Bekijk [Fleets](fleet.md#answered-by-itself-in-a-work-fleet).
 
 ## De eerste keer dat iemand iets vraagt
 
-Een vraag waarvoor je nodig bent, komt als to-do, met **Eén keer delen**, **Altijd delen**, **Weigeren** of **Nooit delen**.
+Een vraag waarvoor jouw input nodig is, komt binnen als een to-do. Je kunt kiezen voor **Eén keer delen**, **Altijd delen**, **Weigeren** of **Nooit delen**.

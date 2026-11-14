@@ -5,6 +5,7 @@ summary: Los canales y mensajes directos en los que estás. Envía un mensaje di
 covers: connector:slack
 code: assistant.py, next_actions.py, onboarding.py, slack_api.py
 site: Connect, Remove
+translated: 8d275e75083292ba
 ---
 ## Qué lee
 

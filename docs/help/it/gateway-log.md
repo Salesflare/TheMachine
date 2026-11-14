@@ -1,37 +1,38 @@
 ---
-title: Salute della tua Machine
+title: Stato della Machine
 area: connections
-summary: Il log della tua Machine, così nota i propri problemi. Legge soltanto.
+summary: Il registro della tua Machine, così individua da sola i problemi. Lo legge soltanto.
 covers: connector:gateway
 code: onboarding.py
 site: More sources, Remove
+translated: 3a06400a28396465
 ---
 ## Cosa legge
 
-Il log della tua Machine: esecuzioni non riuscite, passaggi rifiutati, messaggi Telegram non partiti e gli errori di The Machine stessa. Un’attività ti avvisa quando c’è qualcosa da sistemare.
+Il registro della tua Machine: esecuzioni non riuscite, passaggi rifiutati, messaggi Telegram non inviati ed errori della stessa The Machine. Un’attività ti avvisa quando c’è qualcosa da sistemare. Sul tuo computer, include **Completa l’installazione dell’ultimo aggiornamento**: una parte dell’aggiornamento richiede un breve riavvio notturno, ma per alcune notti non è stato possibile. Chiedilo nella sua chat e The Machine lo completa. L’attività si chiude da sola quando quella parte è installata.
 
 ## Correzioni messe da parte da un aggiornamento
 
-Quando The Machine si aggiorna e una delle sue correzioni non va più bene per la nuova versione, l’aggiornamento mette da parte quella correzione e va avanti, così la tua Machine non resta mai su una versione vecchia. Un’attività, **Rifai una correzione messa da parte dall’aggiornamento**, nomina la correzione.
+Quando The Machine si aggiorna e una sua correzione non è più compatibile con la nuova versione, l’aggiornamento la mette da parte e prosegue, così la tua Machine non resta mai con una versione vecchia. Un’attività, **Rifai una correzione messa da parte dall’aggiornamento**, indica di quale correzione si tratta.
 
-Con **Rifai** la tua Machine la rifà sulla nuova versione, come ogni sua correzione: vedi la modifica e tocchi **Merge fix**. Una volta unita, la vecchia copia sparisce. Oppure chiudi l’attività.
+Con **Rifai**, la tua Machine ricrea la correzione nella nuova versione, come per qualsiasi sua correzione: vedi la modifica e tocchi **Unisci correzione**. Una volta integrata, la vecchia copia viene eliminata. Oppure chiudi l’attività.
 
 ## I tuoi file conservati da un aggiornamento
 
-Quando una nuova versione porta un file con lo stesso nome di uno che hai aggiunto tu, l’aggiornamento rinomina il tuo invece di sovrascriverlo e va avanti. Un’attività dice quanti ne ha conservati e indica ogni nome vecchio e nuovo. Chiudila quando li hai controllati.
+Quando una nuova versione include un file con lo stesso nome di uno che hai aggiunto tu, l’aggiornamento rinomina il tuo invece di sovrascriverlo e prosegue. Un’attività indica quanti file ha conservato ed elenca i vecchi e i nuovi nomi. Chiudila dopo averli controllati.
 
 ## Cosa può fare
 
-Niente. Legge solo il log sulla tua Machine.
+Niente. Legge soltanto il registro della tua Machine.
 
-## Collegalo
+## Collegala
 
-- Su una Machine in hosting si trova nella tua pagina di configurazione, sotto **Altre fonti**, come Salute della tua Machine. Uno per Machine.
+- Su una Machine ospitata, la trovi nella pagina di configurazione, in **Altre fonti**, con il nome Stato della Machine. Una per Machine.
 - Sul tuo computer: esegui `assistant connect gateway`.
 
-## Rimuovilo
+## Rimuovila
 
-- Nella dashboard: **Connessioni**, aprilo, **Dettagli**, poi **Disconnetti**.
-- Su una Machine in hosting puoi anche premere **Rimuovi** accanto al log nella tua pagina di configurazione.
+- Nella dashboard: **Connessioni**, aprila, poi **Dettagli** e **Disconnetti**.
+- Su una Machine ospitata, puoi anche premere **Rimuovi** accanto alla connessione nella pagina di configurazione.
 
-Non c’è nient’altro da disinstallare altrove.
+Non c’è nulla da disinstallare altrove.

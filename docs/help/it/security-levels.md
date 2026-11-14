@@ -5,6 +5,7 @@ summary: Un solo interruttore, Standard o Prudente, imposta sicurezza e privacy.
 covers: settings:security
 code: security_levels.py, dashboard.html, fleet.py
 order: 2
+translated: f8e82f192dd70e3a
 ---
 ## Due livelli
 

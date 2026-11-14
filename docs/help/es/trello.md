@@ -5,6 +5,7 @@ summary: Cambios en tarjetas, comentarios y actividad en un tablero de Trello. S
 covers: connector:trello
 code: connectors/trello.py
 site: Sign in with Trello, Connect, More sources, Remove
+translated: 7fc2a596ef58bd93
 ---
 ## Qué lee
 

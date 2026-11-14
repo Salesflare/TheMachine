@@ -5,6 +5,7 @@ summary: Tus mensajes de LinkedIn, leídos en el navegador propio de tu Machine 
 covers: connector:linkedin
 code: connectors/linkedin.py, integrations/linkedin_inbox.py, linkedin_connections.py
 site: Connect, More sources, Remove
+translated: 850b91f79b9e23fc
 ---
 ## Qué lee
 

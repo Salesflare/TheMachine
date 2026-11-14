@@ -5,6 +5,7 @@ summary: Accounts, Kontakte und Deals, damit es weiß, wer wichtig ist. Es liest
 covers: connector:salesflare
 code: assistant.py, onboarding.py
 site: More sources, Connect, Remove
+translated: 697e6d60b69bb1cd
 ---
 ## Was es liest
 

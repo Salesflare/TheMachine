@@ -5,6 +5,7 @@ summary: Chiedi a qualcuno del team o della tua Famiglia di guardare un’attivi
 covers: ask-to-review
 code: fleet_reviews.py, dashboard/todos-review.js
 order: 4
+translated: 58823adef1b1f51b
 ---
 ## Chiedere a qualcuno di rivedere un’attività
 
