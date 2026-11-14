@@ -1,4 +1,5 @@
 """Things that slipped: unanswered emails offered once to a review that saves. No live calls."""
+import contextlib
 import tempfile
 import unittest
 from pathlib import Path
@@ -95,6 +96,31 @@ class Slipped(unittest.TestCase):
         self.assertNotIn('lee@prospect.example', text)
         self.assertIn('emailed pat@vendor.example "Re: Collab"', text)
         self.assertIn('emailed sam@client.example "Contract"', text)
+
+    def test_one_pass_over_the_email_however_many_people(self):
+        # Who the owner writes with, and who wrote first, come from one read of the email, not one per address:
+        # a read of every email per address took a minute on a big mailbox. The answer stays the same.
+        self.store.commit_page('work', {}, [
+            *[mail(f'w{i}', '2026-09-02T09:00:00+00:00', f'p{i}@client.example', 'owner@example.com', 'Hi', 'Hello', f'tw{i}') for i in range(6)],
+            *[sent(f'o{i}', '2026-10-08T10:00:00+00:00', f'p{i}@client.example', f'Plan {i}', 'Does this work?', f'to{i}') for i in range(2)],
+            *[mail(f'a{i}', '2026-10-12T10:00:00+00:00', f'x{i}@other.example', 'owner@example.com', f'Ask {i}', 'Can you help?', f'ta{i}') for i in range(6)]])
+        real, seen = self.store.connect, []
+
+        @contextlib.contextmanager
+        def traced():
+            with real() as db:
+                db.set_trace_callback(seen.append)
+                try:
+                    yield db
+                finally:
+                    db.set_trace_callback(None)
+        with patch_everywhere(a, 'now', return_value=NOW), patch.object(self.store, 'connect', traced):
+            text = self.store.slipped('run-1')
+        every = [s for s in seen if "FROM events WHERE kind='gmail.message'" in s]
+        self.assertEqual(len(every), 1, every)
+        self.assertIn('emailed p0@client.example "Plan 0"', text)
+        self.assertIn('emailed p1@client.example "Plan 1"', text)
+        self.assertNotIn('x0@other.example', text)  # the owner never wrote to them
 
     def test_review_prompt_section(self):
         self.assertNotIn('Possibly slipped', a.review_prompt('r', ['work']))

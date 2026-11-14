@@ -604,8 +604,32 @@ class PromisesStore:
             done = {r[0] for r in db.execute("SELECT x.event_id FROM slipped x WHERE x.run_id IN (SELECT owner_run FROM analyses WHERE status='complete') OR x.offered_at>?", (ago(0.25),))}
             carded = {r[0] for r in db.execute("SELECT DISTINCT j.value FROM suggestions s, json_each(s.event_ids) j")}
             followed = follow_ups.covered(db)  # the owner's own emails there: automated follow-ups look after them (follow_ups.py)
-            later = ("SELECT 1 FROM events r WHERE r.account_id=e.account_id AND r.kind='gmail.message' AND r.deleted=0 AND r.occurred_at>e.occurred_at "
+            # +account_id: found by its thread (events_thread_id), a few rows, not every email of the account
+            later = ("SELECT 1 FROM events r WHERE +r.account_id=e.account_id AND r.kind='gmail.message' AND r.deleted=0 AND r.occurred_at>e.occurred_at "
                      "AND json_extract(r.metadata,'$.thread_id')=json_extract(e.metadata,'$.thread_id')")
+            # Who the owner wrote to and who wrote to them, in one pass over the email (as lower() and instr() in
+            # SQLite had them), for the checks below: a scan of every email per address took a minute on a big mailbox.
+            mail = {}
+            def scanned():
+                if not mail:
+                    mail.update(to=[], got=[], wrote={}, first={})
+                    for at, sent, to, frm in db.execute("SELECT occurred_at,instr(metadata,'\"SENT\"')>0,lower(json_extract(metadata,'$.to')),"
+                                                        "lower(json_extract(metadata,'$.from')) FROM events WHERE kind='gmail.message'"):
+                        if sent == 1 and to is not None:
+                            mail['to'].append(to)
+                        elif sent == 0 and frm is not None and isinstance(at, str):
+                            mail['got'].append((at, frm))
+                return mail
+            def writes_with(address):  # an email the owner sent with this address in To
+                m = scanned()
+                if address not in m['wrote']:
+                    m['wrote'][address] = any(address in to for to in m['to'])
+                return m['wrote'][address]
+            def wrote_before(address, at):  # an email from this address before at
+                m = scanned()
+                if address not in m['first']:
+                    m['first'][address] = min((t for t, frm in m['got'] if address in frm), default=None)
+                return isinstance(at, str) and m['first'][address] is not None and m['first'][address] < at
             rows = db.execute("SELECT e.id,e.account_id,e.occurred_at,e.title,e.body,e.metadata, instr(e.metadata,'\"SENT\"')>0 mine FROM events e "
                               "WHERE e.kind='gmail.message' AND e.deleted=0 AND e.history=0 AND e.occurred_at>? AND e.occurred_at<? "
                               f"AND ((instr(e.metadata,'\"SENT\"')>0 AND e.occurred_at<? AND NOT EXISTS ({later})) "
@@ -622,7 +646,7 @@ class PromisesStore:
                     if not sender or sender in own or robot.match(sender) or automated or not own & set(to) or len(to) > 2:
                         continue
                     # Only people the owner writes with: no cold pitches or newsletters.
-                    if not db.execute("SELECT 1 FROM events WHERE kind='gmail.message' AND instr(metadata,'\"SENT\"')>0 AND instr(lower(json_extract(metadata,'$.to')),?)>0 LIMIT 1", (sender,)).fetchone():
+                    if not writes_with(sender):
                         continue
                     found['asked'].append((row, sender))
                 elif row['mine']:
@@ -630,11 +654,10 @@ class PromisesStore:
                     people = [x for x in to if x not in own and not robot.match(x)]
                     # Not outreach: in a thread the other person started, or to someone who had
                     # written to the owner before the owner started this thread.
-                    first = db.execute("SELECT occurred_at,instr(metadata,'\"SENT\"')>0 mine FROM events WHERE account_id=? AND kind='gmail.message' "
-                                       "AND json_extract(metadata,'$.thread_id')=? ORDER BY occurred_at LIMIT 1", (row['account_id'], m.get('thread_id'))).fetchone()
+                    first = db.execute("SELECT occurred_at,instr(metadata,'\"SENT\"')>0 mine FROM events WHERE +account_id=? AND kind='gmail.message' "
+                                       "AND json_extract(metadata,'$.thread_id')=? ORDER BY occurred_at,rowid LIMIT 1", (row['account_id'], m.get('thread_id'))).fetchone()
                     if first and first['mine']:
-                        people = [x for x in people if db.execute("SELECT 1 FROM events WHERE kind='gmail.message' AND occurred_at<? AND instr(metadata,'\"SENT\"')=0 "
-                                                                  "AND instr(lower(json_extract(metadata,'$.from')),?)>0 LIMIT 1", (first['occurred_at'], x)).fetchone()]
+                        people = [x for x in people if wrote_before(x, first['occurred_at'])]
                     if people:
                         found['sent'].append((row, ', '.join(people[:3])))
             day = lambda row: dt.datetime.fromisoformat(row['occurred_at']).astimezone(local_tz()).strftime('%a, %b %-d')
