@@ -12,11 +12,26 @@ keywords: log, history, audit, what did it do, sent, refused, blocked
 Apri **Impostazioni**, **Movimenti**. Ogni riga è una cosa che The Machine ha fatto, dalla più recente, per giorno:
 
 - cosa ha fatto e come è finita: inviato, rifiutato, non riuscito o annullato
-- quando, l’account o l’app che ha usato e chi l’ha avviata: tu, il tuo OK, la tua voce o la Machine da sola
+- quando, l’account o l’app che ha usato e [cosa l’ha permessa](activity.md#what-allowed-it)
 - un link alla sua attività, quando c’è
 - per un’IA che hai collegato, come ChatGPT o Claude: il suo nome con **(IA collegata)**, per distinguerla da The Machine
 
 Elenca messaggi e risposte, modifiche a documenti e calendario, passaggi sul web, correzioni che ha unito, agenti di programmazione, domande e risposte del Fleet, apprendimenti inviati al team di The Machine, skill, importazioni nel Graph, fatti che hai chiesto di dimenticare in chat (con **Annulla**), connessioni aggiunte o rimosse, e ogni accesso del nostro team con l’[Accesso per l’assistenza](get-support.md#support-access), anche quelli rifiutati.
+
+## Cosa l’ha permessa
+
+Ogni messaggio, modifica a documenti o calendario, passaggio sul web e correzione unita dice cosa l’ha lasciata partire, come è successo:
+
+- **Approvato nell’attività** o **Approvato in Telegram**: il tuo tocco su Invia, Conferma o Unisci
+- **Approvato a voce**: il tuo sì in Talk
+- **Toccato «Fallo»**: il tuo Fallo sull’attività
+- **Chiesto in chat**: l’hai chiesto a parole, con l’inizio del tuo messaggio tra virgolette. Una citazione appare solo finché quelle parole restano nel tuo messaggio.
+- **Ricontatto che ha inviato da sola**, **Piccola correzione, unita da sola**, **Nuovo documento privato, creato da sola** o **Preparata in anticipo, da sola**: una tua impostazione o una regola propria di The Machine
+- **Nessuna approvazione registrata**: non è stato registrato nulla. Va anche nei nostri [rapporti di errore](error-reports.md), così troviamo il percorso che l’ha mancata.
+
+Passaggi sul web elenca anche l’esecuzione di un’attività che ha cliccato o scritto su una pagina, con cosa ha permesso quell’esecuzione.
+
+Le righe più vecchie, di prima che venisse registrato, mantengono le parole di allora, come **Dopo il tuo OK**.
 
 ## Filtrare
 

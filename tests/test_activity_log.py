@@ -10,6 +10,7 @@ from unittest.mock import patch
 
 from test_assistant import assistant as a, event
 import activity_log
+from machine import action_basis
 import fleet
 import follow_ups
 from seams import patch_everywhere  # noqa: E402
@@ -26,10 +27,11 @@ class Activity(unittest.TestCase):
             self.card = self.store.suggest('task-1', 'Reply to Robin', 'Body', [1])['id']
         self.config = {'accounts': [GMAIL]}
 
-    def job(self, n, payload, status, at, source='dashboard'):
+    def job(self, n, payload, status, at, source='dashboard', basis=action_basis.BEFORE):
+        """An outbox job; one from before bases were kept unless `basis` says what allowed it (test_action_basis.py)."""
         with self.store.connect() as db:
-            db.execute('INSERT INTO action_jobs(id,suggestion_id,revision,payload,status,created_at,updated_at,approval_id,source,rfc_message_id)'
-                       ' VALUES(?,?,?,?,?,?,?,?,?,?)', (f'job{n}', self.card, f'r{n}', json.dumps(payload), status, at, at, 'ok', source, ''))
+            db.execute('INSERT INTO action_jobs(id,suggestion_id,revision,payload,status,created_at,updated_at,approval_id,source,rfc_message_id,basis)'
+                       ' VALUES(?,?,?,?,?,?,?,?,?,?,?)', (f'job{n}', self.card, f'r{n}', json.dumps(payload), status, at, at, 'ok', source, '', basis))
 
     def page(self, **kw):
         with self.store.connect() as db:
