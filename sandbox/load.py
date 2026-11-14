@@ -122,8 +122,9 @@ def calendar_meta(meta, base):
             'attendees': [{'email': a, **({'self': True} if a == meta['organizer'] else {'responseStatus': 'accepted'})} for a in meta['attendees']]}
 
 
-def load(directory, states, port=8870, network_port=8871, fixture_path=HERE / 'fixture.json'):
-    """Writes the install into `directory` (emptied first) and returns (config, config_path)."""
+def load(directory, states, port=8870, network_port=8871, fixture_path=HERE / 'fixture.json', base=None):
+    """Writes the install into `directory` (emptied first) and returns (config, config_path). base: the moment it is
+    loaded at (now by default); a fixed one loads the same install every time (tests/test_graph_golden.py)."""
     directory = Path(directory)
     directory.mkdir(parents=True, exist_ok=True)
     for name in ('events.sqlite', 'events.sqlite-wal', 'events.sqlite-shm', 'sent.jsonl'):
@@ -136,7 +137,7 @@ def load(directory, states, port=8870, network_port=8871, fixture_path=HERE / 'f
     import graph
 
     store = assistant.Store(config['database'])
-    base = dt.datetime.now(dt.timezone.utc).replace(microsecond=0)
+    base = base or dt.datetime.now(dt.timezone.utc).replace(microsecond=0)
     fresh = 'fresh' in states
     accounts = {a['id'] for a in config['accounts']}
     events = [e for e in fixture['events'] if e['account_id'] in accounts]
