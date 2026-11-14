@@ -9,7 +9,7 @@ import locale_prefs
 from machine.sources.android import android_app_shown
 from machine.sources.slack import SLACK_ID
 import next_actions
-from timeutil import WORK_HOURS, clock, in_hours, is_work_day, local_tz, morning_label, next_work_day, now
+from timeutil import WORK_HOURS, hour_minute, in_hours, is_work_day, local_tz, morning_label, next_work_day, now
 from machine import todo_states
 from machine.owner_error import OwnerError
 
@@ -30,7 +30,7 @@ def snooze_time(option=None, explicit=None, hours=24, work=False, start=None):
         # The owner's day starts at 03:00: "tomorrow" pressed at 01:30 means the morning of the
         # same calendar day, pressed from 03:00 onwards it means the next day.
         days = {'tomorrow':1,'1d':1,'3d':3,'1w':7}[option] - (1 if local.hour < 3 else 0)
-        hour, minute = clock(WORK_HOURS['morning'])
+        hour, minute = hour_minute(WORK_HOURS['morning'])
         due = (local + dt.timedelta(days=days)).replace(hour=hour,minute=minute,second=0,microsecond=0)
         if work:
             due = next_work_day(due)  # work comes back on a work day, not the weekend
@@ -53,7 +53,7 @@ def handoff_checkin(urgent=False, due=None, start=None):
     `start` is when it was handed off (now by default)."""
     current = dt.datetime.fromisoformat(start or now())
     local = current.astimezone(local_tz())
-    hour, minute = clock(WORK_HOURS['morning'])
+    hour, minute = hour_minute(WORK_HOURS['morning'])
 
     def soon():
         later = local + dt.timedelta(hours=3)
@@ -93,7 +93,7 @@ def asked_snooze_time(value):
     text = str(value or '').strip()
     try:
         if re.fullmatch(r'\d{4}-\d{2}-\d{2}', text):
-            hour, minute = clock(WORK_HOURS['morning'])
+            hour, minute = hour_minute(WORK_HOURS['morning'])
             due = dt.datetime.combine(dt.date.fromisoformat(text), dt.time(hour, minute))
         else:
             due = dt.datetime.fromisoformat(text)
@@ -121,7 +121,7 @@ def owner_snooze_until(value):
 def thread_return_time(days):
     """Days from now in the morning (work_hours.morning), moved to the next work day when it lands on a day off."""
     local = dt.datetime.fromisoformat(now()).astimezone(local_tz())
-    hour, minute = clock(WORK_HOURS['morning'])
+    hour, minute = hour_minute(WORK_HOURS['morning'])
     due = next_work_day((local + dt.timedelta(days=days)).replace(hour=hour, minute=minute, second=0, microsecond=0))
     return due.astimezone(dt.timezone.utc).isoformat()
 

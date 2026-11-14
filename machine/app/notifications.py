@@ -22,7 +22,7 @@ import notify
 import security_levels
 import still_needed
 import todo_areas
-from timeutil import clock, in_hours, is_work_day, local_tz, next_work_day, now, WORK_HOURS
+from timeutil import hour_minute, in_hours, is_work_day, local_tz, next_work_day, now, WORK_HOURS
 from machine import todo_states
 from machine.owner_error import OwnerError
 
@@ -167,7 +167,7 @@ class NotificationsApp:
         start = local.replace(hour=0, minute=0, second=0, microsecond=0)
         end = start + dt.timedelta(days=1)
         # Overnight: since the end of the last work day's hours (or a day back)
-        hour, minute = clock(WORK_HOURS['end'])
+        hour, minute = hour_minute(WORK_HOURS['end'])
         since = (local - dt.timedelta(days=1)).replace(hour=hour, minute=minute, second=0, microsecond=0)
         if since > local:
             since -= dt.timedelta(days=1)

@@ -124,7 +124,7 @@ def prep_moment(start_local, hours=None):
             if timeutil.is_work_day(day, hours):
                 break
             day -= dt.timedelta(days=1)
-    return dt.datetime.combine(day, dt.time(*timeutil.clock(hours['morning'])), start_local.tzinfo)
+    return dt.datetime.combine(day, dt.time(*timeutil.hour_minute(hours['morning'])), start_local.tzinfo)
 
 
 def due(start, current, tz, hours=None):
