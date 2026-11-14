@@ -82,7 +82,7 @@ For your own Google OAuth client or Entra app, or a Machine you'd rather not pai
 | Signal chats | Unpacks the pinned signal-cli, links it as a device of your phone with a QR code and keeps your chats read with a user service. |
 | Android | Picks your paired Android phone from OpenClaw. For each source you connect that also has a phone app (Gmail, Slack, WhatsApp, …) it asks whether to skip that app's notifications; the default keeps them, since the phone may show other inboxes too. |
 | Gateway log | Finds the Gateway's systemd unit. |
-| Plugins | `github`, `stripe`, `intercom`, `x`, `linkedin`, `trello`, `rss`, `shortcut`: not part of the installer; `assistant connect github` (and so on) asks for the few fields each needs. Zoom, Google Meet and Google Docs sign in through The Machine's hosted sign-in: on a hosted Machine, or one paired with The Machine Network. |
+| Plugins | `github`, `stripe`, `intercom`, `x`, `linkedin`, `trello`, `rss`, `shortcut`, `web_page`: not part of the installer; `assistant connect github` (and so on) asks for the few fields each needs. Zoom, Google Meet, Google Docs and Microsoft Teams sign in through The Machine's hosted sign-in: on a hosted Machine, or one paired with The Machine Network. Salesforce connects with Connect Salesforce on a hosted Machine's setup page. |
 
 Setup checks a real read before it calls the account connected. A busy or rate-limited browser source can be saved for its first sync, marked unverified: a saved setting is not proof a read worked. Afterwards you see the first sync per source: how many signals came in and from how far back.
 
