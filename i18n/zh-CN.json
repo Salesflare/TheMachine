@@ -2418,7 +2418,7 @@
  "Last failure: {} · {}": "上次失败：{} · {}",
  "Last failure: {}, {}": "上次失败：{}，{}",
  "Last phone check: {}": "上次检查手机：{}",
- "Last run {} {}; it retries.": "上次运行{} {}，会重试。",
+ "Last run {} {}; it retries.": "上次运行{}（{}），会自动重试。",
  "Last seen {}": "上次出现时间{}",
  "Last signal {}": "上次信号{}",
  "Last sync": "上次同步",
@@ -2896,9 +2896,9 @@
  "Next follow-up: {}": "下次跟进：{}",
  "Next invoice": "下一张发票",
  "Next month": "下个月",
- "Next one shortly.": "下一条很快就会到。",
- "Next one when new messages come in.": "收到新消息后，下一条就会到。",
- "Next one when your new mail is in.": "收到新邮件后，下一条就会到。",
+ "Next one shortly.": "下一轮检查很快开始。",
+ "Next one when new messages come in.": "收到新消息后开始下一轮检查。",
+ "Next one when your new mail is in.": "新邮件到达后开始下一轮检查。",
  "Next try": "下次尝试",
  "Next try {}.": "下次尝试{}。",
  "Next up. I’ll start shortly.": "接下来处理。我很快就会开始。",
@@ -2950,7 +2950,7 @@
  "No channel block to save": "没有要保存的频道区块",
  "No checks yet.": "目前还没有检查项。",
  "No client threads to share yet.": "目前还没有可分享的客户对话。",
- "No close date: {} in {}": "没有结束日期：{}，位于{}",
+ "No close date: {} in {}": "没有结束日期：{}，共{}笔",
  "No common free time, 8:00 to 21:00.": "8:00到21:00之间没有共同的空闲时间。",
  "No decisions yet.": "目前还没有决定。",
  "No deliveries yet.": "目前还没有交付内容。",
@@ -5527,7 +5527,7 @@
  "The file needs a row of headers and at least one row under it": "文件需要包含一行表头，且表头下至少有一行内容",
  "The final step’s page is an HTTPS link": "最后一步的页面是一个HTTPS链接",
  "The first one expires {}.": "第一个会在{}过期。",
- "The first one starts when your mail is in.": "第一个会在邮件送达后开始。",
+ "The first one starts when your mail is in.": "邮件到达后开始第一轮检查。",
  "The fix changed after you reviewed it. Nothing was merged; tap Change to get it again.": "你查看后，修复内容又有了更改。未合并任何内容；点按“更改”以重新获取。",
  "The fix is no longer in the running code. Nothing to undo.": "修复内容已不在运行中的代码里。无需撤销。",
  "The fix is not on top of the running code: git pull in the clone, test again and commit": "修复内容不是基于运行中的代码：在克隆仓库中运行git pull，再次测试并提交",
@@ -5846,7 +5846,7 @@
  "Time passed": "已用时间",
  "Time picked by {}: {}": "{}选定的时间：{}",
  "Time proposed by {}: {}": "{}提议的时间：{}",
- "Time proposed to {}: {}": "{}提议给你的时间：{}",
+ "Time proposed to {}: {}": "向{}提议的时间：{}",
  "Time zone": "时区",
  "Timeline": "时间线",
  "Title": "标题",
@@ -6429,7 +6429,7 @@
  "Without names": "不显示姓名",
  "Without one, you get an export code.": "没有它，你会获得一个导出代码。",
  "Won": "已赢单",
- "Won this month: {} in {}": "本月已赢单：{}，金额单位：{}",
+ "Won this month: {} in {}": "本月已赢单：{}，共{}笔",
  "Won’t be added again.": "不会再次添加。",
  "Won’t suggest them again.": "不会再推荐它们。",
  "Word": "Word",
@@ -6885,11 +6885,11 @@
  "last 24h": "过去24小时",
  "last contact {}": "最近联系时间{}",
  "last contact {}, so keep it to one thread": "最近联系时间{}，所以请保持在同一个聊天线程中",
- "last not yet": "最近：尚未",
+ "last not yet": "上次检查：暂无",
  "last seen {}": "最近出现时间{}",
  "last signal {}": "最近信号{}",
  "last used {}": "最近使用时间{}",
- "last {}": "最近{}",
+ "last {}": "上次检查：{}",
  "less than a day": "不到一天",
  "list is one of {}": "list的值是{}之一",
  "mail without a tag": "无标签邮件",
@@ -7220,7 +7220,7 @@
  "{} changes wait to send.": {
   "other": "有{}项更改等待发送。"
  },
- "{} checked": "{}已检查",
+ "{} checked": "{} 项已检查",
  "{} client threads": {
   "other": "{}段客户聊天"
  },
@@ -7332,7 +7332,7 @@
   "other": "来自个人的{}条"
  },
  "{} from your history to review": "{}条历史记录待审核",
- "{} from {} (a source)": "{}来自{}",
+ "{} from {} (a source)": "来自{1}的{0}",
  "{} from {} moved to {}.": "{}已从{}移到{}。",
  "{} gets exactly this:": "{}会收到以下内容：",
  "{} gets “no”.": "{}会收到“否”。",
@@ -7439,7 +7439,7 @@
   "other": "{}场会议"
  },
  "{} meetings today, the first at {}.": {
-  "other": "{}场会议，今天{}。"
+  "other": "今天有{}场会议，第一场在{}。"
  },
  "{} meetings.": {
   "other": "{}场会议。"
@@ -7549,7 +7549,7 @@
  "{} of {} to-dos decided": "共{1}项待办已确定，当前{0}项",
  "{} of {} worth it": "共{1}项值得关注，当前{0}项",
  "{} open": "未处理{}项",
- "{} open in {} with a value": "{}个未关闭项目在{}中有价值",
+ "{} open in {} with a value": "{}未成交，共{}笔有金额",
  "{} open project": "{}个未关闭项目",
  "{} open projects": "{}个未关闭项目",
  "{} or {}": "{}或{}",
@@ -7810,7 +7810,7 @@
  "{} won’t get a ping. Let them know.": "{} 不会收到通知。记得告诉对方。",
  "{} works at {}": "{} 在{}工作",
  "{} works here": "{} 在这里工作",
- "{} would not open: {}. Make it again from the original with assistant xlsx-set (Excel), check it with assistant office-check, then attach it.": "{} 无法打开：{}。请用助手xlsx-set（Excel）从原文件重新生成，再用助手office-check检查，然后附上。",
+ "{} would not open: {}. Make it again from the original with assistant xlsx-set (Excel), check it with assistant office-check, then attach it.": "{} 无法打开：{}。请用assistant xlsx-set（Excel）从原文件重新生成，再用assistant office-check检查，然后附上。",
  "{} writing rules": {
   "other": "{}条写作规则"
  },
@@ -7839,6 +7839,7 @@
  "{}, in your Machine’s browser": "{}，在你的Machine浏览器中",
  "{}, {}, {} and {} more": "{}、{}、{}等{}项",
  "{}-hour limit": "{}小时上限",
+ "{}. {}": "{}。{}",
  "{}. {} Only read here: its files stay as they are.": "{}。{}仅在此处读取：文件会保持原样。",
  "{}: Share my brief facts with the team": "{}：与团队分享我的简要信息",
  "{}: canceled.": "{}：已取消。",
@@ -7858,7 +7859,7 @@
  "{}: {} in {} projects": {
   "other": "{}：{}项，涉及{}个项目"
  },
- "{}: {} of {} worth it": "{}：{}项待办中有{}项值得做",
+ "{}: {} of {} worth it": "{0}：{2}项待办中有{1}项值得做",
  "{}: {}% used": "{}：已使用{}%",
  "{}: {}% worth it, {} decided": "{}：{}%值得做，已决定{}项",
  "{}: “{}”": "{}：“{}”",

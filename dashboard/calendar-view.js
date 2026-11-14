@@ -342,7 +342,7 @@ function calView(m){const [a,b0]=calTimes(m),b=isNaN(b0)||b0<=a?new Date(a.getTi
  setHTML($('#cal-v-rows'),html`${rows.map(([k,v])=>html`<div><dt>${t(k)}</dt><dd>${v}</dd></div>`)}${met.length?html`<div><dt>${t('With')}</dt><dd class="cal-v-with">${withHtml}</dd></div>`:''}${
   [['Organization','Organizations','org',m.orgs],['Project','Projects','project',m.projects]].filter(r=>r[3]?.length).map(([one,many,icon,list])=>
    html`<div><dt>${t(list.length>1?many:one)}</dt><dd class="cal-v-links">${list.map(n=>html`<a class="chip scope who" href="${graphHash(n.node_id)}">${raw(CHIP_ICON[icon])}<span>${n.name}</span></a>`)}</dd></div>`)}${
-  todo?html`<div><dt>${t('To-do')}</dt><dd><a class="cal-v-link cal-v-todo" href="#chat=${todo.id}" data-cal-todo="${todo.id}">${todo.title}</a></dd></div>`:''}`);
+  todo?html`<div><dt>${t('To-do')}</dt><dd><a class="cal-v-link cal-v-todo" href="#chat=${todo.id}" data-cal-todo="${todo.id}" translate="no">${todo.title}</a></dd></div>`:''}`);
  const open=$('#cal-v-open');open.hidden=!m.url;if(m.url){open.href=m.url;open.textContent=t(calOpenLabel(m.url))}
  $('#cal-v-orig').onclick=()=>openOriginal(m.id,m.title,true);
  calNotesOpen(m);if(!$('#cal-view').open)$('#cal-view').showModal();calNotesFit()}
