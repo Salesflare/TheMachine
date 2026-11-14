@@ -5,8 +5,9 @@
 ## Architecture
 
 ```text
-Gmail · Google Calendar · Outlook · Slack · Salesflare CRM · Android notifications · WhatsApp · Telegram chats · Signal chats · OpenClaw Gateway
-plugins: Docs · GitHub · Google Meet · Intercom · LinkedIn · RSS · Shortcut · Stripe · Trello · X · Zoom
+Gmail · Google Calendar · Outlook · Other email (IMAP) · Other calendars (CalDAV, ICS, Exchange) · Slack · Salesflare CRM
+Android notifications · WhatsApp · Telegram chats · Signal chats · OpenClaw Gateway
+plugins: Docs · GitHub · Google Meet · Intercom · LinkedIn · Microsoft Teams · RSS · Salesforce · Shortcut · Stripe · Trello · Web page · X · Zoom
                 │  (read-only collectors, one thread and checkpoint per account)
                 ▼
 assistant.py (systemd user service) → private SQLite + full-text search, local API on 127.0.0.1
@@ -26,7 +27,7 @@ Do it → isolated preparation turn of the same agent → result, draft + Send, 
 | `assistant.py` | Collectors, SQLite store, local API, dashboard server, Telegram outbox, review and preparation workers |
 | `dashboard.html` (its main script in parts in `dashboard/`, served as one page), `sw.js`, `manifest.webmanifest`, `brand/` | Owner dashboard and installable web app |
 | `cli.py` | The `assistant` command line |
-| `next_actions.py` | Approved sends: email (Gmail through `gog` or the token broker, Outlook through Microsoft Graph), Slack direct messages (Sign in with Slack, or Maton), LinkedIn messages and X replies and DMs (OpenClaw browser), WhatsApp messages (`wacli`) and Telegram messages (the outbox of `telegram_mirror.py`); calendar changes and doc writes go through `calendar_writes.py` and `doc_writes.py` |
+| `next_actions.py` | Approved sends: email (Gmail through `gog` or the token broker, Outlook through Microsoft Graph, other mailboxes through their SMTP server with `smtp_mail.py`), Slack direct messages (Sign in with Slack, or Maton), Intercom replies, LinkedIn messages and X replies and DMs (OpenClaw browser), WhatsApp messages (`wacli`), and Telegram and Signal messages (the outboxes of `telegram_mirror.py` and `signal_mirror.py`); calendar changes and doc writes go through `calendar_writes.py` and `doc_writes.py` |
 | `preparation_state.py`, `rollout_health.py` | Preparation bookkeeping and health checks |
 | `retention.py` | Nightly housekeeping: old sync history and preparation logs go, free space goes back to the disk, local database copies rotate |
 | `openclaw-plugin/` | `personal-assistant-bridge`: the `assistant_signals` tool (and `assistant_bug_report`, which only writes up a bug report, for main chats on other channels; `assistant_memory`, which reads back what was learned, and `assistant_forget`, which forgets one fact the owner asks it to, and `assistant_page_watch`, which watches a web page for them, for the owner's own main chat), Telegram buttons and replies, Android feed capture, review/preparation guards |

@@ -39,6 +39,9 @@
 | `stripe_broker` | none | `url` of a Stripe token broker, for Stripe accounts signed in with Sign in with Stripe ([sources](sources.md)) |
 | `slack_broker` | none | `url` of a Slack token broker, for Slack accounts signed in with Sign in with Slack ([sources](sources.md)) |
 | `google_meet_broker` | none | `url` of a Google Meet token broker, for Google Meet accounts ([sources](sources.md)) |
+| `google_docs_broker` | none | `url` of a Google Docs token broker, for Google Docs signed in on their own (a hosted Machine's Connect Google Docs, [sources](sources.md#docs)) |
+| `salesforce_broker` | none | `url` of a Salesforce token broker, for Salesforce accounts (a hosted Machine's Connect Salesforce, [sources](sources.md#salesforce)) |
+| `signal_cli` | the pinned signal-cli | Path of a signal-cli of your own for [Signal chats](sources.md#signal-chats) instead of the pinned one |
 | `zoom_transcripts` | `true` | Also store Zoom transcripts, next to the summaries |
 | `microsoft_graph` | none | `client_id` and `tenant` (`common`) of your own Entra app, for Outlook accounts with `"transport": "graph"` |
 | `salesflare_server` | none | `api_base` and `app_base` a new Salesflare account starts on instead of Salesflare's own (a hosted machine's control plane sets it for a team on staging). Only https addresses on salesflare.com subdomains count. An address typed when a key is rejected must be https too |
@@ -80,6 +83,10 @@
 | `embeddings` | `enabled: false` | Optional [related signals](intelligence.md#related-signals-optional-local-embeddings): `url`, `model`, `dims` (256), `floor` (0.6), `query_floor` (0.4), `max_input_tokens` (2048), `max_batch_tokens` (8192), `max_batch_inputs` (64) (for api.openai.com: 8191, 300000, 2048), `bytes_per_token` (1) |
 | `place_search` | on | The Calendar's **Where** also asks Photon (photon.komoot.io, OpenStreetMap data) for addresses, with only the typed text, at most once a second. `false` keeps it to your own places |
 | `enrichment` | off | Optional [organization data](intelligence.md#organization-data-optional-enrichment): `provider` or `url`, `headers`, `key_file`/`key_env`, `fields`, `per_day` (50; 1000 when paired with the Network); for [work contacts](intelligence.md#people-data) `people_url`, `people_fields`, `people_per_day` (50; 3000 when paired) |
+| `memory_rebuild_hours` | `[23, 7]` | A quiet window each night for an OpenClaw memory rebuild that keeps getting cut off; `false` turns it off ([Install](operations.md#install)) |
+| `meeting_prep` | on | A briefing to-do before a meeting with people from outside, while reviews are on; `false` turns it off |
+| `calendar_clashes` | on | A to-do when a work meeting and a personal event overlap; `false` turns it off |
+| `owner_phones` | `[]` | Your own phone numbers (also per account), as About you in Settings sets them |
 | `message_key_store` | file | `keyring` keeps the message key in your desktop keyring ([below](#the-key-in-your-keyring-linux-desktop)) |
 | `first_profile` | `true` | Without the guided setup, draft how you write into `USER.md` by itself once reviews are on ([Operations](operations.md#your-own-instructions-usermd-and-overlays)) |
 | `linkedin_inbox`, `x_inbox` | the bundled readers | Paths of the LinkedIn and X readers (`integrations/`) |
