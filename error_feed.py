@@ -129,13 +129,13 @@ SAFE_CODES = {'android_feed_unavailable', 'delivery_outcome_unknown', 'conversat
 # The services a source error names (SourceError categories: salesflare:HTTP_401, trello_http, google_meet_invalid_page)
 SERVICES = set('''gmail calendar outlook slack salesflare hubspot pipedrive intercom stripe zoom trello shortcut github google
 meet linkedin x rss whatsapp android docs journal maton telegram openclaw gog wacli microsoft gbrain codex claude openai
-anthropic crm imap smtp graph fleet notion jira linear asana airtable teams salesforce'''.split())
+anthropic crm imap smtp graph fleet notion jira linear asana airtable teams salesforce web'''.split())
 # Words those codes are made of besides (each part of a snake_case or dotted code must be a known word or service)
 SAFE_WORDS |= set('''invalid page cursor broker credential unreachable signin expired unreadable http missing timezone window feed
 advancing opportunities join disabled method ratelimited browser busy reader signed story member move history workspace
 search board action summary user host conference artifact maton shared replies off region profile conversation
 conversations parts identity mismatch entry encoding transport source content message person mention account scope
-notifications notification offline snapshot query unreachable stopped collector unsupported download no too large
+notifications notification offline snapshot query unreachable stopped collector unsupported download no too large robots address html
 response timestamp media payment redirect required answered stalled'''.split())
 # An HTTP status said in words, as the control plane takes no 3-digit numbers: 401 and 429 stay told apart
 HTTP_STATUS = re.compile(r'(?i)(?<![A-Za-z])HTTP(?:[ _]?Error)?[ _:]*([1-5]\d\d)\b')
