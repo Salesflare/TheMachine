@@ -55,7 +55,7 @@ from machine.sources.slack import slack_first_import_progress, SLACK_ID, slack_n
 from machine.store import history as history_store
 from machine.store import graph_identifiers
 from machine import names, stamps
-from machine.store.cards import source_kind, source_lead, SOURCE_KIND, use_view
+from machine.store.cards import source_kind, source_lead, use_view
 from machine.store.conversation import ConversationStore
 from machine.store.decisions import checking_in, handoff_wait, handoffs_of, owner_area_open, send_retry_ok, skill_update_view, UNDO_MERGE
 from machine.store.events import SET_ASIDE_AFTER
@@ -274,13 +274,13 @@ def _slack_people_names(db, ids):
             found = set(json.loads(info or '{}').get('identifiers') or ())
         except ValueError:
             continue
-        names.update({i: name for i in ids if 'slack:' + i in found and name and name not in SOURCE_KIND.values()})  # not "Slack", a node no name was known for
+        names.update({i: name for i in ids if 'slack:' + i in found and name and name not in graph.SOURCE_NAMES})  # not "Slack", a node no name was known for
     return names
 
 
 def address_names(db, addresses):
-    """message_view.address_names, never a source's label ("Slack") as a person's name."""
-    return message_view.address_names(db, addresses, SOURCE_KIND.values())
+    """message_view.address_names: never a source's own name ("Slack", "Stripe") as a person's name."""
+    return message_view.address_names(db, addresses)
 
 
 # The who of a stored source line ("email from ann@client.com · Sun 8 Nov")
