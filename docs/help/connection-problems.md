@@ -16,7 +16,7 @@ Open **Connections**. Each source says how it's doing:
 - **Needs your help**: open **Details**. It says what went wrong and what to do.
 - **Phone disconnected**: your Android phone isn't reaching your Machine. Open the OpenClaw app on it.
 
-A source that brings in nothing for longer than usual stops showing as connected. It clears by itself once new items come in.
+A source that brings in nothing for longer than usual says **Waiting for a fresh sync**. It clears by itself once a sync gets through.
 
 The number on **Connections** only counts sources that need your help.
 
