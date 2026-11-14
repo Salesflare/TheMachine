@@ -876,16 +876,40 @@ class GraphActionsApp:
             if not note:
                 # read by the assistant in the chat, never shown to the owner
                 raise ValueError('Facts come from the owner’s own words: they wrote nothing in this chat in the last half hour. Save it when they say it.')
-            done = self.store.remember_fact(args.get('text'), note, args.get('kind') or None, None, args.get('about'),
+            about, skipped = self.chat_subjects(args.get('about'))
+            # a model in Code Mode, without the tool's description, writes the sentence as fact: it is the text
+            text = args.get('text') if args.get('text') not in (None, '') else args.get('fact')
+            done = self.store.remember_fact(text, note, args.get('kind') or None, None, about,
                                             args.get('until') or args.get('valid_until'), said=True)
             if done.get('id') and not any(done.get(k) for k in ('duplicate', 'suppressed', 'merged', 'record')):
                 done.update(said_instead(self.store, done['id']))
+            if skipped:  # read by the assistant in the chat: saved all the same, not tied to these
+                done['about_skipped'] = skipped
+                done['note'] = ('Saved. Not tied to ' + ', '.join(skipped) + ': not a person, organization or project in the graph '
+                                '(the owner themselves never is). Facts about the owner leave about out.')
         else:
             done = self.store.remember_fact(args.get('text'), args.get('decision_id'), args.get('kind') or None, args.get('replaces'), args.get('about'),
                                             args.get('until') or args.get('valid_until'))
         if done.get('record'):  # a contact detail went on someone's record (contact_facts.py): their page follows
             self.graph_later()
         return done
+
+    def chat_subjects(self, about):
+        """(the about values a graph record matches, the ones none does) for a fact the owner states in their own
+        chat: what they said is kept either way. A model often names the owner themselves (never a record), a first
+        name or someone the graph has not met; refusing the save over that lost the fact."""
+        if about in (None, '', []):
+            return None, []
+        values = [about] if isinstance(about, str) else about if isinstance(about, (list, tuple)) else []
+        kept, skipped = [], []
+        with self.store.connect() as db:
+            for value in values[:5]:
+                try:
+                    self.store.fact_subjects(db, [value])
+                    kept.append(value)
+                except ValueError:
+                    skipped.append(str(value)[:80])
+        return kept or None, skipped
 
     def recall_learned_action(self, name, args, owner_dashboard=False):
         """The owner's main chat reads what was learned that a few words are about (the bridge's assistant_memory tool,
