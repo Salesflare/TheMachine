@@ -2,10 +2,13 @@
 # articles (docs/help/<code>/), with scripts/translate.py (gpt-6-luna behind Salesflare's Azure API gateway, the
 # glossary in every request). Pull requests change the English; this run writes every other language, so main may
 # show English for a day, and scripts/release.py cut refuses a commit with anything left.
-# There is at most one pull request (branch translate/daily): a newer run replaces it. It runs the language checks
-# itself before pushing (a pull request this workflow opens starts no other workflow), and merges itself when the
-# required checks pass. When a run fails or leaves something in English, the issue "Daily translation failed" says
-# where; the next good run closes it.
+# There is at most one pull request (branch translate/daily). Each run builds it again from main as it is then and
+# replaces the branch (--force-with-lease), so a pull request that fell behind or conflicts with main never lingers;
+# when nothing is left to translate, the run closes it. It runs the language checks itself before pushing. A push
+# with this run's token starts no other workflow, so it then starts the tests (ci.yml) on the branch itself, as a
+# manual run on our runner (Linux only, no Actions minutes); their check is the one main's rules require, and the
+# pull request merges itself when it passes. When a run fails or leaves something in English, the issue "Daily
+# translation failed" says where; the next good run closes it.
 # The model key is the secret AZ_TRANSLATE_KEY of the environment "translate", which only main can use: branches
 # (contrib/ ones included) never see it.
 name: Daily translation
@@ -26,6 +29,7 @@ jobs:
       contents: write  # the translate/daily branch
       pull-requests: write  # its pull request, merged when the checks pass
       issues: write  # closing the "Daily translation failed" issue after a good run
+      actions: write  # starting the tests (ci.yml) on the branch: its push starts no workflow
     timeout-minutes: 120
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -55,7 +59,11 @@ jobs:
           git switch --quiet -C translate/daily
           summary=$(git diff --cached --stat | tail -1)
           git commit --quiet -m "Languages: the day's translations" -m "Made by .github/workflows/translate.yml (scripts/translate.py)."
-          git push --quiet --force "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:refs/heads/translate/daily
+          # built on main as it is now: replace the branch, but only the one seen here (none when it doesn't exist)
+          seen=$(git ls-remote "https://github.com/${GITHUB_REPOSITORY}.git" refs/heads/translate/daily | cut -f1)
+          git push --quiet --force-with-lease="translate/daily:$seen" "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:refs/heads/translate/daily
+          # the push above starts no workflow (GitHub's rule for this token); a manual run does: every test, on our runner
+          gh workflow run ci.yml --repo "$GITHUB_REPOSITORY" --ref translate/daily -f own_runner=true
           title="Languages: the day's translations"
           body="Catalog keys and help articles that English has and another language did not, translated by the Daily translation workflow (scripts/translate.py, with i18n/glossary.md): $summary. The language checks passed in the run. It merges itself when the required checks pass."
           pr=$(gh pr list --repo "$GITHUB_REPOSITORY" --head translate/daily --state open --json number --jq '.[0].number // empty')
@@ -64,6 +72,14 @@ jobs:
             || { echo "::error::The branch translate/daily is pushed, but no pull request: allow GitHub Actions to create pull requests (Settings, Actions, General)."; exit 1; }
           fi
           gh pr merge translate/daily --repo "$GITHUB_REPOSITORY" --auto --squash --match-head-commit "$(git rev-parse HEAD)"
+      - name: Close a pull request with nothing left to add
+        if: steps.translate.outcome == 'success' && !steps.translate.outputs.changed
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # main has every translation already (made another way): an open one from an earlier run would only go stale
+          pr=$(gh pr list --repo "$GITHUB_REPOSITORY" --head translate/daily --state open --json number --jq '.[0].number // empty')
+          if [ -n "$pr" ]; then gh pr close "$pr" --repo "$GITHUB_REPOSITORY" --delete-branch --comment "Main has these translations already."; fi
       - name: Nothing left in English
         run: |
           # What failed twice stays English (the rest goes in the pull request above): fail here so the issue below
