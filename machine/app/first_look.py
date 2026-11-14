@@ -4,24 +4,30 @@ ending on the dashboard, with their timing constants. Moved out of assistant.App
 import collections
 import datetime as dt
 import json
+import threading
 import time
 
 import activity
+import chat_model
 import graph
 from machine.config import LOG
 from machine.delivery.push import mailing_sources
 from machine.sources.suggest import suggestions
 from machine.store.events import RUN_SIGNAL_BUDGET, SET_ASIDE_AFTER
-from machine.store.first_look import FIRST_ACTIONS, TIP_SOURCES
+from machine.store.first_look import FIRST_ACTIONS, TIP_SOURCES, note_model_check
 from machine.store.review import FIRST_LOOK_READ, PREVIEW_DAYS
 from machine.text import encoded
-from models import has_model
+import model_check
+from models import has_model, main_model, model_ready
 from sources import CALENDAR_SERVICES, MAIL_SERVICES
 from timeutil import now
 
 
-# The first look (App.first_look): starts once no new signal came in for this long, tried at most this often, this far apart
-FIRST_LOOK_SETTLE_SECONDS, FIRST_LOOK_TRIES, FIRST_LOOK_RETRY_SECONDS = 180, 3, 1800
+# The first look (App.first_look): starts once no new signal came in for this long, tried at most this often, a failed
+# try again at most this far apart (minutes, not half an hour: a new owner is waiting for their first to-do)
+FIRST_LOOK_SETTLE_SECONDS, FIRST_LOOK_TRIES, FIRST_LOOK_RETRY_SECONDS = 180, 3, 300
+FIRST_LOOK_LIMIT_SECONDS = 1800  # after a rate or usage limit: the limit holds that long anyway
+FIRST_LOOK_MOVED = ('aborted', 'lost')  # a first look's run stopped from outside (a Gateway restart): not the model's failure
 # Before it, a quick first look: as soon as the first page of mail is in, the QUICK_LOOK_SIGNALS of the week that most
 # likely need the owner (Store.most_promising: newest first, whatever their age within the week), so the first cards
 # come within minutes. A failed try is retried after this long, doubling per failure up to FIRST_LOOK_RETRY_SECONDS.
@@ -80,7 +86,7 @@ def first_look_spent(runs):
 
 def first_look_retry_at(runs, current):
     """When a first look that failed last may be tried again (None: now). A few minutes after the first failure, doubling
-    per failure in a row up to FIRST_LOOK_RETRY_SECONDS; a rate limit waits that long at once."""
+    per failure in a row up to FIRST_LOOK_RETRY_SECONDS; a rate limit waits FIRST_LOOK_LIMIT_SECONDS at once."""
     if not runs or runs[-1]['status'] == 'ok' or not runs[-1]['finished_at']:
         return None
     failed = 0
@@ -88,7 +94,7 @@ def first_look_retry_at(runs, current):
         if run['status'] == 'ok':
             break
         failed += 1
-    wait = FIRST_LOOK_RETRY_SECONDS if runs[-1].get('error') in ('rate_limited', 'usage_limited') else min(
+    wait = FIRST_LOOK_LIMIT_SECONDS if runs[-1].get('error') in ('rate_limited', 'usage_limited') else min(
         FIRST_LOOK_RETRY_MIN_SECONDS * 2 ** (failed - 1), FIRST_LOOK_RETRY_SECONDS)
     at = dt.datetime.fromisoformat(runs[-1]['finished_at']) + dt.timedelta(seconds=wait)
     return at.isoformat() if at > current else None
@@ -167,6 +173,13 @@ class FirstLookApp:
         mail = self.mail_backfill(db)
         if not has_model(self.config):
             return {**out, 'state': 'waiting', 'why': 'model'}
+        if not has_model(self.config, answered=db):
+            # Signed in, but the AI hasn't answered its real check yet (model_check.py): still checking, or it failed,
+            # with the provider's own error for Details
+            found = model_check.last(db) or {}
+            failed = found.get('model') == main_model() and found.get('ok') is False
+            return {**out, 'state': 'waiting', 'why': 'model_check',
+                    **({'error': found.get('error') or '', 'checked_at': found.get('at')} if failed else {})}
         if not quick_done and sources:
             recent = db.execute(f'SELECT count(*) FROM events WHERE analyzed_version<version AND deferrals<? AND occurred_at>=? AND account_id IN ({marks})',
                                 (SET_ASIDE_AFTER, (current - dt.timedelta(hours=QUICK_LOOK_HOURS)).isoformat(), *sources)).fetchone()[0]
@@ -192,6 +205,80 @@ class FirstLookApp:
         if retry:
             return {**out, 'state': 'waiting', 'why': 'retry', 'retry_at': retry, 'failing': self.store.reviews_failing(db)}
         return {**out, 'state': 'due'}
+
+    def first_look_over(self, db):
+        """The first look ended (first_dig_done), or this install reviewed before it had one."""
+        return bool(db.execute("SELECT 1 FROM milestones WHERE name='first_dig_done'").fetchone() or (
+            db.execute("SELECT 1 FROM review_runs WHERE status='ok' LIMIT 1").fetchone()
+            and not db.execute("SELECT 1 FROM milestones WHERE name='first_dig'").fetchone()))
+
+    def first_look_failing(self, db):
+        """The first look's last pass failed (not one a restart cut off), so its next may go to another model."""
+        row = db.execute("SELECT status FROM review_runs WHERE ((preview=1 AND auto=1) OR window_hours IS NOT NULL OR promising=1) "
+                         "AND finished_at IS NOT NULL ORDER BY finished_at DESC LIMIT 1").fetchone()
+        return bool(row) and row['status'] not in ('ok', *FIRST_LOOK_MOVED)
+
+    def first_look_model(self, run_id, db):
+        """The model a first look's run goes to: None (the main model), or another AI the owner signed in that answered
+        its check (model_check.fallback), while the main model fails its check or failed the first look's last pass."""
+        if not self.store.first_look_run(run_id, db):
+            return None
+        model = main_model()
+        fallback = model_check.fallback(db, model)
+        if not fallback or not chat_model.REF.fullmatch(fallback):
+            return None
+        return fallback if not model_check.passed(db, model) or self.first_look_failing(db) else None
+
+    def model_check_kick(self):
+        """From the review worker, never blocking it: the AI's real check (model_check.py) in a thread of its own when
+        one is due (an AI connected, or a failed check comes round again), and while the first look is still ahead and
+        the main model fails it or the first look's last pass failed, a look for another AI to fall back to. Nothing
+        while no sign-in or key exists yet (has_model): there is nothing to check."""
+        thread = getattr(self, '_model_check_thread', None)
+        if thread and thread.is_alive():
+            return None
+        model = main_model()
+        if not model or model_ready(self.config, wait=False) is False:
+            return None
+        current = dt.datetime.fromisoformat(now())
+        with self.store.connect() as db:
+            found = model_check.last(db)
+            main = model_check.due(found, model, model_check.sign_in_stamp(self.config), current)
+            other = not main and bool(found) and found.get('model') == model and not self.first_look_over(db) and (
+                not found.get('ok') or self.first_look_failing(db)) and model_check.due_fallback(found, current)
+        if not (main or other):
+            return None
+        self._model_check_thread = threading.Thread(target=self.model_check_run, args=(model, main), name='model-check', daemon=True)
+        self._model_check_thread.start()
+        return self._model_check_thread
+
+    def model_check_run(self, model, main=True, run=None):
+        """The check itself (model_check_kick's thread): the main model's when `main`, then, when it failed or the first
+        look's last pass did, the other AIs the owner signed in, the first that answers kept as the fallback."""
+        try:
+            with self.store.connect() as db:
+                found = model_check.last(db)
+            if main:
+                found = model_check.check(found, self.config, model, now(), run)
+                with self.store.connect() as db:
+                    note_model_check(db, found)
+                LOG.info('model check ok=%s failed=%s', found['ok'], found['failed'])
+            with self.store.connect() as db:
+                look = not self.first_look_over(db) and (not found['ok'] or self.first_look_failing(db))
+            if not look:
+                return found
+            catalog = getattr(self, 'chat_catalog', None)
+            models = catalog.refresh(self.config) if catalog else chat_model.read_catalog(self.config)
+            other = model_check.look_for_fallback(found, self.config, model, models, now(), dt.datetime.fromisoformat(now()), run)
+            if other is not None:
+                with self.store.connect() as db:
+                    note_model_check(db, other)
+                LOG.info('model check fallback=%s', bool(other.get('fallback')))
+                found = other
+            return found
+        except Exception as error:  # noqa: BLE001 - checked again on a later round
+            LOG.error('model check error=%s', type(error).__name__)
+            return None
 
     def quick_first_review(self, db):
         """How many signals the first review after reviews turned on looks at, quickly: the week's most promising (the

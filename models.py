@@ -124,8 +124,15 @@ def background_model(config):
     return provider, cheaper
 
 
-def has_model(config=None, wait=True):
+def has_model(config=None, wait=True, answered=None):
     """Whether OpenClaw has a main model to review with that can run (model_ready). When that can't be read,
     a main model set in its config is taken as one. wait=False: a turn the owner waits on never waits for `models
-    status` too (model_ready's last reading)."""
-    return bool(main_model()) and model_ready(config, wait=wait) is not False
+    status` too (model_ready's last reading). answered: the app's database; then also that the main model answered
+    its real check (model_check.py), or another model the first look can fall back to did."""
+    model = main_model()
+    if not model or model_ready(config, wait=wait) is False:
+        return False
+    if answered is None:
+        return True
+    import model_check
+    return model_check.passed(answered, model) or bool(model_check.fallback(answered, model))

@@ -2,11 +2,13 @@
 // review is doing, from its own steps, and the next one. Polled every few seconds while one runs; a finished one moves to
 // the lists below.
 const REVIEW_ACTIVE=['starting','running','recovering'];
-const FIRST_LOOK_WAIT={model:'It starts once your main model can run: sign in for it or add a key.',sources:'It starts once a source has brought in its first messages.',settling:'It starts in a few minutes, once the first import settles.',mail:'It starts when your mail is in.',retry:'The last try did not finish; it tries again shortly.',due:'Starting now.'};
+const FIRST_LOOK_WAIT={model:'It starts once your main model can run: sign in for it or add a key.',model_check:'It starts once your AI answers a short test.',sources:'It starts once a source has brought in its first messages.',settling:'It starts in a few minutes, once the first import settles.',mail:'It starts when your mail is in.',retry:'The last try did not finish; it tries again shortly.',due:'Starting now.'};
 // A first look whose tries keep failing (first_look.failing / first_dig.failing: tries in a row that failed, from the
 // third on, as FIRST_LOOK_TRIES) says so in one line instead of "tries again shortly" or "Reading on"
 const FL_KEEPS_FAILING=3,flFailing=f=>(+f?.failing|0)>=FL_KEEPS_FAILING;
-const flWait=fl=>fl?.why==='retry'&&flFailing(fl)?t('The last tries did not finish. Still trying.'):t(FIRST_LOOK_WAIT[fl?.why]||'');
+const flWait=fl=>fl?.why==='retry'&&flFailing(fl)?t('The last tries did not finish. Still trying.'):aiFailed(fl)&&!setupStep()?t(AI_FAILED):t(FIRST_LOOK_WAIT[fl?.why]||'');
+const AI_FAILED='Your AI didn’t answer a short test. Sign in again or use another AI.',aiFailed=fl=>fl?.why=='model_check'&&'error'in fl;
+const flDetail=i=>i.detail?make('details',{class:'fl-detail'},make('summary',{},t('Details')),make('p',{translate:'no'},i.detail)):'';
 const firstLookDays=(fl,run)=>{const hours=run?run.window_hours:fl?.quick&&fl.hours;return hours?Math.max(1,Math.round(hours/24)):fl?.days||7};
 function reviewLiveRows(live){const rows=[];const name=id=>{const c=(state.connectors||[]).find(c=>c.id===id);return c?(c.display_name||c.email||id):id};
 for(const r of live.runs||[]){const total=r.planned||r.claimed_count||0,done=Math.min(r.done_count||0,total||Infinity);const steps=r.steps||[],[latest,...earlier]=steps;
@@ -56,7 +58,7 @@ if(dig&&dig.total){const total=flTotal=Math.max(flTotal,0,+dig.total|0),todos=+d
 if(run&&state.first_look_done&&!(run.started_at>state.first_look_done.at))return null;
 if(run){const total=run.planned||run.claimed_count||0;flMark();return{title:t('Taking a first look at your last {} days',firstLookDays(fl,run)),done:flRunDone(run,6),read:Math.min(total,flInt(run.done_count)),batch:flLeft(run),total}}
 if(startsByItself()&&fl?.state!=='due')return setupStep()?{title:t('Your first to-dos show up here'),wait:false}:flBack()?{title:t('Taking a first look at your last {} days',firstLookDays(fl))}:{title:setupLine(),working:!!aiConnecting()};  // not "All clear" before the first read ends
-if((fl?.state==='waiting'&&fl.why!=='model')||fl?.state==='due')return{title:t('A first look at your last {} days starts soon',firstLookDays(fl)),wait:fl.state==='due'?t(FIRST_LOOK_WAIT.due):flWait(fl)};return null}
+if((fl?.state==='waiting'&&fl.why!=='model')||fl?.state==='due')return{title:t('A first look at your last {} days starts soon',firstLookDays(fl)),wait:fl.state==='due'?t(FIRST_LOOK_WAIT.due):flWait(fl),detail:fl.error};return null}
 // the counts are whole numbers before they reach the page, whatever the status says
 // How far it read, in the robot's voice (messages when not every source is mail). read is what its batches saved
 // (i.read; a bar drawn without one reads its done), batch the size of the one it reads now: "Reading the first 20 of 132
@@ -76,7 +78,7 @@ function flNames(i){const names=(i.names||[]).slice(0,3);if(!names.length){flNam
  const shown=names.slice(0,Math.min(names.length,1+Math.floor((Date.now()-flNamesAt)/4000)));let list;
  try{list=new Intl.ListFormat(I18N.lang||'en',{type:'conjunction'}).format(shown)}catch{list=shown.join(', ')}return t('Bumped into {} so far.',list)}
 const flNamesNode=i=>{const line=flNames(i);return line?make('span',{class:'fl-names',translate:'no'},line):''};
-const firstLookInner=i=>[make('img',{class:'sticker',src:'brand/wave.webp','data-blink':'brand/wave-blink.webp','data-look':'brand/wave-look.webp','data-hand':'brand/wave-hand.webp',alt:''}),make('div',{},make('strong',i.working?{class:'backfill-run'}:{},i.title),firstLookBar(i),flNamesNode(i),i.wait===false?'':make('small',{},i.wait||(firstEta()?t('First to-dos in about {} min.',firstEta()):t('To-dos show up here as they come.'))))];
+const firstLookInner=i=>[make('img',{class:'sticker',src:'brand/wave.webp','data-blink':'brand/wave-blink.webp','data-look':'brand/wave-look.webp','data-hand':'brand/wave-hand.webp',alt:''}),make('div',{},make('strong',i.working?{class:'backfill-run'}:{},i.title),firstLookBar(i),flNamesNode(i),i.wait===false?'':make('small',{},i.wait||(firstEta()?t('First to-dos in about {} min.',firstEta()):t('To-dos show up here as they come.'))),flDetail(i))];
 // The list's empty state while the first look runs: a place the list fills with firstLookFill once it is on the page
 const firstLookEmpty=i=>i?html`<div class="empty all-clear first-look-empty"></div>`:'';
 function firstLookFill(){const box=$('#suggestions .first-look-empty'),i=box&&firstLookInfo(state.review_live||{});if(i)box.replaceChildren(...firstLookInner(i))}
@@ -104,7 +106,7 @@ $('#suggestions').addEventListener('click',e=>{const b=e.target.closest('[data-f
  if(k==='talk'){talkMain();return}if(k==='todo'){newTodo();return}if(k==='ask'){lazyRun('palette',()=>{palShow();pal.hint={q:t('what changed this week?')};palTry()});return}showTab('health','add');connectAdd(true)});
 function renderFirstLook(live){const i=firstLookInfo(live),el=$('#first-look'),empty=$('#suggestions .all-clear');
 if(empty){el.hidden=true;if(i){empty.classList.add('first-look-empty');empty.replaceChildren(...firstLookInner(i))}else if(empty.classList.contains('first-look-empty'))refresh();return}
-if(i){el.replaceChildren(make('strong',{},i.title),...firstLookBar(i),flNamesNode(i),i.wait?make('small',i.first?{class:'fl-first'}:{},i.wait):'');el.hidden=false}else el.hidden=true}
+if(i){el.replaceChildren(make('strong',{},i.title),...firstLookBar(i),flNamesNode(i),i.wait?make('small',i.first?{class:'fl-first'}:{},i.wait):'',flDetail(i));el.hidden=false}else el.hidden=true}
 // The bar moves between polls: only the bar, its line and the names found change, a second at a time
 function firstLookTick(){if(document.hidden||!state)return;const i=firstLookInfo(state.review_live||{});if(!i?.total)return;
  for(const box of document.querySelectorAll('#first-look,#suggestions .first-look-empty')){const bar=box.querySelector('.fl-bar'),count=box.querySelector('.fl-count');if(!bar||!count)continue;
@@ -116,10 +118,10 @@ let reviewWasLive=false,cardWaiting=false;
 // While a review runs, or the first look is about to start, look every 5 s; a card a running review just saved shows at once
 // A hosted Machine waiting for its AI is looked at too: the sign-in on its setup page ends any moment, and the page
 // moves on by itself (a full refresh once the model can run, so reviews turning on shows as well)
-const waitingForAI=()=>!!state?.manage_url&&state.reviews_on===false&&state.review_live?.first_look?.why==='model';
+const waitingForAI=()=>!!state?.manage_url&&state.reviews_on===false&&/^model/.test(state.review_live?.first_look?.why);
 const firstLookPending=()=>['due','waiting'].includes(state?.review_live?.first_look?.state)&&state.review_live.first_look.why!=='model'||!!state?.review_live?.first_dig||waitingForAI();
 setInterval(async()=>{if(document.hidden||!state||!((state.review_live?.runs||[]).length||reviewWasLive||cardWaiting||firstLookPending()))return;try{const live=await request('api/reviews/live');const running=(live.runs||[]).length;
 const before=state.review_live?.cards,fresh=live.cards&&before&&(live.cards.newest!==before.newest||live.cards.count!==before.count);
 if(fresh&&!canRefresh()){reviewWasLive=!!running;cardWaiting=true;state.review_live={...live,cards:before};renderReviewLive();return}  // typing: on the next look, also once the review ended
-const aiReady=waitingForAI()&&live.first_look?.why!=='model',aiChanged=(live.ai_connecting?.name||null)!==(state.review_live?.ai_connecting?.name||null);
+const aiReady=waitingForAI()&&!/^model/.test(live.first_look?.why),aiChanged=(live.ai_connecting?.name||null)!==(state.review_live?.ai_connecting?.name||null);
 if((!running&&reviewWasLive)||fresh||aiReady){reviewWasLive=!!running;cardWaiting=false;state.review_live=live;refresh();return}cardWaiting=false;reviewWasLive=!!running;state.review_live=live;renderReviewLive();if(aiChanged)renderNeedsYou()}catch(e){}},5000);

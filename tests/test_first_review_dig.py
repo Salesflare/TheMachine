@@ -1,7 +1,7 @@
 """The first review digs until it has something to show. It starts with the week's most promising signals (whatever
 their age within the week, no 48-hour cutoff), then goes on a batch at a time, at once, until it has FIRST_DIG_CARDS
 to-dos, has looked through the week, or used FIRST_DIG_USAGE percent of the 5-hour window (FIRST_DIG_SIGNALS signals
-on a sign-in without usage windows). A failed first review comes back within the backoff (at most half an hour), also
+on a sign-in without usage windows). A failed first review comes back within the backoff (at most five minutes), also
 when its runtime reported a failure after the work was saved; a usage limit holds it until the reset. No Gateway,
 nothing is sent."""
 import datetime as dt, importlib.util, tempfile, time, unittest
@@ -359,7 +359,7 @@ class FirstReviewDig(unittest.TestCase):
         with self.later(minutes + 1), self.store.connect() as db:
             self.assertEqual(self.app.first_dig_live(db)['failing'], 0)
 
-    def test_a_failed_first_review_comes_back_within_half_an_hour_however_often_it_failed(self):
+    def test_a_failed_first_review_comes_back_within_five_minutes_however_often_it_failed(self):
         self.store.commit_page('work', {}, [mail(f'm{n}', hours_ago=n + 1) for n in range(30)])
         self.step(Runner('admitted'))
         minutes, gaps = 0, []
@@ -370,9 +370,9 @@ class FirstReviewDig(unittest.TestCase):
             minutes = finished
             while self.step(Runner('admitted'), minutes) != 'admitted':
                 minutes += 1
-                self.assertLess(minutes - finished, 31)
+                self.assertLess(minutes - finished, 6)
             gaps.append(minutes - finished)
-        self.assertEqual(max(gaps), 30)
+        self.assertEqual(max(gaps), 5)
 
     def test_a_usage_limit_holds_the_first_review_until_the_reset_and_says_so(self):
         self.store.commit_page('work', {}, [mail(f'm{n}', hours_ago=n + 1) for n in range(30)])

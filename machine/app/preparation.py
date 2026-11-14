@@ -733,7 +733,8 @@ class PreparationApp:
         (preparation_state.same_start), and the caller's request then shows what went (its fast, its _ keys)."""
         sent=request
         if request.get('action')=='start':
-            if request.get('kind') in ('review','profile') or request.get('background'):
+            # a first look already on a fallback (App.first_look_model) keeps it
+            if (request.get('kind') in ('review','profile') or request.get('background')) and not request.get('model'):
                 swap=background_model(self.config)  # never the costliest model for background work
                 if swap:sent={**request,'provider':swap[0],'model':swap[1]}
             with self.store.connect() as db:sent=preparation_state.same_start(db,sent,now())
