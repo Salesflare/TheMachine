@@ -904,7 +904,7 @@ def tool_list():
 
 def refusal(why, level=None):
     """What a refused call says, to the AI (and so to the owner through it): what is wrong and who changes it where."""
-    where = 'The owner can change this in The Machine: Settings, Connected AIs.'
+    where = 'The owner can change this in The Machine: Settings, Apps, Connected AIs.'
     if why == 'off':
         return 'This connection is off. ' + where
     if why == 'expired':
@@ -1031,7 +1031,7 @@ select{{background:#24221f;color:#eeebe4;border:1px solid #3a3833;border-radius:
 <label><input type="radio" name="level" value="draft"{' checked' if level == 'draft' else ''}> {t('Read & edit: also add to-dos, drafts that wait for you, and Graph changes you can undo')}</label>
 <label class="msg"><input type="checkbox" name="messages" value="on"> {t('Messages: also read your email and chats. Its changes then wait for your OK.')}</label></fieldset>
 {area}<fieldset><legend>{t('For how long')}</legend><select name="expiry">{expiries}</select></fieldset>
-<p class="where">{t('You can change this, see everything it does, or turn it off in Settings, Connected AIs.')}</p>
+<p class="where">{t('You can change this, see everything it does, or turn it off in Settings, Apps, Connected AIs.')}</p>
 <div class="row"><button class="go" name="choice" value="connect">{t('Connect')}</button><button name="choice" value="cancel">{t('Cancel')}</button></div>
 </form></main></html>"""
 
