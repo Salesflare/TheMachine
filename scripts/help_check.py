@@ -99,6 +99,7 @@ FEATURES = {
     'recurring': ('recurring.py', 'def tick'),
     'email-composer': ('machine/app/mail.py', 'def compose_email_action'),
     'lookalike-senders': ('lookalike.py', 'def one_apart'),
+    'notes': ('note_pages.py', 'def sync'),
 }
 # Features that exist in the code but have no article yet, each with the reason. Keep this short.
 PENDING = {

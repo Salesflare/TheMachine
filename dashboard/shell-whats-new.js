@@ -63,6 +63,12 @@ const WN_ART={
   +wnBar(104,130,150,'s')+wnBar(104,144,104),
  // A watched page under its eye: one line of it changed (the old one crossed out, the new one in the accent), and that
  // change becomes a to-do
+ // Notes: the tree on the left (one note open with two under it, one lit), its page on the right with a title, lines and
+ // one name in a line as a link, and a quieter note linking back to it
+ notes:()=>`<rect class="c" x="34" y="18" width="150" height="148" rx="12"/>`+[[50,36,74,1],[66,64,60,0],[66,92,70,2],[50,120,82,0]].map(([x,y,w,s])=>(s===1?`<path class="q" d="M${x} ${y+3}l4 4 4-4"/>`:'')+(s===2?`<rect class="t" x="${x-6}" y="${y-8}" width="${w+30}" height="22" rx="7"/>`:'')+wnBar(x+14,y,w,s===2?'m':'s')).join('')
+  +`<path class="l" stroke-dasharray="2 7" d="M190 95h22"/><path class="l" d="M215 88l7 7-7 7"/><rect class="c" x="232" y="18" width="184" height="148" rx="12"/>`+wnBar(250,36,92,'s',8)
+  +[60,84,108].map((y,i)=>`<path class="e" d="M250 ${y-8}h148"/>`+wnBar(250,y,i===1?40:[124,0,104][i])+(i===1?`<rect class="m" x="296" y="${y}" width="52" height="6" rx="3"/><path class="l" d="M296 ${y+11}h52"/>`+wnBar(354,y,40):'')).join('')
+  +`<rect class="f" x="250" y="128" width="148" height="24" rx="8"/>`+wnBar(262,137,84,'b',5),
  watch:()=>`<rect class="c" x="34" y="18" width="216" height="148" rx="12"/>`+[0,1,2].map(i=>`<circle class="q" cx="${52+i*12}" cy="33" r="3.5"/>`).join('')
   +`<path class="e" d="M34 47h216"/><circle class="m" cx="232" cy="22" r="17"/><g class="k" transform="translate(220 10)"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></g>`
   +wnBar(52,60,118,'s',8)+wnBar(52,76,158)+`<rect class="f" x="46" y="90" width="192" height="44" rx="8"/>`+wnBar(58,100,96)+`<path class="q" d="M54 103h104"/>`+wnBar(58,116,124,'m')

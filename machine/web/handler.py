@@ -63,6 +63,7 @@ from machine.web.serving import (
 )
 import meeting_notes
 import next_actions
+import note_pages
 import notify
 import places
 import record_log
@@ -698,6 +699,8 @@ def make_handler(app):
                         self.output(200, {'projects': graph.project_choices(db)})
                 elif query.strip():
                     self.output(200, app.graph_find(query, urllib.parse.parse_qs(path.query).get('cursor', ['0'])[0] or 0))
+                elif node.startswith('note:'):  # a note's page (note_pages.py)
+                    self.output(200, app.note_page(node))
                 elif node and app.about_you_node(node):  # the owner's own record, also by one of their addresses
                     self.output(200, {**app.about_you(), 'can_share': app.contact_shareable()})  # Share my contact
                 elif node and params.get('part', [''])[0] == 'head':  # the record's head first; its timeline comes with the whole page
@@ -720,6 +723,7 @@ def make_handler(app):
                     try:  # Recent changes: what The Machine changed or learned about it, each with its source (record_log.py)
                         with app.store.connect() as db:
                             found['log'] = record_log.recent(db, graph.resolve(db, found['id']))
+                            found['linked_from'] = note_pages.linked_from(db, found['id'])  # notes that link here
                     except (sqlite3.Error, ValueError, KeyError, TypeError) as error:
                         LOG.info('recent changes error=%s', type(error).__name__)
                     if found.get('kind') == 'project':  # its follow-ups: on or not, the next one, what went out (follow_ups.py)
@@ -761,6 +765,9 @@ def make_handler(app):
                         found['tags'] = crm_fields.tags_in_use(db)  # for the filter sheet
                         found['org_countries'] = crm.countries_in_use(db)  # the Organizations filter's Country
                         found['currency'] = app.currency()  # project values are in it
+                        found['notes'] = app.notes_list(db)  # the Notes list, as a tree (note_pages.py)
+                        if isinstance(found.get('counts'), dict):
+                            found['counts']['note'] = len(found['notes'])
                         try:  # what The Machine updated today: the quiet line on top of each list (graph_updates.py)
                             found['updated_today'] = graph_updates.today(db)
                         except (sqlite3.Error, ValueError) as error:

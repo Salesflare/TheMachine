@@ -31,6 +31,10 @@ import i18n
 from timeutil import local_day, local_tz, now
 
 ENTRIES = [
+    {'id': 'graph-notes', 'date': '2026-11-15', 'weight': 3, 'title': 'Notes in the Graph',
+     'text': 'One page per subject, like your home or a trip, next to People and Projects. Type @ in a line to link a '
+             'person, project or another note.',
+     'action': {'label': 'Open Notes', 'run': 'go-notes'}, 'art': 'notes'},
     {'id': 'watch-a-page', 'date': '2026-11-14', 'weight': 2, 'title': 'Watch a web page',
      'text': 'Ask the chat to watch a page, or add one under Connections. A to-do comes only when something that '
              'matters on it changes.',

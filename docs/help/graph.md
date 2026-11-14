@@ -11,6 +11,7 @@ Your Machine builds a map of who you deal with and what's going on, from your me
 - [People](people.md): everyone you're in touch with, with a summary and timeline for each.
 - [Organizations](organizations.md): the companies they work at, with their people and projects.
 - [Projects](projects.md): what's going on, on boards with stages, like deals in a CRM.
+- [Notes](notes.md): one readable page per subject, like a trip or your home.
 
 ## Updated today
 

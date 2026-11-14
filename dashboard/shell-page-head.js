@@ -15,17 +15,17 @@ addEventListener('hashchange',()=>{if(lazyIn('calendar')&&calReturn&&!/^#chat=/.
 // A title over the main area on a computer: the tagline on To-dos, else the tab's name
 // The footer's Help: the help article for what's on screen (themachine.computer/help, the articles in docs/help/)
 const HELP='https://themachine.computer/help/',HELP_FOR={account:'plans-and-billing',inbox:'cards',calendar:'calendar',routines:'routines',events:'dashboard',people:'graph',fleet:'fleet',feedback:'dashboard',health:'connections',general:'settings',notify:'notifications',security:'security-levels',writing:'writing',skills:'skills',apps:'ai-connections',model:'model'};
-const GRAPH_HELP={people:'people',orgs:'organizations',projects:'projects'};  // the Graph's Help link: the page of the list it shows
+const GRAPH_HELP={people:'people',orgs:'organizations',projects:'projects',notes:'notes'};  // the Graph's Help link: the page of the list it shows
 function helpLink(tab){const a=$('#help-link'),slug=(tab==='people'&&GRAPH_HELP[graphShown])||HELP_FOR[tab==='settings'?settingsNow:tab]||'';if(a&&a.href!==HELP+slug)a.href=HELP+slug}
 const PAGE_TITLES={calendar:'Calendar',routines:'Routines',events:'Messages',people:'Graph',fleet:'Fleet',feedback:'Learning',health:'Connections',settings:'Settings'};
 // The Graph's title is the pane on screen, with Graph as a quiet crumb and the same count as its row in the sidebar
 // A page's section, as its breadcrumb says: an organization opened from a project is under Organizations
-const graphNodePane=id=>id==='me'?'people':/^(team:)?org:/.test(id)?'orgs':/^(team:)?project:/.test(id)?'projects':'people';  /* team:…: a record only teammates have */
-function graphHead(){if(/^promise:/.test(graphDrawn||''))return html`<div><p class="page-crumb">Graph</p><h2 class="page-title">Promise</h2></div>`;const name=GRAPH_SUBS[graphDrawn?graphNodePane(graphDrawn):graphShown];if(!name)return html`<h2 class="page-title">Graph</h2>`;const c=graphCounts||{},n={people:c.person,orgs:c.org,projects:c.project}[graphShown];
- const words={people:['{} person','{} people'],orgs:['{} organization','{} organizations'],projects:['{} open project','{} open projects']}[graphShown];
+const graphNodePane=id=>id==='me'?'people':/^(team:)?org:/.test(id)?'orgs':/^(team:)?project:/.test(id)?'projects':/^note:/.test(id)?'notes':'people';  /* team:…: a record only teammates have */
+function graphHead(){if(/^promise:/.test(graphDrawn||''))return html`<div><p class="page-crumb">Graph</p><h2 class="page-title">Promise</h2></div>`;const name=GRAPH_SUBS[graphDrawn?graphNodePane(graphDrawn):graphShown];if(!name)return html`<h2 class="page-title">Graph</h2>`;const c=graphCounts||{},n={people:c.person,orgs:c.org,projects:c.project,notes:c.note}[graphShown];
+ const words={people:['{} person','{} people'],orgs:['{} organization','{} organizations'],projects:['{} open project','{} open projects'],notes:['{} note','{} notes']}[graphShown];
  const mode=graphShown==='projects'&&!graphDrawn&&graphBoards.length?html`<div class="view-mode" role="group" aria-label="View">${[['list','List'],['board','Board']].map(([v,t])=>html`<button type="button" data-proj-view="${v}" aria-pressed="${projView()===v}">${t}</button>`)}</div>`:'';
  const team=!graphDrawn&&['people','orgs','projects'].includes(graphShown)&&teamOn()?html`<div class="view-mode" role="group" aria-label="Whose">${[['mine','Mine'],['team','Team']].map(([v,t])=>html`<button type="button" data-graph-team="${v}" aria-pressed="${(v==='team')===graphTeam}">${t}</button>`)}</div>`:'';
- const made={people:['person','New person'],orgs:['org','New organization'],projects:['project','New project']}[graphShown];  /* a board has its own + New project */
+ const made={people:['person','New person'],orgs:['org','New organization'],projects:['project','New project'],notes:['note','New note']}[graphShown];  /* a board has its own + New project */
  const add=made&&!graphDrawn&&!(graphShown==='projects'&&projView()==='board')?html`<button type="button" class="ghost head-new" data-graph-new="${made[0]}">+ ${t(made[1])}</button>`:'';
  return html`<div><p class="page-crumb">Graph</p><h2 class="page-title">${name}</h2>${n&&!graphDrawn&&words?html`<p class="page-sub">${t(words,n)}</p>`:''}</div>${team||mode||add?html`<div class="head-modes">${team}${mode}${add}</div>`:''}`}
 // The browser tab's title follows the page: the card in a chat, the person or pane on the Graph, else the tab's name

@@ -61,7 +61,7 @@ const promiseHref=p=>'#promise/'+encodeURIComponent(p.id);
 // Promise links, and card links on Graph pages, stay in the page, also when the page's base is another path.
 document.addEventListener('click',e=>{const a=e.target.closest('a[href^="#promise/"],#people-view a[href^="#card="]');if(!a||e.ctrlKey||e.metaKey||e.shiftKey||e.defaultPrevented)return;e.preventDefault();const href=a.getAttribute('href');if(location.hash===href)graphRoute();else location.hash=href});
 // Graph links: #graph/<node id> opens a person, project or organization; the browser's back goes to where you were.
-const GRAPH_KIND_PANE={person:['people','People'],project:['projects','Projects'],org:['orgs','Organizations']};
+const GRAPH_KIND_PANE={person:['people','People'],project:['projects','Projects'],org:['orgs','Organizations'],note:['notes','Notes']};
 const graphHash=id=>'#graph/'+encodeURIComponent(id);
 // A fact that lives on a record's page (a to-do chat's Saved line): that page, with the fact's editor open on Edit
 let knownEdit=null;
@@ -94,5 +94,5 @@ new MutationObserver(()=>document.querySelectorAll('.fleet-tabs:not([data-faded]
 // people() lives in the Graph's own part: callers outside it that await the redraw go through here.
 const graphPeople=(...a)=>lazyIn('graph')?people(...a):lazyPart('graph').then(()=>people(...a));
 // Graph: People (closest, gone quiet, new), Projects and Organizations.
-const GRAPH_PANES=['people','projects','orgs'];
+const GRAPH_PANES=['people','projects','orgs','notes'];
 const graphPost=(action,args)=>(fuKept=null,request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action,args})}).then(r=>(pagerDrop('gsearch'),r)));  // an edit: the board's follow-ups are asked again, and a search asks the Machine again (a merged pair showed twice there)
