@@ -7,6 +7,9 @@ const SOURCE_KINDS=(()=>{try{return JSON.parse(document.getElementById('source-k
 // (TO_PERSON): sets to ask with includes, in no particular order
 const SENDS=Object.keys(SOURCE_KINDS.sends),TEXT_SENDS=SENDS.filter(k=>SOURCE_KINDS.sends[k].text_only),
   PERSON_SENDS=SENDS.filter(k=>SOURCE_KINDS.sends[k].to_person);
+// The to-do status groups of machine/todo_states.py (TODO.CLOSED, TODO.PREPARING, ...): lists ask them instead of spelling
+// statuses out (tests/test_todo_moves.py checks). A group the page didn't get is empty.
+const TODO=new Proxy(SOURCE_KINDS.todo||{},{get:(groups,name)=>groups[name]||[]});
 // Dates and times follow Settings, General (locale_prefs.py): DL is the date locale (Sat, Oct 24 or Sat 24 Oct), H12 the
 // clock (2:05 PM or 14:05). A Machine without a region keeps US dates and 24-hour times.
 let DL='en-US',H12=false;

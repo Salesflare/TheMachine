@@ -242,6 +242,17 @@ def todo_status_literals(source, filename='<module>'):
     return sorted(found)
 
 
+# The page's scripts read the same groups from the page's JSON (dashboard_parts.kinds_json: TODO.CLOSED, ...): a list
+# of two or more statuses in a script is the same second definition.
+JS_STATUS_LIST = re.compile(r"""\[\s*(["'`])([a-z_]+)\1(?:\s*,\s*(["'`])[a-z_]+\3)+\s*\]""")
+
+
+def js_todo_status_lists(source):
+    """[(line, list)] of to-do status lists spelled out in a page script."""
+    return [(source.count('\n', 0, m.start()) + 1, m.group(0)) for m in JS_STATUS_LIST.finditer(source)
+            if set(re.findall(r"""["'`]([a-z_]+)["'`]""", m.group(0))) <= TODO_STATUSES]
+
+
 # --- the clock -------------------------------------------------------------------------------------------------------
 
 # timeutil.clock() is the one place the app reads the current time, so a test can pin it (tests/pinned.py). Anywhere
@@ -709,6 +720,28 @@ class Architecture(unittest.TestCase):
         self.assertEqual(todo_states.sql(todo_states.NOT_STARTED, todo_states.REJECTED), "('pending','snoozed','rejected')")
         with self.assertRaises(ValueError):
             todo_states.sql('pending', "x') OR 1=1 --")
+
+    def test_the_page_scripts_ask_the_todo_groups(self):
+        # the page as served, its parts included; its own JSON (the groups themselves) aside
+        page = re.sub(r'<script id="source-kinds" type="application/json">.*?</script>', '', dashboard_parts.assemble(ROOT), flags=re.S)
+        self.assertIn('const TODO=', page)
+        self.assertEqual(js_todo_status_lists(page), [],
+                         f'the dashboard: ask a group the page carries (TODO.CLOSED, ...) from {TODO_STATES_FILE} instead')
+        found = js_todo_status_lists("a=['completed','rejected'].includes(x);\nb=[ \"accepted\", 'instructions' ];\n"
+                                     "c=['queued','running'];d=['snoozed'];e=TODO.CLOSED;f=['pending','declined'];\n")
+        self.assertEqual([line for line, _ in found], [1, 2], found)
+        self.assertEqual(js_todo_status_lists("x=[`prepared`,`completed`]"), [(1, '[`prepared`,`completed`]')])
+
+    def test_the_page_carries_every_todo_group(self):
+        from machine import todo_states
+        groups = json.loads(dashboard_parts.kinds_json(ROOT))['todo']
+        self.assertEqual(groups['ALL'], list(todo_states.ALL))
+        self.assertEqual(groups['CLOSED'], list(todo_states.CLOSED))
+        self.assertEqual(set(groups), {n for n, v in vars(todo_states).items() if n.isupper() and isinstance(v, tuple) and v
+                                       and isinstance(v[0], str) and set(v) <= set(todo_states.ALL)})
+        self.assertNotIn('MOVES', groups)
+        used = set(re.findall(r'\bTODO\.([A-Z_]+)', dashboard_parts.assemble(ROOT)))
+        self.assertTrue(used and used <= set(groups), used - set(groups))
 
     def test_only_timeutil_reads_the_clock(self):
         for name in python_files(tests=False):
