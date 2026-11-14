@@ -44,7 +44,7 @@ The row at the top of the list names your last morning or evening digest and wha
 
 Without a recent digest it shows **Today so far**: what got done today and what is still open, for Work and Personal, or only the one you filter on.
 
-A to-do on a project shows the project's name under its title. Tap it to open the project. **Project** under **Details** changes it or takes it off. See [a project's to-dos](projects.md#a-projects-to-dos).
+A to-do on a project shows the project's name under its title. Tap it to open the project. **Project** under **Details** changes it or takes it off. See [a project's to-dos](projects.md#a-project-s-to-dos).
 
 **Area** under **Details** moves a to-do to your other area. What it may read and send from moves with it. **Undo** on the note moves it back.
 
