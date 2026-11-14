@@ -419,7 +419,7 @@ function cardShow(id,flash){const c=(state.connectors||[]).find(x=>x.id===id);if
 
  const el=[...document.querySelectorAll('#connectors>article')].find(a=>a.dataset.conn===id);if(!el)return;
  el.querySelector('.conn-body').hidden=false;el.querySelector('[data-conn-open]').setAttribute('aria-expanded','true');el.scrollIntoView({block:'center',behavior:'smooth'});
- if(flash){el.classList.add('conn-new');setTimeout(()=>el.classList.remove('conn-new'),4000)}}
+ if(flash){el.classList.add('conn-new');setTimeout(()=>document.querySelectorAll('#connectors .conn-new').forEach(a=>a.dataset.conn===id&&a.classList.remove('conn-new')),4000)}}  // also once redrawn
 // Change on a guessed Work or Personal: its card, with Details open on the choice
 function scopeOpen(id){cardShow(id,false);const d=document.getElementById('sync-details-'+id);if(d)d.open=true;setTimeout(()=>document.querySelector(`select[data-scope="${CSS.escape(id)}"]`)?.focus(),300)}
 async function connectFollow(run){const start=Date.now();await new Promise(r=>setTimeout(r,run.live?800:6000));
@@ -629,9 +629,9 @@ ${chatNote(c)}
 }
 // The connection cards (a refresh keeps the opened ones open) and the disconnected ones: A to Z by their name on each tab,
 // a catch-all (Other email, Other calendar, a calendar link) after the rest, Machine health last
-function drawConnectors(){const expandedSync=new Set([...document.querySelectorAll('#connectors details[open]')].map(d=>d.id)),order=new Intl.Collator(I18N.lang||'en',{sensitivity:'base'});
+function drawConnectors(){const expandedSync=new Set([...document.querySelectorAll('#connectors details[open]')].map(d=>d.id)),fresh=new Set([...document.querySelectorAll('#connectors .conn-new')].map(a=>a.dataset.conn)),order=new Intl.Collator(I18N.lang||'en',{sensitivity:'base'});
  setHTML($('#connectors'),html`${[...state.connectors].sort((a,b)=>(a.service==='gateway')-(b.service==='gateway')||!!a.last-!!b.last||order.compare(a.display_name||a.email||'',b.display_name||b.email||'')).map(c=>connectorCard(c,expandedSync))}${connExtra.map(e=>html`<article data-group="${e.g}" class="conn-extra"><button type="button" class="conn-row"${e.k==='codex'?html` data-codex-signin`:e.k==='gbrain'?html` data-gbrain`:html` data-connect-card="${e.k}"`}>${connLogo(e.c)}<span class="conn-row-text"><span class="conn-name">${e.c.card_title}</span><small>${e.c.card_subtitle?html`<span class="conn-sub">${e.c.card_subtitle}</span> · `:''}<span class="state-dot t-mint" aria-hidden="true"></span> <span class="connection-status">${e.on}</span></small></span><span class="cs-go" aria-hidden="true">›</span></button></article>`)}`);
- for(const a of $('#connectors').children)a.hidden=a.dataset.group!==connShown;renderDisconnected()}
+ for(const a of $('#connectors').children){a.hidden=a.dataset.group!==connShown;if(fresh.has(a.dataset.conn))a.classList.add('conn-new')}renderDisconnected()}
 // Served as a part that loads when first needed (dashboard_parts.LAZY): a page drawn before it came draws Connections
 // now (render skipped it; it can't call render, which counts the part in only once this file has run). Inline (the
 // tests, the demo) this part runs before shell-render.js, which draws it itself.
