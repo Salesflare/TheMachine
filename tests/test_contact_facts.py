@@ -73,7 +73,7 @@ class ContactFacts(unittest.TestCase):
         return [f['text'] for f in self.store.facts()]
 
     def save(self, text, kind='contact', **more):
-        return self.store.remember_fact(text, 'owner-note', kind, **more)
+        return self.store.remember_fact(text, 'owner-note', kind, **more, quote='a note')
 
     def test_the_two_records_of_one_name_are_merged_when_the_number_is_on_one(self):
         self.assertEqual(sorted(i for i, (n, _) in self.people().items() if n == 'Robin Vale'), [ROBIN_MAIL, ROBIN_WA])  # never joined by name
@@ -150,7 +150,7 @@ class ContactFacts(unittest.TestCase):
         app = object.__new__(a.App)
         app.store, app.config = self.store, CONFIG
         with patch.object(a.App, 'graph_later') as later:
-            app.action('remember_fact', {'text': 'Kim North can be reached on +1 555 0199.', 'decision_id': 'owner-note', 'kind': 'contact'})
+            app.action('remember_fact', {'text': 'Kim North can be reached on +1 555 0199.', 'decision_id': 'owner-note', 'kind': 'contact', 'quote': 'a note'})
             later.assert_called_once()
 
     def store_changes(self):

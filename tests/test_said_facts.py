@@ -30,10 +30,12 @@ class SaidFacts(unittest.TestCase):
         self.enterContext(pinned(NOW))  # end days and expiry are checked against this moment, not the day the test runs
 
     def says(self, text, message_id):
+        self.said = text
         return self.app.action('feedback_reply', {'text': text, 'message_id': message_id, 'timestamp': NOW.timestamp(), 'reply_to_id': ''})
 
     def save(self, text, **args):
-        return self.app.action('remember_fact', {'text': text, '_owner_chat': True, **args})
+        """The model saves it with a quote of what the owner just wrote (test_fact_quote.py checks the quote)."""
+        return self.app.action('remember_fact', {'text': text, '_owner_chat': True, 'quote': getattr(self, 'said', None), **args})
 
     def test_a_fact_the_owner_states_in_their_chat_shows_under_learning_with_where_it_came_from(self):
         with self.assertRaisesRegex(ValueError, 'owner’s own words'):
@@ -86,7 +88,7 @@ class SaidFacts(unittest.TestCase):
     def test_code_modes_guess_of_the_argument_is_the_fact(self):
         """In Code Mode the model never sees the tool's description and writes the sentence as fact, not text."""
         self.says('the team offsite moved to March', '506')
-        saved = self.app.action('remember_fact', {'fact': 'The team offsite moved to March.', '_owner_chat': True})
+        saved = self.app.action('remember_fact', {'fact': 'The team offsite moved to March.', '_owner_chat': True, 'quote': 'offsite moved to March'})
         self.assertEqual([f['text'] for f in self.store.facts() if f['id'] == saved['id']], ['The team offsite moved to March.'])
 
     def test_only_the_owners_own_chat_and_only_what_they_just_said(self):
@@ -123,10 +125,10 @@ class SaidFacts(unittest.TestCase):
             self.assertEqual(db.execute('SELECT count(*) FROM decisions').fetchone()[0], 0)
 
     def test_the_web_chat_saves_what_the_owner_said_there(self):
-        # the bridge notes the owner's web chat message (owner key, before_dispatch); the words never reach the service
+        # the bridge notes the owner's web chat message (owner key, before_dispatch); its words stay in memory only
         self.assertIn('web_chat_said', a.OWNER_ACTIONS)
-        self.assertEqual(self.app.action('web_chat_said', {'message_id': 'run-7f3a'}), {'noted': True})
-        saved = self.save('You take the train to the office.')
+        self.assertEqual(self.app.action('web_chat_said', {'message_id': 'run-7f3a', 'text': 'I take the train to the office'}), {'noted': True})
+        saved = self.save('You take the train to the office.', quote='take the train to the office')
         with self.store.connect() as db:
             row = dict(db.execute('SELECT decision_id,suggestion_id,source FROM facts WHERE id=?', (saved['id'],)).fetchone())
         self.assertEqual(row, {'decision_id': 'webchat-said:run-7f3a', 'suggestion_id': None, 'source': None})

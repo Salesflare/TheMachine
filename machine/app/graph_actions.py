@@ -895,7 +895,8 @@ class GraphActionsApp:
             # a model in Code Mode, without the tool's description, writes the sentence as fact: it is the text
             text = args.get('text') if args.get('text') not in (None, '') else args.get('fact')
             done = self.store.remember_fact(text, note, args.get('kind') or None, None, about,
-                                            args.get('until') or args.get('valid_until'), said=True)
+                                            args.get('until') or args.get('valid_until'), said=True, quote=args.get('quote'),
+                                            said_text=self.owner_said_words(note))
             if done.get('id') and not any(done.get(k) for k in ('duplicate', 'suppressed', 'merged', 'record')):
                 done.update(said_instead(self.store, done['id']))
             if skipped:  # read by the assistant in the chat: saved all the same, not tied to these
@@ -904,7 +905,7 @@ class GraphActionsApp:
                                 '(the owner themselves never is). Facts about the owner leave about out.')
         else:
             done = self.store.remember_fact(args.get('text'), args.get('decision_id'), args.get('kind') or None, args.get('replaces'), args.get('about'),
-                                            args.get('until') or args.get('valid_until'))
+                                            args.get('until') or args.get('valid_until'), quote=args.get('quote'))
         if done.get('record'):  # a contact detail went on someone's record (contact_facts.py): their page follows
             self.graph_later()
         return done

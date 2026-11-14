@@ -252,11 +252,11 @@ class CardChat(unittest.TestCase):
 
     def test_a_fact_about_a_record_says_which_one_it_went_to(self):
         """The Saved line names the person, organization or project the fact is about: it lives on that page."""
-        self.store.decide(self.sid, 'other', 'Kim runs the venue bookings now', 'chat-2', 'dashboard')
+        self.store.decide(self.sid, 'other', 'Kim runs the venue bookings now, they need two weeks of notice', 'chat-2', 'dashboard')
         with self.store.connect() as db:
             db.execute("INSERT INTO graph_nodes(id,kind,name,strength,signals,info) VALUES('email:kim@venue.example','person','Kim Vale',1,0,'{}')")
-        fact = self.store.remember_fact('Kim Vale runs the venue bookings.', 'chat-2', about=['email:kim@venue.example'])
-        general = self.store.remember_fact('Venue bookings need two weeks of notice.', 'chat-2')
+        fact = self.store.remember_fact('Kim Vale runs the venue bookings.', 'chat-2', about=['email:kim@venue.example'], quote='Kim runs the venue bookings')
+        general = self.store.remember_fact('Venue bookings need two weeks of notice.', 'chat-2', quote='they need two weeks of notice')
         with self.store.connect() as db:
             learned = {i['id']: i.get('about') for i in self.app.card_chat_learned(db, self.sid)}
         self.assertEqual(learned, {fact['id']: {'id': 'email:kim@venue.example', 'name': 'Kim Vale'}, general['id']: None})
@@ -265,15 +265,15 @@ class CardChat(unittest.TestCase):
             self.assertNotIn('about', self.app.card_chat_learned(db, self.sid)[0])
 
     def test_only_the_owner_edits_what_was_learned(self):
-        self.store.decide(self.sid, 'other', 'we stopped using that tool', 'n1', 'dashboard')
-        fact = self.store.remember_fact('The team stopped using the old translation tool.', 'n1')
+        self.store.decide(self.sid, 'other', 'we stopped using that tool, and the team meets on mondays', 'n1', 'dashboard')
+        fact = self.store.remember_fact('The team stopped using the old translation tool.', 'n1', quote='we stopped using that tool')
         self.assertIn('edit_fact', a.OWNER_ACTIONS)
         with self.assertRaises(ValueError):
             self.app.action('edit_fact', {'id': fact['id'], 'text': 'Something else entirely.'})
         for bad in ('', 'tiny', 'x' * 241):
             with self.assertRaises(ValueError):
                 self.store.edit_fact(fact['id'], bad)
-        self.store.remember_fact('The team meets on Mondays.', 'n1')
+        self.store.remember_fact('The team meets on Mondays.', 'n1', quote='the team meets on mondays')
         with self.assertRaises(ValueError):
             self.store.edit_fact(fact['id'], 'the team meets on mondays.')
         self.assertEqual(self.store.edit_fact(fact['id'], '  The team   uses DeepL now. ')['text'], 'The team uses DeepL now.')

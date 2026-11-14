@@ -27,8 +27,8 @@ class FactVectors(unittest.TestCase):
         self.store.commit_page('work', {}, [event()])
         sid = self.store.suggest('facts', 'Check the vendor', 'Body', [1])['id']
         self.store.decide(sid, 'reject', 'a note from the owner', 'owner-note', 'dashboard')
-        self.edited = self.store.remember_fact('The office wifi password changes every quarter.', 'owner-note')['id']
-        self.kept = self.store.remember_fact('Vendor newsletters can wait a week.', 'owner-note')['id']
+        self.edited = self.store.remember_fact('The office wifi password changes every quarter.', 'owner-note', quote='a note from the owner')['id']
+        self.kept = self.store.remember_fact('Vendor newsletters can wait a week.', 'owner-note', quote='a note from the owner')['id']
 
     def stored(self):
         with self.store.connect() as db:

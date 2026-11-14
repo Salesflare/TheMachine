@@ -355,8 +355,9 @@ class Invariants(unittest.TestCase):
         with self.assertRaises(ValueError):self.store.remember_fact('We stopped using TranslateCo.','made-up-id')
         with self.store.connect() as db:db.execute("INSERT INTO decisions(id,suggestion_id,choice,feedback,created_at,source) VALUES('agent-note',?,'other','x',?,'agent')",(sid,assistant.now()))
         with self.assertRaises(ValueError):self.store.remember_fact('Agents cannot invent facts.','agent-note')
-        first=self.store.remember_fact('  We stopped   using TranslateCo. ','owner-note')
-        self.assertTrue(self.store.remember_fact('we stopped using translateco.','owner-note')['duplicate'])
+        quote='we stopped using TranslateCo'
+        first=self.store.remember_fact('  We stopped   using TranslateCo. ','owner-note',quote=quote)
+        self.assertTrue(self.store.remember_fact('we stopped using translateco.','owner-note',quote=quote)['duplicate'])
         self.assertEqual(self.store.facts_text(),'- We stopped using TranslateCo.')
         self.assertIn('We stopped using TranslateCo.',assistant.review_prompt('run',['work'],'',self.store.facts_text()))
         self.assertIn('We stopped using TranslateCo.',assistant.preparation_prompt({'suggestion_id':sid,'job_id':'j'},self.store.facts_text()))
@@ -366,7 +367,7 @@ class Invariants(unittest.TestCase):
         with self.assertRaises(ValueError):app.action('forget_fact',{'id':first['id']})
         app.action('forget_fact',{'id':first['id']},owner_dashboard=True)
         self.assertEqual(self.store.facts_text(),'')
-        self.assertTrue(self.store.remember_fact('we stopped using translateco.','owner-note')['suppressed'])
+        self.assertTrue(self.store.remember_fact('we stopped using translateco.','owner-note',quote=quote)['suppressed'])
         self.assertEqual(self.store.facts_text(),'')
         with self.store.connect() as db:
             db.execute("INSERT INTO decision_annotations(decision_id,status,reason) VALUES('owner-note','excluded','wrong prompt')")

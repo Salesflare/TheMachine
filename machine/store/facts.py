@@ -11,6 +11,7 @@ import embeddings
 import fact_links
 import learning_loop
 from machine.config import LOG
+from machine.text import quoted_in
 from machine.store.voices import voice_channel
 import memory_use
 from timeutil import now
@@ -448,7 +449,8 @@ class FactsStore:
             db.execute("INSERT INTO fact_search(fact_search) VALUES('rebuild')")
         return True
 
-    def remember_fact(self, text, decision_id, kind=None, replaces=None, about=None, until=None, source=None, side=None, said=False):
+    def remember_fact(self, text, decision_id, kind=None, replaces=None, about=None, until=None, source=None, side=None, said=False,
+                      quote=None, said_text=None):
         """Keep a lasting fact from one of the owner's own written notes, so later reviews and preparations use it.
         kind: event, commitment, preference or fact (FACT_SORTS, kept as a fact), or draft (a rule); until: the day it
         stops holding (an event without one holds EVENT_DAYS). With replaces (ids of facts and rules) it condenses: the new
@@ -461,7 +463,11 @@ class FactsStore:
         vouches for: remember_fact_action), not one on a to-do. source 'notes:<file>' with decision_id 'notes:<file>:<id>':
         a line of the owner's own OpenClaw notes that they ticked on Learning (bring_in.py); it is the owner's own, kept
         like a note's fact, and can be a rule. kind contact: how to reach one person (their phone or email), from a note
-        or the owner's chat: it goes on that person's record when contact_facts can tell who for certain, else it is a fact."""
+        or the owner's chat: it goes on that person's record when contact_facts can tell who for certain, else it is a fact.
+        quote: the owner's own words the fact is in, verbatim from the message it cites (the note's text, or said_text:
+        what they wrote in their chat, held in memory by the service). A fact from one of the owner's messages is kept
+        only when the quote is in it (text.quoted_in: case, spacing, quote marks, dashes and Unicode forms aside), and
+        keeps that stretch as its source; otherwise nothing is saved and it is logged, never an error for the owner."""
         text = ' '.join(str(text or '').split())
         contact, kind = kind == contact_facts.KIND, 'fact' if kind == contact_facts.KIND else kind
         notes = source is not None and str(source).startswith('notes:') and str(decision_id).startswith(str(source) + ':') and not replaces
@@ -493,6 +499,17 @@ class FactsStore:
                 note = {'suggestion_id': None} if by_ai or notes or (said is True and str(decision_id).startswith(('telegram-said:', 'webchat-said:'))) else owner_note()
             if not note:
                 raise ValueError('Facts must come from one of the owner’s own written notes: give that decision_id')
+            # The words it cites: the note's (a new one, or the newer note that corrects them), or the owner's chat
+            # message. A condense of facts already kept, a connected AI's and one from the owner's notes cite none.
+            chat = said is True and not originals
+            if storage == 'fact' and not by_ai and not notes and (chat or 'feedback' in note.keys()):
+                quote = quoted_in(quote, said_text if chat else note['feedback'])
+                if not quote:
+                    LOG.info('fact not saved: its quote is not in the message it cites from=%s', 'chat' if chat else 'note')
+                    return {'saved': False, 'note': 'Not saved: quote is not in the owner’s message it cites. Give quote: the words '
+                                                     'that say it, copied exactly from that message, in its own language.'}
+            else:
+                quote = None
             if not originals:
                 removed = db.execute('SELECT id,text FROM facts WHERE decision_id=? AND removed_at IS NOT NULL AND merged_into IS NULL',(decision_id,)).fetchall()
                 tombstone = next((r for r in removed if ' '.join(r['text'].casefold().split()) == text.casefold()),None)
@@ -538,8 +555,8 @@ class FactsStore:
             if existing:  # condensed into one that already says it
                 fact_id = existing['id']
             else:
-                fact_id = db.execute('INSERT INTO facts(text,decision_id,suggestion_id,created_at,kind,fact_kind,valid_until,source,side) VALUES(?,?,?,?,?,?,?,?,?)',
-                                     (text, decision_id, note['suggestion_id'], now(), storage, sort, until, source, side)).lastrowid
+                fact_id = db.execute('INSERT INTO facts(text,decision_id,suggestion_id,created_at,kind,fact_kind,valid_until,source,side,quote) '
+                                     'VALUES(?,?,?,?,?,?,?,?,?,?)', (text, decision_id, note['suggestion_id'], now(), storage, sort, until, source, side, quote)).lastrowid
                 if storage == 'draft':
                     db.execute("INSERT INTO rule_changes(at,kind,text,ref) VALUES(?,'draft_rule',?,?)", (now(), 'Draft rule: ' + text, str(fact_id)))
             if storage == 'fact':

@@ -369,7 +369,7 @@ class Learned(unittest.TestCase):
             self.decision = db.execute("SELECT id FROM decisions WHERE feedback!=''").fetchone()['id']
 
     def fact(self, text, kind='fact'):
-        return self.store.remember_fact(text, self.decision, kind)['id']
+        return self.store.remember_fact(text, self.decision, kind, quote='remember these')['id']
 
     def test_a_preparation_gets_the_facts_that_bear_on_its_card(self):
         few = self.fact('The office is closed on Fridays.')
@@ -377,7 +377,7 @@ class Learned(unittest.TestCase):
         topics = ['listing', 'paint', 'tax', 'travel', 'hiring', 'billing', 'support', 'garden', 'school', 'bank', 'car', 'dentist', 'insurance', 'lunch']
         ids = {t: self.fact(f'A long enough fact about {t}, so that all of them together are more than a preparation should carry around. ' * 1)
                for t in topics}
-        own = self.store.remember_fact('This card’s own note: they write listing copy themselves.', self.decision)['id']
+        own = self.store.remember_fact('This card’s own note: they write listing copy themselves.', self.decision, quote='remember these')['id']
         with self.store.connect() as db:  # a fact learned on this card
             db.execute('UPDATE facts SET suggestion_id=? WHERE id=?', (self.sid, own))
         # No embeddings: the newest first, up to the limit.
@@ -487,7 +487,7 @@ class ReviewRegressions(unittest.TestCase):
         decision = self.note_id()
         for preserve in (False, True):
             self.store.save_voice('Email', 'Original email style.', 'owner')
-            fid = self.store.remember_fact('Use lowercase in email too' + (' next time.' if preserve else '.'), decision)['id']
+            fid = self.store.remember_fact('Use lowercase in email too' + (' next time.' if preserve else '.'), decision, quote='no capitals on whatsapp please')['id']
             self.store.save_voice('Email', 'Original style, lowercase.', 'assistant', replaces=[fid])
             if preserve:
                 self.store.save_voice('Email', 'Newer owner style wins.', 'owner')
@@ -496,15 +496,15 @@ class ReviewRegressions(unittest.TestCase):
                              'Newer owner style wins.' if preserve else 'Original email style.')
             self.store.forget_fact(fid)
         self.store.save_voice('Email', 'Before learned merge.', 'owner')
-        first=self.store.remember_fact('Use original merged style.',decision)['id']
+        first=self.store.remember_fact('Use original merged style.',decision, quote='no capitals on whatsapp please')['id']
         self.store.save_voice('Email','First learned merge style.','assistant',replaces=[first])
         self.store.save_voice('Email','Owner edit between merges.','owner')
-        second=self.store.remember_fact('And a newer merged style.',decision)['id']
+        second=self.store.remember_fact('And a newer merged style.',decision, quote='no capitals on whatsapp please')['id']
         self.store.save_voice('Email','Second learned merge style.','assistant',replaces=[second])
         self.store.unmerge_fact(channel='Email')
         self.assertEqual(next(v['text'] for v in self.store.voices() if v['channel']=='Email'),'Owner edit between merges.')
         self.store.save_voice('Email', '', 'owner')
-        fid = self.store.remember_fact('Another style fact to merge.', decision)['id']
+        fid = self.store.remember_fact('Another style fact to merge.', decision, quote='no capitals on whatsapp please')['id']
         self.store.save_voice('Email', 'First learned email style.', 'assistant', replaces=[fid])
         self.store.unmerge_fact(channel='Email')
         self.assertFalse(any(v['channel']=='Email' for v in self.store.voices()))
@@ -518,7 +518,7 @@ class ReviewRegressions(unittest.TestCase):
 
     def test_learning_offers_survive_unavailable_gateway_then_commit_after_admission(self):
         for i in range(6):
-            self.store.remember_fact('Fact to condense number ' + str(i), self.note_id())
+            self.store.remember_fact('Fact to condense number ' + str(i), self.note_id(), quote='no capitals on whatsapp please')
         with self.store.connect() as db:
             db.execute("INSERT INTO draft_edits(id,suggestion_id,old_revision,new_revision,kind,before_body,after_body,source,created_at) VALUES('retry-edit',?,'a','b','email','Long stiff draft.','Hey, natural reply.','dashboard',?)", (self.sid, a.now()))
             db.execute("INSERT INTO note_kinds VALUES(?,?,?,?,?)", (self.note_id(), self.chat_sid, 'style', 'assistant', a.now()))

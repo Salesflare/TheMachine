@@ -109,8 +109,8 @@ class FactOverturned(unittest.TestCase):
             self.store.commit_page('g', {}, [mail('m1', '2026-11-01T09:00:00+00:00', 'Room for 20 children.')])
             sid = self.store.suggest('party', 'Party venue', 'Body', [1])['id']
             self.store.decide(sid, 'other', 'the party is at Riverside Hall on December 12', 'owner-note', 'dashboard')
-            self.fact = self.store.remember_fact("Robin's birthday party is at Riverside Hall on December 12.", 'owner-note', 'event', until='2026-12-12')['id']
-            self.other = self.store.remember_fact('Robin likes dinosaurs.', 'owner-note')['id']
+            self.fact = self.store.remember_fact("Robin's birthday party is at Riverside Hall on December 12.", 'owner-note', 'event', until='2026-12-12', quote='the party is at Riverside Hall')['id']
+            self.other = self.store.remember_fact('Robin likes dinosaurs.', 'owner-note', quote='the party is at Riverside Hall')['id']
 
     def newer(self, when):
         with at(when):

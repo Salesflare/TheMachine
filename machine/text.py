@@ -1,7 +1,7 @@
 """Message text: a mail's own words without the quoted history under them, its body from the plain and HTML parts
 (plain_html), its attachments and inline images, invisible characters, the compact JSON the app stores (encoded), a
 value cut to size (clamp), the first address in a header (_address), and an encrypted copy of a database (seal_copy,
-open_copy). Moved out of assistant.py as is."""
+open_copy). Moved out of assistant.py as is. Also whether a quote is in a message (quoted_in)."""
 import base64
 import contextlib
 import hashlib
@@ -12,6 +12,7 @@ import os
 from pathlib import Path
 import re
 import sqlite3
+import unicodedata
 
 import message_seal
 import portable
@@ -129,6 +130,58 @@ INVISIBLE = re.compile('[\u200b-\u200f\u2060\u034f\u00ad\ufeff\u2007\u180e]')
 def visible_text(text):
     text = INVISIBLE.sub('', text)
     return re.sub(r'[ \t]+\n', '\n', re.sub(r'[ \t]{2,}', ' ', re.sub(r'\n{3,}', '\n\n', text)))
+
+
+# A quote from a message, compared the way a person reads it (quoted_in): Unicode compatibility forms folded (NFKC:
+# full-width letters, ligatures, no-break spaces), case ignored, every quote mark and apostrophe read as ' and every
+# dash as -, zero-width characters dropped and a run of whitespace as one space. Words are never translated: a quote
+# from a message in Dutch is Dutch.
+QUOTE_FOLD = {**dict.fromkeys('"‘’‚‛“”„‟′″‵´`ʹʺʻ'
+                              'ʼʽ‹›«»〝〞〟', "'"),
+              **dict.fromkeys('‐‑‒–—―⁃−⸺⸻﹘', '-')}
+QUOTE_SKIP = set('​‌‍‎‏⁠­﻿͏')
+QUOTE_EDGE = " '.,;:!?"  # a quote's own marks and end punctuation, around the words that count
+QUOTE_MIN = 8  # characters a quote has at least, unless it is the whole message
+QUOTE_MAX = 300
+
+
+def _quote_folded(text):
+    """(text in NFC, [(folded character, its index in that text)])."""
+    base, out = unicodedata.normalize('NFC', str(text or '')), []
+    for i, c in enumerate(base):
+        if c in QUOTE_SKIP:
+            continue
+        for d in unicodedata.normalize('NFKC', unicodedata.normalize('NFKC', c).casefold()):
+            d = QUOTE_FOLD.get(d, d)
+            if d.isspace():
+                if out and out[-1][0] != ' ':
+                    out.append((' ', i))
+            else:
+                out.append((d, i))
+    return base, out
+
+
+def quoted_in(quote, message):
+    """The stretch of message that quote is (folded as above, its own quote marks and end punctuation left out), in the
+    message's own characters with whitespace as single spaces; None when the message doesn't say it, or the quote is
+    too short (QUOTE_MIN, unless it is the whole message) or too long (QUOTE_MAX)."""
+    if not isinstance(quote, str) or not isinstance(message, str):
+        return None
+    folded = _quote_folded(quote)[1]
+    start, end = 0, len(folded)
+    while start < end and folded[start][0] in QUOTE_EDGE:
+        start += 1
+    while end > start and folded[end - 1][0] in QUOTE_EDGE:
+        end -= 1
+    key = ''.join(c for c, _ in folded[start:end])
+    if not key or len(key) > QUOTE_MAX:
+        return None
+    base, said = _quote_folded(message)
+    words = ''.join(c for c, _ in said)
+    at = words.find(key)
+    if at < 0 or (len(key) < QUOTE_MIN and words.strip(QUOTE_EDGE) != key):
+        return None
+    return ' '.join(base[said[at][1]:said[at + len(key) - 1][1] + 1].split())
 
 
 def email_body(plain, html_parts):

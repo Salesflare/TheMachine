@@ -282,7 +282,7 @@ class AskMemory(unittest.TestCase):
         if not getattr(self, 'noted', None):
             self.noted = self.store.suggest('other', 'Pay the vendor', 'Body', [self.event('Lunch')])['id']
             self.store.decide(self.noted, 'reject', 'we stopped using them', 'owner-note', 'dashboard')
-        return self.store.remember_fact(text, 'owner-note', **more)
+        return self.store.remember_fact(text, 'owner-note', **more, quote='we stopped using them')
 
     def about_kim(self, **more):
         self.plan = {'question': True, 'person': 'Kim Vale', 'said_by': 'both', 'from': None, 'to': None, 'about': '', **more}

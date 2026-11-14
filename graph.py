@@ -2214,9 +2214,9 @@ def open_between(db, node_id, limit=6, skip_card=None, promises_only=False, know
                 "ORDER BY coalesce(due,created_at)", (*OPEN_CARD, skip_card, *mine)) if r['id'] not in have][:max(0, limit - len(out['cards']))]
         marks = ','.join('?' for _ in ids)
         out['known'] = [{'id': r['id'], 'text': r['text'], **({'fact_kind': r['fact_kind']} if r['fact_kind'] else {}),
-                         **({'valid_until': r['valid_until']} if r['valid_until'] else {}), **({'source': r['source']} if r['source'] else {})}
+                         **({'valid_until': r['valid_until']} if r['valid_until'] else {}), **{k: r[k] for k in ('source', 'quote') if r[k]}}
                         for r in db.execute(
-            f"SELECT f.id,f.text,f.fact_kind,f.valid_until,{'f.source' if 'source' in {c[1] for c in db.execute('PRAGMA table_info(facts)')} else 'NULL source'} FROM facts f WHERE f.removed_at IS NULL AND f.kind='fact' "
+            f"SELECT f.id,f.text,f.fact_kind,f.valid_until,{','.join(('f.' if n in have else 'NULL ') + n for have in [{c[1] for c in db.execute('PRAGMA table_info(facts)')}] for n in ('source', 'quote'))} FROM facts f WHERE f.removed_at IS NULL AND f.kind='fact' "
             "AND (f.valid_until IS NULL OR f.valid_until>=?) "
             f"AND EXISTS (SELECT 1 FROM fact_about a WHERE a.fact_id=f.id AND a.removed_at IS NULL AND a.node_id IN ({marks})) "
             f"AND NOT EXISTS (SELECT 1 FROM fact_about a WHERE a.fact_id=f.id AND a.removed_at IS NOT NULL AND a.node_id IN ({marks})) "

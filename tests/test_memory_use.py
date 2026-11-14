@@ -97,8 +97,8 @@ class MemoryUseTests(unittest.TestCase):
         self.store.decide(other, 'reject', 'we stopped using them', 'owner-note', 'dashboard')
         self.other = other
         for i in range(30):
-            self.store.remember_fact(f'General fact number {i} about how the owner works with pilots.', 'owner-note')
-        self.store.remember_fact('Keep replies under five sentences.', 'owner-note', 'draft')
+            self.store.remember_fact(f'General fact number {i} about how the owner works with pilots.', 'owner-note', quote='we stopped using them')
+        self.store.remember_fact('Keep replies under five sentences.', 'owner-note', 'draft', quote='we stopped using them')
         self.store.promise({'direction': 'theirs', 'event_id': 1, 'who': 'Ann Example', 'what': 'send the signed contract', 'due': '2026-10-23'})
         self.todo = self.store.suggest('pilot', 'Answer Ann about the pilot', 'Ann asks to move the pilot.', [1])['id']
         with self.store.connect() as db:

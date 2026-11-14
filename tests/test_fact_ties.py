@@ -102,9 +102,9 @@ class FactTies(unittest.TestCase):
         self.assertEqual(self.store.snapshot([])['learning_changes'], [])
 
     def test_a_fact_said_to_be_about_the_owner_or_their_company_stays_general(self):
-        self.assertNotIn('about', self.store.remember_fact('Closes the books on the 5th.', 'owner-note', about=[OWN]))
-        self.assertNotIn('about', self.store.remember_fact('Likes short replies.', 'owner-note', about=[ME]))
-        self.assertEqual(self.store.remember_fact('Pays late.', 'owner-note', about=[GLOBEX, OWN])['about'], [GLOBEX])
+        self.assertNotIn('about', self.store.remember_fact('Closes the books on the 5th.', 'owner-note', about=[OWN], quote='a note'))
+        self.assertNotIn('about', self.store.remember_fact('Likes short replies.', 'owner-note', about=[ME], quote='a note'))
+        self.assertEqual(self.store.remember_fact('Pays late.', 'owner-note', about=[GLOBEX, OWN], quote='a note')['about'], [GLOBEX])
         fact = self.fact('Works from home on Fridays.')
         with self.assertRaises(ValueError):
             self.store.fact_about(fact, [ME])
