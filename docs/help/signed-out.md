@@ -10,7 +10,7 @@ Sites like LinkedIn and X are read in your Machine's own browser. Sometimes a si
 
 ## Sign back in
 
-**Connections** and the top of your To-dos say it's signed out. Press **Sign in again** and sign in, in a small window on the dashboard.
+**Connections** and the top of your To-dos say it's signed out. Press **Sign in here** and sign in, in a small window on the dashboard.
 
 Tick **Save for next time** to sign back in with one tap when it happens again. The password stays encrypted on your Machine, and the AI never sees it.
 
