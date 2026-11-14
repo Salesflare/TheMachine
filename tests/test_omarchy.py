@@ -7,12 +7,12 @@ import json
 from pathlib import Path
 import tempfile
 import threading
-import time
 import unittest
 from unittest.mock import patch
 
 from machine import omarchy
 from seams import patch_everywhere
+import served
 
 TOKYO = '''mode = "dark"
 accent = "#7aa2f7"
@@ -106,22 +106,7 @@ class OmarchyRouteTest(unittest.TestCase):
                            'dashboard_host': 'machine.example:8443', 'port': 0, 'http_timeout': 1}
 
     def serve(self):
-        servers = []
-        real = a.http.server.ThreadingHTTPServer
-        def capture(*args, **kwargs):
-            servers.append(real(*args, **kwargs)); return servers[-1]
-        for patcher in (patch.object(a.http.server, 'ThreadingHTTPServer', side_effect=capture),
-                        patch.object(a.signal, 'signal'), patch.object(a.App, 'preparation_worker'),
-                        patch.object(a.App, 'delivery_worker'),
-                        patch_everywhere(a, 'tailnet_login', side_effect=lambda ip: 'owner@example.com')):
-            patcher.start()
-            self.addCleanup(patcher.stop)
-        thread = threading.Thread(target=self.app.serve, daemon=True)
-        thread.start()
-        while not servers:
-            time.sleep(0.01)
-        self.addCleanup(lambda: (self.app.stop.set(), thread.join(5)))
-        return servers[0].server_address[1]
+        return served.serve(self, a, [patch_everywhere(a, 'tailnet_login', side_effect=lambda ip: 'owner@example.com')])
 
     def test_here_and_etag(self):
         port = self.serve()

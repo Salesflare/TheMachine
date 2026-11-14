@@ -19,6 +19,7 @@ from unittest.mock import patch
 import ai_access
 import ai_app
 from seams import patch_everywhere  # noqa: E402
+import served  # noqa: E402
 
 spec = importlib.util.spec_from_file_location('ai_access_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec)
@@ -1171,54 +1172,8 @@ class Http(Base):
     """Over the real handler: the owner's sign-in and the service token never count on /mcp, and the consent page
     is the owner's own, with its CSRF token and the dashboard's origin."""
 
-    # What serve() starts besides the web server. These tests only need the handler: the account readers and workers
-    # would write into the temporary folder, also while it is being removed after the test.
-    BACKGROUND = ('collector', 'ability_checker', 'delivery_worker', 'preparation_worker', 'whatsapp_photo_worker',
-                  'voice_warm_worker', 'action_worker', 'review_worker', 'graph_worker', 'model_usage_worker', 'retention_worker',
-                  'plain_keys_worker', 'history_worker', 'embedding_worker', 'enrichment_worker', 'linkedin_connections_worker',
-                  'recurring_worker', 'routines_worker', 'protection_waiter', 'birthdays_facebook_fill_old', 'meeting_write_resume',
-                  'gbrain_start')
-
     def serve(self):
-        import machine.app.serve as serve_module
-        servers, started = [], threading.Event()
-        real_server, real_watch = a.http.server.ThreadingHTTPServer, serve_module.watch_faults
-
-        def capture(*args, **kwargs):
-            servers.append(real_server(*args, **kwargs))
-            started.set()
-            return servers[-1]
-
-        def watch(store, *args):  # its error log hangs on the shared logger and writes into this test's database: it comes off
-            hook = threading.excepthook
-            log = real_watch(store, *args)
-
-            def unwatch():
-                a.LOG.removeHandler(log)
-                threading.excepthook = hook
-            self.addCleanup(unwatch)
-            return log
-        for patcher in (patch.object(serve_module, 'watch_faults', side_effect=watch),
-                        patch.object(a.http.server, 'ThreadingHTTPServer', side_effect=capture), patch.object(a.signal, 'signal'),
-                        patch('machine.store.review_requeue.requeue', return_value=0),
-                        *(patch.object(a.App, name) for name in self.BACKGROUND)):
-            patcher.start()
-            self.addCleanup(patcher.stop)
-        before = set(threading.enumerate())
-        thread = threading.Thread(target=self.app.serve, daemon=True)
-        thread.start()
-        self.assertTrue(started.wait(10), 'serve() did not start its server')
-
-        def stop():  # every thread serve() started (the server's request threads too) ends before the folder goes
-            self.app.stop.set()
-            thread.join(10)
-            self.assertFalse(thread.is_alive(), 'serve() still running after the test')
-            for other in set(threading.enumerate()) - before:
-                other.join(10)
-                self.assertFalse(other.is_alive(), f'{other.name} still running after the test')
-            self.assertEqual(servers[0].socket.fileno(), -1, 'serve() did not close its server')
-        self.addCleanup(stop)
-        return servers[0].server_address[1]
+        return served.serve(self, a)
 
     def request(self, port, method, path, body=None, headers=None):
         conn = http.client.HTTPConnection('127.0.0.1', port, timeout=10)
