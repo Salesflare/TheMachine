@@ -57,6 +57,7 @@ import mail_senders
 from mail_senders import AUTOMATED_PRECEDENCE, BULK, RELAY, address_name, addresses, automated, bulk, list_unsubscribes, mass_mail, owner_kept, relay, shared_inbox  # noqa: F401
 import person_summary
 from machine import stamps, todo_states
+from machine.kinds import KINDS
 from machine.owner_error import OwnerError
 from machine.store import graph_history, graph_identifiers
 
@@ -2323,8 +2324,7 @@ def set_role(db, node_id, role, source, now, event_id=None, quote=None):
     return {'role': role or None}
 
 
-VIA = {'linkedin.message': 'LinkedIn', 'gmail.message': 'email', 'salesflare.email': 'email', 'calendar.event': 'calendar', 'slack.message': 'Slack', 'teams.message': 'Teams',
-       'whatsapp.message': 'WhatsApp', 'telegram.message': 'Telegram', 'signal.message': 'Signal', 'x.dm': 'X', 'x.mention': 'X', 'intercom.conversation': 'Intercom', 'github.notification': 'GitHub'}
+VIA = {kind: row['via'] for kind, row in KINDS.items() if row['via']}  # machine/kinds.py
 
 
 def set_org(db, node_id, org, source, now, event_id=None, quote=None):

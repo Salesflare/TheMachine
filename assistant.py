@@ -1154,11 +1154,6 @@ from machine.main import (  # noqa: F401 - the service and its mixins (machine/m
 VERIFIED_DECISION_SOURCES = ('telegram', 'dashboard')
 
 
-SOURCE_KIND['fleet.request'] = 'Fleet'
-SOURCE_KIND['fleet.email'] = 'email'  # a copy a teammate's handoff carried (fleet_requests.handoff_sources)
-SOURCE_KIND['owner.card'] = 'note'  # a card the owner made themselves (New card): their own words
-SOURCE_KIND['fleet.message'] = 'message'
-SOURCE_KIND['fleet.intercom'] = 'Intercom'  # an Intercom conversation a handoff carried, on a Machine that doesn't read it
 
 
 MAIL_SERVICES, CALENDAR_SERVICES = ('gmail', 'outlook', 'imap'), ('calendar', 'outlook_calendar', 'icloud_calendar', 'caldav', 'proton_calendar', 'ics', 'exchange')

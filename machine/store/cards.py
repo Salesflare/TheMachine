@@ -22,7 +22,8 @@ from machine.cards import current_title, delivery_time, group_sender
 from machine.config import LOG
 from machine.sources.android import android_app_shown
 from machine.sources.calendar import calendar_owned, expiry_moment
-from machine.sources.connectors import load_connector
+from machine.kinds import KINDS
+from machine.sources.connectors import connector_services, load_connector
 from machine.store.review import CARD_OPEN, own_message
 from machine.text import _address, body_after_title, clamp, encoded
 from timeutil import local_tz, now
@@ -124,11 +125,11 @@ def awaiting_match(watch, event, owner_slack_ids=()):
     return not watch['sender'] or (m.get('sender_id') or m.get('from') or '') == watch['sender']
 
 
-SOURCE_KIND = {'gmail.message': 'email', 'calendar.event': 'calendar', 'slack.message': 'Slack', 'teams.message': 'Teams',
-               'salesflare.email': 'CRM email', 'salesflare.meeting': 'CRM meeting',
-               'android.notification': 'phone', 'whatsapp.message': 'WhatsApp', 'telegram.message': 'Telegram', 'signal.message': 'Signal',
-               'gateway.alert': 'The Machine', 'machine.system_log': 'The Machine', 'machine.fault': 'The Machine',
-               'meeting.notes': 'meeting notes', 'meeting.transcript': 'transcript'}
+# The kinds a source line names without asking their connector (source_label): The Machine's own sources, and Teams
+# messages, whose line says "Teams" where the Teams connector's KINDS says "Teams message" (kept as it was). Their names
+# are in machine/kinds.py.
+SOURCE_KIND = {kind: row['name'] for kind, row in KINDS.items()
+               if row['name'] and (row['service'] not in connector_services() or kind == 'teams.message')}
 
 
 def own_life_evidence(db, event_ids):
