@@ -136,6 +136,7 @@ def loads_module(found, wanted):
 MACHINE_LAYERS = {
     'actions': 0,      # the *_ACTIONS sets, the security boundary
     'config': 0,
+    'kinds': 0,        # every kind of event and of message, with what the code knows of each (a leaf)
     'names': 0,        # what the owner calls a service, app or agent (never the tool underneath)
     'omarchy': 0,      # the Omarchy desktop theme's colors, read only (a leaf)
     'owner_error': 0,  # OwnerError: a message for the owner, not a bug (a leaf)

@@ -130,6 +130,7 @@ const fail=()=>{if(self.appStarted||!box.hidden)return;box.hidden=false;addEvent
 box.querySelector('button').onclick=()=>location.reload();
 addEventListener('load',()=>{if(!self.appStarted)fail()});setTimeout(()=>{if(!self.appStarted)fail()},30e3)})();</script>
 <script>const csrf='__CSRF__',UI_VERSION='__UI_VERSION__',CACHE_SCOPE='__CACHE_SCOPE__';</script>
+<script id="source-kinds" type="application/json">__SOURCE_KINDS__</script>
 <script id="i18n">
 /*@include dashboard/shell-i18n.js*/
 </script>
