@@ -53,6 +53,9 @@ FACT_FLOOR = 0.6           # cosine of a fact to the question: under it the fact
 LEARNED = 3           # facts and rules Talk's recall gets for its words (learned)
 LEARNED_TIMEOUT = 2   # seconds for the words' vector in Talk's recall; slower, and words only (a voice waits on it)
 FACT_TIMEOUT = 4      # seconds for the question's vector; slower, and no fact is ranked
+# seconds for the chat's lookup words' vector (assistant_memory): a tool call inside a model turn, not a voice waiting, so
+# a busy embedding server still answers; past it, words only, and most questions in other words then find nothing
+CHAT_TIMEOUT = 10
 NAMED = 2             # organizations and projects named in one question
 NAME_LETTERS = 4      # a name's first word counts alone from this many letters, when no other record has it
 MEETING_KINDS = tuple(sorted(embeddings.PASSAGE_KINDS - set(graph.MESSAGE_KINDS)))
@@ -540,7 +543,7 @@ def _people_named(question, who):
 
 
 def _chat_vector(app, question, settings):
-    """The chat question's own vector (one local embedding request, LEARNED_TIMEOUT), only when some fact has a stored
+    """The chat question's own vector (one local embedding request, CHAT_TIMEOUT), only when some fact has a stored
     vector of this model to compare it with; None without embeddings, without stored vectors, or when the embedding
     server is down or slow: the words alone then."""
     if not settings:
@@ -550,7 +553,7 @@ def _chat_vector(app, question, settings):
         if not db.execute('SELECT 1 FROM fact_vectors WHERE model=? LIMIT 1', (key,)).fetchone():
             return None
     try:
-        return embeddings.embed(settings, [embeddings.QUERY_PREFIX + question], LEARNED_TIMEOUT)[0]
+        return embeddings.embed(settings, [embeddings.QUERY_PREFIX + question], CHAT_TIMEOUT)[0]
     except Exception as error:  # words only, the rest of the answer as it was
         LOG.info('chat recall meaning error=%s', type(error).__name__)
         return None

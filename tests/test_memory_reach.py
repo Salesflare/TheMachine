@@ -454,6 +454,23 @@ class MemoryReach(unittest.TestCase):
         with self.store.connect() as db:
             self.assertIn('closeness', {r[0] for r in db.execute("SELECT how FROM memory_use WHERE purpose='chat'")})
 
+    def test_the_owners_chat_waits_for_a_busy_embedding_server(self):
+        """The chat's lookup is a tool call in a model turn, not a voice waiting: a server that takes a few seconds
+        still answers by meaning (Talk keeps its short wait); only past CHAT_TIMEOUT do the words go alone."""
+        klm = self.flights_learned()
+        self.app.config = {**self.config, 'embeddings': SETTINGS}
+        waits = []
+
+        def busy(settings, texts, timeout=120):
+            waits.append(timeout)
+            if timeout < 5:  # a loaded desktop: a query vector takes 2-7 seconds
+                raise a.embeddings.EmbeddingError('timeout')
+            return plane(settings, texts, timeout)
+        with patch.object(a.embeddings, 'embed', side_effect=busy):
+            self.assertIn(klm, self.chat('plane trip next week')['found'])
+        self.assertEqual(waits, [ask_memory.CHAT_TIMEOUT])
+        self.assertGreater(ask_memory.CHAT_TIMEOUT, ask_memory.LEARNED_TIMEOUT)
+
     def test_the_owners_chat_never_finds_a_forgotten_fact_by_meaning(self):
         klm = self.flights_learned()
         self.app.config = {**self.config, 'embeddings': SETTINGS}
