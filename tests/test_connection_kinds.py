@@ -93,6 +93,7 @@ class DisconnectedUnderItsOwnKind(unittest.TestCase):
         self.assertTrue(set(kinds.values()) <= set(groups.GROUPS) - {'other'})
         self.assertEqual(kinds, {'google': 'mail', 'google_meet': 'mail', 'google_docs': 'mail', 'microsoft': 'mail', 'zoom': 'meetings',
                                  'stripe': 'customers', 'slack': 'chat', 'salesforce': 'customers'})
+        self.assertEqual(names.SIGNIN_KINDS, {p: groups.group_of(s) for p, s in names.SIGNIN_SOURCES.items()})
 
     def test_the_page_shows_each_under_its_own_kind_only(self):
         self.assertIn('(state.disconnected||[]).filter(r=>r.group===connShown)', JS)

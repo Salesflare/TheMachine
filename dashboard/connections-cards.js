@@ -150,14 +150,15 @@ function renderConnectAdd(){const box=$('#connect-add');if(connectRun)return ren
  // there too, with the others, which opens its setup or the card it rests on
  const extra=on.filter(([g,x])=>!(state.connectors||[]).some(c=>healthGroup(c)===g&&c.service===x.service)).map(([g,x])=>{const have=connectHave(x)[0];
   return {g,k:/^(codex|gbrain)$/.test(x.name)?x.name:have?.id,c:{service:x.service,card_title:have?connectHaveName(have):x.label,card_subtitle:have?x.label:''},on:x.name==='gbrain'?t('On'):t('Connected')}}).filter(e=>e.k);
- const sx=JSON.stringify(extra);if(sx!==connExtraSig){connExtraSig=sx;connExtra=extra;drawConnectors();renderHealthTabs()}
  const picks=[...why].map(([n,w])=>connectTile(by.get(n),w));
  const order=new Intl.Collator(I18N.lang||'en',{sensitivity:'base'}),list=(h,tiles,cls='')=>html`<section class="connect-group${cls}">${h?html`<h4>${h}</h4>`:''}<div class="connect-sources">${tiles}</div></section>`;
  connTiles=new Map(CONNECT_GROUPS.map(([k])=>[k,groups.get(k).sort((a,b)=>a[2]-b[2]||order.compare(a[0],b[0])).map(([,tile])=>tile)]));
  // Suggested for you: on top of Connections (the list, on a phone), each tile also in its own category, tagged Suggested
  const sug=$('#conn-suggested'),sugH=picks.length?list(t('Suggested for you'),picks,' suggested'):html``;if(sug.dataset.sig!==sugH.s){sug.dataset.sig=sugH.s;setHTML(sug,sugH)}
  // a category that only now has sources to add (the list came) joins the list
- const sig=CONNECT_GROUPS.filter(([k])=>connTiles.get(k).length).map(([k])=>k).join();if(sig!==connCatsSig){connCatsSig=sig;renderHealthTabs()}
+ // with the tiles in place (the list of kinds counts them), then the extra rows
+ const sig=CONNECT_GROUPS.filter(([k])=>connTiles.get(k).length).map(([k])=>k).join(),sx=JSON.stringify(extra),newCats=sig!==connCatsSig,newExtra=sx!==connExtraSig;
+ connCatsSig=sig;if(newExtra){connExtraSig=sx;connExtra=extra;drawConnectors()}if(newCats||newExtra)renderHealthTabs()
  const tiles=connTiles.get(connShown)||[],have=(state.connectors||[]).some(c=>healthGroup(c)===connShown)||extra.some(e=>e.g===connShown);
  connectDraw(box,'grid',html`${connectList.saveable||connectList.manage_url?'':html`<p class="sub-note">Pick a source to connect.${html` This service can’t save its settings: use <code>assistant connect</code> in a terminal.`}</p>`}${tiles.length?list(have?t('Add another'):'',tiles):''}`)}
 // Codex (codex_signin.py): its own tile. It signs in with Codex's own device code, shown here: a hosted Machine's control

@@ -10,8 +10,6 @@ from __future__ import annotations
 
 import re
 
-from machine.sources import groups
-
 SERVICES = {'gmail': 'Gmail', 'calendar': 'Google Calendar', 'outlook': 'Outlook', 'outlook_calendar': 'Outlook Calendar', 'imap': 'Email', 'icloud_calendar': 'iCloud Calendar', 'caldav': 'Calendar',
             'proton_calendar': 'Proton Calendar', 'ics': 'Calendar', 'exchange': 'Exchange',
             'slack': 'Slack', 'teams': 'Microsoft Teams', 'salesflare': 'Salesflare', 'salesforce': 'Salesforce', 'android': 'Android', 'whatsapp': 'WhatsApp', 'telegram': 'Telegram', 'signal': 'Signal',
@@ -225,9 +223,10 @@ SIGNINS = {'google': 'google', 'google_meet': 'google', 'google_docs': 'google',
            'stripe': 'stripe', 'slack': 'slack', 'salesforce': 'salesforce'}
 SIGNIN_NAMES = {'google': 'Google', 'microsoft': 'Microsoft', 'zoom': 'Zoom', 'stripe': 'Stripe', 'slack': 'Slack',
                 'salesforce': 'Salesforce'}
-# The source a removed account was to the owner, whose kind (groups.GROUP_OF) it shows under: a Google account is Gmail
+# The kind a removed account shows under: its source's kind in sources/groups.py (a Google account is Gmail); a test keeps them equal
 SIGNIN_SOURCES = {'google': 'gmail', 'microsoft': 'outlook', 'zoom': 'zoom', 'stripe': 'stripe', 'slack': 'slack',
                   'salesforce': 'salesforce'}
+SIGNIN_KINDS = {'google': 'mail', 'microsoft': 'mail', 'zoom': 'meetings', 'stripe': 'customers', 'slack': 'chat', 'salesforce': 'customers'}
 
 
 def disconnected_rows(receipts, t=None):
@@ -252,7 +251,7 @@ def disconnected_rows(receipts, t=None):
         if row is None:
             name = SIGNIN_NAMES[provider]
             rows[key] = {'card_title': address or name, 'card_subtitle': t('{} account', name) if address else '',
-                         'mark': provider, 'provider_name': name, 'group': groups.group_of(SIGNIN_SOURCES[provider]), 'state': receipt.get('state') == 'pending' and 'pending' or 'removed', 'at': at}
+                         'mark': provider, 'provider_name': name, 'group': SIGNIN_KINDS[provider], 'state': receipt.get('state') == 'pending' and 'pending' or 'removed', 'at': at}
             continue
         row['at'] = max(row['at'], at)
         if receipt.get('state') == 'pending':
