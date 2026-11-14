@@ -209,6 +209,13 @@ class Embeddings(unittest.TestCase):
         self.assertEqual({e['account_id'] for e in everything['events']}, {'work', 'home'})
         self.assertIn('Invoice unpaid', {e['title'] for e in everything['events'][:3]})
         self.assertEqual({e['account_id'] for e in self.app.action('related', {'account_ids': 'all', 'query': 'invoice'})['events']}, {'work', 'home'})
+        # words: the keyword matches alone, in their keyword order, with no embedding asked (the dashboard's first step)
+        with self.store.connect() as db:
+            by_words = emb.fts_ids(db, ['work', 'home'], 'invoice', 40)
+        with patch.object(self.app, 'related', side_effect=AssertionError('no meaning')), patch.object(emb, 'embed', side_effect=AssertionError('no embedding')):
+            first = self.app.action('events', {'account_ids': ['all'], 'query': 'invoice', 'semantic': True, 'words': True, 'full': True})
+        self.assertTrue(by_words)
+        self.assertEqual([e['id'] for e in first], by_words)
         with self.assertRaises(ValueError):
             self.app.action('begin_analysis', {'account_ids': ['all']})
 

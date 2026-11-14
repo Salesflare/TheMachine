@@ -940,7 +940,12 @@ class ReviewApp:
         if name == 'events' and args.get('semantic') and str(args.get('query') or '').strip() and args.get('event_ids') is None and embeddings.settings(self.config):
             # Meaning and keywords fused, best first; the plain keyword search stays the default.
             # The dashboard waits for it: a slow embedding server falls back to keywords in seconds, not minutes.
-            found, semantic = self.related(selected, (), str(args['query']), min(int(args.get('limit') or 40), 40), timeout=8 if args.get('full') else 30)
+            # words: those keywords alone, at once (the dashboard shows them while meaning is still on its way).
+            if args.get('words'):
+                with self.store.connect() as db:
+                    found, semantic = [(i, None) for i in embeddings.fts_ids(db, selected, str(args['query']), min(int(args.get('limit') or 40), 40))], False
+            else:
+                found, semantic = self.related(selected, (), str(args['query']), min(int(args.get('limit') or 40), 40), timeout=8 if args.get('full') else 30)
             order, starts = [i for i, _ in found], embeddings.starts(found)
             if semantic:  # the best match by words stays in the first three: a name or place asked is never buried
                 with self.store.connect() as db:

@@ -1,4 +1,7 @@
-async function search(){let account=$('#account').value||'all';const q=$('#query').value.trim();evAnswer(q);try{let rows=await request('api/events?account='+encodeURIComponent(account)+'&q='+encodeURIComponent($('#query').value));
+// Keyword matches at once (words=1), then the full search: rows shown stay, its others come in under
+let evSearched=0;
+async function search(){let account=$('#account').value||'all';const q=$('#query').value.trim();evAnswer(q);const n=++evSearched,url='api/events?account='+encodeURIComponent(account)+'&q='+encodeURIComponent($('#query').value);let early=null,last=false;
+ if(q)request(url+'&words=1').then(rows=>{if(n===evSearched&&!last&&rows?.length){early=rows;draw(rows)}}).catch(()=>{});
  // Each row reads by its kind (message_view.list_row): who by name, its words without stamps, ids or markup, and
  // "Open in …" in the same place on every row that has a link. A message with none (a WhatsApp, Signal or Telegram
  // chat, a phone notification, a note of the Machine's own) has no web address to open.
@@ -8,8 +11,12 @@ async function search(){let account=$('#account').value||'all';const q=$('#query
   return `<article class="event tap" data-event="${e.id}"${e.kind==='calendar.event'?' data-meeting':''} tabindex="0"${later}><div class="event-head"><span class="icon">${markIco(sourceMark(e.kind,e.account_id,e.metadata.package_name))}</span><div><h3 translate="no">${esc(r.title||e.title)}</h3><small>${meta}</small></div></div>${said}${link?`<a class="open" href="${esc(onPhone()&&safeURL(r.phone_url||'')||link)}" target="_blank" rel="noreferrer">${esc(r.app?t('Open in {} ↗',r.app):t('Open original'))}</a>`:''}${e.kind==='android.notification'?'<p class="note">Phone preview only. Check the app for the full message.</p>':e.metadata.truncated?'<p class="note">Some conversation history or text is omitted; check the original.</p>':''}</article>`};
  /* As on a person's timeline: meetings still to come apart under Coming up, soonest first; the list itself newest first.
     With words searched, the best match first, as the search ranked them */
- const at=Date.now(),up=q?[]:rows.filter(e=>Date.parse(e.occurred_at)>at).sort((a,b)=>Date.parse(a.occurred_at)-Date.parse(b.occurred_at)),past=q?rows:rows.filter(e=>!(Date.parse(e.occurred_at)>at)).sort((a,b)=>Date.parse(b.occurred_at)-Date.parse(a.occurred_at));
- $('#results').innerHTML=(up.length?`<div class="ev-soon"><h3 class="ge-day">Coming up</h3>${up.map((e,i)=>row(e,i>=GE_SOON?' hidden':'')).join('')}${up.length>GE_SOON?'<button type="button" class="ghost ge-more" data-ev-soon>Show all upcoming</button>':''}</div>${past.length?'<h3 class="ge-day">Latest</h3>':''}`:'')+past.map(e=>row(e)).join('')||'<div class="empty all-clear"><img class="sticker" src="brand/thinking.webp" alt=""><div><strong>No matching messages.</strong>Try another account or a broader search.</div></div>';notice('')}catch(e){errCaught(e);notice(e.message,true);if($('#results').textContent==='Loading…')$('#results').innerHTML=''}}
+ function draw(rows){const at=Date.now(),up=q?[]:rows.filter(e=>Date.parse(e.occurred_at)>at).sort((a,b)=>Date.parse(a.occurred_at)-Date.parse(b.occurred_at)),past=q?rows:rows.filter(e=>!(Date.parse(e.occurred_at)>at)).sort((a,b)=>Date.parse(b.occurred_at)-Date.parse(a.occurred_at));
+ $('#results').innerHTML=(up.length?`<div class="ev-soon"><h3 class="ge-day">Coming up</h3>${up.map((e,i)=>row(e,i>=GE_SOON?' hidden':'')).join('')}${up.length>GE_SOON?'<button type="button" class="ghost ge-more" data-ev-soon>Show all upcoming</button>':''}</div>${past.length?'<h3 class="ge-day">Latest</h3>':''}`:'')+past.map(e=>row(e)).join('')||'<div class="empty all-clear"><img class="sticker" src="brand/thinking.webp" alt=""><div><strong>No matching messages.</strong>Try another account or a broader search.</div></div>'}
+ try{const rows=await request(url);last=true;if(n!==evSearched)return;
+  const box=$('#results'),want=rows.map(e=>''+e.id),kept=early?[...box.querySelectorAll('article')].filter(a=>want.includes(a.dataset.event)||a.remove()).map(a=>a.dataset.event):[];
+  if(kept.length)box.insertAdjacentHTML('beforeend',rows.filter(e=>!kept.includes(''+e.id)).map(e=>row(e)).join(''));else draw(rows);
+  notice('')}catch(e){last=true;errCaught(e);notice(e.message,true);if($('#results').textContent==='Loading…')$('#results').innerHTML=''}}
 $('#search').onclick=search;$('#account').onchange=search;
 // A question searched with every account in view gets a short answer above the results, from Ask (search_ask.py, the
 // palette's own turns), with the messages it read to open. Three words or more, once per search; nothing when it isn't
