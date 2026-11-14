@@ -119,7 +119,7 @@ const deliveryTone=s=>({sent:'mint',delivered:'mint',queued:'lavender',pending:'
 // One delivery on Connections: what happened, to which to-do, when, and why it waits. Every status the deliveries table
 // takes has a label (tests/test_delivery_labels.py); one without reads "Other", never its raw key.
 const DELIVERY_LABEL={sent:'Sent',delivered:'Sent',queued:'Waiting to send',pending:'Waiting to send',grouped:'Grouped with others',sending:'Sending',uncertain:'Checking delivery',cancelled:'Canceled',previewed:'Preview, not sent',not_sent:'In the app only'};
-const deliveryStatusLabel=s=>Object.hasOwn(DELIVERY_LABEL,s)?DELIVERY_LABEL[s]:'Other';
+const deliveryStatusLabel=s=>Object.prototype.hasOwnProperty.call(DELIVERY_LABEL,s)?DELIVERY_LABEL[s]:'Other';
 const DELIVERY_ERROR={gateway_preflight_failed:'Couldn’t send yet. It retries.',delivery_not_admitted:'This send was held back. It retries.',delivery_outcome_unknown:'Not sure it arrived. Checking before it resends.',interrupted_delivery:'Send interrupted. Checking before it resends.'};
 const deliveryRow=d=>make('div',{},chipNode(deliveryStatusLabel(d.status),deliveryTone(d.status)),make('span',{class:'grow'},state.suggestions.find(s=>s.id===d.suggestion_id)?.title||d.suggestion_id),timeNode(d.updated_at),
  d.error?make('small',{class:'error'},DELIVERY_ERROR[d.error]||d.error):'',d.needs_edit?make('small',{},'Telegram update pending'):'');

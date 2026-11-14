@@ -45,7 +45,7 @@ class DeliveryLabels(unittest.TestCase):
 
     def test_no_raw_key_reaches_the_badge(self):
         source = RENDER.read_text(encoding='utf-8')
-        self.assertIn("const deliveryStatusLabel=s=>Object.hasOwn(DELIVERY_LABEL,s)?DELIVERY_LABEL[s]:'Other';", source)
+        self.assertIn("const deliveryStatusLabel=s=>Object.prototype.hasOwnProperty.call(DELIVERY_LABEL,s)?DELIVERY_LABEL[s]:'Other';", source)
         row = re.search(r'const deliveryRow=d=>.*', source)[0]
         self.assertIn('chipNode(deliveryStatusLabel(d.status)', row)
         self.assertNotIn('||d.status', row)

@@ -53,6 +53,8 @@ ALWAYS = {
     'test_test_select.py', 'test_source_icons.py', 'test_kinds.py',
     # every module's tables (export entries), every source file's English (catalogs), every help article against the code
     'test_knowledge_export.py', 'test_i18n.py', 'test_help.py',
+    # every write to the deliveries table has a label on Connections, Checks
+    'test_delivery_labels.py',
 }
 # Python that only puts the dashboard page together from its parts and serves it: a part's change reaches the Python
 # tests that look at the page, and those name dashboard_parts or the page (they're picked by name), not every test that
