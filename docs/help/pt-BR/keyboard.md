@@ -1,48 +1,48 @@
 ---
-title: Teclado e a paleta de comandos
+title: Teclado e paleta de comandos
 area: getting-started
-summary: Chegue a tudo no painel pelo teclado: a paleta, as teclas de navegação e as teclas de uma tarefa.
+summary: Acesse tudo no dashboard pelo teclado: a paleta, os atalhos de navegação, como percorrer tarefas e os atalhos de uma tarefa.
 covers: keyboard
 code: dashboard.html
 order: 5
-translated: 9d9a056e308ced41
+translated: ebf5345474689237
 ---
 ## A paleta
 
-Aperte `⌘K` no Mac ou `Ctrl K` no Windows e no Linux, ou `/`, para abrir **Pesquisa e comandos**. Digite parte de um nome: uma ação, uma página, uma tarefa, uma pessoa, uma organização, um projeto ou uma mensagem. Em **Mensagens** aparecem os melhores resultados, e **Ver todos os resultados** abre a lista completa. Use as setas e Enter, ou Esc para fechar. Os comandos recentes aparecem primeiro.
+Pressione `⌘K` no Mac, `Ctrl K` no Windows e Linux ou `/` para abrir **Pesquisa e comandos**. Digite parte de um nome: uma ação, uma página, uma tarefa, uma pessoa, uma organização, um projeto ou uma mensagem. Use as setas e Enter, ou Esc para fechar. Os comandos recentes aparecem primeiro, e **Ver todos os resultados** abre todas as mensagens correspondentes.
 
-No celular, toque no ícone de busca na barra superior.
+No celular, toque no ícone de pesquisa na barra superior.
 
-## Fazer uma pergunta
+## Faça uma pergunta
 
-Digite uma pergunta, como “o que a Kim disse sobre o piloto?”, e uma resposta curta tirada dos seus próprios e-mails e mensagens aparece acima dos resultados, com um link para cada mensagem usada. Ela responde no idioma da pergunta, só com a área que você está vendo (Todos, Trabalho ou Pessoal). Um nome ou algumas palavras-chave só fazem uma busca. A resposta nunca envia nada nem cria um to-do, e precisa de um modelo (Configurações, Modelo).
+Digite uma pergunta, como “o que a Kim disse sobre o piloto?”, e uma resposta curta, baseada nos seus e-mails e mensagens, aparece acima dos resultados, com um link para cada mensagem usada. A resposta é no idioma em que você faz a pergunta e usa apenas a área que está visualizando (Tudo, Trabalho ou Pessoal). Se você digitar um nome ou algumas palavras-chave, a busca será feita normalmente.
 
-Se você perguntar sobre uma pessoa e um período, como “o que a Kim disse na semana passada?”, ela lê só as mensagens dessa pessoa ou com ela nesses dias, no seu fuso horário. Se ela não enviou nada nesse período, a resposta diz isso e mostra a última mensagem dela com a data.
+Pergunte sobre alguém e um período, como “o que a Kim disse na semana passada?”, e a assistente vai ler apenas as mensagens dessa pessoa ou as mensagens trocadas com ela naqueles dias, no seu fuso horário. Se não houver mensagens nesse período, ela avisa e mostra a mensagem mais recente da pessoa, com a data.
 
-Ela também lê o que a Machine já guarda sobre a pergunta: promessas abertas ou encerradas nos últimos 30 dias, o que aprendeu, o resumo da pessoa, do projeto ou da organização sobre a qual você pergunta e notas de reuniões. Cada item usado pela resposta aparece abaixo dela, com o nome do que é (Promessa, Aprendido, Resumo, Notas de reuniões), e abre onde fica. Só é lido o que combina com a pergunta, e só da área que você está vendo.
+A assistente também consulta o que a Machine já mantém sobre o assunto: promessas (em aberto ou encerradas nos últimos 30 dias), o que aprendeu, o resumo da pessoa, do projeto ou da organização sobre os quais você perguntou e as notas de reunião. Cada item usado na resposta aparece abaixo dela, identificado pelo tipo (como Promessa, Aprendizado, Resumo ou Notas de reunião), e abre no local onde está. A assistente consulta apenas o que corresponde à pergunta, na área que você está visualizando.
 
-Se várias pessoas têm esse nome, diz de qual se trata. As outras mensagens lidas aparecem em Mensagens. A pergunta que uma busca vazia sugere é sempre uma para a qual há mensagens.
+Se várias pessoas tiverem esse nome, a assistente informa de qual delas está falando. As outras mensagens consultadas aparecem em Mensagens. A pergunta sugerida quando a busca está vazia é uma pergunta para a qual existem mensagens. A resposta nunca envia nada nem adiciona uma tarefa e requer um modelo (Configurações, Modelo).
 
 ## Atalhos
 
-Aperte `?` para ver **Atalhos de teclado**, a lista completa para o seu computador.
+Pressione `?` para abrir **Atalhos de teclado**, a lista completa para o seu computador.
 
-- Ir para uma página: `G` e depois `T` Tarefas, `C` Calendário, `P` Pessoas, `O` Organizações, `J` Projetos, `F` Fleet, `L` Aprendizado, `N` Conexões, `,` Configurações. `G` e depois `E` abre os resultados da pesquisa de mensagens. Os antigos `G` e depois `S` e `G` e depois `B` continuam funcionando.
-- `N` adiciona uma nova tarefa. `T` inicia Falar, ou encerra enquanto está ao vivo. `J` e `K` (ou `↓` e `↑`) andam por uma lista, Enter abre.
-- Em uma tarefa: `E` renomeia, `S` adia, `D` marca como feita, `R` escreve no chat dela.
-- No Calendário: `T` vai para hoje, `J` e `K` (ou `→` e `←`) para a semana ou o mês seguinte ou anterior. `A`, `W` e `M` mudam para Agenda, Semana e Mês.
-- Em um computador, `⌘B` no Mac ou `Ctrl B` no Windows e Linux recolhe a barra lateral em ícones e abre de novo.
+- Acessar uma página: `G` e depois `T` para Tarefas, `C` para Calendário, `R` para Rotinas, `P` para Pessoas, `O` para Organizações, `J` para Projetos, `F` para Fleet, `L` para Aprendizado, `N` para Conexões, `,` para Configurações. `G` e depois `E` abrem os resultados da busca de mensagens.
+- `N` adiciona uma tarefa. `T` inicia o Talk ou encerra quando ele está em andamento. `J` e `K` (ou `↓` e `↑`) percorrem uma lista. Enter abre o item.
+- Em uma tarefa: `E` renomeia, `S` adia, `D` marca como feita e `R` abre o chat para você escrever.
+- No Calendário: `T` vai para hoje, `J` e `K` (ou `→` e `←`) vão para a semana ou o mês seguinte ou anterior. `A`, `W` e `M` alternam entre Agenda, Semana e Mês.
+- No computador, `⌘B` no Mac ou `Ctrl B` no Windows e Linux recolhe a barra lateral para exibir ícones e a abre novamente.
 
-As teclas não funcionam enquanto você digita em um campo.
+Os atalhos não funcionam enquanto você digita em um campo.
 
-## Navegar
+## Navegação
 
-- Cada página põe o foco no primeiro item quando você chega pelo teclado. Em Tarefas é a primeira tarefa, ou a primeira lista quando todas estão recolhidas.
-- `J` ou `↓` vai para a próxima tarefa, `K` ou `↑` para a anterior. O título de uma lista recolhida também é uma parada: Enter ou `→` abre a lista, `←` recolhe de novo.
-- Enter em uma tarefa abre o chat dela, pronto para digitar. Esc sai da caixa, e o próximo Esc fecha o chat e volta para a tarefa. Com a caixa vazia, um Esc fecha.
-- Esc também fecha uma janela, a paleta e a lista de atalhos, e devolve o foco para onde estava.
-- Tab passa pelos botões. O que tem o foco mostra um contorno.
+- Ao acessar uma página pelo teclado, o foco vai para o primeiro item.
+- `J` ou `↓` vai para a próxima tarefa; `K` ou `↑`, para a anterior. O primeiro item de uma lista recolhida também recebe o foco: Enter ou `→` abre a lista, e `←` recolhe novamente.
+- Enter em uma tarefa abre o chat dela, pronto para você digitar. Esc sai do campo, e o próximo Esc fecha o chat e volta para a tarefa. Se o campo estiver vazio, um Esc fecha o chat.
+- Esc também fecha uma caixa de diálogo, a paleta e a lista de atalhos, e devolve o foco ao local anterior.
+- Tab percorre os botões. O item em foco aparece contornado.
 
 ## Nenhuma tecla envia nada
 
-Enviar, aprovar ou publicar nunca acontece por uma tecla ou direto da paleta. Itens como Revisar o e-mail só abrem o rascunho, onde ele pode ser lido, alterado e enviado com o próprio botão. A única exceção é [Percorrer](cards.md): ali Enter envia o rascunho que mostra inteiro.
+Nenhuma tecla nem opção da paleta envia, aprova ou publica algo. Opções como "Revisar o e-mail" apenas abrem o rascunho para você ler, editar e enviar pelo botão do próprio rascunho. A única exceção é [Revisar](cards.md): nessa opção, Enter envia o rascunho completo que aparece.

@@ -1,28 +1,28 @@
 ---
 title: Von einer Website abgemeldet
 area: troubleshooting
-summary: LinkedIn oder X hat deine Machine abgemeldet. Melde sie wieder an, einmal oder dauerhaft.
+summary: LinkedIn oder X hat deine Machine abgemeldet. Melde dich wieder an, einmalig oder dauerhaft.
 covers: 
 code: browser_login.py, dashboard.html, dashboard/connections-signin.js
 order: 2
-translated: b77b372b9332ca2b
+translated: da165847c9a9d091
 ---
-Websites wie LinkedIn und X werden im eigenen Browser deiner Machine gelesen. Manchmal meldet eine Website ihn ab.
+Websites wie LinkedIn und X werden im eigenen Browser deiner Machine aufgerufen. Manchmal meldet dich eine Website ab.
 
 ## Wieder anmelden
 
-Die Quelle unter **Verbindungen** und der obere Teil deiner Aufgaben zeigen, dass sie abgemeldet ist. Tippe auf **Erneut anmelden** und melde dich in einem kleinen Fenster im Dashboard an.
+Unter **Verbindungen** und oben in deinen Aufgaben steht, dass du abgemeldet bist. Klicke auf **Hier anmelden** und melde dich in einem kleinen Fenster auf dem Dashboard an.
 
-Setz beim Anmelden ein Häkchen bei **Für nächstes Mal speichern**. Wenn die Website deine Machine das nächste Mal abmeldet, meldet sie sich mit einem Tippen wieder an. Das Passwort bleibt verschlüsselt auf deiner Machine. Die KI sieht es nie.
+Aktiviere **Für nächstes Mal speichern**, damit du dich beim nächsten Mal mit einem Klick wieder anmelden kannst. Das Passwort bleibt auf deiner Machine verschlüsselt und die KI sieht es nie.
 
 ## Passwörter und Codes
 
-Gib Passwörter selbst ein. Codes für die Zwei-Schritt-Bestätigung gibst du ebenfalls selbst ein.
+Gib Passwörter selbst ein. Auch Codes für die zweistufige Anmeldung musst du selbst eingeben.
 
-Gespeicherte Anmeldungen stehen unter **Verbindungen**, **Anmeldungen**. **Vergessen** entfernt eine.
+Deine gespeicherten Anmeldungen findest du unter **Verbindungen** > **Anmeldungen**. Mit **Vergessen** kannst du eine davon entfernen.
 
-## Wenn die Seite ablehnt oder eine Roboterprüfung will
+## Wenn die Website die Anmeldung ablehnt oder eine Roboterprüfung verlangt
 
-LinkedIn, X und Seiten hinter einer Cloudflare-Prüfung lehnen Anmeldungen aus einem Browser in der Cloud oft ab. Auf einer gehosteten Machine zeigt die Anmeldung dann **Über deine Verbindung zu Hause anmelden**. Das öffnet deine Einrichtungsseite, wo der Browser deiner Machine über dein Internet zu Hause rausgehen kann, mit Tailscale oder über deinen eigenen Proxy. Melde dich danach erneut an.
+LinkedIn, X und Websites mit einer Cloudflare-Prüfung lehnen Anmeldungen über einen Browser in der Cloud oft ab. Bei einer gehosteten Machine wird dann **Über deine Verbindung zu Hause anmelden** angezeigt. Damit öffnest du deine Einrichtungsseite. Dort kann der Browser deiner Machine über Tailscale oder deinen eigenen Proxy auf das Internet über deinen Heimanschluss zugreifen. Melde dich anschließend erneut an.
 
-Auf deinem eigenen Computer brauchst du das nicht: Sein Browser ist schon zu Hause.
+Auf deinem eigenen Computer brauchst du das nicht: Der Browser ist bereits mit deinem Heimnetz verbunden.

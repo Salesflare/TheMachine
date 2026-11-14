@@ -1,53 +1,55 @@
 ---
 title: Gmail
 area: connections
-summary: Liest deine Mails und entwirft Antworten in deinem Ton. Sendet eine E-Mail erst, nachdem du sie freigegeben hast.
+summary: Liest deine E-Mails und entwirft Antworten in deinem Stil. E-Mails werden erst gesendet, wenn du sie freigibst.
 covers: connector:gmail
 code: onboarding.py, google_api.py, next_actions.py
 site: Connect Google, Mail and Calendar, Disconnect, Sign in with Google, Use your own app
 order: 10
-translated: e06946aaa6ad0e1a
+translated: c1f2362cd496840e
 ---
-## Was es liest
+## Was gelesen wird
 
-Alle deine Mails: die letzten 7 Tage beim Verbinden, danach alles Neue, eingehend und ausgehend. Mails, die du sendest, zählen auch, damit es lernt, wie du schreibst und was du versprochen hast.
+Alle deine E-Mails: die der letzten 7 Tage, wenn du die Verbindung herstellst, und danach alle neuen, ein- und ausgehenden. Auch gesendete E-Mails zählen. So lernt The Machine, wie du schreibst und was du versprochen hast.
 
-Mails aus Werbung, Newslettern, Benachrichtigungen und Foren werden zuerst kurz angesehen: Absender, Betreff und ein paar Wörter, viele auf einmal. Wenn eine wichtig ist, wird sie ganz gelesen und kann zu einer Aufgabe werden. Nichts wird ungesehen übersprungen.
+Werbung, Newsletter, Updates und E-Mails aus Foren werden zuerst kurz geprüft: Absender, Betreff und ein paar Wörter, oft mehrere auf einmal. Wenn eine E-Mail wichtig ist, wird sie vollständig gelesen und kann zu einer Aufgabe werden. Nichts wird ungesehen übersprungen.
 
-## Was es senden kann
+## Was gesendet werden kann
 
-Eine E-Mail aus einer Aufgabe, und nur, nachdem du sie freigegeben hast. **Ausführen** bereitet einen Entwurf vor. **Prüfen und senden** öffnet ihn, bereit zum Bearbeiten, und nichts geht raus, bis du auf **Jetzt senden** tippst. **Mit Google anmelden** bittet Google auch um das Senden. Mit deiner eigenen App auf deinem eigenen Computer ist die Anmeldung nur lesend, bis du das Senden selbst hinzufügst.
+Eine E-Mail zu einer Aufgabe, und erst, nachdem du sie freigegeben hast. Mit **Ausführen** wird ein Entwurf vorbereitet. **Prüfen und senden** öffnet ihn, damit du ihn bearbeiten kannst. Gesendet wird erst, wenn du auf **Jetzt senden** drückst. **Mit Google anmelden** bittet Google auch um die Berechtigung zum Senden. Wenn du deine eigene App auf deinem eigenen Computer verwendest, ist die Anmeldung nur lesend, bis du selbst den Versand einrichtest.
 
-**Von** in der Prüfung ist eine kleine Auswahl, wenn Gmail dieses Postfach als einen Alias von dir senden lässt (einen mit **Meine** markierten in den Einstellungen, [Deine Adressen](settings.md#your-addresses)). Eine Antwort auf Mail, die an diesen Alias ging, startet von ihm; neue Mail startet von der Adresse deines Postfachs. Direkt vor dem Senden wird Gmail noch einmal gefragt: Bestätigt es die Adresse nicht, wird nichts gesendet.
+**Von** in der Prüfung ist ein kleines Auswahlmenü. Es wird angezeigt, wenn Gmail für dieses Postfach den Versand über einen deiner Aliasse zulässt, der in den **Einstellungen** unter [Deine Adressen](settings.md#your-addresses) mit **Meine** gekennzeichnet ist. Eine Antwort auf eine E-Mail, die an diesen Alias geschickt wurde, wird von dieser Adresse aus gesendet. Neue E-Mails werden von deiner Postfachadresse aus gesendet. Unmittelbar vor dem Senden fragt Gmail noch einmal nach. Wenn Gmail die Adresse nicht bestätigt, wird nichts gesendet.
 
-Eine Antwort landet im Verlauf der E-Mail, auf die sie antwortet. Geht sie von einem anderen Postfach raus als dem, in dem die E-Mail ankam, sagt die Aufgabe das vor dem Senden: Bei der Gegenseite landet sie trotzdem im selben Verlauf.
+Eine Antwort wird in den Thread der E-Mail eingefügt, auf die sie antwortet. Wenn sie von einem anderen deiner Postfächer gesendet wird als dem, an das die E-Mail ging, weist dich die Aufgabe darauf hin, bevor du sendest. Die Antwort landet trotzdem im Thread der ursprünglichen E-Mail.
 
-## Verbinden
+Nachdem eine Antwort gesendet wurde, wird der Thread für ein paar Tage (3, sofern in der Aufgabe nichts anderes steht) mit dem Label „Zurückgestellt“ aus deinem Posteingang verschoben. Danach kommt er zurück oder früher, wenn jemand antwortet. Die Prüfung weist dich darauf hin, bevor du sendest.
+
+## Verbindung herstellen
 
 Auf einer gehosteten Machine:
 
 1. Öffne deine Einrichtungsseite unter app.themachine.computer/setup.
-2. Tippe unter **Mail und Kalender** auf **Google verbinden** und melde dich an. Auf dem Google-Bildschirm steht Salesflare, die Firma hinter The Machine.
-3. Gmail und Google Calendar werden zusammen verbunden.
+2. Drücke unter **Mail und Kalender** auf **Google verbinden** und melde dich an. Auf dem Google-Bildschirm wird Salesflare genannt, das Unternehmen hinter The Machine.
+3. Gmail und Google Kalender werden gemeinsam verbunden.
 
-Mit Google registriert und auf diesem Bildschirm Gmail und Kalender erlaubt? Dann werden sie von selbst verbunden. Gesendet wird nur, wenn du auf Senden tippst.
+Wenn du dich mit Google angemeldet und auf diesem Bildschirm den Zugriff auf Gmail und Kalender erlaubt hast, werden sie automatisch verbunden. E-Mails werden nur gesendet, wenn du auf „Senden“ drückst.
 
-Oder im Dashboard: **Verbindungen**, **E-Mail**, wähle Gmail und tippe auf **Mit Google anmelden**. Danach bist du zurück im Dashboard.
+Oder im Dashboard: **Verbindungen**, **E-Mail**, Gmail auswählen und auf **Mit Google anmelden** drücken. Danach kehrst du zum Dashboard zurück.
 
-Auf deinem eigenen Computer, sobald er [mit deinem Konto gekoppelt](friends.md#a-machine-on-your-own-computer) ist:
+Auf deinem eigenen Computer, sobald er [mit deinem Konto gekoppelt ist](friends.md#a-machine-on-your-own-computer):
 
-1. Öffne im Dashboard **Verbindungen**, dann **E-Mail**, und wähle Gmail.
-2. Tippe auf **Mit Google anmelden** und melde dich in dem Tab an, der sich öffnet. Gmail und Google Calendar werden zusammen verbunden.
+1. Öffne im Dashboard **Verbindungen**, dann **E-Mail**, und wähle Gmail aus.
+2. Drücke auf **Mit Google anmelden** und melde dich im geöffneten Tab an. Gmail und Google Kalender werden gemeinsam verbunden.
 
-Nicht gekoppelt, oder mit deinem eigenen Google-OAuth-Client: Öffne dort **Eigene App nutzen** oder führe `assistant connect gmail` aus. Drücke **Google öffnen**, melde dich an und füge dann die Adresse ein, zu der Google dich schickt. Google Calendar für dieselbe Adresse kommt mit.
+Wenn dein Computer nicht gekoppelt ist oder du deinen eigenen Google OAuth-Client verwendest, öffne dort **Eigene App nutzen** oder führe `assistant connect gmail` aus. Drücke auf **Google öffnen**, melde dich an und füge dann die Adresse ein, zu der Google dich weiterleitet. Google Kalender für dieselbe Adresse wird ebenfalls verbunden.
 
-Ein Google-Workspace-Admin muss die App unter Umständen zuerst in der Admin-Konsole erlauben.
+Möglicherweise muss ein Google Workspace-Administrator die App zuerst in der Admin-Konsole zulassen.
 
-## Entfernen
+## Verbindung entfernen
 
-- Auf einer gehosteten Machine: Tippe auf deiner Einrichtungsseite neben der Adresse auf **Trennen**. Das entfernt Gmail und Kalender für diese Adresse, und deine Machine vergisst die Anmeldung. Deine anderen Machines behalten ihre. Im Dashboard bringt dich **Trennen ↗** unter Verbindungen dorthin. **Neu verbinden** dort meldet dich erneut an, ohne das Dashboard zu verlassen.
-- Auf deinem eigenen Computer: **Verbindungen**, Gmail öffnen, **Details**, dann **Trennen**. Es hört auf zu lesen. Was es schon reingebracht hat, bleibt. Wenn nichts anderes darauf diese Google-Anmeldung nutzt, vergisst sie sie. Deine anderen Machines behalten ihre.
+- Auf einer gehosteten Machine: Drücke auf deiner Einrichtungsseite neben der Adresse auf **Trennen**. Gmail und Kalender für diese Adresse werden entfernt und deine Machine vergisst die Anmeldung. Auf deinen anderen Machine bleibt ihre Anmeldung bestehen. Über **Trennen ↗** bei Verbindungen im Dashboard gelangst du zur Einrichtungsseite. Über **Neu verbinden** kannst du dich dort erneut anmelden, ohne das Dashboard zu verlassen.
+- Auf deinem eigenen Computer: Öffne **Verbindungen**, wähle Gmail und dann **Details**. Drücke anschließend auf **Trennen**. Gmail liest dann keine E-Mails mehr. Was bereits importiert wurde, bleibt erhalten. Wenn keine andere Verbindung diese Google-Anmeldung verwendet, wird sie vergessen. Auf deinen anderen Machine bleibt ihre Anmeldung bestehen.
 
-## Bei Google deinstallieren
+## App bei Google deinstallieren
 
-Öffne in deinem Google-Konto Sicherheit, dann Deine Verbindungen zu Drittanbieter-Apps und -Diensten, und entferne Salesflare (Mit Google anmelden oder gehostet) oder deine eigene App.
+Öffne in deinem Google-Konto den Bereich „Sicherheit“, dann „Deine Verbindungen zu Drittanbieter-Apps und -Diensten“, und entferne Salesflare (Mit Google anmelden oder gehostet) oder deine eigene App.

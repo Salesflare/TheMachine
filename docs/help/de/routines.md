@@ -1,142 +1,144 @@
 ---
 title: Routinen
 area: cards
-summary: Arbeit, die deine Machine von selbst in einem Rhythmus erledigt, wie eine Montagsübersicht deiner offenen Deals. Sie liest nur.
+summary: Aufgaben, die deine Machine regelmäßig selbst erledigt, zum Beispiel montags eine Zusammenfassung deiner offenen Deals. Sie liest nur.
 covers: tab:routines
 code: routines.py, routines_app.py, routine_recipe.py, routine_imports.py, routine_patterns.py, routine_changes.py, routine_templates.py, mail_cleanup.py, mail_cleanup_app.py, birthdays.py, birthdays_app.py, birthdays_facebook.py, birthdays_facebook_app.py, reading_digest.py, reading_digest_app.py, subscriptions.py, subscriptions_app.py, dashboard/routines-page.js, dashboard/todos-digest.js, dashboard/todos-cleanup.js, dashboard/todos-facebook-birthdays.js, dashboard/todos-facebook-people.js, dashboard/todos-subs.js
 order: 10
 keywords: routine, daily digest, interests, automation, scheduled, every week, every morning, report, suggested, digest, newsletter, birthday, facebook birthdays, import birthdays, subscriptions, free trial, renewal, cancel subscription
-translated: 9c3559a910b9dd37
+translated: ed2171ef31eb6213
 ---
-## Eine anlegen
+## Eine Routine erstellen
 
-Öffne **Routinen** in der Seitenleiste und sag in einer Zeile, was sie wann tun soll: „jeden Tag um 9, fasse meine offenen Deals zusammen“ oder „jeden Werktag um 8, liste die Mails, auf die ich noch antworten muss“. Dann **Hinzufügen**.
+Öffne **Routinen** in der Seitenleiste und beschreibe in einer Zeile, was die Routine tun und wann sie laufen soll: „jeden Montag um 9 Uhr meine offenen Deals zusammenfassen“ oder „jeden Werktagmorgen die Mails auflisten, auf die ich noch antworten muss“. Wähle dann **Hinzufügen**.
 
-Ohne Uhrzeit läuft sie um 8:00. Die Uhrzeit gilt auf der Uhr deiner Machine. Ihr erster Lauf gibt ihr einen kurzen Namen.
+Ohne Zeitangabe läuft die Routine um 8:00 Uhr. Maßgeblich ist die Uhr deiner Machine. Beim ersten Lauf erhält sie einen kurzen Namen.
 
-**Hinzufügen** macht zuerst einen Testlauf, damit du siehst, was sie liefert, bevor du sie behältst. Nichts wird gesendet oder gespeichert. Dann behält **Hinzufügen** sie in ihrem Rhythmus, **Ändern** probiert andere Worte oder einen neuen Namen und **Abbrechen** verwirft sie.
+Mit **Hinzufügen** wird zuerst ein Testlauf ausgeführt. So siehst du, was dabei herauskommt, bevor du die Routine übernimmst. Dabei wird nichts gesendet oder gespeichert. Mit **Hinzufügen** übernimmst du die Routine und lässt sie regelmäßig laufen. Mit **Ändern** probierst du andere Formulierungen oder einen neuen Namen aus, und mit **Abbrechen** verwirfst du sie.
 
 ## Vorlagen
 
-Unter **Vorlagen** unten auf Routinen schaltet **Hinzufügen** eine fertige Routine ein. Sie läuft sofort einmal und dann jeden Morgen um 7:30 (Spam aufräumen jede Stunde, Abos und Testphasen einmal im Monat). Ihre Karte zeigt ihre Worte wie jede Routine, und **Bearbeiten** ändert sie oder ihren Namen.
+Unter **Vorlagen** am unteren Ende von Routinen kannst du mit **Hinzufügen** eine fertige Routine aktivieren. Sie läuft sofort einmal und danach jeden Morgen um 7:30 Uhr (Spam aufräumen läuft stündlich, Abos und Testphasen einmal im Monat). Auf der Karte steht wie bei jeder Routine, was sie tut. Mit **Bearbeiten** kannst du die Formulierung oder den Namen ändern.
 
-Kommen viele Newsletter an, während Newsletter aufräumen aus ist (25 oder mehr in einer Woche, von mindestens 5 Absendern), sagt eine Zeile über deinen To-dos, wie viele kamen und was es tun würde, mit **Einschalten** und **Nein danke**.
+Wenn viele Newsletter eingehen und Newsletter aufräumen deaktiviert ist (mindestens 25 in einer Woche von mindestens 5 Absendern), erscheint über deinen Aufgaben ein Hinweis mit der Anzahl und der Beschreibung der geplanten Aktion. Dazu gibt es **Einschalten** und **Nein danke**.
 
-Spam aufräumen wird genauso angeboten, wenn in einer Woche 5 oder mehr Mails von Hand in den Spam verschoben wurden. **Einschalten** fügt es hinzu wie **Hinzufügen** hier. Nach **Nein danke** kommt es nicht wieder, und eine Vorlage, die du schon einmal hattest, nie.
+Spam aufräumen wird auf dieselbe Weise vorgeschlagen, wenn du innerhalb einer Woche mindestens 5 Mails manuell in den Spam verschoben hast. Mit **Einschalten** wird die Vorlage wie hier mit **Hinzufügen** hinzugefügt. Bei **Nein danke** wird sie nicht noch einmal vorgeschlagen. Vorlagen, die du bereits hattest, werden nie wieder vorgeschlagen.
 
-**Newsletter aufräumen** macht ein To-do pro Bereich (Arbeit und Privat) mit den Newslettern des letzten Tages, jeweils mit **Behalten** oder **Abmelden**. Abmelden nutzt den Ein-Klick-Link der Liste oder ihre Abmelde-Mail von deiner Adresse, wenn Senden an ist. Sonst zeigt es **Abmeldeseite öffnen**.
+Mit **Newsletter aufräumen** wird für jeden Bereich (Arbeit und Privat) eine Aufgabe mit den Newslettern des letzten Tages erstellt. Für jeden gibt es **Behalten** oder **Abmelden**. Zum Abmelden wird der Ein-Klick-Link der Liste verwendet oder, wenn das Senden aktiviert ist, eine Abmelde-Mail von deiner Adresse gesendet. Andernfalls meldet The Machine dich über die Seite der Liste in ihrem eigenen Browser ab. Wenn du dich dort anmelden, ein Captcha lösen oder eine Auswahl treffen musst, bleibt das dir überlassen. In der Zeile steht der Grund, zusammen mit **Abmeldeseite öffnen**.
 
-Belege, Bestellungen und Zahlungsmitteilungen bleiben draußen. Mail über eine Gruppenadresse, etwa eine Google Group, steht unter dem, der sie geschrieben hat, und meldet dich nie von der Gruppe ab.
+Quittungen, Bestellungen und Zahlungsbenachrichtigungen werden ausgelassen. Mails, die über eine Gruppenadresse wie eine Google Group eingegangen sind, werden unter dem Namen des Verfassers aufgeführt. Du wirst dabei nie von der Gruppe abgemeldet. Wenn der Absender keine eigene Abmeldemöglichkeit anbietet, steht in der Zeile **Selbst abmelden**.
 
-**Spam aufräumen** macht ein To-do pro Bereich mit Mail von unbekannten Absendern, die nach Spam aussieht, jeweils mit **Spam** oder **Kein Spam**. Outlook verschiebt Spam in Junk-E-Mail, Gmail markiert ihn als Spam. Er prüft jede Stunde, damit Spam meist schon da ist, bevor du dazu kommst. Neuer Spam kommt auf dasselbe To-do, solange es offen ist.
+Mit **Spam aufräumen** wird für jeden Bereich eine Aufgabe mit Mails unbekannter Absender erstellt, die wie Spam aussehen. Für jede Mail kannst du **Spam** oder **Kein Spam** wählen. Outlook verschiebt Spam in den Junk-Ordner und Gmail markiert ihn als Spam. Die Routine prüft stündlich, damit Spam meist schon erfasst ist, bevor du danach schaust. Neuer Spam wird derselben Aufgabe hinzugefügt, solange sie noch offen ist.
 
-Gmail mit nur Leserechten, wie auf einer gehosteten Machine, kann Mail nicht in Spam verschieben. Dort gibt **Spam** einen Link, um sie in Gmail zu markieren, und The Machine merkt sich den Absender als Spam. Ohne verbundenes Mailkonto zeigt die Vorlage **Mail verbinden** statt **Hinzufügen**.
+Bei einem schreibgeschützt verbundenen Gmail-Konto, wie auf einer gehosteten Machine, können Mails nicht in den Spam verschoben werden. Dort öffnet **Spam** einen Link, über den du die Mail in Gmail markieren kannst. The Machine merkt sich den Absender als Spam. Wenn kein Mailkonto verbunden ist, wird bei der Vorlage statt **Hinzufügen** die Option **Mail verbinden** angezeigt.
 
-Unbekannt heißt, du hast ihnen nie geschrieben, und ein „Re:“ zählt nur in einem Verlauf als Gespräch, in dem du geschrieben hast. Kommt Mail von einem Absender, den du als Spam markiert hast (im To-do oder in deinem Postfach), wieder durch, steht sie im nächsten To-do als **Schon einmal als Spam markiert**. Was du selbst in den Spam verschoben hast, hilft auch, ähnliche Mail zu erkennen.
+Unbekannt bedeutet, dass du der Person noch nie geschrieben hast. Ein „Re:“ zählt nur dann als Unterhaltung, wenn du in diesem Thread selbst geschrieben hast. Wenn eine Mail von einem Absender, den du in der Aufgabe oder in deinem Postfach als Spam markiert hast, wieder durchkommt, erscheint sie in der nächsten Aufgabe mit dem Hinweis **Schon einmal als Spam markiert**. Mails, die du selbst in den Spam verschoben hast, helfen außerdem dabei, ähnliche Mails zu erkennen.
 
-Nichts ändert sich, bevor du auf dem To-do bestätigst. Tippe auf einen Absender, um die Mail vorher zu lesen: Sie bleibt ungelesen, und nichts ändert sich. Aus Spam aufräumen laden ihre Bilder aus dem Web nicht, damit der Absender nicht sieht, dass sie geöffnet wurde. Über entschiedene Absender wirst du nicht erneut gefragt. Ein Tag ohne Newsletter oder Spam ergibt kein To-do, und diese To-dos senden nie eine Benachrichtigung.
+Es wird nichts geändert, bevor du es in der Aufgabe bestätigst. Tippe auf einen Absender, um die Mail zuerst zu lesen: Sie bleibt ungelesen und es wird nichts geändert. Bei Spam aufräumen werden Bilder aus dem Internet nicht geladen. Der Absender kann also nicht sehen, dass du die Mail geöffnet hast. Absender, für die du dich entschieden hast, werden nicht erneut gefragt. Wenn an einem Tag keine Newsletter oder Spam eingehen, wird keine Aufgabe erstellt. Diese Aufgaben lösen nie eine Benachrichtigung aus.
 
-Sobald über jeden Absender entschieden ist, sagt das To-do, dass es fertig ist, und **Als erledigt markieren** steht darauf.
+Sobald du dich für alle Absender entschieden hast, wird die Aufgabe als abgeschlossen angezeigt und enthält **Als erledigt markieren**.
 
-**Tägliche Zusammenfassung** wählt einmal am Tag die wenigen Newsletter-Beiträge, die deine Zeit wert sind, in einer Aufgabe. Zu jedem steht in einer Zeile, warum er für dich wichtig ist. Tippe darauf, um die Mail zu lesen, oder nutze **In deiner Mail öffnen**. Nur Newsletter: nie Mail von Menschen, Belege oder Absender, die du abbestellt hast, und nie, was du schon gelesen hast. Sticht nichts heraus, gibt es keine Aufgabe.
+Mit **Tägliche Zusammenfassung** wird einmal täglich eine Aufgabe mit den wenigen Newsletter-Beiträgen erstellt, die sich für dich lohnen. Bei jedem steht in einer Zeile, warum er für dich relevant ist. Tippe auf einen Beitrag, um die Mail zu lesen, oder wähle **In deiner Mail öffnen**. Es werden nur Newsletter berücksichtigt, keine Mails von Personen, Quittungen oder Absender, von denen du dich abgemeldet hast. Bereits gelesene Mails werden ebenfalls ausgelassen. Wenn nichts besonders hervorsticht, wird keine Aufgabe erstellt.
 
-Sie lernt, was dich interessiert, aus dem, was du öffnest, markierst oder ungelesen archivierst, und aus **Mehr davon** und **Weniger davon** bei jedem Beitrag. Die Themen, nach denen sie wählt, stehen auf der Karte der Routine unter **Mehr zu** und **Weniger zu**. Entferne eins mit × oder füge eigene hinzu. Gestrichelte hat sie selbst gelernt. Eine neue Zusammenfassung ersetzt die offene, und sie schickt nie eine Benachrichtigung.
+Die Routine lernt, was dich interessiert, anhand der Inhalte, die du öffnest, markierst oder ungelesen archivierst, sowie über **Mehr davon** und **Weniger davon** bei jedem Vorschlag. Die Themen, nach denen sie sucht, stehen auf der Routinenkarte unter **Mehr zu** und **Weniger zu**. Mit × kannst du ein Thema entfernen oder eigene Themen hinzufügen. Gestrichelte Themen hat die Routine selbst gelernt. Eine neue Zusammenfassung ersetzt die noch offene Aufgabe und löst nie eine Benachrichtigung aus.
 
-Sie liest nur Absender, Betreff und Anfang jedes neuen Newsletters und stellt deiner KI eine kurze Frage dazu, mit einer Tagesgrenze, damit sie günstig bleibt. **Zeit ändern** legt die Uhrzeit fest. Änderst du ihre Worte, läuft sie wie jede Routine mit deinen Worten.
+Die Routine liest nur den Absender, den Betreff und den Anfang jedes neuen Newsletters. Außerdem stellt sie deiner KI dazu einmal täglich eine kurze Frage, damit es günstig bleibt. Mit **Zeitpunkt ändern** legst du die Uhrzeit fest. Sobald du die Formulierung änderst, läuft sie wie jede andere Routine mit deiner eigenen Formulierung.
 
-**Geburtstage** macht eine Aufgabe für jeden engen Kontakt, der heute Geburtstag hat: Menschen, denen du selbst schreibst, wie Freunde, Familie und regelmäßige Kontakte. Jede hat einen kurzen Glückwunsch, entworfen dort, wo ihr meist schreibt, etwa im WhatsApp-Chat oder in deinem Mail-Verlauf, in ihrer Sprache. Er geht erst raus, wenn du ihn sendest. Ein Tag ohne Geburtstage macht keine Aufgabe.
+Mit **Geburtstage** wird für jeden engen Kontakt, der heute Geburtstag hat, eine Aufgabe erstellt. Gemeint sind Personen, denen du selbst schreibst, zum Beispiel Freunde, Familie und regelmäßige Kontakte. Zu jedem Geburtstag gibt es einen kurzen Grußentwurf in dem Kanal, über den ihr normalerweise miteinander sprecht, etwa im WhatsApp-Chat oder im E-Mail-Thread. Der Gruß wird nur gesendet, wenn du ihn selbst abschickst. An Tagen ohne Geburtstage wird keine Aufgabe erstellt.
 
-Geburtstage kommen aus deinen Kalendern (Googles Geburtstagstermine und sein Kalender Geburtstage, jeden Morgen gelesen, auch wenn sie nicht synchronisiert werden, und der Outlook-Kalender Geburtstage), deinen Google-Kontakten auf einer selbst gehosteten Machine und einem Datumsfeld namens Geburtstag bei einer Person im Graph. Steht noch nirgends ein Geburtstag, sagt das Ergebnis **Noch keine Geburtstage bekannt** und wie du welche einträgst.
+Geburtstage stammen aus deinen Kalendern (den Geburtstagsterminen und dem Kalender „Geburtstage“ von Google, die jeden Morgen gelesen werden, auch wenn sie nicht synchronisiert sind, sowie dem Kalender „Geburtstage“ von Outlook), aus deinen Google-Kontakten auf einer selbst gehosteten Machine und aus einem Datumsfeld mit dem Namen Birthday bei einer Person im Graph. Wenn noch nirgendwo Geburtstage gespeichert sind, wird als Ergebnis **Noch keine Geburtstagsinfos** angezeigt und erklärt, wie du welche hinzufügen kannst.
 
-**Geburtstage aus Facebook importieren**: Sobald Geburtstage an ist, bietet eine Aufgabe an, die Geburtstagsseite von Facebook zu lesen. Tippe auf **Importieren**, und The Machine öffnet sie in ihrem Browser, scrollt, bis jeder Monat geladen ist, und liest Name und Geburtstag jedes Freundes. Sie zeigt, wie viele sie gefunden hat und wer nach Vor- und Nachname zu Personen in deinem Graph passt. Ein Name, den mehr als eine Person trägt, wird übersprungen und aufgelistet.
+**Geburtstage aus Facebook importieren**: Sobald Geburtstage aktiviert ist, bietet eine Aufgabe an, die Geburtstagsseite von Facebook auszulesen. Tippe auf **Importieren**. The Machine öffnet die Seite in ihrem Browser, scrollt, bis alle Monate geladen sind, und liest den Namen und Geburtstag jedes Freundes aus. Sie zeigt an, wie viele Geburtstage gefunden wurden und welche Personen anhand ihres Vor- und Nachnamens mit Personen in deinem Graph übereinstimmen. Namen, die mehreren Personen zugeordnet werden können, werden ausgelassen und aufgelistet.
 
-Nur **Speichern** behält sie, auf der Seite der Person: den Geburtstag und, wenn sie noch kein Foto hat, ihr Facebook-Profilbild. Einen Geburtstag oder ein Bild, das du dort eingetragen hast, behält sie, und ein Foto, das jemand schon hat, wird nie ersetzt. Auf Facebook wird nichts geschrieben.
+Nur mit **Speichern** werden die Geburtstage auf den Seiten der einzelnen Personen gespeichert. Außerdem wird das Facebook-Profilbild einer Person gespeichert, wenn sie noch kein Foto hat. Ein Geburtstag oder Bild, den oder das du dort selbst einträgst, bleibt erhalten. Ein bereits vorhandenes Foto wird nie ersetzt. Auf Facebook wird nichts gespeichert.
 
-Sie liest nie von selbst neu: Das macht **Erneut importieren** in der Aufgabe. Der Browser muss bei Facebook angemeldet sein. Ist er es nicht, tippe in der Aufgabe auf **Bei Facebook anmelden** und melde dich dort an; danach liest sie die Seite von selbst. The Machine meldet sich nie für dich an.
+Der Import wird nicht automatisch wiederholt. Das geht über **Erneut importieren** in der Aufgabe. Im Browser musst du bei Facebook angemeldet sein. Falls du noch nicht angemeldet bist, tippe in der Aufgabe auf **Bei Facebook anmelden** und melde dich dort an. Sobald du angemeldet bist, wird die Seite automatisch ausgelesen. The Machine meldet dich nie selbst an.
 
-Freunde, die niemand in deinem Graph hat, werden gezählt, mit ein paar Namen. **… als persönliche Kontakte hinzufügen** fügt sie alle auf einmal hinzu, auch nach Speichern: jede mit Name und Geburtstag, nie mit einer Work Fleet geteilt. Einen Namen, den schon jemand in deinem Graph hat oder jemand hatte, den du endgültig gelöscht hast, überspringt sie. Geburtstagserinnerungen kommen weiterhin nur für Leute, denen du schreibst.
+Freunde, die niemandem in deinem Graph zugeordnet werden können, werden mit einigen Namen aufgelistet. Mit **… als persönliche Kontakte hinzufügen** kannst du sie alle auf einmal hinzufügen, auch nach dem Speichern. Die Kontakte erhalten jeweils ihren Namen und Geburtstag und werden nie mit einer Work Fleet geteilt. Ein Name, der bereits einer Person in deinem Graph zugeordnet ist oder früher zu einer dauerhaft gelöschten Person gehörte, wird ausgelassen. Geburtstagsbenachrichtigungen gibt es weiterhin nur für Personen, denen du schreibst.
 
-**Rückgängig** in der Aufgabe entfernt genau diese Personen wieder, auch nach **Erneut importieren**.
+Mit **Rückgängig** in der Aufgabe werden genau diese Personen wieder entfernt, auch nach **Erneut importieren**.
 
-**Abos und Testphasen** liest einmal im Monat deine Belege, Rechnungen und Verlängerungshinweise und fasst deine Abos in einer Aufgabe zusammen: was jedes kostet, wann es als Nächstes abgebucht wird und ein Hinweis, wenn eine Testphase endet oder ein Preis steigt. Nur sichere Funde stehen darin. Findet sie nichts, gibt es keine Aufgabe.
+Mit **Abos und Testphasen** werden einmal im Monat deine Quittungen, Rechnungen und Verlängerungsbenachrichtigungen gelesen und deine Abos in einer Aufgabe zusammengefasst. Darin stehen die Kosten, der nächste Abbuchungstermin und ein Hinweis, wenn eine Testphase endet oder der Preis steigt. Aufgeführt werden nur Abos, bei denen sich die Routine sicher ist. Wenn sie nichts findet, wird keine Aufgabe erstellt.
 
-Wähle für jedes **Behalten** oder **Kündigen**. Ein behaltenes wird nicht erneut gefragt, außer sein Preis ändert sich. **Kündigen** gibt ihre Kündigungsseite oder einen Entwurf, der um die Kündigung bittet und erst rausgeht, wenn du ihn sendest. Zwischen den Läufen prüft sie täglich und macht eine Aufgabe, wenn eine Testphase oder Verlängerung innerhalb von 7 Tagen abgebucht wird.
+Wähle für jedes Abo **Behalten** oder **Kündigen**. Nach **Behalten** wird nicht erneut nachgefragt, außer der Preis ändert sich. Mit **Kündigen** wird die Kündigungsseite geöffnet oder ein Entwurf erstellt, in dem um die Kündigung gebeten wird. Der Entwurf wird nur gesendet, wenn du ihn selbst abschickst. Zwischen den monatlichen Läufen prüft die Routine jeden Tag, ob eine Testphase oder Verlängerung innerhalb der nächsten 7 Tage abgebucht wird. In diesem Fall wird eine Aufgabe erstellt.
 
-Solange ihre Worte die der Vorlage sind, läuft sie mit eigenem Code, ohne dein KI-Abo (Spam aufräumen listet neue Mail von unbekannten Absendern zuerst per Code und stellt deiner KI nur dann eine kurze Frage, wenn es welche gibt). Ein neuer Name ändert daran nichts. Änderst du ihre Worte, läuft sie wie jede Routine mit deinen Worten.
+Solange die Routine einer Vorlage deren Formulierung beibehält, läuft sie mit eigenem Code und ohne deinen KI-Tarif. (Spam aufräumen listet im Code zuerst neue Mails von unbekannten Absendern auf und stellt deiner KI nur dann eine kurze Frage, wenn es solche Mails gibt.) Ein neuer Name ändert daran nichts. Sobald du die Formulierung änderst, läuft die Routine wie jede andere mit deiner eigenen Formulierung.
 
-Newsletter aufräumen und Spam aufräumen enden weiter im selben To-do mit einer Wahl pro Mail. Geänderte Geburtstage geben ihr Ergebnis und höchstens einen Entwurf, kein To-do pro Person. **Zurück zur Vorlage** in **Bearbeiten** setzt ihre Worte zurück.
+Newsletter aufräumen und Spam aufräumen führen weiterhin zu derselben Aufgabe mit einer Auswahl für jede Mail. Eine bearbeitete Routine für Geburtstage liefert ihr Ergebnis und höchstens einen Entwurf, keine eigene Aufgabe pro Person. Mit **Zurück zur Vorlage** unter **Bearbeiten** wird die ursprüngliche Formulierung wiederhergestellt.
 
 ## Was eine Routine tut
 
-Zu ihrer Zeit liest deine Machine, was sie braucht, etwa deine Nachrichten, Termine und den Graph, und legt das Ergebnis auf der Seite Routinen ab. Jedes Ergebnis zeigt **Bereit**, **Nichts Neues** (mit Grund) oder **Hat nicht geklappt** (mit Grund). Ein Lauf, der ohne Ergebnis endet, zählt als nicht geklappt, nie als erledigt.
+Zur festgelegten Zeit liest deine Machine, was sie braucht, zum Beispiel deine Nachrichten, Termine und den Graph, und stellt das Ergebnis auf der Routinen-Seite bereit. Jedes Ergebnis ist mit **Bereit**, **Nichts Neues** (mit Begründung) oder **Hat nicht geklappt** (mit Begründung) gekennzeichnet. Ein Lauf, der ohne Ergebnis endet, gilt als fehlgeschlagen, nicht als erledigt.
 
-Routinen lesen nur: deine Nachrichten, Webseiten, GitHub und Seiten wie X im Browser. Sie senden, antworten, posten oder ändern nichts. Nur eine Vorlage ändert Mail, und nur, was du auf ihrem To-do bestätigst.
+Routinen lesen nur: deine Nachrichten, Webseiten, GitHub und Seiten wie X im Browser. Sie senden, beantworten oder veröffentlichen nichts und ändern nichts. Nur eine Vorlage kann Mails ändern, und auch dann nur, was du in ihrer Aufgabe bestätigst.
 
-Endet die Aufgabe einer Routine mit einem Post oder einer Nachricht, erledigt sie alles bis zu diesem Schritt und zeigt den Entwurf, etwa **Würde auf X posten:**. Nach einem echten Lauf bekommst du ihn als To-do zum Freigeben; ein Testlauf zeigt ihn nur. Sein Name sagt, worum es geht und wohin es geht, sein Button nennt den Schritt, etwa **Posten**, und **Von deiner Routine** darunter öffnet die Routine.
+Wenn eine Routine mit einem Beitrag oder einer Nachricht enden soll, führt sie alle Schritte bis dahin aus und zeigt den Entwurf, zum Beispiel **Würde auf X posten:**. Nach einem tatsächlichen Lauf erhältst du ihn als Aufgabe zur Freigabe. Bei einem Testlauf wird er nur angezeigt. Der Name der Aufgabe beschreibt, worum es geht und wo sie veröffentlicht wird. Die Schaltfläche nennt den Schritt, zum Beispiel **Posten**, und über **Aus deiner Routine** darunter öffnest du die Routine.
 
-Das To-do startet im Bereich des Kontos, von dem es ausgeht, etwa Arbeit für das X-Konto deiner Firma, und bittet also nie ums Verschieben.
+Die Aufgabe wird im Bereich des Kontos angezeigt, von dem aus sie gesendet wird, zum Beispiel unter Arbeit für das X-Konto deines Unternehmens. Du musst sie also nie verschieben.
 
-Ein Lauf kann deinen eingeschalteten [Skills](skills.md) folgen, ausgewählt nach dem, was die Routine tut: Nur die passenden werden ganz gelesen. Das Ergebnis nennt sie unter **Verwendet:**. Ein Skill bringt eine Routine nie dazu, etwas zu senden oder zu ändern.
+Ein Lauf kann den aktivierten [Skills](skills.md) folgen, die anhand der Aufgabe der Routine ausgewählt werden. Nur passende Skills werden vollständig gelesen. Die verwendeten Skills stehen unter **Verwendet:**. Ein Skill kann eine Routine nie dazu bringen, etwas zu senden oder zu ändern.
 
-Deine Routinen stehen unter **Deine Routinen**, unter den Vorschlägen. Ein langes Ergebnis ist auf eine kurze Vorschau eingeklappt; **Mehr anzeigen** öffnet es.
+Deine Routinen stehen unter **Deine Routinen**, unterhalb aller Vorschläge. Ein langes Ergebnis wird zu einer kurzen Vorschau eingeklappt. Mit **Mehr anzeigen** oder durch Tippen darauf kannst du es öffnen.
 
-Jeder Lauf kennt das letzte Ergebnis und kann so sagen, was sich seitdem geändert hat.
+Jeder Lauf kennt das letzte Ergebnis und kann deshalb sagen, was sich seitdem geändert hat.
 
-Nach einem guten Lauf kann deine Machine sich selbst ein Rezept schreiben für das Lesen, das jedes Mal gleich ist, etwa welche Mails oder GitHub-Änderungen sie ansieht. Die nächsten Läufe lesen das zuerst, in einfachem Code, und die KI wählt nur aus, was zählt, und schreibt es auf, mit weniger Tokens. Ein Rezept liest nur; funktioniert es nicht mehr, liest der Lauf selbst und repariert es. Du siehst es unter **Erweitert: Skriptschritte** im ⋯-Menü.
+Nach einem erfolgreichen Lauf kann deine Machine selbst eine Anleitung für wiederkehrende Leseaufgaben erstellen, zum Beispiel dafür, welche Mails oder GitHub-Änderungen sie ansehen soll. Bei den nächsten Läufen werden diese zuerst mit einfachem Code gelesen. Die KI wählt dann nur noch aus, was wichtig ist, und formuliert es. So werden weniger Tokens benötigt. Eine Anleitung liest nur. Wenn sie nicht mehr funktioniert, liest die Routine die Daten selbst und korrigiert die Anleitung. Sie erscheint im Menü ⋯ unter **Erweitert: Skriptschritte**.
 
 ## Verpasste Tage
 
-War deine Machine aus oder beschäftigt, stapeln sich verpasste Läufe nicht: Nur der neueste läuft, einmal. Jedes Datum läuft einmal, auch nach einem Neustart.
+Wenn deine Machine ausgeschaltet oder beschäftigt war, werden verpasste Läufe nicht nachgeholt. Es läuft nur der neueste verpasste Lauf, und zwar einmal. Jedes Datum wird nur einmal ausgeführt, auch nach einem Neustart.
 
-Routinen laufen nacheinander und warten, wenn das Nutzungslimit deines KI-Abos knapp wird, wie alle Arbeit im Hintergrund. **Jetzt ausführen** startet sie sofort; ihr Ergebnis erscheint auf der Karte, sobald es fertig ist.
+Routinen laufen nacheinander und warten, wenn das Nutzungsvolumen deines KI-Tarifs gering ist, wie bei allen Hintergrundaufgaben. Mit **Jetzt ausführen** startest du die Routine sofort. Sobald das Ergebnis fertig ist, erscheint es auf der Karte.
 
-## Ändern oder stoppen
+## Ändern oder beenden
 
-Das steht im ⋯-Menü der Routine. **Bearbeiten** ändert ihren Namen und was sie tut; wann sie läuft und ihre bisherigen Ergebnisse bleiben. **Zeitpunkt ändern** nimmt einen neuen Rhythmus in deinen eigenen Worten, wie „jeden Werktag um 8“. Beide haben **Speichern** und **Abbrechen**; am Computer brechen auch Esc oder ein Klick daneben ab.
+Diese Optionen findest du im Menü ⋯ der Routine. Mit **Bearbeiten** änderst du den Namen und die Aufgabe. Der Zeitpunkt und die bisherigen Ergebnisse bleiben erhalten. Mit **Zeitpunkt ändern** legst du einen neuen Rhythmus in eigenen Worten fest, zum Beispiel „jeden Werktag um 8 Uhr“. Für beides gibt es **Speichern** und **Abbrechen**. Am Computer kannst du auch mit Esc oder durch einen Klick außerhalb des Menüs abbrechen.
 
-In **Bearbeiten** lässt **Ausprobieren** die neuen Worte einmal laufen und zeigt dort das Ergebnis. Die Routine bleibt, wie sie war, bis **Speichern**.
+Unter **Bearbeiten** kannst du mit **Ausprobieren** die neue Formulierung einmal ausführen und das Ergebnis dort ansehen. Die Routine bleibt unverändert, bis du **Speichern** wählst.
 
-**Pausieren** hält die Läufe an bis **Fortsetzen**; pausierte Routinen warten unten unter **Pausiert**, und was während der Pause verpasst wurde, läuft danach nicht. **Stopp** beendet eine Routine endgültig.
+Mit **Pausieren** werden die Läufe angehalten, bis du auf der Karte **Fortsetzen** wählst. Pausierte Routinen stehen unter **Pausiert**, unterhalb deiner Routinen. Während der Pause verpasste Läufe werden danach nicht nachgeholt. Mit **Stopp** beendest du eine Routine endgültig.
 
-Nutzt du **Änderungen anfragen** bei einer Aufgabe einer Routine oder schreibst in ihrem Chat, und gilt deine Notiz für jeden Lauf, etwa „nie Emojis“, bietet die Aufgabe **Auch die Routine ändern** an, auf der Aufgabe und in ihrem Chat unter der Antwort. Sie zeigt, was sich an den Worten der Routine ändert, und die Routine ändert sich erst, wenn du auf **Ändern** tippst. **So lassen** lässt sie, wie sie ist. Eine Korrektur nur an diesem Entwurf bietet nichts an.
+Es können höchstens 20 Routinen angelegt werden, einschließlich pausierter Routinen. Beende eine Routine, um eine weitere hinzuzufügen.
+
+Wenn du bei der Aufgabe einer Routine **Änderungen anfragen** wählst oder in ihrem Chat schreibst und deine Nachricht für jeden Lauf gelten soll, zum Beispiel „nie Emojis verwenden“, bietet dir die Aufgabe die Option **Auch die Routine ändern**. Du findest sie in der Aufgabe und im Chat unter der Antwort. Es wird angezeigt, was sich an der Formulierung der Routine ändert. Die Routine wird erst geändert, wenn du auf **Ändern** tippst. Mit **So lassen** bleibt sie unverändert. Wenn du nur den Entwurf anpassen möchtest, wird diese Option nicht angeboten.
 
 ## Erweitert: Skriptschritte
 
-Ein Skript brauchst du nie: Sag in deinen eigenen Worten, was eine Routine tun soll.
+Du brauchst kein Skript: Beschreibe in eigenen Worten, was eine Routine tun soll, und deine Machine kümmert sich um den Rest.
 
-Für Fortgeschrittene kann eine Routine auch deine eigenen Befehle auf deiner Machine ausführen: Wähle im ⋯-Menü **Erweitert: Skriptschritte**. **Bearbeiten** zeigt sie nur, wenn eine Routine schon welche hat. **Daten holen** führt zuerst einen Befehl aus, in seinem Ordner (leer: dein Home-Ordner) und höchstens für seine Sekunden. Was er ausgibt, bekommt der Lauf zum Arbeiten. Ohne Worte ist die Ausgabe das Ergebnis.
+Für fortgeschrittene Nutzer kann eine Routine auch eigene Befehle auf deiner Machine ausführen. Wähle dazu im Menü ⋯ **Erweitert: Skriptschritte**. **Bearbeiten** wird erst angezeigt, wenn die Routine Skriptschritte enthält. Mit **Daten holen** wird zuerst ein Befehl ausgeführt, und zwar in seinem Ordner (bei leerem Feld in deinem Home-Ordner) und höchstens für die angegebene Anzahl Sekunden. Die Ausgabe wird an den Lauf weitergegeben. Wenn keine weiteren Anweisungen vorhanden sind, ist die Ausgabe das Ergebnis.
 
-**Prüfung** bekommt nach dem Lauf das Ergebnis als Eingabe. Endet sie mit einem Fehler, zeigt der Lauf **Hat nicht geklappt** mit dem, was die Prüfung gesagt hat. Ein fehlgeschlagener Befehl bei Daten holen zeigt sich genauso.
+Mit **Prüfung** wird das Ergebnis nach dem Lauf als Eingabe übergeben. Wird der Befehl mit einem Fehler beendet, zeigt der Lauf **Hat nicht geklappt** und den Text der Prüfung an. Ein fehlgeschlagener Befehl zum Datenholen wird auf dieselbe Weise angezeigt.
 
-Ein Befehl ist eine Zeile und läuft ohne Shell: keine Pipes oder Variablen. Skriptschritte legst nur du fest, auf deinem Dashboard. Ein Testlauf und **Ausprobieren** führen Daten holen auch aus und sagen das; sie senden und behalten trotzdem nichts. Eine Routine sendet nie, also sollte ein Skriptschritt nur lesen.
+Ein Befehl muss aus einer Zeile bestehen und wird ohne Shell ausgeführt. Pipes und Variablen sind nicht möglich. Skriptschritte gehören dir und können nur in deinem Dashboard festgelegt werden. Auch ein Testlauf und **Ausprobieren** führen den Befehl zum Datenholen aus und zeigen das an. Dabei wird trotzdem nichts gesendet oder gespeichert. Eine Routine sendet nie etwas. Skriptschritte sollten deshalb nur lesen.
 
 ## Aus deinen OpenClaw-Jobs
 
-Hast du vorher geplante Jobs in OpenClaw angelegt, liest deine Machine sie (sie ändert sie nie) und schlägt die passenden unter **Vorgeschlagen** als Routinen vor. Jeder lief einmal, damit du ein echtes Ergebnis siehst.
+Wenn du früher in OpenClaw geplante Jobs erstellt hast, liest deine Machine sie aus. Sie ändert sie nie, sondern bietet passende Jobs unter **Vorgeschlagen** als Routinen an. Jeder Job wurde einmal ausgeführt, damit du ein echtes Ergebnis siehst.
 
-Deine Korrekturen am Job bleiben drin, was er gesendet oder gepostet hat, fällt weg. Ein Job, der ein Skript ausgeführt oder gelesen hat, was ein Skript-Job gesammelt hat, bringt es als Daten holen mit. **Hinzufügen** macht daraus eine Routine, **Nein danke** fragt nie wieder nach diesem Job. Ein Job, der dich an etwas erinnert hat, kommt stattdessen als Angebot für eine wiederkehrende Aufgabe unter Aufgaben.
+Deine Änderungen am Job bleiben erhalten, während gesendete oder veröffentlichte Inhalte ausgelassen werden. Wenn ein Job ein Skript ausgeführt oder die Ergebnisse eines Skript-Jobs gelesen hat, wird dieses Skript als Daten holen übernommen. Mit **Hinzufügen** wird daraus eine Routine. Mit **Nein danke** wird der Job nie wieder vorgeschlagen. Wenn ein Job dich an etwas erinnert hat, wird er stattdessen unter Aufgaben als wiederkehrende Aufgabe angeboten.
 
-Bevor du einen Vorschlag hinzufügst, änderst du ihn mit **Bearbeiten** und **Zeitpunkt ändern** in seinem ⋯-Menü wie jede Routine. **Erneut ausführen** führt ihn jetzt mit seinen aktuellen Worten aus, damit du neuere Ergebnisse siehst, etwa nach einem ruhigen Wochenende. Er liest nur, läuft einmal pro Tippen, und das neue Ergebnis ersetzt das alte.
+Bevor du einen Vorschlag hinzufügst, kannst du ihn über **Bearbeiten** und **Zeitpunkt ändern** im Menü ⋯ wie jede andere Routine anpassen. Mit **Erneut ausführen** startest du ihn jetzt mit der aktuellen Formulierung, um neuere Ergebnisse zu sehen, zum Beispiel nach einem ruhigen Wochenende. Der Job liest nur und wird bei jedem Tippen einmal ausgeführt. Das neue Ergebnis ersetzt das alte.
 
-Höchstens drei Vorschläge warten gleichzeitig. Nach einer Woche guter Läufe fragt die Routine **Den alten OpenClaw-Job ausschalten?** Er wird nur ausgeschaltet, wenn du auf **Ausschalten** tippst, und du kannst ihn in OpenClaw wieder einschalten.
+Es können höchstens drei Vorschläge gleichzeitig ausstehen. Nach einer Woche erfolgreicher Läufe fragt die Routine **Den alten OpenClaw-Job ausschalten?**. Sie wird nur ausgeschaltet, wenn du auf **Ausschalten** tippst. In OpenClaw kannst du sie wieder einschalten. Mit **Behalten** laufen beide weiter.
 
-## Aus dem, was du tust
+## Aus deinen Aktivitäten
 
-Deine Machine bemerkt auch Arbeit, die du in einem Rhythmus erledigst, und schlägt sie unter **Vorgeschlagen** als Routine vor, auch ohne OpenClaw. Sie achtet auf:
+Deine Machine erkennt auch Aufgaben, die du regelmäßig erledigst, und bietet sie unter **Vorgeschlagen** als Routine an, auch ohne OpenClaw. Sie sucht nach Folgendem:
 
-- dieselbe Bitte, dreimal oder öfter hintereinander, wie „fasse die offenen Support-Tickets zusammen“ jeden Montag;
-- eine Mail, die du in einem Rhythmus sendest, wie einen Wochenbericht an dein Team;
-- Newsletter und Update-Mails, die jede Woche wieder kommen;
-- einen vollen Slack-Kanal, in dem andere jede Woche schreiben;
-- Mails, die du einzeln an dieselbe Person weiterleitest, wie Mails von Schule und Verein an deinen Partner: ein wöchentlicher Digest für sie spart das Weiterleiten;
-- dieselbe Anfrage, die du in einem Rhythmus beantwortest, wie eine monatliche Freigabe für dieselbe Person.
+- derselben Anfrage, die du mindestens dreimal hintereinander gestellt hast, zum Beispiel „offene Support-Tickets zusammenfassen“ jeden Montag;
+- einer Mail, die du regelmäßig sendest, zum Beispiel einem wöchentlichen Bericht an dein Team;
+- Newslettern und Update-Mails, die jede Woche wiederkommen;
+- einem stark frequentierten Slack-Kanal, in den andere jede Woche schreiben;
+- Mails, die du einzeln immer an dieselbe Person weiterleitest, zum Beispiel Schul- und Vereinsmails an deine Partnerin oder deinen Partner. Eine wöchentliche Zusammenfassung erspart dir das Weiterleiten;
+- derselben Anfrage, die du regelmäßig beantwortest, zum Beispiel einer monatlichen Freigabe für dieselbe Person.
 
-Jeder Vorschlag sagt, was sie gesehen hat, wie „4 Mal hintereinander gefragt“ oder „6 E-Mails in 3 Wochen an Sam weitergeleitet“, und lief einmal, damit du ein echtes Ergebnis siehst. Denk an eine Team-Zusammenfassung, ein Briefing vor einem wöchentlichen Call, eine Support- oder Dev-Übersicht, einen Puls deiner Zahlen oder einen Digest der Newsletter, die du bekommst.
+Jeder Vorschlag nennt, was die Routine erkannt hat, zum Beispiel „Viermal hintereinander angefragt“ oder „Sechs Mails in drei Wochen an Sam weitergeleitet“. Jeder Vorschlag wurde einmal ausgeführt, damit du ein echtes Ergebnis siehst. Denk zum Beispiel an eine Teamzusammenfassung, eine kurze Vorbereitung auf ein wöchentliches Meeting, eine Zusammenfassung von Support oder Entwicklung, einen Überblick über deine Zahlen oder eine Zusammenfassung der Newsletter, die du erhältst.
 
-Sie schlägt nur vor, was zu dir passt und klar hilft: einen News-Digest nur über deine eigenen Newsletter, nie einen allgemeinen. Passt nichts, gibt es keinen Vorschlag.
+Vorgeschlagen wird nur, was speziell für dich ist und eindeutig nützlich sein kann. Eine Nachrichtenzusammenfassung bezieht sich zum Beispiel nur auf deine eigenen Newsletter, nie auf allgemeine Nachrichten. Wenn nichts passt, gibt es keinen Vorschlag.
 
-Sie schaut höchstens einmal am Tag und bringt höchstens einen neuen Vorschlag pro Woche, ohne Benachrichtigung. **Nein danke** bringt diesen Vorschlag nie zurück. Weitergeleitete Mails und Antworten bleiben bei dem Konto, von dem sie gesendet wurden, damit Arbeit und Privat sich nicht mischen. Alles bleibt auf deiner Machine. Eine Aufgabe, die du in einem Rhythmus erledigst, kommt stattdessen als Angebot für eine wiederkehrende Aufgabe.
+Die Routine prüft höchstens einmal täglich und bringt höchstens einen neuen Vorschlag pro Woche, ohne Benachrichtigung. Mit **Nein danke** wird dieser Vorschlag nicht noch einmal angezeigt. Weitergeleitete und beantwortete Mails bleiben bei dem Konto, von dem aus sie gesendet wurden. Arbeit und Privat bleiben also getrennt. Alles bleibt auf deiner Machine. Eine Aufgabe, die du regelmäßig abschließt, wird stattdessen als wiederkehrende Aufgabe angeboten.
 
 ## Routinen und wiederkehrende Aufgaben
 
-Eine wiederkehrende Aufgabe (recurring.md) erinnert dich daran, etwas zu tun. Eine Routine ist Arbeit, die deine Machine selbst erledigt und dir zeigt. Nimm eine wiederkehrende Aufgabe für „Miete am Ersten zahlen“ und eine Routine für „jeden Freitag sagen, welche Deals still geworden sind“.
+Eine [wiederkehrende Aufgabe](recurring.md) erinnert dich daran, etwas zu erledigen. Eine Routine erledigt eine Aufgabe selbst und zeigt dir das Ergebnis. Verwende eine wiederkehrende Aufgabe für „am Ersten die Miete zahlen“ und eine Routine für „jeden Freitag melden, welche Deals eingeschlafen sind“.

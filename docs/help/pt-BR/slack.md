@@ -1,36 +1,40 @@
 ---
 title: Slack
 area: connections
-summary: Os canais e as mensagens diretas de que você participa. Envia uma mensagem direta só depois que você aprova.
+summary: Os canais e as mensagens diretas de que você participa. Só envia uma mensagem direta depois da sua aprovação.
 covers: connector:slack
 code: assistant.py, next_actions.py, onboarding.py, slack_api.py
 site: Connect, Remove
-translated: 8d275e75083292ba
+translated: 23f9e98f4680d23c
 ---
 ## O que ele lê
 
-As conversas de que você participa: canais, canais privados, mensagens diretas e mensagens em grupo, dos últimos 7 dias quando você conecta, e depois tudo o que for novo. Ele nunca entra em um canal nem abre uma conversa sozinho. Um canal tranquilo é lido mais ou menos uma vez por dia; quando uma tarefa precisa das mensagens mais novas dele, The Machine lê na hora.
+As conversas das quais você participa: canais, canais privados, mensagens diretas e mensagens em grupo. Ele lê as dos últimos 7 dias quando você conecta e, depois, tudo o que chegar de novo. Nunca entra em um canal nem abre uma conversa por conta própria. Um canal sem atividade é lido aproximadamente uma vez por dia. Quando uma tarefa precisa das mensagens mais recentes, The Machine lê o canal na hora.
 
-Cerca de um ano de mensagens antigas chega depois, aos poucos, como [histórico](history.md).
+As mensagens antigas de cerca de um ano são carregadas depois, aos poucos, como [histórico](history.md).
 
-As pessoas aparecem pelo nome e os apps pelo deles, nunca por um ID do Slack. Alguém cuja conta do Slack não existe mais aparece como ex-usuário do Slack.
+As pessoas aparecem pelo nome e os apps, pelo nome deles, nunca por um ID do Slack. Se a conta de alguém no Slack foi removida, essa pessoa aparece como ex-usuário do Slack.
 
-## O que ele pode enviar
+## O que ela pode enviar
 
-Uma mensagem direta para uma pessoa, em seu nome, e só depois que você aprova na tarefa. Uma resposta à mensagem do Slack de onde veio uma tarefa vai na thread dessa mensagem, na mensagem direta ou no canal; o rascunho diz **Na thread**. Ele nunca começa uma publicação nova em um canal.
+Uma mensagem direta para uma pessoa, em seu nome, e somente depois que você aprovar a tarefa. A resposta à mensagem do Slack que originou uma tarefa aparece na thread dessa mensagem, na conversa direta ou no canal. O rascunho mostra **Na thread**. The Machine nunca inicia uma nova publicação em um canal.
 
-## Conecte
+## O que ela guarda
 
-1. **Conexões**, **Chat**, **Slack**, depois **Entrar com Slack**, e permita no Slack. No seu próprio computador, pareie ele antes com sua conta em themachine.computer.
-2. Mensagens novas e mensagens diretas chegam primeiro. O Slack deixa os apps lerem mais ou menos uma conversa por minuto, então as mensagens antigas chegam ao longo de algumas horas.
+O que The Machine lê fica na sua Machine até você excluir o conteúdo ou a Machine. O serviço de hospedagem não guarda cópias das suas mensagens nem seus dados de acesso ao Slack, e nenhum modelo de IA é treinado com seus dados do Slack. The Machine usa IA, que pode cometer erros, então você vê cada mensagem antes que ela seja enviada.
 
-Ou use uma chave de API do Maton: entre em maton.ai, conecte o Slack lá e copie sua chave de API do Maton em Home. Depois abra **Ou use uma chave de API do Maton** embaixo do Slack e cole, ou rode `assistant connect slack` no seu próprio computador. Um Slack conectado pelo Maton continua funcionando como está.
+## Conectar
 
-## Remova
+1. **Conexões**, **Chat**, **Slack** e depois **Entrar com Slack**. Em seguida, autorize o acesso no Slack. Se estiver usando seu próprio computador, primeiro pareie a Machine com sua conta em themachine.computer.
+2. As mensagens novas e as mensagens diretas chegam primeiro. O Slack permite que os apps leiam cerca de uma conversa por minuto, então as mensagens antigas são carregadas ao longo de algumas horas.
 
-- No painel: **Conexões**, abra o Slack, **Detalhes** e depois **Desconectar**. O que ele já trouxe continua lá.
-- Em uma Machine hospedada, você também pode clicar em **Remover** ao lado dele na sua página de configuração.
+Ou use uma chave de API do Maton: entre em maton.ai, conecte o Slack por lá e copie sua chave de API do Maton na página Home. Depois, abra **Ou use uma chave de API do Maton** em Slack e cole a chave, ou execute `assistant connect slack` no seu próprio computador. Uma conexão do Slack feita pelo Maton continua funcionando normalmente.
 
-## Desinstale no Slack
+## Remover
 
-Com login do Slack: abra a página Manage apps do seu workspace no Slack e remova a The Machine. Pelo Maton: remova a conexão do Slack no Maton e exclua a chave de API do Maton que você forneceu. Um admin do Slack também pode remover qualquer um dos dois apps do workspace, em Manage apps.
+- No painel: **Conexões**, abra Slack, selecione **Detalhes** e depois **Desconectar**. O que já foi importado continua lá.
+- Em uma Machine hospedada, você também pode selecionar **Remover** ao lado da conexão na página de configuração.
+
+## Desinstalar no Slack
+
+Se você entrou com o Slack: abra a página Manage apps do seu workspace no Slack e remova The Machine. A leitura para na hora e você precisará entrar novamente. O que já foi importado continua lá. Se você conectou pelo Maton: remova a conexão do Slack no Maton e exclua a chave de API do Maton que você forneceu. Um administrador do Slack também pode remover qualquer um dos apps do workspace, em Manage apps.

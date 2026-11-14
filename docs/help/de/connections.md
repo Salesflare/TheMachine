@@ -1,66 +1,70 @@
 ---
 title: Verbindungen
 area: connections
-summary: Deine Quellen an einem Ort: wie es jeder geht, eine neue hinzufügen oder eine trennen.
+summary: Alle deine Quellen an einem Ort: Sieh, wie es ihnen geht, füge neue hinzu oder trenne eine Verbindung.
 covers: tab:health, saved-signins
 code: dashboard.html, onboarding.py
 order: 1
-translated: 1ca62ab8f65b77ff
+translated: 60304f2504ee5676
 ---
-## Wie es ihnen geht
+## So geht es ihnen
 
-Der Tab **Verbindungen** listet deine Quellen nach Art (**E-Mail**, **Kalender**, **Chat** und mehr), unter einer Linie **Anmeldungen** und **Prüfungen**. Auf dem Handy öffnet ein Tipp eine Art, **Verbindungen** führt zurück. Jede Quelle ist eine Zeile; ein Tipp öffnet ihre Karte. Jede zeigt, wie es ihr geht: Verbunden, Wartet auf die erste Synchronisierung, Verbindet sich automatisch neu oder Braucht deine Hilfe. Öffne **Details** für **Letzte Syncs**, wo ihre Synchronisierung in einfachen Worten steht (etwa „Auf dem neuesten Stand“ oder „Erstes Lesen“), und was zu tun ist.
+Im Tab **Verbindungen** sind deine Quellen nach Art sortiert. Darunter findest du **Anmeldungen** und **Prüfungen**, jeweils durch eine Linie getrennt. Auf dem Handy tippst du auf eine Art, um sie zu öffnen, und auf **Verbindungen**, um zurückzugehen. Eine Art mit einer Quelle, die dich braucht, wird zuerst geöffnet. Jede Quelle wird als Zeile angezeigt: mit ihrem Status (Verbunden, Wartet auf erste Synchronisierung, Verbindet sich automatisch neu oder Braucht deine Hilfe) und den zuletzt eingegangenen Inhalten. Tippe auf die Zeile, um die Karte und **Details** zu öffnen.
 
-Ein fehlgeschlagener Sync, den ein späterer ausgeglichen hat, steht in Grau; nur ein Fehler, der noch der letzte ist, steht als Problem da, mit dem Zeitpunkt des nächsten Versuchs.
+Ein fehlgeschlagener Abgleich, den ein späterer ausgeglichen hat, wird grau angezeigt. Nur ein Fehler, der noch aktuell ist, wird als Problem angezeigt, zusammen mit dem Zeitpunkt des nächsten Versuchs.
 
-Ihre Zahlen zeigen alles, was sie hereingeholt hat, auch ihren [Verlauf](history.md), was in den letzten 24 Std. dazukam und was noch nicht geprüft ist. Ein Kalender zählt Termine: alle, die der nächsten 7 Tage und der letzten 24 Std.
+Die Anzahl umfasst alles, was die Quelle eingebracht hat, auch ihre [Verlaufseinträge](history.md), was in den letzten 24 Stunden eingegangen ist und was noch nicht geprüft wurde. Bei einem Kalender werden die Termine gezählt.
 
-Jede Quelle heißt wie ihr Konto, so wie der Dienst es nennt: deine Adresse, ein X-Profil, ein Slack-Workspace oder wem das Signal oder Telegram gehört. Darunter steht **Arbeit** oder **Privat**, dazu die Adresse oder der Handle, wenn der Name sie noch nicht nennt. Haben zwei Quellen auf einem Tab denselben Namen, steht bei jeder auch, was sie unterscheidet, etwa Slack oder X oder die Adresse des Workspace.
+Jede Quelle ist nach ihrem Konto benannt, so wie es der jeweilige Dienst nennt: nach deiner Adresse, einem X-Profil, einem Slack-Arbeitsbereich oder danach, wem das Signal- oder Telegram-Konto gehört. Unter dem Namen steht zuerst **Arbeit** oder **Privat**, außerdem die Adresse oder der Benutzername, falls sie nicht bereits im Namen vorkommen. Haben zwei Quellen derselben Art denselben Namen, steht auch dabei, woran du sie unterscheiden kannst, zum Beispiel Slack oder X, oder die Adresse des Arbeitsbereichs.
 
-Unter dem Status sagt jede Quelle in einer Zeile, was sie hereinholt, und wenn sie etwas tun kann, dass sie es erst tut, wenn du auf **Senden** drückst oder zustimmst.
+Bei jeder Quelle steht außerdem in einer Zeile, was sie einbringt und, falls sie Aktionen ausführen kann, dass sie erst handelt, wenn du **Senden** drückst oder deine Zustimmung gibst.
 
-## Eine hinzufügen
+## Quelle hinzufügen
 
-Öffne ihre Art und wähle eine Quelle unter **Weitere hinzufügen**, oder unter der Liste, wenn noch keine verbunden ist. Sie zeigt ein kurzes Formular, wie auf deiner Einrichtungsseite: was sie braucht (einen Schlüssel, eine Adresse), und **Arbeit** mit ihrer Firma oder **Privat**. Tippe auf **Verbinden**. Eine Quelle mit Anmeldung, etwa LinkedIn oder X, öffnet ihre Anmeldung auf deiner Machine und macht von selbst weiter, sobald du drin bist. GitHub, WhatsApp und Codex zeigen einen Code zum Eingeben, und Telegram-Chats einen QR-Code zum Scannen.
+Öffne eine Art (**E-Mail**, **Kalender**, **Chat**, **Meetings**, **Dokumente und Dateien**, **Kunden**, **Projekte und Code**, **Andere**) und wähle unter **Weitere hinzufügen** eine Quelle aus. Wenn noch keine verbunden ist, findest du die Auswahl unter der Liste. Als letzte Möglichkeit gibt es **Andere E-Mail** unter E-Mail sowie **Kalenderlink (ICS)** und **Anderer Kalender** unter Kalender. Exchange Server liest Meetings und ist deshalb unter Kalender zu finden.
 
-Die Liste ist gruppiert (**E-Mail**, **Kalender**, **Chat**, **Meetings**, **Dokumente und Dateien**, **Kunden**, **Projekte und Code**, **Andere**), von A bis Z in jeder Gruppe. Ein Sammeleintrag wie **Andere E-Mail** steht zuletzt in seiner Gruppe.
+**Vorgeschlagen für dich** wird oben in **Verbindungen** angezeigt, wenn deine Machine einen Grund für eine Quelle erkennt. Der Grund steht in einer Zeile, zum Beispiel E-Mails von Stripe, Zoom-Meetings in deinem Kalender, Nachrichten mit Links zu Google Docs oder eine nicht abgeschlossene Einrichtung. Die Quelle bleibt auch in ihrer eigenen Gruppe und ist dort als **Vorgeschlagen** markiert. Deine Machine zählt diese Vorschläge auf deiner Machine. Nichts davon verlässt sie. Eine verbundene Quelle wird nie vorgeschlagen.
 
-**Vorgeschlagen für dich** steht oben, wenn deine Machine einen Grund für eine Quelle sieht, mit diesem Grund in einer Zeile: Mails von Stripe, Zoom-Meetings in deinem Kalender, Nachrichten mit Links zu Google Docs oder eine Einrichtung, die nicht abgeschlossen wurde. Die Quelle bleibt auch in ihrer eigenen Gruppe, als **Vorgeschlagen** markiert. Sie zählt das auf deiner Machine; nichts verlässt sie. Eine verbundene Quelle wird nie vorgeschlagen.
+Microsoft Teams wird zweimal angezeigt: unter **Chat** für die Chats und unter **Meetings** als **Teams-Meetings** für die Meeting-Notizen. Beide verwenden dieselbe Microsoft-Anmeldung. Wenn du eine verbindest, wird auch die andere verbunden.
 
-Microsoft Teams steht zweimal da: unter **Chat** für die Chats und unter **Meetings** als **Teams-Meetings** für die Meeting-Notizen. Beide nutzen dieselbe Microsoft-Anmeldung, also verbindet eine auch die andere.
+Eine Quelle, die du bereits verbunden hast, ist in der Liste mit ihrem Konto gekennzeichnet. Wähle sie aus, um eine weitere neben ihr hinzuzufügen. Im Formular steht, dass es um ein weiteres Konto geht, und es gibt einen Link zu deinem bereits verbundenen Konto.
 
-Eine Quelle, die du schon verbunden hast, zeigt das in der Liste, mit ihrem Konto. Wähl sie, um eine weitere daneben hinzuzufügen: ihr Formular sagt das und verlinkt die bestehende.
+Gib die erforderlichen Angaben ein, zum Beispiel einen Schlüssel oder eine Adresse. Wähle **Arbeit** mit dem Namen des Unternehmens oder **Privat**. Bei E-Mail und Kalender wirst du nur gefragt, wenn sich die Kategorie nicht aus der Adresse ergibt. Drücke dann **Verbinden**. Bei einer Website wie LinkedIn oder X wird die Anmeldung im Browser deiner Machine geöffnet. Sobald du angemeldet bist, geht es automatisch weiter. Bei GitHub, WhatsApp und Codex wird ein Code angezeigt, den du eingeben musst. Bei Telegram-Chats und Signal-Chats wird ein QR-Code zum Scannen angezeigt.
 
-**Abbrechen** beendet das Hinzufügen. Vorher weggegangen? Öffne **Verbindungen** wieder, auf jedem Gerät, und es geht beim selben Schritt weiter. Sobald sie verbunden ist, liest deine Machine sie sofort und öffnet die neue Karte. Die zeigt, wie die erste Synchronisierung läuft.
+Mit **Abbrechen** brichst du das Hinzufügen ab. Hast du den Vorgang verlassen, bevor er abgeschlossen war? Öffne **Verbindungen** erneut, auf einem beliebigen Gerät. Der Vorgang wird beim selben Schritt fortgesetzt. Sobald die Verbindung hergestellt ist, beginnt deine Machine sofort, die Quelle zu lesen, und zeigt dir den Fortschritt der ersten Synchronisierung.
 
-Auf einer gehosteten Machine meldest du dich hier bei Google, Microsoft, Microsoft OneDrive, Zoom, Stripe und Intercom an: Wähle **Arbeit** oder **Privat**, tippe auf **Anmelden**, und du kommst zurück zu diesem Formular, das zeigt, wie das Verbinden läuft oder warum es nicht geklappt hat. GitHub, WhatsApp, Codex, Telegram-Chats und dein Android-Handy zeigen ihren Code direkt in diesem Formular. Die Kachel von Codex zeigt, ob Codex angemeldet ist.
+Auf einer gehosteten Machine kannst du dich hier bei Quellen anmelden, die eine eigene Anmeldung haben: Google, Microsoft (Outlook, OneDrive und Teams), Google Meet, Google Docs, Slack, Zoom, Stripe, Intercom, Salesforce und Trello.
 
-**Neu verbinden** bei einer Quelle und in **Braucht dich** öffnet dasselbe Formular. Auf deinem eigenen Computer macht `assistant connect` dasselbe im Terminal.
+Wähle **Arbeit** oder **Privat** und drücke auf die Anmeldeschaltfläche, zum Beispiel **Mit Google anmelden**. Du kehrst zu diesem Formular zurück, das dir das Ergebnis anzeigt. Bei GitHub, WhatsApp, Codex, Telegram-Chats und deinem Android-Handy wird der Code ebenfalls hier angezeigt.
 
-## Arbeit oder privat
+Auf deinem eigenen Computer meldest du dich bei denselben Quellen an, sobald deine Machine mit deinem Konto verbunden ist. Drücke beim ersten Mal auf **Diese Machine verbinden**. Für einige Quellen gibt es auch eine andere Möglichkeit, zum Beispiel eine eigene App oder einen Schlüssel.
 
-Jede Quelle zählt als Arbeit (für eine Firma, die du nennst) oder als privat. Das änderst du unter **Details**. Dort steht nur dann **Geraten**, wenn deine Machine es anhand der Adresse gewählt hat. Sobald du wählst, gilt deine Wahl. Arbeitsaufgaben warten auf deine Arbeitstage.
+Mit **Neu verbinden** bei einer Quelle oder unter **Braucht dich** öffnest du dasselbe Formular. Auf deinem eigenen Computer macht `assistant connect` dasselbe in einem Terminal.
 
-Mail und Kalender von Google und Microsoft richten sich nach ihrer Adresse, wenn sie eindeutig ist: ein Mailanbieter wie Gmail oder Outlook.com ist Privat, die Domain deines Teams ist Arbeit. Sonst fragt sie einmal, direkt nach der Anmeldung. Mit **Ändern** legst du es selbst fest. Sagt die Mail danach das Gegenteil, fragt die Aufgabe **Hol mehr aus The Machine heraus** einmal, ob du es ändern willst.
+## Beruflich oder privat
 
-## Fähigkeiten
+Jede Quelle ist entweder beruflich, für ein Unternehmen, das du angibst, oder privat. Du kannst die Einstellung unter **Details** ändern. **Geschätzt** bedeutet, dass deine Machine die Kategorie anhand der Adresse ausgewählt hat. Aufgaben für die Arbeit warten auf deine Arbeitstage.
 
-Eine Quelle kann Signale bringen (was hereinkommt, wird zu Aufgaben), Dinge für deine Aufgaben tun (ein Dokument lesen, wenn eine es braucht, oder nach deinem OK etwas senden, beantworten oder ändern) oder beides. Mit beidem hat **Details** für jede einen Schalter: **Bringt Signale** und **Kann Dinge tun**. Einer bleibt an. Um beides zu stoppen, trenne die Quelle. Die Antworten eines Chats beziehen sich auf das, was er bringt, deshalb hat ein Chat nur **Kann Dinge tun**.
+Bei Google- und Microsoft-E-Mails und -Kalendern wird die Kategorie anhand der Adresse festgelegt, wenn sie eindeutig ist: Ein E-Mail-Anbieter wie Gmail oder Outlook.com bedeutet **Privat**, die Domain deines Teams bedeutet **Arbeit**. Andernfalls wirst du direkt nach der Anmeldung einmal gefragt. Mit **Ändern** legst du die Kategorie selbst fest. Wenn deine E-Mails später auf die andere Kategorie hindeuten, fragt dich die Aufgabe **Hol mehr aus The Machine heraus** einmal, ob du sie ändern möchtest.
 
-Mit **Bringt Signale** aus synchronisiert sie nicht, und ihre Karte zeigt keine Zahlen. Mit **Kann Dinge tun** aus liest deine Machine damit nie etwas auf Abruf, entwirft nichts und ändert nichts. Quellen von früher haben beides an.
+## Funktionen
 
-## Eine entfernen
+Eine Quelle kann Signale einbringen, aus denen Aufgaben werden, Aktionen für deine Aufgaben ausführen, zum Beispiel ein Dokument lesen oder nach deiner Zustimmung etwas senden, beantworten oder ändern, oder beides. Wenn sie beides kann, findest du unter **Details** für jede Funktion einen Schalter: **Bringt Signale** und **Kann Dinge tun**. Eine Funktion muss eingeschaltet bleiben. Um beide auszuschalten, trenne die Verbindung. Bei einem Chat gibt es nur **Kann Dinge tun**.
 
-Öffne die Quelle, **Details**, dann **Trennen**. Sie hört auf zu lesen. Was sie schon reingebracht hat, bleibt. Auf einer gehosteten Machine zeigen Google, Microsoft, Microsoft OneDrive, Zoom und Stripe **Trennen ↗**, das deine Einrichtungsseite öffnet.
+Wenn **Bringt Signale** ausgeschaltet ist, wird die Quelle nicht synchronisiert. Wenn **Kann Dinge tun** ausgeschaltet ist, liest, entwirft oder ändert deine Machine damit nichts.
 
-**Kürzlich getrennt** listet die Konten bei Google, Microsoft, Zoom, Slack, Stripe und Salesforce, die du in den letzten 30 Tagen entfernt hast, und wann. Ein Google-Konto steht nur einmal da, auch wenn Google Meet oder Docs eine eigene Anmeldung hatten. Jedes steht unter seiner eigenen Art: ein Google- oder Microsoft-Konto unter **E-Mail**, Slack unter **Chat**.
+## Quelle entfernen
+
+Öffne die Quelle und wähle **Details** und dann **Trennen**. Sie wird nicht mehr gelesen. Was sie bereits eingebracht hat, bleibt erhalten. Auf einer gehosteten Machine wird bei Quellen, deren Anmeldung auf deiner Einrichtungsseite verwaltet wird (Google, Microsoft, Google Meet, Slack, Zoom, Stripe und Salesforce), **Trennen ↗** angezeigt. Damit öffnest du deine Einrichtungsseite.
+
+Unter **Kürzlich getrennt** findest du die Google-, Microsoft-, Zoom-, Slack-, Stripe- und Salesforce-Konten, die du in den letzten 30 Tagen entfernt hast, sowie den Zeitpunkt der Entfernung. Bis der Dienst die Trennung bestätigt, steht dort „Ausstehend“ und es wird weiter versucht. Ein Google-Konto wird nur einmal angezeigt, auch wenn Google Meet oder Docs eine eigene Anmeldung hatte. Jedes Konto wird unter seiner eigenen Art angezeigt: ein Google- oder Microsoft-Konto unter **E-Mail**, Slack unter **Chat**.
 
 ## Gespeicherte Anmeldungen
 
-Websites, die der Browser deiner Machine nutzt, etwa LinkedIn oder X, können eine Anmeldung speichern: Setz beim Anmelden ein Häkchen bei **Für nächstes Mal speichern**. Dann listet **Anmeldungen** sie auf. Wenn eine Website deine Machine abmeldet, meldet sie sich mit einem Tippen wieder an. Passwörter bleiben verschlüsselt auf deiner Machine. **Vergessen** entfernt eine gespeicherte Anmeldung.
+Bei Websites wie LinkedIn oder X kannst du bei der Anmeldung **Für nächstes Mal speichern** aktivieren. Unter **Anmeldungen** werden sie dann aufgelistet. Wenn eine Website deine Machine abmeldet, kannst du sie mit einem Tippen wieder anmelden. Passwörter bleiben auf deiner Machine verschlüsselt. Mit **Vergessen** entfernst du eine gespeicherte Anmeldung.
 
 ## Prüfungen
 
-**Prüfungen** zeigt, wie deine Machine liest, was reinkommt: letzte Durchläufe und was jeder gefunden hat. Siehe [Keine neuen Aufgaben](reviews-paused.md).
+Unter **Prüfungen** siehst du, wie deine Machine eingehende Inhalte liest: die letzten Prüfungen und was bei jeder davon gefunden wurde. Siehe [Keine neuen Aufgaben](reviews-paused.md).
 
-Jede Verbindung hat in diesem Bereich einen eigenen Artikel, mit dem, was sie liest und was sie senden kann.
+Zu jeder Verbindung gibt es in diesem Abschnitt einen eigenen Artikel. Darin steht, was sie liest und was sie senden kann.

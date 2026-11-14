@@ -1,34 +1,34 @@
 ---
-title: Eine Verbindung braucht Hilfe
+title: Eine Verbindung braucht deine Hilfe
 area: troubleshooting
-summary: Eine Quelle zeigt Braucht deine Hilfe oder bringt nichts mehr rein. Was du versuchen kannst.
+summary: Eine Quelle zeigt „Braucht deine Hilfe“ an oder liefert nichts mehr. Das kannst du tun.
 covers: 
 code: onboarding.py, dashboard.html, assistant.py
 order: 1
-translated: 1c530fc2b291d640
+translated: 256e9ef2fd6cae48
 ---
 ## Status prüfen
 
-Öffne **Verbindungen**. Jede Quelle zeigt, wie es ihr geht:
+Öffne **Verbindungen**. Bei jeder Quelle siehst du ihren Status:
 
-- **Verbindet sich automatisch neu**: ein kurzer Aussetzer. Sie versucht es von selbst erneut.
-- **Wartet auf die erste Synchronisierung**: gerade verbunden. Gib ihr ein paar Minuten.
-- **Liest wieder um** 07:00: X und LinkedIn lesen nur tagsüber. Nichts zu tun.
-- **Braucht deine Hilfe**: Öffne **Details**. Dort steht, was schiefging und was zu tun ist.
-- **Handy getrennt**: Das Handy erreicht deine Machine nicht. Öffne die OpenClaw-App darauf.
+- **Verbindet sich automatisch neu**: eine kurze Unterbrechung. Die Quelle versucht es von selbst erneut.
+- **Wartet auf die erste Synchronisierung**: gerade verbunden. Warte ein paar Minuten.
+- **Liest wieder um** 07:00: Nur X und LinkedIn lesen tagsüber. Du musst nichts tun.
+- **Braucht deine Hilfe**: Öffne **Details**. Dort erfährst du, was schiefgelaufen ist und was du tun kannst.
+- **Handy getrennt**: Dein Android-Handy erreicht deine Machine nicht. Öffne darauf die OpenClaw-App.
 
-Eine Quelle, die immer wieder fehlschlägt und stundenlang nichts Neues bringt, länger als ihre übliche ruhige Zeit, gilt nicht als verbunden. Das verschwindet von selbst, sobald wieder Neues ankommt.
+Eine Quelle, die länger als gewöhnlich nichts liefert, zeigt **Wartet auf eine neue Synchronisierung** an. Der Status wird automatisch aufgehoben, sobald eine Synchronisierung klappt.
 
 Die Zahl bei **Verbindungen** zählt nur Quellen, die deine Hilfe brauchen.
 
 ## Häufige Lösungen
 
-- „Melde dich wieder bei Google an“ (oder Microsoft): eine Zeile pro Konto. Ein **Neu verbinden** holt alle seine Quellen zurück, etwa Gmail und Kalender.
-- „needs you to sign in again“: Tippe auf **Neu verbinden** und melde dich an. Auf einer gehosteten Machine meldest du dich direkt dort an und kommst zurück zum Dashboard.
-- Microsoft richtet den Zugriff noch ein: Es versucht es von selbst erneut.
-- Slack: Tippe auf **Neu verbinden**. Mit einem Maton-Schlüssel verbunden? Prüfe den Schlüssel und die Slack-Verbindung in Maton.
+- „Melde dich noch einmal bei Google an“ (oder Microsoft): Mit **Neu verbinden** werden alle Quellen dieses Kontos wiederhergestellt, zum Beispiel Gmail und Kalender.
+- „Du musst dich erneut anmelden“: Drücke **Neu verbinden** und melde dich an.
+- Microsoft richtet den Zugriff noch ein: Es versucht es automatisch erneut.
+- Slack: Drücke **Neu verbinden**. Mit einem Maton-Schlüssel verbunden? Prüfe den Schlüssel und die Slack-Verbindung in Maton.
 - Android: Öffne die OpenClaw-App auf dem Handy und erlaube ihr den Zugriff auf Benachrichtigungen.
 
-Auf deinem eigenen Computer prüft `assistant doctor` jede Quelle und zeigt für jedes Problem die Lösung.
+Auf deinem eigenen Computer prüft `assistant doctor` jede Quelle und erklärt, wie du jedes Problem behebst.
 
-Kommst du immer noch nicht weiter? Siehe [Support bekommen](get-support.md).
+Hakt es immer noch? Siehe [Support erhalten](get-support.md).

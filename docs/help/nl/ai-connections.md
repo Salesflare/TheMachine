@@ -1,7 +1,7 @@
 ---
 title: Andere AI's koppelen
 area: connections
-summary: Laat Claude, ChatGPT, Cursor, Codex of GBrain je to-do's en Graph lezen via MCP, elk met eigen toegang en vervaldatum.
+summary: Geef Claude, ChatGPT, Cursor, Codex of GBrain toegang tot je to-do's en Graph. Met Lezen en bewerken kunnen ze ook wijzigingen aanbrengen die je ongedaan kunt maken.
 covers: ai-connections, settings:apps
 code: ai_access.py, ai_app.py, pairing.py, ai_reach.py
 keywords: MCP, Claude, ChatGPT, Cursor, Codex, GBrain, connector, AI, OAuth
@@ -10,72 +10,72 @@ translated: ac5a894df13907fd
 ---
 ## Wat een andere AI kan doen
 
-Andere AI's kunnen via MCP met je Machine koppelen: Claude, ChatGPT, Cursor, Codex, GBrain en meer. Ze kunnen je to-do's, beloftes, teambriefings en de mensen en bedrijven in je Graph lezen.
+Claude, ChatGPT, Cursor, Codex, GBrain en andere AI's kunnen verbinding maken met je Machine. Ze kunnen je to-do's, beloftes, teamoverzichten en de personen en bedrijven in je Graph lezen.
 
-Met **Lezen en bewerken** kunnen ze ook een to-do toevoegen, of een to-do met een e-mailconcept, en je Graph aanpassen: een feit over een persoon of bedrijf bewaren, gegevens, velden en tags verbeteren, of een regel aan iemands samenvatting toevoegen.
+Met **Lezen en bewerken** kunnen ze ook een to-do of een e-mailconcept toevoegen en je Graph bijwerken: een feit opslaan, gegevens, velden en tags corrigeren of een regel toevoegen aan de samenvatting van iemand.
 
-Elke wijziging staat in **Activiteit** met **Ongedaan maken**. Ze voegen nooit records samen, verwijderen of delen ze nooit. Wat ze bewaren toont **AI:** en hun naam, in hun gebied. Je kunt het aanpassen of verwijderen, en The Machine kan een samenvattingsregel later herschrijven. Je Machine ziet het als hun bewering, nooit als jouw opdracht.
+Elke wijziging verschijnt in **Activiteit**, met **Ongedaan maken**. Ze voegen nooit gegevens samen, verwijderen ze niet en delen ze niet. Wat ze opslaan, krijgt het label **AI:** met hun naam. Je Machine behandelt het als hun bewering, nooit als jouw opdracht.
 
-Een concept wacht in je Machine tot je het leest en zelf op **Versturen** drukt. Een gekoppelde AI verstuurt nooit iets en doet nooit iets in jouw naam. Do it en de agents van je Machine zelf horen hier niet bij.
+Een concept blijft staan tot je het zelf leest en op Verzenden drukt. Een gekoppelde AI verstuurt nooit iets en handelt nooit namens jou.
 
-## Er een koppelen
+## Eén AI koppelen
 
-Open **Instellingen**, **Apps**. Onder **De apps van The Machine** komen **Toevoegen in ChatGPT** en **Toevoegen in Claude**. Onder **Of voeg hem toe met een adres** staan het ene adres van de officiële app voor elke Machine, `https://mcp.themachine.computer/mcp`, en **Je adres**, `https://<jouw naam>.mcp.themachine.computer/mcp`, elk met **Kopiëren**.
+Open **Instellingen**, **Apps**. Onder **De apps van The Machine** vind je **Toevoegen in ChatGPT** en **Toevoegen in Claude**. Onder **Of voeg hem toe met een adres** vind je het ene adres van de officiële app voor elke Machine, `https://mcp.themachine.computer/mcp`, en **Je adres**, `https://<your name>.mcp.themachine.computer/mcp`. Bij beide staat **Kopiëren**.
 
-Op een Machine op je eigen computer druk je eerst op **Instellen** onder **Krijg je adres**. Er opent een pagina in je account: controleer of die dezelfde code toont, bevestig en kies een naam. Je Machine koppelt zichzelf, zonder herstart. Beide manieren hebben dit nodig.
+Gebruik je een Machine op je eigen computer? Druk dan eerst op **Instellen** onder **Krijg je adres**. Er wordt een pagina in je account geopend. Controleer of daar dezelfde code staat, bevestig en kies een naam. Je Machine wordt automatisch gekoppeld, zonder opnieuw opstarten. Dit is voor beide manieren nodig.
 
-Daarna haalt hij een eigen certificaat voor het adres. Dat duurt een paar minuten en vraagt het pakket `cryptography` voor Python.
+Je Machine stelt daarna zelf het beveiligde adres in. Dit duurt een paar minuten.
 
-Voor Claude druk je op **Toevoegen in Claude**, of open je [The Machine in de directory van Claude](https://claude.ai/directory/the-machine), en druk op Connect. Bij Team en Enterprise voegt een eigenaar hem toe in Organization settings.
+Druk voor Claude op **Toevoegen in Claude** of open [The Machine in Claude's directory](https://claude.ai/directory/the-machine) en druk op Connect. In Team en Enterprise voegt een eigenaar de app toe via Organization settings.
 
-Wil je in Claude liever een adres gebruiken, open dan Customize, Connectors, druk op + Add en dan op Add custom connector. Noem hem The Machine, plak het adres en druk op Continue en dan op Add.
+Wil je in plaats daarvan een adres in Claude gebruiken? Open dan Customize, Connectors, druk op + Add en vervolgens op Add custom connector. Geef de connector de naam The Machine, plak het adres, druk op Continue en daarna op Add.
 
-Voor ChatGPT druk je op **Toevoegen in ChatGPT**, of open je [The Machine in ChatGPT](https://chatgpt.com/plugins/plugin_asdk_app_6ae74ac637d0819199400cd3750138b4), en druk op Install plugin. Bij Business en Enterprise moet een beheerder het misschien eerst toestaan.
+Druk voor ChatGPT op **Toevoegen in ChatGPT** of open [The Machine in ChatGPT](https://chatgpt.com/plugins/plugin_asdk_app_6ae74ac637d0819199400cd3750138b4) en druk op Install plugin. In Business en Enterprise moet een beheerder de app mogelijk eerst toestaan.
 
-De officiële app bereikt een gehoste Machine, en een Machine op je eigen computer zodra hij zijn adres heeft.
+De officiële app maakt verbinding met een gehoste Machine en met een Machine op je eigen computer zodra die een adres heeft.
 
-Voor je privéadres, of een Machine zonder het Network, voeg je in ChatGPT liever een eigen MCP-server toe: open chatgpt.com/plugins, druk op + en dan op Add custom MCP server. Noem hem The Machine, plak het adres en kies OAuth. Bevestig de waarschuwing en druk op Create as a plugin. Je abonnement of werkruimte moet eigen MCP-servers toestaan.
+Wil je je privéadres gebruiken of een Machine die niet op de Network staat? Voeg dan in plaats daarvan een aangepaste MCP-server toe in ChatGPT: open chatgpt.com/plugins, druk op + en daarna op Add custom MCP server. Geef de server de naam The Machine, plak het adres en kies OAuth. Bevestig de waarschuwing en druk op Create as a plugin. Je abonnement of werkruimte moet aangepaste MCP-servers toestaan.
 
-Met de officiële app vraagt de AI je in te loggen met je The Machine-account. Kies deze Machine als je er meer hebt en keur de AI dan goed op de eigen pagina van je Machine. Met het privéadres komt de AI rechtstreeks naar je Machine.
+Via de officiële app vraagt de AI je om in te loggen met je The Machine-account. Heb je meer dan één Machine, kies dan de juiste en keur de koppeling goed op de eigen pagina van je Machine. Met het privéadres maakt de AI rechtstreeks verbinding met je Machine.
 
-AI's op een apparaat in je tailnet, zoals Claude Code of Cursor, kunnen ook het adres van je dashboard plus `/mcp` gebruiken. **Deze Machine ontkoppelen**, onderaan **Instellingen**, **Account**, haalt een Machine op je eigen computer weer van je account.
+AI's op een apparaat in je privénetwerk (Tailscale), zoals Claude Code of Cursor, kunnen ook het adres van je dashboard gebruiken, gevolgd door `/mcp`. Met **Deze Machine ontkoppelen** onderaan **Instellingen**, **Account** haal je een Machine op je eigen computer weer uit je account.
 
-Je Machine toont welke AI het is. Een AI die hij niet herkent, toont het adres waar hij vandaan komt: koppel alleen als je dit net zelf hebt gestart.
+Je Machine laat zien welke AI verbinding probeert te maken. Kan hij dat niet vaststellen, dan laat hij zien waar het verzoek vandaan komt. Maak alleen verbinding als je dit zelf net hebt gestart.
 
-Kies wat hij mag doen, **Lezen** of **Lezen en bewerken**. Met zowel werk- als privéaccounts kies je ook wat hij mag zien. Kies daarna hoe lang: **1 dag**, **7 dagen**, **30 dagen** of **1 jaar**. Druk op **Verbinden**, of op **Annuleren** om hem zonder iets terug te sturen.
+Kies wat de AI mag doen: **Lezen** of **Lezen en bewerken**. Heb je zowel een Werk- als een Persoonlijk account, kies dan wat de AI mag zien. Kies daarna hoe lang de toegang geldt: **1 dag**, **7 dagen**, **30 dagen** of **1 jaar**. Druk op **Verbinden**, of op **Annuleren** om de AI zonder toegang weg te sturen.
 
 ## Officiële app of privéadres
 
-De officiële app is de makkelijke weg: één adres voor iedereen, en je account vindt je Machine. De cloud stuurt de verzoeken onderweg door, maar bewaart niets.
+De officiële app is de eenvoudigste manier: één adres voor iedereen, en je account vindt je Machine. Onze cloud geeft verzoeken door en slaat niets op.
 
-Met je privéadres is alles versleuteld tot op je Machine. De cloud geeft het alleen door en kan het niet lezen.
+Met je privéadres is alles versleuteld tot aan je Machine. De cloud geeft verzoeken alleen door en kan ze niet lezen.
 
-Hoe dan ook beslist je Machine. Alleen een AI die je op zijn pagina hebt goedgekeurd komt binnen, met de toegang die je koos. In **Instellingen**, **Apps** toont een AI die via de officiële app kwam **Officiële app**.
+In beide gevallen beslist je Machine. Alleen een AI die je op de pagina hebt goedgekeurd, krijgt toegang, met de rechten die je hebt gekozen. In **Instellingen**, **Apps** staat bij een AI die via de officiële app verbinding maakt **Officiële app**.
 
-## Wat hij ziet
+## Wat de AI kan zien
 
-Een koppeling ziet alleen haar gebied. Werk omvat de to-do's en beloftes van je werkaccounts, werkcontacten, bedrijven, projecten en de teambriefing van je Work Fleet. Privé omvat de rest. Berichttekst blijft op je Machine, tenzij je **Berichten** aanzet: zonder dat ziet een AI de bronnen van een to-do alleen met afzender, onderwerp en datum.
+Een verbinding ziet alleen de gegevens binnen het gekozen gebied. Werk omvat de to-do's en beloftes van je werkaccounts, werkcontacten, bedrijven, projecten en de teamoverzichten van je Work Fleet. Persoonlijk omvat de rest. Berichtteksten blijven op je Machine, tenzij je **Berichten** inschakelt. Zonder die optie ziet een AI bij de bronnen van een to-do alleen de afzender, het onderwerp en de datum.
 
-Team Graph-gegevens van teamgenoten gaan nooit naar een AI van buiten.
+Team Graph-gegevens van je teamgenoten worden nooit met een externe AI gedeeld.
 
 ## Berichten
 
-Met **Berichten** kan een AI je e-mail, Slack, WhatsApp en andere chats doorzoeken en lezen. Het staat uit tot je het aanzet, op de pagina waar je de AI koppelt of later in **Instellingen**, **Apps**. Het leest alleen: het verstuurt, verwijdert of markeert nooit iets.
+Met **Berichten** kan een AI je e-mail, Slack, WhatsApp en andere chats doorzoeken en lezen. Deze optie staat uit tot je hem inschakelt op de pagina waar je de AI koppelt, of later via **Instellingen**, **Apps**. De AI kan alleen lezen. Hij verstuurt of verwijdert niets en markeert ook niets.
 
-Het leest alleen berichten in zijn gebied. Sommige gaan nooit mee: eenmalige codes en inloglinks, berichten van een **Alleen jij**-bord of -project, gesprekken die The Machine gevoelig vond (deals, HR, juridisch, gezondheid, geld), gesprekken die je privé hield, en verwijderde berichten.
+De AI leest alleen berichten binnen het gekozen gebied. Sommige berichten worden nooit gedeeld: eenmalige codes en inloglinks, berichten op een **Alleen jij**-bord of in een project, gesprekken die The Machine als gevoelig heeft beoordeeld (deals, HR, juridische zaken, gezondheid, geld), gesprekken die je privé hebt gehouden en verwijderde berichten.
 
-Elke keer dat het leest, staat in zijn **Activiteit**: hoeveel berichten en welke gesprekken, nooit de tekst. Je Machine geeft de tekst door als gegevens, zodat de AI geen instructies volgt die in een bericht staan.
+Elke leesactie verschijnt in de **Activiteit** van de AI, met het aantal berichten en de gesprekken, maar nooit de tekst. Je Machine geeft de tekst door als gegevens, zodat de AI geen instructies in een bericht hoort op te volgen.
 
-Zolang Berichten aanstaat, wachten de Graph-wijzigingen van een AI met **Lezen en bewerken** op je oké. Tik op **Toepassen** of **Negeren** bij de wijziging in **Activiteit**.
+Zolang Berichten is ingeschakeld, wachten wijzigingen in Graph van een AI met **Lezen en bewerken** op jouw goedkeuring. Druk bij de wijziging in **Activiteit** op **Toepassen** of **Afwijzen**.
 
 ## In Instellingen
 
-Open **Instellingen**, **Apps** om elke gekoppelde AI één keer te zien, met zijn toegang, gebied, einddatum en laatste gebruik. **Berichten** zet je daar meteen aan en uit. Druk op **Wijzigen** om zijn toegang, zijn gebied of de duur aan te passen. De volgende oproep gebruikt het meteen. **Activiteit** toont elke oproep, ook geweigerde. **Nu uitzetten** pauzeert hem: al zijn logins stoppen, zijn geschiedenis blijft. **Verwijderen** haalt hem weg, met zijn geschiedenis.
+Open **Instellingen**, **Apps** om te zien welke AI's verbinding hebben gemaakt, met hun toegangsrechten, gebied, einddatum en laatste gebruik. Je kunt **Berichten** daar in- en uitschakelen. Druk op **Wijzigen** om de toegangsrechten, het gebied of de duur aan te passen. De volgende keer dat de AI verbinding maakt, gelden de nieuwe instellingen. In **Activiteit** staan alle verzoeken, ook geweigerde. Met **Nu uitzetten** pauzeer je de toegang: alle inlogsessies worden beëindigd, maar de geschiedenis blijft staan. Met **Verwijderen** haal je de AI weg, inclusief de geschiedenis.
 
-Log je opnieuw in bij dezelfde AI, dan vervangt de nieuwe goedkeuring de vorige.
+Log je opnieuw in bij dezelfde AI, dan vervangt de nieuwe goedkeuring de eerdere.
 
-Een AI die niet zelf kan inloggen, kan een sleutel gebruiken. Geef hem onder **Sleutel toevoegen** een naam, kies de toegang en de duur en druk op **Sleutel maken**. Kopieer de sleutel meteen: hij wordt maar één keer getoond. De AI stuurt hem als `Authorization: Bearer <key>`.
+Een AI die niet zelf kan inloggen, kan een sleutel gebruiken. Geef de sleutel onder **Sleutel toevoegen** een naam, kies de toegangsrechten en de duur en druk op **Sleutel maken**. Kopieer de sleutel meteen: hij wordt maar één keer getoond. De AI stuurt hem mee als `Authorization: Bearer <key>`.
 
-## Veilig houden
+## Houd het veilig
 
-Elke oproep wordt bijgehouden, ook geweigerde. Een koppeling die verlopen is of uitstaat, wordt geweigerd tot je ze aanpast. Inloggen gebeurt met OAuth en PKCE. Je Machine bewaart van elk token alleen een vingerafdruk, dus een kopie van zijn gegevens opent niets.
+Elk verzoek wordt geregistreerd, ook geweigerde verzoeken. Een verbinding waarvan de toegang is verlopen of uitgeschakeld, wordt geweigerd tot je de instellingen wijzigt. Je Machine bewaart alleen een vingerafdruk van elke inlogsessie. Een kopie van de gegevens geeft dus geen toegang.

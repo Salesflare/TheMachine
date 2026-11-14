@@ -1,18 +1,18 @@
 ---
 title: Meilensteine
 area: cards
-summary: Alle so und so viele erledigten Aufgaben eine kleine Feier auf Aufgaben, mit einem Bild zum Teilen, wenn du magst.
+summary: Alle paar erledigten Aufgaben erscheint eine kleine Feier in **Aufgaben**. Wenn du möchtest, kannst du ein Bild davon teilen.
 covers: milestones
 code: machine/store/done_milestones.py, dashboard/todos-milestone.js
 order: 11
-translated: 77c10c7e5e38e386
+translated: 352a1bbf817dde79
 ---
-## Wann es erscheint
+## Wann der Hinweis erscheint
 
-Wenn deine **Erledigt**-Zahl 10, 50, 100, 250, 500, 1.000, 2.500, 5.000 oder 10.000 überschreitet, erscheint oben auf **Aufgaben** eine kleine Karte mit der Zahl. Sie erscheint einmal: Schließ sie mit × und sie ist auf jedem Gerät weg. Bist du schon an mehreren vorbei, siehst du nur die letzte.
+Wenn deine Zahl bei **Erledigt** 10, 50, 100, 250, 500, 1.000, 2.500, 5.000 oder 10.000 übersteigt, erscheint oben in **Aufgaben** ein kleiner Hinweis mit der Zahl. Er erscheint nur einmal: Schließe ihn mit ×, dann ist er auf allen Geräten verschwunden. Wenn du bereits mehrere Meilensteine überschritten hast, wird nur der neueste angezeigt.
 
 ## Teilen
 
-Tippe auf **Teilen** für ein Bild mit der Zahl und dem Maskottchen, auf deinem Gerät erstellt. Auf dem Handy oder in der App öffnet sich dein eigenes Teilen-Menü. Am Computer wählst du **Quadratisch** oder **Für Links**, dann **Bild herunterladen** oder **Bild kopieren**, mit dem **Text zum Posten**. Wo sich ein Bild nicht kopieren lässt (etwa in der App), öffnet **Bild teilen** stattdessen das Teilen-Menü.
+Tippe auf **Teilen**, um ein Bild mit der Zahl und dem Maskottchen zu erstellen. Das Bild wird auf deinem Gerät erstellt. Auf einem Smartphone oder in der App öffnet sich das Teilen-Menü deines Geräts. Am Computer kannst du **Quadratisch** oder **Für Links** auswählen und dann **Bild herunterladen** oder **Bild kopieren** wählen. Dazu gibt es den **Text zum Posten**. Wenn sich ein Bild nicht kopieren lässt, zum Beispiel in der App, öffnet **Bild teilen** stattdessen das Teilen-Menü.
 
-Auf dem Bild steht nur die Zahl. Keine Namen, keine Aufgaben und nichts anderes aus deiner Machine. Gepostet wird nur, was du selbst postest.
+Das Bild zeigt nur die Zahl. Keine Namen, keine Aufgaben und sonst nichts von deiner Machine. Es wird nichts veröffentlicht, wenn du es nicht selbst postest.

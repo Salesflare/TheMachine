@@ -1,40 +1,40 @@
 ---
 title: Familie
 area: fleet
-summary: Eine kostenlose Family Fleet für bis zu 6 Personen: wann alle frei sind, gemeinsame Aufgaben und Pläne.
+summary: Eine kostenlose Familien-Fleet für bis zu 6 Personen: Finde heraus, wann alle Zeit haben, und teile Aufgaben und Pläne.
 covers: family
 code: family.py, dashboard.html
 order: 6
-translated: 3af87ad0b491b336
+translated: 2afbe215fa387999
 ---
-## Was sie macht
+## Was sie kann
 
-- Wann alle frei sind: „Wann haben wir am Samstag alle Zeit?“ Nur belegte Zeiten.
-- Aufgaben: Bitte jemanden in deiner Familie, etwas zu erledigen. Die Person nimmt an oder lehnt ab.
-- Pläne: Schlag einen Plan vor. Alle antworten mit Ich bin dabei oder Ich kann nicht. Ich bin dabei trägt ihn in deinen eigenen Google-Kalender ein, ohne jemanden einzuladen; Rückgängig nimmt ihn wieder heraus. Ohne einen Kalender, den The Machine ändern darf, bekommst du einen Link, um ihn selbst einzutragen.
+- Finde einen gemeinsamen Termin: „Wann haben wir am Samstag alle Zeit?“ Geteilt werden nur belegte Zeiten.
+- Aufgaben: Bitte jemanden aus deiner Familie, etwas zu erledigen. Die Person nimmt die Aufgabe an oder lehnt sie ab.
+- Pläne: Schlage einen Plan vor. Alle antworten **Ich bin dabei** oder **Ich kann nicht**. Mit **Ich bin dabei** wird der Plan in deinen eigenen Google Kalender eingetragen, ohne jemanden einzuladen. Mit **Rückgängig** wird er wieder entfernt. Wenn The Machine deinen Kalender nicht ändern kann, erhältst du einen Link, über den du den Plan selbst hinzufügen kannst.
 
-Über eine Family Fleet laufen keine Arbeitsfragen.
+Über eine Familien-Fleet laufen keine Fragen zur Arbeit.
 
-## Einladungsvorschläge
+## Vorschläge zum Einladen
 
-Geht es in einer Aufgabe um Familienpläne mit jemandem, der noch nicht in deiner Familie ist, etwa „Wer holt die Kinder am Mittwoch ab?“, kann sie fragen: „Sasha einladen? Eure Machines klären das, ohne dass ihr euch gegenseitig fragen müsst.“
+Wenn es bei einer Aufgabe um Familienpläne mit jemandem geht, der noch nicht zu deiner Familie gehört, zum Beispiel „Wer holt die Kinder am Mittwoch ab?“, kann The Machine vorschlagen, die Person einzuladen.
 
-- **Einladen** öffnet das Einladungsformular auf deiner Kontoseite, mit der Adresse schon eingetragen. Du siehst die E-Mail, bevor etwas rausgeht. Nichts geht ohne dich raus.
-- **Nicht jetzt** blendet es 90 Tage aus.
-- Nur für Menschen, die laut deinem Graph oder deinen eigenen Worten Familie sind. Nie für Arbeitskontakte, Leute, die schon in deiner Familie sind, oder jemanden mit offener Einladung. Höchstens einmal pro Person.
-- Ausschalten in Einstellungen, Allgemein, unter Fleet: **Familie einladen vorschlagen**.
+- **Einladen** öffnet das Einladungsformular, in dem die Adresse der Person bereits eingetragen ist, und zeigt dir die E-Mail, die sie erhalten würde. Ohne deine Zustimmung wird nichts verschickt.
+- **Nicht jetzt** blendet den Vorschlag 90 Tage lang aus.
+- Nur bei Personen, die laut deinem Graph oder deinen eigenen Angaben zur Familie gehören. Nie bei Arbeitskontakten, Personen, die bereits zu deiner Familie gehören, oder Personen mit einer offenen Einladung. Höchstens einmal pro Person.
+- Deaktiviere die Option unter **Einstellungen** > **Allgemein** > **Fleet**: **Familie einladen vorschlagen**.
 
 ## Schon erledigt
 
-Bekommt ihr beide dieselbe E-Mail, Rechnung oder dasselbe Formular und jemand von euch hakt die Aufgabe ab, steht bei der anderen Person „Robin hat das erledigt · Sa., 7. Nov.“.
+Wenn ihr beide dieselbe E-Mail, Rechnung oder dasselbe Formular erhaltet und eine Person ihre Aufgabe als erledigt markiert, steht bei der Aufgabe der anderen: „Robin hat das erledigt · Sa., 7. Nov.“
 
-- **Erledigt** schließt deine. **Noch nötig** behält sie und blendet die Zeile aus.
-- Nichts schließt sich von selbst.
-- Eine Erinnerung mit demselben Formular-Link zählt als dieselbe Aufgabe.
-- Geteilt wird nur ein Code, nie die Aufgabe. Ausschalten im Bereich Teilen: Aufgaben, die du schon erledigt hast.
+- **Erledigt** schließt deine Aufgabe. **Noch nötig** lässt sie offen und blendet den Hinweis aus.
+- Nichts wird automatisch geschlossen.
+- Eine Erinnerung mit demselben Formularlink gilt als dieselbe Aufgabe.
+- Es wird nur ein Code geteilt, nie die Aufgabe. Deaktiviere das im Bereich **Teilen** unter **Aufgaben, die du bereits erledigt hast**.
 
 ## Regeln
 
-Standardmäßig werden freie und belegte Zeiten geteilt. Bei Aufgaben und Plänen wird zuerst gefragt. Das änderst du im Bereich Teilen: siehe [Freigaberegeln](sharing-rules.md).
+Standardmäßig werden freie und belegte Zeiten geteilt. Bei Aufgaben und Plänen wirst du vorher gefragt. Ändere das im Bereich **Teilen**. Weitere Infos findest du unter [Freigaberegeln](sharing-rules.md).
 
-Eine Family Fleet ist kostenlos. Gehostete Machines darin werden bezahlt wie jede gehostete Machine: siehe [Tarife und Abrechnung](plans-and-billing.md).
+Eine Familien-Fleet ist kostenlos. Gehostete Machines darin kosten {price.family_pair} pro Monat für die ersten beiden zusammen und danach jeweils {price.family_seat}, zzgl. MwSt. Weitere Infos findest du unter [Tarife und Abrechnung](plans-and-billing.md).

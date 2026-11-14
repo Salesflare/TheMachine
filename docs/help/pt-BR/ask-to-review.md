@@ -1,34 +1,34 @@
 ---
 title: Pedir revisão
 area: fleet
-summary: Peça a alguém da equipe ou da sua Família para olhar uma tarefa, editar o rascunho e devolver. Você escolhe o que fica.
+summary: Peça a alguém da equipe ou da sua Família para revisar uma tarefa, editar o rascunho e devolver para você. Você escolhe o que manter.
 covers: ask-to-review
 code: fleet_reviews.py, dashboard/todos-review.js
 order: 4
-translated: 58823adef1b1f51b
+translated: d2ca08e771f23228
 ---
-## Pedir a alguém para revisar uma tarefa
+## Peça para alguém revisar uma tarefa
 
-1. Na tarefa, abra **…**, depois **Passar…**, e escolha **Pedir revisão**. Funciona em qualquer etapa: antes de Fazer, com um rascunho pronto ou logo antes de enviar.
-2. Escolha quem. Uma tarefa de trabalho só vai para alguém da sua Work Fleet, uma pessoal só para alguém da sua Família.
-3. Confira o que vai: o rascunho (ou o texto da tarefa) e as fontes. Deixe uma fonte de fora com ×. Adicione uma nota se quiser e escolha **Perguntar**.
+1. Na tarefa, abra **…**, depois **Passar…** e escolha **Pedir revisão**. Se essa for a única opção, ela aparece direto no menu **…**. Você pode fazer isso em qualquer etapa: antes de **Fazer**, com um rascunho pronto ou pouco antes de enviar.
+2. Escolha quem vai revisar. Uma tarefa de Trabalho só pode ser enviada para alguém da sua Fleet de Trabalho. Uma tarefa pessoal só pode ser enviada para alguém da sua Família.
+3. Confira o que será enviado: o rascunho (ou o texto da tarefa) e as fontes. Toque em × para remover uma fonte. Se quiser, adicione uma observação e escolha **Perguntar**.
 
-Só essa tarefa vai, nada mais da sua Machine. A tarefa agora mostra "Aguardando a revisão de Pat", com **Retirar** para retirar o pedido.
+Só essa tarefa é enviada, nada mais da sua Machine. Agora a tarefa mostra "Aguardando a revisão de Pat", com a opção **Retirar** para cancelar o pedido.
 
 ## Revisar para outra pessoa
 
-O pedido chega como uma tarefa sua: "Revisão: Responder a Sam sobre o preço". Edite o rascunho ali mesmo, adicione um comentário e escolha **Aprovar**, **Enviar alterações**, **Enviar comentário** ou **Recusar**.
+O pedido aparece como uma tarefa sua: "Revisar: responder a Sam sobre preços". Edite o rascunho ali mesmo, adicione um comentário e escolha **Aprovar**, **Enviar alterações**, **Enviar comentário** ou **Recusar**.
 
-Sua Machine pode ajudar no chat da tarefa, mas uma tarefa de revisão nunca envia nada. Sua revisão volta para quem pediu, que decide o que sai.
+Sua Machine pode ajudar no chat da tarefa, mas uma tarefa de revisão nunca envia nada. A revisão volta para quem fez o pedido, e essa pessoa decide o que será enviado.
 
-## As alterações voltam
+## As alterações voltam para você
 
-A tarefa diz o que aconteceu: "Pat aprovou", "Pat comentou" ou "Pat sugeriu 3 alterações", com o comentário. Escolha **Ver alterações** para ver cada alteração marcada no texto, com quem e quando.
+A tarefa informa o que aconteceu: "Pat aprovou", "Pat comentou" ou "Pat sugeriu 3 alterações", junto com o comentário. Escolha **Ver alterações** para ver cada alteração marcada no texto, com o nome de quem fez e quando.
 
-- **Aceitar tudo** coloca cada alteração no seu rascunho.
-- **Aceitar selecionadas** pega só as marcadas.
-- **Ignorar** deixa o rascunho como estava.
+- **Aceitar tudo** aplica todas as alterações ao seu rascunho.
+- **Aceitar selecionadas** aplica apenas as alterações marcadas.
+- **Ignorar** mantém o rascunho como estava.
 
-Se você editou o rascunho nesse meio-tempo, as alterações entram onde ainda se encaixam. Aceitar só muda o rascunho: nada é enviado até você mesmo apertar Enviar. O chat da tarefa guarda cada passo ("Revisão pedida a Pat", "Pat sugeriu 3 alterações", "2 alterações de Pat aceitas").
+Se você editou o rascunho enquanto isso, as alterações serão aplicadas onde ainda se encaixarem. Aceitar alterações só muda o rascunho: nada será enviado até você escolher **Enviar**. O chat da tarefa mantém o histórico de cada etapa ("Pedido de revisão enviado para Pat", "Pat sugeriu 3 alterações", "2 alterações de Pat aceitas").
 
-Uma revisão por tarefa de cada vez. Quando volta, é recusada ou retirada, você pode pedir de novo, para a mesma pessoa ou outra. Um pedido sem resposta expira depois de 3 dias.
+Só pode haver uma revisão por tarefa de cada vez. Quando a revisão voltar, for recusada ou retirada, você pode pedir outra, para a mesma pessoa ou para alguém diferente. Um pedido sem resposta expira após 3 dias.

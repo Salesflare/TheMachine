@@ -1,19 +1,19 @@
 ---
 title: Salesforce
 area: connections
-summary: Negócios, tarefas e atividade do Salesforce nas suas pessoas e projetos. Se você ativar, ele mantém os dados de contato em dia lá.
+summary: Negócios, tarefas e atividades do Salesforce nos perfis das pessoas e nos projetos. Se você ativar essa opção, a assistente também pode manter os dados de contato atualizados no Salesforce.
 covers: connector:salesforce
 code: connectors/salesforce.py, crm_sync.py, onboarding.py
 site: Connect Salesforce, More sources, Remove, Sign in with Salesforce
-translated: e2394748e0a676b1
+translated: eee5e084bac6dbd1
 ---
-## O que ele lê
+## O que ela lê
 
-Negócios novos, e negócios que mudam de fase ou de valor. Suas tarefas abertas, ligações e outras tarefas registradas como feitas com notas, e reuniões com descrição. Os últimos 7 dias quando você conecta, e depois as novas a cada 15 minutos.
+Novos negócios e negócios que mudam de etapa ou de valor. Suas tarefas em aberto, ligações e outras tarefas marcadas como Feito, com observações, além de reuniões com descrição. Os últimos 7 dias quando você conecta. Depois, novos dados a cada 15 minutos.
 
-Cada negócio vira um projeto no seu Graph, e os contatos dele aparecem nas pessoas, como contato do Salesforce na conta delas.
+Cada negócio vira um projeto no seu Graph, e os contatos associados aparecem nos perfis das pessoas, como contatos do Salesforce na conta delas.
 
-## O que ele pode mudar
+## O que ela pode alterar
 
 Nada, até você ativar **Atualizar dados de contato**. Seu login do Salesforce fica na sua Machine.
 
@@ -21,35 +21,35 @@ Nada, até você ativar **Atualizar dados de contato**. Seu login do Salesforce 
 
 Em uma Machine hospedada:
 
-1. Abra sua página de configuração em app.themachine.computer/setup e vá em **Mais fontes**.
+1. Abra sua página de configuração em app.themachine.computer/setup e acesse **Mais fontes**.
 2. Abra o Salesforce e clique em **Conectar Salesforce**.
-3. Entre no Salesforce e permita a The Machine (feita pela Salesflare).
+3. Entre no Salesforce e autorize o The Machine (feito pela Salesflare).
 
-Ou no painel: **Conexões**, **Clientes**, escolha Salesforce e clique em **Entrar com Salesforce**.
+Ou, no painel: **Conexões**, **Clientes**, escolha Salesforce e clique em **Entrar com Salesforce**. Se estiver no seu próprio computador, primeiro vincule a Machine à sua conta.
 
-Seu usuário do Salesforce precisa de acesso à API, que a maioria das edições inclui.
+Seu usuário do Salesforce precisa ter acesso à API, incluído na maioria das edições.
 
 ## Atualizar dados de contato
 
-Quando sua Machine conhece dados mais novos de um dos seus contatos do Salesforce, ela pode atualizar esse contato lá: cargo, telefone, e o link do LinkedIn se sua org tiver um campo de LinkedIn nos contatos.
+Quando sua Machine encontra dados mais recentes sobre um dos seus contatos do Salesforce, ela pode atualizar o contato por lá: cargo, telefone e link do LinkedIn, se sua organização tiver um campo do LinkedIn nos contatos.
 
 1. Em **Conexões**, abra o Salesforce e clique em **Ver o que mudaria**.
 2. Confira a lista e clique em **Ativar** ou **Agora não**.
 
-O que ela segue:
+O que ela leva em conta:
 
-- Só dados nas palavras da própria pessoa, como o perfil dela no LinkedIn ou no Slack, ou os que você colocou na página dela. Nunca um palpite.
-- Só quando o dado é mais novo que a última mudança do contato no Salesforce. Uma edição feita lá vence.
-- Só campos que diferem, e nunca um valor vazio. Ela nunca muda o endereço de email nem a conta.
-- Cada mudança é uma linha com data na página da pessoa.
+- Apenas dados escritos pela própria pessoa, como os do perfil dela no LinkedIn ou no Slack, ou dados que você adicionou à página dela. Ela nunca adivinha.
+- Apenas quando o dado é mais recente do que a última alteração do contato no Salesforce. Uma edição feita por lá prevalece.
+- Apenas os campos que são diferentes, e nunca um campo vazio. Ela nunca altera o endereço de e-mail nem a conta.
+- Cada alteração aparece como uma linha com data na página da pessoa.
 
-Clique em **Desativar** para parar. Uma conexão que seu Fleet compartilha só lê.
+Clique em **Desativar** para parar. Uma conexão compartilhada pela sua Fleet só lê os dados.
 
 ## Remover
 
-- No painel: **Conexões**, abra o Salesforce, **Detalhes** e depois **Desconectar**. O que ele já trouxe fica.
-- Em uma Machine hospedada, você também pode clicar em **Remover** ao lado dele na sua página de configuração.
+- No painel: **Conexões**, abra o Salesforce, clique em **Detalhes** e depois em **Desconectar**. Os dados que ela já importou continuam lá.
+- Em uma Machine hospedada, **Desconectar ↗** abre sua página de configuração. Clique em **Remover** ao lado do Salesforce.
 
-## Revogar no Salesforce
+## Revogar o acesso no Salesforce
 
-No Salesforce, abra suas configurações pessoais, depois Connected Apps OAuth Usage, ou peça ao seu admin, e revogue a The Machine. Ela não consegue mais ler nem mudar nada.
+No Salesforce, abra suas configurações pessoais e depois Acesso de OAuth a aplicativos conectados. Você também pode pedir ajuda ao administrador. Revogue o acesso do The Machine. Depois disso, ela não poderá mais ler nem alterar dados.

@@ -1,27 +1,27 @@
 ---
-title: Détails des organisations
+title: Détails de l’organisation
 area: graph
-summary: Secteur, taille, lieu et logo à côté de chaque organisation, recherchés à partir de son adresse web.
+summary: Secteur d’activité, taille, lieu et logo pour chaque organisation, recherchés à partir de son adresse Web.
 covers: enrichment
 code: enrichment.py, graph.py, dashboard.html
 order: 5
-translated: a759d8e2c6274792
+translated: f403410953e50582
 ---
-## D’où ils viennent
+## D’où viennent ces informations
 
-- Sur une Machine hébergée, les détails des organisations sont recherchés pour vous, gratuitement.
-- Sur votre propre ordinateur, c’est désactivé jusqu’à ce que vous ajoutiez une clé pour un service de recherche que vous utilisez, comme Apollo, People Data Labs ou Hunter. Voir le [guide de configuration](https://github.com/Salesflare/TheMachine/blob/main/docs/configuration.md).
+- Sur une Machine hébergée, les détails des organisations sont recherchés pour vous, sans frais.
+- Sur votre propre ordinateur, cette option est désactivée jusqu’à ce que vous ajoutiez une clé pour un service de recherche, comme Apollo, People Data Labs ou Hunter. Consultez le [guide de configuration](https://github.com/Salesflare/TheMachine/blob/main/docs/configuration.md).
 
-Seule l’adresse web d’une organisation est envoyée, jamais vos messages ni les personnes que vous y connaissez. Quelques-unes sont recherchées à la fois, 50 par jour au maximum, et actualisées tous les 90 jours. Les personnes ont leur propre recherche : voir [Poste et photo](people.md#job-title-and-photo). Les hébergeurs partagés et les fournisseurs de messagerie, comme google.com, sites.google.com ou gmail.com, ne sont jamais recherchés : ce n’est le site d’aucune entreprise en particulier.
+Seule l’adresse Web d’une organisation est envoyée, jamais vos messages ni les personnes que vous connaissez au sein de cette organisation. Une Machine hébergée ou une Machine sur The Machine Network effectue jusqu’à 1 000 recherches par jour. Dans les autres cas, la limite est de 50. Chaque recherche est actualisée tous les 90 jours. Les sites partagés et les fournisseurs de messagerie, comme gmail.com, ne sont jamais recherchés. Les personnes font l’objet de leur propre recherche : consultez [Intitulé de poste et photo](people.md#job-title-and-photo).
 
-Quand la recherche ne donne pas de logo, ou qu’il n’y a pas de recherche, le logo vient du site de l’organisation elle-même : l’icône que nomme sa page d’accueil. Il est enregistré sur votre Machine, ainsi aucun service de logos ne sait avec qui vous êtes en contact. Un site sans icône est de nouveau interrogé après 30 jours. Si la recherche a trouvé l’organisation mais pas de logo, elle est refaite une fois après une semaine, et le logo qu’elle trouve alors remplace l’icône du site. Les petits emplacements, comme la ligne d’une tâche, gardent l’icône carrée.
+Si aucun logo n’est trouvé, The Machine utilise l’icône du site Web de l’organisation, enregistrée sur votre Machine. Aucun service de logos ne sait avec qui vous échangez. Si les deux sont disponibles, les petits éléments comme la ligne d’une tâche affichent l’icône carrée.
 
-Quand la recherche les donne, jusqu’à 5 spécialités de l’organisation s’affichent sous sa description, et la liste des organisations peut être filtrée par l’une d’elles : **Filtrer**, puis **Spécialité**. Quand la recherche d’une personne apporte les détails de son entreprise, ils complètent aussi l’organisation, qui n’a alors pas besoin de sa propre recherche. Les détails recherchés il y a moins de 90 jours restent tels quels.
+Quand les résultats de recherche le permettent, jusqu’à 5 spécialités de l’organisation s’affichent sous sa description. Vous pouvez aussi filtrer la liste des organisations par spécialité : **Filtrer**, puis **Spécialité**. Si la recherche sur une personne fournit aussi les détails de son entreprise, ils sont ajoutés à l’organisation, sans qu’il soit nécessaire d’effectuer une recherche distincte. Les détails recherchés au cours des 90 derniers jours restent inchangés.
 
 ## Corriger une erreur
 
 Sur la page de l’organisation :
 
-- **Modifier** pour changer le nom, le secteur, la taille, le lieu, l’année de création, la description, le site web, LinkedIn et ce qu’elle représente pour vous. Vos modifications restent. Videz un champ pour reprendre la valeur trouvée.
-- **Mauvaise entreprise, effacer les détails** si elle a choisi la mauvaise entreprise.
-- **Rechercher à nouveau** pour récupérer des détails à jour.
+- **Modifier** pour changer le nom, le secteur d’activité, la taille, le lieu, l’année de fondation, la description, le site Web, LinkedIn, les notes et ce que l’organisation représente pour vous. Vos modifications sont conservées. Videz un champ pour réutiliser la valeur trouvée lors de la recherche.
+- **Mauvaise entreprise, effacer les détails**, dans **Modifier**, si la mauvaise entreprise a été sélectionnée.
+- **Rechercher à nouveau**, qui s’affiche une fois les détails effacés, permet d’obtenir des informations à jour.

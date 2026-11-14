@@ -4,6 +4,7 @@ area: connections
 summary: Una página web que vigilas. Una tarea solo cuando cambia algo que importa.
 covers: connector:web_page
 code: connectors/web_page.py
+translated: d40b156b37cc9bc5
 ---
 ## Qué lee
 

@@ -1,55 +1,55 @@
 ---
 title: Salesforce
 area: connections
-summary: Deals, Aufgaben und Aktivität aus Salesforce bei deinen Personen und Projekten. Wenn du es einschaltest, hält es Kontaktdaten dort aktuell.
+summary: Deals, Aufgaben und Aktivitäten aus Salesforce zu deinen Personen und Projekten. Wenn du das einschaltest, kann The Machine dort Kontaktdaten aktuell halten.
 covers: connector:salesforce
 code: connectors/salesforce.py, crm_sync.py, onboarding.py
 site: Connect Salesforce, More sources, Remove, Sign in with Salesforce
-translated: e2394748e0a676b1
+translated: eee5e084bac6dbd1
 ---
-## Was es liest
+## Was The Machine liest
 
-Neue Deals, und Deals, die in eine andere Phase wechseln oder deren Betrag sich ändert. Deine offenen Aufgaben, Anrufe und andere Aufgaben, die mit Notizen als erledigt eingetragen sind, und Meetings mit einer Beschreibung. Die letzten 7 Tage beim Verbinden, danach alle 15 Minuten neue.
+Neue Deals sowie Deals, die in eine andere Phase wechseln oder deren Betrag sich ändert. Deine offenen Aufgaben, Anrufe und andere als erledigt protokollierte Aufgaben samt Notizen sowie Meetings mit einer Beschreibung. Die letzten 7 Tage beim Verbinden und danach alle 15 Minuten neue Einträge.
 
-Jeder Deal wird ein Projekt in deinem Graph, und die Kontakte darauf erscheinen bei ihren Personen, als Salesforce-Kontakt bei ihrem Account.
+Jeder Deal wird zu einem Projekt in deinem Graph. Die zugehörigen Kontakte erscheinen bei den jeweiligen Personen als Salesforce-Kontakt in deren Account.
 
-## Was es ändern kann
+## Was The Machine ändern kann
 
-Nichts, bis du **Kontaktdaten aktualisieren** einschaltest. Deine Salesforce-Anmeldung bleibt auf deiner Machine.
+Nichts, bis du **Kontaktdaten aktualisieren** einschaltest. Deine Salesforce-Anmeldedaten bleiben auf deiner Machine.
 
 ## Verbinden
 
 Auf einer gehosteten Machine:
 
-1. Öffne deine Einrichtungsseite unter app.themachine.computer/setup und geh zu **Weitere Quellen**.
-2. Öffne Salesforce und tippe auf **Salesforce verbinden**.
-3. Melde dich bei Salesforce an und erlaube The Machine. Es kommt von Salesflare.
+1. Öffne deine Einrichtungsseite unter app.themachine.computer/setup und gehe zu **Weitere Quellen**.
+2. Öffne Salesforce und klicke auf **Salesforce verbinden**.
+3. Melde dich bei Salesforce an und erlaube The Machine (von Salesflare entwickelt) den Zugriff.
 
-Oder im Dashboard: **Verbindungen**, **Kunden**, wähle Salesforce und tippe auf **Mit Salesforce anmelden**.
+Oder im Dashboard: **Verbindungen**, **Kunden**, wähle Salesforce und klicke auf **Mit Salesforce anmelden**. Auf deinem eigenen Computer musst du die Verbindung zuerst mit deinem Konto verknüpfen.
 
-Dein Salesforce-Benutzer braucht API-Zugriff, den die meisten Editionen haben.
+Dein Salesforce-Benutzerkonto braucht API-Zugriff. Dieser ist in den meisten Editionen enthalten.
 
 ## Kontaktdaten aktualisieren
 
-Wenn deine Machine neuere Daten zu einem deiner Salesforce-Kontakte kennt, kann sie den Kontakt dort aktualisieren: Jobtitel, Telefon und den LinkedIn-Link, wenn deine Org ein LinkedIn-Feld bei Kontakten hat.
+Wenn deine Machine neuere Angaben zu einem deiner Salesforce-Kontakte kennt, kann sie den Kontakt dort aktualisieren: Berufsbezeichnung, Telefonnummer und den LinkedIn-Link, falls deine Organisation ein LinkedIn-Feld für Kontakte eingerichtet hat.
 
-1. Öffne in **Verbindungen** Salesforce und tippe auf **Zeigen, was sich ändern würde**.
-2. Prüf die Liste und tippe dann auf **Einschalten** oder **Nicht jetzt**.
+1. Öffne unter **Verbindungen** Salesforce und klicke auf **Zeigen, was sich ändern würde**.
+2. Prüfe die Liste und klicke dann auf **Einschalten** oder **Nicht jetzt**.
 
-Woran es sich hält:
+Dabei gilt:
 
-- Nur Daten in den eigenen Worten der Person, etwa aus ihrem LinkedIn- oder Slack-Profil, oder solche, die du auf ihrer Seite eingetragen hast. Nie eine Vermutung.
-- Nur wenn die Angabe neuer ist als die letzte Änderung am Kontakt in Salesforce. Eine Änderung dort gewinnt.
-- Nur Felder, die sich unterscheiden, und nie ein leerer Wert. Es ändert nie die E-Mail-Adresse oder den Account.
-- Jede Änderung ist eine datierte Zeile auf der Seite der Person.
+- Nur Angaben, die die Person selbst gemacht hat, zum Beispiel in ihrem LinkedIn- oder Slack-Profil, oder die du auf ihrer Seite eingetragen hast. Nie Vermutungen.
+- Nur wenn die Angabe neuer ist als die letzte Änderung des Kontakts in Salesforce. Änderungen dort haben Vorrang.
+- Nur Felder, deren Werte abweichen, und nie leere Werte. Die E-Mail-Adresse und der Account werden nie geändert.
+- Jede Änderung wird als datierte Zeile auf der Seite der Person angezeigt.
 
-Tippe auf **Ausschalten**, um aufzuhören. Eine Verbindung, die deine Fleet teilt, liest nur.
+Klicke auf **Ausschalten**, um die Funktion zu stoppen. Eine Verbindung, die deine Fleet teilt, liest nur Daten.
 
-## Entfernen
+## Verbindung entfernen
 
-- Im Dashboard: **Verbindungen**, Salesforce öffnen, **Details**, dann **Trennen**. Was es schon reingebracht hat, bleibt.
-- Auf einer gehosteten Machine kannst du auch auf deiner Einrichtungsseite daneben auf **Entfernen** tippen.
+- Im Dashboard: Öffne unter **Verbindungen** Salesforce, klicke auf **Details** und dann auf **Trennen**. Bereits importierte Daten bleiben erhalten.
+- Auf einer gehosteten Machine öffnet **Trennen ↗** dort deine Einrichtungsseite. Klicke daneben auf **Entfernen**.
 
-## In Salesforce widerrufen
+## Zugriff in Salesforce widerrufen
 
-Öffne in Salesforce deine persönlichen Einstellungen, dann Connected Apps OAuth Usage, oder frag deinen Admin, und widerrufe The Machine. Es kann dann nichts mehr lesen oder ändern.
+Öffne in Salesforce deine persönlichen Einstellungen und dann „Connected Apps OAuth Usage“, oder bitte deine Administration darum, und widerrufe den Zugriff für The Machine. Sie kann dann nichts mehr lesen oder ändern.

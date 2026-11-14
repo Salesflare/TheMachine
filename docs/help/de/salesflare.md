@@ -1,43 +1,43 @@
 ---
 title: Salesflare CRM
 area: connections
-summary: Accounts, Kontakte und Deals, damit es weiß, wer wichtig ist. Es liest mit deinem API-Schlüssel.
+summary: Konten, Kontakte und Deals, damit sie weiß, wer wichtig ist. Zum Lesen verwendet sie deinen API-Schlüssel.
 covers: connector:salesflare
 code: assistant.py, onboarding.py
 site: More sources, Connect, Remove
-translated: 697e6d60b69bb1cd
+translated: 3d6041d568843d96
 ---
-## Was es liest
+## Was sie liest
 
-Deine Accounts, Kontakte und Deals in Salesflare und die Account-Feeds: E-Mails von Kolleginnen und Kollegen, an denen du nicht beteiligt bist, und Meetings mit Notizen.
+Deine Konten, Kontakte und Deals in Salesflare sowie den Feed jedes Kontos: E-Mails von Kolleginnen und Kollegen, bei denen du nicht dabei warst, und Meetings mit Notizen.
 
-## Was es ändern kann
+## Was sie ändern kann
 
-Nichts, außer du setzt `join_pipelines` in der Einstellungsdatei deiner Machine. Dann fügt es dich von selbst zu Accounts in diesen Pipelines hinzu. Standardmäßig ist das leer.
+Nichts. (Auf deinem eigenen Computer kann die Einstellung `join_pipelines` dafür sorgen, dass sie dich zu Konten in ausgewählten Pipelines hinzufügt. Standardmäßig ist sie deaktiviert.)
 
 ## Verbinden
 
-1. Öffne in Salesflare [Settings, API keys](https://app.salesflare.com/#/settings/apikeys) und erstelle einen Schlüssel.
-2. Auf einer gehosteten Machine: Öffne deine Einrichtungsseite unter app.themachine.computer/setup, geh zu **Weitere Quellen**, öffne Salesflare CRM, füge den Schlüssel ein und tippe auf **Verbinden**.
-3. Auf deinem eigenen Computer: Führe `assistant connect crm` aus, oder **Verbindungen**, **Kunden**, Salesflare CRM. Nach **Verbinden** startet deine Machine neu und öffnet die Salesflare-Karte. Die sagt zuerst, dass sie die Accounts mit aktuellen E-Mails und Meetings sucht, und dann, wie viele sie gelesen hat.
+1. Öffne in Salesflare [Einstellungen, API-Schlüssel](https://app.salesflare.com/#/settings/apikeys) und erstelle einen Schlüssel.
+2. Bei einer gehosteten Machine: Öffne deine Einrichtungsseite unter app.themachine.computer/setup, gehe zu **Weitere Quellen**, öffne Salesflare CRM, füge den Schlüssel ein und klicke auf **Verbinden**.
+3. Öffne im Dashboard **Verbindungen**, **Kunden** und Salesflare CRM, füge den Schlüssel ein und klicke auf **Verbinden**. Auf der Karte siehst du dann den Fortschritt.
 
-## Details zur Synchronisierung
+## Sync-Details
 
-Seine Karte unter **Verbindungen**, **Andere Quellen** zeigt, wie weit es ist: wie viele Accounts es in dieser Runde gelesen hat und wie viele es übersprungen hat, weil Salesflare zu langsam geantwortet hat. Eine Runde, die stundenlang läuft, meldet, dass sie vielleicht festhängt.
+Unter **Verbindungen**, **Kunden** zeigt Salesflare den Fortschritt an: wie viele Konten in dieser Runde gelesen wurden und welche übersprungen wurden, weil Salesflare zu langsam war. Dauert eine Runde mehrere Stunden, wird möglicherweise angezeigt, dass sie festhängt.
 
-Die Kacheln zählen die Accounts, die es öffnen konnte, und die E-Mails und Meetings, die es hereingeholt hat. Lässt Salesflare deinen API-Schlüssel keinen Account öffnen, steht auf der Karte **Braucht deine Hilfe**: Nimm den Schlüssel eines Nutzers, der sie sehen kann. Bricht Salesflare immer wieder ab, klappt aber jeder neue Versuch, heißt es, Salesflare ist **manchmal langsam**.
+Die Kacheln zeigen, auf wie viele Konten sie zugreifen konnte und wie viele E-Mails und Meetings sie übernommen hat. Kann Salesflare mit deinem API-Schlüssel keines der Konten öffnen, steht auf der Karte **Braucht deine Hilfe**: Verwende den Schlüssel eines Benutzers, der sie sehen kann. Läuft Salesflare immer wieder in ein Zeitlimit, aber klappt jeder neue Versuch, steht dort, dass Salesflare **manchmal langsam** ist.
 
-Hat Salesflare den Feed-Zugriff für API-Schlüssel für dein Team nicht eingeschaltet, steht das auf der Karte: Es kommen keine E-Mails oder Meetings an, bis der Salesflare-Support ihn einschaltet. Es prüft am ersten Tag alle 10 Minuten erneut, danach etwa jede Stunde, und macht von selbst weiter, sobald es klappt.
+Hat Salesflare den Feed-Zugriff für API-Schlüssel in deinem Team noch nicht aktiviert, wird das auf der Karte angezeigt: Es werden keine E-Mails oder Meetings übernommen, bis der Salesflare-Support den Zugriff aktiviert. Am ersten Tag wird alle 10 Minuten erneut geprüft, danach etwa einmal pro Stunde. Sobald es funktioniert, läuft die Synchronisierung automatisch weiter.
 
-- **Stopp**: Nichts Neues kommt rein, bis du auf **Starten** tippst. Es macht dort weiter, wo es war.
-- **Sync neu starten**: verwirft die aktuelle Runde samt Fehlern und liest jetzt die letzte Woche neu. Nichts, was es reingebracht hat, geht verloren.
-- **API-Schlüssel**: öffnet die Seite für API-Schlüssel in Salesflare, um einen neuen Schlüssel zu erstellen.
+- **Stopp**: Es werden keine neuen Daten übernommen, bis du auf **Beginn** klickst. Danach wird an der bisherigen Stelle fortgesetzt.
+- **Sync neu starten**: Beginnt von vorn und liest die letzte Woche erneut ein. Bereits übernommene Daten gehen nicht verloren.
+- **API-Schlüssel**: Öffnet die API-Schlüsselseite von Salesflare, auf der du einen neuen Schlüssel erstellen kannst.
 
 ## Entfernen
 
-- Im Dashboard: **Verbindungen**, Salesflare öffnen, **Details**, dann **Trennen**. Was es schon reingebracht hat, bleibt.
-- Auf einer gehosteten Machine kannst du auch auf deiner Einrichtungsseite daneben auf **Entfernen** tippen.
+- Im Dashboard: Öffne **Verbindungen**, dann Salesflare und **Details**. Klicke anschließend auf **Trennen**. Bereits übernommene Daten bleiben erhalten.
+- Bei einer gehosteten Machine kannst du auch auf deiner Einrichtungsseite daneben auf **Entfernen** klicken.
 
 ## In Salesflare widerrufen
 
-Lösche den API-Schlüssel in Salesflare, unter Settings, API keys.
+Lösche den API-Schlüssel in Salesflare unter Einstellungen, API-Schlüssel.

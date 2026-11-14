@@ -1,38 +1,38 @@
 ---
 title: Eine gehostete Machine einrichten
 area: getting-started
-summary: Melde dich an, starte deine kostenlosen Tage, verbinde deine Mail und wähle deine KI. Das dauert ein paar Minuten.
+summary: Melde dich an, starte deine kostenlosen Probetage, verbinde deine E-Mails und wähle deine KI aus. Das dauert nur ein paar Minuten.
 code: onboarding.py, dashboard.html
-site: Mail and Calendar, Your AI, Continue with Google, Continue with Microsoft, Turn on, Add more any time, More sources, Open your dashboard, Sources, Ask for a source, Build it, Add a passkey, Use an authenticator app instead, Add to Claude, First to-dos, Back
+site: Mail and Calendar, Your AI, Continue with Google, Continue with Microsoft, Turn on, Add more any time, More sources, Open your dashboard, Sources, Ask for a source, Build it, Add a passkey, Use an authenticator app instead, Add to Claude, Back
 order: 1
-translated: 0be6044113aaaa39
+translated: 45dda198434fcd3a
 ---
-Eine gehostete Machine läuft in der Cloud, in der EU, nur für dich. Wir halten sie am Laufen und aktuell.
+Eine gehostete Machine läuft in der Cloud, in der EU und nur für dich. Wir halten sie am Laufen und aktualisieren sie.
 
-## Registrieren
+## Anmelden
 
-1. Tippe auf app.themachine.computer auf **Weiter mit Google** oder **Weiter mit Microsoft**. Damit wird dein Konto angelegt. Mit Google fragt derselbe Bildschirm auch nach deinem Gmail und deinem Kalender. Erlaubst du sie, ist deine E-Mail verbunden, ohne zweiten Google-Bildschirm.
-2. Wähle Größe und Adresse deiner Machine. Die ersten {trial_days} Tage sind kostenlos, und vor ihrem Ende wird nichts abgebucht. Fragt die Einrichtung nicht nach einer Zahlungskarte, füge vorher eine auf deiner Kontoseite hinzu.
-3. Tippe auf **Passkey hinzufügen** und nutze deinen Fingerabdruck, dein Gesicht oder die PIN deines Geräts. Lieber eine Authenticator-App? Öffne **Stattdessen eine Authenticator-App verwenden**, scanne den Code, gib die sechs Ziffern ein und tippe auf **Einschalten**. Speichere die Wiederherstellungscodes, die danach kommen.
+1. Drücke auf app.themachine.computer **Mit Google fortfahren** oder **Mit Microsoft fortfahren**. Dadurch wird dein Konto erstellt. Bei Google fragt dich derselbe Bildschirm nach Gmail und Kalender. Erlaube den Zugriff, dann ist deine Mail verbunden, ohne dass du einen zweiten Google-Bildschirm öffnen musst.
+2. Wähle die Größe und Adresse deiner Machine aus. Die ersten {trial_days} Tage sind kostenlos. Vor Ablauf wird dir nichts berechnet. Wenn du bei der Einrichtung nicht nach einer Zahlungskarte gefragt wirst, füge vor Ablauf eine auf deiner Kontoseite hinzu.
+3. Drücke auf **Passkey hinzufügen** und verwende deinen Fingerabdruck, dein Gesicht oder die PIN deines Geräts. Möchtest du lieber eine Authenticator-App verwenden? Öffne **Stattdessen eine Authenticator-App verwenden**, scanne den Code, gib die sechs Ziffern ein und drücke auf **Einschalten**. Speichere die anschließend angezeigten Wiederherstellungscodes.
 
 ## Deine Einrichtungsseite
 
-Die Registrierung ist ein Ablauf in fünf Schritten, einer pro Bildschirm: dein Tarif, dein Passkey, dann **E-Mail und Kalender**, **Deine KI** und **Erste Aufgaben**. Oben steht, bei welchem Schritt du bist. Eine Zeile zeigt, wie weit deine Machine mit dem Starten ist. Du musst nicht darauf warten: Beide Schritte funktionieren, während sie startet.
+Die Einrichtung besteht aus einem Schritt pro Bildschirm: dein Tarif, dein Passkey, dann **Mail und Kalender** und **Deine KI**. Oben siehst du, bei welchem Schritt du bist. Deine Machine startet im Hintergrund, du musst also nie auf sie warten.
 
-1. **E-Mail und Kalender**: ein Tippen auf **Google verbinden** oder **Microsoft verbinden**. Es beginnt mit dem Konto, mit dem du dich angemeldet hast. Gmail und Kalender schon bei der Registrierung mit Google erlaubt? Dann überspringt die Einrichtung diesen Schritt, und es geht weiter mit deiner KI. Arbeit oder privat ergibt sich aus der Adresse; das änderst du später beim Konto. Siehe [Gmail](gmail.md) und [Microsoft](microsoft.md).
-2. **Deine KI**: Melde dich mit ChatGPT oder Claude an, oder nutze einen Schlüssel deines KI-Anbieters. Bei Claude fügst du den Code von der Seite von Claude ein, und es geht von selbst weiter. Kein Abo? Hol dir ChatGPT oder Claude, oder nutze einen Schlüssel: Der Schritt verlinkt die Schlüsselseite jedes Anbieters, und der Anbieter rechnet nach Nutzung ab. Siehe [ChatGPT](chatgpt.md).
-3. Prüfungen schalten sich von selbst ein. Die ersten Aufgaben kommen aus deinen neuesten Mails, dann aus deinen letzten 7 Tagen. Braucht dich nichts, sagt die Liste, was sie gelesen hat und was du noch verbinden kannst. Schlägt eine Prüfung fehl, versucht die Machine es in wenigen Minuten erneut; klappt es weiter nicht, sagt es die Liste.
+1. **Mail und Kalender**: Drücke auf **Google verbinden** oder **Microsoft verbinden**. Dabei wird das Konto verwendet, mit dem du dich angemeldet hast. Hast du dich mit Google angemeldet und Gmail und Kalender bereits Zugriff gewährt? Dann überspringt die Einrichtung diesen Schritt und geht direkt zu deiner KI. Ob dein Konto beruflich oder privat ist, richtet sich nach der Adresse. Du kannst das später im Konto ändern. Siehe [Gmail](gmail.md) und [Microsoft](microsoft.md).
+2. **Deine KI**: Melde dich mit ChatGPT oder Claude an oder füge einen Schlüssel deines KI-Anbieters ein. Bei Claude fügst du den Code von der Claude-Seite ein. Hast du keinen Tarif? Hol dir ChatGPT oder Claude oder verwende einen Schlüssel. Der Schritt enthält einen Link zur Schlüssel-Seite jedes Anbieters. Der Anbieter berechnet dir die Nutzung. Siehe [ChatGPT](chatgpt.md).
+**Zurück** und die Zurück-Schaltfläche deines Browsers bringen dich zum vorherigen Schritt. Sobald Mail und KI funktionieren, kommst du zu deinem Dashboard.
 
-**Zurück** und die Zurück-Taste deines Browsers gehen zum vorigen Schritt. Sobald Mail und deine KI funktionieren, landest du in deinem Dashboard.
+Dort findest du deine ersten Aufgaben: Deine Machine prüft zuerst die neuesten E-Mails und dann die der letzten 7 Tage. Wenn nichts deine Aufmerksamkeit braucht, sagt sie dir, was sie gelesen hat und was du als Nächstes verbinden kannst. Eine fehlgeschlagene Prüfung wird innerhalb weniger Minuten erneut versucht. Schlägt sie weiterhin fehl, steht das in der Liste.
 
-Bei der Einrichtung wird nichts Optionales abgefragt. Danach hat **Jederzeit mehr hinzufügen** auf der Einrichtungsseite **Weitere Quellen** wie Slack, WhatsApp oder GitHub, [Telegram](telegram.md), [Codex](hand-to-agent.md) und die Verbindung deines Browsers. Nach deiner ersten Aufgabe schlägt dein Dashboard eine davon vor, wenn sie hilft, etwa GitHub, sobald dessen Mails regelmäßig reinkommen.
+Bei der Einrichtung wirst du nach nichts gefragt, was optional ist. Danach findest du auf der Einrichtungsseite unter **Jederzeit mehr hinzufügen** die **Weitere Quellen**, zum Beispiel Slack, WhatsApp, GitHub, [Telegram](telegram.md) und [Codex](hand-to-agent.md). Dein Dashboard schlägt dir ebenfalls eine Quelle vor, wenn es sinnvoll ist, zum Beispiel GitHub, sobald regelmäßig E-Mails dazu eingehen.
 
-Sobald deine Machine bereit ist, steht **Dein Dashboard öffnen** oben auf der Seite. **Zu Claude hinzufügen** fügt The Machine zu Claude hinzu, damit du dort nach deinen Mails und Aufgaben fragen kannst. Füge es für Benachrichtigungen zum Startbildschirm deines Handys hinzu: siehe [App installieren und Benachrichtigungen einschalten](phone-app.md).
+Wenn deine Machine bereit ist, wird oben **Dein Dashboard öffnen** angezeigt. Mit **Zu Claude hinzufügen** kannst du Claude Fragen zu deinen E-Mails und Aufgaben stellen. Für Benachrichtigungen kannst du The Machine zum Startbildschirm deines Handys hinzufügen. Siehe [App installieren und Benachrichtigungen aktivieren](phone-app.md).
 
 ## Eine Quelle anfragen
 
-Fehlt dir eine Quelle? Gib unter **Quellen** bei **Eine Quelle anfragen** den Dienst an und was gelesen werden soll, und tippe auf **Bauen**. Deine eigene KI schreibt und testet sie auf deiner Machine. Wenn du sie teilst, öffnet The Machine dafür einen Pull Request auf GitHub für dich. Ein GitHub-Konto brauchst du nicht; [verbinde GitHub](github.md), um als Co-Autor genannt zu werden.
+Fehlt eine Quelle? Nenne unter **Quellen** im Bereich **Eine Quelle anfragen** den Dienst und was gelesen werden soll. Drücke dann auf **Erstellen**. Deine eigene KI erstellt und testet die Quelle auf deiner Machine. Wenn du sie teilen möchtest, stellt The Machine sie für dich allen auf GitHub zur Verfügung. Du brauchst kein GitHub-Konto. [Verbinde GitHub](github.md), damit du als Urheber genannt wirst.
 
-## Später zurückkommen
+## Später weitermachen
 
-Deine Einrichtungsseite bleibt unter app.themachine.computer/setup. Dort kannst du jederzeit Quellen hinzufügen oder entfernen. Im Dashboard hat **Einstellungen** den Punkt **Konto öffnen**.
+Deine Einrichtungsseite findest du weiterhin unter app.themachine.computer/setup. Dort kannst du jederzeit Quellen hinzufügen oder entfernen. Im Dashboard findest du unter **Einstellungen** die Option **Konto öffnen**.

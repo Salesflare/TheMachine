@@ -4,6 +4,7 @@ area: connections
 summary: Een webpagina die je volgt. Alleen een to-do als er iets verandert dat telt.
 covers: connector:web_page
 code: connectors/web_page.py
+translated: d40b156b37cc9bc5
 ---
 ## Wat het leest
 

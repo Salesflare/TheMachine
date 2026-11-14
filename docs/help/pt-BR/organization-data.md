@@ -1,27 +1,27 @@
 ---
 title: Detalhes da organização
 area: graph
-summary: Setor, tamanho, local e um logo ao lado de cada organização, buscados pelo endereço do site dela.
+summary: Setor, porte, localização e um logotipo para cada organização, consultados pelo endereço do site.
 covers: enrichment
 code: enrichment.py, graph.py, dashboard.html
 order: 5
-translated: a759d8e2c6274792
+translated: f403410953e50582
 ---
-## De onde eles vêm
+## De onde vêm os dados
 
-- Em uma Machine hospedada, os detalhes das organizações são buscados para você, sem custo.
-- No seu próprio computador, isso fica desativado até você adicionar uma chave de um serviço de busca que você usa, como Apollo, People Data Labs ou Hunter. Veja o [guia de configuração](https://github.com/Salesflare/TheMachine/blob/main/docs/configuration.md).
+- Em uma Machine hospedada, os detalhes da organização são consultados para você, sem custo.
+- No seu próprio computador, esse recurso fica desativado até você adicionar uma chave de um serviço de consulta, como Apollo, People Data Labs ou Hunter. Consulte o [guia de configuração](https://github.com/Salesflare/TheMachine/blob/main/docs/configuration.md).
 
-Só o endereço do site da organização é enviado, nunca as suas mensagens nem quem você conhece lá. Algumas são buscadas por vez, no máximo 50 por dia, e atualizadas a cada 90 dias. As pessoas têm a própria busca: veja [Cargo e foto](people.md#job-title-and-photo). Hospedagens compartilhadas e provedores de e-mail, como google.com, sites.google.com ou gmail.com, nunca são buscados: não são o site de uma empresa específica.
+Só o endereço do site da organização é enviado, nunca suas mensagens nem quem você conhece nela. Uma Machine hospedada ou uma no The Machine Network faz até 1,000 consultas por dia. Nos outros casos, são até 50. Os dados são atualizados a cada 90 dias. Sites compartilhados e provedores de e-mail, como gmail.com, nunca são consultados. As pessoas têm uma consulta própria: veja [Cargo e foto](people.md#job-title-and-photo).
 
-Quando a busca não traz logo, ou não há busca, o logo vem do próprio site da organização: o ícone que a página inicial indica. Ele fica salvo na sua Machine, então nenhum serviço de logos fica sabendo com quem você lida. Um site sem ícone é consultado de novo depois de 30 dias. Se a busca encontrou a organização mas não o logo, ela é feita mais uma vez depois de uma semana, e o logo que ela trouxer então substitui o ícone do site. Lugares pequenos, como a linha de uma tarefa, continuam mostrando o ícone quadrado.
+Se a consulta não encontrar um logotipo, The Machine usa o ícone do próprio site da organização, salvo na sua Machine. Nenhum serviço de logotipos fica sabendo com quem você trabalha. Quando tem os dois, espaços pequenos, como a linha de uma tarefa, mostram o ícone quadrado.
 
-Quando a busca as traz, até 5 especialidades da organização aparecem sob a descrição dela, e a lista de organizações pode ser filtrada por uma: **Filtrar** e depois **Especialidade**. Quando a busca de uma pessoa traz os dados da empresa dela, eles também preenchem a organização, que assim não precisa de uma busca própria. Dados buscados nos últimos 90 dias ficam como estão.
+Quando a consulta encontra especialidades, até 5 delas aparecem abaixo da descrição. Também é possível filtrar a lista de organizações por uma delas: **Filtrar** e depois **Especialidade**. Quando a consulta de uma pessoa também traz os dados da empresa, eles preenchem os dados da organização, sem que ela precise de uma consulta própria. Os dados consultados nos últimos 90 dias permanecem como estão.
 
-## Corrigir um detalhe errado
+## Corrigir uma organização errada
 
 Na página da organização:
 
-- **Editar** para mudar o nome, o setor, o tamanho, o local, o ano de fundação, a descrição, o site, o LinkedIn e o que ela é para você. Suas edições ficam. Esvazie um campo para usar de novo o valor buscado.
-- **Empresa errada, apagar detalhes** se ele pegou a empresa errada.
-- **Buscar de novo** para trazer detalhes atualizados.
+- Use **Editar** para alterar o nome, setor, porte, localização, ano de fundação, descrição, site, LinkedIn, observações e sua relação com ela. Suas alterações são mantidas. Apague o conteúdo de um campo para voltar a usar o valor consultado.
+- Se a empresa selecionada estiver errada, use **Empresa errada, apagar detalhes** em **Editar**.
+- **Buscar de novo**, exibido depois que os dados são apagados, busca detalhes atualizados.

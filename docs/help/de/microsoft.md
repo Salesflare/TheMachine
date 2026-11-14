@@ -1,56 +1,56 @@
 ---
 title: Microsoft Outlook und Kalender
 area: connections
-summary: Outlook-Mails und Meetings, für Microsoft 365 und Outlook.com. Sendet eine E-Mail erst, nachdem du sie freigegeben hast.
+summary: Outlook-E-Mails und -Termine für Microsoft 365 und Outlook.com. E-Mails werden erst nach deiner Freigabe gesendet.
 covers: connector:outlook, connector:outlook_calendar
 code: ms_graph.py, ms_photos.py, onboarding.py
 site: Connect Microsoft, Copy link, I'm the admin: approve now, Disconnect, Sign in with Microsoft, Use your own app
 order: 12
-translated: 41c9c0174a2a21c7
+translated: c10bf70a327b8ec0
 ---
-## Was es liest
+## Was gelesen wird
 
-- **Outlook**: alle deine Mails, die letzten 7 Tage beim Verbinden, danach alles Neue.
-- **Outlook-Kalender**: deine Meetings, nur lesend.
+- **Outlook**: alle deine E-Mails, beim Verbinden die der letzten 7 Tage und danach alle neuen.
+- **Outlook-Kalender**: deine Termine, nur lesend.
 
-Mails unter Sonstige und Newsletter werden zuerst kurz angesehen: Absender, Betreff und ein paar Wörter, viele auf einmal. Wenn eine wichtig ist, wird sie ganz gelesen und kann zu einer Aufgabe werden. Nichts wird ungesehen übersprungen.
+E-Mails unter „Other“ und Newsletter werden zuerst kurz geprüft: Absender, Betreff und ein paar Wörter. Wenn eine wichtig ist, wird sie vollständig gelesen und kann zu einer Aufgabe werden.
 
-## Was es senden und ändern kann
+## Was gesendet und geändert werden kann
 
-- Eine E-Mail aus einer Aufgabe, erst nachdem du sie in der Vorschau freigegeben hast. Sie geht immer von der eigenen Adresse des Postfachs raus: Microsoft bestätigt das Senden als Alias nicht.
+- Eine E-Mail aus einer Aufgabe, aber erst nachdem du sie freigegeben hast. Sie wird von der Adresse des Postfachs selbst gesendet, nicht von einem Alias.
 - Eine Antwort landet in der Outlook-Unterhaltung der E-Mail, auf die sie antwortet.
-- Wenn du eine Aufgabe zu einer E-Mail zurückstellst, wandern die Nachrichten des Threads in Outlook in einen Ordner Snoozed und kommen zurück, wenn die Aufgabe zurückkommt.
+- Nach dem Versand einer Antwort werden die Nachrichten des Threads für einige Tage (3, sofern in der Aufgabe nichts anderes steht) in Outlook in den Ordner „Zurückgestellt“ verschoben. Danach kommen sie zurück in den Posteingang oder früher, wenn jemand antwortet. In der Prüfung vor dem Senden wird darauf hingewiesen.
 
 Der Kalender wird nie geändert.
 
-## Fotos von Kollegen und Kontakten
+## Fotos von Kolleginnen, Kollegen und Kontakten
 
-Microsoft wird auch um die Basisprofile in deiner Organisation (Name, E-Mail und Foto) und deine Outlook-Kontakte gebeten. Deine Machine nutzt sie nur für Fotos, Positionen und Firmen von Personen, die schon in deinem Graph sind, bis zu 200 Fotos am Tag. Wer kein Foto hat, wird nach 30 Tagen erneut geprüft.
+Microsoft wird außerdem gebeten, grundlegende Profile in deiner Organisation (Name, E-Mail-Adresse und Foto) sowie deine Outlook-Kontakte zu lesen. Deine Machine nutzt diese Daten nur für Fotos, Berufsbezeichnungen und Unternehmen von Personen, die bereits in deinem Graph sind, mit höchstens 200 Fotos pro Tag. Personen ohne Foto werden nach 30 Tagen erneut geprüft.
 
-Eventuell muss der Admin deiner Organisation die Fotos der Kollegen freigeben. Tut er das nicht, verbindet sich Outlook trotzdem, nur ohne diese Fotos. Ein Konto, das schon vorher verbunden war, bekommt eine Aufgabe: Drück **Neu verbinden** oder **Nicht nötig**, um sie dauerhaft zu schließen. Ein privates Konto (Outlook.com, Hotmail) hat keine Kollegen, also fragt seine Aufgabe nur nach den Fotos der Kontakte.
+Der Admin deiner Organisation muss die Fotos von Kolleginnen und Kollegen möglicherweise freigeben. Falls nicht, wird Outlook trotzdem verbunden, aber ohne diese Fotos. Ein Konto, das schon vorher verbunden wurde, erhält eine Aufgabe: Drücke **Neu verbinden** oder **Nicht nötig**, um sie endgültig zu schließen. Bei einem persönlichen Konto (Outlook.com, Hotmail) gibt es keine Kolleginnen und Kollegen. Die Aufgabe betrifft daher nur Fotos von Kontakten.
 
 ## Verbinden
 
-Auf einer gehosteten Machine:
+Bei einer gehosteten Machine:
 
 1. Öffne deine Einrichtungsseite unter app.themachine.computer/setup.
-2. Tippe auf **Microsoft verbinden** und melde dich an.
-3. Wenn Microsoft nach einer Admin-Freigabe fragt, schick deinem Microsoft 365 Admin diesen Link: themachine.computer/m365-admin-consent. **Link kopieren** kopiert ihn. Sobald der Admin freigibt, können sich alle in deiner Organisation verbinden. Bist du der Admin, tippe auf **Ich bin der Admin: jetzt freigeben**.
+2. Drücke **Microsoft verbinden** und melde dich an.
+3. Wenn Microsoft eine Adminfreigabe verlangt, schicke deinem Microsoft 365-Admin den Link (**Link kopieren**). Sobald die Freigabe erteilt ist, kann sich jede Person in deiner Organisation verbinden. Wenn du der Admin bist, drücke **Ich bin der Admin: Jetzt freigeben**.
 
-Oder im Dashboard: **Verbindungen**, **E-Mail**, wähle Outlook und tippe auf **Mit Microsoft anmelden**. Danach bist du zurück im Dashboard. Brauchst du die Freigabe deines Admins? Derselbe Link steht unter dem Button, mit **Link kopieren**.
+Oder im Dashboard: **Verbindungen**, **E-Mail**, wähle Outlook und drücke **Mit Microsoft anmelden**. Der Admin-Link steht direkt unter der Schaltfläche.
 
-Auf deinem eigenen Computer, sobald er [mit deinem Konto gekoppelt](friends.md#a-machine-on-your-own-computer) ist: Öffne **Verbindungen**, dann **E-Mail**, wähle Outlook und tippe auf **Mit Microsoft anmelden**. Mail und Kalender werden zusammen verbunden.
+Auf deinem eigenen Computer: Sobald er [mit deinem Konto verknüpft ist](friends.md#a-machine-on-your-own-computer), öffne **Verbindungen**, dann **E-Mail**, wähle Outlook und drücke **Mit Microsoft anmelden**. E-Mail und Kalender werden zusammen verbunden. Nach der Anmeldung bei Microsoft bist du wieder unter **Verbindungen** in deinem Dashboard.
 
-Mit deiner eigenen App: Öffne dort **Eigene App nutzen** oder führe `assistant connect outlook` oder `assistant connect outlook_calendar` aus. Es nutzt deine eigene App-Registrierung in Microsoft Entra und einen Anmeldecode. Es fragt, ob es auch senden soll, was du freigibst.
+Für IT-Teams mit einer eigenen Microsoft Entra-App: Öffne dort **Eigene App nutzen** oder führe `assistant connect outlook` aus.
 
-## Entfernen
+## Verbindung trennen
 
-- Auf einer gehosteten Machine: Tippe auf deiner Einrichtungsseite neben dem Konto auf **Trennen**. Im Dashboard bringt dich **Trennen ↗** unter Verbindungen dorthin. **Neu verbinden** dort meldet dich erneut an, ohne das Dashboard zu verlassen.
-- Auf deinem eigenen Computer: **Verbindungen**, das Konto öffnen, **Details**, dann **Trennen**.
+- Bei einer gehosteten Machine: Drücke auf deiner Einrichtungsseite neben dem Konto **Trennen**. **Trennen ↗** unter Verbindungen bringt dich dorthin.
+- Auf deinem eigenen Computer: **Verbindungen**, öffne das Konto, **Details**, dann **Trennen**.
 
-## Bei Microsoft deinstallieren
+## In Microsoft deinstallieren
 
-Microsoft bietet uns keinen Weg, eine Anmeldung zu widerrufen. Entferne sie also auch dort:
+Microsoft erlaubt uns nicht, eine Anmeldung zu widerrufen. Entferne die Verbindung daher auch dort:
 
 - Geschäfts- oder Schulkonto: myapps.microsoft.com
-- Privates Konto: account.live.com/consent/Manage
+- Persönliches Konto: account.live.com/consent/Manage

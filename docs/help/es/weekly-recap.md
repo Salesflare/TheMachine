@@ -1,27 +1,26 @@
 ---
 title: Resumen semanal
 area: weekly
-summary: Una vez por semana, cómo le fue a tu Machine: tareas, promesas, personas y proyectos, y lo que notó. Activado por defecto.
+summary: Una vez a la semana, descubre cómo le fue a tu Machine: tareas, promesas, personas y proyectos, y qué detectó. Está activado de forma predeterminada.
 covers: weekly-recap
 code: assistant.py, machine/app/recap_settings.py, config.example.json
 order: 1
-translated: 936df3d624aba2d7
+translated: 223b143a6efd5692
 ---
 ## Qué incluye
 
-- Tu semana con The Machine, y cuántas tareas valieron la pena, comparado con la semana anterior.
-- Tareas: nuevas, hechas, descartadas y pospuestas, y lo rápido que respondiste.
-- Promesas: las tuyas cumplidas y abiertas, las de otros que se cumplieron o siguen pendientes.
-- Aprendizajes para compartir con el equipo de The Machine, si hay alguno esperándote. Consulta [Comparte aprendizajes con el equipo](share-learnings.md).
-- Personas y proyectos, como quién se ha quedado en silencio.
-- Lo que noté: borradores enviados tal cual o editados, tareas descartadas en pocos minutos, tareas pospuestas más de una vez.
-- Entre bastidores: cuántas señales revisó esta semana y cuántas siguen en espera.
-- Opciones, cada una en su propio mensaje después del resumen: una fuente con mucha actividad sin resultados (**Dejar de revisar** o **Seguir revisando**) y una tarea pospuesta más de una vez (**No hace falta**, **Hazlo** o **Mantener**). No cambia nada hasta que toques.
+- Requiere tu atención: promesas que te hicieron y ya vencieron, y promesas tuyas que ya vencieron o vencen en las próximas dos semanas.
+- La próxima semana: tus reuniones (con un enlace cuando la preparación esté lista), las tareas que vencen y las promesas que otras personas hicieron para entonces.
+- Qué cambió: cuántas tareas valieron la pena en comparación con la semana anterior, con qué frecuencia **Hazlo** acertó a la primera, qué ajustó en tu forma de escribir y en sus filtros, y cuántos borradores se enviaron tal como estaban escritos.
+- Para el equipo de The Machine: aprendizajes para compartir, si hay alguno pendiente para ti. Consulta [Compartir aprendizajes con el equipo](share-learnings.md).
+- Personas y proyectos: proyectos que cobran o pierden impulso, quién es nuevo y quién lleva tiempo sin actividad.
+- Entre bastidores: cuántas señales revisó esta semana y cuántas siguen pendientes.
+- En [Telegram](telegram.md), recibirás opciones para elegir, cada una en su propio mensaje: una fuente activa sin resultados (**Dejar de revisar** o **Seguir revisando**) y una tarea pospuesta más de una vez (**No hace falta**, **Hazlo** o **Mantener**). No cambia nada hasta que pulses una opción.
 
 ## Cuándo y dónde
 
-Una vez por semana, por defecto el viernes después de las 16:00 en tu zona horaria. Llega por [Telegram](telegram.md), o como una notificación titulada "Tu semana" desde la [app del teléfono](phone-app.md) y la app del panel. También llega por correo cuando el correo está activado para **Resumen matutino** en Ajustes › Notificaciones. Con [Prudente](security-levels.md) no llega por correo.
+Una vez a la semana, los viernes después de las 16:00 en tu zona horaria, de forma predeterminada. Lo recibirás por [Telegram](telegram.md) o como una notificación titulada «Tu semana» desde la [aplicación para teléfono](phone-app.md) y la aplicación del panel. También lo recibirás por correo electrónico si el correo está activado para **Resumen matutino** en Ajustes › Notificaciones. Si usas [Careful](security-levels.md) o tienes desactivado **Texto en las notificaciones**, no lo recibirás por correo electrónico.
 
-## Desactívalo
+## Desactivarlo
 
-Está activado por defecto. Desactívalo en Ajustes › Notificaciones con el interruptor **Resumen semanal**. Si lo desactivaste, sigue desactivado. En tu propio ordenador también puedes configurar `weekly_recap` en el config.json: `enabled` en false con `chosen` en true y, si quieres, `weekday` (de 1 a 7, el viernes es 5) y `at` ("16:00"). Consulta la [guía de configuración](https://github.com/Salesflare/TheMachine/blob/main/docs/configuration.md).
+Está activado de forma predeterminada. Desactívalo en Ajustes › Notificaciones con el interruptor **Resumen semanal**. Si lo desactivaste, seguirá desactivado. En tu propio ordenador, también puedes configurar `weekly_recap` en config.json: `enabled` false con `chosen` true, y, de forma opcional, `weekday` (del 1 al 7, viernes es 5) y `at` ("16:00"). Consulta la [guía de configuración](https://github.com/Salesflare/TheMachine/blob/main/docs/configuration.md).

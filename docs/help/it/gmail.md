@@ -1,53 +1,55 @@
 ---
 title: Gmail
 area: connections
-summary: Legge le tue email e prepara bozze di risposta con il tuo stile. Invia un’email solo dopo la tua approvazione.
+summary: Legge le tue email e prepara risposte con il tuo stile. Invia un’email solo dopo la tua approvazione.
 covers: connector:gmail
 code: onboarding.py, google_api.py, next_actions.py
 site: Connect Google, Mail and Calendar, Disconnect, Sign in with Google, Use your own app
 order: 10
-translated: e06946aaa6ad0e1a
+translated: c1f2362cd496840e
 ---
 ## Cosa legge
 
-Tutte le tue email: quelle degli ultimi 7 giorni quando colleghi Gmail, poi tutte le nuove, in entrata e in uscita. Conta anche la posta che invii, così impara come scrivi e cosa hai promesso.
+Tutte le tue email: quelle degli ultimi 7 giorni quando colleghi Gmail, poi tutte le nuove, in entrata e in uscita. Conta anche le email che invii, così impara come scrivi e quali promesse hai fatto.
 
-Prima dà un’occhiata veloce alle email di Promozioni, newsletter, Aggiornamenti e Forum: mittente, oggetto e qualche parola, a molte email per volta. Quando una è importante, la legge per intero e può trasformarla in un’attività. Non ne salta nessuna senza averla vista.
+Prima dà un’occhiata alle email di Promozioni, newsletter, Aggiornamenti e Forum: mittente, oggetto e qualche parola, a molte email alla volta. Se una è importante, la legge per intero e può trasformarla in un’attività. Non ne salta nessuna senza averla vista.
 
 ## Cosa può inviare
 
-Un’email da un’attività, e solo dopo la tua approvazione. **Fallo** prepara una bozza; **Rivedi e invia** la apre, pronta da modificare, e non invia nulla finché non premi **Invia ora**. **Accedi con Google** chiede a Google anche il permesso di inviare. Se usi la tua app sul tuo computer, l’accesso consente solo la lettura finché non aggiungi tu la funzione di invio.
+Un’email associata a un’attività, e solo dopo la tua approvazione. **Fallo** prepara una bozza; **Rivedi e invia** la apre, pronta per essere modificata, e non invia nulla finché non premi **Invia ora**. **Accedi con Google** chiede a Google anche l’autorizzazione per inviare. Se usi la tua app sul tuo computer, l’accesso è di sola lettura finché non aggiungi tu la possibilità di inviare.
 
-**Da** nella schermata di revisione è un piccolo menu di selezione, disponibile quando Gmail consente a questa casella di inviare come un tuo alias, uno contrassegnato come **Miei** in **Impostazioni**, [I tuoi indirizzi](settings.md#your-addresses). Le risposte alle email ricevute a quell’indirizzo partono da lì; le nuove email partono dall’indirizzo della tua casella. Subito prima dell’invio, Gmail verifica di nuovo l’indirizzo: se non lo conferma, non viene inviato nulla.
+Nel passaggio di revisione, **Da** è un selettore che compare se Gmail consente a questa casella di inviare email usando un tuo alias, contrassegnato come **Miei** in Impostazioni, [I tuoi indirizzi](settings.md#your-addresses). Se rispondi a un’email arrivata a quell’alias, la risposta parte da lì; le nuove email partono dall’indirizzo della tua casella. Subito prima dell’invio, Gmail viene interrogato di nuovo: se non conferma l’indirizzo, l’email non viene inviata.
 
-Una risposta viene inserita nella conversazione dell’email a cui risponde. Se parte da una tua casella diversa da quella che ha ricevuto l’email, l’attività te lo segnala prima dell’invio. La risposta finisce comunque nella loro conversazione.
+La risposta viene aggiunta alla conversazione dell’email a cui risponde. Se parte da una tua casella diversa da quella che ha ricevuto l’email, l’attività te lo segnala prima dell’invio. La risposta finirà comunque nella loro conversazione.
 
-## Collegala
+Dopo l’invio di una risposta, la conversazione viene spostata fuori dalla Posta in arrivo sotto l’etichetta Posticipata per alcuni giorni (3, salvo diversa indicazione nell’attività), poi vi ritorna oppure torna prima se qualcuno risponde. Te lo segnala durante la revisione, prima dell’invio.
+
+## Collegalo
 
 Su una Machine ospitata:
 
-1. Apri la pagina di configurazione all’indirizzo app.themachine.computer/setup.
-2. In **Posta e calendario**, premi **Collega Google** e accedi. Nella schermata di Google compare Salesflare, l’azienda che ha creato The Machine.
+1. Apri la pagina di configurazione su app.themachine.computer/setup.
+2. In **Posta e calendario**, premi **Collega Google** e accedi. Nella schermata di Google compare Salesflare, l’azienda che crea The Machine.
 3. Gmail e Google Calendar si collegano insieme.
 
-Se ti sei registrato con Google e hai autorizzato Gmail e Calendar in quella schermata, si collegano automaticamente. Le email vengono inviate solo quando premi **Invia**.
+Se ti sei registrato con Google e in quella schermata hai autorizzato Gmail e Calendar, si collegano automaticamente. Le email vengono inviate solo quando premi Invia.
 
-In alternativa, dalla dashboard: **Connessioni**, **Email**, scegli Gmail e premi **Accedi con Google**. Al termine, torni alla dashboard.
+Oppure, nella dashboard: **Connessioni**, **Email**, scegli Gmail e premi **Accedi con Google**. Al termine tornerai alla dashboard.
 
 Sul tuo computer, dopo averlo [associato al tuo account](friends.md#a-machine-on-your-own-computer):
 
 1. Nella dashboard, apri **Connessioni**, poi **Email** e scegli Gmail.
 2. Premi **Accedi con Google** e accedi nella scheda che si apre. Gmail e Google Calendar si collegano insieme.
 
-Se non hai associato la Machine, oppure usi il tuo client OAuth di Google: apri **Usa la tua app** da lì, oppure esegui `assistant connect gmail`. Premi **Apri Google**, accedi e incolla l’indirizzo della pagina a cui ti reindirizza Google. Si collega anche Google Calendar associato allo stesso indirizzo.
+Se non hai associato il computer o usi un tuo client OAuth Google, apri **Usa la tua app** lì oppure esegui `assistant connect gmail`. Premi **Apri Google**, accedi e incolla l’indirizzo a cui ti reindirizza Google. Si collega anche Google Calendar per lo stesso indirizzo.
 
-Un amministratore di Google Workspace potrebbe dover prima autorizzare l’app dalla Console di amministrazione.
+Un amministratore di Google Workspace potrebbe dover autorizzare prima l’app nella Console di amministrazione.
 
-## Rimuovila
+## Rimuovilo
 
-- Su una Machine ospitata: premi **Disconnetti** accanto all’indirizzo nella pagina di configurazione. Così rimuovi Gmail e Calendar per quell’indirizzo e la tua Machine dimentica l’accesso. Le altre tue Machine mantengono il proprio accesso. Nella dashboard, **Disconnetti ↗** in Connessioni ti porta a quella pagina. Da lì, **Riconnetti** ti fa accedere di nuovo senza uscire dalla dashboard.
-- Sul tuo computer: apri **Connessioni**, seleziona Gmail, poi **Dettagli** e **Disconnetti**. Gmail smette di leggere le email. Quelle già importate restano. Quando nessun’altra cosa su quella Machine usa quell’accesso Google, la Machine lo dimentica. Le altre tue Machine mantengono il proprio accesso.
+- Su una Machine ospitata: premi **Disconnetti** accanto all’indirizzo nella pagina di configurazione. Gmail e Calendar verranno scollegati per quell’indirizzo e la tua Machine dimenticherà l’accesso. Le altre Machine manterranno il proprio. Nella dashboard, **Disconnetti ↗** in Connessioni ti porta alla pagina. Da lì, **Riconnetti** ti permette di accedere di nuovo senza uscire dalla dashboard.
+- Sul tuo computer: apri **Connessioni**, scegli Gmail, poi **Dettagli** e **Disconnetti**. Smetterà di leggere le email. Quelle già importate resteranno. Se nessun altro servizio usa quell’accesso Google, lo dimenticherà. Le altre Machine manterranno il proprio.
 
-## Disinstallala da Google
+## Disinstallalo da Google
 
-Nel tuo Account Google, apri Sicurezza, poi Le tue connessioni ad app e servizi di terze parti, e rimuovi Salesflare (Accedi con Google o versione ospitata) oppure la tua app.
+Nel tuo Account Google, apri Sicurezza, poi Le tue connessioni ad app e servizi di terze parti, e rimuovi Salesflare (Accedi con Google o Machine ospitata) oppure la tua app.

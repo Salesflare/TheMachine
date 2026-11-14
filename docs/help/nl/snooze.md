@@ -1,7 +1,7 @@
 ---
 title: Snoozen
 area: cards
-summary: Laat een to-do later terugkomen. Op een werkdag, op het tijdstip dat jij kiest.
+summary: Laat een to-do later terugkomen. Op een werkdag, op het tijdstip dat je kiest.
 covers: snooze
 code: dashboard.html, assistant.py
 order: 3
@@ -9,18 +9,18 @@ translated: e6681ab225810e81
 ---
 ## Een to-do snoozen
 
-Druk op **Snoozen** op een to-do. Het menu biedt een paar tijdstippen, zoals over 2 uur, morgen, over 3 dagen of over een week, of **Kies een datum** voor een andere dag en **Tijd**, dan **Tijd opslaan**. Per ongeluk gesnoozed? **Ongedaan maken** in de melding haalt hem meteen terug.
+Tik bij een to-do op **Snoozen**. In het menu staan een paar opties, zoals over 2 uur, morgen of over een week. Wil je een ander moment? Kies dan **Kies een datum** en **Tijd**, en tik op **Tijd opslaan**. Per ongeluk gesnoozed? Met **Ongedaan maken** in het bericht staat de to-do meteen weer op je lijst.
 
-Snoozes van een dag of langer komen terug op je tijdstip bij "Gesnoozede items komen terug om", en werk-to-do's wachten op een werkdag. Je stelt allebei in bij [Werkuren](work-hours.md).
+To-do's die je minstens een dag snoozet, komen terug op het tijdstip bij **Snoozes komen terug om**. To-do's voor werk wachten tot een werkdag. Stel beide in via [Werkuren](work-hours.md).
 
-Een **Wijzigingen vragen** zoals "herinner me hier volgende dinsdag aan" snoozet hem ook.
+Je kunt het ook zeggen via **Wijzigingen vragen**, bijvoorbeeld: ‘herinner me hier volgende dinsdag aan’.
 
-## Wanneer hij terugkomt
+## Wanneer de to-do terugkomt
 
-Hij komt terug op Telegram als dat aanstaat, en als melding op elk apparaat waar meldingen aanstaan, voor zover **Herinneringen** in [Meldingen](notifications.md) dat toelaten. Na een snooze zegt het bericht welke. Staat geen van beide aan, dan staat hij weer op het dashboard, met **Meldingen aanzetten** er meteen bij. Zet op iPhone en iPad The Machine eerst op je beginscherm.
+De to-do komt terug als melding op elk apparaat waarop meldingen aanstaan, en op Telegram als je dat gebruikt, voor zover **Herinneringen** in [Meldingen](notifications.md) dit toestaat. In het snoozebericht staat waar de to-do terugkomt. Als geen van beide mogelijk is, staat de to-do weer op het dashboard, met **Meldingen aanzetten** erbij. Download op iPhone en iPad de [mobiele app](mobile-app.md) om meldingen te ontvangen.
 
-## Zolang hij gesnoozed is
+## Terwijl de to-do gesnoozed is
 
-De to-do staat onder **Komt later terug**, en op zijn dag in de [Agenda](calendar.md). **Snooze opheffen** haalt hem nu terug, **Tijd wijzigen** kiest een ander tijdstip.
+De to-do staat onder **Komt later terug**, en op de dag zelf in de [Agenda](calendar.md). Met **Snooze opheffen** komt hij meteen terug. Met **Tijd wijzigen** kies je een ander moment.
 
-In Outlook gaat de e-mailthread naar een map Snoozed tot de to-do terugkomt. Zie [Microsoft](microsoft.md).
+In Outlook wordt de e-mailthread verplaatst naar de map Snoozed totdat de to-do terugkomt. Zie [Microsoft](microsoft.md).

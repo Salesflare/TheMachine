@@ -1,32 +1,32 @@
 ---
 title: Freigaberegeln
 area: fleet
-summary: Pro Fleet und pro Art von Frage, was deine Machine antworten darf. Erst mich fragen, Immer, Nie oder Nur Namen.
+summary: Lege pro Fleet und Fragetyp fest, was deine Machine beantworten darf: **Erst mich fragen**, **Immer** oder **Nie**. Bestimme auch, ob Namen genannt werden dürfen.
 covers: 
 code: fleet.py, dashboard.html
 order: 2
 keywords: share, sharing, colleagues, teammates, team, what others see, answer for me
-translated: 8c6f3bda9dfdbe8e
+translated: cfa9e911ea963f17
 ---
-## Festlegen
+## Regeln festlegen
 
-Öffne im Tab **Fleet** den Bereich Teilen. Jede Art von Frage hat eine Regel:
+Lege fest, was deine Machine mit deiner Fleet teilt. Öffne im Tab **Fleet** die Option **Teilen**. Für jede Art von Frage gilt eine Regel:
 
-- Erst mich fragen: Du siehst jede Frage und entscheidest.
-- Immer: Deine Machine antwortet von selbst.
-- Nie: Sie lehnt ab.
-- **Namen**: ob die Antwort sagen darf, wer, etwa den Namen eines Gasts, oder Namen weglässt.
+- **Erst mich fragen**: Du siehst jede Frage und entscheidest.
+- **Immer**: Deine Machine antwortet selbstständig.
+- **Nie**: Sie lehnt ab.
+- **Namen**: Du legst fest, ob die Antwort Personen nennt, etwa Gäste, oder Namen weglässt.
 
-Sie teilt nie E-Mail-Inhalte oder worum es in deinen Meetings geht. „Für jemanden anders? Füge eine Ausnahme hinzu“ legt eine Regel für eine einzelne Person fest.
+Inhalte deiner E-Mails und worum es in deinen Meetings geht, teilt sie nie. Mit **Für jemanden anders? Füge eine Ausnahme hinzu** legst du eine Regel für eine Person fest.
 
-Regeln ändern sich nur im Dashboard, nie über eine Nachricht.
+Regeln kannst du nur im Dashboard ändern, nicht über eine Nachricht.
 
 ## In einer Work Fleet
 
-In einer Work Fleet mit Standard haben wer jemanden kennt, Meeting-Kontext und wer geteilte E-Mails bearbeitet zwei Regeln: **Immer** und **Nie**. Immer antwortet nur mit dem, was der [Team-Graph](team-graph.md) mit deinem Team teilt, und Namen nur von Personen, die er schon teilt. Eine Regel, die als Erst mich fragen gespeichert ist, wirkt wie Immer.
+In einer Standard Work Fleet gelten für „wer kennt wen“, den Meeting-Kontext und die Zuständigkeit für gemeinsam genutzte E-Mails nur **Immer** und **Nie**. Bei **Immer** antwortet deine Machine nur mit Informationen, die der [Team Graph](team-graph.md) bereits mit deinem Team teilt. Sie nennt nur Personen, deren Namen ebenfalls geteilt werden.
 
-Solange der Team-Graph nicht teilt, behalten wer jemanden kennt und Meeting-Kontext alle drei Regeln. Eine Fleet mit Vorsichtig behält Erst mich fragen. Siehe [Fleets](fleet.md#answered-by-itself-in-a-work-fleet).
+Solange der Team Graph nichts teilt, gibt es für „wer kennt wen“ und den Meeting-Kontext weiterhin **Erst mich fragen**. Das gilt auch für eine Careful Fleet. Weitere Infos findest du unter [Fleets](fleet.md#answered-by-itself-in-a-work-fleet).
 
 ## Wenn jemand zum ersten Mal fragt
 
-Eine Frage, die dich braucht, kommt als Aufgabe, mit **Einmal teilen**, **Immer teilen**, **Ablehnen** oder **Nie teilen**.
+Eine Frage, bei der deine Entscheidung nötig ist, erscheint als Aufgabe mit den Optionen **Einmal teilen**, **Immer teilen**, **Ablehnen** oder **Nie teilen**.

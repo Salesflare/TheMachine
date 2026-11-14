@@ -1,45 +1,46 @@
 ---
 title: Níveis de segurança
 area: security
-summary: Um único seletor, Padrão ou Cuidadoso, define suas configurações de segurança e privacidade. O admin de um Fleet de Trabalho escolhe um para o Fleet.
+summary: Um único seletor, Padrão ou Cuidadoso, define suas configurações de segurança e privacidade. O admin de uma Fleet de trabalho escolhe uma opção para a Fleet.
 covers: settings:security
 code: security_levels.py, dashboard.html, fleet.py
 order: 2
-translated: f8e82f192dd70e3a
+translated: cf3ba86c8c1a23f3
 ---
 ## Dois níveis
 
-Abra **Configurações** e depois **Segurança**.
+Acesse **Configurações** e depois **Segurança**.
 
-- **Padrão**: os padrões atuais. Nada muda.
-- **Cuidadoso**: mais rígido, para quando você quer menos coisa no celular e menos coisa guardada.
+- **Padrão**: as configurações padrão de hoje. Nada muda.
+- **Cuidadoso**: mais restritivo, para quando você quer manter menos informações no celular e guardar menos dados.
 
-Um nível é um ponto de partida. Se depois você mudar qualquer configuração, o nível mostra **Personalizada**. Escolha um nível de novo para restaurar tudo.
+Um nível é um ponto de partida. Se depois você mudar qualquer configuração, o nível passa a ser **Personalizada**. Escolha um nível novamente para redefinir as configurações.
 
-## O que o Cuidadoso muda para você
+## O que Cuidadoso muda para você
 
-- **Texto nas notificações** desligado: uma notificação diz "Nova tarefa" ou "Para revisar", não o que a tarefa diz.
-- **Oferecer para salvar logins** desligado. Os sites com login salvo continuam até você tocar em **Esquecer todos os logins salvos**.
-- **Buscar contatos de trabalho**, **Oferecer compartilhar aprendizados** e **Compartilhar o que se pergunta à ajuda** desligados.
-- **Verificar quais dos meus contatos têm uma Machine** e **Deixar quem tem meu e-mail me encontrar** desligados.
-- **Manter detalhes de Fazer por 90 dias** desligado: eles são guardados por 30 dias.
-- Em uma Família, os horários livres e ocupados perguntam a você antes. Com Amigos, o contexto de reuniões é recusado.
+- **Texto nas notificações**: **Desligada**. A notificação diz “Nova tarefa” ou “**Pronto**”, não o conteúdo da tarefa.
+- **Oferecer para salvar logins**: **Desligada**. Os sites em que você entrou e salvou o login continuam salvos até você tocar em **Esquecer todos os logins salvos**.
+- **Buscar contatos de trabalho**, **Oferecer compartilhar aprendizados** e **Compartilhar o que se pergunta à ajuda**: **Desligada**.
+- **Verificar quais dos meus contatos têm uma Machine** e **Deixar quem tem meu e-mail me encontrar**: **Desligada**.
+- **Manter detalhes de Fazer por 90 dias**: **Desligada**. Eles ficam salvos por 30 dias.
+- **O que outras Machines podem perguntar à minha**: definido como **Desligada**. Não há agendamento com outras Machines. Consulte [Amigos e a Network](friends.md#scheduling-with-other-machines).
+- Em uma família, o compartilhamento dos horários em que você está livre ou ocupado pede sua confirmação. Com Amigos, o contexto da reunião é recusado.
 
-## O nível de um Fleet de Trabalho
+## Nível de uma Fleet de trabalho
 
-O proprietário ou um admin do Fleet escolhe o nível nas configurações do Fleet: em **Configurações** › **Conta**, clique em **Fleet**. Todos no Fleet veem o nível. Quando ele é Cuidadoso:
+A pessoa responsável pela Fleet ou um admin escolhe o nível nas configurações da Fleet: em **Configurações** › **Conta**, toque em **Fleet**. Todas as pessoas da Fleet podem vê-lo. Quando está definido como Cuidadoso:
 
-- Respostas a colegas esperam seu OK, sem nomes, e só sobre pessoas das suas contas de trabalho.
-- Apresentações e repasses também esperam por você.
+- As respostas para colegas de equipe aguardam sua aprovação, sem nomes e só sobre pessoas das suas contas de trabalho.
+- Apresentações e repasses também aguardam sua aprovação.
 - O Graph da equipe compartilha e-mails de clientes sem os anexos.
-- As notificações de tarefas de trabalho não mostram texto.
-- Contatos de trabalho não são buscados.
-- Sua Machine não verifica seus contatos na Network nem deixa que encontrem você por e-mail, a não ser que você tenha ligado isso.
-- Todos entram de novo a cada 7 dias.
+- As notificações de tarefas de trabalho não mostram o texto.
+- Os contatos de trabalho não são consultados.
+- Sua Machine não verifica seus contatos na Network nem permite que encontrem você pelo e-mail, a menos que você tenha ativado isso.
+- Todas as pessoas precisam entrar novamente a cada 7 dias.
 - Um link de convite só funciona para o e-mail para o qual foi enviado.
 
-Os membros podem ser mais rígidos que o Fleet, não mais flexíveis. As escolhas deles são mantidas e voltam se o Fleet voltar para Padrão.
+As pessoas podem escolher configurações mais restritivas que as da Fleet, mas não menos. As escolhas pessoais são mantidas e voltam a valer se a Fleet retornar a Padrão.
 
-## O que é igual nos dois
+## O que não muda
 
-Nada é enviado sem o seu OK: você vê cada rascunho e clica em Enviar. Fazer e os agentes de código funcionam do mesmo jeito. Entrar sempre exige um código de autenticador ou uma passkey.
+Nada é enviado sem sua aprovação: você vê cada rascunho e toca em Enviar. **Fazer** e os agentes de programação funcionam da mesma forma. Para entrar, sempre é necessário um código de autenticador ou uma chave de acesso.

@@ -5,44 +5,44 @@ summary: Wenn etwas schiefläuft, teilt deine Machine dem Team von The Machine m
 covers: error-reports
 code: error_feed.py, pacing.py, dashboard.html, sw.js
 order: 4
-translated: fd3e1c2d68b93a35
+translated: 03a8649f2f634b59
 ---
 ## Was das ist
 
-Wenn in The Machine etwas schiefläuft, sendet deine Machine unserem Team eine kurze, anonyme Meldung zum Fehler, damit wir ihn beheben können, bevor ihn jemand meldet. Fehlerberichte sind standardmäßig aktiviert und erfordern [The Machine Network](/network).
+Wenn etwas in The Machine schiefläuft, schickt deine Machine unserem Team eine kurze, anonyme Meldung zum Fehler. So können wir ihn beheben, bevor ihn jemand meldet. Die Funktion ist standardmäßig aktiviert und erfordert [The Machine Network](/network).
 
-## Welche Daten gesendet werden
+## Was gesendet wird
 
-Nur diese Daten, je nach Fehlerart:
+Nur Folgendes, je Fehlerart:
 
-- die Fehlerart, zum Beispiel `KeyError`;
-- die Fehlermeldung, aus der alle spezifischen Angaben entfernt wurden: Zahlen, IDs, zitierter Text, E-Mail-Adressen, Links, Dateipfade, Schlüssel und alle Wörter, die Namen sein könnten;
-- die Stelle im Code von The Machine, an der der Fehler auftrat, niemals ein Ordner auf deinem Computer;
-- die App-Version, wie oft der Fehler auftrat sowie den Zeitpunkt des ersten und letzten Auftretens.
+- die Art des Fehlers, zum Beispiel `KeyError`;
+- die Fehlermeldung, aus der alles Spezifische entfernt wurde: Zahlen, IDs, zitierter Text, E-Mail-Adressen, Links, Dateipfade, Schlüssel und jedes Wort, das ein Name sein könnte;
+- wo der Fehler im Code von The Machine aufgetreten ist, niemals in einem Ordner auf deinem Computer;
+- die App-Version, wie oft der Fehler aufgetreten ist und wann zum ersten und letzten Mal.
 
-Ein echtes Beispiel: `IndexError`, `list index out of range`, bei `assistant.py:fault_event:7899`, Version `05b17ee6ac79`, 1 Mal.
+Zum Beispiel: `IndexError`, `list index out of range`, bei `machine/faults.py:fault_event:246`, Version `05b17ee6ac79`, 1 Mal.
 
 ## Was niemals gesendet wird
 
-Was in deinen Nachrichten, Aufgaben, Entwürfen oder Chats steht. Namen, E-Mail-Adressen, Telefonnummern, Links oder Passwörter. Um welches Konto oder welche Person es ging.
+Der Inhalt deiner Nachrichten, Aufgaben, Entwürfe oder Chats. Namen, E-Mail-Adressen, Telefonnummern, Links oder Passwörter. Um welches Konto oder welche Person es ging.
 
 ## Woher Fehler kommen
 
-- Hintergrundaufgaben: neue Nachrichten prüfen, Aufgaben vorbereiten, Chat, Verbindungen und Synchronisierungen;
-- das Dashboard in deinem Browser oder in der App, einschließlich der Fehler, die es dir angezeigt hat;
-- Anfragen vom Dashboard, die fehlschlagen oder in einen Timeout laufen: welche Anfrage, niemals was sie gesendet hat;
-- fehlgeschlagene Aufträge von Coding-Agenten: nur das Tool und die Art des Fehlers.
+- Hintergrundprozesse: neue Nachrichten prüfen, Aufgaben vorbereiten, Chats, Verbindungen und Synchronisierungen;
+- das Dashboard in deinem Browser oder in der App, einschließlich der Fehler, die dir angezeigt wurden;
+- fehlgeschlagene oder abgelaufene Anfragen vom Dashboard: welche Anfrage, niemals was sie gesendet hat;
+- fehlgeschlagene Jobs von Coding-Agenten: nur das Tool und die Art des Fehlers.
 
-Wiederholungen desselben Fehlers werden gezählt, aber nicht erneut gesendet. Höchstens alle 10 Minuten wird ein Datenpaket gesendet. Wir speichern die Daten 30 Tage lang.
+Wiederholungen desselben Fehlers werden gezählt, aber nicht erneut gesendet. Höchstens alle 10 Minuten wird ein Paket gesendet. Wir bewahren die Berichte 30 Tage lang auf.
 
-## Zeitliche Begrenzung
+## Pausen
 
-Hintergrundaufgaben werden angehalten, wenn die Limits deines KI-Tarifs knapp werden, damit genug Spielraum für deine eigenen Chats bleibt (siehe [Dein KI-Modell](model.md)).
+Hintergrundprozesse werden angehalten, wenn die Limits deines KI-Plans knapp werden. So bleibt genug Platz für deine eigenen Chats (siehe [Dein KI-Modell](model.md)).
 
-Wenn Fehlerberichte aktiviert sind, teilt deine Machine uns außerdem einmal täglich mit, wie oft das passiert ist: pro Pause die Stunde, welches Limit, wie lange und wie viele Aufträge gewartet haben. Keine Angaben dazu, worum es bei den Aufträgen ging.
+Wenn Fehlerberichte aktiviert sind, teilt uns deine Machine außerdem einmal täglich mit, wie oft das passiert ist: pro Pause die Stunde, welches Limit erreicht wurde, wie lange die Pause dauerte und wie viele Jobs gewartet haben. Nichts darüber, worum es bei den Jobs ging.
 
-## Ausschalten
+## Deaktivieren
 
-Deaktiviere unter **Einstellungen** > **Sicherheit** die Option **Fehlerberichte senden**. Es werden keine weiteren Daten erfasst oder gesendet, und ausstehende Daten werden gelöscht. Fehler werden weiterhin auf deiner Machine angezeigt. Sie kann dir eine Lösung anbieten.
+Deaktiviere unter **Einstellungen** > **Sicherheit** die Option **Fehlerberichte senden**. Danach werden keine weiteren Fehler erfasst oder gesendet, und bereits wartende Berichte werden gelöscht. Fehler werden weiterhin auf deiner Machine angezeigt. Sie kann dir eine Lösung vorschlagen.
 
-Siehe [Sicherheit und Datenschutz](security-and-privacy.md).
+Weitere Informationen findest du unter [Sicherheit und Datenschutz](security-and-privacy.md).

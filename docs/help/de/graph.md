@@ -1,61 +1,63 @@
 ---
 title: Der Graph
 area: graph
-summary: Die Personen, Organisationen und Projekte in deinen Nachrichten, die sich von selbst aktuell halten.
+summary: Die Menschen, Organisationen und Projekte in deinen Nachrichten, immer aktuell.
 covers: tab:people
 code: graph.py, graph_updates.py, crm.py, crm_import.py, crm_fixes.py, crm_fields.py, dashboard.html
 order: 1
-translated: 4dbe1a4e1702b1c1
+translated: 850a4e2905f54511
 ---
-Deine Machine baut eine Karte davon, mit wem du zu tun hast und was los ist, aus deinen Nachrichten, Meetings und Entscheidungen. Nichts einzurichten, und alles bleibt auf deiner Machine.
+Deine Machine erstellt anhand deiner Nachrichten, Besprechungen und Entscheidungen eine Übersicht darüber, mit wem du zu tun hast und was gerade läuft. Du musst nichts einrichten, und alles bleibt auf deiner Machine.
 
-- [Personen](people.md): alle, mit denen du in Kontakt bist, jeweils mit Zusammenfassung und Verlauf.
-- [Organisationen](organizations.md): die Firmen, in denen sie arbeiten, mit ihren Personen und Projekten.
-- [Projekte](projects.md): was los ist, auf Boards mit Phasen, wie Deals in einem CRM.
+- [Personen](people.md): alle, mit denen du in Kontakt stehst, jeweils mit einer Zusammenfassung und einem Zeitstrahl.
+- [Organisationen](organizations.md): die Unternehmen, bei denen sie arbeiten, mit ihren Personen und Projekten.
+- [Projekte](projects.md): was gerade läuft, auf Boards mit Phasen, wie Deals in einem CRM.
 
 ## Heute aktualisiert
 
-Eine ruhige Zeile über jeder Liste sagt, was deine Machine heute aktualisiert hat, etwa **4 Personen heute aktualisiert**. Tippe darauf, um zu sehen, wer und was sich geändert hat; ein Name öffnet die Seite mit offenen **Letzte Änderungen**. Ein kleiner Punkt markiert jede Zeile und jede Board-Kachel, die sie heute geändert hat. Es zählen nur die eigenen Änderungen deiner Machine, ab Mitternacht.
+Eine unauffällige Zeile oben in jeder Liste zeigt, was deine Machine heute aktualisiert hat, zum Beispiel **Heute 4 Personen aktualisiert**. Tippe darauf, um zu sehen, wer und was sich geändert hat. Wenn du einen Namen auswählst, öffnet sich die entsprechende Seite mit geöffneten **Letzte Änderungen**. Ein kleiner Punkt markiert jede Zeile und Board-Kachel, die sie heute geändert hat. Gezählt werden nur Änderungen, die deine Machine selbst seit Mitternacht vorgenommen hat.
 
 ## Filtern und sortieren
 
-**Filtern**, neben den Tabs, grenzt die Liste ein. Jede Liste hat ihre eigenen Filter. Personen: Nähe, letzter Kontakt, Organisation, Inhaber, Tag und **Hat ein offenes Projekt**. Organisationen: Branche, Fachgebiet, Größe, Land, letzter Kontakt, Inhaber, Tag und **Hat ein offenes Projekt**. Projekte: Inhaber, Board, Phase, Tag, Organisation, Wert, erwartetes Abschlussdatum und **Keine Antwort seit 10+ Tagen**.
+Mit **Filtern** neben den Tabs kannst du die Liste eingrenzen. Jede Liste hat eigene Filter. Personen: Nähe, letzter Kontakt, Organisation, Inhaber, Tag und **Hat ein offenes Projekt**. Organisationen: Branche, Fachgebiet, Größe, Land, letzter Kontakt, Inhaber, Tag und **Hat ein offenes Projekt**. Projekte: Inhaber, Board, Phase, Tag, Organisation, Wert, voraussichtliches Abschlussdatum und **Keine Antwort seit 10+ Tagen**.
 
-Die gewählten Filter stehen über der Liste, mit **Entfernen**. Bei Projekten teilen sich Liste und Board einen Filter. Auf dem Handy öffnen sie sich als Blatt.
+Die ausgewählten Filter erscheinen über der Liste, zusammen mit **Entfernen**. Bei Projekten verwenden Liste und Board denselben Filter. Auf dem Smartphone werden die Filter als Sheet geöffnet.
 
-Das Sortiermenü sortiert die Liste. Personen und Organisationen nach Nähe, neuestem oder ältestem Kontakt und Name, Organisationen auch nach Größe. Projekte auch nach **Wert** und **Abschlussdatum**. **CSV herunterladen** im Sortiermenü speichert den aktuellen Tab als Tabelle.
+Über das Sortiermenü kannst du die Liste sortieren. Personen und Organisationen lassen sich nach Nähe, neuestem oder ältestem Kontakt und Name sortieren. Organisationen lassen sich außerdem nach Größe sortieren. Projekte lassen sich nach letzter Aktivität, Name, Phase, **Wert** und **Abschlussdatum** sortieren. Mit **CSV herunterladen** unter dem Sortiermenü speicherst du den aktuellen Tab als Tabelle.
 
 ## Felder und Tags
 
-Klick unter Felder bei einer Person, Organisation oder einem Projekt auf einen Wert, um ihn zu ändern: **Speichern** oder Enter behält ihn, **Abbrechen** oder Escape verwirft die Änderung, **Entfernen** leert ihn.
+Klicke im Abschnitt **Felder** einer Person, Organisation oder eines Projekts auf einen Wert, um ihn zu ändern: Mit **Speichern** oder Enter übernimmst du die Änderung, mit **Abbrechen** oder Escape verwirfst du sie, und mit **Entfernen** leerst du das Feld.
 
-**Felder verwalten** fügt Felder für alle Einträge dieser Art hinzu oder entfernt sie. **Neues Feld** fügt eins hinzu: Text, Zahl, Datum oder eine Auswahl aus einer Liste.
+Mit **Felder verwalten** (**Feld hinzufügen**, wenn es noch keine gibt) kannst du Felder für alle Einträge dieser Art hinzufügen oder entfernen. Mit **Neues Feld** fügst du ein Feld hinzu: Text, Zahl, Datum oder eine Auswahl aus einer Liste.
 
-**+ Tag** fügt einen Tag hinzu, etwa VIP oder Partner. **×** nimmt ihn wieder ab. Tags erscheinen in den Listen und **Filtern** findet sie.
+Mit **+ Tag** fügst du ein Tag hinzu, zum Beispiel VIP oder Partner. Mit **×** entfernst du es wieder. Tags werden in den Listen angezeigt und lassen sich über **Filtern** finden.
 
 ## Geburtstag
 
-Der Geburtstag einer Person steht unter Kontakt, mit seiner Herkunft: ihr Google-Kontakt, ein Geburtstag in Google Calendar (die Routine Geburtstage speichert ihn für einen engen Kontakt), ein Facebook-Import oder du. **Bearbeiten** setzt oder korrigiert ihn: Monat und Tag, und das Jahr, wenn du es kennst (dann steht auch das Alter dabei). Deiner gilt vor jeder Quelle und bleibt. **Entfernen** nimmt ihn weg; ein Kontakt oder ein Import bringt ihn nicht zurück.
+Der Geburtstag einer Person erscheint unter **Kontakt** zusammen mit der Quelle: aus ihren Google-Kontakten, aus einem Geburtstag in Google Kalender (die Geburtstags-Routine speichert ihn für enge Kontakte), aus einem Facebook-Import, aus deinen Notizen oder von dir. Mit **Bearbeiten** kannst du ihn festlegen oder korrigieren: Monat und Tag sowie das Jahr, wenn du es weißt. Dann wird auch das Alter angezeigt.
 
-Ohne Geburtstag fügt **Geburtstag hinzufügen** unter Felder ihn hinzu. Die Routine Geburtstage liest denselben Geburtstag, den die Seite zeigt. Ein Geburtstag ist persönlich: Er geht nie an dein Team, auch nicht bei einem geteilten Eintrag.
+Dein Eintrag hat Vorrang vor allen anderen Quellen und bleibt erhalten. Mit **Entfernen** löschst du ihn. Ein Kontakt oder Import fügt ihn nicht wieder hinzu.
 
-## Eine Tabelle importieren
+Wenn noch kein Geburtstag eingetragen ist, kannst du ihn unter **Felder** mit **Geburtstag hinzufügen** ergänzen. Die Geburtstags-Routine verwendet denselben Geburtstag, der auf der Seite angezeigt wird. Ein Geburtstag ist privat: Er wird auch bei einem geteilten Eintrag niemals mit deinem Team geteilt.
 
-**CSV importieren…** im Sortiermenü von Personen, Organisationen oder Projekten fügt eine als CSV gespeicherte Tabelle hinzu.
+## Tabelle importieren
 
-1. Prüf die Spalten. Deine Machine errät anhand der Überschriften und des Inhalts, welche was ist; du kannst jede ändern. Wenn dein Modell laufen kann, prüft es sie auch, mit einer kurzen Begründung, wo es unsicher ist. Es sieht nur die Überschriften, ein paar Werte pro Spalte und die Zellen, die die Regeln nicht lesen konnten.
-2. Prüf die Korrekturen. **Prüfen** listet sie als Vorher und Nachher: zusätzliche Leerzeichen, Namen in Großbuchstaben, Telefonnummern im internationalen Format, Tippfehler in E-Mail-Adressen (gmial.com), Websites als ihre Domain, Daten und Werte in jedem Format („€12k“ ist 12000), mehrere Tags in einer Zelle, eine anders geschriebene Phase und dieselbe Zeile doppelt. Entferne das Häkchen bei einer Art oder Zeile, um sie zu lassen, wie sie ist.
-3. Prüf die Vorschau. Jede Zeile ist neu, ein Treffer zu einem Eintrag in deinem Graph oder übersprungen, mit Grund. Eine Person passt über die E-Mail-Adresse (sonst Name und Organisation), eine Organisation über Website oder Name, ein Projekt über den Namen.
-4. **Importieren** fügt die neuen hinzu und ergänzt die Treffer. Eine leere Zelle ändert nichts.
+Mit **CSV importieren…** unter dem Sortiermenü bei Personen, Organisationen oder Projekten kannst du eine als CSV gespeicherte Tabelle hinzufügen.
 
-**Rückgängig** direkt danach, oder **Letzten Import rückgängig machen** im Sortiermenü, nimmt den letzten Import zurück, solange diese Einträge seitdem nicht geändert wurden. Würde es eine spätere Korrektur überschreiben, erklärt es stattdessen, warum. Die Datei bleibt auf deiner Machine.
+1. Überprüfe die Spalten. Deine Machine erkennt anhand der Überschriften und Inhalte, welche Spalte welche ist. Du kannst die Zuordnung ändern. Wenn dein Modell ausgeführt werden kann, prüft es die Spalten ebenfalls und nennt kurz den Grund, wenn es unsicher ist. Es sieht nur die Überschriften, einige Werte pro Spalte und die Zellen, die sich anhand der Regeln nicht lesen ließen.
+2. Überprüfe die Korrekturen. Unter **Prüfen** werden sie als Vorher und Nachher aufgelistet: zusätzliche Leerzeichen, Namen in Großbuchstaben, Telefonnummern im internationalen Format, Tippfehler in E-Mail-Adressen (gmial.com), Websites als Domain, Datumsangaben und Werte in beliebigem Format („€12k“ entspricht 12000), mehrere Tags in einer Zelle, eine anders geschriebene Phase und dieselbe Zeile zweimal. Deaktiviere eine Art von Korrektur oder eine Zeile, wenn du sie unverändert lassen möchtest.
+3. Überprüfe die Vorschau. Jede Zeile ist neu, stimmt mit einem Eintrag in deinem Graph überein oder wird übersprungen. Der Grund wird jeweils angezeigt. Eine Person wird anhand der E-Mail-Adresse zugeordnet (wenn keine vorhanden ist, anhand von Name und Organisation), eine Organisation anhand der Website oder des Namens und ein Projekt anhand des Namens.
+4. Mit **Importieren** fügst du neue Einträge hinzu und ergänzt die übereinstimmenden Einträge. Leere Zellen ändern nichts.
+
+Mit **Rückgängig** direkt danach oder **Letzten Import rückgängig machen** unter dem Sortiermenü machst du den letzten Import rückgängig, solange die betroffenen Einträge seitdem nicht geändert wurden. Wenn dadurch eine spätere Korrektur überschrieben würde, wird stattdessen der Grund angezeigt. Die Datei bleibt auf deiner Machine.
 
 ## Inhaber
 
-In einer Work Fleet hat jede Person, Organisation und jedes Projekt einen Inhaber: **Inhaber** unter Mit dir auf der jeweiligen Seite. Das bist du, außer du wählst jemanden aus deiner Work Fleet. **Inhaber** in Filtern zeigt nur deine. Jede Änderung erscheint im Verlauf.
+In einer Work Fleet hat jede Person, Organisation und jedes Projekt einen Inhaber. Du findest **Inhaber** unter „Bei dir“ auf der jeweiligen Seite. Standardmäßig bist du das, aber du kannst auch jemanden aus deiner Work Fleet auswählen. Über **Inhaber** unter **Filtern** kannst du nur deine Einträge anzeigen. Jede Änderung erscheint im Zeitstrahl.
 
 ## Team
 
-**Team**, neben Meine, zeigt, was deine Teammitglieder teilen, mit denselben Tabs und demselben Sortiermenü. **Filtern** grenzt es ein nach der Person, die es geteilt hat, einer Organisation (Personen) oder einem Status (Projekte). Was du dort hinzufügst, gehört dir.
+Unter **Team** neben **Meine** siehst du, was deine Teammitglieder teilen. Die Tabs und das Sortiermenü sind dieselben. Mit **Filtern** kannst du nach der Person filtern, die den Eintrag geteilt hat, nach einer Organisation (bei Personen) oder nach dem Status (bei Projekten). Was du dort hinzufügst, gehört dir.
 
-Kundenarbeit wird mit den Machines deiner Teammitglieder geteilt, mit Inhaber, Feldern und Tags, und ihre erscheint in deiner. Jeder Thread zeigt **Team** oder **Nur du**. Siehe [Team-Graph](team-graph.md).
+Die Arbeit mit Kunden wird mit der Machine jedes Teammitglieds geteilt, zusammen mit Inhaber, Feldern und Tags. Die geteilten Inhalte deiner Teammitglieder erscheinen auch auf deiner Machine. Bei jedem Thread steht **Team** oder **Nur du**. Weitere Informationen findest du unter [Team-Graph](team-graph.md).

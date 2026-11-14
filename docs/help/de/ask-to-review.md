@@ -1,34 +1,34 @@
 ---
 title: Um Review bitten
 area: fleet
-summary: Bitte ein Teammitglied oder jemanden aus deiner Familie, eine Aufgabe anzusehen, den Entwurf zu bearbeiten und zurückzuschicken. Du wählst, was bleibt.
+summary: Bitte eine Person aus deinem Team oder deiner Familie, eine Aufgabe anzusehen, den Entwurf zu bearbeiten und dir zurückzusenden. Du entscheidest, was du übernimmst.
 covers: ask-to-review
 code: fleet_reviews.py, dashboard/todos-review.js
 order: 4
-translated: 58823adef1b1f51b
+translated: d2ca08e771f23228
 ---
-## Jemanden um ein Review bitten
+## Jemanden um ein Review einer Aufgabe bitten
 
-1. Öffne bei der Aufgabe **…**, dann **Übergeben…**, und wähle **Um Review bitten**. Das geht bei jedem Schritt: vor Ausführen, bei einem fertigen Entwurf oder kurz vor dem Senden.
-2. Wähle, wen. Eine Arbeitsaufgabe geht nur an jemanden aus deiner Work Fleet, eine private nur an jemanden aus deiner Familie.
-3. Prüfe, was mitgeht: der Entwurf (oder der Text der Aufgabe) und seine Quellen. Lass eine Quelle mit × weg. Füg bei Bedarf eine Notiz hinzu und wähle **Fragen**.
+1. Öffne bei der Aufgabe **…**, dann **Übergeben…** und wähle **Um Review bitten** (wenn das die einzige Option ist, findest du sie direkt im Menü **…**). Das geht bei jedem Schritt: vor **Ausführen**, bei einem Entwurf im Status Bereit oder direkt vor dem Senden.
+2. Wähle aus, wen du fragen möchtest. Eine Arbeitsaufgabe kann nur an jemanden in deinem Arbeits-Fleet gehen, eine persönliche Aufgabe nur an jemanden aus deiner Familie.
+3. Prüfe, was mitgeschickt wird: der Entwurf (oder der Aufgabentext) und die Quellen. Mit × kannst du eine Quelle ausschließen. Füge bei Bedarf eine Notiz hinzu und wähle dann **Fragen**.
 
-Nur diese Aufgabe geht mit, sonst nichts von deiner Machine. Die Aufgabe zeigt jetzt "Wartet auf das Review von Pat", mit **Zurückziehen**, um die Anfrage zurückzunehmen.
+Nur diese Aufgabe wird übergeben, nichts anderes von deiner Machine. Die Aufgabe zeigt jetzt „Wartet auf Pats Review“ an. Mit **Zurückziehen** kannst du die Anfrage zurücknehmen.
 
-## Für jemand anderen reviewen
+## Das Review für jemand anderen durchführen
 
-Die Anfrage erscheint als eigene Aufgabe: "Review: Antwort an Sam zum Preis". Bearbeite den Entwurf direkt dort, füg einen Kommentar hinzu und wähle **Freigeben**, **Änderungen senden**, **Kommentar senden** oder **Ablehnen**.
+Die Anfrage erscheint als eigene Aufgabe bei dir: „Review: Sam wegen der Preise antworten“. Bearbeite den Entwurf direkt dort, füge einen Kommentar hinzu und wähle dann **Freigeben**, **Änderungen senden**, **Kommentar senden** oder **Ablehnen**.
 
-Deine Machine kann im Chat der Aufgabe helfen, aber eine Review-Aufgabe sendet nie etwas. Dein Review geht an die Person zurück, die entscheidet, was rausgeht.
+Deine Machine kann im Chat der Aufgabe helfen, aber eine Review-Aufgabe sendet niemals etwas. Dein Review geht zurück an die Person, der die Aufgabe gehört. Sie entscheidet, was gesendet wird.
 
 ## Die Änderungen kommen zurück
 
-Die Aufgabe sagt, was passiert ist: "Pat hat freigegeben", "Pat hat kommentiert" oder "Pat hat 3 Änderungen vorgeschlagen", mit dem Kommentar. Wähle **Änderungen ansehen**, um jede Änderung im Text markiert zu sehen, mit wem und wann.
+Die Aufgabe zeigt an, was passiert ist: „Pat hat freigegeben“, „Pat hat kommentiert“ oder „Pat hat 3 Änderungen vorgeschlagen“, zusammen mit Pats Kommentar. Wähle **Änderungen ansehen**, um jede Änderung im Text markiert zu sehen, einschließlich der Person, die sie vorgenommen hat, und des Zeitpunkts.
 
-- **Alle annehmen** übernimmt jede Änderung in deinen Entwurf.
-- **Auswahl annehmen** nimmt nur die angehakten.
-- **Ignorieren** lässt den Entwurf, wie er war.
+- **Alle annehmen** übernimmt alle Änderungen in deinen Entwurf.
+- **Auswahl annehmen** übernimmt nur die angekreuzten Änderungen.
+- **Ignorieren** lässt den Entwurf unverändert.
 
-Hast du den Entwurf inzwischen bearbeitet, kommen Änderungen dort rein, wo sie noch passen. Annehmen ändert nur den Entwurf: Nichts wird gesendet, bis du selbst auf Senden drückst. Der Chat der Aufgabe hält jeden Schritt fest ("Pat um ein Review gebeten", "Pat hat 3 Änderungen vorgeschlagen", "2 Änderungen von Pat angenommen").
+Wenn du den Entwurf inzwischen bearbeitet hast, werden Änderungen dort übernommen, wo sie noch passen. Beim Annehmen ändert sich nur der Entwurf. Es wird nichts gesendet, bis du selbst auf Senden drückst. Im Chat der Aufgabe bleibt jeder Schritt festgehalten („Pat um ein Review gebeten“, „Pat hat 3 Änderungen vorgeschlagen“, „2 von Pats Änderungen angenommen“).
 
-Ein Review pro Aufgabe auf einmal. Ist es zurück, abgelehnt oder zurückgezogen, kannst du erneut fragen, dieselbe Person oder jemand anderen. Eine Anfrage ohne Antwort läuft nach 3 Tagen ab.
+Pro Aufgabe ist immer nur ein Review gleichzeitig möglich. Sobald es zurückkommt, abgelehnt oder zurückgezogen wurde, kannst du erneut jemanden bitten, dieselbe Person oder jemand anderen. Eine Anfrage, auf die niemand antwortet, läuft nach 3 Tagen ab.

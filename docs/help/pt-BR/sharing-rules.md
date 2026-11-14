@@ -1,32 +1,32 @@
 ---
 title: Regras de compartilhamento
 area: fleet
-summary: Para cada Fleet e tipo de pergunta, define o que sua Machine pode responder. Perguntar antes, Sempre, Nunca ou apenas Nomes.
+summary: O que sua Machine pode responder em cada Fleet e para cada tipo de pergunta. Você escolhe entre Perguntar antes, Sempre ou Nunca e decide se os nomes podem ser incluídos.
 covers: 
 code: fleet.py, dashboard.html
 order: 2
 keywords: share, sharing, colleagues, teammates, team, what others see, answer for me
-translated: 8c6f3bda9dfdbe8e
+translated: cfa9e911ea963f17
 ---
-## Defina as regras
+## Configure as regras
 
-Escolha o que sua Machine conta à sua Fleet. Na aba **Fleet**, abra **Compartilhamento**. Cada tipo de pergunta tem uma regra:
+Decida o que sua Machine conta para sua Fleet. Na aba **Fleet**, abra **Compartilhamento**. Cada tipo de pergunta tem uma regra:
 
 - **Perguntar antes**: você vê cada pergunta e decide.
 - **Sempre**: sua Machine responde por conta própria.
-- **Nunca**: ela recusa.
-- **Nomes**: define se a resposta pode dizer quem é, como pelo nome de um convidado, ou se deve omitir os nomes.
+- **Nunca**: sua Machine recusa.
+- **Nomes**: define se a resposta pode dizer quem é alguém, como o nome de uma pessoa convidada, ou se deve omitir os nomes.
 
-Sua Machine nunca compartilha o conteúdo dos e-mails nem o assunto das reuniões. **Diferente para alguém? Adicione uma exceção** define uma regra para uma pessoa.
+Sua Machine nunca compartilha o conteúdo dos seus e-mails nem o assunto das suas reuniões. Com **Diferente para alguém? Adicione uma exceção**, você define uma regra para uma pessoa.
 
 As regras só podem ser alteradas no painel, nunca por mensagem.
 
-## Em uma Fleet de trabalho padrão
+## Em uma Fleet de Trabalho
 
-Em uma Fleet de trabalho padrão, as perguntas sobre quem conhece alguém, o contexto das reuniões e quem cuida dos e-mails compartilhados têm apenas as opções **Sempre** e **Nunca**. **Sempre** responde usando apenas o que o [Graph da equipe](team-graph.md) já compartilha com a equipe, e só menciona as pessoas que ele compartilha. Uma regra salva como **Perguntar antes** funciona como **Sempre**.
+Em uma Fleet de Trabalho Padrão, as regras para quem conhece quem, o contexto das reuniões e quem cuida dos e-mails compartilhados têm apenas as opções **Sempre** e **Nunca**. Com **Sempre**, sua Machine responde usando apenas o que o [Graph da equipe](team-graph.md) já compartilha com sua equipe, e só menciona pessoas que ele compartilha. Uma regra salva como **Perguntar antes** funciona como **Sempre**.
 
-Enquanto o Graph da equipe não estiver compartilhando, as perguntas sobre quem conhece alguém e o contexto das reuniões também continuam com a opção **Perguntar antes**. O mesmo vale para uma Fleet cuidadosa. Veja [Fleets](fleet.md#answered-by-itself-in-a-work-fleet).
+Enquanto o Graph da equipe não estiver compartilhando, as opções **Perguntar antes** também continuam disponíveis para quem conhece quem e para o contexto das reuniões. O mesmo vale para uma Fleet Cautelosa. Consulte [Fleets](fleet.md#answered-by-itself-in-a-work-fleet).
 
-## Na primeira vez que alguém pergunta
+## Na primeira vez que alguém perguntar
 
-Uma pergunta que precisa de você chega como uma tarefa, com as opções **Compartilhar uma vez**, **Sempre compartilhar**, **Recusar** ou **Nunca compartilhar**.
+Uma pergunta que precisa da sua aprovação chega como uma tarefa, com as opções **Compartilhar uma vez**, **Sempre compartilhar**, **Recusar** ou **Nunca compartilhar**.

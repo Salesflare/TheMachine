@@ -1,40 +1,40 @@
 ---
 title: Famille
 area: fleet
-summary: Une Fleet Famille gratuite jusqu’à 6 personnes : quand tout le monde est libre, tâches et projets partagés.
+summary: Une Fleet familiale gratuite pour 6 personnes maximum, avec des tâches et des plans partagés quand tout le monde est disponible.
 covers: family
 code: family.py, dashboard.html
 order: 6
-translated: 3af87ad0b491b336
+translated: 2afbe215fa387999
 ---
-## Ce qu’elle fait
+## Fonctionnement
 
-- Quand tout le monde est libre : « Quand sommes-nous tous libres samedi ? » Uniquement les créneaux occupés.
-- Tâches : demandez à quelqu’un de votre famille de faire quelque chose. La personne accepte ou refuse.
-- Projets : proposez un projet. Chacun répond J’en suis ou Je ne peux pas. J’en suis l’ajoute à votre propre agenda Google, sans inviter personne ; Annuler le retire. Sans agenda que The Machine peut modifier, vous recevez un lien pour l’ajouter vous-même.
+- Trouver un créneau : « Quand sommes-nous tous libres samedi ? » Seuls les créneaux occupés sont partagés.
+- Tâches : demandez à un membre de votre famille de faire quelque chose. La personne accepte ou refuse.
+- Plans : proposez-en un. Tout le monde répond **Je participe** ou **Je ne peux pas**. **Je participe** l’ajoute à votre agenda Google personnel, sans inviter personne. **Annuler** le retire. Si The Machine ne peut modifier aucun de vos agendas, elle vous donne un lien pour l’ajouter vous-même.
 
-Aucune question de travail ne passe par une Fleet Famille.
+Aucune question professionnelle ne passe par une Fleet familiale.
 
 ## Suggestions d’invitation
 
-Quand une tâche porte sur des projets de famille avec quelqu’un qui n’est pas encore dans votre Famille, comme « Qui récupère les enfants mercredi ? », elle peut demander : « Inviter Sasha ? Vos Machines peuvent régler ça sans que vous ayez à vous demander. »
+Lorsqu’une tâche concerne un plan familial avec une personne qui ne fait pas encore partie de votre Fleet familiale, par exemple « Qui va chercher les enfants mercredi ? », The Machine peut suggérer de l’inviter.
 
-- **Inviter** ouvre le formulaire d’invitation sur votre page de compte, avec son adresse déjà remplie. L’e-mail qu’elle recevrait s’affiche avant tout envoi. Rien ne part sans vous.
-- **Pas maintenant** la masque pendant 90 jours.
-- Seulement pour les personnes de votre famille selon votre Graph ou vos propres mots. Jamais pour les contacts pro, les membres de votre Famille ni quelqu’un qui a une invitation en cours. Une fois par personne au plus.
-- Désactivez-la dans Paramètres, Général, sous Fleet : **Suggérer d’inviter la famille**.
+- **Inviter** ouvre le formulaire d’invitation avec son adresse déjà renseignée et affiche l’e-mail qu’elle recevra. Rien n’est envoyé sans votre accord.
+- **Pas maintenant** masque la suggestion pendant 90 jours.
+- Cette option ne concerne que les personnes identifiées comme membres de votre famille par votre Graph ou par vos propres mots. Jamais les contacts professionnels, les personnes déjà dans votre Fleet familiale ni celles qui ont une invitation en cours. Une seule suggestion par personne.
+- Désactivez cette option dans Paramètres, Général, sous Fleet : **Suggérer d’inviter la famille**.
 
 ## Déjà fait
 
-Si vous recevez tous les deux le même e-mail, la même facture ou le même formulaire et que l’un de vous marque sa tâche comme faite, celle de l’autre indique « Robin l’a fait · sam. 7 nov. ».
+Lorsque vous recevez le même e-mail, la même facture ou le même formulaire et que l’un de vous marque sa tâche comme terminée, la tâche de l’autre affiche « Robin l’a fait · sam. 7 nov. ».
 
-- **Fait** ferme la vôtre. **Toujours utile** la garde et masque la ligne.
-- Rien ne se ferme tout seul.
-- Un rappel avec le même lien de formulaire compte comme la même tâche.
-- Seul un code est partagé, jamais la tâche. Désactivez-le dans le volet Partage : Tâches que vous avez déjà faites.
+- **Fait** clôt votre tâche. **Toujours utile** la conserve et masque cette indication.
+- Aucune tâche ne se clôt automatiquement.
+- Un rappel contenant le même lien de formulaire est considéré comme la même tâche.
+- Seul un code est partagé, jamais la tâche. Désactivez cette option dans le volet Partage : Tâches déjà effectuées.
 
 ## Règles
 
-Par défaut, les créneaux libres et occupés sont partagés ; les tâches et les projets demandent d’abord. Changez-le dans le volet Partage : voir [Règles de partage](sharing-rules.md).
+Par défaut, vos disponibilités et vos périodes occupées sont partagées, et les tâches et les plans nécessitent votre accord. Modifiez ces paramètres dans le volet Partage : consultez les [Règles de partage](sharing-rules.md).
 
-Une Fleet Famille est gratuite. Les Machines hébergées qui en font partie sont payantes comme toute Machine hébergée : voir [Forfaits et facturation](plans-and-billing.md).
+Une Fleet familiale est gratuite. Les Machines hébergées dans cette Fleet coûtent {price.family_pair} par mois pour les deux premières ensemble, puis {price.family_seat} par personne, hors TVA. Consultez [Offres et facturation](plans-and-billing.md).

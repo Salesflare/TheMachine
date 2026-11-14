@@ -1,83 +1,83 @@
 ---
 title: Microsoft OneDrive
 area: connections
-summary: Kommentare, Erwähnungen, nachverfolgte Änderungen und Freigaben in deinen Word-Dateien in OneDrive und SharePoint, Neue Dokumente und Änderungen warten auf dein OK.
+summary: Kommentare, Erwähnungen, nachverfolgte Änderungen und Freigaben deiner Word-Dateien in OneDrive und SharePoint. Neue Dokumente und Änderungen warten auf dein OK.
 covers: connector:docs
 code: connectors/docs.py, doc_writes.py, next_actions.py, onboarding.py
 site: Sign in with Microsoft
-translated: 6db75e46d29fc2e3
+translated: b06d8ca4f35e5a38
 ---
-## Was es liest
+## Was sie liest
 
-Die Verbindung **Microsoft OneDrive** liest Word-Dateien in OneDrive und SharePoint. Du meldest dich dafür mit Microsoft an, mit oder ohne verbundenes Outlook. Das geht auf einer gehosteten Machine und auf deinem eigenen Computer, der mit deinem Konto gekoppelt ist. Zu Google Docs siehe unten. Es bringt rein:
+**Microsoft OneDrive** liest deine Word-Dateien in OneDrive und SharePoint, sowohl auf einer gehosteten Machine als auch auf deinem eigenen Computer. Outlook muss dafür nicht verbunden sein. Informationen zu Google Docs findest du weiter unten. Sie bringt Folgendes ein:
 
 - Dokumente, die jemand mit dir teilt.
-- Kommentare und Antworten in Dokumenten, die dir gehören, und Kommentare, die dich erwähnen.
-- Nachverfolgte Änderungen in Word-Dateien, die dir gehören.
+- Kommentare und Antworten in deinen Dokumenten sowie Kommentare, in denen du erwähnt wirst.
+- Nachverfolgte Änderungen in deinen Word-Dateien.
 
-Die erste Synchronisierung schaut 30 Tage zurück. Daraus wird jeweils ein Termin, verknüpft mit den Personen und Projekten in deinem [Graph](graph.md). Wenn ein Kommentar dich braucht, wird daraus eine Aufgabe.
+Der erste Abgleich reicht 7 Tage zurück. Jeder Eintrag ist mit Personen und Projekten in deinem [Graph](graph.md) verknüpft. Aus einem Kommentar, um den du dich kümmern musst, wird eine Aufgabe.
 
-## Was es tun kann
+## Was sie kann
 
-Wenn eine Aufgabe den Text eines Dokuments braucht, liest deine Machine genau dieses Dokument, und nur, solange sie an dieser Aufgabe arbeitet.
+Wenn eine Aufgabe den Text eines Dokuments benötigt, liest deine Machine dieses Dokument, und zwar nur, während sie an der Aufgabe arbeitet.
 
-Es kann eine Antwort auf einen Kommentar entwerfen. Word-Dateien bieten keinen Weg, von außerhalb von Word zu antworten. Die Antwort bleibt also ein Entwurf, den du in Word kopierst.
+Sie kann eine Antwort auf einen Kommentar entwerfen. Word bietet keine Möglichkeit, Antworten von außerhalb zu posten. Deshalb kopierst du den Entwurf in Word.
 
-Es nimmt keine Vorschläge an, löst keine Kommentare auf, teilt keine Dateien und ändert kein Dokument ohne dein OK.
+Sie nimmt niemals einen Vorschlag an, löst keinen Kommentar auf, teilt keine Datei und ändert kein Dokument ohne dein OK.
 
-Eine Dokument-Verbindung kann nur Dinge tun: Schalte unter **Details** **Bringt Signale** aus, dann findet und liest sie nur die Dokumente, die deine Aufgaben brauchen, und erstellt neue. Eine Google-Verbindung ohne Zugriff auf ganz Drive liest Dokumente über ihren Link und die, die deine Machine erstellt hat.
+Wenn sie nur Aufgaben erledigen soll, deaktiviere **Bringt Signale** unter **Details**. Dann findet und liest sie nur die Dokumente, die für deine Aufgaben benötigt werden, und erstellt neue.
 
 ## Dokumente erstellen und bearbeiten
 
-Deine Machine kann ein neues Dokument schreiben oder ein Dokument ändern, um das es in einer deiner Aufgaben geht:
+Deine Machine kann ein neues Dokument erstellen oder ein Dokument ändern, um das es in einer Aufgabe geht:
 
-- Ein neues Dokument erstellt sie sofort, wenn die Aufgabe oder ein Skill eines verlangt: ein privates Dokument in deinem eigenen Google Drive oder OneDrive, mit niemandem geteilt. Die Aufgabe zeigt es mit **Dokument öffnen**. Das Teilen, oder den Link an jemanden schicken, wartet auf dein OK.
-- Eine Änderung an einem bestehenden Dokument bereitet sie nur vor, jeden Absatz vorher und nachher. Tippe auf **Änderungen prüfen**, lies alles und dann **Speichern**. Eine Änderung, um die du im Chat der Aufgabe bittest, macht sie sofort.
-- Sie schreibt eine Änderung einmal, und nur in das Dokument, wie du es gesehen hast. Hat jemand es inzwischen geändert, wird nichts geschrieben und die Aufgabe sagt es dir. Bitte dann um einen neuen Entwurf.
-- In Talk liest sie die ganze Änderung vor und wartet auf ein klares Ja.
-- Lehnt Google oder Microsoft ein neues Dokument ab, sagt die Aufgabe, was abgelehnt wurde, und zeigt **Prüfen und erstellen**, um es noch einmal zu versuchen.
+- Ein neues Dokument erstellt sie sofort, wenn die Aufgabe oder ein Skill danach fragt. Es ist privat und wird in deinem eigenen OneDrive oder Google Drive gespeichert. In der Aufgabe wird **Dokument öffnen** angezeigt. Das Dokument zu teilen oder seinen Link zu senden, wartet auf dein OK.
+- Änderungen an einem bestehenden Dokument bereitet sie nur vor. Drücke **Änderungen prüfen**, um jeden Absatz vorher und nachher zu sehen, und anschließend **Speichern**. Eine Änderung, um die du im Chat der Aufgabe bittest, setzt sie sofort um.
+- Sie schreibt nur in das Dokument, wie du es gesehen hast. Wenn jemand es inzwischen geändert hat, wird nichts geschrieben und die Aufgabe informiert dich darüber. Bitte um einen neuen Entwurf.
+- In Talk liest sie die ganze Änderung laut vor und wartet auf ein eindeutiges Ja.
+- Wenn Microsoft oder Google das Erstellen eines Dokuments ablehnt, erklärt die Aufgabe warum und zeigt **Prüfen und erstellen** an, damit du es noch einmal versuchen kannst.
 
-Sie ersetzt Text, fügt Text hinzu und fügt Absätze und Überschriften ein. Tabellen, Bilder, nachverfolgte Änderungen und Felder lässt sie in Ruhe. Ein neues Dokument landet in deinem Google Drive oder OneDrive und bleibt privat, bis du es teilst.
+Sie kann Text ersetzen sowie Text, Absätze und Überschriften hinzufügen. Tabellen, Bilder, nachverfolgte Änderungen und Felder bleiben unverändert.
 
-Ein neues Dokument kommt in ein Konto aus dem Bereich der Aufgabe: das Dokument einer Arbeitsaufgabe in das Konto dieser Firma, wenn möglich das Konto des Gesprächs, nie in ein privates. Auf deinem eigenen Computer kann auch ein Google-Konto, das für Gmail angemeldet ist und schon Zugriff auf Drive hat, ein neues Google-Dokument bekommen. Passt kein Konto, sagt die Aufgabe, was du für Arbeit verbinden kannst: Microsoft OneDrive, oder Google Docs, wo deine Machine es nutzen kann.
+Das Dokument einer Aufgabe für die Arbeit wird im Konto des Unternehmens gespeichert, niemals in einem persönlichen Konto. Auf deinem eigenen Computer kann auch ein Google-Konto mit Zugriff auf Drive neue Google Docs erstellen, wenn es für Gmail verbunden ist. Wenn kein passendes Konto vorhanden ist, sagt dir die Aufgabe, was du für die Arbeit verbinden musst: Microsoft OneDrive oder Google Docs, sofern deine Machine es verwenden kann.
 
-Ist das Dokument nicht das Ende der Aufgabe, etwa wenn noch eine Antwort mit dem Link fehlt, bleibt die Aufgabe offen und bereitet diesen nächsten Schritt für dein OK vor.
+Wenn das Dokument nicht der letzte Schritt ist, zum Beispiel bei einer Antwort mit einem Link darauf, bleibt die Aufgabe offen und erstellt einen Entwurf für diesen Schritt, der auf dein OK wartet.
 
-Das Verbinden von Microsoft OneDrive erlaubt das schon: Es gibt keinen eigenen Schritt. Eine ältere Microsoft-OneDrive-Verbindung, die nur liest, zeigt auf ihrer Karte unter **Verbindungen** **Bearbeiten erlauben**. Tippe einmal darauf und stimme zu.
+Die Bearbeitungsfunktion ist beim Verbinden enthalten. Bei einer älteren Verbindung, die nur lesen kann, wird unter **Verbindungen** die Option **Bearbeiten erlauben** angezeigt. Drücke darauf und bestätige.
 
-## Worum es fragt
+## Was sie anfragt
 
-Microsoft OneDrive fragt Microsoft nach einem OK, getrennt von deiner Mail-Anmeldung: deine Dateien zu lesen und zu ändern, auch die, die in OneDrive und SharePoint mit dir geteilt sind. Jede Änderung wartet trotzdem auf dein OK in ihrer Aufgabe. Dein Zugriff auf Mail und Kalender bleibt, wie er ist. Ohne Outlook gilt die Anmeldung nur für deine Dateien, nie für Mail oder Kalender.
+Microsoft bittet dich um ein einmaliges OK, damit deine Dateien gelesen und geändert werden können, einschließlich der Dateien, die mit dir geteilt wurden. Jede Änderung wartet weiterhin auf dein OK in der jeweiligen Aufgabe. Der Zugriff auf deine Mails und deinen Kalender ändert sich nicht.
 
-Wird dieses OK später zurückgenommen, zeigt die Microsoft-OneDrive-Karte **Wartet auf dein OK, um Dokumente zu lesen**.
+Wenn du dieses OK später zurückziehst, zeigt Microsoft OneDrive unter **Verbindungen** die Meldung **Wartet auf dein OK, um Dokumente zu lesen** an.
 
-## Verbinden
+## Verbindung herstellen
 
-Du brauchst dafür kein verbundenes Outlook.
+Auf einer gehosteten Machine oder auf deinem eigenen Computer, der mit deinem Konto gekoppelt ist:
 
-- Gehostete Machine: Öffne im Dashboard **Verbindungen**, **Dokumente und Dateien**, wähle **Microsoft OneDrive** und tippe auf **Mit Microsoft anmelden**. Microsoft bittet dich, das Lesen und Bearbeiten deiner Dateien zu erlauben, dann kommst du zurück zum Dashboard.
-- Dein eigener Computer, gekoppelt mit deinem Konto: Öffne **Verbindungen**, **Dokumente und Dateien**, wähle **Microsoft OneDrive** und tippe auf **Mit Microsoft anmelden**.
+- Öffne **Verbindungen**, dann **Dokumente und Dateien**, und wähle **Microsoft OneDrive** aus.
+- Drücke **Mit Microsoft anmelden** und erlaube das Lesen und Bearbeiten deiner Dateien.
 
-Es prüft, ob die Anmeldung Dokumente lesen darf. Ohne dieses OK wird es nicht hinzugefügt. Tippst du auf **Bearbeiten erlauben** und Microsoft erlaubt keine Änderungen, sagt es das, statt Verbunden zu zeigen.
+Wenn Microsoft das Lesen nicht erlaubt, wird die Verbindung nicht hinzugefügt. Wenn du **Bearbeiten erlauben** drückst und Microsoft das Bearbeiten nicht erlaubt, wird dir das mitgeteilt.
 
 ## Google Docs
 
-Öffne auf einer gehosteten Machine **Verbindungen**, dann **Dokumente und Dateien**, und wähle **Google Docs**. Google bittet dich zu erlauben, dass sie die Dokumente sieht und bearbeitet, auf die du sie hinweist, und neue erstellt. Gmail muss nicht verbunden sein, und dein Gmail-Zugriff ändert sich nicht.
+Öffne auf einer gehosteten Machine **Verbindungen**, dann **Dokumente und Dateien**, und wähle **Google Docs** aus. Google bittet dich um Erlaubnis, die Dokumente anzusehen und zu bearbeiten, auf die du verweist, sowie neue Dokumente zu erstellen. Gmail muss nicht verbunden sein und dein Gmail-Zugriff ändert sich nicht.
 
 Dann kann deine Machine:
 
-- Ein Google-Dokument lesen, das in den Nachrichten einer Aufgabe verlinkt ist, nur solange sie an dieser Aufgabe arbeitet.
-- Änderungen an diesem Dokument vorbereiten. Jede wartet auf dein OK, wie oben.
+- Ein Google-Dokument lesen, auf das in den Nachrichten einer Aufgabe verwiesen wird, und zwar nur, während sie an dieser Aufgabe arbeitet.
+- Änderungen an diesem Dokument vorbereiten. Jede Änderung wartet wie oben beschrieben auf dein OK.
 - Neue private Dokumente in deinem Google Drive erstellen.
 
-Sie durchsucht dein Drive nicht. Kommentare, Freigaben und Vorschläge sieht sie nur bei Dokumenten, die sie erstellt hat. Mehr bräuchte Zugriff auf dein ganzes Drive, und danach fragt sie nicht.
+Sie durchsucht dein Drive nicht. Kommentare, Freigaben und Vorschläge sieht sie nur in Dokumenten, die sie selbst erstellt hat. Für mehr Zugriff müsste sie auf dein ganzes Drive zugreifen können. Danach fragt sie aber nicht.
 
-Auf deinem eigenen Computer kann deine Machine ein neues Google-Dokument in einem dort angemeldeten Gmail-Konto erstellen, das schon Zugriff auf Drive hat. Deine anderen Google Docs und ihre Kommentare liest sie nicht. **Dokumente und Dateien** zeigt es als Google Docs, mit diesem Konto. Ein Dokument, das sie dort für eine Aufgabe erstellt hat, kann sie auch ändern.
+Auf deinem eigenen Computer kann deine Machine ein neues Google-Dokument in einem dort angemeldeten Gmail-Konto erstellen, das bereits Zugriff auf Drive hat. Sie liest keine anderen Google Docs und deren Kommentare. Unter **Dokumente und Dateien** wird das Konto als Google Docs angezeigt. Außerdem kann sie dort ein Dokument ändern, das sie für eine Aufgabe erstellt hat.
 
 ## Arbeit oder privat
 
-Microsoft OneDrive folgt der Kennzeichnung Arbeit oder privat seiner Verbindung, wie bei Mail. Arbeitsdokumente können nach deinen [Freigaberegeln](sharing-rules.md) in den Graph deines Teams gelangen. Private nie.
+Sie richtet sich wie bei Mails nach der Kennzeichnung Arbeit oder Privat der jeweiligen Verbindung. Dokumente für die Arbeit können gemäß deinen [Freigaberegeln](sharing-rules.md) in den Graph deines Teams gelangen. Private Dokumente gelangen niemals dorthin.
 
-## Entfernen
+## Verbindung entfernen
 
-Im Dashboard: **Verbindungen**, Microsoft OneDrive oder Google Docs öffnen, **Details**, dann **Trennen**. Es hört auf zu lesen. Was es schon reingebracht hat, bleibt.
+Öffne **Verbindungen**, dann Microsoft OneDrive oder Google Docs, **Details** und **Trennen**. Die Verbindung liest dann nichts mehr. Was sie bereits eingebracht hat, bleibt erhalten. Auf einer gehosteten Machine öffnet **Trennen ↗** deine Einrichtungsseite, auf der die Anmeldung gespeichert ist.

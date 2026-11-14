@@ -1,48 +1,48 @@
 ---
-title: Toetsenbord en het opdrachtpalet
+title: Toetsenbord en het opdrachtenmenu
 area: getting-started
-summary: Bereik alles op het dashboard met het toetsenbord: het palet, ga-naar-toetsen en toetsen op een to-do.
+summary: Open alles op het dashboard met je toetsenbord: het opdrachtenmenu, sneltoetsen om naar pagina's te gaan, door to-do's te bladeren en acties op een to-do uit te voeren.
 covers: keyboard
 code: dashboard.html
 order: 5
-translated: 9d9a056e308ced41
+translated: ebf5345474689237
 ---
-## Het palet
+## Het opdrachtenmenu
 
-Druk op `⌘K` op een Mac of `Ctrl K` op Windows en Linux, of op `/`, om **Zoeken en opdrachten** te openen. Typ een deel van een naam: een actie, een pagina, een to-do, een persoon, een organisatie, een project of een bericht. Onder **Berichten** toont het de beste resultaten, en **Alle resultaten** opent de volledige lijst. Gebruik de pijltjestoetsen en Enter, of Esc om te sluiten. Recente opdrachten staan bovenaan.
+Druk op `⌘K` op een Mac, `Ctrl K` op Windows en Linux of `/` om **Zoeken en opdrachten** te openen. Typ een deel van een naam: van een actie, pagina, to-do, persoon, organisatie, project of bericht. Gebruik de pijltoetsen en Enter, of druk op Esc om te sluiten. Recente opdrachten staan bovenaan. Met **Alle resultaten bekijken** open je alle overeenkomende berichten.
 
-Tik op een telefoon op het zoekicoon in de bovenste balk.
+Tik op je telefoon op het zoekpictogram in de bovenbalk.
 
 ## Een vraag stellen
 
-Typ een vraag, zoals “wat zei Kim over de pilot?”, en boven de resultaten verschijnt een kort antwoord uit je eigen mail en berichten, met een link naar elk bericht dat het gebruikte. Het antwoordt in de taal waarin je vraagt, alleen uit het gebied dat je bekijkt (Alle, Werk of Privé). Een naam of een paar trefwoorden zoeken gewoon. Het antwoord verstuurt nooit iets en maakt geen to-do, en het heeft een model nodig (Instellingen, Model).
+Typ een vraag, zoals ‘wat zei Kim over de pilot?’, en boven de resultaten verschijnt een kort antwoord op basis van je eigen e-mail en berichten, met een link naar elk bericht dat hiervoor is gebruikt. Het antwoord is in de taal waarin je de vraag stelt en komt alleen uit het gedeelte dat je bekijkt (Alles, Werk of Persoonlijk). Met een naam of een paar trefwoorden zoek je gewoon.
 
-Vraag je naar iemand en een tijd, zoals “wat zei Kim vorige week?”, dan leest het alleen de berichten van of met die persoon op die dagen, in jouw tijdzone. Stuurde die toen niets, dan zegt het dat en geeft het hun laatste bericht met de datum.
+Vraag naar iemand en een bepaalde periode, zoals ‘wat zei Kim vorige week?’. Dan leest The Machine alleen de berichten van of met die persoon op die dagen, volgens je tijdzone. Heeft die persoon toen niets gestuurd, dan zegt The Machine dat en toont hij het meest recente bericht met de datum.
 
-Het leest ook wat de Machine al over de vraag bijhoudt: beloftes die open zijn of in de laatste 30 dagen zijn afgesloten, wat het leerde, de samenvatting van de persoon, het project of de organisatie waar je naar vraagt, en vergadernotities. Alles wat het antwoord gebruikte staat eronder, benoemd als wat het is (Belofte, Geleerd, Samenvatting, Vergadernotities), en opent waar het thuishoort. Alleen wat bij de vraag past wordt gelezen, en alleen uit het gebied dat je bekijkt.
+The Machine leest ook wat hij al over de vraag heeft bijgehouden: beloftes (open of in de afgelopen 30 dagen gesloten), wat hij heeft geleerd, de samenvatting van de persoon, het project of de organisatie waar je naar vraagt, en vergadernotities. Alles wat in het antwoord is gebruikt, staat eronder met een naam die aangeeft wat het is (zoals Belofte, Inzicht, Samenvatting of Vergadernotities). Je kunt erop klikken om te zien waar het staat. The Machine leest alleen wat relevant is, uit het gedeelte dat je bekijkt.
 
-Hebben meerdere mensen die naam, dan zegt het wie het bedoelt. De andere berichten die het las staan onder Berichten. De vraag die een lege zoekopdracht voorstelt, is altijd een waar berichten voor zijn.
+Als meerdere mensen die naam hebben, geeft The Machine aan wie hij bedoelt. De andere berichten die hij heeft gelezen, staan onder Berichten. De vraag die wordt voorgesteld als je niets hebt ingevuld, is er alleen een waarvoor berichten bestaan. Het antwoord verstuurt niets en voegt geen to-do toe. Hiervoor is een model nodig (**Instellingen**, Model).
 
 ## Sneltoetsen
 
 Druk op `?` voor **Sneltoetsen**, de volledige lijst voor je computer.
 
-- Naar een pagina gaan: `G` en dan `T` To-do's, `C` Agenda, `P` Personen, `O` Organisaties, `J` Projecten, `F` Fleet, `L` Leren, `N` Koppelingen, `,` Instellingen. `G` en dan `E` opent de zoekresultaten in je berichten. De oude `G` en dan `S` en `G` en dan `B` werken nog.
-- `N` voegt een nieuwe to-do toe. `T` start Praten, of stopt het terwijl het loopt. `J` en `K` (of `↓` en `↑`) gaan door een lijst, Enter opent.
-- Op een to-do: `E` hernoemt hem, `S` snoozet hem, `D` markeert hem als gedaan, `R` schrijft in zijn chat.
-- In de Agenda: `T` gaat naar vandaag, `J` en `K` (of `→` en `←`) naar de volgende of vorige week of maand. `A`, `W` en `M` schakelen naar Agenda, Week en Maand.
-- Op een computer klapt `⌘B` op een Mac of `Ctrl B` op Windows en Linux de zijbalk in tot iconen, en weer uit.
+- Naar een pagina gaan: `G` en dan `T` To-do's, `C` Agenda, `R` Routines, `P` Personen, `O` Organisaties, `J` Projecten, `F` Fleet, `L` Leren, `N` Koppelingen, `,` Instellingen. Met `G` en daarna `E` open je de zoekresultaten voor berichten.
+- Met `N` voeg je een to-do toe. Met `T` start je Talk, of beëindig je het als het actief is. Met `J` en `K` (of `↓` en `↑`) blader je door een lijst. Druk op Enter om een item te openen.
+- Op een to-do: met `E` wijzig je de naam, met `S` snooze je de to-do, met `D` markeer je hem als gedaan en met `R` schrijf je in de chat.
+- In de Agenda: met `T` ga je naar vandaag, met `J` en `K` (of `→` en `←`) naar de volgende of vorige week of maand. Met `A`, `W` en `M` schakel je tussen de weergaven Agenda, Week en Maand.
+- Op een computer klap je met `⌘B` op een Mac of `Ctrl B` op Windows en Linux de zijbalk in tot alleen de pictogrammen zichtbaar zijn, en weer terug.
 
-Toetsen werken niet terwijl je in een veld typt.
+Sneltoetsen werken niet als je in een veld typt.
 
-## Rondgaan
+## Navigeren
 
-- Elke pagina zet de focus op het eerste item als je er met het toetsenbord komt. Op To-do's is dat de eerste to-do, of de eerste lijst als alle lijsten ingeklapt zijn.
-- `J` of `↓` gaat naar de volgende to-do, `K` of `↑` naar de vorige. De kop van een ingeklapte lijst is ook een stop: Enter of `→` opent hem, `←` klapt hem weer in.
-- Enter op een to-do opent zijn chat, klaar om te typen. Esc verlaat het vak, en de volgende Esc sluit de chat en gaat terug naar de to-do. Met een leeg vak sluit één Esc hem.
-- Esc sluit ook een venster, het palet en de lijst met sneltoetsen, en zet de focus terug waar hij was.
-- Tab gaat door de knoppen. Wat de focus heeft, krijgt een rand.
+- Als je met het toetsenbord naar een pagina gaat, krijgt het eerste item de focus.
+- Met `J` of `↓` ga je naar de volgende to-do, met `K` of `↑` naar de vorige. Ook het bovenste item van een ingeklapte lijst is een stop: druk op Enter of `→` om de lijst te openen, en op `←` om hem weer in te klappen.
+- Druk op Enter op een to-do om de chat te openen, klaar om in te typen. Met Esc verlaat je het invoerveld. Druk nogmaals op Esc om de chat te sluiten en terug te gaan naar de to-do. Is het invoerveld leeg, dan sluit één keer Esc de chat.
+- Met Esc sluit je ook een dialoogvenster, het opdrachtenmenu en de lijst met sneltoetsen. De focus gaat terug naar de plek waar die stond.
+- Met Tab ga je langs de knoppen. Rond het onderdeel met de focus verschijnt een ring.
 
-## Een toets verstuurt nooit iets
+## Met een toets verstuur je niets
 
-Versturen, goedkeuren of plaatsen gebeurt nooit met een toets of rechtstreeks vanuit het palet. Items zoals De e-mail nakijken openen alleen het concept, waar je het kunt lezen, wijzigen en versturen met een eigen knop. De enige uitzondering is [Doorlopen](cards.md): daar verstuurt Enter het concept dat het volledig toont.
+Geen enkele toets of opdracht in het menu verstuurt, keurt goed of plaatst iets. Opdrachten zoals ‘E-mail bekijken’ openen alleen het concept, zodat je het kunt lezen, aanpassen en met de eigen knop kunt versturen. De enige uitzondering is [Doornemen](cards.md): daar verstuurt Enter het volledige concept dat wordt getoond.

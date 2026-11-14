@@ -1,34 +1,34 @@
 ---
 title: Hilfe fragen
 area: getting-started
-summary: Frag, wie The Machine funktioniert. Die Antworten kommen aus diesen Hilfeseiten, mit Links.
+summary: Frag, wie The Machine funktioniert. Die Antworten stammen aus diesen Hilfeseiten und enthalten Links.
 covers: help-chat
 code: help_chat.py, dashboard.html
 order: 6
-translated: 6313f73729cfba18
+translated: d99f5fc9b9ac3a95
 ---
-Tippe oben auf **Hilfe**, neben **Einstellungen**, und frag in deinen eigenen Worten, etwa „Wie stelle ich eine Aufgabe zurück?“. Drück Enter zum Fragen oder Shift+Enter für eine neue Zeile. Hilfe antwortet in der Sprache deiner App, oder in der Sprache, in der du schreibst, wenn das eine andere ist. Links zu Hilfeseiten öffnen sich direkt hier, in deiner Sprache.
+Tippe unten in der Seitenleiste auf **Hilfe**, über **Einstellungen**, und frag in deinen eigenen Worten, zum Beispiel: „Wie stelle ich eine Aufgabe zurück?“ Mit Enter sendest du deine Frage, mit Shift+Enter fügst du eine Zeile hinzu. Die Hilfe antwortet in der Sprache deiner App oder in der Sprache, in der du schreibst. Links zu Hilfeseiten öffnen sich direkt im Fenster und in der jeweiligen Sprache.
 
 ## Woher die Antworten kommen
 
-Hilfe liest die Hilfeseiten, die zu deiner Frage passen, und für das, was sie offenlassen, den Quellcode der App selbst. Jede Antwort verlinkt die Seiten, die sie genutzt hat, damit du mehr lesen kannst.
+Die Hilfe liest die Hilfeseiten, die zu deiner Frage passen, und greift für alles, was dort nicht behandelt wird, auf den Code der App zurück. Jede Antwort enthält Links zu den verwendeten Seiten.
 
-Sie läuft auf dem eigenen Modell deiner Machine als kurzer, separater Chat. Unter dem Nachrichtenfeld kannst du für diesen Hilfe-Chat ein anderes Modell oder eine andere Nachdenkstufe wählen (siehe [Modell](model.md)). Nur deine Frage und die passenden Seiten gehen hinein: keine deiner Nachrichten, Personen oder Einstellungen.
+Die Hilfe läuft auf dem Modell deiner Machine als kurzer, separater Chat. Unter dem Nachrichtenfeld kannst du für diesen Hilfe-Chat ein anderes Modell oder eine andere Nachdenken-Stufe auswählen (siehe [Modell](model.md)). Es werden nur deine Frage und die passenden Seiten verwendet, keine deiner Nachrichten, Personen oder Einstellungen.
 
-Sie antwortet auf deinem Niveau: einfache Worte für die meisten, mehr Details, wenn dein Setup oder deine Fragen technisch sind. Das schätzt sie danach ein, wie deine Machine eingerichtet ist, welche Rolle du hast und wie du fragst. Nur diese Einschätzung geht hinein.
+Die Antwort passt sich deinem Kenntnisstand an: Sie ist für die meisten leicht verständlich und enthält mehr Details, wenn deine Fragen technisch sind. Die Hilfe schätzt deinen Kenntnisstand anhand deiner Einrichtung, deiner Rolle und deiner Fragen ein. Nur diese Einschätzung wird weitergegeben.
 
-Sie zeigt zuerst, was The Machine schon macht und was du einstellen kannst. Ein Skill nur, wenn nichts Eingebautes es abdeckt. Siehe [Anpassen](personalize.md).
+Zuerst zeigt sie dir, was The Machine bereits kann. Einen Skill schlägt sie nur vor, wenn keine integrierte Funktion dafür geeignet ist. Siehe [Mach es zu deinem](personalize.md).
 
 ## Was das Team sieht
 
-Um die Hilfe besser zu machen, zählt deine Machine ein paar Wörter dazu, worum es in jeder Frage geht, etwa „eine Aufgabe zurückstellen“. Nie deine Frage oder die Antwort, und keine Namen, Adressen oder Nummern: nur Wörter aus diesen Hilfeseiten. Einmal am Tag gehen die Zählungen an das Team von The Machine, ohne dein Konto.
+Damit wir die Hilfe verbessern können, zählt deine Machine ein paar Wörter dazu, worum es bei jeder Frage geht, zum Beispiel „Aufgabe zurückstellen“. Niemals deine Frage oder die Antwort und keine Namen, Adressen oder Zahlen, sondern nur Wörter aus diesen Hilfeseiten. Einmal am Tag werden die Zählwerte ohne dein Konto an das **Team von The Machine** gesendet.
 
-Um das zu beenden, schalte **Teilen, was die Hilfe gefragt wird** in **Einstellungen**, **Sicherheit** unter **Team von The Machine** aus, oder wähle die [Sicherheitsstufe](security-levels.md) **Vorsichtig**. Es braucht [The Machine Network](/network). Was noch nicht gesendet wurde, wird gelöscht.
+Um das zu deaktivieren, schalte unter **Einstellungen** > **Sicherheit** > **Team von The Machine** die Option **Teilen, was die Hilfe gefragt wird** aus oder wähle die Sicherheitsstufe **Vorsichtig** ([Sicherheitsstufen](security-levels.md)). Dafür brauchst du [The Machine Network](/network). Noch nicht gesendete Daten werden gelöscht.
 
-## Was sie nicht kann
+## Was die Hilfe nicht kann
 
-Hilfe beantwortet Fragen. Sie sieht deine Daten nicht und ändert nichts: Sie sagt dir stattdessen, wo du tippen musst.
+Die Hilfe beantwortet Fragen. Sie kann deine Daten nicht sehen und ändert nichts. Stattdessen erklärt sie dir, wo du tippen musst.
 
-Wenn das, was du beschreibst, eher nach einem Fehler klingt als nach einer Wie-geht-das-Frage, endet die Antwort mit **Diesen Fehler melden**. Das öffnet **Fehler melden** mit einer kurzen Beschreibung dessen, was du gemacht hast, was du erwartet hast und was passiert ist, und der Supportbericht ist angehakt. Ändere dort, was du willst. Nichts geht raus, bis du auf **Senden** tippst.
+Wenn deine Beschreibung eher nach einem Fehler als nach einer Frage zur Bedienung klingt, endet die Antwort mit **Diesen Fehler melden**. Damit öffnet sich **Fehler melden** mit einer kurzen Beschreibung davon, was du getan hast, was du erwartet hast und was passiert ist. Die Support-Meldung ist dabei bereits ausgewählt. Du kannst alles ändern. Gesendet wird erst, wenn du auf **Senden** tippst.
 
-**Fehler melden** ist auch ein eigener Tab im selben Bereich. Siehe [Support bekommen](get-support.md#report-a-bug).
+**Fehler melden** ist auch ein eigener Tab im selben Fenster. Siehe [Support erhalten](get-support.md#report-a-bug).

@@ -1,36 +1,40 @@
 ---
 title: Slack
 area: connections
-summary: De kanalen en directe berichten waarin je zit. Stuurt een direct bericht pas nadat je het goedkeurt.
+summary: De kanalen en privéberichten waar je deel van uitmaakt. Stuurt pas een privébericht nadat je het hebt goedgekeurd.
 covers: connector:slack
 code: assistant.py, next_actions.py, onboarding.py, slack_api.py
 site: Connect, Remove
-translated: 8d275e75083292ba
+translated: 23f9e98f4680d23c
 ---
-## Wat het leest
+## Wat hij leest
 
-De gesprekken waarvan je lid bent: kanalen, privékanalen, directe berichten en groepsberichten, de laatste 7 dagen als je koppelt, daarna alles wat nieuw is. Het sluit nooit zelf aan bij een kanaal en begint nooit zelf een gesprek. Een rustig kanaal wordt ongeveer één keer per dag gelezen; heeft een to-do de nieuwste berichten nodig, dan leest The Machine het meteen.
+De gesprekken waar je deel van uitmaakt: kanalen, privékanalen, privéberichten en groepsberichten. Bij het koppelen leest hij de afgelopen 7 dagen, daarna alles wat nieuw is. Hij wordt nooit zelf lid van een kanaal en opent nooit zelf een gesprek. Een rustig kanaal wordt ongeveer één keer per dag gelezen; als een to-do de nieuwste berichten nodig heeft, leest The Machine die meteen.
 
-Oudere berichten, tot ongeveer een jaar terug, komen later beetje bij beetje binnen als [geschiedenis](history.md).
+Berichten van ongeveer een jaar oud komen later beetje bij beetje binnen als [geschiedenis](history.md).
 
-Mensen staan er met hun naam en apps met die van hen, nooit met een Slack-ID. Iemand van wie het Slack-account weg is, staat er als voormalige Slack-gebruiker.
+Mensen worden weergegeven met hun naam en apps met hun naam, nooit met een Slack-ID. Iemand van wie het Slack-account is verwijderd, wordt weergegeven als een voormalige Slack-gebruiker.
 
-## Wat het kan versturen
+## Wat hij kan versturen
 
-Een direct bericht aan één persoon, als jou, en pas nadat je het goedkeurt op de to-do. Een antwoord op het Slack-bericht waar een to-do uit kwam, gaat in de thread van dat bericht, in het directe bericht of het kanaal; op het concept staat **In thread**. Het begint nooit een nieuw bericht in een kanaal.
+Een privébericht aan één persoon, namens jou en alleen nadat je het op de to-do hebt goedgekeurd. Een antwoord op het Slack-bericht waar een to-do vandaan komt, wordt geplaatst in de thread van dat bericht, in het privébericht of kanaal. Het concept heeft het label **In thread**. Hij plaatst nooit een nieuw bericht in een kanaal.
+
+## Wat hij bewaart
+
+Alles wat hij leest, blijft op je Machine staan totdat je het of de Machine verwijdert. De hostingdienst bewaart geen kopie van je berichten en geen Slack-inloggegevens. Ook wordt er geen AI-model getraind met je Slack-berichten. The Machine gebruikt AI, die fouten kan maken. Daarom zie je elk bericht voordat het wordt verstuurd.
 
 ## Koppelen
 
-1. **Koppelingen**, **Chat**, **Slack**, dan **Inloggen met Slack**, en sta het toe in Slack. Op je eigen computer koppel je hem eerst aan je account op themachine.computer.
-2. Nieuwe berichten en directe berichten komen eerst binnen. Slack laat apps ongeveer één gesprek per minuut lezen, dus oudere berichten komen in een paar uur binnen.
+1. Kies **Koppelingen**, **Chat**, **Slack** en daarna **Aanmelden met Slack**. Geef vervolgens toestemming in Slack. Koppel Slack op je eigen computer eerst aan je account op themachine.computer.
+2. Nieuwe berichten en privéberichten komen als eerste binnen. Slack staat apps toe ongeveer één gesprek per minuut te lezen, dus oudere berichten worden in de loop van een paar uur ingeladen.
 
-Of gebruik een Maton-API-sleutel: log in op maton.ai, koppel Slack daar en kopieer je Maton API-sleutel vanaf Home. Open dan onder Slack **Of gebruik een Maton-API-sleutel** en plak hem, of voer `assistant connect slack` uit op je eigen computer. Een Slack die via Maton gekoppeld is, blijft werken zoals hij is.
+Of gebruik een Maton API-sleutel: meld je aan op maton.ai, koppel daar Slack en kopieer je Maton API-sleutel vanuit Home. Open vervolgens **Of gebruik een Maton-API-sleutel** onder Slack en plak de sleutel, of voer `assistant connect slack` uit op je eigen computer. Een Slack-koppeling via Maton blijft gewoon werken.
 
 ## Verwijderen
 
-- In het dashboard: **Koppelingen**, open Slack, **Details**, dan **Ontkoppelen**. Wat al binnengehaald is, blijft.
-- Op een gehoste Machine kun je ook op **Verwijderen** ernaast drukken op je setuppagina.
+- In het dashboard: kies **Koppelingen**, open Slack, kies **Details** en daarna **Ontkoppelen**. Wat al is binnengehaald, blijft staan.
+- Op een gehoste Machine kun je ook op de instellingenpagina ernaast op **Verwijderen** drukken.
 
-## Verwijderen op Slack
+## Slack verwijderen
 
-Ingelogd met Slack: open in Slack de pagina Manage apps van je workspace en verwijder The Machine. Via Maton: verwijder de Slack-koppeling in Maton, en verwijder de Maton API-sleutel die je gaf. Een Slack-beheerder kan beide apps ook uit de workspace verwijderen, onder Manage apps.
+Als je bent aangemeld met Slack: open in Slack de pagina Apps beheren van je workspace en verwijder The Machine. Hij stopt meteen met lezen en vraagt je om opnieuw aan te melden. Wat al is binnengehaald, blijft staan. Via Maton: verwijder de Slack-koppeling in Maton en verwijder de Maton API-sleutel die je hebt opgegeven. Een Slack-beheerder kan beide apps ook verwijderen uit de workspace via Apps beheren.

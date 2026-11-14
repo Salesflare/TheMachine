@@ -1,34 +1,34 @@
 ---
-title: Una connessione richiede il tuo aiuto
+title: Una connessione richiede assistenza
 area: troubleshooting
 summary: Una fonte mostra **Serve il tuo aiuto** o smette di importare dati. Ecco cosa puoi provare.
 covers: 
 code: onboarding.py, dashboard.html, assistant.py
 order: 1
-translated: 1c530fc2b291d640
+translated: 256e9ef2fd6cae48
 ---
 ## Controlla lo stato
 
-Apri **Connessioni**. Per ogni fonte trovi il suo stato:
+Apri **Connessioni**. Ogni fonte indica il proprio stato:
 
-- **Riconnessione automatica**: un breve intoppo. La fonte riprova da sola.
-- **In attesa della prima sincronizzazione**: l’hai appena collegata. Aspetta qualche minuto.
-- **Legge di nuovo alle** 07:00: X e LinkedIn leggono i dati solo durante il giorno. Non devi fare nulla.
-- **Serve il tuo aiuto**: apri **Dettagli**. Trovi cosa è andato storto e cosa fare.
-- **Telefono disconnesso**: il tuo telefono Android non riesce a raggiungere la tua Machine. Apri l’app OpenClaw sul telefono.
+- **Riconnessione automatica**: un'interruzione momentanea. La fonte riprova da sola.
+- **In attesa della prima sincronizzazione**: è appena stata collegata. Aspetta qualche minuto.
+- **Legge di nuovo alle** 07:00: X e LinkedIn leggono solo durante il giorno. Non devi fare nulla.
+- **Serve il tuo aiuto**: apri **Dettagli**. Qui trovi cosa è andato storto e cosa fare.
+- **Telefono disconnesso**: il tuo telefono Android non riesce a raggiungere la tua Machine. Apri l'app OpenClaw sul telefono.
 
-Se una fonte non importa nulla per più tempo del solito, smette di risultare collegata. Lo stato si aggiorna da solo quando arrivano nuovi elementi.
+Se una fonte non importa nulla per più tempo del solito, mostra **In attesa di una nuova sincronizzazione**. Lo stato si aggiorna da solo quando una sincronizzazione va a buon fine.
 
-Il numero accanto a **Connessioni** indica solo le fonti che richiedono il tuo aiuto.
+Il numero su **Connessioni** conta solo le fonti che richiedono il tuo aiuto.
 
 ## Soluzioni comuni
 
-- «Accedi di nuovo a Google» (o Microsoft): premi **Riconnetti** una volta per ripristinare tutte le fonti di quell’account, come Gmail e Calendar.
-- «Devi accedere di nuovo»: premi **Riconnetti** e accedi.
-- Microsoft sta ancora configurando l’accesso: riprova da sola.
-- Slack: premi **Riconnetti**. Hai usato una chiave Maton per collegarti? Controlla la chiave e la connessione a Slack in Maton.
-- Android: apri l’app OpenClaw sul telefono e consentile di accedere alle notifiche.
+- "Accedi di nuovo a Google" (o Microsoft): basta un clic su **Riconnetti** per ripristinare tutte le fonti di quell'account, come Gmail e Calendar.
+- "devi accedere di nuovo": premi **Riconnetti** e accedi.
+- Microsoft sta ancora configurando l'accesso: riprova da sola.
+- Slack: premi **Riconnetti**. Hai effettuato la connessione con una chiave Maton? Controlla la chiave e la connessione Slack in Maton.
+- Android: apri l'app OpenClaw sul telefono e consenti l'accesso alle notifiche.
 
-Sul tuo computer, `assistant doctor` controlla tutte le fonti e spiega come risolvere ogni problema.
+Sul tuo computer, `assistant doctor` controlla ogni fonte e indica come risolvere ciascun problema.
 
-Non riesci ancora a risolvere? Consulta [Contatta l’assistenza](get-support.md).
+Hai ancora problemi? Consulta [Ricevere assistenza](get-support.md).

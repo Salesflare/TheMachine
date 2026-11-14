@@ -1,38 +1,38 @@
 ---
-title: Zustand deiner Machine
+title: Machine-Status
 area: connections
-summary: Das eigene Protokoll deiner Machine, damit sie Probleme selbst erkennt. Sie liest nur.
+summary: Das eigene Protokoll deiner Machine, damit sie Probleme selbst erkennt. Es wird nur gelesen.
 covers: connector:gateway
 code: onboarding.py
 site: More sources, Remove
-translated: 3a06400a28396465
+translated: 7d66ff6a6a5d5b1d
 ---
 ## Was sie liest
 
-Das eigene Protokoll deiner Machine: fehlgeschlagene Ausführungen, abgelehnte Übergaben, Telegram-Nachrichten, die nicht gesendet wurden, und eigene Fehler von The Machine. Eine Aufgabe sagt dir, wenn etwas behoben werden muss. Auf deinem eigenen Computer gehört dazu **Die letzte Aktualisierung fertig installieren**: Ein Teil eines Updates erfordert nachts einen kurzen Neustart, und in einigen Nächten war das nicht möglich. Frag The Machine im Chat danach, und sie schließt die Installation ab. Die Aufgabe wird automatisch geschlossen, sobald dieser Teil installiert ist.
+Das eigene Protokoll deiner Machine: fehlgeschlagene Abläufe, abgelehnte Übergaben, Telegram-Nachrichten, die nicht gesendet wurden, und eigene Fehler von The Machine. Eine Aufgabe zeigt dir, wenn etwas repariert werden muss. Auf deinem eigenen Computer gehört dazu **Die letzte Aktualisierung fertig installieren**: Ein Teil eines Updates braucht nachts einen kurzen Neustart, und das hat ein paar Nächte lang nicht geklappt. Frag im Chat deiner Machine, dann schließt The Machine die Installation ab. Die Aufgabe schließt sich selbst, sobald dieser Teil installiert ist.
 
-## Korrekturen, die ein Update zurückgestellt hat
+## Zurückgestellte Korrekturen eines Updates
 
-Wenn The Machine ein Update installiert und eine ihrer eigenen Korrekturen nicht mehr zur neuen Version passt, stellt das Update diese Korrektur zurück und fährt fort. So bleibt deine Machine immer auf dem neuesten Stand. Eine Aufgabe, **Eine beiseitegelegte Korrektur neu machen**, nennt die Korrektur.
+Wenn The Machine ein Update ausführt und eine eigene Korrektur nicht mehr zur neuen Version passt, stellt das Update diese Korrektur zurück und läuft weiter. So bleibt deine Machine nie auf einer alten Version. Eine Aufgabe namens **Eine beiseitegelegte Korrektur neu machen** nennt die Korrektur.
 
-Mit **Neu machen** lässt du deine Machine die Korrektur in der neuen Version erneut erstellen, wie bei jeder eigenen Korrektur: Du siehst die Änderung und tippst auf **Korrektur zusammenführen**. Sobald sie zusammengeführt ist, wird die alte Kopie verworfen. Oder schließ die Aufgabe.
+Mit **Neu machen** lässt du deine Machine die Korrektur in der neuen Version erneut erstellen, wie bei jeder eigenen Korrektur: Du siehst die Änderung und tippst auf **Korrektur zusammenführen**. Sobald sie zusammengeführt ist, wird die alte Kopie gelöscht. Oder schließe die Aufgabe.
 
-## Eigene Dateien, die ein Update beibehalten hat
+## Eigene Dateien, die ein Update behalten hat
 
-Wenn eine neue Version eine Datei mit demselben Namen enthält wie eine Datei, die du selbst hinzugefügt hast, benennt das Update deine Datei um, statt sie zu überschreiben, und fährt fort. Eine Aufgabe sagt dir, wie viele Dateien beibehalten wurden, und listet jeweils den alten und den neuen Namen auf. Schließ die Aufgabe, sobald du die Namen überprüft hast.
+Wenn eine neue Version eine Datei mit demselben Namen enthält wie eine Datei, die du selbst hinzugefügt hast, benennt das Update deine Datei um, statt sie zu überschreiben, und läuft weiter. Eine Aufgabe zeigt dir, wie viele Dateien behalten wurden, und listet jeweils den alten und den neuen Namen auf. Schließe sie, sobald du die Namen überprüft hast.
 
 ## Was sie tun kann
 
 Nichts. Sie liest nur das Protokoll auf deiner eigenen Machine.
 
-## Verbinde sie
+## Verbinden
 
-- Auf einer gehosteten Machine findest du sie auf deiner Einrichtungsseite unter **Weitere Quellen** als Machine health. Eine pro Machine.
-- Auf deinem eigenen Computer: Führe `assistant connect gateway` aus.
+- Auf einer gehosteten Machine findest du sie auf deiner Einrichtungsseite unter **Weitere Quellen** als Machine-Status. Einmal pro Machine.
+- Auf deinem eigenen Computer: **Verbindungen**, **Andere**, Machine-Status. Oder führe `assistant connect gateway` aus.
 
-## Entferne sie
+## Entfernen
 
-- Im Dashboard: **Verbindungen** öffnen, **Details** und dann **Trennen** auswählen.
+- Im Dashboard: **Verbindungen**, öffne den Eintrag und wähle **Details** und dann **Trennen**.
 - Auf einer gehosteten Machine kannst du auch auf deiner Einrichtungsseite daneben auf **Entfernen** tippen.
 
-Du musst sie nirgendwo sonst deinstallieren.
+An anderer Stelle musst du nichts deinstallieren.

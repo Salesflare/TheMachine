@@ -1,45 +1,46 @@
 ---
 title: Niveles de seguridad
 area: security
-summary: Un solo interruptor, Estándar o Prudente, fija tus ajustes de seguridad y privacidad. El administrador de un Work Fleet elige uno para el Fleet.
+summary: Un solo control, Estándar o Prudente, define tus ajustes de seguridad y privacidad. El administrador de una Fleet de trabajo elige el nivel para toda la Fleet.
 covers: settings:security
 code: security_levels.py, dashboard.html, fleet.py
 order: 2
-translated: f8e82f192dd70e3a
+translated: cf3ba86c8c1a23f3
 ---
 ## Dos niveles
 
 Abre **Ajustes** y luego **Seguridad**.
 
-- **Estándar**: los valores por defecto de hoy. No cambia nada.
-- **Prudente**: más estricto, para cuando quieres menos en tu teléfono y que se guarde menos.
+- **Estándar**: la configuración predeterminada actual. No cambia nada.
+- **Prudente**: más estricto, para cuando quieres menos información en tu teléfono y que se guarde menos.
 
-Un nivel es un punto de partida. Si después cambias cualquier ajuste, el nivel muestra **Personalizado**. Elige un nivel otra vez para restablecerlos.
+Un nivel es un punto de partida. Si después cambias cualquier ajuste, el nivel pasa a **Personalizado**. Elige un nivel de nuevo para restablecer los ajustes.
 
 ## Qué cambia Prudente para ti
 
-- **Texto en las notificaciones** desactivado: una notificación dice "Nueva tarea" o "Para revisar", no lo que dice la tarea.
-- **Ofrecer guardar inicios de sesión** desactivado. Los sitios con sesión iniciada que guardaste se quedan hasta que toques **Olvidar todos los inicios de sesión guardados**.
+- **Texto en las notificaciones** desactivado: una notificación dice «Nueva tarea» o «Para revisar», pero no muestra el contenido de la tarea.
+- **Ofrecer guardar inicios de sesión** desactivado. Los sitios en los que ya iniciaste sesión y que guardaste seguirán ahí hasta que pulses **Olvidar todos los inicios de sesión guardados**.
 - **Buscar contactos de trabajo**, **Ofrecer compartir aprendizajes** y **Compartir lo que se pregunta a la ayuda** desactivados.
 - **Comprobar cuáles de mis contactos tienen una Machine** y **Dejar que me encuentren quienes tienen mi correo** desactivados.
-- **Guardar los detalles de Hazlo 90 días** desactivado: se guardan 30 días.
-- En una Family, las horas libres y ocupadas te preguntan antes. Con Amigos, se rechaza el contexto de reuniones.
+- **Guardar los detalles de Hazlo 90 días** desactivado: se conservan durante 30 días.
+- **Qué pueden preguntar otras Machines a la mía** se establece en **Desactivada**: no se pueden programar reuniones con otras Machines. Consulta [Amigos y Network](friends.md#scheduling-with-other-machines).
+- En una Familia, primero tienes que aprobar las solicitudes de horarios disponibles. Con Amigos, se rechaza el contexto de las reuniones.
 
-## El nivel de un Work Fleet
+## Nivel de una Fleet de trabajo
 
-Lo elige el propietario del Fleet o un administrador en los ajustes del Fleet: en **Ajustes** › **Cuenta**, pulsa **Fleet**. Todos en el Fleet lo ven. Cuando es Prudente:
+La persona propietaria de la Fleet o un administrador lo elige en los ajustes de la Fleet: ve a **Ajustes** › **Cuenta** y pulsa **Fleet**. Todas las personas de la Fleet pueden verlo. Cuando está en Prudente:
 
-- Las respuestas a compañeros esperan tu OK, sin nombres, y solo sobre personas de tus cuentas de trabajo.
-- Las presentaciones y los traspasos también te esperan.
-- El Graph del equipo comparte los correos de clientes sin sus adjuntos.
-- Las notificaciones de tareas de trabajo no muestran texto.
-- No se buscan datos de contactos de trabajo.
-- Tu Machine no comprueba tus contactos en la Network ni hace que te encuentren por correo, salvo que lo hayas activado tú.
-- Todos vuelven a iniciar sesión cada 7 días.
-- Un enlace de invitación solo funciona para el correo al que se envió.
+- Las respuestas a tus compañeros esperan tu aprobación, no incluyen nombres y solo tratan sobre personas de tus cuentas de trabajo.
+- Las presentaciones y los traspasos también esperan tu aprobación.
+- El Graph del equipo comparte los correos de clientes, pero no sus archivos adjuntos.
+- Las notificaciones de tareas de trabajo no muestran el texto.
+- No se buscan contactos de trabajo.
+- Tu Machine no comprueba tus contactos en Network ni permite que te encuentren por correo, a menos que hayas activado esa opción.
+- Todas las personas tienen que volver a iniciar sesión cada 7 días.
+- Un enlace de invitación solo funciona con la dirección de correo a la que se envió.
 
-Los miembros pueden ser más estrictos que el Fleet, no menos. Sus propias elecciones se guardan, y vuelven si el Fleet vuelve a Estándar.
+Los miembros pueden elegir ajustes más estrictos que los de la Fleet, pero no menos estrictos. Se conservan sus propios ajustes y se restablecen si la Fleet vuelve a Estándar.
 
-## Lo mismo en ambos
+## Lo mismo en ambos niveles
 
-No se envía nada sin tu OK: ves cada borrador y pulsas Enviar. Hazlo y los agentes de código funcionan igual. Iniciar sesión siempre pide un código de una app de autenticación o una llave de acceso.
+No se envía nada sin tu aprobación: puedes ver cada borrador y pulsar **Enviar**. Hazlo y los agentes de programación funcionan igual. Para iniciar sesión, siempre necesitas un código de autenticación o una clave de acceso.
