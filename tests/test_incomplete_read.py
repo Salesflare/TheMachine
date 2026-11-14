@@ -60,10 +60,24 @@ class IncompleteReadTest(unittest.TestCase):
             with self.assertRaises(ms_graph.GraphError) as caught:
                 ms_graph.call({}, None, {}, 'me')
         self.assertEqual(caught.exception.category, 'timeout')
-        with patch.object(rss.urllib.request, 'urlopen', dropped):
+        class Connection:  # the feed's server, through the Web page connector's reader (rss.fetch)
+            def __init__(self, *_args):
+                pass
+
+            def request(self, *_args, **_kwargs):
+                pass
+
+            def getresponse(self):
+                response = Dropped()
+                response.status = 200
+                return response
+
+            def close(self):
+                pass
+        with patch.object(rss.web_page, '_connection', side_effect=Connection):
             with self.assertRaises(a.SourceError) as caught:
                 rss.fetch('https://feed.example/rss', {}, a.SourceError)
-        self.assertEqual(caught.exception.category, 'network:IncompleteRead:rss_read')
+        self.assertEqual(caught.exception.category, 'network:read:rss_read')
 
 
 if __name__ == '__main__':

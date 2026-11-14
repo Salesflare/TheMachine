@@ -26,7 +26,7 @@ UA = 'TheMachine/1 (+feed reader)'
 MAX_BYTES = 5_000_000  # of a feed, also once unpacked
 MIN_SECONDS = 900  # never read a feed more often than this, whatever poll_seconds says
 # The reader's errors (connectors/web_page.py get) as this connector's own
-READ_ERRORS = {'web_page_address': 'rss_address', 'web_page_redirects': 'rss_redirects', 'web_page_network': 'network:OSError:rss_read'}
+READ_ERRORS = {'web_page_address': 'rss_address', 'web_page_redirects': 'rss_redirects', 'web_page_network': 'network:read:rss_read'}
 KINDS = {'rss.item': 'feed'}
 # How each kind reads in the message viewer (email, chat, notification or card) and the app its link opens in
 # (machine/store/message_view.py; docs/adding-a-source.md, "How a message reads")

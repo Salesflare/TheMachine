@@ -4,6 +4,7 @@ area: connections
 summary: Posts from an RSS or Atom feed you follow.
 covers: connector:rss
 code: connectors/rss.py
+site: More sources
 ---
 ## What it reads
 
