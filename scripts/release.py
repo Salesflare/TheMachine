@@ -5,7 +5,8 @@ A release is a git tag `release-YYYYMMDD-HHMM` on a commit of main, signed with 
 Machines and `update` below only install a release whose signature checks out against the public key in the code
 that is already installed (deploy/release-signers), so a pushed commit alone never reaches a Machine.
 
-  python3 scripts/release.py cut       sign origin/main as a new release and push the tag (needs the private key and a
+  python3 scripts/release.py cut       sign origin/main as a new release and push the tag (needs the private key, every
+                                        language translated (scripts/translate.py all --check) and a
                                         passed full test run on that commit; --commit SHA cuts an older one of main;
                                         --full-run waits for that run when one is going, or starts it on our CI
                                         runner when there is none, about 12 minutes, and cuts when it passes)
@@ -229,6 +230,33 @@ def whats_new_problems(source, before=None):
     return found
 
 
+def translation_problems(sha):
+    """What the commit would ship in English only, as lines: `scripts/translate.py all --check` run on that commit's
+    own files (a worktree, so the checkout here doesn't matter). [] when every language has every catalog key and help
+    article, or when the commit has no translator yet. Pull requests change the English; the daily translator
+    (.github/workflows/translate.yml) writes the rest, so main may show English for a day and a release never does."""
+    if git('cat-file', '-e', f'{sha}:scripts/translate.py', check=False).returncode:
+        return []
+    # A translator from before --list (a commit cut with --commit) still checks: its counts, the nonzero ones listed
+    listing = "'--list'" in git('show', f'{sha}:scripts/translate.py').stdout
+    with tempfile.TemporaryDirectory() as tmp:
+        tree = Path(tmp) / 'tree'
+        git('worktree', 'add', '--detach', '--quiet', str(tree), sha)
+        try:
+            result = subprocess.run([sys.executable, 'scripts/translate.py', 'all', '--check'] + ['--list'] * listing,
+                                    cwd=tree, capture_output=True, text=True, timeout=900)
+        finally:
+            git('worktree', 'remove', '--force', str(tree), check=False)
+    if result.returncode == 0:
+        return []
+    lines = [line for line in result.stdout.splitlines() if line.strip()]
+    if not listing:
+        lines = [line for line in lines if re.search(r'\b[1-9]\d*\b', line)] or lines
+    if result.returncode != 1 or not lines:
+        return [f'scripts/translate.py all --check --list failed: {(result.stderr or result.stdout).strip()[-300:]}']
+    return lines
+
+
 def cut(args):
     key = Path(args.key or os.environ.get('THE_MACHINE_RELEASE_KEY') or Path.home() / '.config/the-machine-release/signing-key')
     if not key.exists():
@@ -251,6 +279,10 @@ def cut(args):
     bad = whats_new_problems(show(sha) or 'ENTRIES = []', show(last) if last else None)
     if bad:
         raise SystemExit("Not released: What's new candidates to fix first:\n  " + '\n  '.join(bad))
+    untranslated = translation_problems(sha)
+    if untranslated:
+        raise SystemExit('Not released: not every language is translated yet. Run the Daily translation workflow '
+                         '(gh workflow run translate.yml), merge its pull request, then cut again:\n  ' + '\n  '.join(untranslated))
     try:
         try:
             require_green_tests(sha)

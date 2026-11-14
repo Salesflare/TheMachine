@@ -352,7 +352,7 @@ def front(text):
 
 
 def blocks(body):
-    """Per section: its paragraphs and list items (scripts/help_check.py's rule for kept-in-step translations)."""
+    """Per section: its paragraphs and list items. A translation with other ones than its English is out of date."""
     return [sum(len(b.splitlines()) if re.match(r'(- |\d+\. )', b) else 1 for b in re.split(r'\n\s*\n', part.strip()) if b.strip() and not b.startswith('#'))
             for part in re.split(r'^(?=#{2,3} )', body, flags=re.M)]
 
@@ -443,12 +443,16 @@ def help_state(lang, path, folder=HELP, history=None):
         return 'missing'
     fields, body = front(local.read_text(encoding='utf-8'))
     found = dict(fields).get('translated')
+    english = front(path.read_text(encoding='utf-8'))[1]
+    # Out of step with the English's sections, paragraphs and list items, it is out of date whatever its stamp or
+    # history says (a stamp added to an older translation; one made here is held to them by article_problems)
+    in_step = blocks(english) == blocks(body)
     if found:
-        return 'current' if found == stamp(path) else 'stale'
+        return 'current' if found == stamp(path) and in_step else 'stale'
     after = history.changed_after(path, local) if history else None
     if after is None:  # no history to go by: current while it still has the English's headings
-        after = HEADING.findall(front(path.read_text(encoding='utf-8'))[1]) != HEADING.findall(body)
-    return 'stale' if after else 'unstamped'
+        after = HEADING.findall(english) != HEADING.findall(body)
+    return 'stale' if after or not in_step else 'unstamped'
 
 
 def help_todo(langs, folder=HELP, history=None):
@@ -579,9 +583,14 @@ def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument('what', choices=('catalog', 'help', 'all'))
     p.add_argument('--lang', action='append', choices=languages(), help='only this language (repeat for more)')
-    p.add_argument('--check', action='store_true', help='list what is missing or out of date, call nothing (exit 1 when something is)')
+    p.add_argument('--check', action='store_true', help='count what is missing or out of date, call nothing (exit 1 when something is)')
+    p.add_argument('--list', action='store_true', help='with --check and all: one line per language and article left, for scripts/release.py')
     args = p.parse_args(argv)
     langs = args.lang or languages()
+    if args.check and args.list and args.what == 'all':
+        lines = problems(langs)
+        print('\n'.join(lines))
+        return 1 if lines else 0
     left = 0
     if args.what in ('catalog', 'all'):
         left += run_catalog(langs, check=args.check)

@@ -1,7 +1,8 @@
 # Glossary
 
-How The Machine's product terms read in each language. Every catalog in this folder follows it, and
-`tests/test_i18n.py` checks that: when an English string uses a term from the **Terms** table, its translation uses one
+How The Machine's product terms read in each language. The daily translator (`scripts/translate.py`) sends it with
+every request, so a new term goes here, with a form for every language, in the pull request that first uses it.
+Every catalog in this folder follows it, and `tests/test_i18n.py` checks that: when an English string uses a term from the **Terms** table, its translation uses one
 of the forms listed for that language (any of the forms after the first are inflections the check also accepts). A
 capitalized term (Ready, Settings) is the name of a status or a screen and only counts capitalized; a lowercase one
 counts in any case. File names (.skill, SKILL.md) don't count.

@@ -76,8 +76,13 @@ What every pull request needs:
 - Every feature change updates its help article in `docs/help/` in the same pull request (the articles are the help
   at themachine.computer/help). `python3 scripts/help_check.py` names the article a new connector, dashboard tab or
   Settings tab needs, and any button text, route or command an article names that the code no longer has.
-- New UI strings go in every catalog in `i18n/` (glossary in `i18n/glossary.md`). Add keys anywhere: the catalogs are
-  kept sorted by key, so pull requests that add different strings merge without conflicts.
+- New UI strings and help articles are English only: add the strings to `i18n/en.json`
+  (`python3 scripts/i18n_extract.py --add`), and a new product term to `i18n/glossary.md` with a form for every
+  language. Don't edit the other catalogs or `docs/help/<language>/`: the daily translator
+  (`.github/workflows/translate.yml`, `scripts/translate.py`) writes them in one pull request a day, so main may show
+  English for a day, and `scripts/release.py cut` refuses a release with anything left. A wrong translation is fixed
+  by editing that one entry. `python3 scripts/i18n_extract.py --stale` lists keys no code reads any more, to prune.
+- The catalogs are kept sorted by key, so pull requests that add different strings merge without conflicts.
 - Run `python3 scripts/i18n_extract.py --sort` before pushing; `tests/test_i18n.py` fails on a catalog that isn't
   sorted. When merging main still leaves a catalog conflict, `python3 scripts/i18n_extract.py --merge` settles it key
   by key.
@@ -89,7 +94,7 @@ What every pull request needs:
   person would care: 3 a new thing most people will use, 2 a clear improvement to something they use, 1 a small change
   worth a line; set it honestly, it decides what gets shown), a short title, one or two short sentences on what changed
   and what they can do now, `who: 'team'` when only a Work Fleet can use it, and optionally a button that opens it (a
-  palette command id). Fixes, polish and internal work get none. Add its strings to every catalog in `i18n/`.
+  palette command id). Fixes, polish and internal work get none. Add its strings to `i18n/en.json`.
 - Give it a picture: a small drawing of the feature in `WN_ART` (`dashboard/shell-whats-new.js`), named by the entry's
   `art`. Draw it as inline SVG on the 440 by 180 canvas with the classes listed there (they use the theme's colors, so
   it is right in light and dark), no words in it, placeholder bars for text. It should read as its feature without

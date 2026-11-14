@@ -169,6 +169,17 @@ class Help(unittest.TestCase):
         self.assertEqual(T.help_state('nl', self.help / 'projects.md', self.help, self.history), 'current')
         self.assertIn('title: Projecten', (self.help / 'nl' / 'projects.md').read_text(encoding='utf-8'))
 
+    def test_a_translation_out_of_step_with_the_english_is_out_of_date_whatever_its_stamp(self):
+        # a list item short of the English: stamped or not, the next run translates it again
+        short = ARTICLE.replace('title: Projects', 'title: Projecten').replace('\n- ', '\n', 1)
+        self.assertNotEqual(T.blocks(T.front(short)[1]), T.blocks(T.front(ARTICLE)[1]))
+        (self.help / 'nl' / 'projects.md').write_text(short, encoding='utf-8')
+        self.assertEqual(T.help_state('nl', self.help / 'projects.md', self.help, self.history), 'stale')
+        stamped = short.replace('\n---\n', f'\ntranslated: {T.stamp(self.help / "projects.md")}\n---\n', 1)
+        (self.help / 'nl' / 'projects.md').write_text(stamped, encoding='utf-8')
+        self.assertEqual(T.help_state('nl', self.help / 'projects.md', self.help, self.history), 'stale')
+        self.assertEqual(T.problems(['nl'], self.help)[-1], 'nl: docs/help/projects.md out of date with its English')
+
     def test_an_article_english_no_longer_has_goes(self):
         (self.help / 'nl' / 'gone.md').write_text(ARTICLE, encoding='utf-8')
         T.run_help(['nl'], folder=self.help, ask=self.answer(), history=self.history)

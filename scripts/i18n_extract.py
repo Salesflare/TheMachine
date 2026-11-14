@@ -1,15 +1,16 @@
 """Every user-facing English string, for the string catalog (i18n/): the dashboard, the server text it shows and the plugin.
 
     python3 scripts/i18n_extract.py            # what's missing from i18n/en.json, everywhere
-    python3 scripts/i18n_extract.py --add      # add it to en.json (then translate it in every language)
+    python3 scripts/i18n_extract.py --add      # add it to en.json (scripts/translate.py writes the other languages daily)
+    python3 scripts/i18n_extract.py --stale    # en.json keys no code reads any more, to prune by hand
     python3 scripts/i18n_extract.py --check    # exit 1 when anything is missing (CI)
     python3 scripts/i18n_extract.py --area todos   # one dashboard area only (AREAS)
     python3 scripts/i18n_extract.py --sort     # rewrite every i18n/*.json in its canonical form (run before pushing)
     python3 scripts/i18n_extract.py --merge    # during a git merge: settle the catalogs' conflicts key by key
 
 The dashboard translates by source text (the i18n script in dashboard.html): an element's text, placeholder, aria-label or
-title that equals a catalog key reads in the owner's language. So a string only needs to be a key in en.json (and
-translated in every language); nothing in the markup changes. What is read:
+title that equals a catalog key reads in the owner's language. So a string only needs to be a key in en.json (the daily
+translator, scripts/translate.py, adds it to every other language); nothing in the markup changes. What is read:
 
 - dashboard.html: all of its markup and every script in it (AREAS only groups them for a report);
 - server text the dashboard shows: every error the Python modules raise with a message (it reaches the dashboard as
@@ -673,7 +674,26 @@ def missing(areas=None):
     return out
 
 
+def stale():
+    """en.json keys no source here reads any more, sorted: candidates to prune (each lives in every catalog). Some are
+    built at run time (a key made from parts, a status name) and still read, so a person checks before removing one."""
+    source = dashboard_parts.assemble(ROOT)
+    found = set(dashboard_strings(source)) | set(viewer_strings())
+    for group in (server_strings(), plugin_strings()):
+        for strings in group.values():
+            found.update(strings)
+    en = catalog('en')
+    return sorted(k for k, v in en.items()
+                  if k not in found and not (isinstance(v, dict) and any(form in found for form in v.values())))
+
+
 def main(argv):
+    if '--stale' in argv:
+        keys = stale()
+        print('\n'.join(keys))
+        print(f'{len(keys)} of {len(catalog("en"))} keys in en.json are not found in the code (prune by hand, monthly: '
+              'some are built at run time).', file=sys.stderr)
+        return 0
     if '--merge' in argv:
         print('\n'.join(f'merged {n}' for n in merge_conflicts()) or 'no catalog conflicts')
         return 0
