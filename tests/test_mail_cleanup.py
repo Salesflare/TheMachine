@@ -198,11 +198,13 @@ class Cleanup(unittest.TestCase):
                             ('cleanup_can_send', lambda s, account: False),
                             ('cleanup_can_mark', lambda s, account: self.marks),
                             ('cleanup_page', lambda s, url, sender='': self.pages.append(url) or self.page)):
-            p = patch.object(a.App, name, value); p.start(); self.addCleanup(p.stop)
+            owner = a.CleanupTemplate if name in vars(a.CleanupTemplate) else a.App  # the template's own, else the App's
+            p = patch.object(owner, name, value); p.start(); self.addCleanup(p.stop)
         p = patch.object(mail_cleanup_app, 'one_click', lambda url: self.clicked.append(url) or True); p.start(); self.addCleanup(p.stop)
         self.sent, self.n = [], 0
         self.asked, self.reply = [], '{"spam": []}'
         self.app.cleanup_spam_model = lambda prompt: self.asked.append(prompt) or self.reply  # the spam pass's one model call
+        self.cleanup = self.app.template('newsletters')  # Newsletter and Spam cleanup's template (mail_cleanup_app.py)
 
     def gateway(self, request):
         self.sent.append(request)
@@ -307,26 +309,26 @@ class Cleanup(unittest.TestCase):
         self.assertEqual([(i['from'], i['address'], i['count'], i['via']) for i in found],
                          [('Lee Lamps', 'news@lamps.example', 1, 'hello@team.example'), ('Pat Shop', 'orders@shop.example', 2, 'hello@team.example')])
         # the headers read now are the group's own: no way left, so no row offers Unsubscribe: each is by hand
-        self.app.cleanup_headers = lambda account, message: mc.unsubscribe_ways_of(GROUP)
+        self.cleanup.cleanup_headers =lambda account, message: mc.unsubscribe_ways_of(GROUP)
         sends = []
-        with patch.object(a.App, 'cleanup_can_send', lambda s, account: True), \
-                patch.object(a.App, 'cleanup_mailto', lambda s, account, mailto: sends.append(mailto['to']) or 'done'):
-            self.assertEqual([i['how'] for i in self.app.cleanup_ways(found)], ['hand', 'hand'])
+        with patch.object(a.CleanupTemplate, 'cleanup_can_send', lambda s, account: True), \
+                patch.object(a.CleanupTemplate, 'cleanup_mailto', lambda s, account, mailto: sends.append(mailto['to']) or 'done'):
+            self.assertEqual([i['how'] for i in self.cleanup.cleanup_ways(found)], ['hand', 'hand'])
             # even if the group's ways got through the header read, an item that came through it never uses them
-            self.app.cleanup_headers = lambda account, message: mc.unsubscribe_ways(GROUP['list-unsubscribe'], GROUP['list-unsubscribe-post'])
-            self.assertEqual([i['how'] for i in self.app.cleanup_ways(found)], ['hand', 'hand'])
-            self.assertEqual(self.app.cleanup_unsubscribe(ACCOUNTS[0], found[1]), ('failed', None, None))
+            self.cleanup.cleanup_headers =lambda account, message: mc.unsubscribe_ways(GROUP['list-unsubscribe'], GROUP['list-unsubscribe-post'])
+            self.assertEqual([i['how'] for i in self.cleanup.cleanup_ways(found)], ['hand', 'hand'])
+            self.assertEqual(self.cleanup.cleanup_unsubscribe(ACCOUNTS[0], found[1]), ('failed', None, None))
         self.assertEqual((self.clicked, sends, self.pages), ([], [], []))  # nor the group's unsubscribe page
 
     def test_a_todo_made_before_still_never_unsubscribes_the_group(self):
         # a row from before this fix: the group's address, the group's mailto planned; the confirm reads the headers again
         with patch.object(mail_cleanup_app.Gmail, 'get', lambda s, resource, params=None: {'payload': {'headers': [
                 {'name': k.title(), 'value': v} for k, v in GROUP.items()]}}), \
-                patch.object(a.App, 'cleanup_headers', mail_cleanup_app.MailCleanupApp.cleanup_headers), \
-                patch.object(a.App, 'cleanup_can_send', lambda s, account: True), \
-                patch.object(a.App, 'cleanup_mailto', lambda s, account, mailto: self.fail('the group was asked to unsubscribe')):
+                patch.object(a.CleanupTemplate, 'cleanup_headers', mail_cleanup_app.CleanupTemplate.cleanup_headers), \
+                patch.object(a.CleanupTemplate, 'cleanup_can_send', lambda s, account: True), \
+                patch.object(a.CleanupTemplate, 'cleanup_mailto', lambda s, account, mailto: self.fail('the group was asked to unsubscribe')):
             old = {'account': 'w', 'message': 'm9', 'address': 'hello@team.example', 'from': "'Pat Shop' via hello@team.example readers"}
-            self.assertEqual(self.app.cleanup_unsubscribe(ACCOUNTS[0], old), ('failed', None, None))
+            self.assertEqual(self.cleanup.cleanup_unsubscribe(ACCOUNTS[0], old), ('failed', None, None))
         self.assertEqual((self.clicked, self.pages), ([], []))
 
     def test_a_group_that_kept_the_senders_from_never_gets_the_unsubscribe(self):
@@ -338,18 +340,18 @@ class Cleanup(unittest.TestCase):
         sends = []
         with patch.object(mail_cleanup_app.Gmail, 'get', lambda s, resource, params=None: {'payload': {'headers': [
                 {'name': k.title(), 'value': v} for k, v in KEPT_GROUP.items()]}}), \
-                patch.object(a.App, 'cleanup_headers', mail_cleanup_app.MailCleanupApp.cleanup_headers), \
-                patch.object(a.App, 'cleanup_can_send', lambda s, account: True), \
-                patch.object(a.App, 'cleanup_mailto', lambda s, account, mailto: sends.append(mailto['to']) or 'done'):
-            self.assertEqual([i['how'] for i in self.app.cleanup_ways(found)], ['hand'])  # nothing safe: by hand, said on its row
-            self.assertEqual(self.app.cleanup_unsubscribe(ACCOUNTS[0], found[0]), ('failed', None, None))
+                patch.object(a.CleanupTemplate, 'cleanup_headers', mail_cleanup_app.CleanupTemplate.cleanup_headers), \
+                patch.object(a.CleanupTemplate, 'cleanup_can_send', lambda s, account: True), \
+                patch.object(a.CleanupTemplate, 'cleanup_mailto', lambda s, account, mailto: sends.append(mailto['to']) or 'done'):
+            self.assertEqual([i['how'] for i in self.cleanup.cleanup_ways(found)], ['hand'])  # nothing safe: by hand, said on its row
+            self.assertEqual(self.cleanup.cleanup_unsubscribe(ACCOUNTS[0], found[0]), ('failed', None, None))
             # a row from before this fix (no via): the headers read at the confirm still tell
             old = {k: v for k, v in found[0].items() if k != 'via'}
-            self.assertEqual(self.app.cleanup_unsubscribe(ACCOUNTS[0], old), ('failed', None, None))
+            self.assertEqual(self.cleanup.cleanup_unsubscribe(ACCOUNTS[0], old), ('failed', None, None))
             # the sender's own unsubscribe page in the mail's text: the Machine's browser opens it, else the owner does
             self.html[found[0]['message']] = GROUP_FOOTER + '<a href="https://helpers.example/unsubscribe?u=1">Unsubscribe</a>'
-            self.assertEqual([i['how'] for i in self.app.cleanup_ways(found)], ['page'])
-            self.assertEqual(self.app.cleanup_unsubscribe(ACCOUNTS[0], found[0]), ('yours', 'login', 'https://helpers.example/unsubscribe?u=1'))
+            self.assertEqual([i['how'] for i in self.cleanup.cleanup_ways(found)], ['page'])
+            self.assertEqual(self.cleanup.cleanup_unsubscribe(ACCOUNTS[0], found[0]), ('yours', 'login', 'https://helpers.example/unsubscribe?u=1'))
         self.assertEqual((self.clicked, sends, self.pages), ([], [], ['https://helpers.example/unsubscribe?u=1']))
 
     def test_a_group_newsletter_with_no_way_of_its_own_is_a_row_to_unsubscribe_by_hand(self):
@@ -454,7 +456,7 @@ class Cleanup(unittest.TestCase):
         with self.store.connect() as db:  # never "since" for the next run: it reads the same mail again
             self.assertIsNone(routines.last_run(db, run['routine_id']))
         self.assertEqual(a.Store.suggest, real)
-        self.assertEqual(mail_cleanup_app.MailCleanupApp.cleanup_said('newsletters', 4, 1, 7),
+        self.assertEqual(mail_cleanup_app.CleanupTemplate.cleanup_said('newsletters', 4, 1, 7),
                          'Made a to-do with 4 newsletters. Couldn’t put 7 more on a to-do. The next run tries again.')
 
     def test_adding_twice_keeps_one(self):
@@ -872,8 +874,8 @@ class Cleanup(unittest.TestCase):
         self.mail('Weekly Digest <digest@blog.example>', 'Ten links', list_unsubscribe=True)
         self.ways['m1'] = {'mailto': {'to': 'leave@blog.example', 'subject': 'unsubscribe', 'body': 'unsubscribe'}}
         sends = []
-        with patch.object(a.App, 'cleanup_can_send', lambda s, account: True), \
-                patch.object(a.App, 'cleanup_mailto', lambda s, account, mailto: sends.append(mailto['to']) or 'unknown'):
+        with patch.object(a.CleanupTemplate, 'cleanup_can_send', lambda s, account: True), \
+                patch.object(a.CleanupTemplate, 'cleanup_mailto', lambda s, account, mailto: sends.append(mailto['to']) or 'unknown'):
             self.add('newsletters')
             sid = self.todos()[0]['id']
             self.act('routine_cleanup', suggestion_id=sid, picks={'0': 'go'})

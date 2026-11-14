@@ -47,6 +47,12 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   the code it calls in its domain's module when there is one. Either way, add the name to the right `*_ACTIONS` set in
   `machine/actions.py`, one name per line, sorted. Those sets are the security boundary and stay together there;
   a handler still checks `owner_dashboard` itself where its branch did.
+- **A routine template** (Routines, Templates): its catalog entry in `routine_templates.TEMPLATES`, and its code as a
+  `routine_templates.Template` listed in `ROUTINE_TEMPLATES` in `machine/main.py`, not an App mixin. It declares the
+  keys it runs, its to-do kind (`machine/todo_kinds.py`), its `ACTIONS` and an optional worker `step`; `App.template(key)`
+  loads it. Today: `mail_cleanup_app.py` (`CleanupTemplate`: Newsletter cleanup and Spam cleanup, their one to-do with
+  a choice per mail, only what the owner confirms there, and the offers above the to-dos) and `reading_digest_app.py`
+  (`DigestTemplate`: the Daily digest, one model call under a daily token cap, the owner's More or Less like this).
 - **App methods of a domain** (workers, reads, what its actions call): in its mixin when it has one. A mixin imports
   what it needs like any module, never `assistant`, and only `machine/main.py` imports it (`assistant.py` re-exports it). The mixins today:
   - `support_app.py` (`SupportApp`): Help and Report a bug.
@@ -70,14 +76,10 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   - `routines_app.py` (`RoutinesApp`): routines, work The Machine does on its own on a rhythm: the Routines page's
     actions (`ROUTINE_ACTIONS`), a run's own report (`routine_result`) and the worker that starts each run. It also
     sorts old OpenClaw jobs (`routine_imports.py`), then patterns in the owner's activity (`routine_patterns.py`, at
-    most one a day), into suggestions, and turns an old job off on the owner's tap (`openclaw-cron-off.mjs`).
-  - `mail_cleanup_app.py` (`MailCleanupApp`): the Templates on the Routines page: adds one, runs Newsletter cleanup
-    and Spam cleanup, makes their one to-do with a choice per mail and does only what the owner confirms there.
+    most one a day), into suggestions, and turns an old job off on the owner's tap (`openclaw-cron-off.mjs`). It adds
+    a template's routine (`routine_template`) and hands each template run to the template's own code.
   - `birthdays_app.py` (`BirthdaysApp`): the Birthdays template's run: today's birthdays among close contacts
     (`birthdays.py`), each a to-do prepared ahead on the channel the owner usually uses with them.
-  - `reading_digest_app.py` (`ReadingDigestApp`): the Daily digest template's run: a plain-code pass over unread
-    newsletters (`reading_digest.py`), one model call on the best candidates under a daily token cap, one quiet
-    to-do per area, and the owner's More or Less like this and topic edits.
   - `subscriptions_app.py` (`SubscriptionsApp`): the Subscriptions and trials template's monthly run and its daily
     7-day check: plain code over receipts and notices (`subscriptions.py`), one model call only when there are
     candidates, one quiet to-do with Keep or Cancel per row; Cancel only hands the owner a draft or a cancel page.
@@ -296,7 +298,7 @@ test_app_mixins.py` (they run in CI with every suite).
 | Only the owner writes a table. Today's other writers are listed in `OTHER_WRITERS`. That list may only shrink: a new writer fails with the owner's name, and an entry that no longer writes fails until it's removed. | `tests/test_architecture.py` |
 | Only the Store and App (`machine/main.py`, `machine/store/*`) write `events`, the sealed table (and the sandbox's fixture loader, through the sealed connection). Covers subfolders. | `tests/test_message_seal.py` |
 | Nothing reads `dashboard.html` itself; every part in `dashboard/` is included once, its include line is in its place (a script, the stylesheet, the markup), and it is whole (statements that parse on their own, whole rules, whole elements); the service serves the assembled page; Python and Node assemble the same page. | `tests/test_dashboard_parts.py` |
-| No action is mapped by two mixins, no member is defined in two of them or in both `App` and a mixin, every handler is a method, every name in `OWNER_ACTIONS` or `DASHBOARD_ACTIONS` reaches a mixin's handler or a branch of `App.action`, no branch of `App.action` names an action a mixin maps (it would never run), and every action the dashboard sends is in `DASHBOARD_ACTIONS` and has a handler. | `tests/test_app_mixins.py` |
+| No action is mapped by two mixins, no member is defined in two of them or in both `App` and a mixin, every handler is a method, every name in `OWNER_ACTIONS` or `DASHBOARD_ACTIONS` reaches a mixin's handler or a branch of `App.action`, no branch of `App.action` names an action a mixin maps (it would never run), and every action the dashboard sends is in `DASHBOARD_ACTIONS` and has a handler. Each routine template runs keys no other one runs, names a to-do kind the registry has, maps its actions to its own methods and hides no App member. | `tests/test_app_mixins.py` |
 | Code in `machine/` imports only from its own layer or the ones below it, and any root module, never with `import *`; `machine/__init__.py` imports nothing. The layers, lowest first: `actions`, `config`, `kinds`, `names`, `owner_error`, `text`, `timing`, `todo_kinds`, `todo_states`; `browser`, `cards`, `chat`, `faults`, `model_usage`, `prompts`, `sources`; `store`, `upkeep`; `delivery`, `export`, `web`; `app`, `main`. A new area gets its layer in `MACHINE_LAYERS`. | `tests/test_architecture.py` |
 | Python files (tests aside) stay under 2,500 lines and 450 KiB. A bigger module is hard to review, and Aikido's scan skips it. `PY_OVER_BUDGET` lists today's bigger files with ceilings that only come down: a file that grows past its ceiling fails, one that shrinks well under it fails until the ceiling is lowered, and one back within the budget fails until its entry is removed. | `tests/test_architecture.py` |
 | To-do statuses come from `machine/todo_states.py`: two or more of them spelled out elsewhere, as a tuple, list or set or as an SQL `IN` list, fail. Name a group from it, or add one there with its reason when a module means something else. | `tests/test_architecture.py` |

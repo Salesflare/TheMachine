@@ -211,21 +211,21 @@ class Lease(unittest.TestCase):
     def test_no_lease_no_page(self):
         with patch.object(mail_cleanup_app.subprocess, 'run', return_value=SimpleNamespace(returncode=3)) as run, \
                 patch.object(mail_cleanup_app.unsubscribe_page, 'visit') as visit:
-            self.assertEqual(mail_cleanup_app.MailCleanupApp.cleanup_page(self.app(), 'https://news.example/leave'), ('yours', 'browser'))
+            self.assertEqual(mail_cleanup_app.CleanupTemplate.cleanup_page(self.app(), 'https://news.example/leave'), ('yours', 'browser'))
         visit.assert_not_called()
         self.assertEqual(run.call_args[0][0][2], 'claim')
 
     def test_the_lease_is_released_after_the_page(self):
         with patch.object(mail_cleanup_app.subprocess, 'run', return_value=SimpleNamespace(returncode=0)) as run, \
                 patch.object(mail_cleanup_app.unsubscribe_page, 'visit', return_value=('done', 'page')) as visit:
-            self.assertEqual(mail_cleanup_app.MailCleanupApp.cleanup_page(self.app(), 'https://news.example/leave', 'News'), ('done', 'page'))
+            self.assertEqual(mail_cleanup_app.CleanupTemplate.cleanup_page(self.app(), 'https://news.example/leave', 'News'), ('done', 'page'))
         self.assertIs(visit.call_args[0][3], mail_cleanup_app.public_page)
         self.assertEqual([c[0][0][2] for c in run.call_args_list], ['claim', 'release'])
 
     def test_a_browser_that_cant_be_reached_leaves_it_for_the_owner(self):
         with patch.object(mail_cleanup_app.subprocess, 'run', return_value=SimpleNamespace(returncode=0)), \
                 patch.object(mail_cleanup_app.unsubscribe_page, 'visit', side_effect=mail_cleanup_app.browser_login.browser_cdp.CdpError('down')):
-            self.assertEqual(mail_cleanup_app.MailCleanupApp.cleanup_page(self.app(), 'https://news.example/leave'), ('yours', 'browser'))
+            self.assertEqual(mail_cleanup_app.CleanupTemplate.cleanup_page(self.app(), 'https://news.example/leave'), ('yours', 'browser'))
 
     def test_only_https_at_a_public_address(self):
         for address in ('127.0.0.1', '10.0.0.5', '169.254.169.254', '::1'):

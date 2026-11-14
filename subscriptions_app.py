@@ -1,6 +1,6 @@
 """Subscriptions and trials, the App's part: a domain mixin of App (only assistant.py composes it; docs/code-map.md).
 
-The template's own run (subs_template_run, from mail_cleanup_app.routine_template_run), every month: plain code finds
+The template's own run (subs_template_run, from routines_app.routine_template_run), every month: plain code finds
 the candidates (subscriptions.scan) and leaves out what the owner decided (subscriptions.fresh); none ends the run as
 nothing new, without a model. Else one small model call confirms and labels them (subs_pass: the background model, no
 agent, no tools), once the usage budget allows like any background turn. What it confirms, checked against the mail,

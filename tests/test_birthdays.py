@@ -106,7 +106,8 @@ class Birthdays(unittest.TestCase):
         for name, value in (('background_pause', lambda s, **k: None), ('background_spaced', lambda s: True),
                             ('background_started', lambda s: None), ('preparation_gateway', lambda s, request: self.sent.append(request) or {}),
                             ('routine_spawn', lambda s, target, run_id: target(run_id)), ('cleanup_can_mark', lambda s, account: False)):
-            p = patch.object(a.App, name, value); p.start(); self.addCleanup(p.stop)
+            owner = a.CleanupTemplate if name in vars(a.CleanupTemplate) else a.App  # the template's own, else the App's
+            p = patch.object(owner, name, value); p.start(); self.addCleanup(p.stop)
         p = patch.object(ms_graph, 'call', self.graph_call); p.start(); self.addCleanup(p.stop)
         # The run's Facebook offer runs inline, with no shared browser (test_birthdays_facebook.py covers it): in a thread it
         # could still open the store while the temp dir is removed, and it would ask the desktop's own browser

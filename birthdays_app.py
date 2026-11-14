@@ -1,6 +1,6 @@
 """The Birthdays template, the App's part: a domain mixin of App (only assistant.py composes it; docs/code-map.md).
 
-Its run (from mail_cleanup_app.routine_template_run) is plain code, no model: whose birthday it is today among the
+Its run (from routines_app.routine_template_run) is plain code, no model: whose birthday it is today among the
 people the owner is close to (birthdays.py), from the calendars, Google's birthday events and its contacts' Birthdays
 calendar (read here with calendar.readonly), Outlook's Birthdays calendar (read here with Calendars.Read: the scopes the
 calendars already have, never a new one), Google contacts' birthdays and Birthday fields in the Graph. Each

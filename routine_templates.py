@@ -18,12 +18,15 @@ about a charge within 7 days. A rename alone keeps this cheap path.
 
 Once the owner edits its words (or adds script steps), it runs as a normal routine on them: a read-only turn each run.
 Its origin still names the template, so Templates shows it as added. An edited Newsletter or Spam cleanup still sees
-the mail its template would list and may pick from it (routines_app.routine_cleanup_lines): its picks become the same
+the mail its template would list and may pick from it (mail_cleanup_app.routine_cleanup_lines): its picks become the same
 cleanup to-do, one choice per item. An edited Birthdays ends like any routine, in its result and at most one draft.
 Back to the template in Edit (routine_edit back) puts the template's words back, drops script steps and runs its code
 again.
 
-No table: the catalog is here, and a template is added when a live routine has its origin."""
+No table: the catalog is here, and a template is added when a live routine has its origin.
+
+A template's code is a Template (below), not an App mixin: machine/main.py lists them (ROUTINE_TEMPLATES), and the
+routines worker and App.action load them from that list."""
 import i18n
 
 AT = '07:30'  # before the morning summary, so the to-do waits there; an hourly one runs at :30
@@ -54,7 +57,54 @@ TEMPLATES = {
                                'costs, when it charges next, trials that end and prices that go up. Put them in one to-do where I pick '
                                'Keep or Cancel for each, and warn me when one charges within 7 days.'},
 }
-CLEANUP = ('newsletters', 'spam')  # an edited one may still end in the cleanup to-do (routines_app.routine_cleanup_lines)
+CLEANUP = ('newsletters', 'spam')  # an edited one may still end in the cleanup to-do (mail_cleanup_app.routine_cleanup_lines)
+
+
+class Template:
+    """A routine template's code: its run while the routine's words are its own, the to-do kind that run ends in, and
+    the dashboard actions on that to-do. One per App, made on first use (load).
+    KEYS: the TEMPLATES keys it runs (their name, words and rhythm stay in TEMPLATES, which the Routines page reads
+      without the App). KIND: its to-do kind (machine/todo_kinds.py). ACTIONS: action name -> its method, called as
+      method(name, args, owner_dashboard) (App.action). STEP: the name step() fails under in the routines worker, when
+      it has a step of its own.
+    A name it doesn't have itself is the App's (self.store, self.config, self.routine_spawn), so code moved here from
+    an App mixin reads as it did. What it sets on itself stays its own."""
+    KEYS = ()
+    KIND = None
+    ACTIONS = {}
+    STEP = None
+
+    def __init__(self, app):
+        self.app = app
+
+    def __getattr__(self, name):
+        try:
+            app = self.__dict__['app']
+        except KeyError:
+            raise AttributeError(name) from None
+        return getattr(app, name)
+
+    def run(self, run, key):
+        """A run of its routine (routines_app.routine_template_run): True when it is done here, never an agent turn."""
+        raise NotImplementedError
+
+    def step(self):
+        """Its part of each round of the routines worker, if any (STEP)."""
+
+
+def load(app, templates):
+    """{key: its Template} for this App: one of each class in templates, in their order."""
+    out = {}
+    for cls in templates:
+        made = cls(app)
+        for key in cls.KEYS:
+            out[key] = made
+    return out
+
+
+def actions(templates):
+    """{action name: the Template class that handles it}."""
+    return {name: cls for cls in templates for name in cls.ACTIONS}
 
 
 def rule(key):
