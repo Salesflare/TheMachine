@@ -107,15 +107,20 @@ STATUS_QUIET = ('activity_accounts', 'activity_blocks', 'agent_result_receipts',
                 'retention_runs', 'routine_runs', 'store_fixes', 'sync_daily', 'talk_lines', 'team_blobs', 'team_files', 'team_mail')
 # What only the connections' cards read (connector_views): a sync round writes these, and only the cards are made again.
 SYNC_TABLES = ('android_feed_health', 'checkpoints', 'history_backfill', 'sync_activity')
+# Tables the status reads only a part of, kept by that part's own counter (stamps): activity_seen's opens of a to-do
+# (stamps.activity_opened). Its other rows come from the page's own load and poll, which made each next status build again.
+STATUS_NARROW = {'activity_seen': 'activity_opened'}
 
 
 def status_tables(db):
     """The tables the status is kept by: all but STATUS_QUIET, SQLite's own, data_stamps (the counters themselves) and
-    virtual tables with their shadow tables (full-text search, which the status never reads)."""
+    virtual tables with their shadow tables (full-text search, which the status never reads). A table in STATUS_NARROW
+    is there by the name of its part's counter."""
     rows = db.execute("SELECT name,sql FROM sqlite_master WHERE type='table'").fetchall()
     virtual = tuple(r[0] + '_' for r in rows if str(r[1] or '').upper().startswith('CREATE VIRTUAL'))
-    return sorted(r[0] for r in rows if r[0] not in STATUS_QUIET and r[0] != 'data_stamps' and not r[0].startswith('sqlite_')
-                  and not str(r[1] or '').upper().startswith('CREATE VIRTUAL') and not r[0].startswith(virtual))
+    return sorted(STATUS_NARROW.get(r[0], r[0]) for r in rows if r[0] not in STATUS_QUIET and r[0] != 'data_stamps'
+                  and not r[0].startswith('sqlite_') and not str(r[1] or '').upper().startswith('CREATE VIRTUAL')
+                  and not r[0].startswith(virtual))
 DONE_FIRST = 30  # the done to-dos the dashboard's status gets: its Done list's first page (dashboard donePager)
 
 
