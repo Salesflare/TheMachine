@@ -9,6 +9,8 @@ from seams import patch_everywhere  # noqa: E402
 
 spec = importlib.util.spec_from_file_location('fast_first_look_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
+from machine.store.decisions import MACHINE_OWN  # noqa: E402
+from machine.store.first_look import USEFUL_OWN_KINDS  # noqa: E402
 
 
 class Runner:
@@ -179,6 +181,28 @@ class FastFirstLook(unittest.TestCase):
         text = json.dumps(report)
         for secret in ('Secret', 'pricing', 'Sam', 'example.com', 'work'):
             self.assertNotIn(secret, text)
+
+    def test_the_first_useful_to_do_is_the_first_approved_one_from_someones_message(self):
+        self.store.commit_page('work', {}, [dict(signal('f1'), kind='machine.fault'), signal('m1'), signal('m2'),
+                                            dict(signal('r1'), kind=USEFUL_OWN_KINDS[0])])
+        with self.store.connect() as db:
+            ids = {r['source_id']: r['id'] for r in db.execute('SELECT id,source_id FROM events')}
+        own = self.store.suggest('fault', 'Mail stopped syncing', 'The Machine saw it.', [ids['f1']])
+        routine = self.store.suggest('routine', 'Weekly update draft', 'Drafted.', [ids['r1']])
+        skipped = self.store.suggest('first', 'Reply to Sam', 'Sam asked.', [ids['m1']])
+        useful = self.store.suggest('second', 'Send Sam the contract', 'Sam asked.', [ids['m2']])
+        with self.store.connect() as db:
+            for card, at in ((own, '01'), (routine, '02'), (skipped, '03'), (useful, '04')):
+                db.execute('UPDATE suggestions SET created_at=? WHERE id=?', (f'2099-01-01T00:{at}:00+00:00', card['id']))
+        for n, card in enumerate((own, routine)):
+            self.store.decide(card['id'], 'accept', '', f'o{n}', 'dashboard')
+        self.store.decide(skipped['id'], 'reject', 'Not useful', 'd1', 'dashboard')
+        with self.store.connect() as db:
+            self.assertIsNone(a.first_cards_report(db, [])['first_useful_at'])  # The Machine's own and Not needed don't count
+        self.store.decide(useful['id'], 'complete', '', 'd2', 'dashboard')
+        with self.store.connect() as db:
+            self.assertEqual(a.first_cards_report(db, [])['first_useful_at'], '2099-01-01T00:04:00+00:00')
+        self.assertEqual(USEFUL_OWN_KINDS, MACHINE_OWN)
 
     def test_an_install_with_cards_from_before_keeps_no_first_card_milestones(self):
         self.store.commit_page('work', {}, [signal('m1', hours_ago=24 * 30)])
