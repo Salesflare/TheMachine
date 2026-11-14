@@ -77,7 +77,9 @@ try{
  assert.ok(requested.some(u=>u.startsWith('/api/originals?event=7')));
  await page.keyboard.press('Escape');await reader.waitFor({state:'hidden'});
  // Ask: the question, editable, then Send
- await todo.locator('[data-brief-todo="ask"]').click();
+ // a caret placed before the next frame stays put: the box's own focus never moves it to the end mid-typing
+ assert.equal(await page.evaluate(id=>new Promise(done=>{document.querySelector('[data-brief-todo="ask"]').click();
+  const el=document.getElementById('brief-ask-'+id);el.focus();el.setSelectionRange(0,0);requestAnimationFrame(()=>requestAnimationFrame(()=>done(el.selectionStart)))}),BT),0);
  const box=page.locator('#brief-ask-'+BT);assert.equal(await box.inputValue(),'Who is answering Globex?');
  await box.fill('Who is answering Globex this week?');calls.length=0;await todo.locator('[data-brief-todo="send"]').click();
  assert.deepEqual(await waitCall(page,'fleet_brief_todo'),{action:'fleet_brief_todo',args:{suggestion_id:BT,do:'ask',text:'Who is answering Globex this week?'}});
