@@ -12,7 +12,7 @@ const brand={'/brand/avatar.png':'brand/app-icon-192.png','/brand/serif.woff2':'
 const at=new Date().toISOString(),earlier=new Date(Date.now()-3*3600e3).toISOString(),week=new Date(Date.now()-7*86400e3).toISOString();
 const connectors=[{id:'g',service:'gmail',group:'mail',display_name:'alex@acme.example',card_title:'alex@acme.example',card_subtitle:'Work',boundary:'work:Acme',total:812,signals_24h:14,last_success:at,sync_activity:[]},
  {id:'o',service:'outlook',group:'mail',display_name:'sam@contoso.example',card_title:'sam@contoso.example',card_subtitle:'Personal',boundary:'personal:me',total:240,signals_24h:3,last_success:at,sync_activity:[]}];
-const row=(card_title,card_subtitle,mark,provider_name,when,state='removed')=>({card_title,card_subtitle,mark,provider_name,at:when,state});
+const row=(card_title,card_subtitle,mark,provider_name,when,state='removed')=>({card_title,card_subtitle,mark,provider_name,at:when,state,group:mark==='slack'?'chat':'mail'});
 const disconnected=[row('alex.long.address@subsidiary.acme-holdings.example','Google account','google','Google',at,'pending'),
  row('robin@contoso.example','Microsoft account','microsoft','Microsoft',earlier),row('old@acme.example','Google account','google','Google',week),row('Slack','','slack','Slack',week)];
 const server=createServer(async(req,res)=>{
@@ -32,11 +32,10 @@ try{
   await page.goto('http://127.0.0.1:'+server.address().port+'/#connections=mail');  // under Email, also on a phone
   const block=page.locator('#disconnected');await block.locator('article').first().waitFor();
   const rows=await block.locator('article').evaluateAll(a=>a.map(x=>x.innerText.replace(/\s+/g,' ').trim()));
-  assert.equal(rows.length,4);
+  assert.equal(rows.length,3,'Slack shows under Chat, not here');
   assert.match(rows[0],/Google account · Pending: Google hasn’t confirmed\. Retrying/);
   assert.match(rows[1],/^robin@contoso\.example Microsoft account · Removed \d+ hours? ago$/);
   assert.match(rows[2],/^old@acme\.example Google account · Removed 7 days ago$/);
-  assert.match(rows[3],/^Slack Removed 7 days ago$/);
   // like the connected rows: the same row, its mark, the page's own font for when, nothing of a chip
   const look=await page.evaluate(()=>{const r=document.querySelector('#disconnected .conn-row'),c=document.querySelector('#connectors .conn-row');
    const box=e=>e.getBoundingClientRect(),when=document.querySelectorAll('#disconnected time')[1];

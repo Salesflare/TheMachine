@@ -363,6 +363,33 @@ def hosted_docs_sources(config, sources):
     return out
 
 
+GOG_DOCS = {}  # (account id, email, client) -> (when checked, holds Drive): asked at most every GOG_DOCS_SECONDS
+GOG_DOCS_SECONDS = 600
+
+
+def gog_docs_sources(config, clock=time.monotonic):
+    """Google Docs under Docs and files on a Machine whose own gog Google sign-in already holds Drive (drive or
+    drive.file), which makes new Google Docs (doc_writes.targets): a source of its own, connected on those sign-ins
+    (`via`, their account ids, whose cards it opens). None without one: there's no other way to add it here."""
+    mine = [a for a in (config or {}).get('accounts') or () if a.get('transport') == 'gog' and a.get('service', 'gmail') == 'gmail'
+            and a.get('email') and not a.get('shared') and abilities.actions_on(a)]
+    plugin = load_connector('docs') if mine else None
+    via = []
+    for account in mine:
+        key = (account.get('id'), account.get('email'), account.get('client'))
+        hit = GOG_DOCS.get(key)
+        if not hit or clock() - hit[0] > GOG_DOCS_SECONDS:
+            try:
+                holds = bool(plugin.writes_on(config, account, CONNECTOR_HELPERS))
+            except Exception:  # noqa: BLE001 - unknown means not listed
+                holds = False
+            hit = GOG_DOCS[key] = (clock(), holds)
+        if hit[1]:
+            via.append(account['id'])
+    return [{'name': 'google_docs', 'service': 'google_docs', 'group': 'docs', 'label': 'Google Docs', 'connected': len(via), 'via': via,
+             'what': 'New Google Docs in your Drive, with your Google sign-in.'}] if via else []
+
+
 # Connected but silent: a source whose polls succeed while its real read keeps failing and nothing new arrives (the
 # OpenClaw notification feed answers while the phone itself is offline) must not stay green. Quiet means longer than both
 # a few hours and its longest quiet stretch in the week before (a phone with 80 to 130 notifications a day goes quiet

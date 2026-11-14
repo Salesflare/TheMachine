@@ -1,5 +1,5 @@
-// Disconnected lately (names.disconnected_rows): rows like the connected ones
-function renderDisconnected(){const list=state.disconnected||[];setHTML($('#disconnected'),list.length?html`<div class="section-head"><h2>Disconnected lately</h2></div><div class="conn-list disconnected-list">${list.map(r=>{const ok=r.state!=='pending';
+// Disconnected lately (names.disconnected_rows): rows like the connected ones, each under its own kind only
+function renderDisconnected(){const list=(state.disconnected||[]).filter(r=>r.group===connShown);setHTML($('#disconnected'),list.length?html`<div class="section-head"><h2>Disconnected lately</h2></div><div class="conn-list disconnected-list">${list.map(r=>{const ok=r.state!=='pending';
  return html`<article><div class="conn-row">${connLogo({service:r.mark})}<span class="conn-row-text"><span class="conn-name">${r.card_title}</span><small>${r.card_subtitle?html`<span class="conn-sub">${r.card_subtitle}</span> · `:''}${ok?htmlT('Removed {}',time(r.at,true)):html`<span class="state-dot t-orange" aria-hidden="true"></span> ${t('Pending: {} hasn’t confirmed. Retrying',r.provider_name)}`}</small></span></div></article>`})}</div>`:html``)}
 // The last syncs as bars; none when every one brought nothing and none failed (a row of empty bars says nothing), and
 // none for a lone good sync (one bar is no trend; the line under it already says what the last sync brought)
@@ -13,7 +13,7 @@ function spark(c){const a=[...(c.sync_activity||[])].reverse();if(!a.some(x=>x.s
 // (a saved sign-in never does). #connections=add opens the list on a phone and Email on a computer; a setup under way
 // (a sign-in, a form, a run) shows in its source's category.
 const CONN_PHONE=matchMedia('(max-width:719px)'),connCat=id=>CONNECT_GROUPS.some(([k])=>k===id),healthGroup=c=>connCat(c.group)?c.group:'other';
-let connShown='mail',connTiles=new Map(),connCatsSig='',connDrawing=false;
+let connShown='mail',connTiles=new Map(),connCatsSig='',connDrawing=false,connExtra=[],connExtraSig='';
 const connOpened=new Set(),connClosed=new Set();
 const connSrcCat=name=>{const x=connectList?.sources?.find(v=>v.name===name);return name==='codex'?'work':name==='gbrain'?'other':x?(connCat(x.group)?x.group:'other'):''};
 // The category of the setup on screen, if one is (else none): its source's, else the one it started from
@@ -29,8 +29,8 @@ function connDraw(){const cs=state.connectors||[],of=g=>cs.filter(c=>healthGroup
  else if(healthPane==='add'){current=phone&&connCat(connShown)?connShown:cats.some(([g])=>g==='mail')?'mail':cats[0][0];open=!phone}
  else if(healthPicked&&ids.includes(healthPane)){current=healthPane;open=true}
  else{current=first||(ids.includes(healthPane)?healthPane:cats.find(([g])=>of(g).length)?.[0]||ids[0]);open=!phone}
- if(healthPane!=='add')healthPane=current;connShown=current;const index=phone&&!open,isCat=connCat(current);
- const item=([id,label],cat)=>{const mine=cat?of(id):[],n=cat?bad(id):0,on=id===current&&!index;
+ if(healthPane!=='add')healthPane=current;connShown=current;renderDisconnected();const index=phone&&!open,isCat=connCat(current);
+ const item=([id,label],cat)=>{const mine=cat?[...of(id),...connExtra.filter(e=>e.g===id).map(e=>e.c)]:[],n=cat?bad(id):0,on=id===current&&!index;
   const sub=!cat?'':n?t('Needs your help'):mine.length===1?connTitle(mine[0]):mine.length?t('{} connected',mine.length):t('Not connected');
   // one mark per source (two Gmail accounts: one Gmail), else the kind's own plain icon: never a blank spot
   const marks=[...new Map(mine.map(c=>[connMark(c),c])).values()].slice(0,3).map(connLogo);
@@ -50,7 +50,8 @@ CONN_PHONE.addEventListener('change',()=>{if(!$('#health').hidden)renderHealthTa
 // The list's own Connections link (the nav, tapped) on a phone: back to the list, not the category last open
 $('nav').addEventListener('click',e=>{if(e.isTrusted&&e.target.closest('[data-tab="health"]')&&CONN_PHONE.matches&&!connFlowCat()){healthPicked=false;if(healthPane!=='add')healthPane=connShown}});
 // A row opens its card, or closes it; one that needs the owner's help opens by itself until closed
-$('#connectors').addEventListener('click',e=>{const b=e.target.closest('[data-conn-open]');if(!b)return;const id=b.dataset.connOpen,body=b.nextElementSibling,open=body.hidden;
+$('#connectors').addEventListener('click',e=>{if(e.target.closest('.conn-extra')){const c=e.target.closest('[data-connect-card]');if(c)cardShow(c.dataset.connectCard,true);else{gbrainClick(e);connectClick(e)}return}
+ const b=e.target.closest('[data-conn-open]');if(!b)return;const id=b.dataset.connOpen,body=b.nextElementSibling,open=body.hidden;
  body.hidden=!open;b.setAttribute('aria-expanded',String(open));if(open){connOpened.add(id);connClosed.delete(id)}else{connOpened.delete(id);connClosed.add(id)}});
 // ‹ Connections: a setup under way stops being shown (as its own Back does), and the list comes back
 $('#health').addEventListener('click',e=>{if(!e.target.closest('[data-conn-back]'))return;
@@ -116,8 +117,9 @@ const LOGOS=/^(android|calendar|codex|crm|docs|exchange|github|gmail|google_docs
  connectLogo=(x,n=x.name)=>n==='gateway'||LOGOS.test(n)?html`<span class="icon brand${/^(x|github|intercom|codex)$/.test(n)?' mono':''}" aria-hidden="true"><img src="brand/${n==='gateway'?'avatar.png':'logos/'+n+(n==='zoom'?'.png':'.svg')}" alt="" loading="lazy" width="20" height="20"></span>`:icon(CONNECT_ICON[n]||x.service||n);
 // Already connected: which account, on the row ("Connected: kris@…"), and on the source's add view a line that this adds
 // another connection beside it, with a way to its card. Adding one more stays possible. Its own accounts only (not one a
-// teammate shares), matched by service as connect_sources counts them. Named as its card is (connTitle), never "Zoom".
-const connectHave=x=>x?.connected?(state.connectors||[]).filter(c=>c.service===x.service&&!c.shared_by):[],connectHaveName=c=>c.card_title||c.display_name||c.email||c.id;
+// teammate shares), matched by service as connect_sources counts them, or the sign-ins it rests on (`via`: Google Docs
+// on a Google sign-in). Named as its card is (connTitle), never "Zoom".
+const connectHave=x=>x?.connected?(state.connectors||[]).filter(c=>x.via?x.via.includes(c.id):c.service===x.service&&!c.shared_by):[],connectHaveName=c=>c.card_title||c.display_name||c.email||c.id;
 function connectHaveLine(x){const have=connectHave(x);return !have.length?'':have.length===1?t('Connected: {}',connectHaveName(have[0])):t(['Connected: {} and {} more','Connected: {} and {} more'],connectHaveName(have[0]),have.length-1)}
 function connectHaveNote(x){const have=connectHave(x);if(!have.length)return '';
  return html`<p class="fine connect-note connect-have"><span>${connectHaveLine(x)}</span> <button type="button" class="browser-link" data-connect-card="${have[0].id}">${t('Open its card')}</button><br><span>${t('This adds a new connection. Existing ones stay.')}</span></p>`}
@@ -125,6 +127,7 @@ function connectInner(x,why,ext,note=connectHaveLine(x),tag=false){const on=x.co
  const line=why?html`<small class="why">${why}</small>`:x.what?html`<small class="what">${x.what}</small>`:'';
  return html`<span class="cs-icon">${connectLogo(x)}${on}</span><span class="cs-text"><span class="cs-head"><b>${x.label}</b>${tag?html`<span class="cs-tag">${t('Suggested')}</span>`:''}</span>${line}${note?html`<small class="count">${note}</small>`:''}</span><span class="cs-go" aria-hidden="true">${ext?'↗':'›'}</span>`}
 function connectTile(x,why,tag){const inner=ext=>connectInner(x,why,ext,undefined,tag);
+ if(x.via)return html`<button type="button" class="connect-source" data-connect-card="${x.via[0]}">${inner()}</button>`;  // opens the card it rests on
  if(x.hosted_signin&&connectList.manage_url)return html`<button type="button" class="connect-source" data-connect-signin="${x.name}">${inner()}</button>`;
  if(x.account_page&&connectList.manage_url)return html`<a class="connect-source" href="${safeHref(connectList.manage_url+'#'+x.account_page)}" target="_blank" rel="noopener">${inner(true)}</a>`;
  if(x.signin&&!connectList.manage_url)return html`<button type="button" class="connect-source" data-connect-signin="${x.name}">${inner()}</button>`;
@@ -133,16 +136,21 @@ function renderConnectAdd(){const box=$('#connect-add');if(connectRun)return ren
  const by=new Map(connectList.sources.map(x=>[x.name,x])),why=new Map();
  for(const s of connectList.suggested||[]){const x=by.get(s.name),w=x&&!x.connected&&why.size<3&&connectWhy(s,x);if(w&&connectTile(x,w))why.set(s.name,w)}  // only one it can show
  // A to Z in each group; a catch-all (last, groups.CATCH_ALL: Other email) after the rest
- const groups=new Map(CONNECT_GROUPS.map(([k])=>[k,[]])),add=(g,label,tile,last)=>{if(tile)(groups.get(g)||groups.get('other')).push([label,tile,!!last])};
+ const groups=new Map(CONNECT_GROUPS.map(([k])=>[k,[]])),on=[],add=(g,label,tile,last,x)=>{if(!tile)return;g=connCat(g)?g:'other';groups.get(g).push([label,tile,!!last]);if(x?.connected)on.push([g,x])};
  // Teams: one Microsoft sign-in, two tiles. Its chats under Chat, its meeting notes under Meetings as Teams meetings; either
  // one connects both, and both show it connected. Its card on Connections keeps the whole line (connectors/teams.py).
  for(const x of connectList.sources){const teams=x.service==='teams'&&x.group==='chat';
-  add(x.group,x.label,connectTile(teams?{...x,what:t('Chats and meeting chats from Teams. Read-only.')}:x,'',why.has(x.name)),x.last);
+  add(x.group,x.label,connectTile(teams?{...x,what:t('Chats and meeting chats from Teams. Read-only.')}:x,'',why.has(x.name)),x.last,x);
   // meeting notes and transcripts need the admin's step, which only a hosted Machine's account page adds: on a self-hosted
   // one its Teams sign-in reads the meeting chats
   if(teams)add('meetings',t('Teams meetings'),connectTile({...x,label:t('Teams meetings'),
-   what:connectList.manage_url?t('Meeting notes and transcripts from Teams. Read-only.'):t('Meeting chats from Teams. Read-only.')}))}
- add('work','Codex',codexTile());add('other','GBrain',gbrainTile());
+   what:connectList.manage_url?t('Meeting notes and transcripts from Teams. Read-only.'):t('Meeting chats from Teams. Read-only.')}),0,{...x,label:t('Teams meetings')})}
+ add('work','Codex',codexTile(),0,codexSource());add('other','GBrain',gbrainTile(),0,{name:'gbrain',service:'gbrain',label:'GBrain',connected:connectList.gbrain?.on});
+ // Connected with no card of its own in its kind (Codex, GBrain, Google Docs on a Google sign-in, Teams meetings): a row
+ // there too, with the others, which opens its setup or the card it rests on
+ const extra=on.filter(([g,x])=>!(state.connectors||[]).some(c=>healthGroup(c)===g&&c.service===x.service)).map(([g,x])=>{const have=connectHave(x)[0];
+  return {g,k:/^(codex|gbrain)$/.test(x.name)?x.name:have?.id,c:{service:x.service,card_title:have?connectHaveName(have):x.label,card_subtitle:have?x.label:''},on:x.name==='gbrain'?t('On'):t('Connected')}}).filter(e=>e.k);
+ const sx=JSON.stringify(extra);if(sx!==connExtraSig){connExtraSig=sx;connExtra=extra;drawConnectors();renderHealthTabs()}
  const picks=[...why].map(([n,w])=>connectTile(by.get(n),w));
  const order=new Intl.Collator(I18N.lang||'en',{sensitivity:'base'}),list=(h,tiles,cls='')=>html`<section class="connect-group${cls}">${h?html`<h4>${h}</h4>`:''}<div class="connect-sources">${tiles}</div></section>`;
  connTiles=new Map(CONNECT_GROUPS.map(([k])=>[k,groups.get(k).sort((a,b)=>a[2]-b[2]||order.compare(a[0],b[0])).map(([,tile])=>tile)]));
@@ -150,7 +158,7 @@ function renderConnectAdd(){const box=$('#connect-add');if(connectRun)return ren
  const sug=$('#conn-suggested'),sugH=picks.length?list(t('Suggested for you'),picks,' suggested'):html``;if(sug.dataset.sig!==sugH.s){sug.dataset.sig=sugH.s;setHTML(sug,sugH)}
  // a category that only now has sources to add (the list came) joins the list
  const sig=CONNECT_GROUPS.filter(([k])=>connTiles.get(k).length).map(([k])=>k).join();if(sig!==connCatsSig){connCatsSig=sig;renderHealthTabs()}
- const tiles=connTiles.get(connShown)||[],have=(state.connectors||[]).some(c=>healthGroup(c)===connShown);
+ const tiles=connTiles.get(connShown)||[],have=(state.connectors||[]).some(c=>healthGroup(c)===connShown)||extra.some(e=>e.g===connShown);
  connectDraw(box,'grid',html`${connectList.saveable||connectList.manage_url?'':html`<p class="sub-note">Pick a source to connect.${html` This service can’t save its settings: use <code>assistant connect</code> in a terminal.`}</p>`}${tiles.length?list(have?t('Add another'):'',tiles):''}`)}
 // Codex (codex_signin.py): its own tile. It signs in with Codex's own device code, shown here: a hosted Machine's control
 // plane runs that sign-in on its server (POST /_machine/connect, like GitHub), a self-hosted Machine runs it itself.
@@ -621,7 +629,8 @@ ${chatNote(c)}
 // The connection cards (a refresh keeps the opened ones open) and the disconnected ones: A to Z by their name on each tab,
 // a catch-all (Other email, Other calendar, a calendar link) after the rest, Machine health last
 function drawConnectors(){const expandedSync=new Set([...document.querySelectorAll('#connectors details[open]')].map(d=>d.id)),order=new Intl.Collator(I18N.lang||'en',{sensitivity:'base'});
- setHTML($('#connectors'),html`${[...state.connectors].sort((a,b)=>(a.service==='gateway')-(b.service==='gateway')||!!a.last-!!b.last||order.compare(a.display_name||a.email||'',b.display_name||b.email||'')).map(c=>connectorCard(c,expandedSync))}`);renderDisconnected()}
+ setHTML($('#connectors'),html`${[...state.connectors].sort((a,b)=>(a.service==='gateway')-(b.service==='gateway')||!!a.last-!!b.last||order.compare(a.display_name||a.email||'',b.display_name||b.email||'')).map(c=>connectorCard(c,expandedSync))}${connExtra.map(e=>html`<article data-group="${e.g}" class="conn-extra"><button type="button" class="conn-row"${e.k==='codex'?html` data-codex-signin`:e.k==='gbrain'?html` data-gbrain`:html` data-connect-card="${e.k}"`}>${connLogo(e.c)}<span class="conn-row-text"><span class="conn-name">${e.c.card_title}</span><small>${e.c.card_subtitle?html`<span class="conn-sub">${e.c.card_subtitle}</span> · `:''}<span class="state-dot t-mint" aria-hidden="true"></span> <span class="connection-status">${e.on}</span></small></span><span class="cs-go" aria-hidden="true">›</span></button></article>`)}`);
+ for(const a of $('#connectors').children)a.hidden=a.dataset.group!==connShown;renderDisconnected()}
 // Served as a part that loads when first needed (dashboard_parts.LAZY): a page drawn before it came draws Connections
 // now (render skipped it; it can't call render, which counts the part in only once this file has run). Inline (the
 // tests, the demo) this part runs before shell-render.js, which draws it itself.

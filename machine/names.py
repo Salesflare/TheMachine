@@ -10,6 +10,8 @@ from __future__ import annotations
 
 import re
 
+from machine.sources import groups
+
 SERVICES = {'gmail': 'Gmail', 'calendar': 'Google Calendar', 'outlook': 'Outlook', 'outlook_calendar': 'Outlook Calendar', 'imap': 'Email', 'icloud_calendar': 'iCloud Calendar', 'caldav': 'Calendar',
             'proton_calendar': 'Proton Calendar', 'ics': 'Calendar', 'exchange': 'Exchange',
             'slack': 'Slack', 'teams': 'Microsoft Teams', 'salesflare': 'Salesflare', 'salesforce': 'Salesforce', 'android': 'Android', 'whatsapp': 'WhatsApp', 'telegram': 'Telegram', 'signal': 'Signal',
@@ -223,13 +225,17 @@ SIGNINS = {'google': 'google', 'google_meet': 'google', 'google_docs': 'google',
            'stripe': 'stripe', 'slack': 'slack', 'salesforce': 'salesforce'}
 SIGNIN_NAMES = {'google': 'Google', 'microsoft': 'Microsoft', 'zoom': 'Zoom', 'stripe': 'Stripe', 'slack': 'Slack',
                 'salesforce': 'Salesforce'}
+# The source a removed account was to the owner, whose kind (groups.GROUP_OF) it shows under: a Google account is Gmail
+SIGNIN_SOURCES = {'google': 'gmail', 'microsoft': 'outlook', 'zoom': 'zoom', 'stripe': 'stripe', 'slack': 'slack',
+                  'salesforce': 'salesforce'}
 
 
 def disconnected_rows(receipts, t=None):
     """Connections, Disconnected lately: mail_grants.receipts as rows, one per account, newest first. Each is
-    {'card_title', 'card_subtitle', 'mark', 'provider_name', 'state', 'at'}: its address (a Slack or Stripe sign-in, kept under ids,
-    reads as its provider), its kind ("Google account") when the title doesn't say it, the provider's mark, and removed
-    or pending (pending while any of its sign-ins is). Never a provider key or an id."""
+    {'card_title', 'card_subtitle', 'mark', 'provider_name', 'group', 'state', 'at'}: its address (a Slack or Stripe sign-in, kept under ids,
+    reads as its provider), its kind ("Google account") when the title doesn't say it, the provider's mark, the
+    Connections kind it shows under (`group`: a Google account under Email, Slack under Chat), and removed or pending
+    (pending while any of its sign-ins is). Never a provider key or an id."""
     t = t or _t()
     rows = {}
     for receipt in receipts or ():
@@ -246,7 +252,7 @@ def disconnected_rows(receipts, t=None):
         if row is None:
             name = SIGNIN_NAMES[provider]
             rows[key] = {'card_title': address or name, 'card_subtitle': t('{} account', name) if address else '',
-                         'mark': provider, 'provider_name': name, 'state': receipt.get('state') == 'pending' and 'pending' or 'removed', 'at': at}
+                         'mark': provider, 'provider_name': name, 'group': groups.group_of(SIGNIN_SOURCES[provider]), 'state': receipt.get('state') == 'pending' and 'pending' or 'removed', 'at': at}
             continue
         row['at'] = max(row['at'], at)
         if receipt.get('state') == 'pending':

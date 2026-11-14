@@ -71,7 +71,7 @@ Ensuite votre Machine :
 
 Elle ne fouille pas votre Drive. Elle ne voit les commentaires, partages et suggestions que sur les documents qu’elle a créés. Plus demanderait l’accès à tout votre Drive, ce qu’elle ne demande pas.
 
-Sur votre propre ordinateur, votre Machine peut créer un nouveau document Google dans un compte Gmail connecté là-bas qui a déjà accès à Drive. Elle ne lit pas vos autres Google Docs ni leurs commentaires.
+Sur votre propre ordinateur, votre Machine peut créer un nouveau document Google dans un compte Gmail connecté là-bas qui a déjà accès à Drive. Elle ne lit pas vos autres Google Docs ni leurs commentaires. **Documents et fichiers** l’affiche comme Google Docs, sur ce compte.
 
 ## Travail ou perso
 

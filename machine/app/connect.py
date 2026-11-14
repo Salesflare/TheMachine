@@ -18,7 +18,7 @@ import gbrain
 from machine.browser import LINKEDIN_SIGNIN_PATH, browser_link, site_language
 from machine.config import LOG, SIGNIN_ERROR
 from machine.faults import restart_self
-from machine.sources.connectors import HOSTED_SIGNINS, ON_DASHBOARD, hosted_docs_sources, reconnect_help
+from machine.sources.connectors import HOSTED_SIGNINS, ON_DASHBOARD, gog_docs_sources, hosted_docs_sources, reconnect_help
 from sources import MICROSOFT_SERVICES
 
 
@@ -72,6 +72,8 @@ class ConnectApp:
                 found['sources'] = [x for x in found['sources'] if x['service'] != 'google_meet' or (available is not None and 'google_meet' in available)]
                 # Teams the same: only its sign-in connects it, so it waits until the control plane opens it here
                 found['sources'] = [x for x in found['sources'] if x['service'] != 'teams' or (available is not None and 'microsoft_teams' in available)]
+                # Google Docs through the owner's own Google sign-in, when it already holds Drive: under Docs and files
+                found['sources'] += gog_docs_sources(self.config)
                 found['paired'], found['pair_url'] = getattr(self, 'fleet', None) is not None, fleet.PAIR_PAGE
             if not hosted or gbrain.on(self.config):
                 # GBrain (gbrain.py): one optional tile at the end, on a Machine where the owner can install it
