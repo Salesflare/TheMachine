@@ -9,7 +9,6 @@ and why the last one failed. A night outside the quiet hours or with work runnin
 After TRIES failed nights the service makes one to-do (Store.bridge_wait_card), worded for an owner who never opens a
 terminal: the to-do's chat can finish it. The file goes when the bridge is in (installer.write_stamp), and the to-do
 closes itself then. Plain functions of the data folder; only note writes."""
-import datetime as dt
 import json
 from pathlib import Path
 
@@ -43,7 +42,8 @@ def read(path):
 def note(path, fingerprint, failed=None, now=None):
     """The bridge with `fingerprint` waits; `failed`: a quiet night tried and could not put it in (why, for the log).
     Attempts carry over a newer bridge: the owner's question is whether the bridge goes in at all. Returns the state."""
-    path, stamp = Path(path), now or dt.datetime.now(dt.timezone.utc).isoformat(timespec='seconds')
+    import timeutil  # here, not at the top: the installer imports this module before it checks the time zone
+    path, stamp = Path(path), now or timeutil.clock().isoformat(timespec='seconds')
     state = read(path) or {'attempts': 0, 'since': '', 'last': '', 'reason': ''}
     state.update(fingerprint=fingerprint, since=state['since'] or stamp)
     if failed:
