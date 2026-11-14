@@ -2,9 +2,11 @@
 self.appStarted=true;document.getElementById('load-failed')?.setAttribute('hidden','');
 // Dates and times follow Settings, General (locale_prefs.py): DL is the date locale (Sat, Oct 24 or Sat 24 Oct), H12 the
 // clock (2:05 PM or 14:05). A Machine without a region keeps US dates and 24-hour times.
-// localeIn: once they are known (the first status, or the device's copy of it); what draws before that waits for it.
-let DL='en-US',H12=false,localeKnown;const localeIn=new Promise(r=>localeKnown=r);
-const applyLocale=l=>{if(!l)return;DL=l.date_locale||'en-US';H12=!!l.hour12;if(typeof i18nApply==='function')i18nApply(l);localeKnown()};
+let DL='en-US',H12=false;
+// localeIn(): resolves once they are known (the first status, or the device's copy of it); what draws before waits for it
+let localeSet=false,localeWaits=[];
+const localeIn=()=>localeSet?Promise.resolve():new Promise(r=>localeWaits.push(r));
+const applyLocale=l=>{if(!l)return;DL=l.date_locale||'en-US';H12=!!l.hour12;if(typeof i18nApply==='function')i18nApply(l);localeSet=true;for(const r of localeWaits.splice(0))r()};
 // toLocaleDateString and toLocaleTimeString make a new formatter on every call (a fraction of a millisecond each, and a
 // list stamps hundreds of times): localeDate and localeTime give the same text from one kept formatter per locale and
 // options, with the same defaults (a date with no date part shows year, month and day; a time hour, minute and second).

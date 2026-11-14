@@ -105,7 +105,7 @@ function palFind(){clearTimeout(pal.timer);const q=pal.q.trim(),seq=++pal.seq;pa
  pal.timer=setTimeout(async()=>{let found=[],done=[];const e=encodeURIComponent(q);
   // Two steps, as search() does; the keyboard stays on its row. The keyword step waits for the owner's date format.
   const ask=(more,then,wait)=>request('api/events?account=all&q='+e+more).then(r=>Array.isArray(r)?r:[]).catch(()=>[]).then(rows=>wait?wait.then(()=>rows):rows).then(rows=>{if(seq===pal.seq&&$('#palette')?.open)then(rows)});let last=false;
-  ask('&words=1',rows=>{if(!last&&rows.length){pal.msgs=Object.assign(rows.slice(0,4),{early:true});pal.keep=true;palRender()}},localeIn);
+  ask('&words=1',rows=>{if(!last&&rows.length){pal.msgs=Object.assign(rows.slice(0,4),{early:true});pal.keep=true;palRender()}},localeIn());
   ask('',rows=>{last=true;const top=rows.slice(0,4),shown=(pal.msgs||[]).filter(m=>top.some(x=>x.id===m.id));
    pal.msgs=[...shown,...top.filter(m=>!shown.some(x=>x.id===m.id))];pal.keep=true;palRender()});
   await Promise.all([request('api/graph?q='+e).then(r=>{found=Array.isArray(r?.found)?r.found:[]}).catch(()=>{}),
