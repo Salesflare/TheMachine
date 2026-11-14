@@ -95,10 +95,9 @@ class ServeApp:
         threading.Thread(target=self.whatsapp_photo_worker, name='whatsapp-photos', daemon=True).start()
         threading.Thread(target=self.voice_warm_worker, name='voice-warm', daemon=True).start()
         threading.Thread(target=self.action_worker, daemon=True).start()
-        try:  # an older Import birthdays from Facebook to-do: the friends nobody in the Graph has, read once in the background
-            self.birthdays_facebook_fill_old()
-        except Exception as error:  # noqa: BLE001 - never stops the service; the next start tries again
-            LOG.error('facebook birthdays fill error=%s', type(error).__name__)
+        # each routine template's part of the start, never stopping it (an older Import birthdays from Facebook to-do: the
+        # friends nobody in the Graph has, read once in the background)
+        self.routine_templates_start()
         try:  # once: messages whose to-do save failed before the fix of 2026-11-07 go back to the review (review_requeue.py)
             back = review_requeue.requeue(self.store, AGENT_DB, node_bin(self.config))
             if back:

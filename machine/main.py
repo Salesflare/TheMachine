@@ -85,9 +85,9 @@ from machine.store.whats_new import WhatsNewStore
 from meet_app import MeetApp
 from mail_cleanup_app import CleanupTemplate
 from reading_digest_app import DigestTemplate
-from subscriptions_app import SubscriptionsApp
-from birthdays_app import BirthdaysApp
-from birthdays_facebook_app import BirthdaysFacebookApp
+from subscriptions_app import SubscriptionsTemplate
+from birthdays_app import Birthdays
+from birthdays_facebook_app import BirthdaysFacebook
 from bring_in_app import BringInApp
 from missed_work_app import MissedWorkApp
 import next_actions
@@ -111,8 +111,7 @@ class Store(CardsStore, DecisionsStore, DoneMilestonesStore, EventsStore, FactsS
 
 # App's domain mixins (<domain>_app.py): each holds a domain's App methods and the actions it handles (its ACTIONS).
 APP_MIXINS = (SupportApp, CalendarApp, SkillsApp, AgentsApp, GBrainApp, SharedGraphApp, RecurringApp, CorrectionsApp, AiApp, MeetApp, MissedWorkApp, BringInApp,
-              WhatsAppImagesApp, CheckNowApp, SetupCardApp, HistoryApp, RoutinesApp,
-              BirthdaysApp, BirthdaysFacebookApp, SubscriptionsApp)
+              WhatsAppImagesApp, CheckNowApp, SetupCardApp, HistoryApp, RoutinesApp)
 # App's mixins in machine/app/: methods moved out of App as is (docs/code-map.md)
 APP_MIXINS += (FollowUpsApp, GraphActionsApp, KnowledgeExportApp, MeetingWritesApp, ModelPacingApp, PromiseChecksApp, SignaturesApp, SummariesApp,
                VoiceApp)
@@ -137,9 +136,17 @@ APP_MIXINS += (ReviewSavesApp,)
 APP_MIXINS += (CalendarClashesApp,)
 APP_MIXINS += (MeetingPrepApp,)
 APP_MIXINS += (ConnectApp,)
-# Routine templates whose code is a routine_templates.Template, not a mixin: the routines worker and App.action load
-# them from this list (App.template)
-ROUTINE_TEMPLATES = (CleanupTemplate, DigestTemplate)
+
+
+class BirthdaysTemplate(BirthdaysFacebook, Birthdays):
+    """Birthdays (birthdays_app.py) with its one Import birthdays from Facebook to-do (birthdays_facebook_app.py): two
+    modules, one template. Composed here, where *_app modules may be imported."""
+    ACTIONS = {**Birthdays.ACTIONS, **BirthdaysFacebook.ACTIONS}
+
+
+# Routine templates: each one's code is a routine_templates.Template, not an App mixin. The routines worker, the
+# service's start and App.action load them from this list (App.template)
+ROUTINE_TEMPLATES = (CleanupTemplate, DigestTemplate, BirthdaysTemplate, SubscriptionsTemplate)
 
 
 class App(*APP_MIXINS):

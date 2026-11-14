@@ -262,12 +262,12 @@ class Import(unittest.TestCase):
         self.app.birthdays_facebook_inline = True
         self.reads, self.answer = [], {'items': self.ITEMS}
         for name, value in (('birthdays_facebook_base', lambda s: 'http://127.0.0.1:9'),):
-            p = patch.object(a.App, name, value); p.start(); self.addCleanup(p.stop)
+            p = patch.object(a.BirthdaysTemplate, name, value); p.start(); self.addCleanup(p.stop)
         p = patch.object(fb, 'read', lambda base, url=fb.PAGE, limits=None: self.reads.append(url) or self.answer); p.start(); self.addCleanup(p.stop)
         p = patch('subprocess.run', lambda *x, **k: subprocess.CompletedProcess(x, 0, '', '')); p.start(); self.addCleanup(p.stop)  # the lease
 
     def offer(self):
-        return self.app.birthdays_facebook_offer({'routine_id': 'r1'})
+        return self.app.template('birthdays').birthdays_facebook_offer({'routine_id': 'r1'})
 
     def card(self, sid):
         with self.store.connect() as db:
@@ -284,7 +284,7 @@ class Import(unittest.TestCase):
         self.assertEqual(self.reads, [])
 
     def test_no_browser_no_todo(self):
-        with patch.object(a.App, 'birthdays_facebook_base', lambda s: None):
+        with patch.object(a.BirthdaysTemplate, 'birthdays_facebook_base', lambda s: None):
             self.assertIsNone(self.offer())
         self.assertTrue(self.offer())  # offered once it has one
 

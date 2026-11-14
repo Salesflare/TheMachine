@@ -106,13 +106,13 @@ class Birthdays(unittest.TestCase):
         for name, value in (('background_pause', lambda s, **k: None), ('background_spaced', lambda s: True),
                             ('background_started', lambda s: None), ('preparation_gateway', lambda s, request: self.sent.append(request) or {}),
                             ('routine_spawn', lambda s, target, run_id: target(run_id)), ('cleanup_can_mark', lambda s, account: False)):
-            owner = a.CleanupTemplate if name in vars(a.CleanupTemplate) else a.App  # the template's own, else the App's
+            owner = next((t for t in (a.CleanupTemplate, a.BirthdaysTemplate) if hasattr(t, name)), a.App)  # a template's own, else the App's
             p = patch.object(owner, name, value); p.start(); self.addCleanup(p.stop)
         p = patch.object(ms_graph, 'call', self.graph_call); p.start(); self.addCleanup(p.stop)
         # The run's Facebook offer runs inline, with no shared browser (test_birthdays_facebook.py covers it): in a thread it
         # could still open the store while the temp dir is removed, and it would ask the desktop's own browser
         self.app.birthdays_facebook_inline = True
-        p = patch.object(a.App, 'birthdays_facebook_base', lambda s: None); p.start(); self.addCleanup(p.stop)
+        p = patch.object(a.BirthdaysTemplate, 'birthdays_facebook_base', lambda s: None); p.start(); self.addCleanup(p.stop)
         threads = set(threading.enumerate())
         self.addCleanup(lambda: self.assertEqual([t.name for t in set(threading.enumerate()) - threads if t.is_alive()], []))
         self.today = dt.datetime.now(local_tz()).date()
@@ -217,7 +217,7 @@ class Birthdays(unittest.TestCase):
         todos, run = self.morning()
         self.assertEqual(todos, [])
         self.assertEqual((run['state'], run['why']), ('nothing', 'No birthday info yet. Add birthdays to your contacts.'))
-        app, why = self.app, lambda: app.birthdays_none(self.today, local_tz())
+        app, why = self.app, lambda: app.template('birthdays').birthdays_none(self.today, local_tz())
         app.config['accounts'] = [{**x, 'transport': 'broker'} if x['id'] == 'cal' else x for x in ACCOUNTS if x['id'] != 'o365']
         self.assertEqual(why(), 'No birthday info yet. Add birthdays to your Google contacts.')  # hosted too: Google shows them on the calendar
         app.config['accounts'] = [x for x in ACCOUNTS if x['id'] in ('home', 'wa')]
@@ -292,12 +292,12 @@ class Birthdays(unittest.TestCase):
             person_birthday.set_birthday(db, 'wa:15550102', {'month': self.today.month, 'day': self.today.day, 'year': 1990}, ago(0))
         self.assertEqual(kim['source'], 'google_calendar')
         with patch('birthdays_app.gog_read', read):  # the next run doesn't save the same day again
-            self.assertEqual(self.app.birthdays_save(self.app.birthdays_google(self.today, local_tz()), '32'), 0)
+            self.assertEqual(self.app.template('birthdays').birthdays_save(self.app.template('birthdays').birthdays_google(self.today, local_tz()), '32'), 0)
 
         def fails(*args):
             raise a.SourceError('calendar', 403)
         with patch('birthdays_app.gog_read', fails):  # a read that fails is skipped, the run still ends
-            self.assertEqual(self.app.birthdays_google(self.today, local_tz()), [])
+            self.assertEqual(self.app.template('birthdays').birthdays_google(self.today, local_tz()), [])
 
     def test_a_contact_birthday_finds_its_person_by_any_address_or_number_never_a_shared_one(self):
         # Sam goes by a second address; Kim's number was added in local form (the owner is in Belgium); Lou's with spaces

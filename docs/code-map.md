@@ -49,10 +49,28 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   a handler still checks `owner_dashboard` itself where its branch did.
 - **A routine template** (Routines, Templates): its catalog entry in `routine_templates.TEMPLATES`, and its code as a
   `routine_templates.Template` listed in `ROUTINE_TEMPLATES` in `machine/main.py`, not an App mixin. It declares the
-  keys it runs, its to-do kind (`machine/todo_kinds.py`), its `ACTIONS` and an optional worker `step`; `App.template(key)`
-  loads it. Today: `mail_cleanup_app.py` (`CleanupTemplate`: Newsletter cleanup and Spam cleanup, their one to-do with
-  a choice per mail, only what the owner confirms there, and the offers above the to-dos) and `reading_digest_app.py`
-  (`DigestTemplate`: the Daily digest, one model call under a daily token cap, the owner's More or Less like this).
+  keys it runs, its to-do kind (`machine/todo_kinds.py`), its `ACTIONS`, an optional worker `step` and an optional
+  `start` at service start; `App.template(key)` loads it. What it sets on itself stays its own: only the template
+  reads it back. Today:
+  - `mail_cleanup_app.py` (`CleanupTemplate`): Newsletter cleanup and Spam cleanup, their one to-do with a choice per
+    mail, only what the owner confirms there, and the offers above the to-dos.
+  - `reading_digest_app.py` (`DigestTemplate`): the Daily digest, one model call under a daily token cap, the owner's
+    More or Less like this.
+  - `birthdays_app.py` (`Birthdays`, with `birthdays_facebook_app.py` composed into `BirthdaysTemplate` in
+    `machine/main.py`): today's birthdays among close contacts (`birthdays.py`), each a to-do prepared ahead on the
+    channel the owner usually uses with them.
+  - `birthdays_facebook_app.py` (`BirthdaysFacebook`): the Birthdays template's one Import birthdays from Facebook
+    to-do: reads Facebook's birthdays page once in the shared browser on the owner's tap (`birthdays_facebook.py`),
+    shows who matched and keeps their birthdays only on Save, through `person_birthday.offer` (the owner's own stays).
+    Save also fills in the profile picture of a matched person who shows no photo, from the link in the same read, as a
+    small copy (`birthdays_facebook.save_photos`, `enrichment.keep_photo`), one at a time in a thread of its own.
+    Add as personal contacts adds the friends nobody in the Graph has as Personal people with their birthday, in one
+    transaction and one build, with Undo (`birthdays_facebook.add`, `remove`).
+    An older to-do with no friends kept gets them at start, from the same read (`birthdays_facebook_fill_old`); a read
+    that comes back short is read again later, a few times at most, with its report kept on the to-do.
+  - `subscriptions_app.py` (`SubscriptionsTemplate`): Subscriptions and trials, its monthly run and its daily 7-day
+    check: plain code over receipts and notices (`subscriptions.py`), one model call only when there are candidates,
+    one quiet to-do with Keep or Cancel per row; Cancel only hands the owner a draft or a cancel page.
 - **App methods of a domain** (workers, reads, what its actions call): in its mixin when it has one. A mixin imports
   what it needs like any module, never `assistant`, and only `machine/main.py` imports it (`assistant.py` re-exports it). The mixins today:
   - `support_app.py` (`SupportApp`): Help and Report a bug.
@@ -77,21 +95,8 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
     actions (`ROUTINE_ACTIONS`), a run's own report (`routine_result`) and the worker that starts each run. It also
     sorts old OpenClaw jobs (`routine_imports.py`), then patterns in the owner's activity (`routine_patterns.py`, at
     most one a day), into suggestions, and turns an old job off on the owner's tap (`openclaw-cron-off.mjs`). It adds
-    a template's routine (`routine_template`) and hands each template run to the template's own code.
-  - `birthdays_app.py` (`BirthdaysApp`): the Birthdays template's run: today's birthdays among close contacts
-    (`birthdays.py`), each a to-do prepared ahead on the channel the owner usually uses with them.
-  - `subscriptions_app.py` (`SubscriptionsApp`): the Subscriptions and trials template's monthly run and its daily
-    7-day check: plain code over receipts and notices (`subscriptions.py`), one model call only when there are
-    candidates, one quiet to-do with Keep or Cancel per row; Cancel only hands the owner a draft or a cancel page.
-  - `birthdays_facebook_app.py` (`BirthdaysFacebookApp`): the Birthdays template's one Import birthdays from Facebook
-    to-do: reads Facebook's birthdays page once in the shared browser on the owner's tap (`birthdays_facebook.py`),
-    shows who matched and keeps their birthdays only on Save, through `person_birthday.offer` (the owner's own stays).
-    Save also fills in the profile picture of a matched person who shows no photo, from the link in the same read, as a
-    small copy (`birthdays_facebook.save_photos`, `enrichment.keep_photo`), one at a time in a thread of its own.
-    Add as personal contacts adds the friends nobody in the Graph has as Personal people with their birthday, in one
-    transaction and one build, with Undo (`birthdays_facebook.add`, `remove`).
-    An older to-do with no friends kept gets them at start, from the same read (`birthdays_facebook_fill_old`); a read
-    that comes back short is read again later, a few times at most, with its report kept on the to-do.
+    a template's routine (`routine_template`), hands each template run to the template's own code, and runs each
+    template's `step` in its worker and its `start` at service start (`routine_templates_start`).
   - `machine/export/` (with `moving.py`): `inventory.py`, the one list of what an install keeps by part, and `walk()`,
     one iterator over it; `home.py`, OpenClaw's conversations and what else an export takes from outside the data
     folder; `hold.py`, what an import holds so nothing goes out by itself ([moving.md](moving.md)).

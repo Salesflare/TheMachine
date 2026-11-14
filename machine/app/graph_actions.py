@@ -1289,3 +1289,8 @@ class GraphActionsApp:
         if not owner_dashboard:
             raise OwnerError('Only the owner changes owners, merges organizations and imports, on the dashboard')
         return self.crm_action(name, args)
+
+    def birthdays_code(self):
+        """The owner's calling code (32), for a number in the Graph kept without its own; None when unknown."""
+        region = crm_fixes.region_of({'country': self.config.get('country'), 'timezone': self.config.get('timezone') or getattr(local_tz(), 'key', '')})
+        return crm_fixes.CALLING.get(region or '')

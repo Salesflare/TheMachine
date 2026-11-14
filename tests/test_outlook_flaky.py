@@ -287,7 +287,7 @@ class OtherGraphRounds(t.Base):
                     mock.patch.object(ms_graph, 'grant', lambda *args: ({next(iter(ms_graph.ANSWERS[ms_photos.COLLEAGUE]))}, set())):
                 ms_photos.step(self.store.connect, {'accounts': [self.mail]}, None, '2099-01-03T00:00:00+00:00')  # checked again
             app = mock.MagicMock(config=self.config)
-            birthdays_app.BirthdaysApp.birthdays_outlook(app, dt.date(2099, 1, 1), dt.timezone.utc)
+            birthdays_app.Birthdays.birthdays_outlook(app, dt.date(2099, 1, 1), dt.timezone.utc)
         self.assertEqual(len(rounds), 3)
         self.assertTrue(all(left and left > 0 for left in rounds))
 

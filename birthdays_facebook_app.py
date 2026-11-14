@@ -1,4 +1,5 @@
-"""Birthdays from Facebook, the App's part: a domain mixin of App (only assistant.py composes it; docs/code-map.md).
+"""Birthdays from Facebook, the App's part: the Birthdays template's Import birthdays from Facebook to-do, part of its
+routine template (machine/main.py composes it with birthdays_app.Birthdays into BirthdaysTemplate; docs/code-map.md).
 
 When the Birthdays template runs on a Machine with a browser (the shared one the LinkedIn and X readers use), it
 offers one to-do, once: Import birthdays from Facebook. Nothing happens until the owner taps Import there. Then, in a
@@ -41,10 +42,14 @@ FILL_AGAIN = 900  # a fill's read that came back short: the next one after this 
 POST_READ_SECONDS = 60  # the step after the page (matching, the preview): past this it stops and the to-do says it failed
 
 
-class BirthdaysFacebookApp:
+class BirthdaysFacebook:
     # action name -> the method that handles it, called as method(name, args, owner_dashboard) (App.action)
     ACTIONS = {'birthdays_facebook': 'birthdays_facebook_action'}
     FACEBOOK_BIRTHDAYS = birthdays_facebook.PAGE  # tests point it at a made-up page
+    START = 'facebook birthdays fill'
+
+    def start(self):
+        self.birthdays_facebook_fill_old()  # an older Import birthdays from Facebook to-do: the friends nobody in the Graph has
 
     def birthdays_facebook_base(self):
         """The shared browser's DevTools address when it answers, else None."""

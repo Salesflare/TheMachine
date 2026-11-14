@@ -91,7 +91,7 @@ class OwnerBoundary(unittest.TestCase):
     BACKGROUND = ('delivery_worker', 'preparation_worker', 'whatsapp_photo_worker', 'voice_warm_worker', 'action_worker',
                   'review_worker', 'graph_worker', 'model_usage_worker', 'retention_worker', 'plain_keys_worker',
                   'history_worker', 'embedding_worker', 'enrichment_worker', 'linkedin_connections_worker',
-                  'recurring_worker', 'routines_worker', 'protection_waiter', 'birthdays_facebook_fill_old',
+                  'recurring_worker', 'routines_worker', 'protection_waiter', 'routine_templates_start',
                   'meeting_write_resume', 'gbrain_start')
 
     def serve(self):

@@ -1,6 +1,7 @@
-"""The Birthdays template, the App's part: a domain mixin of App (only assistant.py composes it; docs/code-map.md).
+"""The Birthdays template, the App's part: its routine template (routine_templates.Template), listed in machine/main.py's
+ROUTINE_TEMPLATES with its Facebook import (docs/code-map.md).
 
-Its run (from routines_app.routine_template_run) is plain code, no model: whose birthday it is today among the
+Its run (run, from routines_app.routine_template_run) is plain code, no model: whose birthday it is today among the
 people the owner is close to (birthdays.py), from the calendars, Google's birthday events and its contacts' Birthdays
 calendar (read here with calendar.readonly), Outlook's Birthdays calendar (read here with Calendars.Read: the scopes the
 calendars already have, never a new one), Google contacts' birthdays and Birthday fields in the Graph. Each
@@ -11,9 +12,9 @@ import datetime as dt
 import logging
 
 import birthdays
-import crm_fixes
 import i18n
 import ms_graph
+import routine_templates
 import routines
 from sources import SourceError, credential, gog_read
 from timeutil import local_tz
@@ -23,8 +24,18 @@ LOG = logging.getLogger('personal-assistant')
 CALENDAR_READ = 'https://www.googleapis.com/auth/calendar.readonly'  # the scope the calendar already has
 
 
-class BirthdaysApp:
-    ACTIONS = {}  # its run starts from routines; the owner's tap on its to-do is any to-do's
+class Birthdays(routine_templates.Template):
+    KEYS = ('birthdays',)
+    # Its greetings are ordinary to-dos; the one kind of its own is its Import birthdays from Facebook to-do
+    # (birthdays_facebook_app.py, which machine/main.py composes with this into BirthdaysTemplate)
+    KIND = 'facebook_birthdays'
+    ACTIONS = {}  # its run starts from routines; the owner's tap on a greeting's to-do is any to-do's
+
+    def run(self, run, key):
+        """A Birthdays run (routine_template_run): plain code too; Outlook's Birthdays calendar is read in it."""
+        self.routine_spawn(lambda _: self.birthdays_run(run), run['id'])
+        self.birthdays_facebook_spawn(self.birthdays_facebook_offer, run)  # once: Import birthdays from Facebook (birthdays_facebook_app.py)
+        return True
 
     def birthdays_run(self, run):
         """A Birthdays run: today's to-dos (a test run only names them), then the run's result: who has one."""
@@ -139,8 +150,3 @@ class BirthdaysApp:
             LOG.info('birthday to-do not saved error=%s', type(error).__name__)
             return None
         return saved['id']
-
-    def birthdays_code(self):
-        """The owner's calling code (32), for a number in the Graph kept without its own; None when unknown."""
-        region = crm_fixes.region_of({'country': self.config.get('country'), 'timezone': self.config.get('timezone') or getattr(local_tz(), 'key', '')})
-        return crm_fixes.CALLING.get(region or '')
