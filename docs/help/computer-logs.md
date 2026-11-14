@@ -29,9 +29,7 @@ A to-do that says what happened in plain words, why it matters and what you can 
 
 When there is a safe fix, the to-do has Do it. For a service of yours that stays down it starts it again, and on Omarchy it brings the bar back. Do it runs only that command, and the result shows in the to-do's chat. It never touches The Machine's own services or the OpenClaw Gateway.
 
-The same problem brings at most one to-do every two weeks, and never while its to-do is still open. At most two new ones a day.
-
-A to-do about a service that is down closes by itself once it runs again or is cleared.
+The same problem brings at most one to-do every two weeks, and never while its to-do is still open. At most two new ones a day. A to-do about a service that is down closes by itself once it runs again or is cleared.
 
 ## In a terminal
 

@@ -70,7 +70,7 @@ def waiting(data):
 def card(state):
     """(title, body, signal) of the owner's to-do: plain words, no commands. The to-do's chat can do it."""
     return (i18n.t('Finish installing the last update'),
-            i18n.t('The newest version is in, but its link to OpenClaw, the engine The Machine runs on, needs a short '
-                   'OpenClaw restart that the nightly tries could not do. Everything works as before meanwhile. Ask in this '
-                   'to-do’s chat and The Machine finishes it. It also keeps trying each night.'),
-            i18n.t('The nightly update could not put the new OpenClaw link in.'))
+            i18n.t('The newest version is in, except one part that needs a short restart, which the nightly tries could '
+                   'not do. Everything works as before meanwhile. Ask in this to-do’s chat and The Machine finishes it. It '
+                   'also keeps trying each night.'),
+            i18n.t('The nightly update could not finish one part.'))
