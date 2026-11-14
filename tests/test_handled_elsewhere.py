@@ -14,6 +14,7 @@ import test_ux as ux
 from seams import patch_everywhere  # noqa: E402
 from machine.sources import slack as slack_source  # noqa: E402
 from machine.app import handled_check  # noqa: E402
+from machine.store import todo_moves  # noqa: E402
 a = ux.a
 
 SLACK = {'id': 'work-slack', 'service': 'slack', 'transport': 'maton', 'user_id': 'U0RILEY001', 'slack_host': 'studio.slack.com',
@@ -196,6 +197,8 @@ class HandledElsewhere(unittest.TestCase):
         self.assertEqual(app.handled_step(), 1)
         with self.store.connect() as db:
             self.assertEqual(db.execute('SELECT status FROM suggestions WHERE id=?', (sid,)).fetchone()[0], 'completed')
+            last = todo_moves.history(db, sid)[-1]
+            self.assertEqual((last['to'], last['reason']), ('completed', 'by_itself_handled'))
         self.assertNotEqual(yes, later)
         self.assertFalse(self.store.close_handled(sid, 'again', [later]))  # once
 

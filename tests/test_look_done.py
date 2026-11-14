@@ -4,6 +4,7 @@ from unittest.mock import patch
 
 import learning_loop
 from machine.store.cards import wait_until
+from machine.store import todo_moves
 import test_ux as ux
 from seams import patch_everywhere  # noqa: E402
 a = ux.a
@@ -73,6 +74,8 @@ class LookDone(unittest.TestCase):
             choice, note = db.execute("SELECT choice,feedback FROM decisions WHERE id='nd1'").fetchone()
             self.assertEqual(choice, 'not_done')
             self.assertIn('PR #3451 merged, deployed Oct 27.', note)
+            last = todo_moves.history(db, self.sid)[-1]
+            self.assertEqual((last['from'], last['to'], last['reason']), ('prepared', 'pending', 'not_done'))
             self.assertTrue(any(s['what'].startswith('said it was not done') for s in learning_loop.signals(db, '2000-01-01')))
         self.assertIn('Not done (it looked done)', self.store.notes_to_learn())
         with self.assertRaises(ValueError):  # it no longer looks done
