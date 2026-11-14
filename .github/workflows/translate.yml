@@ -4,11 +4,11 @@
 # show English for a day, and scripts/release.py cut refuses a commit with anything left.
 # There is at most one pull request (branch translate/daily). Each run builds it again from main as it is then and
 # replaces the branch (--force-with-lease), so a pull request that fell behind or conflicts with main never lingers;
-# when nothing is left to translate, the run closes it. It runs the language checks itself before pushing. A push
-# with this run's token starts no other workflow, so it then starts the tests (ci.yml) on the branch itself, as a
-# manual run on our runner (Linux only, no Actions minutes); their check is the one main's rules require, and the
-# pull request merges itself when it passes. When a run fails or leaves something in English, the issue "Daily
-# translation failed" says where; the next good run closes it.
+# when nothing is left to translate, the run closes it. It runs the language checks itself before pushing. The pull
+# request's own tests run (ci.yml, the check main's rules require) waits for approval, as for any outside contributor,
+# since this bot counts as one; the run approves it for the commit it pushed, and the pull request merges itself when
+# the checks pass. When a run fails or leaves something in English, the issue "Daily translation failed" says where;
+# the next good run closes it.
 # The model key is the secret AZ_TRANSLATE_KEY of the environment "translate", which only main can use: branches
 # (contrib/ ones included) never see it.
 name: Daily translation
@@ -29,7 +29,7 @@ jobs:
       contents: write  # the translate/daily branch
       pull-requests: write  # its pull request, merged when the checks pass
       issues: write  # closing the "Daily translation failed" issue after a good run
-      actions: write  # starting the tests (ci.yml) on the branch: its push starts no workflow
+      actions: write  # approving the tests' pull_request run (ci.yml), which waits for approval for this bot
     timeout-minutes: 120
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -62,8 +62,6 @@ jobs:
           # built on main as it is now: replace the branch, but only the one seen here (none when it doesn't exist)
           seen=$(git ls-remote "https://github.com/${GITHUB_REPOSITORY}.git" refs/heads/translate/daily | cut -f1)
           git push --quiet --force-with-lease="translate/daily:$seen" "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:refs/heads/translate/daily
-          # the push above starts no workflow (GitHub's rule for this token); a manual run does: every test, on our runner
-          gh workflow run ci.yml --repo "$GITHUB_REPOSITORY" --ref translate/daily -f own_runner=true
           title="Languages: the day's translations"
           body="Catalog keys and help articles that English has and another language did not, translated by the Daily translation workflow (scripts/translate.py, with i18n/glossary.md): $summary. The language checks passed in the run. It merges itself when the required checks pass."
           pr=$(gh pr list --repo "$GITHUB_REPOSITORY" --head translate/daily --state open --json number --jq '.[0].number // empty')
@@ -71,7 +69,26 @@ jobs:
           else gh pr create --repo "$GITHUB_REPOSITORY" --base main --head translate/daily --title "$title" --body "$body" \
             || { echo "::error::The branch translate/daily is pushed, but no pull request: allow GitHub Actions to create pull requests (Settings, Actions, General)."; exit 1; }
           fi
-          gh pr merge translate/daily --repo "$GITHUB_REPOSITORY" --auto --squash --match-head-commit "$(git rev-parse HEAD)"
+          head=$(git rev-parse HEAD)
+          gh pr merge translate/daily --repo "$GITHUB_REPOSITORY" --auto --squash --match-head-commit "$head"
+          # The tests' pull_request run (ci.yml, the check main requires) waits for approval: the repository asks it for
+          # every outside contributor, and the bot that pushed counts as one. Approve that run, only for this exact
+          # commit on this branch; a manual run would not count toward the pull request's required checks.
+          for try in $(seq 1 18); do
+            ids=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs?event=pull_request&head_sha=$head&per_page=20" \
+              --jq '.workflow_runs[] | select(.head_branch == "translate/daily" and .path == ".github/workflows/ci.yml") | "\(.id) \(.conclusion)"')
+            if [ -n "$ids" ]; then
+              echo "$ids" | while read -r id conclusion; do
+                [ "$conclusion" = action_required ] || continue
+                gh api -X POST "repos/$GITHUB_REPOSITORY/actions/runs/$id/approve" --silent \
+                  || { echo "::error::Could not approve the tests' run $id: approve it on the pull request (Approve and run)."; exit 1; }
+                echo "Approved the tests' run $id"
+              done
+              exit $?
+            fi
+            sleep 10
+          done
+          echo "::error::No tests run for $head on translate/daily after 3 minutes: the pull request can't merge until one passes."; exit 1
       - name: Close a pull request with nothing left to add
         if: steps.translate.outcome == 'success' && !steps.translate.outputs.changed
         env:
