@@ -62,6 +62,8 @@ A to-do that asks you something is left out of both: it takes your answer, not a
 
 Your Machine reads each source every few minutes, day and night. It checks what came in once 40 messages wait or the oldest message from a person has waited 15 minutes. Newsletters, notifications and receipts join the next check, within the hour.
 
+At night, from 00:00 until 06:30, checks pause: new messages are still read and kept, and checked together at 06:30, so your to-dos are ready before your morning summary. Checks under Connections says "Paused for the night, catches up at 06:30". Open the app, write in chat or tap a to-do at night and checks run as usual again until you've been away for an hour. **Check now** always checks right away.
+
 **Check now** reads every source right away. With nothing open, tap your Machine's line to see it, with **Details**, which opens Checks under Connections. With to-dos open, it's at the top on a computer. A short line there shows only while a check runs, or when one failed or is late. You can also ask in chat.
 
 LinkedIn, X and Salesflare keep their own pace.

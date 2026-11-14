@@ -28,6 +28,10 @@ While checks wait, the top of the dashboard says until when, like "Checks wait u
 
 Nothing is lost: what came in is checked once it can.
 
+## At night
+
+From 00:00 until 06:30, checks pause and new messages wait. They're checked together at 06:30, before your morning summary. **Checks** says "Paused for the night, catches up at 06:30". Use the app, write in chat or tap a to-do and checks run again until you've been away for an hour. **Check now** checks right away.
+
 ## A run failed
 
 **Recent runs** under **Connections**, **Checks** shows each run. A failed one is tried again by itself.

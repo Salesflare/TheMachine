@@ -216,6 +216,38 @@ def title_view(row, metadata):
     return view
 
 
+CARRIES = frozenset({'files', 'attachments', 'media', 'image', 'images', 'document', 'voice', 'audio', 'video'})  # more than words
+
+
+def in_conversation(rows, shown):
+    """{signal id: the newer signal's id}: chat messages in a batch whose whole text a newer message in the same batch
+    already shows (earlier_in_conversation; `shown` from conversation_context). Such a message reaches the review as
+    one line next to that newer one, so a chat that went on while no review ran (the night pause) costs little more
+    than its last message. Newest first, so the message that shows it is itself shown in full. Set-aside messages on
+    their one more look, and messages with files or media (the line has only their words), stay whole."""
+    def whole(row):
+        metadata = row['metadata'] if isinstance(row['metadata'], dict) else json.loads(row['metadata'] or '{}')
+        return (row.get('deferrals') or 0) >= SET_ASIDE_AFTER or row.get('deleted') or bool(CARRIES & set(metadata))
+    ids = {r['id'] for r in rows if not whole(r)}
+    found = {}
+    for row in sorted(rows, key=lambda r: (r['occurred_at'], r['id']), reverse=True):
+        if row['id'] in found:
+            continue
+        for earlier, newer in shown.items():
+            if row['id'] in newer and earlier in ids and earlier != row['id'] and earlier not in found:
+                found[earlier] = row['id']
+    return found
+
+
+def conversation_view(row, newer):
+    """A review's line for a chat message that the newer signal `newer` in the same batch shows in full."""
+    view = {'id': row['id'], 'account_id': row['account_id'], 'kind': row['kind'], 'occurred_at': row['occurred_at'],
+            'title_only': f'shown in full in earlier_in_conversation of signal {newer}: judge the two together'}
+    if 'version' in row:
+        view['version'] = row['version']
+    return view
+
+
 # OpenClaw cuts a live tool result at 64,000 characters, so review replies are paged below that (with room for the
 # escaping a Code Mode result adds); fuller pages mean fewer model steps, each resending the whole context.
 # Bookkeeping metadata is left out.
@@ -951,9 +983,10 @@ class ReviewStore:
             found[r['id']] = intercom_assignment(metadata, *owners[r['account_id']])
         return found
 
-    def conversation_context(self, rows, limit=4, hours=48):
+    def conversation_context(self, rows, limit=4, hours=48, shown=None):
         """Up to four earlier messages from the same chat for each Slack/WhatsApp signal, so a
-        short reply ("let me check") is reviewed with what it answers."""
+        short reply ("let me check") is reviewed with what it answers. `shown`: a dict to fill with {earlier event id:
+        [signal ids]} for each earlier message whose whole text one of those lines shows."""
         keys = {'slack.message': 'channel_id', 'whatsapp.message': 'chat_id', 'teams.message': 'chat_id', 'telegram.message': 'chat_id', 'signal.message': 'chat_id', 'linkedin.message': 'conversation_id', 'x.dm': 'conversation_id', 'x.mention': 'conversation_id'}
         context = {}
         with self.connect() as db:
@@ -963,7 +996,7 @@ class ReviewStore:
                 if not key or not metadata.get(key):
                     continue
                 since = (dt.datetime.fromisoformat(row['occurred_at']) - dt.timedelta(hours=hours)).isoformat()
-                earlier = db.execute(f"SELECT occurred_at,body,metadata FROM events WHERE account_id=? AND kind=? AND json_extract(metadata,'$.{key}')=? "
+                earlier = db.execute(f"SELECT id,occurred_at,body,metadata FROM events WHERE account_id=? AND kind=? AND json_extract(metadata,'$.{key}')=? "
                                      "AND occurred_at<? AND occurred_at>=? AND deleted=0 ORDER BY occurred_at DESC LIMIT ?",
                                      (row['account_id'], row['kind'], metadata[key], row['occurred_at'], since, limit)).fetchall()
                 lines = []
@@ -972,7 +1005,10 @@ class ReviewStore:
                     who = 'you' if m.get('from_me') or m.get('user_id') in self.owner_user_ids else \
                         (m.get('sender_display') or m.get('user_id') or '?')
                     when = dt.datetime.fromisoformat(e['occurred_at']).astimezone(local_tz()).strftime('%a %H:%M')
-                    lines.append(f"{when} {clamp(who, 160)}: {clamp(' '.join(e['body'].split()), 160)}")
+                    text = ' '.join(e['body'].split())
+                    lines.append(f"{when} {clamp(who, 160)}: {clamp(text, 160)}")
+                    if shown is not None and clamp(text, 160) == text:
+                        shown.setdefault(e['id'], []).append(row['id'])
                 if lines:
                     context[row['id']] = lines
         return context
@@ -1211,7 +1247,8 @@ class ReviewStore:
         """Page the claim once, so every later page read returns the same signals."""
         with self.connect() as db:
             rows = slack_named(db, [dict(r) for r in rows])
-        context = self.conversation_context(rows)
+        shown = {}
+        context = self.conversation_context(rows, shown=shown)
         replies = self.card_replies(rows)
         hints = self.project_hints([r['id'] for r in rows])
         self.bounce_hints(hints, [r['id'] for r in rows])
@@ -1220,7 +1257,11 @@ class ReviewStore:
         with self.connect() as db:
             assigned = self.intercom_assignments(db, rows)
             waits = waiting_cards(db, rows, self.owner_user_ids)
-        pages = review_pages([{**review_view(r, earlier=context.get(r['id']), brief=True, owner_in_thread=r['id'] in owned, team_inbox=teams.get(r['id']),
+        # A chat's earlier message that a newer one here shows in full: one line next to it (in_conversation)
+        within = in_conversation([r for r in rows if r['id'] not in replies and r['id'] not in waits and not hints.get(r['id'])], shown)
+        rows = [x for r in rows if r['id'] not in within for x in [r, *(e for e in rows if within.get(e['id']) == r['id'])]]
+        pages = review_pages([conversation_view(r, within[r['id']]) if r['id'] in within else
+                              {**review_view(r, earlier=context.get(r['id']), brief=True, owner_in_thread=r['id'] in owned, team_inbox=teams.get(r['id']),
                                              assigned=assigned.get(r['id'])),
                                **({'answers_your_card': replies[r['id']]} if r['id'] in replies else {}),
                                **({'waiting_card': waits[r['id']]} if r['id'] in waits else {}),
@@ -1228,6 +1269,7 @@ class ReviewStore:
         page_of = {view['id']: n for n, page in enumerate(pages) for view in page}
         brief = {view['id'] for page in pages for view in page if view.get('title_only')}
         return [{'id': r['id'], 'version': r['version'], 'page': page_of[r['id']], **({'brief': 1} if r['id'] in brief else {}),
+                 **({'with': within[r['id']]} if r['id'] in within else {}),
                  **({'waits': waits[r['id']]['card_id']} if r['id'] in waits else {})} for r in rows], pages
 
     review_result = staticmethod(review_result)  # the function above
@@ -1251,7 +1293,9 @@ class ReviewStore:
         with self.connect() as db:
             assigned = self.intercom_assignments(db, [rows[i] for i in ids if i in rows])
             waits = waiting_cards(db, [rows[i] for i in ids if i in rows], self.owner_user_ids)
-        views = [{**review_view(rows[i], earlier=context.get(i), brief=True, owner_in_thread=i in owned, team_inbox=teams.get(i), assigned=assigned.get(i)),
+        within = {i['id']: i['with'] for i in items if i.get('with')}  # as review_claim offered them (in_conversation)
+        views = [conversation_view(rows[i], within[i]) if i in within else
+                 {**review_view(rows[i], earlier=context.get(i), brief=True, owner_in_thread=i in owned, team_inbox=teams.get(i), assigned=assigned.get(i)),
                   **({'answers_your_card': replies[i]} if i in replies else {}),
                   **({'waiting_card': waits[i]} if i in waits else {}), **hints.get(i, {})}
                  for i in ids if i in rows]

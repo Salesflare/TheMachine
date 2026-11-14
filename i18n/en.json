@@ -3786,6 +3786,7 @@
  "Pause for a year at most": "Pause for a year at most",
  "Paused": "Paused",
  "Paused for a moment; it retries by itself.": "Paused for a moment; it retries by itself.",
+ "Paused for the night, catches up at {}.": "Paused for the night, catches up at {}.",
  "Payment is being retried": "Payment is being retried",
  "Pending: {} hasn’t confirmed. Retrying": "Pending: {} hasn’t confirmed. Retrying",
  "People": "People",

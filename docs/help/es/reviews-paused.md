@@ -28,6 +28,10 @@ Mientras las revisiones esperan, la parte superior del panel dice hasta cuándo,
 
 No se pierde nada mientras espera: lo que llegó se revisa en cuanto se pueda.
 
+## De noche
+
+De 00:00 a 06:30, las revisiones se pausan y los mensajes nuevos esperan. Se revisan juntos a las 06:30, antes de tu resumen de la mañana. **Revisiones** dice entonces "En pausa por la noche, se pone al día a las 06:30". Si usas la app, escribes en el chat o tocas una tarea, las revisiones vuelven hasta que lleves una hora sin usarla. **Revisar ahora** revisa al momento.
+
 ## Falló una ejecución
 
 **Ejecuciones recientes** en **Revisiones** muestra cada ejecución. Un lote fallido se reintenta solo.

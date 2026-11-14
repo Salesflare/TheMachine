@@ -62,6 +62,8 @@ Une tâche qui vous pose une question reste en dehors des deux : il lui faut vot
 
 Votre Machine lit chaque source toutes les quelques minutes, jour et nuit, et vérifie ce qui est arrivé pour en tirer des tâches dès que 40 messages attendent ou que le plus ancien message d’une personne attend depuis 15 minutes. Les newsletters, notifications et reçus rejoignent la vérification suivante, dans l’heure.
 
+La nuit, de 00:00 à 06:30, les vérifications font une pause : les nouveaux messages sont toujours lus et gardés, puis vérifiés ensemble à 06:30, pour que vos tâches soient prêtes avant votre résumé du matin. Vérifications, sous Connexions, indique alors « En pause pour la nuit, rattrapage à 06:30 ». Si vous ouvrez l’app, écrivez dans le chat ou touchez une tâche la nuit, les vérifications reprennent normalement jusqu’à une heure sans activité. **Vérifier maintenant** vérifie toujours tout de suite.
+
 **Vérifier maintenant** lit tout de suite chaque source. Quand rien n’est ouvert, touchez la ligne de votre Machine pour le voir, avec **Détails**, qui ouvre Vérifications dans Connexions. Quand des tâches sont ouvertes, il est en haut sur un ordinateur. Une courte ligne n’y apparaît que pendant une vérification, ou quand une a échoué ou est en retard. Vous pouvez aussi le demander dans le chat.
 
 LinkedIn, X et Salesflare gardent leur propre rythme.

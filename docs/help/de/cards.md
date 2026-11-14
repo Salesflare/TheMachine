@@ -62,6 +62,8 @@ Eine Aufgabe, die dich etwas fragt, zählt bei beidem nicht mit: Sie braucht dei
 
 Deine Machine liest jede Quelle alle paar Minuten, Tag und Nacht, und prüft das Neue auf Aufgaben, sobald 40 Nachrichten warten oder die älteste Nachricht von einer Person 15 Minuten gewartet hat. Newsletter, Benachrichtigungen und Belege kommen in die nächste Prüfung, innerhalb einer Stunde.
 
+Nachts, von 00:00 bis 06:30, pausieren die Prüfungen: Neue Nachrichten werden weiter gelesen und gespeichert und um 06:30 zusammen geprüft, damit deine Aufgaben vor deiner Morgenübersicht bereit sind. Prüfungen unter Verbindungen zeigt dann „Pause über Nacht, um 06:30 wird alles nachgeholt“. Öffnest du nachts die App, schreibst im Chat oder tippst auf eine Aufgabe, laufen die Prüfungen wieder wie gewohnt, bis du eine Stunde weg warst. **Jetzt prüfen** prüft immer sofort.
+
 **Jetzt prüfen** liest sofort jede Quelle. Ist nichts offen, tippe auf die Zeile deiner Machine, um es zu sehen, mit **Details**, das Prüfungen unter Verbindungen öffnet. Sind Aufgaben offen, steht es auf einem Computer oben. Eine kurze Zeile dort erscheint nur, während eine Prüfung läuft oder wenn eine fehlgeschlagen oder spät dran ist. Du kannst auch im Chat fragen.
 
 LinkedIn, X und Salesflare behalten ihr eigenes Tempo.

@@ -28,6 +28,10 @@ Pendant que les vérifications attendent, le haut du tableau de bord indique jus
 
 Rien n’est perdu pendant l’attente : ce qui est arrivé est vérifié dès que possible.
 
+## La nuit
+
+De 00:00 à 06:30, les vérifications font une pause et les nouveaux messages attendent. Ils sont vérifiés ensemble à 06:30, avant votre résumé du matin. **Vérifications** indique alors « En pause pour la nuit, rattrapage à 06:30 ». Si vous utilisez l’app, écrivez dans le chat ou touchez une tâche, les vérifications reprennent jusqu’à une heure sans activité. **Vérifier maintenant** vérifie tout de suite.
+
 ## Une exécution a échoué
 
 **Exécutions récentes** sous **Vérifications** affiche chaque exécution. Un lot échoué est relancé automatiquement.
