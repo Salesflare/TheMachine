@@ -7,7 +7,7 @@
 async function micPrep(){if(micPrepped){micPost('voice_status',{warm:true}).then(s=>{if(s.use)micUse=s.use}).catch(()=>{});return}
  micPrepped=true;try{const s=await micPost('voice_status',{warm:true});if(s.demo)micDemo=true;micUse=s.use||''}catch{micPrepped=false}}
 const micSR=()=>window.SpeechRecognition||window.webkitSpeechRecognition;
-const MIC_BCP={de:'de-DE',en:'en-US',es:'es-ES',fr:'fr-FR',it:'it-IT',nl:'nl-NL',pt:'pt-BR'};
+const MIC_BCP={de:'de-DE',en:'en-US',es:'es-ES',fr:'fr-FR',it:'it-IT',nl:'nl-NL',pt:'pt-BR',zh:'zh-CN',ja:'ja-JP',ko:'ko-KR',ru:'ru-RU'};
 // The browser's own speech recognition, while this Machine's own engine isn't ready: what it hears is kept as it goes
 function micBrowser(v){const SR=micSR(),sr=new SR(),code=(state.dictation?.language||document.documentElement.lang||'en').slice(0,2);
  Object.assign(sr,{lang:MIC_BCP[code]||'en-US',continuous:true,interimResults:true});v.sr=sr;v.heard=[];v.interim='';v.browser=true;

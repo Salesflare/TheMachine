@@ -22,9 +22,10 @@ import zoneinfo
 from pathlib import Path
 
 LANGUAGES = {'en': 'English', 'nl': 'Nederlands', 'fr': 'Français', 'de': 'Deutsch', 'es': 'Español', 'it': 'Italiano',
-             'pt-BR': 'Português (Brasil)'}  # i18n/<code>.json
-# A browser language without its own catalog that reads one of these for now: Portuguese from Portugal reads Brazilian.
-NEAREST = {'pt': 'pt-BR'}
+             'pt-BR': 'Português (Brasil)', 'zh-CN': '简体中文', 'ja': '日本語', 'ko': '한국어', 'ru': 'Русский'}  # i18n/<code>.json
+# A browser language without its own catalog that reads one of these for now: Portuguese from Portugal reads Brazilian,
+# any Chinese (zh-TW, zh-HK, zh-Hant) reads Simplified Chinese.
+NEAREST = {'pt': 'pt-BR', 'zh': 'zh-CN'}
 _CODES = {code.lower(): code for code in LANGUAGES}
 _BASES = {code.split('-')[0] for code in LANGUAGES}
 DEFAULT_REGION = 'US'  # dates without a locale
@@ -40,7 +41,7 @@ _current = {'locale': None, 'clock': 'auto', 'language': None, 'todo_scope': Non
 
 
 def normalize(value):
-    """'en-BE' from 'en-BE' or 'en_be', 'nl-BE' from 'nl-be', 'en-JP' from 'ja-JP' (a language there is no catalog for),
+    """'en-BE' from 'en-BE' or 'en_be', 'nl-BE' from 'nl-be', 'en-TR' from 'tr-TR' (a language there is no catalog for),
     '' for no setting, None when it isn't a tag."""
     text = str(value or '').strip().replace('_', '-')
     if not text:
@@ -90,7 +91,7 @@ def date_locale(locale, language='en'):
     if language and '-' in language:
         return language  # its own region's way (pt-BR), wherever the owner is
     if language and language != 'en':
-        return f'{language}-{region(locale) or {"nl": "NL", "fr": "FR", "de": "DE", "es": "ES", "it": "IT"}.get(language, "US")}'
+        return f'{language}-{region(locale) or {"nl": "NL", "fr": "FR", "de": "DE", "es": "ES", "it": "IT", "ja": "JP", "ko": "KR", "ru": "RU"}.get(language, "US")}'
     return 'en-US' if (region(locale) or DEFAULT_REGION) in MONTH_FIRST else 'en-GB'
 
 
@@ -216,8 +217,13 @@ NAMES = {
     'es': ('lun mar mié jue vie sáb dom'.split(), 'ene feb mar abr may jun jul ago sept oct nov dic'.split()),
     'it': ('lun mar mer gio ven sab dom'.split(), 'gen feb mar apr mag giu lug ago set ott nov dic'.split()),
     'pt-BR': ('seg. ter. qua. qui. sex. sáb. dom.'.split(), 'jan. fev. mar. abr. mai. jun. jul. ago. set. out. nov. dez.'.split()),
+    'zh-CN': ('周一 周二 周三 周四 周五 周六 周日'.split(), [f'{m}月' for m in range(1, 13)]),
+    'ja': ('月 火 水 木 金 土 日'.split(), [f'{m}月' for m in range(1, 13)]),
+    'ko': ('월 화 수 목 금 토 일'.split(), [f'{m}월' for m in range(1, 13)]),
+    'ru': ('пн вт ср чт пт сб вс'.split(), 'янв. февр. мар. апр. мая июн. июл. авг. сент. окт. нояб. дек.'.split()),
 }
-AT = {'en': ' at ', 'nl': ' om ', 'fr': ' à ', 'de': ' um ', 'es': ' a las ', 'it': ' alle ', 'pt-BR': ' às '}
+AT = {'en': ' at ', 'nl': ' om ', 'fr': ' à ', 'de': ' um ', 'es': ' a las ', 'it': ' alle ', 'pt-BR': ' às ',
+      'zh-CN': ' ', 'ja': ' ', 'ko': ' ', 'ru': ' в '}
 
 
 def weekday_name(moment):
@@ -233,6 +239,13 @@ def day_text(moment, weekday=True, year=False, lang=None):
     still decides the order, the words are English and the dashboard writes them again in the UI language."""
     lang = lang or language()
     names = NAMES.get(lang)
+    if names and lang in ('zh-CN', 'ja', 'ko'):  # month first, the weekday after, as Intl writes them: 10月24日周六, 10月24日(土), 10월 24일 (토)
+        day = names[1][moment.month - 1] + (f' {moment.day}일' if lang == 'ko' else f'{moment.day}日')
+        text = (f'{moment.year}年' if year and lang != 'ko' else f'{moment.year}년 ' if year else '') + day
+        wd = names[0][moment.weekday()]
+        return text + ({'zh-CN': wd, 'ja': f'({wd})', 'ko': f' ({wd})'}[lang] if weekday else '')
+    if names and lang == 'ru':  # сб, 24 окт.
+        return (names[0][moment.weekday()] + ', ' if weekday else '') + f'{moment.day} {names[1][moment.month - 1]}' + (f' {moment.year}' if year else '')
     if names:
         text = f'{moment.day}{"." if lang == "de" else " de" if lang == "pt-BR" else ""} {names[1][moment.month - 1]}'
         return (names[0][moment.weekday()] + ' ' if weekday else '') + text + (f' {moment.year}' if year else '')
@@ -247,6 +260,8 @@ def day_text(moment, weekday=True, year=False, lang=None):
 
 def span_text(start, end):
     """'Oct 19–23' or '19–23 Oct'; across months 'Oct 30 – Nov 5' or '30 Oct – 5 Nov'."""
+    if (start.month, start.year) == (end.month, end.year) and language() in ('zh-CN', 'ja', 'ko'):
+        return f'{day_text(start, weekday=False)}–{end.day}' + ('일' if language() == 'ko' else '日')
     if (start.month, start.year) == (end.month, end.year) and language() in NAMES:
         return f'{start.day}–{day_text(end, weekday=False)}'
     if (start.month, start.year) == (end.month, end.year):
@@ -282,13 +297,20 @@ RELATIVE_DAYS = {
     'es': {'hoy': 0, 'mañana': 1, 'ayer': -1},
     'it': {'oggi': 0, 'domani': 1, 'ieri': -1},
     'pt-BR': {'hoje': 0, 'amanhã': 1, 'ontem': -1},
+    'zh-CN': {'今天': 0, '明天': 1, '昨天': -1},
+    'ja': {'今日': 0, '明日': 1, '昨日': -1},
+    'ko': {'오늘': 0, '내일': 1, '어제': -1},
+    'ru': {'сегодня': 0, 'завтра': 1, 'вчера': -1},
 }
+CJK_DAYS = ('zh-CN', 'ja', 'ko')  # written without spaces around (今天下午, 오늘은): matched inside a run of text
 # "mañana" and "Morgen" also mean the morning: after these words they stay ("esta mañana", "am Morgen", "goede morgen").
 MORNING_BEFORE = frozenset('la esta cada una media toda am den jeden guten heute diesen dem der einen goede iedere elke'.split())
 # Small words that tell Dutch from German when "morgen" alone could be either.
 _HINTS = {'nl': frozenset('om de het en met van een op voor naar is'.split()), 'de': frozenset('um der die das und mit von ein für nach ist'.split())}
 _WORDS = sorted({w for words in RELATIVE_DAYS.values() for w in words}, key=len, reverse=True)
-_RELATIVE = re.compile(r"(?<![\w'’])(" + '|'.join(re.escape(w) for w in _WORDS) + r")(?![\w'’-])", re.I)
+_CJK_WORDS = {w for code in CJK_DAYS for w in RELATIVE_DAYS[code]}
+_RELATIVE = re.compile(r"(?<![\w'’])(" + '|'.join(re.escape(w) for w in _WORDS if w not in _CJK_WORDS) + r")(?![\w'’-])|("
+                       + '|'.join(re.escape(w) for w in _WORDS if w in _CJK_WORDS) + ')', re.I)
 _QUOTED = re.compile(r'“[^”]*”|"[^"]*"|„[^“”]*[“”]|«[^»]*»')
 
 
@@ -311,7 +333,7 @@ def undated(text, moment, hint=None):
     quoted = [m.span() for m in _QUOTED.finditer(text)]
     found, out, last = [], [], 0
     for m in _RELATIVE.finditer(text):
-        word, start = m.group(1), m.start()
+        word, start = m.group(1) or m.group(2), m.start()
         lower = word.lower()
         before = re.findall(r'\w+', text[:start].lower())[-1:]
         if any(a <= start < b for a, b in quoted) or text[m.end():m.end() + 2] in ("'s", '’s'):

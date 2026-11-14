@@ -40,7 +40,7 @@ Settings, General, Voice input, **Turned into text** (`voice_input.ENGINES`), wi
   int8 on the CPU, in `voice_worker.py`. The service starts the worker on the first clip and stops it after 5 minutes
   without one, so its memory is free again. The package install runs at a lower priority (`nice -n 10`,
   below-normal priority on Windows); the worker runs at the normal priority, since the owner is waiting on it. Clips go through it one at a
-  time. The language is the one picked in Settings, or detected among the app's seven languages.
+  time. The language is the one picked in Settings, or detected among the app's languages.
 - **With OpenAI**: `gpt-4o-transcribe` through OpenClaw's own transcription, in `voice-openai-run.mjs`: a Node worker
   that loads OpenClaw once and stays up for 5 minutes, so a clip takes 1 to 3 s instead of the 8 s the
   `openclaw infer audio transcribe` CLI needs to start (still the fallback). A tap on the mic warms it up. Offered when

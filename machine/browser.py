@@ -29,7 +29,8 @@ import timeutil
 # captcha, in that country's language), not from the browser's languages, and keeps it for that browser. Its `_l`
 # parameter sets it (undocumented; a value it does not know is ignored). Every sign-in page the Machine opens carries
 # one, English too: without it, LinkedIn falls back to the server's country. Each locale here was checked to work.
-LINKEDIN_LOCALES = {'en': 'en_US', 'nl': 'nl_NL', 'de': 'de_DE', 'fr': 'fr_FR', 'es': 'es_ES', 'it': 'it_IT', 'pt-br': 'pt_BR'}
+LINKEDIN_LOCALES = {'en': 'en_US', 'nl': 'nl_NL', 'de': 'de_DE', 'fr': 'fr_FR', 'es': 'es_ES', 'it': 'it_IT', 'pt-br': 'pt_BR',
+                    'zh-cn': 'zh_CN', 'ja': 'ja_JP', 'ko': 'ko_KR', 'ru': 'ru_RU'}
 LINKEDIN_SIGNIN_PATH = re.compile(r'(?i)/(?:login|uas/login)/?')
 
 

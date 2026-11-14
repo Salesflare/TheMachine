@@ -1,77 +1,77 @@
 ---
 title: Einstellungen
 area: settings
-summary: Wo du jede Einstellung findest, vom hellen Modus bis zu Sicherheit und deinem Konto.
+summary: Hier findest du alle Einstellungen, vom hellen Modus bis zu Sicherheit und Konto.
 covers: settings:general
 code: dashboard.html
 order: 1
-translated: 00e42f9aeb395d21
+translated: 4b0cf1cc99529e64
 ---
 Öffne **Einstellungen** über das Zahnrad oben. Die Tabs:
 
-- **Konto**: **Deine Adressen**, die als du zählen, jeweils mit Herkunft, und **Abmelden**. Auf einer gehosteten Machine auch dein Tarif, Rechnungen, Machine, Fleet, Adresse, Freunde, Anmeldung und Daten, jeweils mit Button. Siehe [Tarife und Abrechnung](plans-and-billing.md). **Abmelden** steht oben, **Tarif kündigen** und **Konto löschen** ganz unten. Auf einer Machine auf deinem eigenen Computer, mit dem Network gekoppelt: deine Fleet, Benutzername, Freunde und Anmeldung, jeweils mit einem Link, der diesen Teil deines Kontos öffnet (dort anmelden), und **Konto löschen** ganz unten. Noch nicht gekoppelt: **Dem Network beitreten**, ganz oben.
-- **Allgemein**: Sprache und Region, Spracheingabe, dieses Gerät, der Browser deiner Machine, deine Fleet, Export und Import und die Version, mit der sie läuft. Ohne Konto-Tab steht **Dem Network beitreten** am Ende.
-- **Sicherheit**: Standard oder Vorsichtig und die Einstellungen, die sie festlegen. Siehe [Sicherheitsstufen](security-levels.md). Auch **Support-Zugriff**, solange er an ist: siehe [Support bekommen](get-support.md#support-access).
-- **Aktivität**: alles, was The Machine für dich getan hat, das Neueste zuerst. Siehe [Aktivität](activity.md).
-- **Benachrichtigungen**: was dich wo erreicht, und deine Arbeitszeiten. Siehe [Benachrichtigungen](notifications.md) und [Arbeitszeiten](work-hours.md).
-- **Schreiben**: Signaturen und wie du schreibst. Siehe [Schreiben](writing.md).
-- **Skills**: Anleitungen, denen deine Machine folgt. Siehe [Skills](skills.md).
-- **Apps**: die Apps von The Machine für Handy und Computer, dann Claude, ChatGPT und andere KIs, die du verbunden hast, und was jede darf. Siehe [Die mobile App](mobile-app.md) und [Andere KIs verbinden](ai-connections.md).
-- **Modell**: was für dich antwortet, und seine Limits. Siehe [Modell](model.md). Auch **Codex und Claude Code**: siehe [An Claude Code oder Codex übergeben](hand-to-agent.md). Und **Suche nach Bedeutung**, weiter unten.
+- **Konto**: Oben findest du **Deine Adressen** (Adressen, die als deine gelten) und **Abmelden**. Bei einer gehosteten Machine findest du hier außerdem deinen Tarif, Rechnungen, Fleet, Freunde, Anmeldung und Daten sowie ganz unten **Tarif kündigen** und **Konto löschen**. Bei einer Machine auf deinem eigenen Computer, die mit dem Network verbunden ist, findest du hier Fleet, deinen Benutzernamen, Freunde und Anmeldung. Jeder Punkt hat einen Link, der den entsprechenden Bereich deines Kontos öffnet (melde dich dort an). Ganz unten findest du **Konto löschen**. Noch nicht verbunden? Oben findest du **Dem Network beitreten**. Mehr dazu unter [Tarife und Abrechnung](plans-and-billing.md).
+- **Allgemein**: Sprache und Region, dieses Gerät, Spracheingabe, der Browser deiner Machine, Fleet, Export und Import sowie die installierte Version. Wenn es keinen Tab „Konto“ gibt, findest du **Dem Network beitreten** ganz am Ende.
+- **Sicherheit**: Standard oder Vorsichtig. Mehr dazu unter [Sicherheitsstufen](security-levels.md). Außerdem **Support-Zugriff**, solange er aktiviert ist: siehe [Support erhalten](get-support.md#support-access).
+- **Aktivität**: alles, was The Machine für dich getan hat, neuestes zuerst. Mehr dazu unter [Aktivität](activity.md).
+- **Benachrichtigungen**: welche Benachrichtigungen dich wo erreichen und deine Arbeitszeiten. Mehr dazu unter [Benachrichtigungen](notifications.md) und [Arbeitszeiten](work-hours.md).
+- **Schreiben**: Signaturen und deine Schreibweise. Mehr dazu unter [Schreiben](writing.md).
+- **Skills**: Anleitungen, an die sich deine Machine hält. Mehr dazu unter [Skills](skills.md).
+- **Apps**: zuerst die Apps von The Machine für dein Smartphone und deinen Computer, dann Claude, ChatGPT und andere KI-Assistenten, die du verbunden hast, und was sie jeweils tun dürfen. Mehr dazu unter [Die mobile App](mobile-app.md) und [Andere KIs verbinden](ai-connections.md).
+- **Modell**: die KI, die für dich liest und Entwürfe schreibt, und ihre Grenzen. Mehr dazu unter [Modell](model.md). Außerdem **Codex und Claude Code**: siehe [An Claude Code oder Codex übergeben](hand-to-agent.md). Und **Suche nach Bedeutung**, weiter unten.
 
-Ein Tab ohne Inhalt wird ausgeblendet.
+Tabs ohne Inhalte werden ausgeblendet.
 
 ## Allgemein
 
-- **Sprache und Region**: Deine **Region** legt fest, wie Daten aussehen (24. Okt. oder Oct 24), und die übliche Uhr. **Zeitformat** wählt stattdessen 12 Stunden (2:05 PM) oder 24 Stunden (14:05). Aufgaben, Telegram, die Zusammenfassung und Nachrichten aus der Fleet folgen dem. Eine gehostete Machine startet mit dem Land der Zeitzone, die du bei der Registrierung gewählt hast. Angaben wie „vor 3 Stunden“ und Zahlen folgen dem ebenfalls.
-- **Sprache**: English, Nederlands, Français, Deutsch, Español, Italiano oder Português (Brasil). Beim ersten Öffnen des Dashboards wird die Sprache deines Browsers gewählt, wenn sie eine davon ist (Portugiesisch aus Portugal bekommt vorerst brasilianisches Portugiesisch). Das Dashboard, Datumsangaben, Telegram-Nachrichten, Benachrichtigungen, der Wochenrückblick sowie die Notizen und Aufgabentitel, die deine Machine für dich schreibt, folgen ihr ab dem Moment, in dem du sie wählst. Was schon geschrieben ist, bleibt, wie es war. Fragen aus Fleet und Familie erscheinen in der eigenen Sprache jedes Teammitglieds. Entwürfe an andere Personen bleiben in der Sprache ihrer Unterhaltung. Auch die Hilfe und ihre Seiten folgen ihr.
-- **Dieses Gerät**: die App (**App installieren**), **Benachrichtigungen** mit **Test senden** und **Heller Modus**, nur für diesen Browser oder dieses Handy. Siehe [App installieren und Benachrichtigungen einschalten](phone-app.md).
-- **Spracheingabe**: wie aus dem, was du sagst, Text wird, und die Stimme von Live sprechen. Siehe [Spracheingabe](voice-input.md) und [Live sprechen](talk-live.md).
-- **Browser der Machine öffnen ↗**: der Browser, den deine Machine für Websites wie LinkedIn nutzt.
+- **Sprache und Region**: Unter **Region** legst du fest, wie Datumsangaben, Uhrzeiten und Zahlen angezeigt werden (24. Okt. oder 24. Okt.). **Zeitformat** bestimmt, ob die Uhrzeit im 12-Stunden-Format (2:05 PM) oder im 24-Stunden-Format (14:05) angezeigt wird. Aufgaben, Telegram, die Zusammenfassung und Fleet-Nachrichten richten sich nach diesen beiden Einstellungen. Bei einer gehosteten Machine wird die Zeitzone verwendet, die du bei der Anmeldung ausgewählt hast.
+- **Sprache**: Englisch, Nederlands, Français, Deutsch, Español, Italiano, Português (Brasil), 简体中文, 日本語, 한국어 oder Русский. Standardmäßig wird die Sprache deines Browsers verwendet. Das Dashboard, die Hilfe, Benachrichtigungen, Telegram, der Wochenrückblick und die Aufgaben, die deine Machine schreibt, wechseln sofort nach deiner Auswahl die Sprache. Ältere Texte bleiben unverändert. Teammitglieder erhalten Fleet- und Family-Fragen in ihrer eigenen Sprache. Entwürfe für andere bleiben in der Sprache des jeweiligen Gesprächs.
+- **Dieses Gerät**: **App installieren**, **Benachrichtigungen** mit **Test senden** und **Heller Modus**. Diese Einstellungen gelten nur für diesen Browser oder dieses Smartphone. Mehr dazu unter [App installieren und Benachrichtigungen aktivieren](phone-app.md). Unter [Omarchy](omarchy.md) gibt es außerdem **Omarchy-Theme**.
+- **Spracheingabe**: wie deine gesprochenen Worte in Text umgewandelt werden und welche Stimme Talk live verwendet. Mehr dazu unter [Spracheingabe](voice-input.md) und [Talk live](talk-live.md).
+- **Browser der Machine öffnen ↗**: der Browser, den deine Machine für Websites wie LinkedIn verwendet.
 - **Fleet-Regeln**: siehe [Freigaberegeln](sharing-rules.md).
 - **Exportieren**:
-  - **Alles**: alles, was deine Machine weiß, in einer verschlüsselten Datei, zum Umziehen oder Aufbewahren, und **Importieren**, um einen hereinzuholen. Siehe [Auf einen anderen Computer umziehen](moving.md).
-  - **Wissen für eine andere KI**: was deine Machine gelernt hat, in Dateien, die jede KI lesen kann. Siehe [Wissen für eine andere KI](knowledge-export.md).
+  - **Alles**: alles, was deine Machine weiß, in einer verschlüsselten Datei, zum Übertragen oder Aufbewahren. Mit **Importieren** kannst du eine Datei importieren. Mehr dazu unter [Auf einen anderen Computer umziehen](moving.md).
+  - **Wissen für eine andere KI**: was deine Machine gelernt hat, in Dateien, die jede KI lesen kann. Mehr dazu unter [Wissen für eine andere KI](knowledge-export.md).
 
 ## Version
 
-Das Release, mit dem deine Machine läuft. Updates installieren sich von selbst. Ist auf einer gehosteten Machine eine neuere Version verfügbar, installiert **Jetzt aktualisieren** sie sofort. Das dauert ein paar Minuten, und deine Daten bleiben erhalten.
+Die Version, die auf deiner Machine läuft. Updates werden automatisch installiert. Wenn bei einer gehosteten Machine eine neuere Version bereitsteht, wird sie mit **Jetzt aktualisieren** sofort installiert. Das dauert ein paar Minuten. Deine Daten bleiben erhalten.
 
-Auf deinem eigenen Computer installiert ein täglicher Timer unter Linux jedes neue signierte Release. Siehe [Auf deinem eigenen Computer betreiben](self-hosted-setup.md).
+Auf deinem eigenen Computer installiert ein täglicher Timer jede neue, signierte Version für Linux. Mehr dazu unter [Auf deinem eigenen Computer ausführen](self-hosted-setup.md).
 
 ## Suche nach Bedeutung
 
-In **Einstellungen**, **Modell**. Sie findet E-Mails, Nachrichten und Notizen nach ihrem Inhalt, nicht nur nach ihren Wörtern. Auf einer gehosteten Machine macht das eine kleine KI auf der Machine selbst, und nichts wird nach außen gesendet. Ab 8 GB Arbeitsspeicher ist sie an. Bei 4 GB schaltest du sie mit ihrem Schalter ein. Sie braucht etwa ein halbes Gigabyte, eine ausgelastete Machine kann also langsamer werden.
+Unter **Einstellungen** und **Modell**. Damit findest du E-Mails, Nachrichten und Notizen nach ihrem Inhalt, nicht nur nach ihren Wörtern. Bei einer gehosteten Machine übernimmt eine kleine KI direkt auf der Machine die Suche. Dabei werden keine Daten irgendwohin gesendet. Ab 8 GB Arbeitsspeicher ist die Funktion aktiviert. Bei 4 GB kannst du sie mit dem Schalter aktivieren. Sie benötigt etwa ein halbes Gigabyte Arbeitsspeicher und kann eine ausgelastete Machine deshalb verlangsamen.
 
-Auf deinem eigenen Computer ist es der Block `embeddings` in `config.json`. Starte die Machine nach einer Änderung neu.
+Auf deinem eigenen Computer findest du die Funktion im Block `embeddings` in `config.json`. Starte die Machine nach einer Änderung neu.
 
 ## Auf dieser Machine
 
-Ein paar Einstellungen liegen auf dem Computer, auf dem deine Machine läuft, nicht in der App:
+Wenn deine Machine auf deinem eigenen Computer läuft, werden einige Dinge dort in einem Terminal erledigt:
 
-- `config.json`: jede Einstellung, in einer Datei. Starte die Machine nach einer Änderung neu.
-- `assistant connect`: eine Quelle hinzufügen, etwa `assistant connect gmail` oder `assistant connect outlook`.
-- `assistant telegram on` oder `off`: Nachrichten über Telegram. Siehe [Telegram](telegram.md).
-- `assistant doctor`: prüft alles und zeigt für jedes Problem eine Lösung.
+- Die Einstellungsdatei `config.json`: alle Einstellungen an einem Ort. Starte die Machine nach einer Änderung neu.
+- `assistant connect`: fügt eine Quelle hinzu, zum Beispiel `assistant connect gmail` oder `assistant connect outlook`.
+- `assistant telegram on` oder `off`: Nachrichten auf Telegram. Mehr dazu unter [Telegram](telegram.md).
+- `assistant doctor`: prüft alles und gibt für jedes Problem eine Lösung aus.
 
 ## Deine Adressen
 
-Jede deiner Adressen, die die Machine gefunden hat: deine Konten, Aliasse in Gmail oder Outlook, dein Kalender, dein Profil in Slack und Intercom. Mails und Meetings von jeder davon erscheinen als du. **Entferne** eine, die nicht deine ist.
+Alle Adressen von dir, die deine Machine gefunden hat: deine Konten, Gmail- oder Outlook-Aliasse, dein Kalender sowie deine Slack- und Intercom-Profile. E-Mails und Termine von all diesen Adressen gelten als deine. Mit **Entfernen** kannst du Adressen löschen, die nicht dir gehören.
 
-Eine geteilte Adresse wie info@ oder eine Google Group zählt nie von selbst. Eine, bei der sich die Machine nicht sicher ist, steht unter **Vielleicht deine**, und nichts wird für dich ausgewählt. Wähle eins:
+Eine gemeinsam genutzte Adresse wie info@ oder eine Google Group gilt nie automatisch als deine. Bei Adressen, bei denen sich deine Machine nicht sicher ist, findest du sie unter **Vielleicht deine**. Wähle eine Option:
 
-- **Meine: Nur ich beantworte sie**: Sie zählt als deine. Mails an sie können deine Aufgaben werden.
-- **Vom Team: Andere beantworten sie auch**: Sie ist nicht du. Mails nur an diese Adresse machen dir keine Aufgaben und keine Entwürfe. Sie füllt weiter den Graph, mit deinem Team geteilt wie bisher.
-- **Nicht meine**: Sie zählt nicht als deine.
+- **Meine: Nur ich beantworte sie**: Die Adresse gilt als deine. E-Mails an sie können zu deinen Aufgaben werden.
+- **Vom Team: Andere beantworten sie auch**: Die Adresse gilt nicht als deine. E-Mails, die nur an sie gesendet wurden, erzeugen keine Aufgaben oder Entwürfe für dich. Sie fließen aber weiterhin in den Graph ein.
+- **Nicht meine**: Die Adresse gilt nicht als deine.
 
-Wähle danach, wer sie heute beantwortet. Ein Team-Postfach wie support@ ist vom Team. Eine Adresse wie partnerships@, die gerade nur du beantwortest, ist deine; stell sie auf Team um, sobald andere sie auch beantworten.
+Entscheide danach, wer die Adresse heute beantwortet. Ein Team-Postfach wie support@ gehört dem Team. Eine Adresse wie partnerships@, die nur du beantwortest, gehört dir. Ändere die Einstellung, wenn auch andere die Adresse beantworten.
 
-**Ändern** in ihrer Zeile stellt es später um. Deine eigene Anmeldeadresse ist immer deine.
+Mit **Ändern** in der Zeile kannst du die Auswahl später ändern. Deine eigene Anmeldeadresse gilt immer als deine.
 
 ### Domains deiner Firma
 
-Die Domains deiner eigenen Adressen zählen als die deiner Firma. Nutzt sie noch eine weitere, etwa acme.co neben acme.com, gib sie unter **Domains deiner Firma** ein und drücke **Hinzufügen**.
+Die Domains deiner eigenen Adressen gelten als Domains deiner Firma. Nutzt du noch eine andere, zum Beispiel acme.co neben acme.com? Gib sie unter **Domains deiner Firma** ein und klicke auf **Hinzufügen**.
 
-Leute dort sind dann deine Kollegen, nie Kunden: Ihre Threads bleiben aus dem Team Graph wie jeder Thread nur unter Kollegen, und es entsteht keine Organisation dafür. **Entfernen** nimmt sie wieder raus. Eine kostenlose E-Mail-Domain wie gmail.com geht nicht.
+Personen unter diesen Domains gelten dann als Kolleginnen und Kollegen, nie als Kundinnen oder Kunden: Ihre Unterhaltungen erscheinen nicht im Team-Graph, und dafür wird keine Organisation erstellt. Mit **Entfernen** kannst du eine Domain wieder löschen. Kostenlose E-Mail-Domains wie gmail.com lassen sich nicht hinzufügen.
 
-Ein Gmail-Alias von dir kann auch **Von** eines Entwurfs sein, wenn Gmail bestätigt, dass du als dieser Alias senden kannst. Siehe [Gmail](gmail.md#what-it-can-send).
+Ein Gmail-Alias von dir kann auch als **Von** für einen Entwurf verwendet werden, wenn Gmail bestätigt, dass du damit E-Mails senden kannst. Mehr dazu unter [Gmail](gmail.md#what-it-can-send).

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="share_label">Добавить в The Machine</string>
+    <string name="saved_download">Сохранено в «Загрузки»: %1$s</string>
+    <string name="not_saved">Не удалось сохранить файл.</string>
+    <string name="push_open">Нажмите, чтобы открыть.</string>
+</resources>

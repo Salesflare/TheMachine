@@ -65,6 +65,13 @@ class CatalogTest(unittest.TestCase):
                         self.assertEqual(len(HOLE.findall(form)), len(HOLE.findall(key)), f'{lang}: {key!r} -> {form!r}')
                         self.assertNotIn('—', form, f'{lang}: no em dashes ({key!r})')
 
+    def test_plural_entries_have_each_languages_forms(self):
+        # CLDR: Russian one, few, many and other; Chinese, Japanese and Korean other only; the rest one and other
+        want = {'ru': {'one', 'few', 'many', 'other'}, 'zh-CN': {'other'}, 'ja': {'other'}, 'ko': {'other'}}
+        for lang in LANGS:
+            bad = [k for k, v in load(f'{lang}.json').items() if isinstance(v, dict) and set(v) != want.get(lang, {'one', 'other'})]
+            self.assertEqual(bad, [], lang)
+
     def test_the_catalogs_are_sorted(self):
         # Sorted keys, one per line: pull requests that add different strings merge without conflicts.
         bad = [p.name for p in i18n_extract.unsorted()]
@@ -100,6 +107,7 @@ class CatalogTest(unittest.TestCase):
             'es': r'\b(?:[Ee]l|[Dd]el|[Aa]l|[Uu]n) (?:propio )?(?:asistente|Machine)\b|\b[Ee]stoy (?:listo|atascado|seguro|ocupado)\b',
             'it': r'\b(?:[Ii]l|[Dd]el|[Aa]l|[Nn]el|[Uu]n|[Tt]uo|[Ss]uo) (?:tuo |suo )?(?:Machine|assistente)\b|\b[Ss]ono (?:riuscito|bloccato|pronto)\b',
             'pt-BR': r'\b(?:[Oo]|[Dd]o|[Nn]o|[Aa]o|[Pp]elo|[Uu]m) (?:próprio )?(?:assistente|Machine)\b|\b[Ee]stou (?:pronto|preso)\b|\b[Ee]u continuo sozinho\b',
+            'ru': r'\bMachine (?:готов|подключен|занят|сам|прочитал|подготовил|нашёл|нашел)\b|\b[Яя] (?:застрял|готов|занят|сам)\b|\b(?:[Вв]аш|[Сс]вой) (?:Machine|ассистент)\b',
         }
         problems = [f'{lang}: {key!r} -> {text!r}' for lang, pattern in wrong.items()
                     for key, value in load(f'{lang}.json').items() for text in forms(value) if re.search(pattern, text)]
@@ -149,7 +157,7 @@ class CatalogTest(unittest.TestCase):
         # "64 organizations" under the Organizations title stayed English in every language: the extractor skipped
         # "{} organizations" (one word after the count), so no catalog had it.
         self.assertLessEqual({'{} organization', '{} organizations', '{} person', '{} people'}, set(i18n_extract.dashboard_strings()))
-        self.assertTrue(all(load(f'{lang}.json').get('{} organizations') for lang in ('en', 'de', 'es', 'fr', 'it', 'nl', 'pt-BR')))
+        self.assertTrue(all(load(f'{lang}.json').get('{} organizations') for lang in LANGS + ['en']))
 
     def test_the_stale_key_report_names_keys_no_code_reads(self):
         # python3 scripts/i18n_extract.py --stale: pruned by hand once a month, since each key lives in every catalog
@@ -184,6 +192,13 @@ class ServerTextTest(unittest.TestCase):
         self.assertEqual(i18n.plural_form('it', 0), 'other')
         self.assertEqual(i18n.t('{} meetings', 2, lang='pt-BR'), '2 reuniões')
         self.assertEqual(i18n.t('{} meetings', 1, lang='it'), '1 riunione')
+        # Russian counts one, few and many; Chinese, Japanese and Korean have one form for any number
+        self.assertEqual([i18n.plural_form('ru', n) for n in (1, 21, 2, 4, 22, 5, 11, 12, 14, 0, 25, 111, 1.5)],
+                         ['one', 'one', 'few', 'few', 'few', 'many', 'many', 'many', 'many', 'many', 'many', 'many', 'other'])
+        self.assertEqual([i18n.t('{} meetings', n, lang='ru') for n in (1, 3, 5)], ['1 встреча', '3 встречи', '5 встреч'])
+        self.assertEqual({i18n.plural_form(lang, n) for lang in ('zh-CN', 'ja', 'ko') for n in (0, 1, 2)}, {'other'})
+        self.assertEqual(i18n.t('{} meetings', 1, lang='ja'), i18n.t('{} meetings', 2, lang='ja').replace('2', '1'))
+        self.assertEqual(i18n.language_name('zh-CN'), 'Simplified Chinese')
         self.assertEqual(i18n.language_name(), 'Dutch')
         locale_prefs.configure({})
         self.assertEqual(i18n.t('Language'), 'Language')
@@ -215,10 +230,12 @@ class ServerTextTest(unittest.TestCase):
         moment = dt.datetime(2026, 10, 24, 14, 5)
         expected = {'en': 'Sat 24 Oct at 14:05', 'nl': 'za 24 okt om 14:05', 'fr': 'sam. 24 oct. à 14:05',
                     'de': 'Sa. 24. Okt. um 14:05', 'es': 'sáb 24 oct a las 14:05', 'it': 'sab 24 ott alle 14:05',
-                    'pt-BR': 'sáb. 24 de out. às 14:05'}
+                    'pt-BR': 'sáb. 24 de out. às 14:05', 'zh-CN': '10月24日周六 14:05', 'ja': '10月24日(土) 14:05',
+                    'ko': '10월 24일 (토) 14:05', 'ru': 'сб, 24 окт. в 14:05'}
         for lang, text in expected.items():
             locale_prefs.configure({'locale': 'en-BE', 'language': lang})
             self.assertEqual(locale_prefs.at_text(moment), text)
+        locale_prefs.configure({'locale': 'en-BE', 'language': 'pt-BR'})
         self.assertEqual(locale_prefs.view()['date_locale'], 'pt-BR')  # Brazilian dates wherever the owner is
         locale_prefs.configure({'locale': 'en-BE', 'language': 'it'})
         self.assertEqual(locale_prefs.view()['date_locale'], 'it-BE')
@@ -246,8 +263,17 @@ class ServerTextTest(unittest.TestCase):
         self.assertEqual(locale_prefs.view({'language': 'fr'})['language_set'], True)
         self.assertEqual(locale_prefs.pick_language('nl-BE,nl;q=0.9,en;q=0.8'), 'nl')
         self.assertEqual(locale_prefs.pick_language('en-US,fr;q=0.5'), 'en')
-        self.assertEqual(locale_prefs.pick_language('ja,fr-CA;q=0.4,de;q=0.6'), 'de')
-        self.assertEqual(locale_prefs.pick_language(['ja', 'es-419']), 'es')
+        self.assertEqual(locale_prefs.pick_language('tr,fr-CA;q=0.4,de;q=0.6'), 'de')
+        self.assertEqual(locale_prefs.pick_language(['tr', 'es-419']), 'es')
+        # Chinese (any script, for now Simplified), Japanese, Korean and Russian
+        self.assertEqual(locale_prefs.pick_language('zh-CN,zh;q=0.9'), 'zh-CN')
+        self.assertEqual(locale_prefs.pick_language(['zh-TW']), 'zh-CN')
+        self.assertEqual(locale_prefs.pick_language(['zh-Hant-HK']), 'zh-CN')
+        self.assertEqual(locale_prefs.pick_language('ja-JP,en;q=0.5'), 'ja')
+        self.assertEqual(locale_prefs.pick_language(['ko-KR']), 'ko')
+        self.assertEqual(locale_prefs.pick_language('ru-RU,ru;q=0.9'), 'ru')
+        self.assertEqual(locale_prefs.language_of({'locale': 'ja-JP'}), 'ja')
+        self.assertEqual(locale_prefs.settings({'language': 'zh-cn'}), {'language': 'zh-CN'})
         self.assertEqual(locale_prefs.settings({'language': 'FR'}), {'language': 'fr'})
         self.assertEqual(locale_prefs.settings({'language': 'pt-br'}), {'language': 'pt-BR'})
         # Italian and Brazilian Portuguese; Portuguese from Portugal (or just pt) reads Brazilian for now

@@ -10,8 +10,8 @@ const {chromium}=await import('./browser.mjs');
 // included, and back to English without a reload. Words around filled-in parts ("{} · {} today") and plurals read
 // translated too, and rows of parts joined by " · " part by part; t() is the same lookup for code. English is untouched when the language is English.
 const dashboard=await dashboardPage();
-const cats={};for(const l of ['en','nl','fr','de','es','it','pt-BR'])cats[l]=await readFile(new URL(`../i18n/${l}.json`,import.meta.url),'utf8');
-const languages={en:'English',nl:'Nederlands',fr:'Français',de:'Deutsch',es:'Español',it:'Italiano','pt-BR':'Português (Brasil)'};
+const cats={};for(const l of ['en','nl','fr','de','es','it','pt-BR','zh-CN','ja','ko','ru'])cats[l]=await readFile(new URL(`../i18n/${l}.json`,import.meta.url),'utf8');
+const languages={en:'English',nl:'Nederlands',fr:'Français',de:'Deutsch',es:'Español',it:'Italiano','pt-BR':'Português (Brasil)','zh-CN':'简体中文',ja:'日本語',ko:'한국어',ru:'Русский'};
 const view=(language,set=true)=>({locale:'en-BE',region:'BE',language,language_set:set,clock:'auto',hour12:false,auto_hour12:false,
  date_locale:language==='en'?'en-GB':language.includes('-')?language:language+'-BE',languages,saveable:true});
 let locale=view('en',false),saved=[],asked=[];
