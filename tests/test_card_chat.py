@@ -224,7 +224,7 @@ class CardChat(unittest.TestCase):
             owner, results = self.app.card_chat_service(db, self.sid)
         self.assertEqual([i for i in owner if i['kind'] == 'learned'], [], 'a claim in the reply is not a learning')
         rule = 'After signing or submitting in the browser, leave the confirmation page open for the owner to check.'
-        saved = self.store.remember_fact(rule, 'chat-1', 'draft')
+        saved = self.store.remember_fact(rule, 'chat-1', 'draft', quote='next time keep it open in the browser for me')
         with self.store.connect() as db:
             owner, results = self.app.card_chat_service(db, self.sid)
         learned = [i for i in owner if i['kind'] == 'learned']
@@ -239,7 +239,7 @@ class CardChat(unittest.TestCase):
         self.app.action('edit_fact', {'id': saved['id'], 'text': rule.replace('the owner', 'Sam')}, owner_dashboard=True)
         with self.store.connect() as db:
             self.assertIn('for Sam to check', self.app.card_chat_learned(db, self.sid)[0]['text'])
-        other = self.store.remember_fact('Keep the browser tab with a signed contract open.', 'chat-1', 'draft')
+        other = self.store.remember_fact('Keep the browser tab with a signed contract open.', 'chat-1', 'draft', quote='keep it open in the browser')
         merged = self.store.remember_fact('After a last step in the browser, leave its confirmation page open.', None, 'draft', replaces=[saved['id'], other['id']])
         with self.store.connect() as db:
             learned = self.app.card_chat_learned(db, self.sid)
