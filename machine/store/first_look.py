@@ -76,6 +76,25 @@ def first_value(db, marks, since):
     return out
 
 
+# The first useful to-do (first_useful, for first_cards_report): one the owner approved (Do it, Send, Mark done) that came
+# from someone's message: not the owner's own to-do, not one of The Machine's own (its faults, logs, set-aside fixes,
+# reconnect asks: signal kinds machine.*) and not one made only from its own words (decisions.MACHINE_OWN).
+USEFUL_OWN_KINDS = ('routine.draft',)
+
+
+def first_useful(db, since):
+    """When the first useful to-do came: the creation of the earliest to-do the owner approved from the dashboard or
+    Telegram, from someone's message (USEFUL_OWN_KINDS). It is known only once approved, so it is reported then, with
+    the time it showed up: the time a new owner waited for something worth doing. None before that."""
+    approved = [choice for choice, action in FIRST_ACTIONS.items() if action != 'dismiss']
+    row = db.execute("SELECT min(s.created_at) FROM suggestions s WHERE s.created_at>=? AND s.dedupe_key NOT LIKE 'owner:%' "
+                     "AND EXISTS (SELECT 1 FROM decisions d WHERE d.suggestion_id=s.id AND d.source IN ('dashboard','telegram') AND d.choice IN ("
+                     + ','.join('?' for _ in approved) + ")) AND EXISTS (SELECT 1 FROM json_each(s.event_ids) j JOIN events e ON e.id=j.value "
+                     "WHERE e.kind NOT LIKE 'machine.%' AND e.kind NOT IN (" + ','.join('?' for _ in USEFUL_OWN_KINDS) + '))',
+                     (since, *approved, *USEFUL_OWN_KINDS)).fetchone()
+    return row[0] if row else None
+
+
 def _finished(payload):
     try:
         result = json.loads(payload).get('finish_result')

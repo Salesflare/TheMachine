@@ -47,7 +47,7 @@ from machine.store import review_backoff, review_wait
 from machine.store.cards import active_preview
 from machine.store.events import RUN_SIGNAL_BUDGET, SET_ASIDE_AFTER
 from machine.store.facts import suggestion_scope
-from machine.store.first_look import FIRST_ACTIONS, first_value
+from machine.store.first_look import FIRST_ACTIONS, first_useful, first_value
 from machine.store.review import (BOARDS_CHARS, PREVIEW_DAYS, REVIEW_PAGE_CHARS, REVIEW_SESSION_PREFIX, REVIEW_TERMINAL, review_view,
                                   service_review_ended, service_run)
 from machine.text import clamp, encoded, fold_previews
@@ -299,7 +299,8 @@ def metadata_page(row, offset):
 def first_cards_report(db, accounts=(), current=None):
     """How fast a new install got to its first useful card, for the hosted health report: per source when its first
     import was in, each first-look pass (start, end, status, reason, cards), when the first card was shown on the
-    dashboard and when the owner first acted on one (and how). Timestamps, counts and codes only, never content. None
+    dashboard, when the owner first acted on one (and how) and when the first to-do they approved showed up
+    (first_useful_at). Timestamps, counts and codes only, never content. None
     on an install from before this was recorded. `db`: a plain sqlite3 connection to the events database."""
     rows = lambda sql, args=(): db.execute(sql, args).fetchall()
     if not rows("SELECT 1 FROM sqlite_master WHERE type='table' AND name='milestones'"):
@@ -345,6 +346,8 @@ def first_cards_report(db, accounts=(), current=None):
     acted = rows("SELECT choice,created_at FROM decisions WHERE source IN ('dashboard','telegram') AND created_at>=? AND choice IN ("
                  + ','.join('?' for _ in approved) + ') ORDER BY created_at LIMIT 1', (since, *approved))
     out['first_approved_at'], out['first_approved'] = (acted[0][1], FIRST_ACTIONS[acted[0][0]]) if acted else (None, None)
+    # When the first to-do the owner went on to approve showed up (first_useful): the "time to the first useful to-do"
+    out['first_useful_at'] = first_useful(db, since) if out['first_approved_at'] else None
     out.update(first_value(db, marks, since))
     # The AI's real check (model_check.py), for the setup page's AI step: whether it answered, and the provider's own
     # error (short, anything like a key taken out) when it didn't
