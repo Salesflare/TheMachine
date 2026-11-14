@@ -58,6 +58,7 @@ from mail_senders import AUTOMATED_PRECEDENCE, BULK, RELAY, address_name, addres
 import person_summary
 from machine import stamps, todo_states
 from machine.kinds import KINDS
+from machine.names import SERVICES
 from machine.owner_error import OwnerError
 from machine.store import graph_history, graph_identifiers
 
@@ -632,6 +633,10 @@ FORMER_SLACK_USER = 'a former Slack user'
 SOMEONE_ON_SLACK = 'someone on Slack'
 
 
+# Never a person's name: each kind's ("Slack", "GitHub", machine/kinds.py) and each service's ("Stripe", machine/names.py)
+SOURCE_NAMES = frozenset({row['name'] for row in KINDS.values() if row['name']} | set(SERVICES.values()))
+
+
 def slack_names(db, ids):
     """{Slack member id: name}: the name the people graph shows for them (the name from their mail over a lower-case
     Slack handle; one matched by their email too), else the one Slack's users.info gave (identity_names), else the
@@ -657,7 +662,7 @@ def slack_names(db, ids):
             found = set(json.loads(info or '{}').get('identifiers') or ())
         except ValueError:
             continue
-        if name and name != 'Slack' and not SLACK_MEMBER.fullmatch(name):
+        if name and name not in SOURCE_NAMES and not SLACK_MEMBER.fullmatch(name):
             names.update({i: name for i in ids if 'slack:' + i in found or ('email:' + emails[i] if i in emails else None) in found})
     return {**{i: label for i, label in labels.items() if label}, **names}
 

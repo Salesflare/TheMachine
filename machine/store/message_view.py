@@ -30,6 +30,7 @@ import json
 import re
 import sqlite3
 
+import graph
 from machine.cards import group_sender
 from machine.sources.android import android_app_shown, android_text_shown
 from machine.sources.gmail import phone_link
@@ -156,10 +157,10 @@ def bare_addresses(*values):
     return {m[1].lower() for v in values for part in str(v or '').split(',') if (m := BARE.fullmatch(part))}
 
 
-def address_names(db, addresses, labels=()):
+def address_names(db, addresses):
     """The Graph's name for each of these addresses (lowercased), for the people one is known for: never an address,
-    nor one of `labels` (a source's own label), as the name. Empty without a Graph. Used wherever a sender shows: the
-    viewer, a to-do's source line, the rows of "Checked N messages"."""
+    nor a source's own name ("Slack", "Stripe": graph.SOURCE_NAMES), as the name. Empty without a Graph. Used wherever
+    a sender shows: the viewer, a to-do's source line, the rows of "Checked N messages"."""
     addresses = sorted({str(a).lower() for a in addresses if a})
     if not addresses:
         return {}
@@ -171,10 +172,10 @@ def address_names(db, addresses, labels=()):
                                         f"WHERE n.kind='person' AND j.value IN ({marks})", wanted)]
     except sqlite3.OperationalError:
         return {}  # no graph yet
-    labels, names = set(labels), {}
+    names = {}
     for row in rows:
         name = str(row['name'] or '').strip()
-        if not name or '@' in name or name in labels:
+        if not name or '@' in name or name in graph.SOURCE_NAMES:
             continue
         try:
             ids = {row['id'], *(json.loads(row['info'] or '{}').get('identifiers') or ())}
