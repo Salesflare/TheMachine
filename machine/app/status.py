@@ -4,6 +4,7 @@ source, and what only the owner can fix (needs_you). Moved out of assistant.py a
 (APP_MIXINS)."""
 import hashlib
 import json
+import os
 from pathlib import Path
 import sqlite3
 import threading
@@ -21,6 +22,8 @@ from machine.config import LOG, WORKSPACE
 from machine.delivery.push import reminder_channels, reviews_start_by_themselves
 from machine import names as display_names
 from machine import stamps
+from machine.store.views import STATUS_QUIET, SYNC_TABLES, status_tables
+from machine.timing import aside
 from machine.sources.connectors import (connector_says, docs_offered, docs_provider, docs_unset, docs_write_offered,
                                         reconnect_help, SIGNIN_ONLY)
 from machine.text import clamp
@@ -193,10 +196,13 @@ class StatusApp:
         return self.status_fresh(self.status_kept(max(0, min(int(done), 100)) if isinstance(done, int) else None))
 
     def status_mark(self, done, kept):
-        """What the kept status was built from: the database (a count of the commits seen, from SQLite's data_version on
-        a connection of its own, which changes with each commit by any other connection, this process's own included),
-        the config, and the minute (what depends on the time of day, a snoozed to-do coming back). None when the store
-        has no file or can't be read that way: then nothing is kept. Called with kept['lock'] held."""
+        """What the kept status was built from, as (the rest, the connections' cards): the database, the config, and the
+        minute (what depends on the time of day, a snoozed to-do coming back). The database by the change counters of
+        the tables the status reads (status_counters), so a commit elsewhere (meaning search, a graph run, the
+        Network) keeps it; the cards also by SYNC_TABLES, which each sync round writes. Without those counters, by a
+        count of the commits seen (SQLite's data_version on a connection of its own, which changes with each commit by
+        any other connection, this process's own included), for both. None when the store has no file or can't be read
+        that way: then nothing is kept. Called with kept['lock'] held."""
         path = getattr(getattr(self, 'store', None), 'path', None)
         if not path:
             return None
@@ -204,15 +210,65 @@ class StatusApp:
             if kept.get('watch') is None or kept.get('watch_path') != str(path):
                 kept['watch'] = sqlite3.connect(Path(path).resolve().as_uri() + '?mode=ro', uri=True, timeout=1,
                                                 check_same_thread=False, isolation_level=None)
-                kept['watch_path'], kept['seen'], kept['commits'] = str(path), None, kept.get('commits', 0) + 1
+                kept['watch_path'], kept['seen'], kept['commits'], kept['schema'] = str(path), None, kept.get('commits', 0) + 1, None
             seen = kept['watch'].execute('PRAGMA data_version').fetchall()[0][0]  # all of it: no read left open
+            counted = self.status_counters(kept)
         except sqlite3.Error:
             kept['watch'] = None
             return None
         if seen != kept['seen']:
             kept['seen'], kept['commits'] = seen, kept['commits'] + 1
         config = hashlib.blake2b(json.dumps(self.config, sort_keys=True, default=str).encode(), digest_size=16).digest()
-        return (done, kept['commits'], config, now()[:16])
+        mark = (done, str(path), config, now()[:16], self.status_inputs())
+        if counted is None:
+            return (*mark, kept['commits']), (*mark, kept['commits'])
+        return (*mark, counted[0]), (*mark, counted[0], counted[1])
+
+    def status_counters(self, kept):
+        """(the counters of every table the status reads but SYNC_TABLES, and those of SYNC_TABLES), with the schema
+        version; None while a table it may read has no counter yet (made on the side, then counted from the next ask).
+        Which tables those are is worked out once per schema version."""
+        db = kept['watch']
+        schema = db.execute('PRAGMA schema_version').fetchall()[0][0]
+        if kept.get('schema') != schema:
+            tables = status_tables(db)
+            made = {r[0] for r in db.execute("SELECT name FROM sqlite_master WHERE type='trigger' AND name LIKE 'stamp\\_%' ESCAPE '\\'")}
+            kept['schema'], kept['tables'] = schema, tables
+            kept['unwatched'] = [t for t in tables if not stamps.IDENTIFIER.fullmatch(t)
+                                 or any(f'stamp_{t}_{op}' not in made for op in ('insert', 'update', 'delete'))]
+            if kept['unwatched']:
+                aside(self.watch_status_tables, 'status counters')
+                if db.execute('PRAGMA schema_version').fetchall()[0][0] != schema:  # made at once (no request on this thread)
+                    return self.status_counters(kept)
+        if kept['unwatched']:
+            return None
+        counters = dict(db.execute('SELECT name,n FROM data_stamps').fetchall())
+        if any(t not in counters for t in kept['tables']):
+            return None
+        # every counter but quiet tables' (another module may count one): graph_who and fleet_view too, which the status reads
+        rest = tuple(sorted((k, v) for k, v in counters.items() if k not in STATUS_QUIET and k not in SYNC_TABLES))
+        return (schema, rest), tuple(counters.get(t) for t in SYNC_TABLES)
+
+    def status_inputs(self):
+        """What the status reads besides the database, the config and the minute that changes by itself: the to-dos'
+        preparations held back in memory (a usage limit, busy slots), USER.md (the owner's names in Learning) and the
+        disconnect receipts beside the database (Connections, Disconnected lately). The rest it reads outside the
+        database changes with the config, or is kept longer inside it as before (card_views' CARDS, setup_hints_view)."""
+        import mail_grants
+        holds = getattr(getattr(self, 'store', None), 'preparation_holds', None)
+        files = []
+        for where in (self.user_md, lambda: mail_grants._receipts_path(self.config)):
+            try:
+                found = os.stat(where())
+                files.append((found.st_mtime_ns, found.st_size))
+            except (OSError, ValueError, mail_grants.GrantError):
+                files.append(None)
+        return json.dumps(holds, sort_keys=True, default=str), tuple(files)
+
+    def watch_status_tables(self):
+        """The change counters of the tables the status reads (stamps.watch): on the side, never on a request's read."""
+        with self.store.connect() as db:
+            stamps.watch(db, [t for t in status_tables(db) if stamps.IDENTIFIER.fullmatch(t)])
 
     def status_kept(self, done):
         """The status as built from the database and config (status_built), kept until either changes: the dashboard
@@ -233,12 +289,14 @@ class StatusApp:
             kept['busy'], started = True, time.monotonic()
         result = None
         try:
-            result = self.status_built(done)
+            # only the connections' cards changed (a sync round): the rest as it was, the cards made again
+            rest = last['rest'] if last and last['done'] == done and mark is not None and last['mark'][0] == mark[0] else None
+            result = {**rest, 'connectors': self.status_connectors()} if rest else self.status_built(done)
         finally:
             with kept['lock']:
                 kept['busy'] = False
                 if result is not None and mark is not None:
-                    kept['last'] = {'done': done, 'mark': mark, 'started': started, 'result': result}
+                    kept['last'] = {'done': done, 'mark': mark, 'started': started, 'result': result, 'rest': result}
                 kept['lock'].notify_all()
         return result
 
@@ -276,42 +334,40 @@ class StatusApp:
         return {'agents_settings': self.agents_view(), 'signatures': self.signature_view(), 'lookups': self.lookups_view(),
                 'own_addresses': self.own_addresses_view()}
 
-    def status_built(self, done):
-        result = self.store.snapshot(self.config['accounts'], **({'done': done} if done is not None else {}))
+    def status_manage_url(self):
         # `manage_url`: where this install is set up when that is a web page (a hosted machine); the dashboard links to it.
         manage = str(self.config.get('manage_url') or '')
-        result['manage_url'] = manage if manage.startswith('https://') else None
-        result['account_url'] = fleet.account_url(self.config)  # the CP Account page, when linked to one (Settings, Account ↗)
-        result['learning_changes'] = self.learning_changes_shown(result.get('learning_changes') or [])
-        by_id = {a['id']: a for a in self.config['accounts']}
+        return manage if manage.startswith('https://') else None
+
+    def status_connectors(self):
+        """The connections' cards as the status shows them: Store.connector_views with how each signs in again and is
+        named. Made apart from the rest of the status, as a sync round changes them and little else (status_kept)."""
+        with self.store.connect() as db:
+            connectors = self.store.connector_views(db, self.config['accounts'])
+        manage, by_id = self.status_manage_url(), {a['id']: a for a in self.config['accounts']}
         from work_or_personal import work_labels
-        result['work_labels'] = work_labels(self.config)  # how each company reads on its cards: never a capitalized domain
-        for area in result.get('areas') or []:  # the to-do area picker names a company the same way
-            named = result['work_labels'].get(area.get('id'), '').partition(' · ')[2]
-            if named and area.get('name'):
-                area['label'] = area['label'].replace(area['name'], named) if area['label'] != 'Work' else 'Work'
-                area['name'] = named
-        result['connectors'] = [c for c in result['connectors'] if not docs_unset(c)]
-        for connector in result['connectors']:
-            connector.update(sign_in_help(connector.get('service', ''), connector.get('error'), result['manage_url']))
+        labels = work_labels(self.config)
+        connectors = [c for c in connectors if not docs_unset(c)]
+        for connector in connectors:
+            connector.update(sign_in_help(connector.get('service', ''), connector.get('error'), manage))
             account = by_id.get(connector['id'])
             try:  # its card's title and subtitle, made the same way for every kind (names.account_card)
-                connector.update(display_names.account_card(account, self.config['accounts'], checkpoint_state(connector), result['work_labels']) if account else {})
+                connector.update(display_names.account_card(account, self.config['accounts'], checkpoint_state(connector), labels) if account else {})
             except Exception as error:  # noqa: BLE001 - a name never costs the status: the card falls back to its own
                 LOG.error('card name error=%s', type(error).__name__)
             connector.update(connector_says(account, connector.get('service', 'gmail')))
             connector.update(abilities.view(account) if account else {})
             kind = docs_provider(self.config, account)
-            connector.update(reconnect_help(account, result['manage_url'], docs_offered(self.config, kind)))
-            if kind == 'microsoft' and not result['manage_url'] and 'connect_name' in connector:
+            connector.update(reconnect_help(account, manage, docs_offered(self.config, kind)))
+            if kind == 'microsoft' and not manage and 'connect_name' in connector:
                 connector['signin'] = fleet.SIGNIN_OF['docs']  # self-hosted: Connect Microsoft documents signs in through the control plane
             if kind and 'edit' not in (connector.get('docs_writes') or ()) and not account.get('shared') and docs_write_offered(self.config, kind):
                 connector['docs_write_signin'] = 'microsoft_docs_write'  # Allow edits: Files.ReadWrite.All, its own consent
-            if connector.get('service') == 'teams' and not result['manage_url'] and 'connect_name' in connector:
+            if connector.get('service') == 'teams' and not manage and 'connect_name' in connector:
                 connector['signin'] = fleet.SIGNIN_OF['teams']  # self-hosted: Reconnect is Teams' own Microsoft consent, through the control plane
-            if connector.get('service') in SIGNIN_ONLY and not result['manage_url'] and 'connect_name' in connector:
+            if connector.get('service') in SIGNIN_ONLY and not manage and 'connect_name' in connector:
                 connector['signin'] = connector['service']  # self-hosted: Reconnect is Sign in with it, through the control plane
-            if result['manage_url']:
+            if manage:
                 continue  # a hosted machine: no terminal there, its account page signs in again
             if 'google_signin_expired' in (connector.get('error') or '') and connector['id'] in by_id:
                 connector['sign_in_command'] = gog_signin_command(self.config, by_id[connector['id']])
@@ -319,9 +375,24 @@ class StatusApp:
                 import onboarding
                 connector['sign_in_command'] = 'assistant connect ' + onboarding.connect_name(by_id[connector['id']], self.config)
         try:  # two cards on one tab never read the same: each says what tells it apart (names.tell_apart)
-            display_names.tell_apart(result['connectors'], self.config['accounts'])
+            display_names.tell_apart(connectors, self.config['accounts'])
         except Exception as error:  # noqa: BLE001 - a name never costs the status
             LOG.error('card names apart error=%s', type(error).__name__)
+        return connectors
+
+    def status_built(self, done):
+        result = self.store.snapshot(self.config['accounts'], connectors=False, **({'done': done} if done is not None else {}))
+        result['manage_url'] = self.status_manage_url()
+        result['account_url'] = fleet.account_url(self.config)  # the CP Account page, when linked to one (Settings, Account ↗)
+        result['learning_changes'] = self.learning_changes_shown(result.get('learning_changes') or [])
+        from work_or_personal import work_labels
+        result['work_labels'] = work_labels(self.config)  # how each company reads on its cards: never a capitalized domain
+        for area in result.get('areas') or []:  # the to-do area picker names a company the same way
+            named = result['work_labels'].get(area.get('id'), '').partition(' · ')[2]
+            if named and area.get('name'):
+                area['label'] = area['label'].replace(area['name'], named) if area['label'] != 'Work' else 'Work'
+                area['name'] = named
+        result['connectors'] = self.status_connectors()
         result['reviews_on'] = bool((self.config.get('review_worker') or {}).get('enabled'))  # off until activated
         result['reviews_auto'] = reviews_start_by_themselves(self.config)
         result['hours'] = self.hours()
