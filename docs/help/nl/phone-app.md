@@ -5,6 +5,7 @@ summary: Installeer The Machine op je telefoon of computer en krijg een melding 
 covers: phone-app
 code: manifest.webmanifest, sw.js, dashboard.html
 order: 3
+translated: 3e2919603c5efa9a
 ---
 Het dashboard installeer je als app op een telefoon of computer. Daarna stuurt het een melding voor elke to-do, elk resultaat en elke herinnering als je niet bij het dashboard bent, binnen je [werkuren](work-hours.md). Kies wat het stuurt bij [Meldingen](notifications.md).
 

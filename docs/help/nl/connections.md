@@ -5,6 +5,7 @@ summary: Je bronnen op één plek: hoe het met elke bron gaat, een nieuwe toevoe
 covers: tab:health, saved-signins
 code: dashboard.html, onboarding.py
 order: 1
+translated: 1ca62ab8f65b77ff
 ---
 ## Hoe het ermee gaat
 

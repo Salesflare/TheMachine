@@ -5,6 +5,7 @@ summary: Meetings aus dem Freigabelink eines Kalenders: Proton Calendar, veröff
 covers: connector:proton_calendar, connector:ics
 code: ics_feed.py, ical.py, machine/sources/calendar_setup.py
 order: 15
+translated: b3bcf33b5c027baf
 ---
 ## Was es liest
 

@@ -5,6 +5,7 @@ summary: I controlli sono disattivati, in attesa o fermi sul limite di utilizzo 
 covers: 
 code: dashboard.html, assistant.py
 order: 3
+translated: 39b4aa749445dfba
 ---
 Le attività nascono dai controlli: la tua Machine legge quello che è arrivato, a piccoli gruppi, entro circa 15 minuti.
 

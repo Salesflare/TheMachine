@@ -1,46 +1,47 @@
 ---
 title: Problemen op je computer
 area: troubleshooting
-summary: Je Machine leest de eigen logs van zijn computer en meldt echte problemen, met de oorzaak en een oplossing. Een oplossing draait alleen als je op Do it tikt.
+summary: Je Machine leest de logboeken van zijn eigen computer en vertelt je over echte problemen, met de oorzaak en een oplossing. Een oplossing wordt pas uitgevoerd als je op **Doe het** tikt.
 covers: computer-logs
 code: machine/system_logs.py, machine/sources/gateway.py, onboarding.py
 keywords: logs, journal, journalctl, crash, coredump, systemd, Hyprland, Omarchy, bar
 order: 3
+translated: 1a191d8433bfba2a
 ---
 ## Wat hij leest
 
-Op Linux met systemd leest je Machine het log van je eigen gebruikerssessie: je eigen services en de crashrapporten van je eigen programma's. Op Omarchy kijkt hij ook naar Hyprland en de balk. Het log van het hele systeem leest hij nooit, en hij vraagt nooit om meer toegang.
+Op Linux met systemd leest je Machine het logboek van je eigen gebruikerssessie: je eigen services en de crashmeldingen van je eigen programma's. Op Omarchy controleert hij ook Hyprland en de balk. Hij leest nooit het volledige systeemlogboek en vraagt nooit om meer toegang.
 
-Hij leest welke service stopte, hoe die eindigde en welk programma crashte. Nooit wat er in een logregel staat, dus er wordt geen logtekst bewaard en niets ervan verlaat je computer.
+Hij leest welke service is gestopt, hoe dat is gebeurd en welk programma is vastgelopen. Hij leest nooit wat er in een logregel staat. Zo wordt er geen logtekst bewaard of van je computer verstuurd.
 
-## Wat telt als probleem
+## Wat als een probleem telt
 
-Een service die blijft herstarten, een die op een dag een paar keer mislukte of eruit blijft liggen, een die geen geheugen meer had, en een programma dat crashte. Op Omarchy ook een crash van Hyprland of de balk, en fouten in je Hyprland-instellingen.
+Een service die steeds opnieuw start, meerdere keren op een dag is mislukt of uit blijft, een service die geen geheugen meer had en een programma dat is vastgelopen. Op Omarchy gaat het ook om crashes van Hyprland of de balk en fouten in je Hyprland-instellingen.
 
-Een enkele herstart of een enkele mislukte run is normaal en blijft stil. Net als een service die een paar keer mislukte en daarna weer goed liep.
+Eén keer opnieuw starten of één mislukte uitvoering is normaal en blijft onopgemerkt. Dat geldt ook voor een service die een paar keer is mislukt en daarna weer gewoon draaide.
 
-Browsers die tests en agents besturen (headless, Playwright, Puppeteer, CI) blijven stil, net als een programma dat stopt terwijl zijn service gestopt of herstart wordt. Dat geldt ook voor ontwikkelaarsruns: wat een codeeragent uitvoert, tests en programma's die vanuit een tijdelijke map of cachemap draaien. Een programma dat telkens weer crasht, geeft één to-do die zegt hoe vaak en wanneer.
+Browsers die door tests en agents worden aangestuurd (headless, Playwright, Puppeteer, CI) blijven buiten beeld. Dat geldt ook voor een programma dat stopt terwijl de bijbehorende service wordt gestopt of opnieuw gestart. Ontwikkelaarsactiviteiten blijven eveneens buiten beeld: wat een codeeragent uitvoert, tests en programma's die vanuit een tijdelijke map of cachemap worden gestart. Als een programma steeds opnieuw vastloopt, maakt The Machine één to-do met hoe vaak en wanneer dat gebeurde.
 
-Een script krijgt zijn eigen naam, zoals backup.py, niet python3 of node.
+Een script wordt genoemd bij zijn eigen naam, zoals backup.py, niet als python3 of node.
 
 ## Wat je krijgt
 
-Een to-do die in gewone woorden zegt wat er gebeurde, waarom het telt en wat je kunt doen. De commando's die tonen waarom, staan onder Meer tonen. Vraag het in de chat ervan en The Machine zoekt het uit. Alles wat hij verandert, wacht op je OK, zoals bij Do it.
+Een to-do die in gewone woorden vertelt wat er is gebeurd, waarom het belangrijk is en wat je kunt doen. De opdrachten die laten zien waarom het gebeurde, staan onder **Meer weergeven**. Stel je vraag in de chat van de to-do en The Machine zoekt het uit. Alles wat hij wijzigt, gebeurt pas nadat je akkoord hebt gegeven, net als bij **Doe het**.
 
-Is er een veilige oplossing, dan heeft de to-do Do it. Een dienst van jou die uit blijft, start het opnieuw, en op Omarchy brengt het de balk terug. Do it voert alleen dat commando uit, en het resultaat staat in de chat van de to-do. Het komt nooit aan de diensten van The Machine zelf of de OpenClaw Gateway.
+Als er een veilige oplossing is, staat **Doe het** op de to-do. Als een service van jou uit blijft, start hij die opnieuw. Op Omarchy zet hij de balk weer aan. **Doe het** voert alleen die opdracht uit. Het resultaat verschijnt in de chat van de to-do. Hij komt nooit aan de eigen services van The Machine of de OpenClaw Gateway.
 
-Hetzelfde probleem geeft hooguit één to-do per twee weken, en nooit zolang die to-do nog openstaat. Hooguit twee nieuwe per dag.
+Voor hetzelfde probleem krijg je hooguit één to-do per twee weken, en nooit zolang de bijbehorende to-do nog openstaat. Er komen maximaal twee nieuwe to-do's per dag bij. Een to-do over een service die uit staat, wordt vanzelf gesloten zodra de service weer draait of de melding is gewist.
 
 ## In een terminal
 
-`assistant doctor` toont dezelfde problemen van de laatste dag.
+`assistant doctor` toont dezelfde problemen van de afgelopen dag.
 
 ## Andere computers
 
-Op macOS, Windows en computers zonder systemd leest hij niets en zegt hij dat in `assistant doctor`.
+Op macOS, Windows en computers zonder systemd leest hij niets. Dat staat ook in `assistant doctor`.
 
-Op een gehoste Machine houden wij de server draaiende: zijn problemen gaan naar het team van The Machine, niet als to-do naar jou.
+Op een gehoste Machine zorgen wij ervoor dat de server blijft draaien. Problemen daarmee gaan naar het team van The Machine, niet naar jou als to-do's.
 
-## Uitzetten
+## Uitschakelen
 
-Zet `"computer_logs": false` in config.json en herstart de service.
+Stel `"computer_logs": false` in config.json in en start de service opnieuw.

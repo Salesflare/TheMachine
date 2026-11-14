@@ -1,47 +1,48 @@
 ---
 title: Spraakinvoer
 area: cards
-summary: Praat in plaats van te typen. Wat je zegt komt in het berichtvak, zodat je het kunt nakijken. Er wordt niets verstuurd.
+summary: Praat in plaats van te typen. Wat je zegt, verschijnt in het berichtvak zodat je het kunt controleren. Er wordt niets verstuurd.
 covers: voice-input
 code: voice_input.py, voice_worker.py, dashboard.html
 order: 7
 keywords: voice, dictate, dictation, speak, talk, microphone, mic, speech, transcribe
+translated: f311b21bb4996eb4
 ---
-## Praten in plaats van typen
+## Praat in plaats van te typen
 
-Tik op de microfoon in een berichtvak: de chat van een to-do, **Nieuwe to-do**, **Help**, of het vak om een concept aan te passen. Praat, en tik dan op het vinkje. Of hou de microfoon ingedrukt terwijl je praat en laat los als je klaar bent.
+Tik op de microfoon in een berichtvak: in de chat van een to-do, bij **Nieuwe to-do**, **Help** of in het vak om een concept aan te passen. Praat en tik daarna op het vinkje. Of houd de microfoon ingedrukt terwijl je praat en laat los als je klaar bent.
 
-Terwijl hij luistert, toont het vak een timer. Tik op het kruisje om te stoppen zonder iets te houden. Een opname duurt hoogstens 2 minuten; na 2 minuten stopt hij vanzelf en schrijft hij uit wat je zei. Wat hij al hoorde, staat in de balk terwijl je praat, zodat de tekst er snel is als je stopt.
+Terwijl de microfoon luistert, zie je in het vak een timer en wat hij tot dan toe heeft verstaan. Tik op het kruisje om te stoppen zonder iets te bewaren. Een opname stopt vanzelf na 2 minuten.
 
-Wat je zei komt in het vak, waar je cursor stond. Er wordt niets verstuurd: lees het, pas aan wat je wilt en verstuur het zelf.
+De tekst verschijnt in het vak, op de plek van je cursor. Er wordt niets verstuurd: lees de tekst na, pas aan wat je wilt en verstuur hem zelf.
 
 ## Waar je stem naartoe gaat
 
-In **Instellingen**, **Algemeen**, onder **Spraakinvoer**, zegt één korte regel welke er gebruikt wordt.
+Kies dit onder **Instellingen** > **Algemeen** bij **Spraakinvoer**. Daar staat kort vermeld welke optie actief is.
 
-- **Automatisch** (standaard): als OpenAI is ingesteld op je Machine, zet OpenAI je opname om naar tekst. Dat is een API-sleutel, of een ChatGPT-login als je abonnement audio toelaat. Zonder OpenAI wordt ze op je Machine zelf omgezet naar tekst en verlaat ze hem nooit.
+- **Automatisch** (de standaardinstelling): OpenAI zet je spraak om in tekst als je Machine OpenAI gebruikt (een OpenAI-sleutel of een ChatGPT-abonnement met audio). Anders doet je Machine dit zelf en verlaat de opname je Machine niet.
 - **Op deze Machine**: altijd op je Machine, ook als OpenAI is ingesteld.
-- **Met OpenAI**: altijd OpenAI.
+- **Met OpenAI**: altijd via OpenAI.
 
-Een opname wordt gewist zodra de tekst terug is.
+Een opname wordt verwijderd zodra de tekst klaar is.
 
-## Klaarzetten
+## Klaarmaken
 
-Om spraak zelf om te zetten naar tekst heeft je Machine een spraakmodel nodig, 150 tot 500 MB. Hij downloadt het op de achtergrond, met lage prioriteit, zodra hij is ingesteld, zijn eerste check klaar is en het een tijdje rustig is geweest. Intussen toont Instellingen **Wordt klaargezet (op de achtergrond)**. Als OpenAI gebruikt wordt, doet hij dat nooit.
+Om spraak zelf om te zetten in tekst, downloadt je Machine eerst op de achtergrond een spraakmodel (150 tot 500 MB), wanneer het rustig is. In de tussentijd staat er in Instellingen **Klaarmaken (op de achtergrond)**. Dit gebeurt niet als OpenAI wordt gebruikt.
 
-Tot hij klaar is, gebruikt **Automatisch** de eigen spraakherkenning van je browser, als je browser die heeft, en zegt dat onder het vak. Sommige browsers sturen dat naar hun maker. Met **Op deze Machine** gekozen wacht je opname, en toont het vak "Spraak klaarzetten…" met de resterende tijd.
+Tot die tijd gebruikt **Automatisch** de spraakherkenning van je browser, als die beschikbaar is. Dat staat onder het vak. Sommige browsers sturen je spraak naar de maker van de browser. Als **Op deze Machine** is gekozen, wacht je opname en staat er in het vak ‘Spraak wordt klaargemaakt…’ met de resterende tijd.
 
 ## Instellingen
 
 - **Omgezet naar tekst**: **Automatisch**, **Op deze Machine** of **Met OpenAI**.
-- **Nauwkeurigheid** (alleen op je Machine): **Nauwkeuriger** werkt het best voor de meeste talen. **Sneller** is vlugger, maar met meer foute woorden. Op een Standaard-Machine, die minder geheugen heeft, staat **Sneller** standaard aan.
+- **Nauwkeurigheid** (alleen op je Machine): **Nauwkeuriger** werkt het best voor de meeste talen. **Sneller** is sneller, maar maakt meer fouten. Dit is de standaardinstelling op een Standaard Machine.
 - **Taal**: **Herkennen** werkt voor elke taal van de app. Je eigen taal kiezen is iets sneller.
 
-Wil je liever hardop met The Machine praten, zie dan [Live praten](talk-live.md).
+Wil je in plaats daarvan hardop met The Machine praten? Bekijk [Live praten](talk-live.md).
 
 ## Als het niet werkt
 
-- **De microfoon is geblokkeerd**: sta de microfoon toe voor deze site in de instellingen van je browser. In de telefoonapp staat dat bij de rechten van de app.
-- **Geen microfoon gevonden**: sluit er een aan en probeer het opnieuw.
-- **Je Machine is niet bereikbaar**: je opname blijft bewaard en wordt uitgeschreven zodra je Machine terug is. Wil je het eerder proberen, tik dan op **Nu proberen**.
-- **Ik heb niets verstaan**: praat wat dichter bij de microfoon, of langer.
+- **De microfoon is geblokkeerd**: geef deze site toestemming om je microfoon te gebruiken in de instellingen van je browser. In de telefoonapp vind je dit bij de appmachtigingen.
+- **Geen microfoon gevonden**: sluit een microfoon aan en probeer het opnieuw.
+- **Kan je Machine niet bereiken**: je opname wordt bewaard en uitgeschreven zodra je Machine weer beschikbaar is. Tik op **Nu proberen** om het eerder te proberen.
+- **Ik heb niets verstaan**: praat dichter bij de microfoon of iets langer.

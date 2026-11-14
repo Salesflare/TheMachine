@@ -4,6 +4,7 @@ area: connections
 summary: Deine Telegram-Chats und kleinen Gruppen, gelesen als Gerät deines eigenen Kontos. Antworten erst nach deiner Freigabe.
 covers: connector:telegram
 code: onboarding.py, telegram_mirror.py, telegram_store.py, next_actions.py
+translated: da17aef29a380002
 ---
 ## Was es liest
 

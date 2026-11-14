@@ -5,6 +5,7 @@ summary: Reuniões de um Exchange Server que sua empresa mantém (2013 a 2019 ou
 covers: connector:exchange
 code: ews_calendar.py, machine/sources/calendar_setup.py
 order: 16
+translated: a437b18fcb879c1b
 ---
 ## O que ela lê
 

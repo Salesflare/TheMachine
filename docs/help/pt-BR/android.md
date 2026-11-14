@@ -5,6 +5,7 @@ summary: As notificações do seu celular Android, pelo app OpenClaw. Ele só l�
 covers: connector:android
 code: onboarding.py, android-notifications.mjs
 site: Show a setup code, Approve, Remove
+translated: 344d64dafc75a0a9
 ---
 ## O que ele lê
 

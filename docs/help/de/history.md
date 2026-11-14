@@ -5,6 +5,7 @@ summary: Etwa ein Jahr ältere Mails, Meetings und WhatsApp-, Slack- und Teams-N
 covers: history
 code: machine/app/history.py, machine/store/history.py, machine/store/graph_history.py
 keywords: older messages, backfill, archive, past emails
+translated: 42069e80e6f85bdb
 ---
 ## Was er behält
 

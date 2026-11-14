@@ -5,6 +5,7 @@ summary: Dónde encontrar cada ajuste, del modo claro a la seguridad y tu cuenta
 covers: settings:general
 code: dashboard.html
 order: 1
+translated: 00e42f9aeb395d21
 ---
 Abre **Ajustes** con el engranaje de arriba. Sus pestañas:
 

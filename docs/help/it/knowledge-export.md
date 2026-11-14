@@ -5,6 +5,7 @@ summary: Porta ciò che la tua Machine ha imparato a qualsiasi altra IA, in semp
 covers: knowledge-export
 code: machine/export/knowledge.py, machine/app/knowledge_export.py, cli.py
 order: 6
+translated: 6a917f8ee2aabaa9
 ---
 Tutto ciò che la tua Machine impara è tuo. Portalo a un’altra IA, o tienilo, anche se smetti di usare The Machine.
 

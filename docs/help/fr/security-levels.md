@@ -5,6 +5,7 @@ summary: Un seul choix, Standard ou Prudent, règle vos paramètres de sécurit�
 covers: settings:security
 code: security_levels.py, dashboard.html, fleet.py
 order: 2
+translated: f8e82f192dd70e3a
 ---
 ## Deux niveaux
 

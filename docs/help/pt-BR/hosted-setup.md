@@ -5,6 +5,7 @@ summary: Entre, comece seus dias grátis, conecte seu e-mail e escolha sua IA. L
 code: onboarding.py, dashboard.html
 site: Mail and Calendar, Your AI, Continue with Google, Continue with Microsoft, Turn on, Add more any time, More sources, Open your dashboard, Sources, Ask for a source, Build it, Add a passkey, Use an authenticator app instead, Add to Claude, First to-dos, Back
 order: 1
+translated: 0be6044113aaaa39
 ---
 Uma Machine hospedada roda na nuvem, na UE, só para você. Nós mantemos ela funcionando e atualizada.
 

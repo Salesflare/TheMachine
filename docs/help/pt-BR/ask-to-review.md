@@ -5,6 +5,7 @@ summary: Peça a alguém da equipe ou da sua Família para olhar uma tarefa, edi
 covers: ask-to-review
 code: fleet_reviews.py, dashboard/todos-review.js
 order: 4
+translated: 58823adef1b1f51b
 ---
 ## Pedir a alguém para revisar uma tarefa
 

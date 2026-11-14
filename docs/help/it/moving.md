@@ -1,35 +1,36 @@
 ---
 title: Passa a un altro computer
 area: getting-started
-summary: Esporta tutto ciò che la tua Machine sa in un unico file cifrato e importalo su un’altra Machine, ospitata o tua.
+summary: Esporta tutto ciò che la tua Machine sa in un unico file crittografato e importalo su un’altra Machine, ospitata o tua.
 covers: moving
 code: moving.py, cli.py, machine/app/export.py
 site: Export everything, Delete it now, Download
 order: 5
+translated: a08d8cd091c7d47b
 ---
-Tutto ciò che la tua IA impara è tuo: messaggi, conversazioni, attività con la loro cronologia, bozze, il Graph, ricordi, skill e lavori degli agenti. Puoi portare tutto con te, anche se smetti di usare The Machine.
+Tutto ciò che la tua Machine impara è tuo: messaggi, attività, bozze, Graph, ricordi e skill. Trasferisci tutto su un’altra Machine o conserva una copia.
 
-## Esportare
+## Esportazione
 
 Sul tuo computer:
 
-1. In **Impostazioni** › **Generale** › **Esporta**, premi **Esporta** accanto a Tutto.
-2. Se vuoi, scegli una passphrase. Senza, ricevi un codice di esportazione: annotalo, l’importazione ne ha bisogno.
-3. Se vuoi, attiva **Includi chiavi e token** (serve una passphrase), così non devi ricollegare le tue fonti.
-4. Premi **Avvia esportazione** e poi **Scarica**. Il file viene eliminato dopo 24 ore, o subito con **Elimina**.
+1. Vai in **Impostazioni** › **Generale** › **Esporta** e premi **Esporta** accanto a Tutto.
+2. Se vuoi, scegli una passphrase. Se non ne imposti una, ricevi un codice di esportazione: annotalo, ti servirà per l’importazione.
+3. Se vuoi, attiva **Includi chiavi e token** (richiede una passphrase), così non dovrai collegare di nuovo le tue fonti.
+4. Premi **Avvia esportazione**, poi **Scarica**. Il file viene eliminato dopo 24 ore oppure subito se premi **Elimina**.
 
-Su una Machine ospitata, **Esporta** accanto a Tutto apre la pagina del tuo account. Premi **Esporta tutto** e poi **Scarica**. La tua Machine elimina il file dopo 24 ore, o subito con **Eliminalo ora**.
+Su una Machine ospitata, **Esporta** accanto a Tutto apre la pagina del tuo account. Premi **Esporta tutto**, poi **Scarica**. La tua Machine elimina il file dopo 24 ore oppure subito se premi **Elimina ora**.
 
-Il file è sempre cifrato. Dopo un’esportazione, Impostazioni mostra cosa contiene, con i numeri, e cosa non contiene e perché. Gli accessi a Google e Microsoft tramite il servizio ospitato richiedono sempre un nuovo accesso dall’altra parte.
+Il file è sempre crittografato. In Impostazioni puoi vedere cosa contiene e cosa no. Per gli account Google e Microsoft collegati tramite il nostro accesso ospitato, dovrai accedere di nuovo sull’altra Machine.
 
-## Importare
+## Importazione
 
-1. In **Impostazioni** › **Generale** › **Esporta**, premi **Scegli file** accanto a Importa e scegli l’esportazione.
-2. Digita la sua passphrase o il codice di esportazione e premi **Apri**. The Machine controlla prima tutto il file.
-3. Ospitata: premi **Importa ora**. The Machine si riavvia con essa tra pochi minuti. Sul tuo computer: premi **Sostituisci con questa esportazione**, poi **Sostituisci**. The Machine si riavvia con essa tra un paio di minuti e le Impostazioni mostrano **Importata**.
+1. Vai in **Impostazioni** › **Generale** › **Esporta**, premi **Scegli file** accanto a Importa e seleziona l’esportazione.
+2. Inserisci la passphrase o il codice di esportazione e premi **Apri**. La Machine controlla prima tutto il file.
+3. Su una Machine ospitata, premi **Importa ora**. Sul tuo computer, premi **Sostituisci con questa esportazione**, poi **Sostituisci**. La Machine si riavvia con i dati importati entro pochi minuti e in Impostazioni compare **Importata**.
 
-L’importazione sostituisce ciò che quella Machine ha ora e prima ne conserva una copia. Niente di ciò che era in attesa parte da solo: gli invii in coda aspettano che tu li rinvii.
+L’importazione sostituisce i dati presenti sulla Machine, dopo averne conservato una copia. Non viene inviato nulla automaticamente: gli invii in coda aspettano una tua conferma.
 
-Avanzato: su un computer dove The Machine gira senza gestore dei servizi, le Impostazioni mostrano i comandi. Puoi anche eseguirli tu: `assistant service stop`, `assistant import --staged --force`, `assistant service start`.
+Se Impostazioni non riesce a riavviare The Machine sul tuo computer, ti mostra i comandi da eseguire.
 
-Su un nuovo computer, [installa prima The Machine](self-hosted-setup.md). Poi annulla il piano ospitato se non ti serve più: vedi [Annullare o eliminare](cancel-and-delete.md).
+Su un nuovo computer, [installa The Machine](self-hosted-setup.md) prima. Poi annulla il tuo piano ospitato se non ti serve più: consulta [Annulla o elimina](cancel-and-delete.md).

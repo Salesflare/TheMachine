@@ -1,47 +1,48 @@
 ---
 title: Entrada de voz
 area: cards
-summary: Habla en lugar de escribir. Lo que dices aparece en el cuadro de mensaje para que lo revises. No se envía nada.
+summary: Habla en vez de escribir. Lo que digas aparecerá en el cuadro de mensaje para que lo revises. No se envía nada.
 covers: voice-input
 code: voice_input.py, voice_worker.py, dashboard.html
 order: 7
 keywords: voice, dictate, dictation, speak, talk, microphone, mic, speech, transcribe
+translated: f311b21bb4996eb4
 ---
-## Habla en lugar de escribir
+## Habla en vez de escribir
 
-Toca el micro en un cuadro de mensaje: el chat de una tarea, **Nueva tarea**, **Ayuda**, o el cuadro para cambiar un borrador. Habla y luego toca la marca de verificación. O mantén pulsado el micro mientras hablas y suéltalo cuando termines.
+Toca el micrófono en un cuadro de mensaje: en el chat de una tarea, en **Nueva tarea**, **Ayuda** o en el cuadro para cambiar un borrador. Habla y luego toca la marca de verificación. También puedes mantener pulsado el micrófono mientras hablas y soltarlo cuando termines.
 
-Mientras escucha, el cuadro muestra un temporizador. Toca la cruz para parar sin guardar nada. Una grabación puede durar hasta 2 minutos; a los 2 minutos se detiene sola y escribe lo que dijiste. Lo que ya oyó aparece en la barra mientras hablas, así el texto está listo poco después de parar.
+Mientras escucha, el cuadro muestra un temporizador y lo que ha oído hasta el momento. Toca la X para detener la grabación sin guardar nada. La grabación se detiene automáticamente después de 2 minutos.
 
-Lo que dijiste aparece en el cuadro, donde estaba tu cursor. No se envía nada: léelo, cambia lo que quieras y envíalo tú.
+El texto aparece en el cuadro, donde estaba el cursor. No se envía nada: léelo, haz los cambios que quieras y envíalo tú.
 
 ## Adónde va tu voz
 
-En **Ajustes**, **General**, bajo **Entrada de voz**, una línea corta dice cuál se usa.
+Elige una opción en **Ajustes**, **General**, en **Entrada de voz**. Ahí se indica brevemente cuál está en uso.
 
-- **Automático** (por defecto): cuando OpenAI está configurado en tu Machine, OpenAI pasa tu grabación a texto. Eso es una clave de API, o un inicio de sesión de ChatGPT si tu plan permite audio. Sin OpenAI, se pasa a texto en tu propia Machine y nunca sale de ella.
-- **En esta Machine**: siempre en tu Machine, aunque OpenAI esté configurado.
-- **Con OpenAI**: siempre OpenAI.
+- **Automático** (la opción predeterminada): OpenAI convierte la grabación en texto cuando tu Machine usa OpenAI (con una clave de OpenAI o un plan de ChatGPT que permite usar audio). De lo contrario, tu Machine lo hace por su cuenta y la grabación no sale de ella.
+- **En esta Machine**: siempre en tu Machine, incluso si OpenAI está configurado.
+- **Con OpenAI**: siempre con OpenAI.
 
-Una grabación se borra en cuanto vuelve el texto.
+La grabación se elimina en cuanto el texto está listo.
 
 ## Preparación
 
-Para pasar la voz a texto ella misma, tu Machine necesita un modelo de voz de 150 a 500 MB. Lo descarga en segundo plano, con prioridad baja, cuando ya está configurada, terminó su primera revisión y lleva un rato tranquila. Mientras tanto, Ajustes muestra **Preparándose (en segundo plano)**. Nunca lo hace cuando se usa OpenAI.
+Para convertir la voz en texto por su cuenta, tu Machine primero descarga un modelo de voz (de 150 a 500 MB) en segundo plano, cuando no está en uso. Mientras tanto, en Ajustes aparece **Preparándose en segundo plano**. Se omite este paso si se usa OpenAI.
 
-Hasta que esté lista, **Automático** usa el reconocimiento de voz de tu navegador si tiene uno, y lo dice bajo el cuadro. Algunos navegadores lo envían a su fabricante. Con **En esta Machine** elegido, tu grabación espera y el cuadro muestra "Preparando la voz…" con el tiempo que falta.
+Hasta entonces, **Automático** usa el reconocimiento de voz propio del navegador, si lo tiene, y lo indica debajo del cuadro. Algunos navegadores envían la grabación a su fabricante. Si eliges **En esta Machine**, la grabación queda en espera y el cuadro muestra «Preparando la entrada de voz…» junto con el tiempo restante.
 
 ## Ajustes
 
 - **Pasado a texto**: **Automático**, **En esta Machine** o **Con OpenAI**.
-- **Precisión** (solo en tu Machine): **Más preciso** funciona mejor para la mayoría de los idiomas. **Más rápido** va más rápido pero se equivoca en más palabras. En una Machine Standard, que tiene menos memoria, **Más rápido** es el valor por defecto.
-- **Idioma**: **Detectar** funciona para todos los idiomas de la app. Elegir el tuyo es un poco más rápido.
+- **Precisión** (solo en tu Machine): **Más preciso** funciona mejor con la mayoría de los idiomas. **Más rápido** tarda menos, pero comete más errores, y es la opción predeterminada en una Machine Standard.
+- **Idioma**: **Detectar** funciona con todos los idiomas de la aplicación. Si eliges el tuyo, será un poco más rápido.
 
-Para hablar en voz alta con The Machine, mira [Hablar en vivo](talk-live.md).
+Para hablar en voz alta con The Machine, consulta [Habla en directo](talk-live.md).
 
 ## Si no funciona
 
-- **El micro está bloqueado**: permite el micro para este sitio en los ajustes de tu navegador. En la app del teléfono, está en los permisos de la app.
-- **No se encontró ningún micro**: conecta uno e inténtalo de nuevo.
-- **No se puede conectar con tu Machine**: tu grabación se guarda y se escribe cuando tu Machine vuelva. Para intentarlo antes, toca **Probar ahora**.
-- **No entendí nada**: habla un poco más cerca del micro, o durante más tiempo.
+- **El micrófono está bloqueado**: permite el acceso al micrófono para este sitio en los ajustes del navegador. En la aplicación del teléfono, está en los permisos de la aplicación.
+- **No se encontró ningún micrófono**: conecta uno e inténtalo de nuevo.
+- **No se puede conectar con tu Machine**: la grabación se conserva y se transcribe cuando tu Machine vuelva a estar disponible. Para intentarlo antes, toca **Probar ahora**.
+- **No se entendió nada**: acércate al micrófono o habla un poco más.

@@ -5,6 +5,7 @@ summary: Eine kostenlose Family Fleet für bis zu 6 Personen: wann alle frei sin
 covers: family
 code: family.py, dashboard.html
 order: 6
+translated: 3af87ad0b491b336
 ---
 ## Was sie macht
 

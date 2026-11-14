@@ -5,6 +5,7 @@ summary: Klick auf eine E-Mail-Adresse, um aus deinem eigenen Postfach zu schrei
 covers: email-composer
 code: machine/app/mail.py, dashboard/todos-compose.js
 order: 12
+translated: 568ac451673bc141
 ---
 ## Öffnen
 

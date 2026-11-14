@@ -5,6 +5,7 @@ summary: Pagos fallidos, disputas, cancelaciones y suscripciones nuevas grandes.
 covers: connector:stripe
 code: connectors/stripe.py, shared_connectors.py
 site: Sign in with Stripe, Connect, More sources, Share Stripe, Connect Stripe, Remove
+translated: 99a14108376ddcc1
 ---
 ## Qué lee
 

@@ -5,6 +5,7 @@ summary: Handleidingen die je Machine volgt. Schrijf ze zelf, importeer ze uit C
 covers: settings:skills
 code: skills.py, dashboard.html
 order: 4
+translated: 98fe851d553ed3dc
 ---
 Een skill vertelt je Machine hoe hij iets doet, zoals "vragen over prijzen beantwoorden". Het zijn alleen instructies: een skill verandert nooit wat je Machine mag doen.
 

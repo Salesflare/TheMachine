@@ -4,6 +4,7 @@ area: graph
 summary: Die Firmen in deinen Nachrichten: ihre Seite, Personen und Projekte, und wie du sie hinzufügst, bearbeitest oder zusammenlegst.
 code: graph.py, crm.py, enrichment.py, dashboard.html
 order: 3
+translated: a69ae21b14edaf94
 ---
 Firmen, aus den Adressen und Namen in deinen Nachrichten. Branche, Größe, Ort und Logo werden nachgeschlagen: siehe [Organisationsdetails](organization-data.md).
 

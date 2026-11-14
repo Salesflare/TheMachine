@@ -5,6 +5,7 @@ summary: Chegue a tudo no painel pelo teclado: a paleta, as teclas de navegaçã
 covers: keyboard
 code: dashboard.html
 order: 5
+translated: 9d9a056e308ced41
 ---
 ## A paleta
 

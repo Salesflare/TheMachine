@@ -6,6 +6,7 @@ covers: omarchy
 code: machine/omarchy.py, dashboard/settings-omarchy.js
 order: 7
 keywords: omarchy, theme, colors, hyprland, arch, linux, desktop
+translated: 44bd9921ac59483e
 ---
 ## Seguire il tema Omarchy
 

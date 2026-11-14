@@ -5,6 +5,7 @@ summary: Die Benachrichtigungen auf deinem Android-Handy, über die OpenClaw-App
 covers: connector:android
 code: onboarding.py, android-notifications.mjs
 site: Show a setup code, Approve, Remove
+translated: 344d64dafc75a0a9
 ---
 ## Was sie liest
 

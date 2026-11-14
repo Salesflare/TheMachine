@@ -5,6 +5,7 @@ summary: Je vermeldingen, antwoorden en directe berichten op X, gelezen in de ei
 covers: connector:x
 code: connectors/x.py, integrations/x_inbox.py
 site: Connect, More sources, Remove
+translated: 5cbe43055458daf4
 ---
 ## Wat het leest
 

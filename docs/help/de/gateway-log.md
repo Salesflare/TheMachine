@@ -1,37 +1,38 @@
 ---
 title: Zustand deiner Machine
 area: connections
-summary: Das eigene Log deiner Machine, damit sie eigene Probleme erkennt. Es liest nur.
+summary: Das eigene Protokoll deiner Machine, damit sie Probleme selbst erkennt. Sie liest nur.
 covers: connector:gateway
 code: onboarding.py
 site: More sources, Remove
+translated: 3a06400a28396465
 ---
-## Was es liest
+## Was sie liest
 
-Das eigene Log deiner Machine: fehlgeschlagene Durchläufe, abgelehnte Übergaben, Telegram-Nachrichten, die nicht rausgingen, und Fehler von The Machine selbst. Eine Aufgabe sagt dir, wenn etwas repariert werden muss.
+Das eigene Protokoll deiner Machine: fehlgeschlagene Ausführungen, abgelehnte Übergaben, Telegram-Nachrichten, die nicht gesendet wurden, und eigene Fehler von The Machine. Eine Aufgabe sagt dir, wenn etwas behoben werden muss. Auf deinem eigenen Computer gehört dazu **Die letzte Aktualisierung fertig installieren**: Ein Teil eines Updates erfordert nachts einen kurzen Neustart, und in einigen Nächten war das nicht möglich. Frag The Machine im Chat danach, und sie schließt die Installation ab. Die Aufgabe wird automatisch geschlossen, sobald dieser Teil installiert ist.
 
-## Korrekturen, die eine Aktualisierung beiseitegelegt hat
+## Korrekturen, die ein Update zurückgestellt hat
 
-Wenn The Machine sich aktualisiert und eine ihrer eigenen Korrekturen nicht mehr zur neuen Version passt, legt die Aktualisierung diese Korrektur beiseite und macht weiter, damit deine Machine nie auf einer alten Version bleibt. Eine Aufgabe, **Eine beiseitegelegte Korrektur neu machen**, nennt die Korrektur.
+Wenn The Machine ein Update installiert und eine ihrer eigenen Korrekturen nicht mehr zur neuen Version passt, stellt das Update diese Korrektur zurück und fährt fort. So bleibt deine Machine immer auf dem neuesten Stand. Eine Aufgabe, **Eine beiseitegelegte Korrektur neu machen**, nennt die Korrektur.
 
-Mit **Neu machen** macht deine Machine sie auf der neuen Version neu, wie jede eigene Korrektur: Du siehst die Änderung und tippst auf **Merge fix**. Sobald sie gemergt ist, fällt die alte Kopie weg. Oder schließ die Aufgabe.
+Mit **Neu machen** lässt du deine Machine die Korrektur in der neuen Version erneut erstellen, wie bei jeder eigenen Korrektur: Du siehst die Änderung und tippst auf **Korrektur zusammenführen**. Sobald sie zusammengeführt ist, wird die alte Kopie verworfen. Oder schließ die Aufgabe.
 
-## Deine eigenen Dateien, die eine Aktualisierung behalten hat
+## Eigene Dateien, die ein Update beibehalten hat
 
-Wenn eine neue Version eine Datei mit demselben Namen mitbringt wie eine, die du selbst hinzugefügt hast, benennt die Aktualisierung deine um, statt sie zu überschreiben, und macht weiter. Eine Aufgabe sagt, wie viele sie behalten hat, und nennt jeden alten und neuen Namen. Schließ sie, wenn du sie geprüft hast.
+Wenn eine neue Version eine Datei mit demselben Namen enthält wie eine Datei, die du selbst hinzugefügt hast, benennt das Update deine Datei um, statt sie zu überschreiben, und fährt fort. Eine Aufgabe sagt dir, wie viele Dateien beibehalten wurden, und listet jeweils den alten und den neuen Namen auf. Schließ die Aufgabe, sobald du die Namen überprüft hast.
 
-## Was es tun kann
+## Was sie tun kann
 
-Nichts. Es liest nur das Log auf deiner eigenen Machine.
+Nichts. Sie liest nur das Protokoll auf deiner eigenen Machine.
 
-## Verbinden
+## Verbinde sie
 
-- Auf einer gehosteten Machine steht es auf deiner Einrichtungsseite unter **Weitere Quellen**, als Zustand deiner Machine. Eins pro Machine.
+- Auf einer gehosteten Machine findest du sie auf deiner Einrichtungsseite unter **Weitere Quellen** als Machine health. Eine pro Machine.
 - Auf deinem eigenen Computer: Führe `assistant connect gateway` aus.
 
-## Entfernen
+## Entferne sie
 
-- Im Dashboard: **Verbindungen**, öffnen, **Details**, dann **Trennen**.
+- Im Dashboard: **Verbindungen** öffnen, **Details** und dann **Trennen** auswählen.
 - Auf einer gehosteten Machine kannst du auch auf deiner Einrichtungsseite daneben auf **Entfernen** tippen.
 
-Woanders gibt es nichts zu deinstallieren.
+Du musst sie nirgendwo sonst deinstallieren.

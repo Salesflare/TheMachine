@@ -1,50 +1,51 @@
 ---
 title: Vrienden en het Network
 area: fleet
-summary: Voeg vrienden toe op gebruikersnaam, vind mensen die je kent met een Machine, en koppel een Machine op je eigen computer.
+summary: Voeg vrienden toe op gebruikersnaam, vind bekenden met een Machine en koppel een Machine op je eigen computer.
 covers: friends
 code: friends.py, network.py, meet.py, meet_app.py, dashboard.html
 site: Pair a self-hosted Machine
 order: 5
+translated: 3565b3898b234575
 ---
 ## Vrienden
 
-Voeg iemand toe met de exacte gebruikersnaam, in het tabblad **Fleet** onder Vrienden. Vrienden kunnen vragen wie iemand kent, context voor een afspraak en warme introducties krijgen, en zien wanneer je bezet bent (alleen bezette tijden, nooit waarmee). Je kunt een vriend altijd verwijderen of blokkeren.
+Voeg iemand toe met de exacte gebruikersnaam, op het tabblad **Fleet** onder Vrienden. Vrienden kunnen vragen wie iemand kent, context over afspraken en introducties via gezamenlijke contacten krijgen, en zien wanneer je bezet bent (alleen wanneer, nooit waarvoor). Je kunt een vriend altijd verwijderen of blokkeren.
 
-## Mensen vinden die je kent
+## Bekenden vinden
 
-In het paneel Network:
+In **Fleet**, onder **Network**:
 
-- "Kijk welke van mijn contacten een Machine hebben" stelt mensen voor die je kent.
-- "Laat mensen die mijn e-mailadres hebben me vinden" laat hen jou vinden.
+- **Controleren welke van mijn contacten een Machine hebben** stelt mensen voor die je kent.
+- **Mensen met mijn e-mailadres toestaan mij te vinden** zorgt ervoor dat zij je kunnen vinden.
 
-Allebei staan standaard aan, en uit bij het beveiligingsniveau Voorzichtig. Zet ze uit wanneer je wilt; je keuze blijft. Mensen vinden je via je login-e-mailadres en je gekoppelde adressen, behalve gedeelde zoals info@: die blijven uit tot je ze aanzet.
+Beide staan standaard aan en staan uit op het beveiligingsniveau Zorgvuldig. Je kunt ze altijd uitzetten. Je keuze blijft bewaard. Mensen kunnen je vinden via je e-mailadres voor aanmelden (altijd aan) en je gekoppelde adressen. Je kunt elk adres apart in- en uitschakelen onder **Vindbaar voor**, behalve gedeelde adressen zoals info@, die uit blijven tot je ze aanzet.
 
-Mensen die je kent en die op het Network zitten, worden meteen voorgesteld als je het aanzet, en wanneer iemand later aansluit. Een match komt met Verbinden, Niet nu of **Nooit voorstellen**. **Het Network verlaten** haalt je eraf.
+Bekenden verschijnen meteen zodra je dit aanzet, en ook wanneer ze zich later aanmelden. Bij elke persoon kun je kiezen voor **Verbinden**, **Niet nu** of **Nooit voorstellen**. Zodra jullie vrienden zijn, wordt die persoon niet meer voorgesteld. Met **Het Network verlaten** word je uit het Network verwijderd.
 
-Mensen die het vindt, staan in je lijst Personen met **Heeft een Machine**. Het kijkt naar de adressen uit je berichten en de adressen die je met **Bewerken** aan iemand toevoegde: meldde iemand zich aan met een ander adres, voeg het dan aan die persoon toe. Op de pagina van iemand die het vond, stuurt **Toevoegen als vriend** hetzelfde verzoek als Verbinden (**Toevoegen als familie** staat in het menu ⋯).
+Bij mensen die het systeem vindt, staat **Heeft een Machine** in je lijst Personen. Er wordt gekeken naar de adressen in je berichten en naar adressen die je aan iemand hebt toegevoegd met **Bewerken**. Als iemand zich met een ander adres heeft aangemeld, voeg dat adres dan toe aan die persoon. Op de pagina van iemand die is gevonden, stuurt **Toevoegen als vriend** hetzelfde verzoek als Verbinden (**Toevoegen als familie** staat in het ⋯-menu).
 
-Bij iemand zonder Machine staat **Uitnodigen voor The Machine**: dat opent de mail die ze krijgen in **Deze e-mail versturen?**, net als bij elke to-do, om aan te passen. Er gaat niets weg voor **Nu versturen**. Sluit je het, dan wacht de uitnodiging als to-do. Zonder mailbox die kan versturen: **Kopiëren** of **Openen in je mail**.
+Bij iemand zonder Machine staat **Uitnodigen voor The Machine**. Daarmee open je de e-mail die diegene krijgt bij **Deze e-mail versturen?**, dezelfde e-mail als bij elke to-do. Je kunt die nog aanpassen. Er wordt niets verstuurd voordat je op **Nu versturen** drukt. Sluit je het venster, dan blijft de uitnodiging als to-do staan. Kun je geen e-mail versturen vanuit je mailbox? Kies dan **Kopiëren** of **Openen in je mail**.
 
-Telefoonnummers tellen ook: de nummers uit je WhatsApp-chats met mensen aan wie je schreef of die je ontmoette, en de nummers die je met **Bewerken** toevoegde. Je gekoppelde WhatsApp-nummer en de nummers onder Over jou maken je vindbaar, elk met een eigen schakelaar onder **Vindbaar voor**. Een nummer vindt iemand alleen als die jou ook opzocht, of als jullie vrienden zijn, dus niemand kan nummers proberen om te zien wie een Machine heeft.
+Telefoonnummers tellen ook mee: de nummers in je WhatsApp-chats met mensen aan wie je hebt geschreven of die je hebt ontmoet, en nummers die je hebt toegevoegd met **Bewerken**. Je gekoppelde WhatsApp-nummer en de nummers onder **Over jou** maken je vindbaar. Je kunt elk nummer apart in- en uitschakelen onder **Vindbaar voor**. Een nummer vindt iemand alleen als diegene jou ook heeft opgezocht of als jullie vrienden zijn. Zo kan niemand nummers proberen om te zien wie een Machine heeft.
 
-## Afspreken met andere Machines
+## Afspraken maken met andere Machines
 
-Schrijft iemand met een Machine "laten we volgende week afspreken", dan vraagt je Machine de hunne naar vrije tijden en zoekt hij er een die jullie allebei past, binnen je werkuren. Jullie krijgen elk één to-do, zoals "Afspraak met Alex Example", met de tijd eronder. Tik op **Boek het**, **Andere tijd** of **Niet nodig**. De uitnodiging gaat pas weg als jullie allebei op Boek het tikten.
+Als iemand met een Machine schrijft: "Laten we volgende week afspreken", vraagt jouw Machine aan die van die persoon wanneer je vrij bent en zoekt hij een moment dat jullie allebei uitkomt, binnen je werkuren. Jullie krijgen allebei één to-do, zoals "Afspreken met Alex Example", met de tijd eronder. Tik op **Boek het**, **Andere tijd** of **Niet nodig**. De uitnodiging wordt pas verstuurd als jullie allebei op Boek het hebben getikt.
 
-Alleen vrij of bezet gaat over, end-to-end versleuteld, voor hoogstens 14 dagen en afgerond op 15 minuten. Privé-afspraken tellen als bezet. Een Machine kan alleen vragen als jullie elkaar over en weer mailden. Stel het in in het paneel Network onder **Wat andere Machines de mijne mogen vragen**: **Vrij/bezet om af te spreken** of **Uit**, met de duur van een afspraak, je buffer en voorkeurstijden. Elke vraag staat in Activiteit, onder Agenda.
+Alleen je beschikbaarheid, vrij of bezet, wordt gedeeld, end-to-end versleuteld, voor maximaal 14 dagen en afgerond op 15 minuten. Privéafspraken tellen als bezet. Een Machine kan dit alleen vragen als jullie allebei over en weer hebben gemaild. Stel dit in onder **Wat andere Machines de mijne mogen vragen**: **Vrij/bezet om af te spreken** of **Uit**, samen met de duur van je afspraak, de buffer en je voorkeurstijden. Elke vraag staat onder Agenda in **Activiteit**.
 
-Geen Machine of geen antwoord: het concept van de e-mail krijgt een link waar de ander een van je vrije tijden kiest. Die keuze wordt een to-do met **Boek het**; er wordt niets geboekt voor je erop tikt.
+Is er geen Machine aan de andere kant, of komt er geen antwoord? Dan bevat het e-mailconcept een link waarmee de ander een van je vrije momenten kan kiezen. Die keuze wordt een to-do met **Boek het**. Er wordt niets geboekt voordat je erop tikt.
 
-De link toont alleen vrije tijden, volgens dezelfde regels, en verder niets over jou. Hij loopt af zodra de afspraak geboekt is, of na 14 dagen. In de e-mail staat hij als "Pick a time". Onderaan zegt de pagina dat je Machine deze tijden vond, met "Get yours." en je voornaam. Zet dat uit met **Voettekst bij boekingslinks**. Elke link en keuze staat in Activiteit.
+De link toont alleen vrije momenten, volgens dezelfde regels, en verder niets over jou. De link verloopt zodra de afspraak is geboekt of na 14 dagen. In de e-mail staat "Kies een tijd". Onderaan de pagina staat "Je Machine heeft deze tijden gevonden. Ontdek de jouwe." met je voornaam. Zet dit uit met **Voettekst bij boekingslinks**. Elke link en keuze staat in **Activiteit**.
 
 ## Een Machine op je eigen computer
 
-Zo sluit je aan op het Network vanaf een Machine die je zelf draait:
+Zo word je lid van het Network met een Machine die je zelf beheert:
 
 1. Open in het dashboard van je Machine **Instellingen** en druk op **Word lid van het Network**.
-2. Log op de pagina die opent in (of maak je account) en bevestig. Je Machine pikt het zelf op, zonder herstart.
+2. Meld je aan op de pagina die wordt geopend (of maak een account aan) en bevestig. Je Machine pikt dit vanzelf op, zonder opnieuw opstarten.
 
-De manier met een code werkt nog steeds: druk op je accountpagina op app.themachine.computer op **Een zelf gehoste Machine koppelen**, voer dan op je computer `assistant fleet-pair` uit met de code, en herstart. De code werkt één keer, 15 minuten lang.
+Je kunt ook nog steeds de code gebruiken: druk op **Een zelfgehoste Machine koppelen** op je accountpagina op app.themachine.computer, voer daarna `assistant fleet-pair` uit met de code op je computer en start opnieuw op. De code werkt één keer en is 15 minuten geldig.
 
-Maximaal 5 Machines per account. Elke Machine kun je daar ontkoppelen.
+Je kunt maximaal 5 Machines per account hebben. Je kunt elke Machine daar loskoppelen.

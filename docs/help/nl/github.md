@@ -5,6 +5,7 @@ summary: Reviewverzoeken, vermeldingen, toewijzingen en mislukte CI-runs. Maakt 
 covers: connector:github
 code: connectors/github.py, onboarding.py
 site: Sign in with GitHub, More sources, Remove
+translated: e97127e156e56f7d
 ---
 ## Wat het leest
 

@@ -5,6 +5,7 @@ summary: Kundengespräche in deinem Intercom-Workspace. Es antwortet erst, nachd
 covers: connector:intercom
 code: connectors/intercom.py, onboarding.py
 site: Sign in with Intercom, More sources, Remove
+translated: 2cbee87e6d24c0a9
 ---
 ## Was es liest
 

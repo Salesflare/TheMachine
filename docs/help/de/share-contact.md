@@ -5,6 +5,7 @@ summary: Schick einen Kontakt, oder deinen eigenen, an ein Teammitglied, einen F
 covers: share-contact
 code: contact_share.py, fleet.py, dashboard.html
 order: 6
+translated: 66412d1dc4e965c2
 ---
 ## Jemanden teilen
 

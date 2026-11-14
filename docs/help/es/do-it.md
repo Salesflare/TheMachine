@@ -5,6 +5,7 @@ summary: Hazlo prepara el trabajo. No se envía, paga ni cambia nada hasta que a
 covers: do-it
 code: dashboard.html, next_actions.py, assistant.py
 order: 2
+translated: 6284dddb10c7b332
 ---
 ## Qué hace Hazlo
 

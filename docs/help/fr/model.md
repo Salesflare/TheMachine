@@ -1,41 +1,42 @@
 ---
 title: Modèle
 area: settings
-summary: Quel modèle d’IA répond pour vous, à quel point il réfléchit, et quelle part des limites de votre forfait il a utilisée.
+summary: Quel modèle d’IA vous répond, son niveau de réflexion et la part des limites de votre forfait qu’il a utilisée.
 covers: settings:model, chat-model
 code: dashboard.html, docs/models.md, chat_model.py
 order: 5
+translated: eee77413a4bdbf0b
 ---
-Dans **Paramètres**, **Modèle** montre le modèle utilisé pour le travail en arrière-plan (marqué **Travail en arrière-plan**) et votre mode de connexion, par exemple avec ChatGPT.
+Dans **Paramètres** > **Modèle**, vous pouvez voir quel modèle d’IA effectue le **Travail en arrière-plan** et comment vous êtes connecté, par exemple avec ChatGPT.
 
 ## Modèle et réflexion pour les chats
 
-Sous **Chats**, choisissez le modèle et le niveau de réflexion qu’utilisent vos chats de tâche et l’Aide. La liste n’a que les modèles proposés par votre connexion, comme ceux de ChatGPT si vous vous êtes connecté avec ChatGPT, et chaque modèle seulement les niveaux qu’il a.
+Dans **Chats**, choisissez le modèle et le niveau de réflexion pour vos chats de tâches et l’aide. Vous ne voyez que les modèles et les niveaux proposés par votre mode de connexion.
 
-Plus de réflexion répond mieux aux questions difficiles, mais c’est plus lent et cela utilise davantage votre forfait. **Réflexion ultra** fait appel à des assistants pour les questions les plus difficiles : c’est le plus lent, et c’est ce qui utilise le plus. Un changement s’applique dès le message suivant. Une nouvelle Machine démarre en **Réflexion faible** si son modèle la propose : de bons résultats pour beaucoup moins de votre forfait.
+Un niveau de réflexion plus élevé permet de mieux répondre aux questions difficiles, mais prend plus de temps et consomme davantage de votre forfait. **Réflexion ultra** fait appel à des assistants pour les questions les plus difficiles et consomme le plus. Une nouvelle Machine utilise **Réflexion faible** par défaut : vous obtenez de bons résultats en consommant beaucoup moins de votre forfait. Tout changement s’applique à partir du message suivant.
 
-Un chat peut utiliser autre chose : sous sa zone de message, appuyez sur le modèle ou le niveau de réflexion. Ce choix vaut pour ce chat seulement. Choisissez à nouveau la même chose que dans Paramètres pour suivre les Paramètres.
+Pour changer le modèle ou le niveau de réflexion d’un seul chat, appuyez sur le modèle ou le niveau de réflexion sous sa zone de message. Sélectionnez de nouveau **Paramètres** pour appliquer les réglages de Paramètres.
 
-Les vérifications, votre profil et les brouillons préparés à l’avance gardent leur propre modèle.
+Les vérifications, votre profil et les brouillons préparés à l’avance conservent leur propre modèle.
 
 ## Limites
 
-Si votre forfait a des limites d’utilisation, il montre la part utilisée de chacune et quand elle se réinitialise, par exemple la limite de 5 heures et la limite hebdomadaire d’un forfait ChatGPT ou Claude. Consulter ces chiffres n’utilise jamais votre forfait.
+Si votre forfait impose des limites d’utilisation, comme les limites de 5 heures et hebdomadaires d’un forfait ChatGPT ou Claude, vous pouvez voir la part utilisée et l’heure de réinitialisation de chaque limite. Consulter ces informations ne consomme pas votre forfait.
 
-## De la place pour vos propres chats
+## Garder de la marge pour vos propres chats
 
-Le travail en arrière-plan (vérifications, votre profil, brouillons préparés à l’avance) laisse de la place pour vos propres chats. Il se met en pause vers 65 % de la limite de 5 heures. Les vérifications de ce qui est arrivé continuent jusqu’à environ 90 % de la limite hebdomadaire ; le reste la répartit à environ un septième par jour. Une connexion sans limite d’utilisation, comme une clé API, n’est jamais mise en pause.
+Le Travail en arrière-plan garde de la marge pour vos propres chats. Il se met en pause lorsque la limite de 5 heures est atteinte à environ 65 %. Les vérifications des nouveaux messages continuent jusqu’à environ 90 % de la limite hebdomadaire. Les autres tâches utilisent environ un septième de la limite hebdomadaire par jour. Une connexion sans limites, comme une clé API, ne se met jamais en pause.
 
-Le travail en arrière-plan ne tourne jamais sur GPT-6 Astra. Il utilise GPT-6.1 Sol à la place.
+Le Travail en arrière-plan ne fonctionne jamais avec GPT-6 Astra. Il utilise plutôt GPT-6.1 Sol.
 
-## Quand une limite est atteinte
+## Lorsqu’une limite est atteinte
 
-Le haut du tableau de bord indique quelle limite est atteinte et quand elle se réinitialise. Le travail attend, puis reprend là où il s’était arrêté. Rien n’est perdu. Certains forfaits ChatGPT incluent des réinitialisations : **Utiliser une réinitialisation** remet les limites à zéro, après confirmation. Sinon, **Voir les réinitialisations dans ChatGPT** ouvre la page de ChatGPT.
+En haut du tableau de bord, vous pouvez voir quelle limite a été atteinte et quand elle sera réinitialisée. Le travail est mis en attente, puis reprend là où il s’était arrêté. Rien n’est perdu. Si votre forfait ChatGPT permet des réinitialisations, **Utiliser une réinitialisation** réinitialise les limites. Sinon, **Voir les réinitialisations dans ChatGPT** ouvre la page de ChatGPT.
 
 ## Avec un modèle de secours
 
-Si votre Machine a un modèle de secours sur un autre forfait ou fournisseur, comme une clé API, il prend le relais quand une limite est atteinte. Tant que ce modèle de secours fonctionne, rien ne se met en pause ni n’attend vos limites, et le haut du tableau de bord indique « Limite ChatGPT atteinte, votre modèle de secours prend le relais. » S’il cesse de fonctionner, les pauses reviennent.
+Si votre Machine dispose d’un modèle de secours associé à un autre forfait ou fournisseur, il prend le relais lorsqu’une limite est atteinte, sans mettre le travail en attente. En haut du tableau de bord, le message « Limite ChatGPT atteinte, utilisation du modèle de secours. » s’affiche. Si le modèle de secours cesse de fonctionner, les pauses reprennent.
 
 ## Changer le modèle principal
 
-Le modèle principal est celui qu’utilise le reste de The Machine. Sur une Machine hébergée, choisissez-en un autre sur votre page de configuration, sous Votre modèle. Sur votre propre ordinateur, changez-le dans OpenClaw. Voir [ChatGPT](chatgpt.md) et le [guide des modèles](https://github.com/Salesflare/TheMachine/blob/main/docs/models.md).
+Le modèle principal est utilisé par le reste de The Machine. Pour une Machine hébergée, vous pouvez le changer sur votre page de configuration, sous Votre IA. Sur votre propre ordinateur, consultez [ChatGPT](chatgpt.md), [Mistral](mistral.md) et le [guide des modèles](https://github.com/Salesflare/TheMachine/blob/main/docs/models.md).

@@ -5,6 +5,7 @@ summary: Posez une question sur une tâche ou changez son brouillon, dans un cha
 covers: card-chat
 code: dashboard.html, assistant.py, chat_files.py, corrections.py
 order: 4
+translated: ba1206b5165695ce
 ---
 ## L’ouvrir
 

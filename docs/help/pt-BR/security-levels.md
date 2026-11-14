@@ -5,6 +5,7 @@ summary: Um único seletor, Padrão ou Cuidadoso, define suas configurações de
 covers: settings:security
 code: security_levels.py, dashboard.html, fleet.py
 order: 2
+translated: f8e82f192dd70e3a
 ---
 ## Dois níveis
 

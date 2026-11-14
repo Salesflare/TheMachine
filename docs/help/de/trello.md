@@ -5,6 +5,7 @@ summary: Kartenänderungen, Kommentare und Aktivität auf einem Trello-Board. Es
 covers: connector:trello
 code: connectors/trello.py
 site: Sign in with Trello, Connect, More sources, Remove
+translated: 7fc2a596ef58bd93
 ---
 ## Was es liest
 

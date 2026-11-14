@@ -5,6 +5,7 @@ summary: E-mail de qualquer provedor com IMAP, como iCloud, Yahoo, Fastmail, Tel
 covers: connector:imap
 code: imap_mail.py, smtp_mail.py, imap_presets.py, machine/sources/imap_setup.py
 order: 13
+translated: 85e7bf625f96964a
 ---
 ## O que ela lê
 

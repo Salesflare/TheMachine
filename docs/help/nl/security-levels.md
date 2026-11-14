@@ -5,6 +5,7 @@ summary: Eén schakelaar, Standaard of Voorzichtig, stelt je beveiligings- en pr
 covers: settings:security
 code: security_levels.py, dashboard.html, fleet.py
 order: 2
+translated: f8e82f192dd70e3a
 ---
 ## Twee niveaus
 

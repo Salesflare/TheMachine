@@ -5,6 +5,7 @@ summary: Una volta a settimana, com'è andata la tua Machine: attività, promess
 covers: weekly-recap
 code: assistant.py, machine/app/recap_settings.py, config.example.json
 order: 1
+translated: 936df3d624aba2d7
 ---
 ## Cosa contiene
 

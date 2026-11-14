@@ -1,41 +1,42 @@
 ---
 title: Modelo
 area: settings
-summary: Qual modelo de IA responde por você, quanto ele raciocina e quanto dos limites do seu plano ele já usou.
+summary: Qual modelo de IA responde para você, quanto ele raciocina e quanto dos limites do seu plano já foi usado.
 covers: settings:model, chat-model
 code: dashboard.html, docs/models.md, chat_model.py
 order: 5
+translated: eee77413a4bdbf0b
 ---
-Em **Configurações**, **Modelo** mostra o modelo que o trabalho em segundo plano usa (marcado como **Trabalho em segundo plano**) e como você entrou, por exemplo com o ChatGPT.
+**Configurações**, **Modelo** mostra qual modelo de IA realiza seu **Trabalho em segundo plano** e como você fez login, por exemplo, com ChatGPT.
 
-## Modelo e raciocínio para os chats
+## Modelo e raciocínio nos chats
 
-Em **Chats**, escolha o modelo e o nível de raciocínio que os chats das suas tarefas e a Ajuda usam. A lista só tem os modelos que o seu login oferece, como os do ChatGPT se você entrou com o ChatGPT, e cada modelo só os níveis que ele tem.
+Em **Chats**, escolha o modelo e o nível de raciocínio para seus chats de tarefas e para a Ajuda. Você só vê os modelos e níveis disponíveis com a sua forma de login.
 
-Mais raciocínio responde melhor perguntas difíceis, mas é mais lento e usa mais do seu plano. **Raciocínio ultra** traz ajudantes para as perguntas mais difíceis: é o mais lento e o que mais usa. Uma mudança vale a partir da próxima mensagem. Uma Machine nova começa com **Raciocínio baixo** quando o modelo dela tem: bons resultados usando bem menos do seu plano.
+Mais raciocínio ajuda a responder melhor a perguntas difíceis, mas é mais lento e consome mais do seu plano. **Raciocínio ultra** usa assistentes para responder às perguntas mais difíceis e consome mais do que qualquer outro nível. Uma nova Machine começa com **Raciocínio baixo**: bons resultados usando bem menos do seu plano. A mudança vale a partir da próxima mensagem.
 
-Um chat pode usar outra coisa: abaixo da caixa de mensagem dele, toque no modelo ou no nível de raciocínio. Essa escolha vale só para esse chat. Escolha de novo o mesmo das Configurações para seguir as Configurações.
+Para mudar o modelo ou o nível de raciocínio em apenas um chat, toque nele abaixo da caixa de mensagem. Escolha **Configurações** novamente para usar a opção definida em Configurações.
 
-Verificações, seu perfil e rascunhos preparados com antecedência mantêm o próprio modelo.
+As verificações, seu perfil e os rascunhos preparados com antecedência usam o próprio modelo.
 
 ## Limites
 
-Se o seu plano tem limites de uso, aparece quanto de cada um já foi usado e quando ele zera, por exemplo o limite de 5 horas e o semanal de um plano do ChatGPT ou do Claude. Ver isso nunca consome seu plano.
+Se seu plano tiver limites de uso, como os limites de 5 horas e semanais de um plano do ChatGPT ou Claude, você verá quanto já foi usado e quando cada limite será redefinido. Consultar essas informações não consome seu plano.
 
-## Espaço para os seus chats
+## Espaço para seus próprios chats
 
-O trabalho em segundo plano (verificações, seu perfil, rascunhos preparados com antecedência) deixa espaço para os seus próprios chats. Ele pausa em cerca de 65% do limite de 5 horas. As verificações do que chegou seguem até cerca de 90% do limite semanal; o resto o distribui em cerca de um sétimo por dia. Um login sem limites de uso, como uma chave de API, nunca é pausado.
+O trabalho em segundo plano deixa espaço para seus próprios chats. Ele pausa quando o limite de 5 horas chega a cerca de 65%. As verificações de novas mensagens continuam até o limite semanal chegar a cerca de 90%. O restante do trabalho consome cerca de um sétimo do limite semanal por dia. Um login sem limites, como uma chave de API, nunca pausa.
 
-O trabalho em segundo plano nunca roda no GPT-6 Astra. Ele usa o GPT-6.1 Sol no lugar.
+O trabalho em segundo plano nunca é executado no GPT-6 Astra. Em vez disso, ele usa o GPT-6.1 Sol.
 
 ## Quando um limite é atingido
 
-O topo do painel diz qual limite foi atingido e quando ele zera. O trabalho espera e depois continua de onde parou. Nada se perde. Alguns planos do ChatGPT vêm com redefinições: **Usar uma redefinição** zera os limites, depois de uma confirmação. Se não, **Ver redefinições no ChatGPT** abre a página do próprio ChatGPT.
+No topo do painel, você verá qual limite foi atingido e quando ele será redefinido. O trabalho aguarda e depois continua de onde parou. Nada se perde. Se seu plano do ChatGPT tiver redefinições, **Usar uma redefinição** reinicia os limites. Caso contrário, **Ver redefinições no ChatGPT** abre a página do ChatGPT.
 
-## Com um modelo reserva
+## Com um modelo alternativo
 
-Se a sua Machine tem um modelo reserva em outro plano ou provedor, como uma chave de API, ele assume quando um limite é atingido. Enquanto o modelo reserva funciona, nada pausa nem espera pelos seus limites, e o topo do painel diz "Limite do ChatGPT atingido, usando seu modelo reserva." Se ele parar de funcionar, as pausas voltam.
+Se sua Machine tiver um modelo alternativo em outro plano ou provedor, ele assume quando um limite é atingido, sem que nenhum trabalho fique aguardando. No topo do painel, você verá "Limite do ChatGPT atingido, usando seu modelo alternativo." Se o modelo alternativo parar de funcionar, as pausas voltam.
 
 ## Mudar o modelo principal
 
-O modelo principal é o que o resto da The Machine usa. Em uma Machine hospedada, escolha outro na sua página de configuração, em Seu modelo. No seu próprio computador, mude no OpenClaw. Veja [ChatGPT](chatgpt.md) e o [guia de modelos](https://github.com/Salesflare/TheMachine/blob/main/docs/models.md).
+O modelo principal é usado no restante da The Machine. Em uma Machine hospedada, mude-o na página de configuração, em Your AI. No seu próprio computador, consulte [ChatGPT](chatgpt.md), [Mistral](mistral.md) e o [guia de modelos](https://github.com/Salesflare/TheMachine/blob/main/docs/models.md).

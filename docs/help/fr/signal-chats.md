@@ -5,6 +5,7 @@ summary: Vos discussions et groupes Signal, lus comme un appareil relié à votr
 covers: connector:signal
 code: onboarding.py, signal_setup.py, signal_mirror.py, signal_store.py, signal_send.py
 keywords: Signal, linked device, QR code
+translated: b85609009f246615
 ---
 ## Ce qu’elle lit
 

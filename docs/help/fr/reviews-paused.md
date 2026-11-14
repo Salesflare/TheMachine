@@ -5,6 +5,7 @@ summary: Les vérifications sont désactivées, en attente, ou arrêtées par la
 covers: 
 code: dashboard.html, assistant.py
 order: 3
+translated: 39b4aa749445dfba
 ---
 Les tâches viennent des vérifications : votre Machine lit ce qui est arrivé, par petits lots, en 15 minutes environ.
 

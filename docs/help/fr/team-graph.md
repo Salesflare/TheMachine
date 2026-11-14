@@ -5,6 +5,7 @@ summary: Expérimental. Partagez votre travail client avec votre Fleet Travail, 
 covers: team-graph
 code: shared_graph.py, fleet_trust.py, dashboard.html
 order: 2
+translated: fc842bc761a3ab17
 ---
 Dans une Fleet Travail, votre Machine peut partager votre travail client avec les Machines de vos collègues, comme un CRM partagé. C’est **Expérimental** : c’est nouveau et ça évolue encore, donc c’est désactivé au départ.
 

@@ -1,31 +1,32 @@
 ---
 title: Règles de partage
 area: fleet
-summary: Par Fleet et par type de question, ce à quoi votre Machine peut répondre. Me demander d’abord, Toujours, Jamais ou Noms seulement.
+summary: Ce que votre Machine peut répondre, par Fleet et par type de question. Me demander d’abord, Toujours, Jamais ou Noms uniquement.
 covers: 
 code: fleet.py, dashboard.html
 order: 2
 keywords: share, sharing, colleagues, teammates, team, what others see, answer for me
+translated: 8c6f3bda9dfdbe8e
 ---
-## Les régler
+## Configurez-les
 
-Dans l’onglet **Fleet**, ouvrez Partage. Chaque type de question a une règle :
+Décidez de ce que votre Machine dit à votre Fleet. Dans l’onglet **Fleet**, ouvrez **Partage**. Chaque type de question a une règle :
 
-- Me demander d’abord : vous voyez chaque question et décidez.
-- Toujours : votre Machine répond d’elle-même.
-- Jamais : elle refuse.
-- Noms : seulement les noms, sans détails.
+- **Me demander d’abord** : vous voyez chaque question et décidez.
+- **Toujours** : votre Machine répond d’elle-même.
+- **Jamais** : elle refuse.
+- **Noms** : indique si la réponse peut préciser de qui il s’agit, par exemple le nom d’un invité, ou si elle doit omettre les noms.
 
-Elle ne partage jamais le contenu des e-mails, ni le sujet de vos réunions. « Différent pour quelqu’un ? Ajouter une exception » règle une règle pour une seule personne.
+Elle ne partage jamais le contenu des e-mails ni le sujet de vos réunions. **Différent pour quelqu’un ? Ajoutez une exception** permet de définir une règle pour une personne.
 
-Les règles ne changent que dans le tableau de bord, jamais depuis un message.
+Les règles ne peuvent être modifiées que dans le tableau de bord, jamais depuis un message.
 
-## Dans une Fleet Travail
+## Dans un Fleet de travail
 
-Dans une Fleet Travail Standard, qui connaît quelqu’un, contexte de réunion et qui gère les e-mails partagés ont deux règles : **Toujours** et **Jamais**. Toujours répond avec seulement ce que le [Graph d’équipe](team-graph.md) partage avec votre équipe, et ne cite que des personnes qu’il partage déjà. Une règle enregistrée sur Me demander d’abord fonctionne comme Toujours.
+Dans un Fleet de travail standard, les questions sur les personnes que quelqu’un connaît, le contexte des réunions et la personne qui traite les e-mails partagés n’acceptent que **Toujours** et **Jamais**. Avec **Toujours**, votre Machine répond uniquement à partir des informations que le [Graph d’équipe](team-graph.md) partage déjà avec votre équipe, et ne nomme que les personnes qu’il partage. Une règle enregistrée sur **Me demander d’abord** fonctionne comme **Toujours**.
 
-Tant que le Graph d’équipe ne partage pas, qui connaît quelqu’un et contexte de réunion gardent les trois règles. Une Fleet Prudente garde Me demander d’abord. Voir [Fleets](fleet.md#answered-by-itself-in-a-work-fleet).
+Tant que le Graph d’équipe ne partage rien, les questions sur les personnes que quelqu’un connaît et le contexte des réunions restent aussi réglés sur **Me demander d’abord**. C’est également le cas dans un Fleet prudent. Consultez [Fleets](fleet.md#answered-by-itself-in-a-work-fleet).
 
-## La première fois que quelqu’un demande
+## La première fois que quelqu’un pose la question
 
-Une question qui a besoin de vous arrive comme une tâche, avec **Partager une fois**, **Toujours partager**, **Refuser** ou **Ne jamais partager**.
+Une question qui nécessite votre intervention arrive sous forme de tâche, avec les options **Partager une fois**, **Toujours partager**, **Refuser** ou **Ne jamais partager**.

@@ -1,41 +1,42 @@
 ---
 title: Modell
 area: settings
-summary: Welches KI-Modell für dich antwortet, wie gründlich es nachdenkt und wie viel der Limits deines Tarifs es schon verbraucht hat.
+summary: Welches KI-Modell für dich antwortet, wie intensiv es nachdenkt und wie viel deines Tarifs es bereits verbraucht hat.
 covers: settings:model, chat-model
 code: dashboard.html, docs/models.md, chat_model.py
 order: 5
+translated: eee77413a4bdbf0b
 ---
-In **Einstellungen** zeigt **Modell** das Modell, das Hintergrundarbeit nutzt (markiert mit **Hintergrundarbeit**), und wie du angemeldet bist, etwa mit ChatGPT.
+**Einstellungen**, **Modell** zeigt, welches KI-Modell deine **Hintergrundarbeit** erledigt und wie du angemeldet bist, zum Beispiel mit ChatGPT.
 
-## Modell und Nachdenken für Chats
+## Modell und Nachdenken in Chats
 
-Wähle unter **Chats** das Modell und die Nachdenkstufe für deine Aufgaben-Chats und die Hilfe. Die Liste hat nur die Modelle, die deine Anmeldung anbietet, etwa die von ChatGPT, wenn du dich mit ChatGPT angemeldet hast, und jedes Modell nur die Stufen, die es hat.
+Unter **Chats** wählst du das Modell und die Nachdenk-Stufe für deine Aufgaben-Chats und die Hilfe aus. Du siehst nur die Modelle und Stufen, die dir mit deiner Anmeldung zur Verfügung stehen.
 
-Mehr Nachdenken beantwortet schwierigere Fragen besser, ist aber langsamer und verbraucht mehr von deinem Tarif. **Ultra-Nachdenken** holt Helfer für die schwierigsten Fragen dazu: am langsamsten, und es verbraucht am meisten. Eine Änderung gilt ab der nächsten Nachricht. Eine neue Machine startet mit **Wenig Nachdenken**, wenn ihr Modell das hat: gute Ergebnisse für viel weniger von deinem Tarif.
+Mit mehr Nachdenken beantwortet das Modell schwierige Fragen besser, ist aber langsamer und verbraucht mehr von deinem Tarif. **Ultra-Nachdenken** bezieht bei besonders schwierigen Fragen Helfer ein und verbraucht am meisten. Eine neue Machine startet mit **Wenig Nachdenken**: gute Ergebnisse bei deutlich geringerem Verbrauch deines Tarifs. Eine Änderung gilt ab der nächsten Nachricht.
 
-Ein Chat kann etwas anderes nutzen: Tippe unter seinem Nachrichtenfeld auf das Modell oder die Nachdenkstufe. Diese Wahl gilt nur für diesen Chat. Wähle wieder dasselbe wie in den Einstellungen, um den Einstellungen zu folgen.
+Um die Einstellung nur für einen Chat zu ändern, tippe unter dem Nachrichtenfeld auf das Modell oder die Nachdenk-Stufe. Wähle erneut **Einstellungen**, damit der Chat den Einstellungen folgt.
 
-Prüfungen, dein Profil und vorab vorbereitete Entwürfe behalten ihr eigenes Modell.
+Prüfungen, dein Profil und im Voraus vorbereitete Entwürfe behalten ihr eigenes Modell.
 
 ## Limits
 
-Wenn dein Tarif Nutzungslimits hat, siehst du, wie viel von jedem verbraucht ist und wann es zurückgesetzt wird, zum Beispiel das 5-Stunden-Limit und das Wochenlimit eines ChatGPT- oder Claude-Tarifs. Das Anzeigen verbraucht nie etwas von deinem Tarif.
+Wenn dein Tarif Nutzungslimits hat, zum Beispiel die 5-Stunden- und Wochenlimits eines ChatGPT- oder Claude-Tarifs, wird angezeigt, wie viel davon verbraucht ist und wann die Limits zurückgesetzt werden. Das Nachsehen verbraucht nichts von deinem Tarif.
 
 ## Platz für deine eigenen Chats
 
-Hintergrundarbeit (Prüfungen, dein Profil, vorab vorbereitete Entwürfe) lässt Platz für deine eigenen Chats. Sie pausiert bei etwa 65 % des 5-Stunden-Limits. Prüfungen dessen, was reingekommen ist, laufen bis etwa 90 % des Wochenlimits; der Rest verteilt es auf etwa ein Siebtel pro Tag. Eine Anmeldung ohne Nutzungslimits, etwa ein API-Schlüssel, wird nie pausiert.
+Hintergrundarbeit lässt Platz für deine eigenen Chats. Sie pausiert bei etwa 65 % des 5-Stunden-Limits. Prüfungen neuer Nachrichten laufen bis etwa 90 % des Wochenlimits weiter. Andere Arbeit verbraucht pro Tag etwa ein Siebtel des Wochenlimits. Eine Anmeldung ohne Limits, zum Beispiel mit einem API-Schlüssel, führt nie zu einer Pause.
 
-Hintergrundarbeit läuft nie auf GPT-6 Astra. Sie nutzt stattdessen GPT-6.1 Sol.
+Hintergrundarbeit läuft nie mit GPT-6 Astra. Stattdessen verwendet sie GPT-6.1 Sol.
 
 ## Wenn ein Limit erreicht ist
 
-Oben im Dashboard steht, welches Limit erreicht ist und wann es zurückgesetzt wird. Die Arbeit wartet und macht dann dort weiter, wo sie aufgehört hat. Nichts geht verloren. Manche ChatGPT-Tarife haben Resets: **Reset nutzen** setzt die Limits nach einer Bestätigung zurück. Sonst öffnet **Resets in ChatGPT ansehen** die Seite von ChatGPT selbst.
+Oben auf dem Dashboard steht, welches Limit erreicht wurde und wann es zurückgesetzt wird. Die Arbeit wartet und wird dann an der Stelle fortgesetzt, an der sie aufgehört hat. Es geht nichts verloren. Wenn dein ChatGPT-Tarif Resets enthält, setzt **Ein Reset nutzen** die Limits zurück. Andernfalls öffnet **Resets in ChatGPT ansehen** die entsprechende Seite von ChatGPT.
 
-## Mit einem Ersatzmodell
+## Mit einem Ausweichmodell
 
-Hat deine Machine ein Ersatzmodell mit einem anderen Tarif oder Anbieter, etwa einem API-Schlüssel, übernimmt es, wenn ein Limit erreicht ist. Solange das Ersatzmodell funktioniert, pausiert und wartet nichts wegen deiner Limits, und oben im Dashboard steht „ChatGPT-Limit erreicht, dein Ersatzmodell übernimmt.“ Funktioniert es nicht mehr, kommen die Pausen zurück.
+Wenn für deine Machine ein Ausweichmodell in einem anderen Tarif oder bei einem anderen Anbieter eingerichtet ist, übernimmt es, sobald ein Limit erreicht ist. Nichts muss warten. Oben auf dem Dashboard steht dann „ChatGPT-Limit erreicht, Ausweichmodell wird verwendet.“ Wenn das Ausweichmodell nicht mehr funktioniert, werden die Pausen wieder aktiviert.
 
-## Das Hauptmodell ändern
+## Hauptmodell ändern
 
-Das Hauptmodell nutzt der Rest von The Machine. Auf einer gehosteten Machine wählst du auf deiner Einrichtungsseite unter Dein Modell ein anderes. Auf deinem eigenen Computer änderst du es in OpenClaw. Siehe [ChatGPT](chatgpt.md) und den [Modell-Leitfaden](https://github.com/Salesflare/TheMachine/blob/main/docs/models.md).
+Das Hauptmodell wird für alles andere auf The Machine verwendet. Bei einer gehosteten Machine kannst du es auf deiner Einrichtungsseite unter „Deine KI“ ändern. Auf deinem eigenen Computer findest du weitere Informationen unter [ChatGPT](chatgpt.md), [Mistral](mistral.md) und im [Leitfaden zu Modellen](https://github.com/Salesflare/TheMachine/blob/main/docs/models.md).

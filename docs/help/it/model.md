@@ -1,41 +1,42 @@
 ---
 title: Modello
 area: settings
-summary: Quale modello di IA risponde per te, quanto ragiona e quanto ha usato dei limiti del tuo piano.
+summary: Quale modello IA ti risponde, quanto ragiona e quanto ha usato dei limiti del tuo piano.
 covers: settings:model, chat-model
 code: dashboard.html, docs/models.md, chat_model.py
 order: 5
+translated: eee77413a4bdbf0b
 ---
-In **Impostazioni**, **Modello** mostra il modello usato dal lavoro in background (indicato con **Lavoro in background**) e come hai effettuato l’accesso, per esempio con ChatGPT.
+In **Impostazioni**, **Modello** mostra quale modello IA svolge il **Lavoro in background** e come hai effettuato l’accesso, per esempio con ChatGPT.
 
 ## Modello e ragionamento per le chat
 
-In **Chat**, scegli il modello e il livello di ragionamento che usano le chat delle tue attività e l’Aiuto. L’elenco ha solo i modelli offerti dal tuo accesso, come quelli di ChatGPT se hai effettuato l’accesso con ChatGPT, e ogni modello solo i livelli che ha.
+In **Chat**, scegli il modello e il livello di ragionamento per le chat delle tue attività e per l’assistenza. Vedrai solo i modelli e i livelli disponibili con il tuo metodo di accesso.
 
-Più ragionamento risponde meglio alle domande difficili, ma è più lento e usa di più il tuo piano. **Ragionamento ultra** chiama degli aiutanti per le domande più difficili: è il più lento e quello che usa di più. Una modifica vale dal messaggio successivo. Una nuova Machine parte con **Ragionamento basso** se il suo modello lo offre: buoni risultati con molto meno del tuo piano.
+Più ragionamento aiuta a rispondere meglio alle domande difficili, ma è più lento e consuma più risorse del tuo piano. **Ragionamento ultra** usa assistenti per le domande più difficili e consuma più risorse di tutte le altre opzioni. Una Machine nuova parte da **Ragionamento basso**: ottieni buoni risultati consumando molte meno risorse del tuo piano. La modifica si applica dal messaggio successivo.
 
-Una chat può usare qualcos’altro: sotto la sua casella del messaggio, tocca il modello o il livello di ragionamento. Quella scelta vale solo per quella chat. Scegli di nuovo lo stesso delle Impostazioni per seguire le Impostazioni.
+Per cambiarlo solo per una chat, tocca il modello o il livello di ragionamento sotto la casella del messaggio. Seleziona di nuovo l’opzione Impostazioni per seguire le Impostazioni.
 
-I controlli, il tuo profilo e le bozze preparate in anticipo mantengono il loro modello.
+I controlli, il tuo profilo e le bozze preparate in anticipo usano un modello dedicato.
 
 ## Limiti
 
-Se il tuo piano ha limiti di utilizzo, mostra quanto hai usato di ciascuno e quando si azzera, per esempio il limite di 5 ore e quello settimanale di un piano ChatGPT o Claude. Leggere questi dati non consuma mai il tuo piano.
+Se il tuo piano ha limiti di utilizzo, come i limiti di 5 ore e settimanali di un piano ChatGPT o Claude, vedrai quanto ne hai usato e quando si azzera ciascun limite. Consultare queste informazioni non consuma il tuo piano.
 
 ## Spazio per le tue chat
 
-Il lavoro in background (controlli, il tuo profilo, bozze preparate in anticipo) lascia spazio alle tue chat. Si mette in pausa a circa il 65% del limite di 5 ore. I controlli di quello che è arrivato continuano fino a circa il 90% del limite settimanale; il resto lo distribuisce a circa un settimo al giorno. Un accesso senza limiti di utilizzo, come una chiave API, non va mai in pausa.
+Il Lavoro in background lascia spazio alle tue chat. Si mette in pausa quando raggiunge circa il 65% del limite di 5 ore. I controlli dei nuovi messaggi continuano fino a circa il 90% del limite settimanale; le altre attività usano circa un settimo del limite settimanale al giorno. Un accesso senza limiti, per esempio con una chiave API, non si mette mai in pausa.
 
-Il lavoro in background non gira mai su GPT-6 Astra. Usa invece GPT-6.1 Sol.
+Il Lavoro in background non usa mai GPT-6 Astra. Usa invece GPT-6.1 Sol.
 
 ## Quando raggiungi un limite
 
-In cima alla dashboard vedi quale limite è stato raggiunto e quando si azzera. Il lavoro aspetta, poi riprende da dove si era fermato. Non si perde nulla. Alcuni piani ChatGPT includono degli azzeramenti: **Usa un azzeramento** fa ripartire i limiti, dopo una conferma. Altrimenti **Vedi gli azzeramenti in ChatGPT** apre la pagina di ChatGPT.
+In cima alla dashboard viene indicato quale limite hai raggiunto e quando si azzera. Le attività restano in attesa, poi riprendono da dove si erano interrotte. Non perdi nulla. Se il tuo piano ChatGPT permette di azzerare i limiti, **Usa un azzeramento** li azzera. Altrimenti, **Vedi gli azzeramenti in ChatGPT** apre la relativa pagina di ChatGPT.
 
 ## Con un modello di riserva
 
-Se la tua Machine ha un modello di riserva su un altro piano o fornitore, come una chiave API, subentra quando raggiungi un limite. Finché il modello di riserva funziona, niente si mette in pausa né aspetta i tuoi limiti, e in alto nella dashboard compare «Limite di ChatGPT raggiunto, ora usa il tuo modello di riserva.» Se smette di funzionare, le pause tornano.
+Se la tua Machine ha un modello di riserva associato a un altro piano o provider, subentra quando raggiungi un limite e le attività non restano in attesa. In cima alla dashboard viene indicato: «Limite ChatGPT raggiunto, uso il modello di riserva». Se il modello di riserva smette di funzionare, le pause riprendono.
 
-## Cambia il modello principale
+## Cambiare il modello principale
 
-Il modello principale è quello che usa il resto di The Machine. Su una Machine in hosting, scegline un altro nella tua pagina di configurazione, sotto Il tuo modello. Sul tuo computer, cambialo in OpenClaw. Vedi [ChatGPT](chatgpt.md) e la [guida ai modelli](https://github.com/Salesflare/TheMachine/blob/main/docs/models.md).
+Il modello principale è quello che usa il resto di The Machine. Se usi una Machine ospitata, puoi cambiarlo nella pagina di configurazione, in La tua IA. Se usi il tuo computer, consulta [ChatGPT](chatgpt.md), [Mistral](mistral.md) e la [guida ai modelli](https://github.com/Salesflare/TheMachine/blob/main/docs/models.md).

@@ -5,6 +5,7 @@ summary: Accounts, contacten en deals, zodat hij weet wie belangrijk is. Het lee
 covers: connector:salesflare
 code: assistant.py, onboarding.py
 site: More sources, Connect, Remove
+translated: 697e6d60b69bb1cd
 ---
 ## Wat het leest
 

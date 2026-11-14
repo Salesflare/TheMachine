@@ -5,6 +5,7 @@ summary: Wijzigingen aan kaarten, reacties en activiteit op één Trello-bord. H
 covers: connector:trello
 code: connectors/trello.py
 site: Sign in with Trello, Connect, More sources, Remove
+translated: 7fc2a596ef58bd93
 ---
 ## Wat het leest
 

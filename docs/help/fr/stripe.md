@@ -5,6 +5,7 @@ summary: Paiements échoués, litiges, résiliations et gros nouveaux abonnement
 covers: connector:stripe
 code: connectors/stripe.py, shared_connectors.py
 site: Sign in with Stripe, Connect, More sources, Share Stripe, Connect Stripe, Remove
+translated: 99a14108376ddcc1
 ---
 ## Ce qu’il lit
 

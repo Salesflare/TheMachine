@@ -5,6 +5,7 @@ summary: Una pagina semplice per chi è fuori dal Network, collegata dalla tua e
 covers: task-pages
 code: task_pages.py, task_invites.py, dashboard.html
 order: 4
+translated: f5a3d79bc2168432
 ---
 ## Aggiungine una
 

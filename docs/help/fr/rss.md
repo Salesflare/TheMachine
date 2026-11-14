@@ -4,6 +4,7 @@ area: connections
 summary: Les articles d’un flux RSS ou Atom que vous suivez. Uniquement sur votre propre ordinateur.
 covers: connector:rss
 code: connectors/rss.py
+translated: 99fdd904c9ff558f
 ---
 ## Ce qu’elle lit
 

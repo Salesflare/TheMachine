@@ -5,6 +5,7 @@ summary: Sperimentale. Condividi il lavoro con i clienti con la tua Fleet di lav
 covers: team-graph
 code: shared_graph.py, fleet_trust.py, dashboard.html
 order: 2
+translated: fc842bc761a3ab17
 ---
 In una Fleet di lavoro, la tua Machine può condividere il lavoro con i clienti con le Machine dei tuoi colleghi, come un CRM condiviso. È **Sperimentale**: è nuovo e cambia ancora, quindi parte disattivato.
 

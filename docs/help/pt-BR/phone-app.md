@@ -5,6 +5,7 @@ summary: Instale a The Machine no celular ou no computador e receba uma notifica
 covers: phone-app
 code: manifest.webmanifest, sw.js, dashboard.html
 order: 3
+translated: 3e2919603c5efa9a
 ---
 O painel pode ser instalado como app no celular ou no computador. Depois ele envia uma notificação para cada tarefa, resultado e lembrete quando você não está no painel, dentro do seu [horário de trabalho](work-hours.md). Escolha o que ele envia em [Notificações](notifications.md).
 

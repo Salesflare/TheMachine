@@ -5,6 +5,7 @@ summary: Elle apprend d’elle-même votre façon d’écrire et ce que vous vou
 keywords: personalize, customize, tailor, adapt, preferences, style, tone, voice, sound like me, write like me, my way, learn, train, teach
 code: learning_loop.py, authorship.py, dashboard.html
 order: 5
+translated: 05455d7e4b5fc29a
 ---
 L’essentiel se fait tout seul. Votre Machine apprend de ce que vous faites, donc il y a peu à configurer et rien à construire.
 

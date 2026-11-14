@@ -5,6 +5,7 @@ summary: Mislukte betalingen, geschillen, opzeggingen en grote nieuwe abonnement
 covers: connector:stripe
 code: connectors/stripe.py, shared_connectors.py
 site: Sign in with Stripe, Connect, More sources, Share Stripe, Connect Stripe, Remove
+translated: 99a14108376ddcc1
 ---
 ## Wat het leest
 

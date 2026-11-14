@@ -5,6 +5,7 @@ summary: Un'attività per ogni cosa che ha bisogno di te, pronta per il tuo sì.
 covers: tab:inbox
 code: dashboard.html, assistant.py
 order: 1
+translated: 645c40350e70a0c9
 ---
 La tua Machine legge tutto ciò che è nuovo e crea un'attività solo quando qualcosa ha bisogno di te. Un'attività per questione, per quanti messaggi comprenda.
 

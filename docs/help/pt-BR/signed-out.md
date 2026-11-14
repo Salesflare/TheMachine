@@ -5,6 +5,7 @@ summary: O LinkedIn ou o X desconectou sua Machine. Entre de novo, uma vez ou de
 covers: 
 code: browser_login.py, dashboard.html, dashboard/connections-signin.js
 order: 2
+translated: b77b372b9332ca2b
 ---
 Sites como LinkedIn e X são lidos no navegador da própria Machine. Às vezes um site a desconecta.
 

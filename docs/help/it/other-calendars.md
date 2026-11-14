@@ -5,6 +5,7 @@ summary: Riunioni dal Calendario iCloud o da qualsiasi calendario CalDAV, come F
 covers: connector:icloud_calendar, connector:caldav
 code: caldav_calendar.py, ical.py, machine/sources/calendar_setup.py
 order: 14
+translated: 0ff916ed2bb877e1
 ---
 ## Cosa legge
 

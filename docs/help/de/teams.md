@@ -5,6 +5,7 @@ summary: Teams-Chats, Meeting-Chats und Meeting-Notizen für ein Arbeits- oder S
 covers: connector:teams
 code: connectors/teams.py, ms_graph.py, onboarding.py
 site: Connect Microsoft Teams
+translated: 864f9e6e98309439
 ---
 ## Was es liest
 

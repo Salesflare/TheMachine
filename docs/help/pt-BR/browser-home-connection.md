@@ -6,6 +6,7 @@ code: browser_login.py
 site: Tailscale, Sign in to Tailscale, Use this exit node, Open it in Tailscale, Test it, Sign in again, Stop using it, Sign it out of Tailscale too
 keywords: tailscale, exit node, home internet, ip address, cloudflare, linkedin
 order: 4
+translated: 9935ac3c09fa5c00
 ---
 Alguns sites, como LinkedIn, X e sites atrás de uma verificação do Cloudflare, recusam logins de um navegador na nuvem. Sua página de configuração pode fazer o navegador da sua Machine hospedada sair pela sua internet de casa, com o Tailscale. É grátis, leva uns 10 minutos e quase tudo acontece sozinho.
 

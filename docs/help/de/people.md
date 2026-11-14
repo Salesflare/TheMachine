@@ -4,6 +4,7 @@ area: graph
 summary: Alle, mit denen du in Kontakt bist: ihre Seite, Zusammenfassung und Verlauf, und wie du jemanden hinzufügst, bearbeitest, zusammenführst oder löschst.
 code: graph.py, crm.py, bounces.py, enrichment.py, record_log.py, dashboard.html
 order: 2
+translated: 2fe1c104a74711c4
 ---
 Alle, mit denen du in Kontakt bist, die engsten zuerst, aus deinen Nachrichten und Meetings. Newsletter, Belege und andere Massenmails fügen niemanden hinzu, bis du zurückschreibst. Sie stehen unter Ausgeblendete Absender, unter der Liste: Als Person zeigen holt sie herein. Felder, Tags und Import funktionieren in allen drei Listen gleich, und jede Liste hat ihre eigenen Filter: siehe [Der Graph](graph.md).
 

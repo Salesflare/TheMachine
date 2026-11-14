@@ -5,6 +5,7 @@ summary: Clique em um endereço de e-mail para escrever da sua própria caixa, n
 covers: email-composer
 code: machine/app/mail.py, dashboard/todos-compose.js
 order: 12
+translated: 568ac451673bc141
 ---
 ## Abrir
 

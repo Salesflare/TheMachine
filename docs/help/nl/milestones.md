@@ -5,6 +5,7 @@ summary: Om de zoveel gedane to-do's een klein feestje op To-do's, met een afbee
 covers: milestones
 code: machine/store/done_milestones.py, dashboard/todos-milestone.js
 order: 11
+translated: 77c10c7e5e38e386
 ---
 ## Wanneer het verschijnt
 

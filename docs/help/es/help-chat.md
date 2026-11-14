@@ -1,33 +1,34 @@
 ---
-title: Pregunta a Ayuda
+title: Preguntar a Ayuda
 area: getting-started
-summary: Pregunta cómo funciona The Machine. Las respuestas salen de estas páginas de ayuda, con enlaces.
+summary: Pregunta cómo funciona The Machine. Las respuestas se basan en estas páginas de ayuda e incluyen enlaces.
 covers: help-chat
 code: help_chat.py, dashboard.html
 order: 6
+translated: 6313f73729cfba18
 ---
-Toca **Ayuda** arriba, junto a **Ajustes**, y pregunta con tus propias palabras, como "¿Cómo pospongo una tarea?". Pulsa Enter para preguntar, o Shift+Enter para una línea nueva. Ayuda responde en el idioma de tu app, o en el idioma en que escribes si es otro. Los enlaces a páginas de ayuda se abren aquí mismo, en tu idioma.
+Toca **Ayuda** en la parte superior, junto a **Ajustes**, y pregunta con tus propias palabras, por ejemplo: «¿Cómo pospongo una tarea?». Pulsa Enter para enviar la pregunta y Shift+Enter para añadir una línea. Ayuda responde en el idioma de tu app o en el idioma en que escribas. Los enlaces a las páginas de ayuda se abren directamente en el panel y en ese idioma.
 
 ## De dónde salen las respuestas
 
-Ayuda lee las páginas de ayuda que encajan con tu pregunta, y el propio código fuente de la app para lo que estas dejan sin resolver. Cada respuesta enlaza a las páginas que usó, para que puedas leer más.
+Ayuda consulta las páginas que coinciden con tu pregunta y el código de la app para responder sobre lo que no explican. Cada respuesta incluye enlaces a las páginas que ha usado.
 
-Funciona con el propio modelo de tu Machine como un chat corto y aparte. Debajo del cuadro de mensaje puedes elegir otro modelo o nivel de razonamiento para este chat de Ayuda (consulta [Modelo](model.md)). Solo entran tu pregunta y las páginas que encajan: nada de tus mensajes, contactos ni ajustes.
+Funciona con el modelo de tu Machine como un chat breve e independiente. Debajo del cuadro de mensaje puedes elegir otro modelo o nivel de razonamiento para este chat de Ayuda (consulta [Modelo](model.md)). Solo se incluyen tu pregunta y las páginas pertinentes: no se incluyen tus mensajes, personas ni ajustes.
 
-Responde a tu nivel: palabras sencillas para la mayoría, más detalle cuando tu configuración o tus preguntas son técnicas. Lo deduce de cómo está configurada tu Machine, tu rol y cómo preguntas. Solo entra esa deducción.
+Adapta las respuestas a tu nivel: usa palabras sencillas para la mayoría y da más detalles cuando tus preguntas son técnicas. Lo calcula según tu configuración, tu función y cómo preguntas. Solo se incluye esa estimación.
 
-Te indica primero lo que The Machine ya hace y lo que puedes ajustar. Una habilidad solo cuando nada de lo que ya trae lo cubre. Consulta [Personalizar](personalize.md).
+Primero te indica lo que The Machine ya puede hacer y solo sugiere una habilidad si ninguna función integrada sirve. Consulta [Personalízala](personalize.md).
 
 ## Qué ve el equipo
 
-Para mejorar la ayuda, tu Machine cuenta unas pocas palabras sobre el tema de cada pregunta, como "posponer una tarea". Nunca tu pregunta ni la respuesta, y ni nombres, ni direcciones, ni números: solo palabras de estas páginas de ayuda. Una vez al día, los recuentos van al equipo de The Machine, sin tu cuenta.
+Para mejorar la ayuda, tu Machine cuenta unas pocas palabras sobre el tema de cada pregunta, como «posponer una tarea». Nunca cuenta tu pregunta ni la respuesta, ni nombres, direcciones o números: solo palabras de estas páginas de ayuda. Una vez al día, los recuentos se envían al **El equipo de The Machine**, sin asociarlos a tu cuenta.
 
-Para pararlo, desactiva **Compartir lo que se pregunta a la ayuda** en **Ajustes**, **Seguridad**, en **El equipo de The Machine**, o elige el [nivel de seguridad](security-levels.md) **Prudente**. Necesita [The Machine Network](/network). Lo que aún no se ha enviado se elimina.
+Para desactivarlo, desactiva **Compartir lo que se pregunta a la ayuda** en **Ajustes**, **Seguridad**, dentro de **El equipo de The Machine**, o elige el nivel de seguridad [Prudente](security-levels.md). Necesita [The Machine Network](/network). Se elimina lo que aún no se haya enviado.
 
-## Qué no puede hacer
+## Lo que no puede hacer
 
-Ayuda responde preguntas. No ve tus datos y no cambia nada: te dice dónde tocar.
+Ayuda responde preguntas. No puede ver tus datos ni cambiar nada: te indica dónde tocar.
 
-Cuando lo que describes parece algo roto y no una duda de uso, la respuesta termina con **Informar de este error**. Abre **Informar de un error** con un breve resumen de lo que hiciste, lo que esperabas y lo que pasó, y con el informe de soporte marcado. Cambia ahí lo que quieras. No se envía nada hasta que pulses **Revisar** y luego **Enviar**.
+Si lo que describes parece un problema en lugar de una pregunta sobre cómo hacer algo, la respuesta termina con **Informar de este error**. Al tocarlo, se abre **Informar de un error** con un resumen breve de lo que hiciste, lo que esperabas y lo que ocurrió, y con el informe de asistencia seleccionado. Puedes cambiar lo que quieras. No se envía nada hasta que pulses **Enviar**.
 
-**Informar de un error** también es una pestaña propia en el mismo panel. Consulta [Obtener ayuda](get-support.md#report-a-bug).
+**Informar de un error** también tiene su propia pestaña en el mismo panel. Consulta [Obtener ayuda](get-support.md#report-a-bug).

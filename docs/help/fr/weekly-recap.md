@@ -5,6 +5,7 @@ summary: Une fois par semaine, le bilan de votre Machine : tâches, promesses, p
 covers: weekly-recap
 code: assistant.py, machine/app/recap_settings.py, config.example.json
 order: 1
+translated: 936df3d624aba2d7
 ---
 ## Ce qu’il contient
 

@@ -5,6 +5,7 @@ summary: Para que serve cada parte do painel, de Tarefas a Conexões.
 covers: tab:events, tab:feedback
 code: dashboard.html
 order: 4
+translated: d41a4a0017765f9e
 ---
 ## As abas
 

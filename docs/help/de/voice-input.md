@@ -1,47 +1,48 @@
 ---
 title: Spracheingabe
 area: cards
-summary: Sprechen statt tippen. Was du sagst, landet im Nachrichtenfeld, damit du es prüfen kannst. Nichts wird gesendet.
+summary: Sprich statt zu tippen. Deine Worte erscheinen im Nachrichtenfeld, wo du sie prüfen kannst. Gesendet wird nichts.
 covers: voice-input
 code: voice_input.py, voice_worker.py, dashboard.html
 order: 7
 keywords: voice, dictate, dictation, speak, talk, microphone, mic, speech, transcribe
+translated: f311b21bb4996eb4
 ---
-## Sprechen statt tippen
+## Sprich statt zu tippen
 
-Tippe in einem Nachrichtenfeld auf das Mikrofon: im Chat einer Aufgabe, bei **Neue Aufgabe**, in der **Hilfe** oder im Feld, mit dem du einen Entwurf änderst. Sprich und tippe dann auf das Häkchen. Oder halte das Mikrofon gedrückt, während du sprichst, und lass los, wenn du fertig bist.
+Tippe auf das Mikrofon in einem Nachrichtenfeld: im Chat einer Aufgabe, bei **Neue Aufgabe**, **Hilfe** oder im Feld zum Bearbeiten eines Entwurfs. Sprich und tippe dann auf das Häkchen. Oder halte das Mikrofon gedrückt, während du sprichst, und lass los, wenn du fertig bist.
 
-Während sie zuhört, zeigt das Feld einen Timer. Tippe auf das Kreuz, um aufzuhören, ohne etwas zu behalten. Eine Aufnahme kann bis zu 2 Minuten lang sein; nach 2 Minuten stoppt sie von selbst und schreibt auf, was du gesagt hast. Was sie bisher gehört hat, steht in der Leiste, während du sprichst, damit der Text kurz nach dem Stoppen da ist.
+Während die Spracheingabe läuft, zeigt das Feld einen Timer und den bisher erkannten Text. Tippe auf das Kreuz, um abzubrechen, ohne etwas zu übernehmen. Eine Aufnahme endet nach 2 Minuten automatisch.
 
-Was du gesagt hast, landet im Feld, dort, wo dein Cursor war. Nichts wird gesendet: Lies es, ändere, was du willst, und sende es selbst.
+Der Text erscheint im Feld an der Stelle, an der dein Cursor stand. Es wird nichts gesendet: Lies den Text, ändere, was du möchtest, und sende ihn selbst.
 
-## Wohin deine Stimme geht
+## Wohin deine Sprache geht
 
-In **Einstellungen**, **Allgemein**, unter **Spracheingabe** sagt eine kurze Zeile, was gerade genutzt wird.
+Wähle die gewünschte Option unter **Einstellungen**, **Allgemein** und **Spracheingabe**. Eine kurze Zeile dort zeigt, welche Option gerade verwendet wird.
 
-- **Automatisch** (Standard): Wenn OpenAI auf deiner Machine eingerichtet ist, wandelt OpenAI deine Aufnahme in Text um. Das ist ein API-Schlüssel oder eine ChatGPT-Anmeldung, wenn dein Tarif Audio erlaubt. Ohne OpenAI wird sie auf deiner Machine selbst in Text umgewandelt und verlässt sie nie.
-- **Auf dieser Machine**: immer auf deiner Machine, auch wenn OpenAI eingerichtet ist.
-- **Mit OpenAI**: immer OpenAI.
+- **Automatisch** (Standardeinstellung): OpenAI wandelt die Aufnahme in Text um, wenn deine Machine OpenAI nutzt (mit einem OpenAI-Schlüssel oder einem ChatGPT-Tarif, der Audio unterstützt). Andernfalls übernimmt deine Machine die Umwandlung selbst, und die Aufnahme verlässt sie nie.
+- **Auf dieser Machine**: Die Umwandlung erfolgt immer auf deiner Machine, auch wenn OpenAI eingerichtet ist.
+- **Mit OpenAI**: Die Umwandlung erfolgt immer mit OpenAI.
 
-Eine Aufnahme wird gelöscht, sobald der Text zurück ist.
+Eine Aufnahme wird gelöscht, sobald der Text vorliegt.
 
 ## Vorbereitung
 
-Um Sprache selbst in Text umzuwandeln, braucht deine Machine ein Sprachmodell mit 150 bis 500 MB. Sie lädt es im Hintergrund mit niedriger Priorität herunter, sobald sie eingerichtet ist, ihre erste Prüfung fertig ist und es eine Weile ruhig war. Solange zeigen die Einstellungen **Wird vorbereitet (im Hintergrund)**. Wenn OpenAI genutzt wird, macht sie das nie.
+Damit deine Machine Sprache selbst in Text umwandeln kann, lädt sie zuerst im Hintergrund ein Sprachmodell herunter (150 bis 500 MB), wenn gerade wenig los ist. In der Zwischenzeit steht in den Einstellungen **Wird im Hintergrund vorbereitet**. Wenn OpenAI verwendet wird, wird dieser Schritt übersprungen.
 
-Bis sie bereit ist, nutzt **Automatisch** die Spracherkennung deines Browsers, falls er eine hat, und sagt das unter dem Feld. Manche Browser schicken das an ihren Hersteller. Wenn **Auf dieser Machine** gewählt ist, wartet deine Aufnahme, und das Feld zeigt „Sprache wird vorbereitet…“ mit der verbleibenden Zeit.
+Bis dahin verwendet **Automatisch** die integrierte Spracherkennung deines Browsers, sofern vorhanden. Das wird unter dem Feld angezeigt. Manche Browser senden die Aufnahme an den jeweiligen Anbieter. Wenn **Auf dieser Machine** ausgewählt ist, wartet deine Aufnahme. Im Feld steht dann „Spracheingabe wird vorbereitet …“ und die verbleibende Zeit.
 
 ## Einstellungen
 
 - **In Text umgewandelt**: **Automatisch**, **Auf dieser Machine** oder **Mit OpenAI**.
-- **Genauigkeit** (nur auf deiner Machine): **Genauer** funktioniert für die meisten Sprachen am besten. **Schneller** geht flotter, erkennt aber mehr Wörter falsch. Auf einer Standard-Machine, die weniger Speicher hat, ist **Schneller** voreingestellt.
-- **Sprache**: **Erkennen** funktioniert für jede Sprache der App. Deine eigene zu wählen ist etwas schneller.
+- **Genauigkeit** (nur auf deiner Machine): **Genauer** funktioniert für die meisten Sprachen am besten. **Schneller** ist zwar schneller, macht aber mehr Fehler. Auf einer Standard-Machine ist diese Option standardmäßig ausgewählt.
+- **Sprache**: **Erkennen** funktioniert mit jeder App-Sprache. Wenn du deine Sprache auswählst, geht es etwas schneller.
 
-Um stattdessen laut mit The Machine zu sprechen, sieh dir [Live sprechen](talk-live.md) an.
+Wenn du stattdessen laut mit The Machine sprechen möchtest, sieh dir [Live sprechen](talk-live.md) an.
 
-## Wenn es nicht klappt
+## Wenn es nicht funktioniert
 
-- **Das Mikrofon ist blockiert**: Erlaube das Mikrofon für diese Seite in den Einstellungen deines Browsers. In der Handy-App findest du das bei den Berechtigungen der App.
-- **Kein Mikrofon gefunden**: Schließ eins an und versuch es noch mal.
-- **Deine Machine ist nicht erreichbar**: Deine Aufnahme bleibt erhalten und wird aufgeschrieben, sobald deine Machine wieder da ist. Für einen früheren Versuch tippe auf **Jetzt versuchen**.
-- **Ich habe nichts verstanden**: Sprich etwas näher am Mikrofon, oder länger.
+- **Das Mikrofon ist gesperrt**: Erlaube den Zugriff auf das Mikrofon für diese Website in den Browsereinstellungen. In der App auf deinem Smartphone findest du die Einstellung unter den App-Berechtigungen.
+- **Kein Mikrofon gefunden**: Schließe ein Mikrofon an und versuche es noch einmal.
+- **Deine Machine ist nicht erreichbar**: Deine Aufnahme wird behalten und transkribiert, sobald deine Machine wieder erreichbar ist. Wenn du es früher versuchen möchtest, tippe auf **Jetzt versuchen**.
+- **Es wurde nichts erkannt**: Sprich näher am Mikrofon oder etwas länger.

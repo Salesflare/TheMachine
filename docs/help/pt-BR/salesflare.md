@@ -5,6 +5,7 @@ summary: Contas, contatos e negócios, para ela saber quem importa. Ela lê com 
 covers: connector:salesflare
 code: assistant.py, onboarding.py
 site: More sources, Connect, Remove
+translated: 697e6d60b69bb1cd
 ---
 ## O que ela lê
 

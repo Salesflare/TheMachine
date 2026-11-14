@@ -5,6 +5,7 @@ summary: Nimm mit, was deine Machine gelernt hat, zu jeder anderen KI, als einfa
 covers: knowledge-export
 code: machine/export/knowledge.py, machine/app/knowledge_export.py, cli.py
 order: 6
+translated: 6a917f8ee2aabaa9
 ---
 Alles, was deine Machine lernt, gehört dir. Nimm es zu einer anderen KI mit oder behalte es, auch wenn du The Machine nicht mehr nutzt.
 

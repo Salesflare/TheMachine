@@ -5,6 +5,7 @@ summary: Eén to-do per ding dat jou nodig heeft, klaar voor je ja. Wat de onder
 covers: tab:inbox
 code: dashboard.html, assistant.py
 order: 1
+translated: 645c40350e70a0c9
 ---
 Je Machine leest alles wat nieuw is en maakt alleen een to-do als iets jou nodig heeft. Eén to-do per zaak, hoeveel berichten er ook bij horen.
 

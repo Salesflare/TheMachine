@@ -6,6 +6,7 @@ covers: talk-live
 code: talk_live.py, talk-live-run.mjs, dashboard.html
 order: 8
 keywords: talk live, voice, conversation, speak, call, realtime, openai, chatgpt, gpt live
+translated: 60168384f08de74e
 ---
 ## Een gesprek starten
 

@@ -5,6 +5,7 @@ summary: Accedi, inizia i tuoi giorni gratuiti, collega la posta e scegli la tua
 code: onboarding.py, dashboard.html
 site: Mail and Calendar, Your AI, Continue with Google, Continue with Microsoft, Turn on, Add more any time, More sources, Open your dashboard, Sources, Ask for a source, Build it, Add a passkey, Use an authenticator app instead, Add to Claude, First to-dos, Back
 order: 1
+translated: 0be6044113aaaa39
 ---
 Una Machine ospitata gira nel cloud, nell'UE, solo per te. Pensiamo noi a tenerla attiva e aggiornata.
 

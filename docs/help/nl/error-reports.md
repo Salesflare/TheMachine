@@ -1,47 +1,48 @@
 ---
 title: Foutrapporten
 area: security
-summary: Als er iets stukgaat, vertelt je Machine het team van The Machine wat er misging en waar in de code. Nooit je berichten, namen of adressen.
+summary: Als er iets misgaat, laat je Machine het team van The Machine weten wat er fout ging en waar in de code. Nooit wat er in je berichten staat, of je namen en adressen.
 covers: error-reports
 code: error_feed.py, pacing.py, dashboard.html, sw.js
 order: 4
+translated: fd3e1c2d68b93a35
 ---
 ## Wat het is
 
-Als er in The Machine iets stukgaat, stuurt je Machine het team een korte handtekening van de fout, zodat we die kunnen oplossen voor iemand ze moet melden. Het staat standaard aan en heeft [The Machine Network](/network) nodig.
+Als er iets misgaat in The Machine, stuurt je Machine ons team een kort, anoniem bericht over de fout. Zo kunnen we die oplossen voordat iemand er melding van maakt. Dit staat standaard aan en vereist [The Machine Network](/network).
 
-## Wat er meegaat
+## Wat er wordt verstuurd
 
 Alleen dit, per soort fout:
 
-- het soort fout, zoals `KeyError` of `TypeError`;
-- de melding ervan, met alles wat specifiek is eruit gehaald: getallen, id's, geciteerde tekst, e-mailadressen, links, bestandspaden en alles wat op een sleutel lijkt. Elk ander woord dat een naam kan zijn, gaat er ook uit;
-- waar het gebeurde in de eigen code van The Machine: bestand, functie en regel, nooit een map op je computer;
-- de versie van de app, hoe vaak het gebeurde, en wanneer de eerste en de laatste keer.
+- de soort fout, zoals `KeyError`;
+- de melding, nadat alle specifieke informatie eruit is gehaald: getallen, id's, geciteerde tekst, e-mailadressen, links, bestandspaden, sleutels en woorden die een naam kunnen zijn;
+- waar in de eigen code van The Machine de fout is opgetreden, nooit een map op je computer;
+- de appversie, hoe vaak de fout is opgetreden en wanneer dat de eerste en laatste keer was.
 
 Een echt voorbeeld: `IndexError`, `list index out of range`, bij `assistant.py:fault_event:7899`, versie `05b17ee6ac79`, 1 keer.
 
-## Wat nooit meegaat
+## Wat er nooit wordt verstuurd
 
-Wat er in je berichten, to-do's, concepten of chats staat. Namen, e-mailadressen, telefoonnummers, links, tokens of wachtwoorden. Over welk account of welke persoon het ging.
+Wat er in je berichten, to-do's, concepten of chats staat. Namen, e-mailadressen, telefoonnummers, links of wachtwoorden. Om welk account of welke persoon het ging.
 
 ## Waar fouten vandaan komen
 
-- de service en zijn taken: checks van nieuwe berichten, to-do's voorbereiden, chat, koppelingen en syncs;
-- het dashboard in je browser, ook fouten die het opving en je liet zien, en de app-kopie ervan op je toestel;
-- oproepen van het dashboard naar je Machine die mislukken of te lang duren: welke oproep, nooit wat die vroeg of stuurde;
-- taken van Claude Code en Codex die mislukken: alleen de tool en het soort fout.
+- achtergrondtaken: nieuwe berichten controleren, to-do's voorbereiden, chat, Koppelingen en synchronisaties;
+- het dashboard, in je browser of de app, inclusief fouten die daar worden getoond;
+- mislukte of verlopen verzoeken vanuit het dashboard: om welk verzoek het gaat, nooit wat het heeft verstuurd;
+- mislukte opdrachten voor codeeragenten: alleen de tool en het soort fout.
 
-Dezelfde fout telt één keer, met een aantal. Hooguit één batch per 10 minuten. Het team bewaart ze 30 dagen.
+Herhaalde fouten van dezelfde soort worden geteld, maar niet opnieuw verstuurd. Er wordt hooguit eens per 10 minuten een bundel verstuurd. We bewaren de gegevens 30 dagen.
 
-## Pacing
+## Belasting beheren
 
-Werk op de achtergrond wacht als de limieten van je AI-abonnement bijna op zijn, zodat er ruimte blijft voor je eigen chats (zie [Model](model.md)). Checks van wat binnenkwam wachten alleen vlak bij de limieten; zwaarder werk, zoals je geschiedenis doorlopen, wordt over de week verdeeld.
+Achtergrondtaken worden gepauzeerd als de limieten van je AI-abonnement bijna bereikt zijn. Zo blijft er ruimte over voor je eigen chats (zie [Je AI-model](model.md)).
 
-Met foutrapporten aan vertelt je Machine het team ook, één keer per dag, hoe vaak dat gebeurde: per keer het uur waarop het begon, welke limiet, hoeveel minuten het duurde en hoeveel taken wachtten. Alleen aantallen en minuten, niets over wat die taken waren.
+Als foutrapporten aanstaan, laat je Machine ons ook één keer per dag weten hoe vaak dit is gebeurd. Per pauze: het uur, welke limiet is bereikt, hoe lang de pauze duurde en hoeveel opdrachten hebben gewacht. Er wordt niet vermeld waar die opdrachten over gingen.
 
 ## Uitzetten
 
-Zet in Instellingen, Beveiliging **Foutrapporten sturen** uit. Er wordt niets meer bijgehouden of verstuurd, ook geen pacingtellingen, en wat nog wachtte, wordt verwijderd. Fouten verschijnen nog steeds op je eigen Machine, die een oplossing kan voorstellen.
+Ga naar **Instellingen** en **Beveiliging** en zet **Foutrapporten sturen** uit. Er wordt dan niets meer vastgelegd of verstuurd en wat klaarstond, wordt verwijderd. Fouten blijven zichtbaar op je eigen Machine, die een oplossing kan voorstellen.
 
 Zie [Beveiliging en privacy](security-and-privacy.md).

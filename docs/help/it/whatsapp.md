@@ -5,6 +5,7 @@ summary: Le tue chat WhatsApp, lette come dispositivo collegato. Risponde solo d
 covers: connector:whatsapp
 code: onboarding.py, next_actions.py, whatsapp_images.py
 site: Show the QR code, Get a code, On your phone? Link with a code instead, Remove
+translated: 881c555219a98f0f
 ---
 ## Cosa legge
 

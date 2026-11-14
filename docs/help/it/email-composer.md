@@ -5,6 +5,7 @@ summary: Fai clic su un indirizzo email per scrivere dalla tua casella, nella st
 covers: email-composer
 code: machine/app/mail.py, dashboard/todos-compose.js
 order: 12
+translated: 568ac451673bc141
 ---
 ## Aprirla
 

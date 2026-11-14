@@ -5,6 +5,7 @@ summary: Comptes, contacts et deals, pour savoir qui compte. Il lit avec votre c
 covers: connector:salesflare
 code: assistant.py, onboarding.py
 site: More sources, Connect, Remove
+translated: 697e6d60b69bb1cd
 ---
 ## Ce qu’il lit
 

@@ -1,61 +1,66 @@
 ---
 title: Connessioni
 area: connections
-summary: Le tue fonti in un solo posto: come stanno andando, aggiungine una nuova o disconnettine una.
+summary: Tutte le tue fonti in un unico posto: controlla come vanno, aggiungine una o disconnettila.
 covers: tab:health, saved-signins
 code: dashboard.html, onboarding.py
 order: 1
+translated: 1ca62ab8f65b77ff
 ---
-## Come stanno andando
+## Come vanno
 
-La scheda **Connessioni** elenca le tue fonti per tipo (**Email**, **Calendario**, **Chat** e altro), con **Accessi** e **Controlli** sotto una linea. Sul telefono, tocca un tipo per aprirlo e **Connessioni** per tornare indietro. Ogni fonte è una riga; toccala per la sua scheda. Ognuna dice come sta andando: Connesso, In attesa della prima sincronizzazione, Riconnessione automatica o Serve il tuo aiuto. Apri **Dettagli** per vedere **Sincronizzazioni recenti**, dove la sincronizzazione è spiegata in parole semplici (come "In pari" o "Prima lettura"), e cosa fare.
+La scheda **Connessioni** mostra le tue fonti divise per tipo, con **Accessi** e **Controlli** sotto una linea. Sul telefono, tocca un tipo per aprirlo e **Connessioni** per tornare indietro. Si apre per prima la categoria con una fonte che richiede il tuo intervento. Ogni fonte è una riga: mostra il suo stato (Connessa, In attesa della prima sincronizzazione, Riconnessione automatica o Serve il tuo intervento) e ciò che è arrivato di recente. Tocca una fonte per aprire la scheda e **Dettagli**.
 
-Una sincronizzazione fallita che una successiva ha recuperato appare in grigio; solo un errore che è ancora l’ultimo appare come problema, con quando riprova.
+Se una sincronizzazione non è riuscita ma una successiva ha recuperato i dati, l'errore appare in grigio. Viene segnalato come problema solo un errore ancora recente, insieme all'orario del prossimo tentativo.
 
-I suoi numeri mostrano tutto ciò che ha portato, anche la sua [cronologia](history.md), cosa è arrivato nelle ultime 24 ore e cosa non è ancora stato controllato. Un calendario conta eventi: tutti, quelli dei prossimi 7 giorni e delle ultime 24 ore.
+I conteggi mostrano tutto ciò che la fonte ha importato, compresa la [cronologia](history.md), ciò che è arrivato nelle ultime 24 ore e ciò che non è ancora stato controllato. Per un calendario, vengono conteggiati gli eventi.
 
-Ogni fonte porta il nome del suo account, come lo chiama il servizio: il tuo indirizzo, un profilo X, uno spazio di lavoro Slack o di chi è il Signal o il Telegram. Sotto: **Lavoro** o **Personale**, con l’indirizzo o l’handle quando il nome non lo dice già. Se due fonti nella stessa scheda hanno lo stesso nome, ognuna dice anche cosa le distingue, come Slack o X, o l’indirizzo dello spazio di lavoro.
+Ogni fonte prende il nome dal suo account, come lo chiama il servizio: il tuo indirizzo, un profilo X, uno spazio di lavoro Slack o la persona a cui appartiene l'account Signal o Telegram. Sotto il nome compare prima **Lavoro** o **Personale**, poi l'indirizzo o il nome utente se il nome non li include già. Se due fonti dello stesso tipo hanno lo stesso nome, viene indicato anche l'elemento che le distingue, ad esempio Slack o X, oppure l'indirizzo dello spazio di lavoro.
 
-Sotto lo stato, ogni fonte dice in una riga cosa porta e, quando può agire, che lo fa solo dopo che premi **Invia** o dai l’OK.
+Ogni fonte indica anche, in una riga, cosa importa e, se può agire, che lo fa solo dopo che premi **Invia** o approvi l'azione.
 
-## Aggiungine una
+## Aggiungerne una
 
-Apri il suo tipo e scegli una fonte sotto **Aggiungine un altro**, o sotto l’elenco se non ne hai ancora collegata nessuna. Chiede quello che le serve, una domanda alla volta. **Annulla** interrompe l'aggiunta. Sei uscito prima di finire? Riapri **Connessioni**, su qualsiasi dispositivo, e riprendi dallo stesso passaggio. Una volta collegata, la tua Machine inizia subito a leggerla e apre la nuova scheda, che mostra come va la prima sincronizzazione. Su una Machine in hosting, Google, Microsoft, Microsoft OneDrive, Zoom, Stripe e Intercom accedono da qui: scegli **Lavoro** o **Personale**, accedi e torni a questo modulo, che mostra come va il collegamento. GitHub, WhatsApp, Codex, Chat di Telegram e il tuo telefono Android mostrano il loro codice direttamente in questo modulo.
+Apri un tipo (**Email**, **Calendario**, **Chat**, **Riunioni**, **Documenti e file**, **Clienti**, **Progetti e codice**, **Altro**) e scegli una fonte sotto **Aggiungine un altro** o, se non ne hai ancora collegate, sotto l'elenco. In fondo trovi le opzioni generiche: **Altra email** sotto Email, **Link del calendario (ICS)** e **Altro calendario** sotto Calendario. Exchange Server importa le riunioni, quindi si trova sotto Calendario.
 
-Una fonte già collegata lo indica nell’elenco, con il suo account. Sceglila per aggiungerne un’altra accanto: il modulo lo dice e rimanda a quella che hai già.
+Se la tua Machine rileva un motivo per aggiungere una fonte, in cima a **Connessioni** compare **Suggerito per te**, con una breve spiegazione: email da Stripe, riunioni Zoom nel tuo calendario, messaggi con link a Google Docs o una configurazione non completata. La fonte resta anche nel suo gruppo, contrassegnata come **Suggerito**. Questo conteggio viene calcolato sulla tua Machine: i dati non ne escono. Una fonte già connessa non viene mai suggerita.
 
-L’elenco è diviso in gruppi (**Email**, **Calendario**, **Chat**, **Riunioni**, **Documenti e file**, **Clienti**, **Progetti e codice**, **Altro**), dalla A alla Z in ciascuno. Una voce generica come **Altra email** viene per ultima nel suo gruppo.
+Microsoft Teams compare due volte: sotto **Chat** per le chat e sotto **Riunioni** come **Riunioni Teams** per le note delle riunioni. Entrambe le opzioni usano lo stesso accesso Microsoft, quindi collegandone una si collega anche l'altra.
 
-**Suggerito per te** compare in alto quando la tua Machine vede un motivo per una fonte, con quel motivo in una riga: email da Stripe, riunioni Zoom nel tuo calendario, messaggi che rimandano a Google Docs, o una configurazione non finita. La fonte resta anche nel suo gruppo, segnata come **Suggerito**. Li conta sulla tua Machine; non esce nulla. Una fonte già collegata non viene mai suggerita.
+Nell'elenco, le fonti che hai già collegato sono indicate con il relativo account. Selezionale per aggiungerne un'altra accanto: il modulo lo specifica e include un link a quella che hai già.
 
-Microsoft Teams compare due volte: sotto **Chat** per le chat e sotto **Riunioni** come **Riunioni Teams** per le note delle riunioni. Usano lo stesso accesso Microsoft, quindi collegarne una collega anche l’altra.
+Inserisci le informazioni richieste, come una chiave o un indirizzo, scegli **Lavoro** con il nome dell'azienda oppure **Personale**, poi premi **Collegati**. Per email e calendari, la scelta viene chiesta solo se l'indirizzo non basta a determinarla. Per servizi come LinkedIn o X, si apre la pagina di accesso nel browser della tua Machine e la procedura prosegue automaticamente dopo l'accesso. GitHub, WhatsApp e Codex mostrano un codice da inserire; le chat di Telegram mostrano un codice QR da scansionare.
 
-**Riconnetti** su una fonte e in **Serve il tuo intervento** apre lo stesso modulo. Sul tuo computer, `assistant connect` fa lo stesso in un terminale.
+Premi **Annulla** per interrompere la procedura. Se sei uscito prima di completarla, riapri **Connessioni** da qualsiasi dispositivo: la procedura riprende dal punto in cui eri arrivato. Dopo la connessione, la tua Machine inizia subito a leggere i dati e mostra lo stato della prima sincronizzazione.
+
+Su una Machine ospitata, puoi accedere a Google, Microsoft, Microsoft OneDrive, Zoom, Stripe e Intercom direttamente qui: scegli **Lavoro** o **Personale** e premi **Accedi**. Tornerai a questo modulo, che mostrerà l'esito. Anche i codici di GitHub, WhatsApp, Codex, delle chat di Telegram e del tuo telefono Android vengono mostrati qui.
+
+Premendo **Riconnetti** su una fonte o in **Serve il tuo intervento** si apre lo stesso modulo. Sul tuo computer, `assistant connect` fa lo stesso da un terminale.
 
 ## Lavoro o personale
 
-Ogni fonte conta come lavoro (per un’azienda che indichi tu) o personale. Cambialo sotto **Dettagli**. Dice **Ipotizzato** solo quando l'ha scelto la tua Machine in base all'indirizzo; quando scegli tu, la scelta è tua. Le attività di lavoro aspettano i tuoi giorni lavorativi.
+Ogni fonte è classificata come lavorativa, per un'azienda che indichi, o personale. Puoi modificare la classificazione in **Dettagli**. **Indovinato** indica che la tua Machine l'ha dedotta dall'indirizzo. Le attività di lavoro aspettano i tuoi giorni lavorativi.
 
-Email e calendari di Google e Microsoft seguono il loro indirizzo quando è chiaro: un provider come Gmail o Outlook.com è Personale, il dominio del tuo team è Lavoro. Altrimenti lo chiede una volta, subito dopo l’accesso. **Cambia** ti fa scegliere. Se poi la posta dice il contrario, l’attività **Ottieni di più da The Machine** chiede una volta se cambiarlo.
+Per email e calendari Google e Microsoft, la classificazione viene dedotta dall'indirizzo quando è chiara: un provider di posta come Gmail o Outlook.com indica **Personale**, mentre il dominio della tua azienda indica **Lavoro**. Altrimenti, ti viene chiesto subito dopo l'accesso. Premi **Cambia** per impostarla tu. Se in seguito le email indicano l'altra opzione, l'attività **Ottieni di più da The Machine** ti chiederà una volta se vuoi cambiarla.
 
-## Capacità
+## Funzionalità
 
-Una fonte può portare segnali (ciò che arriva diventa to-do), fare cose per i tuoi to-do (leggere un documento quando ne serve uno, o inviare, rispondere o cambiare qualcosa dopo il tuo OK), o entrambe. Con entrambe, **Dettagli** ha un interruttore per ciascuna: **Porta segnali** e **Può fare cose**. Una resta attiva. Per fermarle entrambe, disconnettila. Le risposte di una chat rispondono a ciò che porta, quindi una chat ha solo **Può fare cose**.
+Una fonte può importare segnali, che diventano attività, eseguire azioni per le tue attività, come leggere un documento o inviare, rispondere o modificare qualcosa dopo la tua approvazione, oppure fare entrambe le cose. Se fa entrambe le cose, in **Dettagli** trovi un interruttore per ciascuna: **Porta segnali** e **Può fare cose**. Uno dei due deve restare attivo: per disattivarli entrambi, disconnetti la fonte. Una chat offre solo **Può fare cose**.
 
-Con **Porta segnali** spento, non si sincronizza e la sua scheda non mostra numeri. Con **Può fare cose** spento, la tua Machine non legge mai nulla su richiesta, non scrive bozze e non cambia nulla con essa. Le fonti di prima le hanno entrambe attive.
+Se disattivi **Porta segnali**, la fonte non si sincronizza. Se disattivi **Può fare cose**, la tua Machine non legge, crea bozze o modifica mai nulla tramite quella fonte.
 
-## Rimuovine una
+## Rimuoverne una
 
-Apri la fonte, **Dettagli**, poi **Disconnetti**. Smette di leggere. Quello che ha già portato dentro resta. Su una Machine in hosting, Google, Microsoft, Microsoft OneDrive, Zoom e Stripe mostrano **Disconnetti ↗**, che apre la tua pagina di configurazione.
+Apri la fonte, vai su **Dettagli** e premi **Disconnetti**. La fonte smette di essere letta, ma i dati già importati restano. Su una Machine ospitata, per Google, Microsoft, Microsoft OneDrive, Zoom e Stripe compare **Disconnetti ↗**, che apre la pagina di configurazione.
 
-**Disconnesso di recente** elenca gli accessi Google, Microsoft e Zoom che hai rimosso. **Rimosso, confermato** significa che Google ha confermato la disconnessione, oppure, per Microsoft e Zoom, che non ne resta alcuna copia. **In sospeso** spiega il perché, e la tua Machine continua a riprovare.
+**Disconnesso di recente** elenca gli account Google, Microsoft, Zoom, Slack, Stripe e Salesforce che hai rimosso negli ultimi 30 giorni, con la data. Un account Google viene mostrato una sola volta, anche se Google Meet o Docs avevano un accesso separato. Ogni account compare sotto il proprio tipo: un account Google o Microsoft sotto **Email**, Slack sotto **Chat**.
 
 ## Accessi salvati
 
-I siti usati dal browser della tua Machine, come LinkedIn o X, possono salvare un accesso: spunta **Salva per la prossima volta** quando accedi. Poi **Accessi** li elenca. Quando un sito disconnette la tua Machine, lei rientra con un tocco. Le password restano cifrate sulla tua Machine. **Dimentica** ne rimuove uno.
+Per siti come LinkedIn o X, seleziona **Salva per la prossima volta** quando accedi. Gli account compaiono poi in **Accessi** e, quando un sito disconnette la tua Machine, puoi accedere di nuovo con un solo tocco. Le password restano crittografate sulla tua Machine. Premi **Dimentica** per rimuovere un account.
 
 ## Controlli
 
-**Controlli** mostra come la tua Machine sta leggendo quello che arriva: le esecuzioni recenti e cosa ha trovato ciascuna. Vedi [Nessuna nuova attività](reviews-paused.md).
+**Controlli** mostra come la tua Machine legge i dati in arrivo: i controlli recenti e ciò che è stato trovato. Consulta [Nessuna nuova attività](reviews-paused.md).
 
-Ogni connessione ha un suo articolo in questa sezione, con cosa legge e cosa può inviare.
+Ogni connessione ha una pagina dedicata in questa sezione, con i dati che legge e ciò che può inviare.

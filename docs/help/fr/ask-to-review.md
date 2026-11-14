@@ -5,6 +5,7 @@ summary: Demandez à un collègue ou à quelqu’un de votre Famille de relire u
 covers: ask-to-review
 code: fleet_reviews.py, dashboard/todos-review.js
 order: 4
+translated: 58823adef1b1f51b
 ---
 ## Demander la relecture d’une tâche
 

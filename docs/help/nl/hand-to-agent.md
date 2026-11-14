@@ -6,6 +6,7 @@ covers: hand-to-agent
 code: agent_jobs.py, agent_remote.py, dashboard.html
 site: Connect Codex, Add more any time, On your Machine, Other ways, On my computer
 order: 5
+translated: 333d553e80aea529
 ---
 ## Een to-do overdragen
 

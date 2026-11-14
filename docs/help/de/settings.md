@@ -5,6 +5,7 @@ summary: Wo du jede Einstellung findest, vom hellen Modus bis zu Sicherheit und 
 covers: settings:general
 code: dashboard.html
 order: 1
+translated: 00e42f9aeb395d21
 ---
 Öffne **Einstellungen** über das Zahnrad oben. Die Tabs:
 

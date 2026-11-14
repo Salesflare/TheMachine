@@ -5,6 +5,7 @@ summary: Instala la app de código abierto en Linux, macOS o Windows. Gratis, co
 covers: self-hosted
 code: install.sh, install.ps1, docs/getting-started.md
 order: 2
+translated: 73526b82818f009d
 ---
 The Machine es de código abierto (AGPL). En tu propio ordenador es gratis, y tus datos se quedan ahí.
 

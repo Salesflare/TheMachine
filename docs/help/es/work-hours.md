@@ -5,6 +5,7 @@ summary: Cuándo puede escribirte tu Machine, cuándo vuelve lo pospuesto y cuá
 code: dashboard.html, assistant.py
 order: 3
 keywords: quiet hours, weekend, evening, night, do not disturb, time zone
+translated: 062ccef1310f228a
 ---
 En **Ajustes**, **Notificaciones**, en **Horario laboral**:
 

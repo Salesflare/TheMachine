@@ -5,6 +5,7 @@ summary: Conversas com clientes no seu workspace do Intercom. Ele só responde d
 covers: connector:intercom
 code: connectors/intercom.py, onboarding.py
 site: Sign in with Intercom, More sources, Remove
+translated: 2cbee87e6d24c0a9
 ---
 ## O que ele lê
 

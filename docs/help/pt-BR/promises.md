@@ -5,6 +5,7 @@ summary: O que você disse que faria e o que outras pessoas prometeram a você. 
 covers: promises
 code: dashboard.html, assistant.py
 order: 6
+translated: 0779d3fc9d3f3407
 ---
 Sua Machine percebe promessas nas suas mensagens, nos dois sentidos, sem nada para configurar.
 

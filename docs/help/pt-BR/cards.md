@@ -5,6 +5,7 @@ summary: Uma tarefa para cada coisa que precisa de você, pronta para o seu sim.
 covers: tab:inbox
 code: dashboard.html, assistant.py
 order: 1
+translated: 645c40350e70a0c9
 ---
 Sua Machine lê tudo o que chega e cria uma tarefa só quando algo precisa de você. Uma tarefa por assunto, não importa quantas mensagens ele tenha.
 

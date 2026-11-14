@@ -5,6 +5,7 @@ summary: Een rustige pagina voor iemand buiten het Network, met een link in je e
 covers: task-pages
 code: task_pages.py, task_invites.py, dashboard.html
 order: 4
+translated: f5a3d79bc2168432
 ---
 ## Een taakpagina toevoegen
 

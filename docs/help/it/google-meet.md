@@ -5,6 +5,7 @@ summary: Trascrizioni e note di Gemini delle riunioni Meet che organizzi. Legge 
 covers: connector:google_meet
 code: connectors/google_meet.py, onboarding.py
 site: Sign in with Google
+translated: cea7230915b5a536
 ---
 ## Cosa legge
 

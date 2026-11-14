@@ -5,6 +5,7 @@ summary: Les réunions du lien de partage d’un agenda : Proton Calendar, agend
 covers: connector:proton_calendar, connector:ics
 code: ics_feed.py, ical.py, machine/sources/calendar_setup.py
 order: 15
+translated: b3bcf33b5c027baf
 ---
 ## Ce qu’il lit
 

@@ -5,6 +5,7 @@ summary: Le storie che cambiano stato, con i loro responsabili e le scadenze. Le
 covers: connector:shortcut
 code: connectors/shortcut.py
 site: Connect, More sources, Remove
+translated: 2298e2fcb1af74b3
 ---
 ## Cosa legge
 

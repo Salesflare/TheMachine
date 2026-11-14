@@ -1,53 +1,54 @@
 ---
 title: Übergaben
 area: fleet
-summary: Übergib eine Aufgabe an die Machine eines Teammitglieds, mit allem, was es braucht. Frag später nach oder nimm sie zurück.
+summary: Übergib eine Aufgabe an die Machine eines Teammitglieds, zusammen mit allem, was dafür nötig ist. Frag später nach oder hol sie zurück.
 covers: handoffs
 code: fleet_requests.py, dashboard.html
 order: 3
+translated: acb60a24ef374625
 ---
 ## Eine Aufgabe übergeben
 
 1. Öffne bei der Aufgabe **…**, dann **Übergeben…**, und wähle **Ein Teammitglied**.
-2. Wähle, an wen, prüfe, was mitgeht (lass mit × jeden Teil weg), und füge eine Notiz hinzu. Der Text beginnt mit der Aufgabe und warum sie wichtig ist, aus der Aufgabe, und woher sie kommt (ihr Link). Nichts aus einem privaten Konto oder dem einer anderen Firma geht mit.
-3. Schick sie ab. Die Machine des Teammitglieds zeigt sie als Aufgabe.
+2. Wähle eine Person, prüfe, was mitgegeben wird (× lässt einen Teil weg), und füge eine Notiz hinzu. Nichts aus einem Personal-Konto oder einem anderen Unternehmen wird mitgegeben.
+3. Sende die Aufgabe ab. Ihre Machine zeigt sie der Person als Aufgabe an.
 
-Ihre Machine meldet sich per Handy oder in Telegram. Ist nichts davon eingerichtet, schickt sie stattdessen einmal eine E-Mail: wer übergeben hat, der Titel und ein Link, sonst nichts. Siehe [Benachrichtigungen](notifications.md).
+Ihre Machine benachrichtigt sie auf dem Handy oder über Telegram. Wenn beides nicht eingerichtet ist, erhält die Person einmalig eine E-Mail mit dem Namen der Person, die die Aufgabe übergeben hat, dem Titel und einem Link. Weitere Informationen findest du unter [Benachrichtigungen](notifications.md).
 
-Ein Intercom-Gespräch geht mit seinem Platz in Intercom mit. Liest ihre Machine denselben Intercom-Workspace, hängt ihre Aufgabe an diesem Gespräch: **Nachricht lesen** öffnet es, der Kunde steht darauf, und ihre Antwort geht in Intercom zurück. Wenn nicht, verlinkt die Aufgabe trotzdem das Gespräch in Intercom.
+Eine Intercom-Unterhaltung wird ebenfalls mitgegeben. Wenn ihre Machine Zugriff auf denselben Intercom-Arbeitsbereich hat, öffnet **Nachricht lesen** die Unterhaltung und die Antwort wird in Intercom gesendet. Wenn nicht, enthält die Aufgabe einen Link dazu.
 
-Während du wartest, steht die Aufgabe unter **Kommt später zurück**, „Bei Pat · wartet“, mit einem Datum zum Nachfragen. **Jetzt nachhaken** fragt, wie es läuft. **Uhrzeit ändern** verschiebt das Nachfragen.
+Während du wartest, zeigt die Aufgabe, worum du gebeten hast und wann („Pat gefragt am Di., 3. Nov.: …“), aber nur, wenn das zusätzlich zum Titel etwas aussagt. Sie erscheint unter **Kommt später zurück**, „Bei Pat · wartet“, zusammen mit einem Datum fürs Nachfragen. **Jetzt nachhaken** erstellt einen kurzen Erinnerungsentwurf an Pat, den du senden kannst. Mit **Uhrzeit ändern** änderst du den Zeitpunkt fürs Nachfragen.
 
-Kann die Machine von Pat sie nicht benachrichtigen (dort sind weder Handy-Benachrichtigungen noch Telegram noch E-Mail eingeschaltet), sagt die Aufgabe „Pat bekommt keinen Hinweis. Sag Pat Bescheid.“, und du hörst es einmal. Sag Pat selbst Bescheid. Die Zeile verschwindet, sobald Pat eine Benachrichtigung einschaltet.
+Wenn Pats Machine Pat nicht benachrichtigen kann, steht bei der Aufgabe „Pat wird nicht benachrichtigt. Sag Pat Bescheid.“ Informiere Pat selbst. Der Hinweis verschwindet, sobald Pat Benachrichtigungen aktiviert.
 
-Sie kommt nur dann wieder nach oben, wenn es etwas zu entscheiden gibt: Pat hat geantwortet, abgelehnt oder sie als erledigt markiert, die Übergabe ist fehlgeschlagen oder eine Frist ist erreicht. Bei einer Aufgabe, die heute fällig ist, wird ein paar Stunden später nachgefragt, bei einer bald fälligen am Arbeitstag davor, bei einer dringenden ohne Datum am nächsten Arbeitsmorgen und bei allen anderen nach 3 Arbeitstagen.
+Die Aufgabe erscheint erst wieder ganz oben, wenn es etwas zu entscheiden gibt: Pat hat geantwortet, abgelehnt oder die Aufgabe erledigt, die Übergabe ist fehlgeschlagen oder eine Frist ist erreicht. Der Zeitpunkt fürs Nachfragen richtet sich nach dem Fälligkeitsdatum: bei heute ein paar Stunden später, bei bald am vorherigen Arbeitstag, bei dringend am nächsten Morgen, andernfalls in 3 Arbeitstagen.
 
-Zurück zum Nachhaken steht dort „Noch bei Pat · nachhaken?“: Pat hat sie noch, es kam nichts zurück. **Jetzt nachhaken** öffnet den Chat; **Zurücknehmen** und **An jemand anderen übergeben** sind unter **…**, dann **Übergeben…**.
+Wenn die Aufgabe zum Nachfragen zurückkommt, steht dort „Immer noch bei Pat“. **Jetzt nachhaken** erstellt einen kurzen Erinnerungsentwurf an Pat an der Stelle, an der du gefragt hast (Slack, WhatsApp, Telegram oder E-Mail), direkt bei der Aufgabe. Es wird nichts gesendet, bis du **Senden** auswählst. Danach wartet die Aufgabe wieder auf Pat. Wenn du über keinen verbundenen Dienst Nachrichten an Pat senden kannst, öffnet sich der Chat mit einem entsprechenden Hinweis. **Zurücknehmen** und **An jemand anderen übergeben** findest du unter **…**, dann **Übergeben…**.
 
-Der Chat der Aufgabe zeigt, wann sie rausging („An die Machine von Pat übergeben · 14:02“) und was zurückkam: angenommen, abgelehnt (mit Notiz) oder erledigt. Ist sie zum Nachfragen zurück und es gibt noch keine Antwort, steht „Noch keine Antwort von Pat“ unter dieser Zeile, mit **Als erledigt markieren**, **Zurückstellen** und **Nicht nötig** (kein Ausführen: Pat hat sie). Um Pat zu erinnern oder sie zurückzunehmen, sag es im Chat.
+Im Chat der Aufgabe siehst du, wann sie übergeben wurde („An Pats Machine übergeben · 14:02“) und was zurückkam: angenommen, abgelehnt (mit Notiz) oder erledigt. Solange noch keine Antwort da ist, werden **Als erledigt markieren**, **Zurückstellen** und **Nicht nötig** angeboten. Um Pat zu erinnern oder die Aufgabe zurückzunehmen, sag es im Chat.
 
-Wenn die Übergabe nicht rausging, sagen die Aufgabe und ihr Chat das, mit **Erneut versuchen**.
+Wenn die Übergabe nicht gesendet wurde, steht das bei der Aufgabe und im Chat. Dort findest du auch **Erneut versuchen**.
 
-## Stattdessen an jemand anderen übergeben
+## Die Aufgabe stattdessen jemand anderem übergeben
 
-Solange ein Teammitglied sie hat, sagt die Aufgabe das in einer Zeile („Bei Pat · wartet“), mit **Zurücknehmen** und **An jemand anderen übergeben** unter **…**, dann **Übergeben…**. **Zurücknehmen** macht sie wieder zu deiner: Die Machine von Pat erfährt es, und eine Antwort von Pat verschiebt sie nicht mehr.
+Während ein Teammitglied die Aufgabe hat, steht das in einer Zeile („Bei Pat · wartet“). Unter **…**, dann **Übergeben…**, findest du **Zurücknehmen** und **An jemand anderen übergeben**. Mit **Zurücknehmen** gehört die Aufgabe wieder dir: Pats Machine wird informiert und Pats Antwort ändert den Status nicht mehr.
 
-**An jemand anderen übergeben** öffnet das Übergabeformular, für jemanden, der sie noch nicht hat. Oder sag es im Chat der Aufgabe („das sollte an Kim gehen“). Die neue Übergabe wartet bei der Aufgabe, bis du sie gelesen hast: „Noch bei Pat, bis du sie an Kim schickst“, mit **Übergabe prüfen an** Kim. Das öffnet das Formular mit dem Text, für Kim.
+Mit **An jemand anderen übergeben** öffnest du das Übergabeformular. Oder sag es im Chat der Aufgabe („die Aufgabe sollte an Kim gehen“). Dann steht bei der Aufgabe „Immer noch bei Pat, bis du sie an Kim sendest“, zusammen mit **Übergabe prüfen an** Kim.
 
-Eine Aufgabe geht an jede Person im Team nur einmal: Solange Pat sie hat, sagt eine erneute Übergabe an Pat „Pat hat diese Aufgabe schon“.
+Eine Aufgabe wird jedem Teammitglied nur einmal übergeben: Solange Pat sie hat, gilt es als Nachfragen, wenn du Pat im Übergabeformular erneut auswählst. Mit **Nachfragen** erstellst du denselben Erinnerungsentwurf, ergänzt um eine Zeile von dir, falls du eine hinzufügst.
 
-**Zurücknehmen von** Pat ist standardmäßig an. Schalte es aus, wenn beide sie haben sollen. Nichts geht raus, bis du **Übergeben** wählst. Dann sagt der Chat „Von Pat zurückgenommen“ und „An die Machine von Kim übergeben“. Die Machine von Pat erfährt es auch, und die Aufgabe, die sie für Pat angelegt hat, verschwindet.
+**Von Pat zurücknehmen** ist standardmäßig aktiviert. Deaktiviere die Option, wenn beide die Aufgabe haben sollen. Es wird nichts gesendet, bis du **Übergeben** auswählst. Pats Machine wird informiert und Pats Kopie der Aufgabe verschwindet.
 
-## Wenn jemand ablehnt
+## Wenn die Person ablehnt
 
-Die Person kann sagen, warum: nicht ihre Sache, schon erledigt oder keine Zeit diese Woche. Wähle dann **Selbst erledigen**, **An jemand anderen übergeben** oder **Als erledigt markieren**. Das gilt auch, wenn die Person nicht rechtzeitig antwortet. **Selbst erledigen** macht es wieder zu deinem eigenen To-do, unter Für dich.
+Die Person kann einen Grund nennen: Die Aufgabe gehört nicht zu ihr, ist bereits erledigt oder diese Woche ist keine Zeit dafür. Wähle dann **Selbst machen**, **An jemand anderen übergeben** oder **Als erledigt markieren**. Dasselbe gilt, wenn die Person nicht rechtzeitig antwortet. Mit **Selbst machen** wird die Aufgabe wieder zu deiner eigenen und erscheint unter „Für dich“.
 
 ## Jemand außerhalb des Network
 
-Wähle **Per E-Mail**: Deine Machine entwirft eine E-Mail, die du sendest. Während du die Adresse eingibst, schlägt sie zuerst Teammitglieder vor: Personen in deiner Fleet, dann Personen mit der Domain deiner Firma, dann das Getippte mit dieser Domain. Füge eine Aufgabenseite hinzu, damit die Person mit einem Tippen antworten kann: siehe [Aufgabenseiten](task-pages.md).
+Wähle **Per E-Mail**: Deine Machine erstellt einen E-Mail-Entwurf, den du senden kannst. Während du tippst, schlägt sie zuerst deine Fleet und dann Personen aus deinem Unternehmen vor. Füge eine Aufgabenseite hinzu, damit die Person mit einem Fingertipp antworten kann: siehe [Aufgabenseiten](task-pages.md).
 
-Nur für Arbeit-Aufgaben. Hake an, was in die E-Mail kommt: ein paar Zeilen zur Aufgabe, ihr fertiger Entwurf, Links und Dateien. Angeboten wird nur, was dein Team Graph mit dem Team teilt, also bleiben Privat und Nur du draußen. **E-Mail vorbereiten** legt die E-Mail auf die Aufgabe: lies sie und sende sie dann aus deinem eigenen Postfach wie jede E-Mail. Keine Tracking-Pixel.
+Nur für Aufgaben unter „Arbeit“. Wähle aus, was mitgesendet wird: ein paar Zeilen zur Aufgabe, ihr Entwurf, Links und Dateien. Inhalte aus „Persönlich“ und „Nur für dich“ bleiben außen vor. Mit **E-Mail vorbereiten** wird die E-Mail zur Aufgabe hinzugefügt. Lies sie durch und sende sie dann aus deinem eigenen Postfach. Es gibt kein Tracking.
 
-Eine Aufgabe aus Intercom oder Slack hat kein eigenes Postfach, also geht ihre E-Mail aus deinem Arbeit-Postfach.
+Eine Aufgabe aus Intercom oder Slack hat kein eigenes Postfach. Ihre E-Mail wird deshalb aus deinem geschäftlichen Postfach gesendet.
 
-Die Aufgabe zeigt dann "Per E-Mail an <Name> übergeben" und verfolgt es als Versprechen, bis die Person antwortet, dass es erledigt ist, oder du es als erledigt markierst. Am Ende steht "Übernimm das in deiner eigenen Machine": Wer sich über diesen Link anmeldet, kann deiner Fleet beitreten, und die Aufgabe geht als normale Übergabe in die eigene Machine. Schalte die Zeile in **Einstellungen** unter Fleet aus.
+Die Aufgabe behält das Versprechen im Blick, bis die Person antwortet, dass sie erledigt ist, oder du sie als erledigt markierst. Die E-Mail endet mit „Übernimm das in deiner eigenen Machine“: Wenn die Person sich darüber anmeldet, kann sie deiner Fleet beitreten und die Aufgabe wird in ihre Machine verschoben. Du kannst diese Zeile unter Fleet in den **Einstellungen** deaktivieren.

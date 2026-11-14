@@ -5,6 +5,7 @@ summary: Stel een vraag over een to-do of pas het concept aan, in een chat die b
 covers: card-chat
 code: dashboard.html, assistant.py, chat_files.py, corrections.py
 order: 4
+translated: ba1206b5165695ce
 ---
 ## Openen
 

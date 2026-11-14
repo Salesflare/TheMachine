@@ -5,6 +5,7 @@ summary: Je Signal-chats en groepen, gelezen als gekoppeld apparaat van je telef
 covers: connector:signal
 code: onboarding.py, signal_setup.py, signal_mirror.py, signal_store.py, signal_send.py
 keywords: Signal, linked device, QR code
+translated: b85609009f246615
 ---
 ## Wat hij leest
 

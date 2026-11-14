@@ -5,6 +5,7 @@ summary: Bitte ein Teammitglied oder jemanden aus deiner Familie, eine Aufgabe a
 covers: ask-to-review
 code: fleet_reviews.py, dashboard/todos-review.js
 order: 4
+translated: 58823adef1b1f51b
 ---
 ## Jemanden um ein Review bitten
 

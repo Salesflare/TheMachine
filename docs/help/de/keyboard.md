@@ -5,6 +5,7 @@ summary: Erreiche alles im Dashboard per Tastatur: die Palette, Sprungtasten und
 covers: keyboard
 code: dashboard.html
 order: 5
+translated: 9d9a056e308ced41
 ---
 ## Die Palette
 

@@ -5,6 +5,7 @@ summary: A cada tantas tarefas concluídas, uma pequena comemoração em Tarefas
 covers: milestones
 code: machine/store/done_milestones.py, dashboard/todos-milestone.js
 order: 11
+translated: 77c10c7e5e38e386
 ---
 ## Quando aparece
 

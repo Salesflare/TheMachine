@@ -5,6 +5,7 @@ summary: Une page simple pour quelqu’un hors du Network, avec un lien dans vot
 covers: task-pages
 code: task_pages.py, task_invites.py, dashboard.html
 order: 4
+translated: f5a3d79bc2168432
 ---
 ## En ajouter une
 

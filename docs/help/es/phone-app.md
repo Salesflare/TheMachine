@@ -5,6 +5,7 @@ summary: Instala The Machine en tu teléfono u ordenador y recibe una notificaci
 covers: phone-app
 code: manifest.webmanifest, sw.js, dashboard.html
 order: 3
+translated: 3e2919603c5efa9a
 ---
 El panel se instala como app en un teléfono o un ordenador. Luego envía una notificación por cada tarea, resultado y recordatorio cuando no estás en el panel, dentro de tu [horario laboral](work-hours.md). Elige qué envía en [Notificaciones](notifications.md).
 

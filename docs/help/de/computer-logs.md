@@ -1,46 +1,47 @@
 ---
 title: Probleme auf deinem Computer
 area: troubleshooting
-summary: Deine Machine liest die eigenen Logs ihres Computers und sagt dir bei echten Problemen Bescheid, mit Ursache und Lösung. Eine Lösung läuft nur, wenn du auf Do it tippst.
+summary: Deine Machine liest ihre Systemprotokolle und weist dich auf echte Probleme hin, inklusive Ursache und Lösung. Eine Lösung wird erst ausgeführt, wenn du auf **Ausführen** tippst.
 covers: computer-logs
 code: machine/system_logs.py, machine/sources/gateway.py, onboarding.py
 keywords: logs, journal, journalctl, crash, coredump, systemd, Hyprland, Omarchy, bar
 order: 3
+translated: 1a191d8433bfba2a
 ---
 ## Was sie liest
 
-Unter Linux mit systemd liest deine Machine das Log deiner eigenen Benutzersitzung: deine eigenen Dienste und die Absturzberichte deiner eigenen Programme. Unter Omarchy prüft sie auch Hyprland und die Leiste. Das Log des ganzen Systems liest sie nie, und sie fragt nie nach mehr Zugriff.
+Unter Linux mit systemd liest deine Machine das Protokoll deiner eigenen Benutzersitzung: deine eigenen Dienste und die Absturzberichte deiner eigenen Programme. Unter Omarchy prüft sie außerdem Hyprland und die Statusleiste. Sie liest nie das Protokoll des gesamten Systems und fordert nie mehr Zugriff an.
 
-Sie liest, welcher Dienst gestoppt hat, wie er endete und welches Programm abgestürzt ist. Nie, was in einer Logzeile steht, also wird kein Logtext gespeichert und nichts davon verlässt deinen Computer.
+Sie liest, welcher Dienst angehalten wurde, wie er beendet wurde und welches Programm abgestürzt ist. Den Inhalt einzelner Protokollzeilen liest sie nie. Es werden also keine Protokolltexte gespeichert oder von deinem Computer übertragen.
 
-## Was als Problem zählt
+## Was als Problem gilt
 
-Ein Dienst, der immer wieder neu startet, einer, der an einem Tag mehrmals gescheitert ist oder aus bleibt, einer ohne Speicher und ein abgestürztes Programm. Unter Omarchy auch ein Absturz von Hyprland oder der Leiste und Fehler in deinen Hyprland-Einstellungen.
+Ein Dienst, der immer wieder neu startet, mehrmals am Tag ausfällt oder nicht mehr läuft, ein Dienst, dem der Arbeitsspeicher ausgeht, und ein Programm, das abstürzt. Unter Omarchy zählen auch Abstürze von Hyprland oder der Statusleiste sowie Fehler in deinen Hyprland-Einstellungen dazu.
 
-Ein einzelner Neustart oder ein einzelner gescheiterter Lauf ist normal und bleibt still. Ebenso ein Dienst, der ein paar Mal gescheitert ist und danach wieder gut lief.
+Ein einzelner Neustart oder ein einzelner fehlgeschlagener Lauf ist normal und bleibt unbemerkt. Das gilt auch für einen Dienst, der ein paar Mal ausfällt und danach wieder problemlos läuft.
 
-Browser, die Tests und Agents steuern (headless, Playwright, Puppeteer, CI), bleiben still, ebenso ein Programm, das endet, während sein Dienst gestoppt oder neu gestartet wird. Das gilt auch für Entwicklerläufe: was ein Coding-Agent ausführt, Tests und Programme, die aus einem temporären Ordner oder Cache-Ordner laufen. Ein Programm, das immer wieder abstürzt, ergibt eine Aufgabe, die sagt, wie oft und wann.
+Browser, die von Tests und Agenten gesteuert werden (headless, Playwright, Puppeteer, CI), bleiben unbemerkt. Das gilt auch für ein Programm, das beendet wird, während sein Dienst angehalten oder neu gestartet wird. Entwicklerläufe bleiben ebenfalls unbemerkt: Was ein Coding-Agent ausführt, Tests und Programme aus einem temporären Ordner oder Cache-Ordner. Ein Programm, das immer wieder abstürzt, erstellt eine Aufgabe, in der steht, wie oft und wann es passiert ist.
 
-Ein Skript heißt nach seinem eigenen Namen, etwa backup.py, nicht python3 oder node.
+Ein Skript wird unter seinem eigenen Namen aufgeführt, zum Beispiel backup.py, nicht als python3 oder node.
 
 ## Was du bekommst
 
-Eine Aufgabe, die in einfachen Worten sagt, was passiert ist, warum es wichtig ist und was du tun kannst. Die Befehle, die den Grund zeigen, stehen unter Mehr anzeigen. Frag in ihrem Chat, und The Machine sieht es sich an. Alles, was sie ändert, wartet auf dein OK, wie bei Do it.
+Eine Aufgabe, die in einfachen Worten erklärt, was passiert ist, warum es wichtig ist und was du tun kannst. Unter **Mehr anzeigen** findest du die Befehle, die den Grund zeigen. Frag im zugehörigen Chat nach, und The Machine untersucht das Problem. Alles, was sie ändert, wartet auf deine Zustimmung, auch bei **Ausführen**.
 
-Gibt es eine sichere Lösung, hat die Aufgabe Do it. Einen deiner Dienste, der aus bleibt, startet es neu, und auf Omarchy holt es die Leiste zurück. Do it führt nur diesen einen Befehl aus, und das Ergebnis steht im Chat der Aufgabe. Die Dienste von The Machine selbst und das OpenClaw Gateway fasst es nie an.
+Wenn es eine sichere Lösung gibt, enthält die Aufgabe die Schaltfläche **Ausführen**. Bei einem deiner Dienste, der nicht mehr läuft, startet sie ihn neu. Unter Omarchy stellt sie die Statusleiste wieder her. **Ausführen** führt nur diesen Befehl aus. Das Ergebnis erscheint im Chat der Aufgabe. The Machine greift nie in ihre eigenen Dienste oder das OpenClaw Gateway ein.
 
-Dasselbe Problem bringt höchstens alle zwei Wochen eine Aufgabe und nie, solange seine Aufgabe noch offen ist. Höchstens zwei neue am Tag.
+Dasselbe Problem führt höchstens alle zwei Wochen zu einer Aufgabe und nie, solange die entsprechende Aufgabe noch offen ist. Pro Tag gibt es höchstens zwei neue Aufgaben. Eine Aufgabe zu einem ausgefallenen Dienst wird automatisch geschlossen, sobald der Dienst wieder läuft oder der Ausfall behoben ist.
 
 ## Im Terminal
 
-`assistant doctor` listet dieselben Probleme vom letzten Tag.
+`assistant doctor` listet dieselben Probleme aus den letzten 24 Stunden auf.
 
 ## Andere Computer
 
-Unter macOS, Windows und auf Computern ohne systemd liest sie nichts und sagt das in `assistant doctor`.
+Unter macOS und Windows sowie auf Computern ohne systemd liest sie nichts und weist dich in `assistant doctor` darauf hin.
 
-Auf einer gehosteten Machine halten wir den Server am Laufen: Seine Probleme gehen an das Team von The Machine, nicht als Aufgabe an dich.
+Bei einer gehosteten Machine kümmern wir uns darum, dass der Server läuft. Seine Probleme gehen an das Team von The Machine, nicht als Aufgaben an dich.
 
 ## Ausschalten
 
-Setz `"computer_logs": false` in config.json und starte den Dienst neu.
+Setze `"computer_logs": false` in config.json und starte den Dienst neu.

@@ -1,33 +1,34 @@
 ---
 title: ChatGPT
 area: connections
-summary: Inicia sesión con ChatGPT para que tu Machine funcione con tu plan de ChatGPT, e importa tus habilidades de ChatGPT.
+summary: Inicia sesión con ChatGPT para usar tu Machine con tu plan de ChatGPT e importar tus habilidades de ChatGPT.
 covers: chatgpt
 code: docs/models.md, docs/skills.md, skills.py
 site: Sign in with ChatGPT, Reconnect ChatGPT
+translated: fc97be60c0b68336
 ---
 ## Para qué sirve
 
-ChatGPT es el modelo que lee y redacta por ti, con tu propio plan de ChatGPT. The Machine no tiene IA propia. Las peticiones de tu Machine van directamente a OpenAI, con tu cuenta y según sus condiciones.
+Inicia sesión con ChatGPT y tu Machine leerá y redactará con ChatGPT usando tu propio plan. The Machine no tiene una IA propia: las solicitudes van directamente a OpenAI, con tu cuenta y según sus condiciones.
 
-## Inicia sesión
+## Iniciar sesión
 
-En una Machine alojada, en tu página de configuración, pulsa **Iniciar sesión con ChatGPT** y escribe en ChatGPT el código que muestra. ¿Se cerró la sesión más tarde? Pulsa **Reconectar ChatGPT**.
+En una Machine alojada, pulsa **Iniciar sesión con ChatGPT** en la página de configuración e introduce en ChatGPT el código que aparece. ¿Se cierra tu sesión más adelante? Pulsa **Volver a conectar ChatGPT**.
 
-¿OpenAI rechaza el código? Abre tus [ajustes de seguridad de ChatGPT](https://chatgpt.com/settings/security), baja hasta el final y activa el interruptor "Enable device code sign-in for Codex, Excel, PowerPoint, and Word". Luego vuelve a introducir el código.
+¿OpenAI rechaza el código? Abre tus [ajustes de seguridad de ChatGPT](https://chatgpt.com/settings/security), desplázate hasta el final y activa la opción «**Habilitar el inicio de sesión con código de dispositivo para Codex, Excel, PowerPoint y Word**». Después, vuelve a introducir el código.
 
-¿No está? En una cuenta de trabajo (Business, Enterprise o Edu), un administrador del espacio de trabajo lo activa en [Permissions & roles](https://chatgpt.com/admin/permissions), en "Codex and Work Local". Un solo interruptor vale para los dos códigos: si el código de tu modelo funcionó, el de Codex también funciona.
+¿No ves esa opción? Si usas una cuenta de trabajo (Business, Enterprise o Edu), el administrador de ChatGPT puede activarla en [Permisos y roles](https://chatgpt.com/admin/permissions), en «**Codex y Work Local**».
 
-En tu propio ordenador, inicia la sesión de OpenClaw en ChatGPT con `openclaw models auth login`.
+En tu propio ordenador, ejecuta `openclaw models auth login` en una terminal.
 
 ## Límites de uso
 
-Un plan de ChatGPT tiene un límite de 5 horas y uno semanal. **Ajustes** y luego **Modelo** muestra cuánto se ha usado de cada uno y cuándo se reinicia. El trabajo en segundo plano se para bastante antes de un límite, para dejar margen a tus propios chats. Cuando se alcanza un límite, la parte superior del panel dice cuál y cuándo se reinicia, y el trabajo sigue después. Consulta [Modelo](model.md).
+Los planes de ChatGPT tienen un límite de 5 horas y otro semanal. En **Ajustes**, **Modelo** puedes ver cuánto has usado de cada uno y cuándo se restablece. El trabajo en segundo plano se pausa bastante antes de alcanzar un límite para dejar espacio para tus chats. Cuando alcanzas un límite, la parte superior del panel indica cuándo se restablece. Consulta [Modelo](model.md).
 
-## Importa tus habilidades de ChatGPT
+## Importar tus habilidades de ChatGPT
 
-En **Ajustes**, **Habilidades**, pulsa **Importar**, elige **De ChatGPT** y pulsa **Buscar mis habilidades**. Lee las habilidades que creaste, en el navegador de tu Machine. Solo entran las instrucciones. Consulta [Habilidades](skills.md).
+En **Ajustes**, **Habilidades**, pulsa **Importar**, elige **De ChatGPT** y pulsa **Buscar mis habilidades**. Solo se importan las instrucciones. Consulta [Habilidades](skills.md).
 
-## Quítalo
+## Desconectar ChatGPT
 
-Elige otro modelo en tu página de configuración, o inicia la sesión de OpenClaw con otro proveedor. Para terminar su acceso por parte de OpenAI, cierra la sesión en tus ajustes de seguridad de ChatGPT.
+Elige otro modelo en la página de configuración (o, si usas tu propio ordenador, inicia sesión con otro proveedor de la misma manera). Para revocar el acceso desde OpenAI, cierra la sesión en tus ajustes de seguridad de ChatGPT.

@@ -5,6 +5,7 @@ summary: Eine Quelle zeigt Braucht deine Hilfe oder bringt nichts mehr rein. Was
 covers: 
 code: onboarding.py, dashboard.html, assistant.py
 order: 1
+translated: 1c530fc2b291d640
 ---
 ## Status prüfen
 

@@ -5,6 +5,7 @@ summary: Où trouver chaque paramètre, du mode clair à la sécurité et à vot
 covers: settings:general
 code: dashboard.html
 order: 1
+translated: 00e42f9aeb395d21
 ---
 Ouvrez **Paramètres** avec la roue dentée en haut. Ses onglets :
 

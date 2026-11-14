@@ -5,6 +5,7 @@ summary: Haz que una tarea vuelva más tarde. En un día laborable, a la hora qu
 covers: snooze
 code: dashboard.html, assistant.py
 order: 3
+translated: e6681ab225810e81
 ---
 ## Pospón una tarea
 

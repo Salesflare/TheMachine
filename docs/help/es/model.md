@@ -1,41 +1,42 @@
 ---
 title: Modelo
 area: settings
-summary: Qué modelo de IA responde por ti, cuánto razona y cuánto ha usado de los límites de tu plan.
+summary: Qué modelo de IA te responde, cuánto razona y qué parte de los límites de tu plan ha usado.
 covers: settings:model, chat-model
 code: dashboard.html, docs/models.md, chat_model.py
 order: 5
+translated: eee77413a4bdbf0b
 ---
-En **Ajustes**, **Modelo** muestra el modelo que usa el trabajo en segundo plano (marcado como **Trabajo en segundo plano**) y cómo has iniciado sesión, por ejemplo con ChatGPT.
+**Ajustes**, **Modelo** muestra qué modelo de IA realiza tu **Trabajo en segundo plano** y cómo has iniciado sesión, por ejemplo, con ChatGPT.
 
-## Modelo y razonamiento para los chats
+## Modelo y razonamiento en los chats
 
-En **Chats**, elige el modelo y el nivel de razonamiento que usan los chats de tus tareas y la Ayuda. La lista solo tiene los modelos que ofrece tu inicio de sesión, como los de ChatGPT si iniciaste sesión con ChatGPT, y cada modelo solo los niveles que tiene.
+En **Chats**, elige el modelo y el nivel de razonamiento para tus chats de tareas y Ayuda. Solo verás los modelos y niveles disponibles con tu método de inicio de sesión.
 
-Más razonamiento responde mejor a las preguntas difíciles, pero es más lento y usa más de tu plan. **Razonamiento ultra** suma ayudantes para las preguntas más difíciles: es el más lento y el que más usa. Un cambio se aplica desde el siguiente mensaje. Una Machine nueva empieza con **Razonamiento bajo** si su modelo lo tiene: buenos resultados con mucho menos de tu plan.
+Un mayor razonamiento permite responder mejor a las preguntas difíciles, pero es más lento y consume más de tu plan. **Razonamiento ultra** recurre a asistentes para las preguntas más difíciles y es la opción que más consume. Una Machine nueva empieza con **Razonamiento bajo**: buenos resultados con un consumo mucho menor de tu plan. El cambio se aplica a partir del siguiente mensaje.
 
-Un chat puede usar otra cosa: debajo de su cuadro de mensaje, toca el modelo o el nivel de razonamiento. Esa elección es solo para ese chat. Vuelve a elegir lo mismo que en Ajustes para seguir los Ajustes.
+Para cambiarlo solo en un chat, toca el modelo o el nivel de razonamiento que aparece debajo del cuadro de mensaje. Vuelve a elegir **Ajustes** para que el chat siga los ajustes generales.
 
-Las revisiones, tu perfil y los borradores preparados de antemano mantienen su propio modelo.
+Las comprobaciones, tu perfil y los borradores preparados con antelación mantienen su propio modelo.
 
 ## Límites
 
-Si tu plan tiene límites de uso, muestra cuánto se ha usado de cada uno y cuándo se reinicia, por ejemplo el límite de 5 horas y el semanal de un plan de ChatGPT o Claude. Consultar esto nunca gasta tu plan.
+Si tu plan tiene límites de uso, como los límites de 5 horas y semanales de un plan de ChatGPT o Claude, verás cuánto has usado y cuándo se reinicia cada límite. Consultar esta información no consume tu plan.
 
-## Margen para tus propios chats
+## Espacio para tus propios chats
 
-El trabajo en segundo plano (revisiones, tu perfil, borradores preparados de antemano) deja margen para tus propios chats. Se pausa hacia el 65% del límite de 5 horas. Las revisiones de lo que llegó siguen hasta cerca del 90% del límite semanal; el resto lo reparte a razón de más o menos un séptimo al día. Un inicio de sesión sin límites de uso, como una clave de API, nunca se pausa.
+El trabajo en segundo plano deja espacio para tus propios chats. Se pausa cuando se alcanza aproximadamente el 65 % del límite de 5 horas. Las comprobaciones de mensajes nuevos continúan hasta que se alcanza aproximadamente el 90 % del límite semanal. El resto del trabajo consume alrededor de una séptima parte del límite semanal al día. El inicio de sesión no se pausa si no tiene límites, como cuando usas una clave de API.
 
-El trabajo en segundo plano nunca se ejecuta con GPT-6 Astra. Usa GPT-6.1 Sol en su lugar.
+El trabajo en segundo plano nunca se ejecuta en GPT-6 Astra. En su lugar, usa GPT-6.1 Sol.
 
 ## Cuando se alcanza un límite
 
-La parte superior del panel dice qué límite se alcanzó y cuándo se reinicia. El trabajo espera y luego sigue donde lo dejó. No se pierde nada. Algunos planes de ChatGPT incluyen reinicios: **Usar un reinicio** pone los límites a cero, tras una confirmación. Si no, **Ver reinicios en ChatGPT** abre la propia página de ChatGPT.
+En la parte superior del panel se indica qué límite se ha alcanzado y cuándo se reinicia. El trabajo queda en espera y luego se reanuda donde se quedó. No se pierde nada. Si tu plan de ChatGPT permite reinicios, **Usar un reinicio** vuelve a empezar los límites. Si no, **Ver reinicios en ChatGPT** abre la página de ChatGPT.
 
-## Con un modelo de respaldo
+## Con un modelo alternativo
 
-Si tu Machine tiene un modelo de respaldo con otro plan o proveedor, como una clave de API, este toma el relevo cuando se alcanza un límite. Mientras el respaldo funcione, nada se pausa ni espera por tus límites, y arriba del panel dice «Límite de ChatGPT alcanzado, usando tu modelo de respaldo.» Si el respaldo deja de funcionar, las pausas vuelven.
+Si tu Machine tiene un modelo alternativo de otro plan o proveedor, este toma el relevo cuando se alcanza un límite y no hay que esperar. En la parte superior del panel aparece «Se alcanzó el límite de ChatGPT. Se está usando el modelo alternativo». Si el modelo alternativo deja de funcionar, se vuelven a aplicar las pausas.
 
-## Cambia el modelo principal
+## Cambiar el modelo principal
 
-El modelo principal es el que usa el resto de The Machine. En una Machine alojada, elige otro en tu página de configuración, en Tu modelo. En tu propio ordenador, cámbialo en OpenClaw. Consulta [ChatGPT](chatgpt.md) y la [guía de modelos](https://github.com/Salesflare/TheMachine/blob/main/docs/models.md).
+El modelo principal es el que usa el resto de The Machine. Si tienes una Machine alojada, cámbialo en la página de configuración, en Tu IA. Si usas tu propio ordenador, consulta [ChatGPT](chatgpt.md), [Mistral](mistral.md) y la [guía de modelos](https://github.com/Salesflare/TheMachine/blob/main/docs/models.md).

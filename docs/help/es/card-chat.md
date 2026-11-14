@@ -5,6 +5,7 @@ summary: Pregunta sobre una tarea o cambia su borrador, en un chat propio de esa
 covers: card-chat
 code: dashboard.html, assistant.py, chat_files.py, corrections.py
 order: 4
+translated: ba1206b5165695ce
 ---
 ## Ábrelo
 

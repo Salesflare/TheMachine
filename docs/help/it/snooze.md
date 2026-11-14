@@ -5,6 +5,7 @@ summary: Fai tornare un'attività più tardi. In un giorno lavorativo, all'ora c
 covers: snooze
 code: dashboard.html, assistant.py
 order: 3
+translated: e6681ab225810e81
 ---
 ## Posticipa un'attività
 

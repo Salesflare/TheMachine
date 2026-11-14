@@ -5,6 +5,7 @@ summary: Anleitungen, denen deine Machine folgt. Schreib eigene, importiere sie 
 covers: settings:skills
 code: skills.py, dashboard.html
 order: 4
+translated: 98fe851d553ed3dc
 ---
 Ein Skill sagt deiner Machine, wie sie etwas erledigt, etwa „Fragen zu Preisen beantworten“. Er besteht nur aus Anweisungen: Ein Skill ändert nie, was deine Machine tun darf.
 

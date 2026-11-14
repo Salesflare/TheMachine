@@ -5,6 +5,7 @@ summary: Sector, grootte, locatie en een logo bij elke organisatie, opgezocht vi
 covers: enrichment
 code: enrichment.py, graph.py, dashboard.html
 order: 5
+translated: a759d8e2c6274792
 ---
 ## Waar ze vandaan komen
 

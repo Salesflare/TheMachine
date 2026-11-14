@@ -6,6 +6,7 @@ covers:
 code: moving.py
 site: Cancel subscription, Keep my subscription, Withdraw from contract here, Wipe everything now, Delete my account
 order: 2
+translated: 44307d4109200c0b
 ---
 ## Cancelar
 

@@ -5,6 +5,7 @@ summary: Stuur iemands contactgegevens, of die van jezelf, naar een teamgenoot, 
 covers: share-contact
 code: contact_share.py, fleet.py, dashboard.html
 order: 6
+translated: 66412d1dc4e965c2
 ---
 ## Iemand delen
 

@@ -1,33 +1,34 @@
 ---
-title: Une connexion a besoin d’aide
+title: Une connexion a besoin de votre aide
 area: troubleshooting
-summary: Une source indique Attend votre aide, ou ne récupère plus rien. Ce qu’il faut essayer.
+summary: Une source affiche **Attend votre aide** ou n'importe plus rien. Voici quoi essayer.
 covers: 
 code: onboarding.py, dashboard.html, assistant.py
 order: 1
+translated: 1c530fc2b291d640
 ---
 ## Vérifier son état
 
 Ouvrez **Connexions**. Chaque source indique son état :
 
-- **Reconnexion automatique** : un petit accroc. Elle réessaie d’elle-même.
-- **En attente de la première synchro** : tout juste connectée. Laissez-lui quelques minutes.
-- **Lit à nouveau à** 07:00 : X et LinkedIn ne lisent qu’en journée. Rien à faire.
-- **Attend votre aide** : ouvrez **Détails**. Elle dit ce qui n’a pas marché et quoi faire.
-- **Téléphone déconnecté** : le téléphone n’atteint pas OpenClaw. Ouvrez l’app OpenClaw dessus.
+- **Reconnexion automatique** : un petit problème temporaire. La source réessaie toute seule.
+- **En attente de la première synchro** : la connexion vient d'être établie. Patientez quelques minutes.
+- **Reprise de la lecture à** 07:00 : X et LinkedIn ne récupèrent des données que pendant la journée. Rien à faire.
+- **Attend votre aide** : ouvrez **Détails**. Vous y trouverez la cause du problème et la marche à suivre.
+- **Téléphone déconnecté** : votre téléphone Android ne parvient pas à joindre votre Machine. Ouvrez l'application OpenClaw sur votre téléphone.
 
-Une source qui échoue sans cesse et n’apporte rien de nouveau pendant des heures, plus longtemps que son calme habituel, n’apparaît pas comme connectée. Cela disparaît tout seul dès que du nouveau arrive.
+Une source qui n'importe rien pendant plus longtemps que d'habitude n'apparaît plus comme connectée. Le problème disparaît automatiquement dès que de nouveaux éléments arrivent.
 
-Le nombre sur **Connexions** ne compte que les sources qui attendent votre aide.
+Le nombre affiché sur **Connexions** correspond uniquement aux sources qui nécessitent votre aide.
 
-## Solutions courantes
+## Résoudre les problèmes courants
 
-- « Reconnectez-vous à Google » (ou Microsoft) : une ligne par compte. Un seul **Reconnecter** rétablit toutes ses sources, comme Gmail et Agenda.
-- « doit être reconnecté » : appuyez sur **Reconnecter** et connectez-vous. Sur une Machine hébergée, vous vous connectez sur place et revenez au tableau de bord.
-- Microsoft prépare encore l’accès : il réessaie de lui-même.
-- Slack : vérifiez votre clé API Maton et la connexion Slack dans Maton.
-- Android : ouvrez l’app OpenClaw sur le téléphone, et autorisez-lui l’accès aux notifications.
+- « Reconnectez-vous à Google » (ou Microsoft) : un clic sur **Reconnecter** rétablit toutes les sources de ce compte, comme Gmail et Calendar.
+- « Vous devez vous reconnecter » : appuyez sur **Reconnecter**, puis connectez-vous.
+- Microsoft configure encore l'accès : la connexion réessaie automatiquement.
+- Slack : appuyez sur **Reconnecter**. Vous êtes connecté avec une clé Maton ? Vérifiez la clé et la connexion Slack dans Maton.
+- Android : ouvrez l'application OpenClaw sur votre téléphone et autorisez-la à accéder aux notifications.
 
-Sur votre propre ordinateur, `assistant doctor` vérifie chaque source et affiche la solution pour chaque problème.
+Sur votre propre ordinateur, `assistant doctor` vérifie chaque source et indique comment résoudre chaque problème.
 
-Toujours bloqué ? Voir [Obtenir de l’aide](get-support.md).
+Vous êtes toujours bloqué ? Consultez [Obtenir de l'aide](get-support.md).

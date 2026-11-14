@@ -5,6 +5,7 @@ summary: Environ un an d’anciens e-mails, réunions et messages WhatsApp, Slac
 covers: history
 code: machine/app/history.py, machine/store/history.py, machine/store/graph_history.py
 keywords: older messages, backfill, archive, past emails
+translated: 42069e80e6f85bdb
 ---
 ## Ce qu’il garde
 

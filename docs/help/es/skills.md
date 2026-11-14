@@ -5,6 +5,7 @@ summary: Guías que sigue tu Machine. Escribe las tuyas, impórtalas de Claude o
 covers: settings:skills
 code: skills.py, dashboard.html
 order: 4
+translated: 98fe851d553ed3dc
 ---
 Una habilidad le dice a tu Machine cómo hacer algo, como "responder preguntas sobre precios". Son solo instrucciones: una habilidad nunca cambia lo que tu Machine puede hacer.
 

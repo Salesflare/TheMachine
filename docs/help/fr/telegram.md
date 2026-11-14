@@ -5,6 +5,7 @@ summary: Recevez vos tâches sur Telegram, avec les mêmes boutons que dans le t
 covers: telegram
 code: assistant.py, onboarding.py, cli.py
 site: Add my bot, Add more any time, Disconnect Telegram
+translated: a2b74e4831832977
 ---
 ## Ce qu’il fait
 

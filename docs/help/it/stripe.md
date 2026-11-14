@@ -5,6 +5,7 @@ summary: Pagamenti falliti, contestazioni, cancellazioni e nuovi abbonamenti imp
 covers: connector:stripe
 code: connectors/stripe.py, shared_connectors.py
 site: Sign in with Stripe, Connect, More sources, Share Stripe, Connect Stripe, Remove
+translated: 99a14108376ddcc1
 ---
 ## Cosa legge
 

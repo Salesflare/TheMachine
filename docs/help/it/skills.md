@@ -5,6 +5,7 @@ summary: Istruzioni che la tua Machine segue. Scrivi le tue, importale da Claude
 covers: settings:skills
 code: skills.py, dashboard.html
 order: 4
+translated: 98fe851d553ed3dc
 ---
 Una skill dice alla tua Machine come fare qualcosa, per esempio "rispondere alle domande sui prezzi". Sono solo istruzioni: una skill non cambia mai ciò che la tua Machine può fare.
 

@@ -5,6 +5,7 @@ summary: De samenvattingen en transcripties van AI Companion van afspraken die j
 covers: connector:zoom
 code: connectors/zoom.py, meeting_notes.py, onboarding.py
 site: Connect Zoom, More sources, Remove, Sign in with Zoom
+translated: 9533caa1429fb3fc
 ---
 ## Wat het leest
 

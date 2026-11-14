@@ -5,6 +5,7 @@ summary: Les réunions d’iCloud Calendar ou de tout agenda CalDAV, comme Fastm
 covers: connector:icloud_calendar, connector:caldav
 code: caldav_calendar.py, ical.py, machine/sources/calendar_setup.py
 order: 14
+translated: 0ff916ed2bb877e1
 ---
 ## Ce qu’il lit
 

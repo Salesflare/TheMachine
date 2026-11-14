@@ -5,6 +5,7 @@ summary: Bereik alles op het dashboard met het toetsenbord: het palet, ga-naar-t
 covers: keyboard
 code: dashboard.html
 order: 5
+translated: 9d9a056e308ced41
 ---
 ## Het palet
 

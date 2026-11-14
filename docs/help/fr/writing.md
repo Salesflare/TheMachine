@@ -1,36 +1,37 @@
 ---
 title: Rédaction
 area: settings
-summary: Vos signatures d’e-mail, et quelques lignes par canal sur votre façon d’écrire. Les brouillons les suivent.
+summary: Vos signatures d’e-mail et quelques lignes par canal pour définir votre style d’écriture. Les brouillons en tiennent compte.
 covers: settings:writing
 code: dashboard.html, signatures.py, authorship.py, learning_loop.py
 order: 3
 keywords: tone, style, voice, write like me, sound like me, my style, wording, formal, informal
+translated: c6c475c8005473c3
 ---
 ## Signatures
 
-Dans **Paramètres**, **Rédaction**, chaque compte e-mail a une signature ajoutée sous les e-mails que vous envoyez. **Importer depuis Gmail** reprend celle de Gmail ; pour Outlook, **Chercher dans les e-mails envoyés** la trouve dans vos e-mails envoyés. Modifiez-la, puis **Enregistrer**.
+Dans **Paramètres**, **Rédaction**, chaque compte de messagerie a une signature pour les e-mails que vous envoyez. **Importer depuis Gmail** récupère celle de Gmail. Pour Outlook, **Chercher dans les e-mails envoyés** la retrouve dans vos e-mails envoyés. Modifiez-la à votre convenance, puis cliquez sur **Enregistrer**, qui apparaît dès que vous apportez une modification.
 
 ## Votre façon d’écrire
 
-Quelques lignes par canal, comme E-mail ou Slack, et une pour partout. Les brouillons les suivent. Vos messages, notes et modifications les tiennent à jour automatiquement, et vous pouvez les changer à tout moment : **Enregistrer**, ou **Retirer** une ligne.
+Quelques lignes par canal, comme E-mail ou Slack, et une autre qui s’applique partout. Les brouillons en tiennent compte. Ces lignes sont mises à jour automatiquement à partir de vos messages, notes et modifications. Modifiez une ligne puis cliquez sur **Enregistrer**, ou **Retirer**.
 
-Une façon rapide de lui apprendre : quand vous modifiez un brouillon avant de l’envoyer, il apprend de la différence.
+Le moyen le plus rapide de lui apprendre votre style : modifiez un brouillon avant de l’envoyer. Elle apprend de vos modifications.
 
-Il n’apprend que de ce que vous avez écrit vous-même. Un brouillon qu’il a rédigé et que vous avez envoyé tel quel ne compte jamais comme votre écriture, même avec votre nom dessus. Un brouillon que vous avez changé n’apprend que par ce que vous avez changé.
+Elle apprend uniquement à partir de ce que vous avez écrit vous-même. Un brouillon envoyé tel quel ne compte jamais comme un texte que vous avez écrit.
 
-### Il continue d’apprendre
+### L’apprentissage continue
 
-Environ deux fois par jour, quand il y a assez de nouveau, il regarde les brouillons que vous avez changés, les tâches que vous avez écartées ou mises en attente, et ce que vous avez corrigé dans le chat d’une tâche. Puis il apporte quelques petits changements à votre façon d’écrire, à vos règles et à vos faits. Ces courtes vérifications attendent quand les limites de votre forfait sont presque atteintes.
+Environ deux fois par jour, si elle dispose d’assez de nouvelles données, elle examine les brouillons que vous avez modifiés, les tâches que vous avez indiquées comme non nécessaires ou mises en attente, ainsi que les corrections apportées dans le chat d’une tâche. Elle apporte ensuite quelques petits ajustements à votre style d’écriture, à vos règles et aux faits. Ces vérifications sont suspendues lorsque vous approchez des limites de votre forfait.
 
-**Apprentissage**, **Modifications** montre chaque changement et sa raison. **Annuler** revient en arrière. Les lignes que vous avez écrites vous-même restent telles que vous les avez écrites.
+Dans **Apprentissage** > **Modifications**, chaque mise à jour et sa raison sont affichées. **Annuler** permet de revenir en arrière. Les lignes que vous avez écrites vous-même restent telles quelles.
 
-### Quand une ligne est fausse
+### Quand une ligne est incorrecte
 
 Corrigez-la là où vous la voyez :
 
-- Dans **Paramètres**, **Rédaction**, changez les mots dans la case de ce canal et **Enregistrer**. Les relectures suivantes de vos messages ne touchent plus à votre formulation.
-- Ou dites-le dans le chat de n’importe quelle tâche : « Je mets en minuscule seulement le début des phrases, pas les noms ». Ce chat affiche alors une ligne **Enregistré dans Votre façon d’écrire** pour ce canal, avec **Modifier** pour l’ouvrir.
-- **Apprentissage**, **Ce que j’ai appris** liste aussi chaque ligne, chacune avec **Modifier**.
+- Dans **Paramètres**, **Rédaction**, modifiez le texte dans le champ du canal concerné, puis cliquez sur **Enregistrer**. Votre formulation sera ensuite conservée.
+- Vous pouvez aussi le préciser dans le chat d’une tâche, par exemple : « Je ne mets en minuscule que le début des phrases, pas les noms. » Le chat affiche **Enregistré dans Votre façon d’écrire**, avec **Modifier**.
+- **Apprentissage** > **Ce que j’ai appris** répertorie aussi chaque ligne, avec **Modifier**.
 
-Soyez précis, car les brouillons suivent les lignes à la lettre. « Minuscules » seul met aussi les noms en minuscules ; « les phrases commencent en minuscule, les noms gardent leur majuscule » non. Les habitudes d’un canal restent sur ce canal, donc une habitude de chat n’atteint jamais vos e-mails.
+Soyez précise : les brouillons suivent ces lignes à la lettre. « En minuscule » met aussi les noms en minuscule ; « les phrases commencent par une minuscule, les noms gardent leur majuscule » ne le fait pas. Les habitudes restent propres à leur canal. Une habitude indiquée dans un chat ne s’applique donc jamais à vos e-mails.

@@ -5,6 +5,7 @@ summary: Toutes les tant de tâches terminées, une petite fête sur Tâches, av
 covers: milestones
 code: machine/store/done_milestones.py, dashboard/todos-milestone.js
 order: 11
+translated: 77c10c7e5e38e386
 ---
 ## Quand elle s’affiche
 

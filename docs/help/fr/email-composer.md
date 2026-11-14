@@ -5,6 +5,7 @@ summary: Cliquez sur une adresse e-mail pour écrire depuis votre propre boîte 
 covers: email-composer
 code: machine/app/mail.py, dashboard/todos-compose.js
 order: 12
+translated: 568ac451673bc141
 ---
 ## L’ouvrir
 

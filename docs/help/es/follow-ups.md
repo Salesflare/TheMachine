@@ -5,6 +5,7 @@ summary: Hace seguimiento sola cuando alguien no responde, para todo un tablero 
 covers: follow-ups
 code: follow_ups.py, assistant.py, dashboard.html
 order: 7
+translated: db4d60eb468a206d
 ---
 Cuando alguien de un tablero deja de responder, tu Machine redacta el seguimiento por ti, con tu estilo y en la misma conversación. Desactivado hasta que lo actives. Si una de tus habilidades encaja con el tablero, los borradores la siguen, también en lo que va primero en el email.
 

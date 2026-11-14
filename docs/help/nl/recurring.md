@@ -6,6 +6,7 @@ covers: recurring
 code: recurring.py, recurring_app.py, dashboard/todos-repeat.js
 order: 9
 keywords: repeat, recurring, every week, every month, workday, business day, routine
+translated: 06752aedb0bd152d
 ---
 ## Er een maken
 

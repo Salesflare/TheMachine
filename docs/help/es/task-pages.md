@@ -5,6 +5,7 @@ summary: Una página tranquila para alguien fuera de la Network, enlazada desde 
 covers: task-pages
 code: task_pages.py, task_invites.py, dashboard.html
 order: 4
+translated: f5a3d79bc2168432
 ---
 ## Añade una
 

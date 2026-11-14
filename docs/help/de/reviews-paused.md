@@ -5,6 +5,7 @@ summary: Prüfungen sind aus, warten oder stehen beim Nutzungslimit deines Model
 covers: 
 code: dashboard.html, assistant.py
 order: 3
+translated: 39b4aa749445dfba
 ---
 Aufgaben entstehen aus Prüfungen: Deine Machine liest, was reingekommen ist, in kleinen Paketen, innerhalb von etwa 15 Minuten.
 

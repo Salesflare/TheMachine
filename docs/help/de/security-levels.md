@@ -5,6 +5,7 @@ summary: Ein Schalter, Standard oder Vorsichtig, legt deine Einstellungen für S
 covers: settings:security
 code: security_levels.py, dashboard.html, fleet.py
 order: 2
+translated: f8e82f192dd70e3a
 ---
 ## Zwei Stufen
 

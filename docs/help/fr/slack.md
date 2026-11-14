@@ -5,6 +5,7 @@ summary: Les canaux et messages directs dont vous faites partie. N’envoie un m
 covers: connector:slack
 code: assistant.py, next_actions.py, onboarding.py, slack_api.py
 site: Connect, Remove
+translated: 8d275e75083292ba
 ---
 ## Ce qu’elle lit
 

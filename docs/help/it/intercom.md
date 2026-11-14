@@ -5,6 +5,7 @@ summary: Le conversazioni con i clienti nel tuo workspace Intercom. Risponde sol
 covers: connector:intercom
 code: connectors/intercom.py, onboarding.py
 site: Sign in with Intercom, More sources, Remove
+translated: 2cbee87e6d24c0a9
 ---
 ## Cosa legge
 

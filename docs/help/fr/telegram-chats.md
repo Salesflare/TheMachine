@@ -4,6 +4,7 @@ area: connections
 summary: Vos discussions et petits groupes Telegram, lus comme un appareil de votre propre compte. Elle ne répond qu’après votre accord.
 covers: connector:telegram
 code: onboarding.py, telegram_mirror.py, telegram_store.py, next_actions.py
+translated: da17aef29a380002
 ---
 ## Ce qu’elle lit
 

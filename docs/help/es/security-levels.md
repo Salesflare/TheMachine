@@ -5,6 +5,7 @@ summary: Un solo interruptor, Estándar o Prudente, fija tus ajustes de segurida
 covers: settings:security
 code: security_levels.py, dashboard.html, fleet.py
 order: 2
+translated: f8e82f192dd70e3a
 ---
 ## Dos niveles
 

@@ -5,6 +5,7 @@ summary: LinkedIn oder X hat deine Machine abgemeldet. Melde sie wieder an, einm
 covers: 
 code: browser_login.py, dashboard.html, dashboard/connections-signin.js
 order: 2
+translated: b77b372b9332ca2b
 ---
 Websites wie LinkedIn und X werden im eigenen Browser deiner Machine gelesen. Manchmal meldet eine Website ihn ab.
 
