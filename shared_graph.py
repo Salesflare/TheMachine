@@ -54,6 +54,7 @@ from shared_graph_lines import unique_lines
 import shared_graph_logos as logos
 import shared_graph_photos as photos
 from shared_graph_logos import team_logo
+import shared_graph_apart as apart
 import shared_graph_boards
 import shared_graph_takeback
 from machine.owner_error import OwnerError
@@ -2120,23 +2121,29 @@ class SharedGraph(shared_graph_takeback.TakeBack, shared_graph_boards.TeamBoards
         secret = self.graph_secret()
         with self.connect() as db:
             ensure(db)
-            scope = Scope(db, self.graph_accounts(fleet), self.internal(fleet), self.my_emails(), self._personal_people(db))
+            scope_args = (self.graph_accounts(fleet), self.internal(fleet), self.my_emails(), self._personal_people(db))
             others = [k['key'] for kv_, k in sorted(self.graph_keys(fleet).items(), key=lambda x: x[1]['at'], reverse=True) if kv_ != kv][:3]
             before = {(r['kind'], r['key']): r['hash'] for r in db.execute('SELECT kind,key,hash FROM share_out WHERE fleet=?', (fleet,))}
             went = {k for (kind, k) in before if kind == 'thread'}
-            held = set()
-            records, threads, stats, files = collect(db, scope, [key, *others], secret, held=held, kept=went)
-            records.update(fleet_learnings.records(db, fleet, lambda local: keyed(secret, 'record|' + local)))  # team learnings, the whole team's
+            learned = fleet_learnings.records(db, fleet, lambda local: keyed(secret, 'record|' + local))  # team learnings, the whole team's
             by_grant = collections.defaultdict(list)
             granted = grants(db, fleet)
             for m in to:
                 by_grant[granted.get(m)].append(m)
             base_to = by_grant.pop(None, [])
-            chains = {}
-            for grant, members in sorted(by_grant.items(), key=lambda x: x[1]):
-                c_records, c_threads, _, c_files = collect(db, scope.granted(*grant), [key, *others], secret, kept=went)
-                chains[keyed(secret, 'chain|' + fleet + '|' + ','.join(members))] = {'to': members, 'records': c_records, 'threads': c_threads,
-                                                                                    'files': c_files}
+            order = sorted(by_grant.items(), key=lambda x: x[1])
+        # The reads themselves in a process of their own (shared_graph_apart.py): page requests don't wait on them
+        found = apart.run(getattr(self.connect, '__self__', None), scope_args, [key, *others], secret, went, [g for g, _ in order])
+        if found is None:  # where a child can't run: here, as before
+            with self.connect() as db:
+                found = apart.collect(db, {'scope': scope_args, 'keys': [key, *others], 'secret': secret, 'kept': went,
+                                           'grants': [g for g, _ in order]})
+        (records, threads, stats, files, held), chained = found[0], found[1:]
+        records.update(learned)
+        chains = {}
+        for (grant, members), (c_records, c_threads, _, c_files, _) in zip(order, chained):
+            chains[keyed(secret, 'chain|' + fleet + '|' + ','.join(members))] = {'to': members, 'records': c_records, 'threads': c_threads,
+                                                                                'files': c_files}
         # Went before and waits to be sorted again (after an update to the sorting): it stays with the team, unchanged,
         # until the review looked again; then it goes on or is taken back. Anything a rule already says no to (another
         # company's mailbox, automated mail, personal, kept private) is not waiting: it is taken back at once.
