@@ -95,6 +95,26 @@ CARD_TABLES = ('action_jobs', 'agent_jobs', 'calendar_clashes', 'chat_files', 'd
                'slack_members', 'suggestions', 'task_pages', 'thread_snoozes', 'whatsapp_photos')
 CARD_KEEP_S = 120
 CARDS = stamps.Kept(4)
+# The status is kept between polls by the change counters of every table but these (StatusApp.status_kept): tables it
+# never reads that are written all day in the background (meaning search, logs, the Network's transport, runs). A
+# test checks a status build reads none of them; a table not listed is counted, so a new one never leaves it stale.
+STATUS_QUIET = ('activity_accounts', 'activity_blocks', 'agent_result_receipts', 'ai_activity', 'ai_folded', 'ai_tokens', 'ai_writes',
+                'android_inbox', 'android_receipts', 'chat_fast_sessions', 'digest_spend', 'draft_seen', 'email_bounce_cc_scan',
+                'email_bounce_scan', 'event_passages', 'event_vector_skips', 'event_vectors', 'fact_vectors', 'fleet_learn_vectors',
+                'gateway_starts', 'meet_log', 'network_aliases', 'network_looked', 'network_outbox', 'network_pins', 'network_replies',
+                'network_sealed', 'network_taken', 'network_twins', 'person_summary_runs', 'plain_key_pass', 'record_changes',
+                'retention_runs', 'routine_runs', 'store_fixes', 'sync_daily', 'talk_lines', 'team_blobs', 'team_files', 'team_mail')
+# What only the connections' cards read (connector_views): a sync round writes these, and only the cards are made again.
+SYNC_TABLES = ('android_feed_health', 'checkpoints', 'history_backfill', 'sync_activity')
+
+
+def status_tables(db):
+    """The tables the status is kept by: all but STATUS_QUIET, SQLite's own, data_stamps (the counters themselves) and
+    virtual tables with their shadow tables (full-text search, which the status never reads)."""
+    rows = db.execute("SELECT name,sql FROM sqlite_master WHERE type='table'").fetchall()
+    virtual = tuple(r[0] + '_' for r in rows if str(r[1] or '').upper().startswith('CREATE VIRTUAL'))
+    return sorted(r[0] for r in rows if r[0] not in STATUS_QUIET and r[0] != 'data_stamps' and not r[0].startswith('sqlite_')
+                  and not str(r[1] or '').upper().startswith('CREATE VIRTUAL') and not r[0].startswith(virtual))
 DONE_FIRST = 30  # the done to-dos the dashboard's status gets: its Done list's first page (dashboard donePager)
 
 
@@ -840,10 +860,11 @@ class ViewsStore(ConversationStore):
                     card['scope'] = closed[card['id']]['scope']
         return {'cards': cards, 'next': str(offset + limit) if len(rows) > offset + limit else None, 'total': len(rows)}
 
-    def snapshot(self, accounts, done=100, lean=False):
+    def snapshot(self, accounts, done=100, lean=False, connectors=True):
         """The status. lean: without the dashboard's heaviest parts (promises, recent review runs, the quality report,
         the missed-work audit), for an agent's compact status (compact_status), which never reads them: a review asks
-        for it on a busy Machine, where the whole status took longer than the tool's 30 seconds."""
+        for it on a busy Machine, where the whole status took longer than the tool's 30 seconds. connectors=False: an
+        empty list for them (the dashboard's status makes them apart, connector_views)."""
         promises = [] if lean else self.promises()
         with self.connect() as db:
             result = {table: [dict(r) for r in db.execute('SELECT * FROM ' + table + ' ORDER BY ' + column + ' DESC LIMIT 100')]
@@ -913,64 +934,7 @@ class ViewsStore(ConversationStore):
                 result['disconnected'] = names.disconnected_rows(mail_grants.receipts(self.config)) if self.config.get('database') else []
             except Exception:  # noqa: BLE001 - never costs the status
                 result['disconnected'] = []
-            result['connectors'] = []
-            for account in accounts:
-                row = db.execute('SELECT * FROM checkpoints WHERE account_id=?', (account['id'],)).fetchone()
-                cutoff = (dt.datetime.fromisoformat(now()) - dt.timedelta(hours=24)).isoformat()
-                # The card's total is everything kept from this source, history included (docs/help/history.md), from
-                # events_account_time alone; last 24h and not checked stay new signals only, from events_signal_counts.
-                counts = db.execute('SELECT (SELECT count(*) FROM events WHERE account_id=?1) total,sum(analyzed_version<version) pending,'
-                                    'sum(ingested_at>=?2) signals_24h FROM events WHERE account_id=?1 AND history=0',
-                                    (account['id'], cutoff)).fetchone()
-                state = json.loads(row['state']) if row else {}
-                channel_health = {}
-                if account.get('service') == 'android':
-                    feed = db.execute('SELECT last_checked,last_recorded,error FROM android_feed_health WHERE id=1').fetchone()
-                    channel_health = {'transport':account.get('transport'), 'feed_health':dict(feed) if feed else None}
-                if account.get('service') == 'whatsapp' and not account.get('shared'):  # Read photos (whatsapp_images.py)
-                    channel_health = {'photos': whatsapp_images.view(db, account), 'history': whatsapp_history(account)}
-                if account.get('service') == 'slack':
-                    channels = state.get('channels', [])
-                    channel_health = {'conversations': len(channels),
-                                      'conversations_collected': sum(bool(c.get('last_scan')) for c in channels),
-                                      'deferred_threads': sum(bool(c.get('deferred_thread')) for c in channels),
-                                      'conversation_errors': sum(bool(c.get('error')) for c in channels),
-                                      'first_import': slack_first_import_progress(state)}
-                if account.get('service') == 'salesflare':  # its round of accounts, what it set aside, Stop and Restart
-                    channel_health = {'salesflare': salesflare_progress(account, state)}
-                if account.get('service') == 'salesforce':  # Update contact details: on or off, and what it updated last
-                    channel_health = {'crm_sync': crm_sync_health(account, state)}
-                if account.get('service') == 'intercom':  # who a reply goes out as, after the owner's Send; none: it only reads
-                    channel_health = {'replies_as': (account.get('reply_admin_name') or 'you') if next_actions.intercom_replies_on(account) else ''}
-                if account.get('service') == 'teams':  # what it can't read yet and why: admin, license or blocked (connectors/teams.py)
-                    channel_health = {'teams_missing': dict(state.get('missing') or {})}
-                if account.get('service') == 'docs':  # Google or Microsoft, and whether an approved reply can be posted
-                    channel_health = docs_health(self.config, account, state)
-                if account.get('service') in CALENDAR_SERVICES:  # its card counts events coming up, not mail (Next 7 days)
-                    # status is counted in SQL (a plain key, message_seal.ROUTING_KEYS). A row sealed before it was one shows
-                    # no status beside its sealed member until machine/store/plain_keys.py has been over it: those are read
-                    week = (account['id'], now(), (dt.datetime.fromisoformat(now()) + dt.timedelta(days=7)).isoformat())
-                    coming = 'FROM events WHERE account_id=? AND deleted=0 AND occurred_at>=? AND occurred_at<? AND '
-                    unseen = "json_extract(metadata,'$.status') IS NULL AND json_extract(metadata,'$.mc1_sealed') IS NOT NULL"
-                    channel_health = {'upcoming_7d': db.execute(
-                        f"SELECT count(*) {coming} COALESCE(json_extract(metadata,'$.status'),'')!='cancelled' AND NOT ({unseen})", week).fetchone()[0] + sum(
-                        (json.loads(m or '{}').get('status') or '') != 'cancelled' for (m,) in db.execute(f'SELECT metadata {coming} {unseen}', week))}
-                activity = [dict(r) for r in db.execute('SELECT at,status,signals,error,retry_at FROM sync_activity WHERE account_id=? ORDER BY at DESC,rowid DESC LIMIT 12',(account['id'],))]
-                last_failure = db.execute("SELECT at,error FROM sync_activity WHERE account_id=? AND status='failed' ORDER BY at DESC,rowid DESC LIMIT 1",(account['id'],)).fetchone()
-                failures_24h = db.execute("SELECT count(*) FROM sync_activity WHERE account_id=? AND status='failed' AND at>=?",(account['id'],cutoff)).fetchone()[0]
-                result['connectors'].append({'sync_activity':activity,'last_failure':dict(last_failure) if last_failure else None,
-                                             'failures_24h':failures_24h,'id': account['id'], 'email': account.get('email', ''), 'boundary': account['boundary'],
-                                             'boundary_by': account.get('boundary_by'),
-                                             'service': account.get('service', 'gmail'),
-                                             **({'last': True} if groups.last(account.get('service', 'gmail')) else {}),  # a catch-all: after the others
-                                             'group': source_group(account.get('service', 'gmail')),  # its + Add group, which picks its tab
-                                             'poll_seconds':account.get('poll_seconds',300),
-                                             'read_window': read_window(account),
-                                             'display_name': names.account_name(account, accounts, UNNAMED.get(account.get('service'))),
-                                             # a Fleet share the owner also connected themselves rests (shared_connectors.covered_by)
-                                             'covered_by': covered_name(accounts, account),
-                                             **(dict(row) if row else {}), **dict(counts), **channel_health,
-                                             **(silent_failure(db, account, row) or {}), 'backfill': history_store.progress(db, [account['id']]).get(account['id'])})
+            result['connectors'] = self.connector_views(db, accounts) if connectors else []
             # Newest first: the dashboard shows the top few and says when each happened.
             result['deliveries'] = [dict(r) for r in db.execute('SELECT * FROM deliveries ORDER BY updated_at DESC,rowid DESC')]
             self.card_views(db, result['suggestions'], jobs=True)
@@ -1009,3 +973,66 @@ class ViewsStore(ConversationStore):
         if notes:  # nothing to bring in: nothing in the status, so nothing on the page
             result['bring_in'] = notes
         return result
+
+    def connector_views(self, db, accounts):
+        """Each connection's card on Connections: its sync state, reads and counts. Apart from the rest of the snapshot,
+        as these change with each sync round and the rest mostly doesn't (StatusApp.status_kept)."""
+        out = []
+        for account in accounts:
+            row = db.execute('SELECT * FROM checkpoints WHERE account_id=?', (account['id'],)).fetchone()
+            cutoff = (dt.datetime.fromisoformat(now()) - dt.timedelta(hours=24)).isoformat()
+            # The card's total is everything kept from this source, history included (docs/help/history.md), from
+            # events_account_time alone; last 24h and not checked stay new signals only, from events_signal_counts.
+            counts = db.execute('SELECT (SELECT count(*) FROM events WHERE account_id=?1) total,sum(analyzed_version<version) pending,'
+                                'sum(ingested_at>=?2) signals_24h FROM events WHERE account_id=?1 AND history=0',
+                                (account['id'], cutoff)).fetchone()
+            state = json.loads(row['state']) if row else {}
+            channel_health = {}
+            if account.get('service') == 'android':
+                feed = db.execute('SELECT last_checked,last_recorded,error FROM android_feed_health WHERE id=1').fetchone()
+                channel_health = {'transport':account.get('transport'), 'feed_health':dict(feed) if feed else None}
+            if account.get('service') == 'whatsapp' and not account.get('shared'):  # Read photos (whatsapp_images.py)
+                channel_health = {'photos': whatsapp_images.view(db, account), 'history': whatsapp_history(account)}
+            if account.get('service') == 'slack':
+                channels = state.get('channels', [])
+                channel_health = {'conversations': len(channels),
+                                  'conversations_collected': sum(bool(c.get('last_scan')) for c in channels),
+                                  'deferred_threads': sum(bool(c.get('deferred_thread')) for c in channels),
+                                  'conversation_errors': sum(bool(c.get('error')) for c in channels),
+                                  'first_import': slack_first_import_progress(state)}
+            if account.get('service') == 'salesflare':  # its round of accounts, what it set aside, Stop and Restart
+                channel_health = {'salesflare': salesflare_progress(account, state)}
+            if account.get('service') == 'salesforce':  # Update contact details: on or off, and what it updated last
+                channel_health = {'crm_sync': crm_sync_health(account, state)}
+            if account.get('service') == 'intercom':  # who a reply goes out as, after the owner's Send; none: it only reads
+                channel_health = {'replies_as': (account.get('reply_admin_name') or 'you') if next_actions.intercom_replies_on(account) else ''}
+            if account.get('service') == 'teams':  # what it can't read yet and why: admin, license or blocked (connectors/teams.py)
+                channel_health = {'teams_missing': dict(state.get('missing') or {})}
+            if account.get('service') == 'docs':  # Google or Microsoft, and whether an approved reply can be posted
+                channel_health = docs_health(self.config, account, state)
+            if account.get('service') in CALENDAR_SERVICES:  # its card counts events coming up, not mail (Next 7 days)
+                # status is counted in SQL (a plain key, message_seal.ROUTING_KEYS). A row sealed before it was one shows
+                # no status beside its sealed member until machine/store/plain_keys.py has been over it: those are read
+                week = (account['id'], now(), (dt.datetime.fromisoformat(now()) + dt.timedelta(days=7)).isoformat())
+                coming = 'FROM events WHERE account_id=? AND deleted=0 AND occurred_at>=? AND occurred_at<? AND '
+                unseen = "json_extract(metadata,'$.status') IS NULL AND json_extract(metadata,'$.mc1_sealed') IS NOT NULL"
+                channel_health = {'upcoming_7d': db.execute(
+                    f"SELECT count(*) {coming} COALESCE(json_extract(metadata,'$.status'),'')!='cancelled' AND NOT ({unseen})", week).fetchone()[0] + sum(
+                    (json.loads(m or '{}').get('status') or '') != 'cancelled' for (m,) in db.execute(f'SELECT metadata {coming} {unseen}', week))}
+            activity = [dict(r) for r in db.execute('SELECT at,status,signals,error,retry_at FROM sync_activity WHERE account_id=? ORDER BY at DESC,rowid DESC LIMIT 12',(account['id'],))]
+            last_failure = db.execute("SELECT at,error FROM sync_activity WHERE account_id=? AND status='failed' ORDER BY at DESC,rowid DESC LIMIT 1",(account['id'],)).fetchone()
+            failures_24h = db.execute("SELECT count(*) FROM sync_activity WHERE account_id=? AND status='failed' AND at>=?",(account['id'],cutoff)).fetchone()[0]
+            out.append({'sync_activity':activity,'last_failure':dict(last_failure) if last_failure else None,
+                        'failures_24h':failures_24h,'id': account['id'], 'email': account.get('email', ''), 'boundary': account['boundary'],
+                        'boundary_by': account.get('boundary_by'),
+                        'service': account.get('service', 'gmail'),
+                        **({'last': True} if groups.last(account.get('service', 'gmail')) else {}),  # a catch-all: after the others
+                        'group': source_group(account.get('service', 'gmail')),  # its + Add group, which picks its tab
+                        'poll_seconds':account.get('poll_seconds',300),
+                        'read_window': read_window(account),
+                        'display_name': names.account_name(account, accounts, UNNAMED.get(account.get('service'))),
+                        # a Fleet share the owner also connected themselves rests (shared_connectors.covered_by)
+                        'covered_by': covered_name(accounts, account),
+                        **(dict(row) if row else {}), **dict(counts), **channel_health,
+                        **(silent_failure(db, account, row) or {}), 'backfill': history_store.progress(db, [account['id']]).get(account['id'])})
+        return out
