@@ -15,7 +15,7 @@ Every line has one shape, the same for every source (and for sources other modul
      'where': 'Gmail · sam@acme.com', # the account or app it happened in, or None
      'outcome': 'done',              # done, refused, failed, undone or pending (OUTCOMES)
      'status': 'Sent',               # the outcome in a word or two, in the owner's language
-     'by': 'After your OK',          # who started it, or None
+     'by': 'Approved in the to-do',  # what allowed it (machine/action_basis.py), or who started it, or None
      'actor': None,                  # optional: a stable id of who did it (an AI connection), for its own filtered view
      'todo': {'id': '…', 'title': '…'} or None,
      'detail': None,                 # an optional second line
@@ -28,7 +28,11 @@ Every line has one shape, the same for every source (and for sources other modul
 What it reads:
 - messages, docs, calendar, web, fixes: the outbox (action_jobs), every step the owner approved or The Machine ran by
   itself (a self-merged fix, a follow-up sent by itself), with how it went: refused when a check before the send
-  stopped it (blocked), undone when Undo took it back or it was canceled.
+  stopped it (blocked), undone when Undo took it back or it was canceled. Each says what allowed it, as the step
+  recorded it (machine/action_basis.py): the to-do's button, Do it, the owner's words in chat (quoted while they are
+  still in that message of theirs), a setting, or No approval recorded (that path also goes to the error feed once).
+- web, also: a to-do's run that took a step on a page that can change something (a click, typing, an upload), with
+  what allowed the run (preparation_runs.basis).
 - agents: work handed to Claude Code or Codex (agent_jobs).
 - fleet: questions and requests to and from teammates, both ways, with what the owner's rules answered (fleet_log).
 - learnings: learnings sent to The Machine team and withdrawn ones (team_learnings), and votes on team learnings.
@@ -49,7 +53,8 @@ import logging
 import re
 
 import i18n
-from machine import names
+from machine import action_basis, names
+import preparation_state
 from machine.kinds import SENDS
 from machine.owner_error import OwnerError
 
@@ -182,10 +187,40 @@ def _job_status(kind, status):
     return outcome, i18n.t('On its way')
 
 
+_unrecorded = set()  # outbox jobs with no basis at all, sent to the error feed once per run of the service
+
+
+def _by(db, r):
+    """What allowed an outbox step (machine/action_basis.py), in the owner's language; None for a job from before bases
+    were kept (the older wording stays). A job with none at all came by a path that records nothing: it says so, and
+    the path goes to the error feed once."""
+    basis = action_basis.read(r['basis'])
+    if basis is None:
+        if r['id'] not in _unrecorded:
+            _unrecorded.add(r['id'])
+            action_basis.missing(db, 'activity.outbox')
+        basis = {'kind': 'none'}
+    return _basis_line(db, basis)
+
+
+def _basis_line(db, basis):
+    """The line for what allowed a step, never starting with "You"; None for one from before bases were kept."""
+    shown = action_basis.shown(db, basis)
+    if not shown:
+        return None
+    kind, quote = shown
+    if quote:
+        return i18n.t('Asked in chat: “{}”', quote)
+    return {'todo': i18n.t('Approved in the to-do'), 'telegram': i18n.t('Approved in Telegram'), 'voice': i18n.t('Approved by voice'),
+            'chat': i18n.t('Asked in chat'), 'doit': i18n.t('Do it tapped'), 'follow_up': i18n.t('Follow-up, sent by itself'),
+            'self_doc': i18n.t('New private doc, made by itself'), 'self_fix': i18n.t('Small fix, merged by itself'),
+            'ahead': i18n.t('Prepared ahead, by itself')}.get(kind) or i18n.t('No approval recorded')
+
+
 def _jobs(db, config, limit, tables, kinds):
     accounts = {a.get('id'): a for a in (config or {}).get('accounts') or [] if isinstance(a, dict)}
     follow_ups = 'follow_up_sends' in tables
-    rows = db.execute('SELECT j.id,j.suggestion_id,j.payload,j.status,j.error,j.source,j.created_at,j.updated_at,s.title,'
+    rows = db.execute('SELECT j.id,j.suggestion_id,j.payload,j.status,j.error,j.source,j.created_at,j.updated_at,s.title,j.basis,'
                       + ('(SELECT 1 FROM follow_up_sends f WHERE f.job_id=j.id) fu ' if follow_ups else '0 fu ')
                       + 'FROM action_jobs j LEFT JOIN suggestions s ON s.id=j.suggestion_id '
                       "WHERE json_extract(j.payload,'$.kind') IN (" + ','.join('?' * len(kinds)) + ') '
@@ -228,8 +263,8 @@ def _jobs(db, config, limit, tables, kinds):
                                                        or (_clip(p.get('from'), 80) or None))
         if kind == 'docs' and not account and p.get('provider'):
             where = {'google': 'Google Docs', 'microsoft': 'Word'}.get(p['provider'])
-        by = (i18n.t('Follow-up, sent by itself') if r['fu'] else i18n.t('By itself') if r['source'] == 'auto'
-              else i18n.t('Approved by voice') if r['source'] == 'voice' else i18n.t('After your OK'))
+        by = _by(db, r) or (i18n.t('Follow-up, sent by itself') if r['fu'] else i18n.t('By itself') if r['source'] == 'auto'
+                            else i18n.t('Approved by voice') if r['source'] == 'voice' else i18n.t('After your OK'))
         todo = {'id': r['suggestion_id'], 'title': _clip(r['title'], 120)} if r['title'] is not None else None
         # Each time a check stopped it is its own line, at that moment; a send canceled or still held after a block
         # is told by those lines, one sent after it by its own line too
@@ -241,6 +276,33 @@ def _jobs(db, config, limit, tables, kinds):
             continue
         detail = (_clip(r['error'], 200) or None) if r['status'] == 'blocked' else None
         yield _line(kind, r['id'], r['created_at'], what, outcome, status, where, by, todo, detail)
+
+
+RUN_OUTCOME = {'ok': 'done', 'starting': 'pending', 'running': 'pending'}  # preparation_runs.status; the rest stopped
+
+
+def _runs(db, limit, tables):
+    """A to-do's run (Do it, a message in its chat, a confirmed step) that took a step on a web page that can change
+    something (preparation_state.OUTWARD_BROWSER): one line under Steps on the web, with what allowed it. A confirmed
+    final step is the outbox's line already. Runs from before bases were kept aren't listed, as before."""
+    if not {'preparation_runs', 'preparation_calls'} <= tables:
+        return
+    rows = db.execute("SELECT r.job_id,r.suggestion_id,r.status,r.started_at,r.basis,s.title FROM preparation_runs r "
+                      "LEFT JOIN suggestions s ON s.id=r.suggestion_id WHERE r.basis IS NOT NULL AND json_valid(r.basis) "
+                      "AND json_extract(r.basis,'$.kind')!='before' "
+                      "AND EXISTS(SELECT 1 FROM preparation_calls c WHERE c.job_id=r.job_id AND c.tool='browser') "
+                      "AND NOT EXISTS(SELECT 1 FROM action_jobs j WHERE j.id=json_extract(r.basis,'$.job') "
+                      "AND json_extract(j.payload,'$.kind')='finish') ORDER BY r.started_at DESC LIMIT ?", (limit,)).fetchall()
+    for r in rows:
+        # The calls' parameters are sealed at rest (message_seal.DERIVED): read here, never matched in SQL
+        if not any(preparation_state.outward(c['tool'], preparation_state.decoded(c['params'])) for c in db.execute(
+                "SELECT tool,params FROM preparation_calls WHERE job_id=? AND tool='browser' LIMIT 200", (r['job_id'],))):
+            continue
+        outcome = RUN_OUTCOME.get(r['status'], 'failed')
+        status = {'done': i18n.t('Done'), 'pending': i18n.t('Working'), 'failed': i18n.t('Stopped')}[outcome]
+        todo = {'id': r['suggestion_id'], 'title': _clip(r['title'], 120)} if r['title'] is not None else None
+        yield _line('web', 'run:' + r['job_id'], r['started_at'], i18n.t('Steps on the web'), outcome, status, None,
+                    _basis_line(db, action_basis.read(r['basis']) or {'kind': 'none'}), todo)
 
 
 def _agents(db, limit, tables):
@@ -370,6 +432,7 @@ def page(db, config=None, kind='', offset=0, limit=PAGE, outcome='', actor=''):
     job_kinds = [j for k, js in OUTBOX.items() if not chosen or k in chosen for j in js]
     readers = {
         'outbox': lambda: _jobs(db, config, deep, tables, job_kinds) if job_kinds else (),
+        'runs': lambda: _runs(db, size['web'], tables),
         'agents': lambda: _agents(db, size['agents'], tables),
         'fleet': lambda: _fleet(db, size['fleet'], tables),
         'learnings': lambda: _learnings(db, size['learnings'], tables),

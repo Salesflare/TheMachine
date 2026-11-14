@@ -18,6 +18,7 @@ import fleet
 import follow_ups
 import i18n
 import locale_prefs
+from machine import action_basis
 from machine.cards import (
     ask_blocked,
     blocker_questions,
@@ -1343,8 +1344,16 @@ class DecisionsStore:
         # The text as saved (an email gets a blank line before the name): the dashboard shows it before it sends
         return {'status':'revised','revision':revised['revision'],'body':next_actions.draft_text(revised),'subject':revised.get('subject')}
 
-    def confirm_action(self,suggestion_id,revision,approval_id,source,recipients=None,sender=None,hold=None):
+    def based(self,db,basis,source,approval_id):
+        """The step's basis as stored (machine/action_basis.py): the caller's, or the one its source and approval say. Record
+        only: one with nothing behind it still goes, and goes to the error feed so its path can be found."""
+        basis=basis or action_basis.for_outbox(source,approval_id)
+        if basis['kind']=='none':action_basis.missing(db,'confirm_action.'+re.sub(r'[^A-Za-z0-9_]','_',str(source))[:30],self.code_version)
+        return json.dumps(basis,ensure_ascii=False)
+
+    def confirm_action(self,suggestion_id,revision,approval_id,source,recipients=None,sender=None,hold=None,basis=None):
         # hold: seconds the send waits before the outbox takes it (a yes by voice: Undo in the chat meanwhile, undo_voice_send)
+        # basis: what allowed it, when the caller knows better than its source (the owner's words in chat: action_basis.chat)
         with self.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             row=db.execute('SELECT * FROM suggestions WHERE id=?',(suggestion_id,)).fetchone()
@@ -1380,7 +1389,7 @@ class DecisionsStore:
             if previous and action['kind'] in ('prepare','finish') and previous['status'] in ('needs_input','finish_uncertain','cancelled','failed','blocked','paused') and previous['approval_id']!=approval_id:
                 # The same approved step resumes, not a new operation. An unknown outcome
                 # starts with reconciliation of that exact step, never a blind new submission.
-                db.execute("UPDATE action_jobs SET status='local_preparation',approval_id=?,source=?,updated_at=? WHERE id=?",(approval_id,source,now(),previous['id']))
+                db.execute("UPDATE action_jobs SET status='local_preparation',approval_id=?,source=?,updated_at=?,basis=? WHERE id=?",(approval_id,source,now(),self.based(db,basis,source,approval_id),previous['id']))
                 db.execute('INSERT INTO decisions VALUES(?,?,?,?,?,?)',(approval_id,suggestion_id,'prepare_next' if action['kind']=='prepare' else 'send','',source,now()))
                 db.execute("UPDATE suggestions SET status='accepted' WHERE id=?",(suggestion_id,))
                 self.queue_preparation(db,suggestion_id,approval_id,action_id=previous['id'])
@@ -1393,18 +1402,19 @@ class DecisionsStore:
                 # unknown outcome. A blocked pre-send permission check may be retried.
                 # So may an unconfirmed message send after SEND_RETRY_AFTER without a trace: only on the owner's new tap.
                 if (previous['status'] in ('blocked','cancelled','failed') or send_retry_ok(previous,action['kind'])) and previous['approval_id']!=approval_id:
-                    db.execute("UPDATE action_jobs SET status='queued',retry_at=?,error=NULL,updated_at=?,approval_id=?,source=?,payload=? WHERE id=?",
-                               ((dt.datetime.fromisoformat(now())+dt.timedelta(seconds=hold)).isoformat() if hold else None,now(),approval_id,source,encoded(action),previous['id']))
+                    db.execute("UPDATE action_jobs SET status='queued',retry_at=?,error=NULL,updated_at=?,approval_id=?,source=?,payload=?,basis=? WHERE id=?",
+                               ((dt.datetime.fromisoformat(now())+dt.timedelta(seconds=hold)).isoformat() if hold else None,now(),approval_id,source,encoded(action),
+                                self.based(db,basis,source,approval_id),previous['id']))
                     follow_ups.queued(db,suggestion_id,previous['id'],action,now())  # an automated follow-up: spaced with its batch
                     db.execute('INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)',
                         (approval_id,suggestion_id,'send','',source,now()))
                     db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=?',(suggestion_id,))
                 return {'status':previous['status'],'duplicate':True}
             job_id=uuid.uuid4().hex;stamp=now()
-            db.execute('INSERT INTO action_jobs(id,suggestion_id,revision,payload,status,created_at,updated_at,approval_id,source,rfc_message_id,retry_at) VALUES(?,?,?,?,?,?,?,?,?,?,?)',
+            db.execute('INSERT INTO action_jobs(id,suggestion_id,revision,payload,status,created_at,updated_at,approval_id,source,rfc_message_id,retry_at,basis) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)',
                 (job_id,suggestion_id,revision,encoded(action),'local_preparation' if action['kind'] in ('prepare','finish') else 'queued',stamp,stamp,approval_id,source,
                  '<assistant-'+job_id+'@'+action['from'].split('@')[1]+'>' if action['kind']=='email' else '',
-                 (dt.datetime.fromisoformat(stamp)+dt.timedelta(seconds=hold)).isoformat() if hold else None))
+                 (dt.datetime.fromisoformat(stamp)+dt.timedelta(seconds=hold)).isoformat() if hold else None,self.based(db,basis,source,approval_id)))
             db.execute('INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)',
                 (approval_id,suggestion_id,'prepare_next' if action['kind']=='prepare' else 'send','',source,stamp))
             if action['kind'] not in ('prepare','finish'):follow_ups.queued(db,suggestion_id,job_id,action,stamp)  # an automated follow-up: spaced with its batch
@@ -1486,8 +1496,9 @@ class DecisionsStore:
             if db.execute('SELECT 1 FROM action_jobs WHERE suggestion_id=? AND revision=?',(suggestion_id,action['revision'])).fetchone():
                 return 'this fix was already handled'
             job_id=uuid.uuid4().hex;stamp=now()
-            db.execute("INSERT INTO action_jobs(id,suggestion_id,revision,payload,status,created_at,updated_at,approval_id,source,rfc_message_id) VALUES(?,?,?,?,'queued',?,?,?,'auto','')",
-                       (job_id,suggestion_id,action['revision'],encoded({**action,'auto':True,'problem':row['title'],'fault':fault,'fault_kind':fault_info.get('fault_kind'),'fault_frames':fault_info.get('frames',[])}),stamp,stamp,'auto-merge:'+job_id))
+            db.execute("INSERT INTO action_jobs(id,suggestion_id,revision,payload,status,created_at,updated_at,approval_id,source,rfc_message_id,basis) VALUES(?,?,?,?,'queued',?,?,?,'auto','',?)",
+                       (job_id,suggestion_id,action['revision'],encoded({**action,'auto':True,'problem':row['title'],'fault':fault,'fault_kind':fault_info.get('fault_kind'),'fault_frames':fault_info.get('frames',[])}),stamp,stamp,'auto-merge:'+job_id,
+                        self.based(db,None,'auto','auto-merge:'+job_id)))
             db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=?',(suggestion_id,))
         return None
 

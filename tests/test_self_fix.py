@@ -552,7 +552,7 @@ class AutoMerge(unittest.TestCase):
         self.assertIn('recorded errors', self.save(self.fix())['auto_merge'])
         with self.store.connect() as db:
             db.execute("UPDATE events SET kind='machine.fault' WHERE id=1")
-            db.execute("INSERT INTO action_jobs VALUES('old','other','r','{\"kind\":\"merge\"}','sent',?,?,'owner','dashboard','','merge:abc',NULL,NULL)", (a.now(), a.now()))
+            db.execute("INSERT INTO action_jobs VALUES('old','other','r','{\"kind\":\"merge\"}','sent',?,?,'owner','dashboard','','merge:abc',NULL,NULL,NULL)", (a.now(), a.now()))
         self.assertEqual(self.store.auto_merge(self.sid, self.config), 'another merge happened in the last day')
 
 

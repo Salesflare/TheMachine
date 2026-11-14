@@ -3,7 +3,7 @@ import datetime
 import json
 import hashlib
 import re
-from machine import todo_states
+from machine import action_basis, todo_states
 
 TERMINAL = ('ok', 'error', 'aborted', 'timed_out', 'lost')
 
@@ -22,8 +22,12 @@ def initialize(db):
     columns = {r['name'] for r in db.execute('PRAGMA table_info(preparations)')}
     if 'session_job_id' not in columns:
         db.execute('ALTER TABLE preparations ADD COLUMN session_job_id TEXT')
-    if 'retry_at' not in {r['name'] for r in db.execute('PRAGMA table_info(preparation_runs)')}:
+    run_columns = {r['name'] for r in db.execute('PRAGMA table_info(preparation_runs)')}
+    if 'retry_at' not in run_columns:
         db.execute('ALTER TABLE preparation_runs ADD COLUMN retry_at TEXT')
+    if 'basis' not in run_columns:  # what allowed the run's steps (machine/action_basis.py); the ones before it say so
+        db.execute('ALTER TABLE preparation_runs ADD COLUMN basis TEXT')
+        db.execute('UPDATE preparation_runs SET basis=?', (action_basis.BEFORE,))
     db.execute('UPDATE preparations SET session_job_id=job_id WHERE session_job_id IS NULL')
     # Preserve pre-upgrade runtime custody. Closed historical rows aren't proof of a live run.
     db.execute('''INSERT OR IGNORE INTO preparation_runs(job_id,suggestion_id,session_job_id,status,started_at)
@@ -57,7 +61,7 @@ def start_settled(db, job_id):
 
 def tool_intent(db, args, stamp):
     db.execute('BEGIN IMMEDIATE')
-    run = db.execute('''SELECT r.*,p.status current_status,p.job_id current_job,s.status owner_status
+    run = db.execute('''SELECT r.*,p.status current_status,p.job_id current_job,p.decision_id,p.action_id,s.status owner_status
         FROM preparation_runs r JOIN preparations p USING(suggestion_id) JOIN suggestions s ON s.id=r.suggestion_id
         WHERE r.job_id=?''', (args['job_id'],)).fetchone()
     if not run or run['current_job'] != args['job_id'] or run['current_status'] not in ('starting','running') or run['owner_status'] not in todo_states.PREPARING:
@@ -68,7 +72,35 @@ def tool_intent(db, args, stamp):
         return {'active': False, 'reason': 'Read preparation_history first, then reconcile completed or uncertain steps before continuing. Do not repeat the whole task.'}
     db.execute('INSERT OR IGNORE INTO preparation_calls(job_id,call_id,tool,params,started_at) VALUES(?,?,?,?,?)',
                (args['job_id'], args['call_id'], args['tool'], json.dumps(args.get('params',{}),ensure_ascii=False), stamp))
+    note_basis(db, run, args)
     return {'active': True}
+
+
+# A browser step that can change something on a page (a click, typing, an upload, a dialog's answer): Activity lists a
+# run with one under Steps on the web (activity_log), with what allowed it
+OUTWARD_BROWSER = ('act', 'upload', 'dialog')
+
+
+def outward(tool, params):
+    if tool != 'browser' or not isinstance(params, dict) or params.get('action') not in OUTWARD_BROWSER:
+        return False
+    request = params.get('request') if isinstance(params.get('request'), dict) else params
+    return request.get('kind') != 'wait'
+
+
+def note_basis(db, run, args):
+    """Record what allowed this run's steps, once, at its first call: the decision that started it (Do it, the owner's
+    message, a Confirm), never a check. A run with nothing behind it that takes a step on a page goes to the error feed
+    once. Record only: the call goes on either way."""
+    basis = action_basis.read(run['basis'])
+    if basis is None:
+        basis = action_basis.from_decision(db, run['decision_id'], run['action_id'])
+    if basis['kind'] == 'none' and not basis.get('reported') and outward(args.get('tool'), args.get('params')):
+        action_basis.missing(db, 'tool_intent.run')
+        basis = {**basis, 'reported': True}
+    stored = json.dumps(basis, ensure_ascii=False)
+    if stored != run['basis']:
+        db.execute('UPDATE preparation_runs SET basis=? WHERE job_id=?', (stored, args['job_id']))
 
 
 # Saving the result or a blocker is always allowed: a continuation that can't finish would only

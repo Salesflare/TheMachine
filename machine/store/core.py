@@ -27,6 +27,7 @@ import graph_boards
 import handoff_mail
 import help_topics
 import learning_loop
+from machine import action_basis
 from machine.config import LOG
 from machine.sources.exclusions import calendar_title_excluded, email_subject_excluded, excluded_by_rules, routine_rules
 from machine.store import history as history_store
@@ -445,6 +446,10 @@ class StoreCore:
                 db.execute('ALTER TABLE promises ADD COLUMN together INTEGER NOT NULL DEFAULT 0')  # a plan made with them: theirs and the owner's
             if 'owner_step' not in {r['name'] for r in db.execute('PRAGMA table_info(promises)')}:
                 db.execute('ALTER TABLE promises ADD COLUMN owner_step INTEGER NOT NULL DEFAULT 0')  # only the owner can do it (go there, pick it up)
+            if 'basis' not in {r['name'] for r in db.execute('PRAGMA table_info(action_jobs)')}:
+                # What allowed each step (machine/action_basis.py); the ones before it say so
+                db.execute('ALTER TABLE action_jobs ADD COLUMN basis TEXT')
+                db.execute('UPDATE action_jobs SET basis=?', (action_basis.BEFORE,))
             preparation_columns = {r['name'] for r in db.execute('PRAGMA table_info(preparations)')}
             if 'action_id' not in preparation_columns:
                 db.execute('ALTER TABLE preparations ADD COLUMN action_id TEXT')

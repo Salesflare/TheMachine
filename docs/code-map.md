@@ -96,6 +96,9 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   - `machine/app/export.py` (`ExportApp`): Settings, Export: an export in the background, its download, an upload
     to import and its Import now (`EXPORT_ACTIONS`; `machine/export/staged.py` marks a staged import confirmed). Another
     way out is one entry of `EXPORT_OPTIONS` in `dashboard/settings-export.js`.
+  - `machine/action_basis.py`: what allowed each outward step (a tap, Do it, the owner's words, a setting), recorded
+    with the step in `action_jobs.basis` and `preparation_runs.basis` and said in Settings, Activity. Record only,
+    never a check (`tests/test_action_basis.py`).
   - `machine/names.py`: what the owner calls a service, app or agent; every key from data shown on screen goes
     through it, so a tool underneath (gog, wacli, msgraph-cli) is never a name (`tests/test_owner_names.py`).
   - `machine/omarchy.py`: the current Omarchy theme's colors (`GET /api/omarchy-theme`), for Settings, General, This

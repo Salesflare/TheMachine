@@ -27,7 +27,7 @@ from machine.sources.signal_chats import owner_signal_chats
 from machine.sources.telegram import owner_telegram_chats
 from machine.sources.whatsapp import owner_whatsapp_chats, reply_spots
 import meeting_prep
-from machine import todo_kinds
+from machine import action_basis, todo_kinds
 from models import model_ready
 import next_actions
 from machine.store import outcomes
@@ -62,7 +62,7 @@ def owner_turn(db, suggestion_id, job_id):
     """The owner's own message (card chat or Change note) that started this preparation: its decision row
     (feedback, created_at), or None for a run nobody asked for in words (prepared ahead, a bare Do it, a review)."""
     job = db.execute('SELECT decision_id FROM preparations WHERE suggestion_id=? AND job_id=?', (suggestion_id, job_id)).fetchone() if job_id else None
-    turn = db.execute("SELECT feedback,created_at FROM decisions WHERE id=? AND suggestion_id=? AND source IN ('dashboard','telegram') AND choice='other'",
+    turn = db.execute("SELECT id,feedback,created_at FROM decisions WHERE id=? AND suggestion_id=? AND source IN ('dashboard','telegram') AND choice='other'",
                       (job['decision_id'], suggestion_id)).fetchone() if job else None
     return turn if turn and str(turn['feedback'] or '').strip() else None
 
@@ -387,11 +387,11 @@ class CardActionsApp:
             # (same sender, signature and attachments), without a second confirmation.
             ready=[a for a in next_actions.actions(action) if a['kind'] in SEND_NOW and not a.get('to_options')]
             if not ready:raise ValueError('send_now needs an email, LinkedIn, Slack or X draft with its recipients filled in')
-            saved['send']=self.store.confirm_action(args['suggestion_id'],ready[0]['revision'],'assistant:'+uuid.uuid4().hex,'assistant')
+            saved['send']=self.store.confirm_action(args['suggestion_id'],ready[0]['revision'],'assistant:'+uuid.uuid4().hex,'assistant',basis=self.asked_basis(turn))
         if args.get('do_now') is True and not saved.get('replayed'):
             # The owner asked for this step in their message: it runs now as their Confirm would (2026-11-06: "why am I
             # confirming something I asked"). Sends still wait for their Send on a draft they saw.
-            saved['done_now']=self.store.confirm_action(args['suggestion_id'],doable[0]['revision'],'asked:'+uuid.uuid4().hex,'assistant')
+            saved['done_now']=self.store.confirm_action(args['suggestion_id'],doable[0]['revision'],'asked:'+uuid.uuid4().hex,'assistant',basis=self.asked_basis(turn))
         if any(a['kind']=='doc_write' and a.get('op')=='create' for a in next_actions.actions(action)) and not saved.get('replayed'):
             # A new private doc in the owner's own Drive: made now, no OK needed (make_new_docs). Sharing it waits.
             saved['doc_created']='being made now in the owner’s own Drive, private to them; the to-do shows its link' if self.store.make_new_docs(args['suggestion_id']) else 'waits for the owner'
@@ -406,6 +406,15 @@ class CardActionsApp:
     def revise_draft_action(self, name, args, owner_dashboard=False):
         if not owner_dashboard:raise OwnerError('Drafts are edited in the dashboard')
         return self.store.revise_draft(args['suggestion_id'],args['revision'],'dashboard',args.get('subject'),args.get('body'))
+
+    def asked_basis(self, turn):
+        """What allowed a send_now or do_now (machine/action_basis.py): the owner's message in the to-do's chat, with their
+        words; else their last message in their own chat (owner_said: its words are kept nowhere); else None, which
+        records "No approval recorded". Record only: it never stops the step."""
+        if turn:
+            return action_basis.chat(turn['id'], turn['feedback'])
+        said = self.owner_said() if hasattr(self, 'owner_said') else None
+        return action_basis.chat(said) if said else None
 
     def confirm_action_action(self, name, args, owner_dashboard=False):
         if owner_dashboard and re.fullmatch(r'[A-Za-z0-9_.:-]{1,200}',str(args.get('approval_id',''))):source='dashboard'
