@@ -22,7 +22,9 @@ import ms_graph  # noqa: E402
 import routine_templates  # noqa: E402
 from machine.app.workers import GOOGLE_PHOTO_LISTS  # noqa: E402
 from machine.sources.calendar import calendar_event  # noqa: E402
+from pinned import pinned  # noqa: E402
 from timeutil import local_tz  # noqa: E402
+import timeutil  # noqa: E402
 
 ACCOUNTS = [{'id': 'home', 'email': 'owner@mail.example', 'service': 'gmail', 'boundary': 'personal'},
             {'id': 'cal', 'email': 'owner@mail.example', 'service': 'calendar', 'boundary': 'personal'},
@@ -31,7 +33,7 @@ ACCOUNTS = [{'id': 'home', 'email': 'owner@mail.example', 'service': 'gmail', 'b
 
 
 def ago(days):
-    return (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=days)).isoformat()
+    return (timeutil.clock() - dt.timedelta(days=days)).isoformat()
 
 
 class Words(unittest.TestCase):
@@ -115,7 +117,11 @@ class Birthdays(unittest.TestCase):
         p = patch.object(a.BirthdaysTemplate, 'birthdays_facebook_base', lambda s: None); p.start(); self.addCleanup(p.stop)
         threads = set(threading.enumerate())
         self.addCleanup(lambda: self.assertEqual([t.name for t in set(threading.enumerate()) - threads if t.is_alive()], []))
+        # Noon of today in the owner's time zone, and the clock stays still: a birthday to-do lasts until 23:59 of its
+        # day (expiry_moment), so a run in the day's last minute rightly makes none, and a test must never run into that
         self.today = dt.datetime.now(local_tz()).date()
+        clock = pinned(dt.datetime.combine(self.today, dt.time(12), local_tz())); clock.__enter__()
+        self.addCleanup(clock.__exit__, None, None, None)
         with self.store.connect() as db:
             graph.ensure(db)
 
