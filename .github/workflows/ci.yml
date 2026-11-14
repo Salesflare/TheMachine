@@ -118,6 +118,13 @@ jobs:
           echo "files=$(cat "$split")" >> "$GITHUB_OUTPUT"
           echo "shards=$(python3 -c 'import json, sys; print(json.dumps(list(json.load(open(sys.argv[1])))))' "$split")" >> "$GITHUB_OUTPUT"
           python3 -c 'import json, sys; [print(f"shard {k}: {len(v.split())} files") for k, v in json.load(open(sys.argv[1])).items()]' "$split"
+      - name: Help articles whose code changed without them (a note for reviewers, never a failure)
+        # Each help article names the code it describes (code: in its front matter). A pull request that changes one of
+        # those files and not the article gets a warning on the article, so the author and reviewer check it still
+        # reads true (scripts/help_check.py --changed; files many articles name, like dashboard.html, are left out).
+        if: github.event_name == 'pull_request'
+        continue-on-error: true
+        run: git diff --name-only HEAD^1 HEAD | python3 scripts/help_check.py --changed
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         # what this run tests, in the artifact's name (scripts/ci_runs.py); a pull request's or merge group's run proves
         # no commit of main

@@ -91,6 +91,16 @@ class HelpArticles(unittest.TestCase):
                            (GOOD.replace('area: connections', 'area: misc'), 'area')):
             self.assertIn(want, ' '.join(self.problems(text)), text[-40:])
 
+    def test_code_changed_without_its_article_gets_a_note(self):
+        found = {'gmail': help_check.front(GOOD.replace('code: onboarding.py', 'code: onboarding.py, google_api.py')),
+                 'slack': help_check.front(GOOD.replace('code: onboarding.py', 'code: onboarding.py, slack_api.py'))}
+        seen = help_check.changed_without_article
+        self.assertEqual(seen(['google_api.py', 'README.md'], found), {'gmail': ['google_api.py']})
+        self.assertEqual(seen(['google_api.py', 'docs/help/gmail.md'], found), {}, 'the article changed with it')
+        self.assertEqual(seen(['onboarding.py'], dict(found, **{f'a{i}': found['gmail'] for i in range(5)})), {},
+                         'a file many articles name says nothing about one of them')
+        self.assertEqual(seen(['onboarding.py'], found), {'gmail': ['onboarding.py'], 'slack': ['onboarding.py']})
+
     def test_a_site_text_the_article_does_not_use_fails(self):
         # the site's daily help sync checks this too, and stops on it
         self.assertIn('lists "Connect it now" under site: but does not use it',

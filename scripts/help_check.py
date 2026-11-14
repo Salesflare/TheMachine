@@ -34,6 +34,8 @@ It fails when:
   (scripts/translate.py); Help shows the English one for an article not translated yet.
 
     python3 scripts/help_check.py          # prints what is wrong, exit code 1 if anything is
+    git diff --name-only main | python3 scripts/help_check.py --changed
+        # a warning for each article whose code: files changed without it (CI shows it on pull requests; exit 0)
 """
 import ast
 import functools
@@ -364,7 +366,34 @@ def check_translations(found, folder=HELP):
     return problems
 
 
+# An article whose code: names a file this many others name too isn't flagged when that file changes: a change to
+# dashboard.html or onboarding.py says nothing about one article in particular.
+SHARED_CODE = 5
+
+
+def changed_without_article(changed, found=None):
+    """{article: [its code: files]} for each English article a change touched code of but not the article itself."""
+    found = articles() if found is None else found
+    changed = set(changed)
+    names = {}
+    for fields, _ in found.values():
+        for path in (fields or {}).get('code', []):
+            names[path] = names.get(path, 0) + 1
+    return {name: hits for name, (fields, _) in found.items() if fields and f'docs/help/{name}.md' not in changed
+            for hits in [[p for p in fields['code'] if p in changed and names[p] <= SHARED_CODE]] if hits}
+
+
+def note_changed(lines):
+    """A GitHub warning on each article whose code changed without it (CI, pull requests): a note, never a failure."""
+    for name, paths in sorted(changed_without_article(line.strip() for line in lines if line.strip()).items()):
+        print(f'::warning file=docs/help/{name}.md,title=Help article may be out of date::{", ".join(paths)} changed; '
+              f'check that docs/help/{name}.md still reads true, and update it in this pull request if not')
+    return 0
+
+
 def main():
+    if sys.argv[1:2] == ['--changed']:  # the changed paths, one per line, on stdin
+        return note_changed(sys.stdin)
     problems = check()
     for p in problems:
         print(p)
