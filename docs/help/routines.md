@@ -69,11 +69,15 @@ It sends at most two nudges a week, one per person a month, and none to someone 
 
 **Second-hand finds** watches a search on a second-hand site, like Marktplaats, Vinted, eBay or Facebook Marketplace. Search there with the filters you want, copy the address of the results and paste it in after **Add**. Add filters in your own words if you like, such as “under 300, within 30 km, no ‘for parts’”. Each search is its own routine, so add it again for the next one.
 
-Every 3 hours it opens the search in The Machine’s own browser and looks for listings it hasn’t seen yet. Price, distance and words you left out are checked first, in plain code. Each new listing that passes is opened and your AI judges its condition from the photo and description, and the seller from their reviews, rating and account age. The good ones go in one to-do, each with its photo, title, price, a one-line verdict and a link to the listing. A run with nothing good makes no to-do.
+Every 3 hours it opens the search in The Machine’s own browser and looks for listings it hasn’t seen yet. Price, distance and words you left out are checked first, in plain code.
+
+Each new listing that passes is opened and your AI judges its condition from the photo and description, and the seller from their reviews, rating and account age. The good ones go in one to-do, each with its photo, title, price, a one-line verdict and a link to the listing. A run with nothing good makes no to-do.
 
 It stays polite and cheap: one read of the search per run, at most 6 listings opened per run with a pause between them, and at most 40 listings checked a day across all your searches. Each check is one short question to your AI with one photo. The first run checks the newest few and takes in the rest as seen, so later runs bring only what is new.
 
-When the site asks you to sign in, shows a robot check or stops the read, a to-do says so, with **Open** to see it in The Machine’s browser. Sign in or pass the check there yourself; the next run reads again. The Machine never signs in or solves a check for you, and it never contacts a seller, bids or buys. **Change search** on its routine’s card takes a new address or filters, and **Change when** another rhythm, like “every 6 hours”.
+When the site asks you to sign in, shows a robot check or stops the read, a to-do says so, with **Open** to see it in The Machine’s browser. Sign in or pass the check there yourself; the next run reads again. The Machine never signs in or solves a check for you, and it never contacts a seller, bids or buys.
+
+**Change search** on its routine’s card takes a new address or filters, and **Change when** another rhythm, like “every 6 hours”.
 
 While a template’s routine keeps the template’s words, it runs on its own code, without your AI plan (Spam cleanup first lists new mail from unknown senders in code, and asks your AI one short question only when there is some; Stay in touch asks only about the one or two people it picked). A new name keeps that. Once you change its words, it runs like any routine on your words.
 

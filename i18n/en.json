@@ -3808,7 +3808,7 @@
  "Paste a whole SKILL.md, starting with its --- header": "Paste a whole SKILL.md, starting with its --- header",
  "Paste notes or a transcript. Markdown works.": "Paste notes or a transcript. Markdown works.",
  "Paste notes: a summary, decisions, action items. Markdown works.": "Paste notes: a summary, decisions, action items. Markdown works.",
- "Paste the address of a search page, starting with https://": "Paste the address of a search page, starting with https://",
+ "Paste the address of a search page, as your browser shows it": "Paste the address of a search page, as your browser shows it",
  "Paste the calendar’s https or webcal link. Anyone with it can read the calendar, so it is kept like a password.": "Paste the calendar’s https or webcal link. Anyone with it can read the calendar, so it is kept like a password.",
  "Paste the new access token": "Paste the new access token",
  "Paste the session link from claude.ai/code": "Paste the session link from claude.ai/code",

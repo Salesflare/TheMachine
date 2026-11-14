@@ -145,7 +145,7 @@ def address(value):
     try:
         return web_page.address(value)
     except ValueError:
-        raise OwnerError('Paste the address of a search page, starting with https://') from None
+        raise OwnerError('Paste the address of a search page, as your browser shows it') from None
 
 
 def search_name(url):

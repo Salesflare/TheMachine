@@ -91,7 +91,7 @@ class SecondhandTemplate(routine_templates.Template):
             old = secondhand.search(db, row['id'])
             secondhand.set_search(db, row['id'], made['url'], made['filters'], stamp)
             if old and row['name'] == self.secondhand_name(old['url']) and row['name_check'] != routines.OWNER_NAMED:
-                db.execute('UPDATE routines SET name=?,updated_at=? WHERE id=?', (made['name'], stamp, row['id']))
+                routines.retitle(db, row['id'], made['name'], stamp)
         return self.routines_view(row['id'])
 
     def secondhand_view(self, routine_id):

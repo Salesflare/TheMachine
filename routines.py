@@ -392,6 +392,11 @@ def rename(db, routine_id, name, stamp):
         db.execute('UPDATE routines SET name=?,name_check=?,updated_at=? WHERE id=?', (name, OWNER_NAMED, stamp, row['id']))
 
 
+def retitle(db, routine_id, name, stamp):
+    """A name the code made (from a template's setup) follows a change of that setup; it stays the code's own name."""
+    db.execute('UPDATE routines SET name=?,updated_at=? WHERE id=?', (clean_name(name), stamp, routine_id))
+
+
 def named(db, routine_id, name, stamp):
     """A run's short name for its routine (routine_result name), taken only when the routine asked for one."""
     row = db.execute('SELECT * FROM routines WHERE id=?', (routine_id,)).fetchone()
