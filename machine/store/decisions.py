@@ -297,16 +297,28 @@ def close_by_itself(db, row, decision_id, feedback, source, stamp, undo_hours, l
     db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=? AND message_id IS NOT NULL', (sid,))
 
 
-def handoff_wait(db, suggestion, awake=False):
+HANDOFFS = ("SELECT context,name,status,answer FROM fleet_out WHERE context IN (SELECT value FROM json_each(?)) AND kind='handoff' "
+            "AND 'handoff_withdrawn:'||id NOT IN (SELECT key FROM fleet_meta WHERE key LIKE 'handoff_withdrawn:%') ORDER BY at DESC,rowid DESC")
+
+
+def handoffs_of(db, ids):
+    """{context: the newest handoff not taken back} of these to-dos, read once for a list (views.card_reads)."""
+    out = {}
+    for row in db.execute(HANDOFFS, (json.dumps(['handoff:' + str(i) for i in ids]),)):
+        out.setdefault(row['context'], row)
+    return out
+
+
+def handoff_wait(db, suggestion, awake=False, handoffs=None):
     """A card under Later because it is with a teammate who hasn't answered its handoff yet: {'name': their first name}.
     Its time is when it comes back to check in with them, not a snooze of the owner's. awake: the same for a card that
-    is back on the list (the check-in is due, or the owner brought it back) while the teammate still has it."""
+    is back on the list (the check-in is due, or the owner brought it back) while the teammate still has it.
+    handoffs: handoffs_of for a list of cards."""
     if suggestion.get('status') not in (('pending', 'accepted', 'prepared', 'instructions') if awake else ('snoozed',)):
         return None
     try:  # the newest handoff not taken back
-        row = db.execute("SELECT name,status,answer FROM fleet_out WHERE context=? AND kind='handoff' "
-                         "AND 'handoff_withdrawn:'||id NOT IN (SELECT key FROM fleet_meta WHERE key LIKE 'handoff_withdrawn:%') "
-                         "ORDER BY at DESC,rowid DESC LIMIT 1", ('handoff:' + str(suggestion['id']),)).fetchone()
+        row = handoffs.get('handoff:' + str(suggestion['id'])) if handoffs is not None else \
+            next(iter(handoffs_of(db, [suggestion['id']]).values()), None)
     except sqlite3.OperationalError:  # no Fleet on this Machine
         return None
     try:

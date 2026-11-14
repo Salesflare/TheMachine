@@ -576,10 +576,11 @@ def all_settled(db, suggestion_id):
     return bool(states) and states <= {'done', 'kept', 'failed', 'unknown'}
 
 
-def view(db, suggestion_id, metas):
+def view(db, suggestion_id, metas, have=None):
     """What a to-do shows of its items, or None: {'kind', 'items': [{n, from, address, title, event, count, why, state,
-    how, link}]}; event: its mail's id while that mail is kept, else None. metas: the to-do's evidence metadata, as stored (the items' details are sealed with it)."""
-    have = items_of(db, suggestion_id)
+    how, link}]}; event: its mail's id while that mail is kept, else None. metas: the to-do's evidence metadata, as stored (the items' details are sealed with it).
+    have: its items_of, read once for a list of to-dos (views.card_reads)."""
+    have = items_of(db, suggestion_id) if have is None else have
     if not have:
         return None
     for meta in metas:
