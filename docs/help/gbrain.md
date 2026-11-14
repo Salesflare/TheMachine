@@ -14,7 +14,7 @@ Your Machine says what goes in: people and projects from your Graph with a link 
 
 ## What it does
 
-Checks can read your brain (search and read pages, never write) to write better to-dos. Your Machine writes its part of each page between clear markers. Edit or remove that part and it leaves it as you made it. Notes you write about a person in GBrain show up next to them in your Graph.
+Checks can read your brain (search and read pages, never write) to write better to-dos. Your Machine writes its part of each page between clear markers. Edit or remove that part and it leaves it as you made it. Notes you write about a person in GBrain come back to your Machine, so checks and chat see them with that person. They stay on your Machine.
 
 Work people and companies go in only when you check **Include Work people and companies**. Teammates' Team Graph data never goes in.
 

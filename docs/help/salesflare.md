@@ -18,11 +18,11 @@ Nothing. (On your own computer, the `join_pipelines` setting can make it add you
 
 1. In Salesflare, open [Settings, API keys](https://app.salesflare.com/#/settings/apikeys) and create a key.
 2. On a hosted Machine: open your setup page at app.themachine.computer/setup, go to **More sources**, open Salesflare CRM, paste the key and press **Connect**.
-3. In the dashboard: **Connections**, **Customers**, Salesflare CRM, paste the key and press **Connect**. It then shows how many accounts it has read.
+3. In the dashboard: **Connections**, **Customers**, Salesflare CRM, paste the key and press **Connect**. Its card then shows how far it is.
 
 ## Sync details
 
-Under **Connections**, **Other sources**, Salesflare shows how far it is: accounts read this round, and any skipped because Salesflare was too slow. A round that runs for hours says it may be stuck.
+Under **Connections**, **Customers**, Salesflare shows how far it is: accounts read this round, and any skipped because Salesflare was too slow. A round that runs for hours says it may be stuck.
 
 Its tiles count the accounts it could open and the emails and meetings it brought in. If Salesflare lets your API key open none of the accounts, the card says **Needs your help**: use the key of a user who can see them. If Salesflare keeps timing out but each retry gets through, it says Salesflare is **slow at times**.
 
