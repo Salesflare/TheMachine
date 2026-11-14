@@ -17,7 +17,7 @@ Your AI plan is billed by your provider, like OpenAI. We add nothing to it.
 ## On the Network
 
 - Friends and Family: free, with any Machine. In a Family Fleet, hosted Machines cost {price.family_pair} for the first two together, then {price.family_seat} each, excl. VAT.
-- Work Fleet: {price.seat} a seat a month, or {price.seat_big} for a Bigger one, excl. VAT. A teammate who runs their own Machine is {price.network} a month, and one who's already hosted is free. Each Fleet has its own card and invoices, and the owner confirms every amount before it's charged.
+- Work Fleet: {price.seat} a seat a month, or {price.seat_big} for a Bigger one, excl. VAT. A teammate who runs their own Machine is {price.network} a month. A teammate who already pays for a hosted Machine asks the Fleet to take it over as a seat when they join. Once the owner confirms, their own plan stops. Until then, or if the owner declines, they keep paying as now. Each Fleet has its own card and invoices, and the owner confirms every amount before it's charged.
 
 All prices are per month, excl. VAT. See [Pricing](/pricing).
 
