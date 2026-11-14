@@ -114,6 +114,7 @@ import re
 import activity_log
 import bounces
 from machine import todo_states
+from machine.store import todo_moves
 from machine.owner_error import OwnerError
 
 SCHEMA = '''
@@ -1442,7 +1443,8 @@ def bring_back(db, suggestion_id, decision_id, now):
     if not can_bring_back(db, suggestion_id):
         raise OwnerError('This follow-up can’t come back anymore.')
     reopen(db, suggestion_id)
-    db.execute("UPDATE suggestions SET status='prepared',undo_until=NULL,closed_decision_id=NULL,feedback_until=NULL WHERE id=?", (suggestion_id,))
+    db.execute('UPDATE suggestions SET undo_until=NULL,closed_decision_id=NULL,feedback_until=NULL WHERE id=?', (suggestion_id,))
+    todo_moves.transition(db, suggestion_id, todo_states.PREPARED, 'follow_up_back', at=now)
     db.execute('INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)',
                (decision_id, suggestion_id, 'reopen', SKIP_BACK, 'dashboard', now))
     db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=? AND message_id IS NOT NULL', (suggestion_id,))
@@ -1479,7 +1481,8 @@ def rewrite_judged(db, now, mine=mine_default):
             continue  # they answered since: nothing to follow up
         if r['state'] == 'stopped' and not reopen(db, sid):
             continue
-        db.execute("UPDATE suggestions SET status='accepted',early=1,outcome=NULL WHERE id=?", (sid,))
+        db.execute('UPDATE suggestions SET early=1,outcome=NULL WHERE id=?', (sid,))
+        todo_moves.transition(db, sid, todo_states.ACCEPTED, 'follow_up_redraft', at=now)
         db.execute("UPDATE deliveries SET status='grouped' WHERE suggestion_id=? AND status='cancelled' AND message_id IS NULL "
                    "AND EXISTS(SELECT 1 FROM follow_up_cards WHERE suggestion_id=? AND grouped=1)", (sid, sid))
         db.execute("UPDATE deliveries SET status='queued' WHERE suggestion_id=? AND status='cancelled' AND message_id IS NULL", (sid,))
@@ -1538,8 +1541,9 @@ def close(db, suggestion_id, why, now, state='stopped', source='assistant', deci
     said (Stop follow-ups here)."""
     db.execute("UPDATE follow_up_cards SET state=?,why=?,closed_at=? WHERE suggestion_id=? AND state='open'", (state, why, now, suggestion_id))
     # The owner's own close keeps where it was (closed_from: its draft can come back, can_bring_back)
-    if db.execute("UPDATE suggestions SET closed_from=CASE WHEN ? THEN status ELSE closed_from END,status='rejected',early=0 "
-                  f"WHERE id=? AND status NOT IN {todo_states.sql(todo_states.CLOSED)}", (int(source == 'dashboard'), suggestion_id)).rowcount:
+    db.execute("UPDATE suggestions SET closed_from=CASE WHEN ? THEN status ELSE closed_from END,early=0 "
+               f"WHERE id=? AND status NOT IN {todo_states.sql(todo_states.CLOSED)}", (int(source == 'dashboard'), suggestion_id))
+    if todo_moves.transition(db, suggestion_id, todo_states.REJECTED, 'follow_up_' + why, only=todo_states.OPEN, at=now):
         db.execute('INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)',
                    (decision_id or 'follow-up-' + why + ':' + suggestion_id, suggestion_id, 'reject', WHY.get(why, why), source, now))
         db.execute("UPDATE preparations SET status='cancelled',updated_at=? WHERE suggestion_id=? AND status IN ('queued','starting','running','blocked')",
