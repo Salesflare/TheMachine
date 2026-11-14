@@ -131,7 +131,9 @@ try{
    await vcard.waitFor({state:'detached'});
    // Off from Settings
    await navClick(page.locator('#open-settings'));await page.locator('#settings-tabs [data-settings-tab="security"]').click();
-   await vote.locator('label',{hasText:'Off'}).click();await page.locator('#share-vote input[value="off"]:checked').waitFor();
+   // the radio checks at once, its request reaches the server after: wait for that answer before reading what was posted
+   const offSaved=page.waitForResponse(r=>r.url().endsWith('/api/action')&&r.request().postDataJSON()?.action==='set_learnings_vote');
+   await vote.locator('label',{hasText:'Off'}).click();await page.locator('#share-vote input[value="off"]:checked').waitFor();await offSaved;
    assert.deepEqual(posts.at(-1),{action:'set_learnings_vote',args:{mode:'off'}});
    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'no horizontal scroll at '+width);
   }else{

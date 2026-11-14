@@ -520,7 +520,9 @@ const ownerStepChoices=(choices,s)=>[...(s?.origin==='machine'&&s.machine_fix?[[
 // Set by hand it stays; otherwise the review or the project its thread or people are on chose it.
 // The chip opens the project's page; Project under Details opens the picker.
 const projectChip=s=>s.project_node?html`<a class="chip project-link" href="${graphHash(s.project_node.node_id)}" title="${s.project_node.name}">${raw(CHIP_ICON.project)}<span>${s.project_node.name}</span></a>`:'';
-async function cardProjectPick(id,anchor){let names=[];try{const r=await request('api/graph?view=projects');names=r.projects||[]}catch{}
+async function cardProjectPick(id,anchor){const inChat=!!anchor.closest('.chat-main');let names=[];try{const r=await request('api/graph?view=projects');names=r.projects||[]}catch{}
+ // The chat or card may have been drawn again while the projects came: the picker goes where its button is now
+ if(!anchor.isConnected)anchor=document.querySelector(inChat?`.chat-layout[data-chat="${CSS.escape(id)}"] [data-card-project]`:`#task-${CSS.escape(id)} [data-card-project]`)||anchor;
  const s=(state.suggestions||[]).find(x=>x.id===id)||{},cur=s.project_node?.node_id||'';document.querySelector('.project-picker')?.remove();
  const box=document.createElement('div');box.className='project-picker';box.setAttribute('role','dialog');box.setAttribute('aria-label','Project for this to-do');
  setHTML(box,html`<label>Project <select>${cur?'':html`<option value="" selected>Choose a project</option>`}${names.map(p=>html`<option value="${p.id}"${p.id===cur?html` selected`:''}>${p.name}</option>`)}</select></label>${cur?html`<a class="pp-open" href="${graphHash(cur)}">${t('Open project')} ›</a>`:''}<div class="actions"><button type="button" class="primary" data-pp="save">Save</button>${cur?html`<button type="button" class="ghost" data-pp="none">No project</button>`:''}<button type="button" class="quiet" data-pp="cancel">Cancel</button></div>`);
