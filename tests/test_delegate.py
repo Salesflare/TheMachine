@@ -150,7 +150,9 @@ class Delegate(unittest.TestCase):
             self.app().action_step(self.transport(lambda *_: {'message_id': 'gm-1'}))
         with self.store.connect() as db:
             job_rfc = db.execute('SELECT rfc_message_id FROM action_jobs').fetchone()[0]
+            moves = [tuple(r) for r in db.execute("SELECT from_status,to_status FROM todo_moves WHERE reason='sent_wait_reply'")]
         self.assertEqual(self.suggestion()['status'], 'snoozed')
+        self.assertEqual(moves, [('prepared', 'snoozed')])
         # Another email from them about something else doesn't close it; their reply to this one does.
         self.store.commit_page('work', {}, [email('m2', '2026-10-16T10:00:00+00:00', 'Books <books@accountant.example>', thread='t9')])
         with self.store.connect() as db:

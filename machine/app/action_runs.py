@@ -22,6 +22,7 @@ from machine.sources.connectors import docs_transport, docs_write_transport, int
 from machine.store.decisions import note_first, NOTHING_SENT, settle_sent
 from machine.store.first_look import VERIFIED_KINDS
 from machine.store.machine_cards import parked_redo
+from machine.store import todo_moves
 from machine.text import encoded
 import next_actions
 import parked_fixes
@@ -58,8 +59,9 @@ def queue_delegate_wait(db, action, job, result):
     else:
         watch = {'kind': 'gmail.message', 'from': action['to'][0].lower(), 'thread_id': action.get('thread_id'), 'reply_to': job.get('rfc_message_id') or ''}
     watch.update(account_id=action['account_id'], since=now(), delegated=True, name=action.get('to_name') or action['to'][0])
-    db.execute("UPDATE suggestions SET awaiting=?,status='snoozed',snoozed_until=?,resume_status='prepared',undo_until=NULL WHERE id=?",
+    db.execute("UPDATE suggestions SET awaiting=?,snoozed_until=?,resume_status='prepared',undo_until=NULL WHERE id=?",
                (encoded(watch), thread_return_time(action['wait_days']), job['suggestion_id']))
+    todo_moves.transition(db, job['suggestion_id'], todo_states.SNOOZED, 'sent_wait_reply')
 
 
 def settle_doc_write(store, db, suggestion_id, job_id, action, url=None):
@@ -87,7 +89,8 @@ def settle_doc_write(store, db, suggestion_id, job_id, action, url=None):
                ('sent:' + job_id, suggestion_id, 'update', note[:200], 'assistant', stamp))
     db.execute('INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)',
                ('after:' + job_id, suggestion_id, 'continue', step[:2000], 'assistant', stamp))
-    db.execute("UPDATE suggestions SET status='accepted',body=?,outcome=NULL,early=0,undo_until=NULL WHERE id=?", (body, suggestion_id))
+    db.execute('UPDATE suggestions SET body=?,outcome=NULL,early=0,undo_until=NULL WHERE id=?', (body, suggestion_id))
+    todo_moves.transition(db, suggestion_id, todo_states.ACCEPTED, 'doc_then_next', at=stamp)
     store.queue_preparation(db, suggestion_id, 'after:' + job_id)
     return True
 

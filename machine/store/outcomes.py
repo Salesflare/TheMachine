@@ -28,6 +28,7 @@ import uuid
 import i18n
 from machine.text import encoded
 from machine import todo_states
+from machine.store import todo_moves
 
 MAX = 140  # one short line, like a project's condition
 BY = ('review', 'run', 'promise', 'project')  # who set it; the run's (and the owner's through it) word stands
@@ -96,9 +97,10 @@ def wait_for_result(db, row, who, stamp, decision_id=None, source='assistant'):
     Waiting on others, nothing drafted left on it, and comes back to chase them at until. Its chat says what it waits for."""
     waiting_on = ' '.join(str(who or '').split())[:200] or row['done_when'][:200]
     until = until_for(row)
-    db.execute("UPDATE suggestions SET status='prepared',outcome=?,next_action=NULL,early=0,snoozed_until=NULL,resume_status=NULL,"
+    db.execute("UPDATE suggestions SET outcome=?,next_action=NULL,early=0,snoozed_until=NULL,resume_status=NULL,"
                'undo_until=NULL,deliver_after=NULL,feedback_until=NULL WHERE id=?',
                (encoded({'state': 'waiting', 'waiting_on': waiting_on, 'until': until}), row['id']))
+    todo_moves.transition(db, row['id'], todo_states.PREPARED, 'wait_for_result', at=stamp)
     db.execute('INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)',
                (decision_id or 'outcome-wait:' + uuid.uuid4().hex, row['id'], 'update', '', source, stamp))  # its words stay sealed on the to-do
     db.execute("UPDATE deliveries SET status='cancelled',reminder=0 WHERE suggestion_id=? AND status='queued'", (row['id'],))

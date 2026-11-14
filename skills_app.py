@@ -22,6 +22,8 @@ from machine.config import LOG
 from machine.prompts.profile import SKILLS_LEASE, SKILLS_PAGES, SKILLS_READ, SKILLS_SIGNIN, SKILLS_SITES
 from machine.store.decisions import skill_update_after
 from machine.store.voices import sentences
+from machine.store import todo_moves
+from machine import todo_states
 import recurring
 import skills as skills_module
 import skills
@@ -308,7 +310,8 @@ class SkillsApp:
                 LOG.error('skill from notes error=%s', type(error).__name__)
                 with self.store.connect() as db:
                     db.execute("UPDATE skill_clusters SET status='failed',updated_at=? WHERE id=? AND status='accepting'", (now(), offered['id']))
-                    db.execute("UPDATE suggestions SET status='pending' WHERE id=? AND EXISTS(SELECT 1 FROM skill_clusters WHERE id=? AND status='failed')", (offered['suggestion_id'], offered['id']))
+                    if db.execute("SELECT 1 FROM skill_clusters WHERE id=? AND status='failed'", (offered['id'],)).fetchone():
+                        todo_moves.transition(db, offered['suggestion_id'], todo_states.PENDING, 'skill_failed')
         # Files are derived from the committed skills, never a reason to replay the database operation.
         self.skills.sync()
         return len(rows)
