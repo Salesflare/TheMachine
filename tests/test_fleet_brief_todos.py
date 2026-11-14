@@ -10,6 +10,7 @@ from test_fleet import NOW, TEAM, fleet, mail  # noqa: I001 - first: it puts the
 import fleet_brief
 import fleet_brief_todos
 import test_fleet_brief as brief_fixture
+from pinned import pinned
 
 YESTERDAY = (NOW - dt.timedelta(days=1)).date().isoformat()
 GLOBEX = {'org': 'Globex', 'domain': 'globex.example', 'key': 'd' * 64, 'at': YESTERDAY}  # Pat got it; the owner talks to Globex too
@@ -21,7 +22,12 @@ class BriefTodos(unittest.TestCase):
     facts = brief_fixture.Brief.facts
 
     def setUp(self):  # the brief's own fixture (test_fleet_brief.py), then the app's hooks (machine/app/fleet.py)
+        # One clock for the test and the code: the app's at NOW, and the owner's local time NOW too (UTC, the zone this
+        # fixture's days are written in). With the desktop's own zone, "since yesterday" read "since Fri" between local
+        # and UTC midnight, and a run that crossed midnight moved "today" under the fixture.
+        self.enterContext(pinned(NOW))
         brief_fixture.Brief.setUp(self)
+        self.fleet.hours['local_now'] = lambda: NOW
         self.fleet.brief_card = fleet_brief_todos.card_maker(self.store)
         self.fleet.brief_reword = self.store.brief_reword
         self.fleet.done_card = lambda card, choice, why, key: self.store.decide(card, choice, why, key, 'fleet')
