@@ -1,0 +1,19 @@
+# Gitleaks config: the default rules, plus narrow allowlists for false positives in translated text.
+# CI (.github/workflows/ci.yml, shard 1) and local runs pick this file up from the repository root.
+
+[extend]
+useDefault = true
+
+# linkedin-client-id matches "LinkedIn" followed by a comma and a 14-letter word, which translated help articles and
+# catalogs write as plain prose (German "LinkedIn, Telefonnummern ..."). A real client ID mixes letters and digits, so
+# only a letters-only match in the translated help and the non-English catalogs is skipped.
+[[allowlists]]
+description = "A plain word after LinkedIn in translated help or catalogs"
+targetRules = ["linkedin-client-id"]
+regexTarget = "secret"
+regexes = ['''^[A-Za-z]{14}$''']
+condition = "AND"
+paths = [
+  '''^docs/help/(?:de|es|fr|it|nl|pt-BR)/[^/]+\.md$''',
+  '''^i18n/(?:de|es|fr|it|nl|pt-BR)\.json$''',
+]
