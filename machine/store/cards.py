@@ -476,10 +476,10 @@ class CardsStore:
     def set_bill(self, db, suggestion_id, bill):
         return set_bill(db, suggestion_id, bill)
 
-    def code_draft(self, suggestion_id, next_action, needs):
+    def code_draft(self, suggestion_id, next_action):
         """A draft plain code wrote for a to-do it just made (a refund's chase, refunds.draft): the to-do is ready with
-        it, as one prepared ahead, without a run or a model. Nothing is sent: Send stays the owner's. Only while the
-        to-do is still new (pending)."""
+        it, as one prepared ahead, without a run or a model. Nothing is sent: Send stays the owner's. No outcome, so no
+        "Needs you" line: Review and send says it. Only while the to-do is still new (pending)."""
         with self.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             row = db.execute('SELECT status,body FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
@@ -489,7 +489,7 @@ class CardsStore:
                        ('code-draft:' + suggestion_id, suggestion_id, 'prepare_ahead', '', 'assistant', now()))
             todo_moves.transition(db, suggestion_id, todo_states.ACCEPTED, 'prepare_ahead')
             body = row['body']
-        return self.prepare(suggestion_id, body, next_action=next_action, outcome={'state': 'needs_you', 'needs': needs})
+        return self.prepare(suggestion_id, body, next_action=next_action)
 
     def suggest(self, dedupe_key, title, body, event_ids, when='now', digest_at='08:30', work=False, urgent=False, due=None, ahead=False, awaiting=None, project=None,
                 card_id=None, separate=False, reopen=False, match=False, _db=None, suggestion_id=None, owner_step=None, expires_at=None, expires_what=None,

@@ -173,12 +173,22 @@ class Refunds(unittest.TestCase):
         self.assertEqual((draft['kind'], draft['to']), ('email', ['help@shop.example']))
         self.assertEqual(draft['subject'], 'Refund for A-1042')
         self.assertIn('a refund of €42 (A-1042)', draft['body'])
-        self.assertIn('send the reminder', todo['outcome'])
+        self.assertFalse(todo['outcome'])  # no "Needs you" line: Review and send says it
         self.assertTrue(draft['body'].rstrip().endswith('Robin Example'))
         with self.store.connect() as db:
             self.assertEqual(db.execute('SELECT status FROM deliveries WHERE suggestion_id=?', (todo['id'],)).fetchone()[0], 'not_sent')
             self.assertEqual(db.execute("SELECT count(*) FROM action_jobs WHERE suggestion_id=? AND status IN ('queued','sending')", (todo['id'],)).fetchone()[0], 0)
         self.assertEqual(self.promise(pid)['status'], 'carded')
+
+    def test_its_dates_are_written_as_the_dashboard_writes_them_for_the_owner(self):
+        import locale_prefs
+        locale_prefs.configure({'locale': 'en-BE'})
+        self.addCleanup(locale_prefs.configure, {})
+        self.record()
+        self.due_step()
+        todo = self.todos()[0]
+        self.assertEqual(todo['body'], 'Promised on Mon 2 Nov (A-1042), to be in by Mon 16 Nov. Nothing shows it came in yet.')
+        self.assertIn('On Mon 2 Nov you confirmed', json.loads(todo['next_action'])['body'])
 
     def test_money_back_later_closes_the_chase_to_do_by_itself_with_undo(self):
         self.record()

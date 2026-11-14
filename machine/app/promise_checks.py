@@ -297,7 +297,7 @@ class PromiseChecksApp:
         except (OwnerError, ValueError) as failure:  # no mailbox here that sends: the to-do comes without a draft
             LOG.info('refund draft skipped error=%s', type(failure).__name__)
             return saved
-        self.store.code_draft(saved['id'], action, i18n.t('send the reminder'))
+        self.store.code_draft(saved['id'], action)
         return saved
 
     def promise_twin_step(self):
