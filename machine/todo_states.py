@@ -43,6 +43,13 @@ ALSO = {
     (COMPLETED, REJECTED): {
         'merged': 'Merge folds the owner\'s to-do into the one it repeats; a done one closes as Not needed there too',
     },
+    (COMPLETED, SNOOZED): {
+        'undo': 'Undo puts a to-do closed while it slept back exactly as it was: under Later, until the same time',
+    },
+    (REJECTED, SNOOZED): {
+        'undo': 'Undo puts a to-do closed while it slept back exactly as it was: under Later, until the same time',
+        'snooze': 'Later on a to-do already Not needed (a tap from an older message) puts it under Later, to come back pending',
+    },
 }
 
 

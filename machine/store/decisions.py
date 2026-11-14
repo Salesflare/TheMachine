@@ -807,16 +807,17 @@ class DecisionsStore:
             restored = row['closed_from'] or 'pending'
             db.execute('INSERT INTO decisions VALUES(?,?,?,?,?,?)',(decision_id,suggestion_id,choice,feedback[:5000],source,now()))
             previous=json.loads(row['closed_state'] or '{}')
-            db.execute('UPDATE suggestions SET status=?,snoozed_until=?,resume_status=?,undo_until=NULL,feedback_until=NULL WHERE id=?',
-                       (restored,previous.get('snoozed_until'),previous.get('resume_status'),suggestion_id))
+            db.execute('UPDATE suggestions SET snoozed_until=?,resume_status=?,undo_until=NULL,feedback_until=NULL WHERE id=?',
+                       (previous.get('snoozed_until'),previous.get('resume_status'),suggestion_id))
             db.execute('UPDATE suggestions SET expires_at=NULL,expired_at=NULL WHERE id=? AND expired_at IS NOT NULL',(suggestion_id,))  # theirs now: it stays
             if str(row['closed_decision_id']).startswith(('handled:','looks-done:')):
                 # It closed because it looked done: Undo says it isn't, like Not done, so it is a normal to-do again
                 previous_state=outcome_state(dict(row))
                 if restored=='prepared' and previous_state=='already_done':
                     restored='pending'
-                db.execute("UPDATE suggestions SET handled_hint=NULL,status=?,outcome=CASE WHEN ?='pending' AND ?='already_done' THEN NULL ELSE outcome END WHERE id=?",
-                           (restored,restored,previous_state or '',suggestion_id))
+                db.execute("UPDATE suggestions SET handled_hint=NULL,outcome=CASE WHEN ?='pending' AND ?='already_done' THEN NULL ELSE outcome END WHERE id=?",
+                           (restored,previous_state or '',suggestion_id))
+            todo_moves.transition(db, suggestion_id, restored, 'undo')
             db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=? AND message_id IS NOT NULL',(suggestion_id,))
             prior=previous.get('preparation') or {}
             if restored in todo_states.PREPARING and prior.get('status') == 'blocked' and db.execute(
@@ -850,7 +851,8 @@ class DecisionsStore:
                 return {'status':row['status'],'duplicate':True,'skipped':True,'reason':'stale_retry','already':'closed'}
             db.execute('INSERT INTO decisions VALUES(?,?,?,?,?,?)',(decision_id,suggestion_id,choice,feedback[:5000],source,now()))
             if ahead:  # Try again accepts it first: a run works only on an accepted to-do (preparation_state.tool_intent)
-                db.execute("UPDATE suggestions SET status='accepted',undo_until=NULL WHERE id=?",(suggestion_id,))
+                db.execute('UPDATE suggestions SET undo_until=NULL WHERE id=?',(suggestion_id,))
+                todo_moves.transition(db, suggestion_id, todo_states.ACCEPTED, 'retry')
             self.queue_preparation(db,suggestion_id,decision_id,resume_action=True)
             db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=? AND message_id IS NOT NULL',(suggestion_id,))
             return {'status':'accepted' if ahead else row['status'],'retrying':True}
@@ -869,14 +871,15 @@ class DecisionsStore:
                 restored = 'accepted'
             db.execute('INSERT INTO decisions VALUES(?,?,?,?,?,?)',
                        (decision_id,suggestion_id,choice,feedback[:5000],source,now()))
-            db.execute('UPDATE suggestions SET status=?,completed_from=?,snoozed_until=NULL,resume_status=NULL,feedback_until=NULL,feedback_request_id=NULL,undo_until=NULL WHERE id=?',
-                       (restored,restored,suggestion_id))
+            db.execute('UPDATE suggestions SET completed_from=?,snoozed_until=NULL,resume_status=NULL,feedback_until=NULL,feedback_request_id=NULL,undo_until=NULL WHERE id=?',
+                       (restored,suggestion_id))
             db.execute('UPDATE suggestions SET expires_at=NULL,expired_at=NULL WHERE id=? AND expired_at IS NOT NULL',(suggestion_id,))
             if str(row['closed_decision_id']).startswith(('handled:','looks-done:')):  # it closed as looking done: it isn't
                 if restored=='prepared' and outcome_state(dict(row))=='already_done':
                     restored='pending'
-                    db.execute("UPDATE suggestions SET status='pending',completed_from='pending',outcome=NULL WHERE id=?",(suggestion_id,))
+                    db.execute("UPDATE suggestions SET completed_from='pending',outcome=NULL WHERE id=?",(suggestion_id,))
                 db.execute('UPDATE suggestions SET handled_hint=NULL WHERE id=?',(suggestion_id,))
+            todo_moves.transition(db, suggestion_id, restored, 'reopen')
             db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=? AND message_id IS NOT NULL', (suggestion_id,))
             if restored in todo_states.PREPARING:
                 self.queue_preparation(db,suggestion_id,decision_id,resume_action=True)
@@ -909,14 +912,16 @@ class DecisionsStore:
                         encoded({**{k:row[k] for k in ('snoozed_until','resume_status')},'preparation':dict(prior_job) if prior_job else None}),suggestion_id))
         else:
             db.execute('UPDATE suggestions SET undo_until=NULL WHERE id=?',(suggestion_id,))
-        db.execute('UPDATE suggestions SET status=?,snoozed_until=?,resume_status=?,feedback_until=NULL WHERE id=?', (status, until, resume if choice == 'snooze' else None, suggestion_id))
+        db.execute('UPDATE suggestions SET snoozed_until=?,resume_status=?,feedback_until=NULL WHERE id=?', (until, resume if choice == 'snooze' else None, suggestion_id))
+        todo_moves.transition(db, suggestion_id, status, choice)
         db.execute("UPDATE action_jobs SET status='cancelled',updated_at=? WHERE suggestion_id=? AND status IN ('queued','blocked')",(now(),suggestion_id))
         db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=? AND message_id IS NOT NULL', (suggestion_id,))
         cluster = db.execute("SELECT id FROM skill_clusters WHERE suggestion_id=? AND status IN ('pending','declined','failed')", (suggestion_id,)).fetchone()
         if cluster and choice in ('accept', 'reject', 'complete') and not (choice == 'accept' and row['status'] == 'snoozed'):  # Unsnooze isn't Create skill
             db.execute('UPDATE skill_clusters SET status=?,updated_at=? WHERE id=?', ('accepting' if choice == 'accept' else 'declined', now(), cluster['id']))
             if choice == 'accept':
-                db.execute("UPDATE suggestions SET status='completed',completed_from='pending' WHERE id=?", (suggestion_id,))
+                db.execute("UPDATE suggestions SET completed_from='pending' WHERE id=?", (suggestion_id,))
+                todo_moves.transition(db, suggestion_id, todo_states.COMPLETED, 'skill_made')
                 return {'status': 'completed', 'snoozed_until': None, 'note': 'Moving those notes into the skill.'}
         if status in todo_states.PREPARING:
             if choice == 'other':
