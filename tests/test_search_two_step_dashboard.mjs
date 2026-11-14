@@ -10,10 +10,12 @@ const dashboard=await dashboardPage();
 const ev=(id,title)=>({id,account_id:'mail',kind:'gmail.message',title,body:title,occurred_at:'2026-01-0'+(id%9+1)+'T10:00:00Z',metadata:{from:'Sam <sam@example.org>'}});
 const A=ev(1,'Contract draft'),B=ev(2,'Signed contract'),C=ev(3,'Contract typo'),D=ev(4,'Agreement for the deal'),E=ev(5,'Paperwork to sign'),F=ev(6,'Legal review');
 const WORDS=[A,B,C],FULL=[B,D,A,E,F];  // C: a keyword hit the full search ranks out
-let gate,open,asked=[];
+let gate,open,asked=[],statusGo;
+// The first status (with the owner's dates: Fri 2 Jan, not Fri, Jan 2) comes after the keyword matches, as a cold one can
+const statusHeld=new Promise(r=>statusGo=r);
 const server=createServer(async(req,res)=>{const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
- if(url.pathname==='/api/status'){res.end(JSON.stringify({suggestions:[],promises:[],connectors:[{id:'mail',service:'gmail',display_name:'mail',email:'owner@example.org',boundary:'work',state:'{}'}],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[]}));return}
+ if(url.pathname==='/api/status'){await statusHeld;res.end(JSON.stringify({locale:{locale:'en-BE',date_locale:'en-GB',hour12:false,language:'en',language_set:true},suggestions:[],promises:[],connectors:[{id:'mail',service:'gmail',display_name:'mail',email:'owner@example.org',boundary:'work',state:'{}'}],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[]}));return}
  if(url.pathname==='/api/events'){const q=url.searchParams.get('q')||'',words=url.searchParams.get('words')==='1';asked.push([q,words]);
   if(!q){res.end('[]');return}
   if(words){res.end(JSON.stringify(WORDS));return}
@@ -32,8 +34,16 @@ try{
  gate=new Promise(r=>open=r);
  await page.keyboard.press('Control+k');await page.locator('#palette').waitFor();await page.keyboard.type('contract');
  const msgs=()=>page.evaluate(()=>[...document.querySelectorAll('#pal-list .pal-item')].map(o=>o.querySelector('.pal-label').textContent).filter(l=>!/See all results/.test(l)));
+ const subs=()=>page.evaluate(()=>[...document.querySelectorAll('#pal-list .pal-item small')].map(s=>s.textContent).filter(s=>/Sam/.test(s)));
+ const owners=list=>list.every(s=>/ · (Today|Yesterday|[A-Z][a-z]{2} \d{1,2} [A-Z][a-z]{2}) \d\d:\d\d$/.test(s));  // Fri 2 Jan 11:00
+ // The keyword matches wait for the owner's date format: nothing drawn in the US one before the status is in
+ await page.waitForFunction(()=>performance.getEntriesByType('resource').some(e=>/words=1/.test(e.name)&&e.responseEnd>0));
+ await page.evaluate(()=>new Promise(r=>setTimeout(r,200)));
+ assert.deepEqual(await msgs(),[],'no keyword rows before the date format is known');
+ statusGo();
  await page.waitForFunction(()=>/Signed contract/.test(document.querySelector('#pal-list').textContent));
  assert.deepEqual(await msgs(),['Contract draft','Signed contract','Contract typo']);
+ const early=await subs();assert.equal(early.length,3);assert.ok(owners(early),'the keyword step in the owner\'s date format: '+early);
  assert.match(await page.locator('#pal-list .pal-item').last().textContent(),/Looking/);
  await page.keyboard.press('ArrowDown');const on=await page.locator('#pal-list [aria-selected="true"] .pal-label').textContent();
  // The full search: what stays keeps its place and the keyboard, the left-out one goes, the rest under them
@@ -41,6 +51,8 @@ try{
  assert.deepEqual(await msgs(),['Contract draft','Signed contract','Agreement for the deal','Paperwork to sign'],'the full search\'s top four');
  assert.equal(await page.locator('#pal-list [aria-selected="true"] .pal-label').textContent(),on,'the keyboard stays on its row');
  assert.doesNotMatch(await page.locator('#pal-list .pal-item').last().textContent(),/Looking/);
+ const late=await subs();assert.ok(owners(late),'the full search in the same format: '+late);
+ assert.equal(late[0],early[0],'a row reads the same in both steps');
  await page.keyboard.press('Escape');
  // The results page: the same two steps; the rows shown are the same rows, not drawn again
  gate=new Promise(r=>open=r);

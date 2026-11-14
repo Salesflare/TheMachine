@@ -1,7 +1,7 @@
 // Keyword matches at once (words=1), then the full search: rows shown stay, its others come in under
 let evSearched=0;
 async function search(){let account=$('#account').value||'all';const q=$('#query').value.trim();evAnswer(q);const n=++evSearched,url='api/events?account='+encodeURIComponent(account)+'&q='+encodeURIComponent($('#query').value);let early=null,last=false;
- if(q)request(url+'&words=1').then(rows=>{if(n===evSearched&&!last&&rows?.length){early=rows;draw(rows)}}).catch(()=>{});
+ if(q)Promise.all([request(url+'&words=1'),localeIn]).then(([rows])=>{if(n===evSearched&&!last&&rows?.length){early=rows;draw(rows)}}).catch(()=>{});
  // Each row reads by its kind (message_view.list_row): who by name, its words without stamps, ids or markup, and
  // "Open in …" in the same place on every row that has a link. A message with none (a WhatsApp, Signal or Telegram
  // chat, a phone notification, a note of the Machine's own) has no web address to open.
