@@ -6,7 +6,10 @@ on:
   # the newest commit whose full run passed needs (scripts/ci_runs.py), so it repeats nothing already proven; every test
   # runs nightly, on our runner, so anything the selection missed shows up by the next morning (a failed nightly run
   # opens an issue). The full matrix, Windows and macOS run weekly and on demand.
+  # The merge queue tests the pull requests together, on top of main as it will be, before they land: the tests every
+  # repository-wide check needs (ALWAYS in scripts/test_select.py) and the ones the group's changes need, one Linux run.
   pull_request:
+  merge_group:
   push:
     branches: [main]
     tags: ['release-*']
@@ -43,7 +46,8 @@ jobs:
   plan:
     # Which test files run, in how many jobs. A pull request runs the tests its change needs (scripts/test_select.py):
     # with the test-impact map from main's last full run, the tests that ran each function it changes; without it,
-    # what imports or names each changed file. All of them when that isn't clear. A push to main or a release tag runs
+    # what imports or names each changed file. All of them when that isn't clear. A merge group runs the same for
+    # everything its pull requests change together, from the main it sits on. A push to main or a release tag runs
     # the tests for everything changed since the newest commit under it whose full run passed (scripts/ci_runs.py
     # base; nothing when that is the commit itself, every test when there is none), with --wide: a function nearly
     # every test runs takes all of them there, where a pull request takes the quickest few. The nightly, weekly and manual runs
@@ -52,7 +56,7 @@ jobs:
     # most CI_SHARDS, a repository variable, 4 when unset), side by side on our runner's slots. GitHub's runners use one job.
     # Each run on main's commits names what it tested in an artifact (tested-full, tested-since-<sha>): what
     # scripts/ci_runs.py and scripts/release.py read.
-    runs-on: ${{ (github.event_name == 'push' || github.event_name == 'pull_request' && !startsWith(github.head_ref, 'contrib/') || inputs.own_runner || github.event.schedule == '23 1 * * *') && fromJSON(vars.CI_PR_RUNNER || '["self-hosted","linux","themachine-ci"]') || 'ubuntu-24.04' }}
+    runs-on: ${{ (github.event_name == 'push' || github.event_name == 'merge_group' || github.event_name == 'pull_request' && !startsWith(github.head_ref, 'contrib/') || inputs.own_runner || github.event.schedule == '23 1 * * *') && fromJSON(vars.CI_PR_RUNNER || '["self-hosted","linux","themachine-ci"]') || 'ubuntu-24.04' }}
     timeout-minutes: 5
     permissions:
       contents: read
@@ -72,6 +76,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
           EVENT: ${{ github.event_name }}
+          QUEUE_BASE: ${{ github.event.merge_group.base_sha }}
           SHARDS: ${{ runner.environment == 'self-hosted' && (vars.CI_SHARDS || '4') || '1' }}
         run: |
           changed="$RUNNER_TEMP/changed" picked="$RUNNER_TEMP/picked" map="$RUNNER_TEMP/test-impact.json.gz" split="$RUNNER_TEMP/shards.json"
@@ -81,6 +86,10 @@ jobs:
           # anything that goes wrong here runs every test
           if [ "$EVENT" = pull_request ]; then
             git diff --name-only HEAD^1 HEAD > "$changed" && [ -s "$changed" ] && python3 scripts/test_select.py --impact "$map" --base HEAD^1 "$changed" > "$picked" || echo ALL > "$picked"
+          elif [ "$EVENT" = merge_group ]; then
+            # the group's pull requests, one squashed commit each on main: every line any of them changed is in the
+            # diff from main, so this picks what each one's own selection would, together (and ALWAYS)
+            git diff --name-only "$QUEUE_BASE" HEAD > "$changed" && [ -s "$changed" ] && python3 scripts/test_select.py --impact "$map" --base "$QUEUE_BASE" "$changed" > "$picked" || echo ALL > "$picked"
           elif [ "$EVENT" = push ]; then
             base="$(python3 scripts/ci_runs.py base HEAD)" || base=
             if [ "$base" = "$(git rev-parse HEAD)" ]; then
@@ -110,8 +119,9 @@ jobs:
           echo "shards=$(python3 -c 'import json, sys; print(json.dumps(list(json.load(open(sys.argv[1])))))' "$split")" >> "$GITHUB_OUTPUT"
           python3 -c 'import json, sys; [print(f"shard {k}: {len(v.split())} files") for k, v in json.load(open(sys.argv[1])).items()]' "$split"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        # what this run tests, in the artifact's name (scripts/ci_runs.py); a pull request's run proves no commit of main
-        if: github.event_name != 'pull_request'
+        # what this run tests, in the artifact's name (scripts/ci_runs.py); a pull request's or merge group's run proves
+        # no commit of main
+        if: github.event_name != 'pull_request' && github.event_name != 'merge_group'
         with:
           name: ${{ steps.split.outputs.marker }}
           path: ${{ runner.temp }}/tested
@@ -122,7 +132,7 @@ jobs:
     needs: plan
     if: needs.plan.outputs.shards != '[]'
     name: tests (${{ matrix.versions.python }}, ${{ matrix.versions.node }}, ${{ matrix.versions.openclaw }}, shard ${{ matrix.shard }})
-    runs-on: ${{ (github.event_name == 'push' || github.event_name == 'pull_request' && !startsWith(github.head_ref, 'contrib/') || inputs.own_runner || github.event.schedule == '23 1 * * *') && fromJSON(vars.CI_PR_RUNNER || '["self-hosted","linux","themachine-ci"]') || 'ubuntu-24.04' }}
+    runs-on: ${{ (github.event_name == 'push' || github.event_name == 'merge_group' || github.event_name == 'pull_request' && !startsWith(github.head_ref, 'contrib/') || inputs.own_runner || github.event.schedule == '23 1 * * *') && fromJSON(vars.CI_PR_RUNNER || '["self-hosted","linux","themachine-ci"]') || 'ubuntu-24.04' }}
     # 45, not 30: with several PRs on our runner at once a full run takes 28 to 32 minutes (a pull request's that needs
     # every test is one job), and a run cut at 30 with no failure has to start over, which costs more than the extra minutes.
     timeout-minutes: 45
@@ -131,8 +141,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # A pull request and main run the pinned versions only; the weekly run and a manual run add the newest Python, Node and OpenClaw.
-        versions: ${{ fromJSON((github.event_name == 'pull_request' || github.event_name == 'push' || inputs.own_runner || github.event.schedule == '23 1 * * *') && '[{"python":"3.12","node":"24.22.1","openclaw":"2026.11.2"}]' || '[{"python":"3.12","node":"24.22.1","openclaw":"2026.11.2"},{"python":"3.14","node":"26","openclaw":"latest"}]') }}
+        # A pull request, the merge queue and main run the pinned versions only; the weekly run and a manual run add the newest Python, Node and OpenClaw.
+        versions: ${{ fromJSON((github.event_name == 'pull_request' || github.event_name == 'merge_group' || github.event_name == 'push' || inputs.own_runner || github.event.schedule == '23 1 * * *') && '[{"python":"3.12","node":"24.22.1","openclaw":"2026.11.2"}]' || '[{"python":"3.12","node":"24.22.1","openclaw":"2026.11.2"},{"python":"3.14","node":"26","openclaw":"latest"}]') }}
         shard: ${{ fromJSON(needs.plan.outputs.shards) }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -211,21 +221,23 @@ jobs:
       - name: Install cryptography (the address for AIs needs it; tests/test_ai_reach.py)
         run: python -m pip install --quiet cryptography==46.0.3
       - name: Save Python, Node and OpenClaw for the next runs
-        # main's runs only: a pull request's copy would be one more of the same in GitHub's 10 GB, pushing main's out
-        if: steps.tools.outcome == 'success' && steps.tools.outputs.cache-hit != 'true' && github.event_name != 'pull_request'
+        # main's runs only: a pull request's (or merge group's) copy would be one more of the same in GitHub's 10 GB,
+        # pushing main's out
+        if: steps.tools.outcome == 'success' && steps.tools.outputs.cache-hit != 'true' && github.event_name != 'pull_request' && github.event_name != 'merge_group'
         uses: actions/cache/save@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
         with:
           path: ${{ runner.tool_cache }}
           key: ${{ steps.tools.outputs.cache-primary-key }}
       - name: Save Chromium for the next runs
-        if: steps.chromium.outputs.cache-hit != 'true' && github.event_name != 'pull_request'
+        if: steps.chromium.outputs.cache-hit != 'true' && github.event_name != 'pull_request' && github.event_name != 'merge_group'
         uses: actions/cache/save@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
         with:
           path: ~/.cache/ms-playwright
           key: ${{ steps.chromium.outputs.cache-primary-key }}
       - name: Record which functions each test runs
-        # A full run records the test-impact map the pull requests pick their tests with (scripts/test_impact.py).
-        if: needs.plan.outputs.full == 'true' && matrix.versions.openclaw != 'latest'
+        # A full run records the test-impact map the pull requests pick their tests with (scripts/test_impact.py). Not in
+        # the merge queue: the pull requests read main's map only.
+        if: needs.plan.outputs.full == 'true' && matrix.versions.openclaw != 'latest' && github.event_name != 'merge_group'
         run: |
           python3 scripts/test_impact.py install "$RUNNER_TEMP/impact"
           echo "THE_MACHINE_IMPACT_DIR=$RUNNER_TEMP/impact" >> "$GITHUB_ENV"
@@ -239,8 +251,8 @@ jobs:
           # several runs overlap (load near 50 on 16 cores), each holds back instead of starving browser tests into
           # timeouts (scripts/test.py Room).
           THE_MACHINE_TEST_LOAD: ${{ runner.environment == 'self-hosted' && '2' || '' }}
-          # a pull request stops starting files after 5 failed ones: the slot goes to the next pull request
-          THE_MACHINE_TEST_MAX_FAILURES: ${{ github.event_name == 'pull_request' && '5' || '' }}
+          # a pull request or merge group stops starting files after 5 failed ones: the slot goes to the next one
+          THE_MACHINE_TEST_MAX_FAILURES: ${{ (github.event_name == 'pull_request' || github.event_name == 'merge_group') && '5' || '' }}
           # this shard's files, longest first (the plan job)
           FILES: ${{ fromJSON(needs.plan.outputs.files)[matrix.shard] }}
         run: python3 scripts/test.py --in-order $FILES
@@ -280,7 +292,7 @@ jobs:
     needs: [plan, tests]
     if: always()
     name: tests (3.12, 24.22.1, 2026.11.2)
-    runs-on: ${{ (github.event_name == 'push' || github.event_name == 'pull_request' && !startsWith(github.head_ref, 'contrib/') || inputs.own_runner || github.event.schedule == '23 1 * * *') && fromJSON(vars.CI_PR_RUNNER || '["self-hosted","linux","themachine-ci"]') || 'ubuntu-24.04' }}
+    runs-on: ${{ (github.event_name == 'push' || github.event_name == 'merge_group' || github.event_name == 'pull_request' && !startsWith(github.head_ref, 'contrib/') || inputs.own_runner || github.event.schedule == '23 1 * * *') && fromJSON(vars.CI_PR_RUNNER || '["self-hosted","linux","themachine-ci"]') || 'ubuntu-24.04' }}
     timeout-minutes: 5
     permissions:
       contents: read
@@ -301,12 +313,12 @@ jobs:
     # The shards' parts in one test-impact map, the one the pull requests read (scripts/test_impact.py fetch). A map
     # that can't be made leaves the pull requests on the one before, so it never turns a run red.
     needs: [plan, tests]
-    if: always() && needs.plan.outputs.full == 'true'
+    if: always() && needs.plan.outputs.full == 'true' && github.event_name != 'merge_group'
     continue-on-error: true
     permissions:
       contents: read
       actions: read  # the shards' parts in this run
-    runs-on: ${{ (github.event_name == 'push' || github.event_name == 'pull_request' && !startsWith(github.head_ref, 'contrib/') || inputs.own_runner || github.event.schedule == '23 1 * * *') && fromJSON(vars.CI_PR_RUNNER || '["self-hosted","linux","themachine-ci"]') || 'ubuntu-24.04' }}
+    runs-on: ${{ (github.event_name == 'push' || github.event_name == 'merge_group' || github.event_name == 'pull_request' && !startsWith(github.head_ref, 'contrib/') || inputs.own_runner || github.event.schedule == '23 1 * * *') && fromJSON(vars.CI_PR_RUNNER || '["self-hosted","linux","themachine-ci"]') || 'ubuntu-24.04' }}
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
