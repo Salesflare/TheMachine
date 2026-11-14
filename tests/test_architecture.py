@@ -403,7 +403,7 @@ def sql_strings(found):
 STORE_PARTS = {'machine/store/cards.py', 'machine/store/core.py', 'machine/store/decisions.py', 'machine/store/events.py',
                'machine/store/facts.py', 'machine/store/first_look.py', 'machine/store/machine_cards.py', 'machine/store/profile.py', 'machine/store/promises.py',
                'machine/store/review.py', 'machine/store/views.py', 'machine/store/voices.py', 'machine/store/whats_new.py',
-               'machine/store/done_milestones.py', 'machine/store/outcomes.py',
+               'machine/store/done_milestones.py', 'machine/store/outcomes.py', 'machine/store/todo_moves.py',
                'machine/main.py'}  # Store and App themselves, out of assistant.py
 
 

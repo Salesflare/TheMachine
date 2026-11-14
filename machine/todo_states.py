@@ -22,6 +22,27 @@ WAITING_ON_OWNER = (PENDING, PREPARED)  # the owner's move: not snoozed, closed 
 NOT_STARTED = (PENDING, SNOOZED)  # open, and no Do it asked yet
 OPEN_UNPREPARED = (PENDING, ACCEPTED, INSTRUCTIONS, SNOOZED)  # open, and its text is still its own account, not an outcome
 
+# The moves a to-do may make: from -> the statuses it may go to. machine/store/todo_moves.transition() refuses any
+# other, and keeps each move in the to-do's history. Staying in a status is no move, so it is always allowed.
+# - An open to-do moves between its open statuses: Do it, a preparation that is ready or fails, changes asked, Later.
+# - Snoozed wakes to the status it had (resume_status), or is closed while it sleeps.
+# - A closed to-do comes back with Undo, Not done yet or Reopen, to the status it had; it is never put to sleep
+#   closed, and Done and Not needed don't turn into each other without coming back first.
+MOVES = {
+    PENDING: (ACCEPTED, PREPARED, INSTRUCTIONS, SNOOZED, COMPLETED, REJECTED),
+    ACCEPTED: (PENDING, PREPARED, INSTRUCTIONS, SNOOZED, COMPLETED, REJECTED),
+    PREPARED: (PENDING, ACCEPTED, INSTRUCTIONS, SNOOZED, COMPLETED, REJECTED),
+    INSTRUCTIONS: (PENDING, ACCEPTED, PREPARED, SNOOZED, COMPLETED, REJECTED),
+    SNOOZED: (PENDING, ACCEPTED, PREPARED, INSTRUCTIONS, COMPLETED, REJECTED),
+    COMPLETED: (PENDING, ACCEPTED, PREPARED, INSTRUCTIONS),
+    REJECTED: (PENDING, ACCEPTED, PREPARED, INSTRUCTIONS),
+}
+
+
+def allowed(before, after):
+    """Whether a to-do may move from status before to status after (MOVES; staying put is allowed)."""
+    return after in ALL and (before == after or after in MOVES.get(before, ()))
+
 
 def sql(*states):
     """The list for an SQL IN, from groups and single statuses: sql(NOT_STARTED, REJECTED) is
