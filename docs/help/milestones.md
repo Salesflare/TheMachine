@@ -8,7 +8,7 @@ order: 11
 ---
 ## When it shows
 
-When your **Done** count passes 10, 50, 100, 250, 500, 1,000, 2,500, 5,000 or 10,000, a small card shows on top of **To-dos**, with the number. It shows once: close it with × and it's gone on every device. If you're already past several, only the latest one shows.
+When your **Done** count passes 10, 50, 100, 250, 500, 1,000, 2,500, 5,000 or 10,000, a small note shows on top of **To-dos**, with the number. It shows once: close it with × and it's gone on every device. If you're already past several, only the latest one shows.
 
 ## Share it
 

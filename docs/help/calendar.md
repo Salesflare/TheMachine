@@ -63,7 +63,7 @@ A meeting opens with these details wherever you find it: on a timeline, in a mes
 
 ## Add or change an event
 
-When a calendar can be changed from here, **New event** adds one (on a phone it's under **+** in the top bar): pick the calendar, a title and the time. Click an event without guests on that calendar to change it, or **Delete** it (tap twice).
+Your own Google calendar can be changed from here. Outlook and other calendars only show. **New event** adds one (on a phone it's under **+** in the top bar): pick the calendar, a title and the time. Click an event without guests on that calendar to change it, or **Delete** it (tap twice).
 
 **Where** suggests places as you type: ones you used before and your organizations first, then addresses from [OpenStreetMap](https://www.openstreetmap.org), a free map. Only the words you type are sent to look them up. Pick one or keep your own text.
 

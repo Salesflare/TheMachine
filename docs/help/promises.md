@@ -21,7 +21,7 @@ Each one has a **⋯** menu:
 - **Mark done**: it was kept.
 - **Not happening**: it won't happen, so your Machine stops tracking it, with no to-do.
 
-An open promise also becomes a to-do by itself when it's due (yours the morning before, so there's a day to do it), and shows on its day in the [Calendar](calendar.md). One that is a to-do now links to it, and **Mark done** or **Not happening** closes that to-do too. When your Machine sees it done, both close, with a line saying so.
+An open promise also becomes a to-do by itself around its date (yours the morning before, so there's a day to do it; theirs the morning after, if it's still open), and shows on its day in the [Calendar](calendar.md). One that is a to-do now links to it, and **Mark done** or **Not happening** closes that to-do too. When your Machine sees it done, both close, with a line saying so.
 
 Already kept, like a reply you sent or a meeting that covered it? It closes by itself, with no to-do.
 
