@@ -50,9 +50,11 @@ const teamWaitLine=s=>{const n=s.admins||[];return n.length?t('Waiting for {} to
 const graphWaiting=()=>teamWaits(graphSharing).length+teamWaits(fleetData?.shared?.graph).length>0;
 setInterval(()=>{if(graphWaiting()&&!document.hidden&&(!$('#people').hidden||!$('#fleet').hidden))refreshWhenReady()},5e3);
 // A fact's sort and end day, quietly under it: "Temporary · Until Nov 14". A plain fact without an end shows nothing.
+// Its source: a connected AI, the owner's notes file, or the owner's own words it was found in (quote, cut short).
 const FACT_SORT={event:'Temporary',commitment:'Commitment',preference:'Preference'};
+const factQuote=q=>'“'+(q.length>60?(q.slice(0,60).replace(/\s+\S*$/,'')||q.slice(0,59))+'…':q)+'”';
 const factUntil=d=>localeDate(new Date(d+'T12:00:00'),DL,{day:'numeric',month:'short',...(d.slice(0,4)!==String(new Date().getFullYear())?{year:'numeric'}:{})});
-function factMeta(f){const bits=[FACT_SORT[f.fact_kind]?t(FACT_SORT[f.fact_kind]):'',f.valid_until?t('Until {}',factUntil(f.valid_until)):'',String(f.source||'').startsWith('ai:')?t('AI: {}',f.source.slice(3)):String(f.source||'').startsWith('notes:')?t('From {}',f.source.slice(6)):''].filter(Boolean);return bits.length?html`<small class="fact-meta">${bits.join(' · ')}</small>`:''}
+function factMeta(f){const bits=[FACT_SORT[f.fact_kind]?t(FACT_SORT[f.fact_kind]):'',f.valid_until?t('Until {}',factUntil(f.valid_until)):'',String(f.source||'').startsWith('ai:')?t('AI: {}',f.source.slice(3)):String(f.source||'').startsWith('notes:')?t('From {}',f.source.slice(6)):f.quote?t('From {}',factQuote(f.quote)):''].filter(Boolean);return bits.length?html`<small class="fact-meta">${bits.join(' · ')}</small>`:''}
 // A promise's own page (#promise/<id>), laid out like a person's: who promised what to whom and by when, where it
 // stands, the message it came from, who and what it is about, its card as a link, and what happened since.
 const promiseHref=p=>'#promise/'+encodeURIComponent(p.id);

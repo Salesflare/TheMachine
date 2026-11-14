@@ -37,7 +37,7 @@ class FactRoom(unittest.TestCase):
 
     def fill(self, n, when, start=0, kind=None):
         with self.at(when):
-            return [self.store.remember_fact(f'General fact number {i} about how the owner works.', 'owner-note', kind)['id'] for i in range(start, start + n)]
+            return [self.store.remember_fact(f'General fact number {i} about how the owner works.', 'owner-note', kind, quote='we stopped using them')['id'] for i in range(start, start + n)]
 
     def current(self):
         with self.store.connect() as db:
@@ -46,7 +46,7 @@ class FactRoom(unittest.TestCase):
     def test_a_full_list_makes_room_instead_of_failing(self):
         ids = self.fill(assistant.FACTS_GENERAL_MAX, OLD)
         with self.at(NOW):
-            new = self.store.remember_fact('One more general fact than the list holds.', 'owner-note')['id']
+            new = self.store.remember_fact('One more general fact than the list holds.', 'owner-note', quote='we stopped using them')['id']
         current = self.current()
         self.assertIn(new, current)
         self.assertNotIn(ids[0], current)  # the one not used for longest made room
@@ -61,7 +61,7 @@ class FactRoom(unittest.TestCase):
         self.assertIn(ids[0], self.current())
         with self.at('2026-12-31T10:00:00+00:00'):  # brought back: the owner keeps it, it is never set aside again
             self.store.retire_expired()
-            self.store.remember_fact('Yet another general fact for the list.', 'owner-note')
+            self.store.remember_fact('Yet another general fact for the list.', 'owner-note', quote='we stopped using them')
         self.assertIn(ids[0], self.current())
 
     def test_while_every_one_was_used_lately_the_list_grows_up_to_the_hard_cap(self):
@@ -102,7 +102,7 @@ class FactRoom(unittest.TestCase):
     def test_a_review_gets_the_newest_facts_when_they_dont_all_fit(self):
         self.fill(40, OLD)
         with self.at(NOW):
-            self.store.remember_fact('The newest fact the owner told.', 'owner-note')
+            self.store.remember_fact('The newest fact the owner told.', 'owner-note', quote='we stopped using them')
             text = self.store.facts_text(limit=600)
         self.assertTrue(text.startswith('- The newest fact the owner told.'), text[:80])
         self.assertIn('…', text)

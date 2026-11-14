@@ -97,7 +97,7 @@ class FactLinks(unittest.TestCase):
         self.assertEqual(self.named('Close the deal by Friday.', {'org:close.example'}), (None, 'none'))  # also on its own to-do
         self.assertEqual(self.named('Close Labs pays within 30 days.'), ('org:closelabs.example', 'one'))  # several words: a name
         self.assertEqual(self.named('Ann Example wants invoices as a PDF.'), (ANN, 'one'))
-        self.assertIsNone(self.store.remember_fact('Close the deal by Friday when a client asks.', 'owner-note').get('about'))
+        self.assertIsNone(self.store.remember_fact('Close the deal by Friday when a client asks.', 'owner-note', quote='we stopped using them').get('about'))
 
     def test_a_name_the_machine_works_with_is_the_tool_not_the_company(self):
         self.assertIn('slack', fact_links.tools())  # from the product's own lists of sources, connectors and channels
@@ -112,13 +112,13 @@ class FactLinks(unittest.TestCase):
         self.assertEqual(self.named('We pay Globex within 30 days.', {GLOBEX}, CONFIG), (GLOBEX, 'one'))
         self.assertEqual(self.named('Never message me on Slack after 8.', {'org:slack.example'}, CONFIG), (None, 'none'))
         self.store.config = CONFIG
-        self.assertIsNone(self.store.remember_fact('Never message me on Slack after 8.', 'owner-note').get('about'))
+        self.assertIsNone(self.store.remember_fact('Never message me on Slack after 8.', 'owner-note', quote='we stopped using them').get('about'))
         with self.store.connect() as db:
             old = db.execute("INSERT INTO facts(text,decision_id,created_at,kind) VALUES('Send files over Slack, not by mail.','owner-note',?,'fact')", (NOW.isoformat(),)).lastrowid
         self.assertEqual(self.store.name_links_once()['pairs'], [])  # the one-time pass holds the same rule
         self.assertEqual(self.about(old), [])
         # the model saying who by name is its own call: the company can still be told
-        self.assertEqual(self.store.remember_fact('Their sales team answers within a day.', 'owner-note', about=['Slack'])['about'], ['org:slack.example'])
+        self.assertEqual(self.store.remember_fact('Their sales team answers within a day.', 'owner-note', about=['Slack'], quote='we stopped using them')['about'], ['org:slack.example'])
 
     def test_the_owners_own_person_and_organization_are_never_what_a_fact_is_about(self):
         config = {**CONFIG, 'owner_name': 'Sam Owner'}
@@ -136,8 +136,8 @@ class FactLinks(unittest.TestCase):
             db.execute("UPDATE graph_nodes SET id='crm:77' WHERE id='org:acme.example'")  # their company under another id
         self.assertEqual(self.named('Invoices from Acme go out on the 5th.', {'crm:77'}, config), (None, 'none'))
         self.store.config = config
-        self.assertIsNone(self.store.remember_fact('Invoices from Acme go out on the 5th.', 'owner-note').get('about'))
-        self.assertIsNone(self.store.remember_fact('Lee asked whether Sam Owner signs the contracts.', 'owner-note').get('about'))
+        self.assertIsNone(self.store.remember_fact('Invoices from Acme go out on the 5th.', 'owner-note', quote='we stopped using them').get('about'))
+        self.assertIsNone(self.store.remember_fact('Lee asked whether Sam Owner signs the contracts.', 'owner-note', quote='we stopped using them').get('about'))
 
     def test_a_name_two_records_share_links_nothing_unless_one_is_on_the_facts_own_to_do(self):
         self.node('li:ann-example-2', 'Ann Example')
@@ -153,28 +153,28 @@ class FactLinks(unittest.TestCase):
         self.assertEqual(self.named('Lee Park signs off on invoices.'), (LEE, 'one'))
 
     def test_a_saved_fact_is_tied_to_the_record_it_names_or_the_one_it_was_told(self):
-        named = self.store.remember_fact('Ann Example wants invoices as a PDF.', 'owner-note')
+        named = self.store.remember_fact('Ann Example wants invoices as a PDF.', 'owner-note', quote='we stopped using them')
         self.assertEqual((named['about'], self.about(named['id'])), ([ANN], [(named['id'], ANN, 'name', 0)]))
-        general = self.store.remember_fact('Replies stay under five sentences.', 'owner-note')
+        general = self.store.remember_fact('Replies stay under five sentences.', 'owner-note', quote='we stopped using them')
         self.assertEqual((general.get('about'), self.about(general['id'])), (None, []))
-        rule = self.store.remember_fact('For Globex, put the order number in the subject.', 'owner-note', 'draft')
+        rule = self.store.remember_fact('For Globex, put the order number in the subject.', 'owner-note', 'draft', quote='we stopped using them')
         self.assertEqual(self.about(rule['id']), [])  # a rule is about a kind of task, never about a record
         # a preparation names who by the address or name its People and projects lines show; a review by node id
-        told = self.store.remember_fact('Prefers a call over a long mail.', 'owner-note', about=['lee@globex.example'])
+        told = self.store.remember_fact('Prefers a call over a long mail.', 'owner-note', about=['lee@globex.example'], quote='we stopped using them')
         self.assertEqual(self.about(told['id']), [(told['id'], LEE, 'review', 0)])
-        self.assertEqual(self.store.remember_fact('Pays on the last day of the month.', 'owner-note', about=['Globex'])['about'], [GLOBEX])
-        self.assertEqual(self.store.remember_fact('Reads mail in the morning only.', 'owner-note', about=[ANN])['about'], [ANN])
+        self.assertEqual(self.store.remember_fact('Pays on the last day of the month.', 'owner-note', about=['Globex'], quote='we stopped using them')['about'], [GLOBEX])
+        self.assertEqual(self.store.remember_fact('Reads mail in the morning only.', 'owner-note', about=[ANN], quote='we stopped using them')['about'], [ANN])
         with self.assertRaises(ValueError):
-            self.store.remember_fact('Likes short updates.', 'owner-note', about=['Nobody Known'])
+            self.store.remember_fact('Likes short updates.', 'owner-note', about=['Nobody Known'], quote='we stopped using them')
         # the same thing in other words still takes the place of the one tied by its name
-        again = self.store.remember_fact('Ann Example wants invoices as a PDF, sent by mail.', 'owner-note')
+        again = self.store.remember_fact('Ann Example wants invoices as a PDF, sent by mail.', 'owner-note', quote='we stopped using them')
         self.assertEqual(again.get('merged'), 1)
         self.assertEqual([r[1] for r in self.about(again['id'])], [ANN])
 
     def test_the_owner_saying_who_a_fact_is_not_about_holds_for_a_later_save(self):
-        fact = self.store.remember_fact('Ann Example wants invoices as a PDF.', 'owner-note')
+        fact = self.store.remember_fact('Ann Example wants invoices as a PDF.', 'owner-note', quote='we stopped using them')
         self.store.fact_unlink(fact['id'], ANN)
-        self.assertEqual(self.store.remember_fact('Ann Example wants invoices as a PDF.', 'owner-note')['id'], fact['id'])
+        self.assertEqual(self.store.remember_fact('Ann Example wants invoices as a PDF.', 'owner-note', quote='we stopped using them')['id'], fact['id'])
         self.assertEqual(self.about(fact['id']), [(fact['id'], ANN, 'owner', 1)])
         with self.store.connect() as db:
             self.assertEqual(self.store.link_named(db, fact['id'], 'Ann Example wants invoices as a PDF.'), (None, 'tied'))
@@ -220,7 +220,7 @@ class FactLinks(unittest.TestCase):
         on_todo = self.old_fact('Lee Park reads mail in the morning.', self.other)  # one of them is on its own to-do
         both = self.old_fact('Ann Example introduced us to Globex.')
         plain = self.old_fact('Replies stay under five sentences.')
-        kept = self.store.remember_fact('Prefers a call over a long mail.', 'owner-note', about=[LEE])['id']
+        kept = self.store.remember_fact('Prefers a call over a long mail.', 'owner-note', about=[LEE], quote='we stopped using them')['id']
         found = self.store.name_links_once()
         self.assertEqual((sorted(found['pairs']), found['shared'], found['several']), ([[ann, ANN], [org, GLOBEX], [on_todo, LEE]], 1, 1))
         self.assertEqual([r for r in self.about() if r[2] == 'name'], [(ann, ANN, 'name', 0), (org, GLOBEX, 'name', 0), (on_todo, LEE, 'name', 0)])
@@ -256,7 +256,7 @@ class FactLinks(unittest.TestCase):
 
     def many(self):
         for i in range(30):
-            self.store.remember_fact(f'General fact number {i} about how the owner works with pilots.', 'owner-note')
+            self.store.remember_fact(f'General fact number {i} about how the owner works with pilots.', 'owner-note', quote='we stopped using them')
 
     def prep(self, todo=None):
         memory = recall(self.app, 'preparation', {'todo': todo or self.todo}, 14000)
@@ -264,9 +264,9 @@ class FactLinks(unittest.TestCase):
 
     def test_a_preparation_gets_the_facts_about_its_records_first_within_the_same_top(self):
         self.many()
-        ann = self.store.remember_fact('Ann Example wants invoices as a PDF.', 'owner-note')['id']
-        told = self.store.remember_fact('Prefers a call over a long mail.', 'owner-note', about=[ANN])['id']
-        lee = self.store.remember_fact('Lee Park signs off on invoices.', 'owner-note')['id']
+        ann = self.store.remember_fact('Ann Example wants invoices as a PDF.', 'owner-note', quote='we stopped using them')['id']
+        told = self.store.remember_fact('Prefers a call over a long mail.', 'owner-note', about=[ANN], quote='we stopped using them')['id']
+        lee = self.store.remember_fact('Lee Park signs off on invoices.', 'owner-note', quote='we stopped using them')['id']
         before = self.store.facts_for(self.todo, 'fact', SETTINGS, accounts=CONFIG['accounts'], top=2)
         memory, facts, records = self.prep()
         # not close in meaning to the to-do, and in: they are about the person it is with. Lee's is not.
@@ -296,8 +296,8 @@ class FactLinks(unittest.TestCase):
 
     def test_a_fact_about_someone_on_the_other_side_stays_out_of_the_prompt(self):
         self.many()
-        self.store.remember_fact('Ann Example wants invoices as a PDF.', 'owner-note')
-        self.store.remember_fact('We pay Globex within 30 days.', 'owner-note')
+        self.store.remember_fact('Ann Example wants invoices as a PDF.', 'owner-note', quote='we stopped using them')
+        self.store.remember_fact('We pay Globex within 30 days.', 'owner-note', quote='we stopped using them')
 
         def side(value):
             with self.store.connect() as db:
@@ -319,7 +319,7 @@ class FactLinks(unittest.TestCase):
         self.assertIn('Ann Example wants', side('personal'))
 
     def test_the_review_says_which_records_its_facts_are_about(self):
-        ann = self.store.remember_fact('Ann Example wants invoices as a PDF.', 'owner-note')['id']
+        ann = self.store.remember_fact('Ann Example wants invoices as a PDF.', 'owner-note', quote='we stopped using them')['id']
         memory = recall(self.app, 'review')
         text = memory.text('facts')
         self.assertIn(f'- [{ann}] Ann Example wants invoices as a PDF.', text)

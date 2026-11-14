@@ -828,11 +828,12 @@ class Graph(unittest.TestCase):
         self.build()
         card = self.store.suggest('ann-1', 'Answer Ann', 'Ann asked about pricing.', [ask_id])['id']
         self.store.decide(card, 'other', 'i never use capitals in chat, and Ann prefers calls before 10', 'note-1', 'dashboard')
-        mine = self.app.action('remember_fact', {'text': 'The owner does not use capitals in chat.', 'decision_id': 'note-1'})
-        hers = self.app.action('remember_fact', {'text': 'Ann prefers calls before 10.', 'decision_id': 'note-1', 'about': ['email:ann@client.com']})
+        mine = self.app.action('remember_fact', {'text': 'The owner does not use capitals in chat.', 'decision_id': 'note-1', 'quote': 'i never use capitals in chat'})
+        hers = self.app.action('remember_fact', {'text': 'Ann prefers calls before 10.', 'decision_id': 'note-1', 'about': ['email:ann@client.com'],
+                                                 'quote': 'Ann prefers calls before 10'})
         self.assertEqual(hers['about'], ['email:ann@client.com'])
         with self.assertRaisesRegex(ValueError, 'not a person, organization or project'):
-            self.app.action('remember_fact', {'text': 'Someone else entirely.', 'decision_id': 'note-1', 'about': ['email:nobody@x.com']})
+            self.app.action('remember_fact', {'text': 'Someone else entirely.', 'decision_id': 'note-1', 'about': ['email:nobody@x.com'], 'quote': 'Ann prefers calls'})
         known = lambda node: [f['text'] for f in self.app.graph_action({'node_id': node})['open'].get('known', [])]
         self.assertEqual(known('email:ann@client.com'), ['Ann prefers calls before 10.'])  # the owner's own habit is not on her page
         self.assertEqual(known('email:bob@other.com'), [])

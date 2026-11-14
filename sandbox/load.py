@@ -490,8 +490,9 @@ def load_learned_facts(store):
         notes = db.execute("SELECT count(*) FROM decisions WHERE id IN ('sandbox-note-1','sandbox-note-2')").fetchone()[0]
     if not row or notes != 2:
         return
-    old = store.remember_fact('The Meridian Robotics renewal is for 40 seats.', 'sandbox-note-1', about=[row[0]])
-    store.remember_fact('The Meridian Robotics renewal is now for 8 seats.', 'sandbox-note-2', replaces=[old['id']], about=[row[0]])
+    old = store.remember_fact('The Meridian Robotics renewal is for 40 seats.', 'sandbox-note-1', about=[row[0]], quote='renewal is for 40 seats')
+    store.remember_fact('The Meridian Robotics renewal is now for 8 seats.', 'sandbox-note-2', replaces=[old['id']], about=[row[0]],
+                        quote='They cut it to 8 seats')
 
 
 NOTES = {'MEMORY.md': """# MEMORY.md

@@ -71,10 +71,10 @@ class RetainedFactsTests(unittest.TestCase):
         self.clock[0] = START + dt.timedelta(days=31)
         for text in (ENDED, OLD, REWORDED_OLD, FORGOTTEN, CHAIN_OLD):
             self.ids[text] = self.learn(text)
-        self.ids[PAST] = self.store.remember_fact(PAST, 'owner-note', 'event', until=(START + dt.timedelta(days=33)).date().isoformat())['id']
-        self.ids[NEW] = self.store.remember_fact(NEW, 'owner-note', replaces=[self.ids[OLD]])['id']
-        self.ids[REWORDED_NEW] = self.store.remember_fact(REWORDED_NEW, 'owner-note', replaces=[self.ids[REWORDED_OLD]])['id']
-        self.ids[CHAIN_NEW] = self.store.remember_fact(CHAIN_NEW, 'owner-note', replaces=[self.ids[CHAIN_OLD]])['id']
+        self.ids[PAST] = self.store.remember_fact(PAST, 'owner-note', 'event', until=(START + dt.timedelta(days=33)).date().isoformat(), quote='notes on the offsite')['id']
+        self.ids[NEW] = self.store.remember_fact(NEW, 'owner-note', replaces=[self.ids[OLD]], quote='notes on the offsite')['id']
+        self.ids[REWORDED_NEW] = self.store.remember_fact(REWORDED_NEW, 'owner-note', replaces=[self.ids[REWORDED_OLD]], quote='notes on the offsite')['id']
+        self.ids[CHAIN_NEW] = self.store.remember_fact(CHAIN_NEW, 'owner-note', replaces=[self.ids[CHAIN_OLD]], quote='notes on the offsite')['id']
         self.store.forget_fact(self.ids[FORGOTTEN])
         self.store.forget_fact(self.ids[CHAIN_NEW])  # the owner removed the newer one: its history goes with it
         self.clock[0] = START + dt.timedelta(days=32)  # a newer message overturns one
@@ -90,7 +90,7 @@ class RetainedFactsTests(unittest.TestCase):
         self.todo = self.store.suggest('offsite', 'Book the Lisbon offsite venue', 'Robin offers Harbor Lofts for the offsite; the catering menu and the team budget are still open.', [2])['id']
 
     def learn(self, text):
-        return self.store.remember_fact(text, 'owner-note')['id']
+        return self.store.remember_fact(text, 'owner-note', quote='notes on the offsite')['id']
 
     def vectors(self, facts, events):
         key = f"{SETTINGS['model']}:{SETTINGS['dims']}"
@@ -209,8 +209,8 @@ class RetainedFactsTests(unittest.TestCase):
     def test_without_embeddings_a_current_fact_that_shares_the_to_dos_words_beats_newer_ones(self):
         now = self.clock[0]
         self.clock[0] = START + dt.timedelta(days=25)  # older than every filler, so by weight alone it is left out
-        old = self.store.remember_fact('Riverside catering for the Lisbon offsite is ordered a week ahead.', 'owner-note', 'preference')['id']
-        unrelated = self.store.remember_fact('Parking permits are renewed online in January.', 'owner-note')['id']
+        old = self.store.remember_fact('Riverside catering for the Lisbon offsite is ordered a week ahead.', 'owner-note', 'preference', quote='notes on the offsite')['id']
+        unrelated = self.store.remember_fact('Parking permits are renewed online in January.', 'owner-note', quote='notes on the offsite')['id']
         self.clock[0] = now
         picked = self.store.facts_for(self.todo, 'fact', None, accounts=ACCOUNTS)
         self.assertGreater(sum(len(f['text']) for f in self.store.facts()), 3000)  # more than fits: picking matters

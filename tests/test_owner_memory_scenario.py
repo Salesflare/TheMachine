@@ -113,7 +113,8 @@ class OwnerMemoryScenario(unittest.TestCase):
         with self.at(EARLIER):
             filler_todo = self.todo('chores', 'Tidy the shared drive', 'Old folders')
             self.store.decide(filler_todo, 'reject', 'we keep the drive as it is', 'note-0', 'dashboard')
-            fillers = [self.store.remember_fact(f'General fact number {i} about how the owner works.', 'note-0')['id'] for i in range(FILLERS)]
+            fillers = [self.store.remember_fact(f'General fact number {i} about how the owner works.', 'note-0', quote='we keep the drive as it is')['id']
+                       for i in range(FILLERS)]
         with self.at(T0):
             calls = self.todo('calls', 'Plan client calls for the renewal', 'Set up calls with the client team about the renewal')
             other = self.todo('hosting', 'Pay the hosting invoice', 'The hosting invoice for October is due')
@@ -122,7 +123,7 @@ class OwnerMemoryScenario(unittest.TestCase):
         # 1. Learned from the owner's own chat ("remember…"), as the chat's remember_fact saves it
         with self.at(T0):
             self.app.action('feedback_reply', {'text': 'remember that I like client calls early', 'message_id': '501', 'timestamp': 0, 'reply_to_id': ''})
-            first = self.app.action('remember_fact', {'text': LEARNED, 'kind': 'preference', '_owner_chat': True})['id']
+            first = self.app.action('remember_fact', {'text': LEARNED, 'kind': 'preference', '_owner_chat': True, 'quote': 'I like client calls early'})['id']
         self.assertEqual(self.row(first)['decision_id'], 'telegram-said:501')
 
         # 2. Applied: picked for a preparation of a to-do it fits
@@ -132,7 +133,8 @@ class OwnerMemoryScenario(unittest.TestCase):
         # 3. Corrected: a note on another to-do, which the review saves in place of the old one (replaces)
         with self.at(T2):
             self.store.decide(moved, 'snooze', 'client calls work better in the afternoon now', 'note-1', 'dashboard')
-            fixed = self.app.action('remember_fact', {'text': CORRECTED, 'kind': 'preference', 'decision_id': 'note-1', 'replaces': [first]})
+            fixed = self.app.action('remember_fact', {'text': CORRECTED, 'kind': 'preference', 'decision_id': 'note-1', 'replaces': [first],
+                                                      'quote': 'client calls work better in the afternoon'})
             corrected = fixed['id']
             self.assertEqual(fixed['merged'], 1)
             self.assertEqual(self.row(corrected)['decision_id'], 'note-1')  # it came from the newer note, not the old chat message

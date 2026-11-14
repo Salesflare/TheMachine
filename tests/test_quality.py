@@ -288,9 +288,9 @@ class NotesRulesAndOutcome(Base):
         self.assertEqual((q['first_time'], q['finished'], q['first_time_rate'], q['finished_rate']), (1, 0, 100, 0))
 
     def test_draft_rules_reach_drafts_and_mark_the_chart(self):
-        self.store.decide(self.sid, 'other', 'Always use my HTML signature', 'n1', 'telegram')
+        self.store.decide(self.sid, 'other', 'Always use my HTML signature. Sam left Example Corp by the way', 'n1', 'telegram')
         rule = self.app.action('remember_fact', {'text': 'Use the HTML signature in every reply.', 'decision_id': 'n1', 'kind': 'draft'})
-        fact = self.app.action('remember_fact', {'text': 'Sam left Example Corp.', 'decision_id': 'n1'})
+        fact = self.app.action('remember_fact', {'text': 'Sam left Example Corp.', 'decision_id': 'n1', 'quote': 'Sam left Example Corp'})
         with self.assertRaises(ValueError):
             self.app.action('remember_fact', {'text': 'Something else here', 'decision_id': 'n1', 'kind': 'mood'})
         self.assertEqual(self.store.facts_text(kind='draft'), '- Use the HTML signature in every reply.')

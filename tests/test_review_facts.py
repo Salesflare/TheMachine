@@ -52,7 +52,7 @@ class ReviewFactsTests(unittest.TestCase):
         ids = []
         for i in range(start, start + count):
             self.clock[0] += dt.timedelta(minutes=1)
-            ids.append(self.store.remember_fact(f'Fact number {i} about how the owner works with pilots and renewals there.', 'owner-note')['id'])
+            ids.append(self.store.remember_fact(f'Fact number {i} about how the owner works with pilots and renewals there.', 'owner-note', quote='we stopped using them')['id'])
         if about:
             with self.store.connect() as db:
                 db.executemany("INSERT INTO fact_about(fact_id,node_id,by,created_at) VALUES(?,?,'review',?)", [(i, about, NOW.isoformat()) for i in ids])

@@ -31,7 +31,8 @@ SETTINGS = {'url': 'http://embed.invalid', 'model': 'm', 'dims': 2}
 
 # One thing learned through each way in
 SAID = 'You only book aisle seats on flights.'                     # the owner's own chat: "remember ..."
-FIXED = 'Lee Park handles the invoices now, not Ann.'               # a correction on a to-do
+FIXED = 'Lee Park handles the invoices now, not Ann.'
+NOTE_WORDS = 'Lee handles invoices now'  # that note's words               # a correction on a to-do
 NOTE = 'Quotes always go out as a PDF, never as a link.'           # MEMORY.md, ticked under Bring these in
 NOTE_RULE = 'Sign every email with the first name only.'           # MEMORY.md, a rule
 NOTE_ANN = 'Ann Example is vegetarian.'                            # USER.md, about someone: on her page
@@ -86,10 +87,10 @@ class MemoryReach(unittest.TestCase):
         self.todo = self.store.suggest('contract', 'Answer Ann about the contract', 'Ann asks to sign this week.', [1])['id']
         # 1. The owner's chat: a fact they state in their own private chat, and a correction on a to-do
         self.app.action('feedback_reply', {'text': 'remember that I only book aisle seats', 'message_id': '501', 'timestamp': NOW.timestamp(), 'reply_to_id': ''})
-        self.app.action('remember_fact', {'text': SAID, '_owner_chat': True})
+        self.app.action('remember_fact', {'text': SAID, '_owner_chat': True, 'quote': 'I only book aisle seats'})
         other = self.store.suggest('invoice', 'Pay the Client Co invoice', 'An invoice came in.', [1])['id']
         self.store.decide(other, 'reject', 'Lee handles invoices now', 'note-1', 'dashboard')
-        self.app.action('remember_fact', {'text': FIXED, 'decision_id': 'note-1'})
+        self.app.action('remember_fact', {'text': FIXED, 'decision_id': 'note-1', 'quote': NOTE_WORDS})
         # 2. Messages: what a review learned from the mail (a promise the owner made, Ann's role)
         self.store.promise({'direction': 'mine', 'event_id': 2, 'who': 'Ann Example', 'what': PROMISED, 'due': TODAY})
         with self.store.connect() as db:
@@ -105,6 +106,11 @@ class MemoryReach(unittest.TestCase):
 
     def learned(self):
         return (SAID, FIXED, NOTE, NOTE_ANN)
+
+    def owner_says(self, text, n=900):
+        """The owner states it in their own chat, and the chat saves it with that message as its quote."""
+        self.app.action('feedback_reply', {'text': text, 'message_id': str(n), 'timestamp': NOW.timestamp(), 'reply_to_id': ''})
+        return self.app.action('remember_fact', {'text': text, '_owner_chat': True, 'quote': text})
 
     def test_a_review_reads_what_came_in_every_way(self):
         memory = recall(self.app, 'review', {'run': 'review-1'})
@@ -125,7 +131,7 @@ class MemoryReach(unittest.TestCase):
 
     def test_a_correction_said_in_chat_takes_the_place_of_the_fact_it_corrects(self):
         said = lambda text, n, **args: (self.app.action('feedback_reply', {'text': text, 'message_id': str(n), 'timestamp': NOW.timestamp(), 'reply_to_id': ''}),
-                                        self.app.action('remember_fact', {'text': text, '_owner_chat': True, **args}))[1]
+                                        self.app.action('remember_fact', {'text': text, '_owner_chat': True, 'quote': text, **args}))[1]
         old = said('Your office is in Ghent.', 601)
         new = said('Your office is in Brussels now.', 602)
         self.assertEqual(new['replaced'], old['id'])  # the chat saw no ids; code found the one it corrects
@@ -166,7 +172,7 @@ class MemoryReach(unittest.TestCase):
         later.start()
         self.addCleanup(later.stop)
         # learned after the preparation started: in the owner's chat, an edit of one it had, and one the owner removed
-        fresh = self.app.action('remember_fact', {'text': 'Contracts with Client Co are signed through the e-sign portal.', '_owner_chat': True})['id']
+        fresh = self.owner_says('Contracts with Client Co are signed through the e-sign portal.')['id']
         with self.store.connect() as db:
             said, note = (db.execute('SELECT id FROM facts WHERE text=?', (t,)).fetchone()[0] for t in (SAID, NOTE))
         self.store.edit_fact(note, 'Quotes always go out as a PDF attachment, never as a link.')
@@ -199,8 +205,8 @@ class MemoryReach(unittest.TestCase):
         later = patch_everywhere(a, 'now', lambda: (NOW + dt.timedelta(hours=1)).isoformat())
         later.start()
         self.addCleanup(later.stop)
-        self.app.action('remember_fact', {'text': 'Contracts with Client Co are signed through the e-sign portal.', '_owner_chat': True})
-        self.app.action('remember_fact', {'text': 'The garden hedge is trimmed every spring.', '_owner_chat': True})
+        self.owner_says('Contracts with Client Co are signed through the e-sign portal.')
+        self.owner_says('The garden hedge is trimmed every spring.')
         with patch.object(retained_facts, 'FACTS_ALL_UNDER', 0):
             chat = self.chat_turn(1, 'How do we sign the contract?')
         self.assertIn('e-sign portal', chat)  # its words match the to-do
@@ -208,7 +214,7 @@ class MemoryReach(unittest.TestCase):
 
     def test_a_correction_that_swaps_a_plain_word_takes_the_place_of_the_fact_it_corrects(self):
         said = lambda text, n, **args: (self.app.action('feedback_reply', {'text': text, 'message_id': str(n), 'timestamp': NOW.timestamp(), 'reply_to_id': ''}),
-                                        self.app.action('remember_fact', {'text': text, '_owner_chat': True, **args}))[1]
+                                        self.app.action('remember_fact', {'text': text, '_owner_chat': True, 'quote': text, **args}))[1]
         with self.store.connect() as db:
             aisle = db.execute('SELECT id FROM facts WHERE text=?', (SAID,)).fetchone()[0]
         window = said('You only book window seats on flights.', 701)
@@ -258,7 +264,7 @@ class MemoryReach(unittest.TestCase):
     def test_ask_without_embeddings_matches_short_words(self):
         ask = lambda question: ask_memory.facts(self.app, {'area': None, 'subjects': [], 'accounts': ['work'], 'question': question}, 1000)
         for text in ('You go to the gym on Tuesday mornings.', 'Your car is parked at the station.', 'You go to Ghent on Fridays.'):
-            self.store.remember_fact(text, 'note-1')
+            self.store.remember_fact(text, 'note-1', quote=NOTE_WORDS)
         found = ask('When do I go to the gym?')
         self.assertIn('the gym', found)  # "gym" is what the question is about, short as it is
         self.assertNotIn('Ghent', found)  # sharing only "go" is no match
@@ -269,12 +275,12 @@ class MemoryReach(unittest.TestCase):
     def test_ask_finds_facts_about_no_one_with_and_without_embeddings(self):
         ask = lambda question: ask_memory.facts(self.app, {'area': None, 'subjects': [], 'accounts': ['work'], 'question': question}, 1000)
         seats = 'Which seats do I book on flights?'
-        gone = self.store.remember_fact('You only take aisle seats on trains.', 'note-1')['id']
+        gone = self.store.remember_fact('You only take aisle seats on trains.', 'note-1', quote=NOTE_WORDS)['id']
         self.store.forget_fact(gone)  # forgotten: never comes back
-        ended = self.store.remember_fact('You book aisle seats on flights for the fair this week.', 'note-1')['id']
-        old = self.store.remember_fact('You book seats on flights through the travel desk.', 'note-1')['id']
+        ended = self.store.remember_fact('You book aisle seats on flights for the fair this week.', 'note-1', quote=NOTE_WORDS)['id']
+        old = self.store.remember_fact('You book seats on flights through the travel desk.', 'note-1', quote=NOTE_WORDS)['id']
         new = 'You book seats on flights yourself now.'
-        self.store.remember_fact(new, 'note-1', replaces=[old])  # replaced: history, not how things are now
+        self.store.remember_fact(new, 'note-1', quote=NOTE_WORDS, replaces=[old])  # replaced: history, not how things are now
         with self.store.connect() as db:
             db.execute('UPDATE facts SET valid_until=? WHERE id=?', ('2026-11-01', ended))
             db.execute("INSERT INTO facts(text,decision_id,created_at,kind,source,side) VALUES('You book seats on flights in first class.','ai:c1',?,'fact','ai:Claude','work')",
@@ -328,9 +334,9 @@ class MemoryReach(unittest.TestCase):
     def test_talk_recalls_beyond_the_exact_words_with_and_without_embeddings(self):
         self.app.memory_search = lambda request: {'error': 'off'}
         texts = lambda words: [f['text'] for f in ask_memory.learned(self.store, words, a.embeddings.settings(self.app.config))]
-        gone = self.store.remember_fact('You fly economy on short trips.', 'note-1')['id']
-        ended = self.store.remember_fact('You fly to the fair on Friday.', 'note-1')['id']
-        old = self.store.remember_fact('You fly through the travel desk.', 'note-1')['id']
+        gone = self.store.remember_fact('You fly economy on short trips.', 'note-1', quote=NOTE_WORDS)['id']
+        ended = self.store.remember_fact('You fly to the fair on Friday.', 'note-1', quote=NOTE_WORDS)['id']
+        old = self.store.remember_fact('You fly through the travel desk.', 'note-1', quote=NOTE_WORDS)['id']
         with self.store.connect() as db:
             db.execute("INSERT INTO facts(text,decision_id,created_at,kind,source,side) VALUES('You fly first class on long trips.','ai:c1',?,'fact','ai:Claude','work')",
                        (NOW.isoformat(),))  # a connected AI's, not the owner's word
@@ -338,7 +344,7 @@ class MemoryReach(unittest.TestCase):
             self.store.facts_ranked('none', self.store.facts(), SETTINGS)
         self.store.forget_fact(gone)
         new = 'You fly with your own booking tool now.'
-        self.store.remember_fact(new, 'note-1', replaces=[old])
+        self.store.remember_fact(new, 'note-1', quote=NOTE_WORDS, replaces=[old])
         with self.store.connect() as db:
             db.execute('UPDATE facts SET valid_until=? WHERE id=?', ('2026-11-01', ended))
         self.store.retire_expired()
@@ -393,7 +399,7 @@ class MemoryReach(unittest.TestCase):
 
     def test_the_owners_chat_never_reads_a_forgotten_fact(self):
         said = lambda text, n: (self.app.action('feedback_reply', {'text': text, 'message_id': str(n), 'timestamp': NOW.timestamp(), 'reply_to_id': ''}),
-                                self.app.action('remember_fact', {'text': text, '_owner_chat': True}))[1]
+                                self.app.action('remember_fact', {'text': text, '_owner_chat': True, 'quote': text}))[1]
         gym = said('You go to the gym on Thursdays.', 701)
         self.assertIn('gym on Thursdays', self.chat('when do I go to the gym')['found'])
         self.app.action('forget_fact', {'id': gym['id']}, owner_dashboard=True)
@@ -422,9 +428,9 @@ class MemoryReach(unittest.TestCase):
         """What was learned about flying, every fact's vector stored as a preparation stores it (plane): one current,
         one the owner forgot, one ended, and a connected AI's. The current one's text."""
         klm = 'You only fly KLM.'
-        self.store.remember_fact(klm, 'note-1')
-        gone = self.store.remember_fact('You fly from the small airport.', 'note-1')['id']
-        ended = self.store.remember_fact('You fly Lufthansa to the fair.', 'note-1')['id']
+        self.store.remember_fact(klm, 'note-1', quote=NOTE_WORDS)
+        gone = self.store.remember_fact('You fly from the small airport.', 'note-1', quote=NOTE_WORDS)['id']
+        ended = self.store.remember_fact('You fly Lufthansa to the fair.', 'note-1', quote=NOTE_WORDS)['id']
         with self.store.connect() as db:  # a connected AI's, not the owner's word
             db.execute("INSERT INTO facts(text,decision_id,created_at,kind,source,side) VALUES('You fly first class on long trips.','ai:c1',?,'fact','ai:Claude','work')",
                        (NOW.isoformat(),))
@@ -486,10 +492,10 @@ class MemoryReach(unittest.TestCase):
         """No preparation or Ask ranked it: the embedding worker's next pass (embed_pass) gives it its vector, a few
         facts per pass, never a forgotten one or a connected AI's."""
         for n in range(12):  # more than one pass takes
-            self.store.remember_fact(f'Invoice batch {n} goes out on the first workday.', 'note-1')
+            self.store.remember_fact(f'Invoice batch {n} goes out on the first workday.', 'note-1', quote=NOTE_WORDS)
         self.app.action('feedback_reply', {'text': 'I only fly KLM', 'message_id': '801', 'timestamp': NOW.timestamp(), 'reply_to_id': ''})
-        klm = self.app.action('remember_fact', {'text': 'You only fly KLM.', '_owner_chat': True})['id']
-        gone = self.store.remember_fact('You fly from the small airport.', 'note-1')['id']
+        klm = self.app.action('remember_fact', {'text': 'You only fly KLM.', '_owner_chat': True, 'quote': 'I only fly KLM'})['id']
+        gone = self.store.remember_fact('You fly from the small airport.', 'note-1', quote=NOTE_WORDS)['id']
         self.app.action('forget_fact', {'id': gone}, owner_dashboard=True)
         with self.store.connect() as db:  # a connected AI's, kept out of the vectors as the chat keeps it out
             ai = db.execute("INSERT INTO facts(text,decision_id,created_at,kind,source,side) VALUES('You fly first class on long trips.','ai:c1',?,'fact','ai:Claude','work')",
@@ -524,7 +530,7 @@ class MemoryReach(unittest.TestCase):
             self.assertEqual(self.store.embed_new_facts(SETTINGS), 1)
         self.assertIn('Brussels Airlines', sent[-1][0])
         # the embedding server down: left for the next pass, logged once, never an error
-        self.store.remember_fact('You fly economy on short trips.', 'note-1')
+        self.store.remember_fact('You fly economy on short trips.', 'note-1', quote=NOTE_WORDS)
         with patch.object(a.embeddings, 'embed', side_effect=a.embeddings.EmbeddingError('unreachable')), self.assertLogs(a.LOG, 'INFO') as logs:
             self.assertEqual(self.store.embed_new_facts(SETTINGS), 0)
             self.assertEqual(self.store.embed_new_facts(SETTINGS), 0)
@@ -547,7 +553,7 @@ class MemoryReach(unittest.TestCase):
     def test_the_owners_chat_answer_by_meaning_fits_its_budget(self):
         self.flights_learned()
         for n in range(40):
-            self.store.remember_fact(f'You fly route {n} on the early plane when the meeting is before ten in the morning.', 'note-1')
+            self.store.remember_fact(f'You fly route {n} on the early plane when the meeting is before ten in the morning.', 'note-1', quote=NOTE_WORDS)
         self.app.config = {**self.config, 'embeddings': SETTINGS}
         with patch.object(a.embeddings, 'embed', side_effect=plane):
             self.store.facts_ranked('none', self.store.facts(), SETTINGS)

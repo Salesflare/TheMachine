@@ -36,19 +36,19 @@ class FactKinds(unittest.TestCase):
 
     def test_a_fact_keeps_its_sort_and_end_day_and_an_event_ends_by_itself(self):
         with self.at(NOW):
-            pref = self.store.remember_fact('Prefers calls after 10am.', 'owner-note', 'preference')
-            trip = self.store.remember_fact('Is in Lisbon for a conference this week.', 'owner-note', 'event')
-            due = self.store.remember_fact('Sends the board deck every first Monday.', 'owner-note', 'commitment', until='2026-12-31')
-            plain = self.store.remember_fact('Uses Stripe for invoices.', 'owner-note')
-            rule = self.store.remember_fact('Put the order number in the subject.', 'owner-note', 'draft', until='2026-12-01')
+            pref = self.store.remember_fact('Prefers calls after 10am.', 'owner-note', 'preference', quote='we stopped using them')
+            trip = self.store.remember_fact('Is in Lisbon for a conference this week.', 'owner-note', 'event', quote='we stopped using them')
+            due = self.store.remember_fact('Sends the board deck every first Monday.', 'owner-note', 'commitment', until='2026-12-31', quote='we stopped using them')
+            plain = self.store.remember_fact('Uses Stripe for invoices.', 'owner-note', quote='we stopped using them')
+            rule = self.store.remember_fact('Put the order number in the subject.', 'owner-note', 'draft', until='2026-12-01', quote='we stopped using them')
         self.assertEqual((pref['kind'], trip['kind'], trip['until'], due['until'], plain['kind']),
                          ('preference', 'event', '2026-11-30', '2026-12-31', 'fact'))
         with self.store.connect() as db:
             self.assertIsNone(db.execute('SELECT valid_until FROM facts WHERE id=?', (rule['id'],)).fetchone()[0])  # a rule has no end
         with self.at(NOW), self.assertRaises(ValueError):
-            self.store.remember_fact('Was off sick last week.', 'owner-note', 'event', until='2026-10-01')
+            self.store.remember_fact('Was off sick last week.', 'owner-note', 'event', until='2026-10-01', quote='we stopped using them')
         with self.at(NOW), self.assertRaises(ValueError):
-            self.store.remember_fact('Likes short replies.', 'owner-note', 'mood')
+            self.store.remember_fact('Likes short replies.', 'owner-note', 'mood', quote='we stopped using them')
         facts = {f['text']: f for f in self.store.snapshot([])['facts']}
         self.assertEqual((facts['Prefers calls after 10am.']['fact_kind'], facts['Is in Lisbon for a conference this week.']['valid_until']),
                          ('preference', '2026-11-30'))
@@ -57,8 +57,8 @@ class FactKinds(unittest.TestCase):
 
     def test_a_fact_past_its_end_leaves_the_prompts_and_the_condense_pass_retires_it_restorably(self):
         with self.at(NOW):
-            trip = self.store.remember_fact('Is in Lisbon until Friday.', 'owner-note', 'event', until='2026-11-06')
-            self.store.remember_fact('Uses Stripe for invoices.', 'owner-note')
+            trip = self.store.remember_fact('Is in Lisbon until Friday.', 'owner-note', 'event', until='2026-11-06', quote='we stopped using them')
+            self.store.remember_fact('Uses Stripe for invoices.', 'owner-note', quote='we stopped using them')
         later = '2026-11-08T09:00:00+00:00'
         with self.at(later):
             self.assertNotIn('Lisbon', self.store.facts_text())
@@ -88,19 +88,19 @@ class FactKinds(unittest.TestCase):
         self.assertEqual(w('fact', '2026-11-02T10:00:00+00:00', valid_until='2026-11-01'), 0.0)
         self.assertEqual(w('event', '2026-10-08T10:00:00+00:00', confirmed_at='2026-10-08T10:00:00+00:00'), 1.0)
         with self.at(made):
-            first = self.store.remember_fact('Is moving house this month.', 'owner-note', 'event')
+            first = self.store.remember_fact('Is moving house this month.', 'owner-note', 'event', quote='we stopped using them')
         with self.at(NOW):
-            self.assertTrue(self.store.remember_fact('is moving house this month.', 'owner-note', 'event')['duplicate'])
+            self.assertTrue(self.store.remember_fact('is moving house this month.', 'owner-note', 'event', quote='we stopped using them')['duplicate'])
         with self.store.connect() as db:
             self.assertEqual(db.execute('SELECT confirmed_at FROM facts WHERE id=?', (first['id'],)).fetchone()[0], NOW)
 
     def test_a_preparation_puts_what_still_counts_first(self):
         # More than FACTS_ALL_UNDER: without embeddings, the facts that count most go first, not just the newest.
         with self.at('2026-06-01T10:00:00+00:00'):
-            old_event = self.store.remember_fact('Had a long offsite planning week with the whole team in June.', 'owner-note', 'event', until='2026-12-31')
+            old_event = self.store.remember_fact('Had a long offsite planning week with the whole team in June.', 'owner-note', 'event', until='2026-12-31', quote='we stopped using them')
         with self.at('2026-10-01T10:00:00+00:00'):
             for n in range(30):
-                self.store.remember_fact(f'Vendor number {n} is handled by the finance team, not by the owner.', 'owner-note')
+                self.store.remember_fact(f'Vendor number {n} is handled by the finance team, not by the owner.', 'owner-note', quote='we stopped using them')
         with self.at(NOW):
             out = self.store.facts_for('another-card', limit=400)
         self.assertNotIn('offsite', out)
@@ -112,11 +112,11 @@ class FactKinds(unittest.TestCase):
             db.execute("INSERT INTO graph_nodes(id,kind,name,strength,signals,info) VALUES('email:lee@globex.example','person','Lee',1,0,'{}')")
         with self.at(NOW):
             for n in range(assistant.FACTS_GENERAL_MAX):
-                self.store.remember_fact(f'General fact number {n} about how the owner works.', 'owner-note')
-            self.assertIn('id', self.store.remember_fact('One general fact over the cap, never an error.', 'owner-note'))
+                self.store.remember_fact(f'General fact number {n} about how the owner works.', 'owner-note', quote='we stopped using them')
+            self.assertIn('id', self.store.remember_fact('One general fact over the cap, never an error.', 'owner-note', quote='we stopped using them'))
             for n in range(5):  # about someone: still saved
                 self.assertIn('id', self.store.remember_fact(f'Lee prefers email over calls, note {n}.', 'owner-note', 'preference',
-                                                             about=['email:lee@globex.example']))
+                                                             about=['email:lee@globex.example'], quote='we stopped using them'))
             # Condensing two general facts frees their places for the one they become.
             with self.store.connect() as db:
                 ids = [r[0] for r in db.execute("SELECT id FROM facts WHERE text LIKE 'General fact number 1_ %' ORDER BY id LIMIT 2")]
@@ -142,7 +142,7 @@ class FactKinds(unittest.TestCase):
             self.assertEqual(store.facts_text(), '- Uses Stripe for invoices.')
             self.assertEqual(store.retire_expired(), 0)
             self.assertIn('(fact)', store.condense_text(least=1))
-            self.assertEqual(store.remember_fact('Off on Fridays in November.', 'owner-note', 'event', until='2026-11-30')['until'], '2026-11-30')
+            self.assertEqual(store.remember_fact('Off on Fridays in November.', 'owner-note', 'event', until='2026-11-30', quote='we stopped using them')['until'], '2026-11-30')
         assistant.Store(self.path)  # opening again changes nothing
 
 

@@ -65,7 +65,7 @@ class DismissReasons(unittest.TestCase):
         self.assertIn('We already chose another vendor',notes);self.assertIn(decision,notes)
         self.assertIn('Notes the owner wrote when dismissing',a.review_prompt('r',['work'],notes=notes))
         self.assertNotIn('Notes the owner wrote when dismissing',a.review_prompt('r',['work']))
-        self.store.remember_fact('The owner already chose another vendor for this.',decision)
+        self.store.remember_fact('The owner already chose another vendor for this.',decision, quote='We already chose another vendor')
         self.assertEqual(self.store.notes_to_learn(),'')
         self.assertTrue(self.store.feedback_reply('again','42',reply_to_id='41')['duplicate'])
 

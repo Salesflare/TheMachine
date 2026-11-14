@@ -100,17 +100,17 @@ class MemoryEndToEnd(unittest.TestCase):
 
     # The chat model's side: what the owner wrote reaches the service as the bridge sends it, then the model saves
     def web_chat(self, said, n, saved, **args):
-        """The owner writes in the web chat's main session: before_dispatch notes the message's id (never the words),
-        then the model calls assistant_remember, which the bridge sends as remember_fact with its chat mark."""
+        """The owner writes in the web chat's main session: before_dispatch notes the message's id and words, then the
+        model calls assistant_remember with a quote of them, which the bridge sends as remember_fact with its chat mark."""
         self.assertTrue(said)
-        self.app.action('web_chat_said', {'message_id': f'run-{n}'})
-        return self.app.action('remember_fact', {'text': saved, '_owner_chat': True, **args})
+        self.app.action('web_chat_said', {'message_id': f'run-{n}', 'text': said})
+        return self.app.action('remember_fact', {'text': saved, '_owner_chat': True, 'quote': said, **args})
 
     def private_chat(self, said, n, saved, **args):
         """The owner writes in their private Telegram chat: feedback_reply takes the message (owner key), then the model
         calls assistant_signals remember_fact, and the bridge adds the chat mark (privateMain)."""
         self.app.action('feedback_reply', {'text': said, 'message_id': str(n), 'timestamp': NOW.timestamp(), 'reply_to_id': ''})
-        return self.app.action('remember_fact', {'text': saved, '_owner_chat': True, **args})
+        return self.app.action('remember_fact', {'text': saved, '_owner_chat': True, 'quote': said, **args})
 
     def ai_fact(self):
         """A connected AI saves a fact about Ann (ai_app.py's path: source ai:<name>, an area, about someone)."""

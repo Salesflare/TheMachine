@@ -102,20 +102,29 @@ class FeedbackApp:
         if result.get('handled') and not result.get('cancelled'):
             result.update(duplicate=True,card_confirmation_only=True)
         if not result.get('handled') and str(args.get('text') or '').strip() and not str(args['text']).startswith('/'):
-            # Not about a to-do: something the owner wrote in their own chat. Its id and when, in memory only (the words
-            # are kept nowhere), so a fact they state there can be saved from it (owner_said, remember_fact_action).
+            # Not about a to-do: something the owner wrote in their own chat. Its id, when and its words, in memory only,
+            # so a fact they state there can be saved from it (owner_said, remember_fact_action), and only when its quote
+            # is in these words (owner_said_words). A fact saved keeps that quote; the rest is kept nowhere.
             self.owner_said_last = ('telegram-said:' + str(args['message_id']), time.time())
+            self.owner_said_text = (self.owner_said_last[0], str(args['text']))
         return result
 
     def web_chat_said_action(self, name, args, owner_dashboard=False):
-        """The owner wrote in the web chat's main session (the bridge's before_dispatch, with the owner key): its id and
-        when, in memory only, as feedback_reply keeps a Telegram message, so a fact they state there can be saved from
-        it. The words are not sent."""
+        """The owner wrote in the web chat's main session (the bridge's before_dispatch, with the owner key): its id, when
+        and its words, in memory only, as feedback_reply keeps a Telegram message, so a fact they state there can be saved
+        from it, when its quote is in their words. A bridge from before the words were sent leaves them out: then no fact
+        is saved from the web chat until it is updated."""
         message_id = str(args.get('message_id') or '')
         if not re.fullmatch(r'[A-Za-z0-9_.:-]{1,120}', message_id):
             raise ValueError('A web chat message id')
         self.owner_said_last = ('webchat-said:' + message_id, time.time())
+        self.owner_said_text = (self.owner_said_last[0], str(args['text'])[:20000] if isinstance(args.get('text'), str) else None)
         return {'noted': True}
+
+    def owner_said_words(self, note):
+        """What the owner wrote in their chat message note (owner_said), or None when the service doesn't have it."""
+        said, words = getattr(self, 'owner_said_text', None) or (None, None)
+        return words if note and said == note else None
 
     def owner_said(self):
         """The note id of the owner's last message in their own chat ('telegram-said:<message id>' in their private

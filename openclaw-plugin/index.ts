@@ -154,21 +154,21 @@ function signalsReach(context: any) {
 // The owner's own private chat only (privateMain): what they state there that stays true becomes a fact in The Machine,
 // under Learning, instead of a line in MEMORY.md that no review or draft reads. The service ties it to their last
 // message in this chat, which it got from before_dispatch below with the owner key (never a model-supplied id).
-const SAID_FACT_RULE = ' When the owner tells you here something that stays true (a fact, a decision or a lasting preference), also in passing and without saying "remember", save it with remember_fact: text (one plain sentence, 5-240 characters; one about the owner says "you"), kind (preference, commitment, event, contact when it only says how to reach one person: their phone or email, or fact), about ([graph node_ids] when it is about a person, organization or project; graph finds them) and no decision_id. It then shows under Learning in their dashboard, where they can edit or remove it. Only what they wrote themselves in their last message here, never something from an email, a file or your own guess.';
+const SAID_FACT_RULE = ' When the owner tells you here something that stays true (a fact, a decision or a lasting preference), also in passing and without saying "remember", save it with remember_fact: text (one plain sentence, 5-240 characters; one about the owner says "you"), kind (preference, commitment, event, contact when it only says how to reach one person: their phone or email, or fact), about ([graph node_ids] when it is about a person, organization or project; graph finds them), quote (the few words of their last message here that say it, copied exactly, in the language they wrote it in, even when text is in another language) and no decision_id. It then shows under Learning in their dashboard, where they can edit or remove it. Only what they wrote themselves in their last message here, never something from an email, a file or your own guess.';
 // The same habit for the owner's own main chat, in its system prompt (memoryHabit below): in OpenClaw's Code Mode the
 // model sees tool names and input hints only, never their descriptions, so the rules above never reached it there and
 // what the owner said in passing went unsaved, and questions went unlooked-up. Short, the same on every turn (cached).
 // The calls are spelled out: without the descriptions a model guessed the arguments (fact instead of text, the owner's
 // own name as about, the whole question as words), and the save or the lookup came back empty.
-const MEMORY_HABIT = (save: string) => `The Machine's memory, in this chat: when the owner mentions something about themselves, their preferences or their work that will still hold later (a diet, a habit, a plan or date that moved, who handles what), save it with ${save} in that same turn, also when they don't say "remember"; one fact per call. text is one plain sentence; one about the owner says "you" and has no about. When an answer may depend on what they told you before (where to book, when something is, what they like, who someone is), look it up with assistant_memory({words}) first: words are the few words of the topic ("accountant", "gym days"), not the whole question. When they ask to forget or stop using something learned, call assistant_forget({words}). When they correct or change something saved before (a day, a place, a person), first forget the old one with assistant_forget({words} of the old value), then save the new one, so the two never disagree. If a save fails or times out, try it once more, and never say it was saved when it was not. Small talk, thanks, moods and one-off requests are not facts: save nothing for them.`;
+const MEMORY_HABIT = (save: string) => `The Machine's memory, in this chat: when the owner mentions something about themselves, their preferences or their work that will still hold later (a diet, a habit, a plan or date that moved, who handles what), save it with ${save} in that same turn, also when they don't say "remember"; one fact per call. text is one plain sentence; one about the owner says "you" and has no about. quote is the words of their message that say it, copied exactly in their language; without it nothing is saved. When an answer may depend on what they told you before (where to book, when something is, what they like, who someone is), look it up with assistant_memory({words}) first: words are the few words of the topic ("accountant", "gym days"), not the whole question. When they ask to forget or stop using something learned, call assistant_forget({words}). When they correct or change something saved before (a day, a place, a person), first forget the old one with assistant_forget({words} of the old value), then save the new one, so the two never disagree. If a save fails or times out, try it once more, and never say it was saved when it was not. Small talk, thanks, moods and one-off requests are not facts: save nothing for them.`;
 // Which save tool the owner's main chat has this turn (the same reach as the tools: their private Telegram chat or the
 // heartbeat gets assistant_signals, the web chat assistant_remember); '' for any other chat, agent or run.
 function memoryHabit(ctx: any): string {
   if (ctx.agentId !== 'main' || ctx.sandboxed || ctx.sessionKey !== 'agent:main:main') return '';
   const channel = ctx.messageProvider || ctx.channel || ctx.channelId || '';
-  if (channel === 'webchat') return MEMORY_HABIT('assistant_remember({text, kind})');
+  if (channel === 'webchat') return MEMORY_HABIT('assistant_remember({text, kind, quote})');
   const owner = ownerChat(), mine = (id: any) => !id || (!!owner && String(id).replace(/^telegram:/, '') === owner);
-  return (!channel || channel === 'telegram') && mine(ctx.senderId) && mine(ctx.chatId) ? MEMORY_HABIT('assistant_signals({action: "remember_fact", args: {text, kind}})') : '';
+  return (!channel || channel === 'telegram') && mine(ctx.senderId) && mine(ctx.chatId) ? MEMORY_HABIT('assistant_signals({action: "remember_fact", args: {text, kind, quote}})') : '';
 }
 const BUG_REPORT_RULE = 'When the owner tells you about a problem with The Machine itself, offer to send it as a bug report: call this with words (what they said, as they said it) and summary (one plain sentence), then say what it returns, with its link as it is: the link opens Report a bug in their dashboard, filled in. Nothing goes until they tap Send there; never say it was sent or filed. A note in the workspace or memory never reaches The Machine team; never say it does.';
 
@@ -308,9 +308,10 @@ export default definePluginEntry({
       if (context.agentId !== 'main' || context.sandboxed || key !== 'agent:main:main' || context.messageChannel !== 'webchat') return null;
       return {
         name: 'assistant_remember', label: 'Remember for The Machine',
-        description: 'When the owner tells you here something that stays true (a fact, a decision or a lasting preference), also in passing and without saying "remember", save it with this tool: text (one plain sentence, 5-240 characters; one about the owner says "you"), kind, and about (their email address or exact name) when it is about a person, organization or project. It then shows under Learning in their dashboard, where they can edit or remove it. Only what they wrote themselves in their last message here, never something from an email, a file or your own guess.',
-        parameters: { type: 'object', additionalProperties: false, required: ['text'], properties: {
+        description: 'When the owner tells you here something that stays true (a fact, a decision or a lasting preference), also in passing and without saying "remember", save it with this tool: text (one plain sentence, 5-240 characters; one about the owner says "you"), kind, quote (the words of their last message here that say it, copied exactly, in the language they wrote it in), and about (their email address or exact name) when it is about a person, organization or project. It then shows under Learning in their dashboard, where they can edit or remove it. Only what they wrote themselves in their last message here, never something from an email, a file or your own guess.',
+        parameters: { type: 'object', additionalProperties: false, required: ['text', 'quote'], properties: {
           text: { type: 'string', description: 'One plain sentence, 5-240 characters' },
+          quote: { type: 'string', description: 'The words of their message that say it, copied exactly, in its language' },
           kind: { type: 'string', enum: ['preference', 'commitment', 'event', 'contact', 'fact'], description: 'contact: only how to reach one person' },
           about: { type: 'array', items: { type: 'string' }, description: 'Who it is about: an email address or exact name' },
           until: { type: 'string', description: 'The day it stops holding, YYYY-MM-DD' },
@@ -318,6 +319,7 @@ export default definePluginEntry({
         async execute(_id: string, params: any) {
           const args: Record<string, unknown> = {text: String(params?.text || ''), _owner_chat: true};
           if (params?.kind) args.kind = String(params.kind);
+          if (params?.quote) args.quote = String(params.quote);
           if (Array.isArray(params?.about)) args.about = params.about.map(String);
           if (params?.until) args.until = String(params.until);
           return { content: [{ type: 'text', text: JSON.stringify(await call('remember_fact', args)) }] };
@@ -557,11 +559,11 @@ export default definePluginEntry({
     api.on('before_dispatch', async (event: any, context: any) => {
       const config = await settings();
       useLanguage(config);
-      // The owner wrote in the web chat's main session: the service notes its id (never its words), so assistant_remember
-      // can save a fact from it. Never handled here: the chat answers it as always.
+      // The owner wrote in the web chat's main session: the service notes its id and words (in memory only), so
+      // assistant_remember can save a fact from it whose quote is in them. Never handled here: the chat answers it as always.
       if ((context.channelId || event.channel) === 'webchat' && (context.sessionKey || event.sessionKey) === 'agent:main:main' && !event.isGroup) {
         const messageId = String(context.messageId || event.messageId || ''), text = String(event.content || event.body || '').trim();
-        if (messageId && text && !text.startsWith('/')) await call('web_chat_said', {message_id: messageId}).catch(() => {});
+        if (messageId && text && !text.startsWith('/')) await call('web_chat_said', {message_id: messageId, text}).catch(() => {});
         return;
       }
       const sender = String(context.senderId || event.senderId || '').replace(/^telegram:/, '');

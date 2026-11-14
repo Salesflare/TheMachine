@@ -260,12 +260,15 @@ const handled=await beforeDispatch({content:'I fixed it already',timestamp:17916
  const saved=globalThis.fixtureCall,calls=[];
  globalThis.fixtureCall=async(action,args)=>{calls.push([action,args]);return {id:7,text:args.text};};
  assert.equal(await beforeDispatch({content:'remember that I take the train',channel:'webchat'},{channelId:'webchat',sessionKey:'agent:main:main',messageId:'run-1'}),undefined);
- assert.deepEqual(calls.pop(),['web_chat_said',{message_id:'run-1'}]);  // its id only, and the chat answers as always
+ assert.deepEqual(calls.pop(),['web_chat_said',{message_id:'run-1',text:'remember that I take the train'}]);  // its id and words (held in memory to check a quote), and the chat answers as always
  for(const [event,ctx] of [[{content:'/status'},{channelId:'webchat',sessionKey:'agent:main:main',messageId:'run-2'}],[{content:'hi'},{channelId:'webchat',sessionKey:'agent:main:other',messageId:'run-3'}],
    [{content:'hi'},{channelId:'whatsapp',sessionKey:'agent:main:main',messageId:'run-4'}]])await beforeDispatch(event,ctx);
  assert.deepEqual(calls,[]);  // a command, another session or another channel: nothing noted
  await remember(web).execute('t',{text:'You take the train.',kind:'preference',_owner_chat:false,decision_id:'n1'});
  assert.deepEqual(calls.pop(),['remember_fact',{text:'You take the train.',_owner_chat:true,kind:'preference'}]);
+ await remember(web).execute('t',{text:'You take the train.',quote:'I take the train'});  // the owner's own words, which the service checks
+ assert.deepEqual(calls.pop(),['remember_fact',{text:'You take the train.',_owner_chat:true,quote:'I take the train'}]);
+ assert.ok(remember(web).parameters.required.includes('quote'));
  globalThis.fixtureCall=saved;
 }
 // In Code Mode the model never sees tool descriptions, so the owner's main chat carries the memory habit in its system
@@ -277,9 +280,9 @@ const handled=await beforeDispatch({content:'I fixed it already',timestamp:17916
  assert.doesNotMatch(web.appendSystemContext,/remember_fact/);
  // Code Mode shows no descriptions: the calls are spelled out, so the save is text (not fact), about the owner has
  // no about, the lookup is a topic's few words, and a save that failed is never reported as saved
- assert.match(web.appendSystemContext,/assistant_remember\(\{text, kind\}\).*one about the owner says "you" and has no about.*not the whole question.*correct or change something saved before.*first forget the old one.*then save the new one.*never say it was saved when it was not/s);
+ assert.match(web.appendSystemContext,/assistant_remember\(\{text, kind, quote\}\).*one about the owner says "you" and has no about.*quote is the words of their message.*not the whole question.*correct or change something saved before.*first forget the old one.*then save the new one.*never say it was saved when it was not/s);
  for(const c of [{agentId:'main',sessionKey:'agent:main:main',channel:'telegram',senderId:'1000001',chatId:'1000001'},{agentId:'main',sessionKey:'agent:main:main'}])
-  assert.match((await promptBuild({},c)).appendSystemContext,/assistant_signals\(\{action: "remember_fact", args: \{text, kind\}\}\).*assistant_memory\(\{words\}\).*call assistant_forget\(\{words\}\)\./s);
+  assert.match((await promptBuild({},c)).appendSystemContext,/assistant_signals\(\{action: "remember_fact", args: \{text, kind, quote\}\}\).*assistant_memory\(\{words\}\).*call assistant_forget\(\{words\}\)\./s);
  for(const c of [{agentId:'main',sessionKey:'agent:main:main',channel:'telegram',senderId:'1000002'},{agentId:'main',sessionKey:'agent:main:main',messageProvider:'whatsapp'},
    {agentId:'main',sessionKey:'agent:main:assistant-review-preparation-'+'a'.repeat(32)},{agentId:'work',sessionKey:'agent:main:main',messageProvider:'webchat'},
    {agentId:'main',sessionKey:'agent:main:main',messageProvider:'webchat',sandboxed:true}])assert.equal(await promptBuild({},c),undefined);
