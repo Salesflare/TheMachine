@@ -1,6 +1,4 @@
-// Disconnected lately (mail_grants.py receipts, one row per account: names.disconnected_rows): rows like the connected
-// ones above, with the provider's mark, the account's name and kind, and when it was removed; a sign-in an older version
-// kept to revoke again says so until it is dropped.
+// Disconnected lately (names.disconnected_rows): rows like the connected ones
 function renderDisconnected(){const list=state.disconnected||[];setHTML($('#disconnected'),list.length?html`<div class="section-head"><h2>Disconnected lately</h2></div><div class="conn-list disconnected-list">${list.map(r=>{const ok=r.state!=='pending';
  return html`<article><div class="conn-row">${connLogo({service:r.mark})}<span class="conn-row-text"><span class="conn-name">${r.card_title}</span><small>${r.card_subtitle?html`<span class="conn-sub">${r.card_subtitle}</span> · `:''}${ok?htmlT('Removed {}',time(r.at,true)):html`<span class="state-dot t-orange" aria-hidden="true"></span> ${t('Pending: {} hasn’t confirmed. Retrying',r.provider_name)}`}</small></span></div></article>`})}</div>`:html``)}
 // The last syncs as bars; none when every one brought nothing and none failed (a row of empty bars says nothing), and
