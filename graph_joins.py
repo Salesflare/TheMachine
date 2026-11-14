@@ -7,6 +7,7 @@ A name joins two identities only when each of them is one person's own:
   address its List-Id names), or any identifier seen under two or more people's names (own_addresses.people: a Google
   Group's "Ann via Founders" and "Bo via Founders", a mailbox two colleagues answer). The people who wrote through it
   stay themselves. Such an address, or a list, goes by its address and has no person's name to ask about (several()).
+- Two addresses at domains that imitate one another (lookalike.py) never join by a name in one message or thread.
 - A name alone never joins a work contact with a personal chat. An identity's side is the side of the accounts it was
   seen in (graph.account_side); for an account that was never placed, a company address, Slack and the CRM are work,
   WhatsApp and Telegram personal, and anything else says nothing. When a name is on a work identity and on a personal
@@ -27,6 +28,7 @@ import contextlib
 import json
 import re
 
+import lookalike
 import own_addresses
 from mail_senders import bulk
 
@@ -93,6 +95,8 @@ class Keys:
             for _, group in sorted(by_full.items()):
                 group = sorted((i for i in group if not self.shared(i)), key=email_first)
                 for other in group[1:]:
+                    if group[0].startswith('email:') and other.startswith('email:') and lookalike.confusable(group[0].rsplit('@', 1)[-1], other.rsplit('@', 1)[-1]):
+                        continue  # a lookalike domain in the thread with the real one: never one person by the name alone
                     yield group[0], other, where[0]
 
     def side(self, members):

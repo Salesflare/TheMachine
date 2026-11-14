@@ -20,6 +20,7 @@ import doc_writes
 import follow_ups
 import gap_note
 import graph
+import lookalike
 import learning_loop
 import locale_prefs
 from machine.browser import (
@@ -752,6 +753,7 @@ class ViewsStore(ConversationStore):
                     suggestion['looks_done_at'] = looks_done_at(db, suggestion)
                 try:  # who it's about (its chip, also on a done to-do), and their weight to rank open cards by
                     suggestion['people'], weight = graph.card_people(db, json.loads(suggestion['event_ids'] or '[]'))
+                    suggestion['source_line'] = lookalike.source_line(suggestion.get('source_line'), suggestion['people'])  # never the borrowed name
                     if suggestion['status'] not in todo_states.CLOSED:
                         suggestion['weight'] = weight
                 except (sqlite3.Error, ValueError, TypeError):

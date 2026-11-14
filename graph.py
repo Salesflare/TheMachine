@@ -53,6 +53,7 @@ import timeutil
 import enrichment
 import graph_joins
 import graph_publish
+import lookalike
 import mail_senders
 from mail_senders import AUTOMATED_PRECEDENCE, BULK, RELAY, address_name, addresses, automated, bulk, list_unsubscribes, mass_mail, owner_kept, relay, shared_inbox  # noqa: F401
 import person_summary
@@ -959,8 +960,8 @@ def likely_same(people, union, together, projects):
                 match = name_match(pa['words'], pb['words'])
                 if match == 'same' and (pa.get('derived') or pb.get('derived')):
                     match = 'similar'
-                if not match or union.kept_apart(union.find(pair[0]), union.find(pair[1])):
-                    continue
+                if not match or union.kept_apart(union.find(pair[0]), union.find(pair[1])) or lookalike.apart(pa['domains'], pb['domains']):
+                    continue  # nor when one's domain imitates the other's (lookalike.py)
                 shared = []
                 if pa['domains'] & pb['domains']:
                     shared.append(f"both at {sorted(pa['domains'] & pb['domains'])[0]}")
@@ -1292,6 +1293,7 @@ def _build_in(db, config, now, team, kin, locked, history=False):
     org_name, infos = lap('organizations', place_in_organizations(manual, named_orgs, owner, warmup, members, crm_names, edits,
                                                                   named, paying_names, profiles, said_orgs, inboxes, mailings,
                                                                   nodes, stated, strength))
+    lap('lookalikes', lookalike.mark(nodes, lookalike.first_seen(strength, node_events, history_events), owner.domains, FREEMAIL))  # no review role, no "Same person?"
     same_rows, nodes, kept = lap('same_person', find_same_people(event_people, node_events, project_people, alike, union, infos,
                                                                  x_names, nodes))
     lap('org_nodes', org_and_project_nodes(heat_day, history_events, live, named_orgs, said, manual, nodes, named, last_day,
@@ -1484,7 +1486,7 @@ def context_lines(db, event_ids, limit_chars=1500, skip_card=None, sides=None, s
             org_info = json.loads(org['info']) if org else {}
             org_bits = [b for b in (org_info.get('role'), enrichment.summary(org_info.get('profile'))) if b]
             title = (view.get('profile') or {}).get('title')
-            bits = ([view['role']] if view['role'] else ['no role yet']) + ([f'job title {title}'] if title else []) \
+            bits = ([lookalike.prep_bit(like)] if (like := json.loads(row['info'] or '{}').get('lookalike')) else [view['role']] if view['role'] else ['no role yet']) + ([f'job title {title}'] if title else []) \
                 + ([f"at {org['name']}" + (f" ({'; '.join(org_bits)})" if org_bits else '')] if org else []) \
                 + enrichment.prep_bits(db, json.loads(row['info'] or '{}').get('identifiers') or [row['id']]) + [relation_text(r) for r in view['relations'][:2]] \
                 + [f"{view['closeness']} contact", f"last {'seen' if view['seen_only'] else 'contact'} {short_date(view['last_at'])}"]
@@ -2252,7 +2254,7 @@ def card_people(db, event_ids, limit=3):
                        "ORDER BY n.strength DESC", ids).fetchall()
     rows = list({r['id']: r for r in sorted(found, key=lambda r: r['event_id'] != ids[0])}.values())  # the one waiting on it leads
     people = [{'id': r['id'], 'name': (EMAIL_ONLY.fullmatch(r['name'] or '') and address_shown('email:' + r['name'].lower())) or handle_shown(r['name']), 'role': json.loads(r['info']).get('role'),
-               'paying': bool(r['org_info'] and json.loads(r['org_info']).get('paying')),
+               **({'lookalike': like, **({'name': like['sender']} if like.get('sender') else {})} if (like := json.loads(r['info']).get('lookalike')) else {}), 'paying': bool(r['org_info'] and json.loads(r['org_info']).get('paying')),
                **({'photo': photo} if (photo := enrichment.node_picture(r['info'], 'photo')) else {}),
                **({'org': {'id': r['org_id'], 'name': r['org_name'], **({'logo': logo} if (logo := enrichment.node_picture(r['org_info'], 'logo')) else {})}}
                   if r['org_id'] and r['org_name'] else {})} for r in rows]
@@ -2291,6 +2293,7 @@ def set_role(db, node_id, role, source, now, event_id=None, quote=None):
     role = ' '.join(str(role or '').split())
     if len(role) > 60 or (not role and source != 'owner'):
         raise OwnerError('A role is a few words (up to 60 characters): "accountant", "investor", "customer at Globex", "accounting firm"')
+    lookalike.refuse_role(db, row, source)  # only the owner gives someone at a lookalike domain a role
     info = json.loads(row['info'] or '{}')
     identities = info.get('identifiers') or [row['id']]
     current = db.execute('SELECT * FROM person_roles WHERE identifier IN (' + ','.join('?' for _ in identities) + ') '

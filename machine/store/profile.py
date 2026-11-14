@@ -321,7 +321,7 @@ class ProfileStore:
             with self.connect() as db:
                 return [{'node_id': r['id'], 'name': r['name']} for r in db.execute(
                     "SELECT DISTINCT n.id,n.name,n.strength FROM graph_events g JOIN graph_nodes n ON n.id=g.node_id WHERE g.direct=1 AND n.kind='person' "
-                    "AND json_extract(n.info,'$.role') IS NULL AND coalesce(json_extract(n.info,'$.role_by'),'')!='owner' AND g.event_id IN (" + ','.join('?' for _ in ids) + ') ORDER BY n.strength DESC LIMIT 4', ids)]
+                    "AND json_extract(n.info,'$.role') IS NULL AND coalesce(json_extract(n.info,'$.role_by'),'')!='owner' AND json_extract(n.info,'$.lookalike') IS NULL AND g.event_id IN (" + ','.join('?' for _ in ids) + ') ORDER BY n.strength DESC LIMIT 4', ids)]
         except sqlite3.Error:
             return []
 
@@ -332,7 +332,7 @@ class ProfileStore:
         with self.connect() as db:
             owner = graph.Owner({'accounts': self.accounts}, db)
             owner.slack |= set(self.owner_user_ids)
-            rows = db.execute(f"SELECT * FROM graph_nodes WHERE kind='person' AND {live()}>=0.5 AND json_extract(info,'$.role') IS NULL AND coalesce(json_extract(info,'$.role_by'),'')!='owner' "
+            rows = db.execute(f"SELECT * FROM graph_nodes WHERE kind='person' AND {live()}>=0.5 AND json_extract(info,'$.role') IS NULL AND coalesce(json_extract(info,'$.role_by'),'')!='owner' AND json_extract(info,'$.lookalike') IS NULL "
                               f'ORDER BY {live()} DESC LIMIT ?', (limit,)).fetchall()
             for r in rows:
                 view = graph.node_view(r)

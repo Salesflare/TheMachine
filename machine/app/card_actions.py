@@ -15,6 +15,7 @@ import fleet
 import follow_ups
 import graph
 import i18n
+import lookalike
 from machine.browser import FINAL_STEPS
 from machine.cards import asked_snooze_time, owner_snooze_until, undated_card
 from machine.chat import CHAT_FILES_ONLY, unseen_draft
@@ -246,6 +247,8 @@ class CardActionsApp:
             if not evidence or any(e['kind']!='assistant.test' or json.loads(e['metadata']).get('test') is not True for e in evidence):
                 raise OwnerError('Demo previews are only available on explicitly labeled assistant test tasks')
         problems=next_actions.check(action,args['body'],[a.get('email','') for a in self.config['accounts']])
+        with self.store.connect() as db:  # a recipient at a lookalike domain (lookalike.py): the address on record instead
+            problems+=lookalike.problems(next_actions.actions(action),lookalike.for_addresses(db,lookalike.recipients(next_actions.actions(action))))
         problems+=next_actions.reply_context(next_actions.actions(action),spots)
         # The to-do names the place the doc goes, never the other one (Google Docs vs Word)
         problems+=doc_writes.wording(next_actions.actions(action),[args.get('body'),args.get('needs'),args.get('title')])

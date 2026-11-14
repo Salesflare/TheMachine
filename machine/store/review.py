@@ -1193,7 +1193,8 @@ class ReviewStore:
         headed = lambda db, r: {**json.loads(r['info'] or '{}'), 'headline': graph.headline(db, r['id'])}
         parts = []
         with self.connect() as db:
-            asked = "AND n.id NOT IN (SELECT identifier FROM graph_role_asks o WHERE asked_at>? AND (o.run_id IS NULL OR (o.run_id<>? AND (NOT EXISTS(SELECT 1 FROM review_runs r WHERE r.run_id=o.run_id) OR EXISTS(SELECT 1 FROM review_runs r WHERE r.run_id=o.run_id AND r.status='ok') OR EXISTS(SELECT 1 FROM analyses a WHERE a.owner_run=o.run_id AND a.status='complete')))))"
+            # a lookalike sender gets no role from a review (lookalike.py): never asked about
+            asked = "AND json_extract(n.info,'$.lookalike') IS NULL AND n.id NOT IN (SELECT identifier FROM graph_role_asks o WHERE asked_at>? AND (o.run_id IS NULL OR (o.run_id<>? AND (NOT EXISTS(SELECT 1 FROM review_runs r WHERE r.run_id=o.run_id) OR EXISTS(SELECT 1 FROM review_runs r WHERE r.run_id=o.run_id AND r.status='ok') OR EXISTS(SELECT 1 FROM analyses a WHERE a.owner_run=o.run_id AND a.status='complete')))))"
             marks = ','.join('?' for _ in graph.OPEN_CARD)
             on_cards = db.execute(f"SELECT DISTINCT n.* FROM suggestions s JOIN json_each(s.event_ids) j JOIN graph_events g ON g.event_id=j.value AND g.direct=1 "
                                   f"JOIN graph_nodes n ON n.id=g.node_id WHERE s.status IN ({marks}) AND n.kind='person' AND n.strength>=0.1 "
