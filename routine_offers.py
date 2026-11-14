@@ -16,6 +16,7 @@ import datetime as dt
 
 import i18n
 import routine_templates
+from machine.owner_error import OwnerError
 
 WEEK = dt.timedelta(days=7)
 NEWSLETTERS_MIN = 25  # newsletters in a week: more than three a day
@@ -81,7 +82,7 @@ def is_open(db, key):
 def answer(db, key, yes, stamp):
     """The owner's Turn it on or No thanks: never offered again either way. ValueError when it isn't open."""
     if not is_open(db, key):
-        raise ValueError('That suggestion is gone')
+        raise OwnerError('That suggestion is gone')
     db.execute('UPDATE routine_offers SET status=?,decided_at=? WHERE key=?', ('added' if yes else 'declined', stamp, key))
 
 

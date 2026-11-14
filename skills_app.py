@@ -26,6 +26,7 @@ import recurring
 import skills as skills_module
 import skills
 from timeutil import now
+from machine.owner_error import OwnerError
 
 
 SKILL_NOTES_MIN = 5   # notes about one kind of task before they're offered as a skill
@@ -77,7 +78,7 @@ class SkillsApp:
             run = db.execute("SELECT suggestion_id FROM preparations WHERE job_id=? AND status IN ('queued','starting','running','blocked')",
                              (job,)).fetchone()
         if not run:
-            raise ValueError('A skill is proposed for a to-do only from its running preparation')
+            raise OwnerError('A skill is proposed for a to-do only from its running preparation')
         return run['suggestion_id']
 
     def skill_task_done(self, task, skill_id):
@@ -290,9 +291,9 @@ class SkillsApp:
                     if c['target_id']:
                         row = db.execute("SELECT * FROM skills WHERE id=? AND status IN ('on','off') AND origin!='shared'", (c['target_id'],)).fetchone()
                         if not row:
-                            raise ValueError('That skill is gone')
+                            raise OwnerError('That skill is gone')
                         if c['reviewed_sha'] and row['sha'] != c['reviewed_sha'] or c['base_sha'] and row['sha'] != c['base_sha']:
-                            raise ValueError('That skill changed after its before and after were shown')
+                            raise OwnerError('That skill changed after its before and after were shown')
                         after = c['body'] if c['base_sha'] else skill_update_after(row['body'], c['body'])
                         skill_id = self.skills.save(row['id'], row['name'], row['description'], after, _db=db)
                     else:
@@ -321,7 +322,7 @@ class SkillsApp:
         still offers the new skill. Nothing changes until they tap Create skill (or Update, after its before and after);
         Not now isn't asked again until the same notes have grown by SKILL_REGROW."""
         if not getattr(self, 'skills', None):
-            raise ValueError('Skills are not set up here')
+            raise OwnerError('Skills are not set up here')
         name, description, body = skills.validate(name, description, body)
         target, linked, relation = skills.check_against(self.skills_on_hand(), into, related, relation, new)
         if target:  # the whole skill rewritten as one, on the version the review was shown
@@ -333,7 +334,7 @@ class SkillsApp:
             db.execute('BEGIN IMMEDIATE')
             notes = self.store.replaced_facts(db, replaces)
             if not SKILL_NOTES_MIN <= len(notes) <= 20:
-                raise ValueError(f'A skill takes {SKILL_NOTES_MIN} to 20 current notes (replaces=[their ids])')
+                raise OwnerError(f'A skill takes {SKILL_NOTES_MIN} to 20 current notes (replaces=[their ids])')
             ids = {n['id'] for n in notes}
             title = sentences(f'Update {target["name"]} with {len(notes)} notes' if target else f'Turn {len(notes)} notes into a skill: {name}', 90)
             if target:
@@ -361,12 +362,12 @@ class SkillsApp:
                     if old['status'] != 'declined':
                         return {'id': old['id'], 'duplicate': True}
                     if len(ids) < len(before) + SKILL_REGROW:
-                        raise ValueError(f'The owner said Not now to these notes; suggest it again once {SKILL_REGROW} more have joined them')
+                        raise OwnerError(f'The owner said Not now to these notes; suggest it again once {SKILL_REGROW} more have joined them')
             cards = [n['suggestion_id'] for n in notes if n['suggestion_id']]
             events = list(dict.fromkeys(i for r in db.execute('SELECT event_ids FROM suggestions WHERE id IN (' + ','.join('?' for _ in cards) + ')', cards)
                                         for i in json.loads(r['event_ids'] or '[]')))[:20] if cards else []
             if not events:
-                raise ValueError('These notes have no cards behind them to show as evidence')
+                raise OwnerError('These notes have no cards behind them to show as evidence')
             cluster = 'sc_' + secrets.token_hex(6)
             card = self.store.suggest('skill-notes:' + cluster, title, text[:700], events, _db=db)
             db.execute('INSERT INTO skill_clusters(id,fact_ids,' + ','.join(fields) + ",suggestion_id,status,checked,created_at,updated_at) "
@@ -414,12 +415,12 @@ class SkillsApp:
         """Sign in to ChatGPT or claude.ai for Find my skills: its sign-in page in front in the Machine's browser, for
         the dashboard's sign-in dialog. Nothing is typed here."""
         if site not in SKILLS_SIGNIN:
-            raise ValueError('Which account?')
+            raise OwnerError('Which account?')
         try:
             base = browser_login.endpoints(self.config)[0]
             tab = browser_login.browser_cdp.open_tab(base, SKILLS_SIGNIN[site])
         except (browser_login.browser_cdp.CdpError, OSError, IndexError):
-            raise ValueError('I couldn’t open the sign-in page in the browser') from None
+            raise OwnerError('I couldn’t open the sign-in page in the browser') from None
         self.__dict__.setdefault('skills_signin_tabs', {})[site] = tab
         try:
             browser_viewer.focus(SKILLS_SIGNIN[site], base)
@@ -432,7 +433,7 @@ class SkillsApp:
         with self.store.connect() as db:
             run = db.execute("SELECT evidence FROM profile_runs WHERE run_id=? AND kind='skills' AND status IN ('starting','running')", (run_id,)).fetchone()
             if not run:
-                raise ValueError('This Find my skills run is no longer active')
+                raise OwnerError('This Find my skills run is no longer active')
             db.execute('UPDATE profile_runs SET draft=?,updated_at=? WHERE run_id=?', (json.dumps({'reported': True}), now(), run_id))
         token = json.loads(run['evidence'])['token']
         return self.skills.importer.report(token, args.get('found'), args.get('recommended'), args.get('browser'))

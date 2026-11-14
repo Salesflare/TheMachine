@@ -7,6 +7,7 @@ import abilities
 import doc_writes
 from machine.sources.connectors import CONNECTOR_HELPERS, doc_write_files, load_connector
 from sources import SourceError
+from machine.owner_error import OwnerError
 
 
 class DocsApp:
@@ -28,7 +29,7 @@ class DocsApp:
                 row = db.execute("SELECT account_id,metadata FROM events WHERE id=? AND kind LIKE 'docs.%' AND id IN "
                                  "(SELECT value FROM json_each(?))", (int(event_id), run['event_ids'])).fetchone()
             if not row:
-                raise ValueError('That doc is not one of this task’s own doc events')
+                raise OwnerError('That doc is not one of this task’s own doc events')
             account = next((a for a in self.config['accounts'] if a['id'] == row['account_id'] and a.get('service') == 'docs'), None)
             file_id = json.loads(row['metadata']).get('file_id')
         elif re.fullmatch(r'[A-Za-z0-9_!.-]{10,300}', file_id):
@@ -44,7 +45,7 @@ class DocsApp:
         else:
             raise ValueError('Give the event_id of the doc event, or the file_id of the doc')
         if not account or not file_id or not plugin:
-            raise ValueError('That Docs connection is no longer here')
+            raise OwnerError('That Docs connection is no longer here')
         off = abilities.refuse(self.config, account['id'])
         if off:
             raise ValueError(off)
@@ -96,7 +97,7 @@ class DocsApp:
                                  (int(args['event_id']) if str(args['event_id']).isdigit() else -1, run['event_ids'])).fetchone()
                 file_id = row and str(json.loads(row['metadata']).get('file_id') or '')
                 if not file_id:
-                    raise ValueError('That doc is not one of this task’s own doc events')
+                    raise OwnerError('That doc is not one of this task’s own doc events')
         plugin = load_connector('docs')
         if not plugin or not hasattr(plugin, 'Writer'):
             raise ValueError('There is no Docs connection here')
@@ -138,7 +139,7 @@ class DocsApp:
             run = db.execute("SELECT s.event_ids,s.account_ids FROM preparations p JOIN suggestions s ON s.id=p.suggestion_id "
                              "WHERE p.job_id=? AND p.status IN ('queued','starting','running','blocked')", (job,)).fetchone()
             if not run:
-                raise ValueError('Docs are read only for a running preparation of the task the owner started')
+                raise OwnerError('Docs are read only for a running preparation of the task the owner started')
             links, plugin = {}, load_connector('docs')
             for r in db.execute("SELECT e.account_id,e.body,e.metadata FROM events e JOIN json_each(?) ids ON ids.value=e.id",
                                 (run['event_ids'],)) if plugin else ():

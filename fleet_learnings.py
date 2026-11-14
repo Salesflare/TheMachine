@@ -46,6 +46,7 @@ import memory_use
 import message_seal
 import security_levels
 import team_learnings as tl
+from machine.owner_error import OwnerError
 
 SCHEMA = '''
 CREATE TABLE IF NOT EXISTS fleet_learnings(fleet TEXT NOT NULL,fp TEXT NOT NULL,kind TEXT NOT NULL,text TEXT NOT NULL,confidence REAL NOT NULL,
@@ -232,7 +233,7 @@ def save_draft(db, run_id, profile):
     if not isinstance(found, list):
         raise ValueError('args.profile.learnings is a list of {"kind", "text", "confidence", "threads"}, or [] when nothing general holds')
     if not db.execute("SELECT 1 FROM profile_runs WHERE run_id=? AND kind='fleet_learn' AND status IN ('starting','running')", (run_id,)).fetchone():
-        raise ValueError('This team learnings run is no longer active')
+        raise OwnerError('This team learnings run is no longer active')
     items = [{k: r.get(k) for k in ('kind', 'text', 'confidence', 'threads')} for r in found[:MAX_NEW * 3] if isinstance(r, dict)]
     db.execute('UPDATE profile_runs SET draft=?,updated_at=? WHERE run_id=?', (json.dumps({'learnings': items}), now(), run_id))
     return {'saved': True, 'learnings': len(items)}
@@ -391,14 +392,14 @@ def remove(db, fleet, fp):
     """The owner removes a learning, theirs or a teammate's: it goes for the whole Fleet (an unlearn record), and is
     never made or shown again. Returns its text, or None when it isn't one this Machine knows."""
     if not FP.fullmatch(str(fp or '')):
-        raise ValueError('Not a team learning')
+        raise OwnerError('Not a team learning')
     ensure(db)
     text = next((x['text'] for x in _rows(db, 'SELECT text FROM fleet_learnings WHERE fleet=? AND fp=?', (fleet, fp))), None)
     if text is None:
         text = next((json.loads(x['body']).get('text') for x in _rows(db, "SELECT body FROM team_records WHERE fleet=? AND kind='learning'", (fleet,))
                      if json.loads(x['body']).get('fp') == fp), None)
     if text is None:
-        raise ValueError('Not a team learning')
+        raise OwnerError('Not a team learning')
     db.execute("INSERT INTO fleet_learn_removed(fleet,fp,text,by,at) VALUES(?,?,?,'me',?) ON CONFLICT(fleet,fp) DO UPDATE SET by='me',text=excluded.text",
                (fleet, fp, text, now()))
     return text

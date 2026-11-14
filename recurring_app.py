@@ -14,6 +14,7 @@ from zoneinfo import ZoneInfo
 import crm_fixes
 import locale_prefs
 import recurring
+from machine.owner_error import OwnerError
 
 LOG = logging.getLogger('personal-assistant')
 OFFER_EVERY = 3600  # seconds between looks for new offers
@@ -107,7 +108,7 @@ class RecurringApp:
         """More > Repeat on a to-do: start repeating, change the rhythm, or stop (repeat: none). words: a rhythm in the
         owner's words (the to-do's chat: "repeat this every first Monday", "stop repeating")."""
         if not owner_dashboard:
-            raise ValueError('Repeats are set by the owner, on the dashboard')
+            raise OwnerError('Repeats are set by the owner, on the dashboard')
         sid = str(args.get('suggestion_id') or '')
         today, stamp = self.recurring_today(), self.recurring_stamp()
         repeat = args.get('repeat')
@@ -118,7 +119,7 @@ class RecurringApp:
             else:
                 got = recurring.parse(words, today, self.recurring_region())
                 if not got:
-                    raise ValueError('I can’t read that rhythm yet. Try every week, every first Monday or every 3 months.')
+                    raise OwnerError('I can’t read that rhythm yet. Try every week, every first Monday or every 3 months.')
                 repeat = got['rule']
         with self.recurring_lock(), self.store.connect() as db:
             db.execute('BEGIN IMMEDIATE')
@@ -136,7 +137,7 @@ class RecurringApp:
                 recurring.change(db, running, rule, stamp, today)
             else:
                 if card['status'] in recurring.CLOSED:
-                    raise ValueError('Only an open to-do can repeat')
+                    raise OwnerError('Only an open to-do can repeat')
                 try:
                     anchor = dt.date.fromisoformat(str(card['due'])[:10]) if card['due'] else today
                 except ValueError:
@@ -151,12 +152,12 @@ class RecurringApp:
     def card_repeat_skip_action(self, name, args, owner_dashboard):
         """Skip this one: the open occurrence closes as not needed and the next comes on its date."""
         if not owner_dashboard:
-            raise ValueError('Repeats are set by the owner, on the dashboard')
+            raise OwnerError('Repeats are set by the owner, on the dashboard')
         sid = str(args.get('suggestion_id') or '')
         with self.store.connect() as db:
             series = recurring.series_of(db, sid)
         if not series or series['stopped_at'] or series['current_id'] != sid:
-            raise ValueError('This to-do doesn’t repeat')
+            raise OwnerError('This to-do doesn’t repeat')
         self.store.decide(sid, 'reject', 'Skipped this one; it repeats', 'repeat-skip-' + secrets.token_hex(6), 'dashboard')
         self.recurring_step()
         with self.store.connect() as db:
@@ -166,7 +167,7 @@ class RecurringApp:
     def recurring_method_action(self, name, args, owner_dashboard):
         """Edit or Undo on a repeating to-do's chat line "Saved how to do this next time" (recurring.save_method)."""
         if not owner_dashboard:
-            raise ValueError('Repeats are set by the owner, on the dashboard')
+            raise OwnerError('Repeats are set by the owner, on the dashboard')
         sid, stamp = str(args.get('suggestion_id') or ''), self.recurring_stamp()
         with self.recurring_lock(), self.store.connect() as db:
             db.execute('BEGIN IMMEDIATE')
@@ -175,7 +176,7 @@ class RecurringApp:
             else:
                 s = recurring.series_of(db, sid)
                 if not s or s['method_card'] != sid:
-                    raise ValueError('Nothing to edit.')
+                    raise OwnerError('Nothing to edit.')
                 recurring.save_method(db, sid, args.get('text'), stamp)
             return {'id': sid, 'method': recurring.method_item(db, sid)}
 
@@ -188,7 +189,7 @@ class RecurringApp:
         """Make this a recurring to-do? Yes repeats the open to-do it is about, or adds one that repeats; No thanks
         never asks again. Either way only on the owner's tap."""
         if not owner_dashboard:
-            raise ValueError('Repeats are set by the owner, on the dashboard')
+            raise OwnerError('Repeats are set by the owner, on the dashboard')
         key, yes = str(args.get('key') or ''), args.get('choice') == 'yes'
         with self.store.connect() as db:
             db.execute('BEGIN IMMEDIATE')

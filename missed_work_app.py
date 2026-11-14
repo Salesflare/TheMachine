@@ -15,6 +15,7 @@ import uuid
 import i18n
 import missed_work
 from machine import todo_states
+from machine.owner_error import OwnerError
 
 LOG = logging.getLogger('personal-assistant')
 
@@ -26,7 +27,7 @@ class MissedWorkApp:
 
     def missed_work_action(self, name, args, owner_dashboard):
         if not owner_dashboard:
-            raise ValueError('Only the owner labels a miss, on the dashboard')
+            raise OwnerError('Only the owner labels a miss, on the dashboard')
         with self.store.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             done = missed_work.label(db, args.get('event_id'), args.get('label') or None)

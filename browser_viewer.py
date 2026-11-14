@@ -32,6 +32,7 @@ import threading
 import urllib.parse
 import urllib.request
 from pathlib import Path
+from machine.owner_error import OwnerError
 
 ROOT = Path(__file__).resolve().parent
 UNITS = ROOT / 'deploy/browser'
@@ -128,7 +129,7 @@ def focus(page=None, cdp_url=CDP_URL, timeout=5, target=None):
     address, or None without a browser."""
     base = cdp_url.rstrip('/')
     if urllib.parse.urlsplit(base).hostname not in ('127.0.0.1', 'localhost', '::1'):
-        raise ValueError('Only a browser on this machine')
+        raise OwnerError('Only a browser on this machine')
     try:
         with urllib.request.urlopen(base + '/json/list', timeout=timeout) as response:
             tabs = [t for t in json.loads(response.read()) if t.get('type') == 'page']

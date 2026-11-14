@@ -23,6 +23,7 @@ import own_addresses
 from sources import mail_account, MAIL_SERVICES
 from timeutil import now
 import todo_areas
+from machine.owner_error import OwnerError
 
 
 def owner_card_area(db, accounts, node_ids=(), text=''):
@@ -171,7 +172,7 @@ class NewCardsApp:
         It is a normal card (Store.owner_card); the next review fills it in."""
         accounts = self.config.get('accounts', [])
         if not accounts:
-            raise ValueError('Connect a source first')
+            raise OwnerError('Connect a source first')
         scope = args.get('scope') or None
         if scope not in (None, 'work', 'personal'):
             raise ValueError('scope is work or personal')
@@ -181,7 +182,7 @@ class NewCardsApp:
             raise ValueError('attach is a list of event ids') from None
         wanted = list(dict.fromkeys(str(i) for i in args.get('about') or []))
         if len(attach) > 5 or len(wanted) > 5:
-            raise ValueError('Up to five people and five messages')
+            raise OwnerError('Up to five people and five messages')
         known = {a['id'] for a in accounts}
         with self.store.connect() as db:
             found = {r['id']: r['account_id'] for r in db.execute(
@@ -189,17 +190,17 @@ class NewCardsApp:
             nodes = {r['id']: dict(r) for r in db.execute(
                 f"SELECT id,kind,name FROM graph_nodes WHERE id IN ({','.join('?' * len(wanted)) or 'NULL'})", wanted)}
         if set(found) != set(attach) or not set(found.values()) <= known:
-            raise ValueError('That message is no longer there')
+            raise OwnerError('That message is no longer there')
         if set(nodes) != set(wanted):
-            raise ValueError('That person is no longer in the Graph')
+            raise OwnerError('That person is no longer in the Graph')
         about = [{'id': n['id'], 'name': n['name'][:120], 'kind': n['kind']} for n in (nodes[i] for i in wanted) if n['kind'] in ('person', 'org')]
         project = next((nodes[i]['name'] for i in wanted if nodes[i]['kind'] == 'project'), None)
         work_ids = [a['id'] for a in accounts if suggestion_scope([a['id']], accounts) == 'work']
         personal_ids = [a['id'] for a in accounts if a['id'] not in work_ids]
         if scope == 'work' and not work_ids:
-            raise ValueError('No work account is connected')
+            raise OwnerError('No work account is connected')
         if scope == 'personal' and not personal_ids:
-            raise ValueError('No personal account is connected')
+            raise OwnerError('No personal account is connected')
         area_open = []
         if scope == 'work':
             account = work_ids[0]

@@ -32,6 +32,7 @@ import locale_prefs
 import timeutil
 from i18n import t
 from machine import todo_states
+from machine.owner_error import OwnerError
 
 KIND = 'family'
 KINDS = ('availability', 'todo', 'event')
@@ -231,9 +232,9 @@ class Family:
     def _family(self):
         ref = self.family_ref()
         if not ref:
-            raise ValueError('You are not in a Family Fleet')
+            raise OwnerError('You are not in a Family Fleet')
         if not self.teammates(ref):
-            raise ValueError('Nobody else in your Family yet')
+            raise OwnerError('Nobody else in your Family yet')
         return ref
 
     def request_context(self, prefix, proposal):
@@ -257,29 +258,29 @@ class Family:
         ref = self._family()
         question = friends.parse_availability({'start': start, 'days': days})
         if not question:
-            raise ValueError(f'Pick a day and 1 to {friends.MAX_DAYS} days')
+            raise OwnerError(f'Pick a day and 1 to {friends.MAX_DAYS} days')
         sent, context = self.ask_context('availability', question, 'family-free:', ref)
         return {**sent, 'id': context.split(':', 1)[1]}
 
     def propose_todo(self, member_id, title, due=None, note=''):
         ref = self._family()
         if not self.member(ref, member_id):
-            raise ValueError('Not in your Family')
+            raise OwnerError('Not in your Family')
         question = parse('todo', {'title': title, 'due': due or None, 'note': note})
         if not question:
-            raise ValueError('Say what needs doing')
+            raise OwnerError('Say what needs doing')
         if due and 'due' not in question:
-            raise ValueError('Due: a date, or a date and time')
+            raise OwnerError('Due: a date, or a date and time')
         return self.ask_context('todo', question, 'family-todo:', ref, to=[member_id])[0]
 
     def propose_event(self, title, start, end=None, place='', note='', to=None):
         ref = self._family()
         question = parse('event', {'title': title, 'start': start, 'end': end or None, 'place': place, 'note': note})
         if not question:
-            raise ValueError('Give the plan a name and a start')
+            raise OwnerError('Give the plan a name and a start')
         wanted = [m for m in (to or []) if self.member(ref, m)] or None
         if to and not wanted:
-            raise ValueError('Not in your Family')
+            raise OwnerError('Not in your Family')
         return self.ask_context('event', question, 'family-event:', ref, to=wanted)[0]
 
     def family_card(self, row, question, sender):

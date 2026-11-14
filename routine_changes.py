@@ -11,6 +11,7 @@ import re
 
 import routines
 from timeutil import now
+from machine.owner_error import OwnerError
 
 PART_MAX = 280  # characters of the old or the new part a to-do shows
 
@@ -140,7 +141,7 @@ def save(db, suggestion_id, stamp):
     Store.routine_change_line)."""
     row, found = _open(db, suggestion_id)
     if not row:
-        raise ValueError('The routine changed in the meantime. Edit it on Routines.')
+        raise OwnerError('The routine changed in the meantime. Edit it on Routines.')
     routines.change_instructions(db, found['id'], row['instructions'], stamp)
     routines.keep_test(db, found['id'], routines.get(db, found['id']))
     db.execute("UPDATE routine_changes SET state='saved',updated_at=? WHERE suggestion_id=?", (now(), row['suggestion_id']))

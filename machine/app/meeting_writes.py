@@ -19,6 +19,7 @@ import meeting_writer
 from models import background_model, has_model
 from sources import CALENDAR_SERVICES, credential, gog_read
 from timeutil import local_tz, now
+from machine.owner_error import OwnerError
 
 LOG = logging.getLogger('personal-assistant')
 
@@ -35,11 +36,11 @@ class MeetingWritesApp:
         and no notes. The job's view."""
         calendars = [a['id'] for a in self.config['accounts'] if a.get('service') in CALENDAR_SERVICES]
         if not getattr(self, 'notes_model', None) and not has_model(self.config):
-            raise ValueError(i18n.t('Writing notes needs a model. Set one up in Settings, Model.'))
+            raise OwnerError(i18n.t('Writing notes needs a model. Set one up in Settings, Model.'))
         with self.store.connect() as db:
             event = meeting_notes.meeting(db, args.get('event_id'))
             if not event or event['account_id'] not in calendars:
-                raise ValueError('That meeting is not there anymore')
+                raise OwnerError('That meeting is not there anymore')
             meeting_writer.source(db, event['id'])  # raises when it has notes or no transcript
             db.execute('BEGIN IMMEDIATE')
             found = meeting_writer.start(db, event['id'], now())
@@ -230,14 +231,14 @@ class MeetingWritesApp:
         change = {k: v for k, v in args.items() if k in calendar_writes.KEYS - {'kind', 'label'}}
         if args.get('guests'):
             if not isinstance(args['guests'], list) or args.get('invite') != len(args['guests']):
-                raise ValueError('Check who gets an invite and tap again. Nothing was sent.')
+                raise OwnerError('Check who gets an invite and tap again. Nothing was sent.')
             change['guests'] = args['guests']
         with self.store.connect() as db:
             done = db.execute('SELECT status,result FROM calendar_writes WHERE id=?', (request_id,)).fetchone()
             if done and done['status'] == 'done':
                 return {'status': 'done', 'duplicate': True}
             if done and done['status'] == 'sending':
-                raise ValueError('That change is still going through.')
+                raise OwnerError('That change is still going through.')
             events = calendar_write_events(db, [change.get('event')], self.owner_emails())
         action = calendar_writes.validate({'kind': 'calendar', **change}, self.config, events, invite=True)
         transport = transport or calendar_writes.CalendarTransport(self.config, credential, gog_read)
@@ -246,7 +247,7 @@ class MeetingWritesApp:
         with self.store.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             if db.execute("SELECT 1 FROM calendar_writes WHERE id=? AND status IN ('sending','done')", (request_id,)).fetchone():
-                raise ValueError('That change is still going through.')
+                raise OwnerError('That change is still going through.')
             db.execute('INSERT INTO calendar_writes(id,account_id,op,payload,status,created_at,updated_at) VALUES(?,?,?,?,?,?,?) '
                        "ON CONFLICT(id) DO UPDATE SET status='sending',payload=excluded.payload,error=NULL,updated_at=excluded.updated_at",
                        (request_id, action['account_id'], action['op'], hashlib.sha256(encoded(action).encode()).hexdigest(), 'sending', stamp, stamp))
@@ -284,13 +285,13 @@ class MeetingWritesApp:
         try:
             event = transport.event(account, google_id)
         except Exception:  # noqa: BLE001 - a read that failed: nothing is deleted blind
-            raise ValueError(i18n.t('I couldn’t check your calendar. Nothing was changed.')) from None
+            raise OwnerError(i18n.t('I couldn’t check your calendar. Nothing was changed.')) from None
         if event and event.get('status') != 'cancelled':
             if any(not a.get('self') for a in event.get('attendees') or []):
-                raise ValueError(i18n.t('That event has guests now. Change it in the calendar itself. Nothing was changed.'))
+                raise OwnerError(i18n.t('That event has guests now. Change it in the calendar itself. Nothing was changed.'))
             status, _ = transport.write(account, 'events.delete', {'eventId': google_id})
             if status not in (None, 404, 410):
-                raise ValueError(i18n.t('I couldn’t remove it. Check your calendar.'))
+                raise OwnerError(i18n.t('I couldn’t remove it. Check your calendar.'))
         with self.store.connect() as db:
             db.execute("UPDATE calendar_writes SET status='undone',updated_at=? WHERE id=?", (now(), request_id))
         self.sync_soon(row['account_id'])

@@ -29,6 +29,7 @@ import uuid
 import task_invites
 from i18n import t
 import meet as m
+from machine.owner_error import OwnerError
 
 LOG = logging.getLogger('personal-assistant')
 SCHEMA = ('CREATE TABLE IF NOT EXISTS meet_links(session TEXT PRIMARY KEY,card_id TEXT,pick_card TEXT,state TEXT NOT NULL,'
@@ -290,7 +291,7 @@ class MeetLink:
         if not row:
             return None
         if row['state'] != 'picked' or not record.get('pick'):
-            raise ValueError('That time is no longer open')
+            raise OwnerError('That time is no longer open')
         name = record['name'] or record['email']
         when = m.when_text(m.parse_slot(record['pick'][0]), self._meet_tz())
         if choice == 'skip':
@@ -300,7 +301,7 @@ class MeetLink:
                 self.meet_close(row['pick_card'], t('Not needed'))
             return {'state': 'canceled'}
         if choice != 'book':
-            raise ValueError('Book it or Not needed')
+            raise OwnerError('Book it or Not needed')
         result = {'status': 'failed'}
         if self.meet_book:
             try:  # the invite goes to the address the to-do's email went to, never one from the page

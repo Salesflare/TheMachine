@@ -48,6 +48,7 @@ import routine_templates
 import routines
 import skills
 import todo_areas
+from machine.owner_error import OwnerError
 
 LOG = logging.getLogger('personal-assistant')
 RUN_SECONDS = 900  # the runner's own limit for a routine turn (preparation-run.mjs)
@@ -136,7 +137,7 @@ class RoutinesApp:
         at, rest = routines.read_at(args.get('words'))
         got = recurring.parse(rest, now.date())
         if not got:
-            raise ValueError('Say when it should run, like every Monday at 9 or every weekday morning')
+            raise OwnerError('Say when it should run, like every Monday at 9 or every weekday morning')
         with self.routines_lock(), self.store.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             row = routines.get(db, args.get('id'), routines.OWN)
@@ -158,7 +159,7 @@ class RoutinesApp:
             words, steps = args.get('words'), args.get('steps') if 'steps' in args else False
             if args.get('back'):
                 if not key:
-                    raise ValueError('That routine isn’t from a template')
+                    raise OwnerError('That routine isn’t from a template')
                 words, steps = routine_templates.TEMPLATES[key]['words'], None
             elif key and routine_templates.is_own(key, words):
                 words = routine_templates.TEMPLATES[key]['words']  # as shown, in the owner's language: still the template's
@@ -247,9 +248,9 @@ class RoutinesApp:
             row = routines.get(db, args.get('id'))
         origin = str(row['origin'] or '')
         if not origin.startswith('openclaw:'):
-            raise ValueError('That routine is gone')
+            raise OwnerError('That routine is gone')
         if choice == 'off' and routine_imports.still_on(self.config, origin[9:]) and not self.openclaw_job_off(origin[9:]):
-            raise ValueError('Couldn’t turn the old job off. Try again in a minute.')
+            raise OwnerError('Couldn’t turn the old job off. Try again in a minute.')
         with self.routines_lock(), self.store.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             routines.answer_old_job(db, row['id'], choice, self.routines_stamp())

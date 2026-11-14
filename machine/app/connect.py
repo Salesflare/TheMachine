@@ -20,6 +20,7 @@ from machine.config import LOG, SIGNIN_ERROR
 from machine.faults import restart_self
 from machine.sources.connectors import HOSTED_SIGNINS, ON_DASHBOARD, gog_docs_sources, hosted_docs_sources, reconnect_help
 from sources import MICROSOFT_SERVICES
+from machine.owner_error import OwnerError
 
 
 class ConnectApp:
@@ -89,22 +90,22 @@ class ConnectApp:
             # Self-hosted: Codex's device sign-in on this computer. A hosted Machine's runs on its server, started by
             # the control plane (POST /_machine/connect), which the dashboard follows there.
             if hosted:
-                raise ValueError('Your account page signs this one in')
+                raise OwnerError('Your account page signs this one in')
             signin = self.__dict__.setdefault('codex_signin', codex_signin.Signin())
             return signin.start(self.config) if name == 'codex_signin' else signin.view()
         if name in ('connect_signin', 'connect_signin_state'):
             source = args.get('name') if isinstance(args.get('name'), str) else ''
             source = fleet.SIGNIN_OF.get(onboarding.SERVICES.get(source, source), source)  # Gmail and Calendar: Google
             if hosted:
-                raise ValueError('Your account page signs this one in')
+                raise OwnerError('Your account page signs this one in')
             if source not in fleet.SIGNIN_SOURCES:
-                raise ValueError('That source signs in another way')
+                raise OwnerError('That source signs in another way')
             if getattr(self, 'fleet', None) is None:
-                raise ValueError('Pair this Machine first')
+                raise OwnerError('Pair this Machine first')
             if name == 'connect_signin_state':
                 return self.fleet.signin_state(source)
             if not getattr(self, 'config_path', None):
-                raise ValueError('This service cannot save its settings')
+                raise OwnerError('This service cannot save its settings')
             # one already connected is signed in again (onboarding.connect_delivered), as Reconnect does
             try:
                 return {'url': self.fleet.connect_start(source), 'state': 'started'}
@@ -118,7 +119,7 @@ class ConnectApp:
             # tab. Nothing is typed here.
             site = args.get('site') if isinstance(args.get('site'), str) else ''
             if site not in CONNECT_SIGNIN:
-                raise ValueError('That site signs in another way')
+                raise OwnerError('That site signs in another way')
             try:
                 base = browser_login.endpoints(self.config)[0]
                 hosts = onboarding.SIGNIN_HOSTS[site]
@@ -143,7 +144,7 @@ class ConnectApp:
                 if not under_way or args.get('fresh') is True or stale:
                     localized[tab] = url
             except (browser_login.browser_cdp.CdpError, OSError, IndexError, TypeError, AttributeError, KeyError):
-                raise ValueError('I couldn’t open the sign-in page in the browser') from None
+                raise OwnerError('I couldn’t open the sign-in page in the browser') from None
             try:
                 browser_viewer.focus(url, base, target=tab)
             except (ValueError, OSError):
@@ -152,24 +153,24 @@ class ConnectApp:
         if name in ('connect_start', 'connect_remove') and args.get('account') is not None:
             account = next((a for a in self.config['accounts'] if a['id'] == args.get('account')), None)
             if not account:
-                raise ValueError('That account is not connected here')
+                raise OwnerError('That account is not connected here')
             if 'account_page' in reconnect_help(account, manage if hosted else None):
-                raise ValueError('Your account page signs this one in and out')
+                raise OwnerError('Your account page signs this one in and out')
             help_ = reconnect_help(account, None)
             if help_.get('shared_by'):
-                raise ValueError(f"Shared by {help_['shared_by']}: only its admins can change it")
+                raise OwnerError(f"Shared by {help_['shared_by']}: only its admins can change it")
             if name == 'connect_remove' and help_.get('shared_with'):
-                raise ValueError(f"Stop sharing it with {help_['shared_with']} first")
+                raise OwnerError(f"Stop sharing it with {help_['shared_with']} first")
         if name == 'connect_abilities':
             # Brings in signals and Can do things, one switch each (abilities.py): the owner's own, also for one the
             # account page signs in. A restart starts or stops its sync.
             account = next((a for a in self.config['accounts'] if a['id'] == args.get('account')), None)
             if not account:
-                raise ValueError('That account is not connected here')
+                raise OwnerError('That account is not connected here')
             if reconnect_help(account, None).get('shared_by'):
-                raise ValueError('Shared by ' + reconnect_help(account, None)['shared_by'] + ': only its admins can change it')
+                raise OwnerError('Shared by ' + reconnect_help(account, None)['shared_by'] + ': only its admins can change it')
             if not getattr(self, 'config_path', None):
-                raise ValueError('This service cannot save its settings')
+                raise OwnerError('This service cannot save its settings')
             with lock:
                 try:
                     view = onboarding.set_abilities(self.config_path, account['id'],
@@ -183,13 +184,13 @@ class ConnectApp:
             # own marking, which a Work Fleet's removal follows (work_removal.py). Also for one the account page signs in.
             account = next((a for a in self.config['accounts'] if a['id'] == args.get('account')), None)
             if not account:
-                raise ValueError('That account is not connected here')
+                raise OwnerError('That account is not connected here')
             if reconnect_help(account, None).get('shared_by'):
-                raise ValueError('Shared by ' + reconnect_help(account, None)['shared_by'] + ': only its admins can change it')
+                raise OwnerError('Shared by ' + reconnect_help(account, None)['shared_by'] + ': only its admins can change it')
             if not getattr(self, 'config_path', None):
-                raise ValueError('This service cannot save its settings')
+                raise OwnerError('This service cannot save its settings')
             if not isinstance(args.get('boundary'), str):
-                raise ValueError('Pick work with a company name, or personal')
+                raise OwnerError('Pick work with a company name, or personal')
             with lock:
                 try:
                     changed = onboarding.set_boundary(self.config_path, account['id'], args['boundary'])
@@ -199,10 +200,10 @@ class ConnectApp:
             return {'changed': changed, 'restarting': restart_self(3)}
         if name == 'connect_remove':
             if not getattr(self, 'config_path', None):
-                raise ValueError('This service cannot save its settings')
+                raise OwnerError('This service cannot save its settings')
             with lock:
                 if any(v['state'] == 'running' for v in sessions.values()):
-                    raise ValueError('A source is being set up; finish or stop that first')
+                    raise OwnerError('A source is being set up; finish or stop that first')
                 try:
                     onboarding.disconnect(self.config_path, account['id'])
                 except onboarding.SetupError as error:
@@ -217,9 +218,9 @@ class ConnectApp:
             known = {s['name']: s for s in onboarding.catalog(self.config)}
             again = args.get('account') is not None
             if source not in known or (known[source]['broker'] and not again):
-                raise ValueError('That source is not added here')
+                raise OwnerError('That source is not added here')
             if again and source != reconnect_help(account, None)['connect_name']:
-                raise ValueError('That account is not a ' + known[source]['label'] + ' account')
+                raise OwnerError('That account is not a ' + known[source]['label'] + ' account')
             if not getattr(self, 'config_path', None):
                 raise ValueError('This service cannot save its settings' if hosted else f'This service cannot save its settings; run assistant connect {source} in a terminal')
             answers, secrets_ = connect_form(known[source], args) if args.get('form') is True and not again else (None, None)
@@ -231,7 +232,7 @@ class ConnectApp:
                         v['ui'].cancel()
                         v['state'] = 'cancelled'
                 if any(v['state'] == 'running' for v in sessions.values()):
-                    raise ValueError('Another source is being added; finish or stop that one first')
+                    raise OwnerError('Another source is being added; finish or stop that one first')
                 key = secrets.token_hex(12)
                 ui = onboarding.WebUI()
                 ui.reconnect = again
@@ -253,13 +254,13 @@ class ConnectApp:
             return {'session': running[0], **self.connect_view(running[1])} if running else {}
         session = sessions.get(args.get('session')) if isinstance(args.get('session'), str) else None
         if not session:
-            raise ValueError('That setup has ended; start it again')
+            raise OwnerError('That setup has ended; start it again')
         if name == 'connect_answer':
             value = args.get('value')
             if not isinstance(value, (str, bool, int)) or (isinstance(value, str) and len(value) > 4096):
                 raise ValueError('Invalid answer')
             if not session['ui'].answer(args.get('question'), value):
-                raise ValueError('That question was already answered')
+                raise OwnerError('That question was already answered')
             session['at'] = time.monotonic()
             time.sleep(0.3)  # most steps answer at once: show what comes next
         elif name == 'connect_cancel':
@@ -322,7 +323,7 @@ class ConnectApp:
     def connect_owner_action(self, name, args, owner_dashboard=False):
         # a source added from the dashboard (CONNECT_ACTIONS)
         if not owner_dashboard:
-            raise ValueError('Only the owner adds a source, from the dashboard')
+            raise OwnerError('Only the owner adds a source, from the dashboard')
         return self.connect_action(name, args)
 
 
@@ -349,18 +350,18 @@ def connect_form(source, args):
         value = given.get(key)
         if isinstance(value, str) and value.strip():
             if len(value) > 500:
-                raise ValueError('That answer is too long')
+                raise OwnerError('That answer is too long')
             answers[prompt] = value.strip()
     for key, prompt, *options in form.get('advanced') or ():  # folded-away settings (an IMAP mailbox's servers): only when filled in
         value = given.get(key)
         if isinstance(value, str) and value.strip():
             if len(value) > 200 or (options and value.strip() not in options[0]):
-                raise ValueError('Check the server settings')
+                raise OwnerError('Check the server settings')
             answers[prompt] = value.strip()
     secret = args.get('secret')
     if form.get('secret') and isinstance(secret, str) and secret.strip():
         if len(secret) > 4096:
-            raise ValueError('That key is too long')
+            raise OwnerError('That key is too long')
         secrets_[form['secret']] = secret.strip()
     if form.get('auto') and args.get('scope') in (None, '', 'auto'):
         answers.update({'part of your life': 'guess'})  # from the address it signs in as (onboarding.guess_boundary)
@@ -371,7 +372,7 @@ def connect_form(source, args):
         elif scope == 'work' and company and re.fullmatch(r'[^\x00-\x1f<>:]+', company):
             boundary = 'work:' + company
         else:
-            raise ValueError('Pick Work with its company, or Personal')
+            raise OwnerError('Pick Work with its company, or Personal')
         answers.update({'part of your life': boundary, 'company': boundary})
     answers['You already have'] = f"add another {source['label']} account"  # a new one, when there is one; Reconnect signs one in again
     return answers, secrets_

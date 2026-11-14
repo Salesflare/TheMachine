@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import json
 import re
+from machine.owner_error import OwnerError
 
 PERSONAL = 'personal'
 
@@ -151,9 +152,9 @@ def accounts_in(area, accounts):
 def check(area, account_ids, accounts, pinned=None):
     """The area to move a to-do to, checked: one of the owner's, with accounts, and not the one it is in."""
     if not isinstance(area, str) or area not in {x['id'] for x in areas(accounts)}:
-        raise ValueError('Pick one of your areas')
+        raise OwnerError('Pick one of your areas')
     if area == current(account_ids, accounts, pinned):
-        raise ValueError('It is in that area already')
+        raise OwnerError('It is in that area already')
     return area
 
 

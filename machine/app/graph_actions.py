@@ -44,6 +44,7 @@ import project_success
 from sources import gog_read, SourceError
 from timeutil import local_tz, now
 import work_removal
+from machine.owner_error import OwnerError
 
 
 GRAPH_CHECK_SECONDS = 60  # how often the graph worker looks for new organization profiles
@@ -211,7 +212,7 @@ class GraphActionsApp:
             if args.get('project') and args.get('event_ids'):
                 if db.execute('SELECT count(*) FROM events WHERE deleted=0 AND id IN (' + ','.join('?' for _ in args['event_ids']) + ')',
                               [int(i) for i in args['event_ids']]).fetchone()[0] != len(set(args['event_ids'])):
-                    raise ValueError('Every event must exist and be live')
+                    raise OwnerError('Every event must exist and be live')
                 graph.label(db, args['event_ids'], args['project'], 'agent', now())
                 changed = True
             if args.get('split'):  # several projects named at once (one per counterpart), with one graph build after
@@ -221,7 +222,7 @@ class GraphActionsApp:
                     raise ValueError('split takes 1 to 40 of {"project": name, "event_ids": [ids]}')
                 ids = {int(i) for x in parts for i in x['event_ids']}
                 if db.execute(f"SELECT count(*) FROM events WHERE deleted=0 AND id IN ({','.join('?' * len(ids))})", list(ids)).fetchone()[0] != len(ids):
-                    raise ValueError('Every event must exist and be live')
+                    raise OwnerError('Every event must exist and be live')
                 for x in parts:
                     graph.label(db, [int(i) for i in x['event_ids']], str(x['project']).strip(), 'agent', now())
                 split = [{'project': str(x['project']).strip(), 'events': len(x['event_ids'])} for x in parts]
@@ -237,7 +238,7 @@ class GraphActionsApp:
                 changed = changed or 'kept' not in said
             if args.get('close_project'):
                 if not db.execute('UPDATE projects SET closed_at=? WHERE name=? COLLATE NOCASE AND closed_at IS NULL', (now(), str(args['close_project']).strip())).rowcount:
-                    raise ValueError('No open project by that name')
+                    raise OwnerError('No open project by that name')
                 changed = True
             if 'role' in args:
                 if not args.get('node_id'):
@@ -412,7 +413,7 @@ class GraphActionsApp:
         import next_actions
         import own_addresses
         if not owner_dashboard:
-            raise ValueError('Only the owner invites someone, from the dashboard')
+            raise OwnerError('Only the owner invites someone, from the dashboard')
         node = str(args.get('node_id') or '')
         with self.store.connect() as db:
             row = db.execute("SELECT info FROM graph_nodes WHERE id=? AND kind='person'", (node,)).fetchone()
@@ -422,7 +423,7 @@ class GraphActionsApp:
                          **({'fleet': marks[node]} if marks.get(node) else {})}
         invite = found and self.person_invite(found)
         if not invite or not invite.get('email'):
-            raise ValueError(i18n.t('There is no invite to send here.'))
+            raise OwnerError(i18n.t('There is no invite to send here.'))
         title = i18n.t('Invite {} to The Machine', invite['name'])
         with self.store.connect() as db:
             mailbox = self.invite_mailbox(db, node)
@@ -432,7 +433,7 @@ class GraphActionsApp:
                 if draft:  # the one made before and not sent yet: the same to-do, opened again
                     return {'suggestion_id': open_id, 'revision': draft['revision']}
         if not mailbox:
-            raise ValueError(i18n.t('Connect a mailbox that can send first.'))
+            raise OwnerError(i18n.t('Connect a mailbox that can send first.'))
         words = [i18n.t('Hi {},', invite['first']) if invite.get('first') else i18n.t('Hi,'),
                  i18n.t('I use The Machine, an AI assistant that turns my email and chats into to-dos and prepares the work. I think you would like it: {}', self.INVITE_SITE)]
         draft = next_actions.validate({'kind': 'email', 'account_id': mailbox['id'], 'to': [invite['email']],
@@ -518,7 +519,7 @@ class GraphActionsApp:
                 owner = str(args.get('owner') or crm.ME)
                 picked = next((m for m in self.owner_choices() if m['id'] == owner), None)
                 if owner != crm.ME and not picked:
-                    raise ValueError('Pick an owner from your Work Fleet')
+                    raise OwnerError('Pick an owner from your Work Fleet')
                 done = crm.set_owner(db, args.get('node_id'), owner, picked['name'] if picked else None, now())
             elif name == 'graph_org_merge':
                 done = crm.merge_orgs(db, args.get('node_id'), into=args.get('into'), website=args.get('website'), now=now())
@@ -580,7 +581,7 @@ class GraphActionsApp:
         with self.store.connect() as db:
             found = graph.timeline(db, node, source, cursor, limit, now, history=True)  # what its last contact counts
         if found is None:
-            raise ValueError('Not in the graph')
+            raise OwnerError('Not in the graph')
         both = found['items'] + found.get('upcoming', [])
         ids = [i['id'] for i in both if i['type'] == 'event']
         ids += [c for i in both for c in i.get('copies') or ()]
@@ -857,7 +858,7 @@ class GraphActionsApp:
     def undo_merge_action(self, name, args, owner_dashboard=False):
         if owner_dashboard and re.fullmatch(r'[A-Za-z0-9_.:-]{1,200}',str(args.get('approval_id',''))):source='dashboard'
         elif not owner_dashboard and re.fullmatch(r'telegram:[A-Za-z0-9_.:-]{1,200}',str(args.get('approval_id',''))):source='telegram'
-        else:raise ValueError('Undo must come from the owner’s controls')
+        else:raise OwnerError('Undo must come from the owner’s controls')
         return self.store.undo_merge(args['suggestion_id'],args['approval_id'],source)
 
     def remember_fact_action(self, name, args, owner_dashboard=False):
@@ -969,20 +970,20 @@ class GraphActionsApp:
     def graph_summary_action(self, name, args, owner_dashboard=False):
         # a person's summary: the owner's edit, a suggested update used or kept out, or back to The Machine's
         if not owner_dashboard:
-            raise ValueError('Only the owner changes a summary, on the dashboard')
+            raise OwnerError('Only the owner changes a summary, on the dashboard')
         return self.summary_change(args)
 
     def project_about_action(self, name, args, owner_dashboard=False):
         # a project's description: the owner's own text, or back to The Machine's (Keep it updated)
         if not owner_dashboard:
-            raise ValueError('Only the owner changes a project description, on the dashboard')
+            raise OwnerError('Only the owner changes a project description, on the dashboard')
         return self.about_change(args)
 
     def project_split_action(self, name, args, owner_dashboard=False):
         """Split up a project (project_split.py): op propose (one model turn, nothing changes), apply (the owner's
         parts, confirmed) or undo."""
         if not owner_dashboard:
-            raise ValueError('Only the owner splits up a project, on the dashboard')
+            raise OwnerError('Only the owner splits up a project, on the dashboard')
         op = args.get('op')
         if op == 'propose':
             return self.project_split_propose(args.get('node_id'))
@@ -1006,7 +1007,7 @@ class GraphActionsApp:
         from models import background_model, has_model
         stand_in = getattr(self, 'split_model', None)  # a stand-in in the sandbox and tests: (config, prompt)
         if not stand_in and not has_model(self.config, wait=False):
-            raise ValueError('Split up needs a model. Set one up in Settings, Model.')
+            raise OwnerError('Split up needs a model. Set one up in Settings, Model.')
         with self.store.connect() as db:
             project_split.ensure(db)
             row, found = project_split.items(db, node_id, graph.Owner({'accounts': self.config.get('accounts', [])}, db).emails)
@@ -1026,12 +1027,12 @@ class GraphActionsApp:
             parts = project_split.parse(db, answer, row, ids)
         if parts is None:
             LOG.info('project split unreadable answer')
-            raise ValueError('That didn’t work. Try again.')
+            raise OwnerError('That didn’t work. Try again.')
         return {'node_id': 'project:' + str(row['id']), 'name': row['name'], 'parts': parts, 'items': project_split.view(found)}
 
     def graph_fact_unlink_action(self, name, args, owner_dashboard=False):
         if not owner_dashboard:
-            raise ValueError('Only the owner says who a fact is not about, on the dashboard')
+            raise OwnerError('Only the owner says who a fact is not about, on the dashboard')
         return self.store.fact_unlink(args.get('fact_id'), args.get('node_id'))
 
     def graph_fact_add_action(self, name, args, owner_dashboard=False):
@@ -1041,12 +1042,12 @@ class GraphActionsApp:
 
     def unmerge_fact_action(self, name, args, owner_dashboard=False):
         if not owner_dashboard:
-            raise ValueError('Only the owner undoes a condense, on the dashboard')
+            raise OwnerError('Only the owner undoes a condense, on the dashboard')
         return self.store.unmerge_fact(args.get('id'), args.get('channel'), args.get('skill'), args.get('expired'))
 
     def graph_rename_action(self, name, args, owner_dashboard=False):
         if not owner_dashboard:
-            raise ValueError('Only the owner renames people and projects, on the dashboard')
+            raise OwnerError('Only the owner renames people and projects, on the dashboard')
         with self.store.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             renamed = graph.rename(db, args.get('node_id'), args.get('name'), now())
@@ -1066,7 +1067,7 @@ class GraphActionsApp:
 
     def graph_org_edit_action(self, name, args, owner_dashboard=False):
         if not owner_dashboard:
-            raise ValueError("Only the owner edits an organization's details, on the dashboard")
+            raise OwnerError("Only the owner edits an organization's details, on the dashboard")
         with self.store.connect() as db:
             if name == 'graph_org_wrong':
                 done = graph.org_wrong(db, args.get('node_id'), args.get('wrong') is not False, now())
@@ -1081,7 +1082,7 @@ class GraphActionsApp:
     def graph_new_action(self, name, args, owner_dashboard=False):
         # A person or organization added by hand (New person, New organization), and deleting one added that way
         if not owner_dashboard:
-            raise ValueError('Only the owner adds people and organizations by hand, on the dashboard')
+            raise OwnerError('Only the owner adds people and organizations by hand, on the dashboard')
         with self.store.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             done = graph.create_record(db, args.get('kind'), args, now(), graph.Owner(self.config, db)) if name == 'graph_new' else graph.delete_org(db, args.get('node_id'))
@@ -1094,7 +1095,7 @@ class GraphActionsApp:
         # A person's or organization's picture: the owner's upload (made small on the dashboard), one of the pictures
         # found for them (fetched here, on this Machine), or none.
         if not owner_dashboard:
-            raise ValueError("Only the owner changes a picture, on the dashboard")
+            raise OwnerError("Only the owner changes a picture, on the dashboard")
         if name == 'graph_pictures_found':
             with self.store.connect() as db:
                 links = graph.picture_links(db, args.get('node_id'))
@@ -1110,9 +1111,9 @@ class GraphActionsApp:
             try:
                 data = base64.b64decode(raw.split(',', 1)[1] if raw.startswith('data:') else raw, validate=True)
             except (ValueError, binascii.Error):
-                raise ValueError('A picture is a JPEG, PNG or WebP image, up to 200 kB') from None
+                raise OwnerError('A picture is a JPEG, PNG or WebP image, up to 200 kB') from None
         elif not args.get('remove') and not args.get('reset'):
-            raise ValueError('Upload a picture, pick one, or remove it')
+            raise OwnerError('Upload a picture, pick one, or remove it')
         with self.store.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             done = graph.set_picture(db, args.get('node_id'), data, now(), reset=bool(args.get('reset')))
@@ -1125,7 +1126,7 @@ class GraphActionsApp:
         # One Save for a person's page: their name, what they are to the owner and where they work go where those
         # live (graph_names, person_roles, person_orgs, as the owner's word); the rest is person_edits.
         if not owner_dashboard:
-            raise ValueError("Only the owner edits a person's details, on the dashboard")
+            raise OwnerError("Only the owner edits a person's details, on the dashboard")
         node_id, fields = str(args.get('node_id') or ''), args.get('fields') if isinstance(args.get('fields'), dict) else {}
         with self.store.connect() as db:
             db.execute('BEGIN IMMEDIATE')
@@ -1157,13 +1158,13 @@ class GraphActionsApp:
 
     def graph_warmup_action(self, name, args, owner_dashboard=False):
         if not owner_dashboard:
-            raise ValueError('Only the owner undoes a warm-up domain here, on the dashboard; reviews use graph with warmup')
+            raise OwnerError('Only the owner undoes a warm-up domain here, on the dashboard; reviews use graph with warmup')
         return self.graph_action({'node_id': args.get('domain') or args.get('node_id'), 'warmup': args.get('warmup') is True}, source='owner')
 
     def graph_show_person_action(self, name, args, owner_dashboard=False):
         # Hidden senders: Show as a person, for good; the rebuild that adds them runs in the graph worker
         if not owner_dashboard:
-            raise ValueError('Only the owner shows a hidden sender as a person, on the dashboard')
+            raise OwnerError('Only the owner shows a hidden sender as a person, on the dashboard')
         with self.store.connect() as db:
             said = mail_senders.show(db, args.get('identifier'), now())
         self.graph_later()
@@ -1172,14 +1173,14 @@ class GraphActionsApp:
     def graph_same_action(self, name, args, owner_dashboard=False):
         # Same person? Merge, or Not the same (which also undoes a merge)
         if not owner_dashboard:
-            raise ValueError('Only the owner merges people here, on the dashboard; reviews use graph with merge or different')
+            raise OwnerError('Only the owner merges people here, on the dashboard; reviews use graph with merge or different')
         pair = [str(args.get('a') or ''), str(args.get('b') or '')]
         return self.graph_action({('merge' if args.get('same') is True else 'different'): pair}, source='owner')
 
     def graph_same_all_action(self, name, args, owner_dashboard=False):
         # Merge all the listed Same person? pairs, or undo that batch in one go
         if not owner_dashboard:
-            raise ValueError('Only the owner merges people here, on the dashboard; reviews use graph with merge or different')
+            raise OwnerError('Only the owner merges people here, on the dashboard; reviews use graph with merge or different')
         with self.store.connect() as db:
             if args.get('undo'):
                 said = {'split': graph.unmerge_all(db, args['undo'])}
@@ -1194,7 +1195,7 @@ class GraphActionsApp:
 
     def graph_person_delete_action(self, name, args, owner_dashboard=False):
         if not owner_dashboard:
-            raise ValueError('Only the owner deletes someone permanently, on their page in the dashboard')
+            raise OwnerError('Only the owner deletes someone permanently, on their page in the dashboard')
         return self.delete_person(str(args.get('node_id') or ''))
 
     def graph_person_org_action(self, name, args, owner_dashboard=False):
@@ -1209,12 +1210,12 @@ class GraphActionsApp:
 
     def forget_fact_action(self, name, args, owner_dashboard=False):
         if not owner_dashboard:
-            raise ValueError('Only the owner can remove a fact, on the dashboard')
+            raise OwnerError('Only the owner can remove a fact, on the dashboard')
         return self.store.forget_fact(args['id'], bool(args.get('undo')))
 
     def edit_fact_action(self, name, args, owner_dashboard=False):
         if not owner_dashboard:
-            raise ValueError('Only the owner can edit what was learned, on the dashboard')
+            raise OwnerError('Only the owner can edit what was learned, on the dashboard')
         return self.store.edit_fact(args.get('id'), args.get('text'))
 
     def board_action(self, name, args, owner_dashboard=False):
@@ -1230,7 +1231,7 @@ class GraphActionsApp:
     def project_visibility_action(self, name, args, owner_dashboard=False):
         # who sees one project: Only you, Team, or as its board (null)
         if not owner_dashboard:
-            raise ValueError('Only the owner sets who sees a project, on the dashboard')
+            raise OwnerError('Only the owner sets who sees a project, on the dashboard')
         with self.store.connect() as db:
             done = graph.set_project_visibility(db, args.get('node_id'), args.get('visibility'))
         self.graph_later()  # who sees it is read from the projects table: no build needed before the answer
@@ -1271,5 +1272,5 @@ class GraphActionsApp:
 
     def crm_actions_action(self, name, args, owner_dashboard=False):
         if not owner_dashboard:
-            raise ValueError('Only the owner changes owners, merges organizations and imports, on the dashboard')
+            raise OwnerError('Only the owner changes owners, merges organizations and imports, on the dashboard')
         return self.crm_action(name, args)

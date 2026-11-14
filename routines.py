@@ -46,6 +46,7 @@ import uuid
 import recurring
 import routine_changes
 import routine_recipe
+from machine.owner_error import OwnerError
 
 STATES = ('on', 'paused', 'stopped')
 LIVE = ('on', 'paused')  # the owner's routines; 'sorting', 'suggested' and 'skipped' are suggestions (OpenClaw jobs, patterns); 'trying': a new one on trial
@@ -109,7 +110,7 @@ def clean_at(value):
     """'HH:MM' on a 24-hour clock, or ValueError."""
     m = re.fullmatch(r'(\d{1,2}):(\d{2})', str(value or '').strip())
     if not m or int(m.group(1)) > 23 or int(m.group(2)) > 59:
-        raise ValueError('Pick a time like 9:00')
+        raise OwnerError('Pick a time like 9:00')
     return f'{int(m.group(1)):02d}:{m.group(2)}'
 
 
@@ -136,16 +137,16 @@ def read(text, today):
     'instructions'}, or ValueError saying what is missing."""
     words = ' '.join(str(text or '').split())
     if not words:
-        raise ValueError('Say what it should do and when, like every Monday at 9, sum up my open deals')
+        raise OwnerError('Say what it should do and when, like every Monday at 9, sum up my open deals')
     at, rest = read_at(words)
     got = recurring.parse(rest, today)
     if not got:
-        raise ValueError('Say when it should run, like every Monday at 9 or every weekday morning')
+        raise OwnerError('Say when it should run, like every Monday at 9 or every weekday morning')
     instructions = re.sub(r'^(?:(?:in the|on|at) )?(?:morning|noon|afternoon|evening|night)\b|\b(?:in the |at )?(?:morning|noon|afternoon|evening|night)$',
                           '', got['rest'].strip(' ,.;:-'), flags=re.I).strip(' ,.;:-')
     instructions = instructions[:1].upper() + instructions[1:]
     if len(instructions) < 4:
-        raise ValueError('Say what it should do, like sum up my open deals')
+        raise OwnerError('Say what it should do, like sum up my open deals')
     return {'rule': got['rule'], 'anchor': got['anchor'], 'at': at or DEFAULT_AT, 'instructions': instructions[:INSTRUCTIONS_MAX]}
 
 
@@ -230,7 +231,7 @@ def due_period(row, now_local):
 
 def _full(db):
     if db.execute("SELECT count(*) FROM routines WHERE state IN ('on','paused')").fetchone()[0] >= MAX_ROUTINES:
-        raise ValueError('You have 20 routines. Stop one before you add another.')
+        raise OwnerError('You have 20 routines. Stop one before you add another.')
 
 
 def short_name(text, most=SHORT_MAX):
@@ -255,14 +256,14 @@ def clean_steps(steps):
             if not shlex.split(command):
                 continue
         except ValueError:
-            raise ValueError('That command has an open quote') from None
+            raise OwnerError('That command has an open quote') from None
         timeout = step.get('timeout') or STEP_TIMEOUT[kind]
         try:
             timeout = int(timeout)
         except (TypeError, ValueError):
-            raise ValueError('Say how long it may take in seconds, like 60') from None
+            raise OwnerError('Say how long it may take in seconds, like 60') from None
         if not 1 <= timeout <= STEP_TIMEOUT_MAX:
-            raise ValueError('A step may take 1 to 600 seconds')
+            raise OwnerError('A step may take 1 to 600 seconds')
         out[kind] = {'command': command, 'timeout': timeout}
         cwd = ' '.join(str(step.get('cwd') or '').split())[:500]
         if kind == 'get' and cwd:
@@ -299,14 +300,14 @@ def _words(instructions, steps=None):
     """What a routine does, in one line; none only when Get data's output is the result."""
     instructions = ' '.join(str(instructions or '').split())[:INSTRUCTIONS_MAX]
     if len(instructions) < 4 and not (not instructions and (steps or {}).get('get')):
-        raise ValueError('Say what it should do, like sum up my open deals')
+        raise OwnerError('Say what it should do, like sum up my open deals')
     return instructions
 
 
 def get(db, routine_id, states=LIVE):
     row = db.execute('SELECT * FROM routines WHERE id=?', (str(routine_id or ''),)).fetchone()
     if not row or row['state'] not in states:
-        raise ValueError('That routine is gone')
+        raise OwnerError('That routine is gone')
     return row
 
 
@@ -322,9 +323,9 @@ def clean_name(name):
     """The owner's own name for a routine (Edit): one line, at most NAME_MAX characters."""
     name = ' '.join(str(name or '').split())
     if not name:
-        raise ValueError('Give it a name')
+        raise OwnerError('Give it a name')
     if len(name) > NAME_MAX:
-        raise ValueError('Keep the name under 80 characters')  # NAME_MAX
+        raise OwnerError('Keep the name under 80 characters')  # NAME_MAX
     return name
 
 
@@ -415,7 +416,7 @@ def run_now(db, routine_id, stamp):
     if row['state'] == 'suggested':
         return try_words(db, row['id'], row['instructions'], stamp)
     if db.execute("SELECT 1 FROM routine_runs WHERE routine_id=? AND state='running'", (row['id'],)).fetchone():
-        raise ValueError('It’s running already')
+        raise OwnerError('It’s running already')
     return begin(db, row['id'], 'now:' + stamp, stamp)
 
 
@@ -446,7 +447,7 @@ def try_words(db, routine_id, instructions, stamp, steps=False):
     instructions = _words(instructions, steps)
     kept = json.dumps(steps) if steps else None
     if db.execute("SELECT 1 FROM routine_runs WHERE routine_id=? AND state='running'", (row['id'],)).fetchone():
-        raise ValueError('It’s running already')
+        raise OwnerError('It’s running already')
     db.execute("DELETE FROM routine_runs WHERE routine_id=? AND period LIKE 'test:%'", (row['id'],))  # only the newest try shows
     if row['state'] == 'trying':  # its name follows its words, unless the owner named it (rename)
         db.execute('UPDATE routines SET name=?,instructions=?,steps=?,updated_at=?,recipe=? WHERE id=?',

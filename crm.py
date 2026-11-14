@@ -24,6 +24,7 @@ import re
 import enrichment
 import graph
 from machine import stamps
+from machine.owner_error import OwnerError
 
 SCHEMA = '''
 CREATE TABLE IF NOT EXISTS record_owners(node_id TEXT PRIMARY KEY,owner TEXT NOT NULL,name TEXT,set_at TEXT NOT NULL);
@@ -53,7 +54,7 @@ def now_iso():
 def node_row(db, node_id):
     row = graph.resolve(db, str(node_id or ''))
     if not row or row['kind'] not in ('person', 'org', 'project'):
-        raise ValueError('Pick a person, organization or project from your Graph')
+        raise OwnerError('Pick a person, organization or project from your Graph')
     return row
 
 
@@ -69,7 +70,7 @@ def set_owner(db, node_id, owner, owner_name, now):
     row = node_row(db, node_id)
     owner = str(owner or ME)
     if owner != ME and not MEMBER.fullmatch(owner):
-        raise ValueError('Pick an owner from your Work Fleet')
+        raise OwnerError('Pick an owner from your Work Fleet')
     info = json.loads(row['info'] or '{}')
     was, was_name = info.get('owner') or ME, info.get('owner_name')
     if was == owner:
@@ -302,23 +303,23 @@ def merge_orgs(db, node_id, into=None, website=None, now=None):
         db.execute('BEGIN IMMEDIATE')
     here = _org(db, canonical(db, str(node_id or '')))
     if not here:
-        raise ValueError('Pick an organization from your Graph')
+        raise OwnerError('Pick an organization from your Graph')
     if website:
         domain = graph.website_domain(website)
         if not domain:
-            raise ValueError(f'{website} is not a website, like acme.com')
+            raise OwnerError(f'{website} is not a website, like acme.com')
         alias, target = 'org:' + domain, here['id']
         if canonical(db, alias) == target or alias == target:
-            raise ValueError(f'{domain} is one of its websites already')
+            raise OwnerError(f'{domain} is one of its websites already')
         if domain in graph.FREEMAIL:
-            raise ValueError(f'{domain} is free email: many companies use it')
+            raise OwnerError(f'{domain} is free email: many companies use it')
         other = _org(db, canonical(db, alias))
         if other and other['id'] != target:
             alias = other['id']  # that website is an organization of its own: it joins this one
     else:
         other = _org(db, canonical(db, str(into or '')))
         if not other:
-            raise ValueError('Pick the organization it is the same as')
+            raise OwnerError('Pick the organization it is the same as')
         alias, target = here['id'], other['id']
         if alias == target:  # merged already: a second tap, or a list from before the merge
             return {'node_id': target, 'kept': True}
@@ -368,7 +369,7 @@ def split_org(db, alias, now=None):
         db.execute('BEGIN IMMEDIATE')
     row = db.execute('SELECT * FROM org_aliases WHERE alias=?', (str(alias or ''),)).fetchone()
     if not row:
-        raise ValueError('That is not part of another organization')
+        raise OwnerError('That is not part of another organization')
     undo = json.loads(row['undo'] or '{}')
     alias, target = row['alias'], row['target']
     alias_domain = None if alias.startswith('org:named:') else alias[4:]
@@ -399,7 +400,7 @@ def keep_apart(db, a, b, now=None):
     """Not the same organization: the pair isn't offered again."""
     a, b = sorted((str(a or ''), str(b or '')))
     if a == b or not (a.startswith('org:') and b.startswith('org:')):
-        raise ValueError('Pick two organizations')
+        raise OwnerError('Pick two organizations')
     db.execute('INSERT OR IGNORE INTO org_apart(a,b,created_at) VALUES(?,?,?)', (a, b, now or now_iso()))
     return {'apart': [a, b]}
 
@@ -516,47 +517,47 @@ def clean_filters(raw, kind=None):
             continue
         if key == 'owner':
             if value != ME and not MEMBER.fullmatch(value):
-                raise ValueError('Owner: you or someone in your Work Fleet')
+                raise OwnerError('Owner: you or someone in your Work Fleet')
         elif key == 'tag':
             import crm_fields
             value = crm_fields.clean_tag(value)
         elif key == 'waiting':  # no reply in 10+ days (graph.waiting_ids): on or not there
             if value != '1':
-                raise ValueError('No reply in 10+ days: on or off')
+                raise OwnerError('No reply in 10+ days: on or off')
             value = 1
         elif key == 'open_project':
             if value != '1':
-                raise ValueError('Has an open project: on or off')
+                raise OwnerError('Has an open project: on or off')
             value = 1
         elif key == 'closeness':
             if value not in CLOSENESS:
-                raise ValueError('Closeness: close, regular, occasional or faint')
+                raise OwnerError('Closeness: close, regular, occasional or faint')
         elif key == 'last_contact':
             if value not in LAST_CONTACT:
-                raise ValueError('Last contact: 30, 90 or older')
+                raise OwnerError('Last contact: 30, 90 or older')
         elif key == 'size':
             if value not in SIZES:
-                raise ValueError('Size: 1-10, 11-50, 51-200, 201-1000 or 1000+')
+                raise OwnerError('Size: 1-10, 11-50, 51-200, 201-1000 or 1000+')
         elif key == 'country':
             if not re.fullmatch(r'[A-Za-z]{2}', value):
-                raise ValueError('Country: a two-letter code, like BE')
+                raise OwnerError('Country: a two-letter code, like BE')
             value = value.lower()
         elif key == 'board':
             if not value.isdigit():
-                raise ValueError('Board: one of your boards')
+                raise OwnerError('Board: one of your boards')
             value = int(value)
         elif key in ('value_min', 'value_max'):
             try:
                 value = float(value.replace(',', '').replace(' ', '').lstrip('€$£'))
             except ValueError:
-                raise ValueError('Value: a number, like 12000') from None
+                raise OwnerError('Value: a number, like 12000') from None
         elif key in ('close_from', 'close_to'):
             try:
                 value = dt.date.fromisoformat(value).isoformat()
             except ValueError:
-                raise ValueError('Close date: a date, like 2026-12-15') from None
+                raise OwnerError('Close date: a date, like 2026-12-15') from None
         elif len(value) > 200:
-            raise ValueError(f'{key.capitalize()}: up to 200 characters')
+            raise OwnerError(f'{key.capitalize()}: up to 200 characters')
         out[key] = value
     return out
 

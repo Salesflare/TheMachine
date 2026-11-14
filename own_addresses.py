@@ -27,6 +27,7 @@ import json
 import re
 
 from machine import stamps
+from machine.owner_error import OwnerError
 
 SCHEMA = '''
 CREATE TABLE IF NOT EXISTS own_addresses(address TEXT PRIMARY KEY,sources TEXT NOT NULL,state TEXT NOT NULL,reason TEXT,updated_at TEXT NOT NULL);
@@ -336,13 +337,13 @@ def choose(db, address, choice, now, config=None):
     or 'remove' (Not mine)."""
     address = clean(address)
     if not address or choice not in CHOICES:
-        raise ValueError('Pick an address')
+        raise OwnerError('Pick an address')
     ensure(db)
     row = db.execute('SELECT state FROM own_addresses WHERE address=?', (address,)).fetchone()
     if not row:
-        raise ValueError('That address isn’t on the list anymore')
+        raise OwnerError('That address isn’t on the list anymore')
     if choice != 'confirm' and fixed(db, address, config):
-        raise ValueError('Your own sign-in address is always yours')
+        raise OwnerError('Your own sign-in address is always yours')
     db.execute('INSERT OR REPLACE INTO own_address_choices(address,choice,at) VALUES(?,?,?)', (address, choice, now))
 
 
@@ -417,13 +418,13 @@ def set_domain(db, value, on, now, config=None):
     import graph
     domain = clean_domain(value)
     if not domain:
-        raise ValueError('Type a domain, like acme.com')
+        raise OwnerError('Type a domain, like acme.com')
     if domain in graph.FREEMAIL:
-        raise ValueError('That’s a free email domain, not your company’s')
+        raise OwnerError('That’s a free email domain, not your company’s')
     ensure(db)
     if on:
         if domain in detected_domains(db, config or {}):
-            raise ValueError('That domain is yours already')
+            raise OwnerError('That domain is yours already')
         db.execute('INSERT OR REPLACE INTO own_domains(domain,at) VALUES(?,?)', (domain, now))
     else:
         db.execute('DELETE FROM own_domains WHERE domain=?', (domain,))

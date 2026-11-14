@@ -15,6 +15,7 @@ from machine.store.profile import PROFILE_SESSION_PREFIX, SHARE_HISTORY_BATCH, S
 from machine.store.review import REVIEW_TERMINAL
 import team_learnings
 from timeutil import local_tz, now
+from machine.owner_error import OwnerError
 
 SKILLS_SESSION_PREFIX = 'agent:main:assistant-review-skills-'  # the Find my skills turn: the browser, read-only, and its report
 
@@ -52,7 +53,7 @@ class ProfileApp:
         # the Find my skills turn's report; its run is the one bound to its own session
         session = str(args.get('_skills_session') or '')
         if not session.startswith(SKILLS_SESSION_PREFIX):
-            raise ValueError('Only the Find my skills turn reports skills')
+            raise OwnerError('Only the Find my skills turn reports skills')
         return self.skills_found({**args, 'run': session[len(SKILLS_SESSION_PREFIX):]})
 
     def profile_step(self, runner=None):

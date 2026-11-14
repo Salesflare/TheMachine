@@ -62,6 +62,7 @@ import recurring
 import talk_live
 from timeutil import local_tz, now
 import todo_areas
+from machine.owner_error import OwnerError
 
 
 def save_hours(path, values):
@@ -154,7 +155,7 @@ class CardChatApp:
         saved in config.json, only what differs from OpenClaw's own, so the rest keeps following OpenClaw. In use from
         the next turn; OpenClaw's config and its Gateway are left as they are."""
         if not getattr(self, 'config_path', None):
-            raise ValueError('This can’t be changed on this Machine.')
+            raise OwnerError('This can’t be changed on this Machine.')
         models = self.chat_models()
         picked = chat_model.check(args, models, {**self.config, 'chat_model': None})
         value = chat_model.minimal({**self.config, 'chat_model': None}, models, picked) or None
@@ -181,9 +182,9 @@ class CardChatApp:
         """The person's Fast choice for to-do chats (the model menu under a chat's message box), kept in config.json
         (`chat_fast`, chat_model.fast_on) for every to-do chat, from the next message. Off removes it."""
         if not getattr(self, 'config_path', None):
-            raise ValueError('This can’t be changed on this Machine.')
+            raise OwnerError('This can’t be changed on this Machine.')
         if not isinstance(args.get('fast'), bool):
-            raise ValueError('Say on or off')
+            raise OwnerError('Say on or off')
         value = True if args['fast'] else None
         save_hours(self.config_path, {'chat_fast': value})
         self.config['chat_fast'] = value
@@ -665,7 +666,7 @@ class CardChatApp:
 
     def chat_model_action(self, name, args, owner_dashboard=False):
         if not owner_dashboard:
-            raise ValueError('Only the owner picks the model, on the dashboard')
+            raise OwnerError('Only the owner picks the model, on the dashboard')
         if name == 'chat_fast_set':
             return self.chat_fast_set(args)
         return self.chat_model_default(args) if name == 'chat_model_default' else self.chat_model_set(args)

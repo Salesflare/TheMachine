@@ -29,6 +29,7 @@ import project_success
 import shared_graph
 from timeutil import in_hours, is_work_day, local_tz, now
 from machine import todo_states
+from machine.owner_error import OwnerError
 
 
 # Mail that comes from a system, not a person: by address (slipped, first-look order) and by Gmail's category labels
@@ -585,7 +586,7 @@ class ReviewStore:
         reasons = {'ai_connection_reset', 'ai_connection_closed', 'ai_timeout', 'ai_request_failed',
                    'review_not_finished', 'run_interrupted'}
         if reason not in reasons:
-            raise ValueError('Use a redacted review failure class')
+            raise OwnerError('Use a redacted review failure class')
         owner_run = service_run(owner_session, owner_run)
         with self.connect() as db:
             db.execute("UPDATE analyses SET last_error=CASE WHEN ? IN ('review_not_finished','run_interrupted') AND last_error IS NOT NULL THEN last_error ELSE ? END,error_at=?,status=CASE WHEN ? THEN 'retryable' ELSE status END WHERE owner_session=? AND owner_run=? AND status IN ('running','retryable')",
@@ -636,7 +637,7 @@ class ReviewStore:
                         rows.append(dict(row))
                 original_accounts = {r['account_id'] for r in db.execute('SELECT account_id FROM events WHERE id IN (' + ','.join('?' for _ in items) + ')', [i['id'] for i in items])} if items else set()
                 if not original_accounts <= set(accounts):
-                    raise ValueError('Resume with all accounts from the claimed review')
+                    raise OwnerError('Resume with all accounts from the claimed review')
                 items, pages = self.review_claim(rows)
                 db.execute("UPDATE analyses SET status='running',owner_session=?,owner_run=?,resumed_at=?,attempts=attempts+1,items=? WHERE id=?",
                            (owner_session, owner_run, now(), encoded(items), active['id']))
@@ -1276,13 +1277,13 @@ class ReviewStore:
             if row['status'] == 'complete':
                 return {'status': 'complete', 'replayed': True}
             if row['owner_session'] and (row['owner_session'] != owner_session or row['owner_run'] != owner_run):
-                raise ValueError('Finish only the review claimed by this session and run')
+                raise OwnerError('Finish only the review claimed by this session and run')
             if row['status'] != 'running':
-                raise ValueError('Analysis expired; begin a fresh review')
+                raise OwnerError('Analysis expired; begin a fresh review')
             items = json.loads(row['items'])
             reviewed = set(reviewed_ids) if reviewed_ids is not None else {i['id'] for i in items}
             if not reviewed <= {i['id'] for i in items}:
-                raise ValueError('Reviewed IDs must belong to this batch')
+                raise OwnerError('Reviewed IDs must belong to this batch')
             # a message whose to-do save failed is not reviewed: deferred, so a later review tries it again
             since = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(hours=review_saves.FAILED_HOURS)).isoformat()
             not_saved = review_saves.take(db, [i['id'] for i in items], since) & reviewed
@@ -1294,7 +1295,7 @@ class ReviewStore:
                 batch = {i['id'] for i in items}
                 for name, ids in projects.items():
                     if not set(ids) <= batch:
-                        raise ValueError('Project event IDs must belong to this batch')
+                        raise OwnerError('Project event IDs must belong to this batch')
                     if ids:
                         graph.label(db, ids, name, 'review', now())
             moved = []

@@ -15,6 +15,7 @@ from machine.store.voices import voice_channel
 import memory_use
 from timeutil import now
 import todo_areas
+from machine.owner_error import OwnerError
 
 
 FACTS_ALL_UNDER = 1200  # while what was learned is this short, every preparation gets all of it
@@ -471,7 +472,7 @@ class FactsStore:
         if not by_ai and side is not None:
             raise ValueError('Only a fact from a connected AI has an area')
         if not 5 <= len(text) <= 240:
-            raise ValueError('A fact is one short sentence (5-240 characters)')
+            raise OwnerError('A fact is one short sentence (5-240 characters)')
         kind = kind or 'fact'
         storage, sort = ('fact', kind) if kind in FACT_SORTS else (kind, None)
         if storage not in FACT_KINDS:
@@ -656,7 +657,7 @@ class FactsStore:
         edit), tied to that record by them. The same text already learned is tied to it instead of saved twice."""
         text = ' '.join(str(text or '').split())
         if not 5 <= len(text) <= 240:
-            raise ValueError('Keep it to one short sentence (5-240 characters)')
+            raise OwnerError('Keep it to one short sentence (5-240 characters)')
         with self.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             if not db.execute("SELECT 1 FROM graph_nodes WHERE id=? AND kind IN ('person','org','project')", (str(node_id),)).fetchone():
@@ -696,7 +697,7 @@ class FactsStore:
                 refs = ('expired:' + str(int(expired)), 'aside:' + str(int(expired)))
                 if not db.execute('UPDATE facts SET removed_at=NULL,merged_into=NULL,valid_until=NULL,confirmed_at=?,kept_at=? WHERE id=? AND merged_into IN (?,?)',
                                   (now(), now(), int(expired), *refs)).rowcount:
-                    raise ValueError('Nothing to bring back.')
+                    raise OwnerError('Nothing to bring back.')
                 db.execute("INSERT INTO rule_changes(at,kind,text,ref) VALUES(?,'condense',?,?)", (now(), 'Brought back a fact', refs[0]))
             return {'restored': 1}
         into = 'skill:' + str(skill) if skill else 'voice:' + voice_channel(channel) if channel else 'fact:' + str(int(fact_id))
@@ -704,7 +705,7 @@ class FactsStore:
             db.execute('BEGIN IMMEDIATE')
             back = db.execute('UPDATE facts SET removed_at=NULL,merged_into=NULL WHERE merged_into=?', (into,)).rowcount
             if not back:
-                raise ValueError('Nothing was merged into that')
+                raise OwnerError('Nothing was merged into that')
             if not channel and not skill:
                 db.execute('UPDATE facts SET removed_at=? WHERE id=? AND removed_at IS NULL', (now(), int(fact_id)))
             elif channel:
@@ -774,7 +775,7 @@ class FactsStore:
             marks = ','.join('?' * len(ids))
             found = db.execute(f'SELECT count(*),max(ingested_at) FROM events WHERE deleted=0 AND id IN ({marks})', ids).fetchone()
             if found[0] != len(ids):
-                raise ValueError('Every event must exist and be live')
+                raise OwnerError('Every event must exist and be live')
             if (found[1] or '') <= max(row['confirmed_at'] or '', row['created_at'] or '', row['kept_at'] or ''):
                 return {'skipped': 'the fact was said or kept after these messages; it stands'}
             db.execute('UPDATE facts SET removed_at=?,merged_into=?,valid_until=? WHERE id=?', (now(), 'expired:' + str(row['id']), now()[:10], row['id']))
@@ -786,7 +787,7 @@ class FactsStore:
         """The owner rewrites something learned in their own words: same fact or rule, new text."""
         text = ' '.join(str(text or '').split())
         if not 5 <= len(text) <= 240:
-            raise ValueError('Keep it to one short sentence (5-240 characters)')
+            raise OwnerError('Keep it to one short sentence (5-240 characters)')
         with self.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             row = db.execute('SELECT kind,text FROM facts WHERE id=? AND removed_at IS NULL', (int(fact_id),)).fetchone()
@@ -795,7 +796,7 @@ class FactsStore:
             if row['text'] == text:
                 return {'id': int(fact_id), 'unchanged': True}
             if db.execute('SELECT 1 FROM facts WHERE removed_at IS NULL AND kind=? AND lower(text)=lower(?) AND id!=?', (row['kind'], text, int(fact_id))).fetchone():
-                raise ValueError('That is already in what I’ve learned')
+                raise OwnerError('That is already in what I’ve learned')
             db.execute('UPDATE facts SET text=?,kept_at=? WHERE id=?', (text, now(), int(fact_id)))  # in their words: kept
             db.execute('DELETE FROM fact_vectors WHERE fact_id=?', (int(fact_id),))  # it means something else now
             if row['kind'] == 'draft':

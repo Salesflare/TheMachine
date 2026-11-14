@@ -6,6 +6,7 @@ checks where each may come from, as before (the dashboard, and Telegram's owner 
 import json
 
 import shared_graph
+from machine.owner_error import OwnerError
 
 
 class SharedGraphApp:
@@ -31,9 +32,9 @@ class SharedGraphApp:
     def graph_share_action(self, name, args, owner_dashboard=False):
         """The owner's Shared Graph controls, from the dashboard (and Telegram's owner chat through graph share)."""
         if name == 'graph_private' and args.get('private') is not False and self.about_you_node(str(args.get('node_id') or '')):
-            raise ValueError('That’s About you: your own record is never shared, so there’s nothing to keep private')
+            raise OwnerError('That’s About you: your own record is never shared, so there’s nothing to keep private')
         if not getattr(self, 'fleet', None):
-            raise ValueError('Join a Work Fleet to share with your team')
+            raise OwnerError('Join a Work Fleet to share with your team')
         if name == 'graph_share_many' and args.get('share') == 'people':  # Share these?, Share with…: chosen teammates only
             return self.fleet.graph_threads_share(args.get('event_ids') or [], args.get('people') or [])
         with self.store.connect() as db:
@@ -45,7 +46,7 @@ class SharedGraphApp:
                 row = db.execute('SELECT id,account_id,kind,metadata FROM events WHERE id=?', (int(args.get('event_id') or 0),)).fetchone()
                 label = self.fleet.thread_labels(db, [dict(row)]).get(row['id']) if row else None
                 if not label:
-                    raise ValueError('Only messages in a Work account are shared with your team')
+                    raise OwnerError('Only messages in a Work account are shared with your team')
                 if label['fixed'] and choice == 'team':
                     raise ValueError('Personal threads are never shared' if label.get('view') == 'personal'
                                      else 'Only colleagues are on this thread, so it stays with the people on it')
@@ -70,7 +71,7 @@ class SharedGraphApp:
             if name == 'graph_rule':  # "Always keep threads with X private?" (or always share), asked once after a pattern
                 choice = {'team': 'team', 'only_you': 'private', 'private': 'private', 'none': None}.get(str(args.get('choice') or ''), False)
                 if choice is False:
-                    raise ValueError('Choose team, private or none')
+                    raise OwnerError('Choose team, private or none')
                 return {'ok': True, 'rule': shared_graph.set_rule(db, args.get('key'), choice, args.get('name') or '')}
             if name == 'graph_private':  # Keep private on a person, organization or project: it and its threads stay here
                 return {'ok': True, 'private': shared_graph.keep_private(db, str(args.get('node_id') or ''), args.get('private') is not False)}

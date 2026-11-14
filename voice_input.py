@@ -46,6 +46,7 @@ import time
 import urllib.request
 import wave
 from pathlib import Path
+from machine.owner_error import OwnerError
 
 ROOT = Path(__file__).resolve().parent
 REQUIREMENTS = ROOT / 'voice-requirements.txt'
@@ -122,21 +123,21 @@ def set_prefs(db, args, openai_ok):
     changes = {}
     if 'engine' in args:
         if args['engine'] not in ENGINES:
-            raise ValueError('Pick Automatic, this Machine or OpenAI')
+            raise OwnerError('Pick Automatic, this Machine or OpenAI')
         if args['engine'] == 'openai' and not openai_ok:
-            raise ValueError('Voice through OpenAI needs an API key, or a ChatGPT sign-in that allows audio')
+            raise OwnerError('Voice through OpenAI needs an API key, or a ChatGPT sign-in that allows audio')
         changes['engine'] = args['engine']
     if 'model' in args:
         if args['model'] not in MODELS:
-            raise ValueError('Pick Faster or More accurate')
+            raise OwnerError('Pick Faster or More accurate')
         changes['model'] = args['model']
     if 'language' in args:
         if args['language'] not in ('', *LANGUAGES):
-            raise ValueError('Pick a language, or Detect')
+            raise OwnerError('Pick a language, or Detect')
         changes['language'] = args['language']
     if 'talk_voice' in args:
         if args['talk_voice'] not in TALK_VOICES:
-            raise ValueError('Pick one of the voices')
+            raise OwnerError('Pick one of the voices')
         changes['talk_voice'] = args['talk_voice']
     for key, value in changes.items():
         db.execute('INSERT INTO voice_prefs(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value',
@@ -168,15 +169,15 @@ def pcm(data):
     try:
         with wave.open(io.BytesIO(data)) as clip:
             if clip.getnchannels() != 1 or clip.getsampwidth() != 2 or clip.getframerate() != RATE:
-                raise ValueError('That recording couldn’t be read. Try again.')
+                raise OwnerError('That recording couldn’t be read. Try again.')
             frames = clip.readframes(clip.getnframes())
     except (wave.Error, EOFError) as error:
-        raise ValueError('That recording couldn’t be read. Try again.') from error
+        raise OwnerError('That recording couldn’t be read. Try again.') from error
     seconds = len(frames) / (RATE * 2)
     if seconds < 0.3:
-        raise ValueError('That was too short. Talk a little longer.')
+        raise OwnerError('That was too short. Talk a little longer.')
     if seconds > MAX_SECONDS + 5:
-        raise ValueError(f'Recordings can be up to {MAX_SECONDS // 60} minutes.')
+        raise OwnerError(f'Recordings can be up to {MAX_SECONDS // 60} minutes.')
     return frames, seconds
 
 
@@ -348,12 +349,12 @@ class Voice:
                 answer = self._line(process, timeout)
             except (OSError, ValueError, TimeoutError, EOFError):
                 self.stop()
-                raise ValueError('Voice didn’t answer. Try again.')
+                raise OwnerError('Voice didn’t answer. Try again.')
             finally:
                 self.used = time.monotonic()
                 self._idle()
         if answer.get('error'):
-            raise ValueError('That recording couldn’t be turned into text. Try again.')
+            raise OwnerError('That recording couldn’t be turned into text. Try again.')
         return {'text': str(answer.get('text') or '').strip(), 'language': answer.get('language')}
 
     def _worker(self, model):
@@ -371,7 +372,7 @@ class Voice:
                 raise EOFError()
         except (OSError, ValueError, TimeoutError, EOFError):
             self.stop()
-            raise ValueError('Voice couldn’t start on this Machine. Try again.')
+            raise OwnerError('Voice couldn’t start on this Machine. Try again.')
         return process
 
     @staticmethod
@@ -449,12 +450,12 @@ def openai_transcribe(config, root, frames, language, run=subprocess.run):
             result = run(command, capture_output=True, text=True, timeout=120)
             answer = json.loads(result.stdout)
         except (OSError, ValueError, subprocess.TimeoutExpired) as error:
-            raise ValueError('OpenAI didn’t answer. Try again, or use this Machine for voice in Settings.') from error
+            raise OwnerError('OpenAI didn’t answer. Try again, or use this Machine for voice in Settings.') from error
     finally:
         shutil.rmtree(folder, ignore_errors=True)
     outputs = answer.get('outputs') if isinstance(answer, dict) and answer.get('ok') else None
     if not outputs:
-        raise ValueError('OpenAI didn’t answer. Try again, or use this Machine for voice in Settings.')
+        raise OwnerError('OpenAI didn’t answer. Try again, or use this Machine for voice in Settings.')
     return {'text': ' '.join(str(o.get('text') or '').strip() for o in outputs if isinstance(o, dict)).strip(),
             'language': language or None}
 

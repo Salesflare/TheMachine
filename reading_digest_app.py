@@ -20,6 +20,7 @@ import todo_areas
 from machine.store import outcomes
 from models import background_model
 from machine import todo_states
+from machine.owner_error import OwnerError
 
 LOG = logging.getLogger('personal-assistant')
 DIGEST_TIMEOUT = 120  # seconds the model call may take
@@ -39,12 +40,12 @@ class ReadingDigestApp:
     def digest_feedback_action(self, name, args, owner_dashboard):
         """More like this or Less like this on a digest's item (feedback: more, less, or none to take it back)."""
         if not owner_dashboard:
-            raise ValueError('Only the owner says this, on the dashboard')
+            raise OwnerError('Only the owner says this, on the dashboard')
         value = args.get('feedback') or None
         try:
             n = int(args.get('item'))
         except (TypeError, ValueError):
-            raise ValueError(i18n.t('That item is gone')) from None
+            raise OwnerError(i18n.t('That item is gone')) from None
         with self.store.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             reading_digest.ensure(db)
@@ -54,14 +55,14 @@ class ReadingDigestApp:
     def digest_interest_action(self, name, args, owner_dashboard):
         """Add a topic to More of or Less of (kind), or take one off (remove)."""
         if not owner_dashboard:
-            raise ValueError('Only the owner changes this, on the dashboard')
+            raise OwnerError('Only the owner changes this, on the dashboard')
         with self.store.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             reading_digest.ensure(db)
             if args.get('remove'):
                 reading_digest.drop_interest(db, args.get('topic'))
             elif not reading_digest.set_interest(db, args.get('topic'), args.get('kind') or 'more', 'owner', self.routines_stamp()):
-                raise ValueError(i18n.t('Type a topic of a few words'))
+                raise OwnerError(i18n.t('Type a topic of a few words'))
             return {'saved': True, 'interests': reading_digest.interests(db)}
 
     def digest_interests(self):

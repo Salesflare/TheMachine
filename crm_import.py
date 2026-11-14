@@ -28,6 +28,7 @@ import crm
 import crm_fields
 import crm_fixes
 import graph
+from machine.owner_error import OwnerError
 
 MAX_ROWS = 5000
 MAX_COLUMNS = 60
@@ -77,9 +78,9 @@ def read(text):
     """(headers, rows) from the file's text: comma, semicolon or tab separated, a first row of headers."""
     text = str(text or '').lstrip('﻿')
     if not text.strip():
-        raise ValueError('That file is empty')
+        raise OwnerError('That file is empty')
     if len(text) > 8 * 1024 * 1024:
-        raise ValueError('That file is too big: up to 8 MB')
+        raise OwnerError('That file is too big: up to 8 MB')
     head = text[:4096]
     try:
         dialect = csv.Sniffer().sniff(head, delimiters=',;\t')
@@ -87,10 +88,10 @@ def read(text):
         dialect = csv.excel
     rows = [r for r in csv.reader(io.StringIO(text), dialect) if any(c.strip() for c in r)]
     if len(rows) < 2:
-        raise ValueError('The file needs a row of headers and at least one row under it')
+        raise OwnerError('The file needs a row of headers and at least one row under it')
     headers = [' '.join(h.split())[:80] or f'Column {i + 1}' for i, h in enumerate(rows[0][:MAX_COLUMNS])]
     if len(rows) - 1 > MAX_ROWS:
-        raise ValueError(f'Up to {MAX_ROWS} rows at a time')
+        raise OwnerError(f'Up to {MAX_ROWS} rows at a time')
     return headers, [[c.strip() for c in r[:len(headers)]] + [''] * (len(headers) - len(r)) for r in rows[1:]]
 
 
@@ -146,9 +147,9 @@ def clean_mapping(kind, headers, mapping, rows=()):
         if not field or not 0 <= i < len(headers):
             continue
         if field not in FIELDS[kind]:
-            raise ValueError(f'{field} is not a field you can import')
+            raise OwnerError(f'{field} is not a field you can import')
         if field in seen:
-            raise ValueError(f'{FIELDS[kind][field][0]} is picked for two columns')
+            raise OwnerError(f'{FIELDS[kind][field][0]} is picked for two columns')
         seen.add(field)
         out[i] = field
     return out
@@ -269,7 +270,7 @@ def ai_evidence(db, kind, text, region=None, currency=None):
     """What the owner's model gets to look at for this file: the headers with a few values each and the rules' guess,
     the fields to map to, the boards' stages, and up to AI_CELLS cells the rules can't read. Never the whole file."""
     if kind not in FIELDS:
-        raise ValueError('Import people, organizations or projects')
+        raise OwnerError('Import people, organizations or projects')
     headers, rows = read(text)
     mapping = guess(kind, headers, rows)
     ctx = context(db, kind, headers, rows, mapping, region, currency)
@@ -307,7 +308,7 @@ def ai_draft(kind, evidence, said):
         if key in given and crm_fixes.valid(key[1], after, ctx):
             fixes.append({'line': key[0], 'field': key[1], 'after': after, 'why': ' '.join(str(f.get('why') or '').split())[:100]})
     if not mapping and not fixes:
-        raise ValueError('Nothing to save: map at least one column or fix a cell')
+        raise OwnerError('Nothing to save: map at least one column or fix a cell')
     return {'mapping': {str(k): v for k, v in mapping.items()}, 'reasons': {str(k): v for k, v in reasons.items()}, 'fixes': fixes}
 
 
@@ -322,7 +323,7 @@ def plan(db, kind, text, mapping=None, fixes=None, ai=None, region=None, currenc
     """Each row with what Import would do: new, match (with the record it updates) or skip (with why), and the fixes
     suggested (those the owner kept, `fixes`, applied). `ai` is the owner's model's draft for this file."""
     if kind not in FIELDS:
-        raise ValueError('Import people, organizations or projects')
+        raise OwnerError('Import people, organizations or projects')
     headers, rows = read(text)
     if mapping is None and ai and ai.get('mapping'):
         mapping = ai['mapping']
@@ -660,12 +661,12 @@ def undo(db, import_id, now):
         db.execute('BEGIN IMMEDIATE')
     row = db.execute('SELECT * FROM graph_imports WHERE id=? AND undone_at IS NULL AND undo IS NOT NULL', (int(import_id or 0),)).fetchone()
     if not row:
-        raise ValueError('Only the last import can be undone')
+        raise OwnerError('Only the last import can be undone')
     plan_ = json.loads(row['undo'])
     if not plan_.get('after'):
-        raise ValueError('That older import has no change history for Undo. Edit its records directly instead.')
+        raise OwnerError('That older import has no change history for Undo. Edit its records directly instead.')
     if _undo_state(db, plan_) != plan_['after']:
-        raise ValueError('These records changed since the import. Undo would overwrite those changes; edit them directly instead.')
+        raise OwnerError('These records changed since the import. Undo would overwrite those changes; edit them directly instead.')
     for node_id, label in plan_.get('tags') or ():
         db.execute('DELETE FROM crm_tags WHERE node_id=? AND tag=?', (node_id, label))
     for item in reversed(plan_['changed']):

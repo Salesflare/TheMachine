@@ -31,6 +31,7 @@ import urllib.parse
 import activity_log
 import fleet
 import i18n
+from machine.owner_error import OwnerError
 
 LEVELS = ('off', 'read', 'draft')
 AREAS = ('both', 'work', 'personal')
@@ -402,7 +403,7 @@ def approve(db, req, level, area, expiry, issuer, messages=False):
     if req.get('error'):
         return deny(req, issuer)
     if level not in ('read', 'draft') or area not in AREAS or expiry not in EXPIRY_DAYS:
-        raise ValueError('Pick the access, the area and how long')
+        raise OwnerError('Pick the access, the area and how long')
     at = _now()
     until = stamp(at + dt.timedelta(days=EXPIRY_DAYS[expiry]))
     name, _, _ = label({'name': req['name']}, req['redirect_uri'])
@@ -685,7 +686,7 @@ activity_log.register('ai', activity_lines)
 def _connection(db, connection_id):
     row = db.execute('SELECT * FROM ai_connections WHERE id=?', (str(connection_id or ''),)).fetchone()
     if not row:
-        raise ValueError(i18n.t('That connection is gone'))
+        raise OwnerError(i18n.t('That connection is gone'))
     return row
 
 
@@ -741,7 +742,7 @@ def remove(db, connection_id):
 def new_key(db, name, level, area, expiry):
     """Add a key: a connection signed in with a key instead of OAuth. The key is returned once and kept only hashed."""
     if level not in ('read', 'draft') or area not in AREAS or expiry not in EXPIRY_DAYS:
-        raise ValueError('Pick the access, the area and how long')
+        raise OwnerError('Pick the access, the area and how long')
     key, at = KEY_PREFIX + secrets.token_urlsafe(32), _now()
     cid = 'aic_' + secrets.token_hex(8)
     db.execute("INSERT INTO ai_connections(id,name,kind,key_hash,level,area,expires_at,created_at) VALUES(?,?,'key',?,?,?,?,?)",

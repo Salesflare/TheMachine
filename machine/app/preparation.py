@@ -54,6 +54,7 @@ import talk_live
 from timeutil import local_tz, now
 import todo_areas
 from machine import todo_states
+from machine.owner_error import OwnerError
 
 
 # The longest turn message the runner (preparation-run.mjs) starts; it refuses longer ones before the Gateway sees them.
@@ -685,7 +686,7 @@ class PreparationApp:
             waiting = browser_wait(db, job['job_id'], job['status']) if job else None
             steps = preparation_steps(db, job['job_id']) if job and job['status'] in ('starting', 'running') else []
         if not job:
-            raise ValueError('No preparation')
+            raise OwnerError('No preparation')
         running = job['status'] in ('starting', 'running')
         return {'status': job['status'], 'started_at': job['started_at'], 'steps': steps,
                 'browser': {**waiting, 'link': browser_link(self.config)} if waiting else None,
@@ -787,7 +788,7 @@ class PreparationApp:
     def tool_approval_proposal_action(self, name, args, owner_dashboard=False):
         host = self.config.get('dashboard_host')
         if not host:
-            raise ValueError('Private dashboard unavailable for full approval')
+            raise OwnerError('Private dashboard unavailable for full approval')
         proposal_id = self.store.tool_approval_proposal(args['id'], args['title'], args['detail'])
         root = 'https://' + host + self.config.get('dashboard_path', '/')
         return {'id': proposal_id, 'url': root.rstrip('/') + '/approval?id=' + proposal_id}

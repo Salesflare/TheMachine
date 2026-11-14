@@ -20,6 +20,7 @@ from machine.text import _address, encoded
 import memory_use
 from timeutil import local_tz, now
 from machine import todo_states
+from machine.owner_error import OwnerError
 
 
 # When an open promise is checked without a date: the owner's own after 3 days, someone else's after a week.
@@ -346,7 +347,7 @@ class PromisesStore:
                 note = reason or row['note'] if source == 'dashboard' else reason or None
                 check_at = self.move_promise(db, dict(row), due, newer['id'] if newer else None, digest_at, note)
                 return {'id': row['id'], 'status': row['status'], 'due': due, 'check_at': check_at}
-        raise ValueError("Update a promise with status 'kept' or 'dropped' and a reason, or with a new due date")
+        raise OwnerError("Update a promise with status 'kept' or 'dropped' and a reason, or with a new due date")
 
     def move_promise(self, db, row, due, event_id=None, digest_at='08:30', note=None):
         """A promise given a new date (a later message rescheduled it, or the owner on the dashboard): its date and when
@@ -420,7 +421,7 @@ class PromisesStore:
         if card and card['status'] not in todo_states.CLOSED:
             self._decide(db, card['id'], 'complete' if status == 'kept' else 'reject', '', 'promise-close:' + uuid.uuid4().hex, 'dashboard')
         elif card and {'completed': 'kept', 'rejected': 'dropped'}[card['status']] != status:
-            raise ValueError('Its to-do is closed already. Open the to-do to change that.')
+            raise OwnerError('Its to-do is closed already. Open the to-do to change that.')
         if not card:
             db.execute('UPDATE promises SET status=?,note=?,updated_at=? WHERE id=?',
                        (status, ('Done' if status == 'kept' else 'Not needed') + ' (you)', now(), row['id']))

@@ -42,6 +42,7 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 import timeutil
+from machine.owner_error import OwnerError
 
 ROOT = Path(__file__).resolve().parent
 LOG = logging.getLogger('personal-assistant')
@@ -878,19 +879,19 @@ class Talk:
         self.sweep()
         with self.lock:
             if main and any(t.get('main') for t in self.open.values()):
-                raise ValueError('Talk is already open. End it first.')
+                raise OwnerError('Talk is already open. End it first.')
             if not main and any(t['suggestion_id'] == suggestion_id for t in self.open.values()):
-                raise ValueError('A live conversation is already open for this to-do. End it first.')
+                raise OwnerError('A live conversation is already open for this to-do. End it first.')
             if len(self.open) >= 2:
-                raise ValueError('Two live conversations are already open. End one first.')
+                raise OwnerError('Two live conversations are already open. End one first.')
         try:
             held = self.hold(env)
         except OSError:
-            raise ValueError('Talk live couldn’t start. Try again.') from None
+            raise OwnerError('Talk live couldn’t start. Try again.') from None
         made = held.ask({'method': 'start', 'session_key': SESSION_PREFIX + (suggestion_id or 'main'), 'voice': voice})
         if made.get('error') or not made.get('secret'):
             held.close()
-            raise ValueError('Talk live couldn’t start. Check the ChatGPT sign-in or OpenAI key, then try again.'
+            raise OwnerError('Talk live couldn’t start. Check the ChatGPT sign-in or OpenAI key, then try again.'
                              if made.get('reason') == 'auth' else 'Talk live couldn’t start. Try again.')
         talk_id = secrets.token_hex(8)
         with self.lock:
@@ -905,9 +906,9 @@ class Talk:
         with self.lock:
             found = self.open.get(str(talk_id or ''))
         if not found or (suggestion_id is not None and subject(found) != suggestion_id):
-            raise ValueError('This live conversation has ended.')
+            raise OwnerError('This live conversation has ended.')
         if self.clock() - found['started'] > found.get('limit', LIMIT_SECONDS) + GRACE_SECONDS:
-            raise ValueError('This live conversation has ended.')
+            raise OwnerError('This live conversation has ended.')
         return found
 
     def focus(self, talk_id, suggestion_id):
@@ -925,10 +926,10 @@ class Talk:
         """The browser's WebRTC offer, handed on with the session's secret (once); the answer goes back."""
         found = self.get(talk_id)
         if not isinstance(sdp, str) or not sdp.startswith('v=0') or len(sdp) > 262144:
-            raise ValueError('Talk live couldn’t connect. Try again.')
+            raise OwnerError('Talk live couldn’t connect. Try again.')
         with self.lock:
             if found['offered']:
-                raise ValueError('Talk live couldn’t connect. Try again.')
+                raise OwnerError('Talk live couldn’t connect. Try again.')
             found['offered'] = True
         got = found['held'].ask({'method': 'offer', 'session_key': SESSION_PREFIX + (found['suggestion_id'] or 'main'), 'sdp': sdp, 'secret': found['secret'],
                                  'offer_url': found['offer_url'], 'offer_headers': found['offer_headers']})
@@ -938,7 +939,7 @@ class Talk:
             LOG.warning('talk live offer failed via=%s reason=%s status=%s openai=%s', log_word(found.get('via')),
                         log_word(got.get('reason') or ('no_answer' if not got.get('error') else got.get('error'))), log_number(got.get('status')), log_number(got.get('openai')))
             self.end(talk_id, env)
-            raise ValueError('Talk live couldn’t connect. Try again.')
+            raise OwnerError('Talk live couldn’t connect. Try again.')
         return {'sdp': got['sdp']}
 
     def line(self, db, talk_id, role, text, at):
@@ -947,7 +948,7 @@ class Talk:
         found = self.get(talk_id)
         text = ' '.join(str(text or '').split())[:LINE_CHARS]
         if role not in ROLES or not text:
-            raise ValueError('Nothing to keep')
+            raise OwnerError('Nothing to keep')
         db.execute('INSERT INTO talk_lines(suggestion_id,talk_id,role,text,at) VALUES(?,?,?,?,?)', (subject(found) or '', talk_id, role, text, at))
         return {'ok': True}
 

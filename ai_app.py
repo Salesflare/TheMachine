@@ -32,6 +32,7 @@ import pairing
 import person_summary
 import shared_graph
 from machine import todo_states
+from machine.owner_error import OwnerError
 
 OPEN = todo_states.OPEN_NOT_SNOOZED  # list_todos' "open": snoozed ones are their own status there (status=snoozed)
 EMAIL = re.compile(r'[^@\s<>",;]{1,64}@[A-Za-z0-9.-]{1,190}\.[A-Za-z]{2,24}')
@@ -78,7 +79,7 @@ class AiApp:
 
     def ai_dashboard_action(self, name, args, owner_dashboard):
         if not owner_dashboard:
-            raise ValueError('Only the owner manages connected AIs, on the dashboard (Settings, Connected AIs)')
+            raise OwnerError('Only the owner manages connected AIs, on the dashboard (Settings, Connected AIs)')
         if name in ('ai_pair_start', 'ai_pair_state', 'ai_unpair', 'ai_undo', 'ai_apply', 'ai_dismiss'):
             return getattr(self, name)(args)
         cid = str(args.get('id') or '')
@@ -164,7 +165,7 @@ class AiApp:
         dashboard opens it; one that is paired but whose account has no name yet goes to the Account page for it.
         Either way the dashboard then follows ai_pair_state."""
         if self.config.get('manage_url'):
-            raise ValueError(i18n.t('This Machine is on your account already'))
+            raise OwnerError(i18n.t('This Machine is on your account already'))
         if getattr(self, 'fleet', None) is not None:
             self.ai_reach_kept = None
             return {'url': fleet.account_url(self.config) or fleet.CONTROL + '/account', 'state': 'name'}
@@ -172,7 +173,7 @@ class AiApp:
         try:
             made = pairing.start(self.config, label)
         except fleet.Limited:
-            raise ValueError(i18n.t('Too many tries. Wait a few minutes.')) from None
+            raise OwnerError(i18n.t('Too many tries. Wait a few minutes.')) from None
         made['state'] = 'waiting'
         self.ai_pairing = made
         guard = self.__dict__.setdefault('ai_pair_lock', threading.Lock())
@@ -223,7 +224,7 @@ class AiApp:
         """Unpair (Settings, Apps): this Machine's token goes, the Fleet stops. The account keeps the device until it is
         disconnected there."""
         if self.config.get('manage_url'):
-            raise ValueError(i18n.t('A hosted Machine stays on your account'))
+            raise OwnerError(i18n.t('A hosted Machine stays on your account'))
         if getattr(self, 'fleet', None) is None:
             return self.ai_view_now()
         try:
@@ -250,7 +251,7 @@ class AiApp:
     def ai_area_given(self, area):
         area = area or 'both'
         if area != 'both' and area not in self.ai_areas():
-            raise ValueError(i18n.t('No account here is {}', i18n.t('Work' if area == 'work' else 'Personal')))
+            raise OwnerError(i18n.t('No account here is {}', i18n.t('Work' if area == 'work' else 'Personal')))
         return area if len(self.ai_areas()) > 1 else 'both'
 
     # ------------------------------------------------------------------ addresses
@@ -608,7 +609,7 @@ class AiApp:
     def ai_tool_create_todo(self, connection, args):
         text = ' '.join(str(args.get('text') or '').split())
         if not text:
-            raise ValueError('Say what needs doing')
+            raise OwnerError('Say what needs doing')
         if len(text) > 2000:
             raise ValueError('Keep it under 2000 characters')
         _, want = self.ai_accounts(connection, args.get('area'))
@@ -868,12 +869,12 @@ class AiApp:
             db.execute('BEGIN IMMEDIATE')
             asked = ai_access.written(db, args.get('id'))
             if not asked:
-                raise ValueError(i18n.t('This change is gone'))
+                raise OwnerError(i18n.t('This change is gone'))
             if asked['waiting'] != 1:
-                raise ValueError(i18n.t('This change was decided already'))
+                raise OwnerError(i18n.t('This change was decided already'))
             connection = db.execute('SELECT * FROM ai_connections WHERE id=?', (asked['connection_id'],)).fetchone()
             if not connection:
-                raise ValueError(i18n.t('That connection is gone'))
+                raise OwnerError(i18n.t('That connection is gone'))
             ai_access.set_waiting(db, asked['id'], 0)
         try:
             _, said, *write = getattr(self, 'ai_tool_' + asked['tool'])({**dict(connection), 'messages': 0}, asked['changes'].get('args') or {})
@@ -891,9 +892,9 @@ class AiApp:
         with self.store.connect() as db:
             asked = ai_access.written(db, args.get('id'))
             if not asked:
-                raise ValueError(i18n.t('This change is gone'))
+                raise OwnerError(i18n.t('This change is gone'))
             if not ai_access.set_waiting(db, asked['id'], -1, was=1):
-                raise ValueError(i18n.t('This change was decided already'))
+                raise OwnerError(i18n.t('This change was decided already'))
         return {'dismissed': True}
 
     def ai_part_state(self, db, node_id, change):
@@ -924,17 +925,17 @@ class AiApp:
             db.execute('BEGIN IMMEDIATE')
             done = ai_access.written(db, args.get('id'))
             if not done:
-                raise ValueError(i18n.t('This change is gone'))
+                raise OwnerError(i18n.t('This change is gone'))
             if done['undone_at']:
-                raise ValueError(i18n.t('This change was undone already'))
+                raise OwnerError(i18n.t('This change was undone already'))
             if done['waiting']:
-                raise ValueError(i18n.t('This change was never applied'))
+                raise OwnerError(i18n.t('This change was never applied'))
             try:
                 now = [self.ai_part_state(db, done['node_id'], c) for c in done['changes']]
             except ValueError:
                 now = None  # the record is gone (deleted or merged away): nothing left to put back
             if now is None or json.loads(json.dumps(now, sort_keys=True)) != [c['after'] for c in done['changes']]:
-                raise ValueError(i18n.t('This changed again since, so Undo would overwrite that. Change it on the page instead.'))
+                raise OwnerError(i18n.t('This changed again since, so Undo would overwrite that. Change it on the page instead.'))
             for change in done['changes']:
                 self.ai_part_restore(db, done['node_id'], change)
             ai_access.mark_undone(db, done['id'])

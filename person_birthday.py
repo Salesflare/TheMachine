@@ -22,6 +22,7 @@ from __future__ import annotations
 import datetime as dt
 import json
 import re
+from machine.owner_error import OwnerError
 
 FIELD = 'birthday'
 SOURCE = 'owner'
@@ -40,16 +41,16 @@ def clean(month, day, year=None, today=None):
     try:
         month, day = int(month), int(day)
     except (TypeError, ValueError):
-        raise ValueError('Pick a month and a day') from None
+        raise OwnerError('Pick a month and a day') from None
     text = str(year if year is not None else '').strip()
     if text and not re.fullmatch(r'\d{4}', text):
-        raise ValueError('Year: four digits, like 1990')
+        raise OwnerError('Year: four digits, like 1990')
     try:
         dt.date(int(text) if text else 2000, month, day)  # 2000 is a leap year: 29 February is a day without a year
     except ValueError:
-        raise ValueError('That day isn’t in that month' if 1 <= month <= 12 else 'Pick a month and a day') from None
+        raise OwnerError('That day isn’t in that month' if 1 <= month <= 12 else 'Pick a month and a day') from None
     if text and not FIRST_YEAR <= int(text) <= (today or dt.date.today()).year:
-        raise ValueError('Year: not in the future, from 1900')
+        raise OwnerError('Year: not in the future, from 1900')
     return f'{text}-{month:02d}-{day:02d}' if text else f'--{month:02d}-{day:02d}'
 
 
@@ -139,7 +140,7 @@ def set_birthday(db, node_id, args, now, code=None):
     import crm
     row = crm.node_row(db, node_id)
     if row['kind'] != 'person':
-        raise ValueError('A birthday is for a person')
+        raise OwnerError('A birthday is for a person')
     import birthdays
     import enrichment
     ids = birthdays.person_ids(row['id'], json.loads(row['info'] or '{}'), code)

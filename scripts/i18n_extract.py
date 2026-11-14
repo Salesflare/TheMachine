@@ -13,8 +13,9 @@ translated in every language); nothing in the markup changes. What is read:
 
 - dashboard.html: all of its markup and every script in it (AREAS only groups them for a report);
 - server text the dashboard shows: every error the Python modules raise with a message (it reaches the dashboard as
-  the request's error), the strings in SERVER_TEXT's functions (lines the dashboard shows as they come) and every
-  i18n.t() key;
+  the request's error), every OwnerError message (machine/owner_error.py: the owner's own, also each side of an
+  `if`/`else` or `or`, and also one made without a raise), the strings in SERVER_TEXT's functions (lines the
+  dashboard shows as they come) and every i18n.t() key;
 - the OpenClaw plugin (openclaw-plugin/*.ts): every t() key and the button labels it translates.
 
 tests/test_i18n.py fails when any of it is neither in en.json nor in i18n/not-ui.json (strings the extractor finds that
@@ -494,6 +495,25 @@ def _is_t(node):
                                            or isinstance(node.func, ast.Attribute) and node.func.attr == 't')
 
 
+def _owner_error(node):
+    """OwnerError(message) (machine/owner_error.py), raised or not: the dashboard shows its message as it is."""
+    import ast
+    return (isinstance(node, ast.Call) and node.args and
+            (getattr(node.func, 'id', None) == 'OwnerError' or getattr(node.func, 'attr', None) == 'OwnerError'))
+
+
+def _owner_texts(node):
+    """The literal messages an OwnerError's argument can be: a literal, or each literal side of an `if`/`else` or an
+    `or` ('That board is gone' if board else 'That project is gone'). A t() key is read as one already."""
+    import ast
+    if isinstance(node, ast.IfExp):
+        return _owner_texts(node.body) + _owner_texts(node.orelse)
+    if isinstance(node, ast.BoolOp):
+        return [text for value in node.values for text in _owner_texts(value)]
+    text = _py_text(node)
+    return [text] if text and _english(text) else []
+
+
 # Keys of the dicts a server answer carries whose string values the dashboard shows as they are
 SHOWN_KEYS = {'label', 'text', 'title', 'hint', 'error', 'message', 'summary'}
 
@@ -532,6 +552,8 @@ def server_strings(root=ROOT):
                     if (isinstance(k, ast.Constant) and k.value in SHOWN_KEYS and isinstance(v, ast.Constant) and isinstance(v.value, str)
                             and v.value[:1].isupper() and re.search(r'[a-z]{2}', v.value)):
                         found.append(v.value.strip())
+            if _owner_error(node):  # a message for the owner, raised or made here: every literal it can be
+                found += [text.strip() for text in _owner_texts(node.args[0])]
             if isinstance(node, ast.Raise) and isinstance(node.exc, ast.Call) and node.exc.args:
                 text = _py_text(node.exc.args[0])
                 if text and _english(text):

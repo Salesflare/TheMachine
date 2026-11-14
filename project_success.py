@@ -29,6 +29,7 @@ import re
 import sqlite3
 
 import graph
+from machine.owner_error import OwnerError
 
 PROOFS = ('link', 'message')
 NO_REPLY_DAYS = graph.STUCK_DAYS
@@ -74,7 +75,7 @@ def _put(db, project_id, now, **fields):
 def clean_condition(text):
     text = graph.one_line(text, 140)
     if text is None:
-        raise ValueError('Done when: one short line (up to 140 characters), like "Listing is live with a link to us"')
+        raise OwnerError('Done when: one short line (up to 140 characters), like "Listing is live with a link to us"')
     return text
 
 

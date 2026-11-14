@@ -34,6 +34,7 @@ import activity_log
 import network_crypto as nc
 import security_levels
 from i18n import t
+from machine.owner_error import OwnerError
 
 LOG = logging.getLogger('personal-assistant')
 KIND = 'meet'
@@ -394,17 +395,17 @@ class Meet:
             ensure(db)
             if allow is not None:
                 if allow not in ALLOW:
-                    raise ValueError('Pick Free/busy for scheduling or Off')
+                    raise OwnerError('Pick Free/busy for scheduling or Off')
                 security_levels.set_pref(db, 'meet_asks', allow)
             for key, value, choices in (('minutes', minutes, LENGTHS), ('buffer', buffer, BUFFERS), ('prefer', prefer, PREFER)):
                 if value is None:
                     continue
                 if value not in choices:
-                    raise ValueError('Pick one of the choices shown')
+                    raise OwnerError('Pick one of the choices shown')
                 db.execute('INSERT INTO meet_prefs(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value', (key, str(value)))
             if brand is not None:
                 if not isinstance(brand, bool):
-                    raise ValueError('Pick one of the choices shown')
+                    raise OwnerError('Pick one of the choices shown')
                 db.execute("INSERT INTO meet_prefs(key,value) VALUES('brand',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value", ('on' if brand else 'off',))
         if allow is not None:
             self.set_meta('meet_told', None)  # the cloud hears it on the next round
@@ -457,7 +458,7 @@ class Meet:
         sealing = self._sealing()
         me = self.meta('meet_id') or self.meet_tell()
         if not sealing or not me:
-            raise ValueError('This Machine is not on The Machine Network')
+            raise OwnerError('This Machine is not on The Machine Network')
         msg = secrets.token_hex(16)
         body = {**payload, 's': row['id']}
         env = nc.seal(body, sealing.private, json.loads(row['keys']), {'p': 'meet', 'k': KIND, 'f': me, 't': row['peer'], 'r': msg})
@@ -612,7 +613,7 @@ class Meet:
     def meet_decide(self, card_id, choice):
         """Book it, Other time or Not needed on a scheduling to-do."""
         if choice not in ('book', 'other', 'skip'):
-            raise ValueError('Book it, Other time or Not needed')
+            raise OwnerError('Book it, Other time or Not needed')
         linked = self.meet_link_decide(card_id, choice) if hasattr(self, 'meet_link_decide') else None
         if linked is not None:  # a time picked on a booking link (meet_link.py)
             return linked
@@ -621,7 +622,7 @@ class Meet:
             row = db.execute("SELECT * FROM meet_sessions WHERE card_id=? AND state IN ('proposed','answered','waiting') ORDER BY updated_at DESC LIMIT 1",
                              (str(card_id),)).fetchone()
         if not row or row['state'] != 'proposed':
-            raise ValueError('That time is no longer open')
+            raise OwnerError('That time is no longer open')
         slot = json.loads(row['slot'])
         when = when_text(parse_slot(slot[0]), self._meet_tz())
         if choice == 'skip':

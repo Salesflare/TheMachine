@@ -43,6 +43,7 @@ import file_text
 import graph
 import mail_attachments
 import message_seal
+from machine.owner_error import OwnerError
 
 IMAGE_BYTES = 5 * 1024 * 1024  # as an image added to a chat message (chat_files.IMAGE_BYTES)
 INLINE_BYTES = 48 * 1024  # a photo this small comes with the message itself, so the dashboard needs no second request
@@ -243,7 +244,7 @@ def add_read(db, config, account_id, source_id, chat_id, message_id, data, descr
     """A photo kept and read already (the sandbox's made-up one): its row and its file, as the worker leaves them."""
     mime = check(data)
     if not mime:
-        raise ValueError('Not a photo')
+        raise OwnerError('Not a photo')
     row = {'id': photo_id or 'wp_' + secrets.token_hex(10), 'account_id': account_id, 'source_id': source_id, 'status': 'kept'}
     db.execute("INSERT OR REPLACE INTO whatsapp_photos(id,account_id,source_id,chat_id,message_id,status,created_at,updated_at) "
                "VALUES(?,?,?,?,?,'waiting',?,?)", (row['id'], account_id, source_id, chat_id, message_id, stamp, stamp))

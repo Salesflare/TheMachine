@@ -13,6 +13,7 @@ from machine.model_usage import node_bin, node_env, telegram_account, telegram_o
 from machine.text import encoded
 import notify
 from machine import todo_states
+from machine.owner_error import OwnerError
 
 
 # A result notice's quick buttons as the plugin's callbacks: only these two run from the notice itself
@@ -100,5 +101,5 @@ def telegram_request(config,args):
                 raise DeliveryNotSent(failure['error'])
         except json.JSONDecodeError:
             pass
-        raise ValueError('Delivery not confirmed')
+        raise OwnerError('Delivery not confirmed')
     return json.loads(result.stdout)

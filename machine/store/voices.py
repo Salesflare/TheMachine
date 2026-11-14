@@ -26,6 +26,7 @@ import next_actions
 import team_learnings
 from timeutil import now
 from machine import todo_states
+from machine.owner_error import OwnerError
 
 
 def similar(a, b, cutoff=0.5):
@@ -230,7 +231,7 @@ class VoicesStore:
         if not 2 <= len(channel) <= 30:
             raise ValueError('channel is where the owner writes this way: ' + ', '.join(VOICE_CHANNELS) + ', or another channel\'s name')
         if len(text) > VOICE_CHARS or text.count('\n') >= VOICE_LINES or (text and len(text) < 5) or (not text and source != 'owner'):
-            raise ValueError(f'A voice is a short block (up to {VOICE_LINES} lines, 5-{VOICE_CHARS} characters): the whole block for that channel')
+            raise OwnerError(f'A voice is a short block (up to {VOICE_LINES} lines, 5-{VOICE_CHARS} characters): the whole block for that channel')
         with self.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             ref = None
@@ -249,7 +250,7 @@ class VoicesStore:
                     raise ValueError('A voice is learned from one of the owner’s own written notes (decision_id) or their edit of a draft (edit_id)')
             current = db.execute('SELECT * FROM voices WHERE channel=?', (channel,)).fetchone()
             if source == 'assistant' and current and len(text) < VOICE_KEEP * len(current['text']):
-                raise ValueError(f'Keep the whole {channel} block: rewrite it with the note worked in and only what it contradicts dropped. '
+                raise OwnerError(f'Keep the whole {channel} block: rewrite it with the note worked in and only what it contradicts dropped. '
                                  f'The current block is:\n{current["text"]}')
             if not text:
                 if current:
@@ -268,7 +269,7 @@ class VoicesStore:
             if current and current['text'] == text and (not originals or current['ref'] == ref):
                 return {'channel': channel, 'text': text, 'unchanged': True, **({'merged': len(originals)} if originals else {})}
             if not current and db.execute('SELECT count(*) FROM voices').fetchone()[0] >= VOICE_MAX:
-                raise ValueError(f'At most {VOICE_MAX} voices: work this into an existing channel or All')
+                raise OwnerError(f'At most {VOICE_MAX} voices: work this into an existing channel or All')
             db.execute('INSERT INTO voices(channel,text,source,ref,updated_at) VALUES(?,?,?,?,?) ON CONFLICT(channel) DO UPDATE SET '
                        'text=excluded.text,source=excluded.source,ref=excluded.ref,updated_at=excluded.updated_at', (channel, text, source, ref, now()))
             db.execute("INSERT INTO rule_changes(at,kind,text,ref) VALUES(?,'voice',?,?)", (now(), f'{channel} voice: {text}', ref))

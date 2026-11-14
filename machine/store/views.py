@@ -85,6 +85,7 @@ import todo_areas
 import todo_org
 import whatsapp_images
 from machine import todo_states
+from machine.owner_error import OwnerError
 
 # What card_views adds to the to-dos, kept between status polls (each 30 s) while none of the tables it reads changed (on
 # a quiet Machine, between polls only Connections' sync tables do), the to-dos' own rows are the same and within
@@ -712,12 +713,12 @@ class ViewsStore(ConversationStore):
             if suggestion and relative not in linked:
                 linked += [f['path'] for f in self.chat_linked_files(db, suggestion_id)]
             if not suggestion or relative not in linked:
-                raise ValueError('This result is not linked to that task')
+                raise OwnerError('This result is not linked to that task')
         candidate=(WORKSPACE/relative).resolve()
         if not candidate.is_relative_to((WORKSPACE/'memory/assistant').resolve()):
-            raise ValueError('Result is outside the assistant folder')
+            raise OwnerError('Result is outside the assistant folder')
         if candidate.stat().st_size>5*1024*1024:
-            raise ValueError('This result is too large to preview')
+            raise OwnerError('This result is too large to preview')
         return candidate
 
     def review_run_view(self, db, run):

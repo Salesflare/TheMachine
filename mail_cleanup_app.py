@@ -60,6 +60,7 @@ from machine.sources.gmail import Gmail
 from models import background_model
 from sources import credential, gog_read
 from machine import todo_states
+from machine.owner_error import OwnerError
 
 LOG = logging.getLogger('personal-assistant')
 # The list's unsubscribe, and who sent the mail: a list that relayed it (a Google Group, a Microsoft 365 group,
@@ -155,7 +156,7 @@ class MailCleanupApp:
         key, yes = str(args.get('key') or ''), args.get('choice') == 'yes'
         with self.store.connect() as db:
             if not routine_offers.is_open(db, key):
-                raise ValueError('That suggestion is gone')
+                raise OwnerError('That suggestion is gone')
         # the routine first: when it can't be added (no mail account any more), the offer stays as it was
         made = self.routine_template_action('routine_template', {'key': key}, True).get('made') if yes else None
         with self.store.connect() as db:
@@ -172,9 +173,9 @@ class MailCleanupApp:
         key = args.get('key')
         template = routine_templates.TEMPLATES.get(key)
         if not template:
-            raise ValueError('That template is gone')
+            raise OwnerError('That template is gone')
         if key == 'spam' and not self.cleanup_spam_accounts():
-            raise ValueError('Spam cleanup needs a connected mail account.')
+            raise OwnerError('Spam cleanup needs a connected mail account.')
         now, stamp = self.routines_now(), self.routines_stamp()
         with self.routines_lock(), self.store.connect() as db:
             db.execute('BEGIN IMMEDIATE')
@@ -592,16 +593,16 @@ class MailCleanupApp:
         """The owner's picks on a cleanup to-do ({item: keep or go}), confirmed at once. Kept ones are remembered; the
         rest are done in a thread of their own. Returns what is now being done."""
         if not owner_dashboard:
-            raise ValueError('Only the owner confirms this, on the dashboard')
+            raise OwnerError('Only the owner confirms this, on the dashboard')
         sid, picks = str(args.get('suggestion_id') or ''), args.get('picks')
         if not isinstance(picks, dict) or not picks:
-            raise ValueError('Pick at least one')
+            raise OwnerError('Pick at least one')
         stamp = self.routines_stamp()
         with self.store.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             row = db.execute('SELECT status FROM suggestions WHERE id=?', (sid,)).fetchone()
             if not row or row['status'] in todo_states.CLOSED:
-                raise ValueError('That to-do is gone')
+                raise OwnerError('That to-do is gone')
             todo = mail_cleanup.pick(db, sid, picks, stamp)
         if todo:
             self.cleanup_spawn(sid, todo)

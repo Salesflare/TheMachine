@@ -33,6 +33,7 @@ import i18n
 import learning_loop
 import next_actions
 import timeutil
+from machine.owner_error import OwnerError
 
 # The rule a to-do's preparation and chat turns get (assistant.preparation_prompt, chat_prompt).
 PROMPT = ('When the owner\'s note says something The Machine has is wrong ("she\'s not the CEO", "he left the company", "we don\'t use that '
@@ -442,7 +443,7 @@ def undo(db, row):
     target, before = json.loads(row['target']), json.loads(row['before'] or '{}')
     kind, where = target['type'], target['where']
     if not _same(kind, _state(db, kind, where), target['after']):
-        raise ValueError('That changed since. Change it where it is now')
+        raise OwnerError('That changed since. Change it where it is now')
     old = before.get('state')
     if kind == 'fact':
         learning_loop.set_fact(db, where['id'], old['text'], row['at'] if old['removed'] else None, 'undo:' + str(row['id']))

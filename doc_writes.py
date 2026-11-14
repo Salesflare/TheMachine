@@ -40,6 +40,7 @@ import logging
 import re
 import uuid
 import zipfile
+from machine.owner_error import OwnerError
 
 LOG = logging.getLogger('assistant')
 
@@ -81,7 +82,7 @@ def lines(text):
 
 def _text(value, field, limit, newlines):
     if not isinstance(value, str) or '\x00' in value or len(value) > limit:
-        raise ValueError(f'{field} is text of at most {limit:,} characters')
+        raise OwnerError(f'{field} is text of at most {limit:,} characters')
     if re.search(r'[\x01-\x08\x0b\x0c\x0e-\x1f￾￿]', value):
         raise ValueError(f'{field} has control characters')
     value = value.replace('\r\n', '\n').replace('\r', '\n')
@@ -838,9 +839,9 @@ class DocWriteTransport:
         account = next((a for a in self.config.get('accounts', []) if a.get('id') == action['account_id']
                         and (a.get('service') == 'docs' or action['op'] == 'create' and gog(a))), None)
         if not account:
-            raise ValueError('That Docs connection is no longer here. Nothing was changed.')
+            raise OwnerError('That Docs connection is no longer here. Nothing was changed.')
         if action['op'] not in self.connector.writes_on(self.config, account, self.helpers):
-            raise ValueError('Writing docs is not allowed for this connection anymore. Nothing was changed.')
+            raise OwnerError('Writing docs is not allowed for this connection anymore. Nothing was changed.')
         return self.connector.Writer(self.config, account, self.helpers)
 
     def snapshot(self, writer, file_id):
@@ -852,7 +853,7 @@ class DocWriteTransport:
             if action['op'] == 'edit':
                 current = self.snapshot(writer, action['file_id'])
                 if current['version'] != action['version']:
-                    raise ValueError('The doc changed since this was drafted. Nothing was changed; ask for a new draft.')
+                    raise OwnerError('The doc changed since this was drafted. Nothing was changed; ask for a new draft.')
                 resolve(current, action['changes'])
                 return
             proof = action.setdefault('proof', {})
@@ -862,9 +863,9 @@ class DocWriteTransport:
                 proof['name'] = next((name for name in (word_name(action['title'], n) for n in range(1, 10))
                                       if writer.lookup(name) is None), None)
                 if not proof['name']:
-                    raise ValueError('Files with that name are in your OneDrive already. Nothing was created; give it another title.')
+                    raise OwnerError('Files with that name are in your OneDrive already. Nothing was created; give it another title.')
         except self.helpers.SourceError:
-            raise ValueError('I couldn’t reach the doc. Nothing was changed; tap it again.') from None
+            raise OwnerError('I couldn’t reach the doc. Nothing was changed; tap it again.') from None
 
     def send(self, action, job):
         writer = self.writer(action)

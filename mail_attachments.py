@@ -31,6 +31,7 @@ from pathlib import Path
 
 import message_seal
 import office_files
+from machine.owner_error import OwnerError
 
 OPEN_NAME = 'the-machine-open-attachments'
 FETCHES = ('gmail attachment', 'mail_attachment', 'assistant attachment')  # a tool call that takes a file from an email
@@ -64,7 +65,7 @@ def open_root(config, create=False):
     if create:
         base.mkdir(mode=0o700, parents=True, exist_ok=True)
         if base.stat().st_uid != os.getuid():
-            raise ValueError('The private attachments folder belongs to another user')
+            raise OwnerError('The private attachments folder belongs to another user')
         os.chmod(base, 0o700)
     return base
 
@@ -141,7 +142,7 @@ def read(path, config):
         return data
     key = opener(config)
     if not key:
-        raise ValueError(f'This attachment is encrypted and {message_seal.KEY_NAME} is missing')
+        raise OwnerError(f'This attachment is encrypted and {message_seal.KEY_NAME} is missing')
     return key.open_bytes(data)
 
 
@@ -157,7 +158,7 @@ def plain_name(name):
     name = str(name or '')
     if (not name or name in ('.', '..') or name != Path(name).name or '\\' in name or '\0' in name
             or Path(name).is_absolute() or re.match(r'^[A-Za-z]:', name)):
-        raise ValueError('Give the attachment a plain file name')
+        raise OwnerError('Give the attachment a plain file name')
     return name
 
 
@@ -184,7 +185,7 @@ def open_copy(config, path, job):
         raise ValueError('Give the job_id of this preparation')
     real = Path(str(path)).expanduser().resolve()
     if not real.is_relative_to(root(config).resolve()) or not real.is_file():
-        raise ValueError('Give a file in the attachments folder (data/assistant-attachments/<job id>/)')
+        raise OwnerError('Give a file in the attachments folder (data/assistant-attachments/<job id>/)')
     if not message_seal.is_sealed_file(real):
         return {'saved': str(real)}
     copy = open_root(config, create=True) / job

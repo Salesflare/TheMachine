@@ -20,6 +20,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent / 'integrations'))
 import browser_cdp  # noqa: E402
 import message_seal  # noqa: E402
 import portable  # noqa: E402
+from machine.owner_error import OwnerError
 
 LOOPBACK = ('127.0.0.1', 'localhost', '::1')
 SEALED = 'browser-logins.sealed'  # sealed with the message key
@@ -326,41 +327,41 @@ def fill(config, page, host, username=None, password=None, code=None, settle=SET
     index, _, target = str(page or '').partition(':')
     bases = endpoints(config)
     if not index.isdigit() or int(index) >= len(bases) or not target:
-        raise ValueError('That page is not open in the browser any more')
+        raise OwnerError('That page is not open in the browser any more')
     base, given = bases[int(index)], {'u': username, 'p': password, 'c': code}
     given = {k: v for k, v in given.items() if isinstance(v, str) and v}
     if not given:
-        raise ValueError('Nothing to fill in')
+        raise OwnerError('Nothing to fill in')
     if any(len(v) > 1000 or '\n' in v or '\r' in v for v in given.values()):
-        raise ValueError('That is too long, or has a line break')
+        raise OwnerError('That is too long, or has a line break')
     if not _filling.acquire(timeout=30):
-        raise ValueError('Another sign-in is still going on')
+        raise OwnerError('Another sign-in is still going on')
     try:
         try:
             with browser_cdp.Session(base, target, timeout=20) as tab:
                 form = tab.run('(' + DETECT + ')')
                 if not form or form.get('host') != host:
-                    raise ValueError(f'The page in the browser is no longer the sign-in to {site(host)}')
+                    raise OwnerError(f'The page in the browser is no longer the sign-in to {site(host)}')
                 if not form['secure'] and urllib.parse.urlsplit('//' + host).hostname not in LOOPBACK:
-                    raise ValueError('That page is not on a secure (https) address; open the browser to sign in there')
+                    raise OwnerError('That page is not on a secure (https) address; open the browser to sign in there')
                 wanted = {k: v for k, v in given.items() if form[{'u': 'username', 'p': 'password', 'c': 'code'}[k]]}
                 if not wanted:
-                    raise ValueError('The page does not ask for that right now')
+                    raise OwnerError('The page does not ask for that right now')
                 tab.call('Page.bringToFront')
                 for which, value in wanted.items():
                     if tab.run(FOCUS, host, which) != 'ok':
-                        raise ValueError(f'The page in the browser is no longer the sign-in to {site(host)}')
+                        raise OwnerError(f'The page in the browser is no longer the sign-in to {site(host)}')
                     tab.call('Input.insertText', {'text': value})
                 mark, last = secrets.token_hex(8), 'p' if 'p' in wanted else 'c' if 'c' in wanted else 'u'
                 how = tab.run(SUBMIT, host, mark)
                 if how == 'moved':
-                    raise ValueError(f'The page in the browser is no longer the sign-in to {site(host)}')
+                    raise OwnerError(f'The page in the browser is no longer the sign-in to {site(host)}')
                 if how == 'enter':
                     for kind in ('keyDown', 'keyUp'):
                         tab.call('Input.dispatchKeyEvent', {'type': kind, 'key': 'Enter', 'code': 'Enter',
                                                             'windowsVirtualKeyCode': 13, 'text': '\r' if kind == 'keyDown' else ''})
         except browser_cdp.CdpError:
-            raise ValueError('The browser did not take that; open the browser to sign in there') from None
+            raise OwnerError('The browser did not take that; open the browser to sign in there') from None
         state, until = 'same', time.monotonic() + settle
         while time.monotonic() < until:
             time.sleep(0.5)
@@ -383,7 +384,7 @@ def fill(config, page, host, username=None, password=None, code=None, settle=SET
         try:
             shown = describe(browser_cdp.evaluate(base, target, DETECT, timeout_ms=3000))
         except browser_cdp.CdpError:
-            raise ValueError('The browser did not answer after submitting; could not confirm the sign-in') from None
+            raise OwnerError('The browser did not answer after submitting; could not confirm the sign-in') from None
         if state == 'same':
             return {'result': 'still_here', 'page': shown and {**shown, 'id': page, 'site': site(shown['host'])}}
         if shown:
@@ -407,22 +408,22 @@ def choose(config, page, host, label, settle=2.0):
     index, _, target = str(page or '').partition(':')
     bases = endpoints(config)
     if not index.isdigit() or int(index) >= len(bases) or not target:
-        raise ValueError('That page is not open in the browser any more')
+        raise OwnerError('That page is not open in the browser any more')
     if not isinstance(label, str) or not label or len(label) > 60:
-        raise ValueError('Which one?')
+        raise OwnerError('Which one?')
     base = bases[int(index)]
     if not _filling.acquire(timeout=30):
-        raise ValueError('Another sign-in is still going on')
+        raise OwnerError('Another sign-in is still going on')
     try:
         try:
             with browser_cdp.Session(base, target, timeout=20) as tab:
                 form = tab.run('(' + DETECT + ')')
                 if not form or form.get('host') != host:
-                    raise ValueError(f'The page in the browser is no longer the sign-in to {site(host)}')
+                    raise OwnerError(f'The page in the browser is no longer the sign-in to {site(host)}')
                 if tab.run(CHOOSE, host, label) != 'clicked':
-                    raise ValueError(f'{brand(host)} doesn’t show “{label}” any more; open the browser to see what it shows')
+                    raise OwnerError(f'{brand(host)} doesn’t show “{label}” any more; open the browser to see what it shows')
         except browser_cdp.CdpError:
-            raise ValueError('The browser did not take that; open the browser to sign in there') from None
+            raise OwnerError('The browser did not take that; open the browser to sign in there') from None
         shown, until = None, time.monotonic() + settle + 4
         time.sleep(settle)
         while True:
@@ -499,11 +500,11 @@ def watch(config, page):
     index, _, target = str(page or '').partition(':')
     bases = endpoints(config)
     if not index.isdigit() or int(index) >= len(bases) or not target:
-        raise ValueError('That page is not open in the browser any more')
+        raise OwnerError('That page is not open in the browser any more')
     base = bases[int(index)]
     try:
         if not any(t.get('id') == target for t in browser_cdp._http(base, '/json/list', timeout=3)):
-            raise ValueError('That page is not open in the browser any more')
+            raise OwnerError('That page is not open in the browser any more')
         shown = describe(browser_cdp.evaluate(base, target, DETECT, timeout_ms=3000))
     except (browser_cdp.CdpError, OSError, TypeError, AttributeError):
         return {'state': 'waiting'}  # mid-navigation, or the browser is slow: look again
@@ -548,7 +549,7 @@ class LoginStore:
                               *(['-d'] if decrypt else []), '-pass', 'env:MACHINE_LOGIN_KEY'],
                              input=data, capture_output=True, env={**os.environ, 'MACHINE_LOGIN_KEY': self._key()})
         if run.returncode:
-            raise ValueError('Saved sign-ins could not be ' + ('read' if decrypt else 'saved'))
+            raise OwnerError('Saved sign-ins could not be ' + ('read' if decrypt else 'saved'))
         return run.stdout
 
     def _read(self):
@@ -557,12 +558,12 @@ class LoginStore:
             data = self.sealed_path.read_bytes()
             if message_seal.is_sealed_bytes(data):
                 if not key:
-                    raise ValueError('Saved sign-ins are encrypted with the message key, which is not here '
+                    raise OwnerError('Saved sign-ins are encrypted with the message key, which is not here '
                                      + ('yet' if message_seal.held_elsewhere(self.sealed_path) else 'any more'))
                 try:
                     return json.loads(message_seal.Sealer(key).open_bytes(data))
                 except message_seal.SealError:
-                    raise ValueError('Saved sign-ins could not be read') from None
+                    raise OwnerError('Saved sign-ins could not be read') from None
             logins = json.loads(data)  # opened by an export and put here by an import: encrypted again at once
             self._write(logins)
             return logins
@@ -578,7 +579,7 @@ class LoginStore:
         if key:
             target, data = self.sealed_path, message_seal.Sealer(key).seal_bytes(json.dumps(logins).encode())
         elif message_seal.held_elsewhere(self.sealed_path):
-            raise ValueError('Saved sign-ins wait for the message key ' + ('from your keyring' if message_seal.in_keyring(self.sealed_path) else 'your hosting keeps')
+            raise OwnerError('Saved sign-ins wait for the message key ' + ('from your keyring' if message_seal.in_keyring(self.sealed_path) else 'your hosting keeps')
                              + '; try again in a minute')
         else:
             target, data = self.path, self._openssl(json.dumps(logins).encode(), False)

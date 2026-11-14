@@ -23,6 +23,7 @@ import re
 
 import fleet_requests
 from i18n import t
+from machine.owner_error import OwnerError
 
 LOG = logging.getLogger('personal-assistant')
 KIND = 'review'
@@ -241,13 +242,13 @@ class Reviews:
     def review_options(self, card_id):
         """What Ask to review shows: who can review it (by Fleet), what goes (the draft or result) and its sources."""
         if not self.review_subject:
-            raise ValueError('This Machine makes no to-dos')
+            raise OwnerError('This Machine makes no to-dos')
         subject = self.review_subject(str(card_id))
         refs = self.review_fleets(subject['scope'])
         fleets = [{'id': ref, 'name': fleet.clean(self.fleets()[ref].get('name'), 80) or fleet.FLEET_NAMES.get(self.kind_of(ref), ''),
                    'members': [{'member_id': m['member_id'], 'name': fleet.label(m)} for m in self.teammates(ref)]} for ref in refs]
         if not fleets:
-            raise ValueError(t('Nobody in your Work Fleet can review this yet') if subject['scope'] == 'work'
+            raise OwnerError(t('Nobody in your Work Fleet can review this yet') if subject['scope'] == 'work'
                              else t('Nobody in your Family can review this yet'))
         found = self.handoff_sources(card_id, self.review_accounts(refs[0], subject['scope']))
         return {'suggestion_id': str(card_id), 'scope': subject['scope'], 'what': subject['what'], 'title': subject['title'],
@@ -265,19 +266,19 @@ class Reviews:
         Family: anything else is refused here and on their Machine. `sources`: all (True), none (False) or those kept,
         by their place in review_options' list."""
         if not self.review_subject:
-            raise ValueError('This Machine makes no to-dos')
+            raise OwnerError('This Machine makes no to-dos')
         subject = self.review_subject(str(card_id))
         kind = self.kind_of(fleet_ref) if fleet_ref in self.fleets() else None
         if SCOPES.get(kind) != subject['scope']:
-            raise ValueError(t('A work to-do goes only to your Work Fleet') if subject['scope'] == 'work'
+            raise OwnerError(t('A work to-do goes only to your Work Fleet') if subject['scope'] == 'work'
                              else t('A personal to-do goes only to your Family'))
         if fleet_ref not in self.review_fleets(subject['scope']):
-            raise ValueError(t('Your Fleet does not carry reviews yet'))
+            raise OwnerError(t('Your Fleet does not carry reviews yet'))
         member = self.member(fleet_ref, member_id)
         if not member:
-            raise ValueError('Not someone in that Fleet')
+            raise OwnerError('Not someone in that Fleet')
         if self.open_review(card_id):
-            raise ValueError(t('This to-do is already out for review'))
+            raise OwnerError(t('This to-do is already out for review'))
         found = self.handoff_sources(card_id, self.review_accounts(fleet_ref, subject['scope'])) if sources else []
         if isinstance(sources, list):
             keep = {n for n in sources if isinstance(n, int) and not isinstance(n, bool)}
@@ -287,11 +288,11 @@ class Reviews:
         question = parse({'title': subject['title'], 'scope': subject['scope'], 'what': subject['what'], 'body': subject['body'],
                           'subject': subject.get('subject') or '', 'to': subject.get('to') or '', 'note': note, 'sources': found})
         if not question:
-            raise ValueError(t('There is nothing on this to-do to review yet'))
+            raise OwnerError(t('There is nothing on this to-do to review yet'))
         sent = self.ask(KIND, question, context='review:' + str(card_id), fleet=fleet_ref, to=[member_id])
         ask_id = next(iter((sent or {}).get('ids', {}).values()), None)
         if not ask_id:
-            raise ValueError('The Network did not take the review request')
+            raise OwnerError('The Network did not take the review request')
         stamp, name = fleet.now(), fleet.clean(fleet.label(member), 120) or 'A teammate'
         kept = {**question, **({'revision': subject['revision']} if subject.get('revision') else {})}
         with self.connect() as db:
@@ -314,7 +315,7 @@ class Reviews:
             row = db.execute("SELECT * FROM fleet_reviews WHERE card_id=? AND direction='out' AND stage IN ('asked','waiting')",
                              (str(card_id),)).fetchone()
         if not row:
-            raise ValueError(t('Nobody is reviewing this to-do now'))
+            raise OwnerError(t('Nobody is reviewing this to-do now'))
         try:
             self.relay.call('POST', '/withdraw', {'id': row['id'], 'fleet': row['fleet'], 'to': row['member_id'], 'kind': KIND})
             told = True
@@ -363,7 +364,7 @@ class Reviews:
             row = db.execute("SELECT * FROM fleet_reviews WHERE card_id=? AND direction='out' ORDER BY at DESC,rowid DESC LIMIT 1",
                              (str(card_id),)).fetchone()
         if not row or not row['reply'] or row['stage'] == 'withdrawn':
-            raise ValueError(t('No review came back yet'))
+            raise OwnerError(t('No review came back yet'))
         sent, reply = _load(row['sent'], {}), _load(row['reply'], {})
         current = self.review_subject(str(card_id)) if self.review_subject else None
         answered = next((s.get('at') for s in reversed(_load(row['history'], [])) if s.get('event') in STAGES), row['updated_at'])
@@ -380,9 +381,9 @@ class Reviews:
             row = db.execute("SELECT * FROM fleet_reviews WHERE card_id=? AND direction='out' ORDER BY at DESC,rowid DESC LIMIT 1",
                              (str(card_id),)).fetchone()
         if not row or not row['reply'] or row['stage'] != 'changes':
-            raise ValueError(t('No changes to accept on this to-do'))
+            raise OwnerError(t('No changes to accept on this to-do'))
         if row['decided']:
-            raise ValueError(t('Those changes were handled already'))
+            raise OwnerError(t('Those changes were handled already'))
         if picks == 'ignore':
             with self.connect() as db:
                 db.execute("UPDATE fleet_reviews SET decided='ignored' WHERE id=?", (row['id'],))
@@ -392,13 +393,13 @@ class Reviews:
         found = hunks(sent, reply)
         ids = [h['id'] for h in found] if picks == 'all' else [p for p in (picks if isinstance(picks, list) else []) if isinstance(p, str)]
         if not set(ids) & {h['id'] for h in found}:
-            raise ValueError(t('Pick the changes to accept'))
+            raise OwnerError(t('Pick the changes to accept'))
         current = self.review_subject(str(card_id))
         if current['what'] != sent.get('what'):
-            raise ValueError(t('This to-do changed since you asked. Ask for a review again.'))
+            raise OwnerError(t('This to-do changed since you asked. Ask for a review again.'))
         subject, body, applied, missed = merge(sent, current, found, set(ids))
         if not applied:
-            raise ValueError(t('Those changes no longer fit the draft'))
+            raise OwnerError(t('Those changes no longer fit the draft'))
         self.review_write(str(card_id), current['what'], subject if current['what'] == 'draft' else None, body, current.get('revision'))
         decided = 'accepted' if len(applied) == len(found) else 'partial'
         with self.connect() as db:
@@ -437,13 +438,13 @@ class Reviews:
         """The reviewer's answer from their review to-do: approve, changes (the text as they edited it), a comment, or
         decline. It goes back sealed for the owner's Machine; nothing is sent anywhere else, and the to-do closes."""
         if stage not in STAGES:
-            raise ValueError('Approve, suggest changes, comment or decline')
+            raise OwnerError('Approve, suggest changes, comment or decline')
         with self.connect() as db:
             row = db.execute("SELECT * FROM fleet_reviews WHERE card_id=? AND direction='in'", (str(card_id),)).fetchone()
         if not row:
-            raise ValueError('This to-do is not a review')
+            raise OwnerError('This to-do is not a review')
         if row['stage'] in CLOSED_IN:
-            raise ValueError(fleet_requests.taken_line(row['name']) if row['stage'] == 'withdrawn' else t('This review is closed'))
+            raise OwnerError(fleet_requests.taken_line(row['name']) if row['stage'] == 'withdrawn' else t('This review is closed'))
         sent = _load(row['sent'], {})
         answer = {'stage': stage, 'comment': comment or ''}
         if stage == 'changes':
@@ -454,7 +455,7 @@ class Reviews:
         if answer and answer['stage'] == 'changes' and not n:
             answer = {'stage': 'commented', 'comment': answer['comment']} if answer.get('comment') else None
         if not answer:
-            raise ValueError(t('Change the text or add a comment first'))
+            raise OwnerError(t('Change the text or add a comment first'))
         self.relay.call('POST', '/answer', {'id': row['id'], 'status': 'answered', 'answer': answer})
         with self.connect() as db:
             db.execute('UPDATE fleet_reviews SET reply=? WHERE id=?', (json.dumps(answer), row['id']))

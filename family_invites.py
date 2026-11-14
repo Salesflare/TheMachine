@@ -26,6 +26,7 @@ import urllib.parse
 
 import activity_log
 from i18n import t
+from machine.owner_error import OwnerError
 
 HIDE_DAYS = 90  # Not now
 MAX_FAMILY = 6  # people in a Family Fleet, open invites included (the control plane's own limit)
@@ -177,11 +178,11 @@ def act(db, card_id, do, account_url, fleets, now=None):
     """The owner's tap: 'open' (Invite: the account page's form, prefilled; never suggested again) or 'later' (Not now:
     hidden for HIDE_DAYS). Nothing is sent from here."""
     if do not in ('open', 'later'):
-        raise ValueError('Invite or Not now')
+        raise OwnerError('Invite or Not now')
     ensure(db)
     row = db.execute("SELECT * FROM family_invite_offers WHERE card_id=? AND state='offered'", (str(card_id),)).fetchone()
     if not row:
-        raise ValueError('That suggestion is gone')
+        raise OwnerError('That suggestion is gone')
     now = now or _now()
     if do == 'later':
         until = (dt.datetime.fromisoformat(now) + dt.timedelta(days=HIDE_DAYS)).isoformat(timespec='seconds')

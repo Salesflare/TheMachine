@@ -16,6 +16,7 @@ import help_topics
 import i18n
 import model_service
 from models import background_model, has_model
+from machine.owner_error import OwnerError
 
 LOG = logging.getLogger('personal-assistant')
 
@@ -28,7 +29,7 @@ class SupportApp:
 
     def support_dashboard_action(self, name, args, owner_dashboard):
         if not owner_dashboard:
-            raise ValueError('Help and bug reports come from the dashboard')
+            raise OwnerError('Help and bug reports come from the dashboard')
         return self.support_action(name, args)
 
     def bug_queue_worker(self):
@@ -84,7 +85,7 @@ class SupportApp:
         if name == 'help_ask':
             run = getattr(self, 'help_model', None)  # a stand-in in the sandbox and tests
             if not run and not has_model(self.config):
-                raise ValueError(i18n.t('Help needs a model. Set one up in Settings, Model.'))
+                raise OwnerError(i18n.t('Help needs a model. Set one up in Settings, Model.'))
             swap = background_model(self.config)
             model, thinking = '/'.join(swap) if swap else None, None
             own = chat_model.clean({'model': args.get('model'), 'thinking': args.get('thinking')})
@@ -109,7 +110,7 @@ class SupportApp:
         path = getattr(self, 'config_path', None) or os.environ.get('ASSISTANT_CONFIG') or ''
         if name == 'support_access':
             if not getattr(self, 'fleet', None):
-                raise ValueError('This Machine isn’t linked to an account.')
+                raise OwnerError('This Machine isn’t linked to an account.')
             allow = args.get('allow')
             try:
                 return self.fleet.support_access(None if allow is None else bool(allow))
@@ -117,7 +118,7 @@ class SupportApp:
                 LOG.info('support access not reached error=%s', type(error).__name__)
                 if allow is None:
                     return {'until': self.fleet.support_until(), 'hours': self.fleet.SUPPORT_HOURS, 'accesses': [], 'error': True}
-                raise ValueError('Can’t reach your account right now. Try again.') from None
+                raise OwnerError('Can’t reach your account right now. Try again.') from None
         if name == 'bug_preview':
             return {**support.report(path, doctor=onboarding.doctor, budget=self.REPORT_BUDGET), 'paired': bool(getattr(self, 'fleet', None))}
         if name == 'bug_fixed':  # a bug the owner reported, fixed and running here now (fleet.Fleet.fixed); seen closes one
@@ -126,16 +127,16 @@ class SupportApp:
             if args.get('answer') is not None:  # its question: Works now, or Still not right with what is still off
                 said, shot = args.get('answer'), args.get('screenshot')
                 if said not in ('works', 'not_right') or not isinstance(args.get('report'), str):
-                    raise ValueError('Choose Works now or Still not right.')
+                    raise OwnerError('Choose Works now or Still not right.')
                 if shot is not None and not (isinstance(shot, str) and re.fullmatch(r'data:image/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+', shot)
                                              and len(shot) <= self.BUG_SHOT_BYTES * 4 // 3 + 64):
-                    raise ValueError('That screenshot can’t be sent. Try a smaller PNG or JPEG.')
+                    raise OwnerError('That screenshot can’t be sent. Try a smaller PNG or JPEG.')
                 try:
                     return {'fixed': self.fleet.fixed(answer={'answer': said, 'report': args['report'][:40], 'screenshot': shot or None,
                                                               'text': str(args.get('text') or '').strip()[:self.BUG_TEXT]})}
                 except (fleet.Off, fleet.Unavailable, OSError) as error:
                     LOG.info('fixed answer not sent error=%s', type(error).__name__)
-                    raise ValueError('Can’t reach your account right now. Try again.') from None
+                    raise OwnerError('Can’t reach your account right now. Try again.') from None
             try:
                 return {'fixed': self.fleet.fixed(args.get('seen') or None)}
             except (fleet.Off, fleet.Unavailable, OSError, ValueError) as error:
@@ -148,16 +149,16 @@ class SupportApp:
             return {'offer': {k: found[k] for k in ('id', 'words', 'summary', 'sent')} if found else None}
         text = str(args.get('description') or '').strip()[:self.BUG_TEXT]
         if not text:
-            raise ValueError('Say what went wrong first.')
+            raise OwnerError('Say what went wrong first.')
         shot = args.get('screenshot')
         if shot is not None and not (isinstance(shot, str) and re.fullmatch(r'data:image/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+', shot)
                                      and len(shot) <= self.BUG_SHOT_BYTES * 4 // 3 + 64):
-            raise ValueError('That screenshot can’t be sent. Try a smaller PNG or JPEG.')
+            raise OwnerError('That screenshot can’t be sent. Try a smaller PNG or JPEG.')
         report = args.get('report')
         if report is not None and not isinstance(report, dict):
-            raise ValueError('That report can’t be sent.')
+            raise OwnerError('That report can’t be sent.')
         if not getattr(self, 'fleet', None):
-            raise ValueError('This Machine isn’t linked to an account. Email support@themachine.computer instead.')
+            raise OwnerError('This Machine isn’t linked to an account. Email support@themachine.computer instead.')
         # What the owner saw, scrubbed once more here: whatever the page sent, nothing else leaves
         body = {'description': text, 'screenshot': shot,
                 'report': support.scrub_value(report) if report is not None else None}

@@ -6,6 +6,7 @@ import next_actions
 import signatures
 import smtp_mail
 from sources import credential, gog_read
+from machine.owner_error import OwnerError
 
 
 class SignaturesApp:
@@ -29,21 +30,21 @@ class SignaturesApp:
                 return signatures.detect((smtp_mail.sent_bodies if account['service'] == 'imap' else ms_graph.sent_bodies)(
                     self.config, credential, account), (str(self.config.get('owner_name') or '').split() or [''])[0]), 'detected'
             except ms_graph.GraphError as error:
-                raise ValueError(f'Outlook could not be read now ({error})') from None
+                raise OwnerError(f'Outlook could not be read now ({error})') from None
             except smtp_mail.imap_mail.ImapError:
-                raise ValueError('The mail server could not be read now; try again in a minute') from None
+                raise OwnerError('The mail server could not be read now; try again in a minute') from None
         try:
             send_as = (getattr(self, 'mail_read', None) or gog_read)(
                 self.config, account, 'gmail', 'v1', 'gmail.users.settings.sendAs.get',
                 {'userId': 'me', 'sendAsEmail': account['email']}, 'https://www.googleapis.com/auth/gmail.readonly')
         except Exception:
-            raise ValueError('Gmail could not be read now; try again in a minute') from None
+            raise OwnerError('Gmail could not be read now; try again in a minute') from None
         return signatures.clean((send_as or {}).get('signature') or ''), 'imported'
 
     def signature_action(self, name, args):
         account = next((a for a in self.config.get('accounts', []) if a['id'] == args.get('account_id') and next_actions.mail_account(a)), None)
         if not account:
-            raise ValueError('Choose one of your Gmail or Outlook accounts')
+            raise OwnerError('Choose one of your Gmail or Outlook accounts')
         if name == 'detect_signature':
             # Import: kept as the mailbox's signature unless the owner has their own, which stays.
             found, source = self.mailbox_signature(account)
@@ -64,11 +65,11 @@ class SignaturesApp:
         # would be stored broken.
         value = str(args.get('html') or '')
         if len(value) > signatures.MAX_PASTED or len(signatures.clean(value, signatures.MAX_PASTED, None)) > signatures.MAX_HTML:
-            raise ValueError('That signature is too long')
+            raise OwnerError('That signature is too long')
         signatures.save(self.config, account['id'], value, 'owner')
         return self.signature_view()
 
     def set_signature_action(self, name, args, owner_dashboard=False):
         if not owner_dashboard:
-            raise ValueError('Only the owner sets a signature, on the dashboard (Settings, Signatures)')
+            raise OwnerError('Only the owner sets a signature, on the dashboard (Settings, Signatures)')
         return self.signature_action(name, args)

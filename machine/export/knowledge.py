@@ -37,6 +37,7 @@ import person_summary
 import security_levels
 import signatures
 from machine import todo_states
+from machine.owner_error import OwnerError
 
 SCHEMA_VERSION = 1
 FOLDER = 'the-machine-knowledge'
@@ -643,14 +644,14 @@ def encrypt(data, passphrase):
     """The zip encrypted as the full export is (AES-256, PBKDF2, openssl: moving.OPENSSL). It opens with
     `openssl enc -d -aes-256-cbc -pbkdf2 -iter 600000 -md sha256 -in <file> -out knowledge.zip`."""
     if len(passphrase or '') < MIN_PASSPHRASE:
-        raise ValueError(f'Pick a passphrase of at least {MIN_PASSPHRASE} characters, or none.')
+        raise OwnerError(f'Pick a passphrase of at least {MIN_PASSPHRASE} characters, or none.')
     try:
         done = subprocess.run(moving.OPENSSL + ['-salt', '-pass', f'env:{moving.PASSPHRASE_ENV}'], input=data, capture_output=True, timeout=600,
                               env={**os.environ, moving.PASSPHRASE_ENV: passphrase})
     except FileNotFoundError:
         raise ValueError('openssl is needed for an export; install it and try again') from None
     if done.returncode or not done.stdout:
-        raise ValueError('Could not encrypt the export')
+        raise OwnerError('Could not encrypt the export')
     return done.stdout
 
 

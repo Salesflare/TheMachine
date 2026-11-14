@@ -33,6 +33,7 @@ import sqlite3
 import graph
 import person_summary
 import shared_graph
+from machine.owner_error import OwnerError
 
 THREADS = 40       # threads read, labeled first, then "probably part of it", newest first
 TODOS = 30
@@ -247,14 +248,14 @@ def apply(db, node_id, parts, drop=(), now=None):
             continue
         name = clean_name(part.get('name'))
         if not name:
-            raise ValueError('Give each new project a name')
+            raise OwnerError('Give each new project a name')
         if name.casefold() in names or db.execute('SELECT 1 FROM projects WHERE name=? COLLATE NOCASE', (name,)).fetchone():
-            raise ValueError(f'There is a project called "{name}" already')
+            raise OwnerError(f'There is a project called "{name}" already')
         names.add(name.casefold())
         seen.update(keys)
         wanted.append((name, clean_about(part.get('about')), keys))
     if not wanted:
-        raise ValueError('Put something in a new project first')
+        raise OwnerError('Put something in a new project first')
     dropped = [k for k in dict.fromkeys(str(k) for k in drop or ()) if k in found and k not in seen]
     hidden, private = _hidden(db, pid), _private(db, node)
     steps = {'labels': [], 'added': [], 'cards': [], 'people': [], 'original': {c: row[c] for c in ('closed_at',)}}
@@ -331,10 +332,10 @@ def undo(db, split_id, now=None):
     ensure(db)
     row = db.execute('SELECT * FROM project_splits WHERE id=?', (int(split_id or 0),)).fetchone()
     if not row or row['undone_at']:
-        raise ValueError('That split is undone already')
+        raise OwnerError('That split is undone already')
     original = db.execute('SELECT * FROM projects WHERE id=?', (row['project_id'],)).fetchone()
     if not original:
-        raise ValueError('The project it was split from is gone')
+        raise OwnerError('The project it was split from is gone')
     steps, pid = json.loads(row['steps']), original['id']
     for new in json.loads(row['made']):
         p = db.execute('SELECT id,name FROM projects WHERE id=?', (new,)).fetchone()

@@ -14,6 +14,7 @@ import whatsapp_images
 from machine.faults import loop_failed
 from sources import SourceError
 from timeutil import now
+from machine.owner_error import OwnerError
 
 LOG = logging.getLogger('personal-assistant')
 STEP_SECONDS = 20
@@ -32,10 +33,10 @@ class WhatsAppImagesApp:
     def whatsapp_photos_action(self, name, args, owner_dashboard):
         """Read photos on one WhatsApp connection: read (work chats), personal (personal chats too)."""
         if not owner_dashboard:
-            raise ValueError('Only the owner turns Read photos on or off, on Connections')
+            raise OwnerError('Only the owner turns Read photos on or off, on Connections')
         account = self.whatsapp_photo_accounts().get(args.get('account'))
         if not account:
-            raise ValueError('That WhatsApp is not connected here')
+            raise OwnerError('That WhatsApp is not connected here')
         with self.store.connect() as db:
             chosen = whatsapp_images.set_prefs(db, account['id'], args.get('read') is True, args.get('personal') is True, now())
             LOG.info('whatsapp photos read=%s personal=%s', chosen['read'], chosen['personal'])

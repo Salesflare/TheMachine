@@ -10,6 +10,7 @@ import gbrain
 import graph
 from machine.app.card_chat import save_hours
 from timeutil import now
+from machine.owner_error import OwnerError
 
 LOG = logging.getLogger('personal-assistant')
 
@@ -25,7 +26,7 @@ class GBrainApp:
 
     def gbrain_dashboard_action(self, name, args, owner_dashboard):
         if not owner_dashboard:
-            raise ValueError('Only the owner connects GBrain, on the dashboard (Connections)')
+            raise OwnerError('Only the owner connects GBrain, on the dashboard (Connections)')
         return self.gbrain_action(name, args)
 
     def gbrain_view(self):
@@ -86,24 +87,24 @@ class GBrainApp:
         if name == 'gbrain_status':
             return self.gbrain_view()
         if not getattr(self, 'config_path', None):
-            raise ValueError('This can’t be changed on this Machine.')
+            raise OwnerError('This can’t be changed on this Machine.')
         brain = gbrain.Brain(self.config)
         if name == 'gbrain_on':
             # Nothing goes into GBrain, and reviews get none of its tools, before the owner agreed to what goes in.
             if args.get('consent') is not True:
-                raise ValueError('Agree to what goes into GBrain first')
+                raise OwnerError('Agree to what goes into GBrain first')
             binary = brain.binary()
             if not binary:
-                raise ValueError('Install GBrain on this Machine first')
+                raise OwnerError('Install GBrain on this Machine first')
             try:
                 linked = brain.link()
             except gbrain.BrainError:
-                raise ValueError('The Machine could not add GBrain. Try again.') from None
+                raise OwnerError('The Machine could not add GBrain. Try again.') from None
             self.gbrain_save({'on': True, 'consent_at': now(), 'work': args.get('work') is True, 'linked': linked, 'bin': binary})
             self.gbrain_start()
         elif name == 'gbrain_work':
             if not gbrain.on(self.config):
-                raise ValueError('Turn GBrain on first')
+                raise OwnerError('Turn GBrain on first')
             self.gbrain_save({**gbrain.settings(self.config), 'work': args.get('on') is True})
             self.gbrain_start()
         elif name == 'gbrain_off':

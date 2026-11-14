@@ -13,6 +13,7 @@ import help_chat
 import message_seal
 import notes_people
 from machine.config import WORKSPACE
+from machine.owner_error import OwnerError
 
 LOG = logging.getLogger('personal-assistant')
 
@@ -27,7 +28,7 @@ class BringInApp:
 
     def bring_in_action(self, name, args, owner_dashboard):
         if not owner_dashboard:
-            raise ValueError('Only the owner brings notes in, on the dashboard')
+            raise OwnerError('Only the owner brings notes in, on the dashboard')
         done = bring_in.decide(self.store, args.get('keep'), args.get('dismiss'))
         return {**done, 'bring_in': bring_in.status(self.store.connect)}
 

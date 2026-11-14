@@ -4,6 +4,7 @@ on from the dashboard too. On by default: the switch stores the owner's choice w
 turned it off has it off. An `enabled: false` without `chosen` is what every install wrote before (config.example.json)
 and is no choice, so it reads as on. A mixin of assistant.App (APP_MIXINS)."""
 from machine.app.card_chat import save_hours  # config.json's careful write (a .bak, then an atomic replace)
+from machine.owner_error import OwnerError
 
 RECAP_DEFAULT = {'enabled': True, 'weekday': 5, 'at': '16:00'}
 
@@ -32,9 +33,9 @@ class RecapSettingsApp:
         """The owner turns the weekly recap on or off in Settings: saved in config.json as their choice (other keys and
         its day and time kept) and in use at once; recap_step reads it on its next round."""
         if not owner_dashboard:
-            raise ValueError('Only the owner turns the weekly recap on or off, in Settings')
+            raise OwnerError('Only the owner turns the weekly recap on or off, in Settings')
         if not getattr(self, 'config_path', None):
-            raise ValueError('This can’t be changed on this Machine.')
+            raise OwnerError('This can’t be changed on this Machine.')
         value = {**recap_settings(self.config), 'enabled': args.get('on') is True, 'chosen': True}
         save_hours(self.config_path, {'weekly_recap': value})
         self.config['weekly_recap'] = value

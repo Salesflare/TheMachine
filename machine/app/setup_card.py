@@ -8,6 +8,7 @@ import sqlite3
 from machine.delivery.push import (
     phone_qr,
 )
+from machine.owner_error import OwnerError
 
 
 class SetupCardApp:
@@ -18,7 +19,7 @@ class SetupCardApp:
         """A row's × or the card's (setup_dismiss), Undo, Show hidden or Settings' Show again (setup_restore): the
         owner's own dashboard only."""
         if not owner_dashboard:
-            raise ValueError('Only the owner closes a setup step, on the dashboard' if name == 'setup_dismiss'
+            raise OwnerError('Only the owner closes a setup step, on the dashboard' if name == 'setup_dismiss'
                              else 'Only the owner brings back a setup step, on the dashboard')
         return (setup_dismiss if name == 'setup_dismiss' else setup_restore)(self.store, self.config, args.get('step'))
 

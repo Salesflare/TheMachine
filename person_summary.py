@@ -48,6 +48,7 @@ import re
 from machine.store.graph_history import live
 import timeutil
 from machine import todo_states
+from machine.owner_error import OwnerError
 
 SCHEMA = '''
 CREATE TABLE IF NOT EXISTS person_summaries(node_id TEXT PRIMARY KEY,lines TEXT NOT NULL,by TEXT NOT NULL,written_at TEXT NOT NULL,
@@ -605,7 +606,7 @@ def restore(db, kept):
 def use_proposal(db, node_id, current=None):
     row = _row(db, node_id)
     if not row or not row['proposal']:
-        raise ValueError('There is no suggested update')
+        raise OwnerError('There is no suggested update')
     db.execute("UPDATE person_summaries SET lines=proposal,by='machine',written_at=?,proposal=NULL,proposed_at=NULL,edited_at=NULL WHERE node_id=?",
                (current or now(), row['node_id']))
     return {'used': True}

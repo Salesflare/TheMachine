@@ -11,6 +11,7 @@ import urllib.parse
 from pathlib import Path
 
 from machine.export import knowledge
+from machine.owner_error import OwnerError
 
 KEEP_SECONDS = 600  # an export not downloaded by then is dropped
 
@@ -23,10 +24,10 @@ class KnowledgeExportApp:
         """Pack Knowledge for another AI: {token, name, bytes}. args: messages (message text too), private (private
         and Careful content too), passphrase (optional: the file is then encrypted, as the full export is)."""
         if not owner_dashboard:
-            raise ValueError('Export it from the dashboard.')
+            raise OwnerError('Export it from the dashboard.')
         passphrase = args.get('passphrase') or ''
         if not isinstance(passphrase, str) or (passphrase and len(passphrase) < knowledge.MIN_PASSPHRASE):
-            raise ValueError(f'Pick a passphrase of at least {knowledge.MIN_PASSPHRASE} characters, or none.')
+            raise OwnerError(f'Pick a passphrase of at least {knowledge.MIN_PASSPHRASE} characters, or none.')
         options = knowledge.Options(messages=args.get('messages') is True, private=args.get('private') is True)
         workspace = Path(os.environ.get('OPENCLAW_WORKSPACE') or Path.home() / '.openclaw/workspace').expanduser()
         reader = knowledge.StoreReader(self.store, self.config, getattr(self, 'fleet', None), workspace)

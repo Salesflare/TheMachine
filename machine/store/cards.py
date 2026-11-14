@@ -28,6 +28,7 @@ from machine.text import _address, body_after_title, clamp, encoded
 from timeutil import local_tz, now
 import todo_areas
 from machine import todo_states
+from machine.owner_error import OwnerError
 
 
 def first_look_running(db):
@@ -248,7 +249,7 @@ def owner_card_of(db, rows):
     ids = {json.loads(r['metadata']).get('card_id') if isinstance(r['metadata'], str) else r['metadata'].get('card_id')
            for r in rows if r['kind'] == 'owner.card'} - {None}
     if len(ids) > 1:
-        raise ValueError('These are several cards the owner made: suggest about one at a time')
+        raise OwnerError('These are several cards the owner made: suggest about one at a time')
     return db.execute('SELECT * FROM suggestions WHERE id=?', (ids.pop(),)).fetchone() if ids else None
 
 
@@ -509,7 +510,7 @@ class CardsStore:
             except ValueError:
                 raise ValueError('due must be the deadline date as YYYY-MM-DD') from None
         if len(title) > 90 or len(body) > 700:
-            raise ValueError('Keep it simple: title under 90 characters; body under 700 characters, about three short sentences. Keep event IDs and internal details out of the message.')
+            raise OwnerError('Keep it simple: title under 90 characters; body under 700 characters, about three short sentences. Keep event IDs and internal details out of the message.')
         placed = todo_areas.company_accounts(company, getattr(self, 'accounts', None) or []) if company is not None else None
         with contextlib.nullcontext(_db) as db:
             if company is None and (personal is True or own_life_evidence(db, event_ids)):
@@ -522,19 +523,19 @@ class CardsStore:
                 return {'id': existing['id'], 'status': existing['status'], 'duplicate': True}
             rows = db.execute('SELECT id,account_id,kind,occurred_at,ingested_at,metadata FROM events WHERE deleted=0 AND id IN (' + ','.join('?' for _ in event_ids) + ')', event_ids).fetchall()
             if {r['id'] for r in rows} != set(event_ids):
-                raise ValueError('Every evidence event must exist and be live')
+                raise OwnerError('Every evidence event must exist and be live')
             expiry = expiry_moment(expires_at, expires_what, sorted(rows, key=lambda r: event_ids.index(r["id"]))) \
                 if expires_at is not None or expires_what is not None else None
             if all(r['kind'] == 'calendar.event' and not calendar_owned(json.loads(r['metadata'])) for r in rows):
-                raise ValueError("That meeting is on someone else's calendar that the owner can see, and they aren't on it: "
+                raise OwnerError("That meeting is on someone else's calendar that the owner can see, and they aren't on it: "
                                  'not theirs, so no card for it')
             teams = self.team_inbox(db, rows)
             if teams and len(teams) == len(rows):
-                raise ValueError(f"That mail only went to {sorted(set(teams.values()))[0]}, which the owner marked as the team's: "
+                raise OwnerError(f"That mail only went to {sorted(set(teams.values()))[0]}, which the owner marked as the team's: "
                                  'others pick it up, so no card for it')
             taken = [a for a in self.intercom_assignments(db, rows).values() if isinstance(a, tuple)]
             if taken and len(taken) == len(rows):
-                raise ValueError(f"That Intercom conversation is assigned to {taken[0][1] or 'a teammate'}, not the owner: "
+                raise OwnerError(f"That Intercom conversation is assigned to {taken[0][1] or 'a teammate'}, not the owner: "
                                  'theirs to answer, so no card for it')
             own = owner_card_of(db, rows) if match else None
             if own is not None and card_id is not None and card_id != own['id']:
@@ -558,7 +559,7 @@ class CardsStore:
                 if not watch:
                     raise ValueError('awaiting_event_id must be one of event_ids: the email, Slack, WhatsApp, Telegram or LinkedIn message where someone else made the promise')
                 if when in ('now', 'digest') and not due:
-                    raise ValueError('A follow-up on someone else\'s promise needs due (their deadline) or when, so the card waits until then')
+                    raise OwnerError('A follow-up on someone else\'s promise needs due (their deadline) or when, so the card waits until then')
             target = None
             if own is not None:
                 target = own  # the owner's own signal always fills in their card, never a second one
@@ -927,9 +928,9 @@ class CardsStore:
         words = '\n'.join(' '.join(line.split()) for line in str(text or '').strip().splitlines()).strip()
         words = re.sub(r'\n{3,}', '\n\n', words)
         if not words and not (files and files[1]):
-            raise ValueError('Say what needs doing')
+            raise OwnerError('Say what needs doing')
         if len(words) > OWNER_WORDS_MAX:
-            raise ValueError(f'Keep it under {OWNER_WORDS_MAX} characters')
+            raise OwnerError(f'Keep it under {OWNER_WORDS_MAX} characters')
         title = owner_title(words) if words else None
         stamp, sid = now(), uuid.uuid4().hex[:16]
         meta = {'from_me': True, 'sender_display': 'You', 'card_id': sid, 'origin': 'owner', **({'about': list(about)} if about else {}),
@@ -941,7 +942,7 @@ class CardsStore:
                 names = [r['name'] for r in (db.execute('SELECT name FROM chat_files WHERE id=? AND suggestion_id=?', (str(i), files[0])).fetchone()
                                              for i in files[1][:chat_files.MAX_FILES]) if r]
                 if not names:
-                    raise ValueError('A file is gone. Add it again.')
+                    raise OwnerError('A file is gone. Add it again.')
                 title = owner_title(' '.join(re.sub(r'\.[A-Za-z0-9]{1,5}$', '', names[0]).replace('_', ' ').split()) or names[0])
                 body = ', '.join(names)
             cursor = db.execute('INSERT INTO events(account_id,source_id,kind,occurred_at,title,body,metadata,deleted,content_hash,version,analyzed_version,ingested_at) '
@@ -965,7 +966,7 @@ class CardsStore:
         """The owner saw what their confirmed steps did (Just done, Got it): those to-dos stay only in Done."""
         ids = [str(i) for i in (ids if isinstance(ids, list) else []) if re.fullmatch(r'[A-Za-z0-9_-]{1,64}', str(i))][:100]
         if not ids:
-            raise ValueError('Which to-dos did you see?')
+            raise OwnerError('Which to-dos did you see?')
         with self.connect() as db:
             seen = db.execute('UPDATE suggestions SET done_report=NULL WHERE done_report IS NOT NULL AND id IN ('
                               + ','.join('?' * len(ids)) + ')', ids).rowcount
@@ -975,7 +976,7 @@ class CardsStore:
         """The owner's own title for a card, kept in `title` (so every surface shows it) while the generated one waits in
         title_suggested; reviews and preparations update that one, never theirs. reset goes back to the suggested title."""
         if not re.fullmatch(r'[A-Za-z0-9_.:-]{1,200}', str(decision_id or '')):
-            raise ValueError('Renames come from the owner’s controls')
+            raise OwnerError('Renames come from the owner’s controls')
         with self.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             if db.execute('SELECT 1 FROM decisions WHERE id=?', (decision_id,)).fetchone():
@@ -990,9 +991,9 @@ class CardsStore:
             else:
                 new = ' '.join(str(title or '').split())
                 if not new:
-                    raise ValueError('Give the to-do a title')
+                    raise OwnerError('Give the to-do a title')
                 if len(new) > TITLE_OWNER_MAX:
-                    raise ValueError(f'Keep the title under {TITLE_OWNER_MAX} characters')
+                    raise OwnerError(f'Keep the title under {TITLE_OWNER_MAX} characters')
             kept = None if new == suggested else suggested
             if new == row['title'] and kept == row['title_suggested']:
                 return {'id': suggestion_id, 'title': new, 'renamed': kept is not None, 'unchanged': True}
@@ -1011,7 +1012,7 @@ class CardsStore:
         very move (preparation move_to) carries on by itself, as one does after its sign-in; any other stuck one keeps
         Try again. Returns {'id', 'area', 'label', 'line', 'decision_id', 'resumed'}."""
         if not re.fullmatch(r'[A-Za-z0-9_.:-]{1,200}', str(decision_id or '')):
-            raise ValueError('Moves come from the owner’s controls')
+            raise OwnerError('Moves come from the owner’s controls')
         accounts = getattr(self, 'accounts', None) or []
         companies = sum(a['id'] != todo_areas.PERSONAL for a in todo_areas.areas(accounts))
         resume = False
@@ -1025,12 +1026,12 @@ class CardsStore:
             if done:  # the same tap again
                 return {'id': suggestion_id, 'area': done['area'], 'label': todo_areas.label(done['area'], companies, accounts), 'duplicate': True}
             if row['status'] in todo_states.CLOSED:
-                raise ValueError('Reopen it first')
+                raise OwnerError('Reopen it first')
             if undo is not None:
                 last = db.execute('SELECT * FROM card_moves WHERE suggestion_id=? AND undone_at IS NULL ORDER BY created_at DESC,rowid DESC LIMIT 1',
                                   (suggestion_id,)).fetchone()
                 if not last or last['decision_id'] != undo:
-                    raise ValueError('That move can’t be undone any more')
+                    raise OwnerError('That move can’t be undone any more')
                 ids, pinned = json.loads(last['accounts_before']), last['area_before']
                 area = todo_areas.current(ids, accounts, pinned) or todo_areas.PERSONAL
                 db.execute('UPDATE card_moves SET undone_at=? WHERE decision_id=?', (now(), undo))
@@ -1038,7 +1039,7 @@ class CardsStore:
                 area = todo_areas.check(area, row['account_ids'], accounts, row['area'])
                 ids, pinned = todo_areas.accounts_in(area, accounts), area
                 if not ids:
-                    raise ValueError('Pick one of your areas')
+                    raise OwnerError('Pick one of your areas')
                 resume = (row['prep'] == 'blocked' and not row['error'] and row['move_to'] == area
                           and row['status'] in (todo_states.PENDING, todo_states.ACCEPTED, todo_states.INSTRUCTIONS))  # pending: a prepared-ahead run's blocker
             db.execute('INSERT INTO card_moves(decision_id,suggestion_id,area,accounts_before,area_before,created_at) VALUES(?,?,?,?,?,?)',
@@ -1066,7 +1067,7 @@ class CardsStore:
         use_event_ids) become its sources, so the run reads them like the ones it came from, and it carries on by itself.
         Only those messages: its accounts and area stay as they are. Returns {'id', 'line', 'resumed'}."""
         if not re.fullmatch(r'[A-Za-z0-9_.:-]{1,200}', str(decision_id or '')):
-            raise ValueError('This comes from the owner’s controls')
+            raise OwnerError('This comes from the owner’s controls')
         with self.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             done = db.execute('SELECT event_ids,mail FROM card_uses WHERE decision_id=?', (decision_id,)).fetchone()
@@ -1078,10 +1079,10 @@ class CardsStore:
                 raise ValueError('Unknown to-do')
             asked = json.loads(row['use_events'] or '[]') if row['prep'] == 'blocked' and not row['error'] else []
             if not asked or row['status'] not in (todo_states.PENDING, todo_states.ACCEPTED, todo_states.INSTRUCTIONS):  # pending: a prepared-ahead run's blocker
-                raise ValueError('Nothing is waiting for that on this to-do')
+                raise OwnerError('Nothing is waiting for that on this to-do')
             live = [r['id'] for r in db.execute('SELECT id FROM events WHERE deleted=0 AND id IN (' + ','.join('?' * len(asked)) + ')', asked)]
             if not live:
-                raise ValueError('Those messages are gone')
+                raise OwnerError('Those messages are gone')
             view = use_view(db, encoded(live))
             ids = json.loads(row['event_ids'] or '[]')
             db.execute('UPDATE suggestions SET event_ids=? WHERE id=?', (encoded(ids + [i for i in asked if i in live and i not in ids]), suggestion_id))
@@ -1102,14 +1103,14 @@ class CardsStore:
         keeps its own work (a draft, a run) and takes on their words, their title if they gave one, and the evidence.
         Keep both stops the question for that pair."""
         if not re.fullmatch(r'[A-Za-z0-9_.:-]{1,200}', str(decision_id or '')):
-            raise ValueError('Merges come from the owner’s controls')
+            raise OwnerError('Merges come from the owner’s controls')
         stamp = now()
         with self.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             own = db.execute('SELECT * FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
             offer = json.loads((own['merge_offer'] if own else None) or '{}')
             if not own or not offer.get('card_id') or offer.get('kept'):
-                raise ValueError('There is nothing to merge on this to-do')
+                raise OwnerError('There is nothing to merge on this to-do')
             if db.execute('SELECT 1 FROM decisions WHERE id=?', (decision_id,)).fetchone():
                 return {'id': suggestion_id, 'duplicate': True}
             other = db.execute('SELECT * FROM suggestions WHERE id=?', (offer['card_id'],)).fetchone()

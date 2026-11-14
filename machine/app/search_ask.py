@@ -23,6 +23,7 @@ from timeutil import now
 from models import background_model, has_model
 import search_ask
 import shared_graph
+from machine.owner_error import OwnerError
 
 LOG = logging.getLogger('personal-assistant')
 AREAS = (None, 'work', 'personal')
@@ -52,12 +53,12 @@ class SearchAskApp:
 
     def search_ask_action(self, name, args, owner_dashboard):
         if not owner_dashboard:
-            raise ValueError('Ask from search is only in your own dashboard.')
+            raise OwnerError('Ask from search is only in your own dashboard.')
         return self.search_ask(args.get('query'), self.search_ask_area(args), args.get('plan'))
 
     def search_ask_examples_action(self, name, args, owner_dashboard):
         if not owner_dashboard:
-            raise ValueError('Ask from search is only in your own dashboard.')
+            raise OwnerError('Ask from search is only in your own dashboard.')
         if not getattr(self, 'ask_model', None) and has_model(self.config, wait=False):
             import model_service
             model_service.warm(self.config)  # the search is open: a question may follow, so load the model helper now
@@ -68,7 +69,7 @@ class SearchAskApp:
         area = args.get('area')
         area = None if area in (None, '', 'all') else area
         if area not in AREAS:
-            raise ValueError('Pick All, Work or Personal.')
+            raise OwnerError('Pick All, Work or Personal.')
         return area
 
     def search_ask_accounts(self, area):

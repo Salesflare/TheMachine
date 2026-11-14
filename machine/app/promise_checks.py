@@ -23,6 +23,7 @@ from models import background_model, openclaw_model
 from machine.store import outcomes
 from timeutil import now
 from machine import todo_states
+from machine.owner_error import OwnerError
 
 
 PROMISE_CARDS_PER_DAY = 5
@@ -411,7 +412,7 @@ class PromiseChecksApp:
 
     def promise_close_action(self, name, args, owner_dashboard=False):
         if not owner_dashboard or args.get('status') not in ('kept', 'dropped'):
-            raise ValueError('Only the owner closes a promise, on the dashboard')
+            raise OwnerError('Only the owner closes a promise, on the dashboard')
         return self.store.update_promise({'id': args.get('id'), 'status': args['status']}, source='dashboard')
 
     def promise_todo_action(self, name, args, owner_dashboard=False):
@@ -421,7 +422,7 @@ class PromiseChecksApp:
         work, or for a nudge a short follow-up where they promised it. A draft waits on the to-do; nothing sends
         before the owner sends it. A promise that is a to-do already opens that one. Returns {'card': id}."""
         if not owner_dashboard:
-            raise ValueError('Only the owner asks for a promise’s to-do, on the dashboard')
+            raise OwnerError('Only the owner asks for a promise’s to-do, on the dashboard')
         with self.store.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             self.store.settle_promises(db)
@@ -435,12 +436,12 @@ class PromiseChecksApp:
                 if card and card['status'] not in todo_states.CLOSED:
                     return {'id': p['id'], 'card': card['id'], 'existing': True}
                 if card:
-                    raise ValueError('This promise is no longer open')
+                    raise OwnerError('This promise is no longer open')
                 # Its to-do is gone: it reads open (promise_state), so it gets a new one
                 db.execute("UPDATE promises SET status='open',suggestion_id=NULL WHERE id=?", (p['id'],))
                 p['status'] = 'open'
             elif p['status'] != 'open':
-                raise ValueError('This promise is no longer open')
+                raise OwnerError('This promise is no longer open')
             saved = self.promise_card(p, _db=db, ahead=False)
         if saved.get('duplicate') or saved.get('status') != 'pending':
             return {'id': p['id'], 'card': saved['id'], 'existing': bool(saved.get('duplicate'))}
@@ -451,5 +452,5 @@ class PromiseChecksApp:
 
     def promise_due_action(self, name, args, owner_dashboard=False):
         if not owner_dashboard or not args.get('due'):
-            raise ValueError('Only the owner moves a promise’s date here, on the dashboard')
+            raise OwnerError('Only the owner moves a promise’s date here, on the dashboard')
         return self.store.update_promise({'id': args.get('id'), 'due': args['due']}, self.config.get('digest_at', '08:30'), source='dashboard')

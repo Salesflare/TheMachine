@@ -14,6 +14,7 @@ from __future__ import annotations
 import datetime as dt
 import json
 import re
+from machine.owner_error import OwnerError
 
 KIND = 'friends'
 KINDS = ('relationships', 'meeting', 'intro', 'availability')
@@ -130,14 +131,14 @@ class Friends:
         if action == 'add':
             name = str(username or '').strip().lower().lstrip('@')
             if not USERNAME.fullmatch(name):
-                raise ValueError('A username is 3 to 30 letters (a-z), digits or hyphens')
+                raise OwnerError('A username is 3 to 30 letters (a-z), digits or hyphens')
             body['username'] = name
         elif rid:
             body['id'] = str(rid)
         elif member_id:
             body['member_id'] = str(member_id)
         else:
-            raise ValueError('Which request or friend?')
+            raise OwnerError('Which request or friend?')
         found = self.relay.call('POST', '/friends', body, timeout=30)
         self.directory(refresh=True)
         with self.connect() as db:
@@ -148,10 +149,10 @@ class Friends:
         """Ask one friend's Machine when they are busy: their answer is busy blocks only."""
         ref = self.friends_ref()
         if not ref or not self.member(ref, member_id):
-            raise ValueError('Not one of your friends')
+            raise OwnerError('Not one of your friends')
         question = parse_availability({'start': start, 'days': days})
         if not question:
-            raise ValueError(f'Pick a day and 1 to {MAX_DAYS} days')
+            raise OwnerError(f'Pick a day and 1 to {MAX_DAYS} days')
         return self.ask('availability', question, fleet=ref, to=[member_id])
 
     def friends_meeting_round(self):

@@ -17,6 +17,7 @@ import datetime as dt
 import json
 import re
 import sqlite3
+from machine.owner_error import OwnerError
 
 KINDS = ('person', 'org', 'project')
 TYPES = ('text', 'number', 'date', 'choice')
@@ -57,9 +58,9 @@ def fields(db, kind=None):
 def _clean_name(name):
     name = ' '.join(str(name or '').split())
     if not name:
-        raise ValueError('Give the field a name')
+        raise OwnerError('Give the field a name')
     if len(name) > 40:
-        raise ValueError('Name: up to 40 characters')
+        raise OwnerError('Name: up to 40 characters')
     return name
 
 
@@ -70,12 +71,12 @@ def _clean_choices(raw):
         c = ' '.join(str(c or '').split())
         if c and c.casefold() not in {x.casefold() for x in out}:
             if len(c) > 40:
-                raise ValueError('Each choice: up to 40 characters')
+                raise OwnerError('Each choice: up to 40 characters')
             out.append(c)
     if len(out) < 2:
-        raise ValueError('A choice field needs at least two choices')
+        raise OwnerError('A choice field needs at least two choices')
     if len(out) > MAX_CHOICES:
-        raise ValueError(f'Up to {MAX_CHOICES} choices')
+        raise OwnerError(f'Up to {MAX_CHOICES} choices')
     return out
 
 
@@ -87,22 +88,22 @@ def save_field(db, args, now=None):
     if args.get('id'):
         row = db.execute('SELECT * FROM crm_fields WHERE id=?', (int(args['id']),)).fetchone()
         if not row:
-            raise ValueError('That field is gone')
+            raise OwnerError('That field is gone')
         kind, kind_type = row['kind'], row['type']
     else:
         kind, kind_type = str(args.get('kind') or ''), str(args.get('type') or 'text')
         if kind not in KINDS:
-            raise ValueError('Pick people, organizations or projects')
+            raise OwnerError('Pick people, organizations or projects')
         if kind_type not in TYPES:
-            raise ValueError('Pick text, number, date or choice')
+            raise OwnerError('Pick text, number, date or choice')
         if db.execute('SELECT count(*) FROM crm_fields WHERE kind=?', (kind,)).fetchone()[0] >= MAX_FIELDS:
-            raise ValueError(f'Up to {MAX_FIELDS} fields each')
+            raise OwnerError(f'Up to {MAX_FIELDS} fields each')
     import person_birthday
     if kind == 'person' and person_birthday.is_name(name):
-        raise ValueError('Birthday is built in: use Add birthday on their page')
+        raise OwnerError('Birthday is built in: use Add birthday on their page')
     clash = db.execute('SELECT id FROM crm_fields WHERE kind=? AND name=? COLLATE NOCASE AND id!=?', (kind, name, int(args.get('id') or 0))).fetchone()
     if clash:
-        raise ValueError('There is a field with that name already')
+        raise OwnerError('There is a field with that name already')
     choices = _clean_choices(args.get('choices')) if kind_type == 'choice' else None
     if args.get('id'):
         db.execute('UPDATE crm_fields SET name=?,choices=? WHERE id=?', (name, json.dumps(choices) if choices else None, row['id']))
@@ -122,7 +123,7 @@ def save_field(db, args, now=None):
 def delete_field(db, field_id):
     row = db.execute('SELECT id FROM crm_fields WHERE id=?', (int(field_id or 0),)).fetchone()
     if not row:
-        raise ValueError('That field is gone')
+        raise OwnerError('That field is gone')
     db.execute('DELETE FROM crm_values WHERE field_id=?', (row['id'],))
     db.execute('DELETE FROM crm_fields WHERE id=?', (row['id'],))
     return {'deleted': row['id']}
@@ -135,7 +136,7 @@ def clean_value(field, value):
         return None
     if field['type'] == 'text':
         if len(value) > MAX_TEXT:
-            raise ValueError(f'{field["name"]}: up to {MAX_TEXT} characters')
+            raise OwnerError(f'{field["name"]}: up to {MAX_TEXT} characters')
         return value
     if field['type'] == 'number':
         try:
@@ -152,7 +153,7 @@ def clean_value(field, value):
             raise ValueError(f'{field["name"]}: a date, like 2026-12-15') from None
     found = next((c for c in field.get('choices') or [] if c.casefold() == value.casefold()), None)
     if not found:
-        raise ValueError(f'{field["name"]}: one of {", ".join(field.get("choices") or [])}')
+        raise OwnerError(f'{field["name"]}: one of {", ".join(field.get("choices") or [])}')
     return found
 
 
@@ -170,7 +171,7 @@ def set_value(db, node_id, field_id, value, now=None):
     row = crm.node_row(db, node_id)
     f = db.execute('SELECT * FROM crm_fields WHERE id=?', (int(field_id or 0),)).fetchone()
     if not f or f['kind'] != row['kind']:
-        raise ValueError('That field is gone')
+        raise OwnerError('That field is gone')
     field = _field(f)
     clean = clean_value(field, value)
     ids = _ids(db, row)
@@ -192,7 +193,7 @@ def values_for(db, row):
 def clean_tag(tag):
     tag = ' '.join(str(tag or '').split())
     if not tag or not TAG.fullmatch(tag):
-        raise ValueError('A tag: up to 40 characters, no commas')
+        raise OwnerError('A tag: up to 40 characters, no commas')
     return tag
 
 
@@ -206,7 +207,7 @@ def tag(db, node_id, label, add=True, now=None):
         have = {r[0].casefold() for r in db.execute('SELECT tag FROM crm_tags WHERE node_id IN (SELECT value FROM json_each(?))', (within,))}
         if label.casefold() not in have:
             if len(have) >= MAX_TAGS:
-                raise ValueError(f'Up to {MAX_TAGS} tags')
+                raise OwnerError(f'Up to {MAX_TAGS} tags')
             same = db.execute('SELECT tag FROM crm_tags WHERE tag=? LIMIT 1', (label,)).fetchone()  # the spelling in use
             db.execute('INSERT INTO crm_tags(node_id,tag,at) VALUES(?,?,?)', (row['id'], same[0] if same else label, now or _now()))
     else:

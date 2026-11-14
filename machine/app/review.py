@@ -54,6 +54,7 @@ from machine.text import clamp, encoded, fold_previews
 import next_actions
 import shared_graph
 from timeutil import now
+from machine.owner_error import OwnerError
 
 
 # The review worker looks at its run every REVIEW_TICK_SECONDS, and every FIRST_LOOK_TICK_SECONDS while the first look
@@ -383,9 +384,9 @@ class ReviewApp:
         with self.store.connect() as db:
             row = db.execute('SELECT * FROM suggestions WHERE id=?', (str(card_id),)).fetchone()
         if not row:
-            raise ValueError('No such to-do')
+            raise OwnerError('No such to-do')
         if row['status'] not in fleet.OPEN_CARD or str(row['dedupe_key']).startswith('fleet-review:'):
-            raise ValueError(i18n.t('This to-do can’t be reviewed'))
+            raise OwnerError(i18n.t('This to-do can’t be reviewed'))
         scope = suggestion_scope(row['account_ids'], self.config.get('accounts', []), row['area'])
         found = {'scope': scope, 'title': row['title'], 'what': 'result', 'body': fleet_reviews._text(row['body'], fleet_reviews.BODY, True)}
         try:
@@ -780,7 +781,7 @@ class ReviewApp:
         week's signals, for a new install with reviews still off. Its cards are shown on the dashboard
         only (see Store.suggest); review_step monitors the run. Config stays as it is."""
         if (self.config.get('review_worker') or {}).get('enabled'):
-            raise ValueError('Checks are already on: new to-dos arrive by themselves. See assistant tasks or the dashboard.')
+            raise OwnerError('Checks are already on: new to-dos arrive by themselves. See assistant tasks or the dashboard.')
         accounts = [a['id'] for a in self.config['accounts']]
         hours = QUICK_LOOK_HOURS if quick else PREVIEW_DAYS * 24
         # The first look by itself: after the quick one, it digs on with the most promising FIRST_LOOK_NEXT_SIGNALS of the week
@@ -794,11 +795,11 @@ class ReviewApp:
                 return {'run_id': run['run_id'], 'started_at': run['started_at'], 'attached': True}  # follow the running preview
             if run or db.execute("SELECT 1 FROM analyses WHERE status='running' AND coalesce(resumed_at,started_at)>?",
                                  ((dt.datetime.fromisoformat(now()) - dt.timedelta(hours=1)).isoformat(),)).fetchone():
-                raise ValueError('Another check is running. Try again when it has finished (assistant reviews).')
+                raise OwnerError('Another check is running. Try again when it has finished (assistant reviews).')
             waiting = db.execute('SELECT count(*) FROM events WHERE analyzed_version<version AND deferrals<? AND occurred_at>=? AND account_id IN ('
                                  + ','.join('?' for _ in accounts) + ')', (SET_ASIDE_AFTER, since, *accounts)).fetchone()[0] if accounts else 0
             if not waiting:
-                raise ValueError(f'No unchecked signals from the last {PREVIEW_DAYS} days yet. Check assistant sources; the first import can take a few minutes.')
+                raise OwnerError(f'No unchecked signals from the last {PREVIEW_DAYS} days yet. Check assistant sources; the first import can take a few minutes.')
             run_id, started = uuid.uuid4().hex, now()
             db.execute("INSERT INTO review_runs(run_id,status,started_at,updated_at,preview,auto,planned,window_hours,budget,promising) VALUES(?,'starting',?,?,1,?,?,?,?,?)",
                        (run_id, started, started, int(auto), min(waiting, budget), QUICK_LOOK_HOURS if quick else None, budget if quick or nxt else None, int(nxt)))
@@ -849,7 +850,7 @@ class ReviewApp:
     def review_now_action(self, name, args, owner_dashboard=False):
         # the dashboard's Review now while reviews wait for the budget: the owner's own, like a preview
         if not owner_dashboard:
-            raise ValueError('Only the owner can do this, on the dashboard')
+            raise OwnerError('Only the owner can do this, on the dashboard')
         if not (self.config.get('review_worker') or {}).get('enabled'):
             return self.start_preview()
         self.review_asked, self.review_paused = time.time(), None
@@ -900,7 +901,7 @@ class ReviewApp:
     def handoff_on_it_action(self, name, args, owner_dashboard=False):
         # the review: a message the owner sent or a call they joined shows they took a waiting handoff on
         if not getattr(self, 'fleet', None):
-            raise ValueError('This Machine is not on the Network')
+            raise OwnerError('This Machine is not on the Network')
         return self.fleet.handoff_on_it(str(args.get('ask_id') or ''), args.get('event_id'))
 
     def events_action(self, name, args, owner_dashboard=False):

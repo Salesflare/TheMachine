@@ -23,6 +23,7 @@ import threading
 import time
 
 import locale_prefs
+from machine.owner_error import OwnerError
 
 WRITE_SCOPES = {'https://www.googleapis.com/auth/calendar', 'https://www.googleapis.com/auth/calendar.events'}
 SCOPE = 'https://www.googleapis.com/auth/calendar.events'
@@ -114,7 +115,7 @@ def checking():
 def account_for(config, account_id):
     account = next((a for a in config.get('accounts', []) if a.get('id') == account_id), None)
     if not writable(account):
-        raise ValueError('That calendar can’t be changed from The Machine. Pick one of your own, or a shared one marked writable.')
+        raise OwnerError('That calendar can’t be changed from The Machine. Pick one of your own, or a shared one marked writable.')
     return account
 
 
@@ -122,16 +123,16 @@ def _day(value):
     try:
         return dt.date.fromisoformat(str(value))
     except ValueError:
-        raise ValueError('An all-day event takes dates like 2026-10-27') from None
+        raise OwnerError('An all-day event takes dates like 2026-10-27') from None
 
 
 def _moment(value):
     try:
         stamp = dt.datetime.fromisoformat(str(value).replace('Z', '+00:00'))
     except ValueError:
-        raise ValueError('Give start and end as a date and time with its offset, like 2026-10-27T16:00:00+01:00') from None
+        raise OwnerError('Give start and end as a date and time with its offset, like 2026-10-27T16:00:00+01:00') from None
     if stamp.tzinfo is None:
-        raise ValueError('Give start and end with a time zone offset, like 2026-10-27T16:00:00+01:00')
+        raise OwnerError('Give start and end with a time zone offset, like 2026-10-27T16:00:00+01:00')
     return stamp
 
 
@@ -151,11 +152,11 @@ def _times(start, end, all_day):
     if all_day:
         a, b = _day(start), _day(end if end not in (None, '') else start)  # end: the last day, inclusive
         if not 0 <= (b - a).days < MAX_DAYS:
-            raise ValueError('An all-day event ends on or after its first day, within 60 days')
+            raise OwnerError('An all-day event ends on or after its first day, within 60 days')
         return a.isoformat(), b.isoformat()
     a, b = _moment(start), _moment(end)
     if not dt.timedelta(0) < b - a <= dt.timedelta(days=MAX_DAYS):
-        raise ValueError('An event ends after it starts, within 60 days')
+        raise OwnerError('An event ends after it starts, within 60 days')
     return a.isoformat(), b.isoformat()
 
 
@@ -163,7 +164,7 @@ def _text(value, field):
     if value is None:
         return ''
     if not isinstance(value, str) or '\x00' in value or len(value) > TEXT[field]:
-        raise ValueError(f'{field} is text of at most {TEXT[field]} characters')
+        raise OwnerError(f'{field} is text of at most {TEXT[field]} characters')
     return value.strip() if field == 'notes' else ' '.join(value.split())
 
 
@@ -175,7 +176,7 @@ def guest_list(value, account):
     for item in value:
         address = str(item).strip().lower() if isinstance(item, str) else ''
         if len(address) > 254 or not EMAIL.fullmatch(address):
-            raise ValueError(f'{str(item)[:80]} is not an email address')
+            raise OwnerError(f'{str(item)[:80]} is not an email address')
         if address not in mine and address not in found:
             found.append(address)
     return found
@@ -202,22 +203,22 @@ def validate(value, config, events=None, invite=False):
         if not event:
             raise ValueError('event is the id of a meeting on a calendar you can change (from events or the Calendar)')
         if value.get('calendar') not in (None, event['account_id']):
-            raise ValueError('That event is on another calendar')
+            raise OwnerError('That event is on another calendar')
         account = account_for(config, event['account_id'])
         if event.get('guests'):
-            raise ValueError('That event has guests. Change it in the calendar itself, so they hear about it.')
+            raise OwnerError('That event has guests. Change it in the calendar itself, so they hear about it.')
         before = {'title': event['title'], 'when': when(event['start'], event['end'], event['all_day'])}
         result.update(event_id=event['source_id'], event=value['event'], was=before)
     result.update(account_id=account['id'], calendar_name=name(account))
     if guests:
         if op == 'delete':
-            raise ValueError('A delete only names the event')
+            raise OwnerError('A delete only names the event')
         if not own(account):
-            raise ValueError('Invites go out from your own calendar only. Add guests there.')
+            raise OwnerError('Invites go out from your own calendar only. Add guests there.')
         guests = guest_list(guests, account)
     if op == 'delete':
         if set(value) - {'kind', 'op', 'event', 'calendar', 'label'}:
-            raise ValueError('A delete only names the event')
+            raise OwnerError('A delete only names the event')
         result['title'] = before['title']
         result['when'] = before['when']
         return result
@@ -229,16 +230,16 @@ def validate(value, config, events=None, invite=False):
         if op == 'create' or field in value:
             changes[field] = _text(value.get(field), field)
     if op == 'create' and not changes['title']:
-        raise ValueError('A new event needs a title')
+        raise OwnerError('A new event needs a title')
     if op == 'update' and 'title' in changes and not changes['title']:
-        raise ValueError('An event keeps a title')
+        raise OwnerError('An event keeps a title')
     if op == 'create' or any(k in value for k in ('start', 'end', 'all_day')):
         start = value.get('start', None if op == 'create' else event['start'])
         end = value.get('end', None if op == 'create' or 'start' in value else event['end'])
         if start in (None, '') or (end in (None, '') and not all_day):
-            raise ValueError('Give the event a start and an end')
+            raise OwnerError('Give the event a start and an end')
         if op == 'update' and all_day != event['all_day'] and ('start' not in value or ('end' not in value and not all_day)):
-            raise ValueError('Switching between all day and a time needs a new start and end')
+            raise OwnerError('Switching between all day and a time needs a new start and end')
         changes['start'], changes['end'] = _times(start, end, all_day)
         changes['all_day'] = all_day
     if guests:
@@ -321,7 +322,7 @@ class CalendarTransport:
 
     def account(self, action):
         if action.get('kind') != 'calendar':
-            raise ValueError('Only an approved calendar change uses the calendar transport')
+            raise OwnerError('Only an approved calendar change uses the calendar transport')
         return account_for(self.config, action['account_id'])
 
     def calendar_id(self, account):
@@ -334,21 +335,21 @@ class CalendarTransport:
         import next_actions  # noqa: PLC0415 - next_actions imports this module
         account = self.account(action)
         if action.get('guests') and not own(account):
-            raise ValueError('Invites go out from your own calendar only. Nothing was changed.')
+            raise OwnerError('Invites go out from your own calendar only. Nothing was changed.')
         if not next_actions.granted_scopes(self.config, self.credential, account) & WRITE_SCOPES:
-            raise ValueError('This Google sign-in can only read calendars. Nothing was changed.')
+            raise OwnerError('This Google sign-in can only read calendars. Nothing was changed.')
         try:
             entry = self.get(account, 'calendarList.get', {})
         except Exception:
-            raise ValueError('I couldn’t check that calendar. Nothing was changed.') from None
+            raise OwnerError('I couldn’t check that calendar. Nothing was changed.') from None
         if entry.get('accessRole') not in ('writer', 'owner'):
-            raise ValueError(f'{name(account)} is shared with you to view only. Its owner can share it with “Make changes to events”. Nothing was changed.')
+            raise OwnerError(f'{name(account)} is shared with you to view only. Its owner can share it with “Make changes to events”. Nothing was changed.')
         if action['op'] != 'create':
             event = self.event(account, action['event_id'])
             if not event or event.get('status') == 'cancelled':
-                raise ValueError('That event is no longer on the calendar. Nothing was changed.')
+                raise OwnerError('That event is no longer on the calendar. Nothing was changed.')
             if any(not a.get('self') for a in event.get('attendees') or []):
-                raise ValueError('That event has guests now. Change it in the calendar itself. Nothing was changed.')
+                raise OwnerError('That event has guests now. Change it in the calendar itself. Nothing was changed.')
 
     def event(self, account, google_id):
         try:

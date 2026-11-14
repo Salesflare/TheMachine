@@ -33,6 +33,7 @@ import i18n
 import mail_cleanup
 from machine import todo_states
 from machine.store.review_wait import NO_REPLY, People, mail_wait
+from machine.owner_error import OwnerError
 
 KIND = 'routine.subscriptions'
 LOOK_DAYS = 400  # receipts a monthly run reads: a yearly plan's last two charges
@@ -558,9 +559,9 @@ def pick(db, suggestion_id, n, choice, stamp, rows):
     metadata). Returns that row."""
     item = db.execute('SELECT * FROM subs_items WHERE suggestion_id=? AND item=?', (suggestion_id, n)).fetchone()
     if not item or n >= len(rows):
-        raise ValueError(i18n.t('That subscription is gone'))
+        raise OwnerError(i18n.t('That subscription is gone'))
     if choice not in (*CHOICES, None):
-        raise ValueError(i18n.t('Pick Keep or Cancel it'))
+        raise OwnerError(i18n.t('Pick Keep or Cancel it'))
     row = rows[n]
     db.execute('UPDATE subs_items SET choice=?,updated_at=? WHERE suggestion_id=? AND item=?', (choice, stamp, suggestion_id, n))
     remember(db, item['key'], choice, row.get('amount'), row.get('currency'), stamp)

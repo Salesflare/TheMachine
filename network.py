@@ -25,6 +25,7 @@ import logging
 from pathlib import Path
 
 import network_crypto as nc
+from machine.owner_error import OwnerError
 
 LOG = logging.getLogger('personal-assistant')
 SCHEMA = '''
@@ -90,7 +91,7 @@ class Sealing:
     def call(self, method, path, body=None, timeout=40):
         route = path.split('?', 1)[0]
         if not self.private and route in ('/ask', '/answer') and isinstance(body, dict) and (body.get('question') is not None or body.get('answer') is not None):
-            raise ValueError("This Machine has no keys for The Machine Network, so it can't send anything there; nothing was sent.")
+            raise OwnerError("This Machine has no keys for The Machine Network, so it can't send anything there; nothing was sent.")
         if route == '/directory':
             return self._directory(self.inner.call(method, path, body, timeout=timeout))
         if route == '/ask' and method == 'POST' and isinstance(body, dict) and body.get('question') is not None:
@@ -170,7 +171,7 @@ class Sealing:
         group = self._group(body.get('fleet'))
         me = self._me(group)
         if not me:
-            raise ValueError('This Machine is not in that group on The Machine Network; nothing was sent.')
+            raise OwnerError('This Machine is not in that group on The Machine Network; nothing was sent.')
         kind, question = body.get('kind'), body['question']
         named = bool(body.get('to'))
         if body.get('to'):
@@ -183,11 +184,11 @@ class Sealing:
             if keys:
                 sealed[member_id] = nc.seal(question, self.private, keys, {'p': 'ask', 'k': kind, 'f': me, 't': member_id, 'r': body.get('request_id')})
             elif self._keys_of(member_id):
-                raise ValueError("A teammate's Machine stopped showing its keys on The Machine Network; nothing was sent. Try again later.")
+                raise OwnerError("A teammate's Machine stopped showing its keys on The Machine Network; nothing was sent. Try again later.")
             elif named:
-                raise ValueError("Their Machine needs an update before it can get questions on The Machine Network; nothing was sent.")
+                raise OwnerError("Their Machine needs an update before it can get questions on The Machine Network; nothing was sent.")
         if not sealed:
-            raise ValueError("Nobody to ask yet: their Machines need an update before they can get questions on The Machine Network.")
+            raise OwnerError("Nobody to ask yet: their Machines need an update before they can get questions on The Machine Network.")
         out = {**body, 'sealed': sealed, 'to': sorted(sealed)}
         out.pop('question')
         return out
@@ -228,7 +229,7 @@ class Sealing:
         if body.get('answer') is not None:  # sealed for the asking Machine, or not sent at all
             keys = self._keys_of(row['asker']) if row else None
             if not keys:
-                raise ValueError("That question's Machine has no keys on The Machine Network, so the answer can't be sealed; nothing was sent.")
+                raise OwnerError("That question's Machine has no keys on The Machine Network, so the answer can't be sealed; nothing was sent.")
             body['sealed'] = nc.seal(body.pop('answer'), self.private, keys,
                                      {'p': 'answer', 'k': row['kind'], 'f': row['me'], 't': row['asker'], 'r': ask_id})
         return self.send_or_keep('POST', '/answer', body, 'answer:' + ask_id + ':' + str(body.get('status')), timeout)
@@ -243,7 +244,7 @@ class Sealing:
         me = self._me(group)
         keys = self._current_keys(group, to) or self._keys_of(to)
         if not (self.private and me and ask_id and keys):
-            raise ValueError("Their Machine has no keys on The Machine Network, so it can't be told; nothing was sent.")
+            raise OwnerError("Their Machine has no keys on The Machine Network, so it can't be told; nothing was sent.")
         sealed = nc.seal({'id': ask_id}, self.private, keys, {'p': 'withdraw', 'k': kind, 'f': me, 't': to, 'r': ask_id})
         return self.send_or_keep('POST', '/withdraw', {'id': ask_id, 'sealed': sealed}, 'withdraw:' + ask_id, timeout)
 

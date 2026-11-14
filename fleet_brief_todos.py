@@ -34,6 +34,7 @@ from i18n import t
 import shared_graph_kept
 import todo_org
 from machine import todo_states
+from machine.owner_error import OwnerError
 
 LOG = logging.getLogger('personal-assistant')
 META = 'brief_todos'
@@ -389,7 +390,7 @@ class BriefTodos:
         found = self._brief_todos()
         lines = self._brief_lines_of(card_id)
         if not lines:
-            raise ValueError('That to-do is no longer in the team brief')
+            raise OwnerError('That to-do is no longer in the team brief')
         own = not all(found[f][k].get('merged') for f, k in lines)
         for fleet, key in lines:
             found[fleet][key] = {**found[fleet][key], 'closed': True, 'at': dt.datetime.now(dt.timezone.utc).isoformat(timespec='seconds')}
@@ -423,11 +424,11 @@ class BriefTodos:
         import fleet as fleet_module
         lines = self._brief_lines_of(card_id)
         if not lines:
-            raise ValueError('That to-do is no longer in the team brief')
+            raise OwnerError('That to-do is no longer in the team brief')
         ref, key = lines[0]
         question = fleet_module.parse_question('anything', {'text': text})
         if not question:
-            raise ValueError('Ask a question of at least a few words')
+            raise OwnerError('Ask a question of at least a few words')
         sent, context = self.ask_context('anything', question, 'free:', ref)
         self.brief_todo_asked(ref, question['text'], context, key)
         return {**sent, 'asked': context}

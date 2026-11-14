@@ -25,6 +25,7 @@ import own_addresses
 import security_levels
 import team_learnings
 from timeutil import clock, digest_floor, local_tz, now, set_timezone, set_work_hours, WORK_HOURS, work_hours, WORK_HOURS_DEFAULT
+from machine.owner_error import OwnerError
 
 
 def hours_settings(config, changes):
@@ -72,14 +73,14 @@ class SettingsActionsApp:
 
     def set_voice_action(self, name, args, owner_dashboard=False):
         if not owner_dashboard:
-            raise ValueError('Only the owner edits how they write, in Settings')
+            raise OwnerError('Only the owner edits how they write, in Settings')
         self.store.save_voice(args.get('channel'), args.get('text'), 'owner')
         return {'voices': self.store.voices()}
 
     def security_action(self, name, args, owner_dashboard=False):
         # Settings, Security (security_levels.py)
         if not owner_dashboard:
-            raise ValueError('Only the owner changes security settings, in Settings on the dashboard')
+            raise OwnerError('Only the owner changes security settings, in Settings on the dashboard')
         with self.store.connect() as db:
             if name == 'security_level':
                 rules = security_levels.apply(db, str(args.get('level') or ''))
@@ -98,7 +99,7 @@ class SettingsActionsApp:
 
     def own_address_action(self, name, args, owner_dashboard=False):
         if not owner_dashboard:
-            raise ValueError('Only the owner confirms or removes their addresses, in Settings')
+            raise OwnerError('Only the owner confirms or removes their addresses, in Settings')
         with self.store.connect() as db:
             own_addresses.choose(db, args.get('address'), str(args.get('choice') or ''), now(), self.config)
         self.graph_dirty.set()  # who counts as the owner changed: the graph follows within a minute
@@ -106,7 +107,7 @@ class SettingsActionsApp:
 
     def own_domain_action(self, name, args, owner_dashboard=False):
         if not owner_dashboard:
-            raise ValueError('Only the owner changes their company’s domains, in Settings')
+            raise OwnerError('Only the owner changes their company’s domains, in Settings')
         with self.store.connect() as db:
             own_addresses.set_domain(db, args.get('domain'), args.get('on') is not False, now(), self.config)
         self.graph_dirty.set()  # its people become colleagues and its organization folds into the owner's: within a minute
@@ -114,49 +115,49 @@ class SettingsActionsApp:
 
     def set_people_lookup_action(self, name, args, owner_dashboard=False):
         if not owner_dashboard:
-            raise ValueError('Only the owner turns Look up work contacts on or off, in Settings')
+            raise OwnerError('Only the owner turns Look up work contacts on or off, in Settings')
         with self.store.connect() as db:
             enrichment.set_people(db, args.get('on') is not False)
         return self.lookups_view()
 
     def set_agents_action(self, name, args, owner_dashboard=False):
         if not owner_dashboard:
-            raise ValueError('Only the owner changes this, on the dashboard (Settings)')
+            raise OwnerError('Only the owner changes this, on the dashboard (Settings)')
         return self.set_agents(args)
 
     def tip_done_action(self, name, args, owner_dashboard=False):
         if not owner_dashboard:
-            raise ValueError('Only the owner closes a tip, on the dashboard')
+            raise OwnerError('Only the owner closes a tip, on the dashboard')
         return self.store.tip_done(args.get('tip'))
 
     def whats_new_seen_action(self, name, args, owner_dashboard=False):
         if not owner_dashboard:
-            raise ValueError('Only the owner closes What’s new, on the dashboard')
+            raise OwnerError('Only the owner closes What’s new, on the dashboard')
         return self.store.whats_new_seen()
 
     def done_milestone_seen_action(self, name, args, owner_dashboard=False):
         if not owner_dashboard:
-            raise ValueError('Only the owner closes a milestone, on the dashboard')
+            raise OwnerError('Only the owner closes a milestone, on the dashboard')
         return self.store.done_milestone_seen((args or {}).get('count'))
 
     def set_locale_action(self, name, args, owner_dashboard=False):
         if not owner_dashboard:
-            raise ValueError('Only the owner changes region and time format, on the dashboard (Settings, General)')
+            raise OwnerError('Only the owner changes region and time format, on the dashboard (Settings, General)')
         return self.set_locale(args)
 
     def connector_sync_action(self, name, args, owner_dashboard=False):
         if not owner_dashboard:
-            raise ValueError('Only the owner stops or restarts a sync, on the dashboard (Connections)')
+            raise OwnerError('Only the owner stops or restarts a sync, on the dashboard (Connections)')
         return self.connector_contact_sync(args) if name == 'connector_contact_sync' else self.connector_sync(args)
 
     def set_work_hours_action(self, name, args, owner_dashboard=False):
         if not owner_dashboard:
-            raise ValueError('Only the owner changes work hours, on the dashboard or with: assistant hours')
+            raise OwnerError('Only the owner changes work hours, on the dashboard or with: assistant hours')
         return self.set_hours(args)
 
     def model_usage_action(self, name, args, owner_dashboard=False):
         if not owner_dashboard:
-            raise ValueError('Only the owner can do this, on the dashboard')
+            raise OwnerError('Only the owner can do this, on the dashboard')
         if name == 'model_reset':
             reply = getattr(self, 'model_usage_reply', None) or usage_status(self.config)
             key = str(args.get('key') or '')
@@ -196,7 +197,7 @@ class SettingsActionsApp:
     def set_hours(self, args):
         """The owner's Work hours from the dashboard: checked, saved in config.json and in use at once."""
         if not getattr(self, 'config_path', None):
-            raise ValueError('This can’t be changed on this Machine.')
+            raise OwnerError('This can’t be changed on this Machine.')
         values = hours_settings(self.config, args)
         values['digest_at'] = digest_floor(values['digest_at'], values['work_hours'])  # after the morning's snoozes
         save_hours(self.config_path, values)
@@ -212,7 +213,7 @@ class SettingsActionsApp:
     def set_locale(self, args):
         """The owner's language, region, time format and To-dos filter from the dashboard: checked, saved in config.json and in use at once."""
         if not getattr(self, 'config_path', None):
-            raise ValueError('This can’t be changed on this Machine.')
+            raise OwnerError('This can’t be changed on this Machine.')
         if 'browser' in args:  # the dashboard's first load on a Machine without a region: the browser's, never over a choice
             browser = args['browser'] if isinstance(args['browser'], dict) else {}
             found = locale_prefs.guess(browser.get('zone'), browser.get('language'))
@@ -249,16 +250,16 @@ class SettingsActionsApp:
     def set_agents(self, args):
         import agent_remote
         if not getattr(self, 'config_path', None):
-            raise ValueError('This can’t be changed on this Machine.')
+            raise OwnerError('This can’t be changed on this Machine.')
         session = str(args.get('claude_session') or '').strip()
         found = agent_remote.session_id(session) if session else ''
         if session and not found:
-            raise ValueError('Paste the session link from claude.ai/code')
+            raise OwnerError('Paste the session link from claude.ai/code')
         env, branch = str(args.get('codex_env') or '').strip(), str(args.get('codex_branch') or '').strip()
         if env and not re.fullmatch(r'[A-Za-z0-9_-]{1,80}', env):
-            raise ValueError('That is not a Codex environment id')
+            raise OwnerError('That is not a Codex environment id')
         if branch and not re.fullmatch(r'[A-Za-z0-9._/-]{1,120}', branch):
-            raise ValueError('That is not a branch name')
+            raise OwnerError('That is not a branch name')
         own = dict(agent_jobs.settings(self.config) or {})
         claude = {k: v for k, v in (own.get('claude') if isinstance(own.get('claude'), dict) else {}).items() if k not in ('session', 'device')}
         codex = {k: v for k, v in (own.get('codex') if isinstance(own.get('codex'), dict) else {}).items() if k not in ('env', 'branch')}
@@ -321,7 +322,7 @@ class SettingsActionsApp:
     def learnings_action(self, name, args, owner_dashboard=False):
         # team learnings, Help topics and error reports, from Settings (LEARNING_ACTIONS)
         if not owner_dashboard:
-            raise ValueError('Only the owner shares learnings, from the dashboard')
+            raise OwnerError('Only the owner shares learnings, from the dashboard')
         if name == 'learnings_share':
             return {**self.learnings_share(args), 'team_learnings': self.learnings_view()}
         if name == 'learnings_withdraw':

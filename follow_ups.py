@@ -114,6 +114,7 @@ import re
 import activity_log
 import bounces
 from machine import todo_states
+from machine.owner_error import OwnerError
 
 SCHEMA = '''
 CREATE TABLE IF NOT EXISTS follow_up_rules(scope TEXT NOT NULL,ref INTEGER NOT NULL,settings TEXT NOT NULL,updated_at TEXT NOT NULL,
@@ -198,21 +199,21 @@ def _int(value, bounds, what):
 def clean(raw, stage_names=()):
     """A setting as stored, from what the dashboard sent. stage_names: the board's stages (a board's setting only)."""
     if not isinstance(raw, dict):
-        raise ValueError('Follow-up settings are missing')
+        raise OwnerError('Follow-up settings are missing')
     out = defaults()
     out['on'] = raw.get('on') is True
     days_error = 'Wait 1 to 60 days'  # DAYS
     out['days'] = _int(raw.get('days', DEFAULT_DAYS), DAYS, days_error)
     out['max_days'] = _int(raw.get('max_days', max(out['days'], DEFAULT_MAX_DAYS)), DAYS, days_error)
     if out['max_days'] < out['days']:
-        raise ValueError('The longest wait can’t be shorter than the shortest')
+        raise OwnerError('The longest wait can’t be shorter than the shortest')
     out['min'] = _int(raw.get('min', DEFAULT_MIN), MIN, 'At least 0 to 5 follow-ups')
     out['max'] = _int(raw.get('max', DEFAULT_MAX), MAX, 'At most 1 to 5 follow-ups')
     if out['max'] < out['min']:
-        raise ValueError('At most can’t be less than at least')
+        raise OwnerError('At most can’t be less than at least')
     stages = raw.get('stages') or {}
     if not isinstance(stages, dict):
-        raise ValueError('Stages: on or off per stage')
+        raise OwnerError('Stages: on or off per stage')
     known = {n.casefold(): n for n in stage_names}
     for name, value in stages.items():
         if str(name).casefold() not in known or str(name) == STALLED:
@@ -224,10 +225,10 @@ def clean(raw, stage_names=()):
     channels = raw.get('channels')
     if channels is not None:
         if not isinstance(channels, list) or any(c not in CHANNELS for c in channels):
-            raise ValueError('Channels: pick from the connected ones')
+            raise OwnerError('Channels: pick from the connected ones')
         out['channels'] = [c for c in CHANNELS if c in channels]
         if not out['channels'] and out['on']:
-            raise ValueError('Pick at least one channel')
+            raise OwnerError('Pick at least one channel')
     out['switch'] = raw.get('switch') is True
     out['auto'] = raw.get('auto') is True
     out['stall'] = raw['stall'] if isinstance(raw.get('stall'), bool) else None
@@ -321,12 +322,12 @@ def rule(db, scope, ref):
 def save(db, scope, ref, raw, now):
     """The owner's setting for a board or a project. A project's 'inherit' takes its own away: its board's applies."""
     if scope not in SCOPES:
-        raise ValueError('Follow-ups are set for a board or a project')
+        raise OwnerError('Follow-ups are set for a board or a project')
     ref = int(ref or 0)
     table = 'boards' if scope == 'board' else 'projects'
     row = db.execute(f'SELECT * FROM {table} WHERE id=?', (ref,)).fetchone()
     if not row:
-        raise ValueError('That board is gone' if scope == 'board' else 'That project is gone')
+        raise OwnerError('That board is gone' if scope == 'board' else 'That project is gone')
     if scope == 'project' and isinstance(raw, dict) and raw.get('inherit') is True:
         db.execute("DELETE FROM follow_up_rules WHERE scope='project' AND ref=?", (ref,))
         return None
@@ -597,11 +598,11 @@ def _until(value, now):
         else:
             when = parse(text)
     except ValueError:
-        raise ValueError('Pick a date to resume, or none') from None
+        raise OwnerError('Pick a date to resume, or none') from None
     if when <= parse(now):
-        raise ValueError('Pick a date in the future')
+        raise OwnerError('Pick a date in the future')
     if when > parse(now) + dt.timedelta(days=366):
-        raise ValueError('Pause for a year at most')
+        raise OwnerError('Pause for a year at most')
     return when.isoformat()
 
 
@@ -609,14 +610,14 @@ def pause(db, scope, ref, until, now):
     """The owner pauses a board's or a project's follow-ups (only where they are on): nothing is drafted, sent or ended
     for it until `until` (None: until they resume). Pausing again changes the date. Open follow-up to-dos stay open."""
     if scope not in SCOPES:
-        raise ValueError('Follow-ups are set for a board or a project')
+        raise OwnerError('Follow-ups are set for a board or a project')
     ref = int(ref or 0)
     row = db.execute(f"SELECT * FROM {'boards' if scope == 'board' else 'projects'} WHERE id=?", (ref,)).fetchone()
     if not row:
-        raise ValueError('That board is gone' if scope == 'board' else 'That project is gone')
+        raise OwnerError('That board is gone' if scope == 'board' else 'That project is gone')
     settings = rule(db, 'board', ref) if scope == 'board' else effective(db, row)[0]
     if not settings or not settings.get('on'):
-        raise ValueError('Follow-ups are off here, so there’s nothing to pause')
+        raise OwnerError('Follow-ups are off here, so there’s nothing to pause')
     until = _until(until, now)
     held = current_pause(db, scope, ref, now)
     if held:
@@ -629,7 +630,7 @@ def pause(db, scope, ref, until, now):
 def resume(db, scope, ref, now):
     """The owner resumes: follow-ups go on where they were (the paused time doesn't count), what was due comes spaced."""
     if scope not in SCOPES:
-        raise ValueError('Follow-ups are set for a board or a project')
+        raise OwnerError('Follow-ups are set for a board or a project')
     held = current_pause(db, scope, int(ref or 0), now)
     if held:
         db.execute('UPDATE follow_up_pauses SET end_at=? WHERE scope=? AND ref=? AND start_at=?', (now, scope, int(ref), held['at']))
@@ -1339,7 +1340,7 @@ def panel(db, scope, ref, sendable, now, sides=None):
     if scope == 'board':
         board = db.execute('SELECT * FROM boards WHERE id=?', (ref,)).fetchone()
         if not board:
-            raise ValueError('That board is gone')
+            raise OwnerError('That board is gone')
         own = rule(db, 'board', ref)
         view = {'scope': 'board', 'id': ref, 'name': board['name'], 'settings': setting_view(own), 'stalled': bool(board['side']),
                 'stages': [{'name': n, 'open': o} for n, o in board_stages(board) if n != STALLED], 'pause': current_pause(db, 'board', ref, now),
@@ -1347,7 +1348,7 @@ def panel(db, scope, ref, sendable, now, sides=None):
     elif scope == 'project':
         p = db.execute('SELECT * FROM projects WHERE id=?', (ref,)).fetchone()
         if not p:
-            raise ValueError('That project is gone')
+            raise OwnerError('That project is gone')
         own = rule(db, 'project', ref)
         board = db.execute('SELECT * FROM boards WHERE id=?', (p['board_id'],)).fetchone() if p['board_id'] else None
         board_rule = rule(db, 'board', board['id']) if board else None
@@ -1357,7 +1358,7 @@ def panel(db, scope, ref, sendable, now, sides=None):
                 'pause': paused(db, p, now),  # scope 'board': its board's pause holds it (resumed on the board)
                 'workdays_default': area(db, p, sides) != 'personal'}
     else:
-        raise ValueError('Follow-ups are set for a board or a project')
+        raise OwnerError('Follow-ups are set for a board or a project')
     view.update(channels=[c for c in CHANNELS if c in sendable], careful=careful(db))
     return view
 
@@ -1439,7 +1440,7 @@ def bring_back(db, suggestion_id, decision_id, now):
     """A skipped follow-up back in the review: its to-do ready again with the same draft, the waiting point open. The
     thread is still checked right before it goes, and a reply since closes it as usual (settle)."""
     if not can_bring_back(db, suggestion_id):
-        raise ValueError('This follow-up can’t come back anymore.')
+        raise OwnerError('This follow-up can’t come back anymore.')
     reopen(db, suggestion_id)
     db.execute("UPDATE suggestions SET status='prepared',undo_until=NULL,closed_decision_id=NULL,feedback_until=NULL WHERE id=?", (suggestion_id,))
     db.execute('INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)',
@@ -1504,7 +1505,7 @@ def stop_here(db, suggestion_id, decision_id, now):
     note, Stalled or declined when that is on), and the to-do closes, sending nothing. Bring back undoes it."""
     f = db.execute("SELECT * FROM follow_up_cards WHERE suggestion_id=? AND state='open'", (suggestion_id,)).fetchone()
     if not f:
-        raise ValueError('This follow-up isn’t open anymore.')
+        raise OwnerError('This follow-up isn’t open anymore.')
     p = db.execute('SELECT * FROM projects WHERE id=?', (f['project_id'],)).fetchone()
     if p:
         settings = effective(db, p)[0]
@@ -1771,7 +1772,7 @@ def stop(db, batch, now):
     One already going out (sending) is never touched. {'stopped': n, 'sent': n}: what the progress then says."""
     jobs = [r[0] for r in db.execute('SELECT job_id FROM follow_up_sends WHERE batch=?', (str(batch or ''),))]
     if not jobs:
-        raise ValueError('Nothing left to stop.')
+        raise OwnerError('Nothing left to stop.')
     marks = ','.join('?' for _ in jobs)
     db.execute(f"UPDATE action_jobs SET status='cancelled',error=?,retry_at=NULL,updated_at=? WHERE id IN ({marks}) AND status='queued'", (STOPPED, now, *jobs))
     db.execute(f'UPDATE deliveries SET needs_edit=1 WHERE suggestion_id IN (SELECT suggestion_id FROM action_jobs WHERE id IN ({marks}))', jobs)

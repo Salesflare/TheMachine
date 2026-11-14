@@ -28,6 +28,7 @@ import skills
 from sources import MICROSOFT_SERVICES, SourceError
 from timeutil import WORK_HOURS, in_hours, local_tz, now
 from machine import todo_states
+from machine.owner_error import OwnerError
 
 LOG = logging.getLogger('personal-assistant')
 
@@ -242,12 +243,12 @@ class FollowUpsApp:
         {'changing': [{'id', 'revision'}], 'skipped': [ids no longer ready]}."""
         text = str(args.get('text') or '').strip()
         if not text:
-            raise ValueError('Say what should change')
+            raise OwnerError('Say what should change')
         if len(text) > follow_ups.CHANGE_MAX:
-            raise ValueError(f'Keep it under {follow_ups.CHANGE_MAX} characters')
+            raise OwnerError(f'Keep it under {follow_ups.CHANGE_MAX} characters')
         ids = args.get('ids')
         if not isinstance(ids, list) or not ids or len(ids) > 100 or not all(isinstance(i, str) and re.fullmatch(r'[a-f0-9]{16}', i) for i in ids):
-            raise ValueError('Say which follow-ups')
+            raise OwnerError('Say which follow-ups')
         changing, skipped = [], []
         with self.store.connect() as db:
             db.execute('BEGIN IMMEDIATE')
@@ -503,16 +504,16 @@ class FollowUpsApp:
 
     def follow_up_change_action(self, name, args, owner_dashboard=False):
         if not owner_dashboard:
-            raise ValueError('Only the owner changes follow-ups, on the dashboard')
+            raise OwnerError('Only the owner changes follow-ups, on the dashboard')
         return self.follow_up_change(args)
 
     def follow_up_bring_back_action(self, name, args, owner_dashboard=False):
         # A follow-up skipped in the review, back to review (the project's follow-ups, or its to-do in Done)
         if not owner_dashboard:
-            raise ValueError('Only the owner brings a follow-up back, on the dashboard')
+            raise OwnerError('Only the owner brings a follow-up back, on the dashboard')
         sid = str(args.get('id') or '')
         if not re.fullmatch(r'[a-f0-9]{16}', sid):
-            raise ValueError('Say which follow-up')
+            raise OwnerError('Say which follow-up')
         with self.store.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             follow_ups.ensure(db)
@@ -521,10 +522,10 @@ class FollowUpsApp:
     def follow_up_end_action(self, name, args, owner_dashboard=False):
         # Stop follow-ups here, in the review: this round ends like one with no reply, nothing sent (follow_ups.stop_here)
         if not owner_dashboard:
-            raise ValueError('Only the owner stops follow-ups, on the dashboard')
+            raise OwnerError('Only the owner stops follow-ups, on the dashboard')
         sid = str(args.get('id') or '')
         if not re.fullmatch(r'[a-f0-9]{16}', sid):
-            raise ValueError('Say which follow-up')
+            raise OwnerError('Say which follow-up')
         with self.store.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             follow_ups.ensure(db)
@@ -533,7 +534,7 @@ class FollowUpsApp:
     def follow_up_stop_action(self, name, args, owner_dashboard=False):
         # Stop sending on a batch's progress: the ones not gone yet go back to the review as drafts (follow_ups.stop)
         if not owner_dashboard:
-            raise ValueError('Only the owner stops follow-ups, on the dashboard')
+            raise OwnerError('Only the owner stops follow-ups, on the dashboard')
         with self.store.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             follow_ups.ensure(db)
@@ -543,14 +544,14 @@ class FollowUpsApp:
         # Pause or Resume a board's or a project's follow-ups (follow_ups.pause): nothing drafted, sent or ended while
         # paused, open ones stay open. The owner's own decision, on the dashboard (the CLI refuses OWNER_ACTIONS).
         if not owner_dashboard:
-            raise ValueError('Only the owner pauses follow-ups, on the dashboard')
+            raise OwnerError('Only the owner pauses follow-ups, on the dashboard')
         scope, ref = args.get('scope'), args.get('id')
         if scope == 'project' and str(ref or '').startswith('project:'):
             ref = str(ref).split(':', 1)[1]
         if not str(ref or '').isdigit():
-            raise ValueError('Say which board or project')
+            raise OwnerError('Say which board or project')
         if not isinstance(args.get('paused'), bool):
-            raise ValueError('Say pause or resume')
+            raise OwnerError('Say pause or resume')
         with self.store.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             follow_ups.ensure(db)
@@ -563,12 +564,12 @@ class FollowUpsApp:
     def follow_up_settings_action(self, name, args, owner_dashboard=False):
         # Automated follow-ups on a board or one project (follow_ups.py): the owner's own setting, on the dashboard
         if not owner_dashboard:
-            raise ValueError('Only the owner sets follow-ups, on the dashboard')
+            raise OwnerError('Only the owner sets follow-ups, on the dashboard')
         scope, ref = args.get('scope'), args.get('id')
         if scope == 'project' and str(ref or '').startswith('project:'):
             ref = str(ref).split(':', 1)[1]
         if not str(ref or '').isdigit():
-            raise ValueError('Say which board or project')
+            raise OwnerError('Say which board or project')
         with self.store.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             follow_ups.ensure(db)

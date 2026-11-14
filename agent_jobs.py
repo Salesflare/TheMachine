@@ -55,6 +55,7 @@ import urllib.parse
 
 import error_feed
 from machine import names
+from machine.owner_error import OwnerError
 
 LOG = logging.getLogger('personal-assistant')
 TOOLS = {'claude': 'Claude Code', 'codex': 'Codex'}
@@ -1603,7 +1604,7 @@ class AgentJobs:
     def tool(self, tool_id, wait=False):
         found = next((t for t in self.tools(wait) if t['id'] == tool_id), None)
         if not found:
-            raise ValueError(f'{TOOLS.get(tool_id, "That tool")} is not available on this Machine')
+            raise OwnerError(f'{TOOLS.get(tool_id, "That tool")} is not available on this Machine')
         return found
 
     def view(self, row):
@@ -1656,7 +1657,7 @@ class AgentJobs:
     def draft(self, suggestion_id):
         parts = self.card(str(suggestion_id)) if self.card else None
         if not parts:
-            raise ValueError('No such to-do')
+            raise OwnerError('No such to-do')
         title = str(parts['card'].get('title') or 'this task').strip().rstrip('.')
         return {'suggestion_id': str(suggestion_id), 'tools': self.tools(), 'gets': gets_for(parts),
                 'line': f'Picks up “{title[:160]}” and reports back here. Sends nothing itself.',
@@ -1667,21 +1668,21 @@ class AgentJobs:
     def start(self, suggestion_id, tool_id, brief, note=None):
         tool = self.tool(tool_id, wait=True)
         if len(str(note or '')) > ASK_MAX:
-            raise ValueError('The note is too long')
+            raise OwnerError('The note is too long')
         brief = with_note(str(brief or '').strip(), note) if str(brief or '').strip() else ''
         if not brief:
-            raise ValueError('Write what the job is')
+            raise OwnerError('Write what the job is')
         if len(brief) > BRIEF_MAX:
-            raise ValueError('The brief is too long')
+            raise OwnerError('The brief is too long')
         parts = self.card(str(suggestion_id)) if self.card else None
         if not parts:
-            raise ValueError('No such to-do')
+            raise OwnerError('No such to-do')
         with self.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             busy = db.execute(f"SELECT tool FROM agent_jobs WHERE suggestion_id=? AND status IN ({','.join('?' * len(ACTIVE))})",
                               (str(suggestion_id), *ACTIVE)).fetchone()
             if busy:
-                raise ValueError(f'{TOOLS.get(busy["tool"])} is already on this to-do')
+                raise OwnerError(f'{TOOLS.get(busy["tool"])} is already on this to-do')
             job_id = 'aj_' + secrets.token_hex(8)
             at = now()
             # Anything earlier on this card that the owner didn't close was handed off again.
@@ -1702,20 +1703,20 @@ class AgentJobs:
     def follow_up(self, job_id, text):
         text = str(text or '').strip()
         if not text:
-            raise ValueError('Say what should change')
+            raise OwnerError('Say what should change')
         if len(text) > ASK_MAX:
-            raise ValueError('That is too long')
+            raise OwnerError('That is too long')
         with self.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             row = db.execute('SELECT * FROM agent_jobs WHERE id=?', (str(job_id),)).fetchone()
             if not row:
-                raise ValueError('No such job')
+                raise OwnerError('No such job')
             if row['status'] in ACTIVE:
-                raise ValueError('It is still working on it')
+                raise OwnerError('It is still working on it')
             if not row['session_id']:
-                raise ValueError('This job has no session to continue. Hand it off again instead.')
+                raise OwnerError('This job has no session to continue. Hand it off again instead.')
             if row['outcome'] in ('done', 'again'):
-                raise ValueError('This job is closed')
+                raise OwnerError('This job is closed')
             self.tool(row['tool'])
             asks = json.loads(row['asks'] or '[]') + [{'at': now(), 'text': text}]
             db.execute("UPDATE agent_jobs SET status='sent',asks=?,turns=turns+1,progress=NULL,error=NULL,error_kind=NULL,outcome=NULL,"
@@ -1732,7 +1733,7 @@ class AgentJobs:
         with self.connect() as db:
             row = db.execute('SELECT * FROM agent_jobs WHERE id=?', (str(job_id),)).fetchone()
         if not row or row['status'] not in ('failed', 'cancelled'):
-            raise ValueError('Nothing to try again')
+            raise OwnerError('Nothing to try again')
         self.tool(row['tool'])
         asks = json.loads(row['asks'] or '[]')
         resume = row['session_id'] if row['place'] == 'local' or asks else None
@@ -1749,7 +1750,7 @@ class AgentJobs:
         with self.connect() as db:
             row = db.execute('SELECT * FROM agent_jobs WHERE id=?', (str(job_id),)).fetchone()
         if not row or row['status'] not in ACTIVE:
-            raise ValueError('Nothing to cancel')
+            raise OwnerError('Nothing to cancel')
         runner = self.runner(row)
         with self.lock:
             proc = self.procs.get(row['id'])
@@ -1772,7 +1773,7 @@ class AgentJobs:
         with self.connect() as db:
             row = db.execute('SELECT * FROM agent_jobs WHERE id=?', (str(job_id),)).fetchone()
             if not row or row['status'] in ACTIVE:
-                raise ValueError('Nothing to close')
+                raise OwnerError('Nothing to close')
             db.execute('UPDATE agent_jobs SET outcome=?,updated_at=? WHERE id=?', (outcome, now(), row['id']))
         return self.get(row['id'])
 
@@ -1786,14 +1787,14 @@ class AgentJobs:
         with self.connect() as db:
             row = db.execute('SELECT * FROM agent_jobs WHERE id=?', (str(job_id),)).fetchone()
         if not row:
-            raise ValueError('No such job')
+            raise OwnerError('No such job')
         return self.view(row)
 
     def diff(self, job_id):
         with self.connect() as db:
             row = db.execute('SELECT diff FROM agent_jobs WHERE id=?', (str(job_id),)).fetchone()
         if not row or not row['diff']:
-            raise ValueError('No changes to show')
+            raise OwnerError('No changes to show')
         return row['diff']
 
     def file(self, job_id, relative):
@@ -1801,19 +1802,19 @@ class AgentJobs:
         with self.connect() as db:
             row = db.execute('SELECT files FROM agent_jobs WHERE id=?', (str(job_id),)).fetchone()
         if not row or relative not in [f['path'] for f in json.loads(row['files'] or '[]')]:
-            raise ValueError('Not a file of this job')
+            raise OwnerError('Not a file of this job')
         folder = self.work(str(job_id)).resolve()
         found = (folder / relative)
         if found.is_symlink() or not found.resolve().is_relative_to(folder) or not found.is_file():
-            raise ValueError('Not a file of this job')
+            raise OwnerError('Not a file of this job')
         if found.stat().st_size > 10 * 1024 * 1024:
-            raise ValueError('This file is too large to open here')
+            raise OwnerError('This file is too large to open here')
         return found
 
     # -- running
     def folder(self, job_id):
         if not re.fullmatch(r'aj_[0-9a-f]{16}', str(job_id)):
-            raise ValueError('No such job')
+            raise OwnerError('No such job')
         return self.root / str(job_id)
 
     def work(self, job_id):
@@ -2144,7 +2145,7 @@ class AgentJobs:
     # -- remote results (agent_remote.py): what a remote Claude session reported through The Machine's connector
     def network(self, body):
         if not self._network:
-            raise ValueError('This Machine is not on The Machine Network')
+            raise OwnerError('This Machine is not on The Machine Network')
         return self._network(body)
 
     def remote_result(self, job_id, found):

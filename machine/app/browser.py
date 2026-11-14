@@ -21,6 +21,7 @@ import next_actions
 import security_levels
 from timeutil import now
 from machine import todo_states
+from machine.owner_error import OwnerError
 
 
 class BrowserApp:
@@ -33,7 +34,7 @@ class BrowserApp:
 
     def browser_focus_action(self, name, args, owner_dashboard=False):
         if not owner_dashboard:
-            raise ValueError('Only the owner brings the browser to the front, from the dashboard')
+            raise OwnerError('Only the owner brings the browser to the front, from the dashboard')
         page = args.get('page') if isinstance(args.get('page'), str) else None
         if isinstance(args.get('suggestion_id'), str):  # a task's own tab, never another task's
             page = self.signin_page(args['suggestion_id']) or self.preparing_page(args['suggestion_id'])
@@ -45,20 +46,20 @@ class BrowserApp:
 
     def browser_show_action(self, name, args, owner_dashboard=False):
         if not owner_dashboard:
-            raise ValueError('Only the owner opens a task’s page in the browser, from the dashboard')
+            raise OwnerError('Only the owner opens a task’s page in the browser, from the dashboard')
         if not isinstance(args.get('suggestion_id'), str):
-            raise ValueError('Which task?')
+            raise OwnerError('Which task?')
         return self.browser_show(args['suggestion_id'])
 
     def browser_login_action(self, name, args, owner_dashboard=False):
         # A separate path: what the owner types goes into the page and, when asked, the encrypted store, never
         # into a log, the model or an error message (see browser_login.py).
         if not owner_dashboard:
-            raise ValueError('Only the owner signs in to sites, from the dashboard')
+            raise OwnerError('Only the owner signs in to sites, from the dashboard')
         logins = browser_login.LoginStore(Path(self.config['database']).expanduser().parent)
         if name == 'browser_login_open':
             if not isinstance(args.get('suggestion_id'), str):
-                raise ValueError('Which task?')
+                raise OwnerError('Which task?')
             return self.signin_open(args['suggestion_id'])
         if name == 'browser_login_check':
             # The owner closed the browser (its pane, the dialog's view): look now rather than at the next round, so a
@@ -101,7 +102,7 @@ class BrowserApp:
         if args.get('use_saved') is True:
             saved = logins.get(host)
             if not saved:
-                raise ValueError('Nothing is saved for ' + browser_login.site(host))
+                raise OwnerError('Nothing is saved for ' + browser_login.site(host))
             username, password = username or saved.get('username'), saved.get('password')
         code = args.get('code') if isinstance(args.get('code'), str) else None
         done = browser_login.fill(self.config, args.get('page'), host, username, password, code)
@@ -229,7 +230,7 @@ class BrowserApp:
         try:
             tabs = self.signin_tabs()
         except (browser_login.browser_cdp.CdpError, OSError, TypeError, AttributeError):
-            raise ValueError('I couldn’t reach the browser on this computer') from None
+            raise OwnerError('I couldn’t reach the browser on this computer') from None
         mine = [t for t in tabs if t['id'] == opened.get(suggestion_id)] + [t for t in tabs if same_site(t['url'], page)]
         if mine:  # followed from here on, also through an identity provider on another host
             state, url, opened[suggestion_id] = 'open', mine[0]['url'], mine[0]['id']
@@ -238,7 +239,7 @@ class BrowserApp:
             try:
                 opened[suggestion_id] = browser_login.browser_cdp.open_tab(browser_login.endpoints(self.config)[0], url)
             except (browser_login.browser_cdp.CdpError, OSError):
-                raise ValueError('I couldn’t open the sign-in page in the browser') from None
+                raise OwnerError('I couldn’t open the sign-in page in the browser') from None
             state = 'opened'
         try:
             browser_viewer.focus(url, browser_login.endpoints(self.config)[0])
