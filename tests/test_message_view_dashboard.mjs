@@ -92,6 +92,10 @@ try{
     const det=await box.locator('.email-headers').count()?await box.locator('.email-headers').evaluate(d=>d.textContent):'';
     assert.doesNotMatch(det,/"[^"]*@[^"]*"/,k);if(det&&await box.locator('.email-to').count())assert.ok(!norm(det).includes(norm(await box.locator('.email-to').innerText())),k)}
    if(o.view==='chat')assert.ok(await box.locator('.convo-say').count()>=1,k);
+   // a watched page's change by its site, what it had struck through and what it has highlighted, never diff marks
+   if(k==='web_page.change'){assert.equal(await box.locator('.email-from strong').innerText(),'tools.example/pricing');
+    assert.equal(await box.locator('.page-changes del').innerText(),'$49 per user a month');assert.equal(await box.locator('.page-changes ins').innerText(),'$59 per user a month');
+    assert.doesNotMatch(text,/^[−+] /m,k)}
   }
   if(!other){const shown=k=>kinds.includes(k)?data[k]:undefined;  // only the kinds this run shows
    // The CRM email: subject as the title once, the sender by name with the address quiet, "to Dana, Mira", headers out of the text
