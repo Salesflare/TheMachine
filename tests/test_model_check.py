@@ -67,6 +67,22 @@ class Probe(unittest.TestCase):
         self.assertEqual(mc.probe({}, None, run=slow), (False, 'No answer within 90 seconds.'))
 
 
+class WarmUp(unittest.TestCase):
+    def test_gateway_rpcs_only_and_the_throwaway_session_is_always_deleted(self):
+        seen = []
+        def run(args, **kw):
+            seen.append(args)
+            return Answer(1 if args[3] == 'tools.effective' else 0)
+        ok, seconds = mc.warm_up({'openclaw': 'oc'}, run=run, clock=iter([10.0, 12.5]).__next__)
+        self.assertEqual((ok, seconds), (False, 2.5))
+        self.assertEqual([s[:4] for s in seen], [['oc', 'gateway', 'call', m] for m in ('sessions.create', 'tools.effective', 'sessions.delete')])
+        self.assertEqual(json.loads(seen[2][seen[2].index('--params') + 1]), {'key': mc.WARM_KEY, 'deleteTranscript': True})
+        self.assertFalse(any(word in s for s in seen for word in ('agent', 'infer', 'chat.send')))  # no model call
+        def gone(args, **kw):
+            raise OSError('no openclaw')
+        self.assertFalse(mc.warm_up({}, run=gone)[0])
+
+
 class Check(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
@@ -205,6 +221,25 @@ class Check(unittest.TestCase):
             self.checked(model)
         self.assertEqual(model.calls, [None])  # the same provider is no fallback
         self.assertEqual(self.look()['why'], 'model_check')
+
+    def test_the_agent_runtime_is_warmed_once_after_a_passed_check_and_before_any_review(self):
+        warmed = []
+        self.app.model_warm_up = lambda config: warmed.append(config) or (True, 1.0)
+        with self.assertLogs(a.LOG, 'INFO'):
+            self.checked(StandIn(main=(False, 'expired')))
+        self.assertEqual(warmed, [])  # a failed check warms nothing
+        with self.assertLogs(a.LOG, 'INFO'):
+            self.checked(StandIn(main=(True, None)), minutes=2)
+            self.checked(StandIn(main=(True, None)), minutes=60)
+        self.assertEqual(len(warmed), 1)  # once per start
+        self.app._agent_warmed = False
+        with self.store.connect() as db:
+            db.execute("INSERT INTO review_runs(run_id,status,started_at,updated_at) VALUES('r1','ok',?,?)", (a.now(), a.now()))
+        self.assertIsNone(self.app.agent_warm_up())  # a review already ran: nothing left to warm for
+        self.assertEqual(len(warmed), 1)
+        del self.app.model_warm_up
+        self.app._agent_warmed = False
+        self.assertIsNone(self.app.agent_warm_up(run=StandIn()))  # a stand-in check never reaches the real Gateway
 
 
 if __name__ == '__main__':

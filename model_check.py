@@ -12,7 +12,10 @@ fallback in OpenClaw's config, or a model of another provider the Gateway lists)
 look then runs on the first one that answers (App.first_look_model).
 
 The check is stored as the milestone `model_check`: {model, ok, at, error, stamp, failed (failures in a row), fallback,
-fallback_at}. Read by the hosted agent for the setup page (health `model.check`)."""
+fallback_at}. Read by the hosted agent for the setup page (health `model.check`).
+
+Once a check passed and before any review ran, the Gateway's agent runtime is readied for the first look (warm_up):
+Gateway RPCs only, no model call."""
 from __future__ import annotations
 
 import datetime as dt
@@ -20,6 +23,7 @@ import json
 from pathlib import Path
 import re
 import subprocess
+import time
 
 import model_budget
 import model_fallback
@@ -92,6 +96,32 @@ def probe(config, model=None, run=subprocess.run):
     if result.returncode == 0 and data.get('ok') is True and any(t.strip() for t in texts):
         return True, None
     return False, _error(data, result.stderr) or 'The model gave an empty answer.'
+
+
+WARM_KEY = 'agent:main:assistant-warm-up'
+
+
+def warm_up(config, run=subprocess.run, clock=None):
+    """(ok, seconds): readies the Gateway's agent runtime for the first look, with no model call. A new Gateway's first
+    agent run loads and builds its tools (the bridge's included) before it reaches the model, about 3.5 of 8 seconds
+    on a quiet desktop and more on a busy one. The same work done ahead through the Gateway's own RPCs (a throwaway
+    session and its tools.effective, then the session deleted) leaves the first review only the rest. Nothing of the
+    owner's is read or sent, and no tokens are spent."""
+    clock = clock or time.monotonic
+    binary = str((config or {}).get('openclaw') or 'openclaw')
+
+    def call(method, params):
+        try:
+            result = run([binary, 'gateway', 'call', method, '--json', '--timeout', '60000', '--params', json.dumps(params)],
+                         capture_output=True, text=True, timeout=TIMEOUT)
+            return result.returncode == 0
+        except (OSError, subprocess.TimeoutExpired):
+            return False
+    start = clock()
+    call('sessions.create', {'key': WARM_KEY})  # already there (a warm-up cut off before its delete) is fine too
+    ok = call('tools.effective', {'sessionKey': WARM_KEY})
+    call('sessions.delete', {'key': WARM_KEY, 'deleteTranscript': True})
+    return ok, clock() - start
 
 
 def last(db):
