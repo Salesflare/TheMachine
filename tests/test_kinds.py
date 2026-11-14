@@ -18,7 +18,7 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 import dashboard_parts  # noqa: E402
-from machine import kinds, names  # noqa: E402
+from machine import kinds, names, todo_states  # noqa: E402
 
 SKIP_DIRS = {'node_modules', '.git', '.venv', '__pycache__', 'tests'}
 KINDS_FILE = 'machine/kinds.py'
@@ -273,7 +273,8 @@ class Page(unittest.TestCase):
         for page in (dashboard_parts.assemble(ROOT), dashboard_parts.assemble_split(ROOT)[0]):
             self.assertNotIn(dashboard_parts.KINDS_MARK, page)
             data = re.search(r'<script id="source-kinds" type="application/json">(.*?)</script>', page, re.S).group(1)
-            self.assertEqual(json.loads(data), json.loads(json.dumps({'kinds': kinds.KINDS, 'sends': kinds.SENDS})))
+            self.assertEqual(json.loads(data), json.loads(json.dumps({'kinds': kinds.KINDS, 'sends': kinds.SENDS,
+                                                                      'todo': dashboard_parts.todo_groups(todo_states)})))
 
     def test_another_checkouts_page_gets_its_own_kinds(self):
         import tempfile

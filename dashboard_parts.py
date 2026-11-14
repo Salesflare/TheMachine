@@ -118,24 +118,38 @@ def expand(source, folder, kinds=KINDS):
 
 
 # The page's <script id="source-kinds" type="application/json">: every kind of event and of message the app knows
-# (machine/kinds.py), for the page's scripts to read instead of lists of their own. The same for every owner, so it's
-# filled in here, where the demo and the tests get it too.
+# (machine/kinds.py) and the to-do status groups (machine/todo_states.py), for the page's scripts to read instead of
+# lists of their own. The same for every owner, so it's filled in here, where the demo and the tests get it too.
 KINDS_MARK = '__SOURCE_KINDS__'
 
 
-def kinds_json(root=None):
-    """machine/kinds.py of the app in root as the page's JSON: {"kinds": {...}, "sends": {...}}. Read from that
-    folder's own file (a leaf with no imports), so a page assembled from another checkout gets that checkout's kinds;
-    a folder with only the page and its parts (a copy a test makes) gets the kinds beside this file."""
+def _leaf(root, name):
+    """machine/<name>.py of the app in root, a leaf with no imports; beside this file when root has none."""
     import importlib.util
-    path = Path(root or ROOT) / 'machine' / 'kinds.py'
+    path = Path(root or ROOT) / 'machine' / f'{name}.py'
     if not path.is_file():
-        path = ROOT / 'machine' / 'kinds.py'
-    spec = importlib.util.spec_from_file_location('app_machine_kinds', path)
+        path = ROOT / 'machine' / f'{name}.py'
+    spec = importlib.util.spec_from_file_location(f'app_machine_{name}', path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
+    return module
+
+
+def todo_groups(module):
+    """todo_states' named groups (ALL, OPEN, CLOSED, ...): every upper-case tuple of statuses."""
+    return {name: list(value) for name, value in vars(module).items()
+            if name.isupper() and isinstance(value, tuple) and value and set(value) <= set(module.ALL)}
+
+
+def kinds_json(root=None):
+    """machine/kinds.py and machine/todo_states.py of the app in root as the page's JSON: {"kinds": {...}, "sends":
+    {...}, "todo": {"CLOSED": [...], ...}}. Read from that folder's own files (leaves with no imports), so a page
+    assembled from another checkout gets that checkout's; a folder with only the page and its parts (a copy a test
+    makes) gets the ones beside this file."""
+    kinds, states = _leaf(root, 'kinds'), _leaf(root, 'todo_states')
     # </ can't end the script element early: no kind or name has one, and < keeps it so if one ever did
-    return json.dumps({'kinds': module.KINDS, 'sends': module.SENDS}, separators=(',', ':'), sort_keys=True).replace('<', '\\u003c')
+    return json.dumps({'kinds': kinds.KINDS, 'sends': kinds.SENDS, 'todo': todo_groups(states)},
+                      separators=(',', ':'), sort_keys=True).replace('<', '\\u003c')
 
 
 def assemble(root=None, page=None):

@@ -4,7 +4,7 @@
 // A draft the review's Change is rewriting stays in the list while its to-do is back at work, and so does one that
 // couldn't be changed (its "try again" is here)
 const frList=()=>state.suggestions.filter(s=>s.follow_up?.group===fr.g&&s.follow_up.state==='open'&&!fr.gone.has(s.id)&&!fuBusy(s)
- &&(s.status==='prepared'||(fr.changing.has(s.id)||fr.failed.has(s.id))&&['instructions','accepted'].includes(s.status)))
+ &&(s.status==='prepared'||(fr.changing.has(s.id)||fr.failed.has(s.id))&&TODO.PREPARING.includes(s.status)))
  .sort((a,b)=>fr.skipped.has(a.id)-fr.skipped.has(b.id));  // skipped ones wait at the bottom until the review closes
 // Every draft shows in full and the list is the only thing that scrolls; moving (j/k, a click) changes the current one
 // in place and scrolls it into view smoothly, a poll redraws only the drafts that changed and keeps where the list is
@@ -73,7 +73,7 @@ function frCount(){const list=frList(),n=list.filter(s=>fr.checked.has(s.id)&&fr
 // Where each rewrite stands, from the to-do itself: a new draft revision is done (the old text kept for Undo change); its
 // run stuck, or a reply that left the draft as it was, couldn't change it. A to-do that closed meanwhile leaves the list.
 function frTrack(){for(const [id,c] of fr.changing){const s=state.suggestions.find(x=>x.id===id);
-  if(!s||s.follow_up?.state!=='open'||['completed','rejected','snoozed'].includes(s.status)){fr.changing.delete(id);fr.gone.add(id);continue}
+  if(!s||s.follow_up?.state!=='open'||TODO.CLOSED_OR_SNOOZED.includes(s.status)){fr.changing.delete(id);fr.gone.add(id);continue}
   if(s.status!=='prepared')c.seen=true;const a=frDraft(s);
   if(s.status==='prepared'&&a&&a.revision!==c.from){fr.changing.delete(id);fr.undo.set(id,{body:c.body,subject:c.subject})}
   else if(c.seen&&(s.status==='prepared'||s.preparation_status==='blocked')){fr.changing.delete(id);fr.failed.set(id,c.text)}}}

@@ -1,7 +1,7 @@
 // A card waiting on the owner's sign-in carries on by itself once they're in, whichever way they signed in (the dialog,
 // the Browser pane, the browser on the computer): the service sees it (watch_sign_ins). Look at such cards every few
 // seconds so the card shows that at once, and look in the browser right away when the owner closes it there.
-const signinWaiting=s=>s.preparation_status==='blocked'&&!!s.preparation_browser?.sign_in&&['accepted','instructions'].includes(s.status);
+const signinWaiting=s=>s.preparation_status==='blocked'&&!!s.preparation_browser?.sign_in&&TODO.PREPARING.includes(s.status);
 let taskSigninBusy=false;
 async function taskSigninPoll(){if(taskSigninBusy||document.hidden)return;const waits=(state?.suggestions||[]).filter(signinWaiting).slice(0,3);if(!waits.length)return;taskSigninBusy=true;
  try{for(const s of waits){let p;try{p=await request('api/progress?id='+encodeURIComponent(s.id))}catch{continue}

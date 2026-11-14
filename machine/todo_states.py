@@ -21,6 +21,8 @@ TAKEN = (ACCEPTED, PREPARED, INSTRUCTIONS, COMPLETED)  # fleet: someone took it 
 WAITING_ON_OWNER = (PENDING, PREPARED)  # the owner's move: not snoozed, closed or still preparing
 NOT_STARTED = (PENDING, SNOOZED)  # open, and no Do it asked yet
 OPEN_UNPREPARED = (PENDING, ACCEPTED, INSTRUCTIONS, SNOOZED)  # open, and its text is still its own account, not an outcome
+RUN_CAN_ASK = (PENDING, ACCEPTED, INSTRUCTIONS)  # a stuck run's ask (use these messages, connect) shows: preparing, or pending when prepared ahead
+WITH_RESULT = (PREPARED, COMPLETED)  # its run's result stands: ready for the owner, or done (a merged fix's Undo merge)
 
 # The moves a to-do may make: from -> the statuses it may go to. machine/store/todo_moves.transition() refuses any
 # other, and keeps each move in the to-do's history. Staying in a status is no move, so it is always allowed.

@@ -1050,7 +1050,7 @@ class CardsStore:
                 if not ids:
                     raise OwnerError('Pick one of your areas')
                 resume = (row['prep'] == 'blocked' and not row['error'] and row['move_to'] == area
-                          and row['status'] in (todo_states.PENDING, todo_states.ACCEPTED, todo_states.INSTRUCTIONS))  # pending: a prepared-ahead run's blocker
+                          and row['status'] in todo_states.RUN_CAN_ASK)  # pending: a prepared-ahead run's blocker
             db.execute('INSERT INTO card_moves(decision_id,suggestion_id,area,accounts_before,area_before,created_at) VALUES(?,?,?,?,?,?)',
                        (decision_id, suggestion_id, area, row['account_ids'] or '[]', row['area'], now()))
             if undo is not None:  # an undo is no move of its own to undo later
@@ -1087,7 +1087,7 @@ class CardsStore:
             if not row:
                 raise ValueError('Unknown to-do')
             asked = json.loads(row['use_events'] or '[]') if row['prep'] == 'blocked' and not row['error'] else []
-            if not asked or row['status'] not in (todo_states.PENDING, todo_states.ACCEPTED, todo_states.INSTRUCTIONS):  # pending: a prepared-ahead run's blocker
+            if not asked or row['status'] not in todo_states.RUN_CAN_ASK:  # pending: a prepared-ahead run's blocker
                 raise OwnerError('Nothing is waiting for that on this to-do')
             live = [r['id'] for r in db.execute('SELECT id FROM events WHERE deleted=0 AND id IN (' + ','.join('?' * len(asked)) + ')', asked)]
             if not live:
