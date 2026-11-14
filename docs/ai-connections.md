@@ -124,7 +124,7 @@ brief their Fleet tab shows. Teammates' Team Graph records and threads never go 
 | `get_todo` | Read | One to-do, with its ready draft if it has one and where it came from (sender, subject, date; no message bodies) |
 | `list_promises` | Read | Open promises: who promised what to whom, and by when |
 | `search_graph` | Read | People, organizations and projects that match a name, email or company |
-| `get_graph_record` | Read | One person, organization or project: role, organization, closeness, last contact, open to-dos, promises |
+| `get_graph_record` | Read | One person, organization or project: role, organization, closeness, last contact, open to-dos (snoozed ones too, with their status and when they come back), promises |
 | `get_team_brief` | Read | The latest team brief of each Work Fleet, as the Fleet tab shows it |
 | `create_todo` | Read & edit | A new to-do with the AI's text, marked as coming from that AI |
 | `create_draft` | Read & edit | A new to-do with an email draft (to, subject, text) from one of the owner's mail accounts, waiting for the owner's Send |

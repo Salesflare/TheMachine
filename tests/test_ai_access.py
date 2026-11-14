@@ -655,6 +655,21 @@ class GraphWrites(Base):
             return (a.graph.edits_state(db, WORK_PERSON), a.crm_fields.state(db, WORK_PERSON),
                     a.person_summary.state(db, WORK_PERSON))
 
+    # ---- get_graph_record
+
+    def test_a_record_lists_its_snoozed_to_dos_marked_and_not_its_closed_ones(self):
+        later = '2099-01-01T09:00:00+00:00'
+        closed = self.store.suggest('w:done', 'Old contract', 'Done.', [1], when='now', work=True)['id']
+        with self.db() as db:
+            db.execute('INSERT INTO graph_events(node_id,event_id,at,probable,direct) VALUES(?,?,?,0,1)', (WORK_PERSON, 1, a.now()))
+            db.execute("UPDATE suggestions SET status='snoozed',snoozed_until=? WHERE id=?", (later, self.work_card))
+            db.execute("UPDATE suggestions SET status='completed' WHERE id=?", (closed,))
+        _, tokens = self.signed_in('read', area='work')
+        error, out = self.tool(tokens['access_token'], 'get_graph_record', id=WORK_PERSON)
+        self.assertFalse(error, out)
+        self.assertEqual([(t['id'], t['status'], t.get('snoozed_until')) for t in out['todos']],
+                         [(self.work_card, 'snoozed', later)])
+
     # ---- save_fact
 
     def test_a_fact_is_saved_from_the_ai_and_undo_takes_it_out(self):

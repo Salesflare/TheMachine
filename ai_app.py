@@ -33,7 +33,7 @@ import person_summary
 import shared_graph
 from machine import todo_states
 
-OPEN = todo_states.OPEN_NOT_SNOOZED
+OPEN = todo_states.OPEN_NOT_SNOOZED  # list_todos' "open": snoozed ones are their own status there (status=snoozed)
 EMAIL = re.compile(r'[^@\s<>",;]{1,64}@[A-Za-z0-9.-]{1,190}\.[A-Za-z]{2,24}')
 EXPIRY_LABEL = {'1d': '1 day', '7d': '7 days', '30d': '30 days', '1y': '1 year'}
 MCP_DOMAIN = 'mcp.themachine.computer'  # each Machine's address for AIs: https://<name>.<this>/mcp (docs/ai-connections.md)
@@ -575,14 +575,16 @@ class AiApp:
             if not view or not self.ai_node_ok(view, want):
                 raise ValueError('Not in the Graph here')
             events = 'SELECT event_id FROM graph_events WHERE node_id=?'
-            todos = db.execute(f"SELECT DISTINCT s.id,s.dedupe_key,s.title,s.status,s.due,s.account_ids,s.area FROM suggestions s, json_each(s.event_ids) j "
-                               f"WHERE j.value IN ({events}) AND s.status IN ({','.join('?' * len(OPEN))}) ORDER BY s.created_at DESC LIMIT 20",
-                               (node, *OPEN)).fetchall()
+            # every open to-do about the record, as on its Graph page: a snoozed one too, marked by its status
+            todos = db.execute(f"SELECT DISTINCT s.id,s.dedupe_key,s.title,s.status,s.due,s.snoozed_until,s.account_ids,s.area FROM suggestions s, "
+                               f"json_each(s.event_ids) j WHERE j.value IN ({events}) AND s.status IN {todo_states.sql(todo_states.OPEN)} "
+                               'ORDER BY s.created_at DESC LIMIT 20', (node,)).fetchall()
             # still open: one whose to-do is done or dismissed is kept or dropped by now
             promises = db.execute(f"SELECT p.id FROM promises p WHERE p.event_id IN ({events}) AND {person_summary.OPEN_PROMISE} LIMIT 20", (node,)).fetchall()
         item = self.ai_node(view)
         item['todos'] = [{'id': t['id'], 'title': mark(t['title'], self.ai_todo_source(t)) if self.ai_todo_source(t) else t['title'],
-                          'status': t['status'], 'due': t['due']}
+                          'status': t['status'], 'due': t['due'],
+                          **({'snoozed_until': t['snoozed_until']} if t['status'] == todo_states.SNOOZED and t['snoozed_until'] else {})}
                          for t in todos if self.ai_visible(t['account_ids'], ids, want, t['area'])]
         wanted = {p['id'] for p in promises}
         item['promises'] = [{'id': p['id'], 'direction': p['direction'], 'who': p['who'], 'what': mark(p['what'], 'messages'), 'due': p['due']}
