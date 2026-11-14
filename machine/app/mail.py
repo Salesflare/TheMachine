@@ -20,6 +20,8 @@ from machine.cards import handoff_checkin
 from machine.sources.calendar import company_domains
 from machine.sources.gmail import Gmail, message_event
 from machine.store.promises import promise_check_at
+from machine.store import todo_moves
+from machine import todo_states
 from machine.text import message_attachments, message_html, message_images, shown_body
 import mail_attachments
 import ms_graph
@@ -52,7 +54,7 @@ class MailApp:
     def handoff_mail_draft(self, card_id, body, next_action, outcome):
         """The handoff email, ready on the to-do for the owner to read and send (a pending to-do counts as accepted)."""
         with self.store.connect() as db:
-            db.execute("UPDATE suggestions SET status='accepted' WHERE id=? AND status='pending'", (card_id,))
+            todo_moves.transition(db, card_id, todo_states.ACCEPTED, 'handoff_draft', only=todo_states.PENDING)
         self.store.prepare(card_id, body, next_action=next_action, outcome=outcome)
 
     def handoff_mail_wait(self, db, card_id, until):

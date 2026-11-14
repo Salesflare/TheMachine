@@ -55,6 +55,13 @@ class NewCard(unittest.TestCase):
         with self.store.connect() as db:
             return dict(db.execute('SELECT * FROM deliveries WHERE suggestion_id=?', (sid,)).fetchone())
 
+    def test_a_card_made_to_do_now_is_taken_on_and_the_move_is_in_its_history(self):
+        made = self.store.owner_card('Invite Pat to the team', ACCOUNTS[0]['id'], accepted=True)
+        self.assertEqual(self.row(made['id'])['status'], 'accepted')
+        with self.store.connect() as db:
+            moves = [tuple(r) for r in db.execute('SELECT from_status,to_status,reason FROM todo_moves WHERE suggestion_id=?', (made['id'],))]
+        self.assertEqual(moves, [('pending', 'accepted', 'owner_do_it')])
+
     def test_a_new_card_goes_through_the_same_suggest_as_the_reviews(self):
         real = a.Store.suggest
         with patch.object(a.Store, 'suggest', autospec=True, side_effect=real) as suggest:
