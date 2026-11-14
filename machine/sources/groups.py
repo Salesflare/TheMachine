@@ -7,7 +7,7 @@ GROUP_OF = {'gmail': 'mail', 'outlook': 'mail', 'imap': 'mail',
             'calendar': 'calendar', 'outlook_calendar': 'calendar', 'icloud_calendar': 'calendar', 'caldav': 'calendar',
             'proton_calendar': 'calendar', 'ics': 'calendar', 'exchange': 'calendar',
             'slack': 'chat', 'teams': 'chat', 'whatsapp': 'chat', 'telegram': 'chat', 'signal': 'chat', 'linkedin': 'chat', 'x': 'chat',
-            'zoom': 'meetings', 'google_meet': 'meetings', 'docs': 'docs',
+            'zoom': 'meetings', 'google_meet': 'meetings', 'docs': 'docs', 'google_docs': 'docs',
             'salesflare': 'customers', 'salesforce': 'customers', 'intercom': 'customers', 'stripe': 'customers',
             'github': 'work', 'shortcut': 'work', 'trello': 'work'}
 # Catch-all sources ("Other email": any other mail provider): last in their group, after the A to Z rows, in + Add and on

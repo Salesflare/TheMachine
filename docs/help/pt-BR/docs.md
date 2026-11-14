@@ -71,7 +71,7 @@ Depois a sua Machine:
 
 Ela não pesquisa o seu Drive. Vê comentários, compartilhamentos e sugestões só nos documentos que ela criou. Mais do que isso exigiria acesso ao seu Drive inteiro, e ela não pede.
 
-No seu próprio computador, a sua Machine pode criar um novo documento do Google em uma conta do Gmail conectada ali que já tenha acesso ao Drive. Ela não lê seus outros Google Docs nem os comentários deles.
+No seu próprio computador, a sua Machine pode criar um novo documento do Google em uma conta do Gmail conectada ali que já tenha acesso ao Drive. Ela não lê seus outros Google Docs nem os comentários deles. **Documentos e arquivos** mostra isso como Google Docs, nessa conta.
 
 ## Trabalho ou pessoal
 

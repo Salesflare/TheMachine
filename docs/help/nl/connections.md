@@ -48,7 +48,7 @@ Met **Brengt signalen binnen** uit synchroniseert de bron niet en toont de kaart
 
 Open de bron, **Details**, dan **Ontkoppelen**. Hij stopt met lezen. Wat al binnengehaald is, blijft. Op een gehoste Machine tonen Google, Microsoft, Microsoft OneDrive, Zoom en Stripe **Ontkoppelen ↗**, dat je setuppagina opent.
 
-**Onlangs ontkoppeld** toont de accounts bij Google, Microsoft, Zoom, Slack, Stripe en Salesforce die je de laatste 30 dagen verwijderd hebt, en wanneer. Een Google-account staat er één keer, ook als Google Meet of Docs een eigen login hadden.
+**Onlangs ontkoppeld** toont de accounts bij Google, Microsoft, Zoom, Slack, Stripe en Salesforce die je de laatste 30 dagen verwijderd hebt, en wanneer. Een Google-account staat er één keer, ook als Google Meet of Docs een eigen login hadden. Elk staat onder zijn eigen soort: een Google- of Microsoft-account onder **E-mail**, Slack onder **Chat**.
 
 ## Opgeslagen logins
 
