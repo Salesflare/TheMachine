@@ -60,7 +60,7 @@ IN_WSL2 = 'on Windows The Machine runs inside WSL2 (Linux), which the Linux jobs
 # field, and a file whose output says so fails. test_message_seal runs them so itself when run on its own.
 SEAL_AUDIT = (
     'test_connectors', 'test_new_connectors', 'test_x', 'test_linkedin', 'test_whatsapp', 'test_ms_graph', 'test_salesflare',
-    'test_connector_trello', 'test_github_stripe', 'test_connector_shortcut', 'test_connector_google_meet', 'test_connector_teams', 'test_email_bodies', 'test_gmail_exclusions',
+    'test_connector_trello', 'test_github_stripe', 'test_connector_shortcut', 'test_connector_google_meet', 'test_connector_teams', 'test_connector_web_page', 'test_email_bodies', 'test_gmail_exclusions',
     'test_android_coalescing', 'test_gateway', 'test_ingestion_recovery',
 )
 SEAL_LEAK = 'keeps message text in the clear'

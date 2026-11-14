@@ -59,6 +59,10 @@ function mailText(said){const blocks=[];let sig=false;
   const quoted=lines.every(l=>/^\s*>/.test(l)),text=quoted?lines.map(l=>l.replace(/^\s*>\s?/,'')).join('\n'):para;
   blocks.push(html`<p class="${quoted||sig?'email-quiet':''}">${linkify(text)}</p>`)}
  return html`<div class="email-text">${blocks}</div>`}
+// A watched page's change (message_view.shape_page_change): the lines it had struck through and quiet, the lines it has
+// highlighted, the lines around them as they are, a little space between changes far apart. No diff marks.
+const pageChangesHTML=o=>html`<div class="email-text page-changes">${o.changes.map(c=>c.kind==='was'?html`<del class="pc-was">${c.text}</del>`
+ :c.kind==='now'?html`<ins class="pc-now">${c.text}</ins>`:c.text?html`<span class="pc-same">${c.text}</span>`:html`<span class="pc-gap"></span>`)}</div>`;
 // Long bodies fold behind Show more, so a long issue or thread isn't a wall
 function foldLong(box){if(box.classList.contains('msg-fold-open')||box.nextElementSibling?.classList.contains('msg-more'))return;box.classList.add('msg-folded');
  if(box.scrollHeight<=box.clientHeight+40){box.classList.remove('msg-folded');return}
@@ -66,7 +70,7 @@ function foldLong(box){if(box.classList.contains('msg-fold-open')||box.nextEleme
 async function fillMessage(container,o,id){
 const box=container.querySelector('.email-body');if(!box||box.dataset.filled)return;box.dataset.filled='1';
 const said=String(o.body||'').replace(/\r\n/g,'\n').split('\n').filter(l=>!(o.kind==='calendar'&&/^Participants: /.test(l))).join('\n').trim();  // an invite's raw guest addresses: the meeting's With has them by name
-const text=()=>{setHTML(box,said?o.format==='markdown'?html`<div class="msg-md">${chatMarkdown(said)}</div>`:mailText(said):o.view==='notification'||o.view==='card'&&o.card?'':html`<p class="muted">${t('No description.')}</p>`);requestAnimationFrame(()=>foldLong(box))};
+const text=()=>{setHTML(box,o.changes?.length?pageChangesHTML(o):said?o.format==='markdown'?html`<div class="msg-md">${chatMarkdown(said)}</div>`:mailText(said):o.view==='notification'||o.view==='card'&&o.card?'':html`<p class="muted">${t('No description.')}</p>`);requestAnimationFrame(()=>foldLong(box))};
 if(o.kind!=='email'||o.near){text();return}  // a message around the source reads as its stored text
 const view=await emailViewFor(id,o.event_id);if(!view.html){text();if(view.failed)emailRetry(container,box,o,id);return}
 lazyPart('emailframe').then(()=>emailFrame(box,view,o,id),text)}  // its frame (events-email-frame.js)

@@ -52,3 +52,9 @@
 #email-content .convo-im .convo-turn+.convo-turn{margin-top:var(--sp-3)}
 #email-content .convo-im .convo-say .wa-photos{margin:2px 0}
 @media(max-width:560px){#email-content .convo-im .convo-turn .convo-say{max-width:86%}}
+/* A watched page's change: what it had struck through and quiet, what it has on the accent's tint, the rest as is */
+.page-changes{display:flex;flex-direction:column;gap:2px;white-space:normal}
+.page-changes>*{display:block;margin:0 -8px;padding:2px 8px;border-radius:6px;text-decoration:none;color:var(--text)}
+.page-changes>.pc-was{color:var(--muted);text-decoration:line-through;text-decoration-color:color-mix(in srgb,var(--muted) 60%,transparent)}
+.page-changes>.pc-now{background:color-mix(in srgb,var(--mint) 24%,transparent)}
+.page-changes>.pc-gap{height:12px;padding:0}

@@ -31,6 +31,10 @@ import i18n
 from timeutil import local_day, local_tz, now
 
 ENTRIES = [
+    {'id': 'watch-a-page', 'date': '2026-11-14', 'weight': 2, 'title': 'Watch a web page',
+     'text': 'Ask the chat to watch a page, or add one under Connections. A to-do comes only when something that '
+             'matters on it changes.',
+     'action': {'label': 'Add a connection', 'run': 'add-connection'}, 'art': 'watch'},
     {'id': 'day-digests', 'date': '2026-11-13', 'weight': 2, 'title': 'Your day in a digest',
      'text': 'Each evening a digest says what got done and what’s open for tomorrow. Open it from its notification or '
              'To-dos and copy it for Work or Personal.',

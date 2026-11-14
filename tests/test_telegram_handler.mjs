@@ -312,6 +312,21 @@ const handled=await beforeDispatch({content:'I fixed it already',timestamp:17916
  assert.deepEqual(calls.pop(),['forget_learned',{words:'',_owner_chat:true,id:12}]);
  globalThis.fixtureCall=saved;
 }
+// Watch a page from the same chats only: declared side-effecting, sent with the owner key and the bridge's chat mark.
+{
+ const manifest=JSON.parse(await readFile(new URL('../openclaw-plugin/openclaw.plugin.json',import.meta.url),'utf8'));
+ assert.ok(manifest.contracts.tools.includes('assistant_page_watch'));assert.equal(manifest.toolMetadata.assistant_page_watch.sideEffecting,true);
+ assert.match(source,/const OWNER_ACTIONS = new Set\(\[[^\]]*'page_watch'/);
+ const watch=toolFactories.assistant_page_watch,web={agentId:'main',sessionKey:'agent:main:main',messageChannel:'webchat'};
+ assert.equal(watch(web).name,'assistant_page_watch');
+ for(const c of [{agentId:'main',sessionKey:'agent:main:main',messageChannel:'whatsapp'},{agentId:'work',sessionKey:'agent:main:main',messageChannel:'webchat'},
+   {...web,sandboxed:true},{agentId:'main',sessionKey:'agent:main:webchat:other',messageChannel:'webchat'}])assert.equal(watch(c),null);
+ const saved=globalThis.fixtureCall,calls=[];
+ globalThis.fixtureCall=async(action,args)=>{calls.push([action,args]);return {added:'tools.example/pricing'};};
+ await watch(web).execute('t',{do:'add',url:'https://tools.example/pricing',_owner_chat:false});
+ assert.deepEqual(calls.pop(),['page_watch',{do:'add',_owner_chat:true,url:'https://tools.example/pricing'}]);
+ globalThis.fixtureCall=saved;
+}
 // The Find my skills report: bound to its own skills session (sent as an upload); refused from any other session.
 {
  const key='agent:main:assistant-review-skills-'+'d'.repeat(32);

@@ -327,8 +327,9 @@ class EventsStore:
                 else:
                     db.execute('INSERT INTO events(kind,occurred_at,title,body,metadata,deleted,content_hash,ingested_at,account_id,source_id,history,analyzed_version) '
                                'VALUES(?,?,?,?,?,?,?,?,?,?,?,?)', (*values, account, event['source_id'], int(history or settled), int(history or settled)))
-                # on the Calendar, edited after a move, or The Machine's own mail to the owner: never a review or a to-do
-                if event['source_id'] in routine or (old and settled) or machine_notice(event['kind'], event['metadata']):
+                # on the Calendar, edited after a move, The Machine's own mail to the owner, or a version its connector
+                # marks as already reviewed (a watched page's baseline): never a review or a to-do
+                if event['source_id'] in routine or (old and settled) or event.get('reviewed') is True or machine_notice(event['kind'], event['metadata']):
                     db.execute('UPDATE events SET analyzed_version=version WHERE account_id=? AND source_id=?', (account, event['source_id']))
             if state is None:
                 pass  # found by a search (keep_found): no cursor moves

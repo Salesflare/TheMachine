@@ -15,7 +15,7 @@ SERVICES = {'gmail': 'Gmail', 'calendar': 'Google Calendar', 'outlook': 'Outlook
             'slack': 'Slack', 'teams': 'Microsoft Teams', 'salesflare': 'Salesflare', 'salesforce': 'Salesforce', 'android': 'Android', 'whatsapp': 'WhatsApp', 'telegram': 'Telegram', 'signal': 'Signal',
             'linkedin': 'LinkedIn', 'x': 'X', 'intercom': 'Intercom', 'zoom': 'Zoom', 'stripe': 'Stripe', 'github': 'GitHub',
             'trello': 'Trello', 'shortcut': 'Shortcut', 'docs': 'Docs', 'google_meet': 'Google Meet', 'rss': 'RSS',
-            'gateway': 'Machine health'}
+            'web_page': 'Web page', 'gateway': 'Machine health'}
 # An account with no service of its own: its transport says which one (an account without either is Gmail, as in
 # config.example.json and everywhere `account.get('service', 'gmail')` reads it)
 TRANSPORT_SERVICES = {'gog': 'gmail', 'gogcli': 'gmail', 'wacli': 'whatsapp', 'wacli-local': 'whatsapp',

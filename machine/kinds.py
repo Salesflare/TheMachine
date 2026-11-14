@@ -78,6 +78,7 @@ KINDS = {
     'salesforce.task': {**_NO, 'service': 'salesforce', 'name': 'CRM task', 'view': 'card', 'family': CARD, 'mark': 'salesforce'},
     'salesforce.activity': {**_NO, 'service': 'salesforce', 'name': 'CRM activity', 'view': 'card', 'family': CARD, 'mark': 'salesforce'},
     'rss.item': {**_NO, 'service': 'rss', 'name': 'feed', 'view': 'card', 'family': CARD, 'mark': 'rss'},
+    'web_page.change': {**_NO, 'service': 'web_page', 'name': 'web page', 'view': 'card', 'family': CARD, 'mark': 'web_page'},
     'owner.card': {**_NO, 'service': None, 'name': 'note', 'view': 'card', 'family': CARD, 'mark': 'note'},
     'fleet.request': {**_NO, 'service': None, 'name': 'Fleet', 'view': 'card', 'family': CARD, 'mark': 'gateway'},
     'fleet.brief': {**_NO, 'service': None, 'name': None, 'view': 'card', 'family': CARD, 'mark': 'gateway'},

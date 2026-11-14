@@ -143,6 +143,9 @@ SAMPLES = {
     'docs.shared': ev('docs', 'd4', 'docs.shared', 'Budget 2027', 'Kit Navarro shared it with you',
                       **{'source_url': 'https://acme.sharepoint.com/x'}),
     'rss.item': ev('rss', 'r1', 'rss.item', 'Release notes 4.2', 'Faster exports and a new dark mode.', **{'source_url': 'https://blog.example/4-2'}),
+    'web_page.change': ev('page', 'p1', 'web_page.change', 'Pricing | Example Tools',
+                          'Pro\n− $49 per user a month\n+ $59 per user a month\nBilled yearly',
+                          **{'source_url': 'https://tools.example/pricing', 'page_text': 'Pricing\nPro\n$59 per user a month\nBilled yearly'}),
 }
 
 TIMESTAMP = re.compile(r'(?<!\d)1[5-9]\d{8}(?!\d)')
@@ -369,6 +372,15 @@ class Rules(unittest.TestCase):
     def test_cards_drop_a_first_line_that_repeats_the_title(self):
         self.assertTrue(self.items['trello.action']['body'].startswith('Moved to Doing'))
         self.assertTrue(self.items['stripe.event']['body'].startswith('Email:'))
+
+    def test_a_page_change_reads_as_was_and_now_by_its_site(self):
+        o = self.items['web_page.change']
+        self.assertEqual(o['card']['ref'], 'tools.example/pricing')
+        self.assertEqual(o['changes'], [{'kind': 'same', 'text': 'Pro'}, {'kind': 'was', 'text': '$49 per user a month'},
+                                        {'kind': 'now', 'text': '$59 per user a month'}, {'kind': 'same', 'text': 'Billed yearly'}])
+        self.assertEqual(o['body'], 'Pro\n$59 per user a month\nBilled yearly')  # what it says now, no diff marks
+        row = message_view.list_row('web_page.change', o['title'], SAMPLES['web_page.change']['body'], SAMPLES['web_page.change']['metadata'])
+        self.assertNotRegex(row['text'], r'(?m)^[−+] ')
 
     def test_docs_open_in_the_app_their_link_names(self):
         self.assertEqual(self.items['docs.comment']['app'], 'Google Docs')

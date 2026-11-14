@@ -17,7 +17,7 @@ const taskActions=(item:any)=>{
  const emailReady=choices.some((a:any)=>['email','email_demo','linkedin','slack','x','whatsapp','merge','finish'].includes(a.kind));
  return choices.filter((a:any)=>a.kind!=='prepare'||(!emailReady&&!/^Draft (shorter|longer|another|alternative|follow-up)\b/i.test(a.label||'')));
 };
-const OWNER_ACTIONS = new Set(['decide', 'feedback_reply', 'request_feedback', 'bind_feedback_prompt', 'confirm_action', 'undo_merge', 'fleet_decide', 'fleet_notice_decide', 'recap_decide', 'web_chat_said', 'forget_learned']);
+const OWNER_ACTIONS = new Set(['decide', 'feedback_reply', 'request_feedback', 'bind_feedback_prompt', 'confirm_action', 'undo_merge', 'fleet_decide', 'fleet_notice_decide', 'recap_decide', 'web_chat_said', 'forget_learned', 'page_watch']);
 // The service lays out its Fleet question message; callbacks get the same wire format as card buttons.
 const fleetButtons=(rows:any[])=>rows.map(row=>row.map((b:any)=>b.url?{text:b.text,url:b.url}:{text:b.text,callback_data:buildCallback(b.value)}));
 // A Fleet tap's result, shown in the tapped message itself. An unchanged message can't be edited: then the reason, if
@@ -348,6 +348,28 @@ export default definePluginEntry({
         },
       };
     }, { name: 'assistant_forget' });
+    // The owner's own main chat watches a web page for them: a Web page connection, the same as Settings adds
+    // (connectors/web_page.py). A to-do comes only when something that matters on it changed.
+    api.registerTool((context: any) => {
+      const {key, privateMain} = signalsReach(context);
+      const own = privateMain || (key === 'agent:main:main' && context.messageChannel === 'webchat');
+      if (context.agentId !== 'main' || context.sandboxed || !own) return null;
+      return {
+        name: 'assistant_page_watch', label: 'Watch a page for The Machine',
+        description: 'When the owner asks to watch a web page for changes (a price, a policy, a job post), call this with do "add" and its address; it is read every few hours and a to-do comes only when something that matters changed. do "list" shows the watched pages; do "remove" with an id from the list stops one. Say what it returns; never say a page is watched when it was not added.',
+        parameters: { type: 'object', additionalProperties: false, required: ['do'], properties: {
+          do: { type: 'string', enum: ['list', 'add', 'remove'] },
+          url: { type: 'string', description: 'The page address, for add' },
+          id: { type: 'string', description: 'The watched page to remove, from list' },
+          scope: { type: 'string', enum: ['work', 'personal'], description: 'Only when the owner said which; otherwise leave it out' },
+        } },
+        async execute(_id: string, params: any) {
+          const args: Record<string, unknown> = {do: String(params?.do || ''), _owner_chat: true};
+          for (const name of ['url', 'id', 'scope']) if (params?.[name]) args[name] = String(params[name]);
+          return { content: [{ type: 'text', text: JSON.stringify(await call('page_watch', args)) }] };
+        },
+      };
+    }, { name: 'assistant_page_watch' });
     api.registerInteractiveHandler({
       channel: 'telegram', namespace: 'assistant',
       async handler(ctx: any) {

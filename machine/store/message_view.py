@@ -556,6 +556,26 @@ def words_in(text):
     return set(re.findall(r'[^\W_]+', str(text or '').casefold()))
 
 
+CHANGE_MARKS = {'− ': 'was', '+ ': 'now'}
+
+
+def shape_page_change(o, m):
+    """A watched page's change (connectors/web_page.py: '− ' a line it had, '+ ' a line it has, the rest around them):
+    its site and path in the header, its lines as `changes` ({'kind': 'same', 'was' or 'now', 'text'}) that the viewer
+    strikes through or highlights, and as the body (a list row, search) what the page says now, never the marks."""
+    page_name = getattr(_connector('web_page.change'), 'page_name', None)
+    url = str(m.get('source_url') or '')
+    if page_name and url.startswith('https://'):
+        o['card'] = {'ref': page_name(url)}
+    changes = []
+    for line in str(o.get('body') or '').split('\n'):
+        mark = CHANGE_MARKS.get(line[:2], 'same')
+        changes.append({'kind': mark, 'text': line if mark == 'same' else line[2:]})
+    if any(c['kind'] != 'same' for c in changes):
+        o['changes'] = changes
+        o['body'] = '\n'.join(c['text'] for c in changes if c['kind'] != 'was')
+
+
 def shape(kind, o, m):
     """Add the viewer's fields to one original (Store.event_views): view, app, format, and per view what it needs,
     following the rules in this module's docstring."""
@@ -577,6 +597,8 @@ def shape(kind, o, m):
         o['card'] = {'ref': str(m.get('repo') or ''), 'author': actor, 'bot': bool(actor and BOT.search(actor))}
         o['body'] = '\n'.join(line for line in o['body'].split('\n') if not (actor and line.strip() == 'By: ' + actor))
         o['from'] = actor
+    elif kind == 'web_page.change':
+        shape_page_change(o, m)
     elif view == 'card':
         o['body'] = drop_repeats(o['body'], title)
     if transcript_kind(kind) and (turns := transcript_turns(o['body'], m.get('start_at') or o.get('occurred_at'))):
