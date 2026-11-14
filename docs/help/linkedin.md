@@ -26,18 +26,11 @@ LinkedIn doesn't offer an official way to do this. Reading and an occasional mes
 
 ## Connect it
 
-On a hosted Machine:
-
-1. Open your setup page at app.themachine.computer/setup and go to **More sources**.
-2. Open LinkedIn, sign in to LinkedIn in your Machine's browser when it asks, then press **Connect**.
-
-On your own computer:
-
 1. In the dashboard, open **Connections**, then **Chat**, and pick LinkedIn.
 2. Pick **Work** (with its company) or **Personal**, then press **Connect**.
 3. Press **Sign in to LinkedIn** and sign in in your Machine's browser. It connects by itself once you're in.
 
-Or run `assistant connect linkedin`.
+On a hosted Machine, your setup page at app.themachine.computer/setup works too: go to **More sources**, open LinkedIn, sign in when it asks, then press **Connect**. On your own computer, `assistant connect linkedin` does the same in a terminal.
 
 A second LinkedIn account gets a browser of its own. If LinkedIn signs your Machine out, see [Signed out of a site](signed-out.md).
 
