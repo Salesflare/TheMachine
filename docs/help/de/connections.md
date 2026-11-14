@@ -52,7 +52,7 @@ Mit **Bringt Signale** aus synchronisiert sie nicht, und ihre Karte zeigt keine 
 
 Öffne die Quelle, **Details**, dann **Trennen**. Sie hört auf zu lesen. Was sie schon reingebracht hat, bleibt. Auf einer gehosteten Machine zeigen Google, Microsoft, Microsoft OneDrive, Zoom und Stripe **Trennen ↗**, das deine Einrichtungsseite öffnet.
 
-**Kürzlich getrennt** listet Anmeldungen bei Google, Microsoft und Zoom, die du entfernt hast. **Entfernt, bestätigt** heißt, dass Google die Abmeldung bestätigt hat, oder bei Microsoft und Zoom, dass keine Kopie mehr übrig ist. **Ausstehend** sagt, warum, und deine Machine versucht es weiter.
+**Kürzlich getrennt** listet die Konten bei Google, Microsoft, Zoom, Slack, Stripe und Salesforce, die du in den letzten 30 Tagen entfernt hast, und wann. Ein Google-Konto steht nur einmal da, auch wenn Google Meet oder Docs eine eigene Anmeldung hatten.
 
 ## Gespeicherte Anmeldungen
 

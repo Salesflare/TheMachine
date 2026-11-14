@@ -907,9 +907,10 @@ class ViewsStore(ConversationStore):
             result['clear_pace'] = clear_pace.seconds(db)  # seconds per action, the owner's own: To-dos' time to clear
             result['suggestion_counts'] = {r['status']: r['count'] for r in db.execute('SELECT status,count(*) count FROM suggestions GROUP BY status')}
             result['areas'] = todo_areas.areas(accounts)  # where a to-do can move (More, Move to)
-            try:  # Connections, Disconnected lately (mail_grants.py receipts): confirmed or pending, with no token
+            try:  # Connections, Disconnected lately (mail_grants.py receipts): one row per account, named (names.py)
                 import mail_grants
-                result['disconnected'] = mail_grants.receipts(self.config) if self.config.get('database') else []
+                from machine import names
+                result['disconnected'] = names.disconnected_rows(mail_grants.receipts(self.config)) if self.config.get('database') else []
             except Exception:  # noqa: BLE001 - never costs the status
                 result['disconnected'] = []
             result['connectors'] = []

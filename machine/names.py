@@ -217,6 +217,43 @@ def account_card(account, accounts=(), state=None, labels=None, t=None):
     return {'card_title': title, 'card_subtitle': ' · '.join(p for p in parts if p)}
 
 
+# Disconnected lately: a sign-in by the provider it was made with. Google Meet and Google Docs are Google sign-ins of
+# their own (mail_grants.PROVIDERS), but to the owner they are the Google account they removed, so they fold into it.
+SIGNINS = {'google': 'google', 'google_meet': 'google', 'google_docs': 'google', 'microsoft': 'microsoft', 'zoom': 'zoom',
+           'stripe': 'stripe', 'slack': 'slack', 'salesforce': 'salesforce'}
+SIGNIN_NAMES = {'google': 'Google', 'microsoft': 'Microsoft', 'zoom': 'Zoom', 'stripe': 'Stripe', 'slack': 'Slack',
+                'salesforce': 'Salesforce'}
+
+
+def disconnected_rows(receipts, t=None):
+    """Connections, Disconnected lately: mail_grants.receipts as rows, one per account, newest first. Each is
+    {'card_title', 'card_subtitle', 'mark', 'provider_name', 'state', 'at'}: its address (a Slack or Stripe sign-in, kept under ids,
+    reads as its provider), its kind ("Google account") when the title doesn't say it, the provider's mark, and removed
+    or pending (pending while any of its sign-ins is). Never a provider key or an id."""
+    t = t or _t()
+    rows = {}
+    for receipt in receipts or ():
+        if not isinstance(receipt, dict):
+            continue
+        provider = SIGNINS.get(str(receipt.get('provider') or ''))
+        if not provider:
+            continue
+        email = str(receipt.get('email') or '').strip()
+        address = email if re.fullmatch(r'[^@\s]+@[^@\s]+\.[^@\s]+', email) else ''
+        key = (provider, address.casefold() or email.casefold())
+        at = str(receipt.get('at') or '')
+        row = rows.get(key)
+        if row is None:
+            name = SIGNIN_NAMES[provider]
+            rows[key] = {'card_title': address or name, 'card_subtitle': t('{} account', name) if address else '',
+                         'mark': provider, 'provider_name': name, 'state': receipt.get('state') == 'pending' and 'pending' or 'removed', 'at': at}
+            continue
+        row['at'] = max(row['at'], at)
+        if receipt.get('state') == 'pending':
+            row['state'] = 'pending'
+    return sorted(rows.values(), key=lambda r: r['at'], reverse=True)
+
+
 # Connections' own tabs: every other + Add group shares Other sources (the dashboard's HEALTH_TABS)
 PAGE_TABS = ('mail', 'calendar', 'chat')
 # Where a workspace keeps its address ('acme.slack.com'), which tells two of the same name apart
