@@ -59,8 +59,9 @@ class MailApp:
 
     def handoff_mail_wait(self, db, card_id, until):
         """A handoff email went out: the to-do waits under Later until its check-in, then comes back as it was."""
-        db.execute("UPDATE suggestions SET status='snoozed',snoozed_until=?,resume_status='prepared',outcome=NULL,undo_until=NULL WHERE id=?",
+        db.execute("UPDATE suggestions SET snoozed_until=?,resume_status='prepared',outcome=NULL,undo_until=NULL WHERE id=?",
                    (until, card_id))
+        todo_moves.transition(db, card_id, todo_states.SNOOZED, 'handoff_wait')
 
     def handoff_mail_promise(self, db, card_id, event_ids, who, what, due, check_at, event):
         """Their promise to take on a to-do handed off by email, from the sent email (watch NULL: only the review closes it
