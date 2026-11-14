@@ -91,6 +91,21 @@
 | `first_profile` | `true` | Without the guided setup, draft how you write into `USER.md` by itself once reviews are on ([Operations](operations.md#your-own-instructions-usermd-and-overlays)) |
 | `linkedin_inbox`, `x_inbox` | the bundled readers | Paths of the LinkedIn and X readers (`integrations/`) |
 | `voice_python` | the service's Python | The Python that makes [voice input](voice.md)'s virtualenv (3.12 or newer, with `venv`) |
+| `language` | from `locale`, else English | The dashboard's language (Settings, General) |
+| `todo_scope` | `all` | The To-dos filter the dashboard opens on: `all`, `work` or `personal` |
+| `chat_model`, `chat_fast` | OpenClaw's own | The default model and thinking level for to-do chats (Settings, Model), only what differs from OpenClaw's; and the Fast choice of a chat's model menu |
+| `codex` | `codex` on `PATH` | The Codex CLI that reads ChatGPT usage limit resets; `false` never asks it |
+| `agents` | none | Coding agents for **Hand off** ([Coding agents](agents.md)) |
+| `gbrain` | off | The [GBrain](gbrain.md) add-on, as **Connect GBrain** saves it |
+| `gh` | `gh` | The GitHub CLI the GitHub connection uses |
+| `clawhub_registry` | `https://clawhub.ai` | Where Skills searches and reads ClawHub skills |
+| `openclaw_config`, `openclaw_workspace` | `~/.openclaw/openclaw.json`, `~/.openclaw/workspace` (or `OPENCLAW_WORKSPACE`) | OpenClaw's config file and workspace |
+| `gog_keyring_dir` | gog's own data folder | gog's file keyring, where a Google account's refresh token is |
+| `attachment_root`, `open_attachment_dir` | the workspace's `data/assistant-attachments`; the user's runtime folder | Where email attachments are kept, and where runs get readable copies of them |
+| `fleet`, `network_urls` | the Network, once paired | A hosted setup's `{"url": ...}` for [The Machine Network](network.md), and more addresses to fail over to |
+| `network_keys`, `learnings_keys` | `network-keys.json`, `learnings-keys.json` next to the database | This Machine's Network keys and its team learnings key |
+| `started_at` | its first activity | When this Machine started (a hosted Machine's signup) |
+| `docs_consent`, `docs_write_consent`, `teams_consent` | unset | A hosted Machine: set by the control plane once its account page offers the Docs, Docs edits or Teams consent (`true`, or the providers, like `["microsoft"]`) |
 | `accounts` | `[]` | Sources, below |
 
 ## Accounts
