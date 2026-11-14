@@ -15,6 +15,8 @@ split up. Static checks of the source only; nothing is imported or run.
 import ast
 import builtins
 import functools
+import gzip
+import json
 import pathlib
 import re
 import symtable
@@ -387,106 +389,23 @@ SCAN_LIMIT = 450 * 1024
 BUDGETS = {'dashboard.html': 24 * 1024, 'dashboard/*.js': 160 * 1024, 'dashboard/*.css': 64 * 1024,
            'dashboard/*.html': 32 * 1024}
 OVER_BUDGET = {}
-# The page as served (dashboard.html with its parts): what a phone downloads. Not a scan rule, a watch: a ceiling that
-# may only come down; raise it on purpose, in a pull request that says why.
-# 2,000,000 -> 2,100,000 (2026-11-07): main passed 2,000,000 with no single big piece to take out (no inline assets,
-# no string table). The real fix is the dashboard split of the code refactor (load parts when they're used); this is
-# headroom while that lands, so main stays green. Bring it back down with the split.
-# 2,100,000 -> 2,110,000 (2026-11-08): the Routines page (about 7.7 KB) is a whole new page; the split loads it
-# only when opened, and brings this back down.
-# Also Connections › Add redesign (Jeroen picked A); split of the dashboard into on-demand parts follows.
-# 2,110,000 -> 2,120,000 (2026-11-08): Routines took the headroom meant for the + Add redesign (about 6.5 KB, logos
-# already moved out to files). Same reason: the split brings this back down.
-# 2,120,000 -> 2,100,000 (2026-11-08): the ceiling is the first load now, the page and its main script without the
-# parts that load when first needed (dashboard_parts.LAZY); each of those groups has a ceiling of its own.
-# 2,100,000 -> 2,040,000 (2026-11-08): Calendar and Learning load when first needed too (about 78 KB off the first load).
-# 1,770,000 -> 1,774,000 (2026-11-08): "Connect your mail" first (#936, 0.7 KB over on main) and setup picks up where
-# it left off (#963, about 2.9 KB after trimming its comments).
-# 1,774,000 -> 1,775,000 (2026-11-09): main was already 0.1 KB over (#997), and a routine's recipe shows read-only
-# under Advanced (about 0.5 KB after trimming).
-# 1,775,000 -> 1,698,000 (2026-11-09): Settings' general, export and upkeep panels load when first needed (first load
-# 1,774,595 -> 1,696,442).
-# 1,698,000 -> 1,700,000 (2026-11-09): Work or Personal from the address (about 1.7 KB): the line that says what it was
-# set to, with Change, and the setup to-do's row when the mail says the other. The company field and its autofill stay:
-# Zoom, Teams and Google Meet still ask an address and a company up front.
-# 1,700,000 -> 1,614,000 (2026-11-09): the Fleet tab's views load when first needed (first load 1,698,510 -> 1,612,616).
-# 1,614,000 -> 1,527,000 (2026-11-09): the Connections tab's views load when first needed (first load 1,612,918 ->
-# 1,525,351).
-# 1,527,000 -> 1,491,000 (2026-11-09): Settings' Skills panel loads when first needed, with Settings' other panels (first
-# load 1,525,351 -> 1,489,064).
-# 1,491,000 -> 1,494,000 (2026-11-09): the sidebar to-do menu's Mark done, Snooze and Not needed, with keyboard use and
-# placement on a phone (about 3 KB after trimming); main was 1.3 KB under.
-# 1,494,000 -> 1,497,000 (2026-11-09): a routine's to-do names its routine with a link to it and its step on the button,
-# on To-dos itself (about 2.5 KB; first load 1,496,486).
-# 1,497,000 -> 1,500,000 (2026-11-09): a Fixed line asks Works now or Still not right, with a close; the box for what is
-# still off and its image load with Help (about 3.3 KB of buttons and styles; first load 1,499,738).
-# 1,500,000 -> 1,502,000 (2026-11-09): a routine's to-do offers Also change the routine, on To-dos itself (about 1.8 KB;
-# first load 1,501,675).
-# 1,502,000 -> 1,504,000 (2026-11-09): Edit names a routine too, in its title's place (about 1.3 KB; first load 1,502,991).
-# +300 (2026-11-09): a suggested routine also says what it saw for forwards and replies, on Routines (1,504,300).
-# 1,504,300 -> 1,423,000 (2026-11-09): Routines, Talk's session and Calendar's rules load when first needed, and more of
-# the Graph's rules wait for its part (first load about 1,503,000 -> 1,417,982).
-# Don't raise this for a feature: a new page, panel, dialog or anything that only runs once the owner opens or clicks
-# something goes in a part that loads when first needed (dashboard_parts.LAZY, lazyRun in shell-core.js), and what
-# To-dos draws first stays small. Only a change to that first draw itself may raise it, saying why.
-# 2026-11-09: main had reached this ceiling (1,423,014, then 1,421,700). Settings' Connected AIs and Apps panels
-# (settings-ai.js, settings-ai.css, settings-apps.js) load when first needed, with Settings' other panels (first load
-# 1,421,700 -> 1,406,533). The ceiling stays: the room is for what's queued.
-# 2026-11-10: main was over again (1,423,060). Go through's dialog (todos-clear-run.js and its rules) loads when first
-# needed; the header's Go through and its time stay (first load 1,423,060 -> 1,415,719). The ceiling stays.
-# 1,423,000 -> 1,391,000 (2026-11-11): main sat a few hundred bytes under it and every UI change hit it. A follow-up
-# group's fast review (LAZY 'followups'), a project's follow-ups and Done when, a board's follow-ups line and the
-# follow-up settings dialog (the Graph's part) load when first needed (first load 1,421,711 -> 1,380,493). The
-# ceiling is that plus 10 KB, and FIRST_LOAD_ROOM keeps it close: room that opens up is taken in.
-# 1,391,000 -> 1,392,000 (2026-11-12): main sat 9 bytes under it. A Daily digest's place in the list itself (its To
-# read chip, Done as its first button, not counted as needing the owner) is first draw (+561); its items load when
-# first needed (LAZY 'digest').
-# 1,392,000 -> 1,393,000 (2026-11-12): someone new in a Work Fleet sees whose OK the team's Graph waits for, and the
-# page looks again every 5 seconds until it comes (+about 700, used by both the Graph's and the Fleet's parts).
-# 1,393,000 -> 1,394,000 (2026-11-12): main sat 288 bytes under it. Five calendar sources (iCloud, CalDAV, Proton, a
-# calendar link, Exchange) need their names, icons, marks and sync errors in words wherever a to-do or error line
-# shows them (+905); their connect sheets and cards load with Connections.
-# 1,394,000 -> 1,395,000 (2026-11-12): Signal chats is a send and draft kind like WhatsApp in the to-do lists, the send
-# dialog and the viewer, which draw first (about 0.9 KB).
-# 1,395,000 -> 1,250,000 (2026-11-12): main sat at it. What a tap opens and To-dos doesn't draw loads when first
-# needed, the parts a tap on To-dos opens first: New to-do's dialog (LAZY 'newtodo'), Search and Ask (LAZY 'palette'),
-# the send dialog (with the composer, LAZY 'compose'), the sign-in dialog (LAZY 'signin'), a to-do's messages (with
-# their frame, LAZY 'emailframe') and voice recording (LAZY 'voice'); also Talk's bar and view (LAZY 'talk'), Settings'
-# Notifications and Model panels, Learning's Share learnings and votes, and what only the Fleet, Graph and Learning
-# parts draw (first load about 1,394,000 -> 1,243,221). The ceiling is about that plus 7 KB.
-# 1,250,000 -> 1,252,000 (2026-11-13): main sat 263 bytes under it. Back on a phone closes the open dialog or sheet
-# (shell-back.js, about 2 KB): it wraps showModal before any dialog opens, a push link's digest at load included.
-# 1,252,000 -> 1,253,000 (2026-11-13): main sat 173 bytes under it. A to-do with nothing left to lead has Mark done
-# as its lead, and a cleanup with every row decided reads as finished (chip, line, place in the list): first draw (+972).
-# 1,253,000 -> 1,255,000 (2026-11-13): main sat 201 bytes under it. To-dos' Digest row names its digest by when it went
-# with its counts, and goes once opened (todos-learned.js, about 1.5 KB): it draws on the first view.
-FIRST_LOAD_CEILING = 1_255_000
-# At most this much room under the ceiling: a change that makes the first load smaller lowers the ceiling with it, so
-# the room it made stays room, not a buffer for the next feature to fill.
-FIRST_LOAD_ROOM = 32_000
-# graph 336,000 -> 344,000 (2026-11-09): the Graph's rules that moved out of the first load now count in its part.
-# settings 124,000 -> 136,000 (2026-11-09): Connected AIs and Apps joined Settings' part.
-# whatsnew 12,000 (2026-11-10): its pictures are drawn in it (about 5 KB of SVG).
-# whatsnew 14,000 -> 20,000 (2026-11-13): six more pictures for the candidates shipped Nov 11 to 13 (about 4 KB).
-# graph 344,000 -> 348,000 (2026-11-10): a project's description, its Edit and Keep it updated (about 2.5 KB).
-# graph 348,000 -> 350,000 (2026-11-10): a board's header says who sees it, and the owner's locks (about 1.2 KB).
-# graph 350,000 -> 348,000 (2026-11-10): team boards no longer fold look-alike projects.
-# graph 356,000 -> 360,000 (2026-11-10): the lists' Updated today line and its dot, drawn and styled in this part, not
-# in the first load (a few KB).
-# milestone 20,000 (2026-11-10): the milestone card on done to-dos, its share dialog and the image it draws.
-# clearrun 12,000 (2026-11-10): Go through's dialog (about 8.4 KB).
-# recipe 4,000 (2026-11-10): a repeating to-do's kept way, its chat line with Edit and Undo (about 3 KB).
-# fbpeople 4,000 (2026-11-10): Facebook's friends nobody in the Graph has, adding them as personal contacts and its Undo (about 2 KB).
-# emailframe 6,000 (2026-11-11): an email's HTML in its frame, its dark mode and its links (about 4.3 KB), out of
-# the first load when a link fix put it over its ceiling.
-# split 12,000 (2026-11-10): Split up's dialog, its preview and Undo (about 9.7 KB), loaded when first used.
-# routines 33,000 (2026-11-11): a routine form stays while its Save is on the way (was 31.7 KB of 32,000).
-# compose 6,000 (2026-11-12): a new email from a click on an address, in the send dialog (about 4.4 KB).
-# ask 3,000 (2026-11-12): a to-do's questions, a pick and the one Answer that sends them all (about 1.4 KB), loaded on
-# the first pick or Answer; the questions themselves draw with the to-do.
-# msgview 18,000 (2026-11-12): how each kind of message reads in the viewer and a chat as one thread (about 15.7 KB),
-# out of the first load when the viewer's per-kind reading put it over its ceiling.
-LAZY_CEILING = {'ask': 3_000, 'calendar': 96_000, 'clearrun': 12_000, 'compose': 6_000, 'digest': 8_000, 'emailframe': 6_000, 'connections': 108_000, 'fbpeople': 4_000, 'fleet': 96_000, 'game': 12_000, 'graph': 360_000, 'help': 40_000, 'learning': 24_000, 'mailcheck': 8_000, 'milestone': 20_000, 'msgview': 18_000, 'recipe': 4_000, 'routines': 33_000, 'routinetodos': 12_000, 'settings': 136_000, 'split': 12_000, 'talk': 52_000, 'whatsnew': 20_000}  # whatsnew: 14,000 for the pictures of each new candidate (#1156)
+# What a phone downloads before To-dos shows: the first load (the page and its main script, without the parts that load
+# when first needed, dashboard_parts.LAZY), and each of those groups when it's first opened. Counted as gzip of the text
+# without its whole-line comments (served_size), so a comment costs nothing and only shipped code counts.
+# dashboard/budgets.json holds their budgets: about 3% over the size when they were set (at least 500 bytes). They don't
+# follow the size down; a weekly look can lower them. Don't raise one for a feature: a new page, panel, dialog or
+# anything that only runs once the owner opens or clicks something goes in a part that loads when first needed
+# (dashboard_parts.LAZY, lazyRun in shell-core.js). Only a change to what To-dos draws first raises the first load's,
+# on purpose, in a pull request that says why. Their history is in git.
+SIZE_BUDGETS = ROOT / 'dashboard' / 'budgets.json'
+WHOLE_LINE_COMMENT = re.compile(r'^[ \t]*(?://[^\n]*|/\*(?:[^*]|\*(?!/))*\*/[ \t]*)\n', re.M)
+
+
+def served_size(text):
+    """Bytes of text gzipped (level 9, as the service compresses it at best), without its whole-line // and /* */
+    comments: what a change adds to a download, comments aside. The page itself is served with them (a measure, not
+    a minifier)."""
+    return len(gzip.compress(WHOLE_LINE_COMMENT.sub('', text).encode('utf-8'), 9, mtime=0))
 
 
 def budget(name):
@@ -495,66 +414,6 @@ def budget(name):
         return BUDGETS[name]
     folder, _, file = name.rpartition('/')
     return BUDGETS.get(f'{folder}/*.{file.rpartition(".")[2]}', SCAN_LIMIT) if folder == 'dashboard' else SCAN_LIMIT
-
-
-# routinetodos 12,000 -> 14,000 (2026-11-11): Also change the routine in a to-do's chat too, and all its styles, which
-# moved here out of the first load (about 1.8 KB).
-LAZY_CEILING['routinetodos'] = 14_000
-# routinetodos 14,000 -> 15,000 (2026-11-11): a cleanup to-do's row opens its mail in the viewer (about 0.6 KB).
-LAZY_CEILING['routinetodos'] = 15_000
-# routinetodos 15,000 -> 15,500 (2026-11-13): an unsubscribe page the Machine couldn't finish says why on its row
-# (about 0.3 KB, after trimming).
-LAZY_CEILING['routinetodos'] = 15_500
-# routinetodos 15,500 -> 16,000 (2026-11-13): Unsubscribe by hand on a group's row opens its mail in the viewer.
-LAZY_CEILING['routinetodos'] = 16_000
-# followups 28,000 (2026-11-11): a follow-up group's fast review (about 23.9 KB), out of the first load.
-# graph 360,000 -> 384,000 (2026-11-11): a project's follow-ups and Done when, a board's follow-ups line and the
-# follow-up settings dialog, which only the Graph's pages open (about 17.6 KB), out of the first load.
-LAZY_CEILING.update(followups=28_000, graph=384_000)
-# connections 108,000 -> 110,000 (2026-11-12): + Add shows Suggested for you on top again, as well as in each group, and
-# puts catch-all sources last (about 0.9 KB).
-LAZY_CEILING['connections'] = 110_000
-# connections 110,000 -> 111,000 (2026-11-12): Signal chats' QR step, its two stop notes and its no-older-messages note
-# on the card (about 0.35 KB), after the calendar sources took the room.
-LAZY_CEILING['connections'] = 111_000
-# brief 7,000 (2026-11-12): the team brief's lines as to-dos (about 5 KB), loaded when one is on screen.
-LAZY_CEILING['brief'] = 7_000
-# settings 136,000 -> 140,000 (2026-11-12): Work hours' Morning digest follows Snoozes land at, with its note under the
-# field (about 1.8 KB); main was 4 bytes under the old ceiling.
-LAZY_CEILING['settings'] = 140_000
-# msgview 18,000 -> 29,000 (2026-11-13): messenger chats read like their app, with link cards, media chips and their
-# style sheet (events-message.css, about 7.4 KB), which loads with the viewer instead of the first load.
-LAZY_CEILING['msgview'] = 29_000
-# 2026-11-12: out of the first load (FIRST_LOAD_CEILING 1,248,000), each part about this much bigger or new:
-# newtodo 26,000: New to-do's dialog (about 24.7 KB). palette 20,000: Search and Ask (about 18.8 KB).
-# compose 6,000 -> 34,000: the send dialog and a doc write's review (about 28.3 KB).
-# signin 18,000: the sign-in dialog (about 16.3 KB). voice 16,000: recording and writing it out (about 14.8 KB).
-# emailframe 6,000 -> 10,000: the messages dialog (about 4.4 KB). talk 52,000 -> 56,000: Talk's bar and view (about 11 KB).
-# settings 140,000 -> 151,000: Notifications and Model (about 10.6 KB). learning 24,000 -> 42,000: Share learnings and
-# votes, and the quality charts only Learning draws (about 17.8 KB). fleet 96,000 -> 100,000 and graph 384,000 ->
-# 386,000: what only their pages draw (about 4.8 and 2.9 KB).
-LAZY_CEILING.update(newtodo=26_000, palette=20_000, compose=34_000, signin=18_000, voice=16_000, emailframe=10_000,
-                    talk=56_000, settings=151_000, learning=42_000, fleet=100_000, graph=386_000)
-LAZY_CEILING['areadigest'] = 4_000  # the Work and Personal digest view with its Copy buttons
-# areadigest 4,000 -> 8,000 (2026-11-13): a digest notification or its email's link opens that digest as it went, drawn as
-# headings, subheads and a list (about 3 KB)
-LAZY_CEILING['areadigest'] = 8_000
-# followups 28,000 -> 29,000 (2026-11-13): the fast review's styles (graph-followups-review.css, about 3.9 KB of the
-# first load) load with it, when the first load sat over its ceiling (1,250,045 -> 1,246,119).
-LAZY_CEILING['followups'] = 29_000
-# settings 151,000 -> 162,000 (2026-11-13): Settings, Activity (settings-activity.js, about 10.6 KB) loads with Settings,
-# out of the first load, which sat over FIRST_LOAD_CEILING after a day of raises (1,254,638 -> 1,244,343, ceiling kept).
-# Support access stays in the first load (settings-support.js): Report a bug uses it. connections stays at 111,000: the
-# page's brand, tabs and controls rules moved out of base-layout.css (base-controls.css), which Connections' part
-# carried whole (111,261 -> 103,134).
-LAZY_CEILING['settings'] = 162_000
-# msshare 8,000 (2026-11-13): the milestone's share dialog (about 6.5 KB), which a computer now opens instead of its
-# share sheet, out of the milestone part that sat at its ceiling (19,994 -> 14,633).
-LAZY_CEILING['msshare'] = 8_000
-# connections 111,000 -> 121,000 (2026-11-13): Connections by kind, a list of kinds beside the one open (a page of its
-# own on a phone), each account a row that opens its card, each kind's sources under it, and a plain line icon for a
-# kind with nothing connected, Sign-ins and Checks (about 13.8 KB; with Set aside under Checks, 119,559).
-LAZY_CEILING['connections'] = 121_000
 
 
 # Python files: the same scan limit, and a line budget that keeps a module small enough to read and review. A new
@@ -715,23 +574,29 @@ class Architecture(unittest.TestCase):
         self.assertEqual(budget('sw.js'), SCAN_LIMIT)
 
     def test_the_served_dashboard_stays_under_its_ceilings(self):
+        budgets = json.loads(SIZE_BUDGETS.read_text(encoding='utf-8'))
         first, lazy = dashboard_parts.assemble_split(ROOT)
-        size = len(first.encode('utf-8'))
-        self.assertLessEqual(size, FIRST_LOAD_CEILING, f'The dashboard\'s first load is {size} bytes, over '
-                                                       f'FIRST_LOAD_CEILING ({FIRST_LOAD_CEILING}): every phone downloads '
-                                                       'it before To-dos shows. Make it smaller, load a part when first '
-                                                       'needed (dashboard_parts.LAZY), or raise the ceiling on purpose in '
-                                                       'a pull request that says why.')
-        self.assertLessEqual(FIRST_LOAD_CEILING - size, FIRST_LOAD_ROOM, f'The dashboard\'s first load is {size} bytes, '
-                             f'more than {FIRST_LOAD_ROOM} under FIRST_LOAD_CEILING ({FIRST_LOAD_CEILING}): lower the '
-                             'ceiling to about its size plus 10 KB, so the room stays room.')
-        self.assertEqual(sorted(lazy), sorted(LAZY_CEILING))
+        size = served_size(first)
+        self.assertLessEqual(size, budgets['first_load'], f'The dashboard\'s first load is {size} bytes gzipped, over '
+                             f'its budget ({budgets["first_load"]}, first_load in dashboard/budgets.json): every phone '
+                             'downloads it before To-dos shows. Make it smaller, load a part when first needed '
+                             '(dashboard_parts.LAZY), or raise the budget on purpose in a pull request that says why.')
+        self.assertEqual(sorted(lazy), sorted(budgets['lazy']), 'every LAZY group has a budget in dashboard/budgets.json')
         for group, script in lazy.items():
             with self.subTest(group=group):
-                size = len(script.encode('utf-8'))
-                self.assertLessEqual(size, LAZY_CEILING[group], f'The {group} part that loads when first needed is '
-                                     f'{size} bytes, over its LAZY_CEILING ({LAZY_CEILING[group]}): make it smaller, '
-                                     'or raise its ceiling on purpose in a pull request that says why.')
+                size = served_size(script)
+                self.assertLessEqual(size, budgets['lazy'][group], f'The {group} part that loads when first needed is '
+                                     f'{size} bytes gzipped, over its budget ({budgets["lazy"][group]}, in '
+                                     'dashboard/budgets.json): make it smaller, or raise its budget on purpose in a '
+                                     'pull request that says why.')
+
+    def test_the_size_measure_leaves_out_whole_line_comments_only(self):
+        code = 'let a = 1; // kept: not a whole line\nconst u = "http://x";\n'
+        commented = ('  // a whole-line comment\n' + code + '/* one\n   more */\n\t/* a rule */  \n'
+                     '/* not whole */ b();\n')
+        self.assertEqual(WHOLE_LINE_COMMENT.sub('', commented), code + '/* not whole */ b();\n')
+        self.assertEqual(served_size(commented), served_size(code + '/* not whole */ b();\n'))
+        self.assertLess(served_size(code), served_size(code + 'b();\n'))
 
     def test_python_files_stay_within_the_budget(self):
         sizes = python_sizes()
