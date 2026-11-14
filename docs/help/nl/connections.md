@@ -1,62 +1,66 @@
 ---
 title: Koppelingen
 area: connections
-summary: Je bronnen op één plek: hoe het met elke bron gaat, een nieuwe toevoegen of er een ontkoppelen.
+summary: Al je bronnen op één plek: bekijk de status, voeg een bron toe of ontkoppel er een.
 covers: tab:health, saved-signins
 code: dashboard.html, onboarding.py
 order: 1
 translated: 1ca62ab8f65b77ff
 ---
-## Hoe het ermee gaat
+## Status bekijken
 
-Het tabblad **Koppelingen** toont je bronnen per soort (**E-mail**, **Agenda**, **Chat** en meer), met **Logins** en **Checks** onder een lijn. Op een telefoon tik je op een soort om ze te openen en op **Koppelingen** om terug te gaan. Elke bron is een rij; tik erop voor haar kaart. Elke bron zegt hoe het ermee gaat: Verbonden, Wacht op eerste sync, Verbindt automatisch opnieuw, of Heeft je hulp nodig. Open **Details** voor **Recente syncs**, waar de sync in gewone woorden staat (zoals "Bij" of "Eerste keer lezen"), en wat je moet doen.
+Op het tabblad **Koppelingen** staan je bronnen per soort, met **Logins** en **Checks** onder een streep. Tik op je telefoon op een soort om die te openen en op **Koppelingen** om terug te gaan. Een soort met een bron die op jou wacht, wordt als eerste geopend. Elke bron staat op een regel met de status (Verbonden, Wacht op eerste synchronisatie, Bezig automatisch opnieuw te verbinden of Heeft je hulp nodig) en wat er onlangs is binnengekomen. Tik erop om de kaart en **Details** te openen.
 
-Een mislukte sync die een latere sync heeft goedgemaakt staat in grijs; alleen een mislukking die nog de laatste is, staat als probleem, met wanneer hij opnieuw probeert.
+Een mislukte synchronisatie die later is ingehaald, wordt grijs weergegeven. Alleen een fout bij de meest recente synchronisatie wordt als probleem weergegeven, met het tijdstip waarop er opnieuw wordt geprobeerd.
 
-De tellers tonen alles wat de bron binnenbracht, ook de [geschiedenis](history.md), hoeveel er de laatste 24 uur bij kwam en wat nog niet is gecheckt. Een agenda telt afspraken: alle, die van de volgende 7 dagen en de laatste 24 uur.
+De aantallen laten zien hoeveel er in totaal is binnengekomen, ook wat in de [geschiedenis](history.md) staat, wat er in de afgelopen 24 uur is binnengekomen en wat nog niet is gecontroleerd. Bij een agenda gaat het om het aantal afspraken.
 
-Elke bron heet naar haar account, zoals de dienst het noemt: je adres, een X-profiel, een Slack-workspace, of van wie de Signal of Telegram is. Daaronder: **Werk** of **Privé**, met het adres of de handle als de naam dat nog niet zegt. Hebben twee bronnen op één tabblad dezelfde naam, dan zegt elk ook wat ze onderscheidt, zoals Slack of X, of het adres van de workspace.
+Elke bron is genoemd naar het account, zoals de dienst dat noemt: je adres, een X-profiel, een Slack-werkruimte of van wie de Signal- of Telegram-account is. Onder de naam staat eerst **Werk** of **Privé**, plus het adres of de gebruikersnaam als die niet al in de naam staat. Als twee bronnen van dezelfde soort dezelfde naam hebben, staat erbij waaraan je ze kunt onderscheiden, zoals Slack of X, of het adres van de werkruimte.
 
-Onder de status zegt elke bron in één regel wat ze binnenbrengt en, als ze iets kan doen, dat ze dat pas doet nadat je op **Versturen** drukt of het goedkeurt.
+Bij elke bron staat ook in één regel wat die binnenbrengt en, als de bron acties kan uitvoeren, dat hij dat alleen doet nadat je op **Versturen** drukt of de actie goedkeurt.
 
 ## Een bron toevoegen
 
-Open de soort en kies een bron onder **Nog een toevoegen**, of onder de lijst als er nog geen gekoppeld is. Hij vraagt wat hij nodig heeft, één vraag tegelijk. **Annuleren** stopt het toevoegen. Weggegaan voor het klaar was? Open **Koppelingen** opnieuw, op eender welk toestel, en je gaat verder bij dezelfde stap. Zodra hij gekoppeld is, begint je Machine hem meteen te lezen en opent hij de nieuwe kaart, die toont hoe de eerste sync verloopt. Op een gehoste Machine log je hier in bij Google, Microsoft, Microsoft OneDrive, Zoom, Stripe en Intercom: kies **Werk** of **Privé**, log in en je komt terug in dit formulier, dat toont hoe het koppelen gaat. GitHub, WhatsApp, Codex, Telegram-chats en je Android-telefoon tonen hun code meteen in dit formulier.
+Open een soort (**E-mail**, **Agenda**, **Chat**, **Afspraken**, **Documenten en bestanden**, **Klanten**, **Projecten en code**, **Andere**) en kies een bron onder **Nog een toevoegen**, of onder de lijst als er nog niets is verbonden. Onderaan vind je opties voor alles wat niet in een andere categorie past: **Andere e-mail** onder E-mail, en **Agendalink (ICS)** en **Andere agenda** onder Agenda. Exchange Server leest afspraken en staat daarom onder Agenda.
 
-Een bron die je al koppelde zegt dat in de lijst, met het account. Kies hem om er nog een naast toe te voegen: het formulier zegt dat en linkt naar de koppeling die je al hebt.
+**Voorgesteld voor jou** staat bovenaan **Koppelingen** als je Machine een reden ziet om een bron toe te voegen. Die reden staat er in één regel bij: e-mail van Stripe, Zoom-afspraken in je agenda, berichten met links naar Google Docs of een installatie die niet is afgerond. De bron blijft ook in de eigen groep staan, met het label **Voorgesteld**. Je Machine telt deze suggesties zelf; er wordt niets verstuurd. Een verbonden bron wordt nooit voorgesteld.
 
-De lijst is gegroepeerd (**E-mail**, **Agenda**, **Chat**, **Afspraken**, **Documenten en bestanden**, **Klanten**, **Projecten en code**, **Andere**), van A tot Z per groep. Een verzamelbron zoals **Andere e-mail** staat als laatste in zijn groep.
+Microsoft Teams staat op twee plekken: onder **Chat** voor chats en onder **Afspraken** als **Teams-meetings** voor aantekeningen van meetings. Voor beide gebruik je dezelfde Microsoft-login. Als je de ene verbindt, wordt de andere ook verbonden.
 
-**Voorgesteld voor jou** staat bovenaan als je Machine een reden ziet voor een bron, met die reden op één regel: mails van Stripe, Zoom-meetings in je agenda, berichten die naar Google Docs linken, of instellen dat niet is afgerond. De bron staat ook in zijn eigen groep, met het label **Voorgesteld**. Hij telt dat op je Machine; er gaat niets weg. Een gekoppelde bron wordt nooit voorgesteld.
+In de lijst zie je welke bronnen je al hebt verbonden, met het bijbehorende account. Selecteer zo'n bron om er nog een naast te zetten. Het formulier geeft aan dat je een extra bron toevoegt en bevat een link naar de bestaande bron.
 
-Microsoft Teams staat er twee keer: onder **Chat** voor de chats en onder **Afspraken** als **Teams-meetings** voor de meetingnotities. Beide gebruiken dezelfde Microsoft-aanmelding, dus de ene koppelen koppelt ook de andere.
+Vul de gevraagde gegevens in, zoals een sleutel of adres, kies **Werk** met de naam van je bedrijf of **Privé**, en druk op **Verbinden**. Bij e-mail en agenda wordt er alleen om gevraagd als het adres dit niet duidelijk maakt. Een website zoals LinkedIn of X opent de login in de browser van je Machine en gaat vanzelf verder zodra je bent ingelogd. GitHub, WhatsApp en Codex tonen een code die je moet invoeren. Telegram toont een QR-code om te scannen.
 
-**Opnieuw verbinden** op een bron en in **Wacht op jou** opent hetzelfde formulier. Op je eigen computer doet `assistant connect` hetzelfde in een terminal.
+Met **Annuleren** stop je het toevoegen. Ben je weggegaan voordat het klaar was? Open **Koppelingen** opnieuw, op welk apparaat dan ook, en je gaat verder bij dezelfde stap. Zodra de bron is verbonden, begint je Machine die meteen te lezen en zie je hoe de eerste synchronisatie verloopt.
+
+Op een gehoste Machine kun je meteen hier inloggen bij Google, Microsoft, Microsoft OneDrive, Zoom, Stripe en Intercom: kies **Werk** of **Privé** en druk op **Inloggen**. Je keert terug naar dit formulier, waar je ziet hoe het is gegaan. GitHub, WhatsApp, Codex, Telegram en je Android-telefoon tonen hun code hier ook.
+
+Met **Opnieuw verbinden** bij een bron of onder **Wacht op jou** open je hetzelfde formulier. Op je eigen computer doet `assistant connect` hetzelfde in een terminal.
 
 ## Werk of privé
 
-Elke bron telt als werk (voor een bedrijf dat je noemt) of als privé. Wijzig het onder **Details**. Er staat alleen **Geraden** als je Machine het uit het adres afleidde; zodra je zelf kiest, blijft het jouw keuze. Werk-to-do's wachten op je werkdagen.
+Elke bron is voor werk (bij een bedrijf dat je opgeeft) of privé. Je kunt dit wijzigen onder **Details**. **Geschat** betekent dat je Machine dit op basis van het adres heeft bepaald. Werkgerelateerde to-do's wachten tot je werkdagen.
 
-Mail en agenda van Google en Microsoft volgen hun adres als dat duidelijk is: een mailprovider zoals Gmail of Outlook.com is Privé, het domein van je team is Werk. Anders vraagt hij het één keer, meteen na het inloggen. Met **Wijzigen** stel je het zelf in. Zegt de mail daarna het omgekeerde, dan vraagt de to-do **Haal meer uit The Machine** één keer of je het wilt wijzigen.
+Bij e-mail en agenda van Google en Microsoft wordt dit afgeleid van het adres als dat duidelijk is: een e-mailprovider zoals Gmail of Outlook.com betekent Privé, en het domein van je team betekent Werk. Anders wordt het je één keer gevraagd, meteen nadat je bent ingelogd. Met **Wijzigen** stel je dit zelf in. Als e-mails later iets anders aangeven, vraagt de to-do **Haal meer uit The Machine** één keer of je dit wilt aanpassen.
 
-## Vaardigheden
+## Mogelijkheden
 
-Een bron kan signalen binnenbrengen (wat binnenkomt wordt to-do's), dingen doen voor je to-do's (een document lezen als er een nodig is, of iets versturen, beantwoorden of wijzigen na je OK), of allebei. Met allebei heeft **Details** een schakelaar voor elk: **Brengt signalen binnen** en **Kan dingen doen**. Eén blijft aan. Wil je allebei stoppen, ontkoppel de bron dan. De antwoorden van een chat gaan over wat die binnenbrengt, dus een chat heeft alleen **Kan dingen doen**.
+Een bron kan signalen binnenbrengen (wat binnenkomt, wordt omgezet in to-do's), dingen doen voor je to-do's (een document lezen of iets versturen, beantwoorden of wijzigen nadat je het goedkeurt), of allebei. Als de bron beide kan, staan er onder **Details** twee schakelaars: **Brengt signalen binnen** en **Kan dingen doen**. Eén ervan blijft altijd aan. Zet ze allebei uit door de bron te ontkoppelen. Bij een chat is alleen **Kan dingen doen** beschikbaar.
 
-Met **Brengt signalen binnen** uit synchroniseert de bron niet en toont de kaart geen aantallen. Met **Kan dingen doen** uit leest je Machine er nooit iets mee op verzoek, schrijft er geen concept mee en wijzigt er niets mee. Bronnen van vroeger hebben allebei aan.
+Als **Brengt signalen binnen** uitstaat, synchroniseert de bron niet. Als **Kan dingen doen** uitstaat, leest, schrijft of wijzigt je Machine er nooit iets mee.
 
 ## Een bron verwijderen
 
-Open de bron, **Details**, dan **Ontkoppelen**. Hij stopt met lezen. Wat al binnengehaald is, blijft. Op een gehoste Machine tonen Google, Microsoft, Microsoft OneDrive, Zoom en Stripe **Ontkoppelen ↗**, dat je setuppagina opent.
+Open de bron, ga naar **Details** en kies **Ontkoppelen**. De bron wordt dan niet meer gelezen. Wat al is binnengebracht, blijft staan. Op een gehoste Machine staat bij Google, Microsoft, Microsoft OneDrive, Zoom en Stripe **Ontkoppelen ↗**. Daarmee open je de instellingenpagina.
 
-**Onlangs ontkoppeld** toont de accounts bij Google, Microsoft, Zoom, Slack, Stripe en Salesforce die je de laatste 30 dagen verwijderd hebt, en wanneer. Een Google-account staat er één keer, ook als Google Meet of Docs een eigen login hadden. Elk staat onder zijn eigen soort: een Google- of Microsoft-account onder **E-mail**, Slack onder **Chat**.
+Onder **Onlangs ontkoppeld** staan de Google-, Microsoft-, Zoom-, Slack-, Stripe- en Salesforce-accounts die je in de afgelopen 30 dagen hebt verwijderd, met de datum. Een Google-account wordt maar één keer weergegeven, ook als Google Meet of Docs een eigen login had. Elk account staat onder de eigen soort: een Google- of Microsoft-account onder **E-mail**, Slack onder **Chat**.
 
 ## Opgeslagen logins
 
-Sites die de browser van je Machine gebruikt, zoals LinkedIn of X, kunnen een login bewaren: vink **Bewaren voor de volgende keer** aan als je inlogt. Dan toont **Logins** ze. Als een site je Machine uitlogt, logt hij met één tik opnieuw in. Wachtwoorden blijven versleuteld op je Machine. **Vergeten** verwijdert er een.
+Vink bij het inloggen op een website zoals LinkedIn of X **Bewaren voor de volgende keer** aan. De login staat dan onder **Logins**. Als een website je Machine uitlogt, logt hij met één tik weer in. Wachtwoorden blijven versleuteld op je Machine. Met **Vergeten** verwijder je een login.
 
 ## Checks
 
-**Checks** toont hoe je Machine leest wat er binnenkomt: recente runs, en wat elke run vond. Zie [Geen nieuwe to-do's](reviews-paused.md).
+Onder **Checks** zie je hoe je Machine binnenkomende gegevens leest: recente controles en wat elke controle heeft gevonden. Zie [Geen nieuwe to-do's](reviews-paused.md).
 
-Elke koppeling heeft een eigen artikel in deze sectie, met wat ze leest en wat ze kan versturen.
+Elke koppeling heeft een eigen artikel in dit gedeelte. Daarin staat wat de koppeling leest en wat hij kan versturen.

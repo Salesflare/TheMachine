@@ -1,66 +1,70 @@
 ---
-title: Instalar o app e ativar as notificações
+title: Instale o app e ative as notificações
 area: getting-started
-summary: Instale a The Machine no celular ou no computador e receba uma notificação para cada tarefa. O Telegram é opcional.
+summary: Instale The Machine no celular ou computador para receber uma notificação para cada tarefa. O Telegram é opcional.
 covers: phone-app
 code: manifest.webmanifest, sw.js, dashboard.html
 order: 3
 translated: 3e2919603c5efa9a
 ---
-O painel pode ser instalado como app no celular ou no computador. Depois ele envia uma notificação para cada tarefa, resultado e lembrete quando você não está no painel, dentro do seu [horário de trabalho](work-hours.md). Escolha o que ele envia em [Notificações](notifications.md).
+Instale The Machine como app no celular ou computador para receber uma notificação para cada tarefa, resultado e lembrete, dentro do seu [horário de trabalho](work-hours.md). Escolha o que ela envia em [Notificações](notifications.md).
 
-Um aviso discreto no topo de Tarefas oferece as duas coisas, uma de cada vez, assim que você lida com sua primeira tarefa: primeiro as notificações, depois o app. O que já está feito naquele dispositivo nunca aparece. **Agora não** esconde o aviso por 14 dias, e um segundo **Agora não** para de mostrar naquele dispositivo. Os mesmos controles ficam em **Configurações**, **Geral**, **Este dispositivo**.
+Depois da sua primeira tarefa, um aviso discreto no topo de Tarefas oferece estas opções, uma de cada vez: o [app para celular](mobile-app.md), depois as notificações e, por fim, o app para computador. Só aparece o que ainda não estiver instalado nesse dispositivo.
 
-## No computador (Chrome ou Edge)
+**Agora não** oculta o aviso por 14 dias. Se você selecionar **Agora não** uma segunda vez, ele deixa de aparecer nesse dispositivo. Os mesmos controles ficam em **Configurações**, **Geral**, **Este dispositivo**.
 
-1. Abra seu painel e clique em **Instalar** nesse aviso, em **Instalar app** em Configurações, **Geral**, ou em **Instalar** ao lado de **Computador** em Configurações, **Apps**.
-2. A The Machine abre em uma janela própria. Fixe na barra de tarefas ou no Dock.
+No app para celular, a mensagem **Receba um aviso quando algo precisar da sua atenção.** aparece enquanto as notificações estiverem desativadas. **Ativar** pede permissão ao celular ou abre as configurações dele. **×** oculta a mensagem por 7 dias.
+
+## Em um computador (Chrome ou Edge)
+
+1. Abra o painel e clique em **Instalar** nesse aviso, em **Instalar app** em Configurações, Geral, ou em **Instalar** ao lado de **Computador** em Configurações, **Apps**.
+2. The Machine abre em uma janela própria. Fixe-a na barra de tarefas ou no dock.
 3. Clique em **Ativar** no aviso e permita as notificações. Uma notificação de teste aparece na hora.
 
-## No Mac (Safari)
+## Em um Mac (Safari)
 
 1. Na barra de menus do Safari, escolha Arquivo e depois Adicionar ao Dock.
-2. Abra a The Machine pelo Dock e clique em **Ativar**.
+2. Abra The Machine pelo Dock e clique em **Ativar**.
 
 ## No Firefox
 
-O Firefox não instala como app. As notificações funcionam na aba: clique em **Ativar** nesse aviso, ou no sino ao lado de **Notificações** em Configurações.
+Não é possível instalar o Firefox como app. As notificações funcionam na aba: clique em **Ativar** nesse aviso ou no sino ao lado de **Notificações** nas Configurações.
 
-## No iPhone ou iPad
+## Em um iPhone ou iPad
 
-1. Abra seu painel no Safari. É preciso ter o iOS 16.4 ou mais recente.
+1. Abra o painel no Safari. É necessário ter o iOS 16.4 ou mais recente.
 2. Toque em Compartilhar e depois em Adicionar à Tela de Início.
-3. Abra a The Machine pela Tela de Início e toque em **Ativar**.
+3. Abra The Machine pela Tela de Início e toque em **Ativar**.
 
 As notificações só funcionam no app da Tela de Início, não em uma aba do Safari.
 
 ## No Android
 
-1. Abra seu painel no Chrome e toque em **Instalar** nesse aviso, ou abra o menu e toque em Instalar app.
-2. Abra pela tela inicial e toque em **Ativar**.
+1. Abra o painel no Chrome e toque em **Instalar** nesse aviso, ou abra o menu e toque em Instalar app.
+2. Abra o app pela tela inicial e toque em **Ativar**.
 
-## Conferir ou mudar
+## Conferir ou alterar
 
-Em **Configurações**, **Geral**, **Este dispositivo**, o sino ao lado de **Notificações** ativa ou desativa as notificações só naquele dispositivo, e **Enviar um teste** envia uma para ele.
+Em **Configurações**, **Geral**, **Este dispositivo**, o sino ao lado de **Notificações** ativa ou desativa as notificações apenas nesse dispositivo. **Enviar um teste** envia uma notificação para ele.
 
-Se as notificações estiverem bloqueadas, a linha diz onde permitir de novo: no computador, clique no ícone à esquerda do endereço e permita Notificações. No iPhone, abra o app Ajustes, Notificações, The Machine.
+Bloqueou as notificações? No computador, clique no ícone à esquerda do endereço e permita as notificações. No iPhone, abra o app Ajustes e acesse Notificações, The Machine.
 
-## Abrir rápido
+## Abrir rapidamente
 
-O app abre na hora com suas últimas tarefas e depois as atualiza. Sem conexão, ele mostra o que tinha, marcado como **Offline** com o horário da última atualização. Essa cópia fica no dispositivo por no máximo 7 dias, criptografada, e é apagada quando você sai.
+O app abre direto com suas tarefas mais recentes e depois as atualiza. Essa cópia fica no dispositivo, criptografada, por no máximo 7 dias, e é removida quando você sai da conta.
 
-## Offline e wi-fi instável
+## Sem conexão ou com Wi-Fi instável
 
-No avião ou no trem, o painel continua funcionando. Uma barra no topo diz **Offline** e quando o que você vê foi atualizado pela última vez. Suas tarefas, os chats delas, o Calendário e as listas do Graph abrem a partir do dispositivo.
+No avião ou no trem, o painel continua funcionando. Uma barra no topo mostra **Sem conexão** e quando o conteúdo exibido foi atualizado pela última vez. Suas tarefas, os chats delas, o Calendário e as listas do Graph abrem pelo dispositivo.
 
-- **Adiar**, **Não precisa**, **Marcar como feita**, **Reabrir** e notas ou mensagens de chat para a The Machine esperam no dispositivo. A tarefa diz que será salvo quando você voltar a ficar online, com **Cancelar** até lá. Assim que sua Machine responde de novo, eles vão sozinhos, em ordem, uma vez cada.
-- Mensagens para outras pessoas nunca esperam. **Enviar** diz que você está offline: envie de novo quando voltar.
-- O que você digita em um chat fica no dispositivo até você enviar, mesmo depois de recarregar.
-- O app tenta de novo sozinho, um pouco mais tarde a cada vez. **Tentar agora** tenta na hora.
-- Uma Machine ocupada pode demorar para responder. O app diz então **Sua Machine está demorando para responder** e mantém o que você vê. Isso não é estar offline.
+- **Adiar**, **Não precisa**, **Marcar como feita**, **Reabrir** e as mensagens de chat para The Machine ficam aguardando no dispositivo, com a opção **Cancelar**. Elas são enviadas automaticamente quando você volta a ficar online.
+- As mensagens para outras pessoas não ficam aguardando: envie-as de novo quando voltar.
+- O que você digita em um chat fica no dispositivo até ser enviado, mesmo se a página for recarregada.
+- O app tenta enviar automaticamente. **Tentar agora** faz uma nova tentativa na hora.
+- Uma Machine ocupada pode demorar para responder. Nesse caso, o app mostra **Sua Machine está demorando para responder** e mantém o conteúdo exibido. Isso não significa que você está sem conexão.
 
 ## Mais dispositivos
 
-Entre em cada dispositivo do mesmo jeito. Em uma Machine hospedada, uma chave de acesso por dispositivo deixa o login mais rápido: em **Configurações** › **Conta**, clique em **Gerenciar** ao lado de Login.
+Entre em cada dispositivo da mesma forma. Em uma Machine hospedada, uma chave de acesso para cada dispositivo agiliza o acesso: em **Configurações** › **Conta**, clique em **Gerenciar** ao lado de Entrar.
 
-Para ler as notificações do seu celular Android como fonte, veja [Notificações do Android](android.md).
+Para usar como fonte as notificações do seu celular Android, consulte [Notificações do Android](android.md).

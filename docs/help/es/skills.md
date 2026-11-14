@@ -1,50 +1,48 @@
 ---
 title: Habilidades
 area: settings
-summary: Guías que sigue tu Machine. Escribe las tuyas, impórtalas de Claude o ChatGPT, o encuentra una en ClawHub.
+summary: Guías que sigue tu Machine. Crea las tuyas, impórtalas desde Claude o ChatGPT, o busca una en ClawHub.
 covers: settings:skills
 code: skills.py, dashboard.html
 order: 4
 translated: 98fe851d553ed3dc
 ---
-Una habilidad le dice a tu Machine cómo hacer algo, como "responder preguntas sobre precios". Son solo instrucciones: una habilidad nunca cambia lo que tu Machine puede hacer.
+Una habilidad le enseña a tu Machine a hacer un tipo de tarea, como «responder preguntas sobre precios». Solo contiene instrucciones: nunca cambia lo que tu Machine tiene permitido hacer.
 
 ## Escribe una
 
-En **Ajustes**, **Habilidades**, pulsa **Nueva habilidad** o **Empezar desde un ejemplo**. Ponle un **Nombre**, **Cuándo usarla** y las **Instrucciones**, y luego **Guardar**.
+En **Ajustes**, **Habilidades**, pulsa **Nueva habilidad** o **Empezar desde un ejemplo**. Indica un **Nombre**, **Cuándo usarla** y las **Instrucciones**, y luego pulsa **Guardar**.
 
-## Cuándo usa una
+## Cuándo se usa
 
-Cada tarea que prepara tu Machine recibe la skill que le corresponde, sin que lo pidas: la que se llama como su tablero, su proyecto o su título, completa. Tus otras skills van en una lista, así que también sigue la que sirve para ese tipo de trabajo, como una respuesta en un tipo de hilo conocido o una actualización del CRM.
+Cada tarea que prepara tu Machine recibe la habilidad que le corresponde, sin que tengas que pedirlo: una que lleve el nombre de su tablero, proyecto o título, completo. También aparecen tus otras habilidades, así que tu Machine sigue las que sirven para ese tipo de trabajo, como responder en un tipo de hilo conocido o actualizar un CRM.
 
 ## Importar
 
 Pulsa **Importar**:
 
-- **De Claude** o **De ChatGPT**, y luego **Buscar mis habilidades**. Busca en esa cuenta, en el navegador de tu Machine.
-- O tráela tú: **Subir .skill o .zip**, **Subir una carpeta** o **Pegar un SKILL.md**.
+- **De Claude** o **De ChatGPT** y luego **Buscar mis habilidades**. Busca en esa cuenta desde el navegador de tu Machine.
+- O importa una por tu cuenta: **Subir .skill o .zip**, **Subir una carpeta** o **Pegar un SKILL.md**.
 
-Elige las que quieras y pulsa **Importar seleccionadas**. Solo entran las instrucciones; los scripts nunca.
+Elige las que quieras y pulsa **Importar seleccionadas**. Solo se importan las instrucciones, nunca los scripts.
 
-## Busca en ClawHub
+## Buscar en ClawHub
 
-Habilidades que publican otras personas. Son de terceros: léelas antes de instalarlas.
+Encuentra habilidades que otras personas publican. Lee una antes de instalarla: las crean otras personas, no The Machine.
 
-## A partir de tus notas
+## Desde tus notas
 
-Cuando muchas notas tratan de un mismo tipo de tarea, una tarea te sugiere una habilidad. Antes revisa tus habilidades:
+Cuando muchas de tus notas tratan sobre el mismo tipo de tarea, una tarea te sugiere una habilidad. Primero revisa tus habilidades:
 
-- Una ya hace ese trabajo: **Actualizar <habilidad>** muestra la habilidad reescrita con lo que enseñan las notas, antes y después, con los cambios resaltados. Solo **Actualizar habilidad** ahí la cambia, y solo esa habilidad.
-- Una está relacionada pero es distinta: la tarea explica cómo en una línea y aun así ofrece **Crear habilidad**.
+- Si una ya sirve para ese trabajo, **Actualizar <skill>** muestra esa habilidad junto con lo que enseñan las notas y resalta los cambios. Solo **Actualizar habilidad** la modifica.
+- Si una está relacionada, pero es diferente, la tarea explica cómo en una línea y también ofrece **Crear habilidad**.
 
-**Ahora no** deja las notas como están. Las habilidades que propone tu Machine en Ajustes > Habilidades pasan la misma revisión.
+**Ahora no** deja las notas tal como están. Las habilidades que tu Machine propone en **Ajustes** > **Habilidades** también pasan por la misma comprobación.
 
 ## Desde una tarea
 
-Pide una habilidad en una tarea y tu Machine la escribe ahí. Abre **Leer la habilidad** en la tarea y pulsa **Crear habilidad** (o **Actualizar habilidad** si ya la tienes). No se instala nada antes, y después la tarea queda hecha. Si la descartas en Ajustes > Habilidades, la tarea muestra **Habilidad descartada** y sigue abierta hasta que la cierres.
+Pide una habilidad en una tarea y tu Machine la redactará ahí. Abre **Leer la habilidad** y luego pulsa **Crear habilidad** (o **Actualizar habilidad** si ya tienes una). No se instala nada hasta que lo hagas. ¿La descartaste en **Ajustes** > **Habilidades**? La tarea indica **Habilidad descartada** y permanece abierta para que la cierres.
 
-## Comparte una
+## Compartir una habilidad
 
-Comparte una habilidad con un amigo o un compañero. La leen y deciden si la instalan. Los cambios posteriores solo les llegan si vuelves a compartirla.
-
-Más en la [guía de habilidades](https://github.com/Salesflare/TheMachine/blob/main/docs/skills.md).
+Comparte una habilidad con un amigo o compañero de equipo. La leerá y decidirá si quiere instalarla. Los cambios posteriores solo le llegarán si la vuelves a compartir.

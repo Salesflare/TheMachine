@@ -1,7 +1,7 @@
 ---
 title: LinkedIn
 area: connections
-summary: Suas mensagens do LinkedIn, lidas no navegador da sua Machine, já com login feito. Ela só responde depois que você aprova.
+summary: Suas mensagens do LinkedIn, lidas no navegador da sua Machine com sessão iniciada na sua conta. Respostas só depois da sua aprovação.
 covers: connector:linkedin
 code: connectors/linkedin.py, integrations/linkedin_inbox.py, linkedin_connections.py
 site: Connect, More sources, Remove
@@ -9,47 +9,50 @@ translated: 850b91f79b9e23fc
 ---
 ## O que ela lê
 
-Suas mensagens do LinkedIn. Ela lê em uma aba do navegador da sua Machine, com login feito como você, de vez em quando durante o dia. Ela não usa chave de API e não marca nada como lido. Respostas em conversas que você arquivou e solicitações de mensagem também chegam; spam fica de fora.
+Suas mensagens do LinkedIn. Ela as lê de vez em quando, durante o dia, no navegador da sua Machine, com sessão iniciada na sua conta. Ela não marca nenhuma como lida. Também chegam mensagens de conversas que você arquivou e solicitações de mensagem. Spam fica de fora.
 
 ## Cargos e empresas
 
-Ela também mantém atualizados os cargos e empresas das suas conexões do LinkedIn nas pessoas que já estão no seu Graph, a partir da sua lista de conexões. Ela não abre os perfis nem cria pessoas novas. Quando o cargo ou a empresa de alguém muda, a linha do tempo da pessoa mostra, como "Agora Head of Sales em Acme, antes Sales Lead em Acme".
+Ela também mantém atualizados os cargos e as empresas das suas conexões do LinkedIn que já estão no seu Graph, usando sua lista de Conexões. Ela não abre os perfis dessas pessoas nem adiciona ninguém. Quando o cargo ou a empresa de alguém muda, isso aparece na linha do tempo, por exemplo: "Agora Head of Sales na Acme, antes Sales Lead na Acme".
 
-O cargo vem do título do perfil, como "Head of Sales em Acme" ou "VP Sales and Strategy", nunca de um slogan. Ela encontra as pessoas pelo link do perfil, ou por nome e empresa. Sem empresa para comparar, basta um nome completo que só uma pessoa do seu Graph tem. A página da pessoa também mostra desde quando vocês estão conectados.
+O cargo vem do título do perfil, como "Head of Sales at Acme" ou "VP Sales and Strategy", nunca de um slogan. Ela encontra a pessoa pelo link do perfil ou pelo nome e pela empresa. Se não houver uma empresa para comparar, basta que o nome completo pertença a uma única pessoa no seu Graph. A página dessa pessoa também mostra há quanto tempo vocês estão conectados.
 
-Ela lê bem devagar: uma página por vez, com minutos de intervalo, algumas dezenas de páginas por dia, só durante o dia. Cerca de 3.000 conexões levam uns quatro dias. Se o LinkedIn frear, ela para até o dia seguinte.
+Ela lê bem devagar: uma página por vez, com intervalos de alguns minutos, algumas dezenas de páginas por dia e só durante o dia. Cerca de 3.000 conexões levam uns quatro dias. Se o LinkedIn bloquear o acesso, ela para até o dia seguinte.
 
 ## O que ela pode enviar
 
-Uma resposta a uma mensagem, ou uma mensagem nova para um perfil que você indicar, e só depois que você aprovar na tarefa. Até lá, ela só escreve o rascunho.
+Uma resposta a uma mensagem ou uma nova mensagem para um perfil que você indicar, e só depois que você aprovar a tarefa. Até lá, ela só cria rascunhos.
 
-O LinkedIn não oferece um jeito oficial de fazer isso. Ler e enviar de vez em quando uma mensagem que você aprovou dificilmente causa problema; enviar em massa ou de forma automática pode fazer uma conta ser bloqueada.
+O LinkedIn não oferece uma maneira oficial de fazer isso. Ler mensagens e enviar ocasionalmente uma mensagem aprovada por você dificilmente causará problemas. O envio em massa ou automatizado pode bloquear uma conta.
 
-## Conecte
+## Conectar
 
 Em uma Machine hospedada:
 
-1. Abra sua página de configuração em app.themachine.computer/setup e vá para **Mais fontes**.
-2. Abra LinkedIn, entre no LinkedIn no navegador da sua Machine quando ela pedir e depois clique em **Conectar**.
+1. Abra sua página de configuração em app.themachine.computer/setup e acesse **Mais fontes**.
+2. Abra o LinkedIn, entre na sua conta do LinkedIn no navegador da sua Machine quando solicitado e pressione **Conectar**.
 
 No seu próprio computador:
 
-1. Entre no LinkedIn uma vez no navegador da sua Machine (Configurações, **Abrir o navegador da Machine ↗**).
-2. No painel, abra **Conexões**, depois **Chat**, e escolha LinkedIn. Ou rode `assistant connect linkedin`.
+1. No painel, abra **Conexões**, depois **Chat** e escolha LinkedIn.
+2. Escolha **Trabalho** (com a empresa) ou **Pessoal** e pressione **Conectar**.
+3. Pressione **Entrar no LinkedIn** e entre no navegador da sua Machine. A conexão será feita automaticamente quando você entrar.
 
-Uma segunda conta do LinkedIn ganha um navegador próprio. Se o LinkedIn desconectar sua Machine, veja [Desconectado de um site](signed-out.md).
+Ou execute `assistant connect linkedin`.
+
+Uma segunda conta do LinkedIn terá um navegador próprio. Se o LinkedIn desconectar sua Machine, consulte [Saiu de um site](signed-out.md).
 
 ## Se o LinkedIn pedir um código
 
-Na primeira vez que sua Machine entra, o LinkedIn costuma enviar um código por e-mail. Digite-o na janela de login, em **Código**, e toque em **Entrar**. A página fica parada enquanto você digita.
+Na primeira vez que sua Machine entrar, o LinkedIn costuma enviar um código por e-mail. Digite-o na janela de entrada, em **Código**, e pressione **Entrar**. A página não muda enquanto você digita.
 
-Se o LinkedIn voltar ao início, ou nada acontecer por dois minutos, ele interrompeu este login. Espere um minuto e toque em **Tentar de novo**. Se o LinkedIn mostrar uma verificação de robô, conclua-a no navegador da sua Machine.
+Se o LinkedIn voltar ao início ou nada acontecer por dois minutos, espere um minuto e pressione **Tentar de novo**. Se o LinkedIn mostrar uma verificação de robô, conclua-a no navegador da sua Machine.
 
-## Remova
+## Remover
 
-- No painel: **Conexões**, abra LinkedIn, **Detalhes** e depois **Desconectar**. Ela para de ler. O que já foi trazido continua lá.
-- Em uma Machine hospedada, você também pode clicar em **Remover** ao lado dele na sua página de configuração.
+- No painel: abra **Conexões**, selecione LinkedIn, escolha **Detalhes** e depois **Desconectar**. Ela para de ler as mensagens. O que já importou continua lá.
+- Em uma Machine hospedada, você também pode pressionar **Remover** ao lado do LinkedIn na página de configuração.
 
-## Saia no LinkedIn
+## Sair da conta no LinkedIn
 
-No LinkedIn, abra Configurações, Login e segurança, Onde você está conectado, e encerre a sessão do navegador da sua Machine.
+No LinkedIn, abra Configurações, Entrar e segurança, Onde você está conectado e encerre a sessão do navegador da sua Machine.

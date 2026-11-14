@@ -11,23 +11,21 @@ translated: 457d70baa1c81785
 ## Tu Machine
 
 - En tu propio ordenador: gratis. Todo lo que hace The Machine, con tu propio modelo.
-- Alojada: {price.standard} al mes por una Machine Estándar, o {price.big} por una Más grande, sin IVA. Los primeros {trial_days} días son gratis, una vez por persona. Para empezar hace falta tu tarjeta, y no se cobra nada antes de que terminen los días gratis.
+- Alojada: {price.standard} al mes por una Machine estándar o {price.big} por una de mayor tamaño, sin IVA. Los primeros {trial_days} días son gratis, una vez por persona, y no se te cobrará nada hasta que terminen. Si la tuya empezó sin tarjeta, añade una en la página de tu cuenta antes de que terminen.
 
-Tu plan de IA lo factura tu proveedor, como OpenAI. Nosotros no le añadimos nada.
+Tu plan de IA te lo cobra tu proveedor, como OpenAI. No añadimos ningún cargo.
 
-## En la Network
+## En The Machine Network
 
-- Amigos y Familia: gratis, con cualquier Machine. En un Fleet familiar, las Machines alojadas cuestan {price.family_pair} las dos primeras juntas y luego {price.family_seat} cada una, sin IVA.
-- Work Fleet: {price.seat} por puesto al mes, o {price.seat_big} con una Más grande, sin IVA. Un compañero que gestiona su propia Machine cuesta {price.network} al mes, y uno que ya está alojado es gratis. Cada Fleet tiene su propia tarjeta y sus facturas, y el propietario confirma cada importe antes de que se cobre.
+- Amigos y familia: gratis, con cualquier Machine. En una Fleet familiar, las Machines alojadas cuestan {price.family_pair} por las dos primeras en conjunto y luego {price.family_seat} cada una, sin IVA.
+- Fleet de trabajo: {price.seat} al mes por persona, o {price.seat_big} por una Machine de mayor tamaño, sin IVA. Si un compañero usa su propia Machine, cuesta {price.network} al mes; si ya tiene una Machine alojada, es gratis. Cada Fleet tiene su propia tarjeta y sus propias facturas, y el propietario confirma cada importe antes de que se cobre.
 
-Todos los precios son al mes, sin IVA. Consulta [Precios](/pricing).
+Todos los precios son mensuales y no incluyen IVA. Consulta [Precios](/pricing).
 
-Los precios alojado, de puesto de trabajo y de Fleet familiar son precios early adopter, antes {price.standard_list}, {price.seat_list} y {price.family_pair_list}. Los early adopters los mantienen mientras su suscripción siga activa.
-
-¿Empezaste Network para amigos antes de que el Network fuera gratis? Aparece en **Ajustes** › **Cuenta** hasta que lo detengas. **Gestionar** lo abre en tu cuenta, donde lo detienes o cambias su tarjeta. Tu usuario y tus amigos se quedan.
+¿Empezaste una Network para amigos antes de que Network fuera gratis? Aparece en **Ajustes** › **Cuenta** hasta que la canceles. **Gestionar** la abre en tu cuenta, donde puedes cancelarla o cambiar la tarjeta. Tu nombre de usuario y tus amigos se mantienen.
 
 ## Tarjeta y facturas
 
-En **Ajustes** › **Cuenta**, pulsa **Facturación** y luego **Gestionar suscripción**. Se abre Stripe, donde cambias tu tarjeta y descargas las facturas. Los datos de tu tarjeta nunca nos llegan.
+En **Ajustes** › **Cuenta**, pulsa **Facturación** y luego **Gestionar suscripción**. Se abrirá Stripe, donde puedes cambiar la tarjeta y descargar facturas. Nunca recibimos los datos de tu tarjeta.
 
-Cambia el tamaño de tu Machine cuando quieras: en **Ajustes** › **Cuenta**, pulsa **Cambiar plan**.
+Puedes cambiar el tamaño de tu Machine cuando quieras: en **Ajustes** › **Cuenta**, pulsa **Cambiar plan**.

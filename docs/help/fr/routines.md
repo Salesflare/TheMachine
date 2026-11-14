@@ -1,7 +1,7 @@
 ---
 title: Routines
 area: cards
-summary: Du travail que votre Machine fait seule, à un rythme, comme un résumé du lundi de vos deals ouverts. Elle ne fait que lire.
+summary: Les tâches que votre Machine effectue automatiquement à intervalles réguliers, comme un récap de vos opportunités en cours chaque lundi. Elle ne fait que lire.
 covers: tab:routines
 code: routines.py, routines_app.py, routine_recipe.py, routine_imports.py, routine_patterns.py, routine_changes.py, routine_templates.py, mail_cleanup.py, mail_cleanup_app.py, birthdays.py, birthdays_app.py, birthdays_facebook.py, birthdays_facebook_app.py, reading_digest.py, reading_digest_app.py, subscriptions.py, subscriptions_app.py, dashboard/routines-page.js, dashboard/todos-digest.js, dashboard/todos-cleanup.js, dashboard/todos-facebook-birthdays.js, dashboard/todos-facebook-people.js, dashboard/todos-subs.js
 order: 10
@@ -10,119 +10,133 @@ translated: 9c3559a910b9dd37
 ---
 ## En créer une
 
-Ouvrez **Routines** dans la barre latérale et dites en une ligne ce qu’elle doit faire et quand : « chaque lundi à 9 h, résume mes deals ouverts » ou « chaque jour ouvré le matin, liste les e-mails auxquels je dois encore répondre ». Puis **Ajouter**.
+Dans la barre latérale, ouvrez **Routines**, puis indiquez en une ligne ce qu’elle doit faire et quand : « chaque lundi à 9 h, résume mes opportunités en cours » ou « chaque matin en semaine, liste les e-mails auxquels je dois encore répondre ». Puis sélectionnez **Ajouter**.
 
-Sans heure, elle tourne à 8:00. L’heure est celle de l’horloge de votre Machine.
+Sans horaire précisé, elle s’exécute à 8 h, selon l’horloge de votre Machine. La première fois qu’elle s’exécute, elle reçoit un nom court.
+
+**Ajouter** lance d’abord un test, pour vous montrer le résultat avant que vous la gardiez. Rien n’est envoyé ni enregistré. Ensuite, **Ajouter** la programme à la fréquence choisie, **Modifier** permet d’essayer d’autres mots ou un nouveau nom, et **Annuler** la supprime.
 
 ## Modèles
 
-Sous **Modèles** en bas de Routines, **Ajouter** active une routine toute prête. Elle s’exécute une fois tout de suite, puis chaque matin à 7:30 (Tri du spam toutes les heures). Sa carte montre ses mots comme toute routine, et **Modifier** change ses mots ou son nom.
+Dans **Modèles**, en bas de la page Routines, sélectionnez **Ajouter** pour activer une routine prête à l’emploi. Elle s’exécute immédiatement, puis chaque matin à 7 h 30 (le tri du spam, toutes les heures ; les abonnements et essais, une fois par mois). Sa carte affiche les instructions, comme pour n’importe quelle routine. **Modifier** permet de les changer ou de modifier son nom.
 
-Quand beaucoup de newsletters arrivent et que le Tri des newsletters est désactivé (25 ou plus en une semaine, d’au moins 5 expéditeurs), une ligne au-dessus de vos to-dos dit combien sont arrivées et ce qu’il ferait, avec **L’activer** et **Non merci**.
+Quand vous recevez beaucoup de newsletters et que le tri des newsletters est désactivé (25 ou plus en une semaine, provenant d’au moins 5 expéditeurs), une ligne au-dessus de vos tâches indique combien vous en avez reçu et ce que la routine ferait. Elle propose **L’activer** ou **Non merci**.
 
-Le Tri du spam est proposé de la même façon quand 5 e-mails ou plus ont été déplacés à la main dans le spam en une semaine. **L’activer** l’ajoute comme **Ajouter** ici. Après **Non merci**, il n’est plus proposé, et un modèle que vous avez déjà eu ne l’est jamais.
+Le tri du spam est proposé de la même façon si au moins 5 e-mails ont été déplacés manuellement vers les spams en une semaine. **L’activer** l’ajoute comme le fait **Ajouter** ici. Si vous sélectionnez **Non merci**, la proposition ne s’affichera plus. Un modèle que vous avez déjà utilisé ne vous sera jamais proposé.
 
-**Tri des newsletters** crée une tâche par domaine (travail et personnel) avec les newsletters de la veille, chacune avec **Garder** ou **Se désabonner**. Le désabonnement utilise le lien en un clic de la liste, ou son e-mail de désabonnement depuis votre adresse si l’envoi est activé. Sinon, elle affiche **Ouvrir la page de désabonnement**.
+**Tri des newsletters** crée une tâche par espace (professionnel et personnel) avec les newsletters reçues la veille. Pour chacune, vous pouvez sélectionner **Garder** ou **Se désabonner**. Le désabonnement utilise le lien en un clic de la liste, ou un e-mail de désabonnement envoyé depuis votre adresse si l’envoi est activé. Sinon, The Machine se désabonne depuis la page de la liste, dans son propre navigateur. Si la page demande de vous connecter, de résoudre un captcha ou de faire un choix, vous devez vous en charger. La ligne en indique la raison et propose **Ouvrir la page de désabonnement**.
 
-Les reçus, commandes et avis de paiement sont laissés de côté. Un e-mail arrivé par une adresse de groupe, comme un Google Group, est listé sous la personne qui l’a écrit et ne vous désabonne jamais du groupe.
+Les reçus, commandes et avis de paiement sont exclus. Les e-mails reçus via une adresse de groupe, comme un Google Group, sont classés sous le nom de leur auteur et ne vous désabonnent jamais du groupe. Si l’expéditeur n’a pas de lien de désabonnement, la ligne indique **Se désabonner soi-même**.
 
-**Tri du spam** crée une tâche par domaine avec les e-mails d’expéditeurs inconnus qui ressemblent à du spam, chacun avec **Spam** ou **Pas du spam**. Outlook déplace le spam dans Courrier indésirable et Gmail le marque comme spam. Il vérifie toutes les heures, donc le spam est souvent là avant que vous y arriviez. Le nouveau spam va sur la même tâche tant qu’elle est ouverte.
+**Tri du spam** crée une tâche par espace avec les e-mails d’expéditeurs inconnus qui semblent être des spams. Pour chacun, vous pouvez sélectionner **Spam** ou **Pas du spam**. Outlook déplace les spams dans le dossier Courrier indésirable et Gmail les signale comme spams. La vérification a lieu toutes les heures, les spams sont donc généralement repérés avant que vous ne les voyiez. Les nouveaux spams sont ajoutés à la même tâche tant qu’elle est ouverte.
 
-Gmail connecté en lecture seule, comme sur une Machine hébergée, ne peut pas déplacer d’e-mails dans le spam. Là, **Spam** donne un lien pour le signaler dans Gmail, et The Machine retient l’expéditeur comme spam. Sans compte mail connecté, le modèle affiche **Connecter vos e-mails** à la place de **Ajouter**.
+Avec un compte Gmail connecté en lecture seule, comme sur une Machine hébergée, les e-mails ne peuvent pas être déplacés vers les spams. Dans ce cas, **Spam** fournit un lien pour les signaler dans Gmail, et The Machine mémorise l’expéditeur comme spam. Si aucun compte de messagerie n’est connecté, le modèle affiche **Connecter vos e-mails** à la place de **Ajouter**.
 
-Inconnu veut dire que vous ne leur avez jamais écrit, et un « Re: » ne compte comme conversation que dans un fil où vous avez écrit. Si un e-mail d’un expéditeur que vous avez signalé comme spam, sur la tâche ou dans votre boîte, passe encore, il est sur la tâche suivante avec **Déjà signalé comme spam**. Ce que vous avez déplacé vous-même dans le spam l’aide aussi à repérer des e-mails semblables.
+Un expéditeur est considéré comme inconnu si vous ne lui avez jamais écrit. Un « Re: » ne compte comme une conversation que dans un fil auquel vous avez participé. Si un e-mail d’un expéditeur que vous avez signalé comme spam, dans la tâche ou dans votre boîte de réception, arrive de nouveau, il apparaît dans la tâche suivante avec la mention **Déjà signalé comme spam**. Les e-mails que vous avez vous-même déplacés vers les spams aident aussi la routine à repérer les e-mails similaires.
 
-Rien ne change avant votre confirmation sur la tâche. Touchez un expéditeur pour lire d’abord l’e-mail : il reste non lu et rien ne change. Depuis Tri du spam, ses images du web ne se chargent pas : l’expéditeur ne voit pas qu’il a été ouvert. Les expéditeurs déjà décidés ne reviennent pas. Un jour sans newsletters ni spam ne crée aucune tâche, et ces tâches n’envoient jamais de notification.
+Rien ne change tant que vous ne confirmez pas votre choix dans la tâche. Sélectionnez un expéditeur pour lire d’abord son e-mail : il reste non lu et rien ne change. Dans le tri du spam, les images provenant du Web ne se chargent pas, pour que l’expéditeur ne puisse pas savoir que vous avez ouvert l’e-mail. Vous ne serez pas sollicité à nouveau pour les expéditeurs dont vous avez déjà fait le choix. S’il n’y a pas de newsletter ou de spam un jour donné, aucune tâche n’est créée. Ces tâches n’envoient jamais de notification.
 
-Une fois chaque expéditeur décidé, la tâche indique qu’elle est terminée et **Marquer comme fait** y figure.
+Une fois que vous avez fait un choix pour chaque expéditeur, la tâche indique qu’elle est terminée et propose **Marquer comme fait**.
 
-**Récap du jour** choisit une fois par jour les quelques articles de vos newsletters qui valent votre temps, dans une tâche. Chacun dit en une ligne pourquoi il compte pour vous. Touchez-le pour lire l’e-mail, ou utilisez **Ouvrir dans votre messagerie**. Seulement des newsletters : jamais d’e-mails de personnes, de reçus ou d’expéditeurs dont vous vous êtes désabonné, et jamais ce que vous avez déjà lu. Quand rien ne ressort, pas de tâche.
+**Récap du jour** sélectionne chaque jour, dans une seule tâche, quelques articles de newsletters qui valent la peine d’être lus. Une ligne indique pourquoi chacun peut vous intéresser. Sélectionnez un article pour lire l’e-mail, ou utilisez **Ouvrir dans votre messagerie**. La routine ne sélectionne que des newsletters, jamais des e-mails de personnes, des reçus ou des expéditeurs dont vous vous êtes désabonné, ni des e-mails déjà lus. Si rien ne se démarque, aucune tâche n’est créée.
 
-Il apprend ce qui vous intéresse à partir de ce que vous ouvrez, marquez d’une étoile ou archivez sans lire, et de **Plus comme ça** et **Moins comme ça** sur chaque article. Les sujets sur lesquels il choisit sont sur la carte de la routine sous **Plus de** et **Moins de**. Retirez-en un avec ×, ou ajoutez les vôtres. Ceux en pointillés, il les a appris lui-même. Un nouveau récap remplace celui qui est ouvert, et il n’envoie jamais de notification.
+Elle apprend ce qui vous intéresse en fonction des e-mails que vous ouvrez, marquez d’une étoile ou archivez sans les lire, ainsi que de vos choix **Plus comme ça** et **Moins comme ça** pour chaque sélection. Les sujets qu’elle privilégie figurent sur la carte de la routine, sous **Plus de** et **Moins de**. Pour en supprimer un, sélectionnez ×, ou ajoutez vos propres sujets. Les sujets en pointillés ont été appris automatiquement. Un nouveau récap remplace celui qui est encore ouvert et n’envoie jamais de notification.
 
-Il ne lit que l’expéditeur, l’objet et le début de chaque nouvelle newsletter, et pose une courte question à votre IA à leur sujet, avec une limite par jour, pour rester économique. **Changer l’heure** fixe son heure. Si vous changez ses mots, il s’exécute comme toute routine sur vos mots.
+La routine ne lit que l’expéditeur, l’objet et le début de chaque nouvelle newsletter, puis pose une courte question à votre IA à leur sujet, avec une limite quotidienne pour réduire les coûts. **Changer quand** permet de modifier l’horaire. Dès que vous modifiez les instructions, la routine s’exécute comme n’importe quelle autre, en suivant vos instructions.
 
-**Anniversaires** crée une tâche pour chaque proche dont c’est l’anniversaire aujourd’hui : les personnes à qui vous écrivez vous-même, comme vos amis, votre famille et vos contacts réguliers. Chacune a un court message rédigé là où vous échangez d’habitude, comme leur chat WhatsApp ou votre fil d’e-mails, dans leur langue. Il ne part que quand vous l’envoyez. Un jour sans anniversaire ne crée aucune tâche.
+**Anniversaires** crée une tâche pour chaque proche dont c’est l’anniversaire aujourd’hui : les personnes à qui vous écrivez vous-même, comme vos amis, votre famille et vos contacts habituels. Pour chacun, un court message de vœux est rédigé dans le canal que vous utilisez habituellement avec cette personne, comme son chat WhatsApp ou votre fil d’e-mails, et dans sa langue. Le message n’est envoyé que si vous l’envoyez vous-même. Si personne ne fête son anniversaire ce jour-là, aucune tâche n’est créée.
 
-Les anniversaires viennent de vos agendas (les anniversaires et l’agenda Anniversaires de Google, lus chaque matin même s’ils ne sont pas synchronisés, et l’agenda Anniversaires d’Outlook), de vos contacts Google sur une Machine auto-hébergée et d’un champ date nommé Anniversaire sur une personne du Graph. Quand aucun ne contient encore d’anniversaire, le résultat dit **Aucun anniversaire connu pour l’instant** et comment en ajouter.
+Les anniversaires proviennent de vos calendriers (les événements d’anniversaire Google et le calendrier Anniversaires, consultés chaque matin même s’ils ne sont pas synchronisés, ainsi que le calendrier Anniversaires d’Outlook), de vos contacts Google sur une Machine auto-hébergée et d’un champ de date intitulé Birthday sur une personne du Graph. Si aucune de ces sources ne contient encore d’anniversaire, le résultat indique **Aucune info sur les anniversaires** et explique comment en ajouter.
 
-**Importer les anniversaires depuis Facebook** : une fois Anniversaires activé, une tâche propose de lire la page Anniversaires de Facebook. Touchez **Importer** et The Machine l’ouvre dans son navigateur, défile jusqu’à ce que tous les mois soient chargés et lit le nom et l’anniversaire de chaque ami. Elle indique combien elle en a trouvé et qui correspond, par prénom et nom, à des personnes de votre Graph. Un nom que porte plus d’une personne est ignoré et listé.
+**Importer les anniversaires depuis Facebook** : une fois les anniversaires activés, une tâche vous propose de consulter la page des anniversaires de Facebook. Sélectionnez **Importer** : The Machine ouvre la page dans son navigateur, fait défiler la page jusqu’à ce que tous les mois soient chargés, puis relève le nom et l’anniversaire de chaque ami. Elle indique combien d’anniversaires ont été trouvés et quelles personnes correspondent à des personnes de votre Graph, d’après leur prénom et leur nom. Les noms associés à plusieurs personnes sont ignorés et répertoriés.
 
-Seul **Enregistrer** les garde, sur la page de chaque personne : l’anniversaire, et sa photo de profil Facebook si elle n’a pas encore de photo. Un anniversaire ou une photo que vous y avez mis reste, et une photo qu’une personne a déjà n’est jamais remplacée. Rien n’est écrit sur Facebook.
+Seul le bouton **Enregistrer** les ajoute, sur la page de chaque personne : l’anniversaire et la photo de profil Facebook, si la personne n’a pas encore de photo. Les anniversaires et les photos que vous avez ajoutés restent en place, et une photo déjà présente n’est jamais remplacée. Aucune information n’est écrite sur Facebook.
 
-Elle ne relit jamais d’elle-même : c’est **Importer à nouveau** sur la tâche qui le fait. Le navigateur doit être connecté à Facebook. S’il ne l’est pas, touchez **Se connecter à Facebook** sur la tâche et connectez-vous-y ; ensuite elle lit la page d’elle-même. The Machine ne se connecte jamais à votre place.
+La routine ne consulte pas Facebook à nouveau automatiquement. Pour relancer l’importation, sélectionnez **Importer à nouveau** dans la tâche. Le navigateur doit être connecté à Facebook. Si ce n’est pas le cas, sélectionnez **Se connecter à Facebook** dans la tâche et connectez-vous. Une fois la session ouverte, la page est consultée automatiquement. The Machine ne se connecte jamais à votre place.
 
-Les amis que personne dans votre Graph n’a sont comptés, avec quelques noms. **Ajouter … comme contacts personnels** les ajoute tous d’un coup, même après Enregistrer : chacun avec son nom et son anniversaire, jamais partagé avec une Work Fleet. Un nom qu’une personne de votre Graph a déjà, ou qu’avait une personne supprimée définitivement, est ignoré. Les rappels d’anniversaire ne viennent toujours que pour les personnes à qui vous écrivez.
+Les amis qui ne figurent pas dans votre Graph sont comptabilisés, et quelques noms sont affichés. **Ajouter … comme contacts personnels** les ajoute tous en une seule fois, y compris après avoir sélectionné Enregistrer. Chaque personne est ajoutée avec son nom et son anniversaire, sans jamais être partagée avec une Fleet professionnelle. Les personnes dont le nom figure déjà dans votre Graph, ou qui ont été supprimées définitivement, sont ignorées. Les rappels d’anniversaire ne concernent toujours que les personnes à qui vous écrivez.
 
-**Annuler** sur la tâche retire exactement ces personnes, même après **Importer à nouveau**.
+Le bouton **Annuler** de la tâche supprime exactement ces personnes, même après avoir sélectionné **Importer à nouveau**.
 
-Tant que ses mots sont ceux du modèle, elle tourne avec son propre code, sans votre forfait d’IA (Tri du spam liste d’abord par code les nouveaux e-mails d’expéditeurs inconnus, et ne pose une courte question à votre IA que s’il y en a). Un nouveau nom n’y change rien. Si vous changez ses mots, elle tourne comme toute routine, sur vos mots.
+**Abonnements et essais** consulte vos reçus, factures et avis de renouvellement une fois par mois et regroupe vos abonnements dans une seule tâche. Pour chacun, vous voyez son coût, la date du prochain prélèvement et un indicateur si un essai se termine ou si le prix augmente. Seuls les abonnements identifiés avec certitude sont affichés. Si aucun abonnement n’est trouvé, aucune tâche n’est créée.
 
-Tri des newsletters et Tri du spam finissent toujours par la même tâche avec un choix par e-mail. Des Anniversaires modifiés donnent leur résultat et au plus un brouillon, pas une tâche par personne. **Revenir au modèle** dans **Modifier** remet ses mots.
+Pour chaque abonnement, sélectionnez **Garder** ou **Résilier**. La routine ne vous demandera plus quoi faire pour un abonnement que vous gardez, sauf si son prix change. **Résilier** fournit la page de résiliation de l’abonnement ou un brouillon de demande de résiliation, qui ne sera envoyé que si vous l’envoyez vous-même. Entre deux exécutions mensuelles, la routine vérifie chaque jour et crée une tâche si un essai se termine ou si un renouvellement est prévu dans les 7 jours.
 
-## Ce que fait une routine
+Tant que la routine d’un modèle conserve ses instructions, elle s’exécute avec son propre code, sans utiliser votre forfait IA (le tri du spam commence par répertorier en code les nouveaux e-mails provenant d’expéditeurs inconnus, et ne pose qu’une courte question à votre IA s’il y en a). Si vous modifiez son nom, elle conserve cette configuration. Dès que vous modifiez ses instructions, elle s’exécute comme n’importe quelle autre, en suivant vos instructions.
 
-À son heure, votre Machine lit ce dont elle a besoin, comme vos messages, vos réunions et le Graph, et place le résultat sur la page Routines. Chaque résultat indique **Prête**, **Rien de nouveau** (avec pourquoi) ou **N’a pas marché** (avec pourquoi). Une exécution qui se termine sans résultat compte comme ratée, jamais comme faite.
+Le tri des newsletters et le tri du spam produisent toujours la même tâche, avec un choix pour chaque e-mail. Si vous modifiez la routine Anniversaires, elle affiche son résultat et, au maximum, un brouillon, au lieu de créer une tâche pour chaque personne. Dans **Modifier**, **Revenir au modèle** rétablit les instructions du modèle.
 
-Les routines ne font que lire : vos messages, des pages web, GitHub et des sites comme X dans le navigateur. Elles n’envoient, ne répondent, ne publient et ne modifient rien. Seul un modèle modifie des e-mails, et seulement ce que vous confirmez sur sa tâche.
+## Fonctionnement d’une routine
 
-Quand la tâche d’une routine finit par une publication ou un message, elle fait tout jusqu’à cette étape et montre le brouillon, comme **Publierait sur X :**. Après une vraie exécution, vous le recevez comme tâche à approuver ; une exécution de test le montre seulement. Son nom dit de quoi il s’agit et où cela part, son bouton nomme l’étape, comme **Publier**, et **De votre routine** en dessous ouvre la routine.
+À l’heure prévue, votre Machine lit les informations dont elle a besoin, comme vos messages, vos réunions et le Graph, puis affiche le résultat sur la page Routines. Chaque résultat indique **Prête**, **Rien de nouveau** (avec une explication) ou **N’a pas marché** (avec une explication). Une exécution qui se termine sans résultat est considérée comme un échec, jamais comme une tâche terminée.
 
-La tâche commence dans l’espace du compte d’où elle part, comme Travail pour le compte X de votre entreprise, et ne demande donc jamais à être déplacée.
+Les routines ne font que lire : vos messages, des pages Web, GitHub et des sites comme X dans le navigateur. Elles n’envoient rien, ne répondent pas, ne publient rien et ne modifient rien. Seul un modèle peut modifier des e-mails, et uniquement après votre confirmation dans sa tâche.
 
-Chaque exécution connaît le dernier résultat, elle peut donc dire ce qui a changé depuis.
+Quand une routine doit publier ou envoyer un message, elle effectue toutes les étapes précédentes et affiche le brouillon, par exemple **Publier sur X :**. Après une exécution réelle, le brouillon apparaît sous forme de tâche à approuver. Un test ne fait que l’afficher. Son nom indique le sujet et l’endroit où le contenu sera publié. Le bouton indique l’action, comme **Publier**, et le lien **Depuis votre routine** qui apparaît en dessous ouvre la routine.
 
-Après une bonne exécution, votre Machine peut s’écrire une recette pour la lecture qui est la même à chaque fois, comme les e-mails ou les changements GitHub à regarder. Les exécutions suivantes lisent cela d’abord, en code simple, et l’IA choisit seulement ce qui compte et l’écrit, avec moins de tokens. Une recette ne fait que lire ; si elle ne fonctionne plus, l’exécution lit d’elle-même et la répare. Elle apparaît sous **Avancé : étapes de script** dans le menu ⋯.
+La tâche est d’abord placée dans l’espace du compte depuis lequel elle sera envoyée, par exemple Professionnel pour le compte X de votre entreprise. Elle ne vous demande donc jamais de la déplacer.
+
+Une exécution peut suivre vos [compétences](skills.md) activées, choisies en fonction de ce que fait la routine. Seules les compétences pertinentes sont lues en entier. Le résultat les répertorie sous **Utilisées :**. Une compétence ne peut jamais faire envoyer ou modifier quoi que ce soit par une routine.
+
+Vos routines figurent sous **Vos routines**, après les suggestions éventuelles. Un résultat long est réduit à un bref aperçu. Sélectionnez **Afficher plus**, ou le résultat lui-même, pour l’ouvrir.
+
+Chaque exécution connaît le dernier résultat et peut donc indiquer ce qui a changé depuis.
+
+Après une exécution réussie, votre Machine peut créer une recette pour automatiser les lectures qui se répètent, comme les e-mails ou les modifications GitHub à examiner. Les exécutions suivantes commencent par lire ces éléments à l’aide de code simple. L’IA sélectionne ensuite ce qui compte et le rédige, avec moins de jetons. Une recette ne fait que lire. Si elle cesse de fonctionner, la routine s’exécute sans elle et la corrige. La recette apparaît sous **Avancé : étapes de script**, dans le menu ⋯.
 
 ## Jours manqués
 
-Si votre Machine était éteinte ou occupée, les exécutions manquées ne s’empilent pas : seule la plus récente tourne, une fois. Chaque date tourne une fois, même après un redémarrage.
+Si votre Machine était éteinte ou occupée, les exécutions manquées ne s’accumulent pas : seule la plus récente est lancée, une fois. Chaque date ne donne lieu qu’à une seule exécution, même après un redémarrage.
 
-Les routines tournent une à la fois et attendent quand l’usage de votre forfait IA est bas, comme tout le travail en arrière-plan. **Lancer maintenant** la lance tout de suite.
+Les routines s’exécutent une à la fois et attendent si le niveau d’utilisation de votre forfait IA est bas, comme toutes les tâches en arrière-plan. **Lancer maintenant** lance la routine immédiatement. Son résultat apparaît sur sa carte dès qu’il est prêt.
 
-## La modifier ou l’arrêter
+## Modifier ou arrêter une routine
 
-C’est dans le menu ⋯ de la routine. **Changer quand** prend un nouveau rythme dans vos propres mots, comme « chaque jour ouvré à 8 h ». **Mettre en pause** arrête les exécutions jusqu’à **Reprendre** ; ce qui a été manqué pendant la pause ne tourne pas ensuite. **Arrêter** met fin à une routine pour de bon.
+Ces options se trouvent dans le menu ⋯ de la routine. **Modifier** permet de changer son nom et ses instructions. Ses horaires et ses résultats précédents sont conservés. **Changer quand** permet de définir une nouvelle fréquence avec vos propres mots, par exemple « chaque jour de semaine à 8 h ». Les deux options proposent **Enregistrer** et **Annuler**. Sur un ordinateur, vous pouvez aussi appuyer sur Échap ou cliquer en dehors pour annuler.
 
-Quand vous utilisez **Demander des modifications** sur une tâche d’une routine, ou écrivez dans son chat, et que votre note vaut pour chaque exécution, comme « jamais d’emoji », la tâche propose **Modifier aussi la routine**, sur la tâche et dans son chat sous la réponse. Elle montre ce qui change dans les mots de la routine, et la routine ne change que quand vous touchez **Modifier**. **Laisser ainsi** la laisse telle quelle. Une correction de ce seul brouillon ne propose rien.
+Dans **Modifier**, **Essayer** exécute une fois les nouvelles instructions et affiche le résultat. La routine reste inchangée tant que vous n’avez pas sélectionné **Enregistrer**.
+
+**Mettre en pause** suspend les exécutions jusqu’à ce que vous sélectionniez **Reprendre**. Les routines en pause sont regroupées sous **En pause**, en bas de la page. Les exécutions manquées pendant la pause ne seront pas lancées ensuite. **Arrêter** met définitivement fin à une routine.
+
+Quand vous utilisez **Demander des modifications** dans la tâche d’une routine, ou que vous écrivez dans son chat, et que votre demande concerne toutes les exécutions, par exemple « n’utilise jamais d’émojis », la tâche vous propose **Modifier aussi la routine**, sur la tâche et dans son chat, sous la réponse. Elle indique les changements apportés aux instructions de la routine. La routine ne change que si vous sélectionnez **Modifier**. **Laisser ainsi** conserve la routine telle quelle. Une correction qui ne concerne que ce brouillon ne déclenche pas cette proposition.
 
 ## Avancé : étapes de script
 
-Vous n’avez jamais besoin d’un script : dites avec vos propres mots ce qu’une routine doit faire.
+Aucun script n’est nécessaire : décrivez avec vos propres mots ce que la routine doit faire et votre Machine s’occupe du reste.
 
-Pour les utilisateurs avancés, une routine peut aussi lancer vos propres commandes sur votre Machine : dans le menu ⋯, choisissez **Avancé : étapes de script**. **Modifier** ne les montre que si une routine en a déjà. **Récupérer les données** lance d’abord une commande, dans son dossier (vide : votre dossier personnel) et pendant au plus ses secondes. Ce qu’elle affiche va à l’exécution pour travailler avec. Sans mots, ce qu’elle affiche est le résultat.
+Pour les utilisateurs avancés, une routine peut aussi exécuter vos propres commandes sur votre Machine. Dans le menu ⋯, sélectionnez **Avancé : étapes de script**. **Modifier** affiche les étapes uniquement si la routine en contient déjà. **Récupérer les données** exécute d’abord une commande dans son dossier (votre dossier personnel si le champ est vide), pendant la durée maximale indiquée en secondes. Le résultat affiché est transmis à l’exécution pour qu’elle l’utilise. Si aucune instruction n’est fournie, ce résultat constitue la réponse.
 
-**Vérification** reçoit le résultat en entrée après l’exécution. Si elle se termine par une erreur, l’exécution affiche **N’a pas marché** avec ce que la vérification a dit. Une commande de Récupérer les données qui échoue s’affiche de la même façon.
+**Vérification** reçoit le résultat de l’exécution en entrée. Si la commande se termine avec une erreur, l’exécution affiche **N’a pas marché** et le message de la vérification. Une commande Récupérer les données qui échoue affiche le même message.
 
-Une commande tient sur une ligne et tourne sans shell : pas de pipes ni de variables. Les étapes de script sont à vous, réglées sur votre tableau de bord uniquement. Une exécution de test et **Essayer** lancent aussi Récupérer les données et le disent ; elles n’envoient et ne gardent toujours rien. Une routine n’envoie jamais, donc une étape de script devrait seulement lire.
+Une commande doit tenir sur une seule ligne et est exécutée sans shell : les tubes et les variables ne sont pas pris en charge. Les étapes de script vous appartiennent et ne sont configurables que sur votre tableau de bord. Un test ou une exécution avec **Essayer** lance aussi Récupérer les données et l’indique. Ces exécutions n’envoient et ne conservent toujours rien. Une routine n’envoie jamais rien, une étape de script doit donc se limiter à la lecture.
 
 ## Depuis vos tâches OpenClaw
 
-Si vous aviez créé des tâches planifiées dans OpenClaw, votre Machine les lit (elle ne les modifie jamais) et propose celles qui conviennent comme routines sous **Suggérée**. Chacune a tourné une fois, pour que vous voyiez un vrai résultat.
+Si vous avez créé des tâches planifiées dans OpenClaw, votre Machine les lit (sans jamais les modifier) et propose celles qui peuvent être converties en routines, sous **Suggérée**. Chacune a été exécutée une fois, vous pouvez donc voir un résultat réel.
 
-Elle garde vos corrections de la tâche et laisse de côté ce qu’elle envoyait ou publiait. Une tâche qui lançait un script, ou lisait ce qu’une tâche de script collectait, l’apporte comme Récupérer les données. **Ajouter** en fait une routine, **Non merci** ne redemande jamais pour cette tâche. Une tâche qui vous rappelait de faire quelque chose arrive plutôt comme offre de tâche récurrente dans Tâches.
+Elle conserve vos corrections apportées à la tâche et ignore ce qu’elle a envoyé ou publié. Si une tâche a exécuté un script, ou lu les données collectées par une tâche de script, celui-ci est repris dans Récupérer les données. **Ajouter** la convertit en routine. **Non merci** signifie que cette tâche ne vous sera plus jamais proposée. Une tâche qui vous rappelait de faire quelque chose est plutôt proposée sous forme de tâche récurrente dans Tâches.
 
-Avant d’ajouter une suggestion, **Modifier** et **Changer quand** dans son menu ⋯ la changent comme n’importe quelle routine. **Relancer** l’exécute maintenant avec ses mots actuels, pour voir des résultats plus récents, par exemple après un week-end calme. Elle ne fait que lire, tourne une fois par appui, et son nouveau résultat remplace l’ancien.
+Avant d’ajouter une suggestion, utilisez **Modifier** et **Changer quand** dans son menu ⋯ pour la modifier comme n’importe quelle routine. **Relancer** l’exécute maintenant avec les instructions actuelles, pour obtenir un résultat plus récent, par exemple après un week-end calme. Elle ne fait que lire, ne s’exécute qu’une fois par sélection et son nouveau résultat remplace l’ancien.
 
-Trois suggestions au plus attendent en même temps. Après une semaine de bonnes exécutions, la routine demande **Désactiver l’ancienne tâche OpenClaw ?** Elle n’est désactivée que si vous touchez **Désactiver**, et vous pouvez la réactiver dans OpenClaw.
+Trois suggestions au maximum peuvent être en attente à la fois. Après une semaine d’exécutions réussies, la routine demande **Désactiver l’ancienne tâche OpenClaw ?**. Elle ne sera désactivée que si vous sélectionnez **Désactiver**. Vous pouvez la réactiver dans OpenClaw.
 
-## Depuis ce que vous faites
+## À partir de vos habitudes
 
-Votre Machine remarque aussi le travail que vous faites à un rythme et le propose comme routine sous **Suggérée**, même sans OpenClaw. Elle cherche :
+Votre Machine repère aussi les tâches que vous effectuez régulièrement et les propose sous **Suggérée**, même sans OpenClaw. Elle recherche notamment :
 
-- la même demande, trois fois ou plus de suite, comme « résume les tickets de support ouverts » chaque lundi ;
-- un e-mail que vous envoyez à un rythme, comme un rapport hebdomadaire à votre équipe ;
-- des newsletters et e-mails de mise à jour qui reviennent chaque semaine ;
-- un canal Slack animé où d’autres écrivent chaque semaine ;
-- des e-mails que vous transférez un par un à la même personne, comme ceux de l’école et du club à votre partenaire : un condensé hebdomadaire pour cette personne évite les transferts ;
-- la même demande à laquelle vous répondez à un rythme, comme une validation mensuelle pour la même personne.
+- la même demande au moins trois fois de suite, par exemple « résume les demandes d’assistance en cours » chaque lundi ;
+- un e-mail que vous envoyez régulièrement, comme un rapport hebdomadaire à votre équipe ;
+- des newsletters et des e-mails d’actualités que vous recevez chaque semaine ;
+- un canal Slack très actif dans lequel d’autres personnes écrivent chaque semaine ;
+- des e-mails que vous transférez un par un à la même personne, par exemple des e-mails de l’école ou d’un club à votre partenaire. Un récap hebdomadaire lui évite de les transférer ;
+- la même demande à laquelle vous répondez régulièrement, comme une approbation mensuelle pour la même personne.
 
-Chaque suggestion dit ce qu’elle a vu, comme « Demandé 4 fois de suite » ou « 6 e-mails transférés à Sam en 3 semaines », et a tourné une fois pour que vous voyiez un vrai résultat. Pensez à un récap d’équipe, un brief avant un appel hebdomadaire, un résumé du support ou du dev, le pouls de vos chiffres ou un condensé des newsletters que vous recevez.
+Chaque suggestion indique ce qu’elle a repéré, par exemple « Demandé 4 fois de suite » ou « 6 e-mails transférés à Sam en 3 semaines ». Elle a été exécutée une fois, vous pouvez donc voir un résultat réel. Pensez à un récap d’équipe, à un briefing avant un appel hebdomadaire, à un résumé des demandes d’assistance ou de développement, à un suivi de vos chiffres ou à un récap des newsletters que vous recevez.
 
-Elle ne propose que ce qui vous est propre et clairement utile : un condensé d’actualités seulement sur vos propres newsletters, jamais un générique. Quand rien ne convient, il n’y a pas de suggestion.
+Seules les suggestions qui vous sont propres et clairement utiles sont proposées : un récap d’actualités ne porte que sur vos propres newsletters, jamais sur des actualités génériques. Si rien ne correspond, aucune suggestion n’est proposée.
 
-Elle regarde au plus une fois par jour et apporte au plus une nouvelle suggestion par semaine, sans notification. **Non merci** ne la ramène jamais. Les transferts et les réponses restent avec le compte d’où ils sont partis, pour que Travail et Perso ne se mélangent pas. Tout reste sur votre Machine. Une tâche que vous terminez à un rythme arrive plutôt comme offre de tâche récurrente.
+La routine vérifie vos habitudes une fois par jour au maximum et propose une seule nouvelle suggestion par semaine au maximum, sans notification. **Non merci** signifie que cette suggestion ne réapparaîtra pas. Les transferts et les réponses restent associés au compte depuis lequel ils ont été envoyés. Les espaces Professionnel et Personnel ne sont donc pas mélangés. Tout reste sur votre Machine. Une tâche que vous terminez régulièrement est plutôt proposée sous forme de tâche récurrente.
 
 ## Routines et tâches récurrentes
 
-Une tâche récurrente (recurring.md) vous rappelle de faire quelque chose. Une routine est du travail que votre Machine fait seule et vous montre. Utilisez une tâche récurrente pour « payer le loyer le premier du mois », et une routine pour « chaque vendredi, dis-moi quels deals se sont tus ».
+Une tâche récurrente (recurring.md) vous rappelle de faire quelque chose. Une routine est une tâche que votre Machine effectue automatiquement et dont elle vous présente le résultat. Utilisez une tâche récurrente pour « payer le loyer le premier du mois » et une routine pour « dis-moi chaque vendredi quelles opportunités sont au point mort ».

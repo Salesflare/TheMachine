@@ -1,7 +1,7 @@
 ---
 title: Planos e cobrança
 area: account
-summary: Grátis no seu próprio computador. Hospedado a partir de {price.standard} por mês, sem IVA, com {trial_days} dias grátis.
+summary: Grátis no seu próprio computador. Hospedagem a partir de {price.standard} por mês, sem IVA, com {trial_days} dias grátis.
 covers: settings:account
 code: docs/fleet.md
 site: Manage subscription
@@ -11,23 +11,21 @@ translated: 457d70baa1c81785
 ## Sua Machine
 
 - No seu próprio computador: grátis. Tudo o que The Machine faz, com seu próprio modelo.
-- Hospedado: {price.standard} por mês para uma Machine Standard, ou {price.big} para uma maior, sem IVA. Os primeiros {trial_days} dias são grátis, uma vez por pessoa. Você precisa de um cartão de pagamento para começar, e nada é cobrado antes de os dias grátis acabarem.
+- Hospedada: {price.standard} por mês por uma Standard Machine, ou {price.big} por uma maior, sem IVA. Os primeiros {trial_days} dias são grátis, uma vez por pessoa, e nada é cobrado antes do fim desse período. Se o seu período começou sem um cartão, adicione um na página da sua conta antes disso.
 
-Seu plano de IA é cobrado pelo seu provedor, como a OpenAI. Não acrescentamos nada.
+Seu plano de IA é cobrado pelo seu provedor, como a OpenAI. Não acrescentamos nada a ele.
 
 ## Na Network
 
-- Amigos e Família: grátis, com qualquer Machine. No Fleet da Família, as Machines hospedadas custam {price.family_pair} pelas duas primeiras juntas, depois {price.family_seat} cada, sem impostos.
-- Fleet de Trabalho: {price.seat} por usuário por mês, ou {price.seat_big} para uma maior, sem IVA. Um colega que roda a própria Machine custa {price.network} por mês, e um que já é hospedado não paga nada. Cada Fleet tem seu próprio cartão e suas faturas, e o dono confirma cada valor antes da cobrança.
+- Amigos e família: grátis, com qualquer Machine. Em uma Fleet da família, Machines hospedadas custam {price.family_pair} pelas duas primeiras juntas e, depois, {price.family_seat} cada, sem IVA.
+- Fleet de trabalho: {price.seat} por pessoa ao mês, ou {price.seat_big} por uma maior, sem IVA. Um colega de equipe que usa a própria Machine custa {price.network} por mês, e quem já usa uma Machine hospedada não paga. Cada Fleet tem seu próprio cartão e suas próprias faturas, e a pessoa responsável confirma cada valor antes da cobrança.
 
-Todos os preços são por mês, sem IVA. Veja [Preços](/pricing).
+Todos os preços são mensais e não incluem IVA. Consulte [Preços](/pricing).
 
-Os preços hospedado, de vaga de Trabalho e de Fleet da Família são preços early adopter, antes {price.standard_list}, {price.seat_list} e {price.family_pair_list}. Os early adopters mantêm esses preços enquanto a assinatura continuar ativa.
-
-Começou o Network para amigos antes de o Network ficar grátis? Ele aparece em **Configurações** › **Conta** até você parar. **Gerenciar** abre ele na sua conta, onde você para ou troca o cartão. Seu usuário e seus amigos continuam.
+Se você iniciou uma Network para amigos antes de a Network ficar grátis, ela aparece em **Configurações** › **Conta** até você cancelá-la. **Gerenciar** abre a página da sua conta, onde você pode cancelá-la ou alterar o cartão. Seu nome de usuário e seus amigos continuam lá.
 
 ## Cartão e faturas
 
-Em **Configurações** › **Conta**, clique em **Cobrança** e depois em **Gerenciar assinatura**. Isso abre o Stripe, onde você troca o cartão e baixa as faturas. Os dados do seu cartão nunca chegam até nós.
+Em **Configurações** › **Conta**, selecione **Cobrança** e depois **Gerenciar assinatura**. A página da Stripe será aberta, onde você pode alterar seu cartão e baixar faturas. Os dados do seu cartão nunca chegam até nós.
 
-Mude o tamanho da sua Machine quando quiser: em **Configurações** › **Conta**, clique em **Mudar plano**.
+Você pode alterar o tamanho da sua Machine a qualquer momento: em **Configurações** › **Conta**, selecione **Mudar plano**.

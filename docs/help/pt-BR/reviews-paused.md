@@ -1,42 +1,42 @@
 ---
 title: Nenhuma tarefa nova
 area: troubleshooting
-summary: As verificações estão desativadas, esperando ou paradas no limite de uso do seu modelo. Como saber e o que fazer.
+summary: As verificações estão desativadas, aguardando ou pausadas por causa do limite de uso do seu modelo. Veja como identificar o motivo e o que fazer.
 covers: 
 code: dashboard.html, assistant.py
 order: 3
-translated: 39b4aa749445dfba
+translated: d265e540d9ecef0e
 ---
-As tarefas vêm das verificações: sua Machine lê o que chegou, em pequenos lotes, em cerca de 15 minutos.
+As tarefas vêm das verificações: sua Machine analisa o que chegou nos últimos 15 minutos, aproximadamente.
 
 ## Acabou de se cadastrar
 
-Em uma Machine hospedada nova, as verificações começam sozinhas assim que sua IA e seu e-mail estão conectados. Enquanto sua Machine lê seus e-mails, Tarefas mostra "Lendo seus e-mails, primeiras tarefas em poucos minutos". Assim que sabe quanto há, ela diz mais ou menos quanto falta: "Primeiras tarefas em cerca de 10 min." Se faltar uma etapa, **Precisa de você** mostra qual, como **Conectar e-mail**, com um link para essa etapa.
+Em uma Machine hospedada nova, as verificações começam automaticamente quando você conecta sua IA e seu e-mail. Enquanto sua Machine lê seus e-mails, a seção Tarefas mostra "Lendo seus e-mails. Primeiras tarefas em alguns minutos." Depois que ela sabe quanto conteúdo há para ler, informa o tempo aproximado: "Primeiras tarefas em cerca de 10 min." Se faltar alguma etapa, **Precisa de você** indica qual, como **Conectar e-mail**, e inclui um link para essa etapa.
 
-Enquanto lê, Tarefas mostra até onde ela chegou, algumas das pessoas e organizações que encontrou e sua primeira tarefa assim que chega. Os nomes vêm do seu próprio e-mail, e só você os vê.
+Enquanto lê, ela mostra até onde chegou ("20 de 132 mensagens lidas. Lendo as próximas 40…"), algumas pessoas e organizações que encontrou e sua primeira tarefa assim que ela aparecer. O número conta as mensagens que ela terminou de ler; a barra continua avançando enquanto ela lê as próximas. Os nomes vêm dos seus próprios e-mails e só você pode vê-los.
 
-Se na primeira olhada ela não encontrar nada para você, diz o que leu e oferece próximos passos, como conectar um serviço que te escreve com frequência ou perguntar o que mudou esta semana.
+Se a primeira análise não encontrar nada para você, ela informa o que leu e sugere os próximos passos, como conectar um serviço de onde você recebe e-mails com frequência ou perguntar o que mudou nesta semana.
 
 ## As verificações estão desativadas
 
-O topo de Tarefas diz "As verificações estão desligadas, então nenhuma tarefa chega ainda." Em uma Machine hospedada, clique em **Ligar as verificações**. No seu próprio computador, execute `./install.sh --activate`.
+No topo da seção Tarefas, aparece "As verificações estão desativadas, então nenhuma tarefa nova será criada." Em uma Machine hospedada, pressione **Ligar as verificações**. No seu próprio computador, execute `./install.sh --activate`.
 
-## O limite do seu modelo
+## Limite do seu modelo
 
-As verificações do que chegou pausam em cerca de 65% do limite de 5 horas do seu plano e em 90% do limite semanal, para sobrar espaço para os seus próprios chats. Um quadro que percorre seu histórico vai mais devagar, em cerca de um sétimo da semana por dia. Com um modelo reserva funcionando, em outro plano ou provedor, as verificações não esperam. Veja [Modelo](model.md).
+Para reservar espaço para seus próprios chats, as verificações pausam quando chegam a cerca de 65% do limite de 5 horas do seu plano de IA e a 90% do limite semanal. Se você tiver um modelo reserva em outro plano, as verificações não precisam esperar. Veja [Modelo](model.md).
 
-Enquanto as verificações esperam, o topo do painel diz até quando, como "As verificações esperam até 07:15 para poupar sua semana do ChatGPT." **Verificar agora** inicia uma na hora. Quando um limite é atingido, o topo do painel diz qual foi e quando ele reinicia. **Conexões** e depois **Verificações** mostra isso ao lado da execução. **Configurações**, **Modelo** mostra seus limites. Veja [Modelo](model.md).
+Enquanto as verificações aguardam, o topo do painel mostra até quando, por exemplo: "As verificações aguardam até 07:15 para economizar seu limite semanal do ChatGPT." **Verificar agora** inicia uma verificação mesmo assim. Em **Configurações**, **Modelo** mostra seus limites.
 
-Nada se perde enquanto espera: o que chegou é verificado assim que for possível.
+Nada se perde: o que chegou é verificado assim que possível.
 
 ## À noite
 
-Das 00:00 às 06:30, as verificações pausam e as mensagens novas esperam. Elas são verificadas juntas às 06:30, antes do seu resumo da manhã. **Verificações** diz então "Em pausa durante a noite, põe tudo em dia às 06:30". Se você usar o app, escrever no chat ou tocar numa tarefa, as verificações voltam até você ficar uma hora sem usar. **Verificar agora** verifica na hora.
+Das 00:00 às 06:30, as verificações pausam e as mensagens novas aguardam. Elas são verificadas juntas às 06:30, antes do seu resumo da manhã. **Verificações** mostra "Pausadas durante a noite. As mensagens serão verificadas às 06:30". Use o app, escreva no chat ou toque em uma tarefa para que as verificações voltem a funcionar. Elas continuam até você ficar uma hora sem usar o app. **Verificar agora** faz uma verificação na hora.
 
 ## Uma execução falhou
 
-**Execuções recentes** em **Verificações** mostra cada execução. Um lote que falhou é tentado de novo sozinho.
+**Execuções recentes**, em **Conexões**, **Verificações**, mostra cada execução. Uma execução que falhou é tentada novamente automaticamente.
 
 ## Deixados de lado
 
-Quando uma verificação adia uma mensagem duas vezes, ela é deixada de lado. **Conexões**, **Verificações** mostra quantas, e **Deixados de lado** lista todas. Uma de uma pessoa que escreve direto para você, de alguém que você conhece ou de um cliente recebe uma última olhada cerca de 3 dias depois de chegar. Essa olhada cria uma tarefa ou a fecha. O que você dispensou ou adiou continua assim.
+Quando uma verificação adia uma mensagem duas vezes, ela é deixada de lado. **Conexões**, **Verificações** mostra quantas mensagens há, e **Deixados de lado** lista essas mensagens. Uma mensagem de alguém que escreve para você, de alguém que você conhece ou de um cliente é analisada mais uma vez cerca de 3 dias depois de chegar. Essa análise cria uma tarefa ou encerra a mensagem. O que você descartou ou adiou continua assim.

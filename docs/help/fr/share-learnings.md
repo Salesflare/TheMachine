@@ -1,58 +1,60 @@
 ---
 title: Partager des apprentissages avec l’équipe
 area: security
-summary: Au plus une fois par jour, elle propose quelques apprentissages généraux à l’équipe The Machine, et vote sur les apprentissages d’autres Machines. Rien de personnel.
+summary: Au plus une fois par jour, votre Machine propose quelques apprentissages généraux à l’équipe The Machine et vote sur les apprentissages d’autres Machines. Rien de personnel.
 covers: share-learnings
 code: team_learnings.py, dashboard.html
 order: 3
 translated: 8a7418cb4cb27e7b
 ---
-## De quoi il s’agit
+## De quoi s’agit-il ?
 
-Au plus une fois par jour, quand il y a du nouveau, elle transforme ce qu’elle a appris de vous depuis la dernière fois en quelques apprentissages généraux qui pourraient améliorer The Machine pour tout le monde. Par exemple : « Les brouillons pour des personnes qui ne connaissent pas encore le contexte devraient d’abord le présenter. » Elle ne propose jamais deux fois le même : ni un apprentissage envoyé, supprimé ou retiré.
+Au plus une fois par jour, quand il y a du nouveau, votre Machine transforme ce qu’elle a appris auprès de vous en quelques apprentissages généraux susceptibles d’améliorer The Machine pour tout le monde. Par exemple : « Les brouillons destinés à des personnes qui ne connaissent pas encore le contexte devraient le présenter d’abord. » Elle ne propose jamais deux fois le même apprentissage.
 
-Chaque apprentissage est accompagné de 1 à 3 cas d’usage : une situation, ce que vous faites, et ce qui devrait se passer. Par exemple : une première réponse à un client qui n’a jamais entendu parler de vous ; vous ouvrez le brouillon ; il dit qui vous êtes avant la demande. L’équipe s’appuie sur eux, pour que ce qui sort reste fidèle à l’intention.
+Chaque apprentissage comprend de 1 à 3 cas d’usage : une situation, ce que vous faites et ce qui devrait se passer. Par exemple : vous rédigez une première réponse à un client qui ne vous connaît pas encore, vous ouvrez le brouillon, et celui-ci vous présente avant de formuler la demande. L’équipe s’en sert pour ses développements.
 
-## Ce qui part, et ce qui ne part jamais
+## Ce qui est partagé, et ce qui ne l’est jamais
 
-- Seulement le principe général, et un court exemple inventé si ça aide.
-- Les noms, adresses e-mail, liens, numéros de téléphone, dates et montants sont retirés avant que vous le voyiez. Chaque apprentissage dit ce qui a été retiré.
-- Les cas d’usage sont vérifiés plus strictement : pas de citations et pas de noms, même ceux qu’elle ne connaît pas. Un cas d’usage qui échoue est exclu. Si vous en modifiez un, il doit passer la même vérification avant de pouvoir partir.
-- C’est conçu pour partager des apprentissages généraux, pas vos messages ni les personnes avec qui vous travaillez. Le filtrage peut laisser passer des détails : relisez le texte exact avant **Envoyer**.
-- Un journal d’erreurs seulement si vous cochez **Joindre le journal d’erreurs**. Relisez aussi l’extrait : le filtrage fait de son mieux.
+- Seul le principe général est partagé, avec un bref exemple fictif si cela peut aider.
+- Les noms, adresses e-mail, liens, numéros de téléphone, dates et montants sont supprimés avant que vous le voyiez. Chaque apprentissage indique ce qui a été supprimé.
+- Les cas d’usage sont vérifiés plus rigoureusement : ils ne contiennent ni citation ni nom. Tout cas qui ne passe pas la vérification est exclu, même après vos modifications.
+- Le filtrage peut manquer certains détails. Lisez donc le texte exact avant de toucher à **Envoyer**.
+- Un journal d’erreurs n’est joint que si vous cochez **Joindre le journal d’erreurs**. Lisez aussi cet extrait.
 
-## Quand elle demande
+## Quand une confirmation vous est demandée
 
-Les apprentissages partent tout seuls, sauf si vous l’avez désactivé (voir plus bas). Quand elle demande, dans **Apprentissage**, **Partagé**, une courte note demande « Partager 3 apprentissages avec l’équipe The Machine ? ». Appuyez sur **Vérifier** pour voir exactement ce qui serait envoyé. Modifiez ou retirez un apprentissage ou un cas d’usage (chaque apprentissage garde au moins un cas d’usage), puis **Envoyer**. Ou choisissez **Pas maintenant** ou **Ne plus demander**. Une offre plus récente remplace celle à laquelle vous n’avez pas encore répondu.
+Les apprentissages sont envoyés automatiquement, sauf si vous avez désactivé cette option (voir ci-dessous). Quand une confirmation est nécessaire, une note sous **Apprentissage**, **Partagé** indique : « Partager 3 apprentissages avec l’équipe The Machine ? » Touchez **Vérifier** pour voir exactement ce qui serait envoyé. Modifiez ou supprimez les apprentissages ou les cas d’usage de votre choix (chaque apprentissage doit en conserver au moins un), puis touchez **Envoyer**. Vous pouvez aussi choisir **Pas maintenant** ou **Ne plus demander**. Une nouvelle proposition remplace celle à laquelle vous n’avez pas encore répondu.
 
-C’est scellé pour l’équipe et envoyé sous un nom inventé, sauf si vous cochez **Ajouter mon e-mail pour que l’équipe puisse répondre**.
+Le partage est réservé à l’équipe et se fait sous un nom fictif, sauf si vous cochez **Ajouter mon e-mail pour que l’équipe puisse répondre**.
 
-D’autres Machines peuvent voter sur un apprentissage que vous avez partagé, sans savoir qui l’a envoyé. Votre e-mail n’est jamais transmis.
+D’autres Machines peuvent voter sur un apprentissage que vous avez partagé, sans savoir qui l’a envoyé.
 
 ## Envoyer automatiquement
 
-**Envoyer les apprentissages automatiquement** dans Paramètres, Sécurité est activé par défaut. Les nouveaux apprentissages partent sans demander, vérifiés de la même façon. Désactivez-le pour qu’elle demande à chaque fois. Si vous l’avez déjà désactivé, il reste désactivé.
+L’option **Envoyer les apprentissages automatiquement**, dans Paramètres, Sécurité, est activée par défaut. Les nouveaux apprentissages sont envoyés sans vous demander, après les mêmes vérifications. Désactivez-la pour qu’on vous demande confirmation à chaque fois. Si vous l’aviez déjà désactivée, elle le reste.
 
-Pour les apprentissages tirés de vos tâches Perso, elle demande toujours d’abord. Si vous l’aviez activé vous-même avant, ils partent aussi tout seuls, comme vous l’aviez choisi.
+Les apprentissages issus de vos tâches personnelles nécessitent toujours votre accord. Si vous aviez activé cette option vous-même auparavant, ils sont aussi envoyés automatiquement, comme vous l’aviez choisi.
 
-Chaque apprentissage envoyé figure dans Paramètres, **Activité**, et dans Fleet, **Activité**, exactement comme il est parti. Touchez **Retirer** et l’équipe ne le voit plus.
+Chaque apprentissage envoyé figure tel quel dans Paramètres, **Activité**, et dans Fleet, **Activité**. Touchez **Retirer** pour qu’il ne soit plus visible par l’équipe.
 
-Votre e-mail et les journaux d’erreurs ne partent jamais tout seuls. **Prudent**, une Work Fleet Prudente, ou la désactivation de **Proposer de partager des apprentissages** l’arrête. Réactivé, elle demande à nouveau à chaque fois.
+Votre adresse e-mail et les journaux d’erreurs ne sont jamais envoyés automatiquement. Le niveau **Prudent**, une Fleet professionnelle configurée à ce niveau, ou la désactivation de **Proposer de partager des apprentissages** empêche l’envoi automatique. Si vous réactivez cette option, une confirmation vous sera de nouveau demandée à chaque fois.
 
-## Désactiver
+## Désactiver le partage
 
-Pour ne plus être sollicité, désactivez **Proposer de partager des apprentissages** dans Paramètres, Sécurité. Voir [Niveaux de sécurité](security-levels.md). Cela nécessite [The Machine Network](/network).
+Désactivez **Proposer de partager des apprentissages** dans Paramètres, Sécurité. Consultez [Niveaux de sécurité](security-levels.md). Le partage nécessite [The Machine Network](/network).
 
-## Votes
+Le même réglage désactive les [apprentissages de l’équipe](fleet.md#team-learnings) pour votre Fleet professionnelle et retire ceux que votre Machine a partagés.
 
-Les apprentissages partagés par d’autres Machines arrivent aussi sur la vôtre. Une fois par jour, une courte vérification pose une question : est-ce que cela aurait changé quelque chose sur votre Machine la semaine passée ? Elle renvoie seulement un vote. Rien sur vous n’est transmis. Vos propres apprentissages ne vous sont jamais renvoyés pour un vote.
+## Voter
 
-Un vote utile ou pas pertinent demande un cas concret de votre semaine passée : une tâche ou une demande faite dans son chat, raconté de façon générique et vérifié comme un cas d’usage. Sans cas, votre Machine s’abstient et le vote ne compte pas. Une semaine sans activité, elle ne vote pas.
+Les apprentissages d’autres Machines vous sont aussi proposés. Une fois par jour, une brève vérification vous demande si cet apprentissage aurait changé quelque chose sur votre Machine au cours de la semaine passée. Seul le vote est transmis. Vos propres apprentissages ne vous sont jamais proposés.
 
-L’équipe voit les apprentissages classés par votes et choisit ce qui entre dans The Machine pour tout le monde. Rien ne change tout seul.
+Pour voter « utile » ou « non pertinent », il faut citer un cas concret de la semaine passée : une tâche ou une question posée dans votre chat, décrite en termes généraux et vérifiée comme un cas d’usage. Sans exemple, votre Machine s’abstient et le vote n’est pas comptabilisé. Si votre Machine n’a eu aucune activité pendant une semaine, elle ne vote pas.
 
-**Voter sur les apprentissages d’autres Machines** dans Paramètres, Sécurité propose trois choix :
+L’équipe classe les apprentissages selon le nombre de votes « utile » et choisit ceux qui seront intégrés à The Machine pour tout le monde. Rien ne change automatiquement.
 
-- **Activé**, par défaut : elle vote toute seule.
-- **Demander d’abord** : chaque vote vous attend dans un seul encadré sous **Apprentissage**, **Partagé**, avec l’apprentissage et le vote tel qu’il partirait. Envoyez-le ou passez-le, un par un ou tous à la fois. Ni tâche ni notification pour cela. Un vote laissé de côté n’est pas envoyé après 14 jours.
-- **Désactivé** : pas de vote, et rien de ce qui attend ne part.
+L’option **Voter sur les apprentissages d’autres Machines**, dans Paramètres, Sécurité, propose trois choix :
+
+- **Activé**, le choix par défaut : votre Machine vote automatiquement.
+- **Demander d’abord** : les votes sont en attente sous **Apprentissage**, **Partagé**, chacun avec l’apprentissage et le vote associé. Envoyez-les ou ignorez-les un par un ou tous à la fois. Aucune tâche ni notification n’est créée. Les votes laissés en attente expirent au bout de 14 jours.
+- **Désactivée** : aucun vote n’est envoyé et les votes en attente sont supprimés.

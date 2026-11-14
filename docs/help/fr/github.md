@@ -1,39 +1,43 @@
 ---
 title: GitHub
 area: connections
-summary: Demandes de revue, mentions, assignations et exécutions CI échouées. Crée des issues seulement quand vous confirmez.
+summary: Consultez les demandes de révision, les mentions, les tâches qui vous sont attribuées et les échecs d’exécution de CI. Les problèmes ne sont créés qu’après votre confirmation.
 covers: connector:github
 code: connectors/github.py, onboarding.py
 site: Sign in with GitHub, More sources, Remove
 translated: e97127e156e56f7d
 ---
-## Ce qu’il lit
+## Ce que lit The Machine
 
-Vos notifications GitHub : demandes de revue, mentions, assignations, réponses et exécutions CI échouées. Il ne marque jamais une notification comme lue.
+Vos notifications GitHub : demandes de révision, mentions, tâches qui vous sont attribuées, réponses et échecs d’exécution de CI. The Machine ne les marque jamais comme lues.
 
-## Ce qu’il peut faire
+## Ce qu’elle peut faire
 
-La lecture ne change rien sur GitHub. Quand une tâche se termine par une étape sur GitHub, comme créer une issue, cette étape passe par la même connexion gh dès que vous touchez **Confirmer**, et la tâche le dit avant. Les captures d’écran passent quand même par le navigateur de votre Machine, car l’outil de GitHub ne peut pas ajouter d’images. Sans GitHub connecté, la tâche dit qu’elle utilisera le navigateur, avec **Connecter GitHub**.
+La lecture ne modifie rien sur GitHub. Lorsqu’une tâche se termine par une étape GitHub, comme la création d’un problème, la tâche vous l’indique. L’étape ne s’exécute qu’après votre appui sur **Confirmer**, ou si vous avez demandé exactement cela dans son chat. Les captures d’écran passent par le navigateur de votre Machine. Si GitHub n’est pas connecté, la tâche indique qu’elle utilisera le navigateur et affiche **Connecter GitHub**.
 
-## Le connecter
+## Connecter GitHub
 
 Sur une Machine hébergée :
 
-1. Ouvrez votre page de configuration sur app.themachine.computer/setup et allez dans **Plus de sources**.
-2. Ouvrez GitHub et appuyez sur **Se connecter avec GitHub**.
-3. Tapez sur GitHub le code qu’il affiche, sur votre téléphone ou votre ordinateur.
+1. Ouvrez **Connexions**, puis **Projets et code**, et choisissez GitHub.
+2. Choisissez **Travail** ou **Perso**, puis appuyez sur **Se connecter avec GitHub**.
+3. Appuyez sur **Ouvrir GitHub ↗**, saisissez le code affiché et autorisez l’accès. La connexion se fait automatiquement.
+
+La page de configuration sur app.themachine.computer/setup propose la même connexion sous **Plus de sources**.
 
 Sur votre propre ordinateur :
 
-1. Connectez-vous d’abord à la CLI GitHub : `gh auth login`.
-2. Dans le tableau de bord, ouvrez **Connexions**, puis **Projets et code**, et choisissez GitHub. Ou lancez `assistant connect github`.
-3. Confirmez votre identifiant GitHub. The Machine vérifie qu’il correspond à chaque synchro.
+1. Ouvrez **Connexions**, puis **Projets et code**, et choisissez GitHub.
+2. Choisissez **Travail** avec votre entreprise, ou **Perso**, puis appuyez sur **Se connecter**.
+3. Si vous y êtes invité, appuyez sur **Ouvrir GitHub ↗**, saisissez le code et autorisez l’accès. La connexion se fait automatiquement.
 
-## Le retirer
+Vous pouvez aussi exécuter `assistant connect github` et confirmer votre connexion à GitHub.
 
-- Dans le tableau de bord : **Connexions**, ouvrez GitHub, **Détails**, puis **Déconnecter**. Il arrête de lire. Ce qu’il a déjà récupéré reste.
-- Sur une Machine hébergée, vous pouvez aussi appuyer sur **Retirer** à côté sur votre page de configuration.
+## Supprimer la connexion
 
-## Le désinstaller sur GitHub
+- Ouvrez **Connexions**, puis GitHub, **Détails** et **Déconnecter**. The Machine cesse alors de lire vos notifications. Les informations déjà importées restent disponibles.
+- Sur une Machine hébergée, vous pouvez aussi appuyer sur **Retirer** à côté de GitHub sur votre page de configuration.
 
-Révoquez l’accès de la CLI GitHub dans GitHub, sous Settings, Applications, Authorized OAuth Apps. Sur votre propre ordinateur, `gh auth logout` déconnecte aussi la CLI.
+## Désinstaller l’application sur GitHub
+
+Sur GitHub, ouvrez Settings, Applications, Authorized OAuth Apps et révoquez l’accès à GitHub CLI. Sur votre propre ordinateur, `gh auth logout` déconnecte également votre compte.

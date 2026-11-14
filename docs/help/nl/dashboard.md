@@ -1,7 +1,7 @@
 ---
-title: Je weg vinden
+title: Wegwijs op het dashboard
 area: getting-started
-summary: Waarvoor elk deel van het dashboard dient, van To-do's tot Koppelingen.
+summary: Waar elk onderdeel van het dashboard voor is, van To-do's tot Koppelingen.
 covers: tab:events, tab:feedback
 code: dashboard.html
 order: 4
@@ -9,74 +9,76 @@ translated: d41a4a0017765f9e
 ---
 ## De tabbladen
 
-- **To-do's**: je to-do's en beloftes. Zie [To-do's](cards.md).
-- **Agenda**: de komende week met je afspraken, to-do's die moeten gebeuren en beloftes. Zie [Agenda](calendar.md).
-- **Graph**: de personen, organisaties en projecten in je berichten. Zie [Graph](graph.md).
-- **Fleet**: je team, familie en vrienden op The Machine Network, zodra je er een hebt. Zie [Fleet](fleet.md).
-- **Leren**: hoe de to-do's het doen, en wat hij geleerd heeft.
-- **Koppelingen**: je bronnen en hoe het ermee gaat. Zie [Koppelingen](connections.md).
+- **To-do's**: je to-do's en beloftes. Bekijk [To-do's](cards.md).
+- **Agenda**: de komende week met je afspraken, deadlines en beloftes. Bekijk [Agenda](calendar.md).
+- **Graph**: de mensen, organisaties en projecten in je berichten. Bekijk [Graph](graph.md).
+- **Fleet**: je team, familie en vrienden op The Machine Network, zodra je er een hebt. Bekijk [Fleet](fleet.md).
+- **Leren**: hoe het met je to-do's gaat en wat The Machine ervan heeft geleerd.
+- **Koppelingen**: je bronnen en hoe het daarmee gaat. Bekijk [Koppelingen](connections.md).
 
-**Zoeken**, bovenaan de zijbalk, vindt eerst to-do's, dan mensen, berichten en meer. **Browser**, **Help** en **Instellingen** staan onderaan de zijbalk. Op een telefoon opent de menuknop in de bovenbalk de zijbalk.
+Met **Zoeken** bovenaan de zijbalk vind je to-do's, mensen, berichten en meer. **Browser**, **Help** en **Instellingen** staan onderaan. Op een telefoon open je de zijbalk met de menuknop in de bovenbalk.
 
-De zijbalk toont je to-do's zoals de pagina. Verzoeken uit je Fleet staan ook onder **Voor jou**, zodat het aantal klopt met dat bovenaan. Tik op een verzoek om het te tonen.
+De zijbalk toont je to-do's net als de pagina. Verzoeken van je Fleet staan ook onder **Voor jou**, zodat het aantal overeenkomt met dat bovenaan. Tik op een verzoek om het te openen.
 
-Voor het menu van een to-do: ga er met de muis over en klik op **⋯**, klik er met de rechtermuisknop op, of houd hem ingedrukt op een telefoon. Met het toetsenbord druk je er `Shift F10` op. Naast **Hernoemen** en **Openen** heeft het menu de eigen knoppen van de to-do: **Markeer als gedaan**, **Snoozen** en **Niet nodig**, elk met **Ongedaan maken**.
+Beweeg de muis over een to-do en klik op **⋯** om het menu te openen. Je kunt ook met de rechtermuisknop klikken of op een telefoon de to-do ingedrukt houden. Gebruik je het toetsenbord, druk dan op `Shift F10` terwijl de to-do is geselecteerd. Naast **Hernoemen** en **Openen** bevat het menu de opties **Markeer als gedaan**, **Snoozen** en **Niet nodig**, elk met **Ongedaan maken**.
 
-**Browser** toont de eigen browser van je Machine. Op een computer opent hij naast de zijbalk, zo groot als de ruimte die er is, net als **Bekijken in browser** op een to-do en **Browser openen** als een site een login nodig heeft. Op een telefoon opent hij in een nieuw tabblad.
+**Browser** toont de eigen browser van je Machine, die hij gebruikt voor sites zoals LinkedIn. Op een computer opent die naast de zijbalk. Dat geldt ook voor **Bekijken in browser** bij een to-do en **Browser openen** wanneer je op een site moet inloggen. In de browser op je telefoon opent hij in een nieuw tabblad. In de telefoonapp of op het dashboard dat je aan je beginscherm hebt toegevoegd, vult hij het hele scherm. Tik op de X om terug te gaan.
 
-Het voorste venster van de browser staat in het midden en de rest van het scherm is donker; een knop in de hoek toont het hele scherm. Op een laag scherm scrolt de hele zijbalk als één kolom, to-do's inbegrepen, zoals het menu op een telefoon.
+Met **Vergroten** krijgt de browser het hele venster. Druk er nogmaals op om terug te gaan.
 
-**Stoppen** staat bovenaan zolang een to-do de browser gebruikt, met de naam van die to-do naast **Browser**. Eén druk stopt het meteen, zonder te vragen: er wordt niets meer aangeklikt, getypt of verstuurd, en de chat van de to-do zegt "Gestopt vanuit de browser".
+Wanneer een to-do de browser gebruikt, verschijnt bovenaan **Stoppen**. Eén keer tikken stopt die actie meteen: er wordt niets meer aangeklikt, getypt of verstuurd. In de chat van de to-do staat dan "Gestopt vanuit de browser".
 
-Gebruiken meerdere to-do's de browser, dan stopt hij die op het tabblad vooraan. Op een telefoon heeft het tabblad van de browser dezelfde knop bovenaan. Om verder te gaan, schrijf je in de chat of druk je op **Opnieuw proberen**.
+Als er meerdere acties lopen, stopt deze knop de actie op de voorgrond. Typ iets in de chat van de to-do of druk op **Opnieuw proberen** om verder te gaan.
 
-Op een telefoon vult een dialoogvenster zoals **Deze e-mail versturen?** het hele scherm: de titel en × blijven bovenaan, de knoppen onderaan, en alleen wat ertussen staat scrolt. Het berichtvak groeit mee met de vrije ruimte, en de knoppen blijven binnen bereik terwijl je typt.
+Als er meer to-do's zijn dan in de zijbalk passen, kun je de hele zijbalk als één kolom scrollen.
+
+Op een telefoon vult een dialoogvenster zoals **Deze e-mail versturen?** het hele scherm. De knoppen blijven altijd binnen handbereik, ook terwijl je typt.
 
 ## Haal er meer uit
 
-Vanaf je eerste bezoek, zodra de eerste blik klaar is, staat bovenaan To-dos een kleine to-do met wat The Machine nuttiger maakt: de app voor je telefoon, meldingen, WhatsApp, de app op deze computer, nog een account en meer koppelingen. Elke rij heeft één knop die die stap doet, en verdwijnt zodra het klaar is, zodat de to-do alleen toont wat nog rest. Ze toont tot vijf rijen, open stappen eerst, zodat een tool die je mail doet vermoeden, zoals GitHub, een rij krijgt zodra eerdere stappen klaar zijn.
+Bovenaan To-do's staat een kleine to-do met manieren om The Machine nuttiger te maken: de telefoonapp, meldingen, WhatsApp, de app op deze computer, een ander account en meer koppelingen. Elke rij heeft één knop voor die stap en verdwijnt zodra je de stap hebt afgerond. Zo toont de to-do alleen wat er nog moet gebeuren. Er staan maximaal vijf rijen, met openstaande stappen bovenaan. Zo verschijnt een tool die in je e-mail wordt genoemd, zoals GitHub, pas als rij wanneer je eerdere stappen hebt afgerond.
 
-Rijen staan er alleen waar ze passen: geen telefoon-app in de app zelf, geen installeren op een telefoon. Het × op een rij sluit hem op elk apparaat, en het × bovenaan sluit de hele to-do.
+Rijen worden alleen getoond waar ze van toepassing zijn. Met de × op een rij sluit je die op elk apparaat. Met de × bovenaan sluit je de hele to-do.
 
-Na je eerste dag klapt hij in tot één rustige regel boven **Voor jou**, zoals "Nog 2 stappen · Doorgaan". Tik erop om de to-do te openen, en tik op het pijltje om hem weer in te klappen.
+Na je eerste dag wordt de to-do ingeklapt tot één rustige regel boven **Voor jou**, bijvoorbeeld "Nog 2 stappen · Verdergaan". Tik erop om de to-do te openen en tik op de pijl om hem weer in te klappen.
 
-**Ongedaan maken** in het bericht erna haalt hem terug, net als **1 verborgen stap tonen** onderaan de to-do. Is de hele to-do gesloten, dan haalt **Instellingen**, **Algemeen**, **To-do om te starten** hem terug. **Instellingen**, **Algemeen**, **Dit apparaat** heeft dezelfde knoppen, en **Instellingen**, **Apps** heeft altijd de telefoonapp.
+Met **Ongedaan maken** of **1 verborgen tonen** zet je een rij terug. Gebruik **Instellingen**, **Algemeen**, **To-do om te starten** om de hele to-do terug te zetten. Bij **Instellingen**, **Algemeen**, **Dit apparaat** vind je dezelfde opties. De telefoonapp staat altijd bij **Instellingen**, **Apps**.
 
 ## Nieuwe versies
 
-Als er een nieuwe versie van het dashboard klaar is, herlaadt het nooit terwijl je het gebruikt. Bij openen of herladen laadt de app de nieuwste versie. Een open venster laadt die zodra het venster op de achtergrond staat, of na een paar minuten zonder invoer, en nooit terwijl er iets getypt is dat nog niet bewaard of verstuurd is, of een dialoogvenster open staat. **Update klaar**, bovenaan, laadt het meteen. Een herstart van je Machine maakt alleen opnieuw verbinding.
+Een nieuwe versie van het dashboard wordt nooit opnieuw geladen terwijl je het gebruikt. De versie wordt geladen wanneer je de app opent of wanneer het venster een paar minuten op de achtergrond staat of niet actief is. Niet-opgeslagen tekst en open dialoogvensters worden nooit onderbroken. Met **Update klaar** bovenaan laad je de nieuwe versie meteen.
 
-Komt er een grotere functie of verbetering bij, dan vertelt een kleine melding **Wat is er nieuw** je dat, hooguit één keer per dag. Blader met **Terug** en **Volgende**, of veeg. De knop bij een nieuwtje opent de functie. **Gedaan** of **×** sluit ze. Ze verschijnt nooit over iets waar je mee bezig bent, en eenmaal gesloten is ze weg op elk apparaat. Je ziet alleen wat erbij kwam nadat je begonnen bent.
+Wanneer er een grotere functie of verbetering verschijnt, krijg je een korte melding met **Wat is er nieuw**. Die verschijnt hoogstens één keer per dag. Blader erdoor met **Terug** en **Volgende**, of veeg. Met de knop in een melding open je de functie. Met **Gedaan** of **×** sluit je de melding. Die verschijnt nooit over iets waar je mee bezig bent. Zodra je hem sluit, is hij op elk apparaat weg. Je ziet alleen wat er is uitgebracht nadat je aan de slag bent gegaan.
 
 ## Berichten
 
-Open zoeken met `⌘K` op een Mac of `Ctrl K` op Windows en Linux, of met het zoekicoon in de bovenbalk op een telefoon. Typ twee letters of meer: **Berichten** toont de beste resultaten uit alles wat je Machine gelezen heeft, op betekenis of op woorden. Oudere [geschiedenis](history.md) verschijnt op woorden.
+Open Zoeken met `⌘K` op een Mac of `Ctrl K` op Windows en Linux, of tik op een telefoon op het zoekpictogram. Typ minstens twee letters: **Berichten** toont de beste overeenkomsten uit alles wat je Machine heeft gelezen, op basis van betekenis of woorden. Oudere overeenkomsten uit de [geschiedenis](history.md) zijn op woorden gebaseerd.
 
-Je kunt ook een vraag stellen, zoals die een lege zoekopdracht voorstelt, voor een kort antwoord uit je eigen berichten ([Toetsenbord en het opdrachtpalet](keyboard.md)).
+Je kunt daar ook een vraag stellen, bijvoorbeeld de vraag die wordt voorgesteld bij een lege zoekopdracht. Je krijgt dan een kort antwoord op basis van je eigen berichten ([Toetsenbord en het opdrachtenpalet](keyboard.md)).
 
-**Alle resultaten** opent de volledige lijst, voor alle accounts of voor één. Elk resultaat opent in een lezer, met een link naar waar het vandaan kwam. Een lege zoekopdracht toont de nieuwste berichten.
+Met **Alle resultaten bekijken** open je de volledige lijst voor alle accounts of één account. Elk resultaat opent in een lezer met een link naar de oorspronkelijke bron. Bij een lege zoekopdracht zie je de nieuwste berichten.
 
-Een zoekopdracht toont de beste match eerst, en een telefoonvoorbeeld van een bericht dat er volledig is, verschijnt één keer, als dat bericht. Een vraag met alle accounts krijgt bovenaan een kort antwoord, met het bericht waar het uit komt. Als je berichten het niet zeggen, verschijnt er geen antwoord.
+Zoekresultaten tonen de beste overeenkomst bovenaan. Een voorbeeld op je telefoon van een bericht dat daar volledig wordt weergegeven, verschijnt maar één keer, als dat bericht. Bij een vraag voor alle accounts staat bovenaan een kort antwoord met het bericht waarop het is gebaseerd. Als je berichten geen antwoord geven, wordt er geen antwoord getoond.
 
 ## Leren
 
-Leren heeft een rij tabbladen. Een tabblad waar nog niets in staat, valt weg.
+Bij Leren zie je wat The Machine van je heeft geleerd en hoe goed zijn to-do's werken. Lege tabbladen worden verborgen.
 
-- **Wat ik geleerd heb**: hoe je schrijft, feiten en hoe je dingen graag gedaan ziet, uit je notities. **Bewerk** alles in je eigen woorden, en **Verwijder** wat niet meer klopt. Je kunt je chat ook vragen iets te vergeten ("vergeet dat ik verhuisd ben"): past één feit duidelijk, dan is het weg, met **Ongedaan maken** in Instellingen, **Activiteit** en onder **Wijzigingen**. Passen er meerdere, dan vraagt de chat welk. Leert een notitie op een to-do een feit of regel, dan zegt de chat van de to-do dat onder het antwoord (**Bewaard bij wat ik geleerd heb**, met **Bewerken** en **Ongedaan maken**); die regel komt uit wat opgeslagen is, dus een antwoord beweert het nooit zomaar.
-- Een feit kan zeggen wat het is (**Tijdelijk**, **Toezegging**, **Voorkeur**) en **Tot** wanneer het geldt. Een tijdelijk feit vervaagt in weken, een voorkeur of toezegging in maanden, andere feiten in een jaar. Na de datum gaat een feit naar **Afgelopen**, waar **Terughalen** het terugzet.
-- **Feiten** houdt de algemene: over jou en hoe je werkt. Een feit over een persoon, organisatie of project staat op hun pagina in de Graph, onder **Bekend over**, waar je het bewerkt. Een feit dat iemand bij de volledige naam noemt, gaat daarheen bij het opslaan, en de chat van de to-do zegt **Bewaard bij** hen **in de Graph**. Eén rustige regel onder **Feiten** zegt hoeveel er op Graph-pagina’s staan; open hem om naar elke pagina te gaan. Een feit uit je eigen bericht toont tussen aanhalingstekens de woorden waar het uit komt.
-- Een telefoonnummer of e-mailadres dat je voor iemand geeft, komt op hun pagina in de Graph, niet bij de feiten. Staat het nummer al bij één record en heeft precies één ander record dezelfde naam, dan worden de twee samengevoegd. De chat van de to-do zegt **Toegevoegd aan** en hun naam, met **Ongedaan maken**. Is niet duidelijk voor wie het is, dan blijft het een feit.
-- De lijst raakt nooit vol. Wordt ze lang, dan gaan feiten en regels die drie weken niet gebruikt zijn naar **Opzijgezet**, waar **Terughalen** er een terugzet. Wat je bewerkte of terughaalde, blijft. Een opzijgezet feit helpt nog als een to-do of chat erover gaat, en een afgelopen feit alleen als geschiedenis, nooit als hoe het nu is.
-- Een notitie die iets wat al geleerd is in andere woorden zegt, vervangt het, zodat niets dubbel staat. **Merge ongedaan maken** zet de oude versie terug. Je eigen bewerkingen worden nooit vervangen.
-- **Neem deze over**: eerder OpenClaw gebruikt? Regels uit de notities daarvan (`MEMORY.md`, `USER.md`) die het bewaren waard zijn, staan bovenaan, elk met het bestand waar ze uit komen. Vink aan wat je wilt houden en kies **Aangevinkte houden**: het worden feiten of regels zoals alle andere. Met **Rest afwijzen** komen de andere niet meer terug. De bestanden worden nooit gewijzigd, en er staat niets als er niets in zit dat het bewaren waard is.
-- **Wijzigingen**: wat hij oppikte uit je bewerkingen, weggeklikte to-do's en chats, elk met **Ongedaan maken**. Zie [Schrijven](writing.md#it-keeps-learning).
-- **Beslissingen**: een tijdlijn van je keuzes op to-do's.
-- **Gedeeld**: inzichten om te delen met het team van The Machine, en stemmen die op je wachten. Alleen te zien als er iets wacht. Zie [Inzichten delen](share-learnings.md).
-- **Hoe het gaat**: de laatste 30 dagen, en hoger is beter.
-  - **De moeite waard**: van de to-do's waarover je besliste, hoeveel je oppakte (**Doe het**, verstuurd of gedaan) in plaats van weg te klikken.
-  - **Meteen goed**: van de to-do's die je startte met **Doe het**, hoeveel er achteraf geen correctie nodig hadden.
-  - **Afgerond**: van de to-do's die je startte met **Doe het**, hoeveel er klaar raakten zonder dat je vroeg om door te gaan of het opnieuw te proberen.
-  - **Ongewijzigd verstuurd**: van de concepten die je verstuurde, hoeveel er gingen zonder bewerking of eerst **Wijzigingen vragen**.
-  - Elk getal zegt hoe het zich verhoudt tot de 30 dagen ervoor. De grafiek begint bij je eerste besliste to-do: de eerste twee weken één staaf per dag, daarna één per week, tot de laatste 8 weken.
-  - **De moeite waard per bron**: waar de to-do's vandaan kwamen, zoals **E-mail**, **Door jou toegevoegd** (gemaakt met **Nieuwe to-do**), **Telefoonmeldingen** of **The Machine zelf** (problemen in The Machine, zoals een fout), en hoeveel je er oppakte.
-  - **Gemiste to-do’s**: één keer per week controleert The Machine een steekproef van berichten zonder to-do, en toont hij welk deel er waarschijnlijk een nodig had, met de marge. De gevonden berichten staan eronder: **Openen**, of de regel zelf, toont het bericht, en met **Echt gemist** of **Niet gemist** zeg je of hij gelijk had. **Echt gemist** zet de to-do er ook bij, met **Ongedaan maken** (**Open to-do** gaat ernaartoe), en The Machine leert ervan, zodat hij zulke berichten voortaan opmerkt. Je antwoorden blijven op je Machine en maken het getal nauwkeuriger. Het getal houdt ook rekening met hoe vaak de controle zelf fout zit, gemeten op verzonnen voorbeelden en jouw antwoorden. Te zien na de eerste wekelijkse controle.
+- **Wat ik heb geleerd**: hoe je schrijft, feiten en hoe je dingen graag gedaan hebt, op basis van je notities. Je kunt alles in je eigen woorden **Bewerken** en **Verwijderen** wat niet meer klopt. Je kunt ook in je chat vragen om iets te vergeten, zoals "vergeet dat ik verhuisd ben". Als één feit duidelijk overeenkomt, wordt het verwijderd. Je kunt dat **Ongedaan maken** via **Instellingen**, **Activiteit** en **Wijzigingen**. Als meerdere feiten overeenkomen, vraagt de chat welke je bedoelt. Als een notitie een feit of regel aanleert, staat er in de chat van de to-do **Bewaard bij wat ik geleerd heb**, met de opties **Bewerken** en **Ongedaan maken**.
+- Een feit kan **Tijdelijk**, een **Toezegging** of een **Voorkeur** zijn, met **Tot** om aan te geven wanneer het geldt. Tijdelijke feiten vervallen na een paar weken, voorkeuren en toezeggingen na een paar maanden en andere feiten na een jaar. Na de einddatum, of zodra een nieuwer bericht laat zien dat een feit niet meer klopt, wordt het verplaatst naar **Afgelopen**. Met **Terughalen** zet je het terug.
+- **Feiten** bevat de algemene feiten: over jou en hoe je werkt. Een feit over een persoon, organisatie of project staat op de bijbehorende pagina in Graph, onder **Bekend over**. Daar kun je het bewerken. Een feit waarin iemands volledige naam staat, wordt daar opgeslagen. In de chat van de to-do staat dan **Bewaard bij** die persoon **in Graph**. Onder **Feiten** staat één rustige regel met het aantal feiten op Graph-pagina's. Open die regel om naar de pagina's te gaan. Bij een feit uit je eigen bericht zie je de woorden waar het vandaan komt, tussen aanhalingstekens.
+- Een telefoonnummer of e-mailadres dat je voor iemand opgeeft, komt op diens pagina in Graph terecht, niet bij de feiten. Staat het nummer al bij één persoon en heeft een andere persoon dezelfde naam, dan worden de twee vermeldingen samengevoegd. In de chat van de to-do staat **Toegevoegd aan** met de naam, en **Ongedaan maken**. Als niet duidelijk is voor wie het is, blijft het een feit.
+- De lijst raakt nooit vol. Als hij lang wordt, worden feiten en regels die The Machine al drie weken niet heeft gebruikt verplaatst naar **Opzijgezet**. Met **Terughalen** zet je er een terug. Een feit dat je hebt bewerkt of teruggehaald, blijft staan. Een opzijgezet feit helpt nog steeds wanneer een to-do of chat erover gaat. Een beëindigd feit wordt alleen als geschiedenis gebruikt, nooit als informatie over hoe het nu zit.
+- Een notitie met dezelfde informatie als iets wat al is geleerd, maar dan anders verwoord, vervangt het bestaande item. Zo staat iets niet dubbel in de lijst. Met **Merge ongedaan maken** zet je de oude formulering terug. Je eigen bewerkingen worden nooit vervangen.
+- **Neem deze over**: heb je OpenClaw eerder gebruikt? Regels uit de notities (`MEMORY.md`, `USER.md`) die de moeite waard zijn om te bewaren, verschijnen bovenaan met het bestand waaruit ze komen. Vink aan wat je wilt bewaren en kies **Aangevinkte houden**. De regels worden dan feiten of regels, net als andere. Een feit over iemand in je Graph wordt naar diens pagina verplaatst. Een verjaardag wordt ook toegevoegd aan de routine Verjaardagen. Een feit over jou blijft bij Feiten. Kies **Rest afwijzen** om de overige regels definitief te verwijderen. De bestanden worden nooit gewijzigd. Er verschijnt niets als ze niets bevatten dat de moeite waard is.
+- **Wijzigingen**: wat The Machine heeft opgepikt uit je bewerkingen, afwijzingen en chats, telkens met **Ongedaan maken**. Bekijk [Schrijven](writing.md#it-keeps-learning).
+- **Beslissingen**: een tijdlijn van je keuzes bij to-do's.
+- **Gedeeld**: inzichten om te delen met het team van The Machine en stemmen die op je wachten, als die er zijn. Bekijk [Inzichten delen](share-learnings.md).
+- **Hoe het gaat**: vier cijfers over de afgelopen 30 dagen. Hoger is beter. Ze verschijnen nadat je 3 to-do's hebt beoordeeld, door er iets mee te doen of ze af te wijzen. Tot die tijd zie je hoeveel to-do's je tot nu toe hebt beoordeeld.
+  - **De moeite waard**: hoeveel van de to-do's die je hebt beoordeeld je hebt opgepakt (**Doe het**, verstuurd of afgerond), in plaats van afgewezen.
+  - **Meteen goed**: hoeveel van de to-do's waarmee je **Doe het** bent gestart geen correctie achteraf nodig hadden.
+  - **Afgerond**: hoeveel van de to-do's waarmee je **Doe het** bent gestart zijn afgerond zonder dat je vroeg om verder te gaan of het opnieuw te proberen.
+  - **Ongewijzigd verstuurd**: hoeveel van de concepten die je hebt verstuurd geen bewerking of **Wijzigingen vragen** vooraf nodig hadden.
+  - Elk cijfer wordt vergeleken met de 30 dagen ervoor. De grafiek toont voor de eerste twee weken een balk per dag, daarna een balk per week, tot maximaal 8 weken.
+  - **De moeite waard per bron**: hoeveel to-do's je per bron hebt opgepakt, zoals **E-mail**, **Door jou toegevoegd** (via **Nieuwe to-do**), **Telefoonmeldingen** of **The Machine zelf** (problemen zoals een fout).
+  - **Gemiste to-do’s**: één keer per week controleert The Machine een steekproef van berichten waarvoor geen to-do is gemaakt en schat hij hoeveel daarvan er waarschijnlijk wel een nodig hadden. Hij toont de berichten die hij vindt: met **Openen** of de regel zelf open je het bericht. Met **Echt gemist** of **Niet gemist** laat je weten of The Machine het goed had. **Echt gemist** maakt ook de to-do aan. Met **Ongedaan maken** maak je dat ongedaan; **Open to-do** brengt je naar de to-do. The Machine leert ervan en herkent vanaf dat moment vergelijkbare berichten. Je antwoorden maken het cijfer nauwkeuriger en blijven op je Machine. Dit verschijnt na de eerste wekelijkse controle.

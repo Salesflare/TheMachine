@@ -1,46 +1,49 @@
 ---
-title: Faire, et ce qui est envoyé
+title: Faire et ce qui est envoyé
 area: cards
-summary: Faire prépare le travail. Rien n’est envoyé, payé ou modifié tant que vous n’avez pas approuvé cette étape.
+summary: Faire prépare le travail. Rien n’est envoyé, payé ni modifié avant que vous approuviez cette étape.
 covers: do-it
 code: dashboard.html, next_actions.py, assistant.py
 order: 2
 translated: 6284dddb10c7b332
 ---
-## Ce que fait Faire
+## Ce que fait **Faire**
 
-**Faire** demande à votre Machine de préparer la tâche : rédiger la réponse, chercher des informations, remplir un formulaire. Elle utilise vos propres comptes et son propre navigateur, comme vous le feriez.
+**Faire** demande à votre Machine de préparer la tâche : rédiger une réponse, faire des recherches, remplir un formulaire. Elle utilise vos comptes et son propre navigateur, comme vous le feriez.
 
-Pendant qu'elle travaille dans son navigateur, la tâche et son chat montrent cette page en direct, aussi entre les étapes, jusqu'à ce qu'elle y ait fini. Cliquez sur l'image pour ouvrir le navigateur. Dans la tâche, elle s'ouvre en plus grand, avec **Arrêter** : un appui l'arrête tout de suite.
+Pendant qu’elle travaille dans son navigateur, la tâche et son chat affichent cette page en direct, même entre les étapes, jusqu’à ce qu’elle ait terminé. Cliquez sur l’image pour ouvrir le navigateur. Dans la tâche, le navigateur s’ouvre en grand et affiche **Arrêter** : une seule pression met immédiatement fin à l’exécution.
 
-Avant de rédiger une relance ou de passer la main, elle vérifie la conversation pour des réponses plus récentes, y compris d’un collègue. Si c’est déjà réglé, la tâche le dit. Quand elle a créé ou modifié un document ou une page, la tâche y mène directement.
+Avant une relance ou un transfert, elle vérifie s’il y a de nouvelles réponses, y compris celles d’un collègue. Si la tâche a déjà été traitée, elle vous le dit. Si elle a modifié un document ou une page, la tâche contient un lien vers celui-ci.
 
-## Rien ne part sans votre accord
+## Rien n’est envoyé sans votre accord
 
-- Une réponse revient sous forme de brouillon. **Vérifier et envoyer** l’ouvre, prête à modifier ; elle ne part que quand vous appuyez sur **Envoyer maintenant**.
-- Deux e-mails ou plus sur une tâche : dans sa discussion, un seul bouton les fait tous vérifier. Chacun s’affiche à son tour avec **Suivant**, et la dernière étape les envoie tous. Chacun n’apparaît comme envoyé qu’une fois vraiment parti.
-- Un e-mail s’ouvre tel qu’il sera, avec son gras, ses listes et ses liens. Un message Slack ou de chat est du texte brut : un lien apparaît avec ses mots et l’adresse entre crochets, et repart comme un lien.
-- **Demander des modifications** dans la même fenêtre : dites ce qu’il faut changer et votre Machine refait le brouillon.
+- Une réponse revient sous forme de brouillon. **Vérifier et envoyer** l’ouvre, prête à être modifiée ; elle n’est envoyée que lorsque vous appuyez sur **Envoyer maintenant**.
+- S’il y a au moins deux e-mails dans une tâche, un bouton dans son chat vous permet de les vérifier tous. Chacun s’affiche à son tour avec **Suivant**, et la dernière étape les envoie tous. Chaque e-mail n’apparaît comme envoyé qu’une fois qu’il l’a été.
+- Un e-mail s’affiche tel qu’il apparaîtra, avec le texte en gras, les listes et les liens. Un message Slack ou un message de chat s’affiche en texte brut.
+- **Demander des modifications** dans la même fenêtre : indiquez ce qu’il faut changer et votre Machine refait le brouillon.
 - Une réponse répond au dernier e-mail du fil, et la source de la tâche ouvre cet e-mail.
-- Une étape qui engage quelque chose, comme valider, payer ou réserver, s’arrête et attend votre confirmation.
-- Dans le chat d’une tâche, un brouillon n’est jamais envoyé dans le message qui l’a rédigé.
-- Tant que vous n’avez pas approuvé, la tâche attend sous **Pour vous** avec **Préparée**, et la liste dit une fois que rien ne part avant votre accord. Une tâche qui a encore besoin de vous indique **Vous attend**, jamais terminé. Elle dit qu’un brouillon est parti seulement une fois qu’il l’est.
-- Un long brouillon montre ses 3 premières lignes. **Afficher plus** ouvre la suite ; **Vérifier et envoyer** montre toujours tout.
+- Une étape qui valide une action, comme envoyer un formulaire, payer ou réserver, attend votre confirmation ou que vous le demandiez dans le chat. La confirmation d’une étape laisse les autres en attente : la tâche ne se ferme que lorsque toutes les étapes sont terminées.
+- Dans le chat d’une tâche, un brouillon n’est jamais envoyé dans le même message que celui qui l’a rédigé.
+- Tant que vous ne l’avez pas approuvé, la tâche reste dans **Pour vous** avec le statut **Préparée**. La liste rappelle que rien n’est envoyé avant votre approbation. Si la tâche a encore besoin de vous, son statut est **Vous attend**. Elle indique qu’un brouillon a été envoyé uniquement une fois qu’il l’a été.
+- Un long brouillon affiche ses 3 premières lignes. Appuyez sur **Afficher plus** ou sur le texte pour voir la suite. **Vérifier et envoyer** affiche toujours le texte en entier.
 
-Ce qu’elle peut envoyer dépend de la source : un e-mail, un message direct Slack, un message WhatsApp, Telegram, LinkedIn ou X. L’article de chaque connexion dit ce qu’elle peut envoyer.
+Selon la source, elle peut envoyer un e-mail, un message privé Slack ou un message WhatsApp, Telegram, LinkedIn ou X. L’article de chaque connexion indique ce qu’elle peut envoyer.
 
 ## Modifier un e-mail
 
-- Utilisez les boutons au-dessus du texte, ou `Ctrl B` pour le gras, `Ctrl I` pour l’italique et `Ctrl K` pour un lien (`⌘` sur un Mac). Des boutons ajoutent aussi une liste à puces ou une liste numérotée.
-- Un lien a besoin d’une adresse qui commence par https://. Le texte collé arrive brut, sans ses couleurs ni ses images.
-- La mise en forme qu’un e-mail ne peut pas porter est retirée avant tout envoi, et le message montre comment il partira. Appuyez de nouveau sur **Envoyer maintenant** pour l’envoyer.
-- L’e-mail part exactement comme affiché, avec une copie en texte brut pour les apps de messagerie qui n’affichent pas la mise en forme.
+- Utilisez les boutons au-dessus du texte, ou `Ctrl B` pour le gras, `Ctrl I` pour l’italique et `Ctrl K` pour un lien (`⌘` sur Mac). Des boutons permettent aussi de créer des listes à puces et des listes numérotées.
+- Un lien doit commencer par https://. Le texte collé est inséré sans mise en forme, couleurs ni images.
+- La mise en forme qui ne peut pas être conservée dans un e-mail est d’abord supprimée. Le message vous montre alors le résultat. Appuyez de nouveau sur **Envoyer maintenant** pour l’envoyer.
+- L’e-mail est envoyé exactement comme il s’affiche, avec une copie en texte brut pour les applications de messagerie qui ne prennent pas en charge la mise en forme.
 
-## Quand elle ne peut pas
+## Si elle ne peut pas le faire
 
-- « Ceci ne peut pas être envoyé d’ici. » veut dire que vous copiez le brouillon avec **Copier le brouillon** et l’envoyez vous-même.
-- **Attend votre aide** veut dire qu’elle vous pose une question : **Répondre**. **Bloqué** veut dire qu’elle s’est arrêtée sans question, ou qu’elle a tourné trop longtemps et a été arrêtée ; la tâche dit pourquoi.
-- Elle demande plus d’une chose ? Chaque question a ses propres choix ou un champ court, parfois déjà rempli avec la réponse de la dernière fois. **Répondre** envoie tout ensemble.
-- Il lui manque quelque chose que vous seul avez ? Elle vous le demande et ne rédige que ce qui peut partir sans, comme une réponse qui confirme une date. Elle ne rédige pas de réponse qui dit seulement que cela arrive.
-- **Réessayer** la relance une fois. **Demander des modifications** demande autre chose. Sur une tâche bloquée, **Réessayer** passe en premier et **Détails** montre ce qu’elle a essayé.
-- Un code envoyé sur votre téléphone, ou une autorisation qui manque, l’arrête. La tâche dit en une ligne ce qu’il faut, comme le code dans son navigateur ou l’accès à un fichier, puis **Continuer** ou **Réessayer**. Une source qui n’est pas connectée, comme Slack : **Connecter Slack** passe en premier sur la tâche, et elle reprend d’elle-même dès que Slack est connecté.
+- « Impossible d’envoyer ceci depuis ici. » signifie que vous devez copier le brouillon avec **Copier le brouillon** et l’envoyer vous-même.
+- **Attend votre aide** signifie qu’elle a une question : **Répondre**. **Bloqué** signifie qu’elle s’est arrêtée sans poser de question ; la tâche vous explique pourquoi.
+- Vous avez demandé plusieurs choses ? Chaque question a ses propres choix ou un champ à remplir, parfois prérempli avec votre dernière réponse. **Répondre** les envoie toutes ensemble.
+- Il manque une information que vous seul avez ? Elle vous la demande et ne rédige que ce qui peut être fait sans cette information, par exemple une réponse pour confirmer une date. Elle ne rédige pas une réponse qui dit seulement que l’information suivra.
+- **Réessayer** relance la tâche. **Demander des modifications** permet de demander autre chose. Pour une tâche bloquée, **Réessayer** apparaît en premier, et **Détails** affiche ce qu’elle a essayé de faire.
+- Pendant la préparation, la tâche indique en une phrase simple ce que fait votre Machine, par exemple « Lecture des e-mails », « Lecture du PDF » ou « Rédaction du brouillon ». Les étapes détaillées restent dans le chat de la tâche.
+- Une tâche marquée **En préparation…** démarre en quelques secondes. Si elle doit attendre, elle vous indique pourquoi et quand elle devrait démarrer, par exemple « Démarre après la tâche en cours ».
+- Un site vous demande de vous connecter ? Appuyez sur **Se connecter**, ou sur **Ouvrir le navigateur** pour vous connecter dans le navigateur. Elle reprend ensuite automatiquement. Si ce n’est pas le cas, appuyez sur **Continuer**.
+- Un code envoyé sur votre téléphone ou une autorisation manquante l’arrête. La tâche vous indique ce dont elle a besoin, puis affiche **Continuer** ou **Réessayer**. Si une source n’est pas connectée, comme Slack, **Connecter Slack** s’affiche dans la tâche. Elle reprend automatiquement une fois Slack connecté.

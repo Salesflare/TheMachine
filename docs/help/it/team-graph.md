@@ -1,113 +1,116 @@
 ---
 title: Graph del team
 area: fleet
-summary: Sperimentale. Condividi il lavoro con i clienti con la tua Fleet di lavoro, come un CRM. Cosa viene condiviso, cosa mai, e come tenere qualcosa privato.
+summary: Sperimentale. Condividi il lavoro con i clienti con la tua Fleet di lavoro, come in un CRM. Scopri cosa viene condiviso, cosa resta sempre privato e come mantenere qualcosa riservato.
 covers: team-graph
 code: shared_graph.py, fleet_trust.py, dashboard.html
 order: 2
 translated: fc842bc761a3ab17
 ---
-In una Fleet di lavoro, la tua Machine può condividere il lavoro con i clienti con le Machine dei tuoi colleghi, come un CRM condiviso. È **Sperimentale**: è nuovo e cambia ancora, quindi parte disattivato.
+In una Fleet di lavoro, la tua Machine può condividere il lavoro con i clienti con le Machines dei tuoi compagni di team, come in un CRM condiviso. È **Sperimentale** ed è disattivata per impostazione predefinita.
 
-## Attivalo
+## Attivarla
 
-Un admin attiva **Condividi il Graph in questo Fleet** in **Cosa è condiviso** e conferma che l'azienda può condividere questa posta e lo ha detto alle sue persone. Tutti vedono se è attivo. Una Fleet che condivideva già prima resta attivo. Poi ogni persona controlla cosa verrebbe condiviso e tocca **Inizia ora**. Prima di allora non parte niente.
+Un admin attiva **Condividi il Graph in questa Fleet** in **Cosa è condiviso** e conferma che l'azienda può condividere queste email e che lo ha comunicato ai suoi dipendenti. Tutti possono vedere se è attiva.
+
+Anche rendere obbligatori l'email o il calendario di lavoro di tutti attiva la condivisione. A quel punto, ognuno sceglie cos'altro condividere in **Le tue connessioni**. La prima condivisione di un nuovo compagno di team attende un'ora, così può decidere prima cosa mantenere privato.
 
 ## Le tue connessioni
 
-**Le tue connessioni** in **Cosa è condiviso** elenca ognuna con un interruttore. Quelle di lavoro sul dominio della tua Fleet partono attive. Una sul dominio di un'altra azienda parte disattivata, anche se è un account di lavoro: dice "Altra azienda, non condivisa". Puoi attivarla. Quelle personali non vengono mai condivise. Se ne disattivi una, ciò che ha condiviso viene ritirato.
+**Le tue connessioni** in **Cosa è condiviso** elenca ogni connessione con un interruttore. Quelle di lavoro con il dominio della tua Fleet sono attive per impostazione predefinita. Quelle con il dominio di un'altra azienda sono disattivate e indicate come «Altra azienda, non condivisa». Le connessioni personali non vengono mai condivise. Se ne disattivi una, i dati che ha condiviso vengono ritirati.
 
-Il calendario di un'altra persona che leggi con il tuo accesso compare con il suo nome, come connessione personale.
+Il calendario di un'altra persona, che consulti accedendo con il tuo account, compare con il suo nome ed è indicato come personale.
 
-Dentro una connessione attiva, ogni conversazione viene comunque classificata. Lo Slack della tua azienda conta come solo tra colleghi, anche i messaggi diretti: solo una conversazione Slack Connect con un'altra azienda può essere una conversazione con un cliente. Le conversazioni personali e quelle solo tra colleghi restano fuori. La posta sensibile e quella automatica restano fuori dalla condivisione automatica; le tue scelte esplicite di condivisione possono prevalere su queste classificazioni.
+Anche all'interno di una connessione attiva, ogni conversazione viene classificata. Lo Slack della tua azienda conta solo come conversazione tra colleghi; solo una chat Slack Connect con un'altra azienda può essere lavoro con i clienti. Le conversazioni personali, solo tra colleghi, sensibili e automatiche restano escluse, a meno che tu non ne condivida una manualmente.
 
 ## Richiesto dalla Fleet
 
-Un admin può rendere obbligatorie per tutti l'**Email di lavoro** e il **Calendario di lavoro** sul dominio della Fleet, in **Richiesto dalla Fleet**, dopo aver confermato che l'azienda lo ha detto alle sue persone. La posta di lavoro appartiene all'azienda, come in qualsiasi CRM. Queste connessioni mostrano poi "Richiesto da" la tua Fleet e non si possono disattivare. Le conversazioni che tieni private restano private.
+Un admin può rendere obbligatori per tutti **Email di lavoro** e **Calendario di lavoro** con il dominio della Fleet, in **Richiesto dalla Fleet**, dopo aver confermato che l'azienda lo ha comunicato ai suoi dipendenti. Le email di lavoro appartengono all'azienda, come in qualsiasi CRM. Le connessioni obbligatorie sono indicate come «Richiesto dalla Fleet» e non possono essere disattivate. Le conversazioni che mantieni private restano private.
 
-## Cosa va al team
+## Cosa viene condiviso con il team
 
-- Conversazioni con i clienti: email di lavoro con persone esterne alla tua azienda, con i loro allegati.
-- Persone, organizzazioni e progetti di lavoro, con una breve cronologia. Nella **Cronologia** di una pagina, **Team** mostra ogni evento una sola volta, nella tua lingua se la Machine di un collega l'ha scritto così, con tutti quelli da cui arriva: "tramite Sam, Kim e Lee".
-- Una piccola copia del logo di un'organizzazione e della foto di lavoro di una persona: da una ricerca, Slack, LinkedIn, X, Salesflare o Microsoft. Mai un'immagine dai contatti Google, da WhatsApp, Telegram o Facebook, né un'immagine che hai cambiato o tolto.
-- Su una bacheca del team, anche le riunioni di un progetto, le note di Zoom, le conversazioni di Intercom e le chat, perché sono sulla bacheca. Quelle sensibili, come le trattative, restano fuori, come le chat solo tra colleghi.
+- Conversazioni con i clienti: email di lavoro con persone esterne all'azienda, inclusi gli allegati.
+- Persone, organizzazioni e progetti di lavoro, con una breve cronologia. Nella **Cronologia** di una pagina, **Team** mostra ogni evento una sola volta, nella lingua in cui la Machine di un compagno di team l'ha scritto, insieme a tutte le persone coinvolte: «tramite Sam, Kim e Lee».
+- Una piccola copia del logo di un'organizzazione e della foto di lavoro di una persona, presa da una ricerca, Slack, LinkedIn, X, Salesflare o Microsoft. Mai una foto dai contatti Google, WhatsApp, Telegram o Facebook, né una foto che hai modificato o rimosso.
+- Su una bacheca del Team, le riunioni di un progetto, le note di Zoom, le conversazioni di Intercom e le chat. Quelle sensibili, come le trattative, e le chat solo tra colleghi restano escluse.
+- Il numero e le date delle attività per il [brief del team](fleet.md#brief-requests) di un compagno di team.
+- Le risposte a chi chiede chi conosce una persona o vuole informazioni sulle riunioni. Vedi [Fleet](fleet.md#answered-by-itself-in-a-work-fleet).
+- [Apprendimenti del team](fleet.md#team-learnings): come lavora il team, senza nomi né dettagli dei clienti.
 
-## Fuori dalla condivisione automatica
+## Cosa non viene condiviso automaticamente
 
-- Conversazioni sensibili: acquisto o vendita di un'azienda, investimenti, valutazioni, trattative, HR, assunzioni e recruiter, questioni legali, salute, denaro, sicurezza. Nemmeno il fatto che esistano.
-- Posta automatica: ricevute, fatture, avvisi, newsletter e le fatture della tua azienda con i suoi fornitori.
-- Conversazioni interne (solo tra colleghi), posta personale e tutto ciò che arriva da un account personale. Ciò che è personale non viene mai condiviso, nemmeno se tocchi Team.
-- Tutto ciò che hai segnato con **Mantieni privato**, e le bacheche e i progetti impostati su Solo tu.
-- Qualcuno che per te è Personale, come la tua famiglia o i tuoi amici, e la sua posta. Un progetto in cui c’è parte comunque con la sua bacheca, senza quella persona.
+- Conversazioni sensibili: acquisto o vendita di un'azienda, investimenti, trattative, risorse umane e assunzioni, questioni legali, salute, denaro e sicurezza. Non viene condiviso nemmeno il fatto che esistano.
+- Email automatiche: ricevute, fatture, avvisi, newsletter e fatture dei fornitori.
+- Conversazioni solo tra colleghi, email personali e qualsiasi contenuto proveniente da un account personale. I contenuti personali non vengono mai condivisi, nemmeno quando tocchi Team.
+- Qualsiasi elemento che hai contrassegnato con **Mantieni privato**, e le bacheche e i progetti impostati su Only you.
+- Una persona che per te è personale, come un familiare o un amico, e le sue email. Un progetto a cui partecipa viene comunque condiviso con la sua bacheca, ma senza includerla.
 
-Ogni conversazione viene valutata da sola, in base al suo argomento. La classificazione può sbagliare; controlla cosa verrebbe condiviso e usa Mantieni privato per correggerla. La tua scelta esplicita di Team o una condivisione con colleghi specifici può prevalere su una classificazione sensibile; controlla i destinatari prima di condividere.
+Ogni conversazione viene classificata in base al contenuto, ma la classificazione può essere sbagliata. Controlla cosa verrebbe condiviso e usa Mantieni privato per correggere eventuali errori. Se condividi una conversazione con il team o con persone specifiche, la condivisione prevale sull'etichetta di contenuto sensibile: controlla quindi chi può vederla.
 
-## Condividi una bacheca con persone scelte
+## Condividere una bacheca con persone specifiche
 
-Nel menu **⋯** di una bacheca, tocca **Condividi bacheca…** e scegli i colleghi. Solo loro ricevono i suoi progetti con la cronologia completa: conversazioni email, riunioni e le loro note di Zoom, conversazioni di Intercom, chat, attività e spostamenti. Vengono condivisi anche quelli sensibili, come le trattative.
+Nel menu **⋯** di una bacheca, tocca **Condividi bacheca…** e scegli i compagni di team. Solo loro riceveranno i progetti della bacheca con le cronologie complete: email, riunioni e note di Zoom, conversazioni di Intercom, chat, attività e spostamenti. Verranno condivisi anche gli elementi sensibili, come le trattative.
 
-Le conversazioni personali e quelle solo tra colleghi restano fuori, e così le persone in Famiglia o Amici e la posta automatica quando è condivisa solo la bacheca. Restano fuori anche le connessioni che non hai selezionato.
+Le conversazioni personali e quelle solo tra colleghi restano escluse, così come i tuoi familiari e amici, le email automatiche e le connessioni che non hai selezionato.
 
-- Un progetto aggiunto alla bacheca in seguito viene condiviso anche lui. Uno tolto dalla bacheca viene ritirato.
-- Togli qualcuno, o non scegliere nessuno, e la bacheca viene ritirata dalla sua Machine.
-- Anche una singola conversazione può andare a persone scelte: tocca la sua etichetta, poi **Condividi con…**. Questa scelta esplicita può includere posta di lavoro sensibile o automatica. Le conversazioni personali e quelle solo tra colleghi non si possono condividere.
+- Anche un progetto aggiunto in seguito alla bacheca verrà condiviso. Se viene spostato fuori dalla bacheca, la condivisione viene ritirata.
+- Se rimuovi una persona o non selezioni nessuno, il contenuto viene ritirato dalla sua Machine.
+- Per condividere una singola conversazione con persone specifiche, tocca la sua etichetta e poi **Condividi con…**. Può trattarsi di email di lavoro sensibili o automatiche, ma mai di conversazioni personali o solo tra colleghi.
 
-## Non è sicura? Aspetta
+## Se hai dubbi, aspetta
 
-Quando la tua Machine non è sicura, non condivide. Quelle conversazioni aspettano in **Condividerle?**, raggruppate per tipo (come «Scambi con partner e listing»), ogni gruppo con una scelta suggerita:
+Se la tua Machine non è sicura, non condivide. Le conversazioni in attesa compaiono in **Condividere questi?**, raggruppate per tipo, ad esempio «Scambi con partner e annunci», ognuna con un suggerimento:
 
-- **Condividi con il team** arriva a tutti nella Fleet.
-- **Condividi con…** arriva solo ai colleghi che scegli, per esempio un membro del consiglio per i colloqui con investitori. Il resto del team non lo riceve.
-- **Mantieni privato** lo tiene a te.
+- **Condividi con il team**: tutti nella Fleet.
+- **Condividi con…**: solo i compagni di team che scegli, ad esempio un membro della bacheca per le trattative con gli investitori.
+- **Mantieni privato**: il contenuto resta visibile solo a te.
 
-Un tocco decide per tutto il gruppo. Apri un gruppo per vedere le sue conversazioni e togli la spunta a quelle da decidere a parte.
+Basta un tocco per decidere per un intero gruppo. Apri un gruppo per deselezionare le conversazioni che vuoi decidere una alla volta.
 
-Le conversazioni sull'acquisto, la vendita o l'investimento in un'azienda e le questioni del consiglio contano come riservate, quindi non aspettano qui. Listing, integrazioni e il resto del lavoro di tutti i giorni con un'azienda partner sono lavoro per clienti.
+Le conversazioni sull'acquisto, la vendita o l'investimento in un'azienda e le questioni del consiglio di amministrazione sono sensibili, quindi non compaiono qui in attesa. Il lavoro quotidiano con un'azienda partner è lavoro con i clienti.
 
 ## Prima della prima condivisione
 
-Apri **Fleet**, poi **Cosa è condiviso**. Elenca le conversazioni con i clienti che verrebbero condivise, per organizzazione. Tocca **Mantieni privato** su quelle che vuoi, poi **Inizia ora**.
-
-Finché non inizi, la tua Machine te lo ricorda ogni pochi giorni, durante il tuo orario di lavoro. Gli admin vedono chi non ha ancora iniziato.
+La prima condivisione avviene automaticamente un'ora dopo che la tua Machine te lo comunica. In quell'ora, apri **Fleet** e poi **Cosa è condiviso** per vedere, organizzate per azienda, le conversazioni con i clienti che verrebbero condivise. Tocca **Mantieni privato** su quelle che vuoi escludere oppure **Condividi ora** per inviarle subito. Gli admin possono vedere chi non ha ancora condiviso.
 
 ## Cosa è condiviso
 
-**Fleet** › **Cosa è condiviso** mostra tutto in un posto: i conteggi per tipo, ogni conversazione condivisa con il motivo, quelle in attesa in **Condividerle?** e ciò che tieni privato. In **Impostazioni** c'è una scorciatoia, e anche l'etichetta su ogni conversazione ci porta. Tocca l’oggetto di una conversazione per leggerla.
+**Fleet** › **Cosa è condiviso** mostra tutto: il numero di elementi per tipo, ogni conversazione condivisa e il motivo della condivisione, quelle in **Condividere questi?** e ciò che mantieni privato. Tocca un oggetto per leggere la conversazione. Anche **Impostazioni** e l'etichetta di ogni conversazione rimandano qui.
 
-Una nuova conversazione con un cliente aspetta un'ora prima di partire, così hai tempo per cambiare idea.
+Una nuova conversazione con un cliente resta in attesa per un'ora prima di essere condivisa, così hai il tempo di cambiare idea.
 
-## Annulla la condivisione
+## Annullare la condivisione
 
-Tocca l'etichetta **Team** su una conversazione, poi **Non condividere più**. La tua Machine lo dice alla Machine di ogni collega, e ognuna elimina la conversazione, i suoi allegati e le sue righe nella cronologia. Una Machine spenta lo fa quando torna attiva. Qualcuno potrebbe averla già letta.
+Tocca l'etichetta **Team** su una conversazione e poi **Annulla condivisione**. La Machine di ogni compagno di team elimina la conversazione, i suoi allegati e le relative voci della cronologia. Se è offline, lo farà quando tornerà online. Qualcuno potrebbe averla già letta.
 
-**Mantieni privato** su una persona, un'organizzazione o un progetto annulla la condivisione di tutto allo stesso modo.
+Usa **Mantieni privato** su una persona, un'organizzazione o un progetto per annullarne tutta la condivisione.
 
-Se tieni private due conversazioni con la stessa azienda, la tua Machine ti chiede una volta: tenere sempre private le conversazioni di quell'azienda?
+Se mantieni private due conversazioni con la stessa azienda, la tua Machine ti chiederà una volta se vuoi mantenere sempre privata quell'azienda.
 
-## Chi lo vede
+## Chi può vedere i contenuti
 
-Solo le Machine dei tuoi colleghi. Tutto è crittografato end-to-end, sigillato per la Machine di ogni collega. The Machine Network lo inoltra soltanto e non può leggerlo.
+Solo le Machines dei tuoi compagni di team. I contenuti sono crittografati end-to-end. The Machine Network li trasmette, ma non può leggerli.
 
-## Ingresso e nuovi dispositivi
+## Accesso e nuovi dispositivi
 
-Un admin fa entrare ogni persona nella Fleet una volta. Dopo, condividere con lei non richiede altre conferme. La richiesta compare in **Attività** per ogni admin, e la prima risposta vale per tutto il team. I membri non la ricevono mai.
+Un admin autorizza ogni persona una sola volta. La richiesta compare in **Attività** per tutti gli admin e vale la prima risposta. Dopodiché, non servono altre conferme per condividere.
 
-Fino ad allora, il Graph e la Fleet della nuova persona mostrano quali admin sta aspettando. **Miei** e **Team** compaiono pochi secondi dopo la conferma, senza ricaricare.
+Fino ad allora, il Graph e la Fleet della nuova persona indicano quali admin devono ancora rispondere. **Miei** e **Team** compaiono pochi secondi dopo l'autorizzazione, senza dover ricaricare la pagina.
 
-Una nuova Machine di qualcuno che è già dentro riceve il Graph del team dopo 24 ore. Nel frattempo gli admin la vedono e possono toccare **Non è sua** per tenerla fuori.
+Una nuova Machine di una persona già presente riceve il Graph del team dopo 24 ore. Nel frattempo, gli admin possono toccare **Non suo** per escluderla.
 
 ## Quando qualcuno se ne va
 
-Da quel momento non riceve più niente di nuovo. Ciò che ha condiviso resta al team. Un admin può anche **Escludere** qualcuno, e **Condividi di nuovo** più tardi.
+Da quel momento non riceve più nulla di nuovo. Quello che ha condiviso resta al team. Un admin può anche **Escludi** una persona e **Condividi di nuovo** in seguito.
 
-## Disattivalo per tutti
+## Disattivare la condivisione per tutti
 
-Un admin può disattivare **Condividi il Graph in questo Fleet** in **Cosa è condiviso**. Tutti vedono se è attivo. Quando è disattivato, non parte niente di nuovo.
+Un admin disattiva **Condividi il Graph in questa Fleet** in **Cosa è condiviso**. Non verranno condivisi nuovi contenuti.
 
-**Disattiva** lascia ciò che è già sulle Machine dei colleghi. **Disattiva e rimuovi i dati condivisi** fa eliminare a ogni Machine ciò che ha ricevuto. Quando la condivisione torna attiva, ogni persona la ricontrolla prima.
+**Disattiva** conserva ciò che i compagni di team hanno già ricevuto. **Disattiva e rimuovi i dati condivisi** chiede a ogni Machine di eliminarlo. Quando la condivisione viene riattivata, ognuno deve prima ricontrollare i contenuti.
 
-## Smetti di condividere il tuo lavoro
+## Smettere di condividere il proprio lavoro
 
-Disattiva le tue connessioni in **Le tue connessioni**, a meno che il Fleet non le richieda. Ciò che hanno condiviso viene ritirato.
+Disattiva le tue connessioni in **Le tue connessioni**, a meno che non siano obbligatorie per la Fleet. I contenuti che hanno condiviso verranno ritirati.
 
 Vedi anche [Fleet](fleet.md) e [Sicurezza e privacy](security-and-privacy.md).

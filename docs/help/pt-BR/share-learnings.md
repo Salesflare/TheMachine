@@ -1,7 +1,7 @@
 ---
-title: Compartilhar aprendizados com a equipe
+title: Compartilhe aprendizados com a equipe
 area: security
-summary: No máximo uma vez por dia ela oferece alguns aprendizados gerais à equipe de The Machine, e vota em aprendizados de outras Machines. Nada pessoal.
+summary: No máximo uma vez por dia, sua Machine oferece alguns aprendizados gerais à equipe da The Machine e vota nos aprendizados de outras Machines. Nada pessoal.
 covers: share-learnings
 code: team_learnings.py, dashboard.html
 order: 3
@@ -9,50 +9,52 @@ translated: 8a7418cb4cb27e7b
 ---
 ## O que é
 
-No máximo uma vez por dia, quando há algo novo, ela transforma o que aprendeu com você desde a última vez em alguns aprendizados gerais que poderiam deixar a The Machine melhor para todo mundo. Por exemplo: "Rascunhos para pessoas que ainda não conhecem o contexto devem apresentá-lo primeiro." Ela nunca oferece o mesmo aprendizado duas vezes: nem um que você enviou, removeu ou retirou.
+No máximo uma vez por dia, quando há algo novo, sua Machine transforma o que aprendeu com você em alguns aprendizados gerais que podem ajudar a melhorar a The Machine para todo mundo. Por exemplo: "Rascunhos para pessoas que ainda não conhecem o contexto devem começar apresentando-o." Ela nunca oferece o mesmo aprendizado duas vezes.
 
-Cada aprendizado vem com 1 a 3 casos de uso: uma situação, o que você faz e o que deveria acontecer. Por exemplo: uma primeira resposta para um cliente que nunca ouviu falar de você; você abre o rascunho; ele diz quem você é antes do pedido. A equipe trabalha a partir deles, para que o que for lançado continue fiel à ideia original.
+Cada aprendizado inclui de 1 a 3 casos de uso: uma situação, o que você faz e o que deveria acontecer. Por exemplo: uma primeira resposta a um cliente que ainda não conhece você; você abre o rascunho; ele diz quem você é antes de fazer o pedido. A equipe desenvolve com base nesses casos.
 
-## O que vai, e o que nunca vai
+## O que é enviado e o que nunca é
 
-- Só o padrão geral, e um exemplo curto e inventado se ajudar.
-- Nomes, endereços de e-mail, links, números de telefone, datas e valores são tirados antes de você ver. Cada aprendizado diz o que foi tirado.
-- Os casos de uso são verificados com mais rigor: sem citações e sem nomes, nem mesmo os que ela não conhece. Um caso de uso que não passa fica de fora. Se você editar um, ele precisa passar pela mesma verificação antes de ir.
-- Ela foi feita para compartilhar aprendizados gerais, não as suas mensagens nem com quem você lida. O filtro pode deixar passar detalhes: revise o texto exato antes de **Enviar**.
-- Um log de erros só quando você marca **Adicionar o log de erros**. Revise o trecho também: o filtro faz o melhor possível.
+- Apenas o padrão geral, com um exemplo breve e inventado, se ajudar.
+- Nomes, endereços de e-mail, links, números de telefone, datas e valores são removidos antes de você ver o conteúdo. Cada aprendizado informa o que foi removido.
+- Os casos de uso passam por uma verificação mais rigorosa: sem citações e sem nomes. Os que não passam são excluídos, mesmo depois que você os edita.
+- A filtragem pode deixar passar detalhes, então leia o texto exato antes de tocar em **Enviar**.
+- Um log de erros só é enviado quando você marca **Adicionar o log de erros**. Leia esse trecho também.
 
 ## Quando ela pergunta
 
-Os aprendizados vão sozinhos, a não ser que você tenha desligado isso (veja abaixo). Quando ela pergunta, em **Aprendizado**, **Compartilhado**, uma nota curta pergunta "Compartilhar 3 aprendizados com a equipe da The Machine?" Toque em **Revisar** para ver exatamente o que seria enviado. Edite ou remova qualquer aprendizado ou caso de uso (cada aprendizado fica com pelo menos um caso de uso), depois toque em **Enviar**. Ou escolha **Agora não** ou **Nunca perguntar**. Uma oferta mais nova substitui a que você ainda não respondeu.
+Os aprendizados são enviados automaticamente, a menos que você desative essa opção (veja abaixo). Quando ela pergunta, aparece uma nota em **Aprendizado**, **Compartilhado** com a mensagem "Compartilhar 3 aprendizados com a equipe da The Machine?" Toque em **Revisar** para ver exatamente o que será enviado. Edite ou remova qualquer aprendizado ou caso de uso (cada aprendizado mantém pelo menos um) e toque em **Enviar**. Ou escolha **Agora não** ou **Nunca perguntar**. Uma nova oferta substitui uma que você ainda não respondeu.
 
-Tudo vai lacrado para a equipe e sai com um nome inventado, a não ser que você marque **Adicionar meu e-mail para a equipe poder responder**.
+O envio é sigiloso para a equipe e feito com um nome inventado, a menos que você marque **Adicionar meu e-mail para a equipe poder responder**.
 
-Outras Machines podem votar em um aprendizado que você compartilhou, sem saber quem enviou. Seu e-mail nunca vai junto.
+Outras Machines podem votar em um aprendizado que você compartilhou, sem saber quem o enviou.
 
-## Enviar automaticamente
+## Envio automático
 
-**Enviar aprendizados automaticamente** em Configurações, Segurança vem ligado por padrão. Novos aprendizados vão sem perguntar, verificados do mesmo jeito. Desligue para ela perguntar toda vez. Se você já desligou antes, continua desligado.
+A opção **Enviar aprendizados automaticamente**, em Configurações, Segurança, vem ativada por padrão. Os novos aprendizados são enviados sem perguntar, com a mesma verificação. Desative-a para responder a cada vez. Se você já a desativou antes, ela continua desativada.
 
-Para aprendizados das suas tarefas de Pessoal, ela continua perguntando antes. Se você já tinha ativado antes, eles também vão sozinhos, como você escolheu.
+Para tarefas pessoais, a Machine ainda pergunta antes de enviar os aprendizados. Se você mesmo ativou essa opção antes, eles também são enviados automaticamente, conforme sua escolha.
 
-Cada aprendizado enviado aparece em Configurações, **Atividade**, e em Fleet, **Atividade**, exatamente como foi. Toque em **Retirar** e a equipe não o vê mais.
+Cada aprendizado enviado aparece, exatamente como foi enviado, em Configurações, **Atividade**, e em Fleet, **Atividade**. Toque em **Retirar** para que a equipe não o veja mais.
 
-Seu e-mail e os logs de erros nunca vão sozinhos. **Cuidadoso**, uma Work Fleet Cuidadosa, ou desligar **Oferecer compartilhar aprendizados** interrompe isso. Ligado de novo, ela volta a perguntar toda vez.
+Seu e-mail e os logs de erros nunca são enviados automaticamente. O modo **Cuidadoso**, uma Work Fleet no modo **Cuidadoso** ou a desativação de **Oferecer compartilhar aprendizados** impede o envio automático. Ao reativar, ela volta a perguntar a cada vez.
 
-## Desligar
+## Desativar
 
-Para ela parar de perguntar, desative **Oferecer compartilhar aprendizados** em Configurações, Segurança. Veja [Níveis de segurança](security-levels.md). Isso precisa da [The Machine Network](/network).
+Desative **Oferecer compartilhar aprendizados** em Configurações, Segurança. Consulte [Níveis de segurança](security-levels.md). O compartilhamento precisa da [The Machine Network](/network).
+
+O mesmo controle desativa os [aprendizados da equipe](fleet.md#team-learnings) da sua Work Fleet e retira os que sua Machine compartilhou.
 
 ## Votação
 
-Aprendizados que outras Machines compartilharam também chegam à sua. Uma vez por dia, uma verificação rápida faz uma pergunta: isso teria mudado algo na sua Machine na última semana? Ela envia de volta só um voto. Nada sobre você vai junto. Os seus próprios aprendizados nunca voltam para você votar.
+Os aprendizados de outras Machines também chegam à sua. Uma vez por dia, uma breve pergunta aparece: isso teria mudado alguma coisa na sua Machine na última semana? Só o voto é enviado. Você nunca recebe de volta os seus próprios aprendizados.
 
-Um voto útil ou não relevante precisa de um caso concreto da sua última semana: uma tarefa ou algo que você pediu no chat dela, contado de forma genérica e verificado como um caso de uso. Sem ele, sua Machine se abstém e o voto não conta. Em uma semana sem atividade, ela não vota.
+Para votar que um aprendizado é útil ou não é relevante, é preciso indicar um caso concreto da última semana: uma tarefa ou algo que você pediu no chat da sua Machine, descrito em termos gerais e verificado como um caso de uso. Sem um caso, sua Machine se abstém e o voto não conta. Se não houver atividade durante uma semana, não há votação.
 
-A equipe vê os aprendizados ordenados por votos e escolhe o que entra na The Machine para todo mundo. Nada muda sozinho.
+A equipe classifica os aprendizados pelos votos de utilidade e escolhe quais serão incluídos na The Machine para todo mundo. Nada muda automaticamente.
 
-**Votar em aprendizados de outras Machines** em Configurações, Segurança tem três opções:
+A opção **Votar em aprendizados de outras Machines**, em Configurações, Segurança, tem três opções:
 
-- **Ativado**, o padrão: ela vota sozinha.
-- **Perguntar antes**: cada voto espera por você em um único quadro em **Aprendizado**, **Compartilhado**, com o aprendizado e o voto como seriam enviados. Envie ou pule, um de cada vez ou todos de uma vez. Não há tarefa nem notificação para isso. Um voto que você deixar de lado não é enviado depois de 14 dias.
-- **Desativado**: sem votos, e nada do que está esperando é enviado.
+- **Ativado**, por padrão: sua Machine vota automaticamente.
+- **Perguntar antes**: os votos ficam aguardando sua aprovação em **Aprendizado**, **Compartilhado**, cada um com o aprendizado e o voto. Envie ou ignore um por um ou todos de uma vez. Não há tarefa nem notificação. Os votos que você deixar pendentes expiram após 14 dias.
+- **Desligada**: não há votação, e nada que esteja aguardando será enviado.

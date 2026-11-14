@@ -1,58 +1,60 @@
 ---
 title: Condividi gli apprendimenti con il team
 area: security
-summary: Al massimo una volta al giorno propone qualche apprendimento generale al team di The Machine, e vota gli apprendimenti di altre Machine. Niente di personale.
+summary: Al massimo una volta al giorno, ti propone alcuni apprendimenti generali da condividere con il team di The Machine e ti fa votare gli apprendimenti di altre Machine. Nessun dato personale.
 covers: share-learnings
 code: team_learnings.py, dashboard.html
 order: 3
 translated: 8a7418cb4cb27e7b
 ---
-## Cos'è
+## Cos’è
 
-Al massimo una volta al giorno, quando c’è qualcosa di nuovo, trasforma ciò che ha imparato da te dall’ultima volta in qualche apprendimento generale che potrebbe migliorare The Machine per tutti. Per esempio: "Le bozze per chi non conosce ancora il contesto dovrebbero prima presentarlo." Non propone mai due volte lo stesso apprendimento: né uno inviato, né uno rimosso o ritirato.
+Al massimo una volta al giorno, se c’è qualcosa di nuovo, la tua Machine trasforma ciò che ha imparato da te in alcuni apprendimenti generali che potrebbero migliorare The Machine per tutti. Per esempio: «Le bozze per chi non conosce ancora il contesto dovrebbero introdurlo per prima cosa». Non propone mai due volte lo stesso apprendimento.
 
-Ogni apprendimento ha da 1 a 3 casi d'uso: una situazione, cosa fai tu e cosa dovrebbe succedere. Per esempio: una prima risposta a un cliente che non ti conosce; apri la bozza; la bozza dice chi sei prima della richiesta. Il team ci lavora sopra, così ciò che viene rilasciato resta fedele all'intenzione.
+Ogni apprendimento include da 1 a 3 casi d’uso: una situazione, cosa fai e cosa dovrebbe succedere. Per esempio: una prima risposta a un cliente che non ti conosce; apri la bozza; prima della richiesta, la bozza spiega chi sei. Il team li usa come riferimento.
 
-## Cosa parte e cosa non parte mai
+## Cosa viene condiviso e cosa no
 
-- Solo lo schema generale, e un breve esempio inventato se aiuta.
-- Nomi, indirizzi email, link, numeri di telefono, date e importi vengono tolti prima che tu lo veda. Ogni apprendimento dice cosa è stato tolto.
-- I casi d'uso hanno un controllo più severo: niente citazioni e niente nomi, anche quelli che non conosce. Un caso d'uso che non passa viene escluso. Se ne modifichi uno, deve passare lo stesso controllo prima di poter partire.
-- È pensato per condividere apprendimenti generali, non i tuoi messaggi o le persone con cui hai a che fare. Il filtro può lasciarsi sfuggire dei dettagli: rileggi il testo esatto prima di **Invia**.
-- Un log degli errori solo se spunti **Aggiungi il log degli errori**. Rileggi anche l'estratto: il filtro fa del suo meglio.
+- Solo lo schema generale, con un breve esempio inventato se può essere utile.
+- Nomi, indirizzi email, link, numeri di telefono, date e importi vengono rimossi prima che tu possa vederlo. Ogni apprendimento indica cosa è stato rimosso.
+- I casi d’uso vengono controllati con più attenzione: niente citazioni e niente nomi. Quelli che non superano il controllo vengono esclusi, anche dopo che li hai modificati.
+- Il filtro potrebbe non individuare alcuni dettagli, quindi leggi il testo esatto prima di toccare **Invia**.
+- Il log degli errori viene inviato solo se selezioni **Aggiungi il log degli errori**. Leggi anche quel testo.
 
-## Quando chiede
+## Quando ti chiede di condividere
 
-Gli apprendimenti partono da soli, a meno che tu non l'abbia disattivato (vedi sotto). Quando chiede, in **Apprendimento**, **Condiviso**, una breve nota chiede "Condividere 3 apprendimenti con il team di The Machine?" Tocca **Rivedi** per vedere esattamente cosa verrebbe inviato. Modifica o togli qualsiasi apprendimento o caso d'uso (ogni apprendimento tiene almeno un caso d'uso), poi **Invia**. Oppure scegli **Non ora** o **Non chiedere più**. Un'offerta più recente sostituisce quella a cui non hai ancora risposto.
+Gli apprendimenti vengono inviati automaticamente, a meno che tu non abbia disattivato questa opzione (vedi sotto). Quando ti chiede di condividerli, sotto **Apprendimento**, **Condiviso** compare una nota: «Vuoi condividere 3 apprendimenti con il team di The Machine?». Tocca **Rivedi** per vedere esattamente cosa verrebbe inviato. Modifica o rimuovi qualsiasi apprendimento o caso d’uso (ogni apprendimento deve mantenerne almeno uno), poi tocca **Invia**. In alternativa, scegli **Non ora** o **Non chiedere più**. Una nuova proposta sostituisce quella a cui non hai ancora risposto.
 
-È sigillato per il team e arriva da un nome inventato, a meno che tu non spunti **Aggiungi la mia email così il team può rispondere**.
+Il contenuto è riservato al team e viene inviato con un nome inventato, a meno che tu non selezioni **Aggiungi la mia email così il team può rispondere**.
 
-Altre Machine possono votare un apprendimento che hai condiviso, senza sapere chi l'ha inviato. La tua email non parte mai.
+Altre Machine possono votare un apprendimento che hai condiviso, senza sapere chi l’ha inviato.
 
 ## Invio automatico
 
-**Invia apprendimenti in automatico** in Impostazioni, Sicurezza è attivo di default. I nuovi apprendimenti partono senza chiedere, controllati allo stesso modo. Disattivalo perché chieda ogni volta. Se l'hai già disattivato, resta disattivato.
+L’opzione **Invia apprendimenti in automatico** in Impostazioni, Sicurezza è attiva per impostazione predefinita. I nuovi apprendimenti vengono inviati senza chiedertelo e vengono controllati allo stesso modo. Disattivala per ricevere una richiesta ogni volta. Se l’avevi già disattivata, rimane disattivata.
 
-Per gli apprendimenti dalle tue attività di Personale, chiede comunque prima. Se l’avevi attivato tu prima, partono anche loro da soli, come hai scelto.
+Per gli apprendimenti ricavati dalle tue attività personali, ti viene comunque chiesto prima. Se in precedenza avevi attivato tu l’invio automatico, anche questi vengono inviati automaticamente, come avevi scelto.
 
-Ogni apprendimento inviato è elencato in Impostazioni, **Movimenti**, e in Fleet, **Movimenti**, esattamente come è partito. Tocca **Ritira** e il team non lo vede più.
+Ogni apprendimento inviato compare, esattamente come è stato inviato, in Impostazioni, **Movimenti** e in Fleet, **Movimenti**. Tocca **Ritira** e il team non potrà più vederlo.
 
-La tua email e i log degli errori non partono mai da soli. **Prudente**, una Work Fleet Prudente, o disattivare **Proponi di condividere apprendimenti** lo ferma. Riattivato, chiede di nuovo ogni volta.
+La tua email e i log degli errori non vengono mai inviati automaticamente. **Prudente**, una Fleet di lavoro Prudente o la disattivazione di **Proponi di condividere apprendimenti** interrompono l’invio automatico. Quando riattivi l’opzione, ti viene chiesto di nuovo ogni volta.
 
-## Disattivarlo
+## Disattivare la condivisione
 
-Per non ricevere più la richiesta, disattiva **Proponi di condividere apprendimenti** in Impostazioni, Sicurezza. Vedi [Livelli di sicurezza](security-levels.md). Serve [The Machine Network](/network).
+Disattiva **Proponi di condividere apprendimenti** in Impostazioni, Sicurezza. Vedi [Livelli di sicurezza](security-levels.md). Per condividere, serve [The Machine Network](/network).
 
-## Voto
+Lo stesso interruttore disattiva gli [apprendimenti del team](fleet.md#team-learnings) per la tua Fleet di lavoro e ritira quelli condivisi dalla tua Machine.
 
-Anche alla tua arrivano gli apprendimenti condivisi da altre Machine. Una volta al giorno un breve controllo fa una domanda: questo avrebbe cambiato qualcosa sulla tua Machine nell’ultima settimana? Rimanda indietro solo un voto. Niente su di te parte. I tuoi apprendimenti non ti vengono mai rimandati da votare.
+## Votazioni
 
-Un voto utile o non pertinente richiede un caso concreto della tua ultima settimana: un’attività o qualcosa che hai chiesto nella sua chat, raccontato in modo generico e controllato come un caso d’uso. Senza, la tua Machine si astiene e il voto non conta. In una settimana senza attività non vota.
+Anche la tua Machine riceve gli apprendimenti di altre Machine. Una volta al giorno ti pone una breve domanda: questo apprendimento avrebbe cambiato qualcosa sulla tua Machine nell’ultima settimana? Viene inviato solo il voto. Non riceverai mai i tuoi apprendimenti.
 
-Il team vede gli apprendimenti in ordine di voti e sceglie cosa entra in The Machine per tutti. Niente cambia da solo.
+Per votare «utile» o «non pertinente» serve un caso concreto dell’ultima settimana: un’attività o qualcosa che hai chiesto nella chat relativa, descritto in termini generali e controllato come un caso d’uso. Se non c’è un caso del genere, la tua Machine si astiene e il voto non viene conteggiato. Se per una settimana non c’è attività, non viene espresso alcun voto.
 
-**Vota gli apprendimenti di altre Machine** in Impostazioni, Sicurezza ha tre scelte:
+Il team classifica gli apprendimenti in base ai voti «utile» e sceglie quali includere in The Machine per tutti. Non cambia nulla automaticamente.
 
-- **Attivo**, l’impostazione predefinita: vota da sola.
-- **Chiedi prima**: ogni voto ti aspetta in un unico riquadro in **Apprendimento**, **Condiviso**, con l’apprendimento e il voto come partirebbe. Invialo o saltalo, uno alla volta o tutti insieme. Nessuna attività e nessuna notifica per questo. Un voto che lasci lì non viene inviato dopo 14 giorni.
-- **Disattivato**: nessun voto, e niente di ciò che aspetta parte.
+L’opzione **Vota gli apprendimenti di altre Machine** in Impostazioni, Sicurezza offre tre scelte:
+
+- **Attivo**, l’impostazione predefinita: vota automaticamente.
+- **Chiedi prima**: i voti aspettano sotto **Apprendimento**, **Condiviso**, ognuno con il relativo apprendimento e voto. Puoi inviarli o ignorarli uno alla volta o tutti insieme. Non viene creata alcuna attività né inviata alcuna notifica. I voti che lasci in sospeso scadono dopo 14 giorni.
+- **Disattivata**: non viene votato nulla e non ci sono voti in sospeso.

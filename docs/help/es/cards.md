@@ -1,144 +1,144 @@
 ---
 title: Tareas
 area: cards
-summary: Una tarea por cada cosa que te necesita, lista para tu sí. Qué significan las partes de una tarea.
+summary: Una tarea por cada cosa que necesita de ti, lista para que la apruebes. Qué significa cada parte de una tarea.
 covers: tab:inbox
 code: dashboard.html, assistant.py
 order: 1
-translated: 645c40350e70a0c9
+translated: e4ad156150993936
 ---
-Tu Machine lee todo lo nuevo y solo crea una tarea cuando algo te necesita. Una tarea por asunto, por muchos mensajes que abarque.
+Tu Machine lee todo lo nuevo y crea una tarea solo cuando algo necesita de ti. Una tarea por asunto, aunque abarque muchos mensajes.
 
 ## Dónde están las tareas
 
-La página **Tareas** las agrupa:
+La página **Tareas** las agrupa así:
 
-- **Para ti**: todo lo que te espera, lo más urgente primero. Cada tarea dice **Preparada** (el trabajo está hecho, y **Hazlo** o **Enviar** lo lleva a cabo) **Te necesita** (primero necesita tu decisión o una respuesta) o **Preparando…** (tu Machine está trabajando en ella).
-- **Recién hecho**: un último paso que confirmaste, como enviar un formulario o crear un issue, salió bien mientras no estabas. Muestra lo que pasó hasta que tocas **Entendido**, un día como mucho, y tu teléfono también se entera. Después solo está en Hecho.
-- **Vuelve más tarde**: pospuesta, y las tareas sin respuesta a **¿Aún hace falta?** (abajo).
-- **Promesas**: lo que prometiste y lo que otros te prometieron. Consulta [Promesas](promises.md).
-- **Hecho / descartado**: cada tarea terminada, por cuándo se terminó, las más recientes primero, de 30 en 30 según te desplazas. Una tarea que acabas de enviar está arriba, y cada una dice cuándo, como «Hecho hace 5 minutos». Las tareas que ya parecen terminadas van entre ellas según cuándo empezaron a parecerlo, con la etiqueta **Parece hecho**.
+- **Para ti**: todo lo que está esperando por ti, empezando por lo más urgente. Cada tarea indica **Preparada** (el trabajo está hecho y **Hazlo** o **Enviar** lo lleva a cabo), **Te necesita** (primero necesita una decisión o respuesta tuya) o **Preparando…** (tu Machine está trabajando en ella).
+- **Recién hecho**: un último paso que confirmaste, como un formulario o una incidencia, se completó mientras no estabas. Se queda aquí hasta que toques **Entendido**, como máximo durante un día, y también te avisa en el teléfono.
+- **Vuelve más tarde**: las tareas pospuestas y las que no tienen respuesta a **¿Aún hace falta?** (más abajo).
+- **Promesas**: lo que prometiste y lo que otras personas te prometieron. Consulta [Promesas](promises.md).
+- **Hecho / descartado**: todas las tareas completadas, de la más reciente a la más antigua, con la hora a la que se completaron, como «Hecho hace 5 minutos». Las tareas que parecen completadas ya se marcan como **Parece hecho**.
 
-Después de enviar, una nota breve dice dónde está la tarea, como «Enviado. Movido a Hecho.» o, si espera una respuesta, «Enviado. Movido a Más tarde hasta el lun.» **Abrir** te lleva a ella. Que el hilo salga de tu bandeja de entrada unos días solo afecta a tu correo. La búsqueda encuentra una tarea por su título o por a quién se envió, también en Más tarde y Hecho.
+Después de enviar algo, aparece una nota breve que indica adónde fue la tarea, como «Enviado. Se movió a Hecho» o «Enviado. Se movió a Más tarde hasta el lun.». **Abrir** te lleva a la tarea. Puedes buscar una tarea por su título o por la persona a quien se envió, también en Más tarde y Hecho.
 
-**Para ti** pone primero lo vencido o lo que vence a más tardar mañana, luego las preguntas de tu Fleet, luego el resto. Dentro de cada parte, la más reciente primero. Una tarea se queda en su sitio mientras tu Machine la prepara y cuando termina: solo cambia su marca. Los demás grupos abiertos ponen primero lo vencido o lo que vence a más tardar mañana, el resto de la más reciente a la más antigua. La barra lateral sigue el mismo orden.
+En **Para ti**, primero aparecen las tareas vencidas o que vencen mañana, después las preguntas de tu Fleet y, por último, el resto. Dentro de cada grupo, aparecen de la más reciente a la más antigua. Una tarea mantiene su posición mientras tu Machine la prepara y cuando se completa: solo cambia su estado. En los demás grupos abiertos, primero aparecen las tareas vencidas o que vencen mañana y luego el resto, de la más reciente a la más antigua. La barra lateral mantiene el mismo orden.
 
-Una tarea con **Parece hecho** se ve como una hecha, con lo que muestra que está hecha, como "PR #3451 fusionado". Aún no está cerrada: **Reabrir** la devuelve a tu lista, y tu Machine aprende de ello. Nunca aparecen como atrasadas ni cuentan como pendientes de ti. Después de un día se cierra sola, con **Deshacer**. Una tarea que ya resolviste tú, como con una respuesta en Gmail o Slack, también se cierra sola.
+**Parece hecho** significa que tu Machine ve que ya está hecho, como «PR #3451 fusionada», pero la tarea aún no se ha cerrado. **Reabrir** la vuelve a poner en tu lista y tu Machine aprende de ello. Estas tareas nunca aparecen como atrasadas. Después de un día, se cierra sola y puedes **Deshacer**. Una tarea que ya resolviste por tu cuenta, por ejemplo, respondiendo en Gmail o Slack, también se cierra sola.
 
-Una tarea cuyo último paso sigue abierto en manos de otra persona, como una revisión, una fusión o una respuesta, muestra **Esperando:** ese paso y sigue abierta. Espera en **Esperando a otros**, plegada encima de Vuelve más tarde, y no cuenta como lista para ti. Un mensaje nuevo sobre ella la trae de vuelta. Lo mismo si respondiste con una pregunta: vuelve la mañana antes de su fecha límite, a la hora límite si es más tarde hoy, o la mañana siguiente si ya pasó, y dice a quién sigue esperando.
+Una tarea que aún está esperando a otra persona, como una revisión o una respuesta, indica **Esperando a**: ese paso. Aparece en **Esperando a otros**, contraída encima de Vuelve más tarde, hasta que un mensaje nuevo la reactive. Lo mismo ocurre después de que tú hagas una pregunta: vuelve la mañana antes de la fecha límite, en la fecha límite si es más tarde ese mismo día o a la mañana siguiente si ya pasó. También indica a quién sigue esperando.
 
-Cuando una tarea busca un resultado que entrega otra persona, como un contrato firmado o un pago, sus **Detalles** muestran ese resultado como **Hecho cuando**. Enviar tu parte no la cierra: espera en **Esperando a otros** hasta que un mensaje muestre el resultado, y entonces se cierra sola, con **Deshacer**. Si no llega nada cuando toca insistir, vuelve con **Escribe un recordatorio breve** en su chat. Para cambiar qué cuenta como hecho, dilo en el chat.
+Cuando una tarea depende de algo que otra persona debe entregar, como un contrato firmado, **Detalles** lo indica en **Hecho cuando**. Enviar tu parte no la cierra: espera en **Esperando a otros** hasta que un mensaje confirme el resultado. Entonces se cierra sola y puedes **Deshacer**. Si no llega nada para cuando toque insistir, vuelve con **Escribe un recordatorio breve** en su chat. Dile en el chat qué cuenta como hecho para cambiarlo.
 
-Una tarea que nadie tocó en una semana pregunta una vez: **¿Aún hace falta?** **No hace falta** la cierra, con **Deshacer**. **Mantener** la mantiene, y no vuelve a preguntar. Abrirla, un mensaje en el chat, un cambio, posponerla o un mensaje nuevo sobre ella cuentan como tocarla. Si no hay respuesta en otra semana, se guarda en Vuelve más tarde, bajo ¿Aún hace falta?, en lugar de desaparecer. Entonces el número en el icono de la app y el resumen matutino dejan de contarla. Tocarla la trae de vuelta.
+Si nadie toca una tarea durante una semana, pregunta una vez: **¿Aún hace falta?** **No hace falta** la cierra y puedes **Deshacer**. **Mantener** la conserva y no vuelve a preguntarlo. Si no respondes durante otra semana, se contrae en Vuelve más tarde, y deja de contar en el número del icono de la app y en el resumen de la mañana. Si la abres, escribes un mensaje en el chat, la editas, la pospones o llega un mensaje nuevo, vuelve a aparecer.
 
-Una vez por semana, un proyecto que se quedó en silencio sin nada abierto puede recibir una tarea con un siguiente paso concreto, tres por semana como mucho. Consulta [Proyectos](projects.md).
+Una vez a la semana, un proyecto que se haya quedado inactivo y sin tareas abiertas puede generar una tarea con un siguiente paso concreto, como máximo tres veces por semana. Consulta [Proyectos](projects.md).
 
-Cuando nada te necesita, tu Machine se echa una siesta en la lista vacía. Mientras revisa, se despierta y lo dice. Si una revisión falló o va con retraso, su línea lo dice, con **Revisar ahora** debajo.
+Cuando nada necesita de ti, tu Machine descansa y la lista queda vacía. Mientras revisa, se activa y te avisa. Si falla una revisión o se retrasa, la línea lo indica y muestra **Revisar ahora** debajo.
 
-**Todo**, **Trabajo** y **Personal**, encima de la lista en la barra lateral, muestran todas las tareas o solo un tipo. Tu Machine guarda la elección, así que tu teléfono y tu ordenador muestran la misma lista. Mientras Trabajo o Personal está activo, la parte de arriba de la lista lo indica, con **Mostrar todo** para volver. Un aviso sobre tu propia Machine, como una parte que se reinicia una y otra vez, no es ni Trabajo ni Personal y solo aparece en Todo.
+Los filtros **Todo**, **Trabajo** y **Personal** de la parte superior de la barra lateral muestran todas las tareas o solo un tipo. El teléfono y el ordenador muestran la misma selección. Cuando está activo Trabajo o Personal, **Mostrar todo** vuelve a mostrarlo todo. Una alerta sobre tu Machine, como una parte que se reinicia constantemente, no es ni de Trabajo ni de Personal, y solo aparece en Todo.
 
-La línea de arriba de la lista también cambia directamente a la otra: **Solo personal · Trabajo · Mostrar todo**.
+La línea de la parte superior de la lista también permite cambiar directamente a otro filtro: **Solo Personal · Trabajo · Mostrar todo**.
 
-La fila arriba de la lista nombra tu último resumen de la mañana o de la tarde y lo que contó, por ejemplo **Resumen de ayer por la tarde** · 12 hechas, 3 abiertas. Tócala para volver a leerlo, con **Copiar** para pegarlo donde quieras. En cuanto la abres o tocas su **×**, desaparece en todos tus dispositivos hasta el próximo resumen.
+La fila de la parte superior de la lista muestra el nombre de tu último resumen de la mañana o de la tarde y lo que cuenta, como **Resumen de ayer por la tarde** · 12 hechas, 3 abiertas. Tócala para volver a leer el resumen, con **Copiar** para pegarlo donde quieras. Cuando lo abres o tocas su **×**, aparece en todos tus dispositivos hasta el siguiente resumen.
 
-Sin un resumen reciente muestra **Hoy hasta ahora**: lo que se hizo hoy y lo que sigue pendiente, para Trabajo y Personal, o solo el que filtras.
+Si no hay un resumen reciente, aparece **Hoy hasta ahora**: lo que se ha hecho hoy y lo que sigue abierto, para Trabajo y Personal o solo para el filtro que hayas elegido.
 
-Una tarea de un proyecto muestra el nombre del proyecto en la línea bajo su título; abre el proyecto. **Proyecto** en **Detalles** lo cambia o lo quita. Consulta [las tareas de un proyecto](projects.md#a-projects-to-dos).
+Las tareas de un proyecto muestran el nombre del proyecto debajo del título. Tócalo para abrir el proyecto. **Proyecto**, en **Detalles**, permite cambiarlo o quitarlo. Consulta [las tareas de un proyecto](projects.md#a-projects-to-dos).
 
-**Área** en **Detalles** pasa la tarea a tu otra área. Lo que puede leer y desde dónde puede enviar cambia con ella; los mensajes de los que vino se quedan donde están. **Deshacer** en el aviso que sigue la devuelve.
+**Área**, en **Detalles**, mueve una tarea a tu otra área. También se mueve el acceso a los mensajes que puede leer y enviar. **Deshacer** en la nota la devuelve a su área anterior.
 
-Cuando una tarea necesita otra área para seguir y todos los mensajes de los que salió están allí, se mueve sola y sigue. Si no, lo pide con un botón **Mover a Trabajo**. Nada se mueve hasta que lo tocas; después sigue sola. Una tarea que añadiste sin elegir Trabajo o Personal se mueve sola en cuanto sabe dónde va. Hasta entonces no dice Trabajo ni Personal, y queda privada.
+Cuando una tarea necesita tu otra área para continuar y todos los mensajes de los que procede están ahí, se mueve sola y continúa. Si no, muestra **Mover a Trabajo** y no se mueve hasta que lo toques. Una tarea que añadas sin elegir Trabajo o Personal se mueve sola cuando encuentra el área que le corresponde. Hasta entonces, no pertenece ni a Trabajo ni a Personal, y se mantiene privada.
 
-Cuando inicias una tarea, siempre puede leer los mensajes de los que vino, también en el buzón de otra empresa. Si necesita otros mensajes de otra área, lo pide con **Usar este correo para esta tarea**; un toque los añade y sigue. El correo para otra de tus empresas va desde el principio a las tareas de esa empresa. Una tarea de tu propia vida, como tu familia escribiendo a tu dirección del trabajo, es Personal desde el principio.
+Una tarea siempre puede leer los mensajes de los que procede. Cuando necesita otros mensajes de tu otra área, te lo pide con **Usar este correo para esta tarea**. Un buzón de trabajo que hayas etiquetado como Personal cuenta como Personal. El correo de otra de tus empresas va a las tareas de esa empresa, y una tarea sobre tu vida personal, como un mensaje de tu familia a tu dirección de trabajo, es Personal desde el principio.
 
-El trabajo que te llega por una cuenta personal, como un cliente en WhatsApp o un pedido en tu buzón personal, es Trabajo desde el principio. Una tarea que moviste o colocaste tú siempre se queda donde la pusiste. Trabajo o Personal decide dónde aparece una tarea y con quién se comparte, nunca por dónde responde: una respuesta siempre va donde está la conversación, también después de moverla, salvo que elijas otro medio.
+El trabajo que te llega a una cuenta personal, como un cliente por WhatsApp o un pedido en tu buzón personal, es Trabajo desde el principio. Una tarea que hayas movido o asignado tú siempre se queda donde la pusiste. Trabajo o Personal determina dónde aparece una tarea y con quién se comparte, pero nunca dónde responde: la respuesta siempre se envía a la conversación original, incluso después de moverla, a menos que elijas otra forma.
 
-Su respuesta sale igual desde la dirección del trabajo donde llegó, y nunca aparece en una Work Fleet ni en el Graph del equipo.
+Una tarea Personal de este tipo sigue respondiendo desde la dirección de trabajo a la que llegó el correo, y nunca aparece en una Fleet de Trabajo ni en el Team Graph.
 
-Con dos o más esperando, **Repasar** en el encabezado de Para ti las recorre una a una, en el orden de la lista, cada borrador completo, con **Enviar** o **Hazlo**, **Pedir cambios**, **Posponer** y **Omitir**. En una computadora, Intro envía lo que está en pantalla, `S` pospone, `→` omite y Esc termina. Bajo el título, el encabezado también dice cuánto tardan a tu ritmo, como "unos 2 min".
+Si hay dos tareas o más esperando, **Repasar** en el encabezado de Para ti te permite revisarlas una por una, en el orden de la lista. Muestra cada borrador completo, con **Enviar** o **Hazlo**, **Pedir cambios**, **Posponer** y **Omitir**. En un ordenador, Enter envía lo que aparece en pantalla, `S` pospone, `→` omite y Esc detiene el repaso. Debajo del título, el encabezado también indica cuánto se tarda a tu ritmo, como «unos 2 min».
 
-Una tarea que te pregunta algo queda fuera de ambos: necesita tu respuesta, no un toque.
+Las tareas que te hacen una pregunta no se incluyen en ninguna de las dos opciones: necesitan tu respuesta, no que toques un botón.
 
 ## Revisar ahora
 
-Tu Machine lee cada fuente cada pocos minutos, de día y de noche, y revisa lo que llegó en busca de tareas en cuanto hay 40 mensajes esperando o el mensaje más antiguo de una persona lleva 15 minutos esperando. Los boletines, las notificaciones y los recibos entran en la siguiente revisión, en menos de una hora.
+Tu Machine lee cada fuente cada pocos minutos, de día y de noche. Revisa lo que ha llegado cuando hay 40 mensajes pendientes o cuando el mensaje más antiguo de una persona lleva 15 minutos esperando. Los boletines, las notificaciones y los recibos se incluyen en la siguiente revisión, dentro de la hora.
 
-De noche, de 00:00 a 06:30, las revisiones se pausan: los mensajes nuevos se siguen leyendo y guardando, y se revisan juntos a las 06:30, así tus tareas están listas antes de tu resumen de la mañana. Las revisiones en Conexiones dicen "En pausa por la noche, se pone al día a las 06:30". Si de noche abres la app, escribes en el chat o tocas una tarea, las revisiones vuelven a ir como siempre hasta que lleves una hora sin usarla. **Revisar ahora** siempre revisa al momento.
+Por la noche, desde las 00:00 hasta las 06:30, las revisiones se pausan: los mensajes nuevos se siguen leyendo y guardando, y se revisan juntos a las 06:30 para que tus tareas estén listas antes del resumen de la mañana. En Conexiones, Revisiones indica «Pausadas por la noche. Se pondrán al día a las 06:30». Si abres la app, escribes en el chat o tocas una tarea por la noche, las revisiones vuelven a ejecutarse con normalidad hasta que lleves una hora sin usarla. **Revisar ahora** siempre inicia una revisión de inmediato.
 
-**Revisar ahora** lee al momento cada fuente. Si no hay nada abierto, toca la línea de tu Machine para verlo, con **Detalles**, que abre Revisiones en Conexiones. Con tareas abiertas, está arriba en un ordenador. Ahí solo aparece una línea corta mientras una revisión está en marcha, o cuando una falló o va con retraso. También puedes pedirlo en el chat.
+**Revisar ahora** lee todas las fuentes de inmediato. Si no tienes tareas abiertas, toca la línea de tu Machine para verla, junto con **Detalles**, que abre Revisiones en Conexiones. Si tienes tareas abiertas, aparece en la parte superior en el ordenador. Solo se muestra una línea breve mientras se realiza una revisión, o cuando una ha fallado o se ha retrasado. También puedes preguntar en el chat.
 
-LinkedIn, X y Salesflare siguen su propio ritmo.
+LinkedIn, X y Salesflare tienen su propio ritmo.
 
 ## Última revisión
 
-Tras una revisión que leyó mensajes nuevos, una línea encima de tus tareas dice lo que encontró en todas las fuentes, como «13 mensajes revisados a las 16:11 · nada te necesita» o «· 2 tareas nuevas». Cuando una tarea nueva espera un momento mejor, como tu resumen de la mañana, dice hasta cuándo: «1 tarea en espera hasta mañana 08:30».
+Después de una revisión que haya leído mensajes nuevos, aparece una línea encima de tus tareas con lo que encontró en todas las fuentes que leyó, como «13 mensajes revisados a las 16:11 · nada necesita de ti» o «· 2 tareas nuevas». Si una tarea nueva espera a un momento más oportuno, como el resumen de la mañana, indica hasta cuándo: «1 tarea reservada hasta mañana a las 08:30».
 
-Toca la línea para ver cada conversación, chat y notificación, con el icono de su fuente: quién escribió, el asunto o las primeras palabras, y su tarea nueva o por qué no hacía falta nada, como «Solo en copia, responde un compañero» o «Reunión ya fijada para el jueves». Una conversación no muestra motivo cuando la revisión solo dio uno vago. Toca uno para leerlo.
+Toca la línea para ver cada hilo de correo, chat y notificación, con el icono de su fuente: quién escribió, el asunto o las primeras palabras, y la tarea nueva o el motivo por el que no hacía falta crear una, como «Solo estabas en copia, una persona del equipo responderá» o «La reunión ya está programada para el jueves». Si la revisión solo encontró un motivo impreciso, no se muestra ninguno. Toca un elemento para leerlo.
 
-Se ven los 10 primeros, y un toque debajo muestra el resto. Un número tras un nombre, como (3), es cuántos mensajes nuevos tiene ese chat. Una notificación del móvil sobre un mensaje que ya está en la lista sale solo una vez. La línea se queda 12 horas después de la revisión.
+Se muestran los primeros 10 y, al tocar debajo, aparece el resto. Un número después de un nombre, como (3), indica cuántos mensajes nuevos tiene ese chat. Las notificaciones del teléfono sobre mensajes que ya aparecen en la lista se muestran una sola vez. La línea aparece durante 12 horas después de la revisión.
 
-Solo cuenta el correo que te llega. Tus propias respuestas se leen por contexto y promesas, pero no son correo nuevo. Los correos que tu Machine te envía, como tu resumen de la mañana o un aviso de arreglo, nunca se leen ni se listan. Los correos sobre pagos, tu prueba o una invitación se leen como siempre.
+Solo cuenta el correo que recibes. Tus propias respuestas se leen para entender el contexto y las promesas, pero no cuentan como correo nuevo. Los propios correos de The Machine, como el resumen de la mañana o un aviso de solución, nunca se leen ni aparecen en la lista. El correo sobre la facturación, la prueba o una invitación se lee con normalidad.
 
 ## Los botones
 
-Una tarea muestra su siguiente paso, como **Hazlo** o **Revisar y enviar**, con **Posponer** al lado. Consulta [Hazlo](do-it.md) y [Posponer](snooze.md).
+Una tarea muestra el siguiente paso, como **Hazlo** o **Revisar y enviar**, con **Posponer** al lado. Consulta [Hazlo](do-it.md) y [Posponer](snooze.md).
 
-**Pedir cambios** dice qué cambiar: cómo hacerla, o, con un borrador listo, qué cambiar en él. Si la fila no cabe en el móvil, **Posponer** pasa a **…**. **Marcar como hecha** (ya está resuelta) también está: a la vista en una preparada sin borrador, si no, arriba en **…**, también en una que necesita tu decisión. Sale de la lista al instante, con **Deshacer** en el mensaje. Desliza el mensaje o arrástralo con el ratón para cerrarlo antes. El cambio se queda.
+**Pedir cambios** sirve para indicar qué cambiar: cómo hacerlo o, cuando el borrador esté listo, qué cambiar en él. **Marcar como hecha** indica que ya está resuelta: aparece directamente en una tarea lista sin borrador; en los demás casos, incluida una tarea que necesita tu decisión, está al principio de **…**. La tarea sale de la lista inmediatamente y aparece **Deshacer** en el mensaje. Desliza el mensaje para quitarlo o arrástralo fuera con el ratón para cerrarlo antes. El cambio se mantiene.
 
-Para que se haga de otra forma, dilo en su **Chat**.
+Para que se haga de otra manera, dilo en su **Chat**.
 
-En **…** (en el teléfono se abre desde abajo de la pantalla):
+En **…**:
 
-- **Pasar…**: pásala a un compañero, a [Claude Code o Codex](hand-to-agent.md) (los que has configurado) o [pide a alguien que la revise](ask-to-review.md).
-- **Repetir…**: [vuelve con un ritmo](recurring.md).
-- **No hace falta**: desaparece. Si quieres, elige por qué: **No es relevante**, **Datos incorrectos** o **Ya resuelto**. Tu Machine aprende de ello.
+- **Pasar…**: asígnasela a alguien del equipo, a [Claude Code o Codex](hand-to-agent.md), o [pídele a alguien que la revise](ask-to-review.md).
+- **Repetir…**: [volverá a aparecer de forma periódica](recurring.md).
+- **No hace falta**: desaparece. Si quieres, elige un motivo: **No es relevante**, **Datos incorrectos** o **Ya resuelto**. Tu Machine aprende de ello.
 
-Toca el título, o **Nombre** en **Detalles**, para renombrarla. Tu título se queda, también cuando la tarea cambia.
+Toca el título o **Nombre**, en **Detalles**, para cambiarle el nombre. El título que le pongas se mantiene.
 
-Una tarea cerrada puede volver con **Reabrir**. También vuelve sola cuando pasa algo nuevo, como un mensaje nuevo de esa persona. Tu propia respuesta no la hace volver.
+**Reabrir** vuelve a abrir una tarea cerrada. También puede volver a aparecer automáticamente cuando ocurre algo nuevo, como recibir un mensaje de esa persona, pero no al responder tú.
 
-Una factura que aún tienes que pagar tú, de cualquier país, se convierte en una tarea con el importe, la fecha de vencimiento y los datos de pago de la factura. Las que se pagan solas, como una domiciliación o una tarjeta guardada, no. Si un correo posterior muestra que está pagada, por ejemplo el remitente confirma que recibió tu pago, la tarea se cierra sola. **Deshacer** la recupera durante un día.
+Una factura que tengas que pagar tú, de cualquier país, se convierte en una tarea con el importe, la fecha de vencimiento y los datos de pago que incluya. Las facturas con pago automático, como las domiciliadas o las cargadas a una tarjeta guardada, no se convierten en tareas. Cuando un correo posterior indica que se ha pagado, por ejemplo, porque el remitente confirma que recibió el pago, la tarea se cierra sola. Puedes **Deshacer** durante un día.
 
-Una tarea que solo importaba hasta un momento concreto, como una confirmación antes de una reunión, se cierra sola cuando ese momento pasa. Pasa a las hechas con "Ya no hace falta" y cuándo fue. **Deshacer** la recupera durante un día.
+Una tarea que solo era relevante hasta una hora determinada, como una confirmación antes de una reunión, se cierra sola después de esa hora. Pasa a **Hecho / descartado** con el estado «Ya no hace falta». Puedes **Deshacer** durante un día.
 
-Antes de que un mensaje o un traspaso para alguien aparezca como listo, tu Machine revisa tus chats recientes con esas personas, también los de grupo, y espera a que Slack los lea. Si un mensaje posterior muestra que ya está hecho, por ejemplo porque ya se lo pidieron y dijo que sí, la tarea se cierra sola. **Deshacer** la recupera durante un día.
+Antes de que un mensaje o un traspaso para alguien aparezca como listo, tu Machine revisa tus chats recientes con las personas implicadas, incluidos los chats de grupo, y espera a que Slack los lea. Si un mensaje posterior indica que ya está hecho, por ejemplo, que se lo pidieron y dijo que sí, la tarea se cierra sola. Puedes **Deshacer** durante un día.
 
-Cuando un mensaje más nuevo cambia el plan, como una fiesta que pasa a otro lugar o una reserva cancelada, The Machine actualiza sus tareas sola. Una que todavía importa sigue el nuevo plan. Una que ya no tiene nada que hacer pasa a las hechas como "No hace falta", su chat dice "Actualizado:" y por qué, y **Deshacer** la trae de vuelta durante un día.
+Cuando un mensaje nuevo cambia el plan, como cuando una fiesta se traslada a otro sitio o se cancela una reserva, The Machine actualiza sus tareas. Si una tarea sigue siendo relevante, se ajusta al nuevo plan. Si ya no queda nada por hacer, pasa a **Hecho / descartado** con el estado «No hace falta». En el chat aparece «Actualizado:» junto con el motivo y puedes **Deshacer** durante un día.
 
-En tus primeras tareas, una línea corta bajo los botones muestra lo esencial: **Pedir cambios** y **No hace falta** cuando una tarea no es del todo así, y en tu primer borrador listo, que no sale nada hasta que pulsas **Enviar**. Un consejo desaparece para siempre en cuanto usas su botón o pulsas ×, en todos tus dispositivos.
+En tus primeras tareas, aparece un consejo breve con las acciones principales: **Pedir cambios** y **No hace falta**. También te recuerda que no se envía nada hasta que pulses **Enviar**. El consejo desaparece para siempre cuando usas el botón o pulsas ×.
 
-En tu primer día, la parte de arriba de Tareas te saluda por tu nombre y muestra quién lleva más tiempo esperando tu respuesta. The Machine redacta esa respuesta primero, para que esté lista cuando llegues. No sale nada hasta que la envías. La línea desaparece después de tu primer día o de tu primera tarea decidida.
+El primer día, la parte superior de Tareas te da la bienvenida e indica quién lleva más tiempo esperando tu respuesta. Esa respuesta se prepara primero para que esté lista cuando llegues.
 
-Cada tarea empieza por su título. La línea de debajo dice de quién trata, la organización cuando trata de una (nunca solo porque alguien trabaje allí), el proyecto, Trabajo o Personal (en **Todo**) y cuándo llegó, además de cómo va cuando su grupo no lo dice ya. Toca un nombre para abrir su página en el Graph.
+Cada tarea empieza con su título. La línea de debajo indica de quién trata, la organización si corresponde (no solo porque alguien trabaje allí), el proyecto, Trabajo o Personal y cuándo llegó. Toca un nombre para abrir su página en Graph.
 
-Un nombre y una organización muestran su foto o logo cuando el Graph tiene uno. Si no, muestran sus iniciales. Un logo que no se leería tan pequeño, como blanco sobre fondo transparente o un logotipo muy ancho, también muestra la inicial.
+Los nombres y las organizaciones muestran su foto o logotipo si Graph tiene uno; de lo contrario, muestran sus iniciales. Si un logotipo no se distingue bien en tamaño pequeño, por ejemplo, porque es blanco sobre un fondo transparente o porque es un logotipo apaisado con el nombre, también se muestran las iniciales.
 
-A veces una línea discreta bajo el texto dice lo que no se sabe, como «Último contacto hace 12 días por correo; nada desde entonces.» Solo aparece cuando el último contacto es antiguo o sigue sin respuesta, y nombra los canales no conectados por los que quizá respondieron, como WhatsApp. Tu Machine prepara con los mismos datos, así que dice lo que no sabe en vez de adivinar.
+A veces aparece una línea discreta que indica lo que no se sabe, como «Último contacto hace 12 días por correo; no ha habido nada desde entonces». Se muestra cuando el último contacto con esa persona es antiguo o sigue sin respuesta, y nombra los canales que no están conectados, como WhatsApp. Tu Machine indica lo que no sabe en lugar de adivinar.
 
-Cuando nombra un canal no conectado, Conectar al lado abre esa conexión.
+Si menciona un canal que no está conectado, **Conectar**, a su lado, abre esa conexión.
 
-Un título dice qué hay que hacer. Solo cambia cuando eso cambia, como con una nueva petición. Una tarea hecha conserva su título, con debajo cómo terminó, como lo que se envió o "Hecho: Sam lo firmó el martes".
+El título indica lo que hay que hacer y solo cambia si eso cambia. Una tarea completada conserva su título y muestra debajo cómo terminó, como «Hecho: Sam lo firmó el martes».
 
-Sobre el borrador, una línea discreta nombra el mensaje del que viene, con el logo del servicio (Gmail, Slack, WhatsApp…). Tócala para leer el hilo. El borrador empieza con el logo de adónde va, así ves si es una respuesta en Slack o un correo antes de leer. Un paso sin borrador, como un traspaso, muestra el logo en su botón.
+Encima del borrador, una línea tenue indica de qué mensaje procede, con el logotipo del servicio. Tócala para leer el hilo. El borrador muestra el logotipo del destino para que veas de inmediato si es una respuesta de Slack o un correo.
 
-Cuando el borrador sigue lo que otra persona dijo en otro mensaje, como la sugerencia de un compañero en Slack, una línea bajo la tarea lo indica, como "Según Sam en #ops". Tócala para leer ese mensaje aquí, con Abrir en Slack o Gmail dentro. Si ese mensaje es el origen de la propia tarea, la línea de origen ya lo muestra y no hay una segunda línea.
+Si el borrador se basa en lo que alguien dijo en otro lugar, como una sugerencia de un compañero en Slack, una línea lo indica, como «Basado en un mensaje de Sam en #ops». Tócala para leer ese mensaje.
 
-Un chat (Slack, WhatsApp, Telegram, Intercom…) se lee como una sola conversación, del más antiguo al más nuevo, cada mensaje una vez; el mensaje del que trata la tarea aparece bajo "Esta tarea". En WhatsApp, Telegram o Signal tus propios mensajes van a la derecha, como en la app.
+Un chat (Slack, WhatsApp, Telegram, Intercom…) aparece como una sola conversación, de los mensajes más antiguos a los más recientes: los mensajes anteriores al que dio lugar a la tarea y las respuestas posteriores. En WhatsApp, Telegram o Signal, tus mensajes aparecen a la derecha, como en la app. El mensaje relacionado con la tarea se marca como «Esta tarea» y se abre en la conversación. **Mostrar mensajes anteriores** añade mensajes más antiguos. En un correo, el resto del hilo aparece contraído encima y debajo.
 
-En un correo, **Detalles** muestra solo lo que el encabezado no dice, como las direcciones completas en Cc, Cco u otra dirección de respuesta; si no hay nada que añadir, no aparece.
+**Detalles** de un correo solo muestra lo que no aparece en el encabezado, como las direcciones completas en Cc, Bcc o una dirección distinta para responder. Si no hay nada que añadir, no aparece.
 
-Una respuesta en un hilo de Slack también muestra lo que se dijo antes del hilo. Un enlace de la tarea a su propio mensaje también lo abre aquí, con **Abrir en Slack** abajo.
+Una respuesta en un hilo de Slack también muestra lo que se dijo antes de que empezara el hilo. El enlace de una tarea a su propio mensaje también lo abre aquí, con **Abrir en Slack** en la parte inferior.
 
-**Detalles** muestra su nombre, proyecto y área (toca uno para cambiarlo), tu última nota y el resultado de un agente de código. **Chat ›** al final de esa línea abre el chat. Una tarea hecha se queda corta: su título, una línea y lo que se envió; el mensaje del que viene está en sus **Detalles**.
+**Detalles** muestra el nombre, el proyecto y el área (toca uno para cambiarlo), tu última nota y el resultado de un agente de programación. **Chat ›** abre el chat. Una tarea completada se muestra de forma resumida; el mensaje del que procede aparece en **Detalles**.
 
-Una tarea "Esperando a" (alguien te prometió algo) enlaza tu último mensaje a esa persona, el que espera respuesta: "Email a Pat · mar".
+Una tarea con el estado «Esperando a» enlaza tu último mensaje a esa persona, el que está esperando respuesta: «Correo a Pat · mar».
 
-## Crea una tú
+## Crear una tarea
 
-**Nueva tarea** (debajo de **Buscar** en un ordenador) añade una tarea para lo que sea. Crearla no envía nada. Sin elegir Trabajo o Personal, va donde corresponde: según de quién y de qué trata, una empresa o buzón que nombra, o el correo al que da seguimiento. Si nada lo indica, empieza donde están la mayoría de tus tareas. The Machine busca ese correo en tu buzón, también correos más antiguos que aún no ha traído.
+**Nueva tarea** (debajo de **Buscar** en un ordenador) crea una tarea para cualquier cosa. Al crearla no se envía nada. Si no eliges Trabajo o Personal, se asigna al área que le corresponde según de quién y de qué trate. También encuentra el correo al que da seguimiento, aunque sea antiguo.
 
-- **Vence**: escribe un día o una hora, como "mañana", "el viernes que viene", "3 nov", "15:00", "2pm", "en 2 horas" o "mañana 9". También entiende otros idiomas ("over 2 uur", "morgen 9u"). El icono del calendario tiene opciones rápidas, como al posponer, y **Elegir fecha**.
-- **Mensaje**: adjunta el mensaje del que trata: un correo, Slack, Teams, WhatsApp, Telegram o cualquier otro mensaje que tenga The Machine. Busca por texto o remitente. Cada resultado muestra de dónde viene, quién lo envió y cuándo.
-- **Archivos**: toca el clip en el cuadro, pega una captura de pantalla o suelta archivos en el formulario. En un teléfono, la cámara de al lado hace una foto. Hasta 5 archivos, de los mismos tipos y tamaños que en el chat (consulta [Añade archivos](card-chat.md#add-files)). × quita uno.
+- **Vence**: escribe un día o una hora, como «mañana», «el próximo vie.», «3 nov», «14:00» o «en 2 horas». También puedes escribirlo en tu idioma. El icono del calendario ofrece opciones rápidas y **Elegir fecha**.
+- **Mensaje**: adjunta el mensaje relacionado: un correo, un mensaje de Slack, Teams, WhatsApp, Telegram o cualquier otro mensaje que tenga The Machine. Busca por texto o remitente. Cada resultado indica de dónde viene, quién lo envió y cuándo.
+- **Archivos**: toca el clip, pega una captura de pantalla o arrastra archivos al formulario. En el teléfono, puedes hacer una foto con la cámara que aparece al lado. Puedes añadir hasta 5 archivos, como en el chat (consulta [Añadir archivos](card-chat.md#add-files)). × quita un archivo.
 
-Los archivos se quedan con la tarea: se ven en ella y en su chat, y The Machine los lee cuando trabaja en ella. Basta con archivos: The Machine lee el texto de un PDF o de un archivo de texto y completa la tarea con él. Una foto se ve como una imagen pequeña: tócala para verla en grande.
+Los archivos se quedan con la tarea y The Machine los lee cuando trabaja en ella. Puedes adjuntar archivos sin más: completa la tarea a partir de un PDF o un archivo de texto. Las fotos aparecen como imágenes pequeñas. Tócalas para verlas a tamaño completo.

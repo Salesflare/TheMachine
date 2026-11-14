@@ -1,7 +1,7 @@
 ---
 title: Abonnementen en facturatie
 area: account
-summary: Gratis op je eigen computer. Gehost vanaf {price.standard} per maand, excl. btw, met {trial_days} dagen gratis.
+summary: Gratis op je eigen computer. Gehost vanaf {price.standard} per maand, excl. btw, met {trial_days} gratis dagen.
 covers: settings:account
 code: docs/fleet.md
 site: Manage subscription
@@ -11,23 +11,21 @@ translated: 457d70baa1c81785
 ## Je Machine
 
 - Op je eigen computer: gratis. Alles wat The Machine doet, met je eigen model.
-- Gehost: {price.standard} per maand voor een Standaard-Machine, of {price.big} voor een grotere, excl. btw. De eerste {trial_days} dagen zijn gratis, één keer per persoon. Je hebt een betaalkaart nodig om te beginnen, en er wordt niets aangerekend voordat de gratis dagen voorbij zijn.
+- Gehost: {price.standard} per maand voor een Standard Machine, of {price.big} voor een grotere, excl. btw. De eerste {trial_days} dagen zijn gratis, één keer per persoon. Je betaalt pas nadat die periode is afgelopen. Is je proefperiode gestart zonder betaalkaart? Voeg er dan vóór die tijd een toe via je accountpagina.
 
-Je AI-abonnement wordt gefactureerd door je provider, zoals OpenAI. Wij rekenen daar niets bovenop.
+Je AI-abonnement wordt gefactureerd door je provider, zoals OpenAI. Wij rekenen daar niets extra's voor.
 
 ## Op het Network
 
-- Vrienden en Familie: gratis, met elke Machine. In een Familie-Fleet kosten gehoste Machines samen {price.family_pair} voor de eerste twee, daarna {price.family_seat} per stuk, excl. btw.
-- Werk-Fleet: {price.seat} per plaats per maand, of {price.seat_big} voor een grotere, excl. btw. Een teamgenoot die een eigen Machine draait, kost {price.network} per maand, en wie al gehost is, is gratis. Elke Fleet heeft een eigen kaart en eigen facturen, en de eigenaar bevestigt elk bedrag voordat het aangerekend wordt.
+- Vrienden en familie: gratis, met elke Machine. In een Familie Fleet kosten gehoste Machines {price.family_pair} voor de eerste twee samen, daarna {price.family_seat} per Machine, excl. btw.
+- Werk Fleet: {price.seat} per plek per maand, of {price.seat_big} voor een grotere, excl. btw. Een teamgenoot met een eigen Machine kost {price.network} per maand. Een teamgenoot met een Machine die al gehost wordt, is gratis. Elke Fleet heeft een eigen betaalkaart en facturen. De eigenaar bevestigt elk bedrag voordat het in rekening wordt gebracht.
 
-Alle prijzen zijn per maand, excl. btw. Zie [Prijzen](/pricing).
+Alle prijzen zijn per maand, excl. btw. Bekijk [Prijzen](/pricing).
 
-De prijzen voor gehost, Werk-plaatsen en Familie-Fleets zijn early-adopterprijzen, verlaagd van {price.standard_list}, {price.seat_list} en {price.family_pair_list}. Early adopters houden ze zolang hun abonnement actief blijft.
+Ben je met Network voor vrienden begonnen voordat Network gratis werd? Dan zie je het in **Instellingen** › **Account** totdat je het stopzet. Met **Beheren** open je het in je account. Daar kun je het stopzetten of de betaalkaart wijzigen. Je gebruikersnaam en vrienden blijven behouden.
 
-Network voor Vrienden gestart voordat het Network gratis werd? Het staat in **Instellingen** › **Account** tot je het stopt. **Beheren** opent het in je account, waar je het stopt of de kaart wijzigt. Je gebruikersnaam en vrienden blijven.
+## Betaalkaart en facturen
 
-## Kaart en facturen
+Ga naar **Instellingen** › **Account**, druk op **Facturatie** en vervolgens op **Abonnement beheren**. Je abonnement wordt geopend in Stripe. Daar kun je je betaalkaart wijzigen en facturen downloaden. Je betaalkaartgegevens worden nooit met ons gedeeld.
 
-Druk in **Instellingen** › **Account** op **Facturatie** en dan op **Abonnement beheren**. Dat opent Stripe, waar je je kaart wijzigt en facturen downloadt. Je kaartgegevens komen nooit bij ons.
-
-Je kunt de grootte van je Machine altijd wijzigen: druk in **Instellingen** › **Account** op **Abonnement wijzigen**.
+Je kunt de grootte van je Machine op elk moment wijzigen: ga naar **Instellingen** › **Account** en druk op **Abonnement wijzigen**.

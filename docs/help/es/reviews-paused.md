@@ -1,42 +1,42 @@
 ---
 title: No hay tareas nuevas
 area: troubleshooting
-summary: Las revisiones están desactivadas, esperando o paradas por el límite de uso de tu modelo. Cómo saberlo y qué hacer.
+summary: Las revisiones están desactivadas, en espera o detenidas por el límite de uso de tu modelo. Cómo saber qué ocurre y qué hacer.
 covers: 
 code: dashboard.html, assistant.py
 order: 3
-translated: 39b4aa749445dfba
+translated: d265e540d9ecef0e
 ---
-Las tareas salen de las revisiones: tu Machine lee lo que ha llegado, en lotes pequeños, en unos 15 minutos.
+Las tareas se generan con las revisiones: tu Machine revisa lo que ha llegado en unos 15 minutos.
 
-## Recién registrado
+## Te acabas de registrar
 
-En una Machine alojada nueva, las revisiones empiezan solas en cuanto tu IA y tu correo están conectados. Mientras tu Machine lee tu correo, Tareas dice "Leyendo tu correo, tus primeras tareas llegan en unos minutos". En cuanto sabe cuánto hay, dice más o menos cuánto tarda: "Primeras tareas en unos 10 min." Si falta un paso, **Te necesita** lo nombra, como **Conectar correo**, con un enlace a ese paso.
+En una Machine nueva alojada, las revisiones se activan automáticamente cuando conectas tu IA y tu correo. Mientras tu Machine lee el correo, Tareas muestra «Leyendo tu correo. Tus primeras tareas estarán listas en unos minutos». Cuando sabe cuántos mensajes hay, indica más o menos cuánto tardará: «Tus primeras tareas estarán listas en unos 10 min». Si falta algún paso, **Te necesita** te indica cuál, como **Conectar correo**, y te lleva directamente a ese paso.
 
-Mientras lee, Tareas muestra cuánto lleva, algunas de las personas y organizaciones que encontró y tu primera tarea en cuanto llega. Los nombres salen de tu propio correo y solo tú los ves.
+Mientras lee, Tareas muestra cuánto ha avanzado («Ha leído 20 de 132 mensajes. Leyendo los siguientes 40…»), algunas de las personas y organizaciones que ha encontrado, y tu primera tarea en cuanto está lista. El número cuenta los mensajes que ya terminó de leer; la barra sigue avanzando mientras lee los siguientes. Los nombres provienen de tu correo y solo tú los ves.
 
-Si en el primer vistazo no encuentra nada para ti, dice lo que leyó y ofrece próximos pasos, como conectar un servicio que te escribe a menudo o preguntar qué cambió esta semana.
+Si en la primera revisión no encuentra nada para ti, indica qué leyó y te ofrece los siguientes pasos, como conectar un servicio del que recibes correos con frecuencia o preguntar qué ha cambiado esta semana.
 
 ## Las revisiones están desactivadas
 
-La parte superior de Tareas dice "Las revisiones están desactivadas, así que aún no llegan tareas." En una Machine alojada, pulsa **Activar las revisiones**. En tu propio ordenador, ejecuta `./install.sh --activate`.
+En la parte superior de Tareas aparece «Las revisiones están desactivadas, así que aún no recibirás tareas». En una Machine alojada, pulsa **Activar las revisiones**. En tu propio equipo, ejecuta `./install.sh --activate`.
 
 ## El límite de tu modelo
 
-Las revisiones de lo que llegó se pausan hacia el 65% del límite de 5 horas de tu plan y al 90% de su límite semanal, para dejar margen a tus propios chats. Un tablero que recorre tu historial va más despacio, a más o menos un séptimo de la semana al día. Con un modelo de respaldo que funcione, con otro plan o proveedor, las revisiones no esperan. Consulta [Modelo](model.md).
+Para dejar margen para tus propios chats, las revisiones se pausan al llegar a aproximadamente el 65 % del límite de 5 horas de tu plan de IA y al 90 % del límite semanal. Si tienes un modelo de respaldo en otro plan, las revisiones no esperan. Consulta [Modelo](model.md).
 
-Mientras las revisiones esperan, la parte superior del panel dice hasta cuándo, como "Las revisiones esperan hasta las 07:15 para ahorrar tu semana de ChatGPT." **Revisar ahora** inicia una enseguida. Cuando se alcanza un límite, la parte superior del panel dice cuál y cuándo se reinicia. **Conexiones** y luego **Revisiones** lo muestra junto a la ejecución. **Ajustes**, **Modelo** muestra tus límites. Consulta [Modelo](model.md).
+Mientras las revisiones están en espera, en la parte superior del panel se indica hasta cuándo, por ejemplo: «Las revisiones esperan hasta las 07:15 para ahorrar tu límite semanal de ChatGPT». **Revisar ahora** inicia una revisión de todos modos. En **Ajustes**, **Modelo** puedes consultar tus límites.
 
-No se pierde nada mientras espera: lo que llegó se revisa en cuanto se pueda.
+No se pierde nada: se revisa lo que ha llegado en cuanto sea posible.
 
-## De noche
+## Por la noche
 
-De 00:00 a 06:30, las revisiones se pausan y los mensajes nuevos esperan. Se revisan juntos a las 06:30, antes de tu resumen de la mañana. **Revisiones** dice entonces "En pausa por la noche, se pone al día a las 06:30". Si usas la app, escribes en el chat o tocas una tarea, las revisiones vuelven hasta que lleves una hora sin usarla. **Revisar ahora** revisa al momento.
+De las 00:00 a las 06:30, las revisiones se pausan y los mensajes nuevos quedan en espera. Se revisan todos juntos a las 06:30, antes del resumen de la mañana. **Revisiones** muestra «En pausa por la noche. Se pondrán al día a las 06:30». Si usas la app, escribes en el chat o tocas una tarea, las revisiones vuelven a ejecutarse hasta que lleves una hora sin actividad. **Revisar ahora** revisa los mensajes de inmediato.
 
-## Falló una ejecución
+## Error en una ejecución
 
-**Ejecuciones recientes** en **Revisiones** muestra cada ejecución. Un lote fallido se reintenta solo.
+**Ejecuciones recientes**, en **Conexiones** > **Revisiones**, muestra cada ejecución. Si una falla, se vuelve a intentar automáticamente.
 
-## Apartados
+## Apartar mensajes
 
-Cuando una revisión aplaza un mensaje dos veces, queda apartado. **Conexiones**, **Revisiones** muestra cuántos, y **Apartados** los enumera. Uno de una persona que te escribe directamente, de alguien que conoces o de un cliente recibe una última mirada unos 3 días después de llegar. Esa mirada crea una tarea o lo cierra. Lo que descartaste o pospusiste se queda así.
+Cuando una revisión pospone un mensaje dos veces, se aparta. **Conexiones** > **Revisiones** muestra cuántos hay y **Apartados** los enumera. Los mensajes de alguien que te escribe, de alguien que conoces o de un cliente se revisan una vez más unos 3 días después de llegar. Esa revisión crea una tarea o cierra el mensaje. Lo que descartaste o pospusiste sigue así.

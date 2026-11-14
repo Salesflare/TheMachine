@@ -1,42 +1,44 @@
 ---
 title: X
 area: connections
-summary: Je vermeldingen, antwoorden en directe berichten op X, gelezen in de eigen browser van je Machine. Verstuurt pas nadat je het goedkeurt.
+summary: Je vermeldingen, reacties en privéberichten op X, gelezen in de eigen browser van je Machine. Hij verstuurt pas iets nadat je het hebt goedgekeurd.
 covers: connector:x
 code: connectors/x.py, integrations/x_inbox.py
 site: Connect, More sources, Remove
 translated: 5cbe43055458daf4
 ---
-## Wat het leest
+## Wat hij leest
 
-Je vermeldingen, antwoorden en directe berichten op X. Het leest ze in de eigen browser van je Machine, ingelogd als jou. Het gebruikt de developer-API van X niet, markeert niets als gezien en kan versleutelde X Chat niet lezen.
+Je vermeldingen, reacties en privéberichten op X, in de eigen browser van je Machine, ingelogd met jouw account. Hij markeert niets als gelezen en kan versleutelde X Chat niet lezen.
 
-## Wat het kan versturen
+## Wat hij kan versturen
 
-Een antwoord of een direct bericht, en pas nadat je het goedkeurt op de to-do.
+Een reactie of privébericht, en alleen nadat je het hebt goedgekeurd in de to-do.
 
-Dit loopt niet via de officiële API van X. Lezen en af en toe een antwoord dat je goedkeurde, geeft vrijwel nooit problemen; massaal of automatisch versturen kan tot een blokkering van het account leiden.
+Dit loopt niet via de officiële API van X. Lezen en af en toe een door jou goedgekeurde reactie versturen veroorzaakt zeer waarschijnlijk geen problemen. Massaal of geautomatiseerd versturen kan ertoe leiden dat een account wordt geblokkeerd.
 
 ## Koppelen
 
 Op een gehoste Machine:
 
-1. Open je setuppagina op app.themachine.computer/setup en ga naar **Meer bronnen**.
-2. Open X, typ je handle zonder de @, log in bij X in de browser van je Machine als daarom gevraagd wordt, en druk dan op **Verbinden**.
+1. Open je configuratiepagina op app.themachine.computer/setup en ga naar **Meer bronnen**.
+2. Open X, voer je gebruikersnaam in zonder de @, log in bij X in de browser van je Machine wanneer daarom wordt gevraagd en druk op **Verbinden**.
 
 Op je eigen computer:
 
-1. Log één keer in bij X in de browser van je Machine (Instellingen, **De browser van je Machine openen ↗**).
-2. Open in het dashboard **Koppelingen**, dan **Chat**, en kies X. Of voer `assistant connect x` uit.
-3. Typ je handle, en de handle waarmee de browser normaal ingelogd is.
+1. Open in het dashboard **Koppelingen**, daarna **Chat**, en kies X.
+2. Kies **Werk** met het bedrijf of **Privé**, voer je gebruikersnaam in zonder de @ en druk op **Verbinden**.
+3. Druk op **Inloggen bij X** en log in in de browser van je Machine. Zodra je bent ingelogd, wordt de koppeling automatisch gemaakt.
 
-Logt X je Machine uit, zie dan [Uitgelogd op een site](signed-out.md).
+Of voer `assistant connect x` uit in een terminal.
+
+Als X je Machine uitlogt, bekijk dan [Uitgelogd bij een site](signed-out.md).
 
 ## Verwijderen
 
-- In het dashboard: **Koppelingen**, open X, **Details**, dan **Ontkoppelen**. Het stopt met lezen. Wat al binnengehaald is, blijft.
-- Op een gehoste Machine kun je ook op **Verwijderen** ernaast drukken op je setuppagina.
+- In het dashboard: open **Koppelingen**, open X, kies **Details** en daarna **Ontkoppelen**. Hij stopt met lezen. Wat hij al heeft opgehaald, blijft staan.
+- Op een gehoste Machine kun je ook op **Verwijderen** naast X op je configuratiepagina drukken.
 
-## Uitloggen op X
+## Uitloggen bij X
 
-Open in X Settings, Security and account access, Apps and sessions, Sessions, en log de sessie van de browser van je Machine uit.
+Open in X Instellingen, Beveiliging en accounttoegang, Apps en sessies, Sessies en log de sessie van de browser van je Machine uit.

@@ -7,60 +7,64 @@ code: manifest.webmanifest, sw.js, dashboard.html
 order: 3
 translated: 3e2919603c5efa9a
 ---
-La dashboard si installa come app su un telefono o un computer. Poi invia una notifica per ogni attività, risultato e promemoria quando non sei sulla dashboard, nel tuo [orario di lavoro](work-hours.md). Scegli cosa invia in [Notifiche](notifications.md).
+Installa The Machine come app sul telefono o sul computer per ricevere una notifica per ogni attività, risultato e promemoria durante il tuo [orario di lavoro](work-hours.md). Scegli cosa ricevere in [Notifiche](notifications.md).
 
-Una nota discreta in cima ad Attività propone entrambe le cose, una alla volta, appena hai gestito la tua prima attività: prima le notifiche, poi l’app. Ciò che è già fatto su quel dispositivo non compare mai. **Non ora** la nasconde per 14 giorni, e un secondo **Non ora** la toglie su quel dispositivo. Gli stessi comandi restano in **Impostazioni**, **Generale**, **Questo dispositivo**.
+Dopo la prima attività, una nota discreta in cima alla pagina Attività propone queste opzioni, una alla volta: prima l’[app per dispositivi mobili](mobile-app.md), poi le notifiche e infine l’app desktop. Vengono mostrate solo le opzioni che non hai ancora attivato su quel dispositivo.
+
+**Non ora** nasconde la nota per 14 giorni. Se selezioni di nuovo **Non ora**, la nota non verrà più mostrata su quel dispositivo. Gli stessi controlli sono disponibili in **Impostazioni**, **Generale**, **Questo dispositivo**.
+
+Nell’app per telefono, il messaggio **Ricevi una notifica quando c’è qualcosa che richiede la tua attenzione.** appare quando le notifiche sono disattivate. **Attiva** chiede l’autorizzazione al telefono o apre le sue impostazioni. **×** nasconde il messaggio per 7 giorni.
 
 ## Su un computer (Chrome o Edge)
 
-1. Apri la dashboard e fai clic su **Installa** in quella nota, su **Installa l’app** in Impostazioni, **Generali**, oppure su **Installa** accanto a **Computer** in Impostazioni, **App**.
-2. The Machine si apre in una finestra sua. Fissala sulla barra delle applicazioni o nel Dock.
-3. Fai clic su **Attiva** nella nota e consenti le notifiche. Arriva subito una notifica di prova.
+1. Apri la dashboard e seleziona **Installa** sulla nota, **Installa l’app** in Impostazioni, Generale oppure **Installa** accanto a **Computer** in Impostazioni, **App**.
+2. The Machine si apre in una finestra dedicata. Aggiungila alla barra delle applicazioni o al dock.
+3. Seleziona **Attiva** sulla nota e consenti le notifiche. Riceverai subito una notifica di prova.
 
 ## Su un Mac (Safari)
 
 1. Nella barra dei menu di Safari, scegli File, poi Aggiungi al Dock.
-2. Apri The Machine dal Dock e fai clic su **Attiva**.
+2. Apri The Machine dal Dock e seleziona **Attiva**.
 
 ## In Firefox
 
-Firefox non può installarla come app. Le notifiche funzionano nella scheda: fai clic su **Attiva** in quella nota, oppure sulla campanella accanto a **Notifiche** nelle Impostazioni.
+Firefox non permette di installare l’app. Le notifiche funzionano nella scheda: seleziona **Attiva** sulla nota o la campanella accanto a **Notifiche** nelle Impostazioni.
 
-## Su un iPhone o un iPad
+## Su un iPhone o iPad
 
-1. Apri la dashboard in Safari. Serve iOS 16.4 o successivo.
+1. Apri la dashboard in Safari. È necessario iOS 16.4 o versioni successive.
 2. Tocca Condividi, poi Aggiungi alla schermata Home.
 3. Apri The Machine dalla schermata Home e tocca **Attiva**.
 
-Le notifiche funzionano solo dall’app sulla schermata Home, non in una scheda di Safari.
+Le notifiche funzionano solo nell’app aperta dalla schermata Home, non in una scheda di Safari.
 
 ## Su Android
 
-1. Apri la dashboard in Chrome e tocca **Installa** in quella nota, oppure apri il menu e tocca Installa app.
-2. Aprila dalla schermata Home e tocca **Attiva**.
+1. Apri la dashboard in Chrome e tocca **Installa** sulla nota, oppure apri il menu e tocca Installa app.
+2. Apri l’app dalla schermata Home e tocca **Attiva**.
 
-## Controlla o cambia
+## Controllare o modificare le impostazioni
 
-In **Impostazioni**, **Generale**, **Questo dispositivo**, la campanella accanto a **Notifiche** le attiva o disattiva solo per quel dispositivo, e **Invia una prova** ne manda una lì.
+In **Impostazioni**, **Generale**, **Questo dispositivo**, la campanella accanto a **Notifiche** le attiva o disattiva solo per quel dispositivo. **Invia una prova** invia una notifica al dispositivo.
 
-Se le notifiche sono bloccate, la riga dice dove riattivarle: su un computer, fai clic sull’icona a sinistra dell’indirizzo e consenti le notifiche. Su un iPhone, apri l’app Impostazioni, Notifiche, The Machine.
+Le notifiche sono bloccate? Su un computer, seleziona l’icona a sinistra dell’indirizzo e consenti le notifiche. Su un iPhone, apri l’app Impostazioni, poi Notifiche e The Machine.
 
-## Apertura rapida
+## Aprire l’app rapidamente
 
-L’app si apre subito con le tue ultime attività, poi le aggiorna. Senza connessione mostra quello che aveva, segnato **Offline** con l’ora dell’ultimo aggiornamento. Quella copia resta sul dispositivo al massimo 7 giorni, cifrata, e sparisce quando esci.
+L’app si apre subito mostrando le ultime attività, poi le aggiorna. La copia resta sul dispositivo, crittografata, per un massimo di 7 giorni e viene eliminata quando esci dall’account.
 
-## Offline e wifi instabile
+## Senza connessione o con una connessione Wi-Fi instabile
 
-In aereo o in treno la dashboard continua a funzionare. Una barra in alto dice **Offline** e quando è stato aggiornato l’ultima volta quello che vedi. Le tue attività, le loro chat, il Calendario e le liste del Graph si aprono dal dispositivo.
+In aereo o in treno, la dashboard continua a funzionare. Una barra in alto indica **Offline** e mostra quando sono stati aggiornati i contenuti visualizzati. Puoi aprire le tue attività, le relative chat, il Calendario e gli elenchi di Graph dal dispositivo.
 
-- **Posticipa**, **Non serve**, **Segna come fatto**, **Riapri** e le note o i messaggi in chat a The Machine aspettano sul dispositivo. L’attività dice che verrà salvato quando tornerai online, con **Annulla** fino ad allora. Appena la tua Machine risponde di nuovo partono da soli, in ordine, una volta ciascuno.
-- I messaggi ad altre persone non aspettano mai. **Invia** dice che sei offline: invia di nuovo quando torni online.
-- Quello che scrivi in una chat resta sul dispositivo finché non lo invii, anche dopo un ricaricamento.
-- L’app riprova da sola, ogni volta un po’ più tardi. **Prova ora** riprova subito.
-- Una Machine occupata può metterci un po’ a rispondere. L’app dice allora **La tua Machine è lenta a rispondere** e tiene quello che vedi. Non è offline.
+- **Posticipa**, **Non serve**, **Segna come fatto**, **Riapri** e i messaggi in chat a The Machine restano in attesa sul dispositivo. Puoi annullarli con **Annulla**. Verranno inviati automaticamente quando tornerai online.
+- I messaggi alle altre persone non vengono messi in attesa: inviali di nuovo quando tornerai online.
+- Il testo che scrivi in una chat resta sul dispositivo finché non lo invii, anche se ricarichi la pagina.
+- L’app continua a riprovare automaticamente. **Prova ora** avvia un nuovo tentativo subito.
+- Una Machine impegnata può impiegare un po’ a rispondere. In quel caso, l’app mostra **La tua Machine è lenta a rispondere** e conserva i contenuti visualizzati. Questo non significa che sei offline.
 
 ## Altri dispositivi
 
-Accedi allo stesso modo su ogni dispositivo. Su una Machine in hosting, una passkey per dispositivo rende l’accesso più rapido: in **Impostazioni** › **Account**, premi **Gestisci** accanto ad Accesso.
+Accedi a ogni dispositivo nello stesso modo. Su una Machine ospitata, una passkey per dispositivo rende più rapido l’accesso: in **Impostazioni** › **Account**, seleziona **Gestisci** accanto ad Accesso.
 
-Per leggere le notifiche del tuo telefono Android come fonte, vedi [Notifiche Android](android.md).
+Per usare come fonte le notifiche del tuo telefono Android, consulta [Notifiche Android](android.md).
