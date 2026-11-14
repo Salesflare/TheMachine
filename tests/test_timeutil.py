@@ -22,11 +22,50 @@ class TimeUtil(unittest.TestCase):
         timeutil.set_timezone('')  # nothing set keeps the zone
         self.assertEqual(timeutil.local_tz().key, 'Europe/London')
 
-    def test_clock(self):
-        self.assertEqual(timeutil.clock('8:30'), (8, 30))
-        self.assertEqual(timeutil.clock(' 23:05 '), (23, 5))
+    def test_the_clock_reads_the_real_time_as_datetime_now_does(self):
+        before = dt.datetime.now(dt.timezone.utc)
+        utc, local, zoned = timeutil.clock(), timeutil.clock(None), timeutil.clock(ZoneInfo('Asia/Tokyo'))
+        after = dt.datetime.now(dt.timezone.utc)
+        self.assertTrue(before <= utc <= after)
+        self.assertEqual(utc.tzinfo, dt.timezone.utc)
+        self.assertIsNone(local.tzinfo)
+        self.assertTrue(before <= local.astimezone() <= after)
+        self.assertEqual(zoned.tzinfo, ZoneInfo('Asia/Tokyo'))
+        self.assertIn(timeutil.today(), {before.astimezone().date(), after.astimezone().date()})
+
+    def test_pinned_fixes_every_reading_of_the_clock(self):
+        from pinned import pinned
+        when = dt.datetime(2026, 11, 9, 23, 30, tzinfo=dt.timezone.utc)
+        with pinned(when) as pin:
+            self.assertEqual(timeutil.clock(), when)
+            self.assertEqual(timeutil.clock().tzinfo, dt.timezone.utc)
+            self.assertEqual(timeutil.now(), '2026-11-09T23:30:00+00:00')
+            tokyo = timeutil.clock(ZoneInfo('Asia/Tokyo'))
+            self.assertEqual((tokyo.date(), tokyo.hour), (dt.date(2026, 11, 10), 8))
+            self.assertEqual(timeutil.clock(None), when.astimezone().replace(tzinfo=None))
+            self.assertEqual(timeutil.today(), when.astimezone().date())
+            pin.move(days=4)
+            self.assertEqual(timeutil.clock(), when + dt.timedelta(days=4))
+            with pinned('2027-01-05T09:00:00+01:00'):  # an inner pin returns to the outer moment
+                self.assertEqual(timeutil.now(), '2027-01-05T08:00:00+00:00')
+            self.assertEqual(pin.at, when + dt.timedelta(days=4))
+        self.assertIsNone(timeutil.PINNED)
+
+        @pinned(when)
+        def decorated():
+            return timeutil.now()
+        self.assertEqual(decorated(), when.isoformat())
+        self.assertIsNone(timeutil.PINNED)
+        for vague in (dt.datetime(2026, 11, 9), '2026-11-09T12:00:00', dt.date(2026, 11, 9)):
+            with self.subTest(vague=vague), self.assertRaisesRegex(ValueError, 'time zone'), pinned(vague):
+                pass
+        self.assertIsNone(timeutil.PINNED)
+
+    def test_hour_minute(self):
+        self.assertEqual(timeutil.hour_minute('8:30'), (8, 30))
+        self.assertEqual(timeutil.hour_minute(' 23:05 '), (23, 5))
         with self.assertRaisesRegex(ValueError, 'The start must be a time like 09:00'):
-            timeutil.clock('24:00', 'The start')
+            timeutil.hour_minute('24:00', 'The start')
 
     def test_work_hours_are_checked_and_completed(self):
         self.assertEqual(timeutil.work_hours(), timeutil.WORK_HOURS_DEFAULT)

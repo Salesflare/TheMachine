@@ -24,7 +24,7 @@ import notify
 import own_addresses
 import security_levels
 import team_learnings
-from timeutil import clock, digest_floor, local_tz, now, set_timezone, set_work_hours, WORK_HOURS, work_hours, WORK_HOURS_DEFAULT
+from timeutil import hour_minute, digest_floor, local_tz, now, set_timezone, set_work_hours, WORK_HOURS, work_hours, WORK_HOURS_DEFAULT
 from machine.owner_error import OwnerError
 
 
@@ -40,9 +40,9 @@ def hours_settings(config, changes):
         ZoneInfo(zone)
     except (ValueError, KeyError, OSError):
         raise ValueError(f'Unknown time zone {zone!r}; use a name like Europe/Brussels or America/New_York') from None
-    digest = '%02d:%02d' % clock(changes.get('digest_at') or config.get('digest_at') or '08:30', 'The digest time')
+    digest = '%02d:%02d' % hour_minute(changes.get('digest_at') or config.get('digest_at') or '08:30', 'The digest time')
     evening = changes['evening_at'] if 'evening_at' in changes else config.get('evening_at')
-    evening = '%02d:%02d' % clock(evening, 'The evening digest time') if evening else None
+    evening = '%02d:%02d' % hour_minute(evening, 'The evening digest time') if evening else None
     return {'timezone': zone, 'digest_at': digest, 'evening_at': evening, 'work_hours': work_hours(merged)}
 
 
@@ -184,7 +184,7 @@ class SettingsActionsApp:
         digest = self.config.get('digest_at', '08:30')
         try:
             later = digest_floor(digest)
-            if clock(later) == clock(digest) or not getattr(self, 'config_path', None):
+            if hour_minute(later) == hour_minute(digest) or not getattr(self, 'config_path', None):
                 return None
             save_hours(self.config_path, {'digest_at': later})
         except (ValueError, OSError) as error:

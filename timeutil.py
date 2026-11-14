@@ -25,9 +25,37 @@ def set_timezone(name):
         LOCAL_TZ = ZoneInfo(name)
 
 
+# The clock: clock() is the one place the app reads the current time, so a test (tests/pinned.py) or a run at a
+# chosen moment can fix it with pin(). An architecture test keeps datetime.now() and date.today() out of other code.
+PINNED = None  # the moment pin() fixed (an aware datetime), or None for the real clock
+PIN_NEEDS_A_ZONE = 'pin() takes a datetime with a time zone, so the moment is not ambiguous'  # for developers, not shown
+
+
+def clock(tz=dt.timezone.utc):
+    """The current time, aware in `tz` (UTC by default); `tz=None` gives naive local time, as datetime.now() does."""
+    if PINNED is None:
+        return dt.datetime.now(tz)
+    return PINNED.astimezone(tz).replace(tzinfo=None) if tz is None else PINNED.astimezone(tz)
+
+
+def today():
+    """The current local date, as date.today() gives it."""
+    return dt.date.today() if PINNED is None else clock(None).date()
+
+
+def pin(when):
+    """Fix the clock at `when` (an aware datetime, or ISO text with an offset); None lets it run again."""
+    global PINNED
+    if isinstance(when, str):
+        when = dt.datetime.fromisoformat(when.replace('Z', '+00:00'))
+    if when is not None and (not isinstance(when, dt.datetime) or when.utcoffset() is None):
+        raise ValueError(PIN_NEEDS_A_ZONE)
+    PINNED = when
+
+
 def now():
     """The current time in UTC, as ISO text (what the database stores)."""
-    return dt.datetime.now(dt.timezone.utc).isoformat()
+    return clock().isoformat()
 
 
 # The owner's hours (`work_hours` in config.json, the dashboard's Work hours, `assistant hours`):
@@ -42,7 +70,7 @@ WORK_HOURS = dict(WORK_HOURS_DEFAULT)
 DAY_NAMES = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
 
 
-def clock(value, what='time'):
+def hour_minute(value, what='time'):
     """'8:30' or '08:30' as (8, 30); anything else is a ValueError naming `what`."""
     match = re.fullmatch(r'\s*([01]?\d|2[0-3]):([0-5]\d)\s*', str(value or ''))
     if not match:
@@ -80,7 +108,7 @@ def work_hours(value=None):
         raise OwnerError('Pick at least one work day')
     hours = {'days': sorted(picked)}
     for key, what in (('start', 'The start'), ('end', 'The end'), ('morning', 'The morning time')):
-        hours[key] = '%02d:%02d' % clock(value.get(key, WORK_HOURS_DEFAULT[key]), what)
+        hours[key] = '%02d:%02d' % hour_minute(value.get(key, WORK_HOURS_DEFAULT[key]), what)
     return hours
 
 
@@ -99,8 +127,8 @@ def digest_floor(digest_at, hours=None):
     minimum falls past midnight or outside the hours, the digest keeps its own time. The dashboard's Work hours do the
     same (settings-general.js, digestFloor)."""
     hours = hours or WORK_HOURS
-    digest = '%02d:%02d' % clock(digest_at)
-    hour, minute = clock(hours['morning'])
+    digest = '%02d:%02d' % hour_minute(digest_at)
+    hour, minute = hour_minute(hours['morning'])
     after = hour * 60 + minute + DIGEST_AFTER_SNOOZES
     if after >= 24 * 60:
         return digest
@@ -127,14 +155,14 @@ def next_work_day(local, hours=None):
 def in_hours(local, hours=None):
     """Within the owner's hours (start–end, local time), when cards and reminders may go out."""
     hours = hours or WORK_HOURS
-    start, end, minute = clock(hours['start']), clock(hours['end']), (local.hour, local.minute)
+    start, end, minute = hour_minute(hours['start']), hour_minute(hours['end']), (local.hour, local.minute)
     if start == end:
         return True
     return start <= minute < end if start < end else minute >= start or minute < end
 
 
 def morning_label(hours=None):
-    hour, minute = clock((hours or WORK_HOURS)['morning'])
+    hour, minute = hour_minute((hours or WORK_HOURS)['morning'])
     return f'{hour}:{minute:02d}'
 
 

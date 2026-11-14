@@ -44,7 +44,7 @@ import urllib.parse
 import urllib.request
 import uuid
 from zoneinfo import ZoneInfo
-from timeutil import (DAY_NAMES, WORK_HOURS, WORK_HOURS_DEFAULT, clock, in_hours, is_work_day, local_tz, morning_label,  # noqa: F401
+from timeutil import (DAY_NAMES, WORK_HOURS, WORK_HOURS_DEFAULT, hour_minute, in_hours, is_work_day, local_tz, morning_label,  # noqa: F401
                       next_work_day, now, set_timezone, set_work_hours, work_hours)  # the owner's time zone and hours, the clock
 import abilities
 import bug_queue
