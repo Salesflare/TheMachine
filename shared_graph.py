@@ -186,6 +186,7 @@ def _ensure(db):
         message_seal.ensure_triggers(db)
     stamps.watch(db, shared_graph_kept.WATCHED)
     stamps.watch_graph_who(db)
+    stamps.watch_events_shared(db)
 
 
 def drop_received(db, fleet, mine):
@@ -1232,11 +1233,11 @@ COUNTED = ('client', 'sensitive', 'personal', 'internal', 'unsure', 'other')
 LISTED = 300  # threads per list in What's shared, newest first
 
 
-def overview(db, scope, sent=0):
+def overview(db, scope, sent=0, found=None):
     """What's shared, in one place, for one Work Fleet: counts by how the review sorted the threads and what went, and
     the lists: shared (and going within the hour), Share these? (the review was unsure, someone outside is on it),
-    and what the owner keeps private (threads by hand, records, rules)."""
-    found = threads_by_view(db, scope)
+    and what the owner keeps private (threads by hand, records, rules). found: threads_by_view's, when read already."""
+    found = threads_by_view(db, scope) if found is None else found
     sorted_ = dict.fromkeys(COUNTED, 0)
     for verdict, n in db.execute('SELECT verdict,count(*) FROM share_threads WHERE verdict IS NOT NULL GROUP BY verdict'):
         if verdict in sorted_:
@@ -1287,9 +1288,9 @@ def unsure_groups(unsure):
     return sorted(out, key=lambda g: (not g['name'], -g['count'], g['name'].lower()))
 
 
-def preview(db, scope, limit=12):
+def preview(db, scope, limit=12, found=None):
     """Before a Machine's first share: how many client threads go and with which organizations, to look over first."""
-    found = threads_by_view(db, scope)
+    found = threads_by_view(db, scope) if found is None else found
     orgs = collections.Counter()
     keys = {}
     for view, e, _ in found.values():
@@ -1827,17 +1828,23 @@ class SharedGraph(shared_graph_takeback.TakeBack, shared_graph_boards.TeamBoards
             raise ValueError('Not a Work Fleet of yours')
         with self.connect() as db:
             ensure(db)
-            scope = Scope(db, self.graph_accounts(fleet), self.internal(fleet), self.my_emails(), self._personal_people(db))
-            sent = db.execute("SELECT count(*) FROM share_out WHERE fleet=? AND kind='thread'", (fleet,)).fetchone()[0]
-            out = overview(db, scope, sent)
+            at = stamps.stamp(db, shared_graph_kept.OVERVIEW_TABLES)  # before anything it is made from is read
+            scope = self.scopes(db)[fleet]  # the sharing rules, kept until their tables change
+            started = bool((self.meta('graph_start:' + fleet) or {}).get('started'))
+
+            def make():  # a pass over every message of the Fleet's accounts, once for both
+                found = threads_by_view(db, scope)
+                out = overview(db, scope, found=found)
+                if not started:
+                    out['preview'] = preview(db, scope, found=found)
+                    for x in out['threads']:  # nothing went yet: say what goes, not what went
+                        x['why'] = re.sub(r'^(Shared|Shares within the hour): ', 'Goes within the hour: ', x['why'])
+                return out
+            out = shared_graph_kept.overview(db, fleet, scope, started, make, at)  # kept while nothing it reads changed
+            out['sent'] = db.execute("SELECT count(*) FROM share_out WHERE fleet=? AND kind='thread'", (fleet,)).fetchone()[0]
             names = self.member_names()
             for x in out['by_hand']:  # kept from the team, maybe shared with chosen teammates (Share with…)
                 x['shared_with'] = self.named_shares(db, 'thread', x.pop('thread'), names)
-            start = self.meta('graph_start:' + fleet) or {}
-            if not start.get('started'):
-                out['preview'] = preview(db, scope)
-                for x in out['threads']:  # nothing went yet: say what goes, not what went
-                    x['why'] = re.sub(r'^(Shared|Shares within the hour): ', 'Goes within the hour: ', x['why'])
         out['teammates'] = [{'fleet': f, 'member': m, 'name': n} for (f, m), n in
                             sorted(self.graph_teammates().items(), key=lambda x: x[1].lower()) if f == fleet]  # Share with…
         return out

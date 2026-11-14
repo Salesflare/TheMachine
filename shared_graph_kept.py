@@ -19,6 +19,25 @@ SCOPE_TABLES = ('share_private', 'share_rules', 'share_threads', 'graph_who', 'p
                 'event_projects', 'graph_events', 'slack_members', 'identity_names')
 KEPT = stamps.Kept(16)  # what the dashboard's requests work out from the sharing tables (WATCHED), by stamp
 
+# What's shared for one Work Fleet (SharedGraph.graph_overview) reads every message of the Fleet's accounts and judges
+# each (seconds on a big mailbox, on each open of the Fleet tab). Kept while nothing it reads changed: the tables of the
+# sharing rules (SCOPE_TABLES), the messages as it reads them (events_shared: stamps.EVENTS_SHARED), the threads still
+# in the hold, the Slack conversations shared with another company, and whether the first share went. By Fleet and by
+# everything the rules are made for (accounts, the company's domains, the owner's addresses, who is private). At most
+# four kept, each with lists of shared_graph.LISTED threads at most.
+OVERVIEW_TABLES = SCOPE_TABLES + ('events_shared',)
+OVERVIEWS = stamps.Kept(4)
+
+
+def overview(db, fleet, scope, started, make, at):
+    """make() (the overview of this Fleet's scope: a renewed Scope, current to the second), or the one kept from a
+    request that read the same; each caller gets its own copy to change. at: stamps.stamp of OVERVIEW_TABLES, read
+    before the scope was made, so a change meanwhile is never kept as older than it is."""
+    key = ('overview', fleet, frozenset(scope.accounts), frozenset(scope.internal), frozenset(scope.mine),
+           frozenset(scope.private), bool(started))
+    at = None if at is None else (at, frozenset(scope.fresh), frozenset(scope.slack_connect))
+    return copy.deepcopy(OVERVIEWS.get(key, at, make))
+
 
 def fleet_marks(db, fleets):
     """graph.fleet_marks: the Fleet members kept until the graph's people or the directory change (a pass over every
