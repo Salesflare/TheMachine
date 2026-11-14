@@ -27,11 +27,11 @@ It fails when:
   the site does not render (only ## and ### headings, paragraphs, - and 1. lists,
   **bold**, `code` and links; a link to another article is its file name, like gmail.md);
 - a current translation (docs/help/<language>/<article>.md, shown in the dashboard's Help in that language, made
-  from this English) doesn't match its English article: other front matter than title, summary and translated,
-  another number of headings (their anchors are the English ones, by position) or of paragraphs and list items in a
-  section, a link to an article that doesn't exist; or any translation has an em dash. Pull requests change the
-  English only: an article not translated yet, or translated from older English, is the daily translator's
-  (scripts/translate.py), and Help shows the English one until then.
+  from this English, with its headings, paragraphs and list items; the headings' anchors are the English ones, by
+  position) doesn't match its English article: other front matter than title, summary and translated, a link to an
+  article that doesn't exist; or any translation has an em dash. Pull requests change the English only: an article
+  not translated yet, translated from older English or out of step with it, is the daily translator's
+  (scripts/translate.py); Help shows the English one for an article not translated yet.
 
     python3 scripts/help_check.py          # prints what is wrong, exit code 1 if anything is
 """
@@ -268,17 +268,12 @@ def check(folder=HELP):
     return problems + check_translations(found, folder)
 
 
-def blocks(body):
-    """Per section (the text before the first heading, then each ## or ### one): its paragraphs and list items."""
-    return [sum(len(b.splitlines()) if re.match(r'(- |\d+\. )', b) else 1 for b in re.split(r'\n\s*\n', part.strip()) if b.strip() and not b.startswith('#'))
-            for part in re.split(r'^(?=#{2,3} )', body, flags=re.M)]
-
-
 def check_translations(found, folder=HELP):
     """Each language's articles against their English one. Only a current translation is held to it: one made from
-    this English (its `translated:` stamp), or from before stamps with the English's headings. One the English has
-    moved on from, or an article English no longer has, is the daily translator's (scripts/translate.py); Help shows the
-    English article until then, and scripts/release.py cut refuses a release with either."""
+    this English (its `translated:` stamp), or from before stamps, either with the English's headings, paragraphs and
+    list items (translate.help_state). One the English has moved on from, one out of step with it, or an article
+    English no longer has, is the daily translator's (scripts/translate.py), and scripts/release.py cut refuses a
+    release with any of them."""
     sys.path.insert(0, str(ROOT / 'scripts'))
     import translate
     problems = []
@@ -299,13 +294,7 @@ def check_translations(found, folder=HELP):
             # translated: the hash of the English it was made from (scripts/translate.py)
             other = {k for k in set(fields) | set(en[0]) if k not in ('title', 'summary', 'translated') and fields.get(k) != en[0].get(k)}
             problems += [f'{where}: {k} differs from the English article' for k in sorted(other)]
-            heads = lambda text: re.findall(r'^#{2,3} ', text, re.M)
-            if len(heads(body)) != len(heads(en[1])):
-                problems.append(f'{where}: {len(heads(body))} headings, the English article has {len(heads(en[1]))}')
-            elif state == 'current' and blocks(body) != blocks(en[1]):
-                problems += [f'{where}: section {i} has {ours} paragraphs and list items, the English article has {theirs}'
-                             for i, (ours, theirs) in enumerate(zip(blocks(body), blocks(en[1]))) if ours != theirs]
-            problems += [f'{where}: links to {slug}.md, which docs/help/ does not have'
+            problems +=[f'{where}: links to {slug}.md, which docs/help/ does not have'
                          for slug in re.findall(r'\]\(([a-z0-9-]+)\.md', body) if slug not in found]
     return problems
 

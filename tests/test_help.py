@@ -86,7 +86,7 @@ class HelpArticles(unittest.TestCase):
         self.assertIn('lists "Connect it now" under site: but does not use it',
                       ' '.join(self.problems(GOOD.replace('code: onboarding.py', 'code: onboarding.py\nsite: Connect it now'))))
 
-    def test_a_current_translation_has_every_paragraph_and_an_older_one_waits_for_the_translator(self):
+    def test_a_current_translation_matches_and_an_older_or_out_of_step_one_waits_for_the_translator(self):
         import sys
         sys.path.insert(0, str(HERE / 'scripts'))
         import translate
@@ -100,10 +100,15 @@ class HelpArticles(unittest.TestCase):
             (folder / 'de').mkdir()
             self.assertEqual(gmail(), [], 'not translated yet: Help shows the English one, the translator adds it')
             stamped = lambda text: text.replace('---\nOpen', f'translated: {translate.stamp(folder / "gmail.md")}\n---\nOpen', 1).replace('---\nÖffne', f'translated: {translate.stamp(folder / "gmail.md")}\n---\nÖffne', 1)
-            self.write(folder / 'de', 'gmail.md', stamped(de + '\n## Entfernen\n\nÖffne es.\n\n- Eins.\n'))  # a list item short
-            self.assertEqual(gmail(), ['docs/help/de/gmail.md: section 1 has 2 paragraphs and list items, the English article has 3'])
-            self.write(folder / 'de', 'gmail.md', stamped(de + '\n## Entfernen\n\nÖffne es.\n\n- Eins.\n- Zwei.\n'))
+            # a list item short, stamped all the same: out of date, so the translator makes it again and a release waits
+            self.write(folder / 'de', 'gmail.md', stamped(de + '\n## Entfernen\n\nÖffne es.\n\n- Eins.\n'))
             self.assertEqual(gmail(), [])
+            self.assertEqual(translate.help_state('de', folder / 'gmail.md', folder), 'stale')
+            self.write(folder / 'de', 'gmail.md', stamped(de + '\n## Entfernen\n\nÖffne es.\n\n- Eins.\n- Zwei.\n'))
+            self.assertEqual(translate.help_state('de', folder / 'gmail.md', folder), 'current')
+            self.assertEqual(gmail(), [])
+            self.write(folder / 'de', 'gmail.md', stamped(de + '\n## Entfernen\n\nÖffne [es](nirgends.md).\n\n- Eins.\n- Zwei.\n'))
+            self.assertEqual(gmail(), ['docs/help/de/gmail.md: links to nirgends.md, which docs/help/ does not have'])
             # a pull request changes the English only: the translation is out of date, not wrong
             self.write(d, 'gmail.md', english + '\n## Reconnect\n\nOpen it again.\n')
             self.assertEqual(gmail(), [])

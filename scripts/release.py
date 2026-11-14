@@ -237,17 +237,21 @@ def translation_problems(sha):
     (.github/workflows/translate.yml) writes the rest, so main may show English for a day and a release never does."""
     if git('cat-file', '-e', f'{sha}:scripts/translate.py', check=False).returncode:
         return []
+    # A translator from before --list (a commit cut with --commit) still checks: its counts, the nonzero ones listed
+    listing = "'--list'" in git('show', f'{sha}:scripts/translate.py').stdout
     with tempfile.TemporaryDirectory() as tmp:
         tree = Path(tmp) / 'tree'
         git('worktree', 'add', '--detach', '--quiet', str(tree), sha)
         try:
-            result = subprocess.run([sys.executable, 'scripts/translate.py', 'all', '--check', '--list'], cwd=tree,
-                                    capture_output=True, text=True, timeout=900)
+            result = subprocess.run([sys.executable, 'scripts/translate.py', 'all', '--check'] + ['--list'] * listing,
+                                    cwd=tree, capture_output=True, text=True, timeout=900)
         finally:
             git('worktree', 'remove', '--force', str(tree), check=False)
     if result.returncode == 0:
         return []
     lines = [line for line in result.stdout.splitlines() if line.strip()]
+    if not listing:
+        lines = [line for line in lines if re.search(r'\b[1-9]\d*\b', line)] or lines
     if result.returncode != 1 or not lines:
         return [f'scripts/translate.py all --check --list failed: {(result.stderr or result.stdout).strip()[-300:]}']
     return lines

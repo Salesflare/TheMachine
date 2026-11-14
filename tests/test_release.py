@@ -339,7 +339,7 @@ class Releases(unittest.TestCase):
         # the commit's own translator decides, run on its own files: here one that finds a help article missing
         (self.origin / 'scripts').mkdir()
         (self.origin / 'scripts' / 'translate.py').write_text(
-            "import sys\nprint('nl: docs/help/gmail.md not translated')\nsys.exit(1)\n")
+            "import sys\nprint('nl: docs/help/gmail.md not translated')\nsys.exit(1)  # '--list'\n")
         sha = self.commit('two')
         with self.assertRaisesRegex(SystemExit, 'not every language is translated yet(.|\n)*nl: docs/help/gmail.md not translated'):
             release.main(['cut', '--key', str(self.key), '--no-push'])
@@ -350,6 +350,20 @@ class Releases(unittest.TestCase):
         sha = self.commit('three')
         release.main(['cut', '--key', str(self.key), '--no-push'])
         self.assertEqual(release.verify(release.releases()[-1])[1], sha)
+
+    def test_cut_checks_a_translator_from_before_list(self):
+        # an older commit's translator knows only --check: its nonzero counts refuse, not its usage error
+        (self.origin / 'scripts').mkdir()
+        (self.origin / 'scripts' / 'translate.py').write_text(
+            "import sys\nassert sys.argv[1:] == ['all', '--check'], sys.argv\n"
+            "print('nl: 0 catalog keys to translate, 0 no longer in en.json')\n"
+            "print('fr: 2 help articles to translate, 0 out of date')\nsys.exit(1)\n")
+        self.commit('two')
+        with self.assertRaises(SystemExit) as refused:
+            release.main(['cut', '--key', str(self.key), '--no-push'])
+        self.assertIn('fr: 2 help articles to translate', str(refused.exception))
+        self.assertNotIn('nl: 0', str(refused.exception))
+        self.assertEqual(release.releases(), [])
 
     def test_failed_scan_never_creates_or_pushes_a_release(self):
         self.commit('two')

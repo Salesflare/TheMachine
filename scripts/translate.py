@@ -352,7 +352,7 @@ def front(text):
 
 
 def blocks(body):
-    """Per section: its paragraphs and list items (scripts/help_check.py's rule for kept-in-step translations)."""
+    """Per section: its paragraphs and list items. A translation with other ones than its English is out of date."""
     return [sum(len(b.splitlines()) if re.match(r'(- |\d+\. )', b) else 1 for b in re.split(r'\n\s*\n', part.strip()) if b.strip() and not b.startswith('#'))
             for part in re.split(r'^(?=#{2,3} )', body, flags=re.M)]
 
@@ -443,12 +443,16 @@ def help_state(lang, path, folder=HELP, history=None):
         return 'missing'
     fields, body = front(local.read_text(encoding='utf-8'))
     found = dict(fields).get('translated')
+    english = front(path.read_text(encoding='utf-8'))[1]
+    # Out of step with the English's sections, paragraphs and list items, it is out of date whatever its stamp or
+    # history says (a stamp added to an older translation; one made here is held to them by article_problems)
+    in_step = blocks(english) == blocks(body)
     if found:
-        return 'current' if found == stamp(path) else 'stale'
+        return 'current' if found == stamp(path) and in_step else 'stale'
     after = history.changed_after(path, local) if history else None
     if after is None:  # no history to go by: current while it still has the English's headings
-        after = HEADING.findall(front(path.read_text(encoding='utf-8'))[1]) != HEADING.findall(body)
-    return 'stale' if after else 'unstamped'
+        after = HEADING.findall(english) != HEADING.findall(body)
+    return 'stale' if after or not in_step else 'unstamped'
 
 
 def help_todo(langs, folder=HELP, history=None):
