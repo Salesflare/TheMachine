@@ -41,6 +41,8 @@ def sync(store, config, account, helpers):
     return {'mode': 'incremental', 'events': len(events)}
 ```
 
+Each kind also gets a row in [`machine/kinds.py`](../machine/kinds.py) (see [The kind registry](#the-kind-registry)).
+
 The service calls `sync` every `poll_seconds` (default 300) in the account's own thread. `helpers` has:
 
 | Helper | Use |
@@ -105,7 +107,7 @@ Use this common event shape; optional metadata is source-specific. Check parsing
 |---|---|
 | `account_id` | `account['id']`. `commit_page` refuses events for another account. |
 | `source_id` | Stable ID of the item in the source. The same item must always get the same ID; hash it if it's long or contains personal data. |
-| `kind` | `<service>.<type>`, e.g. `rss.item`. Add it to `KINDS`. |
+| `kind` | `<service>.<type>`, e.g. `rss.item`. Add it to `KINDS` and give it a row in `machine/kinds.py`. |
 | `occurred_at` | When it happened, UTC ISO. |
 | `title` | A short line (max 1000 chars): subject, chat name, item title. |
 | `body` | The text (max 40000 chars). Plain text; strip HTML. Omit one-time codes and passwords. |
@@ -115,6 +117,24 @@ Use this common event shape; optional metadata is source-specific. Check parsing
 Message text goes in `title`, `body` and metadata only. With [message protection](configuration.md#message-protection) on, `commit_page` seals all three; only the lookup keys `thread_id`, `from`, `to`, `labels`, `from_me`, `user_id`, `channel_id`, `chat_id`, `conversation_id` and `notification_key_hash` and the routing keys `end_at` (a time), `status` (a calendar event's `confirmed`, `tentative` or `cancelled`), `recurring_event_id` (an id) and `chat_kind` (dm, group and the like) stay readable, so keep text out of those (a status in the source's own words gets a name of its own, as Salesforce's `task_status`), `source_id`, `kind` and your cursor. `MESSAGE_SEAL_AUDIT=1` makes `commit_page` refuse an event that does (`test_message_seal.py` runs every connector suite that way). Store only through `commit_page`, never with your own SQL.
 
 When an item changes, send it again with the same `source_id`: the service stores a new version and reviews see it again. Unchanged items are skipped by content hash, so rereading is cheap and safe.
+
+### The kind registry
+
+[`machine/kinds.py`](../machine/kinds.py) has a row for every event kind. Code asks it what a kind is instead of spelling kinds out in a tuple of its own. It imports nothing, and the dashboard gets it as JSON in the page (`SOURCE_KINDS`). A row says:
+
+| Field | Meaning |
+|---|---|
+| `service` | The service that reads it: your connector's file name, a key of `SERVICES` in `machine/names.py`. |
+| `name` | What a to-do's source line calls it ("Slack"): your `KINDS` label. `None` when nothing names it. |
+| `via` | The Graph's word for where someone was in touch ("last talked via GitHub"), or `None`. |
+| `view` | `email`, `chat`, `notification` or `card`: the same as in `VIEWS`. |
+| `family` | What it is: `mail`, `chat`, `meeting`, `notification` or `card`. |
+| `timeline` | Its group on a person's Graph timeline: `email`, `meetings`, `intercom`, `chats` or `other`. |
+| `send` | The kind of message a reply to it goes out as (a key of `SENDS`), or `None`. |
+| `mark` | Its one-color mark (see below). |
+| `markdown`, `media`, `messenger` | Its body renders as markdown; a caption-less photo or file shows as a chip; it reads like its messenger app. |
+
+Start from `**_NO` for the defaults, as the other rows do. Code reads the registry by field: `of(family=CHAT)`, `of(timeline='meetings')`, `of(service='docs')`, `of(flag='markdown')`; the send kinds through `SEND`, `TEXT_ONLY`, `TO_PERSON` and `SEND_NOW`. [`tests/test_kinds.py`](../tests/test_kinds.py) checks each row is complete, that it says what the code around it says (your `KINDS` label, your `VIEWS`), and that every connector kind has one. It also counts the hand-written lists of kinds still in the code, per file, and fails when a file has more than its count: ask the registry instead. Moving code to another file moves its count with it.
 
 ## 4. Checkpoints
 
@@ -142,7 +162,7 @@ APP = 'GitHub'                 # "Open in GitHub"; '' for "Open original"; or {'
 ```
 
 - **email**: mail. The subject is the title; the sender by name with the address quiet, To and Cc as their own lines. Details only when it adds something the header doesn't say (full addresses behind names, Bcc, a Reply-To elsewhere, the service it was sent through), never a To that is just the address on the line. A body that starts with `From:`/`To:` lines has them moved to the header.
-- **chat**: a conversation. Turns by who said them, the owner's side (and a support team's) on the right, a bot marked as one. A messenger kind in `THREAD_IM` (dashboard/events-message.js) reads like its app, bubbles with their times; list it in `MEDIA_KINDS` and set `media_type` in metadata, and `media_shown` turns a caption-less "Sent image" into a chip.
+- **chat**: a conversation. Turns by who said them, the owner's side (and a support team's) on the right, a bot marked as one. A messenger kind (`messenger` in its `machine/kinds.py` row) reads like its app, bubbles with their times. Set `media` in its row, list it in `MEDIA_KINDS` and set `media_type` in metadata, and `media_shown` turns a caption-less "Sent image" into a chip.
 - **notification**: a phone notification or alert. The app, the time, its title and text, once each.
 - **card**: an item with a state (an issue, a task, a deal, a payment, a doc comment, meeting notes). Its title, where it is, a state, who made it, why it reached the owner, the text rendered.
 
@@ -150,7 +170,7 @@ The rules every view keeps, whatever the source sends:
 
 1. No raw ids, Unix timestamps or internal type names on screen. An app's package id (`com.acme.shop`) is never a title, a subject or a sender: the app by its name, or nothing.
 2. Nothing said twice across the title, the header, Details and the body.
-3. Markup renders (markdown, Slack mrkdwn, sanitized HTML): no literal `**`, backticks or `<url|label>` brackets. Name a markdown kind in `MARKDOWN_KINDS`.
+3. Markup renders (markdown, Slack mrkdwn, sanitized HTML): no literal `**`, backticks or `<url|label>` brackets. Name a markdown kind in `MARKDOWN_KINDS` and set `markdown` in its `machine/kinds.py` row.
 4. People by name where a name exists, and the real author rather than the bot that sent the notification. An address the source sends without a name shows by the name the Graph knows for it, everywhere a sender shows (the viewer, a to-do's source line, the last check's list, a person's Graph timeline); the address only when no name is known. When your `from` is an address, put the name the service gives next to it (`from_name`, `sender_display`, `contact_name` or `customer_name`; `NAME_KEYS`), never an address as that name: `sender_name` in [`machine/store/message_view.py`](../machine/store/message_view.py) reads it. A relay or bot address (Intercom's `operator+…@intercom.io`, a noreply) never shows outside email: the customer by name when the source names one, else the bot or teammate by the name the service gives.
 5. A short title, whole: no `[repo]` prefixes, never cut mid-word.
 6. Long bodies fold behind Show more.
@@ -184,7 +204,7 @@ A connector is a feature people see, so it ships with what every feature ships w
 Before you open the pull request, run the checks it would fail on, not only your own tests:
 
 ```sh
-python3 scripts/test.py test_connector_<service>.py test_connectors.py test_new_connectors.py test_i18n.py test_help.py test_us_english.py
+python3 scripts/test.py test_connector_<service>.py test_connectors.py test_new_connectors.py test_kinds.py test_i18n.py test_help.py test_us_english.py
 ```
 
 ## Checklist
@@ -192,6 +212,7 @@ python3 scripts/test.py test_connector_<service>.py test_connectors.py test_new_
 - [ ] OAuth through The Machine's existing sign-ins when the service has it, with the narrowest scopes; a key only with `no_oauth` saying why.
 - [ ] Read-only credential for exactly this account, with the least access that works.
 - [ ] Stable `source_id`; `kind` listed in `KINDS`, its view in `VIEWS`, its app in `APP`, and a made-up message of it in `tests/test_message_view.py`.
+- [ ] Each kind has its row in `machine/kinds.py`, and no new hand-written list of kinds (`test_kinds.py`).
 - [ ] Message text only in `title`, `body` and metadata, never in ids, lookup keys or the cursor.
 - [ ] Events and cursor committed together; replays don't duplicate.
 - [ ] Failures raise `SourceError` with a content-free label.
