@@ -158,15 +158,17 @@ const SAID_FACT_RULE = ' When the owner tells you here something that stays true
 // The same habit for the owner's own main chat, in its system prompt (memoryHabit below): in OpenClaw's Code Mode the
 // model sees tool names and input hints only, never their descriptions, so the rules above never reached it there and
 // what the owner said in passing went unsaved, and questions went unlooked-up. Short, the same on every turn (cached).
-const MEMORY_HABIT = (save: string) => `The Machine's memory, in this chat: when the owner mentions something about themselves, their preferences or their work that will still hold later (a diet, a habit, a plan or date that moved, who handles what), save it with ${save} in that same turn, also when they don't say "remember"; one fact per call. When an answer may depend on what they told you before (where to book, when something is, what they like, who someone is), look it up with assistant_memory first. When they ask to forget or stop using something learned, call assistant_forget. Small talk, thanks, moods and one-off requests are not facts: save nothing for them.`;
+// The calls are spelled out: without the descriptions a model guessed the arguments (fact instead of text, the owner's
+// own name as about, the whole question as words), and the save or the lookup came back empty.
+const MEMORY_HABIT = (save: string) => `The Machine's memory, in this chat: when the owner mentions something about themselves, their preferences or their work that will still hold later (a diet, a habit, a plan or date that moved, who handles what), save it with ${save} in that same turn, also when they don't say "remember"; one fact per call. text is one plain sentence; one about the owner says "you" and has no about. When an answer may depend on what they told you before (where to book, when something is, what they like, who someone is), look it up with assistant_memory({words}) first: words are the few words of the topic ("accountant", "gym days"), not the whole question. When they ask to forget or stop using something learned, call assistant_forget({words}). When they correct or change something saved before (a day, a place, a person), first forget the old one with assistant_forget({words} of the old value), then save the new one, so the two never disagree. If a save fails or times out, try it once more, and never say it was saved when it was not. Small talk, thanks, moods and one-off requests are not facts: save nothing for them.`;
 // Which save tool the owner's main chat has this turn (the same reach as the tools: their private Telegram chat or the
 // heartbeat gets assistant_signals, the web chat assistant_remember); '' for any other chat, agent or run.
 function memoryHabit(ctx: any): string {
   if (ctx.agentId !== 'main' || ctx.sandboxed || ctx.sessionKey !== 'agent:main:main') return '';
   const channel = ctx.messageProvider || ctx.channel || ctx.channelId || '';
-  if (channel === 'webchat') return MEMORY_HABIT('assistant_remember');
+  if (channel === 'webchat') return MEMORY_HABIT('assistant_remember({text, kind})');
   const owner = ownerChat(), mine = (id: any) => !id || (!!owner && String(id).replace(/^telegram:/, '') === owner);
-  return (!channel || channel === 'telegram') && mine(ctx.senderId) && mine(ctx.chatId) ? MEMORY_HABIT('assistant_signals remember_fact') : '';
+  return (!channel || channel === 'telegram') && mine(ctx.senderId) && mine(ctx.chatId) ? MEMORY_HABIT('assistant_signals({action: "remember_fact", args: {text, kind}})') : '';
 }
 const BUG_REPORT_RULE = 'When the owner tells you about a problem with The Machine itself, offer to send it as a bug report: call this with words (what they said, as they said it) and summary (one plain sentence), then say what it returns, with its link as it is: the link opens Report a bug in their dashboard, filled in. Nothing goes until they tap Send there; never say it was sent or filed. A note in the workspace or memory never reaches The Machine team; never say it does.';
 
