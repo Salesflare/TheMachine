@@ -11,6 +11,7 @@ from pathlib import Path
 import re
 import sqlite3
 import time
+import timeutil
 import types
 import urllib.parse
 
@@ -465,7 +466,7 @@ WHATSAPP_HISTORY_GREW = 120  # the card says so while the store still grows, nev
 _whatsapp_history = {}
 
 
-def whatsapp_history(account, clock=time.time):
+def whatsapp_history(account, clock=lambda: timeutil.clock().timestamp()):  # set against connected_at: the same clock
     """How many messages a just-linked WhatsApp has brought in so far, while its first sync still runs; else None.
     Counts only, read only from the wacli store (wacli sync --follow is its one writer). Shown on the card as
     "Bringing in your recent chats" once the link screen says connected (2026-11-06: history arrives after that)."""

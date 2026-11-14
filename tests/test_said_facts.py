@@ -9,6 +9,8 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
+from pinned import pinned
+
 spec = importlib.util.spec_from_file_location('said_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(a)
@@ -25,6 +27,7 @@ class SaidFacts(unittest.TestCase):
         self.store = a.Store(Path(self.temp.name) / 'events.sqlite')
         self.app = object.__new__(a.App)
         self.app.store, self.app.config = self.store, CONFIG
+        self.enterContext(pinned(NOW))  # end days and expiry are checked against this moment, not the day the test runs
 
     def says(self, text, message_id):
         return self.app.action('feedback_reply', {'text': text, 'message_id': message_id, 'timestamp': NOW.timestamp(), 'reply_to_id': ''})
@@ -49,10 +52,8 @@ class SaidFacts(unittest.TestCase):
         self.app.action('forget_fact', {'id': saved['id']}, owner_dashboard=True)
         self.assertEqual(self.store.snapshot([])['facts'], [])
         # One message can hold several; a sort and an end day are kept
-        # The end day is checked against the real clock (timeutil.now), so it sits a few days from today
-        friday = (dt.date.fromisoformat(a.now()[:10]) + dt.timedelta(days=4)).isoformat()
-        trip = self.save('You are in Lisbon until Friday.', kind='event', until=friday)
-        self.assertEqual((trip['kind'], trip['until']), ('event', friday))
+        trip = self.save('You are in Lisbon until Friday.', kind='event', until='2026-11-13')  # the Friday after NOW
+        self.assertEqual((trip['kind'], trip['until']), ('event', '2026-11-13'))
 
     def test_it_is_tied_to_the_person_it_is_about(self):
         mail = {'account_id': 'work', 'source_id': 'm1', 'kind': 'gmail.message', 'occurred_at': (NOW - dt.timedelta(days=2)).isoformat(),

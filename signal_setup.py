@@ -68,6 +68,7 @@ def install(config):
 
 
 def step_signal(config, account, ui):
+    import timeutil
     ob = _ob()
     import signal_store
     account['store'] = str(Path(account.get('store') or base(config) / 'signal' / ob.slug(account['id'])).expanduser())
@@ -77,7 +78,7 @@ def step_signal(config, account, ui):
     if not now.get('identity') or now.get('error') or not (Path(account['store']) / signal_store.CLI_DIR).exists():
         now = link(config, account, ui)
     account['identity_sha256'] = now['identity']
-    account['connected_at'] = time.strftime('%Y-%m-%dT%H:%M:%S+00:00', time.gmtime())
+    account['connected_at'] = timeutil.clock().strftime('%Y-%m-%dT%H:%M:%S+00:00')
     if follow(config, account, ui):
         ui.say('  Linked. Signal gives a new linked device no older messages, so it reads from now on.')
 

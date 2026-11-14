@@ -8,6 +8,7 @@ import unittest
 from pathlib import Path
 import test_promises as tp
 import test_ux as ux
+from pinned import pinned  # noqa: E402
 from seams import patch_everywhere  # noqa: E402
 a = ux.a
 from machine.store import outcomes  # noqa: E402  (on the path once test_ux loaded the app)
@@ -142,7 +143,7 @@ class Outcomes(unittest.TestCase):
         self.store.commit_page('work', {}, [email('m3', '2026-10-17T08:00:00+00:00', body='Will sign tomorrow')])
         with self.store.connect() as db:
             rows = [dict(r) for r in db.execute("SELECT * FROM events WHERE source_id='m3'")]
-        with patch_everywhere(a, 'now', return_value='2026-10-17T09:00:00+00:00'):  # the day after the send, not the real clock
+        with pinned('2026-10-17T09:00:00+00:00'):  # the day after the send, not the real clock
             replies = self.store.card_replies(rows)  # matched by thread: the review gets what result to look for
         self.assertEqual(replies[rows[0]['id']]['done_when'], RESULT)
 

@@ -78,8 +78,8 @@ STEP_SAID = 200  # characters of what a step that didn't work said (its stderr, 
 
 
 def _age(stamp):
-    """Seconds since an ISO stamp."""
-    return time.time() - dt.datetime.fromisoformat(stamp).timestamp()
+    """Seconds since an ISO stamp, on the clock the stamps come from."""
+    return timeutil.clock().timestamp() - dt.datetime.fromisoformat(stamp).timestamp()
 
 
 class RoutinesApp:

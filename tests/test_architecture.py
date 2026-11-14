@@ -8,8 +8,7 @@ split up. Static checks of the source only; nothing is imported or run.
   OTHER_WRITERS as they are today;
 - modules in machine/ import only from their own layer or the ones below it (MACHINE_LAYERS), never `*`;
 - to-do statuses are named from machine/todo_states.py, never spelled out as a list in code or SQL;
-- only timeutil.py reads the real clock (datetime.now, date.today), apart from today's reads in tests/clock_reads.json,
-  whose counts only come down;
+- only timeutil.py reads the real clock (datetime.now, date.today), so tests can pin it;
 - Python files stay under PY_LINE_BUDGET lines and PY_BYTE_BUDGET bytes, apart from today's bigger ones in
   PY_OVER_BUDGET, whose ceilings only come down;
 - i18n_extract's dashboard AREAS all resolve.
@@ -243,10 +242,8 @@ def todo_status_literals(source, filename='<module>'):
 # timeutil.clock() is the one place the app reads the current time, so a test can pin it (tests/pinned.py). Anywhere
 # else, datetime.now(), datetime.utcnow(), datetime.today() and date.today() read the real clock past the pin: use
 # timeutil.clock() (aware, UTC by default; clock(None) is naive local time) and timeutil.today(). Tests, scripts/ and
-# sandbox/ (tools run beside the app; the sandbox can drive an older installed app) may read it. CLOCK_READS_FILE lists
-# today's direct reads per file until they move; its counts only come down.
+# sandbox/ (tools run beside the app; the sandbox can drive an older installed app) may read it.
 CLOCK_FILE = 'timeutil.py'
-CLOCK_READS_FILE = 'tests/clock_reads.json'
 CLOCK_FREE_DIRS = ('tests/', 'scripts/', 'sandbox/')
 
 
@@ -259,17 +256,6 @@ def clock_reads(tree_nodes):
             if owner == 'datetime' or (owner == 'date' and node.attr == 'today'):
                 found.append(node.lineno)
     return sorted(found)
-
-
-def clock_reading_files():
-    """{file: direct reads of the real clock} for the files the clock rule covers."""
-    out = {}
-    for name in python_files(tests=False):
-        if name != CLOCK_FILE and not name.startswith(CLOCK_FREE_DIRS):
-            count = len(clock_reads(nodes(name)))
-            if count:
-                out[name] = count
-    return out
 
 
 # --- tables ----------------------------------------------------------------------------------------------------------
@@ -720,15 +706,11 @@ class Architecture(unittest.TestCase):
             todo_states.sql('pending', "x') OR 1=1 --")
 
     def test_only_timeutil_reads_the_clock(self):
-        allowed = json.loads((ROOT / CLOCK_READS_FILE).read_text(encoding='utf-8'))
-        found = clock_reading_files()
-        for name in sorted(set(found) | set(allowed)):
-            with self.subTest(module=name):
-                count, ceiling = found.get(name, 0), allowed.get(name, 0)
-                self.assertLessEqual(count, ceiling, f'{name}: read the time with timeutil.clock() or timeutil.today(), '
-                                                     'not datetime.now() or date.today(), so tests can pin it')
-                self.assertEqual(count, ceiling, f'{name} reads the real clock {count} times now: set that in '
-                                                 f'{CLOCK_READS_FILE} (take it out at 0)')
+        for name in python_files(tests=False):
+            if name != CLOCK_FILE and not name.startswith(CLOCK_FREE_DIRS):
+                with self.subTest(module=name):
+                    self.assertEqual(clock_reads(nodes(name)), [], f'{name}: read the time with timeutil.clock() or '
+                                                                   'timeutil.today(), not datetime.now() or date.today(), so tests can pin it')
 
     def test_the_clock_check_finds_direct_reads(self):
         source = ('import datetime as dt\nfrom datetime import date, datetime\nimport timeutil\n'

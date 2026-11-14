@@ -11,10 +11,13 @@ import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
+from zoneinfo import ZoneInfo
 
 spec = importlib.util.spec_from_file_location('recipe_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
 import routine_recipe as rr  # noqa: E402
+import timeutil  # noqa: E402
+from pinned import pinned  # noqa: E402
 
 T = dt.datetime
 SESSION = 'agent:main:assistant-review-routine-'
@@ -54,14 +57,15 @@ class Runs(unittest.TestCase):
         self.app = object.__new__(a.App); self.app.store = self.store
         self.app.config = {'accounts': [{'id': 'w', 'boundary': 'work:acme.example'}], 'timezone': 'Europe/Brussels',
                            'openclaw_state': self.temp.name + '/none.sqlite'}
-        self.now = T(2026, 11, 9, 6, 0)
+        self.now = T(2026, 11, 9, 6, 0)  # the routine's clock: the owner's local time (Brussels)
+        self.pin = self.enterContext(pinned(self.now.replace(tzinfo=ZoneInfo('Europe/Brussels'))))  # and the stamps'
         for name, value in (('routines_now', lambda s: self.now), ('background_pause', lambda s, **k: None),
                             ('background_spaced', lambda s: True), ('background_started', lambda s: None),
                             ('preparation_gateway', lambda s, request: self.sent.append(request) or {'status': 'admitted'}),
                             ('routine_spawn', lambda s, target, run_id: target(run_id))):
             p = patch.object(a.App, name, value); p.start(); self.addCleanup(p.stop)
         self.sent = []
-        stamp = self.now.replace(tzinfo=dt.timezone.utc)  # the routine's clock, so "40 days back" stays past since_days
+        stamp = timeutil.clock()  # the pinned clock, so "40 days back" stays past since_days
         self.store.commit_page('w', {}, [
             {'account_id': 'w', 'source_id': f'm{i}', 'kind': 'gmail.message', 'occurred_at': (stamp - dt.timedelta(days=d)).isoformat(),
              'title': title, 'body': body, 'metadata': {'from': 'billing@example.org'}, 'deleted': False}
@@ -72,6 +76,7 @@ class Runs(unittest.TestCase):
         subprocess.run(['git', 'init', '-q', str(self.repo)], check=True)
 
     def act(self, name, owner=True, **args):
+        self.pin.move(minutes=1)  # each step a minute after the one before, as on a real clock
         return self.app.action(name, args, owner_dashboard=owner)
 
     def run_now(self, rid):
