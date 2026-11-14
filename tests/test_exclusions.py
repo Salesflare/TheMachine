@@ -46,7 +46,10 @@ class Exclusions(unittest.TestCase):
         phone,calendar=config['accounts'][3],config['accounts'][2]
         rules=a.default_exclusions(config,phone)
         drop=lambda package,title='New message':a.excluded_by_rules(rules,{'title':title,'body':'','metadata':{'package_name':package}})
-        self.assertFalse(drop('com.google.android.gm'));self.assertFalse(drop('com.whatsapp'));self.assertFalse(drop('com.whatsapp.w4b'))  # account coverage is unknown
+        self.assertFalse(drop('com.google.android.gm'))  # account coverage is unknown
+        for chat in ('com.whatsapp','com.whatsapp.w4b','org.telegram.messenger','org.telegram.messenger.web','org.thunderdog.challegram',
+                     'org.thoughtcrime.securesms','com.discord'):
+            self.assertTrue(drop(chat),chat)  # chat apps never come in from the phone (docs/help/android.md)
         self.assertFalse(drop('com.Slack'))  # no Slack source: its phone notifications are the only copy
         self.assertFalse(drop('com.example.bank'))
         for notice in ('Chrome is displaying over other apps','Charging this device via USB','USB debugging connected',
@@ -57,7 +60,10 @@ class Exclusions(unittest.TestCase):
         lunch={'title':'Lunch','metadata':{'recurring_event_id':'r','start':same,'original_start':same}}
         self.assertTrue(a.excluded_by_rules(a.default_exclusions(config,calendar),lunch))
         self.assertFalse(a.excluded_by_rules(a.default_exclusions(config,calendar),{**lunch,'title':'Lunch with Ann'}))
-        self.assertEqual(a.default_exclusions(config,{**phone,'default_exclude':False}),[])
+        off=a.default_exclusions(config,{**phone,'default_exclude':False})  # the chat apps stay out even then
+        self.assertTrue(a.excluded_by_rules(off,{'title':'New message','body':'','metadata':{'package_name':'com.whatsapp'}}))
+        self.assertFalse(a.excluded_by_rules(off,{'title':'Chrome is displaying over other apps','body':'','metadata':{'package_name':'android'}}))
+        self.assertEqual(a.default_exclusions(config,{**config['accounts'][0],'default_exclude':False}),[])
         self.assertEqual(a.default_exclusions(config,config['accounts'][0]),[])
 
     def test_work_mail_does_not_discard_personal_phone_mail(self):
