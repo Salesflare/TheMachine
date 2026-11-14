@@ -6,6 +6,7 @@ review set is never asked about. A drop is logged here and undo_org_checks puts 
 import datetime as dt
 
 import graph
+import timeutil
 
 SCHEMA = ('CREATE TABLE IF NOT EXISTS project_org_checks(project_id INTEGER PRIMARY KEY,org TEXT NOT NULL,before_by TEXT NOT NULL,run_id TEXT,'
           'tries INTEGER NOT NULL DEFAULT 0,verdict TEXT,decided_at TEXT)')
@@ -66,7 +67,7 @@ def org_check_answer(db, run_id, answer, now=None):
         if verdict not in ('keep', 'drop'):
             raise ValueError('finish_analysis orgs: each one says "org": "keep" (the project is about that organization) or "drop" (only where someone on it works)')
         said[str(a.get('project') or '').casefold()] = verdict
-    left, dropped, now = [], 0, now or dt.datetime.now(dt.timezone.utc).isoformat()
+    left, dropped, now = [], 0, now or timeutil.clock().isoformat()
     for r in given:
         verdict = said.get(('project:' + str(r['project_id'])).casefold()) or said.get(r['name'].casefold())
         if not verdict:

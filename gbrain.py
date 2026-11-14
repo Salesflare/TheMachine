@@ -91,7 +91,8 @@ def on(config):
 
 
 def now():
-    return dt.datetime.now(dt.timezone.utc).isoformat(timespec='seconds')
+    import timeutil
+    return timeutil.clock().isoformat(timespec='seconds')
 
 
 # --- The CLI and OpenClaw ------------------------------------------------------------------------------------------
@@ -613,13 +614,14 @@ def withdraw(db, call, node_id, row):
 def pull(db, call, limit=MAX_PULLS):
     """GBrain to The Machine: what the owner wrote on the pages of records that went in, as short notes. Pages changed
     since the last pull only (list_pages updated_after); the first pull reads them all, a round at a time."""
+    import timeutil
     ensure(db)
     mapped = {r['slug']: r['node_id'] for r in db.execute("SELECT slug,node_id FROM gbrain_pages WHERE state!='gone'") if r['node_id'] != 'the-machine:learnings'}
     if not mapped:
         return 0
     pending = json.loads(meta(db, 'pull_pending') or 'null')
     if pending is None:
-        since, started, changed = meta(db, 'pulled_at'), dt.datetime.now(dt.timezone.utc).isoformat(), []
+        since, started, changed = meta(db, 'pulled_at'), timeutil.clock().isoformat(), []
         if since:
             for prefix in PREFIX.values():
                 found = call('list_pages', {'slug_prefix': prefix, 'updated_after': since, 'limit': 100})

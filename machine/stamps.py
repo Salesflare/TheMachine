@@ -128,8 +128,9 @@ def fleet_view_stamp(db):
     """A small marker that changes whenever the Fleet's view (api/fleet) could: the fleet_view counter and the hour, for
     what only time changes (a free question's "no answer", a split's last day). The dashboard fetches api/fleet for the
     Fleet's to-dos when it changes. None when the counter isn't kept: the dashboard then fetches as before."""
+    import timeutil
     n = counter(db, 'fleet_view')
-    return None if n is None else f"{n}.{datetime.datetime.now(datetime.timezone.utc):%Y%m%d%H}"
+    return None if n is None else f"{n}.{timeutil.clock():%Y%m%d%H}"
 
 
 def stamp(db, tables):

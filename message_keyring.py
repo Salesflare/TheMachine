@@ -328,7 +328,8 @@ def unencrypted_keyring(collection):
 
 
 def _now():
-    return datetime.datetime.now(datetime.timezone.utc).isoformat(timespec='seconds')
+    import timeutil
+    return timeutil.clock().isoformat(timespec='seconds')
 
 
 def to_keyring(database, say=print):

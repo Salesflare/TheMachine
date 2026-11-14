@@ -18,6 +18,7 @@ from machine.sources.exclusions import email_subject_excluded
 from machine.text import QUOTED_HISTORY_KEPT, encoded, plain_html, trim_quoted_history
 from sources import SourceError, credential
 from timeutil import now
+import timeutil
 
 
 class Salesflare:
@@ -529,7 +530,7 @@ def sync_salesflare(store, config, account, source=None):
         return {'mode': state.get('mode') or 'incremental', 'events': 0, 'stopped': True}
     source = source or Salesflare(config, account)
     salesflare_confirm(source, account)
-    stamp = dt.datetime.now(dt.timezone.utc)
+    stamp = timeutil.clock()
     if feed_off_wait(state, stamp):
         # Nothing to ask until the next re-check. The sync itself worked (the key reads its profile), so it counts.
         store.commit_page(account['id'], state, [])

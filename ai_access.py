@@ -32,6 +32,7 @@ import activity_log
 import fleet
 import i18n
 from machine.owner_error import OwnerError
+import timeutil
 
 LEVELS = ('off', 'read', 'draft')
 AREAS = ('both', 'work', 'personal')
@@ -207,7 +208,7 @@ class OAuthError(ValueError):
 
 
 def _now():
-    return dt.datetime.now(dt.timezone.utc)
+    return timeutil.clock()
 
 
 def stamp(at=None):

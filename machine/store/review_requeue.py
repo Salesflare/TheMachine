@@ -18,6 +18,7 @@ import subprocess
 
 from machine.store.events import SET_ASIDE_AFTER
 from machine.store import review_saves
+import timeutil
 
 LOG = logging.getLogger('personal-assistant')
 
@@ -111,7 +112,7 @@ def requeue(store, agent_db, node='node', now=None):
     """Once: the messages of failed saves that ended in no to-do go back to the review. Returns how many."""
     if store.fix_done(NAME):
         return 0
-    now = now or dt.datetime.now(dt.timezone.utc)
+    now = now or timeutil.clock()
     oldest = max(WINDOW_START, now - dt.timedelta(days=MAX_AGE_DAYS))
     ids = failed_saves(agent_db, oldest, node) if agent_db and agent_db.exists() else set()
     return store.requeue_once(NAME, lambda db: lost_ids(db, ids, oldest))

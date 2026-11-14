@@ -22,7 +22,8 @@ RESULT = 'imported.json'
 
 
 def _now(now=None):
-    return now or dt.datetime.now(dt.timezone.utc)
+    import timeutil
+    return now or timeutil.clock()
 
 
 def _write(path, value):

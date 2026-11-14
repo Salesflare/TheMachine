@@ -274,7 +274,8 @@ def _json(text):
 def sweep(connect, config, since=None, store=None, now=None):
     """Seal what ended runs took from emails and remove their readable copies. `since`: only runs that ended since then
     (an ISO time); None: every earlier run. Returns how many files were sealed."""
-    now = now or dt.datetime.now(dt.timezone.utc)
+    import timeutil
+    now = now or timeutil.clock()
     base, sealed = root(config).resolve(), 0
     workspace = base.parent.parent
     with connect() as db:

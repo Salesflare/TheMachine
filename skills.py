@@ -93,7 +93,8 @@ something went wrong.
 
 
 def now():
-    return dt.datetime.now(dt.timezone.utc).isoformat(timespec='seconds')
+    import timeutil
+    return timeutil.clock().isoformat(timespec='seconds')
 
 
 def ensure(db):
@@ -1258,7 +1259,8 @@ class Hints:
         self.connect, self.catalog = connect, catalog
 
     def room(self, db=None):
-        since = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=7)).isoformat(timespec='seconds')
+        import timeutil
+        since = (timeutil.clock() - dt.timedelta(days=7)).isoformat(timespec='seconds')
         if db is None:
             with self.connect() as db:
                 return self.room(db)
@@ -1332,7 +1334,8 @@ class Hints:
         self.close(row['skill'], 'dismissed')
 
     def open(self):
-        since = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=30)).isoformat(timespec='seconds')
+        import timeutil
+        since = (timeutil.clock() - dt.timedelta(days=30)).isoformat(timespec='seconds')
         with self.connect() as db:
             if not db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='suggestions'").fetchone():
                 return []

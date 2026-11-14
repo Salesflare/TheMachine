@@ -175,7 +175,7 @@ class SummariesApp:
         thread = getattr(self, '_stall_thread', None)
         if thread and thread.is_alive():
             return None
-        local = dt.datetime.now(dt.timezone.utc).astimezone(timeutil.local_tz())
+        local = timeutil.clock().astimezone(timeutil.local_tz())
         if not (timeutil.is_work_day(local) and timeutil.in_hours(local)):
             return None
         with self.store.connect() as db:

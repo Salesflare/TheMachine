@@ -6,6 +6,7 @@ import datetime as dt
 import json
 
 import graph
+import timeutil
 
 
 class TeamBoards:
@@ -90,7 +91,7 @@ class TeamBoards:
             # as on the owner's board: in a stage since its move (or since it was added), sorted newest first, and how
             # long the owner's last message has gone unanswered
             since = rec.get('stage_at') or src.get('since')
-            age = lambda at: max(0, (dt.datetime.now(dt.timezone.utc) - graph.parse_time(at)).days) if at else None
+            age = lambda at: max(0, (timeutil.clock() - graph.parse_time(at)).days) if at else None
             days, waited = age(since) or 0, age(src.get('waiting'))
             tile = {'id': e['local'] or e['key'], 'name': rec['name'], 'stage': stage, 'reason': rec.get('why') or best.get('why'),
                     'by': 'owner' if rec.get('stage_hand') else 'review', 'mover': sg._first_name(mover) if rec.get('stage_by') else None,

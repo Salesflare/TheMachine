@@ -39,6 +39,7 @@ from machine.sources.gmail import phone_link
 from machine.store.review_wait import People, mail_wait
 from machine import todo_states
 from machine.owner_error import OwnerError
+import timeutil
 
 KINDS = ('newsletters', 'spam')
 MAIL_KINDS = ('gmail.message', 'ms_graph.message', 'outlook.message')
@@ -379,7 +380,7 @@ def _marked_rows(db, accounts, days=MARKS_DAYS):
     changed since its first sync), newest first."""
     if not accounts:
         return []
-    start = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=days)).isoformat()
+    start = (timeutil.clock() - dt.timedelta(days=days)).isoformat()
     rows = db.execute(f"SELECT id,account_id,kind,title,metadata,ingested_at FROM events WHERE kind IN ({','.join('?' * len(MAIL_KINDS))}) "
                       f"AND account_id IN ({','.join('?' * len(accounts))}) AND deleted=0 AND occurred_at>=? AND version>1 "
                       "AND instr(json_extract(metadata,'$.labels'),'\"SPAM\"')>0 ORDER BY ingested_at DESC LIMIT 500",

@@ -38,6 +38,7 @@ import security_levels
 import signatures
 from machine import todo_states
 from machine.owner_error import OwnerError
+import timeutil
 
 SCHEMA_VERSION = 1
 FOLDER = 'the-machine-knowledge'
@@ -179,7 +180,7 @@ class StoreReader:
         (others were merged into it): ended (past their end day, retired or not yet), set aside, merged into another or
         moved into a skill, a writing style or a record (HISTORY). One the owner forgot has no merged_into: never here,
         nor are those merged into it (forgetting a condensed fact forgets what it said)."""
-        today = dt.datetime.now(dt.timezone.utc).date().isoformat()
+        today = timeutil.clock().date().isoformat()
         with self.store.connect() as db:
             rows = [dict(r) for r in db.execute("SELECT * FROM facts WHERE kind IN ('fact','draft') AND ((removed_at IS NOT NULL AND merged_into IS NOT NULL) "
                                                 'OR (removed_at IS NULL AND valid_until IS NOT NULL AND valid_until<?)) ORDER BY created_at,id', (today,))]
@@ -211,7 +212,7 @@ class StoreReader:
         with self.store.connect() as db:
             rows = db.execute(f"SELECT id,dedupe_key,title,body,status,due,area,project,account_ids,event_ids,created_at,snoozed_until,deliver_after "
                               f"FROM suggestions WHERE status IN ({','.join('?' * len(OPEN_TODOS))}) ORDER BY created_at", OPEN_TODOS).fetchall()
-        current = dt.datetime.now(dt.timezone.utc).isoformat(timespec='seconds')
+        current = timeutil.clock().isoformat(timespec='seconds')
         return [dict(r) for r in rows if not (r['deliver_after'] and r['deliver_after'] > current)]  # prepared ahead: not shown yet
 
     def voices(self):
@@ -326,7 +327,7 @@ def _stamp(value):
 def collect(reader, options=Options(), now=None):
     """Everything the export holds, as plain records (the bundle write() lays out). Private and Careful content stays
     out unless options.private; what that left out is counted in bundle['left_out']."""
-    now = now or dt.datetime.now(dt.timezone.utc)
+    now = now or timeutil.clock()
     left = {}
 
     def leave(what, n=1):

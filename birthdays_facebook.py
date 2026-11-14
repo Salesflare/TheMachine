@@ -48,6 +48,7 @@ import enrichment  # noqa: E402
 import graph  # noqa: E402
 import graph_show  # noqa: E402
 import person_birthday  # noqa: E402
+import timeutil
 
 PAGE = 'https://www.facebook.com/events/birthdays/'
 SOURCE = 'facebook'
@@ -294,7 +295,7 @@ def parse(label, heading='', today=None):
     name = graph.person_name(' '.join(words).strip(SEPARATORS))
     if not _valid(month, day) or len(graph.name_words(name)) < 2:
         return None
-    return name, (f'{year:04d}-{month:02d}-{day:02d}' if year and 1900 <= year <= (today or dt.date.today()).year else f'--{month:02d}-{day:02d}')
+    return name, (f'{year:04d}-{month:02d}-{day:02d}' if year and 1900 <= year <= (today or timeutil.today()).year else f'--{month:02d}-{day:02d}')
 
 
 def from_data(item, today=None):
@@ -307,7 +308,7 @@ def from_data(item, today=None):
     name = graph.person_name(' '.join(str(item.get('name') or '').split())[:160])
     if not _valid(month, day) or len(graph.name_words(name)) < 2:
         return None
-    return name, (f'{year:04d}-{month:02d}-{day:02d}' if 1900 <= year <= (today or dt.date.today()).year else f'--{month:02d}-{day:02d}')
+    return name, (f'{year:04d}-{month:02d}-{day:02d}' if 1900 <= year <= (today or timeutil.today()).year else f'--{month:02d}-{day:02d}')
 
 
 def found(items, today=None):
@@ -618,7 +619,7 @@ def view(db, suggestion_id, now=None):
     if state == 'new':
         return {'state': 'new'}
     if state == 'reading':
-        now = now or dt.datetime.now(dt.timezone.utc)
+        now = now or timeutil.clock()
         try:
             late = dt.datetime.fromisoformat(at) + dt.timedelta(minutes=READ_MINUTES) < now
         except ValueError:
@@ -712,7 +713,7 @@ def read(base, url=PAGE, limits=None, timeout=420):
                     break
                 time.sleep(0.5)
             months = {word: n for word, n in MONTHS.items() if len(word) >= 3}
-            result = session.run(READ_JS, {**LIMITS, 'months': months, 'month': dt.date.today().month, **(limits or {})})
+            result = session.run(READ_JS, {**LIMITS, 'months': months, 'month': timeutil.today().month, **(limits or {})})
     finally:
         browser_cdp.close_tab(base, target)
     return result if isinstance(result, dict) else {'items': []}

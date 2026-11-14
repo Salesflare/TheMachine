@@ -114,7 +114,8 @@ def prune(config, days=BACKUP_DAYS):
 
 def backup(config_path, config):
     """A private copy of config.json and the database (with its sealing key), before anything changes."""
-    stamp = dt.datetime.now(dt.timezone.utc).strftime('%Y%m%dT%H%M%SZ')
+    import timeutil
+    stamp = timeutil.clock().strftime('%Y%m%dT%H%M%SZ')
     root = _data_dir(config) / 'work-removal-backups'
     root.mkdir(mode=0o700, parents=True, exist_ok=True)
     os.chmod(root, 0o700)
@@ -150,6 +151,7 @@ def _ids(value):
 
 def purge(config, account_ids, store=None):
     """Deletes what these accounts brought in. Returns counts: events, cards, drafts, graph."""
+    import timeutil
     account_ids = sorted(set(account_ids))
     counts = {'events': 0, 'cards': 0, 'drafts': 0, 'graph': 0}
     if not account_ids or not Path(config['database']).expanduser().is_file():
@@ -207,7 +209,7 @@ def purge(config, account_ids, store=None):
             import graph
             with store.connect() as db:
                 db.isolation_level = None  # graph.build runs its own transaction
-                graph.build(db, config, dt.datetime.now(dt.timezone.utc).isoformat(timespec='seconds'))
+                graph.build(db, config, timeutil.clock().isoformat(timespec='seconds'))
                 counts['graph'] = max(0, before - db.execute('SELECT COUNT(*) FROM graph_nodes').fetchone()[0])
         except Exception:  # noqa: BLE001 - the graph is rebuilt again on the service's next round
             counts['graph'] = 0

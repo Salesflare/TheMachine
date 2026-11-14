@@ -49,6 +49,7 @@ import routines
 import skills
 import todo_areas
 from machine.owner_error import OwnerError
+import timeutil
 
 LOG = logging.getLogger('personal-assistant')
 RUN_SECONDS = 900  # the runner's own limit for a routine turn (preparation-run.mjs)
@@ -99,11 +100,11 @@ class RoutinesApp:
 
     def routines_now(self):
         """The owner's local time now."""
-        return dt.datetime.now(self.routines_tz()).replace(tzinfo=None)
+        return timeutil.clock(self.routines_tz()).replace(tzinfo=None)
 
     @staticmethod
     def routines_stamp():
-        return dt.datetime.now(dt.timezone.utc).isoformat()
+        return timeutil.clock().isoformat()
 
     def routines_lock(self):
         if not hasattr(self, '_routines_lock'):
@@ -269,7 +270,7 @@ class RoutinesApp:
             return False
 
     def routines_view(self, made=None):
-        now = dt.datetime.now(dt.timezone.utc)
+        now = timeutil.clock()
         with self.store.connect() as db:
             out = {'routines': routines.view(db), 'suggested': routines.view(db, ('suggested',)), 'trying': routines.view(db, ('trying',)),
                    'templates': routine_templates.view(db, self.cleanup_spam_needs())}

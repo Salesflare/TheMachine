@@ -122,7 +122,8 @@ def _marked(folder):
 def prune(connect, root, now=None, grace_days=GRACE_DAYS, keep=KEEP_FINISHED, dry_run=False):
     """Clears the work folders nothing needs any more (see the module's docstring). Returns a report without names
     or paths other than the job ids."""
-    now = now or dt.datetime.now(dt.timezone.utc)
+    import timeutil
+    now = now or timeutil.clock()
     root = Path(root)
     report = {'cleared': [], 'kept': {}, 'freed_bytes': 0, 'dry_run': dry_run}
     if not root.is_dir():

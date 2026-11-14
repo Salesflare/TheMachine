@@ -521,10 +521,11 @@ def evaluate_when_ready(label, js):
 
 
 def when(ms):
+    import timeutil
     if not ms:
         return ''
     d = datetime.fromtimestamp(ms / 1000).astimezone()
-    now = datetime.now().astimezone()
+    now = timeutil.clock(None).astimezone()
     if d.date() == now.date():
         return d.strftime('%H:%M')
     if (now.date() - d.date()).days < 7:
@@ -576,9 +577,10 @@ def cmd_show(a):
 
 
 def log_send(entry):
+    import timeutil
     SENDS_LOG.parent.mkdir(parents=True, exist_ok=True)
     with SENDS_LOG.open('a') as f:
-        f.write(json.dumps({'at': datetime.now().astimezone().isoformat(timespec='seconds'), **entry}, ensure_ascii=False) + '\n')
+        f.write(json.dumps({'at': timeutil.clock(None).astimezone().isoformat(timespec='seconds'), **entry}, ensure_ascii=False) + '\n')
         f.flush()
         os.fsync(f.fileno())
 

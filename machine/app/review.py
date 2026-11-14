@@ -55,6 +55,7 @@ import next_actions
 import shared_graph
 from timeutil import now
 from machine.owner_error import OwnerError
+import timeutil
 
 
 # The review worker looks at its run every REVIEW_TICK_SECONDS, and every FIRST_LOOK_TICK_SECONDS while the first look
@@ -224,7 +225,7 @@ def ai_connecting(config, current=None):
         notes = json.loads(Path(path).expanduser().read_text())
     except (OSError, ValueError):
         return None
-    current = current or dt.datetime.now(dt.timezone.utc)
+    current = current or timeutil.clock()
     for note in notes if isinstance(notes, list) else []:
         if not isinstance(note, dict) or not isinstance(note.get('ai_connecting'), str) or not AI_CONNECTING_NAME.fullmatch(note['ai_connecting']):
             continue

@@ -83,7 +83,8 @@ def ensure(db):
 
 
 def now():
-    return dt.datetime.now(dt.timezone.utc)
+    import timeutil
+    return timeutil.clock()
 
 
 def stamp(moment=None):

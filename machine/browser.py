@@ -22,6 +22,7 @@ import next_actions
 import preparation_state
 from machine.cards import HANDOFF
 from machine.config import ROOT
+import timeutil
 
 
 # LinkedIn's sign-in page takes its language from the server's country (a Machine on a server abroad showed it, and its
@@ -163,7 +164,7 @@ def browser_wait(db, job_id, status, at=None, reason=None):
     if not streak:
         return None
     since = streak[-1]['started_at']
-    if status != 'blocked' and (at or dt.datetime.now(dt.timezone.utc)) - dt.datetime.fromisoformat(since) < dt.timedelta(seconds=BROWSER_WAIT):
+    if status != 'blocked' and (at or timeutil.clock()) - dt.datetime.fromisoformat(since) < dt.timedelta(seconds=BROWSER_WAIT):
         return None
     return {'since': since, 'page': run_page(db, job_id, calls), 'sign_in': bool(sign_in)}
 

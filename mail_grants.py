@@ -200,14 +200,16 @@ def forget(config, provider, email, revoke=True):
 
 
 def _now():
+    import timeutil
     import datetime as dt
-    return dt.datetime.now(dt.timezone.utc).isoformat(timespec='seconds')
+    return timeutil.clock().isoformat(timespec='seconds')
 
 
 def _age_minutes(stamp):
+    import timeutil
     import datetime as dt
     try:
-        return (dt.datetime.now(dt.timezone.utc) - dt.datetime.fromisoformat(stamp)).total_seconds() / 60
+        return (timeutil.clock() - dt.datetime.fromisoformat(stamp)).total_seconds() / 60
     except (TypeError, ValueError):
         return 1e9
 

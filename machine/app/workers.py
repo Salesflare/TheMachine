@@ -33,6 +33,7 @@ import retention
 from sources import credential, gog_read, SourceError
 import team_learnings
 from timeutil import local_tz, now
+import timeutil
 
 
 # Contact photos from the owner's Google contacts and Workspace directory, with the scopes the gog sign-in already has
@@ -210,7 +211,7 @@ class WorkersApp:
             except Exception as error:  # noqa: BLE001 - tried again in ten minutes
                 LOG.warning('sign-out retry error=%s', type(error).__name__)
             try:
-                if retention.due(self.store.connect, dt.datetime.now(dt.timezone.utc), local_tz()):
+                if retention.due(self.store.connect, timeutil.clock(), local_tz()):
                     report = retention.run(self.store.connect, str(self.store.path), local_tz=local_tz())
                     LOG.info('retention %s', json.dumps(report, sort_keys=True))
             except Exception as error:  # noqa: BLE001 - tried again in ten minutes

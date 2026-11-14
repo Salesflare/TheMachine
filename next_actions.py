@@ -354,7 +354,8 @@ def reply_context(actions_list, spots, now=None):
     """Problems for a draft check: a Slack or WhatsApp reply to an older message a teammate's Machine carried in, which
     this Machine doesn't have itself, so it can't go in its thread or quote it. It then says in a few words what it
     answers, so the reader knows which conversation it belongs to."""
-    now = now or datetime.datetime.now(datetime.timezone.utc)
+    import timeutil
+    now = now or timeutil.clock()
     problems = []
     for action in actions_list:
         if action['kind'] not in ('slack', 'whatsapp') or action.get('thread') or action.get('quote') or action.get('delegate'):
@@ -1197,6 +1198,7 @@ def mail_page(action, signature=''):
 
 
 def mime_bytes(action, job, signature='', config=None):
+    import timeutil
     message = EmailMessage(policy=email.policy.SMTP)
     message['From'] = action['from']
     message['To'] = ', '.join(action['to'])
@@ -1206,7 +1208,7 @@ def mime_bytes(action, job, signature='', config=None):
     message['Subject'] = action['subject']
     message['Message-ID'] = job['rfc_message_id']
     # The moment it goes out, not the approval: a re-approved or retried send can be days later.
-    message['Date'] = format_datetime(datetime.datetime.now(datetime.timezone.utc))
+    message['Date'] = format_datetime(timeutil.clock())
     if action.get('in_reply_to'):
         message['In-Reply-To'] = action['in_reply_to']
         message['References'] = action.get('references', action['in_reply_to'])

@@ -33,6 +33,7 @@ import person_summary
 import shared_graph
 from machine import todo_states
 from machine.owner_error import OwnerError
+import timeutil
 
 OPEN = todo_states.OPEN_NOT_SNOOZED  # list_todos' "open": snoozed ones are their own status there (status=snoozed)
 EMAIL = re.compile(r'[^@\s<>",;]{1,64}@[A-Za-z0-9.-]{1,190}\.[A-Za-z]{2,24}')
@@ -431,7 +432,7 @@ class AiApp:
         columns = 'id,dedupe_key,title,body,status,due,due_at,account_ids,area,project,created_at,snoozed_until,next_action,deliver_after'
         with self.store.connect() as db:
             if status == 'done':  # done in the last 30 days, the latest first (when it was marked done)
-                since = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=30)).isoformat(timespec='seconds')
+                since = (timeutil.clock() - dt.timedelta(days=30)).isoformat(timespec='seconds')
                 done_at = "coalesce((SELECT d.created_at FROM decisions d WHERE d.id=s.closed_decision_id),s.created_at)"
                 rows = db.execute(f"SELECT * FROM (SELECT {columns},{done_at} done_at FROM suggestions s WHERE status='completed') "
                                   'WHERE done_at>=? ORDER BY done_at DESC LIMIT 600', (since,)).fetchall()

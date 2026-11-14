@@ -86,6 +86,7 @@ import todo_org
 import whatsapp_images
 from machine import todo_states
 from machine.owner_error import OwnerError
+import timeutil
 
 # What card_views adds to the to-dos, kept between status polls (each 30 s) while none of the tables it reads changed (on
 # a quiet Machine, between polls only Connections' sync tables do), the to-dos' own rows are the same and within
@@ -392,7 +393,7 @@ def stopped_step(db, suggestion, pre=None):
     line = prefix + label + (f' ({why}).' if why else '.')
     if suggestion.get('status') == 'snoozed' and suggestion.get('snoozed_until'):
         back = dt.datetime.fromisoformat(suggestion['snoozed_until']).astimezone(local_tz())
-        today = dt.datetime.now(local_tz()).date()
+        today = timeutil.clock(local_tz()).date()
         at = locale_prefs.clock_text(back) if back.date() == today else locale_prefs.clock_text(back) + ' tomorrow' if (back.date() - today).days == 1 else locale_prefs.at_text(back)
         line += f' It carries on when the to-do comes back, {at}.'
     elif prep and prep['status'] == 'blocked':
@@ -816,7 +817,7 @@ class ViewsStore(ConversationStore):
                 next(c for c in cards if c['id'] == sid)['files'] = files  # what the owner made it with (New to-do)
             for sid, photos in whatsapp_images.of_cards(db, {'database': str(self.path)}, cards).items():
                 next(c for c in cards if c['id'] == sid)['photos'] = photos  # a WhatsApp photo it came from (whatsapp_images.py)
-            recurring.annotate(db, cards, dt.datetime.now(local_tz()).date())  # "Repeats monthly" (recurring.py)
+            recurring.annotate(db, cards, timeutil.clock(local_tz()).date())  # "Repeats monthly" (recurring.py)
             calendar_clashes.annotate(db, cards)  # the other side of a calendar clash, for the owner only (calendar_clashes.py)
             still_needed.annotate(db, cards, now(), local_tz())  # "Still needed?" on a to-do untouched for a week (still_needed.py)
             return

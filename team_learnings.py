@@ -95,7 +95,8 @@ def ensure(db):
 
 
 def now():
-    return dt.datetime.now(dt.timezone.utc).isoformat(timespec='seconds')
+    import timeutil
+    return timeutil.clock().isoformat(timespec='seconds')
 
 
 def pref(db, key, default=None):
@@ -381,7 +382,8 @@ def due(db, current=None):
     """A distillation is due: the owner wants to be offered, none ran in the last DAYS, no send is on its way, Not now
     was not tapped this week, and there is something new to learn from. An offer still waiting for the owner doesn't
     hold a new one back: the new run carries over what still holds and its batch replaces the waiting one (finish)."""
-    current = current or dt.datetime.now(dt.timezone.utc)
+    import timeutil
+    current = current or timeutil.clock()
     ensure(db)
     if not TEAM_KEY_FINGERPRINT or not offer_on(db):
         return False
@@ -479,7 +481,8 @@ def evidence(db, quality=None, current=None, accounts=None):
     agent. Only the general patterns it writes from it come back. `personal` says whether any of it came from a to-do in
     the Personal area (a note on one, or a fact or rule taken from such a note), or from a waiting offer that did:
     learnings from it then wait for the owner's OK, also with Send automatically on (finish)."""
-    current = current or dt.datetime.now(dt.timezone.utc)
+    import timeutil
+    current = current or timeutil.clock()
     start = since(db, current)
     week = max(start, (current - dt.timedelta(days=FAULT_DAYS)).isoformat())
     notes = _rows(db, "SELECT d.choice,d.feedback note,d.created_at at,d.suggestion_id card,(SELECT e.kind FROM events e JOIN suggestions s ON s.id=d.suggestion_id "
@@ -858,6 +861,7 @@ def auto_send(db_connect, config, call, version=None):
     """Send automatically: the newest batch made while it was on goes as it is (no error excerpt, no email), while it
     is still on. A batch the check would change, or one that can't get through within AUTO_HOURS, waits for the owner
     under Learning, Shared instead. Returns the share result, or None."""
+    import timeutil
     with db_connect() as db:
         ensure(db)
         if not auto_on(db):
@@ -876,7 +880,7 @@ def auto_send(db_connect, config, call, version=None):
     try:
         return share(db_connect, config, batch, chosen, False, call, version, auto=True)
     except Exception:
-        old = row[4] < (dt.datetime.now(dt.timezone.utc) - dt.timedelta(hours=AUTO_HOURS)).isoformat(timespec='seconds')
+        old = row[4] < (timeutil.clock() - dt.timedelta(hours=AUTO_HOURS)).isoformat(timespec='seconds')
         if old:
             with db_connect() as db:
                 db.execute("UPDATE team_learnings SET auto=0 WHERE id=? AND status IN ('ready','sending')", (batch,))
@@ -954,7 +958,8 @@ CHAT_MAX = 300         # characters of one request
 
 def votes_due(db, current=None):
     """Time to fetch candidates: voting is on, the team key is pinned, and the last fetch is VOTE_DAYS ago."""
-    current = current or dt.datetime.now(dt.timezone.utc)
+    import timeutil
+    current = current or timeutil.clock()
     ensure(db)
     if not TEAM_KEY_FINGERPRINT or not vote_on(db):
         return False
@@ -996,11 +1001,12 @@ def vote_evidence(db):
     works (their rules, facts and channels, the past week's to-do decisions and to-do chat requests), to judge them by.
     Private: it stays in the run's evidence. With nothing from the past week, no turn runs: the waiting learnings are
     let go unjudged (fetched again on a later day) and nothing is sent."""
+    import timeutil
     ensure(db)
     rows = _rows(db, "SELECT candidate_id id,text,example,area,use_cases FROM team_learning_votes WHERE status='pending' ORDER BY fetched_at LIMIT ?", (VOTE_BATCH,))
     if not rows:
         return None
-    week = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=VOTE_RECENT_DAYS)).isoformat(timespec='seconds')
+    week = (timeutil.clock() - dt.timedelta(days=VOTE_RECENT_DAYS)).isoformat(timespec='seconds')
     recent = [{'todo': str(r['title'] or '')[:120], 'choice': r['choice'], 'note': str(r['note'] or '')[:200]}
               for r in _rows(db, 'SELECT s.title,d.choice,d.feedback note FROM decisions d LEFT JOIN suggestions s ON s.id=d.suggestion_id '
                                  'WHERE d.created_at>=? ORDER BY d.created_at DESC LIMIT ?', (week, VOTE_RECENT))]
@@ -1086,6 +1092,7 @@ def send_votes(db_connect, call):
     its use case. Under On, an abstain goes as just that, so the learning isn't offered here again; it never shows as
     a vote under Activity. `judged` tells the control plane this Machine abstains when it has nothing to judge by, so its
     Not relevant is a real one. One that fails waits for the next try."""
+    import timeutil
     with db_connect() as db:
         ensure(db)
         mode = vote_mode(db)
@@ -1093,7 +1100,7 @@ def send_votes(db_connect, call):
             return 0
         if mode == 'ask':  # Ask first: only what the owner said may go; what waited too long goes unsent
             db.execute("UPDATE team_learning_votes SET status='skipped' WHERE status='judged' AND fetched_at<?",
-                       ((dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=ASK_DAYS)).isoformat(timespec='seconds'),))
+                       ((timeutil.clock() - dt.timedelta(days=ASK_DAYS)).isoformat(timespec='seconds'),))
         ready = "('approved')" if mode == 'ask' else "('judged','approved','abstained')"
         rows = [dict(r) for r in db.execute(f"SELECT candidate_id,vote,reason,use_case,status FROM team_learning_votes WHERE status IN {ready} "
                                             "ORDER BY status='abstained',fetched_at LIMIT 20")]

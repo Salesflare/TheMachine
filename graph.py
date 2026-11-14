@@ -245,7 +245,7 @@ def ensure(db):
             "SELECT 1 FROM sqlite_master WHERE name='board_backfills_queued'").fetchone():
         # Boards made before boards looked through the history get that look once (2026-10-24)
         db.execute('CREATE TABLE IF NOT EXISTS board_backfills_queued(at TEXT)')
-        stamp = dt.datetime.now(dt.timezone.utc).isoformat()
+        stamp = timeutil.clock().isoformat()
         db.execute('INSERT INTO board_backfills_queued VALUES(?)', (stamp,))
         if 'about' in {r[1] for r in db.execute('PRAGMA table_info(boards)')}:
             db.execute('INSERT OR IGNORE INTO board_backfills(board_id,started_at) SELECT id,? FROM boards', (stamp,))
@@ -254,7 +254,7 @@ def ensure(db):
             db.execute(f'ALTER TABLE {table} ADD COLUMN visibility TEXT')
     # A project's organization (2026-10-25): projects made before it was set on its own get it once, from their people,
     # on the next graph build (fill_orgs); what that set is kept in project_org_fills, so undo_org_fills takes it back.
-    db.execute('INSERT OR IGNORE INTO project_org_backfill(id,queued_at) VALUES(1,?)', (dt.datetime.now(dt.timezone.utc).isoformat(),))
+    db.execute('INSERT OR IGNORE INTO project_org_backfill(id,queued_at) VALUES(1,?)', (timeutil.clock().isoformat(),))
     import crm  # owners, organizations with several websites (2026-10-24)
     crm.ensure(db)
     import own_addresses  # the owner's own addresses, where each came from, and their word on them (2026-10-24)
@@ -1238,7 +1238,7 @@ def _build_in(db, config, now, team, kin, locked, history=False):
     from machine.graph.rows import event_and_unnamed_rows
     from machine.graph.laps import Laps
     import own_addresses
-    started = dt.datetime.now(dt.timezone.utc)
+    started = timeutil.clock()
     lap = Laps()
     current = parse_time(now)
     tz = owner_tz(config)
@@ -1295,7 +1295,7 @@ def _build_in(db, config, now, team, kin, locked, history=False):
     lap('relations', relation_links(pair_day, age, related, union, kept, links, nodes))
     nodes, links, kept, event_rows, history_rows, unnamed_rows = lap('rows', event_and_unnamed_rows(
         db, nodes, links, kept, node_events, project_events, direct_people, history_events, unnamed))
-    took = int((dt.datetime.now(dt.timezone.utc) - started).total_seconds() * 1000)
+    took = int((timeutil.clock() - started).total_seconds() * 1000)
     if not locked:  # the publish: a moment under the write lock, and only when nothing it was computed from changed
         db.execute('PRAGMA query_only=OFF')
         db.execute('COMMIT')
@@ -1518,7 +1518,7 @@ def context_lines(db, event_ids, limit_chars=1500, skip_card=None, sides=None, s
 def overview(db, limit=12):
     rows = lambda sql, *args: [node_view(r) for r in db.execute(sql, args)]
     state = db.execute('SELECT built_at,signals,took_ms FROM graph_state WHERE id=1').fetchone()
-    week_ago = ((parse_time(state['built_at']) if state else dt.datetime.now(dt.timezone.utc)) - dt.timedelta(days=7)).date().isoformat()
+    week_ago = ((parse_time(state['built_at']) if state else timeutil.clock()) - dt.timedelta(days=7)).date().isoformat()
     projects = rows("SELECT * FROM graph_nodes WHERE kind='project' AND json_extract(info,'$.closed_at') IS NULL ORDER BY strength DESC LIMIT ?", 30)
     for project in projects:
         project['people'] = [n['name'] for n in neighbours(db, project['id'], 8) if n['kind'] == 'person'][:4]
@@ -1558,7 +1558,7 @@ def counts(db):
 
 def _week_ago(db):
     state = db.execute('SELECT built_at FROM graph_state WHERE id=1').fetchone()
-    return ((parse_time(state['built_at']) if state else dt.datetime.now(dt.timezone.utc)) - dt.timedelta(days=7)).date().isoformat()
+    return ((parse_time(state['built_at']) if state else timeutil.clock()) - dt.timedelta(days=7)).date().isoformat()
 
 
 # The lists the Graph panes show as tabs, each the whole list, strongest first: People (Closest, Gone quiet, New this
@@ -1705,7 +1705,7 @@ def detail(db, node_id, events=12):
     view = node_view(row, neighbours(db, node_id, 20))
     # What already happened first, newest first; what is still to come (meetings ahead) only after it, soonest first.
     # Newest by date alone, a person with a few meetings ahead had only those, and none of their latest messages.
-    current = dt.datetime.now(dt.timezone.utc).isoformat(timespec='seconds')
+    current = timeutil.clock().isoformat(timespec='seconds')
     order = 'ORDER BY at>? ASC, CASE WHEN at>? THEN at END ASC, at DESC LIMIT ?'
     rows = db.execute(f'SELECT event_id,probable,at FROM graph_events WHERE node_id=? {order}', (node_id, current, current, events)).fetchall()
     if row['kind'] == 'org':  # an organization's timeline: the messages and meetings of the people in it
@@ -1915,7 +1915,7 @@ def timeline(db, node_id, source='', cursor=0, limit=40, now=None, history=False
         wanted = {source} if isinstance(source, str) else set(source)
         items = [i for i in items if i['source'] in wanted]
     # What is still to come is apart, soonest first; the timeline itself goes strictly back in time from now.
-    current = parse_time(now) if now else dt.datetime.now(dt.timezone.utc)
+    current = parse_time(now) if now else timeutil.clock()
 
     def when(i):
         try:
@@ -2217,7 +2217,7 @@ def open_between(db, node_id, limit=6, skip_card=None, promises_only=False, know
             "AND (f.valid_until IS NULL OR f.valid_until>=?) "
             f"AND EXISTS (SELECT 1 FROM fact_about a WHERE a.fact_id=f.id AND a.removed_at IS NULL AND a.node_id IN ({marks})) "
             f"AND NOT EXISTS (SELECT 1 FROM fact_about a WHERE a.fact_id=f.id AND a.removed_at IS NOT NULL AND a.node_id IN ({marks})) "
-            "ORDER BY f.created_at DESC LIMIT ?", (dt.datetime.now(dt.timezone.utc).date().isoformat(), *ids, *ids, known or limit))]
+            "ORDER BY f.created_at DESC LIMIT ?", (timeutil.clock().date().isoformat(), *ids, *ids, known or limit))]
     except sqlite3.OperationalError:
         pass  # a bare graph without the assistant's tables
     return {k: v if k == 'known' else v[:limit] for k, v in out.items() if v}  # known stops at its own count
@@ -4185,7 +4185,7 @@ def link_cards(db, ids=None, limit=100, days=30):
         args += ids
     else:
         where += " AND created_at>=?"
-        args.append((dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=days)).isoformat())
+        args.append((timeutil.clock() - dt.timedelta(days=days)).isoformat())
     linked = 0
     for r in db.execute(f'SELECT id,event_ids FROM suggestions WHERE {where} ORDER BY created_at DESC LIMIT ?', (*args, limit)).fetchall():
         try:

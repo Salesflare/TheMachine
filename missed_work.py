@@ -143,7 +143,8 @@ def ensure(db):
 
 
 def now():
-    return dt.datetime.now(dt.timezone.utc).isoformat(timespec='seconds')
+    import timeutil
+    return timeutil.clock().isoformat(timespec='seconds')
 
 
 def channel_of(kind):
@@ -501,7 +502,8 @@ def patterns(items):
 def prepare(db, accounts, days=DAYS, size=SAMPLE, seed=None, own=frozenset(), cases=CALIBRATION_N, current=None, owned=None, bulk=None):
     """The audit's sample and the evaluator's prompt, read-only: {'prompt', 'ids', 'sample', 'population', 'strata',
     'skipped'}, or {'error'} when there is too little to judge."""
-    current = current or dt.datetime.now(dt.timezone.utc)
+    import timeutil
+    current = current or timeutil.clock()
     seed = seed if seed is not None else uuid.uuid4().hex
     since = (current - dt.timedelta(days=days)).isoformat()
     population, skipped = candidates(db, accounts, since, own, owned, bulk)
@@ -564,8 +566,9 @@ def save(db, audit_id, found):
 
 def due(db, current=None):
     """An audit is due: none started in the last EVERY_DAYS, and none running (one stuck past STALE_HOURS is closed)."""
+    import timeutil
     ensure(db)
-    current = current or dt.datetime.now(dt.timezone.utc)
+    current = current or timeutil.clock()
     db.execute("UPDATE missed_audits SET status='error',error='stale',finished_at=? WHERE status='running' AND started_at<?",
                (now(), (current - dt.timedelta(hours=STALE_HOURS)).isoformat()))
     if db.execute("SELECT 1 FROM missed_audits WHERE status='running'").fetchone():

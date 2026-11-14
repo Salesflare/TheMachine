@@ -34,6 +34,7 @@ import graph
 import person_summary
 import shared_graph
 from machine.owner_error import OwnerError
+import timeutil
 
 THREADS = 40       # threads read, labeled first, then "probably part of it", newest first
 TODOS = 30
@@ -54,7 +55,7 @@ def ensure(db):
 
 
 def _now():
-    return dt.datetime.now(dt.timezone.utc).isoformat(timespec='seconds')
+    return timeutil.clock().isoformat(timespec='seconds')
 
 
 def _meta(raw):
@@ -364,7 +365,7 @@ def page_line(db, pid, now=None):
     """For a project's page: the split it came from or was split up by, while Undo still holds: {'id', 'at', 'into':
     [{'node_id', 'name'}]} on the original, {'id', 'at', 'from': {'node_id', 'name'}} on a new one. None otherwise."""
     try:
-        since = ((dt.datetime.fromisoformat(now) if now else dt.datetime.now(dt.timezone.utc)) - dt.timedelta(days=UNDO_DAYS)).isoformat()
+        since = ((dt.datetime.fromisoformat(now) if now else timeutil.clock()) - dt.timedelta(days=UNDO_DAYS)).isoformat()
         rows = db.execute('SELECT * FROM project_splits WHERE undone_at IS NULL AND created_at>=? AND (project_id=? OR EXISTS(SELECT 1 FROM json_each(made) j '
                           'WHERE j.value=?)) ORDER BY id DESC LIMIT 1', (since, pid, pid)).fetchall()
     except sqlite3.OperationalError:

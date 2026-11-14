@@ -21,6 +21,7 @@ from machine.store import outcomes
 from models import background_model
 from machine import todo_states
 from machine.owner_error import OwnerError
+import timeutil
 
 LOG = logging.getLogger('personal-assistant')
 DIGEST_TIMEOUT = 120  # seconds the model call may take
@@ -82,7 +83,7 @@ class ReadingDigestApp:
         with self.store.connect() as db:
             reading_digest.ensure(db)
             since = self.cleanup_since(db, run['routine_id'])
-            known = reading_digest.habits(db, accounts, dt.datetime.now(dt.timezone.utc))
+            known = reading_digest.habits(db, accounts, timeutil.clock())
             found = reading_digest.candidates(db, accounts, since, known)
         if not found:
             with self.store.connect() as db:
@@ -109,7 +110,7 @@ class ReadingDigestApp:
     def digest_pass(self, run, found, known):
         """The one model call over the candidates; its picks, only from them, become the to-dos after the run is settled.
         None picked: nothing new, no to-do. A reply that isn't one: didn't work, and the next run reads the mail again."""
-        day = dt.datetime.now(dt.timezone.utc).date().isoformat()
+        day = timeutil.clock().date().isoformat()
         with self.store.connect() as db:
             likes = reading_digest.interests(db)
             work, favorites = self.digest_context(db, known)

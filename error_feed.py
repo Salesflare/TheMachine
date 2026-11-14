@@ -59,7 +59,8 @@ def ensure(db):
 
 
 def now():
-    return dt.datetime.now(dt.timezone.utc).isoformat(timespec='seconds')
+    import timeutil
+    return timeutil.clock().isoformat(timespec='seconds')
 
 
 def pref(db, key, default=None):
@@ -335,8 +336,9 @@ def record_client(db, errors, version=None, actions=()):
 
 
 def prune(db, current=None):
+    import timeutil
     ensure(db)
-    cutoff = ((current or dt.datetime.now(dt.timezone.utc)) - dt.timedelta(days=KEEP_DAYS)).isoformat(timespec='seconds')
+    cutoff = ((current or timeutil.clock()) - dt.timedelta(days=KEEP_DAYS)).isoformat(timespec='seconds')
     return db.execute('DELETE FROM error_feed WHERE last_at<?', (cutoff,)).rowcount
 
 
@@ -346,10 +348,11 @@ def batch(db, current=None, names=()):
     """The next batch to send, or None: reports on, SEND_EVERY since the last, under DAY_CAP today, and only signatures
     that are new or counted more since they were last sent. Each is checked again before it may go, with `names` (or
     what it returns, when it is a function: read only when something is to go) taken out besides."""
+    import timeutil
     ensure(db)
     if not on(db):
         return None
-    current = current or dt.datetime.now(dt.timezone.utc)
+    current = current or timeutil.clock()
     prune(db, current)
     last = pref(db, 'sent_at')
     if last and dt.datetime.fromisoformat(last) > current - dt.timedelta(seconds=SEND_EVERY):
@@ -380,7 +383,8 @@ def batch(db, current=None, names=()):
 
 def sent(db, payload, current=None):
     """After the control plane took a batch: each signature counts as sent up to what went."""
-    current = current or dt.datetime.now(dt.timezone.utc)
+    import timeutil
+    current = current or timeutil.clock()
     stamp = current.isoformat(timespec='seconds')
     for item in payload.get('signatures') or []:
         db.execute('UPDATE error_feed SET sent=?,sent_at=? WHERE id=?', (item['total'], stamp, item['id']))

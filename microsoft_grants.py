@@ -79,6 +79,7 @@ def _add(ob, config_path, config, email, refresh, mail, service, fresh, failed, 
     """Keeps the new sign-in in place of the one before, then adds or updates that address's `service` connection
     (fresh(): (boundary, new account)) and checks it; failed(error) says why it didn't check out. On any failure the
     sign-in kept before comes back."""
+    import timeutil
     import mail_grants
     try:
         previous = mail_grants.get(config, 'microsoft', email)
@@ -91,7 +92,7 @@ def _add(ob, config_path, config, email, refresh, mail, service, fresh, failed, 
             boundary, account = fresh()
             account['boundary'], account['boundary_by'] = boundary, (mail or {}).get('boundary_by') or 'guess'
         account = {**account, **more, 'email': email, 'transport': 'broker',
-                   'connected_at': dt.datetime.now(dt.timezone.utc).strftime('%Y-%m-%dT%H:%M:%S+00:00')}
+                   'connected_at': timeutil.clock().strftime('%Y-%m-%dT%H:%M:%S+00:00')}
         if mail:
             account.pop('own_grant', None)  # Outlook's sign-in, which now also reads files or chats
         else:

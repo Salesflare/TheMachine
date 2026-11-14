@@ -41,7 +41,8 @@ def ensure(db):
 
 
 def _now():
-    return dt.datetime.now(dt.timezone.utc).isoformat()
+    import timeutil
+    return timeutil.clock().isoformat()
 
 
 def _field(row):

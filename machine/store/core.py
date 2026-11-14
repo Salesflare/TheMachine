@@ -53,6 +53,7 @@ import team_learnings
 from timeutil import now
 import voice_input
 import whatsapp_images
+import timeutil
 
 
 def check_sealed(db):
@@ -912,7 +913,7 @@ class StoreCore:
     def copy_before(self, name):
         """A copy of the database next to it before a one-time fix changes it (events.sqlite.before-<name>-<time>Z, only
         the owner can read it; retention rotates it like other copies)."""
-        copy = self.path.with_name(f'{self.path.name}.before-{name}-{dt.datetime.now(dt.timezone.utc):%Y%m%dT%H%M%SZ}')
+        copy = self.path.with_name(f'{self.path.name}.before-{name}-{timeutil.clock():%Y%m%dT%H%M%SZ}')
         fd = os.open(copy, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
         os.close(fd)
         with contextlib.closing(sqlite3.connect(self.path, timeout=60)) as source, contextlib.closing(sqlite3.connect(copy)) as target:

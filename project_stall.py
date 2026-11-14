@@ -32,6 +32,7 @@ import graph
 import person_summary
 import project_about
 import project_success
+import timeutil
 
 SCHEMA = '''
 CREATE TABLE IF NOT EXISTS project_stall_runs(id TEXT PRIMARY KEY,started_at TEXT NOT NULL,finished_at TEXT,status TEXT NOT NULL,
@@ -54,7 +55,7 @@ TITLE_CHARS, WHY_CHARS = 89, 300
 
 
 def now():
-    return dt.datetime.now(dt.timezone.utc).isoformat(timespec='seconds')
+    return timeutil.clock().isoformat(timespec='seconds')
 
 
 def ensure(db):
@@ -64,7 +65,7 @@ def ensure(db):
 def due(db, current=None):
     """A run is due: none started in the last EVERY_DAYS and none running (one stuck past STALE_HOURS is closed)."""
     ensure(db)
-    current = current or dt.datetime.now(dt.timezone.utc)
+    current = current or timeutil.clock()
     db.execute("UPDATE project_stall_runs SET status='error',error='stale',finished_at=? WHERE status='running' AND started_at<?",
                (current.isoformat(timespec='seconds'), (current - dt.timedelta(hours=STALE_HOURS)).isoformat(timespec='seconds')))
     if db.execute("SELECT 1 FROM project_stall_runs WHERE status='running'").fetchone():
@@ -114,7 +115,7 @@ def candidates(db, current=None, limit=PER_TURN):
     """The projects that stalled with nothing on them, strongest first: [{'pid', 'node', 'name', 'days', 'latest'}]."""
     ensure(db)
     project_success.ensure(db)
-    current = current or dt.datetime.now(dt.timezone.utc)
+    current = current or timeutil.clock()
     dismissed = (current - dt.timedelta(days=DISMISS_DAYS)).isoformat(timespec='seconds')
     repeated = (current - dt.timedelta(days=REPEAT_DAYS)).isoformat(timespec='seconds')
     boards = {b['id']: b for b in db.execute('SELECT * FROM boards')}

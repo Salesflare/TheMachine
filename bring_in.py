@@ -105,7 +105,8 @@ def ensure(db):
 
 
 def now():
-    return dt.datetime.now(dt.timezone.utc).isoformat(timespec='seconds')
+    import timeutil
+    return timeutil.clock().isoformat(timespec='seconds')
 
 
 def _key(text):
@@ -201,9 +202,10 @@ def unread(db, workspace, config=None):
 def due(db, workspace, config=None, current=None):
     """Whether a pass should run now: not within a day of the last one, not while enough candidates wait, and only
     when a file holds lines no pass has read. Settles the hash of a file with nothing new, so it is not read again."""
+    import timeutil
     ensure(db)
     last = _state(db, 'last_pass')
-    current = current or dt.datetime.now(dt.timezone.utc)
+    current = current or timeutil.clock()
     if last and current - dt.datetime.fromisoformat(last) < dt.timedelta(hours=EVERY_HOURS):
         return False
     if waiting(db) >= MAX_OFFERED:

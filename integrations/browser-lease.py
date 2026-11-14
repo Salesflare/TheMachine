@@ -42,7 +42,8 @@ MAX_MINUTES = 120
 
 
 def now():
-    return datetime.now(timezone.utc)
+    import timeutil
+    return timeutil.clock()
 
 
 def stamp(minutes=0):

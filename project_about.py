@@ -53,7 +53,7 @@ SOURCE = re.compile(r'^(?:([EFP])(\d{1,12})|T(\d{1,3})|[MNOD])$')
 
 
 def now():
-    return dt.datetime.now(dt.timezone.utc).isoformat(timespec='seconds')
+    return timeutil.clock().isoformat(timespec='seconds')
 
 
 def ensure(db):
@@ -124,7 +124,7 @@ def _state(db, row, full=False):
 def due(db, current=None, limit=PER_PASS):
     """The projects a pass describes now: [{'pid', 'node', 'basis', 'early'}], stage or outcome moves first. [] when the
     day's DAY_CAP is used."""
-    current = current or dt.datetime.now(dt.timezone.utc)
+    current = current or timeutil.clock()
     ensure(db)
     day = (current - dt.timedelta(days=1)).isoformat()
     left = DAY_CAP - db.execute('SELECT count(*) FROM projects WHERE about_tried_at>?', (day,)).fetchone()[0]

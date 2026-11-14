@@ -25,6 +25,7 @@ import todo_areas
 from timeutil import hour_minute, in_hours, is_work_day, local_tz, next_work_day, now, WORK_HOURS
 from machine import todo_states
 from machine.owner_error import OwnerError
+import timeutil
 
 
 def done_today(db, start, current):
@@ -368,7 +369,7 @@ class NotificationsApp:
     def notify_step(self, current=None, push=None, mail=None):
         """Held notifications (notify.take_due): a push a minute after the owner left the dashboard, and one email for
         what is still unseen and waiting a while later. Within work hours only; a held push outside them is dropped."""
-        local = (current or dt.datetime.now(dt.timezone.utc)).astimezone(local_tz())
+        local = (current or timeutil.clock()).astimezone(local_tz())
         with self.store.connect() as db:
             notify.ensure(db)
             if not in_hours(local):

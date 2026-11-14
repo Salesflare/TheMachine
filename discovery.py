@@ -144,7 +144,8 @@ def number(value, code=None):
 
 
 def now():
-    return dt.datetime.now(dt.timezone.utc).isoformat(timespec='seconds')
+    import timeutil
+    return timeutil.clock().isoformat(timespec='seconds')
 
 
 def ensure(db):
@@ -279,6 +280,7 @@ class Discovery:
 
     def network_reasons(self, db, node_id):
         """What connecting would help with now: an open card with them, a meeting with them soon. Empty: no card."""
+        import timeutil
         from fleet import OPEN_CARD
         if not node_id:
             return []
@@ -290,7 +292,7 @@ class Discovery:
                 if ids & set(json.loads(card['event_ids'] or '[]')):
                     out.append({'kind': 'card', 'card': card['id'], 'title': card['title'][:120]})
                     break
-        start = dt.datetime.now(dt.timezone.utc)
+        start = timeutil.clock()
         meeting = db.execute("SELECT e.occurred_at,e.title FROM graph_events g JOIN events e ON e.id=g.event_id WHERE g.node_id=? "
                              "AND e.kind='calendar.event' AND e.deleted=0 AND e.occurred_at>=? AND e.occurred_at<=? ORDER BY e.occurred_at LIMIT 1",
                              (node_id, start.isoformat(timespec='seconds'), (start + dt.timedelta(days=MEETING_DAYS)).isoformat(timespec='seconds'))).fetchone()
@@ -302,8 +304,9 @@ class Discovery:
         """{email: reason} for the people just found on the Network (FRESH_DAYS), the strongest FRESH_CARDS of them: suggested
         right away, not only once there is a card or meeting with them. Found in the owner's first lookup: in their
         contacts; found later: they joined since."""
+        import timeutil
         settings = self.network_settings()
-        since = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=FRESH_DAYS)).isoformat(timespec='seconds')
+        since = (timeutil.clock() - dt.timedelta(days=FRESH_DAYS)).isoformat(timespec='seconds')
         rows = db.execute("SELECT p.email,p.found_at FROM network_people p LEFT JOIN graph_nodes g ON g.id=p.node_id "
                           "WHERE p.status='new' AND p.found_at>=? ORDER BY COALESCE(g.strength,0) DESC,p.found_at DESC LIMIT ?",
                           (since, FRESH_CARDS)).fetchall()
@@ -365,10 +368,11 @@ class Discovery:
         return found
 
     def _findable_due(self):
+        import timeutil
         found = self.network_settings()
         return bool(found.get('discoverable')) and (found.get('findable_sent') != self._findable_wanted() or
                                                      found.get('numbers_sent', []) != self._numbers_wanted() or not found.get('findable_at') or
-                                                     found['findable_at'] < (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=ADDRESS_DAYS)).isoformat(timespec='seconds'))
+                                                     found['findable_at'] < (timeutil.clock() - dt.timedelta(days=ADDRESS_DAYS)).isoformat(timespec='seconds'))
 
     # -- the defaults: on at Standard, off at Careful, the owner's own choice kept
     def network_chosen(self):
@@ -426,7 +430,8 @@ class Discovery:
 
     # -- the lookups
     def _ago(self, value, seconds):
-        return not value or value < (dt.datetime.now(dt.timezone.utc) - dt.timedelta(seconds=seconds)).isoformat(timespec='seconds')
+        import timeutil
+        return not value or value < (timeutil.clock() - dt.timedelta(seconds=seconds)).isoformat(timespec='seconds')
 
     def _joined(self):
         """The buckets someone became findable in since the last time this Machine asked (hourly); kept until a lookup
@@ -446,6 +451,7 @@ class Discovery:
         """With "Check which of my contacts have a Machine" on: look all the contacts up daily (or now, when forced), and every NEW_EVERY the ones
         not looked up yet or in a bucket where someone became findable; every time, bring the reasons of the people
         found up to date, and mark the ones who became friends."""
+        import timeutil
         self.network_defaults()
         if self._findable_due():
             try:
@@ -485,7 +491,7 @@ class Discovery:
                     db.execute('DELETE FROM network_people WHERE email=?', (row['email'],))
                     continue
                 status = 'connected' if row['username'] in friends else row['status']
-                if status == 'later' and row['decided_at'] and row['decided_at'] < (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=LATER_DAYS)).isoformat(timespec='seconds'):
+                if status == 'later' and row['decided_at'] and row['decided_at'] < (timeutil.clock() - dt.timedelta(days=LATER_DAYS)).isoformat(timespec='seconds'):
                     status = 'new'
                 reasons = self.network_reasons(db, row['node_id'])
                 if not reasons and row['email'] in fresh:  # just found: suggested now, not only once there is a card or meeting

@@ -86,7 +86,8 @@ CREATE TABLE IF NOT EXISTS agent_result_receipts(ticket_hash TEXT PRIMARY KEY,re
 
 
 def now():
-    return dt.datetime.now(dt.timezone.utc).isoformat()
+    import timeutil
+    return timeutil.clock().isoformat()
 
 
 def stop_for_move(db, reason, at):
@@ -1649,7 +1650,8 @@ class AgentJobs:
 
     def live(self):
         """The jobs still going and those finished in the last minutes, for the dashboard to follow without a full refresh."""
-        since = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(minutes=10)).isoformat()
+        import timeutil
+        since = (timeutil.clock() - dt.timedelta(minutes=10)).isoformat()
         with self.connect() as db:
             rows = db.execute("SELECT * FROM agent_jobs WHERE status IN ('sent','running','waiting') OR updated_at>=? ORDER BY created_at", (since,)).fetchall()
         return {'jobs': {r['suggestion_id']: self.view(r) for r in rows}}

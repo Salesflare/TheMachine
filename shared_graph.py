@@ -56,6 +56,7 @@ from shared_graph_logos import team_logo
 import shared_graph_boards
 import shared_graph_takeback
 from machine.owner_error import OwnerError
+import timeutil
 
 LOG = logging.getLogger('personal-assistant')
 TAG = b'tm-shared-graph/1\n'
@@ -206,7 +207,7 @@ def drop_received(db, fleet, mine):
 
 
 def now():
-    return dt.datetime.now(dt.timezone.utc).isoformat(timespec='seconds')
+    return timeutil.clock().isoformat(timespec='seconds')
 
 
 def after(previous):
@@ -332,7 +333,7 @@ def keep_blob(db, header, ct, sig, dk):
 
 
 def _iso_ago(days):
-    return (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=days)).isoformat()
+    return (timeutil.clock() - dt.timedelta(days=days)).isoformat()
 
 
 # ---------------------------------------------------------------- threads: what the review said and the owner chose
@@ -512,7 +513,7 @@ class Scope(shared_graph_private.Kept):
         self.calls = {r[0]: (r[1], r[2]) for r in db.execute('SELECT thread,verdict,hand FROM share_threads')}  # the review's and the owner's
         self.kept_conversations = _kept_conversations(db)  # Only you by hand on a direct message or chat: for all of it
         self._private_found, self._private_memo = {}, None  # private_units: shared by this scope's copies (granted)
-        self.hold = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(seconds=HOLD)).isoformat(timespec='seconds')
+        self.hold = (timeutil.clock() - dt.timedelta(seconds=HOLD)).isoformat(timespec='seconds')
         self.fresh = {r[0] for r in db.execute('SELECT thread FROM share_threads WHERE hand IS NULL AND sorted_at>?', (self.hold,))}
         self.private_ids = set()
         self.team_ids = set()  # rules the owner said yes to: "always share client threads with X" (for threads the review was unsure of)
@@ -797,7 +798,7 @@ def collect(db, scope, key, secret, today=None, held=None, kept=()):
     messages 'pending' or 'wait'): one that went before stays with the team as it is until then, and goes on or is taken
     back after (graph_publish). kept: the tags of threads that went before: while one waits to be sorted again, the
     people, organizations and projects it is with stay shared too."""
-    today = today or dt.datetime.now(dt.timezone.utc)
+    today = today or timeutil.clock()
     rid = lambda local: keyed(secret, 'record|' + local)
     keys = key if isinstance(key, list) else [key]
     key = keys[0]
@@ -1532,7 +1533,7 @@ class SharedGraph(shared_graph_takeback.TakeBack, shared_graph_boards.TeamBoards
         admitted = (before & set(members)) | set(found)
         rekey = self.meta('graph_rekey:' + fleet) or {}
         declined = self.meta('trust_declined', []) or []
-        hold = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(seconds=REKEY_HOLD)).isoformat(timespec='seconds')
+        hold = (timeutil.clock() - dt.timedelta(seconds=REKEY_HOLD)).isoformat(timespec='seconds')
         pending = set()
         for mid in waiting:
             keys = ft.keys_of(members[mid])
@@ -1798,7 +1799,7 @@ class SharedGraph(shared_graph_takeback.TakeBack, shared_graph_boards.TeamBoards
         with self.connect() as db:
             before = db.execute('SELECT 1 FROM share_out WHERE fleet=? LIMIT 1', (fleet,)).fetchone()
         look = start.get('look')
-        if before or (look and look <= (dt.datetime.now(dt.timezone.utc) - dt.timedelta(seconds=LOOK_OVER)).isoformat(timespec='seconds')):
+        if before or (look and look <= (timeutil.clock() - dt.timedelta(seconds=LOOK_OVER)).isoformat(timespec='seconds')):
             start.update(started=now(), shown=start.get('shown') or now())
         else:
             start.setdefault('shown', now())
@@ -2032,7 +2033,7 @@ class SharedGraph(shared_graph_takeback.TakeBack, shared_graph_boards.TeamBoards
                        and sign_of(r['member'])}
             # Records sent to them after they asked reach them directly: passed on only when their want, which moves as
             # they take them, still says they lack them a while later (a gap in the chain), not again each round.
-            settled = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(seconds=SERVE_SETTLE)).isoformat()
+            settled = (timeutil.clock() - dt.timedelta(seconds=SERVE_SETTLE)).isoformat()
 
             def direct(r):
                 header = json.loads(r['header'])
@@ -2301,7 +2302,7 @@ class SharedGraph(shared_graph_takeback.TakeBack, shared_graph_boards.TeamBoards
         with self.connect() as db:
             ensure(db)
             waiting = db.execute('SELECT id,item,at FROM team_pending ORDER BY at').fetchall()
-        expired = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=PENDING_DAYS)).isoformat()
+        expired = (timeutil.clock() - dt.timedelta(days=PENDING_DAYS)).isoformat()
         for row in waiting:
             try:
                 self.graph_take(json.loads(row['item']))
@@ -3031,7 +3032,7 @@ class SharedGraph(shared_graph_takeback.TakeBack, shared_graph_boards.TeamBoards
         """This week's Work threads that didn't go to the team as a whole (sensitive, or Only you by hand), to look over."""
         ensure(db)
         scopes = self.scopes(db)
-        since = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=days)).isoformat()
+        since = (timeutil.clock() - dt.timedelta(days=days)).isoformat()
         found = {}
         for fleet, scope in scopes.items():
             week = [{**dict(e), 'metadata': json.loads(e['metadata'] or '{}')} for e in _events(db, sorted(scope.accounts), since)]

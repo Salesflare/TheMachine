@@ -30,6 +30,7 @@ import shared_graph
 from timeutil import in_hours, is_work_day, local_tz, now
 from machine import todo_states
 from machine.owner_error import OwnerError
+import timeutil
 
 
 # Mail that comes from a system, not a person: by address (slipped, first-look order) and by Gmail's category labels
@@ -644,12 +645,12 @@ class ReviewStore:
                 return self.review_result(active['id'], pages, resumed=True, last_error=active['last_error'])
             # Legacy/abruptly killed claims still have a conservative one-hour expiry.
             db.execute("UPDATE analyses SET status='abandoned',finished_at=? WHERE status='running' AND coalesce(resumed_at,started_at)<? AND NOT EXISTS(SELECT 1 FROM review_runs r WHERE r.run_id=analyses.owner_run AND analyses.owner_session=?||r.run_id AND r.status IN ('starting','running','recovering'))",
-                       (now(), (dt.datetime.now(dt.timezone.utc) - dt.timedelta(hours=1)).isoformat(), REVIEW_SESSION_PREFIX))
+                       (now(), (timeutil.clock() - dt.timedelta(hours=1)).isoformat(), REVIEW_SESSION_PREFIX))
             if db.execute("SELECT 1 FROM analyses WHERE status='running'").fetchone():
                 return {'busy': True}
             # Retryable claims from another session remain protected until stale.
             db.execute("UPDATE analyses SET status='abandoned',finished_at=? WHERE status='retryable' AND coalesce(resumed_at,started_at)<? AND NOT EXISTS(SELECT 1 FROM review_runs r WHERE r.run_id=analyses.owner_run AND analyses.owner_session=?||r.run_id AND r.status IN ('starting','running','recovering'))",
-                       (now(), (dt.datetime.now(dt.timezone.utc) - dt.timedelta(hours=1)).isoformat(), REVIEW_SESSION_PREFIX))
+                       (now(), (timeutil.clock() - dt.timedelta(hours=1)).isoformat(), REVIEW_SESSION_PREFIX))
             if db.execute("SELECT 1 FROM analyses WHERE status='retryable'").fetchone():
                 return {'busy': True}
             scope = db.execute('SELECT preview,window_hours,budget,promising FROM review_runs WHERE run_id=?', (owner_run,)).fetchone() if owner_run else None
@@ -701,7 +702,7 @@ class ReviewStore:
                     JOIN events e ON e.id=json_extract(j.value,'$.id')
                     WHERE a.status='abandoned' AND coalesce(a.finished_at,a.started_at)>=? AND coalesce(json_extract(j.value,'$.excluded'),0)=0
                       AND e.analyzed_version<e.version AND e.deferrals<? AND e.occurred_at>=? ORDER BY a.started_at,j.key''',
-                    ((dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=7)).isoformat(), SET_ASIDE_AFTER, since)).fetchall()
+                    ((timeutil.clock() - dt.timedelta(days=7)).isoformat(), SET_ASIDE_AFTER, since)).fetchall()
                 for account in accounts:
                     quota = quotas[account]
                     picked = []
@@ -1149,7 +1150,7 @@ class ReviewStore:
         """Who a review should name: people on open cards with no role yet first (they matter now), then the
         strongest; organizations with none; a review's roles that may be out of date; and the owner's past
         corrections to learn from. Each is asked again after 30 days at most."""
-        since = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=30)).isoformat()
+        since = (timeutil.clock() - dt.timedelta(days=30)).isoformat()
         line = lambda r, info: (f"- {r['name']} (node_id {r['id']}; {graph.closeness(r['strength'])}; the owner wrote on {info.get('wrote', 0)} days, "
                                 f"they on {info.get('heard', 0)}, met on {info.get('met', 0)}" + (f"; hints: {', '.join(info['hints'])}" if info.get('hints') else '')
                                 + (f'; LinkedIn headline: "{info["headline"]}"' if info.get('headline') else '') + ')')
@@ -1285,7 +1286,7 @@ class ReviewStore:
             if not reviewed <= {i['id'] for i in items}:
                 raise OwnerError('Reviewed IDs must belong to this batch')
             # a message whose to-do save failed is not reviewed: deferred, so a later review tries it again
-            since = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(hours=review_saves.FAILED_HOURS)).isoformat()
+            since = (timeutil.clock() - dt.timedelta(hours=review_saves.FAILED_HOURS)).isoformat()
             not_saved = review_saves.take(db, [i['id'] for i in items], since) & reviewed
             reviewed -= not_saved
             if projects is not None:

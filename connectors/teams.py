@@ -737,10 +737,11 @@ def history_chat(source, account, state, upper, target):
 def history_channels(source):
     """[[team id, channel id, 'Team / channel']] of the teams the owner is in, only when the live sync reads channels too
     (the admin's OK): never more than it reads. Without it, or refused, none."""
+    import timeutil
     if not set(CHANNEL_SCOPES) <= source.granted():
         return []
     try:
-        return channel_list(source, {}, dt.datetime.now(dt.timezone.utc))
+        return channel_list(source, {}, timeutil.clock())
     except source.helpers.SourceError as error:
         if error.status != 403:
             raise

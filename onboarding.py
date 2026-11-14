@@ -1423,6 +1423,7 @@ def step_salesflare(config, account, ui):
 
 
 def step_whatsapp(config, account, ui):
+    import timeutil
     wacli = tool(config, 'wacli') or install_wacli(config, ui)
     if not wacli:
         raise SetupError('WhatsApp is not installed on this Machine',
@@ -1442,7 +1443,7 @@ def step_whatsapp(config, account, ui):
     if not linked:
         raise SetupError('WhatsApp is not linked', f'wacli --store {account["store"]} auth, then: assistant connect whatsapp')
     account['identity_sha256'] = hashlib.sha256(linked.encode()).hexdigest()
-    account['connected_at'] = dt.datetime.now(dt.timezone.utc).strftime('%Y-%m-%dT%H:%M:%S+00:00')  # its card's first sync (assistant.whatsapp_history)
+    account['connected_at'] = timeutil.clock().strftime('%Y-%m-%dT%H:%M:%S+00:00')  # its card's first sync (assistant.whatsapp_history)
     ui.say('  WhatsApp: linked')
     whatsapp_sync(wacli, account, ui)
 
@@ -2335,6 +2336,7 @@ def connect_grant(config_path, provider, args, team_domains=()):
     Microsoft tenant the grant names (tid) and the domains of Work Fleet teammates (team_domains); nobody can be asked
     here, so a doubt is Personal, a guess, which scope_check.py checks against the mail once it is in. Returns
     {'ok', 'name'}."""
+    import timeutil
     import fleet
     import mail_grants
     name = GRANT_LABELS[provider]
@@ -2392,7 +2394,7 @@ def connect_grant(config_path, provider, args, team_domains=()):
             if tid:
                 account['tenant_id'] = tid
             if provider == 'microsoft':  # a refused sign-in right after this is Microsoft still settling (ms_graph.py)
-                account['connected_at'] = dt.datetime.now(dt.timezone.utc).strftime('%Y-%m-%dT%H:%M:%S+00:00')
+                account['connected_at'] = timeutil.clock().strftime('%Y-%m-%dT%H:%M:%S+00:00')
             error = check(config, account)
             if error and not error.startswith(BUSY) and not re.match(r'outlook:HTTP_5\d\d\b', error):  # Graph down, sign-in fine: kept
                 raise SetupError(f'{label(service)} for {email} did not check out ({error})', 'sign in again from Connections, + Add')
@@ -2528,7 +2530,8 @@ def healthy(config, timeout=0):
 
 
 def now():
-    return dt.datetime.now(dt.timezone.utc).isoformat()
+    import timeutil
+    return timeutil.clock().isoformat()
 
 
 def restart_and_sync(config, account_ids, ui, wait=90, config_path=None):
@@ -2557,6 +2560,7 @@ def database(config):
 
 def first_sync(config, account_ids, since, ui, wait=90):
     """Wait for each account's first sync after `since` and show what came in. Read-only."""
+    import timeutil
     ui.say('First sync (Ctrl+C stops waiting; syncing goes on in the background):')
     deadline, seen = time.monotonic() + wait, {}
     try:
@@ -2574,7 +2578,7 @@ def first_sync(config, account_ids, since, ui, wait=90):
             time.sleep(2)
     except KeyboardInterrupt:
         ui.say('')
-    week = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=7)).isoformat()
+    week = (timeutil.clock() - dt.timedelta(days=7)).isoformat()
     counts = {}
     db = database(config)
     if db:
@@ -2842,8 +2846,9 @@ def offer_user_md(config, ui, workspace=None):
 # ---------------------------------------------------------------- doctor
 
 def ago(stamp):
+    import timeutil
     try:
-        seconds = (dt.datetime.now(dt.timezone.utc) - dt.datetime.fromisoformat(str(stamp).replace('Z', '+00:00'))).total_seconds()
+        seconds = (timeutil.clock() - dt.datetime.fromisoformat(str(stamp).replace('Z', '+00:00'))).total_seconds()
     except ValueError:
         return str(stamp)
     for size, unit in ((86400, 'day'), (3600, 'hour'), (60, 'minute')):
@@ -2856,6 +2861,7 @@ def ago(stamp):
 def doctor(config_path, workspace=None):
     """Every check as (mark, text, fix): ✓ fine, ! worth a look, ✗ broken. Contacts none of your
     accounts (only your own dashboard address); source health comes from the service's own sync records."""
+    import timeutil
     results = []
     add = lambda mark, text, fix='': results.append((mark, text, fix))
     try:
@@ -2987,7 +2993,7 @@ def doctor(config_path, workspace=None):
             add('✗', f'{title}: {point["error"]}' + (f': {hint(point["error"])}' if hint(point['error']) else ''), f'assistant connect {name}')
         elif not point.get('last_success'):
             add('!', f'{title}: no sync yet', 'give it a few minutes after a restart; then assistant sources')
-        elif point['last_success'] < (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=2)).isoformat():
+        elif point['last_success'] < (timeutil.clock() - dt.timedelta(days=2)).isoformat():
             add('✗' if point.get('error') else '!', f'{title}: last sync {ago(point["last_success"])}'
                 + (f'; now failing with {point["error"]}' + (f': {hint(point["error"])}' if hint(point['error']) else '') if point.get('error') else ''),
                 f'assistant connect {name}' if point.get('error') else 'assistant sources; ' + service.hint('logs'))
@@ -3003,7 +3009,7 @@ def doctor(config_path, workspace=None):
     on = config.get('delivery_enabled') and (config.get('review_worker') or {}).get('enabled')
     if not on:
         add('!', 'checks and to-dos in Telegram are off', 'try one: assistant preview; turn them on: ./install.sh --activate')
-    elif not last_review or last_review < (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=2)).isoformat():
+    elif not last_review or last_review < (timeutil.clock() - dt.timedelta(days=2)).isoformat():
         add('!', 'no check in the last 2 days' if last_review else 'no check yet', 'assistant reviews; openclaw logs')
     else:
         add('✓', f'checks on, last one {ago(last_review)}')

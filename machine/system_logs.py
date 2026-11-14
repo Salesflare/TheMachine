@@ -39,6 +39,7 @@ from pathlib import Path
 import i18n
 import locale_prefs
 from timeutil import local_tz
+import timeutil
 
 WINDOW = dt.timedelta(hours=24)
 EVERY = dt.timedelta(minutes=30)  # the service reads at most this often
@@ -354,7 +355,7 @@ def recovered(failures, started, start_failed):
 def detect(rows, failed=(), now=None, on_omarchy=False, config_errors=0, uid=None):
     """The real problems in these records, as findings: [{key, kind, name, unit, count, last_at, ...}], clearest first.
     Pure: everything it reads is passed in."""
-    now = now or dt.datetime.now(dt.timezone.utc)
+    now = now or timeutil.clock()
     uid = str(os.getuid() if uid is None else uid)
     units = {}
     crashes = {}

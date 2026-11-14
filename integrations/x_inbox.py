@@ -660,8 +660,9 @@ def run(mode, **params):
 
 
 def when(ms):
+    import timeutil
     d = datetime.fromtimestamp(ms / 1000).astimezone()
-    today = datetime.now().astimezone().date()
+    today = timeutil.clock(None).astimezone().date()
     return d.strftime('%H:%M') if d.date() == today else d.strftime('%a %H:%M') if (today - d.date()).days < 7 else d.strftime('%Y-%m-%d')
 
 
@@ -685,9 +686,10 @@ def x_length(text):
 
 
 def log_send(entry):
+    import timeutil
     SENDS_LOG.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
     with SENDS_LOG.open('a') as f:
-        f.write(json.dumps({'at': datetime.now().astimezone().isoformat(timespec='seconds'), **entry}, ensure_ascii=False) + '\n')
+        f.write(json.dumps({'at': timeutil.clock(None).astimezone().isoformat(timespec='seconds'), **entry}, ensure_ascii=False) + '\n')
         f.flush()
         os.fsync(f.fileno())
 
