@@ -50,6 +50,7 @@ import message_seal
 import onboarding
 import openclaw_pin
 import service
+from machine import bridge_wait
 from onboarding import CONNECTORS, expand, write_private
 
 ROOT = Path(__file__).resolve().parent
@@ -911,16 +912,18 @@ def precompile(facts):
     return result.returncode == 0
 
 
-def prepare(facts, paths, fresh, start, skip_plugin, bytecode=False):
+def prepare(facts, paths, fresh, start, skip_plugin, bytecode=False, unattended=False):
     """The install steps that need no answers: on a first install in a terminal they run while the questions are asked
     (Ahead), with the bytecode too, which is free there. False when the bridge could not go into OpenClaw (the install
-    then stops, as before)."""
+    then stops, as before). `unattended`: the nightly update (unattended_run), whose changed bridge waits for a quiet
+    night instead (staged_swap) and so never stops it."""
     paths.data.mkdir(mode=0o700, parents=True, exist_ok=True)  # its stamps go here; setup_secrets keeps it 700
     if bytecode:
         precompile(facts)
     install_node_packages(facts['node'])
     # The bridge reads config.json when it needs it; before the answers, the credentials it guards are all in paths.data
-    if not (skip_plugin or install_plugin(facts, reload=start, stamp=paths.data / 'plugin-installed', restart=may_restart_gateway(paths))):
+    if not (skip_plugin or install_plugin(facts, reload=start, stamp=paths.data / 'plugin-installed', restart=may_restart_gateway(paths),
+                                             unattended=unattended)):
         return False
     quiet_openclaw(facts, paths.data / 'openclaw-quiet.json')
     gateway_keep_retrying(paths)
@@ -1102,7 +1105,7 @@ def may_restart_gateway(paths):
 # off. One written in the last REINDEX_FRESH seconds is a rebuild that runs; an older one was left by a Gateway that
 # stopped mid-rebuild. Measured on a real Machine: up to 51 seconds between two writes while it ran.
 REINDEX_FRESH = 120  # seconds since the last write to a rebuild's database within which the rebuild counts as running
-BRIDGE_WAITING = 'plugin-waiting'  # in the data folder, next to the stamp: a changed bridge that is not in OpenClaw yet
+BRIDGE_WAITING = bridge_wait.NAME  # in the data folder, next to the stamp: a changed bridge that is not in OpenClaw yet
 SWAP_WAIT = 600  # seconds an update waits for a running index before the bridge goes in
 REBUILD_WAIT = 1200  # the same for a rebuild on local embeddings (local_rebuild); one still running then is never swapped into
 SWAP_QUIET = 60  # seconds the embedding server has to stay quiet, without a break, before the index counts as stopped
@@ -1328,7 +1331,7 @@ RELOADED = 'reloaded'  # restore_model_runtime: models work again and the Gatewa
 WAITING = 'waiting'  # install_plugin: the bridge waits for the memory index; the rest of the install goes on
 
 
-def install_plugin(facts, reload=True, stamp=None, restart=True):
+def install_plugin(facts, reload=True, stamp=None, restart=True, unattended=False):
     """Link, enable and reload the bridge, unless this exact bridge is already in. Every reload replaces the plugin
     inside a running Gateway, which is slow on a small server and can leave the model runtime unpublished (every
     model call then fails until the Gateway restarts): an update that did not touch the bridge should not do it.
@@ -1341,7 +1344,8 @@ def install_plugin(facts, reload=True, stamp=None, restart=True):
     Returns True when the bridge is in, False when it failed, and WAITING (true as well: the install goes on) when
     the index was still running at the bound on a Gateway this install may not restart, or was a rebuild on local
     embeddings (local_rebuild, on any Gateway: a restart would hang on it as well): nothing is forced, the
-    stamp stays as it was and BRIDGE_WAITING stays next to it, so the next install or nightly update tries again."""
+    stamp stays as it was and BRIDGE_WAITING stays next to it, so the next install or nightly update tries again.
+    `unattended` (the nightly update, unattended_run): a bridge that changed never goes in as a swap; staged_swap."""
     global REBUILD_OUTLASTED
     REBUILD_OUTLASTED = False
     openclaw = facts.get('openclaw')
@@ -1369,11 +1373,9 @@ def install_plugin(facts, reload=True, stamp=None, restart=True):
             write_stamp(stamp, facts)
             say(f'OpenClaw plugin {PLUGIN_ID}: already loaded as it is by the running Gateway, left as it is')
             return True
-        try:
-            stamp.parent.mkdir(parents=True, exist_ok=True)
-            stamp.with_name(BRIDGE_WAITING).write_text(fingerprint + '\n')  # until write_stamp: a nightly update tries again
-        except OSError:
-            pass
+        bridge_wait.note(stamp.with_name(BRIDGE_WAITING), fingerprint)  # until write_stamp: a nightly update tries again
+        if unattended:
+            return staged_swap(facts, stamp, restart, fingerprint)
     plugin = str(ROOT / 'openclaw-plugin')
     if not gateway_idle('the bridge goes in'):
         rebuilding = local_rebuild()  # a rebuild is never swapped into, not even where a restart could follow: that hangs too
@@ -1452,6 +1454,128 @@ def install_plugin(facts, reload=True, stamp=None, restart=True):
     say(f'OpenClaw plugin {PLUGIN_ID}: linked and enabled'
         + ('' if reload else ' (not reloaded: --no-start)')
         + (' (loads when the Gateway starts)' if applied is None else ''))
+    return True
+
+
+# The nightly update puts a changed bridge in only in these local hours ("from-to" in ASSISTANT_QUIET_HOURS), when the
+# owner's chats and to-dos rest. Its timer fires in them (04:00 plus up to 2 hours), but a night the computer was off
+# catches up when it starts, at any time of day.
+QUIET_HOURS = (0, 7)
+
+
+def quiet_hours():
+    try:
+        start, end = (int(part) % 24 for part in os.environ.get('ASSISTANT_QUIET_HOURS', '').split('-'))
+    except ValueError:
+        return QUIET_HOURS
+    return start, end
+
+
+def local_hour():
+    return time.localtime().tm_hour
+
+
+def in_quiet_hours():
+    hour, (start, end) = local_hour(), quiet_hours()
+    return start <= hour < end if start <= end else (hour >= start or hour < end)
+
+
+def work_running():
+    """Whether The Machine runs work that a Gateway stop would cut off (`assistant busy` exits 0 only when idle), or
+    nothing can tell."""
+    return run([sys.executable, str(ROOT / 'cli.py'), 'busy'], timeout=120).returncode != 0
+
+
+def bridge_loaded(openclaw):
+    """After a Gateway (re)start: (its health or None, whether it loaded the bridge, its error for the bridge or ''),
+    waiting up to ASSISTANT_GATEWAY_WAIT seconds for it (a first start on 4 GB takes a minute or more)."""
+    deadline = time.time() + float(os.environ.get('ASSISTANT_GATEWAY_WAIT', 300))
+    while True:
+        live = gateway_health(openclaw)
+        plugins = (live or {}).get('plugins') or {}
+        if PLUGIN_ID in (plugins.get('loaded') or []):
+            return live, True, ''
+        errors = [e.get('error') for e in plugins.get('errors') or [] if isinstance(e, dict) and e.get('id') == PLUGIN_ID]
+        if errors or time.time() >= deadline:
+            return live, False, str(errors[0])[:300] if errors else ''
+        time.sleep(5)
+
+
+def staged_swap(facts, stamp, restart, fingerprint):
+    """How the nightly update (unattended_run) puts a changed bridge in: never as a swap inside the running Gateway.
+    OpenClaw drains the plugin's work before a swap and gives up when it does not settle within a minute, keeping the
+    old one (a real Machine, 2026-11: the update unit failed and its owner got a to-do about it), and in-place swaps
+    can leave the Gateway unable to run models. Only in the quiet hours, with nothing of The Machine's running and
+    the memory index quiet (gateway_idle), on a Gateway unit this install may restart: the Gateway is stopped, the
+    bridge installed, enabled and allowed its hooks while it is down, and the Gateway started again, which loads the
+    bridge from this folder. True once it runs with it and can run models (then stamped). Anything else returns
+    WAITING: the Gateway keeps the bridge it had, the rest of the update goes on and the next night tries again. Only
+    a quiet night that tried and failed counts (bridge_wait.note); after bridge_wait.TRIES the owner gets a to-do."""
+    openclaw, plugin, waits = facts['openclaw'], str(ROOT / 'openclaw-plugin'), stamp.with_name(BRIDGE_WAITING)
+    later = 'The Gateway keeps the bridge it has until then; the rest of the update is in.'
+    if not in_quiet_hours():
+        start, end = quiet_hours()
+        say(f'OpenClaw plugin {PLUGIN_ID}: changed; it goes in between {start:02d}:00 and {end:02d}:00, when nothing runs. {later}')
+        return WAITING
+
+    def wait_for_idle():
+        say(f'OpenClaw plugin {PLUGIN_ID}: changed; it goes in on a night when nothing of The Machine runs. {later}')
+        return WAITING
+
+    def failed(why):
+        state = bridge_wait.note(waits, fingerprint, failed=why)
+        told = state['attempts'] >= bridge_wait.TRIES
+        say(f'OpenClaw plugin {PLUGIN_ID}: not in yet, {why}. {later} The next nightly update tries again'
+            f' (failed nights: {state["attempts"]}' + ('; the owner has a to-do about it).' if told else ').'))
+        return WAITING
+
+    if work_running():
+        return wait_for_idle()
+    unit = (onboarding.gateway_units() or [None])[0]
+    if not unit:
+        return failed('the OpenClaw Gateway does not run as a systemd user unit here, so it cannot be restarted around it')
+    if not restart:
+        return failed('this install leaves restarting the Gateway to its owner ("gateway_restart": false in config.json)')
+    if not gateway_idle(f'restarting {unit} with the new bridge'):
+        return failed(f'the memory index was still running after {swap_minutes(local_rebuild())}')
+    if work_running():  # something started during that wait
+        return wait_for_idle()
+    say(f'Installing the local bridge with {unit} stopped, then starting it again (no swap inside a running Gateway), and'
+        ' accepting its declared OpenClaw capabilities (see README Security model).')
+    why = None
+    stopped = run(['systemctl', '--user', 'stop', unit], timeout=300)
+    if stopped.returncode != 0:
+        why = f'{unit} did not stop: ' + (stopped.stderr or stopped.stdout).strip()[:200]
+    else:
+        for step, command in (('install', [openclaw, 'plugins', 'install', '--link', '--force', '--accept-capabilities', plugin]),
+                              ('enable', [openclaw, 'plugins', 'enable', PLUGIN_ID]),
+                              ('hooks', [openclaw, 'config', 'set', f'plugins.entries.{PLUGIN_ID}.hooks.allowConversationAccess', 'true', '--strict-json'])):
+            result = run(command, timeout=300)
+            if result.returncode != 0:
+                why = f'the plugin {step} failed: ' + (result.stderr or result.stdout).strip()[:200]
+                break
+    loaded, error = False, ''
+    for start in range(2):  # always started again, also after a failed step; once more when it cannot run models
+        run(['systemctl', '--user', 'reset-failed', unit], timeout=30)
+        started = run(['systemctl', '--user', 'start' if not start else 'restart', unit], timeout=300)
+        if started.returncode != 0:
+            say(f'  Could not start the OpenClaw Gateway ({unit}): ' + (started.stderr or started.stdout).strip()[:300]
+                + f'\n  Check: systemctl --user status {unit}; journalctl --user -u {unit} -n 50; openclaw doctor')
+            return failed(why or f'{unit} did not start again')
+        _, loaded, error = bridge_loaded(openclaw)
+        if service.model_runtime(openclaw, run) is not False:
+            break
+        say(f'  {unit} started, but cannot run models' + ('; restarting it once more.' if not start else '.'))
+    else:
+        say('  NOT FIXED: the OpenClaw Gateway cannot run models, so no chat, check or to-do run works until it restarts.'
+            f'\n  Restart it: {service.gateway_restart_hint(onboarding.gateway_units())}')
+        return failed(why or 'the Gateway came back unable to run models')
+    if why:
+        return failed(why)
+    if not loaded:
+        return failed(f'{unit} started without the bridge' + (f': {error}' if error else ''))
+    write_stamp(stamp, facts)
+    say(f'OpenClaw plugin {PLUGIN_ID}: in; {unit} started again with it')
     return True
 
 
@@ -1732,23 +1856,15 @@ def load_in_gateway(openclaw, reload_error='', restart=True, recovery=False):
         say(f'  Could not start the OpenClaw Gateway ({unit}): ' + (result.stderr or result.stdout).strip()[:300]
             + f'\n  Check: systemctl --user status {unit}; journalctl --user -u {unit} -n 50; openclaw doctor')
         return False
-    deadline = time.time() + float(os.environ.get('ASSISTANT_GATEWAY_WAIT', 300))  # a first start on 4 GB takes a minute or more
-    errors = []
-    while True:
-        live = gateway_health(openclaw)
-        plugins = (live or {}).get('plugins') or {}
-        if PLUGIN_ID in (plugins.get('loaded') or []):
-            say(f'  The Gateway is running with {PLUGIN_ID} loaded.')
-            return True
-        errors = [e.get('error') for e in plugins.get('errors') or [] if isinstance(e, dict) and e.get('id') == PLUGIN_ID]
-        if errors or time.time() >= deadline:
-            break
-        time.sleep(5)
+    live, loaded, error = bridge_loaded(openclaw)
+    if loaded:
+        say(f'  The Gateway is running with {PLUGIN_ID} loaded.')
+        return True
     if not live:
         say('  The OpenClaw Gateway did not come up; the bridge is installed and loads when it starts.'
             f'\n  Check: systemctl --user status {unit}; journalctl --user -u {unit} -n 50; openclaw doctor')
         return False
-    say(f'  The Gateway is running but did not load {PLUGIN_ID}' + (': ' + str(errors[0])[:300] if errors else '')
+    say(f'  The Gateway is running but did not load {PLUGIN_ID}' + (': ' + error if error else '')
         + '\n  Check: openclaw plugins doctor')
     return False
 
@@ -1975,6 +2091,19 @@ def dry_run(paths):
     return 0
 
 
+def unattended_run(args, cgroup='/proc/self/cgroup'):
+    """Whether this install is the nightly update's: --unattended, or --non-interactive inside its unit (an update
+    unit from before --unattended runs a newer release's installer this way)."""
+    if args.unattended:
+        return True
+    if not args.non_interactive:
+        return False
+    try:
+        return f'/{UPDATE_UNIT}' in Path(cgroup).read_text()
+    except OSError:
+        return False
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--non-interactive', action='store_true', help='take answers from ASSISTANT_* environment variables')
@@ -1987,6 +2116,7 @@ def main(argv=None):
     parser.add_argument('--browser-viewer', action='store_true', help='existing install: a browser of its own on a virtual display, viewed in yours (127.0.0.1 only)')
     parser.add_argument('--dry-run', action='store_true', help='check prerequisites and show what would be written; changes nothing')
     parser.add_argument('--if-bridge-waits', action='store_true', help='do nothing unless a changed bridge still waits to go into OpenClaw (the nightly update uses this)')
+    parser.add_argument('--unattended', action='store_true', help='the nightly update: a changed bridge goes in only on a quiet night, with the Gateway restarted around it')
     parser.add_argument('--from-main', action='store_true', help='first install: this checkout as it is, not the newest signed release')
     parser.add_argument('--health-timeout', type=float, default=30)
     args = parser.parse_args(argv)
@@ -2052,7 +2182,7 @@ def main(argv=None):
         return 1
     setup_secrets(config, facts, paths)
     install_cli(paths)
-    if not (ahead.result() if ahead else prepare(*steps)):
+    if not (ahead.result() if ahead else prepare(*steps, unattended=unattended_run(args))):
         return 1
     if args.activate:
         config = activate(paths)

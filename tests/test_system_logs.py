@@ -380,6 +380,51 @@ class ToDos(unittest.TestCase):
             a.sync_gateway(self.store, self.config, GATEWAY, NoJournal())  # a test's own source: never the real logs
         self.assertEqual(len(scans), 1)
 
+    def test_a_todo_about_a_unit_that_is_down_closes_itself_once_it_is_not(self):
+        # The nightly update's unit failed once, then ran well (or was reset): its "is down" to-do should not linger.
+        down = [self.finding('stays_failed', 'the-machine-update'), self.finding('gave_up', 'backup'),
+                self.finding('repeated_failures', 'sync')]
+        self.assertEqual(self.store.system_log_cards(GATEWAY['id'], down, per_day=10), 3)
+        self.assertEqual(self.store.settle_system_log_cards(None), [])  # systemd could not be asked: nothing closes
+        self.assertEqual(self.store.settle_system_log_cards({'the-machine-update.service', 'backup.service'}), [])
+        closed = self.store.settle_system_log_cards({'backup.service'})
+        todos = {t['title']: t for t in self.todos()}
+        self.assertEqual(closed, [todos['the-machine-update is down after a failure']['id']])
+        self.assertEqual(todos['the-machine-update is down after a failure']['status'], 'completed')
+        self.assertEqual(todos['backup stopped after failing to start']['status'], 'pending')
+        self.assertEqual(todos['sync failed 3 times in a day']['status'], 'pending')  # about the past day, not about now
+        with self.store.connect() as db:
+            note = db.execute("SELECT feedback FROM decisions WHERE suggestion_id=?", (closed[0],)).fetchone()[0]
+        self.assertIn('no longer down', note)
+        class NoJournal:
+            def read(self, cursor=None, since=None):
+                return []
+        scan = lambda: {'supported': True, 'findings': [], 'failed': set()}  # the gateway source settles them as it reads
+        with mock.patch('machine.sources.gateway.GatewayJournal', return_value=NoJournal()):
+            a.sync_gateway(self.store, {**self.config, 'database': str(Path(self.store.path))}, GATEWAY, scan_logs=scan)
+        self.assertEqual({t['title']: t['status'] for t in self.todos()}['backup stopped after failing to start'], 'completed')
+        self.assertIsNone(s.failed_units(run=lambda *a, **k: (1, ''), unknown=None))
+        self.assertEqual(s.failed_units(run=lambda *a, **k: (0, 'backup.service loaded failed failed Backup\n')), {'backup.service'})
+
+    def test_a_bridge_the_nightly_update_could_not_put_in_becomes_one_todo_and_closes_once_in(self):
+        from machine import bridge_wait
+        data = Path(self.store.path).parent
+        waits = data / bridge_wait.NAME
+        self.assertFalse(self.store.bridge_wait_card(GATEWAY['id'], data))
+        for night in range(bridge_wait.TRIES):
+            self.assertFalse(self.store.bridge_wait_card(GATEWAY['id'], data))  # quiet until a few nights failed
+            bridge_wait.note(waits, 'abc', failed='admitted work did not settle within 60s', now=f'2026-11-1{night}T04:00:00+00:00')
+        self.assertTrue(self.store.bridge_wait_card(GATEWAY['id'], data))
+        self.assertFalse(self.store.bridge_wait_card(GATEWAY['id'], data))  # one to-do, not one a night
+        [todo] = self.todos()
+        self.assertEqual((todo['title'], todo['origin'], todo['status']), ('Finish installing the last update', 'machine', 'pending'))
+        for technical in ('systemctl', 'journalctl', 'install.sh', 'drain', 'settle'):
+            self.assertNotIn(technical, todo['body'])
+        self.store.parked_fix_cards(GATEWAY['id'], [{'sha': 'a' * 40, 'subject': 'A fix of its own', 'changes': False}])
+        waits.unlink()  # the bridge is in (installer.write_stamp)
+        self.assertFalse(self.store.bridge_wait_card(GATEWAY['id'], data))
+        self.assertEqual([t['status'] for t in self.todos()], ['completed', 'pending'])  # a set-aside fix stays open
+
     def test_a_hosted_machine_brings_no_todos_about_its_server(self):
         # the server and its services are ours to keep running: its own agent tells the team, not the owner
         class NoJournal:

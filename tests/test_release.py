@@ -307,7 +307,8 @@ class Releases(unittest.TestCase):
         with mock.patch.object(release, 'busy', return_value=False), mock.patch.object(release.subprocess, 'run', fake):
             release.main(['update', '--install'])
         self.assertEqual(run('git', 'rev-parse', 'HEAD', cwd=self.app), sha)
-        self.assertEqual(installs, [['--non-interactive']])
+        # unattended: a changed bridge waits for a quiet night and a Gateway restart, never a failed unit (staged_swap)
+        self.assertEqual(installs, [['--non-interactive', '--unattended']])
         # A night with no new release: only a bridge that still waits for OpenClaw's memory index goes in (the
         # installer does nothing when none does), and only when nothing runs.
         with mock.patch.object(release, 'busy', return_value=True), mock.patch.object(release.subprocess, 'run', fake):
@@ -316,7 +317,7 @@ class Releases(unittest.TestCase):
         with mock.patch.object(release, 'busy', return_value=False), mock.patch.object(release.subprocess, 'run', fake):
             release.main(['update', '--install'])
             release.main(['update'])  # by hand, without --install: never runs the installer
-        self.assertEqual(installs[1:], [['--non-interactive', '--if-bridge-waits']])
+        self.assertEqual(installs[1:], [['--non-interactive', '--unattended', '--if-bridge-waits']])
         def failing(args, **kwargs):
             return subprocess.CompletedProcess(args, 1) if str(args[0]).endswith('install.sh') else real(args, **kwargs)
         with mock.patch.object(release, 'busy', return_value=False), mock.patch.object(release.subprocess, 'run', failing), \

@@ -8,7 +8,7 @@ site: More sources, Remove
 ---
 ## What it reads
 
-Your Machine's own log: failed runs, refused handoffs, Telegram messages that didn't go out, and The Machine's own errors. A to-do tells you when something needs fixing.
+Your Machine's own log: failed runs, refused handoffs, Telegram messages that didn't go out, and The Machine's own errors. A to-do tells you when something needs fixing. On your own computer that includes **Finish installing the last update**: one part of an update needs a short restart at night, and a few nights could not do it. Ask in its chat and The Machine finishes it. It closes by itself once that part is in.
 
 ## Fixes an update set aside
 

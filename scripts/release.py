@@ -451,6 +451,12 @@ def busy():
                           text=True).returncode != 0
 
 
+# The installer as the nightly update runs it: a changed bridge never goes in as a swap inside the running Gateway,
+# only on a quiet night with the Gateway restarted around it; until then it waits and the install still ends well
+# (installer.py staged_swap). A bridge that keeps failing becomes one owner to-do, never a failed update unit.
+UNATTENDED = ('--non-interactive', '--unattended')
+
+
 def update(args):
     git('fetch', '--quiet', '--tags', 'origin')
     tag, sha = verify(args.tag)
@@ -458,9 +464,9 @@ def update(args):
     if git('merge-base', '--is-ancestor', sha, 'HEAD', check=False).returncode == 0:
         print(f'Already on {tag} or newer.')
         if args.install and not busy():
-            # A changed bridge that could not go into OpenClaw last time (its memory index was running) is tried
-            # again; with none waiting the installer does nothing.
-            code = subprocess.run([str(ROOT / 'install.sh'), '--non-interactive', '--if-bridge-waits'], cwd=ROOT).returncode
+            # A changed bridge that could not go into OpenClaw last time (its memory index was running, or the night
+            # was not quiet) is tried again; with none waiting the installer does nothing.
+            code = subprocess.run([str(ROOT / 'install.sh'), *UNATTENDED, '--if-bridge-waits'], cwd=ROOT).returncode
             if code:
                 raise SystemExit(f'./install.sh failed (exit {code}): the bridge that was waiting is still not in OpenClaw.')
         return
@@ -470,7 +476,7 @@ def update(args):
     note = moved(tag, move_to(sha))
     print(f'Updated to {tag} ({sha[:7]}), signature verified.' + note + ('' if args.install else ' Now run ./install.sh'))
     if args.install:
-        code = subprocess.run([str(ROOT / 'install.sh'), '--non-interactive'], cwd=ROOT).returncode
+        code = subprocess.run([str(ROOT / 'install.sh'), *UNATTENDED], cwd=ROOT).returncode
         if code:
             raise SystemExit(f'./install.sh failed (exit {code}) after the update to {tag}.')
 

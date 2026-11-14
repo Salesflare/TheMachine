@@ -97,6 +97,8 @@ OMARCHY_PIECES = {'hyprland': 'hyprland', 'quickshell': 'bar', 'qs': 'bar', 'way
 # started again, never The Machine's own units and never the OpenClaw Gateway; the bar is brought back with Omarchy's
 # own command. Nothing else ever runs from here.
 RESTARTABLE = ('gave_up', 'repeated_failures', 'stays_failed')
+# Findings about a unit being down now: their to-do closes itself once systemd no longer lists the unit as failed
+FAILED_NOW = ('gave_up', 'stays_failed')
 PROTECTED = re.compile(r'(openclaw|personal-assistant|the-machine)', re.I)
 SAFE_UNIT = re.compile(r'[A-Za-z0-9][A-Za-z0-9_.@:-]{0,200}\.service')
 FIX_TIMEOUT = 60
@@ -207,11 +209,11 @@ def read_coredumps(hours=WINDOW, run=run_quiet):
     return rows
 
 
-def failed_units(run=run_quiet):
-    """The owner's units systemd lists as failed right now."""
+def failed_units(run=run_quiet, unknown=frozenset()):
+    """The owner's units systemd lists as failed right now; `unknown` when systemd can't be asked."""
     code, out = run(['systemctl', '--user', 'list-units', '--state=failed', '--no-legend', '--plain', '--no-pager'])
     if code != 0:
-        return set()
+        return unknown
     return {line.split()[0] for line in out.splitlines() if line.split() and line.split()[0].endswith('.service')}
 
 
@@ -440,7 +442,9 @@ def detect(rows, failed=(), now=None, on_omarchy=False, config_errors=0, uid=Non
 
 
 def scan(window=WINDOW, run=run_quiet, now=None, which=shutil.which):
-    """{'supported', 'reason', 'omarchy', 'findings'} for this computer, read as described above."""
+    """{'supported', 'reason', 'omarchy', 'findings', 'failed'} for this computer, read as described above. 'failed':
+    the units systemd lists as failed now (a to-do about one that is no longer there closes itself,
+    Store.settle_system_log_cards), None when that could not be read."""
     ok, why = supported(which=which)
     if not ok:
         return {'supported': False, 'reason': why, 'omarchy': False, 'findings': []}
@@ -451,8 +455,9 @@ def scan(window=WINDOW, run=run_quiet, now=None, which=shutil.which):
         rows += read_coredumps(window, run)
     on_omarchy = omarchy(which)
     errors = hyprland_config_errors(run) if on_omarchy and which('hyprctl') else 0
+    failed = failed_units(run, unknown=None)
     return {'supported': True, 'reason': '', 'omarchy': on_omarchy,
-            'findings': detect(rows, failed_units(run), now, on_omarchy, errors)}
+            'findings': detect(rows, failed or set(), now, on_omarchy, errors), 'failed': failed}
 
 
 def _bar_command(which=shutil.which):
