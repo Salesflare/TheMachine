@@ -20,7 +20,9 @@ async function promisePage(id){const p=await request('api/promise?id='+encodeURI
 document.addEventListener('click',e=>{const b=e.target.closest('[data-promise-due]');if(!b)return;const f=$('#people-view .promise-due-form');if(f){f.hidden=!f.hidden;if(!f.hidden)f.elements.due.focus()}});
 document.addEventListener('submit',async e=>{const f=e.target.closest('.promise-due-form');if(!f)return;e.preventDefault();const b=f.querySelector('button');b.disabled=true;
  try{await graphPost('promise_due',{id:Number(f.dataset.promiseId),due:f.elements.due.value});f.hidden=true;toast('Date moved.');await people(graphNode,true)}catch(err){errCaught(err);b.disabled=false;toast(err.message,true)}});
-function graphOpen(id){if(!graphNode&&!$('#people').hidden)graphScroll=scrollY;if(location.hash!==graphHash(id))history.pushState(null,'',graphHash(id));people(id)}
+// Opened from a list, the entry says which (graphFrom) and how many steps back it is (graphAt, more after a closed
+// dialog: shell-back.js): a phone's ‹ People goes back to it, as its back gesture does
+function graphOpen(id){const listed=!graphNode&&!$('#people').hidden;if(listed)graphScroll=scrollY;if(location.hash!==graphHash(id))history.pushState(listed?{graphFrom:graphShown,graphAt:1}:null,'',graphHash(id));people(id)}
 function graphBack(pane){if(pane){graphPane=pane;localStorage.setItem('graph-pane',pane)}if(/^#graph\//.test(location.hash))history.pushState(null,'',location.pathname+location.search+'#graph='+(graphPane||'people'));people('')}
 document.addEventListener('click',e=>{if(e.target.closest('[data-graph-retry]'))people(graphNode)});
 document.addEventListener('click',e=>{const item=e.target.closest('.person-menu [role=menuitem]');if(item)item.closest('details').open=false});

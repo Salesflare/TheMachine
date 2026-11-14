@@ -71,8 +71,9 @@ try{
  await navClick(page.locator('nav [data-tab="people"]'));
  await page.locator('#people-view article[data-node="wa:3247000001"] button.node').click();
  await page.locator('.graph-crumbs').waitFor();
- // The section's head stays (Graph, People) with the breadcrumb (Graph › People › name) under it; Graph current (in the drawer on a phone)
- assert.ok(await page.locator('#page-head').isVisible()&&await page.locator('.graph-crumbs [data-crumb="people"]').isVisible()&&await page.locator('nav [data-tab="people"].active').count()===1);
+ // A phone shows ‹ People in place of the section's head (Graph, People) and the breadcrumb (Graph › People › name),
+ // which stay in the page for a desktop (test_graph_back_link_dashboard.mjs); Graph current (in the drawer on a phone)
+ assert.ok(!await page.locator('#page-head').isVisible()&&await page.locator('.graph-crumbs [data-crumb="people"]').isVisible()&&await page.locator('nav [data-tab="people"].active').count()===1);
  assert.equal(await page.locator('#page-head .page-title').textContent(),'People');assert.equal(await page.locator('#page-head .head-new').count(),0);
  assert.equal(await page.evaluate(()=>scrollY),0);
  assert.equal((await page.locator('.graph-crumbs').textContent()).replace(/\s+/g,' '),'Graph›People›Ann Example');
@@ -208,14 +209,13 @@ try{
  await posted(n+2);
  assert.deepEqual(calls[n+1],{action:'forget_fact',args:{id:6}});
  await page.waitForFunction(()=>document.querySelectorAll('.graph-known li').length===1);
- // The breadcrumb goes back to the list; the browser's back button returns to Ann, forward to the list again.
+ // ‹ People goes back to the list it came from, as the back gesture does, past the closed message windows: no step added.
+ const steps=await page.evaluate(()=>history.length);
  await page.locator('.graph-crumbs [data-crumb="people"]').click();
  await page.locator('[data-graph-panel="people"]:not([hidden])').waitFor();
  assert.ok(await page.locator('.people-search').isVisible());
- await page.goBack();
- await page.locator('.graph-crumbs').waitFor();
- await page.goBack();
- await page.locator('[data-graph-panel="people"]:not([hidden])').waitFor();
+ assert.equal(new URL(page.url()).hash,'#graph=people');assert.equal(await page.evaluate(()=>history.length),steps,'no step added');
+ assert.equal(await page.evaluate(()=>history.state?.graphFrom),undefined,'the list\'s own entry');
  // Another tab drops the link; a deep link opens the page straight away, with the tabs.
  await navClick(page.locator('nav [data-tab="feedback"]'));
  assert.equal(new URL(page.url()).hash,'');

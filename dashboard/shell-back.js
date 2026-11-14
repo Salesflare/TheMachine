@@ -2,7 +2,8 @@
 let backLayers=[],backSeq=0,backSkip=0;
 const backLive=l=>l.el.isConnected&&l.el.open,backIn=id=>backLayers.some(l=>l.id===id);
 function backOpen(el,close){if(DESK.matches||backLayers.some(l=>l.el===el))return;backSeq=Math.max(backSeq+1,Date.now());
- history.replaceState({...history.state,under:backSeq},'');backLayers.push({el,close,id:backSeq,url:location.href});history.pushState({layer:backSeq},'')}
+ history.replaceState({...history.state,under:backSeq},'');backLayers.push({el,close,id:backSeq,url:location.href});const s=history.state;
+ history.pushState({layer:backSeq,...s?.graphFrom&&{graphFrom:s.graphFrom,graphAt:s.graphAt+1}},'')}
 const backShut=el=>{backLayers=backLayers.filter(l=>l.el!==el)};
 function backCancel(d){if(d.dispatchEvent(new Event('cancel',{cancelable:true}))&&d.open)d.close();if(d.open)backOpen(d,()=>backCancel(d))}  // as Esc
 {const show=HTMLDialogElement.prototype.showModal;
