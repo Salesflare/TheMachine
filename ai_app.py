@@ -80,7 +80,7 @@ class AiApp:
 
     def ai_dashboard_action(self, name, args, owner_dashboard):
         if not owner_dashboard:
-            raise OwnerError('Only the owner manages connected AIs, on the dashboard (Settings, Connected AIs)')
+            raise OwnerError('Only the owner manages connected AIs, on the dashboard (Settings, Apps, Connected AIs)')
         if name in ('ai_pair_start', 'ai_pair_state', 'ai_unpair', 'ai_undo', 'ai_apply', 'ai_dismiss'):
             return getattr(self, name)(args)
         cid = str(args.get('id') or '')
