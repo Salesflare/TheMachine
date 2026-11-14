@@ -32,6 +32,7 @@ spec = importlib.util.spec_from_file_location('knowledge_export_assistant', ROOT
 a = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(a)
 import graph  # noqa: E402
+from pinned import pinned  # noqa: E402
 import knowledge as brain  # noqa: E402
 import person_summary  # noqa: E402
 import shared_graph  # noqa: E402
@@ -49,6 +50,7 @@ PRIVATE_BODY = 'PRIVATE-SENTINEL about the quiet merger'
 # Past facts and rules (text, kind, sort, about, to-do, until, removed days ago, how): merged_into is '<how>:<own id>'
 # for expired and aside, the target for call, skill, voice and record; None with removed is forgotten, without removed
 # a current fact past its end day; forgot: merged into the forgotten one above it.
+NOW = dt.datetime(2026, 11, 9, 12, tzinfo=dt.timezone.utc)  # the tests' moment (pinned)
 PAST_FACTS = (('Was based in the old office.', 'fact', 'fact', AVERY, 'pricing', '2026-01-31', 30, 'expired'),
               ('Had a trial until last spring.', 'fact', 'event', AVERY, 'pricing', '2025-05-01', None, None),
               ('Liked long reports.', 'fact', 'preference', None, 'done', None, 20, 'aside'),
@@ -78,8 +80,7 @@ def build(folder):
               'slack_bot_token': TOKEN}
     store = a.Store(config['database'], protect=True)
     store.accounts = config['accounts']
-    now = dt.datetime.now(dt.timezone.utc)
-    ago = lambda days: (now - dt.timedelta(days=days)).isoformat(timespec='seconds')
+    ago = lambda days: (NOW - dt.timedelta(days=days)).isoformat(timespec='seconds')
     with store.connect() as db:
         import crm_fields
         import fleet
@@ -130,7 +131,7 @@ def build(folder):
         facts = (('Prefers meetings after 10:00.', 'fact', 'preference', None, 'done', None),
                  ('Prefers a call over email.', 'fact', 'preference', AVERY, 'pricing', None),
                  ('Needs the pricing sheet before the board meets.', 'fact', 'fact', AVERY, 'pricing', None),
-                 ('Is moving offices in December.', 'fact', 'event', AVERY, 'pricing', ago(-30)[:10]),  # still ahead, whatever today is
+                 ('Is moving offices in December.', 'fact', 'event', AVERY, 'pricing', '2026-12-31'),
                  ('Promised to review the contract this month.', 'fact', 'commitment', BO, 'done', None),
                  ('Wants the merger kept quiet.', 'fact', 'fact', AVERY, 'merger', None),
                  ('Keep drafts under five sentences.', 'draft', None, None, 'done', None))
@@ -186,6 +187,7 @@ def build(folder):
 class KnowledgeExport(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        cls.enterClassContext(pinned(NOW))  # end days and "N days ago" read this moment, not the day the test runs
         cls.temp = tempfile.TemporaryDirectory()
         cls.store, cls.config, cls.space = build(cls.temp.name)
         cls.reader = knowledge.StoreReader(cls.store, cls.config, FakeFleet(), cls.space)
@@ -273,7 +275,7 @@ class KnowledgeExport(unittest.TestCase):
 
     @staticmethod
     def day(days):
-        return (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=days)).date().isoformat()
+        return (NOW - dt.timedelta(days=days)).date().isoformat()
 
     def test_sources_are_stable_ids_with_dates(self):
         again = knowledge.collect(self.reader, now=dt.datetime(2030, 1, 1, tzinfo=dt.timezone.utc))

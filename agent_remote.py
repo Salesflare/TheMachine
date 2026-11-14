@@ -185,6 +185,7 @@ def _poll(jobs):
 
 
 def fetch(jobs, rows=None):
+    import timeutil
     rows = _waiting(jobs) if rows is None else rows
     if not rows:
         return 0
@@ -220,7 +221,7 @@ def fetch(jobs, rows=None):
                 db.executemany('UPDATE agent_result_receipts SET acked=1 WHERE ticket_hash=? AND report=?',
                                [(r['ticket_hash'], r['report']) for r in reply.get('acked') or []
                                 if r in receipts])
-    cutoff = time.time() - REMOTE_DAYS * 86400
+    cutoff = timeutil.clock().timestamp() - REMOTE_DAYS * 86400  # set against started_at: the same clock
     for row in rows:
         started = row['started_at'] or row['created_at']
         if row['token_hash'] not in took and dt.datetime.fromisoformat(started).timestamp() < cutoff:

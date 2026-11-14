@@ -262,9 +262,10 @@ def _retry_after(headers):
 
 def connected_age(config, account):
     """Seconds since a broker account was (re)connected (its "connected_at"); None when unknown."""
+    import timeutil
     try:
         stamp = account.get('connected_at') if account.get('transport') == 'broker' else None
-        return time.time() - dt.datetime.fromisoformat(stamp).timestamp() if stamp else None
+        return timeutil.clock().timestamp() - dt.datetime.fromisoformat(stamp).timestamp() if stamp else None
     except (TypeError, ValueError):
         return None
 
@@ -272,9 +273,10 @@ def connected_age(config, account):
 def connected_since(config, account, since):
     """True when the account was connected again after `since` (an ISO time): its own-app sign-in written again, or
     the broker account connected again."""
+    import timeutil
     try:
         when = (credential_path(config, account).stat().st_mtime if account.get('transport') == 'graph'
-                else time.time() - connected_age(config, account))
+                else timeutil.clock().timestamp() - connected_age(config, account))
         return when > dt.datetime.fromisoformat(since).timestamp()
     except (OSError, TypeError, ValueError, GraphError):
         return False
