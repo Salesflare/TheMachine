@@ -4,6 +4,7 @@ area: connections
 summary: Una pagina web che osservi. Un'attività solo quando cambia qualcosa che conta.
 covers: connector:web_page
 code: connectors/web_page.py
+translated: d40b156b37cc9bc5
 ---
 ## Cosa legge
 

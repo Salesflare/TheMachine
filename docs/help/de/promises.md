@@ -1,35 +1,37 @@
 ---
 title: Versprechen
 area: cards
-summary: Was du zugesagt hast und was andere dir versprochen haben. Wird von selbst verfolgt.
+summary: Was du versprochen hast und was andere dir versprochen haben. Wird automatisch nachverfolgt.
 covers: promises
 code: dashboard.html, assistant.py
 order: 6
-translated: 0779d3fc9d3f3407
+translated: dbac0241c54b0ec6
 ---
-Deine Machine erkennt Versprechen in deinen Nachrichten, in beide Richtungen, ohne dass du etwas einrichten musst.
+Behalte im Blick, was du versprochen hast und was andere dir versprochen haben. Deine Machine erkennt Versprechen in deinen Nachrichten automatisch.
 
-## Wo sie stehen
+## Wo du sie findest
 
-Unter **Versprechen** auf der Seite Aufgaben:
+Auf der Seite „Aufgaben“ unter **Versprechen**:
 
-- Was du zugesagt hast, und für wen: **Du hast versprochen**.
-- Was andere zugesagt haben: **Dir versprochen**.
+- Was du tun wolltest und für wen: **Du hast versprochen**.
+- Was andere tun wollten: **Dir versprochen**.
 
-Jedes hat ein Menü **⋯**:
+Jedes Versprechen hat ein Menü **⋯**:
 
-- **Ausführen** bei deinen: Es wird jetzt zur Aufgabe, und deine Machine bereitet sie vor. **Erinnern** bei denen anderer: Deine Machine schreibt einen kurzen Entwurf zum Nachfassen, dort, wo es versprochen wurde, und du bleibst in der Liste. Eine kurze Meldung bestätigt es, mit **Aufgabe öffnen**. Nichts geht raus, bis du es sendest. Ist es schon eine Aufgabe, öffnet sich diese.
-- **Als erledigt markieren**: Es wurde eingehalten.
-- **Findet nicht statt**: Es passiert nicht, also verfolgt deine Machine es nicht mehr, ohne Aufgabe.
+- **Ausführen** bei deinen Versprechen: Daraus wird sofort eine Aufgabe, die deine Machine vorbereitet. **Erinnern** bei den Versprechen anderer: Deine Machine entwirft eine kurze Nachfrage dort, wo die Person es versprochen hat. Du bleibst dabei in der Liste. Eine kurze Notiz sagt, dass die Nachricht unterwegs ist, und enthält **Aufgabe öffnen**. Beim Versprechen steht dann „jetzt eine Aufgabe“. Gesendet wird nichts, bis du es selbst abschickst. Ist es bereits eine Aufgabe, öffnet sich diese.
+- **Als erledigt markieren**: Das Versprechen wurde eingehalten.
+- **Findet nicht statt**: Das Versprechen wird nicht eingehalten. Deine Machine verfolgt es nicht weiter und erstellt keine Aufgabe.
 
-Ein offenes Versprechen wird auch von selbst zur Aufgabe, wenn es fällig ist (deines am Morgen davor, damit ein Tag dafür bleibt), und erscheint an seinem Tag im [Kalender](calendar.md). Ist es schon eine Aufgabe, führt es zu ihr, und **Als erledigt markieren** oder **Findet nicht statt** schließt diese Aufgabe mit. Sieht deine Machine, dass es erledigt ist, schließen beide, mit einer Zeile dazu.
+Ein offenes Versprechen wird automatisch zu einer Aufgabe, sobald es fällig ist. Bei deinen Versprechen passiert das am Morgen davor, damit du einen Tag Zeit hast. Außerdem erscheint es am entsprechenden Tag im [Kalender](calendar.md). Versprechen, die jetzt Aufgaben sind, sind mit diesen verknüpft. Wenn du **Als erledigt markieren** oder **Findet nicht statt** auswählst, wird auch die jeweilige Aufgabe geschlossen. Erkennt deine Machine, dass das Versprechen eingehalten wurde, schließt sie beides und vermerkt es.
 
-Vorher liest deine Machine, was danach kam. Schon gehalten, etwa durch eine Antwort von dir oder ein Meeting dazu? Dann schließt es sich als gehalten, ohne Aufgabe.
+Wurde das Versprechen bereits eingehalten, zum Beispiel durch eine Antwort von dir oder ein entsprechendes Meeting? Dann wird es automatisch geschlossen, ohne eine Aufgabe zu erstellen.
 
-Später ein neues Datum genannt, etwa „doch erst nächste Woche“? Dasselbe Versprechen verschiebt sich, seine Aufgabe mit, ohne ein zweites. Seine Seite zeigt das neue Datum und die neuere Nachricht.
+Wird später ein neuer Termin genannt, zum Beispiel „doch erst nächste Woche“? Dann wird das bestehende Versprechen samt Aufgabe verschoben, ohne ein zweites anzulegen. Auf der Seite des Versprechens siehst du den neuen Termin und die neuere Nachricht.
 
-Eins ohne Datum zeigt seinen Tag zum **Nachfassen**: drei Tage, nachdem du es gesagt hast, eine Woche, nachdem die andere Person es gesagt hat. Dann noch offen? Dann wird es zur Aufgabe.
+Für Versprechen ohne Termin wird ein Tag zum **Nachfassen** festgelegt: drei Tage, nachdem du das Versprechen abgegeben hast, oder eine Woche, nachdem es jemand anderes abgegeben hat. Ist es bis dahin noch offen, wird es zu einer Aufgabe.
 
-Eine Slack-Nachricht nennt ihren Absender nur mit seiner Slack-ID. Deine Machine schlägt den Namen nach, damit Versprechen die Person zeigen, nicht die ID.
+Bei Versprechen aus Slack wird der Name der Person angezeigt.
 
-Auf deinem eigenen Computer listet `assistant promises` sie ebenfalls auf. Der [Wochenrückblick](weekly-recap.md) zählt gehaltene und offene.
+Versprechen per E-Mail von Personen, denen du noch nie geschrieben hast, werden ebenfalls erfasst und als **Absender nicht bestätigt** markiert: Sie beruhen nur auf der Aussage der Person. Die Aufgabe beginnt mit „Nicht bestätigt: Du hast der Person noch nie geschrieben.“
+
+Die [Wochenübersicht](weekly-recap.md) zählt eingehaltene und offene Versprechen. Auf deinem eigenen Computer listet `assistant promises` sie in einem Terminal auf.
