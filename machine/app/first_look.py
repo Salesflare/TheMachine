@@ -263,6 +263,8 @@ class FirstLookApp:
                 with self.store.connect() as db:
                     note_model_check(db, found)
                 LOG.info('model check ok=%s failed=%s', found['ok'], found['failed'])
+                if found['ok']:
+                    self.agent_warm_up(run)
             with self.store.connect() as db:
                 look = not self.first_look_over(db) and (not found['ok'] or self.first_look_failing(db))
             if not look:
@@ -279,6 +281,21 @@ class FirstLookApp:
         except Exception as error:  # noqa: BLE001 - checked again on a later round
             LOG.error('model check error=%s', type(error).__name__)
             return None
+
+    def agent_warm_up(self, run=None):
+        """Once per start, after the AI's check passed and before any review ran: the Gateway's agent runtime readied
+        for the first look (model_check.warm_up, no model call), so the first review reaches the model sooner. A stand-in
+        check (`run`, the tests') warms only through `self.model_warm_up`, never the real Gateway."""
+        warm = getattr(self, 'model_warm_up', None) or (model_check.warm_up if run is None else None)
+        if not warm or getattr(self, '_agent_warmed', False):
+            return None
+        with self.store.connect() as db:
+            if self.first_look_over(db) or db.execute('SELECT 1 FROM review_runs LIMIT 1').fetchone():
+                return None
+        self._agent_warmed = True
+        ok, seconds = warm(self.config)
+        LOG.info('agent warm-up ok=%s seconds=%.1f', ok, seconds)
+        return ok
 
     def quick_first_review(self, db):
         """How many signals the first review after reviews turned on looks at, quickly: the week's most promising (the
