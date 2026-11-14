@@ -216,12 +216,16 @@ def dashboard_status(status):
     count shows, and checked_count has it), its session names, a card's dedupe key and saved pre-close state, a
     delivery's message bookkeeping (its row shows status, to-do, time and error), a card's next_action when next_actions
     has it (the page reads next_actions first), and of a connector's sync state (a Slack one is tens of KB of cursors)
-    all but what Connections reads, and the newest reviews only. The status action itself (CLI, plugin) keeps everything; copies, never its rows."""
+    all but what Connections reads, and the newest reviews only. A promise's bookkeeping (its row shows who, what, when
+    and where it stands), a run's technical details unless it is blocked (only then shown), and the learnings shared
+    with The Machine team (Settings, Activity reads them from api/activity). The status action
+    itself (CLI, plugin) keeps everything; copies, never its rows."""
     def without(rows, keys, when=lambda row: True):
         return [{k: v for k, v in row.items() if k not in keys} if isinstance(row, dict) and when(row) else row for row in rows or []]
     status, drop = dict(status), {'analyses': {'owner_session', 'owner_run'}, 'suggestions': {'dedupe_key', 'closed_state'},
                                   'deliveries': {'previous_message_ids', 'notification_message_id', 'last_notified_at',
-                                                 'edit_retry_at', 'edit_failures', 'message_id', 'send_kind', 'reminder'}}
+                                                 'edit_retry_at', 'edit_failures', 'message_id', 'send_kind', 'reminder'},
+                                  'promises': {'note', 'account_id', 'event_id', 'created_at', 'updated_at', 'card_status'}}
     for name, keys in drop.items():
         if isinstance(status.get(name), list):
             status[name] = without(status[name], keys)
@@ -229,6 +233,9 @@ def dashboard_status(status):
         status['analyses'] = without(status['analyses'][:REVIEWS_SHOWN], {'items'}, lambda r: r.get('status') == 'complete' and r.get('checked_count') is not None)
     if isinstance(status.get('suggestions'), list):
         status['suggestions'] = without(status['suggestions'], {'next_action'}, lambda r: 'next_actions' in r)
+        status['suggestions'] = without(status['suggestions'], {'preparation_details'}, lambda r: r.get('preparation_status') != 'blocked')
+    if isinstance(status.get('team_learnings'), dict):
+        status['team_learnings'] = {k: v for k, v in status['team_learnings'].items() if k not in ('shared', 'last_shared')}
     if isinstance(status.get('connectors'), list):
         status['connectors'] = [{**c, 'state': sync_state_shown(c['state'])} if isinstance(c, dict) and c.get('state') else c for c in status['connectors']]
     return status

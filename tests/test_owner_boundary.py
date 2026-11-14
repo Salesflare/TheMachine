@@ -510,14 +510,19 @@ class OwnerBoundary(unittest.TestCase):
                   'deliveries': [{'status': 'sent', 'suggestion_id': 'x', 'needs_edit': False, 'previous_message_ids': ['1'],
                                   'notification_message_id': '2', 'last_notified_at': 't', 'edit_retry_at': None, 'edit_failures': 0,
                                   'message_id': 'm', 'send_kind': 'email', 'reminder': 0}],
-                  'promises': [{'id': 1}]}
+                  'promises': [{'id': 1, 'who': 'Sam', 'what': 'Send the deck', 'due': None, 'check_at': 't', 'made_at': 't', 'state': 'open',
+                                'status': 'open', 'direction': 'mine', 'together': 0, 'suggestion_id': None, 'note': 'n', 'account_id': 'work',
+                                'event_id': 4, 'created_at': 't', 'updated_at': 't', 'card_status': None}]}
         view = a.dashboard_status(status)
         self.assertEqual(view['analyses'], [{'status': 'complete', 'checked_count': 3, 'summary': 'ok'}, {'status': 'running', 'items': '[1]'},
                                             {'status': 'complete', 'checked_count': None, 'items': '[1,2]'}])
         self.assertEqual(view['suggestions'], [{'id': 'x', 'title': 'T', 'next_actions': []}])
         self.assertEqual(view['deliveries'], [{'status': 'sent', 'suggestion_id': 'x', 'needs_edit': False}])
-        self.assertIs(view['promises'], status['promises'])
+        # a promise's row and its menu (todos-learned.js promisesList, calendar-view.js): who, what, when, where it stands
+        self.assertEqual(view['promises'], [{'id': 1, 'who': 'Sam', 'what': 'Send the deck', 'due': None, 'check_at': 't', 'made_at': 't', 'state': 'open',
+                                             'status': 'open', 'direction': 'mine', 'together': 0, 'suggestion_id': None}])
         self.assertIn('dedupe_key', status['suggestions'][0]); self.assertIn('items', status['analyses'][0])  # the action's own rows stay whole
+        self.assertIn('note', status['promises'][0])
         self.assertNotIn('analyses', a.dashboard_status({'suggestions': []}))
         many = {'analyses': [{'id': str(n), 'status': 'complete', 'checked_count': 1, 'summary': 'ok'} for n in range(100)]}
         self.assertEqual([r['id'] for r in a.dashboard_status(many)['analyses']], [str(n) for n in range(20)])  # the newest 20
@@ -535,6 +540,20 @@ class OwnerBoundary(unittest.TestCase):
         self.assertEqual([json.loads(c['state']) if c['state'] else c['state'] for c in view['connectors']],
                          [{'mode': 'incremental', 'watermark': '2026-11-08T08:00:00+00:00'}, {'transport': 'feed', 'reconciliation_error': 'x'}, None, {}])
         self.assertIn('next_action', status['suggestions'][0]); self.assertIn('channels', status['connectors'][0]['state'])  # the action's own rows stay whole
+
+    def test_dashboard_status_sends_a_run_s_details_while_blocked_and_no_shared_learnings(self):
+        """A run's technical details show only on a blocked to-do (todos-cards.js techPanel); the learnings shared with
+        The Machine team are read from api/activity (settings-activity.js), the rest of team_learnings stays."""
+        status = {'suggestions': [{'id': 'b', 'preparation_status': 'blocked', 'preparation_details': 'log'},
+                                  {'id': 'd', 'preparation_status': 'done', 'preparation_details': 'log'}, {'id': 'n'}],
+                  'team_learnings': {'offer': True, 'network': True, 'ask': None, 'votes_waiting': [], 'shared': [{'items': ['x']}],
+                                     'last_shared': {'at': 't', 'count': 1}}}
+        view = a.dashboard_status(status)
+        self.assertEqual(view['suggestions'], [{'id': 'b', 'preparation_status': 'blocked', 'preparation_details': 'log'},
+                                               {'id': 'd', 'preparation_status': 'done'}, {'id': 'n'}])
+        self.assertEqual(view['team_learnings'], {'offer': True, 'network': True, 'ask': None, 'votes_waiting': []})
+        self.assertIn('shared', status['team_learnings']); self.assertIn('preparation_details', status['suggestions'][1])
+        self.assertNotIn('team_learnings', a.dashboard_status({}))
 
     def test_owner_key_is_created_private(self):
         config = {'credentials': {}, 'database': str(Path(self.temp.name) / 'events.sqlite')}
