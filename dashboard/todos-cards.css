@@ -237,5 +237,7 @@ dialog input{display:block;width:100%;margin-top:8px}
 /* A to-do's named questions (askLine): a field grows with what is typed */
 .ask-line .ask-field,.ask-field:focus{min-height:40px;height:auto;max-height:9em;margin:6px 0 8px;padding:8px 12px;field-sizing:content;resize:none;color:var(--text);font:inherit;font-weight:400}
 .ask-line .ask-q .ask-need{margin:-4px 0 8px;color:var(--orange);font-size:var(--fs-sm);font-weight:500}.ask-send{margin:4px 0 2px}
+/* A promise from a sender the owner doesn't know (todos-learned.js unverified): their word only */
+.promise-unverified{color:var(--orange);font-weight:600}
 /* The source email when Gmail did not answer: one quiet line with Try again (events-email.js emailRetry) */
 .email-retry{margin:10px 0 0;font-size:var(--fs-sm)}.email-retry button.link{display:inline;min-height:0;margin:0;padding:0;border:0;background:none;box-shadow:none;color:var(--text);font:inherit;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
