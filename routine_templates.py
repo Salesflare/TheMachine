@@ -70,7 +70,7 @@ class Template:
     """A routine template's code: its run while the routine's words are its own, the to-do kind that run ends in, and
     the dashboard actions on that to-do. One per App, made on first use (load).
     KEYS: the TEMPLATES keys it runs (their name, words and rhythm stay in TEMPLATES, which the Routines page reads
-      without the App). KIND: its to-do kind (machine/todo_kinds.py). ACTIONS: action name -> its method, called as
+      without the App). KIND: its to-do kind (machine/todo_kinds.py), or None when its to-dos are ordinary ones. ACTIONS: action name -> its method, called as
       method(name, args, owner_dashboard) (App.action). STEP: the name step() fails under in the routines worker, when
       it has a step of its own. START: the same for start(), its part of the service's start.
     A name it doesn't have itself is the App's (self.store, self.config, self.routine_spawn), so code moved here from

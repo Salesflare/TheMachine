@@ -172,7 +172,7 @@ class AppMixins(unittest.TestCase):
 
     def test_routine_templates_are_declared_whole(self):
         # each Template (ROUTINE_TEMPLATES) runs catalog keys no other one runs, every catalog key has one, each names a
-        # to-do kind the registry has and maps its actions to its own methods, none of them a mixin's too
+        # to-do kind the registry has (or none, when its to-dos are ordinary ones) and maps its actions to its own methods, none of them a mixin's too
         from machine import todo_kinds
         import routine_templates
         keys = [key for cls in a.ROUTINE_TEMPLATES for key in cls.KEYS]
@@ -181,7 +181,7 @@ class AppMixins(unittest.TestCase):
         for cls in a.ROUTINE_TEMPLATES:
             with self.subTest(template=cls.__name__):
                 self.assertTrue(issubclass(cls, routine_templates.Template))
-                self.assertIn(cls.KIND, {k.key for k in todo_kinds.KINDS})
+                self.assertIn(cls.KIND, {None, *(k.key for k in todo_kinds.KINDS)})
                 self.assertEqual(set(cls.ACTIONS), {n for part in template_parts(cls) for n in vars(part).get('ACTIONS', {})})
                 for name, method in cls.ACTIONS.items():
                     self.assertNotIn(name, a.App.ACTION_HANDLERS)
@@ -228,7 +228,7 @@ class AppMixins(unittest.TestCase):
         self.assertIs(template.app, app)
         self.assertEqual((name, args, owner), ('digest_interest', {'topic': 'x'}, True))
         self.assertIs(app.template('newsletters'), app.template('spam'))  # one per App, whichever key loads it
-        self.assertEqual(app.templates(), [app.template(k) for k in ('spam', 'digest', 'birthdays', 'subscriptions')])
+        self.assertEqual(app.templates(), [app.template(k) for k in ('spam', 'digest', 'birthdays', 'subscriptions', 'touch')])
         self.assertIsNone(app.template('gone'))
         # Birthdays' two modules are one template: its Facebook import's action reaches it
         with patch.object(a.BirthdaysTemplate, 'birthdays_facebook_action', lambda s, name, args, owner: s):
