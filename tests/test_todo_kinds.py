@@ -28,7 +28,7 @@ class TodoKindsTest(unittest.TestCase):
         traits = {k.key: (k.quiet, k.reading, k.close_only, bool(k.refused), bool(k.reads)) for k in todo_kinds.KINDS}
         self.assertEqual(traits, {
             'cleanup': (True, True, True, True, True),
-            'subs': (True, False, False, True, False),  # its card keeps every choice, an area's digest keeps it
+            'subs': (True, False, True, True, False),  # an area's digest keeps it: a trial about to charge needs the owner
             'digest': (True, True, True, True, True),
             'facebook_birthdays': (False, False, False, False, False),  # only its view is its own
         })
@@ -42,6 +42,11 @@ class TodoKindsTest(unittest.TestCase):
             imported = {a.name for n in ast.walk(tree) if isinstance(n, ast.Import) for a in n.names}
             with self.subTest(path=rel):
                 self.assertEqual(imported & modules, set())
+
+    def test_the_kept_todo_list_waits_on_every_kinds_table(self):
+        """A kind's view reads its table: the to-dos' views kept between polls (views.CARD_TABLES) must change with it."""
+        from machine.store import views
+        self.assertEqual({k.table for k in todo_kinds.KINDS} - set(views.CARD_TABLES), set())
 
     def test_a_database_before_the_tables(self):
         db = sqlite3.connect(':memory:')
@@ -77,7 +82,7 @@ class TodoKindsTest(unittest.TestCase):
                 self.assertEqual(one, todo_kinds.views(db, sid, metas[sid], pre))
                 self.assertTrue(todo_kinds.quiet(db, sid))
                 self.assertTrue(todo_kinds.refused(db, sid))
-                self.assertEqual(todo_kinds.close_only(one), key != 'subs')
+                self.assertTrue(todo_kinds.close_only(one))
         self.assertEqual(todo_kinds.reading_ids(db), {'c1', 'd1'})
         self.assertFalse(todo_kinds.quiet(db, 'other'))
 
