@@ -22,7 +22,7 @@ from machine.config import LOG, WORKSPACE
 from machine.delivery.push import reminder_channels, reviews_start_by_themselves
 from machine import names as display_names
 from machine import stamps
-from machine.store.views import STATUS_QUIET, SYNC_TABLES, status_tables
+from machine.store.views import STATUS_NARROW, STATUS_QUIET, SYNC_TABLES, status_tables
 from machine.timing import aside
 from machine.sources.connectors import (connector_says, docs_offered, docs_provider, docs_unset, docs_write_offered,
                                         reconnect_help, SIGNIN_ONLY)
@@ -247,7 +247,9 @@ class StatusApp:
         if any(t not in counters for t in kept['tables']):
             return None
         # every counter but quiet tables' (another module may count one): graph_who and fleet_view too, which the status reads
-        rest = tuple(sorted((k, v) for k, v in counters.items() if k not in STATUS_QUIET and k not in SYNC_TABLES))
+        # a STATUS_NARROW table's own counter (made before it was narrowed) is left out: its part's counter is in
+        rest = tuple(sorted((k, v) for k, v in counters.items() if k not in STATUS_QUIET and k not in SYNC_TABLES
+                            and k not in STATUS_NARROW))
         return (schema, rest), tuple(counters.get(t) for t in SYNC_TABLES)
 
     def status_inputs(self):
@@ -270,6 +272,7 @@ class StatusApp:
         """The change counters of the tables the status reads (stamps.watch): on the side, never on a request's read."""
         with self.store.connect() as db:
             stamps.watch(db, [t for t in status_tables(db) if stamps.IDENTIFIER.fullmatch(t)])
+            stamps.watch_activity_opened(db)  # STATUS_NARROW's part: activity_seen's opens of a to-do
 
     def status_kept(self, done):
         """The status as built from the database and config (status_built), kept until either changes: the dashboard
