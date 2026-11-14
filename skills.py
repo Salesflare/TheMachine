@@ -42,6 +42,7 @@ import urllib.parse
 import urllib.request
 import zipfile
 from pathlib import Path
+from machine import todo_states
 
 LOG = logging.getLogger('personal-assistant')
 SCHEMA = '''
@@ -1336,7 +1337,7 @@ class Hints:
                 return []
             return [{k: r[k] for k in ('id', 'suggestion_id', 'skill', 'kind', 'name', 'summary', 'why')}
                     for r in db.execute("SELECT h.* FROM skill_hints h JOIN suggestions s ON s.id=h.suggestion_id WHERE h.status='open' AND h.created_at>? "
-                                        "AND s.status NOT IN ('completed','rejected') ORDER BY h.created_at DESC LIMIT 10", (since,))]
+                                        f"AND s.status NOT IN {todo_states.sql(todo_states.CLOSED)} ORDER BY h.created_at DESC LIMIT 10", (since,))]
 
 
 # -- Importing from Claude and ChatGPT (docs/skills.md#import-from-claude-or-chatgpt) -----------------------------------

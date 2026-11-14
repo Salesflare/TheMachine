@@ -22,6 +22,7 @@ from machine.text import encoded
 from models import background_model, openclaw_model
 from machine.store import outcomes
 from timeutil import now
+from machine import todo_states
 
 
 PROMISE_CARDS_PER_DAY = 5
@@ -30,8 +31,8 @@ PROMISE_CARDS_PER_DAY = 5
 def promise_home(db, promise):
     """The to-do a promise's matter already has: the latest one holding its message, else the one in its email or
     Slack thread. Other promises' cards don't count: one message or thread can hold several promises."""
-    cards = [c for c in db.execute("SELECT s.* FROM suggestions s, json_each(s.event_ids) j WHERE j.value=? AND s.status IN ('pending','accepted','prepared','instructions','snoozed','completed','rejected') "
-                                   "ORDER BY CASE WHEN s.status IN ('completed','rejected') THEN 1 ELSE 0 END,s.created_at DESC", (promise['event_id'],))
+    cards = [c for c in db.execute(f"SELECT s.* FROM suggestions s, json_each(s.event_ids) j WHERE j.value=? AND s.status IN {todo_states.sql(todo_states.ALL)} "
+                                   f"ORDER BY CASE WHEN s.status IN {todo_states.sql(todo_states.CLOSED)} THEN 1 ELSE 0 END,s.created_at DESC", (promise['event_id'],))
              if not c['dedupe_key'].startswith('promise:')]
     if cards:
         return cards[0]
@@ -431,7 +432,7 @@ class PromiseChecksApp:
             p = dict(row)
             if p['status'] == 'carded':
                 card = promise_todo(db, p['suggestion_id'])
-                if card and card['status'] not in ('completed', 'rejected'):
+                if card and card['status'] not in todo_states.CLOSED:
                     return {'id': p['id'], 'card': card['id'], 'existing': True}
                 if card:
                     raise ValueError('This promise is no longer open')

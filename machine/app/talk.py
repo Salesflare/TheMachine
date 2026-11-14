@@ -33,6 +33,7 @@ import security_levels
 import talk_live
 from timeutil import local_tz, now
 import voice_input
+from machine import todo_states
 
 
 class TalkApp:
@@ -358,7 +359,7 @@ class TalkApp:
                 with self.store.connect() as db:
                     rows = [dict(r) for r in db.execute(
                         "SELECT s.id,s.title,s.status,p.status preparation_status,s.handled_hint,s.outcome FROM suggestions s "
-                        "LEFT JOIN preparations p ON p.suggestion_id=s.id WHERE s.status NOT IN ('completed','rejected') "
+                        f"LEFT JOIN preparations p ON p.suggestion_id=s.id WHERE s.status NOT IN {todo_states.sql(todo_states.CLOSED)} "
                         "ORDER BY s.created_at DESC LIMIT 500")]
                 for r in rows:
                     r['state'] = todo_state(r)

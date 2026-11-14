@@ -34,6 +34,7 @@ import time
 from zoneinfo import ZoneInfo
 
 import memory_use
+from machine import todo_states
 
 LOG = logging.getLogger('personal-assistant')
 
@@ -49,7 +50,7 @@ BATCH = 2000                 # rows per short write transaction
 PAUSE = 0.05                 # between batches, so other writers get their turn
 VACUUM_MAX_BYTES = 2 * 1024 ** 3   # a bigger database would hold the write lock too long for one VACUUM
 INCREMENTAL_PAGES = 2000     # pages given back per step of the nightly incremental vacuum
-CLOSED_CARDS = ('completed', 'rejected')
+CLOSED_CARDS = todo_states.CLOSED
 
 SQLITE_HEADER = b'SQLite format 3\x00'
 COMPANIONS = ('-wal', '-shm', '-journal')

@@ -33,12 +33,13 @@ import graph
 from i18n import t
 import shared_graph_kept
 import todo_org
+from machine import todo_states
 
 LOG = logging.getLogger('personal-assistant')
 META = 'brief_todos'
 SYNCED = 'brief_todos_synced'  # {fleet: the brief's built_at and the day it was read on}: nothing new, nothing to do
 KEEP_DAYS = 30  # a closed line is remembered this long: the same thing doesn't come back as a to-do
-OPEN = ('pending', 'accepted', 'prepared', 'instructions', 'snoozed')
+OPEN = todo_states.OPEN
 SETTLED = {'waiting': 'Someone on the team replied or took it on', 'quiet': 'Back in touch with them',
            'overlap': 'No longer in the team brief', 'meeting': 'No longer in the team brief'}  # read through t()
 THREADS_SHOWN = 3

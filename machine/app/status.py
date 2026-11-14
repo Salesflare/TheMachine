@@ -31,6 +31,7 @@ import message_seal
 from models import main_model, model_ready
 from sources import gog_signin_command
 from timeutil import now
+from machine import todo_states
 
 
 def agent_work_status(job):
@@ -48,7 +49,7 @@ def agent_work_status(job):
     return {'agent_work': work}
 
 
-CLOSED = ('completed', 'rejected')
+CLOSED = todo_states.CLOSED
 
 
 def compact_card(s):

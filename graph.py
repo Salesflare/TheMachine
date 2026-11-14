@@ -57,7 +57,7 @@ import mail_senders
 from mail_senders import AUTOMATED_PRECEDENCE, BULK, RELAY, addresses, automated, bulk, list_unsubscribes, mass_mail, owner_kept, relay  # noqa: F401
 from mail_senders import address_name, shared_inbox
 import person_summary
-from machine import stamps
+from machine import stamps, todo_states
 from machine.store import graph_history, graph_identifiers
 
 SCHEMA = '''
@@ -154,7 +154,7 @@ UNNAMED = 0.75
 UNNAMED_DAYS = 45
 DOC_KINDS = ('docs.comment', 'docs.mention', 'docs.suggestion', 'docs.shared')
 UNNAMED_KINDS = {'gmail.message', 'calendar.event', 'salesflare.email', 'salesflare.meeting', 'intercom.conversation', 'github.notification'}
-OPEN_CARD = ('pending', 'accepted', 'prepared', 'instructions', 'snoozed')
+OPEN_CARD = todo_states.OPEN
 # Boards: projects of one kind (partner listings, buyers, onboardings) in stages. Every board ends in this row too.
 STALLED = 'Stalled or declined'
 PROJECT_STAGE_COLUMNS = ('board_id INTEGER', 'stage TEXT', 'stage_reason TEXT', 'stage_event_id INTEGER', 'stage_by TEXT', 'stage_at TEXT',
@@ -2697,7 +2697,7 @@ def open_between(db, node_id, limit=6, skip_card=None, promises_only=False, know
     on_node = 'SELECT 1 FROM json_each({}) j JOIN graph_events g ON g.event_id=j.value WHERE g.node_id=?'
     try:
         for r in db.execute("SELECT p.id,p.direction,p.who,p.what,p.due FROM promises p LEFT JOIN suggestions s ON s.id=p.suggestion_id "
-                            "WHERE (p.status='open' OR (p.status='carded' AND s.status IN ('pending','accepted','prepared','instructions','snoozed'))) "
+                            f"WHERE (p.status='open' OR (p.status='carded' AND s.status IN {todo_states.sql(todo_states.OPEN)})) "
                             "AND p.event_id IN (SELECT event_id FROM graph_events WHERE node_id=?) ORDER BY coalesce(p.due,p.check_at) LIMIT ?", (node_id, limit * 2)):
             out['you_promised' if r['direction'] == 'mine' else 'they_promised'].append({'id': r['id'], 'who': r['who'], 'what': r['what'], 'due': r['due']})
         if promises_only:  # a to-do's gap note (gap_note.person) reads only these, on every status

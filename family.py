@@ -31,6 +31,7 @@ import family_invites
 import locale_prefs
 import timeutil
 from i18n import t
+from machine import todo_states
 
 KIND = 'family'
 KINDS = ('availability', 'todo', 'event')
@@ -317,7 +318,7 @@ class Family:
         with self.connect() as db:
             rows = db.execute("SELECT r.id,r.name,i.question,s.status AS card FROM fleet_requests r JOIN fleet_in i ON i.id=r.id "
                               "LEFT JOIN suggestions s ON s.id=r.card_id WHERE r.kind='todo' AND r.stage='accepted'").fetchall()
-            due = [r for r in rows if (json.loads(r['question']).get('due') or '9999')[:10] <= today and r['card'] not in ('completed', 'rejected')
+            due = [r for r in rows if (json.loads(r['question']).get('due') or '9999')[:10] <= today and r['card'] not in todo_states.CLOSED
                    and not db.execute('SELECT 1 FROM fleet_meta WHERE key=?', ('todo_reminded:' + r['id'],)).fetchone()]
             for r in due:
                 db.execute('INSERT OR IGNORE INTO fleet_meta(key,value) VALUES(?,?)', ('todo_reminded:' + r['id'], json.dumps(today)))

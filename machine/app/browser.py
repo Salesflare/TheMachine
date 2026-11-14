@@ -20,6 +20,7 @@ import mail_attachments
 import next_actions
 import security_levels
 from timeutil import now
+from machine import todo_states
 
 
 class BrowserApp:
@@ -200,7 +201,7 @@ class BrowserApp:
         found = []
         with self.store.connect() as db:
             for job in db.execute("SELECT p.suggestion_id,p.job_id,p.reason FROM preparations p JOIN suggestions s ON s.id=p.suggestion_id "
-                                  "WHERE p.status='blocked' AND s.status IN ('accepted','instructions')").fetchall():
+                                  f"WHERE p.status='blocked' AND s.status IN {todo_states.sql(todo_states.PREPARING)}").fetchall():
                 waiting = signin_handoff(job['reason']) and browser_wait(db, job['job_id'], 'blocked', reason=job['reason'])
                 if waiting:
                     found.append((job['suggestion_id'], job['job_id'], waiting.get('page')))

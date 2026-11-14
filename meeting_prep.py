@@ -33,6 +33,7 @@ import json
 import re
 
 import timeutil
+from machine import todo_states
 
 SCHEMA = ('CREATE TABLE IF NOT EXISTS meeting_preps(dedupe_key TEXT PRIMARY KEY,event_id INTEGER NOT NULL,suggestion_id TEXT,'
           'verdict TEXT NOT NULL,starts_at TEXT NOT NULL,created_at TEXT NOT NULL)')
@@ -242,7 +243,7 @@ def evidence(db, meeting, side, sides, owner_emails, current, open_states, resol
             if not person['messages']:
                 del person['messages']
             ps = db.execute("SELECT p.id,p.direction,p.what,p.due,p.account_id FROM promises p WHERE (p.status='open' OR (p.status='carded' AND NOT EXISTS "
-                            "(SELECT 1 FROM suggestions s WHERE s.id=p.suggestion_id AND s.status IN ('completed','rejected')))) "
+                            f"(SELECT 1 FROM suggestions s WHERE s.id=p.suggestion_id AND s.status IN {todo_states.sql(todo_states.CLOSED)}))) "
                             'AND p.event_id IN (SELECT event_id FROM graph_events WHERE node_id=?) ORDER BY coalesce(p.due,p.check_at) LIMIT 6',
                             (node['id'],)).fetchall() if _has(db, 'promises') else []
             listed = []

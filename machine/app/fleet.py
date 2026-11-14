@@ -38,6 +38,7 @@ from sources import credential, SourceError
 import team_learnings
 from timeutil import in_hours, is_work_day, local_tz, now, WORK_HOURS
 import work_removal
+from machine import todo_states
 
 
 def fleet_served(config):
@@ -415,7 +416,7 @@ class FleetApp:
             if not row:
                 raise ValueError('Unknown suggestion')
             still = handoff_wait(db, dict(row)) or handoff_wait(db, dict(row), awake=True)
-            if row['status'] in ('completed', 'rejected') or not still:
+            if row['status'] in todo_states.CLOSED or not still:
                 return {'gone': True}
             events = db.execute('SELECT account_id FROM events WHERE id IN (SELECT value FROM json_each(?)) AND deleted=0 '
                                 'ORDER BY occurred_at,id', (row['event_ids'] or '[]',)).fetchall()

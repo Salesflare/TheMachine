@@ -27,6 +27,7 @@ from machine.store.review import CARD_OPEN, own_message
 from machine.text import _address, body_after_title, clamp, encoded
 from timeutil import local_tz, now
 import todo_areas
+from machine import todo_states
 
 
 def first_look_running(db):
@@ -259,12 +260,12 @@ def same_thread_card(db, rows, days=60):
     if not keys:
         return None
     since = (dt.datetime.fromisoformat(now()) - dt.timedelta(days=days)).isoformat()
-    statuses = CARD_OPEN + ('completed', 'rejected')
+    statuses = CARD_OPEN + todo_states.CLOSED
     # A follow-up to-do (follow_ups.py) is about one nudge: it closes by itself when they reply, so their reply is a
     # new matter and never folds into it.
-    cards = db.execute(f"SELECT * FROM suggestions WHERE status IN ({','.join('?' * len(statuses))}) AND (created_at>=? OR status IN ('pending','accepted','prepared','instructions','snoozed')) "
+    cards = db.execute(f"SELECT * FROM suggestions WHERE status IN ({','.join('?' * len(statuses))}) AND (created_at>=? OR status IN {todo_states.sql(todo_states.OPEN)}) "
                        "AND id NOT IN (SELECT suggestion_id FROM follow_up_cards WHERE suggestion_id IS NOT NULL) "
-                       "ORDER BY CASE WHEN status IN ('completed','rejected') THEN 1 ELSE 0 END,created_at DESC", (*statuses, since)).fetchall()
+                       f"ORDER BY CASE WHEN status IN {todo_states.sql(todo_states.CLOSED)} THEN 1 ELSE 0 END,created_at DESC", (*statuses, since)).fetchall()
     for card in cards:
         ids = json.loads(card['event_ids'] or '[]')
         if not ids:
@@ -442,7 +443,7 @@ def offer_merge(db, own, other_id):
     if offer.get('card_id') == other_id and offer.get('kept'):
         return {'id': own['id'], 'status': own['status'], 'merge_offered': False,
                 'note': 'The owner keeps these two cards apart. Fill in their card on its own (card_id ' + own['id'] + ').'}
-    if other['status'] in ('completed', 'rejected'):
+    if other['status'] in todo_states.CLOSED:
         return {'id': own['id'], 'status': own['status'], 'merge_offered': False,
                 'note': 'That card is closed. Fill in the owner\'s card on its own (card_id ' + own['id'] + ').'}
     db.execute('UPDATE suggestions SET merge_offer=? WHERE id=?', (encoded({'card_id': other_id, 'at': now()}), own['id']))
@@ -694,7 +695,7 @@ class CardsStore:
             accounts = json.loads(card['account_ids'] or '[]')
         db.execute('INSERT OR IGNORE INTO suggestion_keys(dedupe_key,suggestion_id,created_at) VALUES(?,?,?)', (dedupe_key[:240], sid, stamp))
         added = [i for i in event_ids if i not in old_ids]
-        closed = card['status'] in ('completed', 'rejected')
+        closed = card['status'] in todo_states.CLOSED
         own = card['origin'] == 'owner'
         # News is what reached the Machine after they made it: a calendar event's date can lie ahead and still be old context.
         if own and not any(r['kind'] != 'owner.card' and min(r['occurred_at'], r['ingested_at'] or r['occurred_at']) > card['created_at'] for r in rows):
@@ -736,7 +737,7 @@ class CardsStore:
             ahead, deliver_after = False, None
         waiting = card['status'] == 'snoozed'
         # New work on the matter: back to Outstanding as a fresh suggestion, or prepared ahead again.
-        status = 'accepted' if ahead else 'pending' if waiting or closed or card['status'] in ('pending', 'prepared') else card['status']
+        status = 'accepted' if ahead else 'pending' if waiting or closed or card['status'] in todo_states.WAITING_ON_OWNER else card['status']
         # A title the owner gave (a rename) stays: the review's goes to title_suggested. On their own card, their due date stays.
         db.execute('UPDATE suggestions SET ' + KEEP_OWNER_TITLE + ',body=?,event_ids=?,account_ids=?,source_line=?,deliver_after=?,urgent=?,'
                    + ('due=coalesce(due,?)' if own else 'due=coalesce(?,due)') + ',status=?,'
@@ -845,7 +846,7 @@ class CardsStore:
                 pinned = next(iter(linked))
                 accounts = todo_areas.accounts_in(pinned, mine)
         # Done or dismissed, it keeps the title it had: Done shows what the to-do was, its status line how it ended.
-        retitle = KEEP_OWNER_TITLE + ',' if card['status'] not in ('completed', 'rejected') else ''
+        retitle = KEEP_OWNER_TITLE + ',' if card['status'] not in todo_states.CLOSED else ''
         db.execute('UPDATE suggestions SET ' + retitle + 'body=?,event_ids=?,account_ids=?,source_line=?,due=coalesce(due,?) WHERE id=?',
                    ((title[:300], title[:300]) if retitle else ()) + (body[:5000], encoded(ids), encoded(accounts), source_line(evidence, db), due, sid))
         if pinned:
@@ -889,7 +890,7 @@ class CardsStore:
         closed meanwhile."""
         with self.connect() as db:
             db.execute('BEGIN IMMEDIATE')
-            changed = db.execute("UPDATE suggestions SET " + KEEP_OWNER_TITLE + ",body=? WHERE id=? AND status NOT IN ('completed','rejected')",
+            changed = db.execute("UPDATE suggestions SET " + KEEP_OWNER_TITLE + f",body=? WHERE id=? AND status NOT IN {todo_states.sql(todo_states.CLOSED)}",
                                  (title[:300], title[:300], body[:5000], suggestion_id)).rowcount
             if changed:
                 db.execute("UPDATE events SET title=?,body=?,metadata=? WHERE id=? AND kind='routine.cleanup'",
@@ -902,7 +903,7 @@ class CardsStore:
         was closed meanwhile."""
         with self.connect() as db:
             db.execute('BEGIN IMMEDIATE')
-            row = db.execute("SELECT event_ids FROM suggestions WHERE id=? AND status NOT IN ('completed','rejected')", (suggestion_id,)).fetchone()
+            row = db.execute(f"SELECT event_ids FROM suggestions WHERE id=? AND status NOT IN {todo_states.sql(todo_states.CLOSED)}", (suggestion_id,)).fetchone()
             if not row:
                 return False
             db.execute("UPDATE suggestions SET " + KEEP_OWNER_TITLE + ",body=? WHERE id=?", (title[:300], title[:300], body[:5000], suggestion_id))
@@ -1023,7 +1024,7 @@ class CardsStore:
             done = db.execute('SELECT area FROM card_moves WHERE decision_id=?', (decision_id,)).fetchone()
             if done:  # the same tap again
                 return {'id': suggestion_id, 'area': done['area'], 'label': todo_areas.label(done['area'], companies, accounts), 'duplicate': True}
-            if row['status'] in ('completed', 'rejected'):
+            if row['status'] in todo_states.CLOSED:
                 raise ValueError('Reopen it first')
             if undo is not None:
                 last = db.execute('SELECT * FROM card_moves WHERE suggestion_id=? AND undone_at IS NULL ORDER BY created_at DESC,rowid DESC LIMIT 1',
@@ -1039,7 +1040,7 @@ class CardsStore:
                 if not ids:
                     raise ValueError('Pick one of your areas')
                 resume = (row['prep'] == 'blocked' and not row['error'] and row['move_to'] == area
-                          and row['status'] in ('pending', 'accepted', 'instructions'))  # pending: a prepared-ahead run's blocker
+                          and row['status'] in (todo_states.PENDING, todo_states.ACCEPTED, todo_states.INSTRUCTIONS))  # pending: a prepared-ahead run's blocker
             db.execute('INSERT INTO card_moves(decision_id,suggestion_id,area,accounts_before,area_before,created_at) VALUES(?,?,?,?,?,?)',
                        (decision_id, suggestion_id, area, row['account_ids'] or '[]', row['area'], now()))
             if undo is not None:  # an undo is no move of its own to undo later
@@ -1076,7 +1077,7 @@ class CardsStore:
             if not row:
                 raise ValueError('Unknown to-do')
             asked = json.loads(row['use_events'] or '[]') if row['prep'] == 'blocked' and not row['error'] else []
-            if not asked or row['status'] not in ('pending', 'accepted', 'instructions'):  # pending: a prepared-ahead run's blocker
+            if not asked or row['status'] not in (todo_states.PENDING, todo_states.ACCEPTED, todo_states.INSTRUCTIONS):  # pending: a prepared-ahead run's blocker
                 raise ValueError('Nothing is waiting for that on this to-do')
             live = [r['id'] for r in db.execute('SELECT id FROM events WHERE deleted=0 AND id IN (' + ','.join('?' * len(asked)) + ')', asked)]
             if not live:
@@ -1112,7 +1113,7 @@ class CardsStore:
             if db.execute('SELECT 1 FROM decisions WHERE id=?', (decision_id,)).fetchone():
                 return {'id': suggestion_id, 'duplicate': True}
             other = db.execute('SELECT * FROM suggestions WHERE id=?', (offer['card_id'],)).fetchone()
-            if not merge or not other or other['status'] in ('completed', 'rejected'):
+            if not merge or not other or other['status'] in todo_states.CLOSED:
                 db.execute('UPDATE suggestions SET merge_offer=? WHERE id=?', (encoded({**offer, 'kept': True}), suggestion_id))
                 db.execute('INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)',
                            (decision_id, suggestion_id, 'keep_both', '', source, stamp))
@@ -1139,7 +1140,7 @@ class CardsStore:
             db.execute("UPDATE action_jobs SET status='cancelled',updated_at=? WHERE suggestion_id=? AND status IN ('queued','blocked')", (stamp, own['id']))
             db.execute("UPDATE deliveries SET status='cancelled',updated_at=? WHERE suggestion_id=? AND status IN ('queued','not_sent')", (stamp, own['id']))
             db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id IN (?,?) AND message_id IS NOT NULL', (own['id'], other['id']))
-        if own['owner_words'] and other['status'] in ('accepted', 'instructions', 'prepared'):
+        if own['owner_words'] and other['status'] in todo_states.TAKEN_ON:
             # Work on X already started (a draft, a run): what the owner added is their note on it, so the draft takes it in
             self.decide(other['id'], 'other', own['owner_words'], decision_id + ':note', source)
         return {'id': other['id'], 'merged': True, 'from': own['id']}
@@ -1161,7 +1162,7 @@ class CardsStore:
         """A follow-up on someone else's promise closes itself when they wrote again before it was due.
         Their new message goes through the normal review, so a delay still gets a card."""
         for row in db.execute("SELECT s.id,s.awaiting FROM suggestions s JOIN deliveries d ON d.suggestion_id=s.id WHERE s.awaiting IS NOT NULL "
-                              "AND d.message_id IS NULL AND d.status='queued' AND s.status IN ('pending','accepted','prepared','instructions')").fetchall():
+                              f"AND d.message_id IS NULL AND d.status='queued' AND s.status IN {todo_states.sql(todo_states.OPEN_NOT_SNOOZED)}").fetchall():
             watch = json.loads(row['awaiting'])
             answer = next((e for e in db.execute('SELECT id,account_id,kind,occurred_at,title,metadata FROM events WHERE account_id=? AND kind=? AND occurred_at>? AND deleted=0 ORDER BY occurred_at',
                                                  (watch['account_id'], watch['kind'], watch['since'])) if awaiting_match(watch, dict(e), self.owner_user_ids)), None)
@@ -1176,7 +1177,7 @@ class CardsStore:
         # A task handed to someone closes when they answer; their answer is reviewed as a reply to
         # this card, so anything left for the owner gets a new card.
         # With a done when (outcomes.py) their answer isn't the result: it waits for that instead.
-        for row in db.execute("SELECT * FROM suggestions WHERE status IN ('snoozed','prepared') AND json_extract(awaiting,'$.delegated')=1").fetchall():
+        for row in db.execute(f"SELECT * FROM suggestions WHERE status IN {todo_states.sql(todo_states.SNOOZED, todo_states.PREPARED)} AND json_extract(awaiting,'$.delegated')=1").fetchall():
             watch = json.loads(row['awaiting'])
             answer = next((e for e in db.execute('SELECT id,account_id,kind,occurred_at,title,metadata FROM events WHERE account_id=? AND kind=? AND occurred_at>? AND deleted=0 ORDER BY occurred_at',
                                                  (watch['account_id'], watch['kind'], watch['since'])) if awaiting_match(watch, dict(e), self.owner_user_ids)), None)

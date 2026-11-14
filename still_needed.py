@@ -20,10 +20,11 @@ from __future__ import annotations
 
 import datetime as dt
 import json
+from machine import todo_states
 
 DAYS = 7
 KIND = 'still_needed'
-OPEN = ('pending', 'prepared')
+OPEN = todo_states.WAITING_ON_OWNER
 # Decisions that aren't the owner's own touch: the Machine's own, automated follow-ups, a coding agent
 NOT_TOUCHES = ('assistant', 'auto_follow_up', 'agent')
 
@@ -106,7 +107,7 @@ def due(db, stamp, skip=lambda row: False, tz=dt.timezone.utc):
 def annotate(db, cards, stamp, tz=dt.timezone.utc):
     """Each open to-do with an open question gets still_needed: {'id', 'since' (its last touch), 'folded'}. Folded:
     the question waited DAYS without an answer or a touch, so the dashboard puts it out of the way."""
-    live = [c for c in cards if c.get('status') not in ('completed', 'rejected', 'snoozed')]
+    live = [c for c in cards if c.get('status') not in todo_states.CLOSED_OR_SNOOZED]
     if not live:
         return
     ids = [c['id'] for c in live]

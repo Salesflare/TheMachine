@@ -53,6 +53,7 @@ import routine_changes
 import talk_live
 from timeutil import local_tz, now
 import todo_areas
+from machine import todo_states
 
 
 # The longest turn message the runner (preparation-run.mjs) starts; it refuses longer ones before the Gateway sees them.
@@ -351,7 +352,7 @@ class PreparationApp:
                 preparation_overdue(db,dict(row))
             # A confirmed step no preparation works on any more is paused, also one left from before paused existed.
             pause_idle_steps(db)
-            for row in db.execute("SELECT id FROM suggestions WHERE status IN ('accepted','instructions') AND NOT EXISTS(SELECT 1 FROM preparations WHERE suggestion_id=suggestions.id)").fetchall():
+            for row in db.execute(f"SELECT id FROM suggestions WHERE status IN {todo_states.sql(todo_states.PREPARING)} AND NOT EXISTS(SELECT 1 FROM preparations WHERE suggestion_id=suggestions.id)").fetchall():
                 decision=db.execute("SELECT id FROM decisions WHERE suggestion_id=? AND choice IN ('accept','other','reopen') AND id NOT IN (SELECT decision_id FROM decision_annotations) ORDER BY created_at DESC LIMIT 1",(row['id'],)).fetchone()
                 if decision:self.store.queue_preparation(db,row['id'],decision['id'])
             # Several cards can be worked on at once: they share the browser lease,
@@ -366,9 +367,9 @@ class PreparationApp:
             # BACKGROUND_GAP_SECONDS behind a review or another background turn.
             limited=self.background_pause(owner=True)
             # Pressing work first (urgent, or due within PRESSING_DAYS by its own fields), then the oldest
-            queued=[dict(r) for r in db.execute("""SELECT p.*,s.status suggestion_status,s.early,
+            queued=[dict(r) for r in db.execute(f"""SELECT p.*,s.status suggestion_status,s.early,
                 (s.urgent=1 OR (coalesce(s.due,'')<>'' AND substr(s.due,1,10)<=?)) pressing FROM preparations p JOIN suggestions s ON s.id=p.suggestion_id
-                WHERE p.status='queued' AND s.status IN ('accepted','instructions') AND (p.retry_at IS NULL OR p.retry_at<=?)
+                WHERE p.status='queued' AND s.status IN {todo_states.sql(todo_states.PREPARING)} AND (p.retry_at IS NULL OR p.retry_at<=?)
                 AND NOT EXISTS(SELECT 1 FROM preparation_runs r WHERE r.finished_at IS NULL AND r.job_id!=p.job_id
                                AND (r.suggestion_id=p.suggestion_id OR r.session_job_id=coalesce(p.session_job_id,p.job_id)))
                 ORDER BY pressing DESC,p.created_at LIMIT ?""",(pressing_cutoff(),now(),room+20)).fetchall()] if room and not limited else []
@@ -439,8 +440,8 @@ class PreparationApp:
             # Every other queued run says why it waits on its to-do: a usage limit, a retry later, an unfinished run of
             # its own, or every slot taken. Without a reason it starts within seconds ("I'll start shortly.").
             busy={j['suggestion_id'] for j in active+admitted}
-            for row in db.execute("""SELECT p.suggestion_id,p.job_id,p.session_job_id,p.retry_at,p.error FROM preparations p JOIN suggestions s ON s.id=p.suggestion_id
-                    WHERE p.status='queued' AND s.status IN ('accepted','instructions')""").fetchall():
+            for row in db.execute(f"""SELECT p.suggestion_id,p.job_id,p.session_job_id,p.retry_at,p.error FROM preparations p JOIN suggestions s ON s.id=p.suggestion_id
+                    WHERE p.status='queued' AND s.status IN {todo_states.sql(todo_states.PREPARING)}""").fetchall():
                 sid=row['suggestion_id']
                 if sid in busy or sid in held:continue
                 if limited:
@@ -458,7 +459,7 @@ class PreparationApp:
             jobs=[]
             for job in active+queued:
                 if job.get('retry_at') and job['retry_at']>now():continue
-                if job['suggestion_status'] not in ('accepted','instructions'):
+                if job['suggestion_status'] not in todo_states.PREPARING:
                     db.execute("UPDATE preparations SET status='cancelled' WHERE job_id=?",(job['job_id'],));continue
                 if job['status']=='queued':
                     db.execute("UPDATE preparations SET status='starting',updated_at=?,started_at=coalesce(started_at,?),attempts=attempts+1 WHERE job_id=?",(now(),now(),job['job_id']))

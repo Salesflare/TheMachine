@@ -47,6 +47,7 @@ import re
 
 from machine.store.graph_history import live
 import timeutil
+from machine import todo_states
 
 SCHEMA = '''
 CREATE TABLE IF NOT EXISTS person_summaries(node_id TEXT PRIMARY KEY,lines TEXT NOT NULL,by TEXT NOT NULL,written_at TEXT NOT NULL,
@@ -236,7 +237,7 @@ def finish_run(db, run_id, status, error, written):
 # dropped (assistant.promise_state), so the summary no longer says it is open (graph.open_between reads them so too).
 STILL_PROMISED = "p.status IN ('open','carded')"  # a bare database without to-dos
 OPEN_PROMISE = ("(p.status='open' OR (p.status='carded' AND NOT EXISTS (SELECT 1 FROM suggestions s WHERE s.id=p.suggestion_id "
-                "AND s.status IN ('completed','rejected'))))")
+                f"AND s.status IN {todo_states.sql(todo_states.CLOSED)})))")
 
 
 def evidence(db, owner, person, signals):

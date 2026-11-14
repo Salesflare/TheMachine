@@ -45,6 +45,7 @@ import urllib.request
 import clear_pace
 from i18n import t
 import timeutil
+from machine import todo_states
 
 LOG = logging.getLogger('personal-assistant')
 
@@ -141,7 +142,7 @@ def kind_of(row):
     if row.get('_result_notice'):
         return 'result'
     if row.get('reminder'):
-        if row.get('status') in ('prepared', 'instructions') or row.get('preparation_status') == 'blocked':
+        if row.get('status') in (todo_states.PREPARED, todo_states.INSTRUCTIONS) or row.get('preparation_status') == 'blocked':
             return 'result'
         return 'todo' if row.get('_first') else 'reminder'  # never delivered before (deliver_one): new, no reminder
     return 'todo'

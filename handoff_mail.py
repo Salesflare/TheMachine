@@ -36,6 +36,7 @@ import next_actions
 import task_invites
 from fleet_requests import card_reason
 from i18n import t
+from machine import todo_states
 
 LOG = logging.getLogger('personal-assistant')
 NO_MAILBOX = 'No Gmail or Outlook account to send it from. Connect one in Connections.'
@@ -44,7 +45,7 @@ PREFS = 'CREATE TABLE IF NOT EXISTS handoff_mail_prefs(key TEXT PRIMARY KEY,valu
 SITE = 'https://themachine.computer'
 TAKE_DAYS = 30
 LINKS = 3
-OPEN = ('pending', 'snoozed', 'accepted', 'instructions')  # a to-do whose text is still its own account, not an outcome
+OPEN = todo_states.OPEN_UNPREPARED  # a to-do whose text is still its own account, not an outcome
 ACTIONS = ('fleet_handoff_email_parts', 'fleet_handoff_take_line')
 
 
@@ -325,7 +326,7 @@ class HandoffMail:
                             card['due'], self.check_at('theirs', card['due'], event['occurred_at']), event)
                         self.save(card_id, 'waiting', record, db)
                 promise = db.execute('SELECT status,suggestion_id FROM promises WHERE id=?', (record.get('promise_id'),)).fetchone() if record.get('promise_id') else None
-            if card['status'] in ('completed', 'rejected'):
+            if card['status'] in todo_states.CLOSED:
                 if promise and promise['status'] == 'open':
                     store.update_promise({'id': record['promise_id'], 'status': 'kept' if card['status'] == 'completed' else 'dropped',
                                           'reason': 'Marked done' if card['status'] == 'completed' else 'Not needed'}, source='dashboard')

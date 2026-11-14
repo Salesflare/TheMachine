@@ -10,6 +10,7 @@ from machine.sources.android import android_app_shown
 from machine.sources.slack import SLACK_ID
 import next_actions
 from timeutil import WORK_HOURS, clock, in_hours, is_work_day, local_tz, morning_label, next_work_day, now
+from machine import todo_states
 
 
 def snooze_time(option=None, explicit=None, hours=24, work=False, start=None):
@@ -318,7 +319,7 @@ def card(row):
     elif row['status'] == 'prepared' and outcome.get('state') in (None, 'done') and any(
             a.get('kind') in next_actions.WAITING_KINDS for a in row.get('next_actions') or []):
         status = t('Ready to approve. Nothing goes out until you do.')  # prepared, not done: a step still waits for them
-    if row.get('handled_hint') and row['status'] not in ('completed','rejected') and outcome.get('state') != 'already_done':
+    if row.get('handled_hint') and row['status'] not in todo_states.CLOSED and outcome.get('state') != 'already_done':
         try:
             hint = json.loads(row['handled_hint'])
             status = t('Done: {}.', hint['reason'].rstrip('.')) if hint.get('fleet') else t('Looks handled: {}. Mark it done if so.', hint['reason'].rstrip('.'))
@@ -333,7 +334,7 @@ def card(row):
     elif row.get('preparation_status') == 'blocked' and row.get('preparation_error') == 'stopped': status=t(CHAT_STOPPED)
     elif row.get('preparation_status') == 'blocked' and (row.get('preparation_browser') or {}).get('sign_in'):
         status=t('Waiting for you to sign in: {}. Sign in through Sign in and I carry on by myself.', row['preparation_reason'].rstrip('.'))
-    elif row.get('preparation_status') == 'blocked' and row['status'] not in ('completed','rejected','snoozed') and not row.get('handled_hint') and ask_blocked(row):
+    elif row.get('preparation_status') == 'blocked' and row['status'] not in todo_states.CLOSED_OR_SNOOZED and not row.get('handled_hint') and ask_blocked(row):
         status=t('Needs you: {}', sentence(ask_text(row)))
     elif row.get('preparation_status') == 'blocked': status=t('I’m stuck: {}', row.get('preparation_reason') or t('Preparation did not finish. I’ll keep this in your list.'))
     action_state=row.get('action_status') or next((item.get('state') for item in row.get('next_actions',[]) if item.get('state',{}).get('status') in ('queued','sending','sent','uncertain','blocked','failed','undoing','undone')),None)
@@ -369,12 +370,12 @@ def card(row):
         status = expired_text(row)  # its moment passed: closed by itself (Store.expire_passed)
     elif row['status'] == 'completed' and row.get('expired_at'):
         status = t('Not needed.')  # a newer message overturned its plan: closed by itself (Store.plan_changed)
-    if row['status'] not in ('completed','rejected','snoozed') and row.get('change_prompt',{}).get('status')=='uncertain':
+    if row['status'] not in todo_states.CLOSED_OR_SNOOZED and row.get('change_prompt',{}).get('status')=='uncertain':
         status+='\n'+t('I couldn’t confirm the message asking what to change. If it arrived, reply to it; otherwise use Ask for changes on the dashboard.')
     # A hashtag, so tapping it in Telegram lists every #work or #personal card.
     tag = '#' + row['scope'] if row.get('scope') else ''
     due = ''
-    if row.get('due') and row.get('status') not in ('completed', 'rejected'):
+    if row.get('due') and row.get('status') not in todo_states.CLOSED:
         try:
             due = t('Due {}', locale_prefs.day_text(dt.date.fromisoformat(row['due'])))
         except ValueError:
@@ -552,7 +553,7 @@ def ask_question(row, actions):
     """A card waiting on the owner's answer: Answer leads (the Change path) and Mark done steps back. Either a run that
     stopped to ask (ask_blocked) or a result whose needs_you is a question, with nothing to send. Same rule as
     askQuestion() in dashboard.html."""
-    if row['status'] in ('completed', 'rejected', 'snoozed') or row.get('handled_hint'):
+    if row['status'] in todo_states.CLOSED_OR_SNOOZED or row.get('handled_hint'):
         return ''
     if ask_blocked(row):
         return ask_text(row)
@@ -598,11 +599,11 @@ def answered_only(row):
 
 def controls(row, root=''):
     t = i18n.t  # button labels in the owner's language; the choices stay as they are
-    if row['status'] in ['completed','rejected']:
+    if row['status'] in todo_states.CLOSED:
         choices = [('Undo','undo')] if row.get('undo_until') and row['undo_until']>now() else []
     elif row['status'] == 'snoozed':
         choices = [('Check in now' if row.get('handoff_wait') else 'Unsnooze','accept'),('Change time','snooze'),('Not needed','reject')]
-    elif row['status'] in ['accepted','prepared','instructions']:
+    elif row['status'] in todo_states.TAKEN_ON:
         choices = [('Mark done','complete'),('Snooze','snooze'),('Ask for changes','other'),('Not needed','reject')]
         if row.get('preparation_status')=='blocked':choices.insert(0,(retry_label(row.get('preparation_reason')),'retry'))
         elif answered_only(row):choices=[('Do it','accept'),('Snooze','snooze'),('Ask for changes','other'),('Mark done','complete'),('Not needed','reject')]
@@ -610,7 +611,7 @@ def controls(row, root=''):
         choices = [('Do it','accept'),('Mark done','complete'),('Snooze','snooze'),('Ask for changes','other'),('Not needed','reject')]
         if row.get('preparation_status') == 'blocked':  # its prepared-ahead run got stuck (settle_ahead): Try again leads
             choices[0] = (retry_label(row.get('preparation_reason')), 'retry')
-    if row.get('owner_step') and row['status'] not in ('completed','rejected','snoozed'):
+    if row.get('owner_step') and row['status'] not in todo_states.CLOSED_OR_SNOOZED:
         # Only the owner can do this step (a visit, a pickup): Mark done leads; Plan it is what The Machine can do around it.
         # An update's note: Done, Snooze; a problem in the computer's logs also Not needed (machine_log: it never comes
         # back), and with a safe fix Do it (machine_fix). A fix an update set aside (parked_redo) has Redo it while nothing
@@ -626,7 +627,7 @@ def controls(row, root=''):
                  or (choice == 'retry' and redo))]
     actions=next_actions.visible_actions({'kind':'menu','actions':row['next_actions']}) if row.get('next_actions') is not None else next_actions.visible_actions(row.get('next_action'))
     if ask_question(row,actions):choices=[('Answer','other'),*([(retry_label(row.get('preparation_reason')),'retry')] if row.get('preparation_status')=='blocked' and not retry_pointless(row) else []),('Mark done','complete'),('Snooze','snooze'),('Not needed','reject')]
-    if (row.get('cleanup') or row.get('digest')) and row['status'] not in ('completed','rejected'):
+    if (row.get('cleanup') or row.get('digest')) and row['status'] not in todo_states.CLOSED:
         # A routine template's cleanup (mail_cleanup.py): its picks and their confirm are on the to-do; nothing to Do
         choices = [(label, choice) for label, choice in choices if choice in ('complete','snooze','reject')]
     choices = [(t(label), choice) for label, choice in choices]
@@ -635,9 +636,9 @@ def controls(row, root=''):
     buttons=[]
     link=(row.get('preparation_browser') or {}).get('link') or ''
     signin=(row.get('preparation_browser') or {}).get('signin_url') or ''
-    if signin.startswith('https://') and row['status'] in ('accepted','instructions'):
+    if signin.startswith('https://') and row['status'] in todo_states.PREPARING:
         buttons.append({'label':t('Sign in'),'action':{'type':'url','url':signin}})  # the dashboard's sign-in, which also opens the browser
-    elif link.startswith('https://') and row['status'] in ('accepted','instructions'):
+    elif link.startswith('https://') and row['status'] in todo_states.PREPARING:
         buttons.append({'label':t('Open the browser'),'action':{'type':'url','url':link}})
     if row['status']=='prepared':
         shown=card_draft(row)
@@ -655,7 +656,7 @@ def controls(row, root=''):
             elif action['kind']=='open' and str(action.get('url') or '').startswith(('https://','http://')):buttons.append({'label':action['label'],'action':{'type':'url','url':action['url']}})
             elif action['kind'] in ('calendar','doc_write') and root and not action_busy(state):buttons.append({'label':next_actions.label(action),'action':{'type':'url','url':f"{root}#send={row['id']}&revision={action['revision']}"}})  # shown in the dashboard first, then tapped there
             elif action['kind']=='handoff' and root and not row.get('handled_hint'):buttons.append({'label':next_actions.label(action),'action':{'type':'url','url':f"{root}#task-{row['id']}"}})  # the Fleet handoff form is on the dashboard
-    if row['status'] in ('prepared','completed') and any(a['kind']=='merge' and (a.get('state') or row.get('action_status') or {}).get('undo_until','')>now() for a in actions):
+    if row['status'] in (todo_states.PREPARED, todo_states.COMPLETED) and any(a['kind']=='merge' and (a.get('state') or row.get('action_status') or {}).get('undo_until','')>now() for a in actions):
         buttons.append({'label':t('Undo merge'),'action':{'type':'callback','value':f"assistant:{row['id']}:unmerge"}})  # a merged fix stays reversible for a day
     if row.get('skill_proposal') and row['skill_proposal'].get('update') and row['status']=='pending':
         # Update changes one of the owner's skills: its before and after are on the dashboard, and the tap is there.
@@ -717,7 +718,7 @@ def outcome_state(row):
 
 
 def looks_done(row):
-    return row['status'] not in ('completed', 'rejected', 'snoozed') and bool(
+    return row['status'] not in todo_states.CLOSED_OR_SNOOZED and bool(
         row.get('handled_hint') or (row['status'] == 'prepared' and outcome_state(row) == 'already_done'))
 
 
@@ -728,7 +729,7 @@ def waits_on_others(row):
 def todo_state(row):
     """An open to-do's state in plain words (talk_live.STATES, or LOOKS_DONE), as the dashboard's lists place it: looksDone,
     waitsOnOthers and placeOf in dashboard.html. A closed one is 'done' or 'dismissed' (Done / dismissed)."""
-    if row['status'] in ('completed', 'rejected'):
+    if row['status'] in todo_states.CLOSED:
         return 'done' if row['status'] == 'completed' else 'dismissed'
     if looks_done(row):
         return 'looks done'

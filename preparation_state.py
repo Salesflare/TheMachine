@@ -3,6 +3,7 @@ import datetime
 import json
 import hashlib
 import re
+from machine import todo_states
 
 TERMINAL = ('ok', 'error', 'aborted', 'timed_out', 'lost')
 
@@ -59,7 +60,7 @@ def tool_intent(db, args, stamp):
     run = db.execute('''SELECT r.*,p.status current_status,p.job_id current_job,s.status owner_status
         FROM preparation_runs r JOIN preparations p USING(suggestion_id) JOIN suggestions s ON s.id=r.suggestion_id
         WHERE r.job_id=?''', (args['job_id'],)).fetchone()
-    if not run or run['current_job'] != args['job_id'] or run['current_status'] not in ('starting','running') or run['owner_status'] not in ('accepted','instructions'):
+    if not run or run['current_job'] != args['job_id'] or run['current_status'] not in ('starting','running') or run['owner_status'] not in todo_states.PREPARING:
         return {'active': False, 'reason': 'The owner changed or stopped this task. End this run.'}
     earlier = db.execute('SELECT 1 FROM preparation_calls c JOIN preparation_runs r USING(job_id) WHERE r.suggestion_id=? AND c.job_id!=? LIMIT 1',
                          (run['suggestion_id'], args['job_id'])).fetchone()

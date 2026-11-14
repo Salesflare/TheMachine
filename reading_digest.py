@@ -27,6 +27,7 @@ import re
 import i18n
 import mail_cleanup
 from machine.store.review_wait import People, mail_wait
+from machine import todo_states
 
 KIND = 'routine.digest'
 LOOK_DAYS = 30  # how far back the owner's habits with each sender are read
@@ -348,7 +349,7 @@ def is_digest(db, suggestion_id):
 def open_todos(db, area):
     """Digest to-dos of an area still open: a new one replaces them (one at a time)."""
     return [r[0] for r in db.execute("SELECT id FROM suggestions WHERE dedupe_key LIKE 'routine-digest:%' AND substr(dedupe_key,-length(?)-1)=':'||? "
-                                     "AND status NOT IN ('completed','rejected')", (area, area))]
+                                     f"AND status NOT IN {todo_states.sql(todo_states.CLOSED)}", (area, area))]
 
 
 def view(db, suggestion_id, metas, rows=None):

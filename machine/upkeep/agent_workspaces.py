@@ -26,13 +26,14 @@ import shutil
 import sqlite3
 
 import agent_jobs
+from machine import todo_states
 
 LOG = logging.getLogger('personal-assistant')
 
 GRACE_DAYS = 7
 KEEP_FINISHED = 3
 FINISHED = ('result', 'failed', 'cancelled')
-CLOSED_CARDS = ('completed', 'rejected')
+CLOSED_CARDS = todo_states.CLOSED
 MARKER = 'work-removed.json'
 KEEP_IN_WORK = {'BRIEF.md', '.claude'}
 JOB = re.compile(r'aj_[0-9a-f]{16}')

@@ -80,6 +80,7 @@ import skills
 import fleet_trust
 import fleet_learnings
 import embeddings
+from machine import todo_states
 
 LOG = logging.getLogger('personal-assistant')
 SCHEMA = '''
@@ -140,8 +141,8 @@ STOP_WORDS = set('''a an and any anyone anybody are as at be been but by can cou
 have having how i if in into is it its know knows me my no not of on or our ours please so some someone somebody that the their them
 there these they this those to us was we were what when where which who whom why will with would you your yours ever about'''.split())
 CLOSENESS = ('close', 'regular', 'occasional', 'faint')
-OPEN_CARD = ('pending', 'accepted', 'prepared', 'instructions', 'snoozed')
-TAKEN = ('accepted', 'prepared', 'instructions', 'completed')
+OPEN_CARD = todo_states.OPEN
+TAKEN = todo_states.TAKEN
 EMAIL = re.compile(r'[\w.+\'-]+@[\w-]+(?:\.[\w-]+)+')
 DOMAIN = re.compile(r'(?:[a-z0-9-]+\.)+[a-z]{2,}')
 MONTH = re.compile(r'\d{4}-\d{2}')
@@ -890,7 +891,7 @@ def _shared_promises(db, node_id, accounts, ok, limit=3):
         return out
     for r in db.execute("SELECT p.direction,p.what,p.due,e.id,e.account_id,e.kind,e.metadata FROM promises p JOIN events e ON e.id=p.event_id "
                         "LEFT JOIN suggestions s ON s.id=p.suggestion_id WHERE (p.status='open' OR (p.status='carded' AND s.status IN "
-                        "('pending','accepted','prepared','instructions','snoozed'))) AND p.event_id IN (SELECT event_id FROM graph_events WHERE node_id=?) "
+                        f"{todo_states.sql(todo_states.OPEN)})) AND p.event_id IN (SELECT event_id FROM graph_events WHERE node_id=?) "
                         f"AND e.deleted=0 AND e.account_id IN ({','.join('?' * len(accounts))}) ORDER BY coalesce(p.due,p.check_at) LIMIT ?",
                         (node_id, *accounts, limit * 4)):
         side = out['you_promised' if r['direction'] == 'mine' else 'they_promised']
@@ -2787,8 +2788,8 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
                 db.execute('DELETE FROM fleet_claims')
                 return
             db.execute(f"DELETE FROM fleet_claims WHERE fleet NOT IN ({','.join('?' * len(teams))})", tuple(teams))
-            cards = db.execute(f"SELECT id,status,event_ids,area FROM suggestions WHERE status IN ({','.join('?' * len(OPEN_CARD + ('completed', 'rejected')))}) "
-                               'ORDER BY created_at DESC LIMIT 300', OPEN_CARD + ('completed', 'rejected')).fetchall()
+            cards = db.execute(f"SELECT id,status,event_ids,area FROM suggestions WHERE status IN ({','.join('?' * len(OPEN_CARD + todo_states.CLOSED))}) "
+                               'ORDER BY created_at DESC LIMIT 300', OPEN_CARD + todo_states.CLOSED).fetchall()
             keyed = {}  # an email shared with teammates in several Fleets: claimed in the first of them
             for card in cards:
                 for ref, members in teams.items():
@@ -2905,7 +2906,7 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
                     return
             sources = lambda card, ref: family_done.sources(db, card) if ref in families else self.shared_messages(db, card, ref)
             since = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=HANDLED_DAYS)).isoformat()
-            closed = db.execute("SELECT s.id,s.status,s.event_ids,s.title,s.body,s.next_action,s.area,s.bill FROM suggestions s WHERE s.status IN ('completed','rejected') AND "
+            closed = db.execute(f"SELECT s.id,s.status,s.event_ids,s.title,s.body,s.next_action,s.area,s.bill FROM suggestions s WHERE s.status IN {todo_states.sql(todo_states.CLOSED)} AND "
                                 '(SELECT max(created_at) FROM decisions d WHERE d.suggestion_id=s.id)>=? ORDER BY s.created_at DESC LIMIT 300', (since,)).fetchall()
             out = {r['key']: dict(r) for r in db.execute('SELECT * FROM fleet_handled')}
             announce, keep = [], set()

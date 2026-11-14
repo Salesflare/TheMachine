@@ -28,6 +28,7 @@ from machine.store import outcomes
 import project_success
 import shared_graph
 from timeutil import in_hours, is_work_day, local_tz, now
+from machine import todo_states
 
 
 # Mail that comes from a system, not a person: by address (slipped, first-look order) and by Gmail's category labels
@@ -400,7 +401,7 @@ def own_message(event, owner_slack_ids=()):
     return bool(m.get('from_me'))
 
 
-CARD_OPEN = ('pending', 'accepted', 'prepared', 'instructions', 'snoozed')
+CARD_OPEN = todo_states.OPEN
 
 
 # The "boards to suggest" block's size in one review at most: with hundreds of projects on no board (and a name for
@@ -505,7 +506,7 @@ def waiting_cards_unmoved(db, items, reviewed, answered):
         if any(i in answered for i in event_ids):
             continue
         card = db.execute('SELECT title,event_ids,status,outcome,handled_hint FROM suggestions WHERE id=?', (card_id,)).fetchone()
-        if not card or card['handled_hint'] or card['status'] not in ('prepared', 'pending'):
+        if not card or card['handled_hint'] or card['status'] not in todo_states.WAITING_ON_OWNER:
             continue
         state = (json.loads(card['outcome'] or '{}') or {}).get('state') if card['outcome'] else None
         if state not in ('waiting', 'still_waiting') or set(event_ids) & {int(i) for i in json.loads(card['event_ids'] or '[]')}:
@@ -985,7 +986,7 @@ class ReviewStore:
             action = json.loads(job['payload'])
             card = {'suggestion_id': job['suggestion_id'], 'title': job['title'], 'sent_at': job['updated_at'],
                     # the result it waits for (outcomes.py): looks_handled when this shows it, else it keeps waiting
-                    **({'done_when': job['done_when']} if job['done_when'] and job['status'] not in ('completed', 'rejected') else {})}
+                    **({'done_when': job['done_when']} if job['done_when'] and job['status'] not in todo_states.CLOSED else {})}
             if action.get('kind') == 'email':
                 if job['rfc_message_id']:
                     by_key[('rfc', job['rfc_message_id'])] = card

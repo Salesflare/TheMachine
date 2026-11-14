@@ -83,6 +83,7 @@ from timeutil import local_tz, now
 import todo_areas
 import todo_org
 import whatsapp_images
+from machine import todo_states
 
 # What card_views adds to the to-dos, kept between status polls (each 30 s) while none of the tables it reads changed (on
 # a quiet Machine, between polls only Connections' sync tables do), the to-dos' own rows are the same and within
@@ -588,7 +589,7 @@ class ViewsStore(ConversationStore):
             extra['proposed_skill'] = proposed
         # A routine's to-do whose note holds for its next runs too: Also change the routine (routine_changes.py). Read only
         # for a routine's to-do, so other cards cost no query.
-        if suggestion.get('status') not in ('completed','rejected') and any(json.loads(r['metadata'] or '{}').get('routine') for r in rows):
+        if suggestion.get('status') not in todo_states.CLOSED and any(json.loads(r['metadata'] or '{}').get('routine') for r in rows):
             change=routine_changes.view(db,suggestion['id'])
             if change:extra['routine_change']=change
         action=suggestion.get('next_action');action=json.loads(action) if isinstance(action,str) else action
@@ -613,7 +614,7 @@ class ViewsStore(ConversationStore):
             # The draft Telegram shows in full on the card, so its Send there confirms directly (card_draft).
             shown=card_draft({**suggestion,**extra})
             if shown and shown['full']:extra['card_send']=shown['action']['revision']
-        if suggestion.get('status') not in ('completed','rejected'):
+        if suggestion.get('status') not in todo_states.CLOSED:
             stopped=stopped_step(db,suggestion,pre)
             if stopped:extra['step_stopped']=stopped
         prompt=suggestion.get('feedback_request_id') and db.execute('SELECT status,error FROM feedback_prompts WHERE request_id=?',(suggestion['feedback_request_id'],)).fetchone()
@@ -623,7 +624,7 @@ class ViewsStore(ConversationStore):
         if waiting:
             extra['preparation_browser']={**waiting,'link':browser_link(self.config)}
             if waiting.get('sign_in'):extra['preparation_browser']['signin_url']=signin_link(self.config,suggestion['id'])
-        if suggestion.get('status') in ('prepared','accepted','instructions'):self.browser_view(db,suggestion,extra)
+        if suggestion.get('status') in todo_states.TAKEN_ON:self.browser_view(db,suggestion,extra)
         if self.accounts and suggestion.get('account_ids') is not None:
             # the To-dos filter: one only about the Machine itself is neither Work nor Personal, under All only (todo_areas.machine_own).
             # Nor is one the owner added without an area that nothing placed yet (owner_area_open: the review places it by
@@ -764,7 +765,7 @@ class ViewsStore(ConversationStore):
                     suggestion['looks_done_at'] = looks_done_at(db, suggestion)
                 try:  # who it's about (its chip, also on a done to-do), and their weight to rank open cards by
                     suggestion['people'], weight = graph.card_people(db, json.loads(suggestion['event_ids'] or '[]'))
-                    if suggestion['status'] not in ('completed', 'rejected'):
+                    if suggestion['status'] not in todo_states.CLOSED:
                         suggestion['weight'] = weight
                 except (sqlite3.Error, ValueError, TypeError):
                     pass
@@ -845,7 +846,7 @@ class ViewsStore(ConversationStore):
         """Every done or dismissed card, the latest closed first, with its scope: light rows to count, filter and page.
         titles: also each one's title and who its messages went to (card_recipients), for a search."""
         rows = db.execute("SELECT s.id," + ("s.title,s.next_action," if titles else "") + "s.account_ids,s.area,coalesce((SELECT max(d.created_at) FROM decisions d WHERE d.suggestion_id=s.id AND d.choice IN ('complete','reject')),s.created_at) closed_at "
-                          "FROM suggestions s WHERE s.status IN ('completed','rejected') ORDER BY closed_at DESC,s.id").fetchall()
+                          f"FROM suggestions s WHERE s.status IN {todo_states.sql(todo_states.CLOSED)} ORDER BY closed_at DESC,s.id").fetchall()
         return [{'id': r['id'], 'title': (r['title'] or '') if titles else '', 'who': card_recipients(r['next_action']) if titles else '', 'closed_at': r['closed_at'],
                  'scope': suggestion_scope(r['account_ids'], self.accounts, r['area']) if getattr(self, 'accounts', None) and r['account_ids'] is not None
                  and not todo_areas.machine_own(r['account_ids'], self.accounts, r['area']) else None} for r in rows]
@@ -938,7 +939,7 @@ class ViewsStore(ConversationStore):
                 except (TypeError, ValueError):
                     return True  # unreadable: kept, as before
             recent = {r['id']: r['closed_at'] for n, r in enumerate(self.done_rows(db)[:100]) if n < done or today(r['closed_at'])}
-            result['suggestions'] = [dict(r) for r in db.execute("SELECT * FROM suggestions WHERE status NOT IN ('completed','rejected') OR id IN (SELECT value FROM json_each(?)) ORDER BY created_at DESC", (json.dumps(list(recent)),))]
+            result['suggestions'] = [dict(r) for r in db.execute(f"SELECT * FROM suggestions WHERE status NOT IN {todo_states.sql(todo_states.CLOSED)} OR id IN (SELECT value FROM json_each(?)) ORDER BY created_at DESC", (json.dumps(list(recent)),))]
             for card in result['suggestions']:
                 if card['id'] in recent:
                     card['closed_at'] = recent[card['id']]

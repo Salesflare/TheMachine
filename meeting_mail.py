@@ -22,6 +22,7 @@ import json
 import re
 
 import meeting_notes
+from machine import todo_states
 
 # The meeting apps' own sending address for their notes mail, read from the From address: a sender, never the words
 MAIL_FROM = {'no-reply@zoom.us': 'Zoom', 'gemini-notes@google.com': 'Google Meet'}
@@ -30,7 +31,7 @@ RECORDS = meeting_notes.KINDS + ('zoom.transcript', 'google_meet.transcript', 't
 MAIL_AFTER_HOURS = 6  # a notes mail comes within hours of the meeting's end
 MAIL_EARLY_MINUTES = 45  # a call can end before its calendar slot does
 CLEAR_MINUTES = 30  # by time alone, the nearest ending meeting only when the next nearest is this much further
-OPEN = ('pending', 'accepted', 'prepared', 'instructions', 'snoozed')  # review.CARD_OPEN, without importing the Store
+OPEN = todo_states.OPEN  # review.CARD_OPEN, without importing the Store
 
 MAIL_RULE = ('This mail is the meeting app\'s notes of a meeting: the same record as that meeting\'s notes on its '
              'calendar event. Make each next step one to-do led by the meeting: event_ids start with notes_event_id when '

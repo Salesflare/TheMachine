@@ -14,6 +14,7 @@ import sqlite3
 import i18n
 import ms_graph
 from machine.store.machine_cards import RECONNECT_KIND, reconnect_reword, reconnect_source, reconnected
+from machine import todo_states
 
 OUTLOOK_PHOTOS = 'outlook-photos'
 PROVIDERS = {OUTLOOK_PHOTOS: 'microsoft'}  # the hosted sign-in its Reconnect opens (the dashboard's data-hosted-reconnect)
@@ -86,7 +87,7 @@ def reword(db, own):
     colleagues' photos) gets the right ones, in place, unless the owner renamed it."""
     for card, account_id, source, old in db.execute(
             "SELECT s.id,e.account_id,e.source_id,s.title FROM suggestions s JOIN events e ON e.id=json_extract(s.event_ids,'$[0]') "
-            "WHERE e.kind=? AND s.status IN ('pending','snoozed') AND coalesce(s.title_source,'')!='user'", (RECONNECT_KIND,)).fetchall():
+            f"WHERE e.kind=? AND s.status IN {todo_states.sql(todo_states.NOT_STARTED)} AND coalesce(s.title_source,'')!='user'", (RECONNECT_KIND,)).fetchall():
         ask, account = str(source).split(':')[1], own.get(account_id)
         if not account or not title(ask):
             continue

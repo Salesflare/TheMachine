@@ -40,6 +40,7 @@ from machine.store.review import intercom_handled
 import skills
 from timeutil import local_tz, now
 import todo_areas
+from machine import todo_states
 
 
 LOOKS_DONE_HOURS = 24  # how long a to-do looks done before it closes by itself (Store.close_looks_done)
@@ -286,7 +287,7 @@ def close_by_itself(db, row, decision_id, feedback, source, stamp, undo_hours, l
                (decision_id, sid, 'complete', feedback, source, stamp))
     db.execute("UPDATE suggestions SET status='completed',completed_from=?,closed_from=?,closed_decision_id=?,undo_until=?,closed_state=?,"
                'snoozed_until=NULL,resume_status=NULL,feedback_until=NULL' + (',expired_at=?' if lapsed else '') + ' WHERE id=?',
-               (resume if resume in ('pending', 'accepted', 'prepared', 'instructions') else 'pending', row['status'], decision_id,
+               (resume if resume in todo_states.OPEN_NOT_SNOOZED else 'pending', row['status'], decision_id,
                 (dt.datetime.fromisoformat(stamp) + dt.timedelta(hours=undo_hours)).isoformat(),
                 encoded({**{k: row[k] for k in ('snoozed_until', 'resume_status')}, 'preparation': dict(prior_job) if prior_job else None}),
                 *((stamp,) if lapsed else ()), sid))
@@ -314,7 +315,7 @@ def handoff_wait(db, suggestion, awake=False, handoffs=None):
     Its time is when it comes back to check in with them, not a snooze of the owner's. awake: the same for a card that
     is back on the list (the check-in is due, or the owner brought it back) while the teammate still has it.
     handoffs: handoffs_of for a list of cards."""
-    if suggestion.get('status') not in (('pending', 'accepted', 'prepared', 'instructions') if awake else ('snoozed',)):
+    if suggestion.get('status') not in (todo_states.OPEN_NOT_SNOOZED if awake else (todo_states.SNOOZED,)):
         return None
     try:  # the newest handoff not taken back
         row = handoffs.get('handoff:' + str(suggestion['id'])) if handoffs is not None else \
@@ -339,7 +340,7 @@ CHECKIN_SENT_PREFIX = 'handoff-checkin-sent:'
 def checking_in(db, suggestion):
     """A to-do working on, or showing, a check-in nudge to the teammate who still has it: open, not snoozed, and the
     owner's Check in now is newer than its handoff's wait (or the last check-in's send)."""
-    if suggestion.get('status') not in ('accepted', 'instructions', 'prepared'):
+    if suggestion.get('status') not in todo_states.TAKEN_ON:
         return False
     row = db.execute("SELECT id FROM decisions WHERE suggestion_id=? AND (id LIKE 'handoff-checkin%' OR id LIKE 'fleet-handoff-wait-%') "
                      'ORDER BY rowid DESC LIMIT 1', (suggestion['id'],)).fetchone()
@@ -457,7 +458,7 @@ def waiting_questions(db, row):
     """The questions a to-do waits on the owner's answer to, as its Needs you line asks them: those its stopped run
     named (ask_blocked), else its result's own question (needs_you ending in ?, with nothing to send). [] when it asks
     nothing. Same rule as ask_question() in machine/cards.py, from the stored rows."""
-    if row['status'] in ('completed', 'rejected', 'snoozed') or row['handled_hint']:
+    if row['status'] in todo_states.CLOSED_OR_SNOOZED or row['handled_hint']:
         return []
     prep = db.execute('SELECT status,reason,error,questions FROM preparations WHERE suggestion_id=?', (row['id'],)).fetchone()
     view = {'preparation_status': prep['status'], 'preparation_reason': prep['reason'], 'preparation_error': prep['error'],
@@ -487,7 +488,7 @@ def _not_done(db, row, feedback, decision_id, source):
     """Not done on a to-do that looked done (looks_done): it is a normal to-do again, and the decision (with what the
     hint or the run said) is what the next review and the learning pass read. A run's already_done result goes back to
     Needs your decision; nothing starts by itself."""
-    if row['status'] in ('completed', 'rejected', 'snoozed') or not looks_done(dict(row)):
+    if row['status'] in todo_states.CLOSED_OR_SNOOZED or not looks_done(dict(row)):
         if source == 'telegram':
             return {'status': row['status'], 'duplicate': True, 'skipped': True, 'reason': 'stale_not_done'}
         raise ValueError('This to-do no longer looks done')
@@ -542,7 +543,7 @@ class DecisionsStore:
             row = db.execute('SELECT * FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
             if not row:
                 raise ValueError('Unknown suggestion')
-            if row['status'] in ('completed', 'rejected'):
+            if row['status'] in todo_states.CLOSED:
                 return {'skipped': 'already closed'}
             found = db.execute('SELECT count(*) FROM events WHERE deleted=0 AND id IN (' + ','.join('?' for _ in event_ids) + ')', event_ids).fetchone()[0]
             if found != len(set(event_ids)):
@@ -571,7 +572,7 @@ class DecisionsStore:
             row = db.execute('SELECT * FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
             if not row:
                 raise ValueError('Unknown suggestion')
-            if row['status'] not in ('pending', 'accepted', 'instructions', 'prepared', 'snoozed'):
+            if row['status'] not in todo_states.OPEN:
                 return {'skipped': 'already closed'}
             marks = ','.join('?' * len(ids))
             found = db.execute(f'SELECT count(*),max(ingested_at) FROM events WHERE deleted=0 AND id IN ({marks})', ids).fetchone()
@@ -604,7 +605,7 @@ class DecisionsStore:
             row = db.execute('SELECT * FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
             if not row:
                 raise ValueError('Unknown suggestion')
-            if row['status'] not in ('pending', 'accepted', 'instructions', 'prepared', 'snoozed'):
+            if row['status'] not in todo_states.OPEN:
                 return {'skipped': 'already closed'}
             marks = ','.join('?' * len(ids))
             found = db.execute(f'SELECT count(*),max(ingested_at) FROM events WHERE deleted=0 AND id IN ({marks})', ids).fetchone()
@@ -646,7 +647,7 @@ class DecisionsStore:
             if rows and not result.get('duplicate'):
                 chat_files.bind(db, decision_id, rows)
             if choice in ('other', 'undo', 'reopen', 'retry', 'accept') and source in ('dashboard', 'telegram') and not result.get('duplicate') and \
-                    db.execute("SELECT 1 FROM suggestions WHERE id=? AND status NOT IN ('completed','rejected')", (suggestion_id,)).fetchone():
+                    db.execute(f"SELECT 1 FROM suggestions WHERE id=? AND status NOT IN {todo_states.sql(todo_states.CLOSED)}", (suggestion_id,)).fetchone():
                 # The owner's word ("keep trying", Undo, Reopen) opens a skipped or stopped follow-up again (never one a hard fact closed)
                 follow_ups.reopen(db, suggestion_id)
             return result
@@ -687,7 +688,7 @@ class DecisionsStore:
         with self.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             row = db.execute('SELECT * FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
-            if not row or not row['done_when'] or row['status'] in ('completed', 'rejected'):
+            if not row or not row['done_when'] or row['status'] in todo_states.CLOSED:
                 return False
             latest = handoff_latest(db, suggestion_id)
             if not latest or latest['source'] != 'fleet' or latest['id'] not in ('fleet-handoff-wait-' + request_id, 'fleet-handoff-result-' + request_id):
@@ -778,13 +779,13 @@ class DecisionsStore:
             raise ValueError('Unknown suggestion')
         if source in ('telegram', 'dashboard') and row['early']:
             db.execute('UPDATE suggestions SET early=0 WHERE id=?', (suggestion_id,))  # the owner's own decision from here on
-        if choice == 'reject' and row['status'] in ('pending','accepted','instructions','prepared','snoozed') and owner_reports_handled(feedback):
+        if choice == 'reject' and row['status'] in todo_states.OPEN and owner_reports_handled(feedback):
             # "Not needed — I already did it" is a finished task, not a bad suggestion.
             choice = 'complete'
         if choice in ('undo', 'reopen') and row['done_report']:
             db.execute('UPDATE suggestions SET done_report=NULL WHERE id=?', (suggestion_id,))  # back in the list: nothing to report
         if choice == 'undo':
-            if row['status'] not in ('completed','rejected') or not row['undo_until'] or row['undo_until'] <= now():
+            if row['status'] not in todo_states.CLOSED or not row['undo_until'] or row['undo_until'] <= now():
                 # Older running bridges throw validation errors into the
                 # ordered Telegram ingress queue, blocking later clicks.
                 # A stale owner callback is a no-op, not a new decision.
@@ -811,11 +812,11 @@ class DecisionsStore:
                            (restored,restored,previous_state or '',suggestion_id))
             db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=? AND message_id IS NOT NULL',(suggestion_id,))
             prior=previous.get('preparation') or {}
-            if restored in ('accepted','instructions') and prior.get('status') == 'blocked' and db.execute(
+            if restored in todo_states.PREPARING and prior.get('status') == 'blocked' and db.execute(
                     "UPDATE preparations SET status='blocked' WHERE suggestion_id=? AND job_id=? AND status='cancelled'",
                     (suggestion_id,prior.get('job_id'))).rowcount:
                 pass  # back exactly as it was, waiting on the owner: Try again restarts it, Undo doesn't
-            elif restored in ('accepted','instructions'):
+            elif restored in todo_states.PREPARING:
                 if prior.get('status') == 'queued':
                     # Resume custody of the same job, not another still-running
                     # preparation canceled only by the reversible owner close.
@@ -832,8 +833,8 @@ class DecisionsStore:
         if choice == 'retry':
             job=db.execute('SELECT status,error,job_id FROM preparations WHERE suggestion_id=?',(suggestion_id,)).fetchone()
             ahead=row['status']=='pending' and job and job['status']=='blocked'  # a prepared-ahead run stuck on a blocker (settle_ahead)
-            if row['status'] not in ('accepted','instructions') and not ahead or not job or job['status']!='blocked':
-                if row['status'] in ('accepted','instructions','prepared') and job and job['status'] in ('queued','starting','running','done'):
+            if row['status'] not in todo_states.PREPARING and not ahead or not job or job['status']!='blocked':
+                if row['status'] in todo_states.TAKEN_ON and job and job['status'] in ('queued','starting','running','done'):
                     # Already carrying on (its sign-in was seen, another device or a second tap was first) or done:
                     # this tap from a card drawn before that asks for what is already happening, so nothing to do.
                     return {'status':row['status'],'already':'done' if job['status']=='done' else 'running'}
@@ -857,7 +858,7 @@ class DecisionsStore:
                     return {'status': row['status'], 'duplicate': True}
                 raise ValueError('Only a completed item can be reopened')
             restored = row['completed_from'] or 'accepted'
-            if restored not in ['pending','accepted','prepared','instructions']:
+            if restored not in todo_states.OPEN_NOT_SNOOZED:
                 restored = 'accepted'
             db.execute('INSERT INTO decisions VALUES(?,?,?,?,?,?)',
                        (decision_id,suggestion_id,choice,feedback[:5000],source,now()))
@@ -870,17 +871,17 @@ class DecisionsStore:
                     db.execute("UPDATE suggestions SET status='pending',completed_from='pending',outcome=NULL WHERE id=?",(suggestion_id,))
                 db.execute('UPDATE suggestions SET handled_hint=NULL WHERE id=?',(suggestion_id,))
             db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=? AND message_id IS NOT NULL', (suggestion_id,))
-            if restored in ('accepted','instructions'):
+            if restored in todo_states.PREPARING:
                 self.queue_preparation(db,suggestion_id,decision_id,resume_action=True)
             # Reopen edits the existing card; it never sends another notification.
             return {'status':restored, 'note':'Back in Outstanding. Telegram will update too.'}
         # The owner may already have handled it without asking for preparation.
-        if choice == 'complete' and row['status'] not in ['pending', 'accepted', 'instructions', 'prepared', 'snoozed']:
+        if choice == 'complete' and row['status'] not in todo_states.OPEN:
             raise ValueError('Mark done only an open item')
         status = {'accept': 'accepted', 'reject': 'rejected', 'snooze': 'snoozed', 'other': 'instructions', 'complete': 'completed'}[choice]
         until = snooze_time(snooze_option, snoozed_until, snooze_hours, work) if choice == 'snooze' else None
         resume = row['resume_status'] if row['status'] == 'snoozed' else row['status']
-        if resume not in ['pending','accepted','prepared','instructions']:
+        if resume not in todo_states.OPEN_NOT_SNOOZED:
             resume = 'pending'
         if choice == 'accept' and row['status'] == 'snoozed':
             status = resume
@@ -910,11 +911,11 @@ class DecisionsStore:
             if choice == 'accept':
                 db.execute("UPDATE suggestions SET status='completed',completed_from='pending' WHERE id=?", (suggestion_id,))
                 return {'status': 'completed', 'snoozed_until': None, 'note': 'Moving those notes into the skill.'}
-        if status in ('accepted','instructions'):
+        if status in todo_states.PREPARING:
             if choice == 'other':
                 db.execute("UPDATE preparations SET status='cancelled' WHERE suggestion_id=?",(suggestion_id,))
             self.queue_preparation(db,suggestion_id,decision_id,resume_action=choice=='accept' and row['status']=='snoozed')
-        elif status in ('completed','rejected','snoozed'):
+        elif status in todo_states.CLOSED_OR_SNOOZED:
             # Stop unfinished work; a finished preparation stays recorded as done. Its confirmed step waits, paused.
             db.execute("UPDATE preparations SET status='cancelled',updated_at=? WHERE suggestion_id=? AND status!='done'",(now(),suggestion_id))
             pause_idle_steps(db,suggestion_id)
@@ -935,7 +936,7 @@ class DecisionsStore:
         with self.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             rows = db.execute("SELECT * FROM suggestions WHERE expires_at IS NOT NULL AND expires_at<=? AND expired_at IS NULL "
-                              "AND status IN ('pending','accepted','instructions','prepared','snoozed')", (stamp,)).fetchall()
+                              f"AND status IN {todo_states.sql(todo_states.OPEN)}", (stamp,)).fetchall()
             for row in rows:
                 sid = row['id']
                 if db.execute("SELECT 1 FROM action_jobs WHERE suggestion_id=? AND status IN ('sending','uncertain')", (sid,)).fetchone():
@@ -953,7 +954,7 @@ class DecisionsStore:
             if not db.execute("SELECT 1 FROM events WHERE kind='intercom.conversation' LIMIT 1").fetchone():
                 return closed  # no Intercom here: no write lock taken
             db.execute('BEGIN IMMEDIATE')
-            rows = db.execute("SELECT s.* FROM suggestions s WHERE s.status IN ('pending','accepted','instructions','prepared','snoozed') "
+            rows = db.execute(f"SELECT s.* FROM suggestions s WHERE s.status IN {todo_states.sql(todo_states.OPEN)} "
                               "AND EXISTS(SELECT 1 FROM json_each(s.event_ids) j JOIN events e ON e.id=j.value WHERE e.kind='intercom.conversation')").fetchall()
             for row in rows:
                 sid, ids = row['id'], json.loads(row['event_ids'] or '[]')
@@ -991,7 +992,7 @@ class DecisionsStore:
         with self.connect() as db:
             if not db.execute("SELECT 1 FROM events WHERE kind='intercom.conversation' LIMIT 1").fetchone():
                 return []
-            rows = db.execute("SELECT s.* FROM suggestions s WHERE s.status IN ('pending','accepted','instructions','prepared','snoozed') "
+            rows = db.execute(f"SELECT s.* FROM suggestions s WHERE s.status IN {todo_states.sql(todo_states.OPEN)} "
                               "AND EXISTS(SELECT 1 FROM json_each(s.event_ids) j JOIN events e ON e.id=j.value WHERE e.kind='intercom.conversation')").fetchall()
             for row in rows:
                 events, facts = self.intercom_only(db, row), []
@@ -1011,7 +1012,7 @@ class DecisionsStore:
         with self.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             for sid, decision_id, name in found:
-                row = db.execute("SELECT * FROM suggestions WHERE id=? AND status IN ('pending','accepted','instructions','prepared','snoozed')", (sid,)).fetchone()
+                row = db.execute(f"SELECT * FROM suggestions WHERE id=? AND status IN {todo_states.sql(todo_states.OPEN)}", (sid,)).fetchone()
                 if not row or db.execute('SELECT 1 FROM decisions WHERE id=?', (decision_id,)).fetchone():
                     continue  # closed already, or closed for this before and the owner took it back
                 if db.execute("SELECT 1 FROM action_jobs WHERE suggestion_id=? AND status IN ('sending','uncertain')", (sid,)).fetchone():
@@ -1028,7 +1029,7 @@ class DecisionsStore:
         yet), newest first: the sync reads them again once (connectors/intercom.py)."""
         with self.connect() as db:
             rows = db.execute("SELECT DISTINCT e.source_id,e.metadata FROM suggestions s JOIN json_each(s.event_ids) j JOIN events e ON e.id=j.value "
-                              "WHERE s.status IN ('pending','accepted','instructions','prepared','snoozed') AND e.kind='intercom.conversation' "
+                              f"WHERE s.status IN {todo_states.sql(todo_states.OPEN)} AND e.kind='intercom.conversation' "
                               "AND e.account_id=? ORDER BY e.occurred_at DESC", (account_id,)).fetchall()
         wanted = []
         for r in rows:
@@ -1050,11 +1051,11 @@ class DecisionsStore:
         stamp, closed = now(), []
         cutoff = (dt.datetime.fromisoformat(stamp) - dt.timedelta(hours=hours)).isoformat()
         with self.connect() as db:
-            if not db.execute("SELECT 1 FROM suggestions WHERE status IN ('pending','accepted','instructions','prepared') AND "
+            if not db.execute(f"SELECT 1 FROM suggestions WHERE status IN {todo_states.sql(todo_states.OPEN_NOT_SNOOZED)} AND "
                               + LOOKS_DONE_SQL + ' LIMIT 1').fetchone():
                 return closed  # nothing looks done: no write lock taken
             db.execute('BEGIN IMMEDIATE')
-            rows = db.execute("SELECT * FROM suggestions WHERE status IN ('pending','accepted','instructions','prepared') AND " + LOOKS_DONE_SQL).fetchall()
+            rows = db.execute(f"SELECT * FROM suggestions WHERE status IN {todo_states.sql(todo_states.OPEN_NOT_SNOOZED)} AND " + LOOKS_DONE_SQL).fetchall()
             for row in rows:
                 row = dict(row)
                 if not looks_done(row):
@@ -1091,7 +1092,7 @@ class DecisionsStore:
         decision_id = 'handled:' + hashlib.sha256(f"{suggestion_id}:{sorted(int(i) for i in event_ids)}".encode()).hexdigest()[:32]
         with self.connect() as db:
             db.execute('BEGIN IMMEDIATE')
-            row = db.execute("SELECT * FROM suggestions WHERE id=? AND status IN ('pending','accepted','instructions','prepared','snoozed')",
+            row = db.execute(f"SELECT * FROM suggestions WHERE id=? AND status IN {todo_states.sql(todo_states.OPEN)}",
                              (suggestion_id,)).fetchone()
             if not row or db.execute('SELECT 1 FROM decisions WHERE id=?', (decision_id,)).fetchone():
                 return False
@@ -1103,7 +1104,7 @@ class DecisionsStore:
                        (decision_id, suggestion_id, 'complete', ' '.join(str(reason or '').split())[:200], 'handled', stamp))
             db.execute("UPDATE suggestions SET status='completed',completed_from=?,closed_from=?,closed_decision_id=?,undo_until=?,closed_state=?,"
                        'snoozed_until=NULL,resume_status=NULL,feedback_until=NULL,early=0 WHERE id=?',
-                       (resume if resume in ('pending', 'accepted', 'prepared', 'instructions') else 'pending', row['status'], decision_id,
+                       (resume if resume in todo_states.OPEN_NOT_SNOOZED else 'pending', row['status'], decision_id,
                         (dt.datetime.fromisoformat(stamp) + dt.timedelta(hours=undo_hours)).isoformat(),
                         encoded({**{k: row[k] for k in ('snoozed_until', 'resume_status')}, 'preparation': dict(prior_job) if prior_job else None}), suggestion_id))
             db.execute("UPDATE preparations SET status='cancelled',updated_at=? WHERE suggestion_id=? AND status NOT IN ('done','cancelled')", (stamp, suggestion_id))
@@ -1120,9 +1121,9 @@ class DecisionsStore:
             db.execute('UPDATE suggestions SET undo_until=NULL WHERE undo_until<=?',(now(),))
             rows = db.execute("SELECT id,resume_status FROM suggestions WHERE status='snoozed' AND snoozed_until<=?",(now(),)).fetchall()
             for row in rows:
-                status = row['resume_status'] if row['resume_status'] in ['pending','accepted','prepared','instructions'] else 'pending'
+                status = row['resume_status'] if row['resume_status'] in todo_states.OPEN_NOT_SNOOZED else 'pending'
                 db.execute('UPDATE suggestions SET status=?,snoozed_until=NULL,resume_status=NULL WHERE id=?',(status,row['id']))
-                if status in ('accepted','instructions'):
+                if status in todo_states.PREPARING:
                     self.queue_preparation(db,row['id'],'snooze-resumed:'+now(),resume_action=True)
                 # Exactly one new outbox intent per elapsed snooze. An unknown
                 # previous send must be reconciled, not blindly retried.
@@ -1143,7 +1144,7 @@ class DecisionsStore:
             row = db.execute('SELECT feedback_request_id,feedback_kind,status,feedback_until,feedback_prompt_message_id,feedback_card_message_id FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
             if not row:
                 raise ValueError('Unknown suggestion')
-            if row['status'] in ('completed','rejected') or (kind=='change' and row['status']=='snoozed'):
+            if row['status'] in todo_states.CLOSED or (kind=='change' and row['status']=='snoozed'):
                 raise ValueError('Change is available only on an outstanding item' if kind=='change' else 'This item is already closed')
             if row['feedback_request_id'] == request_id:
                 return {'duplicate': True}
@@ -1243,7 +1244,7 @@ class DecisionsStore:
                 raise ValueError('This preparation is owned by its already-running turn')
             if job_id and (not job or job['job_id'] != job_id or job['status'] not in ('starting','running')):
                 raise ValueError('Preparation canceled or replaced by newer owner feedback')
-            if not row or row['status'] not in ['accepted', 'instructions', 'prepared']:
+            if not row or row['status'] not in todo_states.TAKEN_ON:
                 raise ValueError('Prepare only an owner-accepted suggestion or written instruction')
             if row['status'] == 'prepared' and row['body'] == body and row['next_action']==action_json:
                 return {'status': 'prepared', 'replayed': True}
@@ -1548,7 +1549,7 @@ class DecisionsStore:
         with self.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             rows = db.execute("SELECT s.id,s.next_action,s.account_ids FROM suggestions s JOIN preparations p ON p.suggestion_id=s.id "
-                              "WHERE s.status IN ('prepared','accepted') AND p.status='done' AND s.next_action IS NOT NULL "
+                              f"WHERE s.status IN {todo_states.sql(todo_states.PREPARED, todo_states.ACCEPTED)} AND p.status='done' AND s.next_action IS NOT NULL "
                               "AND NOT EXISTS(SELECT 1 FROM decisions d WHERE d.id='intercom-replies:'||s.id) "
                               "AND NOT EXISTS(SELECT 1 FROM action_jobs j WHERE j.suggestion_id=s.id AND j.status NOT IN ('cancelled','rejected'))").fetchall()
             for row in rows:

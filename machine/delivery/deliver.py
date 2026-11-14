@@ -21,6 +21,7 @@ from machine.text import encoded
 import notify
 import still_needed
 from timeutil import in_hours, is_work_day, local_tz, now
+from machine import todo_states
 
 
 def fleet_push(store, config, rows, sender=None):
@@ -87,7 +88,7 @@ def reconcile_uncertain(store, config, grace_minutes=30):
                            "WHERE suggestion_id=? AND status='uncertain'", (str(max(ids)), encoded(previous), now(), row['suggestion_id']))
                 LOG.info('delivery suggestion=%s reconciled=sent', row['suggestion_id'])
             elif current - attempted >= dt.timedelta(minutes=grace_minutes):
-                if row['suggestion_status'] in ('pending', 'accepted', 'prepared', 'instructions'):
+                if row['suggestion_status'] in todo_states.OPEN_NOT_SNOOZED:
                     # Not in the chat: it was never delivered. An earlier card exists, so this is a reminder.
                     db.execute("UPDATE deliveries SET status='queued',reminder=?,error=NULL,updated_at=? WHERE suggestion_id=? AND status='uncertain'",
                                (1 if row['message_id'] else 0, now(), row['suggestion_id']))
@@ -198,7 +199,7 @@ def deliver_one(store, config, edit_cards=True):
                    ((dt.datetime.now(dt.timezone.utc) - dt.timedelta(minutes=3)).isoformat(),))
         retry_cutoff = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(minutes=1)).isoformat()
         store.settle_awaiting(db)
-        rows = db.execute(shown_rows(db, "SELECT s.*,d.reminder,d.message_id,d.previous_message_ids,d.last_notified_at,p.status preparation_status,p.reason preparation_reason,p.error preparation_error,p.questions preparation_questions,(SELECT choice FROM decisions WHERE id=p.decision_id) preparation_cause,"+FEEDBACK_COLUMN+" FROM suggestions s JOIN deliveries d ON s.id=d.suggestion_id LEFT JOIN preparations p ON s.id=p.suggestion_id WHERE d.status='queued' AND (d.error IS NULL OR d.updated_at<?) AND ((s.status='pending' AND s.handled_hint IS NULL) OR (d.reminder=1 AND s.status IN ('accepted','prepared','instructions') AND s.handled_hint IS NULL AND coalesce(json_extract(s.outcome,'$.state'),'') NOT IN ('already_done','waiting'))) AND ((d.reminder=1 AND s.early=0) OR s.deliver_after IS NULL OR s.deliver_after<=?) ORDER BY d.reminder DESC,s.created_at LIMIT 1"),(retry_cutoff,now())).fetchall()
+        rows = db.execute(shown_rows(db, "SELECT s.*,d.reminder,d.message_id,d.previous_message_ids,d.last_notified_at,p.status preparation_status,p.reason preparation_reason,p.error preparation_error,p.questions preparation_questions,(SELECT choice FROM decisions WHERE id=p.decision_id) preparation_cause,"+FEEDBACK_COLUMN+f" FROM suggestions s JOIN deliveries d ON s.id=d.suggestion_id LEFT JOIN preparations p ON s.id=p.suggestion_id WHERE d.status='queued' AND (d.error IS NULL OR d.updated_at<?) AND ((s.status='pending' AND s.handled_hint IS NULL) OR (d.reminder=1 AND s.status IN {todo_states.sql(todo_states.TAKEN_ON)} AND s.handled_hint IS NULL AND coalesce(json_extract(s.outcome,'$.state'),'') NOT IN ('already_done','waiting'))) AND ((d.reminder=1 AND s.early=0) OR s.deliver_after IS NULL OR s.deliver_after<=?) ORDER BY d.reminder DESC,s.created_at LIMIT 1"),(retry_cutoff,now())).fetchall()
         if not rows:
             return
         row = dict(rows[0])
@@ -293,7 +294,7 @@ def deliver_one(store, config, edit_cards=True):
                 if sent:sent.update(store.suggestion_result(sent,db))
                 if sent and (card(sent) != card(row) or controls(sent) != controls(row) or sent['requested_feedback']!=row['requested_feedback']):
                     db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=?', (row['id'],))
-                if sent and row['status']=='instructions' and sent['status'] in ('instructions','prepared') and (
+                if sent and row['status']=='instructions' and sent['status'] in (todo_states.INSTRUCTIONS, todo_states.PREPARED) and (
                         sent['status']=='prepared' or sent['requested_feedback']!=row['requested_feedback']):
                     # The result/new request arrived during its receipt send. Keep
                     # its distinct notification intent instead of losing it here.

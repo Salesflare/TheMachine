@@ -19,6 +19,7 @@ from machine.delivery.telegram import DeliveryNotSent, telegram_request
 from machine.model_usage import node_bin, node_env, telegram_account, telegram_on
 from machine.text import encoded
 from timeutil import now
+from machine import todo_states
 
 
 def prompt_text(title,plain=False,kind='change'):
@@ -133,7 +134,7 @@ class FeedbackApp:
                 # No Telegram chat to ask in: the dashboard takes the change request itself.
                 db.execute("UPDATE feedback_prompts SET status='cancelled' WHERE status NOT IN ('sent','cancelled')")
                 return
-            db.execute("UPDATE feedback_prompts SET status='cancelled' WHERE status!='sent' AND NOT EXISTS(SELECT 1 FROM suggestions s WHERE s.id=feedback_prompts.suggestion_id AND s.feedback_request_id=feedback_prompts.request_id AND s.feedback_until>? AND s.status NOT IN ('completed','rejected') AND (feedback_prompts.kind='dismiss' OR s.status!='snoozed'))",(stamp,))
+            db.execute(f"UPDATE feedback_prompts SET status='cancelled' WHERE status!='sent' AND NOT EXISTS(SELECT 1 FROM suggestions s WHERE s.id=feedback_prompts.suggestion_id AND s.feedback_request_id=feedback_prompts.request_id AND s.feedback_until>? AND s.status NOT IN {todo_states.sql(todo_states.CLOSED)} AND (feedback_prompts.kind='dismiss' OR s.status!='snoozed'))",(stamp,))
             row=db.execute("SELECT * FROM feedback_prompts WHERE status NOT IN ('sent','cancelled') AND (retry_at IS NULL OR retry_at<=?)"+(' AND request_id=?' if request_id else '')+' ORDER BY created_at LIMIT 1', (stamp,request_id) if request_id else (stamp,)).fetchone()
             if not row:return
             row=dict(row)

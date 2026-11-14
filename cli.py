@@ -34,6 +34,7 @@ import notify  # noqa: E402
 import office_files  # noqa: E402
 import service  # noqa: E402
 import support  # noqa: E402
+from machine import todo_states
 
 _spec = importlib.util.spec_from_file_location('moving', Path(__file__).resolve().with_name('moving.py'))
 moving = importlib.util.module_from_spec(_spec)
@@ -41,9 +42,9 @@ _spec.loader.exec_module(moving)
 
 TZ = assistant.local_tz()
 GROUPS = {
-    'outstanding': ('pending', 'accepted', 'instructions', 'prepared'),
-    'later': ('snoozed',),
-    'done': ('completed', 'rejected'),
+    'outstanding': todo_states.OPEN_NOT_SNOOZED,
+    'later': (todo_states.SNOOZED,),
+    'done': todo_states.CLOSED,
 }
 LABELS = {'pending': 'Needs you', 'accepted': 'Accepted', 'instructions': 'Changes requested',
           'prepared': 'Prepared', 'snoozed': 'Later', 'completed': 'Done', 'rejected': 'Not needed'}

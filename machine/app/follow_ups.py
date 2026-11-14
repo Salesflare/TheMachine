@@ -27,6 +27,7 @@ import own_addresses
 import skills
 from sources import MICROSOFT_SERVICES, SourceError
 from timeutil import WORK_HOURS, in_hours, local_tz, now
+from machine import todo_states
 
 LOG = logging.getLogger('personal-assistant')
 
@@ -255,7 +256,7 @@ class FollowUpsApp:
                 row = db.execute("SELECT s.status,s.next_action,p.status job FROM suggestions s JOIN follow_up_cards f ON f.suggestion_id=s.id "
                                  "LEFT JOIN preparations p ON p.suggestion_id=s.id WHERE s.id=? AND f.state='open'", (sid,)).fetchone()
                 # Ready, or a rewrite that got stuck (its draft still the one before): Try again
-                ready = row and (row['status'] == 'prepared' or row['status'] in ('instructions', 'accepted') and row['job'] == 'blocked')
+                ready = row and (row['status'] == 'prepared' or row['status'] in todo_states.PREPARING and row['job'] == 'blocked')
                 draft = next((x for x in next_actions.actions(row['next_action'] or 'null') if x['kind'] in ('email',) + next_actions.TEXT_KINDS),
                              None) if ready else None
                 if not draft or db.execute("SELECT 1 FROM action_jobs WHERE suggestion_id=? AND status IN ('queued','sending','local_preparation')", (sid,)).fetchone():
