@@ -172,7 +172,7 @@ class StatusKeptByTable(unittest.TestCase):
                                                                               'at': NOW.isoformat(), 'state': 'removed'}]))
         out = self.status()
         self.assertEqual(len(self.builds), 3)
-        self.assertEqual([r['email'] for r in out['disconnected']], ['old@acme.example'])
+        self.assertEqual([r['card_title'] for r in out['disconnected']], ['old@acme.example'])
         self.status(); self.assertEqual(len(self.builds), 3)
 
     def test_without_the_counters_it_is_kept_by_any_commit_as_before(self):
