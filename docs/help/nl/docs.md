@@ -71,7 +71,7 @@ Daarna kan je Machine:
 
 Hij doorzoekt je Drive niet. Reacties, delen en suggesties ziet hij alleen bij documenten die hij zelf maakte. Meer zou toegang tot je hele Drive vragen, en daar vraagt hij niet om.
 
-Op je eigen computer kan je Machine een nieuw Google-document maken in een Gmail-account dat daar is aangemeld en al toegang tot Drive heeft. Je andere Google Docs en hun reacties leest hij niet. **Documenten en bestanden** toont het als Google Docs, op dat account.
+Op je eigen computer kan je Machine een nieuw Google-document maken in een Gmail-account dat daar is aangemeld en al toegang tot Drive heeft. Je andere Google Docs en hun reacties leest hij niet. **Documenten en bestanden** toont het als Google Docs, op dat account. Een document dat hij daar voor een taak maakte, kan hij ook aanpassen.
 
 ## Werk of privé
 

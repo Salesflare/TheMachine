@@ -20,6 +20,7 @@ import talk_live
 from test_connectors import a, Response
 from test_connector_docs import ACCOUNT, GMAIL, OUTLOOK, OWNER, GoogleFake, docx, helpers_for
 import test_ux as ux
+from test_assistant import event as ux_event
 
 FILES = {'doc1': {'account_id': 'acme-docs', 'doc_title': 'Q4 plan', 'provider': 'google'}}
 
@@ -114,7 +115,7 @@ class Validate(unittest.TestCase):
         create = {'kind': 'doc_write', 'op': 'create', 'account_id': 'acme-docs', 'title': 'T', 'body': 'x'}
         for value, context, said in ((edit, self.context(writes=('create',)), 'Allow edits'),
                                      (create, self.context(writes=()), 'Allow edits'),
-                                     ({**edit, 'file_id': 'doc9'}, self.context(), 'this task’s own doc events'),
+                                     ({**edit, 'file_id': 'doc9'}, self.context(), 'not one of this to-do’s docs'),
                                      ({**edit, 'changes': []}, self.context(), '1 to 20 changes'),
                                      ({**edit, 'changes': [{'find': 'week 2', 'replace': 'week 3', 'style': 'bold'}]}, self.context(), 'A change is'),
                                      ({**edit, 'label': 'Send it'}, self.context(), 'button labels'),
@@ -715,6 +716,50 @@ class GogDocs(unittest.TestCase):
             self.assertNotIn('nope', line)
         self.assertIn('can view the doc but not edit it', w.failed({'op': 'edit', 'provider': 'google'}, 403, 'insufficientFilePermissions'))
         self.assertIn('can view the doc but not edit it', w.failed({'op': 'edit', 'provider': 'google'}, 403))
+
+    def test_a_doc_made_for_the_to_do_is_its_own_for_later_edits(self):
+        """2026-11-14: a doc The Machine made in a to-do's chat was refused for a later edit there ("isn't recognized as
+        belonging to this task, paste its link"). The doc it made for the to-do is the to-do's own, edited through the sign-in
+        that made it. A doc it didn't make for this to-do still isn't, and the refusal names the ids it may use."""
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        store = a.Store(Path(tmp.name) / 'events.sqlite')
+        store.commit_page('acme-gmail', {}, [ux_event('acme-gmail', 'm1'), ux_event('acme-gmail', 'm2')])
+        with store.connect() as db:
+            first, second = [r[0] for r in db.execute('SELECT id FROM events ORDER BY id')]
+        sid = store.suggest('doc-task', 'Write the partner copy', 'Draft both texts in a doc.', [first])['id']
+        other = store.suggest('other-task', 'Another to-do', 'Something else.', [second])['id']
+        context = w.context(self.config, docs, self.helpers, {}, {'kind': 'doc_write', 'op': 'create'}, WORK)
+        made = w.validate({'kind': 'doc_write', 'op': 'create', 'account_id': 'acme-gmail', 'title': 'Plan', 'body': 'Week 3.'}, context)
+        transport = w.DocWriteTransport(self.config, docs, self.helpers)
+        transport.preflight(made)
+        self.assertEqual(transport.send(made, {})['message_id'], 'docwrite:g1')
+        with store.connect() as db:
+            db.execute("INSERT INTO action_jobs(id,suggestion_id,revision,payload,status,created_at,updated_at,approval_id,source,"
+                       "rfc_message_id,message_id) VALUES('j1',?,'r1',?,'sent','2026-11-13T20:45:00+00:00','2026-11-13T20:46:00+00:00',"
+                       "?,'assistant','','docwrite:g1')", (sid, json.dumps(made), w.NEW_DOC + 'x'))
+            files = a.doc_write_files(db, '[]', self.config, WORK, sid)
+            self.assertEqual(files, {'g1': {'account_id': 'acme-gmail', 'doc_title': 'Plan', 'provider': 'google', 'made': True}})
+            self.assertEqual(a.doc_write_files(db, '[]', self.config, WORK, other), {})  # another to-do's doc isn't this one's
+        self.doc = gdoc(['Plan', 'Week 3.'], 'r2')
+        edit = {'kind': 'doc_write', 'op': 'edit', 'file_id': 'https://docs.google.com/document/d/g1/edit', 'changes': [{'append': 'Week 4.'}]}
+        action = w.validate(edit, w.context(self.config, docs, self.helpers, files, edit, WORK))  # its link works as well as its id
+        self.assertEqual((action['file_id'], action['account_id'], action['version'], action.get('made')), ('g1', 'acme-gmail', 'r2', True))
+        transport.preflight(action)
+        self.assertEqual(transport.send(action, {}), {'message_id': 'docwrite:g1'})
+        self.assertEqual(self.calls[-1], ('docs.documents.batchUpdate', docs.REPLY_SCOPE, True, False, OWNER))
+        # the guard stays: a doc that isn't this to-do's own, or one the gog sign-in didn't make, is never edited through it
+        for file_id in ('someone-elses-doc', 'https://docs.google.com/document/d/someone-elses-doc/edit'):
+            with self.assertRaises(ValueError) as caught:
+                w.validate({**edit, 'file_id': file_id}, w.context(self.config, docs, self.helpers, files, edit, WORK))
+            self.assertIn('g1 (Plan), made for it', str(caught.exception))
+            self.assertIn('Never ask the owner to paste a link', str(caught.exception))
+        linked = {'g1': {**files['g1'], 'made': False}}
+        with self.assertRaises(ValueError) as caught:
+            w.validate(edit, w.context(self.config, docs, self.helpers, linked, edit, WORK))
+        self.assertIn('Editing docs is not allowed', str(caught.exception))
+        with self.assertRaises(w.OwnerError):  # the transport checks it again: no made, no gog edit
+            transport.preflight({**action, 'made': False})
 
     def test_an_unclear_fill_is_finished_once_and_a_sign_in_without_drive_is_no_place(self):
         context = w.context(self.config, docs, self.helpers, {}, {'kind': 'doc_write', 'op': 'create'}, WORK)

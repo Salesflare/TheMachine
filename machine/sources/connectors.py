@@ -158,15 +158,28 @@ def docs_write_transport(config):
     return doc_writes.DocWriteTransport(config, plugin, CONNECTOR_HELPERS) if plugin and hasattr(plugin, 'Writer') else None
 
 
-def doc_write_files(db, event_ids, config=None, area=None):
+def doc_write_files(db, event_ids, config=None, area=None, suggestion_id=None):
     """The docs a doc_write may edit, {file_id: {account_id, doc_title, provider}}: the ones this task's own doc events are
     about, and with config, a Google Doc linked in the task's messages, through the owner's Google Docs connection in the
-    to-do's area that can do things (a hosted Machine's Connect Google Docs reads and edits a doc by its id)."""
+    to-do's area that can do things (a hosted Machine's Connect Google Docs reads and edits a doc by its id). With the
+    to-do's id, also each doc The Machine made for it (its sent doc_write create): that doc is the to-do's own, edited
+    through the connection that made it (made: True)."""
     found = {}
+    if suggestion_id:
+        for r in db.execute("SELECT payload,message_id FROM action_jobs WHERE suggestion_id=? AND status='sent' "
+                            "AND message_id LIKE 'docwrite:%' ORDER BY updated_at", (suggestion_id,)):
+            try:
+                made = json.loads(r[0] or '{}')
+            except (TypeError, ValueError):
+                continue
+            file_id = str(r[1])[len('docwrite:'):]
+            if made.get('kind') == doc_writes.KIND and made.get('op') == 'create' and made.get('account_id') and file_id:
+                found[file_id] = {'account_id': made['account_id'], 'doc_title': made.get('title'),
+                                  'provider': made.get('provider'), 'made': True}
     for r in db.execute("SELECT e.account_id,e.metadata FROM events e JOIN json_each(?) ids ON ids.value=e.id "
                         "WHERE e.kind LIKE 'docs.%' ORDER BY e.occurred_at", (event_ids,)):
         m = json.loads(r[1])
-        if m.get('file_id'):
+        if m.get('file_id') and not (found.get(str(m['file_id'])) or {}).get('made'):
             found[str(m['file_id'])] = {'account_id': r[0], 'doc_title': m.get('doc_title'), 'provider': m.get('provider')}
     plugin = load_connector('docs') if config else None
     google = [a for a in (config or {}).get('accounts') or () if plugin and a.get('service') == 'docs' and not a.get('shared')
@@ -223,14 +236,15 @@ def doc_write_prompt(config):
             "unless their message in this turn asks for that change: then save it with do_now:true and it is made now. Sharing a doc "
             "always waits for their OK (a step after it). The shapes: {kind:'doc_write',op:'create',account_id,title,body} (body plain text, '# ' to '### ' lines are headings; the title is the doc's name and "
             "the to-do shows it, so the body doesn't start with it again) or "
-            "{kind:'doc_write',op:'edit',file_id:<metadata.file_id of this task's doc event, or the id in a Google Doc link in this task's messages>,changes:[{find,replace} | {after,insert} | {append}]}. "
+            "{kind:'doc_write',op:'edit',file_id:<the id of a doc made for this to-do (its docs.google.com link in the to-do), the metadata.file_id of this task's doc event, or the id in a Google Doc link in this task's messages>,changes:[{find,replace} | {after,insert} | {append}]}. "
+            "A doc made for this to-do is its own: edit it through the place that made it, and never ask the owner to paste its link. "
             "A new doc goes only to a place in this to-do's own area (Work at that company, or Personal, as its accounts are), and to the one with "
             "the conversation's own address when that one can; never to another area's account. When none fits, draft no doc: give its text in "
             f"the to-do and say needs:'{doc_writes.connect_line({'boundaries': ['work']}, doc_writes.google_offered(found, config))}' (or for Personal). Name the place exactly as listed "
             "(Google Docs or Word) in the body and needs, never the other. With a new doc, save outcome:'needs_you' with needs:'open the doc and check it' "
             "(the body says the doc is being made, never that someone has it). Add last:true only when the doc itself finishes the to-do; otherwise "
             "then:<the step after it, e.g. reply to Sam with the link>: once the doc is made, the to-do carries on with that step as a new draft. "
-            "Check an edit first: assistant doc-draft --job <job id> --event <event id> [--changes <file.json>] prints the doc's paragraphs "
+            "Check an edit first: assistant doc-draft --job <job id> (--event <event id> | --file <doc id>) [--changes <file.json>] prints the doc's paragraphs "
             "and the before and after the owner will see. Only with Allow edits on; otherwise give the text in the to-do."
             + ("\n- Finding and reading docs: assistant doc-find '<words>' --job <job id> lists matching docs of this to-do's area; "
                "assistant doc --file <file id> --job <job id> reads one it found, or a Google Doc linked in this task's messages. "

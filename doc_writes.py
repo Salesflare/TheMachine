@@ -308,26 +308,53 @@ def validate(value, context):
         return result
     if set(value) - {'kind', 'op', 'label', 'file_id', 'changes', 'account_id', 'last', 'then'}:
         raise ValueError('An edit has file_id and changes only')
-    file_id = str(value.get('file_id') or '')
-    known = (context.get('files') or {}).get(file_id)
+    file_id = file_id_of(value.get('file_id'))
+    files = context.get('files') or {}
+    known = files.get(file_id)
     if not known:
-        raise ValueError('Edit only a doc of this task’s own doc events (file_id is its metadata.file_id)')
+        made = sorted(k for k, f in files.items() if f.get('made'))
+        raise ValueError('That file_id is not one of this to-do’s docs. Its docs: '
+                         + (', '.join(f'{k} ({files[k].get("doc_title") or "made for this to-do"})' for k in made) + ', made for it; ' if made else '')
+                         + 'the metadata.file_id of its doc events; the id in a Google Doc link in its messages. Use one of these '
+                         'ids. Never ask the owner to paste a link to a doc made for this to-do')
     if value.get('account_id') not in (None, known['account_id']):
         raise ValueError('That doc belongs to another Docs connection')
     account = accounts.get(known['account_id'])
-    if not account or 'edit' not in account.get('writes', ()):
+    if not account or not can_edit(account, known):
+        if known.get('made'):
+            raise ValueError(f'This doc was made for this to-do with {(account or {}).get("name") or known["account_id"]}, which '
+                             + ('can make docs but not edit them (Allow edits on its connection)' if account else
+                                'can’t write docs anymore (it was removed, or its Can do things or Drive access is off)')
+                             + '. Give the changes as text in the to-do instead')
         raise ValueError('Editing docs is not allowed for this Docs connection yet (Allow edits on its connection; Google '
                          'needs the same permission as posting replies). Give the changes as text in the to-do instead')
     changes = _changes(value.get('changes'))
     snapshot = (context.get('snapshots') or {}).get(file_id)
     if not isinstance(snapshot, dict):
         raise ValueError(str(snapshot or 'The doc could not be read just now') + '. Nothing was saved; try again')
+    if known.get('made') and 'edit' not in account.get('writes', ()):
+        result['made'] = True  # its own doc, through the sign-in that made it (can_edit): the transport checks this again
     result.update(account_id=known['account_id'], provider=account['provider'], file_id=file_id,
                   doc_title=str(snapshot.get('title') or known.get('doc_title') or 'the doc')[:200], version=snapshot['version'],
                   changes=resolve(snapshot, changes))
     if snapshot.get('url'):
         result['url'] = snapshot['url']
     return result
+
+
+def file_id_of(value):
+    """The doc id an edit names: the id itself, or the id in a Google Docs link to it (with /edit or any suffix)."""
+    text = str(value or '').strip()
+    found = re.search(r'docs\.google\.com/document/(?:u/\d+/)?d/([A-Za-z0-9_-]{1,200})', text)
+    return found[1] if found else text
+
+
+def can_edit(account, known):
+    """Whether this connection may edit this doc after the owner's OK: one with edits allowed, or the owner's own gog
+    Google sign-in for a doc it made for this to-do itself (known['made']), with the same Drive access that made it.
+    A gog sign-in edits no other doc."""
+    writes = account.get('writes') or ()
+    return 'edit' in writes or bool(known.get('made') and account.get('gog') and 'create' in writes)
 
 
 def label(action):
@@ -837,10 +864,12 @@ class DocWriteTransport:
             raise ValueError('Only an approved doc write uses the doc transport')
         gog = getattr(self.connector, 'gog_google', lambda a: False)
         account = next((a for a in self.config.get('accounts', []) if a.get('id') == action['account_id']
-                        and (a.get('service') == 'docs' or action['op'] == 'create' and gog(a))), None)
+                        and (a.get('service') == 'docs' or (action['op'] == 'create' or action.get('made')) and gog(a))), None)
         if not account:
             raise OwnerError('That Docs connection is no longer here. Nothing was changed.')
-        if action['op'] not in self.connector.writes_on(self.config, account, self.helpers):
+        writes = self.connector.writes_on(self.config, account, self.helpers)
+        # a gog sign-in edits only a doc it made for this to-do (validate's made), with the Drive access that made it
+        if action['op'] not in writes and not (action['op'] == 'edit' and action.get('made') and gog(account) and 'create' in writes):
             raise OwnerError('Writing docs is not allowed for this connection anymore. Nothing was changed.')
         return self.connector.Writer(self.config, account, self.helpers)
 
@@ -974,7 +1003,8 @@ def targets(config, connector, helpers, check=True):
             continue
         out[a['id']] = {'name': str(a.get('display_name') or a.get('email') or a['id']), 'email': str(a.get('email') or '').lower(),
                         'provider': connector.provider(config, a) if a.get('service') == 'docs' else 'google',
-                        'boundary': a.get('boundary') or '', 'writes': writes}
+                        'boundary': a.get('boundary') or '', 'writes': writes,
+                        **({'gog': True} if a.get('service') != 'docs' else {})}
     return out
 
 
@@ -995,9 +1025,9 @@ def context(config, connector, helpers, files, value, area=None):
     accounts = targets(config, connector, helpers)
     snapshots = {}
     for w in wanted:
-        file_id = str(w.get('file_id') or '')
+        file_id = file_id_of(w.get('file_id'))
         known = files.get(file_id)
-        if w.get('op') != 'edit' or not known or file_id in snapshots or 'edit' not in (accounts.get(known['account_id']) or {}).get('writes', ()):
+        if w.get('op') != 'edit' or not known or file_id in snapshots or not can_edit(accounts.get(known['account_id']) or {}, known):
             continue
         account = next(a for a in config['accounts'] if a['id'] == known['account_id'])
         try:

@@ -71,7 +71,7 @@ Dann kann deine Machine:
 
 Sie durchsucht dein Drive nicht. Kommentare, Freigaben und Vorschläge sieht sie nur bei Dokumenten, die sie erstellt hat. Mehr bräuchte Zugriff auf dein ganzes Drive, und danach fragt sie nicht.
 
-Auf deinem eigenen Computer kann deine Machine ein neues Google-Dokument in einem dort angemeldeten Gmail-Konto erstellen, das schon Zugriff auf Drive hat. Deine anderen Google Docs und ihre Kommentare liest sie nicht. **Dokumente und Dateien** zeigt es als Google Docs, mit diesem Konto.
+Auf deinem eigenen Computer kann deine Machine ein neues Google-Dokument in einem dort angemeldeten Gmail-Konto erstellen, das schon Zugriff auf Drive hat. Deine anderen Google Docs und ihre Kommentare liest sie nicht. **Dokumente und Dateien** zeigt es als Google Docs, mit diesem Konto. Ein Dokument, das sie dort für eine Aufgabe erstellt hat, kann sie auch ändern.
 
 ## Arbeit oder privat
 

@@ -318,7 +318,9 @@ Every connection brings in signals; one that can send, reply, change events or w
 - A Word edit downloads the `.docx`, changes the `w:t` text in place (no new dependency; DTDs refused), and puts it back with `If-Match` on the eTag read just before.
 - A new doc is a small `.docx` uploaded with `conflictBehavior=fail` under a free name.
 
-`assistant doc-draft` lets a preparation print a doc's paragraphs and check its draft first.
+`assistant doc-draft` lets a preparation print a doc's paragraphs and check its draft first (`--event` for a doc event, `--file` for a doc made for the to-do or linked in its messages).
+
+A doc The Machine made for a to-do (its sent `doc_write` create) is one of that to-do's own docs for later edits, through the connection that made it. A gog Google sign-in edits only such a doc, with the Drive access that made it; it edits no other doc. An edit naming a doc that isn't the to-do's own is refused with the ids it may use.
 
 ### RSS/Atom
 
