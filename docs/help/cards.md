@@ -12,15 +12,16 @@ Your Machine reads everything new and makes a to-do only when something needs yo
 
 The **To-dos** page groups them:
 
-- **For you**: everything waiting on you, most urgent first. Each says **Prepared** (the work is done, and **Do it** or **Send** carries it out) **Needs you** (it needs your decision or an answer first) or **Preparing…** (your Machine is working on it).
-- **Just done**: a last step you confirmed, like a form or an issue, went through while you were away. It stays until you tap **Got it**, for a day at most, and your phone hears of it too.
+- **Just done**: at the top, a last step you confirmed, like a form or an issue, went through while you were away. It stays until you tap **Got it**, for a day at most, and your phone hears of it too.
+- **For you**: everything waiting on you, most urgent first. Each says **Prepared** (the work is done, and **Do it** or **Send** carries it out), **Needs you** (it needs your decision or an answer first), **Preparing…** (your Machine is working on it) or **To read** (a digest or brief, nothing to decide).
+- **Waiting on others**: folded, to-dos where the next step is someone else's (below).
 - **Coming back later**: snoozed to-dos, and ones with no answer to **Still needed?** (below).
 - **Promises**: what you promised and what others promised you. See [Promises](promises.md).
 - **Done / dismissed**: every finished to-do, newest first, with when it finished, like "Done 5 minutes ago". To-dos that seem finished already are marked **Looks done**.
 
 After you send, a short note says where the to-do went, like "Sent. Moved to Done." or "Sent. Moved to Later until Mon." **Open** takes you to it. Search finds a to-do by its title or by who it went to, also in Later and Done.
 
-**For you** puts first what's overdue or due by tomorrow, then questions from your Fleet, then the rest. Within each, newest first. A to-do keeps its place while your Machine prepares it and when it's done: only its mark changes. The other open groups put overdue or due by tomorrow first, the rest newest first. The sidebar keeps the same order.
+**For you** puts first what's overdue or due by tomorrow, then questions from your Fleet, then a board's follow-ups, then the rest. Within each, newest first. A to-do keeps its place while your Machine prepares it and when it's done: only its mark changes. The other open groups put overdue or due by tomorrow first, the rest newest first. The sidebar keeps the same order.
 
 **Looks done** means your Machine sees it's done, like "PR #3451 merged", but it isn't closed yet. **Reopen** puts it back on your list, and your Machine learns from it. These never show as late. After a day, it closes by itself, with **Undo**. A to-do you already handled yourself, like with a reply in Gmail or Slack, closes by itself too.
 
@@ -136,10 +137,12 @@ A "Waiting on" to-do links your last message to them, the one you're waiting on:
 
 ## Make one yourself
 
-**New to-do** (under **Search** on a computer) adds a to-do for anything. Creating it sends nothing. Without Work or Personal picked, it goes where it belongs, by who and what it's about. It also finds the email it follows up on, even older mail.
+**New to-do** (under **Search** on a computer, **+** on a phone, or `N`) adds a to-do for anything. Creating it sends nothing. Without **Work** or **Personal** picked, it goes where it belongs, by who and what it's about. It also finds the email it follows up on, even older mail.
 
 - **Due**: type a day or time, like "tomorrow", "next Fri", "3 Nov", "2pm" or "in 2 hours", in your own language too. The calendar icon has quick picks and **Choose date**.
-- **Message**: attach the message it's about: an email, Slack, Teams, WhatsApp, Telegram or any other message The Machine has. Search by text or sender. Each result shows where it's from, who sent it and when.
+- **Repeats**: it comes back on a rhythm. See [Recurring to-dos](recurring.md).
+- **Person**: link the people or companies it's about, up to 5.
+- Message icon: attach the message it's about: an email, Slack, Teams, WhatsApp, Telegram or any other message The Machine has. Search by text or sender. Each result shows where it's from, who sent it and when.
 - **Files**: tap the paperclip, paste a screenshot or drop files on the form. On a phone, the camera next to it takes a photo. Up to 5 files, like in the chat (see [Add files](card-chat.md#add-files)). × takes one back.
 
 The files stay with the to-do, and The Machine reads them when it works on it. Files alone are enough: it fills in the to-do from a PDF or text file. A photo shows as a small picture: tap it to see it full size.

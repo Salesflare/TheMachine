@@ -95,7 +95,9 @@ These are in the ⋯ menu on the routine. **Edit** changes its name and what it 
 
 In **Edit**, **Try it** runs the new words once and shows the result there. The routine stays as it was until **Save**.
 
-**Pause** stops the runs until **Resume**; paused routines wait under **Paused** at the bottom, and nothing missed while paused runs afterwards. **Stop** ends a routine for good.
+**Pause** stops the runs until **Resume** on its card; paused routines wait under **Paused**, below your routines, and nothing missed while paused runs afterwards. **Stop** ends a routine for good.
+
+Up to 20 routines fit, paused ones included. Stop one to add another.
 
 When you use **Ask for changes** on a routine’s to-do, or write in its chat, and your note is meant for every run, like "never use emoji", the to-do offers **Also change the routine**, on the to-do and in its chat under the reply. It shows what changes in the routine’s words, and the routine only changes when you tap **Change it**. **Keep it as is** leaves it. A fix to just that draft offers nothing.
 
@@ -117,7 +119,7 @@ It keeps your corrections to the job and leaves out what it sent or posted. A jo
 
 Before you add a suggestion, **Edit** and **Change when** in its ⋯ menu change it like any routine. **Run again** runs it now with its current words, to see newer results, say after a quiet weekend. It only reads, runs once per tap, and its new result replaces the old one.
 
-At most three suggestions wait at a time. After a week of good runs, the routine asks **Turn off the old OpenClaw job?** It only turns off when you tap **Turn it off**, and you can turn it back on in OpenClaw.
+At most three suggestions wait at a time. After a week of good runs, the routine asks **Turn off the old OpenClaw job?** It only turns off when you tap **Turn it off**, and you can turn it back on in OpenClaw. **Keep it** leaves both running.
 
 ## From what you do
 
@@ -138,4 +140,4 @@ It looks at most once a day and brings at most one new suggestion a week, withou
 
 ## Routines and recurring to-dos
 
-A recurring to-do (recurring.md) reminds you to do something. A routine is work your Machine does by itself and shows you. Use a recurring to-do for "pay the rent on the first", and a routine for "every Friday, tell me which deals went quiet".
+A [recurring to-do](recurring.md) reminds you to do something. A routine is work your Machine does by itself and shows you. Use a recurring to-do for "pay the rent on the first", and a routine for "every Friday, tell me which deals went quiet".
