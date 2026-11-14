@@ -244,7 +244,7 @@ class WorkersApp:
         import onboarding
         return memory_rebuild.step(Path(self.store.path).parent, str(self.config.get('openclaw') or 'openclaw'),
                                    onboarding.openclaw_settings(), onboarding.openclaw_dir(), time.time(),
-                                   dt.datetime.now(local_tz()), self.memory_rebuild_hours())
+                                   timeutil.clock(local_tz()), self.memory_rebuild_hours())
 
     def memory_rebuild_hold(self):
         """While the quiet window for OpenClaw's memory rebuild is open: why background turns wait (background_pause)."""
