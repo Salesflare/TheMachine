@@ -87,17 +87,24 @@ KINDS = {
 # The kinds of message a to-do can send (a prepared action's `kind`), in the order the code lists them. A send kind's row:
 # - name: the app it goes out in, as Settings, Activity names it (activity_log.MESSAGE_KINDS)
 # - text_only: a message without a subject (next_actions.TEXT_KINDS)
+# - to_person: it reaches a person: their conversations are read before it shows (handled_check), the owner is nudged
+#   to send it (push), an agent job edits its draft (agent_jobs); a reply in a doc's comments is none of these
+# - send_now: a connected AI may send its draft when the owner says so in a later message (card_actions send_now)
 SENDS = {
-    'email': {'name': 'Email', 'text_only': False},
-    'linkedin': {'name': 'LinkedIn', 'text_only': True},
-    'slack': {'name': 'Slack', 'text_only': True},
-    'x': {'name': 'X', 'text_only': True},
-    'whatsapp': {'name': 'WhatsApp', 'text_only': True},
-    'telegram': {'name': 'Telegram', 'text_only': True},
-    'signal': {'name': 'Signal', 'text_only': True},
-    'intercom': {'name': 'Intercom', 'text_only': True},
-    'doc_reply': {'name': 'Docs', 'text_only': True},
+    'email': {'name': 'Email', 'text_only': False, 'to_person': True, 'send_now': True},
+    'linkedin': {'name': 'LinkedIn', 'text_only': True, 'to_person': True, 'send_now': True},
+    'slack': {'name': 'Slack', 'text_only': True, 'to_person': True, 'send_now': True},
+    'x': {'name': 'X', 'text_only': True, 'to_person': True, 'send_now': True},
+    'whatsapp': {'name': 'WhatsApp', 'text_only': True, 'to_person': True, 'send_now': False},
+    'telegram': {'name': 'Telegram', 'text_only': True, 'to_person': True, 'send_now': False},
+    'signal': {'name': 'Signal', 'text_only': True, 'to_person': True, 'send_now': False},
+    'intercom': {'name': 'Intercom', 'text_only': True, 'to_person': True, 'send_now': False},
+    'doc_reply': {'name': 'Docs', 'text_only': True, 'to_person': False, 'send_now': False},
 }
+SEND = tuple(SENDS)  # every send kind: a draft the owner approves before it goes out
+TEXT_ONLY = tuple(k for k, s in SENDS.items() if s['text_only'])  # a message without a subject
+TO_PERSON = tuple(k for k, s in SENDS.items() if s['to_person'])  # it reaches a person, not a doc's comments
+SEND_NOW = tuple(k for k, s in SENDS.items() if s['send_now'])  # a connected AI may send it at the owner's word
 
 
 def of(*, family=None, view=None, timeline=None, service=None, send=None, flag=None):

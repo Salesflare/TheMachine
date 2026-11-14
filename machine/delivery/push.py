@@ -26,6 +26,7 @@ from sources import credential
 import still_needed
 from timeutil import local_tz, now
 from machine import todo_states
+from machine.kinds import TO_PERSON
 
 
 @functools.lru_cache(maxsize=4)
@@ -112,7 +113,7 @@ def reply_waits(row):
                and (s.get('kind') != 'email' or s.get('in_reply_to') or s.get('thread_id')) for s in steps)
 
 
-NUDGE_KINDS = ('email', 'linkedin', 'slack', 'x', 'whatsapp', 'telegram', 'signal', 'intercom', 'handoff')
+NUDGE_KINDS = (*TO_PERSON, 'handoff')
 
 
 def nudge_wait(db, suggestion_id, job_id, outcome, actions):

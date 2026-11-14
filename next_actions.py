@@ -32,6 +32,7 @@ import time
 import unicodedata
 from urllib.parse import urlsplit
 from machine.owner_error import OwnerError
+from machine.kinds import SEND, TEXT_ONLY
 
 SEND_SCOPES = {'https://www.googleapis.com/auth/gmail.send',
                'https://www.googleapis.com/auth/gmail.compose',
@@ -167,7 +168,7 @@ def attachment_bytes(record, config):
 
 
 # Owner-approved sends: each needs the Send review and Send now (Telegram) or the dashboard dialog.
-SEND_KINDS = ('email', 'email_demo', 'linkedin', 'slack', 'x', 'whatsapp', 'telegram', 'signal', 'intercom', 'doc_reply')
+SEND_KINDS = (*SEND, 'email_demo')  # and the demo's email, which goes nowhere
 # Owner-approved changes to The Machine's own code: Merge reviews the fix, Merge now applies it. A calendar change and a
 # doc write (a new doc, or an edit) are approved the same way; never resent when unclear (not in SEND_KINDS).
 APPROVE_KINDS = SEND_KINDS + ('merge', 'calendar', 'doc_write')
@@ -181,7 +182,7 @@ FINISH_VERBS = ('Submit', 'Pay', 'Book', 'Confirm', 'Order', 'Buy', 'Publish', '
 # Steps that still wait for the owner (a send, a merge, a calendar change, a final click, a handoff): a result that
 # has one is ready, not done. The prepare save refuses outcome:'done' with one, and the to-do says so.
 WAITING_KINDS = APPROVE_KINDS + FINISH_KINDS + ('handoff',)
-TEXT_KINDS = ('linkedin', 'slack', 'x', 'whatsapp', 'telegram', 'signal', 'intercom', 'doc_reply')  # a message without a subject
+TEXT_KINDS = TEXT_ONLY  # a message without a subject
 LINKEDIN_INBOX = Path(__file__).resolve().parent / 'integrations/linkedin_inbox.py'
 X_INBOX = Path(__file__).resolve().parent / 'integrations/x_inbox.py'
 X_URLISH = re.compile(r'(?:https?://)?(?:[\w-]+\.)+[a-zA-Z]{2,}(?:/\S*)?')

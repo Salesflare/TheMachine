@@ -33,10 +33,7 @@ JS_KEY = re.compile(r"(?:^|[,{\s])'?([a-z_]+(?:\.[a-z_]+)?)'?\s*:")
 
 # The hand-written lists of kinds each file has today: these only come down.
 KIND_LISTS = {
-    'activity.py': 1,
     'activity_log.py': 1,
-    'agent_jobs.py': 1,
-    'agents_app.py': 1,
     'ai_access.py': 1,
     'birthdays.py': 2,
     'check_now.py': 4,
@@ -52,17 +49,15 @@ KIND_LISTS = {
     'fleet.py': 1,
     'fleet_learnings.py': 1,
     'fleet_requests.py': 4,
-    'fleet_reviews.py': 1,
     'follow_ups.py': 2,
     'gap_note.py': 1,
     'graph.py': 19,
     'graph_board_reviews.py': 1,
     'machine/app/action_runs.py': 2,
-    'machine/app/card_actions.py': 4,
+    'machine/app/card_actions.py': 2,
     'machine/app/first_look.py': 1,
     'machine/app/fleet.py': 1,
     'machine/app/follow_ups.py': 2,
-    'machine/app/handled_check.py': 1,
     'machine/app/mail.py': 2,
     'machine/app/new_cards.py': 1,
     'machine/app/promise_checks.py': 1,
@@ -70,9 +65,7 @@ KIND_LISTS = {
     'machine/app/review.py': 1,
     'machine/browser.py': 1,
     'machine/graph/identities.py': 2,
-    'machine/cards.py': 2,
     'machine/chat.py': 2,
-    'machine/delivery/push.py': 1,
     'machine/sources/connectors.py': 1,
     'machine/sources/gmail.py': 1,
     'machine/sources/mail_senders.py': 1,
@@ -81,7 +74,6 @@ KIND_LISTS = {
     'machine/store/cards.py': 4,
     'machine/store/conversation.py': 1,
     'machine/store/core.py': 2,
-    'machine/store/decisions.py': 3,
     'machine/store/message_view.py': 8,
     'machine/store/profile.py': 1,
     'machine/store/review.py': 5,
@@ -95,13 +87,13 @@ KIND_LISTS = {
     'meeting_notes.py': 3,
     'meeting_prep.py': 1,
     'missed_work.py': 3,
-    'next_actions.py': 3,
+    'next_actions.py': 1,
     'project_about.py': 1,
     'record_log.py': 1,
     'sandbox/fixture.py': 2,
     'shared_graph.py': 3,
     'shared_graph_private.py': 7,
-    'talk_live.py': 2,
+    'talk_live.py': 1,
     'dashboard/events-list.js': 1,
     'dashboard/graph-followups-settings.js': 1,
     'dashboard/graph-record.js': 1,
@@ -214,6 +206,20 @@ class Registry(unittest.TestCase):
         self.assertEqual({k: s['name'] for k, s in kinds.SENDS.items()},
                          {k: v for k, v in __import__('activity_log').MESSAGE_KINDS.items() if k in kinds.SENDS})
         self.assertEqual(tuple(k for k, s in kinds.SENDS.items() if s['text_only']), next_actions.TEXT_KINDS)
+        # The send lists that ask the registry now hold what they spelled out before it (PR 2 moved them)
+        every = ('email', 'linkedin', 'slack', 'x', 'whatsapp', 'telegram', 'signal', 'intercom', 'doc_reply')
+        self.assertEqual(kinds.SEND, every)
+        self.assertEqual(kinds.TEXT_ONLY, every[1:])
+        self.assertEqual(kinds.TO_PERSON, every[:-1])
+        self.assertEqual(kinds.SEND_NOW, ('email', 'linkedin', 'slack', 'x'))
+        self.assertEqual(set(next_actions.SEND_KINDS), {*every, 'email_demo'})
+        self.assertEqual(set(__import__('talk_live').SEND_KINDS), {*every, 'doc_write'})
+        from machine.app import handled_check
+        from machine.delivery import push
+        self.assertEqual(set(push.NUDGE_KINDS), {*every[:-1], 'handoff'})
+        self.assertEqual(handled_check.REACHES, push.NUDGE_KINDS)
+        for row in kinds.SENDS.values():
+            self.assertEqual(set(row), {'name', 'text_only', 'to_person', 'send_now'})
         # every connector kind is here, with its connector's view
         from machine.sources.connectors import load_connector
         for path in sorted((ROOT / 'connectors').glob('*.py')):

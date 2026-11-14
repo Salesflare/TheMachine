@@ -31,10 +31,11 @@ from machine.sources.slack import slack_limits, slack_read_asked, slack_read_dro
 from models import background_model, openclaw_model
 from timeutil import now
 from machine import todo_states
+from machine.kinds import TO_PERSON
 
 
 # Steps that reach someone: before one shows, its people's conversations are checked
-REACHES = ('email', 'linkedin', 'slack', 'x', 'whatsapp', 'telegram', 'signal', 'intercom', 'handoff')
+REACHES = (*TO_PERSON, 'handoff')
 HOLD_SECONDS = 900   # how long a to-do or a promise waits for those reads at most; after that it goes on as it is
 FRESH_SECONDS = 300  # a read this recent counts as read
 CONVERSATIONS = 3    # Slack conversations read first, at most (one read every few minutes)

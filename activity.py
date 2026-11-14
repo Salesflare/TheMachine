@@ -26,6 +26,7 @@ from __future__ import annotations
 import datetime as dt
 import uuid
 from machine import todo_states
+from machine.kinds import SEND
 
 DAYS = 7
 KEEP_DAYS = 8
@@ -34,7 +35,7 @@ SEEN = ('shown', 'opened', 'visits', 'active_hours')
 CHOICES = {'accept': 'do_it', 'prepare_next': 'do_it', 'send': 'send', 'complete': 'done', 'reject': 'dismissed',
            'snooze': 'snoozed', 'other': 'chat'}
 OWNER_SOURCES = ('dashboard', 'telegram')
-SEND_KINDS = ('email', 'linkedin', 'slack', 'x', 'whatsapp', 'telegram', 'signal', 'intercom', 'doc_reply')
+SEND_KINDS = SEND
 KINDS = ('shown', 'opened', 'do_it', 'send', 'sent', 'done', 'dismissed', 'snoozed', 'chat', 'visits', 'active_hours')
 SHOWN = f"status IN {todo_states.sql(todo_states.OPEN_NOT_SNOOZED)} AND (deliver_after IS NULL OR deliver_after<=?)"
 

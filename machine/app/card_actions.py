@@ -40,6 +40,7 @@ import skills
 import task_invites
 from timeutil import local_tz, now
 from machine.owner_error import OwnerError
+from machine.kinds import SEND_NOW
 
 
 # A final step that goes to someone (a message, an invite, sharing) is a send: the owner sees and approves it on the
@@ -319,7 +320,7 @@ class CardActionsApp:
         if args.get('send_now') is True:
             # Only a draft the owner already had in front of them, approved in a later message of theirs. A draft
             # written or changed in this turn is saved and shown first: the owner reads it and taps Send.
-            ready=[a for a in next_actions.actions(action) if a['kind'] in ('email','linkedin','slack','x') and not a.get('to_options')]
+            ready=[a for a in next_actions.actions(action) if a['kind'] in SEND_NOW and not a.get('to_options')]
             with self.store.connect() as db:
                 why=unseen_draft(db,args['suggestion_id'],ready[0]['revision'],args.get('job_id')) if ready else None
             if why:
@@ -386,7 +387,7 @@ class CardActionsApp:
                     raise OwnerError('Prepared ahead: the draft is saved; the owner sends it themselves')
             # The owner asked for it to be sent: queue the draft exactly as their Send tap would
             # (same sender, signature and attachments), without a second confirmation.
-            ready=[a for a in next_actions.actions(action) if a['kind'] in ('email','linkedin','slack','x') and not a.get('to_options')]
+            ready=[a for a in next_actions.actions(action) if a['kind'] in SEND_NOW and not a.get('to_options')]
             if not ready:raise ValueError('send_now needs an email, LinkedIn, Slack or X draft with its recipients filled in')
             saved['send']=self.store.confirm_action(args['suggestion_id'],ready[0]['revision'],'assistant:'+uuid.uuid4().hex,'assistant')
         if args.get('do_now') is True and not saved.get('replayed'):
