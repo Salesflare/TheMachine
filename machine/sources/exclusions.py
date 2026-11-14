@@ -71,14 +71,24 @@ def routine_rules(rules):
     return [r for r in rules if not r.get('routine_recurring')], [r for r in rules if r.get('routine_recurring')]
 
 
+# Chat apps' phone notifications never come in (docs/help/android.md promises it). The OpenClaw Android app already
+# drops them (NotificationForwardingPolicy.kt, the same list); this keeps the promise with an older OpenClaw build or
+# another app that forwards notifications. Their chats come in through their own connections instead. Not
+# `default_exclude`: it holds for every owner.
+ANDROID_CHAT_APPS = {'packages': ['com.discord', 'com.whatsapp', 'com.whatsapp.w4b', 'org.telegram.messenger',
+                                  'org.telegram.messenger.web', 'org.thunderdog.challegram', 'org.thoughtcrime.securesms']}
+
+
 def default_exclusions(config, account):
+    if account.get('service') == 'android' and account.get('default_exclude') is False:
+        return [ANDROID_CHAT_APPS]
     if account.get('default_exclude') is False:
         return []
     if account.get('service') == 'android':
         # One connected work account does not cover every mailbox/workspace in
         # the phone app. Unknown account previews stay; explicit owner exclusions
         # can still suppress a whole package when that is genuinely wanted.
-        return [ANDROID_STATUS_NOTICES]
+        return [ANDROID_CHAT_APPS, ANDROID_STATUS_NOTICES]
     if account.get('service') in CALENDAR_SERVICES:
         return [ROUTINE_CALENDAR]
     return []
