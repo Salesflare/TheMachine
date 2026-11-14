@@ -1027,6 +1027,10 @@ class FollowUps(unittest.TestCase):
         app.action('follow_up_bring_back', {'id': acme}, owner_dashboard=True)
         with self.store.connect() as db:
             self.assertIsNone(db.execute('SELECT 1 FROM follow_up_ends WHERE project_id=?', (self.acme,)).fetchone())
+            # Both moves are in the to-do's history
+            self.assertEqual([tuple(r) for r in db.execute('SELECT from_status,to_status,reason FROM todo_moves WHERE suggestion_id=? '
+                                                           "AND reason LIKE 'follow_up_%' ORDER BY id", (acme,))],
+                             [('prepared', 'rejected', 'follow_up_owner'), ('rejected', 'prepared', 'follow_up_back')])
         self.assertEqual(next(c['state'] for c in self.cards() if c['suggestion_id'] == acme), 'open')
         # Once one went out, stopping moves it to Stalled or declined as the setting says; it comes back once moved out again
         with self.store.connect() as db:
