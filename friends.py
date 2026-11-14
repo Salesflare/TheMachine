@@ -158,6 +158,7 @@ class Friends:
     def friends_meeting_round(self):
         """With meeting questions on: ask a friend about the other people in an open card's meeting this week that
         friend is in too (the relay only carries meeting questions to a friend who is among the attendees)."""
+        import timeutil
         ref = self.friends_ref()
         friends = self.teammates(ref) if ref else []
         if not friends:
@@ -165,7 +166,7 @@ class Friends:
         from fleet import EMAIL, MEETING_DAYS, OPEN_CARD, account_emails
         mine = {e.lower() for e in account_emails(self.config)} | {str(a.get('email') or '').lower() for a in self.config.get('accounts', [])}
         by_email = {e.lower(): m for m in friends for e in m.get('emails', []) if isinstance(e, str)}
-        today = dt.datetime.now(dt.timezone.utc)
+        today = timeutil.clock()
         todo = []
         with self.connect() as db:
             cards = db.execute(f"SELECT id,event_ids FROM suggestions WHERE status IN ({','.join('?' * len(OPEN_CARD))}) "

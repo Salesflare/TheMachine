@@ -35,6 +35,7 @@ from zoneinfo import ZoneInfo
 
 import memory_use
 from machine import todo_states
+import timeutil
 
 LOG = logging.getLogger('personal-assistant')
 
@@ -69,7 +70,7 @@ OTHER_RULES = ('work-removal-backups', 'agents-md-backups')
 
 
 def utc_now():
-    return dt.datetime.now(dt.timezone.utc)
+    return timeutil.clock()
 
 
 def _iso(when):
@@ -267,7 +268,7 @@ def rotate_backups(data_dir, now=None, live=(), dry_run=False, local_tz=None):
     is its file's modification time. Its -wal, -shm and -journal files go with it. Only SQLite files and config.json
     copies made before a change are removed: notes and other files copied beside them stay."""
     now = now or utc_now()
-    zone = local_tz or dt.datetime.now().astimezone().tzinfo
+    zone = local_tz or timeutil.clock(None).astimezone().tzinfo
     data_dir = Path(data_dir).expanduser()
     copies = []
     for path in backup_copies(data_dir, live, configs=True):

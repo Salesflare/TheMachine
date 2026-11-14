@@ -31,6 +31,7 @@ import todo_areas
 from machine.browser import browser_lease_script
 from machine import todo_states
 from machine.owner_error import OwnerError
+import timeutil
 
 LOG = logging.getLogger('personal-assistant')
 OFFERED = 'birthdays_facebook:offered'  # enrich_prefs: the to-do was offered once (also when the owner said Not needed)
@@ -197,7 +198,7 @@ class BirthdaysFacebookApp:
         with self.store.connect() as db:
             db.set_progress_handler(lambda: time.monotonic() > deadline, 20000)
             try:
-                return birthdays_facebook.preview(db, result.get('items'), dt.datetime.now().date(), result.get('capped'),
+                return birthdays_facebook.preview(db, result.get('items'), timeutil.clock(None).date(), result.get('capped'),
                                                   result.get('missing'), deadline=deadline)
             except sqlite3.OperationalError:
                 if time.monotonic() > deadline:
@@ -260,7 +261,7 @@ class BirthdaysFacebookApp:
             again = []
             with self.store.connect() as db:
                 for sid in sids:
-                    fill = birthdays_facebook.fill_others(db, sid, result, dt.datetime.now().date())
+                    fill = birthdays_facebook.fill_others(db, sid, result, timeutil.clock(None).date())
                     if fill is None:
                         continue
                     LOG.info('facebook birthdays fill %s found=%s others=%s capped=%s missing=%s woke=%s rounds=%s ms=%s try=%s%s',

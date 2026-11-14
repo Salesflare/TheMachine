@@ -55,7 +55,8 @@ def ensure(db):
 
 
 def now():
-    return dt.datetime.now(dt.timezone.utc).isoformat(timespec='seconds')
+    import timeutil
+    return timeutil.clock().isoformat(timespec='seconds')
 
 
 def clip(text, n=CLIP):
@@ -96,10 +97,11 @@ def floor(db, current=None):
     """Signals from before this are history, never read. Kept once: from a Machine's last pass that went through when
     it had passes before signals were tracked one by one (so it doesn't learn from its history twice, and a failed pass
     after it loses nothing), else FIRST_DAYS back."""
+    import timeutil
     row = db.execute("SELECT value FROM learning_state WHERE key='floor'").fetchone()
     if row:
         return row[0]
-    current = current or dt.datetime.now(dt.timezone.utc)
+    current = current or timeutil.clock()
     value = (db.execute("SELECT max(started_at) FROM profile_runs WHERE kind='tune' AND status='ok'").fetchone()[0] or
              (current - dt.timedelta(days=FIRST_DAYS)).isoformat())
     db.execute("INSERT INTO learning_state(key,value) VALUES('floor',?)", (value,))
@@ -210,7 +212,8 @@ def settle(db):
 def due(db, current=None):
     """A pass is due: at least MIN_SIGNALS waiting, nothing else running, and none in the last HOURS (SOON_HOURS
     while more than one batch waits and the last pass went through)."""
-    current = current or dt.datetime.now(dt.timezone.utc)
+    import timeutil
+    current = current or timeutil.clock()
     ensure(db)
     settle(db)
     count = waiting(db, floor(db, current))
@@ -222,7 +225,8 @@ def due(db, current=None):
 
 
 def evidence(db, voices, current=None):
-    current = current or dt.datetime.now(dt.timezone.utc)
+    import timeutil
+    current = current or timeutil.clock()
     since = floor(db, current)
     rows = batch(db, since)
     source = 'source' if 'source' in {r[1] for r in db.execute('PRAGMA table_info(facts)')} else 'NULL source'

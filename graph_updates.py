@@ -22,7 +22,7 @@ SCAN = 2000   # rows read per source and day at most: a day of a big first look 
 
 def since(now=None):
     """The owner's midnight today, in UTC ISO (what the database stores)."""
-    current = (now or dt.datetime.now(dt.timezone.utc)).astimezone(timeutil.local_tz())
+    current = (now or timeutil.clock()).astimezone(timeutil.local_tz())
     return current.replace(hour=0, minute=0, second=0, microsecond=0).astimezone(dt.timezone.utc).isoformat()
 
 

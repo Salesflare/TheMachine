@@ -6,6 +6,7 @@ import json
 
 import graph
 from machine import stamps
+import timeutil
 
 
 # What sharing works out from on a person's page and the to-do list, kept between requests (machine/stamps.py):
@@ -87,7 +88,7 @@ def renewed(scope, db, memo, hold, private=None):
     out._automated_memo = memo
     out._private_found, out._private_memo = {}, private  # read from the messages, which change all the time
     out._signals = {}  # the messages themselves too (Scope.signals)
-    out.hold = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(seconds=hold)).isoformat(timespec='seconds')
+    out.hold = (timeutil.clock() - dt.timedelta(seconds=hold)).isoformat(timespec='seconds')
     out.fresh = {r[0] for r in db.execute('SELECT thread FROM share_threads WHERE hand IS NULL AND sorted_at>?', (out.hold,))}
     out._slack_load(db)
     return out

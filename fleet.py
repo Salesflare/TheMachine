@@ -82,6 +82,7 @@ import fleet_learnings
 import embeddings
 from machine import todo_states
 from machine.owner_error import OwnerError
+import timeutil
 
 LOG = logging.getLogger('personal-assistant')
 SCHEMA = '''
@@ -409,7 +410,7 @@ def pair(code, label, emails, timeout=30):
 
 
 def now():
-    return dt.datetime.now(dt.timezone.utc).isoformat(timespec='seconds')
+    return timeutil.clock().isoformat(timespec='seconds')
 
 
 def ensure(db):
@@ -1049,7 +1050,7 @@ def brief_facts(db, accounts, since, secret, internal, today=None, team=(), mine
     - meetings: meetings with outside people from `since` to a week ahead.
     allowed: in a Work Fleet, whether one event is something the Team Graph shares with the team (Fleet.brief_shares):
     only those count, so a private, personal or sensitive thread never reaches a brief. None: every work event."""
-    today = today or dt.datetime.now(dt.timezone.utc).date()
+    today = today or timeutil.clock().date()
     ok = (lambda row: True) if allowed is None else (lambda row: allowed({k: row[k] for k in ('id', 'account_id', 'kind', 'metadata')}))
     out = {'touched': [], 'quiet': [], 'unanswered': [], 'replied': [], 'meetings': []}
     if not accounts:
@@ -1248,7 +1249,7 @@ def free_draft(db, accounts, text, search=None, internal=()):
     last = max((m['at'] or '' for m in matches), default='')[:7]
     if re.fullmatch(r'\d{4}-\d\d', last):  # as people say it: November, or November 2025 in another year
         year, month = int(last[:4]), int(last[5:])
-        last = MONTHS[month - 1] + (f' {year}' if year != dt.date.today().year else '')
+        last = MONTHS[month - 1] + (f' {year}' if year != timeutil.today().year else '')
     draft = (f"Yes, I have: {what} on this" + (f", with {', '.join(orgs[:3])}" if orgs else '')
              + (f", most recently in {last}" if last else '') + '. Happy to tell you more.')
     return draft[:FREE_ANSWER_CHARS], matches
@@ -1872,7 +1873,7 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
 
     # -- the owner's hours
     def local_now(self):
-        return self.hours['local_now']() if self.hours.get('local_now') else dt.datetime.now().astimezone()
+        return self.hours['local_now']() if self.hours.get('local_now') else timeutil.clock(None).astimezone()
 
     def working(self, local=None):
         """Within the owner's work days and hours: when briefs are asked and told, and brief and free questions notify."""
@@ -2251,7 +2252,7 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
         request settled before it was told, or an old notice, only shows in the Fleet tab."""
         if not self.notify_notice:
             return []
-        old = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=2)).isoformat(timespec='seconds')
+        old = (timeutil.clock() - dt.timedelta(days=2)).isoformat(timespec='seconds')
         with self.connect() as db:
             rows = db.execute('SELECT * FROM fleet_notices WHERE notified_at IS NULL ORDER BY at,id LIMIT 5').fetchall()
             db.executemany('UPDATE fleet_notices SET notified_at=? WHERE id=?', [(now(), r['id']) for r in rows])  # marked first
@@ -2335,7 +2336,7 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
         """Tell the owner about questions waiting for them: once each, together when they arrived together."""
         if not self.notify:
             return []
-        stamp = clock or dt.datetime.now(dt.timezone.utc)
+        stamp = clock or timeutil.clock()
         with self.connect() as db:
             rows = self.untold(db)
         if not rows:
@@ -2494,7 +2495,7 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
 
     def meeting_round_in(self, fleet):
         mine, team = self.my_emails(), {e for m in self.teammates(fleet) for e in m.get('emails', [])}
-        today = dt.datetime.now(dt.timezone.utc)
+        today = timeutil.clock()
         asked = 0
         accounts = self.fleet_accounts(fleet)  # a personal calendar, or another company's, never reaches this Fleet
         with self.connect() as db:
@@ -2576,7 +2577,7 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
                 self.build_brief(ref, period, settings['every'], since)
             else:
                 count = self._brief_answers(ref, period)
-                stale = (dt.datetime.now(dt.timezone.utc) - dt.datetime.fromisoformat(row['built_at'])).total_seconds() > BRIEF_REBUILD
+                stale = (timeutil.clock() - dt.datetime.fromisoformat(row['built_at'])).total_seconds() > BRIEF_REBUILD
                 # rebuilt while it settles, and after that while a to-do of it is open: a reply or claim settles that to-do
                 if count != row['answers'] or (stale and (not row['told_at'] or self.brief_todos_open(ref))):
                     self.build_brief(ref, period, row['every'], json.loads(row['view']).get('since') or since)
@@ -2587,7 +2588,7 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
             except (ValueError, KeyError, TypeError, sqlite3.Error) as error:
                 LOG.warning('fleet brief todos error=%s', type(error).__name__)
         with self.connect() as db:
-            db.execute('DELETE FROM fleet_briefs WHERE built_at<?', ((dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=NOTICE_DAYS)).isoformat(timespec='seconds'),))
+            db.execute('DELETE FROM fleet_briefs WHERE built_at<?', ((timeutil.clock() - dt.timedelta(days=NOTICE_DAYS)).isoformat(timespec='seconds'),))
         return asked
 
     def _brief_answers(self, fleet, period):
@@ -2630,9 +2631,9 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
             if not row or row['told_at']:
                 return None
             view = json.loads(row['view'])
-            age = (dt.datetime.now(dt.timezone.utc) - dt.datetime.fromisoformat(row['built_at'])).total_seconds()
+            age = (timeutil.clock() - dt.datetime.fromisoformat(row['built_at'])).total_seconds()
             first = db.execute('SELECT MIN(at) FROM fleet_out WHERE fleet=? AND context=?', (fleet, 'brief:' + period)).fetchone()[0]
-            waited = (dt.datetime.now(dt.timezone.utc) - dt.datetime.fromisoformat(first)).total_seconds() if first else age
+            waited = (timeutil.clock() - dt.datetime.fromisoformat(first)).total_seconds() if first else age
             if (view['missing'] and waited < BRIEF_SETTLE) or not self.working(local):
                 return None
             db.execute('UPDATE fleet_briefs SET told_at=? WHERE fleet=? AND period=?', (now(), fleet, period))  # marked first
@@ -2655,7 +2656,7 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
         """The latest brief of each Work Fleet, for the Fleet tab."""
         with self.connect() as db:
             rows = db.execute('SELECT * FROM fleet_briefs WHERE built_at>? ORDER BY built_at DESC',
-                              ((dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=8)).isoformat(timespec='seconds'),)).fetchall()
+                              ((timeutil.clock() - dt.timedelta(days=8)).isoformat(timespec='seconds'),)).fetchall()
         out = {}
         for row in rows:
             if row['fleet'] not in out:
@@ -2698,7 +2699,7 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
         BRIEF_LEARNED_DAYS goes."""
         found = self.meta('brief_learned') or {}
         mine = dict(found.get(fleet) or {})
-        cutoff = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=BRIEF_LEARNED_DAYS)).isoformat(timespec='seconds')
+        cutoff = (timeutil.clock() - dt.timedelta(days=BRIEF_LEARNED_DAYS)).isoformat(timespec='seconds')
         changed = False
         for x in view.get('several') or []:
             k = 'several:' + str(x.get('domain'))
@@ -2906,7 +2907,7 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
                 if not db.execute('SELECT 1 FROM fleet_handled LIMIT 1').fetchone():
                     return
             sources = lambda card, ref: family_done.sources(db, card) if ref in families else self.shared_messages(db, card, ref)
-            since = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=HANDLED_DAYS)).isoformat()
+            since = (timeutil.clock() - dt.timedelta(days=HANDLED_DAYS)).isoformat()
             closed = db.execute(f"SELECT s.id,s.status,s.event_ids,s.title,s.body,s.next_action,s.area,s.bill FROM suggestions s WHERE s.status IN {todo_states.sql(todo_states.CLOSED)} AND "
                                 '(SELECT max(created_at) FROM decisions d WHERE d.suggestion_id=s.id)>=? ORDER BY s.created_at DESC LIMIT 300', (since,)).fetchall()
             out = {r['key']: dict(r) for r in db.execute('SELECT * FROM fleet_handled')}
@@ -3079,7 +3080,7 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
             self.relay.call('POST', '/ack', acknowledged)
         with self.connect() as db:
             expired = db.execute("SELECT id,telegram_message_id FROM fleet_in WHERE status='waiting' AND at<?",
-                                 ((dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=APPROVAL_DAYS)).isoformat(timespec='seconds'),)).fetchall()
+                                 ((timeutil.clock() - dt.timedelta(days=APPROVAL_DAYS)).isoformat(timespec='seconds'),)).fetchall()
             for row in expired:
                 db.execute("UPDATE fleet_in SET status='expired' WHERE id=?", (row['id'],))
         for message_id in {r['telegram_message_id'] for r in expired if r['telegram_message_id']}:
@@ -3093,7 +3094,7 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
         self.notice_round()
         with self.connect() as db:
             db.execute('DELETE FROM fleet_notices WHERE received_at<?',
-                       ((dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=NOTICE_DAYS)).isoformat(timespec='seconds'),))
+                       ((timeutil.clock() - dt.timedelta(days=NOTICE_DAYS)).isoformat(timespec='seconds'),))
         stamp = time.monotonic()
         if stamp - self.last['claims'] > CLAIMS_EVERY or not wait:
             self.last['claims'] = stamp
@@ -3149,7 +3150,7 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
         """Where this Machine's open questions are on the Network, so the owner sees "not delivered yet" (docs/network.md)."""
         with self.connect() as db:
             ids = [r['id'] for r in db.execute("SELECT id FROM fleet_out WHERE status IN ('asked','waiting') AND at>? ORDER BY at DESC LIMIT 200",
-                                               ((dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=3)).isoformat(timespec='seconds'),))]
+                                               ((timeutil.clock() - dt.timedelta(days=3)).isoformat(timespec='seconds'),))]
         if not ids:
             return
         try:
@@ -3364,14 +3365,14 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
         """Until when the owner allows support access on this Machine, or None. Kept here: the control plane's own
         record of it only lets it ask; this Machine answers only while this says so."""
         until = self.meta('support_access_until')
-        current = dt.datetime.now(dt.timezone.utc).isoformat(timespec='seconds')
+        current = timeutil.clock().isoformat(timespec='seconds')
         return until if isinstance(until, str) and until > current else None
 
     def support_access(self, allow=None):
         """The owner's switch, from their own dashboard: on for SUPPORT_HOURS, or off. The control plane is told (it
         audits it and lists it for the team) and says which reads there were. Returns the view for the switch."""
         if allow is not None:
-            until = (dt.datetime.now(dt.timezone.utc) + dt.timedelta(hours=self.SUPPORT_HOURS)).isoformat(timespec='seconds') if allow else None
+            until = (timeutil.clock() + dt.timedelta(hours=self.SUPPORT_HOURS)).isoformat(timespec='seconds') if allow else None
             self.set_meta('support_access_until', until)
             found = self.relay.call('POST', '/support-access', {'allow': bool(allow)}, timeout=20) or {}
         else:
@@ -3596,7 +3597,7 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
     def free_asked(self, db):
         """The owner's free questions to a Fleet, each with its teammates' answers as they arrive, attributed; "no
         answer" once declined, expired, or FREE_WAIT_HOURS passed without one. Answers are a teammate's plain text."""
-        late = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(hours=FREE_WAIT_HOURS)).isoformat(timespec='seconds')
+        late = (timeutil.clock() - dt.timedelta(hours=FREE_WAIT_HOURS)).isoformat(timespec='seconds')
         out = {}
         for r in db.execute("SELECT * FROM fleet_out WHERE context LIKE 'free:%' ORDER BY at DESC LIMIT 200"):
             item = out.setdefault(r['context'], {'id': r['context'][5:], 'fleet': r['fleet'], 'at': r['at'],

@@ -84,7 +84,7 @@ def ensure(db):
 
 
 def now():
-    return dt.datetime.now(dt.timezone.utc).isoformat(timespec='seconds')
+    return timeutil.clock().isoformat(timespec='seconds')
 
 
 def clip(text, n=CLIP):
@@ -192,7 +192,7 @@ def due(db, current=None, limit=PER_PASS):
     """The people whose summary a pass rewrites now ([] when none, or a pass ran too recently or too often today).
     Someone a matter changed with since their summary (changes) comes first, also within PERSON_HOURS (EARLY_HOURS).
     Past PASSES_PER_DAY, only those, each marked 'extra' (start_run counts it against EARLY_PASSES)."""
-    current = current or dt.datetime.now(dt.timezone.utc)
+    current = current or timeutil.clock()
     ensure(db)
     last = db.execute('SELECT max(started_at) FROM person_summary_runs').fetchone()[0]
     if last and last > (current - dt.timedelta(minutes=PASS_MINUTES)).isoformat():

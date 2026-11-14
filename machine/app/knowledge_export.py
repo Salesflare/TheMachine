@@ -12,6 +12,7 @@ from pathlib import Path
 
 from machine.export import knowledge
 from machine.owner_error import OwnerError
+import timeutil
 
 KEEP_SECONDS = 600  # an export not downloaded by then is dropped
 
@@ -33,7 +34,7 @@ class KnowledgeExportApp:
         reader = knowledge.StoreReader(self.store, self.config, getattr(self, 'fleet', None), workspace)
         bundle = knowledge.collect(reader, options)
         data = knowledge.zipped(bundle)
-        stamp = dt.date.today().isoformat()
+        stamp = timeutil.today().isoformat()
         name = f'the-machine-knowledge-{stamp}.zip'
         if passphrase:
             data, name = knowledge.encrypt(data, passphrase), name + '.enc'

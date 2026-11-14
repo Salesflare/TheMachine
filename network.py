@@ -44,11 +44,13 @@ KEEP_DAYS = 30
 
 
 def now():
-    return dt.datetime.now(dt.timezone.utc).isoformat(timespec='seconds')
+    import timeutil
+    return timeutil.clock().isoformat(timespec='seconds')
 
 
 def _later(seconds):
-    return (dt.datetime.now(dt.timezone.utc) + dt.timedelta(seconds=seconds)).isoformat(timespec='seconds')
+    import timeutil
+    return (timeutil.clock() + dt.timedelta(seconds=seconds)).isoformat(timespec='seconds')
 
 
 def ensure(db):
@@ -278,6 +280,7 @@ class Sealing:
 
     def flush(self):
         """Retry committed intents with backoff; a stale retry never removes a newer one."""
+        import timeutil
         import fleet as fleet_module
         with self.fleet.connect() as db:
             rows = db.execute('SELECT * FROM network_outbox WHERE next_at<=? ORDER BY created_at LIMIT 20', (now(),)).fetchall()
@@ -288,7 +291,7 @@ class Sealing:
             except (fleet_module.Unavailable, OSError) as error:
                 done = False
                 with self.fleet.connect() as db:
-                    if row['created_at'] < (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=OUTBOX_DAYS)).isoformat(timespec='seconds'):
+                    if row['created_at'] < (timeutil.clock() - dt.timedelta(days=OUTBOX_DAYS)).isoformat(timespec='seconds'):
                         LOG.warning('network gave up path=%s after=%sd', row['path'], OUTBOX_DAYS)
                         db.execute('DELETE FROM network_outbox WHERE key=? AND body=?', (row['key'], row['body']))
                     else:
@@ -380,7 +383,8 @@ class Sealing:
                 db.execute('INSERT OR IGNORE INTO network_twins(request_key,ask_id,at) VALUES(?,?,?)', (str(ask_id), str(canonical), now()))
 
     def tidy(self):
-        cut = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=KEEP_DAYS)).isoformat(timespec='seconds')
+        import timeutil
+        cut = (timeutil.clock() - dt.timedelta(days=KEEP_DAYS)).isoformat(timespec='seconds')
         with self.fleet.connect() as db:
             db.execute('DELETE FROM network_taken WHERE at<?', (cut,))
             for table in ('network_twins', 'network_aliases', 'network_replies'):

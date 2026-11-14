@@ -194,6 +194,7 @@ class Mirror:
         ss.set_state(self.db, names_at=ss.now())
 
     def keep(self, chat_id, author, sent_at, from_me, sender, message, edited=False):
+        import timeutil
         text = message.get('message') if isinstance(message.get('message'), str) else ''
         media = media_kind(message)
         if message.get('viewOnce'):
@@ -201,7 +202,7 @@ class Mirror:
         if not text and not media:
             return False
         seconds = message.get('expiresInSeconds') or 0
-        expires = (dt.datetime.now(dt.timezone.utc) + dt.timedelta(seconds=int(seconds))).isoformat(timespec='seconds') if seconds else None
+        expires = (timeutil.clock() + dt.timedelta(seconds=int(seconds))).isoformat(timespec='seconds') if seconds else None
         quote = message.get('quote') or {}
         if not sent_at:
             return False
@@ -349,13 +350,14 @@ def program(args):
 def link(rpc, store, seal, wait=LINK_WAIT, clock=time.monotonic):
     """Links this Machine as a device of the owner's Signal: a QR code to scan in Signal on the phone, Settings, Linked
     devices, Link new device. Signal's code lasts a minute or two; a new one follows until LINK_WAIT."""
+    import timeutil
     db = ss.connect(store)
     until = clock() + wait
     while True:
         uri = str((rpc.call('startLink') or {}).get('deviceLinkUri') or '')
         if not uri.startswith('sgnl://linkdevice?'):
             raise RuntimeError('no_code')
-        emit('qr', matrix=qr.encode(uri), expires=(dt.datetime.now(dt.timezone.utc) + dt.timedelta(seconds=CODE_LIFE)).isoformat(timespec='seconds'))
+        emit('qr', matrix=qr.encode(uri), expires=(timeutil.clock() + dt.timedelta(seconds=CODE_LIFE)).isoformat(timespec='seconds'))
         try:
             result = rpc.call('finishLink', {'deviceLinkUri': uri, 'deviceName': ss.DEVICE}, wait=max(5, min(until - clock(), 300))) or {}
             break

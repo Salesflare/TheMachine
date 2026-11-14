@@ -610,6 +610,7 @@ class LoginStore:
             return self._read().get(site(host))
 
     def save(self, host, username=None, password=None):
+        import timeutil
         with self.lock:
             logins = self._read()
             entry = logins.get(site(host)) or {}
@@ -617,7 +618,7 @@ class LoginStore:
                 entry['username'] = username
             if password:
                 entry['password'] = password
-            entry['saved_at'] = dt.datetime.now(dt.timezone.utc).isoformat(timespec='seconds')
+            entry['saved_at'] = timeutil.clock().isoformat(timespec='seconds')
             logins[site(host)] = entry
             self._write(logins)
 

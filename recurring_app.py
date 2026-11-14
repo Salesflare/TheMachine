@@ -15,6 +15,7 @@ import crm_fixes
 import locale_prefs
 import recurring
 from machine.owner_error import OwnerError
+import timeutil
 
 LOG = logging.getLogger('personal-assistant')
 OFFER_EVERY = 3600  # seconds between looks for new offers
@@ -47,11 +48,11 @@ class RecurringApp:
             return None
 
     def recurring_today(self):
-        return dt.datetime.now(self.recurring_tz()).date()
+        return timeutil.clock(self.recurring_tz()).date()
 
     @staticmethod
     def recurring_stamp():
-        return dt.datetime.now(dt.timezone.utc).isoformat()
+        return timeutil.clock().isoformat()
 
     def recurring_where(self, repeat):
         """A workday rule from the dashboard (Custom…) gets the owner's country, so its days skip their holidays."""
@@ -241,8 +242,8 @@ class RecurringApp:
         while not self.stop.wait(60):
             try:
                 self.recurring_step()
-                if dt.datetime.now().timestamp() - last > OFFER_EVERY:
-                    last = dt.datetime.now().timestamp()
+                if timeutil.clock(None).timestamp() - last > OFFER_EVERY:
+                    last = timeutil.clock(None).timestamp()
                     self.recurring_offers_step()
             except Exception as error:
                 LOG.error('recurring error=%s', type(error).__name__)

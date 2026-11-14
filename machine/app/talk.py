@@ -35,6 +35,7 @@ from timeutil import local_tz, now
 import voice_input
 from machine import todo_states
 from machine.owner_error import OwnerError
+import timeutil
 
 
 class TalkApp:
@@ -408,7 +409,7 @@ class TalkApp:
         accounts = [a['id'] for a in self.config.get('accounts', [])]
         if name == 'calendar':
             try:
-                day = dt.date.fromisoformat(str(args.get('day') or '')) if args.get('day') else dt.datetime.now(local_tz()).date()
+                day = dt.date.fromisoformat(str(args.get('day') or '')) if args.get('day') else timeutil.clock(local_tz()).date()
             except ValueError:
                 return {'error': 'day is YYYY-MM-DD'}
             days = max(1, min(int(args.get('days') or 1), 14))

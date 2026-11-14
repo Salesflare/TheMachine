@@ -20,6 +20,7 @@ from models import background_model, has_model
 from sources import CALENDAR_SERVICES, credential, gog_read
 from timeutil import local_tz, now
 from machine.owner_error import OwnerError
+import timeutil
 
 LOG = logging.getLogger('personal-assistant')
 
@@ -189,7 +190,7 @@ class MeetingWritesApp:
         calendars = [a['id'] for a in self.config['accounts'] if a.get('service') in CALENDAR_SERVICES]
         with self.store.connect() as db:
             if args.get('event_id') in (None, ''):
-                day = str(args.get('day') or dt.datetime.now(local_tz()).date().isoformat())
+                day = str(args.get('day') or timeutil.clock(local_tz()).date().isoformat())
                 try:
                     dt.date.fromisoformat(day)
                 except ValueError:

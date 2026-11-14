@@ -128,7 +128,8 @@ def day_payload(db, day):
 
 def send(connect, call, current=None):
     """The finished days not sent yet (the last BACK_DAYS), one call each, at most every SEND_EVERY. Returns days sent."""
-    current = current or dt.datetime.now(dt.timezone.utc)
+    import timeutil
+    current = current or timeutil.clock()
     with connect() as db:
         ensure(db)
         if not error_feed.on(db):

@@ -499,7 +499,7 @@ def hearing(languages):
 def owner_clock(zone=None, at=None):
     """The owner's local time and time zone name (setup and Settings' time zone, timeutil), for the instructions."""
     tz = ZoneInfo(zone) if zone else timeutil.local_tz()
-    local = (at or dt.datetime.now(dt.timezone.utc)).astimezone(tz)
+    local = (at or timeutil.clock()).astimezone(tz)
     return local.strftime('%A %d %B %Y, %H:%M'), getattr(tz, 'key', None) or str(tz)
 
 

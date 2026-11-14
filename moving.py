@@ -326,8 +326,9 @@ def not_exported(config, keys, emptied):
 
 
 def _add_bytes(archive, name, data):
+    import timeutil
     info = tarfile.TarInfo(name)
-    info.size, info.mode, info.mtime = len(data), 0o600, int(dt.datetime.now().timestamp())
+    info.size, info.mode, info.mtime = len(data), 0o600, int(timeutil.clock(None).timestamp())
     archive.addfile(info, io.BytesIO(data))
 
 
@@ -350,6 +351,7 @@ def export(config_path, out_dir, passphrase=None, workspace=None, openclaw_home=
     """Write the encrypted archive (name ends in .tar.gz.enc) into out_dir and return (path, manifest). Without a
     passphrase an export code is made and returned as manifest['code'] (never written into the archive): show it,
     the import needs it. Keys and tokens come along only when `keys` is true, and then only with a passphrase."""
+    import timeutil
     if passphrase is not None and len(passphrase) < MIN_PASSPHRASE:
         raise MoveError(f'Pick a passphrase of at least {MIN_PASSPHRASE} characters')
     if keys and passphrase is None:
@@ -360,7 +362,7 @@ def export(config_path, out_dir, passphrase=None, workspace=None, openclaw_home=
     code = None if passphrase is not None else new_code()
     left_out = {}
     items = [i for i in plan(config_path, workspace, openclaw_home, left_out, home) if secrets_too or i[0] != 'secret']
-    now = now or dt.datetime.now(dt.timezone.utc)
+    now = now or timeutil.clock()
     manifest = {'format': FORMAT, 'created_at': now.isoformat(timespec='seconds'), 'source': source,
                 'data_dir': str(config_path.parent), 'workspace_dir': str(_workspace(workspace)), 'includes_keys': secrets_too,
                 'telegram': telegram(openclaw_home), 'reconnect': reconnect(config, secrets_too), 'left_out': left_out,
@@ -601,7 +603,8 @@ def import_(archive_path, config_path, passphrase=None, workspace=None, openclaw
 
 def finish(openclaw_home=None, now=None):
     """`assistant import --finish`: OpenClaw's conversations an import left waiting because OpenClaw ran."""
-    now = now or dt.datetime.now(dt.timezone.utc)
+    import timeutil
+    now = now or timeutil.clock()
     notes = []
     return {'restored': elsewhere.finish(_openclaw_home(openclaw_home), notes, f'{now:%Y%m%d-%H%M%S}'), 'notes': notes}
 
@@ -619,6 +622,7 @@ def stage(archive_path, config_path, passphrase=None, now=None):
     private folder until apply_staged() puts it in place with the service stopped (a hosted Machine's server does
     that: the dashboard can't stop itself). Returns its summary: {'created_at', 'source', 'parts', 'not_exported',
     'includes_keys', 'staged_at'}. A newer upload replaces an older one."""
+    import timeutil
     discard_staged(config_path)
     folder = _staged_dir(config_path)
     os.makedirs(folder.parent, mode=0o700, exist_ok=True)
@@ -627,7 +631,7 @@ def stage(archive_path, config_path, passphrase=None, now=None):
         _, manifest, _ = _unpack(Path(archive_path).expanduser(), folder, passphrase)
         summary = {'created_at': manifest.get('created_at'), 'source': manifest.get('source'), 'parts': manifest.get('parts') or {},
                    'not_exported': manifest.get('not_exported') or [], 'includes_keys': bool(manifest.get('includes_keys')),
-                   'staged_at': (now or dt.datetime.now(dt.timezone.utc)).isoformat(timespec='seconds')}
+                   'staged_at': (now or timeutil.clock()).isoformat(timespec='seconds')}
         (folder / 'staged.json').write_text(json.dumps(summary))
         for name in os.listdir(folder):  # only the unpacked export and its summary stay
             if name not in ('export', 'staged.json'):
@@ -640,13 +644,14 @@ def stage(archive_path, config_path, passphrase=None, now=None):
 
 def staged(config_path, now=None):
     """The summary of an export waiting to be imported (stage), or None. One older than STAGED_HOURS is shredded."""
+    import timeutil
     folder = _staged_dir(config_path)
     try:
         summary = json.loads((folder / 'staged.json').read_text())
     except (OSError, ValueError):
         return None
     at = dt.datetime.fromisoformat(summary.get('staged_at') or '1970-01-01T00:00:00+00:00')
-    if (now or dt.datetime.now(dt.timezone.utc)) - at > dt.timedelta(hours=STAGED_HOURS):
+    if (now or timeutil.clock()) - at > dt.timedelta(hours=STAGED_HOURS):
         discard_staged(config_path)
         return None
     return summary
@@ -750,8 +755,9 @@ def _import(archive_path, config_path, passphrase=None, workspace=None, openclaw
             keep_hosted=False, staged=None):
     """Put an export back on this computer. Returns {'restored', 'reconnect', 'notes', 'telegram', 'held', 'parts',
     'not_exported'}. keep_hosted: a hosted Machine takes an export of a computer, keeping its own hosted settings."""
+    import timeutil
     config_path = Path(config_path).expanduser()
-    now, home_dir = now or dt.datetime.now(dt.timezone.utc), home
+    now, home_dir = now or timeutil.clock(), home
     if config_path.exists() and not force:
         try:
             existing = json.loads(config_path.read_text())

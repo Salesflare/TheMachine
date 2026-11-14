@@ -35,6 +35,7 @@ import office_files  # noqa: E402
 import service  # noqa: E402
 import support  # noqa: E402
 from machine import todo_states
+import timeutil
 
 _spec = importlib.util.spec_from_file_location('moving', Path(__file__).resolve().with_name('moving.py'))
 moving = importlib.util.module_from_spec(_spec)
@@ -378,7 +379,7 @@ def preview_cards(status, run):
 
 
 def preview_progress(run, cards):
-    elapsed = int((dt.datetime.now(dt.timezone.utc) - dt.datetime.fromisoformat(run['started_at'])).total_seconds())
+    elapsed = int((timeutil.clock() - dt.datetime.fromisoformat(run['started_at'])).total_seconds())
     phase = {'starting': 'starting the check in OpenClaw', 'recovering': 'OpenClaw is not answering; waiting for it'}.get(
         run['status'], f"checking {run['claimed_count']} signals" if run.get('claimed_count') else 'your agent is reading the signals')
     return f"  {elapsed // 60}m {elapsed % 60:02d}s · {phase} · {len(cards)} suggestion{'s' if len(cards) != 1 else ''} so far"
@@ -487,7 +488,7 @@ def cmd_profile(config, args):
             if time.monotonic() > deadline:
                 raise CliError('The profile draft is still running. Run assistant profile again to pick it up.')
             if tty:
-                elapsed = int((dt.datetime.now(dt.timezone.utc) - dt.datetime.fromisoformat(run['started_at'])).total_seconds())
+                elapsed = int((timeutil.clock() - dt.datetime.fromisoformat(run['started_at'])).total_seconds())
                 print(f"\r  {elapsed // 60}m {elapsed % 60:02d}s · " + ('starting in OpenClaw' if run['status'] == 'starting' else 'your agent is reading'),
                       end='', flush=True)
             time.sleep(5)
@@ -508,7 +509,7 @@ def cmd_profile(config, args):
 
 
 def save_draft(config, args, path, run):
-    day = dt.datetime.now(TZ).date().isoformat()
+    day = timeutil.clock(TZ).date().isoformat()
     while True:
         # The owner can edit USER.md while inference or the save prompt is running.
         observed = path.read_text() if path.exists() else None
@@ -552,7 +553,7 @@ def follow_roles(config, run_id, quiet=False):
             if time.monotonic() > deadline:
                 raise CliError('Still naming roles. They show up in the dashboard\'s Graph tab when done.')
             if tty:
-                elapsed = int((dt.datetime.now(dt.timezone.utc) - dt.datetime.fromisoformat(run['started_at'])).total_seconds())
+                elapsed = int((timeutil.clock() - dt.datetime.fromisoformat(run['started_at'])).total_seconds())
                 print(f"\r  {elapsed // 60}m {elapsed % 60:02d}s · " + ('starting in OpenClaw' if run['status'] == 'starting' else 'your agent is reading'),
                       end='', flush=True)
             time.sleep(5)
@@ -763,7 +764,7 @@ def cmd_export_knowledge(config, args):
     reader = knowledge.StoreReader(store, config, workspace=assistant.WORKSPACE)
     bundle = knowledge.collect(reader, knowledge.Options(messages=args.messages, private=args.private))
     out = Path(args.out).expanduser()
-    name = f'{knowledge.FOLDER}-{dt.date.today().isoformat()}'
+    name = f'{knowledge.FOLDER}-{timeutil.today().isoformat()}'
     try:
         if args.folder:
             target = out / name

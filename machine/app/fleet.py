@@ -40,6 +40,7 @@ from timeutil import in_hours, is_work_day, local_tz, now, WORK_HOURS
 import work_removal
 from machine import todo_states
 from machine.owner_error import OwnerError
+import timeutil
 
 
 def fleet_served(config):
@@ -57,7 +58,7 @@ def own_or_joined(event, owner_slack_ids=()):
         people = [a for a in m.get('attendees') or [] if isinstance(a, dict)]
         me = next((a for a in people if a.get('self')), None)
         joined = (me.get('responseStatus') != 'declined') if me else bool((m.get('organizer') or {}).get('self'))
-        started = dt.datetime.fromisoformat(event['occurred_at']) <= dt.datetime.now(dt.timezone.utc)
+        started = dt.datetime.fromisoformat(event['occurred_at']) <= timeutil.clock()
         return joined and started and any(not a.get('self') for a in people)
     return own_message(event, owner_slack_ids)
 
@@ -100,7 +101,7 @@ class FleetApp:
             self.fleet.retell_notice = lambda message_id, message: threading.Thread(
                 target=self.fleet_retell, args=(message_id, message), daemon=True).start()
             # Briefs and free questions keep to the owner's hours; a free question is searched with the Machine's own search.
-            self.fleet.hours = {'local_now': lambda: dt.datetime.now(local_tz()), 'work_day': is_work_day, 'in_hours': in_hours,
+            self.fleet.hours = {'local_now': lambda: timeutil.clock(local_tz()), 'work_day': is_work_day, 'in_hours': in_hours,
                                 'morning': lambda: WORK_HOURS['morning']}
             self.fleet.search = lambda accounts, query, limit: self.related(accounts, query=query, limit=limit)[0]
             self.fleet.card_task = card_task  # a handoff leads with what the teammate is asked to do, never a chat reply
@@ -674,7 +675,7 @@ class FleetApp:
         threads the Team Graph already shares with the team and writes general team learnings (fleet_learnings.py).
         Nothing is asked per learning; the owner's learnings switch turns it off. It waits for the usage budget like
         every background turn. When too little is new, it looks again an hour later."""
-        current = current or dt.datetime.now(dt.timezone.utc)
+        current = current or timeutil.clock()
         if time.monotonic() - getattr(self, '_fleet_learn_tried', -3600) < 3600:
             return None
         self._fleet_learn_tried = time.monotonic()

@@ -36,11 +36,13 @@ STATUS_AFTER = {'on': 'in_progress', 'done': 'in_progress', 'cant': 'back'}  # t
 
 
 def today():
-    return dt.date.today().isoformat()
+    import timeutil
+    return timeutil.today().isoformat()
 
 
 def stamp():
-    return dt.datetime.now(dt.timezone.utc).isoformat(timespec='seconds')
+    import timeutil
+    return timeutil.clock().isoformat(timespec='seconds')
 
 
 LEAD = {'on': 'is on it', 'done': 'marked it done', 'cant': "can't do this"}

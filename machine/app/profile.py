@@ -16,6 +16,7 @@ from machine.store.review import REVIEW_TERMINAL
 import team_learnings
 from timeutil import local_tz, now
 from machine.owner_error import OwnerError
+import timeutil
 
 SKILLS_SESSION_PREFIX = 'agent:main:assistant-review-skills-'  # the Find my skills turn: the browser, read-only, and its report
 
@@ -259,7 +260,7 @@ class ProfileApp:
         text = path.read_text() if path.exists() else onboarding.starter_user_md(self.config)
         if onboarding.user_md_is_template(path):
             text = text.rstrip() + '\n\n' + onboarding.starter_user_md(self.config)
-        merged, _ = onboarding.fit_profile(text, json.loads(row['draft']), dt.datetime.now(local_tz()).date().isoformat())
+        merged, _ = onboarding.fit_profile(text, json.loads(row['draft']), timeutil.clock(local_tz()).date().isoformat())
         if not merged:
             return False
         path.parent.mkdir(parents=True, exist_ok=True)

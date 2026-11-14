@@ -32,6 +32,7 @@ from machine import todo_states
 from machine.store import outcomes
 from models import background_model
 from machine.owner_error import OwnerError
+import timeutil
 
 LOG = logging.getLogger('personal-assistant')
 SUBS_TIMEOUT = 120  # seconds the model call may take
@@ -85,7 +86,7 @@ class SubscriptionsApp:
     def subs_found(self, soon=False):
         """The candidates still to ask about, plain code (subscriptions.scan, fresh), and the accounts' areas."""
         accounts = [a['id'] for a in self.cleanup_accounts()]
-        now = dt.datetime.now(dt.timezone.utc)
+        now = timeutil.clock()
         with self.store.connect() as db:
             subscriptions.ensure(db)
             found = subscriptions.fresh(db, subscriptions.scan(db, accounts, now, soon), soon, self.routines_now().date())
@@ -121,7 +122,7 @@ class SubscriptionsApp:
             if not db.execute("SELECT 1 FROM routine_runs WHERE routine_id=? AND state IN ('ready','nothing')", (routine['id'],)).fetchone():
                 return  # its first run looks at everything
             db.execute('BEGIN IMMEDIATE')
-            if not subscriptions.soon_due(db, dt.datetime.now(dt.timezone.utc), SOON_EVERY):
+            if not subscriptions.soon_due(db, timeutil.clock(), SOON_EVERY):
                 return
         found = self.subs_found(soon=True)
         if not found or self.background_pause(owner=False, job='routine') or not self.background_spaced():

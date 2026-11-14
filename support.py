@@ -266,7 +266,8 @@ def _connections(db, labels):
 
 
 def _failures(db, days=FAILURE_DAYS):
-    cutoff = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=days)).isoformat(timespec='seconds')[:19]
+    import timeutil
+    cutoff = (timeutil.clock() - dt.timedelta(days=days)).isoformat(timespec='seconds')[:19]
     out = []
     for table, (kind, key, at) in FAILURE_TABLES.items():
         try:
@@ -335,7 +336,8 @@ def _run(args, timeout=60):
 
 
 def versions(config):
-    lines = [f'when: {dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")}',
+    import timeutil
+    lines = [f'when: {timeutil.clock().isoformat(timespec="seconds")}',
              f'os: {platform.platform()}', f'wsl: {service.wsl()}', f'service manager: {service.manager()}',
              f'python: {sys.version.split()[0]} ({sys.executable})', f'app: {ROOT}',
              'commit: ' + _run(['git', '-C', str(ROOT), 'log', '-1', '--format=%h %cd', '--date=short'])]
@@ -358,6 +360,7 @@ def windows_desktop():
 
 def bundle(config_path, out=None, doctor=None, lines=1000):
     """Write the archive and return its path."""
+    import timeutil
     try:
         config = json.loads(Path(config_path).expanduser().read_text())
     except (OSError, ValueError):
@@ -377,7 +380,7 @@ def bundle(config_path, out=None, doctor=None, lines=1000):
         parts['openclaw-log.txt'] = '\n'.join(line[:240] for line in _run([openclaw, 'logs', '--limit', '1500', '--plain'], 60).splitlines()
                                               if re.search(r'\s(warn|error|fatal)\s', line) and '[agent:' not in line)
     parts['config.json'] = json.dumps(scrub_config(config), indent=2)
-    stamp = dt.datetime.now().strftime('%Y%m%d-%H%M%S')
+    stamp = timeutil.clock(None).strftime('%Y%m%d-%H%M%S')
     folder = Path(out).expanduser() if out else (windows_desktop() or Path.cwd())
     folder.mkdir(parents=True, exist_ok=True)
     path = folder / f'the-machine-logs-{stamp}.tar.gz'
@@ -385,7 +388,7 @@ def bundle(config_path, out=None, doctor=None, lines=1000):
         for name, text in parts.items():
             data = scrub(text).encode() if name != 'config.json' else text.encode()
             info = tarfile.TarInfo(f'the-machine-logs-{stamp}/{name}')
-            info.size, info.mtime, info.mode = len(data), int(dt.datetime.now().timestamp()), 0o600
+            info.size, info.mtime, info.mode = len(data), int(timeutil.clock(None).timestamp()), 0o600
             archive.addfile(info, io.BytesIO(data))
     os.chmod(path, 0o600)
     return path

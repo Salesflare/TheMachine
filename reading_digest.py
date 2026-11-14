@@ -29,6 +29,7 @@ import mail_cleanup
 from machine.store.review_wait import People, mail_wait
 from machine import todo_states
 from machine.owner_error import OwnerError
+import timeutil
 
 KIND = 'routine.digest'
 LOOK_DAYS = 30  # how far back the owner's habits with each sender are read
@@ -150,7 +151,7 @@ def candidates(db, accounts, since, known=None):
     """The new list mail since then worth the model's look, best first: unread, never a person the owner knows or a
     receipt, never a sender they unsubscribed from or never open, never a mail an earlier digest showed, one subject
     once, at most PER_SENDER per sender; at most CANDIDATES. known: habits, read here when not given."""
-    now = dt.datetime.now(dt.timezone.utc)
+    now = timeutil.clock()
     known = habits(db, accounts, now) if known is None else known
     people, receipts, gone = People(db), mail_cleanup.notifications(db, since), unsubscribed(db)
     shown = {r[0] for r in db.execute('SELECT event_id FROM digest_items WHERE event_id IS NOT NULL')}

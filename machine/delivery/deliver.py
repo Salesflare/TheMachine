@@ -23,6 +23,7 @@ import notify
 import still_needed
 from timeutil import in_hours, is_work_day, local_tz, now
 from machine import todo_states
+import timeutil
 
 
 def fleet_push(store, config, rows, sender=None):
@@ -62,7 +63,7 @@ def reconcile_uncertain(store, config, grace_minutes=30):
     timeout) must not silence a card forever. Confirm it from the cached bot message
     carrying this suggestion's buttons; if none appears within the grace period, the
     send did not happen, so queue it again."""
-    current = dt.datetime.now(dt.timezone.utc)
+    current = timeutil.clock()
     with store.connect() as db:
         rows = [dict(r) for r in db.execute("SELECT d.*,s.status suggestion_status FROM deliveries d JOIN suggestions s ON s.id=d.suggestion_id "
                                             "WHERE d.status='uncertain' AND d.updated_at<?", ((current - dt.timedelta(minutes=2)).isoformat(),))]
@@ -187,18 +188,18 @@ def deliver_one(store, config, edit_cards=True):
             # e.g. the owner deleted the message. Back off (1 min doubling to 6 h)
             # instead of spawning node every 10 seconds forever.
             failures = row.get('edit_failures', 0) + 1
-            retry = dt.datetime.now(dt.timezone.utc) + dt.timedelta(minutes=min(2 ** (failures - 1), 360))
+            retry = timeutil.clock() + dt.timedelta(minutes=min(2 ** (failures - 1), 360))
             with store.connect() as db:
                 db.execute('UPDATE deliveries SET edit_failures=?,edit_retry_at=? WHERE suggestion_id=?',
                            (failures, retry.isoformat(), row['id']))
-    if not in_hours(dt.datetime.now(local_tz())):
+    if not in_hours(timeutil.clock(local_tz())):
         return  # quiet outside the owner's hours (work_hours.start–end)
     with store.connect() as db:
         db.execute('BEGIN IMMEDIATE')
         # A crash/timeout after sending may have delivered. Never blindly resend.
         db.execute("UPDATE deliveries SET status='uncertain',error='interrupted_delivery' WHERE status='sending' AND updated_at<?",
-                   ((dt.datetime.now(dt.timezone.utc) - dt.timedelta(minutes=3)).isoformat(),))
-        retry_cutoff = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(minutes=1)).isoformat()
+                   ((timeutil.clock() - dt.timedelta(minutes=3)).isoformat(),))
+        retry_cutoff = (timeutil.clock() - dt.timedelta(minutes=1)).isoformat()
         store.settle_awaiting(db)
         rows = db.execute(shown_rows(db, "SELECT s.*,d.reminder,d.message_id,d.previous_message_ids,d.last_notified_at,p.status preparation_status,p.reason preparation_reason,p.error preparation_error,p.questions preparation_questions,(SELECT choice FROM decisions WHERE id=p.decision_id) preparation_cause,"+FEEDBACK_COLUMN+f" FROM suggestions s JOIN deliveries d ON s.id=d.suggestion_id LEFT JOIN preparations p ON s.id=p.suggestion_id WHERE d.status='queued' AND (d.error IS NULL OR d.updated_at<?) AND ((s.status='pending' AND s.handled_hint IS NULL) OR (d.reminder=1 AND s.status IN {todo_states.sql(todo_states.TAKEN_ON)} AND s.handled_hint IS NULL AND coalesce(json_extract(s.outcome,'$.state'),'') NOT IN ('already_done','waiting'))) AND ((d.reminder=1 AND s.early=0) OR s.deliver_after IS NULL OR s.deliver_after<=?) ORDER BY d.reminder DESC,s.created_at LIMIT 1"),(retry_cutoff,now())).fetchall()
         if not rows:
@@ -244,7 +245,7 @@ def deliver_one(store, config, edit_cards=True):
         # Calm (notify.calm_reason): only what can't wait buzzes. The rest arrives quietly (the dashboard, a silent
         # Telegram card) and waits for the morning summary: no push, no waiting email. A quiet one is no ping: it
         # doesn't stamp last_notified_at, so it never silences a real one nor counts as an unseen ping.
-        local=dt.datetime.now(local_tz())
+        local=timeutil.clock(local_tz())
         row['_calm']=notify.calm_reason(db,why_now(row,local.date().isoformat()),is_work_day(local),local.date().isoformat())
         if row['_calm']:
             row['_silent']=True

@@ -103,12 +103,14 @@ def merge_covered(accounts, store):
 
 
 def _now():
-    return dt.datetime.now(dt.timezone.utc).isoformat(timespec='seconds')
+    import timeutil
+    return timeutil.clock().isoformat(timespec='seconds')
 
 
 def _age(stamp):
+    import timeutil
     try:
-        return (dt.datetime.now(dt.timezone.utc) - dt.datetime.fromisoformat(stamp)).total_seconds()
+        return (timeutil.clock() - dt.datetime.fromisoformat(stamp)).total_seconds()
     except (TypeError, ValueError):
         return 1e12
 

@@ -466,6 +466,7 @@ def _headers(mime):
 
 
 def get_message(session, account, message_id, form='full'):
+    import timeutil
     match = MESSAGE_ID.match(str(message_id or ''))
     if not match:
         raise ImapError('imap_message_gone', 404)
@@ -477,7 +478,7 @@ def get_message(session, account, message_id, form='full'):
     meta = parse_fetch(_ok(conn.uid('fetch', str(uid), '(UID FLAGS INTERNALDATE RFC822.SIZE)'))).get(uid)
     if not meta:
         raise ImapError('imap_message_gone', 404)
-    when = meta['date'] or dt.datetime.now(dt.timezone.utc)
+    when = meta['date'] or timeutil.clock()
     out = {'id': message_id, 'labelIds': labels(key, meta['flags']), 'internalDate': str(int(when.timestamp() * 1000)),
            'snippet': '', 'webLink': None}
     if form == 'minimal':
@@ -622,7 +623,8 @@ def search(session, account, query, limit, offset=0):
 
 def thread(session, account, thread_id):
     """The messages of one conversation from the last THREAD_DAYS days, in both folders, with who sent each and when."""
-    since = imap_date(dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=THREAD_DAYS))
+    import timeutil
+    since = imap_date(timeutil.clock() - dt.timedelta(days=THREAD_DAYS))
     out = []
     for key in ('i', 's'):
         if key == 's' and not folders(session, account).get('s'):
@@ -637,7 +639,7 @@ def thread(session, account, thread_id):
             headers = _headers(b''.join(row['bytes']))
             if thread_of(headers) != thread_id:
                 continue
-            when = row['date'] or dt.datetime.now(dt.timezone.utc)
+            when = row['date'] or timeutil.clock()
             out.append({'id': f'{key}{validity}-{uid}', 'threadId': thread_id, 'labelIds': labels(key, row['flags']),
                         'internalDate': str(int(when.timestamp() * 1000)),
                         'payload': {'headers': [{'name': 'From', 'value': headers.get('from', '')}]}})

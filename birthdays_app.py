@@ -17,6 +17,7 @@ import ms_graph
 import routines
 from sources import SourceError, credential, gog_read
 from timeutil import local_tz
+import timeutil
 
 LOG = logging.getLogger('personal-assistant')
 CALENDAR_READ = 'https://www.googleapis.com/auth/calendar.readonly'  # the scope the calendar already has
@@ -28,7 +29,7 @@ class BirthdaysApp:
     def birthdays_run(self, run):
         """A Birthdays run: today's to-dos (a test run only names them), then the run's result: who has one."""
         tz = local_tz()
-        today = dt.datetime.now(tz).date()
+        today = timeutil.clock(tz).date()
         outlook, code = self.birthdays_outlook(today, tz), self.birthdays_code()
         self.birthdays_save(self.birthdays_google(today, tz), code)
         with self.store.connect() as db:
@@ -110,7 +111,7 @@ class BirthdaysApp:
         if not google:
             return 0
         import person_birthday
-        saved, now = 0, dt.datetime.now(dt.timezone.utc).isoformat()
+        saved, now = 0, timeutil.clock().isoformat()
         with self.store.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             for node, value in birthdays.google_people(db, birthdays.close_people(db), google, code).items():
@@ -124,7 +125,7 @@ class BirthdaysApp:
         """One person's to-do (its id, also when it was made earlier today), on the channel the owner usually writes to
         them on, prepared ahead; None without such a channel."""
         with self.store.connect() as db:
-            channel = birthdays.usual_channel(db, person['id'], dt.datetime.now(dt.timezone.utc), self.store.owner_user_ids)
+            channel = birthdays.usual_channel(db, person['id'], timeutil.clock(), self.store.owner_user_ids)
             account = channel and db.execute('SELECT account_id FROM events WHERE id=?', (channel[1],)).fetchone()
         if not account:
             return None

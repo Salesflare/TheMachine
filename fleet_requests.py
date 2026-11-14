@@ -34,6 +34,7 @@ from i18n import t
 import next_actions
 from machine import todo_states
 from machine.owner_error import OwnerError
+import timeutil
 
 LOG = logging.getLogger('personal-assistant')
 SCHEMA = '''
@@ -1045,7 +1046,7 @@ class Requests:
     # -- silent acceptance: the owner is already on a waiting handoff
     def waiting_handoffs(self):
         """Handoffs waiting for the owner's answer, for the review to hold against what the owner does."""
-        since = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=WAITING_DAYS)).isoformat(timespec='seconds')
+        since = (timeutil.clock() - dt.timedelta(days=WAITING_DAYS)).isoformat(timespec='seconds')
         with self.connect() as db:
             rows = db.execute("SELECT id,name,question,at FROM fleet_in WHERE kind='handoff' AND status='waiting' AND at>=? ORDER BY at", (since,)).fetchall()
         return [{'ask_id': r['id'], 'from': r['name'], 'since': r['at'][:16], 'title': json.loads(r['question']).get('title', ''),
@@ -1165,7 +1166,7 @@ class Requests:
     def requests_round(self):
         """Stages the owner reached on accepted requests, told to the teammate who asked: an intro email sent (or its
         card dismissed), a handoff done. And handoffs declined lately whose card hasn't come back yet (handoff_back)."""
-        since = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=BACK_DAYS)).isoformat(timespec='seconds')
+        since = (timeutil.clock() - dt.timedelta(days=BACK_DAYS)).isoformat(timespec='seconds')
         with self.connect() as db:
             back = db.execute("SELECT o.* FROM fleet_out o JOIN suggestions s ON s.id=substr(o.context,9) WHERE o.kind='handoff' "
                               f"AND o.context LIKE 'handoff:%' AND o.answered_at>=? AND s.status IN {todo_states.sql(todo_states.SNOOZED, todo_states.COMPLETED)} "
@@ -1197,7 +1198,7 @@ class Requests:
             asked = {(r['fleet'], r['member_id'], json.loads(r['question']).get('about')) for r in db.execute("SELECT * FROM fleet_out WHERE kind='intro'")}
             offers = []
             for r in db.execute("SELECT * FROM fleet_out WHERE kind='relationships' AND status='answered' AND at>=? ORDER BY at DESC LIMIT 60",
-                                ((dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=30)).isoformat(),)):
+                                ((timeutil.clock() - dt.timedelta(days=30)).isoformat(),)):
                 about = json.loads(r['question']).get('about')
                 if json.loads(r['answer'] or '{}').get('knows') and (r['fleet'], r['member_id'], about) not in asked:
                     offers.append({'ask_id': r['id'], 'fleet': r['fleet'], 'member_id': r['member_id'], 'name': r['name'], 'about': about,

@@ -32,7 +32,8 @@ def pace(stamps):
 
 def seconds(db, current=None):
     """The owner's pace (seconds per action) from their dashboard decisions of the last PACE_DAYS."""
-    current = current or dt.datetime.now(dt.timezone.utc)
+    import timeutil
+    current = current or timeutil.clock()
     since = (current - dt.timedelta(days=PACE_DAYS)).isoformat()
     rows = db.execute("SELECT created_at FROM decisions WHERE source='dashboard' AND created_at>=? ORDER BY created_at DESC LIMIT 2000",
                       (since,)).fetchall()

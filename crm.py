@@ -25,6 +25,7 @@ import enrichment
 import graph
 from machine import stamps
 from machine.owner_error import OwnerError
+import timeutil
 
 SCHEMA = '''
 CREATE TABLE IF NOT EXISTS record_owners(node_id TEXT PRIMARY KEY,owner TEXT NOT NULL,name TEXT,set_at TEXT NOT NULL);
@@ -46,7 +47,7 @@ def ensure(db):
 
 
 def now_iso():
-    return dt.datetime.now(dt.timezone.utc).isoformat()
+    return timeutil.clock().isoformat()
 
 
 # ------------------------------------------------------------------ owner
@@ -632,7 +633,7 @@ def list_query(db, name, filters, sort):
     if 'closeness' in filters:  # graph.closeness's steps
         where.append(CLOSENESS[filters['closeness']])
     if 'last_contact' in filters:
-        today = dt.datetime.now(dt.timezone.utc).date()  # last_at is a day or a time; a day compares as text with both
+        today = timeutil.clock().date()  # last_at is a day or a time; a day compares as text with both
         day30, day90 = ((today - dt.timedelta(days=d)).isoformat() for d in (30, 90))
         if filters['last_contact'] == '30':
             where.append('last_at>=?')

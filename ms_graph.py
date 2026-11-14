@@ -521,10 +521,11 @@ def _fingerprint(key):
 def checked_identity(config, account):
     """The address /me gave for this connection and until when it holds, for the sync to keep with its checkpoint
     ({key, address, until}), so a restart during a /me outage reads on. None when not checked or no longer valid."""
+    import timeutil
     key = _connection_key(config, account)
     with _lock:
         known = _identities.get(key)
-    if not known or known[1] <= dt.datetime.now(dt.timezone.utc):
+    if not known or known[1] <= timeutil.clock():
         return None
     return {'key': _fingerprint(key), 'address': known[0], 'until': known[1].isoformat()}
 
@@ -532,6 +533,7 @@ def checked_identity(config, account):
 def restore_identity(config, account, saved):
     """A checkpoint's checked address (checked_identity) back in the cache after a restart: only for this same connection
     (a reconnect, a changed credential or another address is another key), only while it still holds, never longer."""
+    import timeutil
     if not isinstance(saved, dict) or not saved.get('address') or not isinstance(saved.get('until'), str):
         return
     key = _connection_key(config, account)
@@ -539,7 +541,7 @@ def restore_identity(config, account, saved):
         until = dt.datetime.fromisoformat(saved['until'])
     except ValueError:
         return
-    now = dt.datetime.now(dt.timezone.utc)
+    now = timeutil.clock()
     if saved.get('key') != _fingerprint(key) or until.tzinfo is None or not now < until <= now + dt.timedelta(seconds=IDENTITY_SECONDS):
         return
     with _lock:
@@ -755,19 +757,20 @@ def send_as(me):
 
 def gmail_call(config, credential, account, method, params):
     """The Gmail reads the app makes, answered from Graph. The history cursor is a time: messages changed since."""
+    import timeutil
     params = dict(params or {})
     if method == 'gmail.users.getProfile':
         key = _connection_key(config, account)
         with _lock:
             known = _identities.get(key)
-        if known and known[1] > dt.datetime.now(dt.timezone.utc):
+        if known and known[1] > timeutil.clock():
             address = known[0]
         else:
             address = identity(call(config, credential, account, 'me', {'$select': 'mail,userPrincipalName'}))
             if address:
                 with _lock:
-                    _identities[key] = (address, dt.datetime.now(dt.timezone.utc) + dt.timedelta(seconds=IDENTITY_SECONDS))
-        return {'emailAddress': address, 'historyId':_iso(dt.datetime.now(dt.timezone.utc) - dt.timedelta(minutes=2))}
+                    _identities[key] = (address, timeutil.clock() + dt.timedelta(seconds=IDENTITY_SECONDS))
+        return {'emailAddress': address, 'historyId':_iso(timeutil.clock() - dt.timedelta(minutes=2))}
     if method == 'gmail.users.settings.sendAs.get':
         return {'sendAsEmail': params.get('sendAsEmail'), 'signature': ''}  # Graph has no API for Outlook signatures
     if method == 'gmail.users.settings.sendAs.list':  # the mailbox's own addresses: its proxy addresses (User.Read)

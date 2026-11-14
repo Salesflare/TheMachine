@@ -86,6 +86,7 @@ def qr_matrix(url):
 
 def classify(entity, dialog=None):
     """{'id', 'kind', 'name', 'members', 'muted', 'archived'} of a Telegram user, group or channel."""
+    import timeutil
     kind = type(entity).__name__
     if kind == 'User':
         chat = 'self' if getattr(entity, 'is_self', False) else 'bot' if getattr(entity, 'bot', False) else 'dm'
@@ -103,7 +104,7 @@ def classify(entity, dialog=None):
         settings = getattr(getattr(dialog, 'dialog', None), 'notify_settings', None)
         until = getattr(settings, 'mute_until', None)
         if isinstance(until, dt.datetime):
-            muted = until > dt.datetime.now(dt.timezone.utc)
+            muted = until > timeutil.clock()
         elif isinstance(until, int):
             muted = until > time.time()
         archived = bool(getattr(dialog, 'archived', False) or getattr(dialog, 'folder_id', None) == 1)
@@ -194,7 +195,8 @@ class Mirror:
 
     async def backfill(self, seen, days=ts.BACKFILL_DAYS):
         """The last `days` days of the chats it reads, once, newest chats first, slowly."""
-        since = dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=days)
+        import timeutil
+        since = timeutil.clock() - dt.timedelta(days=days)
         recent = [(cid, date) for cid, skipped, date in seen if not skipped and isinstance(date, dt.datetime)
                   and (date if date.tzinfo else date.replace(tzinfo=dt.timezone.utc)) >= since]
         for cid, _ in recent[:BACKFILL_CHATS]:
@@ -286,10 +288,11 @@ class Mirror:
     async def photo(self):
         """The next profile photo the app asked for, the small one only, paced and within the day's budget. Returns
         the answer ('done', 'none', 'failed', 'flood') or None when there was nothing to do now."""
+        import timeutil
         if self.clock() < self.next_photo:
             return None
         state = ts.get_state(self.db)
-        stamp = dt.datetime.now(dt.timezone.utc)
+        stamp = timeutil.clock()
         if (state.get('photos_until') or '') > stamp.isoformat(timespec='seconds'):
             return None
         today = stamp.strftime('%Y-%m-%d')
@@ -394,6 +397,7 @@ def sent_event(sent):
 async def login(client, store, seal, phone=None, ask=read_answer, wait=QR_WAIT):
     """Logs this device in: a QR code to scan in Telegram (Settings, Devices, Link Desktop Device), or a code Telegram
     sends to the owner's own Telegram app for their phone number. Then the cloud password, if the account has one."""
+    import timeutil
     from telethon import errors
     from telethon.tl.functions.account import GetPasswordRequest
     db = ts.connect(store)
@@ -453,7 +457,7 @@ async def login(client, store, seal, phone=None, ask=read_answer, wait=QR_WAIT):
         until = time.monotonic() + wait
         while True:
             emit('qr', url=qr.url, matrix=qr_matrix(qr.url), expires=qr.expires.isoformat())
-            left = min(until - time.monotonic(), max(5.0, (qr.expires - dt.datetime.now(dt.timezone.utc)).total_seconds()))
+            left = min(until - time.monotonic(), max(5.0, (qr.expires - timeutil.clock()).total_seconds()))
             if left <= 0:
                 raise RuntimeError('qr_expired')
             try:
@@ -526,6 +530,7 @@ async def logout(client):
 
 
 def run(args):
+    import timeutil
     if args.command == 'version':
         import telethon
         print(json.dumps({'telethon': telethon.__version__}))
@@ -587,7 +592,7 @@ def run(args):
             ts.set_state(db, error=reason)
             return 0
         if seconds:
-            ts.set_state(db, flood_until=(dt.datetime.now(dt.timezone.utc) + dt.timedelta(seconds=seconds)).isoformat(timespec='seconds'))
+            ts.set_state(db, flood_until=(timeutil.clock() + dt.timedelta(seconds=seconds)).isoformat(timespec='seconds'))
             time.sleep(min(seconds, FLOOD_LIMIT))
         print('telegram mirror stopped:', error_name(error), file=sys.stderr, flush=True)
         return TEMPORARY

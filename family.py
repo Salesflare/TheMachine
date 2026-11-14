@@ -365,7 +365,7 @@ class Family:
             return None
         import friends
         tz = self.local_now().tzinfo
-        since = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=SHOWN_DAYS)).isoformat(timespec='seconds')
+        since = (timeutil.clock() - dt.timedelta(days=SHOWN_DAYS)).isoformat(timespec='seconds')
         with self.connect() as db:
             rows = db.execute("SELECT * FROM fleet_out WHERE fleet=? AND context LIKE 'family-%' AND at>=? ORDER BY at DESC LIMIT 200",
                               (ref, since)).fetchall()

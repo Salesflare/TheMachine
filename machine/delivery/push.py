@@ -27,6 +27,7 @@ import still_needed
 from timeutil import local_tz, now
 from machine import todo_states
 from machine.kinds import TO_PERSON
+import timeutil
 
 
 @functools.lru_cache(maxsize=4)
@@ -198,7 +199,7 @@ def reported(row):
     if not at or row.get('status') != 'completed':
         return False
     try:
-        return dt.datetime.fromisoformat(at) > dt.datetime.now(dt.timezone.utc) - dt.timedelta(hours=REPORT_HOURS)
+        return dt.datetime.fromisoformat(at) > timeutil.clock() - dt.timedelta(hours=REPORT_HOURS)
     except (TypeError, ValueError):
         return False
 
@@ -622,7 +623,7 @@ def mailing_sources(db, config, now=None):
     """[(service, label)] of HINT_SOURCES that mailed the owner HINT_MAILS times or more in 30 days and aren't connected:
     worth connecting. From the senders' addresses only (setup_hints, and the first look's ending: first_look_done)."""
     services = {a.get('service') for a in config.get('accounts') or [] if isinstance(a, dict)}
-    since = ((now or dt.datetime.now(dt.timezone.utc)) - dt.timedelta(days=30)).isoformat()
+    since = ((now or timeutil.clock()) - dt.timedelta(days=30)).isoformat()
     return [(service, label) for service, label, domains in HINT_SOURCES
             if service not in services and mails_from(db, domains, since, HINT_MAILS) >= HINT_MAILS]
 
@@ -737,7 +738,7 @@ def push_send(store, config, subscriptions, payload, label, sender=None, kind=No
             LOG.info('push %s statuses=%s', label, ','.join(str(r['status']) for r in results))
     if kind and not payload.get('silent'):
         with store.connect() as db:  # the day's count for notify.PUSH_CAP
-            notify.count_push(db, dt.datetime.now(local_tz()).date().isoformat())
+            notify.count_push(db, timeutil.clock(local_tz()).date().isoformat())
     if wake and not payload.get('silent'):
         try:
             sent = app_wake(store, config, wake, payload.get('tag'), state=state,

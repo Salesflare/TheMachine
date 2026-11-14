@@ -38,6 +38,7 @@ from fleet_requests import card_reason
 from i18n import t
 from machine import todo_states
 from machine.owner_error import OwnerError
+import timeutil
 
 LOG = logging.getLogger('personal-assistant')
 NO_MAILBOX = 'No Gmail or Outlook account to send it from. Connect one in Connections.'
@@ -51,7 +52,7 @@ ACTIONS = ('fleet_handoff_email_parts', 'fleet_handoff_take_line')
 
 
 def now():
-    return dt.datetime.now(dt.timezone.utc).isoformat(timespec='seconds')
+    return timeutil.clock().isoformat(timespec='seconds')
 
 
 def ensure(db):

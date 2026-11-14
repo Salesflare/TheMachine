@@ -78,12 +78,13 @@ def _description(row):
 def calendar_notes(row, at=None):
     """Whether a calendar event may now carry its meeting's notes: it has ended, it was edited once it began, and it
     has a description. What the description says is the review's to judge (CALENDAR_RULE)."""
+    import timeutil
     if row['kind'] != 'calendar.event' or row.get('deleted'):
         return False
     m = _meta(row)
     start, end, edited = (meeting_notes.stamp(row['occurred_at']), meeting_notes.stamp(m.get('end_at')),
                           meeting_notes.stamp(m.get('updated')))
-    at = at or dt.datetime.now(dt.timezone.utc)
+    at = at or timeutil.clock()
     return bool(start and end and edited and not m.get('all_day') and m.get('status') != 'cancelled'
                 and end <= at and edited >= start and _description(row))
 
@@ -237,6 +238,7 @@ def lead(db, rows, at=None):
 def hint(db, row, at=None):
     """What a review is told on a signal that is of a meeting: the meeting, its record, and the open to-dos already
     made from it, with the rule. None for other signals."""
+    import timeutil
     if row['kind'] not in RECORDS and row['kind'] != 'calendar.event' and not notes_mail(row):
         return None
     found, how = meeting_of(db, row['id'], at)
@@ -245,7 +247,7 @@ def hint(db, row, at=None):
     todos = same_meeting_cards(db, [row['id']], at=at)
     out = {'event_id': found['id'], 'title': found['title']}
     if how == 'mail':
-        day = (meeting_notes.stamp(found['occurred_at']) or dt.datetime.now(dt.timezone.utc)).date().isoformat()
+        day = (meeting_notes.stamp(found['occurred_at']) or timeutil.clock()).date().isoformat()
         record = meeting_notes.for_event(db, found['id'], day)
         return {**out, **({'notes_event_id': record['id']} if record else {}), **({'todos': todos} if todos else {}), 'rule': MAIL_RULE}
     rules = [CALENDAR_RULE] if how == 'event' else []

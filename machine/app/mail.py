@@ -29,6 +29,7 @@ from sources import credential, gog_read, MAIL_SERVICES, SourceError
 import task_pages
 import todo_areas
 from machine.owner_error import OwnerError
+import timeutil
 
 COMPOSE_ADDRESS = re.compile(r'[^\s<>@,;"]+@[^\s<>@,;"]+\.[^\s<>@,;"]+')
 
@@ -62,7 +63,7 @@ class MailApp:
     def handoff_mail_promise(self, db, card_id, event_ids, who, what, due, check_at, event):
         """Their promise to take on a to-do handed off by email, from the sent email (watch NULL: only the review closes it
         by meaning, or the to-do). The to-do then holds that email, so it is the promise's home. Returns its id."""
-        stamp = dt.datetime.now(dt.timezone.utc).isoformat(timespec='seconds')
+        stamp = timeutil.clock().isoformat(timespec='seconds')
         cursor = db.execute("INSERT INTO promises(direction,who,what,due,check_at,event_id,account_id,watch,status,created_at,updated_at) "
                             "VALUES('theirs',?,?,?,?,?,?,NULL,'open',?,?) ON CONFLICT(event_id,direction,who,what) DO NOTHING",
                             (who, what, due, check_at, event['id'], event['account_id'], stamp, stamp))

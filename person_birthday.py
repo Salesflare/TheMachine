@@ -38,6 +38,7 @@ def is_name(name):
 
 def clean(month, day, year=None, today=None):
     """The birthday as kept, from a month and a day and an optional year; ValueError when it isn't a real day."""
+    import timeutil
     try:
         month, day = int(month), int(day)
     except (TypeError, ValueError):
@@ -49,7 +50,7 @@ def clean(month, day, year=None, today=None):
         dt.date(int(text) if text else 2000, month, day)  # 2000 is a leap year: 29 February is a day without a year
     except ValueError:
         raise OwnerError('That day isn’t in that month' if 1 <= month <= 12 else 'Pick a month and a day') from None
-    if text and not FIRST_YEAR <= int(text) <= (today or dt.date.today()).year:
+    if text and not FIRST_YEAR <= int(text) <= (today or timeutil.today()).year:
         raise OwnerError('Year: not in the future, from 1900')
     return f'{text}-{month:02d}-{day:02d}' if text else f'--{month:02d}-{day:02d}'
 
@@ -166,6 +167,7 @@ def _legacy(db):
 def fold_fields(db):
     """A person date field named Birthday the owner made is the built-in birthday now: its dates become the owner's
     birthdays (where the owner hasn't set one), and the field goes. Once; nothing to do after that."""
+    import timeutil
     found = _legacy(db)
     if not found:
         return 0
@@ -176,7 +178,7 @@ def fold_fields(db):
             value = str(row['value'] or '')[:10]
             have = [r for r in _facts(db, [row['node_id']]) if r[3] == SOURCE]
             if parts(value) and not have:
-                _put(db, row['node_id'], value, row['set_at'] or dt.datetime.now(dt.timezone.utc).isoformat())
+                _put(db, row['node_id'], value, row['set_at'] or timeutil.clock().isoformat())
                 moved += 1
         crm_fields.delete_field(db, field['id'])
     return moved

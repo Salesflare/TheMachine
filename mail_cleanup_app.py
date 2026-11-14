@@ -61,6 +61,7 @@ from models import background_model
 from sources import credential, gog_read
 from machine import todo_states
 from machine.owner_error import OwnerError
+import timeutil
 
 LOG = logging.getLogger('personal-assistant')
 # The list's unsubscribe, and who sent the mail: a list that relayed it (a Google Group, a Microsoft 365 group,
@@ -143,7 +144,7 @@ class MailCleanupApp:
         if not accounts:
             return
         with self.store.connect() as db:
-            counts = routine_offers.count(db, accounts, accounts, dt.datetime.now(dt.timezone.utc))
+            counts = routine_offers.count(db, accounts, accounts, timeutil.clock())
         with self.store.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             routine_offers.look(db, counts, self.routines_stamp())
@@ -207,7 +208,7 @@ class MailCleanupApp:
 
     def cleanup_since(self, db, routine_id):
         """What a run reads: mail since the last run that ended well, else the past day."""
-        return routines.last_run(db, routine_id) or (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=1)).isoformat()
+        return routines.last_run(db, routine_id) or (timeutil.clock() - dt.timedelta(days=1)).isoformat()
 
     def routine_template_run(self, run, key):
         """A template routine's run (routines_step): always done here, never an agent turn (True). Newsletters: found and

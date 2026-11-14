@@ -35,10 +35,11 @@ def suggestions(db, sources, unfinished=(), now=None):
     those tile names), 'meetings' (that many calendar meetings use its video link), 'mail' (that many mails from it in
     DAYS days) or 'links' (that many messages link to it). The strongest signal per tile; a setup that didn't finish
     first, then the most signals. At most SHOWN; [] when nothing has a signal."""
+    import timeutil
     open_ = {s['name']: s for s in sources if isinstance(s, dict) and not s.get('connected')}
     if not open_:
         return []
-    since = ((now or dt.datetime.now(dt.timezone.utc)) - dt.timedelta(days=DAYS)).isoformat()
+    since = ((now or timeutil.clock()) - dt.timedelta(days=DAYS)).isoformat()
     found = {}
 
     def note(name, why, count):

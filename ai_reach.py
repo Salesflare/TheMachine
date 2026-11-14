@@ -39,6 +39,7 @@ from pathlib import Path
 
 import ai_access
 import onboarding
+import timeutil
 
 try:
     from cryptography import x509
@@ -92,7 +93,7 @@ def retry_after(value, now=None):
         return None
     if at is None:
         return None
-    return max(0, int((at - (now or dt.datetime.now(dt.timezone.utc))).total_seconds()))
+    return max(0, int((at - (now or timeutil.clock())).total_seconds()))
 
 
 def backoff(failures, asked=None):
@@ -143,7 +144,7 @@ def needs_cert(config, host, now=None):
     cert, _ = load_cert(config)
     if cert is None or host not in names_of(cert):
         return True
-    now = now or dt.datetime.now(dt.timezone.utc)
+    now = now or timeutil.clock()
     return cert.not_valid_after_utc - now <= dt.timedelta(days=RENEW_DAYS)
 
 
@@ -174,7 +175,7 @@ def challenge_cert(host, key_authorization):
     the key authorization (DER OCTET STRING). (certificate, key)"""
     key = new_key()
     digest = hashlib.sha256(key_authorization.encode()).digest()
-    now = dt.datetime.now(dt.timezone.utc)
+    now = timeutil.clock()
     name = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, host)])
     cert = (x509.CertificateBuilder().subject_name(name).issuer_name(name).public_key(key.public_key())
             .serial_number(x509.random_serial_number()).not_valid_before(now - dt.timedelta(minutes=5))

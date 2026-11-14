@@ -47,6 +47,7 @@ import message_seal
 import security_levels
 import team_learnings as tl
 from machine.owner_error import OwnerError
+import timeutil
 
 SCHEMA = '''
 CREATE TABLE IF NOT EXISTS fleet_learnings(fleet TEXT NOT NULL,fp TEXT NOT NULL,kind TEXT NOT NULL,text TEXT NOT NULL,confidence REAL NOT NULL,
@@ -85,7 +86,7 @@ def ensure(db):
 
 
 def now():
-    return dt.datetime.now(dt.timezone.utc).isoformat(timespec='seconds')
+    return timeutil.clock().isoformat(timespec='seconds')
 
 
 def on(db):
@@ -161,7 +162,7 @@ def last_pass(db):
 
 def due(db, current=None):
     """A pass may start: the owner's switch is on and the last one is at least HOURS old."""
-    current = current or dt.datetime.now(dt.timezone.utc)
+    current = current or timeutil.clock()
     last = last_pass(db)
     return on(db) and not (last and last > (current - dt.timedelta(hours=HOURS)).isoformat())
 
@@ -172,7 +173,7 @@ def evidence(db, fleet, gate, accounts, team_side, company, names, current=None)
     event the Team Graph shares with the team); team_side(metadata): a message the owner or a colleague wrote;
     company(metadata): who a thread is with. Each thread is shown once, stripped (tl.strip), with only its number."""
     import shared_graph
-    current = current or dt.datetime.now(dt.timezone.utc)
+    current = current or timeutil.clock()
     ensure(db)
     if gate is None or not accounts or not due(db, current):
         return None

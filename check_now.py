@@ -28,6 +28,7 @@ from machine.sources.android import android_app_shown, android_text_shown
 from machine.sources.gmail import machine_notice
 from machine.sources.slack import slack_named, slack_plain
 from machine.store import message_view
+import timeutil
 
 REST_SECONDS = 60             # after a check ends, a new press within this long shows it instead of starting another
 READ_WAIT = 180               # the sources' reads, at most this long
@@ -88,7 +89,7 @@ def mail_check(db, current=None, own=()):
     Quality or nothing: a reason under three words, or the same one for SAME_WHY threads, is left out. The owner's own
     chat messages (from_me) and The Machine's own logs (OWN_KINDS) aren't new. `own`: the owner's addresses, so a
     thread shows who wrote to them rather than their own reply. None without such a check in the last MAIL_CHECK_HOURS."""
-    current = current or dt.datetime.now(dt.timezone.utc)
+    current = current or timeutil.clock()
     since = (current - dt.timedelta(hours=MAIL_CHECK_HOURS)).isoformat()
     own = {str(a).lower() for a in own if a}
     for review in db.execute("SELECT started_at,finished_at,items FROM analyses WHERE status='complete' AND finished_at>=? "

@@ -139,11 +139,12 @@ def work_running(database, minutes=40):
     """Review, preparation and profile turns heard from in the last `minutes` (one quiet longer is stuck, not running),
     counted as the hosted updater counts them: sealing or opening the database waits until this is 0. None when the
     database can't be read: not proof that nothing runs."""
+    import timeutil
     import datetime
     path = Path(database).expanduser()
     if not path.is_file():
         return 0
-    since = (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(minutes=minutes)).isoformat(timespec='seconds')
+    since = (timeutil.clock() - datetime.timedelta(minutes=minutes)).isoformat(timespec='seconds')
     active = 0
     try:
         with closing(sqlite3.connect(f'file:{path}?mode=ro', uri=True, timeout=10)) as db:

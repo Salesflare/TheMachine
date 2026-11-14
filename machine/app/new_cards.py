@@ -24,6 +24,7 @@ from sources import mail_account, MAIL_SERVICES
 from timeutil import now
 import todo_areas
 from machine.owner_error import OwnerError
+import timeutil
 
 
 def owner_card_area(db, accounts, node_ids=(), text=''):
@@ -59,7 +60,7 @@ def owner_card_area(db, accounts, node_ids=(), text=''):
     open_ = [f['id'] for f in found] if pick is None else []
     if open_:
         try:
-            since = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=90)).isoformat()
+            since = (timeutil.clock() - dt.timedelta(days=90)).isoformat()
             recent = db.execute('SELECT account_ids,area FROM suggestions WHERE created_at>=? ORDER BY created_at DESC LIMIT 500', (since,)).fetchall()
         except sqlite3.Error:
             recent = []

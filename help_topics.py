@@ -66,12 +66,13 @@ def clean(raw, names=(), vocabulary=None):
 
 def record(db, config, topic, answered, today=None, vocabulary=None):
     """Count one Help question under its topic, when sharing is on. The topic kept, or None."""
+    import timeutil
     if not on(db):
         return None
     kept = clean(topic, team_learnings.known_names(db, config), vocabulary) or (None if answered else 'other')
     if not kept:
         return None
-    day = today or dt.date.today().isoformat()
+    day = today or timeutil.today().isoformat()
     db.execute('INSERT INTO help_topics(day,topic,answered,n) VALUES(?,?,?,1) ON CONFLICT(day,topic,answered) DO UPDATE SET n=n+1',
                (day, kept, 1 if answered else 0))
     return kept
@@ -79,7 +80,8 @@ def record(db, config, topic, answered, today=None, vocabulary=None):
 
 def send(db_connect, call, today=None):
     """Send each finished day (before today), one call a day, and delete it here once the control plane took it."""
-    today = today or dt.date.today().isoformat()
+    import timeutil
+    today = today or timeutil.today().isoformat()
     oldest = (dt.date.fromisoformat(today) - dt.timedelta(days=KEEP_DAYS)).isoformat()
     with db_connect() as db:
         ensure(db)

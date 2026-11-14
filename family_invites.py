@@ -45,7 +45,8 @@ def ensure(db):
 
 
 def _now():
-    return dt.datetime.now(dt.timezone.utc).isoformat(timespec='seconds')
+    import timeutil
+    return timeutil.clock().isoformat(timespec='seconds')
 
 
 def person(db, node_id):

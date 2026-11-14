@@ -440,7 +440,7 @@ def digest_done(db, day, status, channels, digest=None):
     body = json.dumps(digest_kept(digest), ensure_ascii=False, separators=(',', ':')) if digest and status == 'sent' else None
     db.execute('UPDATE notify_digests SET status=?,channels=?,body=? WHERE day=?', (status, channels, body, day))
     db.execute('UPDATE notify_digests SET body=NULL WHERE body IS NOT NULL AND created_at<?',
-               ((dt.datetime.now(dt.timezone.utc) - DIGEST_KEEP).isoformat(),))
+               ((timeutil.clock() - DIGEST_KEEP).isoformat(),))
 
 
 def digest_kept(digest):
