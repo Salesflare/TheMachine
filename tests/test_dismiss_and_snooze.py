@@ -39,6 +39,27 @@ class WorkSnoozeDecisions(unittest.TestCase):
             app.action('decide',{'suggestion_id':self.sid,'choice':'snooze','snooze_option':'tomorrow','decision_id':'telegram:cb','feedback':''})
         self.assertEqual(self.store.snapshot([])['suggestions'][0]['snoozed_until'],at(2026,10,12,9))
 
+class ClosedToLater(unittest.TestCase):
+    """The two moves from closed to Later that todo_states.ALSO allows by name, kept as they were."""
+    setUp=ux.UX.setUp
+    row=ux.UX.row
+    def moves(self):
+        from machine.store import todo_moves
+        with self.store.connect() as db:
+            return [(m['from'],m['to'],m['reason']) for m in todo_moves.history(db,self.sid)]
+    def test_undo_puts_one_closed_while_it_slept_back_under_later(self):
+        self.store.decide(self.sid,'snooze','','s1','dashboard',snooze_option='tomorrow')
+        until=self.row()['snoozed_until']
+        self.store.decide(self.sid,'reject','','r1','dashboard')
+        self.assertEqual(self.store.decide(self.sid,'undo','','u1','dashboard')['status'],'snoozed')
+        self.assertEqual((self.row()['status'],self.row()['snoozed_until']),('snoozed',until))
+        self.assertEqual(self.moves(),[('pending','snoozed','snooze'),('snoozed','rejected','reject'),('rejected','snoozed','undo')])
+    def test_later_on_one_already_not_needed_puts_it_under_later(self):
+        self.store.decide(self.sid,'reject','','r1','dashboard')
+        self.assertEqual(self.store.decide(self.sid,'snooze','','s1','dashboard',snooze_option='tomorrow')['status'],'snoozed')
+        self.assertEqual((self.row()['status'],self.row()['resume_status']),('snoozed','pending'))
+        self.assertEqual(self.moves(),[('pending','rejected','reject'),('rejected','snoozed','snooze')])
+
 class DismissReasons(unittest.TestCase):
     setUp=ux.UX.setUp
     row=ux.UX.row
