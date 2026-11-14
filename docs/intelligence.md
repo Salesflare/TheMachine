@@ -144,6 +144,26 @@ name to compare.
   identities opens the merged person.
 - Someone deleted permanently is never merged or asked about again. The build keeps the questions in `graph_same`.
 
+### Lookalike senders
+
+A domain that imitates one the owner deals with (`lookalike.py`) is a lookalike: beyond its ending, its name reads the
+same once hyphens and the letters people mix up are folded (kestrel-bikes for kestrelbikes, studlo for studio), a long
+name is one letter apart, or it is the other's whole name plus a word (quillpress-payments). Of a pair, the lookalike
+is the one seen later; the owner's own domains always come first. The same name at another ending (example.nl next to
+example.com) and free mail domains never count.
+
+- Each build marks the people at a lookalike domain (`lookalike` on their node: the domain it imitates, and the person
+  on record there with the same name, when there is one).
+- A review never gives them a role (`graph.set_role` refuses it), and one a review gave them before is not shown. Only
+  the owner's own word gives them a role.
+- "Same person?" never pairs two people at confusable domains, and a shared name in one message or thread never joins them.
+- A prepared email to a lookalike address is checked before it is saved (`lookalike.problems`): a check about their
+  message goes to the person at the address on record instead.
+- A to-do about their message says plainly that it isn't who it seems ("This isn't Sam Lee. It came from
+  acme-corp.example, not acmecorp.example."). Its person chip and source line show their own address (the mark's
+  `sender`, via `graph.card_people` and `lookalike.source_line`): no borrowed name, picture or link.
+- The owner can still set a role, merge two people or send to any address themselves.
+
 ### Closeness and rhythm
 
 **Closeness** adds per day of contact, capped at 1 a day, so a burst of chat messages is one day:

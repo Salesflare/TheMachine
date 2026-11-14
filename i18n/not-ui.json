@@ -131,6 +131,7 @@
  "No open to-do with that id. Use list_todos or find_todos.",
  "No project by that name",
  "No record with that id. Use search first.",
+ "No role for a lookalike: {} only looks like {}{}. Say on the to-do that it is not who it seems.",
  "No sheet named {}; this workbook has {}",
  "No such message here",
  "No such promise.",

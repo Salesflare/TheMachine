@@ -5,7 +5,7 @@ import unittest
 import test_graph as tg
 from machine.app.graph_actions import GRAPH_SLOW_MS, slow_build_line
 
-PARTS = ['setup', 'identities', 'joins', 'strength', 'projects', 'decisions', 'sides', 'people', 'organizations', 'same_person',
+PARTS = ['setup', 'identities', 'joins', 'strength', 'projects', 'decisions', 'sides', 'people', 'organizations', 'lookalikes', 'same_person',
          'org_nodes', 'relations', 'rows', 'publish']
 
 
