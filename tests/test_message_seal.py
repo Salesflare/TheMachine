@@ -454,15 +454,16 @@ class Protected(unittest.TestCase):
     def test_role_quotes_promises_and_run_evidence_sealed_in_place_and_promises_still_dedupe(self):
         store = assistant.Store(self.path, protect=True)
         self.fill(store)
-        columns = (('person_roles', 'quote'), ('promises', 'what'), ('promises', 'note'), ('profile_runs', 'evidence'))
+        columns = (('person_roles', 'quote'), ('promises', 'what'), ('promises', 'note'), ('promises', 'refund'), ('profile_runs', 'evidence'))
         with sqlite3.connect(self.path) as raw:  # a database sealed before these columns were: no guards, plain text
             for table, column in columns:
                 for when in ('insert', 'update'):
                     raw.execute(f'DROP TRIGGER mc_{table}_{column}_{when}')
             raw.execute("INSERT INTO person_roles(identifier,role,source,created_at,event_id,quote) VALUES('email:pat@example.com','lawyer','review','t',1,?)",
                         (f'{CANARY} counsel',))
-            raw.execute("INSERT INTO promises(direction,who,what,check_at,event_id,account_id,status,note,created_at,updated_at) "
-                        "VALUES('theirs','Pat',?,'2026-10-20',1,'acct','answered',?,'t','t')", (f'send the {CANARY} contract', f'They wrote again: {CANARY}'))
+            raw.execute("INSERT INTO promises(direction,who,what,check_at,event_id,account_id,status,note,created_at,updated_at,refund) "
+                        "VALUES('theirs','Pat',?,'2026-10-20',1,'acct','answered',?,'t','t',?)", (f'send the {CANARY} contract', f'They wrote again: {CANARY}',
+                                                                                                json.dumps({'ref': CANARY})))
             raw.execute("INSERT INTO profile_runs(run_id,status,started_at,updated_at,evidence,kind) VALUES('r','ok','t','t',?,'profile')",
                         (json.dumps({'messages': [CANARY]}),))
         self.assertIn(CANARY.encode(), files(self.path))

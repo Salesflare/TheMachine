@@ -216,7 +216,8 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   `machine/web/handler.py` (`make_handler(app)`: the dashboard's HTTP `Handler`, out of `App.serve`),
   `machine/app/talk.py` (`TalkApp`: Talk's view, actions, tools, drafts and sends), `machine/app/fleet.py`
   (`FleetApp`: attaching the Fleet, its pings, notices, votes, shared learnings and connectors), follow-up and promise
-  steps into `FollowUpsApp` and `PromiseChecksApp` (`machine/app/follow_ups.py`, `promise_checks.py`), the graph
+  steps into `FollowUpsApp` and `PromiseChecksApp` (`machine/app/follow_ups.py`, `promise_checks.py`; a refund
+  promise's check, money-back match, chase text and draft are plain code in `refunds.py`), the graph
   worker and timeline methods into `GraphActionsApp` (`machine/app/graph_actions.py`), `machine/app/card_chat.py`
   (`CardChatApp`: a to-do's chat turn, its models, stop and hand-offs), `machine/app/recap.py` (`RecapApp`: the weekly
   recap, its steps, view and choices), `machine/store/conversation.py` and `machine/app/conversation.py`
