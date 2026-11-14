@@ -23,9 +23,10 @@ from decimal import Decimal, InvalidOperation
 import graph
 import i18n
 import subscriptions
+from machine import kinds
 from machine.store.review_wait import NO_REPLY
 
-MAIL_KINDS = ('gmail.message', 'ms_graph.message', 'outlook.message')
+MAIL_KINDS = tuple(k for k in kinds.of(family=kinds.MAIL) if kinds.KINDS[k]['service'])  # the owner's own mailboxes
 PHONE_KIND = 'android.notification'  # a bank app's notification on the owner's phone
 # Payment services that send the money back for a merchant, and say so by mail
 PROVIDERS = frozenset((*subscriptions.PROCESSORS, 'klarna.com', 'adyen.com', 'mollie.com', 'squareup.com', 'afterpay.com',

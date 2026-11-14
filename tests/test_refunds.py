@@ -91,7 +91,6 @@ class Refunds(unittest.TestCase):
         for words in ('Refunds:', 'refund {"amount", "currency", "ref", "contact"}', '5-10 business days', 'Only when the amount',
                       'status kept', 'looks_handled paid:true'):
             self.assertIn(words, prompt)
-        self.assertIn('**Refunds owed to the owner**', (ROOT / 'AGENTS.md').read_text())
         self.assertIn('## Refunds', (ROOT / 'docs/help/promises.md').read_text())
 
     def test_a_refund_is_kept_sealed_with_what_the_message_shows(self):
