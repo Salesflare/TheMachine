@@ -1,17 +1,18 @@
 """Connector plugins: one file in connectors/ per service, loaded by name, never by path."""
+import gzip
 import importlib.util
-import io
 import json
 import re
 from pathlib import Path
+import socket
 import tempfile
 import unittest
-import urllib.error
 from unittest.mock import patch
 
 spec = importlib.util.spec_from_file_location('assistant_plugins', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(a)
+from connectors import web_page  # noqa: E402 - after assistant.py, as the connectors load it
 
 FEED = {'id': 'work-feed', 'service': 'rss', 'transport': 'http', 'boundary': 'work', 'url': 'https://example.com/feed.xml'}
 RSS = b"""<?xml version="1.0"?><rss version="2.0"><channel><title>Example</title>
@@ -25,12 +26,14 @@ ATOM = b"""<?xml version="1.0"?><feed xmlns="http://www.w3.org/2005/Atom"><title
 <updated>2026-10-15T08:30:00Z</updated><summary>Hello</summary></entry></feed>"""
 
 
-class Response(io.BytesIO):
-    def __init__(self, body, headers=None):
-        super().__init__(body)
-        self.headers = headers or {}
-    def __enter__(self): return self
-    def __exit__(self, *_): self.close()
+def served(body=b'', headers=None, status=200, asked=None):
+    """The feed's server, as the reader (web_page.get) answers: (status, headers, body, final url). `asked` collects
+    the request headers of each read."""
+    def get(url, SourceError, request_headers=None, limit=web_page.MAX_BYTES):
+        if asked is not None:
+            asked.append(request_headers or {})
+        return status, headers or {}, body if status == 200 else b'', url
+    return patch.object(web_page, 'get', side_effect=get)
 
 
 class ConnectorPlugins(unittest.TestCase):
@@ -43,8 +46,13 @@ class ConnectorPlugins(unittest.TestCase):
         with self.store.connect() as db:
             return [dict(r) for r in db.execute('SELECT kind,title,body,metadata,occurred_at FROM events ORDER BY occurred_at')]
 
+    def later(self):
+        """As if the last read was longer ago than the connector's floor (rss.MIN_SECONDS)."""
+        state = self.store.checkpoint('work-feed')
+        self.store.commit_page('work-feed', {**state, 'read_at': state['read_at'] - 901}, [])
+
     def test_rss_items_are_stored_once_and_rereads_add_nothing(self):
-        with patch('urllib.request.urlopen', return_value=Response(RSS, {'ETag': '"v1"'})):
+        with served(RSS, {'ETag': '"v1"'}):
             self.assertEqual(a.sync_source(self.store, {}, FEED)['events'], 2)
         rows = self.stored()
         self.assertEqual([r['title'] for r in rows], ['Release 1.0', 'Release 2.0'])
@@ -52,24 +60,40 @@ class ConnectorPlugins(unittest.TestCase):
         self.assertEqual(rows[1]['occurred_at'], '2026-10-14T07:00:00+00:00')
         self.assertEqual(json.loads(rows[1]['metadata'])['source_url'], 'https://example.com/2')
         self.assertEqual(self.store.checkpoint('work-feed')['etag'], '"v1"')
-        with patch('urllib.request.urlopen', return_value=Response(RSS)):
+        self.later()
+        with served(RSS):
             a.sync_source(self.store, {}, FEED)
         with self.store.connect() as db:
             self.assertEqual(db.execute('SELECT count(*),max(version) FROM events').fetchone()[:], (2, 1))
 
     def test_not_modified_keeps_the_checkpoint_and_sends_it(self):
-        with patch('urllib.request.urlopen', return_value=Response(RSS, {'ETag': '"v1"'})):
+        with served(RSS, {'ETag': '"v1"'}):
             a.sync_source(self.store, {}, FEED)
-        def not_modified(request, timeout):
-            self.assertEqual(request.get_header('If-none-match'), '"v1"')
-            raise urllib.error.HTTPError(FEED['url'], 304, 'Not Modified', {}, None)
-        with patch('urllib.request.urlopen', side_effect=not_modified):
+        self.later()
+        asked = []
+        with served(status=304, asked=asked):
             self.assertEqual(a.sync_source(self.store, {}, FEED)['events'], 0)
+        self.assertEqual(asked[0]['If-None-Match'], '"v1"')
         self.assertEqual(self.store.checkpoint('work-feed')['etag'], '"v1"')
         self.assertEqual(len(self.stored()), 2)
 
+    def test_a_feed_is_never_read_more_often_than_the_floor(self):
+        # Whatever poll_seconds or a quick retry asks: one read per rss.MIN_SECONDS, as the Web page connector does
+        asked = []
+        with served(RSS, asked=asked):
+            a.sync_source(self.store, {}, {**FEED, 'poll_seconds': 5})
+            self.assertEqual(a.sync_source(self.store, {}, {**FEED, 'poll_seconds': 5})['events'], 0)
+            self.assertEqual(len(asked), 1)
+            self.later()
+            a.sync_source(self.store, {}, FEED)
+        self.assertEqual(len(asked), 2)
+
+    def test_a_gzipped_feed_is_unpacked(self):
+        with served(gzip.compress(ATOM), {'Content-Encoding': 'gzip'}):
+            self.assertEqual(a.sync_source(self.store, {}, FEED)['events'], 1)
+
     def test_atom_feeds_and_kind_labels(self):
-        with patch('urllib.request.urlopen', return_value=Response(ATOM)):
+        with served(ATOM):
             a.sync_source(self.store, {}, FEED)
         [row] = self.stored()
         self.assertEqual((row['kind'], row['title'], row['occurred_at']), ('rss.item', 'Post', '2026-10-15T08:30:00+00:00'))
@@ -78,28 +102,73 @@ class ConnectorPlugins(unittest.TestCase):
         self.assertEqual(a.source_kind('nothing.here'), 'signal')
 
     def test_failures_are_source_errors_with_safe_labels(self):
-        cases = [(urllib.error.HTTPError(FEED['url'], 500, 'secret page text', {}, None), 'rss_http:HTTP_500'),
-                 (Response(b'<rss><channel><item>'), 'rss_invalid_xml')]
-        for outcome, label in cases:
-            kwargs = {'side_effect': outcome} if isinstance(outcome, Exception) else {'return_value': outcome}
-            with self.subTest(label), patch('urllib.request.urlopen', **kwargs):
+        cases = [(served(status=500), 'rss_http:HTTP_500'), (served(b'<rss><channel><item>'), 'rss_invalid_xml'),
+                 (served(b'x' * 5_000_001), 'rss_feed_too_large')]
+        for server, label in cases:
+            with self.subTest(label), server:
                 with self.assertRaises(a.SourceError) as caught:
-                    a.sync_source(self.store, {}, FEED)
+                    a.sync_source(self.store, {}, {**FEED, 'id': label})
                 self.assertEqual(str(caught.exception), label)
         with self.assertRaises(a.SourceError) as caught:
             a.sync_source(self.store, {}, {**FEED, 'url': 'http://example.com/feed'})
         self.assertEqual(str(caught.exception), 'rss_missing_url')
 
+    def test_only_public_addresses_are_read(self):
+        # A hosted Machine runs on a cloud server: no feed address, name or redirect may point it at that server, its
+        # network or the cloud's metadata address. The same reader as the Web page connector (web_page.get).
+        connector = a.load_connector('rss')
+        for url in ('https://127.0.0.1/feed', 'https://169.254.169.254/latest/meta-data', 'https://10.0.0.8/feed',
+                    'https://[::1]/feed', 'https://localhost/feed', 'https://router.local/feed', 'https://example.com:8443/feed'):
+            with self.subTest(url), patch.object(socket, 'create_connection', side_effect=AssertionError('connected')):
+                with self.assertRaises(a.SourceError) as caught:
+                    a.sync_source(self.store, {}, {**FEED, 'url': url})
+                self.assertEqual(str(caught.exception), 'rss_address')
+                with self.assertRaisesRegex(a.SourceError, '^rss_address$'):
+                    connector.check({}, {**FEED, 'url': url}, a.CONNECTOR_HELPERS)
+
+        class Sock:  # a public name that resolves to a private address: refused on the socket, before a byte is sent
+            def getpeername(self):
+                return ('10.1.2.3', 443)
+
+            def close(self):
+                pass
+        with patch.object(socket, 'create_connection', return_value=Sock()):
+            with self.assertRaisesRegex(a.SourceError, '^rss_address$'):
+                connector.check({}, FEED, a.CONNECTOR_HELPERS)
+
+        class Redirect:
+            status = 302
+
+            def getheader(self, name):
+                return 'https://169.254.169.254/latest/meta-data' if name == 'Location' else None
+
+        class Connection:
+            def __init__(self, *_args):
+                pass
+
+            def request(self, *_args, **_kwargs):
+                pass
+
+            def getresponse(self):
+                return Redirect()
+
+            def close(self):
+                pass
+        with patch.object(web_page, '_connection', side_effect=Connection):
+            with self.assertRaisesRegex(a.SourceError, '^rss_address$'):
+                connector.check({}, FEED, a.CONNECTOR_HELPERS)
+        self.assertEqual(connector.SETUP['hints']['rss_address'], web_page.SETUP['hints']['web_page_address'])
+
     def test_setup_probe_reads_and_parses_without_saving_events_or_checkpoint(self):
         connector = a.load_connector('rss')
         for raw in (RSS, ATOM):
-            with patch('urllib.request.urlopen', return_value=Response(raw)):
+            with served(raw):
                 self.assertIsNone(connector.check({}, FEED, a.CONNECTOR_HELPERS))
         self.assertEqual(self.stored(), [])
         self.assertIsNone(self.store.checkpoint('work-feed'))
         for raw, label in ((b'<html/>', 'rss_invalid_feed'), (b'<rss', 'rss_invalid_xml'),
                            (RSS.replace(b'Wed, 14 Oct 2026 09:00:00 +0200', b'not a date').replace(b'Mon, 12 Oct 2026 09:00:00 GMT', b'nor this'), 'rss_invalid_timestamp')):
-            with self.subTest(label), patch('urllib.request.urlopen', return_value=Response(raw)):
+            with self.subTest(label), served(raw):
                 with self.assertRaises(a.SourceError) as caught:
                     connector.check({}, FEED, a.CONNECTOR_HELPERS)
                 self.assertEqual(str(caught.exception), label)

@@ -10,7 +10,7 @@ from unittest.mock import patch
 from machine.sources.rows import SKIPPED, Skips
 from seams import patch_everywhere
 import ms_graph
-from test_connectors import FEED, RSS, Response, a
+from test_connectors import FEED, RSS, a, served
 
 H = a.CONNECTOR_HELPERS
 
@@ -180,7 +180,7 @@ class FeedTests(Base):
     def test_a_feed_item_without_a_date_is_skipped(self):
         feed = RSS.replace(b'Wed, 14 Oct 2026 09:00:00 +0200', b'not a date')
         rss = a.load_connector('rss')
-        with patch('urllib.request.urlopen', side_effect=lambda *_, **__: Response(feed)):
+        with served(feed):
             self.assertIsNone(rss.check({}, FEED, H))  # one odd item is no reason to refuse the feed at setup
             result = a.sync_source(self.store, {}, FEED)
         self.assertEqual((result['events'], result['skipped']), (1, 1))

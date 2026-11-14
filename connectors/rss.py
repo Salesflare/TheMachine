@@ -3,6 +3,10 @@
 Config: {"id": "work-feed", "service": "rss", "transport": "http", "boundary": "work:Acme",
          "url": "https://example.com/feed.xml", "poll_seconds": 1800}
 
+Each read is one HTTPS GET through the Web page connector's reader (connectors/web_page.py get): only public
+addresses, every redirect hop too, checked on the socket; at most MAX_BYTES (also once unpacked) in its TIMEOUT; never
+more than once every MIN_SECONDS, whatever poll_seconds says; If-None-Match/If-Modified-Since when the feed gives them.
+
 A connector is one module in connectors/ named after its service. It exposes
 sync(store, config, account, helpers) and optionally KINDS (event kind -> label).
 """
@@ -10,13 +14,19 @@ import calendar
 import datetime as dt
 import email.utils
 import hashlib
-import http.client
 import re
-import urllib.error
-import urllib.request
+import time
 import xml.etree.ElementTree as ET
+import zlib
 from xml.parsers import expat
 
+from connectors import web_page
+
+UA = 'TheMachine/1 (+feed reader)'
+MAX_BYTES = 5_000_000  # of a feed, also once unpacked
+MIN_SECONDS = 900  # never read a feed more often than this, whatever poll_seconds says
+# The reader's errors (connectors/web_page.py get) as this connector's own
+READ_ERRORS = {'web_page_address': 'rss_address', 'web_page_redirects': 'rss_redirects', 'web_page_network': 'network:OSError:rss_read'}
 KINDS = {'rss.item': 'feed'}
 # How each kind reads in the message viewer (email, chat, notification or card) and the app its link opens in
 # (machine/store/message_view.py; docs/adding-a-source.md, "How a message reads")
@@ -25,7 +35,8 @@ APP = ''
 # For `assistant connect rss`: the account it adds and what it asks (see docs/adding-a-source.md).
 SETUP = {'label': 'RSS feed', 'what': 'Posts from the feeds you follow.',
          'account': {'id': 'feed', 'service': 'rss', 'transport': 'http', 'boundary': 'work', 'poll_seconds': 1800},
-         'ask': [('url', 'Feed URL (RSS or Atom)')]}
+         'ask': [('url', 'Feed URL (RSS or Atom)')],
+         'hints': {'rss_address': 'use a public https:// address'}}
 ATOM = '{http://www.w3.org/2005/Atom}'
 
 
@@ -50,20 +61,31 @@ def parse_xml(raw):
 
 
 def fetch(url, state, SourceError):
-    request = urllib.request.Request(url, headers={'User-Agent': 'TheMachine/1 (+feed reader)'})
+    """One GET of the feed through the Web page connector's reader (web_page.get): public https addresses only, every
+    redirect hop too, checked on the socket itself, so no feed or redirect can point it at this computer, its network
+    or a cloud server's metadata address. (body, headers); body None when the feed says it didn't change (304)."""
+    headers = {'User-Agent': UA, 'Accept': 'application/rss+xml, application/atom+xml, application/xml;q=0.9, text/xml;q=0.9, */*;q=0.5'}
     if state.get('etag'):
-        request.add_header('If-None-Match', state['etag'])
+        headers['If-None-Match'] = state['etag']
     if state.get('last_modified'):
-        request.add_header('If-Modified-Since', state['last_modified'])
+        headers['If-Modified-Since'] = state['last_modified']
     try:
-        with urllib.request.urlopen(request, timeout=30) as response:
-            return response.read(5_000_001), response.headers
-    except urllib.error.HTTPError as error:
-        if error.code == 304:
-            return None, error.headers
-        raise SourceError('rss_http', error.code, retry_after=3600 if error.code == 429 else None) from None
-    except (urllib.error.URLError, TimeoutError, http.client.HTTPException) as error:
-        raise SourceError('network:' + type(error).__name__ + ':rss_read') from None
+        status, response, body, _ = web_page.get(url, SourceError, headers, limit=MAX_BYTES)
+    except SourceError as error:
+        raise SourceError(READ_ERRORS.get(error.category, error.category)) from None
+    if status == 304:
+        return None, response
+    if status != 200:
+        raise SourceError('rss_http', status, retry_after=3600 if status == 429 else None)
+    if (response.get('Content-Encoding') or '').lower() == 'gzip':
+        try:
+            inflate = zlib.decompressobj(16 + zlib.MAX_WBITS)
+            body = inflate.decompress(body, MAX_BYTES + 1)
+        except zlib.error:
+            raise SourceError('rss_invalid_xml') from None
+        if inflate.unconsumed_tail:
+            body += b'!'  # more than MAX_BYTES unpacked: too large
+    return body, response
 
 
 def text(node, *names):
@@ -111,10 +133,13 @@ def sync(store, config, account, helpers):
     if not re.fullmatch(r'https://\S+', account.get('url') or ''):
         raise helpers.SourceError('rss_missing_url')
     state = store.checkpoint(account['id']) or {}
+    if time.time() - float(state.get('read_at') or 0) < MIN_SECONDS:
+        return {'mode': 'incremental', 'events': 0}  # read within MIN_SECONDS: never sooner, whatever asked
+    state['read_at'] = time.time()
     raw, headers = fetch(account['url'], state, helpers.SourceError)
     events, skipped = [], helpers.Skips('rss_invalid_item')
     if raw is not None:
-        if len(raw) > 5_000_000:
+        if len(raw) > MAX_BYTES:
             raise helpers.SourceError('rss_feed_too_large')
         try:
             root = parse_xml(raw)
@@ -136,7 +161,7 @@ def check(config, account, helpers):
     if not re.fullmatch(r'https://\S+', account.get('url') or ''):
         raise helpers.SourceError('rss_missing_url')
     raw, _ = fetch(account['url'], {}, helpers.SourceError)
-    if raw is None or len(raw) > 5_000_000:
+    if raw is None or len(raw) > MAX_BYTES:
         raise helpers.SourceError('rss_invalid_feed' if raw is None else 'rss_feed_too_large')
     try:
         root = parse_xml(raw)
