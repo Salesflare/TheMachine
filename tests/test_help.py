@@ -77,7 +77,7 @@ class HelpArticles(unittest.TestCase):
         for text, want in ((GOOD + 'Fast — and calm.\n', 'em dash'), (GOOD + 'You can open it.\n', 'starts with "You"'),
                            (GOOD + '- You can open it.\n', 'starts with "You"'), (GOOD + 'a' * 430 + '\n', 'over 420'),
                            (GOOD + '| a | b |\n', 'does not render'), (GOOD + '# Big\n', 'does not render'),
-                           (GOOD + '[x](nowhere.md)\n', 'not an article'), (GOOD + 'From {price.cheap}.\n', 'unknown placeholder'), (GOOD + '[x](/nowhere)\n', 'not a page of the site'),
+                           (GOOD + '[x](nowhere.md)\n', 'not an article'), (GOOD + '[x](slack.md#nowhere)\n', 'a heading slack.md does not have'),(GOOD + 'From {price.cheap}.\n', 'unknown placeholder'), (GOOD + '[x](/nowhere)\n', 'not a page of the site'),
                            (GOOD.replace('area: connections', 'area: misc'), 'area')):
             self.assertIn(want, ' '.join(self.problems(text)), text[-40:])
 

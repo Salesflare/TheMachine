@@ -25,7 +25,7 @@ It fails when:
 - the copy breaks the house style: an em dash, a line that starts with "You", a paragraph over 420 characters,
   a summary over 160, a placeholder other than TOKENS (like {price.standard}, which the site fills in), or Markdown
   the site does not render (only ## and ### headings, paragraphs, - and 1. lists,
-  **bold**, `code` and links; a link to another article is its file name, like gmail.md);
+  **bold**, `code` and links; a link to another article is its file name, like gmail.md, and a #part must be a heading it has);
 - a current translation (docs/help/<language>/<article>.md, shown in the dashboard's Help in that language, made
   from this English, with its headings, paragraphs and list items; the headings' anchors are the English ones, by
   position) doesn't match its English article: other front matter than title, summary and translated, a link to an
@@ -95,6 +95,7 @@ FEATURES = {
     'talk-live': ('talk_live.py', 'def lines'),
     'recurring': ('recurring.py', 'def tick'),
     'email-composer': ('machine/app/mail.py', 'def compose_email_action'),
+    'lookalike-senders': ('lookalike.py', 'def one_apart'),
 }
 # Features that exist in the code but have no article yet, each with the reason. Keep this short.
 PENDING = {
@@ -189,6 +190,9 @@ def check_copy(name, fields, body, known):
                 problems.append(f'links to {target}, not a page of the site')
         elif not page.endswith('.md') or page[:-3] not in known:
             problems.append(f'links to {target}, not an article')
+        elif '#' in target and target.split('#', 1)[1] not in {
+                heading_id(h) for h in re.findall(r'^#{2,3} (.+)$', known[page[:-3]][1] or '', re.M)}:
+            problems.append(f'links to {target}, a heading {page} does not have')
     return problems
 
 
