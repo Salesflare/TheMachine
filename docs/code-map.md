@@ -103,6 +103,10 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   - `machine/app/history.py` (`HistoryApp`): the history backfill's worker, when it may run and one step per source;
     `machine/store/history.py` owns `history_backfill` and the line between history and signal (`events.history`).
     `machine/store/graph_history.py` lets history into the Graph's people and organizations in bounded passes, newest first.
+  - `machine/graph/`: the passes of a Graph build, one function each, in the order `graph._build_in` runs them:
+    identities, joins, strength, projects, decisions, sides, people, organizations, same person, organization and
+    project nodes, relations, rows. `graph.py` keeps the transactions and the publish. `tests/test_graph_golden.py`
+    holds every `graph_*` row a sandbox build writes, so a change to a pass shows each row it changes.
   - `machine/app/search_ask.py` (`SearchAskApp`): Ask from search: the messages a question in Search finds in the area
     in view and the one-shot turn that answers it (`search_ask.py` has the prompt and the answer).
   - `machine/app/ask_memory.py`: what Ask reads besides messages, as four blocks on the `ask` recall: promises, facts,

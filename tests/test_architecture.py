@@ -152,6 +152,7 @@ MACHINE_LAYERS = {
     'prompts': 1,
     'sources': 1,
     'store': 2,
+    'graph': 2,        # the Graph build's passes (graph.build): one function each, imports none of machine/
     'upkeep': 2,       # housekeeping of the data folder: agent job folders (retention.py runs it)
     'delivery': 3,
     'export': 3,       # export and import: what an install keeps (inventory), the hold after an import
@@ -453,7 +454,7 @@ PY_BYTE_BUDGET = 450 * 1024
 PY_RATCHET_SLACK = (500, 50_000)
 PY_OVER_BUDGET = {
     'fleet.py': (3_800, PY_BYTE_BUDGET),
-    'graph.py': (4_800, PY_BYTE_BUDGET),
+    'graph.py': (4_300, PY_BYTE_BUDGET),
     'next_actions.py': (2_650, PY_BYTE_BUDGET),
     'onboarding.py': (3_100, PY_BYTE_BUDGET),
     'shared_graph.py': (3_200, PY_BYTE_BUDGET),
