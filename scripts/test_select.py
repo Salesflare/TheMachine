@@ -7,7 +7,7 @@ Given the changed paths, it follows what depends on them, from the files in this
 - any other file (a dashboard part, a catalog, a help article, a helper in tests/, a plugin file): every file that names
   it, its file name or its folder ('dashboard/', 'i18n/'), again and again through files that aren't Python. A Python
   file that names it counts, and with it the files that import that Python file;
-- a test file: itself.
+- a test file: itself, and every test that imports it (from test_connectors import a, Response), with the map too.
 The tests that look over the whole repository (ALWAYS) run on every change. Anything it can't place runs everything:
 a changed file nothing names that isn't plainly inert, a change to the test machinery (FULL), or more files than it
 helps to pick from. Prints the test file names, one per line, or ALL.
@@ -1322,6 +1322,16 @@ def select_mapped(changed, repo, impact, base, why=None):
                 scopes[path] = None
         return scopes[path]
 
+    def test_importers(path):
+        """The tests that import a test module, directly or through another one (a helper in tests/ included)."""
+        found, pending = set(), [path]
+        while pending:
+            for other in repo.importers.get(pending.pop(), ()):
+                if other.startswith('tests/') and other not in found:
+                    found.add(other)
+                    pending.append(other)
+        return {other for other in found if is_test(other)}
+
     def users(path):
         """Python files that can see what path defines: itself, what imports it, what names it."""
         return {path} | repo.importers.get(path, set()) | {p for p in repo.named_by(path) if p.endswith('.py')}
@@ -1929,6 +1939,10 @@ def select_mapped(changed, repo, impact, base, why=None):
         new = (ROOT / path).read_text(encoding='utf-8', errors='replace') if (ROOT / path).is_file() else None
         if is_test(path):
             add(path, 'changed')
+            # a test module others import (from test_connectors import a, Response): those tests, all the way up. The
+            # map knows what tests ran, not what they import from each other, so a name taken out breaks them unseen.
+            for other in test_importers(path):
+                add(other, f'imports {path}')
         elif path.endswith('.py'):
             old = git_text(base, path) if base else None
             if old is None and new is not None and path not in impact.known:

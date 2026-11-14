@@ -219,6 +219,23 @@ class WithTheMap(unittest.TestCase):
         got = select.select([path], repo=REPO, impact=self.impact({}, skip={new_test}), base='HEAD')
         self.assertIn(new_test, got)
 
+    def test_a_test_module_others_import_runs_them_too(self):
+        # test_connectors.py lost a helper (Response) that eleven tests import: the map only knows what tests ran, so
+        # their imports, found here by a grep, are what picks them, with the map and without it
+        path = 'tests/test_connectors.py'
+        importing = re.compile(r'^\s*(?:from\s+test_connectors\s+import|import\s+test_connectors\b)', re.M)
+        needed = {Path(test).name for test, text in SOURCE.items() if test != path and importing.search(text)}
+        self.assertGreater(len(needed), 5)
+        self.change(path, [1])
+        for impact in (self.impact({}), None):
+            with self.subTest(map=impact is not None):
+                got = select.select([path], repo=REPO, impact=impact, base='HEAD' if impact else None)
+                if got is not None:
+                    self.assertEqual(sorted(needed - set(got)), [])
+        why = {}
+        select.select([path], repo=REPO, impact=self.impact({}), base='HEAD', why=why)
+        self.assertEqual(why['test_doc_writes.py'], f'imports {path}')
+
     def test_a_catalog_change_runs_the_tests_that_name_its_text(self):
         text = 'A sentence no test names, ' + 'made up here'
         strings = select.catalog_strings('{"Done": "Klaar"}', '{"Done": "Gedaan", "%s": "x"}' % text)
