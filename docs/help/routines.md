@@ -71,7 +71,9 @@ It sends at most two nudges a week, one per person a month, and none to someone 
 
 Every 3 hours it opens the search in The Machine’s own browser and looks for listings it hasn’t seen yet. Price, distance and words you left out are checked first, in plain code.
 
-Each new listing that passes is opened and your AI judges its condition from the photo and description, and the seller from their reviews, rating and account age. The good ones go in one to-do, each with its photo, title, price, a one-line verdict and a link to the listing. A run with nothing good makes no to-do.
+Each new listing that passes is opened and your AI judges its condition from the photo and description, and the seller from their reviews, rating and account age. The good ones go in one to-do, each with its photo, title, price and a one-line verdict. Tap one to open the listing in The Machine’s browser.
+
+While that to-do is open, new finds join it on top, its count goes up and it notifies you again, since good deals go fast. Mark it done and the next find starts a new one. A run with nothing good changes nothing.
 
 It stays polite and cheap: one read of the search per run, at most 6 listings opened per run with a pause between them, and at most 40 listings checked a day across all your searches. Each check is one short question to your AI with one photo. The first run checks the newest few and takes in the rest as seen, so later runs bring only what is new.
 

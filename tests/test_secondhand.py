@@ -27,7 +27,7 @@ import routines  # noqa: E402
 import secondhand as sh  # noqa: E402
 from secondhand_app import SecondhandTemplate  # noqa: E402
 import timeutil  # noqa: E402
-from machine import todo_kinds  # noqa: E402
+from machine import todo_kinds, todo_states  # noqa: E402
 from machine.actions import DASHBOARD_ACTIONS, OWNER_ACTIONS  # noqa: E402
 from machine.cards import controls  # noqa: E402
 
@@ -315,11 +315,47 @@ class Run(unittest.TestCase):
         self.again()
         self.assertEqual((self.opened, self.asked, len(self.todos())), ([], [], 1))
         self.assertEqual((self.runs()[-1]['state'], self.runs()[-1]['why']), ('nothing', 'No new listings'))
-        # one new listing: only that one
+        # one new listing: only that one, and it joins the open to-do on top, with its count and a notification again
+        with self.store.connect() as db:
+            db.execute("INSERT OR REPLACE INTO deliveries(suggestion_id,status,message_id,updated_at) VALUES(?,'sent','m-1','2026-01-01')", (row['id'],))
         self.search['listings'] = self.items(4) + self.search['listings']
         self.again()
         self.assertEqual(self.opened, ['https://market.example/v/m4'])
-        self.assertEqual(len(self.todos()), 2)
+        todos = self.todos()
+        self.assertEqual([t['title'] for t in todos], ['2 finds for city bike'], 'one finds to-do per search at a time')
+        _, extra = self.view(todos[0]['id'])
+        self.assertEqual([i['url'] for i in extra['secondhand']['items']], ['https://market.example/v/m4', 'https://market.example/v/m1'])
+        with self.store.connect() as db:
+            sent = db.execute('SELECT status,reminder,needs_edit FROM deliveries WHERE suggestion_id=?', (row['id'],)).fetchone()
+        self.assertEqual(tuple(sent), ('queued', 1, 1), 'a good listing goes fast: the joined to-do notifies again')
+        # done: the next find makes a new to-do
+        with self.store.connect() as db:
+            db.execute('UPDATE suggestions SET status=? WHERE id=?', (todo_states.COMPLETED, row['id']))
+        self.search['listings'] = self.items(5) + self.search['listings']
+        self.again()
+        self.assertEqual([t['title'] for t in self.todos()], ['2 finds for city bike', '1 find for city bike'])
+
+    def test_a_find_opens_in_the_machines_browser_and_only_one_on_the_todo(self):
+        self.search['listings'] = self.items(1)
+        self.add()
+        sid = self.todos()[0]['id']
+        made = []
+        with patch.object(sh.browser_cdp, '_http', lambda base, path, *x, **k: made.append(path) or []), \
+                patch.object(sh.browser_cdp, 'open_tab', lambda base, url: made.append(url) or 'T9'), \
+                patch('browser_viewer.raise_window', lambda base: None, create=True):
+            shown = self.act('secondhand_open', suggestion_id=sid, url='https://market.example/v/m1')
+            self.assertTrue(shown['shown'])
+            self.assertEqual(made, ['https://market.example/v/m1', '/json/activate/T9'])
+            with self.assertRaises(ValueError):  # OwnerError
+                self.act('secondhand_open', suggestion_id=sid, url='https://elsewhere.example/phish')
+        with self.store.connect() as db:
+            self.assertNotEqual(sh.search(db, self.rid())['tab'], 'T9', 'the search keeps its own tab')
+
+    def test_joined_finds_stay_one_each_newest_first_and_capped(self):
+        have = [{'url': f'https://m.example/{n}'} for n in range(sh.TODO_MAX)]
+        out = sh.joined([{'url': 'https://m.example/new'}, {'url': 'https://m.example/3'}], have)
+        self.assertEqual(len(out), sh.TODO_MAX)
+        self.assertEqual([i['url'] for i in out[:3]], ['https://m.example/new', 'https://m.example/3', 'https://m.example/0'])
 
     def test_the_first_run_takes_stock_and_the_daily_cap_holds(self):
         self.search['listings'] = self.items(*range(1, 11))

@@ -1,5 +1,5 @@
 """Second-hand finds (docs/help/routines.md, "Templates"): new listings on a second-hand search the owner set, each
-judged on its condition and seller, in one to-do per run when any pass. The plain-code part; secondhand_app.py runs it.
+judged on its condition and seller, on one open to-do per search when any pass. The plain-code part; secondhand_app.py runs it.
 
 A routine per search (routine_templates 'many'): the owner pastes a search page from any second-hand site (Marktplaats,
 2dehands, Vinted, eBay, Facebook Marketplace, Kleinanzeigen, Leboncoin, ...) and, optionally, filters in plain words
@@ -43,7 +43,8 @@ PACE = (4.0, 9.0)  # seconds between two page opens in one run
 SEEN_MAX = 3000  # listings a routine remembers; the oldest go first
 SEARCH_MAX = 60  # listings one search read keeps
 FILTERS_MAX = 200
-SHOWN_MAX = 6  # finds one to-do lists
+SHOWN_MAX = 6  # finds one run adds to its to-do
+TODO_MAX = 24  # finds one to-do lists: new ones join the open to-do on top, the oldest go
 VERDICT_MAX = 120
 TITLE_MAX = 140
 DESCRIPTION_MAX = 1200
@@ -513,6 +514,45 @@ def open_blocked(db, routine_id):
     except Exception:
         return None
     return row
+
+
+def open_finds(db, routine_id):
+    """The routine's open finds to-do, which a run's new finds join (one per search at a time): (suggestion id, its
+    event id, that event's metadata), or None."""
+    try:
+        rows = db.execute(f"SELECT s.id,s.event_ids FROM secondhand_todos t JOIN suggestions s ON s.id=t.suggestion_id WHERE t.routine_id=? "
+                          f"AND t.kind='finds' AND s.status NOT IN {todo_states.sql(todo_states.CLOSED)} ORDER BY t.at DESC", (routine_id,)).fetchall()
+    except Exception:  # a database before these tables
+        return None
+    for row in rows:
+        for event in json.loads(row['event_ids'] or '[]'):
+            found = db.execute('SELECT metadata FROM events WHERE id=? AND kind=?', (event, KIND)).fetchone()
+            meta = _meta(found[0]) if found else {}
+            if meta.get('secondhand') and not meta.get('blocked'):
+                return row['id'], event, meta
+    return None
+
+
+def joined(new, have):
+    """A to-do's finds with a run's new ones on top: each listing once, at most TODO_MAX, the oldest dropped."""
+    out, urls = [], set()
+    for item in [*new, *have]:
+        if isinstance(item, dict) and item.get('url') not in urls:
+            urls.add(item.get('url'))
+            out.append(item)
+    return out[:TODO_MAX]
+
+
+def listing_on(db, suggestion_id, url):
+    """Is this address one of the listings on that finds to-do? Open shows only those, never an address from outside."""
+    row = db.execute('SELECT event_ids FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
+    if not row or not url:
+        return False
+    for event in json.loads(row['event_ids'] or '[]'):
+        found = db.execute('SELECT metadata FROM events WHERE id=? AND kind=?', (event, KIND)).fetchone()
+        if found and any(isinstance(i, dict) and i.get('url') == url for i in _meta(found[0]).get('items') or []):
+            return True
+    return False
 
 
 def _meta(value):

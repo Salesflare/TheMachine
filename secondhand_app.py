@@ -9,7 +9,9 @@ allows, like the Daily digest:
    The lease ends before any model call.
 2. Per listing, one small model call (secondhand_check): its first photo (OpenClaw's image routing, as WhatsApp photos)
    with its text and seller lines, or the text alone. Never more than the day's DAY_CHECKS across all searches.
-3. The ones it keeps, with a verdict that says something, in one to-do (secondhand_todo). None: nothing new, no to-do.
+3. The ones it keeps, with a verdict that says something, on the search's open finds to-do, on top, which notifies
+   again; else a new one (secondhand_todo). None: nothing new, no to-do. Each find opens in The Machine's browser
+   (secondhand_open with its url).
 
 A login, captcha or bot check on the search is the owner's: one to-do says why with Open (secondhand_open: that tab,
 left open, in front in The Machine's browser), and the run didn't work. A later read that works closes it by itself.
@@ -115,27 +117,35 @@ class SecondhandTemplate(routine_templates.Template):
 
     def secondhand_open_action(self, name, args, owner_dashboard):
         """Open: the search page in front in The Machine's browser (the tab the read left open on the wall, else the
-        address again), for the owner to sign in or pass the check there themselves. {shown, view}."""
+        address again), for the owner to sign in or pass the check there themselves. With url: one of that finds
+        to-do's listings, in a tab of its own (only an address on the to-do). {shown, view}."""
         if not owner_dashboard:
             raise OwnerError('Only the owner opens the browser, from the dashboard')
+        sid, listing = str(args.get('suggestion_id') or ''), str(args.get('url') or '')
         with self.store.connect() as db:
             secondhand.ensure(db)
-            row = db.execute('SELECT routine_id FROM secondhand_todos WHERE suggestion_id=?', (str(args.get('suggestion_id') or ''),)).fetchone()
+            row = db.execute('SELECT routine_id FROM secondhand_todos WHERE suggestion_id=?', (sid,)).fetchone()
             found = row and secondhand.search(db, row[0])
-        if not found:
+            if listing and not (row and secondhand.listing_on(db, sid, listing)):
+                raise OwnerError('That listing isn’t on this to-do')
+        if not found and not listing:
             raise OwnerError('That search is gone')
         view, base = browser_link(self.config), self.secondhand_base()
         if not base:
             return {'shown': False, 'view': view, 'error': i18n.t('The Machine’s browser isn’t available right now.')}
         cdp = secondhand.browser_cdp
         try:
-            tabs = {t.get('id'): t for t in cdp._http(base, '/json/list', timeout=10) if t.get('type') == 'page'}
-            target = found['tab'] if found['tab'] in tabs else cdp.open_tab(base, found['url'])
+            if listing:
+                target = cdp.open_tab(base, listing)
+            else:
+                tabs = {t.get('id'): t for t in cdp._http(base, '/json/list', timeout=10) if t.get('type') == 'page'}
+                target = found['tab'] if found['tab'] in tabs else cdp.open_tab(base, found['url'])
             cdp._http(base, '/json/activate/' + target, timeout=10)
         except (cdp.CdpError, OSError, TypeError, AttributeError):
             return {'shown': False, 'view': view, 'error': i18n.t('The Machine’s browser isn’t available right now.')}
-        with self.store.connect() as db:
-            secondhand.set_tab(db, row[0], target)
+        if not listing:
+            with self.store.connect() as db:
+                secondhand.set_tab(db, row[0], target)
         try:
             import browser_viewer
             browser_viewer.raise_window(base)
@@ -363,13 +373,29 @@ class SecondhandTemplate(routine_templates.Template):
             (lambda a: todo_areas.area_of_account(a) == todo_areas.PERSONAL)
         return next((a for a in accounts if want(a)), None) or next((a for a in accounts if todo_areas.area_of_account(a)), None), work
 
+    @staticmethod
+    def secondhand_words(found, finds):
+        """A finds to-do's title and text: its count and each listing (newest first)."""
+        title = i18n.t('{} finds for {}', len(finds), found['name'])  # en.json: one and other
+        text = '\n'.join(f'- {x["title"]}' + (f' ({x["price_text"]})' if x['price_text'] else '') + f': {x["verdict"]} {x["url"]}' for x in finds)[:3000]
+        return title, text
+
     def secondhand_todo(self, run, found, finds):
-        """One to-do with this run's finds. Returns its id, or None."""
+        """This run's finds on the search's open finds to-do, on top, its count brought up to date and a notification
+        again (a good listing goes fast); else a new to-do. One finds to-do per search at a time. Returns its id, or
+        None."""
+        with self.store.connect() as db:
+            open_one = secondhand.open_finds(db, run['routine_id'])
+        if open_one:
+            sid, event, meta = open_one
+            every = secondhand.joined(finds, meta.get('items') or [])
+            title, text = self.secondhand_words(found, every)
+            if self.store.cleanup_grow(sid, event, title, text, {**meta, 'items': every, 'search': found['name'], 'site': found['site'], 'url': found['url']}, kind=secondhand.KIND, notify=True):
+                return sid
         account, work = self.secondhand_account(run['routine_id'])
         if not account:
             return None
-        title = i18n.t('{} finds for {}', len(finds), found['name'])  # en.json: one and other
-        text = '\n'.join(f'- {x["title"]}' + (f' ({x["price_text"]})' if x['price_text'] else '') + f': {x["verdict"]} {x["url"]}' for x in finds)[:3000]
+        title, text = self.secondhand_words(found, finds)
         source = f'routine-secondhand:{run["id"]}'
         event_id = self.store.reviewed_event(account['id'], source, secondhand.KIND, title, text,
                                              {'sender_display': run.get('name') or i18n.t('Second-hand finds'), 'routine': run['routine_id'],

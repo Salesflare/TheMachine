@@ -374,6 +374,7 @@ const COPY_WHY='This can’t be sent from here. Copy it to send it yourself.';
 // (a tap on the title; the project and area under Details). On a phone the … opens as a bottom sheet. Mark done not in
 // sight tops the …; Ask for changes not in sight stays hidden for the keys and the chat.
 // A lead is k=>html``, k mapping its class (and tag): ID keeps it, mmClass makes it a plain … item (no primary; a button goes ghost).
+const shStopped=s=>!!s.secondhand?.blocked&&!closed(s);
 const ID=c=>c,mmClass=(c,tag)=>[...c.split(' ').filter(x=>x&&x!=='primary'),...(tag==='button'&&!/\bghost\b/.test(c)?['ghost']:[])].join(' '),mmPlain=f=>f(mmClass);
 // A doc The Machine made while preparing (Store.make_new_docs): Open the doc leads (a new tab), Mark done and Ask for
 // changes beside it, Snooze and the rest in the …. A made doc without a link (Word) has Mark done lead.
@@ -384,6 +385,8 @@ function cardActions(s,choices,smartButtons,unmerge,hint,smart){const skill=skil
  if(moveAsk(s))smartButtons=[k=>html`<button class="${k('primary','button')}" data-card-move="${s.id}" data-area="${s.preparation_move_to}">${moveText(s.preparation_move_to)}</button>`,...smartButtons];
  else if(useAsk(s))smartButtons=[k=>html`<button class="${k('primary','button')}" data-card-use="${s.id}">${useText(s.preparation_use)}</button>`,...smartButtons];
  else if(connectAsk(s))smartButtons=[k=>html`<button class="${k('primary','button')}" data-connect-open="${s.preparation_connect}">${t('Connect {}',SERVICE_NAMES[s.preparation_connect]||s.preparation_connect)}</button>`,...smartButtons];
+ // A second-hand search the site stopped: Open (its search in The Machine's browser, todos-secondhand.js) leads, Mark done beside it
+ else if(shStopped(s))smartButtons=[k=>html`<button type="button" class="${k('primary','button')}" data-sh-open="${s.id}">${t('Open')}</button>`,...smartButtons];
  // Reconnect: a hosted Machine's sign-in under + Add; a self-hosted one's is its source's, as on its Connections card
  else if(s.reconnect&&!closed(s))smartButtons=[k=>state.manage_url?html`<button class="${k('primary','button')}" data-hosted-reconnect="${s.reconnect.provider}" data-email="${s.reconnect.email}"${s.reconnect.personal?html` data-personal="1"`:''}>${t('Reconnect')}</button>`
   :html`<button class="${k('primary','button')}" data-reconnect="${s.reconnect.source||''}" data-account="${s.reconnect.account||''}" data-signin-source="${s.reconnect.provider}"${s.reconnect.personal?html` data-personal="1"`:''}>${t('Reconnect')}</button>`,...smartButtons];
@@ -396,7 +399,7 @@ function cardActions(s,choices,smartButtons,unmerge,hint,smart){const skill=skil
  // Nothing else leads and nothing waits (a pick, a run, a send): Mark done leads, never only in the …
  const waits=ask||/^(queued|starting|running|working)$/.test(s.preparation_status)||s.cleanup&&!cleanupSettled(s)||s.facebook_birthdays||smart.some(a=>{const x=a.state||s.action_status;return sendBusy(x)&&!/^(sent|undone)$/.test(x.status)});
  const lone=/^(pending|prepared)$/.test(s.status)&&!waits&&!smartButtons.length&&!choices.some(([c])=>c!=='complete'&&base(c));
- const isPrimary=c=>base(c)||(c==='complete'&&lone);
+ const isPrimary=c=>(base(c)&&!(c==='complete'&&shStopped(s)))||(c==='complete'&&lone);
  const btn=([c,t],pre='',k=ID)=>c==='accept'&&s.status==='pending'&&s.skill_proposal?.update?html`<button${pre} class="${k(isPrimary(c)?'primary':'ghost','button')}" data-skill-update="${s.id}">${t}</button>`:c==='change'&&agentAsk(s)?html`<button${pre} class="${k('ghost','button')}" data-agent-ask="${s.id}">Ask for changes</button>`:c==='handoff'?html`<button${pre} class="${k('ghost','button')}" data-fleet-handoff="${s.id}">${t}</button>`:c==='takeback'?html`<button${pre} class="${k('ghost','button')}" data-handoff-take-back="${s.id}">${t}</button>`:c==='checkin'?html`<button${pre} class="${k(isPrimary(c)?'primary':'ghost','button')}" data-handoff-checkin="${s.id}" title="Draft a short nudge for you to send">${t}</button>`:c.startsWith('agent:')?html`<button${pre} class="${k('ghost','button')}" data-agent-hand="${c.slice(6)}" data-card="${s.id}">${t}</button>`:html`<button${pre} class="${k(isPrimary(c)?'primary':c==='reject'?'quiet':'ghost','button')}" data-id="${s.id}" data-choice="${c}"${c==='change'?html` title="${s.status==='pending'?'Tell me how to do it instead':s.status==='prepared'&&smart.some(a=>DRAFT_KINDS.includes(a.kind))?'Tell me what to change in the draft, and I redo it':'Tell me what to change, and I redo it'}"`:''}>${t}</button>`;
  const all=[...choices,...(canHandoff(s)&&s.status!=='snoozed'&&!smart.some(a=>a.kind==='handoff')?[['handoff',s.fleet_handoff?.back?'Hand off to someone else':'Hand off']]:canReassign(s)?[['takeback','Take it back'],['handoff','Hand off to someone else']]:[]),...(canAgent(s)?agentTools().map(t=>['agent:'+t.id,window.t('Hand to {}',t.name)]):[]),...(agentAsk(s)&&!choices.some(([c])=>c==='change')?[['change','']]:[])];
  const head=all.filter(([c])=>isPrimary(c)),order=(mine&&s.status==='pending'?['accept','snooze','reject','change','handoff']:ask?['handoff','complete','retry','snooze','reject']:answered?['snooze','change','complete','reject','handoff']:SECONDARY[s.status])||['complete','snooze','change','reject','handoff'];
@@ -417,7 +420,7 @@ function cardActions(s,choices,smartButtons,unmerge,hint,smart){const skill=skil
  const draft=smart.some(a=>DRAFT_KINDS.includes(a.kind)),ready=s.status==='prepared'&&!answered&&!ask&&!mine&&!withTeammate(s);
  const doneShown=ready&&(!draft||made),doneTop=ready&&draft&&!made;  // with a draft, Mark done tops the … so the row stays one line
  const review=s.status==='prepared'||(s.status==='pending'&&!mine)||!!agentAsk(s);
- const shown=x=>(x[0]==='snooze'&&!made)||(x[0]==='change'&&review)||(x[0]==='complete'&&(doneShown||!!ownFix(s)));
+ const shown=x=>(x[0]==='snooze'&&!made)||(x[0]==='change'&&review)||(x[0]==='complete'&&(doneShown||!!ownFix(s)||shStopped(s)));
  const quiet=x=>x[0]==='change';
  const plain=others.filter(x=>!handing(x)&&x[0]!=='reject'&&x[0]!=='takeback');
  const items=html`${[...plain.filter(x=>x[0]==='complete'&&(doneTop||!shown(x))).map(x=>btn(x)),...leads.slice(1).map(mmPlain),...plain.filter(x=>!shown(x)&&!quiet(x)&&x[0]!=='complete').map(x=>btn(x)),sheet,repeat,unmerge,...others.filter(x=>x[0]==='reject').map(b=>html`<hr class="mm-sep">${btn(b)}`)].filter(Boolean)}`;

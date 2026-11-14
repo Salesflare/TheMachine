@@ -894,17 +894,21 @@ class CardsStore:
                        (account_id, source_id, kind, stamp, title, body, json.dumps(meta), hashlib.sha256((title + body).encode()).hexdigest(), stamp))
             return db.execute('SELECT id FROM events WHERE account_id=? AND source_id=?', (account_id, source_id)).fetchone()[0]
 
-    def cleanup_grow(self, suggestion_id, event_id, title, body, meta):
-        """A routine's open cleanup to-do with more items (mail_cleanup_app.cleanup_todos): its title, text and evidence
-        brought up to date in place. Quiet: no delivery or notification, and where it is stays. False when it was
-        closed meanwhile."""
+    def cleanup_grow(self, suggestion_id, event_id, title, body, meta, kind='routine.cleanup', notify=False):
+        """A routine's open to-do with more items (mail_cleanup_app.cleanup_todos, secondhand_app.secondhand_todo): its
+        title, text and evidence (an event of this kind) brought up to date in place, and where it is stays. Quiet, as
+        a cleanup is; notify: delivered again, its message edited and a notification, as a new result is (Second-hand
+        finds: a good listing goes fast). False when it was closed meanwhile."""
         with self.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             changed = db.execute("UPDATE suggestions SET " + KEEP_OWNER_TITLE + f",body=? WHERE id=? AND status NOT IN {todo_states.sql(todo_states.CLOSED)}",
                                  (title[:300], title[:300], body[:5000], suggestion_id)).rowcount
             if changed:
-                db.execute("UPDATE events SET title=?,body=?,metadata=? WHERE id=? AND kind='routine.cleanup'",
-                           (title, body, json.dumps(meta), event_id))
+                db.execute("UPDATE events SET title=?,body=?,metadata=? WHERE id=? AND kind=?",
+                           (title, body, json.dumps(meta), event_id, kind))
+            if changed and notify:
+                db.execute("UPDATE deliveries SET status='queued',reminder=1,error=NULL,needs_edit=CASE WHEN message_id IS NULL THEN needs_edit ELSE 1 END,"
+                           "updated_at=? WHERE suggestion_id=? AND status IN ('queued','sent','uncertain')", (now(), suggestion_id))
             return bool(changed)
 
     def brief_reword(self, suggestion_id, title, body):
