@@ -108,7 +108,10 @@ class HelpArticles(unittest.TestCase):
             self.assertEqual(translate.help_state('de', folder / 'gmail.md', folder), 'current')
             self.assertEqual(gmail(), [])
             self.write(folder / 'de', 'gmail.md', stamped(de + '\n## Entfernen\n\nÖffne [es](nirgends.md).\n\n- Eins.\n- Zwei.\n'))
-            self.assertEqual(gmail(), ['docs/help/de/gmail.md: links to nirgends.md, which docs/help/ does not have'])
+            # a link the English doesn't have: out of date too (the site's help refuses it), so the translator makes it
+            # again and a release waits
+            self.assertEqual(translate.help_state('de', folder / 'gmail.md', folder), 'stale')
+            self.assertEqual(gmail(), [])
             # a pull request changes the English only: the translation is out of date, not wrong
             self.write(d, 'gmail.md', english + '\n## Reconnect\n\nOpen it again.\n')
             self.assertEqual(gmail(), [])

@@ -27,8 +27,8 @@ It fails when:
   the site does not render (only ## and ### headings, paragraphs, - and 1. lists,
   **bold**, `code` and links; a link to another article is its file name, like gmail.md, and a #part must be a heading it has);
 - a current translation (docs/help/<language>/<article>.md, shown in the dashboard's Help in that language, made
-  from this English, with its headings, paragraphs and list items; the headings' anchors are the English ones, by
-  position) doesn't match its English article: other front matter than title, summary and translated, a link to an
+  from this English, with its headings, paragraphs, list items, link targets and code; the headings' anchors are
+  the English ones, by position) doesn't match its English article: other front matter than title, summary and translated, a link to an
   article that doesn't exist; or any translation has an em dash. Pull requests change the English only: an article
   not translated yet, translated from older English or out of step with it, is the daily translator's
   (scripts/translate.py); Help shows the English one for an article not translated yet.
@@ -274,8 +274,8 @@ def check(folder=HELP):
 
 def check_translations(found, folder=HELP):
     """Each language's articles against their English one. Only a current translation is held to it: one made from
-    this English (its `translated:` stamp), or from before stamps, either with the English's headings, paragraphs and
-    list items (translate.help_state). One the English has moved on from, one out of step with it, or an article
+    this English (its `translated:` stamp), or from before stamps, either with the English's headings, paragraphs,
+    list items, link targets and code (translate.help_state). One the English has moved on from, one out of step with it, or an article
     English no longer has, is the daily translator's (scripts/translate.py), and scripts/release.py cut refuses a
     release with any of them."""
     sys.path.insert(0, str(ROOT / 'scripts'))
