@@ -152,12 +152,11 @@ const htmlT=(key,...a)=>{const tok=i=>`\u0000${i}\u0000`;let s=esc(t(key,...a.ma
 const safeHref=(u,base=location.href)=>{const v=String(u??'').trim();if(!v)return '#';try{const x=new URL(v,base);return ['http:','https:','mailto:','tel:'].includes(x.protocol)?v:'#'}catch{return '#'}};
 const date=v=>v?fmtDHM(v,{month:'short',day:'numeric',year:'numeric'}):t('Not yet');
 // Parts that load when first needed (dashboard_parts.py LAZY), named in LAZY_FILES. The page is drawn without them;
-// once drawn whole and idle after the load event, lazySoon() fetches them one at a time, each once the browser is idle
-// again, so they never slow the start (all at once, they took the connections the page's data waited for). A tab
-// opened before its part is in asks for it at once (lazyPart). A page with every part inline (tests, the demo) has none
-// to load. lazyPart(group): its file, loaded once (a failed load is tried again on the next call). lazyIn(group): it's
-// there (or has no file). lazyRun(group,fn): fn now when it's there, else once it is, and once only: each to-do that
-// needs a part asks for a redraw on every draw, which queued 60 to 80 whole redraws on a first load.
+// after the load event lazySoon() fetches them one at a time, each when the browser is idle, so they never slow the
+// start (all at once, they took the connections the page's data waited for). A tab opened before its part is in asks
+// for it at once. A page with every part inline (tests, the demo) has none to load. lazyPart(group): its file, loaded
+// once (a failed load is tried again next call). lazyIn(group): it's there (or has no file). lazyRun(group,fn): fn now
+// when it's there, else once it is, once only: each to-do needing a part asks for a redraw on every draw (60 to 80).
 const lazyLoads={},lazyDone={},lazyWait={};let lazyAllRun=null,lazySoonRun=false;
 function lazyPart(group){const file=self.LAZY_FILES?.[group];if(!file||lazyDone[group])return Promise.resolve();
  // a load that fails while the Machine restarts (seconds: unreachable or a 502-504) is tried again for a while before it says Offline
