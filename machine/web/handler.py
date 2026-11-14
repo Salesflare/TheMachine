@@ -517,12 +517,13 @@ def make_handler(app):
                 query = args.get('q', [''])[0]
                 # With words, search by meaning and keywords together; "all" searches every account. kind=message:
                 # messages of every kind, by keywords and senders, at once (New to-do's Message chip: message_hits).
-                # kind=email: emails only, by keywords (a dashboard from before the Message chip).
+                # kind=email: emails only, by keywords (a dashboard from before the Message chip). words=1: the keyword
+                # matches alone, at once; the dashboard asks for them next to the full search and shows them first.
                 kind = args.get('kind', [''])[0]
                 email = kind == 'email'
                 rows = app.message_hits(args.get('account', []), query) if kind == 'message' else app.action(
                     'events', {'account_ids': args.get('account', []), 'query': query, 'semantic': bool(query.strip()) and not email,
-                               'full': True, **({'kinds': sorted(EMAIL_KINDS)} if email else {})})
+                               'full': True, 'words': args.get('words', [''])[0] == '1', **({'kinds': sorted(EMAIL_KINDS)} if email else {})})
                 rows = [{**r, 'body': whatsapp_images.listed(shown_body(r.get('body'))[0])} for r in rows]  # read by people: no model marker
                 with app.store.connect() as db:  # row: how it reads in Messages, by the viewer's rules for its kind (message_view.list_row)
                     shown = message_view.list_rows(db, rows)

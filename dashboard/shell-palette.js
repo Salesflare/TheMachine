@@ -69,7 +69,7 @@ function palRows(){const q=pal.q.trim(),ctx=pal.ctx,recent=palRecent(),groups=[]
   const msgs=read?ak.messages.map(m=>({a:{id:'msg:'+m.id,run:()=>msgOpen(m),entity:true},label:m.title||m.from||t('Message'),sub:[m.title?m.from:'',m.at?humanTime(m.at):''].filter(Boolean).join(' · ')}))
    :holding?[]:(pal.msgs||[]).filter(m=>!asked.has(m.id)).map(m=>({a:{id:'msg:'+m.id,run:()=>msgOpen(m),entity:true},label:m.title||t('Message'),sub:msgSub(m)}));
   if(q.length>=2)groups.push([msgs.length?'Messages':'',[...msgs,  /* no heading over See all results alone */
-   {a:{id:'msg-all',run:()=>msgSearch(q),entity:true},label:t('See all results for “{}”',q),sub:pal.msgs===null&&!holding&&!read?t('Looking…'):''}]])}
+   {a:{id:'msg-all',run:()=>msgSearch(q),entity:true},label:t('See all results for “{}”',q),sub:(pal.msgs===null||pal.msgs.early)&&!holding&&!read?t('Looking…'):''}]])}
  // From the sidebar's Search box: the to-dos first (before typing, the first open ones)
  if(pal.todos){if(!q){const open=(state.suggestions||[]).filter(s=>!closed(s)).slice(0,5);if(open.length)groups.unshift(['To-dos',open.map(s=>({a:{id:'card:'+s.id,run:()=>chatGo(s.id),entity:true},label:s.title,sub:palCardSub(s)}))])}
   else groups.sort((x,y)=>['To-dos','Done'].includes(y[0])-['To-dos','Done'].includes(x[0]))}
@@ -103,7 +103,11 @@ function palPaint(scroll=true){const d=$('#palette');if(!d)return;const q=d.quer
 // it can take longer: the rest shows first.
 function palFind(){clearTimeout(pal.timer);const q=pal.q.trim(),seq=++pal.seq;palAsk(q,seq);if(q.length<2){pal.found=[];pal.msgs=[];return}pal.found=null;pal.msgs=null;
  pal.timer=setTimeout(async()=>{let found=[],done=[];const e=encodeURIComponent(q);
-  request('api/events?account=all&q='+e).then(r=>Array.isArray(r)?r:[]).catch(()=>[]).then(rows=>{if(seq!==pal.seq||!$('#palette')?.open)return;pal.msgs=rows.slice(0,4);palRender()});
+  // Two steps, as search() does; the keyboard stays on its row. The keyword step waits for the owner's date format.
+  const ask=(more,then,wait)=>request('api/events?account=all&q='+e+more).then(r=>Array.isArray(r)?r:[]).catch(()=>[]).then(rows=>wait?wait.then(()=>rows):rows).then(rows=>{if(seq===pal.seq&&$('#palette')?.open)then(rows)});let last=false;
+  ask('&words=1',rows=>{if(!last&&rows.length){pal.msgs=Object.assign(rows.slice(0,4),{early:true});pal.keep=true;palRender()}},localeIn());
+  ask('',rows=>{last=true;const top=rows.slice(0,4),shown=(pal.msgs||[]).filter(m=>top.some(x=>x.id===m.id));
+   pal.msgs=[...shown,...top.filter(m=>!shown.some(x=>x.id===m.id))];pal.keep=true;palRender()});
   await Promise.all([request('api/graph?q='+e).then(r=>{found=Array.isArray(r?.found)?r.found:[]}).catch(()=>{}),
    request('api/cards/done?limit=8&q='+e).then(r=>{done=Array.isArray(r?.cards)?r.cards:[]}).catch(()=>{})]);  /* done cards beyond the loaded ones */
   if(seq!==pal.seq||!$('#palette')?.open)return;pal.found=found;pal.done=done;palRender()},180)}
