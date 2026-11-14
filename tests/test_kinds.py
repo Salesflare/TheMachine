@@ -55,7 +55,7 @@ KIND_LISTS = {
     'fleet_reviews.py': 1,
     'follow_ups.py': 2,
     'gap_note.py': 1,
-    'graph.py': 21,
+    'graph.py': 19,
     'graph_board_reviews.py': 1,
     'machine/app/action_runs.py': 2,
     'machine/app/card_actions.py': 4,
@@ -69,6 +69,7 @@ KIND_LISTS = {
     'machine/app/recap.py': 3,
     'machine/app/review.py': 1,
     'machine/browser.py': 1,
+    'machine/graph/identities.py': 2,
     'machine/cards.py': 2,
     'machine/chat.py': 2,
     'machine/delivery/push.py': 1,
@@ -262,7 +263,8 @@ class Guard(unittest.TestCase):
             with self.subTest(name):
                 have, allowed = len(found.get(name, ())), KIND_LISTS.get(name, 0)
                 self.assertLessEqual(have, allowed, f'{name} spells out {have} lists of kinds ({allowed} allowed): '
-                                     f'ask machine/kinds.py instead. Found: {found.get(name)}')
+                                     f'ask machine/kinds.py instead (code moved here from another file: move its count in '
+                                     f'KIND_LISTS with it). Found: {found.get(name)}')
                 self.assertGreaterEqual(have, allowed, f'{name} has {have} lists of kinds now: lower its count in '
                                         'KIND_LISTS to that')
 
