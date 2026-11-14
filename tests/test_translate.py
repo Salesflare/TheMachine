@@ -180,6 +180,24 @@ class Help(unittest.TestCase):
         self.assertEqual(T.help_state('nl', self.help / 'projects.md', self.help, self.history), 'stale')
         self.assertEqual(T.problems(['nl'], self.help)[-1], 'nl: docs/help/projects.md out of date with its English')
 
+    def test_a_translation_with_other_links_or_code_is_out_of_date_whatever_its_stamp(self):
+        # the site's help refuses these (themachine-cloud tests/test_help.py), so the next run translates them again
+        good = ARTICLE.replace('title: Projects', 'title: Projecten').replace('Your Machine names', 'Je Machine noemt')
+        stamp = f'\ntranslated: {T.stamp(self.help / "projects.md")}\n---\n'
+        dropped_link = good.replace('See [Graph](graph.md).', 'Zie Graph.')
+        extra_code = good.replace('Open **Settings**', 'Open **Settings** (`assistant settings`)')
+        extra_block = good.replace('to change it.', 'to change it.\n\n```\nassistant settings\n```', 1)
+        for name, text, state in (('correct', good, 'current'), ('a dropped link', dropped_link, 'stale'),
+                                  ('an extra code span', extra_code, 'stale'), ('an extra code block', extra_block, 'stale')):
+            with self.subTest(name):
+                (self.help / 'nl' / 'projects.md').write_text(text.replace('\n---\n', stamp, 1), encoding='utf-8')
+                self.assertEqual(T.help_state('nl', self.help / 'projects.md', self.help, self.history), state)
+                self.assertEqual(T.run_help(['nl'], check=True, folder=self.help, ask=no_model, history=self.history),
+                                 int(state == 'stale'))
+        both = dropped_link.replace('Open **Settings**', 'Open **Settings** (`assistant settings`)')
+        problems = T.article_problems(T.front(ARTICLE)[1], T.front(both)[1])
+        self.assertEqual([p.split(':')[0] for p in problems], ['keep the same link targets exactly', 'keep the same code in backticks exactly'])
+
     def test_an_article_english_no_longer_has_goes(self):
         (self.help / 'nl' / 'gone.md').write_text(ARTICLE, encoding='utf-8')
         T.run_help(['nl'], folder=self.help, ask=self.answer(), history=self.history)

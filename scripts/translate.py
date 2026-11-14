@@ -14,8 +14,9 @@ the English text, so new English is a new key), or an entry of another shape (a 
 Entries English no longer has are dropped. A translated article carries the hash of the English it was made from
 (`translated:` in its front matter); an article without one, from before this script, counts as current when git shows
 no change to the English after its last change. Each answer is checked before it is written (the same placeholders,
-names and glossary terms, the same headings, paragraphs and list items, no em dash); an answer that fails is asked
-again once with what was wrong, then left out, so the app shows English there until the next run.
+names and glossary terms, the same headings, paragraphs and list items, link targets and code, no em dash); an answer
+that fails is asked again once with what was wrong, then left out, so the app shows English there until the next run.
+A translated article that fails that check is out of date whatever its stamp says: the next run translates it again.
 The key is read from the environment only (never a flag or a file), and never printed.
 .github/workflows/translate.yml runs `all` once a day on main as it is then, opens or replaces one pull request and
 approves its tests' run; scripts/release.py cut refuses a commit where `all --check` finds anything."""
@@ -335,6 +336,7 @@ def run_catalog(langs, check=False, ask=ask):
 
 LINK = re.compile(r'\]\(([^)\s]+)\)')
 CODE = re.compile(r'`[^`]+`')
+FENCE = re.compile(r'^[ \t]*```.*?^[ \t]*```|^[ \t]*~~~.*?^[ \t]*~~~', re.M | re.S)  # a code block, whole
 HEADING = re.compile(r'^(#{2,3}) ', re.M)
 ITEM = re.compile(r'^(- |\d+\. )', re.M)
 CODE_TOKEN = re.compile(r'`§(\d+)`')
@@ -362,8 +364,11 @@ def same(pattern, a, b):
 
 
 def article_problems(en, tr):
+    """What a translation tr does differently from its English en. The site's help (themachine-cloud) shows a
+    translation only when its link targets, code and placeholders are the English's too, so this is held to the same:
+    the translator checks every answer with it, and help_state counts a translation that fails it as out of date."""
     out = []
-    for name, pattern in (('link targets', LINK), ('code in backticks', CODE), ('placeholders', ARTICLE_HOLE)):
+    for name, pattern in (('link targets', LINK), ('code in backticks', CODE), ('code blocks', FENCE), ('placeholders', ARTICLE_HOLE)):
         if not same(pattern, en, tr):
             # plain text, not a Python list: its repr doubles every backslash, and the model copies what it reads
             out.append(f'keep the same {name} exactly: {", ".join(sorted(pattern.findall(en)))}')
@@ -444,9 +449,10 @@ def help_state(lang, path, folder=HELP, history=None):
     fields, body = front(local.read_text(encoding='utf-8'))
     found = dict(fields).get('translated')
     english = front(path.read_text(encoding='utf-8'))[1]
-    # Out of step with the English's sections, paragraphs and list items, it is out of date whatever its stamp or
-    # history says (a stamp added to an older translation; one made here is held to them by article_problems)
-    in_step = blocks(english) == blocks(body)
+    # Out of step with the English (its sections, paragraphs and list items, link targets, code and code blocks), it is
+    # out of date whatever its stamp or history says: a stamp added to an older translation, or one from before these
+    # checks. The site's help refuses the same ones, so the next run translates them again.
+    in_step = not article_problems(english, body)
     if found:
         return 'current' if found == stamp(path) and in_step else 'stale'
     after = history.changed_after(path, local) if history else None
