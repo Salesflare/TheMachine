@@ -110,4 +110,5 @@ service.
 | `outlook_calendar.svg` | Outlook Calendar (its "O" beside a calendar) |
 | `source.svg` | Any other source |
 | `teams.svg` | Microsoft Teams (its "T" beside a person) |
+| `web_page.svg` | Watch a page (a browser window with an eye) |
 | `zoom.svg` | Zoom |

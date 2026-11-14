@@ -106,6 +106,9 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   - `machine/action_basis.py`: what allowed each outward step (a tap, Do it, the owner's words, a setting), recorded
     with the step in `action_jobs.basis` and `preparation_runs.basis` and said in Settings, Activity. Record only,
     never a check (`tests/test_action_basis.py`).
+  - `machine/app/page_watch.py` (`PageWatchApp`): Watch a page from the owner's own main chat (`page_watch`, the
+    bridge's `assistant_page_watch`): list, add and remove Web page connections (`connectors/web_page.py`) with
+    Settings' own connect steps.
   - `machine/names.py`: what the owner calls a service, app or agent; every key from data shown on screen goes
     through it, so a tool underneath (gog, wacli, msgraph-cli) is never a name (`tests/test_owner_names.py`).
   - `machine/omarchy.py`: the current Omarchy theme's colors (`GET /api/omarchy-theme`), for Settings, General, This

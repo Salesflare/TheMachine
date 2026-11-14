@@ -8,7 +8,7 @@ const MONO=['airbnb','android','bol','booking','calendar','claude','discord','do
  'googleplay','googletasks','hubspot','icloud_calendar','instagram','intercom','komoot','lastpass','linkedin','medium','messenger','netflix',
  'notion','openai','outlook','outlook_calendar','paypal','pinterest','podcastaddict','producthunt','proton_calendar','reddit','revolut','rss',
  'salesflare','salesforce','shopify','shortcut','signal','slack','snapchat','source','spotify','strava','stremio','stripe','tailscale','teams',
- 'telegram','tiktok','trello','uber','vinted','waze','whatsapp','wise','x','youtube','zoom'];
+ 'telegram','tiktok','trello','uber','vinted','waze','web_page','whatsapp','wise','x','youtube','zoom'];
 // Other names for a mark: a connector's own key, the older via- names; mail, cal and the rest are the line icons in
 // todos-chat.css (Other email is the plain envelope, Other calendar and a calendar link the plain calendar)
 const MONO_ALIAS={crm:'salesflare',codex:'openai',gdocs:'google_docs',gcal:'calendar',imap:'mail',caldav:'cal',ics:'cal',email:'mail',chatgpt:'openai',google:'gmail',microsoft:'outlook'};

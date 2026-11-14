@@ -264,7 +264,7 @@ REVIEW_METADATA_SKIP = {
     'parts_returned', 'message_id', 'chat_id', 'sender_id', 'channel_id', 'message_ts', 'thread_ts', 'user_id',
     'bot_id', 'conversation_id', 'created_at', 'updated_at', 'post_time_ms', 'source_url', 'thread_id',
     'admin_assignee_id', 'team_assignee_id', 'assignee_name', 'assignee_email', 'admin_emails', 'list_id',
-    'team_closed', 'team_reply', 'customer_at'}
+    'team_closed', 'team_reply', 'customer_at', 'page_text'}
 
 
 def compact_metadata(metadata, budget=2500):

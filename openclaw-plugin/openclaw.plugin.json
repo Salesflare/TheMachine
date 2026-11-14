@@ -18,7 +18,8 @@
       "assistant_bug_report",
       "assistant_memory",
       "assistant_remember",
-      "assistant_forget"
+      "assistant_forget",
+      "assistant_page_watch"
     ]
   },
   "toolMetadata": {
@@ -47,6 +48,12 @@
       "sideEffecting": true
     },
     "assistant_forget": {
+      "profiles": [
+        "full"
+      ],
+      "sideEffecting": true
+    },
+    "assistant_page_watch": {
       "profiles": [
         "full"
       ],

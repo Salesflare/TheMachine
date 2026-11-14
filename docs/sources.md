@@ -34,8 +34,9 @@ Collectors read existing source content. The optional Salesflare `join_pipelines
 | `docs` (plugin) | The owner's own Google (broker) or Microsoft sign-in for that address, plus a separate consent for files | `email`, `transport` (borrowed from the mail account), `provider` (`google` or `microsoft`, else from the mail account), `boundary` |
 | `shortcut` (plugin) | A Shortcut API token | `credential` (`workspace` is filled in from the token) |
 | `rss` (plugin) | none | `url` |
+| `web_page` (plugin) | none: a public https page | `url`, `display_name` (the page, set when you add it), `poll_seconds` (21600; never under an hour) |
 
-Add a plugin account with `assistant connect github` (or `stripe`, `intercom`, `x`, `linkedin`, `trello`, `google_meet`, `shortcut`, `rss`): it asks for the fields that connector needs. The dashboard does the same under Connections, **+ Add** (see [Usage](usage.md#adding-a-source)). You can also add accounts to `config.json` by hand, using the keys above (each connector's header has a full example), and restart the service.
+Add a plugin account with `assistant connect github` (or `stripe`, `intercom`, `x`, `linkedin`, `trello`, `google_meet`, `shortcut`, `rss`, `web_page`): it asks for the fields that connector needs. The dashboard does the same under Connections, **+ Add** (see [Usage](usage.md#adding-a-source)). You can also add accounts to `config.json` by hand, using the keys above (each connector's header has a full example), and restart the service.
 
 ## How each source reads
 
@@ -325,6 +326,12 @@ A doc The Machine made for a to-do (its sent `doc_write` create) is one of that 
 ### RSS/Atom
 
 The example plugin; see [Adding a source](adding-a-source.md).
+
+### Watched pages
+
+One public web page per connection (`connectors/web_page.py`), read every 6 hours and never more than once an hour, as a polite reader: its robots.txt first (kept a day), a plain HTTPS GET of at most 2 MB in 10 seconds, only to public addresses (each redirect too, checked on the connection itself), and `If-None-Match`/`If-Modified-Since` when the site gives them. It keeps the page's main text (its `<main>` when it has one; no scripts, menus, footers, forms, cookie notices or ads) as normalized lines, compared with dates and times masked.
+
+The first read is the baseline: one event per page, kept as reviewed, with the page's text in its sealed metadata. A read with the same text adds nothing, so it costs no model call. A changed page is a new version of that event whose body is only what changed (`−` the lines it had, `+` the lines it has, a line around them); the review decides whether it matters (`source-notes/web_page.md`) and makes a to-do only when it does. The owner adds, lists and removes watched pages under Connections, **Other**, or in their own chat (the bridge's `assistant_page_watch`, `page_watch`).
 
 ### Shortcut
 

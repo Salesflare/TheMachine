@@ -99,6 +99,7 @@ OWNER_ACTIONS = {
     'model_usage_refresh',
     'own_address',
     'own_domain',
+    'page_watch',
     'person_invite_draft',
     'project_about',
     'project_archive',

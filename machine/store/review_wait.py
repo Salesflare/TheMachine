@@ -60,8 +60,9 @@ PERSON_APPS = frozenset({
 PERSON_CATEGORIES = frozenset({'call', 'missed_call', 'msg', 'email', 'event', 'reminder', 'alarm', 'location_sharing'})
 
 
-# Kinds that are a system's report, never a person's message: a failed CI run, a feed's post, a payment event
-BATCH_KINDS = frozenset({'github.ci', 'rss.item', 'stripe.event'})
+# Kinds that are a system's report, never a person's message: a failed CI run, a feed's post, a payment event, a
+# watched page that changed
+BATCH_KINDS = frozenset({'github.ci', 'rss.item', 'stripe.event', 'web_page.change'})
 
 
 # Stripe events that can't wait an hour

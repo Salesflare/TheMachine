@@ -143,6 +143,9 @@ SAMPLES = {
     'docs.shared': ev('docs', 'd4', 'docs.shared', 'Budget 2027', 'Kit Navarro shared it with you',
                       **{'source_url': 'https://acme.sharepoint.com/x'}),
     'rss.item': ev('rss', 'r1', 'rss.item', 'Release notes 4.2', 'Faster exports and a new dark mode.', **{'source_url': 'https://blog.example/4-2'}),
+    'web_page.change': ev('page', 'p1', 'web_page.change', 'Pricing | Example Tools',
+                          'Pro\n− $49 per user a month\n+ $59 per user a month\nBilled yearly',
+                          **{'source_url': 'https://tools.example/pricing', 'page_text': 'Pricing\nPro\n$59 per user a month\nBilled yearly'}),
 }
 
 TIMESTAMP = re.compile(r'(?<!\d)1[5-9]\d{8}(?!\d)')

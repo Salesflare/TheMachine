@@ -61,6 +61,13 @@ const WN_ART={
   +`<rect class="c" x="54" y="70" width="190" height="34" rx="14"/>`+wnBar(70,84,110)+wnTick(222,87,8)
   +`<rect class="c" x="54" y="118" width="300" height="46" rx="10"/><rect class="t" x="66" y="128" width="26" height="26" rx="7"/><g class="l" transform="translate(70 132) scale(.75)"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></g>`
   +wnBar(104,130,150,'s')+wnBar(104,144,104),
+ // A watched page under its eye: one line of it changed (the old one crossed out, the new one in the accent), and that
+ // change becomes a to-do
+ watch:()=>`<rect class="c" x="34" y="18" width="216" height="148" rx="12"/>`+[0,1,2].map(i=>`<circle class="q" cx="${52+i*12}" cy="33" r="3.5"/>`).join('')
+  +`<path class="e" d="M34 47h216"/><circle class="m" cx="232" cy="22" r="17"/><g class="k" transform="translate(220 10)"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></g>`
+  +wnBar(52,60,118,'s',8)+wnBar(52,76,158)+`<rect class="f" x="46" y="90" width="192" height="44" rx="8"/>`+wnBar(58,100,96)+`<path class="q" d="M54 103h104"/>`+wnBar(58,116,124,'m')
+  +wnBar(52,146,136)+`<path class="l" stroke-dasharray="2 7" d="M258 112h22"/><path class="l" d="M284 105l7 7-7 7"/>`
+  +`<rect class="c" x="304" y="74" width="118" height="76" rx="12"/><circle class="m" cx="326" cy="96" r="9"/>`+wnBar(342,92,64,'s',8)+wnBar(318,116,90)+wnBar(318,130,66),
  new:()=>`<rect class="c" x="120" y="42" width="200" height="96" rx="12"/><path class="m" d="M152 62l4 9.5 9.5 4-9.5 4-4 9.5-4-9.5-9.5-4 9.5-4z"/>`+wnBar(180,68,110,'s')+wnBar(180,84,76)+wnBar(142,108,156)+wnBar(142,122,112)};
 let wn={list:[],i:0};
 // A tap on the backdrop (the dialog itself is the target there, and on its own padding too)
