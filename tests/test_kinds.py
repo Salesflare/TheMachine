@@ -98,14 +98,10 @@ KIND_LISTS = {
     'dashboard/graph-tabs.js': 1,
     'dashboard/learning-missed.js': 1,
     'dashboard/new-todo-dialog.js': 1,
-    'dashboard/shell-keys.js': 2,
-    'dashboard/todos-cards.js': 5,
-    'dashboard/todos-chat-talk-view.js': 1,
-    'dashboard/todos-chat-thread.js': 2,
-    'dashboard/todos-clear.js': 1,
-    'dashboard/todos-list.js': 2,
+    'dashboard/shell-keys.js': 1,
+    'dashboard/todos-cards.js': 1,
+    'dashboard/todos-chat-thread.js': 1,
     'dashboard/todos-logos.js': 1,
-    'dashboard/todos-send.js': 2,
 }
 
 
@@ -260,10 +256,12 @@ class Registry(unittest.TestCase):
                     self.assertEqual(kinds.KINDS[kind]['service'], path.stem)
 
     def test_the_messenger_kinds_are_the_viewers(self):
-        """events-message.js THREAD_IM names them by their source line's name."""
+        """events-message.js THREAD_IM names them by their source line's name: the ones it spelled out before it asked the
+        registry (PR 5 moved it)."""
         js = (ROOT / 'dashboard' / 'events-message.js').read_text(encoding='utf-8')
-        names_ = set(re.findall(r"'([^']+)'", re.search(r'const THREAD_IM=new Set\(\[([^\]]*)\]\)', js).group(1)))
-        self.assertEqual({row['name'] for row in kinds.KINDS.values() if row['messenger']}, names_)
+        self.assertIn('const THREAD_IM=new Set(Object.values(SOURCE_KINDS.kinds).filter(r=>r.messenger).map(r=>r.name));', js)
+        self.assertEqual({row['name'] for row in kinds.KINDS.values() if row['messenger']},
+                         {'WhatsApp', 'Telegram', 'Signal', 'LinkedIn', 'X message', 'Teams'})
 
     def test_kinds_is_a_leaf(self):
         tree = ast.parse((ROOT / KINDS_FILE).read_text(encoding='utf-8'))

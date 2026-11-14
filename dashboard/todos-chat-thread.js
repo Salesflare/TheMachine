@@ -76,7 +76,7 @@ function chatDiff(a,b){const x=String(a).split(/(\s+)/),y=String(b).split(/(\s+)
  return html`${out.map(([k,t])=>k==='='?t:k==='-'?(t.trim()?html`<del>${t}</del>`:''):html`<ins>${t}</ins>`)}`}
 // The card's own pieces for the chat, taken from the card as the dashboard draws it, so they stay the same.
 // The card's own sends (their state refreshes every 2 s while one goes out): what the chat's draft says under it
-const CHAT_SENDS=['email','linkedin','slack','x','whatsapp','telegram','signal','intercom','doc_reply'];
+const CHAT_SENDS=SENDS;
 const chatSends=s=>taskActions(s).filter(a=>CHAT_SENDS.includes(a.kind)).map(a=>({a,st:a.state||s.action_status})).filter(x=>x.st?.status);
 const chatGoing=st=>['queued','sending'].includes(st?.status)||st?.status==='uncertain'&&!st.retry_ok;
 const chatFailed=st=>['failed','blocked'].includes(st?.status)||!!st?.retry_ok;
