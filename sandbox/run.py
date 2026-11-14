@@ -108,6 +108,9 @@ def seed_model(app):
                         'windows': [{'label': '5h', 'used': 46, 'reset': reset}, {'label': 'Week', 'used': 12, 'reset': reset + 5 * 86400}],
                         'limit_reached': False, 'limit_resets_at': None, 'resets': {'available': 0, 'credits': []}, 'can_reset': False,
                         'usage_page': 'https://chatgpt.example/usage', 'checked_at': dt.datetime.now(dt.timezone.utc).isoformat()}
+    # A personal plan: the quiet line about training, with Done (machine/ai_training.py)
+    from machine import ai_training
+    app.ai_training = ai_training.state(app.model_status)
     # The models a chat can pick (chat_model.py), as the Gateway would list them for a made-up sign-in
     import chat_model
     models = [{'ref': 'acme/lm-2.5-swift', 'name': 'LM-2.5 Swift', 'levels': ['low', 'medium', 'high', 'xhigh', 'max'], 'default': 'low'},

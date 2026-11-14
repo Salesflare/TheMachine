@@ -77,6 +77,7 @@ A mixed setup works well: a frontier model as `primary`, a local model as the la
 ## Privacy
 
 - Collected content stays in your SQLite database, but reviews and preparations send the signals they read to your model provider. Each review reads up to 120 signals; each Do it reads the to-do's full evidence.
+- Personal plans (ChatGPT Free, Go, Plus, Pro; Claude Free, Pro, Max) may train on chats by default. Settings → Model then shows one line linking to the provider's own switch ([ChatGPT](https://chatgpt.com/settings/data-controls), [Claude](https://claude.ai/settings/data-privacy-controls)); **Done** hides it for good (`ai_training_off` in config.json). Business, Team and Enterprise plans, API keys and local models show nothing. The status (`ai_training`: `todo`, `done` or `na`) tells a hosted Machine's account which applies.
 - A local model keeps inference local. Connected services, enrichment you chose (organization domains; for work contacts their name and company domain, or the address your service asks for, and a hash of their work address for a Gravatar photo), Fleet and Friends summaries, and Telegram and push delivery still use the network.
 - To have someone forgotten, **Delete permanently** on their page removes them and what is tied to them, and keeps them from being added again ([Deleting someone](intelligence.md#deleting-someone)).
 

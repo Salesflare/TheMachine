@@ -11,6 +11,7 @@ import time
 import embeddings
 import graph
 import graph_board_reviews
+from machine import ai_training
 from machine.model_usage import model_resets, model_status, model_usage, usage_status
 import model_budget
 import model_fallback
@@ -243,7 +244,9 @@ class ModelPacingApp:
             resets = model_resets(self.config, reply) if self.config.get('codex') is not False else None
         except (OSError, ValueError):
             resets = None
-        self.model_status = model_status(self.config, reply, self.model_usage, resets)
+        claude = ai_training.claude_plan(self.config) if claude_plan_route(self.config) else None
+        self.model_status = model_status(self.config, reply, self.model_usage, resets, claude_plan=claude)
+        self.ai_training = ai_training.state(self.model_status, ai_training.done_for(self.config, getattr(self, 'config_path', None)))
 
     def pacing_send(self):
         """Once a day, with error reports on: the finished days' pacing counts and minutes to the control plane."""

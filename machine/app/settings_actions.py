@@ -15,6 +15,7 @@ import error_feed
 import fleet
 import help_topics
 import locale_prefs
+from machine import ai_training
 from machine.app.card_chat import save_hours
 from machine.config import LOG
 from machine.delivery.push import setup_hints
@@ -66,6 +67,7 @@ class SettingsActionsApp:
                'set_locale': 'set_locale_action',
                'connector_sync': 'connector_sync_action', 'connector_contact_sync': 'connector_sync_action', 'set_work_hours': 'set_work_hours_action',
                'model_usage_refresh': 'model_usage_action', 'model_reset': 'model_usage_action',
+               'ai_training_done': 'ai_training_done_action',
                # LEARNING_ACTIONS less missed_work_label (MissedWorkApp)
                **dict.fromkeys(('learnings_share', 'learnings_withdraw', 'learnings_later', 'learnings_never',
                                 'set_learnings_vote', 'learnings_votes_decide', 'set_help_topics', 'set_error_reports',
@@ -169,6 +171,22 @@ class SettingsActionsApp:
         status = getattr(self, 'model_status', None)
         return {'model_status': status, 'model_usage': getattr(self, 'model_usage', None),
                 **({'outcome': outcome} if name == 'model_reset' else {})}
+
+    def ai_training_done_action(self, name, args, owner_dashboard=False):
+        """Done on Settings, Model's line about training: the owner turned it off at the provider (or chose not to),
+        kept in config.json for good. The provider's own setting is never read or changed from here."""
+        if not owner_dashboard:
+            raise OwnerError('Only the owner can do this, on the dashboard')
+        provider = str(args.get('provider') or '')
+        if provider not in ai_training.SETTINGS:
+            raise ValueError('Unknown choice')
+        done = ai_training.done_for(self.config, getattr(self, 'config_path', None)) | {provider}
+        value = sorted(done)
+        if getattr(self, 'config_path', None):
+            save_hours(self.config_path, {'ai_training_off': value})
+        self.config['ai_training_off'] = value
+        self.ai_training = ai_training.state(getattr(self, 'model_status', None), done)
+        return {'ai_training': self.ai_training}
 
     def hours(self):
         """Work hours as the dashboard shows and edits them."""

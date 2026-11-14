@@ -99,6 +99,10 @@ document.addEventListener('click',async e=>{
  if(!confirm(t(['This uses 1 of your {} reset. Your ChatGPT usage limits start over now.','This uses 1 of your {} resets. Your ChatGPT usage limits start over now.'],n)))return;b.disabled=true;
  const d=await modelAction('model_reset',{key:crypto.randomUUID()});b.disabled=false;if(!d)return;
  notice(t(({reset:'Usage reset. Your limits start over now.',nothingToReset:'Nothing to reset right now; no reset was used.',noCredit:'No reset was available.',alreadyRedeemed:'That reset was already used.'})[d.outcome]||'Done.'))});
+// Done on the line about training (Settings, Model): hidden at once, kept on the Machine
+document.addEventListener('click',async e=>{const b=e.target.closest('[data-ai-train-done]');if(!b)return;b.disabled=true;
+ const was=state.ai_training;state.ai_training={...was,state:'done'};renderModelUsage();
+ const d=await modelAction('ai_training_done',{provider:b.dataset.aiTrainDone});if(d?.ai_training)state.ai_training=d.ai_training;else if(!d){state.ai_training=was;renderModelUsage()}});
 function renderModelUsage(){const now=Date.now()/1000,label=l=>['Week','168h','7d'].includes(l)?t('Weekly'):['Day','24h'].includes(l)?t('Daily'):/^\d+h$/.test(l)?t('{}-hour limit',parseInt(l)):l;
 if(lazyIn('settings'))renderModelPanel();renderChatModel();cmPaint('chat');renderLimitBanner();setHTML($('#model-usage'),html`${limitNote(state.model_status)}${(state.model_usage||[]).map(p=>html`${p.windows.filter(w=>!(w.reset<now)).map(w=>{const r=w.reset?new Date(w.reset*1000):null,when=r?t(', resets {}',(w.reset-now>86400?localeDate(r,DL,{weekday:'short'})+' ':'')+fmtHM(r)):'';
 return html`<div class="usage"><span>${t('{}: {}% used',p.name+' '+label(w.label),+w.used|0)}${when}</span><progress max="100" value="${+w.used|0}">${+w.used|0}%</progress></div>`})}`)}`)}

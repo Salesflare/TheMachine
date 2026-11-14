@@ -142,18 +142,25 @@ def model_resets(config, reply, server_factory=None):
             'allowed': limits.get('ordinaryUsageAllowed') if isinstance(limits.get('ordinaryUsageAllowed'), bool) else None}
 
 
-def model_status(config, reply, usage, resets, checked_at=None):
+def model_status(config, reply, usage, resets, checked_at=None, claude_plan=None):
     """What Settings shows about the model: which one, through which sign-in and plan, how much of each limit is
-    used, whether a limit is reached and when it lifts, and the resets. No email, no account ids, no tokens."""
+    used, whether a limit is reached and when it lifts, and the resets. No email, no account ids, no tokens.
+    claude_plan: the kind of Claude plan, when the main model runs on it and OpenClaw did not say."""
     entry = next((p for p in (reply or {}).get('providers') or [] if isinstance(p, dict) and p.get('provider') == 'openai'), None)
+    on_claude = claude_plan_route(config)
+    if entry or not on_claude:
+        claude_plan = None
+    else:
+        claude = next((p for p in (reply or {}).get('providers') or [] if isinstance(p, dict) and p.get('provider') == 'anthropic'), {})
+        claude_plan = claude.get('plan') or claude_plan
     model = openclaw_model(config)
     windows = [w for p in usage or [] for w in p['windows']]
     now_s = time.time()
     full = [w for w in windows if w['used'] >= 100 and (w['reset'] or now_s + 1) > now_s]
     reached = bool(full) or (resets or {}).get('allowed') is False
     return {'model': model, 'provider': (model or '').split('/')[0] or (entry or {}).get('provider'),
-            'chatgpt': bool(entry and entry.get('accountEmail')), 'claude_plan': claude_plan_route(config),
-            'plan': re.sub(r'^self_serve_', '', str((entry or {}).get('plan') or ''))[:40].replace('_', ' ') or None,
+            'chatgpt': bool(entry and entry.get('accountEmail')), 'claude_plan': on_claude,
+            'plan': re.sub(r'^self_serve_', '', str((entry or {}).get('plan') or claude_plan or ''))[:40].replace('_', ' ') or None,
             'windows': windows, 'limit_reached': reached,
             'limit_resets_at': max((w['reset'] for w in full if w['reset']), default=None) if reached else None,
             'resets': resets, 'can_reset': bool(resets and resets['available'] > 0),

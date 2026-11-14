@@ -313,6 +313,7 @@ class StatusApp:
         result['needs_you'] = needs_you(self.config)
         result['model_usage'] = getattr(self, 'model_usage', None)
         result['model_status'] = getattr(self, 'model_status', None)
+        result['ai_training'] = getattr(self, 'ai_training', None)  # the plan's training switch: todo, done or na (ai_training.py)
         result['chat_model'] = self.chat_model_view()
         try:  # the limit banner: a usage limit reached, which one and when it resets
             result['model_pause'] = self.model_pause()
