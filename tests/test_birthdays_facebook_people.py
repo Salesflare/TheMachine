@@ -45,7 +45,8 @@ class AddPeople(unittest.TestCase):
         self.app.birthdays_facebook_inline = True
         self.answer, self.builds = {'items': self.ITEMS}, []
         for name, value in (('birthdays_facebook_base', lambda s: 'http://127.0.0.1:9'), ('graph_later', lambda s: self.builds.append(1))):
-            p = patch.object(a.App, name, value); p.start(); self.addCleanup(p.stop)
+            owner = a.BirthdaysTemplate if hasattr(a.BirthdaysTemplate, name) else a.App  # the template's own, else the App's
+            p = patch.object(owner, name, value); p.start(); self.addCleanup(p.stop)
         p = patch.object(fb, 'read', lambda base, url=fb.PAGE, limits=None: self.answer); p.start(); self.addCleanup(p.stop)
         p = patch('subprocess.run', lambda *x, **k: subprocess.CompletedProcess(x, 0, '', '')); p.start(); self.addCleanup(p.stop)  # the lease
         with self.store.connect() as db:
@@ -58,7 +59,7 @@ class AddPeople(unittest.TestCase):
         return self.app.action('birthdays_facebook', {'suggestion_id': sid, 'step': step}, owner_dashboard=True)
 
     def read(self):
-        sid = self.app.birthdays_facebook_offer({'routine_id': 'r1'})
+        sid = self.app.template('birthdays').birthdays_facebook_offer({'routine_id': 'r1'})
         self.step(sid, 'read')
         return sid
 
@@ -210,7 +211,7 @@ class AddPeople(unittest.TestCase):
     # count of the rest. At start the same read as Import again fills them in, in the background and without a tap.
 
     def old(self, state):
-        sid = self.app.birthdays_facebook_offer({'routine_id': 'r1'}) or 'saved-before'  # offered once: the other one by hand
+        sid = self.app.template('birthdays').birthdays_facebook_offer({'routine_id': 'r1'}) or 'saved-before'  # offered once: the other one by hand
         with self.store.connect() as db:
             match = fb.match(db, fb.found(self.ITEMS, dt.date(2026, 11, 10)))
             data = {'found': 4, 'matched': match['matched'], 'new': 1, 'ambiguous': match['ambiguous'], 'unmatched': 4,
@@ -222,7 +223,7 @@ class AddPeople(unittest.TestCase):
         preview, saved = self.old('preview'), self.old('saved')
         self.assertEqual((self.card(preview)['others'], self.card(saved)['others']), (0, 0))
         self.app.stop = threading.Event()
-        self.app.birthdays_facebook_fill_old()
+        self.app.template('birthdays').birthdays_facebook_fill_old()
         for sid, state in ((preview, 'preview'), (saved, 'saved')):
             view = self.card(sid)
             self.assertEqual((view['state'], view['others'], view['others_shown'], view['added']), (state, 2, ['Mira Holt', 'Theo Brandt'], 0))
@@ -235,19 +236,19 @@ class AddPeople(unittest.TestCase):
         with self.store.connect() as db:
             self.assertEqual(fb.to_fill(db), [])
         self.answer = {'items': []}
-        self.app.birthdays_facebook_fill_old()  # once only
+        self.app.template('birthdays').birthdays_facebook_fill_old()  # once only
         self.assertEqual(self.card(preview)['others'], 2)
 
     def test_a_failed_read_leaves_none_and_no_browser_waits_for_the_next_start(self):
         sid = self.old('preview')
         self.app.stop = threading.Event()
-        with patch.object(a.App, 'birthdays_facebook_base', lambda s: None), patch('birthdays_facebook_app.FILL_WAIT', 0):
-            self.app.birthdays_facebook_fill_old()
+        with patch.object(a.BirthdaysTemplate, 'birthdays_facebook_base', lambda s: None), patch('birthdays_facebook_app.FILL_WAIT', 0):
+            self.app.template('birthdays').birthdays_facebook_fill_old()
         with self.store.connect() as db:
             self.assertEqual(fb.to_fill(db), [sid])  # no browser yet: tried again at the next start
         self.answer = {'error': 'signed-out'}
         with patch('birthdays_facebook_app.FILL_AGAIN', 0), self.assertLogs('personal-assistant', 'INFO') as logs:
-            self.app.birthdays_facebook_fill_old()
+            self.app.template('birthdays').birthdays_facebook_fill_old()
         view = self.card(sid)
         self.assertEqual((view['state'], view['matched'], view['others']), ('preview', 1, 0))
         self.assertEqual(len(logs.output), fb.FILL_READS)  # signed out: read again a few times, then none; Import again reads anew
@@ -262,7 +263,7 @@ class AddPeople(unittest.TestCase):
         reads = list(answers)
         p = patch.object(fb, 'read', lambda base, url=fb.PAGE, limits=None: reads.pop(0) if len(reads) > 1 else reads[0])
         with p, patch('birthdays_facebook_app.FILL_AGAIN', 0), self.assertLogs('personal-assistant', 'INFO') as logs:
-            self.app.birthdays_facebook_fill_old()
+            self.app.template('birthdays').birthdays_facebook_fill_old()
         return [line.split(':', 2)[2] for line in logs.output]
 
     def test_a_short_read_keeps_what_it_found_and_is_read_again_until_it_is_whole(self):

@@ -318,15 +318,15 @@ class Subs(unittest.TestCase):
         self.assertEqual(len(self.todos()), 1)
         self.assertTrue(self.app.is_work_suggestion(self.todos()[0]['id']))  # the company's tool only: Work
         asked = len(self.asked)
-        self.app.subs_soon_step()  # nothing new within 7 days: no model, no to-do
+        self.app.template('subscriptions').subs_soon_step()  # nothing new within 7 days: no model, no to-do
         self.assertEqual((len(self.asked), len(self.todos())), (asked, 1))
         self.mail('Canvasly <no-reply@canvasly.example>', 'Your free trial ends in 3 days',
                   f'Your free trial of Canvasly Pro ends on {day(3)}. After that you will be charged $15.00 per month.', 0, account='p')
-        self.app.subs_soon_step()  # checked today already
+        self.app.template('subscriptions').subs_soon_step()  # checked today already
         self.assertEqual(len(self.todos()), 1)
         with self.store.connect() as db:
             db.execute("DELETE FROM subs_state")
-        self.app.subs_soon_step()
+        self.app.template('subscriptions').subs_soon_step()
         todos = self.todos()
         self.assertEqual(len(todos), 2)
         self.assertEqual(todos[1]['title'], 'A trial or renewal charges this week')
@@ -335,7 +335,7 @@ class Subs(unittest.TestCase):
         with self.store.connect() as db:
             db.execute("DELETE FROM subs_state")
         n = len(self.asked)
-        self.app.subs_soon_step()  # shown with that date already: no second warning
+        self.app.template('subscriptions').subs_soon_step()  # shown with that date already: no second warning
         self.assertEqual((len(self.asked), len(self.todos())), (n, 2))
 
     def test_the_daily_check_waits_for_an_edited_or_paused_routine(self):
@@ -346,7 +346,7 @@ class Subs(unittest.TestCase):
             db.execute("UPDATE routines SET state='paused' WHERE origin='template:subscriptions'")
             db.execute("DELETE FROM subs_state")
         self.mail('Drawbox <no-reply@drawbox.example>', 'Your trial ends soon', f'Your trial ends on {day(2)}. Then $9.00 a month.', 0)
-        self.app.subs_soon_step()
+        self.app.template('subscriptions').subs_soon_step()
         self.assertEqual(len(self.todos()), n)
 
     def test_copy_is_short_and_has_no_em_dash(self):

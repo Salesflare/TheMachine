@@ -66,13 +66,15 @@ class Template:
     KEYS: the TEMPLATES keys it runs (their name, words and rhythm stay in TEMPLATES, which the Routines page reads
       without the App). KIND: its to-do kind (machine/todo_kinds.py). ACTIONS: action name -> its method, called as
       method(name, args, owner_dashboard) (App.action). STEP: the name step() fails under in the routines worker, when
-      it has a step of its own.
+      it has a step of its own. START: the same for start(), its part of the service's start.
     A name it doesn't have itself is the App's (self.store, self.config, self.routine_spawn), so code moved here from
-    an App mixin reads as it did. What it sets on itself stays its own."""
+    an App mixin reads as it did. What it sets on itself stays its own: only the template reads it back
+    (tests/test_app_mixins.py checks that no App mixin reads a name a template sets)."""
     KEYS = ()
     KIND = None
     ACTIONS = {}
     STEP = None
+    START = None
 
     def __init__(self, app):
         self.app = app
@@ -90,6 +92,9 @@ class Template:
 
     def step(self):
         """Its part of each round of the routines worker, if any (STEP)."""
+
+    def start(self):
+        """Its part of the service's start, if any (START)."""
 
 
 def load(app, templates):

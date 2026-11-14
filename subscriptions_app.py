@@ -1,4 +1,5 @@
-"""Subscriptions and trials, the App's part: a domain mixin of App (only assistant.py composes it; docs/code-map.md).
+"""Subscriptions and trials, the App's part: its routine template (routine_templates.Template), listed in
+machine/main.py's ROUTINE_TEMPLATES (docs/code-map.md).
 
 The template's own run (subs_template_run, from routines_app.routine_template_run), every month: plain code finds
 the candidates (subscriptions.scan) and leaves out what the owner decided (subscriptions.fresh); none ends the run as
@@ -7,7 +8,7 @@ agent, no tools), once the usage budget allows like any background turn. What it
 becomes one to-do, quiet like the cleanup to-dos: it waits in the list and the morning summary, no buzz. A new monthly
 to-do replaces the open one. A test run only shows its rows.
 
-Between monthly runs, a daily check (subs_soon_step, from routines_app.routines_worker) does the same in plain code
+Between monthly runs, a daily check (subs_soon_step, its step in routines_app.routines_worker) does the same in plain code
 over a shorter look back, for a trial that converts or a renewal that charges within SOON_DAYS and wasn't on a to-do
 with that date: only then a model call, and a to-do with just those. Nothing due: no model, no to-do.
 
@@ -39,7 +40,17 @@ SUBS_TIMEOUT = 120  # seconds the model call may take
 SOON_EVERY = 20 * 3600  # the daily check: about once a day
 
 
-class SubscriptionsApp:
+class SubscriptionsTemplate(routine_templates.Template):
+    KEYS = ('subscriptions',)
+    KIND = 'subs'
+    STEP = 'subscriptions soon'
+
+    def run(self, run, key):
+        return self.subs_template_run(run)  # plain code first, one small model call only over candidates
+
+    def step(self):
+        self.subs_soon_step()  # once a day: a trial or renewal within 7 days
+
     # action name -> the method that handles it, called as method(name, args, owner_dashboard) (App.action)
     ACTIONS = {
         'subs_pick': 'subs_pick_action',
@@ -95,7 +106,7 @@ class SubscriptionsApp:
     def subs_template_run(self, run):
         """The monthly run (routine_template_run): always done here, never an agent turn (True). No candidates: nothing
         new at once, no model. Else the model call in a thread of its own once the usage budget allows."""
-        if run['id'] in self.__dict__.get('_routine_steps', ()):
+        if run['id'] in self.app.__dict__.get('_routine_steps', ()):
             return True  # its pass is running
         found = self.subs_found()
         if not found:

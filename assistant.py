@@ -142,9 +142,9 @@ from recurring_app import RecurringApp
 from routines_app import RoutinesApp
 from mail_cleanup_app import CleanupTemplate  # noqa: F401  (listed in machine/main.py)
 from reading_digest_app import DigestTemplate  # noqa: F401  (listed in machine/main.py)
-from subscriptions_app import SubscriptionsApp  # noqa: F401  (composed in machine/main.py)
-from birthdays_app import BirthdaysApp  # noqa: F401  (composed in machine/main.py)
-from birthdays_facebook_app import BirthdaysFacebookApp  # noqa: F401  (composed in machine/main.py)
+from subscriptions_app import SubscriptionsTemplate  # noqa: F401  (listed in machine/main.py)
+from birthdays_app import Birthdays  # noqa: F401  (composed in machine/main.py)
+from birthdays_facebook_app import BirthdaysFacebook  # noqa: F401  (composed in machine/main.py)
 from shared_graph_app import SharedGraphApp
 from skills_app import SkillsApp
 from whatsapp_images_app import WhatsAppImagesApp
@@ -1147,6 +1147,7 @@ from machine.app.connect import (
 from machine.main import (  # noqa: F401 - the service and its mixins (machine/main.py), re-exported
     APP_MIXINS,
     App,
+    BirthdaysTemplate,
     ROUTINE_TEMPLATES,
     Store,
 )

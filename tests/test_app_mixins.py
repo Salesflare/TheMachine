@@ -5,11 +5,13 @@ and otherwise goes through its own branches. Who may call an action stays the re
 import ast
 import functools
 import importlib.util
+import inspect
 import json
 from pathlib import Path
 import re
 import sys
 import tempfile
+import textwrap
 import unittest
 from unittest.mock import patch
 
@@ -59,6 +61,12 @@ def resolves(name):
 
 def own(cls):
     return {name for name in vars(cls) if not (name.startswith('__') and name.endswith('__'))}
+
+
+def template_parts(cls):
+    """The classes a template is made of (its own and what it is composed from), not the Template base."""
+    import routine_templates
+    return [part for part in cls.__mro__ if part not in (routine_templates.Template, object)]
 
 
 def bare_app():
@@ -163,27 +171,54 @@ class AppMixins(unittest.TestCase):
             writing.assert_called_once_with({'id': 3})
 
     def test_routine_templates_are_declared_whole(self):
-        # each Template (ROUTINE_TEMPLATES) runs catalog keys no other one runs, names a to-do kind the registry has,
-        # and maps its actions to its own methods, none of them a mixin's too
+        # each Template (ROUTINE_TEMPLATES) runs catalog keys no other one runs, every catalog key has one, each names a
+        # to-do kind the registry has and maps its actions to its own methods, none of them a mixin's too
         from machine import todo_kinds
         import routine_templates
         keys = [key for cls in a.ROUTINE_TEMPLATES for key in cls.KEYS]
         self.assertEqual(len(keys), len(set(keys)))
-        self.assertEqual(set(keys) - set(routine_templates.TEMPLATES), set())
+        self.assertEqual(set(keys), set(routine_templates.TEMPLATES))
         for cls in a.ROUTINE_TEMPLATES:
             with self.subTest(template=cls.__name__):
                 self.assertTrue(issubclass(cls, routine_templates.Template))
                 self.assertIn(cls.KIND, {k.key for k in todo_kinds.KINDS})
+                self.assertEqual(set(cls.ACTIONS), {n for part in template_parts(cls) for n in vars(part).get('ACTIONS', {})})
                 for name, method in cls.ACTIONS.items():
                     self.assertNotIn(name, a.App.ACTION_HANDLERS)
-                    self.assertTrue(callable(vars(cls).get(method)), f'{name}: {cls.__name__} has no method {method}')
+                    self.assertTrue(callable(getattr(cls, method, None)), f'{name}: {cls.__name__} has no method {method}')
                     self.assertIs(a.App.TEMPLATE_ACTIONS[name], cls)
 
     def test_a_template_never_hides_an_app_member(self):
         # a template reads the App's members as its own (self.store): one of the same name on the template would hide it
         for cls in a.ROUTINE_TEMPLATES:
             with self.subTest(template=cls.__name__):
-                self.assertEqual(sorted(own(cls) & set(dir(a.App)) - {'ACTIONS'}), [])
+                mine = {name for part in template_parts(cls) for name in own(part)}
+                self.assertEqual(sorted(mine & set(dir(a.App)) - {'ACTIONS'}), [])
+
+    def test_what_a_template_sets_on_itself_only_it_reads(self):
+        # a write through the template (self._x = ...) lands on the template, never on the App: a name it sets must be
+        # read nowhere but in that template, or the App (or another template) would never see the new value
+        def names(classes, writes):
+            found = set()
+            for part in classes:
+                for node in ast.walk(ast.parse(textwrap.dedent(inspect.getsource(part)))):
+                    if writes and isinstance(node, (ast.Assign, ast.AugAssign, ast.AnnAssign)):
+                        for target in (node.targets if isinstance(node, ast.Assign) else [node.target]):
+                            if isinstance(target, ast.Attribute) and isinstance(target.value, ast.Name) and target.value.id == 'self':
+                                found.add(target.attr)
+                    if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id in ('setattr', 'getattr', 'hasattr') \
+                            and node.args and isinstance(node.args[0], ast.Name) and node.args[0].id == 'self' \
+                            and len(node.args) > 1 and isinstance(node.args[1], ast.Constant) and (node.func.id == 'setattr') == writes:
+                        found.add(node.args[1].value)
+                    if not writes and isinstance(node, ast.Attribute) and isinstance(node.value, ast.Name) and node.value.id == 'self':
+                        found.add(node.attr)
+            return found
+        sets = {cls: names(template_parts(cls), True) for cls in a.ROUTINE_TEMPLATES}
+        self.assertIn('_routine_offers_at', sets[a.CleanupTemplate])  # the check sees the one write there is
+        for cls, written in sets.items():
+            others = [a.App, *a.APP_MIXINS] + [p for other in a.ROUTINE_TEMPLATES if other is not cls for p in template_parts(other)]
+            with self.subTest(template=cls.__name__):
+                self.assertEqual(sorted(written & names(others, False)), [])
 
     def test_a_template_action_reaches_its_template(self):
         app = bare_app()
@@ -193,8 +228,11 @@ class AppMixins(unittest.TestCase):
         self.assertIs(template.app, app)
         self.assertEqual((name, args, owner), ('digest_interest', {'topic': 'x'}, True))
         self.assertIs(app.template('newsletters'), app.template('spam'))  # one per App, whichever key loads it
-        self.assertEqual(app.templates(), [app.template('spam'), app.template('digest')])
-        self.assertIsNone(app.template('birthdays'))  # still a mixin's (birthdays_app.py)
+        self.assertEqual(app.templates(), [app.template(k) for k in ('spam', 'digest', 'birthdays', 'subscriptions')])
+        self.assertIsNone(app.template('gone'))
+        # Birthdays' two modules are one template: its Facebook import's action reaches it
+        with patch.object(a.BirthdaysTemplate, 'birthdays_facebook_action', lambda s, name, args, owner: s):
+            self.assertIs(app.action('birthdays_facebook', {}, owner_dashboard=True), app.template('birthdays'))
 
     def test_moved_members_are_found_on_app(self):
         self.assertIs(a.App.bug_with_report, a.SupportApp.bug_with_report)

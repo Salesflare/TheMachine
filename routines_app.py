@@ -1002,17 +1002,18 @@ class RoutinesApp:
 
     def routine_template_run(self, run, key):
         """A template routine's run (routines_step): always done by its template's own code, never an agent turn (True).
-        Newsletter cleanup, Spam cleanup and Daily digest are Templates (machine/main.py ROUTINE_TEMPLATES)."""
+        Each template is a routine_templates.Template (machine/main.py ROUTINE_TEMPLATES)."""
         template = self.template(key)
-        if template:
-            return template.run(run, key)
-        if key == 'subscriptions':  # subscriptions_app.py: plain code first, one small model call only over candidates
-            return self.subs_template_run(run)
-        if key == 'birthdays':  # plain code too (birthdays_app.py); Outlook's Birthdays calendar is read in it
-            self.routine_spawn(lambda _: self.birthdays_run(run), run['id'])
-            self.birthdays_facebook_spawn(self.birthdays_facebook_offer, run)  # once: Import birthdays from Facebook (birthdays_facebook_app.py)
-            return True
-        return None
+        return template.run(run, key) if template else None
+
+    def routine_templates_start(self):
+        """At start: each template's own part (Birthdays: an older Import birthdays from Facebook to-do's fill)."""
+        for template in self.templates():
+            if template.START:
+                try:
+                    template.start()
+                except Exception as error:  # noqa: BLE001 - never stops the service; the next start tries again
+                    LOG.error('%s error=%s', template.START, type(error).__name__)
 
     def cleanup_accounts(self):
         """The owner's mail accounts (Gmail and Outlook), each with its area."""
@@ -1045,16 +1046,13 @@ class RoutinesApp:
                 self.routines_step()
             except Exception as error:
                 loop_failed(LOG, 'routines', error)
-            for template in self.templates():  # a template's own step: Newsletter cleanup's offers a few times a day
+            # a template's own step: Newsletter cleanup's offers a few times a day, Subscriptions' 7-day check once a day
+            for template in self.templates():
                 if template.STEP:
                     try:
                         template.step()
                     except Exception as error:
                         loop_failed(LOG, template.STEP, error)
-            try:
-                self.subs_soon_step()  # once a day: a trial or renewal within 7 days (subscriptions_app.py)
-            except Exception as error:
-                loop_failed(LOG, 'subscriptions soon', error)
 
     @staticmethod
     def routine_why(error):
