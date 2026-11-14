@@ -22,8 +22,8 @@ from machine.sources.rows import Skips
 from machine.sources.salesflare import salesflare_progress, sync_salesflare
 from machine.sources.slack import (Slack, slack_error, slack_event, slack_first_import_plan,
                                    slack_interval, slack_next_due, slack_order, slack_page_names, slack_prune,
-                                   slack_read_asked, slack_limits, slack_read_drop, slack_read_now, slack_refused,
-                                   slack_set_aside, slack_turn_done, slack_hiccup)
+                                   slack_read_asked, slack_limits, slack_read_drop, slack_read_now, slack_read_wait, slack_refused,
+                                   slack_set_aside, slack_turn_done, slack_hiccup, READ_NOW_MAX)
 from machine.sources.signal_chats import sync_signal
 from machine.sources.telegram import sync_telegram
 from machine.sources.whatsapp import sync_whatsapp, WhatsApp
@@ -34,6 +34,7 @@ from machine.owner_error import OwnerError
 
 
 SALESFLARE_RESTART_SPREAD = 180  # seconds: team Machines restarted together start their Salesflare rounds apart
+RUN_READ_WAIT = 900  # seconds a to-do's run waits for the Slack reads it asked for before a blocker may stand (slack_blocker_check)
 
 
 def error_route(error):
@@ -429,6 +430,71 @@ def sync_source(store, config, account):
 class SyncApp:
     ACTIONS = {'slack_read': 'slack_read_action'}  # its other actions are still App.action's own branches
 
+    def run_slack_reads(self):
+        """{job id: {(account id, channel id): when it was asked}}: the Slack conversations each to-do's run asked to have
+        read (slack_read). In memory only, as READ_NOW: after a restart the run starts over and asks again."""
+        runs = self.__dict__.setdefault('_run_slack_reads', {})
+        for job_id in [j for j, asked in runs.items() if all(time.time() - at > READ_NOW_MAX for at in asked.values())]:
+            runs.pop(job_id)
+        return runs
+
+    def slack_reads_waiting(self, job_id):
+        """([names], when first asked) of the conversations this run asked for that Slack hasn't read since. One Slack
+        refused (cannot_read) is no wait: the run says plainly it couldn't read it."""
+        waiting, first = [], None
+        for (account_id, channel_id), at in (self.run_slack_reads().get(str(job_id)) or {}).items():
+            channel = next((c for c in (self.store.checkpoint(account_id) or {}).get('channels') or () if c.get('id') == channel_id), None)
+            if not channel or channel.get('error') or float(channel.get('last_scan') or 0) >= at:
+                continue
+            waiting.append(('#' if channel.get('type') == 'channel' else '') + str(channel.get('name') or channel_id))
+            first = at if first is None else min(first, at)
+        return waiting, first
+
+    def slack_blocker_check(self, args):
+        """Before a run's blocker (preparation_blocked): Slack reads it asked for that are still coming are a wait, never
+        a blocker. Slack reads one conversation every few minutes, so a run that asked for two group DMs, waited one
+        read's time and found both still reading stopped with "paste the update here", and the to-do showed Stuck
+        (2026-11-14). Refused (the run waits and asks again) for RUN_READ_WAIT after its first ask; a blocker after that
+        stands, and the to-do carries on by itself once the reads are in (resume_slack_reads). Returns the reads
+        still coming then."""
+        if any(args.get(k) is not None for k in ('connect', 'move_to', 'use_event_ids')):
+            return []
+        waiting, first = self.slack_reads_waiting(args.get('job_id'))
+        if waiting and time.time() - first < RUN_READ_WAIT:
+            account = next((a for a in self.config.get('accounts') or () if a.get('service') == 'slack'), {})
+            wait = slack_read_wait(self.config, account, len(waiting))
+            raise ValueError(f"Not recorded: Slack is still reading {', '.join(waiting)} for this run. It reads one "
+                             'conversation every few minutes, asked ones first. That is a wait, not a blocker, and never a '
+                             f"question for the owner: sleep {wait} with exec, call slack_read again for each, and carry on "
+                             'once they are read. Only a conversation that comes back cannot_read is a blocker: then say '
+                             'plainly which one you could not read.')
+        return waiting
+
+    def resume_slack_reads(self):
+        """A run that stopped while its Slack reads were still coming (slack_blocker_check) carries on by itself once they
+        are in: no Try again to find. Given up after READ_NOW_MAX (Try again stays). Returns the to-dos it started."""
+        held, resumed = self.__dict__.setdefault('_slack_read_resumes', {}), []
+        for job_id, suggestion_id in list(held.items()):
+            if job_id not in self.run_slack_reads():  # its asks lapsed (READ_NOW_MAX) unread
+                held.pop(job_id)
+                continue
+            waiting, first = self.slack_reads_waiting(job_id)
+            if waiting and time.time() - first < READ_NOW_MAX:
+                continue
+            held.pop(job_id)
+            if waiting:
+                continue
+            with self.store.connect() as db:
+                job = db.execute('SELECT job_id,status FROM preparations WHERE suggestion_id=?', (suggestion_id,)).fetchone()
+            if not job or job['job_id'] != job_id or job['status'] != 'blocked':
+                continue  # tried again, answered or closed in the meantime
+            try:
+                self.store.decide(suggestion_id, 'retry', '', 'slack-read:' + job_id, 'slack_read')
+                resumed.append(suggestion_id)
+            except ValueError as error:
+                LOG.info('slack read resume skipped suggestion=%s error=%s', suggestion_id, error)
+        return resumed
+
     def slack_read_action(self, name, args, owner_dashboard=False):
         """A to-do's run asks for a Slack conversation's newest messages (assistant_signals slack_read {channel}): through
         the Slack connection, never the browser. Slack allows about one read a minute, so the read happens in the
@@ -475,9 +541,15 @@ class SyncApp:
             wakes = self.__dict__.get('collector_wakes') or {}
             if account['id'] in (self.__dict__.get('collector_resting') or ()) and account['id'] in wakes:
                 wakes[account['id']].set()
-            return {'status': 'reading', 'account_id': account['id'], 'channel': channel['name'], 'wait_seconds': 90,
-                    'note': 'Slack allows about one read a minute: the Slack connection reads it next. Call slack_read '
-                            'again in about a minute (sleep 60 with exec), up to a few times.'}
+            if args.get('job_id'):
+                self.run_slack_reads().setdefault(str(args['job_id']), {}).setdefault((account['id'], channel['id']), asked)
+            waiting = sum(slack_read_asked(account['id'], c) is not None and not c.get('error') for c in channels)
+            wait = slack_read_wait(self.config, account, waiting)
+            return {'status': 'reading', 'account_id': account['id'], 'channel': channel['name'], 'wait_seconds': wait,
+                    'note': f'Slack reads one conversation every few minutes, asked ones first: {waiting} asked, this one '
+                            f'among them. Sleep {wait} with exec, then call slack_read again for each conversation still '
+                            'reading, until it is read. A read still to come is a wait, never a blocker: keep waiting, '
+                            "and don't ask the owner for what is in it."}
         if not names:
             return {'status': 'reading', 'wait_seconds': 120,
                     'note': 'Slack is still bringing in its first conversations. Call slack_read again in a few minutes.'}

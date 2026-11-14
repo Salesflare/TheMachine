@@ -238,7 +238,9 @@ export default definePluginEntry({
         }
         if (params.action==='slack_read') {
           // A to-do's own run reads a Slack conversation through the Slack connection (read-only, SyncApp.slack_read_action).
-          if (!/^agent:main:assistant-review-preparation-/.test(key) || !currentReviewRun(key)) throw new Error('Slack conversations are read for a to-do’s own run');
+          const run=currentReviewRun(key);
+          if (!/^agent:main:assistant-review-preparation-/.test(key) || !run) throw new Error('Slack conversations are read for a to-do’s own run');
+          args.job_id=run;  // host-bound: the run waits on its own reads (SyncApp.slack_blocker_check)
         }
         if (['save_profile', 'profile_evidence'].includes(params.action) && /^agent:main:assistant-review-profile-/.test(key)) args._profile_session = key;
         if (params.action === 'skills_found') {
