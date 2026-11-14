@@ -94,6 +94,7 @@ class RoutinesApp:
         'routine_result': 'routine_result_action',
         'routine_run_now': 'routine_run_now_action',
         'routine_state': 'routine_state_action',
+        'routine_template': 'routine_template_action',
         'routine_try': 'routine_try_action',
         'routine_when': 'routine_when_action',
     }
@@ -284,7 +285,7 @@ class RoutinesApp:
             if key and not routine['edited']:
                 routine['instructions'] = routine_templates.words(key)
             if key == 'digest':  # what it picks for, on its card to see and edit (reading_digest_app.py)
-                routine['interests'] = self.digest_interests()
+                routine['interests'] = self.template('digest').digest_interests()
             routine['from_openclaw'] = str(routine.pop('origin') or '').startswith('openclaw:')
             routine.pop('accepted_at', None)
             for run in routine['runs'] + ([routine['test']] if routine['test'] else []):  # a run that didn't work says why
@@ -317,11 +318,11 @@ class RoutinesApp:
             words = mine and (mine['trial'] if mine['trial'] is not None else mine['instructions'])
             key = mine and routine_templates.own(mine['origin'], words, routines.steps_of({'steps': mine['run_steps']}))
             if key == 'spam' and mine['trial'] is None:
-                return self.routine_spam_result(mine, m.group(1), args, stamp, db)  # mail_cleanup_app.py
+                return self.template('spam').routine_spam_result(mine, m.group(1), args, stamp, db)  # mail_cleanup_app.py
             if not mine or mine['state'] != 'sorting':
                 kept = self.routine_recipe_kept(db, mine, args.get('recipe'), stamp) if args.get('recipe') is not None else None
                 # an edited Newsletter or Spam cleanup's picks: read before this run's report moves "since"
-                cleanup = self.routine_cleanup_picked(db, mine, args.get('cleanup')) if mine and mine['trial'] is None and not key \
+                cleanup = self.template('spam').routine_cleanup_picked(db, mine, args.get('cleanup')) if mine and mine['trial'] is None and not key \
                     and not routines.is_test(mine) and args.get('cleanup') else None
                 draft = self.routine_draft(args.get('draft'), self.config.get('accounts', []))
                 checked = mine and routines.steps_of({'steps': mine['run_steps']}).get('check')
@@ -336,7 +337,7 @@ class RoutinesApp:
                 if draft and mine and mine['trial'] is None and not routines.is_test(mine):  # a test run only shows it
                     self.routine_draft_todo(mine, m.group(1), draft)
                 if cleanup:  # the same cleanup to-do as the template's, after the transaction: no network inside it
-                    self.routine_cleanup_todos(mine, m.group(1), *cleanup)
+                    self.template('spam').routine_cleanup_todos(mine, m.group(1), *cleanup)
                 return {'saved': True, **({'recipe': kept} if kept else {}), 'next': 'End your turn now with: Done.'}
             kind = args.get('kind')
             if kind not in ('routine', 'todo', 'skip'):
@@ -551,7 +552,7 @@ class RoutinesApp:
                          'standup' + (f'. Its name is "{run["name"]}": pass it again unless it no longer fits.' if run['name_check'] == '1' else '.'))
         lines.append(self.routine_skill_lines(run))
         lines.append(self.routine_learned_lines(run))
-        lines.append(self.routine_cleanup_lines(run))  # an edited Newsletter or Spam cleanup (mail_cleanup_app.py)
+        lines.append(self.template('spam').routine_cleanup_lines(run))  # an edited Newsletter or Spam cleanup (mail_cleanup_app.py)
         if last:
             lines.append(f'The last result ({last["started_at"][:10]}), so you can say what changed:\n{last["result"][:1500]}')
         return '\n'.join(x for x in lines if x)
@@ -732,7 +733,7 @@ class RoutinesApp:
                 return
             with self.store.connect() as db:
                 run['origin'] = db.execute('SELECT origin FROM routines WHERE id=?', (run['routine_id'],)).fetchone()[0]
-            # a template's own run (mail_cleanup_app.py) while its words are the template's: plain code, or a turn only
+            # a template's own run (routine_template_run) while its words are the template's: plain code, or a turn only
             # when there is mail to read; edited, a normal run on its words
             template = routine_templates.own(run['origin'], self.routine_words(run), routines.steps_of(run))
             if template:
@@ -975,6 +976,66 @@ class RoutinesApp:
             else:
                 routines.finish(db, run_id, 'failed', self.routines_stamp(), result=run['result'], why=said or None, error='check', used=used)
 
+    # --- routine templates (routine_templates.py) ---------------------------------------------------------------------
+
+    def routine_template_action(self, name, args, owner_dashboard):
+        """Add a template's routine (key) and run it once now; one that is there already stays as it is."""
+        if not owner_dashboard:
+            raise ValueError('Routines are made by the owner, on the dashboard')
+        key = args.get('key')
+        template = routine_templates.TEMPLATES.get(key)
+        if not template:
+            raise OwnerError('That template is gone')
+        if key == 'spam' and not self.cleanup_spam_accounts():
+            raise OwnerError('Spam cleanup needs a connected mail account.')
+        now, stamp = self.routines_now(), self.routines_stamp()
+        with self.routines_lock(), self.store.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            found = routine_templates.live(db, key)
+            if found:
+                return self.routines_view(found['id'])
+            rid = routines.create(db, template['words'], routine_templates.rule(key), now.date(), routine_templates.AT, now, stamp,
+                                  name=i18n.t(template['name']), origin='template:' + key)
+            routines.run_now(db, rid, stamp)  # its first look now: the past day
+        self.routines_wake().set()
+        return self.routines_view(rid)
+
+    def routine_template_run(self, run, key):
+        """A template routine's run (routines_step): always done by its template's own code, never an agent turn (True).
+        Newsletter cleanup, Spam cleanup and Daily digest are Templates (machine/main.py ROUTINE_TEMPLATES)."""
+        template = self.template(key)
+        if template:
+            return template.run(run, key)
+        if key == 'subscriptions':  # subscriptions_app.py: plain code first, one small model call only over candidates
+            return self.subs_template_run(run)
+        if key == 'birthdays':  # plain code too (birthdays_app.py); Outlook's Birthdays calendar is read in it
+            self.routine_spawn(lambda _: self.birthdays_run(run), run['id'])
+            self.birthdays_facebook_spawn(self.birthdays_facebook_offer, run)  # once: Import birthdays from Facebook (birthdays_facebook_app.py)
+            return True
+        return None
+
+    def cleanup_accounts(self):
+        """The owner's mail accounts (Gmail and Outlook), each with its area."""
+        return [a for a in self.config.get('accounts', []) if a.get('id') and todo_areas.area_of_account(a)
+                and (a.get('service') or 'gmail') in ('gmail', 'outlook', 'microsoft', 'microsoft365', 'outlook.com')]
+
+    def cleanup_spam_accounts(self):
+        """The mail accounts Spam cleanup reads: every mail account. Where it may not move mail to spam (read-only
+        Gmail), Spam on its to-do links to the mail for the owner to mark (cleanup_spam_ways, cleanup_mark)."""
+        return [a['id'] for a in self.cleanup_accounts()]
+
+    def cleanup_spam_needs(self):
+        """Why Spam cleanup can't be added here, for its line and Connect mail on the Routines page, or None when it
+        can: 'mail' with no mail account at all."""
+        return None if self.cleanup_spam_accounts() else 'mail'
+
+    def cleanup_since(self, db, routine_id):
+        """What a run reads: mail since the last run that ended well, else the past day."""
+        return routines.last_run(db, routine_id) or (timeutil.clock() - dt.timedelta(days=1)).isoformat()
+
+    def cleanup_account(self, account_id):
+        return next((a for a in self.config.get('accounts', []) if a.get('id') == account_id), None)
+
     def routines_worker(self):
         wake = self.routines_wake()
         while not self.stop.is_set():
@@ -984,10 +1045,12 @@ class RoutinesApp:
                 self.routines_step()
             except Exception as error:
                 loop_failed(LOG, 'routines', error)
-            try:
-                self.routine_offers_step()  # a few times a day: offer a mail cleanup template (mail_cleanup_app.py)
-            except Exception as error:
-                loop_failed(LOG, 'routine offers', error)
+            for template in self.templates():  # a template's own step: Newsletter cleanup's offers a few times a day
+                if template.STEP:
+                    try:
+                        template.step()
+                    except Exception as error:
+                        loop_failed(LOG, template.STEP, error)
             try:
                 self.subs_soon_step()  # once a day: a trial or renewal within 7 days (subscriptions_app.py)
             except Exception as error:

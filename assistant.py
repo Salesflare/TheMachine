@@ -140,8 +140,8 @@ from gbrain_app import GBrainApp
 from meet_app import MeetApp
 from recurring_app import RecurringApp
 from routines_app import RoutinesApp
-from mail_cleanup_app import MailCleanupApp  # noqa: F401  (composed in machine/main.py)
-from reading_digest_app import ReadingDigestApp  # noqa: F401  (composed in machine/main.py)
+from mail_cleanup_app import CleanupTemplate  # noqa: F401  (listed in machine/main.py)
+from reading_digest_app import DigestTemplate  # noqa: F401  (listed in machine/main.py)
 from subscriptions_app import SubscriptionsApp  # noqa: F401  (composed in machine/main.py)
 from birthdays_app import BirthdaysApp  # noqa: F401  (composed in machine/main.py)
 from birthdays_facebook_app import BirthdaysFacebookApp  # noqa: F401  (composed in machine/main.py)
@@ -1147,6 +1147,7 @@ from machine.app.connect import (
 from machine.main import (  # noqa: F401 - the service and its mixins (machine/main.py), re-exported
     APP_MIXINS,
     App,
+    ROUTINE_TEMPLATES,
     Store,
 )
 

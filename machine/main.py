@@ -83,8 +83,8 @@ from machine.store.views import ViewsStore
 from machine.store.voices import VoicesStore
 from machine.store.whats_new import WhatsNewStore
 from meet_app import MeetApp
-from mail_cleanup_app import MailCleanupApp
-from reading_digest_app import ReadingDigestApp
+from mail_cleanup_app import CleanupTemplate
+from reading_digest_app import DigestTemplate
 from subscriptions_app import SubscriptionsApp
 from birthdays_app import BirthdaysApp
 from birthdays_facebook_app import BirthdaysFacebookApp
@@ -93,6 +93,7 @@ from missed_work_app import MissedWorkApp
 import next_actions
 import notify
 from recurring_app import RecurringApp
+import routine_templates
 from routines_app import RoutinesApp
 from shared_graph_app import SharedGraphApp
 import skills
@@ -110,8 +111,8 @@ class Store(CardsStore, DecisionsStore, DoneMilestonesStore, EventsStore, FactsS
 
 # App's domain mixins (<domain>_app.py): each holds a domain's App methods and the actions it handles (its ACTIONS).
 APP_MIXINS = (SupportApp, CalendarApp, SkillsApp, AgentsApp, GBrainApp, SharedGraphApp, RecurringApp, CorrectionsApp, AiApp, MeetApp, MissedWorkApp, BringInApp,
-              WhatsAppImagesApp, CheckNowApp, SetupCardApp, HistoryApp, RoutinesApp, MailCleanupApp,
-              BirthdaysApp, BirthdaysFacebookApp, ReadingDigestApp, SubscriptionsApp)
+              WhatsAppImagesApp, CheckNowApp, SetupCardApp, HistoryApp, RoutinesApp,
+              BirthdaysApp, BirthdaysFacebookApp, SubscriptionsApp)
 # App's mixins in machine/app/: methods moved out of App as is (docs/code-map.md)
 APP_MIXINS += (FollowUpsApp, GraphActionsApp, KnowledgeExportApp, MeetingWritesApp, ModelPacingApp, PromiseChecksApp, SignaturesApp, SummariesApp,
                VoiceApp)
@@ -136,12 +137,16 @@ APP_MIXINS += (ReviewSavesApp,)
 APP_MIXINS += (CalendarClashesApp,)
 APP_MIXINS += (MeetingPrepApp,)
 APP_MIXINS += (ConnectApp,)
+# Routine templates whose code is a routine_templates.Template, not a mixin: the routines worker and App.action load
+# them from this list (App.template)
+ROUTINE_TEMPLATES = (CleanupTemplate, DigestTemplate)
 
 
 class App(*APP_MIXINS):
     # action name -> method, from the mixins' ACTIONS; App.action calls it as method(name, args, owner_dashboard). Who
     # may call an action is still the reviewed sets above (OWNER_ACTIONS, DASHBOARD_ACTIONS, SUPPORT_ACTIONS, ...).
     ACTION_HANDLERS = {name: method for mixin in APP_MIXINS for name, method in mixin.ACTIONS.items()}
+    TEMPLATE_ACTIONS = routine_templates.actions(ROUTINE_TEMPLATES)  # action name -> the Template that handles it
     HISTORY_SOURCES = {'mail': (Gmail, message_event), 'calendar': (Calendar, calendar_event, calendar_title_excluded), 'whatsapp': (WhatsApp, whatsapp_event),
                        'slack': (None, slack_event)}  # Slack's client is the collector's own (SyncApp.slack_source)
 
@@ -201,9 +206,23 @@ class App(*APP_MIXINS):
     def action(self, name, args, owner_dashboard=False):
         if name in self.ACTION_HANDLERS:  # an action a domain mixin handles (APP_MIXINS)
             return getattr(self, self.ACTION_HANDLERS[name])(name, args, owner_dashboard)
+        if name in self.TEMPLATE_ACTIONS:  # an action on a routine template's to-do (ROUTINE_TEMPLATES)
+            cls = self.TEMPLATE_ACTIONS[name]
+            return getattr(self.template(cls.KEYS[0]), cls.ACTIONS[name])(name, args, owner_dashboard)
         if name.startswith('fleet_') or name in FAMILY_ACTIONS:
             return self.fleet_action(name, args, owner_dashboard)
         raise ValueError('Unknown operation')
+
+    def template(self, key):
+        """The routine template that runs this TEMPLATES key, or None. Made on first use, one of each per App."""
+        found = self.__dict__.get('_templates')
+        if found is None:
+            found = self.__dict__.setdefault('_templates', routine_templates.load(self, ROUTINE_TEMPLATES))
+        return found.get(key)
+
+    def templates(self):
+        """Every routine template, in ROUTINE_TEMPLATES' order."""
+        return [self.template(cls.KEYS[0]) for cls in ROUTINE_TEMPLATES]
 
     def fleet_card(self, kind, ask_id, name, title, body, evidence, action=None, due=None, into=None, family=False, via=None, carried=()):
         """A card for a Fleet request the owner accepted (fleet_requests.py), made from this Machine's own data. Its

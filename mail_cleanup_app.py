@@ -1,9 +1,8 @@
-"""Routine templates and mail cleanup, the App's part: a domain mixin of App (only assistant.py composes it;
-docs/code-map.md).
+"""Newsletter cleanup and Spam cleanup, the App's part: their routine template (routine_templates.Template), listed in
+machine/main.py's ROUTINE_TEMPLATES (docs/code-map.md).
 
-routine_template adds a template's routine (routine_templates.py) and starts its first run. A template routine's run is
-its own (routine_template_run, from routines_app.routines_step): Newsletter cleanup in plain code. Spam cleanup runs every
-hour: plain code lists the mail by unknown senders that is new since its last run (no model), and only when there is
+Their routine's run is the template's own (run, from routines_app.routine_template_run): Newsletter cleanup in plain
+code. Spam cleanup runs every hour: plain code lists the mail by unknown senders that is new since its last run (no model), and only when there is
 any, one small model call reads just that list (cleanup_spam_pass: no agent, no tools, the background model; it waits
 for the usage budget like any background turn). Either ends in at most one to-do per area with a choice per item
 (mail_cleanup.py), quiet: no buzz or push.
@@ -27,7 +26,6 @@ of its own, each item with what this Machine may already do and never with more 
   with Connect mail (cleanup_spam_needs).
 Once every item is settled, the to-do is done by itself."""
 import base64
-import datetime as dt
 import http.client
 import ipaddress
 import json
@@ -124,13 +122,18 @@ def one_click(url, timeout=POST_TIMEOUT):
     return False
 
 
-class MailCleanupApp:
+class CleanupTemplate(routine_templates.Template):
+    KEYS = ('newsletters', 'spam')
+    KIND = 'cleanup'
     # action name -> the method that handles it, called as method(name, args, owner_dashboard) (App.action)
     ACTIONS = {
         'routine_cleanup': 'routine_cleanup_action',
         'routine_offer': 'routine_offer_action',
-        'routine_template': 'routine_template_action',
     }
+    STEP = 'routine offers'
+
+    def step(self):
+        self.routine_offers_step()  # a few times a day: offer a mail cleanup template
 
     # --- offering a template (routine_offers.py) -----------------------------------------------------------------------
 
@@ -165,67 +168,16 @@ class MailCleanupApp:
             routine_offers.answer(db, key, yes, self.routines_stamp())
         return {'key': key, 'added': made}
 
-    # --- adding a template ---------------------------------------------------------------------------------------------
-
-    def routine_template_action(self, name, args, owner_dashboard):
-        """Add a template's routine (key) and run it once now; one that is there already stays as it is."""
-        if not owner_dashboard:
-            raise ValueError('Routines are made by the owner, on the dashboard')
-        key = args.get('key')
-        template = routine_templates.TEMPLATES.get(key)
-        if not template:
-            raise OwnerError('That template is gone')
-        if key == 'spam' and not self.cleanup_spam_accounts():
-            raise OwnerError('Spam cleanup needs a connected mail account.')
-        now, stamp = self.routines_now(), self.routines_stamp()
-        with self.routines_lock(), self.store.connect() as db:
-            db.execute('BEGIN IMMEDIATE')
-            found = routine_templates.live(db, key)
-            if found:
-                return self.routines_view(found['id'])
-            rid = routines.create(db, template['words'], routine_templates.rule(key), now.date(), routine_templates.AT, now, stamp,
-                                  name=i18n.t(template['name']), origin='template:' + key)
-            routines.run_now(db, rid, stamp)  # its first look now: the past day
-        self.routines_wake().set()
-        return self.routines_view(rid)
-
     # --- a template's run ----------------------------------------------------------------------------------------------
 
-    def cleanup_accounts(self):
-        """The owner's mail accounts (Gmail and Outlook), each with its area."""
-        return [a for a in self.config.get('accounts', []) if a.get('id') and todo_areas.area_of_account(a)
-                and (a.get('service') or 'gmail') in ('gmail', 'outlook', 'microsoft', 'microsoft365', 'outlook.com')]
-
-    def cleanup_spam_accounts(self):
-        """The mail accounts Spam cleanup reads: every mail account. Where it may not move mail to spam (read-only
-        Gmail), Spam on its to-do links to the mail for the owner to mark (cleanup_spam_ways, cleanup_mark)."""
-        return [a['id'] for a in self.cleanup_accounts()]
-
-    def cleanup_spam_needs(self):
-        """Why Spam cleanup can't be added here, for its line and Connect mail on the Routines page, or None when it
-        can: 'mail' with no mail account at all."""
-        return None if self.cleanup_spam_accounts() else 'mail'
-
-    def cleanup_since(self, db, routine_id):
-        """What a run reads: mail since the last run that ended well, else the past day."""
-        return routines.last_run(db, routine_id) or (timeutil.clock() - dt.timedelta(days=1)).isoformat()
-
-    def routine_template_run(self, run, key):
+    def run(self, run, key):
         """A template routine's run (routines_step): always done here, never an agent turn (True). Newsletters: found and
         done in plain code. Spam: nothing new by unknown senders finishes it at once; else one small model call over just
         that mail, in a thread of its own, once the usage budget allows (cleanup_spam_pass)."""
         if key == 'newsletters':  # its headers are read from the mailbox: in a thread of its own, never under the lock
             self.routine_spawn(lambda _: self.cleanup_finish_run(run, key), run['id'])
             return True
-        if key == 'digest':  # reading_digest_app.py: plain code first, one small model call only over new newsletters
-            return self.digest_template_run(run)
-        if key == 'subscriptions':  # subscriptions_app.py: plain code first, one small model call only over candidates
-            return self.subs_template_run(run)
-        if key == 'birthdays':  # plain code too (birthdays_app.py); Outlook's Birthdays calendar is read in it
-            self.routine_spawn(lambda _: self.birthdays_run(run), run['id'])
-            self.birthdays_facebook_spawn(self.birthdays_facebook_offer, run)  # once: Import birthdays from Facebook (birthdays_facebook_app.py)
-            return True
-        if run['id'] in self.__dict__.get('_routine_steps', ()):
+        if run['id'] in self.app.__dict__.get('_routine_steps', ()):
             return True  # its pass is running
         ids = self.cleanup_spam_accounts()
         with self.store.connect() as db:
@@ -401,9 +353,6 @@ class MailCleanupApp:
         """Its to-do, the template's own (cleanup_todos): each with how it will go, only what this Machine may do."""
         items = self.cleanup_ways(picked) if key == 'newsletters' else self.cleanup_spam_ways(picked)
         return self.cleanup_todos(mine, key, items, run_id) if items else (0, 0, 0, 0)
-
-    def cleanup_account(self, account_id):
-        return next((a for a in self.config.get('accounts', []) if a.get('id') == account_id), None)
 
     def cleanup_ways(self, items):
         """Newsletters, each with how Unsubscribe will go (how: one_click, mailto or page), from its List-Unsubscribe

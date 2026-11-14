@@ -39,7 +39,9 @@ class Offers(unittest.TestCase):
                             ('cleanup_headers', lambda s, account, message: {}),
                             ('cleanup_can_send', lambda s, account: False),
                             ('cleanup_can_mark', lambda s, account: self.marks)):
-            p = patch.object(a.App, name, value); p.start(); self.addCleanup(p.stop)
+            owner = a.CleanupTemplate if name in vars(a.CleanupTemplate) else a.App  # the template's own, else the App's
+            p = patch.object(owner, name, value); p.start(); self.addCleanup(p.stop)
+        self.cleanup = self.app.template('newsletters')  # the offers are Newsletter and Spam cleanup's step
         p = patch.object(mail_cleanup_app, 'one_click', lambda url: self.clicked.append(url) or True); p.start(); self.addCleanup(p.stop)
 
     def mail(self, sender, title, hours_ago=3, version=1, **metadata):
@@ -56,8 +58,8 @@ class Offers(unittest.TestCase):
                 self.mail(f'Shop {s} <news@shop{s}.example>', f'Deals {i}', hours_ago=hours_ago + i * 5, list_unsubscribe=True)
 
     def look(self):
-        self.app._routine_offers_at = 0
-        self.app.routine_offers_step()
+        self.cleanup._routine_offers_at = 0
+        self.cleanup.step()
         with self.store.connect() as db:
             return ro.view(db)
 
@@ -136,9 +138,9 @@ class Offers(unittest.TestCase):
 
     def test_the_counts_are_looked_at_a_few_times_a_day(self):
         self.newsletters(6, 5)
-        self.app.routine_offers_step()
+        self.cleanup.step()
         with patch.object(ro, 'count', side_effect=AssertionError('looked again')):
-            self.app.routine_offers_step()  # within LOOK_EVERY: not again
+            self.cleanup.step()  # within LOOK_EVERY: not again
 
 
 if __name__ == '__main__':

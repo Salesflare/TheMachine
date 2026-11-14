@@ -162,6 +162,40 @@ class AppMixins(unittest.TestCase):
             self.assertEqual(bare_app().action('meeting_notes_write', {'id': 3}, True), 'writing')
             writing.assert_called_once_with({'id': 3})
 
+    def test_routine_templates_are_declared_whole(self):
+        # each Template (ROUTINE_TEMPLATES) runs catalog keys no other one runs, names a to-do kind the registry has,
+        # and maps its actions to its own methods, none of them a mixin's too
+        from machine import todo_kinds
+        import routine_templates
+        keys = [key for cls in a.ROUTINE_TEMPLATES for key in cls.KEYS]
+        self.assertEqual(len(keys), len(set(keys)))
+        self.assertEqual(set(keys) - set(routine_templates.TEMPLATES), set())
+        for cls in a.ROUTINE_TEMPLATES:
+            with self.subTest(template=cls.__name__):
+                self.assertTrue(issubclass(cls, routine_templates.Template))
+                self.assertIn(cls.KIND, {k.key for k in todo_kinds.KINDS})
+                for name, method in cls.ACTIONS.items():
+                    self.assertNotIn(name, a.App.ACTION_HANDLERS)
+                    self.assertTrue(callable(vars(cls).get(method)), f'{name}: {cls.__name__} has no method {method}')
+                    self.assertIs(a.App.TEMPLATE_ACTIONS[name], cls)
+
+    def test_a_template_never_hides_an_app_member(self):
+        # a template reads the App's members as its own (self.store): one of the same name on the template would hide it
+        for cls in a.ROUTINE_TEMPLATES:
+            with self.subTest(template=cls.__name__):
+                self.assertEqual(sorted(own(cls) & set(dir(a.App)) - {'ACTIONS'}), [])
+
+    def test_a_template_action_reaches_its_template(self):
+        app = bare_app()
+        with patch.object(a.DigestTemplate, 'digest_interest_action', lambda s, name, args, owner: (s, name, args, owner)):
+            template, name, args, owner = app.action('digest_interest', {'topic': 'x'}, owner_dashboard=True)
+        self.assertIs(template, app.template('digest'))
+        self.assertIs(template.app, app)
+        self.assertEqual((name, args, owner), ('digest_interest', {'topic': 'x'}, True))
+        self.assertIs(app.template('newsletters'), app.template('spam'))  # one per App, whichever key loads it
+        self.assertEqual(app.templates(), [app.template('spam'), app.template('digest')])
+        self.assertIsNone(app.template('birthdays'))  # still a mixin's (birthdays_app.py)
+
     def test_moved_members_are_found_on_app(self):
         self.assertIs(a.App.bug_with_report, a.SupportApp.bug_with_report)
         self.assertEqual(a.App.REPORT_BUDGET, 20)

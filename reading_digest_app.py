@@ -1,6 +1,7 @@
-"""Daily digest, the App's part: a domain mixin of App (only assistant.py composes it; docs/code-map.md).
+"""Daily digest, the App's part: its routine template (routine_templates.Template), listed in machine/main.py's
+ROUTINE_TEMPLATES (docs/code-map.md).
 
-The Daily digest template's own run (digest_template_run, from mail_cleanup_app.routine_template_run): plain code finds
+The Daily digest template's own run (run, from routines_app.routine_template_run): plain code finds
 the candidates (reading_digest.candidates); none ends the run as nothing new, without a model. Else one small model call
 reads only them (digest_pass: the background model, no agent, no tools), once the usage budget allows like any
 background turn, within the day's rough input cap (reading_digest.fit). Its picks become one to-do per area (a Work
@@ -15,6 +16,7 @@ import logging
 import help_chat
 import i18n
 import reading_digest
+import routine_templates
 import routines
 import todo_areas
 from machine.store import outcomes
@@ -29,7 +31,9 @@ FAVORITES = 5
 WORK = 8  # open projects named as what the owner works on
 
 
-class ReadingDigestApp:
+class DigestTemplate(routine_templates.Template):
+    KEYS = ('digest',)
+    KIND = 'digest'
     # action name -> the method that handles it, called as method(name, args, owner_dashboard) (App.action)
     ACTIONS = {
         'digest_feedback': 'digest_feedback_action',
@@ -74,10 +78,10 @@ class ReadingDigestApp:
 
     # --- a run -----------------------------------------------------------------------------------------------------
 
-    def digest_template_run(self, run):
+    def run(self, run, key):
         """The Daily digest's run (routine_template_run): always done here, never an agent turn (True). No candidates:
         nothing new at once, no model. Else the model call in a thread of its own once the usage budget allows."""
-        if run['id'] in self.__dict__.get('_routine_steps', ()):
+        if run['id'] in self.app.__dict__.get('_routine_steps', ()):
             return True  # its pass is running
         accounts = [a['id'] for a in self.cleanup_accounts()]
         with self.store.connect() as db:
