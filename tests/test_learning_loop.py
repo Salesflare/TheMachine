@@ -182,7 +182,7 @@ class LearningLoop(unittest.TestCase):
         self.assertEqual(next(v for v in self.store.voices() if v['channel'] == 'Email')['text'], EMAIL)
 
     def test_the_why_and_what_is_learned_say_you_never_the_owners_name(self):
-        # "Jeroen explicitly corrected the Canadian tax review task" under a change: the prompts ask for "you" and no
+        # "Sam explicitly corrected the tax review to-do" under a change: the prompts ask for "you" and no
         # filler; an older line that names the owner reads "You corrected …" on Learning, the stored line unchanged.
         self.assertIn('never their name', learning_loop.prompt('r1'))
         self.assertIn('"explicitly"', learning_loop.prompt('r1'))

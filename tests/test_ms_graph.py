@@ -559,7 +559,7 @@ class Sending(Base):
 
 class ReplyInItsConversation(Base):
     """A reply goes into the conversation of the email it answers: createReply on that email when it is in this
-    mailbox, the MIME draft with In-Reply-To and References when it isn't (Jeroen, 2026-10-30)."""
+    mailbox, the MIME draft with In-Reply-To and References when it isn't (seen by an owner, 2026-10-30)."""
 
     def setUp(self):
         super().setUp()

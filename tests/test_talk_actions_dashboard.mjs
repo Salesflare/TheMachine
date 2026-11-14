@@ -215,7 +215,7 @@ try{
    await page.evaluate(()=>{window.__skew=0});
   }
   if(full){
-   // A to-do's own Talk (the wave in its chat), Jeroen's payroll to-do: "mark this as done" heard as "Güzel." was taken
+   // A to-do's own Talk (the wave in its chat), an owner's to-do: "mark this as done" heard as "Güzel." was taken
    // for a wrap-up. A word in a language the owner doesn't speak is dropped ("say that again"), is never a goodbye, and
    // "mark this as done" marks that to-do done itself; the chat stays open, with Talk.
    await tap(viewBar+' [data-talk-end]');await page.waitForFunction(()=>!document.querySelector('#talk-view .talk'));

@@ -481,7 +481,7 @@ def fill_reply(value, replied):
 
 def unlinked_reply(value):
     """Why a saved result can't keep its reply as it is, or None: an email drafted as a reply that answers no email would
-    start a new thread, in this mailbox and theirs (Jeroen, 2026-10-30). Send refuses it too (EmailTransport.preflight)."""
+    start a new thread, in this mailbox and theirs (seen by an owner, 2026-10-30). Send refuses it too (EmailTransport.preflight)."""
     if any(reads_as_reply(item) and not item.get('in_reply_to') for item in actions(value)):
         return ('This email reads as a reply (a Re: subject or Send reply) but answers no email: set in_reply_to to the '
                 'Message-ID of the email it answers, from this to-do’s emails, or write it as a new email without Re:')

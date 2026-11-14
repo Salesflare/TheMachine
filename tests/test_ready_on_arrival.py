@@ -113,8 +113,8 @@ class ReadyOnArrival(unittest.TestCase):
         self.assertEqual(self.store.greeting('Alex')['line'], {'person': 'Sam', 'card': ready, 'since': self.since('sam')})
 
     def test_the_owners_other_mailbox_is_not_someone_waiting(self):
-        # 2026-11-09: a new owner's own mail from their other address led the hello ("Jeroen has been waiting on your
-        # reply") and the live line ("Bumped into Jeroen"). Their full name is no one else; a first name alone still is.
+        # 2026-11-09: a new owner's own mail from their other address led the hello ("Alex has been waiting on your
+        # reply") and the live line ("Bumped into Alex"). Their full name is no one else; a first name alone still is.
         self.store.commit_page('work', {}, [mail('self', 'Alex Example <alex@other.example>', 24 * 6)])
         with self.store.connect() as db:
             self.ids = {s: i for i, s in db.execute('SELECT id,source_id FROM events')}

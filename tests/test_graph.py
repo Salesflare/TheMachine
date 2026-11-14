@@ -1901,7 +1901,7 @@ class Find(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
         self.store = a.Store(Path(self.temp.name) / 'events.sqlite')
-        nodes = [('email:lieven@acme.example', 'person', 'Lieven Janssens', 5, {'identifiers': ['email:lieven@acme.example'], 'profile': {'title': 'CFO'}}),
+        nodes = [('email:rory@acme.example', 'person', 'Rory Vance', 5, {'identifiers': ['email:rory@acme.example'], 'profile': {'title': 'CFO'}}),
                  ('email:jose@acme.example', 'person', 'José Müller', 4, {'note': 'Ação'}),
                  ('email:jo@beta.example', 'person', 'Jo Beta', 4, {}),
                  ('org:acme.example', 'org', 'ACME Corp', 3, {'domain': 'acme.example'}),
@@ -1922,13 +1922,13 @@ class Find(unittest.TestCase):
     def test_the_same_nodes_in_the_same_order(self):
         also = {'email:kim@gamma.example': 'Kimberley Teammate'}
         with self.store.connect() as db:
-            for text in ('lieven', 'LIEVEN janssens', 'jose', 'josé müller', 'muller', 'acao', 'jo', 'acme', 'cfo', 'invoice',
+            for text in ('rory', 'RORY vance', 'jose', 'josé müller', 'muller', 'acao', 'jo', 'acme', 'cfo', 'invoice',
                          'teammate', 'kimberley', 'there', 'zzz', 'a', '', '@gamma.example', 'jo acme'):
                 for kinds in (('person', 'project', 'org'), ('person',)):
                     for limit in (1, 10):
                         self.assertEqual([r['id'] for r in graph.find(db, text, limit, kinds, also=also)],
                                          self.every_node(db, text, limit, kinds, also), (text, kinds, limit))
-            row = graph.find(db, 'lieven')[0]
+            row = graph.find(db, 'rory')[0]
             self.assertEqual(sorted(row.keys()), sorted(db.execute('SELECT * FROM graph_nodes LIMIT 1').fetchone().keys()))
 
 

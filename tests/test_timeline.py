@@ -190,15 +190,15 @@ class MeetingRow(unittest.TestCase):
         self.store.accounts = ACCOUNTS
         self.app.fleet = None
         juli = 'juli@globex.example'
-        board = invite(2, 'board', 'Board Q3', juli, 'lieven@globex.example', 'falconheavy_room@cloudgroup.example', 'c_1886@resource.calendar.google.com',
-                       'babette@globex.example', 'babette.claessens@home.example')
-        self.add(tg.mail(3, 'Juli Ex <juli@globex.example>', 'sam@acme.com'), tg.mail(4, 'Lieven Janssen <lieven@globex.example>', 'sam@acme.com'),
-                 tg.mail(5, 'Babette Claessens <babette@globex.example>', 'sam@acme.com'),
-                 tg.mail(6, 'B. Claessens <babette.claessens@home.example>', 'sam@acme.com'), board,
-                 invite(1, 'lunch', 'Lunch', juli, 'lieven@globex.example'))
+        board = invite(2, 'board', 'Board Q3', juli, 'rory@globex.example', 'falconheavy_room@cloudgroup.example', 'c_1886@resource.calendar.google.com',
+                       'wilma@globex.example', 'wilma.brandt@home.example')
+        self.add(tg.mail(3, 'Juli Ex <juli@globex.example>', 'sam@acme.com'), tg.mail(4, 'Rory Vance <rory@globex.example>', 'sam@acme.com'),
+                 tg.mail(5, 'Wilma Brandt <wilma@globex.example>', 'sam@acme.com'),
+                 tg.mail(6, 'W. Brandt <wilma.brandt@home.example>', 'sam@acme.com'), board,
+                 invite(1, 'lunch', 'Lunch', juli, 'rory@globex.example'))
         self.build()
         with self.store.connect() as db:
-            graph.merge(db, 'email:babette.claessens@home.example', 'email:babette@globex.example', True, tg.NOW.isoformat())
+            graph.merge(db, 'email:wilma.brandt@home.example', 'email:wilma@globex.example', True, tg.NOW.isoformat())
             ids = dict(db.execute("SELECT source_id,id FROM events WHERE kind='calendar.event'").fetchall())
             for kind, prefix in (('meeting.notes', 'notes'), ('meeting.transcript', 'transcript')):
                 db.execute('INSERT INTO events(account_id,source_id,kind,occurred_at,title,body,metadata,deleted,content_hash,ingested_at) '
@@ -210,8 +210,8 @@ class MeetingRow(unittest.TestCase):
         return next(i for i in self.found['items'] if i.get('title') == title and i.get('kind') == 'calendar.event')
 
     def test_names_once_and_no_rooms(self):
-        # Babette once (her two addresses are one person on the Graph), by its name for her; the two rooms not at all
-        self.assertRegex(self.row('Board Q3')['preview'], r'^With Lieven Janssen, (Babette|B\.) Claessens$')
+        # Wilma once (her two addresses are one person on the Graph), by its name for her; the two rooms not at all
+        self.assertRegex(self.row('Board Q3')['preview'], r'^With Rory Vance, (Wilma|W\.) Brandt$')
 
     def test_notes_and_transcript_marked(self):
         board, lunch = self.row('Board Q3'), self.row('Lunch')
