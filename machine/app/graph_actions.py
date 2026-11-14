@@ -50,6 +50,18 @@ from machine.owner_error import OwnerError
 GRAPH_CHECK_SECONDS = 60  # how often the graph worker looks for new organization profiles
 GRAPH_RETRY_SECONDS = 5   # a build that met edits on the way: the next try
 GRAPH_LOCK_AFTER = 1800   # this long without a published build: the last try holds the write lock (graph.build lock_last)
+GRAPH_SLOW_MS = 10_000    # a build that takes this long logs its passes' times (slow_build_line)
+
+
+def slow_build_line(summary, slow_ms=GRAPH_SLOW_MS):
+    """The log line for a slow build: its whole time (setup and publish included) and each part's, slowest first; None
+    for a build that wasn't slow (most of them), so the log only says something when there is something to look at."""
+    parts = (summary or {}).get('passes_ms') or {}
+    total = round(sum(parts.values())) or (summary or {}).get('took_ms') or 0
+    if total < slow_ms:
+        return None
+    slowest = sorted(parts.items(), key=lambda p: -p[1])
+    return f'graph build slow total_ms={total} ' + ' '.join(f'{name}={ms:g}' for name, ms in slowest)
 
 
 def account_services(config, account_ids=None):
@@ -738,7 +750,9 @@ class GraphActionsApp:
                 self.own_addresses_fetch()  # once a day per mailbox: its aliases, before the build tells the owner apart
                 # A build that keeps meeting edits tries again in a few seconds instead of holding the write lock for a
                 # whole build (every request that writes waited); only after half an hour without one does it hold it
-                self.graph_build(lock_last=time.monotonic() - published > GRAPH_LOCK_AFTER)
+                line = slow_build_line(self.graph_build(lock_last=time.monotonic() - published > GRAPH_LOCK_AFTER))
+                if line:
+                    LOG.info(line)
                 published, seen, wait = time.monotonic(), self.graph_freshness(), 600
                 if self.history_graph_step():  # a slice of history taken in: the next build counts it, in a minute
                     wait = 60
