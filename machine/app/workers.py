@@ -4,6 +4,7 @@ start and the restart that waits for it, and stopping them all. Moved out of ass
 assistant.App (APP_MIXINS)."""
 import datetime as dt
 import json
+from pathlib import Path
 import threading
 import time
 
@@ -25,6 +26,7 @@ from machine.sources.telegram import telegram_photo_asker
 from machine.sources.whatsapp import whatsapp_photo_asker
 from machine.store import plain_keys
 from machine.store.review import bulk_kind
+from machine.upkeep import memory_rebuild
 import message_seal
 from models import background_model
 import ms_photos
@@ -225,6 +227,29 @@ class WorkersApp:
                     chat_files.sweep(db, self.config, now())
             except Exception as error:  # noqa: BLE001 - tried again in ten minutes
                 LOG.error('chat files sweep error=%s', type(error).__name__)
+            try:  # OpenClaw's memory rebuild that never ends by itself: a quiet night for it (machine/upkeep/memory_rebuild.py)
+                self.memory_rebuild_step()
+            except Exception as error:  # noqa: BLE001 - tried again in ten minutes
+                LOG.error('memory rebuild window error=%s', type(error).__name__)
+
+    def memory_rebuild_hours(self):
+        """The quiet window's local hours ([start, end], config `memory_rebuild_hours`), or None when turned off."""
+        found = self.config.get('memory_rebuild_hours', list(memory_rebuild.WINDOW))
+        if isinstance(found, (list, tuple)) and len(found) == 2 and all(isinstance(h, int) and 0 <= h < 24 for h in found) and found[0] != found[1]:
+            return tuple(found)
+        return None
+
+    def memory_rebuild_step(self):
+        import onboarding
+        return memory_rebuild.step(Path(self.store.path).parent, str(self.config.get('openclaw') or 'openclaw'),
+                                   onboarding.openclaw_settings(), onboarding.openclaw_dir(), time.time(),
+                                   dt.datetime.now(local_tz()), self.memory_rebuild_hours())
+
+    def memory_rebuild_hold(self):
+        """While the quiet window for OpenClaw's memory rebuild is open: why background turns wait (background_pause)."""
+        store = getattr(self, 'store', None)
+        found = memory_rebuild.holding(Path(store.path).parent) if store is not None and getattr(store, 'path', None) else None
+        return {'window': 'memory', 'until': found['until'], 'limited': False} if found else None
 
     def embedding_worker(self):
         """Small background passes (embed_pass): signals first, then history. Never blocks

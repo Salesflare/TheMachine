@@ -132,6 +132,8 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
     promises), written in one background turn, or none when there is nothing useful; once per meeting, by its iCalUID.
   - `machine/upkeep/agent_workspaces.py`: the nightly cleanup of Claude Code and Codex job folders nothing needs any
     more (retention.py runs it; it only reads `agent_jobs`, `suggestions` and `agent_relayed`).
+  - `machine/upkeep/memory_rebuild.py`: an OpenClaw memory index rebuild that never ends by itself (the installer
+    stops waiting for it) and the quiet night that lets it finish (the retention worker runs it, `background_pause` holds).
   - `machine/app/knowledge_export.py` (`KnowledgeExportApp`): Knowledge for another AI (Settings, General, Export) and its
     one-time download; the format is `machine/export/knowledge.py` ([knowledge-export.md](knowledge-export.md)).
 - **A question about a person, organization or project** (who they are, their latest messages, what is open with them,
