@@ -18,6 +18,10 @@ People show by their name and apps by theirs, never by a Slack ID. Someone whose
 
 A direct message to one person, as you, and only after you approve it on the to-do. A reply to the Slack message a to-do came from goes in that message's thread, in its direct message or channel; the draft says **In thread**. It never starts a new post in a channel.
 
+## What it keeps
+
+What it reads stays on your Machine, until you delete it or the Machine. The hosting service keeps no copy of your messages and no Slack sign-in, and no AI model is trained on your Slack. The Machine uses AI, which can get things wrong, so you see every message before it goes out.
+
 ## Connect it
 
 1. **Connections**, **Chat**, **Slack**, then **Sign in with Slack**, and allow it in Slack. On your own computer, pair it with your account on themachine.computer first.
@@ -32,4 +36,4 @@ Or use a Maton API key: sign in at maton.ai, connect Slack there and copy your M
 
 ## Uninstall it on Slack
 
-Signed in with Slack: open your workspace's Manage apps page in Slack and remove The Machine. Through Maton: remove the Slack connection in Maton and delete the Maton API key you gave. A Slack admin can also remove either app from the workspace, under Manage apps.
+Signed in with Slack: open your workspace's Manage apps page in Slack and remove The Machine. It stops reading at once and asks you to sign in again; what it already brought in stays. Through Maton: remove the Slack connection in Maton and delete the Maton API key you gave. A Slack admin can also remove either app from the workspace, under Manage apps.
