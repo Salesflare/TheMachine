@@ -20,6 +20,10 @@ When The Machine updates and one of its own fixes no longer fits the new version
 
 When a new version brings a file with the same name as one you added yourself, the update renames yours instead of overwriting it and goes on. A to-do says how many it kept and lists each old and new name. Close it once you've checked them.
 
+## An update that needs a restart
+
+On your own computer, The Machine updates at night. When an update changes its link to OpenClaw, that part goes in only on a quiet night, with a short OpenClaw restart. Until then everything keeps working as before. If a few nights in a row could not do it, a to-do, **Finish installing the last update**, says so. Ask in its chat and The Machine finishes it. The to-do closes by itself once it is in.
+
 ## What it can do
 
 Nothing. It only reads the log on your own Machine.

@@ -1402,6 +1402,21 @@ exit 0
         self.assertTrue((self.data / 'plugin-installed').exists())
         self.assertFalse((self.data / 'plugin-waiting').exists())
 
+    def test_the_nightly_update_outside_its_quiet_hours_leaves_a_changed_bridge_waiting_and_installs_the_rest(self):
+        self.assertEqual(self.install('--no-start').returncode, 0)
+        stamp = self.data / 'plugin-installed'
+        stamp.write_text('0' * 64 + '\n' + json.dumps({'files': 'older', 'root': 'elsewhere'}) + '\n')  # the release changed the bridge
+        self.log.unlink()
+        hour = __import__('time').localtime().tm_hour
+        result = self.install('--unattended', ASSISTANT_QUIET_HOURS=f'{(hour + 2) % 24}-{(hour + 3) % 24}')
+        self.assertIn('The Gateway keeps the bridge it has until then', result.stdout, result.stdout + result.stderr)
+        calls = self.calls()
+        self.assertFalse([c for c in calls if c.startswith('openclaw plugins')], calls)
+        self.assertFalse([c for c in calls if 'openclaw-gateway' in c and (' stop ' in c or ' restart ' in c)], calls)
+        self.assertIn('systemctl --user restart personal-assistant.service', calls)  # the rest of the update went in
+        self.assertTrue((self.data / 'plugin-waiting').exists())
+        self.assertTrue(stamp.read_text().startswith('0' * 64))
+
     def test_the_nightly_run_leaves_a_bridge_the_gateway_already_runs_alone(self):
         self.assertEqual(self.install('--no-start').returncode, 0)
         stamp = self.data / 'plugin-installed'
@@ -1695,6 +1710,151 @@ class WizardTest(unittest.TestCase):
     def test_example_config_covers_every_connector(self):
         example = json.loads((ROOT / 'config.example.json').read_text())
         self.assertEqual(sorted(a['id'] for a in example['accounts']), sorted(installer.CONNECTORS.values()))
+
+
+class StagedSwapTest(unittest.TestCase):
+    """The nightly update's way in for a changed bridge (staged_swap): never a swap inside the running Gateway. A real
+    Machine, 2026-11: OpenClaw gave up draining the bridge's work after a minute, install.sh exited 1, the update unit
+    failed and its owner got a to-do about it."""
+    DRAIN = 'Plugin operation failed during drain: plugin personal-assistant-bridge admitted work did not settle within 60s'
+
+    def staged(self, hour=4, busy=(), fail=None, models=True, unit='openclaw-gateway.service', restart=True, index=None, loads=True, earlier=0):
+        """install_plugin(unattended=True) over a stamp from an older bridge, at `hour` local time. `busy`: what
+        `assistant busy` says in turn (then idle); `fail`: {'plugins install': error, ...}; `models`: whether the
+        Gateway runs models after a start. Returns (result, calls, said, stamped, the waiting state)."""
+        calls, said, looks = [], [], iter(busy)
+        def run(command, **kwargs):
+            line = ' '.join(command[1:3]) if command[0] == 'openclaw' else ' '.join(command[:4]) if command[0] == 'systemctl' else 'assistant busy'
+            calls.append(line)
+            if line == 'assistant busy':
+                return subprocess.CompletedProcess(command, 3 if next(looks, False) else 0, '', '')
+            if command[1:3] == ['gateway', 'health']:
+                loaded = [installer.PLUGIN_ID] if loads else []
+                return subprocess.CompletedProcess(command, 0, json.dumps({'ok': True, 'plugins': {'loaded': loaded}}), '')
+            if command[1:4] == ['gateway', 'call', 'models.list']:
+                return subprocess.CompletedProcess(command, 0 if models else 1, '', '' if models else 'UNAVAILABLE')
+            error = (fail or {}).get(line)
+            return subprocess.CompletedProcess(command, 1 if error else 0, '', error or '')
+        tmp = Path(tempfile.mkdtemp(prefix='machine-staged-'))
+        self.addCleanup(shutil.rmtree, tmp, True)
+        stamp = tmp / 'plugin-installed'
+        stamp.write_text('0' * 64 + '\n' + json.dumps({'files': 'older', 'root': 'elsewhere'}) + '\n')
+        for _ in range(earlier):
+            installer.bridge_wait.note(tmp / installer.BRIDGE_WAITING, 'older', failed='an earlier night')
+        with mock.patch.object(installer, 'run', side_effect=run), mock.patch.object(installer, 'say', side_effect=said.append), \
+                mock.patch.object(installer, 'local_hour', return_value=hour), mock.patch.object(installer, 'index_busy', return_value=index), \
+                mock.patch.object(installer, 'local_rebuild', return_value=False), mock.patch.object(installer.time, 'sleep'), \
+                mock.patch.object(installer, 'gateway_started', return_value=None), \
+                mock.patch.object(installer.onboarding, 'gateway_units', return_value=[unit] if unit else []), \
+                mock.patch.dict(os.environ, {'ASSISTANT_GATEWAY_WAIT': '0', 'ASSISTANT_SWAP_WAIT': '0'}):
+            os.environ.pop('ASSISTANT_QUIET_HOURS', None)
+            result = installer.install_plugin({'openclaw': 'openclaw', 'openclaw_version': '2026.11.2'}, stamp=stamp, restart=restart,
+                                              unattended=True)
+        state = installer.bridge_wait.read(tmp / installer.BRIDGE_WAITING)
+        return result, calls, '\n'.join(said), installer.read_stamp(stamp)[0] != '0' * 64, state
+
+    def test_a_quiet_night_installs_the_bridge_with_the_gateway_stopped_and_starts_it_again(self):
+        result, calls, said, stamped, state = self.staged()
+        self.assertIs(result, True, said)
+        self.assertTrue(stamped)
+        self.assertIsNone(state)  # nothing waits any more
+        steps = [c for c in calls if c.startswith(('systemctl --user stop', 'systemctl --user start', 'plugins'))]
+        self.assertEqual(steps, ['systemctl --user stop openclaw-gateway.service', 'plugins install', 'plugins enable',
+                                 'systemctl --user start openclaw-gateway.service'], calls)
+        self.assertNotIn('plugins reload', calls)  # never a swap or reload inside a running Gateway
+        self.assertLess(calls.index('assistant busy'), calls.index('systemctl --user stop openclaw-gateway.service'))
+        self.assertIn('config set', calls)  # its conversation hooks are allowed while the Gateway is down too
+
+    def test_outside_the_quiet_hours_or_with_work_running_it_only_waits(self):
+        for case in ({'hour': 14}, {'busy': [True]}, {'busy': [False, True]}):  # the last: work started during the index wait
+            with self.subTest(case=case):
+                result, calls, said, stamped, state = self.staged(**case)
+                self.assertEqual(result, installer.WAITING)
+                self.assertFalse(stamped)
+                self.assertEqual(state['attempts'], 0)  # not a failed night: nothing to tell the owner
+                self.assertFalse([c for c in calls if c.startswith(('systemctl', 'plugins'))], calls)
+                self.assertIn('The Gateway keeps the bridge it has until then', said)
+        with mock.patch.dict(os.environ, {'ASSISTANT_QUIET_HOURS': '22-6'}), mock.patch.object(installer, 'local_hour', return_value=23):
+            self.assertTrue(installer.in_quiet_hours())  # a window over midnight
+        with mock.patch.dict(os.environ, {'ASSISTANT_QUIET_HOURS': '22-6'}), mock.patch.object(installer, 'local_hour', return_value=7):
+            self.assertFalse(installer.in_quiet_hours())
+
+    def test_a_drain_that_still_times_out_leaves_the_old_bridge_running_and_tries_again_the_next_night(self):
+        result, calls, said, stamped, state = self.staged(fail={'plugins install': self.DRAIN})
+        self.assertEqual(result, installer.WAITING)  # the install goes on and ends well: no failed unit
+        self.assertFalse(stamped)
+        self.assertEqual(state['attempts'], 1)
+        self.assertIn('did not settle', state['reason'])
+        self.assertLess(calls.index('plugins install'), calls.index('systemctl --user start openclaw-gateway.service'))  # started again
+        self.assertNotIn('plugins enable', calls)
+        self.assertNotIn('plugins reload', calls)
+        self.assertIn('The next nightly update tries again (failed nights: 1)', said)
+        self.assertNotIn('to-do', said)
+        result, _, said, _, state = self.staged(fail={'plugins install': self.DRAIN}, earlier=installer.bridge_wait.TRIES - 1)
+        self.assertEqual((result, state['attempts']), (installer.WAITING, installer.bridge_wait.TRIES))
+        self.assertIn('the owner has a to-do about it', said)
+
+    def test_failed_nights_are_counted_and_the_owner_hears_after_a_few(self):
+        folder = Path(tempfile.mkdtemp(prefix='machine-wait-'))
+        self.addCleanup(shutil.rmtree, folder, True)
+        path = folder / installer.BRIDGE_WAITING
+        path.write_text('abc\n')  # a file from before the attempts were kept
+        self.assertEqual(installer.bridge_wait.read(path)['attempts'], 0)
+        installer.bridge_wait.note(path, 'abc', now='2026-11-09T14:00:00+00:00')  # a day that only waited
+        self.assertIsNone(installer.bridge_wait.due(folder))
+        for night in range(installer.bridge_wait.TRIES):
+            state = installer.bridge_wait.note(path, 'abc', failed=self.DRAIN, now=f'2026-11-1{night}T04:00:00+00:00')
+        self.assertEqual(state['attempts'], installer.bridge_wait.TRIES)
+        self.assertEqual(installer.bridge_wait.due(folder)['since'], '2026-11-09T14:00:00+00:00')  # waiting since then
+        self.assertEqual(installer.bridge_wait.due(folder)['last'], '2026-11-12T04:00:00+00:00')
+        title, body, _ = installer.bridge_wait.card(state)
+        for technical in ('systemctl', 'journalctl', 'install.sh', 'plugin', 'Gateway', 'drain'):
+            self.assertNotIn(technical, title + body)
+        self.assertIn('chat', body)
+
+    def test_a_gateway_that_comes_back_without_models_is_restarted_once_more_and_still_never_fails_the_install(self):
+        result, calls, said, stamped, state = self.staged(models=False)
+        self.assertEqual(result, installer.WAITING)
+        self.assertEqual(calls.count('systemctl --user restart openclaw-gateway.service'), 1)
+        self.assertIn('NOT FIXED', said)
+        self.assertEqual(state['attempts'], 1)
+        result, _, _, stamped, state = self.staged(loads=False)  # up, but without the bridge
+        self.assertEqual((result, stamped, state['attempts']), (installer.WAITING, False, 1))
+
+    def test_where_the_gateway_may_not_be_restarted_it_waits_and_counts(self):
+        for case in ({'restart': False}, {'unit': None}):
+            with self.subTest(case=case):
+                result, calls, _, _, state = self.staged(**case)
+                self.assertEqual((result, state['attempts']), (installer.WAITING, 1))
+                self.assertFalse([c for c in calls if c.startswith(('systemctl', 'plugins'))], calls)
+
+    def test_only_the_nightly_update_is_unattended(self):
+        folder = Path(tempfile.mkdtemp(prefix='machine-cgroup-'))
+        self.addCleanup(shutil.rmtree, folder, True)
+        cgroup = folder / 'cgroup'
+        args = lambda **kw: mock.Mock(**{'unattended': False, 'non_interactive': True, **kw})
+        self.assertTrue(installer.unattended_run(args(unattended=True), cgroup))
+        cgroup.write_text('0::/user.slice/user-1000.slice/user@1000.service/app.slice/the-machine-update.service\n')
+        self.assertTrue(installer.unattended_run(args(), cgroup))  # an update unit from before --unattended
+        self.assertFalse(installer.unattended_run(args(non_interactive=False), cgroup))
+        cgroup.write_text('0::/user.slice/user-1000.slice/session-2.scope\n')  # a terminal: as today
+        self.assertFalse(installer.unattended_run(args(), cgroup))
+        self.assertFalse(installer.unattended_run(args(), folder / 'none'))
+        with mock.patch.object(installer, 'install_plugin', return_value=True) as plugin, mock.patch.object(installer, 'install_node_packages'), \
+                mock.patch.object(installer, 'quiet_openclaw'), mock.patch.object(installer, 'gateway_keep_retrying'), mock.patch.object(installer, 'memory_rules'):
+            installer.prepare({'node': 'node'}, mock.Mock(data=folder), False, True, False, unattended=True)
+            installer.prepare({'node': 'node'}, mock.Mock(data=folder), False, True, False)
+        self.assertEqual([c.kwargs['unattended'] for c in plugin.call_args_list], [True, False])
+
+    def test_a_manual_install_still_swaps_as_today(self):
+        with mock.patch.object(installer, 'staged_swap') as staged, mock.patch.object(installer, 'run',
+                return_value=subprocess.CompletedProcess([], 0, json.dumps({'ok': True, 'plugins': {'loaded': [installer.PLUGIN_ID]}}), '')), \
+                mock.patch.object(installer, 'say'), mock.patch.object(installer, 'index_busy', return_value=None), \
+                mock.patch.object(installer, 'gateway_started', return_value=None), tempfile.TemporaryDirectory() as tmp:
+            stamp = Path(tmp) / 'plugin-installed'
+            stamp.write_text('0' * 64 + '\n' + json.dumps({'files': 'older', 'root': 'elsewhere'}) + '\n')
+            self.assertTrue(installer.install_plugin({'openclaw': 'openclaw', 'openclaw_version': '2026.11.2'}, stamp=stamp))
+        staged.assert_not_called()
 
 
 if __name__ == '__main__':

@@ -6,6 +6,7 @@ import datetime as dt
 import json
 import re
 import subprocess
+from pathlib import Path
 
 from machine import system_logs
 from machine.config import LOG
@@ -136,13 +137,14 @@ def sync_gateway(store, config, account, source=None, scan_logs=None):
     # source as with the service's own errors; off with "computer_logs": false. Not on a hosted Machine: its server and
     # every service on it are The Machine team's to keep running, and its own agent reports their trouble to the team
     # (2026-11-10: a Gateway out of memory brought its owner two to-dos about a service they cannot reach).
-    found = []
+    found, failed = [], None
     last_scan = state.get('computer_logs_at')
     if scan_logs and carries_faults and config.get('computer_logs', True) is not False and not hosted(config) and (
             not last_scan or dt.datetime.fromisoformat(now()) - dt.datetime.fromisoformat(last_scan) >= system_logs.EVERY):
         state['computer_logs_at'] = now()
         try:
-            found = scan_logs()['findings']
+            scanned = scan_logs()
+            found, failed = scanned['findings'], scanned.get('failed') if scanned.get('supported') else None
         except Exception as error:  # a bug here never stops the Gateway's own log; it becomes a fault to fix
             LOG.error('computer logs error=%s', type(error).__name__, exc_info=True)
     # Only the last two windows can still grow; older ones are final.
@@ -159,4 +161,9 @@ def sync_gateway(store, config, account, source=None, scan_logs=None):
         store.parked_fix_cards(account['id'], parked_fixes.pending(next_actions.app_dir(config)))
         if found:
             store.system_log_cards(account['id'], found)
+        store.settle_system_log_cards(failed)  # a unit that runs again (or was reset) closes its to-do
+        # a changed bridge the nightly update could not put into OpenClaw (machine/bridge_wait.py): one to-do after
+        # a few quiet nights, closed once it is in. Self-hosted only: a hosted Machine's agent installs its releases.
+        if config.get('database') and not hosted(config):
+            store.bridge_wait_card(account['id'], Path(config['database']).expanduser().parent)
     return {'mode': 'incremental', 'events': len(events)}

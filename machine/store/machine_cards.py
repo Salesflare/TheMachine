@@ -1,6 +1,7 @@
 """The Machine's own to-dos, a Store mixin: changes an update set aside (parked_fixes.py) and problems in the
-computer's own logs (machine/system_logs.py). Each goes through machine_card, which writes it. Do it on one from the
-logs runs only its one safe fix (machine_fix), never an AI run. Redo it on a fix an update set aside (parked_redo)
+computer's own logs (machine/system_logs.py), and a changed bridge the nightly update could not put in
+(machine/bridge_wait.py). Each goes through machine_card, which writes it; one about something that is over closes
+itself (close_by_itself). Do it on one from the logs runs only its one safe fix (machine_fix), never an AI run. Redo it on a fix an update set aside (parked_redo)
 starts the usual self-fix run from that commit, merged only through the usual Merge fix checks."""
 import datetime as dt
 import hashlib
@@ -8,12 +9,16 @@ import json
 
 import ms_graph
 import parked_fixes
+from machine import bridge_wait
 from machine import system_logs
 from timeutil import now
 from machine import todo_states
 
 # A sign-in from before a newer feature (machine/app/reconnect_asks.py): its to-do's signal, one per account and ask
 RECONNECT_KIND = 'machine.reconnect_ask'
+# A changed bridge the nightly update could not put in (machine/bridge_wait.py): an update's note like a set-aside fix,
+# shown and sourced the same way (no Redo it: its signal names no commit), told apart by its source_id
+BRIDGE_KIND, BRIDGE_SOURCE = 'machine.parked_fix', 'bridge-wait:'
 RECONNECT_SOURCES = {'microsoft': 'outlook'}  # a sign-in's source under + Add, which a self-hosted Machine's Reconnect redoes
 
 
@@ -50,6 +55,17 @@ def reconnected(db, account, ask, at):
         db.execute('INSERT OR IGNORE INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)',
                    ('reconnected:' + row[0], row[0], 'complete', 'Reconnected: the sign-in has it now.', 'assistant', at))
         db.execute("UPDATE deliveries SET status='cancelled',reminder=0,updated_at=? WHERE suggestion_id=? AND message_id IS NULL", (at, row[0]))
+
+
+def close_by_itself(db, suggestion_id, why, at):
+    """An open to-do of The Machine's own closes itself as done: what it was about is over. `why` is its decision's
+    note; anything not sent yet is not sent, and a sent message is marked for an edit."""
+    db.execute("UPDATE suggestions SET status='completed',completed_from='pending',snoozed_until=NULL,resume_status=NULL,early=0 WHERE id=?",
+               (suggestion_id,))
+    db.execute('INSERT OR IGNORE INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)',
+               ('over:' + suggestion_id, suggestion_id, 'complete', why, 'assistant', at))
+    db.execute("UPDATE deliveries SET status='cancelled',reminder=0,updated_at=? WHERE suggestion_id=? AND message_id IS NULL", (at, suggestion_id))
+    db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=? AND message_id IS NOT NULL', (suggestion_id,))
 
 
 def machine_fix_finding(db, suggestion_id):
@@ -127,6 +143,42 @@ class MachineCardsStore:
             made += self.machine_card(account_id, 'machine.system_log', f'{key}:{stamp[:10]}', title, body, signal, metadata,
                                       at=finding.get('last_at'))
         return made
+
+    def settle_system_log_cards(self, failed):
+        """An open to-do about a unit that is down (system_logs.FAILED_NOW) closes itself once systemd no longer lists
+        that unit as failed: it ran well again or was reset. `failed`: the units failed now (system_logs.scan); None
+        when systemd could not be asked, and then nothing closes. Returns the closed ids."""
+        if failed is None:
+            return []
+        stamp, closed = now(), []
+        with self.connect() as db:
+            for row in db.execute("SELECT s.id,e.metadata FROM suggestions s JOIN events e ON e.id=json_extract(s.event_ids,'$[0]') "
+                                  f"WHERE s.origin='machine' AND e.kind='machine.system_log' AND s.status IN {todo_states.sql(todo_states.NOT_STARTED)}").fetchall():
+                try:
+                    meta = json.loads(row['metadata'] or '{}')
+                except ValueError:
+                    continue
+                if isinstance(meta, dict) and meta.get('kind') in system_logs.FAILED_NOW and meta.get('unit') and meta['unit'] not in failed:
+                    close_by_itself(db, row['id'], 'It is no longer down: systemd no longer lists it as failed.', stamp)
+                    closed.append(row['id'])
+        return closed
+
+    def bridge_wait_card(self, account_id, data):
+        """The owner's one to-do about a changed bridge the nightly update could not put into OpenClaw on
+        bridge_wait.TRIES quiet nights (machine/bridge_wait.py), once per stretch of waiting; it closes itself once the
+        bridge is in (nothing waits in the data folder `data` any more). Returns whether one was made now."""
+        state = bridge_wait.due(data)
+        if state:
+            return self.machine_card(account_id, BRIDGE_KIND, BRIDGE_SOURCE + (state['since'] or 'unknown'), *bridge_wait.card(state),
+                                     {'attempts': state['attempts'], 'since': state['since']})
+        if not bridge_wait.waiting(data):
+            stamp = now()
+            with self.connect() as db:
+                for row in db.execute("SELECT s.id FROM suggestions s JOIN events e ON e.id=json_extract(s.event_ids,'$[0]') "
+                                      f"WHERE s.origin='machine' AND e.kind=? AND substr(e.source_id,1,?)=? AND s.status IN {todo_states.sql(todo_states.OPEN_UNPREPARED)}",
+                                      (BRIDGE_KIND, len(BRIDGE_SOURCE), BRIDGE_SOURCE)).fetchall():
+                    close_by_itself(db, row['id'], 'The nightly update finished it.', stamp)
+        return False
 
     def machine_fix_finding(self, db, suggestion_id):
         return machine_fix_finding(db, suggestion_id)

@@ -31,6 +31,8 @@ When there is a safe fix, the to-do has Do it. For a service of yours that stays
 
 The same problem brings at most one to-do every two weeks, and never while its to-do is still open. At most two new ones a day.
 
+A to-do about a service that is down closes by itself once it runs again or is cleared.
+
 ## In a terminal
 
 `assistant doctor` lists the same problems from the last day.
