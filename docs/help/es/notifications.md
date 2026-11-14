@@ -1,93 +1,94 @@
 ---
 title: Notificaciones
 area: settings
-summary: Qué te llega, por dónde y cuándo: solo avisa lo que no puede esperar, lo demás va en un único resumen matutino.
+summary: Qué te llega, dónde y cuándo: solo lo que no puede esperar te avisa al momento; lo demás va en un único resumen matutino.
 covers: settings:notify
 code: notify.py, dashboard.html, assistant.py, sw.js
 order: 2
 keywords: alerts, notify, ping, buzz, quiet, too many, push, sound, interrupt
 translated: 334224e0b479ef47
 ---
-En **Ajustes**, **Notificaciones**, elige por tipo por dónde te llega:
+¿Quieres recibir menos notificaciones o recibir otras? En **Ajustes**, **Notificaciones**, elige dónde quieres recibir cada tipo:
 
-- **Tareas nuevas**: solo lo que no puede esperar, como algo que vence hoy o algo urgente.
-- **Resultados y preguntas**: una respuesta lista para enviar, un inicio de sesión que necesita una tarea, una pregunta del Fleet.
-- **Recordatorios**: lo pospuesto y las esperas que vuelven.
-- **Resumen matutino**: un resumen corto de tu día. Más abajo.
-- **Resumen de la tarde**: lo hecho hoy y lo pendiente para mañana. Más abajo.
+- **Tareas nuevas**: solo lo que no puede esperar, como algo que vence hoy o es urgente.
+- **Resultados y preguntas**: una respuesta lista para enviar, una tarea que requiere iniciar sesión o una pregunta de Fleet.
+- **Recordatorios**: tareas pospuestas y respuestas que estás esperando cuando vuelven a aparecer.
+- **Resumen matutino**: un breve resumen de tu día. Consulta más abajo.
+- **Resumen de la tarde**: lo que has hecho hoy y lo que queda pendiente para mañana. Consulta más abajo.
 
-Cada uno tiene un interruptor para **Push** (la app en tu teléfono u ordenador), **Telegram** cuando está configurado y **Correo** en una Machine alojada o en una que está en The Machine Network. Todos están activados, salvo los resúmenes en Telegram.
+Cada tipo tiene un interruptor para **Push** (la app en tu teléfono u ordenador), **Telegram** cuando esté configurado y **Correo** en una Machine alojada o en una Machine de The Machine Network. Todas las opciones están activadas, excepto los resúmenes en Telegram.
 
-El **Horario laboral** está en la misma pestaña: tus días laborables, las horas en que pueden salir notificaciones, cuándo vuelve lo pospuesto, la hora del resumen y tu zona horaria. Consulta [Horario laboral](work-hours.md).
+En la misma pestaña encontrarás tu **Horario laboral**: los días laborables, cuándo pueden enviarse las notificaciones, cuándo vuelven a aparecer las tareas pospuestas, las horas de los resúmenes y tu zona horaria. Consulta [Horario laboral](work-hours.md).
 
 ## Solo lo que no puede esperar
 
-Un push, un aviso en Telegram o un correo solo sale para:
+Solo recibirás una notificación push, un aviso de Telegram o un correo por:
 
-- una tarea que vence hoy, o marcada como urgente;
-- una respuesta que alguien espera, redactada y lista para enviar;
-- una tarea que necesita que inicies sesión;
-- algo pospuesto que vuelve a la hora que elegiste.
+- una tarea que vence hoy o está marcada como urgente;
+- una respuesta que alguien está esperando, ya redactada y lista para enviar;
+- una tarea que requiere que inicies sesión;
+- una tarea pospuesta que vuelve a aparecer a la hora que elegiste.
 
-Todo lo demás llega en silencio al panel (y sin sonido en Telegram) y espera al resumen matutino. En un día libre solo avisa lo urgente o lo que vence hoy. Como mucho 8 push al día. Tras 3 días sin abrir el panel, solo llega el resumen matutino, hasta que vuelvas.
+Todo lo demás aparece discretamente en el panel (y sin sonido en Telegram) y espera al resumen matutino. En un día libre, solo te avisamos de lo urgente o de lo que vence hoy. Recibirás como máximo 8 notificaciones push al día. Si pasan 3 días sin que abras el panel, solo recibirás el resumen matutino hasta que vuelvas.
 
-## Cuándo avisa
+## Cuándo te avisa
 
-Como Slack, mira si estás usando el panel, no solo si está abierto:
+La app comprueba si estás usando el panel de verdad, no solo si está abierto:
 
-- En uso: el panel está delante de ti, en primer plano, y has hecho clic, escrito, desplazado o tocado en los últimos 10 minutos. No vibra nada. Telegram llega sin sonido.
-- Fuera: el panel está en segundo plano, minimizado, cerrado o inactivo durante 10 minutos. Un push sale un minuto después de que lo dejes, salvo que vuelvas y lo veas antes.
-- Sin ver 15 minutos después, y no puede esperar: un correo para eso, como mucho uno por hora. Lo que ya resolviste queda fuera. La mayoría de los días, el resumen matutino es el único correo.
-- Fuera de tu horario laboral: nada. El resumen matutino trae lo que llegó.
-- Una tarea nueva de trabajo que llega en un día libre espera a la hora del resumen de tu próximo día laborable. La tarea muestra dónde y cuándo te llegará, como Notificación lun, 2 nov · 08:30, según la fila **Tareas nuevas**. Con Push y Telegram apagados ahí, no dice nada.
+- Si lo estás usando (está en primer plano y has hecho clic, escrito o desplazado la página en los últimos 10 minutos), no suena nada. Telegram llega sin sonido.
+- Si no estás (está en segundo plano, cerrado o inactivo durante 10 minutos), recibirás una notificación push un minuto después de salir, a menos que vuelvas y la veas.
+- Si sigue sin verse 15 minutos después y no puede esperar, recibirás un correo. Como máximo, uno por hora. No se incluyen las cosas que ya hayas resuelto. La mayoría de los días, el resumen matutino es el único correo que recibes.
+- Si un compañero te asigna una tarea y tu Machine no tiene un teléfono ni Telegram para contactarte, recibirás un correo con el título y un enlace 15 minutos después, si aún no la has visto. Desactiva **Correo** en **Resultados y preguntas** para evitarlo.
+- Fuera de tu horario laboral, no se envía nada. La tarea aparecerá en el resumen matutino.
+- Si recibes una tarea nueva de trabajo en un día libre, esperará hasta la hora del resumen de tu próximo día laborable. La tarea indica cuándo te llegará, por ejemplo: «Notificación: lun., 2 nov. · 08:30».
 
-Solo avisa lo que te necesita. El progreso y los cambios no. Un resultado más nuevo en una tarea que aún no viste la actualiza sin una notificación nueva. Una ráfaga vibra una vez. El icono de la app muestra cuántas tareas te necesitan.
+Los avances y las ediciones no generan notificaciones. Si aparece un resultado nuevo en una tarea que aún no has visto, se actualiza sin enviar otra notificación. Si llegan varias a la vez, recibirás un solo aviso. El icono de la app muestra cuántas tareas requieren tu atención.
 
-## Botones en las notificaciones
+## Botones de las notificaciones
 
-Cada notificación tiene botones para el siguiente paso. En la app del móvil:
+Cada notificación tiene botones para que puedas dar el siguiente paso. En la app para el teléfono:
 
-- Tarea nueva: Hazlo, Posponer, Marcar como hecha.
-- Borrador listo: Abrir borrador, Posponer, Marcar como hecha.
-- Resultado listo: Abrir, Marcar como hecha, Posponer.
-- Pregunta, atascada o con inicio de sesión: Responder, Abrir o Iniciar sesión, y luego Posponer y Marcar como hecha.
-- Recordatorio: Marcar como hecha, Posponer, Abrir.
+- Tarea nueva: **Hazlo**, **Posponer**, **Marcar como hecho**.
+- Borrador listo: **Abrir borrador**, **Posponer**, **Marcar como hecho**.
+- Resultado listo: **Abrir**, **Marcar como hecho**, **Posponer**.
+- Pregunta, bloqueo o solicitud para iniciar sesión: **Responder**, **Abrir** o **Iniciar sesión**; también **Posponer** y **Marcar como hecho**.
+- Recordatorio: **Marcar como hecho**, **Posponer**, **Abrir**.
 - Resumen matutino: tócalo para abrirlo.
 
-Un navegador y Telegram muestran dos de ellos. Las preguntas del Fleet mantienen Responder una vez y Rechazar.
+En el navegador y en Telegram aparecen dos de esos botones. Las preguntas de Fleet siempre incluyen **Responder una vez** y **Rechazar**.
 
-Desde una notificación nunca se envía, se paga ni se presenta nada. Un borrador siempre se abre primero, para que lo veas antes de que salga. Abrir borrador muestra la tarea en tu lista con el borrador completo. Hazlo solo empieza el trabajo en una tarea nueva.
+No se envía, paga ni presenta nada desde una notificación. Los borradores siempre se abren primero para que los revises antes de que se envíen. **Abrir borrador** muestra la tarea en tu lista con el borrador completo. **Hazlo** solo inicia el trabajo de una tarea nueva.
 
-En la app, Posponer y Marcar como hecha piden desbloquear primero. En un navegador abren el panel, que lo hace y muestra Deshacer. Posponer trae la tarea de vuelta en dos horas, o mañana por la mañana en un recordatorio.
+En la app para el teléfono, **Posponer** y **Marcar como hecho** te piden que desbloquees el teléfono primero. En el navegador, abren el panel, donde se realiza la acción y aparece la opción **Deshacer**. Al posponer una tarea, volverá a aparecer dentro de dos horas o, si es un recordatorio, a la mañana siguiente.
 
-Los correos con lo que te espera tienen enlaces Abrir y Posponer. Solo abren el panel.
+Los correos incluyen enlaces para **Abrir** y, en el caso de lo que estés esperando, para **Posponer**. Solo abren el panel.
 
-Tocar una notificación, o Abrir en un correo o en Telegram, muestra la tarea resaltada en tu lista. Si está hecha, pospuesta o en otra vista, se abre su chat.
+Al tocar una notificación, o **Abrir** en un correo o en Telegram, verás la tarea resaltada en tu lista. Si ya está hecha, pospuesta o en otra vista, se abrirá su chat.
 
 ## El resumen matutino
 
-Llega los días laborables a tu hora de **Resumen matutino**, salvo que no haya nada que contar. Si es antes de **Lo pospuesto vuelve a las**, espera hasta 5 minutos después, para incluir las tareas que vuelven esa mañana. **Vista previa**, en su fila, lo muestra sin enviarlo. Por defecto es un push y un correo, cortos para leer de un vistazo:
+Lo recibirás los días laborables a la hora de **Resumen matutino**, a menos que no haya nada que contar. Si esa hora es anterior a **Lo pospuesto vuelve a las**, esperará hasta 5 minutos después para incluir las tareas que vuelvan a aparecer esa mañana. **Vista previa** te permite verlo sin enviarlo. De forma predeterminada, se envía como notificación push y por correo, y es lo bastante breve como para leerlo de un vistazo:
 
-- un saludo con lo que importa hoy, como "Buenos días, Sam: 2 respuestas listas para enviar" o, para una tarea, "Buenos días, Sam. Para revisar: Enviar el formulario de pedido";
-- las tareas que cuenta el saludo, cada una con un enlace Abrir, y lo que vence hoy; si no, como mucho tres cosas que hacer;
-- cuántas más pueden esperar y cuánto te llevan a tu ritmo, como "12 más pueden esperar, unos 5 min para terminar." Las tareas que esperan tu respuesta no cuentan en ese tiempo.
-- tus reuniones en una línea.
+- un saludo con lo más importante del día, como «Buenos días, Sam. Hay 2 respuestas listas para enviar» o, si hay una sola tarea, «Buenos días, Sam. En espera de tu visto bueno: enviar el formulario de pedido»;
+- las tareas que menciona el saludo, cada una con un enlace **Abrir**, y lo que vence hoy; si no hay nada que venza hoy, como máximo tres tareas;
+- cuántas tareas más pueden esperar y cuánto tardarías en resolverlas a tu ritmo, por ejemplo: «Hay 12 más que pueden esperar. Te llevará unos 5 min resolverlas». No se incluye el tiempo de las tareas que esperan tu respuesta.
+- tus reuniones, en una sola línea.
 
-Abrir muestra esa tarea resaltada en tu lista. Si está hecha, pospuesta o en otra vista, se abre su chat. Una promesa abre su tarea, o su propia página si aún no tiene una.
+**Abrir** muestra la tarea resaltada en tu lista. Si ya está hecha, pospuesta o en otra vista, se abrirá su chat. Una promesa abre su tarea o, si aún no tiene una, su propia página.
 
-El push dice lo mismo sin enlaces. Tócalo, o toca el enlace al final del correo, para volver a leer este resumen en **Tareas**.
+La notificación push muestra lo mismo, pero sin enlaces. Tócala o usa el enlace al final del correo para volver a leer este resumen en **Tareas**.
 
 ## El resumen de la tarde
 
-Llega una vez los días laborables a su hora en **Horario laboral**, por defecto 15 minutos antes de **Hasta**, por los medios que elijas en su fila de arriba. Un día sin ninguna tarea hecha ni reunión celebrada no recibe ninguno. Empieza con tu día en una cifra, como "Buenas tardes, Sam: 4 tareas hechas hoy", y luego una parte **Trabajo** y una parte **Personal**. Una parte vacía se omite. Cada una tiene:
+Lo recibirás una vez cada día laborable, a la hora indicada en **Horario laboral**. De forma predeterminada, llega 15 minutos antes de **Hasta** y por los medios que hayas elegido en la fila de arriba. Si no has terminado ninguna tarea ni has tenido reuniones ese día, no recibirás el resumen. Empieza con un recuento del día, como «Buenas tardes, Sam. Has completado 4 tareas hoy», y luego incluye una parte de **Trabajo** y otra de **Personal**. Si una parte está vacía, no aparece. Cada una incluye:
 
-- **Hecho hoy**: hasta tres tareas que tú o tu Machine terminaron, luego "+12 más" y las reuniones del día, como "+3 reuniones: Llamada de precios y 2 más";
-- **Pendiente para mañana** (un viernes, tu próximo día laborable): las primeras reuniones y lo que vence.
+- **Hecho hoy**: hasta tres tareas que hayas completado tú o tu Machine, luego «+12 más» y las reuniones del día, como «+3 reuniones: llamada sobre precios y 2 más»;
+- **Pendiente para mañana** (o para el próximo día laborable si es viernes): las primeras reuniones y lo que vence.
 
-Termina con cuántas tareas aún te necesitan. Toca la notificación push, o el enlace al final del correo, para volver a leerlo, con **Copiar Trabajo** y **Copiar Personal**. Para no recibirlo, desactiva su fila.
+Al final indica cuántas tareas aún requieren tu atención. Toca la notificación push o el enlace al final del correo para volver a leerlo, con **Copiar Trabajo** y **Copiar Personal**. Para dejar de recibirlo, desactiva su fila.
 
 ## Privacidad
 
-El push va de tu Machine directamente a tu dispositivo, cifrado para ese dispositivo. El plano de control nunca lo ve. El correo lo envía el servidor de correo de The Machine a la dirección de tu cuenta, así que el texto pasa por él y por el proveedor de correo. Cuando [Prudente](security-levels.md) oculta el texto de las tareas en las notificaciones, los correos solo llevan recuentos. Desactiva **Correo** para un tipo si no quieres que llegue nunca por correo.
+Las notificaciones push van directamente desde tu Machine a tu dispositivo, cifradas para este. El correo pasa por el servidor de correo de The Machine y tu proveedor de correo. Si [Cuidadoso](security-levels.md) oculta el texto de las tareas en las notificaciones, los correos solo muestran recuentos. Desactiva **Correo** en un tipo de notificación para que no llegue por correo.
 
-Activa el push para un dispositivo en **Este dispositivo**, o consulta [Instala la app](phone-app.md).
+Activa las notificaciones push de un dispositivo en **Este dispositivo** o consulta [Instalar la app](phone-app.md). La [app móvil](mobile-app.md) envía una línea de texto simple a través de Apple o Google y luego le pide a tu Machine el título y el siguiente paso.

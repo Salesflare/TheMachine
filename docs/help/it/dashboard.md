@@ -1,7 +1,7 @@
 ---
-title: Orientarti
+title: Orientati nella dashboard
 area: getting-started
-summary: A cosa serve ogni parte della dashboard, da Attività a Connessioni.
+summary: A cosa serve ogni sezione della dashboard, da Attività a Connessioni.
 covers: tab:events, tab:feedback
 code: dashboard.html
 order: 4
@@ -10,73 +10,75 @@ translated: d41a4a0017765f9e
 ## Le schede
 
 - **Attività**: le tue attività e promesse. Vedi [Attività](cards.md).
-- **Calendario**: la settimana che ti aspetta con le tue riunioni, le attività in scadenza e le promesse. Vedi [Calendario](calendar.md).
+- **Calendario**: la settimana in arrivo, con riunioni, scadenze delle attività e promesse. Vedi [Calendario](calendar.md).
 - **Graph**: le persone, le organizzazioni e i progetti nei tuoi messaggi. Vedi [Graph](graph.md).
-- **Fleet**: il tuo team, la famiglia e gli amici su The Machine Network, quando ne hai uno. Vedi [Fleet](fleet.md).
+- **Fleet**: il tuo team, la tua famiglia e i tuoi amici su The Machine Network, se ne hai una. Vedi [Fleet](fleet.md).
 - **Apprendimento**: come vanno le attività e cosa ha imparato.
-- **Connessioni**: le tue fonti e come stanno andando. Vedi [Connessioni](connections.md).
+- **Connessioni**: le tue fonti e come funzionano. Vedi [Connessioni](connections.md).
 
-**Cerca**, in cima alla barra laterale, trova prima le attività, poi persone, messaggi e altro. **Browser**, **Aiuto** e **Impostazioni** sono in fondo alla barra laterale. Su un telefono, il pulsante del menu nella barra in alto apre la barra laterale.
+**Cerca**, in cima alla barra laterale, trova attività, persone, messaggi e altro. **Browser**, **Aiuto** e **Impostazioni** si trovano in fondo. Sul telefono, il pulsante del menu nella barra superiore apre la barra laterale.
 
-La barra laterale elenca le tue attività come la pagina. Anche le richieste della tua Fleet sono in **Per te**, così il numero corrisponde a quello in alto. Toccane una per vederla.
+La barra laterale mostra le tue attività come la pagina. Anche le richieste della tua Fleet sono in **Per te**, così il conteggio corrisponde a quello in alto. Tocca un’attività per aprirla.
 
-Per il menu di un’attività, passaci sopra con il mouse e fai clic su **⋯**, fai clic destro su di essa o tienila premuta sul telefono. Con la tastiera, premi `Shift F10` su di essa. Oltre a **Rinomina** e **Apri**, il menu ha i pulsanti dell’attività stessa: **Segna come fatto**, **Posticipa** e **Non serve**, ognuno con **Annulla**.
+Per aprire il menu di un’attività, passaci sopra e fai clic su **⋯**, fai clic destro oppure tienila premuta sul telefono. Con la tastiera, premi `Shift F10` sull’attività. Oltre a **Rinomina** e **Apri**, il menu include **Segna come fatto**, **Posticipa** e **Non serve**, ciascuno con **Annulla**.
 
-**Browser** mostra il browser della tua Machine. Su un computer si apre accanto alla barra laterale, grande quanto lo spazio disponibile, e lo stesso fanno **Vedi nel browser** su un'attività e **Apri il browser** quando un sito richiede l'accesso. Su un telefono si apre in una nuova scheda.
+**Browser** mostra il browser della tua Machine, quello che usa per siti come LinkedIn. Sul computer si apre accanto alla barra laterale, come succede con **Vedi nel browser** su un’attività e **Apri il browser** quando un sito richiede l’accesso. Nel browser del telefono si apre in una nuova scheda. Nell’app del telefono o nella dashboard aggiunta alla schermata Home, occupa tutto lo schermo; la X ti riporta indietro.
 
-La finestra in primo piano del browser compare al centro e il resto dello schermo è scuro; un pulsante nell'angolo mostra lo schermo intero. Su uno schermo basso l'intera barra laterale scorre come un'unica colonna, attività comprese, come il menu su un telefono.
+**Ingrandisci** fa occupare al browser tutta la finestra. Premilo di nuovo per tornare indietro.
 
-**Ferma** compare in alto mentre un’attività usa il browser, con il nome di quell’attività accanto a **Browser**. Un tocco la ferma subito, senza chiedere: non viene più cliccato, scritto o inviato nulla, e la chat dell’attività dice "Interrotta dal browser".
+Mentre un’attività usa il browser, in alto compare **Ferma**. Premilo una volta per interrompere subito l’esecuzione: non verrà più fatto clic su nulla, non verrà digitato o inviato nulla e nella chat dell’attività comparirà «Interrotto dal browser».
 
-Se più attività lo usano, si ferma quella sulla scheda in primo piano. Su un telefono la scheda del browser ha lo stesso pulsante in alto. Per continuare, scrivi nella chat o tocca **Riprova**.
+Se è in corso più di un’esecuzione, si interrompe quella in primo piano. Per continuare, scrivi nella chat dell’attività o premi **Riprova**.
 
-Sul telefono, una finestra come **Inviare questa email?** occupa tutto lo schermo: il titolo e × restano in alto, i pulsanti in basso, e scorre solo quello che sta in mezzo. Il riquadro del messaggio cresce nello spazio libero, e i pulsanti restano a portata mentre scrivi.
+Se le attività non ci stanno tutte, l’intera barra laterale scorre come un’unica colonna.
 
-## Ottieni di più
+Sul telefono, una finestra di dialogo come **Inviare questa email?** occupa tutto lo schermo, con i pulsanti sempre a portata di mano, anche mentre scrivi.
 
-Dalla prima visita, appena finita la prima occhiata, una piccola attività in cima alle Attività elenca ciò che rende The Machine più utile: l’app per il telefono, le notifiche, WhatsApp, l’app su questo computer, un altro account e altre connessioni. Ogni riga ha un pulsante che fa quel passaggio, e sparisce una volta fatto, così l’attività mostra solo quello che manca. Mostra fino a cinque righe, prima i passaggi aperti, così uno strumento suggerito dalla tua posta, come GitHub, ha la sua riga quando i passaggi precedenti sono fatti.
+## Sfruttala al meglio
 
-Le righe compaiono solo dove servono: niente app per il telefono dentro l’app, niente installazione su un telefono. La × di una riga la chiude su ogni dispositivo, e la × in alto chiude l’intera attività.
+Una piccola attività in cima ad Attività elenca ciò che rende The Machine più utile: l’app per il telefono, le notifiche, WhatsApp, l’app sul computer, un altro account e altre connessioni. Ogni riga ha un pulsante per completare quel passaggio e scompare dall’elenco una volta completato, così l’attività mostra solo ciò che resta da fare. Vengono mostrate fino a cinque righe, prima quelle ancora aperte. Per esempio, uno strumento suggerito dalla tua posta, come GitHub, compare quando hai completato i passaggi precedenti.
 
-Dopo il tuo primo giorno, si riduce a una riga discreta sopra **Per te**, come «Mancano 2 passaggi · Continua». Toccala per aprire l’attività, e tocca la freccia per richiuderla.
+Le righe vengono mostrate solo quando sono pertinenti. La × su una riga la chiude su tutti i dispositivi. La × in cima chiude l’intera attività.
 
-**Annulla** nel messaggio che segue la riporta, come **Mostra 1 passaggio nascosto** in fondo all’attività. Se hai chiuso l’intera attività, **Impostazioni**, **Generali**, **Attività di configurazione** la riporta. **Impostazioni**, **Generali**, **Questo dispositivo** ha gli stessi controlli, e **Impostazioni**, **App** ha sempre l’app per il telefono.
+Dopo il primo giorno, l’attività si riduce a una riga discreta sopra **Per te**, per esempio «Restano 2 passaggi · Continua». Tocca la riga per aprire l’attività e la freccia per ridurla di nuovo.
+
+**Annulla** o **Mostra 1 nascosta** ripristina una riga. Per ripristinare l’intera attività, vai in **Impostazioni**, **Generale**, **Attività di configurazione**. In **Impostazioni**, **Generale**, **Questo dispositivo** trovi gli stessi controlli, mentre in **Impostazioni**, **App** trovi sempre l’app per il telefono.
 
 ## Nuove versioni
 
-Quando è pronta una nuova versione della dashboard, non si ricarica mai mentre la usi. Aprire o ricaricare l’app carica la versione più recente. Una finestra aperta la carica quando la finestra passa in secondo piano, o dopo qualche minuto senza input, e mai mentre c'è qualcosa di scritto non ancora salvato o inviato, o una finestra di dialogo aperta. **Aggiornamento pronto**, in alto, la carica subito. Un riavvio della tua Machine si limita a riconnettersi.
+La dashboard non si ricarica mai mentre la stai usando. Si carica quando apri l’app o quando la finestra è rimasta in secondo piano o inattiva per qualche minuto. Non interrompe mai il testo non salvato o una finestra di dialogo aperta. **Aggiornamento pronto**, in alto, la carica subito.
 
-Quando arriva una funzione o un miglioramento più grande, una piccola nota **Novità** te lo dice, al massimo una volta al giorno. Scorri con **Indietro** e **Successivo**, o con uno swipe. Il pulsante di ogni novità apre la funzione. **Fatto** o **×** la chiude. Non compare mai sopra quello che stai facendo, e una volta chiusa sparisce su ogni dispositivo. Vedi solo ciò che è arrivato dopo che hai iniziato.
+Quando arriva una funzionalità o un miglioramento importante, una breve nota **Novità** te lo segnala, al massimo una volta al giorno. Scorri la nota con **Indietro** e **Successivo**, oppure passa il dito sullo schermo. Il pulsante della nota apre la funzionalità. **Fatto** o **×** chiude la nota. Non compare mai mentre stai facendo qualcosa e, una volta chiusa, scompare su tutti i dispositivi. Vedrai solo ciò che è stato rilasciato dopo che hai iniziato a usare The Machine.
 
 ## Messaggi
 
-Apri la ricerca con `⌘K` su un Mac o `Ctrl K` su Windows e Linux, oppure con l'icona di ricerca nella barra in alto su un telefono. Scrivi almeno due lettere: **Messaggi** mostra i risultati migliori tra tutto ciò che la tua Machine ha letto, per significato o per parole. La [cronologia](history.md) più vecchia appare per parole.
+Apri la ricerca con `⌘K` su Mac o `Ctrl K` su Windows e Linux, oppure tocca l’icona di ricerca sul telefono. Digita almeno due lettere: **Messaggi** mostra i risultati migliori tra tutto ciò che la tua Machine ha letto, in base al significato o alle parole. I risultati della [cronologia](history.md) più vecchia si basano sulle parole.
 
-Puoi anche fare una domanda, come quella che suggerisce una ricerca vuota, per una risposta breve dai tuoi messaggi ([Tastiera e palette dei comandi](keyboard.md)).
+Puoi anche fare una domanda, come quella suggerita quando la ricerca è vuota, per ricevere una risposta breve basata sui tuoi messaggi ([Tastiera e tavolozza dei comandi](keyboard.md)).
 
-**Vedi tutti i risultati** apre l'elenco completo, per tutti gli account o per uno solo. Ogni risultato si apre in un lettore, con un link al punto da cui è arrivato. Una ricerca vuota mostra i messaggi più recenti.
+**Vedi tutti i risultati** apre l’elenco completo, per tutti gli account o per uno solo. Ogni risultato si apre in un lettore e include un link alla fonte. Una ricerca vuota mostra i messaggi più recenti.
 
-Una ricerca mostra prima il risultato migliore, e l'anteprima sul telefono di un messaggio presente per intero appare una sola volta, come quel messaggio. Una domanda su tutti gli account riceve in alto una risposta breve, con il messaggio da cui viene. Se i tuoi messaggi non lo dicono, non appare nessuna risposta.
+La ricerca mostra prima il risultato più pertinente. L’anteprima sul telefono di un messaggio che è già visualizzato per intero compare una sola volta, come messaggio. Se poni una domanda su tutti gli account, in alto compare una risposta breve con il messaggio da cui proviene. Se i tuoi messaggi non contengono la risposta, non ne viene mostrata nessuna.
 
 ## Apprendimento
 
-Apprendimento ha una fila di schede. Una scheda ancora vuota non compare.
+Apprendimento mostra cosa ha imparato The Machine da te e come funzionano le sue attività. Le schede vuote sono nascoste.
 
-- **Cosa ho imparato**: come scrivi, i fatti e come preferisci che si facciano le cose, dalle tue note. **Modifica** qualsiasi voce con parole tue e **Rimuovi** ciò che non è più vero. Puoi anche chiedere alla tua chat di dimenticare qualcosa ("dimentica che mi sono trasferito"): se un fatto corrisponde chiaramente, viene tolto, con **Annulla** in Impostazioni, **Movimenti** e sotto **Modifiche**. Se ne corrispondono diversi, la chat chiede quale. Quando una nota su un'attività insegna un fatto o una regola, la chat dell'attività lo dice sotto la risposta (**Salvato in ciò che ho imparato**, con **Modifica** e **Annulla**); quella riga viene da ciò che è stato salvato, quindi una risposta non lo afferma mai e basta.
-- Un fatto può dire cos’è (**Temporaneo**, **Impegno**, **Preferenza**) e **Fino a** quando vale. Un fatto temporaneo sbiadisce in settimane, una preferenza o un impegno in mesi, gli altri fatti in un anno. Passata la data, un fatto va in **Scaduti**, dove **Ripristina** lo riporta.
-- **Fatti** tiene quelli generali: su di te e su come lavori. Un fatto su una persona, un’organizzazione o un progetto sta nella loro pagina nel Graph, sotto **Cosa si sa su**, dove lo modifichi. Un fatto che ne nomina uno con il nome completo ci va al salvataggio, e la chat dell’attività dice **Salvato su** di loro **nel Graph**. Una riga discreta sotto **Fatti** dice quanti sono su pagine del Graph; aprila per andare a ogni pagina. Un fatto da un tuo messaggio mostra tra virgolette le parole da cui viene.
-- Un numero di telefono o un indirizzo email che dai per qualcuno va nella sua pagina nel Graph, non nei fatti. Se il numero è già su una scheda e un’altra sola scheda ha lo stesso nome, le due vengono unite. La chat dell’attività dice **Aggiunto a** e il suo nome, con **Annulla**. Se non è chiaro per chi è, resta un fatto.
-- L’elenco non si riempie mai. Quando si allunga, i fatti e le regole non usati da tre settimane vanno in **Messi da parte**, dove **Ripristina** ne riporta uno. Quello che hai modificato o ripristinato resta. Un fatto messo da parte aiuta ancora quando un’attività o una chat ne parla, e uno scaduto solo come storia, mai come lo stato attuale.
-- Una nota che dice con altre parole qualcosa di già imparato lo sostituisce, così niente compare due volte. **Annulla unione** riporta la versione precedente. Le tue modifiche non vengono mai sostituite.
-- **Da importare**: usavi già OpenClaw? Le righe delle sue note (`MEMORY.md`, `USER.md`) che vale la pena tenere compaiono in alto, ognuna con il file da cui viene. Spunta quelle da tenere, poi **Tieni i selezionati**: diventano fatti o regole come gli altri. Con **Scarta il resto** le altre non tornano. I file non vengono mai modificati, e non compare nulla se non contengono niente da tenere.
-- **Modifiche**: cosa ha ricavato dalle tue modifiche, dai rifiuti e dalle chat, ognuna con **Annulla**. Vedi [Scrittura](writing.md#it-keeps-learning).
+- **Cosa ho imparato**: come scrivi, i fatti e il modo in cui preferisci che vengano fatte le cose, in base ai tuoi appunti. Puoi **Modifica**re qualsiasi elemento con parole tue e **Rimuovi**re ciò che non è più vero. Puoi anche chiedere alla tua chat di dimenticare qualcosa («dimentica che mi sono trasferito»): se corrisponde chiaramente a un solo fatto, lo elimina e in Impostazioni, **Movimenti** e in **Modifiche** trovi **Annulla**. Se corrisponde a più fatti, la chat ti chiede quale intendi. Quando un appunto insegna un fatto o una regola, nella chat dell’attività compare **Salvato in ciò che ho imparato**, con **Modifica** e **Annulla**.
+- Un fatto può essere **Temporaneo**, un **Impegno** o una **Preferenza**, con **Fino alle** per indicare per quanto tempo vale. I fatti temporanei scompaiono dopo alcune settimane, le preferenze e gli impegni dopo alcuni mesi, gli altri fatti dopo un anno. Quando arriva la data indicata, o un messaggio più recente mostra che il fatto non è più valido, il fatto passa a **Scaduti**. Puoi ripristinarlo con **Ripristina**.
+- **Fatti** contiene quelli generali, su di te e sul tuo modo di lavorare. I fatti su una persona, un’organizzazione o un progetto si trovano nella relativa pagina in Graph, sotto **Informazioni note**, dove puoi modificarli. Quando salvi un fatto che menziona una persona, un’organizzazione o un progetto con il suo nome completo, il fatto viene aggiunto alla relativa pagina e nella chat dell’attività compare **Salvato in** seguito dal nome e **in Graph**. Una riga discreta sotto **Fatti** indica quanti fatti si trovano nelle pagine di Graph; aprila per raggiungere ogni pagina. Per un fatto ricavato da un tuo messaggio, vengono mostrate tra virgolette le parole da cui proviene.
+- Un numero di telefono o un indirizzo email che fornisci per qualcuno viene aggiunto alla sua pagina in Graph, non ai fatti. Se il numero è già in una scheda e un’altra scheda ha lo stesso nome, le due schede vengono unite. Nella chat dell’attività compare **Aggiunto a** seguito dal nome, con **Annulla**. Se non è chiaro a chi appartengano i dati, restano tra i fatti.
+- L’elenco non si riempie mai. Quando diventa lungo, i fatti e le regole che non sono stati usati per tre settimane passano a **Messi da parte**, dove puoi ripristinarli con **Ripristina**. I fatti che hai modificato o ripristinato restano nell’elenco. Un fatto messo da parte continua a essere utile quando un’attività o una chat lo riguarda. Un fatto scaduto viene usato solo come cronologia, mai come informazione attuale.
+- Se un appunto ripete con altre parole qualcosa che è già stato imparato, lo sostituisce, così non compare due volte nell’elenco. **Annulla unione** ripristina la formulazione precedente. Le tue modifiche non vengono mai sostituite.
+- **Da importare**: hai già usato OpenClaw? In cima compaiono le righe dei suoi appunti (`MEMORY.md`, `USER.md`) che vale la pena conservare, ciascuna con il file di provenienza. Seleziona quelle da tenere, poi premi **Tieni i selezionati**: diventano fatti o regole come gli altri. Un fatto su qualcuno in Graph viene spostato nella sua pagina, mentre un compleanno viene aggiunto anche alla routine Compleanni. Un fatto su di te resta in Fatti. Premi **Scarta il resto** per rimuovere gli altri senza che ricompaiano. I file non vengono mai modificati e non viene mostrato nulla se non contengono informazioni che vale la pena conservare.
+- **Modifiche**: ciò che ha imparato dalle tue modifiche, dai contenuti che hai scartato e dalle chat, ciascuno con **Annulla**. Vedi [Scrittura](writing.md#it-keeps-learning).
 - **Decisioni**: una cronologia delle tue scelte sulle attività.
-- **Condiviso**: apprendimenti da condividere con il team di The Machine e voti che ti aspettano. Compare solo quando qualcosa aspetta. Vedi [Condividi gli apprendimenti](share-learnings.md).
-- **Come va**: gli ultimi 30 giorni, e più alto è meglio.
-  - **Utile**: delle attività su cui hai deciso, su quante hai agito (**Fallo**, inviata o fatta) invece di scartarle.
-  - **Al primo colpo**: delle attività avviate con **Fallo**, quante non hanno avuto bisogno di correzioni dopo.
-  - **Completata**: delle attività avviate con **Fallo**, quante sono finite senza che tu le chiedessi di continuare o di riprovare.
-  - **Inviata così com’è**: delle bozze che hai inviato, quante sono partite senza una modifica o un **Chiedi modifiche** prima.
-  - Ogni numero dice come si confronta con i 30 giorni precedenti. Il grafico parte dalla tua prima attività decisa: una barra al giorno nelle prime due settimane, poi una a settimana, fino alle ultime 8 settimane.
-  - **Utile per origine**: da dove arrivano le attività, come **Email**, **Aggiunto da te** (create con **Nuova attività**), **Notifiche del telefono** o **The Machine stessa** (problemi in The Machine, come un errore), e su quante hai agito.
-  - **Attività sfuggite**: una volta a settimana The Machine controlla un campione di messaggi rimasti senza attività, e mostra la quota che probabilmente ne richiedeva una, con il suo margine. Quelli trovati sono elencati: **Apri**, o la riga stessa, mostra il messaggio, e **Vera svista** o **Non è una svista** le dice se aveva ragione. **Vera svista** aggiunge anche l’attività, con **Annulla** (**Apri attività** ci porta), e The Machine ne impara, così da notare messaggi simili d’ora in poi. Le tue risposte restano sulla tua Machine e rendono il numero più preciso. Il numero tiene conto anche di quante volte il controllo stesso sbaglia, misurato su esempi inventati e sulle tue risposte. Compare dopo il primo controllo settimanale.
+- **Condiviso**: apprendimenti da condividere con il team di The Machine e voti in attesa, se ce ne sono. Vedi [Condividere gli apprendimenti](share-learnings.md).
+- **Come sta andando**: quattro numeri relativi agli ultimi 30 giorni. Più sono alti, meglio è. Compaiono dopo che hai deciso su 3 attività, agendo o scartandole. Fino ad allora, viene mostrato quante ne hai decise finora.
+  - **Utile**: tra le attività su cui hai deciso, quante hai portato avanti (**Fallo**, inviate o completate) invece di scartarle.
+  - **Al primo colpo**: tra le attività che hai iniziato con **Fallo**, quante non hanno richiesto correzioni.
+  - **Completata**: tra le attività che hai iniziato con **Fallo**, quante sono state completate senza che tu chiedessi di continuare o riprovare.
+  - **Inviata così com’è**: tra le bozze che hai inviato, quante non hanno richiesto modifiche o un **Chiedi modifiche**.
+  - Ogni numero viene confrontato con i 30 giorni precedenti. Il grafico mostra una barra per ogni giorno nelle prime due settimane, poi una per settimana, fino a 8 settimane.
+  - **Utile per origine**: quante attività hai portato avanti per ciascuna origine, come **Email**, **Aggiunto da te** (da **Nuova attività**), **Notifiche del telefono** o **The Machine stessa** (problemi come un errore).
+  - **Attività sfuggite**: una volta alla settimana The Machine controlla un campione di messaggi che non hanno generato un’attività e stima quanti probabilmente ne richiedevano una. Elenca quelli che ha trovato: **Apri**, o la riga stessa, mostra il messaggio; **Vera svista** o **Non è una svista** le indica se ha ragione. **Vera svista** crea anche l’attività, con **Annulla** (**Apri attività** la apre), e The Machine impara dalla tua risposta, così da allora riconosce messaggi simili. Le tue risposte rendono il numero più preciso e restano sulla tua Machine. La sezione compare dopo il primo controllo settimanale.

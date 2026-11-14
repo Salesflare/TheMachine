@@ -1,49 +1,53 @@
 ---
 title: Gmail
 area: connections
-summary: Leest je mail en schrijft antwoorden in jouw stijl. Verstuurt een e-mail pas nadat je hem goedkeurt.
+summary: Leest je e-mail en maakt conceptantwoorden in jouw stijl. Verstuurd wordt er pas nadat je akkoord hebt gegeven.
 covers: connector:gmail
 code: onboarding.py, google_api.py, next_actions.py
 site: Connect Google, Mail and Calendar, Disconnect, Sign in with Google, Use your own app
 order: 10
 translated: e06946aaa6ad0e1a
 ---
-## Wat het leest
+## Wat hij leest
 
-Al je mail: de laatste 7 dagen als je koppelt, daarna alles wat nieuw is, inkomend en uitgaand. Mail die je verstuurt telt ook mee, zodat hij leert hoe je schrijft en wat je beloofd hebt.
+Al je e-mail: de laatste 7 dagen wanneer je verbinding maakt, daarna alle nieuwe berichten, zowel inkomende als uitgaande. Ook e-mail die je verstuurt telt mee. Zo leert hij hoe je schrijft en wat je hebt beloofd.
 
-Mail in Promoties, nieuwsbrieven, Updates en Forums krijgt eerst een snelle blik: afzender, onderwerp en een paar woorden, veel tegelijk. Als er een belangrijk is, wordt die volledig gelezen en kan die een to-do worden. Niets wordt ongezien overgeslagen.
+Promoties, nieuwsbrieven en e-mail uit Updates en Forums bekijkt hij eerst vluchtig: de afzender, het onderwerp en een paar woorden, van veel berichten tegelijk. Als een bericht belangrijk is, leest hij het helemaal en kan het een to-do worden. Hij slaat niets over zonder het te bekijken.
 
-## Wat het kan versturen
+## Wat hij kan versturen
 
-Een e-mail vanuit een to-do, en pas nadat je hem goedkeurt. **Doe het** bereidt een concept voor; **Nakijken en versturen** opent het, klaar om te bewerken, en er gaat niets weg tot je op **Nu versturen** drukt. **Inloggen met Google** vraagt Google ook om te mogen versturen. Met je eigen app op je eigen computer is de login alleen-lezen tot je versturen zelf toevoegt.
+Een e-mail vanuit een to-do, en alleen nadat je akkoord hebt gegeven. **Doe het** maakt een concept. **Nakijken en versturen** opent het concept zodat je het kunt bewerken. Er wordt pas iets verstuurd als je op **Nu versturen** drukt. **Inloggen met Google** vraagt Google ook om toestemming om e-mail te versturen. Gebruik je je eigen app op je eigen computer, dan kan die na het inloggen alleen e-mail lezen, totdat je zelf verzenden instelt.
 
-Een antwoord komt in het gesprek van de e-mail waarop het antwoordt. Gaat het via een andere mailbox dan die waarin de e-mail binnenkwam, dan zegt de to-do dat voor je verstuurt: bij hen komt het toch in hetzelfde gesprek.
+**Van** is in het controlevenster een kleine keuzelijst, als Gmail toestaat dat deze mailbox e-mail verstuurt als een alias van jou (een alias met het label **Van mij** in Instellingen, [Je adressen](settings.md#your-addresses)). Een antwoord op e-mail die naar die alias is gestuurd, wordt vanaf dat adres verstuurd. Nieuwe e-mail wordt vanaf het adres van je mailbox verstuurd. Vlak voor het versturen vraagt hij het opnieuw aan Gmail. Bevestigt Gmail het adres niet, dan wordt er niets verstuurd.
 
-## Koppelen
+Een antwoord komt in de e-mailthread waarop je reageert. Als het antwoord wordt verstuurd vanuit een andere mailbox dan die waarin de oorspronkelijke e-mail is binnengekomen, staat dat in de to-do voordat je verstuurt. Het antwoord komt nog steeds in hun thread terecht.
+
+## Verbinden
 
 Op een gehoste Machine:
 
-1. Open je setuppagina op app.themachine.computer/setup.
-2. Druk onder **Mail en agenda** op **Google koppelen** en log in. Het scherm van Google noemt Salesflare, dat The Machine maakt.
-3. Gmail en Google Calendar worden samen gekoppeld.
+1. Open je installatiepagina op app.themachine.computer/setup.
+2. Klik onder **Mail en Agenda** op **Google verbinden** en log in. Op het Google-scherm staat Salesflare, de maker van The Machine.
+3. Gmail en Google Calendar worden samen verbonden.
 
-Of in het dashboard: **Koppelingen**, **E-mail**, kies Gmail en druk op **Inloggen met Google**. Als je klaar bent, ben je terug in het dashboard.
+Heb je je aangemeld met Google en op dat scherm toestemming gegeven voor Gmail en Calendar? Dan worden ze automatisch verbonden. Er wordt alleen iets verstuurd als je op Nu versturen drukt.
 
-Op je eigen computer, zodra hij [aan je account gekoppeld is](friends.md#a-machine-on-your-own-computer):
+Of ga in het dashboard naar **Koppelingen**, **E-mail**, kies Gmail en klik op **Inloggen met Google**. Als je klaar bent, keer je terug naar het dashboard.
 
-1. Open in het dashboard **Koppelingen**, dan **E-mail**, en kies Gmail.
-2. Druk op **Inloggen met Google** en log in in het tabblad dat opent. Gmail en Google Calendar worden samen gekoppeld.
+Op je eigen computer, nadat die [aan je account is gekoppeld](friends.md#a-machine-on-your-own-computer):
 
-Niet gekoppeld, of met je eigen Google OAuth-client: open daar **Je eigen app gebruiken**, of voer `assistant connect gmail` uit. Druk op **Open Google**, log in en plak dan het adres waar Google je naartoe stuurt. Google Calendar voor hetzelfde adres komt mee.
+1. Open in het dashboard **Koppelingen**, daarna **E-mail**, en kies Gmail.
+2. Klik op **Inloggen met Google** en log in op het tabblad dat wordt geopend. Gmail en Google Calendar worden samen verbonden.
 
-Een beheerder van Google Workspace moet de app misschien eerst toestaan, in de Admin-console.
+Niet gekoppeld, of gebruik je je eigen Google OAuth-client? Open daar **Je eigen app gebruiken** of voer `assistant connect gmail` uit. Klik op **Open Google**, log in en plak daarna het adres waar Google je naartoe stuurt. Google Calendar voor hetzelfde adres wordt ook verbonden.
+
+Een Google Workspace-beheerder moet de app mogelijk eerst toestaan in de Admin-console.
 
 ## Verwijderen
 
-- Op een gehoste Machine: druk op **Ontkoppelen** naast het adres op je setuppagina. Dat verwijdert Gmail en Agenda voor dat adres, en je Machine vergeet de login. Je andere Machines houden de hunne. In het dashboard brengt **Ontkoppelen ↗** op Koppelingen je daarheen. **Opnieuw verbinden** daar logt opnieuw in zonder het dashboard te verlaten.
-- Op je eigen computer: **Koppelingen**, open Gmail, **Details**, dan **Ontkoppelen**. Het stopt met lezen. Wat al binnengehaald is, blijft. Gebruikt niets anders erop die Google-login nog, dan vergeet hij hem. Je andere Machines houden de hunne.
+- Op een gehoste Machine: klik naast het adres op **Ontkoppelen** op je installatiepagina. Gmail en Calendar voor dat adres worden verwijderd en je Machine vergeet de aanmeldgegevens. Je andere Machines behouden die van hen. Klik in het dashboard bij Koppelingen op **Ontkoppelen ↗** om naar die pagina te gaan. Met **Opnieuw verbinden** log je daar opnieuw in zonder het dashboard te verlaten.
+- Op je eigen computer: ga naar **Koppelingen**, open Gmail, klik op **Details** en daarna op **Ontkoppelen**. De e-mail wordt dan niet meer gelezen. Wat al is binnengehaald, blijft staan. Als niets anders die Google-aanmelding gebruikt, vergeet hij die. Je andere Machines behouden die van hen.
 
 ## Verwijderen bij Google
 
-Open in je Google-account Beveiliging, dan Je verbindingen met apps en services van derden, en verwijder Salesflare (Inloggen met Google, of gehost) of je eigen app.
+Open in je Google-account Beveiliging, ga naar Je verbindingen met apps en services van derden en verwijder Salesflare (Inloggen met Google of gehost) of je eigen app.

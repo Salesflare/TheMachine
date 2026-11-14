@@ -1,7 +1,7 @@
 ---
 title: GitHub
 area: connections
-summary: Richieste di revisione, menzioni, assegnazioni ed esecuzioni CI fallite. Apre issue solo quando confermi.
+summary: Esamina richieste di revisione, menzioni, assegnazioni e CI non riuscite. Crea issue solo dopo la tua conferma.
 covers: connector:github
 code: connectors/github.py, onboarding.py
 site: Sign in with GitHub, More sources, Remove
@@ -9,31 +9,35 @@ translated: e97127e156e56f7d
 ---
 ## Cosa legge
 
-Le tue notifiche GitHub: richieste di revisione, menzioni, assegnazioni, risposte ed esecuzioni CI fallite. Non segna mai una notifica come letta.
+Le notifiche di GitHub: richieste di revisione, menzioni, assegnazioni, risposte ed esecuzioni CI non riuscite. Non le segna mai come lette.
 
 ## Cosa può fare
 
-Leggere non cambia nulla su GitHub. Quando un’attività finisce con un passo su GitHub, come aprire una issue, quel passo usa lo stesso accesso gh appena tocchi **Conferma**, e l’attività lo dice prima. Gli screenshot passano comunque dal browser della tua Machine, perché lo strumento di GitHub non può aggiungere immagini. Senza GitHub collegato, l’attività dice che userà il browser, con **Collega GitHub**.
+La sola lettura non modifica nulla su GitHub. Quando un'attività include un passaggio GitHub, come la creazione di un issue, l'attività lo indica e il passaggio viene eseguito solo dopo che premi **Conferma** o quando lo hai richiesto esplicitamente nella chat. Gli screenshot vengono acquisiti tramite il browser della tua Machine. Se GitHub non è collegato, l'attività indica che userà il browser e mostra **Collega GitHub**.
 
-## Collegalo
+## Collega GitHub
 
 Su una Machine ospitata:
 
-1. Apri la tua pagina di configurazione su app.themachine.computer/setup e vai su **Altre fonti**.
-2. Apri GitHub e premi **Accedi con GitHub**.
-3. Scrivi su GitHub il codice che ti mostra, dal telefono o dal computer.
+1. Apri **Connessioni**, poi **Progetti e codice**, e seleziona GitHub.
+2. Seleziona **Lavoro** o **Personale** e premi **Accedi con GitHub**.
+3. Premi **Apri GitHub ↗**, inserisci il codice mostrato e autorizza l'accesso. La connessione viene stabilita automaticamente.
+
+La pagina di configurazione su app.themachine.computer/setup offre lo stesso accesso nella sezione **Altre fonti**.
 
 Sul tuo computer:
 
-1. Prima accedi alla GitHub CLI: `gh auth login`.
-2. Nella dashboard, apri **Connessioni**, poi **Progetti e codice**, e scegli GitHub. Oppure esegui `assistant connect github`.
-3. Conferma il tuo login GitHub. The Machine controlla che corrisponda a ogni sincronizzazione.
+1. Apri **Connessioni**, poi **Progetti e codice**, e seleziona GitHub.
+2. Seleziona **Lavoro** con la tua azienda, oppure **Personale**, e premi **Collegati**.
+3. Se richiesto, premi **Apri GitHub ↗**, inserisci il codice e autorizza l'accesso. La connessione viene stabilita automaticamente.
 
-## Rimuovilo
+Oppure esegui `assistant connect github` e conferma il tuo accesso a GitHub.
 
-- Nella dashboard: **Connessioni**, apri GitHub, **Dettagli**, poi **Disconnetti**. Smette di leggere. Ciò che ha già portato dentro resta.
-- Su una Machine ospitata puoi anche premere **Rimuovi** accanto a GitHub nella tua pagina di configurazione.
+## Rimuovi la connessione
 
-## Disinstallalo su GitHub
+- Apri **Connessioni**, poi GitHub, **Dettagli** e **Disconnetti**. La connessione smette di leggere le notifiche. I contenuti già importati restano.
+- Su una Machine ospitata puoi anche premere **Rimuovi** accanto a GitHub nella pagina di configurazione.
 
-Revoca l'accesso della GitHub CLI in GitHub, in Settings, Applications, Authorized OAuth Apps. Sul tuo computer, anche `gh auth logout` disconnette la CLI.
+## Disinstalla da GitHub
+
+Su GitHub, apri **Impostazioni**, **Applicazioni**, **Applicazioni OAuth autorizzate** e revoca GitHub CLI. Sul tuo computer, anche `gh auth logout` disconnette l'account.

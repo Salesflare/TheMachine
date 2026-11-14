@@ -1,113 +1,116 @@
 ---
 title: Graph d’équipe
 area: fleet
-summary: Expérimental. Partagez votre travail client avec votre Fleet Travail, comme un CRM. Ce qui part, ce qui ne part jamais, et comment garder quelque chose privé.
+summary: Expérimental. Partagez le travail avec vos clients avec votre Fleet professionnel, comme dans un CRM. Découvrez ce qui est partagé, ce qui ne l’est jamais et comment garder certains éléments privés.
 covers: team-graph
 code: shared_graph.py, fleet_trust.py, dashboard.html
 order: 2
 translated: fc842bc761a3ab17
 ---
-Dans une Fleet Travail, votre Machine peut partager votre travail client avec les Machines de vos collègues, comme un CRM partagé. C’est **Expérimental** : c’est nouveau et ça évolue encore, donc c’est désactivé au départ.
+Dans une Fleet professionnelle, votre Machine peut partager le travail avec vos clients avec les Machines de vos collègues, comme dans un CRM partagé. Cette fonctionnalité est **Expérimental** et désactivée par défaut.
 
-## L’activer
+## Activer le partage
 
-Un admin active **Partager le Graph dans cette Fleet** dans **Ce qui est partagé**, et confirme que l’entreprise peut partager ces e-mails et qu’elle a prévenu ses équipes. Tout le monde voit si c’est activé. Une Fleet qui partageait déjà reste activée. Ensuite, chaque personne regarde ce qui partirait et appuie sur **Commencer**. Rien ne part avant.
+Un admin active **Partager le Graph dans cette Fleet** dans **Ce qui est partagé**, puis confirme que l’entreprise peut partager ces e-mails et en a informé ses employés. Tout le monde voit si le partage est activé.
+
+Le partage s’active aussi si l’entreprise exige l’adresse e-mail professionnelle ou l’agenda professionnel de tout le monde. Chaque personne choisit ensuite ce qu’elle partage en plus dans **Vos connexions**. Le premier partage d’un nouvel équipier attend une heure, pour lui laisser le temps de garder certains éléments privés.
 
 ## Vos connexions
 
-**Vos connexions**, dans **Ce qui est partagé**, liste chaque connexion avec un interrupteur. Celles de travail sur le domaine de votre Fleet sont activées au départ. Une connexion sur le domaine d’une autre entreprise est désactivée au départ, même si c’est un compte de travail : elle indique « Autre entreprise, non partagé ». Vous pouvez l’activer. Les connexions perso ne partent jamais. En désactiver une reprend ce qu’elle a partagé.
+**Vos connexions** dans **Ce qui est partagé** affiche chaque connexion avec un bouton d’activation. Les connexions professionnelles du domaine de votre Fleet sont activées par défaut. Celles d’un domaine appartenant à une autre entreprise sont désactivées par défaut et indiquent « Autre entreprise, non partagé ». Les connexions personnelles ne sont jamais partagées. Désactiver une connexion annule le partage de ce qu’elle a transmis.
 
-L’agenda d’une autre personne que vous lisez avec votre propre connexion apparaît sous son nom, comme une connexion perso.
+Le calendrier d’une autre personne auquel vous accédez avec votre propre compte apparaît sous son propre nom, comme calendrier personnel.
 
-Dans une connexion activée, chaque fil est quand même trié. Le Slack de votre propre entreprise compte comme entre collègues uniquement, messages directs compris : seule une conversation Slack Connect avec une autre entreprise peut être un fil client. Les fils perso et ceux entre collègues uniquement restent exclus. Les e-mails sensibles et automatiques restent hors du partage automatique ; vos choix de partage explicites peuvent passer outre ces classements.
+Dans une connexion activée, chaque fil est tout de même classé. Le Slack de votre entreprise ne compte que comme échanges entre collègues. Seuls les chats Slack Connect avec une autre entreprise peuvent concerner des clients. Les fils personnels, réservés aux collègues, sensibles et automatisés ne sont pas partagés, sauf si vous en partagez un vous-même.
 
-## Exigé par la Fleet
+## Connexions exigées par la Fleet
 
-Un admin peut exiger l’**E-mail pro** et l’**Agenda pro** de chacun sur le domaine de la Fleet, sous **Exigé par la Fleet**, après avoir confirmé que l’entreprise a prévenu ses équipes. Les e-mails de travail appartiennent à l’entreprise, comme dans tout CRM. Ces connexions indiquent alors « Exigé par » votre Fleet et ne peuvent pas être désactivées. Les fils que vous gardez privés restent privés.
+Un admin peut exiger l’adresse e-mail **E-mail pro** et l’**Agenda pro** de tout le monde sur le domaine de la Fleet, dans **Exigé par la Fleet**, après avoir confirmé que l’entreprise en a informé ses employés. Les e-mails professionnels appartiennent à l’entreprise, comme dans tout CRM. Les connexions exigées indiquent « Exigé par » votre Fleet et ne peuvent pas être désactivées. Les fils que vous gardez privés le restent.
 
-## Ce qui part vers l’équipe
+## Ce qui est partagé avec l’équipe
 
-- Les fils clients : les e-mails de travail avec des personnes extérieures à votre entreprise, avec leurs pièces jointes.
-- Les personnes, organisations et projets de travail, avec une courte chronologie. Dans la **Chronologie** d'une page, **Équipe** montre chaque événement une seule fois, dans votre langue quand la Machine d'un coéquipier l'a écrit ainsi, avec tous ceux dont il vient : « via Sam, Kim et Lee ».
-- Une petite copie du logo d’une organisation et de la photo professionnelle d’une personne : issue d’une recherche, de Slack, LinkedIn, X, Salesflare ou Microsoft. Jamais une image des contacts Google, de WhatsApp, Telegram ou Facebook, ni une image que vous avez changée ou retirée.
-- Sur un tableau d’équipe, les réunions d’un projet, les notes Zoom, les conversations Intercom et les chats aussi, parce qu’ils sont sur le tableau. Les éléments sensibles, comme les deals, restent exclus, tout comme les chats entre collègues uniquement.
+- Les fils avec des clients : les e-mails professionnels échangés avec des personnes hors de votre entreprise, pièces jointes comprises.
+- Les personnes, les organisations et les projets professionnels, avec une chronologie succincte. Sur la page d’un élément, **Chronologie** affiche chaque événement une seule fois dans la langue de votre collègue si sa Machine l’a rédigé dans cette langue, avec les personnes à l’origine de l’événement : « via Sam, Kim, et Lee ».
+- Une petite copie du logo d’une organisation et de la photo professionnelle d’une personne : récupérée par recherche, depuis Slack, LinkedIn, X, Salesflare ou Microsoft. Jamais une image issue de Google Contacts, WhatsApp, Telegram ou Facebook, ni une image que vous avez modifiée ou supprimée.
+- Sur un tableau d’équipe, les réunions d’un projet, les notes Zoom, les conversations Intercom et les chats. Les échanges sensibles, comme les négociations, et ceux réservés aux collègues ne sont pas partagés.
+- Le nombre et les dates des éléments du [brief d’équipe](fleet.md#brief-requests) d’un collègue.
+- Les réponses aux questions d’un collègue sur les personnes qui connaissent quelqu’un ou sur le contexte d’une réunion. Consultez [Fleets](fleet.md#answered-by-itself-in-a-work-fleet).
+- Les [apprentissages de l’équipe](fleet.md#team-learnings) : la façon dont l’équipe travaille, sans noms ni informations sur les clients.
 
-## Exclu du partage automatique
+## Éléments exclus du partage automatique
 
-- Les fils sensibles : achat ou vente d’une entreprise, investissements, valorisations, négociations, RH, embauche et recruteurs, juridique, santé, argent, sécurité. Pas même le fait qu’ils existent.
-- Les e-mails automatiques : reçus, factures, alertes, newsletters, et les factures de votre entreprise avec ses fournisseurs.
-- Les fils internes (entre collègues uniquement), les e-mails perso et tout ce qui vient d’un compte perso. Le perso ne part jamais, même si vous appuyez sur Équipe.
-- Tout ce que vous avez marqué **Garder privé**, ainsi que les tableaux et projets réglés sur Vous seul.
-- Une personne Perso pour vous, comme votre famille ou vos amis, et ses e-mails. Un projet où elle figure part quand même avec son tableau, sans elle.
+- Les fils sensibles : achat ou vente d’une entreprise, investissements, négociations, RH et recrutement, questions juridiques, santé, argent, sécurité. Même leur existence n’est pas révélée.
+- Les e-mails automatisés : reçus, factures, alertes, newsletters et factures de fournisseurs.
+- Les fils réservés aux collègues, les e-mails personnels et tout ce qui provient d’un compte personnel. Les éléments personnels ne sont jamais partagés, même si vous touchez **Équipe**.
+- Tout élément marqué **Garder privé**, ainsi que les tableaux et projets réservés à vous seul.
+- Les personnes que vous avez classées comme personnelles, comme votre famille ou vos amis, et leurs e-mails. Un projet auquel elles participent est tout de même partagé avec son tableau, mais sans elles.
 
-Chaque fil est jugé séparément, selon son sujet. Le classement peut se tromper ; vérifiez ce qui partirait et utilisez Garder privé pour corriger. Votre choix explicite Équipe ou un partage avec des collègues nommés peut passer outre un classement sensible ; vérifiez les destinataires avant de partager.
+Chaque fil est classé selon son contenu, mais le classement peut être incorrect. Vérifiez ce qui serait partagé et utilisez **Garder privé** pour corriger le tir. Si vous partagez vous-même un fil avec l’équipe ou des personnes précises, cette action remplace l’étiquette « sensible ». Vérifiez donc qui y aura accès.
 
-## Partager un tableau avec des personnes choisies
+## Partager un tableau avec certaines personnes
 
-Dans le menu **⋯** d’un tableau, appuyez sur **Partager le tableau…** et choisissez des collègues. Seules ces personnes reçoivent ses projets avec leur chronologie complète : fils d’e-mails, réunions et leurs notes Zoom, conversations Intercom, chats, tâches et déplacements. Les éléments sensibles partent aussi, comme les deals.
+Dans le menu **⋯** d’un tableau, touchez **Partager le tableau…**, puis choisissez les collègues concernés. Eux seuls reçoivent les projets du tableau avec leur chronologie complète : e-mails, réunions et notes Zoom, conversations Intercom, chats, tâches et changements. Les échanges sensibles, comme les négociations, sont également partagés.
 
-Les fils perso et ceux entre collègues uniquement restent exclus, de même que les personnes de votre Famille ou de vos Amis et les e-mails automatiques quand seul leur tableau est partagé. Les connexions que vous n’avez pas sélectionnées restent exclues aussi.
+Les fils personnels et ceux réservés aux collègues ne sont pas partagés, pas plus que ceux de votre famille et de vos amis, les e-mails automatisés et les connexions que vous n’avez pas sélectionnées.
 
-- Un projet ajouté au tableau plus tard part aussi. Un projet retiré du tableau est repris.
-- Retirez quelqu’un, ou ne choisissez personne, et c’est repris de sa Machine.
-- Un fil peut aussi partir vers des personnes choisies : appuyez sur son étiquette, puis sur **Partager avec…**. Ce choix explicite peut inclure des e-mails de travail sensibles ou automatiques. Les fils perso et ceux entre collègues uniquement ne peuvent pas être partagés.
+- Les projets ajoutés au tableau par la suite sont également partagés. Ceux qui en sont retirés ne le sont plus.
+- Si vous retirez une personne ou ne choisissez personne, le partage est annulé sur sa Machine.
+- Pour partager un seul fil avec certaines personnes, touchez son étiquette, puis **Partager avec…**. Vous pouvez ainsi partager des e-mails professionnels sensibles ou automatisés, mais jamais des fils personnels ou réservés aux collègues.
 
-## Pas sûr ? Ça attend
+## En cas de doute, le partage attend
 
-Quand votre Machine n’est pas sûre, elle ne partage pas. Ces fils attendent sous **Partager ceux-ci ?**, groupés selon ce qu’ils sont (comme « Échanges de partenaires et de listings »), chaque groupe avec un choix suggéré :
+Si votre Machine hésite, elle ne partage rien. Les fils concernés apparaissent dans **Partager ceux-ci ?**, regroupés par type, par exemple « Échanges avec des partenaires et annonces », avec une suggestion pour chacun :
 
-- **Partager avec l’équipe** envoie à toute la Fleet.
-- **Partager avec…** envoie seulement aux coéquipiers que vous choisissez, par exemple un membre du conseil pour des discussions avec des investisseurs. Le reste de l’équipe ne le reçoit pas.
-- **Garder privé** le garde chez vous.
+- **Partager avec l’équipe** : tout le monde dans la Fleet.
+- **Partager avec…** : uniquement les collègues que vous choisissez, par exemple un membre du tableau pour des négociations avec des investisseurs.
+- **Garder privé** : le contenu reste visible par vous seul.
 
-Un seul appui décide pour tout un groupe. Ouvrez un groupe pour voir ses fils et décochez ceux que vous voulez décider à part.
+Une seule action permet de choisir pour tout un groupe. Ouvrez un groupe pour décocher les fils que vous souhaitez examiner un par un.
 
-Les discussions sur l’achat, la vente ou l’investissement dans une entreprise, et les sujets du conseil, comptent comme sensibles : elles n’attendent donc pas ici. Les listings, les intégrations et le reste du travail courant avec une entreprise partenaire sont du travail client.
+Les discussions sur l’achat, la vente ou l’investissement dans une entreprise, ainsi que les sujets du conseil d’administration, sont sensibles. Elles n’apparaissent donc pas ici. Les échanges courants avec une entreprise partenaire concernent des clients.
 
 ## Avant le premier partage
 
-Ouvrez **Fleet**, puis **Ce qui est partagé**. La liste montre les fils clients qui partiraient, par organisation. Appuyez sur **Garder privé** pour ceux que vous voulez, puis sur **Commencer**.
-
-Tant que vous n’avez pas commencé, votre Machine vous le rappelle tous les quelques jours, pendant vos heures de travail. Les admins voient qui n’a pas encore commencé.
+Votre premier partage est envoyé automatiquement une heure après que votre Machine vous en a informé. Pendant ce délai, ouvrez **Fleet**, puis **Ce qui est partagé** pour consulter, par organisation, les fils concernant des clients qui seraient partagés. Touchez **Garder privé** pour en exclure un, ou **Partager maintenant** pour l’envoyer tout de suite. Les admins voient qui n’a pas encore partagé.
 
 ## Ce qui est partagé
 
-**Fleet** › **Ce qui est partagé** montre tout au même endroit : le nombre par type, chaque fil partagé avec la raison de son envoi, ceux qui attendent sous **Partager ceux-ci ?**, et ce que vous gardez privé. **Paramètres** a un raccourci, tout comme l’étiquette de chaque fil. Touchez l’objet d’un fil pour le lire.
+**Fleet** › **Ce qui est partagé** affiche tout : le nombre d’éléments par type, chaque fil partagé et la raison du partage, ceux qui figurent dans **Partager ceux-ci ?**, ainsi que les éléments que vous gardez privés. Touchez un sujet pour le lire. **Paramètres** et l’étiquette de chaque fil renvoient également ici.
 
-Un nouveau fil client attend une heure avant de partir, pour vous laisser le temps de changer d’avis.
+Un nouveau fil concernant un client attend une heure avant d’être partagé, pour vous laisser le temps de changer d’avis.
 
-## Arrêter de partager un fil
+## Annuler le partage
 
-Appuyez sur l’étiquette **Équipe** d’un fil, puis sur **Ne plus partager**. Votre Machine prévient la Machine de chaque collègue, et chacune supprime le fil, ses pièces jointes et ses lignes dans la chronologie. Une Machine éteinte le fait à son retour. Quelqu’un l’a peut-être déjà lu.
+Touchez l’étiquette **Équipe** d’un fil, puis **Ne plus partager**. La Machine de chaque collègue supprime le fil, ses pièces jointes et les entrées correspondantes dans la chronologie, ou le fait dès qu’elle se reconnecte. Quelqu’un a peut-être déjà lu le contenu.
 
-**Garder privé** sur une personne, une organisation ou un projet retire tout le partage de la même façon.
+En touchant **Garder privé** sur une personne, une organisation ou un projet, vous annulez le partage de tout son contenu.
 
-Gardez privés deux fils avec la même entreprise et votre Machine vous demande une fois : toujours garder privés les fils de cette entreprise ?
+Si vous gardez privés deux fils concernant la même entreprise, votre Machine vous demande une fois si vous souhaitez toujours garder cette entreprise privée.
 
-## Qui le voit
+## Qui peut voir le contenu
 
-Uniquement les Machines de vos collègues. Tout est chiffré de bout en bout, scellé pour la Machine de chaque collègue. The Machine Network ne fait que transmettre et ne peut pas lire.
+Seules les Machines de vos collègues. Le contenu est chiffré de bout en bout. The Machine Network le transmet, mais ne peut pas le lire.
 
-## Arrivées et nouveaux appareils
+## Nouveaux membres et appareils
 
-Un admin fait entrer chaque personne dans la Fleet une fois. Ensuite, partager avec elle ne demande plus d’accord. La demande s’affiche dans **Tâches** pour chaque admin, et la première réponse vaut pour toute l’équipe. Les membres ne la reçoivent jamais.
+Un admin autorise chaque personne une seule fois. La demande apparaît dans **Tâches** pour tous les admins, et seule la première réponse est prise en compte. Ensuite, le partage ne nécessite aucune autre autorisation.
 
-D’ici là, le Graph et la Fleet de la nouvelle personne indiquent quels admins elle attend. **Les miens** et **Équipe** s’affichent quelques secondes après l’accord, sans recharger.
+En attendant, le Graph et la Fleet de la nouvelle personne indiquent quels admins doivent encore l’autoriser. **Les miens** et **Équipe** apparaissent quelques secondes après l’autorisation, sans actualiser la page.
 
-Une nouvelle Machine d’une personne déjà membre reçoit le Graph de l’équipe après 24 heures. Les admins la voient en attendant et peuvent appuyer sur **Pas la sienne** pour l’exclure.
+Une nouvelle Machine appartenant à une personne déjà membre reçoit le Graph de l’équipe après 24 heures. Pendant ce délai, les admins peuvent toucher **Pas à eux** pour empêcher le partage.
 
-## Quand quelqu’un part
+## Départ d’un membre
 
-La personne ne reçoit plus rien de nouveau à partir de ce moment. Ce qu’elle a partagé reste dans l’équipe. Un admin peut aussi **Retirer** quelqu’un, puis **Partager à nouveau** plus tard.
+À partir de ce moment, la personne ne reçoit plus rien de nouveau. Le contenu qu’elle a partagé reste accessible à l’équipe. Un admin peut aussi **Retirer** une personne, puis **Partager à nouveau** plus tard.
 
-## Le désactiver pour tout le monde
+## Désactiver le partage pour tout le monde
 
-Un admin peut désactiver **Partager le Graph dans cette Fleet** dans **Ce qui est partagé**. Tout le monde voit si c’est activé. Quand c’est désactivé, plus rien de nouveau ne part.
+Un admin désactive **Partager le Graph dans cette Fleet** dans **Ce qui est partagé**. Plus rien n’est partagé.
 
-**Désactiver** garde ce qui est déjà sur les Machines des collègues. **Désactiver et supprimer les données partagées** fait supprimer à chaque Machine ce qu’elle a reçu. Quand le partage revient, chaque personne vérifie d’abord à nouveau.
+**Désactiver** conserve les éléments déjà reçus par les collègues. **Désactiver et retirer les données partagées** les supprime de toutes les Machines. Lorsque le partage est réactivé, chaque personne doit d’abord examiner à nouveau les éléments.
 
-## Arrêter de partager votre propre travail
+## Arrêter de partager votre travail
 
-Désactivez vos connexions sous **Vos connexions**, sauf si la Fleet les exige. Ce qu’elles ont partagé est repris.
+Désactivez vos connexions dans **Vos connexions**, sauf si la Fleet les exige. Le contenu qu’elles ont partagé est retiré.
 
-Voir aussi [Fleets](fleet.md) et [Sécurité et confidentialité](security-and-privacy.md).
+Consultez aussi [Fleets](fleet.md) et [Sécurité et confidentialité](security-and-privacy.md).

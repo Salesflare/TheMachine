@@ -1,59 +1,61 @@
 ---
 title: WhatsApp
 area: connections
-summary: Je WhatsApp-chats, gelezen als gekoppeld apparaat. Antwoordt pas nadat je het goedkeurt.
+summary: Je WhatsApp-chats worden gelezen als op een gekoppeld apparaat. Antwoorden worden pas verstuurd nadat je ze hebt goedgekeurd.
 covers: connector:whatsapp
 code: onboarding.py, next_actions.py, whatsapp_images.py
 site: Show the QR code, Get a code, On your phone? Link with a code instead, Remove
 translated: 881c555219a98f0f
 ---
-## Wat het leest
+## Wat hij leest
 
-Je WhatsApp-chats, als gekoppeld apparaat van WhatsApp op je telefoon, zoals WhatsApp op een computer. Als je koppelt, stuurt WhatsApp ook je oudere chats, vaak jaren terug. Je Machine bewaart alles, en alleen berichten van de laatste 7 dagen worden to-do's.
+Je WhatsApp-chats, zoals op een gekoppeld apparaat van WhatsApp op je telefoon, net als WhatsApp op een computer. Wanneer je de koppeling maakt, stuurt WhatsApp ook je oudere chats door, vaak van jaren terug. Je Machine bewaart alles, maar alleen berichten van de afgelopen 7 dagen worden to-do's.
 
-Een foto, spraakbericht of bestand zonder bijschrift staat er als wat het is, zoals "Foto", met een icoontje. De eigen meldingen van WhatsApp, zoals die over versleuteling of over iemand die bij een groep komt, hebben geen tekst en worden weggelaten.
+Een foto, spraakbericht of bestand zonder bijschrift wordt getoond als wat het is, bijvoorbeeld als "Foto", met het bijbehorende pictogram. WhatsApp-meldingen, zoals de melding over versleuteling of dat iemand lid wordt van een groep, bevatten geen tekst en worden niet meegenomen.
 
 ## Foto’s lezen
 
-Staat uit tot je het aanzet. Open in **Koppelingen** WhatsApp, dan **Details**, en zet **Foto’s lezen** aan, en The Machine leest de foto’s in je werkchats: een bonnetje, een screenshot, een foto van een brief of een formulier. **Ook in privéchats** leest ook die in je privéchats. Een chat is werk of privé zoals delen het ziet, dus een chat met familie blijft privé.
+Deze functie staat uit totdat je die inschakelt. Open WhatsApp onder **Koppelingen** en vervolgens **Details**. Schakel **Foto’s lezen** in, dan leest The Machine foto's in je werkchats, zoals een bon, screenshot, foto van een brief of formulier. Met **Ook in privéchats** leest hij ook de foto's in je privéchats. Of een chat werk of privé is, hangt af van hoe die gedeeld wordt. Een chat met familie blijft dus privé.
 
-The Machine downloadt elke foto één keer en bewaart hem op je Machine zoals een bijlage van een e-mail: versleuteld als berichtbescherming aan staat, en gewist als het bericht verdwijnt. Zijn eigen model leest wat de foto toont en de tekst erin. Dat hoort bij het bericht, nooit als opdracht. JPEG, PNG en WebP tot 5 MB. Een eenmalige code op een foto wordt weggelaten.
+The Machine downloadt elke foto één keer en bewaart die op je Machine, net als een e-mailbijlage: versleuteld als berichtbeveiliging is ingeschakeld en verwijderd zodra het bijbehorende bericht verdwijnt. Het eigen model leest wat er op de foto staat en de tekst erin. Dat geldt als onderdeel van het bericht, nooit als instructies. JPEG, PNG en WebP tot 5 MB. Een eenmalige code op een foto wordt niet meegenomen.
 
-De to-do en het bericht tonen de foto. Tik erop om hem groot te zien.
+De to-do en het bericht tonen de foto. Tik erop om hem groter te bekijken.
 
-## Wat het kan versturen
+## Wat hij kan versturen
 
-Een tekst in een chat die al bestaat, pas nadat je het goedkeurt op de to-do. Een antwoord op het WhatsApp-bericht waar een to-do uit kwam, citeert dat bericht als er daarna nog meer gezegd is, of in een groep; op het concept staat **Als antwoord**.
+Een tekstbericht in een bestaande chat, maar alleen nadat je het via de to-do hebt goedgekeurd. Een antwoord op het WhatsApp-bericht waar een to-do vandaan komt, vermeldt dat bericht als er daarna nog meer is gezegd of als het om een groepschat gaat. In het concept staat **Als antwoord**.
 
-Kwam een to-do binnen via e-mail maar praat je met die persoon op WhatsApp, zeg dat dan in de chat van de to-do. The Machine vindt je bestaande chat met die persoon en zet het concept om naar WhatsApp, zodat je het kunt nakijken en versturen. Het begint nooit een nieuwe chat.
+Als een to-do via e-mail binnenkomt, maar je met die persoon via WhatsApp praat, zeg dat dan in de chat van de to-do. The Machine zoekt je bestaande chat met die persoon en schakelt het concept over naar WhatsApp, zodat je het kunt controleren en versturen. Hij begint nooit een nieuwe chat.
 
-WhatsApp biedt hier geen officiële manier voor. Lezen en af en toe een antwoord dat je goedkeurde, geeft vrijwel nooit problemen; massaal of automatisch versturen kan tot een blokkering van het account leiden.
+WhatsApp biedt hier geen officiële manier voor. Lezen en af en toe een goedgekeurd antwoord versturen veroorzaakt zeer waarschijnlijk geen problemen. Door massaal of automatisch berichten te versturen kan een account worden geblokkeerd.
 
 ## Koppelen
 
 Op een gehoste Machine:
 
-1. Open in het dashboard **Koppelingen**, dan **Chat**, en kies WhatsApp.
+1. Open in het dashboard **Koppelingen**, daarna **Chat**, en kies WhatsApp.
 2. Druk op **Toon de QR-code**.
-3. Open op je telefoon in WhatsApp Instellingen, Gekoppelde apparaten, Apparaat koppelen, en scan de QR-code.
-4. Binnen een minuut staat WhatsApp als gekoppeld. Je chatgeschiedenis blijft daarna binnenkomen, en de kaart telt de berichten zolang dat duurt.
-   Duurt het koppelen te lang, dan zegt hij dat na een paar minuten. Druk op **Opnieuw proberen** om verder te gaan waar het stopte.
+3. Open op je telefoon WhatsApp, ga naar Instellingen, Gekoppelde apparaten, Een apparaat koppelen en scan de QR-code.
+4. Binnen een minuut wordt WhatsApp als gekoppeld weergegeven. Daarna blijft je chatgeschiedenis binnenkomen. De kaart telt ondertussen de berichten.
+   Duurt het koppelen te lang, dan krijg je na een paar minuten een melding. Druk op **Opnieuw proberen** om verder te gaan waar het proces is gestopt.
 
-Stel je alles in op je telefoon, zonder tweede scherm om van te scannen? Open **Op je telefoon? Koppel dan met een code**, vul je nummer in en druk op **Vraag een code**. WhatsApp vraagt dan om die code.
+Stel je dit in op je telefoon en heb je geen tweede scherm om de code mee te scannen? Open **Op je telefoon? Koppel met een code**, voer je nummer in en druk op **Code ophalen**. WhatsApp vraagt daarna om die code.
 
-Voer op je eigen computer `assistant connect whatsapp` uit en scan de code die in de terminal verschijnt. De eerste keer biedt het aan om de WhatsApp-koppeling te installeren, een vastgezette build gecontroleerd met de checksum ([broncode](https://github.com/Salesflare/wacli)).
+Op je eigen computer: open **Koppelingen**, daarna **Chat**, kies WhatsApp, voer je telefoonnummer met landcode in en druk op **Verbinden**. Er verschijnt een code. Open op je telefoon WhatsApp, ga naar Instellingen, Gekoppelde apparaten, Een apparaat koppelen, kies **In plaats daarvan koppelen met telefoonnummer** en voer de code in.
 
-Onder Gekoppelde apparaten staat hij als The Machine. Een Machine die eerder gekoppeld is, houdt daar zijn oude naam tot je hem opnieuw koppelt.
+Je kunt ook `assistant connect whatsapp` uitvoeren en de code scannen die in de terminal verschijnt. De eerste keer biedt The Machine aan de WhatsApp-connector te installeren, een vastgezette build die aan de hand van de checksum is gecontroleerd ([bron](https://github.com/Salesflare/wacli)).
 
-## Foto's
+Bij Gekoppelde apparaten wordt hij weergegeven als The Machine. Een Machine die je eerder hebt gekoppeld, houdt daar zijn oude naam totdat je hem opnieuw koppelt.
 
-The Machine vraagt WhatsApp om de profielfoto's van mensen in je Graph die er geen hebben, maximaal 50 per dag, via de sync die WhatsApp up-to-date houdt. Er wordt niets naar hen verstuurd. Wie de eigen foto voor je verbergt, blijft zonder foto.
+## Foto’s
+
+The Machine vraagt WhatsApp om profielfoto's van mensen in je Graph die er nog geen hebben, met een maximum van 50 per dag. Dit gebeurt via de synchronisatie die WhatsApp up-to-date houdt. Er wordt niets naar die mensen gestuurd. Als iemand zijn foto voor jou verbergt, blijft diegene er geen hebben.
 
 ## Verwijderen
 
-- Op een gehoste Machine: druk op **Verwijderen** ernaast op je setuppagina. Je Machine ontkoppelt zichzelf en verwijdert wat hij voor WhatsApp bewaarde.
-- Op je eigen computer: **Koppelingen**, open WhatsApp, **Details**, dan **Ontkoppelen**. Ontkoppel hem daarna ook op je telefoon.
+- Op een gehoste Machine: druk op **Verwijderen** naast WhatsApp op je installatiepagina. Je Machine verbreekt de koppeling en verwijdert alles wat hij voor WhatsApp heeft bewaard.
+- Op je eigen computer: open WhatsApp onder **Koppelingen**, ga naar **Details** en kies **Ontkoppelen**. Verbreek daarna ook de koppeling op je telefoon.
 
 ## Ontkoppelen in WhatsApp
 
-Open op je telefoon in WhatsApp Instellingen, Gekoppelde apparaten, tik op je Machine en log uit.
+Open WhatsApp op je telefoon, ga naar Instellingen, Gekoppelde apparaten, tik op je Machine en log uit.

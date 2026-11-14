@@ -1,59 +1,61 @@
 ---
 title: WhatsApp
 area: connections
-summary: Vos discussions WhatsApp, lues comme un appareil associé. Il ne répond qu’après votre accord.
+summary: Vos discussions WhatsApp, lues comme sur un appareil connecté. Les réponses ne sont envoyées qu’après votre approbation.
 covers: connector:whatsapp
 code: onboarding.py, next_actions.py, whatsapp_images.py
 site: Show the QR code, Get a code, On your phone? Link with a code instead, Remove
 translated: 881c555219a98f0f
 ---
-## Ce qu’il lit
+## Ce que The Machine lit
 
-Vos discussions WhatsApp, comme un appareil associé au WhatsApp de votre téléphone, comme WhatsApp sur un ordinateur. À la connexion, WhatsApp envoie aussi vos anciennes discussions, souvent sur des années. Votre Machine garde tout, et seuls les messages des 7 derniers jours deviennent des tâches.
+Vos discussions WhatsApp, comme sur un appareil connecté à WhatsApp sur votre téléphone, à l’image de WhatsApp sur un ordinateur. Quand vous connectez WhatsApp, l’application envoie aussi vos anciennes discussions, parfois plusieurs années d’historique. Votre Machine les conserve toutes, mais seules les 7 derniers jours de messages deviennent des tâches.
 
-Une photo, un message vocal ou un fichier sans légende apparaît tel quel, par exemple « Photo », avec son icône. Les notifications de WhatsApp lui-même, comme l’avis de chiffrement ou l’arrivée de quelqu’un dans un groupe, n’ont pas de texte et sont exclues.
+Une photo, un message vocal ou un fichier sans légende apparaît sous la forme de son contenu, par exemple « Photo », avec son icône. Les notifications de WhatsApp, comme celle sur le chiffrement ou l’arrivée d’une personne dans un groupe, n’ont pas de texte et sont ignorées.
 
 ## Lire les photos
 
-Désactivé tant que vous ne l’activez pas. Dans **Connexions**, ouvrez WhatsApp, puis **Détails**, et activez **Lire les photos** et The Machine lit les photos de vos discussions pro : un reçu, une capture d’écran, la photo d’une lettre ou d’un formulaire. **Aussi dans les discussions perso** lit aussi celles de vos discussions perso. Une discussion est pro ou perso comme le partage la voit : une discussion en famille reste perso.
+Cette option est désactivée tant que vous ne l’activez pas. Dans **Connexions**, ouvrez WhatsApp, puis **Détails**, et activez **Lire les photos**. The Machine lira alors les photos de vos discussions professionnelles : un reçu, une capture d’écran, la photo d’une lettre ou d’un formulaire. **Aussi dans les discussions perso** permet aussi de lire les photos de vos discussions personnelles. Le partage détermine si une discussion est professionnelle ou personnelle. Une discussion avec votre famille reste donc personnelle.
 
-The Machine télécharge chaque photo une fois et la garde sur votre Machine comme une pièce jointe d’e-mail : chiffrée quand la protection des messages est active, et supprimée quand son message disparaît. Son propre modèle lit ce que montre la photo et le texte qu’elle contient. Cela fait partie du message, jamais des instructions. JPEG, PNG et WebP jusqu’à 5 Mo. Un code à usage unique sur une photo est laissé de côté.
+The Machine télécharge chaque photo une seule fois et la conserve sur votre Machine comme une pièce jointe à un e-mail : elle est chiffrée si la protection des messages est activée, et supprimée quand le message l’est. Son propre modèle lit le contenu de la photo et le texte qu’elle contient. Ces éléments font partie du message et ne sont jamais considérés comme des instructions. Formats JPEG, PNG et WebP, jusqu’à 5 MB. Les codes à usage unique présents sur une photo sont ignorés.
 
-La tâche et le message montrent la photo. Touchez-la pour la voir en grand.
+La tâche et le message affichent la photo. Touchez-la pour l’agrandir.
 
-## Ce qu’il peut envoyer
+## Ce que The Machine peut envoyer
 
-Un texte dans une discussion qui existe déjà, seulement après votre accord sur la tâche. Une réponse au message WhatsApp d’où vient une tâche cite ce message quand d’autres messages ont suivi, ou dans un groupe ; le brouillon indique **En réponse**.
+Un texte dans une discussion existante, uniquement après votre approbation dans la tâche. Une réponse au message WhatsApp à l’origine d’une tâche cite ce message si quelqu’un a répondu entre-temps ou s’il s’agit d’un groupe. Le brouillon porte la mention **En réponse**.
 
-Si une tâche est arrivée par e-mail mais que vous parlez à cette personne sur WhatsApp, dites-le dans le chat de la tâche. The Machine trouve votre discussion existante avec elle et passe le brouillon sur WhatsApp, pour que vous le vérifiiez et l’envoyiez. Il ne lance jamais de nouvelle discussion.
+Si une tâche provient d’un e-mail, mais que vous échangez avec cette personne sur WhatsApp, dites-le dans le chat de la tâche. The Machine retrouve votre discussion existante avec cette personne et bascule le brouillon sur WhatsApp, afin que vous puissiez le vérifier et l’envoyer. Elle ne crée jamais de nouvelle discussion.
 
-WhatsApp ne propose pas de moyen officiel pour cela. Lire et envoyer de temps en temps une réponse que vous avez validée ne pose presque jamais de problème ; un envoi en masse ou automatisé peut faire bloquer un compte.
+WhatsApp ne propose pas de méthode officielle pour cela. La lecture des messages et l’envoi occasionnel d’une réponse que vous avez approuvée ne devraient pas poser de problème. L’envoi massif ou automatisé peut entraîner le blocage d’un compte.
 
-## Le connecter
+## Connecter WhatsApp
 
 Sur une Machine hébergée :
 
 1. Dans le tableau de bord, ouvrez **Connexions**, puis **Chat**, et choisissez WhatsApp.
 2. Appuyez sur **Afficher le code QR**.
-3. Sur votre téléphone, dans WhatsApp, ouvrez Paramètres, Appareils connectés, Connecter un appareil, et scannez le code QR.
-4. WhatsApp apparaît comme connecté en moins d’une minute. Votre historique de discussions continue d’arriver ensuite, et sa carte compte les messages pendant ce temps.
-   Si la connexion prend trop de temps, elle le dit après quelques minutes. Appuyez sur **Réessayer** pour reprendre là où elle s’est arrêtée.
+3. Sur votre téléphone, ouvrez les paramètres de WhatsApp, puis Appareils connectés, Connecter un appareil, et scannez le code QR.
+4. WhatsApp apparaît comme connecté en moins d’une minute. L’historique de vos discussions continue ensuite d’arriver, et la carte affiche le nombre de messages reçus pendant ce temps.
+   Si la connexion prend trop de temps, un message vous l’indique après quelques minutes. Appuyez sur **Réessayer** pour reprendre là où vous en étiez.
 
-Vous configurez sur votre téléphone, sans second écran pour scanner ? Ouvrez **Sur votre téléphone ? Associez avec un code**, saisissez votre numéro et appuyez sur **Obtenir un code**. WhatsApp vous demande ensuite ce code.
+Vous faites la configuration sur votre téléphone, sans deuxième écran pour scanner le code ? Ouvrez **Sur ton téléphone ? Connecte-toi plutôt avec un code**, saisissez votre numéro et appuyez sur **Obtenir un code**. WhatsApp vous demandera ensuite ce code.
 
-Sur votre propre ordinateur, lancez `assistant connect whatsapp` et scannez le code affiché dans le terminal. La première fois, il propose d’installer le connecteur WhatsApp, une version épinglée vérifiée avec sa somme de contrôle ([source](https://github.com/Salesflare/wacli)).
+Sur votre propre ordinateur : ouvrez **Connexions**, puis **Chat**, choisissez WhatsApp, saisissez votre numéro de téléphone avec son indicatif pays et appuyez sur **Se connecter**. Un code s’affiche. Sur votre téléphone, ouvrez les paramètres de WhatsApp, puis Appareils connectés, Connecter un appareil, **Lier avec un numéro de téléphone**, et saisissez le code.
 
-Dans Appareils connectés, elle apparaît sous le nom The Machine. Une Machine connectée avant garde son ancien nom jusqu’à ce que vous la connectiez à nouveau.
+Vous pouvez aussi exécuter `assistant connect whatsapp` et scanner le code affiché dans le terminal. La première fois, The Machine vous propose d’installer le connecteur WhatsApp, une version figée dont la somme de contrôle a été vérifiée ([source](https://github.com/Salesflare/wacli)).
 
-## Photos
+Dans Appareils connectés, l’appareil apparaît sous le nom The Machine. Une Machine connectée auparavant conserve son ancien nom jusqu’à ce que vous la reconnectiez.
 
-The Machine demande à WhatsApp les photos de profil des personnes de votre graph qui n’en ont pas, 50 par jour au maximum, via la synchro qui tient WhatsApp à jour. Rien ne leur est envoyé. Une personne qui vous cache sa photo reste sans photo.
+## Photos de profil
 
-## Le retirer
+The Machine demande à WhatsApp les photos de profil des personnes de votre Graph qui n’en ont pas, dans le cadre de la synchronisation qui actualise WhatsApp, à raison de 50 par jour maximum. Aucun message ne leur est envoyé. Les personnes qui vous cachent leur photo n’en auront pas.
 
-- Sur une Machine hébergée : appuyez sur **Retirer** à côté sur votre page de configuration. Votre Machine se dissocie et supprime ce qu’elle gardait pour WhatsApp.
-- Sur votre propre ordinateur : **Connexions**, ouvrez WhatsApp, **Détails**, puis **Déconnecter**. Puis dissociez-le aussi sur votre téléphone.
+## Supprimer la connexion
 
-## Le dissocier dans WhatsApp
+- Sur une Machine hébergée : appuyez sur **Retirer** à côté de WhatsApp, sur la page de configuration. Votre Machine se déconnecte et supprime les données WhatsApp qu’elle conservait.
+- Sur votre propre ordinateur : ouvrez **Connexions**, puis WhatsApp et **Détails**, et appuyez sur **Déconnecter**. Déconnectez aussi l’appareil depuis votre téléphone.
 
-Sur votre téléphone, dans WhatsApp, ouvrez Paramètres, Appareils connectés, appuyez sur votre Machine et déconnectez-vous.
+## Déconnecter l’appareil dans WhatsApp
+
+Sur votre téléphone, ouvrez les paramètres de WhatsApp, puis Appareils connectés. Touchez votre Machine et déconnectez-la.

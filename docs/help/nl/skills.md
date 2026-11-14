@@ -1,50 +1,48 @@
 ---
 title: Skills
 area: settings
-summary: Handleidingen die je Machine volgt. Schrijf ze zelf, importeer ze uit Claude of ChatGPT, of vind er een op ClawHub.
+summary: Handleidingen die je Machine volgt. Schrijf er zelf een, importeer ze vanuit Claude of ChatGPT, of zoek er een op ClawHub.
 covers: settings:skills
 code: skills.py, dashboard.html
 order: 4
 translated: 98fe851d553ed3dc
 ---
-Een skill vertelt je Machine hoe hij iets doet, zoals "vragen over prijzen beantwoorden". Het zijn alleen instructies: een skill verandert nooit wat je Machine mag doen.
+Een skill leert je Machine hoe hij een bepaald soort taak uitvoert, zoals ‘vragen over prijzen beantwoorden’. Het zijn alleen instructies: ze veranderen nooit wat je Machine mag doen.
 
-## Er zelf een schrijven
+## Zelf een skill schrijven
 
-Druk in **Instellingen**, **Skills** op **Nieuwe skill** of **Begin met een voorbeeld**. Geef hem een **Naam**, **Wanneer je het gebruikt** en de **Instructies**, en druk dan op **Opslaan**.
+Ga naar **Instellingen** en **Skills**, en klik op **Nieuwe skill** of **Begin met een voorbeeld**. Vul **Naam**, **Wanneer je het gebruikt** en **Instructies** in en klik op **Opslaan**.
 
-## Wanneer hij er een gebruikt
+## Wanneer een skill wordt gebruikt
 
-Elke to-do die je Machine voorbereidt krijgt de skill die erbij past, zonder dat je het vraagt: een met de naam van het bord, het project of de titel, volledig. Je andere skills staan erbij, dus ook een voor dat soort werk, zoals een antwoord in een bekend soort thread of een CRM-update, volgt hij.
+Elke to-do die je Machine voorbereidt, krijgt automatisch de skill die erbij past. Een skill met dezelfde naam als het bord, project of de titel wordt volledig toegepast. Je andere skills worden er ook bij vermeld. Zo worden skills voor dat soort werk, zoals een antwoord in een bekend soort gesprek of een update van een CRM, ook gevolgd.
 
 ## Importeren
 
-Druk op **Importeren**:
+Klik op **Importeren**:
 
-- **Van Claude** of **Van ChatGPT**, dan **Zoek mijn skills**. Hij zoekt in dat account, in de browser van je Machine.
-- Of breng er zelf een mee: **Upload .skill of .zip**, **Upload een map** of **Plak een SKILL.md**.
+- Kies **Van Claude** of **Van ChatGPT** en klik daarna op **Zoek mijn skills**. De skill wordt gezocht in dat account, in de browser van je Machine.
+- Je kunt ook zelf een skill toevoegen: **Upload .skill of .zip**, **Upload een map** of **Plak een SKILL.md**.
 
-Kies de skills die je wilt en druk op **Selectie importeren**. Alleen instructies komen binnen; scripts nooit.
+Selecteer de skills die je wilt en klik op **Selectie importeren**. Alleen de instructies worden geïmporteerd, nooit scripts.
 
 ## Zoeken op ClawHub
 
-Skills die andere mensen publiceren. Ze komen van derden: lees er een voordat je hem installeert.
+Zoek naar skills die anderen publiceren. Lees een skill voordat je hem installeert: ze zijn door anderen gemaakt, niet door The Machine.
 
-## Uit je notities
+## Vanuit je notities
 
-Gaan veel notities over één soort taak, dan stelt een to-do een skill voor. Hij kijkt eerst naar je skills:
+Als veel van je notities over hetzelfde soort taak gaan, stelt een to-do een skill voor. Eerst worden je bestaande skills gecontroleerd:
 
-- Er is er al een die dat doet: **<skill> bijwerken** toont de skill herschreven met wat de notities leren, voor en na, met de wijzigingen gemarkeerd. Alleen **Skill bijwerken** daar wijzigt hem, en alleen die skill.
-- Er is er een die verwant is maar apart: de to-do zegt in één regel hoe, en biedt toch **Skill maken** aan.
+- Een skill doet dat werk al: **Skill bijwerken <skill>** toont die skill met wat de notities toevoegen en markeert de wijzigingen. Alleen **Skill bijwerken** past de skill aan.
+- Een skill is verwant, maar doet iets anders: de to-do legt in één regel uit hoe dat zit en biedt ook **Skill maken** aan.
 
-**Niet nu** laat de notities zoals ze zijn. Skills die je Machine voorstelt in Instellingen > Skills krijgen dezelfde controle.
+Met **Niet nu** blijven de notities zoals ze zijn. Skills die je Machine voorstelt in **Instellingen > Skills** worden op dezelfde manier gecontroleerd.
 
 ## Vanuit een to-do
 
-Vraag in een to-do om een skill, en je Machine schrijft hem daar. Open **Skill lezen** in de to-do en druk dan op **Skill maken** (of **Skill bijwerken** voor een die je al hebt). Daarvoor wordt niets geïnstalleerd, en daarna is de to-do klaar. Zet je hem weg in Instellingen > Skills, dan toont de to-do **Skill weggezet** en blijft hij open tot je hem sluit.
+Vraag in een to-do om een skill en je Machine schrijft die daar. Klik op **Skill lezen** en daarna op **Skill maken** (of **Skill bijwerken** als je er al een hebt). Er wordt niets geïnstalleerd voordat je dat doet. Heb je de skill in **Instellingen > Skills** afgewezen? Dan toont de to-do **Skill weggezet** en blijft hij open totdat je hem sluit.
 
-## Er een delen
+## Een skill delen
 
-Deel een skill met een vriend of teamgenoot. Die leest hem en kiest of hij geïnstalleerd wordt. Latere wijzigingen gaan alleen mee als je opnieuw deelt.
-
-Meer in de [gids over skills](https://github.com/Salesflare/TheMachine/blob/main/docs/skills.md).
+Deel een skill met een vriend of teamgenoot. Die kan de skill lezen en zelf kiezen of hij hem installeert. Latere wijzigingen krijgen ze alleen als je de skill opnieuw deelt.

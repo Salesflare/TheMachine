@@ -1,7 +1,7 @@
 ---
 title: WhatsApp
 area: connections
-summary: Tus chats de WhatsApp, leídos como dispositivo vinculado. Solo responde después de que lo apruebes.
+summary: Tus chats de WhatsApp, leídos desde un dispositivo vinculado. Las respuestas solo se envían cuando las apruebas.
 covers: connector:whatsapp
 code: onboarding.py, next_actions.py, whatsapp_images.py
 site: Show the QR code, Get a code, On your phone? Link with a code instead, Remove
@@ -9,51 +9,53 @@ translated: 881c555219a98f0f
 ---
 ## Qué lee
 
-Tus chats de WhatsApp, como dispositivo vinculado al WhatsApp de tu teléfono, igual que WhatsApp en un ordenador. Al conectar, WhatsApp también envía tus chats antiguos, a menudo de años. Tu Machine lo guarda todo, y solo los mensajes de los últimos 7 días se convierten en tareas.
+Tus chats de WhatsApp, como si WhatsApp de tu teléfono estuviera vinculado a otro dispositivo, igual que WhatsApp en una computadora. Al conectarlo, WhatsApp también envía tus chats antiguos, a menudo de varios años. Tu Machine conserva todo, pero solo los mensajes de los últimos 7 días se convierten en tareas.
 
-Una foto, un mensaje de voz o un archivo sin texto aparece como lo que es, por ejemplo "Foto", con su icono. Los avisos propios de WhatsApp, como el aviso de cifrado o que alguien se une a un grupo, no tienen texto y se dejan fuera.
+Las fotos, los mensajes de voz y los archivos sin texto aparecen como lo que son, por ejemplo, «Foto», con su icono. Se omiten los avisos de WhatsApp que no tienen texto, como el aviso de cifrado o cuando alguien se une a un grupo.
 
 ## Leer fotos
 
-Desactivado hasta que lo actives. En **Conexiones**, abre WhatsApp, luego **Detalles**, y activa **Leer fotos** y The Machine lee las fotos de tus chats de trabajo: un recibo, una captura, la foto de una carta o de un formulario. **También en chats personales** lee también las de tus chats personales. Un chat es de trabajo o personal según lo ve el uso compartido, así que un chat con la familia sigue siendo personal.
+Esta opción está desactivada hasta que la actives. En **Conexiones**, abre WhatsApp y luego **Detalles**. Activa **Leer fotos** para que The Machine lea las fotos de tus chats de trabajo: un recibo, una captura de pantalla, la foto de una carta o de un formulario. **También en chats personales** permite leer también las fotos de tus chats personales. Los chats se consideran de trabajo o personales según cómo se comparten, así que un chat con tu familia sigue siendo personal.
 
-The Machine descarga cada foto una vez y la guarda en tu Machine como un adjunto de correo: cifrada cuando la protección de mensajes está activa, y borrada cuando su mensaje desaparece. Su propio modelo lee lo que muestra la foto y el texto que tiene. Eso cuenta como parte del mensaje, nunca como instrucciones. JPEG, PNG y WebP de hasta 5 MB. Un código de un solo uso en una foto se omite.
+The Machine descarga cada foto una sola vez y la guarda en tu Machine como si fuera un archivo adjunto de correo: cifrada cuando la protección de mensajes está activada y eliminada cuando se borra su mensaje. El modelo de The Machine lee lo que aparece en la foto y el texto que contiene. Eso se considera parte del mensaje, nunca instrucciones. Se admiten archivos JPEG, PNG y WebP de hasta 5 MB. Se omiten los códigos de un solo uso que aparezcan en una foto.
 
-La tarea y el mensaje muestran la foto. Tócala para verla en grande.
+La tarea y el mensaje muestran la foto. Tócala para verla en tamaño grande.
 
 ## Qué puede enviar
 
-Un texto en un chat que ya existe, solo después de que lo apruebes en la tarea. Una respuesta al mensaje de WhatsApp del que salió una tarea cita ese mensaje cuando se escribió más después, o en un grupo; el borrador dice **Como respuesta**.
+Puede enviar un texto a un chat que ya exista, pero solo después de que lo apruebes en la tarea. Si una tarea viene de un mensaje de WhatsApp, la respuesta cita ese mensaje cuando alguien respondió después o cuando se trata de un grupo. El borrador indica **Como respuesta**.
 
-Si una tarea llegó por correo pero con esa persona hablas por WhatsApp, dilo en el chat de la tarea. The Machine encuentra tu chat con ella y pasa el borrador a WhatsApp, para que lo revises y lo envíes. Nunca empieza un chat nuevo.
+Si una tarea llegó por correo electrónico, pero hablas con esa persona por WhatsApp, dilo en el chat de la tarea. The Machine encuentra el chat que ya tienes con esa persona y cambia el borrador a WhatsApp para que lo revises y lo envíes. Nunca inicia un chat nuevo.
 
-WhatsApp no ofrece una forma oficial de hacerlo. Leer y enviar de vez en cuando una respuesta que aprobaste casi nunca da problemas; enviar en masa o de forma automática puede hacer que bloqueen una cuenta.
+WhatsApp no ofrece una forma oficial de hacerlo. Es muy poco probable que leer mensajes y enviar alguna respuesta que hayas aprobado cause problemas; los envíos masivos o automatizados pueden hacer que bloqueen una cuenta.
 
-## Conéctalo
+## Conectarlo
 
 En una Machine alojada:
 
-1. En el panel, abre **Conexiones**, luego **Chat**, y elige WhatsApp.
+1. En el panel, abre **Conexiones**, luego **Chat** y elige WhatsApp.
 2. Pulsa **Mostrar el código QR**.
-3. En tu teléfono, en WhatsApp, abre Ajustes, Dispositivos vinculados, Vincular un dispositivo, y escanea el código QR.
-4. WhatsApp aparece como conectado en menos de un minuto. Tu historial de chats sigue llegando después, y su tarjeta cuenta los mensajes mientras llegan.
-   Si la conexión tarda demasiado, lo dice después de unos minutos. Pulsa **Reintentar** para seguir donde se quedó.
+3. En tu teléfono, abre WhatsApp, ve a Ajustes, Dispositivos vinculados, Vincular un dispositivo y escanea el código QR.
+4. WhatsApp aparecerá como conectado en menos de un minuto. Después, seguirá llegando tu historial de chats, y la tarjeta irá contando los mensajes mientras tanto.
+   Si la conexión tarda demasiado, aparecerá un aviso al cabo de unos minutos. Pulsa **Reintentar** para continuar donde se quedó.
 
-¿Lo configuras en el teléfono, sin una segunda pantalla desde la que escanear? Abre **¿En tu teléfono? Vincula con un código**, introduce tu número y pulsa **Obtener un código**. WhatsApp te pide entonces ese código.
+¿Estás configurándolo en tu teléfono y no tienes otra pantalla para escanear el código? Abre **¿En tu teléfono? Vincula con un código**, introduce tu número y pulsa **Obtener un código**. WhatsApp te pedirá ese código.
 
-En tu propio ordenador, ejecuta `assistant connect whatsapp` y escanea el código que muestra en el terminal. La primera vez, ofrece instalar el conector de WhatsApp, una versión fijada comprobada con su checksum ([código](https://github.com/Salesflare/wacli)).
+En tu propia computadora: abre **Conexiones**, luego **Chat**, elige WhatsApp, introduce tu número de teléfono con el código de país y pulsa **Conectar**. Aparecerá un código. En tu teléfono, abre WhatsApp, ve a Ajustes, Dispositivos vinculados, Vincular un dispositivo, luego **Vincular con el número de teléfono** e introduce el código.
 
-En Dispositivos vinculados aparece como The Machine. Una Machine vinculada antes conserva allí su nombre anterior hasta que la vuelvas a vincular.
+O ejecuta `assistant connect whatsapp` y escanea el código que aparece en la terminal. La primera vez, se te ofrecerá instalar el conector de WhatsApp, una versión fijada cuya suma de comprobación se ha verificado ([código fuente](https://github.com/Salesflare/wacli)).
 
-## Fotos
+En Dispositivos vinculados, aparecerá como The Machine. Si ya habías vinculado una Machine, conservará el nombre anterior hasta que la vuelvas a vincular.
 
-The Machine pide a WhatsApp las fotos de perfil de las personas de tu Graph que no tienen, como mucho 50 al día, a través de la sincronización que mantiene WhatsApp al día. No se les envía nada. Alguien que te oculta su foto se queda sin ella.
+## Fotos de perfil
 
-## Quítalo
+The Machine solicita a WhatsApp las fotos de perfil de las personas de tu Graph que no tienen una, hasta un máximo de 50 al día, mediante la sincronización que mantiene WhatsApp actualizado. No se les envía nada. Si alguien oculta su foto, seguirá sin aparecerte.
 
-- En una Machine alojada: pulsa **Quitar** junto a él en tu página de configuración. Tu Machine se desvincula y elimina lo que guardaba para WhatsApp.
-- En tu propio ordenador: **Conexiones**, abre WhatsApp, **Detalles** y luego **Desconectar**. Después desvincúlalo también en tu teléfono.
+## Quitarla
 
-## Desvincúlalo en WhatsApp
+- En una Machine alojada: pulsa **Quitar** junto a ella en la página de configuración. Tu Machine se desvinculará y eliminará todo lo que guardó de WhatsApp.
+- En tu propia computadora: abre WhatsApp en **Conexiones**, pulsa **Detalles** y luego **Desconectar**. Después, desvincúlala también en tu teléfono.
 
-En tu teléfono, en WhatsApp, abre Ajustes, Dispositivos vinculados, toca tu Machine y cierra la sesión.
+## Desvincularla en WhatsApp
+
+En tu teléfono, abre WhatsApp, ve a Ajustes, Dispositivos vinculados, toca tu Machine y cierra sesión.

@@ -7,69 +7,71 @@ code: dashboard.html
 order: 1
 translated: 00e42f9aeb395d21
 ---
-Abra **Configurações** pela engrenagem no topo. As abas:
+Abra **Configurações** pela engrenagem no topo. Estas são as abas:
 
-- **Conta**: **Seus endereços**, os que contam como você, com a origem de cada um, e **Sair**. Em uma Machine hospedada, também seu plano, faturas, Machine, Fleet, endereço, amigos, login e dados, cada um com seu botão. Veja [Planos e cobrança](plans-and-billing.md). **Sair** fica no topo, **Cancelar plano** e **Excluir conta** bem no final. Em uma Machine no seu próprio computador, pareada com o Network: sua Fleet, usuário, amigos e login, cada um com um link que abre essa parte da sua conta (entre por lá), e **Excluir conta** no final. Ainda não pareada: **Entrar na Network**, no topo.
-- **Geral**: idioma e região, entrada por voz, este dispositivo, o navegador da sua Machine, seu Fleet, exportar e importar, e a versão que ela roda. Sem a aba Conta, **Entrar na Network** fica no final.
-- **Segurança**: Padrão ou Cuidadoso, e as configurações que cada um define. Veja [Níveis de segurança](security-levels.md). Também **Acesso de suporte**, enquanto está ativo: veja [Obter suporte](get-support.md#support-access).
-- **Atividade**: tudo o que The Machine fez por você, o mais recente primeiro. Veja [Atividade](activity.md).
-- **Notificações**: o que chega até você e onde, e o seu horário de trabalho. Veja [Notificações](notifications.md) e [Horário de trabalho](work-hours.md).
-- **Escrita**: assinaturas e como você escreve. Veja [Escrita](writing.md).
-- **Habilidades**: instruções que a sua Machine segue. Veja [Habilidades](skills.md).
-- **Apps**: os apps da The Machine para celular e computador e depois Claude, ChatGPT e outras IAs que você conectou, e o que cada uma pode fazer. Veja [O app para celular](mobile-app.md) e [Conectar outras IAs](ai-connections.md).
-- **Modelo**: o que responde por você, e os limites dele. Veja [Modelo](model.md). Também **Codex e Claude Code**: veja [Passar para o Claude Code ou o Codex](hand-to-agent.md). E **Busca por significado**, mais abaixo.
+- **Conta**: **Seus endereços** (os que contam como seus) e **Sair**, no topo. Em uma Machine hospedada, também ficam aqui seu plano, faturas, Fleet, amigos, acesso e dados, com **Cancelar plano** e **Excluir conta** no fim da página. Em uma Machine no seu próprio computador, pareada com a Network: seu Fleet, nome de usuário, amigos e acesso, cada um com um link que abre essa parte da sua conta (faça login por lá), e **Excluir conta** no fim da página. Se ainda não estiver pareada: **Entrar na Network**, no topo. Veja [Planos e cobrança](plans-and-billing.md).
+- **Geral**: idioma e região, este dispositivo, entrada por voz, o navegador da sua Machine, seu Fleet, exportação e importação, e a versão em execução. Se não houver a aba Conta, **Entrar na Network** aparece no fim.
+- **Segurança**: Padrão ou Cuidadoso. Veja [Níveis de segurança](security-levels.md). Também há **Acesso de suporte** enquanto estiver ativado: veja [Como receber suporte](get-support.md#support-access).
+- **Atividade**: tudo o que The Machine fez por você, começando pelo mais recente. Veja [Atividade](activity.md).
+- **Notificações**: o que você recebe e onde, além do seu horário de trabalho. Veja [Notificações](notifications.md) e [Horário de trabalho](work-hours.md).
+- **Escrita**: assinaturas e seu jeito de escrever. Veja [Escrita](writing.md).
+- **Habilidades**: instruções que sua Machine segue. Veja [Habilidades](skills.md).
+- **Apps**: os apps de The Machine para seu celular e computador, depois Claude, ChatGPT e outras IAs que você conectou, e o que cada uma pode fazer. Veja [O app para celular](mobile-app.md) e [Conectar outras IAs](ai-connections.md).
+- **Modelo**: a IA que lê e escreve rascunhos para você, e os limites dela. Veja [Modelo](model.md). Também há **Codex e Claude Code**: veja [Delegar para Claude Code ou Codex](hand-to-agent.md). E **Busca por significado**, abaixo.
 
-Uma aba sem nada para mostrar fica escondida.
+Uma aba sem conteúdo fica oculta.
 
 ## Geral
 
-- **Idioma e região**: a sua **Região** define como as datas aparecem (Oct 24 ou 24 Oct) e o relógio de costume. **Formato de hora** escolhe 12 horas (2:05 PM) ou 24 horas (14:05). Tarefas, Telegram, o resumo e as mensagens do Fleet seguem essa escolha. Uma Machine hospedada começa com o país do fuso horário que você escolheu ao criar a conta. Horários como "há 3 horas" e números também seguem essa escolha.
-- **Idioma**: English, Nederlands, Français, Deutsch, Español, Italiano ou Português (Brasil). Na primeira vez que você abre o painel, ele usa o idioma do seu navegador, se for um desses (português de Portugal recebe português do Brasil por enquanto). O painel, as datas, as mensagens do Telegram, as notificações, o resumo semanal e as notas e títulos de tarefas que a sua Machine escreve para você seguem o idioma a partir do momento em que você escolhe. O que já foi escrito fica como estava. As perguntas do Fleet e da família aparecem no idioma de cada pessoa. Rascunhos para outras pessoas ficam no idioma da conversa. A Ajuda e as páginas dela também seguem essa escolha.
-- **Este dispositivo**: o app (**Instalar app**), **Notificações** com **Enviar um teste**, e **Modo claro**, só para este navegador ou celular. Veja [Instalar o app e ativar notificações](phone-app.md).
-- **Entrada por voz**: como o que você fala vira texto, e a voz de Falar ao vivo. Veja [Entrada por voz](voice-input.md) e [Falar ao vivo](talk-live.md).
-- **Abrir o navegador da Machine ↗**: o navegador que a sua Machine usa para sites como o LinkedIn.
+- **Idioma e região**: sua **Região** define como datas, horários e números são exibidos (24 de out. ou 24 out.). **Formato de hora** define o formato de 12 horas (2:05 PM) ou 24 horas (14:05). As tarefas, Telegram, o resumo e as mensagens do Fleet seguem essas duas configurações. Uma Machine hospedada usa o fuso horário escolhido no cadastro.
+- **Idioma**: English, Nederlands, Français, Deutsch, Español, Italiano ou Português (Brasil). O idioma inicial é o do navegador. O painel, a Ajuda, as notificações, Telegram, o resumo semanal e as tarefas escritas pela sua Machine mudam assim que você escolhe outro idioma. Os textos antigos não mudam. As pessoas da equipe recebem perguntas do Fleet e da Family no próprio idioma, e os rascunhos para outras pessoas continuam no idioma da conversa.
+- **Este dispositivo**: **Instalar app**, **Notificações** com **Enviar um teste** e **Modo claro**, somente neste navegador ou celular. Veja [Instalar o app e ativar as notificações](phone-app.md). No [Omarchy](omarchy.md), também há **Tema do Omarchy**.
+- **Entrada por voz**: como o que você diz vira texto e qual voz é usada no Talk ao vivo. Veja [Entrada por voz](voice-input.md) e [Talk ao vivo](talk-live.md).
+- **Abrir o navegador da Machine ↗**: o navegador que sua Machine usa para sites como LinkedIn.
 - **Regras do Fleet**: veja [Regras de compartilhamento](sharing-rules.md).
 - **Exportar**:
-  - **Tudo**: tudo o que sua Machine sabe em um único arquivo criptografado, para mudar ou guardar, e **Importar** para trazer um. Veja [Mudar para outro computador](moving.md).
-  - **Conhecimento para outra IA**: o que sua Machine aprendeu, em arquivos que qualquer IA consegue ler. Veja [Conhecimento para outra IA](knowledge-export.md).
+  - **Tudo**: tudo o que sua Machine sabe em um arquivo criptografado, para transferir ou guardar, e **Importar** para carregar um arquivo. Veja [Mudar para outro computador](moving.md).
+  - **Conhecimento para outra IA**: o que sua Machine aprendeu, em arquivos que qualquer IA pode ler. Veja [Exportar conhecimento para outra IA](knowledge-export.md).
 
 ## Versão
 
-A versão que sua Machine roda. As atualizações se instalam sozinhas. Quando há uma versão mais recente em uma Machine hospedada, **Atualizar agora** a instala na hora. Leva alguns minutos, e seus dados ficam.
+A versão que sua Machine está executando. As atualizações são instaladas automaticamente. Quando uma versão mais recente fica disponível em uma Machine hospedada, **Atualizar agora** instala a atualização imediatamente. Isso leva alguns minutos, e seus dados são mantidos.
 
-No seu próprio computador, um timer diário instala cada nova versão assinada no Linux. Veja [Rodar no seu próprio computador](self-hosted-setup.md).
+No seu próprio computador, um temporizador diário instala cada nova versão assinada no Linux. Veja [Executar no seu próprio computador](self-hosted-setup.md).
 
 ## Busca por significado
 
-Em **Configurações**, **Modelo**. Ela encontra e-mails, mensagens e notas pelo assunto, não só pelas palavras. Em uma Machine hospedada, uma pequena IA na própria Machine faz isso, e nada é enviado para fora. Ela fica ativada a partir de 8 GB de memória. Com 4 GB, ative com o botão dela. Ela usa cerca de meio gigabyte, então uma Machine ocupada pode ficar mais lenta.
+Em **Configurações**, **Modelo**. Encontra e-mails, mensagens e notas pelo assunto, não apenas pelas palavras usadas. Em uma Machine hospedada, uma IA pequena faz isso na própria Machine, sem enviar nada para outro lugar. O recurso fica ativado a partir de 8 GB de memória. Com 4 GB, ative-o pela chave. Ele usa cerca de meio gigabyte, então uma Machine ocupada pode ficar mais lenta.
 
-No seu próprio computador, é o bloco `embeddings` do `config.json`. Reinicie a Machine depois de uma mudança.
+No seu próprio computador, esse recurso é o bloco `embeddings` em `config.json`. Reinicie a Machine depois de fazer uma alteração.
 
 ## Nesta Machine
 
-Algumas configurações ficam no computador onde a sua Machine roda, não no app:
+Quando sua Machine é executada no seu próprio computador, algumas tarefas são feitas por lá, no terminal:
 
-- `config.json`: todas as configurações, em um arquivo. Reinicie a Machine depois de uma mudança.
-- `assistant connect`: adiciona uma fonte, como `assistant connect gmail` ou `assistant connect outlook`.
+- O arquivo de configurações, `config.json`: todas as configurações em um só lugar. Reinicie a Machine depois de fazer uma alteração.
+- `assistant connect`: adicione uma fonte, como `assistant connect gmail` ou `assistant connect outlook`.
 - `assistant telegram on` ou `off`: mensagens no Telegram. Veja [Telegram](telegram.md).
-- `assistant doctor`: verifica tudo e mostra uma solução para cada problema.
+- `assistant doctor`: verifica tudo e mostra uma correção para cada problema.
 
 ## Seus endereços
 
-Cada endereço seu que a Machine encontrou: suas contas, aliases do Gmail ou do Outlook, seu calendário, seu perfil no Slack e no Intercom. E-mails e reuniões de qualquer um deles aparecem como você. Use **Remover** para tirar um que não é seu.
+Todos os seus endereços encontrados pela Machine: suas contas, aliases do Gmail ou Outlook, seu calendário e seus perfis do Slack e Intercom. E-mails e reuniões de qualquer um deles contam como seus. Use **Remover** nos que não forem seus.
 
-Um endereço compartilhado, como info@ ou um Google Group, nunca conta sozinho. Um endereço do qual a Machine não tem certeza fica em **Talvez seus**, e nada é escolhido por você. Escolha um:
+Um endereço compartilhado, como info@ ou um Google Group, nunca conta por conta própria. Se a Machine não tiver certeza, o endereço aparece em **Talvez seus**. Escolha uma opção:
 
-- **Meu: só eu respondo**: conta como seu. E-mails para ele podem virar suas tarefas.
-- **Da equipe: outros também respondem**: não é você. E-mails que só foram para ele não criam tarefas nem rascunhos para você. Ele continua alimentando o Graph, compartilhado com sua equipe como antes.
-- **Não é meu**: não conta como seu.
+- **Meu: só eu respondo**: o endereço conta como seu. E-mails enviados para ele podem virar suas tarefas.
+- **Da equipe: outros também respondem**: o endereço não é seu. E-mails enviados somente para ele não geram tarefas nem rascunhos para você. Mesmo assim, eles aparecem no Graph.
+- **Não é meu**: o endereço não vai contar como seu.
 
-Escolha por quem responde hoje. Uma caixa da equipe como support@ é da equipe. Um endereço como partnerships@ que agora só você responde é seu; mude para a equipe quando outros também responderem.
+Escolha de acordo com quem responde hoje. Uma caixa de entrada da equipe, como support@, é da equipe. Um endereço como partnerships@, ao qual só você responde, é seu. Mude a opção quando outras pessoas também começarem a responder.
 
-**Mudar** na linha dele troca isso depois. Seu próprio endereço de login é sempre seu.
+**Mudar** na linha do endereço permite trocar a opção depois. Seu próprio endereço de acesso sempre conta como seu.
 
 ### Domínios da sua empresa
 
-Os domínios dos seus próprios endereços contam como os da sua empresa. Se ela usa outro, como acme.co ao lado de acme.com, digite em **Domínios da sua empresa** e toque em **Adicionar**.
+Os domínios dos seus endereços contam como domínios da sua empresa. Você também usa outro, como acme.co além de acme.com? Digite-o em **Domínios da sua empresa** e pressione **Adicionar**.
 
-Quem está lá passa a ser seu colega, nunca cliente: as conversas ficam fora do Team Graph como qualquer conversa só entre colegas, e nenhuma organização é criada. **Remover** tira de novo. Um domínio de e-mail gratuito como gmail.com não pode ser adicionado.
+A partir daí, as pessoas desses domínios são colegas, nunca clientes: as conversas delas ficam fora do Team Graph e nenhuma organização é criada para elas. Use **Remover** para excluir um domínio. Não é possível adicionar domínios de e-mail gratuitos, como gmail.com.
+
+Um alias seu do Gmail também pode aparecer como **De** em um rascunho, se o Gmail confirmar que você pode enviar mensagens por ele. Veja [Gmail](gmail.md#what-it-can-send).

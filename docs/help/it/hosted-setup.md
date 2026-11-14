@@ -1,36 +1,38 @@
 ---
 title: Configura una Machine ospitata
 area: getting-started
-summary: Accedi, inizia i tuoi giorni gratuiti, collega la posta e scegli la tua IA. Bastano pochi minuti.
+summary: Accedi, inizia i giorni gratuiti, collega la posta e scegli la tua IA. Bastano pochi minuti.
 code: onboarding.py, dashboard.html
 site: Mail and Calendar, Your AI, Continue with Google, Continue with Microsoft, Turn on, Add more any time, More sources, Open your dashboard, Sources, Ask for a source, Build it, Add a passkey, Use an authenticator app instead, Add to Claude, First to-dos, Back
 order: 1
 translated: 0be6044113aaaa39
 ---
-Una Machine ospitata gira nel cloud, nell'UE, solo per te. Pensiamo noi a tenerla attiva e aggiornata.
+Una Machine ospitata funziona nel cloud, nell’UE, solo per te. La teniamo attiva e aggiornata.
 
 ## Registrati
 
-1. Su app.themachine.computer, premi **Continua con Google** o **Continua con Microsoft**. Così crei il tuo account.
-2. Scegli la dimensione e il nome della tua Machine, poi aggiungi la tua carta di pagamento. I primi {trial_days} giorni sono gratuiti e non paghi nulla prima che finiscano.
-3. Scansiona il codice con un'app di autenticazione, scrivi le sei cifre e premi **Attiva**. Una passkey può arrivare dopo.
+1. Vai su app.themachine.computer e premi **Continua con Google** o **Continua con Microsoft**. In questo modo crei il tuo account. Con Google, nella stessa schermata ti viene chiesto di collegare Gmail e Calendar. Autorizzali e la posta sarà collegata, senza dover passare da una seconda schermata di Google.
+2. Scegli le dimensioni e l’indirizzo della tua Machine. I primi {trial_days} giorni sono gratuiti e non ti verrà addebitato nulla prima della fine del periodo. Se durante la configurazione non ti viene chiesto un metodo di pagamento, aggiungilo alla pagina del tuo account prima della scadenza.
+3. Premi **Aggiungi una passkey** e usa l’impronta digitale, il volto o il PIN del dispositivo. Preferisci un’app di autenticazione? Apri **Usa invece un’app di autenticazione**, scansiona il codice, inserisci le sei cifre e premi **Attiva**. Salva i codici di recupero che seguono.
 
-## La tua pagina di configurazione
+## La pagina di configurazione
 
-La tua Machine si avvia, poi la pagina di configurazione ti guida nel resto, un passo alla volta:
+La configurazione procede un passaggio per schermata: il tuo piano, la passkey, poi **Posta e calendario**, **La tua IA** e **Prime attività**. In alto vedi a quale passaggio sei. La tua Machine si avvia in background, così non devi aspettarla.
 
-1. **Email e calendario**: collega Google o Microsoft. Puoi farlo mentre la tua Machine si avvia. Dopo l’accesso, il passaggio dice che sta lavorando finché la tua Machine non è installata e ha letto la tua posta, circa un minuto. Vedi [Gmail](gmail.md) e [Microsoft](microsoft.md).
-2. **La tua IA**: accedi con ChatGPT o Claude, o usa una chiave del tuo fornitore di IA. Vedi [ChatGPT](chatgpt.md). Una dashboard aperta nel frattempo dice **Connessione a ChatGPT…** finché non ha finito.
-3. I controlli si attivano da soli. Le prime attività arrivano dalla posta più recente, poi dagli ultimi 7 giorni. Se niente ha bisogno di te, l’elenco dice cosa ha letto e cosa collegare dopo. Un controllo che non riesce viene riprovato entro pochi minuti; se continua a non riuscire, l’elenco lo dice.
+1. **Posta e calendario**: premi **Collega Google** o **Collega Microsoft**. Si inizia con l’account usato per registrarti. Se hai autorizzato Gmail e Calendar al momento della registrazione con Google, la configurazione salta questo passaggio e passa alla tua IA. Il tipo di account, di lavoro o personale, dipende dall’indirizzo; puoi modificarlo in seguito nelle impostazioni dell’account. Scopri di più su [Gmail](gmail.md) e [Microsoft](microsoft.md).
+2. **La tua IA**: accedi con ChatGPT o Claude, oppure incolla una chiave del tuo provider IA. Con Claude, incolla il codice dalla pagina di Claude. Non hai un piano? Abbonati a ChatGPT o Claude, oppure usa una chiave: in questo passaggio trovi il link alla pagina delle chiavi di ciascun provider, che ti addebiterà i costi in base all’utilizzo. Scopri di più su [ChatGPT](chatgpt.md).
+3. **Prime attività**: la tua Machine controlla prima le email più recenti, poi quelle degli ultimi 7 giorni. Se non c’è nulla che richiede la tua attenzione, ti dice cosa ha letto e cosa collegare dopo. Se un controllo non riesce, viene ripetuto entro pochi minuti; se continua a non riuscire, la lista te lo segnala.
 
-Sotto **Aggiungi altro quando vuoi** ci sono quelle facoltative: **Altre fonti** come Slack, WhatsApp o GitHub, [Telegram](telegram.md), [Codex](hand-to-agent.md) e la connessione del tuo browser. Nessuna serve per iniziare. La dashboard te le suggerisce quando sono utili, per esempio GitHub quando continua ad arrivarti la sua posta.
+**Indietro** e il pulsante Indietro del browser ti riportano al passaggio precedente. Quando la posta e la tua IA funzionano, arrivi alla dashboard.
 
-Appena la tua Machine è pronta, **Apri la tua dashboard** compare in cima alla pagina. Aggiungila alla schermata Home del telefono per le notifiche: vedi [Installa l'app e attiva le notifiche](phone-app.md).
+La configurazione non ti chiede di fare nulla di facoltativo. In seguito, nella pagina di configurazione trovi **Aggiungi altro quando vuoi**, con **Altre fonti**, come Slack, WhatsApp, GitHub, [Telegram](telegram.md) e [Codex](hand-to-agent.md). Anche la dashboard ti suggerisce una fonte quando può esserti utile, per esempio GitHub se continui a ricevere email da GitHub.
+
+Quando la tua Machine è pronta, in alto trovi **Apri la tua dashboard**. **Aggiungi a Claude** ti permette di chiedere a Claude informazioni sulla posta e sulle attività. Per ricevere notifiche, aggiungi The Machine alla schermata Home del telefono: consulta [Installa l’app e attiva le notifiche](phone-app.md).
 
 ## Richiedi una fonte
 
-Ti manca una fonte? In **Fonti**, sotto **Richiedi una fonte**, indica il servizio e cosa leggere, poi premi **Crealo**. La tua IA la scrive e la testa sulla tua Machine. Se la condividi, The Machine apre una pull request su GitHub per te. Non serve un account GitHub; [collega GitHub](github.md) per comparire come coautore.
+Ti manca una fonte? In **Fonti**, sotto **Richiedi una fonte**, indica il servizio e cosa vuoi leggere, poi premi **Creala**. La tua IA la crea e la testa sulla tua Machine. Se scegli di condividerla, The Machine la propone a tutti su GitHub per conto tuo. Non serve un account GitHub; [collega GitHub](github.md) per ricevere il riconoscimento.
 
 ## Torna più tardi
 
-La tua pagina di configurazione resta su app.themachine.computer/setup. Aggiungi o togli fonti lì quando vuoi. Nella dashboard, **Impostazioni** ha **Apri l’account**.
+La pagina di configurazione resta disponibile su app.themachine.computer/setup. Puoi aggiungere o rimuovere fonti lì, quando vuoi. Nella dashboard, **Impostazioni** include **Apri l’account**.

@@ -1,7 +1,7 @@
 ---
 title: WhatsApp
 area: connections
-summary: Le tue chat WhatsApp, lette come dispositivo collegato. Risponde solo dopo la tua approvazione.
+summary: Le tue chat WhatsApp, lette come su un dispositivo collegato. Le risposte vengono inviate solo dopo la tua approvazione.
 covers: connector:whatsapp
 code: onboarding.py, next_actions.py, whatsapp_images.py
 site: Show the QR code, Get a code, On your phone? Link with a code instead, Remove
@@ -9,51 +9,53 @@ translated: 881c555219a98f0f
 ---
 ## Cosa legge
 
-Le tue chat WhatsApp, come dispositivo collegato al WhatsApp del tuo telefono, come WhatsApp su un computer. Quando lo colleghi, WhatsApp invia anche le chat più vecchie, spesso di anni. La tua Machine conserva tutto, e solo i messaggi degli ultimi 7 giorni diventano attività.
+Le tue chat WhatsApp, come su un dispositivo collegato al WhatsApp del tuo telefono, proprio come WhatsApp su un computer. Quando la colleghi, WhatsApp invia anche le chat meno recenti, a volte vecchie di anni. La tua Machine conserva tutto, ma solo i messaggi degli ultimi 7 giorni diventano attività.
 
-Una foto, un messaggio vocale o un file senza didascalia compare per ciò che è, come "Foto", con la sua icona. Gli avvisi di WhatsApp, come quello sulla crittografia o qualcuno che entra in un gruppo, non hanno testo e vengono esclusi.
+Una foto, un messaggio vocale o un file senza didascalia viene mostrato per quello che è, ad esempio «Foto», con la relativa icona. Gli avvisi di WhatsApp, come quello sulla crittografia o sull'ingresso di qualcuno in un gruppo, non contengono testo e vengono esclusi.
 
 ## Leggi le foto
 
-Spento finché non lo accendi. In **Connessioni**, apri WhatsApp, poi **Dettagli**, e attiva **Leggi le foto** e The Machine legge le foto nelle tue chat di lavoro: una ricevuta, uno screenshot, la foto di una lettera o di un modulo. **Anche nelle chat personali** legge anche quelle delle tue chat personali. Una chat è di lavoro o personale come la vede la condivisione, quindi una chat con la famiglia resta personale.
+Questa funzione è disattivata finché non la attivi. In **Connessioni**, apri WhatsApp, poi **Dettagli**, e attiva **Leggi le foto**. The Machine leggerà le foto nelle tue chat di lavoro: una ricevuta, uno screenshot, la foto di una lettera o di un modulo. **Anche nelle chat personali** permette di leggere anche le foto nelle tue chat personali. Una chat è considerata di lavoro o personale in base a come la classifica la condivisione, quindi una chat con la famiglia resta personale.
 
-The Machine scarica ogni foto una volta e la tiene sulla tua Machine come un allegato email: cifrata quando la protezione dei messaggi è attiva, ed eliminata quando il suo messaggio sparisce. Il suo modello legge cosa mostra la foto e il testo che contiene. Conta come parte del messaggio, mai come istruzioni. JPEG, PNG e WebP fino a 5 MB. Un codice monouso in una foto viene omesso.
+The Machine scarica ogni foto una sola volta e la conserva sulla tua Machine come un allegato email: crittografata quando la protezione dei messaggi è attiva ed eliminata quando viene eliminato il messaggio. Il suo modello legge cosa mostra la foto e il testo al suo interno. Questi contenuti vengono considerati parte del messaggio, mai istruzioni. Sono supportati JPEG, PNG e WebP fino a 5 MB. Un codice monouso in una foto viene escluso.
 
-L’attività e il messaggio mostrano la foto. Toccala per vederla in grande.
+L'attività e il messaggio mostrano la foto. Toccala per ingrandirla.
 
 ## Cosa può inviare
 
-Un testo in una chat che esiste già, solo dopo che l'hai approvato sull'attività. Una risposta al messaggio WhatsApp da cui è nata un’attività cita quel messaggio quando dopo ne sono arrivati altri, o in un gruppo; la bozza dice **Come risposta**.
+Un testo in una chat esistente, solo dopo che lo approvi nell'attività. Una risposta al messaggio WhatsApp da cui proviene un'attività cita quel messaggio se qualcuno ha scritto altro dopo, oppure se si tratta di un gruppo. La bozza indica **Come risposta**.
 
-Se un'attività è arrivata via email ma con quella persona parli su WhatsApp, dillo nella chat dell'attività. The Machine trova la chat che hai già con lei e sposta la bozza su WhatsApp, da rivedere e inviare. Non apre mai una nuova chat.
+Se un'attività è arrivata via email, ma parli con quella persona su WhatsApp, dillo nella chat dell'attività. The Machine trova la chat esistente con quella persona e passa la bozza a WhatsApp, così puoi controllarla e inviarla. Non avvia mai una nuova chat.
 
-WhatsApp non offre un modo ufficiale per farlo. Leggere e inviare ogni tanto una risposta che hai approvato difficilmente crea problemi; inviare in massa o in automatico può far bloccare un account.
+WhatsApp non offre un modo ufficiale per farlo. Leggere e inviare ogni tanto una risposta che hai approvato difficilmente causerà problemi; gli invii di massa o automatici possono far bloccare un account.
 
 ## Collegalo
 
 Su una Machine ospitata:
 
-1. Nella dashboard, apri **Connessioni**, poi **Chat**, e scegli WhatsApp.
+1. Nella dashboard, apri **Connessioni**, poi **Chat** e scegli WhatsApp.
 2. Premi **Mostra il codice QR**.
-3. Sul telefono, in WhatsApp, apri Impostazioni, Dispositivi collegati, Collega un dispositivo, e scansiona il codice QR.
-4. WhatsApp risulta collegato entro un minuto. La tua cronologia chat continua ad arrivare dopo, e la sua scheda conta i messaggi mentre arrivano.
-   Se il collegamento richiede troppo, lo dice dopo qualche minuto. Premi **Riprova** per riprendere da dove si è fermato.
+3. Sul telefono, apri WhatsApp, vai su Impostazioni, Dispositivi collegati, Collega un dispositivo e scansiona il codice QR.
+4. WhatsApp risulterà collegato entro un minuto. La cronologia delle chat continuerà a essere importata e la relativa scheda conterà i messaggi man mano che arrivano.
+   Se il collegamento richiede troppo tempo, vedrai un avviso dopo qualche minuto. Premi **Riprova** per riprendere da dove si era interrotto.
 
-Stai configurando dal telefono, senza un secondo schermo da cui scansionare? Apri **Sei sul telefono? Collegati con un codice**, inserisci il tuo numero e premi **Ottieni un codice**. WhatsApp poi ti chiede quel codice.
+Stai configurando WhatsApp sul telefono e non hai un secondo schermo da cui scansionare il codice? Apri **Sei sul telefono? Collega con un codice**, inserisci il tuo numero e premi **Ottieni un codice**. WhatsApp ti chiederà quel codice.
 
-Sul tuo computer, esegui `assistant connect whatsapp` e scansiona il codice che mostra nel terminale. La prima volta, si offre di installare il connettore di WhatsApp, una build fissata verificata con il suo checksum ([sorgente](https://github.com/Salesflare/wacli)).
+Sul tuo computer: apri **Connessioni**, poi **Chat**, scegli WhatsApp, inserisci il tuo numero di telefono con il prefisso internazionale e premi **Collegati**. Verrà mostrato un codice. Sul telefono, apri WhatsApp, vai su Impostazioni, Dispositivi collegati, Collega un dispositivo, poi **Collega con il numero di telefono** e inserisci il codice.
 
-In Dispositivi collegati appare come The Machine. Una Machine collegata prima mantiene lì il suo vecchio nome finché non la colleghi di nuovo.
+Oppure esegui `assistant connect whatsapp` e scansiona il codice mostrato nel terminale. La prima volta, ti verrà proposto di installare il connettore WhatsApp, una build bloccata verificata con il relativo checksum ([codice sorgente](https://github.com/Salesflare/wacli)).
 
-## Foto
+In Dispositivi collegati, apparirà come The Machine. Una Machine collegata in precedenza manterrà il vecchio nome finché non la colleghi di nuovo.
 
-The Machine chiede a WhatsApp le foto profilo delle persone nel tuo graph che non ne hanno una, al massimo 50 al giorno, tramite la sincronizzazione che tiene aggiornato WhatsApp. Non viene inviato nulla a loro. Chi ti nasconde la propria foto resta senza.
+## Foto del profilo
+
+The Machine chiede a WhatsApp le foto del profilo delle persone nel tuo Graph che non ne hanno una, fino a un massimo di 50 al giorno, tramite la sincronizzazione che mantiene WhatsApp aggiornato. Non viene inviato loro nulla. Chi nasconde la propria foto a te continuerà a non averne una.
 
 ## Rimuovilo
 
-- Su una Machine ospitata: premi **Rimuovi** accanto a WhatsApp nella tua pagina di configurazione. La tua Machine si scollega da sola ed elimina ciò che aveva conservato per WhatsApp.
-- Sul tuo computer: **Connessioni**, apri WhatsApp, **Dettagli**, poi **Disconnetti**. Poi scollegalo anche dal telefono.
+- Su una Machine ospitata: premi **Rimuovi** accanto a WhatsApp nella pagina di configurazione. La tua Machine si scollega ed elimina i dati conservati per WhatsApp.
+- Sul tuo computer: apri **Connessioni**, seleziona WhatsApp, poi **Dettagli** e **Disconnetti**. Scollega poi WhatsApp anche dal telefono.
 
 ## Scollegalo in WhatsApp
 
-Sul telefono, in WhatsApp, apri Impostazioni, Dispositivi collegati, tocca la tua Machine ed esci.
+Sul telefono, apri WhatsApp, vai su Impostazioni, Dispositivi collegati, tocca la tua Machine e disconnettila.

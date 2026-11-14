@@ -1,50 +1,48 @@
 ---
 title: Compétences
 area: settings
-summary: Les marches à suivre de votre Machine. Écrivez les vôtres, importez-les depuis Claude ou ChatGPT, ou trouvez-en une sur ClawHub.
+summary: Des guides que votre Machine suit. Créez les vôtres, importez-les depuis Claude ou ChatGPT, ou trouvez-en sur ClawHub.
 covers: settings:skills
 code: skills.py, dashboard.html
 order: 4
 translated: 98fe851d553ed3dc
 ---
-Une compétence explique à votre Machine comment faire quelque chose, comme « répondre aux questions sur les prix ». Ce ne sont que des instructions : une compétence ne change jamais ce que votre Machine a le droit de faire.
+Une compétence apprend à votre Machine à effectuer un type de tâche, comme « répondre aux questions sur les tarifs ». Elle ne contient que des instructions : elle ne change jamais ce que votre Machine est autorisée à faire.
 
-## En écrire une
+## En créer une
 
-Dans **Paramètres**, **Compétences**, appuyez sur **Nouvelle compétence** ou **Partir d’un exemple**. Donnez-lui un **Nom**, un **Quand l’utiliser** et des **Instructions**, puis **Enregistrer**.
+Dans **Paramètres**, ouvrez **Compétences**, puis appuyez sur **Nouvelle compétence** ou **Partir d’un exemple**. Indiquez son **Nom**, **Quand l’utiliser** et ses **Instructions**, puis appuyez sur **Enregistrer**.
 
-## Quand elle en utilise une
+## Quand elle est utilisée
 
-Chaque tâche que votre Machine prépare reçoit la skill qui lui correspond, sans que vous le demandiez : celle qui porte le nom de son tableau, de son projet ou de son titre, en entier. Vos autres skills sont listées avec, pour qu'elle suive aussi celle qui convient à ce type de travail, comme une réponse dans un type de fil connu ou une mise à jour du CRM.
+Chaque tâche que votre Machine prépare reçoit la compétence qui lui convient, sans que vous ayez à le demander : une compétence dont le nom reprend en entier celui de son tableau, de son projet ou de son titre. Vos autres compétences sont également associées. Ainsi, une compétence adaptée à ce type de travail, comme répondre dans un type de fil de discussion connu ou mettre à jour un CRM, est aussi suivie.
 
 ## Importer
 
 Appuyez sur **Importer** :
 
-- **Depuis Claude** ou **Depuis ChatGPT**, puis **Trouver mes compétences**. Elle cherche dans ce compte, dans le navigateur de votre Machine.
-- Ou apportez-en une vous-même : **Téléverser un .skill ou .zip**, **Téléverser un dossier** ou **Coller un SKILL.md**.
+- **Depuis Claude** ou **Depuis ChatGPT**, puis **Trouver mes compétences**. La recherche s’effectue dans le compte concerné, depuis le navigateur de votre Machine.
+- Vous pouvez aussi en ajouter une vous-même : **Téléverser un .skill ou .zip**, **Téléverser un dossier** ou **Coller un SKILL.md**.
 
-Choisissez celles que vous voulez et appuyez sur **Importer la sélection**. Seules les instructions sont importées ; les scripts jamais.
+Sélectionnez les compétences voulues, puis appuyez sur **Importer la sélection**. Seules les instructions sont importées, jamais les scripts.
 
-## Chercher sur ClawHub
+## Rechercher sur ClawHub
 
-Des compétences publiées par d’autres. Elles viennent de tiers : lisez-en une avant de l’installer.
+Trouvez des compétences publiées par d’autres personnes. Lisez-en une avant de l’installer : elles sont créées par d’autres, pas par The Machine.
 
 ## À partir de vos notes
 
-Quand beaucoup de notes portent sur un même type de tâche, une tâche suggère une compétence. Elle vérifie d’abord vos compétences :
+Quand plusieurs de vos notes portent sur un même type de tâche, une tâche vous suggère une compétence. Elle vérifie d’abord vos compétences :
 
-- L’une fait déjà ce travail : **Mettre à jour <compétence>** montre la compétence réécrite avec ce que les notes apprennent, avant et après, avec les changements surlignés. Seul **Mettre à jour la compétence** à cet endroit la modifie, et seulement cette compétence.
-- L’une est proche mais distincte : la tâche explique en une ligne en quoi elle diffère et propose quand même **Créer la compétence**.
+- Une compétence fait déjà l’affaire : **Mettre à jour <skill>** affiche cette compétence et ce que les notes lui apportent, avec les modifications mises en évidence. Seule l’action **Mettre à jour la compétence** la modifie.
+- Une compétence est liée, mais différente : la tâche explique en une ligne en quoi elle est liée, mais distincte, et propose quand même **Créer la compétence**.
 
-**Pas maintenant** garde les notes telles quelles. Les compétences que votre Machine propose dans Paramètres > Compétences passent la même vérification.
+**Pas maintenant** conserve vos notes telles quelles. Les compétences proposées par votre Machine dans Paramètres > Compétences font l’objet de la même vérification.
 
-## Depuis une tâche
+## À partir d’une tâche
 
-Demandez une compétence dans une tâche, et votre Machine l’écrit là. Ouvrez **Lire la compétence** dans la tâche, puis appuyez sur **Créer la compétence** (ou **Mettre à jour la compétence** pour une que vous avez déjà). Rien n’est installé avant, et la tâche est ensuite terminée. Si vous l’ignorez dans Réglages > Compétences, la tâche affiche **Compétence ignorée** et reste ouverte jusqu’à ce que vous la fermiez.
+Demandez une compétence dans une tâche, et votre Machine la rédige directement. Ouvrez **Lire la compétence**, puis appuyez sur **Créer la compétence** (ou sur **Mettre à jour la compétence** si vous en avez déjà une). Rien n’est installé avant cela. Vous l’avez plutôt écartée dans Paramètres > Compétences ? La tâche affiche **Compétence ignorée** et reste ouverte jusqu’à ce que vous la fermiez.
 
-## En partager une
+## Partager une compétence
 
-Partagez une compétence avec un ami ou un collègue. La personne la lit et choisit de l’installer. Les modifications ultérieures ne partent que si vous la partagez à nouveau.
-
-Plus d’infos dans le [guide des compétences](https://github.com/Salesflare/TheMachine/blob/main/docs/skills.md).
+Partagez une compétence avec un ami ou un collègue. Cette personne la lit et choisit si elle veut l’installer. Les modifications ultérieures ne lui parviennent que si vous la partagez à nouveau.

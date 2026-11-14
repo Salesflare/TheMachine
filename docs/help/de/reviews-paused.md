@@ -1,42 +1,42 @@
 ---
 title: Keine neuen Aufgaben
 area: troubleshooting
-summary: Prüfungen sind aus, warten oder stehen beim Nutzungslimit deines Modells. Woran du das erkennst und was du tun kannst.
+summary: Prüfungen sind ausgeschaltet, warten oder wurden wegen des Nutzungslimits deines Modells angehalten. So erkennst du den Grund und weißt, was zu tun ist.
 covers: 
 code: dashboard.html, assistant.py
 order: 3
-translated: 39b4aa749445dfba
+translated: d265e540d9ecef0e
 ---
-Aufgaben entstehen aus Prüfungen: Deine Machine liest, was reingekommen ist, in kleinen Paketen, innerhalb von etwa 15 Minuten.
+Aufgaben entstehen durch Prüfungen: Deine Machine schaut sich an, was in den letzten etwa 15 Minuten eingegangen ist.
 
 ## Gerade angemeldet
 
-Auf einer neuen gehosteten Machine starten die Prüfungen von selbst, sobald deine KI und deine E-Mails verbunden sind. Während deine Machine deine E-Mails liest, steht unter Aufgaben "Deine E-Mails werden gelesen, die ersten Aufgaben kommen in ein paar Minuten". Sobald sie weiß, wie viel es ist, sagt sie ungefähr, wie lange es dauert: "Erste Aufgaben in etwa 10 Min." Fehlt ein Schritt, nennt ihn **Braucht dich**, etwa **Mail verbinden**, mit einem Link zu diesem Schritt.
+Auf einer neuen gehosteten Machine starten Prüfungen automatisch, sobald deine KI und Mail verbunden sind. Während deine Machine deine Mails liest, steht unter Aufgaben: „Deine Mails werden gelesen. Die ersten Aufgaben kommen in wenigen Minuten.“ Sobald deine Machine weiß, wie viel es zu lesen gibt, nennt sie die ungefähre Dauer: „Die ersten Aufgaben kommen in etwa 10 Minuten.“ Fehlt ein Schritt, nennt **Braucht dich** ihn, zum Beispiel **Mail verbinden**, und verlinkt direkt dorthin.
 
-Während sie liest, zeigt Aufgaben, wie weit sie ist, ein paar der Personen und Organisationen, auf die sie gestoßen ist, und deine erste Aufgabe, sobald sie da ist. Die Namen stammen aus deinen eigenen E-Mails, und nur du siehst sie.
+Während deine Machine liest, zeigt Aufgaben, wie weit sie ist („20 von 132 Nachrichten gelesen. Die nächsten 40 werden gelesen …“), einige Personen und Organisationen, auf die sie gestoßen ist, und deine erste Aufgabe, sobald sie da ist. Die Zahl zählt die Nachrichten, die sie fertig gelesen hat. Der Balken bewegt sich weiter, während sie die nächsten Nachrichten liest. Die Namen stammen aus deinen eigenen Mails und sind nur für dich sichtbar.
 
-Findet sie beim ersten Blick nichts für dich, sagt sie, was sie gelesen hat, und bietet nächste Schritte an, etwa einen Dienst zu verbinden, der dir oft mailt, oder zu fragen, was sich diese Woche geändert hat.
+Wenn beim ersten Durchsehen nichts für dich dabei ist, steht dort, was gelesen wurde, und es werden nächste Schritte vorgeschlagen, zum Beispiel einen Dienst zu verbinden, der dir oft Mails schickt, oder zu fragen, was sich diese Woche geändert hat.
 
-## Prüfungen sind aus
+## Prüfungen sind ausgeschaltet
 
-Oben in Aufgaben steht „Die Prüfung ist aus, daher kommen noch keine Aufgaben.“ Auf einer gehosteten Machine tippst du auf **Prüfung einschalten**. Auf deinem eigenen Computer führst du `./install.sh --activate` aus.
+Oben unter Aufgaben steht: „Prüfungen sind ausgeschaltet. Deshalb kommen noch keine Aufgaben an.“ Auf einer gehosteten Machine drückst du **Prüfung einschalten**. Auf deinem eigenen Computer führst du `./install.sh --activate` aus.
 
 ## Das Limit deines Modells
 
-Prüfungen dessen, was reingekommen ist, pausieren bei etwa 65 % des 5-Stunden-Limits deines Tarifs und bei 90 % des Wochenlimits, damit Platz für deine eigenen Chats bleibt. Ein Board, das deinen Verlauf durchgeht, ist langsamer, mit etwa einem Siebtel der Woche pro Tag. Mit einem funktionierenden Ersatzmodell mit anderem Tarif oder Anbieter warten Prüfungen nicht. Siehe [Modell](model.md).
+Damit genug Spielraum für deine eigenen Chats bleibt, werden Prüfungen bei etwa 65 % des 5-Stunden-Limits und 90 % des Wochenlimits deines KI-Tarifs pausiert. Mit einem Backup-Modell in einem anderen Tarif werden Prüfungen nicht angehalten. Weitere Infos findest du unter [Modell](model.md).
 
-Während Prüfungen warten, steht oben im Dashboard, bis wann, etwa „Die Prüfung wartet bis 07:15, um deine ChatGPT-Woche zu schonen.“ **Jetzt prüfen** startet sofort eine. Ist ein Limit erreicht, steht oben im Dashboard, welches und wann es zurückgesetzt wird. **Verbindungen**, dann **Prüfungen** zeigt es neben dem Durchlauf. **Einstellungen**, **Modell** zeigt deine Limits. Siehe [Modell](model.md).
+Während Prüfungen warten, steht oben im Dashboard, bis wann sie warten, zum Beispiel: „Prüfungen warten bis 07:15, damit dein ChatGPT-Wochenlimit geschont wird.“ **Jetzt prüfen** startet trotzdem eine Prüfung. Unter **Einstellungen**, **Modell** findest du deine Limits.
 
-Während es wartet, geht nichts verloren: Was reingekommen ist, wird geprüft, sobald es geht.
+Es geht nichts verloren: Sobald es möglich ist, werden die eingegangenen Nachrichten geprüft.
 
 ## Nachts
 
-Von 00:00 bis 06:30 pausieren die Prüfungen und neue Nachrichten warten. Um 06:30 werden sie zusammen geprüft, vor deiner Morgenübersicht. **Prüfungen** zeigt dann „Pause über Nacht, um 06:30 wird alles nachgeholt“. Nutzt du die App, schreibst im Chat oder tippst auf eine Aufgabe, laufen die Prüfungen wieder, bis du eine Stunde weg warst. **Jetzt prüfen** prüft sofort.
+Von 00:00 bis 06:30 pausieren Prüfungen, und neue Nachrichten warten. Um 06:30 werden sie zusammen geprüft, bevor deine morgendliche Zusammenfassung erstellt wird. Unter **Prüfungen** steht: „Nachts pausiert. Aufholen um 06:30.“ Wenn du die App nutzt, im Chat schreibst oder eine Aufgabe antippst, laufen Prüfungen wieder, bis du eine Stunde lang nicht aktiv warst. **Jetzt prüfen** prüft sofort.
 
 ## Ein Durchlauf ist fehlgeschlagen
 
-**Letzte Durchläufe** unter **Prüfungen** zeigt jeden Durchlauf. Ein fehlgeschlagenes Paket wird von selbst erneut versucht.
+Unter **Verbindungen**, **Prüfungen** zeigt **Letzte Durchläufe** jeden Durchlauf an. Ein fehlgeschlagener Durchlauf wird automatisch erneut versucht.
 
 ## Zurückgestellt
 
-Schiebt eine Prüfung eine Nachricht zweimal auf, wird sie zurückgestellt. **Verbindungen**, **Prüfungen** zeigt, wie viele, und **Zurückgestellt** listet sie auf. Eine von einer Person, die dir direkt schreibt, von jemandem, den du kennst, oder von einem Kunden bekommt etwa 3 Tage nach dem Eingang noch einen Blick. Dieser Blick macht eine Aufgabe daraus oder schließt sie. Was du verworfen oder zurückgestellt hast, bleibt so.
+Wenn eine Prüfung eine Nachricht zweimal zurückstellt, wird sie zurückgestellt abgelegt. Unter **Verbindungen**, **Prüfungen** siehst du, wie viele es sind. Unter **Zurückgestellt** findest du sie. Eine Nachricht von jemandem, der dir schreibt, einer Person, die du kennst, oder einem Kunden wird etwa 3 Tage nach Eingang noch einmal geprüft. Dabei wird eine Aufgabe erstellt oder die Nachricht geschlossen. Was du verworfen oder zurückgestellt hast, bleibt so.

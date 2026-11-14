@@ -1,50 +1,48 @@
 ---
 title: Skill
 area: settings
-summary: Istruzioni che la tua Machine segue. Scrivi le tue, importale da Claude o ChatGPT, o trovane una su ClawHub.
+summary: Guide pratiche che la tua Machine segue. Creane una, importala da Claude o ChatGPT oppure cercane una su ClawHub.
 covers: settings:skills
 code: skills.py, dashboard.html
 order: 4
 translated: 98fe851d553ed3dc
 ---
-Una skill dice alla tua Machine come fare qualcosa, per esempio "rispondere alle domande sui prezzi". Sono solo istruzioni: una skill non cambia mai ciò che la tua Machine può fare.
+Una skill insegna alla tua Machine come svolgere un certo tipo di compito, per esempio «rispondere a domande sui prezzi». Contiene solo istruzioni: non cambia mai ciò che la tua Machine può fare.
 
-## Scrivine una
+## Scriverne una
 
-In **Impostazioni**, **Skill**, premi **Nuova skill** o **Parti da un esempio**. Dalle un **Nome**, **Quando usarla** e le **Istruzioni**, poi **Salva**.
+In **Impostazioni**, **Skill**, premi **Nuova skill** oppure **Parti da un esempio**. Inserisci **Nome**, **Quando usarla** e **Istruzioni**, poi premi **Salva**.
 
-## Quando ne usa una
+## Quando viene usata
 
-Ogni attività che la tua Machine prepara riceve la skill adatta, senza che tu lo chieda: quella con il nome della sua bacheca, del progetto o del titolo, per intero. Le altre tue skill sono elencate insieme, così segue anche quella per quel tipo di lavoro, come una risposta in un tipo di thread noto o un aggiornamento del CRM.
+Ogni attività che la tua Machine prepara riceve la skill più adatta, senza che tu debba chiederlo: una skill con lo stesso nome della bacheca, del progetto o del titolo viene applicata per intero. Anche le altre tue skill vengono considerate, quindi viene seguita anche una skill per quel tipo di lavoro, per esempio per rispondere a un certo tipo di conversazione o aggiornare un CRM.
 
-## Importa
+## Importare
 
 Premi **Importa**:
 
-- **Da Claude** o **Da ChatGPT**, poi **Trova le mie skill**. Cerca in quell'account, nel browser della tua Machine.
-- Oppure portane una tu: **Carica .skill o .zip**, **Carica una cartella** o **Incolla un SKILL.md**.
+- Premi **Da Claude** o **Da ChatGPT**, poi **Trova le mie skill**. La tua Machine cerca le skill in quell’account, usando il suo browser.
+- Oppure importa una skill tu: **Carica .skill o .zip**, **Carica una cartella** o **Incolla un SKILL.md**.
 
-Scegli quelle che vuoi e premi **Importa selezionate**. Entrano solo le istruzioni; gli script mai.
+Seleziona le skill che vuoi e premi **Importa selezionate**. Vengono importate solo le istruzioni, mai gli script.
 
-## Cerca su ClawHub
+## Cercare su ClawHub
 
-Skill pubblicate da altre persone. Sono di terze parti: leggine una prima di installarla.
+Trova le skill pubblicate da altre persone. Leggine una prima di installarla: le hanno create altre persone, non The Machine.
 
 ## Dalle tue note
 
-Quando molte note riguardano un solo tipo di compito, un'attività suggerisce una skill. Prima controlla le tue skill:
+Quando molte delle tue note riguardano lo stesso tipo di compito, un’attività ti suggerisce una skill. Prima controlla le skill che hai già:
 
-- Una fa già quel lavoro: **Aggiorna <skill>** mostra la skill riscritta con ciò che insegnano le note, prima e dopo, con le modifiche evidenziate. Solo **Aggiorna la skill** lì la cambia, e solo quella skill.
-- Una è collegata ma diversa: l'attività dice come in una riga e offre comunque **Crea la skill**.
+- Una skill svolge già quel compito: **Aggiorna <skill>** mostra la skill insieme a ciò che le note insegnano, con le modifiche evidenziate. Solo **Aggiorna skill** la modifica.
+- Una skill è correlata, ma distinta: l’attività spiega in una riga in che modo e propone comunque **Crea skill**.
 
-**Non ora** lascia le note come sono. Le skill che la tua Machine propone in Impostazioni > Skill passano lo stesso controllo.
+**Non ora** lascia invariate le note. Anche le skill che la tua Machine propone in **Impostazioni** > **Skill** vengono controllate allo stesso modo.
 
-## Da un'attività
+## Da un’attività
 
-Chiedi una skill in un'attività e la tua Machine la scrive lì. Apri **Leggi la skill** nell'attività, poi premi **Crea skill** (o **Aggiorna skill** per una che hai già). Prima non viene installato nulla, e poi l'attività è fatta. Se invece la ignori in Impostazioni > Skill, l'attività mostra **Skill ignorata** e resta aperta finché non la chiudi.
+Chiedi una skill in un’attività e la tua Machine la scrive lì. Apri **Leggi la skill**, poi premi **Crea skill** (oppure **Aggiorna skill** per una skill che hai già). Non viene installato nulla finché non lo fai. Se invece l’hai scartata in **Impostazioni** > **Skill**, l’attività mostra **Skill ignorata** e resta aperta finché non la chiudi.
 
-## Condividine una
+## Condividerne una
 
-Condividi una skill con un amico o un collega. La legge e sceglie se installarla. Le modifiche successive partono solo se la condividi di nuovo.
-
-Altro nella [guida alle skill](https://github.com/Salesflare/TheMachine/blob/main/docs/skills.md).
+Condividi una skill con un amico o un collega. Potrà leggerla e decidere se installarla. Le modifiche successive gli arriveranno solo se la condividi di nuovo.

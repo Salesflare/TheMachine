@@ -1,7 +1,7 @@
 ---
 title: Piani e fatturazione
 area: account
-summary: Gratis sul tuo computer. In hosting da {price.standard} al mese, IVA esclusa, con {trial_days} giorni gratis.
+summary: Gratis sul tuo computer. Con hosting, da {price.standard} al mese, IVA esclusa, con {trial_days} giorni gratis.
 covers: settings:account
 code: docs/fleet.md
 site: Manage subscription
@@ -11,23 +11,21 @@ translated: 457d70baa1c81785
 ## La tua Machine
 
 - Sul tuo computer: gratis. Tutto quello che fa The Machine, con il tuo modello.
-- In hosting: {price.standard} al mese per una Machine Standard, o {price.big} per una Più grande, IVA esclusa. I primi {trial_days} giorni sono gratis, una volta per persona. Per iniziare serve la tua carta di pagamento, e non viene addebitato nulla prima della fine dei giorni gratis.
+- Con hosting: {price.standard} al mese per una Machine Standard, oppure {price.big} per una Machine più grande, IVA esclusa. I primi {trial_days} giorni sono gratis, una volta per persona, e non ti addebitiamo nulla prima della fine del periodo. Se hai iniziato senza carta, aggiungine una nella pagina del tuo account prima di allora.
 
-Il tuo piano AI viene fatturato dal tuo fornitore, come OpenAI. Noi non aggiungiamo nulla.
+Il tuo piano AI viene fatturato dal tuo provider, come OpenAI. Noi non aggiungiamo nulla.
 
-## Nel Network
+## Sul Network
 
-- Amici e Family: gratis, con qualsiasi Machine. In una Fleet di famiglia, le Machine in hosting costano {price.family_pair} per le prime due insieme, poi {price.family_seat} ciascuna, IVA esclusa.
-- Fleet Lavoro: {price.seat} per posto al mese, o {price.seat_big} per una Più grande, IVA esclusa. Un collega che gestisce la propria Machine costa {price.network} al mese, e uno che è già in hosting è gratis. Ogni Fleet ha la sua carta e le sue fatture, e il proprietario conferma ogni importo prima dell’addebito.
+- Amici e famiglia: gratis, con qualsiasi Machine. In una Fleet per la famiglia, le Machine con hosting costano {price.family_pair} per le prime due insieme, poi {price.family_seat} ciascuna, IVA esclusa.
+- Fleet per il lavoro: {price.seat} al mese per persona, oppure {price.seat_big} per una Machine più grande, IVA esclusa. Un compagno di squadra che usa la propria Machine costa {price.network} al mese; chi ha già una Machine con hosting è gratis. Ogni Fleet ha la propria carta e le proprie fatture, e il proprietario conferma ogni importo prima che venga addebitato.
 
-Tutti i prezzi sono al mese, IVA esclusa. Vedi [Prezzi](/pricing).
+Tutti i prezzi sono mensili e IVA esclusa. Consulta [Prezzi](/pricing).
 
-I prezzi in hosting, per posto di lavoro e per la Fleet di famiglia sono prezzi early adopter, invece di {price.standard_list}, {price.seat_list} e {price.family_pair_list}. Gli early adopter li mantengono finché l’abbonamento resta attivo.
-
-Hai attivato Network per gli amici prima che il Network diventasse gratuito? Compare in **Impostazioni** › **Account** finché non lo interrompi. **Gestisci** lo apre nel tuo account, dove lo interrompi o cambi la carta. Il tuo nome utente e i tuoi amici restano.
+Hai avviato Network per gli amici prima che Network diventasse gratis? Lo trovi in **Impostazioni** › **Account** finché non lo interrompi. **Gestisci** lo apre nel tuo account, dove puoi interromperlo o cambiare la carta. Il tuo nome utente e i tuoi amici restano.
 
 ## Carta e fatture
 
-In **Impostazioni** › **Account**, premi **Fatturazione** e poi **Gestisci abbonamento**. Si apre Stripe, dove cambi la carta e scarichi le fatture. I dati della tua carta non arrivano mai a noi.
+In **Impostazioni** › **Account**, tocca **Fatturazione**, poi **Gestisci abbonamento**. Si apre Stripe, dove puoi cambiare la carta e scaricare le fatture. Non riceviamo mai i dati della tua carta.
 
-Cambia la dimensione della tua Machine quando vuoi: in **Impostazioni** › **Account**, premi **Cambia piano**.
+Puoi cambiare in qualsiasi momento le dimensioni della tua Machine: in **Impostazioni** › **Account**, tocca **Cambia piano**.

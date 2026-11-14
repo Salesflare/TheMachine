@@ -1,7 +1,7 @@
 ---
 title: X
 area: connections
-summary: Le tue menzioni, risposte e messaggi diretti su X, letti nel browser della tua Machine. Invia solo dopo la tua approvazione.
+summary: Le tue menzioni, risposte e messaggi diretti su X, letti nel browser della tua Machine. I messaggi vengono inviati solo dopo la tua approvazione.
 covers: connector:x
 code: connectors/x.py, integrations/x_inbox.py
 site: Connect, More sources, Remove
@@ -9,34 +9,36 @@ translated: 5cbe43055458daf4
 ---
 ## Cosa legge
 
-Le tue menzioni, risposte e messaggi diretti su X. Li legge nel browser della tua Machine, con il tuo accesso. Non usa l'API per sviluppatori di X, non segna nulla come visto e non può leggere X Chat cifrata.
+Le tue menzioni, risposte e messaggi diretti su X, nel browser della tua Machine, con la tua sessione. Non segna nulla come letto e non può leggere i messaggi crittografati di X Chat.
 
 ## Cosa può inviare
 
-Una risposta o un messaggio diretto, e solo dopo che l'hai approvato sull'attività.
+Una risposta o un messaggio diretto, solo dopo che l'approvi nell'attività.
 
-Questo non passa dall’API ufficiale di X. Leggere e inviare ogni tanto una risposta che hai approvato difficilmente crea problemi; inviare in massa o in automatico può far bloccare un account.
+La connessione non passa dall'API ufficiale di X. È molto improbabile che la lettura e l'invio occasionale di una risposta da te approvata causino problemi. L'invio massivo o automatico può far bloccare un account.
 
 ## Collegalo
 
-Su una Machine in hosting:
+Su una Machine ospitata:
 
-1. Apri la tua pagina di configurazione su app.themachine.computer/setup e vai su **Altre fonti**.
-2. Apri X, scrivi il tuo nome utente senza la @, accedi a X nel browser della tua Machine quando te lo chiede, poi premi **Collegati**.
+1. Apri la pagina di configurazione su app.themachine.computer/setup e vai a **Altre fonti**.
+2. Apri X, inserisci il tuo handle senza @, poi accedi a X nel browser della tua Machine quando richiesto e premi **Collegati**.
 
 Sul tuo computer:
 
-1. Accedi a X una volta nel browser della tua Machine (Impostazioni, **Apri il browser della Machine ↗**).
-2. Nella dashboard, apri **Connessioni**, poi **Chat**, e scegli X. Oppure esegui `assistant connect x`.
-3. Scrivi il tuo nome utente, e quello con cui il browser di solito ha l'accesso.
+1. Nella dashboard, apri **Connessioni**, poi **Chat** e scegli X.
+2. Scegli **Lavoro** e l'azienda, oppure **Personale**. Inserisci il tuo handle senza @ e premi **Collegati**.
+3. Premi **Accedi a X** e accedi nel browser della tua Machine. La connessione si attiva automaticamente appena hai effettuato l'accesso.
 
-Se X disconnette la tua Machine, vedi [Disconnesso da un sito](signed-out.md).
+Oppure esegui `assistant connect x` in un terminale.
+
+Se X disconnette la tua Machine, consulta [Disconnessione da un sito](signed-out.md).
 
 ## Rimuovilo
 
-- Nella dashboard: **Connessioni**, apri X, **Dettagli**, poi **Disconnetti**. Smette di leggere. Quello che ha già portato resta.
-- Su una Machine in hosting puoi anche premere **Rimuovi** accanto a esso nella tua pagina di configurazione.
+- Nella dashboard: apri **Connessioni**, scegli X, poi **Dettagli** e **Disconnetti**. La Machine smette di leggere. I dati già importati restano.
+- Su una Machine ospitata, puoi anche premere **Rimuovi** accanto a X nella pagina di configurazione.
 
-## Esci da X
+## Disconnetti la sessione da X
 
-In X, apri Impostazioni, Sicurezza e accesso all'account, App e sessioni, Sessioni, ed esci dalla sessione del browser della tua Machine.
+Su X, apri Impostazioni, Sicurezza e accesso all'account, App e sessioni, Sessioni e disconnetti la sessione del browser della tua Machine.

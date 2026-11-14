@@ -7,15 +7,19 @@ code: manifest.webmanifest, sw.js, dashboard.html
 order: 3
 translated: 3e2919603c5efa9a
 ---
-El panel se instala como app en un teléfono o un ordenador. Luego envía una notificación por cada tarea, resultado y recordatorio cuando no estás en el panel, dentro de tu [horario laboral](work-hours.md). Elige qué envía en [Notificaciones](notifications.md).
+Instala The Machine como app en tu teléfono u ordenador para recibir una notificación por cada tarea, resultado y recordatorio, dentro de tu [horario laboral](work-hours.md). Elige qué envía en [Notificaciones](notifications.md).
 
-Una nota discreta arriba en Tareas ofrece ambas cosas, de una en una, en cuanto gestionas tu primera tarea: primero las notificaciones y luego la app. Lo que ya está hecho en ese dispositivo nunca aparece. **Ahora no** la oculta 14 días, y un segundo **Ahora no** la quita en ese dispositivo. Los mismos controles siguen en **Ajustes**, **General**, **Este dispositivo**.
+Después de tu primera tarea, aparece una nota discreta en la parte superior de Tareas con estas opciones, de una en una: primero la [app móvil](mobile-app.md), luego las notificaciones y, por último, la app de escritorio. Solo aparece lo que aún no tengas en ese dispositivo.
+
+**Ahora no** la oculta durante 14 días. Si vuelves a elegir **Ahora no**, dejará de aparecer en ese dispositivo. Los mismos controles están en **Ajustes**, **General**, **Este dispositivo**.
+
+En la app del teléfono, **Recibe un aviso cuando algo necesite tu atención.** aparece mientras las notificaciones estén desactivadas. **Activar** se lo pide al teléfono o abre sus ajustes. **×** lo oculta durante 7 días.
 
 ## En un ordenador (Chrome o Edge)
 
-1. Abre tu panel y haz clic en **Instalar** en esa nota, en **Instalar app** en Ajustes, **General**, o en **Instalar** junto a **Ordenador** en Ajustes, **Apps**.
-2. The Machine se abre en su propia ventana. Fíjala en la barra de tareas o en el Dock.
-3. Haz clic en **Activar** en la nota y permite las notificaciones. Aparece al momento una notificación de prueba.
+1. Abre tu panel y haz clic en **Instalar** en esa nota, en **Instalar app** en Ajustes, General, o en **Instalar** junto a **Ordenador** en Ajustes, **Apps**.
+2. The Machine se abre en una ventana propia. Fíjala a la barra de tareas o al Dock.
+3. Haz clic en **Activar** en la nota y permite las notificaciones. Recibirás una notificación de prueba enseguida.
 
 ## En un Mac (Safari)
 
@@ -24,43 +28,43 @@ Una nota discreta arriba en Tareas ofrece ambas cosas, de una en una, en cuanto 
 
 ## En Firefox
 
-Firefox no puede instalarla como app. Las notificaciones funcionan en la pestaña: haz clic en **Activar** en esa nota, o en la campana junto a **Notificaciones** en Ajustes.
+Firefox no permite instalarla como app. Las notificaciones funcionan en la pestaña: haz clic en **Activar** en esa nota o en la campana junto a **Notificaciones** en Ajustes.
 
 ## En un iPhone o iPad
 
-1. Abre tu panel en Safari. Hace falta iOS 16.4 o posterior.
+1. Abre tu panel en Safari. Necesitas iOS 16.4 o posterior.
 2. Toca Compartir y luego Añadir a pantalla de inicio.
-3. Abre The Machine desde tu pantalla de inicio y toca **Activar**.
+3. Abre The Machine desde la pantalla de inicio y toca **Activar**.
 
-Las notificaciones solo funcionan desde la app de la pantalla de inicio, no en una pestaña de Safari.
+Las notificaciones solo funcionan desde la app de la pantalla de inicio, no desde una pestaña de Safari.
 
 ## En Android
 
-1. Abre tu panel en Chrome y toca **Instalar** en esa nota, o abre el menú y toca Instalar aplicación.
-2. Ábrela desde tu pantalla de inicio y toca **Activar**.
+1. Abre tu panel en Chrome y toca **Instalar** en esa nota, o abre el menú y toca Instalar app.
+2. Ábrela desde la pantalla de inicio y toca **Activar**.
 
-## Revísalo o cámbialo
+## Consultar o cambiar los ajustes
 
-En **Ajustes**, **General**, **Este dispositivo**, la campana junto a **Notificaciones** las activa o desactiva solo para ese dispositivo, y **Enviar una prueba** le envía una.
+En **Ajustes**, **General**, **Este dispositivo**, la campana junto a **Notificaciones** las activa o desactiva solo para ese dispositivo. **Enviar una prueba** envía una notificación a ese dispositivo.
 
-Si las notificaciones están bloqueadas, la fila dice dónde volver a permitirlas: en un ordenador, haz clic en el icono a la izquierda de la dirección y permite las Notificaciones. En un iPhone, abre la app Ajustes, Notificaciones, The Machine.
+¿Están bloqueadas? En un ordenador, haz clic en el icono a la izquierda de la dirección y permite las notificaciones. En un iPhone, abre la app Ajustes y ve a Notificaciones, The Machine.
 
-## Abre rápido
+## Abrir rápidamente
 
-La app se abre al momento con tus últimas tareas y luego las actualiza. Sin conexión muestra lo que tenía, marcado como **Sin conexión** con la hora de la última actualización. Esa copia se queda en el dispositivo como mucho 7 días, cifrada, y se borra cuando cierras sesión.
+La app se abre enseguida con tus últimas tareas y luego las actualiza. Esa copia permanece en el dispositivo, cifrada, durante un máximo de 7 días, y se elimina cuando cierras sesión.
 
-## Sin conexión y wifi inestable
+## Sin conexión o con wifi inestable
 
-En un avión o un tren el panel sigue funcionando. Una barra arriba dice **Sin conexión** y cuándo se actualizó por última vez lo que ves. Tus tareas, sus chats, el Calendario y las listas del Graph se abren desde el dispositivo.
+En un avión o un tren, el panel sigue funcionando. Una barra en la parte superior indica **Sin conexión** y cuándo se actualizó por última vez lo que ves. Tus tareas, sus chats, el Calendario y las listas de Graph se abren desde el dispositivo.
 
-- **Posponer**, **No hace falta**, **Marcar como hecha**, **Reabrir** y las notas o mensajes de chat a The Machine esperan en el dispositivo. La tarea dice que se guarda cuando vuelvas a estar en línea, con **Cancelar** hasta entonces. En cuanto tu Machine responde de nuevo, se envían solos, en orden, una vez cada uno.
-- Los mensajes a otras personas nunca esperan. **Enviar** dice que no tienes conexión: vuelve a enviarlo cuando estés en línea.
-- Lo que escribes en un chat se queda en el dispositivo hasta que lo envías, también al recargar.
-- La app vuelve a intentarlo sola, cada vez un poco más tarde. **Probar ahora** lo intenta al momento.
-- Una Machine ocupada puede tardar en responder. La app dice entonces **Tu Machine está tardando en responder** y mantiene lo que ves. Eso no es estar sin conexión.
+- **Posponer**, **No hace falta**, **Marcar como hecha**, **Reabrir** y los mensajes de chat para The Machine se guardan en el dispositivo, con la opción **Cancelar**. Se envían automáticamente cuando vuelves a tener conexión.
+- Los mensajes para otras personas nunca se guardan para enviarlos después: vuelve a enviarlos cuando tengas conexión.
+- Lo que escribes en un chat permanece en el dispositivo hasta que lo envíes, incluso si recargas la página.
+- La app lo sigue intentando automáticamente. **Probar ahora** lo intenta al instante.
+- Una Machine ocupada puede tardar en responder. En ese caso, la app muestra **Tu Machine tarda en responder** y conserva lo que ves. Eso no significa que estés sin conexión.
 
 ## Más dispositivos
 
-Inicia sesión en cada dispositivo de la misma forma. En una Machine alojada, una llave de acceso por dispositivo hace más rápido iniciar sesión: en **Ajustes** › **Cuenta**, pulsa **Gestionar** junto a Inicio de sesión.
+Inicia sesión en cada dispositivo de la misma manera. En una Machine alojada, una clave de acceso por dispositivo agiliza el inicio de sesión: en **Ajustes** › **Cuenta**, pulsa **Gestionar** junto a Inicio de sesión.
 
 Para leer las notificaciones de tu teléfono Android como fuente, consulta [Notificaciones de Android](android.md).

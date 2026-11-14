@@ -1,31 +1,35 @@
 ---
 title: Promesse
 area: cards
-summary: Quello che hai detto che avresti fatto, e quello che gli altri ti hanno promesso. Tenuto sotto controllo da solo.
+summary: Quello che hai detto che avresti fatto e quello che gli altri ti hanno promesso. Il monitoraggio è automatico.
 covers: promises
 code: dashboard.html, assistant.py
 order: 6
 translated: 0779d3fc9d3f3407
 ---
-La tua Machine nota le promesse nei tuoi messaggi, in entrambe le direzioni, senza niente da configurare.
+Tieni traccia di quello che hai promesso e di quello che gli altri ti hanno promesso. La tua Machine individua automaticamente le promesse nei tuoi messaggi.
 
-## Dove si trovano
+## Dove trovarle
 
-Sotto **Promesse** nella pagina Attività:
+Nella sezione **Promesse** della pagina Attività:
 
-- Quello che hai detto che avresti fatto, e per chi: **Hai promesso**.
+- Quello che hai detto che avresti fatto e per chi: **Hai promesso**.
 - Quello che gli altri hanno detto che avrebbero fatto: **Promesso a te**.
 
-Ogni promessa ha un menu **⋯**:
+Ognuna ha un menu **⋯**:
 
-- **Fallo** sulle tue: diventa subito un’attività, e la tua Machine la prepara. **Sollecita** su quelle degli altri: la tua Machine scrive una breve bozza di sollecito dove l’hanno promesso, e tu resti nell’elenco. Un breve avviso lo conferma, con **Apri attività**. Non parte nulla finché non lo invii tu. Se è già un’attività, si apre quella.
-- **Segna come fatto**: è stata mantenuta.
-- **Non succederà**: non accadrà, quindi la tua Machine smette di seguirla, senza attività.
+- **Fallo** sulle tue promesse: diventano subito un'attività e la tua Machine la prepara. **Sollecita** sulle promesse degli altri: la tua Machine prepara una breve bozza di sollecito nel luogo in cui te l'hanno fatta, mentre tu resti nell'elenco. Una breve nota ti avvisa che è in preparazione e include **Apri attività**; la promessa risulta «ora è un'attività». Non viene inviato nulla finché non lo invii tu. Se è già un'attività, si apre quell'attività.
+- **Segna come fatto**: la promessa è stata mantenuta.
+- **Non succederà**: non succederà, quindi la tua Machine smette di monitorarla e non crea un'attività.
 
-Una promessa aperta diventa anche da sola un’attività alla scadenza (le tue la mattina prima, così hai un giorno per farla), e compare nel suo giorno nel [Calendario](calendar.md). Una che è già un’attività porta a quella, e **Segna come fatto** o **Non succederà** chiude anche quell’attività. Quando la tua Machine vede che è fatta, si chiudono entrambe, con una riga che lo dice.
+Una promessa aperta diventa automaticamente un'attività quando arriva la scadenza (se è tua, la mattina prima, così hai un giorno per occupartene) e appare nel giorno corrispondente nel [Calendario](calendar.md). Se è già un'attività, include un link per aprirla; anche **Segna come fatto** o **Non succederà** chiude l'attività. Quando la tua Machine vede che è stata completata, chiude entrambe e lo indica con una nota.
 
-Prima, la tua Machine legge cosa è arrivato dopo. Già mantenuta, per esempio con una tua risposta o una riunione che ne ha parlato? Si chiude come mantenuta, senza attività.
+Una promessa è già stata mantenuta, per esempio con una risposta che hai inviato o una riunione che l'ha soddisfatta? Si chiude automaticamente, senza creare un'attività.
 
-Poi arriva una nuova data, come «meglio la settimana prossima»? La stessa promessa si sposta, con la sua attività, senza una seconda. La sua pagina mostra la nuova data e il messaggio più recente.
+La promessa ha una nuova data, per esempio «la prossima settimana, invece»? La stessa promessa viene aggiornata, così come la relativa attività, senza crearne un'altra. La sua pagina mostra la nuova data e il messaggio più recente.
 
-Sul tuo computer, anche `assistant promises` le elenca. Il [riepilogo settimanale](weekly-recap.md) conta quelle mantenute e quelle aperte.
+Le promesse senza data ricevono un giorno di promemoria: tre giorni dopo che l'hai fatta tu, una settimana dopo che l'ha fatta l'altra persona. Se è ancora aperta a quel punto, diventa un'attività.
+
+Le promesse da Slack mostrano il nome della persona.
+
+Il [riepilogo settimanale](weekly-recap.md) conta le promesse mantenute e quelle ancora aperte. Sul tuo computer, `assistant promises` le elenca in un terminale.

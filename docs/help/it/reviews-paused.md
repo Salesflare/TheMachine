@@ -1,42 +1,42 @@
 ---
 title: Nessuna nuova attività
 area: troubleshooting
-summary: I controlli sono disattivati, in attesa o fermi sul limite di utilizzo del tuo modello. Come capirlo e cosa fare.
+summary: I controlli sono disattivati, in attesa o interrotti per il limite di utilizzo del modello. Scopri come capirlo e cosa fare.
 covers: 
 code: dashboard.html, assistant.py
 order: 3
-translated: 39b4aa749445dfba
+translated: d265e540d9ecef0e
 ---
-Le attività nascono dai controlli: la tua Machine legge quello che è arrivato, a piccoli gruppi, entro circa 15 minuti.
+Le attività arrivano dai controlli: la tua Machine controlla cosa è arrivato negli ultimi 15 minuti circa.
 
-## Appena registrato
+## Ti sei appena registrato
 
-Su una nuova Machine ospitata, i controlli partono da soli appena la tua IA e la tua posta sono collegate. Mentre la tua Machine legge la tua posta, Attività dice "Leggo la tua posta, le prime attività arrivano tra pochi minuti". Appena sa quanto c’è da leggere, dice più o meno quanto ci vuole: "Prime attività tra circa 10 min." Se manca un passaggio, **Serve il tuo intervento** lo indica, come **Collega la posta**, con un link a quel passaggio.
+Su una nuova Machine ospitata, i controlli si avviano da soli una volta collegate l’AI e la posta. Mentre la tua Machine legge la posta, Attività mostra «Lettura della posta in corso, le prime attività arriveranno tra qualche minuto». Una volta capito quanto c’è da leggere, indica all’incirca quanto ci vorrà: «Le prime attività arriveranno tra circa 10 min». Se manca un passaggio, **Serve il tuo intervento** lo indica, per esempio con **Collega la posta**, e include un link a quel passaggio.
 
-Mentre legge, Attività mostra a che punto è, alcune delle persone e organizzazioni che ha incontrato e la tua prima attività appena arriva. I nomi vengono dalla tua posta e li vedi solo tu.
+Durante la lettura, Attività mostra i progressi («Letti 20 messaggi su 132. Lettura dei prossimi 40…»), alcune delle persone e organizzazioni che ha trovato e la tua prima attività non appena è pronta. Il numero indica quanti messaggi ha finito di leggere; la barra avanza mentre legge i successivi. I nomi provengono dalla tua posta e li vedi solo tu.
 
-Se al primo sguardo non trova niente per te, dice cosa ha letto e propone i passi successivi, come collegare un servizio che ti scrive spesso o chiedere cosa è cambiato questa settimana.
+Se al primo controllo non trova nulla per te, indica cosa ha letto e suggerisce i passaggi successivi, per esempio collegare un servizio da cui ricevi spesso email o chiedere cosa è cambiato questa settimana.
 
 ## I controlli sono disattivati
 
-In cima ad Attività compare "I controlli sono disattivati, quindi per ora non arrivano attività." Su una Machine in hosting, premi **Attiva i controlli**. Sul tuo computer, esegui `./install.sh --activate`.
+In cima ad Attività compare «I controlli sono disattivati, quindi non arrivano ancora attività». Su una Machine ospitata, premi **Attiva i controlli**. Sul tuo computer, esegui `./install.sh --activate`.
 
 ## Il limite del tuo modello
 
-I controlli di quello che è arrivato si mettono in pausa a circa il 65% del limite di 5 ore del tuo piano e al 90% del limite settimanale, per lasciare spazio alle tue chat. Una bacheca che scorre la tua cronologia va più piano, a circa un settimo della settimana al giorno. Con un modello di riserva funzionante, su un altro piano o fornitore, i controlli non aspettano. Vedi [Modello](model.md).
+Per lasciare spazio alle tue chat, i controlli si mettono in pausa quando raggiungono circa il 65% del limite di 5 ore del tuo piano AI e il 90% del limite settimanale. Se hai un modello di riserva con un altro piano, i controlli non aspettano. Vedi [Modello](model.md).
 
-Mentre i controlli aspettano, in cima alla dashboard compare fino a quando, per esempio "I controlli aspettano fino alle 07:15 per risparmiare la tua settimana di ChatGPT." **Controlla ora** ne avvia uno subito. Quando raggiungi un limite, in cima alla dashboard compare quale e quando si azzera. **Connessioni**, poi **Controlli**, lo mostra accanto all’esecuzione. **Impostazioni**, **Modello** mostra i tuoi limiti. Vedi [Modello](model.md).
+Mentre i controlli sono in attesa, in cima alla dashboard compare fino a quando, per esempio «I controlli sono in attesa fino alle 07:15 per salvaguardare la tua quota settimanale di ChatGPT». **Controlla ora** ne avvia comunque uno. In **Impostazioni**, **Modello** trovi i tuoi limiti.
 
-Mentre aspetta non si perde nulla: quello che è arrivato viene controllato appena possibile.
+Non perdi nulla: i contenuti arrivati vengono controllati appena possibile.
 
 ## Di notte
 
-Dalle 00:00 alle 06:30 i controlli vanno in pausa e i nuovi messaggi aspettano. Vengono controllati insieme alle 06:30, prima del riepilogo del mattino. **Controlli** dice allora “In pausa per la notte, recupera alle 06:30”. Se usi l’app, scrivi in chat o tocchi un’attività, i controlli ripartono finché non resti inattivo per un’ora. **Controlla ora** controlla subito.
+Dalle 00:00 alle 06:30, i controlli si mettono in pausa e i nuovi messaggi restano in attesa. Alle 06:30 vengono controllati tutti insieme, prima del riepilogo del mattino. **Controlli** mostra «In pausa per la notte, recupero alle 06:30». Usa l’app, scrivi in chat o tocca un’attività: i controlli ripartono e continuano finché non resti inattivo per un’ora. **Controlla ora** avvia subito un controllo.
 
 ## Un’esecuzione non è riuscita
 
-**Esecuzioni recenti** sotto **Controlli** mostra ogni esecuzione. Un gruppo non riuscito viene ritentato da solo.
+In **Connessioni**, **Controlli**, la sezione **Esecuzioni recenti** mostra ogni esecuzione. Se una non riesce, viene riprovata automaticamente.
 
 ## Messi da parte
 
-Quando un controllo rimanda un messaggio due volte, viene messo da parte. **Connessioni**, **Controlli** mostra quanti, e **Messi da parte** li elenca. Uno da una persona che ti scrive direttamente, da qualcuno che conosci o da un cliente riceve un ultimo controllo circa 3 giorni dopo l’arrivo. Quel controllo crea un’attività o lo chiude. Ciò che hai scartato o posticipato resta così.
+Quando un controllo rimanda un messaggio due volte, viene messo da parte. In **Connessioni**, **Controlli** trovi quanti sono, mentre **Messi da parte** li elenca. Un messaggio ricevuto da una persona che ti scrive, da qualcuno che conosci o da un cliente viene controllato un’ultima volta circa 3 giorni dopo il suo arrivo. Quel controllo crea un’attività o chiude il messaggio. Ciò che hai scartato o posticipato resta tale.

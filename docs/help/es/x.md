@@ -1,7 +1,7 @@
 ---
 title: X
 area: connections
-summary: Tus menciones, respuestas y mensajes directos en X, leídos en el navegador propio de tu Machine. Solo envía después de que lo apruebes.
+summary: Tus menciones, respuestas y mensajes directos en X, leídos en el navegador propio de tu Machine. Solo los envía cuando los apruebas.
 covers: connector:x
 code: connectors/x.py, integrations/x_inbox.py
 site: Connect, More sources, Remove
@@ -9,34 +9,36 @@ translated: 5cbe43055458daf4
 ---
 ## Qué lee
 
-Tus menciones, respuestas y mensajes directos en X. Los lee en el navegador propio de tu Machine, con tu sesión iniciada. No usa la API para desarrolladores de X, no marca nada como visto y no puede leer el X Chat cifrado.
+Tus menciones, respuestas y mensajes directos en X, en el navegador de tu Machine con tu sesión iniciada. No marca nada como leído y no puede leer los mensajes cifrados de X Chat.
 
 ## Qué puede enviar
 
 Una respuesta o un mensaje directo, y solo después de que lo apruebes en la tarea.
 
-Esto no pasa por la API oficial de X. Leer y enviar de vez en cuando una respuesta que aprobaste casi nunca da problemas; enviar en masa o de forma automática puede hacer que bloqueen una cuenta.
+Esto no pasa por la API oficial de X. Es muy poco probable que leer y enviar alguna respuesta que hayas aprobado cause problemas; el envío masivo o automatizado puede hacer que bloqueen una cuenta.
 
 ## Conéctalo
 
 En una Machine alojada:
 
 1. Abre tu página de configuración en app.themachine.computer/setup y ve a **Más fuentes**.
-2. Abre X, escribe tu usuario sin la @, inicia sesión en X en el navegador de tu Machine cuando te lo pida y luego pulsa **Conectar**.
+2. Abre X, escribe tu nombre de usuario sin la @, inicia sesión en X desde el navegador de tu Machine cuando te lo pida y pulsa **Conectar**.
 
-En tu propio ordenador:
+En tu propio equipo:
 
-1. Inicia sesión en X una vez en el navegador de tu Machine (Ajustes, **Abrir el navegador de la Machine ↗**).
-2. En el panel, abre **Conexiones**, luego **Chat**, y elige X. O ejecuta `assistant connect x`.
-3. Escribe tu usuario, y el usuario con el que el navegador suele tener la sesión iniciada.
+1. En el panel, abre **Conexiones**, luego **Chat** y elige X.
+2. Elige **Trabajo** con su empresa o **Personal**, escribe tu nombre de usuario sin la @ y pulsa **Conectar**.
+3. Pulsa **Iniciar sesión en X** e inicia sesión en el navegador de tu Machine. Se conectará automáticamente cuando hayas iniciado sesión.
 
-Si X cierra la sesión de tu Machine, consulta [Sesión cerrada en un sitio](signed-out.md).
+También puedes ejecutar `assistant connect x` en una terminal.
+
+Si X cierra la sesión de tu Machine, consulta [Cierre de sesión en un sitio](signed-out.md).
 
 ## Quítalo
 
-- En el panel: **Conexiones**, abre X, **Detalles** y luego **Desconectar**. Deja de leer. Lo que ya trajo se queda.
-- En una Machine alojada también puedes pulsar **Quitar** junto a él en tu página de configuración.
+- En el panel: abre **Conexiones**, abre X, pulsa **Detalles** y luego **Desconectar**. Dejará de leer. Lo que ya haya importado se queda.
+- En una Machine alojada, también puedes pulsar **Quitar** junto a X en tu página de configuración.
 
-## Cierra su sesión en X
+## Cierra la sesión desde X
 
-En X, abre Settings, Security and account access, Apps and sessions, Sessions, y cierra la sesión del navegador de tu Machine.
+En X, abre **Ajustes**, **Seguridad y acceso a la cuenta**, **Aplicaciones y sesiones**, **Sesiones** y cierra la sesión del navegador de tu Machine.

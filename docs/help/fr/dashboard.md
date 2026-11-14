@@ -1,7 +1,7 @@
 ---
-title: Vous repérer
+title: Se repérer
 area: getting-started
-summary: À quoi sert chaque partie du tableau de bord, de Tâches à Connexions.
+summary: À quoi sert chaque partie du tableau de bord, des tâches aux connexions.
 covers: tab:events, tab:feedback
 code: dashboard.html
 order: 4
@@ -10,73 +10,75 @@ translated: d41a4a0017765f9e
 ## Les onglets
 
 - **Tâches** : vos tâches et vos promesses. Voir [Tâches](cards.md).
-- **Agenda** : la semaine à venir avec vos réunions, vos tâches à échéance et vos promesses. Voir [Agenda](calendar.md).
-- **Graph** : les personnes, organisations et projets de vos messages. Voir [Graph](graph.md).
-- **Fleet** : votre équipe, votre famille et vos amis sur The Machine Network, une fois que vous en avez une. Voir [Fleet](fleet.md).
-- **Apprentissage** : comment se passent les tâches, et ce qu’elle a appris.
+- **Agenda** : la semaine à venir avec vos réunions, les échéances de vos tâches et vos promesses. Voir [Agenda](calendar.md).
+- **Graph** : les personnes, les organisations et les projets mentionnés dans vos messages. Voir [Graph](graph.md).
+- **Fleet** : votre équipe, votre famille et vos amis sur The Machine Network, si vous en avez une. Voir [Fleet](fleet.md).
+- **Apprentissage** : l’avancement de vos tâches et ce que The Machine a appris.
 - **Connexions** : vos sources et leur état. Voir [Connexions](connections.md).
 
-**Rechercher**, en haut de la barre latérale, trouve d’abord les tâches, puis les personnes, les messages et plus encore. **Navigateur**, **Aide** et **Paramètres** sont en bas de la barre latérale. Sur un téléphone, le bouton de menu de la barre du haut ouvre la barre latérale.
+**Rechercher**, en haut de la barre latérale, permet de trouver des tâches, des personnes, des messages et plus encore. **Navigateur**, **Aide** et **Paramètres** se trouvent en bas. Sur un téléphone, le bouton de menu dans la barre supérieure ouvre la barre latérale.
 
-La barre latérale liste vos tâches comme la page. Les demandes de votre Fleet sont aussi sous **Pour vous**, donc son nombre correspond à celui du haut. Touchez-en une pour l’afficher.
+La barre latérale affiche vos tâches comme la page. Les demandes de votre Fleet apparaissent aussi sous **Pour vous**, pour que le nombre corresponde à celui affiché en haut. Touchez une tâche pour l’ouvrir.
 
-Pour le menu d’une tâche, survolez-la et cliquez sur **⋯**, faites un clic droit dessus, ou maintenez-la appuyée sur un téléphone. Au clavier, appuyez sur `Shift F10` dessus. En plus de **Renommer** et **Ouvrir**, le menu a les boutons de la tâche elle-même : **Marquer comme fait**, **Mettre en attente** et **Pas nécessaire**, chacun avec **Annuler**.
+Pour ouvrir le menu d’une tâche, survolez-la et cliquez sur **⋯**, faites un clic droit dessus ou maintenez-la appuyée sur un téléphone. Au clavier, appuyez sur `Shift F10` lorsque la tâche est sélectionnée. En plus de **Renommer** et **Ouvrir**, le menu propose les commandes propres à la tâche : **Marquer comme fait**, **Mettre en attente** et **Pas nécessaire**, chacune avec **Annuler**.
 
-**Navigateur** montre le navigateur de votre Machine. Sur ordinateur, il s’ouvre à côté de la barre latérale, à la taille de l’espace disponible, tout comme **Voir dans le navigateur** sur une tâche et **Ouvrir le navigateur** quand un site demande une connexion. Sur un téléphone, il s’ouvre dans un nouvel onglet.
+**Navigateur** affiche le navigateur de votre Machine, celui qu’elle utilise pour des sites comme LinkedIn. Sur un ordinateur, il s’ouvre à côté de la barre latérale, tout comme **Voir dans le navigateur** sur une tâche et **Ouvrir le navigateur** lorsqu’un site demande de vous connecter. Dans le navigateur d’un téléphone, il s’ouvre dans un nouvel onglet. Dans l’appli mobile ou sur le tableau de bord ajouté à l’écran d’accueil, il occupe tout l’écran. Son X permet de revenir en arrière.
 
-La fenêtre au premier plan du navigateur s’affiche au milieu et le reste de l’écran est sombre ; un bouton dans le coin montre tout l’écran. Sur un petit écran, toute la barre latérale défile comme une seule colonne, tâches comprises, comme le menu sur un téléphone.
+**Agrandir** fait occuper toute la fenêtre au navigateur. Appuyez de nouveau dessus pour revenir en arrière.
 
-**Arrêter** s’affiche en haut tant qu’une tâche utilise le navigateur, avec le nom de cette tâche à côté de **Navigateur**. Un appui l’arrête tout de suite, sans rien demander : plus rien n’est cliqué, saisi ni envoyé, et le chat de la tâche indique « Arrêtée depuis le navigateur ».
+Lorsqu’une tâche utilise le navigateur, **Arrêter** s’affiche en haut. Une seule pression met immédiatement fin à cette exécution : plus rien n’est cliqué, saisi ou envoyé, et le chat de la tâche indique « Arrêtée depuis le navigateur ».
 
-Si plusieurs tâches l’utilisent, c’est celle de l’onglet au premier plan qui s’arrête. Sur un téléphone, l’onglet du navigateur a le même bouton en haut. Pour continuer, écrivez dans le chat ou appuyez sur **Réessayer**.
+S’il y a plusieurs exécutions, cela arrête celle qui est au premier plan. Pour continuer, écrivez dans le chat de la tâche ou appuyez sur **Réessayer**.
 
-Sur un téléphone, une fenêtre comme **Envoyer cet e-mail ?** occupe tout l’écran : le titre et × restent en haut, les boutons en bas, et seul ce qui est entre les deux défile. La zone du message prend la place libre, et les boutons restent à portée pendant la saisie.
+Quand les tâches ne tiennent pas dans la barre latérale, celle-ci défile en une seule colonne.
 
-## Tirez-en le meilleur
+Sur un téléphone, une boîte de dialogue comme **Envoyer cet e-mail ?** occupe tout l’écran. Ses boutons restent toujours accessibles, même pendant que vous écrivez.
 
-Dès votre première visite, une fois le premier coup d’œil terminé, une petite tâche en haut des Tâches liste ce qui rend The Machine plus utile : l’app sur le téléphone, les notifications, WhatsApp, l’app sur cet ordinateur, un autre compte et d’autres connexions. Chaque ligne a un bouton qui fait cette étape, et disparaît une fois faite, la tâche ne montre donc que ce qui reste. Elle affiche jusqu’à cinq lignes, les étapes ouvertes d’abord : un outil que suggèrent vos e-mails, comme GitHub, a sa ligne dès que les étapes précédentes sont faites.
+## En tirer le meilleur parti
 
-Les lignes n’apparaissent que là où elles ont du sens : pas d’app de téléphone dans l’app, pas d’installation sur un téléphone. Le × d’une ligne la ferme sur tous les appareils, et le × en haut ferme toute la tâche.
+Une petite tâche en haut de la page Tâches indique ce qui rend The Machine plus utile : l’appli mobile, les notifications, WhatsApp, l’appli sur cet ordinateur, un autre compte et d’autres connexions. Chaque ligne propose un bouton pour effectuer l’étape correspondante et disparaît une fois l’étape terminée. La tâche n’affiche ainsi que ce qu’il reste à faire. Elle affiche jusqu’à cinq lignes, en commençant par les étapes en cours. Un outil suggéré par vos e-mails, comme GitHub, apparaît donc une fois les étapes précédentes terminées.
 
-Après votre premier jour, elle se replie en une ligne discrète au-dessus de **Pour vous**, comme « Encore 2 étapes · Continuer ». Touchez-la pour ouvrir la tâche, et touchez la flèche pour la replier.
+Les lignes ne s’affichent que là où elles sont pertinentes. Le × d’une ligne la ferme sur tous les appareils. Le × en haut ferme toute la tâche.
 
-**Annuler** dans le message qui suit la fait revenir, tout comme **Afficher 1 étape masquée** en bas de la tâche. Une fois toute la tâche fermée, **Paramètres**, **Général**, **Tâche de démarrage** la fait revenir. **Paramètres**, **Général**, **Cet appareil** garde les mêmes réglages, et **Paramètres**, **Applis** propose toujours l’app mobile.
+Après votre première journée, elle se replie en une ligne discrète au-dessus de **Pour vous**, par exemple « 2 étapes restantes · Continuer ». Touchez-la pour ouvrir la tâche, puis touchez la flèche pour la replier à nouveau.
+
+**Annuler** ou **Afficher 1 élément masqué** réaffiche une ligne. Pour réafficher toute la tâche, allez dans **Paramètres**, **Général**, **Tâche de démarrage**. **Paramètres**, **Général**, **Cet appareil** propose les mêmes commandes, et **Paramètres**, **Applis** affiche toujours l’appli mobile.
 
 ## Nouvelles versions
 
-Quand une nouvelle version du tableau de bord est prête, il ne se recharge jamais pendant que vous l’utilisez. L’ouverture ou le rechargement de l’app charge la version la plus récente. Une fenêtre ouverte la charge dès que la fenêtre passe en arrière-plan, ou après quelques minutes sans saisie, et jamais tant qu’un texte saisi n’est pas enregistré ou envoyé, ou qu’une boîte de dialogue est ouverte. **Mise à jour prête**, en haut, la charge tout de suite. Un redémarrage de votre Machine ne fait que rétablir la connexion.
+Une nouvelle version du tableau de bord ne se recharge jamais pendant que vous l’utilisez. Elle se charge à l’ouverture de l’appli, ou lorsque la fenêtre est restée en arrière-plan ou inactive pendant quelques minutes. Elle n’interrompt jamais du texte non enregistré ni une boîte de dialogue ouverte. **Mise à jour prête**, en haut, permet de la charger immédiatement.
 
-Quand une fonction ou une amélioration plus importante arrive, une petite note **Quoi de neuf** vous le dit, au plus une fois par jour. Passez de l’une à l’autre avec **Retour** et **Suivant**, ou glissez. Le bouton de chaque nouveauté ouvre la fonction. **Fait** ou **×** la ferme. Elle ne s’affiche jamais par-dessus ce que vous faites, et une fois fermée elle disparaît sur tous vos appareils. Vous ne voyez que ce qui est arrivé après vos débuts.
+Lorsqu’une fonctionnalité ou une amélioration importante est disponible, une petite note **Quoi de neuf** vous en informe, au maximum une fois par jour. Parcourez-la avec **Retour** et **Suivant**, ou en balayant l’écran. Le bouton de la note ouvre la fonctionnalité. **Fait** ou **×** ferme la note. Elle ne s’affiche jamais par-dessus ce que vous faites et, une fois fermée, elle disparaît sur tous les appareils. Vous ne voyez que les nouveautés publiées après votre prise en main.
 
 ## Messages
 
-Ouvrez la recherche avec `⌘K` sur Mac ou `Ctrl K` sur Windows et Linux, ou avec l’icône de recherche dans la barre du haut sur un téléphone. Tapez au moins deux lettres : **Messages** montre les meilleurs résultats parmi tout ce que votre Machine a lu, par sens ou par mots. L’[historique](history.md) plus ancien apparaît par mots.
+Ouvrez la recherche avec `⌘K` sur un Mac ou `Ctrl K` sur Windows et Linux, ou avec l’icône de recherche sur un téléphone. Saisissez au moins deux lettres : **Messages** affiche les meilleurs résultats parmi tous les contenus lus par votre Machine, selon leur sens ou les mots utilisés. Les résultats de l’[historique](history.md) plus ancien reposent sur les mots utilisés.
 
-Vous pouvez aussi poser une question, comme celle que propose une recherche vide, pour une réponse courte tirée de vos propres messages ([Clavier et palette de commandes](keyboard.md)).
+Vous pouvez aussi poser une question, comme celle suggérée dans une recherche vide, pour obtenir une réponse courte à partir de vos propres messages ([Clavier et palette de commandes](keyboard.md)).
 
-**Voir tous les résultats** ouvre la liste complète, pour tous les comptes ou un seul. Chaque résultat s’ouvre dans un lecteur, avec un lien vers son origine. Une recherche vide montre les messages les plus récents.
+**Voir tous les résultats** ouvre la liste complète, pour tous les comptes ou pour un seul. Chaque résultat s’ouvre dans un lecteur, avec un lien vers sa source. Une recherche vide affiche les messages les plus récents.
 
-Une recherche montre d’abord le meilleur résultat, et l’aperçu sur le téléphone d’un message présent en entier n’apparaît qu’une fois, comme ce message. Une question sur tous les comptes reçoit en haut une réponse courte, avec le message d’où elle vient. Si vos messages ne le disent pas, aucune réponse n’apparaît.
+La recherche affiche d’abord le meilleur résultat. Sur un téléphone, l’aperçu d’un message déjà affiché en entier n’apparaît qu’une fois, comme ce message. Une question posée sur tous les comptes affiche une réponse courte en haut, avec le message qui en est la source. Si vos messages ne contiennent pas la réponse, aucune réponse ne s’affiche.
 
 ## Apprentissage
 
-Apprentissage a une rangée d’onglets. Un onglet encore vide n’est pas affiché.
+La section Apprentissage montre ce que The Machine a appris de vous et l’efficacité de ses tâches. Les onglets vides sont masqués.
 
-- **Ce que j’ai appris** : votre façon d’écrire, des faits et la façon dont vous aimez que les choses soient faites, à partir de vos notes. **Modifier** n’importe quel élément avec vos mots, et **Retirer** ce qui n’est plus vrai. Vous pouvez aussi demander à votre chat d’oublier quelque chose (« oublie que j’ai déménagé ») : si un fait correspond clairement, il est retiré, avec **Annuler** dans Paramètres, **Activité** et sous **Modifications**. Si plusieurs correspondent, le chat demande lequel. Quand une note sur une tâche apprend un fait ou une règle, le chat de la tâche l’indique sous la réponse (**Ajouté à ce que j’ai appris**, avec **Modifier** et **Annuler**) ; cette ligne vient de ce qui a été enregistré, donc une réponse ne peut jamais simplement le prétendre.
-- Un fait peut dire ce qu’il est (**Temporaire**, **Engagement**, **Préférence**) et **Jusqu’au** quand il vaut. Un fait temporaire s’efface en quelques semaines, une préférence ou un engagement en quelques mois, les autres faits en un an. Passé sa date, un fait va dans **Terminés**, où **Récupérer** le remet.
-- **Faits** garde les faits généraux : sur vous et votre façon de travailler. Un fait sur une personne, une organisation ou un projet se trouve sur leur page dans le Graph, sous **Ce qu’on sait de**, où vous le modifiez. Un fait qui en nomme un par son nom complet y va à l’enregistrement, et le chat de la tâche dit **Ajouté à** eux **dans le Graph**. Une ligne discrète sous **Faits** dit combien se trouvent sur des pages du Graph ; ouvrez-la pour aller à chaque page. Un fait tiré de votre propre message montre entre guillemets les mots dont il vient.
-- Un numéro de téléphone ou une adresse e-mail que vous donnez pour quelqu’un va sur sa page dans le Graph, pas dans les faits. Si le numéro est déjà sur une fiche et qu’une seule autre fiche porte le même nom, les deux sont fusionnées. Le chat de la tâche indique **Ajouté à** et son nom, avec **Annuler**. Si on ne sait pas pour qui c’est, cela reste un fait.
-- La liste ne se remplit jamais. Quand elle s’allonge, les faits et règles pas utilisés depuis trois semaines vont dans **Mis de côté**, où **Récupérer** en remet un. Ce que vous avez modifié ou récupéré reste. Un fait mis de côté aide encore quand une tâche ou un chat en parle, et un fait terminé seulement comme historique, jamais comme l’état actuel.
-- Une note qui dit autrement quelque chose de déjà appris le remplace, pour que rien n’apparaisse deux fois. **Annuler la fusion** remet l’ancienne formulation. Vos propres modifications ne sont jamais remplacées.
-- **À reprendre** : vous utilisiez déjà OpenClaw ? Les lignes de ses notes (`MEMORY.md`, `USER.md`) qui valent la peine d’être gardées s’affichent en haut, chacune avec son fichier d’origine. Cochez celles à garder, puis **Garder la sélection** : elles deviennent des faits ou des règles comme les autres. Avec **Écarter le reste**, les autres ne reviennent pas. Les fichiers ne sont jamais modifiés, et rien ne s’affiche s’ils ne contiennent rien à garder.
-- **Modifications** : ce qu’elle a retenu de vos retouches, de vos refus et de vos chats, chacun avec **Annuler**. Voir [Rédaction](writing.md#it-keeps-learning).
-- **Décisions** : une chronologie de vos choix sur les tâches.
-- **Partagé** : les apprentissages à partager avec l’équipe The Machine, et les votes qui vous attendent. Ne s’affiche que si quelque chose attend. Voir [Partager des apprentissages](share-learnings.md).
-- **Où on en est** : les 30 derniers jours, et plus c’est haut, mieux c’est.
-  - **Utile** : parmi les tâches que vous avez tranchées, combien vous avez traitées (**Faire**, envoyée ou faite) au lieu de les écarter.
-  - **Du premier coup** : parmi les tâches lancées avec **Faire**, combien n’ont demandé aucune correction ensuite.
-  - **Terminée** : parmi les tâches lancées avec **Faire**, combien ont abouti sans que vous demandiez de continuer ou de réessayer.
-  - **Envoyé tel quel** : parmi les brouillons envoyés, combien sont partis sans retouche ni **Demander des modifications** avant.
-  - Chaque chiffre se compare aux 30 jours précédents. Le graphique commence à votre première tâche décidée : une barre par jour les deux premières semaines, puis une par semaine, jusqu’aux 8 dernières semaines.
-  - **Utile par source** : d’où viennent les tâches, comme **E-mail**, **Ajouté par vous** (créées avec **Nouvelle tâche**), **Notifications sur le téléphone** ou **The Machine elle-même** (problèmes dans The Machine, comme une erreur), et combien vous en avez traitées.
-  - **Tâches oubliées** : une fois par semaine, The Machine vérifie un échantillon de messages restés sans tâche, et montre la part qui en demandait sans doute une, avec sa fourchette. Ceux qu’elle a trouvés sont listés : **Ouvrir**, ou la ligne elle-même, affiche le message, et **Vrai oubli** ou **Pas un oubli** lui dit si elle avait raison. **Vrai oubli** ajoute aussi la tâche, avec **Annuler** (**Ouvrir la tâche** y mène), et The Machine en tire une leçon pour repérer ce genre de message à l’avenir. Vos réponses restent sur votre Machine et rendent le chiffre plus juste. Le chiffre tient aussi compte des erreurs de la vérification elle-même, mesurées sur des exemples inventés et vos réponses. Visible après la première vérification hebdomadaire.
+- **Ce que j’ai appris** : votre façon d’écrire, des faits et vos préférences, à partir de vos notes. **Modifier** un élément avec vos propres mots, ou **Retirer** ce qui n’est plus vrai. Vous pouvez aussi demander à votre chat d’oublier quelque chose (« oublie que j’ai déménagé ») : si un seul fait correspond clairement, il est supprimé. Vous pouvez alors **Annuler** dans **Paramètres**, **Activité** et sous **Modifications**. Si plusieurs faits correspondent, le chat vous demande lequel supprimer. Lorsqu’une note lui apprend un fait ou une règle, le chat de la tâche indique **Ajouté à ce que j’ai appris**, avec les options **Modifier** et **Annuler**.
+- Un fait peut être **Temporaire**, un **Engagement** ou une **Préférence**, avec une date **Jusqu’à** laquelle il est valable. Les faits temporaires disparaissent au bout de quelques semaines, les préférences et les engagements au bout de quelques mois, et les autres faits au bout d’un an. Une fois sa date passée, ou si un message plus récent montre qu’il n’est plus valable, le fait passe dans **Terminés**, où **Récupérer** permet de le rétablir.
+- **Faits** regroupe les faits généraux : ceux qui vous concernent et qui décrivent votre façon de travailler. Un fait sur une personne, une organisation ou un projet figure sur sa page dans Graph, sous **Connu à son sujet**, où vous pouvez le modifier. Lorsqu’un fait nomme quelqu’un par son nom complet, il est enregistré sur sa page, et le chat de la tâche indique **Ajouté à** son nom **dans Graph**. Une ligne discrète sous **Faits** indique le nombre de faits présents sur les pages Graph. Ouvrez-la pour accéder à chaque page. Pour un fait tiré de l’un de vos messages, les mots d’origine s’affichent entre guillemets.
+- Le numéro de téléphone ou l’adresse e-mail que vous indiquez pour quelqu’un figure sur sa page dans Graph, pas parmi les faits. Si le numéro figure déjà sur une fiche et qu’une autre fiche porte le même nom, les deux fiches sont fusionnées. Le chat de la tâche indique **Ajouté à** suivi de son nom, avec **Annuler**. Si la personne concernée n’est pas claire, l’information reste un fait.
+- La liste n’est jamais saturée. Lorsqu’elle s’allonge, les faits et les règles qui n’ont pas été utilisés depuis trois semaines passent dans **Mis de côté**, où **Récupérer** permet de rétablir un élément. Un élément que vous avez modifié ou récupéré reste dans la liste. Un fait mis de côté reste utile lorsqu’une tâche ou un chat le concerne. Un fait terminé ne sert que d’historique et n’est jamais utilisé pour décrire la situation actuelle.
+- Une note qui reformule quelque chose déjà appris le remplace, pour éviter les doublons. **Annuler la fusion** rétablit l’ancienne formulation. Vos propres modifications ne sont jamais remplacées.
+- **À reprendre** : vous avez déjà utilisé OpenClaw ? Les lignes de ses notes (`MEMORY.md`, `USER.md`) qui méritent d’être conservées apparaissent en haut, avec le nom du fichier dont elles proviennent. Cochez celles à conserver, puis choisissez **Garder la sélection** : elles deviennent des faits ou des règles comme les autres. Un fait concernant une personne de votre Graph est déplacé sur sa page. Un anniversaire est également ajouté à la routine Birthdays. Un fait vous concernant reste dans Faits. Choisissez **Écarter le reste** pour que les éléments écartés ne reviennent pas. Les fichiers ne sont jamais modifiés et rien ne s’affiche s’ils ne contiennent rien qui mérite d’être conservé.
+- **Modifications** : les informations tirées de vos modifications, de vos éléments écartés et de vos chats, chacune avec **Annuler**. Voir [Écriture](writing.md#it-keeps-learning).
+- **Décisions** : une chronologie de vos choix concernant les tâches.
+- **Partagé** : les apprentissages à partager avec l’équipe The Machine et les votes en attente, s’il y en a. Voir [Partager des apprentissages](share-learnings.md).
+- **Comment ça se passe** : quatre chiffres pour les 30 derniers jours. Plus ils sont élevés, mieux c’est. Ils apparaissent après 3 tâches décidées, c’est-à-dire suivies ou écartées. En attendant, le nombre de tâches que vous avez décidées jusqu’ici s’affiche.
+  - **Utile** : parmi les tâches que vous avez décidées, combien ont été suivies (**Faire**, envoyées ou terminées) au lieu d’être écartées.
+  - **Du premier coup** : parmi les tâches pour lesquelles vous avez choisi **Faire**, combien n’ont nécessité aucune correction par la suite.
+  - **Terminée** : parmi les tâches pour lesquelles vous avez choisi **Faire**, combien ont été terminées sans que vous lui demandiez de continuer ou de réessayer.
+  - **Envoyé tel quel** : parmi les brouillons que vous avez envoyés, combien l’ont été sans modification ni **Demander des modifications** au préalable.
+  - Chaque chiffre est comparé à celui des 30 jours précédents. Le graphique affiche une barre par jour pour les deux premières semaines, puis une barre par semaine, jusqu’à 8 semaines.
+  - **Utile par source** : le nombre de tâches suivies pour chaque source, comme **E-mail**, **Ajouté par vous** (depuis **Nouvelle tâche**), **Notifications sur le téléphone** ou **The Machine elle-même** (problèmes comme une erreur).
+  - **Tâches oubliées** : une fois par semaine, The Machine vérifie un échantillon de messages qui n’ont généré aucune tâche et estime combien en auraient probablement nécessité une. Elle affiche les messages trouvés : **Ouvrir**, ou la ligne elle-même, affiche le message. **Vrai oubli** ou **Pas un oubli** indique si son évaluation était correcte. **Vrai oubli** ajoute aussi la tâche. **Annuler** permet de revenir en arrière, et **Ouvrir la tâche** y accède. The Machine en tire des enseignements et repère ensuite les messages similaires. Vos réponses améliorent la précision de cette estimation et restent sur votre Machine. La section s’affiche après la première vérification hebdomadaire.

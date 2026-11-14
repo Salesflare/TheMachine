@@ -7,69 +7,71 @@ code: dashboard.html
 order: 1
 translated: 00e42f9aeb395d21
 ---
-Ouvrez **Paramètres** avec la roue dentée en haut. Ses onglets :
+Ouvrez **Paramètres** avec la roue dentée en haut. Voici les onglets :
 
-- **Compte** : **Vos adresses**, celles qui comptent comme vous, avec leur provenance, et **Se déconnecter**. Sur une Machine hébergée, aussi votre forfait, vos factures, votre Machine, votre Fleet, votre adresse, vos amis, votre connexion et vos données, chacun avec son bouton. Voir [Forfaits et facturation](plans-and-billing.md). **Se déconnecter** est en haut, **Résilier le forfait** et **Supprimer le compte** tout en bas. Sur une Machine sur votre propre ordinateur, associée au Network : votre Fleet, nom d’utilisateur, amis et connexion, chacun avec un lien qui ouvre cette partie de votre compte (connectez-vous là-bas), et **Supprimer le compte** tout en bas. Pas encore associée : **Rejoindre le Network**, en haut.
-- **Général** : langue et région, saisie vocale, cet appareil, le navigateur de votre Machine, votre Fleet, l’export et l’import, et la version qu’elle exécute. Sans onglet Compte, **Rejoindre le Network** est à la fin.
-- **Sécurité** : Standard ou Prudent, et les paramètres qu’ils règlent. Voir [Niveaux de sécurité](security-levels.md). **Accès du support** aussi, tant qu’il est actif : voir [Obtenir de l’aide](get-support.md#support-access).
-- **Activité** : tout ce que The Machine a fait pour vous, le plus récent d’abord. Voir [Activité](activity.md).
-- **Notifications** : ce qui vous parvient et où, et vos heures de travail. Voir [Notifications](notifications.md) et [Heures de travail](work-hours.md).
-- **Rédaction** : signatures et votre façon d’écrire. Voir [Rédaction](writing.md).
-- **Compétences** : les modes d’emploi que suit votre Machine. Voir [Compétences](skills.md).
-- **Applis** : les applis The Machine pour téléphone et ordinateur, puis Claude, ChatGPT et les autres IA que vous avez connectées, et ce que chacune peut faire. Voir [L’appli mobile](mobile-app.md) et [Connecter d’autres IA](ai-connections.md).
-- **Modèle** : ce qui répond pour vous, et ses limites. Voir [Modèle](model.md). **Codex et Claude Code** aussi : voir [Transférer à Claude Code ou Codex](hand-to-agent.md). Et **Recherche par le sens**, plus bas.
+- **Compte** : **Vos adresses** (celles qui comptent comme les vôtres) et **Se déconnecter**, en haut. Sur une Machine hébergée, vous trouverez aussi votre forfait, vos factures, Fleet, vos amis, la connexion et vos données, avec **Résilier le forfait** et **Supprimer le compte** tout en bas. Sur une Machine installée sur votre ordinateur et associée au Network : votre Fleet, votre nom d’utilisateur, vos amis et la connexion, chacun avec un lien qui ouvre la partie correspondante de votre compte (connectez-vous à cet endroit), et **Supprimer le compte** tout en bas. Si elle n’est pas encore associée : **Rejoindre le Network**, en haut. Consultez [Forfaits et facturation](plans-and-billing.md).
+- **Général** : langue et région, cet appareil, saisie vocale, navigateur de votre Machine, votre Fleet, exportation et importation, et version utilisée. Sans onglet Compte, **Rejoindre le Network** se trouve à la fin.
+- **Sécurité** : Standard ou prudent. Consultez [Niveaux de sécurité](security-levels.md). Vous trouverez aussi **Accès du support** lorsqu’il est activé : consultez [Obtenir de l’aide](get-support.md#support-access).
+- **Activité** : tout ce que The Machine a fait pour vous, du plus récent au plus ancien. Consultez [Activité](activity.md).
+- **Notifications** : où vous recevez vos notifications et vos heures de travail. Consultez [Notifications](notifications.md) et [Heures de travail](work-hours.md).
+- **Rédaction** : signatures et style d’écriture. Consultez [Rédaction](writing.md).
+- **Compétences** : les guides suivis par votre Machine. Consultez [Compétences](skills.md).
+- **Applis** : les applis de The Machine pour votre téléphone et votre ordinateur, puis Claude, ChatGPT et les autres IA que vous avez connectées, ainsi que les actions autorisées pour chacune. Consultez [L’application mobile](mobile-app.md) et [Connecter d’autres IA](ai-connections.md).
+- **Modèle** : l’IA qui lit et rédige pour vous, et ses limites. Consultez [Modèle](model.md). Vous trouverez aussi **Codex et Claude Code** : consultez [Transmettre à Claude Code ou Codex](hand-to-agent.md). Et **Recherche par le sens**, plus bas.
 
-Un onglet sans rien à afficher est masqué.
+Un onglet sans contenu est masqué.
 
 ## Général
 
-- **Langue et région** : votre **Région** règle l’affichage des dates (Oct 24 ou 24 oct.) et l’horloge habituelle. **Format de l’heure** choisit plutôt 12 heures (2:05 PM) ou 24 heures (14:05). Les tâches, Telegram, le récap et les messages de la Fleet le suivent. Une Machine hébergée part du pays du fuseau horaire choisi à l’inscription. Les durées comme « il y a 3 heures » et les nombres le suivent aussi.
-- **Langue** : English, Nederlands, Français, Deutsch, Español, Italiano ou Português (Brasil). La première fois que vous ouvrez le tableau de bord, il prend la langue de votre navigateur, si c’est l’une de celles-ci (le portugais du Portugal reçoit pour l’instant le portugais du Brésil). Le tableau de bord, les dates, les messages Telegram, les notifications, le récap hebdomadaire et les notes et titres de tâches que votre Machine écrit pour vous la suivent, dès que vous la choisissez ; ce qui était déjà écrit reste tel quel. Les questions de Fleet et de Famille s’affichent dans la langue de chaque membre. Les brouillons destinés à d’autres personnes restent dans la langue de leur conversation. L’Aide et ses pages la suivent aussi.
-- **Cet appareil** : l’app (**Installer l’app**), **Notifications** avec **Envoyer un test**, et **Mode clair**, seulement pour ce navigateur ou ce téléphone. Voir [Installer l’app et activer les notifications](phone-app.md).
-- **Saisie vocale** : comment ce que vous dites devient du texte, et la voix de Parler en direct. Voir [Saisie vocale](voice-input.md) et [Parler en direct](talk-live.md).
-- **Ouvrir le navigateur de la Machine ↗** : le navigateur que votre Machine utilise pour des sites comme LinkedIn.
-- **Règles Fleet** : voir [Règles de partage](sharing-rules.md).
+- **Langue et région** : votre **Région** détermine l’affichage des dates, des heures et des nombres (24 oct. ou 24 oct.). **Format de l’heure** permet de choisir entre le format sur 12 heures (2:05 PM) et celui sur 24 heures (14:05). Les tâches, Telegram, le récap et les messages Fleet suivent ces deux paramètres. Une Machine hébergée utilise le fuseau horaire choisi lors de votre inscription.
+- **Langue** : English, Nederlands, Français, Deutsch, Español, Italiano ou Português (Brasil). La langue initiale est celle de votre navigateur. Le tableau de bord, l’aide, les notifications, Telegram, le récap hebdomadaire et les tâches rédigées par votre Machine changent dès que vous en choisissez une. Les anciens textes ne changent pas. Les membres de l’équipe reçoivent les questions Fleet et Famille dans leur propre langue, et les brouillons destinés à d’autres personnes restent dans la langue de leur conversation.
+- **Cet appareil** : **Installer l’app**, **Notifications** avec **Envoyer un test**, et **Mode clair**, pour ce navigateur ou ce téléphone uniquement. Consultez [Installer l’app et activer les notifications](phone-app.md). Sur [Omarchy](omarchy.md), vous trouverez aussi **Thème Omarchy**.
+- **Saisie vocale** : comment vos paroles sont converties en texte et quelle voix utilise Talk live. Consultez [Saisie vocale](voice-input.md) et [Talk live](talk-live.md).
+- **Ouvrir le navigateur de la Machine ↗** : le navigateur utilisé par votre Machine pour les sites comme LinkedIn.
+- **Règles Fleet** : consultez [Règles de partage](sharing-rules.md).
 - **Exporter** :
-  - **Tout** : tout ce que votre Machine sait dans un seul fichier chiffré, pour changer d’ordinateur ou pour garder, et **Importer** pour en faire entrer un. Voir [Passer sur un autre ordinateur](moving.md).
-  - **Connaissances pour une autre IA** : ce que votre Machine a appris, dans des fichiers que toute IA sait lire. Voir [Connaissances pour une autre IA](knowledge-export.md).
+  - **Tout** : tout ce que votre Machine sait, dans un seul fichier chiffré, à transférer ou à conserver, et **Importer** pour en importer un. Consultez [Passer à un autre ordinateur](moving.md).
+  - **Connaissances pour une autre IA** : ce que votre Machine a appris, dans des fichiers lisibles par n’importe quelle IA. Consultez [Connaissances pour une autre IA](knowledge-export.md).
 
 ## Version
 
-La version que votre Machine exécute. Les mises à jour s’installent toutes seules. Quand une version plus récente est disponible sur une Machine hébergée, **Mettre à jour** l’installe tout de suite. Cela prend quelques minutes, et vos données restent.
+La version utilisée par votre Machine. Les mises à jour s’installent automatiquement. Lorsqu’une nouvelle version est prête sur une Machine hébergée, **Mettre à jour** l’installe immédiatement. Cela prend quelques minutes et vos données sont conservées.
 
-Sur votre propre ordinateur, un minuteur quotidien installe chaque nouvelle version signée sous Linux. Voir [L’installer sur votre propre ordinateur](self-hosted-setup.md).
+Sur votre propre ordinateur, un minuteur quotidien installe chaque nouvelle version signée sous Linux. Consultez [Installer la Machine sur votre ordinateur](self-hosted-setup.md).
 
 ## Recherche par le sens
 
-Dans **Paramètres**, **Modèle**. Elle trouve les e-mails, messages et notes selon leur sujet, pas seulement selon leurs mots. Sur une Machine hébergée, une petite IA sur la Machine elle-même s’en charge, et rien n’est envoyé ailleurs. Elle est activée à partir de 8 Go de mémoire. Avec 4 Go, activez-la avec son interrupteur. Elle utilise environ un demi-gigaoctet, donc une Machine chargée peut ralentir.
+Dans **Paramètres**, sous **Modèle**. Cette fonction trouve des e-mails, des messages et des notes selon leur sujet, pas seulement les mots qu’ils contiennent. Sur une Machine hébergée, une petite IA installée sur la Machine s’en charge, sans rien envoyer ailleurs. Elle est activée à partir de 8 Go de mémoire. Avec 4 Go, activez-la à l’aide de son interrupteur. Elle utilise environ un demi-gigaoctet de mémoire, ce qui peut ralentir une Machine très sollicitée.
 
-Sur votre propre ordinateur, c’est le bloc `embeddings` de `config.json`. Redémarrez la Machine après une modification.
+Sur votre propre ordinateur, c’est le bloc `embeddings` dans `config.json`. Redémarrez la Machine après toute modification.
 
 ## Sur cette Machine
 
-Quelques paramètres se trouvent sur l’ordinateur où tourne votre Machine, pas dans l’app :
+Lorsque votre Machine fonctionne sur votre propre ordinateur, certaines opérations se font dans un terminal :
 
-- `config.json` : tous les paramètres, dans un seul fichier. Redémarrez la Machine après un changement.
+- Le fichier de paramètres, `config.json` : tous les paramètres au même endroit. Redémarrez la Machine après toute modification.
 - `assistant connect` : ajouter une source, comme `assistant connect gmail` ou `assistant connect outlook`.
-- `assistant telegram on` ou `off` : les messages sur Telegram. Voir [Telegram](telegram.md).
+- `assistant telegram on` ou `off` : les messages sur Telegram. Consultez [Telegram](telegram.md).
 - `assistant doctor` : vérifie tout et affiche une solution pour chaque problème.
 
 ## Vos adresses
 
-Toutes vos adresses que la Machine a trouvées : vos comptes, vos alias Gmail ou Outlook, votre agenda, votre profil Slack et Intercom. Les e-mails et réunions de chacune apparaissent comme venant de vous. **Retirer** celle qui n’est pas à vous.
+Toutes les adresses vous appartenant que la Machine a trouvées : vos comptes, vos alias Gmail ou Outlook, votre calendrier, vos profils Slack et Intercom. Les e-mails et les réunions provenant de ces adresses sont considérés comme les vôtres. **Retirer** une adresse qui ne vous appartient pas.
 
-Une adresse partagée, comme info@ ou un Google Group, ne compte jamais d’elle-même. Celle dont la Machine n’est pas sûre est sous **Peut-être à vous**, et rien n’est choisi à votre place. Choisissez :
+Une adresse partagée, comme info@ ou un groupe Google, n’est jamais considérée comme la vôtre par défaut. Si la Machine a un doute sur une adresse, elle apparaît sous **Peut-être à vous**. Choisissez une option :
 
-- **À moi : personne d’autre n’y répond** : elle compte comme la vôtre. Les e-mails qui y arrivent peuvent devenir vos tâches.
-- **À l’équipe : d’autres y répondent aussi** : ce n’est pas vous. Un e-mail envoyé seulement à cette adresse ne crée ni tâche ni brouillon pour vous. Elle alimente toujours le Graph, partagé avec votre équipe comme avant.
-- **Pas à moi** : elle ne compte pas comme la vôtre.
+- **À moi : personne d’autre n’y répond** : l’adresse est considérée comme la vôtre. Les e-mails qui y sont envoyés peuvent devenir vos tâches.
+- **À l’équipe : d’autres y répondent aussi** : l’adresse ne vous appartient pas. Les e-mails envoyés uniquement à cette adresse ne génèrent ni tâches ni brouillons pour vous. Ils alimentent tout de même le Graph.
+- **Pas à moi** : l’adresse ne sera pas considérée comme la vôtre.
 
-Choisissez selon qui y répond aujourd’hui. Une boîte d’équipe comme support@ est à l’équipe. Une adresse comme partnerships@ à laquelle personne d’autre ne répond pour l’instant est à vous ; passez-la à l’équipe dès que d’autres y répondent aussi.
+Choisissez selon la personne qui répond aux messages aujourd’hui. Une boîte d’équipe comme support@ appartient à l’équipe. Une adresse comme partnerships@ à laquelle vous seule répondez vous appartient. Modifiez ce choix lorsque d’autres personnes commencent aussi à répondre.
 
-**Modifier** sur sa ligne change ce choix plus tard. Votre propre adresse de connexion est toujours la vôtre.
+**Modifier** sur la ligne correspondante permet de changer ce choix plus tard. Votre propre adresse de connexion est toujours considérée comme la vôtre.
 
 ### Les domaines de votre entreprise
 
-Les domaines de vos propres adresses comptent comme ceux de votre entreprise. Si elle en utilise un autre, comme acme.co à côté d’acme.com, saisissez-le sous **Les domaines de votre entreprise** et appuyez sur **Ajouter**.
+Les domaines de vos propres adresses sont considérés comme ceux de votre entreprise. Vous en utilisez un autre aussi, comme acme.co en plus de acme.com ? Saisissez-le sous **Les domaines de votre entreprise**, puis appuyez sur **Ajouter**.
 
-Les personnes de ce domaine sont alors vos collègues, jamais des clients : leurs fils restent hors du Team Graph comme tout fil entre collègues, et aucune organisation n’est créée. **Retirer** l’enlève. Un domaine d’e-mail gratuit comme gmail.com ne peut pas être ajouté.
+Les personnes qui utilisent ces domaines sont alors considérées comme des collègues, jamais comme des clients : leurs fils de discussion restent en dehors du Team Graph, et aucune organisation n’est créée pour ces échanges. **Retirer** permet de supprimer un domaine. Les domaines d’e-mails gratuits comme gmail.com ne peuvent pas être ajoutés.
+
+Un alias Gmail qui vous appartient peut aussi être utilisé comme adresse **De** d’un brouillon, si Gmail confirme que vous pouvez envoyer des e-mails depuis cette adresse. Consultez [Gmail](gmail.md#what-it-can-send).
