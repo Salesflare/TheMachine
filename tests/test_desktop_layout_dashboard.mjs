@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {dashboardPage} from './dashboard-page.mjs';
+import {settled} from './page-calls.mjs';
 const {chromium}=await import('./browser.mjs');
 // The tagline is a quiet line over the cards, not a headline: about body size, muted, on one line where it fits, with
 // the count readable under it
@@ -50,7 +51,10 @@ const open=async(width,height,opts={})=>{const mobile=width<600;
  if(opts.noStorage)await context.addInitScript(()=>{for(const m of ['getItem','setItem']){const real=Storage.prototype[m];Storage.prototype[m]=function(k,...v){if(/^side/.test(k))throw new DOMException('blocked','SecurityError');return real.call(this,k,...v)}}});
  const page=await context.newPage();page.on('pageerror',e=>errors.push(width+': '+e.message));
  await page.goto(base);await page.locator(opts.wait||'#task-'+cards[0].id).waitFor();return {context,page}};
-const tab=(page,t)=>page.evaluate(t=>t==='settings'?showSettings('general'):document.querySelector(`nav [data-tab="${t}"]`).click(),t).then(()=>page.waitForTimeout(120));
+// a tab opens: its section shows (Settings is a section of its own)
+const tab=(page,t)=>page.evaluate(t=>t==='settings'?showSettings('general'):document.querySelector(`nav [data-tab="${t}"]`).click(),t).then(()=>page.locator('#'+t+':not([hidden])').waitFor());
+// n frames drawn: what a click set going has started (an animation, a scroll), without a fixed time
+const frames=(page,n=2)=>page.evaluate(n=>new Promise(r=>{const f=()=>--n<0?r():requestAnimationFrame(f);f()}),n);
 const scrolls=async(page,where)=>{const y=await page.evaluate(()=>{const s=[...document.querySelectorAll('main>section')].find(x=>!x.hidden);
  if(!s.querySelector('.scroll-probe')){const d=document.createElement('div');d.className='scroll-probe';d.style.height='3000px';s.append(d)}
  scrollTo(0,0);scrollTo(0,1e6);return scrollY});assert.ok(y>500,`${where} scrolls (scrollY ${y})`)};
@@ -135,6 +139,7 @@ try{
   await page.keyboard.press('Escape');assert.equal(await page.locator('#side-tip').isVisible(),false);
   await page.locator('body').click({position:{x:900,y:300}});await page.keyboard.press('Control+b');await page.waitForFunction(()=>document.documentElement.dataset.side==='open');
   assert.equal(await page.locator('#side-toggle').getAttribute('aria-label'),'Collapse sidebar');
+  // a check that nothing comes: longer than the tooltip's 300 ms delay (sideTipTimer in dashboard/shell-tabs.js)
   await row.hover();await page.waitForTimeout(500);assert.equal(await page.locator('#side-tip').isVisible(),false,'no tooltip with the labels showing');
   await context.close()}
  // Settings in the same column: the lists as wide as the forms, no browser button (Browser is in the sidebar).
@@ -170,7 +175,7 @@ try{
   assert.equal(await pane(),'orgs');assert.equal(new URL(page.url()).hash,'#graph=orgs');assert.equal(await lit(),'orgs');assert.ok(await page.locator('#page-head').isVisible());
   await page.locator('.side-sub a[data-graph-sub="projects"]').click();await page.waitForFunction(()=>location.hash==='#graph=projects');await page.locator('[data-graph-panel="projects"]').waitFor();assert.equal(await pane(),'projects');assert.equal(await lit(),'projects');
   await page.goBack();await page.waitForFunction(()=>location.hash==='#graph=orgs');await page.locator('[data-graph-panel="orgs"]').waitFor();assert.equal(await pane(),'orgs');assert.equal(await lit(),'orgs');
-  await page.reload();await page.locator('[data-graph-panel="orgs"]').waitFor();await page.waitForTimeout(300);assert.equal(await pane(),'orgs');assert.equal(await lit(),'orgs');
+  await page.reload();await page.locator('[data-graph-panel="orgs"]').waitFor();await settled(async()=>[await pane(),await lit()],['orgs','orgs'],'a reload keeps Organizations');
   assert.equal(await page.locator('#people-view [data-graph-pane]').count(),0,'no pane pills: the rows are the panes');
   assert.equal(await page.locator('#page-head .page-title').textContent(),'Organizations');assert.equal(await page.locator('#page-head .page-sub').textContent(),'38 organizations');
   assert.equal(await page.locator('#page-head .page-crumb').textContent(),'Graph');
@@ -197,7 +202,7 @@ try{
   for(let i=1;i<=6;i++){const x=from[0]+(to[0]-from[0])*i/6,y=from[1]+(to[1]-from[1])*i/6;el.dispatchEvent(new TouchEvent('touchmove',{bubbles:true,touches:[t(x,y)],changedTouches:[t(x,y)]}))}
   el.dispatchEvent(new TouchEvent('touchend',{bubbles:true,touches:[],changedTouches:[t(...to)]}))},[from,to]);
  const isOpen=page=>page.evaluate(()=>document.documentElement.dataset.drawer==='open');
- const settle=async page=>{await page.waitForTimeout(60);await page.waitForFunction(()=>['#app-side','#drawer-scrim'].every(q=>!document.querySelector(q).getAnimations().length));await page.waitForTimeout(40)};  // the slide is over, also on a busy machine
+ const settle=async page=>{await frames(page);await page.waitForFunction(()=>['#app-side','#drawer-scrim'].every(q=>!document.querySelector(q).getAnimations().length));await frames(page)};  // the slide is over, also on a busy machine
  // On a phone the whole drawer scrolls as one column (the nav, the cards, then Browser and Settings), with no scroll area
  // inside it: a finger swipe up from the nav reaches Settings and the last card
  {const {context,page}=await open(390,700);
@@ -208,7 +213,9 @@ try{
   for(let i=0;i<8&&await page.locator('#app-side').evaluate(s=>s.scrollTop+s.clientHeight<s.scrollHeight-1);i++)
   {const x=Math.round(nav.x+nav.width/2),pt=y=>[{x,y}];await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:pt(620)});
    for(let y=600;y>=120;y-=40)await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:pt(y)});
-   await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await page.waitForTimeout(200)}
+   await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+   // the fling has stopped: the drawer's scroll stays put for 5 frames
+   await page.locator('#app-side').evaluate(s=>new Promise(r=>{let last=-1,same=0;const f=()=>{if(s.scrollTop===last){if(++same>=5)return r()}else{same=0;last=s.scrollTop}requestAnimationFrame(f)};f()}))}
   const inView=sel=>page.locator(sel).evaluate(e=>{const r=e.getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight+1});
   assert.ok(await inView('#open-settings'),'Settings is reached');assert.ok(await inView('#side-cards a >> nth=-1'),'the last card is reached');
   assert.ok(await isOpen(page),'scrolling does not close the drawer');

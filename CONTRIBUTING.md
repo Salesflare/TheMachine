@@ -52,7 +52,8 @@ dashboard's page is read assembled, through `dashboardPage()` (`tests/dashboard-
 `playwright-core` directly: it runs the browser cut off from the desktop, so a clicked `mailto:` or other external
 link never opens an app on your computer (`tests/test_browser_guard.mjs` checks both). A browser test waits for what
 it expects, never a fixed time: the call the page makes (`waitForAction`, `callAfter` in `tests/page-calls.mjs`) or
-what the page shows (a locator's `waitFor`, `page.waitForFunction`). `tests/test_fixed_waits.py` counts the
+what the page shows (a locator's `waitFor`, `page.waitForFunction`), or, before measuring where things are, for the
+page to settle (`quiet`). `tests/test_fixed_waits.py` counts the
 `page.waitForTimeout` calls left per file, and the counts only come down.
 
 CI runs the suite on every pull request with the minimum supported Python, Node and OpenClaw. A weekly run adds a
