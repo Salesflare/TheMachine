@@ -21,7 +21,7 @@ import section_notes
 import todo_areas
 import trip_notes
 from models import background_model
-from timeutil import now, today
+from timeutil import clock, local_tz, now, quiet_hours, today
 
 LOG = logging.getLogger('personal-assistant')
 SECTION_KINDS = (home_notes.KIND, health_notes.KIND, kids_notes.KIND)  # the kinds kept in sections (section_notes.py)
@@ -90,7 +90,8 @@ class NotesApp:
             return []
 
     def section_notes_step(self):
-        """About every six hours (section_notes.EVERY) for each kind in sections (Home, Health): its notes from plain
+        """About every six hours (section_notes.EVERY; every FIRST_EVERY in the first fill, outside the quiet hours,
+        section_notes.filling) for each kind in sections (Home, Health, Kids): its notes from plain
         code, with one small model call per kind over the candidates no call placed yet, in a thread of its own once
         the budget allows and there is space after the last background turn, or it waited SPACED_WAIT_SECONDS for that.
         Nothing new to place: no model, the notes still brought up to date. True when a round started."""
@@ -100,9 +101,12 @@ class NotesApp:
         at, accounts = now(), self.config.get('accounts') or []
         with self.store.connect() as db:
             section_notes.ensure(db)
-            kinds = [k for k in SECTION_KINDS if section_notes.due(db, k, at)]
-            ask = kinds and (any(section_notes.unasked(db, k, k.candidates(db, accounts, today())) for k in kinds)
-                             or section_notes.mail_unasked(db, SECTION_KINDS, section_notes.mail_senders(db, accounts, today())))
+            mail = lambda: section_notes.mail_unasked(db, SECTION_KINDS, section_notes.mail_senders(db, accounts, today()))  # noqa: E731
+            waiting = lambda: bool(mail()) or any(section_notes.unasked(db, k, k.candidates(db, accounts, today())) for k in SECTION_KINDS)  # noqa: E731
+            # The first fill goes faster, outside the quiet hours (section_notes.filling)
+            fast = (not section_notes.quiet(clock(local_tz()), quiet_hours())) and section_notes.filling(db, at, waiting)
+            kinds = [k for k in SECTION_KINDS if section_notes.due(db, k, at, section_notes.FIRST_EVERY if fast else section_notes.EVERY)]
+            ask = kinds and (any(section_notes.unasked(db, k, k.candidates(db, accounts, today())) for k in kinds) or mail())
         if not kinds:
             return False
         if ask:
@@ -116,7 +120,8 @@ class NotesApp:
                 return False
             self.background_started()
         self.__dict__.pop('section_notes_waiting', None)
-        self.section_notes_thread = threading.Thread(target=lambda: [self.section_notes_mail_run(), *(self.section_notes_run(k) for k in kinds)],
+        calls = section_notes.FIRST_MAIL_CALLS if fast else section_notes.MAIL_CALLS
+        self.section_notes_thread = threading.Thread(target=lambda: [self.section_notes_mail_run(calls), *(self.section_notes_run(k) for k in kinds)],
                                                      daemon=True, name='section-notes')
         self.section_notes_thread.start()
         return True
@@ -131,13 +136,17 @@ class NotesApp:
         except help_chat.Unavailable:
             return None
 
-    def section_notes_mail_run(self):
+    def section_notes_mail_run(self, calls=section_notes.MAIL_CALLS):
         """The senders of the owner's Personal mail no call placed yet, placed for every kind that reads mail at once
-        (section_notes.mail_prompt): up to MAIL_CALLS calls a round, so a mailbox with a year of senders is through in
-        a few rounds. A reply that isn't one keeps nothing and stops the round. Returns how many it placed."""
+        (section_notes.mail_prompt): up to `calls` calls a round (MAIL_CALLS, FIRST_MAIL_CALLS in the first fill), so
+        a mailbox with a year of senders is through in a few rounds. Every call after the first waits for the budget
+        (background_pause) and stops the round when it holds. A reply that isn't one keeps nothing and stops the round.
+        Returns how many it placed."""
         accounts, done = self.config.get('accounts') or [], 0
         try:
-            for _ in range(section_notes.MAIL_CALLS):
+            for n in range(calls):
+                if n and self.background_pause(job='section-notes'):
+                    break
                 with self.store.connect() as db:
                     section_notes.ensure(db)
                     items = section_notes.mail_unasked(db, SECTION_KINDS, section_notes.mail_senders(db, accounts, today()))

@@ -13,7 +13,8 @@ on its own says nothing the note doesn't already have in the Calendar, so it is 
   never starts such a note; it only fills in the owner's.
 - Mail is placed for every kind at once (mail_senders, mail_prompt): who writes to the owner's Personal mailboxes, one
   per sender, read by name, how many mails and their newest subjects (digits masked), never a body. One call places a
-  sender in one kind and part, or in none, at most MAIL_ASK_MAX senders a call and MAIL_CALLS calls a round. A kind
+  sender in one kind and part, or in none, at most MAIL_ASK_MAX senders a call and MAIL_CALLS calls a round (more, and rounds more often, in the first
+  fill: filling). A kind
   says how it keeps a sender (Kind.mail): one line for them (Home) or a dated line per mail (Health, Kids).
 - The parts are notes under the folder note. A part is started only once it has MIN_LINES lines, and goes again when
   it has none left, unless the owner wrote in it, renamed it or put notes under it. The owner's edits, moves and
@@ -24,7 +25,7 @@ on its own says nothing the note doesn't already have in the Calendar, so it is 
 
 Tables (this module owns them): section_topics (each candidate's key, the part it was placed in, '' for not of this
 kind, and the owner's note in that part it went in, '' for none; no other text) and section_state (when each kind's
-last round ran)."""
+last round ran) and section_fill (when the first fill began and ended)."""
 import datetime as dt
 import hashlib
 import json
@@ -39,6 +40,7 @@ SCHEMA = '''
 CREATE TABLE IF NOT EXISTS section_topics(kind TEXT NOT NULL,key TEXT NOT NULL,section TEXT NOT NULL,note TEXT NOT NULL DEFAULT '',at TEXT NOT NULL,
   PRIMARY KEY(kind,key));
 CREATE TABLE IF NOT EXISTS section_state(kind TEXT PRIMARY KEY,at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS section_fill(name TEXT PRIMARY KEY,at TEXT NOT NULL);
 '''
 MIN_LINES = 2  # lines before a part is started, and useful lines before a kind shows at all
 USEFUL = frozenset({'bill', 'subscription', 'fact', 'mail'})  # lines that say something: never a date from the calendar alone
@@ -62,6 +64,13 @@ MAIL_EACH_MAX = 20  # dated lines per sender in a kind that keeps each mail (the
 SUBJECTS = 3  # a sender's newest subjects the call reads
 SUBJECT_MAX = 120
 REPLY_PREFIX = re.compile(r'^\s*((re|fw|fwd|aw|wg|tr|rv|sv|antw)\s*:\s*)+', re.I)
+# The first fill (filling): until a year of mail is placed once, rounds come every FIRST_EVERY with up to
+# FIRST_MAIL_CALLS mail calls, so the notes fill in a few hours, not days. Outside the quiet hours only, and every call
+# still waits for the budget (NotesApp.section_notes_mail_run). Then rounds go back to EVERY and MAIL_CALLS.
+FIRST_EVERY = dt.timedelta(minutes=20)
+FIRST_MAIL_CALLS = 8
+FIRST_MAX = dt.timedelta(days=2)  # a Machine with no Personal mail to place ends its first fill after this
+FILLING, FILLED = 'began', 'filled'  # section_fill rows
 
 
 class Kind:
@@ -94,12 +103,36 @@ def ensure(db):
     db.execute("DELETE FROM section_topics WHERE key LIKE 'appt:%'")
 
 
-def due(db, kind, at):
+def due(db, kind, at, every=EVERY):
     row = db.execute('SELECT at FROM section_state WHERE kind=?', (kind.kind,)).fetchone()
     try:
-        return not row or dt.datetime.fromisoformat(at) - dt.datetime.fromisoformat(row['at']) >= EVERY
+        return not row or dt.datetime.fromisoformat(at) - dt.datetime.fromisoformat(row['at']) >= every
     except (TypeError, ValueError):
         return True
+
+
+def filling(db, at, waiting):
+    """Whether the first fill goes on (FIRST_EVERY, FIRST_MAIL_CALLS). It ends once nothing waits to be placed
+    (`waiting()` false, asked only then) after some mail was placed, or FIRST_MAX after it began; then never again."""
+    if db.execute('SELECT 1 FROM section_fill WHERE name=?', (FILLED,)).fetchone():
+        return False
+    db.execute('INSERT OR IGNORE INTO section_fill(name,at) VALUES(?,?)', (FILLING, at))
+    began = db.execute('SELECT at FROM section_fill WHERE name=?', (FILLING,)).fetchone()[0]
+    placed = db.execute("SELECT 1 FROM section_topics WHERE key LIKE 'mail:%' LIMIT 1").fetchone()
+    try:
+        late = dt.datetime.fromisoformat(at) - dt.datetime.fromisoformat(began) >= FIRST_MAX
+    except (TypeError, ValueError):
+        late = True
+    if late or (placed and not waiting()):
+        db.execute('INSERT OR IGNORE INTO section_fill(name,at) VALUES(?,?)', (FILLED, at))
+        return False
+    return True
+
+
+def quiet(local, hours):
+    """`local` (a local time) falls in the quiet hours (start, end): no first fill then."""
+    start, end = hours
+    return start <= local.hour < end if start <= end else (local.hour >= start or local.hour < end)
 
 
 def ran(db, kind, at):

@@ -23,7 +23,7 @@ AT = '2026-11-14T10:00:00+00:00'
 KINDS = (home_notes.KIND, health_notes.KIND, kids_notes.KIND)
 
 
-class NotesFromMail(unittest.TestCase):
+class Mail(unittest.TestCase):
     def setUp(self):
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)
@@ -69,6 +69,8 @@ class NotesFromMail(unittest.TestCase):
     def mail_prompts(self):
         return [p for p in self.asked if 'who writes to the owner' in p]
 
+
+class NotesFromMail(Mail):
     def test_home_gets_a_line_per_sender_that_writes_regularly(self):
         self.places = {'Example Energy': ('home', 'Bills and subscriptions'), 'Example Water': ('home', 'Bills and subscriptions'),
                        'Example Plumber': ('home', 'Repairs and upkeep')}
@@ -146,6 +148,63 @@ class NotesFromMail(unittest.TestCase):
             self.assertEqual(section_notes._sender_group('x@mail.example.be', set()), 'example.be')
             self.assertEqual(section_notes.subject('RE: Fwd:  Trip  to the zoo'), 'Trip to the zoo')
             self.assertEqual(section_notes.mail_senders(db, [JOB], timeutil.today()), [], 'no Personal mailbox: no mail read')
+
+
+class FirstFill(Mail):
+    """The first fill goes faster: more mail calls a round and rounds every FIRST_EVERY, outside the quiet hours and
+    under the budget, then back to MAIL_CALLS every EVERY."""
+
+    def setUp(self):
+        super().setUp()
+        from unittest import mock
+        import note_pages_app
+        self.mock, self.note_pages_app = mock, note_pages_app
+        for x in (mock.patch.object(section_notes, 'MAIL_ASK_MAX', 2), mock.patch.object(note_pages_app, 'quiet_hours', lambda: (0, 0))):
+            x.start()
+            self.addCleanup(x.stop)
+        self.holds = []
+        self.app.background_pause = lambda **_: self.holds.pop(0) if self.holds else None
+        self.app.background_spaced = lambda: True
+        self.app.background_started = lambda: None
+
+    def senders(self, n, start=0):
+        for i in range(start, start + n):
+            self.mail(f'Example Shop {i} <news@shop{i}.example>', 'News', '2026-10-06')
+
+    def step(self):
+        self.assertTrue(self.app.section_notes_step())
+        self.app.section_notes_thread.join(10)
+        return len(self.mail_prompts())
+
+    def filled(self):
+        with self.store.connect() as db:
+            return bool(db.execute('SELECT 1 FROM section_fill WHERE name=?', (section_notes.FILLED,)).fetchone())
+
+    def test_the_first_fill_makes_more_calls_then_goes_back_to_the_usual_pace(self):
+        self.senders(20)
+        self.assertEqual(self.step(), section_notes.FIRST_MAIL_CALLS, 'first fill: more calls a round')
+        self.assertFalse(self.app.section_notes_step(), 'not due before FIRST_EVERY')
+        with self.store.connect() as db:
+            db.execute('DELETE FROM section_state')
+        self.assertEqual(self.step(), 10, 'the rest of the senders')
+        self.assertFalse(self.filled())
+        with self.store.connect() as db:
+            db.execute('DELETE FROM section_state')
+        self.step()  # nothing waits after mail was placed: the first fill ends
+        self.assertTrue(self.filled())
+        self.senders(20, start=100)
+        with self.store.connect() as db:
+            db.execute('DELETE FROM section_state')
+        self.assertEqual(self.step(), 10 + section_notes.MAIL_CALLS, 'after the first fill: MAIL_CALLS again')
+
+    def test_the_budget_and_the_quiet_hours_hold_the_first_fill(self):
+        self.senders(20)
+        self.holds = [None, {'window': '5h', 'until': None}]  # the step goes, the second call waits for the budget
+        self.assertEqual(self.step(), 1)
+        with self.store.connect() as db:
+            db.execute('DELETE FROM section_state')
+        with self.mock.patch.object(self.note_pages_app, 'quiet_hours', lambda: (0, 24)):
+            self.assertEqual(self.step(), 1 + section_notes.MAIL_CALLS, 'quiet hours: the usual pace')
 
 
 if __name__ == '__main__':
