@@ -22,7 +22,7 @@ A note can sit under another, like Appliances under Home. Notes shows them as a 
 
 ## Notes your Machine keeps
 
-Your Machine also writes notes by itself, from your messages, and keeps them current. Each of its lines says where it came from: tap the message to open it. A line from **What I've learned** says **From what I learned**.
+Your Machine also writes notes by itself, from your messages, and keeps them current. Each of its lines says where it came from, like who sent the email: tap it to open the message. A line from **What I've learned** says **From what I learned**.
 
 Your changes always stand. Rename a note, move it, change its dates or a line, and your Machine keeps it that way when it updates the note. Delete a line or a note and it doesn't come back. Later notes on the same subject go where you put the first one.
 
@@ -41,6 +41,7 @@ Under **Home**, your Machine keeps what it knows about your home: **Bills and su
 - A bill that comes regularly, like energy or water, gets a line with how often it comes and the day of the last one. **Open the to-do** shows the bill itself; the amount and payment details stay there.
 - A subscription you kept gets a line that opens its **Subscriptions** to-do. One you canceled isn't listed.
 - What your Machine learned about your home, like the make of your dishwasher, is a line too. Editing it also changes it under **What I've learned**.
+- If you keep your own note in a part, like one for your dishwasher under **Appliances**, what's about that thing goes in your note instead. Your Machine doesn't start notes like that itself.
 
 Only Personal bills and subscriptions are used, and Home notes are always Personal. Your Machine asks its AI once about each new bill, subscription or thing it learned, to tell whether it's about your home. For a bill it sends who it's from, never the amount.
 

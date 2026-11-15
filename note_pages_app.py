@@ -4,9 +4,11 @@ The Notes list and a note's page (read through /api/graph, like the Graph's othe
 (NOTE_ACTIONS, from their dashboard only). The notes themselves, their kinds, the tree, links and how The Machine keeps
 its own notes current: note_pages.py. A line that came from a fact is that fact: editing it edits the fact under What
 I've learned first (Store.edit_fact), so there is one truth."""
+import json
 import logging
 import threading
 from datetime import date, timedelta
+from email.utils import parseaddr
 
 import help_chat
 import home_notes
@@ -17,6 +19,19 @@ from models import background_model
 from timeutil import now, today
 
 LOG = logging.getLogger('personal-assistant')
+
+
+def _sender(metadata, mine):
+    """The name a message came from (its From's name, else its address), or '' when it has none or the owner sent it.
+    metadata: as Store.events gives it (read already), or its JSON."""
+    try:
+        meta = metadata if isinstance(metadata, dict) else json.loads(metadata or '{}')
+    except (TypeError, ValueError):
+        return ''
+    name, address = parseaddr(str(meta.get('from') or '') if isinstance(meta, dict) else '')
+    if not address or address.casefold() in mine:
+        return ''
+    return ' '.join(name.strip('"\' ').split())[:80] or address[:80]
 
 
 class NotesApp:
@@ -90,7 +105,8 @@ class NotesApp:
         try:
             with self.store.connect() as db:
                 items = home_notes.unasked(db, home_notes.candidates(db, accounts, today()))
-            placed = home_notes.reply(self.home_notes_ask(home_notes.prompt(items)), items) if items else {}
+                under = home_notes.notes_under(db)
+            placed = home_notes.reply(self.home_notes_ask(home_notes.prompt(items, under)), items, under) if items else {}
             with self.store.connect() as db:
                 db.execute('BEGIN IMMEDIATE')
                 home_notes.remember(db, placed or {}, at)
@@ -134,10 +150,14 @@ class NotesApp:
         ids = sorted({x['event_id'] for x in found['lines'] if x.get('event_id')})
         if ids:
             rows = {r['id']: r for r in self.store.events([a['id'] for a in self.config['accounts']], event_ids=ids)}
+            mine = {str(a.get('email') or '').casefold() for a in self.config['accounts']} - {''}
             for x in found['lines']:
                 r = rows.get(x.get('event_id'))
                 if r:
                     x['source'] = {'id': r['id'], 'kind': r['kind'], 'title': r['title'][:200], 'occurred_at': r['occurred_at']}
+                    who = _sender(r['metadata'], mine)
+                    if who:  # a message says who it is from ("From Example Energy"), not its subject
+                        x['source']['from'] = who
                 elif x.get('event_id'):
                     x['source'] = {'gone': True}
         found['areas'] = todo_areas.areas(self.config.get('accounts') or [])

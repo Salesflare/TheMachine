@@ -122,8 +122,9 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
     Trips: the mail source reads a confirmation's JSON-LD reservations (`bookings.py`) into the message's sealed
     metadata; `trip_notes.py` keeps them (`trip_bookings`), groups one journey into one trip, and `trip_notes_step`
     (every ten minutes, plain code) syncs them under Trips. Home: `home_notes.py` finds regular Personal bills,
-    subscriptions and loose facts in plain code, one small model call places only the new ones in a Home section
-    (`home_topics`, asked once each), and `home_notes_step` syncs the sections under Home; a line opens its to-do.
+    subscriptions and loose facts in plain code, one small model call places only the new ones in a Home section or
+    an owner's note in it (`home_topics`, asked once each), and `home_notes_step` syncs the sections under Home; a
+    line opens its to-do.
   - `machine/names.py`: what the owner calls a service, app or agent; every key from data shown on screen goes
     through it, so a tool underneath (gog, wacli, msgraph-cli) is never a name (`tests/test_owner_names.py`).
   - `machine/omarchy.py`: the current Omarchy theme's colors (`GET /api/omarchy-theme`), for Settings, General, This

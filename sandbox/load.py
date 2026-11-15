@@ -453,7 +453,7 @@ def load_home_notes(store, base):
         store.remember_fact(text, f'webchat-said:sandbox-home-{n}', said=True, quote=text, said_text=text)
     accounts, when = [{'id': 'home-gmail', 'service': 'gmail', 'boundary': 'personal'}], stamp(2 * 24 * 60, base)
     places = {'Brightwater': 'Bills and subscriptions', 'Clearbrook': 'Bills and subscriptions', 'boiler': 'Repairs and upkeep',
-              'gutters': 'Repairs and upkeep', 'fridge': 'Appliances', 'dishwasher': 'Appliances'}
+              'gutters': 'Repairs and upkeep', 'fridge': 'Appliances', 'dishwasher': ('Appliances', 'Dishwasher')}  # the owner's Dishwasher note
     with store.connect() as db:
         db.execute('BEGIN IMMEDIATE')
         items = home_notes.unasked(db, home_notes.candidates(db, accounts, base.date()))

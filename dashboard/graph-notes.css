@@ -39,3 +39,7 @@ a.note-link{color:var(--text);text-decoration:underline;text-decoration-thicknes
 .note-suggest button:hover,.note-suggest button:focus-visible,.note-suggest button:first-child{background:var(--c-hover)}
 .note-suggest button>small{color:var(--muted);font-size:var(--fs-xs);flex:0 0 auto}.note-suggest>p{margin:4px 8px}
 .note-kids,.note-backlinks{margin-top:var(--sp-4)}
+/* A phone: a note under another one goes back to that one (‹ Home), as the breadcrumb on a wide screen shows */
+@media(max-width:560px){#people-view .graph-crumbs:has(>a.note-up)>a[data-crumb]{display:none}
+#people-view .graph-crumbs>a.note-up{display:inline-flex;align-items:center;gap:6px;min-width:0;min-height:44px;margin:-4px 0 -4px -6px;padding:0 14px 0 6px;color:var(--muted);font-size:var(--fs-md);font-weight:var(--fw-medium)}
+#people-view .graph-crumbs>a.note-up::before{content:'‹';content:'‹'/'';font-size:1.5em;line-height:1;margin-top:-2px}}

@@ -38,7 +38,8 @@ class HomeNotes(unittest.TestCase):
         for line in lines:
             item = json.loads(line)
             said = item.get('from') or item.get('name') or item.get('text')
-            out.append({'n': item['n'], 'section': next((s for k, s in self.places.items() if k in said), '')})
+            section, _, note = next((s for k, s in self.places.items() if k in said), '').partition('/')  # 'Appliances/Dishwasher'
+            out.append({'n': item['n'], 'section': section, **({'note': note} if note else {})})
         return json.dumps({'places': out})
 
     def bill(self, payee, day, account='home', amount='EUR 84,20'):
@@ -162,6 +163,40 @@ class HomeNotes(unittest.TestCase):
         self.run_round()
         with self.store.connect() as db:
             self.assertEqual([x['text'] for x in note_pages.page(db, mine)['lines']], ['Manuals are in the blue box'])
+
+    def test_a_fact_about_a_thing_with_its_own_note_goes_in_that_note_never_beside_it_too(self):
+        home = self.app.note_action('note_new', {'title': 'Home'}, owner_dashboard=True)['id']
+        mine = self.app.note_action('note_new', {'title': 'Appliances', 'parent': home}, owner_dashboard=True)['id']
+        washer = self.app.note_action('note_new', {'title': 'Dishwasher', 'parent': mine, 'lines': ['Filter cleaned every month']},
+                                      owner_dashboard=True)['id']
+        self.places = {'dishwasher': 'Appliances/Dishwasher', 'fridge': 'Appliances', 'oven': 'Appliances/Oven'}
+        model = self.fact('The dishwasher is a Example DW-500')
+        self.fact('The fridge warranty runs until June 2027')
+        self.fact('The oven is a Example OV-2')  # no Oven note: The Machine starts none, it goes in Appliances
+        self.run_round()
+        self.assertIn('"Appliances": ["Dishwasher"]', self.asked[0], 'the call sees the owner\'s notes by name')
+        with self.store.connect() as db:
+            under = note_pages.page(db, mine)
+            dish = note_pages.page(db, washer)
+            names = sorted(x['name'] for x in note_pages.listing(db, '2026-11-14'))
+        self.assertEqual(names, ['Appliances', 'Dishwasher', 'Home'])
+        self.assertCountEqual([x['text'] for x in under['lines']], ['The fridge warranty runs until June 2027', 'The oven is a Example OV-2'])
+        self.assertCountEqual([x['text'] for x in dish['lines']], ['Filter cleaned every month', 'The dishwasher is a Example DW-500'])
+        self.assertEqual(dish['name'], 'Dishwasher')
+        with self.store.connect() as db:  # the fact goes: so does its line there; their note and line stay
+            db.execute('UPDATE facts SET removed_at=? WHERE id=?', (AT, model))
+        self.run_round()
+        with self.store.connect() as db:
+            self.assertEqual([x['text'] for x in note_pages.page(db, washer)['lines']], ['Filter cleaned every month'])
+
+    def test_a_line_from_a_message_says_who_it_came_from_not_its_subject(self):
+        import note_pages_app
+        mine = {'sam@example.com'}
+        self.assertEqual(note_pages_app._sender(json.dumps({'from': '"Example Energy" <billing@energy.example>'}), mine), 'Example Energy')
+        self.assertEqual(note_pages_app._sender(json.dumps({'from': 'billing@energy.example'}), mine), 'billing@energy.example')
+        self.assertEqual(note_pages_app._sender(json.dumps({'from': 'Sam <SAM@example.com>'}), mine), '', 'the owner\'s own: its subject')
+        self.assertEqual(note_pages_app._sender('{}', mine), '')
+        self.assertEqual(note_pages_app._sender({'from': 'Example Water <bills@water.example>'}, mine), 'Example Water', 'as Store.events reads it')
 
     def test_a_canceled_subscription_isnt_on_home(self):
         with self.store.connect() as db:

@@ -566,7 +566,8 @@ def _folder(db, path, at):
 def sync(db, kind, drafts, at, keep=None):
     """The notes of one kind The Machine keeps, from its sources. drafts: [{key, title, area, starts, ends, under,
     data, lines: [{key, text, at, item, event_id, fact_id, links, data}]}], the whole current set for that kind. under:
-    the folder notes it goes in (['Trips']). A note or line not there yet is added; one that is changes to what its
+    the folder notes it goes in (['Trips']); or inside: the key of a note of this kind earlier in drafts that it goes in
+    (skipped while that one isn't there). A note or line not there yet is added; one that is changes to what its
     draft says (the owner's title, place, dates and words stay on top); a line its draft no longer has goes (not the
     owner's own lines). A note no draft has any more stays as it is unless keep says otherwise (keep(key) False: the
     source is gone, so is the note), so mail that ages out of the mailbox never takes a trip with it. A note or line
@@ -589,7 +590,14 @@ def sync(db, kind, drafts, at, keep=None):
             continue
         if row and row['removed_at']:
             continue
-        parent = _folder(db, [str(p) for p in d['under']], at) if d.get('under') else None
+        if d.get('inside'):  # in another note of this kind, synced before it (an owner's Dishwasher in Appliances)
+            up = db.execute('SELECT id FROM note_pages WHERE key=? AND removed_at IS NULL AND merged_into IS NULL',
+                            (kind + ':' + str(d['inside']),)).fetchone()
+            if not up:
+                continue
+            parent = up['id']
+        else:
+            parent = _folder(db, [str(p) for p in d['under']], at) if d.get('under') else None
         own = None if row else _same(db, title, parent)
         if own:  # the owner's note of that name there: filled in beside their own lines, which stay theirs; their name stands
             shown = own['owner_title'] or own['title']

@@ -15,9 +15,13 @@ Plain code first, a model only for what code can't tell:
   in a later round. Nothing new: no model call.
 - The sections (SECTIONS) are notes under Home. A section is started only once it has MIN_LINES lines, and goes again
   when it has none left. The owner's edits, moves and deletes stay on top (note_pages.sync).
+- A note the owner keeps under a section (Dishwasher under Appliances) is one of the places too: the call sees their
+  names (notes_under), and what is about that thing goes in that note, never beside it in the section as well. The
+  Machine never starts such a note; it only fills in the owner's.
 
-Home is always Personal. Tables (this module owns them): home_topics (each candidate's key and the section it was
-placed in, '' for not about the home; no text) and home_state (when the last round ran)."""
+Home is always Personal. Tables (this module owns them): home_topics (each candidate's key, the section it was placed
+in, '' for not about the home, and the owner's note in that section it went in, '' for none; no text) and home_state
+(when the last round ran)."""
 import datetime as dt
 import hashlib
 import json
@@ -26,7 +30,7 @@ from i18n import t
 import todo_areas
 
 SCHEMA = '''
-CREATE TABLE IF NOT EXISTS home_topics(key TEXT PRIMARY KEY,section TEXT NOT NULL,at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS home_topics(key TEXT PRIMARY KEY,section TEXT NOT NULL,note TEXT NOT NULL DEFAULT '',at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS home_state(id INTEGER PRIMARY KEY CHECK(id=1),at TEXT NOT NULL);
 '''
 # The parts of the home a candidate can be about, each a note under Home (English: its key; titled in the owner's
@@ -178,8 +182,47 @@ def _ask_line(n, c):
     return json.dumps(what, ensure_ascii=False)
 
 
-def prompt(items):
-    """The one model call's prompt: the candidates as plain code read them (evidence, never instructions)."""
+def _slug(section):
+    return section.casefold().replace(' ', '-')
+
+
+def _named(db, parent, title):
+    """The live note with this name directly under parent (None: at the top), oldest first."""
+    for r in db.execute('SELECT id,title,owner_title FROM note_pages WHERE parent_id IS ? AND removed_at IS NULL AND merged_into IS NULL ORDER BY id', (parent,)):
+        if (r['owner_title'] or r['title']).casefold() == title.casefold():
+            return r['id']
+    return None
+
+
+def _live(db, key):
+    row = db.execute('SELECT id FROM note_pages WHERE key=? AND removed_at IS NULL AND merged_into IS NULL', (key,)).fetchone()
+    return row['id'] if row else None
+
+
+def notes_under(db):
+    """The notes under each section, the owner's own (Dishwasher under Appliances): {section: [name]}. A section is
+    its note once synced, else the owner's note of that name under their Home."""
+    home = _live(db, 'folder:home') or _named(db, None, t('Home'))
+    out = {}
+    for section in SECTIONS:
+        at = _live(db, 'home:' + _slug(section)) or (home and _named(db, home, t(section)))
+        if not at:
+            continue
+        names = [' '.join((r['owner_title'] or r['title']).split())[:120] for r in db.execute(
+            "SELECT title,owner_title FROM note_pages WHERE parent_id=? AND removed_at IS NULL AND merged_into IS NULL "
+            "AND (key IS NULL OR key LIKE 'home:%') ORDER BY id", (at,))]  # not a note another kind keeps (a trip moved there)
+        if names:
+            out[section] = names[:20]
+    return out
+
+
+def prompt(items, under=None):
+    """The one model call's prompt: the candidates as plain code read them (evidence, never instructions), and the
+    names of the notes the owner keeps under each part (notes_under)."""
+    notes = [
+        'The owner already keeps these notes under a part, by name: ' + json.dumps(under, ensure_ascii=False) + '. When one '
+        'is about the thing such a note is about, also give "note": that name, exactly as written; otherwise leave "note" out.',
+    ] if under else []
     return '\n'.join([
         'You are sorting what the owner\'s Machine knows into notes about the owner\'s own home. It runs on its own; nobody '
         'is waiting in a chat.',
@@ -192,12 +235,14 @@ def prompt(items):
         'plumber, a boiler service, cleaning, the garden) or "The house" (the home itself: rooms, how things work there, '
         'codes, what is where). Use "" when it is not about the home (work, a person, health, a child\'s school, a hobby, '
         'a trip, a subscription for one person\'s own use) or when you are not sure.',
+        *notes,
         'Answer with JSON only: {"places": [{"n": 1, "section": "Appliances"}]}',
     ])
 
 
-def reply(text, items):
-    """{key: section} for every item the answer placed ('' for not about the home), or None when it isn't an answer."""
+def reply(text, items, under=None):
+    """{key: (section, note)} for every item the answer placed (section '' for not about the home; note: the name of
+    the owner's note under that section it is about, from under, '' for none), or None when it isn't an answer."""
     text = str(text or '')
     start, end = text.find('{'), text.rfind('}')
     try:
@@ -211,13 +256,17 @@ def reply(text, items):
         if not isinstance(p, dict) or not isinstance(p.get('n'), int) or not 1 <= p['n'] <= len(items):
             continue
         section = p.get('section') if p.get('section') in SECTIONS else ''
-        out[items[p['n'] - 1]['key']] = section
+        said = ' '.join(p['note'].split()).casefold() if section and isinstance(p.get('note'), str) else ''
+        note = next((x for x in (under or {}).get(section, []) if said and x.casefold() == said), '')
+        out[items[p['n'] - 1]['key']] = (section, note)
     return out
 
 
 def remember(db, placed, at):
-    for key, section in placed.items():
-        db.execute('INSERT OR REPLACE INTO home_topics(key,section,at) VALUES(?,?,?)', (key, section, at))
+    """Keep each placing: {key: (section, note)}, or {key: section} for no note."""
+    for key, place in placed.items():
+        section, note = (place, '') if isinstance(place, str) else place
+        db.execute('INSERT OR REPLACE INTO home_topics(key,section,note,at) VALUES(?,?,?,?)', (key, section, note or '', at))
 
 
 def _org(db, name):
@@ -239,9 +288,12 @@ def _line(db, c):
 
 
 def drafts(db, found):
-    """The Home sections as note_pages.sync drafts, and keep(key): a section no candidate fills any more goes, unless
-    the owner wrote in it, renamed it or put notes under it."""
-    placed = {r['key']: r['section'] for r in db.execute("SELECT key,section FROM home_topics WHERE section!=''")}
+    """The Home sections as note_pages.sync drafts, then the owner's notes under them that get lines (inside: their
+    section), and keep(key): a section no candidate fills any more goes, unless the owner wrote in it, renamed it or
+    put notes under it. An owner's note stays always: it is theirs. A line for one of their notes that is gone or
+    renamed goes in its section instead."""
+    placed = {r['key']: (r['section'], r['note']) for r in db.execute("SELECT key,section,note FROM home_topics WHERE section!=''")}
+    under = notes_under(db)
     started = {r['key'] for r in db.execute("SELECT key FROM note_pages WHERE kind='home' AND removed_at IS NULL")}
     owned = {r['key'][len('home:'):] for r in db.execute(
         "SELECT p.key FROM note_pages p WHERE p.kind='home' AND (p.owner_title IS NOT NULL OR EXISTS(SELECT 1 FROM note_page_lines l "
@@ -249,8 +301,18 @@ def drafts(db, found):
         "OR EXISTS(SELECT 1 FROM note_pages c WHERE c.parent_id=p.id AND c.removed_at IS NULL))")}
     out = []
     for section in SECTIONS:
-        lines = [_line(db, c) for c in _all(found) if placed.get(c['key']) == section]
-        key = section.casefold().replace(' ', '-')
-        if len(lines) >= MIN_LINES or (lines and 'home:' + key in started) or key in owned:  # the owner's own lines stay
+        lines, kids = [], {}
+        for c in _all(found):
+            got, note = placed.get(c['key'], ('', ''))
+            if got != section:
+                continue
+            mine = next((x for x in under.get(section, []) if note and x.casefold() == note.casefold()), None)
+            (kids.setdefault(mine, []) if mine else lines).append(_line(db, c))
+        key = _slug(section)
+        filled = {key + '/' + name.casefold(): (name, got) for name, got in kids.items()}
+        for r in db.execute("SELECT key,title FROM note_pages WHERE kind='home' AND key LIKE ? AND removed_at IS NULL", ('home:' + key + '/%',)):
+            filled.setdefault(r['key'][len('home:'):], (r['title'], []))  # one filled before: what it no longer has goes
+        if len(lines) >= MIN_LINES or (lines and 'home:' + key in started) or key in owned or kids:  # the owner's own lines stay
             out.append({'key': key, 'title': t(section), 'under': ['Home'], 'lines': lines})
-    return out, (lambda key: key in owned)
+            out.extend({'key': k, 'title': name, 'inside': key, 'lines': got} for k, (name, got) in filled.items())
+    return out, (lambda key: key in owned or '/' in key)
