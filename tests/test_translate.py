@@ -91,6 +91,38 @@ class Catalog(unittest.TestCase):
         self.assertEqual(len(model.calls), 2)
         self.assertIn('placeholder', model.calls[1][2])
 
+    def test_an_answer_of_another_shape_than_the_english_is_asked_again_never_written(self):
+        # Russian's model answered the plain "{} tickets" with count forms: let through, catalog_todo still counted it
+        # missing, so every run asked again and the daily run stayed red
+        en = {'{} tickets': '{} tickets', '{} guests': {'one': '{} guest', 'other': '{} guests'}}
+        forms = T.plural_forms('ru')
+
+        def model(fixes):
+            def ask(lang, instruction, payload, cache_key):
+                retry = 'Last time' in payload
+                items = json.loads(payload[payload.index('\n{'):])
+                out = {}
+                for i, item in items.items():
+                    plain = isinstance(item['english'], str)
+                    wrong = not retry or not fixes
+                    out[i] = ({f: 'x {}' for f in forms} if plain else 'x {}') if wrong else ('x {}' if plain else {f: 'x {}' for f in forms})
+                return {'t': out}
+            return ask
+
+        got = T.translate_entries('ru', list(en), en, ask=model(fixes=True))
+        self.assertEqual(got, {'{} tickets': 'x {}', '{} guests': {f: 'x {}' for f in forms}})
+        self.assertEqual(T.catalog_todo('ru', en, got), [])
+        self.assertEqual(T.translate_entries('ru', list(en), en, ask=model(fixes=False)), {}, 'left in English, not written')
+        words = T.glossary()
+        self.assertTrue(T.entry_problems('{} tickets', {f: 'x {}' for f in forms}, 'ru', words, '{} tickets'))
+        # a plural entry's key says what it counts, as a plain one's does: tickets to an event, not support tickets
+        tickets = {'one': '{} ticket', 'other': '{} tickets'}
+        self.assertEqual(T.source('{} tickets (to an event)', tickets), {'english': tickets, 'meaning': '{} tickets (to an event)'})
+        self.assertEqual(T.source('{} guests', {'one': '{} guest', 'other': '{} guests'}), {'english': {'one': '{} guest', 'other': '{} guests'}})
+        for lang in ('zh-CN', 'ja', 'ko'):  # one count form: a plural entry answered with a bare string
+            self.assertTrue(T.entry_problems('{} guests', 'x {}', lang, words, en['{} guests']), lang)
+            self.assertEqual(T.entry_problems('{} guests', {'other': 'x {}'}, lang, words, en['{} guests']), [], lang)
+
     def test_a_check_counts_without_the_model(self):
         self.assertEqual(T.run_catalog(['nl'], check=True, ask=no_model), 4)
 
