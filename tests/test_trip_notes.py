@@ -281,6 +281,26 @@ class HeldMail(unittest.TestCase):
             self.assertTrue(self.app.history_step())
         self.assertEqual(HeldMail.Reader.reads, ['messages'])  # but mail whose bookings are in isn't read twice
 
+    def test_personal_mailboxes_are_read_again_before_work_ones(self):
+        from machine.store import history
+        work = {'id': 'job', 'service': 'gmail', 'email': 'owner@work.example', 'boundary': 'work:Example'}
+        home = {**MAIL, 'boundary': 'personal'}
+        with self.store.connect() as db:
+            history.save(db, 'job', {'target': '2025-11-14T10:00:00+00:00'}, AT, done=True, depth_days=365)
+        self.app.collector_resting = {'job', MAIL['id']}
+        read = []
+
+        def page(account, walk):
+            read.append(account['id'])
+            walk['done'] = True
+            return 0
+        with mock.patch.object(self.app, 'history_accounts', return_value=[work, home]), \
+                mock.patch.object(self.app, 'history_bookings_page', side_effect=page):
+            self.assertTrue(self.app.history_bookings(AT))
+            self.assertTrue(self.app.history_bookings(AT))
+            self.assertFalse(self.app.history_bookings(AT))
+        self.assertEqual(read, ['home', 'job'])
+
     def test_it_waits_for_the_mailboxs_own_walk_and_rests_on_a_rate_limit(self):
         from machine.store import history
         with self.store.connect() as db:

@@ -136,7 +136,8 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   - `machine/omarchy.py`: the current Omarchy theme's colors (`GET /api/omarchy-theme`), for Settings, General, This
     device, Omarchy theme (`dashboard/settings-omarchy.js`, painted by `paintOmarchy` in dashboard.html).
   - `machine/app/history.py` (`HistoryApp`): the history backfill's worker, when it may run and one step per source;
-    after a mailbox's walk, `history_bookings` reads its held mail once more per `trip_notes.WALK_VERSION` for bookings;
+    after a mailbox's walk, `history_bookings` reads its held mail once more per `trip_notes.WALK_VERSION` for bookings,
+    Personal mailboxes first;
     `machine/store/history.py` owns `history_backfill` and the line between history and signal (`events.history`).
     `machine/store/graph_history.py` lets history into the Graph's people and organizations in bounded passes, newest first.
   - `machine/graph/`: the passes of a Graph build, one function each, in the order `graph._build_in` runs them:
