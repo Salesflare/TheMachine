@@ -136,6 +136,19 @@ function networkSection(f){const net=f.network;if(!net||!f.friends?.id)return'';
  h=html`${h}${html`<div class="acct-danger net-leave">${netBtn('Leave the Network','leave','','','acct-quiet','Leave the Network? Every friendship ends and nobody can find you. Your Fleets stay.')}</div></div>`}`;
  return h}
 // The Fleet tab drawn from fleetData (fleetView in fleet-shared.js fetches it first, and loads this part).
+// A field someone is typing in when the view is drawn again (a save's answer, a refresh) keeps what they typed, the fold
+// it's in stays open and focus stays in it: the redraw replaced it, so the words went and their change never came.
+// Found again as the same field of the same rule or row (its own attributes, under the nearest id or rule).
+const fleetFieldKey=f=>{const host=f.closest('[data-member][data-kind],[id]:not(#fleet-view)');
+ return (host?(host.id||host.dataset.member+'/'+host.dataset.kind+'/'+(host.dataset.fleet||'')):'')+'|'+f.tagName+'|'+[...f.attributes].filter(a=>!/^(value|class|style|placeholder|aria-|tabindex)/.test(a.name)).map(a=>a.name+'='+a.value).join('&')};
+function fleetTyping(view){const f=document.activeElement;if(!f||!view.contains(f)||!f.matches('input:not([type=checkbox],[type=radio],[type=button],[type=submit]),textarea'))return null;
+ return {key:fleetFieldKey(f),tag:f.tagName,value:f.value,start:f.selectionStart,end:f.selectionEnd}}
+function fleetTypingPut(view,h){if(!h)return;const f=[...view.querySelectorAll(h.tag)].find(x=>fleetFieldKey(x)===h.key);if(!f)return;
+ f.value=h.value;for(let d=f.closest('details');d;d=d.parentElement?.closest('details'))d.open=true;
+ // words put back aren't typed in this field, so leaving it wouldn't save them: it does, as typing would (once)
+ if(h.value!==f.defaultValue){let saved=false;f.addEventListener('change',()=>{saved=true},{once:true});
+  f.addEventListener('blur',()=>{if(!saved&&f.isConnected&&f.value!==f.defaultValue)f.dispatchEvent(new Event('change',{bubbles:true}))},{once:true})}
+ const p=f.closest('.fleet-pane[hidden]');if(p)return;f.focus({preventScroll:true});try{f.setSelectionRange(h.start,h.end)}catch{}}
 function fleetDraw(view){const f=fleetData;if(!f.on){view._fleetHTML=null;setHTML(view,html`<p class="muted">This Machine is not in a Fleet. Pair it with your account to join your team's. <a href="${HELP}fleet" target="_blank" rel="noopener">Learn more</a></p>`);return}
  // Several Work Fleets: each its own section, with its own people, rules and Ask; questions go to one Fleet at a time.
  const works=f.fleets.filter(x=>x.kind==='work'),family=f.fleets.find(x=>x.kind==='family'),several=works.length>1;
@@ -191,7 +204,8 @@ function fleetDraw(view){const f=fleetData;if(!f.on){view._fleetHTML=null;setHTM
  // Leave unchanged forms in place: a completed background request must not swallow a click.
  if(view._fleetHTML===String(body)){actEmbedFill();return}
  const drafts=[...view.querySelectorAll('form')].map(form=>({key:form.className+'|'+(form.dataset.fleet||''),values:[...form.elements].filter(e=>e.name&&['INPUT','TEXTAREA'].includes(e.tagName)).map(e=>[e.name,e.value])}));
- setHTML(view,body);view._fleetHTML=String(body);actEmbedFill();
+ const typing=fleetTyping(view);
+ setHTML(view,body);view._fleetHTML=String(body);actEmbedFill();fleetTypingPut(view,typing);
  if(/^shared-/.test(current))sharedLoad(current.slice(7),true);
  for(const draft of drafts){const form=[...view.querySelectorAll('form')].find(f=>f.className+'|'+(f.dataset.fleet||'')===draft.key);if(form)for(const [name,value]of draft.values){const input=form.elements.namedItem(name);if(input&&'value'in input)input.value=value}}
 }
