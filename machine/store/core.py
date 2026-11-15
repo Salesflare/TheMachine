@@ -119,7 +119,7 @@ class StoreCore:
         self.path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
         key = message_seal.load_key(self.path)
         self.sealer = message_seal.Sealer(key) if key else None
-        self._seal_key = key  # for a reader in a process of its own (shared_graph_apart.py), over a pipe only
+        self._seal_key = key  # for a process of its own (shared_graph_apart.py, graph_apart.py), over a pipe only
         self.protected, self._sealed_schema = False, None
         with self.connect() as db:
             db.executescript('''
