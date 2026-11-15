@@ -8,7 +8,10 @@ const notesOpen=new Set((()=>{try{return JSON.parse(sideStore.get('notes-open')|
 const NOTE_KIND={trip:'Trip',event:'Event'};
 const noteDay=v=>v?shortDay(String(v).slice(0,10)):'';
 const noteDates=x=>x.starts?(x.ends&&x.ends!==x.starts?t('{} to {}',noteDay(x.starts),noteDay(x.ends)):noteDay(x.starts)):'';
-const noteMeta=x=>[NOTE_KIND[x.kind]?t(NOTE_KIND[x.kind]):'',noteDates(x),x.lines?t(['{} line','{} lines'],x.lines):x.children?t(['{} note','{} notes'],x.children):''].filter(Boolean).join(' · ');
+// A row's meta wraps between its parts only, never inside a date or "2 lines" (no-break spaces within each part)
+const noteKeep=s=>String(s).replace(/ /g,' ');
+const noteMeta=x=>[NOTE_KIND[x.kind]?t(NOTE_KIND[x.kind]):'',x.starts?(x.ends&&x.ends!==x.starts?t('{} to {}',noteKeep(noteDay(x.starts)),noteKeep(noteDay(x.ends))):noteKeep(noteDay(x.starts))):'',
+ noteKeep(x.lines?t(['{} line','{} lines'],x.lines):x.children?t(['{} note','{} notes'],x.children):'')].filter(Boolean).join(' · ');
 const noteRow=(x,fold='')=>html`<article class="tap note-item" data-node="${x.id}"${fold?html` data-depth="${Math.min(x.depth,6)}"`:''}>${fold}<div class="graph-row one">${nodeButton(x)}<small>${noteMeta(x)}</small></div></article>`;
 const noteTitleForm=(cls,parent,shown)=>html`<form class="note-form ${cls}"${parent?html` data-note-parent="${parent}"`:''}${shown?'':html` hidden`}><input name="title" maxlength="120" required aria-label="${t('Title')}" placeholder="${t('Title')}" autocomplete="off"><span class="note-acts"><button type="button" class="quiet" data-note-cancel>${t('Cancel')}</button><button class="primary">${t('Start the note')}</button></span></form>`;
 // The list: each note after the one it is under; a note's own notes show once it is unfolded
@@ -27,7 +30,8 @@ function noteNew(){const find=()=>$('#people-view [data-graph-panel="notes"]:not
 function noteText(x){const text=x.text,low=text.toLowerCase(),spots=[];
  for(const l of x.links||[]){const i=low.indexOf(l.name.toLowerCase());if(i>=0&&!spots.some(s=>i<s.end&&i+l.name.length>s.i))spots.push({i,end:i+l.name.length,id:l.id})}
  spots.sort((a,b)=>a.i-b.i);const out=[];let at=0;for(const s of spots){out.push(text.slice(at,s.i),html`<a href="${graphHash(s.id)}" class="note-link">${text.slice(s.i,s.end)}</a>`);at=s.end}out.push(text.slice(at));return out}
-const noteWhen=v=>v?html`<time datetime="${v}">${noteDay(v)}${String(v).length>10?' '+fmtHM(new Date(v)):''}</time>`:'';
+const noteStamp=v=>noteDay(v)+(String(v).length>10?' '+fmtHM(new Date(v)):'');
+const noteWhen=(v,until)=>v?html`<time datetime="${v}">${until?t('{} to {}',noteStamp(v),noteStamp(until)):noteStamp(v)}</time>`:'';  // until: a line that runs into another day (an event)
 // Where a line came from, and the to-do it points to (a bill or a subscription: the details stay there)
 function noteSource(x){const from=x.source?.gone?t('From a message that is gone')
  :x.source?html`<button type="button" class="link" data-note-src="${x.source.id}" data-kind="${x.source.kind}" data-title="${x.source.title}">${x.source.kind==='calendar.event'?t('From your calendar'):t('From {}',x.source.from||x.source.title||t('a message'))}</button>`
@@ -38,7 +42,7 @@ function noteSource(x){const from=x.source?.gone?t('From a message that is gone'
 const noteLineForm=x=>html`<form class="note-form note-line-form" data-note-line="${x.id}" data-links="${JSON.stringify(x.links||[])}"><textarea name="text" maxlength="${x.fact_id?240:1000}" rows="2" required aria-label="${t('Line')}">${x.text}</textarea><span class="note-acts"><button type="button" class="quiet" data-note-cancel>${t('Cancel')}</button><button class="primary">${t('Save')}</button></span></form>`;
 function noteLine(x){if(noteEditing===x.id)return html`<li>${noteLineForm(x)}</li>`;
  const menu=html`<details class="fact-menu"><summary aria-label="${t('Options for this line')}" title="${t('Options')}">⋯</summary><div class="fact-menu-list" role="menu"><button type="button" role="menuitem" data-note-line-edit="${x.id}">${t('Edit')}${x.fact_id?html`<small>${t('Also changes it under What I’ve learned')}</small>`:''}</button>${x.edited?html`<button type="button" role="menuitem" data-note-line-reset="${x.id}">${t('Back to the original')}</button>`:''}<button type="button" role="menuitem" class="danger" data-note-line-remove="${x.id}">${t('Remove')}</button></div></details>`;
- return html`<li>${noteWhen(x.at)}<span class="note-text">${noteText(x)}${noteSource(x)}</span>${menu}</li>`}
+ return html`<li>${noteWhen(x.at,x.data?.until)}<span class="note-text">${noteText(x)}${noteSource(x)}</span>${menu}</li>`}
 // Is note b somewhere under note a (so a can't go under b, or into it)?
 function noteBelow(a,b){const by=new Map((noteList||[]).map(x=>[x.id,x]));for(let x=by.get(b),i=0;x&&i<8;x=by.get(x.parent),i++)if(x.parent===a)return true;return false}
 const noteOptions=(list,picked)=>list.map(x=>html`<option value="${x.id}"${x.id===picked?html` selected`:''}>${'  '.repeat(x.depth||0)}${x.name}</option>`);

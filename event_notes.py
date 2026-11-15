@@ -9,8 +9,9 @@ note_pages.sync, which keeps the owner's own edits, moves and deletes on top.
 How tickets become events, without a model:
 - One event is known by its name and first day. Every booking for it (a second order, a mail about more seats) is a
   line on that note. A later mail about the same booking replaces it, and a cancellation takes it out.
-- A line says where, with the booking code, seat and ticket, at the event's time. An event that runs over more days
-  also gets a line on its last day. The note's dates run from the first day to the last: a band in Calendar, like a trip.
+- A line says where, with the booking code, seat and ticket, at the event's time; one that runs into another day keeps
+  its end too (data.until), so its date reads from start to end. The note's dates run from the first day to the last:
+  a band in Calendar, like a trip.
 - A to-do made from the ticket mail (pay, pick up the tickets) opens from its line.
 - An event whose tickets were all canceled goes. One whose mail aged out of the mailbox stays.
 Its area is the mailbox's: a conference booked on the work address is Work."""
@@ -48,15 +49,14 @@ def _key(b):
     return hashlib.sha256(('event|' + ' '.join(b['name'].casefold().split()) + '|' + b['start'][:10]).encode()).hexdigest()[:20]
 
 
-def lines(b, lang=None):
-    """The lines one booking gives: (key, at, text, main), main being the one its to-do opens from."""
+def line(b, lang=None):
+    """The line one booking gives: (key, at, text, until), until being its end when it runs into another day (the
+    line's date reads "Fri 18 Dec 09:00 to Sat 19 Dec 17:30"), else None."""
     key = hashlib.sha256(trip_notes._ident(b).encode()).hexdigest()[:16]
     seats = int(b['guests']) if str(b.get('guests') or '').isdigit() else 0
     text = (t('At {}', b['where'], lang=lang) if b.get('where') else t('Tickets', lang=lang)) + (', ' + t('{} tickets', seats, lang=lang) if seats > 1 else '')
-    out = [(key, b['start'], text + trip_notes._code(b, lang), True)]
-    if (b.get('end') or '')[:10] > b['start'][:10]:
-        out.append((key + '-last', b['end'], t('Last day', lang=lang), False))
-    return out
+    end = b.get('end') or ''
+    return key, b['start'], text + trip_notes._code(b, lang), end if end[:10] > b['start'][:10] else None
 
 
 def _todos(db, event_ids):
@@ -82,9 +82,9 @@ def drafts(db, accounts, lang=None):
         first = min(group, key=lambda b: (b['seen'], b['start']))
         made = []
         for b in group:
-            for k, at, text, main in lines(b, lang):
-                todo = todos.get(b['event_id']) if main else None
-                made.append({'key': k, 'at': at, 'text': text, 'event_id': b['event_id'], 'item': 'event', **({'data': {'todo': todo}} if todo else {})})
+            k, at, text, until = line(b, lang)
+            data = {**({'until': until} if until else {}), **({'todo': todos[b['event_id']]} if b['event_id'] in todos else {})}
+            made.append({'key': k, 'at': at, 'text': text, 'event_id': b['event_id'], 'item': 'event', **({'data': data} if data else {})})
         made.sort(key=lambda x: x['at'])
         out.append({'key': key, 'title': first['name'], 'area': trip_notes._area(accounts, first['account_id']), 'under': ['Events'],
                     'starts': min(b['start'] for b in group)[:10], 'ends': max((b.get('end') or b['start']) for b in group)[:10], 'lines': made})

@@ -89,7 +89,9 @@ class EventNotes(unittest.TestCase):
                                                                       'At Example Arena, Antwerp, booking TK-5520, ticket 0042'])
         self.assertEqual({x['source']['from'] for x in concert['lines']}, {'Example Tickets'}, 'each line says who the tickets came from')
         festival = events['Harbor Sound Festival']
-        self.assertEqual([(x['at'][:10], x['text']) for x in festival['lines']], [('2027-07-09', 'At Harbor Park, Ghent, booking HS-77, ticket 0042'), ('2027-07-11', 'Last day')])
+        self.assertEqual([(x['at'], x['data']['until'], x['text']) for x in festival['lines']],
+                         [('2027-07-09T12:00', '2027-07-11T23:00', 'At Harbor Park, Ghent, booking HS-77, ticket 0042')], 'one line, its date to the end')
+        self.assertNotIn('data', concert['lines'][0], 'an evening has no end day')
         self.assertEqual((festival['starts'], festival['ends'], festival['area']), ('2027-07-09', '2027-07-11', 'personal'))
         with self.store.connect() as db:
             self.assertEqual([x for x in note_pages.listing(db, '2026-11-14') if x['kind'] == 'trip'], [], 'tickets make no trip')
@@ -108,7 +110,7 @@ class EventNotes(unittest.TestCase):
         self.mail(ticket('Example Dev Summit', '2027-03-04', '2027-03-05', code='DS-1', venue='Expo Hall', town='Lyon'), account=JOB)
         summit = self.sync()['Example Dev Summit']
         self.assertEqual(summit['area'], 'work:Acme')
-        self.assertEqual([x['text'] for x in summit['lines']], ['At Expo Hall, Lyon, booking DS-1, ticket 0042', 'Last day'])
+        self.assertEqual([x['text'] for x in summit['lines']], ['At Expo Hall, Lyon, booking DS-1, ticket 0042'])
 
 
 if __name__ == '__main__':
