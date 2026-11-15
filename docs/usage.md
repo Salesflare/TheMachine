@@ -571,11 +571,12 @@ These go through the same signed-in x.com session the X source reads with.
 
 Only from a to-do: the owner's Send now, never `send_now`.
 
-- The `whatsapp` action replies in a chat from the task's own `whatsapp.message` signals (`chat_id`, from the account the message came in on). Plain text, no media, at most 4,000 characters.
+- The `whatsapp` action replies in a chat from the task's own `whatsapp.message` signals (`chat_id`, from the account the message came in on). Text of at most 4,000 characters, or one file (`attachments`, stored and checksummed like an email's, up to 18 MB) with an optional caption of at most 1,024. The send dialog and the Telegram preview list the file.
+- When the owner has WhatsApp, Telegram or Signal linked, the Do it prompt says so (`chats_prompt`): messages there go out as this action, never through the app's web version in the browser, and the run never asks the owner to link or scan a QR code for them. Telegram and Signal carry text only; for a file there the run says so and offers WhatsApp or email.
 - When the owner says they talk to that person on WhatsApp, a to-do from another channel switches to their existing chat. The action names the owner's WhatsApp account and the `chat_id` (checked against that account's messages, else `wacli chats show`) or `to_name` (looked up with `wacli chats list --query`, which must match exactly one chat).
 - Excluded chats and new numbers are refused.
-- `WhatsAppTransport` checks read-only first (the linked number still matches `identity_sha256`, the chat is in the store). Then it makes the one writable wacli call, `wacli send text --to <chat> --message …`, without `--read-only`. Every other wacli call stays read-only. With the sync running, wacli hands the send to it.
-- wacli has no send token, so an unclear outcome stays uncertain. It is checked by finding exactly one message from you with that text in the chat, newer than the saved pre-send message inventory and dispatch time. It's never resent.
+- `WhatsAppTransport` checks read-only first (the linked number still matches `identity_sha256`, the chat is in the store). Then it makes the one writable wacli call, `wacli send text --to <chat> --message …` (a file: `wacli send file --file … --filename … --mime … --caption …`, from a private copy of the approved bytes that is deleted right after), without `--read-only`. Every other wacli call stays read-only. With the sync running, wacli hands the send to it.
+- wacli has no send token, so an unclear outcome stays uncertain. It is checked by finding exactly one message from you with that text (a file: a media message with that caption and file name) in the chat, newer than the saved pre-send message inventory and dispatch time. It's never resent.
 - A busy store waits.
 
 ### Intercom replies

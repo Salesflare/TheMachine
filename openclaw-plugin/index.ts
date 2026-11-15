@@ -120,7 +120,7 @@ function sendReview(item:any,draft:any,dashboardBase=''){
  if(draft.kind==='x')return {text:(draft.reply_to?[t('Reply on X as @{}?',draft.handle),t('To: {}','@'+draft.to_screen_name)+`${draft.to_name&&draft.to_name!=='@'+draft.to_screen_name?` (${draft.to_name})`:''}`,...(draft.to_text?[`“${draft.to_text}”`]:[])]
      :[t('Send this X message?'),t('As @{} to {}',draft.handle,draft.to_name)]).concat(['',draft.body]).join('\n'),
    buttons:[[button(item.id,t('Send now'),'confirm_'+draft.revision),...edit,button(item.id,t('Cancel'),'back')]]};
- if(draft.kind==='whatsapp')return {text:[t('Send this WhatsApp message?'),t('To: {}',draft.to_name),'',draft.body].join('\n'),
+ if(draft.kind==='whatsapp')return {text:[t('Send this WhatsApp message?'),t('To: {}',draft.to_name),...(draft.attachments?.length?[t('Attachments: {}',fileList(draft.attachments))]:[]),...(draft.body?['',draft.body]:[])].join('\n'),
    buttons:[[button(item.id,t('Send now'),'confirm_'+draft.revision),...edit,button(item.id,t('Cancel'),'back')]]};
  if(draft.kind==='slack')return {text:[t('Send this Slack message?'),t('To: {}',draft.to_name)+`${draft.to_email?` (${draft.to_email})`:''}`,'',draft.body,...(waits.length?['',...waits]:[])].join('\n'),
    buttons:[[button(item.id,t('Send now'),'confirm_'+draft.revision),...edit,button(item.id,t('Cancel'),'back')]]};
