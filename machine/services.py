@@ -21,6 +21,8 @@ A service's row:
   Gmail and Google Calendar together. None for one connected another way.
 - transports: the internal tools an account without a `service` of its own names in its `transport` instead
   (names.TRANSPORT_SERVICES): an account with transport 'gog' is Gmail.
+- video: for a video call service, the key a meeting booked with it keeps (meet.VIDEO, meet_sessions.video), named
+  by its `short` name; video_links: the parts of an address that are a link to such a call (meet.VIDEO_LINKS).
 
 Where names disagree, each is kept as it is today and said here, never picked silently:
 - name and label: 'imap' is 'Email' on a line but 'Other email' in + Add; 'caldav' and 'ics' are both 'Calendar' on a
@@ -30,6 +32,8 @@ Where names disagree, each is kept as it is today and said here, never picked si
 - short and name: 'gmail' is 'Email' on the dashboard's lines but 'Gmail' on the server's; 'calendar' is 'Calendar'
   and 'Google Calendar'; 'teams' is 'Teams' and 'Microsoft Teams'; 'rss' is 'Feed' and 'RSS'; 'docs' is 'Microsoft
   OneDrive' and 'Docs'; 'telegram', 'signal', 'android' and 'salesflare' say their + Add label.
+- video and the service key: a booking keeps Google Meet as 'meet', not 'google_meet' (stored in meet_sessions, so it
+  stays); a booking names Teams 'Teams', its `short` name.
 - sharing and label: 'telegram' is 'Telegram' and 'salesflare' 'Salesflare' in Sharing, the rest that have one say
   their + Add label there.
 """
@@ -37,7 +41,8 @@ Where names disagree, each is kept as it is today and said here, never picked si
 MAIL, CALENDAR, CHAT, MEETINGS, DOCS, CUSTOMERS, WORK, OTHER = 'mail', 'calendar', 'chat', 'meetings', 'docs', 'customers', 'work', 'other'
 GROUPS = (MAIL, CALENDAR, CHAT, MEETINGS, DOCS, CUSTOMERS, WORK, OTHER)  # + Add's groups, in the order its list shows them
 
-_NO = {'label': None, 'short': None, 'sharing': None, 'unit': None, 'group': None, 'last': False, 'signin': None, 'transports': ()}
+_NO = {'label': None, 'short': None, 'sharing': None, 'unit': None, 'group': None, 'last': False, 'signin': None, 'transports': (),
+       'video': None, 'video_links': ()}
 
 SERVICES = {
     # mail and calendars
@@ -62,7 +67,6 @@ SERVICES = {
                  'group': CALENDAR},
     # chat, customers, the owner's phone
     'slack': {**_NO, 'name': 'Slack', 'label': 'Slack', 'short': 'Slack', 'sharing': 'Slack', 'group': CHAT, 'signin': 'slack'},
-    'teams': {**_NO, 'name': 'Microsoft Teams', 'short': 'Teams', 'group': CHAT, 'signin': 'microsoft_teams'},
     'salesflare': {**_NO, 'name': 'Salesflare', 'label': 'Salesflare CRM', 'short': 'Salesflare CRM', 'sharing': 'Salesflare', 'group': CUSTOMERS,
                    'transports': ('salesflare-rest',)},
     'salesforce': {**_NO, 'name': 'Salesforce', 'short': 'Salesforce', 'unit': 'updates', 'group': CUSTOMERS, 'signin': 'salesforce'},
@@ -79,13 +83,17 @@ SERVICES = {
     'intercom': {**_NO, 'name': 'Intercom', 'short': 'Intercom', 'sharing': 'Intercom', 'unit': 'conversations', 'group': CUSTOMERS,
                  'signin': 'intercom'},
     # meetings, work, docs and the rest
-    'zoom': {**_NO, 'name': 'Zoom', 'short': 'Zoom', 'group': MEETINGS, 'signin': 'zoom'},
+    'zoom': {**_NO, 'name': 'Zoom', 'short': 'Zoom', 'group': MEETINGS, 'signin': 'zoom', 'video': 'zoom', 'video_links': ('zoom.us/',)},
     'stripe': {**_NO, 'name': 'Stripe', 'short': 'Stripe', 'unit': 'events', 'group': CUSTOMERS, 'signin': 'stripe'},
     'github': {**_NO, 'name': 'GitHub', 'short': 'GitHub', 'unit': 'notifications', 'group': WORK, 'transports': ('gh',)},
     'trello': {**_NO, 'name': 'Trello', 'short': 'Trello', 'unit': 'card changes', 'group': WORK, 'signin': 'trello'},
     'shortcut': {**_NO, 'name': 'Shortcut', 'short': 'Shortcut', 'group': WORK},
     'docs': {**_NO, 'name': 'Docs', 'short': 'Microsoft OneDrive', 'unit': 'items', 'group': DOCS, 'signin': 'microsoft_docs'},
-    'google_meet': {**_NO, 'name': 'Google Meet', 'short': 'Google Meet', 'unit': 'meetings', 'group': MEETINGS, 'signin': 'google_meet'},
+    'google_meet': {**_NO, 'name': 'Google Meet', 'short': 'Google Meet', 'unit': 'meetings', 'group': MEETINGS, 'signin': 'google_meet',
+                    'video': 'meet', 'video_links': ('meet.google.com/',)},
+    # after Zoom and Google Meet: a tie between video links goes to the first row (meet.video_habit)
+    'teams': {**_NO, 'name': 'Microsoft Teams', 'short': 'Teams', 'group': CHAT, 'signin': 'microsoft_teams',
+              'video': 'teams', 'video_links': ('teams.microsoft.com/', 'teams.live.com/')},
     'rss': {**_NO, 'name': 'RSS', 'short': 'Feed', 'unit': 'items'},
     'web_page': {**_NO, 'name': 'Web page', 'short': 'Web page', 'unit': 'updates'},
     'gateway': {**_NO, 'name': 'Machine health', 'label': 'Machine health', 'short': 'Machine health', 'unit': 'alerts',

@@ -48,7 +48,8 @@ its `short` name on the dashboard's status and error lines, what its connection 
 its + Add `group` when `SETUP` doesn't say it, the control plane `signin` that connects it, if any, and the `transports`
 that mean it. Start from `**_NO`, as the other rows do. The dashboard gets the rows with the page (`SERVICE_ROWS`). Code asks this table (`services.of(group=services.MAIL)`,
 `services.field('name')`) instead of keeping a map of services of its own; [`tests/test_services.py`](../tests/test_services.py)
-checks each row.
+checks each row, and counts the hand-written lists and maps of services still in the code, per file (`SERVICE_LISTS`):
+a file with more than its count fails. A video call service also says its `video` key and `video_links`.
 
 The service calls `sync` every `poll_seconds` (default 300) in the account's own thread. `helpers` has:
 
@@ -220,7 +221,7 @@ python3 scripts/test.py test_connector_<service>.py test_connectors.py test_new_
 - [ ] OAuth through The Machine's existing sign-ins when the service has it, with the narrowest scopes; a key only with `no_oauth` saying why.
 - [ ] Read-only credential for exactly this account, with the least access that works.
 - [ ] Stable `source_id`; `kind` listed in `KINDS`, its view in `VIEWS`, its app in `APP`, and a made-up message of it in `tests/test_message_view.py`.
-- [ ] The service has its row in `machine/services.py` (`test_services.py`).
+- [ ] The service has its row in `machine/services.py`, and no new hand-written list or map of services (`test_services.py`).
 - [ ] Each kind has its row in `machine/kinds.py`, and no new hand-written list of kinds (`test_kinds.py`).
 - [ ] Message text only in `title`, `body` and metadata, never in ids, lookup keys or the cursor.
 - [ ] Events and cursor committed together; replays don't duplicate.

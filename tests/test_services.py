@@ -1,15 +1,129 @@
 """machine/services.py, the one table of every service a connection reads: that each row is complete, that it is a leaf,
-and that the maps it replaced read exactly as they did when they were written out by hand (BEFORE below: the literals
-as they were, so a change to a row that would change what one of them said fails here first)."""
+that the maps it replaced read exactly as they did when they were written out by hand (BEFORE below: the literals as
+they were, so a change to a row that would change what one of them said fails here first), and a guard that fails on
+a new map or list of services written out by hand.
+
+The guard counts, per file, the lists of services spelled out in code: four or more service keys ('gmail', 'slack',
+...) in a tuple, list, set or dict's keys, or in a dashboard array or object's keys, with at least one key no other
+word could be (SURE). A list with 'email' or 'doc_reply' in it is a list of message kinds, counted by
+tests/test_kinds.py instead. The files that have them today are in SERVICE_LISTS, with their count, which only comes
+down: ask machine/services.py instead (services.of(group=services.MAIL), services.field('name'), the page's
+SERVICE_ROWS), and lower the count when a list goes. `python3 tests/test_services.py --counts` prints today's."""
 import ast
 import pathlib
+import re
 import sys
 import unittest
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
+import dashboard_parts  # noqa: E402
 from machine import services  # noqa: E402
+
+SKIP_DIRS = {'node_modules', '.git', '.venv', '__pycache__', 'tests'}
+SERVICES_FILE = 'machine/services.py'
+SERVICE_KEYS = frozenset(services.SERVICES)
+# keys that are only ever a service ('calendar', 'docs', 'x', 'rss' are words of their own too)
+SURE = SERVICE_KEYS - {'calendar', 'docs', 'x', 'rss', 'ics', 'imap', 'android', 'gateway', 'github'}
+SEND_MARKERS = {'email', 'doc_reply'}
+JS_ARRAY = re.compile(r'\[([^\[\]]*)\]')
+JS_OBJECT = re.compile(r'\{([^{}]*)\}')
+JS_STRING = re.compile(r"['\"]([a-z_]+)['\"]")
+JS_KEY = re.compile(r"(?:^|[,{\s])['\"]?([a-z_]+)['\"]?\s*:")
+
+# The hand-written lists of services each file has today: these only come down.
+SERVICE_LISTS = {
+    'abilities.py': 1,
+    'assistant.py': 1,
+    'calendar_app.py': 1,
+    'calendar_clashes.py': 1,
+    'discovery.py': 1,
+    'enrichment.py': 1,
+    'fleet.py': 1,
+    'follow_ups.py': 1,
+    'installer.py': 1,
+    'machine/app/fleet.py': 1,
+    'machine/app/history.py': 1,
+    'machine/app/setup_card.py': 2,
+    'machine/app/workers.py': 1,
+    'machine/cards.py': 1,
+    'machine/config.py': 1,
+    'machine/names.py': 2,
+    'machine/sources/calendar_setup.py': 6,
+    'machine/sources/connectors.py': 3,
+    'machine/sources/suggest.py': 1,
+    'machine/store/message_view.py': 1,
+    'mail_grants.py': 1,
+    'next_actions.py': 1,
+    'onboarding.py': 12,
+    'routines_app.py': 1,
+    'sandbox/check_fixture.py': 1,
+    'sandbox/derive_profile.py': 1,
+    'scripts/test.py': 1,
+    'shared_graph.py': 2,
+    'shared_graph_photos.py': 1,
+    'sources.py': 1,
+    'team_learnings.py': 1,
+    'work_or_personal.py': 1,
+    'dashboard/connections-cards.js': 3,
+    'dashboard/events-email.js': 2,
+    'dashboard/events-message.js': 1,
+    'dashboard/graph-record.js': 1,
+    'dashboard/setup-card.js': 1,
+    'dashboard/todos-cards.js': 2,
+    'dashboard/todos-logos.js': 1,
+}
+
+
+def service_list(values):
+    """Whether these strings are a list of services: four or more service keys, one of them SURE, and no message kind
+    marker."""
+    values = set(values)
+    return len(values & SERVICE_KEYS) >= 4 and bool(values & SURE) and not values & SEND_MARKERS
+
+
+def python_service_lists(source, filename='<module>'):
+    """[(line, literal)] of the lists of services spelled out in a Python module."""
+    found = []
+    for node in ast.walk(ast.parse(source, filename)):
+        if isinstance(node, (ast.Tuple, ast.List, ast.Set)):
+            values = [e.value for e in node.elts if isinstance(e, ast.Constant) and isinstance(e.value, str)]
+        elif isinstance(node, ast.Dict):
+            values = [k.value for k in node.keys if isinstance(k, ast.Constant) and isinstance(k.value, str)]
+        else:
+            continue
+        if service_list(values):
+            found.append((node.lineno, ast.unparse(node)[:120]))
+    return sorted(found)
+
+
+def js_service_lists(source):
+    """[(line, literal)] of the lists of services spelled out in dashboard code: an array of them, or an object keyed
+    by them (the innermost braces)."""
+    found = []
+    for pattern, values in ((JS_ARRAY, JS_STRING), (JS_OBJECT, JS_KEY)):
+        for match in pattern.finditer(source):
+            if service_list(values.findall(match.group(1))):
+                found.append((source.count('\n', 0, match.start()) + 1, match.group(0)[:120]))
+    return sorted(found)
+
+
+def service_lists():
+    """{file: [(line, literal)]} for every Python file outside tests and every dashboard script."""
+    out = {}
+    for path in sorted(ROOT.rglob('*.py')):
+        rel = path.relative_to(ROOT)
+        if SKIP_DIRS & set(rel.parts[:-1]) or rel.as_posix() == SERVICES_FILE:
+            continue
+        found = python_service_lists(path.read_text(encoding='utf-8'), rel.as_posix())
+        if found:
+            out[rel.as_posix()] = found
+    for path in [ROOT / dashboard_parts.PAGE, *sorted((ROOT / 'dashboard').glob('*.js'))]:
+        found = js_service_lists(path.read_text(encoding='utf-8'))
+        if found:
+            out[path.relative_to(ROOT).as_posix()] = found
+    return out
 
 # The hand-written maps machine/services.py replaced, as they were in the code
 BEFORE = {
@@ -53,7 +167,17 @@ BEFORE = {
     'sources.MICROSOFT_SERVICES': ('outlook', 'outlook_calendar'),
     'sources.CALENDAR_SERVICES': ('calendar', 'outlook_calendar', 'icloud_calendar', 'caldav', 'proton_calendar', 'ics', 'exchange'),
     'machine.sources.scope_check.MAIL_SERVICES': ('gmail', 'outlook', 'imap'),
+    'names.SIGNIN_SOURCES': {'google': 'gmail', 'microsoft': 'outlook', 'zoom': 'zoom', 'stripe': 'stripe', 'slack': 'slack',
+                             'salesforce': 'salesforce'},
+    'names.SIGNIN_KINDS': {'google': 'mail', 'microsoft': 'mail', 'zoom': 'meetings', 'stripe': 'customers', 'slack': 'chat',
+                           'salesforce': 'customers'},
+    'onboarding.GRANT_SERVICES': {'google': ('gmail', 'calendar'), 'microsoft': ('outlook', 'outlook_calendar'), 'zoom': ('zoom',),
+                                  'stripe': ('stripe',), 'slack': ('slack',), 'google_meet': ('google_meet',), 'salesforce': ('salesforce',)},
+    'meet.VIDEO': {'zoom': 'Zoom', 'meet': 'Google Meet', 'teams': 'Teams'},
+    'meet.VIDEO_LINKS': {'zoom': ('zoom.us/',), 'meet': ('meet.google.com/',), 'teams': ('teams.microsoft.com/', 'teams.live.com/')},
 }
+# dicts whose order the code reads: meet.video_habit gives a tie to the first video service
+ORDERED = {'meet.VIDEO': ['zoom', 'meet', 'teams'], 'meet.VIDEO_LINKS': ['zoom', 'meet', 'teams']}
 
 
 # The dashboard's maps machine/services.py replaced, as they were in its scripts
@@ -109,7 +233,7 @@ class Page(unittest.TestCase):
 
 class Registry(unittest.TestCase):
     def test_every_row_is_complete(self):
-        fields = {'name', 'label', 'short', 'sharing', 'unit', 'group', 'last', 'signin', 'transports'}
+        fields = {'name', 'label', 'short', 'sharing', 'unit', 'group', 'last', 'signin', 'transports', 'video', 'video_links'}
         for key, row in services.SERVICES.items():
             with self.subTest(key):
                 self.assertEqual(set(row), fields)
@@ -127,7 +251,10 @@ class Registry(unittest.TestCase):
             module = {'names': 'machine.names', 'groups': 'machine.sources.groups',
                       'calendar_setup': 'machine.sources.calendar_setup'}.get(module, module)
             with self.subTest(name):
-                self.assertEqual(getattr(importlib.import_module(module), attr), before)
+                value = getattr(importlib.import_module(module), attr)
+                self.assertEqual(value, before)
+                if name in ORDERED:
+                    self.assertEqual(list(value), ORDERED[name])
 
     def test_services_is_a_leaf(self):
         tree = ast.parse((ROOT / 'machine' / 'services.py').read_text(encoding='utf-8'))
@@ -140,5 +267,33 @@ class Registry(unittest.TestCase):
                 self.assertTrue(row['service'] is None or row['service'] in services.SERVICES)
 
 
+class Guard(unittest.TestCase):
+    def test_no_new_hand_written_service_lists(self):
+        found = service_lists()
+        for name in sorted(set(found) | set(SERVICE_LISTS)):
+            with self.subTest(name):
+                have, allowed = len(found.get(name, ())), SERVICE_LISTS.get(name, 0)
+                self.assertLessEqual(have, allowed, f'{name} spells out {have} lists of services ({allowed} allowed): '
+                                     f'ask machine/services.py instead (code moved here from another file: move its count '
+                                     f'in SERVICE_LISTS with it). Found: {found.get(name)}')
+                self.assertGreaterEqual(have, allowed, f'{name} has {have} lists of services now: lower its count in '
+                                        'SERVICE_LISTS to that')
+
+    def test_the_guard_finds_lists_of_services(self):
+        found = python_service_lists(
+            "A = ('gmail', 'outlook', 'imap', 'slack')\n"
+            "B = {'calendar': 'events', 'outlook_calendar': 'events', 'caldav': 'events', 'ics': 'events'}\n"
+            "ok = ('gmail', 'outlook', 'imap'), ('email', 'slack', 'whatsapp', 'telegram'), ('calendar', 'docs', 'x', 'rss')\n")
+        self.assertEqual([line for line, _ in found], [1, 2], found)
+        js = js_service_lists("const A=['calendar','outlook_calendar','icloud_calendar','caldav'];\n"
+                              "const B={gmail:'Email',imap:'Email',slack:'Slack',x:'X'};\n"
+                              "const ok=['gmail','outlook'],m={email:'Send',slack:'Send',x:'Send',whatsapp:'Send'};\n")
+        self.assertEqual([line for line, _ in js], [1, 2], js)
+
+
 if __name__ == '__main__':
-    unittest.main()
+    if '--counts' in sys.argv:
+        for name, found in service_lists().items():
+            print(f'    {name!r}: {len(found)},')
+    else:
+        unittest.main()

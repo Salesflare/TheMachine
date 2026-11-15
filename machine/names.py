@@ -216,10 +216,10 @@ SIGNINS = {'google': 'google', 'google_meet': 'google', 'google_docs': 'google',
            'stripe': 'stripe', 'slack': 'slack', 'salesforce': 'salesforce'}
 SIGNIN_NAMES = {'google': 'Google', 'microsoft': 'Microsoft', 'zoom': 'Zoom', 'stripe': 'Stripe', 'slack': 'Slack',
                 'salesforce': 'Salesforce'}
-# The kind a removed account shows under: its source's kind in sources/groups.py (a Google account is Gmail); a test keeps them equal
-SIGNIN_SOURCES = {'google': 'gmail', 'microsoft': 'outlook', 'zoom': 'zoom', 'stripe': 'stripe', 'slack': 'slack',
-                  'salesforce': 'salesforce'}
-SIGNIN_KINDS = {'google': 'mail', 'microsoft': 'mail', 'zoom': 'meetings', 'stripe': 'customers', 'slack': 'chat', 'salesforce': 'customers'}
+# The kind a removed account shows under: the group of the first service its sign-in connects (machine/services.py:
+# a Google account is Gmail, under Email)
+SIGNIN_SOURCES = {provider: services.of(signin=provider)[0] for provider in SIGNIN_NAMES}
+SIGNIN_KINDS = {provider: services.SERVICES[service]['group'] for provider, service in SIGNIN_SOURCES.items()}
 
 
 def disconnected_rows(receipts, t=None):
