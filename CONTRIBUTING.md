@@ -80,7 +80,9 @@ What every pull request needs:
   (`python3 scripts/i18n_extract.py --add`), and a new product term to `i18n/glossary.md` with a form for every
   language. Don't edit the other catalogs or `docs/help/<language>/`: the daily translator
   (`.github/workflows/translate.yml`, `scripts/translate.py`) writes them in one pull request a day, so main may show
-  English for a day, and `scripts/release.py cut` refuses a release with anything left. A wrong translation is fixed
+  English for a day, and `scripts/release.py cut` refuses a release with anything left. A run waits for the last
+  run's pull request to merge, and builds on main as it is when it pushes (translating again where main changed the
+  same files), since GitHub runs no tests for a pull request that conflicts with main. A wrong translation is fixed
   by editing that one entry. A string with a count (`{} tickets`) is a plural entry in `en.json`
   (`{"one": "{} ticket", "other": "{} tickets"}`): Russian needs more count forms, and a plain string gets one form
   in every language. `python3 scripts/i18n_extract.py --stale` lists keys no code reads any more, to prune.
