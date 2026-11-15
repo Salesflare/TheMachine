@@ -55,6 +55,7 @@ from timeutil import local_tz, now
 import todo_areas
 from machine import todo_states
 from machine.owner_error import OwnerError
+from machine.dashboard_link import dashboard_link
 
 
 # The longest turn message the runner (preparation-run.mjs) starts; it refuses longer ones before the Gateway sees them.
@@ -793,7 +794,7 @@ class PreparationApp:
         if not host:
             raise OwnerError('Private dashboard unavailable for full approval')
         proposal_id = self.store.tool_approval_proposal(args['id'], args['title'], args['detail'])
-        root = 'https://' + host + self.config.get('dashboard_path', '/')
+        root = dashboard_link(self.config)
         return {'id': proposal_id, 'url': root.rstrip('/') + '/approval?id=' + proposal_id}
 
     def preparation_blocked_action(self, name, args, owner_dashboard=False):

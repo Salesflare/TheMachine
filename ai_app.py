@@ -33,6 +33,7 @@ import person_summary
 import shared_graph
 from machine import todo_states
 from machine.owner_error import OwnerError
+from machine.dashboard_link import dashboard_link
 import timeutil
 
 OPEN = todo_states.OPEN_NOT_SNOOZED  # list_todos' "open": snoozed ones are their own status there (status=snoozed)
@@ -259,10 +260,7 @@ class AiApp:
 
     def ai_issuer(self):
         """The dashboard's own address: where the owner signs in, so the authorization server's."""
-        host = str(self.config.get('dashboard_host') or '')
-        if not host:
-            return ''
-        return 'https://' + host + str(self.config.get('dashboard_path', '/')).rstrip('/')
+        return dashboard_link(self.config).rstrip('/')
 
     def ai_issuer_for(self, req):
         """The issuer the AI saw (RFC 9207 iss): the mcp host's when it asked for that address, else the dashboard's."""

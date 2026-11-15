@@ -34,6 +34,7 @@ import team_learnings
 from timeutil import local_tz, now
 from machine import todo_states
 from machine.owner_error import OwnerError
+from machine.dashboard_link import dashboard_link
 
 
 def recap_escape(text):
@@ -142,15 +143,15 @@ def recap_share_lines(store, config):
             "SELECT 1 FROM sqlite_master WHERE name='fleet_meta'").fetchone() else []
         directory = db.execute("SELECT value FROM fleet_meta WHERE key='directory'").fetchone() if rows else None
     names = {f.get('id'): f.get('name') for f in (json.loads(directory['value']) or {}).get('fleets', [])} if directory else {}
-    host = str(config.get('dashboard_host') or '')
+    root = dashboard_link(config)
     for row in rows:
         week, fleet_id = json.loads(row['value']) or {}, row['key'].split(':', 1)[1]
         if fleet_id not in names:
             continue
         held = week.get('held') or 0
         line = '• ' + i18n.t('Shared {} threads with {} this week, {} held back.', week.get('threads', 0), names[fleet_id] or i18n.t('your team'), held)
-        if host:
-            line += ' [' + i18n.t("What's shared") + f"]({'https://' + host + config.get('dashboard_path', '/') + '#shared=' + fleet_id})"
+        if root:
+            line += ' [' + i18n.t("What's shared") + f"]({root + '#shared=' + fleet_id})"
         out.append(line)
     return out
 
@@ -253,7 +254,7 @@ def weekly_recap_message(store, config, current=None):
     start_ahead = dt.datetime.combine(tomorrow, dt.time(), tz).astimezone(dt.timezone.utc).isoformat()
     ahead = dt.datetime.combine(tomorrow + dt.timedelta(days=7), dt.time(), tz).astimezone(dt.timezone.utc).isoformat()
     in_week = lambda day: tomorrow.isoformat() <= str(day)[:10] < (tomorrow + dt.timedelta(days=7)).isoformat()
-    root = 'https://' + config['dashboard_host'] + config.get('dashboard_path', '/') if config.get('dashboard_host') else ''
+    root = dashboard_link(config)
     link = lambda text, card: f'[{recap_escape(text)}]({notify.todo_link(root, card)})' if root and card else recap_escape(text)
     names = {x['id']: display_names.account_name(x, config.get('accounts', []), UNNAMED.get(x.get('service'))) for x in config.get('accounts', [])}
     with store.connect() as db:
@@ -406,7 +407,7 @@ class RecapApp:
             show = security_levels.notify_text(db)
         body = '\n'.join(message.split('\n')[1:])  # the title says it is the week; the first section leads
         if subscriptions and self.config.get('dashboard_host'):
-            root = 'https://' + self.config['dashboard_host'] + self.config.get('dashboard_path', '/')
+            root = dashboard_link(self.config)
             try:
                 push_node(self.config, {'action': 'send', 'subscriptions': subscriptions,
                                         'payload': {'title': i18n.t('Your week'), 'body': plain(body), 'url': root, 'tag': 'recap-' + week,

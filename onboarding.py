@@ -35,6 +35,7 @@ import portable
 import service
 import signal_setup, wacli_release  # noqa: E401 - Signal's setup steps (signal_setup.py)
 from machine.sources import calendar_setup, groups, imap_setup, teams_setup
+from machine.dashboard_link import dashboard_address
 
 ROOT = Path(__file__).resolve().parent
 UNIT_NAME = service.UNIT_NAME
@@ -2636,7 +2637,7 @@ def dashboard_url(config):
     served = dashboard_served(config)
     host = str(config.get('dashboard_host') or '')
     if host and (not served or urllib.parse.urlparse(served).netloc != host):
-        url = f'https://{host}/{config.get("dashboard_path", "/").strip("/")}'.rstrip('/') + '/'
+        url = dashboard_address(config)
         if reachable(url):
             return url
     return served

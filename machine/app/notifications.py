@@ -25,6 +25,7 @@ import todo_areas
 from timeutil import hour_minute, in_hours, is_work_day, local_tz, next_work_day, now, WORK_HOURS
 from machine import todo_states
 from machine.owner_error import OwnerError
+from machine.dashboard_link import dashboard_link
 import timeutil
 from machine import todo_kinds
 
@@ -194,7 +195,7 @@ class NotificationsApp:
             per = clear_pace.seconds(db, current)  # the owner's pace: "12 more can wait, about 5 min to clear."
             show = security_levels.notify_text(db, False)
         promised = notify.promised_today(self.store.promises(), top, local.date().isoformat(), lambda p: promise_text(p)[0])
-        root = 'https://' + self.config['dashboard_host'] + self.config.get('dashboard_path', '/') if self.config.get('dashboard_host') else ''
+        root = dashboard_link(self.config)
         when = lambda iso: locale_prefs.clock_text(dt.datetime.fromisoformat(iso).astimezone(local_tz()))
         digest = notify.compose(meetings, due, overnight, root, show, when, total=total, top=top, ready=ready, promised=promised,
                                 per=per, name=notify.first_name(self.config.get('owner_name')), replies=[r['id'] for r in ready if reply_waits(r)], asking=asking)
@@ -327,7 +328,7 @@ class NotificationsApp:
             r['area'] = side(todo_areas.current(r.get('account_ids'), accounts, r.get('area')))
         for m in held + ahead:
             m['area'] = side(todo_areas.area_of_account(by_id[m['account']]) if m.get('account') in by_id else None)
-        root = 'https://' + self.config['dashboard_host'] + self.config.get('dashboard_path', '/') if self.config.get('dashboard_host') else ''
+        root = dashboard_link(self.config)
         when = lambda iso: locale_prefs.clock_text(dt.datetime.fromisoformat(iso).astimezone(tz))
         tomorrow = following.date() == day + dt.timedelta(days=1)
         return notify.evening_compose(done, held, waiting, due, ahead, root, show, when, name=notify.first_name(self.config.get('owner_name')),
@@ -385,7 +386,7 @@ class NotificationsApp:
                 went.append('push')
         target = (lines or handoffs) and self.notify_mail_target()
         if target:
-            root = 'https://' + self.config['dashboard_host'] + self.config.get('dashboard_path', '/') if self.config.get('dashboard_host') else ''
+            root = dashboard_link(self.config)
             for item in handoffs:  # each its own email, once
                 message = notify.handoff_mail(item, root)
                 if (mail(*target, message['subject'], message['text']) if mail else notify.mail(*target, message['subject'], message['text'], delivery=item['delivery'])):

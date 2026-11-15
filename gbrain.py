@@ -37,6 +37,7 @@ import subprocess
 import unicodedata
 import uuid
 from pathlib import Path
+from machine.dashboard_link import dashboard_link
 
 # GBrain's read operations reviews may use (scope read, not mutating, in GBrain's operation manifest). Never put_page,
 # remember, delete_* or any other write. The OpenClaw plugin keeps the same list (review-recovery.ts GBRAIN_READ_TOOLS).
@@ -259,11 +260,8 @@ def digest(text):
 
 
 def graph_link(config, node_id):
-    host = str((config or {}).get('dashboard_host') or '')
-    if not host:
-        return None
     import urllib.parse
-    return 'https://' + host + str(config.get('dashboard_path') or '/') + '#graph/' + urllib.parse.quote(node_id, safe='')
+    return dashboard_link(config, '#graph/' + urllib.parse.quote(node_id, safe='')) or None
 
 
 def _info(row):

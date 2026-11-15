@@ -27,6 +27,7 @@ import still_needed
 from timeutil import local_tz, now
 from machine import todo_states
 from machine.kinds import TO_PERSON
+from machine.dashboard_link import dashboard_link
 import timeutil
 
 
@@ -154,7 +155,7 @@ def push_notify(store, config, row, sender=None):
     subscriptions, phones = push_reach(store, config)
     if not subscriptions and not phones:
         return []
-    root = 'https://' + config['dashboard_host'] + config.get('dashboard_path', '/') if config.get('dashboard_host') else ''
+    root = dashboard_link(config)
     try:
         ids = json.loads(row.get('account_ids') or '[]')
     except (TypeError, ValueError):
@@ -222,7 +223,7 @@ def report_done(store, config, suggestion_id, sender=None):
     subscriptions, phones = push_reach(store, config)
     if not subscriptions and not phones:
         return []
-    root = 'https://' + config['dashboard_host'] + config.get('dashboard_path', '/') if config.get('dashboard_host') else ''
+    root = dashboard_link(config)
     payload = {'title': i18n.t('Done: {}', row['title']) if text else i18n.t('Done'),
                'body': plain(row['body'] or '') if text else '', 'url': notify.todo_link(root, row['id']), 'tag': row['id'],
                '_line': notify.app_line_text('Done: {}', row['title']) if text else i18n.t('Done'), '_state': 'ready',
@@ -567,7 +568,7 @@ def phone_app(config):
         return {'hosted': True}
     if not config.get('dashboard_host'):
         return {'hosted': False}
-    url = 'https://' + config['dashboard_host'] + config.get('dashboard_path', '/')
+    url = dashboard_link(config)
     link = APP_SCHEME + urllib.parse.quote(url, safe='')
     try:
         rows = list(phone_qr(link))
