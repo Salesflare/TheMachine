@@ -88,6 +88,7 @@ DERIVED = {'suggestions': ('title', 'body', 'handled_hint', 'owner_words', 'titl
            'note_pages': ('title', 'owner_title', 'data'), 'note_page_lines': ('text', 'owner_text', 'links', 'data'),  # Notes in the Graph: a trip's bookings, a home's details (note_pages.py)
            'trip_bookings': ('rows',),  # the bookings a mail held, for its trip note (trip_notes.py)
            'section_topics': ('note',),  # the name of the owner's note a Home, Health or Kids line went in (section_notes.py)
+           'topic_routes': ('note', 'title'),  # the note a conversation went in, as the call named it, and the conversation's title (topic_notes.py)
            'recurring_series': ('text',), 'recurring_offers': ('title', 'text'),  # a recurring to-do's words (recurring.py)
            'routines': ('name', 'instructions'), 'routine_runs': ('result', 'why'),  # a routine's words and what its run read (routines.py)
            'routine_changes': ('instructions',),  # a routine's new words, offered on one of its to-dos (routine_changes.py)

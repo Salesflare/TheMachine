@@ -3,7 +3,7 @@ title: Notes
 area: graph
 summary: One readable page per subject, like a trip or your home, linked to the people and projects in it.
 covers: notes
-code: note_pages.py, note_pages_app.py, trip_notes.py, event_notes.py, bookings.py, section_notes.py, home_notes.py, health_notes.py, kids_notes.py, dashboard/graph-notes.js
+code: note_pages.py, note_pages_app.py, trip_notes.py, event_notes.py, bookings.py, section_notes.py, topic_notes.py, home_notes.py, health_notes.py, kids_notes.py, dashboard/graph-notes.js
 order: 8
 ---
 A note is the overview of one subject: a trip, your home, how invoices are done. Notes sit in the Graph next to People, Organizations and Projects. They stay on your Machine and aren't shared with your team.
@@ -31,6 +31,21 @@ Your Machine also writes notes by itself, from your messages, and keeps them cur
 Your changes always stand. Rename a note, move it, change its dates or a line, and your Machine keeps it that way when it updates the note. Delete a line or a note and it doesn't come back. Later notes on the same subject go where you put the first one.
 
 **Back to the original** shows your Machine's own words again. Editing a line that came from what your Machine learned also changes it under **What I've learned**, so there's one version of it.
+
+## Notes from your conversations
+
+Your Machine reads whole conversations and sorts each into the note it's about: an email thread from any of your mailboxes, a chat in WhatsApp, Slack, Telegram, LinkedIn or another connected app, and your meeting notes. Chat messages count as one conversation until the chat goes quiet for two days.
+
+- A conversation about a project or organization in your Graph goes on that page, not on a new note.
+- A conversation can go in a part of **Home**, **Health** or **Kids**, in a note of your own, or in a note your Machine starts under **Work**, **Car**, **Taxes** or another folder.
+- Your Machine starts a new note only for a subject with at least two conversations, or one you wrote in that's clearly still going.
+- Each line is one conversation, newest first. Tapping it opens the conversation.
+
+It sends the AI a short part of each conversation, without quoted replies or signatures. Each conversation is asked about once, and new messages in it follow it.
+
+Bulk email and chats never go in a note and are never sent to the AI: spam, promotions, newsletters and other list mail, no-reply notifications, bots and broadcast channels. A conversation you wrote in still counts, and so does booking mail for **Trips** and **Events**.
+
+The first time, it goes through your past three months in a few hours, outside the night and only while your AI plan has room. After that it sorts new conversations once ten are waiting, or one has waited half a day.
 
 ## Trips
 
@@ -62,11 +77,7 @@ Under **Home**, your Machine keeps what it knows about your home: **Bills and su
 
 Only Personal bills, subscriptions and email are used, and Home notes are always Personal. Your Machine asks its AI once about each new bill, subscription or thing it learned, to tell whether it's about your home. For a bill it sends who it's from, never the amount.
 
-For **Home**, **Health** and **Kids** together, your Machine also asks its AI once about each sender of your Personal email. It sends the sender's name, how many emails they sent and their newest subjects with the numbers hidden, never the email itself. An email that came in twice, or in two of your mailboxes, counts once, and so does a reply with the same subject in its thread.
-
-Bulk email never goes in these notes and is never sent to the AI: spam, promotions, newsletters and other list mail, and no-reply notifications. Mail in a thread you replied in still counts, and so does booking mail for **Trips** and **Events**.
-
-The first time, it goes through your past year of email in a few hours, outside the night and only while your AI plan has room. After that it looks at new senders every six hours.
+Your conversations go in these notes too, as **Notes from your conversations** above says.
 
 ## Health
 

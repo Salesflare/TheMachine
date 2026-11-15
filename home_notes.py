@@ -12,10 +12,9 @@ Candidates, in plain code: a payee that sent the owner two or more Personal bill
 Machine learned that is about no one in the Graph (not a passing event, not on the Work side). Home is always
 Personal.
 
-Mail too (section_notes.mail_senders): who writes to the owner's Personal mailboxes at least MIN_BILLS times in the
-past year, placed by the one mail call every kind shares. A sender the call puts in Home, like the energy supplier,
-the landlord or the municipality, is one line: who and how often they write, opening their newest mail. That is how a
-Home fills when the owner pays by direct debit and no bill ever became a to-do."""
+Conversations too (topic_notes.py): a mail thread or chat about the home, like the landlord's, the energy supplier's
+or a plumber's, is a line of the part it is about, opening its newest message. That is how a Home fills when the owner
+pays by direct debit and no bill ever became a to-do."""
 import section_notes
 
 # The parts of the home a candidate can be about, each a note under Home (English: its key; titled in the owner's
@@ -39,4 +38,4 @@ def candidates(db, accounts, today):
 KIND = section_notes.Kind(
     'home', 'Home', SECTIONS, PARTS, 'the owner\'s own home',
     'work, a person, health, a child\'s school, a hobby, a trip, a subscription for one person\'s own use',
-    candidates, section_notes.ask, section_notes.line, mail='sender', mail_least=MIN_BILLS)
+    candidates, section_notes.ask, section_notes.line)

@@ -31,6 +31,10 @@ import i18n
 from timeutil import local_day, local_tz, now
 
 ENTRIES = [
+    {'id': 'notes-from-conversations', 'date': '2026-11-15', 'weight': 2, 'title': 'Notes from your conversations',
+     'text': 'Email, chats and meeting notes go in the note they’re about, Work too. A project or organization keeps '
+             'its own page.',
+     'action': {'label': 'Open Notes', 'run': 'go-notes'}, 'art': 'notes'},
     {'id': 'graph-notes', 'date': '2026-11-15', 'weight': 3, 'title': 'Notes in the Graph',
      'text': 'One page per subject, like your home or a trip, next to People and Projects. Type @ in a line to link a '
              'person, project or another note.',

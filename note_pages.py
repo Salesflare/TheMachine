@@ -58,6 +58,7 @@ KINDS = {
     'health': {'label': 'Health', 'dated': False, 'personal': True},  # health_notes.py: a part of the owner's health, under Health
     'kids': {'label': 'Kids', 'dated': False, 'personal': True},  # kids_notes.py: a part of the owner's children's lives, under Kids
     'event': {'label': 'Event', 'dated': True, 'personal': False},  # event_notes.py: one event the owner has tickets for, under Events
+    'topic': {'label': 'Note', 'dated': False, 'personal': False},  # topic_notes.py: an ongoing matter, from the conversations about it
 }
 OWNER_KINDS = ('note',)        # what the owner can start by hand (New note)
 # The guidance The Machine builds the tree by. The starting tree: the top notes its own notes go under, each made only
@@ -65,9 +66,11 @@ OWNER_KINDS = ('note',)        # what the owner can start by hand (New note)
 # follows; the owner's own moves, renames, merges and deletes always stand (owner_title, owner_parent, merged_into,
 # removed_at) and teach where that subject goes: a folder keeps its key wherever the owner puts it, so later notes of
 # that subject follow it there.
-STARTING_TREE = ('Trips', 'Home', 'Health', 'Kids', 'Events', 'Car', 'Taxes', 'Pets')
+STARTING_TREE = ('Work', 'Trips', 'Home', 'Health', 'Kids', 'Events', 'Car', 'Taxes', 'Pets')
 PLACING = (
-    'A subject earns its own note only with several facts or sources about it, never from one message.',
+    'A subject earns its own note only with several facts or sources about it, or one conversation about a matter that '
+    'clearly goes on, never from one passing message.',
+    'A project or organization the Graph has already is that record\'s page, not a second note.',
     'It goes under the starting tree note it belongs to (a trip under Trips, a fridge under Home > Appliances).',
     'A new top note outside the starting tree only for a subject that clearly comes back.',
     'Add to the note that already covers the subject instead of starting a second one.',

@@ -11,9 +11,9 @@ history (section_notes.py).
 Health is always Personal, whatever the account it came in on: a doctor's bill sent to a work address is still the
 owner's own. The notes are never shared.
 
-Mail too (section_notes.mail_senders): a sender of the owner's Personal mail that the one mail call every kind shares
-puts in Health (a practice, a hospital, a lab, the health insurer) gets a dated line per mail, its subject, opening
-that mail: the owner's medical history over time, from what their care sent them."""
+Conversations too (topic_notes.py): a mail thread or chat with a practice, a hospital, a lab or the health insurer is
+a line of the part it is about, opening its newest message: the owner's medical history over time, from what their
+care wrote."""
 import section_notes
 
 # The parts of the owner's health a candidate can be about, each a note under Health (English: its key; titled in the
@@ -37,4 +37,4 @@ def candidates(db, accounts, today):
 KIND = section_notes.Kind(
     'health', 'Health', SECTIONS, PARTS, 'the owner\'s own health',
     'the home, work, a hobby or a sport, a trip, a meeting, someone else\'s health, like a child\'s or a parent\'s',
-    candidates, section_notes.ask, section_notes.line, mail='each')
+    candidates, section_notes.ask, section_notes.line)
