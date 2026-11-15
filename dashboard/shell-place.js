@@ -54,8 +54,10 @@ document.fonts?.addEventListener?.('loadingdone',()=>placeKeep());
 // A finger on the glass or a page still gliding: a background refresh waits for it to settle
 addEventListener('touchstart',()=>{place.touch=true},{passive:true,capture:true});
 for(const t of ['touchend','touchcancel'])addEventListener(t,e=>{if(!e.touches.length){place.touch=false;place.lifted=Date.now()}},{passive:true,capture:true});
-// The app's own moves (a scroll call, scrollIntoView, focus, a link, Back) are the new place, never undone; a smooth one is let glide
-const placeMoved=(f,self,a)=>{const y=scrollY,r=f.apply(self,a);if(a.some(o=>o?.behavior==='smooth'))place.glide=Date.now()+1200;if(Math.abs(scrollY-y)>=1)placeNote();return r};
+// The app's own moves (a scroll call, scrollIntoView, focus, a link, Back) are the new place, never undone; a smooth one is let glide.
+// A height still held for the old place goes with it: a chat opened then would otherwise scroll as a page on a computer.
+const placeMoved=(f,self,a)=>{const y=scrollY,r=f.apply(self,a);if(a.some(o=>o?.behavior==='smooth'))place.glide=Date.now()+1200;
+ if(Math.abs(scrollY-y)>=1){if(document.body.style.minHeight){clearTimeout(place.hold);document.body.style.minHeight=''}placeNote()}return r};
 for(const [o,n] of [[window,'scrollTo'],[window,'scroll'],[window,'scrollBy'],[Element.prototype,'scrollIntoView'],[HTMLElement.prototype,'focus']]){const f=o[n];o[n]=function(...a){return placeMoved(f,this,a)}}
 for(const t of ['hashchange','popstate'])addEventListener(t,()=>{place.opened=Date.now()+5000},true);
 for(const t of ['touchstart','wheel','keydown','mousedown'])addEventListener(t,()=>{place.opened=0},{passive:true,capture:true});
