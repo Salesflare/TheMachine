@@ -176,6 +176,9 @@ class NotesApp:
                 found = [*kind.candidates(db, accounts, today()), *section_notes.mail_for(kind, section_notes.mail_senders(db, accounts, today()))]
                 found, keep = section_notes.drafts(db, kind, found)
                 touched = note_pages.sync(db, kind.kind, found, at, keep)
+                gone = note_pages.drop_empty_folder(db, [kind.folder])  # the kind has nothing left to show: no empty Health
+                if gone:
+                    touched.append(gone)
         except Exception as error:  # noqa: BLE001 - the next round tries again
             LOG.warning('section notes kind=%s error=%s', kind.kind, type(error).__name__)
             return []

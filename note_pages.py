@@ -566,6 +566,24 @@ def _folder(db, path, at):
     return parent
 
 
+def drop_empty_folder(db, path):
+    """A folder note The Machine made (_folder, ['Health']) goes again once nothing is in it: no line, no note under
+    it (not even a deleted one, which Undo puts back there), no note linking to it, and the owner never renamed or
+    moved it. Returns its node id when it went, else None."""
+    key = 'folder:' + '/'.join(str(p).casefold() for p in path)
+    row = db.execute("SELECT id FROM note_pages WHERE key=? AND by='machine' AND owner_title IS NULL AND owner_parent=0 "
+                     'AND removed_at IS NULL AND merged_into IS NULL', (key,)).fetchone()
+    if not row:
+        return None
+    note_id = row['id']
+    if (db.execute('SELECT 1 FROM note_page_lines WHERE note_id=?', (note_id,)).fetchone()
+            or db.execute('SELECT 1 FROM note_pages WHERE parent_id=? OR merged_into=?', (note_id, note_id)).fetchone()
+            or db.execute('SELECT 1 FROM note_page_links WHERE target=?', (node_id(note_id),)).fetchone()):
+        return None
+    db.execute('DELETE FROM note_pages WHERE id=?', (note_id,))
+    return node_id(note_id)
+
+
 def sync(db, kind, drafts, at, keep=None):
     """The notes of one kind The Machine keeps, from its sources. drafts: [{key, title, area, starts, ends, under,
     data, lines: [{key, text, at, item, event_id, fact_id, links, data}]}], the whole current set for that kind. under:

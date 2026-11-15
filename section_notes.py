@@ -18,6 +18,9 @@ on its own says nothing the note doesn't already have in the Calendar, so it is 
 - The parts are notes under the folder note. A part is started only once it has MIN_LINES lines, and goes again when
   it has none left, unless the owner wrote in it, renamed it or put notes under it. The owner's edits, moves and
   deletes stay on top (note_pages.sync).
+- Quality or nothing: a kind shows only once its parts hold MIN_LINES lines that say something (USEFUL: a bill, a
+  subscription, a fact), or the owner keeps something of their own in it. Below that its parts go, and the folder
+  note The Machine made for it goes with them (note_pages.drop_empty_folder).
 
 Tables (this module owns them): section_topics (each candidate's key, the part it was placed in, '' for not of this
 kind, and the owner's note in that part it went in, '' for none; no other text) and section_state (when each kind's
@@ -37,7 +40,8 @@ CREATE TABLE IF NOT EXISTS section_topics(kind TEXT NOT NULL,key TEXT NOT NULL,s
   PRIMARY KEY(kind,key));
 CREATE TABLE IF NOT EXISTS section_state(kind TEXT PRIMARY KEY,at TEXT NOT NULL);
 '''
-MIN_LINES = 2  # lines before a part is started
+MIN_LINES = 2  # lines before a part is started, and useful lines before a kind shows at all
+USEFUL = frozenset({'bill', 'subscription', 'fact', 'mail'})  # lines that say something: never a date from the calendar alone
 ASK_MAX = 60  # candidates one model call reads
 EVERY = dt.timedelta(hours=6)
 TIMEOUT = 120
@@ -204,7 +208,7 @@ def drafts(db, kind, found):
         'SELECT p.key FROM note_pages p WHERE p.kind=? AND (p.owner_title IS NOT NULL OR EXISTS(SELECT 1 FROM note_page_lines l '
         "WHERE l.note_id=p.id AND l.removed_at IS NULL AND (l.by='owner' OR l.owner_text IS NOT NULL)) "
         'OR EXISTS(SELECT 1 FROM note_pages c WHERE c.parent_id=p.id AND c.removed_at IS NULL))', (k,))}
-    out = []
+    out, useful, theirs = [], 0, False
     for section in kind.sections:
         lines, kids = [], {}
         for c in found:
@@ -221,6 +225,10 @@ def drafts(db, kind, found):
         if len(lines) >= MIN_LINES or (lines and k + ':' + key in started) or key in owned or kids:  # the owner's own lines stay
             out.append({'key': key, 'title': t(section), 'under': [kind.folder], 'lines': lines})
             out.extend({'key': n, 'title': name, 'inside': key, 'lines': got} for n, (name, got) in filled.items())
+            useful += sum(1 for x in (*lines, *(y for _, got in filled.values() for y in got)) if x.get('item') in USEFUL)
+            theirs = theirs or key in owned or bool(kids)
+    if useful < MIN_LINES and not theirs:  # the kind as a whole has too little to say: nothing shows, not even its folder
+        out = []
     return out, (lambda key: key in owned or '/' in key)
 
 
