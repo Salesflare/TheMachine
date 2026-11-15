@@ -72,12 +72,12 @@ PLAIN_METADATA = frozenset({'thread_id', 'from', 'to', 'labels', 'notification_k
 # Text the app derives from messages: card text and the drafts behind it, edits, what a preparation's tools returned, a person's summary (person_summary.py), a project's description (project_about.py),
 # a review's own summary (and its answer on a board check), what teammates' Machines asked and answered, what they shared in the team's Graph (and the review's
 # line for each shared thread), a Claude Code or Codex job's brief and result, a task page's record (with its link's key), the weekly recap as sent and the lines it offers a choice on, the line a role or an organization was read from, promises (what
-# and the note closing one), and the messages a profile, roles or skills run was given. JSON columns keep the named
+# and the note closing one, and the refund one is about), and the messages a profile, roles or skills run was given. JSON columns keep the named
 # keys in the clear. Not here, on purpose: columns the app matches in SQL, and what the Machine learned (facts, rules,
 # feedback, skills, profile, voices, roles), which support may read (docs/configuration.md). The words around a
 # learning are here: a Fleet's team learnings, what a learned change replaced and why, and the Fleet's log lines.
 DERIVED = {'suggestions': ('title', 'body', 'handled_hint', 'owner_words', 'title_suggested', 'expires_what', 'chat_asks', 'done_when', 'bill'), 'feedback_prompts': ('title',),
-           'person_roles': ('quote',), 'person_orgs': ('quote',), 'person_summaries': ('lines', 'proposal'), 'person_facts': ('value',), 'promises': ('what', 'note'), 'profile_runs': ('evidence',),
+           'person_roles': ('quote',), 'person_orgs': ('quote',), 'person_summaries': ('lines', 'proposal'), 'person_facts': ('value',), 'promises': ('what', 'note', 'refund'), 'profile_runs': ('evidence',),
            'draft_edits': ('before_subject', 'before_body', 'after_subject', 'after_body'),
            'graph_unnamed': ('titles',), 'preparation_calls': ('params', 'result'), 'analyses': ('summary',),
            'fleet_in': ('question', 'draft'), 'fleet_out': ('question', 'answer'), 'network_replies': ('body',),

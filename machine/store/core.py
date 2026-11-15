@@ -455,6 +455,8 @@ class StoreCore:
                 db.execute('ALTER TABLE promises ADD COLUMN owner_step INTEGER NOT NULL DEFAULT 0')  # only the owner can do it (go there, pick it up)
             if 'unverified' not in {r['name'] for r in db.execute('PRAGMA table_info(promises)')}:
                 db.execute('ALTER TABLE promises ADD COLUMN unverified INTEGER NOT NULL DEFAULT 0')  # from a sender the owner doesn't know (promises.unknown_sender)
+            if 'refund' not in {r['name'] for r in db.execute('PRAGMA table_info(promises)')}:
+                db.execute('ALTER TABLE promises ADD COLUMN refund TEXT')  # money back owed to the owner (refunds.py), sealed
             if 'basis' not in {r['name'] for r in db.execute('PRAGMA table_info(action_jobs)')}:
                 # What allowed each step (machine/action_basis.py); the ones before it say so
                 db.execute('ALTER TABLE action_jobs ADD COLUMN basis TEXT')

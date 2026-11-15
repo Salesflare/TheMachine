@@ -244,6 +244,11 @@ def promise_text(p):
     # The due chip says when it is due; the line adds it only when it isn't the day it was said
     t = i18n.t  # written once, when the card is made: in the owner's language then
     by = due and due != made.date() and locale_prefs.day_text(due)
+    if p['direction'] == 'theirs' and p.get('refund') and due:
+        import refunds  # here, not at the top: it reads the store's review_wait
+        refund = refunds.load(p['refund'])
+        if refund:  # money back that didn't come in: "Chase the €42 refund from Acme"
+            return refunds.text(p, refund, said, locale_prefs.day_text(due))
     if p['direction'] == 'mine':
         title = p['what'][:1].upper() + p['what'][1:]
         title = title if p['who'].lower() in title.lower() or len(title) + len(p['who']) > 84 else title + t(' for {}', p['who'])
@@ -306,17 +311,29 @@ class PromisesStore:
                 due = dt.date.fromisoformat(str(due)[:10]).isoformat()
             except ValueError:
                 raise ValueError('due must be the promised date as YYYY-MM-DD, or left out when none was said') from None
+        if args.get('refund') is not None and direction != 'theirs':
+            raise ValueError("refund is money someone owes the owner back: direction 'theirs'")
         with self.connect() as db:
             db.execute('BEGIN IMMEDIATE')
-            event = db.execute('SELECT id,account_id,kind,occurred_at,metadata FROM events WHERE id=? AND deleted=0', (args.get('event_id'),)).fetchone()
-            if not event or event['kind'] not in OWN_KINDS:
+            event = db.execute('SELECT id,account_id,kind,occurred_at,title,body,metadata FROM events WHERE id=? AND deleted=0', (args.get('event_id'),)).fetchone()
+            refund = None
+            if args.get('refund') is not None:  # money back, watched in plain code (refunds.py)
+                import refunds  # here, not at the top: it reads the store's review_wait
+                if not event or event['kind'] not in (*OWN_KINDS, *refunds.MAIL_KINDS):
+                    raise ValueError('event_id is the email or message that promises the refund')
+                today = dt.datetime.fromisoformat(now()).astimezone(local_tz()).date()
+                refund, why = refunds.check(event, args['refund'], due, today, own_message(dict(event), self.owner_user_ids))
+                if refund is None:
+                    return {'skipped': why}
+            if not event or (event['kind'] not in OWN_KINDS and refund is None):
                 raise ValueError('event_id is the email, Slack, WhatsApp, Telegram, LinkedIn or X message with the promise')
             own = own_message(dict(event), self.owner_user_ids)
             if direction == 'mine' and not own:
                 raise ValueError("The owner's promises are in messages they sent (a reply, a yes or a reaction to a request); event_id is that message")
             # Only an email closes someone else's promise by itself: chats run on, so a later chat message from
-            # them is no sign it was kept; the review closes those, or the check when it's due.
-            watch = awaiting_key(dict(event), self.owner_user_ids) if direction == 'theirs' and event['kind'] == 'gmail.message' else None
+            # them is no sign it was kept; the review closes those, or the check when it's due. A refund closes only
+            # on the money back (refunds.arrived), never on any reply.
+            watch = awaiting_key(dict(event), self.owner_user_ids) if direction == 'theirs' and event['kind'] == 'gmail.message' and refund is None else None
             check_at = promise_check_at(direction, due, event['occurred_at'], digest_at)
             if direction == 'theirs':
                 check_at = before_blocked(db, event['id'], check_at, digest_at)
@@ -341,12 +358,13 @@ class PromisesStore:
                 return {'id': row['id'], 'status': row['status'], 'duplicate': True}
             # From a sender the owner doesn't know: kept, marked unverified (their word only), never dropped
             unverified = int(direction == 'theirs' and unknown_sender(db, dict(event), self.review_own_addresses(db)))
-            cursor = db.execute('INSERT INTO promises(direction,who,what,due,check_at,event_id,account_id,watch,status,created_at,updated_at,owner_step,unverified) '
-                                "VALUES(?,?,?,?,?,?,?,?,'open',?,?,?,?) ON CONFLICT(event_id,direction,who,what) DO NOTHING",
+            cursor = db.execute('INSERT INTO promises(direction,who,what,due,check_at,event_id,account_id,watch,status,created_at,updated_at,owner_step,unverified,refund) '
+                                "VALUES(?,?,?,?,?,?,?,?,'open',?,?,?,?,?) ON CONFLICT(event_id,direction,who,what) DO NOTHING",
                                 (direction, who, what, due, check_at, event['id'], event['account_id'], encoded({**watch, 'promise': True}) if watch else None, stamp, stamp,
-                                 int(direction == 'mine' and args.get('owner_step') is True), unverified))
+                                 int(direction == 'mine' and args.get('owner_step') is True), unverified, encoded(refund) if refund else None))
         return {'id': cursor.lastrowid, 'status': 'open', 'check_at': check_at, **({'unverified': True} if unverified else {}),
-                'note': 'Recorded, no card. It is checked when due; if still open then, a card comes.'}
+                'note': ('Recorded, no card. The service watches for the money back; if it is not in by due, a chase to-do comes.' if refund else
+                         'Recorded, no card. It is checked when due; if still open then, a card comes.')}
 
     def update_promise(self, args, digest_at='08:30', source='assistant'):
         with self.connect() as db:

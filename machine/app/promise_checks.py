@@ -16,12 +16,13 @@ from machine.app.follow_ups import activity_who, newer_activity, NEWER_KINDS
 from machine.config import LOG
 from machine.sources.calendar import company_domains
 from machine.store.cards import promise_closed_at, same_matter_cards, same_thread_card
-from machine.store.promises import fit_title, promise_card as promise_todo, promise_logged, promise_text, promise_title, promise_who_named
+from machine.store.promises import fit_title, promise_card as promise_todo, promise_logged, promise_open_card, promise_text, promise_title, promise_who_named
 from machine.store.review import CARD_OPEN, own_message
 from machine.text import encoded
 from models import background_model, openclaw_model
 from machine.store import outcomes
-from timeutil import now
+import locale_prefs
+from timeutil import local_tz, now
 from machine import todo_states
 from machine.owner_error import OwnerError
 
@@ -136,6 +137,7 @@ class PromiseChecksApp:
     ACTIONS = {'promise_close': 'promise_close_action', 'promise_due': 'promise_due_action', 'promise_todo': 'promise_todo_action'}
 
     PROMISE_CHECK_SECONDS = 180
+    REFUND_EVERY = 600  # seconds between looks for money back on refunds not due yet (refund_step)
     PROMISE_TWIN_RETRY = 1800  # seconds after a failed twin turn before the pairs are asked again
 
     def promise_checks(self, due):
@@ -227,10 +229,76 @@ class PromiseChecksApp:
             due = [dict(r) for r in db.execute("SELECT p.*,e.occurred_at made_at FROM promises p JOIN events e ON e.id=p.event_id "
                                                "WHERE p.status='open' AND p.check_at<=? ORDER BY p.check_at LIMIT ?", (now(), max(0, min(limit, room))))]
         due = [p for p in due if p['id'] not in twins]
+        # Refunds are plain code (refunds.py): the money back closes them, never a model turn; one still not in comes as
+        # a quiet chase to-do with its draft
+        refunds_due = [p for p in due if p.get('refund')]
+        due = [p for p in due if not p.get('refund')]
+        came = self.refund_step({p['id'] for p in refunds_due})
         held = self.promise_checks(due) if due else set()
         for promise in due:
             if promise['id'] not in held:
                 self.promise_card(promise)
+        for promise in refunds_due:
+            if promise['id'] not in came:
+                self.refund_card(promise)
+
+    def refund_step(self, due=()):
+        """Money back for open refunds and their open chase to-dos (refunds.arrived), plain code: an open one closes as
+        kept; a chase to-do closes by itself, with Undo (Store.bill_paid). The due ones each time, all the others every
+        REFUND_EVERY seconds; each reads only the messages since its last look. Returns the ids that came in."""
+        import refunds
+        every = time.monotonic() >= getattr(self, '_refund_next', 0)
+        if every:
+            self._refund_next = time.monotonic() + self.REFUND_EVERY
+        read = self.__dict__.setdefault('_refund_read', {})
+        came, paid = set(), []
+        with self.store.connect() as db:  # no write lock while reading: the one write checks the promise is still open
+            rows = [dict(r) for r in db.execute("SELECT p.*,e.occurred_at made_at FROM promises p JOIN events e ON e.id=p.event_id "
+                                                "WHERE p.status IN ('open','carded') AND p.refund IS NOT NULL")]
+            for p in rows:
+                refund = refunds.load(p['refund'])
+                if not refund or not (every or p['id'] in due):
+                    continue
+                card = promise_open_card(db, p) if p['status'] == 'carded' else None
+                if p['status'] == 'carded' and not card:
+                    continue
+                found, read[p['id']] = refunds.arrived(db, p, refund, read.get(p['id'], 0))
+                if not found:
+                    continue
+                came.add(p['id'])
+                reason = i18n.t('The {} refund came in', refunds.money_text(refund))
+                if card:
+                    paid.append((card['id'], reason, found))
+                elif db.execute("UPDATE promises SET status='kept',note=?,updated_at=? WHERE id=? AND status='open'", (reason, now(), p['id'])).rowcount:
+                    promise_logged(db, p['id'], 'kept', f'refund:{found}')
+        for sid, reason, found in paid:
+            self.store.bill_paid(sid, reason, [found])
+        return came
+
+    def refund_card(self, p):
+        """A refund not in by its day: its quiet chase to-do (promise_card), ready with a short draft to the contact
+        when there is one and a mailbox that sends (refunds.draft). Nothing is sent by itself."""
+        import next_actions
+        import own_addresses
+        import refunds
+        saved = self.promise_card(p, quiet=True)
+        refund = refunds.load(p['refund'])
+        if not saved or saved.get('duplicate') or saved.get('status') != 'pending' or not refund:
+            return saved
+        made = dt.datetime.fromisoformat(p['made_at']).astimezone(local_tz())
+        found = refunds.draft(p, refund, locale_prefs.day_text(made), graph.person_name(self.config.get('owner_name')).strip()[:80])
+        if not found:
+            return saved
+        try:
+            with self.store.connect() as db:
+                senders = own_addresses.senders(db, self.config)
+            action = next_actions.validate({'kind': 'email', 'label': 'Send', 'account_id': p['account_id'], 'to': [found['to']],
+                                            'subject': found['subject'], 'body': found['body']}, self.config, [p['account_id']], senders=senders)
+        except (OwnerError, ValueError) as failure:  # no mailbox here that sends: the to-do comes without a draft
+            LOG.info('refund draft skipped error=%s', type(failure).__name__)
+            return saved
+        self.store.code_draft(saved['id'], action)
+        return saved
 
     def promise_twin_step(self):
         """Open promises that may be an older one given again (promise_twins: the same person and direction): one short
@@ -362,9 +430,9 @@ class PromiseChecksApp:
         LOG.info('promise check promises=%s kept=%s', len(pages), kept)
         return kept
 
-    def promise_card(self, p, _db=None, ahead=None):
+    def promise_card(self, p, _db=None, ahead=None, quiet=False):
         """A due promise's to-do (promise_step), or one the owner asked for now (promise_todo_action, ahead=False:
-        their own Do it prepares it instead)."""
+        their own Do it prepares it instead). quiet: it is not sent by itself (a refund's chase)."""
         if _db is None:
             with self.store.connect() as db:
                 db.execute('BEGIN IMMEDIATE')
@@ -373,7 +441,7 @@ class PromiseChecksApp:
                                      "WHERE p.id=? AND p.status='open' AND p.check_at<=? AND e.deleted=0", (p['id'], now())).fetchone()
                 if not current:
                     return None  # closed or rescheduled since the worker selected it
-                return self.promise_card(dict(current), _db=db, ahead=ahead)
+                return self.promise_card(dict(current), _db=db, ahead=ahead, quiet=quiet)
         title, body = promise_text(promise_who_named(_db, p))
         home = promise_home(_db, p)
         if home is not None and home['status'] in CARD_OPEN:
@@ -395,8 +463,11 @@ class PromiseChecksApp:
         evidence = [last['id'], p['event_id']] if last else [p['event_id']]
         # A closed to-do on the same matter comes back with the promise (one to-do per matter): theirs came due, or the
         # owner promised more after closing it.
+        if p.get('refund'):  # a refund's chase: its draft is plain code (refund_card), and its day is theirs, not the owner's
+            ahead = False
         saved = self.store.suggest('promise:%d' % p['id'], promise_title(p, title), body[:700], evidence, 'now', self.config.get('digest_at', '08:30'),
-                                   work=self.is_work([p['account_id']]), due=p['due'], ahead=ahead, _db=_db, owner_step=bool(p.get('owner_step')),
+                                   work=self.is_work([p['account_id']]), due=None if p.get('refund') else p['due'], ahead=ahead, _db=_db,
+                                   owner_step=bool(p.get('owner_step')), quiet=quiet,
                                    **({'card_id': home['id'], 'match': True, 'reopen': 'due'} if home is not None else {}))
         with contextlib.nullcontext(_db) as db:
             if db.execute("UPDATE promises SET status='carded',suggestion_id=?,updated_at=? WHERE id=? AND status='open'", (saved['id'], now(), p['id'])).rowcount:
