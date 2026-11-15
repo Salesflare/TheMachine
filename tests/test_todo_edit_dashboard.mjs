@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {dashboardPage} from './dashboard-page.mjs';
+import {settled} from './page-calls.mjs';
 const {chromium}=await import('./browser.mjs');
 
 // Working on a to-do: Ask for changes says what it changes and keeps Review and send in reach; editing an email shows it
@@ -112,7 +113,7 @@ try{
   const before=await tall();
   steps=[{title:'Checking the venue’s calendar'},{title:'Reading the contract, a long step title that would wrap onto a second line on a phone'},{title:'Drafting the reply'}];
   await page.waitForFunction(()=>document.querySelector('#task-p1 .steps li')?.textContent==='Drafting the reply',null,{timeout:10000});
-  await page.waitForTimeout(200);await page.locator('#task-p1').scrollIntoViewIfNeeded();await shot(page,'preparing',width);assert.equal(await tall(),before,'the to-do keeps its height while steps come in');
+  await settled(tall,before,'the to-do keeps its height while steps come in');await page.locator('#task-p1').scrollIntoViewIfNeeded();await shot(page,'preparing',width);
   Object.assign(cards[2],{status:'prepared',preparation_status:'done'});
   await page.evaluate(()=>refresh());
   assert.ok(await page.evaluate(()=>{const r=document.getElementById('section-foryou'),t=document.getElementById('task-p1');return !!(r&&t&&r.compareDocumentPosition(t)&Node.DOCUMENT_POSITION_FOLLOWING)&&!!t.querySelector('.chip.t-mint')}),'ready: then it says Prepared, still in For you');

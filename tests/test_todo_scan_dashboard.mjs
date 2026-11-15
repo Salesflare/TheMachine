@@ -96,8 +96,8 @@ try{
    assert.match(await prep.locator('.prep .steps li').innerText(),/Reading the second quote/);assert.equal(await prep.locator('.prep .steps li').count(),1);
    assert.ok(await one(),'still one line with a long step')}
   // Under Work the Work word goes: the filter says it
-  await page.evaluate(()=>document.querySelector('[data-scope="work"]').click());await page.waitForTimeout(200);
-  assert.equal(await page.locator('#task-a1a1a1a1a1a1a1a1 span.chip.scope').count(),0);
+  await page.evaluate(()=>document.querySelector('[data-scope="work"]').click());
+  await page.waitForFunction(()=>document.querySelector('#task-a1a1a1a1a1a1a1a1')&&!document.querySelector('#task-a1a1a1a1a1a1a1a1 span.chip.scope'),null,{timeout:10000});
   await page.evaluate(()=>document.querySelector('[data-scope="all"]').click());
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'no sideways scroll');
   // In the chat, Change project sits in its ⋯ menu; the picker opens in the chat and the menu closes

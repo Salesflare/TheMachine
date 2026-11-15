@@ -3,6 +3,7 @@ import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import zlib from 'node:zlib';
 import {dashboardPage} from './dashboard-page.mjs';
+import {waitForAction} from './page-calls.mjs';
 const {chromium}=await import('./browser.mjs');
 
 // Files on a new to-do (New to-do, chat_files.py): the paperclip (on a phone the file picker, with the camera), a pasted
@@ -49,7 +50,8 @@ try{
   const context=await browser.newContext({viewport:{width,height},locale:'en-US',timezoneId:'Europe/Brussels',hasTouch:phone,isMobile:phone});
   await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
   const page=await context.newPage();page.on('pageerror',e=>errors.push(tag+': '+e.message));
-  const shot=async n=>{if(process.env.SHOT_DIR)await page.screenshot({path:`${process.env.SHOT_DIR}/${n}-${tag}.png`})};
+  // settle: a picture only, so the test itself never waits a fixed time
+  const shot=async(n,settle=0)=>{if(!process.env.SHOT_DIR)return;if(settle)await page.waitForTimeout(settle);await page.screenshot({path:`${process.env.SHOT_DIR}/${n}-${tag}.png`})};
   await page.goto(base);await page.locator('#task-'+'c1'.repeat(8)).waitFor();
   await page.evaluate(()=>ncOpen());const dialog=page.locator('#new-card');await dialog.waitFor();
   if(shotsOnly){await page.locator('#nc-text').fill('Check the venue quote against the brief');await shot('before-new');await context.close();continue}
@@ -74,7 +76,7 @@ try{
    assert.ok(!shotFile.isMultiple());await shotFile.setFiles([fileOf('image.jpg','image/jpeg',PNG)]);
    await page.locator('#nc-tray .chat-att:not(.up)').first().waitFor();assert.equal(ups().at(-1).args.name,'image.jpg');
    await shot('new-camera');await page.locator('#nc-tray [data-nc-remove]').first().click();
-   for(let i=0;i<50&&!actions.some(a=>a.action==='chat_file_remove');i++)await page.waitForTimeout(100);actions.length=0;uploaded={}}
+   await waitForAction(actions,'chat_file_remove');actions.length=0;uploaded={}}
   const chooser=page.waitForEvent('filechooser');await page.locator('#nc-attach').click();
   await (await chooser).setFiles([fileOf('Whiteboard.png','image/png',PNG),fileOf('Quote.pdf','application/pdf',Buffer.from('%PDF-1.4\n'+'x'.repeat(30000)))]);
   await page.locator('#nc-tray .chat-att:not(.up)').nth(1).waitFor();
@@ -112,7 +114,7 @@ try{
   // × takes one back, and tells the Machine (under the same draft key)
   await page.locator('#nc-tray [data-nc-remove]').nth(4).click();
   assert.equal(await page.locator('#nc-tray .chat-att').count(),4);
-  for(let i=0;i<50&&!actions.some(a=>a.action==='chat_file_remove');i++)await page.waitForTimeout(100);  // the post goes after the click
+  await waitForAction(actions,'chat_file_remove');  // the post goes after the click
   const removed=actions.filter(a=>a.action==='chat_file_remove');assert.equal(removed.length,1);assert.equal(removed[0].args.draft,draft);
   // Nothing is saved before it's added; the form fits the screen
   assert.equal(actions.filter(a=>a.action==='card_new').length,0);
@@ -140,7 +142,7 @@ try{
   await page.evaluate(id=>chatGo(id),NEW);
   await page.locator('#chat-log .chat-source.you .chat-you-img').first().waitFor();
   assert.ok(await page.locator('#chat-log .chat-source.you .chat-files a',{hasText:'Quote.pdf'}).isVisible());
-  await page.waitForTimeout(300);await shot('chat-files');
+  await shot('chat-files',300);
   // Closed without adding: its uploads are taken back
   await page.evaluate(()=>ncOpen());await dialog.waitFor();
   await page.locator('#nc-file').setInputFiles([fileOf('Later.pdf','application/pdf',Buffer.from('%PDF-1.4 later'))]);

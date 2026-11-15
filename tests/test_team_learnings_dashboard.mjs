@@ -99,7 +99,8 @@ try{
    await page.locator('#toast a[data-settings-at="settings-share"]').click();
    const sw=page.locator('#share-offer');await sw.waitFor();
    await page.waitForFunction(()=>document.querySelector('#settings-tabs [aria-selected="true"]')?.dataset.settingsTab==='security'&&document.querySelector('#share-offer').closest('.flash'));
-   await page.waitForTimeout(700);assert.ok(await sw.evaluate(b=>{const r=b.getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight}),'the switch is in view');
+   // it scrolls there smoothly: the switch comes into view
+   await page.waitForFunction(()=>{const r=document.querySelector('#share-offer').getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight},null,{timeout:10000});
    assert.equal(await sw.getAttribute('aria-checked'),'false');
    await sw.click();await page.locator('#share-offer[aria-checked="true"]').waitFor();
    assert.deepEqual(posts.at(-1),{action:'set_learnings_offer',args:{on:true}});
