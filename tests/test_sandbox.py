@@ -68,6 +68,8 @@ class StatesTest(unittest.TestCase):
                 self.assertEqual(bool(config.get('fleet')), 'all' in state)
                 self.assertEqual(cards == 0, state == 'fresh')
                 self.assertEqual(errors, 2 if 'expired' in state else 0)
+                seeded = db.execute("SELECT count(*) FROM note_page_lines WHERE by='memory'").fetchone()[0]  # memory_seed.py, in the demo too
+                self.assertEqual(bool(seeded), state != 'fresh')
                 self.assertTrue(config['fleet']['url'].startswith('http://127.0.0.1:') if config.get('fleet') else True)
                 # the demo (recorded from all) shows a note's written page (note_writer.py); a fresh Machine has none
                 pages = db.execute("SELECT count(*) FROM sqlite_master WHERE name='note_writeups'").fetchone()[0] and \

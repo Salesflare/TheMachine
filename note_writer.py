@@ -85,11 +85,12 @@ def _basis(lines):
 
 
 def candidates(db):
-    """The notes that may have a page: live, not dated, with MIN_SOURCES lines from a message or a fact."""
+    """The notes that may have a page: live, not dated, with MIN_SOURCES lines from a message, a fact or the owner's
+    earlier memory pages (memory_seed.py)."""
     dated = [k for k, v in note_pages.KINDS.items() if v['dated']]
     return [r['id'] for r in db.execute(
         f"SELECT p.id FROM note_pages p WHERE p.removed_at IS NULL AND p.merged_into IS NULL AND p.kind NOT IN ({','.join('?' * len(dated))}) "
-        'AND (SELECT count(*) FROM note_page_lines l WHERE l.note_id=p.id AND l.removed_at IS NULL AND (l.event_id IS NOT NULL OR l.fact_id IS NOT NULL))>=? '
+        'AND (SELECT count(*) FROM note_page_lines l WHERE l.note_id=p.id AND l.removed_at IS NULL AND (l.event_id IS NOT NULL OR l.fact_id IS NOT NULL OR l.by=\'memory\'))>=? '
         'ORDER BY p.updated_at DESC', (*dated, MIN_SOURCES))]
 
 
@@ -131,6 +132,8 @@ def evidence(db, item, owner_slack=()):
             entry['from'] = 'the owner'
         elif r['fact_id']:
             entry['from'] = 'what the owner told'
+        elif r['by'] == 'memory':
+            entry['from'] = "the owner's earlier notes"
         if said.get(r['id']):
             entry['said'] = said[r['id']]
         sources.append({k: v for k, v in entry.items() if v})

@@ -18,6 +18,7 @@ import help_chat
 import home_notes
 import kids_notes
 import locale_prefs
+import memory_seed
 import note_pages
 import note_writer
 import section_notes
@@ -364,6 +365,48 @@ class NotesApp:
             return 0
         LOG.info('folder overview asked=%s written=%s', len(asked), written)
         return written
+
+    def memory_seed_step(self):
+        """Once per Machine: the topic pages of the OpenClaw workspace's memory/ read into Notes (memory_seed.py), a
+        few pages a turn at most every memory_seed.PASS_MINUTES, in a thread of its own once the budget allows. Only
+        ever reads the workspace. True when a turn started."""
+        running = getattr(self, 'memory_seed_thread', None)
+        if (running and running.is_alive()) or monotonic() < getattr(self, 'memory_seed_next', 0):
+            return False
+        self.memory_seed_next = monotonic() + memory_seed.PASS_MINUTES * 60
+        with self.store.connect() as db:
+            if memory_seed.done(db):
+                self.memory_seed_next = float('inf')
+                return False
+            db.execute('BEGIN IMMEDIATE')
+            batch = memory_seed.due(db, self.bring_in_workspace())
+        if not batch or not self.notes_turn_free('memory-seed'):
+            return False
+        self.memory_seed_thread = threading.Thread(target=self.memory_seed_run, args=(batch,), daemon=True, name='memory-seed')
+        self.memory_seed_thread.start()
+        return True
+
+    def memory_seed_run(self, batch):
+        """One turn: the pages and the notes there are, one call, the facts saved as lines. An answer that can't be read
+        leaves the pages for a later turn. Returns how many lines it added."""
+        try:
+            with self.store.connect() as db:
+                where = memory_seed.places(db)
+            text = memory_seed.prompt(batch, where, locale_prefs.language_of(self.config))
+            answer = self.notes_model_ask(text, getattr(self, 'memory_seed_model', None), memory_seed.TIMEOUT)  # tests: (prompt) -> reply
+            found = memory_seed.parse(answer, batch, where)
+            added = 0
+            with self.store.connect() as db:
+                db.execute('BEGIN IMMEDIATE')
+                if found is None:
+                    memory_seed.tried(db, batch)
+                else:
+                    added = memory_seed.save(db, batch, found, now())
+        except Exception as error:  # noqa: BLE001 - the next turn tries again
+            LOG.warning('memory seed error=%s', type(error).__name__)
+            return 0
+        LOG.info('memory seed pages=%s lines=%s', len(batch), added)
+        return added
 
     def calendar_notes(self, start, end):
         """The dated notes (trips, events) that touch the Calendar's window, as bands: a day either side, since the window's

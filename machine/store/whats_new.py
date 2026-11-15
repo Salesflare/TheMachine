@@ -38,6 +38,9 @@ ENTRIES = [
      'text': 'A note now opens with a summary, key facts, decisions, open items and a timeline, written from your '
              'conversations. Each line links to where it came from.',
      'action': {'label': 'Open Notes', 'run': 'go-notes'}, 'art': 'notes'},
+    {'id': 'notes-from-openclaw-memory', 'date': '2026-11-15', 'weight': 1, 'title': 'Your earlier memory pages in Notes',
+     'text': 'What lasts from the memory pages your assistant kept before goes in your notes once. Each line says the page it came from.',
+     'action': {'label': 'Open Notes', 'run': 'go-notes'}, 'art': 'notes'},
     {'id': 'notes-from-conversations', 'date': '2026-11-15', 'weight': 2, 'title': 'Notes from your conversations',
      'text': 'Email, chats and meeting notes go in the note they’re about, Work too. A project or organization keeps '
              'its own page.',
