@@ -29,7 +29,11 @@ function i18nPatterns(cat){const out=[],esc=s=>s.replace(/[.*+?^${}()|[\]\\]/g,'
 // a hole's text read again only when it is a catalog entry itself ("Due {}" with "today"); a name, a title or a
 // message in it stays as written, even when it looks like UI ("Change {}" around "the intro.")
 function i18nExact(text){const s=text.replace(/\s+/g,' ').trim(),cat=I18N.cat;if(!s||!Object.prototype.hasOwnProperty.call(cat,s))return null;const v=cat[s];return typeof v==='object'?(v.one&&I18N.en[s]?.one===s?v.one:v.other):v}
-function i18nLookup(text){const s=text.replace(/\s+/g,' ').trim();if(!s||s.length>400||!/[A-Za-z]/.test(s))return null;
+// A to-do's title is the owner's (or the model's) words: it reads as written wherever it shows, never with a frame like
+// "Send {}" or "Prepare for {}" translating its first words only
+function i18nTitles(){const l=typeof state==='object'&&state?.suggestions;if(!Array.isArray(l))return null;
+ if(I18N.titlesOf!==l){I18N.titlesOf=l;I18N.titles=new Set(l.map(x=>String(x?.title||'').replace(/\s+/g,' ').trim()).filter(Boolean))}return I18N.titles}
+function i18nLookup(text){const s=text.replace(/\s+/g,' ').trim();if(!s||s.length>400||!/[A-Za-z]/.test(s)||i18nTitles()?.has(s))return null;
  if(I18N.memo.has(s))return I18N.memo.get(s);let out=null;const cat=I18N.cat;
  if(Object.prototype.hasOwnProperty.call(cat,s)){const v=cat[s];out=typeof v==='object'?(v.one&&I18N.en[s]?.one===s?v.one:v.other):v}
  else for(const p of I18N.pats){if(p.head&&!s.startsWith(p.head))continue;const m=p.re.exec(s);if(!m)continue;
@@ -65,8 +69,9 @@ async function i18nLoad(lang){if(!lang||lang===I18N.lang&&(lang==='en'||I18N.cat
  I18N.loading=lang;try{const [cat,en]=await Promise.all([fetch('i18n/'+lang+'.json?v='+I18N.ver).then(r=>r.ok?r.json():null),Object.keys(I18N.en).length?I18N.en:fetch('i18n/en.json?v='+I18N.ver).then(r=>r.ok?r.json():{})]);
   if(!cat)return false;I18N.en=en||{};i18nUse(lang,cat);try{localStorage.setItem('i18n',JSON.stringify({lang,ver:I18N.ver,cat,en:I18N.en}))}catch{}return true}catch{return false}finally{I18N.loading=null}}
 // The first language a browser asks for that there is a catalog for (navigator.languages is its Accept-Language):
-// the exact tag (pt-BR), else its language (it-CH reads it), Portuguese from Portugal reading Brazilian for now.
-const I18N_NEAREST={pt:'pt-BR'};
+// the exact tag (pt-BR), else its language (it-CH reads it), Portuguese from Portugal reading Brazilian and any Chinese
+// (zh-TW, zh-Hant) Simplified Chinese for now.
+const I18N_NEAREST={pt:'pt-BR',zh:'zh-CN'};
 function i18nBrowser(langs){const codes=Object.fromEntries(Object.keys(langs).map(c=>[c.toLowerCase(),c]));
  for(const l of (navigator.languages?.length?navigator.languages:[navigator.language||'en'])){const t=String(l).toLowerCase(),b=t.split('-')[0],c=codes[t]||codes[b]||(langs[I18N_NEAREST[b]]?I18N_NEAREST[b]:'');if(c)return c}return 'en'}
 // With each state (applyLocale): the owner's language; never chosen yet (language_set false), the browser's, saved once.

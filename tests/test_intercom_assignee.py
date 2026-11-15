@@ -144,7 +144,7 @@ class Store(unittest.TestCase):
         self.assertIn('id', self.store.suggest('c8', 'Answer Casey about import', 'Casey asks about import.', [2]))
 
     def test_the_line_is_in_every_language(self):
-        for lang in ('nl', 'fr', 'de', 'es', 'it', 'pt-BR'):
+        for lang in ('nl', 'fr', 'de', 'es', 'it', 'pt-BR', 'zh-CN', 'ja', 'ko', 'ru'):
             catalog = json.loads((ROOT / 'i18n' / f'{lang}.json').read_text())
             self.assertIn('Closed by itself: {} took it in Intercom', catalog)
             self.assertIn('Closed by itself: a teammate took it in Intercom', catalog)

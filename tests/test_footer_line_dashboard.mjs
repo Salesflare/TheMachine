@@ -6,7 +6,7 @@ import {dashboardPage} from './dashboard-page.mjs';
 
 // The footer's line of the day jokes from the owner's side, never about who made the app: "© 2026 The Machine. No inboxes
 // were harmed." reads in every language, in at most two lines on a phone beside the stacked Help and other links.
-const dashboard=await dashboardPage(),LANGS=['en','de','es','fr','it','nl','pt-BR'],cats={};
+const dashboard=await dashboardPage(),LANGS=['en','de','es','fr','it','nl','pt-BR','zh-CN','ja','ko','ru'],cats={};
 for(const l of LANGS)cats[l]=await readFile(new URL(`../i18n/${l}.json`,import.meta.url),'utf8');
 const LINE='No inboxes were harmed.';
 for(const l of LANGS)assert.ok(JSON.parse(cats[l])[LINE],`${l} has the footer line`);

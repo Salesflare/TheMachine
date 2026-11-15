@@ -64,7 +64,7 @@ function renderSetAside(rh){const sa=rh.set_aside_list||[],day=s=>localeDate(new
   list.addEventListener('click',e=>{const b=e.target.closest('[data-sa-open]');if(b)openEvent(b.dataset.saOpen,b.textContent)})}
  $('#set-aside').hidden=!sa.length;
  const why=x=>x.state==='closed'?t('Closed after one more look'):x.state==='left'?t('Left as is: no sign it needs you'):new Date(x.look_at)>new Date()?t('One more look on {}',day(x.look_at)):t('One more look with the next check');
- $('#set-aside-list').replaceChildren(...sa.map(x=>make('div',{class:'sa-row'},make('button',{type:'button',class:'sa-open','data-sa-open':x.id},x.title||t('(no subject)')),make('small',{},why(x)))))}
+ $('#set-aside-list').replaceChildren(...sa.map(x=>make('div',{class:'sa-row'},make('button',{type:'button',class:'sa-open','data-sa-open':x.id,translate:'no'},x.title||t('(no subject)')),make('small',{},why(x)))))}
 const BROKER_LINK={gmail:'#google',calendar:'#google',outlook:'#microsoft',outlook_calendar:'#microsoft',zoom:'#source-zoom',stripe:'#source-stripe',slack:'#source-slack',salesforce:'#source-salesforce'};
 // Only the latest load draws: opening + Add starts one and connectOpen another, and the earlier answering last would
 // draw the grid again over the source connectOpen just picked

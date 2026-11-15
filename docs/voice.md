@@ -40,7 +40,7 @@ Settings, General, Voice input, **Turned into text** (`voice_input.ENGINES`), wi
   int8 on the CPU, in `voice_worker.py`. The service starts the worker on the first clip and stops it after 5 minutes
   without one, so its memory is free again. The package install runs at a lower priority (`nice -n 10`,
   below-normal priority on Windows); the worker runs at the normal priority, since the owner is waiting on it. Clips go through it one at a
-  time. The language is the one picked in Settings, or detected among the app's seven languages.
+  time. The language is the one picked in Settings, or detected among the app's languages.
 - **With OpenAI**: `gpt-4o-transcribe` through OpenClaw's own transcription, in `voice-openai-run.mjs`: a Node worker
   that loads OpenClaw once and stays up for 5 minutes, so a clip takes 1 to 3 s instead of the 8 s the
   `openclaw infer audio transcribe` CLI needs to start (still the fallback). A tap on the mic warms it up. Offered when
@@ -86,7 +86,7 @@ Measured on a 4-core desktop CPU limited to 2 cores, under heavy load from other
 
 | Model | 7 sentences in 7 languages (60 s of speech) | 34 s of Dutch | Peak memory | Quality |
 |---|---|---|---|---|
-| small (**More accurate**) | 0.5 to 1.5 × real time | 26 s (2 threads), 11 s (4 threads) | 640 MB | Good in all seven languages |
+| small (**More accurate**) | 0.5 to 1.5 × real time | 26 s (2 threads), 11 s (4 threads) | 640 MB | Good in all seven languages measured |
 | base (**Faster**) | 0.4 × real time | 10 s | 350 MB | More words wrong, most of all in Dutch and Portuguese |
 
 End to end through the service (worker already running, 4 threads, same load), the small model wrote a 10 s Dutch clip

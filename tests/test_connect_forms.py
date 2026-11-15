@@ -272,7 +272,8 @@ class FormTest(unittest.TestCase):
         from machine.app import connect
         from machine.browser import site_language
         for language, locale, expected in (('nl', None, 'nl_NL'), ('de', None, 'de_DE'), ('fr', None, 'fr_FR'),
-                                           ('es', None, 'es_ES'), ('it', None, 'it_IT'), ('pt-BR', None, 'pt_BR'),
+                                           ('es', None, 'es_ES'), ('it', None, 'it_IT'), ('pt-BR', None, 'pt_BR'), ('zh-CN', None, 'zh_CN'),
+                                           ('ja', None, 'ja_JP'), ('ko', None, 'ko_KR'), ('ru', None, 'ru_RU'),
                                            ('en', None, 'en_US'), (None, None, 'en_US'), (None, 'nl-BE', 'nl_NL'),  # signup's guess
                                            ('en', 'nl-BE', 'en_US'), ('xx', None, 'en_US'), ('xx', 'nl-BE', 'nl_NL')):
             config = {k: v for k, v in (('language', language), ('locale', locale)) if v}

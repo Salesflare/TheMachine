@@ -10,18 +10,18 @@ const {chromium}=await import('./browser.mjs');
 // included, and back to English without a reload. Words around filled-in parts ("{} · {} today") and plurals read
 // translated too, and rows of parts joined by " · " part by part; t() is the same lookup for code. English is untouched when the language is English.
 const dashboard=await dashboardPage();
-const cats={};for(const l of ['en','nl','fr','de','es','it','pt-BR'])cats[l]=await readFile(new URL(`../i18n/${l}.json`,import.meta.url),'utf8');
-const languages={en:'English',nl:'Nederlands',fr:'Français',de:'Deutsch',es:'Español',it:'Italiano','pt-BR':'Português (Brasil)'};
+const cats={};for(const l of ['en','nl','fr','de','es','it','pt-BR','zh-CN','ja','ko','ru'])cats[l]=await readFile(new URL(`../i18n/${l}.json`,import.meta.url),'utf8');
+const languages={en:'English',nl:'Nederlands',fr:'Français',de:'Deutsch',es:'Español',it:'Italiano','pt-BR':'Português (Brasil)','zh-CN':'简体中文',ja:'日本語',ko:'한국어',ru:'Русский'};
 const view=(language,set=true)=>({locale:'en-BE',region:'BE',language,language_set:set,clock:'auto',hour12:false,auto_hour12:false,
  date_locale:language==='en'?'en-GB':language.includes('-')?language:language+'-BE',languages,saveable:true});
-let locale=view('en',false),saved=[],asked=[];
+let locale=view('en',false),saved=[],asked=[],todos=[],deliveries=[];
 const server=createServer(async(req,res)=>{
  const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
  const cat=/^\/i18n\/(\w\w(?:-[A-Z]{2})?)\.json$/.exec(url.pathname);if(cat){asked.push(cat[1]);res.end(cats[cat[1]]||'{}');return}
  if(url.pathname==='/api/action'){let body='';req.on('data',c=>body+=c);req.on('end',()=>{const {action,args}=JSON.parse(body);
   if(action!=='set_locale'){res.end('{}');return}saved.push(args);if(args.language)locale=view(args.language);res.end(JSON.stringify(locale))});return}
- if(url.pathname==='/api/status'){res.end(JSON.stringify({suggestions:[],promises:[],connectors:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],
+ if(url.pathname==='/api/status'){res.end(JSON.stringify({suggestions:todos,promises:[],connectors:[],suggestion_counts:{},decisions:[],analyses:[],deliveries,review_health:{},review_runs:[],
   hours:{days:[1,2,3,4,5],start:'08:00',end:'18:00',morning:'09:00',digest_at:'08:30',timezone:'UTC',saveable:true},locale}));return}
  res.end('{}');
 });
@@ -120,6 +120,27 @@ try{
  assert.deepEqual(await page.evaluate(syncs),['Última sincronização: 1 com falha','Últimas 5 sincronizações: 2 com falha','1 sinal']);
  assert.equal(await page.evaluate(()=>t('Last signal {}','seg., 26 de out.')),'Último sinal seg., 26 de out.');
  await context.close();
+ // A to-do's title reads as written in every language, wherever it shows: a frame like "Send {}" or "Prepare for {}"
+ // never translates its first words ("Отправить the team ..."), also not in a spot that isn't marked translate="no"
+ const titles=['Send the team the weekly numbers','Prepare for the demo with the new team','Review'];
+ todos=titles.map((title,i)=>({id:String(i+1).repeat(16),title,body:'Ready.',status:'prepared',preparation_status:'ok',scope:'work',created_at:'2026-11-14T09:00:00Z',event_ids:[i+1]}));
+ deliveries=todos.map((s,i)=>({id:i+1,suggestion_id:s.id,status:'sent',updated_at:'2026-11-14T09:30:00Z'}));
+ for(const lang of ['ru','zh-CN','ja','ko','fr']){locale=view(lang);
+  [context,page]=await open('en-US');await page.waitForFunction(l=>document.documentElement.lang===l,lang);
+  await page.waitForFunction(()=>document.querySelectorAll('#deliveries>div').length===3);
+  const seen=await page.evaluate(ts=>{const p=document.createElement('p');p.textContent=ts[0];document.body.append(p);
+   return new Promise(r=>setTimeout(()=>{const changed=[],w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);
+    for(let n;(n=w.nextNode());){const en=(I18N.orig.get(n)??n.nodeValue).replace(/\s+/g,' ').trim();if(ts.includes(en)&&n.nodeValue.replace(/\s+/g,' ').trim()!==en)changed.push(n.nodeValue)}
+    r({changed,rows:[...document.querySelectorAll('#deliveries>div .grow')].map(x=>x.textContent),added:p.textContent,lookup:ts.map(x=>i18nLookup(x))})},50))},titles);
+  assert.deepEqual(seen,{changed:[],rows:titles,added:titles[0],lookup:[null,null,null]},lang);
+  // times and other coding-font text in another script fall back to the language's sans, never a system monospace
+  const fonts=await page.evaluate(()=>{const s=document.createElement('span');s.className='mono';document.body.append(s);
+   return [getComputedStyle(document.querySelector('#deliveries time')).fontFamily,getComputedStyle(s).fontFamily]});
+  if(lang!=='fr'){assert.doesNotMatch(fonts[0],/mono/i,lang);assert.match(fonts[1],/^"Mono Latin",/,lang);assert.doesNotMatch(fonts[1],/monospace/,lang)}
+  // the frames still read UI text that is no to-do's title
+  assert.notEqual(await page.evaluate(()=>i18nLookup('Prepare for {}'.replace('{}','the meeting'))),null,lang);
+  await context.close()}
+ todos=[];deliveries=[];
  assert.deepEqual(errors,[]);
  console.log('i18n dashboard: ok');
 }finally{await browser?.close();server.close()}

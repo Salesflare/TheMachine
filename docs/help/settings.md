@@ -23,7 +23,7 @@ A tab with nothing to show is hidden.
 ## General
 
 - **Language and region**: your **Region** sets how dates, times and numbers read (Oct 24 or 24 Oct). **Time format** picks 12-hour (2:05 PM) or 24-hour (14:05). To-dos, Telegram, the digest and Fleet messages follow both. A hosted Machine starts from the time zone you picked at signup.
-- **Language**: English, Nederlands, Français, Deutsch, Español, Italiano or Português (Brasil). It starts from your browser's language. The dashboard, Help, notifications, Telegram, the weekly recap and the to-dos your Machine writes switch from the moment you pick it. Older text stays as it was. Teammates get Fleet and Family questions in their own language, and drafts to other people stay in the language of their conversation.
+- **Language**: English, Nederlands, Français, Deutsch, Español, Italiano, Português (Brasil), 简体中文, 日本語, 한국어 or Русский. It starts from your browser's language. The dashboard, Help, notifications, Telegram, the weekly recap and the to-dos your Machine writes switch from the moment you pick it. Older text stays as it was. Teammates get Fleet and Family questions in their own language, and drafts to other people stay in the language of their conversation.
 - **This device**: **Install app**, **Notifications** with **Send a test**, and **Light mode**, for this browser or phone only. See [Install the app and turn on notifications](phone-app.md). On [Omarchy](omarchy.md), also **Omarchy theme**.
 - **Voice input**: how what you say becomes text, and the voice of Talk live. See [Voice input](voice-input.md) and [Talk live](talk-live.md).
 - **Open the Machine’s browser ↗**: the browser your Machine uses for sites like LinkedIn.

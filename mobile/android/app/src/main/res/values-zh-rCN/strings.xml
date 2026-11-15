@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="share_label">添加到The Machine</string>
+    <string name="saved_download">已保存到“下载”：%1$s</string>
+    <string name="not_saved">无法保存文件。</string>
+    <string name="push_open">点按打开。</string>
+</resources>

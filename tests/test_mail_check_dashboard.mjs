@@ -103,10 +103,10 @@ try{
  // "Checked … messages" is no longer than its "Checked … new emails", and the whole line fits at 390
  const fill=(s,...v)=>v.reduce((o,x)=>o.replace('{}',x),s);
  const lines=[];
- for(const lang of ['en','de','es','fr','it','nl','pt-BR']){
+ for(const lang of ['en','de','es','fr','it','nl','pt-BR','zh-CN','ja','ko','ru']){
   const cat=JSON.parse(await readFile(new URL(`../i18n/${lang}.json`,import.meta.url),'utf8'));
   const now=cat['Checked {} messages at {}'],was=cat['Checked {} new emails at {}'];
-  for(const form of ['one','other'])assert.ok(now[form].length<=was[form].length,`${lang} ${form}: "${now[form]}" is longer than "${was[form]}"`);
+  for(const form of Object.keys(was))assert.ok(now[form].length<=was[form].length,`${lang} ${form}: "${now[form]}" is longer than "${was[form]}"`);
   lines.push([lang,fill(now.other,13,'08:41')+' · '+(typeof cat['nothing needs you']==='string'?cat['nothing needs you']:'nothing needs you')]);
  }
  const heights=await page.evaluate(lines=>{const span=document.querySelector('#suggestions .mc-line span'),b=span.closest('.mc-line'),kept=span.textContent;

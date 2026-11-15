@@ -76,8 +76,25 @@ def stem(w):
     return w[:-1] if len(w) > 3 and w.endswith('e') else w
 
 
+# Chinese and Japanese write without spaces, Korean glues particles to its words: those runs count by each pair of
+# characters ("设置语言" is 设置, 置语, 语言), so a question finds the section with the same words in it.
+CJK = re.compile(r'[぀-ヿ㐀-鿿가-힯]+')
+
+
 def words(text):
-    return [stem(w) for w in WORD.findall(str(text).lower()) if w not in STOP]
+    out = []
+    for w in WORD.findall(str(text).lower()):
+        if w in STOP:
+            continue
+        if not CJK.search(w):
+            out.append(stem(w))
+            continue
+        for part in re.split(f'({CJK.pattern})', w):
+            if CJK.fullmatch(part):
+                out += [part] if len(part) == 1 else [part[i:i + 2] for i in range(len(part) - 1)]
+            elif part:
+                out.append(stem(part))
+    return out
 
 
 def heading_id(text):
