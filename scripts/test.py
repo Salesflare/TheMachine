@@ -58,11 +58,19 @@ IN_WSL2 = 'on Windows The Machine runs inside WSL2 (Linux), which the Linux jobs
 
 # The connector suites run with MESSAGE_SEAL_AUDIT=1: commit_page refuses any event whose message text shows in a plain
 # field, and a file whose output says so fails. test_message_seal runs them so itself when run on its own.
-SEAL_AUDIT = (
+# Every tests/test_connector_*.py is one by its name; the suites below test connectors too. A connector in connectors/
+# without a test_connector_<name>.py of its own names the suite that tests it in SEAL_COVERED_BY (test_message_seal
+# checks that every connector is audited).
+SEAL_AUDIT_ALSO = (
     'test_connectors', 'test_new_connectors', 'test_x', 'test_linkedin', 'test_whatsapp', 'test_ms_graph', 'test_salesflare',
-    'test_connector_trello', 'test_github_stripe', 'test_connector_shortcut', 'test_connector_google_meet', 'test_connector_teams', 'test_connector_web_page', 'test_email_bodies', 'test_gmail_exclusions',
-    'test_android_coalescing', 'test_gateway', 'test_ingestion_recovery',
+    'test_github_stripe', 'test_email_bodies', 'test_gmail_exclusions', 'test_android_coalescing', 'test_gateway',
+    'test_ingestion_recovery',
 )
+SEAL_COVERED_BY = {
+    'github': 'test_github_stripe', 'linkedin': 'test_linkedin', 'rss': 'test_connectors', 'stripe': 'test_github_stripe',
+    'x': 'test_x',
+}
+SEAL_AUDIT = tuple(sorted({*SEAL_AUDIT_ALSO, *(file.stem for file in TESTS.glob('test_connector_*.py'))}))
 SEAL_LEAK = 'keeps message text in the clear'
 
 

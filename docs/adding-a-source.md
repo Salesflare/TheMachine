@@ -186,7 +186,7 @@ A row in Messages follows the same rules (`message_view.list_row`): who it's fro
 
 ## 6. Tests
 
-Test with saved fixtures, not live accounts, in `tests/test_connector_<service>.py`. [`tests/test_connectors.py`](../tests/test_connectors.py) shows the pattern for `rss.py`: it fakes the HTTP response and checks
+Test with saved fixtures, not live accounts, in `tests/test_connector_<service>.py`; the test runner runs every file by that name with `MESSAGE_SEAL_AUDIT=1`. [`tests/test_connectors.py`](../tests/test_connectors.py) shows the pattern for `rss.py`: it fakes the HTTP response and checks
 
 - the events and their fields,
 - that a second run with the same feed adds nothing,
