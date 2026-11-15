@@ -30,7 +30,7 @@ Your changes always stand. Rename a note, move it, change its dates or a line, a
 
 ## Trips
 
-When a flight, hotel, train, bus, ferry or rental car booking reaches your mail, your Machine adds it to a trip under **Trips**. Bookings for one journey go on one trip: the way out, the hotel and the way back. The trip has the booking code, seat and ticket for each line, in time order, and it shows its dates. In [Calendar](calendar.md) it shows as all day on each of those days, and opens the trip.
+When a flight, hotel, train, bus, ferry or rental car booking reaches your mail, your Machine adds it to a trip under **Trips**. Bookings for one journey go on one trip: the way out, the hotel and the way back. The trip has the booking code, seat and ticket for each line, in time order, and it shows its dates. In [Calendar](calendar.md) it shows as one band across those days, and opens the trip.
 
 It reads the booking details that airlines, hotels and booking sites put in their confirmation mail. A mail without them doesn't make a trip. A changed booking updates its line, and a canceled one goes. When every booking of a trip is canceled, the trip goes too.
 

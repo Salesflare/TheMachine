@@ -119,7 +119,8 @@ function calPlace(loc){const s=String(loc||'').trim(),url=(s.match(/https?:\/\/[
   rest=s.replace(/https?:\/\/[^\s<>"',;]+/gi,' ').split(/\s*[,;|·]\s*|\s{2,}/).map(x=>x.trim()).filter(x=>x&&x.toLowerCase()!==name.toLowerCase()).join(', ');
  return {text:[rest,name].filter(Boolean).join(' · '),rest,name,url}}
 function calParts(it){const hm=v=>humanHM(new Date(v)),late=it.day==='overdue';
- if(it.kind==='note'){const n=it.n;return {time:'All day',title:n.name,sub:[t(n.kind==='trip'?'Trip':'Note'),it.span?rangeText(calShort(it.span[0]),calShort(it.span[1])):''].filter(Boolean).join(' · '),href:'#graph/'+encodeURIComponent(n.id),tone:'note'}}
+ if(it.kind==='note'){const n=it.n,trip=n.kind==='trip'&&!/\btrip$/i.test(n.name);  // "Lisbon trip"; one named "Lisbon trip" already stays as it is
+  return {time:'All day',title:trip?t('{} trip',n.name):n.name,sub:it.span?rangeText(calShort(it.span[0]),calShort(it.span[1])):'',href:'#graph/'+encodeURIComponent(n.id),tone:'note'}}
  if(it.kind==='meeting'){const m=it.m,c=it.s&&CAL_CARD[it.s.status],a=new Date(m.start),b=new Date(m.end),
    when=it.allDay?(it.span?rangeText(calShort(it.span[0]),calShort(it.span[1])):''):!(b>a)?'':rangeText(hm(a),(localDay(b)!==localDay(a)?calShort(localDay(b))+' ':'')+hm(b));
   return {time:it.allDay?'All day':hm(m.start),title:m.title,owner:m.shared?m.shared+'’s':'',sub:[when,calPlace(m.location).text,...(m.rooms||[]),m.guests?t(['{} guest','{} guests'],m.guests):'',m.notes?t('Notes'):'',m.transcript?t('Transcript'):''].filter(Boolean).join(' · '),
@@ -134,7 +135,11 @@ function calCardWho(s){let w={};try{w=JSON.parse(s.awaiting||'{}')||{}}catch{}co
  const p=(state.promises||[]).find(p=>p.suggestion_id===s.id);return p?calSaid(p):''}
 function calRow(it){const x=calParts(it),tag=x.href||x.edit||x.view?'a':'div',attrs=x.href?` href="${esc(x.href)}"`:x.edit?` role="button" tabindex="0" data-cal-edit="${esc(x.edit)}"`:x.view?` role="button" tabindex="0" data-cal-view="${esc(x.view)}"`:'';
  return `<${tag} class="cal-item k-${x.tone}${it.past?' past':''}"${attrs}><span class="cal-time">${esc(x.time)}</span><span class="cal-dot" aria-hidden="true"></span><span class="cal-main"><span class="cal-title">${x.owner?`<span class="cal-owner">${esc(x.owner)}</span> `:''}<span translate="no">${esc(x.title)}</span></span>${x.sub||x.prep?`<span class="cal-sub">${x.prep?`<span class="cal-prep">${esc(x.prep)}${x.sub?' · ':''}</span>`:''}${esc(x.sub)}</span>`:''}${(x.said||[]).map(t=>`<span class="cal-sub cal-said">${esc(t)}</span>`).join('')}</span><span class="cal-end">${x.badge||''}${x.href||x.edit||x.view?'<span class="cal-go" aria-hidden="true">›</span>':''}</span></${tag}>`}
-function calChip(it){const x=calParts(it),tag=x.href||x.edit||x.view?'a':'div',attrs=x.href?` href="${esc(x.href)}"`:x.edit?` role="button" tabindex="0" data-cal-edit="${esc(x.edit)}"`:x.view?` role="button" tabindex="0" data-cal-view="${esc(x.view)}"`:'';
+// A dated note in the Week and Month grids: one band across its days, a piece per day joined edge to edge, its name at
+// its start and again where a week's row begins (rowStart, rowEnd: the day is the first or last of its row)
+function calBand(it,rowStart,rowEnd){const x=calParts(it),n=it.n,head=it.day===n.starts||rowStart,tail=it.day===(n.ends||n.starts)||rowEnd;
+ return `<a class="cal-chip cal-band k-${x.tone}${head?' b-head':''}${tail?' b-tail':''}" href="${esc(x.href)}" title="${esc(x.title+(x.sub?' · '+x.sub:''))}"${head?'':' aria-hidden="true" tabindex="-1"'}><span class="n" translate="no">${head?esc(x.title):''}</span></a>`}
+function calChip(it,rowStart=false,rowEnd=false){if(it.kind==='note')return calBand(it,rowStart===true,rowEnd===true);const x=calParts(it),tag=x.href||x.edit||x.view?'a':'div',attrs=x.href?` href="${esc(x.href)}"`:x.edit?` role="button" tabindex="0" data-cal-edit="${esc(x.edit)}"`:x.view?` role="button" tabindex="0" data-cal-view="${esc(x.view)}"`:'';
  return `<${tag} class="cal-chip k-${x.tone}${it.past?' past':''}"${attrs} title="${esc([x.owner,x.title].filter(Boolean).join(' ')+(x.sub?' · '+x.sub:'')+(x.said||[]).map(t=>' · '+t).join(''))}"><span class="t">${esc(x.owner||x.time)}</span><span class="n" translate="no">${esc(x.title)}</span></${tag}>`}
 const calDate=(k,o={weekday:'short',day:'numeric',month:'short'})=>localeDate(calOf(k),DL,o);  // Sat, Oct 24 (in the owner's date format, DL)
 const calMon=d=>localeDate(d,DL,{month:'short'}).replace(/\.$/,'');
@@ -198,7 +203,7 @@ function calAbreast(n){if(!DESK.matches)return 1;const box=$('#calendar-view');l
 function calTimeGrid(days,byDay,today){const n=days.length,nowMin=new Date().getHours()*60+new Date().getMinutes(),abreast=calAbreast(n);
  const cols=days.map(k=>{const list=byDay(k);return {k,strip:list.filter(i=>i.allDay||i.at<0),lay:calLay(list.filter(i=>!i.allDay&&i.at>=0),k,abreast)}}),strip=cols.some(c=>c.strip.length);
  const head=`<div class="cal-tg-head">${'<span></span>'+cols.map(c=>`<div class="cal-tg-day${c.k===today?' today':''}${c.k<today?' gone':''}" data-day="${c.k}"><span>${c.k===today?'Today':esc(calWeekday(c.k))}</span><b>${calOf(c.k).getDate()}</b></div>`).join('')}</div>`;
- const top=strip?`<div class="cal-tg-strip"><span class="cal-tg-label">All day</span>${cols.map(c=>`<div class="cal-tg-cell">${c.strip.map(calChip).join('')}</div>`).join('')}</div>`:'';
+ const top=strip?`<div class="cal-tg-strip"><span class="cal-tg-label">All day</span>${cols.map((c,ci)=>`<div class="cal-tg-cell">${c.strip.map(i=>calChip(i,ci===0,ci===cols.length-1)).join('')}</div>`).join('')}</div>`:'';
  const hours=[...Array(23)].map((_,h)=>`<span style="top:${(h+1)*CAL_HOUR}px">${calHourLabel(h+1)}</span>`).join('');
  return `<div class="cal-tg" style="--n:${n};--hour:${CAL_HOUR}px">${head}${top}<div class="cal-tg-scroll"><div class="cal-tg-body"><div class="cal-tg-hours" aria-hidden="true">${hours}</div>${cols.map(c=>`<div class="cal-tg-col${c.k===today?' today':''}" data-col="${c.k}">${c.k===today?`<i class="cal-now" style="top:${nowMin*CAL_HOUR/60}px" aria-hidden="true"></i>`:''}${c.lay.shown.map(calBlock).join('')}${c.lay.more.map(m=>calMoreBlock(m,c.k)).join('')}</div>`).join('')}</div></div></div>`}
 // Month: the calendar month, Monday on or before the 1st to Sunday on or after the last; days of the months around it
@@ -207,9 +212,9 @@ let calPick='';
 function calMonthGrid(days,byDay,today){const m=calMonth.getMonth(),phone=!DESK.matches;
  if(!calPick||calOf(calPick).getMonth()!==m||!days.includes(calPick))calPick=localDay(calOnNow()?calDay(0):calMonth);
  const head=`<div class="cal-mg-head">${days.slice(0,7).map(k=>`<span>${esc(calWeekday(k))}</span>`).join('')}</div>`;
- const cells=days.map(k=>{const d=calOf(k),list=byDay(k),cls=`cal-mday${d.getMonth()!==m?' out':''}${k===today?' today':''}${k<today?' gone':''}`;
+ const cells=days.map((k,di)=>{const d=calOf(k),list=byDay(k),cls=`cal-mday${d.getMonth()!==m?' out':''}${k===today?' today':''}${k<today?' gone':''}`;
   if(phone)return `<button type="button" class="${cls}${k===calPick?' picked':''}" data-cal-pick="${k}" aria-label="${esc(calDate(k)+(list.length?', '+list.length:''))}" aria-pressed="${k===calPick}"><b>${d.getDate()}</b><span class="cal-dots">${list.slice(0,3).map(i=>`<i class="k-${calParts(i).tone}"></i>`).join('')}</span></button>`;
-  return `<div class="${cls}" data-day="${k}"><button type="button" class="cal-mnum" data-cal-open="${k}" aria-label="${esc(calDate(k))}">${d.getDate()}</button>${list.slice(0,3).map(calChip).join('')}${list.length>3?`<button type="button" class="cal-mmore" data-cal-open="${k}">${esc(t('+{} more',list.length-3))}</button>`:''}</div>`}).join('');
+  return `<div class="${cls}" data-day="${k}"><button type="button" class="cal-mnum" data-cal-open="${k}" aria-label="${esc(calDate(k))}">${d.getDate()}</button>${list.slice(0,3).map(i=>calChip(i,di%7===0,di%7===6)).join('')}${list.length>3?`<button type="button" class="cal-mmore" data-cal-open="${k}">${esc(t('+{} more',list.length-3))}</button>`:''}</div>`}).join('');
  return `<div class="cal-mg${phone?' dots':''}">${head}<div class="cal-mg-days">${cells}</div></div>`+(phone?calDayBlock(calPick,byDay(calPick),'',''):'')}
 function calRender(){const box=$('#calendar-view');if(!box||!state)return;const list=calList(),[from,to]=calRange(),{days,items}=calItems(from,to),byDay=k=>items.filter(i=>i.day===k),late=byDay('overdue'),today=localDay(new Date());
  $('#calendar').classList.toggle('week',!list);

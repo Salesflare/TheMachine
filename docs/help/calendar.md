@@ -16,7 +16,7 @@ Your days from today on, with:
 - promises with a date,
 - [notes](notes.md) with dates, like a trip.
 
-A meeting on two calendars shows once. A calendar someone shared with you shows their events muted, with their first name; those never make a to-do. All-day and multi-day events show as all day, on each day they cover. So does a trip, first on each of its days.
+A meeting on two calendars shows once. A calendar someone shared with you shows their events muted, with their first name; those never make a to-do. All-day and multi-day events show as all day, on each day they cover. A trip is first on each of its days in Agenda, and one band across its days in Week and Month, like "Lisbon trip".
 
 A plan made together is one promise, marked "With" and their name. A promise about a meeting that day with the same person sits on that meeting's row.
 
