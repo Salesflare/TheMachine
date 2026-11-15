@@ -2251,10 +2251,10 @@ def enable_replies(config_path, account_id, token):
 
 
 # Google, Microsoft, Zoom, Stripe, Slack and Google Meet signed in from the dashboard of a paired self-hosted Machine (connect_grant): the accounts each adds
-GRANT_SERVICES = {'google': ('gmail', 'calendar'), 'microsoft': ('outlook', 'outlook_calendar'), 'zoom': ('zoom',), 'stripe': ('stripe',), 'slack': ('slack',),
-                  'google_meet': ('google_meet',), 'salesforce': ('salesforce',)}  # Google Meet: its own Google sign-in, apart from Gmail's
 GRANT_LABELS = {'google': 'Google', 'microsoft': 'Microsoft', 'zoom': 'Zoom', 'stripe': 'Stripe', 'slack': 'Slack', 'google_meet': 'Google Meet',
                'salesforce': 'Salesforce'}
+# Each one's services: the rows of machine/services.py its sign-in connects (Google Meet: its own Google sign-in, apart from Gmail's)
+GRANT_SERVICES = {provider: service_registry.of(signin=provider) for provider in GRANT_LABELS}
 SLACK_KEY = r'[te][a-z0-9]{6,20}:[uw][a-z0-9]{6,20}'  # a Slack sign-in's name: '<team id>:<user id>' (slack_api.key)
 DELIVERED = {'intercom', 'trello', 'microsoft_docs', 'microsoft_docs_write', 'microsoft_teams', *GRANT_SERVICES}  # sources a sign-in started on the dashboard connects on a paired self-hosted Machine (fleet.SIGNIN_SOURCES)
 

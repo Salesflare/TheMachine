@@ -35,6 +35,7 @@ import network_crypto as nc
 import security_levels
 import timeutil
 from i18n import t
+from machine import services
 from machine.owner_error import OwnerError
 
 LOG = logging.getLogger('personal-assistant')
@@ -57,8 +58,9 @@ LENGTHS = (15, 30, 45, 60, 90)
 BUFFERS = (0, 5, 10, 15, 30)
 PREFER = ('any', 'morning', 'afternoon')
 DEFAULTS = {'minutes': 30, 'buffer': 10, 'prefer': 'any', 'brand': True}  # brand: the footer line on booking links (meet_link.py)
-VIDEO = {'zoom': 'Zoom', 'meet': 'Google Meet', 'teams': 'Teams'}
-VIDEO_LINKS = {'zoom': ('zoom.us/',), 'meet': ('meet.google.com/',), 'teams': ('teams.microsoft.com/', 'teams.live.com/')}
+# The video call services and the links that are a call of theirs, in machine/services.py's order (a tie goes to the first)
+VIDEO = {row['video']: row['short'] for row in services.SERVICES.values() if row['video']}
+VIDEO_LINKS = {row['video']: row['video_links'] for row in services.SERVICES.values() if row['video']}
 TYPES = {'asker': ('free', 'no', 'ok', 'other', 'cancel'), 'answerer': ('propose', 'booked', 'cancel')}
 SESSION = re.compile(r'[a-f0-9]{32}')
 PEER = re.compile(r'mt_[A-Za-z0-9_-]{8,40}')
