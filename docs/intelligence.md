@@ -444,6 +444,12 @@ Notes are sorted by what was said, a whole conversation at a time (`topic_notes.
   a line from it: mail in Spam or Trash, Gmail's Promotions, Social and Forums tabs, list mail, mail a program sent and
   system senders (`mail_senders.bulk` and `relay`, the same signals the Graph reads); bot messages, broadcast and
   newsletter chats, and channels. Not when the owner wrote in it, and not mail that carries a booking (`bookings.py`).
+- **A meeting's own mail stays in Calendar** (`topic_notes.meeting_mail`): an invitation, a reply to one, an update
+  or a cancellation. Its subject is a calendar entry's title with the meeting's date or time after it, or a short
+  label ending in a colon before it ("Accepted:"), in any language, sent up to six months before the meeting or two
+  weeks after. A thread that only shares the title ("Re: Board review") is people talking and stays. Such mail placed
+  earlier is forgotten (`topic_notes.forget`), so its line goes. The call is also told to leave out invitations for
+  meetings no connected calendar has.
 - **One call per 40 conversations** on the background model, up to two calls a round every two hours (eight every
   twenty minutes in the first fill, outside the quiet hours, under `background_pause` and the plan's budget). After
   the first fill a round asks only once ten wait or one waited twelve hours (`topic_notes.worth`): every call also

@@ -66,6 +66,10 @@ TEXT_CHARS, MESSAGE_CHARS, MESSAGES = 900, 300, 5  # what the call reads of a co
 TITLE_MAX, PEOPLE_MAX, RECORDS_MAX, PLACES_MAX = 120, 4, 3, 150
 FOLDERS = note_pages.STARTING_TREE  # where a new note can go
 MEETING_TEXTS = ('notes', 'summary', 'transcript')  # a meeting kind that holds what was said ('zoom.summary'), not a calendar entry
+# A meeting's own mail (meeting_mail): sent this far ahead of it or after it, a label of at most LABEL_WORDS words
+# before its title ("Updated invitation:"), and a title at least this long
+INVITE_AHEAD, INVITE_AFTER, LABEL_WORDS, MEETING_TITLE_LEAST = dt.timedelta(days=180), dt.timedelta(days=14), 4, 4
+WORDS = re.compile(r'\w+')
 # Gmail's tabs for mailings (bulk_mail); not Updates, which holds bills, bookings and a practice's mail too
 BULK_LABELS = frozenset({'CATEGORY_PROMOTIONS', 'CATEGORY_SOCIAL', 'CATEGORY_FORUMS'})
 REPLY_PREFIX = re.compile(r'^\s*((re|fw|fwd|aw|wg|tr|rv|sv|antw)\s*:\s*)+', re.I)
@@ -157,6 +161,42 @@ def bulk_chat(meta):
                 or chat.endswith(('@broadcast', '@newsletter')) or meta.get('chat_kind') == 'channel')
 
 
+def meetings(db, since):
+    """The calendar's entries from since on (a canceled one too), for meeting_mail: [(title casefolded, start)], indexed
+    by the title's first word."""
+    kinds = [k for k, row in event_kinds.KINDS.items() if row['family'] == event_kinds.MEETING and k.rpartition('.')[2] not in MEETING_TEXTS]
+    out = {}
+    for r in db.execute(f"SELECT title,occurred_at FROM events WHERE kind IN ({','.join('?' * len(kinds))}) AND occurred_at>=?",
+                        [*kinds, (dt.date.fromisoformat(since[:10]) - INVITE_AHEAD).isoformat()]):
+        title, start = ' '.join(str(r['title'] or '').casefold().split()), _when(r['occurred_at'])
+        words = WORDS.findall(title)
+        if len(title) >= MEETING_TITLE_LEAST and words and start:
+            out.setdefault(words[0], []).append((title, start))
+    return out
+
+
+def meeting_mail(title, at, found):
+    """Whether a mail is a meeting's own: its invitation, a reply to it (accepted, declined), an update or a
+    cancellation. Its subject is a calendar entry's title (found: meetings) with the meeting's date or time after it
+    ("Invitation: Board @ Tue Nov 17, 2026 19:00"), or a short label ending in ':' before it and nothing after
+    ("Accepted: Board"), in any language, sent from INVITE_AHEAD before the meeting to INVITE_AFTER after it. A thread
+    that only shares the title ("Board", "Re: Board", "Board: the plan for it") is people talking: it stays. The meeting
+    stays in Calendar; its mail never goes in a note."""
+    text, when = ' '.join(REPLY_PREFIX.sub('', str(title or '')).casefold().split()), _when(at)
+    if not text or not when:
+        return False
+    for word in set(WORDS.findall(text)):
+        for name, start in found.get(word, ()):
+            i = text.find(name)
+            if i < 0 or not start - INVITE_AHEAD <= when <= start + INVITE_AFTER:
+                continue
+            before, after = text[:i].strip(), text[i + len(name):].strip()
+            label = before.endswith(':') and len(before.split()) <= LABEL_WORDS
+            if (not before or label) and (any(ch.isdigit() for ch in after) if after else label):
+                return True
+    return False
+
+
 def thread_of(kind, meta, event_id):
     """(key, exact): messages with one exact key are one conversation however far apart (a mail thread, a Slack
     thread, an Intercom conversation); a chat's key holds only while its messages are less than GAP apart."""
@@ -213,10 +253,12 @@ def _chat_title(kind, meta, names, title=''):
     return ' '.join(str(meta.get('chat_name') or '').split())[:TITLE_MAX] or subject(title)
 
 
-def conversations(db, accounts, today, owner_slack=(), since=None):
+def conversations(db, accounts, today, owner_slack=(), since=None, gone=None):
     """The owner's conversations within LOOK_DAYS (or since a day), oldest first: [{id, kind, key, area, title, people,
     events: [ids], first_at, last_at, event_id (the newest), replied, count}]. Plain code, no body read: bulk mail and
-    bulk chat left out, a mail the owner sent or a chat message they wrote counts (replied), a draft never."""
+    bulk chat left out, a meeting's own mail too (meeting_mail: it stays in Calendar), a mail the owner sent or a chat
+    message they wrote counts (replied), a draft never. gone, a set, gets the ids of the threads that were only a
+    meeting's mail (forget)."""
     import graph
     kinds = conversation_kinds()
     ids = [a['id'] for a in accounts if a.get('id')]
@@ -236,7 +278,7 @@ def conversations(db, accounts, today, owner_slack=(), since=None):
             replied.add(meta['thread_id'])
         rows.append((r, meta))
     names = graph.slack_names(db, slack_ids - {None}) if slack_ids else {}
-    found, open_ = [], {}
+    found, open_, calendar, invites = [], {}, meetings(db, since), set()
     for r, meta in rows:
         kind = r['kind']
         mine = _mine(kind, meta, owner_slack)
@@ -244,6 +286,9 @@ def conversations(db, accounts, today, owner_slack=(), since=None):
         if not mine and (bulk_mail(meta, replied) if family == event_kinds.MAIL else bulk_chat(meta) if family == event_kinds.CHAT else False):
             continue
         key, exact = thread_of(kind, meta, r['id'])
+        if family == event_kinds.MAIL and meeting_mail(r['title'], r['occurred_at'], calendar):
+            invites.add(key_of(key) if exact else key_of(key, str(r['id'])))
+            continue
         when = _when(r['occurred_at'])
         c = open_.get(key)
         if c and not exact and (not when or not c['_at'] or when - c['_at'] > GAP):
@@ -270,7 +315,18 @@ def conversations(db, accounts, today, owner_slack=(), since=None):
             continue  # only the owner talking (a note to self), or a lone chat message (an Intercom conversation is whole in one)
         c['title'] = c['title'] or t('Conversation')
         out.append(c)
+    if gone is not None:
+        gone |= invites - {c['id'] for c in found}
     return out
+
+
+def forget(db, convs):
+    """Drop the places of these conversations (a meeting's mail, placed before meeting_mail knew it): their lines go
+    from the notes on the next sync."""
+    convs = list(convs)
+    for n in range(0, len(convs), 500):
+        part = convs[n:n + 500]
+        db.execute(f"DELETE FROM topic_routes WHERE conv IN ({','.join('?' * len(part))})", part)
 
 
 def trimmed(body, title=''):
@@ -457,7 +513,8 @@ def prompt(items, where, linked):
         'conversations about the same matter the same title. Add "ongoing": true only when this one conversation already '
         'shows a matter that goes on for weeks (open steps, a next date, a decision to make).',
         'Leave a conversation out when it is small talk, a one-off question or support request, a welcome or onboarding '
-        'message, a notification, marketing, or you are not sure.',
+        'message, a notification, marketing, a meeting\'s invitation or a reply, update or cancellation of one (the '
+        'meeting stays in the calendar), or you are not sure.',
         'Answer with JSON only: {"places": [{"n": 1, "place": "P3"}, {"n": 2, "record": "R1"}, '
         '{"n": 3, "new": {"title": "Kitchen renovation", "under": "Home"}, "ongoing": true}]}',
     ]), {v: k for k, v in refs.items()}

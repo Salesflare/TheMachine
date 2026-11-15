@@ -24,7 +24,9 @@ The top of a note's page shows where it sits, like **Notes › Kids**: tap any p
 
 ## Notes your Machine keeps
 
-Your Machine also writes notes by itself, from your messages, and keeps them current. Each of its lines says where it came from, like who sent the email: tap it to open the message. A line from **What I've learned** says **From what I learned**. A meeting or appointment in your calendar is never a line on its own: it stays in [Calendar](calendar.md).
+Your Machine also writes notes by itself, from your messages, and keeps them current. Each of its lines says where it came from, like who sent the email: tap it to open the message. A line from **What I've learned** says **From what I learned**.
+
+A meeting or appointment in your calendar is never a line on its own: it stays in [Calendar](calendar.md). So does its mail: the invitation, replies to it, updates and cancellations.
 
 **Home**, **Health** and **Kids** show up only once your Machine has at least two real things to say there, like a bill or something it learned. Until then they aren't in the list at all, and if they run empty again, they go.
 

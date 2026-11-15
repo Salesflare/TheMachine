@@ -207,6 +207,33 @@ class LeftOutFirst(Conversations):
         for kept in ('Trip forms', 'Theater tickets', 'Are you coming Saturday?'):
             self.assertIn(kept, prompt)
 
+    def test_a_meetings_own_mail_stays_in_calendar_and_leaves_a_note_it_was_in(self):
+        """An invitation, a reply to it, an update or a cancellation, in any language, never reaches a call or a note;
+        mail that only shares the meeting's title is people talking and stays. Placed before: its line goes."""
+        self.event('calendar.event', 'Board review', '2026-11-20T09:00:00+00:00', 'home')
+        self.event('calendar.event', 'Pottery class', '2026-11-03T18:00:00+00:00', 'home')
+        self.mail('Example Org <ana@example.org>', 'Board review', '2026-10-20', thread_id='talk')  # people talking
+        self.mail('Sam <sam@example.com>', 'Re: Board review', '2026-10-21', thread_id='talk', labels=['SENT'])
+        self.mail('Example Org <ana@example.org>', 'Board review: the numbers for it', '2026-10-22', thread_id='plan')
+        self.routes = {'Board review': {'place': 'Home > Repairs and upkeep'}, 'Pottery': {'place': 'Home > Repairs and upkeep'}}
+        self.mail('Ana <ana@example.org>', 'Invitation: Pottery class @ Tue Nov 3, 2026 18:00 - 19:00 (CET)', '2026-10-01', thread_id='i0')
+        self.mail('Ana <ana@example.org>', 'Updated invitation: Pottery class @ Tue Nov 3, 2026 18:30', '2026-10-02', thread_id='i1')
+        with mock.patch.object(topic_notes, 'meeting_mail', lambda *a: False):  # before it knew: placed
+            self.round()
+        self.assertIn('Invitation: Pottery class @ Tue Nov 3, 2026 18:00 - 19:00 (CET)', self.routed())
+        self.asked.clear()
+        for n, subject in enumerate(('Invitation: Board review @ Fri Nov 20, 2026 09:00 - 10:00 (CET)', 'Accepted: Board review',
+                                     'Nieuwe afspraak: Board review op vr 20 nov 2026 09:00', 'Canceled event: Board review @ Fri Nov 20, 2026')):
+            self.mail('Ana <ana@example.org>', subject, f'2026-11-0{n + 1}', thread_id=f'm{n}')
+        self.mail('Sam <sam@example.com>', 'Accepted: Board review', '2026-11-06', thread_id='m9', labels=['SENT'])
+        notes = self.round()
+        prompt = '\n'.join(self.asked)
+        for invite in ('Invitation:', 'Accepted:', 'Nieuwe afspraak', 'Canceled event'):
+            self.assertNotIn(invite, prompt)
+        self.assertNotIn('Pottery', ' '.join(self.routed()), 'placed before: forgotten')
+        self.assertEqual(sorted(self.routed()), ['Board review', 'Board review: the numbers for it'])
+        self.assertCountEqual([x['text'] for x in notes[('home', 'Repairs and upkeep')]['lines']], ['Board review', 'Board review: the numbers for it'])
+
     def test_a_chat_that_went_quiet_starts_a_new_conversation_and_a_slack_thread_is_one(self):
         for day in ('2026-10-01', '2026-10-01', '2026-10-10', '2026-10-10'):
             self.event('whatsapp.message', 'Ana', f'{day}T0{self.n % 9}:00:00+00:00', 'chat', 'hello', chat_id='3201@s.whatsapp.net', chat_name='Ana')

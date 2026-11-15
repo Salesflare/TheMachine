@@ -132,7 +132,8 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
     meeting-notes source (`topic_notes.py`, kinds from the kinds and services registries) are sorted by what was said,
     forty to a call (`topic_notes_step`, `topic_notes_run`): into a Home, Health or Kids part, an owner's note, a
     project or organization page, or a new note (`topic` in `note_pages.KINDS`). Bulk mail and chats are left out
-    before any call (`topic_notes.bulk_mail`, `bulk_chat`). The first fill (`topic_notes.filling`) runs rounds every
+    before any call (`topic_notes.bulk_mail`, `bulk_chat`), and so is a meeting's own mail: its invitation, replies,
+    updates and cancellation (`topic_notes.meeting_mail`, `forget`). The first fill (`topic_notes.filling`) runs rounds every
     twenty minutes with more calls, outside the quiet hours and under `background_pause`, then every two hours.
     A note with two or more lines from a message or a fact gets a written page (`note_writer.py`, `note_writer_step`,
     at most hourly, four notes a call, only when its lines changed): summary, facts, decisions, open items and a
