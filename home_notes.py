@@ -10,14 +10,20 @@ it edits the fact (note_pages_app.py).
 Candidates, in plain code: a payee that sent the owner two or more Personal bills within section_notes.LOOK_DAYS
 (bill to-dos, Store.set_bill), a Personal subscription the owner didn't cancel (subscriptions.py), and what The
 Machine learned that is about no one in the Graph (not a passing event, not on the Work side). Home is always
-Personal."""
+Personal.
+
+Mail too (section_notes.mail_senders): who writes to the owner's Personal mailboxes at least MIN_BILLS times in the
+past year, placed by the one mail call every kind shares. A sender the call puts in Home, like the energy supplier,
+the landlord or the municipality, is one line: who and how often they write, opening their newest mail. That is how a
+Home fills when the owner pays by direct debit and no bill ever became a to-do."""
 import section_notes
 
 # The parts of the home a candidate can be about, each a note under Home (English: its key; titled in the owner's
 # language through i18n)
 SECTIONS = ('Bills and subscriptions', 'Appliances', 'Repairs and upkeep', 'The house')
 PARTS = {
-    'Bills and subscriptions': 'a bill or subscription for the home itself: rent or mortgage, energy, water, home insurance, internet, a home service',
+    'Bills and subscriptions': 'a bill, contract or subscription for the home itself: rent or mortgage, energy, water, home insurance, '
+                               'internet, the municipality\'s taxes or waste collection, a home service',
     'Appliances': 'a device in the home: its make, model, warranty or manual',
     'Repairs and upkeep': 'work done on the home or who does it: a plumber, a boiler service, cleaning, the garden',
     'The house': 'the home itself: rooms, how things work there, codes, what is where',
@@ -33,4 +39,4 @@ def candidates(db, accounts, today):
 KIND = section_notes.Kind(
     'home', 'Home', SECTIONS, PARTS, 'the owner\'s own home',
     'work, a person, health, a child\'s school, a hobby, a trip, a subscription for one person\'s own use',
-    candidates, section_notes.ask, section_notes.line)
+    candidates, section_notes.ask, section_notes.line, mail='sender', mail_least=MIN_BILLS)

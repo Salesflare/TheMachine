@@ -11,14 +11,19 @@ owner says so, section_notes.children) or about no one, calendar events only the
 school play: section_notes.own_events), bills from any payee and subscriptions the owner didn't cancel. Kids is always
 Personal, whatever the account it came in on: a school's mail to a work address is still about the owner's own child.
 A note the owner keeps for one child in a part (Isla under School) gets what is about that child. The notes are
-never shared."""
+never shared.
+
+Mail too (section_notes.mail_senders): a sender of the owner's Personal mail that the one mail call every kind shares
+puts in Kids (the school, a club, childcare) gets a dated line per mail, its subject, opening that mail: everything the
+school sends, in one place."""
 import section_notes
 
 # The parts of the children's lives a candidate can be about, each a note under Kids (English: its key; titled in the
 # owner's language through i18n)
 SECTIONS = ('School', 'Activities', 'Doctors and care', 'Bills and fees')
 PARTS = {
-    'School': 'a child\'s school, class, teacher, school days, holidays, trips, parents\' evenings, homework or report',
+    'School': 'a child\'s school, class, teacher, the school\'s newsletters, school days, holidays, trips, what to bring, '
+              'parents\' evenings, homework or report',
     'Activities': 'a child\'s sport, music, club, camp or lesson, its days and who runs it',
     'Doctors and care': 'a child\'s doctor, dentist, allergy or medicine, a babysitter or childcare',
     'Bills and fees': 'a bill or subscription for a child: school fees, a club or camp fee, childcare, lessons',
@@ -34,4 +39,4 @@ def candidates(db, accounts, today):
 KIND = section_notes.Kind(
     'kids', 'Kids', SECTIONS, PARTS, 'the owner\'s children and their school',
     'the owner\'s own health or work, the home, a trip, a meeting, someone else\'s child',
-    candidates, section_notes.ask, section_notes.line)
+    candidates, section_notes.ask, section_notes.line, mail='each')

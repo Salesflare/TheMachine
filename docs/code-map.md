@@ -128,7 +128,9 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
     Health: the owner's own calendar events, bills, subscriptions and facts from any area; Kids: those, and facts
     about the owner's children, people whose role to the owner says so), one small model call
     per kind places only the new ones in a section or an owner's note in it (`section_topics`, asked once each), and
-    `section_notes_step` syncs the sections; a bill's line opens its to-do.
+    `section_notes_step` syncs the sections; a bill's line opens its to-do. Senders of Personal mail are placed for
+    all three at once (`section_notes_mail_run`, one call per eighty senders): a line per sender in Home, a dated line
+    per mail in Health and Kids.
   - `machine/names.py`: what the owner calls a service, app or agent; every key from data shown on screen goes
     through it, so a tool underneath (gog, wacli, msgraph-cli) is never a name (`tests/test_owner_names.py`).
   - `machine/omarchy.py`: the current Omarchy theme's colors (`GET /api/omarchy-theme`), for Settings, General, This

@@ -9,13 +9,18 @@ that fact.
 Candidates, in plain code: appointments (calendar events only the owner is on, section_notes.own_events), bills from
 any payee, subscriptions the owner didn't cancel, and what The Machine learned that is about no one in the Graph.
 Health is always Personal, whatever the account it came in on: a doctor's bill sent to a work address is still the
-owner's own. The notes are never shared."""
+owner's own. The notes are never shared.
+
+Mail too (section_notes.mail_senders): a sender of the owner's Personal mail that the one mail call every kind shares
+puts in Health (a practice, a hospital, a lab, the health insurer) gets a dated line per mail, its subject, opening
+that mail: the owner's medical history over time, from what their care sent them."""
 import section_notes
 
 # The parts of the owner's health a candidate can be about, each a note under Health (English: its key; titled in the
 # owner's language through i18n)
-SECTIONS = ('Appointments', 'Doctors and care', 'Medicines', 'Allergies and conditions', 'Bills and insurance')
+SECTIONS = ('Appointments', 'Test results', 'Doctors and care', 'Medicines', 'Allergies and conditions', 'Bills and insurance')
 PARTS = {
+    'Test results': 'a test, scan or lab result, a diagnosis, a doctor\'s or hospital\'s report',
     'Appointments': 'a visit to a doctor, dentist, physiotherapist, therapist, optician, a test or a vaccination',
     'Doctors and care': 'who takes care of the owner\'s health: their doctor, dentist, practice or hospital, and how to reach them',
     'Medicines': 'a medicine or supplement the owner takes, a prescription, a pharmacy',
@@ -32,4 +37,4 @@ def candidates(db, accounts, today):
 KIND = section_notes.Kind(
     'health', 'Health', SECTIONS, PARTS, 'the owner\'s own health',
     'the home, work, a hobby or a sport, a trip, a meeting, someone else\'s health, like a child\'s or a parent\'s',
-    candidates, section_notes.ask, section_notes.line)
+    candidates, section_notes.ask, section_notes.line, mail='each')

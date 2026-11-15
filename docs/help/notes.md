@@ -50,17 +50,21 @@ Under **Home**, your Machine keeps what it knows about your home: **Bills and su
 
 - A bill that comes regularly, like energy or water, gets a line with how often it comes and the day of the last one. **Open the to-do** shows the bill itself; the amount and payment details stay there.
 - A subscription you kept gets a line that opens its **Subscriptions** to-do. One you canceled isn't listed.
+- Who writes to your home regularly, like your energy supplier, internet provider or the town, gets a line with how often they write. Tapping it opens their newest email.
 - What your Machine learned about your home, like the make of your dishwasher, is a line too. Editing it also changes it under **What I've learned**.
 - If you keep your own note in a part, like one for your dishwasher under **Appliances**, what's about that thing goes in your note instead. Your Machine doesn't start notes like that itself.
 
-Only Personal bills and subscriptions are used, and Home notes are always Personal. Your Machine asks its AI once about each new bill, subscription or thing it learned, to tell whether it's about your home. For a bill it sends who it's from, never the amount.
+Only Personal bills, subscriptions and email are used, and Home notes are always Personal. Your Machine asks its AI once about each new bill, subscription or thing it learned, to tell whether it's about your home. For a bill it sends who it's from, never the amount.
+
+For **Home**, **Health** and **Kids** together, your Machine also asks its AI once about each sender of your Personal email. It sends the sender's name, how many emails they sent and their newest subjects with the numbers hidden, never the email itself.
 
 ## Health
 
-Under **Health**, your Machine keeps what it knows about your own health: **Appointments**, **Doctors and care**, **Medicines**, **Allergies and conditions** and **Bills and insurance**. A part shows up once it has at least two lines.
+Under **Health**, your Machine keeps what it knows about your own health: **Appointments**, **Test results**, **Doctors and care**, **Medicines**, **Allergies and conditions** and **Bills and insurance**. A part shows up once it has at least two lines.
 
 - An appointment in your calendar that only you go to, like the dentist, gets a line with its next date, or its last one. **From your calendar** opens it.
 - A bill from a doctor, dentist or pharmacy gets a line that opens its to-do. The amount stays there.
+- Each email from your practice, a hospital, a lab or your health insurer is a dated line with its subject, so your history builds up over time. Tapping it opens the email.
 - What your Machine learned about your health, like an allergy, is a line too. Editing it also changes it under **What I've learned**.
 - Your own note in a part, like one for your physio under **Appointments**, gets what's about that thing.
 
@@ -73,6 +77,7 @@ Under **Kids**, your Machine keeps what it knows about your children: **School**
 - What your Machine learned about your child, like their class teacher or swimming day, is a line that links to their page. It counts someone as your child when their **To you** says so, like daughter or son.
 - An event in your calendar that only you go to, like a parents' evening, gets a line with its next date, or its last one. **From your calendar** opens it.
 - A bill for school, a club or childcare gets a line that opens its to-do. The amount stays there.
+- Each email from the school, a club or childcare, like the weekly letter or a note about a trip, is a dated line with its subject, so everything they send is in one place. Tapping it opens the email.
 - Your own note for one child in a part, like one for Isla under **School**, gets what's about that child.
 
 Kids notes are always Personal, even when the school writes to your work address. Your Machine asks its AI once about each new thing, to tell whether it's about your children.
