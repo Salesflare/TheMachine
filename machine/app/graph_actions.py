@@ -37,6 +37,7 @@ from machine.text import clamp
 from machine.web.handler import event_glance
 import meeting_notes
 import memory_use
+import note_pages
 import own_addresses
 import person_birthday
 import project_split
@@ -345,6 +346,8 @@ class GraphActionsApp:
             marks = self.graph_fleet_marks(db)
             hits = graph.find(db, query, offset + limit + 1, also={k: m['name'] for k, m in marks.items() if m['name']})
             found = [graph.node_view(r, graph.neighbours(db, r['id'], 6)) for r in hits[offset:offset + limit]]
+            if not offset:  # notes by their title, after the records (note_pages.py)
+                found += note_pages.find(db, query)
             if not offset and self.about_you_match(db, query):  # the owner's own address or name: About you, first
                 found.insert(0, {'id': graph.ME, 'kind': graph.ME, 'name': graph.ABOUT_YOU, 'links': []})
             return graph.with_fleet(db, {'found': found, 'next': str(offset + limit) if len(hits) > offset + limit else None}, marks)

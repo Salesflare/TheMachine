@@ -177,6 +177,7 @@ def load(directory, states, port=8870, network_port=8871, fixture_path=HERE / 'f
             load_roles(db, base)
             load_learned(db, base)
             load_fields(db, base)
+            load_graph_notes(db, base)
             load_skills(db, states, fixture, base)
             # The owner's first view after setup (Store.greeting): the hello by name, leading with who waits longest
             assistant.Store.greeting_on(db, base.isoformat())
@@ -385,6 +386,30 @@ def load_fields(db, base):
             crm_fields.set_value(db, node, seats['id'], count, when)
         for label in tags:
             crm_fields.tag(db, node, label, now=when)
+    db.commit()
+
+
+def load_graph_notes(db, base):
+    """Graph, Notes (note_pages.py): a few of the owner's own notes in a small tree, one linking a person and a
+    project, and a trip The Machine keeps (under Trips), so the list, a page and Linked from all show something."""
+    import note_pages
+    when, day = stamp(2 * 24 * 60, base), lambda days: (base + dt.timedelta(days=days)).date().isoformat()
+    node = lambda kind, name: (db.execute('SELECT id FROM graph_nodes WHERE kind=? AND name=?', (kind, name)).fetchone() or [None])[0]
+    work = 'work:Lumen Labs'
+    home = note_pages.create(db, 'Home', 'personal', when, ['personal', work])['id']
+    appliances = note_pages.create(db, 'Appliances', 'personal', when, ['personal', work], parent=home)['id']
+    note_pages.create(db, 'Dishwasher', 'personal', when, ['personal', work], parent=appliances,
+                      lines=['Bought in March, warranty for two years', 'Filter cleaned every month'])
+    note_pages.create(db, 'Internet', 'personal', when, ['personal', work], parent=home, lines=['Fiber, 1 Gbit, contract runs to next June'])
+    office = note_pages.create(db, 'Office move', work, when, ['personal', work])['id']
+    links = [{'id': i, 'name': n} for i, n in ((node('person', 'Mila Underhay'), 'Mila Underhay'),
+                                                (node('project', 'Northwind rollout'), 'Northwind rollout')) if i]
+    note_pages.line_add(db, office, 'Movers booked for the last Friday of the month', when)
+    note_pages.line_add(db, office, 'Mila Underhay helps plan the desks, after the Northwind rollout', when, links=links)
+    note_pages.sync(db, 'trip', [{'key': 'sandbox-lisbon', 'title': 'Lisbon', 'area': work, 'starts': day(18), 'ends': day(21), 'under': ['Trips'],
+                                  'lines': [{'key': 'out', 'at': day(18) + 'T07:10', 'text': 'Flight LX 2084 Brussels to Lisbon, booking K7PQ2M'},
+                                            {'key': 'hotel', 'at': day(18), 'text': 'Hotel Alfama Garden, 3 nights, check-in from 15:00'},
+                                            {'key': 'back', 'at': day(21) + 'T18:45', 'text': 'Flight LX 2087 Lisbon to Brussels, booking K7PQ2M'}]}], when)
     db.commit()
 
 

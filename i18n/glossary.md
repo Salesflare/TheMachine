@@ -129,6 +129,8 @@ The sidebar pages (renamed 2026-11-01): Suggestions is now *To-dos* (the plural 
 | Previous / Next (week, month, days) | one whole string per step ("Vorige week"), never "Previous {}": the word agrees with the noun | | | | | |
 | Work / Personal | Werk / Privé | Travail / Perso | Arbeit / Privat | Trabajo / Personal | Lavoro / Personale | Trabalho / Pessoal |
 | People / Organizations / Projects | Personen / Organisaties / Projecten | Personnes / Organisations / Projets | Personen / Organisationen / Projekte | Personas / Organizaciones / Proyectos | Persone / Organizzazioni / Progetti | Pessoas / Organizações / Projetos |
+| Note, Notes (a page of its own in the Graph, next to People; not meeting notes or the Notes field on a record) | Notitie, Notities | Note, Notes | Notiz, Notizen | Nota, Notas | Nota, Note | Nota, Notas |
+| Linked from (the notes that link to a page) | Gelinkt vanuit | Lié depuis | Verlinkt von | Enlazado desde | Collegato da | Vinculado de |
 | board | bord | tableau | Board | tablero | bacheca | quadro |
 | chat | chat | chat | Chat | chat | chat | chat |
 | Careful / Standard (security) | Voorzichtig / Standaard | Prudent / Standard | Vorsichtig / Standard | Prudente / Estándar | Prudente / Standard | Cuidadoso / Padrão |

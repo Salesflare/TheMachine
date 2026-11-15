@@ -1,15 +1,15 @@
 // Graph's rows: People, Organizations and Projects open the Graph on that pane, the address says which (#graph=orgs), the
 // row of the pane on screen is lit, and the group folds (remembered).
-const GRAPH_SUBS={people:'People',orgs:'Organizations',projects:'Projects',held:'Held back'};let graphCounts=null;
+const GRAPH_SUBS={people:'People',orgs:'Organizations',projects:'Projects',notes:'Notes',held:'Held back'};let graphCounts=null;
 // The counts come with the status (graph_counts) on every load and poll, and with the Graph once it is opened; the same
 // counts again change nothing
-function graphCountsSet(c){if(!c||graphCounts&&['person','org','project'].every(k=>c[k]===graphCounts[k]))return;graphCounts=c;for(const [k,n] of Object.entries({people:c.person,orgs:c.org,projects:c.project})){const b=$('#count-'+k);if(b)b.textContent=n?String(n):''}graphSubLabels();pageHead()}
+function graphCountsSet(c){if(!c||graphCounts&&['person','org','project','note'].every(k=>c[k]===graphCounts[k]))return;graphCounts=c;for(const [k,n] of Object.entries({people:c.person,orgs:c.org,projects:c.project,notes:c.note})){const b=$('#count-'+k);if(b)b.textContent=n?String(n):''}graphSubLabels();pageHead()}
 function graphSubLabels(){for(const a of document.querySelectorAll('.side-sub a')){const n=a.querySelector('.badge').textContent.trim(),label=GRAPH_SUBS[a.dataset.graphSub]+(n?' · '+n:'');if(a.getAttribute('aria-label')!==label)a.setAttribute('aria-label',label)}}
 function graphSubSync(){pageHead();const on=!$('#people').hidden,graph=$('nav [data-tab="people"]');let lit=false;
  const shown=graphNode&&!/^promise:/.test(graphNode)?graphNodePane(graphNode):graphShown;
  for(const a of document.querySelectorAll('.side-sub a')){const me=on&&a.dataset.graphSub===shown;lit||=me;if(me)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')}graph.classList.toggle('sub-on',lit);
  // The search says what the list on screen holds
- const q=$('#people-query'),pane=graphShown||graphPane,find=t(pane==='orgs'?'Find an organization':pane==='projects'?'Find a project':'Find a person');
+ const q=$('#people-query'),pane=graphShown||graphPane,find=t(pane==='orgs'?'Find an organization':pane==='projects'?'Find a project':pane==='notes'?'Find a note':'Find a person');
  if(q&&q.placeholder!==find){q.placeholder=find;q.setAttribute('aria-label',find)}}
 // A link to another pane that is drawn (#graph=projects just followed, its hashchange still to come) is left for
 // openTabLink: a redraw that started before it never puts the old pane back in the address. A pane the owner
@@ -19,6 +19,6 @@ $('#graph-sub').addEventListener('click',e=>{const a=e.target.closest('a[data-gr
  if(history.state?.drawer)history.replaceState(null,'',url);else if(location.hash!=='#graph='+a.dataset.graphSub)history.pushState(null,'',url);openTabLink();graphSubSync();if(!DESK.matches)scrollTo(0,0)});
 {const fold=$('#graph-fold'),lab=fold.parentNode.querySelector('.nl'),place=()=>{const w=lab.offsetLeft+lab.offsetWidth;if(w)fold.style.setProperty('--fold-x',w+(matchMedia('(max-width:1023px)').matches?2:4)+'px')  /* just after the label, its box never under the text */};
  new ResizeObserver(place).observe(lab);place();
- const set=open=>{fold.setAttribute('aria-expanded',String(open));fold.setAttribute('aria-label',open?'Hide People, Organizations and Projects':'Show People, Organizations and Projects');$('#graph-sub').hidden=!open};
+ const set=open=>{fold.setAttribute('aria-expanded',String(open));fold.setAttribute('aria-label',open?'Hide People, Organizations, Projects and Notes':'Show People, Organizations, Projects and Notes');$('#graph-sub').hidden=!open};
  set(sideStore.get('graph-sub')!=='closed');fold.onclick=()=>{const open=fold.getAttribute('aria-expanded')!=='true';set(open);sideStore.set('graph-sub',open?'open':'closed')}}
 

@@ -28,6 +28,7 @@ from machine.sources.connectors import (connector_says, docs_offered, docs_provi
                                         reconnect_help, SIGNIN_ONLY)
 from machine.text import clamp
 import message_seal
+import note_pages
 from models import main_model, model_ready
 from sources import gog_signin_command
 from timeutil import now
@@ -462,7 +463,7 @@ class StatusApp:
         try:  # the sidebar's People, Organizations and Projects counts, kept by the graph's stamp: a page load no longer
             # fetches the whole Graph overview (some 600 KB) for three numbers; the overview comes when Graph opens
             with self.store.connect() as db:
-                result['graph_counts'] = graph.counts(db)
+                result['graph_counts'] = {**graph.counts(db), 'note': note_pages.count(db)}
         except sqlite3.Error as error:
             LOG.warning('graph counts error=%s', type(error).__name__); result['graph_counts'] = None
         return result
