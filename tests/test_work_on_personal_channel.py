@@ -4,7 +4,6 @@ could only move a to-do from Work to Personal. Now the review is told the owner'
 with one company too, and judges by meaning whether to add company=<id>: the to-do is then that company's Work from the
 start, as after a move. The owner's own choice always stands: a to-do they moved, or added with Work or Personal
 picked, is never placed elsewhere by the review. Made-up data; offline: nothing is sent."""
-import importlib.util
 import json
 import tempfile
 import unittest
@@ -14,9 +13,6 @@ import machine.main as machine_main
 import machine.sources.connectors as machine_sources_connectors
 import next_actions
 
-ROOT = Path(__file__).parent.parent
-spec = importlib.util.spec_from_file_location('work_personal_channel_assistant', ROOT / 'assistant.py')
-a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
 from machine.store.cards import owner_placed  # noqa: E402
 
 ACCOUNTS = [{'id': 'home-chat', 'service': 'whatsapp', 'boundary': 'personal:whatsapp'},

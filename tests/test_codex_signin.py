@@ -13,7 +13,6 @@ from unittest.mock import patch
 
 import agent_jobs
 import agent_remote
-import assistant
 import codex_signin
 import machine.actions as machine_actions
 import machine.main as machine_main

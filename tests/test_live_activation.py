@@ -1,7 +1,7 @@
 """Reviews turned on while the first look runs apply without restarting the app (App.follow_config, LIVE_CONFIG): the
 hosting agent's reviews on restarted it 44 s into a first look (2026-11-04). And on a new install the review worker looks
 every few seconds while its first mail comes in, so the first look starts right after the AI sign-in. No Gateway."""
-import datetime as dt, importlib.util, json, os, tempfile, unittest
+import datetime as dt, json, os, tempfile, unittest
 from pathlib import Path
 import machine.app.review as machine_app_review
 import machine.app.workers as machine_app_workers
@@ -10,9 +10,6 @@ import machine.main as machine_main
 import threading
 import time
 import timeutil
-
-spec = importlib.util.spec_from_file_location('live_activation_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
-a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
 
 
 def mail(source_id, hours_ago=2):

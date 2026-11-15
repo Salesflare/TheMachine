@@ -2,7 +2,6 @@
 in The Machine's own code, version, count), deduplicated and rate-limited here, sent in batches over the Network, and
 nothing at all once the owner turns it off. The Network is a stand-in here: nothing is sent anywhere."""
 import datetime as dt
-import importlib.util
 import json
 import logging
 import sqlite3
@@ -18,9 +17,6 @@ import machine.main as machine_main
 import machine.store.events as machine_store_events
 import sources
 
-spec = importlib.util.spec_from_file_location('error_feed_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
-a = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(a)
 
 JWT = '.'.join(['eyJ' + 'hbGciOiJIUzI1NiJ9', 'eyJ' + 'zdWIiOiIxMjM0NTY3ODkwIn0', 'c2lnbmF0dXJlLXNpZ25hdHVyZQ'])  # made up
 NOW = dt.datetime(2026, 10, 27, 9, 0, tzinfo=dt.timezone.utc)

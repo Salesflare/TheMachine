@@ -4,7 +4,6 @@ places it by meaning (company or personal), or the message it follows up on does
 for that message in every area, the mailboxes themselves too (events mailbox:true), and a move it asks for happens by
 itself. Made-up data; offline: the mailbox search reads a fake mailbox and nothing is sent."""
 import base64
-import importlib.util
 import json
 import tempfile
 import unittest
@@ -18,9 +17,6 @@ import machine.store.review as machine_store_review
 import sources
 import todo_areas
 
-ROOT = Path(__file__).parent.parent
-spec = importlib.util.spec_from_file_location('owner_area_assistant', ROOT / 'assistant.py')
-a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
 import ms_graph  # noqa: E402
 
 GATEWAY = {'id': 'gateway', 'service': 'gateway', 'boundary': 'owner:system'}

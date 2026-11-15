@@ -2,7 +2,6 @@
 chat message's conversation once (chat, and dm for a Slack direct message) and splits an Intercom conversation into its
 turns. Email and other sources carry no chat fields and read as before. The dashboard test
 (test_chat_thread_dashboard.mjs) reads its originals from fixture() here. All names and messages are made up."""
-import importlib.util
 import json
 import sys
 import tempfile
@@ -13,9 +12,6 @@ import machine.store.views as machine_store_views
 
 ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(ROOT))
-spec = importlib.util.spec_from_file_location('chat_thread_assistant', ROOT / 'assistant.py')
-a = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(a)
 
 DAY = '2026-11-05T'
 # An Intercom conversation as the connector stores it: the opening message, then "<unix time> · <author> · <type>: <text>"

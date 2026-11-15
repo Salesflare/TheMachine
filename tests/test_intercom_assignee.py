@@ -3,7 +3,6 @@
 A to-do comes only from a conversation assigned to the owner's own Intercom admin, to nobody, or only to a team inbox.
 One a teammate was assigned is context for the review, not a to-do, and an open to-do made only from Intercom closes by
 itself once a teammate takes the conversation: Done, with an event line and Undo, once per teammate."""
-import importlib.util
 import json
 import tempfile
 import types
@@ -18,9 +17,6 @@ import sources
 import timeutil
 
 ROOT = Path(__file__).parent.parent
-spec = importlib.util.spec_from_file_location('assignee_assistant', ROOT / 'assistant.py')
-a = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(a)
 
 OWN = {'id': 'ic', 'service': 'intercom', 'transport': 'api', 'workspace_id': 'ws1', 'admin_id': '42', 'region': 'us',
        'email': 'owner@example.com'}

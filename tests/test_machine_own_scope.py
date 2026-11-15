@@ -2,7 +2,6 @@
 owner:system) is neither Work nor Personal. It used to count as Personal, so the To-dos filter listed such alerts under
 Personal (Waiting, Later and Done too). Now its scope is None: the filter shows it under All only, and the Done counts
 per area leave it out. A pin wins, and a to-do with any Work or Personal account keeps its area. Made-up data; offline."""
-import importlib.util
 import tempfile
 import unittest
 from pathlib import Path
@@ -10,9 +9,6 @@ import json
 import machine.main as machine_main
 import machine.store.facts as machine_store_facts
 
-ROOT = Path(__file__).parent.parent
-spec = importlib.util.spec_from_file_location('machine_own_scope_assistant', ROOT / 'assistant.py')
-a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
 import todo_areas  # noqa: E402
 
 ACCOUNTS = [{'id': 'gateway', 'service': 'gateway', 'boundary': 'owner:system'},

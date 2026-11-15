@@ -3,7 +3,6 @@ step), never because the to-do got finished: a result that only finishes it (don
 approved send went through), a review update on a done or dismissed to-do, the review filling in an owner's to-do that
 is already done, and marking it done all leave the title as it was. How it ended goes in the line under the title in
 Done (what went out, or "Done: <the sign it was handled>"), so Done still shows what each to-do was (2026-10-29)."""
-import importlib.util
 import json
 import shutil
 import subprocess
@@ -15,9 +14,6 @@ import machine.cards as machine_cards
 import machine.main as machine_main
 
 ROOT = Path(__file__).parent.parent
-spec = importlib.util.spec_from_file_location('title_on_done_assistant', ROOT / 'assistant.py')
-a = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(a)
 
 TITLE = 'Send Sam the bounty receipt'
 

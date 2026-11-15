@@ -1,16 +1,11 @@
 """Watch a page from the owner's own main chat (the bridge's assistant_page_watch, page_watch): the watched pages, a new
 one added with Settings' own steps (connect_start), one taken off (connect_remove); only in their own chat, after they
 wrote there. A temporary store; the connect steps are replaced, so nothing is read or saved. No model call, no send."""
-import importlib.util
 import tempfile
 import unittest
 from pathlib import Path
 import machine.actions as machine_actions
 import machine.main as machine_main
-
-ROOT = Path(__file__).parent.parent
-spec = importlib.util.spec_from_file_location('page_watch_assistant', ROOT / 'assistant.py')
-a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
 
 
 class PageWatchChat(unittest.TestCase):

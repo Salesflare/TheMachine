@@ -1,7 +1,6 @@
 """The model and thinking level for chats (chat_model.py): only what the sign-in offers, each model with its own levels;
 the default saved in config.json and one to-do chat's own in the database; both go with the chat's turns, and without
 any choice the turns go exactly as before. OpenClaw's own config is never written."""
-import importlib.util
 import json
 from pathlib import Path
 import subprocess
@@ -13,9 +12,6 @@ import machine.actions as machine_actions
 import machine.main as machine_main
 import timeutil
 
-spec = importlib.util.spec_from_file_location('chat_model_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
-a = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(a)
 
 # A models.list reply as the Gateway gives it ("configured" view), trimmed to what is read
 REPLY = {'models': [

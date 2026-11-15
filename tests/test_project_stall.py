@@ -4,7 +4,6 @@ to-do on the project with the message it rests on as evidence. A project with an
 never asked about, a dismissed one not again for weeks, a vague or empty answer makes nothing, and nothing is made
 twice. Made-up data; no model, nothing is sent."""
 import datetime as dt
-import importlib.util
 import json
 from pathlib import Path
 import tempfile
@@ -12,9 +11,6 @@ import unittest
 from unittest.mock import patch
 import machine.main as machine_main
 
-spec = importlib.util.spec_from_file_location('stall_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
-a = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(a)
 import graph
 import project_stall
 import timeutil

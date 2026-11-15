@@ -1,7 +1,6 @@
 """Open in Gmail on a phone. mail.google.com serves a phone its mobile site, which drops the desktop link's
 #all/<message> and lands in the inbox. A Gmail message also carries a phone link that opens its conversation on the
 mobile site, in the account the desktop link names; the dashboard uses it on a phone (test_email_frame_layout_dashboard.mjs)."""
-import importlib.util
 import sys
 import tempfile
 import unittest
@@ -10,9 +9,6 @@ import machine.main as machine_main
 
 ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(ROOT))
-spec = importlib.util.spec_from_file_location('gmail_phone_link_assistant', ROOT / 'assistant.py')
-a = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(a)
 from machine.sources.gmail import phone_link  # noqa: E402
 
 DESKTOP = 'https://mail.google.com/mail/u/?authuser=owner%40example.com#all/18c0ffee00000002'

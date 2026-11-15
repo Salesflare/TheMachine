@@ -1,15 +1,11 @@
 """A fact's stored vector (machine/store/facts.py facts_ranked) always belongs to its current text: an edit made while
 the embedding request runs never gets the old text's vector back."""
-import importlib.util
 import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
 import machine.main as machine_main
 
-spec = importlib.util.spec_from_file_location('assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
-assistant = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(assistant)
 from machine.store import facts  # noqa: E402
 
 SETTINGS = {'model': 'm', 'dims': 4}

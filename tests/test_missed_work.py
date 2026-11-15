@@ -5,7 +5,6 @@ and area, adjusts it with the evaluator's precision and recall, and lists the mi
 makes or changes a to-do by itself, and the owner's labels stay local. The owner's Real miss gives the message its to-do
 (with Undo) and keeps the miss, with the review's own reason, for the learning loop, as does a to-do the owner makes from
 a message a review passed over."""
-import importlib.util
 import json
 from pathlib import Path
 import re
@@ -17,9 +16,6 @@ import machine.sources.calendar as machine_sources_calendar
 import machine.store.review as machine_store_review
 import timeutil
 
-spec = importlib.util.spec_from_file_location('missed_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
-a = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(a)
 import learning_loop
 import missed_work as mw
 

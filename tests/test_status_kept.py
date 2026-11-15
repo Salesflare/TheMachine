@@ -11,7 +11,6 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-import assistant as a
 from machine.app import status
 import machine.main as machine_main
 

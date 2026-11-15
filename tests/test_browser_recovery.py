@@ -1,13 +1,9 @@
 """Managed-browser recovery must not close another job's tabs or lose its exclusive lease on failure."""
-import importlib.util
 import json
-from pathlib import Path
 import subprocess
 import unittest
 from unittest.mock import patch
 import machine.browser as machine_browser
-spec=importlib.util.spec_from_file_location('recover_assistant',Path(__file__).parent.parent.joinpath('assistant.py'))
-a=importlib.util.module_from_spec(spec);spec.loader.exec_module(a)
 
 class RecoveryLease(unittest.TestCase):
     def setUp(self):

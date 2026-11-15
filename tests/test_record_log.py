@@ -1,15 +1,12 @@
 """Recent changes on a record (record_log.py): what The Machine changed or learned about a person, organization or
 project, newest first, each with its source and the page's own correction. The owner's own edits stay out, and a
 project's Undo shows only while the move it would take back still stands."""
-import importlib.util
 import json
 import tempfile
 import unittest
 from pathlib import Path
 import machine.main as machine_main
 
-spec = importlib.util.spec_from_file_location('record_log_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
-a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
 import record_log  # noqa: E402
 
 SAM, KIM = 'email:sam@client.example', 'email:kim@client.example'

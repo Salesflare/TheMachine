@@ -4,7 +4,6 @@ with their name and birthday (source facebook), never shared with a Work Fleet. 
 person in the Graph has now, or two people have, is skipped. One transaction, one Graph build after it, and nothing
 looked up for them. Undo takes exactly those people away. Made-up people only."""
 import datetime as dt
-import importlib.util
 import json
 import sqlite3
 import subprocess
@@ -16,8 +15,6 @@ from pathlib import Path
 from unittest.mock import patch
 import machine.main as machine_main
 
-spec = importlib.util.spec_from_file_location('facebook_people_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
-a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
 import birthdays  # noqa: E402
 import birthdays_facebook as fb  # noqa: E402
 import enrichment  # noqa: E402

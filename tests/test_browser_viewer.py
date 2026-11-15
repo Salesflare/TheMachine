@@ -10,7 +10,6 @@ import threading
 import unittest
 from pathlib import Path
 
-import assistant
 import browser_viewer
 import preparation_state
 import machine.browser as machine_browser

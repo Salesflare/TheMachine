@@ -5,7 +5,6 @@ import tempfile
 import unittest
 from pathlib import Path
 
-import assistant
 from machine.actions import DASHBOARD_ACTIONS, OWNER_ACTIONS
 import machine.main as machine_main
 

@@ -4,7 +4,6 @@ no live calls.
 Handled: someone on the team (the owner or a teammate, an admin) closed the conversation after the to-do was made, or
 replied to the customer after it and the customer hasn't written since, when a reply is all the to-do asks. Never: the
 customer wrote again, a note, a snooze, an assignment, a bot or Fin, or a to-do that asks for more than a reply."""
-import importlib.util
 import json
 import tempfile
 import time
@@ -19,9 +18,6 @@ import sources
 import timeutil
 
 ROOT = Path(__file__).parent.parent
-spec = importlib.util.spec_from_file_location('handled_assistant', ROOT / 'assistant.py')
-a = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(a)
 
 OWN = {'id': 'ic', 'service': 'intercom', 'transport': 'api', 'workspace_id': 'ws1', 'admin_id': '42', 'region': 'us',
        'email': 'owner@example.com'}

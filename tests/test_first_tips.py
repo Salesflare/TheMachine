@@ -1,4 +1,3 @@
-import importlib.util
 import tempfile
 import unittest
 from pathlib import Path
@@ -6,10 +5,6 @@ import machine.actions as machine_actions
 import machine.main as machine_main
 import machine.store.first_look as machine_store_first_look
 import timeutil
-
-spec = importlib.util.spec_from_file_location('first_tips_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
-a = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(a)
 
 
 class FirstTips(unittest.TestCase):

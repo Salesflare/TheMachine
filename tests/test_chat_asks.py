@@ -2,7 +2,6 @@
 it, written by the review with the to-do (suggest's asks, no model call of their own) and shown as taps over the chat's
 message box. Anything else is dropped, none rather than a canned line, and each update says them again. Sealed at rest
 like the to-do's text. No Gateway, nothing sent."""
-import importlib.util
 import json
 import tempfile
 import unittest
@@ -11,11 +10,6 @@ from pathlib import Path
 import message_seal
 import machine.main as machine_main
 import machine.prompts.review as machine_prompts_review
-
-ROOT = Path(__file__).parent.parent
-spec = importlib.util.spec_from_file_location('chat_asks_assistant', ROOT / 'assistant.py')
-a = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(a)
 
 
 class ChatAsks(unittest.TestCase):

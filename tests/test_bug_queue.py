@@ -1,6 +1,5 @@
 """Report a bug never loses a report: when the control plane can't take it now (its limit with Retry-After, 5xx,
 offline), the Machine keeps it and sends it by itself later (bug_queue.py). No network: the control plane is a stand-in."""
-import importlib.util
 import io
 import json
 import sys
@@ -16,10 +15,6 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 import bug_queue  # noqa: E402
 import fleet  # noqa: E402
-
-spec = importlib.util.spec_from_file_location('bug_queue_assistant', ROOT / 'assistant.py')
-a = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(a)
 
 
 class Clock:

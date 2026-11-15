@@ -5,7 +5,6 @@ import tempfile
 import unittest
 from pathlib import Path
 
-import assistant
 from machine.store.cards import source_kind, source_label, source_line
 from machine.store.views import source_lines_shown
 import machine.main as machine_main

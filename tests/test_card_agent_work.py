@@ -1,6 +1,5 @@
 """A Claude Code or Codex job's result is part of its card's state: the card's chat turn, its preparation and the
 review's status read it as the latest truth of what was done, so the next step never repeats finished work."""
-import importlib.util
 import json
 from pathlib import Path
 import tempfile
@@ -13,9 +12,6 @@ import machine.main as machine_main
 import machine.prompts.review as machine_prompts_review
 import timeutil
 
-spec = importlib.util.spec_from_file_location('card_agent_work_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
-a = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(a)
 
 DONE = 'The acme.example link is now live across all 14 languages, keeping the existing wording.'
 STALE = 'Next, edit the agency article: link the existing words to acme.example and publish.'

@@ -8,7 +8,6 @@ from pathlib import Path
 from unittest import mock
 
 import test_graph as tg
-import assistant as a
 import graph
 import graph_apart as apart
 import timeutil

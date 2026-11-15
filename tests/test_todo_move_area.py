@@ -3,7 +3,6 @@ More menu. Its accounts become that area's, so what it may send from follows; th
 Undo. Its run can ask for a move (preparation_blocked move_to): the owner's tap makes it, and a to-do stuck on exactly that
 carries on by itself. When the messages it came from are all in that area, it moves there by itself. Offline: nothing is
 sent and no site is contacted."""
-import importlib.util
 import json
 import tempfile
 import unittest
@@ -14,8 +13,6 @@ import machine.store.views as machine_store_views
 import uuid
 
 ROOT = Path(__file__).parent.parent
-spec = importlib.util.spec_from_file_location('move_area_assistant', ROOT / 'assistant.py')
-a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
 import next_actions  # noqa: E402
 import todo_areas  # noqa: E402
 
@@ -219,7 +216,6 @@ class MoveCard(unittest.TestCase):
         self.assertIn('never move it yourself', line)
         self.assertEqual(machine_app_preparation.area_prompt({'accounts': ACCOUNTS[:2]}, '["home-chat"]'), '')  # only one area: nothing to say
         self.assertIn('Area: this to-do is in', (ROOT / 'PREPARATION.md').read_text() + line)
-
 
 
 BETA = [{'id': 'beta-mail', 'service': 'gmail', 'transport': 'gog', 'email': 'robin@beta.example', 'boundary': 'work:Beta'}]

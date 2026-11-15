@@ -2,15 +2,12 @@
 the rest), found by its words or its sender, and a to-do made with a Slack message works the whole way: its source
 line and link, its evidence for the review and the drafting step, a reply that goes back to Slack in that message's
 thread, and the task page's check. No live calls or sends."""
-import importlib.util
 import json
 import tempfile
 import unittest
 from pathlib import Path
 import machine.main as machine_main
 
-spec = importlib.util.spec_from_file_location('message_attach_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
-a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
 from machine.app.new_cards import ATTACH_KINDS  # noqa: E402
 import task_pages  # noqa: E402
 

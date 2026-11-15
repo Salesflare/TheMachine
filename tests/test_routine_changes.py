@@ -3,7 +3,6 @@ reads the routine's words, offers new ones only when it judges the note lasting 
 shows what changes, and the routine takes them only on the owner's Change it (Edit's path), with a chat line. Kept as
 is or stale (the routine edited since): nothing changes."""
 import datetime as dt
-import importlib.util
 import tempfile
 import time
 import unittest
@@ -11,8 +10,6 @@ from pathlib import Path
 from unittest.mock import patch
 import machine.main as machine_main
 
-spec = importlib.util.spec_from_file_location('routine_changes_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
-a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
 import routine_changes  # noqa: E402
 from machine.actions import DASHBOARD_ACTIONS, OWNER_ACTIONS  # noqa: E402
 

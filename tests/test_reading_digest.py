@@ -3,7 +3,6 @@ code lists the new unread newsletters, and only when there are any does one smal
 reading; the picks are one quiet to-do with why each matters and its mail; More or Less like this and the interests on
 the routine's card steer the next ones. Made-up newsletters only; nothing is sent."""
 import datetime as dt
-import importlib.util
 import json
 import tempfile
 import unittest
@@ -11,8 +10,6 @@ from pathlib import Path
 from unittest.mock import patch
 import machine.main as machine_main
 
-spec = importlib.util.spec_from_file_location('digest_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
-a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
 import reading_digest as rd  # noqa: E402
 import routines  # noqa: E402
 from machine.actions import DASHBOARD_ACTIONS, OWNER_ACTIONS  # noqa: E402

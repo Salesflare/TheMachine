@@ -1,4 +1,3 @@
-import importlib.util
 import json
 from pathlib import Path
 import tempfile
@@ -8,10 +7,6 @@ import machine.app.status as machine_app_status
 import machine.main as machine_main
 import machine.store.review as machine_store_review
 import machine.text as machine_text
-
-spec = importlib.util.spec_from_file_location('assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
-assistant = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(assistant)
 
 
 def event(account, number, body='Full evidence'):

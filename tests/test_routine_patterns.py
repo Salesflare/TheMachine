@@ -5,7 +5,6 @@ new one goes to one sorting run a day, the same run and real preview as an OpenC
 suggestion carries why as numbers for the line that says what was seen. A to-do closed on a rhythm stays recurring.py's.
 All fixtures are made up."""
 import datetime as dt
-import importlib.util
 import json
 import tempfile
 import unittest
@@ -14,8 +13,6 @@ from unittest.mock import patch
 from zoneinfo import ZoneInfo
 import machine.main as machine_main
 
-spec = importlib.util.spec_from_file_location('patterns_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
-a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
 import recurring  # noqa: E402
 import routine_patterns as rp  # noqa: E402
 import routines as rt  # noqa: E402

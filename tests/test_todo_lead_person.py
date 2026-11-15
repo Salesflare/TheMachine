@@ -3,7 +3,6 @@ closer colleague of theirs as its person, only because he was on the review meet
 confirmation for the owner's own trip became a to-do to move their own gym slot. Later the same handoff showed the
 colleague on copy as its person, and a proposal to-do that led with the owner's own channel post showed a teammate from
 an internal meeting instead of the client who asked. No live calls."""
-import importlib.util
 import tempfile
 import unittest
 from pathlib import Path
@@ -12,10 +11,6 @@ import graph
 import machine.app.preparation as machine_app_preparation
 import machine.main as machine_main
 import machine.prompts.review as machine_prompts_review
-
-spec = importlib.util.spec_from_file_location('lead_person_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
-a = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(a)
 
 
 def ask(source_id):

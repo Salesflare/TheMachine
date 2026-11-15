@@ -13,7 +13,6 @@ import uuid
 from pathlib import Path
 from unittest.mock import patch
 
-import assistant as a
 from machine import stamps
 from machine.store import views
 from test_status_kept import NOW, WORK, mail

@@ -1,4 +1,4 @@
-import base64,importlib.util,unittest
+import base64,unittest
 from pathlib import Path
 import json
 import machine.cards as machine_cards
@@ -8,7 +8,6 @@ import machine.main as machine_main
 import machine.sources.gmail as machine_sources_gmail
 import machine.store.facts as machine_store_facts
 import machine.text as machine_text
-spec=importlib.util.spec_from_file_location('assistant_bodies',Path(__file__).parent.parent.joinpath('assistant.py'));a=importlib.util.module_from_spec(spec);spec.loader.exec_module(a)
 ACCOUNT={'id':'work','email':'me@example.com'}
 def raw(plain='',markup=''):
     parts=[{'mimeType':m,'body':{'data':base64.urlsafe_b64encode(v.encode()).decode()}} for m,v in [('text/plain',plain),('text/html',markup)] if v]

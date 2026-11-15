@@ -163,7 +163,6 @@ class SlackSignin(unittest.TestCase):
 
     def test_add_on_a_hosted_machine_signs_in_with_slack(self):
         """+ Add's Slack tile is Sign in with Slack on a hosted Machine too (Maton is the other way, on the account page)."""
-        import assistant
         app = object.__new__(machine_main.App)
         app.config = {**self.config, 'manage_url': 'https://cp.example/account'}
         app.store = machine_main.Store(Path(self.config['database']))

@@ -1,7 +1,6 @@
 """One-click pairing (pairing.py) and the address for AIs in Settings, Apps (ai_app.ai_reach): the signed request and
 pickup, the sealed token opened only for this request, the token file 0600 and the config like `cli.py fleet-pair`,
 the Fleet starting live without a restart, and Unpair."""
-import importlib.util
 import json
 import stat
 import tempfile
@@ -15,9 +14,6 @@ import network_crypto as nc
 import pairing
 import machine.main as machine_main
 
-spec = importlib.util.spec_from_file_location('pairing_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
-a = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(a)
 
 RID = 'R' * 22
 PAGE = 'https://app.themachine.computer/pair/' + RID

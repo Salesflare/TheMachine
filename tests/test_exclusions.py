@@ -1,9 +1,8 @@
-import importlib.util,tempfile,unittest
+import tempfile,unittest
 from pathlib import Path
 import machine.main as machine_main
 import machine.sources.calendar as machine_sources_calendar
 import machine.sources.exclusions as machine_sources_exclusions
-spec=importlib.util.spec_from_file_location('assistant_excl',Path(__file__).parent.parent.joinpath('assistant.py'));a=importlib.util.module_from_spec(spec);spec.loader.exec_module(a)
 def ev(sid,**metadata):return {'account_id':'acc','source_id':sid,'kind':'k','occurred_at':'2026-10-11T00:00:00+00:00','title':'t','body':'b','metadata':metadata,'deleted':False}
 RULES=[{'channels':['development-log','error-log']},{'channels':['sales'],'bots_only':True},
        {'packages':['android','com.google.android.youtube']},{'senders':['product@analytics.example']},

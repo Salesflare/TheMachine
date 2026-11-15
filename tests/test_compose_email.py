@@ -7,7 +7,6 @@ import tempfile
 import unittest
 from pathlib import Path
 
-import assistant as a
 import machine.actions as machine_actions
 import machine.main as machine_main
 

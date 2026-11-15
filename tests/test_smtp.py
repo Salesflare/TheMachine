@@ -232,7 +232,6 @@ class Sending(SmtpBase):
         self.assertTrue(sources.mail_account(self.account))
         self.assertFalse(next_actions.mail_account({**self.account, 'smtp_refused': True}))
         self.assertFalse(next_actions.mail_account({k: v for k, v in self.account.items() if k != 'smtp_host'}))
-        import assistant
         self.assertEqual(machine_sources_connectors.connector_says(self.account, 'imap').get('acts'), 'send')
         self.assertEqual(sources.mailbox_name(self.config, {'account_id': self.account['id']}), 'Your mail server')
 

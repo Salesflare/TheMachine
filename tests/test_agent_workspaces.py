@@ -1,14 +1,10 @@
 import datetime as dt
-import importlib.util
 import json
 from pathlib import Path
 import tempfile
 import unittest
 import machine.main as machine_main
 
-spec = importlib.util.spec_from_file_location('assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
-assistant = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(assistant)
 import agent_jobs  # noqa: E402
 import agent_remote  # noqa: E402
 import retention  # noqa: E402

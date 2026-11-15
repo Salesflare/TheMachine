@@ -3,7 +3,6 @@ facts, signals and promises when new evidence arrives (batched, only for people 
 to its sources. The owner's edit wins: a later rewrite proposes instead. A preparation gets only the lines in the
 to-do's own area, and nothing about it reaches the team's Graph."""
 import datetime as dt
-import importlib.util
 import json
 from pathlib import Path
 import sqlite3
@@ -13,9 +12,6 @@ import machine.main as machine_main
 import machine.sources.calendar as machine_sources_calendar
 import timeutil
 
-spec = importlib.util.spec_from_file_location('summary_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
-a = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(a)
 import graph
 import person_summary
 

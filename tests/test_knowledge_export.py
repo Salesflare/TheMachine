@@ -12,7 +12,6 @@ Markdown, JSONL and CSV that another AI understands without The Machine.
 Synthetic data only."""
 import csv
 import datetime as dt
-import importlib.util
 import io
 import json
 import os
@@ -31,9 +30,6 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / 'tests'))
 
-spec = importlib.util.spec_from_file_location('knowledge_export_assistant', ROOT / 'assistant.py')
-a = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(a)
 import graph  # noqa: E402
 from pinned import pinned  # noqa: E402
 import knowledge as brain  # noqa: E402
