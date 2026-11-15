@@ -28,7 +28,8 @@ import smtp_mail
 import sources
 from machine import config as machine_config
 from machine.sources import imap_setup
-from test_ux import a
+import machine.main as machine_main
+import machine.sources.gmail as machine_sources_gmail
 
 PASSWORD = 'pw-Fake-7731-xyz'  # made up; the tests look for it everywhere it must not be
 USER = 'alex@acme.test'
@@ -327,7 +328,7 @@ class Base(unittest.TestCase):
                         'username': USER, 'credential': 'imap-acme-imap'}
         self.config = {'credentials': {'imap-acme-imap': str(secret)}, 'accounts': [self.account], 'bootstrap_days': 7,
                        'database': str(Path(self.temp.name) / 'events.sqlite'), 'data_dir': self.temp.name}
-        self.store = a.Store(Path(self.temp.name) / 'events.sqlite')
+        self.store = machine_main.Store(Path(self.temp.name) / 'events.sqlite')
         self.logs = []
         handler = logging.Handler(logging.DEBUG)
         handler.emit = lambda record: self.logs.append(record.getMessage())
@@ -354,7 +355,7 @@ class Sync(Base):
         inbox, sent = self.server.folders['INBOX'], self.server.folders['Sent']
         inbox.add(mime('Quote', 'Bo <bo@client.test>', USER, 'Café at 10?', '<q1@client.test>', when(2)), when(2))
         inbox.add(mime('Old', 'Cy <cy@client.test>', USER, 'From long ago', '<o1@client.test>', when(40)), when(40), ['\\Seen'])
-        a.sync_gmail(self.store, self.config, self.account)  # bootstrap: the last 7 days
+        machine_sources_gmail.sync_gmail(self.store, self.config, self.account)  # bootstrap: the last 7 days
         rows = self.rows()
         self.assertEqual(list(rows), ['i1700000000-1'])
         first = json.loads(rows['i1700000000-1']['metadata'])
@@ -366,7 +367,7 @@ class Sync(Base):
         # A reply sent from another mail app and a new message: the next sync reads just those
         sent.add(mime('Re: Quote', USER, 'bo@client.test', 'Yes, 10 works', '<r1@acme.test>', when(0), reply_to='<q1@client.test>'), when(0), ['\\Seen'])
         inbox.add(mime('Lunch', 'Di <di@client.test>', USER, 'Lunch Friday?', '<l1@client.test>', when(0)), when(0), ['\\Seen'])
-        a.sync_gmail(self.store, self.config, self.account)
+        machine_sources_gmail.sync_gmail(self.store, self.config, self.account)
         rows = self.rows()
         self.assertEqual(set(rows), {'i1700000000-1', 'i1700000000-3', 's1700000001-1'})
         reply = json.loads(rows['s1700000001-1']['metadata'])
@@ -376,7 +377,7 @@ class Sync(Base):
         cursor = self.store.checkpoint('acme-imap')['history_id']
         self.assertEqual(cursor, 'imap1:i1700000000.4:s1700000001.2')
         # Nothing new: nothing read again, the cursor stays
-        a.sync_gmail(self.store, self.config, self.account)
+        machine_sources_gmail.sync_gmail(self.store, self.config, self.account)
         self.assertEqual(self.store.checkpoint('acme-imap')['history_id'], cursor)
         verbs = {v for v, _ in self.server.commands}
         self.assertNotIn('SELECT', verbs)  # read-only: EXAMINE, never SELECT
@@ -388,18 +389,18 @@ class Sync(Base):
     def test_a_renumbered_folder_reads_the_window_again(self):
         inbox = self.server.folders['INBOX']
         inbox.add(mime('Quote', 'Bo <bo@client.test>', USER, 'Hi', '<q1@client.test>', when(1)), when(1))
-        a.sync_gmail(self.store, self.config, self.account)
+        machine_sources_gmail.sync_gmail(self.store, self.config, self.account)
         self.assertEqual(set(self.rows()), {'i1700000000-1'})
         inbox.validity = 1800000000  # UIDVALIDITY changed: every UID it had is gone
-        self.assertEqual(a.sync_gmail(self.store, self.config, self.account)['mode'], 'resync')
+        self.assertEqual(machine_sources_gmail.sync_gmail(self.store, self.config, self.account)['mode'], 'resync')
         self.assertEqual(self.store.checkpoint('acme-imap')['resync_reason'], 'expired_history')
-        a.sync_gmail(self.store, self.config, self.account)
+        machine_sources_gmail.sync_gmail(self.store, self.config, self.account)
         self.assertIn('i1800000000-1', self.rows())
         self.assertEqual(self.store.checkpoint('acme-imap')['mode'], 'incremental')
 
     def test_more_new_mail_than_a_page_comes_in_pages(self):
         inbox = self.server.folders['INBOX']
-        a.sync_gmail(self.store, self.config, self.account)  # an empty mailbox
+        machine_sources_gmail.sync_gmail(self.store, self.config, self.account)  # an empty mailbox
         for n in range(5):
             inbox.add(mime(f'N{n}', 'Bo <bo@client.test>', USER, 'x', f'<n{n}@client.test>', when(0)), when(0))
         session = imap_mail._Use(self.config, sources.credential, self.account)
@@ -744,7 +745,7 @@ class Setup(Base):
         # and it reads from there
         self.server.folders['INBOX'].add(mime('Hallo', 'Bo <bo@client.test>', TELENET_USER, 'x', '<t1@client.test>', when(1)), when(1))
         self.config['accounts'] = [account]
-        a.sync_gmail(self.store, self.config, account)
+        machine_sources_gmail.sync_gmail(self.store, self.config, account)
         self.assertEqual(list(self.rows()), ['i1700000000-1'])
         # A wrong password says what to use for Telenet, and saves nothing
         Path(saved).unlink()
@@ -790,7 +791,7 @@ class Setup(Base):
         self.assertLessEqual({'tls_pin', 'smtp_tls_pin'}, imap_setup.IDENTITY)  # never copied to another mailbox
         # and from then on it reads only from a server with that certificate
         self.config['accounts'] = [account]
-        a.sync_gmail(self.store, self.config, account)
+        machine_sources_gmail.sync_gmail(self.store, self.config, account)
 
     def test_proton_on_a_hosted_machine_says_why_it_cant(self):
         self.config['manage_url'] = 'https://app.example.test/manage'

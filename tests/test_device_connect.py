@@ -18,7 +18,7 @@ import network
 import network_crypto as nc
 import onboarding
 from test_intercom_replies import Fake, REPLY
-from test_connectors import a
+from test_connectors import FOR_ONBOARDING
 import machine.main as machine_main
 
 TOKEN = REPLY
@@ -237,7 +237,7 @@ class ConnectDelivered(unittest.TestCase):
         self.path.write_text(json.dumps({'database': str(root / 'events.sqlite'), 'credentials': {}, 'accounts': []}))
         self.fake = Fake(self)
         patch('urllib.request.OpenerDirector.open', side_effect=self.fake.respond).start()
-        patch.object(onboarding, 'assistant', return_value=a).start()
+        patch.object(onboarding, 'assistant', return_value=FOR_ONBOARDING).start()
         self.addCleanup(patch.stopall)
 
     def args(self, **change):
@@ -284,7 +284,7 @@ class TrelloDelivered(unittest.TestCase):
         self.path.write_text(json.dumps({'database': str(root / 'events.sqlite'), 'credentials': {}, 'accounts': []}))
         self.seen = []
         patch('urllib.request.urlopen', side_effect=self.respond).start()
-        patch.object(onboarding, 'assistant', return_value=a).start()
+        patch.object(onboarding, 'assistant', return_value=FOR_ONBOARDING).start()
         self.addCleanup(patch.stopall)
         self.credential = json.dumps({'key': 'f' * 32, 'token': 'ATTA' + 'b' * 60}, separators=(',', ':'))
 

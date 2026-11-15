@@ -1,5 +1,4 @@
 import datetime as dt
-import importlib.util
 import json
 import re
 import tempfile
@@ -11,11 +10,22 @@ from pathlib import Path
 from seams import patch_everywhere  # noqa: E402,F401  (test_shared_graph_apart imports it from here)
 from pinned import pinned  # noqa: E402
 
-spec = importlib.util.spec_from_file_location('graph_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
-a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
-graph = a.graph
+import assistant_on_use
+import enrichment
+import graph
 import graph_board_reviews  # noqa: E402
-enrichment = a.enrichment
+import machine.actions as machine_actions
+import machine.app.recap as machine_app_recap
+import machine.app.sync as machine_app_sync
+import machine.main as machine_main
+import machine.prompts.profile as machine_prompts_profile
+import machine.prompts.review as machine_prompts_review
+import machine.sources.slack as machine_sources_slack
+import machine.store.profile as machine_store_profile
+import machine.web.handler as machine_web_handler
+import timeutil
+
+__getattr__ = assistant_on_use.handed_out('a', 'graph_assistant')  # `a` for the tests that still read it from here
 NOW = dt.datetime(2026, 10, 16, 12, tzinfo=dt.timezone.utc)
 CONFIG = {'accounts': [{'id': 'work', 'email': 'sam@acme.com'}, {'id': 'chat', 'service': 'whatsapp', 'email': 'Personal WhatsApp'},
                        {'id': 'slack', 'service': 'slack', 'email': 'sam@acme.com', 'user_id': 'U0OWNER'}]}
@@ -43,8 +53,8 @@ def chat(days_ago, phone, name, mine=False, hour=0):
 class Graph(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'events.sqlite')
-        self.app = object.__new__(a.App); self.app.store = self.store; self.app.config = CONFIG
+        self.store = machine_main.Store(Path(self.temp.name) / 'events.sqlite')
+        self.app = object.__new__(machine_main.App); self.app.store = self.store; self.app.config = CONFIG
         # The whole clock stands at NOW: now() and the windows counted back from clock() ("asked in the last 30
         # days"), so the stored times and those windows agree on any day the tests run.
         clock = pinned(NOW)  # entered by hand: some suites call this setUp on a plain object with addCleanup
@@ -298,17 +308,17 @@ class Graph(unittest.TestCase):
 
     def test_slack_names_are_looked_up_a_few_at_a_time_once_a_month(self):
         calls = []
-        slack = object.__new__(a.Slack); slack.account = {'user_id': 'U0OWNER'}
+        slack = object.__new__(machine_sources_slack.Slack); slack.account = {'user_id': 'U0OWNER'}
         slack.get = lambda method, params: calls.append(params['user']) or {'user': {'id': params['user'], 'profile': {
             'real_name': 'Name ' + params['user'], 'email': params['user'].lower() + '@acme.com',
             'is_custom_image': params['user'] == 'U0A', 'image_192': f"https://avatars.slack-edge.com/{params['user']}_192.png"}}}
         channels = [{'name': 'DM U0A'}, {'name': 'DM U0B'}, {'name': 'general'}, {'name': 'My notes'}]
         events = [{'metadata': {'user_id': 'U0C', 'channel_name': 'general'}}, {'metadata': {'user_id': 'U0OWNER', 'channel_name': 'general'}}]
-        a.remember_slack_names(self.store, slack, events, channels, per_page=2)
-        a.remember_slack_names(self.store, slack, events, channels, per_page=2)
-        a.remember_slack_names(self.store, slack, events, channels, per_page=2)
+        machine_app_sync.remember_slack_names(self.store, slack, events, channels, per_page=2)
+        machine_app_sync.remember_slack_names(self.store, slack, events, channels, per_page=2)
+        machine_app_sync.remember_slack_names(self.store, slack, events, channels, per_page=2)
         self.assertEqual(calls, ['U0A', 'U0B', 'U0C', 'U0OWNER'])  # the owner once too: their name for their mentions
-        a.remember_slack_names(self.store, slack, events, channels, per_page=2)
+        machine_app_sync.remember_slack_names(self.store, slack, events, channels, per_page=2)
         self.assertEqual(len(calls), 4)
         with self.store.connect() as db:
             self.assertEqual(db.execute("SELECT label FROM slack_members WHERE user_id='U0OWNER'").fetchone()[0], 'Name U0OWNER')
@@ -368,9 +378,9 @@ class Graph(unittest.TestCase):
         channel = {'id': 'C1', 'name': 'projects', 'type': 'channel'}
         account = {'id': 'slack', 'slack_host': 'example.invalid'}
         stamp = str(int((NOW - dt.timedelta(days=1)).timestamp())) + '.000001'
-        root = a.slack_event(account, channel, {'ts': stamp, 'text': 'Project root', 'user': 'U1', 'reply_count': 1})
-        reply = a.slack_event(account, channel, {'ts': str(float(stamp) + 60), 'thread_ts': stamp, 'text': 'Project reply', 'user': 'U2'})
-        other = a.slack_event(account, channel, {'ts': str(float(stamp) + 120), 'text': 'Unrelated root', 'user': 'U3'})
+        root = machine_sources_slack.slack_event(account, channel, {'ts': stamp, 'text': 'Project root', 'user': 'U1', 'reply_count': 1})
+        reply = machine_sources_slack.slack_event(account, channel, {'ts': str(float(stamp) + 60), 'thread_ts': stamp, 'text': 'Project reply', 'user': 'U2'})
+        other = machine_sources_slack.slack_event(account, channel, {'ts': str(float(stamp) + 120), 'text': 'Unrelated root', 'user': 'U3'})
         foreign = {**root, 'account_id': 'other-slack'}
         self.add(root, reply, other, foreign)
         with self.store.connect() as db:
@@ -442,7 +452,7 @@ class Graph(unittest.TestCase):
         self.assertFalse(rae['quiet'])
         with self.store.connect() as db:
             self.assertEqual([p['id'] for p in graph.overview(db)['quiet']], ['wa:00000000001'])
-        self.assertIn('• Gone quiet: Wes Weekly (usually every 7 days)', a.recap_graph_lines(self.store))
+        self.assertIn('• Gone quiet: Wes Weekly (usually every 7 days)', machine_app_recap.recap_graph_lines(self.store))
 
     def test_preparation_context_and_agent_lookup(self):
         self.add(mail(3, 'Ann Example <ann@client.com>', 'sam@acme.com', thread='deal'), mail(2, 'Sam <sam@acme.com>', 'Ann Example <ann@client.com>, Bob <bob@client.com>', ('SENT',), thread='deal'))
@@ -524,16 +534,16 @@ class Graph(unittest.TestCase):
         self.assertIn('"Mail ', first)
         self.assertNotIn('Bo Chat', first)  # chats read alike per person, whatever the topic
         self.assertEqual(self.store.unnamed_text('run2'), '')
-        self.assertIn('Possibly one piece of work nobody named', a.review_prompt('run', ['work'], unnamed=first))
-        self.assertNotIn('Possibly one piece of work', a.review_prompt('run', ['work']))
+        self.assertIn('Possibly one piece of work nobody named', machine_prompts_review.review_prompt('run', ['work'], unnamed=first))
+        self.assertNotIn('Possibly one piece of work', machine_prompts_review.review_prompt('run', ['work']))
 
     def test_the_owner_renames_people_organisations_and_projects(self):
         self.add(mail(3, 'Sam Stone <sam@acme.com>', 'Lee <lee@globex.com>', ('SENT',), thread='t1'),
                  mail(2, 'Lee <lee@globex.com>', 'sam@acme.com', thread='t1'), mail(1, 'Lee <lee@globex.com>', 'sam@acme.com', thread='t2'))
         with self.store.connect() as db:
             ids = [r[0] for r in db.execute('SELECT id FROM events ORDER BY id')]
-            graph.label(db, ids[:2], 'Globex deal', 'agent', a.now())
-            graph.label(db, ids[2:], 'Globex renewal', 'agent', a.now())
+            graph.label(db, ids[:2], 'Globex deal', 'agent', timeutil.now())
+            graph.label(db, ids[2:], 'Globex renewal', 'agent', timeutil.now())
         self.build()
         self.app.graph_build = self.build
         rename = lambda node, name: self.app.action('graph_rename', {'node_id': node, 'name': name}, owner_dashboard=True)
@@ -547,7 +557,7 @@ class Graph(unittest.TestCase):
         self.assertEqual(self.node('org:globex.com')['name'], 'Globex Corp')
         with self.store.connect() as db:
             deal, renewal = (db.execute('SELECT id FROM projects WHERE name=?', (n,)).fetchone()[0] for n in ('Globex deal', 'Globex renewal'))
-            db.execute("INSERT INTO suggestions(id,dedupe_key,title,body,event_ids,account_ids,project,created_at) VALUES('s1','k1','Reply to Lee','','[]','[]','Globex deal',?)", (a.now(),))
+            db.execute("INSERT INTO suggestions(id,dedupe_key,title,body,event_ids,account_ids,project,created_at) VALUES('s1','k1','Reply to Lee','','[]','[]','Globex deal',?)", (timeutil.now(),))
         self.assertEqual(rename(f'project:{deal}', 'Globex expansion'), {'node_id': f'project:{deal}', 'name': 'Globex expansion'})
         self.assertEqual(self.node(f'project:{deal}')['name'], 'Globex expansion')
         joined = rename(f'project:{renewal}', 'globex EXPANSION')  # another project's name: they become one
@@ -558,7 +568,7 @@ class Graph(unittest.TestCase):
             self.assertEqual(db.execute("SELECT project FROM suggestions WHERE id='s1'").fetchone()[0], 'Globex expansion')
         with self.assertRaisesRegex(ValueError, 'short label'):
             rename(f'project:{deal}', '')
-        self.assertIn('graph_rename', a.OWNER_ACTIONS)
+        self.assertIn('graph_rename', machine_actions.OWNER_ACTIONS)
 
     def test_roles_only_as_said_by_the_owner_or_a_review(self):
         self.add(mail(3, 'Sam Stone <sam@acme.com>', 'Ann Stone <ann@home.example>, Pat <pat@client.com>, Lee <lee@globex.com>', ('SENT',)),
@@ -596,9 +606,9 @@ class Graph(unittest.TestCase):
         self.assertIn('node_id email:pat@client.com', asked)
         self.assertIn('hints: billed through Stripe as Client Ltd', asked)
         self.assertEqual(self.store.role_text('run2', limit=10), '')
-        prompt = a.review_prompt('run', ['work'], roles=asked)
+        prompt = machine_prompts_review.review_prompt('run', ['work'], roles=asked)
         self.assertIn('Hints say where someone appears, not what they are', prompt)
-        self.assertNotIn('Who they are to', a.review_prompt('run', ['work']))
+        self.assertNotIn('Who they are to', machine_prompts_review.review_prompt('run', ['work']))
         with self.store.connect() as db:
             self.assertEqual(db.execute("SELECT name FROM graph_nodes WHERE id='org:client.com'").fetchone()[0], 'Client Ltd')
         self.app.graph_build = self.build
@@ -613,7 +623,7 @@ class Graph(unittest.TestCase):
         self.assertEqual(self.node('email:ann@home.example')['role_by'], 'owner')
         self.app.action('graph_role', {'node_id': 'email:ann@home.example', 'role': ''}, owner_dashboard=True)
         self.assertIsNone(role('email:ann@home.example'))
-        self.assertIn('graph_role', a.OWNER_ACTIONS)
+        self.assertIn('graph_role', machine_actions.OWNER_ACTIONS)
         with self.store.connect() as db:
             lines = graph.context_lines(db, self.ids(['st1']))
         self.assertIn('- Pat (pat@client.com): CFO at Client Ltd; ', lines)
@@ -816,9 +826,9 @@ class Graph(unittest.TestCase):
         with self.store.connect() as db:
             ran = []
             db.set_trace_callback(ran.append)
-            only = a.graph.open_between(db, 'email:ann@client.com', 2, task['id'], promises_only=True)
+            only = graph.open_between(db, 'email:ann@client.com', 2, task['id'], promises_only=True)
             db.set_trace_callback(None)
-            full = a.graph.open_between(db, 'email:ann@client.com', 2, task['id'])
+            full = graph.open_between(db, 'email:ann@client.com', 2, task['id'])
         self.assertEqual(only, {k: full[k] for k in ('you_promised', 'they_promised')})
         self.assertFalse([q for q in ran if 'FROM suggestions s WHERE' in q or 'FROM facts' in q or "kind='owner.card'" in q])
 
@@ -864,7 +874,7 @@ class Graph(unittest.TestCase):
 
     def test_an_event_row_says_who_wrote_it_and_how_it_starts(self):
         accounts = [{'id': 'slack', 'service': 'slack', 'user_id': 'U0OWNER'}]
-        glance = lambda kind, body, **m: a.event_glance({'kind': kind, 'account_id': 'slack', 'body': body, 'metadata': m}, accounts)
+        glance = lambda kind, body, **m: machine_web_handler.event_glance({'kind': kind, 'account_id': 'slack', 'body': body, 'metadata': m}, accounts)
         self.assertEqual(glance('gmail.message', 'Hi Sam,\r\n\r\nthe   form', **{'from': 'Ann Example <ann@client.com>'}),
                          {'from': 'Ann Example', 'from_me': False, 'preview': 'Hi Sam, the form'})
         self.assertEqual(glance('gmail.message', 'Sure', **{'from': 'Sam <sam@acme.com>', 'labels': ['SENT']})['from'], 'You')
@@ -1052,13 +1062,13 @@ class StatedOrganisations(unittest.TestCase):
         started = self.app.orgs_backfill_step()
         self.assertEqual(started['people'], 1)
         self.assertIsNone(self.app.orgs_backfill_step())  # one at a time, once
-        page = self.store.profile_evidence(1, a.PROFILE_SESSION_PREFIX + started['run_id'])
+        page = self.store.profile_evidence(1, machine_store_profile.PROFILE_SESSION_PREFIX + started['run_id'])
         self.assertEqual(page['people'][0]['linkedin_headline'], 'Engineering at Globex')
         self.assertTrue(all(m['from'] != 'the owner' for m in page['people'][0]['messages']))
         with self.store.connect() as db:
             db.execute("UPDATE profile_runs SET status='ok' WHERE run_id=?", (started['run_id'],))
         self.assertIsNone(self.app.orgs_backfill_step())
-        prompt = a.orgs_prompt(started['run_id'], page['pages'])
+        prompt = machine_prompts_profile.orgs_prompt(started['run_id'], page['pages'])
         self.assertIn('states it plainly', prompt)
         self.assertNotIn('{', prompt.split('graph args')[0])
 
@@ -1257,7 +1267,7 @@ class Boards(unittest.TestCase):
         self.app.graph_build = lambda *a, **k: None
         moved = self.app.action('graph_stage', {'node_id': node, 'stage': 'Live'}, owner_dashboard=True)
         self.assertEqual(moved['stage'], 'Live')
-        self.assertIn('graph_stage', a.OWNER_ACTIONS)
+        self.assertIn('graph_stage', machine_actions.OWNER_ACTIONS)
 
     def test_a_move_by_hand_and_other_project_edits_answer_before_the_graph_is_built_again(self):
         """With the graph worker running (the service), a drag on the board, its Undo, Won or Lost, who sees a project,
@@ -1365,8 +1375,8 @@ class Boards(unittest.TestCase):
         self.assertIn(f'{agreed} (gmail.message, ', text)
         self.assertIn('Bramblebox', text)
         self.assertNotIn('Quillfeather', text)  # nothing to read: its tile says so at once
-        self.assertIn('Boards to sort, before anything else', a.review_prompt('run1', ['work'], sorting=text))
-        self.assertNotIn('Boards to sort, before', a.review_prompt('run1', ['work']))
+        self.assertIn('Boards to sort, before anything else', machine_prompts_review.review_prompt('run1', ['work'], sorting=text))
+        self.assertNotIn('Boards to sort, before', machine_prompts_review.review_prompt('run1', ['work']))
         with self.store.connect() as db:
             tiles = {p['name']: p for p in graph.boards(db, NOW.isoformat())[1]['projects']}
             self.assertTrue(tiles['Paperkite']['sorting'])
@@ -1488,7 +1498,7 @@ class Boards(unittest.TestCase):
         self.assertIn(f'Company sale (project:{oldest})', text)  # older than the newest 60 too
         self.assertIn('its messages are with 3 organizations: ', text)
         self.assertIn(f'Northwind (messages {events[0]})', text)
-        prompt = a.review_prompt('run1', ['work'], boards=text)
+        prompt = machine_prompts_review.review_prompt('run1', ['work'], boards=text)
         self.assertIn('one project per counterpart', prompt)
         self.assertIn('"only_you" for sensitive work', prompt)
         self.assertIn('"split": [', prompt)
@@ -1576,7 +1586,7 @@ class Boards(unittest.TestCase):
         self.assertIn('Boards: Listings (Contacted > Agreed > Live > Stalled or declined): Partners we list with', text)
         for name in ids:
             self.assertIn(f'{name} ({ids[name]})', text)
-        self.assertIn('Projects that may fit a board', a.review_prompt('run1', ['work'], fitting=text))
+        self.assertIn('Projects that may fit a board', machine_prompts_review.review_prompt('run1', ['work'], fitting=text))
         with self.store.connect() as db:
             with self.assertRaises(ValueError):
                 graph_board_reviews.fit_answer(db, 'run1', None)
@@ -1626,7 +1636,7 @@ class Boards(unittest.TestCase):
         self.assertNotIn('fernwave', text)  # it has a project
         self.assertNotIn('lee@acme.com', text)  # a colleague
         self.assertIn('Listing Acme on your marketplace', text)
-        self.assertIn('Looking through the history for new boards', a.review_prompt('run1', ['work'], backfill=text))
+        self.assertIn('Looking through the history for new boards', machine_prompts_review.review_prompt('run1', ['work'], backfill=text))
         with self.store.connect() as db:
             with self.assertRaises(ValueError):
                 graph_board_reviews.backfill_answer(db, 'run1', None)
@@ -1704,7 +1714,7 @@ class Boards(unittest.TestCase):
             graph.save_board(db, {'name': 'Buyers', 'stages': ['Contacted', 'Diligence'], 'about': 'Possible buyers of Acme'}, NOW.isoformat())
         text = self.app.backfill_text('run1')
         self.assertIn('(org:shop.example)', text)
-        prompt = a.review_prompt('run1', ['work'], backfill=text)
+        prompt = machine_prompts_review.review_prompt('run1', ['work'], backfill=text)
         self.assertIn("each board's own purpose", prompt)
         with self.store.connect() as db:
             with self.assertRaises(ValueError) as said:  # asked against two boards: one fit per board
@@ -1727,7 +1737,7 @@ class Boards(unittest.TestCase):
         line = {k: next(x for x in text.splitlines() if f'({k})' in x) for k in ('org:buyer.example', 'org:brokers.example')}
         self.assertIn('the owner wrote on 1 day', line['org:buyer.example'])
         self.assertIn('inbound only', line['org:brokers.example'])
-        prompt = a.review_prompt('run1', ['work'], backfill=text)
+        prompt = machine_prompts_review.review_prompt('run1', ['work'], backfill=text)
         self.assertIn('unsolicited outreach', prompt)
         self.assertIn('never a label', prompt)
 
@@ -1905,7 +1915,7 @@ class Find(unittest.TestCase):
 
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'events.sqlite')
+        self.store = machine_main.Store(Path(self.temp.name) / 'events.sqlite')
         nodes = [('email:rory@acme.example', 'person', 'Rory Vance', 5, {'identifiers': ['email:rory@acme.example'], 'profile': {'title': 'CFO'}}),
                  ('email:jose@acme.example', 'person', 'José Müller', 4, {'note': 'Ação'}),
                  ('email:jo@beta.example', 'person', 'Jo Beta', 4, {}),

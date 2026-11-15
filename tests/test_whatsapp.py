@@ -1,4 +1,3 @@
-import importlib.util
 from pathlib import Path
 import tempfile,unittest
 from unittest.mock import patch
@@ -9,7 +8,6 @@ import machine.sources.connectors as machine_sources_connectors
 import machine.sources.whatsapp as machine_sources_whatsapp
 import os
 import sources
-spec=importlib.util.spec_from_file_location('assistant_wa',Path(__file__).parent.parent.joinpath('assistant.py'));a=importlib.util.module_from_spec(spec);spec.loader.exec_module(a)
 account={'id':'personal-whatsapp','identity_sha256':hashlib.sha256(b'123@s.whatsapp.net').hexdigest()}
 def message():return {'ChatJID':'12345@g.us','MsgID':'FULL-NATIVE-ID','Timestamp':'2026-10-09T12:00:00Z','FromMe':False,'SenderJID':'12345@g.us','Text':'Hello','ChatName':'Family'}
 class WhatsAppTests(unittest.TestCase):

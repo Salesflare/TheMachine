@@ -385,6 +385,11 @@ The table checks read the SQL in each module's strings. A statement whose table 
   also patches every module of the app that binds the same object, so code moved out of `assistant.py` sees the
   patch too. tests/test_seams.py fails on a plain patch or assignment; methods go through the class
   (`patch.object(a.App, ...)`).
+- Tests import names from their own modules (`machine.main.Store`, `sources.SourceError`), not through `assistant.py`,
+  and patch them where the code looks them up. The shared test helpers (test_assistant, test_connectors, test_graph,
+  test_intercom_replies, test_ux) do so too, so importing one doesn't run `assistant.py`; they still hand it out as `a`
+  (test_assistant: `assistant`), loaded on first use (tests/assistant_on_use.py), to the tests not yet converted. A test
+  that drives `onboarding` patches `onboarding.assistant` with `test_connectors.FOR_ONBOARDING` instead of loading it.
 - **Prefer plain modules to mixins.** A mixin still reaches into `App` (`self.store`, `self.config`, other mixins), so
   it moves code without separating it. New domain code goes to a flat module of plain functions that take `db`,
   `config` and the values they need as arguments (`notify.py`, `follow_ups.py`); `App` keeps a thin method that

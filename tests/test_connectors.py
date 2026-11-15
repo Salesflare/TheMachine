@@ -7,13 +7,37 @@ import re
 from pathlib import Path
 import socket
 import tempfile
+import types
 import unittest
 from unittest.mock import patch
 
-spec = importlib.util.spec_from_file_location('assistant_plugins', Path(__file__).parent.parent.joinpath('assistant.py'))
-a = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(a)
-from connectors import web_page  # noqa: E402 - after assistant.py, as the connectors load it
+import assistant_on_use
+import machine.app.sync as machine_app_sync
+import machine.main as machine_main
+import machine.sources.android as machine_sources_android
+import machine.sources.calendar as machine_sources_calendar
+import machine.sources.connectors as machine_sources_connectors
+import machine.sources.gmail as machine_sources_gmail
+import machine.sources.salesflare as machine_sources_salesflare
+import machine.sources.signal_chats as machine_sources_signal_chats
+import machine.sources.slack as machine_sources_slack
+import machine.sources.telegram as machine_sources_telegram
+import machine.sources.whatsapp as machine_sources_whatsapp
+import machine.store.cards as machine_store_cards
+import sources
+from connectors import web_page  # noqa: E402 - after the app's modules, as the connectors load them
+
+__getattr__ = assistant_on_use.handed_out('a', 'assistant_plugins')  # `a` for the tests that still import it from here
+
+# What onboarding reads through onboarding.assistant(), from their own modules: tests patch it in
+# (onboarding.assistant returning it, or onboarding._assistant) so onboarding doesn't load assistant.py.
+FOR_ONBOARDING = types.SimpleNamespace(
+    Android=machine_sources_android.Android, Calendar=machine_sources_calendar.Calendar,
+    CONNECTOR_HELPERS=machine_sources_connectors.CONNECTOR_HELPERS, Gmail=machine_sources_gmail.Gmail,
+    Salesflare=machine_sources_salesflare.Salesflare, Signal=machine_sources_signal_chats.Signal,
+    Slack=machine_sources_slack.Slack, SourceError=sources.SourceError, Telegram=machine_sources_telegram.Telegram,
+    WhatsApp=machine_sources_whatsapp.WhatsApp, connector_services=machine_sources_connectors.connector_services,
+    credential=sources.credential, load_connector=machine_sources_connectors.load_connector)
 
 FEED = {'id': 'work-feed', 'service': 'rss', 'transport': 'http', 'boundary': 'work', 'url': 'https://example.com/feed.xml'}
 RSS = b"""<?xml version="1.0"?><rss version="2.0"><channel><title>Example</title>
@@ -50,7 +74,7 @@ class ConnectorPlugins(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
-        self.store = a.Store(Path(self.tmp.name) / 'test.sqlite3')
+        self.store = machine_main.Store(Path(self.tmp.name) / 'test.sqlite3')
 
     def stored(self):
         with self.store.connect() as db:
@@ -63,7 +87,7 @@ class ConnectorPlugins(unittest.TestCase):
 
     def test_rss_items_are_stored_once_and_rereads_add_nothing(self):
         with served(RSS, {'ETag': '"v1"'}):
-            self.assertEqual(a.sync_source(self.store, {}, FEED)['events'], 2)
+            self.assertEqual(machine_app_sync.sync_source(self.store, {}, FEED)['events'], 2)
         rows = self.stored()
         self.assertEqual([r['title'] for r in rows], ['Release 1.0', 'Release 2.0'])
         self.assertEqual(rows[1]['body'], 'New things')
@@ -72,17 +96,17 @@ class ConnectorPlugins(unittest.TestCase):
         self.assertEqual(self.store.checkpoint('work-feed')['etag'], '"v1"')
         self.later()
         with served(RSS):
-            a.sync_source(self.store, {}, FEED)
+            machine_app_sync.sync_source(self.store, {}, FEED)
         with self.store.connect() as db:
             self.assertEqual(db.execute('SELECT count(*),max(version) FROM events').fetchone()[:], (2, 1))
 
     def test_not_modified_keeps_the_checkpoint_and_sends_it(self):
         with served(RSS, {'ETag': '"v1"'}):
-            a.sync_source(self.store, {}, FEED)
+            machine_app_sync.sync_source(self.store, {}, FEED)
         self.later()
         asked = []
         with served(status=304, asked=asked):
-            self.assertEqual(a.sync_source(self.store, {}, FEED)['events'], 0)
+            self.assertEqual(machine_app_sync.sync_source(self.store, {}, FEED)['events'], 0)
         self.assertEqual(asked[0]['If-None-Match'], '"v1"')
         self.assertEqual(self.store.checkpoint('work-feed')['etag'], '"v1"')
         self.assertEqual(len(self.stored()), 2)
@@ -91,50 +115,50 @@ class ConnectorPlugins(unittest.TestCase):
         # Whatever poll_seconds or a quick retry asks: one read per rss.MIN_SECONDS, as the Web page connector does
         asked = []
         with served(RSS, asked=asked):
-            a.sync_source(self.store, {}, {**FEED, 'poll_seconds': 5})
-            self.assertEqual(a.sync_source(self.store, {}, {**FEED, 'poll_seconds': 5})['events'], 0)
+            machine_app_sync.sync_source(self.store, {}, {**FEED, 'poll_seconds': 5})
+            self.assertEqual(machine_app_sync.sync_source(self.store, {}, {**FEED, 'poll_seconds': 5})['events'], 0)
             self.assertEqual(len(asked), 1)
             self.later()
-            a.sync_source(self.store, {}, FEED)
+            machine_app_sync.sync_source(self.store, {}, FEED)
         self.assertEqual(len(asked), 2)
 
     def test_a_gzipped_feed_is_unpacked(self):
         with served(gzip.compress(ATOM), {'Content-Encoding': 'gzip'}):
-            self.assertEqual(a.sync_source(self.store, {}, FEED)['events'], 1)
+            self.assertEqual(machine_app_sync.sync_source(self.store, {}, FEED)['events'], 1)
 
     def test_atom_feeds_and_kind_labels(self):
         with served(ATOM):
-            a.sync_source(self.store, {}, FEED)
+            machine_app_sync.sync_source(self.store, {}, FEED)
         [row] = self.stored()
         self.assertEqual((row['kind'], row['title'], row['occurred_at']), ('rss.item', 'Post', '2026-10-15T08:30:00+00:00'))
-        self.assertEqual(a.source_kind('rss.item'), 'feed')
-        self.assertEqual(a.source_kind('gmail.message'), 'email')
-        self.assertEqual(a.source_kind('nothing.here'), 'signal')
+        self.assertEqual(machine_store_cards.source_kind('rss.item'), 'feed')
+        self.assertEqual(machine_store_cards.source_kind('gmail.message'), 'email')
+        self.assertEqual(machine_store_cards.source_kind('nothing.here'), 'signal')
 
     def test_failures_are_source_errors_with_safe_labels(self):
         cases = [(served(status=500), 'rss_http:HTTP_500'), (served(b'<rss><channel><item>'), 'rss_invalid_xml'),
                  (served(b'x' * 5_000_001), 'rss_feed_too_large')]
         for server, label in cases:
             with self.subTest(label), server:
-                with self.assertRaises(a.SourceError) as caught:
-                    a.sync_source(self.store, {}, {**FEED, 'id': label})
+                with self.assertRaises(sources.SourceError) as caught:
+                    machine_app_sync.sync_source(self.store, {}, {**FEED, 'id': label})
                 self.assertEqual(str(caught.exception), label)
-        with self.assertRaises(a.SourceError) as caught:
-            a.sync_source(self.store, {}, {**FEED, 'url': 'http://example.com/feed'})
+        with self.assertRaises(sources.SourceError) as caught:
+            machine_app_sync.sync_source(self.store, {}, {**FEED, 'url': 'http://example.com/feed'})
         self.assertEqual(str(caught.exception), 'rss_missing_url')
 
     def test_only_public_addresses_are_read(self):
         # A hosted Machine runs on a cloud server: no feed address, name or redirect may point it at that server, its
         # network or the cloud's metadata address. The same reader as the Web page connector (web_page.get).
-        connector = a.load_connector('rss')
+        connector = machine_sources_connectors.load_connector('rss')
         for url in ('https://127.0.0.1/feed', 'https://169.254.169.254/latest/meta-data', 'https://10.0.0.8/feed',
                     'https://[::1]/feed', 'https://localhost/feed', 'https://router.local/feed', 'https://example.com:8443/feed'):
             with self.subTest(url), patch.object(socket, 'create_connection', side_effect=AssertionError('connected')):
-                with self.assertRaises(a.SourceError) as caught:
-                    a.sync_source(self.store, {}, {**FEED, 'url': url})
+                with self.assertRaises(sources.SourceError) as caught:
+                    machine_app_sync.sync_source(self.store, {}, {**FEED, 'url': url})
                 self.assertEqual(str(caught.exception), 'rss_address')
-                with self.assertRaisesRegex(a.SourceError, '^rss_address$'):
-                    connector.check({}, {**FEED, 'url': url}, a.CONNECTOR_HELPERS)
+                with self.assertRaisesRegex(sources.SourceError, '^rss_address$'):
+                    connector.check({}, {**FEED, 'url': url}, machine_sources_connectors.CONNECTOR_HELPERS)
 
         class Sock:  # a public name that resolves to a private address: refused on the socket, before a byte is sent
             def getpeername(self):
@@ -143,8 +167,8 @@ class ConnectorPlugins(unittest.TestCase):
             def close(self):
                 pass
         with patch.object(socket, 'create_connection', return_value=Sock()):
-            with self.assertRaisesRegex(a.SourceError, '^rss_address$'):
-                connector.check({}, FEED, a.CONNECTOR_HELPERS)
+            with self.assertRaisesRegex(sources.SourceError, '^rss_address$'):
+                connector.check({}, FEED, machine_sources_connectors.CONNECTOR_HELPERS)
 
         class Redirect:
             status = 302
@@ -165,30 +189,30 @@ class ConnectorPlugins(unittest.TestCase):
             def close(self):
                 pass
         with patch.object(web_page, '_connection', side_effect=Connection):
-            with self.assertRaisesRegex(a.SourceError, '^rss_address$'):
-                connector.check({}, FEED, a.CONNECTOR_HELPERS)
+            with self.assertRaisesRegex(sources.SourceError, '^rss_address$'):
+                connector.check({}, FEED, machine_sources_connectors.CONNECTOR_HELPERS)
         self.assertEqual(connector.SETUP['hints']['rss_address'], web_page.SETUP['hints']['web_page_address'])
 
     def test_setup_probe_reads_and_parses_without_saving_events_or_checkpoint(self):
-        connector = a.load_connector('rss')
+        connector = machine_sources_connectors.load_connector('rss')
         for raw in (RSS, ATOM):
             with served(raw):
-                self.assertIsNone(connector.check({}, FEED, a.CONNECTOR_HELPERS))
+                self.assertIsNone(connector.check({}, FEED, machine_sources_connectors.CONNECTOR_HELPERS))
         self.assertEqual(self.stored(), [])
         self.assertIsNone(self.store.checkpoint('work-feed'))
         for raw, label in ((b'<html/>', 'rss_invalid_feed'), (b'<rss', 'rss_invalid_xml'),
                            (RSS.replace(b'Wed, 14 Oct 2026 09:00:00 +0200', b'not a date').replace(b'Mon, 12 Oct 2026 09:00:00 GMT', b'nor this'), 'rss_invalid_timestamp')):
             with self.subTest(label), served(raw):
-                with self.assertRaises(a.SourceError) as caught:
-                    connector.check({}, FEED, a.CONNECTOR_HELPERS)
+                with self.assertRaises(sources.SourceError) as caught:
+                    connector.check({}, FEED, machine_sources_connectors.CONNECTOR_HELPERS)
                 self.assertEqual(str(caught.exception), label)
 
     def test_unknown_or_unsafe_service_names_are_unsupported(self):
         for service in ['nope', '../assistant', 'rss.py', 'RSS', '__init__', '']:
-            with self.subTest(service), self.assertRaises(a.SourceError) as caught:
-                a.sync_source(self.store, {}, {**FEED, 'service': service})
+            with self.subTest(service), self.assertRaises(sources.SourceError) as caught:
+                machine_app_sync.sync_source(self.store, {}, {**FEED, 'service': service})
             self.assertEqual(str(caught.exception), 'unsupported_service')
-        self.assertIn('rss', a.connector_services())
+        self.assertIn('rss', machine_sources_connectors.connector_services())
 
 
 if __name__ == '__main__':

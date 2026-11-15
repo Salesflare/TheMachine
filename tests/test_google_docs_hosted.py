@@ -11,9 +11,9 @@ from unittest.mock import patch
 from connectors import docs
 import mail_grants
 import onboarding
-from test_connectors import a
 import test_connector_docs as t
 import machine.main as machine_main
+import machine.sources.connectors as machine_sources_connectors
 
 DOCS_URL = 'https://cp.example/api/google-docs/token'
 ACCOUNT = {**t.ACCOUNT, 'provider': 'google', 'own_grant': True, 'transport': 'broker'}
@@ -79,7 +79,7 @@ class Hosted(unittest.TestCase):
         config = {**HOSTED, 'docs_consent': consent, 'accounts': list(accounts)}
         listed = [{**s, **({'connected': sum(1 for x in accounts if x.get('service') == 'docs')} if s['service'] == 'docs' else {})}
                   for s in onboarding.catalog(config)]
-        return {s['name']: s for s in a.hosted_docs_sources(config, listed) if s['service'] == 'docs'}
+        return {s['name']: s for s in machine_sources_connectors.hosted_docs_sources(config, listed) if s['service'] == 'docs'}
 
     def test_add_shows_the_docs_tiles_its_account_page_offers(self):
         both = self.sources(['google', 'microsoft'], [ACCOUNT, {**t.ACCOUNT, 'id': 'ms', 'provider': 'microsoft'}])
@@ -88,7 +88,7 @@ class Hosted(unittest.TestCase):
         self.assertEqual((both['google_docs']['connected'], both['docs']['connected']), (1, 1))
         self.assertEqual(set(self.sources(['google'])), {'google_docs'})
         self.assertEqual(set(self.sources(['microsoft'])), {'docs'})
-        self.assertIn('google_docs', a.HOSTED_SIGNINS)
+        self.assertIn('google_docs', machine_sources_connectors.HOSTED_SIGNINS)
 
     def test_add_on_the_dashboard_lists_google_docs_with_its_own_sign_in(self):
         tmp = tempfile.TemporaryDirectory()
@@ -101,9 +101,9 @@ class Hosted(unittest.TestCase):
 
     def test_reconnect_opens_connect_google_docs(self):
         manage = HOSTED['manage_url']
-        self.assertEqual(a.reconnect_help(ACCOUNT, manage, True)['hosted_signin'], 'google_docs')
-        self.assertEqual(a.reconnect_help({**ACCOUNT, 'provider': 'microsoft'}, manage, True)['hosted_signin'], 'microsoft_docs')
-        self.assertEqual(a.reconnect_help(ACCOUNT, manage, False), {})
+        self.assertEqual(machine_sources_connectors.reconnect_help(ACCOUNT, manage, True)['hosted_signin'], 'google_docs')
+        self.assertEqual(machine_sources_connectors.reconnect_help({**ACCOUNT, 'provider': 'microsoft'}, manage, True)['hosted_signin'], 'microsoft_docs')
+        self.assertEqual(machine_sources_connectors.reconnect_help(ACCOUNT, manage, False), {})
 
 
 class Linked(unittest.TestCase):
@@ -114,12 +114,12 @@ class Linked(unittest.TestCase):
         db.execute("INSERT INTO events VALUES(1,'acme-gmail','gmail.message',?,'{}','2026-10-27')", ('Can you fix ' + link,))
         ids = json.dumps([1])
         config = {**HOSTED, 'accounts': [t.GMAIL, PERSONAL, ACCOUNT]}
-        files = a.doc_write_files(db, ids, config, {'boundaries': ['work:Acme']})
+        files = machine_sources_connectors.doc_write_files(db, ids, config, {'boundaries': ['work:Acme']})
         self.assertEqual(files, {'x' * 30: {'account_id': 'acme-docs', 'doc_title': None, 'provider': 'google'}})
-        self.assertEqual(a.doc_write_files(db, ids), {})  # without config: only the task's own doc events
-        self.assertEqual(a.doc_write_files(db, ids, {**config, 'accounts': [t.GMAIL, PERSONAL]}, {'boundaries': ['work:Acme']}), {})
+        self.assertEqual(machine_sources_connectors.doc_write_files(db, ids), {})  # without config: only the task's own doc events
+        self.assertEqual(machine_sources_connectors.doc_write_files(db, ids, {**config, 'accounts': [t.GMAIL, PERSONAL]}, {'boundaries': ['work:Acme']}), {})
         microsoft = {**ACCOUNT, 'provider': 'microsoft'}
-        self.assertEqual(a.doc_write_files(db, ids, {**config, 'accounts': [microsoft]}, {'boundaries': ['work:Acme']}), {})
+        self.assertEqual(machine_sources_connectors.doc_write_files(db, ids, {**config, 'accounts': [microsoft]}, {'boundaries': ['work:Acme']}), {})
 
 
 if __name__ == '__main__':
