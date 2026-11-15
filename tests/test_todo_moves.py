@@ -1,7 +1,10 @@
 """A to-do's moves between statuses (machine/store/todo_moves.py): transition() checks each against
 machine/todo_states.MOVES, keeps it in the to-do's history and otherwise writes what the UPDATE it replaces wrote.
 Synthetic data only."""
+import ast
+import re
 import sqlite3
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -96,6 +99,49 @@ class TodoMoves(unittest.TestCase):
             with store.connect() as db:
                 columns = [r[1] for r in db.execute('PRAGMA table_info(todo_moves)')]
         self.assertEqual(columns, ['id', 'suggestion_id', 'at', 'from_status', 'to_status', 'reason'])
+
+
+class OnlyTransitionMoves(unittest.TestCase):
+    """Guard: a to-do's status changes only through todo_moves.transition(), so every move is a declared one and is in
+    its history. A raw `UPDATE suggestions SET status=` anywhere else (tests set up rows as they like) fails here."""
+    ROOT = Path(__file__).resolve().parents[1]
+    SETS = re.compile(r'UPDATE\s+suggestions\s+SET\s(.*?)(?:\sWHERE\s|$)', re.S | re.I)
+    STATUS = re.compile(r'(?:^|,)\s*status\s*=', re.I)
+
+    @classmethod
+    def raw_writes(cls, source, name='<code>'):
+        found = []
+        for node in ast.walk(ast.parse(source, name)):
+            if isinstance(node, ast.Call) and node.args:
+                parts = sorted((n for n in ast.walk(node.args[0]) if isinstance(n, ast.Constant) and isinstance(n.value, str)),
+                               key=lambda n: (n.lineno, n.col_offset))  # the SQL as written, also when built from pieces
+                sets = cls.SETS.search(' '.join(n.value for n in parts))
+                if sets and cls.STATUS.search(sets.group(1)):
+                    found.append(f'{name}:{node.lineno}')
+        return found
+
+    def test_no_raw_status_write_outside_transition(self):
+        files = subprocess.run(['git', 'ls-files', '*.py'], cwd=self.ROOT, capture_output=True, text=True, check=True).stdout.split()
+        self.assertIn('machine/store/decisions.py', files)
+        raw = [hit for path in files if not path.startswith('tests/') and path != 'machine/store/todo_moves.py'
+               for hit in self.raw_writes((self.ROOT / path).read_text(encoding='utf-8'), path)]
+        self.assertEqual(raw, [], 'move a to-do with machine.store.todo_moves.transition(), not a raw status UPDATE')
+
+    def test_the_guard_sees_the_shapes_a_write_takes(self):
+        caught = '\n'.join((
+            "db.execute(\"UPDATE suggestions SET status='done' WHERE id=?\", (1,))",
+            "db.execute('UPDATE suggestions SET early=0, status=? WHERE id=?', (s, 1))",
+            "db.execute('UPDATE suggestions SET ' + KEEP + ',body=?,' + ('a=?' if x else 'b=?') + \",status='prepared' WHERE id=?\", ())",
+            "db.execute(f\"UPDATE suggestions SET outcome=NULL,status={s!r} WHERE id=?\", (1,))",
+        ))
+        self.assertEqual(len(self.raw_writes(caught)), 4)
+        fine = '\n'.join((
+            "db.execute(\"UPDATE suggestions SET outcome=CASE WHEN status=? THEN outcome END WHERE id=?\", (s, 1))",
+            "db.execute(\"UPDATE suggestions SET early=0 WHERE id=? AND status='pending'\", (1,))",
+            "db.execute(\"UPDATE preparations SET status='cancelled' WHERE suggestion_id=?\", (1,))",
+            "db.execute(\"UPDATE suggestions SET resume_status=? WHERE id=?\", (s, 1))",
+        ))
+        self.assertEqual(self.raw_writes(fine), [])
 
 
 if __name__ == '__main__':

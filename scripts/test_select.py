@@ -57,6 +57,8 @@ ALWAYS = {
     'test_docs_match_code.py',
     # every write to the deliveries table has a label on Connections, Checks
     'test_delivery_labels.py',
+    # every write of a to-do's status goes through todo_moves.transition()
+    'test_todo_moves.py',
 }
 # Python that only puts the dashboard page together from its parts and serves it: a part's change reaches the Python
 # tests that look at the page, and those name dashboard_parts or the page (they're picked by name), not every test that
