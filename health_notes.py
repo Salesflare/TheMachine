@@ -2,12 +2,12 @@
 notes under Health, kept the way every kind in sections is (section_notes.py: one small model call over what is new
 only, the owner's own notes in a part filled in, a part only from two lines).
 
-Each line points to where the thing lives instead of copying it: an appointment's line opens it in the calendar, a
-bill's opens its to-do and mail (its amount and payment details stay there), a line from what The Machine learned is
-that fact.
+Each line points to where the thing lives instead of copying it: a bill's opens its to-do and mail (its amount and
+payment details stay there), a line from what The Machine learned is that fact.
 
-Candidates, in plain code: appointments (calendar events only the owner is on, section_notes.own_events), bills from
-any payee, subscriptions the owner didn't cancel, and what The Machine learned that is about no one in the Graph.
+Candidates, in plain code: bills from any payee, subscriptions the owner didn't cancel, and what The Machine learned
+that is about no one in the Graph. Never a calendar event: an appointment alone is a date, not a line of the owner's
+history (section_notes.py).
 Health is always Personal, whatever the account it came in on: a doctor's bill sent to a work address is still the
 owner's own. The notes are never shared."""
 import section_notes
@@ -25,7 +25,7 @@ PARTS = {
 
 
 def candidates(db, accounts, today):
-    return [*section_notes.own_events(db, accounts, today), *section_notes.bills(db, accounts, today, personal=False),
+    return [*section_notes.bills(db, accounts, today, personal=False),
             *section_notes.subscriptions(db, accounts, personal=False), *section_notes.facts(db, accounts, personal=False)]
 
 

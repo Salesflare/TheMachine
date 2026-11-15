@@ -1,6 +1,6 @@
-"""Health notes (health_notes.py, section_notes.py, NotesApp.section_notes_run): the owner's own appointments from
-the calendar, care bills and what was learned, from any area, placed under Health by one small model call over what is
-new only. Health is always Personal. Made-up data only; the model is a stand-in, nothing is sent."""
+"""Health notes (health_notes.py, section_notes.py, NotesApp.section_notes_run): care bills and what was learned,
+from any area, placed under Health by one small model call over what is new only; a calendar event is never a line.
+Health is always Personal. Made-up data only; the model is a stand-in, nothing is sent."""
 import importlib.util
 import json
 import tempfile
@@ -72,45 +72,18 @@ class HealthNotes(unittest.TestCase):
         with self.store.connect() as db:
             return {x['name']: note_pages.page(db, x['id']) for x in note_pages.listing(db, '2026-11-14') if x['kind'] == 'health'}
 
-    def test_appointments_only_the_owner_goes_to_with_their_next_or_last_time(self):
-        self.event('Dentist check-up', '2026-05-10')
-        coming = self.event('Dentist check-up', '2026-12-02')
-        self.event('Physio', '2026-10-01', attendees=['sam@example.com'])
-        last = self.event('Physio', '2026-10-08', attendees=[{'email': 'sam@example.com', 'self': True, 'responseStatus': 'accepted'}])
-        self.event('Eye test', '2026-09-20', account='job')  # on the work calendar: still the owner's own health
-        self.event('Team sync', '2026-11-03', attendees=['ana@acme.example'])  # someone else on it: a meeting
-        self.event('Dentist cleaning', '2026-11-20', status='cancelled')
-        self.event('Blood test', '2026-11-21', attendees=[{'email': 'sam@example.com', 'self': True, 'responseStatus': 'declined'}])
-        self.event('Old allergist visit', '2025-01-10')  # before EVENTS_BACK
-        self.event('Room booking', '2026-10-15', attendees=[{'email': 'room@acme.example', 'resource': True}])
-        with self.store.connect() as db:
-            import timeutil
-            found = {c['name']: c for c in section_notes.own_events(db, [HOME, JOB], timeutil.today())}
-        self.assertEqual(sorted(found), ['Dentist check-up', 'Eye test', 'Physio', 'Room booking'])
-        self.assertEqual((found['Dentist check-up']['at'], found['Dentist check-up']['coming'], found['Dentist check-up']['event_id']),
-                         ('2026-12-02', True, coming))
-        self.assertEqual((found['Physio']['at'], found['Physio']['coming'], found['Physio']['event_id'], found['Physio']['count']),
-                         ('2026-10-08', False, last, 2))
-
     def test_health_sections_from_any_area_always_personal_with_their_sources(self):
-        self.places = {'Dentist': 'Appointments', 'Eye test': 'Appointments', 'Example Dental': 'Bills and insurance',
-                       'Example Pharmacy': 'Bills and insurance', 'penicillin': 'Allergies and conditions', 'hay fever': 'Allergies and conditions',
-                       'Team': ''}
-        self.event('Dentist check-up', '2026-12-02')
-        self.event('Eye test', '2026-09-20', account='job')
-        self.event('Team lunch', '2026-11-03')  # alone on it but not health: the model says ""
+        self.places = {'Example Dental': 'Bills and insurance', 'Example Pharmacy': 'Bills and insurance',
+                       'penicillin': 'Allergies and conditions', 'hay fever': 'Allergies and conditions'}
         dental = self.bill('Example Dental', '10-12')
         self.bill('Example Pharmacy', '09-01', account='job')  # a work address: Health is still Personal
         self.fact('Allergic to penicillin')
         self.fact('Has hay fever every spring')
         notes = self.run_round()
-        self.assertEqual(sorted(notes), ['Allergies and conditions', 'Appointments', 'Bills and insurance'])
-        appts = notes['Appointments']
-        self.assertEqual([x['name'] for x in appts['path']], ['Health'])
-        self.assertEqual({n['area'] for n in notes.values()}, {'personal'})
-        self.assertCountEqual([(x['text'], x['at']) for x in appts['lines']],
-                              [('Dentist check-up: coming up', '2026-12-02'), ('Eye test: last time', '2026-09-20')])
+        self.assertEqual(sorted(notes), ['Allergies and conditions', 'Bills and insurance'])
         bills = notes['Bills and insurance']
+        self.assertEqual([x['name'] for x in bills['path']], ['Health'])
+        self.assertEqual({n['area'] for n in notes.values()}, {'personal'})
         self.assertCountEqual([x['text'] for x in bills['lines']],
                               ['Example Dental: one bill in the past year', 'Example Pharmacy: one bill in the past year'])
         page = self.app.note_page(bills['id'])
@@ -118,38 +91,49 @@ class HealthNotes(unittest.TestCase):
         prompt = self.asked[0]
         self.assertNotIn('65,00', prompt)
         self.assertNotIn('IBAN', prompt)
-        self.assertIn('"kind": "calendar"', prompt)
+
+    def test_a_calendar_event_is_never_a_line(self):
+        self.places = {'Dentist': 'Appointments', 'GP': 'Appointments', 'Physio': 'Appointments'}
+        self.event('Dentist check-up', '2026-12-02')
+        self.event('GP visit', '2026-10-20', account='job')
+        self.event('Physio', '2026-11-05', attendees=[{'email': 'sam@example.com', 'self': True}])
+        notes = self.run_round()
+        self.assertEqual(notes, {}, 'meetings and appointments alone start no note')
+        self.assertFalse(self.asked, 'nothing to place: no model call')
+        with self.store.connect() as db:
+            self.assertEqual(note_pages.listing(db, '2026-11-14'), [])
+
+    def test_appointment_lines_from_before_leave_the_notes(self):
+        with self.store.connect() as db:  # what a round made before calendar events stopped being candidates
+            section_notes.ensure(db)
+            db.execute("INSERT INTO section_topics(kind,key,section,at) VALUES('health','appt:old1','Appointments',?)", (AT,))
+            note_pages.sync(db, 'health', [{'key': 'appointments', 'title': 'Appointments', 'under': ['Health'], 'lines': [
+                {'key': 'appt:old1', 'item': 'appointment', 'text': 'Dentist check-up: coming up', 'at': '2026-12-02'},
+                {'key': 'appt:old2', 'item': 'appointment', 'text': 'GP visit: last time', 'at': '2026-10-20'}]}], AT)
+        self.assertEqual(sorted(self.run_round()), [], 'the part with only appointments goes')
+        with self.store.connect() as db:
+            self.assertIsNone(db.execute("SELECT 1 FROM section_topics WHERE key LIKE 'appt:%'").fetchone())
+            self.assertIsNone(db.execute("SELECT 1 FROM note_page_lines WHERE item='appointment'").fetchone())
 
     def test_one_line_starts_no_part_and_the_owners_own_note_gets_what_is_about_it(self):
         health = self.app.note_action('note_new', {'title': 'Health'}, owner_dashboard=True)['id']
-        appts = self.app.note_action('note_new', {'title': 'Appointments', 'parent': health}, owner_dashboard=True)['id']
-        physio = self.app.note_action('note_new', {'title': 'Physio', 'parent': appts, 'lines': ['Exercises: twice a day']},
-                                      owner_dashboard=True)['id']
-        self.places = {'Physio': 'Appointments/Physio', 'Dentist': 'Appointments', 'GP': 'Appointments', 'ibuprofen': 'Medicines'}
-        self.event('Physio', '2026-11-05')
-        self.event('Dentist check-up', '2026-12-02')
-        self.event('GP visit', '2026-10-20')
-        self.fact('Takes ibuprofen for back pain')
+        meds = self.app.note_action('note_new', {'title': 'Medicines', 'parent': health}, owner_dashboard=True)['id']
+        inhaler = self.app.note_action('note_new', {'title': 'Inhaler', 'parent': meds, 'lines': ['Two puffs when needed']},
+                                       owner_dashboard=True)['id']
+        self.places = {'inhaler': 'Medicines/Inhaler', 'vitamin D': 'Medicines', 'magnesium': 'Medicines', 'penicillin': 'Allergies and conditions'}
+        self.fact('Refills the inhaler every three months')
+        self.fact('Takes vitamin D in winter')
+        self.fact('Takes magnesium before sleep')
+        self.fact('Allergic to penicillin')
         notes = self.run_round()
-        self.assertIn('"Appointments": ["Physio"]', self.asked[0])
-        self.assertNotIn('Medicines', notes, 'one line: no Medicines yet')
-        self.assertEqual(notes['Appointments']['id'], appts)
+        self.assertIn('"Medicines": ["Inhaler"]', self.asked[0])
+        self.assertNotIn('Allergies and conditions', notes, 'one line: no part yet')
+        self.assertEqual(notes['Medicines']['id'], meds)
         with self.store.connect() as db:
-            under = note_pages.page(db, appts)
-            mine = note_pages.page(db, physio)
-            names = sorted(x['name'] for x in note_pages.listing(db, '2026-11-14'))
-        self.assertEqual(names, ['Appointments', 'Health', 'Physio'])
-        self.assertCountEqual([x['text'] for x in under['lines']], ['Dentist check-up: coming up', 'GP visit: last time'])
-        self.assertCountEqual([x['text'] for x in mine['lines']], ['Exercises: twice a day', 'Physio: last time'])
-
-    def test_a_calendar_line_names_no_sender(self):
-        self.places = {'Dentist': 'Appointments', 'GP': 'Appointments'}
-        self.event('Dentist check-up', '2026-12-02', organizer='front-desk@dental.example')
-        self.event('GP visit', '2026-10-20')
-        notes = self.run_round()
-        page = self.app.note_page(notes['Appointments']['id'])
-        self.assertEqual({x['source']['kind'] for x in page['lines']}, {'calendar.event'})
-        self.assertFalse(any('from' in x['source'] for x in page['lines']))
+            under = note_pages.page(db, meds)
+            mine = note_pages.page(db, inhaler)
+        self.assertCountEqual([x['text'] for x in under['lines']], ['Takes vitamin D in winter', 'Takes magnesium before sleep'])
+        self.assertCountEqual([x['text'] for x in mine['lines']], ['Two puffs when needed', 'Refills the inhaler every three months'])
 
 
 if __name__ == '__main__':

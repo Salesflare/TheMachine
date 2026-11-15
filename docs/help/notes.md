@@ -22,7 +22,7 @@ A note can sit under another, like Appliances under Home. Notes shows them as a 
 
 ## Notes your Machine keeps
 
-Your Machine also writes notes by itself, from your messages, and keeps them current. Each of its lines says where it came from, like who sent the email: tap it to open the message. A line from **What I've learned** says **From what I learned**.
+Your Machine also writes notes by itself, from your messages, and keeps them current. Each of its lines says where it came from, like who sent the email: tap it to open the message. A line from **What I've learned** says **From what I learned**. A meeting or appointment in your calendar is never a line on its own: it stays in [Calendar](calendar.md).
 
 Your changes always stand. Rename a note, move it, change its dates or a line, and your Machine keeps it that way when it updates the note. Delete a line or a note and it doesn't come back. Later notes on the same subject go where you put the first one.
 
@@ -59,19 +59,17 @@ Only Personal bills and subscriptions are used, and Home notes are always Person
 
 Under **Health**, your Machine keeps what it knows about your own health: **Appointments**, **Doctors and care**, **Medicines**, **Allergies and conditions** and **Bills and insurance**. A part shows up once it has at least two lines.
 
-- An appointment in your calendar that only you go to, like the dentist, gets a line with its next date, or its last one. **From your calendar** opens it.
 - A bill from a doctor, dentist or pharmacy gets a line that opens its to-do. The amount stays there.
 - What your Machine learned about your health, like an allergy, is a line too. Editing it also changes it under **What I've learned**.
 - Your own note in a part, like one for your physio under **Appointments**, gets what's about that thing.
 
-Health notes are always Personal, even when a bill came in on your work address. Your Machine asks its AI once about each new appointment, bill or thing it learned, to tell whether it's about your own health. It sends an appointment's name, never its notes or who else is invited.
+Health notes are always Personal, even when a bill came in on your work address. Your Machine asks its AI once about each new bill or thing it learned, to tell whether it's about your own health.
 
 ## Kids
 
 Under **Kids**, your Machine keeps what it knows about your children: **School**, **Activities**, **Doctors and care** and **Bills and fees**. A part shows up once it has at least two lines.
 
 - What your Machine learned about your child, like their class teacher or swimming day, is a line that links to their page. It counts someone as your child when their **To you** says so, like daughter or son.
-- An event in your calendar that only you go to, like a parents' evening, gets a line with its next date, or its last one. **From your calendar** opens it.
 - A bill for school, a club or childcare gets a line that opens its to-do. The amount stays there.
 - Your own note for one child in a part, like one for Isla under **School**, gets what's about that child.
 

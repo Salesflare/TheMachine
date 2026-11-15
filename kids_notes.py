@@ -2,13 +2,13 @@
 school, in a few notes under Kids, kept the way every kind in sections is (section_notes.py: one small model call over
 what is new only, the owner's own notes in a part filled in, a part only from two lines).
 
-Each line points to where the thing lives instead of copying it: a calendar event's line opens it, a bill's opens its
-to-do and mail (its amount and payment details stay there), a line from what The Machine learned is that fact, and
-links the child it is about.
+Each line points to where the thing lives instead of copying it: a bill's opens its to-do and mail (its amount and
+payment details stay there), a line from what The Machine learned is that fact, and links the child it is about.
 
 Candidates, in plain code: what was learned about one of the owner's children (people in the Graph whose role to the
-owner says so, section_notes.children) or about no one, calendar events only the owner is on (a parents' evening, a
-school play: section_notes.own_events), bills from any payee and subscriptions the owner didn't cancel. Kids is always
+owner says so, section_notes.children) or about no one, bills from any payee and subscriptions the owner didn't
+cancel. Never a calendar event: a lesson or a babysitter's evening alone is a date, not what the school or a club told
+the owner (section_notes.py). Kids is always
 Personal, whatever the account it came in on: a school's mail to a work address is still about the owner's own child.
 A note the owner keeps for one child in a part (Isla under School) gets what is about that child. The notes are
 never shared."""
@@ -26,8 +26,7 @@ PARTS = {
 
 
 def candidates(db, accounts, today):
-    return [*section_notes.child_facts(db), *section_notes.own_events(db, accounts, today),
-            *section_notes.bills(db, accounts, today, personal=False), *section_notes.subscriptions(db, accounts, personal=False),
+    return [*section_notes.child_facts(db), *section_notes.bills(db, accounts, today, personal=False), *section_notes.subscriptions(db, accounts, personal=False),
             *section_notes.facts(db, accounts, personal=False)]
 
 

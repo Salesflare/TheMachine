@@ -1,5 +1,5 @@
-"""Kids notes (kids_notes.py, section_notes.py, NotesApp.section_notes_run): what was learned about the owner's children,
-their calendar events and bills, from any area, placed under Kids by one small model call over what is new only, a
+"""Kids notes (kids_notes.py, section_notes.py, NotesApp.section_notes_run): what was learned about the owner's children
+and their bills, from any area (never a calendar event alone), placed under Kids by one small model call over what is new only, a
 child's lines in the owner's own note for that child. Kids is always Personal. Made-up data only; the model is a
 stand-in, nothing is sent."""
 import importlib.util
@@ -96,7 +96,8 @@ class KidsNotes(unittest.TestCase):
         self.fact('Jules is in class 4B this year', about=jules)
         self.fact('Jules swims on Wednesdays', about=jules)  # one line: no Activities yet
         self.fact('Ms Lee prefers mail to calls', about=teacher)  # about someone who is not a child: their page
-        self.event('Parents evening', '2026-11-26', account='job')  # on the work calendar: still about the owner's child
+        self.fact('Parents evening for class 4B is on 26 November')
+        self.event('Parents evening', '2026-11-26', account='job')  # a calendar event alone: never a line
         self.bill('Example Primary School', '09-05', account='job')
         self.bill('Example Swim Club', '10-02')
         notes = self.run_round()
@@ -104,7 +105,8 @@ class KidsNotes(unittest.TestCase):
         school = notes['School']
         self.assertEqual([x['name'] for x in school['path']], ['Kids'])
         self.assertEqual({n['area'] for n in notes.values()}, {'personal'})
-        self.assertCountEqual([x['text'] for x in school['lines']], ['Jules is in class 4B this year', 'Parents evening: coming up'])
+        self.assertCountEqual([x['text'] for x in school['lines']], ['Jules is in class 4B this year', 'Parents evening for class 4B is on 26 November'])
+        self.assertNotIn('"kind": "calendar"', self.asked[0])
         line = next(x for x in school['lines'] if x['fact_id'])
         self.assertEqual(line['links'], [{'id': jules, 'name': 'Jules'}], 'links the child, as the line names them')
         prompt = self.asked[0]
