@@ -2,6 +2,8 @@
 imports nothing, so any module can use it. Code and SQL name a group here instead of spelling statuses out
 (tests/test_architecture.py checks that); a module that means something else names that difference here."""
 
+LAYER = 0  # every to-do status and its named groups (a leaf)
+
 PENDING = 'pending'            # new, needs the owner
 ACCEPTED = 'accepted'          # Do it: The Machine is preparing it
 PREPARED = 'prepared'          # ready for the owner's look

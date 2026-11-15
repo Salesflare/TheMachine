@@ -109,6 +109,8 @@ from support_app import SupportApp
 from timeutil import now, set_timezone, set_work_hours
 from whatsapp_images_app import WhatsAppImagesApp
 
+LAYER = 4
+
 
 class Store(CardsStore, DecisionsStore, DoneMilestonesStore, EventsStore, FactsStore, FaultsStore, FirstLookStore,
             ProfileStore, PromisesStore, MachineCardsStore, ReviewStore, StoreCore, ViewsStore, VoicesStore, WhatsNewStore):

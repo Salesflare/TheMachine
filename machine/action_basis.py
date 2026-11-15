@@ -31,6 +31,8 @@ import authorship
 import doc_writes
 import error_feed
 
+LAYER = 0  # what allowed each outward step, recorded for Activity (never a check)
+
 KINDS = ('todo', 'telegram', 'voice', 'chat', 'doit', 'follow_up', 'self_doc', 'self_fix', 'ahead', 'none')
 BEFORE = json.dumps({'kind': 'before'})  # a row from before bases were recorded
 QUOTE_MAX = 80

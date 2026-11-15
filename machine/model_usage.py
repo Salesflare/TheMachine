@@ -17,6 +17,8 @@ from timeutil import now
 from machine.owner_error import OwnerError
 from machine.dashboard_link import dashboard_link
 
+LAYER = 1
+
 
 def usage_status(config, run=subprocess.run):
     """The running OpenClaw Gateway's own usage reading (`usage.status`): a short RPC client, not a second Gateway,

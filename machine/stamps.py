@@ -13,6 +13,8 @@ import sqlite3
 import threading
 import timeutil
 
+LAYER = 0  # change counters per table, so a request's answer is kept until its tables change
+
 IDENTIFIER = re.compile(r'[a-z][a-z0-9_]{0,62}')
 
 

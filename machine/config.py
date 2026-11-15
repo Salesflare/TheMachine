@@ -8,6 +8,8 @@ from pathlib import Path
 
 import voice_input
 
+LAYER = 0
+
 ROOT = Path(__file__).resolve().parent.parent
 
 

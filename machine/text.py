@@ -17,6 +17,8 @@ import unicodedata
 import message_seal
 import portable
 
+LAYER = 0  # message parsing
+
 
 def encoded(value):
     return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(',', ':'))

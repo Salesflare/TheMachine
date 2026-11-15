@@ -25,6 +25,8 @@ from machine.config import ROOT
 from machine.dashboard_link import dashboard_link
 import timeutil
 
+LAYER = 1
+
 
 # LinkedIn's sign-in page takes its language from the server's country (a Machine on a server abroad showed it, and its
 # captcha, in that country's language), not from the browser's languages, and keeps it for that browser. Its `_l`

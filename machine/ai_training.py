@@ -12,6 +12,8 @@ import subprocess
 import time
 from pathlib import Path
 
+LAYER = 0  # whether the owner's AI plan trains on chats, and where to turn that off (a leaf)
+
 # Where each provider keeps the switch (checked 2026-11): ChatGPT's Settings, Data controls; Claude's Settings, Privacy
 SETTINGS = {'chatgpt': 'https://chatgpt.com/settings/data-controls',
             'claude': 'https://claude.ai/settings/data-privacy-controls'}

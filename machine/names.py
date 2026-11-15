@@ -12,6 +12,8 @@ import re
 
 from machine import services
 
+LAYER = 0  # what the owner calls a service, app or agent (never the tool underneath)
+
 SERVICES = services.field('name')  # 'gmail' -> 'Gmail' (machine/services.py)
 # An account with no service of its own: its transport says which one (an account without either is Gmail, as in
 # config.example.json and everywhere `account.get('service', 'gmail')` reads it)

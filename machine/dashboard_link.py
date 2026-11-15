@@ -1,6 +1,8 @@
 """The dashboard's own https address, for links in messages, pushes and pages: one place builds it from `dashboard_host`
 and `dashboard_path` (a leaf)."""
 
+LAYER = 0  # the dashboard's own address for links (a leaf)
+
 
 def dashboard_link(config, fragment=''):
     """https://<dashboard_host><dashboard_path><fragment>, as the config spells them ('#card=...' for a fragment), or ''
