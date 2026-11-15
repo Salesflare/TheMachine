@@ -8,7 +8,8 @@ import unicodedata
 import unittest
 from unittest.mock import patch
 from pathlib import Path
-from seams import patch_everywhere  # noqa: E402
+from seams import patch_everywhere  # noqa: E402,F401  (test_shared_graph_apart imports it from here)
+from pinned import pinned  # noqa: E402
 
 spec = importlib.util.spec_from_file_location('graph_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
@@ -44,9 +45,11 @@ class Graph(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
         self.store = a.Store(Path(self.temp.name) / 'events.sqlite')
         self.app = object.__new__(a.App); self.app.store = self.store; self.app.config = CONFIG
-        clock = patch_everywhere(a, 'now', lambda: NOW.isoformat())
-        clock.start()
-        self.addCleanup(clock.stop)
+        # The whole clock stands at NOW: now() and the windows counted back from clock() ("asked in the last 30
+        # days"), so the stored times and those windows agree on any day the tests run.
+        clock = pinned(NOW)  # entered by hand: some suites call this setUp on a plain object with addCleanup
+        clock.__enter__()
+        self.addCleanup(clock.__exit__, None, None, None)
 
     def add(self, *events):
         for e in events:
@@ -734,7 +737,7 @@ class Graph(unittest.TestCase):
         self.assertIn('node_id org:client.com', self.store.role_text('org-run2b', limit=10))
         self.assertNotIn('org:client.com', self.store.role_text('org-run2c', limit=10))
         # One of its people getting a role after the ask makes the organization worth reading again.
-        with patch_everywhere(a, 'now', lambda: (NOW + dt.timedelta(minutes=5)).isoformat()):
+        with pinned(NOW + dt.timedelta(minutes=5)):
             self.app.action('graph_role', {'node_id': 'email:ann@client.com', 'role': 'office manager'}, owner_dashboard=True)
         self.assertIn('node_id org:client.com', self.store.role_text('org-run3', limit=10))
         self.app.action('graph_role', {'node_id': 'email:ann@client.com', 'role': ''}, owner_dashboard=True)
@@ -1204,16 +1207,17 @@ class Boards(unittest.TestCase):
             self.assertEqual(graph.waiting_ids(db, later), {node})
             board, = graph.boards(db, later)
             self.assertEqual(board['stuck'], 1)  # the board's count is the filter's
-            # The List and the Board ask the same query (the Board for the ids it keeps); today is past ten days
-            self.assertEqual([i['id'] for i in graph.page(db, 'projects', filters={'waiting': '1'})['items']], [node])
-            self.assertEqual(graph.page_ids(db, 'projects', {'waiting': '1'}), {'ids': [node]})
-            self.assertEqual(graph.page_ids(db, 'projects', {}), {'ids': [node]})
-            self.assertEqual([i['id'] for i in graph.page(db, 'people', filters={'waiting': '1'})['items']], ['email:ann@partner.example'])
-            with self.assertRaisesRegex(ValueError, 'on or off'):
-                graph.page(db, 'projects', filters={'waiting': 'yes'})
-            graph.set_stage(db, node, graph.STALLED, 'owner', NOW.isoformat())  # Stalled never counts
-            self.assertEqual(graph.waiting_ids(db, later), set())
-            self.assertEqual(graph.page_ids(db, 'projects', {'waiting': '1'}), {'ids': []})
+            # The List and the Board ask the same query (the Board for the ids it keeps), on a day past the ten
+            with pinned(later):
+                self.assertEqual([i['id'] for i in graph.page(db, 'projects', filters={'waiting': '1'})['items']], [node])
+                self.assertEqual(graph.page_ids(db, 'projects', {'waiting': '1'}), {'ids': [node]})
+                self.assertEqual(graph.page_ids(db, 'projects', {}), {'ids': [node]})
+                self.assertEqual([i['id'] for i in graph.page(db, 'people', filters={'waiting': '1'})['items']], ['email:ann@partner.example'])
+                with self.assertRaisesRegex(ValueError, 'on or off'):
+                    graph.page(db, 'projects', filters={'waiting': 'yes'})
+                graph.set_stage(db, node, graph.STALLED, 'owner', NOW.isoformat())  # Stalled never counts
+                self.assertEqual(graph.waiting_ids(db, later), set())
+                self.assertEqual(graph.page_ids(db, 'projects', {'waiting': '1'}), {'ids': []})
             # The Board's ids come from the List's own query: an unknown list or owner is refused, a tag is only ever a value
             with self.assertRaisesRegex(ValueError, 'list is one of'):
                 graph.page_ids(db, "projects' OR 1=1 --", {})
