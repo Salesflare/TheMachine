@@ -101,7 +101,8 @@ class NotesApp:
         with self.store.connect() as db:
             section_notes.ensure(db)
             kinds = [k for k in SECTION_KINDS if section_notes.due(db, k, at)]
-            ask = any(section_notes.unasked(db, k, k.candidates(db, accounts, today())) for k in kinds)
+            ask = kinds and (any(section_notes.unasked(db, k, k.candidates(db, accounts, today())) for k in kinds)
+                             or section_notes.mail_unasked(db, SECTION_KINDS, section_notes.mail_senders(db, accounts, today())))
         if not kinds:
             return False
         if ask:
@@ -115,7 +116,8 @@ class NotesApp:
                 return False
             self.background_started()
         self.__dict__.pop('section_notes_waiting', None)
-        self.section_notes_thread = threading.Thread(target=lambda: [self.section_notes_run(k) for k in kinds], daemon=True, name='section-notes')
+        self.section_notes_thread = threading.Thread(target=lambda: [self.section_notes_mail_run(), *(self.section_notes_run(k) for k in kinds)],
+                                                     daemon=True, name='section-notes')
         self.section_notes_thread.start()
         return True
 
@@ -129,9 +131,37 @@ class NotesApp:
         except help_chat.Unavailable:
             return None
 
+    def section_notes_mail_run(self):
+        """The senders of the owner's Personal mail no call placed yet, placed for every kind that reads mail at once
+        (section_notes.mail_prompt): up to MAIL_CALLS calls a round, so a mailbox with a year of senders is through in
+        a few rounds. A reply that isn't one keeps nothing and stops the round. Returns how many it placed."""
+        accounts, done = self.config.get('accounts') or [], 0
+        try:
+            for _ in range(section_notes.MAIL_CALLS):
+                with self.store.connect() as db:
+                    section_notes.ensure(db)
+                    items = section_notes.mail_unasked(db, SECTION_KINDS, section_notes.mail_senders(db, accounts, today()))
+                if not items:
+                    break
+                placed = section_notes.mail_reply(SECTION_KINDS, self.section_notes_ask(section_notes.mail_prompt(SECTION_KINDS, items)), items)
+                if placed is None:
+                    break
+                at = now()
+                with self.store.connect() as db:
+                    db.execute('BEGIN IMMEDIATE')
+                    for kind in SECTION_KINDS:
+                        if kind.mail:
+                            section_notes.remember(db, kind, placed[kind.kind], at)
+                done += len(items)
+        except Exception as error:  # noqa: BLE001 - the next round tries again
+            LOG.warning('section notes mail error=%s', type(error).__name__)
+        if done:
+            LOG.info('section notes mail placed=%s', done)
+        return done
+
     def section_notes_run(self, kind):
-        """One round of one kind: what is new placed by the model (kept, so it is asked once), then its notes synced.
-        Returns the notes it changed."""
+        """One round of one kind: what is new placed by the model (kept, so it is asked once), then its notes synced,
+        with the mail senders placed in it (section_notes_mail_run). Returns the notes it changed."""
         accounts, at = self.config.get('accounts') or [], now()
         try:
             with self.store.connect() as db:
@@ -143,7 +173,8 @@ class NotesApp:
                 db.execute('BEGIN IMMEDIATE')
                 section_notes.remember(db, kind, placed or {}, at)
                 section_notes.ran(db, kind, at)
-                found, keep = section_notes.drafts(db, kind, kind.candidates(db, accounts, today()))
+                found = [*kind.candidates(db, accounts, today()), *section_notes.mail_for(kind, section_notes.mail_senders(db, accounts, today()))]
+                found, keep = section_notes.drafts(db, kind, found)
                 touched = note_pages.sync(db, kind.kind, found, at, keep)
         except Exception as error:  # noqa: BLE001 - the next round tries again
             LOG.warning('section notes kind=%s error=%s', kind.kind, type(error).__name__)
