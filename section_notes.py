@@ -1,9 +1,9 @@
 """Notes in sections (docs/help/notes.md): the engine behind the kinds The Machine keeps as a few notes under one folder
 note, like Home (home_notes.py), Health (health_notes.py) and Kids (kids_notes.py).
 
-A kind (Kind) brings its candidates, found in plain code (bills, subscriptions, the owner's own calendar events, what
-was learned, what was learned about the owner's children), and
-says what its parts are. This module does the rest, the same way for every kind:
+A kind (Kind) brings its candidates, found in plain code (bills, subscriptions, what was learned, what was learned
+about the owner's children), and says what its parts are. A calendar event is never one: a meeting or an appointment
+on its own says nothing the note doesn't already have in the Calendar, so it is no line. This module does the rest, the same way for every kind:
 - Whether a candidate belongs to the kind, and in which part, is a matter of meaning: one small model call (the
   background model, no agent, no tools) over the new candidates only, at most ASK_MAX at a time. Each answer is kept
   (section_topics, by kind and the candidate's key), so a candidate is asked about once. A reply that isn't one keeps
@@ -38,9 +38,6 @@ NOTES_MAX = 20  # the owner's notes per part the call sees
 LOOK_DAYS = 400  # a yearly bill's last two
 RHYTHMS = {'month': (26, 35), 'quarter': (85, 97), 'year': (350, 380)}  # days between two bills
 TEXT_MAX = 240
-EVENTS_BACK = 400  # days of the owner's own calendar events before today
-EVENTS_AHEAD = 120  # and after
-NAME_MAX = 120
 # What a person is to the owner when they are the owner's child ("To you": "daughter", "my son"), in the languages the
 # app speaks; only when graph.personal_relation says it is family too ("Emma's teacher" is not)
 CHILD_WORDS = frozenset('''son daughter child children kid kids stepson stepdaughter zoon dochter fils fille sohn tochter
@@ -69,6 +66,9 @@ def ensure(db):
     if db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='home_state'").fetchone():
         db.execute("INSERT OR IGNORE INTO section_state(kind,at) SELECT 'home',at FROM home_state WHERE id=1")
         db.execute('DROP TABLE home_state')
+    # Calendar events were candidates once (2026-11): placed, never asked again, so their placings go and their lines
+    # leave the notes on the next round
+    db.execute("DELETE FROM section_topics WHERE key LIKE 'appt:%'")
 
 
 def due(db, kind, at):
@@ -312,48 +312,6 @@ def facts(db, accounts, personal=True):
     return out
 
 
-def _others(meta, mine):
-    """Whether someone besides the owner is on a calendar event (a booked room doesn't count)."""
-    for a in meta.get('attendees') or ():
-        if isinstance(a, dict):
-            if not a.get('self') and not a.get('resource') and a.get('email') and str(a['email']).casefold() not in mine:
-                return True
-        elif isinstance(a, str) and a.strip() and a.strip().casefold() not in mine:
-            return True
-    return False
-
-
-def _declined(meta):
-    return any(isinstance(a, dict) and a.get('self') and a.get('responseStatus') == 'declined' for a in meta.get('attendees') or ())
-
-
-def own_events(db, accounts, today):
-    """The calendar events only the owner is on (a dentist, a school play), within EVENTS_BACK days before today and
-    EVENTS_AHEAD after, not canceled or declined, one per name: [{key, name, count, at, coming, event_id}], its next
-    time if there is one, else its last. From every calendar: which kind an event is about is the call's to say."""
-    mine = {str(a.get('email') or '').casefold() for a in accounts} - {''}
-    ids = [a['id'] for a in accounts if a.get('id')]
-    if not ids:
-        return []
-    start = (today - dt.timedelta(days=EVENTS_BACK)).isoformat()
-    end = (today + dt.timedelta(days=EVENTS_AHEAD + 1)).isoformat()
-    now = today.isoformat()
-    found = {}
-    for r in db.execute(f"SELECT id,title,occurred_at,metadata FROM events WHERE kind='calendar.event' AND deleted=0 "
-                        f"AND account_id IN ({','.join('?' * len(ids))}) AND occurred_at>=? AND occurred_at<? ORDER BY occurred_at,id",
-                        [*ids, start, end]):
-        meta = r['metadata'] if isinstance(r['metadata'], dict) else _json(r['metadata'], {})
-        name = ' '.join(str(r['title'] or '').split())[:NAME_MAX]
-        if not name or meta.get('status') == 'cancelled' or _declined(meta) or _others(meta, mine):
-            continue
-        day = str(r['occurred_at'])[:10]
-        c = found.setdefault(name.casefold(), {'key': 'appt:' + key_of(name.casefold()), 'name': name, 'count': 0})
-        c['count'] += 1
-        if day < now or not c.get('coming'):  # the last one before today, until the first one from today on
-            c.update(at=day, coming=day >= now, event_id=r['id'])
-    return sorted(found.values(), key=lambda c: c['at'], reverse=True)
-
-
 def _child(role):
     words = str(role or '').casefold().split()
     while words and words[0] in OWN_WORDS:
@@ -391,24 +349,18 @@ def child_facts(db):
 
 
 def ask(c):
-    """What the call reads of a candidate: for a bill who it's from and how many, never the amount; for a calendar
-    event its name and how often, never its notes or who else is invited; for a fact about a child, whom."""
+    """What the call reads of a candidate: for a bill who it's from and how many, never the amount; for a fact about a
+    child, whom."""
     if c['key'].startswith('bill:'):
         return {'kind': 'bill', 'from': c['name'], 'bills': c['count']}
     if c['key'].startswith('sub:'):
         return {'kind': 'subscription', 'name': c['name'], 'period': c['period']}
-    if c['key'].startswith('appt:'):
-        return {'kind': 'calendar', 'name': c['name'], 'times': c['count']}
     return {'kind': 'learned', 'text': c['text'], **({'about': c['child']} if c.get('child') else {})}
 
 
 def line(db, c):
     """A candidate's line. A bill's: the payee and how often (at: the day of the last one), opening its to-do and
-    mail; a subscription's opens its to-do; a calendar event's says whether it is coming up (at: its next day, else its
-    last) and opens it; a fact's is that fact, linking the child it is about."""
-    if c['key'].startswith('appt:'):
-        said = t('{}: coming up', c['name']) if c['coming'] else t('{}: last time', c['name'])
-        return {'key': c['key'], 'item': 'appointment', 'text': said, 'at': c['at'], 'event_id': c['event_id']}
+    mail; a subscription's opens its to-do; a fact's is that fact, linking the child it is about."""
     if c.get('node'):  # the link as the line names them: "Isla Morgan", else "Isla"
         first = c['child'].split()[0] if c['child'].split() else c['child']
         name = c['child'] if c['child'].casefold() in c['text'].casefold() or first.casefold() not in c['text'].casefold() else first
