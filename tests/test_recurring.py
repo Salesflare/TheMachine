@@ -2,7 +2,6 @@
 time that comes on its date in the owner's timezone, missed ones that don't stack, Skip this one, change and stop, the
 previous occurrence's result in the next preparation, the one-time offer, and a database from before this change."""
 import datetime as dt
-import importlib.util
 import json
 import sqlite3
 import tempfile
@@ -11,8 +10,6 @@ from pathlib import Path
 from unittest.mock import patch
 import machine.main as machine_main
 
-spec = importlib.util.spec_from_file_location('recurring_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
-a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
 import recurring as r  # noqa: E402
 
 D = dt.date

@@ -427,7 +427,6 @@ class SealedStoreTest(unittest.TestCase):
 @unittest.skipUnless(shutil.which('openssl'), 'needs openssl')
 class ListActionTest(unittest.TestCase):
     def test_the_dashboard_list_has_no_password_value_or_length(self):
-        import assistant
         with tempfile.TemporaryDirectory() as folder:
             browser_login.LoginStore(folder).save('example.invalid', USER, SECRET)
             app = machine_main.App.__new__(machine_main.App)
@@ -440,7 +439,6 @@ class ListActionTest(unittest.TestCase):
 
 class OwnerOnlyTest(unittest.TestCase):
     def test_not_for_the_agent_or_the_cli(self):
-        import assistant
         for name in ('browser_login_pages', 'browser_login_fill', 'browser_login_choose', 'browser_logins', 'browser_login_forget'):
             self.assertIn(name, machine_actions.OWNER_ACTIONS)
             app = machine_main.App.__new__(machine_main.App)

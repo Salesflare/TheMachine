@@ -2,7 +2,6 @@
 run reads a private copy that goes afterwards, drafts and sends still get the real bytes, and files a run makes itself
 stay as they are."""
 import datetime as dt
-import importlib.util
 import json
 import os
 from pathlib import Path
@@ -15,9 +14,6 @@ import machine.app.mail as machine_app_mail
 import machine.main as machine_main
 
 ROOT = Path(__file__).resolve().parent.parent
-spec = importlib.util.spec_from_file_location('assistant', ROOT / 'assistant.py')
-assistant = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(assistant)
 import mail_attachments
 import message_seal
 import next_actions

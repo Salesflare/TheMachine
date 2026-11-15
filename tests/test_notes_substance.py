@@ -1,15 +1,12 @@
 """Notes in sections show only with substance (section_notes.drafts, USEFUL; note_pages.drop_empty_folder): a kind
 shows once its parts hold two lines that say something, never for dates from the calendar alone, and the folder note
 The Machine made for it goes when its parts do. Made-up data only; the model is a stand-in, nothing is sent."""
-import importlib.util
 import json
 import tempfile
 import unittest
 from pathlib import Path
 import machine.main as machine_main
 
-spec = importlib.util.spec_from_file_location('notes_substance_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
-a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
 import health_notes  # noqa: E402
 import note_pages  # noqa: E402
 import section_notes  # noqa: E402

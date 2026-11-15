@@ -3,7 +3,6 @@ at sync, one dated note per event under Events with every order for it, a band i
 mail, cancellations, and the area of the mailbox. Made-up mail only; nothing is sent, no Gateway, no model."""
 import base64
 import datetime as dt
-import importlib.util
 import json
 import tempfile
 import unittest
@@ -12,8 +11,6 @@ import i18n
 import machine.main as machine_main
 import machine.sources.gmail as machine_sources_gmail
 
-spec = importlib.util.spec_from_file_location('event_notes_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
-a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
 import bookings  # noqa: E402
 import note_pages  # noqa: E402
 

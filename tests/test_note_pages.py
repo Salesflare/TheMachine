@@ -1,15 +1,11 @@
 """Notes in the Graph (note_pages.py, note_pages_app.py): the tree, links and Linked from, the owner's edits and how
 The Machine's own notes keep them (sync), merges and Undo, and a line from a fact that edits the fact."""
-import importlib.util
 import sqlite3
 import tempfile
 import unittest
 from pathlib import Path
 import machine.main as machine_main
 
-ROOT = Path(__file__).parent.parent
-spec = importlib.util.spec_from_file_location('note_pages_assistant', ROOT / 'assistant.py')
-a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
 import note_pages  # noqa: E402
 from machine import actions  # noqa: E402
 from machine.owner_error import OwnerError  # noqa: E402

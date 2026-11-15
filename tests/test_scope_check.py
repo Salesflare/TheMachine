@@ -7,7 +7,6 @@ import types
 import unittest
 from pathlib import Path
 
-import assistant as a
 from machine.app.setup_card import SETUP_STEP_RE
 from machine.sources import scope_check
 import machine.main as machine_main

@@ -6,7 +6,6 @@ login, robot check or block is a to-do with Open, never solved. Made-up pages on
 never a real site, and nothing contacts a seller."""
 import datetime as dt
 import http.server
-import importlib.util
 import json
 import os
 import shutil
@@ -21,8 +20,6 @@ from pathlib import Path
 from unittest.mock import patch
 import machine.main as machine_main
 
-spec = importlib.util.spec_from_file_location('secondhand_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
-a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
 import routine_templates  # noqa: E402
 import routines  # noqa: E402
 import secondhand as sh  # noqa: E402

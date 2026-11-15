@@ -4,7 +4,6 @@ Only reads pass (the Machine's events, and gh or git commands that only read), c
 filled in by the Machine; a recipe that fails hands the reading back to the turn, which repairs it, and goes after
 three runs without a repair. New words drop it; the owner's Get data comes first."""
 import datetime as dt
-import importlib.util
 import json
 import subprocess
 import tempfile
@@ -14,8 +13,6 @@ from unittest.mock import patch
 from zoneinfo import ZoneInfo
 import machine.main as machine_main
 
-spec = importlib.util.spec_from_file_location('recipe_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
-a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
 import routine_recipe as rr  # noqa: E402
 import timeutil  # noqa: E402
 from pinned import pinned  # noqa: E402

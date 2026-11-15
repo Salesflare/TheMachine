@@ -2,7 +2,6 @@
 came from wherever they live, and nothing else outside its area; mail in one company's mailbox for another company of
 the owner's goes there from the start (suggest company); a run stuck on other messages from another area offers the one
 tap that unblocks it ("Use this email for this to-do") instead of a dead Stuck. Offline: nothing is sent."""
-import importlib.util
 import json
 import tempfile
 import unittest
@@ -12,8 +11,6 @@ import machine.main as machine_main
 import machine.sources.connectors as machine_sources_connectors
 
 ROOT = Path(__file__).parent.parent
-spec = importlib.util.spec_from_file_location('todo_own_sources_assistant', ROOT / 'assistant.py')
-a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
 import todo_areas  # noqa: E402
 
 # The owner runs Acme (Work) and a second company, Side, whose accounts they labeled Personal.

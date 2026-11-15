@@ -2,7 +2,6 @@
 dismissed and snoozed to-dos, corrections in a to-do's chat), one small background turn brings voices, rules and facts
 up to date. Each change is applied, shown under Recent changes with why, and can be undone; a voice the owner wrote
 stays theirs, and an undo never overwrites what they changed since. All local; nothing is sent."""
-import importlib.util
 import json
 from pathlib import Path
 import tempfile
@@ -14,9 +13,6 @@ import machine.prompts.review as machine_prompts_review
 import machine.store.profile as machine_store_profile
 import timeutil
 
-spec = importlib.util.spec_from_file_location('loop_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
-a = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(a)
 import learning_loop
 
 EMAIL = 'English: Hi + first name\nShort paragraphs\nRegards, then the name'
@@ -228,7 +224,6 @@ class LearningLoop(unittest.TestCase):
         titles = {d['id']: d['title'] for d in snap['decisions']}
         self.assertEqual(titles['d9'], 'Ana accepts the venue wording')
         self.assertEqual(titles['d2'], 'To-do 2')
-
 
 
 class DurableSignals(LearningLoop):

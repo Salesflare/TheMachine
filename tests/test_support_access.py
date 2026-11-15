@@ -9,7 +9,6 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-import assistant
 import fleet
 import support
 from test_device_connect import fleet_with

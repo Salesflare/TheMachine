@@ -1,5 +1,4 @@
 import copy
-import importlib.util
 import json
 from pathlib import Path
 import tempfile
@@ -13,9 +12,6 @@ import machine.text as machine_text
 import sources
 import timeutil
 
-spec = importlib.util.spec_from_file_location('assistant_connectors', Path(__file__).parent.parent.joinpath('assistant.py'))
-a = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(a)
 
 from machine.sources.android import RECONCILE_MAX_SECONDS, feed_backoff  # noqa: E402
 

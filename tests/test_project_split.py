@@ -3,16 +3,12 @@ changes until the owner confirms the parts (renamed, items moved, kept or taken 
 same board and stage, seen by no more people than the original, with their threads, to-dos and people; Undo puts it
 all back. Made-up names; the model is a stand-in."""
 import datetime as dt
-import importlib.util
 import json
 from pathlib import Path
 import tempfile
 import unittest
 import machine.main as machine_main
 
-spec = importlib.util.spec_from_file_location('split_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
-a = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(a)
 import graph
 import project_split
 import shared_graph

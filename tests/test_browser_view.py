@@ -1,7 +1,6 @@
 """A ready card whose run worked in the Machine's browser links to that page there (View in browser), from the run's own
 recorded browser steps; the link never carries the page's address or a token. A final click left to the owner says so
 on the card. Offline: no browser, no Telegram, no site is contacted."""
-import importlib.util
 import json
 import tempfile
 import unittest
@@ -16,9 +15,6 @@ import machine.delivery.deliver as machine_delivery_deliver
 import machine.main as machine_main
 import timeutil
 
-spec = importlib.util.spec_from_file_location('view_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
-a = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(a)
 
 TAB = 'A0F20ED451EA2A1247613CAB889F3BCB'
 PAGE = 'https://portal.example.org/campaigns/a05/projects/a0F/Reports/2d05'

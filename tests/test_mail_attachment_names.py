@@ -2,14 +2,12 @@
 review sees them, so it knows the amount and date are in a file its to-do's run can open (AGENTS.md, "Invoices to pay
 by hand"). Before, the review saw only the body and could conclude there was nothing to pay. Made-up mail only;
 nothing is sent, no Gateway, no model."""
-import base64, datetime as dt, email.message, importlib.util, json, tempfile, unittest
+import base64, datetime as dt, email.message, json, tempfile, unittest
 from pathlib import Path
 import machine.main as machine_main
 import machine.sources.gmail as machine_sources_gmail
 import ms_graph
 
-spec = importlib.util.spec_from_file_location('attachment_names_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
-a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
 import message_seal  # noqa: E402  (on the path once assistant.py is loaded)
 
 WORK = {'id': 'work', 'service': 'gmail', 'email': 'owner@example.com'}

@@ -1,7 +1,6 @@
 """A to-do whose draft or decision follows someone else's input in another message (a teammate's suggestion in a Slack
 thread, another conversation) shows it on the to-do: "Based on Robin in #support · Wed", linking to that message. The
 review (suggest) and the drafting step (prepare) name it with based_on; it joins the evidence after the main source."""
-import importlib.util
 import json
 import tempfile
 import unittest
@@ -12,10 +11,6 @@ import machine.main as machine_main
 import machine.prompts.review as machine_prompts_review
 import machine.store.cards as machine_store_cards
 import machine.store.views as machine_store_views
-
-spec = importlib.util.spec_from_file_location('based_on_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
-a = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(a)
 
 
 def intercom():

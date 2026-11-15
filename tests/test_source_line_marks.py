@@ -7,7 +7,6 @@ import tempfile
 import unittest
 from pathlib import Path
 
-import assistant
 from machine.sources.connectors import connector_services, load_connector
 from machine.store.cards import SOURCE_KIND, line_head, source_lead, source_line
 from machine.store.views import source_marks

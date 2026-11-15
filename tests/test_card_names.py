@@ -5,7 +5,6 @@ Each kind is tried with the accounts it can come with: a bare one (only an id li
 boundary like personal:signal), one with a config key as its name, one with an address, one whose provider told its
 name, and two of the same kind. Its title is never an id or a config key; its subtitle never names the provider or
 its kind again, never a raw key, and never repeats a word of the title."""
-import importlib.util
 from pathlib import Path
 import re
 import sys
@@ -14,8 +13,6 @@ import machine.main as machine_main
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-spec = importlib.util.spec_from_file_location('card_names_assistant', ROOT / 'assistant.py')
-a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
 import onboarding  # noqa: E402
 from machine import names  # noqa: E402
 from machine.sources import connectors  # noqa: E402

@@ -13,7 +13,6 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-import assistant
 import fleet
 import network
 import network_crypto as nc

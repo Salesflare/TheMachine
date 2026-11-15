@@ -3,16 +3,12 @@ background from what the Machine keeps for it (messages, to-dos, promises, facts
 changed, never in a request. Quality or nothing: no description rather than a vague one. The owner's edit stays
 until Keep it updated. A teammate gets it with a shared Work project only when every source it cites went to them."""
 import datetime as dt
-import importlib.util
 import json
 from pathlib import Path
 import tempfile
 import unittest
 import machine.main as machine_main
 
-spec = importlib.util.spec_from_file_location('about_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
-a = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(a)
 import graph
 import project_about
 

@@ -4,7 +4,6 @@ are all from the owner's own life, puts the to-do in Personal from the start: wi
 accounts, as a move does; with only work accounts it keeps its mailbox and is pinned Personal. Either way its label,
 connected AIs, team learnings, handoffs and reviews follow, so it is never offered to a Work Fleet. A move to Work takes
 the pin off, and Undo puts it back. Offline: nothing is sent."""
-import importlib.util
 import json
 import tempfile
 import unittest
@@ -14,8 +13,6 @@ import machine.prompts.review as machine_prompts_review
 import machine.store.facts as machine_store_facts
 
 ROOT = Path(__file__).parent.parent
-spec = importlib.util.spec_from_file_location('personal_work_mailbox_assistant', ROOT / 'assistant.py')
-a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
 import fleet_requests  # noqa: E402
 import knowledge  # noqa: E402
 import todo_areas  # noqa: E402

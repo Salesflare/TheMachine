@@ -1,6 +1,5 @@
 """Milestones on done to-dos (machine/store/done_milestones.py): the latest round number passed shows once on To-dos,
 never a backlog, and closing it keeps it closed on every device."""
-import importlib.util
 import sys
 import tempfile
 import unittest
@@ -9,9 +8,6 @@ import machine.actions as machine_actions
 import machine.main as machine_main
 
 ROOT = Path(__file__).parent.parent
-spec = importlib.util.spec_from_file_location('done_milestones_assistant', ROOT.joinpath('assistant.py'))
-a = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(a)
 sys.path.insert(0, str(ROOT))
 from machine.store import done_milestones  # noqa: E402
 

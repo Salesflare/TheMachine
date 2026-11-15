@@ -2,7 +2,6 @@
 something about since the owner's midnight, for the quiet line on top of each Graph list and the mark on its rows. The
 owner's own edits and older changes stay out; each record counts once, with its newest change."""
 import datetime as dt
-import importlib.util
 import json
 import tempfile
 import unittest
@@ -10,8 +9,6 @@ from pathlib import Path
 from unittest.mock import patch
 import machine.main as machine_main
 
-spec = importlib.util.spec_from_file_location('graph_updates_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
-a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
 import graph_updates  # noqa: E402
 
 NOW = dt.datetime(2026, 11, 4, 15, 0, tzinfo=dt.timezone.utc)

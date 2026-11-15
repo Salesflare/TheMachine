@@ -86,7 +86,6 @@ class DashboardParts(unittest.TestCase):
         self.assertEqual(dashboard_parts.files(ROOT)[1:], [folder / name for name in included])
 
     def test_the_service_serves_the_assembled_page(self):
-        import assistant
         page = machine_web_serving.dashboard_page('token', 'owner', '/base/')
         self.assertEqual(page, dashboard_parts.assemble(ROOT).replace('__CSRF__', '')
                          .replace('__UI_VERSION__', machine_web_serving.dashboard_version()).replace('__BASE__', '/base/')

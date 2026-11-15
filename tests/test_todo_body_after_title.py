@@ -2,15 +2,12 @@
 to-do, Talk, a share from the phone and a routine all make their to-do through Store.owner_card, and a connected AI
 through App.ai_card. Words that are only the title keep them as the body (the review reads them; the card shows
 none); a first line or sentence that is the title keeps only what follows. The owner's own words stay whole."""
-import importlib.util
 import json
 import tempfile
 import unittest
 from pathlib import Path
 import machine.main as machine_main
 
-spec = importlib.util.spec_from_file_location('bodytitle_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
-a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
 from machine.text import body_after_title  # noqa: E402 (assistant.py puts the app on the path)
 
 

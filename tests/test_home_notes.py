@@ -1,7 +1,6 @@
 """Home notes (home_notes.py, section_notes.py, NotesApp.section_notes_run): regular Personal bills, subscriptions and what was learned,
 placed under Home by one small model call over what is new only, each line pointing to its to-do, mail or fact instead
 of copying it. Made-up data only; the model is a stand-in, nothing is sent."""
-import importlib.util
 import json
 import tempfile
 import time
@@ -10,8 +9,6 @@ from pathlib import Path
 from unittest import mock
 import machine.main as machine_main
 
-spec = importlib.util.spec_from_file_location('home_notes_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
-a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
 import home_notes  # noqa: E402
 import section_notes  # noqa: E402
 import note_pages  # noqa: E402

@@ -91,7 +91,6 @@ class Hosted(unittest.TestCase):
         self.assertIn('google_docs', a.HOSTED_SIGNINS)
 
     def test_add_on_the_dashboard_lists_google_docs_with_its_own_sign_in(self):
-        import assistant
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
         app = object.__new__(machine_main.App)

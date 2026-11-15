@@ -220,7 +220,6 @@ class ServerTextTest(unittest.TestCase):
         self.assertEqual(notify.compose([], [{'title': 'A'}], [])['subject'], 'Good morning, 1 due today')
 
     def test_prompts_ask_for_the_owners_language_and_drafts_in_the_threads(self):
-        import assistant
         locale_prefs.configure({'language': 'fr'})
         prompt = machine_prompts_review.review_prompt('run1', ['mail'])
         self.assertIn('What the owner reads from you (to-do titles, summaries, bodies, notes, steps, chat replies) is in French', prompt)
@@ -246,7 +245,6 @@ class ServerTextTest(unittest.TestCase):
     def test_a_cards_source_date_is_stored_in_english_words_in_the_regions_order(self):
         # The source line is stored and read later in whatever language the owner has then; the dashboard writes its
         # date again in that language. Stored in Dutch it read "di 27 okt" in an English UI.
-        import assistant
         row = {'kind': 'email.message', 'occurred_at': '2026-10-27T12:00:00+00:00',
                'metadata': {'from': 'Sam Lee <sam@example.com>'}, 'title': 'Intro'}
         for lang in ('nl', 'fr', 'en'):

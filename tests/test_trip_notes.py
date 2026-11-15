@@ -3,7 +3,6 @@ read at sync, bookings grouped into one trip per journey, updates and cancellati
 Made-up mail only; nothing is sent, no Gateway, no model."""
 import base64
 import datetime as dt
-import importlib.util
 import json
 import sqlite3
 import tempfile
@@ -14,8 +13,6 @@ import machine.main as machine_main
 import machine.sources.gmail as machine_sources_gmail
 import sources
 
-spec = importlib.util.spec_from_file_location('trip_notes_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
-a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
 import bookings  # noqa: E402
 import note_pages  # noqa: E402
 import note_pages_app  # noqa: E402

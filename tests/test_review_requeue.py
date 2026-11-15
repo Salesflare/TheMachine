@@ -3,7 +3,6 @@ failed ("That didn't go through", a left-out dedupe_key) still marked its messag
 tries, so their to-dos were never made. A test persona lost its accountant's receipts request that way. The agent's own
 transcripts show those failed saves; their messages that are in no to-do go back to the review once."""
 import datetime as dt
-import importlib.util
 import json
 import shutil
 import sqlite3
@@ -16,9 +15,6 @@ from seams import patch_everywhere  # noqa: E402,F401
 from machine.store import review_requeue, review_saves  # noqa: E402
 import machine.main as machine_main
 
-spec = importlib.util.spec_from_file_location('review_requeue_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
-a = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(a)
 
 NOW = dt.datetime(2026, 11, 8, 12, tzinfo=dt.timezone.utc)
 FAILED = {'status': 'failed', 'code': 'internal_error', 'error': "Error: That didn't go through. Reload the page and try again."}

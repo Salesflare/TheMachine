@@ -1,15 +1,12 @@
 """Home, Health and Kids from the owner's Personal mail (section_notes.mail_senders, mail_prompt, mail_reply;
 NotesApp.section_notes_mail_run): one call places each sender in one kind and part for all three at once, Home keeps a
 line per sender, Health and Kids a dated line per mail. Made-up data only; the model is a stand-in, nothing is sent."""
-import importlib.util
 import json
 import tempfile
 import unittest
 from pathlib import Path
 import machine.main as machine_main
 
-spec = importlib.util.spec_from_file_location('notes_from_mail_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
-a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
 import health_notes  # noqa: E402
 import home_notes  # noqa: E402
 import kids_notes  # noqa: E402

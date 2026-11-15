@@ -1,15 +1,12 @@
 """Health notes (health_notes.py, section_notes.py, NotesApp.section_notes_run): care bills and what was learned,
 from any area, placed under Health by one small model call over what is new only; a calendar event is never a line.
 Health is always Personal. Made-up data only; the model is a stand-in, nothing is sent."""
-import importlib.util
 import json
 import tempfile
 import unittest
 from pathlib import Path
 import machine.main as machine_main
 
-spec = importlib.util.spec_from_file_location('health_notes_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
-a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
 import health_notes  # noqa: E402
 import note_pages  # noqa: E402
 import section_notes  # noqa: E402

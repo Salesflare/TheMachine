@@ -5,7 +5,6 @@ suggestion with a real preview, a recurring to-do offer, or nothing, and a job i
 the owner's; a week of good runs offers to turn the old job off, which happens only on the owner's tap."""
 import datetime as dt
 import hashlib
-import importlib.util
 import json
 import sqlite3
 import tempfile
@@ -15,8 +14,6 @@ from pathlib import Path
 from unittest.mock import patch
 import machine.main as machine_main
 
-spec = importlib.util.spec_from_file_location('imports_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
-a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
 import routine_imports as ri  # noqa: E402
 import routines as rt  # noqa: E402
 

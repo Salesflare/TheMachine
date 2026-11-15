@@ -4,7 +4,6 @@ are any does one small model call confirm them; what it confirms, checked agains
 or Cancel per row. Keep is remembered until the price changes; Cancel only hands the owner a draft or a cancel page and
 never sends; a daily check warns about a charge within 7 days. Made-up mail only; nothing is sent."""
 import datetime as dt
-import importlib.util
 import json
 import re
 import tempfile
@@ -13,8 +12,6 @@ from pathlib import Path
 from unittest.mock import patch
 import machine.main as machine_main
 
-spec = importlib.util.spec_from_file_location('subs_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
-a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
 import routine_templates  # noqa: E402
 import routines  # noqa: E402
 import subscriptions as subs  # noqa: E402

@@ -1,7 +1,6 @@
 """A to-do being prepared says what the run is doing in one plain line per kind of step, decided from the step itself
 (the tool and its action), never from the title the model wrote for it. Plumbing shows nothing, an unknown kind shows
 one neutral line, and a line that repeats shows once. Offline: fixture calls only, no model, no browser."""
-import importlib.util
 import json
 import sys
 import tempfile
@@ -15,9 +14,6 @@ ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(ROOT / 'scripts'))
 import i18n_extract  # noqa: E402
 
-spec = importlib.util.spec_from_file_location('preparing_lines_assistant', ROOT / 'assistant.py')
-a = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(a)
 
 from machine import browser as b  # noqa: E402
 

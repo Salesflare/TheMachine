@@ -2,7 +2,6 @@
 wrong ("she's not the CEO", "we don't use that template anymore", "he left the company"); the chat turn finds where it
 came from and fixes it there, as the owner's word. Each fix shows in the chat as "Fixed: …" and under Recent changes,
 with Undo; an undo puts back exactly what was there unless it changed since; a fixed note adds no rule on top later."""
-import importlib.util
 import json
 from pathlib import Path
 import tempfile
@@ -14,9 +13,6 @@ import machine.app.preparation as machine_app_preparation
 import machine.main as machine_main
 import timeutil
 
-spec = importlib.util.spec_from_file_location('corrections_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
-a = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(a)
 import corrections
 import graph
 import learning_loop

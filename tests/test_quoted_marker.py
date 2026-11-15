@@ -1,7 +1,6 @@
 """The quoted-history marker (trim_quoted_history) is for the model only: the chat, the original's dialog, the Events
 list and the Graph show an email without it, the reply's new text apart from its quoted history; the model's own
 view of the body keeps it."""
-import importlib.util
 import json
 import sys
 import tempfile
@@ -13,9 +12,6 @@ import machine.web.handler as machine_web_handler
 
 ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(ROOT))
-spec = importlib.util.spec_from_file_location('quoted_marker_assistant', ROOT / 'assistant.py')
-a = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(a)
 
 FIRST = ('Here are my link details. Once approved, I will move forward with the insertion.\n'
          'Post: blog.example.com\nLink: example.net\nRegards\nSam Z')

@@ -4,7 +4,6 @@ time that waits for the usage budget, three honest ends (Ready, Nothing new, Did
 result didn't work), a result only from the run's own session, and the owner's Pause, Resume, Change when, Stop and Run
 now from the dashboard only. Separate from recurring to-dos: only recurring.py's rhythm math is shared."""
 import datetime as dt
-import importlib.util
 import shlex
 import sys
 import tempfile
@@ -13,8 +12,6 @@ from pathlib import Path
 from unittest.mock import patch
 import machine.main as machine_main
 
-spec = importlib.util.spec_from_file_location('routines_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
-a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
 import routines as rt  # noqa: E402
 import routines_app  # noqa: E402
 from machine.actions import DASHBOARD_ACTIONS, OWNER_ACTIONS, ROUTINE_ACTIONS  # noqa: E402

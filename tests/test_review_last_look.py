@@ -4,7 +4,6 @@ a regular review and at most LAST_LOOK_CAP per review. That look ends it: review
 dedupe) or put off again and closed for good. Automated mail and mail to many get none; what the owner decided stays
 decided; the missed-work audit counts set-aside messages; Connections, Checks lists them with what each waits for."""
 import datetime as dt
-import importlib.util
 import json
 from pathlib import Path
 import tempfile
@@ -13,9 +12,6 @@ import machine.main as machine_main
 import machine.sources.calendar as machine_sources_calendar
 import machine.store.review as machine_store_review
 
-spec = importlib.util.spec_from_file_location('last_look_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
-a = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(a)
 import missed_work as mw
 from machine.store import review_last_look as last_look
 

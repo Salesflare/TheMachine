@@ -1,4 +1,3 @@
-import importlib.util
 from pathlib import Path
 import tempfile
 import time
@@ -8,8 +7,6 @@ import machine.main as machine_main
 import machine.sources.slack as machine_sources_slack
 import sources
 
-spec = importlib.util.spec_from_file_location('assistant_slack_first', Path(__file__).parent.parent.joinpath('assistant.py'))
-a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
 
 DAY = 86400
 

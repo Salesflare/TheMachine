@@ -1,7 +1,6 @@
 """The Machine's own changes an update set aside (refs/machine/parked/, scripts/release.py) come back as to-dos, one
 each and once, through the first Gateway source."""
 import datetime as dt
-import importlib.util
 import subprocess
 import tempfile
 import unittest
@@ -14,10 +13,6 @@ import machine.sources.gateway as machine_sources_gateway
 import machine.store.profile as machine_store_profile
 import timeutil
 
-ROOT = Path(__file__).resolve().parent.parent
-spec = importlib.util.spec_from_file_location('parked_assistant', ROOT / 'assistant.py')
-a = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(a)
 WHO = ['-c', 'user.name=t', '-c', 'user.email=t@example.invalid']
 GATEWAY = {'id': 'openclaw-gateway', 'service': 'gateway'}
 

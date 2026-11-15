@@ -4,7 +4,6 @@ import tempfile
 import unittest
 from pathlib import Path
 
-import assistant as a
 import machine.actions as machine_actions
 import machine.app.setup_card as machine_app_setup_card
 import machine.main as machine_main

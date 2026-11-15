@@ -3,17 +3,12 @@ that asked for a pre-read "this evening" before "tomorrow's" committee: a review
 time only as UTC (occurred_at), a day apart from the owner's near midnight, and had no rule for "tomorrow" in an
 older message. Each message they read now carries its moment in the owner's zone, with its weekday (local_time), and
 both prompts say a relative day counts from it. No live calls."""
-import importlib.util
-from pathlib import Path
 import unittest
 from seams import patch_everywhere  # noqa: E402,F401
 import machine.app.preparation as machine_app_preparation
 import machine.prompts.review as machine_prompts_review
 import machine.store.review as machine_store_review
 
-spec = importlib.util.spec_from_file_location('local_time_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
-a = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(a)
 import timeutil  # noqa: E402
 
 

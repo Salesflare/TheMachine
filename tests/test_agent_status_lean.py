@@ -2,7 +2,6 @@
 Do it read the whole status, about 100k characters on a Machine with a long Done list: past OpenClaw's tool-result
 cut, so most open to-dos were never seen. Done to-dos now come in short after the open ones, and a to-do's own run
 reads only its card."""
-import importlib.util
 import json
 from pathlib import Path
 import tempfile
@@ -12,9 +11,6 @@ import machine.app.status as machine_app_status
 import machine.main as machine_main
 import machine.text as machine_text
 
-spec = importlib.util.spec_from_file_location('assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
-assistant = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(assistant)
 
 BODY = 'Drafted a reply with the numbers they asked for and checked the attachment opens. ' * 8  # ~650 characters
 CUT = 64000  # OpenClaw's tool-result cut, about what the agents saw (2026-11-08)

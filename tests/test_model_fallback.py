@@ -2,7 +2,6 @@
 assistant.py): no pacing, no waiting for a reached limit, one short line on top; a fallback that fails, or a run that
 still ended on the limit, brings the rules back. 2026-10-31: teammates' hosted Machines paused at 65% of the ChatGPT
 5-hour window although their pay-per-use fallback could carry the work. No Gateway, no model call."""
-import importlib.util
 import json
 import subprocess
 import tempfile
@@ -14,8 +13,6 @@ import model_budget
 import model_fallback as f
 import machine.main as machine_main
 
-spec = importlib.util.spec_from_file_location('fallback_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
-a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
 
 HOUR = 3600
 

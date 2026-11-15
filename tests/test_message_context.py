@@ -5,7 +5,6 @@ older ones. Only the same connection and kind: a Work to-do never shows a Person
 in their thread, and Show earlier pages only that conversation. An email thread with older mail the Machine never stored
 reads the rest live, read-only, once. The dashboard test (test_message_context_dashboard.mjs) reads dump(). All names
 and messages are made up."""
-import importlib.util
 import json
 import sys
 import tempfile
@@ -18,9 +17,6 @@ import sources
 
 ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(ROOT))
-spec = importlib.util.spec_from_file_location('message_context_assistant', ROOT / 'assistant.py')
-a = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(a)
 
 DAY, EVE = '2026-11-04T', '2026-11-03T'
 SLACK_DM = [  # (when, from the owner, text); the to-do's message is the one marked

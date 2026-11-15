@@ -409,7 +409,6 @@ class FindTurn(unittest.TestCase):
 
 class FindPrompt(unittest.TestCase):
     def test_prompt_stays_under_the_gateway_limit(self):
-        import assistant
         items = [{'key': f'claude:~/.claude/skills/s{n}', 'name': f's{n}', 'description': 'd' * 200, 'group': 'yours'} for n in range(150)]
         text = machine_prompts_profile.skills_find_prompt('r' * 32, {'token': 't', 'items': items, 'cards': ['c' * 200] * 40, 'sources': ['gmail'], 'skills': []})
         self.assertLess(len(text), 20000)
@@ -417,7 +416,6 @@ class FindPrompt(unittest.TestCase):
         self.assertIn('more', text)
 
     def test_readers_are_read_only_and_keep_the_token_in_the_page(self):
-        import assistant
         for site, js in machine_prompts_profile.SKILLS_READ.items():
             self.assertNotIn("method: 'POST'", js)
             self.assertNotIn('delete', js.lower())

@@ -1,5 +1,4 @@
 import json, struct, unittest
-import assistant as a
 import dashboard_parts
 import machine.config as machine_config
 import machine.faults as machine_faults

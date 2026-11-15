@@ -1,7 +1,6 @@
 """Where a to-do comes from: a reply drafted to an older email of the thread answers its newest one, and the email it
 answers leads the to-do (its source line and Read email); New to-do's Email pill searches emails only; who a to-do
 is about carries their organization, also once it is done. No live calls."""
-import importlib.util
 import json
 import tempfile
 import unittest
@@ -11,9 +10,6 @@ import machine.app.card_actions as machine_app_card_actions
 import machine.main as machine_main
 import machine.store.decisions as machine_store_decisions
 import machine.web.handler as machine_web_handler
-
-spec = importlib.util.spec_from_file_location('sources_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
-a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
 
 
 def mail(source_id, when, mid, thread='t1', sender='Mira Hart <mira@fund.example>', kind='gmail.message', title='Financials'):

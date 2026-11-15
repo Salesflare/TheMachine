@@ -1,6 +1,5 @@
 import contextlib
 import datetime as dt
-import importlib.util
 import io
 import json
 import os
@@ -12,9 +11,6 @@ from unittest import mock
 from zoneinfo import ZoneInfo
 import machine.main as machine_main
 
-spec = importlib.util.spec_from_file_location('assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
-assistant = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(assistant)
 import retention  # noqa: E402
 
 NOW = dt.datetime(2026, 10, 24, 3, 30, tzinfo=dt.timezone.utc)

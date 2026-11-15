@@ -2,7 +2,6 @@
 the switch and removals are in test_shared_graph_more.py. No network, no model."""
 import base64
 import datetime as dt
-import importlib.util
 import json
 import os
 from pathlib import Path
@@ -13,9 +12,6 @@ import unittest.mock
 import machine.main as machine_main
 import machine.store.profile as machine_store_profile
 
-spec = importlib.util.spec_from_file_location('fleet_learn_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
-a = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(a)
 import activity_log
 import fleet
 import fleet_learnings as fl

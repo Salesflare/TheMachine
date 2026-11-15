@@ -1,4 +1,3 @@
-import importlib.util
 import json
 import os
 from pathlib import Path
@@ -10,9 +9,6 @@ import fleet
 import machine.main as machine_main
 import sources
 
-spec = importlib.util.spec_from_file_location('assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
-assistant = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(assistant)
 import work_removal  # noqa: E402
 
 NOW = '2026-10-21T10:00:00+00:00'

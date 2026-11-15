@@ -3,7 +3,6 @@ quote is in the message it cites (text.quoted_in, Store.remember_fact quote). A 
 and only logged; one in another language than the fact keeps the owner's own words. Facts kept before have none
 and stay as they were."""
 import datetime as dt
-import importlib.util
 import sqlite3
 import tempfile
 import unittest
@@ -13,9 +12,6 @@ from pinned import pinned
 import machine.config as machine_config
 import machine.main as machine_main
 
-spec = importlib.util.spec_from_file_location('quote_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
-a = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(a)
 from machine.text import quoted_in  # noqa: E402  (after assistant.py set up the import path)
 
 NOW = dt.datetime(2026, 11, 9, 12, tzinfo=dt.timezone.utc)

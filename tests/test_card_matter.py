@@ -1,6 +1,5 @@
 """One card per matter: a new signal about something that already has a card updates that card
 (and brings it back when it was snoozed or waiting) instead of starting another one."""
-import importlib.util
 import json
 import tempfile
 import unittest
@@ -9,9 +8,6 @@ import datetime as dt
 import machine.main as machine_main
 import machine.store.cards as machine_store_cards
 import timeutil
-
-spec = importlib.util.spec_from_file_location('matter_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
-a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
 
 
 def mail(source_id, thread, sender='Sam Example <sam@example.com>', when='2026-10-19T16:22:17+00:00', title='Re: Billing help'):

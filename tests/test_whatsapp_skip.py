@@ -1,4 +1,3 @@
-import importlib.util
 from pathlib import Path
 import tempfile, unittest
 from unittest.mock import patch
@@ -6,8 +5,6 @@ import hashlib
 import machine.main as machine_main
 import machine.sources.whatsapp as machine_sources_whatsapp
 import sources
-spec = importlib.util.spec_from_file_location('assistant_wa_skip', Path(__file__).parent.parent.joinpath('assistant.py'))
-a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
 account = {'id': 'personal-whatsapp', 'identity_sha256': hashlib.sha256(b'123@s.whatsapp.net').hexdigest()}
 
 

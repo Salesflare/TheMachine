@@ -1,7 +1,7 @@
 """The first look's ending (App.first_look_done): once it stopped digging, the dashboard says what it read in counts
 (the groups its reviewer sorted the signals into, finish_analysis read) and offers the setup steps that fit. Counts and
 codes only, never a message's text. No Gateway, nothing sent: the review is played through the Store."""
-import datetime as dt, importlib.util, json, tempfile, unittest
+import datetime as dt, json, tempfile, unittest
 from pathlib import Path
 from unittest.mock import patch
 import machine.app.first_look as machine_app_first_look
@@ -9,9 +9,6 @@ import machine.main as machine_main
 import machine.prompts.review as machine_prompts_review
 import machine.store.review as machine_store_review
 import timeutil
-
-spec = importlib.util.spec_from_file_location('first_look_done_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
-a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
 
 
 def signal(source_id, account='work', kind='gmail.message', days_ago=1):

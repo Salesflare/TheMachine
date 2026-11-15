@@ -1,7 +1,6 @@
 """A bug the owner reported, fixed: a paired self-hosted Machine says which release it runs and its language, and shows
 the control plane's lines (fleet.Fleet.fixed, the bug_fixed action, the dashboard's #fixed-notice). No network: the
 Network relay is a stand-in."""
-import importlib.util
 import sys
 import unittest
 from pathlib import Path
@@ -13,10 +12,6 @@ sys.path.insert(0, str(ROOT))
 import fleet  # noqa: E402
 import dashboard_parts
 from machine import actions  # noqa: E402
-
-spec = importlib.util.spec_from_file_location('bug_fixed_assistant', ROOT / 'assistant.py')
-a = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(a)
 
 
 class Relay:

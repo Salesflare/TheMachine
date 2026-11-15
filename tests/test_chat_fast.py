@@ -3,7 +3,6 @@ the turns they wait on in a to-do chat (a message, or a Do it they started there
 has a fast option (OpenAI's API and Codex on a ChatGPT sign-in: service tier priority; Anthropic's API key on Opus:
 speed fast). Preparations, work done ahead and a follow-up review's Change never run fast, also with Fast on; a session
 that ran fast is set back to standard before its next turn."""
-import importlib.util
 import json
 from pathlib import Path
 import tempfile
@@ -17,9 +16,6 @@ import next_actions
 import timeutil
 import uuid
 
-spec = importlib.util.spec_from_file_location('chat_fast_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
-a = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(a)
 
 LEVELS = [{'id': x} for x in ('low', 'medium', 'high')]
 # A models.list reply ("configured" view) as OpenClaw 2026.10 gives it, with its fast-mode fields

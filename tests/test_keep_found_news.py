@@ -2,16 +2,11 @@
 A test persona's accountant asked for receipts a minute after the first look; a run's mailbox search found that mail
 before the next sync did, kept it as reviewed, and the sync then skipped it as already collected: no to-do, ever."""
 import datetime as dt
-import importlib.util
 import tempfile
 import unittest
 from pathlib import Path
 from seams import patch_everywhere  # noqa: E402,F401
 import machine.main as machine_main
-
-spec = importlib.util.spec_from_file_location('keep_found_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
-a = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(a)
 
 
 def mail(source_id, when):

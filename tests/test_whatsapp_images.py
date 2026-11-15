@@ -2,7 +2,6 @@
 unless personal chats are on too, a photo kept like an email attachment (sealed, gone with its message), what it says
 joined to its message as content, and the dashboard's view. Made-up images; wacli and the model are always faked, so
 nothing reaches WhatsApp."""
-import importlib.util
 import json
 import subprocess
 import tempfile
@@ -19,9 +18,6 @@ import machine.sources.whatsapp as machine_sources_whatsapp
 import sources
 import timeutil
 
-spec = importlib.util.spec_from_file_location('assistant_wa_images', Path(__file__).parent.parent / 'assistant.py')
-a = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(a)
 
 # A made-up receipt: real PNG and JPEG headers, invented bytes after them
 PNG = b'\x89PNG\r\n\x1a\n' + b'\x00\x00\x00\rIHDR' + bytes(range(200))

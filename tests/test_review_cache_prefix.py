@@ -2,7 +2,7 @@
 a cached prefix ends at the first byte that differs, so nothing that changes per run (the run id, its batch, a time or a
 count) may come before the instructions and the slowly changing parts. The plugin side (the same system context for
 every review) is checked in tests/test_review_hooks.mjs."""
-import importlib.util, os, sys, tempfile, unittest
+import os, sys, tempfile, unittest
 from pathlib import Path
 import machine.main as machine_main
 import machine.prompts.review as machine_prompts_review
@@ -10,8 +10,6 @@ import machine.prompts.review as machine_prompts_review
 sys.path.insert(0, os.path.dirname(__file__))
 from test_preview import Runner, signal  # noqa: E402
 
-spec = importlib.util.spec_from_file_location('cache_prefix_assistant', Path(__file__).parent.parent / 'assistant.py')
-a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
 
 # Well under the instructions alone (about 11,000 characters, 2,700 tokens); a token is about 4 characters of English
 MIN_SHARED_TOKENS = 2500

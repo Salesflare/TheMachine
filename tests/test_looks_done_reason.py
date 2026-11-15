@@ -1,7 +1,6 @@
 """A review's Looks done reason is an event line under the to-do: never with "You" as its subject ("Explained that…",
 not "You explained that…"). The review prompt says so, and a reason that still starts with "You " is stored without
 it. Made-up data, no live calls."""
-import importlib.util
 import json
 import tempfile
 import unittest
@@ -11,11 +10,6 @@ from machine.prompts.review import review_prompt
 from machine.text import no_you
 import machine.main as machine_main
 import timeutil
-
-ROOT = Path(__file__).parent.parent
-spec = importlib.util.spec_from_file_location('looks_done_reason_assistant', ROOT / 'assistant.py')
-a = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(a)
 
 
 class Reason(unittest.TestCase):

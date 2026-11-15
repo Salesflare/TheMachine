@@ -3,15 +3,12 @@ preparation follows it without being coached again, the to-do's chat shows one q
 owner's alone), Undo goes back to the way before, and a to-do that keeps its way offers no Create skill for the same
 work. It never sends anything: nothing is queued. All local, made-up data."""
 import datetime as dt
-import importlib.util
 import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
 import machine.main as machine_main
 
-spec = importlib.util.spec_from_file_location('recurring_method_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
-a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
 import recurring as r  # noqa: E402
 import skills  # noqa: E402
 from machine.actions import DASHBOARD_ACTIONS, OWNER_ACTIONS  # noqa: E402

@@ -9,7 +9,6 @@ import json
 import unittest
 from unittest.mock import patch
 
-import assistant as a
 import next_actions as n
 import machine.app.card_actions as machine_app_card_actions
 

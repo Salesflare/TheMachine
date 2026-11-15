@@ -7,7 +7,6 @@ their birthdays, as facts with source facebook that the Birthdays run reads like
 matched person who shows no photo yet, as a small copy on the Machine. Nothing else is kept. A made-up page (tests/facebook-birthdays-fixture.html) and made-up people only; never the real Facebook."""
 import datetime as dt
 import http.server
-import importlib.util
 import json
 import os
 import re
@@ -25,8 +24,6 @@ import browser_login
 import browser_viewer
 import machine.main as machine_main
 
-spec = importlib.util.spec_from_file_location('facebook_birthdays_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
-a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
 import birthdays  # noqa: E402
 import birthdays_facebook as fb  # noqa: E402
 import enrichment  # noqa: E402

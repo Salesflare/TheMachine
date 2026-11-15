@@ -4,7 +4,6 @@ contacts and Birthday fields in the Graph, once per person however many sources 
 a day without birthdays makes nothing, the greeting is drafted on the channel the owner usually uses with them and
 nothing is sent. Made-up people only."""
 import datetime as dt
-import importlib.util
 import json
 import tempfile
 import threading
@@ -15,8 +14,6 @@ import machine.main as machine_main
 import mail_cleanup_app
 import sources
 
-spec = importlib.util.spec_from_file_location('birthdays_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
-a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
 import birthdays  # noqa: E402
 import person_birthday  # noqa: E402
 import enrichment  # noqa: E402

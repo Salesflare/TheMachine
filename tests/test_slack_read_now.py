@@ -4,7 +4,6 @@ disabled; enable it in your Machine's OpenClaw settings" while Slack was connect
 on a quiet channel a minute after its last read, and a quiet channel rests a day between reads, so the run found
 nothing collected and reached for the browser. Now the run asks the Slack connection to read that conversation next
 (slack_read), and a source that isn't connected is one plain tap on the to-do (Connect Slack). Offline: nothing sent."""
-import importlib.util
 import json
 import tempfile
 import time
@@ -14,9 +13,6 @@ import machine.app.sync as machine_app_sync
 import machine.main as machine_main
 import sources
 
-ROOT = Path(__file__).parent.parent
-spec = importlib.util.spec_from_file_location('slack_read_now_assistant', ROOT / 'assistant.py')
-a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
 from machine.sources import slack as slack_source  # noqa: E402
 from machine.app import sync as app_sync  # noqa: E402
 

@@ -3,7 +3,6 @@ picks people from a short list of their actual close people; a nudge comes only 
 own rhythm and something concrete to say, at most two a week and one per person a month, backing off after the owner
 passes on one. Plain code shortlists; the model reads only the shortlisted. Made-up people only."""
 import datetime as dt
-import importlib.util
 import json
 import tempfile
 import threading
@@ -12,8 +11,6 @@ from pathlib import Path
 from unittest.mock import patch
 import machine.main as machine_main
 
-spec = importlib.util.spec_from_file_location('touch_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
-a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
 import graph  # noqa: E402
 import routine_templates  # noqa: E402
 import stay_in_touch  # noqa: E402

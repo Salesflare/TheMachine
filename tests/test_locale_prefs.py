@@ -8,7 +8,6 @@ import subprocess
 import tempfile
 import unittest
 
-import assistant
 import calendar_writes
 import family
 import fleet_requests
