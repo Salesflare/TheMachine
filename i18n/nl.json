@@ -8080,7 +8080,10 @@
   "one": "{} gesprek",
   "other": "{} gesprekken"
  },
- "{} tickets": "{} tickets",
+ "{} tickets (to an event)": {
+  "one": "{} ticket",
+  "other": "{} tickets"
+ },
  "{} times": {
   "one": "{} keer",
   "other": "{} keer"
