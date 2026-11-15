@@ -4,8 +4,10 @@ of copying it. Made-up data only; the model is a stand-in, nothing is sent."""
 import importlib.util
 import json
 import tempfile
+import time
 import unittest
 from pathlib import Path
+from unittest import mock
 
 spec = importlib.util.spec_from_file_location('home_notes_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
@@ -97,6 +99,40 @@ class HomeNotes(unittest.TestCase):
         self.assertNotIn('Office Rent', prompt)
         self.assertNotIn('at the office', prompt)
         self.assertNotIn('84,20', prompt)
+
+    def test_a_due_round_is_not_starved_by_background_work_that_runs_more_often(self):
+        """The step comes round every ten minutes, and the space between background turns is ten minutes too: reviews
+        and drafts ahead took it every time and no round ever came. After SPACED_WAIT_SECONDS it goes anyway, but never
+        while the budget holds background work."""
+        import note_pages_app
+        self.places = {'Example Energy': 'Bills and subscriptions'}
+        self.bill('Example Energy', '09-02')
+        self.bill('Example Energy', '10-02')
+        clock = [10000.0]
+        self.app.background_pause = lambda **_: None
+        self.app.background_at = time.time()  # another background turn just went, and keeps going
+        started = []
+        self.app.background_started = lambda: started.append(clock[0])
+        with mock.patch.object(note_pages_app, 'monotonic', lambda: clock[0]):
+            for _ in range(5):  # rounds every ten minutes while other work keeps taking the space
+                self.assertFalse(self.app.section_notes_step())
+                clock[0] += 600
+            clock[0] += note_pages_app.SPACED_WAIT_SECONDS
+            self.assertTrue(self.app.section_notes_step())
+            self.app.section_notes_thread.join(10)
+            self.assertEqual(started, [clock[0]])
+            with self.store.connect() as db:
+                self.assertEqual([r[0] for r in db.execute('SELECT kind FROM section_state ORDER BY kind')], ['health', 'home', 'kids'])
+            self.assertFalse(self.app.section_notes_step())  # not due again for six hours
+            with self.store.connect() as db:
+                db.execute('DELETE FROM section_state')
+            self.bill('Example Water', '10-05')
+            self.bill('Example Water', '11-05')  # something new to ask about
+            self.app.background_pause = lambda **_: {'window': 'memory', 'until': None}
+            clock[0] += 10 * note_pages_app.SPACED_WAIT_SECONDS
+            self.assertFalse(self.app.section_notes_step())  # the budget or a quiet window always holds it
+            self.app.background_pause = lambda **_: None
+            self.assertFalse(self.app.section_notes_step())  # and the wait for space starts over after a round
 
     def test_each_candidate_is_asked_about_once(self):
         self.places = {'Example Energy': 'Bills and subscriptions', 'Example Water': 'Bills and subscriptions'}

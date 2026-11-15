@@ -26,6 +26,7 @@ from timeutil import now, today
 LOG = logging.getLogger('personal-assistant')
 SECTION_KINDS = (home_notes.KIND, health_notes.KIND, kids_notes.KIND)  # the kinds kept in sections (section_notes.py)
 EVENTS_EVERY = 3600  # seconds: the events brought up to date without new ticket mail (a to-do made later)
+SPACED_WAIT_SECONDS = 3600  # a due section round waits at most this long for the space between background turns
 
 
 def _sender(metadata, mine):
@@ -85,8 +86,8 @@ class NotesApp:
     def section_notes_step(self):
         """About every six hours (section_notes.EVERY) for each kind in sections (Home, Health): its notes from plain
         code, with one small model call per kind over the candidates no call placed yet, in a thread of its own once
-        the budget allows. Nothing new to place: no model, the notes still brought up to date. True when a round
-        started."""
+        the budget allows and there is space after the last background turn, or it waited SPACED_WAIT_SECONDS for that.
+        Nothing new to place: no model, the notes still brought up to date. True when a round started."""
         running = getattr(self, 'section_notes_thread', None)
         if running and running.is_alive():
             return False
@@ -95,10 +96,19 @@ class NotesApp:
             section_notes.ensure(db)
             kinds = [k for k in SECTION_KINDS if section_notes.due(db, k, at)]
             ask = any(section_notes.unasked(db, k, k.candidates(db, accounts, today())) for k in kinds)
-        if not kinds or ask and (self.background_pause(job='section-notes') or not self.background_spaced()):
+        if not kinds:
             return False
         if ask:
+            if self.background_pause(job='section-notes'):
+                return False
+            # This step comes round once every ten minutes, and the space after the last background turn is ten minutes
+            # too: work that runs more often (reviews, drafts ahead) took that space every time, and a round never came.
+            # After SPACED_WAIT_SECONDS of waiting it goes anyway (still within the budget, background_pause above).
+            waiting = self.__dict__.setdefault('section_notes_waiting', monotonic())
+            if not self.background_spaced() and monotonic() - waiting < SPACED_WAIT_SECONDS:
+                return False
             self.background_started()
+        self.__dict__.pop('section_notes_waiting', None)
         self.section_notes_thread = threading.Thread(target=lambda: [self.section_notes_run(k) for k in kinds], daemon=True, name='section-notes')
         self.section_notes_thread.start()
         return True
