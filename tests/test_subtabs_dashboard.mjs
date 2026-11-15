@@ -70,7 +70,7 @@ try{
  await page.goto(base+'/#people');await page.locator('#people:not([hidden])').waitFor();
  // Connections: sources by kind; the one with a failing source shows its count and opens first.
  await page.goto(base);await navClick(page.locator('nav [data-tab="health"]'));await page.locator('#health-tabs [role=tab]').first().waitFor();
- for(let i=0;i<100&&(await tabs(page,'#health-tabs')).length<7;i++)await page.waitForTimeout(20);
+ await page.waitForFunction(()=>document.querySelectorAll('#health-tabs [role=tab]').length>=7,null,{timeout:10000});
  const kinds=page=>page.locator('#health-tabs .conn-cat').evaluateAll(b=>b.map(x=>x.querySelector('.ell').textContent+(x.querySelector('.badge')?'\n'+x.querySelector('.badge').textContent:'')));
  const open=page=>page.locator('#health-tabs .conn-cat[aria-selected="true"] .ell').textContent();
  // A number only where something needs you: Chat has a failing source; a saved sign-in needs nothing, so Sign-ins has none
@@ -83,7 +83,7 @@ try{
  await page.locator('#saved-logins-block').waitFor();assert.equal(await page.locator('#connectors>article:not([hidden])').count(),0);
  assert.equal(await page.locator('#review-summary').isVisible(),false);
  await page.goto(base+'/#connections=reviews');await page.locator('#review-summary').waitFor({state:'attached'});
- for(let i=0;i<100&&await open(page).catch(()=>'')!=='Checks';i++)await page.waitForTimeout(20);
+ await page.waitForFunction(()=>document.querySelector('#health-tabs .conn-cat[aria-selected="true"] .ell')?.textContent==='Checks',null,{timeout:10000});
  assert.equal(await open(page),'Checks');
  // Android is in Other; the old phone link opens it.
  await page.goto(base+'/#connections=phone');await page.locator('#connectors>article:not([hidden]) .conn-name',{hasText:'phone'}).waitFor();
@@ -91,7 +91,7 @@ try{
  await page.goto(base+'/#health');await page.locator('#health:not([hidden])').waitFor();
  // One column for every tab.
  const widths=[];
- for(const t of ['inbox','events','people','feedback','health']){await page.evaluate(t=>showTab(t),t);await page.waitForTimeout(100);widths.push(await page.locator('#'+t).evaluate(e=>Math.round(e.getBoundingClientRect().width)))}
+ for(const t of ['inbox','events','people','feedback','health']){await page.evaluate(t=>showTab(t),t);await page.locator('#'+t+':not([hidden])').waitFor();widths.push(await page.locator('#'+t).evaluate(e=>Math.round(e.getBoundingClientRect().width)))}
  // Events opens with the latest signals (here none), never an empty page
  await page.evaluate(()=>showTab('events'));await page.waitForFunction(()=>/No matching messages/.test(document.querySelector('#results').textContent));
  assert.equal(new Set(widths).size,1,widths.join());

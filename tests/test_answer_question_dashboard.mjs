@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {dashboardPage} from './dashboard-page.mjs';
+import {waitForAction} from './page-calls.mjs';
 const {chromium}=await import('./browser.mjs');
 
 // A card whose result waits on the owner's answer (needs_you, written as a question) leads with Answer: it opens the
@@ -127,8 +128,8 @@ try{
   assert.equal(await page.locator('#task-h1 .answer-editor label').textContent(),'Your answer');
   await page.locator('#feedback-h1').fill('It is 500 euros, by bank transfer.');await page.locator('#task-h1 [data-choice="other"]').click();
   // The toast from the first answer may still show: wait for this answer's own post
-  for(let i=0;i<100&&!posts.some(p=>p.action==='decide');i++)await page.waitForTimeout(50);
-  assert.deepEqual([posts.find(p=>p.action==='decide')?.args.suggestion_id,posts.find(p=>p.action==='decide')?.args.choice],['h1','other']);
+  const decided=await waitForAction(posts,'decide');
+  assert.deepEqual([decided.args.suggestion_id,decided.args.choice],['h1','other']);
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
   await page.locator("#task-q1").screenshot({path:`/tmp/answer-card-${width}.png`,timeout:5000}).catch(()=>{});
   await context.close();

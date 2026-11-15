@@ -50,7 +50,10 @@ repository root, so they import the app's modules directly and open files like `
 dashboard's page is read assembled, through `dashboardPage()` (`tests/dashboard-page.mjs`) or
 `dashboard_parts.assemble()` ([Code map](docs/code-map.md)). Tests get Chromium from `tests/browser.mjs`, never from
 `playwright-core` directly: it runs the browser cut off from the desktop, so a clicked `mailto:` or other external
-link never opens an app on your computer (`tests/test_browser_guard.mjs` checks both).
+link never opens an app on your computer (`tests/test_browser_guard.mjs` checks both). A browser test waits for what
+it expects, never a fixed time: the call the page makes (`waitForAction`, `callAfter` in `tests/page-calls.mjs`) or
+what the page shows (a locator's `waitFor`, `page.waitForFunction`). `tests/test_fixed_waits.py` counts the
+`page.waitForTimeout` calls left per file, and the counts only come down.
 
 CI runs the suite on every pull request with the minimum supported Python, Node and OpenClaw. A weekly run adds a
 newer combination (the latest OpenClaw) and macOS and Windows.
