@@ -9,6 +9,7 @@ import sqlite3
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 spec = importlib.util.spec_from_file_location('trip_notes_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
@@ -169,6 +170,94 @@ class TripNotes(unittest.TestCase):
         stored = raw.execute('SELECT rows FROM trip_bookings').fetchone()[0]
         raw.close()
         self.assertNotIn(b'K7PQ2M', stored if isinstance(stored, bytes) else stored.encode())
+
+
+class HeldMail(unittest.TestCase):
+    """Mail held from before The Machine read bookings: after the mailbox's own history walk, the history worker reads
+    the held mail once more (HistoryApp.history_bookings), one page a step under history's holds, and the trips follow."""
+
+    class Reader:
+        pages, messages, reads = {}, {}, []
+
+        def __init__(self, config, account):
+            pass
+
+        def profile(self):
+            return {'emailAddress': 'owner@example.com', 'historyId': '1'}
+
+        def get(self, resource, params=None):
+            HeldMail.Reader.reads.append(resource)
+            if resource == 'messages':
+                return HeldMail.Reader.pages[(params or {}).get('pageToken')]
+            found = HeldMail.Reader.messages.get(resource.split('/')[1])
+            if found is None:
+                raise a.SourceError('not_found', status=404)
+            return found
+
+    def setUp(self):
+        from machine.app import history as app_history
+        from machine.store import history
+        temp = tempfile.TemporaryDirectory()
+        self.addCleanup(temp.cleanup)
+        self.store = a.Store(Path(temp.name) / 'events.sqlite', protect=True)
+        self.app = object.__new__(a.App)
+        self.app.store, self.app.config = self.store, {'accounts': [MAIL], 'database': str(self.store.path)}
+        self.app.collector_resting = {MAIL['id']}
+        self.app.HISTORY_SOURCES = {'mail': (HeldMail.Reader, a.message_event)}
+        for x in (mock.patch.object(app_history, 'free_disk', return_value=True), mock.patch.object(app_history, 'free_memory', return_value=True)):
+            x.start()
+            self.addCleanup(x.stop)
+        held = [message('m1', OUT, BACK), message('m2', STAY, sent=dt.datetime(2026, 11, 2, 9, 0, tzinfo=dt.timezone.utc)), message('m3')]
+        events = []
+        for raw in held:  # kept as they were before bookings were read: no bookings in their metadata
+            found = a.message_event(MAIL, raw)
+            found['metadata'].pop('bookings', None)
+            events.append(found)
+        self.store.commit_page(MAIL['id'], None, events, record_sync=False, history=True)
+        HeldMail.Reader.messages = {r['id']: r for r in held + [message('m9', OUT)]}  # m9: not held, never read
+        HeldMail.Reader.pages = {None: {'messages': [{'id': 'm1'}, {'id': 'm9'}], 'nextPageToken': 'p2'},
+                                 'p2': {'messages': [{'id': 'm2'}, {'id': 'm3'}, {'id': 'gone'}]}}
+        HeldMail.Reader.reads = []
+        with self.store.connect() as db:
+            db.execute("INSERT INTO milestones(name,at) VALUES('first_dig_done',?),('first_import:home',?)", (AT, AT))
+            history.save(db, MAIL['id'], {'target': '2025-11-14T10:00:00+00:00'}, AT, done=True, depth_days=365)
+            trip_notes.collect(db)  # the cursor is past them: they had nothing then
+
+    def trips(self):
+        with self.store.connect() as db:
+            return [(x['name'], len(note_pages.page(db, x['id'])['lines'])) for x in note_pages.listing(db, '2026-11-14') if x['kind'] == 'trip']
+
+    def test_held_mail_is_read_again_once_and_the_trips_follow(self):
+        self.app.trip_notes_step()
+        self.assertEqual(self.trips(), [])
+        self.assertTrue(self.app.history_step())
+        self.assertEqual(HeldMail.Reader.reads, ['messages', 'messages/m1'])  # m9 isn't held: not read
+        self.assertEqual(len(self.app.trip_notes_step()), 1)
+        self.assertEqual(self.trips(), [('Lisbon', 2)])
+        self.assertTrue(self.app.history_step())  # the last page: m3 has no bookings, and what isn't held isn't read
+        self.assertEqual(HeldMail.Reader.reads[2:], ['messages', 'messages/m2', 'messages/m3'])
+        self.app.trip_notes_step()
+        self.assertEqual(self.trips(), [('Lisbon', 4)])
+        HeldMail.Reader.reads = []
+        self.assertFalse(self.app.history_step())  # done for this version: nothing read again
+        self.assertEqual(HeldMail.Reader.reads, [])
+        with mock.patch.object(trip_notes, 'WALK_VERSION', trip_notes.WALK_VERSION + 1):  # bookings.py reads more: again,
+            self.assertTrue(self.app.history_step())
+        self.assertEqual(HeldMail.Reader.reads, ['messages'])  # but mail whose bookings are in isn't read twice
+
+    def test_it_waits_for_the_mailboxs_own_walk_and_rests_on_a_rate_limit(self):
+        from machine.store import history
+        with self.store.connect() as db:
+            history.save(db, MAIL['id'], {'target': '2025-11-14T10:00:00+00:00'}, AT, depth_days=365)  # not done yet
+        with mock.patch.object(self.app, 'history_mail', return_value=(0, None, False)):
+            self.app.history_step()
+        self.assertEqual(HeldMail.Reader.reads, [])
+        with self.store.connect() as db:
+            history.save(db, MAIL['id'], {'target': '2025-11-14T10:00:00+00:00'}, AT, done=True, depth_days=365)
+        limited = a.SourceError('HTTP_429', status=429)
+        with mock.patch.object(HeldMail.Reader, 'get', side_effect=limited):
+            self.assertFalse(self.app.history_step())
+        self.assertEqual(self.app.history_wait(), 'rate_limit')
 
 
 if __name__ == '__main__':
