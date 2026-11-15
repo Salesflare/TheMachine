@@ -58,7 +58,9 @@ Under **Home**, your Machine keeps what it knows about your home: **Bills and su
 
 Only Personal bills, subscriptions and email are used, and Home notes are always Personal. Your Machine asks its AI once about each new bill, subscription or thing it learned, to tell whether it's about your home. For a bill it sends who it's from, never the amount.
 
-For **Home**, **Health** and **Kids** together, your Machine also asks its AI once about each sender of your Personal email. It sends the sender's name, how many emails they sent and their newest subjects with the numbers hidden, never the email itself. The first time, it goes through your past year of email in a few hours, outside the night and only while your AI plan has room. After that it looks at new senders every six hours.
+For **Home**, **Health** and **Kids** together, your Machine also asks its AI once about each sender of your Personal email. It sends the sender's name, how many emails they sent and their newest subjects with the numbers hidden, never the email itself.
+
+The first time, it goes through your past year of email in a few hours, outside the night and only while your AI plan has room. After that it looks at new senders every six hours.
 
 ## Health
 
