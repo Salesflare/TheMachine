@@ -121,6 +121,11 @@ def save(db, account_id, state, at, kept=0, oldest=None, done=False, depth_days=
                (account_id, json.dumps(state, sort_keys=True), int(kept), oldest, at if done else None, depth_days, at))
 
 
+def set_state(db, account_id, state):
+    """A finished walk's state changed by work after it (its bookings pass, HistoryApp.history_bookings): the rest as it is."""
+    db.execute('UPDATE history_backfill SET state=? WHERE account_id=?', (json.dumps(state, sort_keys=True), account_id))
+
+
 def progress(db, account_ids):
     """{account id: {'back_to': 'YYYY-MM' (the oldest month it reaches), 'done': bool, 'kept': n}} for the cards, only
     for connections whose backfill started."""

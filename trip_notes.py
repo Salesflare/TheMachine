@@ -30,7 +30,11 @@ SCHEMA = '''
 CREATE TABLE IF NOT EXISTS trip_bookings(event_id INTEGER PRIMARY KEY,account_id TEXT NOT NULL,occurred_at TEXT NOT NULL,rows TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS trip_state(id INTEGER PRIMARY KEY CHECK(id=1),cursor INTEGER NOT NULL DEFAULT 0);
 '''
-BATCH = 500  # mails read per round
+BATCH = 5000  # mails read per round: a Machine with a year of mail is through it in a few rounds, not a day
+# Mail the Machine held before it read bookings (or before it read them as it does now) carries none in its metadata:
+# the history worker reads the mailbox's held mail again once per WALK_VERSION, slowly, after its own history walk
+# (HistoryApp.history_bookings). Raise it when bookings.py reads more than before.
+WALK_VERSION = 1
 NEAR = dt.timedelta(days=1, hours=12)  # bookings this close after each other are one journey
 RETURN_DAYS = 31  # a ride back home this long after the way out still belongs to it
 RIDES = ('flight', 'train', 'bus', 'boat')
@@ -50,6 +54,16 @@ def _meta(value):
     return found if isinstance(found, dict) else {}
 
 
+def keep(db, event_id, account_id, occurred_at, found):
+    """One mail's bookings kept for the trips and events; 1 when it had some, else 0."""
+    found = [x for x in found if isinstance(x, dict)][:12] if isinstance(found, list) else []
+    if not found:
+        return 0
+    db.execute('INSERT OR REPLACE INTO trip_bookings(event_id,account_id,occurred_at,rows) VALUES(?,?,?,?)',
+               (event_id, account_id, occurred_at, json.dumps(found)))
+    return 1
+
+
 def collect(db, limit=BATCH):
     """New mail since the cursor: each one with bookings is kept. Returns how many mails had some."""
     cursor = (db.execute('SELECT cursor FROM trip_state WHERE id=1').fetchone() or [0])[0]
@@ -57,11 +71,7 @@ def collect(db, limit=BATCH):
                       'ORDER BY id LIMIT ?', (cursor, *mail_cleanup.MAIL_KINDS, limit)).fetchall()
     kept = 0
     for r in rows:
-        found = _meta(r['metadata']).get('bookings')
-        if isinstance(found, list) and found:
-            db.execute('INSERT OR REPLACE INTO trip_bookings(event_id,account_id,occurred_at,rows) VALUES(?,?,?,?)',
-                       (r['id'], r['account_id'], r['occurred_at'], json.dumps([x for x in found if isinstance(x, dict)][:12])))
-            kept += 1
+        kept += keep(db, r['id'], r['account_id'], r['occurred_at'], _meta(r['metadata']).get('bookings'))
     if rows:
         db.execute('INSERT INTO trip_state(id,cursor) VALUES(1,?) ON CONFLICT(id) DO UPDATE SET cursor=excluded.cursor', (rows[-1]['id'],))
     return kept

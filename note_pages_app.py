@@ -64,12 +64,15 @@ class NotesApp:
     def trip_notes_step(self):
         """Every ten minutes, plain code: new booking mail kept (trip_notes.collect), then the trips and events
         (event_notes.py) brought up to date when there was any. The events also once an hour without new mail, so a
-        to-do made from a ticket mail later on opens from its line. Returns the notes it changed."""
+        to-do made from a ticket mail later on opens from its line. Bookings the history worker found in mail held from
+        before (HistoryApp.history_bookings) count as new mail, and so does the first round after a start. Returns the
+        notes it changed."""
         try:
             accounts, clock = self.config.get('accounts') or [], monotonic()
+            added = self.__dict__.pop('trip_bookings_added', False) or not getattr(self, 'trip_notes_built', False)
             with self.store.connect() as db:
                 db.execute('BEGIN IMMEDIATE')
-                kept = trip_notes.collect(db)
+                kept = trip_notes.collect(db) or added
                 touched = []
                 if kept:
                     found, keep = trip_notes.drafts(db, accounts)
@@ -78,9 +81,12 @@ class NotesApp:
                     self.event_notes_at = clock
                     found, keep = event_notes.drafts(db, accounts)
                     touched += note_pages.sync(db, 'event', found, now(), keep)
-                return touched
+            self.trip_notes_built = True
+            return touched
         except Exception as error:  # the next round tries again from the same mail
             LOG.warning('trip notes error=%s', type(error).__name__)
+            if added:
+                self.trip_bookings_added = True
             return []
 
     def section_notes_step(self):

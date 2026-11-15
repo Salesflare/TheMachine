@@ -325,9 +325,11 @@ class MailHistory(Base):
         FakeGmail.messages = {'m1': mail(1, '2026-10-20T10:00:00+00:00'), 'm2': mail(2, '2026-10-01T10:00:00+00:00'),
                               'm3': mail(3, '2026-02-01T10:00:00+00:00', 'Contract draft')}
         FakeGmail.pages = {None: {'messages': [{'id': 'm1'}, {'id': 'm2'}], 'nextPageToken': 'p2'}, 'p2': {'messages': [{'id': 'm3'}]}}
-        self.assertTrue(self.app.history_step())
-        self.assertTrue(self.app.history_step())
-        self.assertFalse(self.app.history_step())
+        with mock.patch.object(self.app, 'history_bookings', return_value=False) as bookings:  # its own test: test_trip_notes.HeldMail
+            self.assertTrue(self.app.history_step())
+            self.assertTrue(self.app.history_step())
+            self.assertFalse(self.app.history_step())
+        self.assertEqual(bookings.call_count, 1)  # only once the walk is done
         q = FakeGmail.reads[0][1]['q']
         self.assertEqual(q, f"after:{int(dt.datetime.fromisoformat('2025-11-06T09:00:00+00:00').timestamp())} before:1793350800")
         self.assertNotIn(('messages/m2', {'format': 'full'}), FakeGmail.reads)  # already here: not read again

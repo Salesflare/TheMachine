@@ -25,6 +25,7 @@ import abilities
 import check_now
 import embeddings
 import graph
+import trip_notes
 from machine.store import graph_history
 from machine.store import history
 from machine.store.facts import FACT_VECTOR_BATCH
@@ -305,7 +306,89 @@ class HistoryApp:
             if kept or done:
                 LOG.info('history account=%s kept=%d done=%s', account['id'], kept, done)
             return True
+        if self.history_bookings(stamp):
+            self.history_waits(None)
+            return True
         return self.history_waits(reading or 'done')
+
+    def history_bookings(self, stamp):
+        """After a mailbox's own history walk: the mail it holds read once more for bookings (trip_notes.WALK_VERSION),
+        one page a step at history's pace and under history's holds, so mail held from before The Machine read bookings
+        (or read them as it does now) makes trips and events too. Only held mail without bookings is read again; nothing
+        is kept as a message. True when it did a step."""
+        resting = self.__dict__.get('collector_resting')
+        for account in self.history_accounts():
+            if kind(account) != 'mail' or (resting is not None and account['id'] not in resting):
+                continue  # its own sync reads now: another time
+            with self.store.connect() as db:
+                found = history.get(db, account['id'])
+            if not (found and found['done_at']):
+                continue  # its history walk first: mail it brings in is read for bookings as it comes
+            state = dict(found['state'])
+            walk = dict(state.get('bookings') or {})
+            if walk.get('version') != trip_notes.WALK_VERSION:
+                walk = {'version': trip_notes.WALK_VERSION, 'upper': stamp,
+                        'target': state.get('target') or history.before(stamp, history.depth(self.config, account))}
+            if walk.get('done') or walk.get('error_at', '') > history.before(stamp, ERROR_WAIT_DAYS):
+                continue
+            walk.pop('error_at', None)
+            try:
+                kept = self.history_bookings_page(account, walk)
+            except SourceError as error:  # tried again later; a 429 rests all history work
+                LOG.info('history bookings account=%s waits error=%s', account['id'], error)
+                self.history_rest(error)
+                with self.store.connect() as db:
+                    history.set_state(db, account['id'], {**state, 'bookings': {**walk, 'error_at': stamp}})
+                return False
+            with self.store.connect() as db:
+                history.set_state(db, account['id'], {**state, 'bookings': walk})
+            if kept:
+                self.trip_bookings_added = True  # trip_notes_step brings the trips and events up to date
+            if kept or walk['done']:
+                LOG.info('history bookings account=%s kept=%d done=%s', account['id'], kept, walk['done'])
+            return True
+        return False
+
+    def history_bookings_page(self, account, walk):
+        """One page of the bookings walk: the held mail on it that has no bookings kept yet, read again (a mail the
+        mailbox no longer has is passed). Returns how many had bookings; walk gets its next page or done."""
+        reader, event = self.HISTORY_SOURCES['mail']
+        source = reader(self.config, account)
+        source.profile()  # the right mailbox, as every sync checks
+        after = int(dt.datetime.fromisoformat(walk['target']).timestamp())
+        before = int(dt.datetime.fromisoformat(walk['upper']).timestamp())
+        params = {'q': f'after:{after} before:{before}', 'maxResults': MAIL_PAGE}
+        if walk.get('token'):
+            params['pageToken'] = walk['token']
+        page = source.get('messages', params)
+        refs = [r['id'] for r in page.get('messages') or [] if isinstance(r, dict) and r.get('id')]
+        held = {}
+        if refs:
+            with self.store.connect() as db:
+                held = {r[0]: (r[1], r[2]) for r in db.execute(
+                    'SELECT e.source_id,e.id,e.occurred_at FROM events e WHERE e.account_id=? AND e.source_id IN (' + ','.join('?' * len(refs)) + ') '
+                    'AND NOT EXISTS (SELECT 1 FROM trip_bookings b WHERE b.event_id=e.id)', (account['id'], *refs))}
+        found = []
+        for ref in refs:
+            if ref not in held:
+                continue  # not held (outside what the Machine keeps) or its bookings are in already
+            try:
+                message = event(account, source.get('messages/' + ref, {'format': 'full'}), self.config)
+            except SourceError as error:
+                if error.status != 404:
+                    raise
+                continue
+            rows = ((message or {}).get('metadata') or {}).get('bookings')
+            if rows:
+                found.append((*held[ref], rows))
+        kept = 0
+        if found:
+            with self.store.connect() as db:
+                for event_id, occurred_at, rows in found:
+                    kept += trip_notes.keep(db, event_id, account['id'], occurred_at, rows)
+        walk['token'] = page.get('nextPageToken')
+        walk['done'] = not walk['token']
+        return kept
 
     def history_waits(self, why):
         """Note why it waits (None: it goes), logged once per change rather than every step. Always False."""
