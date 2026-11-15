@@ -1,26 +1,27 @@
 ---
 title: RSS-feeds
 area: connections
-summary: Berichten uit een RSS- of Atom-feed die je volgt. Alleen op je eigen computer.
+summary: Berichten uit een RSS- of Atom-feed die je volgt.
 covers: connector:rss
 code: connectors/rss.py
-translated: 99fdd904c9ff558f
+site: More sources
+translated: efeb27dadc6163e9
 ---
-## Wat het leest
+## Wat er wordt gelezen
 
-Nieuwe berichten uit één RSS- of Atom-feed per koppeling. Voeg hem opnieuw toe voor elke feed.
+Nieuwe berichten uit één RSS- of Atom-feed per koppeling. Voeg voor elke feed een aparte koppeling toe.
 
-## Wat het kan doen
+De feed wordt elke 30 minuten gelezen, en nooit vaker dan eens per 15 minuten. Alleen openbare https://-adressen worden gelezen.
 
-Niets. Het haalt alleen de feed op.
+## Wat ermee kan
+
+Niets. De feed wordt alleen gelezen.
 
 ## Koppelen
 
-RSS is voor een Machine op je eigen computer; de setuppagina's voor gehoste Machines bieden het niet aan.
-
-1. Open in het dashboard **Koppelingen**, dan **Andere**, en kies RSS-feed. Of voer `assistant connect rss` uit.
+1. Open in het dashboard **Koppelingen**, dan **Andere**, en kies RSS-feed. Op een gehoste Machine staat deze optie ook op de instelpagina, onder **Meer bronnen**. Op je eigen computer kun je ook `assistant connect rss` uitvoeren.
 2. Plak het adres van de feed.
 
 ## Verwijderen
 
-In het dashboard: **Koppelingen**, open de feed, **Details**, dan **Ontkoppelen**. Je hoeft nergens anders iets te verwijderen.
+Open in het dashboard de feed via **Koppelingen**, kies **Details** en vervolgens **Ontkoppelen**. Je hoeft verder nergens iets te verwijderen.

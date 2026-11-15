@@ -1,26 +1,27 @@
 ---
 title: RSS-Feeds
 area: connections
-summary: Beiträge aus einem RSS- oder Atom-Feed, dem du folgst. Nur auf deinem eigenen Computer.
+summary: Beiträge aus einem RSS- oder Atom-Feed, dem du folgst.
 covers: connector:rss
 code: connectors/rss.py
-translated: 99fdd904c9ff558f
+site: More sources
+translated: efeb27dadc6163e9
 ---
-## Was es liest
+## Was gelesen wird
 
-Neue Beiträge aus einem RSS- oder Atom-Feed pro Verbindung. Füge es für jeden Feed erneut hinzu.
+Neue Beiträge aus einem RSS- oder Atom-Feed pro Verbindung. Füge für jeden Feed eine separate Verbindung hinzu.
 
-## Was es tun kann
+Der Feed wird alle 30 Minuten gelesen, aber nie häufiger als alle 15 Minuten. Es werden nur öffentliche https://-Adressen gelesen.
 
-Nichts. Es ruft nur den Feed ab.
+## Was möglich ist
 
-## Verbinden
+Nichts. Es wird nur der Feed gelesen.
 
-RSS ist für eine Machine auf deinem eigenen Computer. Gehostete Einrichtungsseiten bieten es nicht an.
+## Verbindung herstellen
 
-1. Öffne im Dashboard **Verbindungen**, dann **Andere**, und wähle RSS-Feed. Oder führe `assistant connect rss` aus.
+1. Öffne im Dashboard **Verbindungen** und dann **Andere**. Wähle RSS-Feed aus. Auf einer gehosteten Machine findest du die Einrichtung auch unter **Weitere Quellen**. Auf deinem eigenen Computer kannst du auch `assistant connect rss` ausführen.
 2. Füge die Adresse des Feeds ein.
 
-## Entfernen
+## Verbindung entfernen
 
-Im Dashboard: **Verbindungen**, den Feed öffnen, **Details**, dann **Trennen**. Woanders gibt es nichts zu deinstallieren.
+Im Dashboard: Öffne **Verbindungen**, wähle den Feed und dann **Details** und **Trennen**. Anderswo muss nichts deinstalliert werden.

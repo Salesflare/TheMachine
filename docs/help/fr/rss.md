@@ -1,26 +1,27 @@
 ---
 title: Flux RSS
 area: connections
-summary: Les articles d’un flux RSS ou Atom que vous suivez. Uniquement sur votre propre ordinateur.
+summary: Publications d’un flux RSS ou Atom que vous suivez.
 covers: connector:rss
 code: connectors/rss.py
-translated: 99fdd904c9ff558f
+site: More sources
+translated: efeb27dadc6163e9
 ---
 ## Ce qu’elle lit
 
-Les nouveaux articles d’un flux RSS ou Atom par connexion. Ajoutez-la à nouveau pour chaque flux.
+Les nouvelles publications d’un flux RSS ou Atom par connexion. Ajoutez une connexion distincte pour chaque flux.
+
+Elle consulte le flux toutes les 30 minutes, et jamais à moins de 15 minutes d’intervalle. Elle ne consulte que les adresses https:// publiques.
 
 ## Ce qu’elle peut faire
 
-Rien. Elle se contente de récupérer le flux.
+Rien. Elle se contente de consulter le flux.
 
-## La connecter
+## Connecter le flux
 
-RSS est réservé à une Machine sur votre propre ordinateur. Les pages de configuration hébergées ne le proposent pas.
-
-1. Dans le tableau de bord, ouvrez **Connexions**, puis **Autres**, et choisissez Flux RSS. Ou lancez `assistant connect rss`.
+1. Dans le tableau de bord, ouvrez **Connexions**, puis **Autres**, et choisissez **Flux RSS**. Sur une Machine hébergée, la page de configuration propose aussi cette option, sous **Plus de sources**. Sur votre propre ordinateur, vous pouvez aussi exécuter `assistant connect rss`.
 2. Collez l’adresse du flux.
 
-## La retirer
+## Supprimer la connexion
 
-Dans le tableau de bord : **Connexions**, ouvrez le flux, **Détails**, puis **Déconnecter**. Il n’y a rien à désinstaller ailleurs.
+Dans le tableau de bord : ouvrez le flux depuis **Connexions**, puis **Détails**, et enfin **Déconnecter**. Rien d’autre n’est à désinstaller.
