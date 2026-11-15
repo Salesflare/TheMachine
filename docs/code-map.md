@@ -119,7 +119,7 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
     `api/graph?node=note:<id>` with Linked from, and the owner's edits (`NOTE_ACTIONS`). A kind The Machine fills in
     by itself is a line in `note_pages.KINDS` and an extractor that hands drafts to `note_pages.sync`, which places
     them in the tree (`STARTING_TREE`, `PLACING`) and keeps the owner's changes on top. Dashboard: `dashboard/graph-notes.js`.
-    Trips: the mail source reads a confirmation's JSON-LD reservations (`bookings.py`) into the message's sealed
+    Trips: the mail source reads a confirmation's schema.org reservations, JSON-LD or microdata (`bookings.py`), into the message's sealed
     metadata; `trip_notes.py` keeps them (`trip_bookings`), groups one journey into one trip, and `trip_notes_step`
     (every ten minutes, plain code) syncs them under Trips. Events: ticket mail's EventReservation rows, kept with them,
     become one dated note per event under Events (`event_notes.py`, the same step; a to-do from the ticket mail opens

@@ -80,6 +80,42 @@ class Bookings(unittest.TestCase):
         self.assertEqual(bookings.read([page(no_time)]), [])
         self.assertEqual(bookings.read([page({**OUT, 'reservationStatus': 'http://schema.org/ReservationCancelled'})])[0]['status'], 'canceled')
 
+    def test_microdata_reads_like_json_ld(self):
+        """Many airlines and hotels mark up their confirmations as microdata on the mail's own HTML, not as a JSON-LD
+        block: loose HTML, values in content and datetime attributes or as text, a link for the status."""
+        micro = ('<html><body><table><tr><td>'
+                 '<div itemscope itemtype="http://schema.org/FlightReservation">'
+                 '<meta itemprop="reservationNumber" content="K7PQ2M">'
+                 '<link itemprop="reservationStatus" href="http://schema.org/ReservationConfirmed"/>'
+                 '<div itemprop="reservationFor" itemscope itemtype="http://schema.org/Flight">'
+                 '<span itemprop="flightNumber">2084</span>'
+                 '<div itemprop="airline" itemscope itemtype="http://schema.org/Airline"><meta itemprop="name" content="Example Air"><meta itemprop="iataCode" content="EX"></div>'
+                 '<div itemprop="departureAirport" itemscope itemtype="http://schema.org/Airport"><span itemprop="name">Brussels <b>Airport</b></span><meta itemprop="iataCode" content="BRU">'
+                 '<div itemprop="address" itemscope itemtype="http://schema.org/PostalAddress"><meta itemprop="addressLocality" content="Brussels"></div></div>'
+                 '<div itemprop="arrivalAirport" itemscope itemtype="http://schema.org/Airport"><meta itemprop="name" content="Lisbon Airport"><meta itemprop="iataCode" content="LIS"></div>'
+                 '<time itemprop="departureTime" datetime="2026-12-02T07:10:00+01:00">2 Dec</time>'
+                 '<meta itemprop="arrivalTime" content="2026-12-02T08:55:00+00:00">'
+                 '</div><meta itemprop="airplaneSeat" content="14A"></div>'
+                 '<p>Unclosed paragraph<td></table>'
+                 '<div itemscope itemtype="https://schema.org/LodgingReservation"><meta itemprop="reservationNumber" content="H-2231">'
+                 '<meta itemprop="checkinDate" content="2026-12-02"><meta itemprop="checkoutDate" content="2026-12-05">'
+                 '<div itemprop="reservationFor" itemscope itemtype="http://schema.org/LodgingBusiness"><meta itemprop="name" content="Hotel Alfama Garden">'
+                 '<div itemprop="address" itemscope itemtype="http://schema.org/PostalAddress"><meta itemprop="addressLocality" content="Lisbon"></div></div></div>'
+                 '</body></html>')
+        rows = bookings.read([micro])
+        self.assertEqual(rows[0], {'type': 'flight', 'code': 'K7PQ2M', 'status': 'confirmed', 'start': '2026-12-02T07:10', 'end': '2026-12-02T08:55',
+                                   'from': 'Brussels', 'to': 'Lisbon Airport', 'number': 'EX 2084', 'by': 'Example Air', 'seat': '14A'})
+        self.assertEqual((rows[1]['type'], rows[1]['name'], rows[1]['where'], rows[1]['start'], rows[1]['end']),
+                         ('hotel', 'Hotel Alfama Garden', 'Lisbon', '2026-12-02', '2026-12-05'))
+        self.assertEqual(len(rows), 2)
+        # the same reservation as JSON-LD and as microdata in one mail is one row
+        self.assertEqual(len(bookings.read([micro.replace('</body>', '<script type="application/ld+json">' + json.dumps(STAY) + '</script></body>')])), 3)
+        self.assertEqual(bookings.read([micro + micro]), rows)
+        # nothing is guessed: a boarding pass whose time is only text, or no reservation type at all
+        self.assertEqual(bookings.read([micro.replace('datetime="2026-12-02T07:10:00+01:00"', '')]), rows[1:])
+        self.assertEqual(bookings.read(['<div itemscope itemtype="http://schema.org/Restaurant"><meta itemprop="name" content="x"></div>']), [])
+        self.assertEqual(bookings.read(['<div itemscope itemtype="http://schema.org/FlightReservation"><div><span itemprop="x">']), [])
+
     def test_the_mail_source_keeps_them_in_the_sealed_metadata(self):
         event = a.message_event(MAIL, message('m1', OUT))
         self.assertEqual(event['metadata']['bookings'][0]['code'], 'K7PQ2M')
