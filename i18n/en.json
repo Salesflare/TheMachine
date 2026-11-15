@@ -8080,7 +8080,10 @@
   "one": "{} thread",
   "other": "{} threads"
  },
- "{} tickets": "{} tickets",
+ "{} tickets (to an event)": {
+  "one": "{} ticket",
+  "other": "{} tickets"
+ },
  "{} times": {
   "one": "{} time",
   "other": "{} times"

@@ -13,10 +13,11 @@ Only what is missing or out of date is sent. A catalog key is missing when its l
 the English text, so new English is a new key), or an entry of another shape (a plural entry for a plain one).
 Entries English no longer has are dropped. A translated article carries the hash of the English it was made from
 (`translated:` in its front matter); an article without one, from before this script, counts as current when git shows
-no change to the English after its last change. Each answer is checked before it is written (the same placeholders,
-names and glossary terms, the same headings, paragraphs and list items, link targets and code, no em dash); an answer
-that fails is asked again once with what was wrong, then left out, so the app shows English there until the next run.
-A translated article that fails that check is out of date whatever its stamp says: the next run translates it again.
+no change to the English after its last change. Each answer is checked before it is written (the English's shape, a
+string or count forms, the same placeholders, names and glossary terms, the same headings, paragraphs and list items,
+link targets and code, no em dash); an answer that fails is asked again once with what was wrong, then left out, so
+the app shows English there until the next run. A translated article that fails that check is out of date whatever
+its stamp says: the next run translates it again.
 The key is read from the environment only (never a flag or a file), and never printed.
 .github/workflows/translate.yml runs `all` once a day on main as it is then, opens or replaces one pull request and
 approves its tests' run; scripts/release.py cut refuses a commit where `all --check` finds anything."""
@@ -222,8 +223,13 @@ def string_problems(key, text, lang, words):
     return out
 
 
-def entry_problems(key, value, lang, words):
-    """Problems with a whole catalog entry: a string, or a plural entry with exactly lang's forms."""
+def entry_problems(key, value, lang, words, english=None):
+    """Problems with a whole catalog entry: a string, or a plural entry with exactly lang's forms, of the English's
+    shape. catalog_todo counts an entry of another shape as missing, so one let through here is asked for forever."""
+    if english is not None and isinstance(english, dict) != isinstance(value, dict):
+        if isinstance(english, dict):
+            return [f'an object of count forms with exactly these keys: {", ".join(plural_forms(lang))}']
+        return ['one plain string, not count forms, even when it holds a count']
     if isinstance(value, dict):
         forms = plural_forms(lang)
         if sorted(value) != sorted(forms):
@@ -258,10 +264,10 @@ def catalog_stale(lang, en=None, cat=None):
 
 
 def source(key, value):
-    """What the model reads for one entry: the English, and the key as a note when it says more ("Close (a closeness)")."""
-    if isinstance(value, dict):
-        return {'english': value}
-    return {'english': value, 'meaning': key} if value != key else {'english': value}
+    """What the model reads for one entry: the English, and the key as a note when it says more ("Close (a closeness)",
+    "{} tickets (to an event)" for a plural entry)."""
+    shown = value.get('other') if isinstance(value, dict) else value
+    return {'english': value, 'meaning': key} if shown != key else {'english': value}
 
 
 def translate_entries(lang, keys, en, words=None, ask=ask):
@@ -276,7 +282,7 @@ def translate_entries(lang, keys, en, words=None, ask=ask):
         items = {str(i): source(k, en[k]) for i, k in enumerate(chunk)}
         payload = ('Return one JSON object {"t": {"<id>": <translation>}} with every id. Translate each "english" on '
                    'its own; "meaning", when there, says what it is and is not translated. A plain "english" string '
-                   'becomes a string. An "english" object of count forms (one, other) becomes an object with exactly '
+                   'becomes a string, also when it holds a count. An "english" object of count forms (one, other) becomes an object with exactly '
                    f'these keys for {language_name(lang)}: {json.dumps(list(forms))}, each the whole text for that count.'
                    + (f'\nLast time these answers were wrong: {json.dumps(notes, ensure_ascii=False)}' if notes else '')
                    + '\n' + json.dumps(items, ensure_ascii=False))
@@ -297,14 +303,14 @@ def translate_entries(lang, keys, en, words=None, ask=ask):
     with concurrent.futures.ThreadPoolExecutor(WORKERS) as pool:
         for got in pool.map(batch, chunks):
             done.update(got)
-    retry = {k: entry_problems(k, done.get(k), lang, words) for k in keys}
+    retry = {k: entry_problems(k, done.get(k), lang, words, en[k]) for k in keys}
     retry = {k: p for k, p in retry.items() if p}
     again = {}
     for i in range(0, len(retry), 40):
         chunk = list(retry)[i:i + 40]
         again.update(batch(chunk, {str(n): {'answer': done.get(k), 'fix': retry[k]} for n, k in enumerate(chunk)}))
     for k in retry:
-        if entry_problems(k, again.get(k), lang, words):
+        if entry_problems(k, again.get(k), lang, words, en[k]):
             done.pop(k, None)
             print(f'{lang}: left in English after two tries: {k[:80]!r}', file=sys.stderr)
         else:

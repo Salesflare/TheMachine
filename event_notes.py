@@ -54,7 +54,7 @@ def line(b, lang=None):
     line's date reads "Fri 18 Dec 09:00 to Sat 19 Dec 17:30"), else None."""
     key = hashlib.sha256(trip_notes._ident(b).encode()).hexdigest()[:16]
     seats = int(b['guests']) if str(b.get('guests') or '').isdigit() else 0
-    text = (t('At {}', b['where'], lang=lang) if b.get('where') else t('Tickets', lang=lang)) + (', ' + t('{} tickets', seats, lang=lang) if seats > 1 else '')
+    text = (t('At {}', b['where'], lang=lang) if b.get('where') else t('Tickets', lang=lang)) + (', ' + t('{} tickets (to an event)', seats, lang=lang) if seats > 1 else '')
     end = b.get('end') or ''
     return key, b['start'], text + trip_notes._code(b, lang), end if end[:10] > b['start'][:10] else None
 

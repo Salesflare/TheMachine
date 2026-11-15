@@ -88,6 +88,8 @@ class EventNotes(unittest.TestCase):
         self.assertCountEqual([x['text'] for x in concert['lines']], ['At Example Arena, Antwerp, 2 tickets, booking TK-4411, seat B 14, ticket 0042',
                                                                       'At Example Arena, Antwerp, booking TK-5520, ticket 0042'])
         self.assertEqual({x['source']['from'] for x in concert['lines']}, {'Example Tickets'}, 'each line says who the tickets came from')
+        # a plural entry: languages with more count forms (Russian) get them, and one reads "1 ticket"
+        self.assertEqual([a.i18n.t('{} tickets (to an event)', n, lang='en') for n in (1, 2)], ['1 ticket', '2 tickets'])
         festival = events['Harbor Sound Festival']
         self.assertEqual([(x['at'], x['data']['until'], x['text']) for x in festival['lines']],
                          [('2027-07-09T12:00', '2027-07-11T23:00', 'At Harbor Park, Ghent, booking HS-77, ticket 0042')], 'one line, its date to the end')

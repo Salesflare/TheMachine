@@ -81,7 +81,9 @@ What every pull request needs:
   language. Don't edit the other catalogs or `docs/help/<language>/`: the daily translator
   (`.github/workflows/translate.yml`, `scripts/translate.py`) writes them in one pull request a day, so main may show
   English for a day, and `scripts/release.py cut` refuses a release with anything left. A wrong translation is fixed
-  by editing that one entry. `python3 scripts/i18n_extract.py --stale` lists keys no code reads any more, to prune.
+  by editing that one entry. A string with a count (`{} tickets`) is a plural entry in `en.json`
+  (`{"one": "{} ticket", "other": "{} tickets"}`): Russian needs more count forms, and a plain string gets one form
+  in every language. `python3 scripts/i18n_extract.py --stale` lists keys no code reads any more, to prune.
 - The catalogs are kept sorted by key, so pull requests that add different strings merge without conflicts.
 - Run `python3 scripts/i18n_extract.py --sort` before pushing; `tests/test_i18n.py` fails on a catalog that isn't
   sorted. When merging main still leaves a catalog conflict, `python3 scripts/i18n_extract.py --merge` settles it key
