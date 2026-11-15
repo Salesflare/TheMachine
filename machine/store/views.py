@@ -753,11 +753,22 @@ class ViewsStore(ConversationStore):
                 "SELECT DISTINCT suggestion_id FROM decisions WHERE suggestion_id IN (SELECT value FROM json_each(?)) AND trim(feedback)<>'' "
                 "AND source IN ('telegram','dashboard') AND id NOT IN (SELECT decision_id FROM decision_annotations)", (json.dumps([c['id'] for c in cards]),))}
             projects = {}  # a project's chip, read once per name
+            heads = {}
+            for c in cards:
+                try:
+                    ids = json.loads(c.get('event_ids') or '[]')
+                except ValueError:
+                    continue
+                if isinstance(ids, list) and ids and isinstance(ids[0], int):
+                    heads[c['id']] = ids[0]
+            firsts = {r['id']: r for r in db.execute('SELECT id,kind,metadata FROM events WHERE id IN (SELECT value FROM json_each(?))',
+                                                     (json.dumps(sorted(set(heads.values()))),))} if heads else {}  # who each one's sender is, read once
             for suggestion in cards:
                 if looks_done(suggestion):  # where it sits in Done, among the closed ones (dashboard doneAt)
                     suggestion['looks_done_at'] = looks_done_at(db, suggestion)
                 try:  # who it's about (its chip, also on a done to-do), and their weight to rank open cards by
-                    suggestion['people'], weight = graph.card_people(db, json.loads(suggestion['event_ids'] or '[]'))
+                    suggestion['people'], weight = graph.card_people(db, json.loads(suggestion['event_ids'] or '[]'),
+                                                                     first=firsts.get(heads.get(suggestion['id']), {}), unlinked=True)
                     suggestion['source_line'] = lookalike.source_line(suggestion.get('source_line'), suggestion['people'])  # never the borrowed name
                     if suggestion['status'] not in todo_states.CLOSED:
                         suggestion['weight'] = weight
