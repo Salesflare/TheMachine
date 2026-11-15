@@ -317,9 +317,9 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   line in `dashboard.html`), and only the assembled page has them all.
   `scripts/split_dashboard.py readers` rewrites a test that still reads the file. The service serves the assembled
   page (`dashboard_page()`), so the browser, the service worker's offline copy, the ETag and the CSP see one page as
-  before; `dashboard/` itself is never served. `scripts/split_dashboard.py split`, `split-css` and `split-html` cut
-  the script, the stylesheet and the markup into parts at named anchors, so a rebase re-runs them instead of merging
-  moved lines by hand; `verify origin/main` proves the assembled page is byte for byte main's.
+  before; `dashboard/` itself is never served. The script's parts are edited by hand;
+  `scripts/split_dashboard.py split-css` and `split-html` cut the stylesheet and the markup into parts at named anchors,
+  and `verify origin/main` proves the assembled page is byte for byte main's.
 - **A big page or script** is split before it nears 450 KiB: Aikido skips big files (some just over 500 KiB already
   go unscanned), so a bigger one ships unchecked (see the size rule below).
 - **Markup in the dashboard:** build elements with `make()`, or write markup with ``html`...` `` and put it in the page
