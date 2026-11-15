@@ -11,7 +11,7 @@ import {basename, dirname, resolve} from 'node:path';
 
 console.log = console.info = console.warn = console.error;   // OpenClaw's own notes go to stderr: stdout is the answers
 const MODEL = {provider: 'openai', model: 'gpt-4o-transcribe'};   // as voice_input.OPENAI_MODEL
-const LANGUAGES = ['de', 'en', 'es', 'fr', 'it', 'nl', 'pt'];
+const LANGUAGES = ['de', 'en', 'es', 'fr', 'it', 'ja', 'ko', 'nl', 'pt', 'ru', 'zh'];
 const CLIP = /^[a-f0-9]{16}\.wav$/;
 const CLIPS = resolve(process.argv[2] || '.');
 const say = value => process.stdout.write(JSON.stringify(value) + '\n');

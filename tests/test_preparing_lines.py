@@ -106,7 +106,7 @@ class Lines(unittest.TestCase):
     def test_every_line_is_in_the_catalog_short_and_plain(self):
         lines = {v for table in (b.PREPARING_TOOLS, b.PREPARING_BROWSER, b.PREPARING_ACTIONS, b.PREPARING_PROGRAMS, b.PREPARING_GOG) for v in table.values() if v}
         lines |= {b.PREPARING_OTHER, b.PREPARING_CONNECTED, b.PREPARING_MAIL, b.PREPARING_CALENDAR, b.PREPARING_DRAFT, b.PREPARING_PDF}
-        for lang in ('en', 'nl', 'fr', 'de', 'es', 'it', 'pt-BR'):
+        for lang in ('en', 'nl', 'fr', 'de', 'es', 'it', 'pt-BR', 'zh-CN', 'ja', 'ko', 'ru'):
             catalog = i18n_extract.catalog(lang)
             for line in lines:
                 with self.subTest(lang=lang, line=line):

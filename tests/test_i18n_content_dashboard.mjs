@@ -10,7 +10,7 @@ const {chromium}=await import('./browser.mjs');
 // stored in ("di 27 okt" in an English UI with an en-BE locale reads "Tue 27 Oct"), and so do Done rows already loaded
 // when the language changes. Words glued to a value ("Hand to Codex") read translated as a whole.
 const dashboard=await dashboardPage();
-const cats={};for(const l of ['en','nl','fr','de','es','it','pt-BR'])cats[l]=await readFile(new URL(`../i18n/${l}.json`,import.meta.url),'utf8');
+const cats={};for(const l of ['en','nl','fr','de','es','it','pt-BR','zh-CN','ja','ko','ru'])cats[l]=await readFile(new URL(`../i18n/${l}.json`,import.meta.url),'utf8');
 const languages={en:'English',nl:'Nederlands',fr:'Français'};
 const view=language=>({locale:'en-BE',region:'BE',language,language_set:true,clock:'auto',hour12:false,auto_hour12:false,
  date_locale:language==='en'?'en-GB':language+'-BE',languages,saveable:true});

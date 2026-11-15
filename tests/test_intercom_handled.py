@@ -262,7 +262,7 @@ class Store(unittest.TestCase):
         self.assertEqual(asked, ['/conversations/search'])
 
     def test_the_lines_are_in_every_language(self):
-        for lang in ('en', 'nl', 'fr', 'de', 'es', 'it', 'pt-BR'):
+        for lang in ('en', 'nl', 'fr', 'de', 'es', 'it', 'pt-BR', 'zh-CN', 'ja', 'ko', 'ru'):
             catalog = json.loads((ROOT / 'i18n' / f'{lang}.json').read_text())
             for key in ('Closed in Intercom', 'Answered in Intercom', 'Closed in Intercom by {}', 'Answered in Intercom by {}'):
                 self.assertIn(key, catalog)

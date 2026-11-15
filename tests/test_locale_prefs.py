@@ -60,7 +60,8 @@ class LocaleTest(unittest.TestCase):
     def test_tags_are_normalized_and_languages_without_a_catalog_read_english(self):
         self.assertEqual(locale_prefs.normalize('en_gb'), 'en-GB')
         self.assertEqual(locale_prefs.normalize('nl-BE'), 'nl-BE')
-        self.assertEqual(locale_prefs.normalize('ja-JP'), 'en-JP')
+        self.assertEqual(locale_prefs.normalize('tr-TR'), 'en-TR')
+        self.assertEqual(locale_prefs.normalize('ja-JP'), 'ja-JP')
         self.assertEqual(locale_prefs.normalize(''), '')
         self.assertIsNone(locale_prefs.normalize('english'))
         self.assertIsNone(locale_prefs.normalize('en-GB"><script>'))

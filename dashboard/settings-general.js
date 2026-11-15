@@ -128,7 +128,7 @@ $('#settings-locale').addEventListener('change',async e=>{const el=e.target;if(!
  catch(err){errCaught(err);notice(err.message);renderLocale()}finally{el.disabled=!state.locale?.saveable}});
 // Settings, General, Voice input (voice_input.py): where speech becomes text (this Machine, or OpenAI with the owner's
 // key when OpenClaw has one), how accurate the Machine's own model is, and the language (Detect picks among the app's).
-const MIC_LANGS=[['de','Deutsch'],['en','English'],['es','Español'],['fr','Français'],['it','Italiano'],['nl','Nederlands'],['pt','Português']];
+const MIC_LANGS=[['de','Deutsch'],['en','English'],['es','Español'],['fr','Français'],['it','Italiano'],['nl','Nederlands'],['pt','Português'],['ru','Русский'],['zh','简体中文'],['ja','日本語'],['ko','한국어']];
 let dictation={at:0,busy:false,timer:null};
 async function loadDictation(force){if(dictation.busy||(!force&&Date.now()-dictation.at<30000))return;dictation.busy=true;if(!state.dictation)renderDictation();
  try{state.dictation=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'voice_status',args:{settings:true}})});dictation.at=Date.now()}catch{}
