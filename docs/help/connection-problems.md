@@ -2,7 +2,7 @@
 title: A connection needs help
 area: troubleshooting
 summary: A source says Needs your help, or stops bringing anything in. What to try.
-covers: 
+covers:
 code: onboarding.py, dashboard.html, assistant.py
 order: 1
 ---

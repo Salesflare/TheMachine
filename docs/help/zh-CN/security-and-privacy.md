@@ -2,11 +2,11 @@
 title: 安全与隐私
 area: security
 summary: 专属于你的 Machine，邮件加密存储，未经你同意不会发送任何内容。简要说明和相关链接。
-covers: 
+covers:
 code: message_seal.py, next_actions.py, SECURITY.md
 order: 1
 keywords: private, privacy, data, gdpr, encrypted, who can see, safe, stored, keep
-translated: edaba74e38b8ef79
+translated: e636b2a2fbbc714d
 ---
 ## 简要说明
 

@@ -2,11 +2,11 @@
 title: Segurança e privacidade
 area: security
 summary: Sua Machine particular, e-mails armazenados com criptografia e nada enviado sem sua aprovação. O resumo, com links.
-covers: 
+covers:
 code: message_seal.py, next_actions.py, SECURITY.md
 order: 1
 keywords: private, privacy, data, gdpr, encrypted, who can see, safe, stored, keep
-translated: edaba74e38b8ef79
+translated: e636b2a2fbbc714d
 ---
 ## Em resumo
 

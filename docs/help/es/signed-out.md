@@ -2,10 +2,10 @@
 title: Se cerró la sesión de un sitio
 area: troubleshooting
 summary: LinkedIn o X cerró la sesión de tu Machine. Vuelve a iniciarla, una vez o para siempre.
-covers: 
+covers:
 code: browser_login.py, dashboard.html, dashboard/connections-signin.js
 order: 2
-translated: da165847c9a9d091
+translated: 96c09e57cd3dca62
 ---
 Los sitios como LinkedIn y X se abren en el navegador propio de tu Machine. A veces, un sitio cierra la sesión.
 

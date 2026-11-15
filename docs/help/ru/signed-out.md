@@ -2,10 +2,10 @@
 title: Сайт завершил сеанс The Machine
 area: troubleshooting
 summary: LinkedIn или X завершили сеанс The Machine. Войдите снова один раз или сохраните вход на будущее.
-covers: 
+covers:
 code: browser_login.py, dashboard.html, dashboard/connections-signin.js
 order: 2
-translated: da165847c9a9d091
+translated: 96c09e57cd3dca62
 ---
 Такие сайты, как LinkedIn и X, открываются в собственном браузере The Machine. Иногда сайт завершает сеанс.
 

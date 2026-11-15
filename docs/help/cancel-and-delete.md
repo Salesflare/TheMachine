@@ -2,7 +2,7 @@
 title: Cancel or delete
 area: account
 summary: Cancel any time. Export first if you like; your data is deleted {grace_days} days later, backups included.
-covers: 
+covers:
 code: moving.py
 site: Cancel subscription, Keep my subscription, Withdraw from contract here, Wipe everything now, Delete my account
 order: 2

@@ -2,11 +2,11 @@
 title: セキュリティとプライバシー
 area: security
 summary: 自分専用のMachine、暗号化して保存されるメール、確認なしに送信されることはありません。要点と関連リンクをご紹介します。
-covers: 
+covers:
 code: message_seal.py, next_actions.py, SECURITY.md
 order: 1
 keywords: private, privacy, data, gdpr, encrypted, who can see, safe, stored, keep
-translated: edaba74e38b8ef79
+translated: e636b2a2fbbc714d
 ---
 ## 要点
 

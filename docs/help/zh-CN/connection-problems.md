@@ -2,10 +2,10 @@
 title: 连接需要你帮忙
 area: troubleshooting
 summary: 某个来源显示“需要你帮忙”，或不再同步内容。试试这些方法。
-covers: 
+covers:
 code: onboarding.py, dashboard.html, assistant.py
 order: 1
-translated: 256e9ef2fd6cae48
+translated: c07a7f214b1e4deb
 ---
 ## 查看状态
 

@@ -2,10 +2,10 @@
 title: 사이트에서 로그아웃됨
 area: troubleshooting
 summary: LinkedIn이나 X에서 The Machine이 로그아웃됐어요. 한 번만 로그인하거나 로그인 정보를 저장해 두세요.
-covers: 
+covers:
 code: browser_login.py, dashboard.html, dashboard/connections-signin.js
 order: 2
-translated: da165847c9a9d091
+translated: 96c09e57cd3dca62
 ---
 LinkedIn이나 X 같은 사이트는 The Machine 전용 브라우저에서 열려요. 사이트에서 로그아웃되는 경우가 있어요.
 

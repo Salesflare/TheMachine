@@ -531,7 +531,8 @@ def article_text(path, title, summary, body):
     lines = []
     for k, v in front(path.read_text(encoding='utf-8'))[0]:
         if k != 'translated':
-            lines.append(f'{k}: {" ".join({"title": title, "summary": summary}.get(k, v).split())}')
+            # an empty value is "covers:", never "covers: ": the site copies these byte for byte and refuses trailing spaces
+            lines.append(f'{k}: {" ".join({"title": title, "summary": summary}.get(k, v).split())}'.rstrip())
     lines.append(f'translated: {stamp(path)}')
     return '---\n' + '\n'.join(lines) + '\n---\n' + body.strip() + '\n'
 

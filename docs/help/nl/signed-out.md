@@ -2,10 +2,10 @@
 title: Afgemeld bij een site
 area: troubleshooting
 summary: LinkedIn of X heeft je Machine afgemeld. Log opnieuw in, eenmalig of blijvend.
-covers: 
+covers:
 code: browser_login.py, dashboard.html, dashboard/connections-signin.js
 order: 2
-translated: da165847c9a9d091
+translated: 96c09e57cd3dca62
 ---
 Je Machine leest sites zoals LinkedIn en X in zijn eigen browser. Soms meldt een site hem af.
 

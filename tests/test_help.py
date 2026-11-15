@@ -106,6 +106,18 @@ class HelpArticles(unittest.TestCase):
         self.assertIn('lists "Connect it now" under site: but does not use it',
                       ' '.join(self.problems(GOOD.replace('code: onboarding.py', 'code: onboarding.py\nsite: Connect it now'))))
 
+    def test_no_front_matter_line_ends_in_whitespace(self):
+        # the site copies docs/help byte for byte and its whitespace check refuses a trailing space ("covers: ")
+        self.assertEqual(help_check.trailing_spaces(), [])
+        with tempfile.TemporaryDirectory() as d:
+            (Path(d) / 'nl').mkdir()
+            self.write(d, 'gmail.md', GOOD.replace('covers: connector:gmail', 'covers: '))
+            self.write(d, 'nl/gmail.md', GOOD.replace('area: connections', 'area: connections\t'))
+            self.write(d, 'slack.md', GOOD.replace('covers: connector:gmail', 'covers:') + 'A line with a trailing space \n')
+            self.assertEqual(help_check.trailing_spaces(Path(d)),
+                             ['docs/help/gmail.md:5: trailing whitespace in the front matter',
+                              'docs/help/nl/gmail.md:3: trailing whitespace in the front matter'])
+
     def test_a_current_translation_matches_and_an_older_or_out_of_step_one_waits_for_the_translator(self):
         import sys
         sys.path.insert(0, str(HERE / 'scripts'))

@@ -2,10 +2,10 @@
 title: Проблема с подключением
 area: troubleshooting
 summary: Источник показывает статус «Ждёт вашей помощи» или перестаёт передавать данные. Что попробовать.
-covers: 
+covers:
 code: onboarding.py, dashboard.html, assistant.py
 order: 1
-translated: 256e9ef2fd6cae48
+translated: c07a7f214b1e4deb
 ---
 ## Проверьте статус
 

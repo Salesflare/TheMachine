@@ -2,10 +2,10 @@
 title: Una connessione richiede assistenza
 area: troubleshooting
 summary: Una fonte mostra **Serve il tuo aiuto** o smette di importare dati. Ecco cosa puoi provare.
-covers: 
+covers:
 code: onboarding.py, dashboard.html, assistant.py
 order: 1
-translated: 256e9ef2fd6cae48
+translated: c07a7f214b1e4deb
 ---
 ## Controlla lo stato
 

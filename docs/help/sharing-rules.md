@@ -2,7 +2,7 @@
 title: Sharing rules
 area: fleet
 summary: Per Fleet and per kind of question, what your Machine may answer. Ask me first, Always or Never, and whether names go.
-covers: 
+covers:
 code: fleet.py, dashboard.html
 order: 2
 keywords: share, sharing, colleagues, teammates, team, what others see, answer for me

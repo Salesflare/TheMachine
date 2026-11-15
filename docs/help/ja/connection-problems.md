@@ -2,10 +2,10 @@
 title: 接続に対応が必要です
 area: troubleshooting
 summary: 接続元に「サポートが必要です」と表示される場合や、データが取り込まれなくなった場合に試すことをご紹介します。
-covers: 
+covers:
 code: onboarding.py, dashboard.html, assistant.py
 order: 1
-translated: 256e9ef2fd6cae48
+translated: c07a7f214b1e4deb
 ---
 ## 状態を確認する
 

@@ -2,11 +2,11 @@
 title: Beveiliging en privacy
 area: security
 summary: Je eigen privé-Machine, versleutelde opslag van je mail en er wordt niets verstuurd zonder jouw akkoord. De korte versie, met links.
-covers: 
+covers:
 code: message_seal.py, next_actions.py, SECURITY.md
 order: 1
 keywords: private, privacy, data, gdpr, encrypted, who can see, safe, stored, keep
-translated: edaba74e38b8ef79
+translated: e636b2a2fbbc714d
 ---
 ## Kort gezegd
 

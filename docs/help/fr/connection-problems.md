@@ -2,10 +2,10 @@
 title: Une connexion nécessite votre aide
 area: troubleshooting
 summary: Une source affiche **Attend votre aide** ou cesse d’importer des données. Voici quoi essayer.
-covers: 
+covers:
 code: onboarding.py, dashboard.html, assistant.py
 order: 1
-translated: 256e9ef2fd6cae48
+translated: c07a7f214b1e4deb
 ---
 ## Vérifier son état
 

@@ -2,11 +2,11 @@
 title: Opzeggen of verwijderen
 area: account
 summary: Zeg op wanneer je wilt. Exporteer eerst als je wilt; je gegevens worden {grace_days} dagen later verwijderd, back-ups inbegrepen.
-covers: 
+covers:
 code: moving.py
 site: Cancel subscription, Keep my subscription, Withdraw from contract here, Wipe everything now, Delete my account
 order: 2
-translated: 44307d4109200c0b
+translated: e02f2502bf275cde
 ---
 ## Opzeggen
 

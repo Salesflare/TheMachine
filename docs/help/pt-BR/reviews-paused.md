@@ -2,10 +2,10 @@
 title: Nenhuma tarefa nova
 area: troubleshooting
 summary: As verificações estão desativadas, aguardando ou pausadas por causa do limite de uso do seu modelo. Veja como identificar o motivo e o que fazer.
-covers: 
+covers:
 code: dashboard.html, assistant.py
 order: 3
-translated: d265e540d9ecef0e
+translated: c3456770809873dd
 ---
 As tarefas vêm das verificações: sua Machine analisa o que chegou nos últimos 15 minutos, aproximadamente.
 

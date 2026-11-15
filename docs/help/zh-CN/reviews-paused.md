@@ -2,10 +2,10 @@
 title: 没有新的待办
 area: troubleshooting
 summary: 检查已关闭、正在等待，或因模型用量达到上限而停止。了解如何判断并采取相应措施。
-covers: 
+covers:
 code: dashboard.html, assistant.py
 order: 3
-translated: d265e540d9ecef0e
+translated: c3456770809873dd
 ---
 待办来自检查：The Machine 会查看最近约 15 分钟内收到的内容。
 

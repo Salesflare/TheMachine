@@ -2,11 +2,11 @@
 title: Regras de compartilhamento
 area: fleet
 summary: O que sua Machine pode responder em cada Fleet e para cada tipo de pergunta. Você escolhe entre Perguntar antes, Sempre ou Nunca e decide se os nomes podem ser incluídos.
-covers: 
+covers:
 code: fleet.py, dashboard.html
 order: 2
 keywords: share, sharing, colleagues, teammates, team, what others see, answer for me
-translated: cfa9e911ea963f17
+translated: 1ae445260f88518d
 ---
 ## Configure as regras
 

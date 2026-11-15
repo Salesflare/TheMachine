@@ -2,11 +2,11 @@
 title: Sicurezza e privacy
 area: security
 summary: La tua Machine privata, email salvate in forma crittografata e niente viene inviato senza il tuo OK. Ecco i punti principali, con link di approfondimento.
-covers: 
+covers:
 code: message_seal.py, next_actions.py, SECURITY.md
 order: 1
 keywords: private, privacy, data, gdpr, encrypted, who can see, safe, stored, keep
-translated: edaba74e38b8ef79
+translated: e636b2a2fbbc714d
 ---
 ## In breve
 

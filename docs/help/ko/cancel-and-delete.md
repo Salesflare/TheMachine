@@ -2,11 +2,11 @@
 title: 취소 또는 삭제
 area: account
 summary: 언제든 취소할 수 있어요. 원하면 먼저 데이터를 내보내세요. 백업을 포함한 데이터는 {grace_days}일 후 삭제돼요.
-covers: 
+covers:
 code: moving.py
 site: Cancel subscription, Keep my subscription, Withdraw from contract here, Wipe everything now, Delete my account
 order: 2
-translated: 44307d4109200c0b
+translated: e02f2502bf275cde
 ---
 ## 취소
 
