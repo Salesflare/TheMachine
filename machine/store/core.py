@@ -42,7 +42,7 @@ import reading_digest
 import meet_link
 import memory_use
 import message_seal
-import home_notes
+import section_notes
 import note_pages
 import trip_notes
 import pacing
@@ -541,7 +541,7 @@ class StoreCore:
             memory_use.ensure(db)  # what prompts read of what was learned (memory_use.py): a new table, empty
             note_pages.ensure(db)  # Notes in the Graph (note_pages.py): new tables only
             trip_notes.ensure(db)  # the bookings trip notes are built from (trip_notes.py): new tables only
-            home_notes.ensure(db)  # where each Home candidate goes (home_notes.py): new tables only
+            section_notes.ensure(db)  # where each Home or Health candidate goes (section_notes.py): Home's old tables moved over
             # The question(s) a note of the owner's answered (Store._decide): its own line in the chat, the run's question
             db.execute('CREATE TABLE IF NOT EXISTS decision_asks(decision_id TEXT PRIMARY KEY,suggestion_id TEXT NOT NULL,'
                        'questions TEXT NOT NULL,created_at TEXT NOT NULL)')

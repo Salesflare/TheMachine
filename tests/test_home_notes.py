@@ -1,4 +1,4 @@
-"""Home notes (home_notes.py, NotesApp.home_notes_run): regular Personal bills, subscriptions and what was learned,
+"""Home notes (home_notes.py, section_notes.py, NotesApp.section_notes_run): regular Personal bills, subscriptions and what was learned,
 placed under Home by one small model call over what is new only, each line pointing to its to-do, mail or fact instead
 of copying it. Made-up data only; the model is a stand-in, nothing is sent."""
 import importlib.util
@@ -10,6 +10,7 @@ from pathlib import Path
 spec = importlib.util.spec_from_file_location('home_notes_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
 import home_notes  # noqa: E402
+import section_notes  # noqa: E402
 import note_pages  # noqa: E402
 import subscriptions  # noqa: E402
 
@@ -28,7 +29,7 @@ class HomeNotes(unittest.TestCase):
         self.app.config = {'accounts': [HOME, JOB]}
         self.asked = []
         self.places = {}
-        self.app.home_notes_model = self.model
+        self.app.section_notes_model = self.model
         self.n = 0
 
     def model(self, prompt):
@@ -59,8 +60,8 @@ class HomeNotes(unittest.TestCase):
 
     def run_round(self):
         with self.store.connect() as db:
-            db.execute('DELETE FROM home_state')
-        self.app.home_notes_run()
+            db.execute('DELETE FROM section_state')
+        self.app.section_notes_run(home_notes.KIND)
         with self.store.connect() as db:
             return {x['name']: note_pages.page(db, x['id']) for x in note_pages.listing(db, '2026-11-14') if x['kind'] == 'home'}
 
@@ -115,14 +116,14 @@ class HomeNotes(unittest.TestCase):
     def test_an_answer_that_isnt_one_keeps_nothing_and_asks_again(self):
         for day in ('09-03', '10-03'):
             self.bill('Example Energy', day)
-        self.app.home_notes_model = lambda prompt: self.asked.append(prompt) or 'Sorry, I can\'t help with that.'
+        self.app.section_notes_model = lambda prompt: self.asked.append(prompt) or 'Sorry, I can\'t help with that.'
         self.assertEqual(self.run_round(), {})
-        self.app.home_notes_model = self.model
+        self.app.section_notes_model = self.model
         self.places = {'Example Energy': 'Bills and subscriptions'}
         self.run_round()
         self.assertEqual(len(self.asked), 2)
         with self.store.connect() as db:
-            self.assertEqual(db.execute('SELECT section FROM home_topics').fetchone()['section'], 'Bills and subscriptions')
+            self.assertEqual(db.execute("SELECT section FROM section_topics WHERE kind='home'").fetchone()['section'], 'Bills and subscriptions')
 
     def test_one_line_starts_no_section_and_a_section_goes_with_its_last_line_unless_the_owner_wrote_in_it(self):
         self.places = {'dishwasher': 'Appliances', 'fridge': 'Appliances', 'boiler': 'Repairs and upkeep', 'gutters': 'Repairs and upkeep'}
@@ -198,6 +199,20 @@ class HomeNotes(unittest.TestCase):
         self.assertEqual(note_pages_app._sender('{}', mine), '')
         self.assertEqual(note_pages_app._sender({'from': 'Example Water <bills@water.example>'}, mine), 'Example Water', 'as Store.events reads it')
 
+    def test_homes_own_tables_from_before_move_over_once(self):
+        with self.store.connect() as db:
+            db.execute('DROP TABLE section_topics')
+            db.execute('DROP TABLE section_state')
+            db.execute("CREATE TABLE home_topics(key TEXT PRIMARY KEY, section TEXT NOT NULL, note TEXT NOT NULL DEFAULT '', at TEXT NOT NULL)")
+            db.execute('CREATE TABLE home_state(id INTEGER PRIMARY KEY CHECK(id=1), at TEXT NOT NULL)')
+            db.execute("INSERT INTO home_topics VALUES('bill:x','Appliances','Dishwasher',?)", (AT,))
+            db.execute('INSERT INTO home_state VALUES(1,?)', (AT,))
+            section_notes.ensure(db)
+            section_notes.ensure(db)
+            self.assertEqual([tuple(r) for r in db.execute('SELECT kind,key,section,note FROM section_topics')], [('home', 'bill:x', 'Appliances', 'Dishwasher')])
+            self.assertFalse(section_notes.due(db, home_notes.KIND, AT), 'its last round is kept')
+            self.assertFalse(db.execute("SELECT 1 FROM sqlite_master WHERE name IN ('home_topics','home_state')").fetchone())
+
     def test_a_canceled_subscription_isnt_on_home(self):
         with self.store.connect() as db:
             subscriptions.ensure(db)  # made by the Subscriptions routine's first run
@@ -211,7 +226,7 @@ class HomeNotes(unittest.TestCase):
             for n, row in enumerate(rows):
                 db.execute('INSERT INTO subs_items(suggestion_id,item,key,next,updated_at) VALUES(?,?,?,?,?)', ('subs1', n, row['key'], '2026-12-01', AT))
             db.execute("INSERT INTO subs_kept(key,choice,at) VALUES('news.example','cancel',?)", (AT,))
-            found = home_notes.subscriptions(db, [HOME, JOB])
+            found = section_notes.subscriptions(db, [HOME, JOB])
         self.assertEqual([(x['name'], x['period'], x['todo']) for x in found], [('Example Stream', 'month', 'subs1')])
 
 

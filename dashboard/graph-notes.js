@@ -30,7 +30,7 @@ function noteText(x){const text=x.text,low=text.toLowerCase(),spots=[];
 const noteWhen=v=>v?html`<time datetime="${v}">${noteDay(v)}${String(v).length>10?' '+fmtHM(new Date(v)):''}</time>`:'';
 // Where a line came from, and the to-do it points to (a bill or a subscription: the details stay there)
 function noteSource(x){const from=x.source?.gone?t('From a message that is gone')
- :x.source?html`<button type="button" class="link" data-note-src="${x.source.id}" data-kind="${x.source.kind}" data-title="${x.source.title}">${t('From {}',x.source.from||x.source.title||t('a message'))}</button>`
+ :x.source?html`<button type="button" class="link" data-note-src="${x.source.id}" data-kind="${x.source.kind}" data-title="${x.source.title}">${x.source.kind==='calendar.event'?t('From your calendar'):t('From {}',x.source.from||x.source.title||t('a message'))}</button>`
  :x.fact_id?t('From what I learned'):'';
  // the to-do itself: an open one in the list, picked out; a done one (a paid bill) in its chat, as from Done
  const todo=x.todo?html`<a href="#card=${encodeURIComponent(x.todo)}&or=chat">${t('Open the to-do')}</a>`:'';

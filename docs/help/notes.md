@@ -3,7 +3,7 @@ title: Notes
 area: graph
 summary: One readable page per subject, like a trip or your home, linked to the people and projects in it.
 covers: notes
-code: note_pages.py, note_pages_app.py, trip_notes.py, bookings.py, home_notes.py, dashboard/graph-notes.js
+code: note_pages.py, note_pages_app.py, trip_notes.py, bookings.py, section_notes.py, home_notes.py, health_notes.py, dashboard/graph-notes.js
 order: 8
 ---
 A note is the overview of one subject: a trip, your home, how invoices are done. Notes sit in the Graph next to People, Organizations and Projects. They stay on your Machine and aren't shared with your team.
@@ -44,6 +44,17 @@ Under **Home**, your Machine keeps what it knows about your home: **Bills and su
 - If you keep your own note in a part, like one for your dishwasher under **Appliances**, what's about that thing goes in your note instead. Your Machine doesn't start notes like that itself.
 
 Only Personal bills and subscriptions are used, and Home notes are always Personal. Your Machine asks its AI once about each new bill, subscription or thing it learned, to tell whether it's about your home. For a bill it sends who it's from, never the amount.
+
+## Health
+
+Under **Health**, your Machine keeps what it knows about your own health: **Appointments**, **Doctors and care**, **Medicines**, **Allergies and conditions** and **Bills and insurance**. A part shows up once it has at least two lines.
+
+- An appointment in your calendar that only you go to, like the dentist, gets a line with its next date, or its last one. **From your calendar** opens it.
+- A bill from a doctor, dentist or pharmacy gets a line that opens its to-do. The amount stays there.
+- What your Machine learned about your health, like an allergy, is a line too. Editing it also changes it under **What I've learned**.
+- Your own note in a part, like one for your physio under **Appointments**, gets what's about that thing.
+
+Health notes are always Personal, even when a bill came in on your work address. Your Machine asks its AI once about each new appointment, bill or thing it learned, to tell whether it's about your own health. It sends an appointment's name, never its notes or who else is invited.
 
 ## Merge, delete and undo
 
