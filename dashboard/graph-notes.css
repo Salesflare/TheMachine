@@ -20,6 +20,7 @@
 .note-lines li:has(>time){grid-template-columns:8.5rem minmax(0,1fr) auto}.note-lines li:not(:has(>time))>.note-text{grid-column:1/3}
 @media(max-width:560px){.note-lines li:has(>time){grid-template-columns:minmax(0,1fr) auto;gap:0 12px}.note-lines li>time{grid-row:1}.note-lines li:has(>time)>.note-text{grid-column:1;grid-row:2}.note-lines li:has(>time)>details{grid-column:2;grid-row:1/span 2}}.note-lines li:has(>form){display:block}
 .note-text .note-src{display:block;margin-top:2px;color:var(--faint);font-size:var(--fs-xs);white-space:normal}
+.note-src>a{color:inherit;text-underline-offset:2px;white-space:nowrap}
 .note-src button.link{min-height:0;margin:0;padding:0;border:0;background:none;box-shadow:none;color:inherit;font:inherit;text-decoration:underline;text-underline-offset:2px;text-align:left}
 a.note-link{color:var(--text);text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px}
 .note-page .note-add-line{margin:6px 0 0 -8px;min-height:0;padding:4px 8px;font-size:var(--fs-sm);color:var(--muted)}.note-page .note-lines{margin-top:var(--sp-2)}

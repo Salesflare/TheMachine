@@ -187,6 +187,7 @@ def load(directory, states, port=8870, network_port=8871, fixture_path=HERE / 'f
         load_logins(directory, fixture)
         if not fresh:
             load_learned_facts(store)
+            load_home_notes(store, base)
         load_recurring(store, config, base)
         if not fresh:  # a fresh Machine has no routines yet: the page's empty state
             load_routines(store, base)
@@ -426,7 +427,40 @@ def load_graph_notes(db, base):
     trip_notes.collect(db)
     found, keep = trip_notes.drafts(db, [{'id': 'work-gmail', 'service': 'gmail', 'boundary': work}])
     note_pages.sync(db, 'trip', found, when, keep)
+    # Home's bills (home_notes.py): paid energy and water bills on the personal mailbox; load_home_notes makes the notes
+    bills =[('Brightwater Energy', days) for days in (95, 64, 33, 3)] + [('Clearbrook Water', days) for days in (150, 58)]
+    mails = insert_events(db, [{'key': f'home:bill{n}', 'account_id': 'home-gmail', 'kind': 'gmail.message', 'minutes_ago': days * 24 * 60,
+                                'title': f'Your {payee} bill', 'body': f'Your new bill from {payee} is ready.',
+                                'metadata': {'from': f'{payee} <billing@{payee.split()[0].lower()}.example>', 'to': 'alex.morgan@mail.example',
+                                             'labels': ['INBOX'], 'thread_id': f't-home-bill{n}', 'message-id': f'<home.bill{n}@mail.example>'}}
+                               for n, (payee, days) in enumerate(bills)], base)
+    for n, (payee, days) in enumerate(bills):
+        db.execute("INSERT INTO suggestions(id,dedupe_key,title,body,event_ids,account_ids,status,created_at,bill) VALUES(?,?,?,?,?,?,'completed',?,?)",
+                   (hashlib.sha256(f'home-bill{n}'.encode()).hexdigest()[:16], f'sandbox:home-bill{n}', f'Pay the {payee} bill', f'The {payee} bill, paid.',
+                    json.dumps([mails[f'home:bill{n}']]), json.dumps(['home-gmail']), stamp(days * 24 * 60, base),
+                    json.dumps({'payee': payee, 'invoice': f'HB-{4410 + n}', 'amount': 'EUR 64.20'})))
     db.commit()
+
+
+def load_home_notes(store, base):
+    """Home (home_notes.py): a few things the owner said in their chat about the house, kept the way the chat keeps
+    them (Store.remember_fact), and those and load_graph_notes' bills placed as the Machine's model call would place
+    them, filled in beside the owner's own Home and Appliances notes."""
+    import home_notes
+    import note_pages
+    for n, text in enumerate(('The boiler is serviced every October by Northside Heating', 'The gutters are cleaned each November',
+                              'The fridge warranty runs until June 2027', 'The dishwasher is a Lumo DW-500, bought in March 2024')):
+        store.remember_fact(text, f'webchat-said:sandbox-home-{n}', said=True, quote=text, said_text=text)
+    accounts, when = [{'id': 'home-gmail', 'service': 'gmail', 'boundary': 'personal'}], stamp(2 * 24 * 60, base)
+    places = {'Brightwater': 'Bills and subscriptions', 'Clearbrook': 'Bills and subscriptions', 'boiler': 'Repairs and upkeep',
+              'gutters': 'Repairs and upkeep', 'fridge': 'Appliances', 'dishwasher': 'Appliances'}
+    with store.connect() as db:
+        db.execute('BEGIN IMMEDIATE')
+        items = home_notes.unasked(db, home_notes.candidates(db, accounts, base.date()))
+        home_notes.remember(db, {c['key']: next((s for k, s in places.items() if k in (c.get('name') or c.get('text') or '')), '') for c in items}, when)
+        found, keep = home_notes.drafts(db, home_notes.candidates(db, accounts, base.date()))
+        note_pages.sync(db, 'home', found, when, keep)
+        db.commit()
 
 
 def load_share(db):

@@ -637,7 +637,7 @@
     ["email:theo.marchetti@mail.example", "email:theo@vantagerail.example", "Same name", 2.1468]
   ]},
   "graph_state": {"columns": ["id", "built_at", "signals"], "rows": [
-    [1, "2026-03-10T09:30:00+00:00", 407]
+    [1, "2026-03-10T09:30:00+00:00", 408]
   ]},
   "graph_unnamed": {"columns": ["key", "event_ids", "people", "titles", "size", "last_at"], "rows": [
 

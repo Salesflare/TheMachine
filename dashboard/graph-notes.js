@@ -28,9 +28,12 @@ function noteText(x){const text=x.text,low=text.toLowerCase(),spots=[];
  for(const l of x.links||[]){const i=low.indexOf(l.name.toLowerCase());if(i>=0&&!spots.some(s=>i<s.end&&i+l.name.length>s.i))spots.push({i,end:i+l.name.length,id:l.id})}
  spots.sort((a,b)=>a.i-b.i);const out=[];let at=0;for(const s of spots){out.push(text.slice(at,s.i),html`<a href="${graphHash(s.id)}" class="note-link">${text.slice(s.i,s.end)}</a>`);at=s.end}out.push(text.slice(at));return out}
 const noteWhen=v=>v?html`<time datetime="${v}">${noteDay(v)}${String(v).length>10?' '+fmtHM(new Date(v)):''}</time>`:'';
-const noteSource=x=>x.source?.gone?html`<small class="note-src">${t('From a message that is gone')}</small>`
- :x.source?html`<small class="note-src"><button type="button" class="link" data-note-src="${x.source.id}" data-kind="${x.source.kind}" data-title="${x.source.title}">${t('From {}',x.source.title||t('a message'))}</button></small>`
- :x.fact_id?html`<small class="note-src">${t('From what I learned')}</small>`:'';
+// Where a line came from, and the to-do it points to (a bill or a subscription: the details stay there)
+function noteSource(x){const from=x.source?.gone?t('From a message that is gone')
+ :x.source?html`<button type="button" class="link" data-note-src="${x.source.id}" data-kind="${x.source.kind}" data-title="${x.source.title}">${t('From {}',x.source.title||t('a message'))}</button>`
+ :x.fact_id?t('From what I learned'):'';
+ const todo=x.todo?html`<a href="#card=${encodeURIComponent(x.todo)}">${t('Open the to-do')}</a>`:'';
+ return from||todo?html`<small class="note-src">${from}${from&&todo?' · ':''}${todo}</small>`:''}
 const noteLineForm=x=>html`<form class="note-form note-line-form" data-note-line="${x.id}" data-links="${JSON.stringify(x.links||[])}"><textarea name="text" maxlength="${x.fact_id?240:1000}" rows="2" required aria-label="${t('Line')}">${x.text}</textarea><span class="note-acts"><button type="button" class="quiet" data-note-cancel>${t('Cancel')}</button><button class="primary">${t('Save')}</button></span></form>`;
 function noteLine(x){if(noteEditing===x.id)return html`<li>${noteLineForm(x)}</li>`;
  const menu=html`<details class="fact-menu"><summary aria-label="${t('Options for this line')}" title="${t('Options')}">⋯</summary><div class="fact-menu-list" role="menu"><button type="button" role="menuitem" data-note-line-edit="${x.id}">${t('Edit')}${x.fact_id?html`<small>${t('Also changes it under What I’ve learned')}</small>`:''}</button>${x.edited?html`<button type="button" role="menuitem" data-note-line-reset="${x.id}">${t('Back to the original')}</button>`:''}<button type="button" role="menuitem" class="danger" data-note-line-remove="${x.id}">${t('Remove')}</button></div></details>`;
