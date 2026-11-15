@@ -432,6 +432,7 @@ SERVER_TEXT = {
     'onboarding.py': ['WHAT', 'LABELS'],
     'home_notes.py': ['SECTIONS'],       # the Home notes' titles (t(section))
     'health_notes.py': ['SECTIONS'],     # the Health notes' titles (t(section))
+    'kids_notes.py': ['SECTIONS'],       # the Kids notes' titles (t(section))
     # + Add's calendars beyond Google and Outlook: their names, lines, form notes and fields, and what setup says
     'machine/sources/calendar_setup.py': ['LABELS', 'WHAT', 'NOTES', 'SECRETS', 'ASKS', 'FIELDS', 'REFUSED', 'MISSING'],
     'shared_graph.py': ['why'],          # why a thread is shared or not, under Sharing

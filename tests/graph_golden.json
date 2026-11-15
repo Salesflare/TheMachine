@@ -1,6 +1,6 @@
 {
   "graph_edits": {"columns": ["id", "n"], "rows": [
-    [1, 216]
+    [1, 224]
   ]},
   "graph_events": {"columns": ["node_id", "event_id", "at", "probable", "direct"], "rows": [
     ["email:anouk@vantagerail.example", 195, "2026-03-09T11:30:00+00:00", 0, 1],
@@ -292,6 +292,7 @@
     ["email:imogen@tallowcrest.example", "email:imogen@tallowcrest.example"],
     ["email:jasper@willowtick.example", "email:jasper@willowtick.example"],
     ["email:jonah@glasswingapps.example", "email:jonah@glasswingapps.example"],
+    ["email:jules.morgan@example.net", "email:jules.morgan@example.net"],
     ["email:kofi@ironbarkoutdoor.example", "email:kofi@ironbarkoutdoor.example"],
     ["email:leontine@vantagerail.example", "email:leontine@vantagerail.example"],
     ["email:liesel@fernhillschools.example", "email:liesel@fernhillschools.example"],
@@ -390,6 +391,7 @@
     ["email:jasper@willowtick.example", "org:willowtick.example", "member", 1.2529, null],
     ["email:jasper@willowtick.example", "project:19", "project", 0.5114, "2026-03-01"],
     ["email:jonah@glasswingapps.example", "org:glasswingapps.example", "member", 1.4949, null],
+    ["email:jules.morgan@example.net", "org:example.net", "member", 0.01, null],
     ["email:kofi@ironbarkoutdoor.example", "org:ironbarkoutdoor.example", "member", 3.3728, null],
     ["email:leontine@vantagerail.example", "org:vantagerail.example", "member", 0.5509, null],
     ["email:liesel@fernhillschools.example", "org:fernhillschools.example", "member", 1.9215, null],
@@ -458,7 +460,7 @@
 
   ]},
   "graph_names": {"columns": ["node_id", "name", "created_at"], "rows": [
-
+    ["email:jules.morgan@example.net", "Jules Morgan", "2026-03-07T09:30:00+00:00"]
   ]},
   "graph_nodes": {"columns": ["id", "kind", "name", "strength", "last_at", "signals", "gap_days", "quiet", "trend", "info"], "rows": [
     ["email:anouk@vantagerail.example", "person", "Anouk Valemont", 0.6949, "2026-03-10", 5, null, 0, null, "{\"ids\": [\"anouk@vantagerail.example\"], \"org\": \"org:vantagerail.example\", \"org_by\": \"email\", \"has_headline\": false, \"wrote\": 0, \"heard\": 1, \"met\": 1, \"accounts\": [\"work-calendar\", \"work-gmail\"], \"next_meeting\": \"2026-03-10T14:00:00+00:00\", \"colleague\": false, \"role\": null, \"role_by\": null, \"role_id\": null, \"identifiers\": [\"email:anouk@vantagerail.example\"], \"hints\": [], \"seen_only\": false, \"profile\": null, \"edited\": [], \"side\": \"work\", \"side_by\": null, \"side_why\": \"address\", \"manual\": false, \"notes\": null, \"phones\": [], \"emails\": [{\"value\": \"anouk@vantagerail.example\", \"by\": \"messages\"}]}"],
@@ -485,6 +487,7 @@
     ["email:imogen@tallowcrest.example", "person", "Imogen Hale", 0.8538, "2026-03-06", 2, null, 0, null, "{\"ids\": [\"imogen@tallowcrest.example\"], \"org\": \"org:tallowcrest.example\", \"org_by\": \"email\", \"has_headline\": false, \"wrote\": 1, \"heard\": 1, \"met\": 0, \"accounts\": [\"work-gmail\"], \"next_meeting\": null, \"colleague\": false, \"role\": null, \"role_by\": null, \"role_id\": null, \"identifiers\": [\"email:imogen@tallowcrest.example\"], \"hints\": [], \"seen_only\": false, \"profile\": null, \"edited\": [], \"side\": \"work\", \"side_by\": null, \"side_why\": \"address\", \"manual\": false, \"notes\": null, \"phones\": [], \"emails\": [{\"value\": \"imogen@tallowcrest.example\", \"by\": \"messages\"}]}"],
     ["email:jasper@willowtick.example", "person", "Jasper Nkemelu", 1.2529, "2026-03-01", 2, null, 0, null, "{\"ids\": [\"jasper@willowtick.example\"], \"org\": \"org:willowtick.example\", \"org_by\": \"email\", \"has_headline\": false, \"wrote\": 1, \"heard\": 1, \"met\": 0, \"accounts\": [\"work-gmail\"], \"next_meeting\": null, \"colleague\": false, \"role\": null, \"role_by\": null, \"role_id\": null, \"identifiers\": [\"email:jasper@willowtick.example\"], \"hints\": [], \"seen_only\": false, \"profile\": null, \"edited\": [], \"side\": \"work\", \"side_by\": null, \"side_why\": \"address\", \"manual\": false, \"notes\": null, \"phones\": [], \"emails\": [{\"value\": \"jasper@willowtick.example\", \"by\": \"messages\"}], \"history\": 1, \"live\": 0.8029}"],
     ["email:jonah@glasswingapps.example", "person", "Jonah Kettering", 1.4949, "2026-03-10", 4, null, 0, null, "{\"ids\": [\"jonah@glasswingapps.example\"], \"org\": \"org:glasswingapps.example\", \"org_by\": \"email\", \"has_headline\": false, \"wrote\": 1, \"heard\": 1, \"met\": 1, \"accounts\": [\"work-calendar\", \"work-gmail\"], \"next_meeting\": null, \"colleague\": false, \"role\": null, \"role_by\": null, \"role_id\": null, \"identifiers\": [\"email:jonah@glasswingapps.example\"], \"hints\": [], \"seen_only\": false, \"profile\": null, \"edited\": [], \"side\": \"work\", \"side_by\": null, \"side_why\": \"address\", \"manual\": false, \"notes\": null, \"phones\": [], \"emails\": [{\"value\": \"jonah@glasswingapps.example\", \"by\": \"messages\"}]}"],
+    ["email:jules.morgan@example.net", "person", "Jules Morgan", 0.01, null, 0, null, 0, null, "{\"ids\": [\"jules.morgan@example.net\"], \"org\": \"org:example.net\", \"org_by\": \"email\", \"has_headline\": false, \"wrote\": 0, \"heard\": 0, \"met\": 0, \"accounts\": [], \"next_meeting\": null, \"colleague\": false, \"role\": \"daughter\", \"role_by\": \"owner\", \"role_id\": \"email:jules.morgan@example.net\", \"identifiers\": [\"email:jules.morgan@example.net\"], \"hints\": [\"shares the owner's surname\"], \"seen_only\": true, \"profile\": null, \"edited\": [\"side\"], \"side\": \"personal\", \"side_by\": \"owner\", \"side_why\": \"owner\", \"manual\": true, \"notes\": null, \"phones\": [], \"emails\": [{\"value\": \"jules.morgan@example.net\", \"by\": \"messages\"}]}"],
     ["email:kofi@ironbarkoutdoor.example", "person", "Kofi Larkspur", 3.3728, "2026-03-08", 4, null, 0, null, "{\"ids\": [\"kofi@ironbarkoutdoor.example\"], \"org\": \"org:ironbarkoutdoor.example\", \"org_by\": \"email\", \"has_headline\": false, \"wrote\": 0, \"heard\": 2, \"met\": 0, \"accounts\": [\"work-gmail\", \"work-intercom\"], \"next_meeting\": null, \"colleague\": false, \"role\": \"product manager\", \"role_by\": \"review\", \"role_id\": \"email:kofi@ironbarkoutdoor.example\", \"identifiers\": [\"email:kofi@ironbarkoutdoor.example\"], \"hints\": [\"wrote to support (Intercom)\"], \"seen_only\": false, \"profile\": null, \"edited\": [], \"side\": \"work\", \"side_by\": null, \"side_why\": \"address\", \"manual\": false, \"notes\": null, \"phones\": [], \"emails\": [{\"value\": \"kofi@ironbarkoutdoor.example\", \"by\": \"messages\"}]}"],
     ["email:leontine@vantagerail.example", "person", "Leontine Merrow", 0.5509, "2026-03-08", 6, null, 0, null, "{\"ids\": [\"leontine@vantagerail.example\"], \"org\": \"org:vantagerail.example\", \"org_by\": \"email\", \"has_headline\": false, \"wrote\": 0, \"heard\": 2, \"met\": 0, \"accounts\": [\"work-gmail\", \"work-intercom\"], \"next_meeting\": \"2026-03-12T16:00:00+00:00\", \"colleague\": false, \"role\": null, \"role_by\": null, \"role_id\": null, \"identifiers\": [\"email:leontine@vantagerail.example\"], \"hints\": [\"wrote to support (Intercom)\"], \"seen_only\": false, \"profile\": null, \"edited\": [], \"side\": \"work\", \"side_by\": null, \"side_why\": \"address\", \"manual\": false, \"notes\": null, \"phones\": [], \"emails\": [{\"value\": \"leontine@vantagerail.example\", \"by\": \"messages\"}]}"],
     ["email:liesel@fernhillschools.example", "person", "Liesel Merrow", 1.9215, "2026-03-10", 7, null, 0, null, "{\"ids\": [\"liesel@fernhillschools.example\"], \"org\": \"org:fernhillschools.example\", \"org_by\": \"email\", \"has_headline\": false, \"wrote\": 0, \"heard\": 3, \"met\": 0, \"accounts\": [\"work-gmail\", \"work-intercom\"], \"next_meeting\": null, \"colleague\": false, \"role\": null, \"role_by\": null, \"role_id\": null, \"identifiers\": [\"email:liesel@fernhillschools.example\"], \"hints\": [\"wrote to support (Intercom)\"], \"seen_only\": false, \"profile\": null, \"edited\": [], \"side\": \"work\", \"side_by\": null, \"side_why\": \"address\", \"manual\": false, \"notes\": null, \"phones\": [], \"emails\": [{\"value\": \"liesel@fernhillschools.example\", \"by\": \"messages\"}]}"],
@@ -545,6 +548,7 @@
     ["org:cobaltandfinch.example", "org", "Cobalt & Finch", 2.8477, "2026-03-10", 3, null, 0, null, "{\"domain\": \"cobaltandfinch.example\", \"role\": null, \"role_by\": null, \"paying\": false, \"profile\": {\"website\": \"https://cobaltandfinch.example\", \"name\": \"Cobalt & Finch\", \"industry\": \"Design\", \"size\": \"2-10\", \"country\": \"gb\"}, \"edited\": [], \"wrong\": false, \"manual\": false}"],
     ["org:copperleafapps.example", "org", "Copperleaf Apps", 0.5605, "2026-03-04", 1, null, 0, null, "{\"domain\": \"copperleafapps.example\", \"role\": null, \"role_by\": null, \"paying\": false, \"profile\": {\"website\": \"https://copperleafapps.example\", \"name\": \"Copperleaf Apps\", \"industry\": \"Software\"}, \"edited\": [], \"wrong\": false, \"manual\": false}"],
     ["org:driftwooddocs.example", "org", "Driftwood Docs", 0.7978, "2026-03-06", 1, null, 0, null, "{\"domain\": \"driftwooddocs.example\", \"role\": null, \"role_by\": null, \"paying\": false, \"profile\": {\"website\": \"https://driftwooddocs.example\", \"name\": \"Driftwood Docs\", \"industry\": \"Software\"}, \"edited\": [], \"wrong\": false, \"manual\": false}"],
+    ["org:example.net", "org", "Example", 0.01, null, 1, null, 0, null, "{\"domain\": \"example.net\", \"role\": null, \"role_by\": null, \"paying\": false, \"profile\": {\"website\": \"https://example.net\"}, \"edited\": [], \"wrong\": false, \"manual\": false}"],
     ["org:fernhillschools.example", "org", "Fernhill Schools", 3.3321, "2026-03-10", 2, null, 0, null, "{\"domain\": \"fernhillschools.example\", \"role\": null, \"role_by\": null, \"paying\": false, \"profile\": {\"website\": \"https://fernhillschools.example\", \"name\": \"Fernhill Schools\", \"industry\": \"Education Management\", \"size\": \"51-200\", \"country\": \"gb\"}, \"edited\": [], \"wrong\": false, \"manual\": false}"],
     ["org:fernwave.example", "org", "Fernwave", 0.7911, "2026-02-09", 1, null, 0, null, "{\"domain\": \"fernwave.example\", \"role\": null, \"role_by\": null, \"paying\": false, \"profile\": {\"website\": \"https://fernwave.example\", \"name\": \"Fernwave\", \"industry\": \"Software\"}, \"edited\": [], \"wrong\": false, \"manual\": false, \"live\": 0.0}"],
     ["org:glasswingapps.example", "org", "Glasswing Apps", 5.0148, "2026-03-10", 2, null, 0, null, "{\"domain\": \"glasswingapps.example\", \"role\": null, \"role_by\": null, \"paying\": false, \"profile\": {\"website\": \"https://glasswingapps.example\", \"name\": \"Glasswing Apps\", \"industry\": \"Computer Software\", \"size\": \"2-10\", \"country\": \"be\"}, \"edited\": [], \"wrong\": false, \"manual\": false}"],
@@ -637,7 +641,7 @@
     ["email:theo.marchetti@mail.example", "email:theo@vantagerail.example", "Same name", 2.1468]
   ]},
   "graph_state": {"columns": ["id", "built_at", "signals"], "rows": [
-    [1, "2026-03-10T09:30:00+00:00", 413]
+    [1, "2026-03-10T09:30:00+00:00", 416]
   ]},
   "graph_unnamed": {"columns": ["key", "event_ids", "people", "titles", "size", "last_at"], "rows": [
 

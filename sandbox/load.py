@@ -405,6 +405,9 @@ def load_graph_notes(db, base):
     health = note_pages.create(db, 'Health', 'personal', when, ['personal', work])['id']
     visits = note_pages.create(db, 'Appointments', 'personal', when, ['personal', work], parent=health)['id']
     note_pages.create(db, 'Physio', 'personal', when, ['personal', work], parent=visits, lines=['Knee exercises twice a day'])
+    kids = note_pages.create(db, 'Kids', 'personal', when, ['personal', work])['id']
+    school = note_pages.create(db, 'School', 'personal', when, ['personal', work], parent=kids)['id']
+    note_pages.create(db, 'Jules', 'personal', when, ['personal', work], parent=school, lines=['Pick-up at 15:30 on Fridays'])
     office = note_pages.create(db, 'Office move', work, when, ['personal', work])['id']
     links = [{'id': i, 'name': n} for i, n in ((node('person', 'Mila Underhay'), 'Mila Underhay'),
                                                 (node('project', 'Northwind rollout'), 'Northwind rollout')) if i]
@@ -442,42 +445,58 @@ def load_graph_notes(db, base):
                    (hashlib.sha256(f'home-bill{n}'.encode()).hexdigest()[:16], f'sandbox:home-bill{n}', f'Pay the {payee} bill', f'The {payee} bill, paid.',
                     json.dumps([mails[f'home:bill{n}']]), json.dumps(['home-gmail']), stamp(days * 24 * 60, base),
                     json.dumps({'payee': payee, 'invoice': f'HB-{4410 + n}', 'amount': 'EUR 64.20'})))
-    # Health's (health_notes.py): appointments only the owner goes to on the personal calendar, a dentist's and an
-    # insurer's bill; load_section_notes makes the notes
+    # Health's (health_notes.py) and Kids' (kids_notes.py): events only the owner goes to on the personal calendar
+    # (days before now; below 0 still to come) and paid bills; load_section_notes makes the notes
     me = 'alex.morgan@mail.example'
-    insert_events(db, [{'key': f'health:visit{n}', 'account_id': 'home-calendar', 'kind': 'calendar.event', 'minutes_ago': max(days, 0) * 24 * 60,
-                        'title': title, 'body': '', 'metadata': {'start_minutes_ago': days * 24 * 60 + n, 'duration_minutes': 45,
-                                                                 'attendees': [me], 'organizer': me, 'status': 'confirmed'}}
-                       for n, (title, days) in enumerate((('Dentist check-up', 170), ('Dentist check-up', -20), ('GP visit', 41),
-                                                         ('Physio', 16), ('Physio', 9), ('Physio', 2)))], base)
-    bills = [('Smileline Dental', 12), ('Northcare Health Insurance', 26)]
-    mails = insert_events(db, [{'key': f'health:bill{n}', 'account_id': 'home-gmail', 'kind': 'gmail.message', 'minutes_ago': days * 24 * 60,
-                                'title': f'Your invoice from {payee}', 'body': f'Your invoice from {payee} is ready.',
-                                'metadata': {'from': f'{payee} <billing@{payee.split()[0].lower()}.example>', 'to': me,
-                                             'labels': ['INBOX'], 'thread_id': f't-health-bill{n}', 'message-id': f'<health.bill{n}@mail.example>'}}
-                               for n, (payee, days) in enumerate(bills)], base)
-    for n, (payee, days) in enumerate(bills):
-        db.execute("INSERT INTO suggestions(id,dedupe_key,title,body,event_ids,account_ids,status,created_at,bill) VALUES(?,?,?,?,?,?,'completed',?,?)",
-                   (hashlib.sha256(f'health-bill{n}'.encode()).hexdigest()[:16], f'sandbox:health-bill{n}', f'Pay the {payee} invoice',
-                    f'The {payee} invoice, paid.', json.dumps([mails[f'health:bill{n}']]), json.dumps(['home-gmail']), stamp(days * 24 * 60, base),
-                    json.dumps({'payee': payee, 'invoice': f'HC-{2210 + n}', 'amount': 'EUR 48.00'})))
+    for kind, visits, bills in (('health', (('Dentist check-up', 170), ('Dentist check-up', -20), ('GP visit', 41), ('Physio', 16),
+                                            ('Physio', 9), ('Physio', 2)), (('Smileline Dental', 12), ('Northcare Health Insurance', 26))),
+                                ('kids', (('Parents evening', -9), ('Hockey tournament', -12)), (('Oakfield School', 20), ('Riverside Hockey Club', 33)))):
+        insert_events(db, [{'key': f'{kind}:visit{n}', 'account_id': 'home-calendar', 'kind': 'calendar.event', 'minutes_ago': max(days, 0) * 24 * 60,
+                            'title': title, 'body': '', 'metadata': {'start_minutes_ago': days * 24 * 60 + n, 'duration_minutes': 45,
+                                                                     'attendees': [me], 'organizer': me, 'status': 'confirmed'}}
+                           for n, (title, days) in enumerate(visits)], base)
+        mails = insert_events(db, [{'key': f'{kind}:bill{n}', 'account_id': 'home-gmail', 'kind': 'gmail.message', 'minutes_ago': days * 24 * 60,
+                                    'title': f'Your invoice from {payee}', 'body': f'Your invoice from {payee} is ready.',
+                                    'metadata': {'from': f'{payee} <billing@{payee.split()[0].lower()}.example>', 'to': me,
+                                                 'labels': ['INBOX'], 'thread_id': f't-{kind}-bill{n}', 'message-id': f'<{kind}.bill{n}@mail.example>'}}
+                                   for n, (payee, days) in enumerate(bills)], base)
+        for n, (payee, days) in enumerate(bills):
+            db.execute("INSERT INTO suggestions(id,dedupe_key,title,body,event_ids,account_ids,status,created_at,bill) VALUES(?,?,?,?,?,?,'completed',?,?)",
+                       (hashlib.sha256(f'{kind}-bill{n}'.encode()).hexdigest()[:16], f'sandbox:{kind}-bill{n}', f'Pay the {payee} invoice',
+                        f'The {payee} invoice, paid.', json.dumps([mails[f'{kind}:bill{n}']]), json.dumps(['home-gmail']), stamp(days * 24 * 60, base),
+                        json.dumps({'payee': payee, 'invoice': f'{kind[0].upper()}C-{2210 + n}', 'amount': 'EUR 48.00'})))
     db.commit()
 
 
 def load_section_notes(store, base):
-    """Home and Health (section_notes.py): a few things the owner said in their chat about the house and their health,
-    kept the way the chat keeps them (Store.remember_fact), and those and load_graph_notes' bills and appointments
-    placed as the Machine's model call would place them, filled in beside the owner's own notes (Home's Appliances and
-    Dishwasher, Health's Appointments and Physio)."""
+    """Home, Health and Kids (section_notes.py): a few things the owner said in their chat about the house, their health
+    and their daughter Jules, kept the way the chat keeps them (Store.remember_fact), and those and load_graph_notes'
+    bills and calendar events placed as the Machine's model call would place them, filled in beside the owner's own
+    notes (Home's Appliances and Dishwasher, Health's Appointments and Physio, Kids' School and Jules)."""
+    import graph
     import health_notes
     import home_notes
+    import kids_notes
     import note_pages
     import section_notes
+    with store.connect() as db:  # Jules, added by hand as Personal (as on a person's page), and what she is to the owner (To you)
+        import crm_import
+        import graph_show
+        at, personal = stamp(3 * 24 * 60, base), {'side': 'personal'}
+        done = graph.create_record(db, 'person', {'name': 'Jules Morgan', 'email': 'jules.morgan@example.net'}, at)  # an address: the same node id each load
+        if done.get('created'):
+            crm_import.details_made(db, [done['node_id']], personal, at)
+            graph_show.show_new_people(db, [done], personal)
+        graph.set_role(db, done['node_id'], 'daughter', 'owner', at)
+        row = (done['node_id'],)
+        db.commit()
     said = ('The boiler is serviced every October by Northside Heating', 'The gutters are cleaned each November',
             'The fridge warranty runs until June 2027', 'The dishwasher is a Lumo DW-500, bought in March 2024',
-            'Allergic to penicillin', 'Blood type is A positive', 'Takes vitamin D in winter')
+            'Allergic to penicillin', 'Blood type is A positive', 'Takes vitamin D in winter', 'The autumn term ends on 18 December')
     for n, text in enumerate(said):
         store.remember_fact(text, f'webchat-said:sandbox-home-{n}', said=True, quote=text, said_text=text)
+    for n, text in enumerate(('Jules is in class 4B, her teacher is Ms Okafor', 'Jules has hockey practice on Wednesdays until 5') if row else ()):
+        store.remember_fact(text, f'webchat-said:sandbox-kids-{n}', said=True, quote=text, said_text=text, about=[row[0]])
     accounts = [{'id': 'home-gmail', 'service': 'gmail', 'boundary': 'personal'},
                 {'id': 'home-calendar', 'service': 'calendar', 'email': 'alex.morgan@mail.example', 'boundary': 'personal'}]
     when = stamp(2 * 24 * 60, base)
@@ -485,7 +504,9 @@ def load_section_notes(store, base):
                                 'gutters': 'Repairs and upkeep', 'fridge': 'Appliances', 'dishwasher': ('Appliances', 'Dishwasher')},
               health_notes.KIND: {'Dentist': 'Appointments', 'GP visit': 'Appointments', 'Physio': ('Appointments', 'Physio'),
                                   'Smileline': 'Bills and insurance', 'Northcare': 'Bills and insurance', 'penicillin': 'Allergies and conditions',
-                                  'Blood type': 'Allergies and conditions', 'vitamin D': 'Medicines'}}  # the owner's Dishwasher and Physio notes
+                                  'Blood type': 'Allergies and conditions', 'vitamin D': 'Medicines'},
+              kids_notes.KIND: {'Oakfield': 'Bills and fees', 'Riverside Hockey': 'Bills and fees', 'class 4B': ('School', 'Jules'),
+                                'Parents evening': 'School', 'autumn term': 'School', 'hockey': 'Activities', 'Hockey': 'Activities'}}  # the owner's own sub-notes
     with store.connect() as db:
         db.execute('BEGIN IMMEDIATE')
         section_notes.ensure(db)
