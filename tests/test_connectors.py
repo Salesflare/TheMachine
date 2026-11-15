@@ -30,7 +30,7 @@ from connectors import web_page  # noqa: E402 - after the app's modules, as the 
 __getattr__ = assistant_on_use.handed_out('a', 'assistant_plugins')  # `a` for the tests that still import it from here
 
 # What onboarding reads through onboarding.assistant(), from their own modules: tests patch it in
-# (onboarding.assistant returning it, or onboarding._assistant) so onboarding doesn't load assistant.py.
+# (onboarding.assistant returning it, or onboarding._assistant) to hand setup these very objects.
 FOR_ONBOARDING = types.SimpleNamespace(
     Android=machine_sources_android.Android, Calendar=machine_sources_calendar.Calendar,
     CONNECTOR_HELPERS=machine_sources_connectors.CONNECTOR_HELPERS, Gmail=machine_sources_gmail.Gmail,

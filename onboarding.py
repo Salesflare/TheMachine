@@ -431,13 +431,27 @@ def expand(value, home):
 _assistant = None
 
 
+class _Reads:
+    """The sources, credentials and connector plugins setup reads, each looked up in its own module at every use: they
+    import this module, so not at the top, and a test's patch on that module (seams.patch_everywhere) reaches setup too."""
+    WHERE = {'Android': 'machine.sources.android', 'Calendar': 'machine.sources.calendar',
+             'CONNECTOR_HELPERS': 'machine.sources.connectors', 'Gmail': 'machine.sources.gmail',
+             'Salesflare': 'machine.sources.salesflare', 'Signal': 'machine.sources.signal_chats',
+             'Slack': 'machine.sources.slack', 'SourceError': 'sources', 'Telegram': 'machine.sources.telegram',
+             'WhatsApp': 'machine.sources.whatsapp', 'connector_services': 'machine.sources.connectors',
+             'credential': 'sources', 'load_connector': 'machine.sources.connectors'}
+
+    def __getattr__(self, name):
+        if name not in self.WHERE:
+            raise AttributeError(name)
+        return getattr(importlib.import_module(self.WHERE[name]), name)
+
+
 def assistant():
-    """assistant.py, loaded on first use (sources, credentials, connector plugins)."""
+    """What setup reads from the rest of the app (_Reads). Tests may patch this, or _assistant, to hand in their own."""
     global _assistant
     if _assistant is None:
-        spec = importlib.util.spec_from_file_location('assistant', ROOT / 'assistant.py')
-        _assistant = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(_assistant)
+        _assistant = _Reads()
     return _assistant
 
 
