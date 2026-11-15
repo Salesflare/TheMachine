@@ -4,13 +4,19 @@ import contextlib, datetime as dt, importlib.util, io, json, os, tempfile, unitt
 from pathlib import Path
 from unittest.mock import patch
 from seams import patch_everywhere  # noqa: E402
+import machine.app.graph_actions as machine_app_graph_actions
+import machine.delivery.deliver as machine_delivery_deliver
+import machine.delivery.telegram as machine_delivery_telegram
+import machine.main as machine_main
+import machine.prompts.review as machine_prompts_review
+import machine.store.review as machine_store_review
+import timeutil
 
 def load(name, file):
     spec = importlib.util.spec_from_file_location(name, Path(__file__).parent.parent.joinpath(file))
     module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module); return module
 
-a = load('preview_assistant', 'assistant.py')
-cli = load('preview_cli', 'cli.py')
+cli = None  # cli.py, loaded by PreviewCli: it loads assistant.py (an entry point), so importing this file doesn't
 
 
 class Runner:
@@ -18,9 +24,9 @@ class Runner:
     def __call__(self, request): self.requests.append(request); return {'status': self.results.pop(0)}
 
 
-class Daytime(a.dt.datetime):
+class Daytime(dt.datetime):
     @classmethod
-    def now(cls, tz=None): return cls(2030, 1, 2, 10, 0, tzinfo=a.dt.timezone.utc).astimezone(tz or a.dt.timezone.utc)  # a later weekday morning
+    def now(cls, tz=None): return cls(2030, 1, 2, 10, 0, tzinfo=dt.timezone.utc).astimezone(tz or dt.timezone.utc)  # a later weekday morning
 
 
 def signal(source_id, days_ago, title='Invoice question'):
@@ -32,8 +38,8 @@ def signal(source_id, days_ago, title='Invoice question'):
 class Preview(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'events.sqlite')
-        self.app = object.__new__(a.App); self.app.store = self.store
+        self.store = machine_main.Store(Path(self.temp.name) / 'events.sqlite')
+        self.app = object.__new__(machine_main.App); self.app.store = self.store
         self.app.config = {'accounts': [{'id': 'work', 'boundary': 'work:Acme'}], 'review_worker': {'enabled': False},
                            'delivery_enabled': False, 'telegram_owner': 'owner', 'prepare_ahead': True}
         self.store.commit_page('work', {}, [signal('recent', 2), signal('old', 20, 'Old thread')])
@@ -60,8 +66,8 @@ class Preview(unittest.TestCase):
         self.assertEqual(self.app.review_step(runner), 'admitted')
         start = runner.requests[0]
         self.assertEqual((start['kind'], start['action'], start['job_id']), ('review', 'start', run_id))
-        self.assertEqual(start['message'], a.review_prompt(run_id, ['work'], self.store.preference_summary(), self.store.facts_text(),
-                                                                    sources=a.source_notes(a.account_services(self.app.config, ['work']))))
+        self.assertEqual(start['message'], machine_prompts_review.review_prompt(run_id, ['work'], self.store.preference_summary(), self.store.facts_text(),
+                                                                    sources=machine_prompts_review.source_notes(machine_app_graph_actions.account_services(self.app.config, ['work']))))
         self.assertEqual(self.app.review_step(runner), 'pending')
         self.assertEqual(self.app.review_step(runner), 'ok')
         self.assertEqual(self.runs()[0]['status'], 'ok')
@@ -80,16 +86,16 @@ class Preview(unittest.TestCase):
     def test_preview_claims_only_the_last_week(self):
         run_id = self.app.start_preview()['run_id']
         self.app.review_step(Runner('admitted'))
-        claim = self.store.begin_analysis(['work'], 120, a.REVIEW_SESSION_PREFIX + run_id, run_id)
+        claim = self.store.begin_analysis(['work'], 120, machine_store_review.REVIEW_SESSION_PREFIX + run_id, run_id)
         self.assertEqual([e['title'] for e in claim['events']], ['Invoice question'])
 
     def test_refused_while_reviews_are_on_without_recent_signals_or_during_another_review(self):
         self.app.config['review_worker'] = {'enabled': True}
         with self.assertRaisesRegex(ValueError, 'already on'): self.app.start_preview()
         self.app.config['review_worker'] = {'enabled': False}
-        with self.store.connect() as db: db.execute("INSERT INTO review_runs(run_id,status,started_at,updated_at) VALUES('x','running',?,?)", (a.now(), a.now()))
+        with self.store.connect() as db: db.execute("INSERT INTO review_runs(run_id,status,started_at,updated_at) VALUES('x','running',?,?)", (timeutil.now(), timeutil.now()))
         with self.assertRaisesRegex(ValueError, 'Another check'): self.app.start_preview()
-        with self.store.connect() as db: db.execute("UPDATE review_runs SET status='ok',finished_at=?", (a.now(),)); db.execute('UPDATE events SET analyzed_version=version')
+        with self.store.connect() as db: db.execute("UPDATE review_runs SET status='ok',finished_at=?", (timeutil.now(),)); db.execute('UPDATE events SET analyzed_version=version')
         with self.assertRaisesRegex(ValueError, 'No unchecked signals'): self.app.start_preview()
 
     def test_preview_cards_are_shown_never_sent_or_prepared_also_after_activation(self):
@@ -106,8 +112,8 @@ class Preview(unittest.TestCase):
         # --activate: a later regular card goes out; the preview card is not pushed as a backlog.
         self.app.config.update(delivery_enabled=True, review_worker={'enabled': True})
         later = self.store.suggest('later', 'Reply to Sam', 'Sam answered.', [1])
-        with patch.object(a.dt, 'datetime', Daytime), patch_everywhere(a, 'telegram', return_value={'messageId': '901'}) as send:
-            a.deliver(self.store, self.app.config)
+        with patch.object(dt, 'datetime', Daytime), patch_everywhere(machine_delivery_telegram, 'telegram', return_value={'messageId': '901'}) as send:
+            machine_delivery_deliver.deliver(self.store, self.app.config)
         self.assertEqual([c.args[1]['id'] for c in send.call_args_list], [later['id']])
         self.assertEqual((self.delivery(saved['id'])['status'], self.delivery(later['id'])['status']), ('previewed', 'sent'))
         self.assertEqual(self.store.snapshot([])['suggestions'][-1]['status'], 'pending')  # still on the dashboard
@@ -125,6 +131,11 @@ def status(run_status, cards=(), **run):
 
 class PreviewCli(unittest.TestCase):
     config = {'port': 0, 'accounts': [{'id': 'work'}], 'dashboard_host': 'machine.example-tailnet.ts.net', 'dashboard_path': '/assistant/'}
+
+    @classmethod
+    def setUpClass(cls):
+        global cli
+        cli = cli or load('preview_cli', 'cli.py')
 
     def run_cli(self, *states, argv=('preview',)):
         replies = [{'run_id': 'r1', 'started_at': STARTED, 'waiting': 40, 'signals': 40}, *states]

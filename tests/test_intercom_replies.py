@@ -13,10 +13,17 @@ import urllib.error
 from unittest.mock import Mock, patch
 
 from connectors import intercom
+import assistant_on_use
+import machine.cards as machine_cards
+import machine.main as machine_main
+import machine.sources.connectors as machine_sources_connectors
 import next_actions as n
 import onboarding
-from test_connectors import a, Response
+import sources
+from test_connectors import Response
 import test_ux as ux
+
+__getattr__ = assistant_on_use.handed_out('a', 'assistant_plugins')  # `a` for the tests that still import it from here
 
 READ, REPLY = 'fixture-read-token', 'fixture-reply-token'
 ACCOUNT = {**intercom.SETUP['account'], 'workspace_id': 'abc123', 'workspace_name': 'Example Support', 'admin_id': '42',
@@ -94,28 +101,28 @@ class Allowlist(unittest.TestCase):
 
     def test_any_other_write_is_refused_before_the_token_is_read(self):
         credential = Mock(return_value=REPLY)
-        helpers = types.SimpleNamespace(SourceError=a.SourceError, Skips=a.CONNECTOR_HELPERS.Skips, iso=a.CONNECTOR_HELPERS.iso, credential=credential)
+        helpers = types.SimpleNamespace(SourceError=sources.SourceError, Skips=machine_sources_connectors.CONNECTOR_HELPERS.Skips, iso=machine_sources_connectors.CONNECTOR_HELPERS.iso, credential=credential)
         replier = intercom.Replier({}, ACCOUNT, helpers)
         with patch('urllib.request.OpenerDirector.open', side_effect=AssertionError('no request')):
             for method, path, payload in [('POST', '/conversations/7/reply', self.payload(admin_id='43')),
                                           ('POST', '/conversations/7/reply', self.payload(message_type='note')),
                                           ('POST', '/conversations/7/parts', {'message_type': 'close', 'type': 'admin', 'admin_id': '42'}),
                                           ('POST', '/conversations/7/tags', {'id': '1'})]:
-                with self.assertRaises(a.SourceError) as caught:
+                with self.assertRaises(sources.SourceError) as caught:
                     replier.request(method, path, payload)
                 self.assertEqual(caught.exception.category, 'unsupported_intercom_method')
             # The reading connector never writes at all, not even the reply
-            with self.assertRaises(a.SourceError):
+            with self.assertRaises(sources.SourceError):
                 intercom.Source({}, ACCOUNT, helpers).request('POST', '/conversations/7/reply', self.payload())
         credential.assert_not_called()
 
     def test_a_fleet_shared_token_can_never_reply_even_with_a_reply_file(self):
-        helpers = types.SimpleNamespace(SourceError=a.SourceError, credential=Mock(return_value=REPLY))
+        helpers = types.SimpleNamespace(SourceError=sources.SourceError, credential=Mock(return_value=REPLY))
         for account in (SHARED, {**SHARED, 'shared': True}, {**ACCOUNT, 'reply_credential': ACCOUNT['credential']},
                         {**ACCOUNT, 'reply_credential': None}, {**ACCOUNT, 'reply_admin_id': ''}):
             self.assertFalse(intercom.replies_on(account))
             self.assertFalse(n.intercom_replies_on(account))
-            with self.assertRaises(a.SourceError):
+            with self.assertRaises(sources.SourceError):
                 intercom.Replier({}, account, helpers)
         helpers.credential.assert_not_called()
         # The one who shared it keeps their own replies
@@ -172,12 +179,12 @@ class Send(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'events.sqlite')
+        self.store = machine_main.Store(Path(self.temp.name) / 'events.sqlite')
         self.fake = Fake(self)
         patch('urllib.request.OpenerDirector.open', side_effect=self.fake.respond).start()
         self.addCleanup(patch.stopall)
         tokens = {'intercom': READ, 'intercom-reply': REPLY, 'shared-intercom-f1': READ}
-        self.helpers = types.SimpleNamespace(SourceError=a.SourceError, Skips=a.CONNECTOR_HELPERS.Skips, iso=a.CONNECTOR_HELPERS.iso, credential=lambda config, name: tokens[name])
+        self.helpers = types.SimpleNamespace(SourceError=sources.SourceError, Skips=machine_sources_connectors.CONNECTOR_HELPERS.Skips, iso=machine_sources_connectors.CONNECTOR_HELPERS.iso, credential=lambda config, name: tokens[name])
         self.accounts = [dict(ACCOUNT), dict(SHARED)]
         events = [intercom.event(ACCOUNT, conversation(), self.helpers), intercom.event(SHARED, {**conversation(), 'id': '8'}, self.helpers)]
         for event in events:
@@ -187,7 +194,7 @@ class Send(unittest.TestCase):
         self.sid = self.store.suggest('ic-task', 'Answer Casey', 'Casey asks about exporting.', ids)['id']
 
     def app(self):
-        app = object.__new__(a.App)
+        app = object.__new__(machine_main.App)
         app.store, app.config = self.store, {'accounts': self.accounts}
         return app
 
@@ -257,7 +264,7 @@ class Send(unittest.TestCase):
             'type': 'admin', 'admin_id': '42', 'message_type': 'comment', 'body': '<p>Yes, under Settings &gt; Export.</p>'})])
         self.assertTrue(all(token == REPLY for _, _, token, _ in self.fake.requests))  # never the read token
         self.assertEqual((self.job()['status'], self.job()['message_id']), ('sent', 'intercom:7:p2'))
-        self.assertIn('✓ Sent as Alex Example in Intercom at ', str(a.card(self.row())))
+        self.assertIn('✓ Sent as Alex Example in Intercom at ', str(machine_cards.card(self.row())))
         with self.store.connect() as db:
             owner, _ = self.app().card_chat_service(db, self.sid)
         events = [e['text'] for e in owner if e.get('kind') == 'event']
@@ -371,7 +378,7 @@ class ConnectionsRow(unittest.TestCase):
 
     def test_replies_as_the_owner_only_with_their_own_sign_in(self):
         with tempfile.TemporaryDirectory() as temp:
-            store = a.Store(Path(temp) / 'events.sqlite')
+            store = machine_main.Store(Path(temp) / 'events.sqlite')
             plain = {k: v for k, v in ACCOUNT.items() if not k.startswith('reply_')}
             rows = {c['id']: c for c in store.snapshot([ACCOUNT, {**SHARED, 'id': 'intercom-fleet'}, {**plain, 'id': 'intercom-read'}])['connectors']}
         self.assertEqual(rows['intercom']['replies_as'], 'Alex Example')

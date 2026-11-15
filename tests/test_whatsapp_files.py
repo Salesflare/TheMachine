@@ -5,8 +5,10 @@
 from pathlib import Path
 import subprocess,unittest
 from unittest.mock import patch
-from test_whatsapp import WhatsAppSend,WA,CHAT,ok,a,n
+from test_whatsapp import WhatsAppSend,WA,CHAT,ok,n
 from machine.sources.connectors import chats_prompt
+import machine.app.preparation as machine_app_preparation
+import machine.main as machine_main
 
 
 class WhatsAppFile(WhatsAppSend):
@@ -16,7 +18,7 @@ class WhatsAppFile(WhatsAppSend):
   (self.src/'report.pdf').write_bytes(b'%PDF-1 fake report..')
   (self.src/'other.pdf').write_bytes(b'%PDF-1 other')
   config={'accounts':self.accounts,'attachment_sources':[str(self.src)],'attachment_dir':str(self.files)}
-  app=object.__new__(a.App);app.store=self.store;app.config=config;self.app=lambda:app
+  app=object.__new__(machine_main.App);app.store=self.store;app.config=config;self.app=lambda:app
 
  def test_one_file_with_or_without_a_caption_shows_before_send(self):
   action=self.ready(body=None,attachments=[str(self.src/'report.pdf')])
@@ -27,7 +29,7 @@ class WhatsAppFile(WhatsAppSend):
   captioned=self.ready(body='Here it is.',attachments=[str(self.src/'report.pdf')])
   self.assertTrue(n.preview(captioned).endswith('File: report.pdf (20 B)\n\nHere it is.'))
   self.assertNotEqual(action['revision'],captioned['revision'])  # the file is part of what the owner approves
-  self.assertEqual(a.App.draft_attachment(self.app(),self.sid,record['sha256'])[2],'report.pdf')  # it opens from the card
+  self.assertEqual(machine_main.App.draft_attachment(self.app(),self.sid,record['sha256'])[2],'report.pdf')  # it opens from the card
   for bad in ({'attachments':[str(self.src/'report.pdf'),str(self.src/'other.pdf')]},{'attachments':[]},
               {'attachments':['/etc/hostname']},{'body':'a'*1025,'attachments':[str(self.src/'report.pdf')]},{'body':None}):
    with self.assertRaises(ValueError,msg=bad):self.save(**bad)
@@ -85,8 +87,8 @@ class LinkedChatsPrompt(unittest.TestCase):
 
  def test_the_do_it_prompt_carries_it(self):
   job={'job_id':'job-1','suggestion_id':'s1'}
-  self.assertIn("Linked here: WhatsApp (personal-whatsapp)",a.preparation_prompt(job,config={'accounts':[WA]}))
-  self.assertNotIn('Linked here',a.preparation_prompt(job,config={'accounts':[]}))
+  self.assertIn("Linked here: WhatsApp (personal-whatsapp)",machine_app_preparation.preparation_prompt(job,config={'accounts':[WA]}))
+  self.assertNotIn('Linked here',machine_app_preparation.preparation_prompt(job,config={'accounts':[]}))
 
 
 if __name__=='__main__':unittest.main()

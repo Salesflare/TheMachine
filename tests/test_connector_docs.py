@@ -14,11 +14,15 @@ from unittest.mock import patch
 
 from connectors import docs
 import graph
+import machine.cards as machine_cards
+import machine.main as machine_main
+import machine.sources.connectors as machine_sources_connectors
 import mail_grants
 import next_actions as n
 import onboarding
 import shared_graph
-from test_connectors import a, Response
+import sources
+from test_connectors import Response
 import test_ux as ux
 
 OWNER = 'owner@acme.example'
@@ -96,7 +100,7 @@ class GoogleFake:
 
 
 def helpers_for(now=NOW):
-    return types.SimpleNamespace(SourceError=a.SourceError, now=lambda: now, iso=a.CONNECTOR_HELPERS.iso,
+    return types.SimpleNamespace(SourceError=sources.SourceError, now=lambda: now, iso=machine_sources_connectors.CONNECTOR_HELPERS.iso,
                                  credential=lambda config, name: 'machine-token' if name in ('google-broker', 'microsoft-broker') else 1 / 0)
 
 
@@ -104,7 +108,7 @@ class Google(unittest.TestCase):
     def setUp(self):
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
-        self.store = a.Store(Path(tmp.name) / 'events.sqlite')
+        self.store = machine_main.Store(Path(tmp.name) / 'events.sqlite')
         self.config = {'database': str(Path(tmp.name) / 'events.sqlite'), 'google_broker': {'url': 'https://cp.example/api/google/token'},
                        'accounts': [GMAIL, ACCOUNT]}
         mail_grants.put(self.config, 'google', OWNER, 'refresh-1')
@@ -166,7 +170,7 @@ class Google(unittest.TestCase):
             self.assertFalse(state['coverage_complete'])
             self.assertNotIn('since', state)
             self.assertEqual(len(self.events()), 40)
-            self.store = a.Store(Path(self.config['database']))  # collector restart, same committed checkpoint
+            self.store = machine_main.Store(Path(self.config['database']))  # collector restart, same committed checkpoint
             docs.sync(self.store, self.config, ACCOUNT, helpers_for('2026-10-27T10:15:00+00:00'))
         self.assertEqual(len(self.events()), 45)
         state = self.store.checkpoint(ACCOUNT['id'])
@@ -193,7 +197,7 @@ class Google(unittest.TestCase):
 
     def test_without_the_docs_consent_it_says_to_connect_google_docs(self):
         self.fake.granted = {'https://www.googleapis.com/auth/gmail.readonly'}
-        with self.assertRaises(a.SourceError) as caught:
+        with self.assertRaises(sources.SourceError) as caught:
             docs.sync(self.store, self.config, ACCOUNT, helpers_for())
         self.assertEqual(caught.exception.category, 'docs_not_connected')
         self.assertEqual(self.events(), [])
@@ -201,7 +205,7 @@ class Google(unittest.TestCase):
     def test_only_the_owners_own_broker_sign_in(self):
         for accounts in ([{**GMAIL, 'transport': 'gog'}], [{**GMAIL, 'shared': {'fleet': 'f1'}}], []):
             config = {**self.config, 'accounts': accounts + [{**ACCOUNT, 'transport': 'gog'}]}
-            with self.assertRaises(a.SourceError) as caught:
+            with self.assertRaises(sources.SourceError) as caught:
                 docs.signin(config, {**ACCOUNT, 'transport': 'gog'}, helpers_for())
             self.assertEqual(caught.exception.category, 'docs_no_signin')
         self.assertEqual(onboarding.missing({'accounts': []}, {**ACCOUNT, 'transport': 'gog'}), 'no Google or Microsoft sign-in for this address yet')
@@ -243,7 +247,7 @@ class Microsoft(unittest.TestCase):
     def setUp(self):
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
-        self.store = a.Store(Path(tmp.name) / 'events.sqlite')
+        self.store = machine_main.Store(Path(tmp.name) / 'events.sqlite')
         self.config = {'database': str(Path(tmp.name) / 'events.sqlite'), 'microsoft_broker': {'url': 'https://cp.example/api/microsoft/token'},
                        'accounts': [OUTLOOK, ACCOUNT]}
         mail_grants.put(self.config, 'microsoft', OWNER, 'refresh-1')
@@ -348,17 +352,17 @@ class Microsoft(unittest.TestCase):
     def test_a_failed_call_names_its_endpoint_without_ids(self):
         import ms_graph
         source = docs.Microsoft(self.config, ACCOUNT, helpers_for())
-        with patch.object(ms_graph, 'call', side_effect=ms_graph.GraphError('outlook', 400)), self.assertRaises(a.SourceError) as raised:
+        with patch.object(ms_graph, 'call', side_effect=ms_graph.GraphError('outlook', 400)), self.assertRaises(sources.SourceError) as raised:
             source.item('d1', 'i1')
         self.assertEqual((str(raised.exception), raised.exception.route), ('docs_microsoft:HTTP_400', '/drives/{drive}/items/{id}'))
-        with patch.object(ms_graph, 'call', side_effect=ms_graph.GraphError('outlook', 403)), self.assertRaises(a.SourceError) as raised:
+        with patch.object(ms_graph, 'call', side_effect=ms_graph.GraphError('outlook', 403)), self.assertRaises(sources.SourceError) as raised:
             source.delta('t1')
         self.assertEqual((raised.exception.category, raised.exception.route), ('docs_not_connected', '/me/drive/root/delta'))
 
     def test_downloads_only_from_microsofts_file_hosts(self):
         source = docs.Microsoft(self.config, ACCOUNT, helpers_for())
         for link in ('https://evil.example/f', 'http://acme-my.sharepoint.com/f', 'https://sharepoint.com.evil.example/f'):
-            with self.assertRaises(a.SourceError):
+            with self.assertRaises(sources.SourceError):
                 source.download({'@microsoft.graph.downloadUrl': link, 'size': 10})
 
 
@@ -382,7 +386,7 @@ class Reply(unittest.TestCase):
     def setUp(self):
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
-        self.store = a.Store(Path(tmp.name) / 'events.sqlite')
+        self.store = machine_main.Store(Path(tmp.name) / 'events.sqlite')
         self.config = {'database': str(Path(tmp.name) / 'events.sqlite'), 'google_broker': {'url': 'https://cp.example/api/google/token'},
                        'accounts': [GMAIL, ACCOUNT]}
         mail_grants.put(self.config, 'google', OWNER, 'refresh-1')
@@ -390,7 +394,7 @@ class Reply(unittest.TestCase):
         google_api._tokens.clear()
         self.fake = GoogleFake(self)
         patch('urllib.request.OpenerDirector.open', side_effect=self.fake.respond).start()
-        patch.object(a.CONNECTOR_HELPERS, 'credential', lambda config, name: 'machine-token').start()
+        patch.object(machine_sources_connectors.CONNECTOR_HELPERS, 'credential', lambda config, name: 'machine-token').start()
         self.addCleanup(patch.stopall)
         docs.sync(self.store, self.config, ACCOUNT, helpers_for())
         with self.store.connect() as db:
@@ -398,7 +402,7 @@ class Reply(unittest.TestCase):
         self.sid = self.store.suggest('doc-task', 'Answer Robin', 'Robin asks to move the launch.', ids)['id']
 
     def app(self):
-        app = object.__new__(a.App)
+        app = object.__new__(machine_main.App)
         app.store, app.config = self.store, self.config
         return app
 
@@ -408,7 +412,7 @@ class Reply(unittest.TestCase):
         return self.app().action('prepare', {'suggestion_id': self.sid, 'body': 'Reply ready.', 'next_action': action})
 
     def transport(self):
-        return n.ActionTransport(None, None, docs=n.DocReplyTransport(self.config, a.load_connector('docs'), a.CONNECTOR_HELPERS))
+        return n.ActionTransport(None, None, docs=n.DocReplyTransport(self.config, machine_sources_connectors.load_connector('docs'), machine_sources_connectors.CONNECTOR_HELPERS))
 
     def job(self):
         with self.store.connect() as db:
@@ -442,7 +446,7 @@ class Reply(unittest.TestCase):
         self.assertEqual([r[1] for r in self.fake.writes()], ['/drive/v3/files/doc1/comments/c1/replies'])
         self.assertEqual(self.fake.replies[0]['content'], 'Week 3 works, moving it.')
         self.assertEqual((self.job()['status'], self.job()['message_id']), ('sent', 'doc:c1:r1'))
-        self.assertIn('✓ Reply posted in the doc', str(a.card(self.row())))
+        self.assertIn('✓ Reply posted in the doc', str(machine_cards.card(self.row())))
 
 
 if __name__ == '__main__':
@@ -455,7 +459,7 @@ class Hosted(unittest.TestCase):
     def setUp(self):
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
-        self.store = a.Store(Path(tmp.name) / 'events.sqlite')
+        self.store = machine_main.Store(Path(tmp.name) / 'events.sqlite')
         self.hosted = {'database': str(Path(tmp.name) / 'events.sqlite'), 'manage_url': 'https://cp.example/account',
                        'google_broker': {'url': 'https://cp.example/api/google/token'}, 'accounts': [GMAIL, ACCOUNT]}
 
@@ -470,28 +474,28 @@ class Hosted(unittest.TestCase):
     def test_a_docs_connection_without_its_consent_has_no_card(self):
         with self.store.connect() as db:
             db.execute('INSERT INTO checkpoints(account_id,state,error,failures) VALUES(?,?,?,?)', ('acme-docs', '{}', 'docs_not_connected', 1))
-        app = object.__new__(a.App)
+        app = object.__new__(machine_main.App)
         app.store, app.config = self.store, self.hosted
         connectors = [c['id'] for c in app.action('status', {})['connectors']]
         self.assertIn(GMAIL['id'], connectors)
         self.assertNotIn('acme-docs', connectors)
-        self.assertTrue(a.docs_unset({'service': 'docs', 'error': 'docs_not_connected'}))
-        self.assertFalse(a.docs_unset({'service': 'docs', 'error': 'docs_not_connected', 'last_success': '2026-10-27T08:00:00Z'}))  # it worked: say so
-        self.assertFalse(a.docs_unset({'service': 'gmail', 'error': 'docs_not_connected'}))
+        self.assertTrue(machine_sources_connectors.docs_unset({'service': 'docs', 'error': 'docs_not_connected'}))
+        self.assertFalse(machine_sources_connectors.docs_unset({'service': 'docs', 'error': 'docs_not_connected', 'last_success': '2026-10-27T08:00:00Z'}))  # it worked: say so
+        self.assertFalse(machine_sources_connectors.docs_unset({'service': 'gmail', 'error': 'docs_not_connected'}))
 
     def test_no_link_to_a_consent_the_account_page_does_not_offer(self):
         manage = self.hosted['manage_url']
-        self.assertNotIn('account_page', a.reconnect_help(ACCOUNT, manage, a.docs_offered(self.hosted)))
-        self.assertEqual(a.reconnect_help(ACCOUNT, manage, a.docs_offered({**self.hosted, 'docs_consent': True}))['account_page'],
+        self.assertNotIn('account_page', machine_sources_connectors.reconnect_help(ACCOUNT, manage, machine_sources_connectors.docs_offered(self.hosted)))
+        self.assertEqual(machine_sources_connectors.reconnect_help(ACCOUNT, manage, machine_sources_connectors.docs_offered({**self.hosted, 'docs_consent': True}))['account_page'],
                          'https://cp.example/account#docs')
 
     def test_an_account_page_that_offers_microsoft_only_links_microsoft_docs_only(self):
         microsoft = {**self.hosted, 'docs_consent': ['microsoft']}
         self.assertTrue(self.offered(microsoft))
-        self.assertTrue(a.docs_offered(microsoft, 'microsoft'))
-        self.assertFalse(a.docs_offered(microsoft, 'google'))
-        self.assertFalse(a.docs_offered({**self.hosted, 'docs_consent': []}))
-        self.assertTrue(a.docs_offered({k: v for k, v in microsoft.items() if k != 'manage_url'}, 'google'))  # self-hosted
+        self.assertTrue(machine_sources_connectors.docs_offered(microsoft, 'microsoft'))
+        self.assertFalse(machine_sources_connectors.docs_offered(microsoft, 'google'))
+        self.assertFalse(machine_sources_connectors.docs_offered({**self.hosted, 'docs_consent': []}))
+        self.assertTrue(machine_sources_connectors.docs_offered({k: v for k, v in microsoft.items() if k != 'manage_url'}, 'google'))  # self-hosted
         # + Add on a hosted Machine opens the account page's Docs tile, where the consent is
         [docs] = [s for s in onboarding.catalog(microsoft) if s['service'] == 'docs']
         self.assertEqual(docs['account_page'], 'docs')
@@ -500,7 +504,7 @@ class Hosted(unittest.TestCase):
         with self.store.connect() as db:
             db.execute('INSERT INTO checkpoints(account_id,state,error,failures,last_success) VALUES(?,?,?,?,?)',
                        ('acme-docs', '{}', 'docs_not_connected', 1, '2026-10-26T08:00:00+00:00'))
-        app = object.__new__(a.App)
+        app = object.__new__(machine_main.App)
         app.store = self.store
         def card(config):
             app.config = config

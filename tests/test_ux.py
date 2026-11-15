@@ -1,14 +1,24 @@
+import datetime as dt
 from pathlib import Path
 import tempfile
 import unittest
 from unittest.mock import patch
-from test_assistant import assistant as a, event
+import assistant_on_use
+import machine.cards as machine_cards
+import machine.config as machine_config
+import machine.delivery.deliver as machine_delivery_deliver
+import machine.delivery.telegram as machine_delivery_telegram
+import machine.main as machine_main
+import timeutil
+from test_assistant import event
 from seams import patch_everywhere  # noqa: E402
+
+__getattr__ = assistant_on_use.handed_out('a', 'assistant')  # `a` (test_assistant's) for the tests that still read it from here
 
 class UX(unittest.TestCase):
     def setUp(self):
         self.tmp=tempfile.TemporaryDirectory();self.addCleanup(self.tmp.cleanup)
-        self.root=Path(self.tmp.name);self.store=a.Store(self.root/'events.sqlite')
+        self.root=Path(self.tmp.name);self.store=machine_main.Store(self.root/'events.sqlite')
         self.store.commit_page('work',{},[event()])
         self.sid=self.store.suggest('task','Prepare a draft','I can draft this.',[1])['id']
     def row(self):return self.store.snapshot([])['suggestions'][0]
@@ -19,7 +29,7 @@ class UX(unittest.TestCase):
         self.decide('accept')
         with self.store.connect() as db:db.execute("UPDATE preparations SET status='running'")
         self.store.prepare(self.sid,'Actual draft',self.job()['job_id'])
-        self.decide('complete');self.assertEqual(a.controls(self.row())['blocks'][0]['buttons'][0]['label'],'Undo')
+        self.decide('complete');self.assertEqual(machine_cards.controls(self.row())['blocks'][0]['buttons'][0]['label'],'Undo')
         self.decide('undo');self.assertEqual(self.row()['status'],'prepared');self.assertEqual(self.row()['body'],'Actual draft')
         self.assertEqual(self.job()['status'],'done');self.assertTrue(self.decide('undo')['duplicate'])
     def test_undo_dismiss_restores_snooze_and_delivery(self):
@@ -45,14 +55,14 @@ class UX(unittest.TestCase):
         self.decide('reject')
         with self.store.connect() as db:db.execute("UPDATE suggestions SET undo_until='2020-01-01'")
         with self.assertRaises(ValueError):self.decide('undo')
-        self.store.wake_snoozed();self.assertIsNone(self.row()['undo_until']);self.assertEqual(a.controls(self.row())['blocks'][0]['buttons'],[])
+        self.store.wake_snoozed();self.assertIsNone(self.row()['undo_until']);self.assertEqual(machine_cards.controls(self.row())['blocks'][0]['buttons'],[])
     def test_stale_telegram_undo_unblocks_ingress_without_changing_owner_state(self):
         self.decide('other',feedback='Keep my exact instructions')
         self.decide('complete');self.decide('undo');before=self.row();job=self.job()
         with self.store.connect() as db:
             decisions=[tuple(r) for r in db.execute('SELECT * FROM decisions')]
             delivery=dict(db.execute('SELECT * FROM deliveries').fetchone())
-        app=object.__new__(a.App);app.store=self.store;app.config={'accounts':[]}
+        app=object.__new__(machine_main.App);app.store=self.store;app.config={'accounts':[]}
         args={'suggestion_id':self.sid,'choice':'undo','decision_id':'telegram:delayed-second-click'}
         for _ in range(2):
             result=app.action('decide',args)
@@ -86,7 +96,7 @@ class UX(unittest.TestCase):
     def test_unconfirmed_preparation_retry_needs_terminal_proof(self):
         self.decide('accept');job=self.job()['job_id']
         with self.store.connect() as db:db.execute("UPDATE preparations SET status='blocked',error='completion_unconfirmed'")
-        app=object.__new__(a.App);app.store=self.store;app.config={'accounts':[]}
+        app=object.__new__(machine_main.App);app.store=self.store;app.config={'accounts':[]}
         args={'suggestion_id':self.sid,'choice':'retry','decision_id':'owner-click'}
         with patch.object(app,'preparation_gateway',return_value={'status':'pending'}) as gateway:
             app.action('decide',args,owner_dashboard=True)
@@ -98,7 +108,7 @@ class UX(unittest.TestCase):
     def test_ended_preparation_retry_needs_no_stop(self):
         self.decide('accept');job=self.job()['job_id']
         with self.store.connect() as db:db.execute("UPDATE preparations SET status='blocked',error='completion_unconfirmed'")
-        app=object.__new__(a.App);app.store=self.store;app.config={'accounts':[]}
+        app=object.__new__(machine_main.App);app.store=self.store;app.config={'accounts':[]}
         args={'suggestion_id':self.sid,'choice':'retry','decision_id':'owner-click'}
         with patch.object(app,'preparation_gateway',return_value={'status':'aborted'}) as gateway:
             app.action('decide',args,owner_dashboard=True)
@@ -125,9 +135,9 @@ class UX(unittest.TestCase):
         with self.store.connect() as db:
             delivery=dict(db.execute('SELECT * FROM deliveries').fetchone());job=dict(db.execute('SELECT * FROM preparations').fetchone())
         self.assertEqual((delivery['status'],delivery['message_id'],delivery['needs_edit']),('sent','40',1))
-        with patch_everywhere(a,'telegram_request',side_effect=lambda config,args:args):
+        with patch_everywhere(machine_delivery_telegram, 'telegram_request',side_effect=lambda config,args:args):
             row={**self.row(),'preparation_status':'queued','requested_feedback':'Make it *funny* [please]','reminder':1}
-            payload=a.telegram({'telegram_owner':'1000001'},row,'edit','40')
+            payload=machine_delivery_telegram.telegram({'telegram_owner':'1000001'},row,'edit','40')
         self.assertEqual((payload['action'],payload['messageId']),('edit','40'))
         self.assertIn(r'Make it \*funny\* \[please\]',payload['message'])
         self.assertIn('I’m preparing your update',payload['message']);self.assertNotIn('I can draft this.',payload['message'])
@@ -155,11 +165,11 @@ class UX(unittest.TestCase):
                 return {'messageId':'40'}
             self.assertEqual(args[1]['status'],'prepared')
             return {'messageId':'43'}
-        class Daytime(a.dt.datetime):
+        class Daytime(dt.datetime):
             @classmethod
-            def now(cls,tz=None):return cls(2026,10,11,14,0,tzinfo=tz or a.dt.timezone.utc)
-        with patch.object(a.dt,'datetime',Daytime),patch_everywhere(a,'telegram',side_effect=finish_during_edit) as send:
-            a.deliver_one(self.store,{'telegram_owner':'1000001'},edit_cards=True)
+            def now(cls,tz=None):return cls(2026,10,11,14,0,tzinfo=tz or dt.timezone.utc)
+        with patch.object(dt,'datetime',Daytime),patch_everywhere(machine_delivery_telegram, 'telegram',side_effect=finish_during_edit) as send:
+            machine_delivery_deliver.deliver_one(self.store,{'telegram_owner':'1000001'},edit_cards=True)
         with self.store.connect() as db:
             row=dict(db.execute('SELECT * FROM deliveries').fetchone())
             self.assertEqual((row['status'],row['reminder'],row['message_id']),('sent',0,'43'))
@@ -168,12 +178,12 @@ class UX(unittest.TestCase):
         with self.store.connect() as db:db.execute("UPDATE deliveries SET status='sent',message_id='40',needs_edit=0")
         self.store.request_feedback(self.sid,'change',card_message_id='40');self.store.bind_feedback_prompt(self.sid,'change','41')
         self.store.feedback_reply('Make it shorter','42',reply_to_id='41')
-        class Daytime(a.dt.datetime):
+        class Daytime(dt.datetime):
             @classmethod
-            def now(cls,tz=None):return cls(2026,10,11,14,0,tzinfo=tz or a.dt.timezone.utc)
-        with patch.object(a.dt,'datetime',Daytime),patch_everywhere(a,'telegram',return_value={'messageId':'40'}) as send:
-            a.deliver(self.store,{'telegram_owner':'1000001'})
-            a.deliver(self.store,{'telegram_owner':'1000001'})
+            def now(cls,tz=None):return cls(2026,10,11,14,0,tzinfo=tz or dt.timezone.utc)
+        with patch.object(dt,'datetime',Daytime),patch_everywhere(machine_delivery_telegram, 'telegram',return_value={'messageId':'40'}) as send:
+            machine_delivery_deliver.deliver(self.store,{'telegram_owner':'1000001'})
+            machine_delivery_deliver.deliver(self.store,{'telegram_owner':'1000001'})
             self.assertEqual(send.call_count,1);self.assertEqual(send.call_args.args[2:4],('edit','40'))
         self.assertEqual(self.job()['status'],'queued');self.assertEqual(self.row()['latest_feedback']['feedback'],'Make it shorter')
     def test_completion_edits_one_full_card_and_sends_only_short_notice(self):
@@ -186,11 +196,11 @@ class UX(unittest.TestCase):
         payloads=[]
         def transport(config,payload):
             payloads.append(payload);return {'messageId':'40' if payload['action']=='edit' else '43'}
-        class Daytime(a.dt.datetime):
+        class Daytime(dt.datetime):
             @classmethod
-            def now(cls,tz=None):return cls(2026,10,11,14,0,tzinfo=tz or a.dt.timezone.utc)
-        with patch.object(a.dt,'datetime',Daytime),patch_everywhere(a,'telegram_request',side_effect=transport):
-            a.deliver(self.store,config);a.deliver(self.store,config)
+            def now(cls,tz=None):return cls(2026,10,11,14,0,tzinfo=tz or dt.timezone.utc)
+        with patch.object(dt,'datetime',Daytime),patch_everywhere(machine_delivery_telegram, 'telegram_request',side_effect=transport):
+            machine_delivery_deliver.deliver(self.store,config);machine_delivery_deliver.deliver(self.store,config)
         self.assertEqual([p['action'] for p in payloads],['edit','send'])
         self.assertIn('Unique complete result content',payloads[0]['message'])
         self.assertNotIn('Unique complete result content',payloads[1]['message'])
@@ -208,19 +218,19 @@ class UX(unittest.TestCase):
         with self.store.connect() as db:db.execute("UPDATE deliveries SET status='sent',message_id='40',needs_edit=0")
         self.store.prepare(self.sid,'Actual result')
         config={'telegram_owner':'1000001','dashboard_host':'machine.example'}
-        with patch_everywhere(a,'telegram',side_effect=ValueError('Disconnected')) as send:
-            a.deliver_one(self.store,config)
+        with patch_everywhere(machine_delivery_telegram, 'telegram',side_effect=ValueError('Disconnected')) as send:
+            machine_delivery_deliver.deliver_one(self.store,config)
         self.assertEqual(send.call_count,1);self.assertEqual(send.call_args.args[2],'edit')
         with self.store.connect() as db:self.assertEqual(db.execute('SELECT status FROM deliveries').fetchone()[0],'queued')
     def test_plain_change_prompt_when_native_prompt_failed_is_sent_once(self):
-        app=object.__new__(a.App);app.store=self.store;app.config={'telegram_owner':'1000001','accounts':[]}
+        app=object.__new__(machine_main.App);app.store=self.store;app.config={'telegram_owner':'1000001','accounts':[]}
         args={'suggestion_id':self.sid,'request_id':'cb1','card_message_id':'40'}
         app.config['prompt_receipts']=str(self.root/'receipts')
         app.action('request_feedback',{**args,'managed_prompt':True})
-        with patch_everywhere(a,'now',return_value=(a.dt.datetime.fromisoformat(a.now())+a.dt.timedelta(seconds=11)).isoformat()):
+        with patch_everywhere(timeutil, 'now',return_value=(dt.datetime.fromisoformat(timeutil.now())+dt.timedelta(seconds=11)).isoformat()):
             app.feedback_prompt_step(sender=lambda row:{'definitely_not_sent':True})
         sent=[]
-        with patch_everywhere(a,'now',return_value=(a.dt.datetime.fromisoformat(a.now())+a.dt.timedelta(seconds=25)).isoformat()),patch_everywhere(a,'telegram_request',side_effect=lambda config,payload:(sent.append(payload),{'messageId':'41'})[1]):
+        with patch_everywhere(timeutil, 'now',return_value=(dt.datetime.fromisoformat(timeutil.now())+dt.timedelta(seconds=25)).isoformat()),patch_everywhere(machine_delivery_telegram, 'telegram_request',side_effect=lambda config,payload:(sent.append(payload),{'messageId':'41'})[1]):
             app.feedback_prompt_step()
             app.action('request_feedback',{**args,'managed_prompt':True})  # a retried callback
             app.feedback_prompt_step()
@@ -232,37 +242,37 @@ class UX(unittest.TestCase):
         with self.store.connect() as db:db.execute("UPDATE deliveries SET status='sent',message_id='40',needs_edit=0")
         self.store.prepare(self.sid,'Actual result')
         with self.store.connect() as db:db.execute("UPDATE deliveries SET needs_edit=1,edit_failures=3,edit_retry_at='2999-01-01'")
-        class Daytime(a.dt.datetime):
+        class Daytime(dt.datetime):
             @classmethod
-            def now(cls,tz=None):return cls(2026,10,11,14,0,tzinfo=tz or a.dt.timezone.utc)
+            def now(cls,tz=None):return cls(2026,10,11,14,0,tzinfo=tz or dt.timezone.utc)
         config={'telegram_owner':'1000001','dashboard_host':'machine.example'}
-        with patch.object(a.dt,'datetime',Daytime),patch_everywhere(a,'telegram_request',return_value={'messageId':'44'}) as send:
-            a.deliver_one(self.store,config)
+        with patch.object(dt,'datetime',Daytime),patch_everywhere(machine_delivery_telegram, 'telegram_request',return_value={'messageId':'44'}) as send:
+            machine_delivery_deliver.deliver_one(self.store,config)
         self.assertTrue(send.call_args.args[1]['message'].startswith('Ready: '))
         with self.store.connect() as db:self.assertEqual(db.execute('SELECT notification_message_id FROM deliveries').fetchone()[0],'44')
     def test_uncertain_short_notice_reconciles_without_replacing_task_card(self):
         import sqlite3,json
         self.decide('accept');self.store.prepare(self.sid,'Actual result')
-        when=(a.dt.datetime.now(a.dt.timezone.utc)-a.dt.timedelta(minutes=5)).isoformat()
+        when=(dt.datetime.now(dt.timezone.utc)-dt.timedelta(minutes=5)).isoformat()
         with self.store.connect() as db:db.execute("UPDATE deliveries SET status='uncertain',reminder=1,send_kind='notice',message_id='40',updated_at=?",(when,))
         native=self.root/'native.sqlite'
         with sqlite3.connect(native) as db:
             db.execute('CREATE TABLE plugin_state_entries(plugin_id,namespace,value_json)')
             db.execute('INSERT INTO plugin_state_entries VALUES(?,?,?)',('telegram','telegram.message-cache',json.dumps({'sourceMessage':{
-                'message_id':43,'date':a.dt.datetime.fromisoformat(when).timestamp()+10,'from':{'is_bot':True},
+                'message_id':43,'date':dt.datetime.fromisoformat(when).timestamp()+10,'from':{'is_bot':True},
                 'chat':{'id':1000001},'text':'Ready [View result](https://machine.example/#result='+self.sid+')'}})))
-        a.reconcile_uncertain(self.store,{'telegram_owner':'1000001','dashboard_host':'machine.example','openclaw_state':str(native)})
+        machine_delivery_deliver.reconcile_uncertain(self.store,{'telegram_owner':'1000001','dashboard_host':'machine.example','openclaw_state':str(native)})
         with self.store.connect() as db:
             row=dict(db.execute('SELECT * FROM deliveries').fetchone())
             self.assertEqual((row['status'],row['message_id'],row['notification_message_id'],row['reminder']),('sent','40','43',0))
         # a notice's link now opens the to-do in the list (#card=): still found as this to-do's
         with sqlite3.connect(native) as db:db.execute("UPDATE plugin_state_entries SET value_json=replace(value_json,'#result=','#card=')")
-        self.assertEqual(a.cached_card_ids({'telegram_owner':'1000001','openclaw_state':str(native)},self.sid,0),[43])
+        self.assertEqual(machine_delivery_deliver.cached_card_ids({'telegram_owner':'1000001','openclaw_state':str(native)},self.sid,0),[43])
     def test_only_linked_assistant_files_are_served(self):
         reports=self.root/'memory/assistant';reports.mkdir(parents=True)
         report=reports/'261011-draft.md';report.write_text('Real draft');(self.root/'secret.txt').write_text('Private')
         with self.store.connect() as db:db.execute('UPDATE suggestions SET body=?',('memory/assistant/261011-draft.md',))
-        with patch_everywhere(a,'WORKSPACE',self.root):
+        with patch_everywhere(machine_config, 'WORKSPACE',self.root):
             self.assertEqual(self.store.result_document(self.sid,'memory/assistant/261011-draft.md'),report.resolve())
             with self.assertRaises(ValueError):self.store.result_document(self.sid,'secret.txt')
             with self.assertRaises(ValueError):self.store.result_document(self.sid,'memory/assistant/../../secret.txt')
@@ -270,16 +280,16 @@ class UX(unittest.TestCase):
             with self.assertRaises(ValueError):self.store.result_document(self.sid,'memory/assistant/261011-draft.md')
     def test_telegram_has_mobile_result_link_not_path(self):
         row=self.row();row.update(status='prepared',body='Draft. [Full result](memory/assistant/261011-draft.md)')
-        with patch_everywhere(a,'telegram_request',side_effect=lambda config,args:args):
-            payload=a.telegram({'dashboard_host':'machine.example','dashboard_path':'/assistant/','telegram_owner':'owner'},row,'send')
+        with patch_everywhere(machine_delivery_telegram, 'telegram_request',side_effect=lambda config,args:args):
+            payload=machine_delivery_telegram.telegram({'dashboard_host':'machine.example','dashboard_path':'/assistant/','telegram_owner':'owner'},row,'send')
         self.assertNotIn('memory/assistant/',payload['message']);self.assertIn('https://machine.example/assistant/#card=',payload['message'])
     def test_telegram_links_open_the_to_do_in_the_list_not_its_chat(self):
         """A tap on a Telegram link opened the old Result modal (Copy draft) over the list, later the to-do's chat. Every
         link now opens the to-do itself in the list (#card=<id>), its chat only when it isn't there (&or=chat)."""
         config={'dashboard_host':'machine.example','dashboard_path':'/assistant/','telegram_owner':'owner'}
         row=self.row();row.update(status='prepared',body='Draft.',message_id=5)
-        with patch_everywhere(a,'telegram_request',side_effect=lambda config,args:args):
-            texts=[a.telegram(config,row,'send')['message'],a.telegram(config,{**row,'_result_notice':True},'send')['message'],
-                   a.telegram(config,{**row,'status':'instructions','preparation_status':'blocked','_result_notice':True},'send')['message']]
+        with patch_everywhere(machine_delivery_telegram, 'telegram_request',side_effect=lambda config,args:args):
+            texts=[machine_delivery_telegram.telegram(config,row,'send')['message'],machine_delivery_telegram.telegram(config,{**row,'_result_notice':True},'send')['message'],
+                   machine_delivery_telegram.telegram(config,{**row,'status':'instructions','preparation_status':'blocked','_result_notice':True},'send')['message']]
         for text in texts:
             self.assertIn('https://machine.example/assistant/#card='+self.sid+'&or=chat)',text);self.assertNotIn('#result=',text);self.assertNotIn('#chat=',text)

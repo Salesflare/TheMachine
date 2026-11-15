@@ -14,8 +14,11 @@ import mail_grants
 import next_actions
 import onboarding
 import slack_api
-from test_connectors import a, Response
+import sources
+from test_connectors import FOR_ONBOARDING, Response
 import machine.main as machine_main
+import machine.sources.connectors as machine_sources_connectors
+import machine.sources.slack as machine_sources_slack
 
 KEY = 't0team123:u0me12345'
 BROKER = {'id': 'work-slack', 'service': 'slack', 'transport': 'broker', 'boundary': 'work:Acme', 'team_id': 'T0TEAM123',
@@ -38,11 +41,11 @@ class SlackSignin(unittest.TestCase):
                        'accounts': []}
         mail_grants.put(self.config, 'slack', KEY, 'xoxe-1-first')
         slack_api._tokens.clear()
-        patch.object(onboarding, '_assistant', a).start()
+        patch.object(onboarding, '_assistant', FOR_ONBOARDING).start()
         self.broker_calls, self.slack_calls, self.maton_calls = [], [], []
         self.broker_status, self.expired_once, self.team = 200, False, 'T0TEAM123'
         patch('urllib.request.urlopen', side_effect=self.respond).start()
-        patch.object(a.Slack, 'pace', lambda self, method: None).start()
+        patch.object(machine_sources_slack.Slack, 'pace', lambda self, method: None).start()
         self.addCleanup(patch.stopall)
 
     def respond(self, request, timeout):
@@ -88,39 +91,39 @@ class SlackSignin(unittest.TestCase):
         return Response(json.dumps(body).encode(), headers)
 
     def test_it_reads_straight_from_slack_with_short_lived_tokens_and_keeps_the_rolled_sign_in(self):
-        slack = a.Slack(self.config, BROKER)
+        slack = machine_sources_slack.Slack(self.config, BROKER)
         slack.profile()
         self.assertEqual(self.slack_calls, ['auth.test', 'users.info'])
         self.assertEqual(self.broker_calls, [{'email': KEY, 'refresh_token': 'xoxe-1-first'}])
         self.assertEqual(mail_grants.get(self.config, 'slack', KEY), 'xoxe-1-r1')  # Slack rolled it: the new one is kept
-        a.Slack(self.config, BROKER).get('auth.test')
+        machine_sources_slack.Slack(self.config, BROKER).get('auth.test')
         self.assertEqual(len(self.broker_calls), 1)  # the access token lasts hours: no refresh per call
         self.assertEqual(self.maton_calls, [])
 
     def test_an_access_token_that_ran_out_early_is_refreshed_once(self):
         slack_api.broker_token(self.config, BROKER)
         self.expired_once = True
-        self.assertTrue(a.Slack(self.config, BROKER).get('auth.test')['ok'])
+        self.assertTrue(machine_sources_slack.Slack(self.config, BROKER).get('auth.test')['ok'])
         self.assertEqual([c['refresh_token'] for c in self.broker_calls], ['xoxe-1-first', 'xoxe-1-r1'])
 
     def test_a_removed_sign_in_asks_to_sign_in_again(self):
         self.broker_status = 401
-        with self.assertRaisesRegex(a.SourceError, 'slack_signin_expired'):
-            a.Slack(self.config, BROKER).get('auth.test')
+        with self.assertRaisesRegex(sources.SourceError, 'slack_signin_expired'):
+            machine_sources_slack.Slack(self.config, BROKER).get('auth.test')
         self.assertIn('sign in with Slack again', onboarding.hint('slack_signin_expired'))
 
     def test_only_the_allowed_methods(self):
-        with self.assertRaisesRegex(a.SourceError, 'slack_method_not_allowed'):
-            a.Slack(self.config, BROKER).get('chat.postMessage')
+        with self.assertRaisesRegex(sources.SourceError, 'slack_method_not_allowed'):
+            machine_sources_slack.Slack(self.config, BROKER).get('chat.postMessage')
         self.assertEqual(self.broker_calls, [])
 
     def test_a_maton_account_keeps_reading_through_maton(self):
-        a.Slack(self.config, MATON).get('auth.test')
+        machine_sources_slack.Slack(self.config, MATON).get('auth.test')
         self.assertEqual((self.maton_calls, self.slack_calls, self.broker_calls), (['auth.test'], [], []))
 
     def test_an_approved_dm_goes_straight_to_slack_as_the_owner(self):
         self.config['accounts'] = [BROKER]
-        transport = next_actions.SlackTransport(self.config, a.credential)
+        transport = next_actions.SlackTransport(self.config, sources.credential)
         action = {'kind': 'slack', 'account_id': 'work-slack', 'to_name': 'Alex Kim', 'to_email': 'alex@client.test', 'body': 'Hi Alex'}
         result = transport.send(action, {'created_at': '2026-10-29T10:00:00+00:00'})
         self.assertEqual(result['message_id'], 'slack:D0DM1:1792000000.000100')
@@ -152,10 +155,10 @@ class SlackSignin(unittest.TestCase):
 
     def test_maton_accounts_stay_on_maton_and_new_ones_sign_in_from_add(self):
         manage = 'https://app.example.com/setup'
-        self.assertEqual(a.reconnect_help(MATON, manage), {'connect_name': 'slack'})  # no nudge: Maton's own Reconnect
-        self.assertEqual(a.reconnect_help(MATON, None), {'connect_name': 'slack'})
-        self.assertEqual(a.reconnect_help(BROKER, manage)['hosted_signin'], 'slack')
-        self.assertEqual(a.reconnect_help(BROKER, None), {'connect_name': 'slack', 'signin': 'slack'})
+        self.assertEqual(machine_sources_connectors.reconnect_help(MATON, manage), {'connect_name': 'slack'})  # no nudge: Maton's own Reconnect
+        self.assertEqual(machine_sources_connectors.reconnect_help(MATON, None), {'connect_name': 'slack'})
+        self.assertEqual(machine_sources_connectors.reconnect_help(BROKER, manage)['hosted_signin'], 'slack')
+        self.assertEqual(machine_sources_connectors.reconnect_help(BROKER, None), {'connect_name': 'slack', 'signin': 'slack'})
 
     def test_a_broker_account_needs_the_slack_broker(self):
         self.assertEqual(onboarding.missing({**self.config, 'slack_broker': {}}, BROKER), 'slack_broker url is not set')
@@ -167,7 +170,7 @@ class SlackSignin(unittest.TestCase):
         app.config = {**self.config, 'manage_url': 'https://cp.example/account'}
         app.store = machine_main.Store(Path(self.config['database']))
         found = {s['name']: s for s in app.action('connect_sources', {}, owner_dashboard=True)['sources']}
-        self.assertIn('slack', a.HOSTED_SIGNINS)
+        self.assertIn('slack', machine_sources_connectors.HOSTED_SIGNINS)
         self.assertEqual(found['slack'].get('hosted_signin'), 'slack')
         self.assertFalse(found['slack'].get('broker'))  # its own tile: the dashboard offers "Or use a Maton API key" beside it
 
@@ -184,7 +187,7 @@ class SlackPace(unittest.TestCase):
 
     def slack(self, account, config=None):
         stop = type('Stop', (), {'wait': lambda _, seconds: self.waits.append(round(seconds, 1)) or False})()
-        return a.Slack({**self.config, **(config or {})}, {**account, 'id': 'acct-' + account['transport']}, stop=stop)
+        return machine_sources_slack.Slack({**self.config, **(config or {})}, {**account, 'id': 'acct-' + account['transport']}, stop=stop)
 
     def test_the_read_rate_and_page_come_from_slack_limits_per_transport(self):
         from machine.sources import slack
@@ -213,7 +216,7 @@ class SlackPace(unittest.TestCase):
         source.request = lambda method, values, fresh=False: urllib.request.Request('https://slack.com/api/' + method)
         error = urllib.error.HTTPError('https://slack.com/api/conversations.history', 429, 'limited', {'Retry-After': '120'}, None)
         with patch.object(source, 'pace'), patch('urllib.request.urlopen', side_effect=error):
-            with self.assertRaises(a.SourceError) as caught:
+            with self.assertRaises(sources.SourceError) as caught:
                 source.get('conversations.history', {'channel': 'C0GENERAL'})
         self.assertEqual(caught.exception.status, 429)
         self.assertTrue(125 <= caught.exception.retry_after <= 180)  # Slack's 120 s plus a spread, never sooner
