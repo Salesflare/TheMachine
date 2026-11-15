@@ -139,7 +139,8 @@ def instructions(lang, texts, what, words=None):
         'Write it the way a native product would say it: short, natural, plain. Never word for word. Keep the meaning, '
         'every fact and every qualification; do not add, summarize or leave out anything.',
         f'Tone and conventions: {words["tone"]}' if words['tone'] else '',
-        'Never use an em dash (—).',
+        'Never use an em dash (—), also where this language\'s own typography would (as in Russian "X — это Y"): '
+        'write a colon, a comma or two sentences instead.',
         'Keep these names exactly as written, never translated or inflected into another word: ' + ', '.join(words['names']) + '.',
         'Keep exactly as they are: placeholders in braces ({}, {0}, {1}; a translation may number them {0}, {1} to '
         'reorder), text in angle brackets (<job id>), URLs, email addresses, file names, commands, code, JSON, numbers '
@@ -212,7 +213,7 @@ def string_problems(key, text, lang, words):
     if not holes_ok(key, text):
         out.append('keep every placeholder ({}, or {0} {1} to reorder) exactly as many times as in the English')
     if '—' in text:
-        out.append('no em dash')
+        out.append(no_em_dash(text))
     out += [f'keep the name "{n}"' for n in words['names'] if re.search(r'(?<![\w-])' + re.escape(n) + r'(?![\w-])', key) and n not in text]
     if key not in words['exceptions']:
         out += [f'"{term}" must read one of: {", ".join(forms[lang])}' + TERM_PROBLEM for term, forms in words['checked'].items()
@@ -383,8 +384,16 @@ def article_problems(en, tr):
     elif blocks(en) != blocks(tr):
         out.append('keep the same paragraphs and list items in each section, one list item per line, as - or 1.')
     if '—' in tr:
-        out.append('no em dash')
+        out.append(no_em_dash(tr))
     return out
+
+
+def no_em_dash(text, where=''):
+    """The em dash note, with where the answer has them: a bare "no em dash" was ignored twice by languages whose own
+    typography writes one (Russian "X — это Y"), so the article stayed out of date run after run."""
+    spots = [' '.join(text[max(0, m.start() - 40):m.end() + 40].split()) for m in re.finditer('—', text)][:5]
+    return (f'no em dash (—){where}: rewrite each of these without it, with a colon, a comma or two sentences '
+            f'(no other dash in its place): ' + ' | '.join(f'"{s}"' for s in spots))
 
 
 def protect_code(body):
@@ -516,7 +525,7 @@ def translate_article(lang, path, words=None, ask=ask):
                 if not isinstance(text, str) or not text.strip() or '\n' in text.strip():
                     problems.append(f'a one-line {k}')
                 elif '—' in text:
-                    problems.append(f'no em dash in the {k}')
+                    problems.append(no_em_dash(text, f' in the {k}'))
         # a label not as the app shows it is asked again once; the second time the article is kept anyway
         wrong = [f'write **{tr}** for {en}' for en, tr in labels.items() if f'**{tr}' not in got['body']]
         if not problems and (not wrong or attempt):
