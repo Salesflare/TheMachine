@@ -7,17 +7,26 @@ const {chromium}=await import('./browser.mjs');
 // script asks for the theme's colors, api/omarchy-theme, as it starts), and the script's first status read takes that
 // answer instead of asking again.
 // An early request that fails (the connection cut) is asked again, and the to-dos still show.
+// It asks with X-Status-Kept: the Machine may answer with the status it built a moment ago (_kept, its age), which shows at once
+// while the page asks for the current one right after; to-dos that changed or closed meanwhile then update in place.
 const dashboard=await dashboardPage();
 const now=new Date().toISOString();
-const cards=[{id:'a1a1a1a1a1a1a1a1',title:'Check the payroll is ready',body:'Ready.',status:'prepared',preparation_status:'ok',scope:'work',created_at:now,event_ids:[1]}];
-const state=()=>({suggestions:cards,promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],review_live:{runs:[]},
- connectors:[],fleet:{on:false,fleets:[]}});
-let asked=[],cutNext=false;
-const server=createServer(async(req,res)=>{for await(const _ of req);const url=new URL(req.url,'http://fixture.invalid');asked.push(url.pathname);res.setHeader('Content-Type','application/json');
+const card=(id,title,n)=>({id,title,body:'Ready.',status:'prepared',preparation_status:'ok',scope:'work',created_at:now,event_ids:[n]});
+const cards=[card('a1a1a1a1a1a1a1a1','Check the payroll is ready',1)];
+const state=(suggestions=cards)=>({suggestions,promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],
+ review_live:{runs:[]},connectors:[],fleet:{on:false,fleets:[]}});
+// the kept one, from a moment ago: a to-do since renamed, one that stayed, and one since closed
+const stays=card('b2b2b2b2b2b2b2b2','Book the room',2);
+const keptState={...state([{...cards[0],title:'Check the payroll'},stays,card('c3c3c3c3c3c3c3c3','Renew the lease',3)]),_kept:40};
+let asked=[],cutNext=false,keptNext=false,holdFresh=null;
+const server=createServer(async(req,res)=>{for await(const _ of req);const url=new URL(req.url,'http://fixture.invalid');asked.push(url.pathname+(req.headers['x-status-kept']==='1'?' kept':''));res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
- if(url.pathname==='/api/status'){if(cutNext){cutNext=false;req.socket.destroy();return}res.end(JSON.stringify(state()));return}
+ if(url.pathname==='/api/status'){if(cutNext){cutNext=false;req.socket.destroy();return}
+  if(keptNext){keptNext=false;res.end(JSON.stringify(keptState));return}
+  if(holdFresh)await holdFresh;res.end(JSON.stringify(state(holdFresh?[...cards,stays]:cards)));return}
  res.statusCode=url.pathname.startsWith('/brand/')?404:200;res.end('{}')});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
+const statusAsks=()=>asked.filter(p=>p.startsWith('/api/status'));
 const errors=[];let browser;
 try{
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
@@ -25,14 +34,26 @@ try{
  await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
  const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
  const origin='http://127.0.0.1:'+server.address().port;
- // 1. A load: one status request, asked before the page's script runs
+ // 1. A load: one status request, asked before the page's script runs, as a first read
  await page.goto(origin);await page.locator('#task-a1a1a1a1a1a1a1a1').waitFor();
- const status=asked.filter(p=>p==='/api/status').length,first=asked.indexOf('/api/status'),theme=asked.indexOf('/api/omarchy-theme');
- assert.equal(status,1,'the status is asked once: '+asked.join(' '));
+ const first=asked.indexOf('/api/status kept'),theme=asked.indexOf('/api/omarchy-theme');
+ assert.deepEqual(statusAsks(),['/api/status kept'],'the status is asked once, as a first read: '+asked.join(' '));
  assert.ok(theme>0&&first<theme,'the status is asked before the page’s script runs: '+asked.join(' '));
  // 2. The early request cut off: asked again, and the to-dos show
  asked=[];cutNext=true;
  await page.reload();await page.locator('#task-a1a1a1a1a1a1a1a1').waitFor();
- assert.equal(asked.filter(p=>p==='/api/status').length,2,'asked again after the cut: '+asked.join(' '));
+ assert.equal(statusAsks().length,2,'asked again after the cut: '+asked.join(' '));
+ // 3. The Machine answers with the one it kept: it shows at once, and the current one is asked for right after
+ asked=[];keptNext=true;let letGo;holdFresh=new Promise(r=>{letGo=r});
+ await page.reload();await page.locator('#task-c3c3c3c3c3c3c3c3').waitFor();
+ assert.match(await page.locator('#task-a1a1a1a1a1a1a1a1').textContent(),/Check the payroll/,'the kept one shows');
+ await page.evaluate(()=>{document.querySelector('#task-b2b2b2b2b2b2b2b2').dataset.mark='1'});
+ for(const end=Date.now()+10e3;statusAsks().length<2&&Date.now()<end;)await new Promise(r=>setTimeout(r,20));
+ assert.deepEqual(statusAsks(),['/api/status kept','/api/status'],'the current one asked for right after: '+asked.join(' '));
+ letGo();
+ await page.locator('#task-c3c3c3c3c3c3c3c3').waitFor({state:'detached'});
+ assert.match(await page.locator('#task-a1a1a1a1a1a1a1a1').textContent(),/Check the payroll is ready/,'a changed to-do updates');
+ assert.equal(await page.locator('#task-b2b2b2b2b2b2b2b2').getAttribute('data-mark'),'1','one that stayed is the same, in place');
+ assert.equal(statusAsks().length,2,'and nothing more is asked');
  assert.deepEqual(errors,[]);
 }finally{await browser?.close();server.close()}
