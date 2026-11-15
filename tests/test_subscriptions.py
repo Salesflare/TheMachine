@@ -69,7 +69,10 @@ class Subs(unittest.TestCase):
     def mail(self, sender, title, body='', days_ago=0, account='w', labels=('INBOX',), **metadata):
         self.n += 1
         meta = {'from': sender, 'labels': list(labels), 'thread_id': f't{self.n}', **metadata}
-        when = (NOW - dt.timedelta(days=days_ago, minutes=5)).isoformat()
+        # A few minutes back, never before that day's midnight: a run just after midnight keeps each mail on its own day
+        # (a trial mail of today fell on yesterday and ended a day early, 2026-11-14 23:57 UTC on CI)
+        on = dt.datetime.combine(TODAY - dt.timedelta(days=days_ago), dt.time(), dt.timezone.utc)
+        when = max(NOW - dt.timedelta(days=days_ago, minutes=5), on).isoformat()
         with self.store.connect() as db:
             db.execute('INSERT INTO events(account_id,source_id,kind,occurred_at,title,body,metadata,content_hash,ingested_at,version) VALUES(?,?,?,?,?,?,?,?,?,?)',
                        (account, f'm{self.n}', 'gmail.message', when, title, body, json.dumps(meta), 'h', when, 1))
