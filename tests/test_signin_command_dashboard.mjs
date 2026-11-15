@@ -41,7 +41,7 @@ try{
  const pre=page.locator('#connectors .signin-command');await pre.waitFor({state:'attached'});
  assert.equal(await pre.textContent(),command);
  const card=await page.locator('#connectors').textContent();
- assert.match(card,/Google sign-in for Email expired\. Reconnect/);
+ assert.match(card,/Google sign-in for Gmail expired\. Reconnect/);
  assert.doesNotMatch(card,/Please reconnect this account/);
  assert.equal(await pre.isVisible(),false,'the command waits behind "Or use a terminal"');
  await page.locator('#connectors .signin-fallback summary').click();
