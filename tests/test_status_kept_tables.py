@@ -64,6 +64,8 @@ class StatusKeptByTable(unittest.TestCase):
             return built(done)
         self.app.status_built = counted
         self.addCleanup(lambda: (self.app.__dict__.get('_status_kept') or {}).get('watch') and self.app._status_kept['watch'].close())
+        # the minute is part of what keeps it (status_mark): it stands still, or a test that crosses one builds it again
+        minute = patch('machine.app.status.now', return_value=NOW.isoformat()); minute.start(); self.addCleanup(minute.stop)
         # some to-dos with their messages and a decision: more of what the status reads
         self.store.commit_page('work', {}, [mail(1), mail(2)])
         with self.store.connect() as db:
