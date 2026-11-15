@@ -8,7 +8,7 @@
 const CAL_BACK=56,CAL_AHEAD=52;  // how many weeks the agenda runs back (a year of history: docs/help/history.md) and ahead of this one
 // calStarts: the first day there are meetings for ({day, joined, history}, api/calendar): a calendar's first read went a week back,
 // its history (history: true) about a year
-let calStarts=null,calCals=[],calWeeks=new Map(),calMeetings=null,calReturn=false,calRouting=false,calBusy=null,calMoreFailed={},calUp=false,calLastY=0;
+let calStarts=null,calCals=[],calWeeks=new Map(),calMeetings=null,calNotes=[],calReturn=false,calRouting=false,calBusy=null,calMoreFailed={},calUp=false,calLastY=0;
 let calMode=['week','month'].includes(sideStore.get('cal-mode'))?sideStore.get('cal-mode'):'agenda';
 const calMid=d=>{const x=new Date(d);x.setHours(0,0,0,0);return x};
 const calAdd=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);x.setHours(0,0,0,0);return x};  // by calendar days, also over a clock change
@@ -34,14 +34,15 @@ function calFetchSpan(mons,force){const busy=[],want=[];
  const q='from='+encodeURIComponent(first.toISOString())+'&to='+encodeURIComponent(end.toISOString());
  // Each week read is kept on the device too (encrypted, like the cards), so the Calendar opens offline with what it had
  const loading=request('api/calendar?'+q).then(r=>{if(Array.isArray(r?.calendars))calCals=r.calendars;if(r&&'starts' in r)calStarts=r.starts?.day?r.starts:null;
-   if(r?.checking)calCheckAgain();const all=Array.isArray(r?.meetings)?r.meetings:[];
-   for(const mon of want){const k=localDay(mon),meetings=want.length>1?all.filter(m=>calIn(m,mon,calAdd(mon,7))):all;calWeeks.set(k,{meetings,failed:false,at:Date.now()});localCache.put('cal:'+k,{...r,meetings})}})
+   if(r?.checking)calCheckAgain();const all=Array.isArray(r?.meetings)?r.meetings:[],dated=Array.isArray(r?.notes)?r.notes:[];
+   for(const mon of want){const k=localDay(mon),meetings=want.length>1?all.filter(m=>calIn(m,mon,calAdd(mon,7))):all,notes=dated.filter(n=>n.starts<=localDay(calAdd(mon,6))&&n.ends>=k);
+    calWeeks.set(k,{meetings,notes,failed:false,at:Date.now()});localCache.put('cal:'+k,{...r,meetings,notes})}})
   .catch(async e=>{for(const mon of want){const k=localDay(mon),w=was.get(k);
    if(e?.offline){const mine=w?.meetings&&!w.failed,hit=mine?null:await localCache.read('cal:'+k);
     if(mine||hit){if(hit){if(Array.isArray(hit.value?.calendars)&&!calCals?.length)calCals=hit.value.calendars;if(hit.value?.starts?.day&&!calStarts)calStarts=hit.value.starts;staleMark(hit.at)}
-     calWeeks.set(k,{meetings:mine?w.meetings:Array.isArray(hit.value?.meetings)?hit.value.meetings:[],failed:false,at:0});continue}}
-   calWeeks.set(k,{meetings:w?.meetings||[],failed:true,at:Date.now()})}}).finally(calUnion);
- for(const mon of want){const w=was.get(localDay(mon));calWeeks.set(localDay(mon),{meetings:w?.meetings||null,failed:!!w?.failed,at:w?.at||0,loading})}
+     calWeeks.set(k,{meetings:mine?w.meetings:Array.isArray(hit.value?.meetings)?hit.value.meetings:[],notes:mine?w.notes||[]:Array.isArray(hit.value?.notes)?hit.value.notes:[],failed:false,at:0});continue}}
+   calWeeks.set(k,{meetings:w?.meetings||[],notes:w?.notes||[],failed:true,at:Date.now()})}}).finally(calUnion);
+ for(const mon of want){const w=was.get(localDay(mon));calWeeks.set(localDay(mon),{meetings:w?.meetings||null,notes:w?.notes||[],failed:!!w?.failed,at:w?.at||0,loading})}
  return Promise.all([...busy,loading])}
 const calFetchWeek=(mon,force)=>calFetchSpan([mon],force);
 // Mondays (sorted) in runs of next weeks, at most six to an ask
@@ -61,7 +62,7 @@ function calQueue(mons){for(const d of mons)if(!calLater.some(x=>+x===+d)&&!(cal
 let calChecked=false;
 function calCheckAgain(){if(calChecked)return;calChecked=true;setTimeout(()=>calFetch(true).then(()=>{if(!$('#calendar').hidden)calRender()}),3000)}
 // Every loaded week's meetings, each once (one that runs over a Monday comes in both weeks)
-function calUnion(){const seen=new Set(),all=[];let any=false;for(const w of calWeeks.values()){if(!w.meetings)continue;any=true;for(const m of w.meetings)if(!seen.has(m.id)){seen.add(m.id);all.push(m)}}calMeetings=any?all:null}
+function calUnion(){const seen=new Set(),all=[],notes=new Map();let any=false;for(const w of calWeeks.values()){for(const n of w.notes||[])notes.set(n.id,n);if(!w.meetings)continue;any=true;for(const m of w.meetings)if(!seen.has(m.id)){seen.add(m.id);all.push(m)}}calMeetings=any?all:null;calNotes=[...notes.values()]}
 const calFailedIn=(a,b)=>calMondays(a,b).some(d=>calWeeks.get(localDay(d))?.failed);
 // What is on show comes first, in one ask: the period's weeks (the agenda: the week at the top and the next one), and
 // any week in it not loaded yet. After it, the other loaded weeks and the weeks either side follow one at a time.
@@ -97,6 +98,9 @@ function calItems(from=calDay(0),to=calDay(1)){const days=[];for(let d=calMid(fr
   if(!was){said.set(k,{...p});continue}if(was.direction!==p.direction)was.together=true;if(p.direction==='mine')Object.assign(was,{...p,together:was.together||p.together})}
  for(const p of said.values()){const on=p.due>=today&&out.find(it=>it.kind==='meeting'&&!it.m.shared&&it.day===p.due&&calWith(p,it.m));
   if(on)on.promises.push(p);else out.push({day:p.due<today?'overdue':p.due,kind:'promise',at:-1,p})}
+ // A dated note (a trip) is a band across its days, first in the day's All day strip; it opens the note
+ for(const n of calNotes){if(!n.starts)continue;const ends=n.ends||n.starts,span=ends!==n.starts?[n.starts,ends]:null;
+  for(const k of days)if(k>=n.starts&&k<=ends)out.unshift({day:k,kind:'note',allDay:true,at:0,n,span})}
  out.sort((x,y)=>(x.allDay?-2:x.at)-(y.allDay?-2:y.at));return {days,items:out}}
 const calNorm=v=>String(v||'').normalize('NFKD').replace(/\p{M}/gu,'').toLowerCase().trim();
 const calWords=v=>calNorm(v).split(/[^\p{L}\p{N}]+/u).filter(w=>w.length>1);
@@ -115,6 +119,7 @@ function calPlace(loc){const s=String(loc||'').trim(),url=(s.match(/https?:\/\/[
   rest=s.replace(/https?:\/\/[^\s<>"',;]+/gi,' ').split(/\s*[,;|·]\s*|\s{2,}/).map(x=>x.trim()).filter(x=>x&&x.toLowerCase()!==name.toLowerCase()).join(', ');
  return {text:[rest,name].filter(Boolean).join(' · '),rest,name,url}}
 function calParts(it){const hm=v=>humanHM(new Date(v)),late=it.day==='overdue';
+ if(it.kind==='note'){const n=it.n;return {time:'All day',title:n.name,sub:[t(n.kind==='trip'?'Trip':'Note'),it.span?rangeText(calShort(it.span[0]),calShort(it.span[1])):''].filter(Boolean).join(' · '),href:'#graph/'+encodeURIComponent(n.id),tone:'note'}}
  if(it.kind==='meeting'){const m=it.m,c=it.s&&CAL_CARD[it.s.status],a=new Date(m.start),b=new Date(m.end),
    when=it.allDay?(it.span?rangeText(calShort(it.span[0]),calShort(it.span[1])):''):!(b>a)?'':rangeText(hm(a),(localDay(b)!==localDay(a)?calShort(localDay(b))+' ':'')+hm(b));
   return {time:it.allDay?'All day':hm(m.start),title:m.title,owner:m.shared?m.shared+'’s':'',sub:[when,calPlace(m.location).text,...(m.rooms||[]),m.guests?t(['{} guest','{} guests'],m.guests):'',m.notes?t('Notes'):'',m.transcript?t('Transcript'):''].filter(Boolean).join(' · '),
@@ -306,7 +311,7 @@ $('#calendar').addEventListener('click',e=>{const ed=e.target.closest('[data-cal
  const day=e.target.closest('[data-cal-open]');if(day){calSetMode('agenda',calOf(day.dataset.calOpen));return}
  const a=e.target.closest('a[href^="#"]');if(!a||e.ctrlKey||e.metaKey||e.shiftKey)return;const href=a.getAttribute('href');e.preventDefault();
  if(href.startsWith('#chat=')){calReturn=true;chatGo(href.slice(6));return}
- if(href.startsWith('#promise/')){calPush(true);location.hash=href;return}  // back returns to this period of the Calendar
+ if(href.startsWith('#promise/')||href.startsWith('#graph/')){calPush(true);location.hash=href;return}  // a promise or a note (a trip): back returns to this period of the Calendar
  if(href==='#connections')showTab('health')});
 $('#page-head').addEventListener('click',e=>{if(e.target.closest('[data-cal-new]')){calEditor();return}const b=e.target.closest('[data-cal-mode],[data-cal-go]');if(!b)return;if(b.dataset.calMode)calSetMode(b.dataset.calMode);else calGo(Number(b.dataset.calGo))});
 // New event and changing one: only on a calendar the owner can write (their own, or one shared with them to change),

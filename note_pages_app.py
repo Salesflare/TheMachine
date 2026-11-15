@@ -5,6 +5,7 @@ The Notes list and a note's page (read through /api/graph, like the Graph's othe
 its own notes current: note_pages.py. A line that came from a fact is that fact: editing it edits the fact under What
 I've learned first (Store.edit_fact), so there is one truth."""
 import logging
+from datetime import date, timedelta
 
 import note_pages
 import todo_areas
@@ -46,6 +47,17 @@ class NotesApp:
         except Exception as error:  # the next round tries again from the same mail
             LOG.warning('trip notes error=%s', type(error).__name__)
             return []
+
+    def calendar_notes(self, start, end):
+        """The dated notes (trips) that touch the Calendar's window, as bands: a day either side, since the window's
+        edges are instants and a note's dates are local days (the Calendar keeps what touches each week)."""
+        try:
+            first = (date.fromisoformat(start[:10]) - timedelta(days=1)).isoformat()
+            last = (date.fromisoformat(end[:10]) + timedelta(days=1)).isoformat()
+        except ValueError:
+            return []
+        with self.store.connect() as db:
+            return [{k: x[k] for k in ('id', 'kind', 'name', 'starts', 'ends')} for x in note_pages.dated(db, first, last)]
 
     def notes_list(self, db):
         """The Notes list, light: what each row shows, in tree order."""

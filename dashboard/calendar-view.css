@@ -29,7 +29,7 @@ a.cal-item:hover{background:var(--c-hover)}a.cal-item:hover+.cal-item::before,a.
 .cal-owner{display:inline-block;margin-right:2px;padding:0 6px;border-radius:999px;background:var(--c-sunken);box-shadow:inset 0 0 0 1px var(--c-line);color:var(--c-text-3);font-size:var(--fs-xs);font-weight:600;line-height:1.6;vertical-align:1px}
 .cal-said{color:var(--c-text-2)}.cal-said::before{content:'';display:inline-block;width:6px;height:6px;margin:0 6px 1px 0;border-radius:50%;background:var(--mint);vertical-align:middle}
 /*@eager*/
-.k-due{--tone:var(--amber)}.k-late{--tone:var(--orange)}.k-back{--tone:var(--lavender)}.k-promise{--tone:var(--mint)}
+.k-note{--tone:var(--lavender)}.k-due{--tone:var(--amber)}.k-late{--tone:var(--orange)}.k-back{--tone:var(--lavender)}.k-promise{--tone:var(--mint)}
 /*@lazy*/
 .cal-item.past .cal-time,.cal-item.past .cal-main,.cal-chip.past{opacity:.55}
 /*@eager*/
