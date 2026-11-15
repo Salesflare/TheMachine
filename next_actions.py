@@ -16,6 +16,7 @@ import hashlib
 import google_api
 import mail_attachments
 import ms_graph, signal_send, smtp_mail
+from whatsapp_send import WhatsAppTransport  # noqa: F401  (next_actions.WhatsAppTransport, as callers use it)
 import signatures
 import html
 import i18n
@@ -116,6 +117,7 @@ _WORKSPACE = Path(os.environ.get('OPENCLAW_WORKSPACE') or Path.home() / '.opencl
 ATTACHMENT_SOURCES = (str(_WORKSPACE / 'data/assistant-attachments'), str(_WORKSPACE / 'memory/assistant'))
 ATTACHMENT_STORE = str(Path.home() / '.local/share/personal-assistant/attachments')
 MAX_ATTACHMENT_BYTES = 18 * 1024 * 1024  # Gmail's 25 MB limit applies after base64 encoding.
+WHATSAPP_CAPTION = 1024  # WhatsApp shows at most this much text under a file
 
 
 def attachment_store(config):
@@ -288,7 +290,9 @@ def preview(value):
         files = '\n\nAttachments: ' + attachment_list(value) if value.get('attachments') else ''
         return value['preview'] + message + files + ('\n\n' + value['url'] if value.get('url') else '')
     if value['kind'] == 'whatsapp':
-        return 'WhatsApp message to ' + value['to_name'] + (', as a reply' if value.get('quote') else '') + '\n\n' + value['body']
+        return ('WhatsApp message to ' + value['to_name'] + (', as a reply' if value.get('quote') else '')
+                + ('\n\nFile: ' + attachment_list(value) if value.get('attachments') else '')
+                + ('\n\n' + value['body'] if value['body'] else ''))
     if value['kind'] in ('telegram', 'signal'):
         return value['kind'].title() + ' message to ' + value['to_name'] + (', as a reply' if value.get('quote') else '') + '\n\n' + value['body']
     if value['kind'] == 'intercom':
@@ -788,11 +792,13 @@ def validate(value, config, allowed_accounts, recipient_options=None, linkedin_t
             result['thread'] = thread
     elif value.get('kind') == 'whatsapp':
         # A WhatsApp message in an existing chat, from the owner's linked account; wacli sends it only after the
-        # owner's Send now. Text only. The chat is one from this task's own WhatsApp messages, or, when the owner
-        # talks to this person on WhatsApp although the task came in another way, their existing chat that the
-        # service looked up in that account (whatsapp_chats marks it so): the card switches to it.
-        if set(value) - {'kind', 'label', 'account_id', 'chat_id', 'to_name', 'body'}:
-            raise OwnerError('Unsupported WhatsApp fields; plain text only, no media')
+        # owner's Send now. Text, or one file with an optional caption (attachments, stored and checksummed as an
+        # email's are, so the owner approves exactly those bytes). The chat is one from this task's own WhatsApp
+        # messages, or, when the owner talks to this person on WhatsApp although the task came in another way, their
+        # existing chat that the service looked up in that account (whatsapp_chats marks it so): the card switches to it.
+        if set(value) - {'kind', 'label', 'account_id', 'chat_id', 'to_name', 'body', 'attachments'}:
+            raise OwnerError('Unsupported WhatsApp fields: a WhatsApp message is text, or one file in attachments:[<path>] '
+                             'with an optional caption in body')
         account = next((a for a in config['accounts'] if a['id'] == value.get('account_id') and a.get('service') == 'whatsapp'), None)
         if not account:
             raise OwnerError('Use one of the owner’s WhatsApp accounts')
@@ -805,10 +811,17 @@ def validate(value, config, allowed_accounts, recipient_options=None, linkedin_t
         if not chat or chat.get('account_id') != account['id']:
             raise ValueError('Send only in an existing WhatsApp chat: one from this task’s own messages (its metadata.chat_id), '
                              'or the person’s chat in this account (chat_id, or to_name to look it up)')
-        result.update(chat_id=str(value['chat_id']), to_name=chat.get('name') or 'WhatsApp chat', max_length=4000)
-        body = value.get('body')
-        if not isinstance(body, str) or not body.strip() or len(body) > 4000 or '\x00' in body:
-            raise OwnerError('Provide the concrete WhatsApp message, at most 4000 characters')
+        if 'attachments' in value:
+            if not isinstance(value['attachments'], list) or len(value['attachments']) != 1:
+                raise OwnerError('A WhatsApp message carries one file: put each further file in its own WhatsApp next action')
+            result['attachments'] = store_attachments(value['attachments'], config)
+        limit = WHATSAPP_CAPTION if result.get('attachments') else 4000
+        result.update(chat_id=str(value['chat_id']), to_name=chat.get('name') or 'WhatsApp chat', max_length=limit)
+        body = value.get('body', '' if result.get('attachments') else None)
+        if (not isinstance(body, str) or (not body.strip() and not result.get('attachments'))
+                or len(body) > limit or '\x00' in body):
+            raise OwnerError('Keep the caption under the WhatsApp file to at most 1024 characters' if result.get('attachments')
+                             else 'Provide the concrete WhatsApp message, at most 4000 characters')
         result['body'] = body.strip()
         quote = whatsapp_quote(result, reply_spots)
         if quote:
@@ -951,6 +964,8 @@ def check(value, result='', own_addresses=()):
         if action['kind'] == 'finish' and not action.get('attachments') and (
                 ATTACHED.search(text) or SAVED_FILE.search(action['instructions'])):
             problems.append(f"“{action['label']}” uploads or mentions a file but lists none: add attachments:[<paths>] so the owner sees it, or reword it")
+        if action['kind'] == 'whatsapp' and ATTACHED.search(action['body']) and not action.get('attachments'):
+            problems.append('The WhatsApp message mentions a file but has none: add attachments:[<path>] or reword it')
         if action['kind'] == 'handoff' and not ENDS_SENTENCE.search(action['body']):
             problems.append('The handoff message runs on without its punctuation: write it as whole sentences, what they need to '
                             'know ending with a period and the ask as its own sentence ending with a question mark')
@@ -1608,103 +1623,6 @@ class XTransport:
         except ValueError:
             return {}
         return {'message_id': ('x:' if action.get('reply_to') else 'xdm:') + str(out.get('id') or job['id'])} if out.get('found') else {}
-
-
-class WhatsAppTransport:
-    """Sends one owner-approved WhatsApp text into an existing chat with wacli. Only this send runs
-    wacli without --read-only; every check before and after it stays read-only. When the sync keeps
-    the store open, wacli hands the send to that running process. wacli has no idempotency token,
-    so an unclear outcome is checked in the chat afterwards and never resent."""
-
-    def __init__(self, config):
-        self.config = config
-
-    def account(self, action):
-        return next(a for a in self.config['accounts'] if a['id'] == action['account_id'] and a.get('service') == 'whatsapp')
-
-    def run(self, action, args, write=False, timeout=30):
-        env = {k: v for k, v in os.environ.items() if k != 'WACLI_READONLY'}
-        if not write:
-            env['WACLI_READONLY'] = '1'
-        command = [self.config.get('wacli') or 'wacli', '--store', self.account(action)['store'],
-                   *([] if write else ['--read-only']), '--json', *args]
-        return subprocess.run(command, env=env, capture_output=True, text=True, timeout=timeout)
-
-    def read(self, action, args):
-        try:
-            result = self.run(action, ['--timeout', '15s', *args], timeout=25)
-            data = {} if result.returncode else json.loads(result.stdout or '{}')
-        except (subprocess.TimeoutExpired, ValueError):
-            data = {}
-        if not isinstance(data, dict) or data.get('success') is not True or not isinstance(data.get('data'), dict):
-            raise OwnerError('I couldn’t reach WhatsApp on this computer. Nothing was sent; tap Send again.')
-        return data['data']
-
-    def preflight(self, action):
-        if action['kind'] != 'whatsapp':
-            raise OwnerError('Only an owner-approved WhatsApp message can use the WhatsApp transport')
-        status = self.read(action, ['auth', 'status'])
-        linked = status.get('linked_jid')
-        if (status.get('authenticated') is not True or not isinstance(linked, str)
-                or hashlib.sha256(linked.encode()).hexdigest() != self.account(action).get('identity_sha256')):
-            raise OwnerError('WhatsApp is signed out, or linked to another number. Nothing was sent.')
-        rows = self.read(action, ['messages', 'list', '--chat', action['chat_id'], '--limit', '50']).get('messages')
-        if not rows:
-            raise OwnerError('I couldn’t find that WhatsApp chat. Nothing was sent.')
-        action['proof'] = {'whatsapp_before_ids': [r['MsgID'] for r in rows if r.get('MsgID')]}
-
-    def send(self, action, job):
-        try:
-            quote = action.get('quote') or {}  # a reply to the to-do's own message in this chat quotes it
-            result = self.run(action, ['--timeout', '90s', '--lock-wait', '30s', 'send', 'text', '--to', action['chat_id'],
-                                       '--message', action['body'],
-                                       *(['--reply-to', quote['message_id']] if quote else []),
-                                       *(['--reply-to-sender', quote['sender_id']] if quote.get('sender_id') else [])],
-                               write=True, timeout=150)
-        except subprocess.TimeoutExpired:
-            return {}
-        try:
-            out = json.loads(result.stdout or '{}')
-        except ValueError:
-            out = {}
-        data = out.get('data') if isinstance(out.get('data'), dict) else {}
-        if not result.returncode and out.get('success') is True and data.get('sent') is True and data.get('id'):
-            return {'message_id': 'whatsapp:' + str(data['id'])}
-        err = ((out.get('error') or '') if isinstance(out.get('error'), str) else '') + ' ' + result.stderr
-        err = err.lower()
-        if 'may still have gone through' in err or 'after dispatch' in err:
-            return {}  # Unknown outcome: never resend; reconcile reads the chat.
-        if 'lock' in err and 'store' in err:
-            return {'not_sent': True}
-        if 'not authenticated' in err or 'not logged in' in err or 'read-only' in err or 'invalid' in err:
-            return {'rejected': 'refused'}
-        return {}
-
-    def reconcile(self, action, job):
-        proof = action.get('proof') or {}
-        stamp = proof.get('whatsapp_dispatched_at')
-        if not stamp:
-            return {}  # Legacy uncertain sends have no attributable dispatch boundary; never invent a receipt.
-        try:
-            since = datetime.datetime.fromisoformat(stamp)
-            if since.tzinfo is None:
-                return {}
-            rows = self.read(action, ['messages', 'list', '--chat', action['chat_id'], '--from-me',
-                                      '--after', since.isoformat(), '--limit', '50']).get('messages') or []
-        except ValueError:
-            return {}
-        found = []
-        for r in rows:
-            try:
-                occurred = datetime.datetime.fromisoformat(r.get('Timestamp', '').replace('Z', '+00:00'))
-            except (ValueError, TypeError, AttributeError):
-                continue
-            if occurred.tzinfo is None:
-                continue
-            if (r.get('FromMe') is True and (r.get('Text') or '').strip() == action['body']
-                    and r.get('MsgID') not in proof.get('whatsapp_before_ids', []) and occurred >= since):
-                found.append(r)
-        return {'message_id': 'whatsapp:' + str(found[0]['MsgID'])} if len(found) == 1 and found[0].get('MsgID') else {}
 
 
 class TelegramTransport:

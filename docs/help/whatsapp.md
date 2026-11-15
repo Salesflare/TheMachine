@@ -22,7 +22,7 @@ The to-do and the message show the photo. Tap it to see it large.
 
 ## What it can send
 
-A text into a chat that already exists, only after you approve it on the to-do. A reply to the WhatsApp message a to-do came from quotes that message when more was said after it, or in a group; the draft says **As a reply**.
+A text, or one file with an optional caption, into a chat that already exists, only after you approve it on the to-do. Before you send, the to-do shows the file, and you can open it. A file goes up to 18 MB. A reply to the WhatsApp message a to-do came from quotes that message when more was said after it, or in a group; the draft says **As a reply**.
 
 If a to-do came in by email but you talk to that person on WhatsApp, say so in the to-do's chat. The Machine finds your existing chat with them and switches the draft to WhatsApp, for you to review and send. It never starts a new chat.
 

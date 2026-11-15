@@ -9,7 +9,13 @@ function sendOpenAll(id){const ready=sendReady(state.suggestions.find(s=>s.id===
  sendBatch={id,list:ready.map(a=>a.revision),mail:ready.every(a=>a.kind==='email'),at:0,done:[]};openSend(id,ready[0].revision,1)}
 function sendStep(){const b=sendBatch;$('#send-step').hidden=!b;if(!b)return;const n=b.list.length;
  $('#send-step').textContent=t('{} of {}',b.at+1,n);$('#send-confirm').textContent=b.at<n-1?t('Next'):t(b.mail?'Send {} emails':'Send all {}',n)}
-function sendOpen(id,revision,step){if(!step)sendBatch=null;$('#send-mailapp').hidden=true;$('#send-ask').hidden=true;$('#send-bounce').hidden=true;$('#send-act').hidden=false;$('#send-ask-open').hidden=true;
+// A message that carries a file: the file leads (above the text), and the text is a caption, short and optional, a
+// few lines that grow as it's typed (sendCaptionFit). Any other send keeps its files below the message.
+function sendFileFirst(on){const d=$('#send-dialog'),files=$('#send-files'),label=$('#send-body-label').firstChild;d.classList.toggle('with-file',on);
+ if(on)$('#send-preview').before(files);else $('#send-editor').after(files);label.nodeValue=on?t('Caption (optional)'):t('Message');$('#send-body').style.height=''}
+function sendCaptionFit(){const el=$('#send-body');if(!$('#send-dialog').classList.contains('with-file'))return;el.style.height='auto';el.style.height=Math.min(el.scrollHeight+2,Math.round(innerHeight*.4))+'px'}
+$('#send-body').addEventListener('input',sendCaptionFit);
+function sendOpen(id,revision,step){if(!step)sendBatch=null;sendFileFirst(false);$('#send-mailapp').hidden=true;$('#send-ask').hidden=true;$('#send-bounce').hidden=true;$('#send-act').hidden=false;$('#send-ask-open').hidden=true;
 const task=state.suggestions.find(s=>s.id===id),smart=taskActions(task),draft=revision?smart.find(a=>a.revision===revision):smart.find(a=>a.kind==='email');
 if(!task||task.status!=='prepared'||!SEND_KINDS.includes(draft?.kind)||(revision&&draft.revision!==revision)){toast('That draft changed. Review the current result.',true);return}
 // A new doc or a doc edit: all of it, before and after (todos-docwrite.js)
@@ -33,7 +39,9 @@ sendFine(draft.message?`Confirm types exactly this text on the page (replacing a
 sendTask=id;sendRevision=draft.revision;sendDraft=draft;$('#send-editor').hidden=true;$('#send-preview').hidden=false;$('#send-edit').hidden=draft.kind==='email_demo';$('#send-subject-label').hidden=SEND_CHATS.includes(draft.kind);
 // Handing it to someone: the card then waits for their reply.
 const waits=draft.delegate?`After sending, this to-do waits ${draft.wait_days} day${draft.wait_days>1?'s':''} for ${draft.to_name?draft.to_name+'’s':'a'} reply; it closes when they answer.`:'';
-if(SEND_CHATS.includes(draft.kind)){$('#send-title').textContent=draft.kind==='doc_reply'?'Post this reply in the doc?':draft.kind==='x'?(draft.reply_to?'Reply on X?':'Send this X message?'):draft.kind==='slack'?'Send this Slack message?':draft.kind==='whatsapp'?'Send this WhatsApp message?':draft.kind==='telegram'?'Send this Telegram message?':draft.kind==='signal'?'Send this Signal message?':draft.kind==='intercom'?'Send this reply in Intercom?':'Send this LinkedIn message?';$('#send-confirm').hidden=false;$('#send-confirm').disabled=false;$('#send-cancel').textContent='Cancel';$('#send-recipients').hidden=true;$('#send-files').hidden=true;$('#send-error').textContent='';
+if(SEND_CHATS.includes(draft.kind)){$('#send-title').textContent=draft.kind==='doc_reply'?'Post this reply in the doc?':draft.kind==='x'?(draft.reply_to?'Reply on X?':'Send this X message?'):draft.kind==='slack'?'Send this Slack message?':draft.kind==='whatsapp'?'Send this WhatsApp message?':draft.kind==='telegram'?'Send this Telegram message?':draft.kind==='signal'?'Send this Signal message?':draft.kind==='intercom'?'Send this reply in Intercom?':'Send this LinkedIn message?';$('#send-confirm').hidden=false;$('#send-confirm').disabled=false;$('#send-cancel').textContent='Cancel';$('#send-recipients').hidden=true;$('#send-error').textContent='';
+// A WhatsApp message may carry one file: it leads, above a short caption field, and opens before Send now.
+const files=draft.attachments||[];$('#send-files').hidden=!files.length;setHTML($('#send-files'),draftFileLinks(id,files));sendFileFirst(files.length>0);
 sendHeader=()=>sendRows(draft.kind==='doc_reply'?[['To',draft.to_name],['On',draft.doc_title]]:draft.kind==='intercom'?[['To',draft.to_name],['As',draft.as_name+' in Intercom']]:draft.kind==='x'?[['As','@'+draft.handle],draft.reply_to?['Replying to','@'+draft.to_screen_name+(draft.to_text?': “'+draft.to_text+'”':'')]:['To',draft.to_name]]:[['To',draft.to_name+(draft.profile?' (linkedin.com/in/'+draft.profile+')':draft.to_email?' ('+draft.to_email+')':'')],...(replyWhere(draft)?[['Where',replyWhere(draft)]]:[])]);
 sendHeader();sendBody(draft.body);sendFine(waits);sendShow();return}
 const demo=draft.kind==='email_demo';$('#send-title').textContent=demo?'Demo email preview':INTERCOM_WHY[draft.intercom_fallback]?'Send by email instead?':'Send this email?';$('#send-confirm').hidden=demo;$('#send-cancel').textContent=demo?'Back':'Cancel';
@@ -64,7 +72,7 @@ const sendRecipients=()=>[...document.querySelectorAll('#send-recipients input:c
 function editSend(focus=true){const mail=sendDraft.kind==='email';$('#send-subject').value=sendDraft.subject||'';$('#send-body-label').hidden=mail;$('#send-rich').hidden=!mail;$('#send-rich-link').hidden=true;
  if(mail){mailLoad(draftText(sendDraft));if(KB_MAC)for(const[k,v]of[['b','Bold (Ctrl B)'],['i','Italic (Ctrl I)'],['link','Link (Ctrl K)']]){const x=document.querySelector(`[data-mail-tool="${k}"]`);if(x)x.title=t(v).replace('Ctrl ','⌘')}}  /* on a Mac the keys are ⌘ */
  else $('#send-body').value=plainDraft(draftText(sendDraft));
- $('#send-editor').hidden=false;sendHeader(false);subjectFit();$('#send-preview').hidden=true;$('#send-edit').hidden=true;if(focus!==false)(mail?mailRich():$('#send-body')).focus()}
+ $('#send-editor').hidden=false;sendHeader(false);subjectFit();sendCaptionFit();$('#send-preview').hidden=true;$('#send-edit').hidden=true;if(focus!==false)(mail?mailRich():$('#send-body')).focus()}
 // An email is edited as it will look (bold, italic, lists, links), never as marks or HTML. The editor holds only what
 // an email can carry: a paste or a drop comes in as plain text, and Send reads the page back into the email's marks
 // (mailBody), draws those once more the way the mail will be written (mailHtml) and sends only when both read the same.

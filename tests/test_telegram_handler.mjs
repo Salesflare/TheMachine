@@ -134,7 +134,13 @@ await handler(ctx('back'));assert.equal(edits.pop().buttons.flat()[0].text,'Subm
  // With a file it uploads, the review names it and its size, and Confirm says it attaches it.
  item.next_action={...item.next_action,attachments:[{name:'receipt.pdf',size:21213,sha256:'a'.repeat(64),type:'application/pdf'}]};
  await handler(ctx('back'));edits.pop();await handler(ctx('send_abcdef123456'));const f=edits.pop();
- assert.match(f.text,/\n\nAttachments: receipt\.pdf \(21 KB\)\n/);assert.match(f.text,/attaches the files above, submits it/);item.next_action=step;}
+ assert.match(f.text,/\n\nAttachments: receipt\.pdf \(21 KB\)\n/);assert.match(f.text,/attaches the files above, submits it/);
+ // A file on WhatsApp: Send now's review names the file, with its caption only when there is one.
+ item.next_action={kind:'whatsapp',label:'Send',revision:'abcdef123456',to_name:'Sam Example',body:'',attachments:[{name:'receipt.pdf',size:21213,sha256:'a'.repeat(64),type:'application/pdf'}]};
+ await handler(ctx('back'));edits.pop();await handler(ctx('send_abcdef123456'));
+ assert.equal(edits.pop().text,'Send this WhatsApp message?\nTo: Sam Example\nAttachments: receipt.pdf (21 KB)');
+ item.next_action={...item.next_action,body:'Here it is.'};await handler(ctx('back'));edits.pop();await handler(ctx('send_abcdef123456'));
+ assert.equal(edits.pop().text,'Send this WhatsApp message?\nTo: Sam Example\nAttachments: receipt.pdf (21 KB)\n\nHere it is.');item.next_action=step;}
 item.next_action.state={status:'done'};
 {const before=choices.length;await handler(ctx('back'));assert.ok(!edits.pop().buttons.flat().some(b=>b.text==='Submit claim'));
  await handler(ctx('confirm_abcdef123456'));assert.equal(choices.length,before);edits.pop();}

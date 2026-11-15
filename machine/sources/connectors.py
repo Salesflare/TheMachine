@@ -544,6 +544,31 @@ def slack_prompt(config):
             "in the browser for it.")
 
 
+CHAT_APPS = {'whatsapp': 'WhatsApp', 'telegram': 'Telegram', 'signal': 'Signal'}
+
+
+def chats_prompt(config):
+    """The preparation's line about sending on the owner's linked chat apps: through the to-do's own send, never the
+    app's web version in the browser, and never a request to link what is linked. A run once read a rejected WhatsApp
+    file as "not linked", opened WhatsApp Web, and asked the owner to scan its QR code (2026-11-15)."""
+    found = {}
+    for account in (config or {}).get('accounts') or ():
+        if account.get('service') in CHAT_APPS and not account.get('shared'):
+            found.setdefault(account['service'], []).append(account['id'])
+    if not found:
+        return ''
+    linked = ', '.join(f"{CHAT_APPS[s]} ({', '.join(ids)})" for s, ids in found.items())
+    files = ("A file on WhatsApp is a kind:whatsapp next action with attachments:[<path>], one file each, body its caption "
+             "or ''. " if 'whatsapp' in found else '')
+    text_only = [CHAT_APPS[s] for s in ('telegram', 'signal') if s in found]
+    plain = (f"{' and '.join(text_only)} carry text only: for a file there, say so in one line and offer what does work "
+             "(WhatsApp or email with it attached). " if text_only else '')
+    return (f"\n- Linked here: {linked}. Messages there go out as their own next action, which the owner reviews and "
+            f"sends. {files}{plain}Never use these apps' web versions in the browser, and never ask the owner to link, "
+            "sign in to or scan a QR code for them. A send this Machine refuses is a limit to name plainly, not a "
+            "sign-in.")
+
+
 def calendars_prompt(config):
     """The run's line naming the owner's connected calendars and how to read when they are free, so a to-do that came
     from an email still knows a calendar is connected. Without it a run saw only the to-do's own accounts (Its accounts,
