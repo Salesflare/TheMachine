@@ -1,97 +1,99 @@
 ---
 title: Notizen
 area: graph
-summary: Eine übersichtliche Seite pro Thema, etwa für eine Reise oder dein Zuhause, verknüpft mit den darin erwähnten Personen und Projekten.
+summary: Eine übersichtliche Seite pro Thema, etwa zu einer Reise oder deinem Zuhause, verknüpft mit den darin vorkommenden Personen und Projekten.
 covers: notes
 code: note_pages.py, note_pages_app.py, trip_notes.py, event_notes.py, bookings.py, section_notes.py, home_notes.py, health_notes.py, kids_notes.py, dashboard/graph-notes.js
 order: 8
-translated: 8e27b2c69f77196d
+translated: 336e0f0dad44f19a
 ---
-Eine Notiz bietet einen Überblick über ein Thema: eine Reise, dein Zuhause oder die Abwicklung von Rechnungen. Notizen stehen im Graph neben Personen, Organisationen und Projekten. Sie bleiben auf deiner Machine und werden nicht mit deinem Team geteilt.
+Eine Notiz gibt dir einen Überblick über ein Thema: eine Reise, dein Zuhause oder die Bezahlung von Rechnungen. Notizen stehen im Graph neben Personen, Organisationen und Projekten. Sie bleiben auf deiner Machine und werden nicht mit deinem Team geteilt.
 
-## Eine Notiz beginnen
+## Notiz beginnen
 
-Oben in den Notizen findest du **Neue Notiz**. Gib der Notiz einen Titel und wähle **Notiz beginnen**. Dann öffnet sich ihre Seite. Mit **Zeile hinzufügen** fügst du etwas hinzu, das du festhalten möchtest. Jede Textzeile wird zu einer eigenen Zeile.
+Über **Neue Notiz** oben in den Notizen legst du eine Notiz an. Gib ihr einen Titel und wähle **Notiz beginnen**. Dann öffnet sich die Seite. Mit **Zeile hinzufügen** fügst du hinzu, was du festhalten möchtest. Jede Textzeile wird zu einer eigenen Zeile.
 
 ## Mit Personen, Projekten und anderen Notizen verknüpfen
 
-Gib in einer Zeile @ und die ersten Buchstaben eines Namens ein. Wähle eine Person, Organisation, ein Projekt oder eine Notiz aus der Liste aus. Der Name wird als Link eingefügt. Auf der Seite des verknüpften Eintrags erscheint unter **Verlinkt von** deine Notiz.
+Gib in einer Zeile @ und einige Buchstaben eines Namens ein. Wähle eine Person, Organisation, ein Projekt oder eine Notiz aus der Liste. Der Name wird als Link eingefügt. Auf der Seite des verknüpften Elements erscheint unter **Verlinkt von** deine Notiz.
 
 ## Notizen unter anderen Notizen
 
-Eine Notiz kann unter einer anderen stehen, zum Beispiel Geräte unter Zuhause. In den Notizen werden sie als Baum angezeigt: Mit dem Pfeil neben einer Notiz öffnest du die darunterliegenden. Um eine Notiz zu verschieben, wähle **Bearbeiten** und dann unter **Unter** den gewünschten Ort aus. Über **Neue Notiz unter dieser** im Menü ⋯ kannst du direkt dort eine Notiz erstellen.
+Eine Notiz kann unter einer anderen liegen, zum Beispiel Geräte unter Zuhause. In den Notizen werden sie als Baum angezeigt: Über den Pfeil neben einer Notiz öffnest du die darunterliegenden Notizen. Um eine Notiz zu verschieben, wähle **Bearbeiten** und dann unter **Unter** den gewünschten Ort. Mit **Neue Notiz unter dieser** im Menü ⋯ erstellst du direkt darunter eine Notiz.
 
-Oben auf einer Notizseite siehst du, wo sie sich befindet, zum Beispiel **Notizen › Kinder**. Tippe auf einen beliebigen Teil, um dorthin zu gelangen. Auf dem Smartphone werden die dazwischenliegenden Notizen in ⋯ zusammengeklappt.
+Oben auf einer Notizseite siehst du, wo sie liegt, zum Beispiel **Notizen › Kinder**. Tippe auf einen beliebigen Teil, um dorthin zu gehen. Auf dem Smartphone werden dazwischenliegende Notizen im Menü ⋯ zusammengeklappt.
 
-## Notizen, die deine Machine erstellt
+## Notizen, die deine Machine führt
 
-Deine Machine erstellt auch selbst Notizen aus deinen Nachrichten und hält sie auf dem neuesten Stand. In jeder ihrer Zeilen steht, woher die Information stammt, zum Beispiel, wer die E-Mail geschickt hat. Tippe darauf, um die Nachricht zu öffnen. Bei einer Zeile aus **Was ich gelernt habe** steht **Aus meinen Erkenntnissen**. Ein Termin oder eine Verabredung in deinem Kalender erscheint nie als eigene Zeile, sondern bleibt im [Kalender](calendar.md).
+Deine Machine schreibt auch selbst Notizen aus deinen Nachrichten und hält sie aktuell. Bei jeder Zeile steht, woher sie stammt, zum Beispiel, wer die E-Mail geschickt hat. Tippe darauf, um die Nachricht zu öffnen. Bei einer Zeile aus **Was ich gelernt habe** steht **Aus meinen Erkenntnissen**. Besprechungen und Termine aus deinem Kalender erscheinen nie als eigene Zeile. Sie bleiben im [Kalender](calendar.md).
 
-**Zuhause**, **Gesundheit** und **Kinder** werden erst angezeigt, wenn deine Machine dort mindestens zwei konkrete Einträge hat, etwa eine Rechnung oder eine neue Erkenntnis. Bis dahin erscheinen sie gar nicht in der Liste. Wenn sie später wieder leer sind, verschwinden sie ebenfalls.
+**Zuhause**, **Gesundheit** und **Kinder** erscheinen erst, wenn deine Machine dort mindestens zwei konkrete Dinge zu sagen hat, zum Beispiel zu einer Rechnung oder einer Erkenntnis. Bis dahin tauchen sie gar nicht in der Liste auf. Wenn sie später wieder leer sind, verschwinden sie.
 
-Deine Änderungen bleiben immer erhalten. Benennst du eine Notiz um, verschiebst sie oder änderst ihre Daten oder eine Zeile, behält deine Machine diese Änderungen bei, wenn sie die Notiz aktualisiert. Löschst du eine Zeile oder eine Notiz, kommt sie nicht wieder. Spätere Notizen zum selben Thema werden dort abgelegt, wo du die erste Notiz eingeordnet hast.
+Deine Änderungen bleiben immer erhalten. Benennst du eine Notiz um, verschiebst du sie oder änderst du ihre Termine oder eine Zeile, behält deine Machine diese Änderungen bei, wenn sie die Notiz aktualisiert. Löschst du eine Zeile oder eine Notiz, kommt sie nicht zurück. Spätere Notizen zum selben Thema landen dort, wo du die erste Notiz abgelegt hast.
 
-Mit **Zurück zum Original** werden wieder die ursprünglichen Worte deiner Machine angezeigt. Wenn du eine Zeile bearbeitest, die aus den Erkenntnissen deiner Machine stammt, ändert sie sich auch unter **Was ich gelernt habe**. So gibt es nur eine Version davon.
+Mit **Zurück zum Original** werden wieder die eigenen Worte deiner Machine angezeigt. Wenn du eine Zeile bearbeitest, die aus einer Erkenntnis deiner Machine stammt, ändert sie sich auch unter **Was ich gelernt habe**. So gibt es nur eine Version davon.
 
 ## Reisen
 
-Wenn eine Flug-, Hotel-, Zug-, Bus-, Fähr- oder Mietwagenbuchung in deinem Postfach eingeht, fügt deine Machine sie unter **Reisen** zu einer Reise hinzu. Buchungen für dieselbe Reise kommen auf eine gemeinsame Seite: die Hinfahrt, das Hotel und die Rückfahrt. Für jede Zeile enthält die Reise den Buchungscode, den Sitzplatz und das Ticket, sortiert nach Uhrzeit. Außerdem werden die Reisedaten angezeigt. Im [Kalender](calendar.md) erscheint die Reise als Balken über diese Tage. Tippe darauf, um die Reise zu öffnen.
+Wenn eine Buchung für einen Flug, ein Hotel, einen Zug, einen Bus, eine Fähre oder einen Mietwagen in deinem Posteingang landet, fügt deine Machine sie unter **Reisen** zu einer Reise hinzu. Buchungen für dieselbe Reise landen zusammen: die Hinfahrt, das Hotel und die Rückfahrt. Für jede Buchung enthält die Reise eine Zeile mit Buchungscode, Sitzplatz und Ticket. Die Zeilen sind nach Uhrzeit sortiert. Außerdem werden die Reisedaten angezeigt. Im [Kalender](calendar.md) erscheint die Reise als ein Balken über diese Tage. Tippe darauf, um die Reise zu öffnen.
 
-Deine Machine liest die Buchungsdetails aus den Bestätigungsmails von Fluggesellschaften, Hotels und Buchungsseiten. Eine Mail ohne diese Angaben löst keine Reise aus. Buchungsmails aus der Vergangenheit, die in das Jahr [Verlauf](history.md) fallen, das deine Machine speichert, werden im Hintergrund gelesen, sobald dieser Verlauf importiert ist. Zuerst werden deine privaten Postfächer berücksichtigt.
+Deine Machine liest die Buchungsdetails aus den Bestätigungsmails von Fluggesellschaften, Hotels und Buchungsseiten. Eine Mail ohne diese Angaben erstellt keine Reise. Buchungsmails aus der Zeit vor dem Jahr, dessen [Verlauf](history.md) deine Machine aufbewahrt, werden im Hintergrund eingelesen, sobald dieser Verlauf verfügbar ist. Dabei werden zuerst deine persönlichen Postfächer berücksichtigt. Wird eine ältere Bestätigung später eingelesen, wird sie der bereits vorhandenen Reise hinzugefügt.
 
-Wird eine Buchung geändert, wird ihre Zeile aktualisiert. Eine stornierte Buchung wird entfernt. Wenn alle Buchungen einer Reise storniert werden, wird auch die Reise entfernt.
+Wird eine Buchung geändert, wird ihre Zeile aktualisiert. Wird sie storniert, verschwindet sie. Wenn alle Buchungen einer Reise storniert wurden, verschwindet auch die Reise.
 
 ## Termine
 
-Wenn Tickets für ein Konzert, ein Spiel, ein Festival oder eine Konferenz in deinem Postfach eingehen, erstellt deine Machine unter **Termine** einen Eintrag für die Veranstaltung. In einer Zeile stehen der Veranstaltungsort, der Buchungscode, der Sitzplatz und die Anzahl der Tickets. Eine weitere Bestellung für dieselbe Veranstaltung kommt auf dieselbe Seite. Wie bei einer Reise werden die Termine angezeigt. Im [Kalender](calendar.md) erscheint die Veranstaltung als Balken, über den du die Seite öffnen kannst.
+Wenn Tickets für ein Konzert, ein Spiel, ein Festival oder eine Konferenz in deinem Posteingang landen, fügt deine Machine das Ereignis unter **Termine** hinzu. Für jedes Ereignis gibt es eine eigene Notiz. Eine Zeile enthält den Veranstaltungsort, den Buchungscode, den Sitzplatz und die Anzahl der Tickets. Eine zweite Bestellung für dasselbe Ereignis kommt in dieselbe Notiz. Wie bei einer Reise werden auch hier die Daten angezeigt. Im [Kalender](calendar.md) erscheint das Ereignis als Balken. Tippe darauf, um die Notiz zu öffnen.
 
-- In jeder Zeile steht, von wem die Tickets stammen, zum Beispiel **Von Example Tickets**. Tippe darauf, um die Mail zu öffnen.
-- Wenn aus der Ticketmail eine Aufgabe entstanden ist, zum Beispiel die Tickets zu bezahlen, findest du sie über **Aufgabe öffnen**.
-- Eine Veranstaltung, die über dein Arbeits-Postfach gebucht wurde, ist Arbeit. Alle anderen sind privat.
+- Bei jeder Zeile steht, von wem die Tickets stammen, zum Beispiel **Von Example Tickets**. Tippe darauf, um die Mail zu öffnen.
+- Wenn aus der Ticketmail eine Aufgabe entstanden ist, zum Beispiel das Bezahlen der Tickets, wird sie über **Aufgabe öffnen** angezeigt.
+- Ein Ereignis, das über dein Arbeits-Postfach gebucht wurde, ist Arbeit. Andernfalls ist es Privat.
 
-Deine Machine liest die Ticketdetails aus den Bestätigungsmails der Ticketanbieter, ohne KI. Eine Mail ohne diese Angaben löst keine Veranstaltung aus. Eine stornierte Buchung wird entfernt. Wenn alle Tickets für eine Veranstaltung storniert werden, wird auch die Veranstaltung entfernt.
+Deine Machine liest die Ticketdetails ohne KI aus den Bestätigungsmails der Ticketanbieter. Eine Mail ohne diese Angaben erstellt kein Ereignis. Wird eine Buchung storniert, verschwindet sie. Wenn alle Tickets für ein Ereignis storniert wurden, verschwindet auch das Ereignis.
 
 ## Zuhause
 
-Unter **Zuhause** speichert deine Machine, was sie über dein Zuhause weiß: **Rechnungen und Abos**, **Geräte**, **Reparaturen und Instandhaltung** und **Das Haus**. Ein Bereich wird angezeigt, sobald er mindestens zwei Zeilen enthält.
+Unter **Zuhause** hält deine Machine fest, was sie über dein Zuhause weiß: **Rechnungen und Abos**, **Geräte**, **Reparaturen und Instandhaltung** und **Das Haus**. Ein Bereich erscheint, sobald er mindestens zwei Zeilen enthält.
 
-- Für regelmäßig anfallende Rechnungen, etwa für Strom oder Wasser, wird eine Zeile mit der Häufigkeit und dem Datum der letzten Rechnung erstellt. Über **Aufgabe öffnen** gelangst du zur Rechnung selbst. Betrag und Zahlungsdetails stehen dort.
-- Für ein Abo, das du behalten hast, wird eine Zeile erstellt, über die du die zugehörige Aufgabe unter **Abos** öffnest. Gekündigte Abos werden nicht aufgeführt.
-- Wer regelmäßig über dein Zuhause schreibt, etwa dein Energieversorger, Internetanbieter oder die Stadt, erhält eine Zeile mit der Häufigkeit der Nachrichten. Tippe darauf, um die neueste E-Mail zu öffnen.
-- Auch Erkenntnisse deiner Machine über dein Zuhause, etwa die Marke deiner Spülmaschine, werden als Zeile aufgeführt. Wenn du sie bearbeitest, ändert sie sich auch unter **Was ich gelernt habe**.
-- Wenn du in einem Bereich eine eigene Notiz führst, zum Beispiel eine für deine Spülmaschine unter **Geräte**, werden die dazugehörigen Informationen dort abgelegt. Deine Machine erstellt solche Notizen nicht selbst.
+- Regelmäßig anfallende Rechnungen, zum Beispiel für Strom oder Wasser, erhalten eine Zeile mit der Häufigkeit und dem Datum der letzten Rechnung. Über **Aufgabe öffnen** wird die Rechnung selbst angezeigt. Betrag und Zahlungsdetails stehen dort.
+- Ein Abo, das du behalten hast, erhält eine Zeile, über die du die Aufgabe **Abos** öffnest. Gekündigte Abos werden nicht aufgeführt.
+- Wer regelmäßig wegen deines Zuhauses schreibt, zum Beispiel dein Energieversorger, Internetanbieter oder die Gemeinde, erhält eine Zeile mit der Häufigkeit. Tippe darauf, um die neueste E-Mail zu öffnen.
+- Auch Erkenntnisse deiner Machine über dein Zuhause, zum Beispiel die Marke deiner Spülmaschine, erscheinen als Zeile. Wenn du sie bearbeitest, ändert sie sich auch unter **Was ich gelernt habe**.
+- Wenn du in einem Bereich eine eigene Notiz führst, zum Beispiel für deine Spülmaschine unter **Geräte**, landet alles zu diesem Gerät in deiner Notiz. Deine Machine erstellt solche Notizen nicht selbst.
 
-Es werden nur private Rechnungen, Abos und E-Mails verwendet. Notizen unter Zuhause sind immer privat. Deine Machine fragt ihre KI einmal zu jeder neuen Rechnung, jedem neuen Abo und jeder neuen Erkenntnis, ob sie dein Zuhause betreffen. Bei einer Rechnung übermittelt sie den Absender, aber niemals den Betrag.
+Es werden nur persönliche Rechnungen, Abos und E-Mails verwendet. Notizen unter Zuhause sind immer persönlich. Deine Machine fragt ihre KI einmal zu jeder neuen Rechnung, jedem neuen Abo und jeder neuen Erkenntnis, ob sie dein Zuhause betreffen. Bei einer Rechnung übermittelt sie, von wem sie stammt, aber niemals den Betrag.
 
-Für **Zuhause**, **Gesundheit** und **Kinder** zusammen fragt deine Machine ihre KI außerdem einmal zu jedem Absender deiner privaten E-Mails. Dabei übermittelt sie den Namen des Absenders, die Anzahl der gesendeten E-Mails und deren neueste Betreffzeilen, wobei Zahlen unkenntlich gemacht werden. Die E-Mails selbst werden niemals übermittelt.
+Für **Zuhause**, **Gesundheit** und **Kinder** fragt deine Machine ihre KI außerdem einmal zu jedem Absender deiner persönlichen E-Mails. Sie übermittelt den Namen des Absenders, die Anzahl der E-Mails und die Betreffzeilen der neuesten E-Mails, wobei Zahlen ausgeblendet werden. Die E-Mails selbst werden niemals übermittelt. Eine E-Mail, die zweimal oder in zwei deiner Postfächer eingegangen ist, wird nur einmal gezählt. Dasselbe gilt für eine Antwort mit demselben Betreff im selben Thread.
 
-Beim ersten Mal durchsucht deine Machine innerhalb weniger Stunden das vergangene E-Mail-Jahr, nicht während der Nacht und nur, wenn in deinem KI-Tarif noch Kapazität verfügbar ist. Danach prüft sie alle sechs Stunden neue Absender.
+Massenmails landen nie in diesen Notizen und werden nie an die KI gesendet. Dazu gehören Spam, Werbemails, Newsletter und andere Listenmails sowie Benachrichtigungen von No-Reply-Adressen. Mails in einem Thread, auf den du geantwortet hast, werden trotzdem berücksichtigt. Das gilt auch für Buchungsmails zu **Reisen** und **Terminen**.
+
+Beim ersten Mal verarbeitet deine Machine die E-Mails aus dem vergangenen Jahr innerhalb weniger Stunden, außerhalb der Nacht und nur, solange in deinem KI-Tarif noch Kapazität ist. Danach prüft sie alle sechs Stunden neue Absender.
 
 ## Gesundheit
 
-Unter **Gesundheit** speichert deine Machine, was sie über deine Gesundheit weiß: **Termine**, **Testergebnisse**, **Ärzte und Pflege**, **Medikamente**, **Allergien und Erkrankungen** sowie **Rechnungen und Versicherung**. Ein Bereich wird angezeigt, sobald er mindestens zwei Zeilen enthält.
+Unter **Gesundheit** hält deine Machine fest, was sie über deine Gesundheit weiß: **Termine**, **Testergebnisse**, **Ärzte und Pflege**, **Medikamente**, **Allergien und Erkrankungen** sowie **Rechnungen und Versicherung**. Ein Bereich erscheint, sobald er mindestens zwei Zeilen enthält.
 
-- Eine Rechnung von einem Arzt, Zahnarzt oder einer Apotheke wird als Zeile hinzugefügt, über die du die zugehörige Aufgabe öffnest. Der Betrag steht dort.
-- Jede E-Mail von deiner Arztpraxis, einem Krankenhaus, einem Labor oder deiner Krankenversicherung erscheint als datierte Zeile mit ihrem Betreff. So entsteht nach und nach deine Übersicht. Tippe darauf, um die E-Mail zu öffnen.
-- Auch Erkenntnisse deiner Machine über deine Gesundheit, etwa eine Allergie, werden als Zeile aufgeführt. Wenn du sie bearbeitest, ändert sie sich auch unter **Was ich gelernt habe**.
-- Wenn du in einem Bereich eine eigene Notiz führst, zum Beispiel eine für deine Physiotherapeutin oder deinen Physiotherapeuten unter **Termine**, werden die dazugehörigen Informationen dort abgelegt.
+- Eine Rechnung von einer Arztpraxis, Zahnarztpraxis oder Apotheke erhält eine Zeile, über die du die zugehörige Aufgabe öffnest. Der Betrag steht dort.
+- Jede E-Mail von deiner Praxis, einem Krankenhaus, einem Labor oder deiner Krankenversicherung wird als datierte Zeile mit Betreff angezeigt. So baut sich mit der Zeit dein Verlauf auf. Tippe darauf, um die E-Mail zu öffnen.
+- Auch Erkenntnisse deiner Machine über deine Gesundheit, zum Beispiel eine Allergie, erscheinen als Zeile. Wenn du sie bearbeitest, ändert sie sich auch unter **Was ich gelernt habe**.
+- In deiner eigenen Notiz in einem Bereich, zum Beispiel für deine Physiotherapie-Termine unter **Termine**, landet alles, was diese betrifft.
 
-Notizen unter Gesundheit sind immer privat, auch wenn eine Rechnung an deine geschäftliche Adresse ging. Deine Machine fragt ihre KI einmal zu jeder neuen Rechnung und jeder neuen Erkenntnis, ob sie deine Gesundheit betrifft.
+Notizen unter Gesundheit sind immer persönlich, auch wenn eine Rechnung an deine Arbeitsadresse geschickt wurde. Deine Machine fragt ihre KI einmal zu jeder neuen Rechnung und jeder neuen Erkenntnis, ob sie deine Gesundheit betrifft.
 
 ## Kinder
 
-Unter **Kinder** speichert deine Machine, was sie über deine Kinder weiß: **Schule**, **Aktivitäten**, **Kinderbetreuung**, **Ärzte und Pflege** sowie **Rechnungen und Gebühren**. Ein Babysitter oder eine Kita gehört zu Kinderbetreuung, niemals zu Ärzte und Pflege. Ein Bereich wird angezeigt, sobald er mindestens zwei Zeilen enthält.
+Unter **Kinder** hält deine Machine fest, was sie über deine Kinder weiß: **Schule**, **Aktivitäten**, **Kinderbetreuung**, **Ärzte und Pflege** sowie **Rechnungen und Gebühren**. Ein Babysitter oder eine Kita gehört zu Kinderbetreuung, niemals zu Ärzte und Pflege. Ein Bereich erscheint, sobald er mindestens zwei Zeilen enthält.
 
-- Erkenntnisse deiner Machine über dein Kind, etwa den Namen der Klassenlehrkraft oder den Schwimmtag, erscheinen als Zeile mit einem Link zur Seite des Kindes. Als dein Kind gilt eine Person, wenn unter **Für dich** etwa Tochter oder Sohn steht.
-- Eine Rechnung für die Schule, einen Verein oder die Kinderbetreuung wird als Zeile hinzugefügt, über die du die zugehörige Aufgabe öffnest. Der Betrag steht dort.
-- Jede E-Mail von der Schule, einem Verein oder der Kinderbetreuung, etwa der wöchentliche Rundbrief oder eine Nachricht zu einem Ausflug, erscheint als datierte Zeile mit ihrem Betreff. So findest du alle Nachrichten an einem Ort. Tippe darauf, um die E-Mail zu öffnen.
-- Wenn du in einem Bereich eine eigene Notiz für ein Kind führst, zum Beispiel eine für Isla unter **Schule**, werden die dazugehörigen Informationen dort abgelegt.
+- Erkenntnisse deiner Machine über dein Kind, zum Beispiel den Namen der Klassenlehrerin oder den Schwimmtag, erscheinen als Zeile, die mit der Seite des Kindes verknüpft ist. Als dein Kind gilt eine Person, wenn bei ihr unter **Für dich** eine entsprechende Beziehung steht, zum Beispiel Tochter oder Sohn.
+- Eine Rechnung für die Schule, einen Verein oder die Kinderbetreuung erhält eine Zeile, über die du die zugehörige Aufgabe öffnest. Der Betrag steht dort.
+- Jede E-Mail von der Schule, einem Verein oder der Kinderbetreuung, zum Beispiel eine Nachricht zu einem Ausflug oder einer Planänderung, wird als datierte Zeile mit Betreff angezeigt. So findest du alles, was sie schicken, an einem Ort. Tippe darauf, um die E-Mail zu öffnen.
+- In deiner eigenen Notiz für ein Kind in einem Bereich, zum Beispiel für Isla unter **Schule**, landet alles, was dieses Kind betrifft.
 
-Notizen unter Kinder sind immer privat, auch wenn die Schule an deine geschäftliche Adresse schreibt. Deine Machine fragt ihre KI einmal zu jeder neuen Information, ob sie deine Kinder betrifft.
+Notizen unter Kinder sind immer persönlich, auch wenn die Schule an deine Arbeitsadresse schreibt. Deine Machine fragt ihre KI einmal zu jeder neuen Erkenntnis, ob sie deine Kinder betrifft.
 
 ## Zusammenführen, löschen und rückgängig machen
 
-Mit **Zusammenführen mit …** im Menü ⋯ verschiebst du die Zeilen einer Notiz und ihre untergeordneten Notizen in eine andere Notiz. Von da an fügt deine Machine neue Informationen zu dieser Notiz hinzu. Mit **Löschen** entfernst du eine Notiz. Bei beiden Aktionen wird kurz **Rückgängig** angezeigt. Das gilt auch, wenn du eine Zeile entfernst.
+Mit **Zusammenführen mit …** im Menü ⋯ verschiebst du die Zeilen einer Notiz und die darunterliegenden Notizen in eine andere Notiz. Neue Informationen fügt deine Machine von da an dieser Notiz hinzu. **Löschen** entfernt eine Notiz. Bei beiden Aktionen kannst du kurz **Rückgängig** wählen. Das gilt auch, wenn du eine Zeile entfernst.
 
 ## Nicht dasselbe wie Besprechungsnotizen
 
