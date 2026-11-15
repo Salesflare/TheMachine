@@ -13,9 +13,10 @@ Your days from today on, with:
 - meetings from the calendars you connected,
 - to-dos due that day, and snoozed to-dos on the day they come back,
 - check-ins on work you handed off,
-- promises with a date.
+- promises with a date,
+- [notes](notes.md) with dates, like a trip.
 
-A meeting on two calendars shows once. A calendar someone shared with you shows their events muted, with their first name; those never make a to-do. All-day and multi-day events show as all day, on each day they cover.
+A meeting on two calendars shows once. A calendar someone shared with you shows their events muted, with their first name; those never make a to-do. All-day and multi-day events show as all day, on each day they cover. A trip is first on each of its days in Agenda, and one band across its days in Week and Month, like "Lisbon trip".
 
 A plan made together is one promise, marked "With" and their name. A promise about a meeting that day with the same person sits on that meeting's row.
 
@@ -33,7 +34,7 @@ In the week grid, events at the same time sit side by side while each stays read
 
 ## Open something
 
-Click a row to open its to-do's chat, the promise, or the meeting. A meeting you can't change here, like someone else's or one with guests, shows its details: when, where and who. Someone your Graph knows, and the organizations and projects the meeting is on, are links to their page. **Open in Google Calendar** (or **Open in Outlook**) under them opens it there. Looking changes nothing.
+Click a row to open its to-do's chat, the promise, the note, or the meeting. A meeting you can't change here, like someone else's or one with guests, shows its details: when, where and who. Someone your Graph knows, and the organizations and projects the meeting is on, are links to their page. **Open in Google Calendar** (or **Open in Outlook**) under them opens it there. Looking changes nothing.
 
 A meeting room booked on a meeting shows under where, never as a person or in your Graph.
 

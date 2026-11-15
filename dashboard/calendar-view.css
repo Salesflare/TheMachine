@@ -29,7 +29,7 @@ a.cal-item:hover{background:var(--c-hover)}a.cal-item:hover+.cal-item::before,a.
 .cal-owner{display:inline-block;margin-right:2px;padding:0 6px;border-radius:999px;background:var(--c-sunken);box-shadow:inset 0 0 0 1px var(--c-line);color:var(--c-text-3);font-size:var(--fs-xs);font-weight:600;line-height:1.6;vertical-align:1px}
 .cal-said{color:var(--c-text-2)}.cal-said::before{content:'';display:inline-block;width:6px;height:6px;margin:0 6px 1px 0;border-radius:50%;background:var(--mint);vertical-align:middle}
 /*@eager*/
-.k-due{--tone:var(--amber)}.k-late{--tone:var(--orange)}.k-back{--tone:var(--lavender)}.k-promise{--tone:var(--mint)}
+.k-note{--tone:var(--lavender)}.k-due{--tone:var(--amber)}.k-late{--tone:var(--orange)}.k-back{--tone:var(--lavender)}.k-promise{--tone:var(--mint)}
 /*@lazy*/
 .cal-item.past .cal-time,.cal-item.past .cal-main,.cal-chip.past{opacity:.55}
 /*@eager*/
@@ -137,6 +137,14 @@ body:has(#calendar:not([hidden])) #page-head{position:sticky;top:0;z-index:30;ma
 @media(hover:hover){a.cal-chip:hover,a.cal-blk:hover{background:color-mix(in srgb,var(--text) 8%,var(--c-sunken))}}
 .cal-chip .t{color:var(--c-text-3);font-variant-numeric:tabular-nums;margin-right:4px}
 /* one line; the title ends in … inside the chip */
+/* A dated note (a trip): one band across its days. Each day's piece reaches over the cell's padding and line to the
+   next, so the pieces join; only its first day and a row's first day carry the name and a rounded start */
+.cal-band{--bl:4px;--br:3px;margin:0 calc(-1*var(--br)) 0 calc(-1*var(--bl));border-radius:0;box-shadow:none;background:color-mix(in srgb,var(--tone) 38%,var(--c-sunken))}
+.cal-mday .cal-band{--bl:5px;--br:4px}
+.cal-band.b-head{margin-left:0;border-top-left-radius:var(--r-xs);border-bottom-left-radius:var(--r-xs);box-shadow:inset 3px 0 0 var(--tone)}
+.cal-band.b-tail{margin-right:0;border-top-right-radius:var(--r-xs);border-bottom-right-radius:var(--r-xs)}
+.cal-band .n:empty::before{content:"\00a0"}
+@media(hover:hover){a.cal-band:hover{background:color-mix(in srgb,var(--tone) 55%,var(--c-sunken))}}
 .cal-chip{display:flex;overflow:hidden;white-space:nowrap}.cal-chip .t{flex:none}.cal-chip .n{min-width:0;overflow:hidden;text-overflow:ellipsis}
 /* Week: the time grid */
 .cal-tg{--gut:48px;border:1px solid var(--c-line);border-radius:var(--r-lg);background:var(--c-surface);overflow:hidden}

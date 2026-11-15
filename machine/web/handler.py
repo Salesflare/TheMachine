@@ -574,6 +574,7 @@ def make_handler(app):
                                                                  args.get('from', [''])[0], args.get('to', [''])[0], owner,
                                                                  {c['id'] for c in writable},
                                                                  {a['id']: n for a in app.config['accounts'] if (n := calendar_account_owner(a))}),
+                                  'notes': app.calendar_notes(args.get('from', [''])[0], args.get('to', [''])[0]),  # trips as bands
                                   'calendars': writable, 'starts': app.calendar_starts(),  # where its meetings begin: the line at the edge
                                   **({'checking': True} if calendar_writes.checking() else {})})  # ask again for the Edit buttons
             except (ValueError, sqlite3.OperationalError):

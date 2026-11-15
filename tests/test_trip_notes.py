@@ -14,6 +14,7 @@ spec = importlib.util.spec_from_file_location('trip_notes_assistant', Path(__fil
 a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
 import bookings  # noqa: E402
 import note_pages  # noqa: E402
+import note_pages_app  # noqa: E402
 import trip_notes  # noqa: E402
 
 MAIL = {'id': 'home', 'service': 'gmail', 'email': 'owner@example.com', 'area': 'personal'}
@@ -119,6 +120,17 @@ class TripNotes(unittest.TestCase):
         self.assertTrue(all(x['event_id'] for x in lisbon['lines']))
         self.assertEqual([p['name'] for p in lisbon['path']], ['Trips'])
         self.assertEqual(trips[1]['lines'][0]['text'], 'Train 9114 Brussels-Midi to London St Pancras, booking TR8812, seat 5 61, ticket 0042')
+
+    def test_a_trip_is_a_band_in_the_calendar_windows_it_touches(self):
+        self.mail(OUT, BACK)
+        self.sync()
+        app = type('App', (note_pages_app.NotesApp,), {})()
+        app.store = self.store
+        week = app.calendar_notes('2026-11-30T00:00:00+01:00', '2026-12-07T00:00:00+01:00')
+        self.assertEqual(week, [{'id': week[0]['id'], 'kind': 'trip', 'name': 'Lisbon', 'starts': '2026-12-02', 'ends': '2026-12-05'}])
+        self.assertTrue(week[0]['id'].startswith('note:'))
+        self.assertEqual(app.calendar_notes('2026-12-14T00:00:00+01:00', '2026-12-21T00:00:00+01:00'), [])
+        self.assertEqual(app.calendar_notes('', ''), [])
 
     def test_a_return_home_days_later_joins_the_way_out(self):
         self.mail(flight('11', 'AB1', 'Brussels', 'Porto', '2026-12-10T07:00:00', '2026-12-10T08:30:00'))
