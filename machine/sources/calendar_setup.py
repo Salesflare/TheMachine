@@ -12,6 +12,7 @@ import caldav_calendar
 from caldav_calendar import CalendarError
 import ews_calendar
 import ics_feed
+from machine import services
 from machine.sources.imap_setup import given
 
 SERVICES = ('icloud_calendar', 'caldav', 'proton_calendar', 'ics', 'exchange')
@@ -19,8 +20,7 @@ CALDAV, ICS = ('icloud_calendar', 'caldav'), ('proton_calendar', 'ics')
 TRANSPORTS = {'icloud_calendar': 'caldav', 'caldav': 'caldav', 'proton_calendar': 'ics', 'ics': 'ics', 'exchange': 'ews'}
 ACCOUNTS = {s: {'id': 'work-' + s.replace('_', '-'), 'service': s, 'transport': TRANSPORTS[s], 'calendar_id': 'primary',
                 'boundary': 'work:Acme', 'exclude': []} for s in SERVICES}
-LABELS = {'icloud_calendar': 'iCloud Calendar', 'caldav': 'Other calendar', 'proton_calendar': 'Proton Calendar',
-          'ics': 'Calendar link (ICS)', 'exchange': 'Exchange Server'}
+LABELS = {s: services.SERVICES[s]['label'] for s in SERVICES}  # their names in + Add (machine/services.py)
 WHAT = {'icloud_calendar': 'Your iCloud meetings, so you go in prepared. Read-only.',
         'caldav': 'Meetings from a CalDAV calendar: Fastmail, Nextcloud, Zoho. Read-only.',
         'proton_calendar': 'Your Proton Calendar, through its share link. Read-only.',

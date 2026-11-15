@@ -146,6 +146,7 @@ MACHINE_LAYERS = {
     'night_pause': 0,  # when the reviews of new signals pause for the night (a leaf)
     'omarchy': 0,      # the Omarchy desktop theme's colors, read only (a leaf)
     'owner_error': 0,  # OwnerError: a message for the owner, not a bug (a leaf)
+    'services': 0,     # every service a connection reads, with what the code knows of each (a leaf)
     'stamps': 0,       # change counters per table, so a request's answer is kept until its tables change
     'system_logs': 0,  # the computer's own logs: journald and crash dumps, read only
     'text': 0,         # message parsing

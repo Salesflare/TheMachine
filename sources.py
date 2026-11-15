@@ -1,5 +1,5 @@
 """Reading the owner's sources: plain functions any module may import (nothing of the app's own beyond the Google and
-Microsoft clients).
+Microsoft clients, and machine/services.py, a leaf).
 
 SourceError and how a failure is judged (rate_limited, upstream_busy, transient); the credentials in config.json's
 `credentials` (or systemd's CREDENTIALS_DIRECTORY); gog_read, the one read of a Google or Outlook mailbox or calendar;
@@ -23,6 +23,7 @@ import ics_feed
 import imap_mail
 import ms_graph
 import smtp_mail
+from machine import services
 
 # The service's "busy, try again" statuses (5xx it recovers from by itself, 429): one quick retry, then the normal wait
 UPSTREAM_BUSY = {429, 500, 502, 503, 504}
@@ -134,14 +135,14 @@ def gog_read(config, account, api, version, method, params, scope):
 
 # Outlook mail and calendar: they flow through the same sync, cards and sends as Gmail and Google Calendar, and their
 # messages are stored with the same 'gmail.message' kind (it means "an email" everywhere in the app).
-MICROSOFT_SERVICES = ('outlook', 'outlook_calendar')
+MICROSOFT_SERVICES = services.of(signin='microsoft')
 # Any other mailbox over IMAP ('imap', imap_mail.py) flows through the same sync the same way, and sends through its own
 # SMTP server (smtp_mail.py).
-MAIL_SERVICES = ('gmail', 'outlook', 'imap')
+MAIL_SERVICES = services.of(group=services.MAIL)
 # Calendars beyond Google and Outlook, read only: iCloud and any other CalDAV server (caldav_calendar.py), Proton
 # Calendar and any calendar link (ics_feed.py), Exchange Server (ews_calendar.py). They answer Google's calendar reads.
 OTHER_CALENDARS = ('icloud_calendar', 'caldav', 'proton_calendar', 'ics', 'exchange')
-CALENDAR_SERVICES = ('calendar', 'outlook_calendar', *OTHER_CALENDARS)
+CALENDAR_SERVICES = services.of(group=services.CALENDAR)  # Google, Outlook and OTHER_CALENDARS
 OTHER_CALENDAR_READERS = {'caldav': caldav_calendar, 'ics': ics_feed, 'ews': ews_calendar}
 
 

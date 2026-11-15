@@ -34,6 +34,7 @@ import message_seal
 import portable
 import service
 import signal_setup, wacli_release  # noqa: E401 - Signal's setup steps (signal_setup.py)
+from machine import services as service_registry
 from machine.sources import calendar_setup, groups, imap_setup, teams_setup
 from machine.dashboard_link import dashboard_address
 
@@ -46,8 +47,8 @@ CONNECTORS = {'gmail': 'work-gmail', 'calendar': 'work-calendar', 'slack': 'work
 SERVICES = {'gmail': 'gmail', 'calendar': 'calendar', 'outlook': 'outlook', 'outlook_calendar': 'outlook_calendar', 'imap': 'imap',
             'outlook-calendar': 'outlook_calendar', 'slack': 'slack', 'crm': 'salesflare', 'salesflare': 'salesflare',
             'android': 'android', 'whatsapp': 'whatsapp', 'telegram': 'telegram', 'telegram-chats': 'telegram', 'signal': 'signal', 'gateway': 'gateway', 'icloud_calendar': 'icloud_calendar', 'caldav': 'caldav', 'proton_calendar': 'proton_calendar', 'ics': 'ics', 'exchange': 'exchange'}
-LABELS = {'gmail': 'Gmail', 'calendar': 'Google Calendar', 'outlook': 'Outlook', 'outlook_calendar': 'Outlook Calendar', 'imap': 'Other email', 'slack': 'Slack', 'salesflare': 'Salesflare CRM',
-          'android': 'Android notifications', 'whatsapp': 'WhatsApp', 'telegram': 'Telegram chats', 'signal': 'Signal chats', 'gateway': 'Machine health', **calendar_setup.LABELS}
+# The built-in sources' names in + Add (each one's `label` in machine/services.py); a connector's is its SETUP['label']
+LABELS = service_registry.field('label')
 # What each built-in source brings in, in one short line (a connector's own is SETUP['what']). The dashboard's Add tab
 # and a hosted control plane's setup page show it under the name.
 WHAT = {'gmail': 'Your email, what comes in and what you send.', 'calendar': 'Your meetings, so you go in prepared and follow up.',

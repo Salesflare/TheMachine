@@ -43,6 +43,12 @@ def sync(store, config, account, helpers):
 
 Each kind also gets a row in [`machine/kinds.py`](../machine/kinds.py) (see [The kind registry](#the-kind-registry)).
 
+The service itself gets a row in [`machine/services.py`](../machine/services.py): its `name` on screen ("Web page"),
+its + Add `group` when `SETUP` doesn't say it, the control plane `signin` that connects it, if any, and the `transports`
+that mean it. Start from `**_NO`, as the other rows do. Code asks this table (`services.of(group=services.MAIL)`,
+`services.field('name')`) instead of keeping a map of services of its own; [`tests/test_services.py`](../tests/test_services.py)
+checks each row.
+
 The service calls `sync` every `poll_seconds` (default 300) in the account's own thread. `helpers` has:
 
 | Helper | Use |
@@ -125,7 +131,7 @@ When an item changes, send it again with the same `source_id`: the service store
 
 | Field | Meaning |
 |---|---|
-| `service` | The service that reads it: your connector's file name, a key of `SERVICES` in `machine/names.py`. |
+| `service` | The service that reads it: your connector's file name, a key of `SERVICES` in `machine/services.py`. |
 | `name` | What a to-do's source line calls it ("Slack"): your `KINDS` label. `None` when nothing names it. |
 | `via` | The Graph's word for where someone was in touch ("last talked via GitHub"), or `None`. |
 | `view` | `email`, `chat`, `notification` or `card`: the same as in `VIEWS`. |
@@ -213,6 +219,7 @@ python3 scripts/test.py test_connector_<service>.py test_connectors.py test_new_
 - [ ] OAuth through The Machine's existing sign-ins when the service has it, with the narrowest scopes; a key only with `no_oauth` saying why.
 - [ ] Read-only credential for exactly this account, with the least access that works.
 - [ ] Stable `source_id`; `kind` listed in `KINDS`, its view in `VIEWS`, its app in `APP`, and a made-up message of it in `tests/test_message_view.py`.
+- [ ] The service has its row in `machine/services.py` (`test_services.py`).
 - [ ] Each kind has its row in `machine/kinds.py`, and no new hand-written list of kinds (`test_kinds.py`).
 - [ ] Message text only in `title`, `body` and metadata, never in ids, lookup keys or the cursor.
 - [ ] Events and cursor committed together; replays don't duplicate.

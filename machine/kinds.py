@@ -4,7 +4,7 @@ send, with what the code knows about each. A leaf: data only, it imports nothing
 spelling kinds out in a tuple of its own (tests/test_architecture.py counts the lists that still do).
 
 An event kind's row:
-- service: the service that reads it (machine/names.SERVICES), None for The Machine's own (a Fleet hand-off, a
+- service: the service that reads it (machine/services.py), None for The Machine's own (a Fleet hand-off, a
   note the owner wrote, notes added to a meeting)
 - name: what a to-do's source line calls it ("signal from Slack"), None for a kind it never names
   (machine/store/cards.source_label)
