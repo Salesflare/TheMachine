@@ -7,7 +7,7 @@
 .note-tree .note-item+.note-item::before{content:"";position:absolute;top:0;right:0;left:calc(44px + var(--note-in,0px));height:1px;background:var(--border)}  /* the line between rows starts where the row does */
 .note-item[data-depth="1"]{--note-in:24px}.note-item[data-depth="2"]{--note-in:48px}.note-item[data-depth="3"],.note-item[data-depth="4"],.note-item[data-depth="5"],.note-item[data-depth="6"]{--note-in:72px}
 @media(hover:hover) and (pointer:fine){.note-tree .note-item:hover{background-color:var(--c-hover)}}
-.note-tree article.kb-on,.note-tree article.kb-on:focus{outline-offset:-2px;border-radius:var(--r-lg)}  /* inside the card, which clips */
+.note-tree article.kb-on,.note-tree article.kb-on:focus{outline-offset:-2px}  /* inside the card, which clips; a row stays square */
 .note-tree .note-item>.graph-row{flex:1;min-width:0;flex-wrap:wrap}.note-item .graph-row>.node{flex-shrink:0;max-width:100%}
 .note-item .graph-row>small{color:var(--muted);font-size:var(--fs-sm)}
 .note-fold{flex:0 0 28px;width:28px;height:28px;min-height:0;padding:0;border:0;background:none;box-shadow:none;display:grid;place-items:center;color:var(--muted);border-radius:8px}

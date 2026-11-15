@@ -27,6 +27,8 @@ try{
   await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
   page.on('pageerror',e=>errors.push(width+': '+e.message));await page.goto(base+'#graph=notes');
   await page.locator('.note-tree .note-item').nth(1).waitFor();
+  // The keyboard cursor on the first row keeps it a row too
+  await page.evaluate(()=>document.querySelector('.note-tree .note-item').classList.add('kb-on'));
   // One card: the rows have no card of their own
   const look=await page.evaluate(()=>{const tree=document.querySelector('.note-tree'),s=getComputedStyle(tree),rows=[...tree.querySelectorAll('.note-item')];
    return {card:s.borderTopWidth!=='0px'&&s.backgroundColor!=='rgba(0, 0, 0, 0)',rowCards:rows.filter(r=>{const c=getComputedStyle(r);return c.borderTopLeftRadius!=='0px'||c.boxShadow!=='none'}).length,
