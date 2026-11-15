@@ -2,10 +2,10 @@
 title: No hay tareas nuevas
 area: troubleshooting
 summary: Las revisiones están desactivadas, en espera o detenidas por el límite de uso de tu modelo. Cómo saber qué ocurre y qué hacer.
-covers: 
+covers:
 code: dashboard.html, assistant.py
 order: 3
-translated: d265e540d9ecef0e
+translated: c3456770809873dd
 ---
 Las tareas se generan con las revisiones: tu Machine revisa lo que ha llegado en unos 15 minutos.
 

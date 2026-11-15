@@ -2,10 +2,10 @@
 title: 网站已将你登出
 area: troubleshooting
 summary: LinkedIn 或 X 将你的 Machine 登出了。重新登录一次，或保存登录信息以便下次使用。
-covers: 
+covers:
 code: browser_login.py, dashboard.html, dashboard/connections-signin.js
 order: 2
-translated: da165847c9a9d091
+translated: 96c09e57cd3dca62
 ---
 LinkedIn 和 X 等网站会在你的 Machine 自带的浏览器中打开。有时，网站会让它退出登录。
 

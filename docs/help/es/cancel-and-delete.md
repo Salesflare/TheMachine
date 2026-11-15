@@ -2,11 +2,11 @@
 title: Cancelar o eliminar
 area: account
 summary: Cancela cuando quieras. Exporta antes si quieres; tus datos se eliminan {grace_days} días después, copias de seguridad incluidas.
-covers: 
+covers:
 code: moving.py
 site: Cancel subscription, Keep my subscription, Withdraw from contract here, Wipe everything now, Delete my account
 order: 2
-translated: 44307d4109200c0b
+translated: e02f2502bf275cde
 ---
 ## Cancelar
 

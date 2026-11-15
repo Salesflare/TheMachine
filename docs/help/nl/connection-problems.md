@@ -2,10 +2,10 @@
 title: Een koppeling heeft hulp nodig
 area: troubleshooting
 summary: Een bron geeft aan dat er hulp nodig is of haalt niets meer binnen. Dit kun je proberen.
-covers: 
+covers:
 code: onboarding.py, dashboard.html, assistant.py
 order: 1
-translated: 256e9ef2fd6cae48
+translated: c07a7f214b1e4deb
 ---
 ## Status controleren
 

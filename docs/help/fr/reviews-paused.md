@@ -2,10 +2,10 @@
 title: Aucune nouvelle tâche
 area: troubleshooting
 summary: Les vérifications sont désactivées, en attente ou arrêtées parce que votre modèle a atteint sa limite d’utilisation. Voici comment le savoir et quoi faire.
-covers: 
+covers:
 code: dashboard.html, assistant.py
 order: 3
-translated: d265e540d9ecef0e
+translated: c3456770809873dd
 ---
 Les tâches viennent des vérifications : votre Machine examine ce qui est arrivé au cours des 15 dernières minutes environ.
 

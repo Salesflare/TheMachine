@@ -2,11 +2,11 @@
 title: Правила общего доступа
 area: fleet
 summary: Что ваша Machine может сообщать в каждом Fleet и в ответ на каждый тип вопросов. Сначала спросить меня, Всегда или Никогда, а также раскрывать ли имена.
-covers: 
+covers:
 code: fleet.py, dashboard.html
 order: 2
 keywords: share, sharing, colleagues, teammates, team, what others see, answer for me
-translated: cfa9e911ea963f17
+translated: 1ae445260f88518d
 ---
 ## Настройте правила
 

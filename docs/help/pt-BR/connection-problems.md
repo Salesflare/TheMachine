@@ -2,10 +2,10 @@
 title: Uma conexão precisa da sua ajuda
 area: troubleshooting
 summary: Uma fonte mostra Precisa da sua ajuda ou para de trazer informações. Veja o que fazer.
-covers: 
+covers:
 code: onboarding.py, dashboard.html, assistant.py
 order: 1
-translated: 256e9ef2fd6cae48
+translated: c07a7f214b1e4deb
 ---
 ## Confira o status
 

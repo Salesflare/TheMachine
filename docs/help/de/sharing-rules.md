@@ -2,11 +2,11 @@
 title: Freigaberegeln
 area: fleet
 summary: Lege pro Fleet und Fragetyp fest, was deine Machine beantworten darf: **Erst mich fragen**, **Immer** oder **Nie**. Bestimme auch, ob Namen genannt werden dürfen.
-covers: 
+covers:
 code: fleet.py, dashboard.html
 order: 2
 keywords: share, sharing, colleagues, teammates, team, what others see, answer for me
-translated: cfa9e911ea963f17
+translated: 1ae445260f88518d
 ---
 ## Regeln festlegen
 

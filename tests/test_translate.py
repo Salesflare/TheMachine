@@ -185,6 +185,14 @@ class Help(unittest.TestCase):
         self.assertEqual(T.help_state('nl', self.help / 'projects.md', self.help, self.history), 'stale')
         self.assertEqual(T.run_help(['nl'], check=True, folder=self.help, ask=no_model, history=self.history), 1)
 
+    def test_an_empty_front_matter_value_is_written_without_a_trailing_space(self):
+        # "covers: " broke the site's whitespace check, which copies these files byte for byte
+        (self.help / 'projects.md').write_text(ARTICLE.replace('code: graph.py', 'covers:\ncode: graph.py'), encoding='utf-8')
+        self.assertEqual(T.run_help(['nl'], folder=self.help, ask=self.answer(), history=self.history), 0)
+        text = (self.help / 'nl' / 'projects.md').read_text(encoding='utf-8')
+        self.assertIn('\ncovers:\ncode: graph.py\n', text)
+        self.assertEqual([line for line in text.split('\n---\n')[0].split('\n') if line != line.rstrip()], [])
+
     def test_an_answer_that_loses_structure_is_left_out(self):
         broken = 'Je Machine.\n\n## Een project\n\n- Een regel.'
         self.assertEqual(T.run_help(['nl'], folder=self.help, ask=self.answer(broken), history=self.history), 1)

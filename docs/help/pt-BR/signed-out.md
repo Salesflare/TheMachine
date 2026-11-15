@@ -2,10 +2,10 @@
 title: Você saiu de um site
 area: troubleshooting
 summary: LinkedIn ou X desconectou sua Machine. Entre de novo, uma vez ou para sempre.
-covers: 
+covers:
 code: browser_login.py, dashboard.html, dashboard/connections-signin.js
 order: 2
-translated: da165847c9a9d091
+translated: 96c09e57cd3dca62
 ---
 Sites como LinkedIn e X são acessados pelo navegador da sua própria Machine. Às vezes, um site desconecta sua Machine.
 

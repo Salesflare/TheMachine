@@ -2,10 +2,10 @@
 title: Новых задач нет
 area: troubleshooting
 summary: Проверки отключены, ждут или остановлены из-за лимита вашей модели. Как понять, что происходит, и что делать.
-covers: 
+covers:
 code: dashboard.html, assistant.py
 order: 3
-translated: d265e540d9ecef0e
+translated: c3456770809873dd
 ---
 Задачи появляются после проверок: The Machine просматривает новые письма и сообщения примерно за последние 15 минут.
 

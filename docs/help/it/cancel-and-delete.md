@@ -2,11 +2,11 @@
 title: Disdici o elimina
 area: account
 summary: Disdici quando vuoi. Se vuoi, esporta prima; i tuoi dati vengono eliminati {grace_days} giorni dopo, backup compresi.
-covers: 
+covers:
 code: moving.py
 site: Cancel subscription, Keep my subscription, Withdraw from contract here, Wipe everything now, Delete my account
 order: 2
-translated: 44307d4109200c0b
+translated: e02f2502bf275cde
 ---
 ## Disdici
 

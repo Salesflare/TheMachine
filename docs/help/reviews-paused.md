@@ -2,7 +2,7 @@
 title: No new to-dos
 area: troubleshooting
 summary: Checks are off, waiting, or stopped on your model's usage limit. How to tell and what to do.
-covers: 
+covers:
 code: dashboard.html, assistant.py
 order: 3
 ---

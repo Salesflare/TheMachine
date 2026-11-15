@@ -2,10 +2,10 @@
 title: 연결에 도움이 필요해요
 area: troubleshooting
 summary: 연결 항목에 도움이 필요하다고 표시되거나 데이터를 가져오지 않아요. 이렇게 해 보세요.
-covers: 
+covers:
 code: onboarding.py, dashboard.html, assistant.py
 order: 1
-translated: 256e9ef2fd6cae48
+translated: c07a7f214b1e4deb
 ---
 ## 상태 확인하기
 

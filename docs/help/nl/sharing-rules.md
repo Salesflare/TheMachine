@@ -2,11 +2,11 @@
 title: Deelregels
 area: fleet
 summary: Wat je Machine per Fleet en per soort vraag mag beantwoorden. **Vraag het me eerst**, **Altijd** of **Nooit**, en of namen worden gedeeld.
-covers: 
+covers:
 code: fleet.py, dashboard.html
 order: 2
 keywords: share, sharing, colleagues, teammates, team, what others see, answer for me
-translated: cfa9e911ea963f17
+translated: 1ae445260f88518d
 ---
 ## Stel ze in
 

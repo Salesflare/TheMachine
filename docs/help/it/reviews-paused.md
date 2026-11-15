@@ -2,10 +2,10 @@
 title: Nessuna nuova attività
 area: troubleshooting
 summary: I controlli sono disattivati, in attesa o interrotti per il limite di utilizzo del modello. Scopri come capirlo e cosa fare.
-covers: 
+covers:
 code: dashboard.html, assistant.py
 order: 3
-translated: d265e540d9ecef0e
+translated: c3456770809873dd
 ---
 Le attività arrivano dai controlli: la tua Machine controlla cosa è arrivato negli ultimi 15 minuti circa.
 

@@ -2,7 +2,7 @@
 title: Signed out of a site
 area: troubleshooting
 summary: LinkedIn or X signed your Machine out. Sign it back in, once or for good.
-covers: 
+covers:
 code: browser_login.py, dashboard.html, dashboard/connections-signin.js
 order: 2
 ---

@@ -2,11 +2,11 @@
 title: 보안 및 개인정보 보호
 area: security
 summary: 나만 쓰는 비공개 Machine, 암호화되어 저장되는 메일, 확인 없이는 전송되지 않는 내용. 핵심 내용과 관련 링크를 확인해 보세요.
-covers: 
+covers:
 code: message_seal.py, next_actions.py, SECURITY.md
 order: 1
 keywords: private, privacy, data, gdpr, encrypted, who can see, safe, stored, keep
-translated: edaba74e38b8ef79
+translated: e636b2a2fbbc714d
 ---
 ## 간단히 보기
 

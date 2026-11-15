@@ -2,7 +2,7 @@
 title: Security and privacy
 area: security
 summary: Your own private Machine, mail stored encrypted, and nothing sent without your OK. The short version, with links.
-covers: 
+covers:
 code: message_seal.py, next_actions.py, SECURITY.md
 order: 1
 keywords: private, privacy, data, gdpr, encrypted, who can see, safe, stored, keep

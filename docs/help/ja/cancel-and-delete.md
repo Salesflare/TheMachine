@@ -2,11 +2,11 @@
 title: 解約または削除
 area: account
 summary: いつでも解約できます。必要なら先にデータをエクスポートしてください。データは{grace_days}日後にバックアップも含めて削除されます。
-covers: 
+covers:
 code: moving.py
 site: Cancel subscription, Keep my subscription, Withdraw from contract here, Wipe everything now, Delete my account
 order: 2
-translated: 44307d4109200c0b
+translated: e02f2502bf275cde
 ---
 ## 解約
 

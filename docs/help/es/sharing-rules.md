@@ -2,11 +2,11 @@
 title: Reglas para compartir
 area: fleet
 summary: Qué puede responder tu Machine en cada Fleet y sobre cada tipo de pregunta. Elige Pregúntame primero, Siempre o Nunca, y decide si se incluyen nombres.
-covers: 
+covers:
 code: fleet.py, dashboard.html
 order: 2
 keywords: share, sharing, colleagues, teammates, team, what others see, answer for me
-translated: cfa9e911ea963f17
+translated: 1ae445260f88518d
 ---
 ## Configúralas
 

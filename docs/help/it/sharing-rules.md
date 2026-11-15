@@ -2,11 +2,11 @@
 title: Regole di condivisione
 area: fleet
 summary: Per Fleet e per tipo di domanda, cosa può rispondere la tua Machine. Chiedimi prima, Sempre o Mai, e se includere i nomi.
-covers: 
+covers:
 code: fleet.py, dashboard.html
 order: 2
 keywords: share, sharing, colleagues, teammates, team, what others see, answer for me
-translated: cfa9e911ea963f17
+translated: 1ae445260f88518d
 ---
 ## Impostale
 

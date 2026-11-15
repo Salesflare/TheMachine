@@ -2,10 +2,10 @@
 title: Disconnessione da un sito
 area: troubleshooting
 summary: LinkedIn o X hanno disconnesso la tua Machine. Accedi di nuovo, una volta sola o in modo permanente.
-covers: 
+covers:
 code: browser_login.py, dashboard.html, dashboard/connections-signin.js
 order: 2
-translated: da165847c9a9d091
+translated: 96c09e57cd3dca62
 ---
 I siti come LinkedIn e X vengono consultati nel browser della tua Machine. A volte un sito ti disconnette.
 

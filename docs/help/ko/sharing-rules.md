@@ -2,11 +2,11 @@
 title: 공유 규칙
 area: fleet
 summary: Fleet별, 질문 유형별로 The Machine이 답변할 수 있는 내용을 정해요. 먼저 확인 요청, 항상 또는 안 함으로 설정하고 이름을 포함할지도 정할 수 있어요.
-covers: 
+covers:
 code: fleet.py, dashboard.html
 order: 2
 keywords: share, sharing, colleagues, teammates, team, what others see, answer for me
-translated: cfa9e911ea963f17
+translated: 1ae445260f88518d
 ---
 ## 규칙 설정하기
 

@@ -2,10 +2,10 @@
 title: 새 할 일이 없어요
 area: troubleshooting
 summary: 확인 기능이 꺼져 있거나 대기 중이거나, 모델 사용량 한도에 도달해 중단된 상태예요. 상태를 확인하고 해결하는 방법을 알아보세요.
-covers: 
+covers:
 code: dashboard.html, assistant.py
 order: 3
-translated: d265e540d9ecef0e
+translated: c3456770809873dd
 ---
 할 일은 확인 기능에서 만들어져요. The Machine은 지난 15분 정도 동안 들어온 내용을 살펴봐요.
 

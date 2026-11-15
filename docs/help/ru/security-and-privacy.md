@@ -2,11 +2,11 @@
 title: Безопасность и конфиденциальность
 area: security
 summary: Ваша личная Machine, почта хранится в зашифрованном виде, и ничего не отправляется без вашего согласия. Кратко и со ссылками.
-covers: 
+covers:
 code: message_seal.py, next_actions.py, SECURITY.md
 order: 1
 keywords: private, privacy, data, gdpr, encrypted, who can see, safe, stored, keep
-translated: edaba74e38b8ef79
+translated: e636b2a2fbbc714d
 ---
 ## Кратко
 

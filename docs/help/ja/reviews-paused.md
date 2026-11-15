@@ -2,10 +2,10 @@
 title: 新しいToDoはありません
 area: troubleshooting
 summary: 確認項目がオフ、待機中、またはモデルの使用上限で停止しています。状況の見分け方と対処方法をご案内します。
-covers: 
+covers:
 code: dashboard.html, assistant.py
 order: 3
-translated: d265e540d9ecef0e
+translated: c3456770809873dd
 ---
 ToDoは確認処理から作成されます。Machineは、直近約15分以内に届いた内容を確認します。
 

@@ -2,11 +2,11 @@
 title: Отменить подписку или удалить аккаунт
 area: account
 summary: Отменить подписку можно когда угодно. Если хотите, сначала экспортируйте данные. Через {grace_days} дней они будут удалены вместе с резервными копиями.
-covers: 
+covers:
 code: moving.py
 site: Cancel subscription, Keep my subscription, Withdraw from contract here, Wipe everything now, Delete my account
 order: 2
-translated: 44307d4109200c0b
+translated: e02f2502bf275cde
 ---
 ## Отмена
 

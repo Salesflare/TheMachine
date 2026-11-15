@@ -2,10 +2,10 @@
 title: Von einer Website abgemeldet
 area: troubleshooting
 summary: LinkedIn oder X hat deine Machine abgemeldet. Melde dich wieder an, einmalig oder dauerhaft.
-covers: 
+covers:
 code: browser_login.py, dashboard.html, dashboard/connections-signin.js
 order: 2
-translated: da165847c9a9d091
+translated: 96c09e57cd3dca62
 ---
 Websites wie LinkedIn und X werden im eigenen Browser deiner Machine aufgerufen. Manchmal meldet dich eine Website ab.
 

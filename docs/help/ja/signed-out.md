@@ -2,10 +2,10 @@
 title: サイトからサインアウトされた
 area: troubleshooting
 summary: LinkedInやXによってThe Machineからサインアウトされました。再度ログインするか、次回以降のために保存できます。
-covers: 
+covers:
 code: browser_login.py, dashboard.html, dashboard/connections-signin.js
 order: 2
-translated: da165847c9a9d091
+translated: 96c09e57cd3dca62
 ---
 LinkedInやXなどのサイトは、The Machine専用のブラウザーで表示されます。サイトからサインアウトされることがあります。
 

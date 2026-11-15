@@ -29,7 +29,9 @@ It fails when:
 - a current translation (docs/help/<language>/<article>.md, shown in the dashboard's Help in that language, made
   from this English, with its headings, paragraphs, list items, link targets and code; the headings' anchors are
   the English ones, by position) doesn't match its English article: other front matter than title, summary and translated, a link to an
-  article that doesn't exist; or any translation has an em dash. Pull requests change the English only: an article
+  article that doesn't exist; or any translation has an em dash;
+- any article's front matter, English or translated, has a line ending in a space (write "covers:", not "covers: "):
+  the site copies these files byte for byte and its whitespace check refuses them. Pull requests change the English only: an article
   not translated yet, translated from older English or out of step with it, is the daily translator's
   (scripts/translate.py); Help shows the English one for an article not translated yet.
 
@@ -297,6 +299,7 @@ def check(folder=HELP):
     text, labels, cli = app_text(), label_text(), commands()
     templates = label_templates(labels)
     problems = [f'FEATURES: {f} is gone from {FEATURES[f][0]}: update or delete its article, and this entry' for f in gone]
+    problems += trailing_spaces(folder)
     covered = {}
     for name, (fields, body) in found.items():
         where = f'docs/help/{name}.md'
@@ -334,6 +337,18 @@ def check(folder=HELP):
     problems += [f'PENDING: {f} has an article now, so take it out of PENDING' for f in PENDING if f in covered]
     problems += [f'PENDING: {f} no longer exists' for f in PENDING if f not in exist]
     return problems + check_translations(found, folder)
+
+
+def trailing_spaces(folder=HELP):
+    """Front matter lines ending in a space or tab, in English and every translation ("covers: " for an empty
+    value): the site copies these files byte for byte and its whitespace check refuses them. Write "covers:"."""
+    problems = []
+    for path in sorted(folder.glob('*.md')) + sorted(folder.glob('*/*.md')):
+        m = re.match(r'---\n(.*?)\n---\n', path.read_text(encoding='utf-8'), re.S)
+        for n, line in enumerate(m[1].split('\n') if m else [], start=2):
+            if line != line.rstrip():
+                problems.append(f'docs/help/{path.relative_to(folder).as_posix()}:{n}: trailing whitespace in the front matter')
+    return problems
 
 
 def check_translations(found, folder=HELP):

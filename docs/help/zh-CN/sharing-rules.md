@@ -2,11 +2,11 @@
 title: 分享规则
 area: fleet
 summary: 按 Fleet 和问题类型设置 Machine 可以回答什么。选择先问我、始终或从不，还可以设置是否分享姓名。
-covers: 
+covers:
 code: fleet.py, dashboard.html
 order: 2
 keywords: share, sharing, colleagues, teammates, team, what others see, answer for me
-translated: cfa9e911ea963f17
+translated: 1ae445260f88518d
 ---
 ## 设置规则
 

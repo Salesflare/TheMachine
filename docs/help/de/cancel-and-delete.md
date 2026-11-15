@@ -2,11 +2,11 @@
 title: Kündigen oder löschen
 area: account
 summary: Kündige jederzeit. Exportiere vorher, wenn du willst. Deine Daten werden {grace_days} Tage später gelöscht, Backups eingeschlossen.
-covers: 
+covers:
 code: moving.py
 site: Cancel subscription, Keep my subscription, Withdraw from contract here, Wipe everything now, Delete my account
 order: 2
-translated: 44307d4109200c0b
+translated: e02f2502bf275cde
 ---
 ## Kündigen
 

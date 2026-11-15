@@ -2,10 +2,10 @@
 title: Déconnexion d’un site
 area: troubleshooting
 summary: LinkedIn ou X a déconnecté votre Machine. Reconnectez-la, une fois ou pour de bon.
-covers: 
+covers:
 code: browser_login.py, dashboard.html, dashboard/connections-signin.js
 order: 2
-translated: da165847c9a9d091
+translated: 96c09e57cd3dca62
 ---
 Les sites comme LinkedIn et X s’ouvrent dans le navigateur de votre Machine. Parfois, un site la déconnecte.
 

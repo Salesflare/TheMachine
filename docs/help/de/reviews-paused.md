@@ -2,10 +2,10 @@
 title: Keine neuen Aufgaben
 area: troubleshooting
 summary: Prüfungen sind ausgeschaltet, warten oder wurden wegen des Nutzungslimits deines Modells angehalten. So erkennst du den Grund und weißt, was zu tun ist.
-covers: 
+covers:
 code: dashboard.html, assistant.py
 order: 3
-translated: d265e540d9ecef0e
+translated: c3456770809873dd
 ---
 Aufgaben entstehen durch Prüfungen: Deine Machine schaut sich an, was in den letzten etwa 15 Minuten eingegangen ist.
 

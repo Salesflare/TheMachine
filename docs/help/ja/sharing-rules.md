@@ -2,11 +2,11 @@
 title: 共有ルール
 area: fleet
 summary: Fleetごと、質問の種類ごとに回答できる内容を設定します。「先に確認」「常に」「しない」と、名前を含めるかどうかを選べます。
-covers: 
+covers:
 code: fleet.py, dashboard.html
 order: 2
 keywords: share, sharing, colleagues, teammates, team, what others see, answer for me
-translated: cfa9e911ea963f17
+translated: 1ae445260f88518d
 ---
 ## ルールを設定する
 

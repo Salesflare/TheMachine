@@ -2,10 +2,10 @@
 title: Geen nieuwe to-do's
 area: troubleshooting
 summary: Checks staan uit, wachten of zijn gestopt vanwege de gebruikslimiet van je model. Zo herken je dat en weet je wat je kunt doen.
-covers: 
+covers:
 code: dashboard.html, assistant.py
 order: 3
-translated: d265e540d9ecef0e
+translated: c3456770809873dd
 ---
 To-do's komen voort uit checks: je Machine bekijkt wat er in ongeveer 15 minuten is binnengekomen.
 
