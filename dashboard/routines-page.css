@@ -73,3 +73,12 @@
 .rt-form-acts{flex-wrap:wrap}.rt-form-acts>button{flex:none}
 /* Templates (routine_templates.py): a name, one line, Add */
 .rt-tpl{display:flex;align-items:center;gap:var(--sp-4);padding:var(--sp-3) var(--sp-5)}.rt-tpl>div{flex:1;min-width:0}.rt-tpl h3{margin:0}.rt-tpl .rt-what{margin:2px 0 0;color:var(--c-text-2)}.rt-tpl>button{flex:none}.rt-tpl .rt-needs{margin:4px 0 0;color:var(--c-text-3);font-size:var(--fs-xs)}
+/* Second-hand finds: its setup in the template's card, and the search on each of its routines with Change search */
+.rt-setup{display:block}.rt-setup form{display:block}.rt-setup .rt-what{margin:4px 0 0}.rt-field input.rt-plain{font-family:var(--sans)}
+.rt-setup-fine{margin:8px 0 0;color:var(--c-text-3);font-size:var(--fs-xs)}
+.rt-search{display:flex;flex-direction:column;gap:4px;margin:10px 0 0;font-size:var(--fs-sm)}.rt-search-change{gap:0;margin:4px 0 0}
+.rt-search-line{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 8px;margin:0;min-width:0}.rt-search-line>span:first-child{color:var(--c-text-3)}
+.rt-search-line>:not(:first-child){overflow-wrap:anywhere;min-width:0}
+.rt-search-line a{color:var(--text);text-decoration:underline;text-decoration-color:var(--c-line-strong);text-underline-offset:3px}
+.rt-search-line button.link{min-height:0;margin:0;padding:0;border:0;background:none;box-shadow:none;color:var(--c-text-2);font:inherit;text-decoration:underline;text-decoration-color:var(--c-line-strong);text-underline-offset:3px;cursor:pointer}
+.rt-search-line button.link:hover{color:var(--text)}

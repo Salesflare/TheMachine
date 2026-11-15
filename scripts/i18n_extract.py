@@ -444,6 +444,7 @@ SERVER_TEXT = {
                            'PREPARING_GOG'],
     'machine/store/whats_new.py': ['ENTRIES'],  # What's new: each entry's title, text and button
     'routine_templates.py': ['TEMPLATES'],  # the Routines page's Templates: each one's name and what it does
+    'secondhand_app.py': ['WALL_TEXT'],  # a Second-hand finds to-do: why a site stopped its search
 }
 # Constants the dashboard also shows capitalized (cap()) as a label
 CAPITALIZED = {'fleet.py': ['KIND_LABEL'], 'family.py': ['LABELS']}

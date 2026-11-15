@@ -3,9 +3,9 @@ title: Routines
 area: cards
 summary: Work your Machine does on its own, on a rhythm, like a Monday summary of your open deals. It only reads.
 covers: tab:routines
-code: routines.py, routines_app.py, routine_recipe.py, routine_imports.py, routine_patterns.py, routine_changes.py, routine_templates.py, mail_cleanup.py, mail_cleanup_app.py, birthdays.py, birthdays_app.py, birthdays_facebook.py, birthdays_facebook_app.py, reading_digest.py, reading_digest_app.py, subscriptions.py, subscriptions_app.py, stay_in_touch.py, stay_in_touch_app.py, dashboard/routines-page.js, dashboard/todos-digest.js, dashboard/todos-cleanup.js, dashboard/todos-facebook-birthdays.js, dashboard/todos-facebook-people.js, dashboard/todos-subs.js
+code: routines.py, routines_app.py, routine_recipe.py, routine_imports.py, routine_patterns.py, routine_changes.py, routine_templates.py, mail_cleanup.py, mail_cleanup_app.py, birthdays.py, birthdays_app.py, birthdays_facebook.py, birthdays_facebook_app.py, reading_digest.py, reading_digest_app.py, subscriptions.py, subscriptions_app.py, stay_in_touch.py, stay_in_touch_app.py, secondhand.py, secondhand_app.py, dashboard/routines-page.js, dashboard/todos-digest.js, dashboard/todos-cleanup.js, dashboard/todos-facebook-birthdays.js, dashboard/todos-facebook-people.js, dashboard/todos-subs.js
 order: 10
-keywords: routine, daily digest, interests, automation, scheduled, every week, every morning, report, suggested, digest, newsletter, birthday, facebook birthdays, import birthdays, subscriptions, free trial, renewal, cancel subscription, stay in touch, keep in touch, reach out, check in
+keywords: routine, daily digest, interests, automation, scheduled, every week, every morning, report, suggested, digest, newsletter, birthday, facebook birthdays, import birthdays, subscriptions, free trial, renewal, cancel subscription, stay in touch, keep in touch, reach out, check in, second-hand, secondhand, marketplace, listings, every 3 hours
 ---
 ## Make one
 
@@ -17,7 +17,7 @@ Without a time it runs at 8:00. The time is on your Machine's clock. Its first r
 
 ## Templates
 
-Under **Templates** at the bottom of Routines, **Add** turns on a ready-made routine. It runs once right away, then every morning at 7:30 (Spam cleanup every hour, Subscriptions and trials once a month). Its card shows its words like any routine, and **Edit** changes them or its name.
+Under **Templates** at the bottom of Routines, **Add** turns on a ready-made routine. It runs once right away, then every morning at 7:30 (Spam cleanup every hour, Second-hand finds every 3 hours, Subscriptions and trials once a month). Its card shows its words like any routine, and **Edit** changes them or its name.
 
 When a lot of newsletters come in and Newsletter cleanup is off (25 or more in a week, from at least 5 senders), a line above your to-dos says how many came and what it would do, with **Turn it on** and **No thanks**.
 
@@ -66,6 +66,20 @@ Pick **Keep** or **Cancel it** for each. A kept one isn’t asked about again un
 A nudge comes only when you haven’t talked in much longer than usual and there is something specific to say: news they shared, a promise still open or a message you never answered. It is one to-do with the reason and a short message drafted where you usually talk, in their language. It goes out only when you send it. Nothing to say means no to-do.
 
 It sends at most two nudges a week, one per person a month, and none to someone you talked with lately. **Not needed** on a nudge makes it wait longer for that person, and longer again each time. It never sends a notification, and it stays Personal: never shared with a Work Fleet.
+
+**Second-hand finds** watches a search on a second-hand site, like Marktplaats, Vinted, eBay or Facebook Marketplace. Search there with the filters you want, copy the address of the results and paste it in after **Add**. Add filters in your own words if you like, such as “under 300, within 30 km, no ‘for parts’”. Each search is its own routine, so add it again for the next one.
+
+Every 3 hours it opens the search in The Machine’s own browser and looks for listings it hasn’t seen yet. Price, distance and words you left out are checked first, in plain code.
+
+Each new listing that passes is opened and your AI judges its condition from the photo and description, and the seller from their reviews, rating and account age. The good ones go in one to-do, each with its photo, title, price and a one-line verdict. Tap one to open the listing in The Machine’s browser.
+
+While that to-do is open, new finds join it on top, its count goes up and it notifies you again, since good deals go fast. Mark it done and the next find starts a new one. A run with nothing good changes nothing.
+
+It stays polite and cheap: one read of the search per run, at most 6 listings opened per run with a pause between them, and at most 40 listings checked a day across all your searches. Each check is one short question to your AI with one photo. The first run checks the newest few and takes in the rest as seen, so later runs bring only what is new.
+
+When the site asks you to sign in, shows a robot check or stops the read, a to-do says so, with **Open** to see it in The Machine’s browser. Sign in or pass the check there yourself; the next run reads again. The Machine never signs in or solves a check for you, and it never contacts a seller, bids or buys.
+
+**Change search** on its routine’s card takes a new address or filters, and **Change when** another rhythm, like “every 6 hours”.
 
 While a template’s routine keeps the template’s words, it runs on its own code, without your AI plan (Spam cleanup first lists new mail from unknown senders in code, and asks your AI one short question only when there is some; Stay in touch asks only about the one or two people it picked). A new name keeps that. Once you change its words, it runs like any routine on your words.
 

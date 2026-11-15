@@ -434,6 +434,8 @@ ROUTINE_ACTIONS = {
     'routine_template',
     'routine_try',
     'routine_when',
+    'secondhand_open',
+    'secondhand_search',
     'subs_pick',
     'touch_people',
 }

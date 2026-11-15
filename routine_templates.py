@@ -18,6 +18,10 @@ about a charge within 7 days. Stay in touch (stay_in_touch.py, stay_in_touch_app
 the owner picked on its card who are due a nudge (a long gap and something concrete to say, at most two a week), and
 only when there are any does one small model call name a specific reason per person, or none. A rename alone keeps
 this cheap path.
+Second-hand finds (secondhand.py, secondhand_app.py) is the one template added many times,
+each routine with its own search page and filters (`many`): every 3 hours it reads the search in The Machine's own
+browser, filters the new listings in plain code, and only then has a small model call per listing judge its photo and
+seller, under a daily cap. A rename alone keeps this cheap path.
 
 Once the owner edits its words (or adds script steps), it runs as a normal routine on them: a read-only turn each run.
 Its origin still names the template, so Templates shows it as added. An edited Newsletter or Spam cleanup still sees
@@ -36,6 +40,7 @@ AT = '07:30'  # before the morning summary, so the to-do waits there; an hourly 
 DAILY = 'daily'  # recurring.PRESETS
 HOURLY = 'hourly'  # routines.HOURLY: often enough to be there before the owner marks spam by hand
 MONTHLY = 'monthly'  # recurring.PRESETS: on the day it was added; the 7-day warning in between is daily plain code
+EVERY_3_HOURS = {'unit': 'hour', 'n': 3}  # routines.hours: Second-hand finds, often enough for a good listing
 
 # key -> its name, what it does (the Templates list) and its words (its routine's words, what Edit shows), in the
 # owner's language at view time (scripts/i18n_extract.py SERVER_TEXT)
@@ -62,6 +67,11 @@ TEMPLATES = {
     'touch': {'name': 'Stay in touch', 'what': 'Now and then, a nudge to reach out to someone close, when there’s a real reason. At most two a week.',
               'words': 'For the people I picked, when we haven’t talked in much longer than usual and there is something specific '
                        'to follow up on, make a to-do with the reason and a short message to send. At most two a week.'},
+    'secondhand': {'name': 'Second-hand finds', 'rule': EVERY_3_HOURS, 'many': True,
+                   'what': 'Every 3 hours, new listings on a second-hand search, each with a short check of its condition and seller.',
+                   'words': 'Look at my second-hand search for new listings that fit my filters. For each, judge its condition from '
+                            'the photos and description, and the seller from their reviews. Put the good ones in one to-do, each '
+                            'with a one-line verdict, its photo and a link. Never contact a seller, bid or buy.'},
 }
 CLEANUP = ('newsletters', 'spam')  # an edited one may still end in the cleanup to-do (mail_cleanup_app.routine_cleanup_lines)
 
@@ -94,6 +104,15 @@ class Template:
 
     def run(self, run, key):
         """A run of its routine (routines_app.routine_template_run): True when it is done here, never an agent turn."""
+        raise NotImplementedError
+
+    def setup_of(self, args):
+        """A template added many times (TEMPLATES 'many'): its setup from the template card's fields, checked, with the
+        new routine's name ({'name', ...}); OwnerError says what is wrong."""
+        raise NotImplementedError
+
+    def setup_save(self, db, routine_id, made, stamp):
+        """Keep setup_of's setup for the routine just made, in the same transaction."""
         raise NotImplementedError
 
     def step(self):
@@ -165,10 +184,11 @@ def own(origin, text, steps=None):
 def view(db, spam_needs=None):
     """The Templates section: [{key, name, what, added}], added when a live routine (on or paused) has its origin. Every
     template has an action on the page: Add, or for Spam cleanup with no mail account (spam_needs 'mail') a line saying
-    so with Connect mail."""
+    so with Connect mail. One the owner adds many times, each with its own setup (many: Second-hand finds, one routine
+    per search), is never added: Add opens its setup (setup) every time."""
     live = {r[0] for r in db.execute("SELECT origin FROM routines WHERE origin LIKE 'template:%' AND state IN ('on','paused')")}
-    return [{'key': key, 'name': i18n.t(t['name']), 'what': i18n.t(t['what']), 'added': 'template:' + key in live,
-             **({'needs': spam_needs} if key == 'spam' and spam_needs else {})}
+    return [{'key': key, 'name': i18n.t(t['name']), 'what': i18n.t(t['what']), 'added': not t.get('many') and 'template:' + key in live,
+             **({'needs': spam_needs} if key == 'spam' and spam_needs else {}), **({'setup': True} if t.get('many') else {})}
             for key, t in TEMPLATES.items()]
 
 

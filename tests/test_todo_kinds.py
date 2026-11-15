@@ -31,9 +31,10 @@ class TodoKindsTest(unittest.TestCase):
             'subs': (True, False, True, True, False),  # an area's digest keeps it: a trial about to charge needs the owner
             'digest': (True, True, True, True, True),
             'facebook_birthdays': (False, False, False, False, False),  # only its view is its own
+            'secondhand': (False, False, True, True, False),  # it buzzes: a good listing goes fast
         })
         # the owner's decision asked cleanup, then Subscriptions, then the digest
-        self.assertEqual([k.key for k in todo_kinds.KINDS if k.refused], ['cleanup', 'subs', 'digest'])
+        self.assertEqual([k.key for k in todo_kinds.KINDS if k.refused], ['cleanup', 'subs', 'digest', 'secondhand'])
 
     def test_core_paths_ask_the_registry_not_a_kinds_module(self):
         modules = {k.module for k in todo_kinds.KINDS}

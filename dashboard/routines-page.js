@@ -3,16 +3,16 @@
 // why: what was seen, on the rhythm line), each with the result of one real run; Add or No thanks, Run again, Edit.
 // A new one shows a test run first (routine_try, dry: nothing sent or kept): Add, Change or Cancel. Edit's Try it, too.
 // Advanced (the card's ...): script steps. Get data's output goes to the run; Check gets the result.
-let routinesData=null,routinesAt=0,rtForm=null,rtTimer=0,rtStale=false,rtMissed=0,rtFrame='',rtShown=new Map();
+let routinesData=null,routinesAt=0,rtForm=null,rtTimer=0,rtStale=false,rtMissed=0,rtFrame='',rtShown=new Map(),rtSetup='';
 // rtFrame, rtShown: the page around the cards and each card's markup as last drawn (Show more redraws its entry)
 // Opened Earlier and ⋯ menus, by routine ("<id> <class>"): a refresh, or a rebuilt card, opens them again
 const rtDetails=new Set();
 const RT_STATE={ready:'Ready',nothing:'Nothing new',failed:'Didn’t work',running:'Running…'};
 const rtTime=at=>localeTime(new Date('2000-01-01T'+at),DL,{hour:'numeric',minute:'2-digit'});
 const rtDay=v=>localeDate(v,DL,{weekday:'short',day:'numeric',month:'short'});
-function rtRhythm(r){const u=r.rule.unit,d=rpDate(r.anchor),wd=rpWeekday(d);if(u==='hour')return t('Every hour');if((r.rule.n||1)>1)return repeatText(r.rule,r.anchor);
+function rtRhythm(r){const u=r.rule.unit,d=rpDate(r.anchor),wd=rpWeekday(d);if(u==='hour')return (r.rule.n||1)>1?t(['Every {} hour','Every {} hours'],r.rule.n):t('Every hour');if((r.rule.n||1)>1)return repeatText(r.rule,r.anchor);
  return u==='day'?t('Daily'):u==='weekday'?t('Weekdays'):u==='week'?t('Weekly on {}',wd):u==='year'?t('Yearly on {}',rpMonthDay(d)):r.rule.workday!=null?(REPEAT_WORKDAY_OPTION[r.rule.workday]?t(REPEAT_WORKDAY_OPTION[r.rule.workday]):t('Monthly on workday {}',r.rule.workday)):r.rule.nth!=null?t(REPEAT_NTH_OPTION[r.rule.nth],wd):t('Monthly on day {}',d.getDate())}
-// an hourly one (Spam cleanup): no time of day or next date, only Every hour
+// an hourly one (Spam cleanup; Second-hand finds every 3 hours): no time of day or next date, only Every hour
 const rtWhen=r=>r.rule.unit==='hour'?[rtRhythm(r),r.state==='paused'?t('Paused'):''].filter(Boolean).join(' · '):[rtRhythm(r),rtTime(r.at),r.state==='paused'?t('Paused'):r.next_due?t('Next {}',rtDay(rpDate(r.next_due))):''].filter(Boolean).join(' · ');
 // A test run wears its own chip and says nothing was sent or saved; a result is Markdown, as in the chat (lists, bold, headings), its ISO dates as the owner reads dates; Used: the owner's skills it followed
 const rtDates=v=>String(v||'').replace(/\b(\d{4})-(\d{2})-(\d{2})\b/g,(m,y,mo,d)=>localeDate(new Date(+y,mo-1,+d),DL,{day:'numeric',month:'short'}));
@@ -24,7 +24,7 @@ const rtRows=s=>String(s||'').split('\n').reduce((n,l)=>n+(l.trim()?Math.ceil(l.
 function rtBody(r,inner,rows,always){const key='rt-'+r.id,fold=always||rows>3,open=expandedBodies.has(key);
  return html`<div class="rt-body${fold&&!open?html` clamp`:''}"${always?'':html` data-clamp="${key}"`}>${inner}</div>${fold?html`<button type="button" class="more" data-more="${key}" aria-expanded="${open}">${t(open?'Show less':'Show more')}</button>`:''}`}
 function rtCard(r){const [last,...older]=r.runs,paused=r.state==='paused',what=r.instructions!==r.name&&r.instructions;
- return html`<article class="rt${paused?html` paused`:''}" data-rt="${r.id}"><h3>${r.name}</h3><p class="rt-when">${rtWhen(r)}</p>${what?html`<p class="rt-what rt-short">${what}</p>`:''}${r.interests?lazyIn('digest')?digestInterests(r):(lazyRun('digest',routinesRender),''):''}${r.touch?rtTouch(r.touch):''}${rtStepLine(r)}${rtBody(r,html`${last?rtRun(last):html`<p class="rt-why">${t('No result yet.')}</p>`}${older.length?html`<details class="rt-earlier"><summary>${t('Earlier')}</summary>${older.map(x=>rtRun(x))}</details>`:''}`,last?1+rtRows(last.result||last.why):1,paused&&rtRows(last?.result||last?.why)>1)}
+ return html`<article class="rt${paused?html` paused`:''}" data-rt="${r.id}"><h3>${r.name}</h3><p class="rt-when">${rtWhen(r)}</p>${what?html`<p class="rt-what rt-short">${what}</p>`:''}${r.interests?lazyIn('digest')?digestInterests(r):(lazyRun('digest',routinesRender),''):''}${r.touch?rtTouch(r.touch):''}${r.search?rtSearch(r):''}${rtStepLine(r)}${rtBody(r,html`${last?rtRun(last):html`<p class="rt-why">${t('No result yet.')}</p>`}${older.length?html`<details class="rt-earlier"><summary>${t('Earlier')}</summary>${older.map(x=>rtRun(x))}</details>`:''}`,last?1+rtRows(last.result||last.why):1,paused&&rtRows(last?.result||last?.why)>1)}
   ${r.old_job?html`<div class="rt-old"><p>${t('Turn off the old OpenClaw job?')}</p><button type="button" class="ghost" data-rt-old="off">${t('Turn it off')}</button><button type="button" class="quiet" data-rt-old="keep">${t('Keep it')}</button></div>`:''}
   <div class="actions">${paused?html`<button type="button" class="ghost" data-rt-do="resume">${t('Resume')}</button>`:html`<button type="button" class="ghost" data-rt-do="now"${last?.state==='running'?html` disabled`:''}>${t('Run now')}</button>`}<details class="more-actions"><summary aria-label="${t('More actions')}" title="${t('More actions')}">${DOTS}</summary><div class="more-menu" role="group" aria-label="${t('More actions')}"><button type="button" data-rt-do="edit">${t('Edit')}</button><button type="button" data-rt-do="when">${t('Change when')}</button>${paused?'':html`<button type="button" data-rt-do="pause">${t('Pause')}</button>`}<button type="button" data-rt-do="steps">${t('Advanced: script steps')}</button><button type="button" class="danger" data-rt-do="stop">${t('Stop')}</button></div></details></div></article>`}
 // Stay in touch (stay_in_touch.py): who is in it, each with its remove, and a few of the owner's close people to add
@@ -47,7 +47,22 @@ const rtTrying=r=>html`<article class="rt rt-s rt-try" data-rt="${r.id}"><h3>${r
  <div class="actions"><button type="button" class="primary" data-rt-do="accept">${t('Add')}</button><button type="button" class="quiet" data-rt-do="change">${t('Change')}</button><button type="button" class="quiet" data-rt-do="no">${t('Cancel')}</button></div></article>`;
 // Templates (routine_templates.py): ready-made routines, one tap to add; an added one leaves the list. Every one has an
 // action: one this Machine can't run yet (Spam cleanup with no mail account) says why, and Connect mail opens Connections
-const rtTemplate=x=>html`<article class="rt rt-tpl"><div><h3>${x.name}</h3><p class="rt-what">${x.what}</p>${x.needs?html`<p class="rt-needs">${t('Needs a connected mail account.')}</p>`:''}</div>${x.needs?html`<button type="button" class="ghost" data-connect-open="mail">${t('Connect mail')}</button>`:html`<button type="button" class="ghost" data-rt-tpl="${x.key}">${t('Add')}</button>`}</article>`;
+// One added many times, each with its own setup (setup: Second-hand finds), opens its fields in the card on Add
+// (rtSetup: its key) and adds it with them.
+const rtTemplate=x=>x.setup&&rtSetup===x.key?rtSearchSetup(x):html`<article class="rt rt-tpl"><div><h3>${x.name}</h3><p class="rt-what">${x.what}</p>${x.needs?html`<p class="rt-needs">${t('Needs a connected mail account.')}</p>`:''}</div>${x.needs?html`<button type="button" class="ghost" data-connect-open="mail">${t('Connect mail')}</button>`:html`<button type="button" class="ghost" ${x.setup?html`data-rt-setup`:html`data-rt-tpl`}="${x.key}">${t('Add')}</button>`}</article>`;
+// Second-hand finds (secondhand_app.py): its setup (one search page, optional filters; each Add one more routine) and,
+// on each of its routines, the search with Change search (rtChanging: those open). The fields are [data-rt-own]: what
+// was typed stays when the page is drawn again (rtOwnKeep).
+const rtChanging=new Set();
+const rtSearchFields=(url,filters)=>html`<label class="rt-field"><span>${t('Search page')}</span><input name="url" type="url" inputmode="url" autocomplete="off" spellcheck="false" maxlength="2000" required placeholder="https://" value="${url||''}"></label>
+ <label class="rt-field"><span>${t('Filters (optional)')}</span><input class="rt-plain" name="filters" autocomplete="off" spellcheck="true" maxlength="200" placeholder="${t('Under 300, within 30 km, no “for parts”')}" value="${filters||''}"></label>`;
+const rtSearchSetup=x=>html`<article class="rt rt-tpl rt-setup"><form data-rt-own="setup-${x.key}" data-rt-search-add="${x.key}"><h3>${x.name}</h3><p class="rt-what">${t('Search on the site, then paste the address of its results here. Each search is its own routine.')}</p>
+ ${rtSearchFields('','')}<p class="rt-setup-fine">${t('Up to 40 listings checked a day. It never contacts a seller, bids or buys.')}</p>
+ <p class="rt-form-acts"><button class="primary">${t('Add')}</button><button type="button" class="quiet" data-rt-search-cancel>${t('Cancel')}</button></p></form></article>`;
+function rtSearch(r){const s=r.search,href=safeURL(s.url);
+ if(rtChanging.has(r.id))return html`<form class="rt-search rt-search-change" data-rt-own="search-${r.id}" data-rt-search="${r.id}">${rtSearchFields(s.url,s.filters)}<p class="rt-form-acts"><button class="primary">${t('Save')}</button><button type="button" class="quiet" data-rt-search-cancel="${r.id}">${t('Cancel')}</button></p></form>`;
+ return html`<div class="rt-search"><p class="rt-search-line"><span>${t('Search')}</span>${href?html`<a href="${href}" target="_blank" rel="noreferrer" translate="no">${s.site||s.name} ↗</a>`:html`<span translate="no">${s.site||s.name}</span>`}</p>
+  ${s.filters?html`<p class="rt-search-line"><span>${t('Filters')}</span><span translate="no">${s.filters}</span></p>`:''}<p class="rt-search-line"><button type="button" class="link" data-rt-search-edit="${r.id}">${t('Change search')}</button></p></div>`}
 const rtSection=(name,label,cards,fine)=>html`<section class="rt-sec rt-${name}" aria-label="${label}"><h2>${label}</h2>${fine?html`<p class="fine">${fine}</p>`:''}${cards}</section>`;
 // A refresh while Edit, Change or Change when is open only patches that card's test run (rtPatch), and redraws other cards
 // that changed: the page is rebuilt when the form closes. A rebuild keeps what is on screen in place (rtKeep), and redraws only the cards that changed (rtFull):
@@ -61,7 +76,12 @@ function rtReveal(box){if(!rtWant)return;const a=box.querySelector(`article[data
  a.tabIndex=-1;a.scrollIntoView({block:'center'});a.focus({preventScroll:true});a.classList.add('rt-found');setTimeout(()=>a.classList.remove('rt-found'),2400)}
 // A run in progress: look again in a few seconds (slower after a failed look), so its result shows in the card when ready
 function rtLook(ms){const d=routinesData;clearTimeout(rtTimer);if([...d.routines,...d.suggested||[],...d.trying||[]].some(r=>r.runs[0]?.state==='running'||r.test?.state==='running'))rtTimer=setTimeout(()=>$('#routines-view')?.offsetParent?routinesView(true):routinesAt=0,ms)}
-function rtFull(box,list,form){const typed=$('#rt-words')?.value||'',sv=$('#routines-view .rt-form')?.dataset.rtSave,sugg=routinesData.suggested||[],trying=routinesData.trying||[],on=list.filter(r=>r.state!=='paused'),off=list.filter(r=>r.state==='paused'),tpl=(routinesData.templates||[]).filter(x=>!x.added),
+// A part's own fields ([data-rt-own], e.g. a search's setup) keep what was typed, and their focus, when drawn again
+function rtFull(box,list,form){const own=rtOwnKeep(box);try{rtDraw(box,list,form)}finally{own()}}
+function rtOwnKeep(box){const key=i=>i.closest('[data-rt-own]').dataset.rtOwn+' '+i.name,fo=document.activeElement,
+  vals=new Map([...box.querySelectorAll('[data-rt-own] [name]')].map(i=>[key(i),i.value])),at=fo?.closest?.('[data-rt-own]')&&fo.name?[key(fo),fo.selectionStart,fo.selectionEnd]:null;
+ return ()=>{for(const i of box.querySelectorAll('[data-rt-own] [name]')){const k=key(i);if(vals.has(k)&&i.value!==vals.get(k))i.value=vals.get(k);if(at&&at[0]===k&&document.activeElement!==i){i.focus({preventScroll:true});try{i.setSelectionRange(at[1],at[2])}catch{}}}}}
+function rtDraw(box,list,form){const typed=$('#rt-words')?.value||'',sv=$('#routines-view .rt-form')?.dataset.rtSave,sugg=routinesData.suggested||[],trying=routinesData.trying||[],on=list.filter(r=>r.state!=='paused'),off=list.filter(r=>r.state==='paused'),tpl=(routinesData.templates||[]).filter(x=>!x.added),
   fo=document.activeElement,typing=fo?.id==='rt-words'&&[fo.selectionStart,fo.selectionEnd],cards=new Map(),slot=f=>r=>{cards.set(r.id,[f(r),()=>f(r).s]);return html`<article data-rt-slot="${r.id}"></article>`};
  const frame=html`<form class="rt-new"><textarea id="rt-words" class="rt-grow" rows="1" spellcheck="true" autocapitalize="sentences" placeholder="${t('Every Monday, sum up my deals')}" aria-label="${t('New routine')}"></textarea><button class="primary">${t('Add')}</button></form>
   <p class="fine">${t('Routines only read. Any change waits for your OK on a to-do.')}</p>${trying.map(slot(rtTrying))}${sugg.length?rtSection('sugg',t('Suggested'),sugg.map(slot(rtSuggested)),t(sugg.every(r=>r.from_openclaw)?'From your OpenClaw jobs. Each one ran once to show you.':'Each one ran once to show you.')):''}${
@@ -101,6 +121,10 @@ async function routinesLoad(force){if(!force&&Date.now()-routinesAt<20000&&routi
  try{routinesData=await request('api/routines');routinesAt=Date.now();rtMissed=0;routinesRender()}
  catch(e){errCaught(e);if(force&&routinesData)rtLook(Math.min(3e4,4e3*2**++rtMissed));else toast(e.message,true)}}
 const rtPost=(action,args)=>request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action,args})});
+// A search's setup (Add: one more Second-hand finds routine) or its Change search, saved
+async function rtSearchSave(f){const b=f.querySelector('.primary'),url=f.elements.url.value.trim(),filters=f.elements.filters.value.trim();if(!url){f.elements.url.focus();return}
+ if(f.dataset.rtSearchAdd){if(await rtDo('routine_template',{key:f.dataset.rtSearchAdd,url,filters},b,t('Routine added'))){rtSetup='';routinesRender()}return}
+ const id=f.dataset.rtSearch;if(await rtDo('secondhand_search',{id,url,filters},b,t('Search changed'))){rtChanging.delete(id);routinesRender()}}
 async function rtDo(action,args,b,done){if(b)b.disabled=true;try{routinesData={...routinesData,...await rtPost(action,args)};routinesAt=Date.now();routinesRender();if(done)toast(done);return true}catch(e){errCaught(e);toast(e.message,true);if(b)b.disabled=false;return false}}
 // Edit and Change when: one at a time, under the card's text, with Save and Cancel (Esc, or a click outside on a computer).
 // Edit's Try it shows a test run of the new words in the form; Change on a new one tries its new words.
@@ -125,7 +149,7 @@ function rtShut(back){const f=$('#routines-view .rt-form');rtForm=null;if(!f)ret
  if(back)$(`#routines-view [data-rt="${id}"] .more-actions>summary`)?.focus({preventScroll:true})}
 // Not while it saves: it went from under the pointer and the click missed
 document.addEventListener('pointerdown',e=>{const f=$('#routines-view .rt-form');if(f&&!f.dataset.rtSave&&!f.contains(e.target)&&matchMedia('(pointer:fine)').matches&&!e.target.closest?.('[data-rt-do="edit"],[data-rt-do="when"],[data-rt-do="change"],[data-rt-do="steps"]'))rtShut()});
-$('#routines-view').addEventListener('submit',e=>{e.preventDefault();const f=e.target,input=rtWordsIn(f),words=input.value.trim(),b=f.querySelector('.primary'),steps=rtStepsOf(f);if(!words&&!steps?.get)return;
+$('#routines-view').addEventListener('submit',e=>{e.preventDefault();if(e.target.closest('[data-rt-own]')){rtSearchSave(e.target);return}const f=e.target,input=rtWordsIn(f),words=input.value.trim(),b=f.querySelector('.primary'),steps=rtStepsOf(f);if(!words&&!steps?.get)return;
  if(input.id==='rt-words'){rtDo('routine_try',{words},b).then(ok=>{if(ok)rtGrow(Object.assign($('#rt-words'),{value:''}))});return}
  const id=f.closest('[data-rt]').dataset.rt,kind=f.dataset.rtForm,nm=f.querySelector('.rt-name'),name=nm?.value.trim(),was=[...routinesData.routines,...routinesData.suggested||[],...routinesData.trying||[]].find(r=>r.id===id)?.name;
  const n=f.dataset.rtSave=++rtSaves+'';
@@ -142,6 +166,9 @@ $('#routines-view').addEventListener('click',e=>{if(e.target.closest('[data-rt-c
  const tr=e.target.closest('[data-rt-try]');if(tr){const words=rtWordsIn(tr.form).value.trim(),steps=rtStepsOf(tr.form);if(words||steps?.get){rtForm.tried=true;rtDo('routine_try',{id:rtForm.id,words,steps},tr)}return}
  const m=e.target.closest('[data-more]');if(m){const key=m.dataset.more,open=!expandedBodies.has(key);open?expandedBodies.add(key):expandedBodies.delete(key);m.previousElementSibling.classList.toggle('clamp',!open);m.setAttribute('aria-expanded',open);m.textContent=t(open?'Show less':'Show more');const c=rtShown.get(m.closest('[data-rt]')?.dataset.rt);if(c)c.s=c.redo();return}
  const tc=e.target.closest('[data-touch-add],[data-touch-drop]');if(tc){rtTouchSet(tc);return}
+ const su=e.target.closest('[data-rt-setup]');if(su){rtSetup=su.dataset.rtSetup;routinesRender();$('#routines-view [data-rt-own] [name]')?.focus();return}
+ const sc=e.target.closest('[data-rt-search-cancel]');if(sc){if(sc.dataset.rtSearchCancel)rtChanging.delete(sc.dataset.rtSearchCancel);else rtSetup='';routinesRender();return}
+ const se=e.target.closest('[data-rt-search-edit]');if(se){const id=se.dataset.rtSearchEdit;rtChanging.add(id);routinesRender();$(`#routines-view [data-rt-search="${CSS.escape(id)}"] [name]`)?.focus();return}
  const tp=e.target.closest('[data-rt-tpl]');if(tp){rtDo('routine_template',{key:tp.dataset.rtTpl},tp,t('Routine added'));return}
  const old=e.target.closest('[data-rt-old]');if(old){const choice=old.dataset.rtOld;rtDo('routine_old_job',{id:old.closest('[data-rt]').dataset.rt,choice},old,choice==='off'?t('Old job turned off'):'');return}
  const b=e.target.closest('[data-rt-do]');if(!b)return;const card=b.closest('[data-rt]'),id=card.dataset.rt,what=b.dataset.rtDo;

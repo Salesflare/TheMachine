@@ -73,7 +73,14 @@ VOICE_SERVICES = {'gmail': 'Email', 'outlook': 'Email', 'microsoft': 'Email', 'i
 # What a run's failure says on the page: a short reason from the runner's categories, never provider text.
 WHY_FAILED = {'usage_limited': 'Your AI plan’s usage limit was reached.', 'runtime_timeout': 'It took too long.',
               'no_result': 'It finished without a result.', 'not_started': 'It couldn’t start today.',
-              'get_data': 'Get data didn’t work.', 'check': 'The check said it didn’t work.'}
+              'get_data': 'Get data didn’t work.', 'check': 'The check said it didn’t work.',
+              # Second-hand finds (secondhand_app.py): its search page, read in The Machine's browser
+              'secondhand_setup': 'It has no search page. Stop it and add the template again.',
+              'secondhand_browser': 'The Machine’s browser isn’t available right now.',
+              'secondhand_busy': 'The Machine’s browser was busy. The next run tries again.',
+              'secondhand_login': 'The site asks you to sign in. The to-do says how.',
+              'secondhand_captcha': 'The site shows a robot check. The to-do says how.',
+              'secondhand_blocked': 'The site stopped the read. The to-do says how.'}
 STEP_SAID = 200  # characters of what a step that didn't work said (its stderr, else its output), shown under the reason
 
 
@@ -137,7 +144,8 @@ class RoutinesApp:
             raise ValueError('Routines are changed by the owner, on the dashboard')
         now = self.routines_now()
         at, rest = routines.read_at(args.get('words'))
-        got = recurring.parse(rest, now.date())
+        every = routines.read_hours(rest)  # "every 3 hours": a routine's own rhythm, never a recurring to-do's
+        got = {'rule': {'unit': 'hour', 'n': every}, 'anchor': now.date()} if every else recurring.parse(rest, now.date())
         if not got:
             raise OwnerError('Say when it should run, like every Monday at 9 or every weekday morning')
         with self.routines_lock(), self.store.connect() as db:
@@ -288,6 +296,8 @@ class RoutinesApp:
                 routine['interests'] = self.template('digest').digest_interests()
             if key == 'touch':  # who is in it and who to add, on its card (stay_in_touch_app.py)
                 routine['touch'] = self.template('touch').touch_view()
+            if key == 'secondhand':  # its search page and filters, on its card to see and change (secondhand_app.py)
+                routine['search'] = self.template('secondhand').secondhand_view(routine['id'])
             routine['from_openclaw'] = str(routine.pop('origin') or '').startswith('openclaw:')
             routine.pop('accepted_at', None)
             for run in routine['runs'] + ([routine['test']] if routine['test'] else []):  # a run that didn't work says why
@@ -555,6 +565,7 @@ class RoutinesApp:
         lines.append(self.routine_skill_lines(run))
         lines.append(self.routine_learned_lines(run))
         lines.append(self.template('spam').routine_cleanup_lines(run))  # an edited Newsletter or Spam cleanup (mail_cleanup_app.py)
+        lines.append(self.template('secondhand').secondhand_lines(run))  # an edited Second-hand finds: its search (secondhand_app.py)
         if last:
             lines.append(f'The last result ({last["started_at"][:10]}), so you can say what changed:\n{last["result"][:1500]}')
         return '\n'.join(x for x in lines if x)
@@ -990,14 +1001,18 @@ class RoutinesApp:
             raise OwnerError('That template is gone')
         if key == 'spam' and not self.cleanup_spam_accounts():
             raise OwnerError('Spam cleanup needs a connected mail account.')
+        # one added many times (Second-hand finds: a routine per search) comes with its own setup, checked by its code
+        made = self.template(key).setup_of(args) if template.get('many') else None
         now, stamp = self.routines_now(), self.routines_stamp()
         with self.routines_lock(), self.store.connect() as db:
             db.execute('BEGIN IMMEDIATE')
-            found = routine_templates.live(db, key)
+            found = None if made else routine_templates.live(db, key)
             if found:
                 return self.routines_view(found['id'])
             rid = routines.create(db, template['words'], routine_templates.rule(key), now.date(), routine_templates.AT, now, stamp,
-                                  name=i18n.t(template['name']), origin='template:' + key)
+                                  name=made['name'] if made else i18n.t(template['name']), origin='template:' + key)
+            if made:
+                self.template(key).setup_save(db, rid, made, stamp)
             routines.run_now(db, rid, stamp)  # its first look now: the past day
         self.routines_wake().set()
         return self.routines_view(rid)
