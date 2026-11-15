@@ -1,38 +1,38 @@
 ---
-title: 设置托管版The Machine
+title: 设置托管版 Machine
 area: getting-started
-summary: 登录、开始免费试用、连接邮箱并选择AI，只需几分钟。
+summary: 登录，开启免费试用，连接邮箱并选择 AI，只需几分钟。
 code: onboarding.py, dashboard.html
-site: Mail and Calendar, Your AI, Continue with Google, Continue with Microsoft, Turn on, Add more any time, More sources, Open your dashboard, Sources, Ask for a source, Build it, Add a passkey, Use an authenticator app instead, Add to Claude, First to-dos, Back
+site: Mail and Calendar, Your AI, Continue with Google, Continue with Microsoft, Turn on, Add more any time, More sources, Open your dashboard, Sources, Ask for a source, Build it, Add a passkey, Use an authenticator app instead, Add to Claude, Back
 order: 1
-translated: 0be6044113aaaa39
+translated: 45dda198434fcd3a
 ---
-托管版The Machine在欧盟的云端运行，只供你使用。我们会让它持续运行并保持更新。
+托管版 Machine 在欧盟的云端运行，只为你服务。我们会负责保持它运行并及时更新。
 
 ## 注册
 
-1. 在app.themachine.computer上，点击**继续使用Google**或**继续使用Microsoft**，即可创建账户。使用Google时，同一页面会请求访问你的Gmail和日历。允许访问后，邮箱就会连接好，无需再打开另一个Google页面。
-2. 选择The Machine的规格和地址。前{trial_days}天免费，到期前不会扣费。如果设置过程中没有要求你提供付款卡，请在此之前前往账户页面添加。
-3. 点击**添加通行密钥**，然后使用指纹、面容或设备PIN码。如果你更想使用身份验证器应用，请打开**改用身份验证器应用**，扫描二维码，输入六位数代码，然后点击**开启**。请保存接下来显示的恢复代码。
+1. 前往 app.themachine.computer，点击 **继续使用 Google** 或 **继续使用 Microsoft**，创建账户。使用 Google 时，同一页面会询问你是否连接 Gmail 和 Calendar。允许连接后，邮箱就会连好，无需再经过一次 Google 授权页面。
+2. 选择 Machine 的规格和地址。前 {trial_days} 天免费，试用结束前不会扣费。如果设置过程中没有要求添加付款卡，请在试用结束前前往账户页面添加。
+3. 点击 **添加通行密钥**，然后使用指纹、面容或设备 PIN。如果更喜欢使用身份验证器应用，请打开 **改用身份验证器应用**，扫描二维码，输入六位数代码，然后点击 **开启**。请保存接下来显示的恢复代码。
 
 ## 设置页面
 
-设置流程每个页面只有一个步骤：套餐、通行密钥，然后是**邮箱和日历**、**你的AI**和**第一批待办**。页面顶部会显示当前步骤。The Machine会在后台启动，你不用等待。
+设置过程每个页面完成一个步骤：选择方案、设置通行密钥，然后设置 **邮箱和日历** 和 **你的 AI**。页面顶部会显示当前步骤。Machine 会在后台启动，无需等待。
 
-1. **邮箱和日历**：点击**连接Google**或**连接Microsoft**。系统会先使用你注册时的账户。如果你注册时已允许访问Gmail和日历，设置流程会跳过这一步，进入AI设置。系统会根据邮箱地址判断这是工作账户还是个人账户；之后可在账户页面更改。请参阅[Gmail](gmail.md)和[Microsoft](microsoft.md)。
-2. **你的AI**：登录ChatGPT或Claude，或者粘贴AI服务提供商提供的密钥。使用Claude时，请粘贴Claude页面上的代码。如果你没有套餐，可以开通ChatGPT或Claude，或者使用密钥：此步骤会链接到各服务提供商的密钥页面，费用由服务提供商按使用量收取。请参阅[ChatGPT](chatgpt.md)。
-3. **第一批待办**：The Machine会先检查最新邮件，然后检查最近7天的邮件。如果没有需要你处理的内容，它会告诉你已读取的内容，以及接下来可以连接什么。如果检查失败，会在几分钟内重试；如果一直失败，列表会显示相关提示。
+1. **邮箱和日历**：点击 **连接Google** 或 **连接Microsoft**。系统会先使用你注册时用的账户。如果注册时已允许连接 Gmail 和 Calendar，这一步会自动跳过，直接进入 AI 设置。系统会根据邮箱地址判断它是工作邮箱还是个人邮箱，你可以稍后在账户中更改。请参阅 [Gmail](gmail.md) 和 [Microsoft](microsoft.md)。
+2. **你的 AI**：登录 ChatGPT 或 Claude，或者粘贴 AI 服务提供商给你的密钥。使用 Claude 时，请粘贴 Claude 页面上的代码。还没有方案？可以获取 ChatGPT 或 Claude，也可以使用密钥：此步骤会链接到各服务提供商的密钥页面，费用由服务提供商按使用量收取。请参阅 [ChatGPT](chatgpt.md)。
+点击 **返回** 或使用浏览器的后退按钮，即可返回上一步。邮箱和 AI 都连接好后，你就会进入控制面板。
 
-点击**返回**或浏览器的后退按钮，即可回到上一步。邮箱和AI都设置好后，你就会进入控制面板。
+你的首批待办事项会出现在这里：Machine 会先检查最新邮件，然后检查最近 7 天的邮件。如果没有需要你处理的内容，它会说明读过哪些邮件，以及接下来可以连接哪些服务。如果检查失败，系统会在几分钟内重试；如果一直失败，列表会显示相关提示。
 
-设置过程中不会询问任何可选内容。之后，你随时可以在设置页面点击**随时添加更多**，再选择**更多来源**，例如Slack、WhatsApp、GitHub、[Telegram](telegram.md)和[Codex](hand-to-agent.md)。有帮助时，控制面板也会推荐来源，例如GitHub邮件不断到达时，会推荐连接GitHub。
+设置过程中不会询问任何可选内容。完成后，你随时可以在设置页面点击 **随时添加更多**，然后选择 **更多来源**，例如 Slack、WhatsApp、GitHub、[Telegram](telegram.md) 和 [Codex](hand-to-agent.md)。如果有帮助，控制面板也会推荐来源，例如在持续收到相关邮件后推荐 GitHub。
 
-The Machine准备好后，页面顶部会显示**打开你的控制面板**。点击**添加到Claude**，即可向Claude询问邮件和待办。要接收通知，请将The Machine添加到手机主屏幕：请参阅[安装应用并开启通知](phone-app.md)。
+Machine 准备就绪后，页面顶部会显示 **打开你的控制面板**。点击 **添加到 Claude**，即可向 Claude 询问邮件和待办事项。要接收通知，请将 The Machine 添加到手机主屏幕：请参阅[安装应用并开启通知](phone-app.md)。
 
-## 请求添加来源
+## 申请添加来源
 
-找不到需要的来源？在**来源**页面的**请求添加来源**下，写明服务名称和要读取的内容，然后点击**构建**。你的AI会在The Machine上构建并测试来源。如果你选择分享，The Machine会帮你在GitHub上向所有人提供该来源。无需GitHub账户；[连接GitHub](github.md)即可获得署名。
+找不到需要的来源？前往 **来源**，在 **申请添加来源** 下填写服务名称和要读取的内容，然后点击 **构建**。你自己的 AI 会在你的 Machine 上构建并测试它。如果你选择分享，The Machine 会代你将它发布到 GitHub，供所有人使用。无需 GitHub 账户；[连接 GitHub](github.md) 后即可获得署名。
 
-## 稍后再回来
+## 稍后继续
 
-你的设置页面会保留在app.themachine.computer/setup。你可以随时在此添加或移除来源。在控制面板中，点击**设置**，再选择**打开账户**。
+设置页面会一直保留在 app.themachine.computer/setup。你可以随时在此添加或移除来源。在控制面板中，点击 **设置**，然后选择 **打开账户**。

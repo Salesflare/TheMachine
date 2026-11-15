@@ -86,7 +86,7 @@ Measured on a 4-core desktop CPU limited to 2 cores, under heavy load from other
 
 | Model | 7 sentences in 7 languages (60 s of speech) | 34 s of Dutch | Peak memory | Quality |
 |---|---|---|---|---|
-| small (**More accurate**) | 0.5 to 1.5 × real time | 26 s (2 threads), 11 s (4 threads) | 640 MB | Good in all seven languages |
+| small (**More accurate**) | 0.5 to 1.5 × real time | 26 s (2 threads), 11 s (4 threads) | 640 MB | Good in all seven languages measured |
 | base (**Faster**) | 0.4 × real time | 10 s | 350 MB | More words wrong, most of all in Dutch and Portuguese |
 
 End to end through the service (worker already running, 4 threads, same load), the small model wrote a 10 s Dutch clip

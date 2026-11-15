@@ -1,38 +1,38 @@
 ---
-title: ホスト型のMachineを設定する
+title: ホスト型のThe Machineを設定する
 area: getting-started
 summary: サインインして無料期間を開始し、メールを接続してAIを選びます。数分で完了します。
 code: onboarding.py, dashboard.html
-site: Mail and Calendar, Your AI, Continue with Google, Continue with Microsoft, Turn on, Add more any time, More sources, Open your dashboard, Sources, Ask for a source, Build it, Add a passkey, Use an authenticator app instead, Add to Claude, First to-dos, Back
+site: Mail and Calendar, Your AI, Continue with Google, Continue with Microsoft, Turn on, Add more any time, More sources, Open your dashboard, Sources, Ask for a source, Build it, Add a passkey, Use an authenticator app instead, Add to Claude, Back
 order: 1
-translated: 0be6044113aaaa39
+translated: 45dda198434fcd3a
 ---
-ホスト型のMachineは、EU内のクラウドで専用に動作します。The Machineが稼働を維持し、更新します。
+ホスト型のThe Machineは、EUのクラウドで自分専用に動作します。The Machineの稼働と更新は、こちらで行います。
 
 ## 登録する
 
-1. app.themachine.computerで**Googleで続行**または**Microsoftで続行**を押します。アカウントが作成されます。Googleの場合、同じ画面でGmailとカレンダーへのアクセスも求められます。許可すると、Googleの画面をもう一度開かずにメールが接続されます。
-2. Machineのサイズとアドレスを選びます。最初の{trial_days}日間は無料で、期間が終わるまでは請求されません。設定中に支払いカードを求められなかった場合は、その前にアカウントページで追加してください。
-3. **パスキーを追加**を押し、指紋、顔認証、またはデバイスのPINを使います。認証アプリを使う場合は、**代わりに認証アプリを使う**を開き、コードをスキャンして6桁の数字を入力し、**オンにする**を押します。続けて表示されるリカバリーコードを保存してください。
+1. app.themachine.computerで**Googleで続行**または**Microsoftで続行**を押します。アカウントが作成されます。Googleの場合、同じ画面でGmailとCalendarへのアクセスを求められます。許可すると、Googleの画面をもう一度開かずにメールが接続されます。
+2. The Machineのサイズとアドレスを選びます。最初の{trial_days}日間は無料で、その期間が終わるまでは請求されません。設定中に支払いカードを求められなかった場合は、期間終了前にアカウントページで追加してください。
+3. **パスキーを追加**を押し、指紋、顔認証、またはデバイスのPINを使います。認証アプリを使う場合は、**代わりに認証アプリを使う**を開いてコードをスキャンし、6桁の数字を入力して**オンにする**を押します。その後に表示されるリカバリーコードを保存してください。
 
 ## 設定ページ
 
-設定は画面ごとに1ステップずつ進みます。プラン、パスキーのあとに、**メールとカレンダー**、**AI**、**最初のToDo**が続きます。上部に現在のステップが表示されます。Machineはバックグラウンドで起動するため、待つ必要はありません。
+設定は画面ごとに1つずつ進みます。プラン、パスキー、**メールとカレンダー**、続いて**AI**です。画面上部に現在のステップが表示されます。The Machineはバックグラウンドで起動するため、起動を待つ必要はありません。
 
-1. **メールとカレンダー**：**Googleに接続**または**Microsoftに接続**を押します。登録に使ったアカウントが最初に表示されます。Googleで登録したときにGmailとカレンダーへのアクセスを許可している場合、このステップは省略され、AIの設定に進みます。仕事用か個人用かはメールアドレスから判断されます。あとからアカウントで変更できます。[Gmail](gmail.md)と[Microsoft](microsoft.md)をご覧ください。
-2. **AI**：ChatGPTまたはClaudeでサインインするか、AIプロバイダーのキーを貼り付けます。Claudeの場合は、Claudeのページに表示されるコードを貼り付けます。プランがない場合は、ChatGPTかClaudeを利用するか、キーを使ってください。このステップから各プロバイダーのキーのページを開けます。料金はプロバイダーから使用量に応じて請求されます。[ChatGPT](chatgpt.md)をご覧ください。
-3. **最初のToDo**：Machineはまず最新のメールを確認し、その後、過去7日間のメールを確認します。対応が必要なものがない場合は、確認した内容と次に接続するものが表示されます。確認に失敗した場合は数分以内に再試行します。失敗が続く場合はリストに表示されます。
+1. **メールとカレンダー**：**Googleに接続**または**Microsoftに接続**を押します。登録に使ったアカウントから始まります。Googleで登録したときにGmailとCalendarを許可していれば、このステップは省略され、AIの設定に進みます。仕事用か個人用かはアドレスから判別されます。後からアカウントで変更できます。[Gmail](gmail.md)と[Microsoft](microsoft.md)をご覧ください。
+2. **AI**：ChatGPTまたはClaudeにサインインするか、AIプロバイダーのキーを貼り付けます。Claudeの場合は、Claudeのページに表示されたコードを貼り付けます。プランがない場合は、ChatGPTかClaudeを利用するか、キーを使ってください。このステップには各プロバイダーのキー取得ページへのリンクがあります。料金はプロバイダーから使用量に応じて請求されます。[ChatGPT](chatgpt.md)をご覧ください。
+**戻る**またはブラウザーの戻るボタンを押すと、前のステップに戻ります。メールとAIが使えるようになると、ダッシュボードが表示されます。
 
-**戻る**またはブラウザーの戻るボタンで、ひとつ前のステップに戻れます。メールとAIが使えるようになると、ダッシュボードが表示されます。
+最初のToDoがダッシュボードに届きます。まず最新のメールを確認し、その後、過去7日間のメールを確認します。対応が必要なものがない場合は、確認した内容と次に接続するものが表示されます。確認に失敗しても数分以内に再試行します。失敗が続く場合は、リストにその旨が表示されます。
 
-設定に任意の項目はありません。設定後は、設定ページの**いつでも追加**から**その他のソース**を開き、Slack、WhatsApp、GitHub、[Telegram](telegram.md)、[Codex](hand-to-agent.md)などを追加できます。ダッシュボードでも、役立つタイミングでソースが提案されます。たとえばGitHubからのメールが届き続けると、GitHubが提案されます。
+設定中に、任意の項目を求められることはありません。設定ページの**いつでも追加**には、Slack、WhatsApp、GitHub、[Telegram](telegram.md)、[Codex](hand-to-agent.md)などの**その他のソース**があります。役立つ場合は、ダッシュボードにもソースが提案されます。たとえば、GitHubからのメールが届き続けると、GitHubが提案されます。
 
-Machineの準備ができると、上部に**ダッシュボードを開く**が表示されます。**Claudeに追加**すると、ClaudeでメールやToDoについて質問できます。通知を受け取るには、The Machineをスマートフォンのホーム画面に追加してください。[アプリをインストールして通知をオンにする](phone-app.md)をご覧ください。
+The Machineの準備が完了すると、画面上部に**ダッシュボードを開く**が表示されます。**Claudeに追加**すると、ClaudeにメールやToDoについて質問できます。通知を受け取るには、The Machineをスマートフォンのホーム画面に追加してください。[アプリをインストールして通知をオンにする](phone-app.md)をご覧ください。
 
 ## ソースをリクエストする
 
-必要なソースがありませんか？**ソース**の**ソースをリクエスト**で、サービス名と読み取る内容を入力し、**作成する**を押します。使用中のAIがMachine上でソースを作成し、テストします。共有を選ぶと、The MachineがGitHubで公開し、誰でも使えるようにします。GitHubアカウントは不要です。[GitHubを接続](github.md)すると、作成者として記録されます。
+必要なソースがありませんか？**ソース**の**ソースをリクエスト**で、サービス名と読み取りたい情報を入力し、**作成する**を押します。自分のAIがThe Machine上でソースを作成し、テストします。共有を選ぶと、The Machineが代わりにGitHubで公開し、誰でも利用できるようにします。GitHubアカウントは必要ありません。貢献者として表示されるには、[GitHubを接続](github.md)してください。
 
-## あとで戻る
+## 後で戻る
 
-設定ページはapp.themachine.computer/setupにあります。ここではいつでもソースを追加、削除できます。ダッシュボードの**設定**から**アカウントを開く**を選べます。
+設定ページはapp.themachine.computer/setupにあります。いつでもソースを追加または削除できます。ダッシュボードの**設定**から**アカウントを開く**を選べます。
