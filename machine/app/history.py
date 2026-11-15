@@ -31,6 +31,7 @@ from machine.store import history
 from machine.store.facts import FACT_VECTOR_BATCH
 from sources import SourceError, rate_limited, upstream_busy
 from timeutil import local_tz, now
+import todo_areas
 
 LOG = logging.getLogger('personal-assistant')
 
@@ -315,9 +316,11 @@ class HistoryApp:
         """After a mailbox's own history walk: the mail it holds read once more for bookings (trip_notes.WALK_VERSION),
         one page a step at history's pace and under history's holds, so mail held from before The Machine read bookings
         (or read them as it does now) makes trips and events too. Only held mail without bookings is read again; nothing
-        is kept as a message. True when it did a step."""
+        is kept as a message. Personal mailboxes go first: bookings come there mostly, and a work mailbox can take days.
+        True when it did a step."""
         resting = self.__dict__.get('collector_resting')
-        for account in self.history_accounts():
+        personal_first = sorted(self.history_accounts(), key=lambda a: todo_areas.area_of_account(a) != todo_areas.PERSONAL)
+        for account in personal_first:
             if kind(account) != 'mail' or (resting is not None and account['id'] not in resting):
                 continue  # its own sync reads now: another time
             with self.store.connect() as db:
