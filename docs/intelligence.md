@@ -415,7 +415,7 @@ the organization's role.
   with Undo, and a link you removed stays removed.
 - **The page itself** keeps the dashboard's header and tabs, with a breadcrumb back (Graph › People › name). On a phone a single ‹ People (‹ Organizations, ‹ Projects) link
   takes the header's and breadcrumb's place and goes back to the list as the back gesture does. A note's page shows its
-  whole path instead (Graph › Notes › Kids ›, its title as the heading under it); a phone keeps that on one line, without
+  whole path instead, in the header's place (Graph › Notes › Kids ›, its title as the heading under it); a phone keeps that on one line, without
   Graph, and folds the notes in between into a ⋯ menu. Each page
   has its own link, `#graph/<node id>`, and the browser's back button works. Its events come by day, coming up first.
 

@@ -4,7 +4,7 @@ import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import('./browser.mjs');
 
 // A note's breadcrumb shows its whole path, each level a link, and not its own title (the heading right under it):
-// Graph › Notes › Kids › on a wide screen. A phone keeps it on one line, Notes › Kids ›, and folds the notes in between
+// Graph › Notes › Kids › on a wide screen, in place of the page head (one path), with the note's area still under it. A phone keeps it on one line, Notes › Kids ›, and folds the notes in between
 // into a ⋯ menu (Notes › ⋯ › Activities ›), with long names shortened, never wider than the screen. Browser back
 // returns to the note it came from, and Notes goes back to the list.
 const dashboard=(await dashboardPage()).replace('__CSRF__','').replaceAll('__UI_VERSION__','v1').replace('__BASE__','/').replace('__CACHE_SCOPE__','s'.repeat(32));  // a crumb is a plain link: it opens under the page's base
@@ -14,7 +14,7 @@ const TITLE='Swimming lessons at the pool every Wednesday afternoon, with the ki
 const row=(id,name,parent,depth,children=0,lines=0)=>({id,kind:'note',name,area:'personal',starts:null,ends:null,by:'machine',updated_at:at,parent,depth,children,lines});
 const tree=[row('note:1','Kids',null,0,2),row('note:2','Doctors and care','note:1',1,0,2),row('note:3',LONG,'note:1',1,1),row('note:4',TITLE,'note:3',2,0,1)];
 const paths={'note:1':[],'note:2':[{id:'note:1',name:'Kids'}],'note:3':[{id:'note:1',name:'Kids'}],'note:4':[{id:'note:1',name:'Kids'},{id:'note:3',name:LONG}]};
-const page_=id=>({...tree.find(x=>x.id===id),path:paths[id],created_at:at,renamed:false,owner_dates:false,dated:false,linked_from:[],tree,
+const page_=id=>({...tree.find(x=>x.id===id),path:paths[id],areas:[{id:'personal',label:'Personal'},{id:'work',label:'Work'}],created_at:at,renamed:false,owner_dates:false,dated:false,linked_from:[],tree,
  children:tree.filter(x=>x.parent===id),lines:[{id:1,text:'Example line',at:null,item:null,by:'machine',edited:false,event_id:null,fact_id:null,links:[],data:{}}]});
 const server=createServer(async(req,res)=>{const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
@@ -30,7 +30,8 @@ const seen=page=>page.evaluate(()=>{const c=document.querySelector('#people-view
  return {crumbs:[...c.querySelectorAll('a,summary')].filter(el=>vis(el)&&!el.closest('.fact-menu-list')).map(el=>el.textContent.trim()),height:Math.round(box.height),
   inside:[...c.querySelectorAll('a,summary')].filter(vis).every(el=>el.getBoundingClientRect().right<=innerWidth+0.5),fits:document.documentElement.scrollWidth<=innerWidth,
   here:vis(c.querySelector('[aria-current="page"]')),title:document.querySelector('#people-view .note-page h3').textContent,
-  titleWhole:(h=>h.scrollWidth<=h.clientWidth+1)(document.querySelector('#people-view .note-page h3')),tab:document.title}});
+  titleWhole:(h=>h.scrollWidth<=h.clientWidth+1)(document.querySelector('#people-view .note-page h3')),tab:document.title,
+  head:vis(document.querySelector('#page-head')),sub:document.querySelector('#people-view .note-page .detail-sub')?.textContent||''}});
 const open=async(page,id,title)=>{await page.goto(base+'#graph/'+encodeURIComponent(id));await page.locator('#people-view .note-page h3',{hasText:title.slice(0,20)}).waitFor()};
 try{
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
@@ -42,6 +43,8 @@ try{
   await open(page,'note:2','Doctors and care');let s=await seen(page);
   assert.deepEqual(s.crumbs,mobile?['Notes','Kids']:['Graph','Notes','Kids'],tag+': '+JSON.stringify(s));
   assert.ok(!s.here&&s.title==='Doctors and care'&&s.tab.includes('Doctors and care'),tag+': the title shows once, as the heading, and names the tab');
+  assert.ok(!s.head,tag+': the trail takes the page head\'s place: the path shows once');
+  assert.equal(s.sub,'Personal · Kept up to date by The Machine',tag+': the area still shows');
   assert.ok(s.fits&&s.inside,tag+': fits');if(mobile)assert.ok(s.height<=48,tag+': one line '+s.height);
   // Deeper, with long names: a wide screen shows every level; a phone folds the middle into … and shortens the rest
   await open(page,'note:4',TITLE);s=await seen(page);
