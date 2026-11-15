@@ -314,7 +314,7 @@ OWNER_AREA_RULE = ('They gave it no area. Place it by what it is about and who i
 def local_when(value):
     """A signal's moment in the owner's time zone with its weekday ("Tue 2026-11-10 21:54"): for a message, when it
     was sent. occurred_at is UTC, a day apart from theirs near midnight; a relative day in a message ("tonight",
-    "tomorrow's committee") counts from this day, never from today or another message's (AGENTS.md, Dates)."""
+    "tomorrow's committee") counts from this day, never from today or another message's (the review prompt's Moments, the Do it job message)."""
     try:
         return dt.datetime.fromisoformat(str(value).replace('Z', '+00:00')).astimezone(local_tz()).strftime('%a %Y-%m-%d %H:%M')
     except (TypeError, ValueError):

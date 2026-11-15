@@ -2243,67 +2243,16 @@ def open_line(items, skip=()):
     return '; '.join(bits)
 
 
-def lead_identifiers(kind, m):
-    """Who a message is from, as graph identifiers, the sender first: whoever wrote it to the owner, or for the owner's
-    own message whoever it went to. Others on it (cc, the rest of a thread or meeting) are not its sender."""
-    m = relayed(kind, m)
-    if kind == 'gmail.message' or (m.get('from') and '@' in str(m.get('from'))):
-        own = 'SENT' in (m.get('labels') or ()) or m.get('from_me') is True
-        return ['email:' + a for _, a in addresses(m.get('to'))] if own else ['email:' + a for _, a in addresses(m.get('from'))[:1]]
-    if kind == 'slack.message' and m.get('user_id'):
-        return ['slack:' + str(m['user_id'])]
-    if kind == 'teams.message' and m.get('from_email') and m.get('from_me') is not True:
-        return ['email:' + str(m['from_email']).lower()]
-    prefix = {'whatsapp.message': 'wa:', 'telegram.message': 'tg:'}.get(kind)
-    if prefix:
-        sender = str(m.get('sender_id') or '') if m.get('from_me') is not True else ''
-        chat = str(m.get('chat_id') or '')
-        who = sender or (chat if not chat.endswith('@g.us') else '')
-        return [prefix + who.split('@')[0]] if who else []
-    return []
-
-
-def _card_lead(db, event_id, first=None):
-    """The person a card's main source (its first event) is from (lead_identifiers), as a graph node id, or None.
-    first: that event's kind and metadata when the caller read them already (the to-do list reads all at once)."""
-    row = first or db.execute('SELECT kind,metadata FROM events WHERE id=?', (event_id,)).fetchone()
-    if not row:
-        return None
-    try:
-        m = row['metadata'] if isinstance(row['metadata'], dict) else json.loads(row['metadata'] or '{}')
-    except ValueError:
-        return None
-    for identifier in lead_identifiers(row['kind'], m if isinstance(m, dict) else {}):
-        node = resolve(db, identifier)
-        if node and node['kind'] == 'person':
-            return node['id']
-    return None
-
-
-def card_people(db, event_ids, limit=3, first=None):
-    """Who a card is directly about, with their role: its main source's sender (its first event: the review leads with
-    the message the matter is about) first, then the people of each message in the review's order, closest first within
-    one; and a weight to rank cards by: how close they are, more when their organization pays the owner (Stripe).
-    Someone cc'd on the request, or closer to the owner from a meeting on it, never leads over who asked. first: the
-    first event's kind and metadata, when the caller read them already ({} when it is gone)."""
+def card_people(db, event_ids, limit=3, first=None, unlinked=False):
+    """Who a card is directly about, with their role, who asked first (card_lead.ordered: first, unlinked); and a
+    weight to rank cards by: how close they are, more when their organization pays the owner (Stripe)."""
     ids = [int(i) for i in event_ids or ()]
     if not ids:
         return [], 0.0
-    select = ("SELECT n.id,n.name,n.strength,n.info,o.id org_id,o.name org_name,o.info org_info,g.event_id FROM graph_events g JOIN graph_nodes n ON n.id=g.node_id "
-              "LEFT JOIN graph_nodes o ON o.id=json_extract(n.info,'$.org') ")
-    found = db.execute(select + f"WHERE g.direct=1 AND n.kind='person' AND g.event_id IN ({','.join('?' * len(ids))}) ORDER BY n.strength DESC", ids).fetchall()
-    try:
-        lead = None if first == {} else _card_lead(db, ids[0], first)
-    except sqlite3.OperationalError:
-        lead = None  # a bare graph without the events table
-    if lead and not any(r['id'] == lead for r in found):
-        # their message is not linked to them yet (the graph is built later): they lead all the same
-        found = db.execute(select.replace('FROM graph_events g JOIN graph_nodes n ON n.id=g.node_id', 'FROM graph_nodes n')
-                           .replace(',g.event_id', ',? event_id') + "WHERE n.id=?", (ids[0], lead)).fetchall() + found
-    # the one waiting on it leads; then by the review's order of its evidence (the owner's own post first names nobody:
-    # the next message's people, not a teammate closer to the owner from an internal meeting), closest first within one
-    order = {e: n for n, e in reversed(list(enumerate(ids)))}
-    rows = list({r['id']: r for r in sorted(found, key=lambda r: (r['id'] != lead, order.get(r['event_id'], len(ids))))}.values())
+    found = db.execute(f"SELECT n.id,n.name,n.strength,n.info,o.id org_id,o.name org_name,o.info org_info,g.event_id FROM graph_events g JOIN graph_nodes n ON n.id=g.node_id "
+                       f"LEFT JOIN graph_nodes o ON o.id=json_extract(n.info,'$.org') WHERE g.direct=1 AND n.kind='person' AND g.event_id IN ({','.join('?' * len(ids))}) "
+                       "ORDER BY n.strength DESC", ids).fetchall()
+    rows = __import__('machine.graph.card_lead', fromlist=['ordered']).ordered(db, ids, found, first, unlinked)
     people = [{'id': r['id'], 'name': (EMAIL_ONLY.fullmatch(r['name'] or '') and address_shown('email:' + r['name'].lower())) or handle_shown(r['name']), 'role': json.loads(r['info']).get('role'),
                **({'lookalike': like, **({'name': like['sender']} if like.get('sender') else {})} if (like := json.loads(r['info']).get('lookalike')) else {}), 'paying': bool(r['org_info'] and json.loads(r['org_info']).get('paying')),
                **({'photo': photo} if (photo := enrichment.node_picture(r['info'], 'photo')) else {}),

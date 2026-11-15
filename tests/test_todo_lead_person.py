@@ -41,9 +41,10 @@ class LeadPerson(unittest.TestCase):
                                 ('email:marco@client.example', 103)):
                 db.execute("INSERT INTO graph_events(node_id,event_id,at,direct) VALUES(?,?,'2026-11-09T00:00:00+00:00',1)", (node, event))
 
-    def people(self, ids):
+    def people(self, ids, unlinked=True):
+        """As the to-do's chip shows them (unlinked: its sender also before the graph links their message)."""
         with self.store.connect() as db:
-            return [p['name'] for p in a.graph.card_people(db, ids)[0]]
+            return [p['name'] for p in a.graph.card_people(db, ids, unlinked=unlinked)[0]]
 
     def test_the_main_sources_person_comes_first(self):
         self.assertEqual(self.people([101, 102, 103]), ['Lena Ortiz', 'Marco Bell'])
@@ -61,6 +62,8 @@ class LeadPerson(unittest.TestCase):
                 db.execute("INSERT INTO graph_events(node_id,event_id,at,direct) VALUES(?,?,'2026-11-09T00:00:00+00:00',1)", (node, new['ask']))
         self.assertEqual(self.people([new['ask'], 103]), ['Lena Ortiz', 'Marco Bell'])
         self.assertEqual(self.people([new['nudge'], 102, 103]), ['Lena Ortiz', 'Marco Bell'])
+        # A same-matter check keeps to what the graph linked: only the colleague's own question has nobody else
+        self.assertEqual(self.people([new['nudge'], 103], unlinked=False), ['Marco Bell'])
         # A to-do about the colleague's own matter leads with his message, and so with him
         self.assertEqual(self.people([103, new['ask']]), ['Marco Bell', 'Lena Ortiz'])
 

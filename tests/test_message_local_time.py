@@ -41,8 +41,7 @@ class LocalTime(unittest.TestCase):
         self.assertNotIn('local_time', view)
 
     def test_both_prompts_count_a_relative_day_from_its_message(self):
-        agents = (Path(__file__).parent.parent / 'AGENTS.md').read_text()
-        self.assertIn('counts from the day it was sent (its `local_time`)', agents)
+        self.assertIn('counts from the day it was sent (its local_time)', a.review_prompt('r1', ['work']))
         self.assertIn('counts from the day it was sent (its local_time)', a.preparation_prompt({'job_id': 'j', 'suggestion_id': 's'}))
 
 

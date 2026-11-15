@@ -768,7 +768,7 @@ class ViewsStore(ConversationStore):
                     suggestion['looks_done_at'] = looks_done_at(db, suggestion)
                 try:  # who it's about (its chip, also on a done to-do), and their weight to rank open cards by
                     suggestion['people'], weight = graph.card_people(db, json.loads(suggestion['event_ids'] or '[]'),
-                                                                     first=firsts.get(heads.get(suggestion['id']), {}))
+                                                                     first=firsts.get(heads.get(suggestion['id']), {}), unlinked=True)
                     suggestion['source_line'] = lookalike.source_line(suggestion.get('source_line'), suggestion['people'])  # never the borrowed name
                     if suggestion['status'] not in todo_states.CLOSED:
                         suggestion['weight'] = weight
