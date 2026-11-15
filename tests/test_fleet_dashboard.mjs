@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {navClick,menuPick} from './nav-click.mjs';
-import {callAfter} from './page-calls.mjs';
+import {callAfter,quiet} from './page-calls.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import('./browser.mjs');
 
@@ -93,9 +93,13 @@ try{
   assert.deepEqual((await callAfter(page,'fleet_rule',()=>R('meeting').locator('[data-fleet-ex-rule="never"]').click())).args,{fleet:FL,member_id:'q',kind:'meeting',rule:'never'});
   await page.waitForFunction(()=>/Alexandra Longname-Whitfield: Never/.test(document.querySelector('.fleet-rule[data-member="*"][data-kind="meeting"] .fleet-ex')?.textContent||''));
   // The Fleet's own choice saves for everyone.
+  // A wide rule's answer also draws the Fleet view again (api/fleet). That redraw waits to land before the next rule is
+  // filled in: coming between the fill and the Tab, it replaced the field, so its change never came and nothing was saved
+  const redrawn=page.waitForResponse(r=>new URL(r.url()).pathname==='/api/fleet');
   assert.deepEqual(await callAfter(page,'fleet_rule',()=>R('handling').locator('[data-fleet-rule][value="always"]').check({force:true})),{action:'fleet_rule',args:{fleet:FL,member_id:'*',kind:'handling',rule:'always'}});
+  await redrawn;await quiet(page);
   await page.waitForFunction(()=>/without asking you/.test(document.querySelector('.fleet-rule[data-member="*"][data-kind="handling"] .fleet-preview').textContent));
-  // (that answer redraws the rules, which can fold this one again)
+  // (that redraw can fold this one again)
   const never=R('relationships').locator('[data-scope="never"]');
   assert.deepEqual((await callAfter(page,c=>c.action==='fleet_rule'&&!!c.args.scope,()=>menuPick(R('relationships').locator('summary').first(),never,{act:async l=>{await l.fill('Globex, rival.example');await l.press('Tab')}}))).args,
    {fleet:FL,member_id:'*',kind:'relationships',scope:{only:'acme.com',never:'Globex, rival.example',work_only:true}});
