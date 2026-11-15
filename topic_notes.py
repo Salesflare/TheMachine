@@ -81,6 +81,21 @@ def ensure(db):
     for statement in SCHEMA.split(';'):  # one at a time: executescript would commit an open transaction
         if statement.strip():
             db.execute(statement)
+    if 'events' not in {r[1] for r in db.execute('PRAGMA table_info(topic_routes)')}:  # its messages, for the page writer (note_writer.py)
+        db.execute('ALTER TABLE topic_routes ADD COLUMN events TEXT')
+
+
+def events_of(db, event_ids):
+    """{a line's event id: the ids of the conversation it is the newest message of, oldest first} (topic_routes);
+    an event no conversation ends with maps to itself alone."""
+    out = {}
+    wanted = [int(i) for i in event_ids if i]
+    for at in range(0, len(wanted), 500):
+        chunk = wanted[at:at + 500]
+        for r in db.execute(f"SELECT event_id,events FROM topic_routes WHERE event_id IN ({','.join('?' * len(chunk))})", chunk):
+            ids = [int(i) for i in _json(r['events'], []) if str(i).isdigit()]
+            out[r['event_id']] = ids or [r['event_id']]
+    return {i: out.get(i) or [i] for i in wanted}
 
 
 def conversation_kinds():
@@ -274,14 +289,23 @@ def trimmed(body, title=''):
 def texts(db, convs, owner_slack=()):
     """Each conversation's words for the call ('text'): its first message and its newest, each trimmed to
     MESSAGE_CHARS, who said it in front, TEXT_CHARS in all. Slack members by name, never by id."""
+    found = said(db, {c['id']: c['events'] for c in convs}, owner_slack)
+    for c in convs:
+        c['text'] = found.get(c['id'], '')
+    return convs
+
+
+def said(db, groups, owner_slack=(), each=MESSAGE_CHARS, total=TEXT_CHARS, messages=MESSAGES):
+    """{key: what was said} for groups ({key: [event ids, oldest first]}): the first message and the newest (messages in
+    all), each trimmed to `each` characters with who said it in front ('Owner' for the owner), `total` in all. Slack
+    members by name, never by id. Also the page writer's evidence (note_writer.py)."""
     import graph
     want = {}
-    for c in convs:
-        ids = c['events']
-        for event_id in (ids[:1] + ids[1:][-(MESSAGES - 1):]):
-            want[event_id] = c['id']
+    for key, ids in groups.items():
+        for event_id in (ids[:1] + ids[1:][-(messages - 1):]):
+            want[event_id] = key
     if not want:
-        return convs
+        return {}
     rows = {}
     marks = list(want)
     for at in range(0, len(marks), 500):
@@ -293,21 +317,22 @@ def texts(db, convs, owner_slack=()):
         if r['kind'] == 'slack.message':
             slack |= {_json(r['metadata'], {}).get('user_id')} | graph.slack_ids_in(r['body'])
     names = graph.slack_names(db, slack - {None}) if slack else {}
-    for c in convs:
+    out = {}
+    for key, ids in groups.items():
         parts = []
-        for event_id in c['events'][:1] + c['events'][1:][-(MESSAGES - 1):]:
+        for event_id in ids[:1] + ids[1:][-(messages - 1):]:
             r = rows.get(event_id)
             if not r:
                 continue
             meta = _json(r['metadata'], {})
-            said = trimmed(graph.slack_text_named(r['body'], names, graph.SOMEONE_ON_SLACK) if r['kind'] == 'slack.message' else r['body'], r['title'] or '')
-            if not said:
+            words = trimmed(graph.slack_text_named(r['body'], names, graph.SOMEONE_ON_SLACK) if r['kind'] == 'slack.message' else r['body'], r['title'] or '')
+            if not words:
                 continue
             who = 'Owner' if _mine(r['kind'], meta, owner_slack) else _who(r['kind'], meta, names)
-            parts.append((who + ': ' if who else '') + (said if len(said) <= MESSAGE_CHARS else said[:MESSAGE_CHARS - 1] + '…'))
+            parts.append((who + ': ' if who else '') + (words if len(words) <= each else words[:each - 1] + '…'))
         joined = ' | '.join(parts)
-        c['text'] = joined if len(joined) <= TEXT_CHARS else joined[:TEXT_CHARS - 1] + '…'
-    return convs
+        out[key] = joined if len(joined) <= total else joined[:total - 1] + '…'
+    return out
 
 
 def routed(db):
@@ -333,12 +358,13 @@ def worth(waiting, at):
 
 def refresh(db, convs):
     """A placed conversation that went on: its newest message, time and title, plain code (it stays where it went)."""
-    have = {r['conv']: r for r in db.execute('SELECT conv,event_id,last_at,title FROM topic_routes')}
+    have = {r['conv']: r for r in db.execute('SELECT conv,event_id,last_at,title,events FROM topic_routes')}
     for c in convs:
         r = have.get(c['id'])
-        if r and (r['event_id'], r['last_at'], r['title']) != (c['event_id'], c['last_at'], c['title']):
-            db.execute('UPDATE topic_routes SET event_id=?,last_at=?,title=?,replied=max(replied,?) WHERE conv=?',
-                       (c['event_id'], c['last_at'], c['title'], int(c['replied']), c['id']))
+        events = json.dumps(c['events'])
+        if r and (r['event_id'], r['last_at'], r['title'], r['events']) != (c['event_id'], c['last_at'], c['title'], events):
+            db.execute('UPDATE topic_routes SET event_id=?,last_at=?,title=?,events=?,replied=max(replied,?) WHERE conv=?',
+                       (c['event_id'], c['last_at'], c['title'], events, int(c['replied']), c['id']))
 
 
 def _path(db, note_id):
@@ -488,9 +514,10 @@ def remember(db, items, placed, at, kinds):
                 route['note'] = note or None
             else:
                 route['place'] = ''
-        db.execute('INSERT OR REPLACE INTO topic_routes(conv,place,note,under,ongoing,title,kind,event_id,last_at,area,replied,at) '
-                   'VALUES(?,?,?,?,?,?,?,?,?,?,?,?)', (c['id'], route['place'], route['note'], route['under'], route['ongoing'], c['title'],
-                                                       c['kind'], c['event_id'], c['last_at'], c['area'], int(c['replied']), at))
+        db.execute('INSERT OR REPLACE INTO topic_routes(conv,place,note,under,ongoing,title,kind,event_id,last_at,area,replied,at,events) '
+                   'VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)', (c['id'], route['place'], route['note'], route['under'], route['ongoing'], c['title'],
+                                                         c['kind'], c['event_id'], c['last_at'], c['area'], int(c['replied']), at,
+                                                         json.dumps(c.get('events') or [c['event_id']])))
 
 
 def _line(r):
