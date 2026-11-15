@@ -26,22 +26,29 @@ def at(hour, day=14, minute=5):
 
 
 class FakeCron:
-    """`openclaw cron list|enable|disable` over a few jobs; `down` makes the Gateway not answer."""
+    """`openclaw cron list|enable|disable` over a few jobs, as OpenClaw answers: `list` hides disabled jobs without
+    --all, an unknown id or a system-owned monitor ("heartbeat:" declarationKey) fails the switch. `down` makes the
+    Gateway not answer; `refuse` makes every switch exit non-zero, changed or not."""
 
     def __init__(self, jobs):
         self.jobs = {job['id']: job for job in jobs}
-        self.calls, self.down = [], False
+        self.calls, self.down, self.refuse = [], False, False
 
     def __call__(self, command, **kwargs):
         self.calls.append(command[1:])
         if self.down:
             return subprocess.CompletedProcess(command, 1, '', 'gateway closed')
         if command[1:3] == ['cron', 'list']:
-            listed = [job for job in self.jobs.values() if job['enabled']]
+            listed = [job for job in self.jobs.values() if job['enabled'] or '--all' in command]
             return subprocess.CompletedProcess(command, 0, json.dumps({'jobs': listed, 'total': len(listed)}), '')
         if command[1:3] in (['cron', 'enable'], ['cron', 'disable']):
-            self.jobs[command[3]]['enabled'] = command[2] == 'enable'
-            return subprocess.CompletedProcess(command, 0, '{}', '')
+            found = self.jobs.get(command[3])
+            if not found:
+                return subprocess.CompletedProcess(command, 1, '', 'unknown cron job id')
+            if str(found.get('declarationKey') or '').startswith('heartbeat:'):
+                return subprocess.CompletedProcess(command, 1, '', 'system-owned monitor jobs cannot be edited by cron clients')
+            found['enabled'] = command[2] == 'enable'
+            return subprocess.CompletedProcess(command, 1 if self.refuse else 0, '{}', '')
         return subprocess.CompletedProcess(command, 1, '', 'unknown')
 
     def enabled(self):
@@ -157,6 +164,45 @@ class MemoryRebuildTest(unittest.TestCase):
         self.cron.down = True
         self.assertIsNone(self.step(at(23, day=15)))
         self.assertFalse((self.data / memory_rebuild.STATE).exists())
+
+    def test_openclaws_own_heartbeat_monitor_is_left_alone(self):
+        self.cron.jobs['monitor'] = {**job('monitor', 'heartbeat'), 'declarationKey': 'heartbeat:main'}
+        self.assertEqual(self.step(at(23)), 'opened')
+        self.assertNotIn('monitor', memory_rebuild.read_state(self.data)['jobs'])
+        self.assertNotIn(['cron', 'disable', 'monitor'], self.cron.calls)
+        self.assertEqual(self.step(at(7, day=15)), 'ended')
+        self.assertEqual(memory_rebuild.read_state(self.data)['jobs'], [])
+
+    def test_a_job_already_on_again_or_gone_counts_as_done(self):
+        # the window from before this fix: it listed the heartbeat monitor, whose switch always fails
+        self.cron.jobs['monitor'] = {**job('monitor', 'heartbeat'), 'declarationKey': 'heartbeat:main'}
+        memory_rebuild.write_state(self.data, {'opened': at(23).timestamp(), 'until': at(7, day=15, minute=0).timestamp(),
+                                               'night': '2026-11-14', 'closed': at(7, day=15).timestamp(),
+                                               'outcome': 'ended', 'jobs': ['monitor', 'deleted']})
+        self.assertEqual(self.step(at(9, day=15)), 'closing')
+        self.assertEqual(memory_rebuild.read_state(self.data)['jobs'], [])
+        self.assertIsNone(self.step(at(9, day=15, minute=10)))  # nothing left to do: no more looks, no more log lines
+        # a switch that exits non-zero but did take is done too; a disabled job is not taken for a gone one
+        self.cron.refuse = True
+        self.assertEqual(memory_rebuild.switch_jobs('openclaw', ['brief', 'nope'], False, self.cron), [])
+        self.assertFalse(self.cron.jobs['brief']['enabled'])
+        self.cron.jobs['brief']['declarationKey'] = 'heartbeat:other'  # can't be switched any more, and is still off
+        self.assertEqual(memory_rebuild.switch_jobs('openclaw', ['brief'], True, self.cron), ['brief'])
+
+    def test_it_gives_up_after_a_few_tries_and_logs_once(self):
+        self.assertEqual(self.step(at(23)), 'opened')
+        self.cron.jobs['brief']['declarationKey'] = 'heartbeat:other'  # stays off whatever it tries
+        with self.assertLogs('personal-assistant', 'INFO') as logs:
+            self.assertEqual(self.step(at(7, day=15)), 'ended')
+            for n in range(1, memory_rebuild.CLOSE_TRIES + 3):
+                self.step(at(8, day=15, minute=n))
+        lines = [record.getMessage() for record in logs.records]
+        self.assertEqual(sum('jobs_left=1' in line and 'closing' in line for line in lines), memory_rebuild.CLOSE_TRIES - 1)
+        self.assertEqual(sum('gave up' in line for line in lines), 1)
+        state = memory_rebuild.read_state(self.data)
+        self.assertEqual((state['jobs'], state['not_on'], state['tries']), ([], ['brief'], memory_rebuild.CLOSE_TRIES))
+        self.assertEqual(state['closed'], at(7, day=15).timestamp())  # when it closed, not the last try
+        self.assertEqual(self.cron.enabled(), ['backup', 'beat', 'sync'])
 
     def test_turned_off_it_closes_an_open_window_and_never_opens_one(self):
         self.assertEqual(self.step(at(23)), 'opened')
