@@ -108,6 +108,28 @@ LOADS_ASSISTANT = {
 }
 LOADERS = {'spec_from_file_location', 'import_module', '__import__', 'load_source', 'run_path'}
 
+# assistant.py is frozen: the entry (`main()`) and the names it hands out to the code and tests that still read them
+# through it. No new code goes in (a def, a class or an assignment beyond ASSISTANT_OWN), and the names it binds may only
+# go down: ASSISTANT_NAMES is today's count, a new import fails, and one taken out fails until the count comes down to
+# match. Import a name from its own module instead (tests too).
+ASSISTANT_NAMES = 1041
+ASSISTANT_OWN = {'main', 'VERIFIED_DECISION_SOURCES', 'MAIL_SERVICES', 'CALENDAR_SERVICES'}
+
+
+def assistant_bindings():
+    """({name assistant.py binds at the top}, {names it defines itself: def, class or assignment})."""
+    tree = ast.parse((ROOT / 'assistant.py').read_text(encoding='utf-8'))
+    bound, own = set(), set()
+    for node in tree.body:
+        if isinstance(node, (ast.Import, ast.ImportFrom)):
+            bound |= {(alias.asname or alias.name).split('.')[0] for alias in node.names if alias.name != '*'}
+        elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            own.add(node.name)
+        elif isinstance(node, (ast.Assign, ast.AnnAssign, ast.AugAssign)):
+            targets = node.targets if isinstance(node, ast.Assign) else [node.target]
+            own |= {n.id for target in targets for n in ast.walk(target) if isinstance(n, ast.Name)}
+    return bound | own, own
+
 
 def loads_module(found, wanted):
     """Lines where the module imports a module for which wanted(name) is true: import, from-import, or a loader call
@@ -621,6 +643,15 @@ class Architecture(unittest.TestCase):
                                   'they need out of assistant.py into a module both import (docs/code-map.md).')
         gone = sorted(set(LOADS_ASSISTANT) - set(found))
         self.assertEqual(gone, [], f'{gone} no longer load assistant.py: remove them from LOADS_ASSISTANT in this file.')
+
+    def test_assistant_is_frozen(self):
+        bound, own = assistant_bindings()
+        self.assertEqual(sorted(own - ASSISTANT_OWN), [], 'no new code in assistant.py: put it in its own module '
+                                                         '(docs/code-map.md, Moving code out of assistant.py)')
+        self.assertLessEqual(len(bound), ASSISTANT_NAMES, 'assistant.py binds a new name: import it from its own module '
+                                                          'where it is used instead of handing it out through assistant.py')
+        self.assertEqual(len(bound), ASSISTANT_NAMES, f'assistant.py binds {len(bound)} names now: lower ASSISTANT_NAMES '
+                                                      'in tests/test_architecture.py to match')
 
     def test_only_assistant_imports_the_app_mixins(self):
         for name in python_files(tests=False):
