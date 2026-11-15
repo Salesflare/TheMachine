@@ -18,6 +18,10 @@ after NO_REBUILD_AFTER when no rebuild has run in it (OpenClaw starts one only o
 bring), and every job it turned off is turned on again. The owner's own turns (chat, Do it, Review now) still go; one only
 makes that night's try start again.
 
+OpenClaw starts a rebuild only when its memory syncs, which a quiet night may never bring. So when the window opens
+for an index in an older format, it asks the Gateway for one memory search (start_rebuild): OpenClaw's documented
+way, since its first search after a format upgrade rebuilds the index, inside the Gateway.
+
 Nothing here restarts the Gateway or reloads a plugin, and OpenClaw's own reindex command is not used: it runs a second
 index manager beside the Gateway's, and OpenClaw coordinates rebuilds only inside one process ("foreign writers must
 stop the Gateway"). Reads only file times, OpenClaw's log and the index's saved settings (read-only)."""
@@ -46,6 +50,7 @@ STATE = 'memory-rebuild.json'  # in the data folder: the window that is open or 
 SYSTEM_MONITOR = 'heartbeat:'  # declarationKey of OpenClaw's own heartbeat jobs, which no cron client may edit
 NO_REBUILD_AFTER = 1800  # seconds after opening: a window that has seen no rebuild running by then closes
 AGENT_DB = re.compile(r'(?P<folder>/[^"\'\s]*)/openclaw-agent\.sqlite(?P<copy>\.memory-reindex-)?')  # in a log line
+START_WAIT = 30  # seconds the search that starts the rebuild is waited for; the Gateway goes on with it after that
 CLOSE_TRIES = 6  # looks (ten minutes apart) that try to turn a closed window's jobs on again before it gives up
 
 
@@ -252,6 +257,35 @@ def switch_jobs(openclaw, ids, on, run=subprocess.run):
     return failed
 
 
+def behind_agents(settings, state_dir):
+    """The agents whose saved index is in an older input format than its model wants, by id."""
+    found = [(path.parent.name, path) for path in agent_dirs({}, state_dir)]
+    agents = settings.get('agents')
+    for entry in (agents.get('list') if isinstance(agents, dict) else None) or []:
+        if isinstance(entry, dict) and isinstance(entry.get('id'), str) and isinstance(entry.get('agentDir'), str):
+            found.append((entry['id'], Path(entry['agentDir'].strip()).expanduser()))
+    return list(dict.fromkeys(agent for agent, path in found if format_behind(index_meta(path))))
+
+
+def start_rebuild(openclaw, agent, run=subprocess.run):
+    """Start OpenClaw's rebuild of an agent's index the way OpenClaw documents: its first search after an index-format
+    upgrade rebuilds the index (memory.search, which runs in the Gateway on the Gateway's own index managers).
+    `gateway call` only asks the running Gateway, never opens the index itself as `openclaw memory search` does when no
+    Gateway answers. The search waits for the rebuild, which takes hours; the Gateway goes on with it when the call
+    times out. The results are thrown away, never logged. 'answered', 'no answer' (none in START_WAIT, or an error: a
+    rebuild that runs, or one that didn't start; the window's NO_REBUILD_AFTER tells them apart) or 'failed' (the
+    command couldn't run)."""
+    params = json.dumps({'query': 'memory', 'agentId': agent, 'maxResults': 1})
+    try:
+        result = run([openclaw, 'gateway', 'call', 'memory.search', '--params', params, '--json',
+                      '--timeout', str(START_WAIT * 1000)], capture_output=True, text=True, timeout=START_WAIT + 30)
+    except subprocess.TimeoutExpired:
+        return 'no answer'
+    except (OSError, subprocess.SubprocessError):
+        return 'failed'
+    return 'answered' if result.returncode == 0 else 'no answer'
+
+
 def window_bounds(local_now, hours=WINDOW):
     """(opens, closes) of tonight's window as aware datetimes, when `local_now` is in its first hour; else None."""
     start, end = hours
@@ -331,6 +365,9 @@ def step(folder, openclaw, settings, state_dir, now, local_now, hours=WINDOW, ru
               'meta': json.dumps(metas, sort_keys=True), 'why': why}
     write_state(folder, opened)  # first: a crash in between still turns every one of them on again
     left = switch_jobs(openclaw, jobs, False, run)
-    LOG.info('memory rebuild window opened jobs=%s not_off=%s format_behind=%s interrupted=%s',
-             len(jobs), len(left), why['format_behind'], why['interrupted'])
+    started = {agent: start_rebuild(openclaw, agent, run) for agent in behind_agents(settings, state_dir)}
+    if started:
+        write_state(folder, {**opened, 'started': started})
+    LOG.info('memory rebuild window opened jobs=%s not_off=%s format_behind=%s interrupted=%s started=%s',
+             len(jobs), len(left), why['format_behind'], why['interrupted'], ','.join(sorted(set(started.values()))) or '-')
     return 'opened'
