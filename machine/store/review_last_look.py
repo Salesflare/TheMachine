@@ -52,15 +52,17 @@ def thread(metadata):
     return None
 
 
-def worth(store, db, row, own, people):
-    """Whether a set-aside message may need the owner, read from who wrote to whom (never the words)."""
+def worth(store, db, row, own, people, owners=None):
+    """Whether a set-aside message may need the owner, read from who wrote to whom (never the words). owners: the
+    owner's Intercom admins by account (Store.intercom_owner), kept across the rows of one listing: each read is up to
+    500 conversations, and the status built this list once per row."""
     m = meta(row)
     if row['deleted'] or row.get('history') or {'SPAM', 'TRASH'} & set(m.get('labels') or ()):
         return False
     if review_wait.can_wait(row, people):  # automated or bulk: a newsletter, a receipt, an app's notification
         return False
     if row['kind'] in CUSTOMER_KINDS:
-        assigned = store.intercom_assignments(db, [row]).get(row['id']) if row['kind'] == 'intercom.conversation' else None
+        assigned = store.intercom_assignments(db, [row], owners).get(row['id']) if row['kind'] == 'intercom.conversation' else None
         return not isinstance(assigned, tuple)  # a teammate took it: theirs
     if store.need_rank(row, own) == 0:
         return True
@@ -104,12 +106,12 @@ def due(store, db, accounts, cap=LAST_LOOK_CAP, current=None):
         return []
     current = current or dt.datetime.fromisoformat(now())
     ready, oldest = (current - dt.timedelta(days=LAST_LOOK_DAYS)).isoformat(), (current - dt.timedelta(days=LAST_LOOK_MAX_DAYS)).isoformat()
-    own, people = store.review_own_addresses(db), review_wait.People(db)
+    own, people, owners = store.review_own_addresses(db), review_wait.People(db), {}
     found = []
     for row in reversed(set_aside_rows(db, accounts)):
         if not oldest <= row['ingested_at'] <= ready:
             continue
-        if worth(store, db, row, own, people) and not decided(db, row):
+        if worth(store, db, row, own, people, owners) and not decided(db, row):
             found.append(row)
             if len(found) >= cap:
                 break
@@ -120,13 +122,13 @@ def listing(store, db, limit=LISTED):
     """The set-aside messages for the list under the count: {id, kind, title, at, state, look_at}. state: 'look' (one
     more look on look_at, or with the next check once that passed), 'closed' (put off at its last look too) or 'left'
     (no sign it needs the owner, or the owner decided already)."""
-    own, people = store.review_own_addresses(db), review_wait.People(db)
+    own, people, owners = store.review_own_addresses(db), review_wait.People(db), {}
     out = []
     for row in set_aside_rows(db, closed=True)[:limit]:
         if row['deferrals'] >= CLOSED_AFTER:
             state = 'closed'
         else:
-            state = 'look' if worth(store, db, row, own, people) and not decided(db, row) else 'left'
+            state = 'look' if worth(store, db, row, own, people, owners) and not decided(db, row) else 'left'
         look_at = (dt.datetime.fromisoformat(row['ingested_at']) + dt.timedelta(days=LAST_LOOK_DAYS)).isoformat() if state == 'look' else None
         out.append({'id': row['id'], 'kind': row['kind'], 'title': (row['title'] or '')[:200], 'at': row['occurred_at'], 'state': state, 'look_at': look_at})
     return out

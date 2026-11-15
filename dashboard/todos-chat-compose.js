@@ -16,14 +16,17 @@ function chatKeepPlace(fn){const log=$('#chat-log');if(!log)return fn();const l=
  const at=kids.findIndex(n=>n.getBoundingClientRect().bottom>top+1),y=at>=0?kids[at].getBoundingClientRect().top:0,keep=l?.scrollTop;fn();
  if(end&&chat?.items?.length){chatToEnd();return}if(l)l.scrollTop=keep;const n=at>=0?$('#chat-log').children[at]:null;if(!n)return;
  const d=n.getBoundingClientRect().top-y;if(Math.abs(d)>.5){if(l)l.scrollTop+=d;else scrollBy(0,d)}}
-// Long names fade out at the edge instead of wrapping; the full name is in their tooltip.
-function chatFades(){document.querySelectorAll('.chat-side a,.chat-title,.side-cards a').forEach(n=>{const cut=!n.matches('.chat-title')&&n.scrollHeight>n.clientHeight+1;  // the chat's title is one line, its box trimmed to its capitals (todos-chat.css)
- n.classList.toggle('fade',n.scrollWidth>n.clientWidth+1||cut);
- // A title cut after its second line ends where its last whole word does, often well before the edge: fade out there
- if(!cut||!n.firstChild||n.firstChild.nodeType!==3){n.style.removeProperty('--fade-x');return}
- const box=n.getBoundingClientRect(),r=document.createRange(),txt=n.firstChild;let lo=0,hi=txt.length;
- while(lo<hi){const m=(lo+hi+1)>>1;r.setStart(txt,m-1);r.setEnd(txt,m);const q=r.getBoundingClientRect();if(q.bottom<=box.bottom+1)lo=m;else hi=m-1}
- while(lo>1&&/\s/.test(txt.data[lo-1]))lo--;r.setStart(txt,Math.max(0,lo-1));r.setEnd(txt,lo);n.style.setProperty('--fade-x',Math.round(r.getBoundingClientRect().right-box.left)+'px')})}
+// Long names fade out at the edge instead of wrapping; the full name is in their tooltip. Every name is measured first
+// and its fade set after: a fade set between two measures made the next one lay out the whole page again, for each name
+// in the sidebar (the fade is a mask, so it changes no measure).
+function chatFades(){const names=[...document.querySelectorAll('.chat-side a,.chat-title,.side-cards a')];
+ const fades=names.map(n=>{const cut=!n.matches('.chat-title')&&n.scrollHeight>n.clientHeight+1,fade=n.scrollWidth>n.clientWidth+1||cut;  // the chat's title is one line, its box trimmed to its capitals (todos-chat.css)
+  // A title cut after its second line ends where its last whole word does, often well before the edge: fade out there
+  if(!cut||!n.firstChild||n.firstChild.nodeType!==3)return [fade,''];
+  const box=n.getBoundingClientRect(),r=document.createRange(),txt=n.firstChild;let lo=0,hi=txt.length;
+  while(lo<hi){const m=(lo+hi+1)>>1;r.setStart(txt,m-1);r.setEnd(txt,m);const q=r.getBoundingClientRect();if(q.bottom<=box.bottom+1)lo=m;else hi=m-1}
+  while(lo>1&&/\s/.test(txt.data[lo-1]))lo--;r.setStart(txt,Math.max(0,lo-1));r.setEnd(txt,lo);return [fade,Math.round(r.getBoundingClientRect().right-box.left)+'px']});
+ names.forEach((n,i)=>{const [fade,x]=fades[i];n.classList.toggle('fade',fade);if(n.style.getPropertyValue('--fade-x')!==x){if(x)n.style.setProperty('--fade-x',x);else n.style.removeProperty('--fade-x')}})}
 addEventListener('resize',()=>chatFades());
 // A scrolled box shows its thin thumb while it moves
 // Fonts that arrive late change the widths: measure the fades again then

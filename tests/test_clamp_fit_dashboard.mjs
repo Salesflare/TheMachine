@@ -65,7 +65,7 @@ try{
    // A phone-width sheet (Snooze) takes the page's scrollbar gutter away, so the to-dos behind it widen: they aren't
    // measured again while it covers them (each costs the page's style and layout, in the frame that opens the sheet)...
    await page.setViewportSize({width:500,height});await page.waitForTimeout(200);
-   await page.evaluate(()=>{const f=window.clampKey;window.__measured=0;window.clampKey=k=>{window.__measured++;f(k)}});
+   await page.evaluate(()=>{const f=window.clampKeys;window.__measured=0;window.clampKeys=keys=>{window.__measured+=[...keys].length;f(keys)}});
    await page.evaluate(()=>openSnooze('fitbody'));await page.waitForTimeout(300);
    assert.ok(await page.evaluate(()=>$('#snooze-dialog').open),why+': the sheet is open');
    assert.equal(await page.evaluate(()=>window.__measured),0,why+': nothing behind the sheet measured again');
