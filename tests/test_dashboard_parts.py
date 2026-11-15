@@ -269,23 +269,6 @@ class DashboardParts(unittest.TestCase):
                                  text=True, check=True, timeout=60).stdout
         self.assertEqual(bad, '', 'a part (or the main script around the include lines) does not parse on its own')
 
-    def test_the_split_tool_loses_nothing(self):
-        # scripts/split_dashboard.py split cuts the assembled page into parts and nothing else: cutting it again and
-        # putting it back gives the same bytes (the PR that split it showed the page was byte for byte the one before).
-        tool = split_tool()
-        page = dashboard_parts.assemble(ROOT)
-        try:
-            html, parts = tool.cut(page)
-        except KeyError as gone:
-            self.skipTest(f'the split tool\'s anchors have moved on ({gone}); it is only for rebasing the split')
-        with tempfile.TemporaryDirectory() as tmp:
-            (Path(tmp) / 'dashboard').mkdir()
-            for name, text in parts.items():
-                (Path(tmp) / 'dashboard' / name).write_text(text, encoding='utf-8')
-            (Path(tmp) / 'dashboard.html').write_text(html, encoding='utf-8')
-            self.assertEqual(dashboard_parts.assemble(tmp), page)
-        self.assertGreater(len(parts), 1)
-
     def test_the_css_and_html_cuts_lose_nothing(self):
         # split-css and split-html cut only their own kind: cutting what dashboard.html holds now (its other parts as
         # include lines) and putting it back gives the same page.

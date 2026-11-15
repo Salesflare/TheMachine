@@ -94,7 +94,9 @@ npm test
 npm run sync      # the Capacitor CLI, pinned, through npx
 ```
 
-**Android** (any OS): JDK 21 and the Android SDK (platform 36). `cd android && ./gradlew assembleDebug`. FCM needs
+**Android** (any OS): JDK 21 and the Android SDK (platform 36). `cd android && ./gradlew assembleDebug`. The Java unit
+tests (`android/app/src/test`) run with `./gradlew testDebugUnitTest`; CI doesn't run them (it has no Android SDK), so
+run them after changing the Java. FCM needs
 `android/app/google-services.json` from the Firebase project (not in git); without it the app works without push.
 
 **iOS**: Xcode on a Mac: open `ios/App/App.xcodeproj`, team Salesflare, and run. The Share extension
