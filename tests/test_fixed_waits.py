@@ -1,11 +1,12 @@
 """A guard on the browser tests' fixed waits (page.waitForTimeout): a test that sleeps a fixed time and then looks
 fails when CI runs slower than that, and waits for nothing when it runs faster. A test waits for what it expects
 instead: the call the page makes (tests/page-calls.mjs waitForAction, callAfter), what the page shows (a locator's
-waitFor, page.waitForFunction, settled).
+waitFor, page.waitForFunction, settled), or the page settling before a measurement (quiet).
 
 The files that have fixed waits today are in WAITS, with their count, which only comes down: when a wait goes, lower
 its count (`python3 tests/test_fixed_waits.py --counts` prints them). A new file has none. A wait that only steadies
-a screenshot belongs in the test's shot helper, behind the variable that asks for pictures."""
+a screenshot belongs in the test's shot helper, behind the variable that asks for pictures. A check that something does
+not happen (no tooltip, no post, it stays) needs a time: it keeps its wait, longer than what it waits out."""
 import pathlib
 import re
 import sys
@@ -96,7 +97,6 @@ WAITS = {
     'tests/test_fleet_handoff_dashboard.mjs': 1,
     'tests/test_fleet_handoff_decline_dashboard.mjs': 2,
     'tests/test_fleet_learnings_dashboard.mjs': 1,
-    'tests/test_fleet_manage_dashboard.mjs': 2,
     'tests/test_fleet_refresh_dashboard.mjs': 4,
     'tests/test_fleet_requests_dashboard.mjs': 1,
     'tests/test_fleet_review_dashboard.mjs': 3,
@@ -137,7 +137,6 @@ WAITS = {
     'tests/test_message_context_dashboard.mjs': 3,
     'tests/test_message_view_dashboard.mjs': 1,
     'tests/test_milestone_dashboard.mjs': 2,
-    'tests/test_model_picker_dashboard.mjs': 3,
     'tests/test_needs_you_place_dashboard.mjs': 5,
     'tests/test_new_card_dashboard.mjs': 6,
     'tests/test_new_card_files_dashboard.mjs': 1,
@@ -148,7 +147,6 @@ WAITS = {
     'tests/test_open_between_link_dashboard.mjs': 3,
     'tests/test_org_page_dashboard.mjs': 3,
     'tests/test_outcomes_dashboard.mjs': 1,
-    'tests/test_page_scroll_dashboard.mjs': 1,
     'tests/test_peek_connect_dashboard.mjs': 2,
     'tests/test_peek_steady_dashboard.mjs': 2,
     'tests/test_person_page_dashboard.mjs': 1,
@@ -158,7 +156,6 @@ WAITS = {
     'tests/test_preparing_in_place_dashboard.mjs': 1,
     'tests/test_project_picker_fit_dashboard.mjs': 1,
     'tests/test_promise_page_dashboard.mjs': 2,
-    'tests/test_promises_dashboard.mjs': 2,
     'tests/test_push_links_dashboard.mjs': 1,
     'tests/test_quality_wait_dashboard.mjs': 1,
     'tests/test_quick_buttons_dashboard.mjs': 1,
@@ -191,7 +188,6 @@ WAITS = {
     'tests/test_signature_paste_save_dashboard.mjs': 7,
     'tests/test_signatures_dashboard.mjs': 2,
     'tests/test_signin_approve_dashboard.mjs': 1,
-    'tests/test_signin_command_dashboard.mjs': 2,
     'tests/test_signin_resume_dashboard.mjs': 1,
     'tests/test_skills_catalog_dashboard.mjs': 1,
     'tests/test_slow_not_offline_dashboard.mjs': 1,

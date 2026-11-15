@@ -32,7 +32,7 @@ try{
   const scrolls=async(where)=>{const y=await page.evaluate(()=>{const s=[...document.querySelectorAll('main>section')].find(x=>!x.hidden);
    if(!s.querySelector('.scroll-probe')){const d=document.createElement('div');d.className='scroll-probe';d.style.height='3000px';s.append(d)}
    scrollTo(0,0);scrollTo(0,1e6);return scrollY});assert.ok(y>500,`${where} at ${width}px scrolls (scrollY ${y})`)};
-  const tab=async t=>{await page.evaluate(t=>t==='settings'?showSettings('general'):document.querySelector(`nav [data-tab="${t}"]`).click(),t);await page.waitForTimeout(150)};
+  const tab=async t=>{await page.evaluate(t=>t==='settings'?showSettings('general'):document.querySelector(`nav [data-tab="${t}"]`).click(),t);await page.locator('#'+t+':not([hidden])').waitFor()};
   for(const opened of [false,true]){
    if(opened){await page.goto(base+'#chat='+cards[1].id);await page.locator('#chat-log').waitFor();
     if(!mobile){const y=await page.evaluate(()=>{scrollTo(0,1e6);return scrollY});assert.equal(y,0,'the open chat keeps the page put on a computer')}}
