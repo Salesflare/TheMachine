@@ -7,11 +7,10 @@ let noteList=null,noteEditing=null,noteAdding=false,noteFind=0;
 const notesOpen=new Set((()=>{try{return JSON.parse(sideStore.get('notes-open')||'[]')}catch{return[]}})());
 const NOTE_KIND={trip:'Trip',event:'Event'};
 const noteDay=v=>v?shortDay(String(v).slice(0,10)):'';
-const noteDates=x=>x.starts?(x.ends&&x.ends!==x.starts?t('{} to {}',noteDay(x.starts),noteDay(x.ends)):noteDay(x.starts)):'';
-// A row's meta wraps between its parts only, never inside a date or "2 lines" (no-break spaces within each part)
-const noteKeep=s=>String(s).replace(/ /g,' ');
-const noteMeta=x=>[NOTE_KIND[x.kind]?t(NOTE_KIND[x.kind]):'',x.starts?(x.ends&&x.ends!==x.starts?t('{} to {}',noteKeep(noteDay(x.starts)),noteKeep(noteDay(x.ends))):noteKeep(noteDay(x.starts))):'',
- noteKeep(x.lines?t(['{} line','{} lines'],x.lines):x.children?t(['{} note','{} notes'],x.children):'')].filter(Boolean).join(' · ');
+// A row's meta wraps between its parts only, never inside a date or "2 lines" (k: no-break spaces within each part)
+const noteDates=(x,k=s=>s)=>x.starts?(x.ends&&x.ends!==x.starts?t('{} to {}',k(noteDay(x.starts)),k(noteDay(x.ends))):k(noteDay(x.starts))):'';
+const noteKeep=s=>s.replace(/ /g,' ');
+const noteMeta=x=>[NOTE_KIND[x.kind]?t(NOTE_KIND[x.kind]):'',noteDates(x,noteKeep),noteKeep(x.lines?t(['{} line','{} lines'],x.lines):x.children?t(['{} note','{} notes'],x.children):'')].filter(Boolean).join(' · ');
 const noteRow=(x,fold='')=>html`<article class="tap note-item" data-node="${x.id}"${fold?html` data-depth="${Math.min(x.depth,6)}"`:''}>${fold}<div class="graph-row one">${nodeButton(x)}<small>${noteMeta(x)}</small></div></article>`;
 const noteTitleForm=(cls,parent,shown)=>html`<form class="note-form ${cls}"${parent?html` data-note-parent="${parent}"`:''}${shown?'':html` hidden`}><input name="title" maxlength="120" required aria-label="${t('Title')}" placeholder="${t('Title')}" autocomplete="off"><span class="note-acts"><button type="button" class="quiet" data-note-cancel>${t('Cancel')}</button><button class="primary">${t('Start the note')}</button></span></form>`;
 // The list: each note after the one it is under; a note's own notes show once it is unfolded
@@ -30,8 +29,9 @@ function noteNew(){const find=()=>$('#people-view [data-graph-panel="notes"]:not
 function noteText(x){const text=x.text,low=text.toLowerCase(),spots=[];
  for(const l of x.links||[]){const i=low.indexOf(l.name.toLowerCase());if(i>=0&&!spots.some(s=>i<s.end&&i+l.name.length>s.i))spots.push({i,end:i+l.name.length,id:l.id})}
  spots.sort((a,b)=>a.i-b.i);const out=[];let at=0;for(const s of spots){out.push(text.slice(at,s.i),html`<a href="${graphHash(s.id)}" class="note-link">${text.slice(s.i,s.end)}</a>`);at=s.end}out.push(text.slice(at));return out}
+// until: a line that runs into another day (an event) reads from its start to its end
 const noteStamp=v=>noteDay(v)+(String(v).length>10?' '+fmtHM(new Date(v)):'');
-const noteWhen=(v,until)=>v?html`<time datetime="${v}">${until?t('{} to {}',noteStamp(v),noteStamp(until)):noteStamp(v)}</time>`:'';  // until: a line that runs into another day (an event)
+const noteWhen=(v,until)=>v?html`<time datetime="${v}">${until?t('{} to {}',noteStamp(v),noteStamp(until)):noteStamp(v)}</time>`:'';
 // Where a line came from, and the to-do it points to (a bill or a subscription: the details stay there)
 function noteSource(x){const from=x.source?.gone?t('From a message that is gone')
  :x.source?html`<button type="button" class="link" data-note-src="${x.source.id}" data-kind="${x.source.kind}" data-title="${x.source.title}">${x.source.kind==='calendar.event'?t('From your calendar'):t('From {}',x.source.from||x.source.title||t('a message'))}</button>`
