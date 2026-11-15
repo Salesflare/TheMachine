@@ -72,11 +72,11 @@ class NotesFromMail(Mail):
     def test_home_gets_a_line_per_sender_that_writes_regularly(self):
         self.places = {'Example Energy': ('home', 'Bills and subscriptions'), 'Example Water': ('home', 'Bills and subscriptions'),
                        'Example Plumber': ('home', 'Repairs and upkeep')}
-        self.mail('Example Energy <billing@mail.example-energy.be>', 'Your invoice 2026-0801', '2026-08-03', body='EUR 84,20 IBAN BE00')
-        self.mail('Example Energy <billing@mail.example-energy.be>', 'Your invoice 2026-0901', '2026-09-03')
-        newest = self.mail('Example Energy <invoices@example-energy.be>', 'Your invoice 2026-1001', '2026-10-03')
-        self.mail('Example Water <no-reply@example-water.be>', 'Your water bill', '2026-05-10')
-        self.mail('Example Water <no-reply@example-water.be>', 'Meter reading', '2026-08-01')
+        self.mail('Example Energy <customer@mail.example-energy.be>', 'Your invoice 2026-0801', '2026-08-03', body='EUR 84,20 IBAN BE00')
+        self.mail('Example Energy <customer@mail.example-energy.be>', 'Your invoice 2026-0901', '2026-09-03')
+        newest = self.mail('Example Energy <service@example-energy.be>', 'Your invoice 2026-1001', '2026-10-03')
+        self.mail('Example Water <office@example-water.be>', 'Your water bill', '2026-05-10')
+        self.mail('Example Water <office@example-water.be>', 'Meter reading', '2026-08-01')
         self.mail('Example Plumber <office@example-plumber.be>', 'Quote for the boiler', '2026-10-20')  # once: not regular
         self.mail('Sam <sam@example.com>', 'Note to self', '2026-10-21')  # the owner's own address
         self.mail('Example Office Rent <rent@example-office.be>', 'Rent', '2026-10-01', account='job')  # a work mailbox: not read
@@ -93,13 +93,13 @@ class NotesFromMail(Mail):
         self.assertNotIn(('home', 'Repairs and upkeep'), notes)
         prompt = self.mail_prompts()[0]
         self.assertIn('Your invoice ####-####', prompt)
-        for private in ('2026-1001', '84,20', 'IBAN', 'billing@', 'Note to self', 'Office Rent'):
+        for private in ('2026-1001', '84,20', 'IBAN', 'customer@', 'Note to self', 'Office Rent'):
             self.assertNotIn(private, prompt)
 
     def test_kids_and_health_keep_a_dated_line_per_mail(self):
         self.places = {'Example Primary': ('kids', 'School'), 'Example Lab': ('health', 'Test results'),
                        'Example Shop': ('', '')}
-        self.mail('Example Primary <office@example-primary.be>', 'Weekly letter: bring a lunch box on Friday', '2026-10-06', list_unsubscribe=True)
+        self.mail('Example Primary <office@example-primary.be>', 'Weekly letter: bring a lunch box on Friday', '2026-10-06')
         first = self.mail('Example Primary <office@example-primary.be>', 'Re: School trip to the zoo on 21 November', '2026-11-03')
         self.mail('Example Lab <results@example-lab.be>', 'Your blood test results are ready', '2026-09-12')
         self.mail('Example Lab <results@example-lab.be>', 'Your vitamin D result', '2026-10-30')
@@ -148,6 +148,54 @@ class NotesFromMail(Mail):
             self.assertEqual(section_notes.mail_senders(db, [JOB], timeutil.today()), [], 'no Personal mailbox: no mail read')
 
 
+class BulkMail(Mail):
+    """Bulk mail never reaches a note or the mail call (section_notes.bulk_mail): spam always; promotions, list mail,
+    mail a program sent and system senders unless the owner wrote in the thread or it carries a booking."""
+
+    def test_bulk_mail_is_left_out_before_any_call(self):
+        self.places = {'Example Clinic': ('health', 'Doctors and care'), 'Example Deals': ('health', 'Doctors and care')}
+        self.mail('Example Clinic <desk@example-clinic.be>', 'Your appointment on Tuesday', '2026-10-01')
+        self.mail('Example Clinic <desk@example-clinic.be>', 'Your referral letter', '2026-10-08')
+        self.mail('Example Clinic <desk@example-clinic.be>', 'Clinic newsletter', '2026-10-09', list_unsubscribe=True)
+        self.mail('Example Clinic <desk@example-clinic.be>', 'Autumn offer', '2026-10-10', labels=['CATEGORY_PROMOTIONS', 'INBOX'])
+        self.mail('Example Clinic <desk@example-clinic.be>', 'Member update', '2026-10-11', list_id='<members.example-clinic.be>')
+        self.mail('Example Clinic <desk@example-clinic.be>', 'Weekly digest', '2026-10-12', precedence='bulk')
+        self.mail('Example Clinic <desk@example-clinic.be>', 'Out of office', '2026-10-13', auto_submitted=True)
+        self.mail('Example Clinic <no-reply@example-clinic.be>', 'Rate your visit', '2026-10-14')
+        self.mail('Example Clinic <desk@example-clinic.be>', 'Free whitening', '2026-10-15', labels=['SPAM'])
+        for n in range(3):  # a sender with only bulk mail: no call reads it
+            self.mail('Example Deals <offers@example-deals.be>', f'Deal {n}', f'2026-10-0{n + 1}', list_unsubscribe=True)
+        notes = self.round()
+        self.assertCountEqual([x['text'] for x in notes[('health', 'Doctors and care')]['lines']],
+                              ['Your appointment on Tuesday', 'Your referral letter'])
+        prompt = '\n'.join(self.mail_prompts())
+        for bulk in ('Example Deals', 'Clinic newsletter', 'Autumn offer', 'Rate your visit', 'Free whitening'):
+            self.assertNotIn(bulk, prompt)
+
+    def test_a_thread_the_owner_wrote_in_and_a_booking_stay(self):
+        self.places = {'Example School': ('kids', 'School')}
+        self.mail('Example School <office@example-school.be>', 'Trip forms', '2026-10-01', list_unsubscribe=True, thread_id='t1')
+        self.mail('Sam <sam@example.com>', 'Re: Trip forms', '2026-10-02', from_me=True, labels=['SENT'], thread_id='t1')
+        self.mail('Example School <office@example-school.be>', 'Re: Trip forms', '2026-10-03', list_unsubscribe=True, thread_id='t1')
+        self.mail('Example School <office@example-school.be>', 'Spam in the thread', '2026-10-04', thread_id='t1', labels=['SPAM'])
+        self.mail('Example School <noreply@example-school.be>', 'Theater tickets', '2026-10-05',
+                  bookings=[{'type': 'event', 'name': 'School play', 'start': '2026-12-01'}])
+        notes = self.round()
+        self.assertCountEqual([x['text'] for x in notes[('kids', 'School')]['lines']], ['Trip forms', 'Trip forms', 'Theater tickets'])
+
+    def test_bulk_lines_kept_before_go_on_the_next_round(self):
+        from unittest import mock
+        self.places = {'Example Club': ('kids', 'Activities')}
+        self.mail('Example Club <coach@example-club.be>', 'No practice on Wednesday', '2026-10-01')
+        self.mail('Example Club <coach@example-club.be>', 'Camp sign-up is open', '2026-10-02')
+        self.mail('Example Club <coach@example-club.be>', 'Club shop sale', '2026-10-03', labels=['CATEGORY_PROMOTIONS'])
+        with mock.patch.object(section_notes, 'bulk_mail', lambda meta, replied=(): False):  # as built before the filter
+            before = self.round()
+        self.assertEqual(len(before[('kids', 'Activities')]['lines']), 3)
+        after = self.round()
+        self.assertCountEqual([x['text'] for x in after[('kids', 'Activities')]['lines']], ['No practice on Wednesday', 'Camp sign-up is open'])
+
+
 class FirstFill(Mail):
     """The first fill goes faster: more mail calls a round and rounds every FIRST_EVERY, outside the quiet hours and
     under the budget, then back to MAIL_CALLS every EVERY."""
@@ -167,7 +215,7 @@ class FirstFill(Mail):
 
     def senders(self, n, start=0):
         for i in range(start, start + n):
-            self.mail(f'Example Shop {i} <news@shop{i}.example>', 'News', '2026-10-06')
+            self.mail(f'Example Shop {i} <office@shop{i}.example>', 'News', '2026-10-06')
 
     def step(self):
         self.assertTrue(self.app.section_notes_step())

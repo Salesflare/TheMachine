@@ -430,6 +430,20 @@ the organization's role.
   Graph, and folds the notes in between into a ⋯ menu. Each page
   has its own link, `#graph/<node id>`, and the browser's back button works. Its events come by day, coming up first.
 
+### Notes from mail
+
+Home, Health and Kids read the senders of the owner's Personal mail (`section_notes.mail_senders`). Bulk mail is left
+out in plain code first (`section_notes.bulk_mail`), so no model call reads it and no note keeps a line from it:
+
+- Mail in Spam or Trash, always.
+- Gmail's Promotions, Social and Forums tabs, list mail (List-Unsubscribe, List-Id), mail a program sent (Precedence
+  bulk, junk or list, Auto-Submitted) and system senders (no-reply, notifications, newsletters, mailing services:
+  `mail_senders.bulk` and `relay`, the same signals the Graph reads).
+- Not when the owner wrote in the thread, and not mail that carries a booking (`bookings.py`): Trips and Events read
+  those, and stay as they were.
+
+A line kept from bulk mail before goes on the next round, and a sender with only bulk mail is never asked about.
+
 ### Project descriptions
 
 `project_about.py` writes one or two sentences under a project's name on its page: what it is and where it stands now.

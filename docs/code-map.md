@@ -130,7 +130,7 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
     per kind places only the new ones in a section or an owner's note in it (`section_topics`, asked once each), and
     `section_notes_step` syncs the sections; a bill's line opens its to-do. Senders of Personal mail are placed for
     all three at once (`section_notes_mail_run`, one call per eighty senders): a line per sender in Home, a dated line
-    per mail in Health and Kids. The first fill (`section_notes.filling`) runs rounds every twenty minutes with more
+    per mail in Health and Kids. Bulk mail is left out before any call (`section_notes.bulk_mail`). The first fill (`section_notes.filling`) runs rounds every twenty minutes with more
     mail calls, outside the quiet hours and under `background_pause`, then rounds go back to every six hours.
   - `machine/names.py`: what the owner calls a service, app or agent; every key from data shown on screen goes
     through it, so a tool underneath (gog, wacli, msgraph-cli) is never a name (`tests/test_owner_names.py`).

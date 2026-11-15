@@ -12,7 +12,9 @@ on its own says nothing the note doesn't already have in the Calendar, so it is 
   (notes_under), and what is about that thing goes in that note, never beside it in the part as well. The Machine
   never starts such a note; it only fills in the owner's.
 - Mail is placed for every kind at once (mail_senders, mail_prompt): who writes to the owner's Personal mailboxes, one
-  per sender, read by name, how many mails and their newest subjects (digits masked), never a body. One call places a
+  per sender, read by name, how many mails and their newest subjects (digits masked), never a body. Bulk mail (spam,
+  promotions, list mail, no-reply and other mail a program sent: bulk_mail) is left out in plain code first, so no
+  call ever reads it and no note keeps it. One call places a
   sender in one kind and part, or in none, at most MAIL_ASK_MAX senders a call and MAIL_CALLS calls a round (more, and rounds more often, in the first
   fill: filling). A kind
   says how it keeps a sender (Kind.mail): one line for them (Home) or a dated line per mail (Health, Kids).
@@ -58,6 +60,8 @@ hijo hija figlio figlia filho filha'''.split())
 OWN_WORDS = ('my', 'the', "owner's", 'mijn', 'ma', 'mon', 'mes', 'mein', 'meine', 'mi', 'mis', 'mia', 'mio', 'miei', 'minha', 'meu', 'meus')
 # The owner's Personal mail (mail_senders)
 MAIL_KINDS = tuple(k for k in event_kinds.of(family=event_kinds.MAIL) if event_kinds.KINDS[k]['service'])  # the owner's own mailboxes
+# Gmail's tabs for mailings (bulk_mail); not Updates, which holds bills, bookings and a practice's mail too
+BULK_LABELS = frozenset({'CATEGORY_PROMOTIONS', 'CATEGORY_SOCIAL', 'CATEGORY_FORUMS'})
 MAIL_ASK_MAX = 80  # senders one mail call reads
 MAIL_CALLS = 3  # mail calls per round, while senders wait to be placed
 MAIL_EACH_MAX = 20  # dated lines per sender in a kind that keeps each mail (the newest)
@@ -426,12 +430,33 @@ def subject(text):
     return ' '.join(REPLY_PREFIX.sub('', str(text or '')).split())[:SUBJECT_MAX]
 
 
+def bulk_mail(meta, replied=frozenset()):
+    """Whether a mail is bulk, so no note reads it and no call is asked about its sender: mail in Spam or Trash, always;
+    else, unless the owner wrote in its thread (replied: those thread ids) or it carries a booking (bookings.py, what
+    Trips and Events read), Gmail's Promotions, Social or Forums tab, a list's headers (List-Unsubscribe, List-Id), mail
+    a program sent (mail_senders.automated: Precedence bulk, junk or list, Auto-Submitted) or a system's address
+    (mail_senders.bulk and relay: no-reply, notifications, newsletters, mailing services). The same signals the Graph
+    and the to-do review read; no word in a subject or body is judged here."""
+    import mail_senders
+    labels = set(meta.get('labels') or ()) if isinstance(meta.get('labels'), list) else set()
+    if labels & {'SPAM', 'TRASH'}:
+        return True
+    if (meta.get('thread_id') and meta['thread_id'] in replied) or meta.get('bookings'):
+        return False
+    if labels & BULK_LABELS or meta.get('list_unsubscribe') or meta.get('list_id') or mail_senders.automated(meta):
+        return True
+    address = parseaddr(str(meta.get('from') or ''))[1].strip().casefold()
+    return mail_senders.bulk(address) or mail_senders.relay(address)
+
+
 def mail_senders(db, accounts, today):
     """Who writes to the owner's Personal mailboxes, within LOOK_DAYS, one per sender (_sender_group), the owner's own
-    mail and addresses left out: [{key, name, count, days, last, event_id, mails: [{event_id, day, subject}]}], newest
-    first, each sender's mails newest first (at most MAIL_EACH_MAX). Plain code: which kind and part a sender is about
-    is the mail call's to say (mail_prompt). Only Personal mailboxes: a work mailbox's thousands of senders would cost
-    a call per eighty of them, and the owner's own life mostly comes in there."""
+    mail and addresses left out, and bulk mail (bulk_mail) too: [{key, name, count, days, last, event_id, mails:
+    [{event_id, day, subject}]}], newest first, each sender's mails newest first (at most MAIL_EACH_MAX). Plain code:
+    which kind and part a sender is about is the mail call's to say (mail_prompt). Only Personal mailboxes: a work
+    mailbox's thousands of senders would cost a call per eighty of them, and the owner's own life mostly comes in
+    there. A sender with only bulk mail is no sender here, so no call reads it, and a line kept from bulk mail before
+    goes on the next round (note_pages.sync)."""
     import graph
     import own_addresses
     ids = [a['id'] for a in accounts if a.get('id') and _personal([a['id']], accounts)]
@@ -444,13 +469,19 @@ def mail_senders(db, accounts, today):
     except Exception:  # noqa: BLE001 - a database before own domains
         own = set()
     since = (today - dt.timedelta(days=LOOK_DAYS)).isoformat()
-    found = {}
+    found, rows, replied = {}, [], set()
     for r in db.execute(f"SELECT id,title,occurred_at,metadata FROM events WHERE deleted=0 AND kind IN ({','.join('?' * len(MAIL_KINDS))}) "
                         f"AND account_id IN ({','.join('?' * len(ids))}) AND occurred_at>=? ORDER BY occurred_at DESC,id DESC",
                         [*MAIL_KINDS, *ids, since]):
         meta = r['metadata'] if isinstance(r['metadata'], dict) else _json(r['metadata'], {})
         labels = meta.get('labels') if isinstance(meta.get('labels'), list) else []
         if meta.get('from_me') or 'SENT' in labels or 'DRAFT' in labels:
+            if meta.get('thread_id') and 'DRAFT' not in labels:
+                replied.add(meta['thread_id'])  # the owner wrote in this thread: its mail is a conversation, not bulk
+            continue
+        rows.append((r, meta))
+    for r, meta in rows:
+        if bulk_mail(meta, replied):
             continue
         name, address = parseaddr(str(meta.get('from') or ''))
         address = address.strip().casefold()
