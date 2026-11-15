@@ -242,7 +242,7 @@ class Crm(unittest.TestCase):
         self.act('project_save', name='Globex pilot', org='globex.example', people=['email:ivy@globex.example'])
         self.act('project_save', name='Umber deal', org='umber.example', people=['email:bo@umber.example'])
         import datetime as dt
-        today = dt.datetime.now(dt.timezone.utc).date()
+        today = tg.NOW.date()  # the pinned clock's day (tests/test_graph.py's setUp)
         ago = lambda d: (today - dt.timedelta(days=d)).isoformat()
         with self.store.connect() as db:
             with db:  # what the build and enrichment bring, set straight on the nodes
