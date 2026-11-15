@@ -41,6 +41,7 @@ from contextlib import closing
 from pathlib import Path
 
 import message_seal
+import timeutil
 
 MARKER = 'message-content.keyring'
 MOVING = 'message-content.key.moving'  # the old file between the switch and its overwrite (a crash leaves it)
@@ -328,7 +329,6 @@ def unencrypted_keyring(collection):
 
 
 def _now():
-    import timeutil
     return timeutil.stamp()
 
 

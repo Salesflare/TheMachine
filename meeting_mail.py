@@ -22,6 +22,7 @@ import json
 import re
 
 import meeting_notes
+import timeutil
 from machine import todo_states
 
 # The meeting apps' own sending address for their notes mail, read from the From address: a sender, never the words
@@ -78,7 +79,6 @@ def _description(row):
 def calendar_notes(row, at=None):
     """Whether a calendar event may now carry its meeting's notes: it has ended, it was edited once it began, and it
     has a description. What the description says is the review's to judge (CALENDAR_RULE)."""
-    import timeutil
     if row['kind'] != 'calendar.event' or row.get('deleted'):
         return False
     m = _meta(row)
@@ -238,7 +238,6 @@ def lead(db, rows, at=None):
 def hint(db, row, at=None):
     """What a review is told on a signal that is of a meeting: the meeting, its record, and the open to-dos already
     made from it, with the rule. None for other signals."""
-    import timeutil
     if row['kind'] not in RECORDS and row['kind'] != 'calendar.event' and not notes_mail(row):
         return None
     found, how = meeting_of(db, row['id'], at)

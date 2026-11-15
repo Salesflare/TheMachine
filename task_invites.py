@@ -24,6 +24,7 @@ import hmac
 import json
 import os
 import re
+import timeutil
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -172,7 +173,6 @@ MONTHS = ('January', 'February', 'March', 'April', 'May', 'June', 'July', 'Augus
 
 def spoken_day(day, today=None):
     """A date as a person writes it in an email: "Saturday, October 31", with the year only when it is not this year."""
-    import timeutil
     found = dt.date.fromisoformat(day)
     year = '' if found.year == (today or timeutil.today()).year else f', {found.year}'
     return f'{DAYS[found.weekday()]}, {MONTHS[found.month - 1]} {found.day}{year}'

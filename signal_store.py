@@ -22,6 +22,7 @@ import sqlite3
 from pathlib import Path
 
 import message_seal
+import timeutil
 
 DB_NAME = 'signal.sqlite'
 CLI_DIR = 'signal-keys'
@@ -69,7 +70,6 @@ def touches(m, weights):
 
 
 def now():
-    import timeutil
     return timeutil.stamp()
 
 

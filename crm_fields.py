@@ -17,6 +17,7 @@ import datetime as dt
 import json
 import re
 import sqlite3
+import timeutil
 from machine.owner_error import OwnerError
 
 KINDS = ('person', 'org', 'project')
@@ -41,7 +42,6 @@ def ensure(db):
 
 
 def _now():
-    import timeutil
     return timeutil.clock().isoformat()
 
 

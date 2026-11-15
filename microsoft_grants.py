@@ -9,6 +9,7 @@ comes back and nothing is added.
 `ob` is the onboarding module its caller already loaded (as in google_pair.py)."""
 import datetime as dt
 import re
+import timeutil
 
 
 def docs(ob, config_path, args):
@@ -79,7 +80,6 @@ def _add(ob, config_path, config, email, refresh, mail, service, fresh, failed, 
     """Keeps the new sign-in in place of the one before, then adds or updates that address's `service` connection
     (fresh(): (boundary, new account)) and checks it; failed(error) says why it didn't check out. On any failure the
     sign-in kept before comes back."""
-    import timeutil
     import mail_grants
     try:
         previous = mail_grants.get(config, 'microsoft', email)

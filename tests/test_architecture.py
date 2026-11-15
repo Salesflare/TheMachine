@@ -272,6 +272,10 @@ LINK_BUILDERS = {'machine/dashboard_link.py', 'machine/browser.py'}
 # sandbox/ (tools run beside the app; the sandbox can drive an older installed app) may read it.
 CLOCK_FILE = 'timeutil.py'
 CLOCK_FREE_DIRS = ('tests/', 'scripts/', 'sandbox/')
+# Modules `import installer` loads: they import timeutil inside a function, since timeutil reads the time zone when it
+# loads and the installer imports them before it checks the time zone. The list may only shrink.
+LOCAL_TIMEUTIL = frozenset({'imap_mail.py', 'machine/bridge_wait.py', 'mail_grants.py', 'message_seal.py', 'ms_graph.py',
+                            'onboarding.py', 'signal_setup.py'})
 
 
 def clock_reads(tree_nodes):
@@ -775,6 +779,21 @@ class Architecture(unittest.TestCase):
                 with self.subTest(module=name):
                     self.assertNotRegex((ROOT / name).read_text(encoding='utf-8'), r"\bclock\(\)\.isoformat\(timespec='seconds'\)",
                                         'use timeutil.stamp()')
+
+    def test_timeutil_is_imported_at_the_top(self):
+        """A module imports timeutil once, at the top, except the ones the installer loads: timeutil reads the time
+        zone when it loads, and the installer imports them before it checks the time zone (LOCAL_TIMEUTIL)."""
+        for name in python_files(tests=False):
+            if name.startswith(CLOCK_FREE_DIRS + ('integrations/',)):
+                continue
+            tree = ast.parse((ROOT / name).read_text(encoding='utf-8'))
+            local = [node.lineno for node in ast.walk(tree) if isinstance(node, ast.Import) and node not in tree.body
+                     and any(alias.name == 'timeutil' for alias in node.names)]
+            with self.subTest(module=name):
+                if name in LOCAL_TIMEUTIL:
+                    self.assertTrue(local, 'imports timeutil at the top now: take it out of LOCAL_TIMEUTIL')
+                else:
+                    self.assertEqual(local, [], 'import timeutil at the top of the module')
 
     def test_the_clock_check_finds_direct_reads(self):
         source = ('import datetime as dt\nfrom datetime import date, datetime\nimport timeutil\n'

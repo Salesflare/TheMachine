@@ -11,6 +11,7 @@ from __future__ import annotations
 import datetime as dt
 import math
 import statistics
+import timeutil
 
 from i18n import t
 
@@ -32,7 +33,6 @@ def pace(stamps):
 
 def seconds(db, current=None):
     """The owner's pace (seconds per action) from their dashboard decisions of the last PACE_DAYS."""
-    import timeutil
     current = current or timeutil.clock()
     since = (current - dt.timedelta(days=PACE_DAYS)).isoformat()
     rows = db.execute("SELECT created_at FROM decisions WHERE source='dashboard' AND created_at>=? ORDER BY created_at DESC LIMIT 2000",

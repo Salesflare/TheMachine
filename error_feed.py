@@ -28,6 +28,7 @@ import datetime as dt
 import hashlib
 import json
 import re
+import timeutil
 import uuid
 
 SOURCES = ('service', 'dashboard', 'sw', 'api', 'job', 'review', 'sync')
@@ -59,7 +60,6 @@ def ensure(db):
 
 
 def now():
-    import timeutil
     return timeutil.stamp()
 
 
@@ -336,7 +336,6 @@ def record_client(db, errors, version=None, actions=()):
 
 
 def prune(db, current=None):
-    import timeutil
     ensure(db)
     cutoff = ((current or timeutil.clock()) - dt.timedelta(days=KEEP_DAYS)).isoformat(timespec='seconds')
     return db.execute('DELETE FROM error_feed WHERE last_at<?', (cutoff,)).rowcount
@@ -348,7 +347,6 @@ def batch(db, current=None, names=()):
     """The next batch to send, or None: reports on, SEND_EVERY since the last, under DAY_CAP today, and only signatures
     that are new or counted more since they were last sent. Each is checked again before it may go, with `names` (or
     what it returns, when it is a function: read only when something is to go) taken out besides."""
-    import timeutil
     ensure(db)
     if not on(db):
         return None
@@ -383,7 +381,6 @@ def batch(db, current=None, names=()):
 
 def sent(db, payload, current=None):
     """After the control plane took a batch: each signature counts as sent up to what went."""
-    import timeutil
     current = current or timeutil.clock()
     stamp = current.isoformat(timespec='seconds')
     for item in payload.get('signatures') or []:

@@ -14,6 +14,7 @@ import html
 import json
 import os
 import re
+import timeutil
 from html.parser import HTMLParser
 from pathlib import Path
 from machine.owner_error import OwnerError
@@ -207,7 +208,6 @@ def get(config, account_id):
 def save(config, account_id, value, source):
     """Store a cleaned signature; one read from the mailbox (imported or detected) never replaces the owner's own.
     Returns the stored entry."""
-    import timeutil
     where = path(config)
     if not where:
         raise OwnerError('This can’t be changed on this Machine.')

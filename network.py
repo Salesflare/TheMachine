@@ -25,6 +25,7 @@ import logging
 from pathlib import Path
 
 import network_crypto as nc
+import timeutil
 from machine.owner_error import OwnerError
 
 LOG = logging.getLogger('personal-assistant')
@@ -44,12 +45,10 @@ KEEP_DAYS = 30
 
 
 def now():
-    import timeutil
     return timeutil.stamp()
 
 
 def _later(seconds):
-    import timeutil
     return (timeutil.clock() + dt.timedelta(seconds=seconds)).isoformat(timespec='seconds')
 
 
@@ -280,7 +279,6 @@ class Sealing:
 
     def flush(self):
         """Retry committed intents with backoff; a stale retry never removes a newer one."""
-        import timeutil
         import fleet as fleet_module
         with self.fleet.connect() as db:
             rows = db.execute('SELECT * FROM network_outbox WHERE next_at<=? ORDER BY created_at LIMIT 20', (now(),)).fetchall()
@@ -383,7 +381,6 @@ class Sealing:
                 db.execute('INSERT OR IGNORE INTO network_twins(request_key,ask_id,at) VALUES(?,?,?)', (str(ask_id), str(canonical), now()))
 
     def tidy(self):
-        import timeutil
         cut = (timeutil.clock() - dt.timedelta(days=KEEP_DAYS)).isoformat(timespec='seconds')
         with self.fleet.connect() as db:
             db.execute('DELETE FROM network_taken WHERE at<?', (cut,))

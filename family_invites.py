@@ -25,6 +25,7 @@ import re
 import urllib.parse
 
 import activity_log
+import timeutil
 from i18n import t
 from machine.owner_error import OwnerError
 
@@ -45,7 +46,6 @@ def ensure(db):
 
 
 def _now():
-    import timeutil
     return timeutil.stamp()
 
 

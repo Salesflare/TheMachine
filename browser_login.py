@@ -20,6 +20,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent / 'integrations'))
 import browser_cdp  # noqa: E402
 import message_seal  # noqa: E402
 import portable  # noqa: E402
+import timeutil
 from machine.owner_error import OwnerError
 
 LOOPBACK = ('127.0.0.1', 'localhost', '::1')
@@ -610,7 +611,6 @@ class LoginStore:
             return self._read().get(site(host))
 
     def save(self, host, username=None, password=None):
-        import timeutil
         with self.lock:
             logins = self._read()
             entry = logins.get(site(host)) or {}

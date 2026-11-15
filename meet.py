@@ -33,6 +33,7 @@ import secrets
 import activity_log
 import network_crypto as nc
 import security_levels
+import timeutil
 from i18n import t
 from machine.owner_error import OwnerError
 
@@ -83,7 +84,6 @@ def ensure(db):
 
 
 def now():
-    import timeutil
     return timeutil.clock()
 
 

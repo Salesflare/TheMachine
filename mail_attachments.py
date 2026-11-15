@@ -31,6 +31,7 @@ from pathlib import Path
 
 import message_seal
 import office_files
+import timeutil
 from machine.owner_error import OwnerError
 
 OPEN_NAME = 'the-machine-open-attachments'
@@ -274,7 +275,6 @@ def _json(text):
 def sweep(connect, config, since=None, store=None, now=None):
     """Seal what ended runs took from emails and remove their readable copies. `since`: only runs that ended since then
     (an ISO time); None: every earlier run. Returns how many files were sealed."""
-    import timeutil
     now = now or timeutil.clock()
     base, sealed = root(config).resolve(), 0
     workspace = base.parent.parent

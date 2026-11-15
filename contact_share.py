@@ -18,6 +18,7 @@ import hashlib
 import json
 import re
 import secrets
+import timeutil
 from machine.owner_error import OwnerError
 
 KIND = 'contact'
@@ -40,7 +41,6 @@ def ensure(db):
 
 
 def now():
-    import timeutil
     return timeutil.stamp()
 
 

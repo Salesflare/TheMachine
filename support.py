@@ -21,6 +21,7 @@ import tarfile
 from pathlib import Path
 
 import service
+import timeutil
 
 ROOT = Path(__file__).resolve().parent
 SENSITIVE_KEY = re.compile(r'token|secret|password|passphrase|key|credential|cookie|auth|session|owner|email|phone|host', re.I)
@@ -266,7 +267,6 @@ def _connections(db, labels):
 
 
 def _failures(db, days=FAILURE_DAYS):
-    import timeutil
     cutoff = (timeutil.clock() - dt.timedelta(days=days)).isoformat(timespec='seconds')[:19]
     out = []
     for table, (kind, key, at) in FAILURE_TABLES.items():
@@ -336,7 +336,6 @@ def _run(args, timeout=60):
 
 
 def versions(config):
-    import timeutil
     lines = [f'when: {timeutil.clock().isoformat(timespec="seconds")}',
              f'os: {platform.platform()}', f'wsl: {service.wsl()}', f'service manager: {service.manager()}',
              f'python: {sys.version.split()[0]} ({sys.executable})', f'app: {ROOT}',
@@ -360,7 +359,6 @@ def windows_desktop():
 
 def bundle(config_path, out=None, doctor=None, lines=1000):
     """Write the archive and return its path."""
-    import timeutil
     try:
         config = json.loads(Path(config_path).expanduser().read_text())
     except (OSError, ValueError):

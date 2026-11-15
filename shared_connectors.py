@@ -35,6 +35,7 @@ from pathlib import Path
 
 import fleet_trust as ft
 import network_crypto as nc
+import timeutil
 from machine.owner_error import OwnerError
 
 LOG = logging.getLogger('personal-assistant')
@@ -103,12 +104,10 @@ def merge_covered(accounts, store):
 
 
 def _now():
-    import timeutil
     return timeutil.stamp()
 
 
 def _age(stamp):
-    import timeutil
     try:
         return (timeutil.clock() - dt.datetime.fromisoformat(stamp)).total_seconds()
     except (TypeError, ValueError):

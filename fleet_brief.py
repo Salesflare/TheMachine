@@ -10,6 +10,7 @@ import re
 import urllib.parse
 
 import locale_prefs
+import timeutil
 from i18n import t
 
 
@@ -241,7 +242,6 @@ def brief_items(view, today=None, hidden=(), opener=None, learned=None, limit=12
     (for Not needed), a title, why it matters and, where the Fleet can help, a question to ask it. `opener(domain)` links
     the owner's own waiting mail (a Gmail search by default). `learned`: overlaps Not needed settled for good
     (Fleet.brief_learned). Plain code."""
-    import timeutil
     opener = opener or gmail_search
     today = today or timeutil.clock().date()
     short = _first_names(view)

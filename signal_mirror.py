@@ -38,6 +38,7 @@ sys.path.insert(0, str(ROOT))
 import portable  # noqa: E402
 import qr  # noqa: E402
 import signal_store as ss  # noqa: E402
+import timeutil
 
 SEND_GAP = 20            # seconds between two sends, at least
 LINK_WAIT = 600          # seconds a link waits for the code to be scanned
@@ -194,7 +195,6 @@ class Mirror:
         ss.set_state(self.db, names_at=ss.now())
 
     def keep(self, chat_id, author, sent_at, from_me, sender, message, edited=False):
-        import timeutil
         text = message.get('message') if isinstance(message.get('message'), str) else ''
         media = media_kind(message)
         if message.get('viewOnce'):
@@ -350,7 +350,6 @@ def program(args):
 def link(rpc, store, seal, wait=LINK_WAIT, clock=time.monotonic):
     """Links this Machine as a device of the owner's Signal: a QR code to scan in Signal on the phone, Settings, Linked
     devices, Link new device. Signal's code lasts a minute or two; a new one follows until LINK_WAIT."""
-    import timeutil
     db = ss.connect(store)
     until = clock() + wait
     while True:
