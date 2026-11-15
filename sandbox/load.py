@@ -540,6 +540,29 @@ def load_section_notes(store, base):
             found, keep = section_notes.drafts(db, kind, kind.candidates(db, accounts, base.date()))
             note_pages.sync(db, kind.kind, found, when, keep)
         db.commit()
+    load_note_page(store, when)
+
+
+def load_note_page(store, when):
+    """A written page (note_writer.py) on Home's Repairs and upkeep, as the Machine's turn would write it from its lines,
+    each bullet citing the lines it stands on."""
+    import note_writer
+    with store.connect() as db:
+        db.execute('BEGIN IMMEDIATE')
+        row = db.execute("SELECT id FROM note_pages WHERE kind='home' AND title='Repairs and upkeep' AND removed_at IS NULL").fetchone()
+        lines = {r['text']: r['id'] for r in db.execute('SELECT id,text FROM note_page_lines WHERE note_id=? AND removed_at IS NULL', (row['id'],))} if row else {}
+        line = lambda word: next((i for text, i in lines.items() if word in text), None)  # noqa: E731
+        boiler, gutters = line('boiler'), line('gutters')
+        if boiler and gutters:
+            item = next((x for x in note_writer.due(db, limit=50) if x['note_id'] == row['id']), None)
+            if item:
+                note_writer.save(db, item, {
+                    'summary': {'text': 'Two jobs come back every autumn: Northside Heating services the boiler in October, and the gutters are cleaned in November.',
+                                'sources': [boiler, gutters]},
+                    'facts': [{'text': 'Northside Heating does the boiler service.', 'sources': [boiler]}],
+                    'open': [{'text': 'The gutters are due again in November.', 'sources': [gutters]}],
+                    'timeline': [{'date': when[:4] + '-10-15', 'text': 'Boiler service by Northside Heating.', 'sources': [boiler]}]}, when)
+        db.commit()
 
 
 def load_share(db):

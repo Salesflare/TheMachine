@@ -69,6 +69,10 @@ class StatesTest(unittest.TestCase):
                 self.assertEqual(cards == 0, state == 'fresh')
                 self.assertEqual(errors, 2 if 'expired' in state else 0)
                 self.assertTrue(config['fleet']['url'].startswith('http://127.0.0.1:') if config.get('fleet') else True)
+                # the demo (recorded from all) shows a note's written page (note_writer.py); a fresh Machine has none
+                pages = db.execute("SELECT count(*) FROM sqlite_master WHERE name='note_writeups'").fetchone()[0] and \
+                    db.execute('SELECT count(*) FROM note_writeups WHERE page IS NOT NULL').fetchone()[0]
+                self.assertEqual(bool(pages), state != 'fresh')
 
 
 class SendStubTest(unittest.TestCase):

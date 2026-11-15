@@ -26,6 +26,21 @@
 a.note-link{color:var(--text);text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px}
 .note-page .note-add-line{margin:6px 0 0 -8px;min-height:0;padding:4px 8px;font-size:var(--fs-sm);color:var(--muted)}.note-page .note-lines{margin-top:var(--sp-2)}
 .note-empty{margin:4px 0 0;color:var(--muted)}
+/* The written page above the lines (note_writer.py): a summary, short sections, each bullet's sources as small numbers */
+.note-item .graph-row>.note-about{flex-basis:100%;margin:2px 0 0;color:var(--muted);font-size:var(--fs-sm);line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.note-written{margin-top:var(--sp-2);font-size:var(--fs-md);line-height:1.55}
+.note-written .note-summary{margin:0 0 var(--sp-2);max-width:70ch}
+.note-written h4{margin:var(--sp-3) 0 4px;color:var(--muted);font-size:var(--fs-xs);font-weight:var(--fw-medium);letter-spacing:.04em;text-transform:uppercase}
+.note-bullets{margin:0;padding-left:1.2em;max-width:70ch}.note-bullets li{margin:2px 0;font-size:var(--fs-sm)}
+.note-timeline{list-style:none;padding:0}.note-timeline li{display:grid;grid-template-columns:5.5em minmax(0,1fr);gap:8px}
+.note-timeline time{color:var(--muted);font-size:var(--fs-xs);line-height:1.9;white-space:nowrap;font-variant-numeric:tabular-nums}
+.note-cites{white-space:nowrap}.note-cite{display:inline-block;min-width:1.5em;margin-left:3px;padding:0 4px;border-radius:6px;background:var(--tile);color:var(--muted);font-size:var(--fs-xs);line-height:1.5;text-align:center;text-decoration:none;font-variant-numeric:tabular-nums;vertical-align:1px}
+.note-cite:hover{color:var(--text)}
+.note-written .note-sources-head{margin-bottom:0}
+.note-num{display:inline-block;min-width:1.5em;margin-right:6px;padding:0 4px;border-radius:6px;background:var(--tile);color:var(--muted);font-size:var(--fs-xs);font-weight:var(--fw-medium);text-align:center;font-variant-numeric:tabular-nums}
+.note-lines li.note-flash{animation:note-flash 1.6s ease-out}
+@keyframes note-flash{from{background:color-mix(in srgb,var(--c-accent) 14%,transparent)}to{background:transparent}}
+@media(prefers-reduced-motion:reduce){.note-lines li.note-flash{animation:none;outline:2px solid var(--border)}}
 .note-form{display:grid;gap:10px;width:100%;margin:8px 0 12px}
 .note-form label{display:grid;gap:4px;color:var(--muted);font-size:var(--fs-sm)}.note-form label>:is(input,select){width:100%;box-sizing:border-box;color:var(--text)}
 .note-form textarea,.note-form textarea:focus,.note-form textarea.filled{width:100%;box-sizing:border-box;height:auto;min-height:64px;field-sizing:content;max-height:240px;resize:vertical;transition:none;font:inherit}
@@ -40,7 +55,7 @@ a.note-link{color:var(--text);text-decoration:underline;text-decoration-thicknes
 .note-suggest button:hover,.note-suggest button:focus-visible,.note-suggest button:first-child{background:var(--c-hover)}
 .note-suggest button>small{color:var(--muted);font-size:var(--fs-xs);flex:0 0 auto}.note-suggest>p{margin:4px 8px}
 .note-kids,.note-backlinks{margin-top:var(--sp-4)}
-/* A note's breadcrumb: Graph › Notes › Kids ›, each a link, and the note's title as the heading right under it; it takes
+/* A note's breadcrumb: Graph › Notes › Kids, each a link, and the note's title as the heading right under it; it takes
    the page head's place at every width, so the path shows once. A long
    name shortens with … (its title shows it whole); the heading wraps, so the title always shows in full. */
 body:has(#people:not([hidden]) .note-crumbs) #page-head{display:none}  /* the trail is the path: no Graph / Notes head over it */

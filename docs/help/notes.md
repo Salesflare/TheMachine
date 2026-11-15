@@ -3,7 +3,7 @@ title: Notes
 area: graph
 summary: One readable page per subject, like a trip or your home, linked to the people and projects in it.
 covers: notes
-code: note_pages.py, note_pages_app.py, trip_notes.py, event_notes.py, bookings.py, section_notes.py, topic_notes.py, home_notes.py, health_notes.py, kids_notes.py, dashboard/graph-notes.js
+code: note_pages.py, note_pages_app.py, trip_notes.py, event_notes.py, bookings.py, section_notes.py, topic_notes.py, note_writer.py, home_notes.py, health_notes.py, kids_notes.py, dashboard/graph-notes.js
 order: 8
 ---
 A note is the overview of one subject: a trip, your home, how invoices are done. Notes sit in the Graph next to People, Organizations and Projects. They stay on your Machine and aren't shared with your team.
@@ -31,6 +31,18 @@ Your Machine also writes notes by itself, from your messages, and keeps them cur
 Your changes always stand. Rename a note, move it, change its dates or a line, and your Machine keeps it that way when it updates the note. Delete a line or a note and it doesn't come back. Later notes on the same subject go where you put the first one.
 
 **Back to the original** shows your Machine's own words again. Editing a line that came from what your Machine learned also changes it under **What I've learned**, so there's one version of it.
+
+## Written pages
+
+Once a note has at least two lines from your messages or from what your Machine learned, your Machine writes its page at the top. It reads the conversations themselves, not just their subjects:
+
+- A short summary: what it's about and where it stands.
+- **Key facts**, **Decisions**, **Open items** and a **Timeline**, each only when there's something concrete to say.
+- The note's lines come after, numbered, under **Sources**. Each sentence ends with the numbers of the lines it comes from: tap one to go to that line.
+
+The page is rewritten only when the note's lines change, at most about once a day. If its sources say nothing concrete, there's no page, just the lines. Remove a line and what came only from it goes from the page too. The Notes list shows the start of each page's summary under the note's name.
+
+A project or organization has its own page in the Graph already, with its description at the top. Conversations about one go there, not in a note.
 
 ## Notes from your conversations
 

@@ -16,7 +16,9 @@ import health_notes
 import help_chat
 import home_notes
 import kids_notes
+import locale_prefs
 import note_pages
+import note_writer
 import section_notes
 import todo_areas
 import topic_notes
@@ -257,6 +259,60 @@ class NotesApp:
         LOG.info('topic notes placed=%s notes=%s', done, len(touched))
         return done
 
+    def note_writer_step(self):
+        """At most once a note_writer.PASS_MINUTES: one background turn writes the pages of a few notes whose sources
+        changed (note_writer.py), in a thread of its own once the budget allows (notes_turn_free). Never in a request.
+        True when a turn started."""
+        running = getattr(self, 'note_writer_thread', None)
+        if (running and running.is_alive()) or monotonic() < getattr(self, 'note_writer_next', 0):
+            return False
+        with self.store.connect() as db:
+            items = note_writer.due(db)
+        if not items:
+            self.note_writer_next = monotonic() + note_writer.PASS_MINUTES * 60
+            return False
+        if not self.notes_turn_free('note-writer'):
+            return False
+        self.note_writer_next = monotonic() + note_writer.PASS_MINUTES * 60
+        self.note_writer_thread = threading.Thread(target=self.note_writer_run, args=(items,), daemon=True, name='note-writer')
+        self.note_writer_thread.start()
+        return True
+
+    def note_writer_run(self, items):
+        """One turn: the notes' sources, one call, their pages saved. An answer that can't be read keeps every page as
+        it was and tries again after note_writer.NOTE_HOURS. Returns how many pages it wrote."""
+        try:
+            with self.store.connect() as db:
+                notes = [note_writer.evidence(db, item, self.owner_slack_ids()) for item in items]
+            answer = None
+            ask = getattr(self, 'note_writer_model', None)  # tests and the sandbox: (prompt) -> reply
+            text = note_writer.prompt(notes, locale_prefs.language_of(self.config))
+            try:
+                if ask:
+                    answer = ask(text)
+                else:
+                    model = background_model(self.config)
+                    answer = help_chat.openclaw_model_run(self.config, text, '/'.join(model) if model else None, timeout=note_writer.TIMEOUT)
+            except help_chat.Unavailable:
+                answer = None
+            found = note_writer.parse(answer, notes)
+            written = 0
+            with self.store.connect() as db:
+                db.execute('BEGIN IMMEDIATE')
+                if found is None:
+                    note_writer.tried(db, items)
+                else:
+                    for item in items:
+                        if item['note_id'] in found:
+                            written += note_writer.save(db, item, found[item['note_id']]) == 'written'
+                        else:
+                            note_writer.tried(db, [item])
+        except Exception as error:  # noqa: BLE001 - the next turn tries again
+            LOG.warning('note writer error=%s', type(error).__name__)
+            return 0
+        LOG.info('note writer asked=%s written=%s', len(items), written)
+        return written
+
     def calendar_notes(self, start, end):
         """The dated notes (trips, events) that touch the Calendar's window, as bands: a day either side, since the window's
         edges are instants and a note's dates are local days (the Calendar keeps what touches each week)."""
@@ -269,14 +325,23 @@ class NotesApp:
             return [{k: x[k] for k in ('id', 'kind', 'name', 'starts', 'ends')} for x in note_pages.dated(db, first, last)]
 
     def notes_list(self, db):
-        """The Notes list, light: what each row shows, in tree order."""
-        return note_pages.listing(db, today().isoformat())
+        """The Notes list, light: what each row shows, in tree order, with a written page's summary (note_writer)."""
+        found = note_pages.listing(db, today().isoformat())
+        about = note_writer.about(db, [note_pages.parse_id(x['id']) for x in found])
+        for x in found:
+            text = about.get(note_pages.parse_id(x['id']))
+            if text:
+                x['about'] = text
+        return found
 
     def note_page(self, node):
         """One note's page (with the whole tree, light), each line with the message it came from (what and when), so it opens from there."""
         with self.store.connect() as db:
             found = note_pages.page(db, node)
             found['tree'] = note_pages.listing(db, today().isoformat())  # for Under and Merge into, and @ links
+            written = note_writer.view(db, note_pages.parse_id(node))  # the written page above the lines, its bullets citing them
+            if written:
+                found['page'] = written
         todos = sorted({str(x['data']['todo']) for x in found['lines'] if isinstance(x.get('data'), dict) and x['data'].get('todo')})
         if todos:  # a bill's or a subscription's line opens its to-do, while it is there
             with self.store.connect() as db:

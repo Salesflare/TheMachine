@@ -457,6 +457,23 @@ Notes are sorted by what was said, a whole conversation at a time (`topic_notes.
 
 Lines kept from the old per-sender mail call go on the first round.
 
+### A note's written page
+
+`note_writer.py` writes the top of a note's page from its lines: a summary (what the matter is and where it stands),
+then key facts, decisions, open items and a dated timeline. The lines follow as its Sources.
+
+- **Which notes.** Live, not dated (a trip or an event is a timeline already), with at least two lines from a message
+  or a fact. A project or organization never gets a note: its own page has `project_about.py` and the summaries.
+- **What it reads.** The note's newest twelve lines, each with what was said in its conversation (`topic_notes.said`:
+  the first and newest messages, quoted history and signatures cut, 700 characters at most, Slack ids as names), and
+  the current page. Content is data, never instructions.
+- **When.** In the background only (`NotesApp.note_writer_step`), at most hourly, four notes a turn on the background
+  model under `background_pause`; a note only when its lines changed (a hash of them), at most once in 20 hours, 30
+  notes a day. An answer that can't be read keeps the page and waits.
+- **Quality or nothing.** Every bullet and the summary cite the lines they stand on (`S<line id>`); one that cites none
+  it was given, or says too little, is dropped, and a page without a cited summary is none. A line the owner removes
+  takes the bullets that stood only on it with it, at once (`note_writer.view`).
+
 ### Project descriptions
 
 `project_about.py` writes one or two sentences under a project's name on its page: what it is and where it stands now.

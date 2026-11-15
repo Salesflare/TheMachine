@@ -31,6 +31,10 @@ import i18n
 from timeutil import local_day, local_tz, now
 
 ENTRIES = [
+    {'id': 'note-pages-written', 'date': '2026-11-15', 'weight': 3, 'title': 'Notes read like pages',
+     'text': 'A note now opens with a summary, key facts, decisions, open items and a timeline, written from your '
+             'conversations. Each line links to where it came from.',
+     'action': {'label': 'Open Notes', 'run': 'go-notes'}, 'art': 'notes'},
     {'id': 'notes-from-conversations', 'date': '2026-11-15', 'weight': 2, 'title': 'Notes from your conversations',
      'text': 'Email, chats and meeting notes go in the note they’re about, Work too. A project or organization keeps '
              'its own page.',
