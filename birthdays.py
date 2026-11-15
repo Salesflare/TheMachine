@@ -162,12 +162,43 @@ def by_identifier(db, people, identifiers, code=None):
     wanted = {same_form(i): i for i in identifiers}
     if not wanted:
         return {}
-    owners = {}
-    for row in db.execute("SELECT id,info FROM graph_nodes WHERE kind='person'"):
-        info = people[row['id']]['info'] if row['id'] in people else json.loads(row['info'] or '{}')
-        for identifier in person_ids(row['id'], info, code) & set(wanted):
-            owners.setdefault(identifier, set()).add(row['id'])
+    owners, keys = {}, set(wanted)
+    for node_id, ids in _everyones_ids(db, people, code):
+        for identifier in ids & keys:
+            owners.setdefault(identifier, set()).add(node_id)
     return {wanted[i]: next(iter(nodes)) for i, nodes in owners.items() if len(nodes) == 1 and next(iter(nodes)) in people}
+
+
+# Every person's identifiers (person_ids), by node id: {node id: (their info as stored, the calling code, ids)}. A
+# person's page asks by_identifier whether anyone else goes by one of their identifiers, which reads every person in the
+# Graph. Opening and parsing each one's info is most of that time; the stored text alone is quick to read. So the ids
+# are kept for as long as the stored text is the same (a sealed value is written anew with every change), and are
+# made again from the info when it isn't. Holds only who is in the Graph now (each pass keeps what it read, about the
+# size of the stored infos), and a pass swaps it whole, so one running at the same time reads the one before.
+_IDS = {}
+
+
+def _everyones_ids(db, people, code):
+    """[(node id, person_ids)] for every person in the Graph; people's own info for those in people, as before."""
+    global _IDS
+    cur = db.cursor()
+    cur.row_factory = None  # the stored text, unopened
+    sealer = getattr(db, 'sealer', None)
+    kept, seen, out = _IDS, {}, []
+    for node_id, stored in cur.execute("SELECT id,info FROM graph_nodes WHERE kind='person'"):
+        if node_id in people:
+            out.append((node_id, person_ids(node_id, people[node_id]['info'], code)))
+            continue
+        hit = kept.get(node_id)
+        if hit and hit[0] == stored and hit[1] == code:
+            ids = hit[2]
+        else:
+            info = sealer.open_any(stored) if sealer else stored
+            ids = frozenset(person_ids(node_id, json.loads(info or '{}'), code))
+        seen[node_id] = (stored, code, ids)
+        out.append((node_id, ids))
+    _IDS = seen
+    return out
 
 
 # --- the sources -------------------------------------------------------------------------------------------------------
