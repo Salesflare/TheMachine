@@ -46,6 +46,8 @@ import time
 import urllib.request
 import wave
 from pathlib import Path
+
+import locale_prefs
 from machine.owner_error import OwnerError
 
 ROOT = Path(__file__).resolve().parent
@@ -55,7 +57,8 @@ RATE = 16000
 REQUEST_BYTES = (MAX_SECONDS + 5) * RATE * 2 * 4 // 3 + 64 * 1024   # the WAV, base64 in JSON
 IDLE_SECONDS = 300
 FREE_BYTES = 2 * 1024 ** 3   # room the preparation needs: packages about 0.5 GB, the small model 0.5 GB, and slack
-LANGUAGES = ('de', 'en', 'es', 'fr', 'it', 'ja', 'ko', 'nl', 'pt', 'ru', 'zh')   # the app's languages (i18n/*.json), as Whisper names them
+# Voice input's languages as Whisper names them (ISO 639-1), A to Z: locale_prefs.LANGUAGE_TABLE's, as the menu offers them
+LANGUAGES = tuple(sorted(code for code, _, _ in locale_prefs.mic_languages()))
 # Talk live's voices (OpenAI Realtime, gpt-realtime). ChatGPT's Cove isn't one of them (only GPT-Live through a
 # ChatGPT sign-in has it); Cedar, calm and low, is the closest, so it's the default. Samples: brand/voices/<name>.mp3.
 TALK_VOICES = ('cedar', 'marin', 'ash', 'ballad', 'coral', 'echo', 'sage', 'shimmer', 'verse', 'alloy')

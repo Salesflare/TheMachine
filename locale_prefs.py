@@ -18,28 +18,56 @@ from __future__ import annotations
 import datetime as dt
 import functools
 import re
+import unicodedata
 import zoneinfo
 from pathlib import Path
 
 # Every language the app speaks, one row each (i18n/<code>.json holds its strings): its name in itself (the language
 # picker), its name in English (what a prompt calls it), and the language as speech knows it, an ISO 639-1 code and its
-# English name (voice input and Talk). The one table: the modules that name a language read it from here.
+# English name (voice input and Talk), and the BCP-47 tag the browser's own speech recognition hears it by (voice input;
+# None leaves the language out of voice input's languages, mic_languages()). The one table: the modules that name a
+# language read it from here.
 LANGUAGE_TABLE = {
-    'en': ('English', 'English', 'en', 'English'),
-    'nl': ('Nederlands', 'Dutch', 'nl', 'Dutch'),
-    'fr': ('Français', 'French', 'fr', 'French'),
-    'de': ('Deutsch', 'German', 'de', 'German'),
-    'es': ('Español', 'Spanish', 'es', 'Spanish'),
-    'it': ('Italiano', 'Italian', 'it', 'Italian'),
-    'pt-BR': ('Português (Brasil)', 'Brazilian Portuguese', 'pt', 'Portuguese'),
-    'zh-CN': ('简体中文', 'Simplified Chinese', 'zh', 'Chinese'),
-    'ja': ('日本語', 'Japanese', 'ja', 'Japanese'),
-    'ko': ('한국어', 'Korean', 'ko', 'Korean'),
-    'ru': ('Русский', 'Russian', 'ru', 'Russian'),
+    'en': ('English', 'English', 'en', 'English', 'en-US'),
+    'nl': ('Nederlands', 'Dutch', 'nl', 'Dutch', 'nl-NL'),
+    'fr': ('Français', 'French', 'fr', 'French', 'fr-FR'),
+    'de': ('Deutsch', 'German', 'de', 'German', 'de-DE'),
+    'es': ('Español', 'Spanish', 'es', 'Spanish', 'es-ES'),
+    'it': ('Italiano', 'Italian', 'it', 'Italian', 'it-IT'),
+    'pt-BR': ('Português (Brasil)', 'Brazilian Portuguese', 'pt', 'Portuguese', 'pt-BR'),
+    'zh-CN': ('简体中文', 'Simplified Chinese', 'zh', 'Chinese', 'zh-CN'),
+    'ja': ('日本語', 'Japanese', 'ja', 'Japanese', 'ja-JP'),
+    'ko': ('한국어', 'Korean', 'ko', 'Korean', 'ko-KR'),
+    'ru': ('Русский', 'Russian', 'ru', 'Russian', 'ru-RU'),
 }
 LANGUAGES = {code: row[0] for code, row in LANGUAGE_TABLE.items()}
 ENGLISH_NAMES = {code: row[1] for code, row in LANGUAGE_TABLE.items()}  # 'Dutch' for nl
 SPOKEN_NAMES = {row[2]: row[3] for row in LANGUAGE_TABLE.values()}  # 'Chinese' for zh
+
+
+def _script(name):
+    """0 for a name in Latin letters, 1 in Cyrillic, 2 in another script."""
+    first = unicodedata.name(name[:1], '') if name else ''
+    return 0 if first.startswith('LATIN') else 1 if first.startswith('CYRILLIC') else 2
+
+
+def _folded(name):
+    """'espanol' from 'Español': a name as A to Z sorts it."""
+    return ''.join(c for c in unicodedata.normalize('NFD', name.casefold()) if not unicodedata.combining(c))
+
+
+def mic_languages():
+    """Voice input's languages (Settings, General, Voice input; the browser's own speech recognition; Whisper), from
+    LANGUAGE_TABLE: [spoken code, name in itself, BCP-47 tag] for each spoken language with a tag. The name is the
+    picker's without its region ('Português' for 'Português (Brasil)'). Names in Latin letters come first, A to Z, then
+    Cyrillic ones, then the rest in the table's order."""
+    rows, seen = [], set()
+    for index, (name, _, spoken, _, tag) in enumerate(LANGUAGE_TABLE.values()):
+        if tag and spoken not in seen:
+            seen.add(spoken)
+            rows.append((index, [spoken, name.split(' (')[0], tag]))
+    key = lambda r: (_script(r[1][1]), _folded(r[1][1]) if _script(r[1][1]) < 2 else '', r[0])
+    return [row for _, row in sorted(rows, key=key)]
 # A browser language without its own catalog that reads one of these for now: Portuguese from Portugal reads Brazilian,
 # any Chinese (zh-TW, zh-HK, zh-Hant) reads Simplified Chinese.
 NEAREST = {'pt': 'pt-BR', 'zh': 'zh-CN'}
