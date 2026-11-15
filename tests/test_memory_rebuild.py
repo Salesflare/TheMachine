@@ -92,6 +92,13 @@ class MemoryRebuildTest(unittest.TestCase):
         with open(self.logs / f'openclaw-{day}.log', 'a') as out:
             out.write('\n'.join(lines) + '\n')
 
+    def rebuilding(self, when):
+        """OpenClaw writing its rebuild's copy at `when`."""
+        shadow = self.agent / 'openclaw-agent.sqlite.memory-reindex-8762fa68-b86f-4bd0-a19b-7e1a4dae71d1'
+        shadow.write_text('')
+        os.utime(shadow, (when.timestamp(),) * 2)
+        return shadow
+
     def step(self, local_now, hours=memory_rebuild.WINDOW):
         return memory_rebuild.step(self.data, 'openclaw', self.settings, self.state, local_now.timestamp(), local_now, hours, self.cron)
 
@@ -118,6 +125,25 @@ class MemoryRebuildTest(unittest.TestCase):
         self.assertEqual(memory_rebuild.log_files(settings, dt.date(2026, 11, 14)), [path])
         self.assertEqual(memory_rebuild.interruptions([path], at(0).timestamp()), 1)  # a line without its time is not counted
 
+    def test_tries_cut_off_on_another_gateway_sharing_the_log_do_not_count(self):
+        def copy_line(folder, time):
+            return json.dumps({'0': '{"subsystem":"sqlite/transaction"}', 'time': time,
+                               '1': {'database': f'{folder}/openclaw-agent.sqlite.memory-reindex-0d4c'}})
+        def cut(time):
+            return json.dumps({'1': 'memory sync failed (watch): MemoryBackgroundRebuildInterruptedError', 'time': f'2026-11-14T{time}+01:00'})
+        other = self.tmp / 'eval' / 'agents' / 'main' / 'agent'
+        lines = [copy_line(self.agent, '2026-11-14T01:00:00+01:00'), cut('01:30:00'), cut('02:00:00'),
+                 copy_line(other, '2026-11-14T03:00:00+01:00'), cut('03:30:00'), cut('04:00:00'), cut('04:30:00')]
+        (self.logs / 'openclaw-2026-11-14.log').write_text('\n'.join(lines) + '\n')
+        paths = memory_rebuild.log_files(self.settings, dt.date(2026, 11, 14))
+        self.assertEqual(memory_rebuild.interruptions(paths, at(0).timestamp()), 5)
+        self.assertEqual(memory_rebuild.interruptions(paths, at(0).timestamp(), [self.agent]), 2)  # after the eval's copy: not ours
+        self.save_meta(1)
+        self.assertIsNone(memory_rebuild.stuck(self.settings, [self.agent], at(8).timestamp()))  # 2: not stuck
+        # a log only this Machine's Gateway writes: every try counts, whether a copy was named or not
+        (self.logs / 'openclaw-2026-11-14.log').write_text('\n'.join(lines[:3] + lines[4:]) + '\n')
+        self.assertEqual(memory_rebuild.interruptions(paths, at(0).timestamp(), [self.agent]), 5)
+
     def test_a_stuck_rebuild_gets_one_quiet_night(self):
         self.assertIsNone(self.step(at(22, minute=50)))  # not yet
         self.assertEqual(self.step(at(23, minute=0)), 'opened')
@@ -140,6 +166,8 @@ class MemoryRebuildTest(unittest.TestCase):
 
     def test_the_window_ends_at_its_hour_and_opens_once_a_night(self):
         self.assertEqual(self.step(at(23)), 'opened')
+        self.rebuilding(at(23, minute=20))
+        self.assertEqual(self.step(at(23, minute=21)), 'open')
         self.assertEqual(self.step(at(6, day=15, minute=55)), 'open')  # still in the old format, nothing published
         self.assertEqual(self.step(at(7, day=15, minute=0)), 'ended')
         self.assertEqual(self.cron.enabled(), ['backup', 'beat', 'brief', 'sync'])
@@ -164,6 +192,23 @@ class MemoryRebuildTest(unittest.TestCase):
         self.cron.down = True
         self.assertIsNone(self.step(at(23, day=15)))
         self.assertFalse((self.data / memory_rebuild.STATE).exists())
+
+    def test_a_window_no_rebuild_starts_in_closes_after_half_an_hour(self):
+        self.assertEqual(self.step(at(23, minute=0)), 'opened')
+        self.assertEqual(self.step(at(23, minute=20)), 'open')
+        self.assertEqual(self.step(at(23, minute=30)), 'no rebuild')
+        self.assertEqual(self.cron.enabled(), ['backup', 'beat', 'brief', 'sync'])
+        self.assertIsNone(memory_rebuild.holding(self.data, at(23, minute=31).timestamp()))  # reviews and turns go again
+        self.assertEqual(memory_rebuild.read_state(self.data)['outcome'], 'no rebuild')
+        self.assertIsNone(self.step(at(23, minute=40)))  # once a night
+
+    def test_a_rebuild_seen_keeps_the_window_open_between_its_writes(self):
+        self.assertEqual(self.step(at(23, minute=0)), 'opened')
+        self.rebuilding(at(23, minute=9))
+        self.assertEqual(self.step(at(23, minute=10)), 'open')
+        self.assertEqual(memory_rebuild.read_state(self.data)['rebuild_seen'], at(23, minute=10).timestamp())
+        self.assertEqual(self.step(at(23, minute=50)), 'open')  # cut off and not restarted yet: the window stays open
+        self.assertEqual(self.step(at(7, day=15)), 'ended')
 
     def test_openclaws_own_heartbeat_monitor_is_left_alone(self):
         self.cron.jobs['monitor'] = {**job('monitor', 'heartbeat'), 'declarationKey': 'heartbeat:main'}

@@ -13,8 +13,9 @@ stuck() says when that is so. The installer then stops waiting for the rebuild (
 service opens one quiet window a night (step): from `start` local time until `end`, The Machine's background turns wait
 (App.background_pause) and the OpenClaw jobs that run agent turns are turned off. OpenClaw's
 own rebuild then runs to the end. OpenClaw's own heartbeat monitor ("heartbeat:<agent>") is the exception: OpenClaw
-refuses any edit to it from a cron client, so it keeps running. The window closes once the saved index has the format its model wants, or at `end`,
-and every job it turned off is turned on again. The owner's own turns (chat, Do it, Review now) still go; one only
+refuses any edit to it from a cron client, so it keeps running. The window closes once the saved index has the format its model wants, at `end`, or
+after NO_REBUILD_AFTER when no rebuild has run in it (OpenClaw starts one only on a sync, which a quiet night may never
+bring), and every job it turned off is turned on again. The owner's own turns (chat, Do it, Review now) still go; one only
 makes that night's try start again.
 
 Nothing here restarts the Gateway or reloads a plugin, and OpenClaw's own reindex command is not used: it runs a second
@@ -27,6 +28,7 @@ import json
 import logging
 import os
 from pathlib import Path
+import re
 import sqlite3
 import subprocess
 import time
@@ -42,6 +44,8 @@ WINDOW = (23, 7)  # local hours: the quiet window opens in the hour from `start`
 TURN_KINDS = ('agentTurn', 'heartbeat')  # OpenClaw jobs that run an agent turn; scripts and commands keep running
 STATE = 'memory-rebuild.json'  # in the data folder: the window that is open or was last open, and the jobs it turned off
 SYSTEM_MONITOR = 'heartbeat:'  # declarationKey of OpenClaw's own heartbeat jobs, which no cron client may edit
+NO_REBUILD_AFTER = 1800  # seconds after opening: a window that has seen no rebuild running by then closes
+AGENT_DB = re.compile(r'(?P<folder>/[^"\'\s]*)/openclaw-agent\.sqlite(?P<copy>\.memory-reindex-)?')  # in a log line
 CLOSE_TRIES = 6  # looks (ten minutes apart) that try to turn a closed window's jobs on again before it gives up
 
 
@@ -142,18 +146,28 @@ def line_time(line):
         return None
 
 
-def interruptions(paths, since):
-    """Rebuild tries a turn cut off since `since` (epoch seconds), from OpenClaw's log."""
-    count = 0
-    for path in paths:
+def interruptions(paths, since, folders=None):
+    """Rebuild tries a turn cut off since `since` (epoch seconds), from OpenClaw's log. The default log folder is
+    shared by every Gateway on the computer (a test or eval run's too), and the interrupted line doesn't say whose try
+    it was. So once the log names an agent database outside `folders`, a cut-off try counts only when the last
+    rebuild copy the log named before it is in one of `folders`. `folders` None: every one counts."""
+    ours = {os.path.normpath(str(folder)) for folder in folders} if folders is not None else None
+    cut, shared, last_ours = [], False, False
+    for path in reversed(paths):  # oldest first, so a try is matched with the copy named before it
         try:
             with open(path, encoding='utf-8', errors='replace') as lines:
                 for line in lines:
+                    if ours is not None and 'openclaw-agent.sqlite' in line:
+                        for found in AGENT_DB.finditer(line):
+                            mine = os.path.normpath(found.group('folder')) in ours
+                            shared = shared or not mine
+                            if found.group('copy'):
+                                last_ours = mine
                     if INTERRUPTED in line and (line_time(line) or 0) >= since:
-                        count += 1
+                        cut.append(last_ours)
         except OSError:
             continue
-    return count
+    return sum(cut) if shared else len(cut)
 
 
 def stuck(settings, folders, now=None, today=None):
@@ -165,7 +179,7 @@ def stuck(settings, folders, now=None, today=None):
     now = time.time() if now is None else now
     today = today or dt.date.fromtimestamp(now)
     behind = any(format_behind(index_meta(folder)) for folder in folders)
-    cut = interruptions(log_files(settings, today), now - 86400)
+    cut = interruptions(log_files(settings, today), now - 86400, folders)
     if behind or cut >= STUCK_INTERRUPTS:
         return {'format_behind': behind, 'interrupted': cut}
     return None
@@ -293,6 +307,13 @@ def step(folder, openclaw, settings, state_dir, now, local_now, hours=WINDOW, ru
         if finished(state, folders, now):
             close(folder, openclaw, state, 'done', now, run)
             return 'done'
+        if rebuild_running(folders, now):
+            if not state.get('rebuild_seen'):
+                write_state(folder, {**state, 'rebuild_seen': now})
+            return 'open'
+        if not state.get('rebuild_seen') and now - float(state.get('opened') or now) >= NO_REBUILD_AFTER:
+            close(folder, openclaw, state, 'no rebuild', now, run)  # OpenClaw didn't start one: nothing to hold for
+            return 'no rebuild'
         return 'open'
     if hours is None:
         return None
