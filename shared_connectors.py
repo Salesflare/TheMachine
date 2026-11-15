@@ -104,7 +104,7 @@ def merge_covered(accounts, store):
 
 def _now():
     import timeutil
-    return timeutil.clock().isoformat(timespec='seconds')
+    return timeutil.stamp()
 
 
 def _age(stamp):

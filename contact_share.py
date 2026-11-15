@@ -41,7 +41,7 @@ def ensure(db):
 
 def now():
     import timeutil
-    return timeutil.clock().isoformat(timespec='seconds')
+    return timeutil.stamp()
 
 
 def line(value, chars):

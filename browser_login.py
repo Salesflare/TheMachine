@@ -618,7 +618,7 @@ class LoginStore:
                 entry['username'] = username
             if password:
                 entry['password'] = password
-            entry['saved_at'] = timeutil.clock().isoformat(timespec='seconds')
+            entry['saved_at'] = timeutil.stamp()
             logins[site(host)] = entry
             self._write(logins)
 

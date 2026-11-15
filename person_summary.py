@@ -85,7 +85,7 @@ def ensure(db):
 
 
 def now():
-    return timeutil.clock().isoformat(timespec='seconds')
+    return timeutil.stamp()
 
 
 def clip(text, n=CLIP):

@@ -212,7 +212,7 @@ class StoreReader:
         with self.store.connect() as db:
             rows = db.execute(f"SELECT id,dedupe_key,title,body,status,due,area,project,account_ids,event_ids,created_at,snoozed_until,deliver_after "
                               f"FROM suggestions WHERE status IN ({','.join('?' * len(OPEN_TODOS))}) ORDER BY created_at", OPEN_TODOS).fetchall()
-        current = timeutil.clock().isoformat(timespec='seconds')
+        current = timeutil.stamp()
         return [dict(r) for r in rows if not (r['deliver_after'] and r['deliver_after'] > current)]  # prepared ahead: not shown yet
 
     def voices(self):

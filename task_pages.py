@@ -42,7 +42,7 @@ def today():
 
 def stamp():
     import timeutil
-    return timeutil.clock().isoformat(timespec='seconds')
+    return timeutil.stamp()
 
 
 LEAD = {'on': 'is on it', 'done': 'marked it done', 'cant': "can't do this"}

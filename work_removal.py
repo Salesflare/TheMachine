@@ -209,7 +209,7 @@ def purge(config, account_ids, store=None):
             import graph
             with store.connect() as db:
                 db.isolation_level = None  # graph.build runs its own transaction
-                graph.build(db, config, timeutil.clock().isoformat(timespec='seconds'))
+                graph.build(db, config, timeutil.stamp())
                 counts['graph'] = max(0, before - db.execute('SELECT COUNT(*) FROM graph_nodes').fetchone()[0])
         except Exception:  # noqa: BLE001 - the graph is rebuilt again on the service's next round
             counts['graph'] = 0

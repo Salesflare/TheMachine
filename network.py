@@ -45,7 +45,7 @@ KEEP_DAYS = 30
 
 def now():
     import timeutil
-    return timeutil.clock().isoformat(timespec='seconds')
+    return timeutil.stamp()
 
 
 def _later(seconds):

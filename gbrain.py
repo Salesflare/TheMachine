@@ -93,7 +93,7 @@ def on(config):
 
 def now():
     import timeutil
-    return timeutil.clock().isoformat(timespec='seconds')
+    return timeutil.stamp()
 
 
 # --- The CLI and OpenClaw ------------------------------------------------------------------------------------------

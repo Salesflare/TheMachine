@@ -1713,7 +1713,7 @@ def detail(db, node_id, events=12):
     view = node_view(row, neighbours(db, node_id, 20))
     # What already happened first, newest first; what is still to come (meetings ahead) only after it, soonest first.
     # Newest by date alone, a person with a few meetings ahead had only those, and none of their latest messages.
-    current = timeutil.clock().isoformat(timespec='seconds')
+    current = timeutil.stamp()
     order = 'ORDER BY at>? ASC, CASE WHEN at>? THEN at END ASC, at DESC LIMIT ?'
     rows = db.execute(f'SELECT event_id,probable,at FROM graph_events WHERE node_id=? {order}', (node_id, current, current, events)).fetchall()
     if row['kind'] == 'org':  # an organization's timeline: the messages and meetings of the people in it

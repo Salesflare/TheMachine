@@ -52,7 +52,7 @@ ACTIONS = ('fleet_handoff_email_parts', 'fleet_handoff_take_line')
 
 
 def now():
-    return timeutil.clock().isoformat(timespec='seconds')
+    return timeutil.stamp()
 
 
 def ensure(db):
