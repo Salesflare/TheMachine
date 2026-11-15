@@ -606,6 +606,7 @@
  "At most {} voices: work this into an existing channel or All": "最多{}种声音：将其整合到现有频道或“全部”中",
  "At stake": "事关",
  "At stake: {}": "事关：{}",
+ "At {}": "在{}",
  "Attach a message": "附加一条消息",
  "Attach a message this to-do is about": "附加与此待办相关的消息",
  "Attach an email": "附加一封邮件",
@@ -5971,6 +5972,7 @@
  "Thursdays after {}": "每周四，{}之后",
  "Tick Save for next time when you sign in to a site.": "登录网站时，勾选“下次保存”。",
  "Tick the skills to import": "勾选要导入的技能",
+ "Tickets": "工单",
  "Time": "时间",
  "Time format": "时间格式",
  "Time passed": "已用时间",
@@ -7886,6 +7888,7 @@
  "{} threads": {
   "other": "{}个线程"
  },
+ "{} tickets": "{} 个工单",
  "{} times": {
   "other": "{}次"
  },
