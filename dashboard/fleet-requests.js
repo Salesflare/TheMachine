@@ -81,4 +81,11 @@ function fleetSync(force){if(!state?.fleet?.on)return Promise.resolve();if(fleet
  if(!force&&Date.now()-fleetAt<20000&&!(graphWaiting()&&stamp!==fleetStamp))return Promise.resolve();
  if(!force&&fleetData&&stamp!=null&&stamp===fleetStamp&&$('#fleet').hidden)return Promise.resolve();
  const before=fleetSig();fleetLoading=request('api/fleet').then(d=>{fleetData=d;fleetAt=Date.now();fleetStamp=stamp;if(fleetSig()!==before)render();if(!$('#fleet').hidden&&!($('#fleet-view').contains(document.activeElement)&&document.activeElement.matches('input,select,textarea')))fleetView(false,true)}).catch(()=>{fleetAt=Date.now()}).finally(()=>{fleetLoading=null});return fleetLoading}
+// From a redraw: the first read waits for the page's load and then an idle browser (it's a large one, and nothing of it
+// shows), unless something there needs the owner (its to-dos go first in the list) or the Fleet tab is open; after
+// that, as fleetSync
+let fleetIdleAsked=false;
+function fleetSoon(){if(fleetData||state?.fleet?.waiting||!$('#fleet').hidden)return fleetSync();if(fleetIdleAsked||!state?.fleet?.on)return;
+ fleetIdleAsked=true;new Promise(r=>{if(document.readyState==='complete')r();else{addEventListener('load',()=>r(),{once:true});setTimeout(r,5000)}})
+  .then(lazyIdle).then(()=>fleetSync()).finally(()=>{fleetIdleAsked=false})}
 const fleetOn=(type,fn)=>{for(const el of [$('#fleet-view'),$('#suggestions')])el.addEventListener(type,fn)};

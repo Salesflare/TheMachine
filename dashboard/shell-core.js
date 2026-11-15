@@ -170,7 +170,9 @@ const safeHref=(u,base=location.href)=>{const v=String(u??'').trim();if(!v)retur
 const date=v=>v?fmtDHM(v,{month:'short',day:'numeric',year:'numeric'}):t('Not yet');
 // Parts that load when first needed (dashboard_parts.py LAZY), named in LAZY_FILES. The page is drawn without them;
 // once drawn whole and idle after the load event, lazySoon() fetches them one at a time, each once the browser is idle
-// again, so they never slow the start (all at once, they took the connections the page's data waited for). A tab
+// again and the owner has left the page alone for LAZY_QUIET ms (none in the first LAZY_QUIET ms either), so they never
+// slow the start (all at once, they took the connections the page's data waited for; right after the load, running
+// them kept a phone's first taps waiting for seconds, each part's styles restyling the whole page). A tab
 // opened before its part is in asks for it at once (lazyPart). A page with every part inline (tests, the demo) has none
 // to load. lazyPart(group): its file, loaded once (a failed load is tried again on the next call). lazyIn(group): it's
 // there (or has no file). lazyRun(group,fn): fn now when it's there, else once it is, and once only: each to-do that
@@ -183,9 +185,12 @@ function lazyPart(group){const file=self.LAZY_FILES?.[group];if(!file||lazyDone[
   load=()=>{const s=document.createElement('script');s.src=file;s.onload=()=>{lazyDone[group]=true;ok()};
   s.onerror=()=>{s.remove();fetch(file,{cache:'no-store'}).then(r=>r.status>=502&&r.status<=504?again():no(),again)};document.head.append(s)};load()})}
 const lazyIdle=()=>new Promise(r=>self.requestIdleCallback?requestIdleCallback(r,{timeout:3000}):setTimeout(r,200));
-const lazyAll=()=>lazyAllRun??=(async()=>{for(const group of Object.keys(self.LAZY_FILES||{})){await lazyIdle();await lazyPart(group).catch(()=>{})}})();
+const LAZY_QUIET=3000;let lazyTouched=performance.now();
+for(const type of ['pointerdown','keydown','wheel','touchstart'])addEventListener(type,()=>{lazyTouched=performance.now()},{capture:true,passive:true});
+const lazyQuiet=()=>new Promise(r=>{const wait=()=>{const left=LAZY_QUIET-(performance.now()-lazyTouched);if(left>0)setTimeout(wait,left);else lazyIdle().then(()=>performance.now()-lazyTouched<LAZY_QUIET?wait():r())};wait()});
+const lazyAll=()=>lazyAllRun??=(async()=>{for(const group of Object.keys(self.LAZY_FILES||{})){await lazyQuiet();await lazyPart(group).catch(()=>{})}})();
 function lazySoon(){if(lazySoonRun||!self.LAZY_FILES)return;lazySoonRun=true;let gone=false;
- const go=()=>{if(gone)return;gone=true;self.requestIdleCallback?requestIdleCallback(()=>lazyAll(),{timeout:2000}):setTimeout(lazyAll,200)};
+ const go=()=>{if(gone)return;gone=true;lazyTouched=Math.max(lazyTouched,performance.now());lazyAll()};
  if(document.readyState==='complete')go();else{addEventListener('load',go,{once:true});setTimeout(go,5000)}}
 addEventListener('popstate',e=>backPop(e));  // shell-back.js
 const lazyIn=group=>!self.LAZY_FILES?.[group]||!!lazyDone[group];

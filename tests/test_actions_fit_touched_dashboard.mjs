@@ -30,7 +30,7 @@ try{
  const rows=await page.waitForFunction(()=>document.querySelectorAll('#suggestions .card .actions[data-fit]').length>=6,null,{timeout:5000}).then(()=>6,()=>page.locator('#suggestions .card .actions[data-fit]').count());
  assert.ok(rows>=6,'each to-do’s row is fitted: '+rows);
  // Count the measurings from here on (actionsSize is a page-wide function, so the observers call this one)
- await page.evaluate(()=>{window.sized=[];const was=actionsSize;window.actionsSize=a=>{sized.push(a.closest('article')?.id);was(a)}});
+ await page.evaluate(()=>{window.sized=[];const was=actionsSize;window.actionsSize=rows=>{for(const a of rows)sized.push(a.closest('article')?.id);was(rows)}});
  const settle=()=>page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(()=>setTimeout(r,50)))));
  const take=()=>page.evaluate(()=>sized.splice(0));
  await settle();await take();

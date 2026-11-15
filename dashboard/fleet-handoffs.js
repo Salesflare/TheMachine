@@ -91,11 +91,14 @@ document.addEventListener('click',e=>{if(e.target.closest?.('a.agent-app[data-la
 // name is already on the left). Measured per header as its width changes, not at a fixed screen width.
 // A wider header tries the long label again; any other change (a late font, new text) only ever shortens it, so it can't flip back and forth.
 const agentHeadWraps=h=>{const a=h.querySelector('a.agent-app'),n=h.firstElementChild;return !!a&&a!==n&&a.getBoundingClientRect().top>=n.getBoundingClientRect().bottom-1};
-function agentHeadSize(h,width){if(width!==undefined&&h._fitW!==width){h._fitW=width;h.classList.remove('tight')}if(!h.classList.contains('tight')&&agentHeadWraps(h))h.classList.add('tight')}
-const agentHeadFit=new ResizeObserver(rows=>{for(const {target:h,contentRect:r} of rows)if(r.width&&h._fitW!==r.width)agentHeadSize(h,r.width)});  // the width it has (or none): nothing to measure
+// Many headers at once: the new widths' labels put back first, then all measured (one layout), then the ones that
+// wrap shortened; header by header, each measure came after the one before's change, a whole layout each
+function agentHeadSize(heads,widths=[]){heads.forEach((h,i)=>{const w=widths[i];if(w!==undefined&&h._fitW!==w){h._fitW=w;h.classList.remove('tight')}});
+ for(const h of heads.filter(h=>!h.classList.contains('tight')&&agentHeadWraps(h)))h.classList.add('tight')}
+const agentHeadFit=new ResizeObserver(rows=>{const heads=[],widths=[];for(const {target:h,contentRect:r} of rows)if(r.width&&h._fitW!==r.width){heads.push(h);widths.push(r.width)}agentHeadSize(heads,widths)});  // the width it has (or none): nothing to measure
 // A header drawn anew is fitted before it is painted, so a refresh never shows it wrapped first and then pulls the card up
-new MutationObserver(()=>{for(const h of document.querySelectorAll('.agent-result .agent-head:not([data-fit])')){h.dataset.fit='';agentHeadSize(h);agentHeadFit.observe(h)}}).observe(document.body,{childList:true,subtree:true});
-const agentHeadsFit=()=>{for(const h of document.querySelectorAll('.agent-result .agent-head[data-fit]'))agentHeadSize(h)};
+new MutationObserver(()=>{const heads=[...document.querySelectorAll('.agent-result .agent-head:not([data-fit])')];for(const h of heads)h.dataset.fit='';agentHeadSize(heads);for(const h of heads)agentHeadFit.observe(h)}).observe(document.body,{childList:true,subtree:true});
+const agentHeadsFit=()=>agentHeadSize([...document.querySelectorAll('.agent-result .agent-head[data-fit]')]);
 document.fonts?.ready.then(agentHeadsFit);document.fonts?.addEventListener?.('loadingdone',agentHeadsFit);
 // A job's follow-up goes to the same session: the card's Change asks the agent while its result is open.
 const agentAsk=s=>agentOpen(s)&&s.agent_job.can_follow_up;
