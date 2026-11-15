@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {dashboardPage} from './dashboard-page.mjs';
+import {quiet,trackRequests} from './page-calls.mjs';
 const {chromium}=await import('./browser.mjs');
 
 // Small things in the dashboard's shell, measured the way they look. Week or Month and back to Agenda opens the agenda
@@ -33,7 +34,7 @@ await new Promise(r=>server.listen(0,'127.0.0.1',r));
 const base='http://127.0.0.1:'+server.address().port+'/';
 let browser;
 const open=async size=>{const context=await browser.newContext({viewport:size,locale:'en-GB'});await context.route('**/*',r=>new URL(r.request().url()).hostname==='127.0.0.1'?r.continue():r.abort());
- const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));await page.goto(base);await page.waitForFunction(()=>!/Connecting/.test(document.querySelector('#updated')?.textContent||'Connecting'));return page};
+ const page=await context.newPage();trackRequests(page);page.on('pageerror',e=>errors.push(e.message));await page.goto(base);await page.waitForFunction(()=>!/Connecting/.test(document.querySelector('#updated')?.textContent||'Connecting'));return page};
 const shot=async(page,name)=>{if(shotDir)await page.screenshot({path:`${shotDir}/${name}.png`})};
 const mid=r=>r.top+r.height/2;
 // The whole sidebar scrolls as one column, the to-do list without a box of its own, and its bottom (Help, Settings) comes
@@ -47,12 +48,12 @@ const sideOneColumn=async size=>{const tag=size.width+'x'+size.height;
  assert.equal(side.listScrolls,false,`${tag}: the to-do list has no scroll box of its own ${JSON.stringify(side)}`);
  assert.equal(side.listOverflow,'visible',`${tag}: the to-do list never scrolls on its own`);
  assert.equal(side.sideScrolls,true,`${tag}: the whole sidebar scrolls`);await shot(page,`side-top-${tag}`);
- await page.mouse.move(120,size.height/2);await page.mouse.wheel(0,8000);await page.waitForTimeout(400);
+ await page.mouse.move(120,size.height/2);await page.mouse.wheel(0,8000);await quiet(page);
  const end=await page.evaluate(()=>{const h=document.querySelector('#help-link-side, .app-side .head-side>.settings-link:last-child, #open-settings')?.getBoundingClientRect();return {bottom:h&&h.bottom,vh:innerHeight,page:scrollY}});
  assert.ok(end.bottom<=end.vh,`${tag}: the bottom of the sidebar comes into view ${JSON.stringify(end)}`);
  assert.equal(end.page,0,`${tag}: scrolling the sidebar leaves the page where it was`);await shot(page,`side-scrolled-${tag}`);
  // Folded to its icons, the hidden list takes no room: nothing to scroll
- await page.evaluate(()=>{document.documentElement.dataset.side='collapsed'});await page.waitForTimeout(100);
+ await page.evaluate(()=>{document.documentElement.dataset.side='collapsed'});await quiet(page);
  assert.equal(await page.evaluate(()=>{const s=document.querySelector('#app-side');return s.scrollHeight>s.clientHeight+1}),false,`${tag}: the folded sidebar does not scroll`);
  await page.context().close()};
 try{
@@ -63,14 +64,14 @@ try{
   cards=[];let page=await open(size);
   const at=()=>page.evaluate(()=>{const k=new Date(),day=k.getFullYear()+'-'+String(k.getMonth()+1).padStart(2,'0')+'-'+String(k.getDate()).padStart(2,'0');
    const b=document.querySelector(`#calendar-view .cal-block[data-day="${day}"]`);return {y:Math.round(scrollY),top:b&&Math.round(b.getBoundingClientRect().top)}});
-  await page.locator('nav [data-tab="calendar"]').click();await page.locator('#calendar-view .cal-block').first().waitFor();await page.waitForTimeout(300);
+  await page.locator('nav [data-tab="calendar"]').click();await page.locator('#calendar-view .cal-block').first().waitFor();await quiet(page);
   const first=await at();assert.ok(first.top!==null,'today is in the agenda');await shot(page,`agenda-first-${tag}`);
-  for(const v of ['week','month']){await page.locator(`#page-head [data-cal-mode="${v}"]`).click();await page.locator(v==='week'?'#calendar-view .cal-tg-body':'#calendar-view .cal-mg').first().waitFor();await page.waitForTimeout(300);
-   await page.locator('#page-head [data-cal-mode="agenda"]').click();await page.waitForTimeout(500);
+  for(const v of ['week','month']){await page.locator(`#page-head [data-cal-mode="${v}"]`).click();await page.locator(v==='week'?'#calendar-view .cal-tg-body':'#calendar-view .cal-mg').first().waitFor();await quiet(page);
+   await page.locator('#page-head [data-cal-mode="agenda"]').click();await quiet(page);
    assert.deepEqual(await at(),first,`${tag}: Agenda after ${v} sits where it opened`)}
   await shot(page,`agenda-back-${tag}`);
   // Back from Week by the browser's own Back: the same place too
-  await page.locator('#page-head [data-cal-mode="week"]').click();await page.waitForTimeout(300);await page.goBack();await page.waitForTimeout(600);
+  await page.locator('#page-head [data-cal-mode="week"]').click();await quiet(page);await page.goBack();await quiet(page);
   assert.deepEqual(await at(),first,`${tag}: Back to Agenda sits where it opened`);
   await page.context().close();
 
@@ -92,10 +93,10 @@ try{
   const d=ink||glyph;return {title:t.top+t.height/2,dots:d.top+d.height/2}});
  assert.ok(Math.abs(dots.dots-dots.title)<=2,`the board's ⋯ sits on the middle of its name ${JSON.stringify(dots)}`);await shot(page,'board-dots');
  // Graph: open a person while the page loads slowly; the head stays as it was until the page is drawn
- await page.evaluate(()=>document.querySelector('[data-graph-sub="people"]').click());await page.locator('#people-view [data-node]:visible').first().waitFor();await page.waitForTimeout(300);
+ await page.evaluate(()=>document.querySelector('[data-graph-sub="people"]').click());await page.locator('#people-view [data-node]:visible').first().waitFor();await quiet(page);
  const head=()=>page.evaluate(()=>{const h=document.querySelector('#page-head');return {text:h.textContent.replace(/\s+/g,' ').trim(),height:h.offsetHeight}});
  const before=await head();nodeWait=800;await page.evaluate(()=>graphPeek.clear());  // a row under the resting pointer may have fetched its page ahead (graphPeekStart)
- await page.locator('#people-view [data-node]:visible').first().click();await page.waitForTimeout(300);
+ await page.locator('#people-view [data-node]:visible').first().click();await page.waitForTimeout(300);  // a look while the person loads (nodeWait: 800 ms)
  assert.equal(await page.locator('.graph-crumbs').count(),0,'the person is still loading');
  assert.deepEqual(await head(),before,'the head stays until the person is there');
  await page.locator('.graph-crumbs').waitFor();assert.equal(await page.locator('#page-head .page-title').textContent(),'People');nodeWait=0;

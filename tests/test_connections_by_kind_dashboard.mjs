@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {mkdir} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {dashboardPage} from './dashboard-page.mjs';
+import {quiet,trackRequests} from './page-calls.mjs';
 const {chromium}=await import('./browser.mjs');
 
 // Connections by kind. On a computer the kinds sit on the left beside the one open; on a phone they are a list of their
@@ -45,10 +46,10 @@ try{
  for(const [width,height,mobile] of [[390,844,true],[1440,900,false]])for(const scheme of ['light','dark']){
   const context=await browser.newContext({viewport:{width,height},isMobile:mobile,hasTouch:mobile,colorScheme:scheme,locale:'en-US'});
   await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
-  const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
+  const page=await context.newPage();trackRequests(page);page.on('pageerror',e=>errors.push(e.message));
   const tag=`${width}-${scheme}`,shot=async name=>{if(shots)await page.screenshot({path:`${shots}/${tag}-${name}.png`,fullPage:true})};
   await page.goto(base+'/#connections');
-  await page.locator('#health-tabs .conn-cat').first().waitFor();await page.locator('#connect-add .connect-source').first().waitFor({state:'attached'});await page.waitForTimeout(300);
+  await page.locator('#health-tabs .conn-cat').first().waitFor();await page.locator('#connect-add .connect-source').first().waitFor({state:'attached'});await quiet(page);
   let v=await look(page);
   assert.deepEqual(v.cats.map(c=>c.label),['Email','Calendar','Chat','Meetings','Projects and code','Checks'],`${tag}: the kinds with a source (Codex: Projects and code), then Checks below the line`);
   // Checks apart: below a line on a computer, its own small card on a phone; every kind shows an icon, one per source
@@ -63,7 +64,7 @@ try{
    assert.deepEqual(v.cats.map(c=>c.sub),['2 connected','sam@example.org','Needs your help','Not connected','Not connected',null],`${tag}: the list says what each kind holds`);
    assert.deepEqual([v.title,v.rows.length,v.back],[null,0,false],`${tag}: on a phone, Connections opens on the list`);
    await shot('list');
-   await page.locator('#health-tabs [data-health-pane="mail"]').click();await page.waitForTimeout(200);v=await look(page);
+   await page.locator('#health-tabs [data-health-pane="mail"]').click();await quiet(page);v=await look(page);
    assert.deepEqual([v.title,v.back,v.cats.length],['Email',true,0],`${tag}: a kind opens as its own page, with a way back`);
   }else{
    // the kind that needs you opens first
@@ -71,7 +72,7 @@ try{
    assert.deepEqual(v.rows.map(r=>[r.id,r.open]),[['x1',true]],`${tag}: a card that needs you opens by itself`);
    assert.equal(v.back,false,`${tag}: no way back beside the list`);
    assert.deepEqual(v.cats.map(c=>c.sub),[null,null,null,null,null,null],`${tag}: the list beside a kind is just names`);
-   await page.locator('#health-tabs [data-health-pane="mail"]').click();await page.waitForTimeout(200);v=await look(page);
+   await page.locator('#health-tabs [data-health-pane="mail"]').click();await quiet(page);v=await look(page);
    assert.deepEqual([v.title,v.cats.find(c=>c.on)?.id],['Email','mail'],`${tag}: a kind opens beside the list`);
   }
   // Email: its rows, Work or Personal first, closed; then Add another with its sources
@@ -95,17 +96,17 @@ try{
   await page.evaluate(()=>showHealthPane('meetings'));v=await look(page);
   assert.deepEqual([v.rows.length,v.add],[0,[{head:null,tiles:['Zoom']}]],`${tag}: Meetings, nothing connected: just its sources`);
   if(mobile){
-   await page.locator('[data-conn-back]').click();await page.waitForTimeout(200);v=await look(page);
+   await page.locator('[data-conn-back]').click();await quiet(page);v=await look(page);
    assert.deepEqual([v.title,v.back,v.cats.length],[null,false,6],`${tag}: back goes to the list`);
   }
   // links: a kind, and the old + Add
-  await page.goto(base+'/#connections=chat');await page.locator('#health-tabs .conn-cat').first().waitFor({state:'attached'});await page.waitForTimeout(300);v=await look(page);
+  await page.goto(base+'/#connections=chat');await page.locator('#health-tabs .conn-cat').first().waitFor({state:'attached'});await quiet(page);v=await look(page);
   assert.equal(v.title,'Chat',`${tag}: #connections=chat opens Chat`);
-  await page.goto(base+'/#connections=add');await page.locator('#health-tabs .conn-cat').first().waitFor({state:'attached'});await page.waitForTimeout(300);v=await look(page);
+  await page.goto(base+'/#connections=add');await page.locator('#health-tabs .conn-cat').first().waitFor({state:'attached'});await quiet(page);v=await look(page);
   assert.equal(v.title,mobile?null:'Email',`${tag}: #connections=add opens ${mobile?'the list':'Email'}`);
   // a setup opens in its own kind
   await page.goto(base+'/#connections=mail');await page.locator('#connect-add .connect-source').first().waitFor();
-  await page.locator('#connect-add .connect-source',{hasText:'Outlook'}).click();await page.waitForTimeout(300);v=await look(page);
+  await page.locator('#connect-add .connect-source',{hasText:'Outlook'}).click();await quiet(page);v=await look(page);
   assert.deepEqual([v.title,v.rows.length],['Email',0],`${tag}: a setup shows in its kind, instead of its rows`);
   assert.ok(['form','run'].includes(await page.locator('#connect-add').getAttribute('data-view')),`${tag}: its setup`);
   await shot('setup');

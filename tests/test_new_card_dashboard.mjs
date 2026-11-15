@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {dashboardPage} from './dashboard-page.mjs';
+import {quiet,trackRequests} from './page-calls.mjs';
 const {chromium}=await import('./browser.mjs');
 
 // New card and Rename on the dashboard. New card: a row under Find a to-do on a computer, "+" in the top bar on a
@@ -44,7 +45,7 @@ const open=async(width,height)=>{const mobile=width<600;reset();
  const context=await browser.newContext({viewport:{width,height},isMobile:mobile,hasTouch:mobile,locale:'en-US',timezoneId:'Europe/Brussels'});
  await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
  await context.clock.install({time:NOW});
- const page=await context.newPage();page.on('pageerror',e=>errors.push(width+': '+e.message));
+ const page=await context.newPage();trackRequests(page);page.on('pageerror',e=>errors.push(width+': '+e.message));
  await page.goto(base);await page.locator('#task-'+id(1)).waitFor();return {context,page}};
 const sent=name=>actions.filter(a=>a.action===name);
 const shot=async(page,what)=>{if(process.env.SHOT_DIR)await page.screenshot({path:`${process.env.SHOT_DIR}/after-${what}-${page.viewportSize().width}.png`})};
@@ -118,7 +119,7 @@ try{
   assert.match(await fresh.locator('.actions').textContent(),/Do it/);
   // N opens it (the row shows N), not while typing; C no longer does; Esc closes; "new" in Search (the palette) opens it too
   assert.equal(await page.locator('#side-new kbd').textContent(),'N');assert.equal(await page.locator('#side-new').getAttribute('title'),'New to-do (N)');
-  await page.locator('body').press('c');await page.waitForTimeout(200);assert.ok(!(await dialog.isVisible()),'C is not New to-do any more');
+  await page.locator('body').press('c');await page.waitForTimeout(200);  // a check that nothing opensassert.ok(!(await dialog.isVisible()),'C is not New to-do any more');
   await page.locator('body').press('n');await dialog.waitFor();await page.keyboard.press('Escape');await dialog.waitFor({state:'hidden'});
   await page.evaluate(()=>{const i=document.createElement('input');i.id='t-field';document.body.append(i)});
   await page.locator('#t-field').press('n');assert.ok(!(await dialog.isVisible()),'N in a field types an n');assert.equal(await page.locator('#t-field').inputValue(),'n');
@@ -142,7 +143,7 @@ try{
   await row(3).click({button:'right'});await page.locator('.row-menu [data-row-rename]').click();await page.locator('.rename-box input').press('Escape');
   assert.equal(sent('card_rename').length,1,'Esc cancels');
   // From the top of the page: the double click's first click opens the chat at the top, and a page scrolled down would move the row from under the second
-  await page.evaluate(()=>scrollTo(0,0));await page.waitForTimeout(100);
+  await page.evaluate(()=>scrollTo(0,0));await quiet(page);
   await row(3).dblclick();await renameTo(page,'   ');assert.equal(sent('card_rename').length,1,'empty keeps the old title');assert.equal(await row(3).textContent(),'Book the dentist');
   await row(3).dblclick();await renameTo(page,'<img src=x onerror=alert(1)> & co');await until(()=>sent('card_rename').length===2,'markup rename');
   assert.equal(await row(3).textContent(),'<img src=x onerror=alert(1)> & co');assert.equal(await page.locator('#side-cards img,#suggestions h3 img').count(),0,'markup stays text');
@@ -177,7 +178,7 @@ await page.locator('.rename-reset').click();
   await page.locator('#nc-text').fill('Call Sam back');
   await page.locator('#nc-add').tap();await page.locator('#new-card').waitFor({state:'hidden'});assert.equal(sent('card_new')[0].args.text,'Call Sam back');
   // New card is in the drawer too: the row opens the composer and closes the drawer
-  await page.locator('#drawer-open').tap();await page.locator('#side-new').waitFor();await page.waitForTimeout(400);await page.locator('#side-new').tap();
+  await page.locator('#drawer-open').tap();await page.locator('#side-new').waitFor();await quiet(page);await page.locator('#side-new').tap();
   await page.locator('#new-card').waitFor();assert.notEqual(await page.evaluate(()=>document.documentElement.dataset.drawer),'open','the drawer closes');
   await page.locator('#new-card form button[aria-label="Close"]').tap();await page.locator('#new-card').waitFor({state:'hidden'});
   await still(page);await page.locator('#task-'+id(1)+' h3 .title-link').tap();await page.locator('.rename-box').waitFor();assert.equal(await page.locator('#chat-log').count(),0,'a tap on the title renames');
@@ -185,13 +186,13 @@ await page.locator('.rename-reset').click();
   await still(page);await page.locator('#task-'+id(1)+' .card-chat-link').tap();await page.locator('#chat-log').waitFor();
   // All tasks as a person reaches it: open the menu, then tap (an open menu is never redrawn under the tap)
   await page.locator('#chat-menu summary').tap();await page.locator('#chat-menu [data-chat-drawer]').tap();const link=page.locator(`#side-cards a[href="#chat=${id(2)}"]`);await link.waitFor();
-  await page.waitForTimeout(500);const box=await link.boundingBox();const cdp=await context.newCDPSession(page);
+  await quiet(page);const box=await link.boundingBox();const cdp=await context.newCDPSession(page);
   const touch=(type,points)=>cdp.send('Input.dispatchTouchEvent',{type,touchPoints:points});
-  await touch('touchStart',[{x:box.x+20,y:box.y+box.height/2}]);await page.waitForTimeout(650);await touch('touchEnd',[]);
+  await touch('touchStart',[{x:box.x+20,y:box.y+box.height/2}]);await page.waitForTimeout(650);await touch('touchEnd',[]);  // a long press: held on purpose
   await page.locator('.row-menu [data-row-rename]').tap();await renameTo(page,'Deck');await until(()=>sent('card_rename').length===1,'long press');
   assert.equal(await page.locator('.chat-title').textContent(),'Send Sam the signed contract','still on the same chat');
   if(await page.evaluate(()=>document.documentElement.dataset.drawer==='open'))await page.locator('#side-toggle').tap();  // the list is the app's drawer on a phone
-  await page.waitForFunction(()=>document.documentElement.dataset.drawer!=='open');await page.waitForTimeout(500);
+  await page.waitForFunction(()=>document.documentElement.dataset.drawer!=='open');await quiet(page);
   await page.locator('.chat-title').tap();await renameTo(page,'Contract');await until(()=>sent('card_rename').length===2,'phone chat title');
   await context.close()}
  assert.deepEqual(errors,[]);
