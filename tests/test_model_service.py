@@ -82,7 +82,21 @@ class ModelService(unittest.TestCase):
         with mock.patch.object(help_chat, 'openclaw_model_run', return_value='From the CLI') as cli:
             self.assertEqual(model_service.run({}, 'die', timeout=5), 'From the CLI')
         cli.assert_called_once_with({}, 'die', None, None, timeout=5)
-        self.assertEqual(model_service.run({}, 'next'), 'Said: next')
+        with mock.patch.object(help_chat, 'openclaw_model_run', side_effect=AssertionError('no CLI')):
+            self.assertEqual(model_service.run({}, 'next'), 'Said: next')
+        self.assertEqual(self.started(), 2)
+
+    def test_a_helper_that_exited_but_is_not_reaped_yet_gets_no_turn(self):
+        """A busy computer: its output has ended, yet poll() still says it runs for a moment. The next turn starts a
+        new helper instead of being written to the old one, where it waited out the timeout or went to the CLI."""
+        self.assertEqual(model_service.run({}, 'hello'), 'Said: hello')
+        old = self.service.proc
+        with mock.patch.object(help_chat, 'openclaw_model_run', return_value='From the CLI'):
+            self.assertEqual(model_service.run({}, 'die', timeout=5), 'From the CLI')
+        old.wait(5)
+        with mock.patch.object(old, 'poll', return_value=None), \
+                mock.patch.object(help_chat, 'openclaw_model_run', side_effect=AssertionError('no CLI')):
+            self.assertEqual(model_service.run({}, 'next', timeout=5), 'Said: next')
         self.assertEqual(self.started(), 2)
 
     def test_a_helper_that_cannot_start_leaves_the_turn_to_the_cli(self):
