@@ -65,6 +65,7 @@ BULK_LABELS = frozenset({'CATEGORY_PROMOTIONS', 'CATEGORY_SOCIAL', 'CATEGORY_FOR
 MAIL_ASK_MAX = 80  # senders one mail call reads
 MAIL_CALLS = 3  # mail calls per round, while senders wait to be placed
 MAIL_EACH_MAX = 20  # dated lines per sender in a kind that keeps each mail (the newest)
+REPEAT = dt.timedelta(days=1)  # a sender's mail with the subject of one they sent this close to it is a copy of it (mail_senders)
 SUBJECTS = 3  # a sender's newest subjects the call reads
 SUBJECT_MAX = 120
 REPLY_PREFIX = re.compile(r'^\s*((re|fw|fwd|aw|wg|tr|rv|sv|antw)\s*:\s*)+', re.I)
@@ -449,6 +450,34 @@ def bulk_mail(meta, replied=frozenset()):
     return mail_senders.bulk(address) or mail_senders.relay(address)
 
 
+def _when(value):
+    try:
+        found = dt.datetime.fromisoformat(str(value))
+    except ValueError:
+        return None
+    return found if found.tzinfo else found.replace(tzinfo=dt.timezone.utc)
+
+
+def _repeats(kept, account_id, occurred_at, said, meta):
+    """Whether one sender's mail (newest first) is one already counted: the same message id (the same mail in two
+    mailboxes), or the same subject in the same conversation or within REPEAT of it. Either way it is noted in kept,
+    that sender's {message ids, (subject, mailbox, conversation), subject: [times]}, so an older mail in the
+    conversation of a copy is known too."""
+    ident = str(meta.get('message-id') or '').strip().casefold()
+    thread = (said, account_id, str(meta.get('thread_id') or '')) if said and meta.get('thread_id') else None
+    when = _when(occurred_at) if said else None
+    ids, threads, times = kept.setdefault('ids', set()), kept.setdefault('threads', set()), kept.setdefault('times', {})
+    repeat = bool((ident and ident in ids) or (thread and thread in threads)
+                  or (when and any(abs(when - x) <= REPEAT for x in times.get(said, ()))))
+    if ident:
+        ids.add(ident)
+    if thread:
+        threads.add(thread)
+    if when and not repeat:
+        times.setdefault(said, []).append(when)
+    return repeat
+
+
 def mail_senders(db, accounts, today):
     """Who writes to the owner's Personal mailboxes, within LOOK_DAYS, one per sender (_sender_group), the owner's own
     mail and addresses left out, and bulk mail (bulk_mail) too: [{key, name, count, days, last, event_id, mails:
@@ -456,7 +485,9 @@ def mail_senders(db, accounts, today):
     which kind and part a sender is about is the mail call's to say (mail_prompt). Only Personal mailboxes: a work
     mailbox's thousands of senders would cost a call per eighty of them, and the owner's own life mostly comes in
     there. A sender with only bulk mail is no sender here, so no call reads it, and a line kept from bulk mail before
-    goes on the next round (note_pages.sync)."""
+    goes on the next round (note_pages.sync). One mail counts once: a copy of it (the same message in two mailboxes, a
+    sender that sends it twice, to two addresses or seconds apart) and a later mail in its conversation with the same
+    subject are that mail, so a note never shows one subject twice for it (_repeats)."""
     import graph
     import own_addresses
     ids = [a['id'] for a in accounts if a.get('id') and _personal([a['id']], accounts)]
@@ -469,8 +500,8 @@ def mail_senders(db, accounts, today):
     except Exception:  # noqa: BLE001 - a database before own domains
         own = set()
     since = (today - dt.timedelta(days=LOOK_DAYS)).isoformat()
-    found, rows, replied = {}, [], set()
-    for r in db.execute(f"SELECT id,title,occurred_at,metadata FROM events WHERE deleted=0 AND kind IN ({','.join('?' * len(MAIL_KINDS))}) "
+    found, rows, replied, seen = {}, [], set(), {}
+    for r in db.execute(f"SELECT id,account_id,title,occurred_at,metadata FROM events WHERE deleted=0 AND kind IN ({','.join('?' * len(MAIL_KINDS))}) "
                         f"AND account_id IN ({','.join('?' * len(ids))}) AND occurred_at>=? ORDER BY occurred_at DESC,id DESC",
                         [*MAIL_KINDS, *ids, since]):
         meta = r['metadata'] if isinstance(r['metadata'], dict) else _json(r['metadata'], {})
@@ -490,6 +521,8 @@ def mail_senders(db, accounts, today):
             continue
         group = _sender_group(address, free)
         day = str(r['occurred_at'])[:10]
+        if _repeats(seen.setdefault(group, {}), r['account_id'], r['occurred_at'], subject(r['title']).casefold(), meta):
+            continue
         s = found.get(group)
         if not s:
             shown = ' '.join(name.strip('"\' ').split())[:80] or group

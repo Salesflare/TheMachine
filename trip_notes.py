@@ -12,6 +12,8 @@ How bookings become trips, without a model:
   ride back to where the journey started, from where it went, within RETURN_DAYS joins it too, with no hotel between.
 - The trip is named after where it goes: the first ride's destination, or the first hotel's town when there is no
   ride. Its days run from the first start to the last end.
+- A trip keeps its note: bookings that are on a trip note already stay on that note (drafts), whatever order their
+  mail is read in.
 - Each booking is a line at its own time, in the owner's language, with its code and seat, and the mail it came from.
   A hotel and a rental car also get a line when they end (check-out, return the car).
 - A trip whose bookings were all canceled goes. One whose mail aged out of the mailbox stays.
@@ -192,13 +194,53 @@ def _area(accounts, account_id):
     return (todo_areas.area_of_account(account) if account else None) or todo_areas.PERSONAL
 
 
+def _kept(db):
+    """The trip notes already made, by the bookings on them: {booking line key: {note key}}, and each note's rank (one
+    the owner deleted or merged away after the ones still there, then the oldest first). A line the owner moved to
+    another note stays out."""
+    held, rank = {}, {}
+    try:
+        rows = db.execute("SELECT p.id,p.key AS note,l.key AS line,(p.removed_at IS NOT NULL OR p.merged_into IS NOT NULL) AS gone "
+                          "FROM note_pages p JOIN note_page_lines l ON l.note_id=p.id "
+                          "WHERE p.kind='trip' AND l.by='machine' AND l.moved_from IS NULL AND l.key IS NOT NULL").fetchall()
+    except Exception:  # noqa: BLE001 - a database before notes
+        return held, rank
+    for r in rows:
+        if str(r['note'] or '').startswith('trip:'):
+            held.setdefault(r['line'], set()).add(r['note'][5:])
+            rank[r['note'][5:]] = (r['gone'], r['id'])
+    return held, rank
+
+
+def _spare(db, key):
+    """A trip note no booking needs any more that nothing of the owner's is on: their title, dates, place, words or
+    lines. It goes (keep says no); one with anything of theirs stays, for them to merge or delete."""
+    row = db.execute("SELECT id FROM note_pages WHERE key=? AND by='machine' AND owner_title IS NULL AND owner_dates=0 AND owner_parent=0 "
+                     'AND removed_at IS NULL AND merged_into IS NULL', ('trip:' + key,)).fetchone()
+    return bool(row) and not db.execute("SELECT 1 FROM note_page_lines WHERE note_id=? AND (by!='machine' OR owner_text IS NOT NULL OR moved_from IS NOT NULL) "
+                                        'UNION SELECT 1 FROM note_pages WHERE parent_id=? OR merged_into=?', (row['id'], row['id'], row['id'])).fetchone()
+
+
 def drafts(db, accounts, lang=None):
-    """The trips as note_pages.sync drafts, and keep(key) for the trips no booking holds any more."""
+    """The trips as note_pages.sync drafts, and keep(key) for the trips no booking holds any more.
+
+    A trip keeps the key of the note already made for it: the oldest trip note holding any of its bookings. Mail is
+    read in the order it arrived on the Machine, not the order it was sent, so a journey's first booking can show up
+    after its note was made (an older confirmation the history walk brings in later); a key from the bookings alone
+    would then start a second note for the same journey. A machine-made trip note whose bookings all went to another
+    trip's note goes, unless the owner put something of theirs on it."""
     found, canceled = bookings_now(db)
+    (held, rank), taken, superseded = _kept(db), set(), set()
     out = []
     for group in journeys(found):
-        first = min(group, key=lambda b: (b['seen'], b['start']))  # the trip keeps its key as bookings join it
+        first = min(group, key=lambda b: (b['seen'], b['start']))  # a new trip's key
         key = hashlib.sha256(_ident(first).encode()).hexdigest()[:20]
+        mine = {hashlib.sha256(_ident(b).encode()).hexdigest()[:16] for b in group}
+        before = {k for lkey in mine for k in held.get(lkey, ()) if k not in taken}
+        if before:
+            key = min(before, key=rank.__getitem__)
+            superseded |= {k for k in before - {key} if all(lkey in mine for lkey, notes in held.items() if k in notes)}
+        taken.add(key)
         made = []
         for b in group:
             made += [{'key': k, 'at': at, 'text': text, 'event_id': b['event_id'], 'item': b['type']} for k, at, text in lines(b, lang)]
@@ -206,4 +248,5 @@ def drafts(db, accounts, lang=None):
         out.append({'key': key, 'title': _title(group), 'area': _area(accounts, first['account_id']), 'under': ['Trips'],
                     'starts': min(b['start'] for b in group)[:10], 'ends': max((b.get('end') or b['start']) for b in group)[:10], 'lines': made})
     gone = {hashlib.sha256(k.encode()).hexdigest()[:20] for k in canceled}
+    gone |= {k for k in superseded - taken if _spare(db, k)}
     return out, (lambda key: key not in gone)

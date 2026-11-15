@@ -197,6 +197,32 @@ class TripNotes(unittest.TestCase):
         self.assertEqual(trip['lines'][0]['text'], 'Flight out, aisle seat asked')
         self.assertEqual(len(trip['lines']), 4)
 
+    def test_an_older_confirmation_read_later_joins_the_trip_already_made(self):
+        """Mail is read in the order it reached the Machine: an earlier confirmation of the same booking, with one leg
+        more, can come in after the trip's note was made. It stays one trip, with that leg added."""
+        via = flight('2090', 'K7PQ2M', 'Lisbon', 'Porto', '2026-12-02T10:00:00+00:00', '2026-12-02T11:00:00+00:00')
+        self.mail(OUT, BACK, day=5)
+        first = self.sync()
+        self.mail(OUT, via, BACK, day=1)
+        trips = self.sync()
+        self.assertEqual([(x['id'], x['name'], len(x['lines'])) for x in trips], [(first[0]['id'], 'Lisbon', 3)])
+
+    def test_a_trip_split_before_heals_into_its_first_note(self):
+        via = flight('2090', 'K7PQ2M', 'Lisbon', 'Porto', '2026-12-02T10:00:00+00:00', '2026-12-02T11:00:00+00:00')
+        self.mail(OUT, BACK, day=5)
+        first = self.sync()[0]
+        self.mail(OUT, via, BACK, day=1)
+        with mock.patch.object(trip_notes, '_kept', return_value=({}, {})):  # as it went before: a second note for it
+            self.assertEqual(len(self.sync()), 2)
+        trips = self.sync()
+        self.assertEqual([(x['id'], len(x['lines'])) for x in trips], [(first['id'], 3)])
+        # a second note the owner wrote on stays, for them to merge or delete
+        with mock.patch.object(trip_notes, '_kept', return_value=({}, {})):
+            second = next(x for x in self.sync() if x['id'] != first['id'])
+        with self.store.connect() as db:
+            note_pages.edit(db, second['id'], AT, title='The second week')
+        self.assertEqual(len(self.sync()), 2)
+
     def test_bookings_are_sealed_at_rest_and_read_once(self):
         self.mail(OUT)
         self.sync()
