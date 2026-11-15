@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {mkdir} from 'node:fs/promises';
+import {mkdir,readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import('./browser.mjs');
@@ -10,6 +10,7 @@ const {chromium}=await import('./browser.mjs');
 // SHOTS=<folder> saves screenshots. Made-up data only.
 const dashboard=await dashboardPage();
 const shots=process.env.SHOTS;if(shots)await mkdir(shots,{recursive:true});
+const brand={'/brand/avatar.png':'app-icon-192.png','/brand/avatar-blink.png':'avatar-blink.png','/brand/favicon-32.png':'app-icon-192.png'};
 const at=new Date().toISOString(),year=new Date().getFullYear();
 const note=(n,name,depth,parent,children=0,lines=0,about)=>({id:'note:'+n,kind:n===2?'topic':'note',name,area:'work:Example',starts:null,ends:null,by:n===2?'machine':'owner',updated_at:at,lines,parent,depth,children,...(about?{about}:{})});
 const notes=[note(1,'Work',0,null,2),note(2,'Office move',1,'note:1',0,4,'Moving the team to the new office on Example Street by the end of January. The lease is signed; the movers still need a date.'),
@@ -29,6 +30,7 @@ const server=createServer(async(req,res)=>{const url=new URL(req.url,'http://fix
   res.end(JSON.stringify({...x,lines:own?lines:[],path:x.parent?[{id:x.parent,name:'Work'}]:[],created_at:at,renamed:false,owner_dates:false,dated:false,children:notes.filter(c=>c.parent===x.id),linked_from:[],tree:notes,...(own?{page}:{})}));return}
  if(url.pathname==='/api/graph'){res.end(JSON.stringify({list_counts:{people:0,quiet:0,new:0,orgs:0,warmup:0,projects:0,projects_done:0},counts:{person:0,org:0,project:0},boards:[],board_suggestions:[],notes}));return}
  if(url.pathname==='/api/graph/list'){res.end(JSON.stringify({items:[],next:null,total:0}));return}
+ if(brand[url.pathname]){res.setHeader('Content-Type','image/png');res.end(await readFile(new URL('../brand/'+brand[url.pathname],import.meta.url)));return}  // as machine/config.py serves it
  res.statusCode=url.pathname.startsWith('/brand/')||url.pathname.startsWith('/assets/')?404:200;res.end('{}')});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
 const base='http://127.0.0.1:'+server.address().port+'/',errors=[];let browser;
@@ -45,6 +47,7 @@ try{
   assert.ok(await about.evaluate(e=>e.getBoundingClientRect().height<=parseFloat(getComputedStyle(e).lineHeight)*2+1),width+': two lines at most');
   assert.equal(await page_.locator('.note-item[data-node="note:3"] .note-about').count(),0,'no page: no summary');
   assert.ok(await page_.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),width+': the list fits');
+  await page_.waitForFunction(()=>[...document.querySelectorAll('img[src="brand/avatar.png"]')].some(i=>i.offsetWidth&&i.complete&&i.naturalWidth>0));  // the logo, as served
   if(shots)await page_.screenshot({path:`${shots}/notes-list-${width}-${scheme}.png`});
   // The page: summary, sections in order, numbered sources
   await page_.goto(base+'#graph/note:2');const written=page_.locator('.note-written');await written.waitFor();

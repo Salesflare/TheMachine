@@ -55,7 +55,7 @@ a.note-link{color:var(--text);text-decoration:underline;text-decoration-thicknes
 .note-suggest button:hover,.note-suggest button:focus-visible,.note-suggest button:first-child{background:var(--c-hover)}
 .note-suggest button>small{color:var(--muted);font-size:var(--fs-xs);flex:0 0 auto}.note-suggest>p{margin:4px 8px}
 .note-kids,.note-backlinks{margin-top:var(--sp-4)}
-/* A note's breadcrumb: Graph › Notes › Kids ›, each a link, and the note's title as the heading right under it; it takes
+/* A note's breadcrumb: Graph › Notes › Kids, each a link, and the note's title as the heading right under it; it takes
    the page head's place at every width, so the path shows once. A long
    name shortens with … (its title shows it whole); the heading wraps, so the title always shows in full. */
 body:has(#people:not([hidden]) .note-crumbs) #page-head{display:none}  /* the trail is the path: no Graph / Notes head over it */

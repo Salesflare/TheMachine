@@ -4,8 +4,8 @@ import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import('./browser.mjs');
 
 // A note's breadcrumb shows its whole path, each level a link, and not its own title (the heading right under it):
-// Graph › Notes › Kids › on a wide screen, in place of the page head (one path), with the note's area still under it. A phone keeps it on one line, Notes › Kids ›, and folds the notes in between
-// into a ⋯ menu (Notes › ⋯ › Activities ›), with long names shortened, never wider than the screen. Browser back
+// Graph › Notes › Kids on a wide screen, in place of the page head (one path), with the note's area still under it. A phone keeps it on one line, Notes › Kids, and folds the notes in between
+// into a ⋯ menu (Notes › ⋯ › Activities), no › after the last crumb, with long names shortened, never wider than the screen. Browser back
 // returns to the note it came from, and Notes goes back to the list.
 const dashboard=(await dashboardPage()).replace('__CSRF__','').replaceAll('__UI_VERSION__','v1').replace('__BASE__','/').replace('__CACHE_SCOPE__','s'.repeat(32));  // a crumb is a plain link: it opens under the page's base
 const at=new Date().toISOString();
@@ -29,7 +29,7 @@ const seen=page=>page.evaluate(()=>{const c=document.querySelector('#people-view
  const vis=el=>{const r=el.getBoundingClientRect();return r.width>2&&r.height>2&&getComputedStyle(el).visibility!=='hidden'};
  return {crumbs:[...c.querySelectorAll('a,summary')].filter(el=>vis(el)&&!el.closest('.fact-menu-list')).map(el=>el.textContent.trim()),height:Math.round(box.height),
   inside:[...c.querySelectorAll('a,summary')].filter(vis).every(el=>el.getBoundingClientRect().right<=innerWidth+0.5),fits:document.documentElement.scrollWidth<=innerWidth,
-  here:vis(c.querySelector('[aria-current="page"]')),title:document.querySelector('#people-view .note-page h3').textContent,
+  here:vis(c.querySelector('[aria-current="page"]')),seps:[...c.querySelectorAll('span[aria-hidden]')].filter(el=>vis(el)&&!el.closest('.crumb-here')).length,title:document.querySelector('#people-view .note-page h3').textContent,
   titleWhole:(h=>h.scrollWidth<=h.clientWidth+1)(document.querySelector('#people-view .note-page h3')),tab:document.title,
   head:vis(document.querySelector('#page-head')),sub:document.querySelector('#people-view .note-page .detail-sub')?.textContent||''}});
 const open=async(page,id,title)=>{await page.goto(base+'#graph/'+encodeURIComponent(id));await page.locator('#people-view .note-page h3',{hasText:title.slice(0,20)}).waitFor()};
@@ -42,6 +42,7 @@ try{
   // Two levels deep: the path up to the note it is under, and the note's title once, as the heading
   await open(page,'note:2','Doctors and care');let s=await seen(page);
   assert.deepEqual(s.crumbs,mobile?['Notes','Kids']:['Graph','Notes','Kids'],tag+': '+JSON.stringify(s));
+  assert.equal(s.seps,s.crumbs.length-1,tag+': a › between crumbs, none after the last');
   assert.ok(!s.here&&s.title==='Doctors and care'&&s.tab.includes('Doctors and care'),tag+': the title shows once, as the heading, and names the tab');
   assert.ok(!s.head,tag+': the trail takes the page head\'s place: the path shows once');
   assert.equal(s.sub,'Personal · Kept up to date by The Machine',tag+': the area still shows');
@@ -49,6 +50,7 @@ try{
   // Deeper, with long names: a wide screen shows every level; a phone folds the middle into … and shortens the rest
   await open(page,'note:4',TITLE);s=await seen(page);
   assert.deepEqual(s.crumbs,mobile?['Notes','⋯',LONG]:['Graph','Notes','Kids',LONG],tag+': '+JSON.stringify(s.crumbs));
+  assert.equal(s.seps,s.crumbs.length-1,tag+': a › between crumbs, none after the last');
   assert.ok(s.fits&&s.inside&&s.titleWhole,tag+': nothing wider than the screen, and the long title shows whole');
   if(mobile){assert.ok(s.height<=48,tag+': one line '+s.height);
    await page.locator('.note-crumbs .crumb-fold summary').click();
