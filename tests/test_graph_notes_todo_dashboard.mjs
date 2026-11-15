@@ -13,10 +13,15 @@ const note={id:'note:4',kind:'home',name:'Bills and subscriptions',area:'persona
  lines:[{id:1,text:'Example Energy: a bill every month',at:'2026-11-03',item:'bill',by:'machine',edited:false,event_id:7,fact_id:null,links:[],data:{todo:'0a1b2c3d4e5f6071'},todo:'0a1b2c3d4e5f6071',
          source:{id:7,kind:'gmail.message',title:'Your Example Energy bill',from:'Example Energy',occurred_at:at}},
         {id:2,text:'Example Water: a bill every three months',at:'2026-09-18',item:'bill',by:'machine',edited:false,event_id:null,fact_id:null,links:[],data:{todo:'s-gone'}}]};
+const paid={id:'0a1b2c3d4e5f6071',title:'Pay the Example Energy bill',body:'The Example Energy bill, paid.',status:'completed',scope:'personal',
+ created_at:at,updated_at:at,completed_at:at,event_ids:[7],account_ids:['home'],evidence:[],next_actions:[]};
 const home={id:'note:1',kind:'note',name:'Home',area:'personal',starts:null,ends:null,by:'owner',updated_at:at,parent:null,depth:0,children:1,lines:0};
 const server=createServer(async(req,res)=>{const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
  if(url.pathname==='/api/status'){res.end(JSON.stringify({suggestions:[],promises:[],connectors:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[]}));return}
+ // the paid bill: a done to-do past what the status sends, asked for by its id (doneFetch). Without it the chat
+ // closes again as "isn't here anymore", and #chat= would only show for a moment (a race on a slow runner)
+ if(url.pathname==='/api/cards/done'){res.end(JSON.stringify({cards:url.searchParams.get('id')==='0a1b2c3d4e5f6071'?[paid]:[]}));return}
  if(url.pathname==='/api/graph'&&url.searchParams.has('node')){res.end(JSON.stringify({...note,path:[{id:'note:1',name:'Home'}],created_at:at,renamed:false,owner_dates:false,dated:false,children:[],linked_from:[],tree:[home,{...note,lines:2}]}));return}
  if(url.pathname==='/api/graph'){res.end(JSON.stringify({list_counts:{people:0,quiet:0,new:0,orgs:0,warmup:0,projects:0,projects_done:0},counts:{person:0,org:0,project:0},boards:[],board_suggestions:[],notes:[home,{...note,lines:2}]}));return}
  res.statusCode=url.pathname.startsWith('/brand/')||url.pathname.startsWith('/assets/')?404:200;res.end('{}')});
@@ -39,6 +44,9 @@ try{
   else assert.deepEqual(back.map(x=>x[0]),['Graph','Notes','Home'],'the breadcrumb');
   await page.locator('.note-src a').click();
   await page.waitForFunction(()=>location.hash==='#chat=0a1b2c3d4e5f6071');  // not on the list (done): its chat
+  await page.waitForTimeout(300);
+  assert.equal(await page.evaluate(()=>location.hash),'#chat=0a1b2c3d4e5f6071',width+': the chat stays open');
+  assert.equal(errors.filter(e=>e.startsWith(width+':')).length,0,width+': no page errors');
   await context.close()}
  assert.deepEqual(errors,[]);
  console.log('ok notes to-do link');

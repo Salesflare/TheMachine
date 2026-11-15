@@ -55,6 +55,7 @@ KINDS = {
     'note': {'label': 'Note', 'dated': False, 'personal': False},
     'trip': {'label': 'Trip', 'dated': True, 'personal': False},
     'home': {'label': 'Home', 'dated': False, 'personal': True},  # home_notes.py: a part of the home, under Home
+    'health': {'label': 'Health', 'dated': False, 'personal': True},  # health_notes.py: a part of the owner's health, under Health
 }
 OWNER_KINDS = ('note',)        # what the owner can start by hand (New note)
 # The guidance The Machine builds the tree by. The starting tree: the top notes its own notes go under, each made only

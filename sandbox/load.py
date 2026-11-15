@@ -187,7 +187,7 @@ def load(directory, states, port=8870, network_port=8871, fixture_path=HERE / 'f
         load_logins(directory, fixture)
         if not fresh:
             load_learned_facts(store)
-            load_home_notes(store, base)
+            load_section_notes(store, base)
         load_recurring(store, config, base)
         if not fresh:  # a fresh Machine has no routines yet: the page's empty state
             load_routines(store, base)
@@ -402,6 +402,9 @@ def load_graph_notes(db, base):
     note_pages.create(db, 'Dishwasher', 'personal', when, ['personal', work], parent=appliances,
                       lines=['Bought in March, warranty for two years', 'Filter cleaned every month'])
     note_pages.create(db, 'Internet', 'personal', when, ['personal', work], parent=home, lines=['Fiber, 1 Gbit, contract runs to next June'])
+    health = note_pages.create(db, 'Health', 'personal', when, ['personal', work])['id']
+    visits = note_pages.create(db, 'Appointments', 'personal', when, ['personal', work], parent=health)['id']
+    note_pages.create(db, 'Physio', 'personal', when, ['personal', work], parent=visits, lines=['Knee exercises twice a day'])
     office = note_pages.create(db, 'Office move', work, when, ['personal', work])['id']
     links = [{'id': i, 'name': n} for i, n in ((node('person', 'Mila Underhay'), 'Mila Underhay'),
                                                 (node('project', 'Northwind rollout'), 'Northwind rollout')) if i]
@@ -439,27 +442,59 @@ def load_graph_notes(db, base):
                    (hashlib.sha256(f'home-bill{n}'.encode()).hexdigest()[:16], f'sandbox:home-bill{n}', f'Pay the {payee} bill', f'The {payee} bill, paid.',
                     json.dumps([mails[f'home:bill{n}']]), json.dumps(['home-gmail']), stamp(days * 24 * 60, base),
                     json.dumps({'payee': payee, 'invoice': f'HB-{4410 + n}', 'amount': 'EUR 64.20'})))
+    # Health's (health_notes.py): appointments only the owner goes to on the personal calendar, a dentist's and an
+    # insurer's bill; load_section_notes makes the notes
+    me = 'alex.morgan@mail.example'
+    insert_events(db, [{'key': f'health:visit{n}', 'account_id': 'home-calendar', 'kind': 'calendar.event', 'minutes_ago': max(days, 0) * 24 * 60,
+                        'title': title, 'body': '', 'metadata': {'start_minutes_ago': days * 24 * 60 + n, 'duration_minutes': 45,
+                                                                 'attendees': [me], 'organizer': me, 'status': 'confirmed'}}
+                       for n, (title, days) in enumerate((('Dentist check-up', 170), ('Dentist check-up', -20), ('GP visit', 41),
+                                                         ('Physio', 16), ('Physio', 9), ('Physio', 2)))], base)
+    bills = [('Smileline Dental', 12), ('Northcare Health Insurance', 26)]
+    mails = insert_events(db, [{'key': f'health:bill{n}', 'account_id': 'home-gmail', 'kind': 'gmail.message', 'minutes_ago': days * 24 * 60,
+                                'title': f'Your invoice from {payee}', 'body': f'Your invoice from {payee} is ready.',
+                                'metadata': {'from': f'{payee} <billing@{payee.split()[0].lower()}.example>', 'to': me,
+                                             'labels': ['INBOX'], 'thread_id': f't-health-bill{n}', 'message-id': f'<health.bill{n}@mail.example>'}}
+                               for n, (payee, days) in enumerate(bills)], base)
+    for n, (payee, days) in enumerate(bills):
+        db.execute("INSERT INTO suggestions(id,dedupe_key,title,body,event_ids,account_ids,status,created_at,bill) VALUES(?,?,?,?,?,?,'completed',?,?)",
+                   (hashlib.sha256(f'health-bill{n}'.encode()).hexdigest()[:16], f'sandbox:health-bill{n}', f'Pay the {payee} invoice',
+                    f'The {payee} invoice, paid.', json.dumps([mails[f'health:bill{n}']]), json.dumps(['home-gmail']), stamp(days * 24 * 60, base),
+                    json.dumps({'payee': payee, 'invoice': f'HC-{2210 + n}', 'amount': 'EUR 48.00'})))
     db.commit()
 
 
-def load_home_notes(store, base):
-    """Home (home_notes.py): a few things the owner said in their chat about the house, kept the way the chat keeps
-    them (Store.remember_fact), and those and load_graph_notes' bills placed as the Machine's model call would place
-    them, filled in beside the owner's own Home and Appliances notes."""
+def load_section_notes(store, base):
+    """Home and Health (section_notes.py): a few things the owner said in their chat about the house and their health,
+    kept the way the chat keeps them (Store.remember_fact), and those and load_graph_notes' bills and appointments
+    placed as the Machine's model call would place them, filled in beside the owner's own notes (Home's Appliances and
+    Dishwasher, Health's Appointments and Physio)."""
+    import health_notes
     import home_notes
     import note_pages
-    for n, text in enumerate(('The boiler is serviced every October by Northside Heating', 'The gutters are cleaned each November',
-                              'The fridge warranty runs until June 2027', 'The dishwasher is a Lumo DW-500, bought in March 2024')):
+    import section_notes
+    said = ('The boiler is serviced every October by Northside Heating', 'The gutters are cleaned each November',
+            'The fridge warranty runs until June 2027', 'The dishwasher is a Lumo DW-500, bought in March 2024',
+            'Allergic to penicillin', 'Blood type is A positive', 'Takes vitamin D in winter')
+    for n, text in enumerate(said):
         store.remember_fact(text, f'webchat-said:sandbox-home-{n}', said=True, quote=text, said_text=text)
-    accounts, when = [{'id': 'home-gmail', 'service': 'gmail', 'boundary': 'personal'}], stamp(2 * 24 * 60, base)
-    places = {'Brightwater': 'Bills and subscriptions', 'Clearbrook': 'Bills and subscriptions', 'boiler': 'Repairs and upkeep',
-              'gutters': 'Repairs and upkeep', 'fridge': 'Appliances', 'dishwasher': ('Appliances', 'Dishwasher')}  # the owner's Dishwasher note
+    accounts = [{'id': 'home-gmail', 'service': 'gmail', 'boundary': 'personal'},
+                {'id': 'home-calendar', 'service': 'calendar', 'email': 'alex.morgan@mail.example', 'boundary': 'personal'}]
+    when = stamp(2 * 24 * 60, base)
+    places = {home_notes.KIND: {'Brightwater': 'Bills and subscriptions', 'Clearbrook': 'Bills and subscriptions', 'boiler': 'Repairs and upkeep',
+                                'gutters': 'Repairs and upkeep', 'fridge': 'Appliances', 'dishwasher': ('Appliances', 'Dishwasher')},
+              health_notes.KIND: {'Dentist': 'Appointments', 'GP visit': 'Appointments', 'Physio': ('Appointments', 'Physio'),
+                                  'Smileline': 'Bills and insurance', 'Northcare': 'Bills and insurance', 'penicillin': 'Allergies and conditions',
+                                  'Blood type': 'Allergies and conditions', 'vitamin D': 'Medicines'}}  # the owner's Dishwasher and Physio notes
     with store.connect() as db:
         db.execute('BEGIN IMMEDIATE')
-        items = home_notes.unasked(db, home_notes.candidates(db, accounts, base.date()))
-        home_notes.remember(db, {c['key']: next((s for k, s in places.items() if k in (c.get('name') or c.get('text') or '')), '') for c in items}, when)
-        found, keep = home_notes.drafts(db, home_notes.candidates(db, accounts, base.date()))
-        note_pages.sync(db, 'home', found, when, keep)
+        section_notes.ensure(db)
+        for kind, place in places.items():
+            items = section_notes.unasked(db, kind, kind.candidates(db, accounts, base.date()))
+            section_notes.remember(db, kind, {c['key']: next((s for k, s in place.items() if k in (c.get('name') or c.get('text') or '')), '')
+                                              for c in items}, when)
+            found, keep = section_notes.drafts(db, kind, kind.candidates(db, accounts, base.date()))
+            note_pages.sync(db, kind.kind, found, when, keep)
         db.commit()
 
 

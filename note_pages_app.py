@@ -10,15 +10,18 @@ import threading
 from datetime import date, timedelta
 from email.utils import parseaddr
 
+import health_notes
 import help_chat
 import home_notes
 import note_pages
+import section_notes
 import todo_areas
 import trip_notes
 from models import background_model
 from timeutil import now, today
 
 LOG = logging.getLogger('personal-assistant')
+SECTION_KINDS = (home_notes.KIND, health_notes.KIND)  # the kinds kept in sections (section_notes.py)
 
 
 def _sender(metadata, mine):
@@ -67,56 +70,57 @@ class NotesApp:
             LOG.warning('trip notes error=%s', type(error).__name__)
             return []
 
-    def home_notes_step(self):
-        """About every six hours (home_notes.EVERY): the Home notes from plain code, with one small model call over the
-        candidates no call placed yet, in a thread of its own once the budget allows. Nothing new to place: no model,
-        the notes still brought up to date. True when a round started."""
-        running = getattr(self, 'home_notes_thread', None)
+    def section_notes_step(self):
+        """About every six hours (section_notes.EVERY) for each kind in sections (Home, Health): its notes from plain
+        code, with one small model call per kind over the candidates no call placed yet, in a thread of its own once
+        the budget allows. Nothing new to place: no model, the notes still brought up to date. True when a round
+        started."""
+        running = getattr(self, 'section_notes_thread', None)
         if running and running.is_alive():
             return False
-        at = now()
+        at, accounts = now(), self.config.get('accounts') or []
         with self.store.connect() as db:
-            home_notes.ensure(db)
-            if not home_notes.due(db, at):
-                return False
-            ask = home_notes.unasked(db, home_notes.candidates(db, self.config.get('accounts') or [], today()))
-        if ask and (self.background_pause(job='home-notes') or not self.background_spaced()):
+            section_notes.ensure(db)
+            kinds = [k for k in SECTION_KINDS if section_notes.due(db, k, at)]
+            ask = any(section_notes.unasked(db, k, k.candidates(db, accounts, today())) for k in kinds)
+        if not kinds or ask and (self.background_pause(job='section-notes') or not self.background_spaced()):
             return False
         if ask:
             self.background_started()
-        self.home_notes_thread = threading.Thread(target=self.home_notes_run, daemon=True, name='home-notes')
-        self.home_notes_thread.start()
+        self.section_notes_thread = threading.Thread(target=lambda: [self.section_notes_run(k) for k in kinds], daemon=True, name='section-notes')
+        self.section_notes_thread.start()
         return True
 
-    def home_notes_ask(self, prompt):
-        ask = getattr(self, 'home_notes_model', None)  # tests and the sandbox: (prompt) -> reply
+    def section_notes_ask(self, prompt):
+        ask = getattr(self, 'section_notes_model', None)  # tests and the sandbox: (prompt) -> reply
         try:
             if ask:
                 return ask(prompt)
             model = background_model(self.config)
-            return help_chat.openclaw_model_run(self.config, prompt, '/'.join(model) if model else None, timeout=home_notes.TIMEOUT)
+            return help_chat.openclaw_model_run(self.config, prompt, '/'.join(model) if model else None, timeout=section_notes.TIMEOUT)
         except help_chat.Unavailable:
             return None
 
-    def home_notes_run(self):
-        """One round: what is new placed by the model (kept, so it is asked once), then the notes synced. Returns the
-        notes it changed."""
+    def section_notes_run(self, kind):
+        """One round of one kind: what is new placed by the model (kept, so it is asked once), then its notes synced.
+        Returns the notes it changed."""
         accounts, at = self.config.get('accounts') or [], now()
         try:
             with self.store.connect() as db:
-                items = home_notes.unasked(db, home_notes.candidates(db, accounts, today()))
-                under = home_notes.notes_under(db)
-            placed = home_notes.reply(self.home_notes_ask(home_notes.prompt(items, under)), items, under) if items else {}
+                section_notes.ensure(db)
+                items = section_notes.unasked(db, kind, kind.candidates(db, accounts, today()))
+                under = section_notes.notes_under(db, kind)
+            placed = section_notes.reply(kind, self.section_notes_ask(section_notes.prompt(kind, items, under)), items, under) if items else {}
             with self.store.connect() as db:
                 db.execute('BEGIN IMMEDIATE')
-                home_notes.remember(db, placed or {}, at)
-                home_notes.ran(db, at)
-                found, keep = home_notes.drafts(db, home_notes.candidates(db, accounts, today()))
-                touched = note_pages.sync(db, 'home', found, at, keep)
+                section_notes.remember(db, kind, placed or {}, at)
+                section_notes.ran(db, kind, at)
+                found, keep = section_notes.drafts(db, kind, kind.candidates(db, accounts, today()))
+                touched = note_pages.sync(db, kind.kind, found, at, keep)
         except Exception as error:  # noqa: BLE001 - the next round tries again
-            LOG.warning('home notes error=%s', type(error).__name__)
+            LOG.warning('section notes kind=%s error=%s', kind.kind, type(error).__name__)
             return []
-        LOG.info('home notes asked=%s placed=%s notes=%s', len(items), len(placed or {}), len(touched))
+        LOG.info('section notes kind=%s asked=%s placed=%s notes=%s', kind.kind, len(items), len(placed or {}), len(touched))
         return touched
 
     def calendar_notes(self, start, end):

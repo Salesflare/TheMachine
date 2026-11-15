@@ -69,7 +69,7 @@ LEFT_OUT = {
         'ms_photo_asks', 'photo_asks', 'telegram_photo_asks', 'whatsapp_photo_asks', 'whatsapp_photos',
     },
     'derived from the Graph and rebuilt from it on import': {'graph_identifiers'},
-    'Notes in the Graph: kept by the full export, not in the knowledge export yet': {'note_pages', 'note_page_lines', 'note_page_links', 'trip_bookings', 'trip_state', 'home_topics', 'home_state'},
+    'Notes in the Graph: kept by the full export, not in the knowledge export yet': {'note_pages', 'note_page_lines', 'note_page_links', 'trip_bookings', 'trip_state', 'section_topics', 'section_state'},
     'in the owner\'s own GBrain already': {'gbrain_meta', 'gbrain_notes', 'gbrain_pages'},
     'proposals the owner has not taken on': {
         'board_suggestions', 'skill_clusters', 'skill_hints', 'team_learning_votes', 'team_learnings', 'board_fits', 'tool_approval_proposals',
