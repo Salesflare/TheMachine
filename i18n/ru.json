@@ -642,6 +642,7 @@
  "At most {} voices: work this into an existing channel or All": "Не более {} голосов: добавьте их в существующий канал или в «Все»",
  "At stake": "На кону",
  "At stake: {}": "На кону: {}",
+ "At {}": "В {}",
  "Attach a message": "Прикрепить сообщение",
  "Attach a message this to-do is about": "Прикрепите сообщение, к которому относится эта задача",
  "Attach an email": "Прикрепить письмо",
@@ -6202,6 +6203,7 @@
  "Thursdays after {}": "По четвергам после {}",
  "Tick Save for next time when you sign in to a site.": "При входе на сайт отметьте «Сохранить на следующий раз».",
  "Tick the skills to import": "Отметьте навыки для импорта",
+ "Tickets": "Билеты",
  "Time": "Время",
  "Time format": "Формат времени",
  "Time passed": "Прошедшее время",
@@ -8461,6 +8463,12 @@
   "many": "{} веток",
   "one": "{} ветка",
   "other": "{} ветки"
+ },
+ "{} tickets": {
+  "few": "{} заявки",
+  "many": "{} заявок",
+  "one": "{} заявка",
+  "other": "{} заявки"
  },
  "{} times": {
   "few": "{} раза",
