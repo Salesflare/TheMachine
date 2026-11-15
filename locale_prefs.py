@@ -21,8 +21,25 @@ import re
 import zoneinfo
 from pathlib import Path
 
-LANGUAGES = {'en': 'English', 'nl': 'Nederlands', 'fr': 'Français', 'de': 'Deutsch', 'es': 'Español', 'it': 'Italiano',
-             'pt-BR': 'Português (Brasil)', 'zh-CN': '简体中文', 'ja': '日本語', 'ko': '한국어', 'ru': 'Русский'}  # i18n/<code>.json
+# Every language the app speaks, one row each (i18n/<code>.json holds its strings): its name in itself (the language
+# picker), its name in English (what a prompt calls it), and the language as speech knows it, an ISO 639-1 code and its
+# English name (voice input and Talk). The one table: the modules that name a language read it from here.
+LANGUAGE_TABLE = {
+    'en': ('English', 'English', 'en', 'English'),
+    'nl': ('Nederlands', 'Dutch', 'nl', 'Dutch'),
+    'fr': ('Français', 'French', 'fr', 'French'),
+    'de': ('Deutsch', 'German', 'de', 'German'),
+    'es': ('Español', 'Spanish', 'es', 'Spanish'),
+    'it': ('Italiano', 'Italian', 'it', 'Italian'),
+    'pt-BR': ('Português (Brasil)', 'Brazilian Portuguese', 'pt', 'Portuguese'),
+    'zh-CN': ('简体中文', 'Simplified Chinese', 'zh', 'Chinese'),
+    'ja': ('日本語', 'Japanese', 'ja', 'Japanese'),
+    'ko': ('한국어', 'Korean', 'ko', 'Korean'),
+    'ru': ('Русский', 'Russian', 'ru', 'Russian'),
+}
+LANGUAGES = {code: row[0] for code, row in LANGUAGE_TABLE.items()}
+ENGLISH_NAMES = {code: row[1] for code, row in LANGUAGE_TABLE.items()}  # 'Dutch' for nl
+SPOKEN_NAMES = {row[2]: row[3] for row in LANGUAGE_TABLE.values()}  # 'Chinese' for zh
 # A browser language without its own catalog that reads one of these for now: Portuguese from Portugal reads Brazilian,
 # any Chinese (zh-TW, zh-HK, zh-Hant) reads Simplified Chinese.
 NEAREST = {'pt': 'pt-BR', 'zh': 'zh-CN'}

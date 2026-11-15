@@ -78,9 +78,7 @@ def t(text, *args, lang=None):
 
 def language_name(lang=None):
     """'Dutch' for nl: how a prompt names the owner's language."""
-    return {'en': 'English', 'nl': 'Dutch', 'fr': 'French', 'de': 'German', 'es': 'Spanish', 'it': 'Italian',
-            'pt-BR': 'Brazilian Portuguese', 'zh-CN': 'Simplified Chinese', 'ja': 'Japanese', 'ko': 'Korean',
-            'ru': 'Russian'}.get(lang or locale_prefs.language(), 'English')
+    return locale_prefs.ENGLISH_NAMES.get(lang or locale_prefs.language(), 'English')
 
 
 def written_in(lang=None):

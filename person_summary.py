@@ -45,6 +45,7 @@ import datetime as dt
 import json
 import re
 
+import locale_prefs
 from machine.store.graph_history import live
 import timeutil
 from machine import todo_states
@@ -72,8 +73,7 @@ MAX_LINES, LINE_CHARS = 5, 180
 SIGNALS, CLIP = 8, 260
 KINDS = ('who', 'now', 'open')
 SOURCE = re.compile(r'^([EFP])(\d{1,12})$')
-LANGUAGE_NAMES = {'en': 'English', 'nl': 'Dutch', 'fr': 'French', 'de': 'German', 'es': 'Spanish', 'it': 'Italian', 'pt-BR': 'Brazilian Portuguese',
-                  'zh-CN': 'Simplified Chinese', 'ja': 'Japanese', 'ko': 'Korean', 'ru': 'Russian'}
+LANGUAGE_NAMES = locale_prefs.ENGLISH_NAMES
 
 
 def ensure(db):

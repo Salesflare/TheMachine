@@ -20,6 +20,7 @@ from __future__ import annotations
 import json
 import re
 
+import locale_prefs
 import meeting_notes
 from machine.owner_error import OwnerError
 
@@ -31,8 +32,7 @@ NOTES_CHARS = 12_000  # the notes themselves
 TABLE = ('CREATE TABLE IF NOT EXISTS meeting_writes(event_id INTEGER PRIMARY KEY,status TEXT NOT NULL,done INTEGER NOT NULL DEFAULT 0,'
          'total INTEGER NOT NULL DEFAULT 0,until REAL,error TEXT,started_at TEXT NOT NULL,updated_at TEXT NOT NULL)')
 ACTIVE = ('queued', 'running', 'waiting')
-LANGUAGE_NAMES = {'en': 'English', 'nl': 'Dutch', 'fr': 'French', 'de': 'German', 'es': 'Spanish', 'it': 'Italian', 'pt-BR': 'Brazilian Portuguese',
-                  'zh-CN': 'Simplified Chinese', 'ja': 'Japanese', 'ko': 'Korean', 'ru': 'Russian'}
+LANGUAGE_NAMES = locale_prefs.ENGLISH_NAMES
 
 
 def chunks(text, size=CHUNK_BYTES):

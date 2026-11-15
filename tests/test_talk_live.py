@@ -386,6 +386,14 @@ class Tools(unittest.TestCase):
         for words in ('web', 'browser', 'where you found it'):
             self.assertIn(words, t.RELAY_NOTE)
 
+    def test_the_voice_speaks_every_ui_language_by_name(self):
+        for code, name in (('zh-CN', 'Chinese'), ('ja', 'Japanese'), ('ko', 'Korean'), ('ru', 'Russian'),
+                           ('pt-BR', 'Brazilian Portuguese'), ('nl', 'Dutch')):
+            for text in (t.instructions('Reply to Dana', code, 'now'), t.main_instructions(code, 'now')):
+                self.assertIn('Speak %s unless' % name, text)
+        for code in t.locale_prefs.LANGUAGES:
+            self.assertNotIn('the owner’s language', t.instructions('Reply to Dana', code, 'now'))
+
     def test_the_instructions_send_only_after_a_question(self):
         text = t.instructions('Reply to Dana', 'nl', 'Tuesday 28 October 2026, 10:00')
         self.assertIn('"Reply to Dana"', text)
