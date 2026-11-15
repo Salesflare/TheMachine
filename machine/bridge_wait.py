@@ -14,6 +14,8 @@ from pathlib import Path
 
 import i18n
 
+LAYER = 0  # a changed bridge the nightly update could not put in yet (a leaf, shared with installer.py)
+
 NAME = 'plugin-waiting'  # in the data folder, next to the stamp (installer.BRIDGE_WAITING)
 TRIES = 3  # failed quiet nights before the owner hears about it
 

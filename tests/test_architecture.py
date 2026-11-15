@@ -6,7 +6,7 @@ split up. Static checks of the source only; nothing is imported or run.
 - no module loads assistant.py except the entry points that do so today (tests may);
 - each table is created by one module, its owner, and written only by its owner, apart from the writers listed in
   OTHER_WRITERS as they are today;
-- modules in machine/ import only from their own layer or the ones below it (MACHINE_LAYERS), never `*`;
+- modules in machine/ import only from their own layer or the ones below it (each area's LAYER), never `*`;
 - to-do statuses are named from machine/todo_states.py, never spelled out as a list in code or SQL;
 - only timeutil.py reads the real clock (datetime.now, date.today), so tests can pin it;
 - Python files stay under PY_LINE_BUDGET lines and PY_BYTE_BUDGET bytes, apart from today's bigger ones in
@@ -132,43 +132,38 @@ def loads_module(found, wanted):
 
 # The package assistant.py's code moves into (docs/code-map.md). Each top-level module or folder of machine/ has a layer;
 # a module imports only from its own layer or the ones below it (and any root module), so the code can't grow a cycle
-# and Store and App's helpers stay importable without them. A new area gets its layer here in the pull request that adds
-# it. Lazy imports inside a function count too.
-MACHINE_LAYERS = {
-    'action_basis': 0,  # what allowed each outward step, recorded for Activity (never a check)
-    'ai_training': 0,  # whether the owner's AI plan trains on chats, and where to turn that off (a leaf)
-    'actions': 0,      # the *_ACTIONS sets, the security boundary
-    'bridge_wait': 0,  # a changed bridge the nightly update could not put in yet (a leaf, shared with installer.py)
-    'config': 0,
-    'dashboard_link': 0,  # the dashboard's own address for links (a leaf)
-    'kinds': 0,       # every kind of event and of message, with what the code knows of each (a leaf)
-    'names': 0,        # what the owner calls a service, app or agent (never the tool underneath)
-    'night_pause': 0,  # when the reviews of new signals pause for the night (a leaf)
-    'omarchy': 0,      # the Omarchy desktop theme's colors, read only (a leaf)
-    'owner_error': 0,  # OwnerError: a message for the owner, not a bug (a leaf)
-    'services': 0,     # every service a connection reads, with what the code knows of each (a leaf)
-    'stamps': 0,       # change counters per table, so a request's answer is kept until its tables change
-    'system_logs': 0,  # the computer's own logs: journald and crash dumps, read only
-    'text': 0,         # message parsing
-    'timing': 0,       # request timing, shared by web and store
-    'todo_kinds': 0,   # the to-do kinds the core paths ask about; their modules load on first use
-    'todo_states': 0,  # every to-do status and its named groups (a leaf)
-    'browser': 1,
-    'cards': 1,
-    'chat': 1,
-    'faults': 1,
-    'model_usage': 1,
-    'prompts': 1,
-    'sources': 1,
-    'store': 2,
-    'graph': 2,        # the Graph build's passes (graph.build): one function each, imports none of machine/
-    'upkeep': 2,       # housekeeping of the data folder: agent job folders (retention.py runs it)
-    'delivery': 3,
-    'export': 3,       # export and import: what an install keeps (inventory), the hold after an import
-    'web': 3,
-    'app': 4,
-    'main': 4,
-}
+# and Store and App's helpers stay importable without them. An area declares its layer itself, `LAYER = n` at the top
+# of its module (machine/<area>.py) or package (machine/<area>/__init__.py), with what it is in a comment; a new area
+# declares it in the pull request that adds it. Lazy imports inside a function count too.
+# `python3 tests/test_architecture.py --layers` prints them, lowest first.
+
+
+def declared_layer(path):
+    """The LAYER an area's module or package __init__ declares (an int literal), or None."""
+    for node in ast.parse(path.read_text(encoding='utf-8'), str(path)).body:
+        if (isinstance(node, ast.Assign) and [getattr(t, 'id', None) for t in node.targets] == ['LAYER']
+                and isinstance(node.value, ast.Constant) and type(node.value.value) is int):
+            return node.value.value
+    return None
+
+
+def machine_layers():
+    """{area: layer} for every top-level module and package of machine/ that declares one."""
+    found = {}
+    for path in sorted((ROOT / 'machine').iterdir()):
+        if path.suffix == '.py' and path.stem != '__init__':
+            area, source = path.stem, path
+        elif path.is_dir() and (path / '__init__.py').exists():
+            area, source = path.name, path / '__init__.py'
+        else:
+            continue
+        layer = declared_layer(source)
+        if layer is not None:
+            found[area] = layer
+    return found
+
+
+MACHINE_LAYERS = machine_layers()
 
 
 def machine_area(module):
@@ -189,7 +184,7 @@ def machine_layer_problems(rel, source):
         return [(n.lineno, 'machine/__init__.py imports nothing') for n in ast.walk(ast.parse(source, rel))
                 if isinstance(n, (ast.Import, ast.ImportFrom))]
     if own not in MACHINE_LAYERS:
-        return [(1, f'machine/{own} has no layer: add it to MACHINE_LAYERS in tests/test_architecture.py')]
+        return [(1, f'machine/{own} has no layer: declare LAYER = <n> at the top of it (tests/test_architecture.py, machine/ layers)')]
     for node in ast.walk(ast.parse(source, rel)):
         wanted = []
         if isinstance(node, ast.Import):
@@ -212,7 +207,7 @@ def machine_layer_problems(rel, source):
             if area is None or area == own:
                 continue
             if area not in MACHINE_LAYERS:
-                problems.append((node.lineno, f'imports machine.{area}, which has no layer in MACHINE_LAYERS'))
+                problems.append((node.lineno, f'imports machine.{area}, which declares no LAYER'))
             elif MACHINE_LAYERS[area] > MACHINE_LAYERS[own]:
                 problems.append((node.lineno, f'machine.{own} (layer {MACHINE_LAYERS[own]}) imports machine.{area} '
                                               f'(layer {MACHINE_LAYERS[area]}): move what it needs down a layer, or '
@@ -703,6 +698,13 @@ class Architecture(unittest.TestCase):
         self.assertIn('take it out', check({'big.py': (2400, 50)})[0])        # back within the budget
         self.assertIn('is gone', check({})[0])
 
+    def test_every_machine_area_declares_its_layer(self):
+        areas = {p.stem for p in (ROOT / 'machine').glob('*.py') if p.stem != '__init__'}
+        areas |= {p.parent.name for p in (ROOT / 'machine').glob('*/__init__.py')}
+        self.assertEqual(sorted(areas - set(MACHINE_LAYERS)), [], 'declare LAYER = <n> at the top of each')
+        self.assertEqual(MACHINE_LAYERS['owner_error'], 0)
+        self.assertEqual(MACHINE_LAYERS['store'], 2)  # a package declares it in its __init__.py
+
     def test_machine_modules_import_down_the_layers(self):
         for name in python_files(tests=False):
             if name.startswith('machine/'):
@@ -863,5 +865,8 @@ def owners_report():
 if __name__ == '__main__':
     if sys.argv[1:] == ['--owners']:
         print(owners_report())
+    elif sys.argv[1:] == ['--layers']:
+        for layer in sorted(set(MACHINE_LAYERS.values())):
+            print(layer, ' '.join(sorted(area for area, at in MACHINE_LAYERS.items() if at == layer)))
     else:
         unittest.main()

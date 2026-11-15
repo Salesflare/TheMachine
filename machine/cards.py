@@ -15,6 +15,8 @@ from machine import todo_states
 from machine.owner_error import OwnerError
 from machine import todo_kinds
 
+LAYER = 1
+
 
 def snooze_time(option=None, explicit=None, hours=24, work=False, start=None):
     current = dt.datetime.fromisoformat(start or now())

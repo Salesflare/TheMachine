@@ -41,6 +41,8 @@ import locale_prefs
 from timeutil import local_tz
 import timeutil
 
+LAYER = 0  # the computer's own logs: journald and crash dumps, read only
+
 WINDOW = dt.timedelta(hours=24)
 EVERY = dt.timedelta(minutes=30)  # the service reads at most this often
 MAX_ENTRIES = 3000  # newest records over WINDOW; enough for a day of a busy desktop

@@ -11,6 +11,8 @@ import re
 import socket
 import tomllib
 
+LAYER = 0  # the Omarchy desktop theme's colors, read only (a leaf)
+
 # Omarchy 4 keeps the current theme under ~/.local/state, Omarchy 3 under ~/.config.
 PLACES = ('.local/state/omarchy/current', '.config/omarchy/current')
 # The colors the dashboard maps onto its own tokens (dashboard/settings-omarchy.js); every Omarchy theme has these.

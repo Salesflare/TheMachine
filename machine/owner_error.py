@@ -7,6 +7,8 @@ a JSON decode error) isn't for the owner. machine/web/handler.py logs those and 
 
 It is a ValueError, so every `except ValueError` still catches it."""
 
+LAYER = 0  # OwnerError: a message for the owner, not a bug (a leaf)
+
 
 class OwnerError(ValueError):
     """A message for the owner, such as "Handing off to Claude Code or Codex is off on this Machine"."""

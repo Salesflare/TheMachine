@@ -6,6 +6,8 @@ import time
 
 from machine.config import LOG
 
+LAYER = 0  # request timing, shared by web and store
+
 
 # A dashboard or API request that takes longer than this is logged with its path, its total time and the time it spent
 # getting a database connection (opening it, waiting on the lock) and holding one: never a query, a body or an answer.

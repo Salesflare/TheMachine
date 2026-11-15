@@ -12,6 +12,8 @@ from machine.text import _address, clamp, split_quoted_history
 import next_actions
 from timeutil import local_tz, now
 
+LAYER = 1
+
 
 # A card's chat (dashboard #chat=<id>): the card's own preparation session, read with chat.history through
 # chat-history-run.mjs, shown as a conversation. The owner's side comes from this app's decisions, never from the long

@@ -11,6 +11,8 @@ import sqlite3
 
 import i18n
 
+LAYER = 0  # the to-do kinds the core paths ask about; their modules load on first use
+
 
 class TodoKind:
     """One kind of to-do.

@@ -26,6 +26,8 @@ import service
 from sources import SourceError
 from timeutil import local_tz
 
+LAYER = 1
+
 # The Machine's own errors. A handler on the service log keeps, for each error raised in this
 # code, its exception type, code location (file, line, function) and its message with anything
 # private taken out (fault_message) per day: never arguments, values or content. The Gateway

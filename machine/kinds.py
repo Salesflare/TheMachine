@@ -20,6 +20,8 @@ An event kind's row:
 - messenger: a conversation that reads like its messenger app, bubbles with their times (events-message.js THREAD_IM)
 """
 
+LAYER = 0  # every kind of event and of message, with what the code knows of each (a leaf)
+
 MAIL, CHAT, MEETING, NOTIFICATION, CARD = 'mail', 'chat', 'meeting', 'notification', 'card'
 FAMILIES = (MAIL, CHAT, MEETING, NOTIFICATION, CARD)
 VIEWS = ('email', 'chat', 'notification', 'card')

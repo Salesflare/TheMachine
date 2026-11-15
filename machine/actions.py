@@ -5,6 +5,8 @@ checks; scripts/merge_friendly.py lays them out). Moved out of assistant.py as i
 import handoff_mail
 import task_pages
 
+LAYER = 0  # the *_ACTIONS sets, the security boundary
+
 
 # Owner decisions/feedback. Only the bridge's verified Telegram handlers and the
 # authenticated dashboard may record them; never the local CLI the agent can run.

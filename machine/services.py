@@ -37,6 +37,8 @@ Where names disagree, each is kept as it is today and said here, never picked si
   their + Add label there.
 """
 
+LAYER = 0  # every service a connection reads, with what the code knows of each (a leaf)
+
 MAIL, CALENDAR, CHAT, MEETINGS, DOCS, CUSTOMERS, WORK, OTHER = 'mail', 'calendar', 'chat', 'meetings', 'docs', 'customers', 'work', 'other'
 GROUPS = (MAIL, CALENDAR, CHAT, MEETINGS, DOCS, CUSTOMERS, WORK, OTHER)  # + Add's groups, in the order its list shows them
 

@@ -27,6 +27,8 @@ import datetime as dt
 
 import timeutil
 
+LAYER = 0  # when the reviews of new signals pause for the night (a leaf)
+
 CATCH_UP_LEAD = 30       # minutes before the quiet hours end: the held signals are reviewed then
 SUMMARY_LEAD = 60        # minutes before the morning summary, when it comes before that
 IDLE_SECONDS = 3600      # after the owner last used The Machine at night, reviews run as usual this long
