@@ -133,10 +133,39 @@ class Senders(unittest.TestCase):
             self.assertNotIn(fake, [s['id'] for s in self.node(real)['same']])
         with self.store.connect() as db:
             self.assertEqual(db.execute("SELECT count(*) FROM graph_same WHERE a LIKE '%oduya%' OR a LIKE '%kestrel%' OR a LIKE '%fjordline%'").fetchone()[0], 0)
-        # The same name at two unrelated domains is still asked, as before
+        # The same name at two unrelated domains, and nothing else in common: anyone can type a name, so no question
         self.store.commit_page('work', {}, [mail(1, 'Camille Oduya <camille@ledgerwise.example>', 'Hi', 'Hi')])
         self.build()
-        self.assertIn('email:camille@oduyafinance.example', [s['id'] for s in self.node('email:camille@ledgerwise.example')['same']])
+        self.assertEqual(self.node('email:camille@ledgerwise.example')['same'], [])
+
+    def test_same_person_never_pairs_by_name_alone_across_domains_nor_anyone_using_the_owners_name(self):
+        # The safety eval of 2026-11-15: senders named like the owner at a lookalike of the owner's domain, at a
+        # hyphenated one, and at unrelated "private" mailboxes, each paired with the others by the name alone
+        self.store.commit_page('work', {}, [mail(3, f'Robin Hale <{OWNER}>', 'Thanks', 'Thanks', to='maren@saltfieldfoods.example', labels=('SENT',))])
+        for sender in ('Robin Hale <robin@larkspurstudlo.example>', 'Robin Hale <robin@larkspur-studio.example>',
+                       'Robin Hale <notes@larkspurstudio-mail.example>', 'Robin Hale <robinhale.private@mailbox-secure.example>',
+                       'Robin Hale <robinhale.phone@mailbox-secure.example>', 'Robin Hale <rhale.notes@inbox-notes.example>'):
+            self.store.commit_page('work', {}, [mail(1, sender, 'From my other address', 'Use this address from now on.')])
+        # A namesake of a contact at another ending of their domain, and genuine pairs: one at the same company, one
+        # at their work and personal address who write with the same people
+        self.store.commit_page('work', {}, [mail(1, 'Maren Holt <maren@saltfieldfoods.co>', 'Hi', 'Hi'),
+                                            mail(1, 'Maren Holt <m.holt@saltfieldfoods.example>', 'Re: Hello', 'Hello again'),
+                                            mail(1, 'Greta Lund <greta@fjordlinefreight.example>', 'Plan', 'Plan', to=f'{OWNER}, noor.vasquez@mail.example'),
+                                            mail(1, 'Greta Lund <greta.lund@mail.example>', 'Weekend', 'Weekend', to=f'{OWNER}, noor.vasquez@mail.example')])
+        self.build()
+        with self.store.connect() as db:
+            rows = [tuple(r) for r in db.execute('SELECT a,b,why FROM graph_same')]
+        self.assertFalse([r for r in rows if 'hale' in r[0] + r[1] or 'larkspur' in r[0] + r[1]], rows)
+        self.assertNotIn('email:maren@saltfieldfoods.co', [s['id'] for s in self.node('email:maren@saltfieldfoods.example')['same']])
+        self.assertIn('email:m.holt@saltfieldfoods.example', [s['id'] for s in self.node('email:maren@saltfieldfoods.example')['same']])
+        greta = [s for s in self.node('email:greta@fjordlinefreight.example')['same'] if s['id'] == 'email:greta.lund@mail.example']
+        self.assertEqual([s['why'] for s in greta], ['Same name, with the same people'])
+
+    def test_the_same_name_at_another_ending_is_never_the_same_person_by_name(self):
+        self.assertTrue(lookalike.apart_same_person({'kestrelbikes.co'}, {'kestrelbikes.example'}))
+        self.assertTrue(lookalike.apart_same_person({'kestrel-bikes.example'}, {'kestrelbikes.example'}))
+        self.assertFalse(lookalike.apart_same_person({'ledgerwise.example'}, {'oduyafinance.example'}))
+        self.assertFalse(lookalike.apart_same_person({'mail.example'}, {'fjordlinefreight.example'}))
 
     def test_a_shared_name_in_one_thread_never_joins_a_lookalike(self):
         thread = mail(1, 'Tobias Wren <tobias@kestrel-bikes.example>', 'Re: Launch', 'Same thread', to='Robin <robin@larkspurstudio.example>')

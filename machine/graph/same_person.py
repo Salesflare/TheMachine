@@ -3,11 +3,15 @@
 import collections
 import json
 
-from graph import FLOOR, likely_same, shown_id
+from graph import FLOOR, likely_same, name_words, shown_id
 
 
-def find_same_people(event_people, node_events, project_people, alike, union, infos, x_names, nodes):
-    # Same person? Likely pairs for the owner to Merge or keep apart, on both pages and in People.
+def find_same_people(event_people, node_events, project_people, alike, union, infos, x_names, nodes, owner_names=()):
+    # Same person? Likely pairs for the owner to Merge or keep apart, on both pages and in People. Never with a person
+    # the lookalikes pass marked, nor anyone carrying the owner's own name (owner_names: the configured one and the ones
+    # they send under).
+    marked = {n[0] for n in nodes if isinstance(n[9], dict) and n[9].get('lookalike')}
+    owner_words = [w for w in (name_words(n) for n in dict.fromkeys(owner_names) if n) if len(w) >= 2]
     seen_with = {}
 
     def together(node):
@@ -18,7 +22,7 @@ def find_same_people(event_people, node_events, project_people, alike, union, in
     for (node, pid), value in project_people.items():
         if value >= FLOOR:
             on_projects[node].add(pid)
-    same_rows = likely_same(alike, union, together, on_projects)
+    same_rows = likely_same(alike, union, together, on_projects, marked, owner_words)
     for a, b, why, _ in same_rows:
         for one, other in ((a, b), (b, a)):
             asks = infos[one].setdefault('same', [])

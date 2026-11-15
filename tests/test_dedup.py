@@ -49,9 +49,9 @@ class SamePerson(unittest.TestCase):
         self.assertEqual(self.app.graph_action({'node_id': 'wa:00000000021'})['id'], node)
 
     def test_a_merge_answers_at_once_and_the_worker_joins_them(self):
-        self.add(tg.mail(3, 'Sam Rivera <sam.rivera@one.example>', 'sam@acme.com'), tg.mail(2, 'Sam Rivera <rivera@two.example>', 'sam@acme.com'))
+        self.add(tg.mail(3, 'Sam Rivera <sam.rivera@one.example>', 'sam@acme.com'), tg.mail(2, 'Sam Rivera <rivera@one.example>', 'sam@acme.com'))
         self.build()
-        pair = ('email:rivera@two.example', 'email:sam.rivera@one.example')
+        pair = ('email:rivera@one.example', 'email:sam.rivera@one.example')
         self.assertIn(pair[1], [s['id'] for s in self.node(pair[0])['same']])
         self.app.graph_worker_on, self.app.graph_dirty = True, tg.a.threading.Event()  # as on a running Machine: rebuilds go to the graph worker
         builds = []
@@ -68,10 +68,10 @@ class SamePerson(unittest.TestCase):
     def test_a_pair_merges_made_one_already_is_not_asked_before_the_rebuild(self):
         # Merge on A and B, then on B and C: A and C are one person already, so the list stops asking at once (tapped,
         # it came back on the next redraw until the worker's rebuild).
-        self.add(tg.mail(3, 'Sam Rivera <sam.rivera@one.example>', 'sam@acme.com'), tg.mail(2, 'Sam Rivera <rivera@two.example>', 'sam@acme.com'),
-                 tg.mail(1, 'Sam Rivera <sam@three.example>', 'sam@acme.com'))
+        self.add(tg.mail(3, 'Sam Rivera <sam.rivera@one.example>', 'sam@acme.com'), tg.mail(2, 'Sam Rivera <rivera@one.example>', 'sam@acme.com'),
+                 tg.mail(1, 'Sam Rivera <sam@one.example>', 'sam@acme.com'))
         self.build()
-        one, two, three = 'email:sam.rivera@one.example', 'email:rivera@two.example', 'email:sam@three.example'
+        one, two, three = 'email:sam.rivera@one.example', 'email:rivera@one.example', 'email:sam@one.example'
         listed = lambda: {frozenset((s['a']['id'], s['b']['id'])) for s in self.app.graph_action({})['same_person']}
         self.assertEqual(listed(), {frozenset(p) for p in ((one, two), (one, three), (two, three))})
         self.app.graph_worker_on, self.app.graph_dirty = True, tg.a.threading.Event()  # rebuilds go to the graph worker
@@ -119,21 +119,21 @@ class SamePerson(unittest.TestCase):
 
     def test_two_people_with_one_name_never_merge_by_themselves(self):
         self.add(tg.mail(3, 'Sam Rivera <sam.rivera@one.example>', 'sam@acme.com'),
-                 tg.mail(2, 'Sam Rivera <rivera@two.example>', 'sam@acme.com'),
+                 tg.mail(2, 'Sam Rivera <rivera@one.example>', 'sam@acme.com'),
                  tg.chat(1, '00000000031', 'Sam Rivera'))
         self.build()
         self.assertEqual(len(self.people()), 3)  # two addresses carry the name: nobody is joined on the name
         pairs = self.same_pairs()
-        self.assertIn(('email:rivera@two.example', 'email:sam.rivera@one.example'), pairs)
+        self.assertIn(('email:rivera@one.example', 'email:sam.rivera@one.example'), pairs)
         self.assertEqual(len(pairs), 3)  # a question for each pair, nothing more
         view = self.app.graph_action({})
-        self.assertEqual({s['why'] for s in view['same_person']}, {'Same name'})
+        self.assertEqual({s['why'] for s in view['same_person']}, {'Same name', 'Same name, both at one.example'})
         # Not the same is remembered: no question again, also after a rebuild.
-        self.say('email:rivera@two.example', 'email:sam.rivera@one.example', False)
+        self.say('email:rivera@one.example', 'email:sam.rivera@one.example', False)
         with self.assertRaisesRegex(ValueError, 'their word stays'):
-            self.app.graph_action({'merge': ['email:sam.rivera@one.example', 'email:rivera@two.example']})  # a review can't overrule it
+            self.app.graph_action({'merge': ['email:sam.rivera@one.example', 'email:rivera@one.example']})  # a review can't overrule it
         self.build()
-        self.assertNotIn(('email:rivera@two.example', 'email:sam.rivera@one.example'), self.same_pairs())
+        self.assertNotIn(('email:rivera@one.example', 'email:sam.rivera@one.example'), self.same_pairs())
         self.assertEqual(len(self.people()), 3)
 
     def test_a_name_read_from_an_address_an_initial_or_a_company_name_is_no_same_name(self):
@@ -146,9 +146,9 @@ class SamePerson(unittest.TestCase):
                  tg.mail(2, 'P Lee <lee@four.example>', 'sam@acme.com'), tg.mail(2, 'Sam <sam@acme.com>', 'lee@four.example', sent),
                  tg.mail(2, 'Blue Harbor <info@blueharbor.example>', 'sam@acme.com'),  # the company's own name
                  tg.mail(2, 'Blue Harbor <team@news.blueharbor.example>', 'sam@acme.com'),
-                 tg.mail(1, 'Sam Rivera <sam.rivera@one.example>', 'sam@acme.com'), tg.mail(1, 'Sam Rivera <rivera@two.example>', 'sam@acme.com'))
+                 tg.mail(1, 'Sam Rivera <sam.rivera@one.example>', 'sam@acme.com'), tg.mail(1, 'Sam Rivera <rivera@one.example>', 'sam@acme.com'))
         self.build()
-        self.assertEqual(self.same_pairs(), {('email:rivera@two.example', 'email:sam.rivera@one.example')})  # a full name someone gave
+        self.assertEqual(self.same_pairs(), {('email:rivera@one.example', 'email:sam.rivera@one.example')})  # a full name someone gave
 
     def test_a_similar_name_needs_something_shared_and_is_only_asked(self):
         self.add(tg.mail(3, 'Kit Lane <kit@globex.example>', 'sam@acme.com'),
@@ -240,13 +240,13 @@ class SamePerson(unittest.TestCase):
         self.assertEqual(set(self.people()), {'email:kit@globex.example'})
 
     def test_merge_all_takes_every_listed_pair_but_never_a_not_the_same_and_one_undo_splits_them(self):
-        self.add(tg.mail(3, 'Sam Rivera <sam.rivera@one.example>', 'sam@acme.com'), tg.mail(3, 'Sam Rivera <rivera@two.example>', 'sam@acme.com'),
+        self.add(tg.mail(3, 'Sam Rivera <sam.rivera@one.example>', 'sam@acme.com'), tg.mail(3, 'Sam Rivera <rivera@one.example>', 'sam@acme.com'),
                  tg.mail(2, 'Kit Lane <kit@globex.example>', 'sam@acme.com'), tg.mail(2, 'Kit <k.lane@globex.example>', 'sam@acme.com'),
-                 tg.mail(1, 'Lee Ames <lee@north.example>', 'sam@acme.com'), tg.mail(1, 'Lee Ames <ames@south.example>', 'sam@acme.com'))
+                 tg.mail(1, 'Lee Ames <lee@north.example>', 'sam@acme.com'), tg.mail(1, 'Lee Ames <ames@north.example>', 'sam@acme.com'))
         self.build()
         listed = [[s['a']['id'], s['b']['id']] for s in self.app.graph_action({})['same_person']]
         self.assertEqual(len(listed), 3)
-        self.say('email:ames@south.example', 'email:lee@north.example', False)  # the list on screen still shows it
+        self.say('email:ames@north.example', 'email:lee@north.example', False)  # the list on screen still shows it
         with self.assertRaisesRegex(ValueError, 'Only the owner'):
             self.app.action('graph_same_all', {'pairs': listed})
         said = self.app.action('graph_same_all', {'pairs': listed}, owner_dashboard=True)
@@ -254,12 +254,12 @@ class SamePerson(unittest.TestCase):
         people = self.people()
         self.assertEqual(len(people), 4)
         self.assertIn('email:lee@north.example', people)
-        self.assertIn('email:ames@south.example', people)  # Not the same is never merged
+        self.assertIn('email:ames@north.example', people)  # Not the same is never merged
         self.assertEqual(self.same_pairs(), set())
         # One Undo: every pair of the batch is two people again, and asked again; Not the same stays.
         self.assertEqual(self.app.action('graph_same_all', {'undo': said['batch']}, owner_dashboard=True)['split'], 2)
         self.assertEqual(len(self.people()), 6)
-        self.assertEqual(self.same_pairs(), {('email:rivera@two.example', 'email:sam.rivera@one.example'),
+        self.assertEqual(self.same_pairs(), {('email:rivera@one.example', 'email:sam.rivera@one.example'),
                                               ('email:k.lane@globex.example', 'email:kit@globex.example')})
         # Undo on one pair of a Merge all still works on its own.
         said = self.app.action('graph_same_all', {'pairs': listed}, owner_dashboard=True)
@@ -268,8 +268,8 @@ class SamePerson(unittest.TestCase):
         people = self.people()
         self.assertEqual(len(people), 5)
         self.assertIn('email:k.lane@globex.example', people)
-        self.assertEqual(sorted(next(ids for ids in people.values() if 'email:rivera@two.example' in ids)),
-                         ['email:rivera@two.example', 'email:sam.rivera@one.example'])
+        self.assertEqual(sorted(next(ids for ids in people.values() if 'email:rivera@one.example' in ids)),
+                         ['email:rivera@one.example', 'email:sam.rivera@one.example'])
         self.assertEqual(self.app.action('graph_same_all', {'pairs': listed}, owner_dashboard=True)['batch'], None)  # nothing left to merge
 
     def test_a_domain_or_a_placeholder_is_not_a_name(self):

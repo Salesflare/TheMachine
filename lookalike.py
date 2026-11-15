@@ -12,7 +12,8 @@ Graph build marks each person at a lookalike domain (`lookalike` on their node: 
 person on record there with the same name, when there is one). What follows from it:
 
 - a review never gives them a role (graph.set_role), and a role a review gave them before is not shown;
-- "Same person?" never pairs two people whose domains are confusable, and a shared name never joins them;
+- "Same person?" never pairs them with anyone, nor two people whose domains are confusable or the same name at another
+  ending, and a shared name never joins them;
 - a prepared email to a lookalike address is checked before it is saved: it goes to the address on record instead
   (problems, from the Do it prepare step);
 - a to-do about their message says that it isn't who it seems (graph.card_people, the dashboard).
@@ -119,6 +120,14 @@ def imitations(first_seen, own=()):
 def apart(domains, others):
     """True when any of one person's domains imitates any of another's: never one person, whatever the name."""
     return any(confusable(a, b) for a in domains for b in others)
+
+
+def apart_same_person(domains, others):
+    """"Same person?"'s stricter check: besides confusable domains, the same name at another ending (kestrelbikes.co
+    for kestrelbikes.example) is never the same person by name either. It may be the organization's other domain, but
+    a stranger can register it too, and nothing in their mail tells the two apart."""
+    return any(confusable(a, b) or (registrable(a) != registrable(b) and name_of(a) and name_of(a) == name_of(b))
+               for a in domains for b in others)
 
 
 def first_seen(nodes, *events):

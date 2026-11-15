@@ -121,11 +121,21 @@ owner's company as their stated organization), the chat's number is known for th
 the owner's own edit), both are on one project, both are at one organization, or one signal has both.
 
 Weaker evidence is only a question: the same full name on a work contact and a personal chat, the same full name that two
-people on one channel carry, or a similar name ("Ann" and "Ann Lee", a nameless jane.doe@ and Jane Doe) with something
+people on one channel carry (when they write from a domain in common, or one of them has no address), or a similar name ("Ann" and "Ann Lee", a nameless jane.doe@ and Jane Doe) with something
 shared besides (the same company domain, people seen with both, a project, the same role). A name read from an address
 (jane.doe@ with no name given) is only ever similar, so the same local part at two domains is never asked by itself; an
 initial ("P") is no name, and a sender named for their own company ("Blue Harbor" at blueharbor.com) has no person's
 name to compare.
+
+A name is what anyone can type, so it never pairs two addresses across domains by itself (`graph.likely_same`):
+
+- two people who write from no domain in common (free mail and the owner's own domains count as domains here) are
+  asked only with something shared besides the name: people seen with both, a project, the same role;
+- two whose domains imitate one another (Lookalike senders, below), or carry the same name at another ending
+  (acme.co next to acme.com), are never asked;
+- a person marked as a lookalike is never asked with anyone;
+- someone carrying the owner's own name (Settings, or the name on mail the owner sent) at an address that isn't the
+  owner's is never asked: the owner's other addresses go under Your addresses, never through a merge.
 
 - The person page asks it quietly ("Same person as …?", with why and where the other one is from: their address,
   number or channel), and People lists them under **Same person?** with **Merge** and **Not the same**. Not the same
@@ -156,7 +166,8 @@ example.com) and free mail domains never count.
   on record there with the same name, when there is one).
 - A review never gives them a role (`graph.set_role` refuses it), and one a review gave them before is not shown. Only
   the owner's own word gives them a role.
-- "Same person?" never pairs two people at confusable domains, and a shared name in one message or thread never joins them.
+- "Same person?" never pairs them with anyone, nor two people at confusable domains or the same name at another ending,
+  and a shared name in one message or thread never joins them.
 - A prepared email to a lookalike address is checked before it is saved (`lookalike.problems`): a check about their
   message goes to the person at the address on record instead.
 - A to-do about their message says plainly that it isn't who it seems ("This isn't Sam Lee. It came from

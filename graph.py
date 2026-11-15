@@ -935,11 +935,17 @@ def signature_pairs(db, senders, best, known):
     return pairs
 
 
-def likely_same(people, union, together, projects):
+def likely_same(people, union, together, projects, skip=frozenset(), owner_names=()):
     """Pairs of people who may be one, for the owner to Merge or keep apart: [(a, b, why, score)]. The same full name
     is enough to ask (it was not joined because two people on one channel carry it); a similar name needs something
     shared besides: the same company, people seen with both, a project, or the same role. A name read from an address
-    (jane.doe@, pm_bounces@) is only ever similar: the same local part at two domains says nothing by itself."""
+    (jane.doe@, pm_bounces@) is only ever similar: the same local part at two domains says nothing by itself.
+
+    A name is what anyone can type, so it never pairs two addresses by itself across domains (docs/intelligence.md,
+    Lookalike senders): two people who write from no domain in common need something shared besides, and two whose
+    domains imitate one another (a hyphen, a swapped letter, another ending) are never asked. Nor is anyone in skip
+    (a person at a lookalike domain, lookalike.mark) or anyone carrying the owner's own name (owner_names: name words) at an
+    address that isn't the owner's: the owner's other addresses are added under Your addresses, never merged here."""
     buckets = collections.defaultdict(list)
     for node, p in people.items():
         if p['words']:
@@ -962,6 +968,12 @@ def likely_same(people, union, together, projects):
                     match = 'similar'
                 if not match or union.kept_apart(union.find(pair[0]), union.find(pair[1])) or lookalike.apart(pa['domains'], pb['domains']):
                     continue  # nor when one's domain imitates the other's (lookalike.py)
+                if pair[0] in skip or pair[1] in skip or any(name_match(p['words'], w) == 'same' for w in owner_names for p in (pa, pb)):
+                    continue  # a lookalike, or someone using the owner's own name: never one tap from merging
+                ma, mb = pa.get('mail') or set(), pb.get('mail') or set()
+                apart_domains = bool(ma and mb and not ma & mb)
+                if apart_domains and lookalike.apart_same_person(ma, mb):
+                    continue  # kestrel-bikes for kestrelbikes, or kestrelbikes at another ending: never one person by name
                 shared = []
                 if pa['domains'] & pb['domains']:
                     shared.append(f"both at {sorted(pa['domains'] & pb['domains'])[0]}")
@@ -971,7 +983,7 @@ def likely_same(people, union, together, projects):
                     shared.append('with the same people')
                 if projects.get(pair[0], set()) & projects.get(pair[1], set()):
                     shared.append('on the same project')
-                if match == 'same' and len(pa['words']) >= 2 or shared:
+                if (match == 'same' and len(pa['words']) >= 2 and not apart_domains) or shared:
                     why = ', '.join([('Same name' if match == 'same' else 'Similar name')] + shared)
                     out.append((*pair, why, round(len(shared) + (2 if match == 'same' else 0) + min(pa['strength'], pb['strength']), 4)))
     return sorted(out, key=lambda s: -s[3])[:300]
@@ -1295,7 +1307,7 @@ def _build_in(db, config, now, team, kin, locked, history=False):
                                                                   nodes, stated, strength))
     lap('lookalikes', lookalike.mark(nodes, lookalike.first_seen(strength, node_events, history_events), owner.domains, FREEMAIL))  # no review role, no "Same person?"
     same_rows, nodes, kept = lap('same_person', find_same_people(event_people, node_events, project_people, alike, union, infos,
-                                                                 x_names, nodes))
+                                                                 x_names, nodes, [config.get('owner_name'), *owner.names]))
     lap('org_nodes', org_and_project_nodes(heat_day, history_events, live, named_orgs, said, manual, nodes, named, last_day,
                                            edits, links, members, inboxes, profiles, site_logos, org_name, paying_names,
                                            wrong, current, projects, project_events, tz, kept, project_people,
