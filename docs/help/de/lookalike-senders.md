@@ -1,27 +1,27 @@
 ---
-title: Ähnliche Absender
+title: Täuschend ähnliche Absender
 area: security
-summary: E-Mails von einer Adresse, die jemanden aus deinem Umfeld nachahmt, werden in der Aufgabe gekennzeichnet. Entwürfe gehen nie an diese Adresse.
+summary: E-Mails von einer Adresse, die jemanden nachahmt, mit dem du zu tun hast, werden bei der Aufgabe gekennzeichnet. Entwürfe gehen nie an diese Adresse.
 covers: lookalike-senders
 code: lookalike.py, dashboard/todos-cards.js
 order: 5
 keywords: phishing, fake address, spoof, scam, impersonation, lookalike domain, fraud
-translated: 457e3111d2e26dd6
+translated: 6a2d62a74cec9ee4
 ---
 ## Was erkannt wird
 
-Manche Betrugsversuche kommen von einer Adresse, die einer bekannten ähnelt: `examp1e.com` statt `example.com`, `example-billing.com` oder mit einem Buchstaben Unterschied. The Machine vergleicht die Domain jedes Absenders mit denen, mit denen du bereits zu tun hast. Wenn die neuere Domain nur einer bekannten ähnelt, wird sie als Lookalike eingestuft.
+Manche Betrugsversuche kommen von einer Adresse, die einer bekannten Adresse ähnelt: zum Beispiel `examp1e.com` statt `example.com`, `example-billing.com` oder mit nur einem Buchstaben Unterschied. The Machine vergleicht die Domain jedes Absenders mit den Domains, mit denen du bereits zu tun hast. Wenn eine neuere Adresse nur einer bekannten ähnelt, gilt sie als täuschend ähnlich.
 
-Derselbe Name mit einer anderen Endung, wie `example.nl` neben `example.com`, gehört zur selben Organisation und ist kein Lookalike. Kostenlose Mailanbieter wie gmail.com zählen nie dazu.
+Derselbe Name mit einer anderen Endung, zum Beispiel `example.nl` neben `example.com`, gehört zur selben Organisation und gilt nicht als täuschend ähnlich. Kostenlose Mailanbieter wie gmail.com zählen nie dazu.
 
-## In einer Aufgabe
+## Bei einer Aufgabe
 
-In einer Aufgabe zu einer solchen Nachricht steht ein klarer Hinweis, zum Beispiel: „Das ist nicht Alex. Die Nachricht kam von examp1e.com, nicht von example.com.“ Der Absender wird als reine Adresse angezeigt, ohne Bild und ohne Link zu der Person, die er nachahmt.
+Bei einer Aufgabe zu einer solchen Nachricht steht es klar dabei, zum Beispiel: „Das ist nicht Alex. Die Nachricht kam von examp1e.com, nicht von example.com.“ Der Absender wird als reine Adresse ohne Bild und ohne Link zu der Person angezeigt, die nachgeahmt wird.
 
 ## Was The Machine nicht tut
 
-- Sie gibt einem Lookalike-Absender nie eine Rolle in deinem Graph.
-- Sie führt ihn nie mit der Person zusammen, die er nachahmt, und schlägt ihn auch nie unter **Gleiche Person?** vor.
-- Ein Antwortentwurf geht an die hinterlegte Adresse, nicht an die des Lookalikes.
+- Sie gibt einem täuschend ähnlichen Absender nie eine Rolle in deinem Graph.
+- Sie führt ihn nie mit der nachgeahmten Person zusammen und schlägt ihn nie unter **Gleiche Person?** vor.
+- Eine Antwort, die sie vorbereitet, geht an die gespeicherte Adresse, nicht an die täuschend ähnliche.
 
-Deine Entscheidung gilt immer: Du kannst dem Absender trotzdem eine Rolle geben, ihn mit jemandem zusammenführen oder an jede beliebige Adresse schreiben.
+Deine Entscheidung gilt immer: Du kannst dem Absender trotzdem eine Rolle geben, ihn mit jemandem zusammenführen oder an eine beliebige Adresse schreiben.
