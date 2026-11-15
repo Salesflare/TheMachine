@@ -48,6 +48,14 @@ class NotePagesTests(unittest.TestCase):
         self.assertEqual(page['parent'], appliances)
         self.assertEqual(note_pages.count(self.db), 4)
 
+    def test_the_path_shows_folders_as_the_owner_renamed_them(self):
+        folder = note_pages._folder(self.db, ['Kids', 'Doctors and care'], AT)
+        kids = self.db.execute('SELECT parent_id FROM note_pages WHERE id=?', (folder,)).fetchone()['parent_id']
+        note_pages.edit(self.db, note_pages.node_id(kids), LATER, title='Children')
+        note_pages.edit(self.db, note_pages.node_id(folder), LATER, title='Care')
+        dentist = self.new('Dentist', parent=note_pages.node_id(folder))
+        self.assertEqual([p['name'] for p in note_pages.page(self.db, dentist)['path']], ['Children', 'Care'])
+
     def test_their_words_are_sealed_at_rest(self):
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)

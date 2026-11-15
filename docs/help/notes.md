@@ -20,6 +20,8 @@ Type @ and a few letters of a name in a line. Pick a person, organization, proje
 
 A note can sit under another, like Appliances under Home. Notes shows them as a tree: the arrow beside a note opens the ones under it. To move a note, **Edit** and pick where it goes under **Under**. **New note under this one** in the ⋯ menu starts one right there.
 
+The top of a note's page shows where it sits, like **Notes › Kids**: tap any part to go there. On a phone, the notes in between fold into ⋯.
+
 ## Notes your Machine keeps
 
 Your Machine also writes notes by itself, from your messages, and keeps them current. Each of its lines says where it came from, like who sent the email: tap it to open the message. A line from **What I've learned** says **From what I learned**. A meeting or appointment in your calendar is never a line on its own: it stays in [Calendar](calendar.md).

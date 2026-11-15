@@ -6,7 +6,7 @@ const {chromium}=await import('./browser.mjs');
 // A Home line that points to a to-do (a bill): under its words, who its message came from (not the mail's subject) and
 // "Open the to-do", which opens that to-do itself (#card=…&or=chat: a done one, a paid bill, opens in its chat). A
 // line whose to-do is gone shows no link. At 390 the link stays on one line, nothing is wider than the screen, and the
-// back link goes to the note it is under (Home), not to Notes.
+// breadcrumb shows the path up to the note it is under (Notes › Home).
 const dashboard=await dashboardPage();
 const at=new Date().toISOString();
 const note={id:'note:4',kind:'home',name:'Bills and subscriptions',area:'personal',starts:null,ends:null,by:'machine',updated_at:at,parent:'note:1',depth:1,children:0,
@@ -40,7 +40,7 @@ try{
   assert.equal(rows[0].tall,1,width+': "Open the to-do" on one line');
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),width+': fits');
   const back=await page.locator('#people-view .graph-crumbs>a').evaluateAll(l=>l.filter(a=>a.getClientRects().length).map(a=>[a.textContent.trim(),a.getAttribute('href')]));
-  if(mobile)assert.deepEqual(back,[['Home','#graph/note%3A1']],'a phone goes back to the note it is under');
+  if(mobile)assert.deepEqual(back,[['Notes','#graph=notes'],['Home','#graph/note%3A1']],'a phone shows the path: Notes › Home');
   else assert.deepEqual(back.map(x=>x[0]),['Graph','Notes','Home'],'the breadcrumb');
   await page.locator('.note-src a').click();
   await page.waitForFunction(()=>location.hash==='#chat=0a1b2c3d4e5f6071');  // not on the list (done): its chat
