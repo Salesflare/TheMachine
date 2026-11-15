@@ -26,7 +26,7 @@ from __future__ import annotations
 import json
 import re
 
-from machine import stamps
+from machine import services, stamps
 from machine.owner_error import OwnerError
 
 SCHEMA = '''
@@ -42,8 +42,8 @@ ROLE = re.compile(r'^(?:info|support|hello|hi|team|sales|billing|admin|office|co
                   r'legal|security|privacy|feedback|marketing|partners?|partnerships?|success|cs|service|orders|invoices?|ops|operations|dev|'
                   r'engineering|product|founders|all|everyone|staff|general|enquiries|inquiries|reception|bookings?|events|'
                   r'community|media|pr|noreply|no-reply|mail|post|shop|store|webmaster|postmaster)(?:[._+-][a-z0-9]+)?@')
-MAIL_SERVICES = ('gmail', 'outlook', 'imap')
-CALENDAR_SERVICES = ('calendar', 'outlook_calendar', 'icloud_calendar', 'caldav', 'proton_calendar', 'ics', 'exchange')
+MAIL_SERVICES = services.of(group=services.MAIL)
+CALENDAR_SERVICES = services.of(group=services.CALENDAR)
 # Where an address was found, as the short tags Settings shows on its row (one or two words each)
 LABELS = {'config': 'Settings file', 'account': 'Connected', 'alias': 'Alias', 'calendar': 'Calendar',
           'slack': 'Slack', 'intercom': 'Intercom', 'received': 'Inbox', 'named': 'Your name',

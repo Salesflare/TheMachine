@@ -13,6 +13,7 @@ import email.utils
 import hashlib
 
 import i18n
+from machine import services
 
 SENT_LOOKED_AT = 40   # the owner's newest sent messages in this mailbox looked at
 ROWS_LOOKED_AT = 600  # the newest messages read to find them
@@ -20,7 +21,7 @@ ENOUGH = 5            # people written to (outside the address's own domain) bef
 PERSONAL_SHARE = 0.7  # this share of them at a mail provider: personal mail
 WORK_SHARE = 0.1      # at most this share at a mail provider, and WORK_DOMAINS companies or more: work mail
 WORK_DOMAINS = 3
-MAIL_SERVICES = ('gmail', 'outlook', 'imap')
+MAIL_SERVICES = services.of(group=services.MAIL)
 
 
 def hint_id(account):
