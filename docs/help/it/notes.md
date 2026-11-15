@@ -1,87 +1,87 @@
 ---
 title: Note
 area: graph
-summary: Una pagina chiara per ogni argomento, come un viaggio o la tua casa, collegata alle persone e ai progetti che ne fanno parte.
+summary: Una pagina chiara per ogni argomento, come un viaggio o la tua casa, collegata alle persone e ai progetti coinvolti.
 covers: notes
 code: note_pages.py, note_pages_app.py, trip_notes.py, event_notes.py, bookings.py, section_notes.py, home_notes.py, health_notes.py, kids_notes.py, dashboard/graph-notes.js
 order: 8
-translated: a32102a88a8b3856
+translated: b88647412222409d
 ---
-Una nota raccoglie le informazioni su un argomento: un viaggio, la tua casa, come gestire le fatture. Nel Graph, le note sono accanto a Persone, Organizzazioni e Progetti. Restano sulla tua Machine e non sono condivise con il tuo team.
+Una nota offre una panoramica su un argomento: un viaggio, la tua casa, come gestire le fatture. Le note si trovano nel Graph, accanto a Persone, Organizzazioni e Progetti. Restano sulla tua Machine e non vengono condivise con il tuo team.
 
-## Crea una nota
+## Inizia una nota
 
-Tocca **Nuova nota** in alto nella sezione Note. Inserisci un titolo e tocca **Inizia la nota** per aprire la pagina. Con **Aggiungi una riga** aggiungi ciò che vuoi conservare. Ogni riga di testo diventa una riga a sé.
+Tocca **Nuova nota** in alto nella sezione Note. Assegna un titolo e tocca **Inizia la nota** per aprire la pagina. Con **Aggiungi una riga** puoi aggiungere quello che vuoi conservare. Ogni riga di testo diventa una riga a sé.
 
 ## Collega persone, progetti e altre note
 
-In una riga, digita @ e le prime lettere di un nome. Seleziona dall’elenco una persona, un’organizzazione, un progetto o una nota: il nome verrà inserito come link. Nella pagina dell’elemento collegato, la tua nota comparirà sotto **Collegato da**.
+In una riga, digita @ e le prime lettere di un nome. Scegli una persona, un’organizzazione, un progetto o una nota dall’elenco: il nome verrà inserito come link. Nella pagina dell’elemento collegato, la tua nota comparirà sotto **Collegato da**.
 
 ## Note sotto altre note
 
-Una nota può essere contenuta in un’altra, per esempio Elettrodomestici sotto Casa. Nella sezione Note, le note sono organizzate ad albero: tocca la freccia accanto a una nota per vedere quelle contenute al suo interno. Per spostare una nota, tocca **Modifica** e scegli dove inserirla sotto **Sotto**. Dal menu ⋯, tocca **Nuova nota sotto questa** per crearne una al suo interno.
+Una nota può trovarsi sotto un’altra, per esempio Elettrodomestici sotto Casa. Le note sono organizzate in una struttura ad albero: tocca la freccia accanto a una nota per aprire quelle che contiene. Per spostare una nota, tocca **Modifica** e scegli dove collocarla sotto **Sotto**. Per creare una nota al suo interno, tocca **Nuova nota sotto questa** nel menu ⋯.
 
-## Note che la tua Machine tiene aggiornate
+## Note che la tua Machine tiene
 
-La tua Machine crea e aggiorna anche le note usando i tuoi messaggi. Ogni riga indica da dove proviene, per esempio chi ha inviato l’email: toccala per aprire il messaggio. Le righe basate su **Ciò che ho imparato** riportano **Da ciò che ho imparato**.
+La tua Machine scrive anche note da sola, a partire dai tuoi messaggi, e le aggiorna. Ogni riga indica da dove proviene, per esempio chi ha inviato l’email: toccala per aprire il messaggio. Una riga tratta da **Ciò che ho imparato** riporta **Da ciò che ho imparato**.
 
-Le tue modifiche restano sempre. Se rinomini una nota, la sposti, ne modifichi le date o cambi una riga, la tua Machine manterrà le modifiche quando aggiornerà la nota. Se elimini una riga o una nota, non verrà ripristinata. Le note future sullo stesso argomento verranno aggiunte dove hai inserito la prima.
+Le tue modifiche restano sempre. Rinomina o sposta una nota, cambia le date o una riga: quando la aggiorna, la tua Machine manterrà le tue modifiche. Se elimini una riga o una nota, non verrà ripristinata. Le note successive sullo stesso argomento verranno aggiunte a quella che hai scelto.
 
-**Ripristina l’originale** mostra di nuovo il testo scritto dalla tua Machine. Se modifichi una riga basata su ciò che la tua Machine ha imparato, la modifica si applica anche sotto **Ciò che ho imparato**, così ne resta una sola versione.
+Con **Ripristina l’originale** puoi rivedere le parole originali della tua Machine. Se modifichi una riga che proviene da ciò che la tua Machine ha imparato, la modifica si applica anche in **Ciò che ho imparato**, così ne esiste una sola versione.
 
 ## Viaggi
 
-Quando ricevi un’email con la prenotazione di un volo, hotel, treno, autobus, traghetto o auto a noleggio, la tua Machine la aggiunge a un viaggio sotto **Viaggi**. Le prenotazioni dello stesso itinerario vengono raccolte in un unico viaggio: l’andata, l’hotel e il ritorno. Per ogni riga, il viaggio mostra il codice di prenotazione, il posto e il biglietto, in ordine cronologico, oltre alle date. In [Calendario](calendar.md), il viaggio appare come una fascia che copre quei giorni e, se la tocchi, si apre.
+Quando ricevi un’email di conferma per un volo, un hotel, un treno, un autobus, un traghetto o un’auto a noleggio, la tua Machine la aggiunge a un viaggio sotto **Viaggi**. Le prenotazioni dello stesso viaggio vengono raggruppate: l’andata, l’hotel e il ritorno. Il viaggio include il codice di prenotazione, il posto e il biglietto per ogni riga, in ordine cronologico, e mostra le date. In [Calendario](calendar.md) appare come una singola fascia che copre quei giorni; toccandola, si apre il viaggio.
 
-La tua Machine legge i dettagli delle prenotazioni che compagnie aeree, hotel e siti di prenotazione inseriscono nelle email di conferma. Un’email senza questi dettagli non crea un viaggio. Se una prenotazione cambia, la relativa riga viene aggiornata; se viene annullata, viene rimossa. Quando tutte le prenotazioni di un viaggio sono annullate, anche il viaggio viene rimosso.
+La tua Machine legge i dettagli di prenotazione inseriti da compagnie aeree, hotel e siti di prenotazione nelle email di conferma. Un’email che non li contiene non crea un viaggio. Le email di prenotazione precedenti, comprese nell’anno di [cronologia](history.md) conservato dalla tua Machine, vengono lette in background dopo che la cronologia è stata importata. Se una prenotazione cambia, la relativa riga viene aggiornata; se viene annullata, viene rimossa. Quando tutte le prenotazioni di un viaggio sono annullate, viene rimosso anche il viaggio.
 
 ## Eventi
 
-Quando ricevi via email i biglietti per un concerto, una partita, un festival o una conferenza, la tua Machine aggiunge l’evento sotto **Eventi**, con una nota per ogni evento. Una riga indica dove si svolge e riporta il codice di prenotazione, il posto e il numero di biglietti. Un secondo ordine per lo stesso evento viene aggiunto alla stessa nota. Come un viaggio, l’evento mostra le date e appare come una fascia in [Calendario](calendar.md) che apre la nota.
+Quando ricevi via email i biglietti per un concerto, una partita, un festival o una conferenza, la tua Machine aggiunge l’evento sotto **Eventi**, con una nota per ogni evento. Una riga indica dove si svolge e include il codice di prenotazione, il posto e il numero di biglietti. Se fai un secondo ordine per lo stesso evento, viene aggiunto alla stessa nota. Come per un viaggio, l’evento mostra le date e appare come una fascia in [Calendario](calendar.md) che apre la nota.
 
 - Ogni riga indica da chi provengono i biglietti, per esempio **Da Example Tickets**, e apre l’email.
-- Se dall’email dei biglietti è stata creata un’attività, per esempio per pagarli, **Apri l’attività** la mostra.
-- Un evento prenotato con la tua casella di lavoro è Lavoro, altrimenti è Personale.
+- Se dall’email dei biglietti è stata creata un’attività, per esempio per pagarli, tocca **Apri l’attività** per visualizzarla.
+- Un evento prenotato con la tua casella email di lavoro è classificato come Lavoro, altrimenti come Personale.
 
-La tua Machine legge, senza usare l’AI, i dettagli dei biglietti che i venditori inseriscono nelle email di conferma. Un’email senza questi dettagli non crea un evento. Una prenotazione annullata viene rimossa; quando tutti i biglietti per un evento sono annullati, anche l’evento viene rimosso.
+La tua Machine legge i dettagli dei biglietti inseriti dai rivenditori nelle email di conferma, senza usare l’AI. Un’email che non li contiene non crea un evento. Se una prenotazione viene annullata, viene rimossa; quando tutti i biglietti di un evento sono annullati, viene rimosso anche l’evento.
 
 ## Casa
 
-Sotto **Casa**, la tua Machine raccoglie ciò che sa sulla tua casa: **Bollette e abbonamenti**, **Elettrodomestici**, **Riparazioni e manutenzione** e **La casa**. Una sezione appare quando contiene almeno due righe.
+Sotto **Casa**, la tua Machine conserva ciò che sa sulla tua casa: **Bollette e abbonamenti**, **Elettrodomestici**, **Riparazioni e manutenzione** e **La casa**. Una sezione appare quando contiene almeno due righe.
 
-- Una bolletta ricorrente, come quella dell’elettricità o dell’acqua, compare con la frequenza e la data dell’ultima bolletta. **Apri l’attività** mostra la bolletta; l’importo e i dettagli del pagamento restano lì.
-- Un abbonamento che hai mantenuto compare con una riga che apre la relativa attività **Abbonamenti**. Gli abbonamenti che hai annullato non vengono elencati.
-- Anche ciò che la tua Machine ha imparato sulla tua casa, per esempio la marca della lavastoviglie, compare in una riga. Se la modifichi, la modifica viene applicata anche sotto **Ciò che ho imparato**.
-- Se tieni una tua nota in una sezione, per esempio una nota sulla lavastoviglie sotto **Elettrodomestici**, le informazioni su quell’elemento vengono aggiunte alla tua nota. La tua Machine non crea autonomamente note di questo tipo.
+- Una bolletta ricorrente, per esempio quella dell’energia o dell’acqua, ha una riga che indica ogni quanto arriva e la data dell’ultima. Tocca **Apri l’attività** per visualizzare la bolletta: l’importo e i dettagli del pagamento sono lì.
+- Un abbonamento che hai mantenuto ha una riga che apre la relativa attività in **Abbonamenti**. Quelli che hai annullato non vengono elencati.
+- Anche ciò che la tua Machine ha imparato sulla tua casa, come la marca della lavastoviglie, compare in una riga. Se la modifichi, la modifica viene applicata anche in **Ciò che ho imparato**.
+- Se tieni una tua nota in una sezione, per esempio una nota sulla lavastoviglie in **Elettrodomestici**, le informazioni su quell’elemento vengono aggiunte alla tua nota. La tua Machine non crea note di questo tipo da sola.
 
-Vengono usate solo le bollette e gli abbonamenti Personali, e le note di Casa sono sempre Personali. Per ogni nuova bolletta, abbonamento o informazione appresa, la tua Machine chiede una volta alla sua AI di stabilire se riguarda la tua casa. Per una bolletta, invia il mittente, mai l’importo.
+Vengono considerate solo le bollette e gli abbonamenti Personali, e le note di Casa sono sempre Personali. Per ogni nuova bolletta, abbonamento o elemento appreso, la tua Machine chiede una volta alla sua AI di stabilire se riguarda la tua casa. Per una bolletta, invia il nome del mittente, mai l’importo.
 
 ## Salute
 
-Sotto **Salute**, la tua Machine raccoglie ciò che sa sulla tua salute: **Appuntamenti**, **Medici e assistenza**, **Farmaci**, **Allergie e patologie** e **Fatture e assicurazione**. Una sezione appare quando contiene almeno due righe.
+Sotto **Salute**, la tua Machine conserva ciò che sa sulla tua salute: **Appuntamenti**, **Medici e assistenza**, **Farmaci**, **Allergie e patologie** e **Fatture e assicurazione**. Una sezione appare quando contiene almeno due righe.
 
-- Un appuntamento nel tuo calendario a cui vai solo tu, per esempio dal dentista, compare con la prossima data o con l’ultima. **Dal tuo calendario** lo apre.
-- Una fattura di un medico, dentista o farmacia compare con una riga che apre la relativa attività. L’importo resta lì.
-- Anche ciò che la tua Machine ha imparato sulla tua salute, per esempio un’allergia, compare in una riga. Se la modifichi, la modifica viene applicata anche sotto **Ciò che ho imparato**.
-- Se hai una tua nota in una sezione, per esempio una nota sul fisioterapista sotto **Appuntamenti**, le informazioni su quell’elemento vengono aggiunte alla nota.
+- Un appuntamento sul tuo calendario a cui partecipi solo tu, per esempio dal dentista, ha una riga con la prossima data o, se non ce ne sono, con l’ultima. Tocca **Dal tuo calendario** per aprirlo.
+- Una fattura di un medico, dentista o farmacista ha una riga che apre la relativa attività. L’importo è indicato lì.
+- Anche ciò che la tua Machine ha imparato sulla tua salute, per esempio un’allergia, compare in una riga. Se la modifichi, la modifica viene applicata anche in **Ciò che ho imparato**.
+- Se hai una tua nota in una sezione, per esempio una nota sul tuo fisioterapista in **Appuntamenti**, le informazioni su quell’elemento vengono aggiunte alla nota.
 
-Le note di Salute sono sempre Personali, anche se una fattura è arrivata al tuo indirizzo di lavoro. Per ogni nuovo appuntamento, fattura o informazione appresa, la tua Machine chiede una volta alla sua AI di stabilire se riguarda la tua salute. Invia il nome dell’appuntamento, mai le note né i nomi degli altri invitati.
+Le note di Salute sono sempre Personali, anche se una fattura è arrivata al tuo indirizzo email di lavoro. Per ogni nuovo appuntamento, fattura o elemento appreso, la tua Machine chiede una volta alla sua AI di stabilire se riguarda la tua salute. Per un appuntamento invia il nome, mai le note o i nomi degli altri invitati.
 
 ## Figli
 
-Sotto **Figli**, la tua Machine raccoglie ciò che sa sui tuoi figli: **Scuola**, **Attività**, **Medici e assistenza** e **Bollette e commissioni**. Una sezione appare quando contiene almeno due righe.
+Sotto **Figli**, la tua Machine conserva ciò che sa sui tuoi figli: **Scuola**, **Attività**, **Medici e assistenza** e **Bollette e commissioni**. Una sezione appare quando contiene almeno due righe.
 
-- Ciò che la tua Machine ha imparato su tuo figlio, per esempio il nome dell’insegnante o il giorno di nuoto, compare in una riga collegata alla sua pagina. La tua Machine considera qualcuno tuo figlio se sotto **Per te** è indicato come tale, per esempio figlia o figlio.
-- Un evento nel tuo calendario a cui vai solo tu, per esempio una riunione con gli insegnanti, compare con la prossima data o con l’ultima. **Dal tuo calendario** lo apre.
-- Una fattura della scuola, di un’attività o dell’assistenza all’infanzia compare con una riga che apre la relativa attività. L’importo resta lì.
-- Se hai una tua nota per un figlio in una sezione, per esempio una nota per Isla sotto **Scuola**, le informazioni su quel figlio vengono aggiunte alla nota.
+- Ciò che la tua Machine ha imparato su tuo figlio, per esempio il nome dell’insegnante o il giorno di nuoto, compare in una riga che rimanda alla sua pagina. Considera qualcuno tuo figlio se sotto **Per te** è indicato un rapporto di parentela, per esempio figlia o figlio.
+- Un evento sul tuo calendario a cui partecipi solo tu, per esempio un colloquio con gli insegnanti, ha una riga con la prossima data o, se non ce ne sono, con l’ultima. Tocca **Dal tuo calendario** per aprirlo.
+- Una fattura per la scuola, un club o l’assistenza all’infanzia ha una riga che apre la relativa attività. L’importo è indicato lì.
+- Se hai una tua nota per un figlio in una sezione, per esempio una nota per Isla in **Scuola**, le informazioni su quel figlio vengono aggiunte alla nota.
 
-Le note di Figli sono sempre Personali, anche se la scuola scrive al tuo indirizzo di lavoro. Per ogni nuova informazione, la tua Machine chiede una volta alla sua AI di stabilire se riguarda i tuoi figli.
+Le note di Figli sono sempre Personali, anche se la scuola scrive al tuo indirizzo email di lavoro. Per ogni nuovo elemento, la tua Machine chiede una volta alla sua AI di stabilire se riguarda i tuoi figli.
 
 ## Unisci, elimina e annulla
 
-Dal menu ⋯, **Unisci in…** sposta le righe di una nota e le note contenute al suo interno in un’altra nota. Da quel momento, la tua Machine aggiunge i nuovi contenuti a quella nota. **Elimina** rimuove una nota. Dopo entrambe le azioni, e dopo aver rimosso una riga, per qualche istante è disponibile **Annulla**.
+**Unisci in…** nel menu ⋯ sposta le righe di una nota e le note contenute al suo interno in un’altra nota. Da quel momento, la tua Machine aggiungerà i nuovi contenuti a quella nota. **Elimina** rimuove una nota. Dopo entrambe le operazioni, e dopo aver rimosso una riga, per qualche istante puoi toccare **Annulla**.
 
-## Non sono note delle riunioni
+## Diverse dalle note delle riunioni
 
-Le note delle riunioni e quelle associate a una persona o a un’organizzazione restano dove sono. Le note qui sono pagine a sé.
+Le note delle riunioni e quelle associate a una persona o un’organizzazione restano dove sono. Le note qui sono pagine a sé.

@@ -1,34 +1,36 @@
 ---
 title: Histórico
 area: connections
-summary: Cerca de um ano de e-mails, reuniões e mensagens do WhatsApp, Slack e Teams antigos, para pesquisar, ler e conhecer as suas pessoas. Nunca uma tarefa.
+summary: Cerca de um ano de e-mails antigos, reuniões e mensagens do WhatsApp, Slack e Teams para pesquisar, ler e conhecer as pessoas. Nunca vira uma tarefa.
 covers: history
 code: machine/app/history.py, machine/store/history.py, machine/store/graph_history.py
 keywords: older messages, backfill, archive, past emails
-translated: 42069e80e6f85bdb
+translated: c10fe5fb8d7b2d8b
 ---
 ## O que ele guarda
 
-Cada conta de e-mail, agenda, WhatsApp, Slack e Teams guarda cerca de um ano de mensagens e reuniões antigas. A pesquisa as encontra, também por significado, uma conversa as mostra e a [Agenda](calendar.md) mostra as reuniões passadas.
+Sua Machine importa cerca de um ano de e-mails antigos, reuniões e mensagens do WhatsApp, Slack e Teams. A pesquisa encontra esse conteúdo, inclusive por significado, as conversas mostram as mensagens, e o [Calendário](calendar.md) mostra as reuniões anteriores.
 
-O cartão diz até onde ele vai: **Histórico: até** um mês, quando já chegou.
+Cada conexão em **Conexões** informa até que data ela volta, como **Histórico: desde** novembro de 2025.
 
-## O que ele traz para o seu Graph
+## O que isso acrescenta ao seu Graph
 
-O seu [Graph](graph.md) conta com ele: o quanto você é próximo das pessoas, quando vocês se falaram pela última vez, quem conhece quem, e as próprias pessoas e organizações. A Linha do tempo de uma pessoa ou organização também mostra ele, então o último contato sempre aparece lá. As respostas da sua Fleet a "quem conhece alguém" usam ele a partir das contas de trabalho, com as mesmas [regras de compartilhamento](sharing-rules.md) dos e-mails novos.
+Seu [Graph](graph.md) usa essas informações para mostrar o quanto você é próximo das pessoas, quando conversou com elas pela última vez, quem conhece quem e quem são as pessoas e organizações. A linha do tempo de uma pessoa ou organização também mostra essas informações, para que o último contato esteja sempre disponível. As respostas da sua Fleet para "quem conhece alguém" usam essas informações das contas de trabalho, seguindo as mesmas [regras de compartilhamento](sharing-rules.md) dos e-mails novos.
 
-## O que ele nunca faz
+## O que isso nunca faz
 
-Ele nunca cria uma tarefa ou uma promessa, nunca conta como novo, nunca inicia uma verificação e nunca entra num projeto. O histórico pessoal continua pessoal, como o e-mail pessoal. Fora a pesquisa por significado, nenhum modelo de IA o lê.
+Nunca cria uma tarefa nem uma promessa, nunca conta como conteúdo novo, nunca inicia uma verificação e nunca é adicionado a um projeto. O histórico pessoal continua pessoal, como os e-mails pessoais. Com exceção da pesquisa por significado, nenhum modelo de IA lê esse conteúdo.
 
-## Quando ele roda
+## Quando isso acontece
 
-Ele começa quando a primeira olhada nas suas mensagens termina, e em cada conexão só quando a primeira semana dela já chegou, também numa que você adicionar depois. Ele anda devagar em segundo plano e espera enquanto uma verificação ou uma sincronização roda, quando um serviço pede para ir mais devagar ou quando a sua Machine tem pouco espaço. Mensagens novas sempre vêm primeiro.
+Começa depois que suas mensagens são verificadas pela primeira vez. Para cada conexão, só começa depois que a primeira semana dela termina. Isso também vale para conexões adicionadas depois. O processo acontece devagar, em segundo plano, e pausa enquanto uma verificação ou sincronização está em andamento, quando um serviço pede para reduzir o ritmo ou quando falta espaço na sua Machine. As mensagens novas sempre têm prioridade.
 
-Ele usa o acesso que cada conexão já tem. Nada novo é pedido.
+Quando o histórico de uma caixa de e-mail termina de ser importado, sua Machine lê novamente os e-mails guardados para encontrar detalhes de reservas e passagens, para que as reservas antigas também apareçam em [Viagens e eventos](notes.md). A leitura acontece no mesmo ritmo lento e pausa pelos mesmos motivos.
 
-## Até onde
+O processo usa o acesso que cada conexão já tem. Não é preciso aprovar nada de novo.
 
-Cerca de um ano por padrão. Machines auto-hospedadas podem definir `history_days` na configuração (0 desliga, até 730). Telegram e outras fontes guardam o que leem hoje.
+## Até que data
 
-Mensagens do LinkedIn e do X voltam 90 dias e são lidas bem devagar: poucas leituras pequenas por hora, só de dia, e nenhuma por um dia se o site resistir, para sua conta ficar segura (`social_history_days`, 0 desliga).
+Cerca de um ano. No seu próprio computador, `history_days` no arquivo de configurações altera esse período (0 desativa o recurso; o máximo é 730 dias). O Telegram e outras fontes não importam o histórico antigo.
+
+As mensagens do LinkedIn e do X voltam 90 dias e são lidas bem devagar: algumas leituras pequenas por hora, apenas durante o dia, e nenhuma leitura por um dia se o site restringir o acesso, para manter sua conta segura (`social_history_days`, 0 desativa o recurso).
