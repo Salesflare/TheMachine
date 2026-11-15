@@ -12,6 +12,7 @@ from email.utils import parseaddr
 from time import monotonic
 
 import event_notes
+import folder_overview
 import health_notes
 import help_chat
 import home_notes
@@ -286,18 +287,8 @@ class NotesApp:
         try:
             with self.store.connect() as db:
                 notes = [note_writer.evidence(db, item, self.owner_slack_ids()) for item in items]
-            answer = None
-            ask = getattr(self, 'note_writer_model', None)  # tests and the sandbox: (prompt) -> reply
             text = note_writer.prompt(notes, locale_prefs.language_of(self.config))
-            try:
-                if ask:
-                    answer = ask(text)
-                else:
-                    model = background_model(self.config)
-                    answer = help_chat.openclaw_model_run(self.config, text, '/'.join(model) if model else None, timeout=note_writer.TIMEOUT)
-            except help_chat.Unavailable:
-                answer = None
-            found = note_writer.parse(answer, notes)
+            found = note_writer.parse(self.notes_model_ask(text, getattr(self, 'note_writer_model', None), note_writer.TIMEOUT), notes)
             written = 0
             with self.store.connect() as db:
                 db.execute('BEGIN IMMEDIATE')
@@ -315,6 +306,65 @@ class NotesApp:
         LOG.info('note writer asked=%s written=%s', len(items), written)
         return written
 
+    def notes_model_ask(self, text, ask, timeout):
+        """One background-model call for a notes turn (no agent, no tools), or ask(text) in tests and the sandbox. None
+        when the model can't be reached."""
+        try:
+            if ask:
+                return ask(text)
+            model = background_model(self.config)
+            return help_chat.openclaw_model_run(self.config, text, '/'.join(model) if model else None, timeout=timeout)
+        except help_chat.Unavailable:
+            return None
+
+    def folder_overview_step(self):
+        """At most once a folder_overview.PASS_MINUTES: one background turn writes the daily overview of a few folders
+        whose notes changed (folder_overview.py), in a thread of its own once the budget allows. True when a turn started."""
+        running = getattr(self, 'folder_overview_thread', None)
+        if (running and running.is_alive()) or monotonic() < getattr(self, 'folder_overview_next', 0):
+            return False
+        with self.store.connect() as db:
+            items = folder_overview.due(db)
+        if not items:
+            self.folder_overview_next = monotonic() + folder_overview.PASS_MINUTES * 60
+            return False
+        if any(not folder_overview.quiet(x) for x in items) and not self.notes_turn_free('folder-overview'):
+            return False
+        self.folder_overview_next = monotonic() + folder_overview.PASS_MINUTES * 60
+        self.folder_overview_thread = threading.Thread(target=self.folder_overview_run, args=(items,), daemon=True, name='folder-overview')
+        self.folder_overview_thread.start()
+        return True
+
+    def folder_overview_run(self, items):
+        """One turn: what the folders' notes say, one call, their overviews saved; a quiet folder's goes without a call.
+        An answer that can't be read keeps every overview and tries again after folder_overview.FOLDER_HOURS. Returns
+        how many it wrote."""
+        try:
+            asked = [x for x in items if not folder_overview.quiet(x)]
+            found = {}
+            if asked:
+                with self.store.connect() as db:
+                    folders = [folder_overview.evidence(db, x) for x in asked]
+                text = folder_overview.prompt(folders, locale_prefs.language_of(self.config))
+                found = folder_overview.parse(self.notes_model_ask(text, getattr(self, 'folder_overview_model', None), folder_overview.TIMEOUT), folders)
+            written = 0
+            with self.store.connect() as db:
+                db.execute('BEGIN IMMEDIATE')
+                for item in items:
+                    if folder_overview.quiet(item):
+                        folder_overview.save(db, item, None)
+                    elif found is None:
+                        folder_overview.tried(db, [item])
+                    elif item['note_id'] in found:
+                        written += folder_overview.save(db, item, found[item['note_id']]) == 'written'
+                    else:
+                        folder_overview.tried(db, [item])
+        except Exception as error:  # noqa: BLE001 - the next turn tries again
+            LOG.warning('folder overview error=%s', type(error).__name__)
+            return 0
+        LOG.info('folder overview asked=%s written=%s', len(asked), written)
+        return written
+
     def calendar_notes(self, start, end):
         """The dated notes (trips, events) that touch the Calendar's window, as bands: a day either side, since the window's
         edges are instants and a note's dates are local days (the Calendar keeps what touches each week)."""
@@ -327,9 +377,11 @@ class NotesApp:
             return [{k: x[k] for k in ('id', 'kind', 'name', 'starts', 'ends')} for x in note_pages.dated(db, first, last)]
 
     def notes_list(self, db):
-        """The Notes list, light: what each row shows, in tree order, with a written page's summary (note_writer)."""
+        """The Notes list, light: what each row shows, in tree order, with a folder's overview (folder_overview) or a
+        written page's summary (note_writer)."""
         found = note_pages.listing(db, today().isoformat())
-        about = note_writer.about(db, [note_pages.parse_id(x['id']) for x in found])
+        ids = [note_pages.parse_id(x['id']) for x in found]
+        about = {**note_writer.about(db, ids), **folder_overview.about(db, ids)}
         for x in found:
             text = about.get(note_pages.parse_id(x['id']))
             if text:
@@ -344,6 +396,9 @@ class NotesApp:
             written = note_writer.view(db, note_pages.parse_id(node))  # the written page above the lines, its bullets citing them
             if written:
                 found['page'] = written
+            overview = folder_overview.view(db, note_pages.parse_id(node))  # a folder's daily overview, naming the notes under it
+            if overview:
+                found['overview'] = overview
         todos = sorted({str(x['data']['todo']) for x in found['lines'] if isinstance(x.get('data'), dict) and x['data'].get('todo')})
         if todos:  # a bill's or a subscription's line opens its to-do, while it is there
             with self.store.connect() as db:

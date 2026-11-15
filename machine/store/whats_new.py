@@ -31,6 +31,9 @@ import i18n
 from timeutil import local_day, local_tz, now
 
 ENTRIES = [
+    {'id': 'note-folder-overviews', 'date': '2026-11-15', 'weight': 2, 'title': 'What’s going on, per folder',
+     'text': 'Work, Home and your other folders open with a short daily overview of the notes under them.',
+     'action': {'label': 'Open Notes', 'run': 'go-notes'}, 'art': 'notes'},
     {'id': 'note-pages-written', 'date': '2026-11-15', 'weight': 3, 'title': 'Notes read like pages',
      'text': 'A note now opens with a summary, key facts, decisions, open items and a timeline, written from your '
              'conversations. Each line links to where it came from.',

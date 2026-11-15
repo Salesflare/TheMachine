@@ -3,7 +3,7 @@ title: Notes
 area: graph
 summary: One readable page per subject, like a trip or your home, linked to the people and projects in it.
 covers: notes
-code: note_pages.py, note_pages_app.py, trip_notes.py, event_notes.py, bookings.py, section_notes.py, topic_notes.py, note_writer.py, home_notes.py, health_notes.py, kids_notes.py, dashboard/graph-notes.js
+code: note_pages.py, note_pages_app.py, trip_notes.py, event_notes.py, bookings.py, section_notes.py, topic_notes.py, note_writer.py, folder_overview.py, home_notes.py, health_notes.py, kids_notes.py, dashboard/graph-notes.js
 order: 8
 ---
 A note is the overview of one subject: a trip, your home, how invoices are done. Notes sit in the Graph next to People, Organizations and Projects. They stay on your Machine and aren't shared with your team.
@@ -45,6 +45,12 @@ Once a note has at least two lines from your messages or from what your Machine 
 The page is rewritten only when the note's lines change, at most about once a day. If its sources say nothing concrete, there's no page, just the lines. Remove a line and what came only from it goes from the page too. The Notes list shows the start of each page's summary under the note's name.
 
 A project or organization has its own page in the Graph already, with its description at the top. Conversations about one go there, not in a note.
+
+## Overviews
+
+A note with notes under it, like **Work** or **Home**, gets a short overview at the top once at least two of them have news: a sentence or two on what's going on, and a few things that moved lately or come next. Each one ends with the names of the notes it comes from: tap one to open that note.
+
+It's read from the pages and newest lines of the notes under it, at most once a day and only when they changed. When nothing is current, there's no overview. The Notes list shows its start under the folder's name.
 
 ## Notes from your conversations
 

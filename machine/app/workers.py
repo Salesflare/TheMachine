@@ -409,6 +409,7 @@ class WorkersApp:
             self.section_notes_step()  # about every six hours: the Home, Health and Kids notes, one small model call only for what is new (section_notes.py)
             self.topic_notes_step()  # every two hours: new conversations sorted into notes, one call per forty (topic_notes.py)
             self.note_writer_step()  # at most hourly: the written pages of a few notes whose sources changed (note_writer.py)
+            self.folder_overview_step()  # every few hours: a folder's daily overview, when its notes changed (folder_overview.py)
             if self.fleet:  # learnings go to the team over the Network: without it there is nobody to offer them to
                 self.store.learnings_due()
                 self.team_votes_due()  # and other Machines' learnings come to be judged, when voting is on

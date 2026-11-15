@@ -73,6 +73,9 @@ class StatesTest(unittest.TestCase):
                 pages = db.execute("SELECT count(*) FROM sqlite_master WHERE name='note_writeups'").fetchone()[0] and \
                     db.execute('SELECT count(*) FROM note_writeups WHERE page IS NOT NULL').fetchone()[0]
                 self.assertEqual(bool(pages), state != 'fresh')
+                overviews = db.execute("SELECT count(*) FROM sqlite_master WHERE name='folder_overviews'").fetchone()[0] and \
+                    db.execute('SELECT count(*) FROM folder_overviews WHERE page IS NOT NULL').fetchone()[0]
+                self.assertEqual(bool(overviews), state != 'fresh', 'and a folder its overview (folder_overview.py)')
 
 
 class SendStubTest(unittest.TestCase):

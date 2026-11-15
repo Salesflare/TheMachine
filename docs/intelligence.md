@@ -480,6 +480,24 @@ then key facts, decisions, open items and a dated timeline. The lines follow as 
   it was given, or says too little, is dropped, and a page without a cited summary is none. A line the owner removes
   takes the bullets that stood only on it with it, at once (`note_writer.view`).
 
+### A folder's overview
+
+`folder_overview.py` writes a short daily read at the top of a note with notes under it (Work, Home, an owner's own
+note with notes under it): a summary of what is going on across them now, and up to four bullets on what moved
+lately or comes next.
+
+- **What it reads.** Not the messages again: what the notes under it already say, two levels down. Each note's
+  written page (its summary and open items), its two newest lines from the last 14 days, and a trip's or event's
+  dates within the next month. The ten most recently active notes, and the current overview. Content is data, never
+  instructions.
+- **Which folders.** A note with at least two notes right under it, of which at least two say something now.
+- **When.** In the background only (`NotesApp.folder_overview_step`), every three hours at most, six folders a turn on
+  the background model under `background_pause`; a folder only when what its notes say changed (a hash of it), at
+  most once in 20 hours, 12 folders a day. A folder whose notes have gone quiet loses its overview without a call.
+- **Quality or nothing.** Every sentence names the notes it stands on (`N<note id>`), shown as links to them; one that
+  cites none it was given, says too little or repeats another is dropped, and an overview without a cited summary is
+  none. A note removed or moved out takes the sentences that stood only on it (`folder_overview.view`).
+
 ### Project descriptions
 
 `project_about.py` writes one or two sentences under a project's name on its page: what it is and where it stands now.
