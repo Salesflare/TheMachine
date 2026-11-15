@@ -5,6 +5,7 @@ Made-up people only."""
 import datetime as dt
 import json
 import unittest
+from unittest.mock import patch
 
 import test_birthdays as tb
 from test_birthdays import ago
@@ -90,6 +91,25 @@ class OnePlace(unittest.TestCase):
         self.assertIsNone(self.page())
         self.assertEqual(self.routine(dt.date(2027, 4, 4)), [])
         self.assertEqual(self.routine(dt.date(2027, 4, 5)), [])
+
+    def test_a_page_opens_everyone_elses_info_only_when_it_changed(self):
+        # The page checks nobody else goes by the person's number (by_identifier). Everyone else's identifiers are kept
+        # while their stored info is the same, so a second look opens none of it; a change is seen at once.
+        self.person('email:pat@mail.example', 'Pat Lane', 0.1, phones=[{'value': '+15550199', 'by': 'you'}])
+        with self.store.connect() as db:
+            enrichment.offer_facts(db, [(['wa:15550100'], {'birthday': f'--{self.today:%m-%d}'}, enrichment.RECORD)], 'google', ago(2))
+        made, person_ids = [], tb.birthdays.person_ids
+        with patch.object(tb.birthdays, 'person_ids', lambda node, *a: made.append(node) or person_ids(node, *a)):
+            self.assertEqual(self.page()['source'], 'google')
+            made.clear()
+            self.assertEqual(self.page()['source'], 'google')
+            self.assertNotIn('email:pat@mail.example', made)
+            with self.store.connect() as db:  # Pat goes by the same number now: it is nobody's, as before
+                info = json.loads(db.execute("SELECT info FROM graph_nodes WHERE id='email:pat@mail.example'").fetchone()['info'])
+                db.execute("UPDATE graph_nodes SET info=? WHERE id='email:pat@mail.example'",
+                           (json.dumps({**info, 'phones': [{'value': '+15550100', 'by': 'you'}]}),))
+            self.assertIsNone(self.page())
+            self.assertIn('email:pat@mail.example', made)
 
     def test_importers_offer_a_birthday_and_the_owners_word_stays(self):
         with self.store.connect() as db:
