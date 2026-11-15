@@ -51,6 +51,7 @@ import onboarding
 import openclaw_pin
 import service
 from machine import bridge_wait
+from machine.dashboard_link import dashboard_link
 from onboarding import CONNECTORS, expand, write_private
 
 ROOT = Path(__file__).resolve().parent
@@ -1945,7 +1946,6 @@ def guided(paths, since, ui=None):
 
 def next_steps(config, healthy, started, paths=None, not_restarted=()):
     paths = paths or Paths()
-    host, path = config.get('dashboard_host', ''), config.get('dashboard_path', '/assistant/')
     lines = ['', 'Your Machine is up. Next steps:' if started and healthy else 'Next steps:']
     if started:
         lines.append(f'  - Health: {"OK" if healthy else "not answering yet; check " + service.hint("logs")}')
@@ -1959,7 +1959,7 @@ def next_steps(config, healthy, started, paths=None, not_restarted=()):
         lines.append(f'  - Dashboard: {served}')
     else:
         lines += [f'  - Dashboard on your tailnet: {" ".join(onboarding.serve_command(config))}',
-                  f'    then open https://{host}{path} (custom domain instead: see deploy/Caddyfile)']
+                  f'    then open {dashboard_link(config)} (custom domain instead: see deploy/Caddyfile)']
     user_md = onboarding.user_md_path(paths.workspace)
     if not user_md.exists() or onboarding.user_md_is_template(user_md):
         lines.append(f'  - Tell the agent about you: create USER.md in {paths.workspace} (name, companies, tone, preferences)')

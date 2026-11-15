@@ -22,6 +22,7 @@ import next_actions
 import preparation_state
 from machine.cards import HANDOFF
 from machine.config import ROOT
+from machine.dashboard_link import dashboard_link
 import timeutil
 
 
@@ -219,8 +220,7 @@ def signin_handoff(reason):
 def signin_link(config, suggestion_id):
     """The dashboard address that opens the sign-in for a card blocked on one (Telegram's Sign in button), or None
     without a dashboard address."""
-    host = str(config.get('dashboard_host') or '')
-    return 'https://' + host + config.get('dashboard_path', '/') + '#signin-for=' + suggestion_id if host else None
+    return dashboard_link(config, '#signin-for=' + suggestion_id) or None
 
 
 SIGNIN_ADDRESS = re.compile(r'(?i)log-?in|sign-?in|/auth|oauth|\bsso\b|/idp|switch-account|account-?select|challenge|/2fa|/mfa|verif|captcha')
@@ -446,8 +446,7 @@ def browser_view_link(config, suggestion_id):
     """The dashboard address that shows a task's page in the Machine's own browser (View in browser, also from
     Telegram): it brings that tab to the front, or reopens it there, then opens the browser's viewer. None without a
     dashboard address. It carries only the task's ID, never the page's address."""
-    host = str(config.get('dashboard_host') or '')
-    return 'https://' + host + config.get('dashboard_path', '/') + '#browser-for=' + suggestion_id if host else None
+    return dashboard_link(config, '#browser-for=' + suggestion_id) or None
 
 
 def transcript_tool_calls(session_key, agent_db=None, limit=4, scan=60):

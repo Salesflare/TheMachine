@@ -17,6 +17,7 @@ import i18n
 import model_service
 from models import background_model, has_model
 from machine.owner_error import OwnerError
+from machine.dashboard_link import dashboard_link
 
 LOG = logging.getLogger('personal-assistant')
 
@@ -201,8 +202,7 @@ class SupportApp:
                                               'support@themachine.computer (with a file from `assistant support-bundle` if they like) '
                                               'or open an issue at https://github.com/Salesflare/TheMachine/issues. Nothing was sent or filed.')}
         item = bug_queue.offer(self.config, args.get('words'), args.get('summary'))
-        host = str(self.config.get('dashboard_host') or '')
-        url = 'https://' + host + self.config.get('dashboard_path', '/') + '#bug-offer=' + item['id'] if host else None
+        url = dashboard_link(self.config, '#bug-offer=' + item['id']) or None
         how = f'Tap to check it and send: {url}' if url else 'Open Help, then Report a bug, in the dashboard: it is filled in there.'
         return {'linked': True, 'id': item['id'], 'url': url,
                 'say': ('Offer it in one short message: you wrote it up as a bug report for The Machine team. ' + how +

@@ -15,6 +15,7 @@ from models import claude_plan_route, openclaw_model
 import portable
 from timeutil import now
 from machine.owner_error import OwnerError
+from machine.dashboard_link import dashboard_link
 
 
 def usage_status(config, run=subprocess.run):
@@ -209,5 +210,5 @@ def node_env(config):
         env['ASSISTANT_TELEGRAM_OWNER'] = str(config.get('telegram_owner'))
     env['ASSISTANT_TELEGRAM_ACCOUNT'] = telegram_account(config)
     if config.get('dashboard_host'):
-        env['PUSH_VAPID_SUBJECT'] = 'https://' + config['dashboard_host'] + config.get('dashboard_path', '/')
+        env['PUSH_VAPID_SUBJECT'] = dashboard_link(config)
     return env

@@ -12,6 +12,7 @@ import agent_jobs
 import fleet
 import i18n
 from machine.cards import card, controls, delivery_time
+from machine.dashboard_link import dashboard_link
 from machine.config import LOG
 from machine.delivery.push import first_result, hold_mail, push_notify, push_reach, push_send, reply_waits, result_lead, shown_as_reminder
 from machine.delivery.telegram import DeliveryNotSent, telegram
@@ -28,7 +29,7 @@ def fleet_push(store, config, rows, sender=None):
     subscriptions, phones = push_reach(store, config)
     if not subscriptions and not phones:
         return []
-    return push_send(store, config, subscriptions, fleet.push_payload(rows, fleet.dashboard_root(config)), 'fleet=' + rows[0]['id'], sender, kind='result', wake='fleet')
+    return push_send(store, config, subscriptions, fleet.push_payload(rows, dashboard_link(config)), 'fleet=' + rows[0]['id'], sender, kind='result', wake='fleet')
 
 
 def fleet_notice_push(store, config, view, sender=None):
@@ -36,7 +37,7 @@ def fleet_notice_push(store, config, view, sender=None):
     subscriptions, phones = push_reach(store, config)
     if not subscriptions and not phones:
         return []
-    return push_send(store, config, subscriptions, fleet.notice_push(view, fleet.dashboard_root(config)), 'fleet=' + view['id'], sender, kind='result', wake='fleet')
+    return push_send(store, config, subscriptions, fleet.notice_push(view, dashboard_link(config)), 'fleet=' + view['id'], sender, kind='result', wake='fleet')
 
 
 def cached_card_ids(config, suggestion_id, since):

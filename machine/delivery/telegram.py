@@ -14,6 +14,7 @@ from machine.text import encoded
 import notify
 from machine import todo_states
 from machine.owner_error import OwnerError
+from machine.dashboard_link import dashboard_link
 
 
 # A result notice's quick buttons as the plugin's callbacks: only these two run from the notice itself
@@ -41,7 +42,7 @@ def telegram(config, row, action, message_id=None):
     if action=='send' and row.get('_result_notice'):
         title=re.sub(r'([\\`*_{}\[\]()#+.!>|~-])',r'\\\1',row['title'])
         ready=row['status']=='prepared'
-        root='https://'+config['dashboard_host']+config.get('dashboard_path','/')
+        root=dashboard_link(config)
         signin=not ready and (row.get('preparation_browser') or {}).get('signin_url')
         lead=row.get('_lead','Ready') if ready else 'Needs you to sign in' if signin else 'Needs your help' if ask_blocked(row) or (row.get('preparation_browser') and not row.get('preparation_error')) else 'Stuck'
         message=i18n.t(lead+': {}', '**'+title+'**') if lead else '**'+title+'**'
@@ -65,7 +66,7 @@ def telegram(config, row, action, message_id=None):
             asked=re.sub(r'([\\`*_{}\[\]()#+.!>|~-])',r'\\\1',asked[:500])
             body['body']=i18n.t('You asked: “{}”', asked)+'\n\n'+i18n.t('Got it. I’m preparing your update. I’ll send it here when it’s ready.')
         else:body['body']=i18n.t('Got it. I’m preparing your update. I’ll send it here when it’s ready.')
-    root='https://'+config['dashboard_host']+config.get('dashboard_path','/') if config.get('dashboard_host') else ''
+    root=dashboard_link(config)
     shown=card_draft(row)
     if root:
         body['body']=strip_result_links(body['body'])

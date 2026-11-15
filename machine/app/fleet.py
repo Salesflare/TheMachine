@@ -40,6 +40,7 @@ from timeutil import in_hours, is_work_day, local_tz, now, WORK_HOURS
 import work_removal
 from machine import todo_states
 from machine.owner_error import OwnerError
+from machine.dashboard_link import dashboard_link
 import timeutil
 
 
@@ -183,7 +184,7 @@ class FleetApp:
                 LOG.warning('fleet mail hold error=%s', type(error).__name__)
         if not telegram_on(self.config) or not self.notify_on('result', 'telegram'):
             return None
-        result = fleet_telegram(self.config, fleet.telegram_message(rows, fleet.dashboard_root(self.config)))
+        result = fleet_telegram(self.config, fleet.telegram_message(rows, dashboard_link(self.config)))
         message_id = str(result.get('messageId') or '')
         return message_id if re.fullmatch(r'\d+', message_id) else None
 
@@ -228,7 +229,7 @@ class FleetApp:
     def fleet_tell(self, text, anchor):
         """How the owner's own Fleet request went (an intro, a handoff): a phone notification, and a
         plain Telegram line with Open when Telegram is on. No buttons to act on: it only tells."""
-        root = fleet.dashboard_root(self.config)
+        root = dashboard_link(self.config)
         subscriptions, phones = push_reach(self.store, self.config)
         if subscriptions or phones:
             with self.store.connect() as db:

@@ -35,6 +35,7 @@ import office_files  # noqa: E402
 import service  # noqa: E402
 import support  # noqa: E402
 from machine import todo_states
+from machine.dashboard_link import dashboard_link
 import timeutil
 
 _spec = importlib.util.spec_from_file_location('moving', Path(__file__).resolve().with_name('moving.py'))
@@ -369,7 +370,7 @@ PREVIEW_POLL = 10
 
 
 def dashboard_url(config):
-    return f"https://{config['dashboard_host']}{config.get('dashboard_path', '/')}" if config.get('dashboard_host') else None
+    return dashboard_link(config) or None
 
 
 def preview_cards(status, run):

@@ -140,7 +140,8 @@ MACHINE_LAYERS = {
     'actions': 0,      # the *_ACTIONS sets, the security boundary
     'bridge_wait': 0,  # a changed bridge the nightly update could not put in yet (a leaf, shared with installer.py)
     'config': 0,
-    'kinds': 0,        # every kind of event and of message, with what the code knows of each (a leaf)
+    'dashboard_link': 0,  # the dashboard's own address for links (a leaf)
+    'kinds': 0,       # every kind of event and of message, with what the code knows of each (a leaf)
     'names': 0,        # what the owner calls a service, app or agent (never the tool underneath)
     'night_pause': 0,  # when the reviews of new signals pause for the night (a leaf)
     'omarchy': 0,      # the Omarchy desktop theme's colors, read only (a leaf)
@@ -251,6 +252,15 @@ def js_todo_status_lists(source):
     """[(line, list)] of to-do status lists spelled out in a page script."""
     return [(source.count('\n', 0, m.start()) + 1, m.group(0)) for m in JS_STATUS_LIST.finditer(source)
             if set(re.findall(r"""["'`]([a-z_]+)["'`]""", m.group(0))) <= TODO_STATUSES]
+
+
+# --- the dashboard's address -----------------------------------------------------------------------------------------
+
+# machine/dashboard_link.py builds every link to the dashboard from dashboard_host and dashboard_path; a line elsewhere
+# that puts https:// and one of them together builds one by hand. browser.py's viewer link puts the dashboard's path
+# inside the viewer's own (browser_viewer.view_link).
+HAND_BUILT_LINK = re.compile(r'https://.*dashboard_(host|path)|dashboard_(host|path).*https://')
+LINK_BUILDERS = {'machine/dashboard_link.py', 'machine/browser.py'}
 
 
 # --- the clock -------------------------------------------------------------------------------------------------------
@@ -742,6 +752,13 @@ class Architecture(unittest.TestCase):
         self.assertNotIn('MOVES', groups)
         used = set(re.findall(r'\bTODO\.([A-Z_]+)', dashboard_parts.assemble(ROOT)))
         self.assertTrue(used and used <= set(groups), used - set(groups))
+
+    def test_no_module_builds_a_dashboard_link_by_hand(self):
+        found = [f'{name}:{number}' for name in python_files(tests=False) if name not in LINK_BUILDERS
+                 and not name.startswith(('scripts/', 'sandbox/'))
+                 for number, line in enumerate((ROOT / name).read_text(encoding='utf-8').splitlines(), 1)
+                 if HAND_BUILT_LINK.search(line)]
+        self.assertEqual(found, [], 'build the link with machine.dashboard_link (dashboard_link or dashboard_address)')
 
     def test_only_timeutil_reads_the_clock(self):
         for name in python_files(tests=False):

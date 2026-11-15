@@ -82,6 +82,7 @@ import fleet_learnings
 import embeddings
 from machine import todo_states
 from machine.owner_error import OwnerError
+from machine.dashboard_link import dashboard_address, dashboard_link
 import timeutil
 
 LOG = logging.getLogger('personal-assistant')
@@ -325,15 +326,6 @@ def account_emails(config):
     work = set(work_accounts(config))
     return sorted({str(a.get('email') or '').strip().lower() for a in config.get('accounts', [])
                    if a.get('id') in work and '@' in str(a.get('email') or '')})
-
-
-def dashboard_address(config):
-    """The dashboard's own https address (dashboard_host and dashboard_path), told to the Network so its owner's Account
-    page can link to it; None when it has none (only reachable on this computer)."""
-    host = str(config.get('dashboard_host') or '').strip().lower()
-    if not host:
-        return None
-    return f"https://{host}/{str(config.get('dashboard_path') or '/').strip('/')}".rstrip('/') + '/'
 
 
 TAILNET_LABEL = re.compile(r'[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?')
@@ -1424,10 +1416,6 @@ def question_text(kind, question, db=None):
     return kind
 
 
-def dashboard_root(config):
-    return 'https://' + config['dashboard_host'] + config.get('dashboard_path', '/') if config.get('dashboard_host') else ''
-
-
 def asks_line(row):
     """Who asks and the question, in its fixed form. Notifications carry this and nothing of the owner's."""
     return t("{}'s Machine asks: {}", row['name'], question_text(row['kind'], json.loads(row['question'])))
@@ -2205,7 +2193,7 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
         with self.connect() as db:
             rows = db.execute("SELECT i.*,m.value AS silent FROM fleet_in i LEFT JOIN fleet_meta m ON m.key='handoff_silent:'||i.id "
                               'WHERE i.telegram_message_id=? ORDER BY i.at,i.id', (str(message_id),)).fetchall()
-        return telegram_message(rows, dashboard_root(self.config)) if rows else None
+        return telegram_message(rows, dashboard_link(self.config)) if rows else None
 
     # -- notices: what happens in the owner's Fleet (a seat request, joined, a server started, left)
     def take_notice(self, raw):
@@ -2235,7 +2223,7 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
     def notice_telegram(self, row):
         """The Telegram message for a notice row, and the terms (key) it shows."""
         view = json.loads(row['view'])
-        return notice_message(view, dashboard_root(self.config)), view.get('key') or ''
+        return notice_message(view, dashboard_link(self.config)), view.get('key') or ''
 
     def retell_notice_now(self, message_id):
         with self.connect() as db:
@@ -2639,7 +2627,7 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
             db.execute('UPDATE fleet_briefs SET told_at=? WHERE fleet=? AND period=?', (now(), fleet, period))  # marked first
         if not tell or not self.notify_brief:
             return None
-        root = dashboard_root(self.config)
+        root = dashboard_link(self.config)
         try:
             hidden, learned = self.brief_hidden(fleet, period), self.brief_learned(fleet)
             message_id = self.notify_brief(brief_text(view, local.date(), hidden, learned), (root + '#fleet-brief=' + fleet) if root else '',
