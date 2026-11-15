@@ -125,10 +125,11 @@ def service_lists():
             out[path.relative_to(ROOT).as_posix()] = found
     return out
 
-# The hand-written maps machine/services.py replaced, as they were in the code
+# The hand-written maps machine/services.py replaced, as they were in the code, apart from the names settled since:
+# Gmail is 'Gmail' and 'imap' 'Other email' on every line
 BEFORE = {
     'names.SERVICES': {
-        'gmail': 'Gmail', 'calendar': 'Google Calendar', 'outlook': 'Outlook', 'outlook_calendar': 'Outlook Calendar', 'imap': 'Email',
+        'gmail': 'Gmail', 'calendar': 'Google Calendar', 'outlook': 'Outlook', 'outlook_calendar': 'Outlook Calendar', 'imap': 'Other email',
         'icloud_calendar': 'iCloud Calendar', 'caldav': 'Calendar', 'proton_calendar': 'Proton Calendar', 'ics': 'Calendar', 'exchange': 'Exchange',
         'slack': 'Slack', 'teams': 'Microsoft Teams', 'salesflare': 'Salesflare', 'salesforce': 'Salesforce', 'android': 'Android',
         'whatsapp': 'WhatsApp', 'telegram': 'Telegram', 'signal': 'Signal', 'linkedin': 'LinkedIn', 'x': 'X', 'intercom': 'Intercom',
@@ -180,11 +181,11 @@ BEFORE = {
 ORDERED = {'meet.VIDEO': ['zoom', 'meet', 'teams'], 'meet.VIDEO_LINKS': ['zoom', 'meet', 'teams']}
 
 
-# The dashboard's maps machine/services.py replaced, as they were in its scripts
+# The dashboard's maps machine/services.py replaced, as they were in its scripts, with the names settled as above
 BEFORE_PAGE = {
     # dashboard/todos-cards.js
     'SERVICE_NAMES': {
-        'gmail': 'Email', 'imap': 'Email', 'calendar': 'Calendar', 'outlook': 'Outlook', 'outlook_calendar': 'Outlook Calendar',
+        'gmail': 'Gmail', 'imap': 'Other email', 'calendar': 'Calendar', 'outlook': 'Outlook', 'outlook_calendar': 'Outlook Calendar',
         'icloud_calendar': 'iCloud Calendar', 'caldav': 'Calendar', 'proton_calendar': 'Proton Calendar', 'ics': 'Calendar',
         'exchange': 'Exchange', 'slack': 'Slack', 'salesflare': 'Salesflare CRM', 'salesforce': 'Salesforce', 'whatsapp': 'WhatsApp',
         'telegram': 'Telegram chats', 'signal': 'Signal chats', 'linkedin': 'LinkedIn', 'android': 'Android notifications',

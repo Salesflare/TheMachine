@@ -8,8 +8,8 @@ A service's row:
   None for a key that is no service of its own (google_docs: a Docs connection's Google provider, for its group).
 - label: what + Add and setup call a built-in source (onboarding.LABELS): 'Other email'. None for a source with a
   connector file (connectors/*.py), whose label is its SETUP['label'].
-- short: what the dashboard's status and error lines call it ("Signed out of Email", "Slack had a problem on its
-  side", the Connect button of a to-do that needs it): the page's SERVICE_NAMES (dashboard/todos-cards.js).
+- short: what the dashboard's status and error lines call it ("Signed out of Gmail", "Slack had a problem on its
+  side", the Connect button of a to-do that needs it; Gmail is 'Gmail' and 'imap' is 'Other email' on every line): the page's SERVICE_NAMES (dashboard/todos-cards.js).
 - sharing: what Fleet, Sharing calls a connection of it in "Your connections" (dashboard/fleet-sharing.js), None
   where it says `short`.
 - unit: what a connection card counts ("1,204 events"), None for messages (dashboard/connections-cards.js).
@@ -25,11 +25,10 @@ A service's row:
   by its `short` name; video_links: the parts of an address that are a link to such a call (meet.VIDEO_LINKS).
 
 Where names disagree, each is kept as it is today and said here, never picked silently:
-- name and label: 'imap' is 'Email' on a line but 'Other email' in + Add; 'caldav' and 'ics' are both 'Calendar' on a
-  line, 'Other calendar' and 'Calendar link (ICS)' in + Add; 'exchange' is 'Exchange' and 'Exchange Server';
+- name and label: 'caldav' and 'ics' are both 'Calendar' on a line, 'Other calendar' and 'Calendar link (ICS)' in + Add; 'exchange' is 'Exchange' and 'Exchange Server';
   'salesflare' is 'Salesflare' and 'Salesflare CRM'; 'android' is 'Android' and 'Android notifications'; 'telegram'
   and 'signal' are 'Telegram' and 'Signal' on a line, 'Telegram chats' and 'Signal chats' in + Add.
-- short and name: 'gmail' is 'Email' on the dashboard's lines but 'Gmail' on the server's; 'calendar' is 'Calendar'
+- short and name: 'calendar' is 'Calendar'
   and 'Google Calendar'; 'teams' is 'Teams' and 'Microsoft Teams'; 'rss' is 'Feed' and 'RSS'; 'docs' is 'Microsoft
   OneDrive' and 'Docs'; 'telegram', 'signal', 'android' and 'salesflare' say their + Add label.
 - video and the service key: a booking keeps Google Meet as 'meet', not 'google_meet' (stored in meet_sessions, so it
@@ -46,7 +45,7 @@ _NO = {'label': None, 'short': None, 'sharing': None, 'unit': None, 'group': Non
 
 SERVICES = {
     # mail and calendars
-    'gmail': {**_NO, 'name': 'Gmail', 'label': 'Gmail', 'short': 'Email', 'sharing': 'Gmail', 'group': MAIL, 'signin': 'google',
+    'gmail': {**_NO, 'name': 'Gmail', 'label': 'Gmail', 'short': 'Gmail', 'sharing': 'Gmail', 'group': MAIL, 'signin': 'google',
               'transports': ('gog', 'gogcli', 'himalaya')},
     'calendar': {**_NO, 'name': 'Google Calendar', 'label': 'Google Calendar', 'short': 'Calendar', 'sharing': 'Google Calendar',
                  'unit': 'events', 'group': CALENDAR, 'signin': 'google'},
@@ -54,7 +53,7 @@ SERVICES = {
                 'transports': ('msgraph', 'msgraph-cli')},
     'outlook_calendar': {**_NO, 'name': 'Outlook Calendar', 'label': 'Outlook Calendar', 'short': 'Outlook Calendar',
                          'sharing': 'Outlook Calendar', 'unit': 'events', 'group': CALENDAR, 'signin': 'microsoft'},
-    'imap': {**_NO, 'name': 'Email', 'label': 'Other email', 'short': 'Email', 'group': MAIL, 'last': True},
+    'imap': {**_NO, 'name': 'Other email', 'label': 'Other email', 'short': 'Other email', 'group': MAIL, 'last': True},
     'icloud_calendar': {**_NO, 'name': 'iCloud Calendar', 'label': 'iCloud Calendar', 'short': 'iCloud Calendar', 'sharing': 'iCloud Calendar',
                         'unit': 'events', 'group': CALENDAR},
     'caldav': {**_NO, 'name': 'Calendar', 'label': 'Other calendar', 'short': 'Calendar', 'sharing': 'Other calendar', 'unit': 'events',

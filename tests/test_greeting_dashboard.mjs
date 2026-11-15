@@ -50,7 +50,7 @@ try{
   assert.equal(h.firstSection,'For you');assert.equal(h.needsYou,false);assert.equal(h.fixed,false)}
  // A signed-out connection still shows: on day one it means the Machine can't work. The waiting skill stays away.
  connectors=[{id:'work',service:'gmail',display_name:'alex@example.com',signed_out:true}];h=await head();
- assert.deepEqual(h.needs,['Signed out of Email (alex@example.com).']);
+ assert.deepEqual(h.needs,['Signed out of Gmail (alex@example.com).']);
  if(process.env.SHOTS){const c=await browser.newContext({viewport:{width:390,height:844},timezoneId:'UTC',locale:'en-US',colorScheme:'light',deviceScaleFactor:2}),p=await c.newPage();
   await c.route('**/*',r=>new URL(r.request().url()).hostname==='127.0.0.1'?r.continue():r.abort());await p.clock.setFixedTime(NOW);await p.goto(base+'/');
   await p.locator('#needs-you li').first().waitFor();await p.waitForTimeout(500);await p.screenshot({path:process.env.SHOTS+'/greeting-signed-out-390-light.png'});await c.close()}
