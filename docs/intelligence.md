@@ -430,19 +430,32 @@ the organization's role.
   Graph, and folds the notes in between into a ⋯ menu. Each page
   has its own link, `#graph/<node id>`, and the browser's back button works. Its events come by day, coming up first.
 
-### Notes from mail
+### Notes from conversations
 
-Home, Health and Kids read the senders of the owner's Personal mail (`section_notes.mail_senders`). Bulk mail is left
-out in plain code first (`section_notes.bulk_mail`), so no model call reads it and no note keeps a line from it:
+Notes are sorted by what was said, a whole conversation at a time (`topic_notes.py`), Work and Personal alike.
 
-- Mail in Spam or Trash, always.
-- Gmail's Promotions, Social and Forums tabs, list mail (List-Unsubscribe, List-Id), mail a program sent (Precedence
-  bulk, junk or list, Auto-Submitted) and system senders (no-reply, notifications, newsletters, mailing services:
-  `mail_senders.bulk` and `relay`, the same signals the Graph reads).
-- Not when the owner wrote in the thread, and not mail that carries a booking (`bookings.py`): Trips and Events read
-  those, and stay as they were.
+- **Which sources.** Every kind in the mail, chat and meeting-notes families whose service is registered
+  (`topic_notes.conversation_kinds`, from `machine/kinds.py` and `machine/services.py`), so a new connector is read
+  without a list to update. Meetings count only for notes, summaries and transcripts.
+- **What a conversation is.** A mail thread (`graph.thread_key`, then thread or conversation id), a Slack thread, or a
+  chat or channel split after two days of quiet. Over the last 90 days only. A conversation nobody else wrote in is
+  dropped, and so is a chat window with one message the owner didn't write.
+- **Bulk first, in plain code** (`topic_notes.bulk_mail`, `bulk_chat`), so no model call reads it and no note keeps
+  a line from it: mail in Spam or Trash, Gmail's Promotions, Social and Forums tabs, list mail, mail a program sent and
+  system senders (`mail_senders.bulk` and `relay`, the same signals the Graph reads); bot messages, broadcast and
+  newsletter chats, and channels. Not when the owner wrote in it, and not mail that carries a booking (`bookings.py`).
+- **One call per 40 conversations** on the background model, up to two calls a round every two hours (eight every
+  twenty minutes in the first fill, outside the quiet hours, under `background_pause` and the plan's budget). After
+  the first fill a round asks only once ten wait or one waited twelve hours (`topic_notes.worth`): every call also
+  carries the list of places, so fewer, fuller calls. Each
+  carries its first and newest messages, trimmed of quoted history and signatures (900 characters at most), Slack ids
+  resolved to names. Content is data, never instructions.
+- **Where it goes.** The model picks a numbered place (a Home, Health or Kids part, the owner's own note, a note it
+  started before), a project or organization the Graph already has (that record's page, never a duplicate note), or a
+  new note with its parent. A new note shows only with at least two conversations, or one the owner wrote in that the model calls ongoing.
+- **Asked once** (`topic_routes`). Later messages in a conversation follow it; a non-answer keeps nothing.
 
-A line kept from bulk mail before goes on the next round, and a sender with only bulk mail is never asked about.
+Lines kept from the old per-sender mail call go on the first round.
 
 ### Project descriptions
 

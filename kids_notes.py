@@ -13,9 +13,8 @@ Personal, whatever the account it came in on: a school's mail to a work address 
 A note the owner keeps for one child in a part (Isla under School) gets what is about that child. The notes are
 never shared.
 
-Mail too (section_notes.mail_senders): a sender of the owner's Personal mail that the one mail call every kind shares
-puts in Kids (the school, a club, childcare) gets a dated line per mail, its subject, opening that mail: everything the
-school sends, in one place."""
+Conversations too (topic_notes.py): a mail thread or chat with the school, a club or childcare is a line of the part
+it is about, opening its newest message: everything the school sends, in one place."""
 import section_notes
 
 # The parts of the children's lives a candidate can be about, each a note under Kids (English: its key; titled in the
@@ -40,4 +39,4 @@ def candidates(db, accounts, today):
 KIND = section_notes.Kind(
     'kids', 'Kids', SECTIONS, PARTS, 'the owner\'s children and their school',
     'the owner\'s own health or work, the home, a trip, a meeting, someone else\'s child',
-    candidates, section_notes.ask, section_notes.line, mail='each')
+    candidates, section_notes.ask, section_notes.line)
