@@ -10,6 +10,10 @@ const SENDS=Object.keys(SOURCE_KINDS.sends),TEXT_SENDS=SENDS.filter(k=>SOURCE_KI
 // The to-do status groups of machine/todo_states.py (TODO.CLOSED, TODO.PREPARING, ...): lists ask them instead of spelling
 // statuses out (tests/test_todo_moves.py checks). A group the page didn't get is empty.
 const TODO=new Proxy(SOURCE_KINDS.todo||{},{get:(groups,name)=>groups[name]||[]});
+// machine/services.py as the page carries it: each service's short name on status and error lines (SERVICE_NAMES:
+// gmail is Email here), its name in Sharing, what its card counts, its + Add group. Maps ask it instead of listing services.
+const SERVICE_ROWS=SOURCE_KINDS.services||{},serviceField=f=>Object.fromEntries(Object.entries(SERVICE_ROWS).filter(([,r])=>r[f]).map(([k,r])=>[k,r[f]])),
+  SERVICE_NAMES=serviceField('short'),CALENDAR_SERVICES=Object.keys(SERVICE_ROWS).filter(k=>SERVICE_ROWS[k].group==='calendar');
 // Dates and times follow Settings, General (locale_prefs.py): DL is the date locale (Sat, Oct 24 or Sat 24 Oct), H12 the
 // clock (2:05 PM or 14:05). A Machine without a region keeps US dates and 24-hour times.
 let DL='en-US',H12=false;

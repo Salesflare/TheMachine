@@ -589,7 +589,6 @@ document.addEventListener('click',async e=>{const b=e.target.closest('button[dat
 const connFigures=(c,unit)=>CALENDAR_SERVICES.includes(c.service)?[[c.total,'events'],[c.upcoming_7d,'next 7 days'],[c.signals_24h,'last 24h']]
  :c.service==='salesflare'?[[c.salesflare?.round?.read??c.salesflare?.last_round?.read,'accounts read'],[c.total,'emails and meetings'],[c.signals_24h,'last 24h']]
  :[[c.total,unit],[c.signals_24h,'last 24h'],[c.pending,'not checked']];
-const CALENDAR_SERVICES=['calendar','outlook_calendar','icloud_calendar','caldav','proton_calendar','ics','exchange'];
 // Recent syncs, newest first, in the dashboard's own time style (Today 08:18, the year only when it isn't this one).
 // A failed sync that a later one made up for reads calm, without its old Retry time; only a failure that is still
 // the latest one shows as an error with when it retries.
@@ -611,7 +610,7 @@ const CAT_ICO={mail:'via-mail',calendar:'via-cal',chat:'via-chat',meetings:'conn
  connMark=c=>c.service==='docs'&&c.docs_provider==='google'?'google_docs':c.service,
  connLogo=c=>{const k=connMark(c);return monoKey(k)?html`<span class="icon" aria-hidden="true">${markIco(k)}</span>`:connectLogo({service:c.service},k)};
 function connectorCard(c,open){
-const unit={calendar:'events',outlook_calendar:'events',icloud_calendar:'events',caldav:'events',proton_calendar:'events',ics:'events',exchange:'events',intercom:'conversations',android:'notifications',gateway:'alerts',github:'notifications',stripe:'events',rss:'items',docs:'items',google_meet:'meetings',trello:'card changes',salesforce:'updates',web_page:'updates'}[c.service]||'messages',tone=connectorTone(c),phone=c.service==='android'?JSON.parse(c.state||'{}'):{},synced=c.signals!==false;
+const unit=SERVICE_ROWS[c.service]?.unit||'messages',tone=connectorTone(c),phone=c.service==='android'?JSON.parse(c.state||'{}'):{},synced=c.signals!==false;
 const opened=connOpened.has(c.id)||tone==='orange'&&!connClosed.has(c.id),recent=!synced?'':CALENDAR_SERVICES.includes(c.service)?t('{} next 7 days',(c.upcoming_7d||0).toLocaleString(DL)):t('{} last 24h',(c.signals_24h||0).toLocaleString(DL));
 // Its row: Work or Personal first (never the part cut off), then how it is and what it brought in lately; it opens the card
 return html`<article data-group="${healthGroup(c)}" data-conn="${c.id}"><button type="button" class="conn-row" data-conn-open="${c.id}" aria-expanded="${opened}">${connLogo(c)}<span class="conn-row-text"><span class="conn-name">${connTitle(c)}</span><small>${c.card_subtitle?html`<span class="conn-sub">${c.card_subtitle}</span> · `:''}<span class="state-dot t-${tone}" aria-hidden="true"></span> <span class="connection-status">${connectorHealth(c).text}</span>${recent?html` · <span>${recent}</span>`:''}</small></span><span class="cs-go" aria-hidden="true">›</span></button><div class="conn-body"${opened?'':html` hidden`}>

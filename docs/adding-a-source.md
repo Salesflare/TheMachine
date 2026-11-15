@@ -44,8 +44,9 @@ def sync(store, config, account, helpers):
 Each kind also gets a row in [`machine/kinds.py`](../machine/kinds.py) (see [The kind registry](#the-kind-registry)).
 
 The service itself gets a row in [`machine/services.py`](../machine/services.py): its `name` on screen ("Web page"),
+its `short` name on the dashboard's status and error lines, what its connection card counts (`unit`, else messages),
 its + Add `group` when `SETUP` doesn't say it, the control plane `signin` that connects it, if any, and the `transports`
-that mean it. Start from `**_NO`, as the other rows do. Code asks this table (`services.of(group=services.MAIL)`,
+that mean it. Start from `**_NO`, as the other rows do. The dashboard gets the rows with the page (`SERVICE_ROWS`). Code asks this table (`services.of(group=services.MAIL)`,
 `services.field('name')`) instead of keeping a map of services of its own; [`tests/test_services.py`](../tests/test_services.py)
 checks each row.
 

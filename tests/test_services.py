@@ -56,9 +56,60 @@ BEFORE = {
 }
 
 
+# The dashboard's maps machine/services.py replaced, as they were in its scripts
+BEFORE_PAGE = {
+    # dashboard/todos-cards.js
+    'SERVICE_NAMES': {
+        'gmail': 'Email', 'imap': 'Email', 'calendar': 'Calendar', 'outlook': 'Outlook', 'outlook_calendar': 'Outlook Calendar',
+        'icloud_calendar': 'iCloud Calendar', 'caldav': 'Calendar', 'proton_calendar': 'Proton Calendar', 'ics': 'Calendar',
+        'exchange': 'Exchange', 'slack': 'Slack', 'salesflare': 'Salesflare CRM', 'salesforce': 'Salesforce', 'whatsapp': 'WhatsApp',
+        'telegram': 'Telegram chats', 'signal': 'Signal chats', 'linkedin': 'LinkedIn', 'android': 'Android notifications',
+        'gateway': 'Machine health', 'github': 'GitHub', 'intercom': 'Intercom', 'zoom': 'Zoom', 'google_meet': 'Google Meet',
+        'teams': 'Teams', 'trello': 'Trello', 'stripe': 'Stripe', 'rss': 'Feed', 'web_page': 'Web page', 'docs': 'Microsoft OneDrive',
+        'shortcut': 'Shortcut', 'x': 'X'},
+    # dashboard/fleet-sharing.js
+    'CONN_LABEL': {
+        'gmail': 'Gmail', 'outlook': 'Outlook', 'calendar': 'Google Calendar', 'outlook_calendar': 'Outlook Calendar',
+        'icloud_calendar': 'iCloud Calendar', 'caldav': 'Other calendar', 'proton_calendar': 'Proton Calendar', 'ics': 'Calendar link (ICS)',
+        'exchange': 'Exchange Server', 'slack': 'Slack', 'salesflare': 'Salesflare', 'whatsapp': 'WhatsApp', 'intercom': 'Intercom',
+        'linkedin': 'LinkedIn', 'x': 'X', 'telegram': 'Telegram', 'signal': 'Signal chats'},
+    # dashboard/connections-cards.js connectorCard's unit (else 'messages')
+    'unit': {
+        'calendar': 'events', 'outlook_calendar': 'events', 'icloud_calendar': 'events', 'caldav': 'events', 'proton_calendar': 'events',
+        'ics': 'events', 'exchange': 'events', 'intercom': 'conversations', 'android': 'notifications', 'gateway': 'alerts',
+        'github': 'notifications', 'stripe': 'events', 'rss': 'items', 'docs': 'items', 'google_meet': 'meetings',
+        'trello': 'card changes', 'salesforce': 'updates', 'web_page': 'updates'},
+    # dashboard/connections-cards.js and calendar-view.js (a set: read with includes)
+    'CALENDAR_SERVICES': {'calendar', 'outlook_calendar', 'icloud_calendar', 'caldav', 'proton_calendar', 'ics', 'exchange'},
+}
+
+
+class Page(unittest.TestCase):
+    def test_the_page_maps_read_as_before(self):
+        """What shell-core.js and its callers make of the page's rows: the maps they wrote out by hand before."""
+        rows = services.page()
+        field = lambda name: {k: r[name] for k, r in rows.items() if r[name]}
+        self.assertEqual(field('short'), BEFORE_PAGE['SERVICE_NAMES'])
+        self.assertEqual(field('sharing'), BEFORE_PAGE['CONN_LABEL'])
+        self.assertEqual(field('unit'), BEFORE_PAGE['unit'])
+        self.assertEqual({k for k, r in rows.items() if r['group'] == 'calendar'}, BEFORE_PAGE['CALENDAR_SERVICES'])
+
+    def test_the_scripts_ask_the_rows(self):
+        read = lambda name: (ROOT / 'dashboard' / name).read_text(encoding='utf-8')
+        core = read('shell-core.js')
+        self.assertIn("SERVICE_NAMES=serviceField('short')", core)
+        self.assertIn("CALENDAR_SERVICES=Object.keys(SERVICE_ROWS).filter(k=>SERVICE_ROWS[k].group==='calendar')", core)
+        self.assertIn("const CONN_LABEL=serviceField('sharing');", read('fleet-sharing.js'))
+        self.assertIn("const unit=SERVICE_ROWS[c.service]?.unit||'messages'", read('connections-cards.js'))
+        for name in ('todos-cards.js', 'fleet-sharing.js'):
+            self.assertNotIn("outlook_calendar:", read(name), f'{name}: a map keyed by service, written out by hand')
+        for name in ('todos-cards.js', 'fleet-sharing.js', 'connections-cards.js', 'calendar-view.js'):
+            self.assertNotIn("'outlook_calendar','icloud_calendar'", read(name), f'{name}: a list of calendars, written out by hand')
+
+
 class Registry(unittest.TestCase):
     def test_every_row_is_complete(self):
-        fields = {'name', 'label', 'group', 'last', 'signin', 'transports'}
+        fields = {'name', 'label', 'short', 'sharing', 'unit', 'group', 'last', 'signin', 'transports'}
         for key, row in services.SERVICES.items():
             with self.subTest(key):
                 self.assertEqual(set(row), fields)

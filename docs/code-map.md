@@ -136,7 +136,8 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
     through it, so a tool underneath (gog, wacli, msgraph-cli) is never a name (`tests/test_owner_names.py`).
   - `machine/services.py`: every service a connection reads (`gmail`, `slack`, `web_page`), one row each: its name,
     its + Add label, group and sign-in, and the transports that mean it. A leaf; `names`, `sources/groups`, `fleet`,
-    `onboarding` and the mail and calendar lists read it (`tests/test_services.py`).
+    `onboarding` and the mail and calendar lists read it, and the page carries its dashboard fields as JSON
+    (`SERVICE_ROWS` in `dashboard/shell-core.js`; `tests/test_services.py`).
   - `machine/omarchy.py`: the current Omarchy theme's colors (`GET /api/omarchy-theme`), for Settings, General, This
     device, Omarchy theme (`dashboard/settings-omarchy.js`, painted by `paintOmarchy` in dashboard.html).
   - `machine/app/history.py` (`HistoryApp`): the history backfill's worker, when it may run and one step per source;
