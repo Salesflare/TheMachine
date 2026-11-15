@@ -29,7 +29,11 @@ function i18nPatterns(cat){const out=[],esc=s=>s.replace(/[.*+?^${}()|[\]\\]/g,'
 // a hole's text read again only when it is a catalog entry itself ("Due {}" with "today"); a name, a title or a
 // message in it stays as written, even when it looks like UI ("Change {}" around "the intro.")
 function i18nExact(text){const s=text.replace(/\s+/g,' ').trim(),cat=I18N.cat;if(!s||!Object.prototype.hasOwnProperty.call(cat,s))return null;const v=cat[s];return typeof v==='object'?(v.one&&I18N.en[s]?.one===s?v.one:v.other):v}
-function i18nLookup(text){const s=text.replace(/\s+/g,' ').trim();if(!s||s.length>400||!/[A-Za-z]/.test(s))return null;
+// A to-do's title is the owner's (or the model's) words: it reads as written wherever it shows, never with a frame like
+// "Send {}" or "Prepare for {}" translating its first words only
+function i18nTitles(){const l=typeof state==='object'&&state?.suggestions;if(!Array.isArray(l))return null;
+ if(I18N.titlesOf!==l){I18N.titlesOf=l;I18N.titles=new Set(l.map(x=>String(x?.title||'').replace(/\s+/g,' ').trim()).filter(Boolean))}return I18N.titles}
+function i18nLookup(text){const s=text.replace(/\s+/g,' ').trim();if(!s||s.length>400||!/[A-Za-z]/.test(s)||i18nTitles()?.has(s))return null;
  if(I18N.memo.has(s))return I18N.memo.get(s);let out=null;const cat=I18N.cat;
  if(Object.prototype.hasOwnProperty.call(cat,s)){const v=cat[s];out=typeof v==='object'?(v.one&&I18N.en[s]?.one===s?v.one:v.other):v}
  else for(const p of I18N.pats){if(p.head&&!s.startsWith(p.head))continue;const m=p.re.exec(s);if(!m)continue;
