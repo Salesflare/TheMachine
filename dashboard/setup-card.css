@@ -1,6 +1,10 @@
 /* The setup to-do at the top of To-dos (setup-card.js): one small card, a title with how many steps are done, tight rows of an icon, a short label, one button and an ×. */
 .setup-card{margin:0 0 var(--sp-4);padding:10px 14px 4px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);box-shadow:var(--shadow);font-size:var(--fs-sm);line-height:1.35}
 .setup-card[hidden],body.chat-open .setup-card{display:none}
+/* Until the first answer: the card's place as last time (shell-main.html), an outline like the to-dos' (the loading
+   outline's quiet pill for the line), so the to-dos coming in under it don't move */
+.setup-card.sk-setup{box-sizing:border-box;box-shadow:none}
+.setup-card.sk-setup.quiet::before{content:'';display:block;width:9rem;height:14px;position:relative;top:9px;border-radius:var(--r-pill);background:var(--c-sunken)}
 .setup-head{display:flex;align-items:center;gap:10px;min-height:32px}
 .setup-head strong{flex:1;min-width:0;color:var(--text);font-size:var(--fs-md);font-weight:var(--fw-strong)}
 .setup-count{flex:none;color:var(--muted);font-size:var(--fs-xs);font-variant-numeric:tabular-nums}

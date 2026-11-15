@@ -83,19 +83,26 @@ function setupHTML(rows,quiet){const desk=!DEV.mobile,hidden=setupHidden(),store
  return html`<div class="setup-head"><strong>Get more out of The Machine</strong><span class="setup-count">${t(['{} step left','{} steps left'],rows.length)}</span>${quiet?html`<button type="button" class="setup-x setup-fold" data-setup-fold aria-expanded="true" aria-label="Show less" title="Show less">${raw(SETUP_CHEVRON)}</button>`:''}<button type="button" class="setup-x" data-setup-close aria-label="Close" title="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17"/></svg></button></div><ul class="setup-rows">${
   rows.map(r=>html`<li class="setup-row" data-step="${r.id}">${setupSvg(r.hint?(r.hint.scope?'scope':'hint'):r.id)}<span class="setup-label">${setupLabel(r)}</span>${html`${r.id==='phone'&&store?html`<a class="setup-go btn-link" href="${safeHref(store)}" target="_blank" rel="noopener" data-setup-go="phone">${setupButton(r)}</a>`:html`<button type="button" class="setup-go" data-setup-go="${r.id}"${r.id==='phone'&&desk?html` aria-expanded="${setupQR}"`:''}>${setupButton(r)}</button>`}<button type="button" class="setup-x" data-setup-dismiss="${r.id}" aria-label="Dismiss" title="Dismiss"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17"/></svg></button>`}${
    r.id==='phone'&&desk&&setupQR?setupQRHTML():''}</li>`)}</ul>${hidden?html`<button type="button" class="setup-more" data-setup-restore="all">${t(['Show {} hidden','Show {} hidden'],hidden)}</button>`:''}`}
-function setupBox(){let el=$('#setup-card');if(el)return el;
- el=document.createElement('div');el.id='setup-card';el.className='setup-card';el.setAttribute('role','region');el.setAttribute('aria-label','Get more out of The Machine');el.hidden=true;
- const nudge=$('#device-nudge');if(nudge)nudge.after(el);else $('#inbox').prepend(el);
- el.addEventListener('click',setupClick);return el}
+// The card is in the page from the start (shell-main.html), at the top of To-dos, so its place can be kept while loading
+let setupWired=false;
+function setupBox(){const el=$('#setup-card');if(!setupWired){setupWired=true;el.addEventListener('click',setupClick)}return el}
+// What the loading outline keeps for the card next time (shell-main.html): quiet line or card, its height, the kind of
+// screen. Read from the Machine's own answers (not the device's copy), and only when it changed: one layout read then.
+let setupShaped=null;
+function setupShape(el){if(!state?.suggestions||shownCached||setupOpen||pushOK&&!devicePush.checked||document.body.classList.contains('chat-open')||$('#inbox').hidden)return;
+ const key=el.hidden?'':el.dataset.html+el.className+skeletonBand();if(key===setupShaped)return;setupShaped=key;
+ try{localStorage.setItem('skeleton-setup',el.hidden?'':(el.classList.contains('quiet')?'q':'c')+':'+el.offsetHeight+':'+skeletonBand())}catch{}}
 function setupRender(){const s=state?.setup_card,el=setupBox(),first=setupMailFirst();
+ // the outline's place until the first answer, and this browser's notifications are known (a row of their own)
+ if(el.classList.contains('sk-setup')){if(!state?.suggestions||pushOK&&!devicePush.checked&&performance.now()<8000)return;el.classList.remove('sk-setup');el.style.removeProperty('height')}
  el.classList.toggle('mail-first',first);$('#inbox')?.classList.toggle('mail-first',first);  // its empty state hides (setup-card.css)el.setAttribute('aria-label',first?t('Connect mail'):'Get more out of The Machine');
- if(first){const h=String(setupMailHTML());if(el.dataset.html!==h){setHTML(el,raw(h));el.dataset.html=h}el.hidden=false;el.classList.remove('quiet');setupSettings(false);return}
+ if(first){const h=String(setupMailHTML());if(el.dataset.html!==h){setHTML(el,raw(h));el.dataset.html=h}el.hidden=false;el.classList.remove('quiet');setupSettings(false);setupShape(el);return}
  const off=!s||settingUp()||(DEV.framed&&!s.demo);
  // Only what is left: a done step leaves the card (its label says what to do, so a ticked "Connect WhatsApp" read as not done)
  const closed=new Set(off?[]:s.dismissed||[]),rows=off||s.closed?[]:setupRows(true).filter(r=>!r.done&&!closed.has(r.id)).slice(0,SETUP_MAX),quiet=!off&&setupQuiet(s);
  const show=rows.length>0,h=show?String(setupHTML(rows,quiet)):'';
  if(el.dataset.html!==h){setHTML(el,show?raw(h):html``);el.dataset.html=h}el.hidden=!show;el.classList.toggle('quiet',quiet&&!setupOpen);
- setupSettings(!off&&(s.closed||!show)&&(s.closed||setupHidden()>0))}
+ setupSettings(!off&&(s.closed||!show)&&(s.closed||setupHidden()>0));setupShape(el)}
 // Settings, General, Setup to-do: while the to-do is closed, or shows nothing but has closed rows, one row brings it all back
 function setupSettings(on){let sec=$('#settings-setup');
  if(!on){if(sec)sec.hidden=true;return}

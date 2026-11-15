@@ -46,7 +46,12 @@ function pageHead(){const h=$('#page-head'),tab=[...document.querySelectorAll('m
  const head=tab==='inbox'?html`<img class="page-avatar" src="brand/avatar.png" data-blink="brand/avatar-blink.png" alt="" width="40" height="40"><div><h2 class="page-title">${hi||$('#tagline').textContent}</h2>${line?html`<p class="page-hello"><a href="#card=${g.line.card}">${line}</a></p>`:''}${sub?html`<p class="page-sub">${sub}</p>`:''}</div>${checkHead()}`:tab==='people'?(()=>{try{return graphHead()}catch{return html`<h2 class="page-title">Graph</h2>`}})():tab==='calendar'&&lazyIn('calendar')?calHead():tab==='events'?html`<div><h2 class="page-title">${t('Messages')}</h2><p class="page-sub">${t('Everything I read, found by meaning or by words.')}</p></div>`:html`<h2 class="page-title">${PAGE_TITLES[tab]||''}</h2>`;
  h.classList.toggle('greet',tab==='inbox');h.classList.toggle('hello',!!(hi||line));h.classList.toggle('busy',tab==='inbox'&&busy.length>0);
  // A mascot mid-blink is the same head: comparing it as open keeps it (a rebuild would cut its blink short)
- if(h.innerHTML.replace(/<img class="page-avatar[^"]*" src="[^"]*"/,'<img class="page-avatar" src="brand/avatar.png"')!==head.s)setHTML(h,head);h.hidden=false}
+ const changed=h.innerHTML.replace(/<img class="page-avatar[^"]*" src="[^"]*"/,'<img class="page-avatar" src="brand/avatar.png"')!==head.s;if(changed)setHTML(h,head);h.hidden=false;
+ // The loading outline held the head's height from last time (shell-main.html) until the Machine's answer; the head that
+ // answer first draws is the one kept for next time (one layout read per load; a head that grows later doesn't count)
+ if(tab!=='inbox'||known)h.style.removeProperty('min-height');
+ if(tab==='inbox'&&known&&!shownCached&&!headShaped){headShaped=true;try{localStorage.setItem('skeleton-head',Math.round(h.getBoundingClientRect().height)+':'+skeletonBand()+':'+(h.classList.contains('hello')?1:0))}catch{}}}
+let headShaped=false;
 {const o=new MutationObserver(()=>graphSubSync());document.querySelectorAll('main>section').forEach(x=>o.observe(x,{attributes:true,attributeFilter:['hidden']}));o.observe($('#tagline'),{childList:true,characterData:true,subtree:true})}
 $('#suggestions').oninput=e=>{if(e.target.tagName==='TEXTAREA')e.target.classList.toggle('filled',!!e.target.value)};
 // Mark done, Not needed and Snooze answer at once: the to-do leaves the list in this frame, its message (with Undo)

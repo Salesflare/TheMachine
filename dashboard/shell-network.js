@@ -91,9 +91,9 @@ const localCache=(()=>{const DB='tm-cache',MAX_AGE=7*864e5,MAX_BYTES=8e6,MAX_ITE
  async function read(name){if(!on||blocked)return null;try{await writes.get(name);if(blocked)return null;const key=await open(),row=await req(store(db,'data').get(name));if(!row)return null;
   if(!durable(name)&&(Date.now()-row.at>MAX_AGE||row.at>Date.now()+6e5)){store(db,'data','readwrite').delete(name);return null}
   return {value:JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:row.iv,additionalData:aad(name)},key,row.ct))),at:row.at}}catch{return null}}
- // Everything this device kept: the data, its key, the skeleton's count and the service worker's copy of the page.
+ // Everything this device kept: the data, its key, the loading outline's shape (skeleton-*) and the service worker's copy of the page.
  async function wipe(){blocked=true;await Promise.allSettled([...writes.values()]);try{await opened}catch{}opened=null;try{db?.close()}catch{}db=null;
-  try{localStorage.removeItem('skeleton-cards')}catch{}
+  try{for(const k of ['skeleton-cards','skeleton-head','skeleton-setup','skeleton-fleet','skeleton-talk'])localStorage.removeItem(k)}catch{}
   await Promise.all([new Promise(ok=>{try{const r=indexedDB.deleteDatabase(DB);r.onsuccess=r.onerror=r.onblocked=()=>ok()}catch{ok()}}),
    (async()=>{try{for(const k of await caches.keys())if(k.startsWith('tm-'))await caches.delete(k)}catch{}})()])}
  return {on,put,read,wipe}})();

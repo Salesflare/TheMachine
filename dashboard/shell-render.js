@@ -1,6 +1,8 @@
 const mailCheckSlot=()=>state?.mail_check?.read?lazyIn('mailcheck')?mailCheckBlock():(lazyRun('mailcheck',render),''):'';
 const milestoneSlot=()=>state?.done_milestone?lazyIn('milestone')?milestoneCard():(lazyRun('milestone',render),''):'';
 const SKELETON=nodeHTML($('#suggestions .skeleton'));  // the page's own loading outline
+// The kind of screen a kept outline shape is for (skeleton-head, skeleton-setup): shell-main.html reads it the same way
+const skeletonBand=()=>innerWidth>1023?'w':innerWidth>560?'m':'n';
 // Where a decision came from, in the page's language ("on the dashboard", not "via dashboard"). Unknown sources: "via <source>".
 const DECISION_VIA={auto_follow_up:'by automated follow-ups',dashboard:'on the dashboard',telegram:'on Telegram',assistant:'automatically',fleet:'from the Fleet','owner-chat':'in the chat',voice:'by voice',signed_in:'after a sign-in',agent:'by an agent',elsewhere:'elsewhere'};
 const decisionVia=source=>DECISION_VIA[source]?t(DECISION_VIA[source]):t('via {}',source);
@@ -12,14 +14,19 @@ const SOURCE_TIPS={'Added by you':'Made with New to-do','The Machine itself':'Pr
 // render('view'): only what opening or closing a chat changes (the to-do list, the sidebar, the chat), when the data is
 // the same as at the last whole render; Learning, Connections and the rest stay as they are drawn (a chat's open or
 // close redrew them all, some 40 ms of each).
-let drawnWhole=null;
+let drawnWhole=null,earlyWaited=false;
 // The app icon's badge: the To-dos count in the sidebar (what needs the owner now), set on each render from the Machine's
 // own data, cleared at 0. Work or Personal alone leaves it as All has it; a push sets it the same way (sw.js, waiting_count).
 function appBadge(n){try{if(navigator.setAppBadge)(n?navigator.setAppBadge(n):navigator.clearAppBadge()).catch(()=>{})}catch{}}
 // A plain open (not a reload, a way back or an update's reload, where the page goes back to a place further down) draws only
 // the first For you to-dos that fit a screen in that first drawing; the rest come with the others, after that paint.
 const FIRST_CARDS=8,plainOpen=(()=>{try{return performance.getEntriesByType('navigation')[0]?.type==='navigate'&&!sessionStorage.getItem('tm-update-view')}catch{return false}})();
-function render(view){const first=!drawnWhole&&!view&&/^(#todos|#chat=[a-f0-9]{16})?$/.test(location.hash),onScreen=first&&plainOpen&&/^(#todos)?$/.test(location.hash);  // a page's first drawing on To-dos (below)
+function render(view){
+// What stands over the to-dos (dashboard_parts.LAZY_EARLY: the mail check's line, a milestone) comes with the first
+// drawing: while its file, fetched with the page, is still on its way, the loading outline stays (once, a moment)
+if(!earlyWaited&&!drawnWhole&&!view&&/^(#todos)?$/.test(location.hash)){const wait=[state.done_milestone&&'milestone',state.mail_check?.read&&'mailcheck'].filter(g=>g&&!lazyIn(g));
+ if(wait.length){earlyWaited=true;Promise.allSettled(wait.map(lazyPart)).then(()=>render());return}}
+const first=!drawnWhole&&!view&&/^(#todos|#chat=[a-f0-9]{16})?$/.test(location.hash),onScreen=first&&plainOpen&&/^(#todos)?$/.test(location.hash);  // a page's first drawing on To-dos (below)
 scopeSync(state.locale);try{talkFromStatus();if(lazyIn('talk'))talkViewPaint()}catch{}applyLocale(state.locale);renderNeedsYou();if(!first&&lazyIn('settings'))renderNotify();fixedLoad();try{palAskShow()}catch{}
 const finishedOpen=listOpen('finished-list'),laterOpen=listOpen('later-list'),promisesOpen=listOpen('promises-list'),waitOpen=listOpen('waiting-list');
 const drafts=Object.fromEntries([...document.querySelectorAll('#suggestions textarea,#suggestions .fleet-card input[id]')].filter(t=>t.value).map(t=>[t.id,t.value]));
@@ -56,7 +63,7 @@ putIfChanged($('#suggestion-stats'),make('div',{class:'stats'},[[fuv.foryou,'For
  'aria-label':items.length?t('{} {}, tap to show or hide',items.length,t(title)):items.length+' '+t(title),...(items.length?{}:{disabled:''})},make('b',{},items.length),make('span',{},title)))));
 $('#badge-inbox').textContent=(open.length-fuHidden-open.filter(toRead).length+(fleetData?fleetCards.length:scopeFilter==='personal'?0:state.fleet?.waiting||0))||'';if(scopeFilter==='all'&&!shownCached)appBadge(+$('#badge-inbox').textContent||0);$('#tab-fleet').hidden=!state.fleet?.on;$('#badge-fleet').textContent='';
 // "All clear" only when the Machine itself just said so: a copy from the device keeps the loading outline instead
-if(!shownCached)try{localStorage.setItem('skeleton-cards',String(Math.min(4,outstanding.length+fleetCards.length)))}catch{}
+if(!shownCached)try{localStorage.setItem('skeleton-cards',String(Math.min(4,outstanding.length+fleetCards.length)));localStorage.setItem('skeleton-fleet',state.fleet?.on?'1':'')}catch{}
 const loading=shownCached&&!outstanding.length&&!fleetCards.length;$('#suggestions').toggleAttribute('aria-busy',loading);
 const foldsBack=foldsKeep($('#suggestions'));
 // Snoozed cards are out of the way by choice: folded by default, open state kept across refreshes. Waiting on others too.

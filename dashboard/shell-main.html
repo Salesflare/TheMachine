@@ -1,9 +1,16 @@
 ><section id="inbox"
+><div id="setup-card" class="setup-card" role="region" aria-label="Get more out of The Machine" hidden></div
 ><div id="suggestion-summary"></div
 ><div id="suggestion-stats" aria-live="polite"></div
 ><div id="first-look" class="first-look" role="status" hidden></div
 ><div id="suggestions" aria-busy="true"><div class="skeleton" role="status" aria-label="Loading your to-dos"><div class="sk-head"></div><div class="sk-card"><i></i><i></i><i></i><i></i></div><div class="sk-card"><i></i><i></i><i></i><i></i></div><div class="sk-card"><i></i><i></i><i></i><i></i></div></div></div><script>// as many outlines as cards last time (1 to 4)
-try{const n=+localStorage.getItem('skeleton-cards'),k=document.querySelector('#suggestions .skeleton');if(n>=0&&localStorage.getItem('skeleton-cards')!==null){const c=k.querySelector('.sk-card');k.querySelectorAll('.sk-card').forEach(x=>x.remove());for(let i=0;i<Math.min(4,Math.max(1,n));i++)k.appendChild(c.cloneNode(true))}}catch{}</script></section>
+try{const n=+localStorage.getItem('skeleton-cards'),k=document.querySelector('#suggestions .skeleton');if(n>=0&&localStorage.getItem('skeleton-cards')!==null){const c=k.querySelector('.sk-card');k.querySelectorAll('.sk-card').forEach(x=>x.remove());for(let i=0;i<Math.min(4,Math.max(1,n));i++)k.appendChild(c.cloneNode(true))}}catch{}
+// the sidebar's Fleet and Talk as last time (render, talkSide); the head's height and the setup to-do's place as they
+// were last time on this kind of screen (pageHead, setupShape; skeletonBand), kept unseen until they're drawn
+try{if(localStorage.getItem('skeleton-fleet')==='1')document.getElementById('tab-fleet').hidden=false;if(localStorage.getItem('skeleton-talk')==='1')document.getElementById('side-talk').hidden=false}catch{}
+try{const band=innerWidth>1023?'w':innerWidth>560?'m':'n',[hh,hb,hello]=(localStorage.getItem('skeleton-head')||'').split(':'),[kind,h,b]=(localStorage.getItem('skeleton-setup')||'').split(':'),e=document.getElementById('setup-card');
+ if(hb===band&&+hh>0&&+hh<600){const p=document.getElementById('page-head');p.style.minHeight=+hh+'px';p.classList.toggle('hello',hello==='1')}
+ if(b===band&&+h>0&&+h<1000){e.classList.toggle('quiet',kind==='q');e.classList.add('sk-setup');e.style.height=+h+'px';e.hidden=false}}catch{}</script></section>
 <section id="calendar" hidden><div id="calendar-view" aria-live="polite"></div></section><section id="routines" hidden><div id="routines-view" aria-live="polite"></div></section><section id="events" hidden><div class="search"><select id="account" aria-label="Account"><option value="all">All accounts</option></select><input id="query" type="search" placeholder="Search messages" aria-label="Search messages"><button id="search" class="primary">Search</button></div><div id="ev-answer" class="ev-answer" aria-live="polite" hidden></div><div id="results"></div></section>
 <section id="people" hidden><div class="search people-search"><input id="people-query" type="search" placeholder="Find a person" aria-label="Find a person"><button id="people-find" class="primary">Find</button></div><div id="people-view"></div></section>
 <section id="fleet" hidden><div id="fleet-view"></div></section>
