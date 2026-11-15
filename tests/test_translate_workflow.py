@@ -55,7 +55,7 @@ class TranslateWorkflowTest(unittest.TestCase):
                 script = re.sub(r'\$\{\{[^}]*\}\}', 'x', run_block(step))
                 subprocess.run(['bash', '-n'], input=script, text=True, check=True)
 
-    def rebuild(self, main_change):
+    def rebuild(self, main_change, before=None):
         """The step's rebuild-on-main part, on a scratch clone whose main gets main_change after the run checked out.
         Returns (clone, main's head, the script's output)."""
         pr = run_block(steps()['Open or update the pull request'])
@@ -69,8 +69,12 @@ class TranslateWorkflowTest(unittest.TestCase):
             'i18n/de.json': '{"a": "A"}\n',
             'docs/help/de/start.md': '# Start\n',
             # stand-ins: the translator writes the missing key; the checks pass
+            # and an English help article without its translation gets one
             'scripts/translate.py': "import pathlib\np = pathlib.Path('i18n/de.json')\n"
-                                    "if '\"b\"' not in p.read_text(): p.write_text(p.read_text()[:-2] + ', \"b\": \"B (again)\"}\\n')\n",
+                                    "if '\"b\"' not in p.read_text(): p.write_text(p.read_text()[:-2] + ', \"b\": \"B (again)\"}\\n')\n"
+                                    "en, de = pathlib.Path('docs/help/notes.md'), pathlib.Path('docs/help/de/notes.md')\n"
+                                    "if en.exists() and (not de.exists() or en.read_text() not in de.read_text()):\n"
+                                    "    de.write_text('Notizen: ' + en.read_text())\n",
             'scripts/help_check.py': '',
             'tests/test_i18n.py': 'import unittest\n\n\nclass T(unittest.TestCase):\n    def test_ok(self):\n        pass\n',
         }.items():
@@ -78,6 +82,8 @@ class TranslateWorkflowTest(unittest.TestCase):
             (origin / path).write_text(text)
         for args in (('config', 'user.name', 't'), ('config', 'user.email', 't@example.invalid'), ('add', '-A'), ('commit', '-qm', 'start')):
             git(origin, *args)
+        if before:
+            before(origin)
         subprocess.run(['git', 'clone', '-q', str(origin), str(work)], check=True)
         git(work, 'config', 'user.name', 't')
         git(work, 'config', 'user.email', 't@example.invalid')
@@ -96,6 +102,26 @@ class TranslateWorkflowTest(unittest.TestCase):
             git(origin, 'commit', '-qm', 'other')
         work, main, out = self.rebuild(other)
         self.assertEqual(git(work, 'rev-parse', 'HEAD~1'), main)
+        self.assertIn('"b": "B"', (work / 'i18n/de.json').read_text())
+        self.assertIn('PUSH', out)
+
+    def test_main_changed_english_this_run_translated_translates_it_again(self):
+        # The run translated an article, then a merged pull request changed its English: the rebase goes through (other
+        # files), and without translating again the pull request carried the old English's translation, out of date.
+        def english(origin):
+            (origin / 'docs/help/notes.md').write_text('new\n')
+            git(origin, 'add', '-A')
+            git(origin, 'commit', '-qm', 'the English changed')
+
+        def build(origin):
+            (origin / 'docs/help/notes.md').write_text('old\n')
+            (origin / 'docs/help/de/notes.md').write_text('Notizen: old\n')
+            git(origin, 'add', '-A')
+            git(origin, 'commit', '-qm', 'an article')
+        work, main, out = self.rebuild(english, before=build)
+        self.assertNotIn('translating again', out)  # no conflict: the rebase went through
+        self.assertEqual(git(work, 'rev-parse', 'HEAD~1'), main)
+        self.assertEqual((work / 'docs/help/de/notes.md').read_text(), 'Notizen: new\n')
         self.assertIn('"b": "B"', (work / 'i18n/de.json').read_text())
         self.assertIn('PUSH', out)
 

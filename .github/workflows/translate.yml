@@ -89,7 +89,8 @@ jobs:
           git commit --quiet -m "Languages: the day's translations" -m "Made by .github/workflows/translate.yml (scripts/translate.py)."
           # Main may have moved while this run translated. A commit built on the old main that touches the same files
           # conflicts with it, and GitHub runs no tests at all for a conflicting pull request, so it could never merge:
-          # put the translations on main as it is now, or translate again on it where main changed the same files.
+          # put the translations on main as it is now (translating again where main changed the same files), then
+          # translate what main's own commits put out of date.
           git fetch --quiet --no-tags origin main
           main=$(git rev-parse FETCH_HEAD)
           if [ "$(git rev-parse HEAD~1)" != "$main" ]; then
@@ -98,10 +99,14 @@ jobs:
               git rebase --abort
               echo "main changed the same files: translating again on it."
               git reset --quiet --hard "$main"
-              python3 scripts/translate.py all || python3 scripts/translate.py all || true
-              git add -A i18n docs/help
-              git diff --cached --quiet || git commit --quiet -m "Languages: the day's translations" -m "Made by .github/workflows/translate.yml (scripts/translate.py)."
             fi
+            # Main's new commits can also change English this run already translated (a help article, a key), and a
+            # rebase that goes through keeps the translation of the old English: translate on main as it is now, which
+            # sends only what is missing or out of date there (nothing when main changed no English). One commit.
+            python3 scripts/translate.py all || python3 scripts/translate.py all || true
+            git add -A i18n docs/help
+            git reset --quiet --soft "$main"
+            git diff --cached --quiet || git commit --quiet -m "Languages: the day's translations" -m "Made by .github/workflows/translate.yml (scripts/translate.py)."
             if [ "$(git rev-parse HEAD)" = "$main" ]; then echo "Main has these translations already: nothing to push."; exit 0; fi
             summary=$(git diff --stat "$main" HEAD | tail -1)
             # the language checks again, on what is pushed

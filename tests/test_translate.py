@@ -198,6 +198,22 @@ class Help(unittest.TestCase):
         self.assertEqual(T.run_help(['nl'], folder=self.help, ask=self.answer(broken), history=self.history), 1)
         self.assertFalse((self.help / 'nl' / 'projects.md').exists())
 
+    def test_an_em_dash_is_asked_again_with_where_it_is(self):
+        # A bare "no em dash" was ignored twice in a row (a language whose typography writes one), so the article stayed
+        # out of date run after run: the second ask quotes the spots and says what to write instead.
+        payloads = []
+
+        def ask(lang, instruction, payload, cache_key):
+            payloads.append(payload)
+            src = json.loads(payload[payload.index('\n{'):])
+            body = src['body'].replace('Your Machine names', 'Je Machine — benoemt' if len(payloads) == 1 else 'Je Machine benoemt')
+            return {'title': 'Projecten', 'summary': 'Wat er speelt.', 'body': body}
+        self.assertEqual(T.run_help(['nl'], folder=self.help, ask=ask, history=self.history), 0)
+        self.assertEqual(len(payloads), 2)
+        self.assertIn('"Je Machine — benoemt projects.', payloads[1])
+        self.assertIn('a colon, a comma or two sentences', payloads[1])
+        self.assertNotIn('—', (self.help / 'nl' / 'projects.md').read_text(encoding='utf-8'))
+
     def test_a_translation_from_before_stamps_counts_by_history(self):
         old = ARTICLE.replace('title: Projects', 'title: Projecten')
         (self.help / 'nl' / 'projects.md').write_text(old, encoding='utf-8')
