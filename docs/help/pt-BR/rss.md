@@ -1,26 +1,27 @@
 ---
 title: Feeds RSS
 area: connections
-summary: Posts de um feed RSS ou Atom que você acompanha. Só no seu próprio computador.
+summary: Publicações de um feed RSS ou Atom que você acompanha.
 covers: connector:rss
 code: connectors/rss.py
-translated: 99fdd904c9ff558f
+site: More sources
+translated: efeb27dadc6163e9
 ---
-## O que ele lê
+## O que ela lê
 
-Novos posts de um feed RSS ou Atom por conexão. Adicione de novo para cada feed.
+Novas publicações de um feed RSS ou Atom por conexão. Adicione uma conexão para cada feed.
 
-## O que ele pode fazer
+Ela lê o feed a cada 30 minutos e nunca com intervalos menores que 15 minutos. Só lê endereços públicos https://.
 
-Nada. Ele só busca o feed.
+## O que ela pode fazer
 
-## Conecte
+Nada. Ela só lê o feed.
 
-O RSS é para uma Machine no seu próprio computador. As páginas de configuração hospedada não oferecem essa opção.
+## Conectar
 
-1. No painel, abra **Conexões**, depois **Outras**, e escolha feed RSS. Ou rode `assistant connect rss`.
+1. No painel, abra **Conexões**, depois **Outras** e selecione RSS feed. Em uma Machine hospedada, a página de configuração também tem essa opção, em **Mais fontes**. No seu computador, você também pode executar `assistant connect rss`.
 2. Cole o endereço do feed.
 
-## Remova
+## Remover
 
-No painel: **Conexões**, abra o feed, **Detalhes** e depois **Desconectar**. Não há nada para desinstalar em outro lugar.
+No painel: abra o feed em **Conexões**, selecione **Detalhes** e depois **Desconectar**. Não há nada para desinstalar em outro lugar.
