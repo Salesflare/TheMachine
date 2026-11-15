@@ -4,7 +4,10 @@
 # show English for a day, and scripts/release.py cut refuses a commit with anything left.
 # There is at most one pull request (branch translate/daily). Each run builds it again from main as it is then and
 # replaces the branch (--force-with-lease), so a pull request that fell behind or conflicts with main never lingers;
-# when nothing is left to translate, the run closes it. It runs the language checks itself before pushing. The pull
+# when nothing is left to translate, the run closes it. A run first lets the last run's pull request merge (when it is
+# set to merge itself), and before pushing it puts its commit on main as main is then (translating again where main
+# changed the same files): GitHub runs no tests at all for a pull request that conflicts with main, so it could never
+# merge. It runs the language checks itself before pushing. The pull
 # request's own tests run (ci.yml, the check main's rules require) waits for approval, as for any outside contributor,
 # since this bot counts as one; the run approves it for the commit it pushed, and the pull request merges itself when
 # the checks pass. When a run fails or leaves something in English, the issue "Daily translation failed" says where;
@@ -32,11 +35,6 @@ jobs:
       actions: write  # approving the tests' pull_request run (ci.yml), which waits for approval for this bot
     timeout-minutes: 120
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-        with:
-          persist-credentials: false
-          fetch-depth: 0  # each help article's history: a translation from before stamps is current when its English didn't change after it
-          filter: blob:none
       - name: The model key
         id: key
         env:
@@ -45,6 +43,27 @@ jobs:
           # Not set yet (a fork, or before the owner adds it): skip with a notice, not a red run or a failure issue
           if [ -z "$AZ_TRANSLATE_KEY" ]; then echo "::notice::Skipped: the secret AZ_TRANSLATE_KEY of the environment translate is not set (Settings, Environments)."; exit 0; fi
           echo "ready=1" >> "$GITHUB_OUTPUT"
+      - name: Let the open pull request merge first
+        if: steps.key.outputs.ready
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # A run that starts right after the last one (they queue in one concurrency group) would otherwise build on a
+          # main without that run's pull request, translate the same strings again, and replace the pull request just
+          # as it merges. Wait while it is open and set to merge itself; its tests take a few minutes.
+          for try in $(seq 1 60); do
+            pr=$(gh pr list --repo "$GITHUB_REPOSITORY" --head translate/daily --state open --json number,autoMergeRequest \
+              --jq '.[] | select(.autoMergeRequest != null) | .number')
+            [ -n "$pr" ] || exit 0
+            [ "$try" != 1 ] || echo "Waiting for #$pr to merge before building on main."
+            sleep 20
+          done
+          echo "::notice::#$pr did not merge in 20 minutes: this run replaces it with one built on main as it is now."
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0  # each help article's history: a translation from before stamps is current when its English didn't change after it
+          filter: blob:none
       - name: Translate what is missing
         id: translate
         if: steps.key.outputs.ready
@@ -61,12 +80,34 @@ jobs:
         if: steps.translate.outputs.changed
         env:
           GH_TOKEN: ${{ github.token }}
+          AZ_TRANSLATE_KEY: ${{ secrets.AZ_TRANSLATE_KEY }}  # translating again when main changed the same files meanwhile
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git switch --quiet -C translate/daily
           summary=$(git diff --cached --stat | tail -1)
           git commit --quiet -m "Languages: the day's translations" -m "Made by .github/workflows/translate.yml (scripts/translate.py)."
+          # Main may have moved while this run translated. A commit built on the old main that touches the same files
+          # conflicts with it, and GitHub runs no tests at all for a conflicting pull request, so it could never merge:
+          # put the translations on main as it is now, or translate again on it where main changed the same files.
+          git fetch --quiet --no-tags origin main
+          main=$(git rev-parse FETCH_HEAD)
+          if [ "$(git rev-parse HEAD~1)" != "$main" ]; then
+            echo "main moved to $main while this run translated: building on it."
+            if ! git rebase --quiet "$main"; then
+              git rebase --abort
+              echo "main changed the same files: translating again on it."
+              git reset --quiet --hard "$main"
+              python3 scripts/translate.py all || python3 scripts/translate.py all || true
+              git add -A i18n docs/help
+              git diff --cached --quiet || git commit --quiet -m "Languages: the day's translations" -m "Made by .github/workflows/translate.yml (scripts/translate.py)."
+            fi
+            if [ "$(git rev-parse HEAD)" = "$main" ]; then echo "Main has these translations already: nothing to push."; exit 0; fi
+            summary=$(git diff --stat "$main" HEAD | tail -1)
+            # the language checks again, on what is pushed
+            python3 scripts/help_check.py
+            python3 -m unittest discover -s tests -p 'test_i18n.py'
+          fi
           # built on main as it is now: replace the branch, but only the one seen here (none when it doesn't exist)
           seen=$(git ls-remote "https://github.com/${GITHUB_REPOSITORY}.git" refs/heads/translate/daily | cut -f1)
           git push --quiet --force-with-lease="translate/daily:$seen" "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:refs/heads/translate/daily
@@ -78,6 +119,7 @@ jobs:
             || { echo "::error::The branch translate/daily is pushed, but no pull request: allow GitHub Actions to create pull requests (Settings, Actions, General)."; exit 1; }
           fi
           head=$(git rev-parse HEAD)
+          pr=$(gh pr list --repo "$GITHUB_REPOSITORY" --head translate/daily --state open --json number --jq '.[0].number // empty')
           gh pr merge translate/daily --repo "$GITHUB_REPOSITORY" --auto --squash --match-head-commit "$head"
           # The tests' pull_request run (ci.yml, the check main requires) waits for approval: the repository asks it for
           # every outside contributor, and the bot that pushed counts as one. Approve that run, only for this exact
@@ -94,9 +136,14 @@ jobs:
               done
               exit $?
             fi
+            # No tests run yet: say why when GitHub won't start one (it starts none for a conflicting pull request)
+            read -r state mergeable at <<< "$(gh pr view "$pr" --repo "$GITHUB_REPOSITORY" --json state,mergeable,headRefOid --jq '"\(.state) \(.mergeable) \(.headRefOid)"')"
+            if [ -n "$state" ] && [ "$state" != OPEN ]; then echo "::error::Pull request #$pr is $state before its tests ran: the next run builds a new one."; exit 1; fi
+            if [ -n "$at" ] && [ "$at" != "$head" ]; then echo "::error::Pull request #$pr moved to $at, not this run's $head: something else pushed to translate/daily."; exit 1; fi
+            if [ "$mergeable" = CONFLICTING ]; then echo "::error::Pull request #$pr conflicts with main (main changed the same files after this run built on it), so GitHub starts no tests for it: the next run builds it again on main."; exit 1; fi
             sleep 10
           done
-          echo "::error::No tests run for $head on translate/daily after 3 minutes: the pull request can't merge until one passes."; exit 1
+          echo "::error::No tests run for $head on translate/daily after 3 minutes (pull request #$pr, mergeable: ${mergeable:-unknown}): the pull request can't merge until one passes."; exit 1
       - name: Close a pull request with nothing left to add
         if: steps.translate.outcome == 'success' && !steps.translate.outputs.changed
         env:
