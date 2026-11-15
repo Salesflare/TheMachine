@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {dashboardPage} from './dashboard-page.mjs';
+import {settled} from './page-calls.mjs';
 const {chromium}=await import('./browser.mjs');
 
 // The Promises list on the To-dos page: both directions, due chips, one ⋯ on every one still open with Do it (theirs:
@@ -80,7 +81,7 @@ try{
  calls.length=0;await page.evaluate(()=>$('#toast').classList.remove('show'));
  await menu(3);
  await list.locator('[data-promise-todo="3"]').evaluate(b=>{b.click();b.click()});
- for(let i=0;i<100&&!calls.length;i++)await page.waitForTimeout(20);
+ await settled(()=>calls.length>0,true,'the click posts');
  assert.deepEqual(calls[0],{action:'promise_todo',args:{id:3}});
  promises=promises.map(p=>p.id===3?{...p,state:'card',suggestion_id:'c3'}:p);
  const toastEl=page.locator('#toast.show');
@@ -107,7 +108,7 @@ try{
  if(!await page.locator('#promises-list').evaluate(d=>d.open))await page.locator('#promises-head').click();
  const n=calls.length;
  await menu(1);await list.locator('[data-promise="1"][data-close="kept"]').click();
- for(let i=0;i<100&&calls.length<=n;i++)await page.waitForTimeout(20);
+ await settled(()=>calls.length>n,true,'the click posts');
  assert.deepEqual(calls[n],{action:'promise_close',args:{id:1,status:'kept'}});
  promises=promises.map(p=>p.id===1?{...p,state:'kept'}:p);await page.evaluate(()=>refresh());
  assert.equal(await page.locator('#promises-list summary .count').textContent(),'2');

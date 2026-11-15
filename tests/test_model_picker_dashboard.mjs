@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {readFile,mkdir} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {dashboardPage} from './dashboard-page.mjs';
+import {quiet,trackRequests} from './page-calls.mjs';
 const {chromium}=await import('./browser.mjs');
 
 // The model and thinking pickers (chat_model.py) under a to-do chat's message box, in Help and in Settings, Model: each
@@ -41,8 +42,8 @@ try{
   const context=await browser.newContext({viewport:{width:w,height:h},isMobile:phone,hasTouch:phone,deviceScaleFactor:phone?2:1,colorScheme:scheme,locale:'en-US',timezoneId:'Europe/Brussels'});
   await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
   await context.addInitScript(s=>{try{localStorage.setItem('theme',s)}catch{}},scheme);
-  const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
-  await page.goto(base+'#chat='+id);await page.locator('#chat-model [data-cm-pick="think"]').waitFor();await page.waitForTimeout(400);
+  const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));const requests=trackRequests(page);
+  await page.goto(base+'#chat='+id);await page.locator('#chat-model [data-cm-pick="think"]').waitFor();await quiet(page,requests);
   const tag=`${w}-${scheme}`;
   // No native pickers and no separator dot
   assert.equal(await page.locator('#chat-model select').count(),0,'no native select under the box');
@@ -114,8 +115,8 @@ try{
   const context=await browser.newContext({viewport:{width:w,height:h},isMobile:phone,hasTouch:phone,deviceScaleFactor:phone?2:1,colorScheme:scheme,locale:'en-US',timezoneId:'Europe/Brussels'});
   await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
   await context.addInitScript(s=>{try{localStorage.setItem('theme',s)}catch{}},scheme);
-  const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
-  await page.goto(base+'#chat='+id);await page.locator('#chat-model [data-cm-pick="model"]').waitFor();await page.waitForTimeout(300);
+  const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));const requests=trackRequests(page);
+  await page.goto(base+'#chat='+id);await page.locator('#chat-model [data-cm-pick="model"]').waitFor();await quiet(page,requests);
   const tag=`${w}x${h}-${scheme}`;
   const sections=()=>page.evaluate(()=>[...document.querySelectorAll('#cm-menu .cm-section')].map(s=>{const g=s.querySelector('.cm-group'),gr=g.getBoundingClientRect(),
    first=s.querySelector('[role=menuitemradio] span').getBoundingClientRect(),cs=getComputedStyle(s);
@@ -130,7 +131,7 @@ try{
   let m=await menu(page);assert.ok(m.top>=8&&m.bottom<=h-8&&m.left>=8&&m.right<=w-8,`the chat menu fits the screen: ${JSON.stringify(m)}`);
   if(SHOTS)await page.screenshot({path:`${SHOTS}/groups-chat-${tag}.png`});
   await page.keyboard.press('Escape');
-  await page.evaluate(()=>helpOpen('ask'));const hm=page.locator('#help-model [data-cm-pick="model"]');await hm.waitFor();await page.waitForTimeout(300);
+  await page.evaluate(()=>helpOpen('ask'));const hm=page.locator('#help-model [data-cm-pick="model"]');await hm.waitFor();await quiet(page,requests);
   await hm.click();await check('help');m=await menu(page);
   const title=await page.evaluate(()=>document.querySelector('#help-title').parentElement.getBoundingClientRect().bottom),tb=await hm.boundingBox();
   assert.ok(m.top>=title&&m.top>=8&&m.bottom<=h-8,`the Help menu stays on the screen and off Help's title: ${JSON.stringify({m,title})}`);

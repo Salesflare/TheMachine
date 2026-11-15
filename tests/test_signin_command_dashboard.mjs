@@ -3,6 +3,7 @@ import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {navClick} from './nav-click.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
+import {settled} from './page-calls.mjs';
 const {chromium}=await import('./browser.mjs');
 
 // Connections: an expired Google sign-in names the problem with a Reconnect button that runs the sign-in from here,
@@ -68,10 +69,11 @@ try{
  await page.locator('#connectors select[data-scope="work-gmail"]').selectOption('personal:me');
  await page.locator('#toast',{hasText:'Saved.'}).waitFor();
  assert.deepEqual(actions.find(a=>a[0]==='connect_scope')[1],{account:'work-gmail',boundary:'personal:me'});
- await page.waitForTimeout(800);
+ // the list is drawn anew half a second after a save, its select usable again
+ await page.locator('#connectors select[data-scope="work-gmail"]:not([disabled])').waitFor();
  page.once('dialog',d=>{assert.equal(d.message(),'Company name');d.accept('Other Co')});
  await page.locator('#connectors select[data-scope="work-gmail"]').selectOption('');
- for(let i=0;i<50&&actions.filter(a=>a[0]==='connect_scope').length<2;i++)await page.waitForTimeout(100);
+ await settled(()=>actions.filter(a=>a[0]==='connect_scope').length,2,'the second scope is saved');
  assert.deepEqual(actions.filter(a=>a[0]==='connect_scope')[1][1],{account:'work-gmail',boundary:'work:Other Co'});
  const connection=connectors[0],failure=connection.sync_activity[0];
  Object.assign(connection,{error:null,retry_at:null,failures:0,last_success:new Date().toISOString(),last_sync_signals:1,total:247});

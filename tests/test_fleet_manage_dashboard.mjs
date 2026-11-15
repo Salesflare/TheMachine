@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
 import {navClick} from './nav-click.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
+import {quiet,settled} from './page-calls.mjs';
 const {chromium}=await import('./browser.mjs');
 
 // Fleet › Manage (dashboard/fleet-manage.js). Self-hosted (no manage_url): read only, the people and their roles and a
@@ -21,7 +22,7 @@ const manage={mail:true,fleets:[{id:FL,name:'Acme',kind:'work',role:'owner',free
  joins:[{id:'jr_1',name:'Lou Park',email:'lou@acme.example',via:'domain'}]}]};
 let hosted=false;const posts=[];
 // the post a click sends, once it reaches the stand-in control plane (no fixed wait: a busy runner takes longer)
-const posted=async(page,what)=>{for(let i=0;i<200&&posts.at(-1)?.do!==what;i++)await page.waitForTimeout(25);return posts.at(-1)};
+const posted=async(page,what)=>{await settled(()=>posts.at(-1)?.do,what,'the page posts '+what);return posts.at(-1)};
 const server=createServer(async(req,res)=>{res.setHeader('Content-Type','application/json');
  if(req.url==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
  if(req.url==='/api/status'){res.end(JSON.stringify({suggestions:[],connectors:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],fleet:{on:true,waiting:0},account_url:ACCOUNT,...(hosted?{manage_url:'http://127.0.0.1/account'}:{})}));return}
@@ -63,7 +64,7 @@ try{
  // Invite stays put when the emails box loses focus (the press on Invite blurs it): it moved up and the click missed
  // (measured from the form's top: the box scrolls into view smoothly meanwhile)
  const inviteAt=()=>page.locator('.manage-invite-form button.primary').evaluate(b=>b.getBoundingClientRect().top-b.form.getBoundingClientRect().top),typed=await inviteAt();
- await page.locator('.manage-invite-form textarea').blur();await page.waitForTimeout(250);assert.equal(await inviteAt(),typed,'Invite stays where it was');
+ await page.locator('.manage-invite-form textarea').blur();await quiet(page);assert.equal(await inviteAt(),typed,'Invite stays where it was');
  await page.locator('.manage-invite-form button.primary').click();
  assert.deepEqual(await posted(page,'invite'),{do:'invite',fleet:FL,emails:'a@acme.example\nb@acme.example',plan:'own',mail:true,origin:url});
  await page.locator('[data-manage-do="remove"][data-member="fm_2"]').click();
