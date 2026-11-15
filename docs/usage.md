@@ -279,6 +279,7 @@ A draft with no send path is the raised result itself, named for what it is ("In
 - A small muted icon marks where a message came from (email, chat, calendar, note), on the to-do's source line too.
 - That source line names the person ("Slack DM with Sam Lee"), never a channel handle or ID. When no name is known yet, it names only the app ("Slack").
 - The person chip on a to-do uses their name as they write it elsewhere, not a lower-case chat handle.
+- That chip is whoever sent the message the to-do is about, also when someone closer to you is on copy or in a meeting on it.
 
 ### Writing in the chat
 

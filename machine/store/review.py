@@ -311,6 +311,16 @@ OWNER_AREA_RULE = ('They gave it no area. Place it by what it is about and who i
                    'The message it follows up on places it too. Leave both out only when it is truly unclear.')
 
 
+def local_when(value):
+    """A signal's moment in the owner's time zone with its weekday ("Tue 2026-11-10 21:54"): for a message, when it
+    was sent. occurred_at is UTC, a day apart from theirs near midnight; a relative day in a message ("tonight",
+    "tomorrow's committee") counts from this day, never from today or another message's (AGENTS.md, Dates)."""
+    try:
+        return dt.datetime.fromisoformat(str(value).replace('Z', '+00:00')).astimezone(local_tz()).strftime('%a %Y-%m-%d %H:%M')
+    except (TypeError, ValueError):
+        return None
+
+
 def review_view(row, preview=REVIEW_PREVIEW_CHARS, offset=0, earlier=None, brief=False, owner_in_thread=False, team_inbox=None, assigned=None,
                 passage=None):
     """What a reviewer needs from a signal, without sync bookkeeping. brief: bulk mail as a title line (bulk_kind).
@@ -339,6 +349,8 @@ def review_view(row, preview=REVIEW_PREVIEW_CHARS, offset=0, earlier=None, brief
         view['metadata'] = compact
     if row['kind'] == 'calendar.event' and all_day_span(metadata):  # its date as the owner's calendar has it, not occurred_at's UTC day
         view['all_day_on'] = all_day_span(metadata)[0]
+    elif local := local_when(row['occurred_at']):
+        view['local_time'] = local
     if metadata_clipped:
         view['metadata_clipped'] = True
     for flag in ('deleted', 'history'):  # history: older than the signals, to search and read, never to act on
