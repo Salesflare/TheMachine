@@ -13,6 +13,9 @@ addEventListener('online',refreshWhenReady);
 // the Fleet tab load their own data. Then the cards this device kept last time (if any) while the live ones load.
 if(openPushLink()){openTabLink();openFleetLink()}openDigestLink();  // a digest's own link too: it reads the digest, not the status  // only a notification's own view: other links wait for the status as before
 sessionCheck();
+// The parts for what can stand over the to-dos (the mail check's line, a milestone: dashboard_parts.LAZY_EARLY, fetched with
+// the page) run now, not once the status asks for them: drawn late, they pushed the to-dos already on screen down
+for(const l of document.querySelectorAll('link[data-lazy]'))lazyPart(l.dataset.lazy).catch(()=>{});
 if(localCache.on)localCache.read('status').then(hit=>{if(!hit||state.suggestions)return;state=wakeSnoozed(hit.value);shownCached=true;shownAt=hit.at;
  try{cardsMerge();render();openChatLink();openTabLink()}catch(e){errCaught(e);console.error(e)}});
 refresh().then(()=>{newTagline();updateViewBack();if(localCache.on&&'serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').then(()=>navigator.serviceWorker.ready).then(r=>r.active?.postMessage({cache:'warm'})).catch(e=>{if(navigator.onLine!==false&&e?.name!=='SecurityError'&&e?.name!=='AbortError')errSw({kind:e?.name,message:e?.message,function:'register'})})});setInterval(refreshWhenReady,30000);

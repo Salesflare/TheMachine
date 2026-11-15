@@ -75,6 +75,8 @@ body main{padding-top:0}
 .app-side .head-side>.live,[data-theme="light"] .app-side .head-side>.live{display:flex;justify-content:flex-start;gap:10px;min-height:30px;margin:0;padding:0 10px 0 16px;border:0;background:none;color:var(--side-quiet);font:400 var(--fs-xs)/1 var(--sans);cursor:pointer}
 .app-side .head-side>.live::before{flex:none}
 .page-head{display:flex;align-items:center;gap:14px;margin:0 0 32px}.page-head[hidden]{display:none}
+/* Until the first drawing (pageHead) the head's place is kept by its outline in the page, a line and the count's line, unseen: the to-dos coming in don't push the page down */
+.page-head:has(>.ph-wait){visibility:hidden}
 .page-title{margin:0;font:var(--fw-display) 30px/1.2 var(--serif);letter-spacing:-.015em;color:var(--text);text-wrap:balance}
 /* The tagline is a quiet line, not a headline: about body size, muted, one line where it fits; the count stays readable under it. */
 .page-head.greet{align-items:center;gap:12px;margin-bottom:24px}

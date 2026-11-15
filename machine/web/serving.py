@@ -131,9 +131,12 @@ def _dashboard_files(token, owner, base):
     if not name:
         return page, files
     files[name] = script
-    named = json.dumps({name.rsplit('-', 1)[0][len('lazy-'):]: name for name in files if name.startswith('lazy-')})
+    lazy_names = {name.rsplit('-', 1)[0][len('lazy-'):]: name for name in files if name.startswith('lazy-')}
+    named = json.dumps(lazy_names)
+    early = ''.join(f'<link rel="preload" as="script" href="{lazy_names[group]}" data-lazy="{group}">'
+                    for group in dashboard_parts.LAZY_EARLY if group in lazy_names)
     tag = f'<script src="{name}"></script></html>'
-    return page.replace(tag, f'<script>self.LAZY_FILES={named}</script>' + tag), files
+    return page.replace(tag, early + f'<script>self.LAZY_FILES={named}</script>' + tag), files
 
 
 def served_file(files, name):
