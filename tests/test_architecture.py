@@ -263,6 +263,13 @@ def js_todo_status_lists(source):
 HAND_BUILT_LINK = re.compile(r'https://.*dashboard_(host|path)|dashboard_(host|path).*https://')
 LINK_BUILDERS = {'machine/dashboard_link.py', 'machine/browser.py'}
 
+# --- languages -------------------------------------------------------------------------------------------------------
+
+# locale_prefs.LANGUAGE_TABLE names every language the app speaks; a table of language names elsewhere is a second one.
+LANGUAGE_FILE = 'locale_prefs.py'
+SPELLED_LANGUAGE = re.compile(r"""['"](?:nl|de|fr|es|it|ja|ko|ru)['"]\s*:\s*['"](?:Dutch|German|French|Spanish|Italian"""
+                              r"""|Japanese|Korean|Russian|Nederlands|Deutsch|Français|Español|Italiano)['"]""")
+
 
 # --- the clock -------------------------------------------------------------------------------------------------------
 
@@ -764,6 +771,11 @@ class Architecture(unittest.TestCase):
                  for number, line in enumerate((ROOT / name).read_text(encoding='utf-8').splitlines(), 1)
                  if HAND_BUILT_LINK.search(line)]
         self.assertEqual(found, [], 'build the link with machine.dashboard_link (dashboard_link or dashboard_address)')
+
+    def test_one_table_names_the_languages(self):
+        found = [name for name in python_files(tests=False) if name != LANGUAGE_FILE and not name.startswith(('scripts/', 'sandbox/'))
+                 and SPELLED_LANGUAGE.search((ROOT / name).read_text(encoding='utf-8'))]
+        self.assertEqual(found, [], 'name a language from locale_prefs.LANGUAGE_TABLE')
 
     def test_only_timeutil_reads_the_clock(self):
         for name in python_files(tests=False):

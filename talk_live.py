@@ -41,6 +41,7 @@ import unicodedata
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
+import locale_prefs
 import timeutil
 from machine.owner_error import OwnerError
 from machine.kinds import SEND
@@ -448,9 +449,12 @@ TRANSCRIBE_MODEL = 'gpt-4o-transcribe'
 # changes nothing else, and TRANSCRIBE_MODEL stays.
 NEXT_TRANSCRIBE_MODEL = 'gpt-transcribe'
 # The languages the app speaks, as ISO 639-1 codes (what transcription takes)
-SPOKEN = ('de', 'en', 'es', 'fr', 'it', 'ja', 'ko', 'nl', 'pt', 'ru', 'zh')
-LANGUAGE_NAMES = {'de': 'German', 'en': 'English', 'es': 'Spanish', 'fr': 'French', 'it': 'Italian', 'nl': 'Dutch', 'pt-BR': 'Brazilian Portuguese',
-                  'ja': 'Japanese', 'ko': 'Korean', 'ru': 'Russian', 'zh': 'Chinese'}
+SPOKEN = tuple(sorted(locale_prefs.SPOKEN_NAMES))
+# A spoken language's name, by its ISO code and by every UI language (instructions() looks up the UI language):
+# 'Chinese' for zh-CN, and Brazilian Portuguese for pt-BR
+LANGUAGE_NAMES = {**locale_prefs.SPOKEN_NAMES,
+                  **{code: row[3] for code, row in locale_prefs.LANGUAGE_TABLE.items()},
+                  'pt-BR': locale_prefs.ENGLISH_NAMES['pt-BR']}
 
 
 def spoken(*wanted):
@@ -469,7 +473,7 @@ def transcription(languages):
     """audio.input.transcription for the owner's languages. One language is pinned (`language`, which OpenAI says
     improves accuracy and latency); with several, pinning one would turn a sentence in another into a wrong
     transcript, so the prompt names them instead. Either way the model no longer picks among every language."""
-    names = [LANGUAGE_NAMES.get(code) or {'pt': 'Portuguese'}.get(code, code) for code in languages]
+    names = [LANGUAGE_NAMES.get(code, code) for code in languages]
     said = names[0] if len(names) == 1 else ', '.join(names[:-1]) + ' or ' + names[-1]
     found = {'model': TRANSCRIBE_MODEL, 'prompt': 'One person talking with their assistant in %s.' % said}
     if len(languages) == 1:
@@ -505,7 +509,7 @@ def lines(db, suggestion_id):
 def hearing(languages):
     """What the voice does with what it can't take as the owner talking: in the owner's languages, a noise or another
     language gets no answer (the dashboard also cancels a reply to a line it drops)."""
-    names = [LANGUAGE_NAMES.get(code) or {'pt': 'Portuguese'}.get(code, code) for code in spoken(languages)]
+    names = [LANGUAGE_NAMES.get(code, code) for code in spoken(languages)]
     said = names[0] if len(names) == 1 else ', '.join(names[:-1]) + ' or ' + names[-1]
     return ['- The owner speaks %s. A noise, a breath, a cough, a cut-off word or a few words in another language aren’t '
             'meant for you: don’t answer them, say nothing and wait.' % said]

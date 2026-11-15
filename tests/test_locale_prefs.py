@@ -188,6 +188,12 @@ class DashboardTest(unittest.TestCase):
         legacy = self.run_js(None, "[fmtHM(d),fmtDHM(d,{weekday:'short',day:'numeric',month:'short'})]")
         self.assertEqual(legacy, ['14:05', 'Sat, Oct 24, 14:05'])
 
+    def test_one_table_names_the_languages(self):
+        """locale_prefs.LANGUAGE_TABLE (tests/test_architecture.py checks no other module keeps a table of names)."""
+        self.assertTrue(all((ROOT / 'i18n' / f'{code}.json').exists() for code in locale_prefs.LANGUAGES))
+        self.assertEqual(locale_prefs.ENGLISH_NAMES['nl'], 'Dutch')
+        self.assertEqual(locale_prefs.SPOKEN_NAMES['zh'], 'Chinese')
+
     def tearDown(self):
         locale_prefs.configure({})
 
