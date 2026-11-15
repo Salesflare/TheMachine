@@ -60,6 +60,8 @@ Only Personal bills, subscriptions and email are used, and Home notes are always
 
 For **Home**, **Health** and **Kids** together, your Machine also asks its AI once about each sender of your Personal email. It sends the sender's name, how many emails they sent and their newest subjects with the numbers hidden, never the email itself.
 
+The first time, it goes through your past year of email in a few hours, outside the night and only while your AI plan has room. After that it looks at new senders every six hours.
+
 ## Health
 
 Under **Health**, your Machine keeps what it knows about your own health: **Appointments**, **Test results**, **Doctors and care**, **Medicines**, **Allergies and conditions** and **Bills and insurance**. A part shows up once it has at least two lines.
