@@ -544,6 +544,21 @@ def slack_prompt(config):
             "in the browser for it.")
 
 
+def calendars_prompt(config):
+    """The run's line naming the owner's connected calendars and how to read when they are free, so a to-do that came
+    from an email still knows a calendar is connected. Without it a run saw only the to-do's own accounts (Its accounts,
+    evidence_line) and told the owner to connect the calendar they had connected (2026-11-15 agent users)."""
+    found = [a for a in (config or {}).get('accounts') or () if a.get('service') in CALENDAR_SERVICES and not a.get('shared')]
+    if not found:
+        return ''
+    named = ', '.join(dict.fromkeys(names.SERVICES.get(a.get('service'), 'Calendar') + ' (' + (a.get('display_name') or a.get('email') or '') + ')'
+                                    if a.get('display_name') or a.get('email') else names.SERVICES.get(a.get('service'), 'Calendar') for a in found))
+    return (f"\n- Connected calendars: {named}, synced every few minutes. For the owner's free times, assistant_signals meeting_notes "
+            "args day=<YYYY-MM-DD> lists that day's meetings with start and end; read the days before offering times. Never ask to "
+            "connect a calendar listed here, also when a direct read fails. A calendar invitation as a final step: its preview lists "
+            "the title, day, start and end with time zone, each guest, and whether a Meet link is added.")
+
+
 def meeting_notes_prompt(config):
     """The preparation's line about notes on a meeting, when the owner has a calendar connected."""
     if not any(a.get('service') in CALENDAR_SERVICES for a in (config or {}).get('accounts') or ()):

@@ -9,7 +9,7 @@ import unittest
 from unittest.mock import patch
 from seams import patch_everywhere  # noqa: E402
 
-from machine.chat import CHAT_STEP_GROUPS, chat_unglued  # noqa: E402
+from machine.chat import CHAT_STEP_GROUPS, chat_final_step, chat_unglued  # noqa: E402
 
 spec = importlib.util.spec_from_file_location('card_chat_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec)
@@ -177,6 +177,25 @@ class CardChat(unittest.TestCase):
         [result] = results[job['job_id']]
         self.assertEqual(result['text'], 'Drafted it. See notes.')
         self.assertEqual([(d['to'], d['body'], d['reply']) for d in result['drafts']], [(['Alex'], 'Hi Alex, done.', True)])
+
+    def test_a_final_step_shows_what_goes_out_before_the_tap(self):
+        """A run that left a final step (Book …) for a calendar invitation: the chat's result carries its preview, the
+        title, time, guests and Meet link the owner checks, never only the button (2026-11-15 agent users)."""
+        preview = 'Intro call\nTue 17 Nov, 10:00-10:30 (Europe/Brussels)\nGuests: Robin Lee <robin@example.com>\nA Google Meet link is added.'
+        step = {'kind': 'finish', 'label': 'Book intro call', 'instructions': 'Create the event and invite Robin.', 'preview': preview,
+                'url': 'https://calendar.example.invalid/'}
+        with self.store.connect() as db:
+            db.execute("INSERT INTO preparation_runs(job_id,suggestion_id,session_job_id,status,started_at) VALUES('job1',?,'job1','ok',?)", (self.sid, a.now()))
+            db.execute('INSERT INTO preparation_calls(job_id,call_id,tool,params,started_at) VALUES(?,?,?,?,?)', ('job1', 'c1', 'assistant_signals', json.dumps(
+                {'action': 'prepare', 'args': {'suggestion_id': self.sid, 'body': 'The invitation is ready.', 'next_actions': [step]}}), a.now()))
+            _, results = self.app.card_chat_service(db, self.sid)
+        [draft] = results['job1'][0]['drafts']
+        self.assertEqual((draft['kind'], draft['label'], draft['body'], draft['to']), ('finish', 'Book intro call', preview, []))
+        # a step that posts a message shows that message, to whom it goes
+        posted = chat_final_step({**step, 'message': 'Hi Robin,\n\nSee you Tuesday.', 'to_name': 'Robin Lee'})
+        self.assertEqual((posted['body'], posted['to']), ('Hi Robin,\n\nSee you Tuesday.', ['Robin Lee']))
+        self.assertIsNone(chat_final_step({**step, 'preview': ' '}))
+        self.assertIsNone(chat_final_step({'kind': 'merge', 'label': 'Merge fix'}))
 
     def test_a_step_without_a_draft_says_how_it_went(self):
         with self.store.connect() as db:
