@@ -36,6 +36,8 @@ class StatusKept(unittest.TestCase):
             self.builds.append(done)
             return built(done)
         self.app.status_built = counted
+        # the minute is part of what keeps it (status_mark): it stands still, or a test that crosses one builds it again
+        minute = patch('machine.app.status.now', return_value=NOW.isoformat()); minute.start(); self.addCleanup(minute.stop)
         self.status(); self.status(); self.builds.clear()  # a new database's first build makes its tables: one more build
         self.addCleanup(lambda: (self.app.__dict__.get('_status_kept') or {}).get('watch') and self.app._status_kept['watch'].close())
 
