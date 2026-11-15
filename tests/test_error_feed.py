@@ -156,7 +156,15 @@ class Scrub(Base):
     def test_every_connector_is_a_service_the_feed_keeps(self):
         root = Path(ef.__file__).resolve().parent / 'connectors'
         for stem in (p.stem for p in root.glob('*.py') if not p.stem.startswith('_')):
-            self.assertTrue(ef.safe_word(stem), f'{stem}: add it to error_feed.SERVICES')
+            self.assertTrue(ef.safe_word(stem), f'{stem}: add it to error_words.SERVICES')
+
+    def test_the_word_lists_import_only_re(self):
+        """The control plane runs a byte-for-byte copy of error_words.py, without the rest of the app."""
+        import ast
+        tree = ast.parse((Path(ef.__file__).resolve().parent / 'error_words.py').read_text(encoding='utf-8'))
+        imported = {alias.name for node in ast.walk(tree) if isinstance(node, (ast.Import, ast.ImportFrom))
+                    for alias in node.names} | {node.module for node in ast.walk(tree) if isinstance(node, ast.ImportFrom)}
+        self.assertEqual(imported, {'re'})
 
     def test_the_shape_check_refuses_anything_else(self):
         for bad in ('Sam’s card', 'naïve', 'a' * 200, 'x\ny', "it's"):

@@ -1,4 +1,4 @@
-"""The cloud's error intake keeps its own copy of error_feed.py's word lists, types, services and patterns, and refuses
+"""The cloud's error intake runs a copy of error_words.py's word lists, types, services and patterns, and refuses
 reports with anything outside them. A change here that the cloud doesn't take too gets error reports quietly refused,
 so this pins a checksum of exactly what the cloud compares."""
 import hashlib
@@ -19,8 +19,8 @@ def checksum(feed):
 
 class CloudCopy(unittest.TestCase):
     def test_the_word_lists_the_cloud_copies_are_unchanged(self):
-        self.assertEqual(checksum(ef), CHECKSUM, 'error_feed word lists changed: update cloud/errors.py in the cloud repo '
-                         'too, then update this checksum')
+        self.assertEqual(checksum(ef), CHECKSUM, 'error_words.py changed: copy it to cloud/error_words.py in the cloud '
+                         'repo too, then update this checksum')
 
 
 if __name__ == '__main__':

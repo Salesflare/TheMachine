@@ -308,8 +308,8 @@ Broker-token rotations replace only the exact login that made the request, never
   These changes add no permissions or approval tiers. Error messages use a finite technical vocabulary (the words
   Python, browsers, SQLite and HTTP write errors in, the services a source names, and codes made only of those, like
   `salesflare_invalid_json`), with unfamiliar words removed. An HTTP status goes as words (`salesflare: HTTP
-  unauthorized`, `HTTP rate limited`), since the control plane takes no 3-digit numbers. The control plane's
-  `cloud/errors.py` keeps the same `safe_word`, `SAFE_WORDS`, `SERVICES` and `SAFE_TYPES`, or it blanks those messages.
+  unauthorized`, `HTTP rate limited`), since the control plane takes no 3-digit numbers. They live in
+  `error_words.py`, and the control plane keeps the same lists, or it blanks those messages.
 
 Rollback uses a reviewed source revert, preserving SQLite and receipts. Old notification/catch-up code does not
 provide these guarantees; reverting it must not discard pending entries or replay uncertain sends.
