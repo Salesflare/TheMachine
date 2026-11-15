@@ -10,7 +10,7 @@ Candidates, in plain code: what was learned about one of the owner's children (p
 owner says so, section_notes.children) or about no one, calendar events only the owner is on (a parents' evening, a
 school play: section_notes.own_events), bills from any payee and subscriptions the owner didn't cancel. Kids is always
 Personal, whatever the account it came in on: a school's mail to a work address is still about the owner's own child.
-A note the owner keeps for one child in a part (Jules under School) gets what is about that child. The notes are
+A note the owner keeps for one child in a part (Isla under School) gets what is about that child. The notes are
 never shared."""
 import section_notes
 

@@ -14,6 +14,8 @@ const facts=[
  {id:3,kind:'fact',fact_kind:'preference',text:'Prefers calls after 10am.',created_at:t(21),merged:0},
  {id:2,kind:'fact',fact_kind:'commitment',valid_until:`${year}-12-31`,text:'Sends the board update every first Monday.',created_at:t(20),merged:0},
  {id:1,kind:'fact',fact_kind:'fact',text:'Quotes go out in EUR, excluding VAT.',created_at:t(19),merged:0},
+ {id:5,kind:'fact',fact_kind:'fact',text:'The team lunch is at noon on Fridays.',quote:'team lunch is at noon on fridays',created_at:t(18),merged:0},
+ {id:6,kind:'fact',fact_kind:'fact',text:'Prefers short agendas.',quote:'keep the agendas short please',created_at:t(18),merged:0},
  {id:8,kind:'draft',text:'Put the order number in the subject.',created_at:t(18),merged:0}];
 let ended=[{id:9,fact_kind:'event',valid_until:`${year}-10-20`,text:'Is off on a team trip this week.',removed_at:t(21)}];
 const posts=[];
@@ -45,6 +47,8 @@ try{
   assert.equal(await meta('board update').textContent(),'Commitment · Until Dec 31');
   assert.equal(await meta('Quotes go out').count(),0);  // a plain fact without an end shows nothing extra
   assert.equal(await meta('order number').count(),0);
+  assert.equal(await meta('team lunch').textContent(),'From what you said');  // the owner's words the fact already says: not quoted again
+  assert.equal(await meta('short agendas').textContent(),'From “keep the agendas short please”');
   assert.equal(await learned.locator('[data-group="ended"] .learn-head h3').textContent(),'Ended 1');
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'no horizontal scroll at '+width);
   if(shots){await page.evaluate(()=>document.fonts.ready);await learned.scrollIntoViewIfNeeded();await page.screenshot({path:`${shots}/facts-${width}x${height}.png`,fullPage:true})}

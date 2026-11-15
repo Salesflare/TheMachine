@@ -407,7 +407,7 @@ def load_graph_notes(db, base):
     note_pages.create(db, 'Physio', 'personal', when, ['personal', work], parent=visits, lines=['Knee exercises twice a day'])
     kids = note_pages.create(db, 'Kids', 'personal', when, ['personal', work])['id']
     school = note_pages.create(db, 'School', 'personal', when, ['personal', work], parent=kids)['id']
-    note_pages.create(db, 'Jules', 'personal', when, ['personal', work], parent=school, lines=['Pick-up at 15:30 on Fridays'])
+    note_pages.create(db, 'Isla', 'personal', when, ['personal', work], parent=school, lines=['Pick-up at 15:30 on Fridays'])
     office = note_pages.create(db, 'Office move', work, when, ['personal', work])['id']
     links = [{'id': i, 'name': n} for i, n in ((node('person', 'Mila Underhay'), 'Mila Underhay'),
                                                 (node('project', 'Northwind rollout'), 'Northwind rollout')) if i]
@@ -470,20 +470,20 @@ def load_graph_notes(db, base):
 
 def load_section_notes(store, base):
     """Home, Health and Kids (section_notes.py): a few things the owner said in their chat about the house, their health
-    and their daughter Jules, kept the way the chat keeps them (Store.remember_fact), and those and load_graph_notes'
+    and their daughter Isla, kept the way the chat keeps them (Store.remember_fact), and those and load_graph_notes'
     bills and calendar events placed as the Machine's model call would place them, filled in beside the owner's own
-    notes (Home's Appliances and Dishwasher, Health's Appointments and Physio, Kids' School and Jules)."""
+    notes (Home's Appliances and Dishwasher, Health's Appointments and Physio, Kids' School and Isla)."""
     import graph
     import health_notes
     import home_notes
     import kids_notes
     import note_pages
     import section_notes
-    with store.connect() as db:  # Jules, added by hand as Personal (as on a person's page), and what she is to the owner (To you)
+    with store.connect() as db:  # Isla, added by hand as Personal (as on a person's page), and what she is to the owner (To you)
         import crm_import
         import graph_show
         at, personal = stamp(3 * 24 * 60, base), {'side': 'personal'}
-        done = graph.create_record(db, 'person', {'name': 'Jules Morgan', 'email': 'jules.morgan@example.net'}, at)  # an address: the same node id each load
+        done = graph.create_record(db, 'person', {'name': 'Isla Morgan', 'email': 'isla.morgan@example.net'}, at)  # an address: the same node id each load
         if done.get('created'):
             crm_import.details_made(db, [done['node_id']], personal, at)
             graph_show.show_new_people(db, [done], personal)
@@ -495,7 +495,7 @@ def load_section_notes(store, base):
             'Allergic to penicillin', 'Blood type is A positive', 'Takes vitamin D in winter', 'The autumn term ends on 18 December')
     for n, text in enumerate(said):
         store.remember_fact(text, f'webchat-said:sandbox-home-{n}', said=True, quote=text, said_text=text)
-    for n, text in enumerate(('Jules is in class 4B, her teacher is Ms Okafor', 'Jules has hockey practice on Wednesdays until 5') if row else ()):
+    for n, text in enumerate(('Isla is in class 4B, her teacher is Ms Okafor', 'Isla has hockey practice on Wednesdays until 5') if row else ()):
         store.remember_fact(text, f'webchat-said:sandbox-kids-{n}', said=True, quote=text, said_text=text, about=[row[0]])
     accounts = [{'id': 'home-gmail', 'service': 'gmail', 'boundary': 'personal'},
                 {'id': 'home-calendar', 'service': 'calendar', 'email': 'alex.morgan@mail.example', 'boundary': 'personal'}]
@@ -505,7 +505,7 @@ def load_section_notes(store, base):
               health_notes.KIND: {'Dentist': 'Appointments', 'GP visit': 'Appointments', 'Physio': ('Appointments', 'Physio'),
                                   'Smileline': 'Bills and insurance', 'Northcare': 'Bills and insurance', 'penicillin': 'Allergies and conditions',
                                   'Blood type': 'Allergies and conditions', 'vitamin D': 'Medicines'},
-              kids_notes.KIND: {'Oakfield': 'Bills and fees', 'Riverside Hockey': 'Bills and fees', 'class 4B': ('School', 'Jules'),
+              kids_notes.KIND: {'Oakfield': 'Bills and fees', 'Riverside Hockey': 'Bills and fees', 'class 4B': ('School', 'Isla'),
                                 'Parents evening': 'School', 'autumn term': 'School', 'hockey': 'Activities', 'Hockey': 'Activities'}}  # the owner's own sub-notes
     with store.connect() as db:
         db.execute('BEGIN IMMEDIATE')

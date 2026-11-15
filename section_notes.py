@@ -409,7 +409,7 @@ def line(db, c):
     if c['key'].startswith('appt:'):
         said = t('{}: coming up', c['name']) if c['coming'] else t('{}: last time', c['name'])
         return {'key': c['key'], 'item': 'appointment', 'text': said, 'at': c['at'], 'event_id': c['event_id']}
-    if c.get('node'):  # the link as the line names them: "Jules Morgan", else "Jules"
+    if c.get('node'):  # the link as the line names them: "Isla Morgan", else "Isla"
         first = c['child'].split()[0] if c['child'].split() else c['child']
         name = c['child'] if c['child'].casefold() in c['text'].casefold() or first.casefold() not in c['text'].casefold() else first
         return {'key': c['key'], 'item': 'fact', 'text': c['text'], 'fact_id': c['fact_id'], 'links': [{'id': c['node'], 'name': name}]}

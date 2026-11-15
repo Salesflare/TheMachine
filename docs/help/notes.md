@@ -63,7 +63,7 @@ Under **Kids**, your Machine keeps what it knows about your children: **School**
 - What your Machine learned about your child, like their class teacher or swimming day, is a line that links to their page. It counts someone as your child when their **To you** says so, like daughter or son.
 - An event in your calendar that only you go to, like a parents' evening, gets a line with its next date, or its last one. **From your calendar** opens it.
 - A bill for school, a club or childcare gets a line that opens its to-do. The amount stays there.
-- Your own note for one child in a part, like one for Jules under **School**, gets what's about that child.
+- Your own note for one child in a part, like one for Isla under **School**, gets what's about that child.
 
 Kids notes are always Personal, even when the school writes to your work address. Your Machine asks its AI once about each new thing, to tell whether it's about your children.
 
