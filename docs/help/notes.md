@@ -24,6 +24,8 @@ A note can sit under another, like Appliances under Home. Notes shows them as a 
 
 Your Machine also writes notes by itself, from your messages, and keeps them current. Each of its lines says where it came from, like who sent the email: tap it to open the message. A line from **What I've learned** says **From what I learned**. A meeting or appointment in your calendar is never a line on its own: it stays in [Calendar](calendar.md).
 
+**Home**, **Health** and **Kids** show up only once your Machine has at least two real things to say there, like a bill or something it learned. Until then they aren't in the list at all, and if they run empty again, they go.
+
 Your changes always stand. Rename a note, move it, change its dates or a line, and your Machine keeps it that way when it updates the note. Delete a line or a note and it doesn't come back. Later notes on the same subject go where you put the first one.
 
 **Back to the original** shows your Machine's own words again. Editing a line that came from what your Machine learned also changes it under **What I've learned**, so there's one version of it.
