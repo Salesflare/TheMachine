@@ -437,18 +437,20 @@ function cardActions(s,choices,smartButtons,unmerge,hint,smart){const skill=skil
 // menu there) instead of wrapping onto another line (under a lead, the second line; without one, the only one); Ask for changes stays in sight. Measured per row, always
 // with Snooze in it (no paint in between), so a row folds only when it really doesn't fit and never flips back and forth.
 const actionsWrap=a=>{const f=a.querySelector(':scope>[data-row-fold]'),m=a.querySelector(':scope>.more-actions'),p=a.children[a.classList.contains('two-rows')?1:0];return !!(f&&m&&p)&&p!==m&&m.getBoundingClientRect().top>p.getBoundingClientRect().top+1};
-function actionsSize(a){a.classList.remove('folded');if(actionsWrap(a))a.classList.add('folded')}
+// Many rows at once: every row unfolded, then all measured (one layout), then the ones that wrap folded. Row by row,
+// each measure came after the row before's change: a whole layout per to-do on a first load.
+function actionsSize(rows){for(const a of rows)a.classList.remove('folded');for(const a of rows.filter(actionsWrap))a.classList.add('folded')}
 // A width it was fitted at already (a list put back as it was, a chat's open and close) or none (out of the page) needs no
 // measuring: only a new width does.
-const actionsFit=new ResizeObserver(rows=>{for(const {target:a,contentRect:r} of rows)if(r.width&&a._fitW!==r.width){a._fitW=r.width;actionsSize(a)}});
+const actionsFit=new ResizeObserver(rows=>{const now=[];for(const {target:a,contentRect:r} of rows)if(r.width&&a._fitW!==r.width){a._fitW=r.width;now.push(a)}actionsSize(now)});
 // A row drawn anew is fitted before it is painted, and again when its width, its labels (a translation) or the font change
-const actionsAll=()=>{for(const f of document.querySelectorAll('.card .actions>[data-row-fold]')){const a=f.parentElement;if(a.dataset.fit==null){a.dataset.fit='';actionsFit.observe(a)}actionsSize(a)}};
+const actionsAll=()=>{const rows=[];for(const f of document.querySelectorAll('.card .actions>[data-row-fold]')){const a=f.parentElement;if(a.dataset.fit==null){a.dataset.fit='';actionsFit.observe(a)}rows.push(a)}actionsSize(rows)};
 // A change in the page measures only the rows it touched and the ones drawn anew, not every row on it (a chat that streams
 // in, a time that ticks or a list put back re-measured them all, a forced layout each)
 const actionsTouched=new Set();let actionsQueued=0;
 const actionsSome=()=>{actionsQueued=0;const rows=[...actionsTouched];actionsTouched.clear();
  for(const f of document.querySelectorAll('.card .actions:not([data-fit])>[data-row-fold]'))rows.push(f.parentElement);
- for(const a of new Set(rows)){if(!a.isConnected||!a.querySelector(':scope>[data-row-fold]'))continue;if(a.dataset.fit==null){a.dataset.fit='';actionsFit.observe(a)}actionsSize(a)}};
+ const now=[];for(const a of new Set(rows)){if(!a.isConnected||!a.querySelector(':scope>[data-row-fold]'))continue;if(a.dataset.fit==null){a.dataset.fit='';actionsFit.observe(a)}now.push(a)}actionsSize(now)};
 // (once a frame at most, still before it is painted: a streaming chat changes the page many times a second)
 new MutationObserver(records=>{for(const m of records){const n=m.target.nodeType===1?m.target:m.target.parentElement,a=n?.closest('.card .actions[data-fit]');if(a)actionsTouched.add(a)}
  if(!actionsQueued)actionsQueued=requestAnimationFrame(actionsSome)}).observe(document.body,{childList:true,subtree:true,characterData:true});document.fonts?.ready.then(actionsAll);

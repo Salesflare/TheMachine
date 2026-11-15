@@ -27,7 +27,7 @@ KINDS = ('js', 'css', 'html')
 # Parts the served page loads when they're first needed, not with the main script (machine/web/serving.py
 # dashboard_script): each group's parts leave the main script and are served as one file of their own, named by its
 # contents, that lazyPart(group) in shell-core.js loads (and the page fetches in the background once it's drawn whole
-# and idle after its load event, so they never slow the start).
+# and idle after its load event and the owner has left it alone for a few seconds, so they never slow the start).
 # The source keeps every part in its place, so assemble(), the tests and the demo have them all inline and
 # lazyPart() is done at once there. A group's parts run after the main script, so the main script reads none of their
 # names while it loads, and calls into them only through lazyRun() or behind lazyIn() (shell-core.js).
