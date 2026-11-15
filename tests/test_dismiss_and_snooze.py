@@ -6,6 +6,15 @@ from unittest.mock import patch
 import test_ux as ux
 from seams import patch_everywhere  # noqa: E402
 import timeutil
+import machine.app.feedback as machine_app_feedback
+import machine.app.preparation as machine_app_preparation
+import machine.cards as machine_cards
+import machine.config as machine_config
+import machine.delivery.deliver as machine_delivery_deliver
+import machine.delivery.telegram as machine_delivery_telegram
+import machine.main as machine_main
+import machine.prompts.review as machine_prompts_review
+import zoneinfo
 
 
 def setUpModule():  # these read snoozes landing at 09:00, the old default (now 08:00, before the 08:30 digest)
@@ -14,27 +23,26 @@ def setUpModule():  # these read snoozes landing at 09:00, the old default (now 
 
 def tearDownModule():
     timeutil.set_work_hours(None)
-a=ux.a
-BXL=a.ZoneInfo('Europe/Amsterdam')
+BXL=zoneinfo.ZoneInfo('Europe/Amsterdam')
 def at(y,m,d,h,mi=0):return dt.datetime(y,m,d,h,mi,tzinfo=BXL).astimezone(dt.timezone.utc).isoformat()
 
 class WorkSnooze(unittest.TestCase):
     def test_work_skips_the_weekend_personal_does_not(self):
-        with patch_everywhere(a,'now',return_value=at(2026,10,9,15)):  # Friday
-            self.assertEqual(a.snooze_time('tomorrow',work=True),at(2026,10,12,9))
-            self.assertEqual(a.snooze_time('tomorrow'),at(2026,10,10,9))
-            self.assertEqual(a.snooze_time('2h',work=True),at(2026,10,9,17))
-            self.assertEqual(a.snooze_choices(True),[['2h','2 hours'],['tomorrow','Monday · 9:00'],['1w','1 week · 9:00']])
-            self.assertEqual(a.snooze_choices(False)[1],['tomorrow','Tomorrow · 9:00'])
-        with patch_everywhere(a,'now',return_value=at(2026,10,10,15)):  # Saturday: a week lands on Saturday
-            self.assertEqual(a.snooze_choices(True)[-1],['1w','Mon, Oct 19 · 9:00'])
+        with patch_everywhere(timeutil,'now',return_value=at(2026,10,9,15)):  # Friday
+            self.assertEqual(machine_cards.snooze_time('tomorrow',work=True),at(2026,10,12,9))
+            self.assertEqual(machine_cards.snooze_time('tomorrow'),at(2026,10,10,9))
+            self.assertEqual(machine_cards.snooze_time('2h',work=True),at(2026,10,9,17))
+            self.assertEqual(machine_cards.snooze_choices(True),[['2h','2 hours'],['tomorrow','Monday · 9:00'],['1w','1 week · 9:00']])
+            self.assertEqual(machine_cards.snooze_choices(False)[1],['tomorrow','Tomorrow · 9:00'])
+        with patch_everywhere(timeutil,'now',return_value=at(2026,10,10,15)):  # Saturday: a week lands on Saturday
+            self.assertEqual(machine_cards.snooze_choices(True)[-1],['1w','Mon, Oct 19 · 9:00'])
 
 class WorkSnoozeDecisions(unittest.TestCase):
     setUp=ux.UX.setUp
     def test_status_labels_and_decide_use_the_source_boundary(self):
-        app=object.__new__(a.App);app.store=self.store
+        app=object.__new__(machine_main.App);app.store=self.store
         app.config={'accounts':[{'id':'work','email':'owner@example.com','boundary':'work:Acme'}],'telegram_owner':'1000001'}
-        with patch_everywhere(a,'now',return_value=at(2026,10,9,15)):
+        with patch_everywhere(timeutil,'now',return_value=at(2026,10,9,15)):
             self.assertEqual(app.action('status',{'full':True})['suggestions'][0]['snooze_choices'][1][1],'Monday · 9:00')
             app.action('decide',{'suggestion_id':self.sid,'choice':'snooze','snooze_option':'tomorrow','decision_id':'telegram:cb','feedback':''})
         self.assertEqual(self.store.snapshot([])['suggestions'][0]['snoozed_until'],at(2026,10,12,9))
@@ -64,7 +72,7 @@ class DismissReasons(unittest.TestCase):
     setUp=ux.UX.setUp
     row=ux.UX.row
     def app(self):
-        app=object.__new__(a.App);app.store=self.store
+        app=object.__new__(machine_main.App);app.store=self.store
         app.config={'telegram_owner':'1000001','accounts':[],'prompt_receipts':str(self.root/'r'),'openclaw_state':str(self.root/'n.sqlite')}
         return app
     def test_typed_reason_dismisses_with_that_reason(self):
@@ -73,7 +81,7 @@ class DismissReasons(unittest.TestCase):
         sent=[]
         self.assertEqual(app.feedback_prompt_step(sender=lambda row:(sent.append(row),{'messageId':'41'})[1]),'sent')
         self.assertEqual(sent[0]['kind'],'dismiss')
-        self.assertTrue(a.prompt_text(sent[0]['title'],kind='dismiss').startswith('Not needed: Prepare a draft'))
+        self.assertTrue(machine_app_feedback.prompt_text(sent[0]['title'],kind='dismiss').startswith('Not needed: Prepare a draft'))
         result=self.store.feedback_reply('We already chose another vendor','42',reply_to_id='41')
         self.assertEqual(result['status'],'rejected')
         self.assertEqual(self.row()['status'],'rejected')
@@ -84,8 +92,8 @@ class DismissReasons(unittest.TestCase):
         notes=self.store.notes_to_learn()
         with self.store.connect() as db:decision=db.execute("SELECT id FROM decisions").fetchone()[0]
         self.assertIn('We already chose another vendor',notes);self.assertIn(decision,notes)
-        self.assertIn('Notes the owner wrote when dismissing',a.review_prompt('r',['work'],notes=notes))
-        self.assertNotIn('Notes the owner wrote when dismissing',a.review_prompt('r',['work']))
+        self.assertIn('Notes the owner wrote when dismissing',machine_prompts_review.review_prompt('r',['work'],notes=notes))
+        self.assertNotIn('Notes the owner wrote when dismissing',machine_prompts_review.review_prompt('r',['work']))
         self.store.remember_fact('The owner already chose another vendor for this.',decision, quote='We already chose another vendor')
         self.assertEqual(self.store.notes_to_learn(),'')
         self.assertTrue(self.store.feedback_reply('again','42',reply_to_id='41')['duplicate'])
@@ -100,7 +108,7 @@ class DismissReasons(unittest.TestCase):
                 self.assertEqual(self.store.decide(self.sid,'reject',reason,'d-'+reason,'telegram')['status'],'completed')
         self.store.decide(self.sid,'reopen','','r-last','dashboard')
         self.assertEqual(self.store.decide(self.sid,'reject','Not relevant to me','d-last','telegram')['status'],'rejected')
-        self.assertIn('Not needed',[b['label'] for block in a.controls({**self.row(),'status':'pending'})['blocks'] for b in block['buttons']])
+        self.assertIn('Not needed',[b['label'] for block in machine_cards.controls({**self.row(),'status':'pending'})['blocks'] for b in block['buttons']])
 
     def test_negative_or_future_feedback_stays_rejected(self):
         for reason in ("I haven't handled it",'I have not already handled it',"I didn't already do it",
@@ -212,26 +220,26 @@ class SilentBatch(unittest.TestCase):
             @classmethod
             def now(cls,tz=None):return dt.datetime(2026,10,12,9,0,tzinfo=BXL).astimezone(tz or dt.timezone.utc)
         sent=[]
-        with patch.object(a.dt,'datetime',Day),patch_everywhere(a,'now',return_value=at(2026,10,12,9)),\
-             patch_everywhere(a,'telegram_request',side_effect=lambda c,args:(sent.append(args),{'messageId':str(40+len(sent))})[1]):
-            a.deliver(self.store,{'telegram_owner':'1000001'})
+        with patch.object(dt,'datetime',Day),patch_everywhere(timeutil,'now',return_value=at(2026,10,12,9)),\
+             patch_everywhere(machine_delivery_telegram,'telegram_request',side_effect=lambda c,args:(sent.append(args),{'messageId':str(40+len(sent))})[1]):
+            machine_delivery_deliver.deliver(self.store,{'telegram_owner':'1000001'})
         self.assertEqual([args.get('silent') for args in sent],[None,True])
 
 class AnswerQuestion(unittest.TestCase):
     """A result waiting on the owner's answer (needs_you, written as a question) leads with Answer on Telegram too; the
     question keeps its own "?" in the status line."""
     setUp=ux.UX.setUp
-    def labels(self,row):return [b['label'] for block in a.controls(row)['blocks'] for b in block['buttons']]
+    def labels(self,row):return [b['label'] for block in machine_cards.controls(row)['blocks'] for b in block['buttons']]
     def test_a_question_leads_with_answer_and_keeps_its_mark(self):
         row={**ux.UX.row(self),'status':'prepared','outcome':json.dumps({'state':'needs_you','needs':'Which date goes in the cash-out field?'})}
         self.assertEqual(self.labels(row)[:2],['Answer','Mark done'])
         self.assertNotIn('Ask for changes',self.labels(row))
-        answer=next(b for block in a.controls(row)['blocks'] for b in block['buttons'] if b['label']=='Answer')
+        answer=next(b for block in machine_cards.controls(row)['blocks'] for b in block['buttons'] if b['label']=='Answer')
         self.assertTrue(answer['action']['value'].endswith(':other'))  # the Change path
-        self.assertTrue(a.card(row).endswith('Needs you: Which date goes in the cash-out field?'))
+        self.assertTrue(machine_cards.card(row).endswith('Needs you: Which date goes in the cash-out field?'))
         # Not a question, a draft to send, or a sign it's handled: the usual buttons
         plain={**row,'outcome':json.dumps({'state':'needs_you','needs':'Pay in the bank app'})}
-        self.assertEqual(self.labels(plain)[0],'Mark done');self.assertTrue(a.card(plain).endswith('Needs you: Pay in the bank app.'))
+        self.assertEqual(self.labels(plain)[0],'Mark done');self.assertTrue(machine_cards.card(plain).endswith('Needs you: Pay in the bank app.'))
         self.assertNotIn('Answer',self.labels({**row,'next_actions':[{'kind':'email','revision':'v1','label':'Send','to':['x@example.com'],'subject':'s','body':'b'}]}))
         self.assertNotIn('Answer',self.labels({**row,'handled_hint':json.dumps({'reason':'You replied'})}))
         self.assertNotIn('Answer',self.labels({**row,'preparation_status':'blocked'}))
@@ -240,10 +248,10 @@ class AnswerQuestion(unittest.TestCase):
         ask='I couldn’t find the amount; please share it or point me to the message.'
         row={**ux.UX.row(self),'status':'instructions','preparation_status':'blocked','preparation_reason':ask,'preparation_error':None}
         self.assertEqual(self.labels(row)[:3],['Answer','Try again','Mark done'])
-        self.assertTrue(a.card(row).endswith('Needs you: '+ask))
+        self.assertTrue(machine_cards.card(row).endswith('Needs you: '+ask))
         # The service's own failure, or a sign-in: the usual buttons and line
         failed={**row,'preparation_error':'ai_run_failed','preparation_reason':'I tried twice but couldn’t finish this. Tap Try again, or change the request.'}
-        self.assertEqual(self.labels(failed)[0],'Try again');self.assertIn('I’m stuck:',a.card(failed))
+        self.assertEqual(self.labels(failed)[0],'Try again');self.assertIn('I’m stuck:',machine_cards.card(failed))
         self.assertEqual(self.labels({**row,'preparation_reason':'Stripe needs your code: complete sign-in in the tab, then tap Continue.'})[0],'Continue')
 
 
@@ -254,7 +262,7 @@ class AskConcretely(unittest.TestCase):
     """A run that stops for the owner's input names it as short questions (quick picks for a clear choice); a Try again
     that came back asking again isn't offered once more."""
     setUp=ux.UX.setUp
-    def labels(self,row):return [b['label'] for block in a.controls(row)['blocks'] for b in block['buttons']]
+    def labels(self,row):return [b['label'] for block in machine_cards.controls(row)['blocks'] for b in block['buttons']]
     def block(self,questions=None):
         with self.store.connect() as db:db.execute("UPDATE preparations SET status='running'")
         return self.store.preparation_blocked(self.sid,ux.UX.job(self)['job_id'],'Finishing this needs your notes and one choice.','long technical dump',None,questions)
@@ -265,9 +273,9 @@ class AskConcretely(unittest.TestCase):
         row=ux.UX.row(self)
         self.assertEqual(row['preparation_questions'],asks);self.assertEqual(row['preparation_cause'],'accept')
         self.assertEqual(self.labels(row)[:3],['Answer','Try again','Mark done'])
-        self.assertTrue(a.card(row).endswith('Needs you: What did you notice when you tried it? Which score fills the gap?'))
+        self.assertTrue(machine_cards.card(row).endswith('Needs you: What did you notice when you tried it? Which score fills the gap?'))
         # Asked even right after a browser step, because it named its questions
-        self.assertEqual(a.ask_question({**row,'preparation_browser':{'since':'x'}},[]),'What did you notice when you tried it? Which score fills the gap?')
+        self.assertEqual(machine_cards.ask_question({**row,'preparation_browser':{'since':'x'}},[]),'What did you notice when you tried it? Which score fills the gap?')
         # Try again without anything new, and it stops asking again: no Try again any more
         ux.UX.decide(self,'retry','r1');self.block(asks)
         row=ux.UX.row(self)
@@ -278,28 +286,28 @@ class AskConcretely(unittest.TestCase):
     def test_malformed_questions_are_refused(self):
         for bad in ([{'question':''}],[{'question':'x'*201}],[{'question':'Q?','options':['a']*5}],[{'question':'Q?'}]*4,'Q?'):
             with self.subTest(bad=bad):
-                self.assertRaises(ValueError,a.blocker_questions,bad,True)
-        self.assertEqual(a.blocker_questions('not json'),[])
+                self.assertRaises(ValueError,machine_cards.blocker_questions,bad,True)
+        self.assertEqual(machine_cards.blocker_questions('not json'),[])
         for bad in ([{'question':'Q?','options':'a, b'}],[{'question':'Q?','suggestion':'x'*121}]):
             with self.subTest(bad=bad):
-                self.assertRaises(ValueError,a.blocker_questions,bad,True)
+                self.assertRaises(ValueError,machine_cards.blocker_questions,bad,True)
     def test_several_questions_each_with_their_own_answer(self):
         # Each question keeps its own options; an open one its suggestion (prefilled on the card), never beside options
         asks=[{'question':'How many tickets should I order?','options':['1','2','3','None']},
               {'question':'Which room should I book?','suggestion':'  Room   B '},
               {'question':'Which day suits you?','options':['Tuesday'],'suggestion':'Tuesday'}]
-        self.assertEqual(a.blocker_questions(asks,True),[
+        self.assertEqual(machine_cards.blocker_questions(asks,True),[
             {'question':'How many tickets should I order?','options':['1','2','3','None']},
             {'question':'Which room should I book?','suggestion':'Room B'},
             {'question':'Which day suits you?','options':['Tuesday']}])
         # Stored as runs wrote them before: plain strings and one flat question with options still read
-        self.assertEqual(a.blocker_questions('["Which date?", {"question": "Which score?", "options": ["3.9", "4.0"]}]'),
+        self.assertEqual(machine_cards.blocker_questions('["Which date?", {"question": "Which score?", "options": ["3.9", "4.0"]}]'),
                          [{'question':'Which date?'},{'question':'Which score?','options':['3.9','4.0']}])
     def test_the_prompt_asks_for_plain_questions_and_defaults_for_small_calls(self):
-        text=open(a.ROOT/'PREPARATION.md').read()
+        text=open(machine_config.ROOT/'PREPARATION.md').read()
         for words in ('questions=[{question, options}]','make sense on its own','sensible default'):
             self.assertIn(words,text)
-        job=a.preparation_prompt({'suggestion_id':self.sid,'job_id':'j'})
+        job=machine_app_preparation.preparation_prompt({'suggestion_id':self.sid,'job_id':'j'})
         self.assertIn("questions=[{question:<one short plain question>",job);self.assertIn('sensible default you make yourself',job)
 
 
@@ -314,15 +322,15 @@ class StuckIsNotAQuestion(unittest.TestCase):
         ux.UX.decide(self,'accept');self.block()
         row=ux.UX.row(self)
         self.assertTrue(row['preparation_no_questions']);self.assertEqual(row['preparation_questions'],[])
-        self.assertFalse(a.ask_blocked(row));self.assertEqual(a.ask_question(row,[]),'')
+        self.assertFalse(machine_cards.ask_blocked(row));self.assertEqual(machine_cards.ask_question(row,[]),'')
         self.assertEqual(self.labels(row)[0],'Try again');self.assertNotIn('Answer',self.labels(row))
-        self.assertIn('I’m stuck: Finishing this needs your notes and one choice.',a.card(row))
-        self.assertNotIn('Help me answer this',a.card_task(row))
+        self.assertIn('I’m stuck: Finishing this needs your notes and one choice.',machine_cards.card(row))
+        self.assertNotIn('Help me answer this',machine_cards.card_task(row))
         # The Telegram rows read the stored column itself: the same answer
         with self.store.connect() as db:stored=db.execute('SELECT questions FROM preparations WHERE suggestion_id=?',(self.sid,)).fetchone()[0]
         self.assertEqual(stored,'[]')
-        self.assertFalse(a.ask_blocked({**row,'preparation_no_questions':None,'preparation_questions':stored}))
+        self.assertFalse(machine_cards.ask_blocked({**row,'preparation_no_questions':None,'preparation_questions':stored}))
         # One saved before runs named questions (no list at all) keeps asking with its reason
         legacy={**row,'preparation_no_questions':False,'preparation_questions':None}
-        self.assertTrue(a.ask_blocked(legacy));self.assertEqual(self.labels(legacy)[0],'Answer')
-        self.assertTrue(a.ask_blocked({**row,'preparation_questions':[{'question':'Which date?'}]}))
+        self.assertTrue(machine_cards.ask_blocked(legacy));self.assertEqual(self.labels(legacy)[0],'Answer')
+        self.assertTrue(machine_cards.ask_blocked({**row,'preparation_questions':[{'question':'Which date?'}]}))

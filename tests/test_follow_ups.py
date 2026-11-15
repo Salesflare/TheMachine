@@ -16,7 +16,12 @@ import model_budget
 import test_ux as ux
 import timeutil
 from seams import patch_everywhere  # noqa: E402
-a = ux.a
+import machine.actions as machine_actions
+import machine.main as machine_main
+import machine.sources.gmail as machine_sources_gmail
+import models
+import next_actions
+import sources
 
 GMAIL = {'id': 'work', 'email': 'owner@example.com', 'service': 'gmail', 'transport': 'gog', 'boundary': 'work:Example'}
 LINKEDIN = {'id': 'li', 'service': 'linkedin', 'transport': 'browser', 'boundary': 'work:Example'}
@@ -303,21 +308,21 @@ class FollowUps(unittest.TestCase):
             p = patch.object(timeutil, target, value)
             p.start()
             self.addCleanup(p.stop)
-        self.clock = patch_everywhere(a, 'now', return_value=NOW)
+        self.clock = patch_everywhere(timeutil, 'now', return_value=NOW)
         self.clock.start()
         self.addCleanup(lambda: self.clock.stop())
-        unread = patch.object(a.Gmail, 'get', side_effect=a.SourceError('offline'))  # no live reads: the quoted history
+        unread = patch.object(machine_sources_gmail.Gmail, 'get', side_effect=sources.SourceError('offline'))  # no live reads: the quoted history
         unread.start()
         self.addCleanup(unread.stop)
         # The fresh read right before a send (App.follow_up_thread): a fake mailbox once a test goes online (the outbox
         # tests), else the offline Gmail above. Never a live read.
         self.mailbox = FakeMailbox(self)
-        real = a.App.follow_up_thread
-        fresh = patch.object(a.App, 'follow_up_thread', autospec=True,
+        real = machine_main.App.follow_up_thread
+        fresh = patch.object(machine_main.App, 'follow_up_thread', autospec=True,
                              side_effect=lambda app, account, thread_id: self.mailbox.read(account, thread_id) if self.mailbox.online else real(app, account, thread_id))
         fresh.start()
         self.addCleanup(fresh.stop)
-        self.store = a.Store(Path(self.tmp.name) / 'events.sqlite')
+        self.store = machine_main.Store(Path(self.tmp.name) / 'events.sqlite')
         self.store.commit_page('work', {}, [msg('in1', '2026-10-08T09:00:00+00:00'), msg('out1', '2026-10-13T09:00:00+00:00', mine=True),
                                             msg('in2', '2026-10-09T09:00:00+00:00', who='kim@other.example', thread='t2', title='Trial'),
                                             msg('out2', '2026-10-14T09:00:00+00:00', mine=True, who='kim@other.example', thread='t2', title='Trial')])
@@ -333,11 +338,11 @@ class FollowUps(unittest.TestCase):
 
     def at(self, stamp):
         self.clock.stop()
-        self.clock = patch_everywhere(a, 'now', return_value=stamp)
+        self.clock = patch_everywhere(timeutil, 'now', return_value=stamp)
         self.clock.start()
 
     def app(self, **config):
-        app = object.__new__(a.App)
+        app = object.__new__(machine_main.App)
         app.store = self.store
         app.config = {'accounts': [GMAIL], 'digest_at': '08:30', 'review_worker': {'enabled': True}, **config}
         app.model_usage = None
@@ -393,7 +398,7 @@ class FollowUps(unittest.TestCase):
         self.assertEqual(len(self.cards()), 2)
         # Board and project show where they stand
         with self.store.connect() as db:
-            boards = graph.boards(db, a.now())
+            boards = graph.boards(db, timeutil.now())
             self.app().follow_up_annotate(db, boards)
         self.assertTrue(boards[0]['follow_ups']['on'])
         self.assertEqual(boards[0]['follow_ups']['next_at'], None)  # both have a to-do out now
@@ -512,7 +517,7 @@ class FollowUps(unittest.TestCase):
         self.turn_on()
         app = self.app()
         app.model_usage = [{'provider': 'anthropic', 'windows': [{'label': '5h', 'used': 55, 'reset': 9e12}]}]
-        with patch_everywhere(a, 'openclaw_model', return_value='anthropic/claude'):
+        with patch_everywhere(models, 'openclaw_model', return_value='anthropic/claude'):
             with patch.object(follow_ups, 'schedule', wraps=follow_ups.schedule) as sched:
                 # Not late yet: waits while the 5-hour window is past FOLLOW_UP_PAUSE
                 self.at('2026-10-17T10:00:00+00:00')
@@ -544,7 +549,7 @@ class FollowUps(unittest.TestCase):
         app.stop_stale_runs = lambda runner: None
         app.follow_up_lines = lambda sid: ''
         calls = []
-        with patch.object(a.App, 'follow_up_pause', return_value=None), patch.object(a.App, 'background_pause', return_value=None):
+        with patch.object(machine_main.App, 'follow_up_pause', return_value=None), patch.object(machine_main.App, 'background_pause', return_value=None):
             app.preparation_step(lambda r: calls.append(r) or {'status': 'admitted'})
         self.assertEqual(len([c for c in calls if c['action'] == 'start']), 3)
         self.assertTrue(all(c['background'] for c in calls))  # still background work (background_model)
@@ -553,7 +558,7 @@ class FollowUps(unittest.TestCase):
             db.execute("UPDATE preparations SET status='queued'")
             db.execute('DELETE FROM preparation_runs')
         calls.clear()
-        with patch.object(a.App, 'follow_up_pause', return_value={'window': '5h'}), patch.object(a.App, 'background_pause', return_value=None):
+        with patch.object(machine_main.App, 'follow_up_pause', return_value={'window': '5h'}), patch.object(machine_main.App, 'background_pause', return_value=None):
             app.preparation_step(lambda r: calls.append(r) or {'status': 'admitted'})
         self.assertEqual(calls, [])
 
@@ -573,7 +578,7 @@ class FollowUps(unittest.TestCase):
                 with self.store.connect() as db:
                     sid = db.execute('SELECT suggestion_id FROM preparations WHERE job_id=?', (request['job_id'],)).fetchone()[0]
                     current = db.execute('SELECT next_action FROM suggestions WHERE id=?', (sid,)).fetchone()[0]
-                draft = next(iter(a.next_actions.actions(current or 'null')), None)
+                draft = next(iter(next_actions.actions(current or 'null')), None)
                 saved = rewrite(sid, request['message'], draft)
                 if saved is not None:
                     try:
@@ -596,17 +601,17 @@ class FollowUps(unittest.TestCase):
         acme, kim = [c['suggestion_id'] for c in self.cards()]
         first = lambda sid: {'kind': 'email', 'account_id': 'work', 'to': ['sam@client.example' if sid == acme else 'kim@other.example'],
                              'subject': 'Re: Pilot', 'body': 'Hi, here is the case study I mentioned.\n\nRegards,\n\nOwen'}
-        with patch.object(a.App, 'follow_up_pause', return_value=None), patch.object(a.App, 'background_pause', return_value=None):
+        with patch.object(machine_main.App, 'follow_up_pause', return_value=None), patch.object(machine_main.App, 'background_pause', return_value=None):
             self.assertEqual(self.model_turns(app, lambda sid, message, draft: first(sid))[1], [])
         def drafts():
             with self.store.connect() as db:
-                return {s: a.next_actions.actions(db.execute('SELECT next_action FROM suggestions WHERE id=?', (s,)).fetchone()[0])[0] for s in (acme, kim)}
+                return {s: next_actions.actions(db.execute('SELECT next_action FROM suggestions WHERE id=?', (s,)).fetchone()[0])[0] for s in (acme, kim)}
         before = drafts()
         self.assertEqual({c['status'] for c in self.cards()}, {'prepared'})
         # Only the owner, on the dashboard
         with self.assertRaises(ValueError):
             app.action('follow_up_change', {'ids': [acme], 'text': 'Shorter.'}, owner_dashboard=False)
-        self.assertIn('follow_up_change', a.DASHBOARD_ACTIONS)
+        self.assertIn('follow_up_change', machine_actions.DASHBOARD_ACTIONS)
         with self.assertRaises(ValueError):
             app.action('follow_up_change', {'ids': [acme], 'text': '  '}, owner_dashboard=True)
         # All checked: both go back to work as a Change note in their chat (decide 'other'), nothing queued to send
@@ -621,7 +626,7 @@ class FollowUps(unittest.TestCase):
             self.assertEqual({r[0] for r in db.execute('SELECT status FROM suggestions WHERE id IN (?,?)', (acme, kim))}, {'instructions'})
         self.assertEqual(self.jobs(), [])
         # The owner's ask, not background work: not held by the follow-up pause, at most DRAFTING at once
-        with patch.object(a.App, 'follow_up_pause', return_value={'window': '5h'}), patch.object(a.App, 'background_pause', return_value=None), \
+        with patch.object(machine_main.App, 'follow_up_pause', return_value={'window': '5h'}), patch.object(machine_main.App, 'background_pause', return_value=None), \
                 patch.object(follow_ups, 'DRAFTING', 1):
             starts = self.model_turns(app, lambda sid, message, draft: None)[0]
         self.assertEqual(len(starts), 1)
@@ -639,7 +644,7 @@ class FollowUps(unittest.TestCase):
             if sid == kim and tries.count(kim) == 1:
                 out['to'] = ['someone@else.example']
             return out
-        with patch.object(a.App, 'follow_up_pause', return_value={'window': '5h'}), patch.object(a.App, 'background_pause', return_value=None):
+        with patch.object(machine_main.App, 'follow_up_pause', return_value={'window': '5h'}), patch.object(machine_main.App, 'background_pause', return_value=None):
             starts, refused = self.model_turns(app, rewrite)
         self.assertEqual(len(starts), 2)  # both at once
         self.assertEqual([r[0] for r in refused], [kim], refused)
@@ -687,7 +692,7 @@ class FollowUps(unittest.TestCase):
         seen = {}
         draft = {'kind': 'email', 'account_id': 'work', 'to': ['sam@client.example'], 'subject': 'Re: Pilot', 'body': 'Hi Sam, early access is yours.'}
         kim = {**draft, 'to': ['kim@other.example'], 'subject': 'Re: Trial'}  # each follow-up answers its own person's email
-        with patch.object(a.App, 'follow_up_pause', return_value=None), patch.object(a.App, 'background_pause', return_value=None):
+        with patch.object(machine_main.App, 'follow_up_pause', return_value=None), patch.object(machine_main.App, 'background_pause', return_value=None):
             starts, refused = self.model_turns(app, lambda sid, message, current: seen.setdefault(sid, message) and (kim if 'Kim' in self.title(sid) else draft))
         self.assertEqual((len(starts), refused), (2, []))
         for message in seen.values():
@@ -776,7 +781,7 @@ class FollowUps(unittest.TestCase):
         self.assertEqual(app.follow_up_step()['drafted'], 2)
         acme = [c['suggestion_id'] for c in self.cards()][0]
         first = {'kind': 'email', 'account_id': 'work', 'to': ['sam@client.example'], 'subject': 'Re: Pilot', 'body': 'Hi, any news?\n\nRegards,\n\nOwen'}
-        with patch.object(a.App, 'follow_up_pause', return_value=None), patch.object(a.App, 'background_pause', return_value=None):
+        with patch.object(machine_main.App, 'follow_up_pause', return_value=None), patch.object(machine_main.App, 'background_pause', return_value=None):
             self.model_turns(app, lambda sid, message, draft: first if sid == acme else None)
         with self.store.connect() as db:
             db.execute("UPDATE preparations SET status='done' WHERE suggestion_id!=?", (acme,))
@@ -791,7 +796,7 @@ class FollowUps(unittest.TestCase):
             path = next(Path(line.rsplit('(', 1)[1].rstrip(')')) for line in message.splitlines() if line.startswith('- Listing exchanges:'))
             follow = path.read_text().strip().splitlines()[-1]  # the skill's instructions, read as the agent would
             return {**first, 'body': 'Hi Sam, ' + follow.split(',')[0].lower() + '?\n\nRegards,\n\nOwen'}
-        with patch.object(a.App, 'follow_up_pause', return_value={'window': '5h'}), patch.object(a.App, 'background_pause', return_value=None):
+        with patch.object(machine_main.App, 'follow_up_pause', return_value={'window': '5h'}), patch.object(machine_main.App, 'background_pause', return_value=None):
             starts, refused = self.model_turns(app, rewrite)
         self.assertEqual((len(starts), refused), (1, []))
         message = seen[0]
@@ -802,7 +807,7 @@ class FollowUps(unittest.TestCase):
         self.assertIn('- Listing exchanges: How to follow up on a listing exchange (', message)
         self.assertIn(str(Path(self.tmp.name) / 'skills' / skills.FOLDER / 'listing-exchanges' / 'SKILL.md'), message)
         with self.store.connect() as db:
-            body = a.next_actions.actions(db.execute('SELECT next_action FROM suggestions WHERE id=?', (acme,)).fetchone()[0])[0]['body']
+            body = next_actions.actions(db.execute('SELECT next_action FROM suggestions WHERE id=?', (acme,)).fetchone()[0])[0]['body']
         self.assertTrue(body.startswith('Hi Sam, offer a listing on our partner page in return?'), body)
         self.assertEqual(self.jobs(), [])  # nothing sent
 
@@ -887,7 +892,7 @@ class FollowUps(unittest.TestCase):
     def test_a_sealed_store_reads_the_quoted_history_and_without_its_key_drafts_nothing_on_a_guess(self):
         root = Path(self.tmp.name) / 'sealed'
         root.mkdir()
-        sealed = a.Store(root / 'events.sqlite', protect=True)
+        sealed = machine_main.Store(root / 'events.sqlite', protect=True)
         quoted = {**msg('out1', '2026-10-13T09:00:00+00:00', mine=True), 'body': GMAIL_CHAIN}
         sealed.commit_page('work', {}, [quoted])
         with sealed.connect() as db:
@@ -943,7 +948,7 @@ class FollowUps(unittest.TestCase):
         head = lambda i, ms, who, labels: {'id': i, 'internalDate': str(ms), 'labelIds': labels, 'payload': {'headers': [{'name': 'From', 'value': who}]}}
         thread = {'messages': [head('old', 1789551093000, 'owner@example.com', ['SENT']), head('out1', 1791882000000, 'owner@example.com', ['SENT'])]}
         self.turn_on()
-        with patch.object(a.Gmail, 'get', return_value=thread) as read:
+        with patch.object(machine_sources_gmail.Gmail, 'get', return_value=thread) as read:
             self.app().follow_up_step()
             self.app().follow_up_step()
         self.assertEqual(sorted(c.args[0] for c in read.call_args_list), ['threads/t1', 'threads/t2'])  # each due thread once
@@ -979,7 +984,7 @@ class FollowUps(unittest.TestCase):
         self.turn_on(min=0, max=3)
         app = self.app()
         acme, kim, first = self.drafted_pair(app)
-        free = (patch.object(a.App, 'follow_up_pause', return_value=None), patch.object(a.App, 'background_pause', return_value=None))
+        free = (patch.object(machine_main.App, 'follow_up_pause', return_value=None), patch.object(machine_main.App, 'background_pause', return_value=None))
         # Ending the round without a draft is refused: the draft is written anyway
         with free[0], free[1]:
             starts, refused = self.model_turns(app, lambda sid, message, draft: first(sid), next_actions=None, outcome='already_done', follow_up='stop')
@@ -1004,7 +1009,7 @@ class FollowUps(unittest.TestCase):
         with self.store.connect() as db:
             self.assertEqual(db.execute('SELECT count(*) FROM follow_up_ends').fetchone()[0], 0)
         # Stop follow-ups here: the owner's pick, on the dashboard; the round ends, nothing sent
-        self.assertIn('follow_up_end', a.DASHBOARD_ACTIONS)
+        self.assertIn('follow_up_end', machine_actions.DASHBOARD_ACTIONS)
         with self.assertRaisesRegex(ValueError, 'Only the owner'):
             app.action('follow_up_end', {'id': acme}, owner_dashboard=False)
         with self.assertRaisesRegex(ValueError, 'Say which follow-up'):
@@ -1048,7 +1053,7 @@ class FollowUps(unittest.TestCase):
         self.turn_on(min=0, max=3)
         app = self.app()
         acme, kim, first = self.drafted_pair(app)
-        free = (patch.object(a.App, 'follow_up_pause', return_value=None), patch.object(a.App, 'background_pause', return_value=None))
+        free = (patch.object(machine_main.App, 'follow_up_pause', return_value=None), patch.object(machine_main.App, 'background_pause', return_value=None))
         with free[0], free[1]:
             self.model_turns(app, lambda sid, message, draft: first(sid), follow_up='stop', follow_up_why='No answer to four emails')
         # Skipped in the review (the owner's reject), then "keep trying" in its chat: open again and drafted
@@ -1118,8 +1123,8 @@ class FollowUps(unittest.TestCase):
     def test_only_the_owner_sets_follow_ups(self):
         with self.assertRaisesRegex(ValueError, 'Only the owner'):
             self.app().action('follow_up_save', {'scope': 'board', 'id': self.board, 'settings': {'on': True}}, owner_dashboard=False)
-        self.assertIn('follow_up_save', a.DASHBOARD_ACTIONS)
-        self.assertIn('follow_up_settings', a.OWNER_ACTIONS)
+        self.assertIn('follow_up_save', machine_actions.DASHBOARD_ACTIONS)
+        self.assertIn('follow_up_settings', machine_actions.OWNER_ACTIONS)
 
 
     # ------------------------------------------------------------------ several in a row: spaced per mailbox
@@ -1153,7 +1158,7 @@ class FollowUps(unittest.TestCase):
 
     def progress(self):
         with self.store.connect() as db:
-            return follow_ups.progress(db, a.now())
+            return follow_ups.progress(db, timeutil.now())
 
     def test_the_gap_is_random_within_30_to_45_seconds(self):
         self.assertEqual(follow_ups.gap(lambda lo, hi: lo), 30)
@@ -1217,7 +1222,7 @@ class FollowUps(unittest.TestCase):
             # Back up, on a fresh service over the same database (an update opens it the same way): straight after the
             # restart nothing goes inside the gap of the claimed one, and the claimed one is only checked, never sent again
             transport.die = False
-            self.store = a.Store(self.store.path)
+            self.store = machine_main.Store(self.store.path)
             step = self.outbox(transport)
             self.assertIsNone(step('2026-10-19T09:00:45+00:00'))
             self.assertEqual(step('2026-10-19T09:01:20+00:00'), 'sent')  # the third, one gap after the claimed one
@@ -1238,7 +1243,7 @@ class FollowUps(unittest.TestCase):
             with self.assertRaises(KeyboardInterrupt):
                 self.outbox(transport)('2026-10-19T09:00:00+00:00')
             transport.die = False
-            self.store = a.Store(self.store.path)
+            self.store = machine_main.Store(self.store.path)
             step = self.outbox(transport)
             self.assertIsNone(step('2026-10-19T09:00:30+00:00'))  # the second still waits the gap after the claimed one
             step('2026-10-19T09:01:31+00:00')  # nothing in Sent mail: uncertain, not sent again
@@ -1296,12 +1301,12 @@ class FollowUps(unittest.TestCase):
             batch = self.progress()[0]['batch']
             with self.assertRaisesRegex(ValueError, 'Only the owner'):
                 app.action('follow_up_stop', {'batch': batch}, owner_dashboard=False)
-            self.assertIn('follow_up_stop', a.DASHBOARD_ACTIONS)
+            self.assertIn('follow_up_stop', machine_actions.DASHBOARD_ACTIONS)
             self.assertEqual(app.action('follow_up_stop', {'batch': batch}, owner_dashboard=True), {'stopped': 3, 'sent': 1})
             states = self.job_states()
             self.assertEqual([states[s] for s in sids], ['sent', 'sending', 'cancelled', 'cancelled', 'cancelled'])
             # Nothing more goes, also after a restart (a fresh service over the same database)
-            self.store = a.Store(self.store.path)
+            self.store = machine_main.Store(self.store.path)
             step = self.outbox(transport)
             for at in ('09:01:00', '09:02:00', '09:03:00'):
                 step('2026-10-19T' + at + '+00:00')
@@ -1327,7 +1332,7 @@ class FollowUps(unittest.TestCase):
         p = self.progress()[0]
         self.assertEqual((p['stopped'], p['sent'], p['going'], p['held']), (2, 1, False, 0))
         with self.store.connect() as db:
-            follow_ups.settle(db, a.now())
+            follow_ups.settle(db, timeutil.now())
         self.assertEqual(self.job_states()[sids[1]], 'cancelled')
         self.assertEqual(self.progress()[0]['stopped'], 2)
 
@@ -1338,13 +1343,13 @@ class FollowUps(unittest.TestCase):
 
     def states(self):
         with self.store.connect() as db:
-            return {x['project']['id']: x['state'] for x in follow_ups.plan(db, a.now(), {'email'}, self.app().follow_up_mine(), None, self.app().follow_up_work())}
+            return {x['project']['id']: x['state'] for x in follow_ups.plan(db, timeutil.now(), {'email'}, self.app().follow_up_mine(), None, self.app().follow_up_work())}
 
     def test_pause_is_the_owners_and_only_where_follow_ups_are_on(self):
         with self.assertRaisesRegex(ValueError, 'Only the owner'):
             self.app().action('follow_up_pause', {'scope': 'board', 'id': self.board, 'paused': True}, owner_dashboard=False)
-        self.assertIn('follow_up_pause', a.DASHBOARD_ACTIONS)
-        self.assertIn('follow_up_pause', a.OWNER_ACTIONS)  # so the assistant CLI refuses it (cli.call), like every owner decision
+        self.assertIn('follow_up_pause', machine_actions.DASHBOARD_ACTIONS)
+        self.assertIn('follow_up_pause', machine_actions.OWNER_ACTIONS)  # so the assistant CLI refuses it (cli.call), like every owner decision
         with self.assertRaisesRegex(ValueError, 'Follow-ups are off here'):
             self.pause()
         self.turn_on()
@@ -1373,7 +1378,7 @@ class FollowUps(unittest.TestCase):
         self.assertEqual(self.jobs(), [])  # Send without asking waits too
         self.assertEqual(self.states(), {self.acme: 'open', self.kim: 'open'})
         with self.store.connect() as db:
-            self.assertEqual(set(follow_ups.paused_ids(db, a.now())), {acme['suggestion_id'], kim['suggestion_id']})  # no background preparation
+            self.assertEqual(set(follow_ups.paused_ids(db, timeutil.now())), {acme['suggestion_id'], kim['suggestion_id']})  # no background preparation
         # A hard fact still closes one: they replied
         self.store.commit_page('work', {}, [msg('in3', '2026-10-19T08:30:00+00:00')])
         with self.store.connect() as db:
@@ -1392,7 +1397,7 @@ class FollowUps(unittest.TestCase):
         self.assertEqual(self.app().follow_up_step()['drafted'], 0)
         self.assertEqual(self.states(), {self.acme: 'paused', self.kim: 'paused'})
         with self.store.connect() as db:
-            boards = graph.boards(db, a.now())
+            boards = graph.boards(db, timeutil.now())
             self.app().follow_up_annotate(db, boards)
         self.assertEqual(boards[0]['follow_ups']['pause']['scope'], 'board')
         self.assertEqual({p['follow_up']['state'] for p in boards[0]['projects']}, {'paused'})
@@ -1415,8 +1420,8 @@ class FollowUps(unittest.TestCase):
         self.at('2026-10-21T09:00:00+00:00')
         with self.store.connect() as db:
             p = db.execute('SELECT * FROM projects WHERE id=?', (self.acme,)).fetchone()
-            self.assertIsNone(follow_ups.paused(db, p, a.now()))
-            self.assertEqual(follow_ups.resumed_at(db, p, a.now())[2].isoformat(), '2026-10-21T09:00:00+00:00')
+            self.assertIsNone(follow_ups.paused(db, p, timeutil.now()))
+            self.assertEqual(follow_ups.resumed_at(db, p, timeutil.now())[2].isoformat(), '2026-10-21T09:00:00+00:00')
         self.assertEqual(self.app().follow_up_step()['drafted'], 1)
 
     def test_a_project_pause_holds_only_that_project(self):
@@ -1472,7 +1477,7 @@ class FollowUps(unittest.TestCase):
             self.assertTrue(follow_ups.cards_view(db, [acme])[acme]['back'])
         with self.assertRaisesRegex(ValueError, 'Only the owner'):
             app.action('follow_up_bring_back', {'id': acme}, owner_dashboard=False)
-        self.assertIn('follow_up_bring_back', a.DASHBOARD_ACTIONS)
+        self.assertIn('follow_up_bring_back', machine_actions.DASHBOARD_ACTIONS)
         self.assertEqual(app.action('follow_up_bring_back', {'id': acme}, owner_dashboard=True), {'id': acme, 'status': 'prepared'})
         card = self.cards()[0]
         self.assertEqual((card['state'], card['status']), ('open', 'prepared'))
@@ -1540,7 +1545,7 @@ class FollowUps(unittest.TestCase):
         card = [c for c in self.cards() if c['project_id'] == self.acme][0]
         self.assertEqual((card['state'], card['why']), ('stopped', 'handled'))
         with self.store.connect() as db:
-            item = [x for x in follow_ups.plan(db, a.now(), {'email'}) if x['project']['id'] == self.acme][0]
+            item = [x for x in follow_ups.plan(db, timeutil.now(), {'email'}) if x['project']['id'] == self.acme][0]
         self.assertEqual((item['state'], item['n'], item['after_at'], item['next_at']),
                          ('waiting', 2, '2026-10-19T08:30:00+00:00', '2026-10-22T08:30:00+00:00'))
 
@@ -1658,14 +1663,14 @@ class FollowUps(unittest.TestCase):
         self.prepared(acme, kind='whatsapp', account_id='wa', chat_id='3247@s.whatsapp.net', body='Hi Sam, a short follow-up.')
         self.send(acme)
         rows = [{'MsgID': 'w1', 'Timestamp': '2026-10-12T09:00:00Z', 'FromMe': True}]
-        with patch.object(a.App, 'follow_up_chat', return_value=rows + [{'MsgID': 'w2', 'Timestamp': '2026-10-19T08:00:00Z', 'FromMe': False}]):
+        with patch.object(machine_main.App, 'follow_up_chat', return_value=rows + [{'MsgID': 'w2', 'Timestamp': '2026-10-19T08:00:00Z', 'FromMe': False}]):
             self.assertEqual(self.outbox(transport)('2026-10-19T09:00:00+00:00'), 'held')
         self.send(acme, 'again')
-        with patch.object(a.App, 'follow_up_chat', side_effect=ValueError('I couldn’t reach WhatsApp on this computer.')):
+        with patch.object(machine_main.App, 'follow_up_chat', side_effect=ValueError('I couldn’t reach WhatsApp on this computer.')):
             self.assertEqual(self.outbox(transport)('2026-10-19T09:01:00+00:00'), 'held')
         self.assertEqual(self.hold_of(acme)['why'], 'unchecked')
         self.send(acme, 'third')
-        with patch.object(a.App, 'follow_up_chat', return_value=rows):
+        with patch.object(machine_main.App, 'follow_up_chat', return_value=rows):
             self.assertEqual(self.outbox(transport)('2026-10-19T09:02:00+00:00'), 'sent')
         self.assertEqual(len(transport.sent), 1)
 
@@ -1701,7 +1706,7 @@ class FollowUps(unittest.TestCase):
         self.assertEqual(self.send(acme)['status'], 'queued')
         self.assertTrue(self.send(acme)['duplicate'])  # the same tap twice
         self.assertTrue(self.send(acme, 'other')['duplicate'])  # a second tap while it's queued
-        self.store = a.Store(self.store.path)  # a restart
+        self.store = machine_main.Store(self.store.path)  # a restart
         self.assertTrue(self.send(acme, 'after-restart')['duplicate'])
         self.assertEqual(len(self.jobs()), 1)
         step = self.outbox(transport)
@@ -1747,7 +1752,7 @@ class FollowUps(unittest.TestCase):
         self.assertEqual(self.cards(), [])  # no to-do on the weekend
         self.assertEqual(self.states(), {self.acme: 'waiting', self.kim: 'waiting'})
         with self.store.connect() as db:
-            boards = graph.boards(db, a.now())
+            boards = graph.boards(db, timeutil.now())
             self.app().follow_up_annotate(db, boards)
         self.assertEqual(boards[0]['follow_ups']['next_at'], '2026-10-26T07:00:00+00:00')  # "Follow-ups on, next Mon"
         self.at('2026-10-25T20:00:00+00:00')  # Sunday evening
@@ -1780,10 +1785,10 @@ class FollowUps(unittest.TestCase):
         with self.store.connect() as db:
             jobs = {r['source']: r['id'] for r in db.execute('SELECT id,source FROM action_jobs')}
             work = self.app().follow_up_work()
-            self.assertEqual(follow_ups.off_day_send(db, jobs['auto_follow_up'], a.now(), work), '2026-11-02T07:00:00+00:00')
-            self.assertIsNone(follow_ups.off_day_send(db, jobs['dashboard'], a.now(), work))
+            self.assertEqual(follow_ups.off_day_send(db, jobs['auto_follow_up'], timeutil.now(), work), '2026-11-02T07:00:00+00:00')
+            self.assertIsNone(follow_ups.off_day_send(db, jobs['dashboard'], timeutil.now(), work))
             self.at('2026-11-02T07:00:00+00:00')
-            self.assertIsNone(follow_ups.off_day_send(db, jobs['auto_follow_up'], a.now(), work))
+            self.assertIsNone(follow_ups.off_day_send(db, jobs['auto_follow_up'], timeutil.now(), work))
 
     def test_the_owners_work_days_decide(self):
         self.turn_on()
@@ -1811,11 +1816,11 @@ class FollowUps(unittest.TestCase):
         self.at('2026-10-24T09:00:00+00:00')  # Saturday
         work = app().follow_up_work()
         with self.store.connect() as db:
-            self.assertEqual({x['project']['id']: x['state'] for x in follow_ups.plan(db, a.now(), {'email'}, app().follow_up_mine(), None, work)},
+            self.assertEqual({x['project']['id']: x['state'] for x in follow_ups.plan(db, timeutil.now(), {'email'}, app().follow_up_mine(), None, work)},
                              {garden: 'due'})
         app().action('follow_up_save', {'scope': 'project', 'id': garden, 'settings': {'on': True, 'workdays': True}}, owner_dashboard=True)
         with self.store.connect() as db:
-            self.assertEqual({x['project']['id']: x['state'] for x in follow_ups.plan(db, a.now(), {'email'}, app().follow_up_mine(), None, work)},
+            self.assertEqual({x['project']['id']: x['state'] for x in follow_ups.plan(db, timeutil.now(), {'email'}, app().follow_up_mine(), None, work)},
                              {garden: 'waiting'})
         app().action('follow_up_save', {'scope': 'project', 'id': garden, 'settings': {'on': True}}, owner_dashboard=True)
         self.assertEqual(app().follow_up_step()['drafted'], 1)
@@ -1852,7 +1857,7 @@ class FakeMailbox:
     def read(self, account, thread_id):
         self.reads += 1
         if self.fail:
-            raise a.SourceError('offline')
+            raise sources.SourceError('offline')
         with self.test.store.connect() as db:
             rows = db.execute("SELECT source_id,occurred_at,metadata FROM events WHERE json_extract(metadata,'$.thread_id')=?", (thread_id,)).fetchall()
         known = [self.head(r['source_id'], r['occurred_at'], json.loads(r['metadata'])['from'], json.loads(r['metadata'])['labels']) for r in rows]
@@ -1875,7 +1880,7 @@ class FakeOutbox:
             raise KeyboardInterrupt('killed mid-send')
         if job['suggestion_id'] in self.refuse:
             return {'rejected': 550}
-        self.sent.append((job['suggestion_id'], a.now()))
+        self.sent.append((job['suggestion_id'], timeutil.now()))
         return {'message_id': 'm-' + job['id']}
 
     def reconcile(self, action, job):

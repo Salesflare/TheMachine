@@ -16,7 +16,10 @@ import graph
 import ms_graph
 import test_ux as ux
 import timeutil
-a = ux.a
+import machine.main as machine_main
+import machine.sources.gmail as machine_sources_gmail
+import sources
+import sqlite3
 
 GMAIL = {'id': 'work', 'email': 'owner@example.com', 'service': 'gmail', 'transport': 'gog', 'boundary': 'work:Example'}
 LINKEDIN = {'id': 'li', 'service': 'linkedin', 'transport': 'browser', 'boundary': 'work:Example'}
@@ -127,10 +130,10 @@ class Reading(unittest.TestCase):
 
     def test_collection_keeps_the_report_with_the_message(self):
         raw = {'id': 'm1', 'threadId': 't1', 'labelIds': ['INBOX'], 'internalDate': '1760000000000', 'snippet': 'Address not found', 'payload': gmail_dsn()}
-        event = a.message_event({'id': 'work', 'email': 'owner@example.com'}, raw)
+        event = machine_sources_gmail.message_event({'id': 'work', 'email': 'owner@example.com'}, raw)
         self.assertEqual(event['metadata']['bounce']['recipients'][0]['address'], 'sam@client.example')
         normal = {**raw, 'payload': {'mimeType': 'text/plain', 'headers': [{'name': 'From', 'value': 'sam@client.example'}], 'body': {'data': b64('Hi')}}}
-        self.assertNotIn('bounce', a.message_event({'id': 'work', 'email': 'owner@example.com'}, normal)['metadata'])
+        self.assertNotIn('bounce', machine_sources_gmail.message_event({'id': 'work', 'email': 'owner@example.com'}, normal)['metadata'])
 
     def test_the_text_is_only_a_fallback_for_the_address(self):
         no_fields = gmail_dsn()
@@ -147,21 +150,21 @@ class Recording(unittest.TestCase):
         p = patch.object(timeutil, 'LOCAL_TZ', ZoneInfo('Europe/Brussels'))
         p.start()
         self.addCleanup(p.stop)
-        self.clock = patch_everywhere(a, 'now', return_value=NOW)
+        self.clock = patch_everywhere(timeutil, 'now', return_value=NOW)
         self.clock.start()
         self.addCleanup(lambda: self.clock.stop())
-        unread = patch.object(a.Gmail, 'get', side_effect=a.SourceError('offline'))
+        unread = patch.object(machine_sources_gmail.Gmail, 'get', side_effect=sources.SourceError('offline'))
         unread.start()
         self.addCleanup(unread.stop)
-        self.store = a.Store(Path(self.tmp.name) / 'events.sqlite')
+        self.store = machine_main.Store(Path(self.tmp.name) / 'events.sqlite')
 
     def at(self, stamp):
         self.clock.stop()
-        self.clock = patch_everywhere(a, 'now', return_value=stamp)
+        self.clock = patch_everywhere(timeutil, 'now', return_value=stamp)
         self.clock.start()
 
     def app(self, **config):
-        app = object.__new__(a.App)
+        app = object.__new__(machine_main.App)
         app.store = self.store
         app.config = {'accounts': [GMAIL], 'digest_at': '08:30', 'review_worker': {'enabled': True}, **config}
         app.model_usage = None
@@ -177,7 +180,7 @@ class Recording(unittest.TestCase):
 
     def build(self):
         with self.store.connect() as db:
-            graph.build(db, self.app().config, a.now())
+            graph.build(db, self.app().config, timeutil.now())
 
     def flags(self, *addresses):
         with self.store.connect() as db:
@@ -200,7 +203,7 @@ class Recording(unittest.TestCase):
         self.add(mail('out1', '2026-10-12T09:00:00+00:00', mine=True), report('dsn1', '2026-10-12T09:00:05+00:00'))
         self.build()
         with self.store.connect() as db:
-            graph.person_edit(db, 'email:sam@client.example', {'emails': ['sam@client.example', 'sam@newco.example']}, a.now())
+            graph.person_edit(db, 'email:sam@client.example', {'emails': ['sam@client.example', 'sam@newco.example']}, timeutil.now())
         self.build()
         self.app().bounce_step()
         with self.store.connect() as db:
@@ -251,11 +254,11 @@ class Recording(unittest.TestCase):
                 def tick():
                     steps[0] += 1
                     if not blocked:  # another writer meanwhile: the lock is held, it can't get in
-                        other = a.sqlite3.connect(self.store.path, timeout=0)
+                        other = sqlite3.connect(self.store.path, timeout=0)
                         try:
                             other.execute('INSERT INTO email_bounce_scan(id,last_event) VALUES(1,0) ON CONFLICT(id) DO NOTHING')
                             blocked.append(False)
-                        except a.sqlite3.OperationalError as error:
+                        except sqlite3.OperationalError as error:
                             blocked.append('locked' in str(error))
                         finally:
                             other.close()
@@ -312,7 +315,7 @@ class Recording(unittest.TestCase):
             # Their only address: kept, and the send sheet warns
             self.assertEqual(bounces.steer(db, draft, ['sam@client.example'])[0]['to'], ['sam@client.example'])
             self.assertEqual(bounces.mark_draft(db, draft)['bounced'], {'sam@client.example': '2026-10-12T09:00:05+00:00'})
-            graph.person_edit(db, 'email:sam@client.example', {'emails': ['sam@client.example', 'sam@newco.example']}, a.now())
+            graph.person_edit(db, 'email:sam@client.example', {'emails': ['sam@client.example', 'sam@newco.example']}, timeutil.now())
         self.build()
         with self.store.connect() as db:
             steered, options = bounces.steer(db, [draft], ['sam@client.example', 'kim@other.example'])
@@ -360,7 +363,7 @@ class FollowUpsAfterABounce(Recording):
     def plan(self):
         app = self.app(**self.config)
         with self.store.connect() as db:
-            return {x['project']['id']: x for x in follow_ups.plan(db, a.now(), app.follow_up_sendable(), app.follow_up_mine(), app.follow_up_own(db))}
+            return {x['project']['id']: x for x in follow_ups.plan(db, timeutil.now(), app.follow_up_sendable(), app.follow_up_mine(), app.follow_up_own(db))}
 
     def test_without_a_bounce_it_follows_up_by_email(self):
         self.turn_on()
@@ -376,7 +379,7 @@ class FollowUpsAfterABounce(Recording):
         self.assertEqual((item['state'], item['reason']), ('off', 'bounced'))  # not "replied": a report is no reply
         self.assertEqual(self.app().follow_up_step()['drafted'], 0)
         with self.store.connect() as db:
-            boards = graph.boards(db, a.now())
+            boards = graph.boards(db, timeutil.now())
             self.app().follow_up_annotate(db, boards)
         self.assertEqual(boards[0]['projects'][0]['follow_up']['reason'], 'bounced')  # "Email bounced" on the project
 
@@ -434,7 +437,7 @@ class AnotherAddress(FollowUpsAfterABounce):
     def other_address(self):
         self.build()
         with self.store.connect() as db:
-            graph.person_edit(db, 'email:sam@client.example', {'emails': ['sam@client.example', 'sam@newco.example']}, a.now())
+            graph.person_edit(db, 'email:sam@client.example', {'emails': ['sam@client.example', 'sam@newco.example']}, timeutil.now())
         self.build()
 
     def test_the_follow_up_goes_on_by_email_to_the_working_address(self):
@@ -464,14 +467,14 @@ class AnotherAddress(FollowUpsAfterABounce):
             for _ in range(20):
                 self.assertEqual(bounces.mark_draft(db, draft)['moved'], {'sam@newco.example': 'sam@client.example'})
             self.assertEqual(looked.call_count, 1)
-            graph.person_edit(db, 'email:sam@client.example', {'name': 'Sam Client'}, a.now())  # a change on this connection
+            graph.person_edit(db, 'email:sam@client.example', {'name': 'Sam Client'}, timeutil.now())  # a change on this connection
             bounces.mark_draft(db, draft)
             self.assertEqual(looked.call_count, 2)  # read again
         with self.store.connect() as db, patch.object(bounces, 'person_emails', wraps=bounces.person_emails) as looked:
             self.assertEqual(bounces.mark_draft(db, draft)['moved'], {'sam@newco.example': 'sam@client.example'})
             self.assertEqual(looked.call_count, 0)  # a new connection: kept, the graph is the same
         with self.store.connect() as db:
-            graph.person_edit(db, 'email:sam@client.example', {'emails': ['sam@client.example', 'sam@other.example']}, a.now())
+            graph.person_edit(db, 'email:sam@client.example', {'emails': ['sam@client.example', 'sam@other.example']}, timeutil.now())
         self.build()  # the graph's people change
         with self.store.connect() as db, patch.object(bounces, 'person_emails', wraps=bounces.person_emails) as looked:
             bounces.mark_draft(db, draft)
@@ -502,9 +505,9 @@ class HeldBeforeItGoes(_Harness):
         for step in ('build', 'edit', 'build'):
             with self.store.connect() as db:
                 if step == 'build':
-                    graph.build(db, self.app().config, a.now())
+                    graph.build(db, self.app().config, timeutil.now())
                 else:
-                    graph.person_edit(db, 'email:sam@client.example', {'emails': ['sam@client.example', 'sam@newco.example']}, a.now())
+                    graph.person_edit(db, 'email:sam@client.example', {'emails': ['sam@client.example', 'sam@newco.example']}, timeutil.now())
         self.bounce()
         step = self.outbox(transport)
         self.assertEqual(step('2026-10-19T09:00:00+00:00'), 'held')

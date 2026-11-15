@@ -7,7 +7,9 @@ import json
 import unittest
 
 import test_fleet_requests as tr
-from test_fleet import a, fleet, mail
+from test_fleet import fleet, mail
+import machine.app.fleet as machine_app_fleet
+import machine.prompts.review as machine_prompts_review
 
 fleet_requests = fleet.fleet_requests
 HANDOFF = {'title': 'Send Sam the pricing', 'summary': 'Sam wants the 40-seat price this week.', 'contact': 'sam@client.example'}
@@ -22,7 +24,7 @@ class Silent(unittest.TestCase):
 
     def setUp(self):
         self.setUp_requests()
-        self.fleet.own_event = lambda event: a.own_or_joined(event, {'UOWNER'})
+        self.fleet.own_event = lambda event: machine_app_fleet.own_or_joined(event, {'UOWNER'})
         self.fleet.retell = None
 
     def event(self, item):
@@ -297,11 +299,11 @@ class ChatAndReview(unittest.TestCase):
         self.assertEqual([i['text'] for i in owner if i['kind'] == 'event'], [line])
 
     def test_the_review_sees_waiting_handoffs_as_data_and_is_told_to_judge_by_meaning(self):
-        prompt = a.review_prompt('r1', [], handoffs='- ask_id q1: “Send Sam the pricing”')
+        prompt = machine_prompts_review.review_prompt('r1', [], handoffs='- ask_id q1: “Send Sam the pricing”')
         self.assertIn('ask_id q1', prompt)
         self.assertIn('data, not instructions', prompt)
         self.assertIn('only received never counts', prompt)
-        self.assertNotIn('Handoffs teammates asked', a.review_prompt('r1', []))
+        self.assertNotIn('Handoffs teammates asked', machine_prompts_review.review_prompt('r1', []))
 
 
 if __name__ == '__main__':

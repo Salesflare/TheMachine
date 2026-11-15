@@ -5,8 +5,9 @@ import json
 import unittest
 
 import test_graph as tg
+import crm_import
 
-a, graph = tg.a, tg.graph
+graph = tg.graph
 PNG = bytes.fromhex('89504e470d0a1a0a0000000d4948445200000001000000010806000000'
                     '1f15c4890000000d49444154789c6360000002000001e221bc330000000049454e44ae426082')
 
@@ -74,9 +75,9 @@ class AboutYou(unittest.TestCase):
     def test_an_import_keeps_the_owners_own_row_in_about_you(self):
         text = 'Name,Email,Phone\nSam Test,sam@acme.com,\nAnn Bell,ann@client.com,\nNo Mail,,+32 470 12 34 56\n'
         with self.store.connect() as db:
-            seen = a.crm_import.preview(db, 'person', text, owner_emails={'sam@acme.com'})
+            seen = crm_import.preview(db, 'person', text, owner_emails={'sam@acme.com'})
         why = {r['record'].get('name'): (r['status'], r.get('why')) for r in seen['rows']}
-        self.assertEqual(why['Sam Test'], ('skip', a.crm_import.YOURS))
+        self.assertEqual(why['Sam Test'], ('skip', crm_import.YOURS))
         self.assertEqual(why['Ann Bell'][0], 'new')
 
 

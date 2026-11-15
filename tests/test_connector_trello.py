@@ -11,8 +11,11 @@ import urllib.error
 import urllib.parse
 from unittest.mock import patch
 
-from test_connectors import a, Response
+from test_connectors import Response
 from connectors import trello
+import machine.main as machine_main
+import machine.sources.connectors as machine_sources_connectors
+import sources
 
 BOARD = {'id': 'b' * 24, 'shortLink': 'Board001', 'name': 'Example board'}
 ACCOUNT = {**trello.SETUP['account'], 'board': 'https://trello.com/b/Board001/example'}
@@ -30,9 +33,9 @@ class TrelloTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
-        self.store = a.Store(Path(self.tmp.name) / 'events.sqlite')
+        self.store = machine_main.Store(Path(self.tmp.name) / 'events.sqlite')
         self.credential = unittest.mock.Mock(return_value=json.dumps({'key': 'fixture-key', 'token': 'fixture-token'}))
-        self.helpers = types.SimpleNamespace(SourceError=a.SourceError, iso=a.CONNECTOR_HELPERS.iso,
+        self.helpers = types.SimpleNamespace(SourceError=sources.SourceError, iso=machine_sources_connectors.CONNECTOR_HELPERS.iso,
                                              now=lambda: NOW, credential=self.credential)
         self.pages = [[action()]]
         self.requests = []
@@ -114,7 +117,7 @@ class TrelloTests(unittest.TestCase):
             self.assertEqual(state['catchup']['cursor'], f'{3:024x}')
             self.assertFalse(state['coverage_complete'])
             self.pages = [urllib.error.URLError('private response')]
-            with self.assertRaises(a.SourceError):
+            with self.assertRaises(sources.SourceError):
                 self.sync()
             self.assertEqual(self.store.checkpoint(ACCOUNT['id']), state)
             self.pages = [[action(2)]]
@@ -136,7 +139,7 @@ class TrelloTests(unittest.TestCase):
         self.store.commit_page(ACCOUNT['id'], {'catchup': {'since': '2026-10-12T00:00:00+00:00',
                                'until': NOW, 'cursor': f'{1:024x}'}}, [])
         self.pages = [[action()]]
-        with self.assertRaisesRegex(a.SourceError, '^trello_invalid_cursor$'):
+        with self.assertRaisesRegex(sources.SourceError, '^trello_invalid_cursor$'):
             self.sync()
         self.assertEqual(self.rows(), [])
 
@@ -144,7 +147,7 @@ class TrelloTests(unittest.TestCase):
         for status in (401, 403, 404, 429, 500):
             with self.subTest(status=status):
                 self.pages = [urllib.error.HTTPError('unused', status, 'private content', {'Retry-After': '120'}, None)]
-                with self.assertRaises(a.SourceError) as caught:
+                with self.assertRaises(sources.SourceError) as caught:
                     self.sync()
                 self.assertEqual(str(caught.exception), f'trello_http:HTTP_{status}')
                 self.assertEqual(caught.exception.retry_after, 120)
@@ -152,17 +155,17 @@ class TrelloTests(unittest.TestCase):
         for raw, label in ((b'not json', 'trello_invalid_json'), (b'{}', 'trello_invalid_page'),
                            (json.dumps([{'id': 'bad'}]).encode(), 'trello_invalid_action')):
             with self.subTest(label=label), patch('urllib.request.urlopen', side_effect=[Response(json.dumps(BOARD).encode()), Response(raw)]):
-                with self.assertRaisesRegex(a.SourceError, '^' + label + '$'):
+                with self.assertRaisesRegex(sources.SourceError, '^' + label + '$'):
                     self.sync()
         self.pages = [urllib.error.URLError('private content')]
-        with self.assertRaisesRegex(a.SourceError, '^trello_network$'):
+        with self.assertRaisesRegex(sources.SourceError, '^trello_network$'):
             self.sync()
 
     def test_invalid_timestamp_does_not_commit(self):
         item = action()
         item['date'] = 'not a date'
         self.pages = [[item]]
-        with self.assertRaisesRegex(a.SourceError, '^trello_invalid_timestamp$'):
+        with self.assertRaisesRegex(sources.SourceError, '^trello_invalid_timestamp$'):
             self.sync()
         self.assertIsNone(self.store.checkpoint(ACCOUNT['id']))
 
@@ -171,7 +174,7 @@ class TrelloTests(unittest.TestCase):
         self.assertEqual(self.rows(), [])
         self.assertIsNone(self.store.checkpoint(ACCOUNT['id']))
         with patch('urllib.request.urlopen', return_value=Response(json.dumps({**BOARD, 'shortLink': 'Wrong001'}).encode())):
-            with self.assertRaisesRegex(a.SourceError, '^account_identity_mismatch$'):
+            with self.assertRaisesRegex(sources.SourceError, '^account_identity_mismatch$'):
                 trello.check({}, ACCOUNT, self.helpers)
 
     def test_check_names_the_connection_after_its_board(self):
@@ -193,16 +196,16 @@ class TrelloTests(unittest.TestCase):
 
     def test_board_validation_and_credentials_are_runtime_only(self):
         for value in ('https://example.invalid/b/Board001', '../members/me', '', None):
-            with self.subTest(value=value), self.assertRaisesRegex(a.SourceError, '^trello_invalid_board$'):
+            with self.subTest(value=value), self.assertRaisesRegex(sources.SourceError, '^trello_invalid_board$'):
                 trello.Source({}, {**ACCOUNT, 'board': value}, self.helpers)
         self.credential.return_value = 'plain-token'
-        with self.assertRaisesRegex(a.SourceError, '^trello_credential_unavailable$'):
+        with self.assertRaisesRegex(sources.SourceError, '^trello_credential_unavailable$'):
             trello.Source({}, ACCOUNT, self.helpers)  # a plain token needs the API key from setup
         source = trello.Source({}, {**ACCOUNT, 'api_key': 'setup-key'}, self.helpers)
         self.assertEqual(source.headers['Authorization'], 'OAuth oauth_consumer_key="setup-key", oauth_token="plain-token"')
         for value in ('{}', '{not json', '[]', '{"key": "bad\\nheader", "token": "x"}'):
             self.credential.return_value = value
-            with self.subTest(value=value), self.assertRaisesRegex(a.SourceError, '^trello_credential_unavailable$'):
+            with self.subTest(value=value), self.assertRaisesRegex(sources.SourceError, '^trello_credential_unavailable$'):
                 trello.Source({}, ACCOUNT, self.helpers)
         self.assertEqual(trello.board_id(BOARD['id'], self.helpers), BOARD['id'])
         self.assertEqual(trello.board_id('Board001', self.helpers), 'Board001')

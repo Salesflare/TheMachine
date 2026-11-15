@@ -9,6 +9,8 @@ import test_graph as tg
 graph = tg.graph
 import crm_fields  # noqa: E402
 import shared_graph  # noqa: E402
+import machine.actions as machine_actions
+import machine.main as machine_main
 
 
 class Fields(unittest.TestCase):
@@ -56,7 +58,7 @@ class Fields(unittest.TestCase):
             return crm_fields.fields(db, kind)
 
     def test_values_are_sealed_at_rest_and_follow_a_person_and_a_merged_organisation(self):
-        self.store = self.app.store = tg.a.Store(self.store.path, protect=True)
+        self.store = self.app.store = machine_main.Store(self.store.path, protect=True)
         self.mails()
         note = self.act('graph_field_save', kind='person', name='Met at', type='text')
         self.act('graph_field_set', node_id='email:ivy@globex.example', field_id=note['id'], value='The Ghent meetup')
@@ -116,7 +118,7 @@ class Fields(unittest.TestCase):
     def test_field_actions_are_the_owners_only(self):
         with self.assertRaisesRegex(ValueError, 'Only the owner'):
             self.app.action('graph_field_save', {'kind': 'org', 'name': 'X', 'type': 'text'}, owner_dashboard=False)
-        self.assertTrue({'graph_field_save', 'graph_field_delete', 'graph_field_set', 'graph_tag'} <= tg.a.OWNER_ACTIONS)
+        self.assertTrue({'graph_field_save', 'graph_field_delete', 'graph_field_set', 'graph_tag'} <= machine_actions.OWNER_ACTIONS)
 
 
 if __name__ == '__main__':

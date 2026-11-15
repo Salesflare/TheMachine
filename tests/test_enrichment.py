@@ -9,9 +9,15 @@ from pathlib import Path
 from unittest.mock import patch
 
 import test_graph as tg
+import enrichment
+import machine.actions as machine_actions
+import machine.app.workers as machine_app_workers
+import machine.main as machine_main
+import signal
+import sources
 
-a, graph = tg.a, tg.graph
-enrichment = a.enrichment
+graph = tg.graph
+enrichment = enrichment
 KEY = 'not-a-real-key'  # a test value; a realistic-looking one trips secret scanners
 
 
@@ -387,7 +393,7 @@ class Enrichment(unittest.TestCase):
         edit = lambda args: self.app.action('graph_org_edit', {'node_id': 'org:globex.com', **args}, owner_dashboard=True)
         with self.assertRaisesRegex(ValueError, 'Only the owner'):
             self.app.action('graph_org_edit', {'node_id': 'org:globex.com', 'fields': {'industry': 'Toys'}})
-        self.assertIn('graph_org_edit', a.OWNER_ACTIONS)
+        self.assertIn('graph_org_edit', machine_actions.OWNER_ACTIONS)
         with self.assertRaisesRegex(ValueError, 'Founded is a year'):
             edit({'fields': {'founded': 'long ago'}})
         edit({'fields': {'industry': 'Toys', 'website': 'globex.example', 'founded': '2001'}, 'name': 'Globex Toys'})
@@ -500,7 +506,7 @@ class Enrichment(unittest.TestCase):
             lines = graph.context_lines(db, [r[0] for r in db.execute("SELECT event_id FROM graph_events WHERE node_id='email:lee@globex.com'")])
         self.assertIn('job title Head of Sales', lines)
         self.app.config = {**tg.CONFIG, **config}
-        self.assertTrue({'graph_person_delete', 'set_people_lookup'} <= a.OWNER_ACTIONS and 'graph_person_lookup' not in a.OWNER_ACTIONS)
+        self.assertTrue({'graph_person_delete', 'set_people_lookup'} <= machine_actions.OWNER_ACTIONS and 'graph_person_lookup' not in machine_actions.OWNER_ACTIONS)
         # Settings, Look up work contacts: off means nobody is looked up.
         with self.assertRaisesRegex(ValueError, 'Only the owner'):
             self.app.action('set_people_lookup', {'on': False})
@@ -793,14 +799,14 @@ class Enrichment(unittest.TestCase):
         with self.store.connect() as db:
             enrichment.save_person(db, 'email:lee@globex.com', 'found', {'title': 'Head of Sales', 'photo': 'https://media.example/lee.jpg'}, tg.NOW.isoformat())
         enrichment.photos_step(self.store.connect, tg.NOW.isoformat(), fetch=lambda url: (JPEG, 'image/jpeg'))
-        app = object.__new__(a.App)
+        app = object.__new__(machine_main.App)
         app.store, app.token, app.stop, app.graph_dirty, app.owner_token = self.store, 'test-token', threading.Event(), threading.Event(), 'owner-key'
         app.config = {'accounts': [], 'tailscale_owner': 'owner@example.com', 'dashboard_host': 'machine.example:8443', 'port': 0, 'http_timeout': 1}
-        servers, real = [], a.http.server.ThreadingHTTPServer
+        servers, real = [], http.server.ThreadingHTTPServer
         def capture(*args, **kwargs):
             servers.append(real(*args, **kwargs)); return servers[-1]
-        for patcher in (patch.object(a.http.server, 'ThreadingHTTPServer', side_effect=capture), patch.object(a.signal, 'signal'),
-                        patch.object(a.App, 'preparation_worker'), patch.object(a.App, 'delivery_worker')):
+        for patcher in (patch.object(http.server, 'ThreadingHTTPServer', side_effect=capture), patch.object(signal, 'signal'),
+                        patch.object(machine_main.App, 'preparation_worker'), patch.object(machine_main.App, 'delivery_worker')):
             patcher.start()
             self.addCleanup(patcher.stop)
         thread = threading.Thread(target=app.serve, daemon=True)
@@ -905,13 +911,13 @@ class Enrichment(unittest.TestCase):
             pages.append((method, params.get('pageToken'), scope))
             if method == 'people.connections.list':
                 return contacts if not params.get('pageToken') else {'connections': []}
-            raise a.SourceError('people', 403)  # a list this sign-in can't read is skipped
-        offers = a.google_photo_offers({}, {'email': 'sam@acme.com'}, read=read)
+            raise sources.SourceError('people', 403)  # a list this sign-in can't read is skipped
+        offers = machine_app_workers.google_photo_offers({}, {'email': 'sam@acme.com'}, read=read)
         self.assertEqual(pages[:2], [('people.connections.list', None, 'https://www.googleapis.com/auth/contacts'), ('people.connections.list', 'p2', 'https://www.googleapis.com/auth/contacts')])
         self.assertTrue(all('write' not in s and 'gmail' not in s for _, _, s in pages))  # only the contact scopes the sign-in has
         self.assertIn((['email:kim@family.example', 'wa:32470000001'], 'https://lh3.googleusercontent.com/a/kim-own=s160-c', True), offers)
         self.assertEqual(len(offers), 2)  # Kim and the stranger; Bo's letter and the off-host link are skipped
-        self.assertEqual(a.google_photo_accounts({'accounts': [
+        self.assertEqual(machine_app_workers.google_photo_accounts({'accounts': [
             {'id': 'g', 'service': 'gmail', 'transport': 'gog', 'email': 'Sam@acme.com'}, {'id': 'c', 'service': 'calendar', 'transport': 'gog', 'email': 'sam@acme.com'},
             {'id': 'h', 'service': 'gmail', 'transport': 'broker', 'email': 'h@acme.com'}, {'id': 's', 'service': 'gmail', 'transport': 'gog', 'email': 'x@y.example', 'shared': True}]}),
             [{'id': 'g', 'service': 'gmail', 'transport': 'gog', 'email': 'Sam@acme.com'}])  # once per address, own gog sign-ins only

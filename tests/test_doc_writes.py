@@ -17,10 +17,14 @@ import doc_writes as w
 import mail_grants
 import next_actions as n
 import talk_live
-from test_connectors import a, Response
+from test_connectors import Response
 from test_connector_docs import ACCOUNT, GMAIL, OUTLOOK, OWNER, GoogleFake, docx, helpers_for
 import test_ux as ux
 from test_assistant import event as ux_event
+import machine.cards as machine_cards
+import machine.main as machine_main
+import machine.sources.connectors as machine_sources_connectors
+import sources
 
 FILES = {'doc1': {'account_id': 'acme-docs', 'doc_title': 'Q4 plan', 'provider': 'google'}}
 
@@ -271,7 +275,7 @@ class Google(unittest.TestCase):
     def setUp(self):
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
-        self.store = a.Store(Path(tmp.name) / 'events.sqlite')
+        self.store = machine_main.Store(Path(tmp.name) / 'events.sqlite')
         self.config = {'database': str(Path(tmp.name) / 'events.sqlite'), 'google_broker': {'url': 'https://cp.example/api/google/token'},
                        'accounts': [GMAIL, ACCOUNT]}
         mail_grants.put(self.config, 'google', OWNER, 'refresh-1')
@@ -279,7 +283,7 @@ class Google(unittest.TestCase):
         google_api._tokens.clear()
         self.fake = GoogleWrites(self)
         patch('urllib.request.OpenerDirector.open', side_effect=self.fake.respond).start()
-        patch.object(a.CONNECTOR_HELPERS, 'credential', lambda config, name: 'machine-token').start()
+        patch.object(machine_sources_connectors.CONNECTOR_HELPERS, 'credential', lambda config, name: 'machine-token').start()
         self.addCleanup(patch.stopall)
         docs.sync(self.store, self.config, ACCOUNT, helpers_for())
         with self.store.connect() as db:
@@ -288,7 +292,7 @@ class Google(unittest.TestCase):
         self.fake.doc = gdoc(['Q4 plan', 'Launch in week 2.'])
 
     def app(self):
-        app = object.__new__(a.App)
+        app = object.__new__(machine_main.App)
         app.store, app.config = self.store, self.config
         return app
 
@@ -297,7 +301,7 @@ class Google(unittest.TestCase):
         return self.app().action('prepare', {'suggestion_id': self.sid, 'body': 'Edit ready.', 'next_action': action})
 
     def transport(self):
-        return n.ActionTransport(None, None, doc_writes=a.docs_write_transport(self.config))
+        return n.ActionTransport(None, None, doc_writes=machine_sources_connectors.docs_write_transport(self.config))
 
     def job(self):
         with self.store.connect() as db:
@@ -318,7 +322,7 @@ class Google(unittest.TestCase):
         with self.assertRaises(ValueError) as caught:
             self.save()
         self.assertIn('Allow edits', str(caught.exception))
-        self.assertEqual(a.docs_write_offered({'manage_url': 'https://cp.example/account'}, 'google'), False)
+        self.assertEqual(machine_sources_connectors.docs_write_offered({'manage_url': 'https://cp.example/account'}, 'google'), False)
 
     def test_an_approved_edit_is_written_once_into_the_version_the_owner_saw(self):
         self.fake.granted.add(docs.REPLY_SCOPE)
@@ -335,7 +339,7 @@ class Google(unittest.TestCase):
         self.assertEqual(len(self.batches()), 1)
         self.assertEqual(texts(w.google_snapshot(self.fake.doc, 'doc1')), ['Q4 plan', 'Launch in week 3.'])
         self.assertEqual(self.job()['status'], 'sent')
-        self.assertIn('✓ Changes saved in the doc', str(a.card(self.row())))
+        self.assertIn('✓ Changes saved in the doc', str(machine_cards.card(self.row())))
         broker = {r[1] for r in self.fake.requests if r[0] == 'BROKER' and r[1]}
         self.assertTrue(broker <= {docs.READ_SCOPE, docs.REPLY_SCOPE}, broker)  # never Gmail's
 
@@ -349,7 +353,7 @@ class Google(unittest.TestCase):
         self.app().action_step(self.transport())
         self.assertEqual(self.batches(), [])
         self.assertEqual(self.job()['status'], 'blocked')  # checked before the write: nothing went out
-        self.assertIn('The doc changed since this was drafted', str(a.card(self.row())))
+        self.assertIn('The doc changed since this was drafted', str(machine_cards.card(self.row())))
 
     def create(self, **extra):
         self.app().action('prepare', {'suggestion_id': self.sid, 'body': 'Doc ready in Google Docs.', 'next_action': {
@@ -377,7 +381,7 @@ class Google(unittest.TestCase):
         row = self.row()
         self.assertEqual(row['status'], 'prepared')  # stays open with the doc's link for the owner to look at
         self.assertEqual(row['next_actions'][0]['state']['url'], 'https://docs.google.com/document/d/new1/edit')  # Open the doc
-        self.assertRegex(str(a.card(row)), r'✓ Doc created at [\d:]+\. https://docs.google.com/document/d/new1/edit')
+        self.assertRegex(str(machine_cards.card(row)), r'✓ Doc created at [\d:]+\. https://docs.google.com/document/d/new1/edit')
         self.create(last=True)
         self.app().action_step(self.transport())
         self.assertEqual(len(self.uploads()), 1)  # the same doc saved again is never made twice
@@ -385,7 +389,7 @@ class Google(unittest.TestCase):
     def test_an_unclear_upload_is_never_sent_twice(self):
         self.fake.granted.add(docs.FILE_SCOPE)
         acct = next(x for x in self.config['accounts'] if x['id'] == 'acme-docs')
-        self.assertEqual(docs.writes_on(self.config, acct, a.CONNECTOR_HELPERS), {'create'})
+        self.assertEqual(docs.writes_on(self.config, acct, machine_sources_connectors.CONNECTOR_HELPERS), {'create'})
         self.decide('accept')
         self.create()
         self.fake.upload_fails = True  # it was created, but the answer got lost
@@ -431,7 +435,7 @@ class Google(unittest.TestCase):
         action = self.create(last=True)
         self.app().action_step(self.transport())
         self.assertEqual(self.job()['status'], 'failed')
-        card = str(a.card(self.row()))
+        card = str(machine_cards.card(self.row()))
         self.assertIn('Google Docs is turned off for this Google sign-in', card)
         self.assertNotIn('Google API has not been used', card)  # Google's message text never reaches the to-do
         self.fake.upload_refused = None
@@ -511,9 +515,9 @@ class Microsoft(unittest.TestCase):
         self.assertEqual(docs.writes_on(self.config, ACCOUNT, helpers_for()), set())
         with self.assertRaises(ValueError):
             self.edit()
-        self.assertTrue(a.docs_write_offered({}, 'microsoft'))
-        self.assertTrue(a.docs_write_offered({'manage_url': 'https://cp.example/a', 'docs_write_consent': ['microsoft']}, 'microsoft'))
-        self.assertFalse(a.docs_write_offered({'manage_url': 'https://cp.example/a'}, 'microsoft'))
+        self.assertTrue(machine_sources_connectors.docs_write_offered({}, 'microsoft'))
+        self.assertTrue(machine_sources_connectors.docs_write_offered({'manage_url': 'https://cp.example/a', 'docs_write_consent': ['microsoft']}, 'microsoft'))
+        self.assertFalse(machine_sources_connectors.docs_write_offered({'manage_url': 'https://cp.example/a'}, 'microsoft'))
 
     def test_an_edit_puts_the_file_back_only_onto_the_version_it_read(self):
         action = self.edit()
@@ -630,7 +634,7 @@ class GogDocs(unittest.TestCase):
     def setUp(self):
         self.account = {'id': 'acme-gmail', 'email': OWNER, 'transport': 'gog', 'client': 'acme', 'boundary': 'work:Acme'}
         self.config = {'gog': '/usr/bin/gog-fake', 'accounts': [self.account]}
-        self.helpers = types.SimpleNamespace(SourceError=a.SourceError, credential=lambda config, name: 'pw')
+        self.helpers = types.SimpleNamespace(SourceError=sources.SourceError, credential=lambda config, name: 'pw')
         self.scopes = ['email', docs.REPLY_SCOPE, 'https://www.googleapis.com/auth/gmail.modify']
         self.calls, self.doc, self.created, self.fail_fill, self.refuse = [], None, {}, False, None
         patch('subprocess.run', side_effect=self.gog).start()
@@ -723,7 +727,7 @@ class GogDocs(unittest.TestCase):
         that made it. A doc it didn't make for this to-do still isn't, and the refusal names the ids it may use."""
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
-        store = a.Store(Path(tmp.name) / 'events.sqlite')
+        store = machine_main.Store(Path(tmp.name) / 'events.sqlite')
         store.commit_page('acme-gmail', {}, [ux_event('acme-gmail', 'm1'), ux_event('acme-gmail', 'm2')])
         with store.connect() as db:
             first, second = [r[0] for r in db.execute('SELECT id FROM events ORDER BY id')]
@@ -738,9 +742,9 @@ class GogDocs(unittest.TestCase):
             db.execute("INSERT INTO action_jobs(id,suggestion_id,revision,payload,status,created_at,updated_at,approval_id,source,"
                        "rfc_message_id,message_id) VALUES('j1',?,'r1',?,'sent','2026-11-13T20:45:00+00:00','2026-11-13T20:46:00+00:00',"
                        "?,'assistant','','docwrite:g1')", (sid, json.dumps(made), w.NEW_DOC + 'x'))
-            files = a.doc_write_files(db, '[]', self.config, WORK, sid)
+            files = machine_sources_connectors.doc_write_files(db, '[]', self.config, WORK, sid)
             self.assertEqual(files, {'g1': {'account_id': 'acme-gmail', 'doc_title': 'Plan', 'provider': 'google', 'made': True}})
-            self.assertEqual(a.doc_write_files(db, '[]', self.config, WORK, other), {})  # another to-do's doc isn't this one's
+            self.assertEqual(machine_sources_connectors.doc_write_files(db, '[]', self.config, WORK, other), {})  # another to-do's doc isn't this one's
         self.doc = gdoc(['Plan', 'Week 3.'], 'r2')
         edit = {'kind': 'doc_write', 'op': 'edit', 'file_id': 'https://docs.google.com/document/d/g1/edit', 'changes': [{'append': 'Week 4.'}]}
         action = w.validate(edit, w.context(self.config, docs, self.helpers, files, edit, WORK))  # its link works as well as its id

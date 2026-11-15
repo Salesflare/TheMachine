@@ -7,11 +7,20 @@ import unittest
 from unittest.mock import patch
 
 import test_fleet as tf
-from test_fleet import a, fleet, NOW, TEAM, mail
+from test_fleet import fleet, NOW, TEAM, mail
 import fleet_requests  # noqa: E402
 from seams import patch_everywhere  # noqa: E402
 from machine.store.decisions import own_title  # noqa: E402
 from machine.store.promises import fit_title, promise_title  # noqa: E402
+import machine.actions as machine_actions
+import machine.cards as machine_cards
+import machine.delivery.push as machine_delivery_push
+import machine.delivery.telegram as machine_delivery_telegram
+import machine.main as machine_main
+import machine.prompts.review as machine_prompts_review
+import next_actions
+import notify
+import timeutil
 
 fleet_requests = fleet.fleet_requests
 WORK = {**tf.WORK, 'transport': 'gog'}
@@ -36,7 +45,7 @@ class Requests(unittest.TestCase):
         self.relay.directory['fleets'][0]['asks'] = list(fleet.ASKS['work'])
         self.fleet.directory(refresh=True)
         self.ref = self.fleet.ref('work')
-        self.app = object.__new__(a.App)
+        self.app = object.__new__(machine_main.App)
         self.app.store, self.app.config, self.app.fleet = self.store, CONFIG, self.fleet
         self.told = []
         self.fleet.make_card, self.fleet.tell = self.app.fleet_card, lambda text, anchor: self.told.append(text)
@@ -281,7 +290,7 @@ class Requests(unittest.TestCase):
         self.assertNotIn('no_ping', [a for a in self.fleet.view()['asked'] if a['id'] == ask_id][0])
 
     def test_can_ping_is_any_channel_that_reaches_the_owner(self):
-        app = object.__new__(a.App)
+        app = object.__new__(machine_main.App)
         app.store = self.store
         app.config = {'accounts': [], 'credentials': {}}
         self.assertFalse(app.fleet_can_ping())  # Razvan's case: no phone, no Telegram, no email
@@ -291,7 +300,7 @@ class Requests(unittest.TestCase):
         app.config = {**app.config, 'dashboard_host': 'machine.example'}
         self.assertTrue(app.fleet_can_ping())
         with self.store.connect() as db:
-            a.notify.set_pref(db, 'result', 'push', False)
+            notify.set_pref(db, 'result', 'push', False)
         self.assertFalse(app.fleet_can_ping())  # turned off for results
         app.config = {**app.config, 'fleet': {'url': 'https://cp.example/api/fleet'}, 'credentials': {'fleet': 'token'}}
         self.assertTrue(app.fleet_can_ping())  # email through the control plane
@@ -531,8 +540,8 @@ class Requests(unittest.TestCase):
             extra = self.store.suggestion_result(row, db)
         self.assertEqual(extra.get('handoff_still'), {'name': 'Kim'})
         self.assertNotIn('handoff_wait', extra)
-        self.assertIn('Still with Kim', a.card({**row, **extra}))
-        self.assertNotIn('check in?', a.card({**row, **extra}))  # plain status: Check in now is the one way to check in
+        self.assertIn('Still with Kim', machine_cards.card({**row, **extra}))
+        self.assertNotIn('check in?', machine_cards.card({**row, **extra}))  # plain status: Check in now is the one way to check in
         open_kim = [x for x in self.fleet.view()['asked'] if x['kind'] == 'handoff' and not x.get('withdrawn')]
         self.assertEqual(len(open_kim), 1)
         self.app.action('fleet_handoff_take_back', {'suggestion_id': card}, owner_dashboard=True)
@@ -646,7 +655,7 @@ class Requests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'Kim already handled this'):
             self.fleet.hand_off(card, self.ref, 'kim1', 'Check the tax alert', 'Can you check it?')
         row = next(r for r in self.store.snapshot([])['suggestions'] if r['id'] == card)
-        self.assertIn('Done: Kim already handled this.', a.card(row))
+        self.assertIn('Done: Kim already handled this.', machine_cards.card(row))
         self.relay.claims[self.handled('done')] = 'kim1'  # Mark done by Kim: done for every card on it
         self.fleet.handled_round()
         self.assertEqual(self.hint(other)['reason'], 'Kim already handled this')
@@ -670,7 +679,7 @@ class Requests(unittest.TestCase):
         self.assertEqual(self.hint(card), own)
 
     def test_plain_text_drafts_carry_links_as_words_and_url_while_email_keeps_a_real_link(self):
-        n, link = a.next_actions, '[the tax settings](https://vendor.example/tax)'
+        n, link = next_actions, '[the tax settings](https://vendor.example/tax)'
         handoff = n.validate({'kind': 'handoff', 'to_email': 'kim@acme.example', 'to_name': 'Kim Doe', 'body': f'Check {link} please.'}, CONFIG, ['work'])
         self.assertEqual(handoff['body'], 'Check the tax settings (https://vendor.example/tax) please.')
         mail_draft = n.validate({'kind': 'email', 'account_id': 'work', 'to': ['sam@client.example'], 'subject': 'Tax', 'body': f'See {link}.'}, CONFIG, ['work'])
@@ -689,12 +698,12 @@ class Requests(unittest.TestCase):
         with self.store.connect() as db:
             db.execute('UPDATE suggestions SET account_ids=? WHERE id=?', (json.dumps(['home']), personal))
         self.assertEqual(self.fleet.teammate_lines(personal), '')  # a personal card is nobody's in the Fleet
-        action = a.next_actions.validate({'kind': 'handoff', 'label': 'Hand off to Kim', 'to_email': 'kim@acme.example', 'to_name': 'Kim Doe',
+        action = next_actions.validate({'kind': 'handoff', 'label': 'Hand off to Kim', 'to_email': 'kim@acme.example', 'to_name': 'Kim Doe',
                                           'body': self.HANDOFF_TEXT}, CONFIG, ['work'])
-        self.assertEqual(a.next_actions.preview(action), 'Hand off to Kim Doe through The Machine\n\n' + self.HANDOFF_TEXT.replace('[Report](https://tracker.example/1)', 'Report (https://tracker.example/1)'))  # plain text on their side
+        self.assertEqual(next_actions.preview(action), 'Hand off to Kim Doe through The Machine\n\n' + self.HANDOFF_TEXT.replace('[Report](https://tracker.example/1)', 'Report (https://tracker.example/1)'))  # plain text on their side
         for bad in ({'label': 'Send to Kim'}, {'body': ''}, {'body': 'x' * 1001}, {'send_now': True}):
             with self.subTest(bad=bad), self.assertRaises(ValueError):
-                a.next_actions.validate({'kind': 'handoff', 'to_email': 'kim@acme.example', 'to_name': 'Kim Doe', 'body': 'Take it', **bad}, CONFIG, ['work'])
+                next_actions.validate({'kind': 'handoff', 'to_email': 'kim@acme.example', 'to_name': 'Kim Doe', 'body': 'Take it', **bad}, CONFIG, ['work'])
 
     def test_a_handoff_message_is_whole_sentences_the_ask_its_own(self):
         # What they need to know, then the ask as its own question: the run is told so, and a message that runs on
@@ -703,8 +712,8 @@ class Requests(unittest.TestCase):
         lines = self.fleet.lines(self.ready_card([]))
         self.assertIn('what they need to know ends with a period, and the ask is a sentence of its own that ends with a question mark', lines)
         def problems(body):
-            action = a.next_actions.validate({'kind': 'handoff', 'to_email': 'kim@acme.example', 'to_name': 'Kim Doe', 'body': body}, CONFIG, ['work'])
-            return [p for p in a.next_actions.check(action) if 'handoff message' in p]
+            action = next_actions.validate({'kind': 'handoff', 'to_email': 'kim@acme.example', 'to_name': 'Kim Doe', 'body': body}, CONFIG, ['work'])
+            return [p for p in next_actions.check(action) if 'handoff message' in p]
         run_on = ('the customer needs every contact with its custom fields in one file for their quarterly review '
                   'can you set up the export by friday')
         self.assertEqual(len(problems(run_on)), 1)
@@ -729,7 +738,7 @@ class Requests(unittest.TestCase):
                 self.fleet.hand_off(card, self.ref, 'kim1', 'Export leaks rows', self.HANDOFF_TEXT)
                 row = self.card_row(card)
                 self.assertEqual((row['status'], row['resume_status']), ('snoozed', 'prepared'))  # out of Ready, under Later
-                self.assertGreater(row['snoozed_until'], a.now())  # back by itself if their Machine stays quiet
+                self.assertGreater(row['snoozed_until'], timeutil.now())  # back by itself if their Machine stays quiet
                 with self.store.connect() as db:
                     shown = view(card)
                     ask_id = db.execute("SELECT id FROM fleet_out WHERE kind='handoff'").fetchone()[0]
@@ -865,7 +874,7 @@ class Requests(unittest.TestCase):
             self.assertEqual(db.execute('SELECT COUNT(*) FROM action_jobs WHERE suggestion_id=?', (card,)).fetchone()[0], 0)  # nothing sent
             extra = self.store.suggestion_result(row, db)
         self.assertEqual((extra.get('handoff_still'), extra.get('handoff_checkin')), ({'name': 'Kim'}, True))
-        self.assertNotIn('Still with Kim', a.card({**row, **extra}))  # its draft's status leads, not the handoff's
+        self.assertNotIn('Still with Kim', machine_cards.card({**row, **extra}))  # its draft's status leads, not the handoff's
         self.assertIn(('Asked for a check-in', True, None), self.chat_events(card))  # a tap, not words put in the owner's mouth
         self.assertEqual(self.fleet.handoff_draft(card)['note'], '')  # the check-in is no note for whoever takes it on
         # Kim takes it on meanwhile: the handoff still owns the to-do, so it closes as handed off
@@ -1116,9 +1125,9 @@ class Requests(unittest.TestCase):
         self.assertEqual(self.relay.sent('/ask'), [])
         with self.store.connect() as db:
             self.assertEqual(db.execute('SELECT COUNT(*) FROM fleet_splits').fetchone()[0], 0)
-        prompt = a.review_prompt('r1', ['work'])
+        prompt = machine_prompts_review.review_prompt('r1', ['work'])
         self.assertNotIn('split_from_notes', prompt)
-        self.assertNotIn('split_from_notes', a.App.ACTIONS)
+        self.assertNotIn('split_from_notes', machine_main.App.ACTIONS)
         # The review's own rule for a meeting's record: a to-do per next step, the meeting first in its evidence, one per step
         self.assertIn('each next step is one to-do with the meeting first in its evidence', prompt)
         self.assertIn('never a second one', prompt)
@@ -1209,11 +1218,11 @@ class Requests(unittest.TestCase):
             self.assertEqual({r['fleet'] for r in db.execute('SELECT fleet FROM fleet_requests')}, {first, second})
 
     def test_new_actions_are_the_owners_from_the_dashboard_only(self):
-        self.assertTrue(a.FLEET_REQUEST_ACTIONS <= a.OWNER_ACTIONS)
-        for name in a.FLEET_REQUEST_ACTIONS:
+        self.assertTrue(machine_actions.FLEET_REQUEST_ACTIONS <= machine_actions.OWNER_ACTIONS)
+        for name in machine_actions.FLEET_REQUEST_ACTIONS:
             with self.assertRaisesRegex(ValueError, 'dashboard'):
                 self.app.action(name, {'id': 'q1', 'source': 'telegram', 'message_id': '77'})
-        with patch_everywhere(a, 'telegram_request', side_effect=AssertionError('no Telegram')), patch_everywhere(a, 'push_node', side_effect=AssertionError('no push')):
+        with patch_everywhere(machine_delivery_telegram, 'telegram_request', side_effect=AssertionError('no Telegram')), patch_everywhere(machine_delivery_push, 'push_node', side_effect=AssertionError('no push')):
             self.app.fleet_tell('Pat accepted your handoff.', 'q1')  # neither is configured here: nothing goes out
 
 

@@ -10,9 +10,16 @@ import next_actions as n
 import test_ux as ux
 import timeutil
 from seams import patch_everywhere  # noqa: E402
-a = ux.a
-li = a.load_connector('linkedin')
-H = a.CONNECTOR_HELPERS
+import datetime as dt
+import machine.app.status as machine_app_status
+import machine.cards as machine_cards
+import machine.main as machine_main
+import machine.sources.connectors as machine_sources_connectors
+import machine.store.cards as machine_store_cards
+import sources
+import zoneinfo
+li = machine_sources_connectors.load_connector('linkedin')
+H = machine_sources_connectors.CONNECTOR_HELPERS
 
 ACCOUNT = {'id': 'li', 'service': 'linkedin', 'transport': 'linkedin-inbox', 'email': 'LinkedIn', 'boundary': 'work:linkedin'}
 CONV = 'urn:li:msg_conversation:(urn:li:fsd_profile:ME,2-ABC==)'
@@ -38,8 +45,8 @@ class LinkedInSource(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
-        self.store = a.Store(Path(self.tmp.name) / 'a.sqlite')
-        a.set_timezone('Europe/Amsterdam')
+        self.store = machine_main.Store(Path(self.tmp.name) / 'a.sqlite')
+        timeutil.set_timezone('Europe/Amsterdam')
 
     def test_event_shape_thread_link_and_invalid_rows(self):
         e = li.event(ACCOUNT, raw(), H)
@@ -48,27 +55,27 @@ class LinkedInSource(unittest.TestCase):
         self.assertEqual(e['metadata']['source_url'], 'https://www.linkedin.com/messaging/thread/2-ABC%3D%3D/')
         self.assertEqual(li.event(ACCOUNT, raw(fromMe=True), H)['metadata']['from'], 'You')
         for bad in (raw(urn='x'), raw(at='soon'), raw(fromMe=None), raw(conversation=None)):
-            with self.assertRaises(a.SourceError):
+            with self.assertRaises(sources.SourceError):
                 li.event(ACCOUNT, bad, H)
 
     def test_sync_is_incremental_dedupes_and_sleeps_at_night(self):
         src = Source([raw(), raw()])
-        with patch_everywhere(a, 'now', return_value=NOW):
+        with patch_everywhere(timeutil, 'now', return_value=NOW):
             self.assertEqual(li.sync(self.store, {}, ACCOUNT, H, src)['events'], 1)
             li.sync(self.store, {}, ACCOUNT, H, src)
-        self.assertEqual(src.calls[1], int(a.dt.datetime.fromisoformat(NOW).timestamp() * 1000) - 3600000)
+        self.assertEqual(src.calls[1], int(dt.datetime.fromisoformat(NOW).timestamp() * 1000) - 3600000)
         with self.store.connect() as db:
             self.assertEqual(db.execute('SELECT count(*) FROM events').fetchone()[0], 1)
-        with patch_everywhere(a, 'now', return_value='2026-10-13T23:30:00+00:00'):  # 01:30 local time
+        with patch_everywhere(timeutil, 'now', return_value='2026-10-13T23:30:00+00:00'):  # 01:30 local time
             li.sync(self.store, {}, ACCOUNT, H, src)
         self.assertEqual(len(src.calls), 2)
 
     def test_reader_only_runs_read_commands_and_maps_errors(self):
         source = li.Source({'linkedin_inbox': '/bin/linkedin-inbox-test'}, ACCOUNT, H)
-        with self.assertRaises(a.SourceError):
+        with self.assertRaises(sources.SourceError):
             source.run(['send', '--yes'])
         ok = subprocess.CompletedProcess([], 0, json.dumps({'messages': [], 'state': {}, 'more': False}), '')
-        with patch.object(a.subprocess, 'run', return_value=ok) as run:
+        with patch.object(subprocess, 'run', return_value=ok) as run:
             source.page(5, {'cursor': 'C1'})
         command = run.call_args.args[0]
         self.assertEqual(command[:4], ['/bin/linkedin-inbox-test', 'sync', '--since', '5'])
@@ -83,16 +90,16 @@ class LinkedInSource(unittest.TestCase):
                                    # a LinkedIn request that ran out its own time: LinkedIn was slow
                                    ('LinkedIn read failed: TimeoutError: signal timed out', 'linkedin_read_timeout', 900),
                                    ('LinkedIn lookup failed: boom', 'linkedin_read_failed', 900)):
-            with patch.object(a.subprocess, 'run', return_value=subprocess.CompletedProcess([], 2, '', 'linkedin-inbox: ' + stderr)):
-                with self.assertRaises(a.SourceError) as caught:
+            with patch.object(subprocess, 'run', return_value=subprocess.CompletedProcess([], 2, '', 'linkedin-inbox: ' + stderr)):
+                with self.assertRaises(sources.SourceError) as caught:
                     source.page(0, {})
             self.assertEqual((caught.exception.category, caught.exception.retry_after), (code, wait))
-        with patch.object(a.subprocess, 'run', side_effect=subprocess.TimeoutExpired('linkedin-inbox', 480)):
-            with self.assertRaises(a.SourceError) as caught:
+        with patch.object(subprocess, 'run', side_effect=subprocess.TimeoutExpired('linkedin-inbox', 480)):
+            with self.assertRaises(sources.SourceError) as caught:
                 source.page(0, {})
         self.assertEqual(caught.exception.category, 'linkedin_browser_stalled')  # the reader never finished: the browser
-        with patch.object(a.subprocess, 'run', return_value=subprocess.CompletedProcess([], 0, '{"messages": []}', '')):
-            with self.assertRaises(a.SourceError):
+        with patch.object(subprocess, 'run', return_value=subprocess.CompletedProcess([], 0, '{"messages": []}', '')):
+            with self.assertRaises(sources.SourceError):
                 source.page(0, {})
         self.assertTrue(li.READER.exists())
 
@@ -103,9 +110,9 @@ class LinkedInSource(unittest.TestCase):
                 self.calls.append((since, state))
                 return {'messages': [raw()], 'state': {'cursor': 'page2'} if len(self.calls) == 1 else {}, 'more': len(self.calls) == 1}
         src = Paged()
-        with patch_everywhere(a, 'now', return_value=NOW):
+        with patch_everywhere(timeutil, 'now', return_value=NOW):
             self.assertTrue(li.sync(self.store, {}, ACCOUNT, H, src)['more'])
-        with patch_everywhere(a, 'now', return_value='2026-10-30T10:00:00+00:00'):
+        with patch_everywhere(timeutil, 'now', return_value='2026-10-30T10:00:00+00:00'):
             self.assertFalse(li.sync(self.store, {}, ACCOUNT, H, src)['more'])
         self.assertEqual(src.calls[0][0], src.calls[1][0])
         self.assertEqual(src.calls[1][1], {'cursor': 'page2'})
@@ -113,11 +120,11 @@ class LinkedInSource(unittest.TestCase):
 
     def test_a_scan_by_an_older_reader_reads_back_once_without_duplicates(self):
         # Caught up by a reader that only listed INBOX: the next scan goes back bootstrap_days once, the one after doesn't.
-        current = int(a.dt.datetime.fromisoformat(NOW).timestamp() * 1000)
+        current = int(dt.datetime.fromisoformat(NOW).timestamp() * 1000)
         self.store.commit_page('li', {'mode': 'incremental', 'completed_ms': current - 600000, 'coverage_complete': True, 'page': {}},
                                [li.event(ACCOUNT, raw(), H)])
         src = Source([raw(), raw(urn='urn:li:msg_message:(urn:li:fsd_profile:ME,2-M9==)', at=current - 3 * 86400000, text='Late reply')])
-        with patch_everywhere(a, 'now', return_value=NOW):
+        with patch_everywhere(timeutil, 'now', return_value=NOW):
             self.assertEqual(li.sync(self.store, {}, ACCOUNT, H, src)['events'], 2)
             li.sync(self.store, {}, ACCOUNT, H, src)
         self.assertEqual(src.calls[0], current - 7 * 86400000)
@@ -134,11 +141,11 @@ class LinkedInSource(unittest.TestCase):
         context = self.store.conversation_context([rows[1]])
         self.assertEqual(len(context[rows[1]['id']]), 1)
         self.assertTrue(context[rows[1]['id']][0].endswith('Ada Lovelace: Hello?'))
-        self.assertTrue(a.source_line([rows[1]]).startswith('Source: LinkedIn from Ada Lovelace · '))
-        watch = a.awaiting_key(rows[1])
+        self.assertTrue(machine_store_cards.source_line([rows[1]]).startswith('Source: LinkedIn from Ada Lovelace · '))
+        watch = machine_store_cards.awaiting_key(rows[1])
         self.assertEqual(watch['conversation'], CONV)
-        self.assertTrue(a.awaiting_match(watch, {**rows[1], 'metadata': {**json.loads(rows[1]['metadata']), 'message_id': 'later'}}))
-        self.assertIsNone(a.awaiting_key({**rows[1], 'metadata': {**json.loads(rows[1]['metadata']), 'from_me': True}}))
+        self.assertTrue(machine_store_cards.awaiting_match(watch, {**rows[1], 'metadata': {**json.loads(rows[1]['metadata']), 'message_id': 'later'}}))
+        self.assertIsNone(machine_store_cards.awaiting_key({**rows[1], 'metadata': {**json.loads(rows[1]['metadata']), 'from_me': True}}))
 
 
 class LinkedInSend(unittest.TestCase):
@@ -148,14 +155,14 @@ class LinkedInSend(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
-        self.store = a.Store(Path(self.tmp.name) / 'events.sqlite')
+        self.store = machine_main.Store(Path(self.tmp.name) / 'events.sqlite')
         self.store.commit_page('li', {}, [li.event(ACCOUNT, raw(), H)])
         with self.store.connect() as db:
             event_id = db.execute("SELECT id FROM events WHERE kind='linkedin.message'").fetchone()[0]
         self.sid = self.store.suggest('li-task', 'Reply to Ada', 'Ada asks about Friday.', [event_id])['id']
 
     def app(self):
-        app = object.__new__(a.App)
+        app = object.__new__(machine_main.App)
         app.store = self.store
         app.config = {'accounts': [ACCOUNT, {'id': 'work', 'email': 'owner@example.com', 'service': 'gmail', 'transport': 'gog'}]}
         return app
@@ -185,7 +192,7 @@ class LinkedInSend(unittest.TestCase):
         action = self.ready()
         self.assertEqual(action['to_name'], 'Ada Lovelace')
         self.assertIn('LinkedIn message to Ada Lovelace', n.preview(action))
-        self.assertEqual(a.controls(self.row())['blocks'][0]['buttons'][0]['label'], 'Send reply')
+        self.assertEqual(machine_cards.controls(self.row())['blocks'][0]['buttons'][0]['label'], 'Send reply')
 
     def test_only_task_conversations_or_named_profiles(self):
         self.decide('accept')
@@ -216,12 +223,12 @@ class LinkedInSend(unittest.TestCase):
         self.app().action_step(self.transport(send=lambda *_: self.fail('Duplicate send')))
         self.assertEqual([c['body'] for c in calls], ['Friday works.'])
         self.assertEqual(self.job()['status'], 'sent')
-        self.assertIn('✓ LinkedIn message sent to Ada Lovelace at ', str(a.card(self.row())))
+        self.assertIn('✓ LinkedIn message sent to Ada Lovelace at ', str(machine_cards.card(self.row())))
 
     def test_reply_in_that_conversation_answers_the_card(self):
         self.ready()
         self.confirm()
-        with patch_everywhere(a, 'now', return_value='2026-10-13T10:00:00+00:00'):
+        with patch_everywhere(timeutil, 'now', return_value='2026-10-13T10:00:00+00:00'):
             self.app().action_step(self.transport())
         later = li.event(ACCOUNT, raw(urn='urn:li:msg_message:(urn:li:fsd_profile:ME,2-M2==)', at=1792000000000, text='Great, see you then.'), H)
         own = li.event(ACCOUNT, raw(urn='urn:li:msg_message:(urn:li:fsd_profile:ME,2-M3==)', at=1792000000001, fromMe=True), H)
@@ -278,11 +285,11 @@ class Transport(unittest.TestCase):
 
     def test_an_account_with_its_own_browser_profile_reads_and_sends_there(self):
         ok = subprocess.CompletedProcess([], 0, json.dumps({'messages': [], 'state': {}, 'more': False}), '')
-        with patch.object(a.subprocess, 'run', return_value=ok) as run:
+        with patch.object(subprocess, 'run', return_value=ok) as run:
             li.Source({}, ACCOUNT, H).page(5, {})
         self.assertIsNone(run.call_args.kwargs['env'])  # no profile of its own: the reader's default
         second = {**ACCOUNT, 'id': 'li-2', 'browser_profile': 'machine-2', 'browser_cdp': 'http://127.0.0.1:9304'}
-        with patch.object(a.subprocess, 'run', return_value=ok) as run:
+        with patch.object(subprocess, 'run', return_value=ok) as run:
             li.Source({}, second, H).page(5, {})
         self.assertEqual(run.call_args.kwargs['env']['LINKEDIN_INBOX_BROWSER_PROFILE'], 'machine-2')
         t = n.LinkedInTransport({'accounts': [ACCOUNT, second], 'linkedin_inbox': '/bin/linkedin-inbox-test'})
@@ -325,15 +332,15 @@ if __name__ == '__main__':
 class Tabs(unittest.TestCase):
     """The browser readers close what they open, also after a run that was stopped halfway."""
     def test_signed_out_shows_where_to_sign_in_again(self):
-        hosted = a.sign_in_help('linkedin', 'linkedin_signed_out', 'https://app.example.test/setup')
+        hosted = machine_app_status.sign_in_help('linkedin', 'linkedin_signed_out', 'https://app.example.test/setup')
         self.assertEqual(hosted['sign_in_url'], 'https://app.example.test/open?to=browser&site=linkedin')
         self.assertTrue(hosted['signed_out'])
         self.assertIn('not signed in to LinkedIn', hosted['sign_in_hint'])
-        self.assertEqual(a.sign_in_help('x', 'x_signed_out', 'https://app.example.test/setup')['sign_in_url'],
+        self.assertEqual(machine_app_status.sign_in_help('x', 'x_signed_out', 'https://app.example.test/setup')['sign_in_url'],
                          'https://app.example.test/open?to=browser&site=x')
-        self.assertIsNone(a.sign_in_help('linkedin', 'linkedin_signed_out', None)['sign_in_url'])  # self-hosted: the hint only
-        self.assertEqual(a.sign_in_help('linkedin', 'linkedin_read_failed', 'https://app.example.test/setup'), {})
-        self.assertEqual(a.sign_in_help('linkedin', None, None), {})
+        self.assertIsNone(machine_app_status.sign_in_help('linkedin', 'linkedin_signed_out', None)['sign_in_url'])  # self-hosted: the hint only
+        self.assertEqual(machine_app_status.sign_in_help('linkedin', 'linkedin_read_failed', 'https://app.example.test/setup'), {})
+        self.assertEqual(machine_app_status.sign_in_help('linkedin', None, None), {})
 
     def test_with_a_devtools_address_the_readers_skip_openclaw(self):
         import importlib.util
@@ -602,12 +609,12 @@ class ReadWindow(unittest.TestCase):
                  ('2026-10-28T02:00:00+00:00', {**x, 'active_hours': [0, 24]}, None),  # around the clock
                  ('2026-10-28T02:00:00+00:00', {**x, 'service': 'github'}, None)]
         for at, account, want in cases:
-            with self.subTest(at=at, account=account), patch.object(timeutil, 'LOCAL_TZ', a.ZoneInfo('Europe/Amsterdam')):
-                self.assertEqual(a.read_window(account, at), want)
+            with self.subTest(at=at, account=account), patch.object(timeutil, 'LOCAL_TZ', zoneinfo.ZoneInfo('Europe/Amsterdam')):
+                self.assertEqual(machine_sources_connectors.read_window(account, at), want)
 
     def test_the_dashboard_gets_it_with_each_source(self):
-        with tempfile.TemporaryDirectory() as tmp, patch_everywhere(a, 'now', return_value='2026-10-28T02:00:00+00:00'), \
-                patch.object(timeutil, 'LOCAL_TZ', a.ZoneInfo('Europe/Amsterdam')):
-            store = a.Store(Path(tmp) / 'events.sqlite')
+        with tempfile.TemporaryDirectory() as tmp, patch_everywhere(timeutil, 'now', return_value='2026-10-28T02:00:00+00:00'), \
+                patch.object(timeutil, 'LOCAL_TZ', zoneinfo.ZoneInfo('Europe/Amsterdam')):
+            store = machine_main.Store(Path(tmp) / 'events.sqlite')
             found = {c['id']: c['read_window'] for c in store.snapshot([{**ACCOUNT, 'service': 'linkedin'}, {'id': 'gh', 'service': 'github', 'boundary': 'work'}])['connectors']}
         self.assertEqual(found, {'li': {'hours': [7, 22], 'reads_again_at': '2026-10-28T06:00:00+00:00'}, 'gh': None})

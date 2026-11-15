@@ -6,11 +6,13 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from test_assistant import assistant as a, event
+from test_assistant import event
 import activity_log
 import error_feed
 from machine import action_basis
 import preparation_state
+import machine.main as machine_main
+import timeutil
 
 GMAIL = {'id': 'work', 'service': 'gmail', 'email': 'sam@acme.example'}
 
@@ -18,7 +20,7 @@ GMAIL = {'id': 'work', 'service': 'gmail', 'email': 'sam@acme.example'}
 class ActionBasis(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory(); self.addCleanup(self.tmp.cleanup)
-        self.store = a.Store(Path(self.tmp.name) / 'events.sqlite')
+        self.store = machine_main.Store(Path(self.tmp.name) / 'events.sqlite')
         self.store.commit_page('work', {}, [event()])
         self.config = {'accounts': [GMAIL]}
         activity_log._unrecorded.clear()
@@ -35,7 +37,7 @@ class ActionBasis(unittest.TestCase):
     def said(self, sid, decision_id, words, source='dashboard'):
         with self.store.connect() as db:
             db.execute("INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,'other',?,?,?)",
-                       (decision_id, sid, words, source, a.now()))
+                       (decision_id, sid, words, source, timeutil.now()))
 
     def lines(self, **kw):
         with self.store.connect() as db:
@@ -82,7 +84,7 @@ class ActionBasis(unittest.TestCase):
         self.assertLessEqual(len(long['quote']), action_basis.QUOTE_MAX)
 
     def test_a_send_now_takes_the_to_do_chat_turn_then_the_main_chat(self):
-        app = object.__new__(a.App)
+        app = object.__new__(machine_main.App)
         self.assertEqual(app.asked_basis({'id': 'chat-1', 'feedback': 'Send it'}), {'kind': 'chat', 'decision': 'chat-1', 'quote': 'Send it'})
         app.owner_said = lambda: 'webchat-said:m1'  # their own main chat: its words are kept nowhere
         self.assertEqual(app.asked_basis(None), {'kind': 'chat', 'decision': 'webchat-said:m1'})
@@ -100,7 +102,7 @@ class ActionBasis(unittest.TestCase):
         other, _ = self.card(2)
         with self.store.connect() as db:
             db.execute("INSERT INTO action_jobs(id,suggestion_id,revision,payload,status,created_at,updated_at,approval_id,source,rfc_message_id)"
-                       " VALUES('j2',?,'r2','{\"kind\":\"slack\",\"to\":\"Robin\"}','sent',?,?,'x','somewhere','')", (other, a.now(), a.now()))
+                       " VALUES('j2',?,'r2','{\"kind\":\"slack\",\"to\":\"Robin\"}','sent',?,?,'x','somewhere','')", (other, timeutil.now(), timeutil.now()))
         self.assertEqual(self.lines()['messages:j2']['by'], 'No approval recorded')
         self.lines()
         with self.store.connect() as db:
@@ -137,17 +139,17 @@ class ActionBasis(unittest.TestCase):
             self.store.queue_preparation(db, sid, decision)
             job = db.execute('SELECT job_id FROM preparations WHERE suggestion_id=?', (sid,)).fetchone()[0]
             db.execute("UPDATE preparations SET status='running' WHERE suggestion_id=?", (sid,))
-            db.execute("INSERT INTO preparation_runs(job_id,suggestion_id,session_job_id,status,started_at) VALUES(?,?,?,'running',?)", (job, sid, job, a.now()))
+            db.execute("INSERT INTO preparation_runs(job_id,suggestion_id,session_job_id,status,started_at) VALUES(?,?,?,'running',?)", (job, sid, job, timeutil.now()))
         return job
 
     def call(self, job, n, params):
         with self.store.connect() as db:
-            return preparation_state.tool_intent(db, {'job_id': job, 'call_id': f'c{n}', 'tool': 'browser', 'params': params}, a.now())
+            return preparation_state.tool_intent(db, {'job_id': job, 'call_id': f'c{n}', 'tool': 'browser', 'params': params}, timeutil.now())
 
     def test_a_do_it_run_that_clicks_on_a_page_shows_under_steps_on_the_web(self):
         sid = self.store.suggest('task-pay', 'Pay the invoice', 'Body', [1])['id']
         with self.store.connect() as db:
-            db.execute("INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES('go-1',?,'accept','','dashboard',?)", (sid, a.now()))
+            db.execute("INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES('go-1',?,'accept','','dashboard',?)", (sid, timeutil.now()))
         job = self.run_of(sid, 'go-1')
         self.assertEqual(self.call(job, 1, {'action': 'open', 'url': 'https://example.org/'}), {'active': True})
         self.assertNotIn('web:run:' + job, self.lines(), 'opening a page changes nothing')

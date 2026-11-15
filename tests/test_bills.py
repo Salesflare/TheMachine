@@ -10,9 +10,11 @@ from pathlib import Path
 
 import test_ux as ux
 from seams import patch_everywhere  # noqa: E402
-a = ux.a
 
 import family_done  # noqa: E402
+import machine.main as machine_main
+import machine.prompts.review as machine_prompts_review
+import timeutil
 
 ROOT = Path(__file__).parent.parent
 MAIL = {'id': 'home', 'email': 'owner@example.com', 'service': 'gmail', 'transport': 'gog', 'boundary': 'personal'}
@@ -35,7 +37,7 @@ def mail(source_id, sender, title, body, at=NOW):
 
 
 def at(text):
-    return patch_everywhere(a, 'now', lambda: text)
+    return patch_everywhere(timeutil, 'now', lambda: text)
 
 
 class Bills(unittest.TestCase):
@@ -43,10 +45,10 @@ class Bills(unittest.TestCase):
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
         self.tmp = tmp
-        clock = patch_everywhere(a, 'now', return_value=NOW)
+        clock = patch_everywhere(timeutil, 'now', return_value=NOW)
         clock.start()
         self.addCleanup(clock.stop)
-        self.store = a.Store(Path(tmp.name) / 'events.sqlite', protect=True)
+        self.store = machine_main.Store(Path(tmp.name) / 'events.sqlite', protect=True)
         self.store.commit_page('home', {}, [
             mail('us', 'City Water <billing@citywater.example>', 'Your water bill', US_BILL),
             mail('uk', 'Example School <accounts@school.example.co.uk>', 'School trip invoice', UK_BILL),
@@ -58,7 +60,7 @@ class Bills(unittest.TestCase):
             return db.execute('SELECT id FROM events WHERE source_id=?', (source_id,)).fetchone()[0]
 
     def app(self):
-        app = object.__new__(a.App)
+        app = object.__new__(machine_main.App)
         app.store = self.store
         app.config = {'accounts': [MAIL], 'digest_at': '08:30', 'review_worker': {'enabled': True}, 'prepare_ahead': False,
                       'openclaw_config': str(Path(self.tmp.name) / 'no-openclaw.json')}  # no model here: never a live turn
@@ -84,7 +86,7 @@ class Bills(unittest.TestCase):
         return self.id('us-paid')
 
     def test_the_review_is_told_to_judge_bills_by_meaning_wherever_they_come_from(self):
-        prompt = a.review_prompt('r1', ['home'])
+        prompt = machine_prompts_review.review_prompt('r1', ['home'])
         for words in ('Bills:', 'routing', 'sort code', 'BSB', 'check is payable to', 'pay link', 'autopay', 'direct debit',
                       'never by its format', 'paid:true', 'bill {"payee", "invoice", "amount"}'):
             self.assertIn(words, prompt)

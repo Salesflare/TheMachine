@@ -7,6 +7,7 @@ import unittest
 
 import test_fleet_requests as tr
 from test_fleet import fleet, mail, TEAM
+import machine.store.cards as machine_store_cards
 
 fleet_requests = fleet.fleet_requests
 
@@ -45,7 +46,7 @@ class HandoffSources(unittest.TestCase):
         self.assertTrue(row['source_line'].startswith('Source: email from Sam Lee, via Pat · '))
         # (+1 is Sam's own email on this Machine, the contact's latest.) The handoff's own event is the card's text, not a source:
         rows = [{'kind': k, 'metadata': {'sender_display': 'Sam, via Pat'}, 'occurred_at': '2026-10-22T09:00:00+00:00'} for k in ('fleet.email', 'fleet.request')]
-        self.assertEqual(tr.a.source_line(rows), 'Source: email from Sam, via Pat · Thu, Oct 22')
+        self.assertEqual(machine_store_cards.source_line(rows), 'Source: email from Sam, via Pat · Thu, Oct 22')
         with self.store.connect() as db:
             first = db.execute('SELECT kind,title,body,metadata,analyzed_version FROM events WHERE id=?', (json.loads(row['event_ids'])[0],)).fetchone()
         meta = json.loads(first['metadata'])

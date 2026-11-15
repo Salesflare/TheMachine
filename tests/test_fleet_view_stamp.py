@@ -7,6 +7,7 @@ import unittest
 
 from machine import stamps
 import test_fleet as t
+import machine.main as machine_main
 
 
 class FleetViewStamp(unittest.TestCase):
@@ -38,7 +39,7 @@ class FleetViewStamp(unittest.TestCase):
         self.assertNotEqual(self.view_stamp(), third)
 
     def test_the_status_carries_it(self):
-        app = object.__new__(t.a.App)
+        app = object.__new__(machine_main.App)
         app.store, app.config_path, app.config, app.fleet = self.store, None, {**t.CONFIG}, self.fleet
         self.assertEqual(app.action('status', {'full': True})['fleet']['stamp'], self.view_stamp())
 

@@ -11,7 +11,8 @@ import test_ux as ux
 from seams import patch_everywhere  # noqa: E402
 import timeutil
 from machine.store import todo_moves  # noqa: E402
-a = ux.a
+import machine.cards as machine_cards
+import machine.main as machine_main
 
 
 def setUpModule():  # these read snoozes landing at 09:00, the old default (now 08:00, before the 08:30 digest)
@@ -46,7 +47,7 @@ class Delegate(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
-        self.store = a.Store(Path(self.tmp.name) / 'events.sqlite')
+        self.store = machine_main.Store(Path(self.tmp.name) / 'events.sqlite')
         self.store.owner_user_ids = {'UOWNER1'}
         self.store.commit_page('work', {}, [email('m1', '2026-10-15T08:00:00+00:00')])
         with self.store.connect() as db:
@@ -54,7 +55,7 @@ class Delegate(unittest.TestCase):
         self.sid = self.store.suggest('invoice-question', 'Invoice question from Client', 'They ask about an invoice.', [event_id])['id']
 
     def app(self):
-        app = object.__new__(a.App)
+        app = object.__new__(machine_main.App)
         app.store = self.store
         app.config = {'accounts': [GMAIL, SLACK, OTHER_SLACK]}
         return app
@@ -89,7 +90,7 @@ class Delegate(unittest.TestCase):
         self.assertIn('Slack message to Sam (sam@example.com)', n.preview(action))
         self.assertIn('waits 3 days for Sam’s reply', n.preview(action))
         # Same rows as the plugin's packRows: the Send shares its row with Mark done.
-        self.assertEqual([[b['label'] for b in block['buttons']] for block in a.controls(self.row())['blocks']],
+        self.assertEqual([[b['label'] for b in block['buttons']] for block in machine_cards.controls(self.row())['blocks']],
                          [['Send to Sam', 'Mark done', 'Snooze'], ['Ask for changes', 'Not needed']])
         for bad in ({'account_id': 'other-slack'}, {'user_id': 'U0SAM12'}, {'to_email': None, 'user_id': 'nope'},
                     {'wait_days': 30}, {'delegate': 'yes'}, {'label': 'Delegate'}, {'to_name': ''}, {'channel': 'C1'}):
@@ -101,13 +102,13 @@ class Delegate(unittest.TestCase):
         self.ready(self.slack_action())
         self.confirm()
         sent = []
-        with patch_everywhere(a, 'now', return_value='2026-10-16T09:00:00+00:00'):
+        with patch_everywhere(timeutil, 'now', return_value='2026-10-16T09:00:00+00:00'):
             self.app().action_step(self.transport(lambda action, job: (sent.append(action), {'message_id': 'slack:D0SAM1:1.2', 'channel_id': 'D0SAM1', 'user_id': 'U0SAM12'})[1]))
         self.assertEqual(len(sent), 1)
         row = self.suggestion()
         self.assertEqual((row['status'], row['resume_status']), ('snoozed', 'prepared'))
         self.assertEqual(row['snoozed_until'], '2026-10-19T07:00:00+00:00')  # 3 days, Monday 09:00 local time
-        self.assertIn('Sent to Sam. Waiting for their reply until Mon, Oct 19', a.card(self.row()))
+        self.assertIn('Sent to Sam. Waiting for their reply until Mon, Oct 19', machine_cards.card(self.row()))
         # The owner's own message in that DM, someone else in another chat and older messages don't count.
         self.store.commit_page('slack', {}, [slack('s0', '2026-10-16T08:00:00+00:00', 'U0SAM12'),
                                              slack('s1', '2026-10-16T10:00:00+00:00', 'UOWNER1'),
@@ -122,7 +123,7 @@ class Delegate(unittest.TestCase):
             reply_id = db.execute("SELECT id FROM events WHERE source_id='s3'").fetchone()[0]
         self.assertEqual(self.suggestion()['status'], 'completed')
         self.assertEqual((decision['choice'], decision['source']), ('complete', 'assistant'))
-        self.assertEqual(a.card(self.row()).splitlines()[-1], 'Sam replied, so I closed this.')
+        self.assertEqual(machine_cards.card(self.row()).splitlines()[-1], 'Sam replied, so I closed this.')
         # Their answer is reviewed as a reply to this card.
         with self.store.connect() as db:
             rows = [dict(r) for r in db.execute('SELECT * FROM events WHERE id=?', (reply_id,))]
@@ -131,12 +132,12 @@ class Delegate(unittest.TestCase):
     def test_no_reply_brings_the_card_back(self):
         self.ready(self.slack_action(wait_days=1))
         self.confirm()
-        with patch_everywhere(a, 'now', return_value='2026-10-14T09:00:00+00:00'):
+        with patch_everywhere(timeutil, 'now', return_value='2026-10-14T09:00:00+00:00'):
             self.app().action_step(self.transport(lambda *_: {'message_id': 'slack:D0SAM1:1.2', 'channel_id': 'D0SAM1', 'user_id': 'U0SAM12'}))
         self.assertEqual(self.suggestion()['snoozed_until'], '2026-10-15T07:00:00+00:00')
         self.store.wake_snoozed()
         self.assertEqual(self.suggestion()['status'], 'prepared')
-        self.assertIn('No reply from Sam yet.', a.card(self.row()))
+        self.assertIn('No reply from Sam yet.', machine_cards.card(self.row()))
 
     def test_delegated_email_waits_for_that_persons_reply(self):
         action = self.ready({'kind': 'email', 'label': 'Send to the accountant', 'account_id': 'work', 'to': ['books@accountant.example'],
@@ -147,7 +148,7 @@ class Delegate(unittest.TestCase):
             n.validate({**{k: v for k, v in action.items() if k not in ('revision', 'from', 'signature')}, 'to': ['a@x.example', 'b@x.example']},
                        self.app().config, ['work'])
         self.confirm()
-        with patch_everywhere(a, 'now', return_value='2026-10-16T09:00:00+00:00'):
+        with patch_everywhere(timeutil, 'now', return_value='2026-10-16T09:00:00+00:00'):
             self.app().action_step(self.transport(lambda *_: {'message_id': 'gm-1'}))
         with self.store.connect() as db:
             job_rfc = db.execute('SELECT rfc_message_id FROM action_jobs').fetchone()[0]
@@ -172,7 +173,7 @@ class Delegate(unittest.TestCase):
         self.confirm()
         self.app().action_step(self.transport(lambda *_: {'message_id': 'slack:D0SAM1:1.2', 'channel_id': 'D0SAM1', 'user_id': 'U0SAM12'}))
         self.assertEqual(self.suggestion()['status'], 'completed')
-        self.assertIn('✓ Slack message sent to Sam at ', a.card(self.row()))
+        self.assertIn('✓ Slack message sent to Sam at ', machine_cards.card(self.row()))
 
 
 class SlackSender(unittest.TestCase):

@@ -13,8 +13,8 @@ import google_api
 import next_actions as n
 import onboarding
 import test_ux as ux
+import sources
 
-a = ux.a
 BROKER = 'https://cloud.example/api/google/token'
 
 
@@ -62,10 +62,10 @@ class Broker(unittest.TestCase):
     def test_reads_ask_the_broker_once_per_scope_and_call_google_directly(self):
         self.fake.google['https://gmail.googleapis.com/gmail/v1/users/me/messages/m%2F1'] = (200, {'id': 'm/1'})
         self.fake.google['https://gmail.googleapis.com/gmail/v1/users/me/messages?'] = (200, {'messages': []})
-        found = a.gog_read(self.config, self.account, 'gmail', 'v1', 'gmail.users.messages.get', {'userId': 'me', 'id': 'm/1', 'format': 'full'},
+        found = sources.gog_read(self.config, self.account, 'gmail', 'v1', 'gmail.users.messages.get', {'userId': 'me', 'id': 'm/1', 'format': 'full'},
                            'https://www.googleapis.com/auth/gmail.readonly')
         self.assertEqual(found, {'id': 'm/1'})
-        a.gog_read(self.config, self.account, 'gmail', 'v1', 'gmail.users.messages.list', {'userId': 'me', 'q': 'in:inbox', 'labelIds': ['A', 'B'],
+        sources.gog_read(self.config, self.account, 'gmail', 'v1', 'gmail.users.messages.list', {'userId': 'me', 'q': 'in:inbox', 'labelIds': ['A', 'B'],
                    'includeSpamTrash': False}, 'https://www.googleapis.com/auth/gmail.readonly')
         broker = [c for c in self.fake.calls if c[1] == BROKER]
         self.assertEqual(len(broker), 1)  # the token is reused until shortly before it expires
@@ -78,18 +78,18 @@ class Broker(unittest.TestCase):
 
     def test_an_expired_token_is_renewed_once_and_errors_stay_content_free(self):
         self.fake.google['https://www.googleapis.com/calendar/v3/calendars/primary/events'] = (401, None)
-        with self.assertRaises(a.SourceError) as caught:
-            a.gog_read(self.config, self.account, 'calendar', 'v3', 'calendar.events.list', {'calendarId': 'primary'},
+        with self.assertRaises(sources.SourceError) as caught:
+            sources.gog_read(self.config, self.account, 'calendar', 'v3', 'calendar.events.list', {'calendarId': 'primary'},
                        'https://www.googleapis.com/auth/gmail.readonly')
         self.assertEqual((caught.exception.category, caught.exception.status), ('calendar', 401))
         self.assertEqual(self.fake.issued, 2)
-        with self.assertRaises(a.SourceError) as caught:  # a scope the owner didn't grant
-            a.gog_read(self.config, self.account, 'calendar', 'v3', 'calendar.events.list', {'calendarId': 'primary'},
+        with self.assertRaises(sources.SourceError) as caught:  # a scope the owner didn't grant
+            sources.gog_read(self.config, self.account, 'calendar', 'v3', 'calendar.events.list', {'calendarId': 'primary'},
                        'https://www.googleapis.com/auth/calendar.readonly')
         self.assertEqual(caught.exception.category, 'google_scope_not_granted')
         calls = len(self.fake.calls)
-        with self.assertRaises(a.SourceError) as caught:  # only listed methods; refused before asking for a token
-            a.gog_read(self.config, self.account, 'gmail', 'v1', 'gmail.users.messages.trash', {'userId': 'me', 'id': 'x'},
+        with self.assertRaises(sources.SourceError) as caught:  # only listed methods; refused before asking for a token
+            sources.gog_read(self.config, self.account, 'gmail', 'v1', 'gmail.users.messages.trash', {'userId': 'me', 'id': 'x'},
                        'https://www.googleapis.com/auth/gmail.readonly')
         self.assertEqual((caught.exception.category, len(self.fake.calls)), ('unsupported_google_method', calls))
         with self.assertRaises(google_api.BrokerError):  # and writes only through the write list
@@ -107,15 +107,15 @@ class Broker(unittest.TestCase):
         calls = len(self.fake.calls)
         for bad in ('http://cloud.example/api/google/token', 'file:///etc/passwd', 'https://', 'https://u:p@cloud.example/t'):
             with self.assertRaises(google_api.BrokerError, msg=bad) as caught:
-                google_api.scopes({**self.config, 'google_broker': {'url': bad}}, a.credential, self.account)
+                google_api.scopes({**self.config, 'google_broker': {'url': bad}}, sources.credential, self.account)
             self.assertEqual(caught.exception.category, 'google_broker_not_https')
         self.assertEqual(len(self.fake.calls), calls)  # refused before anything was sent
         with self.assertRaises(google_api.BrokerError) as caught:
-            google_api.scopes({**self.config, 'google_broker': {}}, a.credential, self.account)
+            google_api.scopes({**self.config, 'google_broker': {}}, sources.credential, self.account)
         self.assertEqual(caught.exception.category, 'google_broker_not_configured')
 
     def test_sending_needs_a_granted_send_scope_and_never_retries_an_unclear_send(self):
-        email = n.EmailTransport(self.config, a.credential, a.gog_read)
+        email = n.EmailTransport(self.config, sources.credential, sources.gog_read)
         action = {'kind': 'email', 'account_id': 'work-gmail', 'from': 'alex@acme.test'}
         with self.assertRaisesRegex(ValueError, 'read-only'):
             email.preflight(action)
@@ -141,7 +141,7 @@ class Broker(unittest.TestCase):
                 self.assertEqual(len([c for c in self.fake.calls if c[1] == send]), before + 1)
 
     def test_snooze_needs_modify_and_setup_needs_the_broker(self):
-        snooze = n.ThreadSnooze(self.config, a.credential, a.gog_read)
+        snooze = n.ThreadSnooze(self.config, sources.credential, sources.gog_read)
         self.assertFalse(snooze.allowed(self.account))
         self.fake.granted.add(n.MODIFY_SCOPE)
         self.assertTrue(snooze.allowed(self.account))

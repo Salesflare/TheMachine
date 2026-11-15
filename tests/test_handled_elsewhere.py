@@ -15,7 +15,10 @@ from seams import patch_everywhere  # noqa: E402
 from machine.sources import slack as slack_source  # noqa: E402
 from machine.app import handled_check  # noqa: E402
 from machine.store import todo_moves  # noqa: E402
-a = ux.a
+import datetime as dt
+import graph
+import machine.main as machine_main
+import timeutil
 
 SLACK = {'id': 'work-slack', 'service': 'slack', 'transport': 'maton', 'user_id': 'U0RILEY001', 'slack_host': 'studio.slack.com',
          'boundary': 'work:Studio'}
@@ -26,7 +29,7 @@ OTHER = {'id': 'G0OTHER001', 'name': 'mpdm-riley--lee-1', 'type': 'group'}
 
 
 def ts(stamp):
-    return f"{a.dt.datetime.fromisoformat(stamp).timestamp():.6f}"
+    return f"{dt.datetime.fromisoformat(stamp).timestamp():.6f}"
 
 
 def message(channel, user, stamp, text):
@@ -39,13 +42,13 @@ class HandledElsewhere(unittest.TestCase):
         self.addCleanup(slack_source.READ_NOW.clear)
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
-        self.clock = patch_everywhere(a, 'now', return_value=MONDAY)
+        self.clock = patch_everywhere(timeutil, 'now', return_value=MONDAY)
         self.clock.start()
         self.addCleanup(lambda: self.clock.stop())
-        self.store = a.Store(Path(self.tmp.name) / 'events.sqlite')
+        self.store = machine_main.Store(Path(self.tmp.name) / 'events.sqlite')
         self.store.owner_user_ids = {'U0RILEY001'}
         with self.store.connect() as db:
-            a.graph.ensure(db)
+            graph.ensure(db)
             for uid, name in (('U0ANA00001', 'Ana Ortiz'), ('U0SAM00001', 'Sam Reyes'), ('U0LEE00001', 'Lee Park')):
                 db.execute('INSERT INTO identity_names(identifier,name,email,checked_at) VALUES(?,?,?,?)',
                            ('slack:' + uid, name, name.split()[0].lower() + '@studio.example', MONDAY))
@@ -68,7 +71,7 @@ class HandledElsewhere(unittest.TestCase):
     def commit(self, events, trio_scan=None):
         self.store.commit_page('work-slack', self.state(trio_scan or self.read_at), events)
         with self.store.connect() as db:
-            a.graph.build(db, {'accounts': [SLACK]}, a.now())
+            graph.build(db, {'accounts': [SLACK]}, timeutil.now())
 
     def slack_reads(self):
         """Slack's next turn read the group DM: the owner asked Sam there, and Sam said yes."""
@@ -84,7 +87,7 @@ class HandledElsewhere(unittest.TestCase):
         return rows[0]['id']
 
     def app(self):
-        app = object.__new__(a.App)
+        app = object.__new__(machine_main.App)
         app.store = self.store
         app.config = {'accounts': [SLACK], 'digest_at': '08:30', 'review_worker': {'enabled': True}, 'prepare_ahead': False,
                       'openclaw_config': str(Path(self.tmp.name) / 'no-openclaw.json')}  # no model here: never a live turn

@@ -3,8 +3,10 @@ asks them to confirm what they asked for (2026-11-06: "why am I confirming somet
 their Send on a draft they saw, and a step they didn't ask for still waits for their Confirm. Synthetic data only."""
 import unittest
 import test_chat_send as cs
+import machine.app.card_actions as machine_app_card_actions
+import machine.cards as machine_cards
+import next_actions
 
-a = cs.a
 
 CLEANUP = {'kind': 'finish', 'label': 'Confirm document cleanup', 'url': 'https://docs.example.invalid/d/42/edit',
            'instructions': 'In doc 42 remove the two raw anchor tags from the headings and add paragraph spacing.',
@@ -41,7 +43,7 @@ class ChatDoNow(unittest.TestCase):
         self.assertEqual(saved['done_now'], {'status': 'queued'})
         [run] = self.jobs()
         self.assertEqual((run['status'], run['source']), ('local_preparation', 'assistant'))
-        step = a.next_actions.actions(self.store_next())[0]
+        step = next_actions.actions(self.store_next())[0]
         self.assertEqual(run['revision'], step['revision'])
         with self.store.connect() as db:  # the step's own run starts now, the email draft still waits for Send
             self.assertEqual(db.execute('SELECT status FROM preparations').fetchone()[0], 'queued')
@@ -72,7 +74,7 @@ class ChatDoNow(unittest.TestCase):
             self.save(job, [CLEANUP])
         self.save(job, [CLEANUP], do_now=False)
         self.assertEqual(self.jobs(), [])
-        self.assertIn('Confirm document cleanup', [b['label'] for b in a.controls(self.row())['blocks'][0]['buttons']])
+        self.assertIn('Confirm document cleanup', [b['label'] for b in machine_cards.controls(self.row())['blocks'][0]['buttons']])
         # The same step carried over in a later turn is not asked about again
         job = self.say('when did they last write?', 'chat-later')
         self.save(job, [CLEANUP])
@@ -99,13 +101,13 @@ class ChatDoNow(unittest.TestCase):
         self.assertEqual(self.jobs(), [])
 
     def test_which_steps_can_run_on_the_owners_word(self):
-        self.assertTrue(a.doable_now({'kind': 'doc_write', 'op': 'edit'}))
-        self.assertFalse(a.doable_now({'kind': 'doc_write', 'op': 'create'}))  # made by itself already
-        self.assertTrue(a.doable_now(CLEANUP))
+        self.assertTrue(machine_app_card_actions.doable_now({'kind': 'doc_write', 'op': 'edit'}))
+        self.assertFalse(machine_app_card_actions.doable_now({'kind': 'doc_write', 'op': 'create'}))  # made by itself already
+        self.assertTrue(machine_app_card_actions.doable_now(CLEANUP))
         for step in ({**CLEANUP, 'message': 'Hi'}, {**CLEANUP, 'attachments': [{'name': 'x.pdf'}]},
                      {**CLEANUP, 'label': 'Share the doc'}, {**CLEANUP, 'label': 'Send invoice'},
                      {'kind': 'email'}, {'kind': 'slack'}, {'kind': 'calendar'}):
-            self.assertFalse(a.doable_now(step), step)
+            self.assertFalse(machine_app_card_actions.doable_now(step), step)
 
 
 if __name__ == '__main__':

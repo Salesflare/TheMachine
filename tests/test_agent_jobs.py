@@ -17,7 +17,10 @@ from unittest.mock import patch
 
 import agent_jobs
 import test_ux as ux
-a = ux.a
+import machine.actions as machine_actions
+import machine.app.action_runs as machine_app_action_runs
+import machine.cards as machine_cards
+import machine.main as machine_main
 
 FAKE_CLAUDE = r"""#!PYTHON
 import datetime, json, os, signal, sys, time, uuid
@@ -444,7 +447,7 @@ class AgentJobs(unittest.TestCase):
             poll.start()
             self.addCleanup(poll.stop)
         self.revised, self.sent, self.tickets, self.reported = [], [], {}, []
-        self.store = a.Store(root / 'events.sqlite', protect=True)
+        self.store = machine_main.Store(root / 'events.sqlite', protect=True)
         self.store.commit_page('work', {}, [{'account_id': 'work', 'source_id': 'm1', 'kind': 'gmail.message', 'occurred_at': '2026-10-20T08:00:00+00:00',
                                              'title': 'Quarterly numbers', 'body': 'Can you sum up the numbers?', 'deleted': False,
                                              'metadata': {'from': 'sam@client.example', 'thread_id': 't1', 'labels': ['INBOX'],
@@ -653,7 +656,7 @@ class AgentJobs(unittest.TestCase):
             self.assertEqual(db.execute('SELECT acked FROM agent_result_receipts').fetchone()[0], 1)
 
     def test_cancel_or_an_owner_edit_between_checks_cannot_replace_the_draft(self):
-        app = object.__new__(a.App)
+        app = object.__new__(machine_main.App)
         app.store, app.config = self.store, self.config
         action = {'kind': 'email', 'to': ['sam@client.example'], 'body': 'Approved original', 'subject': 'Hi', 'revision': 'r1'}
         with self.store.connect() as db:
@@ -723,7 +726,7 @@ class AgentJobs(unittest.TestCase):
 
         def busy():
             with self.store.connect() as db:
-                return [r['id'] for r in a.active_work(db)['agent_jobs']]
+                return [r['id'] for r in machine_app_action_runs.active_work(db)['agent_jobs']]
         stale = time.time() - agent_jobs.STALE - 60
         for found in folder.glob('turn-*.jsonl'):
             os.utime(found, (stale, stale))
@@ -767,7 +770,7 @@ class AgentJobs(unittest.TestCase):
                                     card=lambda sid: {'card': {'title': 'Fix the typo'}, 'drafts': [], 'links': [], 'files': [], 'messages': ''} if sid == self.sid else None,
                                     network=net.hosted)
         self.assertEqual(home.tools(wait=True), [])  # no computer of theirs takes Codex jobs yet
-        laptop_store = a.Store(Path(self.tmp.name) / 'laptop.sqlite', protect=True)
+        laptop_store = machine_main.Store(Path(self.tmp.name) / 'laptop.sqlite', protect=True)
         laptop = agent_jobs.AgentJobs(laptop_store.connect, {'database': str(Path(self.tmp.name) / 'laptop.sqlite'), 'accounts': [], 'agents': {'timeout_minutes': 1}},
                                       Path(self.tmp.name) / 'laptop-jobs', network=net.laptop)
         signed_in = lambda argv, *rest: (0, 'Logged in using ChatGPT') if argv[1:] == ['login', 'status'] else (1, '')
@@ -862,7 +865,7 @@ class AgentJobs(unittest.TestCase):
     def test_a_computer_without_codex_signed_in_takes_no_jobs(self):
         import agent_remote
         net = FakeNetwork()
-        laptop_store = a.Store(Path(self.tmp.name) / 'laptop.sqlite', protect=True)
+        laptop_store = machine_main.Store(Path(self.tmp.name) / 'laptop.sqlite', protect=True)
         laptop = agent_jobs.AgentJobs(laptop_store.connect, {'database': str(Path(self.tmp.name) / 'laptop.sqlite'), 'accounts': [], 'agents': {}},
                                       Path(self.tmp.name) / 'lj', network=net.laptop)
         agent_remote._ready.update(at=None)
@@ -877,7 +880,7 @@ class AgentJobs(unittest.TestCase):
         import agent_remote
         import network_crypto as nc
         net = FakeNetwork()
-        laptop_store = a.Store(Path(self.tmp.name) / 'laptop.sqlite', protect=True)
+        laptop_store = machine_main.Store(Path(self.tmp.name) / 'laptop.sqlite', protect=True)
         laptop = agent_jobs.AgentJobs(laptop_store.connect, {'database': str(Path(self.tmp.name) / 'laptop.sqlite'), 'accounts': [], 'agents': {}},
                                       Path(self.tmp.name) / 'lj', network=net.laptop)
         signed_in = lambda argv, *rest: (0, 'Logged in') if argv[1:] == ['login', 'status'] else (1, '')
@@ -1231,7 +1234,7 @@ class AgentJobs(unittest.TestCase):
         self.assertTrue(all(isinstance(v, bytes) for v in raw), raw)
 
     def test_dashboard_only_and_marking_the_card_done_closes_the_job(self):
-        app = object.__new__(a.App)
+        app = object.__new__(machine_main.App)
         app.store, app.config = self.store, {'accounts': []}
         app.agents = self.jobs()
         with self.assertRaisesRegex(ValueError, 'from the dashboard'):
@@ -1244,7 +1247,7 @@ class AgentJobs(unittest.TestCase):
         app.store.decide(self.sid, 'complete', '', 'd1', 'dashboard')
         app.agents.card_closed(self.sid)
         self.assertEqual(app.agents.get(job['id'])['outcome'], 'done')
-        self.assertIn('agent_send', a.OWNER_ACTIONS)
+        self.assertIn('agent_send', machine_actions.OWNER_ACTIONS)
 
 
 
@@ -1254,9 +1257,9 @@ class AgentSettings(unittest.TestCase):
         self.addCleanup(tmp.cleanup)
         path = Path(tmp.name) / 'config.json'
         path.write_text(json.dumps({'database': 'x', 'accounts': [], 'manage_url': 'https://app.example.test/machine', 'other': 1}, indent=2) + '\n')
-        app = object.__new__(a.App)
+        app = object.__new__(machine_main.App)
         app.config_path, app.config = path, json.loads(path.read_text())
-        self.assertIn('set_agents', a.OWNER_ACTIONS)
+        self.assertIn('set_agents', machine_actions.OWNER_ACTIONS)
         codex_home = Path(tmp.name) / 'codex'
         with patch.dict(os.environ, {'CODEX_HOME': str(codex_home)}):
             self.assertIsNone(app.agents_view())  # hosted, nothing to do with code yet: out of sight
@@ -1294,7 +1297,7 @@ class TaskFirstBrief(unittest.TestCase):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
         root = Path(self.tmp.name)
-        self.store = a.Store(root / 'events.sqlite', protect=True)
+        self.store = machine_main.Store(root / 'events.sqlite', protect=True)
         self.store.commit_page('work', {}, [{'account_id': 'work', 'source_id': 'm1', 'kind': 'gmail.message', 'occurred_at': '2026-10-22T09:00:00+00:00',
                                              'title': 'Final entry for the agency list', 'body': self.MAIL, 'deleted': False,
                                              'metadata': {'from': 'Robin Vendor <robin@listly.example>', 'to': 'me@example.com', 'thread_id': 't1',
@@ -1312,7 +1315,7 @@ class TaskFirstBrief(unittest.TestCase):
             db.execute('INSERT INTO preparation_calls(job_id,call_id,tool,params,started_at) VALUES(?,?,?,?,?)',
                        ('job1', 'c1', 'assistant_signals', json.dumps({'action': 'prepare', 'args': {'suggestion_id': self.sid, 'body': self.REPLY}}),
                         '2026-10-22T10:01:30+00:00'))
-        self.app = object.__new__(a.App)
+        self.app = object.__new__(machine_main.App)
         self.app.store = self.store
         self.app.config = {'accounts': [], 'database': str(root / 'events.sqlite')}
         self.config = {'database': str(root / 'events.sqlite'), 'accounts': [], 'agents': {}}
@@ -1383,12 +1386,12 @@ class TaskFirstBrief(unittest.TestCase):
 
     def test_the_task_follows_the_card(self):
         row = {'status': 'prepared', 'title': 'Pick a venue', 'outcome': json.dumps({'state': 'needs_you', 'needs': 'which venue do we book?'})}
-        self.assertEqual(a.card_task(row), 'Help me answer this: Which venue do we book?')
+        self.assertEqual(machine_cards.card_task(row), 'Help me answer this: Which venue do we book?')
         row['outcome'] = json.dumps({'state': 'your_step', 'step': 'submit'})
-        self.assertEqual(a.card_task(row), 'Check that everything is ready for me to submit, and fix what isn’t.')
-        self.assertEqual(a.card_task({'status': 'pending', 'title': 'Sum up the quarterly numbers'}), 'Sum up the quarterly numbers.')
+        self.assertEqual(machine_cards.card_task(row), 'Check that everything is ready for me to submit, and fix what isn’t.')
+        self.assertEqual(machine_cards.card_task({'status': 'pending', 'title': 'Sum up the quarterly numbers'}), 'Sum up the quarterly numbers.')
         blocked = {'status': 'accepted', 'title': 'X', 'preparation_status': 'blocked', 'preparation_reason': 'Which account should pay?'}
-        self.assertEqual(a.card_task(blocked), 'Help me answer this: Which account should pay?')
+        self.assertEqual(machine_cards.card_task(blocked), 'Help me answer this: Which account should pay?')
 
 if __name__ == '__main__':
     unittest.main()

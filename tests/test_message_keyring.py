@@ -20,12 +20,14 @@ import unittest.mock
 from pathlib import Path
 
 import test_message_seal
-from test_message_seal import CANARY, SOURCES, assistant, files
+from test_message_seal import CANARY, SOURCES, files
 import browser_login
 import mail_grants
 import message_keyring
 import message_seal
 import moving
+import machine.main as machine_main
+import machine.web.waiting as machine_web_waiting
 
 ROOT = Path(__file__).resolve().parent.parent
 Unavailable = message_keyring.Unavailable
@@ -99,7 +101,7 @@ class Keyring(unittest.TestCase):
         self.addCleanup(backend.stop)
         message_keyring.forget()
         self.addCleanup(message_keyring.forget)
-        self.fill(assistant.Store(self.path, protect=True))
+        self.fill(machine_main.Store(self.path, protect=True))
         self.logins = browser_login.LoginStore(self.data)
         self.logins.save('example.invalid', 'pat@example.invalid', 'throwaway-password')
         self.key_file = message_seal.key_path(self.path)
@@ -122,7 +124,7 @@ class Keyring(unittest.TestCase):
                 self.assertNotIn(encoded, path.read_bytes(), path)
 
     def readable(self):
-        store = assistant.Store(self.path, protect=True)
+        store = machine_main.Store(self.path, protect=True)
         self.assertEqual(len(store.events(['acct'], query=CANARY.lower())), len(SOURCES))
         self.assertEqual(browser_login.LoginStore(self.data).get('example.invalid')['password'], 'throwaway-password')
 
@@ -237,7 +239,7 @@ class Keyring(unittest.TestCase):
             with self.assertRaises(message_seal.SealError):
                 message_seal.load_key(self.path, create=True)
             with self.assertRaises(message_seal.SealError):
-                assistant.Store(self.path, protect=True)
+                machine_main.Store(self.path, protect=True)
             with self.assertRaises(mail_grants.GrantError):
                 mail_grants._sealer({'database': str(self.path)})
             with self.assertRaises(ValueError):
@@ -288,7 +290,7 @@ class Keyring(unittest.TestCase):
         with socket.socket() as probe:
             probe.bind(('127.0.0.1', 0))
             port = probe.getsockname()[1]
-        page = assistant.KeyWaitingPage({'port': port})
+        page = machine_web_waiting.KeyWaitingPage({'port': port})
         page('the keyring is locked')
         try:
             for path, kind in (('/', 'text/html'), ('/health', 'application/json')):
@@ -350,7 +352,7 @@ class Keyring(unittest.TestCase):
         there = Path(self.temp.name) / 'there' / 'events.sqlite'
         there.parent.mkdir()
         there.write_bytes(exported['data/events.sqlite'])
-        store = assistant.Store(there, protect=True)
+        store = machine_main.Store(there, protect=True)
         self.assertTrue(store.protected and message_seal.key_path(there).is_file())
         self.assertFalse(message_seal.in_keyring(there))
         self.assertNotIn(CANARY.encode(), files(there))
@@ -358,19 +360,19 @@ class Keyring(unittest.TestCase):
         for name in ('events.sqlite', 'events.sqlite-wal', 'events.sqlite-shm'):
             (self.data / name).unlink(missing_ok=True)
         self.path.write_bytes(exported['data/events.sqlite'])
-        self.assertTrue(assistant.Store(self.path, protect=True).protected)
+        self.assertTrue(machine_main.Store(self.path, protect=True).protected)
         self.assertTrue(self.key_file.is_symlink())
         self.assertNotIn(CANARY.encode(), files(self.path))
         self.readable()
 
     def test_config_can_ask_for_the_keyring_at_start(self):
         config = {'database': str(self.path), 'message_key_store': 'keyring'}
-        with unittest.mock.patch.object(assistant.threading, 'Thread'):
-            assistant.message_key_keeper(config)
+        with unittest.mock.patch.object(threading, 'Thread'):
+            machine_web_waiting.message_key_keeper(config)
         self.assertTrue(message_seal.in_keyring(self.path) and self.key_file.is_symlink())
         self.readable()
-        with unittest.mock.patch.object(assistant.threading, 'Thread'):
-            assistant.message_key_keeper(config)  # already there: nothing moves again
+        with unittest.mock.patch.object(threading, 'Thread'):
+            machine_web_waiting.message_key_keeper(config)  # already there: nothing moves again
         self.assertEqual(len(self.keyring.items), 1)
 
 
