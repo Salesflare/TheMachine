@@ -1047,6 +1047,27 @@ Learning, and saves only the ones the owner ticks.
   fact about a Personal person stays out of Work prompts and out of the learnings sent to the team, like any fact about
   them. One entry under Learning, Changes undoes it all.
 
+### Notes from OpenClaw memory
+
+An OpenClaw workspace keeps lasting knowledge in topic pages under `memory/` (`memory/trips/lisbon.md`), beside its
+daily logs. `memory_seed.py` brings what they say into Notes once, so a Machine that follows OpenClaw doesn't start
+with empty notes (`NotesApp.memory_seed_step`).
+
+- **Only ever read.** Pages are opened for reading only; nothing in the workspace is written, moved or deleted.
+  Nothing outside `memory/` is read (not `AGENTS.md`, skills or the workspace's own files), and a link out of it is
+  not followed.
+- **Which pages, in code.** Markdown under `memory/`, never a daily log or dated snapshot (a date in its path),
+  OpenClaw's `daily/` and `dreaming/` folders, a README, index or appendix, a folder named sensitive or private, or a
+  bulk export (a folder of more than 40 pages). The most recently dated first, 16 per folder and 80 in all. Code,
+  comments and anything that looks like a key or token are dropped before a model sees a page.
+- **One pass.** Six pages a call on the background model, every 20 minutes at most under the background budget, with
+  the notes that exist. Per page: up to six lasting facts, and the note that covers its subject or a new one in the
+  starting tree. A page about the assistant itself, a log, a to-do list or one with nothing lasting brings nothing.
+  Once every page picked is read, it never runs again; an answer that can't be read is tried three times.
+- **Cited.** Each fact is a line (by `memory`) saying the page it came from and its date: the fact's own, or else the
+  newest day the page names. The page writer counts them as sources and cites them like any other. A kind's own
+  updates never take them, and a line the owner removes doesn't come back.
+
 <a id="missed-work-audit"></a>
 ## Missed work
 

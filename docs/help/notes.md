@@ -3,7 +3,7 @@ title: Notes
 area: graph
 summary: One readable page per subject, like a trip or your home, linked to the people and projects in it.
 covers: notes
-code: note_pages.py, note_pages_app.py, trip_notes.py, event_notes.py, bookings.py, section_notes.py, topic_notes.py, note_writer.py, folder_overview.py, home_notes.py, health_notes.py, kids_notes.py, dashboard/graph-notes.js
+code: note_pages.py, note_pages_app.py, trip_notes.py, event_notes.py, bookings.py, section_notes.py, topic_notes.py, note_writer.py, folder_overview.py, memory_seed.py, home_notes.py, health_notes.py, kids_notes.py, dashboard/graph-notes.js
 order: 8
 ---
 A note is the overview of one subject: a trip, your home, how invoices are done. Notes sit in the Graph next to People, Organizations and Projects. They stay on your Machine and aren't shared with your team.
@@ -66,6 +66,12 @@ It sends the AI a short part of each conversation, without quoted replies or sig
 Bulk email and chats never go in a note and are never sent to the AI: spam, promotions, newsletters and other list mail, no-reply notifications, bots and broadcast channels. A conversation you wrote in still counts, and so does booking mail for **Trips** and **Events**.
 
 The first time, it goes through your past three months in a few hours, outside the night and only while your AI plan has room. After that it sorts new conversations once ten are waiting, or one has waited half a day.
+
+## Notes from OpenClaw memory
+
+If you used OpenClaw before, your Machine reads the topic pages in its memory folder once, like a page on a trip or your health. What lasts goes in the note on that subject, or a new one. Each line says the page it came from, like **From your memory pages · Lisbon**, with its date. Hover it to see where that page is.
+
+It never changes those pages, and skips daily logs, pages about the assistant itself and folders marked sensitive or private. It reads at most 80 pages, a few at a time, then never again.
 
 ## Trips
 

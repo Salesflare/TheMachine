@@ -540,7 +540,23 @@ def load_section_notes(store, base):
             found, keep = section_notes.drafts(db, kind, kind.candidates(db, accounts, base.date()))
             note_pages.sync(db, kind.kind, found, when, keep)
         db.commit()
+    load_memory_seed(store, when)
     load_note_page(store, when)
+
+
+def load_memory_seed(store, when):
+    """What the memory seed (memory_seed.py) brought in from the owner's earlier OpenClaw memory pages: a line on
+    Appliances, saying the page it came from."""
+    import memory_seed
+    import note_pages
+    with store.connect() as db:
+        db.execute('BEGIN IMMEDIATE')
+        row = db.execute("SELECT id FROM note_pages WHERE key='home:appliances' AND removed_at IS NULL").fetchone()
+        if row:
+            note_pages.add_kept(db, row['id'], [{'key': 'memory:sandbox:washer', 'text': 'The washing machine is a Lumo WM-700, bought in 2024.',
+                                                 'at': when[:4] + '-03-02', 'data': {'memory': 'memory/home/appliances.md', 'page': 'Appliances'}}], 'memory', when)
+        memory_seed.finish(db, when)
+        db.commit()
 
 
 def load_note_page(store, when):

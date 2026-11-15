@@ -59,6 +59,7 @@ KINDS = {
     'kids': {'label': 'Kids', 'dated': False, 'personal': True},  # kids_notes.py: a part of the owner's children's lives, under Kids
     'event': {'label': 'Event', 'dated': True, 'personal': False},  # event_notes.py: one event the owner has tickets for, under Events
     'topic': {'label': 'Note', 'dated': False, 'personal': False},  # topic_notes.py: an ongoing matter, from the conversations about it
+    'memory': {'label': 'Note', 'dated': False, 'personal': False},  # memory_seed.py: a subject from the owner's OpenClaw memory pages
 }
 OWNER_KINDS = ('note',)        # what the owner can start by hand (New note)
 # The guidance The Machine builds the tree by. The starting tree: the top notes its own notes go under, each made only
@@ -390,6 +391,31 @@ def line_add(db, note_id, text, at, when=None, links=None):
         ids.append(line_id)
     _touch(db, row['id'], at)
     return {'id': node_id(row['id']), 'lines': ids}
+
+
+def add_kept(db, note_id, lines, by, at):
+    """Lines The Machine brings in once from elsewhere (by: where, like 'memory' for memory_seed.py), at the end of any
+    note, of any kind: [{key, text, at, data}]. A key the note had already, even one the owner removed, stays as it is,
+    and a kind's own sync never takes them (it only takes its own 'machine' lines). Returns the ids added."""
+    row = _row(db, parse_id(note_id))
+    have = {r['key'] for r in db.execute('SELECT key FROM note_page_lines WHERE note_id=? AND key IS NOT NULL', (row['id'],))}
+    room = LINES_MAX - db.execute('SELECT count(*) FROM note_page_lines WHERE note_id=?', (row['id'],)).fetchone()[0]
+    pos, ids = _next_pos(db, row['id']), []
+    for line in lines:
+        key = str(line['key'])
+        if key in have or len(ids) >= room:
+            continue
+        text = _text(str(line['text'])[:LINE_MAX])
+        kept = _links(db, text, None, row['id'])
+        ids.append(db.execute('INSERT INTO note_page_lines(note_id,key,pos,at,text,data,links,by,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?)',
+                              (row['id'], key, pos + len(ids), _when(line.get('at')), text,
+                               json.dumps(line['data'], sort_keys=True) if line.get('data') else None, json.dumps(kept) if kept else None,
+                               by, at, at)).lastrowid)
+        _index(db, ids[-1], row['id'], kept)
+        have.add(key)
+    if ids:
+        _touch(db, row['id'], at)
+    return ids
 
 
 def _line_row(db, line_id, removed=False):
