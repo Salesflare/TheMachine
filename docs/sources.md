@@ -57,6 +57,8 @@ Instead of `gog`, a Gmail or Calendar account can use `"transport": "broker"`. A
 
 Follows Gmail history after a seven-day import, and replays the retained window when history expires. Replies keep their new text whole and only 3,000 characters of quoted history. Sending approved drafts and snoozing threads use separate workers and only scopes already granted.
 
+Through `gog`, each message is one `gog api call` (gog has no batched or long-running read of whole messages). Each runs with `GOMAXPROCS=1`, `GOGC=off` and `GOMEMLIMIT=256MiB`, which cut its CPU by about a third with the same output; any of the three set in the service's own environment wins.
+
 ### Outlook and Outlook Calendar
 
 Microsoft 365 and Outlook.com. `ms_graph.py` reads them through Microsoft Graph with delegated scopes only: `User.Read`, `Mail.Read` and `Calendars.Read`, plus `Mail.ReadWrite` and `Mail.Send` when you turn sending on.
