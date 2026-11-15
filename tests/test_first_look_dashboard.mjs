@@ -30,9 +30,11 @@ try{
  await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
  const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
  // Nothing running yet: "No checks yet" and the plain summary
- await page.goto('http://127.0.0.1:'+server.address().port);
+ // (Connections' lists are drawn when it shows: opened for them, then back to To-dos for the strip)
+ await page.goto('http://127.0.0.1:'+server.address().port);await page.waitForFunction(()=>typeof drawnWhole!=='undefined'&&drawnWhole);
+ await page.evaluate(()=>showTab('health'));
  await page.locator('#analyses .no-reviews').waitFor({state:'attached'});
- assert.equal(await page.locator('#analyses .no-reviews').evaluate(e=>e.hidden),false);  // Connections is another tab: check the attribute
+ assert.equal(await page.locator('#analyses .no-reviews').evaluate(e=>e.hidden),false);
  assert.equal(await page.locator('#review-summary').textContent(),'0 waiting · 0 checked · last not yet. Next one when new messages come in.');
  // A running first look: no "No checks yet" beside it, the accounts named once
  runs=[run];await page.evaluate(()=>refresh());
@@ -41,7 +43,7 @@ try{
  const row=await page.locator('#review-live .review-live').textContent();
  assert.equal(row.split('pat@example.com').length-1,1,row);
  // With cards: the strip sits under the counters, after the filters
- cards=[card];await page.evaluate(()=>refresh());
+ await page.evaluate(()=>showTab('inbox'));cards=[card];await page.evaluate(()=>refresh());
  const strip=page.locator('#first-look');
  assert.equal(await strip.isVisible(),true);
  assert.match(await strip.textContent(),/Taking a first look at your last 7 days.*Read 5 of 67 messages\. Reading the next 62…/);

@@ -39,6 +39,7 @@ async function upkeepPress(part,body){if(upkeep.busy)return;upkeep.busy=part;upk
 $('#settings-version').addEventListener('click',e=>{if(e.target.closest('#version-update'))upkeepPress('update',{})});
 $('#settings-meaning').addEventListener('click',e=>{const b=e.target.closest('#meaning-switch');if(b)upkeepPress('meaning',{on:b.getAttribute('aria-checked')!=='true'})});
 // Served as a part that loads when first needed (dashboard_parts.LAZY), with Settings' other panels: a page
-// drawn before they came draws Settings' panels now (render skipped them). Inline (the tests, the demo) these parts run
-// before shell-render.js, which draws them itself.
-if(self.LAZY_FILES?.settings&&drawnWhole)try{renderHours();renderLocale();renderAgents();renderSignatures();renderLookups();renderAddresses();renderSecurity();renderVoices();renderSkills();appsRender();renderNotify();renderModelPanel()}catch(e){errCaught(e);console.error(e)}
+// drawn before they came draws Settings' panels (render skipped them) when Settings shows (tabDraw). Inline (the
+// tests, the demo) these parts run before shell-render.js, which draws them itself.
+function settingsDraw(){renderHours();renderLocale();renderAgents();renderSignatures();renderLookups();renderAddresses();renderSecurity();renderVoices();renderSkills();appsRender();renderNotify();renderModelPanel()}
+if(self.LAZY_FILES?.settings&&drawnWhole)try{tabDraw('settings','settings',settingsDraw);skillsSoon()}catch(e){errCaught(e);console.error(e)}

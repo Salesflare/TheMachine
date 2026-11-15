@@ -194,4 +194,11 @@ function lazySoon(){if(lazySoonRun||!self.LAZY_FILES)return;lazySoonRun=true;let
  if(document.readyState==='complete')go();else{addEventListener('load',go,{once:true});setTimeout(go,5000)}}
 addEventListener('popstate',e=>backPop(e));  // shell-back.js
 const lazyIn=group=>!self.LAZY_FILES?.[group]||!!lazyDone[group];
+// Learning, Connections and Settings are drawn when they're opened, not while they're hidden (a first load drew them
+// all, some 0.9 s on a slow phone). tabDraw(section,key,draw): draw now when the section shows, else the latest draw
+// for that key waits and runs the moment it shows, before that frame paints (the observer; a tab switch asks at once).
+const tabDue=new Map();
+function tabDraw(id,key,draw){const due=tabDue.get(id)||tabDue.set(id,new Map()).get(id);if(document.getElementById(id)?.hidden){due.set(key,draw);return}due.delete(key);draw()}
+function tabsDue(){for(const[id,due]of tabDue){if(!due.size||document.getElementById(id)?.hidden)continue;const draws=[...due.values()];due.clear();for(const draw of draws)try{draw()}catch(e){errCaught(e);console.error(e)}}}
+{const o=new MutationObserver(tabsDue);for(const s of document.querySelectorAll('main>section'))o.observe(s,{attributes:true,attributeFilter:['hidden']})}
 function lazyRun(group,fn){if(lazyIn(group))return fn();const w=lazyWait[group]??=new Set;if(w.has(fn))return;w.add(fn);lazyPart(group).then(fn,e=>toast(e.message,true)).finally(()=>w.delete(fn))}

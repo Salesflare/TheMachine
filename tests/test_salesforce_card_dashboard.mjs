@@ -37,7 +37,7 @@ try{
   await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
   page.on('pageerror',e=>errors.push(e.message));
   await page.goto('http://127.0.0.1:'+server.address().port);
-  await page.waitForFunction(()=>typeof showTab==='function'&&document.querySelector('#connectors article'));
+  await page.waitForFunction(()=>typeof showTab==='function'&&typeof drawnWhole!=='undefined'&&!!drawnWhole);
   await page.evaluate(()=>{showTab('health','other');for(const a of document.querySelectorAll('#connectors>article:not([hidden])'))cardShow(a.dataset.conn)});  // Other, its card open
   const card=page.locator('#connectors article',{hasText:'Salesforce'}).first();
   await card.waitFor();

@@ -144,5 +144,6 @@ $('#facts').addEventListener('keydown',e=>{if(e.key==='Escape'&&e.target.closest
 $('#facts').addEventListener('submit',async e=>{const form=e.target.closest('[data-fact-edit]');if(!form)return;e.preventDefault();const id=Number(form.dataset.factEdit),text=form.text.value.trim(),save=form.querySelector('[type=submit]');save.disabled=true;
  try{await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'edit_fact',args:{id,text}})});const f=(state.facts||[]).find(x=>x.id===id);if(f)f.text=text;learnEdit=learnEditText=null;setHTML($('#facts'),learnedList());toast('Saved.');refresh()}catch(err){errCaught(err);save.disabled=false;toast(err.message,true)}});
 // Served as a part that loads when first needed (dashboard_parts.LAZY): a page drawn before it came draws Learning's
-// own parts now (render skipped them)
-if(drawnWhole)try{renderQuality();if(learnEdit==null)setHTML($('#facts'),learnedList());setHTML($('#learn-changes'),learnChanges());renderShare();renderVotes();learnTabs()}catch(e){errCaught(e);console.error(e)}
+// own parts (render skipped them) when Learning shows (tabDraw). An open editor keeps what was typed until Save or Cancel.
+function learnDraw(){renderQuality();if(learnEdit==null)setHTML($('#facts'),learnedList());setHTML($('#learn-changes'),learnChanges());renderShare();renderVotes();learnTabs()}
+if(drawnWhole)try{tabDraw('feedback','learn',learnDraw)}catch(e){errCaught(e);console.error(e)}

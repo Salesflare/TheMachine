@@ -57,7 +57,8 @@ try{
  for(let i=0;i<80&&await page.locator('#review-live .review-live').count();i++)await page.waitForTimeout(100);
  assert.equal(await page.locator('#review-live .review-live').count(),0);
  assert.equal(await page.locator('#review-runs > div:not(.muted)').count(),0);  // saved cleanly: only the review row
- assert.ok((await page.locator('#analyses').textContent()).includes('Checked'));
+ // (Connections' lists are drawn as it shows: read there, then back to To-dos)
+ assert.ok(await page.evaluate(()=>{showTab('health');const t=document.querySelector('#analyses').textContent;showTab('inbox');return t.includes('Checked')}));
  assert.equal(await banner.count(),0);
  assert.ok((await page.locator('#suggestions').textContent()).includes('All clear'));
  // Waiting: the next review and the first look say when they start

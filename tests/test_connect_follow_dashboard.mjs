@@ -45,7 +45,7 @@ try{
  await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
  page.on('pageerror',e=>errors.push(e.message));
  await page.goto('http://127.0.0.1:'+server.address().port);
- await page.waitForFunction(()=>typeof showTab==='function'&&document.querySelector('#connectors article'));
+ await page.waitForFunction(()=>typeof showTab==='function'&&typeof drawnWhole!=='undefined'&&!!drawnWhole);
  await page.evaluate(()=>showTab('health'));
  // Details: plain lines, no raw state
  await page.evaluate(()=>cardShow('work-gmail'));  // its kind, its card open
@@ -81,7 +81,7 @@ try{
  assert.equal(await card.locator('.conn-body').isVisible(),true,'its card opens');
  assert.equal(await page.locator('#connect-add').getAttribute('data-view'),'grid','the setup gives way to the card');
  // Dutch: Recent syncs and Details lines
- language='nl';await page.reload();await page.waitForFunction(()=>document.documentElement.lang==='nl'&&document.querySelector('#connectors article'));
+ language='nl';await page.reload();await page.waitForFunction(()=>document.documentElement.lang==='nl'&&typeof drawnWhole!=='undefined'&&!!drawnWhole);
  await page.evaluate(()=>{showTab('health');cardShow('work-gmail')});
  for(const id of ['sync-recent-work-gmail','sync-details-work-gmail'])await page.locator('#'+id+' summary').click();
  const dutch=await page.locator('#connectors article[data-conn="work-gmail"] .conn-more').innerText();

@@ -11,7 +11,8 @@ const {chromium}=await import('./browser.mjs');
 // draw, and the Fleet tab draws once its views are in. Settings opened while its panels are on their way opens once
 // they're in, drawn (Skills and Connected AIs too). They're fetched one at a time, not all at once with the page's data. A link straight to Calendar opens it once its part is in. When they can't load, the rest is drawn
 // all the same, and Calendar, the Graph, Settings, the Fleet, Connections, Routines, Talk and the game say so. Connections
-// draws once its views are in, its cards too. Routines opened while its part is on its way draws once it's in, and a
+// draws once its views are in, its cards too. Learning and Connections in while another tab shows are drawn as they
+// open, in that same task; a link straight to one, and the way back to it, show it drawn. Routines opened while its part is on its way draws once it's in, and a
 // conversation by Talk starts with its session's part. A follow-up group's Review tapped while its part is on its way
 // opens once it's in, and so do New to-do and Search. The same redraw asked many times while its part is on its way
 // runs once when it's in.
@@ -36,7 +37,8 @@ const server=createServer(async(req,res)=>{const url=new URL(req.url,'http://fix
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
 const base='http://127.0.0.1:'+server.address().port+'/';
 const errors=[];let browser;
-const wholeDrawn=page=>page.waitForFunction(()=>document.querySelector('#decisions')?.children.length>0);
+// drawn whole: the page's whole render ran (Learning, Connections and Settings wait until they're opened)
+const wholeDrawn=page=>page.waitForFunction(()=>typeof drawnWhole!=='undefined'&&!!drawnWhole);
 try{
  assert.deepEqual(Object.keys(lazyNames).sort(),Object.keys(lazy).sort());
  for(const s of Object.values(lazy))assert.ok(!script.includes(s),'a lazy group is not in the main script');
@@ -73,7 +75,13 @@ try{
   await p.waitForFunction(()=>fr?.g==='board:held');await p.evaluate(()=>document.querySelector('#fu-held').remove());
   // #help-panel is made by Help's part: until it's in, there's none (the check waits, it doesn't throw). Settings has a
   // block of its own below: opened here too, whichever part came last would decide what shows.
-  await p.waitForFunction(()=>document.querySelector('#calendar-view').children.length>0&&document.querySelector('#learn-tabs').children.length>0&&document.querySelector('#help-panel')?.open&&document.querySelector('#people-view').innerHTML!==''&&document.querySelector('#fleet-view').textContent.includes('not in a Fleet')&&document.querySelector('#health-tabs').children.length>0&&document.querySelector('#connectors').children.length>0);
+  await p.waitForFunction(()=>document.querySelector('#calendar-view').children.length>0&&document.querySelector('#help-panel')?.open&&document.querySelector('#people-view').innerHTML!==''&&document.querySelector('#fleet-view').textContent.includes('not in a Fleet')&&typeof learnDraw==='function'&&typeof drawConnectors==='function');
+  // Learning and Connections, in while Calendar is on screen, wait for their tab; opened, they're drawn in that same
+  // task (nothing paints in between)
+  assert.deepEqual(await p.evaluate(()=>[document.querySelector('#connectors').children.length,document.querySelector('#facts').innerHTML]),[0,'']);
+  assert.ok(await p.evaluate(()=>{showTab('health');return document.querySelector('#health-tabs').children.length>0&&document.querySelector('#connectors').children.length>0}),'Connections drawn as it opens');
+  assert.ok(await p.evaluate(()=>{showTab('feedback');return document.querySelector('#learn-tabs').children.length>0&&document.querySelector('#facts').innerHTML!==''}),'Learning drawn as it opens');
+  await p.evaluate(()=>showTab('calendar'));
   assert.deepEqual(await graphRules(),[true,'grid']);
   await p.evaluate(()=>showTab('routines'));await p.locator('#routines-view .rt-empty').waitFor();
   await p.waitForFunction(()=>typeof talkStart==='function');  // in by itself, in its turn
@@ -136,6 +144,20 @@ try{
   for(const until=Date.now()+20000;!asked.some(n=>n.startsWith('lazy-graph-'));){assert.ok(Date.now()<until,'the graph part is asked for');await new Promise(r=>setTimeout(r,50))}
   assert.equal(await p.evaluate(()=>graphLoadedAt),0);
   release();hold=null;holdOnly=null;await p.waitForFunction(()=>!document.querySelector('#people').hidden&&graphNode==='person:ada@example.com'&&graphLoadedAt>0);
+  await context.close()}
+ // A link straight to Connections draws it once its part is in. A change while it's hidden waits, and the way back to it
+ // (back, then forward) shows it drawn with that change
+ {const context=await browser.newContext({viewport:{width:390,height:844}});
+  await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
+  const p=await context.newPage();p.on('pageerror',e=>errors.push('tab links: '+e.message+' '+e.stack));
+  await p.goto(base+'#connections');await p.waitForFunction(()=>document.querySelector('#connectors [data-conn="mail"]'));
+  await p.evaluate(()=>{location.hash='#todos'});await p.waitForFunction(()=>document.querySelector('#health').hidden);
+  await p.evaluate(()=>{state.connectors=[...state.connectors,{id:'cal',service:'gmail',email:'work@example.org',display_name:'Work',status:'ok'}];render()});
+  assert.equal(await p.locator('#connectors [data-conn="cal"]').count(),0,'hidden: the cards wait');
+  await p.goBack();await p.waitForFunction(()=>!document.querySelector('#health').hidden);
+  assert.equal(await p.locator('#connectors [data-conn="cal"]').count(),1,'back on Connections: drawn with the change');
+  await p.goForward();await p.waitForFunction(()=>document.querySelector('#health').hidden);await p.goBack();
+  await p.waitForFunction(()=>!document.querySelector('#health').hidden&&document.querySelector('#connectors [data-conn="cal"]'));
   await context.close()}
  // The same redraw asked again and again while its part is on its way (each to-do that needs a part asks on every draw)
  // runs once when the part is in, and at once after that; a different one still runs too
