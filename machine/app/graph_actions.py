@@ -19,6 +19,7 @@ import fleet
 import gap_note
 import gbrain
 import graph
+import graph_apart
 import graph_board_reviews
 import graph_show
 import graph_updates
@@ -569,10 +570,15 @@ class GraphActionsApp:
         else:
             self.graph_build()
 
-    def graph_build(self, lock_last=True):
+    def graph_build(self, lock_last=True, apart=False):
+        """apart: in a process of its own (graph_apart.py), as the graph worker builds, so page requests don't wait on it
+        for Python; in this one where no child can run."""
+        args = (self.config, now(), self.fleet_addresses(), self.fleet_circles())
+        if apart and (built := graph_apart.run(self.store, *args, history=True, lock_last=lock_last)) is not None:
+            return built
         with self.store.connect() as db:
             db.isolation_level = None  # graph.build runs its own transaction
-            return graph.build(db, self.config, now(), self.fleet_addresses(), self.fleet_circles(), history=True, lock_last=lock_last)
+            return graph.build(db, *args, history=True, lock_last=lock_last)
 
     def graph_event_lines(self, event_ids, keep_order=False):
         """One line per signal, newest first (keep_order: in the order given): "<id> (<account>) <what, from whom, when> ·
@@ -753,7 +759,7 @@ class GraphActionsApp:
                 self.own_addresses_fetch()  # once a day per mailbox: its aliases, before the build tells the owner apart
                 # A build that keeps meeting edits tries again in a few seconds instead of holding the write lock for a
                 # whole build (every request that writes waited); only after half an hour without one does it hold it
-                line = slow_build_line(self.graph_build(lock_last=time.monotonic() - published > GRAPH_LOCK_AFTER))
+                line = slow_build_line(self.graph_build(lock_last=time.monotonic() - published > GRAPH_LOCK_AFTER, apart=True))
                 if line:
                     LOG.info(line)
                 published, seen, wait = time.monotonic(), self.graph_freshness(), 600
