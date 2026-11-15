@@ -79,7 +79,7 @@ async function people(node=graphNode,quiet=false){graphLoadedAt=Date.now();graph
   if(version!==graphRequest||$('#people-query').value.trim()!==q)return;  /* a late answer to an older search changes nothing */
   if(p.failed&&!p.items.length)throw new Error('Couldn’t search. Try again.');
   draw(p.items.length?html`<div class="graph-found"><div class="section-head"><h2>Found</h2></div>${pagerSlot(key,'','graph-list')}</div>`:html`<div class="empty all-clear graph-found"><img class="sticker" src="brand/thinking.webp" alt=""><div><strong>Nobody by that name.</strong>Try part of a name, an address or a company.</div></div>`,'search');pagerMount(view);return}
- const forTeam=graphTeam;let g=await cachedGet(graphTeam||graphPane==='held'?'api/graph?view=team':'api/graph',graphFresh);graphSharing=g.sharing||graphSharing;graphTeammates=g.teammates||graphTeammates;if(g.team&&!teamOn())g=await request('api/graph');
+ const forTeam=graphTeam;let g=await cachedGet(graphTeam||graphPane==='held'?'api/graph?view=team':'api/graph',graphFresh,true);graphSharing=g.sharing||graphSharing;graphTeammates=g.teammates||graphTeammates;if(g.team&&!teamOn())g=await request('api/graph');
  if(forTeam!==graphTeam)return;  // Mine or Team changed while this loaded: the newer load draws
  if(!g.team)graphContactsIn=g.contacts_in||[];
  const team=!!g.team&&(graphTeam||graphPane==='held');const start=team?shareNote(g.sharing):'';

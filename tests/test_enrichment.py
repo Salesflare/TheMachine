@@ -808,15 +808,28 @@ class Enrichment(unittest.TestCase):
         while not servers:
             pass
         self.addCleanup(lambda: (app.stop.set(), thread.join(5)))
-        def get(path, owner=True):
+        sent = {}
+        def get(path, owner=True, etag=None):
             conn = http.client.HTTPConnection('127.0.0.1', servers[0].server_address[1], timeout=10)
-            conn.request('GET', path, headers={'Host': 'machine.example:8443', **({'Tailscale-User-Login': 'owner@example.com'} if owner else {})})
+            conn.request('GET', path, headers={'Host': 'machine.example:8443', **({'Tailscale-User-Login': 'owner@example.com'} if owner else {}),
+                                               **({'If-None-Match': etag} if etag else {})})
             r = conn.getresponse()
             body = r.read()
             conn.close()
+            sent.update(etag=r.getheader('ETag'), cache=r.getheader('Cache-Control'))
             return r.status, r.getheader('Content-Type'), r.getheader('X-Content-Type-Options'), body
         key = enrichment.photo_key('email:lee@globex.com')
         self.assertEqual(get('/api/person-photo?p=' + key), (200, 'image/jpeg', 'nosniff', JPEG))
+        etag = sent['etag']
+        self.assertTrue(etag)
+        self.assertIn('stale-while-revalidate', sent['cache'])  # kept long, asked again on the side
+        self.assertEqual(get('/api/person-photo?p=' + key, etag=etag)[0], 304)  # the same photo: nothing sent again
+        self.assertEqual(sent['etag'], etag)
+        self.assertEqual(get('/api/person-photo?p=' + key, owner=False, etag=etag)[0], 403)  # owner only, also for a 304
+        with self.store.connect() as db:  # a new photo under the same address shows: a new ETag, the new picture
+            db.execute('UPDATE person_photos SET data=? WHERE key=?', (JPEG + b'2', key))
+        self.assertEqual(get('/api/person-photo?p=' + key, etag=etag), (200, 'image/jpeg', 'nosniff', JPEG + b'2'))
+        self.assertNotEqual(sent['etag'], etag)
         self.assertEqual(get('/api/person-photo?p=' + key, owner=False)[0], 403)
         self.assertEqual(get('/api/person-photo?p=' + 'f' * 32)[0], 404)
         self.assertEqual(get('/api/person-photo?p=email:lee@globex.com')[0], 404)
