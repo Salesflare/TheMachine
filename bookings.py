@@ -1,10 +1,11 @@
-"""Bookings in mail: the travel reservations a confirmation mail carries as structured data, read with plain code.
+"""Bookings in mail: the travel and ticket reservations a confirmation mail carries as structured data, read with plain code.
 
-Airlines, hotels, rail, bus and car rental companies and booking sites put a schema.org reservation in their mail as
-JSON-LD (a <script type="application/ld+json"> block) so mail apps can show it: FlightReservation, LodgingReservation,
-TrainReservation, BusReservation, BoatReservation and RentalCarReservation. read() turns those into short, flat rows
-that the mail source keeps in the message's metadata (sealed at rest with the rest of it, message_seal.py). A trip
-note (trip_notes.py) is built from those rows. Nothing is guessed: a mail without the structured data gives nothing,
+Airlines, hotels, rail, bus and car rental companies, ticket sellers and booking sites put a schema.org reservation in
+their mail as JSON-LD (a <script type="application/ld+json"> block) so mail apps can show it: FlightReservation,
+LodgingReservation, TrainReservation, BusReservation, BoatReservation, RentalCarReservation and EventReservation. read()
+turns those into short, flat rows that the mail source keeps in the message's metadata (sealed at rest with the rest of
+it, message_seal.py). A trip note (trip_notes.py) is built from the travel rows, an event note (event_notes.py) from
+the event rows (name: the event; where: its venue and town; guests: how many seats). Nothing is guessed: a mail without the structured data gives nothing,
 and a reservation without a start time is left out.
 
 A row: {type, code, status, start, end, from, to, name, number, by, seat, ticket, guests, where}. start and end are
@@ -15,7 +16,7 @@ import json
 import re
 
 TYPES = {'FlightReservation': 'flight', 'LodgingReservation': 'hotel', 'TrainReservation': 'train',
-         'BusReservation': 'bus', 'BoatReservation': 'boat', 'RentalCarReservation': 'car'}
+         'BusReservation': 'bus', 'BoatReservation': 'boat', 'RentalCarReservation': 'car', 'EventReservation': 'event'}
 ROWS_MAX = 12  # per message
 TEXT_MAX = 120
 SCRIPT = re.compile(r'<script\b[^>]*type\s*=\s*["\']?application/ld\+json["\']?[^>]*>(.*?)</script\s*>', re.I | re.S)
@@ -81,7 +82,9 @@ def _row(thing):
         return None
     what = thing.get('reservationFor') if isinstance(thing.get('reservationFor'), dict) else {}
     row = {'type': kind, 'code': _text(thing.get('reservationNumber')), 'status': _status(thing)}
-    ticket = thing.get('reservedTicket') if isinstance(thing.get('reservedTicket'), dict) else {}
+    ticket = thing.get('reservedTicket')
+    ticket = ticket[0] if isinstance(ticket, list) and ticket else ticket  # an event's tickets: the first one's number and seat
+    ticket = ticket if isinstance(ticket, dict) else {}
     seat = ticket.get('ticketedSeat') if isinstance(ticket.get('ticketedSeat'), dict) else {}
     if kind == 'flight':
         airline = what.get('airline') if isinstance(what.get('airline'), dict) else {}
@@ -100,6 +103,15 @@ def _row(thing):
         row.update(start=_when(thing.get('pickupTime')), end=_when(thing.get('dropoffTime')),
                    **{'from': _place(thing.get('pickupLocation')), 'to': _place(thing.get('dropoffLocation'))},
                    by=_text(company), name=_text(what.get('name')))
+    elif kind == 'event':  # a concert, a match, a festival, a conference: where it is, the venue and its town
+        place = what.get('location')
+        place = place[0] if isinstance(place, list) and place else place
+        place = place if isinstance(place, dict) else {}
+        address = place.get('address') if isinstance(place.get('address'), dict) else {}
+        where = [x for x in (_text(place.get('name')), _text(address.get('addressLocality'))) if x]
+        row.update(start=_when(what.get('startDate')), end=_when(what.get('endDate')), name=_text(what.get('name')),
+                   where=', '.join(dict.fromkeys(where)), by=_text(thing.get('provider')), guests=_text(thing.get('numSeats')),
+                   seat=' '.join(x for x in (_text(seat.get('seatSection')), _text(seat.get('seatRow')), _text(seat.get('seatNumber'))) if x))
     else:  # train, bus, boat
         place = {'train': ('departureStation', 'arrivalStation'), 'bus': ('departureBusStop', 'arrivalBusStop'),
                  'boat': ('departureBoatTerminal', 'arrivalBoatTerminal')}[kind]
@@ -111,9 +123,9 @@ def _row(thing):
     row['ticket'] = _text(ticket.get('ticketNumber'))
     if not row.get('start'):
         return None
-    if kind == 'hotel' and not row.get('name'):
+    if kind in ('hotel', 'event') and not row.get('name'):
         return None
-    if kind != 'hotel' and not (row.get('from') or row.get('to')):
+    if kind not in ('hotel', 'event') and not (row.get('from') or row.get('to')):
         return None
     return {k: v for k, v in row.items() if v}
 

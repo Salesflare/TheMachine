@@ -142,6 +142,7 @@ The sidebar pages (renamed 2026-11-01): Suggestions is now *To-dos* (the plural 
 | Note, Notes (a page of its own in the Graph, next to People; not meeting notes or the Notes field on a record) | Notitie, Notities | Note, Notes | Notiz, Notizen | Nota, Notas | Nota, Note | Nota, Notas | 笔记 | メモ | 메모 | Заметка, Заметки |
 | Linked from (the notes that link to a page) | Gelinkt vanuit | Lié depuis | Verlinkt von | Enlazado desde | Collegato da | Vinculado de | 链接自 | リンク元 | 링크한 곳 | Ссылаются |
 | Trip, Trips (a dated note The Machine fills in from booking mail) | Reis, Reizen | Voyage, Voyages | Reise, Reisen | Viaje, Viajes | Viaggio, Viaggi | Viagem, Viagens | 行程 | 旅行 | 여행 | Поездка, Поездки |
+| Event, Events (a dated note The Machine fills in from ticket mail: a concert, a match, a conference; not a calendar event) | Evenement, Evenementen | Événement, Événements | Veranstaltung, Veranstaltungen | Evento, Eventos | Evento, Eventi | Evento, Eventos | 活动 | イベント | 이벤트 | Мероприятие, Мероприятия |
 | Home (the notes about the owner's own home: its bills, appliances and upkeep; not the app's home page) | Thuis | Maison | Zuhause | Hogar | Casa | Casa | 家 | 自宅 | 집 | Дом |
 | Health (the notes about the owner's own health: appointments, doctors, medicines) | Gezondheid | Santé | Gesundheit | Salud | Salute | Saúde | 健康 | 健康 | 건강 | Здоровье |
 | Kids (the notes about the owner's children: their school, activities and care) | Kinderen | Enfants | Kinder | Hijos | Figli | Filhos | 孩子 | 子ども | 아이 | Дети |

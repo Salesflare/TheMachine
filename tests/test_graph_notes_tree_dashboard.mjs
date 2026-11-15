@@ -9,7 +9,9 @@ const {chromium}=await import('./browser.mjs');
 const dashboard=await dashboardPage();
 const at=new Date().toISOString();
 const note=(n,name,depth,parent,children=0,lines=0)=>({id:'note:'+n,kind:'note',name,area:'personal',starts:null,ends:null,by:'owner',updated_at:at,lines,parent,depth,children});
-const notes=[note(1,'Home',0,null,1),note(2,'Dishwasher',1,'note:1',0,2),note(3,'Garden',0,null,0,1)];
+const year=new Date().getFullYear();
+const notes=[note(1,'Home',0,null,1),note(2,'Dishwasher',1,'note:1',0,2),note(3,'Garden',0,null,0,1),
+ {...note(4,'Example Dev Summit',0,null,0,2),kind:'event',starts:`${year}-12-18`,ends:`${year}-12-19`}];
 const server=createServer(async(req,res)=>{const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
  if(url.pathname==='/api/status'){res.end(JSON.stringify({suggestions:[],promises:[],connectors:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[]}));return}
@@ -35,7 +37,11 @@ try{
     gaps:rows.slice(1).map((r,i)=>Math.round(r.getBoundingClientRect().top-rows[i].getBoundingClientRect().bottom)),names:rows.map(r=>r.querySelector('.node').textContent.trim())}});
   assert.ok(look.card,width+': the list is one card');assert.equal(look.rowCards,0,width+': no card per row');assert.ok(look.gaps.every(g=>g===0),width+': rows touch '+look.gaps);
   // Folded at first; the caret shows Dishwasher a step in
-  assert.deepEqual(look.names,['Home','Garden']);
+  assert.deepEqual(look.names,['Home','Garden','Example Dev Summit']);
+  // A row's meta wraps between its parts only: never inside a date or "2 lines"
+  const meta=await page.locator('.note-item[data-node="note:4"] small').textContent();
+  assert.deepEqual(meta.split(' · ').map(p=>p.split(' to ').some(x=>x.includes(' '))),[false,false,false],width+': '+meta);
+  assert.match(meta,/^Event · .+ to .+ · 2 lines$/);
   await page.click('[data-note-fold="note:1"]');await page.locator('.note-item[data-node="note:2"]').waitFor();
   const x=id=>page.locator(`.note-item[data-node="${id}"] .node`).evaluate(e=>e.getBoundingClientRect().left);
   assert.ok(await x('note:2')-await x('note:1')>=20,width+': a note under another sits a step in');
