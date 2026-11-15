@@ -179,6 +179,8 @@ body main{padding-top:0}
   :root[data-side="collapsed"] .side-sub a{justify-content:center;padding:0}
   :root[data-side="collapsed"] .side-sub .badge{display:none}
 }
+/* Folded on a short window: the icons sit a little closer, so every row fits without scrolling */
+@media(min-width:1024px) and (max-height:680px){:root[data-side="collapsed"] :is(.app-side nav button,.app-side .head-side>.settings-link,.side-sub a){min-height:30px}}
 /* A phone and a tablet: a slim top bar with the menu button, the page's title in the column, and the sidebar as a drawer */
 @media(max-width:1023px){
   :root{--side-bg:var(--bg)}

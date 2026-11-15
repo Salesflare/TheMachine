@@ -27,7 +27,7 @@ class StatusGraphCounts(unittest.TestCase):
         self.app.store, self.app.config_path, self.app.config = self.store, None, {'accounts': [WORK]}
 
     def test_status_has_the_counts_the_graph_overview_has(self):
-        self.assertEqual(self.app.action('status', {'full': True})['graph_counts'], {'person': 0, 'org': 0, 'project': 0})
+        self.assertEqual(self.app.action('status', {'full': True})['graph_counts'], {'person': 0, 'org': 0, 'project': 0, 'note': 0})
         self.store.commit_page('work', {}, [mail(1, 'Sam Lee <sam@client.example>'), mail(2, 'Kim Ito <kim@other.example>')])
         with self.store.connect() as db:
             db.isolation_level = None
@@ -35,7 +35,7 @@ class StatusGraphCounts(unittest.TestCase):
         counts = self.app.action('status', {'full': True})['graph_counts']
         with self.store.connect() as db:
             overview = graph.overview(db)['counts']
-        self.assertEqual(counts, overview)
+        self.assertEqual(counts, {**overview, 'note': 0})  # the Graph adds its Notes count to the overview's (api/graph)
         self.assertGreaterEqual(counts['person'], 2)
 
     def test_the_agents_compact_status_leaves_them_out(self):
