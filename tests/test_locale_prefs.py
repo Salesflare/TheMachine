@@ -194,6 +194,33 @@ class DashboardTest(unittest.TestCase):
         self.assertEqual(locale_prefs.ENGLISH_NAMES['nl'], 'Dutch')
         self.assertEqual(locale_prefs.SPOKEN_NAMES['zh'], 'Chinese')
 
+    def test_voice_input_reads_its_languages_from_the_table(self):
+        """The mic's menu, the browser's speech tags and Whisper's codes all come from LANGUAGE_TABLE: every spoken
+        language with a tag, in the menu's order (Latin A to Z, then Cyrillic, then the table's order)."""
+        import voice_input
+        mic = locale_prefs.mic_languages()
+        self.assertEqual([[c, n] for c, n, _ in mic],
+                         [['de', 'Deutsch'], ['en', 'English'], ['es', 'Español'], ['fr', 'Français'], ['it', 'Italiano'],
+                          ['nl', 'Nederlands'], ['pt', 'Português'], ['ru', 'Русский'], ['zh', '简体中文'], ['ja', '日本語'],
+                          ['ko', '한국어']])
+        self.assertEqual({c: tag for c, _, tag in mic},
+                         {'de': 'de-DE', 'en': 'en-US', 'es': 'es-ES', 'fr': 'fr-FR', 'it': 'it-IT', 'nl': 'nl-NL',
+                          'pt': 'pt-BR', 'zh': 'zh-CN', 'ja': 'ja-JP', 'ko': 'ko-KR', 'ru': 'ru-RU'})
+        tagged = {row[2] for row in locale_prefs.LANGUAGE_TABLE.values() if row[4]}
+        self.assertEqual({c for c, _, _ in mic}, tagged)
+        self.assertEqual(voice_input.LANGUAGES, tuple(sorted(tagged)))
+        self.assertEqual(json.loads(dashboard_parts.kinds_json(ROOT))['mic'], mic)
+        for name in ('settings-general.js', 'todos-chat-voice-rec.js'):
+            js = (ROOT / 'dashboard' / name).read_text(encoding='utf-8')
+            self.assertIn('SOURCE_KINDS.mic', js, f'{name} reads the languages from the page')
+            self.assertNotIn("'de-DE'", js, f'{name} keeps no list of its own')
+        row = locale_prefs.LANGUAGE_TABLE['ru']
+        try:  # a language without a tag isn't offered
+            locale_prefs.LANGUAGE_TABLE['ru'] = (*row[:4], None)
+            self.assertNotIn('ru', [c for c, _, _ in locale_prefs.mic_languages()])
+        finally:
+            locale_prefs.LANGUAGE_TABLE['ru'] = row
+
     def tearDown(self):
         locale_prefs.configure({})
 

@@ -18,6 +18,7 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 import dashboard_parts  # noqa: E402
+import locale_prefs  # noqa: E402
 from machine import kinds, names, services, todo_states  # noqa: E402
 
 SKIP_DIRS = {'node_modules', '.git', '.venv', '__pycache__', 'tests'}
@@ -275,7 +276,8 @@ class Page(unittest.TestCase):
             data = re.search(r'<script id="source-kinds" type="application/json">(.*?)</script>', page, re.S).group(1)
             self.assertEqual(json.loads(data), json.loads(json.dumps({'kinds': kinds.KINDS, 'sends': kinds.SENDS,
                                                                       'todo': dashboard_parts.todo_groups(todo_states),
-                                                                      'services': services.page()})))
+                                                                      'services': services.page(),
+                                                                      'mic': locale_prefs.mic_languages()})))
 
     def test_another_checkouts_page_gets_its_own_kinds(self):
         import tempfile
