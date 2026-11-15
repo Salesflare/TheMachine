@@ -33,10 +33,12 @@ class Service:
         self.waiting = {}  # id: [Event, reply]
 
     def start(self):
-        """The running helper, started when it isn't (or exited when idle)."""
+        """The running helper and its ready event, started when it isn't (or exited when idle). One whose output ended
+        is gone (read() clears self.proc), also while poll() still says it runs: an exited process stays unreaped for
+        a moment, and on a busy computer a turn sent to it then never got an answer."""
         with self.lock:
             if self.proc and self.proc.poll() is None:
-                return self.proc
+                return self.proc, self.ready
             try:
                 proc = subprocess.Popen(self.command, env=self.env, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                                         stderr=subprocess.DEVNULL, text=True, bufsize=1)
@@ -44,7 +46,7 @@ class Service:
                 raise Down() from None
             self.proc, self.ready = proc, threading.Event()
             threading.Thread(target=self.read, args=(proc, self.ready), daemon=True, name='model-run-service').start()
-            return proc
+            return proc, self.ready
 
     def read(self, proc, ready):
         for line in proc.stdout:
@@ -59,9 +61,11 @@ class Service:
             if slot:
                 slot[1] = reply
                 slot[0].set()
-        with self.lock:  # it exited (idle, or failed): wake everyone still waiting on it
+        with self.lock:  # it exited (idle, or failed): no turn goes to it again, and everyone still waiting on it wakes
+            if self.proc is proc:
+                self.proc = None
             for slot in self.waiting.values():
-                if slot[1] is None:
+                if slot[1] is None and slot[2] is proc:
                     slot[1] = {'down': True}
                     slot[0].set()
         ready.set()
@@ -76,16 +80,18 @@ class Service:
     def run(self, text, model=None, thinking=None, timeout=60):
         """The reply's text. Raises Down when the helper can't take the turn, help_chat.Unavailable when the model
         didn't answer."""
-        proc = self.start()
-        if not self.ready.wait(START_SECONDS) or proc.poll() is not None:
+        proc, ready = self.start()
+        if not ready.wait(START_SECONDS) or proc.poll() is not None:
             raise Down()
-        rid, slot = uuid.uuid4().hex, [threading.Event(), None]
-        self.waiting[rid] = slot
+        rid, slot = uuid.uuid4().hex, [threading.Event(), None, proc]
         try:
             line = {'id': rid, 'prompt': text, 'timeout_ms': int(timeout * 1000)}
             line.update({k: v for k, v in (('model', model), ('thinking', thinking)) if v})
             try:
                 with self.lock:
+                    if self.proc is not proc:  # its output ended meanwhile (read): nobody would answer
+                        raise Down()
+                    self.waiting[rid] = slot
                     proc.stdin.write(json.dumps(line) + '\n')
                     proc.stdin.flush()
             except (OSError, ValueError):
