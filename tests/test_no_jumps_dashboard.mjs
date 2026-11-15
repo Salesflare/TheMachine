@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {dashboardPage} from './dashboard-page.mjs';
+import {quiet,trackRequests} from './page-calls.mjs';
 const {chromium}=await import('./browser.mjs');
 
 // A phone (390x844, touch) scrolled halfway down any main screen stays put while the page updates by itself: a refresh
@@ -75,7 +76,7 @@ const screens=[
  ['Connections',async page=>{await page.evaluate(()=>showTab('health','other'));await page.locator('#connectors>article:not([hidden])').nth(20).waitFor()}],
  ['Fleet',async page=>{await page.evaluate(()=>showTab('fleet'));await page.locator('#fleet-view').getByText('Teammate 20').first().waitFor()}],
  // Model is the tallest tab: Codex and Claude Code, the model picker and the plan's usage
- ['Settings',async page=>{await page.evaluate(()=>showSettings('model'));await page.waitForTimeout(300)}]];
+ ['Settings',async page=>{await page.evaluate(()=>showSettings('model'));await page.locator('#settings:not([hidden])').waitFor()}]];
 // The element on screen 300px down, tracked through the refresh: the same node, or (drawn anew) the one with its text
 const mark=()=>{const words=x=>x.textContent.replace(/\s+/g,' ').trim().slice(0,80),same=x=>[...document.querySelectorAll('main '+x.tagName)].filter(y=>y.getClientRects().length&&words(y)===words(x)).length;
  // the row under the reader: the smallest element there whose words are its own (a date line repeats on every row)
@@ -92,29 +93,29 @@ try{
   const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true,locale:'en-US',timezoneId:'Europe/Brussels'});
   await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
   if(!anchoring)await context.addInitScript(()=>addEventListener('DOMContentLoaded',()=>{const s=document.createElement('style');s.textContent='*{overflow-anchor:none!important}';document.head.append(s)}));
-  const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
+  const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));const requests=trackRequests(page),settle=()=>quiet(page,requests);
   await page.goto(base);await page.locator('#task-'+hex('a',0)).waitFor();
   for(const [name,open] of screens){
-   await open(page);await page.waitForTimeout(400);
+   await open(page);await settle();
    // A card chat's thread scrolls in its own box (the page itself stays put); every other screen scrolls the page
    const H=await page.evaluate(()=>{const l=document.querySelector('#chat-log'),box=l&&l.getClientRects().length&&getComputedStyle(l).overflowY!=='visible'?l:null;window.__box=box;
     const H=box?box.scrollHeight-box.clientHeight:document.documentElement.scrollHeight-innerHeight;if(box)box.scrollTop=Math.round(H/2);else scrollTo(0,Math.round(H/2));return H});
    assert.ok(H>400,`${name}: the page (or the thread) is taller than the screen (${H})`);
    const at=()=>page.evaluate(()=>Math.round(window.__box?window.__box.scrollTop:scrollY));
-   await page.waitForTimeout(300);const y0=await at(),text=await page.evaluate(mark);
-   for(let i=0;i<2;i++){tick++;await page.evaluate(()=>refresh());await page.waitForTimeout(700)}
+   await settle();const y0=await at(),text=await page.evaluate(mark);
+   for(let i=0;i<2;i++){tick++;await page.evaluate(()=>refresh());await settle()}
    // a slow machine: give the lists that load after the refresh time to come back before measuring
-   await page.waitForFunction(()=>{const m=window.__mark;return m.el.isConnected&&m.el.getClientRects().length||[...document.querySelectorAll('main '+m.tag)].some(x=>x.getClientRects().length&&x.textContent.replace(/\s+/g,' ').trim().slice(0,80)===m.text)},null,{timeout:6000}).catch(()=>{});await page.waitForTimeout(300);
+   await page.waitForFunction(()=>{const m=window.__mark;return m.el.isConnected&&m.el.getClientRects().length||[...document.querySelectorAll('main '+m.tag)].some(x=>x.getClientRects().length&&x.textContent.replace(/\s+/g,' ').trim().slice(0,80)===m.text)},null,{timeout:6000}).catch(()=>{});await settle();
    const r=await page.evaluate(moved),where=`${name}${anchoring?'':' (no scroll anchoring)'}: "${text.slice(0,30)}"`;
    if(!r.found||Math.abs(r.d)>2||r.cls>0.01)failures.push(`${where} moved ${r.d}px, CLS ${r.cls.toFixed(3)}, scrollY ${y0} -> ${await at()}`);
    if(name==='Cards'&&!await page.locator('#task-'+hex('a',4)+' details.agent-more').evaluate(d=>d.open))failures.push(where+': the fold the reader opened closed');
    if(process.env.NO_JUMPS_SHOT)await page.screenshot({path:`${process.env.NO_JUMPS_SHOT}/${name.replace(/\W+/g,'-').toLowerCase()}${anchoring?'':'-noanchor'}.png`})}
   // The phone's drawer scrolls in its own box: a new card above keeps the rows in view where they were
-  await page.evaluate(()=>{showTab('inbox');drawerOpen()});await page.waitForTimeout(400);
+  await page.evaluate(()=>{showTab('inbox');drawerOpen()});await settle();
   const side=await page.evaluate(()=>{const sc=document.querySelector('.app-side');sc.scrollTop=Math.round((sc.scrollHeight-sc.clientHeight)/2);return sc.scrollHeight-sc.clientHeight});
-  assert.ok(side>200,`the drawer is taller than the screen (${side})`);await page.waitForTimeout(200);
+  assert.ok(side>200,`the drawer is taller than the screen (${side})`);await settle();
   const row=await page.evaluate(()=>{const a=[...document.querySelectorAll('#side-cards a')].find(a=>a.getBoundingClientRect().top>300);window.__row={href:a.getAttribute('href'),top:a.getBoundingClientRect().top};return a.textContent});
-  for(let i=0;i<2;i++){tick++;await page.evaluate(()=>refresh());await page.waitForTimeout(500)}
+  for(let i=0;i<2;i++){tick++;await page.evaluate(()=>refresh());await settle()}
   const d=await page.evaluate(()=>Math.round(document.querySelector(`#side-cards a[href="${window.__row.href}"]`).getBoundingClientRect().top-window.__row.top));
   if(Math.abs(d)>2)failures.push(`Drawer${anchoring?'':' (no scroll anchoring)'}: "${row}" moved ${d}px`);
   if(process.env.NO_JUMPS_SHOT)await page.screenshot({path:`${process.env.NO_JUMPS_SHOT}/drawer${anchoring?'':'-noanchor'}.png`});

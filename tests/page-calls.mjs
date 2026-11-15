@@ -27,6 +27,23 @@ export async function waitForAction(calls,match,{timeout=15000}={}){const want=w
   if(Date.now()>end)assert.fail(`no ${typeof match==='string'?match+' ':''}call within ${timeout} ms`);
   await new Promise(r=>setTimeout(r,20))}}
 
+// The page's requests in flight, for quiet(): call it when the page is made, before it loads anything.
+export function trackRequests(page){let open=0;const done=()=>{open=Math.max(0,open-1)};
+ page.on('request',()=>{open++});page.on('requestfinished',done);page.on('requestfailed',done);return ()=>open}
+
+// The page has settled: no request in flight (requests: from trackRequests), and for `frames` animation frames in a
+// row no change to the page and no animation running (an endless one, a spinner, doesn't count). For a check that
+// measures where things are after something happened (nothing jumped, nothing shifted).
+export async function quiet(page,requests=()=>0,{frames=8,timeout=15000}={}){const end=Date.now()+timeout;
+ const still=n=>new Promise(done=>{let changed=false,left=n;const watch=new MutationObserver(()=>{changed=true});
+  watch.observe(document,{subtree:true,childList:true,attributes:true,characterData:true});
+  const moving=()=>document.getAnimations().some(a=>a.playState==='running'&&a.effect?.getComputedTiming().iterations!==Infinity);
+  const frame=()=>{if(changed||moving()){watch.disconnect();return done(false)}if(--left<=0){watch.disconnect();return done(true)}requestAnimationFrame(frame)};
+  requestAnimationFrame(frame)});
+ for(;;){if(!requests()&&await page.evaluate(still,frames)&&!requests())return;
+  if(Date.now()>end)assert.fail(`the page kept changing for ${timeout} ms`);
+  await new Promise(r=>setTimeout(r,20))}}
+
 // What the page shows once it has caught up: get() again until it deep-equals want (or the time is up, then the usual
 // assertion with the last value). For a check right after a call is answered, while the page may still redraw.
 export async function settled(get,want,message,{timeout=30000}={}){const end=Date.now()+timeout;let got;
