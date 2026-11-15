@@ -11,6 +11,7 @@ import assistant
 from machine.sources.connectors import connector_services, load_connector
 from machine.store.cards import SOURCE_KIND, line_head, source_lead, source_line
 from machine.store.views import source_marks
+import machine.main as machine_main
 
 AT, OLDER = '2026-11-12T09:00:00+00:00', '2026-11-05T09:00:00+00:00'
 MAIL_URL = 'https://mail.google.com/mail/u/0/#all/abc123'
@@ -43,7 +44,7 @@ def fixture(folder):
     """One to-do per named kind, its line naming that kind's message with an older Gmail email as "+1 more" (and a
     Gmail link among its originals), plus the reported case: the owner's own WhatsApp message with six others, one an
     email; and one whose evidence was reordered after its line was written. Returns (cards, connectors)."""
-    store = assistant.Store(Path(folder) / 'events.sqlite')
+    store = machine_main.Store(Path(folder) / 'events.sqlite')
     cards = []
     with store.connect() as db:
         for n, kind in enumerate(named_kinds()):

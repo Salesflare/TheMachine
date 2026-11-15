@@ -9,6 +9,9 @@ from pathlib import Path
 import sqlite3
 import tempfile
 import unittest
+import machine.main as machine_main
+import machine.sources.calendar as machine_sources_calendar
+import timeutil
 
 spec = importlib.util.spec_from_file_location('summary_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec)
@@ -25,11 +28,11 @@ class PersonSummary(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'events.sqlite', protect=True)
+        self.store = machine_main.Store(Path(self.temp.name) / 'events.sqlite', protect=True)
         self.accounts = [{'id': 'work', 'service': 'gmail', 'email': 'owner@example.com', 'boundary': 'work:Example'},
                          {'id': 'home', 'service': 'whatsapp', 'boundary': 'personal:'}]
         self.store.accounts = self.accounts
-        self.app = object.__new__(a.App)
+        self.app = object.__new__(machine_main.App)
         self.app.store = self.store
         self.app.config = {'accounts': self.accounts, 'review_worker': {'enabled': True}}
         self.app.fleet = None
@@ -131,14 +134,14 @@ class PersonSummary(unittest.TestCase):
         self.run_pass()
         with self.store.connect() as db:
             new = db.execute("INSERT INTO events(account_id,source_id,kind,occurred_at,title,body,metadata,content_hash,ingested_at) VALUES('work','n','gmail.message',?,'Re','Signed!','{}','h',?)",
-                             (a.now(), a.now())).lastrowid
-            db.execute('INSERT INTO graph_events(node_id,event_id,at,probable,direct) VALUES(?,?,?,0,1)', (ANN, new, a.now()))
+                             (timeutil.now(), timeutil.now())).lastrowid
+            db.execute('INSERT INTO graph_events(node_id,event_id,at,probable,direct) VALUES(?,?,?,0,1)', (ANN, new, timeutil.now()))
             self.assertEqual(person_summary.due(db), [])  # a pass ran within the hour
             db.execute('UPDATE person_summary_runs SET started_at=?', ((self.now - dt.timedelta(hours=2)).isoformat(),))
             self.assertEqual(person_summary.due(db), [])  # and Ann was written less than a day ago
             db.execute('UPDATE person_summaries SET written_at=?', ((self.now - dt.timedelta(days=1)).isoformat(),))
             self.assertEqual([p['id'] for p in person_summary.due(db)], [ANN])  # newer evidence, later: due
-            db.execute('UPDATE person_summaries SET evidence_at=?', (a.now(),))
+            db.execute('UPDATE person_summaries SET evidence_at=?', (timeutil.now(),))
             self.assertEqual(person_summary.due(db), [])  # nothing new since: not due
 
     def test_the_owners_edit_wins_and_a_rewrite_proposes(self):
@@ -185,7 +188,7 @@ class PersonSummary(unittest.TestCase):
         self.assertNotIn('birthday', lines)
         with self.store.connect() as db:  # the meeting prep for them reads it through graph_lines, in the to-do's own area
             db.execute("INSERT INTO suggestions(id,dedupe_key,title,body,event_ids,account_ids,status,created_at) VALUES('s2','s2','Prep the call with Ann','',?,'[\"work\"]','pending',?)",
-                       (json.dumps([self.events[2]]), a.now()))
+                       (json.dumps([self.events[2]]), timeutil.now()))
         self.app.gbrain_lines = lambda db, ids: ''
         prep = self.app.graph_lines('s2')
         self.assertIn('Legal reviews the contract next week.', prep)
@@ -199,7 +202,7 @@ class PersonSummary(unittest.TestCase):
             texts = [line['text'] for line in person_summary.view(db, ANN)['lines']]
             self.assertNotIn('Invited you to a birthday party.', texts)
             db.execute('UPDATE person_summary_runs SET started_at=?', ((self.now - dt.timedelta(hours=2)).isoformat(),))
-            db.execute('UPDATE person_summaries SET written_at=?,evidence_at=?', ((self.now - dt.timedelta(days=1)).isoformat(), a.now()))
+            db.execute('UPDATE person_summaries SET written_at=?,evidence_at=?', ((self.now - dt.timedelta(days=1)).isoformat(), timeutil.now()))
             self.assertEqual([p['id'] for p in person_summary.due(db)], [ANN])
 
     def all_day_party(self, zone):
@@ -209,10 +212,10 @@ class PersonSummary(unittest.TestCase):
         year = self.now.year + 1
         raw = {'id': f'party-{zone}', 'summary': 'Birthday party', 'start': {'date': f'{year}-12-05'}, 'end': {'date': f'{year}-12-06'},
                'attendees': [{'email': 'ann@acme.example'}, {'email': 'owner@example.com', 'self': True}], 'status': 'confirmed'}
-        event = a.calendar_event({'id': 'home', 'email': 'owner@example.com'}, raw, 'UTC')
+        event = machine_sources_calendar.calendar_event({'id': 'home', 'email': 'owner@example.com'}, raw, 'UTC')
         with self.store.connect() as db:
             event_id = db.execute("INSERT INTO events(account_id,source_id,kind,occurred_at,title,body,metadata,content_hash,ingested_at) VALUES(?,?,?,?,?,?,?,'h',?)",
-                                  ('home', raw['id'], 'calendar.event', event['occurred_at'], 'Birthday party', '', json.dumps(event['metadata']), a.now())).lastrowid
+                                  ('home', raw['id'], 'calendar.event', event['occurred_at'], 'Birthday party', '', json.dumps(event['metadata']), timeutil.now())).lastrowid
             db.execute('INSERT INTO graph_events(node_id,event_id,at,probable,direct) VALUES(?,?,?,0,1)', (ANN, event_id, event['occurred_at']))
         return event_id, f'{year}-12-05'
 
@@ -229,7 +232,7 @@ class PersonSummary(unittest.TestCase):
                     page = person_summary.evidence(db, graph.Owner({'accounts': self.accounts}, db), person, graph.person_evidence)
                 party = next(m for m in page['signals'] if m['id'] == f'E{event_id}')
                 self.assertEqual((party['date'], party.get('all_day')), (day, True))
-                self.assertEqual(page['today'], timeutil.local_day_text(a.now()))
+                self.assertEqual(page['today'], timeutil.local_day_text(timeutil.now()))
                 with self.store.connect() as db:
                     db.execute('DELETE FROM graph_events WHERE event_id=?', (event_id,))
         self.assertIn('an all_day meeting is on its date', person_summary.prompt([page]))
@@ -240,7 +243,7 @@ class PersonSummary(unittest.TestCase):
         self.answer = lambda prompt: json.dumps(self.lines())
         self.run_pass()
         with self.store.connect() as db:
-            db.execute("INSERT INTO suggestions(id,dedupe_key,title,body,event_ids,account_ids,status,created_at) VALUES('s2','s2','Send it','','[]','[\"work\"]','accepted',?)", (a.now(),))
+            db.execute("INSERT INTO suggestions(id,dedupe_key,title,body,event_ids,account_ids,status,created_at) VALUES('s2','s2','Send it','','[]','[\"work\"]','accepted',?)", (timeutil.now(),))
             db.execute("UPDATE promises SET status='carded',suggestion_id='s2' WHERE id=?", (self.promise,))
             texts = [line['text'] for line in person_summary.view(db, ANN)['lines']]
             self.assertIn('You promised to send the contract by Friday.', texts)  # its to-do is still out: still open
@@ -340,7 +343,7 @@ class PersonSummary(unittest.TestCase):
         for name in ('fleet.py', 'shared_graph.py', 'fleet_requests.py', 'fleet_reviews.py', 'fleet_learnings.py', 'team_learnings.py', 'contact_share.py', 'network.py'):
             self.assertNotIn('person_summar', (ROOT / name).read_text(encoding='utf-8'), name)
         with self.store.connect() as db:
-            graph.delete_person(db, ANN, self.app.config, a.now())
+            graph.delete_person(db, ANN, self.app.config, timeutil.now())
             self.assertEqual(db.execute('SELECT count(*) FROM person_summaries').fetchone()[0], 0)
 
     # Early refresh: a matter that moved later the same day ---------------------------------------------------------
@@ -424,7 +427,7 @@ class PersonSummary(unittest.TestCase):
         other = self.message('email:cy@other.example', 'Can you review the brief?', hours_ago=1)
         copied = self.message(ANN, 'cc', hours_ago=1, direct=0)
         with self.store.connect() as db:
-            db.execute('INSERT INTO graph_events(node_id,event_id,at,probable,direct) VALUES(?,?,?,0,0)', (ANN, other, a.now()))
+            db.execute('INSERT INTO graph_events(node_id,event_id,at,probable,direct) VALUES(?,?,?,0,0)', (ANN, other, timeutil.now()))
             db.execute('DELETE FROM graph_events WHERE event_id=? AND node_id=?', (copied, ANN))
         self.store.suggest('brief-cy', 'Review the brief', 'Cy asks for a review.', [other], match=True, separate=True)
         self.assertEqual(self.due_now(), [])
@@ -440,7 +443,7 @@ class PersonSummary(unittest.TestCase):
         self.store.suggest('venue-ann', 'Confirm the venue', 'Ann asks to confirm the venue.', [ask], match=True)
         with self.store.connect() as db:
             self.assertEqual([p['id'] for p in person_summary.due(db, limit=1)], [ANN])
-            db.execute('UPDATE person_summary_runs SET started_at=?', (a.now(),))
+            db.execute('UPDATE person_summary_runs SET started_at=?', (timeutil.now(),))
             self.assertEqual(person_summary.due(db), [])  # a pass ran within the hour
 
     def test_past_the_days_passes_only_early_ones_and_spread_out(self):

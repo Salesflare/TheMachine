@@ -12,6 +12,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 from zoneinfo import ZoneInfo
+import machine.main as machine_main
 
 spec = importlib.util.spec_from_file_location('patterns_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
@@ -33,7 +34,7 @@ def at(day, hour=9, minute=10):
 class Base(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'e.sqlite')
+        self.store = machine_main.Store(Path(self.temp.name) / 'e.sqlite')
         self.n = 0
 
     def ask(self, day, words, hour=9, chat=False):
@@ -145,7 +146,7 @@ class Candidates(Base):
 
 def sorting_app(self):
     """An App with the Gateway stubbed (self.gateway), on this test's store and a made-up clock."""
-    self.app = object.__new__(a.App); self.app.store = self.store
+    self.app = object.__new__(machine_main.App); self.app.store = self.store
     self.app.config = {'accounts': [{'id': 'w', 'boundary': 'work:acme.example'}], 'timezone': 'Europe/Brussels',
                        'openclaw_state': self.temp.name + '/none.sqlite'}  # a hosted Machine: no OpenClaw jobs
     self.now = T(2026, 11, 9, 6, 0)
@@ -153,7 +154,7 @@ def sorting_app(self):
     for name, value in (('routines_now', lambda s: self.now), ('background_pause', lambda s, **k: None),
                         ('background_spaced', lambda s: True), ('background_started', lambda s: None),
                         ('preparation_gateway', lambda s, request: self.gateway(request))):
-        p = patch.object(a.App, name, value); p.start(); self.addCleanup(p.stop)
+        p = patch.object(machine_main.App, name, value); p.start(); self.addCleanup(p.stop)
     self.sent, self.answer = [], {'start': {'status': 'admitted'}, 'status': {'status': 'pending'}}
 
 

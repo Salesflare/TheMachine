@@ -1,5 +1,8 @@
 import importlib.util,tempfile,unittest
 from pathlib import Path
+import machine.main as machine_main
+import machine.sources.calendar as machine_sources_calendar
+import machine.sources.exclusions as machine_sources_exclusions
 spec=importlib.util.spec_from_file_location('assistant_excl',Path(__file__).parent.parent.joinpath('assistant.py'));a=importlib.util.module_from_spec(spec);spec.loader.exec_module(a)
 def ev(sid,**metadata):return {'account_id':'acc','source_id':sid,'kind':'k','occurred_at':'2026-10-11T00:00:00+00:00','title':'t','body':'b','metadata':metadata,'deleted':False}
 RULES=[{'channels':['development-log','error-log']},{'channels':['sales'],'bots_only':True},
@@ -8,20 +11,20 @@ RULES=[{'channels':['development-log','error-log']},{'channels':['sales'],'bots_
 
 class Exclusions(unittest.TestCase):
     def test_rules(self):
-        m=lambda **k:a.excluded_by_rules(RULES,{'metadata':k})
+        m=lambda **k:machine_sources_exclusions.excluded_by_rules(RULES,{'metadata':k})
         self.assertTrue(m(channel_name='error-log',user_id='U1'))
         self.assertTrue(m(channel_name='sales',bot_id='B1'))
         self.assertFalse(m(channel_name='sales',user_id='U1'))  # people in #sales stay
         self.assertFalse(m(channel_name='leads',bot_id='B1'))
         self.assertTrue(m(package_name='android'));self.assertFalse(m(package_name='com.whatsapp.w4b'))
         self.assertTrue(m(**{'from':'AnalyticsVendor <product@analytics.example>'}));self.assertFalse(m(**{'from':'alerts@seo-tool.example'}))
-        self.assertFalse(a.excluded_by_rules([],{'metadata':{'channel_name':'error-log'}}))
+        self.assertFalse(machine_sources_exclusions.excluded_by_rules([],{'metadata':{'channel_name':'error-log'}}))
         self.assertTrue(m(chat_id='120363000000000001@g.us',chat_name='Family photo diary'))
         self.assertFalse(m(chat_id='other@g.us',chat_name='Family photo diary'))
 
     def test_routine_recurring_calendar_instances(self):
         rule=[{'routine_recurring':True}]
-        def m(**k):return a.excluded_by_rules(rule,{'metadata':k})
+        def m(**k):return machine_sources_exclusions.excluded_by_rules(rule,{'metadata':k})
         same={'dateTime':'2026-10-14T09:00:00+02:00'};utc={'dateTime':'2026-10-14T07:00:00Z'}
         self.assertTrue(m(recurring_event_id='r',start=same,original_start=same,status='confirmed'))
         self.assertTrue(m(recurring_event_id='r',start=utc,original_start=same))  # same moment, other notation
@@ -31,21 +34,21 @@ class Exclusions(unittest.TestCase):
         self.assertTrue(m(recurring_event_id='r',start={'date':'2026-10-14'},original_start={'date':'2026-10-14'}))
         system=[{'packages':['android'],'text':['is displaying over other apps','charging this device via usb']}]
         overlay={'title':'Some App is displaying over other apps','body':'If you don’t want…','metadata':{'package_name':'android'}}
-        self.assertTrue(a.excluded_by_rules(system,overlay))
-        self.assertFalse(a.excluded_by_rules(system,{'title':'Storage space running out','body':'','metadata':{'package_name':'android'}}))
-        self.assertFalse(a.excluded_by_rules(system,{**overlay,'metadata':{'package_name':'com.other'}}))
+        self.assertTrue(machine_sources_exclusions.excluded_by_rules(system,overlay))
+        self.assertFalse(machine_sources_exclusions.excluded_by_rules(system,{'title':'Storage space running out','body':'','metadata':{'package_name':'android'}}))
+        self.assertFalse(machine_sources_exclusions.excluded_by_rules(system,{**overlay,'metadata':{'package_name':'com.other'}}))
         titled=[{'routine_recurring':True,'titles':['Lunch','Stand up']}]
         rec={'recurring_event_id':'r','start':same,'original_start':same}
-        self.assertTrue(a.excluded_by_rules(titled,{'title':'lunch','metadata':rec}))
-        self.assertFalse(a.excluded_by_rules(titled,{'title':'Growth meeting','metadata':rec}))
-        self.assertFalse(a.excluded_by_rules(titled,{'title':'Lunch','metadata':{'start':same}}))  # a one-off lunch stays
+        self.assertTrue(machine_sources_exclusions.excluded_by_rules(titled,{'title':'lunch','metadata':rec}))
+        self.assertFalse(machine_sources_exclusions.excluded_by_rules(titled,{'title':'Growth meeting','metadata':rec}))
+        self.assertFalse(machine_sources_exclusions.excluded_by_rules(titled,{'title':'Lunch','metadata':{'start':same}}))  # a one-off lunch stays
 
     def test_defaults_every_owner_gets(self):
         config={'accounts':[{'id':'g','service':'gmail'},{'id':'w','service':'whatsapp'},{'id':'c','service':'calendar'},
                             {'id':'p','service':'android'}]}
         phone,calendar=config['accounts'][3],config['accounts'][2]
-        rules=a.default_exclusions(config,phone)
-        drop=lambda package,title='New message':a.excluded_by_rules(rules,{'title':title,'body':'','metadata':{'package_name':package}})
+        rules=machine_sources_exclusions.default_exclusions(config,phone)
+        drop=lambda package,title='New message':machine_sources_exclusions.excluded_by_rules(rules,{'title':title,'body':'','metadata':{'package_name':package}})
         self.assertFalse(drop('com.google.android.gm'))  # account coverage is unknown
         for chat in ('com.whatsapp','com.whatsapp.w4b','org.telegram.messenger','org.telegram.messenger.web','org.thunderdog.challegram',
                      'org.thoughtcrime.securesms','com.discord'):
@@ -58,20 +61,20 @@ class Exclusions(unittest.TestCase):
         self.assertFalse(drop('android','Storage space running out'))
         same={'dateTime':'2026-10-14T12:00:00+02:00'}
         lunch={'title':'Lunch','metadata':{'recurring_event_id':'r','start':same,'original_start':same}}
-        self.assertTrue(a.excluded_by_rules(a.default_exclusions(config,calendar),lunch))
-        self.assertFalse(a.excluded_by_rules(a.default_exclusions(config,calendar),{**lunch,'title':'Lunch with Ann'}))
-        off=a.default_exclusions(config,{**phone,'default_exclude':False})  # the chat apps stay out even then
-        self.assertTrue(a.excluded_by_rules(off,{'title':'New message','body':'','metadata':{'package_name':'com.whatsapp'}}))
-        self.assertFalse(a.excluded_by_rules(off,{'title':'Chrome is displaying over other apps','body':'','metadata':{'package_name':'android'}}))
-        self.assertEqual(a.default_exclusions(config,{**config['accounts'][0],'default_exclude':False}),[])
-        self.assertEqual(a.default_exclusions(config,config['accounts'][0]),[])
+        self.assertTrue(machine_sources_exclusions.excluded_by_rules(machine_sources_exclusions.default_exclusions(config,calendar),lunch))
+        self.assertFalse(machine_sources_exclusions.excluded_by_rules(machine_sources_exclusions.default_exclusions(config,calendar),{**lunch,'title':'Lunch with Ann'}))
+        off=machine_sources_exclusions.default_exclusions(config,{**phone,'default_exclude':False})  # the chat apps stay out even then
+        self.assertTrue(machine_sources_exclusions.excluded_by_rules(off,{'title':'New message','body':'','metadata':{'package_name':'com.whatsapp'}}))
+        self.assertFalse(machine_sources_exclusions.excluded_by_rules(off,{'title':'Chrome is displaying over other apps','body':'','metadata':{'package_name':'android'}}))
+        self.assertEqual(machine_sources_exclusions.default_exclusions(config,{**config['accounts'][0],'default_exclude':False}),[])
+        self.assertEqual(machine_sources_exclusions.default_exclusions(config,config['accounts'][0]),[])
 
     def test_work_mail_does_not_discard_personal_phone_mail(self):
         tmp=tempfile.TemporaryDirectory();self.addCleanup(tmp.cleanup)
-        store=a.Store(Path(tmp.name)/'e.sqlite')
+        store=machine_main.Store(Path(tmp.name)/'e.sqlite')
         phone={'id':'acc','service':'android'}
         config={'accounts':[{'id':'work','service':'gmail','email':'owner@work.example'},phone]}
-        store.exclusions={'acc':a.default_exclusions(config,phone)}
+        store.exclusions={'acc':machine_sources_exclusions.default_exclusions(config,phone)}
         notification=ev('personal-mail',package_name='com.google.android.gm')
         notification.update(kind='android.notification',title='Personal message')
         store.commit_page('acc',{'cursor':'next'},[notification])
@@ -83,7 +86,7 @@ class Exclusions(unittest.TestCase):
 
     def test_excluded_signals_are_never_stored_and_old_copies_are_removed(self):
         tmp=tempfile.TemporaryDirectory();self.addCleanup(tmp.cleanup)
-        store=a.Store(Path(tmp.name)/'e.sqlite')
+        store=machine_main.Store(Path(tmp.name)/'e.sqlite')
         store.commit_page('acc',{},[ev('1',channel_name='error-log'),ev('2',channel_name='leads')])
         self.assertEqual(len(store.events(['acc'])),2)
         self.assertEqual(store.purge_excluded('acc',RULES),1)
@@ -96,24 +99,24 @@ class Exclusions(unittest.TestCase):
         # A daily stand-up with the team, an occurrence at its usual time: the default routine rule used to drop it,
         # so it never showed on the Calendar or in Talk. It is kept, already reviewed; a title-only rule still drops.
         tmp=tempfile.TemporaryDirectory();self.addCleanup(tmp.cleanup)
-        store=a.Store(Path(tmp.name)/'e.sqlite')
+        store=machine_main.Store(Path(tmp.name)/'e.sqlite')
         account={'id':'cal','service':'calendar','email':'owner@acme.example'}
-        store.exclusions={'cal':a.default_exclusions({'accounts':[account]},account)+[{'titles':['Dentist']}]}
+        store.exclusions={'cal':machine_sources_exclusions.default_exclusions({'accounts':[account]},account)+[{'titles':['Dentist']}]}
         at={'dateTime':'2026-10-30T09:30:00+01:00','timeZone':'Europe/Brussels'}
         def raw(i,title,**k):return {'id':i,'status':'confirmed','summary':title,'start':at,'end':{**at,'dateTime':'2026-10-30T09:45:00+01:00'},
             'htmlLink':'https://www.google.com/calendar/event?eid=x','attendees':[{'email':'owner@acme.example','self':True,'responseStatus':'accepted'},
             {'email':'kim@acme.example','responseStatus':'accepted'}],**k}
         series={'recurringEventId':'standup','originalStartTime':at}
-        page=[a.calendar_event(account,raw('standup_20261030','Stand up',**series),'Europe/Brussels')]
-        page.append(a.calendar_event(account,raw('roadmap','Roadmap review'),'Europe/Brussels'))
-        page.append(a.calendar_event(account,raw('dentist_20261030','Dentist',recurringEventId='dentist',originalStartTime=at),'Europe/Brussels'))
+        page=[machine_sources_calendar.calendar_event(account,raw('standup_20261030','Stand up',**series),'Europe/Brussels')]
+        page.append(machine_sources_calendar.calendar_event(account,raw('roadmap','Roadmap review'),'Europe/Brussels'))
+        page.append(machine_sources_calendar.calendar_event(account,raw('dentist_20261030','Dentist',recurringEventId='dentist',originalStartTime=at),'Europe/Brussels'))
         store.commit_page('cal',{'cursor':'next'},page)
         day=store.calendar(['cal'],'2026-10-30T00:00:00+01:00','2026-10-31T00:00:00+01:00',owner=['owner@acme.example'])
         self.assertEqual(sorted(r['title'] for r in day),['Roadmap review','Stand up'])
         self.assertEqual([e['title'] for e in store.events(['cal'],pending=True)],['Roadmap review'])  # no review, no to-do
         self.assertEqual(store.purge_excluded('cal',store.exclusions['cal']),0)
         moved=raw('standup_20261030','Stand up',recurringEventId='standup',originalStartTime={**at,'dateTime':'2026-10-30T08:30:00+01:00'})
-        store.commit_page('cal',{'cursor':'later'},[a.calendar_event(account,moved,'Europe/Brussels')])
+        store.commit_page('cal',{'cursor':'later'},[machine_sources_calendar.calendar_event(account,moved,'Europe/Brussels')])
         self.assertIn('Stand up',[e['title'] for e in store.events(['cal'],pending=True)])  # moved: something new, reviewed
 
 if __name__=='__main__':unittest.main()

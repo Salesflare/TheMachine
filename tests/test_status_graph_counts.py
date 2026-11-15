@@ -8,6 +8,7 @@ from pathlib import Path
 
 import assistant as a
 import graph
+import machine.main as machine_main
 
 NOW = dt.datetime.now(dt.timezone.utc).replace(microsecond=0)
 WORK = {'id': 'work', 'email': 'owner@acme.example', 'service': 'gmail', 'boundary': 'work:Acme'}
@@ -22,8 +23,8 @@ def mail(n, sender):
 class StatusGraphCounts(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'events.sqlite')
-        self.app = object.__new__(a.App)
+        self.store = machine_main.Store(Path(self.temp.name) / 'events.sqlite')
+        self.app = object.__new__(machine_main.App)
         self.app.store, self.app.config_path, self.app.config = self.store, None, {'accounts': [WORK]}
 
     def test_status_has_the_counts_the_graph_overview_has(self):

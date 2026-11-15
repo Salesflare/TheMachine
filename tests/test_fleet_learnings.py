@@ -10,6 +10,8 @@ import sqlite3
 import tempfile
 import unittest
 import unittest.mock
+import machine.main as machine_main
+import machine.store.profile as machine_store_profile
 
 spec = importlib.util.spec_from_file_location('fleet_learn_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec)
@@ -125,9 +127,9 @@ class Pass(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'events.sqlite')
+        self.store = machine_main.Store(Path(self.temp.name) / 'events.sqlite')
         self.store.accounts = [{'id': 'work', 'service': 'gmail', 'email': 'owner@acme.example'}]
-        self.app = object.__new__(a.App)
+        self.app = object.__new__(machine_main.App)
         self.app.store, self.app.config = self.store, {'accounts': self.store.accounts, 'review_worker': {'enabled': True}}
         self.app.fleet = StubFleet({f't{n}' for n in range(5)})
         at = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=1)).isoformat()
@@ -140,7 +142,7 @@ class Pass(unittest.TestCase):
         run_id = self.app.fleet_learn_due()
         self.assertTrue(run_id)
         self.assertIsNone(self.app.fleet_learn_due())  # at most once an hour, and once a day
-        session = a.PROFILE_SESSION_PREFIX + run_id
+        session = machine_store_profile.PROFILE_SESSION_PREFIX + run_id
         page = self.store.profile_evidence(1, session)
         self.assertEqual(len(page['threads']), 5)
         self.assertNotIn('private', json.dumps(page))
@@ -170,7 +172,7 @@ class Locked(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.path = Path(self.temp.name) / 'events.sqlite'
-        store = a.Store(self.path, protect=True)
+        store = machine_main.Store(self.path, protect=True)
         with store.connect() as db:
             fl.ensure(db)
             learning_loop.ensure(db)
@@ -202,7 +204,7 @@ class Locked(unittest.TestCase):
     def test_without_the_key_the_app_does_not_start_and_a_reader_gets_an_error_not_an_empty_list(self):
         self.key.unlink()
         with self.assertRaises(message_seal.SealError) as stopped:
-            a.Store(self.path)
+            machine_main.Store(self.path)
         self.assertIn('message-content.key is missing', str(stopped.exception))
         self.assertEqual([p[0] for p in message_seal.problems(self.path)], ['message-key-missing'])  # what Needs you and doctor say
         with sqlite3.connect(self.path) as db:  # a tool that opens the file without the key
@@ -213,7 +215,7 @@ class Locked(unittest.TestCase):
 
     def test_with_another_key_the_fleet_tab_and_the_team_graph_round_fail_rather_than_show_or_send_nothing(self):
         self.key.write_bytes(base64.b64encode(os.urandom(32)) + b'\n')
-        store = a.Store(self.path)
+        store = machine_main.Store(self.path)
         with store.connect() as db:
             for name, read in (self.readers(db) | self.others(db)).items():
                 with self.subTest(reader=name), self.assertRaises(message_seal.SealError):

@@ -8,6 +8,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
+import machine.main as machine_main
 
 spec = importlib.util.spec_from_file_location('recurring_method_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
@@ -29,14 +30,14 @@ class Today:
 class Method(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'e.sqlite')
+        self.store = machine_main.Store(Path(self.temp.name) / 'e.sqlite')
         self.store.accounts = [dict(x) for x in ACCOUNTS]
-        self.app = object.__new__(a.App); self.app.store = self.store
+        self.app = object.__new__(machine_main.App); self.app.store = self.store
         self.app.config = {'accounts': [dict(x) for x in ACCOUNTS], 'timezone': 'Europe/Brussels', 'openclaw_state': self.temp.name + '/none.sqlite'}
         self.app.skills = skills.Skills(self.store.connect, Path(self.temp.name) / 'workspace')
         Today.day = D(2026, 11, 2)
         for name, value in (('recurring_today', lambda s: Today.day), ('card_chat_gateway', lambda s, request: {'messages': []})):
-            p = patch.object(a.App, name, value); p.start(); self.addCleanup(p.stop)
+            p = patch.object(machine_main.App, name, value); p.start(); self.addCleanup(p.stop)
         self.sid = self.act('card_new', text='Make the monthly report', scope='work', repeat='monthly')['id']
 
     def act(self, action, owner=True, **args):

@@ -5,6 +5,8 @@ import importlib.util
 import sys
 import unittest
 from pathlib import Path
+import machine.actions as machine_actions
+import machine.main as machine_main
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
@@ -67,7 +69,7 @@ class Fixed(unittest.TestCase):
         self.assertEqual(f.relay.calls, [('POST', '/fixed', works), ('POST', '/fixed', off)])
 
     def test_the_action_checks_the_answer_and_says_a_refusal(self):
-        app = object.__new__(a.App)
+        app = object.__new__(machine_main.App)
         app.fleet = paired(ValueError('You sent a few reports just now; we have them. Write to support by email if there is more.'))
         app.fleet.fixed_now = [{'id': 's_045cc20be4f1c3e6', 'text': 'Fixed: x.', 'at': ''}]
         with self.assertRaises(ValueError):
@@ -89,7 +91,7 @@ class Fixed(unittest.TestCase):
         self.assertEqual(len(f.relay.calls), 2)
 
     def test_the_dashboard_can_ask(self):
-        self.assertIn('bug_fixed', a.SUPPORT_ACTIONS)
+        self.assertIn('bug_fixed', machine_actions.SUPPORT_ACTIONS)
         page = dashboard_parts.assemble(ROOT)
         self.assertIn('<div id="fixed-notice" role="status" hidden></div>', page)
         self.assertIn("action:'bug_fixed'", page)

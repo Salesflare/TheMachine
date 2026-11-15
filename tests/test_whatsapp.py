@@ -2,11 +2,18 @@ import importlib.util
 from pathlib import Path
 import tempfile,unittest
 from unittest.mock import patch
+import hashlib
+import machine.cards as machine_cards
+import machine.main as machine_main
+import machine.sources.connectors as machine_sources_connectors
+import machine.sources.whatsapp as machine_sources_whatsapp
+import os
+import sources
 spec=importlib.util.spec_from_file_location('assistant_wa',Path(__file__).parent.parent.joinpath('assistant.py'));a=importlib.util.module_from_spec(spec);spec.loader.exec_module(a)
-account={'id':'personal-whatsapp','identity_sha256':a.hashlib.sha256(b'123@s.whatsapp.net').hexdigest()}
+account={'id':'personal-whatsapp','identity_sha256':hashlib.sha256(b'123@s.whatsapp.net').hexdigest()}
 def message():return {'ChatJID':'12345@g.us','MsgID':'FULL-NATIVE-ID','Timestamp':'2026-10-09T12:00:00Z','FromMe':False,'SenderJID':'12345@g.us','Text':'Hello','ChatName':'Family'}
 class WhatsAppTests(unittest.TestCase):
- def setUp(self):self.tmp=tempfile.TemporaryDirectory();self.store=a.Store(Path(self.tmp.name)/'a.sqlite')
+ def setUp(self):self.tmp=tempfile.TemporaryDirectory();self.store=machine_main.Store(Path(self.tmp.name)/'a.sqlite')
  def tearDown(self):self.tmp.cleanup()
  def test_card_counts_the_first_history_while_it_grows_then_stops(self):
   # After linking, WhatsApp keeps sending history; the card counts it while the store grows, never in steady state
@@ -15,65 +22,65 @@ class WhatsAppTests(unittest.TestCase):
   db.executemany('INSERT INTO messages VALUES (?)',[(i,) for i in range(300)]);db.commit()
   t=[1_800_000_000.0];clock=lambda:t[0]
   linked={'store':str(folder),'connected_at':dt.datetime.fromtimestamp(t[0]-60,dt.timezone.utc).isoformat()}
-  self.assertEqual(a.whatsapp_history(linked,clock),300)
+  self.assertEqual(machine_sources_connectors.whatsapp_history(linked,clock),300)
   t[0]+=60;db.execute('INSERT INTO messages VALUES (1)');db.commit()
-  self.assertEqual(a.whatsapp_history(linked,clock),301)
-  t[0]+=a.WHATSAPP_HISTORY_GREW+1
-  self.assertIsNone(a.whatsapp_history(linked,clock),'stopped growing: the first sync is done')
+  self.assertEqual(machine_sources_connectors.whatsapp_history(linked,clock),301)
+  t[0]+=machine_sources_connectors.WHATSAPP_HISTORY_GREW+1
+  self.assertIsNone(machine_sources_connectors.whatsapp_history(linked,clock),'stopped growing: the first sync is done')
   t[0]+=10;db.execute('INSERT INTO messages VALUES (2)');db.commit()
-  self.assertEqual(a.whatsapp_history(linked,clock),302)
-  t[0]+=a.WHATSAPP_HISTORY_HOURS*3600
-  self.assertIsNone(a.whatsapp_history(linked,clock),'hours after linking a new message is not history')
-  self.assertIsNone(a.whatsapp_history({'store':str(folder)},clock),'linked before this: nothing to count')
-  self.assertIsNone(a.whatsapp_history({'store':self.tmp.name+'/none','connected_at':linked['connected_at']},lambda:t[0]-a.WHATSAPP_HISTORY_HOURS*3600),'no store yet')
+  self.assertEqual(machine_sources_connectors.whatsapp_history(linked,clock),302)
+  t[0]+=machine_sources_connectors.WHATSAPP_HISTORY_HOURS*3600
+  self.assertIsNone(machine_sources_connectors.whatsapp_history(linked,clock),'hours after linking a new message is not history')
+  self.assertIsNone(machine_sources_connectors.whatsapp_history({'store':str(folder)},clock),'linked before this: nothing to count')
+  self.assertIsNone(machine_sources_connectors.whatsapp_history({'store':self.tmp.name+'/none','connected_at':linked['connected_at']},lambda:t[0]-machine_sources_connectors.WHATSAPP_HISTORY_HOURS*3600),'no store yet')
   db.close()
  def test_account_mismatch_and_mutation_blocked(self):
-  source=a.WhatsApp({},account)
-  with patch.object(source,'read',return_value={'authenticated':True,'linked_jid':'wrong'}),self.assertRaises(a.SourceError):source.profile()
-  with self.assertRaises(a.SourceError):source.read(['send','text'])
+  source=machine_sources_whatsapp.WhatsApp({},account)
+  with patch.object(source,'read',return_value={'authenticated':True,'linked_jid':'wrong'}),self.assertRaises(sources.SourceError):source.profile()
+  with self.assertRaises(sources.SourceError):source.read(['send','text'])
  def test_group_sender_not_invented_and_native_identity_preserved(self):
-  raw=message();raw['ChatJID']='123-456@g.us';event=a.whatsapp_event(account,raw);self.assertEqual(event['metadata']['sender_identity'],'unknown');self.assertEqual(event['metadata']['message_id'],'FULL-NATIVE-ID');self.assertEqual(event['title'],'Family')
+  raw=message();raw['ChatJID']='123-456@g.us';event=machine_sources_whatsapp.whatsapp_event(account,raw);self.assertEqual(event['metadata']['sender_identity'],'unknown');self.assertEqual(event['metadata']['message_id'],'FULL-NATIVE-ID');self.assertEqual(event['title'],'Family')
  def test_outgoing_sender_is_owner_even_when_provider_labels_recipient(self):
   raw=message();raw.update(ChatJID='234@s.whatsapp.net',ChatName='Xavier',SenderName='Xavier',SenderJID='234@s.whatsapp.net',FromMe=True)
-  event=a.whatsapp_event(account,raw)
+  event=machine_sources_whatsapp.whatsapp_event(account,raw)
   self.assertEqual(event['title'],'Xavier');self.assertEqual(event['metadata']['from'],'You')
   self.assertEqual(event['metadata']['sender_display'],'You');self.assertIsNone(event['metadata']['sender_id'])
   self.assertEqual(event['metadata']['sender_identity'],'authenticated_account_owner')
-  raw['FromMe']=False;event=a.whatsapp_event(account,raw);self.assertEqual(event['metadata']['from'],'Xavier')
+  raw['FromMe']=False;event=machine_sources_whatsapp.whatsapp_event(account,raw);self.assertEqual(event['metadata']['from'],'Xavier')
 
  def test_full_window_replay_edit_and_revocation(self):
-  src=a.WhatsApp({},account);raw=message()
+  src=machine_sources_whatsapp.WhatsApp({},account);raw=message()
   with patch.object(src,'profile',return_value={}),patch.object(src,'read',side_effect=lambda _: {'messages':[raw]}):
-   a.sync_whatsapp(self.store,{},account,src);a.sync_whatsapp(self.store,{},account,src)
-   raw['Text']='Updated';raw['Edited']=True;a.sync_whatsapp(self.store,{},account,src)
-   raw['Revoked']=True;a.sync_whatsapp(self.store,{},account,src)
+   machine_sources_whatsapp.sync_whatsapp(self.store,{},account,src);machine_sources_whatsapp.sync_whatsapp(self.store,{},account,src)
+   raw['Text']='Updated';raw['Edited']=True;machine_sources_whatsapp.sync_whatsapp(self.store,{},account,src)
+   raw['Revoked']=True;machine_sources_whatsapp.sync_whatsapp(self.store,{},account,src)
   with self.store.connect() as db:self.assertEqual(tuple(db.execute('SELECT count(*),version,deleted FROM events').fetchone()),(1,3,1))
  def test_content_free_rows_are_not_empty_messages(self):
   # wacli keeps WhatsApp's own notices and unparsed types with a "(message)" placeholder: never an empty message
   for display in ('(message)','> Earlier text\n(message)',''):
-   raw=message();raw.update(Text='',DisplayText=display);event=a.whatsapp_event(account,raw)
+   raw=message();raw.update(Text='',DisplayText=display);event=machine_sources_whatsapp.whatsapp_event(account,raw)
    self.assertTrue(event['deleted']);self.assertEqual(event['body'],'');self.assertTrue(event['metadata']['no_content'])
-  raw=message();raw.update(Text='',DisplayText='Sent image',MediaType='image');event=a.whatsapp_event(account,raw)
+  raw=message();raw.update(Text='',DisplayText='Sent image',MediaType='image');event=machine_sources_whatsapp.whatsapp_event(account,raw)
   self.assertEqual(event['body'],'Sent image');self.assertFalse(event['deleted'])
-  raw=message();raw.update(Text='',DisplayText='',MediaType='live_location');self.assertEqual(a.whatsapp_event(account,raw)['body'],'Sent live location')
-  raw=message();raw.update(Text='',DisplayText='Sent image',MediaType='image',MediaCaption='Our new kitchen');self.assertEqual(a.whatsapp_event(account,raw)['body'],'Sent image\nOur new kitchen')
-  raw=message();raw.update(Text='',DisplayText='Reacted 👍 to Hello',ReactionEmoji='👍');self.assertEqual(a.whatsapp_event(account,raw)['body'],'Reacted 👍 to Hello')
+  raw=message();raw.update(Text='',DisplayText='',MediaType='live_location');self.assertEqual(machine_sources_whatsapp.whatsapp_event(account,raw)['body'],'Sent live location')
+  raw=message();raw.update(Text='',DisplayText='Sent image',MediaType='image',MediaCaption='Our new kitchen');self.assertEqual(machine_sources_whatsapp.whatsapp_event(account,raw)['body'],'Sent image\nOur new kitchen')
+  raw=message();raw.update(Text='',DisplayText='Reacted 👍 to Hello',ReactionEmoji='👍');self.assertEqual(machine_sources_whatsapp.whatsapp_event(account,raw)['body'],'Reacted 👍 to Hello')
  def test_placeholder_taken_in_before_goes_and_comes_back_with_content(self):
-  src=a.WhatsApp({},account);raw=message();raw.update(Text='',DisplayText='(message)')
+  src=machine_sources_whatsapp.WhatsApp({},account);raw=message();raw.update(Text='',DisplayText='(message)')
   with patch.object(src,'profile',return_value={}),patch.object(src,'read',side_effect=lambda _: {'messages':[raw]}):
-   self.store.commit_page(account['id'],{},[{**a.whatsapp_event(account,raw),'deleted':False,'body':'(message)'}])  # as an older app kept it
-   a.sync_whatsapp(self.store,{},account,src)
+   self.store.commit_page(account['id'],{},[{**machine_sources_whatsapp.whatsapp_event(account,raw),'deleted':False,'body':'(message)'}])  # as an older app kept it
+   machine_sources_whatsapp.sync_whatsapp(self.store,{},account,src)
    with self.store.connect() as db:self.assertEqual(tuple(db.execute('SELECT count(*),deleted FROM events').fetchone()),(1,1))
-   raw.update(Text='See you at 6',DisplayText='See you at 6');a.sync_whatsapp(self.store,{},account,src)
+   raw.update(Text='See you at 6',DisplayText='See you at 6');machine_sources_whatsapp.sync_whatsapp(self.store,{},account,src)
   with self.store.connect() as db:self.assertEqual(tuple(db.execute('SELECT count(*),deleted,body FROM events').fetchone()),(1,0,'See you at 6'))
  def test_saturated_or_invalid_window_cannot_advance_checkpoint(self):
-  src=a.WhatsApp({},account)
-  with patch.object(src,'profile',return_value={}),patch.object(src,'read',return_value={'messages':[message()]*1000}),self.assertRaises(a.SourceError):a.sync_whatsapp(self.store,{},account,src)
+  src=machine_sources_whatsapp.WhatsApp({},account)
+  with patch.object(src,'profile',return_value={}),patch.object(src,'read',return_value={'messages':[message()]*1000}),self.assertRaises(sources.SourceError):machine_sources_whatsapp.sync_whatsapp(self.store,{},account,src)
   self.assertIsNone(self.store.checkpoint(account['id']))
   raw=message();raw['Timestamp']='2026-10-09T12:00:00'
-  with self.assertRaises(a.SourceError):a.whatsapp_event(account,raw)
+  with self.assertRaises(sources.SourceError):machine_sources_whatsapp.whatsapp_event(account,raw)
   raw=message();raw['MsgID']='imported_synthetic'
-  with self.assertRaises(a.SourceError):a.whatsapp_event(account,raw)
+  with self.assertRaises(sources.SourceError):machine_sources_whatsapp.whatsapp_event(account,raw)
 
 
 # Sending: only an owner-approved card sends, once, through the one writable wacli call. No live sends: wacli is always faked.
@@ -86,14 +93,14 @@ def ok(data):return subprocess.CompletedProcess([],0,json.dumps({'success':True,
 class WhatsAppSend(unittest.TestCase):
  row=ux.UX.row;decide=ux.UX.decide
  def setUp(self):
-  self.tmp=tempfile.TemporaryDirectory();self.addCleanup(self.tmp.cleanup);self.store=a.Store(Path(self.tmp.name)/'events.sqlite')
+  self.tmp=tempfile.TemporaryDirectory();self.addCleanup(self.tmp.cleanup);self.store=machine_main.Store(Path(self.tmp.name)/'events.sqlite')
   raw=message();raw.update(ChatJID=CHAT,ChatName='Sam',SenderJID=CHAT,Text='Are we still on for Friday?')
-  self.store.commit_page(WA['id'],{},[a.whatsapp_event(WA,raw)])
+  self.store.commit_page(WA['id'],{},[machine_sources_whatsapp.whatsapp_event(WA,raw)])
   with self.store.connect() as db:ids=[r[0] for r in db.execute('SELECT id FROM events')]
   self.sid=self.store.suggest('wa-task','Answer Sam','Sam asks about Friday.',ids)['id']
   self.accounts=[WA,{**WA,'id':'other-whatsapp'},{'id':'work','email':'owner@example.com','service':'gmail','transport':'gog'}]
  def app(self):
-  app=object.__new__(a.App);app.store=self.store;app.config={'accounts':self.accounts};return app
+  app=object.__new__(machine_main.App);app.store=self.store;app.config={'accounts':self.accounts};return app
  def save(self,**draft):
   action={k:v for k,v in {'kind':'whatsapp','label':'Send reply','account_id':WA['id'],'chat_id':CHAT,'body':'Yes, Friday works.',**draft}.items() if v is not None}
   return self.app().action('prepare',{'suggestion_id':self.sid,'body':'Reply ready.','next_action':action})
@@ -113,7 +120,7 @@ class WhatsAppSend(unittest.TestCase):
   action=self.ready()
   self.assertEqual((action['chat_id'],action['to_name'],action['max_length']),(CHAT,'Sam',4000))
   self.assertEqual(n.preview(action),'WhatsApp message to Sam\n\nYes, Friday works.')
-  self.assertEqual(a.controls(self.row())['blocks'][0]['buttons'][0]['label'],'Send reply')
+  self.assertEqual(machine_cards.controls(self.row())['blocks'][0]['buttons'][0]['label'],'Send reply')
   for bad in ({'chat_id':'999@s.whatsapp.net'},{'account_id':'other-whatsapp'},{'account_id':'work'},{'label':'Post it'},
               {'body':'a'*4001},{'body':' '},{'media':['a.png']},{'to':'+3247000'}):
    with self.assertRaises(ValueError,msg=bad):self.save(**bad)
@@ -130,9 +137,9 @@ class WhatsAppSend(unittest.TestCase):
   self.app().action_step(self.transport(send=lambda action,job:(calls.append(action),{'message_id':'whatsapp:3EB0AA'})[1]))
   self.app().action_step(self.transport(send=lambda *_:self.fail('Duplicate send')))
   self.assertEqual([c['body'] for c in calls],['Yes, Friday works.'])
-  self.assertEqual(self.job()['status'],'sent');self.assertIn('✓ WhatsApp message sent to Sam at ',str(a.card(self.row())))
+  self.assertEqual(self.job()['status'],'sent');self.assertIn('✓ WhatsApp message sent to Sam at ',str(machine_cards.card(self.row())))
   raw=message();raw.update(ChatJID=CHAT,ChatName='Sam',SenderJID=CHAT,MsgID='ANSWER',Text='Great!',Timestamp='2099-01-01T00:00:00Z')
-  self.store.commit_page(WA['id'],{},[a.whatsapp_event(WA,raw)])
+  self.store.commit_page(WA['id'],{},[machine_sources_whatsapp.whatsapp_event(WA,raw)])
   with self.store.connect() as db:rows=[dict(r) for r in db.execute("SELECT * FROM events WHERE kind='whatsapp.message' ORDER BY occurred_at DESC LIMIT 1")]
   self.assertEqual(list(self.store.card_replies(rows).values())[0]['suggestion_id'],self.sid)
  def test_unknown_outcome_never_resends_and_signed_out_blocks(self):
@@ -180,7 +187,7 @@ class WhatsAppSend(unittest.TestCase):
  def test_failed_send_says_so_and_can_be_retried(self):
   self.ready();self.confirm()
   self.assertEqual(self.app().action_step(self.transport(send=lambda *_:{'rejected':'refused'})),'failed')
-  self.assertIn('Last attempt failed: WhatsApp refused this WhatsApp message',a.card(self.row()))
+  self.assertIn('Last attempt failed: WhatsApp refused this WhatsApp message',machine_cards.card(self.row()))
   self.confirm('retry');self.assertEqual(self.job()['status'],'queued')
   self.assertEqual(self.app().action_step(self.transport()),'sent')
  def test_unconfirmed_send_is_retried_only_by_the_owner_after_checking(self):
@@ -189,10 +196,10 @@ class WhatsAppSend(unittest.TestCase):
   self.assertEqual(self.job()['status'],'uncertain')
   self.confirm('impatient');self.assertEqual(self.job()['status'],'uncertain')  # no second send yet
   with self.assertRaisesRegex(ValueError,'still checking whether the last attempt went out'):self.revise('Edit')
-  self.assertFalse(any(b['label']=='Send reply' for block in a.controls(self.row())['blocks'] for b in block['buttons']))
+  self.assertFalse(any(b['label']=='Send reply' for block in machine_cards.controls(self.row())['blocks'] for b in block['buttons']))
   with self.store.connect() as db:db.execute("UPDATE action_jobs SET updated_at=?,retry_at=?",('2000-01-01T00:00:00+00:00','2999-01-01T00:00:00+00:00'))
-  self.assertIn('Last attempt unconfirmed: I found no sign of it going out',a.card(self.row()))
-  self.assertTrue(any(b['label']=='Send reply' for block in a.controls(self.row())['blocks'] for b in block['buttons']))
+  self.assertIn('Last attempt unconfirmed: I found no sign of it going out',machine_cards.card(self.row()))
+  self.assertTrue(any(b['label']=='Send reply' for block in machine_cards.controls(self.row())['blocks'] for b in block['buttons']))
   self.assertEqual(self.revise('Edited after checking')['status'],'revised')
   self.confirm('after-checking');calls=[]
   self.app().action_step(self.transport(send=lambda action,job:(calls.append(action['body']),{'message_id':'whatsapp:3EB0CC'})[1]))
@@ -209,7 +216,7 @@ class WhatsAppTransportTest(unittest.TestCase):
    if 'messages' in args:return ok({'messages':[{'MsgID':'1'}]})
    return ok({'sent':True,'to':CHAT,'id':'3EB0AA'})
   t=n.WhatsAppTransport(self.config)
-  with patch.dict(a.os.environ,{'WACLI_READONLY':'1'}),patch.object(n.subprocess,'run',side_effect=run):
+  with patch.dict(os.environ,{'WACLI_READONLY':'1'}),patch.object(n.subprocess,'run',side_effect=run):
    t.preflight(self.action);self.assertEqual(t.send(self.action,{'id':'J1'}),{'message_id':'whatsapp:3EB0AA'})
   reads,(send,send_env)=seen[:-1],seen[-1]
   self.assertTrue(all('--read-only' in args and env=='1' for args,env in reads))
@@ -246,23 +253,23 @@ from test_assistant import event
 class WhatsAppSwitch(unittest.TestCase):
  row=ux.UX.row;decide=ux.UX.decide
  def setUp(self):
-  self.tmp=tempfile.TemporaryDirectory();self.addCleanup(self.tmp.cleanup);self.store=a.Store(Path(self.tmp.name)/'events.sqlite')
+  self.tmp=tempfile.TemporaryDirectory();self.addCleanup(self.tmp.cleanup);self.store=machine_main.Store(Path(self.tmp.name)/'events.sqlite')
   self.store.commit_page('work',{},[event()])
   self.sid=self.store.suggest('task','Arrange the installer','Ask them about the speakers.',[1])['id']
   self.accounts=[{**WA,'exclude':[{'chats':['32471111111@s.whatsapp.net']}]},{'id':'work','email':'owner@example.com','service':'gmail','transport':'gog','boundary':'work:Example'}]
   self.reads=[]
  def app(self):
-  app=object.__new__(a.App);app.store=self.store;app.config={'accounts':self.accounts};return app
+  app=object.__new__(machine_main.App);app.store=self.store;app.config={'accounts':self.accounts};return app
  def wacli(self,chats):
   def read(source,command):
    self.reads.append(command)
    if command[:2]==['chats','show']:
     found=[c for c in chats if c['jid']==command[3]]
-    if not found:raise a.SourceError('whatsapp_source_unavailable')
+    if not found:raise sources.SourceError('whatsapp_source_unavailable')
     return found[0]
    if command[:2]==['chats','list']:return [c for c in chats if command[3].lower() in c['name'].lower()]
    self.fail('only read-only chat lookups: '+str(command))
-  return patch.object(a.WhatsApp,'read',read)
+  return patch.object(machine_sources_whatsapp.WhatsApp,'read',read)
  def save(self,**draft):
   action={k:v for k,v in {'kind':'whatsapp','label':'Send','account_id':WA['id'],'body':'Hi Sam! We’d like ceiling speakers put in. Could you help?',**draft}.items() if v is not None}
   return self.app().action('prepare',{'suggestion_id':self.sid,'body':'Switched to WhatsApp.','next_action':action})
@@ -286,7 +293,7 @@ class WhatsAppSwitch(unittest.TestCase):
   self.assertEqual(self.row()['next_action']['to_name'],'Sam Lee')
   # A chat the account already synced needs no lookup
   raw=message();raw.update(ChatJID='32472222222@s.whatsapp.net',ChatName='Robin',SenderJID='32472222222@s.whatsapp.net')
-  self.store.commit_page(WA['id'],{},[a.whatsapp_event(WA,raw)]);self.reads.clear()
+  self.store.commit_page(WA['id'],{},[machine_sources_whatsapp.whatsapp_event(WA,raw)]);self.reads.clear()
   with self.wacli([]):self.save(chat_id='32472222222@s.whatsapp.net')
   self.assertEqual((self.row()['next_action']['to_name'],self.reads),('Robin',[]))
  def test_never_a_new_number_an_excluded_chat_or_a_guess(self):
@@ -308,5 +315,5 @@ class WhatsAppSwitch(unittest.TestCase):
   with self.store.connect() as db:self.assertIsNone(db.execute('SELECT 1 FROM action_jobs').fetchone())
  def test_without_a_readable_whatsapp_it_says_what_to_do(self):
   self.decide('accept')
-  def down(source,command):raise a.SourceError('whatsapp_source_unavailable')
-  with patch.object(a.WhatsApp,'read',down),self.assertRaisesRegex(ValueError,'send it on WhatsApp themselves'):self.save(to_name='Sam')
+  def down(source,command):raise sources.SourceError('whatsapp_source_unavailable')
+  with patch.object(machine_sources_whatsapp.WhatsApp,'read',down),self.assertRaisesRegex(ValueError,'send it on WhatsApp themselves'):self.save(to_name='Sam')

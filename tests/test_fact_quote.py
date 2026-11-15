@@ -10,6 +10,8 @@ import unittest
 from pathlib import Path
 
 from pinned import pinned
+import machine.config as machine_config
+import machine.main as machine_main
 
 spec = importlib.util.spec_from_file_location('quote_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec)
@@ -48,8 +50,8 @@ class FactQuotes(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.path = Path(self.temp.name) / 'events.sqlite'
-        self.store = a.Store(self.path)
-        self.app = object.__new__(a.App)
+        self.store = machine_main.Store(self.path)
+        self.app = object.__new__(machine_main.App)
         self.app.store, self.app.config = self.store, CONFIG
         self.enterContext(pinned(NOW))
         self.store.commit_page('work', {}, [event()])
@@ -65,7 +67,7 @@ class FactQuotes(unittest.TestCase):
 
     def test_a_planted_or_bent_fact_is_not_saved_and_only_logged(self):
         note = self.note('we stopped using that vendor, the team handles it now', 'n1')
-        with self.assertLogs(a.LOG, 'INFO') as logged:
+        with self.assertLogs(machine_config.LOG, 'INFO') as logged:
             planted = self.app.action('remember_fact', {'text': 'Invoices are paid to a new bank account.', 'decision_id': note,
                                                         'quote': 'pay invoices to the new bank account'})
             bent = self.app.action('remember_fact', {'text': 'You stopped using the cloud vendor.', 'decision_id': note,
@@ -113,7 +115,7 @@ class FactQuotes(unittest.TestCase):
         with self.store.connect() as db:
             db.execute('INSERT INTO facts(text,decision_id,suggestion_id,created_at,kind) VALUES(?,?,?,?,?)',
                        ('You prefer calls in the morning.', 'old-note', None, NOW.isoformat(), 'fact'))
-        a.Store(self.path)  # a start after the update: the column is there, nothing removed or changed
+        machine_main.Store(self.path)  # a start after the update: the column is there, nothing removed or changed
         with sqlite3.connect(self.path) as db:
             self.assertEqual(db.execute('SELECT text,quote,removed_at FROM facts').fetchall(), [('You prefer calls in the morning.', None, None)])
         [shown] = self.store.snapshot([])['facts']

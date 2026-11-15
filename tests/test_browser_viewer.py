@@ -13,6 +13,10 @@ from pathlib import Path
 import assistant
 import browser_viewer
 import preparation_state
+import machine.browser as machine_browser
+import machine.cards as machine_cards
+import machine.web.handler as machine_web_handler
+import timeutil
 
 
 def journal(*calls):
@@ -29,52 +33,52 @@ def journal(*calls):
 class BrowserWaitTest(unittest.TestCase):
     def test_a_long_browser_step_offers_the_browser_with_its_page(self):
         db = journal(('read', {}, 300), ('browser', {'action': 'navigate', 'url': 'https://www.linkedin.com/login'}, 120), ('browser', {'action': 'snapshot'}, 50))
-        waiting = assistant.browser_wait(db, 'job', 'running')
+        waiting = machine_browser.browser_wait(db, 'job', 'running')
         self.assertEqual(waiting['page'], 'https://www.linkedin.com/login')
         self.assertLessEqual(dt.datetime.fromisoformat(waiting['since']), dt.datetime.now(dt.timezone.utc) - dt.timedelta(seconds=119))
 
     def test_a_short_browser_step_or_other_work_offers_nothing(self):
-        self.assertIsNone(assistant.browser_wait(journal(('browser', {'action': 'open'}, 10)), 'job', 'running'))
-        self.assertIsNone(assistant.browser_wait(journal(('browser', {}, 300), ('read', {}, 200)), 'job', 'running'))
-        self.assertIsNone(assistant.browser_wait(journal(('browser', {}, 300)), 'job', 'done'))
+        self.assertIsNone(machine_browser.browser_wait(journal(('browser', {'action': 'open'}, 10)), 'job', 'running'))
+        self.assertIsNone(machine_browser.browser_wait(journal(('browser', {}, 300), ('read', {}, 200)), 'job', 'running'))
+        self.assertIsNone(machine_browser.browser_wait(journal(('browser', {}, 300)), 'job', 'done'))
 
     def test_a_run_that_stopped_right_after_the_browser_offers_it_at_once(self):
         db = journal(('browser', {'action': 'open', 'targetUrl': 'https://x.com/login'}, 20), ('assistant_signals', {'action': 'preparation_blocked'}, 5))
-        self.assertEqual(assistant.browser_wait(db, 'job', 'blocked')['page'], 'https://x.com/login')
-        self.assertIsNone(assistant.browser_wait(journal(('read', {}, 20)), 'job', 'blocked'))
+        self.assertEqual(machine_browser.browser_wait(db, 'job', 'blocked')['page'], 'https://x.com/login')
+        self.assertIsNone(machine_browser.browser_wait(journal(('read', {}, 20)), 'job', 'blocked'))
 
     def test_link_comes_from_browser_url_only(self):
-        self.assertEqual(assistant.browser_link({'browser_url': 'https://cp.example/open?to=browser'}), 'https://cp.example/open?to=browser')
-        self.assertEqual(assistant.browser_link({'browser_url': browser_viewer.VIEWER_URL}), browser_viewer.VIEWER_URL)
-        self.assertIsNone(assistant.browser_link({'browser_url': 'javascript:alert(1)'}))
-        self.assertIsNone(assistant.browser_link({}))
+        self.assertEqual(machine_browser.browser_link({'browser_url': 'https://cp.example/open?to=browser'}), 'https://cp.example/open?to=browser')
+        self.assertEqual(machine_browser.browser_link({'browser_url': browser_viewer.VIEWER_URL}), browser_viewer.VIEWER_URL)
+        self.assertIsNone(machine_browser.browser_link({'browser_url': 'javascript:alert(1)'}))
+        self.assertIsNone(machine_browser.browser_link({}))
 
     def test_a_desktop_view_links_to_the_dashboards_own_viewer(self):
         config = {'browser_vnc': '/run/user/1000/view/vnc.sock', 'dashboard_host': 'machine.example', 'dashboard_path': '/'}
         with tempfile.TemporaryDirectory() as folder:
             (Path(folder) / 'vnc.html').write_text("<html><head></head><script>fetch('./defaults.json')</script></html>")
             config['browser_novnc'] = folder
-            self.assertEqual(assistant.browser_link(config), 'https://machine.example/browser')  # noVNC 1.5+: the short link
+            self.assertEqual(machine_browser.browser_link(config), 'https://machine.example/browser')  # noVNC 1.5+: the short link
             self.assertEqual(browser_viewer.view_link('/assistant/', folder), '/assistant/browser')
             (Path(folder) / 'vnc.html').write_text('<html><head></head></html>')  # an older noVNC reads only the query
-            self.assertEqual(assistant.browser_link(config), 'https://machine.example/browser/vnc.html?' + browser_viewer.VIEW_QUERY + '&path=browser/websockify')
+            self.assertEqual(machine_browser.browser_link(config), 'https://machine.example/browser/vnc.html?' + browser_viewer.VIEW_QUERY + '&path=browser/websockify')
             self.assertTrue(browser_viewer.view_link('/assistant/', folder).endswith('&path=assistant/browser/websockify'))
-        self.assertEqual(assistant.browser_link({**config, 'browser_url': 'https://cp.example/open?to=browser'}), 'https://cp.example/open?to=browser')
-        self.assertIsNone(assistant.browser_link({'browser_vnc': '/x.sock'}))  # no dashboard address for Telegram
+        self.assertEqual(machine_browser.browser_link({**config, 'browser_url': 'https://cp.example/open?to=browser'}), 'https://cp.example/open?to=browser')
+        self.assertIsNone(machine_browser.browser_link({'browser_vnc': '/x.sock'}))  # no dashboard address for Telegram
 
     def test_the_dashboard_shows_the_viewer_in_its_own_pane_only_on_its_own_address(self):
         with tempfile.TemporaryDirectory() as folder:
             (Path(folder) / 'vnc.html').write_text("<html><head></head><script>fetch('./defaults.json')</script></html>")
             desktop = {'browser_vnc': '/run/user/1000/view/vnc.sock', 'dashboard_host': 'machine.example', 'browser_novnc': folder}
-            self.assertEqual(assistant.browser_embed(desktop, 'machine.example'), '/browser')
+            self.assertEqual(machine_web_handler.browser_embed(desktop, 'machine.example'), '/browser')
             hosted = {'browser_url': 'https://cp.example/open?to=browser', 'dashboard_host': 'm.app.example', 'browser_novnc': folder}
-            self.assertIsNone(assistant.browser_embed(hosted))  # a Machine whose viewer files have no short page yet
+            self.assertIsNone(machine_web_handler.browser_embed(hosted))  # a Machine whose viewer files have no short page yet
             (Path(folder) / 'index.html').write_text('<html></html>')
             # the pane's own size: the hosted browser fills it (resize=remote), with the websocket noVNC always used
-            self.assertEqual(assistant.browser_embed(hosted), '/browser/?autoconnect=1&reconnect=1&resize=remote&path=browser/websockify')
-            self.assertIsNone(assistant.browser_embed({'browser_url': browser_viewer.VIEWER_URL, 'browser_novnc': folder}))  # 127.0.0.1: a tab
-            self.assertIsNone(assistant.browser_embed({'browser_url': 'https://elsewhere.example/viewer', 'browser_novnc': folder}))
-            self.assertIsNone(assistant.browser_embed({}))
+            self.assertEqual(machine_web_handler.browser_embed(hosted), '/browser/?autoconnect=1&reconnect=1&resize=remote&path=browser/websockify')
+            self.assertIsNone(machine_web_handler.browser_embed({'browser_url': browser_viewer.VIEWER_URL, 'browser_novnc': folder}))  # 127.0.0.1: a tab
+            self.assertIsNone(machine_web_handler.browser_embed({'browser_url': 'https://elsewhere.example/viewer', 'browser_novnc': folder}))
+            self.assertIsNone(machine_web_handler.browser_embed({}))
 
     def test_the_short_viewer_page_and_its_settings(self):
         defaults, mandatory = browser_viewer.view_settings('/')
@@ -86,12 +90,12 @@ class BrowserWaitTest(unittest.TestCase):
 
     def test_telegram_card_says_so_and_gets_a_button_only_for_a_https_viewer(self):
         row = {'id': 'abc', 'status': 'accepted', 'title': 'Reply', 'body': 'Body', 'preparation_status': 'running',
-               'preparation_browser': {'since': assistant.now(), 'page': None, 'link': 'https://cp.example/open?to=browser'}}
-        buttons = [b for block in assistant.controls(row)['blocks'] for b in block['buttons']]
+               'preparation_browser': {'since': timeutil.now(), 'page': None, 'link': 'https://cp.example/open?to=browser'}}
+        buttons = [b for block in machine_cards.controls(row)['blocks'] for b in block['buttons']]
         self.assertEqual(buttons[0], {'label': 'Open the browser', 'action': {'type': 'url', 'url': 'https://cp.example/open?to=browser'}})
-        self.assertIn('browser', assistant.card(row))
+        self.assertIn('browser', machine_cards.card(row))
         row['preparation_browser']['link'] = browser_viewer.VIEWER_URL  # Telegram can't open this computer's 127.0.0.1
-        self.assertNotIn('Open the browser', [b['label'] for block in assistant.controls(row)['blocks'] for b in block['buttons']])
+        self.assertNotIn('Open the browser', [b['label'] for block in machine_cards.controls(row)['blocks'] for b in block['buttons']])
 
 
 class Tabs(http.server.BaseHTTPRequestHandler):

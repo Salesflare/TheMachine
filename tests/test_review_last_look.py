@@ -9,6 +9,9 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+import machine.main as machine_main
+import machine.sources.calendar as machine_sources_calendar
+import machine.store.review as machine_store_review
 
 spec = importlib.util.spec_from_file_location('last_look_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec)
@@ -28,7 +31,7 @@ class LastLook(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'events.sqlite')
+        self.store = machine_main.Store(Path(self.temp.name) / 'events.sqlite')
         self.store.accounts = ACCOUNTS
         self.n = 0
 
@@ -154,7 +157,7 @@ class LastLook(unittest.TestCase):
     def test_the_audit_counts_set_aside_messages(self):
         stuck, closed, fresh_review = self.add(days=2), self.add(days=2, deferrals=last_look.CLOSED_AFTER), self.add(days=2, deferrals=0)
         with self.store.connect() as db:
-            found, _ = mw.candidates(db, ACCOUNTS, ago(7), frozenset({OWNER}), a.calendar_owned, a.bulk_kind)
+            found, _ = mw.candidates(db, ACCOUNTS, ago(7), frozenset({OWNER}), machine_sources_calendar.calendar_owned, machine_store_review.bulk_kind)
         flagged = {c['id']: c.get('set_aside') for c in found}
         self.assertEqual(flagged, {stuck: True, closed: True})  # a message waiting its first review is no candidate
         self.assertEqual(mw.patterns([{'what': 'reply', 'channel': 'email', 'area': 'Acme', 'set_aside': True}])['set_aside'], 1)

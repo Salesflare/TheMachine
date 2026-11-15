@@ -15,6 +15,9 @@ import agent_jobs
 import agent_remote
 import assistant
 import codex_signin
+import machine.actions as machine_actions
+import machine.main as machine_main
+import machine.sources.connectors as machine_sources_connectors
 
 # A stand-in for the Codex CLI: `login status` reads a file, `login --device-auth` prints what the real one prints and
 # signs in once the test drops the "approved" file (or gives up when it drops "denied").
@@ -92,7 +95,7 @@ class Signing(StubCodex):
 
 class Connections(StubCodex):
     def app(self, config):
-        app = object.__new__(assistant.App)
+        app = object.__new__(machine_main.App)
         app.config, app.config_path = config, self.home / 'config.json'
         app.config_path.write_text(json.dumps(config))
         return app
@@ -112,14 +115,14 @@ class Connections(StubCodex):
                 break
             time.sleep(0.02)
         self.assertEqual(app.action('connect_sources', {}, owner_dashboard=True)['codex'], {'status': 'connected'})
-        self.assertIn('codex_signin', assistant.DASHBOARD_ACTIONS)
+        self.assertIn('codex_signin', machine_actions.DASHBOARD_ACTIONS)
         with self.assertRaises(ValueError):
             app.action('codex_signin', {}, owner_dashboard=False)  # the owner's dashboard only
 
     def test_a_hosted_machine_signs_in_through_its_account(self):
         app = self.app({**self.config, 'manage_url': 'https://app.example.test/setup'})
-        self.assertIn('codex', assistant.HOSTED_SIGNINS)
-        self.assertIn('codex', assistant.ON_DASHBOARD)
+        self.assertIn('codex', machine_sources_connectors.HOSTED_SIGNINS)
+        self.assertIn('codex', machine_sources_connectors.ON_DASHBOARD)
         self.assertEqual(app.action('connect_sources', {}, owner_dashboard=True)['codex'], {'status': 'signed_out'})
         with self.assertRaises(ValueError):
             app.action('codex_signin', {}, owner_dashboard=True)  # the control plane runs it on the server
@@ -153,7 +156,7 @@ class WhereCodexRuns(StubCodex):
         self.assertEqual(agent_remote.where(Jobs())['codex'], 'machine')
 
     def test_settings_say_it_runs_on_the_machine(self):
-        app = object.__new__(assistant.App)
+        app = object.__new__(machine_main.App)
         app.config = {**self.HOSTED, 'accounts': [{'id': 'acme-github', 'service': 'github'}]}
         app.config_path = None
         app.agents = type('Agents', (), {'where': lambda self: {'codex': 'machine', 'devices': []}})()

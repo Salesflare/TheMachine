@@ -13,6 +13,7 @@ from unittest.mock import patch
 import fleet
 import network_crypto as nc
 import pairing
+import machine.main as machine_main
 
 spec = importlib.util.spec_from_file_location('pairing_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec)
@@ -105,8 +106,8 @@ class FakeRelay:
 class App(Base):
     def setUp(self):
         super().setUp()
-        self.app = object.__new__(a.App)
-        self.app.store = a.Store(self.config['database'])
+        self.app = object.__new__(machine_main.App)
+        self.app.store = machine_main.Store(self.config['database'])
         self.app.config, self.app.config_path, self.app.stop = self.config, self.config_path, threading.Event()
         self.started = []
 
@@ -129,7 +130,7 @@ class App(Base):
         self.assertEqual(self.app.ai_reach(), {'hosted': False, 'paired': False, 'name': None, 'address': None, 'shared': None, 'pairing': None})
         with patch.object(pairing, '_post', self.post({'/pair-request': {'id': RID, 'url': PAGE, 'expires_in': 600},
                                                       '/pair-pickup': [{'state': 'waiting'}, {'state': 'paired', 'sealed': self.sealed()}]})), \
-                patch.object(a.threading, 'Thread', self.thread), patch('ai_app.threading.Thread', self.thread):
+                patch.object(threading, 'Thread', self.thread), patch('ai_app.threading.Thread', self.thread):
             out = self.app.action('ai_pair_start', {}, owner_dashboard=True)
             self.assertEqual((out['url'], out['state']), (PAGE, 'waiting'))
             self.assertEqual(self.app.action('ai_pair_state', {}, owner_dashboard=True)['state'], 'waiting')

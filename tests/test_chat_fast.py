@@ -10,6 +10,12 @@ import tempfile
 import unittest
 
 import chat_model
+import machine.actions as machine_actions
+import machine.config as machine_config
+import machine.main as machine_main
+import next_actions
+import timeutil
+import uuid
 
 spec = importlib.util.spec_from_file_location('chat_fast_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec)
@@ -62,11 +68,11 @@ class AppTest(unittest.TestCase):
         self.config_path = root / 'config.json'
         self.config = {'accounts': [], 'database': str(root / 'events.sqlite'), 'openclaw_config': str(self.oc)}
         self.config_path.write_text(json.dumps(self.config))
-        self.store = a.Store(root / 'events.sqlite')
-        self.store.commit_page('work', {}, [{'account_id': 'work', 'source_id': 'one', 'kind': 'gmail.message', 'occurred_at': a.now(),
+        self.store = machine_main.Store(root / 'events.sqlite')
+        self.store.commit_page('work', {}, [{'account_id': 'work', 'source_id': 'one', 'kind': 'gmail.message', 'occurred_at': timeutil.now(),
                                              'title': 'Evidence', 'body': 'Actual evidence', 'metadata': {}, 'deleted': False}], None)
         self.sid = self.store.suggest('task', 'Reply to the venue', 'I can draft this.', [1])['id']
-        self.app = object.__new__(a.App)
+        self.app = object.__new__(machine_main.App)
         self.app.store, self.app.config, self.app.config_path = self.store, self.config, self.config_path
         self.app.chat_catalog = chat_model.Catalog(reader=lambda config: chat_model.parse_catalog(REPLY, config))
 
@@ -81,11 +87,11 @@ class AppTest(unittest.TestCase):
 
     def finish(self):
         with self.store.connect() as db:  # the run ended; the next message continues the same session
-            db.execute("UPDATE preparation_runs SET status='ok',finished_at=?", (a.now(),))
+            db.execute("UPDATE preparation_runs SET status='ok',finished_at=?", (timeutil.now(),))
             db.execute("UPDATE preparations SET status='done' WHERE status IN ('starting','running')")
 
     def say(self, text):
-        self.store.decide(self.sid, 'other', text, 'chat-' + a.uuid.uuid4().hex, 'dashboard')
+        self.store.decide(self.sid, 'other', text, 'chat-' + uuid.uuid4().hex, 'dashboard')
         return self.turn()
 
     def fast(self, on):
@@ -104,13 +110,13 @@ class AppTest(unittest.TestCase):
             self.app.action('chat_fast_set', {'fast': True}, owner_dashboard=False)
         with self.assertRaises(ValueError):
             self.app.action('chat_fast_set', {'fast': 'yes'}, owner_dashboard=True)
-        self.assertIn('chat_fast_set', a.OWNER_ACTIONS)
+        self.assertIn('chat_fast_set', machine_actions.OWNER_ACTIONS)
 
     def test_chat_turns_are_fast_on_openai_and_anthropic(self):
         self.fast(True)
         self.store.decide(self.sid, 'accept', '', 'click', 'dashboard')
         self.assertNotIn('fast', self.turn())  # the preparation a Do it starts with: not fast
-        with self.assertLogs(a.LOG, 'INFO') as logs:
+        with self.assertLogs(machine_config.LOG, 'INFO') as logs:
             self.assertIs(self.say('Shorter please')['fast'], True)  # OpenAI, the main model
         self.assertTrue(any('fast=True model=openai/gpt-6.1-sol last_served=default' in x for x in logs.output), logs.output)
         self.app.action('chat_model_set', {'suggestion_id': self.sid, 'model': 'anthropic/claude-opus-5-5'}, owner_dashboard=True)
@@ -155,7 +161,7 @@ class AppTest(unittest.TestCase):
                                     'outcome': 'needs_you', 'needs': 'confirm the booking'})
         self.finish()
         with self.store.connect() as db:
-            action = a.next_actions.actions(db.execute('SELECT next_action FROM suggestions WHERE id=?', (self.sid,)).fetchone()['next_action'])[0]
+            action = next_actions.actions(db.execute('SELECT next_action FROM suggestions WHERE id=?', (self.sid,)).fetchone()['next_action'])[0]
         approval = 'owner-tap' if owner_dashboard else 'telegram:tap'
         self.app.action('confirm_action', {'suggestion_id': self.sid, 'revision': action['revision'], 'approval_id': approval}, owner_dashboard=owner_dashboard)
         return self.turn(finish=False)

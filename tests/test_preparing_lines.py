@@ -7,6 +7,9 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+import datetime as dt
+import machine.main as machine_main
+import timeutil
 
 ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(ROOT / 'scripts'))
@@ -121,11 +124,11 @@ class Steps(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'events.sqlite')
-        self.store.commit_page('work', {}, [{'account_id': 'work', 'source_id': 'one', 'kind': 'gmail.message', 'occurred_at': a.now(),
+        self.store = machine_main.Store(Path(self.temp.name) / 'events.sqlite')
+        self.store.commit_page('work', {}, [{'account_id': 'work', 'source_id': 'one', 'kind': 'gmail.message', 'occurred_at': timeutil.now(),
                                              'title': 'Parking invoice', 'body': 'Please check the invoice', 'metadata': {}, 'deleted': False}])
         self.sid = self.store.suggest('task', 'Check the parking invoice', 'I can check it against the statement.', [1])['id']
-        self.app = object.__new__(a.App)
+        self.app = object.__new__(machine_main.App)
         self.app.store = self.store
         self.app.config = {'accounts': [], 'database': str(Path(self.temp.name) / 'events.sqlite'), 'dashboard_host': 'machine.example'}
         self.store.config = self.app.config
@@ -143,7 +146,7 @@ class Steps(unittest.TestCase):
                 self.n += 1
                 db.execute('INSERT INTO preparation_calls(job_id,call_id,tool,params,started_at) VALUES(?,?,?,?,?)',
                            (self.job, str(self.n), tool, json.dumps({**params, 'title': RAW}),
-                            (a.dt.datetime(2026, 10, 20, 8, 0, tzinfo=a.dt.timezone.utc) + a.dt.timedelta(seconds=self.n)).isoformat()))
+                            (dt.datetime(2026, 10, 20, 8, 0, tzinfo=dt.timezone.utc) + dt.timedelta(seconds=self.n)).isoformat()))
 
     def titles(self):
         return [s['title'] for s in self.app.preparation_progress(self.sid)['steps']]

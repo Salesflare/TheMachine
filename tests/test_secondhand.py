@@ -19,6 +19,7 @@ import unittest
 import urllib.request
 from pathlib import Path
 from unittest.mock import patch
+import machine.main as machine_main
 
 spec = importlib.util.spec_from_file_location('secondhand_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
@@ -205,8 +206,8 @@ class Read(unittest.TestCase):
 class Run(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'e.sqlite')
-        self.app = object.__new__(a.App); self.app.store = self.store
+        self.store = machine_main.Store(Path(self.temp.name) / 'e.sqlite')
+        self.app = object.__new__(machine_main.App); self.app.store = self.store
         self.app.config = {'accounts': [dict(x) for x in ACCOUNTS], 'timezone': 'Europe/Brussels',
                            'openclaw_state': self.temp.name + '/none.sqlite', 'browser_cdp_url': 'http://127.0.0.1:9'}
         self.store.accounts = self.app.config['accounts']
@@ -215,7 +216,7 @@ class Run(unittest.TestCase):
         for name, value in (('routines_now', lambda s: dt.datetime(2026, 11, 9, 6, 0)), ('background_pause', lambda s, **k: None),
                             ('background_spaced', lambda s: True), ('background_started', lambda s: None),
                             ('routine_spawn', lambda s, target, run_id: target(run_id))):
-            p = patch.object(a.App, name, value); p.start(); self.addCleanup(p.stop)
+            p = patch.object(machine_main.App, name, value); p.start(); self.addCleanup(p.stop)
         p = patch.object(SecondhandTemplate, 'secondhand_base', lambda s: 'http://127.0.0.1:9'); p.start(); self.addCleanup(p.stop)
         p = patch.object(SecondhandTemplate, 'PACE', None); p.start(); self.addCleanup(p.stop)
         p = patch('subprocess.run', lambda *x, **k: subprocess.CompletedProcess(x, 0, '', '')); p.start(); self.addCleanup(p.stop)  # the lease

@@ -14,6 +14,7 @@ import zipfile
 from pathlib import Path
 
 import skills
+import machine.prompts.profile as machine_prompts_profile
 
 SKILL = '---\nname: {name}\ndescription: {description}\n{extra}---\n\n# {name}\n\n{body}\n'
 
@@ -410,19 +411,19 @@ class FindPrompt(unittest.TestCase):
     def test_prompt_stays_under_the_gateway_limit(self):
         import assistant
         items = [{'key': f'claude:~/.claude/skills/s{n}', 'name': f's{n}', 'description': 'd' * 200, 'group': 'yours'} for n in range(150)]
-        text = assistant.skills_find_prompt('r' * 32, {'token': 't', 'items': items, 'cards': ['c' * 200] * 40, 'sources': ['gmail'], 'skills': []})
+        text = machine_prompts_profile.skills_find_prompt('r' * 32, {'token': 't', 'items': items, 'cards': ['c' * 200] * 40, 'sources': ['gmail'], 'skills': []})
         self.assertLess(len(text), 20000)
         self.assertIn('assistant_signals action skills_found', text)
         self.assertIn('more', text)
 
     def test_readers_are_read_only_and_keep_the_token_in_the_page(self):
         import assistant
-        for site, js in assistant.SKILLS_READ.items():
+        for site, js in machine_prompts_profile.SKILLS_READ.items():
             self.assertNotIn("method: 'POST'", js)
             self.assertNotIn('delete', js.lower())
-        self.assertIn('/export', assistant.SKILLS_READ['chatgpt'])
-        self.assertIn("source === 'personal'", assistant.SKILLS_READ['claude'])
-        self.assertNotIn('accessToken', assistant.SKILLS_READ['chatgpt'].split('return {state')[-1])
+        self.assertIn('/export', machine_prompts_profile.SKILLS_READ['chatgpt'])
+        self.assertIn("source === 'personal'", machine_prompts_profile.SKILLS_READ['claude'])
+        self.assertNotIn('accessToken', machine_prompts_profile.SKILLS_READ['chatgpt'].split('return {state')[-1])
 
 
 if __name__ == '__main__':

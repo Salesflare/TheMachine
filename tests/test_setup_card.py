@@ -5,18 +5,21 @@ import unittest
 from pathlib import Path
 
 import assistant as a
+import machine.actions as machine_actions
+import machine.app.setup_card as machine_app_setup_card
+import machine.main as machine_main
 
 
 class SetupCard(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'events.sqlite')
+        self.store = machine_main.Store(Path(self.temp.name) / 'events.sqlite')
         self.config = {'accounts': [{'id': 'me-gmail', 'service': 'gmail'}, {'id': 'me-cal', 'service': 'calendar'}],
                        'manage_url': 'https://app.example.test/setup'}
 
     def card(self, config=None):
-        return a.setup_card(self.store, config or self.config)
+        return machine_app_setup_card.setup_card(self.store, config or self.config)
 
     def test_a_new_machine_has_every_step_open(self):
         card = self.card()
@@ -31,7 +34,7 @@ class SetupCard(unittest.TestCase):
         self.assertTrue(self.card(outlook)['calendar'])
         shared = dict(self.config, accounts=[{'id': 'me-gmail', 'service': 'gmail'}, {'id': 'team-cal', 'service': 'calendar', 'shared': True}])
         self.assertFalse(self.card(shared)['calendar'])  # a team's calendar is not the owner's
-        self.assertEqual(a.setup_dismiss(self.store, self.config, 'calendar')['setup_card']['dismissed'], ['calendar'])
+        self.assertEqual(machine_app_setup_card.setup_dismiss(self.store, self.config, 'calendar')['setup_card']['dismissed'], ['calendar'])
 
     def test_since_is_the_first_to_do_shown(self):
         with self.store.connect() as db:
@@ -61,27 +64,27 @@ class SetupCard(unittest.TestCase):
         self.assertFalse(self.card(shared)['whatsapp'])
 
     def test_a_closed_row_stays_closed_on_every_device(self):
-        self.assertEqual(a.setup_dismiss(self.store, self.config, 'whatsapp')['setup_card']['dismissed'], ['whatsapp'])
-        a.setup_dismiss(self.store, self.config, 'whatsapp')  # twice is fine
-        a.setup_dismiss(self.store, self.config, 'hint-source-github')
+        self.assertEqual(machine_app_setup_card.setup_dismiss(self.store, self.config, 'whatsapp')['setup_card']['dismissed'], ['whatsapp'])
+        machine_app_setup_card.setup_dismiss(self.store, self.config, 'whatsapp')  # twice is fine
+        machine_app_setup_card.setup_dismiss(self.store, self.config, 'hint-source-github')
         # another device asks the Machine: the same rows closed
-        other = a.Store(Path(self.temp.name) / 'events.sqlite')
-        self.assertEqual(a.setup_card(other, self.config)['dismissed'], ['hint-source-github', 'whatsapp'])
-        self.assertFalse(a.setup_card(other, self.config)['closed'])
-        a.setup_dismiss(self.store, self.config, 'card')
-        self.assertTrue(a.setup_card(other, self.config)['closed'])
-        self.assertNotIn('card', a.setup_card(other, self.config)['dismissed'])
+        other = machine_main.Store(Path(self.temp.name) / 'events.sqlite')
+        self.assertEqual(machine_app_setup_card.setup_card(other, self.config)['dismissed'], ['hint-source-github', 'whatsapp'])
+        self.assertFalse(machine_app_setup_card.setup_card(other, self.config)['closed'])
+        machine_app_setup_card.setup_dismiss(self.store, self.config, 'card')
+        self.assertTrue(machine_app_setup_card.setup_card(other, self.config)['closed'])
+        self.assertNotIn('card', machine_app_setup_card.setup_card(other, self.config)['dismissed'])
 
     def test_only_known_steps_are_kept(self):
         for bad in ('', 'tour', 'hint-', 'hint-UPPER', 'setup:card', 'phone x', None):
             with self.assertRaises(ValueError, msg=bad):
-                a.setup_dismiss(self.store, self.config, bad)
+                machine_app_setup_card.setup_dismiss(self.store, self.config, bad)
 
     def test_only_the_owner_closes_a_step_on_the_dashboard(self):
-        app = object.__new__(a.App)
+        app = object.__new__(machine_main.App)
         app.store, app.config = self.store, self.config
-        self.assertIn('setup_dismiss', a.DASHBOARD_ACTIONS)
-        self.assertIn('setup_dismiss', a.OWNER_ACTIONS)
+        self.assertIn('setup_dismiss', machine_actions.DASHBOARD_ACTIONS)
+        self.assertIn('setup_dismiss', machine_actions.OWNER_ACTIONS)
         with self.assertRaises(ValueError):
             app.action('setup_dismiss', {'step': 'phone'})
         self.assertEqual(app.action('setup_dismiss', {'step': 'phone'}, owner_dashboard=True)['setup_card']['dismissed'], ['phone'])
@@ -89,25 +92,25 @@ class SetupCard(unittest.TestCase):
     def test_a_closed_row_or_the_whole_to_do_comes_back(self):
         # Undo after a × (one row, or the card), and Show hidden / Settings' Show again (all of it)
         for step in ('phone', 'whatsapp', 'hint-source-github', 'card'):
-            a.setup_dismiss(self.store, self.config, step)
-        card = a.setup_restore(self.store, self.config, 'phone')['setup_card']
+            machine_app_setup_card.setup_dismiss(self.store, self.config, step)
+        card = machine_app_setup_card.setup_restore(self.store, self.config, 'phone')['setup_card']
         self.assertEqual((card['dismissed'], card['closed']), (['hint-source-github', 'whatsapp'], True))
-        card = a.setup_restore(self.store, self.config, 'card')['setup_card']
+        card = machine_app_setup_card.setup_restore(self.store, self.config, 'card')['setup_card']
         self.assertEqual((card['dismissed'], card['closed']), (['hint-source-github', 'whatsapp'], False))
-        a.setup_restore(self.store, self.config, 'phone')  # not closed: fine
-        a.setup_dismiss(self.store, self.config, 'card')
-        card = a.setup_restore(self.store, self.config, 'all')['setup_card']
+        machine_app_setup_card.setup_restore(self.store, self.config, 'phone')  # not closed: fine
+        machine_app_setup_card.setup_dismiss(self.store, self.config, 'card')
+        card = machine_app_setup_card.setup_restore(self.store, self.config, 'all')['setup_card']
         self.assertEqual((card['dismissed'], card['closed']), ([], False))
         for bad in ('', 'tour', 'setup:%', '%', None):
             with self.assertRaises(ValueError, msg=bad):
-                a.setup_restore(self.store, self.config, bad)
+                machine_app_setup_card.setup_restore(self.store, self.config, bad)
 
     def test_only_the_owner_brings_a_step_back_on_the_dashboard(self):
-        app = object.__new__(a.App)
+        app = object.__new__(machine_main.App)
         app.store, app.config = self.store, self.config
-        self.assertIn('setup_restore', a.DASHBOARD_ACTIONS)
-        self.assertIn('setup_restore', a.OWNER_ACTIONS)
-        a.setup_dismiss(self.store, self.config, 'phone')
+        self.assertIn('setup_restore', machine_actions.DASHBOARD_ACTIONS)
+        self.assertIn('setup_restore', machine_actions.OWNER_ACTIONS)
+        machine_app_setup_card.setup_dismiss(self.store, self.config, 'phone')
         with self.assertRaises(ValueError):
             app.action('setup_restore', {'step': 'phone'})
         self.assertEqual(app.action('setup_restore', {'step': 'phone'}, owner_dashboard=True)['setup_card']['dismissed'], [])

@@ -4,6 +4,8 @@ count) may come before the instructions and the slowly changing parts. The plugi
 every review) is checked in tests/test_review_hooks.mjs."""
 import importlib.util, os, sys, tempfile, unittest
 from pathlib import Path
+import machine.main as machine_main
+import machine.prompts.review as machine_prompts_review
 
 sys.path.insert(0, os.path.dirname(__file__))
 from test_preview import Runner, signal  # noqa: E402
@@ -22,8 +24,8 @@ def shared_prefix(one, two):
 class ReviewCachePrefix(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'events.sqlite')
-        self.app = object.__new__(a.App); self.app.store = self.store
+        self.store = machine_main.Store(Path(self.temp.name) / 'events.sqlite')
+        self.app = object.__new__(machine_main.App); self.app.store = self.store
         self.app.config = {'accounts': [{'id': 'work', 'boundary': 'work:Acme'}], 'review_worker': {'enabled': False},
                            'delivery_enabled': False, 'telegram_owner': 'owner'}
 
@@ -52,10 +54,10 @@ class ReviewCachePrefix(unittest.TestCase):
     def test_per_run_parts_come_after_everything_stable(self):
         stable_args = dict(preferences='- Dismissed 2 newsletters quickly', facts='- The owner prefers short replies.',
                            promises='- Send Sam the deck by Friday', sources='\n\nReading the connected sources: mail.')
-        one = a.review_prompt('a' * 32, ['work'], **stable_args, slipped='- No answer for 8 days', roles='- Sam', unnamed='- two threads',
+        one = machine_prompts_review.review_prompt('a' * 32, ['work'], **stable_args, slipped='- No answer for 8 days', roles='- Sam', unnamed='- two threads',
                               notes='- not mine', handoffs='- ask_id q1', boards='- Acme sale', sorting='- p1',
                               fitting='- p2', backfill='- org:x', first_look=True)
-        two = a.review_prompt('b' * 32, ['work'], **stable_args)
+        two = machine_prompts_review.review_prompt('b' * 32, ['work'], **stable_args)
         shared = shared_prefix(one, two)
         self.assertTrue(two[len(shared):].startswith('b' * 32), two[len(shared) - 40:len(shared) + 40])
         for slow in stable_args.values():
@@ -64,7 +66,7 @@ class ReviewCachePrefix(unittest.TestCase):
             self.assertNotIn(per_run, shared)
             self.assertIn(per_run, one)
         # No clock in the prompt: the same inputs give the same bytes a minute later
-        self.assertEqual(two, a.review_prompt('b' * 32, ['work'], **stable_args))
+        self.assertEqual(two, machine_prompts_review.review_prompt('b' * 32, ['work'], **stable_args))
 
 
 if __name__ == '__main__':

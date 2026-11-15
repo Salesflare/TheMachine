@@ -9,6 +9,9 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+import machine.main as machine_main
+import machine.prompts.review as machine_prompts_review
+import machine.store.facts as machine_store_facts
 
 ROOT = Path(__file__).parent.parent
 spec = importlib.util.spec_from_file_location('personal_work_mailbox_assistant', ROOT / 'assistant.py')
@@ -31,9 +34,9 @@ def mail(source_id, sender, subject, thread):
 class PersonalOnWorkMailbox(unittest.TestCase):
     def open(self, accounts):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'e.sqlite')
+        self.store = machine_main.Store(Path(self.temp.name) / 'e.sqlite')
         self.store.accounts = accounts
-        self.app = object.__new__(a.App); self.app.store = self.store
+        self.app = object.__new__(machine_main.App); self.app.store = self.store
         self.app.config = {'accounts': accounts, 'prepare_ahead': False, 'database': str(Path(self.temp.name) / 'e.sqlite')}
         self.store.config = self.app.config
         self.store.commit_page('work-mail', {}, [mail('f1', 'Jo <jo@mail.example>', 'Birthday party venue', 't1'),
@@ -59,7 +62,7 @@ class PersonalOnWorkMailbox(unittest.TestCase):
         row, card = self.row(sid), self.card(sid)
         self.assertEqual((json.loads(row['account_ids']), row['area']), (['work-mail'], 'personal'))
         self.assertEqual((card['scope'], card['area']), ('personal', 'personal'))
-        self.assertEqual(a.suggestion_scope(row['account_ids'], WORK_ONLY, row['area']), 'personal')
+        self.assertEqual(machine_store_facts.suggestion_scope(row['account_ids'], WORK_ONLY, row['area']), 'personal')
         self.assertEqual(knowledge.card_area(self.app.config, row['account_ids'], row['area']), 'personal')
         # Never a Work Fleet's: no handoff, no team learnings, a review only from the Family
         stub = type('S', (), {'connect': self.store.connect})()
@@ -101,7 +104,7 @@ class PersonalOnWorkMailbox(unittest.TestCase):
 
     def test_the_review_is_told_when_a_to_do_is_personal(self):
         self.open(WORK_ONLY)
-        self.assertIn('gets personal:true on suggest, also when it came in on a work mailbox', a.review_prompt('r1', ['work-mail']))
+        self.assertIn('gets personal:true on suggest, also when it came in on a work mailbox', machine_prompts_review.review_prompt('r1', ['work-mail']))
         self.assertIn('`personal:true`', (ROOT / 'AGENTS.md').read_text())
 
 

@@ -15,6 +15,7 @@ import fleet_requests
 import installer
 import locale_prefs
 import dashboard_parts
+import machine.main as machine_main
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 AFTERNOON = dt.datetime(2026, 10, 24, 14, 5, 9)
@@ -96,7 +97,7 @@ class SettingTest(unittest.TestCase):
         self.dir = pathlib.Path(tempfile.mkdtemp())
         self.path = self.dir / 'config.json'
         self.path.write_text(json.dumps({'timezone': 'Europe/Brussels', 'other': 1}))
-        self.app = assistant.App.__new__(assistant.App)
+        self.app = machine_main.App.__new__(machine_main.App)
         self.app.config, self.app.config_path = json.loads(self.path.read_text()), self.path
         locale_prefs.configure({})
 

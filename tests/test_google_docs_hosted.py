@@ -13,6 +13,7 @@ import mail_grants
 import onboarding
 from test_connectors import a
 import test_connector_docs as t
+import machine.main as machine_main
 
 DOCS_URL = 'https://cp.example/api/google-docs/token'
 ACCOUNT = {**t.ACCOUNT, 'provider': 'google', 'own_grant': True, 'transport': 'broker'}
@@ -93,9 +94,9 @@ class Hosted(unittest.TestCase):
         import assistant
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
-        app = object.__new__(assistant.App)
+        app = object.__new__(machine_main.App)
         app.config = {**HOSTED, 'database': str(Path(tmp.name) / 'e.sqlite'), 'docs_consent': ['google', 'microsoft'], 'accounts': []}
-        app.store = assistant.Store(Path(tmp.name) / 'e.sqlite')
+        app.store = machine_main.Store(Path(tmp.name) / 'e.sqlite')
         found = {s['name']: s.get('hosted_signin') for s in app.action('connect_sources', {}, owner_dashboard=True)['sources']}
         self.assertEqual((found['docs'], found['google_docs']), ('microsoft_docs', 'google_docs'))
 

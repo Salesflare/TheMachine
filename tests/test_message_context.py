@@ -12,6 +12,9 @@ import tempfile
 import unittest
 from pathlib import Path
 from unittest import mock
+import machine.main as machine_main
+import machine.sources.gmail as machine_sources_gmail
+import sources
 
 ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(ROOT))
@@ -45,7 +48,7 @@ LISTS = [  # (when, from the owner, text): questions, numbered answers, then a n
 def fixture(folder):
     """Three to-dos (a Slack DM, a WhatsApp group, an email thread) with their conversations stored around them, and
     noise that must never show: another Slack channel, another thread's replies, a Personal chat with the same id."""
-    store = a.Store(Path(folder) / 'events.sqlite')
+    store = machine_main.Store(Path(folder) / 'events.sqlite')
 
     def slack(i, at, me, text, channel='D0TESTER', thread=None):
         ts = f'17937{i:05d}.000100'
@@ -93,7 +96,7 @@ def fixture(folder):
              'whatsapp': store.suggest('wa-card', 'Pick up the ladder from Bo on Friday', 'Promised in the group.', [ids['home-wa-wa4']])['id'],
              'email': store.suggest('mail-card', 'Tell Avery if the booth lighting is a go', 'Avery asked.', [ids['m3']])['id'],
              'thread': store.suggest('lists-card', 'Log the release blocker', 'Rui answered.', [ids[lists[-1]['source_id']]])['id']}
-    app = object.__new__(a.App)
+    app = object.__new__(machine_main.App)
     app.store = store
     app.config = {'accounts': [{'id': 'work', 'service': 'gmail', 'email': 'alex@lumen.example'}], 'database': str(Path(folder) / 'events.sqlite')}
     store.accounts = app.config['accounts']
@@ -220,7 +223,7 @@ class MessageContext(unittest.TestCase):
                                                                {'name': 'Subject', 'value': 'Booth for the spring fair'}],
                          'body': {'data': 'SGVsbG8gZnJvbSBiZWZvcmUgdGhlIGltcG9ydA'}}},
             {'id': 'm3', 'threadId': 'T1', 'internalDate': '1793782000000', 'payload': {'headers': []}}]}
-        with mock.patch.object(a.Gmail, 'get', return_value=raw) as read:
+        with mock.patch.object(machine_sources_gmail.Gmail, 'get', return_value=raw) as read:
             older = self.app.message_context(self.cards['email'], self.ids['m3'])
             self.app.message_context(self.cards['email'], self.ids['m3'])
         read.assert_called_once_with('threads/T1', {'format': 'full'})
@@ -229,7 +232,7 @@ class MessageContext(unittest.TestCase):
     def test_a_live_read_that_fails_shows_nothing_more(self):
         with self.app.store.connect() as db:
             db.execute("UPDATE events SET deleted=1 WHERE source_id IN ('m1','m2')")
-        with mock.patch.object(a.Gmail, 'get', side_effect=a.SourceError('offline')):
+        with mock.patch.object(machine_sources_gmail.Gmail, 'get', side_effect=sources.SourceError('offline')):
             self.assertEqual(self.app.message_context(self.cards['email'], self.ids['m3'])['before'], [])
 
     def test_the_conversation_query_is_fixed_sql_with_the_key_bound(self):

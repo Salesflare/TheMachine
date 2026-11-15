@@ -12,6 +12,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 from zoneinfo import ZoneInfo
+import machine.main as machine_main
 
 spec = importlib.util.spec_from_file_location('recipe_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
@@ -53,8 +54,8 @@ class Clean(unittest.TestCase):
 class Runs(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'e.sqlite')
-        self.app = object.__new__(a.App); self.app.store = self.store
+        self.store = machine_main.Store(Path(self.temp.name) / 'e.sqlite')
+        self.app = object.__new__(machine_main.App); self.app.store = self.store
         self.app.config = {'accounts': [{'id': 'w', 'boundary': 'work:acme.example'}], 'timezone': 'Europe/Brussels',
                            'openclaw_state': self.temp.name + '/none.sqlite'}
         self.now = T(2026, 11, 9, 6, 0)  # the routine's clock: the owner's local time (Brussels)
@@ -63,7 +64,7 @@ class Runs(unittest.TestCase):
                             ('background_spaced', lambda s: True), ('background_started', lambda s: None),
                             ('preparation_gateway', lambda s, request: self.sent.append(request) or {'status': 'admitted'}),
                             ('routine_spawn', lambda s, target, run_id: target(run_id))):
-            p = patch.object(a.App, name, value); p.start(); self.addCleanup(p.stop)
+            p = patch.object(machine_main.App, name, value); p.start(); self.addCleanup(p.stop)
         self.sent = []
         stamp = timeutil.clock()  # the pinned clock, so "40 days back" stays past since_days
         self.store.commit_page('w', {}, [

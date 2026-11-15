@@ -5,6 +5,8 @@ import importlib.util
 import tempfile
 import unittest
 from pathlib import Path
+import machine.actions as machine_actions
+import machine.main as machine_main
 
 ROOT = Path(__file__).parent.parent
 spec = importlib.util.spec_from_file_location('page_watch_assistant', ROOT / 'assistant.py')
@@ -15,11 +17,11 @@ class PageWatchChat(unittest.TestCase):
     def setUp(self):
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)
-        self.store = a.Store(Path(temp.name) / 'events.sqlite')
+        self.store = machine_main.Store(Path(temp.name) / 'events.sqlite')
         self.config = {'accounts': [{'id': 'work', 'service': 'gmail', 'email': 'sam@acme.example', 'boundary': 'work:Acme'},
                                     {'id': 'page', 'service': 'web_page', 'url': 'https://tools.example/pricing',
                                      'display_name': 'tools.example/pricing'}]}
-        self.app = object.__new__(a.App)
+        self.app = object.__new__(machine_main.App)
         self.app.store, self.app.config = self.store, self.config
         self.calls = []
         self.app.connect_action = self.connect
@@ -64,8 +66,8 @@ class PageWatchChat(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'only when the owner asks'):
             self.watch(do='add', url='https://news.example/jobs')
         self.assertEqual(self.calls, [])
-        self.assertIn('page_watch', a.OWNER_ACTIONS)  # never the local CLI, the agent's own tool
-        self.assertNotIn('page_watch', a.DASHBOARD_ACTIONS)
+        self.assertIn('page_watch', machine_actions.OWNER_ACTIONS)  # never the local CLI, the agent's own tool
+        self.assertNotIn('page_watch', machine_actions.DASHBOARD_ACTIONS)
 
 
 if __name__ == '__main__':

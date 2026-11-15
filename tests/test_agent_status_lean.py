@@ -8,6 +8,9 @@ from pathlib import Path
 import tempfile
 import unittest
 import uuid
+import machine.app.status as machine_app_status
+import machine.main as machine_main
+import machine.text as machine_text
 
 spec = importlib.util.spec_from_file_location('assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 assistant = importlib.util.module_from_spec(spec)
@@ -21,10 +24,10 @@ class LeanAgentStatus(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
-        self.store = assistant.Store(Path(self.temp.name) / 'events.sqlite')
+        self.store = machine_main.Store(Path(self.temp.name) / 'events.sqlite')
         self.store.commit_page('work', {}, [{'account_id': 'work', 'source_id': '1', 'kind': 'slack.message', 'title': 'A signal',
                                              'occurred_at': '2026-11-01T10:00:00+00:00', 'body': 'Evidence', 'metadata': {}, 'deleted': False}])
-        self.app = object.__new__(assistant.App)
+        self.app = object.__new__(machine_main.App)
         self.app.store, self.app.config = self.store, {'accounts': []}
 
     def card(self, n, status='pending'):
@@ -45,7 +48,7 @@ class LeanAgentStatus(unittest.TestCase):
     def test_open_todos_come_first_and_all_fit_under_the_cut(self):
         done, open_ = self.long_done_list()
         status = self.app.action('status', {})
-        size = len(assistant.encoded(status))
+        size = len(machine_text.encoded(status))
         ids = [s['id'] for s in status['suggestions']]
         self.assertEqual(set(ids[:len(open_)]), set(open_))  # every open to-do before any done one
         self.assertLess(size * 1.5, CUT, size)  # the agent reads it escaped once more inside the tool's reply
@@ -58,11 +61,11 @@ class LeanAgentStatus(unittest.TestCase):
     def test_the_lean_status_is_far_smaller_than_before(self):
         self.long_done_list()
         snapshot = self.store.snapshot([], lean=True)
-        before = dict(assistant.compact_status(snapshot))
+        before = dict(machine_app_status.compact_status(snapshot))
         before['suggestions'] = [{**{k: s[k] for k in ('id', 'status', 'title', 'dedupe_key', 'created_at') if s.get(k)},
                                   'body': s.get('body', '')[:400]} for s in snapshot['suggestions']]
-        after = assistant.compact_status(snapshot)
-        self.assertLess(len(assistant.encoded(after)) * 2, len(assistant.encoded(before)))
+        after = machine_app_status.compact_status(snapshot)
+        self.assertLess(len(machine_text.encoded(after)) * 2, len(machine_text.encoded(before)))
 
     def test_one_todo_with_its_own_decisions(self):
         done, open_ = self.long_done_list()
@@ -74,7 +77,7 @@ class LeanAgentStatus(unittest.TestCase):
         self.assertTrue(found['decisions'])
         self.assertTrue(all(d['suggestion_id'] == target for d in found['decisions']))
         self.assertNotIn('suggestions', found)
-        self.assertLess(len(assistant.encoded(found)), 3000)
+        self.assertLess(len(machine_text.encoded(found)), 3000)
 
     def test_an_old_done_todo_past_the_list_is_still_found(self):
         oldest = self.card(0, 'completed')

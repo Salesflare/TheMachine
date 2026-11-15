@@ -5,6 +5,7 @@ import sqlite3
 import tempfile
 import unittest
 from pathlib import Path
+import machine.main as machine_main
 
 ROOT = Path(__file__).parent.parent
 spec = importlib.util.spec_from_file_location('note_pages_assistant', ROOT / 'assistant.py')
@@ -28,7 +29,7 @@ class NotePagesTests(unittest.TestCase):
     def setUp(self):
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)
-        self.store = a.Store(Path(temp.name) / 'events.sqlite')
+        self.store = machine_main.Store(Path(temp.name) / 'events.sqlite')
         self.db = self.enterContext(self.store.connect())
 
     def new(self, title, parent=None, lines=()):
@@ -59,7 +60,7 @@ class NotePagesTests(unittest.TestCase):
     def test_their_words_are_sealed_at_rest(self):
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)
-        self.store = a.Store(Path(temp.name) / 'events.sqlite', protect=True)
+        self.store = machine_main.Store(Path(temp.name) / 'events.sqlite', protect=True)
         self.db = self.enterContext(self.store.connect())
         note_pages.sync(self.db, 'trip', [trip()], LATER)
         self.db.commit()
@@ -211,13 +212,13 @@ class NotesAppTests(unittest.TestCase):
     def setUp(self):
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)
-        self.store = a.Store(Path(temp.name) / 'events.sqlite')
-        self.app = object.__new__(a.App)
+        self.store = machine_main.Store(Path(temp.name) / 'events.sqlite')
+        self.app = object.__new__(machine_main.App)
         self.app.store = self.store
         self.app.config = {'accounts': [{'id': 'home', 'email': 'sam@example.com'}]}
 
     def test_the_actions_are_the_owners_from_their_dashboard(self):
-        self.assertLessEqual(set(a.App.ACTIONS) & {n for n in a.App.ACTIONS if n.startswith('note_')}, actions.OWNER_ACTIONS)
+        self.assertLessEqual(set(machine_main.App.ACTIONS) & {n for n in machine_main.App.ACTIONS if n.startswith('note_')}, actions.OWNER_ACTIONS)
         self.assertTrue({'note_new', 'note_line_edit', 'note_merge'} <= actions.DASHBOARD_ACTIONS)
         with self.assertRaises(ValueError):
             self.app.note_action('note_new', {'title': 'Garden'}, owner_dashboard=False)

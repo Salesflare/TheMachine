@@ -5,6 +5,8 @@ from pathlib import Path
 
 import browser_login
 import moving
+import machine.actions as machine_actions
+import machine.main as machine_main
 
 USER, SECRET, CODE = 'test-user@example.invalid', 'not-a-real-password-123', '424242'
 
@@ -428,7 +430,7 @@ class ListActionTest(unittest.TestCase):
         import assistant
         with tempfile.TemporaryDirectory() as folder:
             browser_login.LoginStore(folder).save('example.invalid', USER, SECRET)
-            app = assistant.App.__new__(assistant.App)
+            app = machine_main.App.__new__(machine_main.App)
             app.config = {'accounts': [], 'database': str(Path(folder) / 'events.sqlite')}
             sent = app.action('browser_logins', {}, owner_dashboard=True)
             self.assertEqual(sent['logins'], [{'site': 'example.invalid', 'username': USER, 'password_saved': True,
@@ -440,8 +442,8 @@ class OwnerOnlyTest(unittest.TestCase):
     def test_not_for_the_agent_or_the_cli(self):
         import assistant
         for name in ('browser_login_pages', 'browser_login_fill', 'browser_login_choose', 'browser_logins', 'browser_login_forget'):
-            self.assertIn(name, assistant.OWNER_ACTIONS)
-            app = assistant.App.__new__(assistant.App)
+            self.assertIn(name, machine_actions.OWNER_ACTIONS)
+            app = machine_main.App.__new__(machine_main.App)
             app.config = {'accounts': [], 'database': '/nonexistent/x.db'}
             with self.assertRaisesRegex(ValueError, 'Only the owner'):
                 app.action(name, {'page': '0:x', 'host': 'example.invalid', 'password': SECRET})

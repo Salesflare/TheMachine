@@ -13,6 +13,10 @@ import unittest
 from pathlib import Path
 
 from connectors import intercom
+import machine.main as machine_main
+import machine.sources.connectors as machine_sources_connectors
+import sources
+import timeutil
 
 ROOT = Path(__file__).parent.parent
 spec = importlib.util.spec_from_file_location('handled_assistant', ROOT / 'assistant.py')
@@ -21,7 +25,7 @@ spec.loader.exec_module(a)
 
 OWN = {'id': 'ic', 'service': 'intercom', 'transport': 'api', 'workspace_id': 'ws1', 'admin_id': '42', 'region': 'us',
        'email': 'owner@example.com'}
-HELPERS = types.SimpleNamespace(SourceError=a.SourceError, iso=a.CONNECTOR_HELPERS.iso)
+HELPERS = types.SimpleNamespace(SourceError=sources.SourceError, iso=machine_sources_connectors.CONNECTOR_HELPERS.iso)
 T = int(time.time()) + 600  # after the to-do is made
 CUSTOMER = {'type': 'user', 'id': 'u1', 'email': 'customer@example.com', 'name': 'Casey'}
 REPLY = {'kind': 'intercom', 'account_id': 'ic', 'conversation_id': '7', 'body': 'Yes, under Settings, Export.'}
@@ -72,9 +76,9 @@ class Store(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'events.sqlite')
+        self.store = machine_main.Store(Path(self.temp.name) / 'events.sqlite')
         self.store.accounts = [OWN, {'id': 'mail', 'service': 'gmail', 'email': 'owner@example.com'}]
-        self.app = object.__new__(a.App)
+        self.app = object.__new__(machine_main.App)
         self.app.store = self.store
         self.app.config = {'accounts': self.store.accounts, 'database': str(Path(self.temp.name) / 'events.sqlite'),
                            'openclaw_config': str(Path(self.temp.name) / 'openclaw.json')}
@@ -156,7 +160,7 @@ class Store(unittest.TestCase):
 
     def made_now(self):
         with self.store.connect() as db:
-            db.execute('UPDATE suggestions SET created_at=? WHERE id=?', (a.now(), self.sid))
+            db.execute('UPDATE suggestions SET created_at=? WHERE id=?', (timeutil.now(), self.sid))
 
     def test_before_the_to_do_was_made(self):
         # Read in before the to-do was made: the review that made it saw them, so they never close it
@@ -217,7 +221,7 @@ class Store(unittest.TestCase):
         self.stays(handled)  # nothing drafted: unsure what it asks, so it stays
 
     def test_other_evidence_too_stays(self):
-        self.store.commit_page('mail', {}, [{'account_id': 'mail', 'source_id': 'm1', 'kind': 'gmail.message', 'occurred_at': a.now(),
+        self.store.commit_page('mail', {}, [{'account_id': 'mail', 'source_id': 'm1', 'kind': 'gmail.message', 'occurred_at': timeutil.now(),
                                              'title': 'Export', 'body': 'Also by mail', 'deleted': False, 'metadata': {'from': 'customer@example.com'}}])
         with self.store.connect() as db:
             db.execute('UPDATE suggestions SET event_ids=? WHERE id=?', ('[1, 2]', self.sid))
@@ -253,7 +257,7 @@ class Store(unittest.TestCase):
                 if path == '/conversations/search':
                     return {'conversations': [], 'pages': {}, 'total_count': 0}
                 return conversation(part('close', T, admin(), body=None), state='closed')
-        helpers = a.CONNECTOR_HELPERS
+        helpers = machine_sources_connectors.CONNECTOR_HELPERS
         intercom.sync(self.store, {'bootstrap_days': 7}, OWN, helpers, source=Fake())
         self.assertEqual(asked, ['/conversations/search', '/conversations/7'])
         self.assertEqual(self.store.close_handled_intercom(), [self.sid])

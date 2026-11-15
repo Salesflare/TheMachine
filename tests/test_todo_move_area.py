@@ -8,6 +8,10 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+import machine.app.preparation as machine_app_preparation
+import machine.main as machine_main
+import machine.store.views as machine_store_views
+import uuid
 
 ROOT = Path(__file__).parent.parent
 spec = importlib.util.spec_from_file_location('move_area_assistant', ROOT / 'assistant.py')
@@ -97,23 +101,23 @@ class Areas(unittest.TestCase):
                    (json.dumps({'side': 'work', 'accounts': ['home-chat'], 'org': 'org:beta.example'}), json.dumps({'domain': 'beta.example'})))
         mine = ACCOUNTS + [{'id': 'beta-mail', 'service': 'gmail', 'email': 'robin@beta.example', 'boundary': 'work:Beta'}]
         card = {'event_ids': '[7]', 'account_ids': '["home-chat"]'}
-        self.assertEqual(a.area_hint(db, card, mine, 'personal'), 'work:Beta')
-        self.assertIsNone(a.area_hint(db, card, ACCOUNTS, 'personal'))  # one other area: no picker, no hint
+        self.assertEqual(machine_store_views.area_hint(db, card, mine, 'personal'), 'work:Beta')
+        self.assertIsNone(machine_store_views.area_hint(db, card, ACCOUNTS, 'personal'))  # one other area: no picker, no hint
 
 
 class MoveCard(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'e.sqlite')
+        self.store = machine_main.Store(Path(self.temp.name) / 'e.sqlite')
         self.store.accounts = ACCOUNTS
-        self.app = object.__new__(a.App); self.app.store = self.store
+        self.app = object.__new__(machine_main.App); self.app.store = self.store
         self.app.config = {'accounts': ACCOUNTS, 'prepare_ahead': False, 'database': str(Path(self.temp.name) / 'e.sqlite')}
         self.store.config = self.app.config
         self.store.commit_page('home-chat', {}, [chat('m1', '2026-10-30T09:00:00+00:00'), chat('m2', '2026-11-02T09:00:00+00:00')])
         self.sid = self.store.suggest('home-chat:c1', 'Find out why the zero invoices keep coming', 'Kai still gets them.', [1])['id']
 
     def move(self, area=None, undo=None, owner=True):
-        return self.app.action('card_move', {'suggestion_id': self.sid, 'area': area, 'undo': undo, 'decision_id': a.uuid.uuid4().hex},
+        return self.app.action('card_move', {'suggestion_id': self.sid, 'area': area, 'undo': undo, 'decision_id': uuid.uuid4().hex},
                                owner_dashboard=owner)
 
     def row(self):
@@ -208,12 +212,12 @@ class MoveCard(unittest.TestCase):
         self.assertEqual(self.card()['preparation_status'], 'blocked')
 
     def test_the_run_is_told_its_area_and_how_to_ask(self):
-        line = a.area_prompt(self.app.config, '["home-chat"]')
+        line = machine_app_preparation.area_prompt(self.app.config, '["home-chat"]')
         self.assertIn('this to-do is in Personal (its accounts: whatsapp, android, gmail)', line)  # gmail: Side's, labeled personal
         self.assertIn('move_to=<work:Acme (Work: gmail, slack)>', line)  # what a move would get it
         self.assertIn('never for what the to-do is about', line)
         self.assertIn('never move it yourself', line)
-        self.assertEqual(a.area_prompt({'accounts': ACCOUNTS[:2]}, '["home-chat"]'), '')  # only one area: nothing to say
+        self.assertEqual(machine_app_preparation.area_prompt({'accounts': ACCOUNTS[:2]}, '["home-chat"]'), '')  # only one area: nothing to say
         self.assertIn('Area: this to-do is in', (ROOT / 'PREPARATION.md').read_text() + line)
 
 
@@ -226,9 +230,9 @@ class MovesByItself(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
         self.accounts = ACCOUNTS + BETA
-        self.store = a.Store(Path(self.temp.name) / 'e.sqlite')
+        self.store = machine_main.Store(Path(self.temp.name) / 'e.sqlite')
         self.store.accounts = self.accounts
-        self.app = object.__new__(a.App); self.app.store = self.store
+        self.app = object.__new__(machine_main.App); self.app.store = self.store
         self.app.config = {'accounts': self.accounts, 'prepare_ahead': False, 'database': str(Path(self.temp.name) / 'e.sqlite')}
         self.store.config = self.app.config
         self.store.commit_page('acme-chat', {}, [{'account_id': 'acme-chat', 'source_id': 's1', 'kind': 'slack.message',
@@ -291,7 +295,7 @@ class MovesByItself(unittest.TestCase):
         self.assertEqual(self.store.preparation_blocked(mixed, job, 'It needs the Acme Slack.', move_to='work:Acme')['status'], 'blocked')
 
     def test_the_run_asks_which_account_rather_than_for_a_move(self):
-        line = a.area_prompt(self.app.config, '["home-chat"]')
+        line = machine_app_preparation.area_prompt(self.app.config, '["home-chat"]')
         self.assertIn('or it came from a routine\'s own draft, it moves there by itself', line)
         self.assertIn('ask which account in questions instead, never to move it', line)
 
@@ -336,11 +340,11 @@ class PersonalReplyFromWorkMailbox(unittest.TestCase):
             next_actions.validate(new, beta, ['beta-mail'], replied=self.replied)
 
     def test_the_run_is_told_to_reply_from_there_and_not_to_ask_for_a_move(self):
-        line = a.area_prompt(self.config, '["home-mail", "home-chat"]', [(1, 'acme-mail')])
+        line = machine_app_preparation.area_prompt(self.config, '["home-mail", "home-chat"]', [(1, 'acme-mail')])
         self.assertIn('goes from the mailbox that thread came in on (robin@acme.example), also one labeled Work', line)
         self.assertIn('never ask to move this to-do to Work for it', line)
-        self.assertNotIn('goes from the mailbox that thread', a.area_prompt(self.config, '["home-mail"]', [(1, 'home-mail')]))
-        self.assertNotIn('goes from the mailbox that thread', a.area_prompt(self.config, '["acme-mail"]', [(1, 'acme-mail')]))
+        self.assertNotIn('goes from the mailbox that thread', machine_app_preparation.area_prompt(self.config, '["home-mail"]', [(1, 'home-mail')]))
+        self.assertNotIn('goes from the mailbox that thread', machine_app_preparation.area_prompt(self.config, '["acme-mail"]', [(1, 'acme-mail')]))
 
 
 if __name__ == '__main__':

@@ -10,6 +10,7 @@ from pathlib import Path
 import assistant as a
 from machine.app.setup_card import SETUP_STEP_RE
 from machine.sources import scope_check
+import machine.main as machine_main
 
 ME = 'jules@moreaudesign.io'
 FRIENDS = ['ann@gmail.com', 'bo@outlook.com', 'cy@yahoo.com', 'di@icloud.com', 'ed@gmx.de', 'fi@hotmail.com']
@@ -20,7 +21,7 @@ class ScopeCheck(unittest.TestCase):
     def setUp(self):
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)
-        self.store = a.Store(Path(temp.name) / 'events.sqlite')
+        self.store = machine_main.Store(Path(temp.name) / 'events.sqlite')
         self.account = {'id': 'moreau-gmail', 'service': 'gmail', 'email': ME, 'boundary': 'work:Moreaudesign',
                         'boundary_by': 'owner', 'scope_check': True}
         self.config = {'accounts': [self.account]}
@@ -82,7 +83,7 @@ class ScopeCheck(unittest.TestCase):
     def test_the_setup_todo_shows_it_on_a_self_hosted_machine_too(self):
         self.sent(*FRIENDS)
         app = types.SimpleNamespace(store=self.store, config=self.config, team_domains=lambda: set())
-        hints = a.App.setup_hints_view(app)
+        hints = machine_main.App.setup_hints_view(app)
         self.assertEqual([h['id'] for h in hints], [scope_check.hint_id(self.account)])  # no manage_url: no other hints
 
 

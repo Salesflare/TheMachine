@@ -6,6 +6,9 @@ import tempfile
 import time
 import unittest
 from unittest import mock
+import fleet
+import machine.main as machine_main
+import sources
 
 spec = importlib.util.spec_from_file_location('assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 assistant = importlib.util.module_from_spec(spec)
@@ -64,7 +67,7 @@ class Removal(unittest.TestCase):
                        'credentials': {'intercom-acme': str(secret), 'api-token': str(self.dir / 'api-token')}}
         self.path = self.dir / 'config.json'
         self.path.write_text(json.dumps(self.config))
-        self.store = assistant.Store(self.db)
+        self.store = machine_main.Store(self.db)
         for account in ('acme-gmail', 'acme-intercom', 'personal-gmail'):
             self.store.commit_page(account, {'cursor': account}, [event(account, f'{account}-1', f'word{account.replace("-", "")} hello'),
                                                                   event(account, f'{account}-2', 'second')])
@@ -173,7 +176,7 @@ class Removal(unittest.TestCase):
                                    'credential': 'microsoft-alex-acme-com', 'boundary': 'work:Acme'})
         self.path.write_text(json.dumps(config))
         for email in ('alex@acme.com', 'alex@gmail.com'):
-            assistant.gog_token_path(config, {'email': email, 'client': 'mine'}).write_text('token')
+            sources.gog_token_path(config, {'email': email, 'client': 'mine'}).write_text('token')
         calls = []
         def run(command, **kwargs):
             calls.append(command)
@@ -182,8 +185,8 @@ class Removal(unittest.TestCase):
         result = work_removal.remove(self.path, ['acme.com'], ['Acme'], store=self.store, run=run)
         self.assertEqual(result['signins'], 2)
         self.assertEqual(calls, [['gog', 'auth', 'remove', 'alex@acme.com', '--client', 'mine', '--force', '--no-input']])
-        self.assertFalse(assistant.gog_token_path(config, {'email': 'alex@acme.com', 'client': 'mine'}).exists())
-        self.assertTrue(assistant.gog_token_path(config, {'email': 'alex@gmail.com', 'client': 'mine'}).exists())
+        self.assertFalse(sources.gog_token_path(config, {'email': 'alex@acme.com', 'client': 'mine'}).exists())
+        self.assertTrue(sources.gog_token_path(config, {'email': 'alex@gmail.com', 'client': 'mine'}).exists())
         self.assertFalse(token.exists())
         self.assertFalse(Path(str(token) + '.lock').exists())
         self.assertNotIn('microsoft-alex-acme-com', json.loads(self.path.read_text())['credentials'])
@@ -225,9 +228,9 @@ class FleetRound(unittest.TestCase):
     def make(self, relay):
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)
-        store = assistant.Store(Path(temp.name) / 'events.sqlite')
+        store = machine_main.Store(Path(temp.name) / 'events.sqlite')
         config = {'accounts': [], 'fleet': {'url': 'https://cp.example/api/fleet'}, 'credentials': {}}
-        return assistant.fleet.Fleet(store.connect, config, lambda: 'token', relay=relay)
+        return fleet.Fleet(store.connect, config, lambda: 'token', relay=relay)
 
     def test_does_each_request_and_reports_counts_also_outside_any_fleet(self):
         relay, asked = Relay(), []
@@ -244,7 +247,7 @@ class FleetRound(unittest.TestCase):
         self.assertEqual(relay.calls[-1][2]['result'], {'ok': False, 'error': 'ZeroDivisionError'})
 
     def test_an_older_network_or_no_fleet_is_quiet(self):
-        machine = self.make(Relay(error=assistant.fleet.Off()))
+        machine = self.make(Relay(error=fleet.Off()))
         machine.remove_work = lambda item: self.fail('nothing to do')
         self.assertEqual(machine.removals_round(clock=lambda: 0), [])
 

@@ -2,9 +2,13 @@ import importlib.util
 from pathlib import Path
 import tempfile, unittest
 from unittest.mock import patch
+import hashlib
+import machine.main as machine_main
+import machine.sources.whatsapp as machine_sources_whatsapp
+import sources
 spec = importlib.util.spec_from_file_location('assistant_wa_skip', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
-account = {'id': 'personal-whatsapp', 'identity_sha256': a.hashlib.sha256(b'123@s.whatsapp.net').hexdigest()}
+account = {'id': 'personal-whatsapp', 'identity_sha256': hashlib.sha256(b'123@s.whatsapp.net').hexdigest()}
 
 
 def message(**changes):  # synthetic rows only, shaped like wacli's `messages list`
@@ -16,15 +20,15 @@ def message(**changes):  # synthetic rows only, shaped like wacli's `messages li
 
 class WhatsAppOddRowsTests(unittest.TestCase):
     def setUp(self):
-        self.tmp = tempfile.TemporaryDirectory(); self.store = a.Store(Path(self.tmp.name) / 'a.sqlite')
+        self.tmp = tempfile.TemporaryDirectory(); self.store = machine_main.Store(Path(self.tmp.name) / 'a.sqlite')
 
     def tearDown(self):
         self.tmp.cleanup()
 
     def sync(self, rows):
-        src = a.WhatsApp({}, account)
+        src = machine_sources_whatsapp.WhatsApp({}, account)
         with patch.object(src, 'profile', return_value={}), patch.object(src, 'read', return_value={'messages': rows}):
-            return a.sync_whatsapp(self.store, {}, account, src)
+            return machine_sources_whatsapp.sync_whatsapp(self.store, {}, account, src)
 
     def test_odd_rows_are_skipped_and_counted_not_failing_the_source(self):
         odd = [message(ChatJID='120363000000000000@newsletter', MsgID='SYNTHETIC-CHANNEL', MediaType='image'),  # a Channel post
@@ -46,7 +50,7 @@ class WhatsAppOddRowsTests(unittest.TestCase):
         self.assertEqual(self.store.checkpoint(account['id'])['skipped_messages'], {'whatsapp_invalid_message': 1})
 
     def test_a_window_of_only_odd_rows_still_fails_visibly(self):
-        with self.assertRaises(a.SourceError) as caught:
+        with self.assertRaises(sources.SourceError) as caught:
             self.sync([message(ChatJID='1@newsletter', MsgID=f'SYNTHETIC-{n}') for n in range(10)])
         self.assertEqual(caught.exception.category, 'whatsapp_invalid_message')
         self.assertIsNone(self.store.checkpoint(account['id']))

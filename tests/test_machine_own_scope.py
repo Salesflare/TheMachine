@@ -6,6 +6,9 @@ import importlib.util
 import tempfile
 import unittest
 from pathlib import Path
+import json
+import machine.main as machine_main
+import machine.store.facts as machine_store_facts
 
 ROOT = Path(__file__).parent.parent
 spec = importlib.util.spec_from_file_location('machine_own_scope_assistant', ROOT / 'assistant.py')
@@ -20,14 +23,14 @@ ACCOUNTS = [{'id': 'gateway', 'service': 'gateway', 'boundary': 'owner:system'},
 class MachineOwnScope(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'e.sqlite')
+        self.store = machine_main.Store(Path(self.temp.name) / 'e.sqlite')
         self.store.accounts = ACCOUNTS
         self.store.config = {'accounts': ACCOUNTS}
 
     def add(self, sid, accounts, status='pending', area=None):
         with self.store.connect() as db:
             db.execute('INSERT INTO suggestions(id,dedupe_key,title,body,event_ids,account_ids,status,created_at,area) VALUES (?,?,?,?,?,?,?,?,?)',
-                       (sid, 'k-' + sid, 'A to-do', 'Its body.', '[]', a.json.dumps(accounts), status, '2026-11-10T09:00:00+00:00', area))
+                       (sid, 'k-' + sid, 'A to-do', 'Its body.', '[]', json.dumps(accounts), status, '2026-11-10T09:00:00+00:00', area))
 
     def scope(self, sid):
         with self.store.connect() as db:
@@ -42,7 +45,7 @@ class MachineOwnScope(unittest.TestCase):
         self.assertFalse(todo_areas.machine_own('[]', ACCOUNTS))
         self.assertFalse(todo_areas.machine_own('["gone"]', ACCOUNTS))
         # what sharing and the rest go by is unchanged
-        self.assertEqual(a.suggestion_scope('["gateway"]', ACCOUNTS), 'personal')
+        self.assertEqual(machine_store_facts.suggestion_scope('["gateway"]', ACCOUNTS), 'personal')
 
     def test_the_filter_shows_a_machine_alert_under_all_only(self):
         self.add('alert', ['gateway'])

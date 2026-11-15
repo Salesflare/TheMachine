@@ -3,6 +3,10 @@ from pathlib import Path
 import tempfile
 import time
 import unittest
+import machine.app.sync as machine_app_sync
+import machine.main as machine_main
+import machine.sources.slack as machine_sources_slack
+import sources
 
 spec = importlib.util.spec_from_file_location('assistant_slack_first', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
@@ -16,7 +20,7 @@ class FirstImport(unittest.TestCase):
 
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'events.sqlite')
+        self.store = machine_main.Store(Path(self.temp.name) / 'events.sqlite')
         self.account = {'id': 'slack', 'user_id': 'U1', 'service': 'slack', 'boundary': 'work:Example',
                         'email': 'me@example.com', 'slack_host': 'example.slack.com'}
         now = time.time()
@@ -55,15 +59,15 @@ class FirstImport(unittest.TestCase):
 
     def run_all(self, source):
         for _ in range(100):
-            if not a.sync_slack(self.store, {}, self.account, source)['more']:
+            if not machine_app_sync.sync_slack(self.store, {}, self.account, source)['more']:
                 return
         self.fail('first import did not finish')
 
     def test_order_follows_activity_and_reads_the_last_day_first(self):
         source, calls = self.source({'DA': [{'ts': f'{self.now - 3600:.6f}', 'text': 'Can you send the contract?', 'user': 'U2'}]})
-        a.sync_slack(self.store, {}, self.account, source)  # discovery
+        machine_app_sync.sync_slack(self.store, {}, self.account, source)  # discovery
         self.assertEqual(self.store.checkpoint('slack')['phase'], 'triage')
-        a.sync_slack(self.store, {}, self.account, source)  # one cheap look at every conversation
+        machine_app_sync.sync_slack(self.store, {}, self.account, source)  # one cheap look at every conversation
         self.assertEqual([m for m, _ in calls], ['users.conversations'] + ['conversations.info'] * 7)
         self.run_all(source)
         reads = [(p['channel'], float(p['oldest']), float(p['latest'])) for m, p in calls if m == 'conversations.history']
@@ -87,27 +91,27 @@ class FirstImport(unittest.TestCase):
 
     def test_card_shows_where_the_first_import_is(self):
         source, _ = self.source()
-        a.sync_slack(self.store, {}, self.account, source)
-        a.sync_slack(self.store, {}, self.account, source)
+        machine_app_sync.sync_slack(self.store, {}, self.account, source)
+        machine_app_sync.sync_slack(self.store, {}, self.account, source)
         progress = lambda: self.store.snapshot([self.account])['connectors'][0]['first_import']
         self.assertEqual(progress(), {'step': 'recent', 'done': 0, 'total': 2, 'quiet': 1})
-        a.sync_slack(self.store, {}, self.account, source)
+        machine_app_sync.sync_slack(self.store, {}, self.account, source)
         self.assertEqual(progress(), {'step': 'recent', 'done': 1, 'total': 2, 'quiet': 1})
-        a.sync_slack(self.store, {}, self.account, source)
+        machine_app_sync.sync_slack(self.store, {}, self.account, source)
         self.assertEqual(progress(), {'step': 'deepen', 'done': 0, 'total': 4, 'quiet': 1})
         self.run_all(source)
         self.assertIsNone(progress())
 
     def test_unavailable_conversation_is_marked_and_the_import_moves_on(self):
-        source, calls = self.source({'DA': a.SourceError('slack_not_in_channel:conversations.history')})
-        a.sync_slack(self.store, {}, self.account, source)
-        a.sync_slack(self.store, {}, self.account, source)
-        a.sync_slack(self.store, {}, self.account, source)  # one refused conversation is no failed sync
+        source, calls = self.source({'DA': sources.SourceError('slack_not_in_channel:conversations.history')})
+        machine_app_sync.sync_slack(self.store, {}, self.account, source)
+        machine_app_sync.sync_slack(self.store, {}, self.account, source)
+        machine_app_sync.sync_slack(self.store, {}, self.account, source)  # one refused conversation is no failed sync
         state = self.store.checkpoint('slack')
         refused = {c['id']: c for c in state['channels']}['DA']
         self.assertEqual(refused['error'], 'slack_not_in_channel')
         self.assertGreater(refused['due'], time.time() + 3000)  # and it rests, so the regular rounds don't start with it each time
-        a.sync_slack(self.store, {}, self.account, source)
+        machine_app_sync.sync_slack(self.store, {}, self.account, source)
         self.assertEqual(calls[-1][1]['channel'], 'CB')
         self.run_all(source)
         self.assertEqual(sum(c[0] == 'conversations.history' and c[1]['channel'] == 'DA' for c in calls), 1)
@@ -121,7 +125,7 @@ class FirstImport(unittest.TestCase):
                                          'after': f'{self.now - 90 * DAY:.6f}', 'next_discovery': 0}, [])
         self.conversations = [{'id': 'CA', 'name': 'aaa'}, {'id': 'DA', 'is_im': True, 'user': 'U2'}]
         source, calls = self.source()
-        a.sync_slack(self.store, {}, self.account, source)
+        machine_app_sync.sync_slack(self.store, {}, self.account, source)
         state = self.store.checkpoint('slack')
         self.assertEqual([m for m, _ in calls], ['users.conversations'])
         self.assertEqual([c['id'] for c in state['channels']], ['DA', 'CA'])
@@ -136,7 +140,7 @@ class FirstImport(unittest.TestCase):
         self.store.commit_page('slack', {'mode': 'bootstrap', 'phase': 'scan', 'channels': [done] + rest, 'index': 1,
                                          'after': f'{self.now - 7 * DAY:.6f}', 'next_discovery': self.now + DAY}, [])
         fake, calls = self.source()
-        class Live(a.Slack):  # the old order is only left on a real connection
+        class Live(machine_sources_slack.Slack):  # the old order is only left on a real connection
             def __init__(self): self.account = {'user_id': 'U1'}
             def profile(self): pass
             def get(self, method, params=None): return {} if method == 'users.info' else fake.get(method, params)

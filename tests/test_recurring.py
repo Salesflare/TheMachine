@@ -9,6 +9,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
+import machine.main as machine_main
 
 spec = importlib.util.spec_from_file_location('recurring_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
@@ -110,8 +111,8 @@ class Today:
 class Series(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'e.sqlite')
-        self.app = object.__new__(a.App); self.app.store = self.store
+        self.store = machine_main.Store(Path(self.temp.name) / 'e.sqlite')
+        self.app = object.__new__(machine_main.App); self.app.store = self.store
         self.app.config = {'accounts': [dict(x) for x in ACCOUNTS], 'timezone': 'Europe/Brussels'}
         Today.day = D(2026, 11, 2)
         patcher = patch.object(type(self.app), 'recurring_today', lambda self: Today.day)
@@ -312,7 +313,7 @@ class OldDatabase(unittest.TestCase):
     def test_a_database_from_before_recurring_to_dos_upgrades(self):
         with tempfile.TemporaryDirectory() as folder:
             path = Path(folder) / 'e.sqlite'
-            a.Store(path)
+            machine_main.Store(path)
             with sqlite3.connect(path) as db:  # the schema before this change: no recurring tables
                 db.executescript('DROP TABLE recurring_series; DROP TABLE recurring_cards; DROP TABLE recurring_offers;')
                 db.execute("INSERT INTO suggestions(id,dedupe_key,title,body,event_ids,account_ids,status,created_at) VALUES('old','k','Old one','','[]','[\"w\"]','pending','2026-10-01T00:00:00+00:00')")
@@ -320,7 +321,7 @@ class OldDatabase(unittest.TestCase):
                 db.row_factory = sqlite3.Row
                 r.annotate(db, cards, D(2026, 11, 2))  # before the upgrade: nothing, no error
                 self.assertEqual(r.offer_view(db), None)
-            store = a.Store(path)
+            store = machine_main.Store(path)
             with store.connect() as db:
                 self.assertEqual({x[0] for x in db.execute("SELECT name FROM sqlite_master WHERE name LIKE 'recurring_%' AND type='table'")},
                                  {'recurring_series', 'recurring_cards', 'recurring_offers'})

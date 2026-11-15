@@ -11,6 +11,7 @@ from unittest.mock import patch
 
 import assistant as a
 import next_actions as n
+import machine.app.card_actions as machine_app_card_actions
 
 HOME = 'owner@home.test'
 WORK = 'owner@work.test'
@@ -38,8 +39,8 @@ def draft(**extra):
 
 def save(value, rows, allowed=('home-gmail',)):
     """The review's save path: fill_reply and reply_to_newest, then validate with the to-do's emails."""
-    replied = a.replied_to(rows)
-    action = n.validate(a.reply_to_newest(rows, n.fill_reply(value, replied)), CONFIG, list(allowed), replied=replied)
+    replied = machine_app_card_actions.replied_to(rows)
+    action = n.validate(machine_app_card_actions.reply_to_newest(rows, n.fill_reply(value, replied)), CONFIG, list(allowed), replied=replied)
     if n.unlinked_reply(action):
         raise ValueError(n.unlinked_reply(action))
     return action

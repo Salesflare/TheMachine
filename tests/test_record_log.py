@@ -6,6 +6,7 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+import machine.main as machine_main
 
 spec = importlib.util.spec_from_file_location('record_log_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
@@ -17,7 +18,7 @@ SAM, KIM = 'email:sam@client.example', 'email:kim@client.example'
 class RecordLog(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'e.sqlite')
+        self.store = machine_main.Store(Path(self.temp.name) / 'e.sqlite')
         self.store.commit_page('w', {}, [{'account_id': 'w', 'source_id': 'm1', 'kind': 'gmail.message', 'occurred_at': '2026-11-02T09:00:00+00:00',
                                           'title': 'Renewal', 'body': 'Kim and I run ops here.', 'metadata': {'from': 'Sam Lee <sam@client.example>'},
                                           'deleted': False}])

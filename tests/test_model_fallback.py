@@ -12,6 +12,7 @@ from pathlib import Path
 
 import model_budget
 import model_fallback as f
+import machine.main as machine_main
 
 spec = importlib.util.spec_from_file_location('fallback_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
@@ -88,7 +89,7 @@ class App(unittest.TestCase):
         path = Path(self.tmp.name, 'openclaw.json')
         path.write_text(json.dumps({'agents': {'defaults': {'model': {'primary': 'openai/gpt-6.1-sol',
                                                                        'fallbacks': ['work-api/gpt-6.1-sol']}}}}))
-        self.app = object.__new__(a.App)
+        self.app = object.__new__(machine_main.App)
         self.app.config = {'openclaw_config': str(path), 'review_worker': {'enabled': True}}
         self.app.usage_limit = None
         self.checks = []

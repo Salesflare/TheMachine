@@ -8,6 +8,9 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+import i18n
+import machine.main as machine_main
+import machine.sources.gmail as machine_sources_gmail
 
 spec = importlib.util.spec_from_file_location('event_notes_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
@@ -58,15 +61,15 @@ class EventNotes(unittest.TestCase):
     def setUp(self):
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)
-        self.store = a.Store(Path(temp.name) / 'events.sqlite', protect=True)
-        self.app = object.__new__(a.App)
+        self.store = machine_main.Store(Path(temp.name) / 'events.sqlite', protect=True)
+        self.app = object.__new__(machine_main.App)
         self.app.store = self.store
         self.app.config = {'accounts': [HOME, JOB]}
         self.n = 0
 
     def mail(self, *things, day=1, account=HOME):
         self.n += 1
-        event = a.message_event(account, message(f'm{self.n}', *things, sent=dt.datetime(2026, 11, day, 9, 0, tzinfo=dt.timezone.utc)))
+        event = machine_sources_gmail.message_event(account, message(f'm{self.n}', *things, sent=dt.datetime(2026, 11, day, 9, 0, tzinfo=dt.timezone.utc)))
         self.store.commit_page(account['id'], None, [event], record_sync=False)
         with self.store.connect() as db:
             return db.execute('SELECT max(id) FROM events').fetchone()[0]
@@ -89,7 +92,7 @@ class EventNotes(unittest.TestCase):
                                                                       'At Example Arena, Antwerp, booking TK-5520, ticket 0042'])
         self.assertEqual({x['source']['from'] for x in concert['lines']}, {'Example Tickets'}, 'each line says who the tickets came from')
         # a plural entry: languages with more count forms (Russian) get them, and one reads "1 ticket"
-        self.assertEqual([a.i18n.t('{} tickets (to an event)', n, lang='en') for n in (1, 2)], ['1 ticket', '2 tickets'])
+        self.assertEqual([i18n.t('{} tickets (to an event)', n, lang='en') for n in (1, 2)], ['1 ticket', '2 tickets'])
         festival = events['Harbor Sound Festival']
         self.assertEqual([(x['at'], x['data']['until'], x['text']) for x in festival['lines']],
                          [('2027-07-09T12:00', '2027-07-11T23:00', 'At Harbor Park, Ghent, booking HS-77, ticket 0042')], 'one line, its date to the end')

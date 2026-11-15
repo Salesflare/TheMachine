@@ -13,6 +13,7 @@ import unittest
 from contextlib import closing
 from pathlib import Path
 from unittest.mock import patch
+import machine.main as machine_main
 
 spec = importlib.util.spec_from_file_location('imports_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
@@ -124,15 +125,15 @@ class Sorting(unittest.TestCase):
         self.jobs = [job_row(f'{i:08d}-job', f'Job {i}', f'Every day sum up thing number {i} for me from my mail.', cron('0 7 * * *'), order=i)
                      for i in range(1, 6)]
         openclaw(self.claw, self.jobs)
-        self.store = a.Store(Path(self.temp.name) / 'e.sqlite')
-        self.app = object.__new__(a.App); self.app.store = self.store
+        self.store = machine_main.Store(Path(self.temp.name) / 'e.sqlite')
+        self.app = object.__new__(machine_main.App); self.app.store = self.store
         self.app.config = {'accounts': [{'id': 'w', 'boundary': 'work:acme.example'}], 'timezone': 'Europe/Brussels',
                            'openclaw_state': str(self.claw)}
         self.now = T(2026, 11, 9, 6, 0)
         for name, value in (('routines_now', lambda s: self.now), ('background_pause', lambda s, **k: None),
                             ('background_spaced', lambda s: True), ('background_started', lambda s: None),
                             ('preparation_gateway', lambda s, request: self.gateway(request))):
-            p = patch.object(a.App, name, value); p.start(); self.addCleanup(p.stop)
+            p = patch.object(machine_main.App, name, value); p.start(); self.addCleanup(p.stop)
         self.sent, self.answer = [], {'start': {'status': 'admitted'}, 'status': {'status': 'pending'}}
 
     def gateway(self, request):
@@ -298,13 +299,13 @@ class Sorting(unittest.TestCase):
                 rt.finish(db, run, 'nothing' if day else 'ready', 'x', result='ok')
         self.assertTrue(self.app.routines_view()['routines'][0]['old_job'])
         calls = []
-        with patch.object(a.App, 'openclaw_job_off', lambda s, job: calls.append(job) or False):
+        with patch.object(machine_main.App, 'openclaw_job_off', lambda s, job: calls.append(job) or False):
             with self.assertRaisesRegex(ValueError, 'Couldn’t turn the old job off'):
                 self.act('routine_old_job', id=rid, choice='off')
         self.assertTrue(self.app.routines_view()['routines'][0]['old_job'])  # still asked
         with self.assertRaises(ValueError):
             self.act('routine_old_job', owner=False, id=rid, choice='off')
-        with patch.object(a.App, 'openclaw_job_off', lambda s, job: calls.append(job) or True):
+        with patch.object(machine_main.App, 'openclaw_job_off', lambda s, job: calls.append(job) or True):
             self.act('routine_old_job', id=rid, choice='off')
         self.assertEqual(calls, ['00000001-job', '00000001-job'])
         self.assertFalse(self.app.routines_view()['routines'][0]['old_job'])  # asked once
@@ -313,7 +314,7 @@ class Sorting(unittest.TestCase):
         self.answer_run(kind='routine', name='Thing one', instructions='Sum up thing one', text='Something')
         rid = self.app.routines_view()['suggested'][0]['id']
         self.act('routine_accept', id=rid)
-        with patch.object(a.App, 'openclaw_job_off', lambda s, job: self.fail('touched OpenClaw')):
+        with patch.object(machine_main.App, 'openclaw_job_off', lambda s, job: self.fail('touched OpenClaw')):
             self.act('routine_old_job', id=rid, choice='keep')
         with self.store.connect() as db:
             self.assertEqual(db.execute('SELECT old_job FROM routines WHERE id=?', (rid,)).fetchone()[0], 'kept')

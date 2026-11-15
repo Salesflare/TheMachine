@@ -13,6 +13,11 @@ from unittest.mock import patch
 
 import message_seal
 import whatsapp_images as w
+import machine.actions as machine_actions
+import machine.main as machine_main
+import machine.sources.whatsapp as machine_sources_whatsapp
+import sources
+import timeutil
 
 spec = importlib.util.spec_from_file_location('assistant_wa_images', Path(__file__).parent.parent / 'assistant.py')
 a = importlib.util.module_from_spec(spec)
@@ -47,7 +52,7 @@ class Source:
     def download(self, chat, mid, target):
         self.calls.append((chat, mid))
         if self.fail:
-            raise a.SourceError('whatsapp_media_unavailable')
+            raise sources.SourceError('whatsapp_media_unavailable')
         Path(target).write_bytes(self.data)
         return {'path': str(target), 'bytes': len(self.data), 'mime_type': 'image/png'}
 
@@ -58,20 +63,20 @@ class PhotoTests(unittest.TestCase):
         self.addCleanup(self.tmp.cleanup)
         base = Path(self.tmp.name)
         self.config = {'database': str(base / 'data/events.sqlite'), 'open_attachment_dir': str(base / 'open'), 'accounts': [WORK, HOME]}
-        self.store = a.Store(self.config['database'], protect=True)
+        self.store = machine_main.Store(self.config['database'], protect=True)
         self.source = Source()
 
     def app(self):
-        app = object.__new__(a.App)
+        app = object.__new__(machine_main.App)
         app.store, app.config, app.stop = self.store, self.config, threading.Event()
         app.background_pause = lambda **kw: None
         app.whatsapp_source = lambda account: self.source
         return app
 
     def sync(self, account, *rows):
-        events = [a.whatsapp_event(account, r) for r in rows]
+        events = [machine_sources_whatsapp.whatsapp_event(account, r) for r in rows]
         with self.store.connect() as db:
-            events = w.note(db, account, events, {e['source_id']: r for e, r in zip(events, rows)}, a.now())
+            events = w.note(db, account, events, {e['source_id']: r for e, r in zip(events, rows)}, timeutil.now())
         self.store.commit_page(account['id'], None, events, record_sync=False)
         return events
 
@@ -102,8 +107,8 @@ class PhotoTests(unittest.TestCase):
             self.app().action('whatsapp_photos', {'account': shared['id'], 'read': True}, owner_dashboard=True)
         view = self.app().action('whatsapp_photos', {'account': WORK['id'], 'read': False, 'personal': True}, owner_dashboard=True)
         self.assertEqual((view['read'], view['personal']), (False, False))  # personal only together with read
-        self.assertIn('whatsapp_photos', a.OWNER_ACTIONS)
-        self.assertIn('whatsapp_photos', a.DASHBOARD_ACTIONS)
+        self.assertIn('whatsapp_photos', machine_actions.OWNER_ACTIONS)
+        self.assertIn('whatsapp_photos', machine_actions.DASHBOARD_ACTIONS)
 
     def test_work_chats_only_unless_personal_chats_are_on_too(self):
         self.turn_on(WORK)
@@ -252,7 +257,7 @@ class PhotoTests(unittest.TestCase):
     def test_a_photo_noted_just_now_waits_for_its_message(self):
         with self.store.connect() as db:
             db.execute("INSERT INTO whatsapp_photos(id,account_id,source_id,chat_id,message_id,status,created_at,updated_at) "
-                       "VALUES('wp_00000000000000000001',?,'not-yet','c','m','waiting',?,?)", (WORK['id'], a.now(), a.now()))
+                       "VALUES('wp_00000000000000000001',?,'not-yet','c','m','waiting',?,?)", (WORK['id'], timeutil.now(), timeutil.now()))
             self.assertEqual(w.sweep(db, self.config, [WORK['id']], '2000-01-01'), 0)
             self.assertEqual(w.sweep(db, self.config, [WORK['id']], '9999'), 1)
 
@@ -265,23 +270,23 @@ class PhotoTests(unittest.TestCase):
 
 class DownloadTests(unittest.TestCase):
     def test_the_download_is_read_only_and_checks_what_wacli_says(self):
-        source = a.WhatsApp({'wacli': 'wacli'}, WORK)
+        source = machine_sources_whatsapp.WhatsApp({'wacli': 'wacli'}, WORK)
         target = Path('/tmp/made-up/photo')
         said = {'success': True, 'error': None, 'data': {'path': str(target), 'bytes': 10, 'mime_type': 'image/jpeg'}}
-        with patch.object(a.subprocess, 'run', return_value=subprocess.CompletedProcess([], 0, json.dumps(said), '')) as run:
+        with patch.object(subprocess, 'run', return_value=subprocess.CompletedProcess([], 0, json.dumps(said), '')) as run:
             self.assertEqual(source.download(CHAT, 'PHOTO-1', target)['bytes'], 10)
         command, env = run.call_args[0][0], run.call_args[1]['env']
         self.assertEqual(command[command.index('--store') + 1:command.index('--store') + 3], [WORK['store'], '--read-only'])
         self.assertEqual(command[command.index('media'):], ['media', 'download', '--chat', CHAT, '--id', 'PHOTO-1', '--output', str(target)])
         self.assertEqual(env['WACLI_READONLY'], '1')
         for chat, mid in (('not-a-chat', 'PHOTO-1'), (CHAT, '--output=/etc/passwd x'), (CHAT, '')):
-            with self.assertRaises(a.SourceError):
+            with self.assertRaises(sources.SourceError):
                 source.download(chat, mid, target)
         elsewhere = {**said, 'data': {**said['data'], 'path': '/tmp/elsewhere'}}
-        with patch.object(a.subprocess, 'run', return_value=subprocess.CompletedProcess([], 0, json.dumps(elsewhere), '')), \
-                self.assertRaises(a.SourceError):
+        with patch.object(subprocess, 'run', return_value=subprocess.CompletedProcess([], 0, json.dumps(elsewhere), '')), \
+                self.assertRaises(sources.SourceError):
             source.download(CHAT, 'PHOTO-1', target)
-        with patch.object(a.subprocess, 'run', return_value=subprocess.CompletedProcess([], 1, '', 'not found')), self.assertRaises(a.SourceError):
+        with patch.object(subprocess, 'run', return_value=subprocess.CompletedProcess([], 1, '', 'not found')), self.assertRaises(sources.SourceError):
             source.download(CHAT, 'PHOTO-1', target)
 
     def test_the_answer_is_parsed_and_kept_short(self):

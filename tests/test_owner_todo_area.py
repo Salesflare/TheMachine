@@ -10,6 +10,13 @@ import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
+import machine.app.preparation as machine_app_preparation
+import machine.main as machine_main
+import machine.sources.gmail as machine_sources_gmail
+import machine.store.decisions as machine_store_decisions
+import machine.store.review as machine_store_review
+import sources
+import todo_areas
 
 ROOT = Path(__file__).parent.parent
 spec = importlib.util.spec_from_file_location('owner_area_assistant', ROOT / 'assistant.py')
@@ -42,9 +49,9 @@ class Base(unittest.TestCase):
 
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'e.sqlite')
+        self.store = machine_main.Store(Path(self.temp.name) / 'e.sqlite')
         self.store.accounts = [dict(x) for x in self.accounts]
-        self.app = object.__new__(a.App); self.app.store = self.store
+        self.app = object.__new__(machine_main.App); self.app.store = self.store
         self.app.config = {'accounts': self.store.accounts, 'prepare_ahead': False, 'database': str(Path(self.temp.name) / 'e.sqlite')}
         self.store.config = self.app.config
 
@@ -82,7 +89,7 @@ class OnlyWork(Base):
         self.assertEqual((card['scope'], card['area']), ('work', 'work:Acme'))
         self.assertNotIn('area_open', json.loads(self.owner_event(made)['metadata']))
         # Its run reads and sends from the Acme mailbox; there is no other area to ask for
-        self.assertEqual(a.area_prompt(self.app.config, card['account_ids']), '')
+        self.assertEqual(machine_app_preparation.area_prompt(self.app.config, card['account_ids']), '')
 
 
 class BothAreas(Base):
@@ -111,17 +118,17 @@ class BothAreas(Base):
             self.assertEqual(team_learnings.personal_cards(db, [made['id']], self.store.accounts), {made['id']})
         event = self.owner_event(made)
         self.assertEqual(json.loads(event['metadata'])['area_open'], ['personal', 'work:Acme'])
-        rule = a.review_view(event)['owner_card']['rule']
+        rule = machine_store_review.review_view(event)['owner_card']['rule']
         self.assertIn('company=<work:Acme>', rule)
         self.assertIn('mailbox:true', rule)  # and to look the message up in the mailboxes when nothing collected matches
         with self.store.connect() as db:
-            self.assertEqual(a.owner_area_open(db, made['id']), ['personal', 'work:Acme'])
+            self.assertEqual(machine_store_decisions.owner_area_open(db, made['id']), ['personal', 'work:Acme'])
         # The review says it is the owner's own life: Personal, with that area's accounts, and placed for good
         self.fill(made['id'], [made['event_id']], personal=True)
         card = self.card(made['id'])
         self.assertEqual((json.loads(card['account_ids']), self.row(made['id'])['area'], card['scope']), (['home-mail'], 'personal', 'personal'))
         with self.store.connect() as db:
-            self.assertEqual(a.owner_area_open(db, made['id']), [])
+            self.assertEqual(machine_store_decisions.owner_area_open(db, made['id']), [])
 
     def test_placed_by_the_review_as_work_it_says_work(self):
         made = self.new()
@@ -147,7 +154,7 @@ class BothAreas(Base):
         made = self.new(scope='personal')
         self.assertNotIn('area_open', json.loads(self.owner_event(made)['metadata']))
         with self.store.connect() as db:
-            self.assertEqual(a.owner_area_open(db, made['id']), [])
+            self.assertEqual(machine_store_decisions.owner_area_open(db, made['id']), [])
 
     def test_its_words_place_it_a_company_or_a_mailbox_they_name(self):
         for text, area in (('Search the Acme inbox for the pilot mail', 'work:Acme'),
@@ -174,7 +181,7 @@ class BothAreas(Base):
         made = self.new()
         self.assertEqual(json.loads(self.card(made['id'])['account_ids']), ['home-mail'])  # most of theirs are Personal
         self.assertEqual(json.loads(self.owner_event(made)['metadata'])['area_open'], ['personal', 'work:Acme'])  # the review still places it
-        self.assertIsNone(a.todo_areas.most_used([('["home-mail"]', None), ('["acme-mail"]', None)], self.accounts))  # a tie: no pick
+        self.assertIsNone(todo_areas.most_used([('["home-mail"]', None), ('["acme-mail"]', None)], self.accounts))  # a tie: no pick
 
     def blocked(self, sid, move_to):
         self.store.decide(sid, 'accept', '', 'click-' + sid, 'dashboard')
@@ -188,7 +195,7 @@ class BothAreas(Base):
         with self.store.connect() as db:  # it started on the Personal side
             db.execute('UPDATE suggestions SET account_ids=? WHERE id=?', ('["home-mail"]', made['id']))
         card = self.card(made['id'])
-        prompt = a.area_prompt(self.app.config, card['account_ids'], unplaced=True)
+        prompt = machine_app_preparation.area_prompt(self.app.config, card['account_ids'], unplaced=True)
         self.assertIn('moves there by itself', prompt)
         self.assertIn('mailbox:true', prompt)
         said = self.blocked(made['id'], 'work:Acme')
@@ -221,7 +228,7 @@ class MailboxSearch(Base):
 
     def test_older_mail_is_found_in_the_mailbox_and_kept_as_reviewed_context(self):
         calls = []
-        with patch.object(a.Gmail, 'get', autospec=True, side_effect=self.fake(['m-old'], calls)):
+        with patch.object(machine_sources_gmail.Gmail, 'get', autospec=True, side_effect=self.fake(['m-old'], calls)):
             found = self.app.action('events', {'account_ids': ['acme-mail', 'acme-calendar', 'gateway'], 'mailbox': True,
                                                'query': 'to:sam@prospect.example subject:pricing in:sent'})
         self.assertEqual(calls[1], ('acme-mail', 'messages', {'q': 'to:sam@prospect.example subject:pricing in:sent', 'maxResults': 5}))
@@ -232,7 +239,7 @@ class MailboxSearch(Base):
             self.assertIsNone(db.execute('SELECT 1 FROM checkpoints WHERE account_id=?', ('acme-mail',)).fetchone())  # no cursor moved
         self.assertEqual((row['account_id'], row['analyzed_version'], row['version']), ('acme-mail', 1, 1))  # context, never a review signal
         # The same search again keeps one copy
-        with patch.object(a.Gmail, 'get', autospec=True, side_effect=self.fake(['m-old'], [])):
+        with patch.object(machine_sources_gmail.Gmail, 'get', autospec=True, side_effect=self.fake(['m-old'], [])):
             again = self.app.action('events', {'account_ids': ['acme-mail'], 'mailbox': True, 'query': 'pricing'})
         self.assertEqual([e['id'] for e in again['events']], [row['id']])
         with self.store.connect() as db:
@@ -242,8 +249,8 @@ class MailboxSearch(Base):
         self.store.accounts.append({'id': 'team-mail', 'service': 'gmail', 'transport': 'broker', 'email': 'team@acme.example',
                                     'boundary': 'work:Acme', 'shared': True})
         def get(source, resource, params=None):
-            raise a.SourceError('google_signin_expired', 401)
-        with patch.object(a.Gmail, 'get', autospec=True, side_effect=get) as called:
+            raise sources.SourceError('google_signin_expired', 401)
+        with patch.object(machine_sources_gmail.Gmail, 'get', autospec=True, side_effect=get) as called:
             found = self.app.action('events', {'account_ids': ['all'], 'mailbox': True, 'query': 'pricing'})
         self.assertEqual(found['mailbox_errors'], {'acme-mail': 'google_signin_expired', 'home-mail': 'google_signin_expired'})
         self.assertNotIn('team-mail', {c.args[0].account['id'] for c in called.call_args_list})

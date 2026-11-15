@@ -2,6 +2,10 @@ import importlib.util
 import tempfile
 import unittest
 from pathlib import Path
+import machine.actions as machine_actions
+import machine.main as machine_main
+import machine.store.first_look as machine_store_first_look
+import timeutil
 
 spec = importlib.util.spec_from_file_location('first_tips_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec)
@@ -14,8 +18,8 @@ class FirstTips(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'events.sqlite')
-        self.store.commit_page('work', {}, [{'account_id': 'work', 'source_id': 'one', 'kind': 'gmail.message', 'occurred_at': a.now(),
+        self.store = machine_main.Store(Path(self.temp.name) / 'events.sqlite')
+        self.store.commit_page('work', {}, [{'account_id': 'work', 'source_id': 'one', 'kind': 'gmail.message', 'occurred_at': timeutil.now(),
                                              'title': 'Evidence', 'body': 'Body', 'metadata': {}, 'deleted': False}])
         self.n = 0
 
@@ -24,7 +28,7 @@ class FirstTips(unittest.TestCase):
         sid = self.store.suggest('task', f'Task {self.n}', 'I can draft this.', [1])['id']
         with self.store.connect() as db:
             db.execute('INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)',
-                       (f'd{self.n}', sid, choice, '', source, a.now()))
+                       (f'd{self.n}', sid, choice, '', source, timeutil.now()))
 
     def test_a_new_person_gets_both_until_each_button_is_used(self):
         self.assertEqual(self.store.first_tips(), ['change', 'send'])
@@ -51,17 +55,17 @@ class FirstTips(unittest.TestCase):
 
     def test_tips_stop_after_the_first_to_dos(self):
         self.store.first_tips()
-        for _ in range(a.FIRST_TIPS_UNTIL - 1):
+        for _ in range(machine_store_first_look.FIRST_TIPS_UNTIL - 1):
             self.decide('snooze')
         self.assertEqual(self.store.first_tips(), ['change', 'send'])
         self.decide('complete')
         self.assertEqual(self.store.first_tips(), [])
 
     def test_only_the_owner_closes_a_tip_on_the_dashboard(self):
-        app = object.__new__(a.App)
+        app = object.__new__(machine_main.App)
         app.store, app.config = self.store, {'accounts': []}
-        self.assertIn('tip_done', a.DASHBOARD_ACTIONS)
-        self.assertIn('tip_done', a.OWNER_ACTIONS)
+        self.assertIn('tip_done', machine_actions.DASHBOARD_ACTIONS)
+        self.assertIn('tip_done', machine_actions.OWNER_ACTIONS)
         with self.assertRaises(ValueError):
             app.action('tip_done', {'tip': 'change'})
         self.assertEqual(app.action('tip_done', {'tip': 'change'}, owner_dashboard=True)['first_tips'], ['send'])

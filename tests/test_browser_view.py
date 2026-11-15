@@ -7,6 +7,14 @@ import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
+import browser_login
+import browser_viewer
+import datetime as dt
+import machine.browser as machine_browser
+import machine.cards as machine_cards
+import machine.delivery.deliver as machine_delivery_deliver
+import machine.main as machine_main
+import timeutil
 
 spec = importlib.util.spec_from_file_location('view_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec)
@@ -28,11 +36,11 @@ class Fixture(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'events.sqlite')
-        self.store.commit_page('work', {}, [{'account_id': 'work', 'source_id': 'one', 'kind': 'gmail.message', 'occurred_at': a.now(),
+        self.store = machine_main.Store(Path(self.temp.name) / 'events.sqlite')
+        self.store.commit_page('work', {}, [{'account_id': 'work', 'source_id': 'one', 'kind': 'gmail.message', 'occurred_at': timeutil.now(),
                                              'title': 'Evidence', 'body': 'Your quarterly report is waiting', 'metadata': {}, 'deleted': False}])
         self.sid = self.store.suggest('task', 'Get the quarterly report ready', 'I can fill it in.', [1])['id']
-        self.app = object.__new__(a.App)
+        self.app = object.__new__(machine_main.App)
         self.app.store = self.store
         self.app.config = {'accounts': [], 'database': str(Path(self.temp.name) / 'events.sqlite'), 'dashboard_host': 'machine.example',
                            'browser_cdp_url': 'http://127.0.0.1:18800', 'browser_url': 'https://app.example/open?to=browser'}
@@ -48,7 +56,7 @@ class Fixture(unittest.TestCase):
                 raise OSError('connection refused')
             assert (base, path) == ('http://127.0.0.1:18800', '/json/list')
             return self.tabs
-        patcher = patch.object(a.browser_login.browser_cdp, '_http', side_effect=listed)
+        patcher = patch.object(browser_login.browser_cdp, '_http', side_effect=listed)
         patcher.start()
         self.addCleanup(patcher.stop)
 
@@ -61,7 +69,7 @@ class Fixture(unittest.TestCase):
             for i, (tool, params, result) in enumerate(calls):
                 db.execute('INSERT INTO preparation_calls(job_id,call_id,tool,params,result,started_at) VALUES(?,?,?,?,?,?)',
                            (self.job(), str(i), tool, json.dumps(params), result,
-                            a.dt.datetime(2026, 10, 22, 8, 11, i, tzinfo=a.dt.timezone.utc).isoformat()))
+                            dt.datetime(2026, 10, 22, 8, 11, i, tzinfo=dt.timezone.utc).isoformat()))
 
     def fill_in(self):
         # The run as it goes: opens the portal, types and clicks in that tab (the last answer says where the tab is now).
@@ -77,7 +85,7 @@ class Fixture(unittest.TestCase):
     def row(self):
         self.store.__dict__.pop('tab_look', None)  # a fresh look at the tabs
         with self.store.connect() as db:
-            row = dict(db.execute(a.EDIT_ROWS + ' AND s.id=?', (self.sid,)).fetchone())
+            row = dict(db.execute(machine_delivery_deliver.EDIT_ROWS + ' AND s.id=?', (self.sid,)).fetchone())
             row.update(self.store.suggestion_result(row, db))
         return row
 
@@ -91,7 +99,7 @@ class BrowserView(Fixture):
         self.assertEqual(row['browser_view'], {'label': 'View in browser', 'site': 'portal.example.org'})
         self.assertEqual(row['next_actions'], [{'kind': 'open', 'label': 'View in browser', 'url': link, 'browser': True, 'site': 'portal.example.org', 'revision': 'browser-view'}])
         # Telegram gets the same: the dashboard's address, which opens the page in the Machine's browser
-        buttons = [b for block in a.controls(row)['blocks'] for b in block['buttons']]
+        buttons = [b for block in machine_cards.controls(row)['blocks'] for b in block['buttons']]
         self.assertIn({'label': 'View in browser', 'action': {'type': 'url', 'url': link}}, buttons)
         # The card never carries the page's address or its session
         self.assertNotIn('s3cr3t', json.dumps(row))
@@ -100,7 +108,7 @@ class BrowserView(Fixture):
         self.assertEqual(self.status(row), 'Ready for you to check and submit.')
 
     def status(self, row):
-        return next(line for line in a.card(row).split('\n') if line.startswith(('Ready', 'Finished', 'Needs')))
+        return next(line for line in machine_cards.card(row).split('\n') if line.startswith(('Ready', 'Finished', 'Needs')))
 
     def test_a_tab_the_run_closed_gets_no_view_in_browser(self):
         # The run read and clicked on the page, then closed its own tab: nothing to view there any more
@@ -114,7 +122,7 @@ class BrowserView(Fixture):
         self.assertNotIn('browser_open', row)
         (link,) = row['next_actions']
         self.assertEqual((link['url'], link.get('browser')), (PAGE, None))  # a plain link again
-        self.assertNotIn('View in browser', json.dumps(a.controls(row)))
+        self.assertNotIn('View in browser', json.dumps(machine_cards.controls(row)))
 
     def test_view_in_browser_goes_when_the_tab_does(self):
         self.fill_in()
@@ -133,15 +141,15 @@ class BrowserView(Fixture):
         self.save(outcome='your_step', step='submit')
         self.row()
         with self.store.connect() as db:
-            row = dict(db.execute(a.EDIT_ROWS + ' AND s.id=?', (self.sid,)).fetchone())
+            row = dict(db.execute(machine_delivery_deliver.EDIT_ROWS + ' AND s.id=?', (self.sid,)).fetchone())
             for _ in range(3):
                 self.store.suggestion_result(row, db)
-        self.assertEqual(a.browser_login.browser_cdp._http.call_count, 1)
+        self.assertEqual(browser_login.browser_cdp._http.call_count, 1)
 
     def test_task_page_follows_the_tab_the_run_used(self):
         self.fill_in()
         with self.store.connect() as db:
-            page = a.task_page(db, self.sid)
+            page = machine_browser.task_page(db, self.sid)
         self.assertEqual(page, {'url': PAGE + '?session=s3cr3t&tab=2', 'target': TAB, 'port': 18800, 'title': None, 'worked': True})
 
     def test_only_reading_pages_gets_no_link_of_its_own(self):
@@ -179,9 +187,9 @@ class BrowserView(Fixture):
             self.save(outcome='your_step', step='delete everything')
 
     def show(self, tabs):
-        with patch.object(a.App, 'signin_tabs', return_value=tabs), \
-                patch.object(a.browser_login.browser_cdp, 'open_tab', return_value='NEWTAB') as open_tab, \
-                patch.object(a.browser_viewer, 'focus', return_value='https://x') as focus:
+        with patch.object(machine_main.App, 'signin_tabs', return_value=tabs), \
+                patch.object(browser_login.browser_cdp, 'open_tab', return_value='NEWTAB') as open_tab, \
+                patch.object(browser_viewer, 'focus', return_value='https://x') as focus:
             shown = self.app.action('browser_show', {'suggestion_id': self.sid}, owner_dashboard=True)
         return shown, open_tab, focus
 
@@ -214,8 +222,8 @@ class OpenTheBrowser(Fixture):
 
     def front(self, tabs):
         self.tabs = [{**t, 'type': 'page'} for t in tabs]
-        with patch.object(a.browser_login.browser_cdp, 'open_tab', return_value='NEWTAB') as open_tab, \
-                patch.object(a.browser_viewer, 'focus', return_value='https://x') as focus:
+        with patch.object(browser_login.browser_cdp, 'open_tab', return_value='NEWTAB') as open_tab, \
+                patch.object(browser_viewer, 'focus', return_value='https://x') as focus:
             shown = self.app.action('browser_focus', {'suggestion_id': self.sid}, owner_dashboard=True)
         return shown, open_tab, focus
 
@@ -247,11 +255,11 @@ class OpenTheBrowser(Fixture):
 
 class SafeLink(unittest.TestCase):
     def test_tokens_and_sessions_are_dropped(self):
-        self.assertEqual(a.safe_link('https://user:pw@example.com/a?id=7&access_token=x&sessionid=y&sig=z&code=1#t=2'), 'https://example.com/a?id=7')
-        self.assertEqual(a.safe_link('https://example.com/a#section'), 'https://example.com/a#section')
-        self.assertEqual(a.safe_link('http://example.com:8080/a?X-Amz-Signature=1&page=2'), 'http://example.com:8080/a?page=2')
+        self.assertEqual(machine_browser.safe_link('https://user:pw@example.com/a?id=7&access_token=x&sessionid=y&sig=z&code=1#t=2'), 'https://example.com/a?id=7')
+        self.assertEqual(machine_browser.safe_link('https://example.com/a#section'), 'https://example.com/a#section')
+        self.assertEqual(machine_browser.safe_link('http://example.com:8080/a?X-Amz-Signature=1&page=2'), 'http://example.com:8080/a?page=2')
         for bad in ('javascript:alert(1)', 'file:///etc/passwd', 'ftp://example.com/', '', None):
-            self.assertIsNone(a.safe_link(bad))
+            self.assertIsNone(machine_browser.safe_link(bad))
 
 
 if __name__ == '__main__':

@@ -7,6 +7,7 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+import machine.main as machine_main
 
 spec = importlib.util.spec_from_file_location('message_attach_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
@@ -33,9 +34,9 @@ def slack(ts, text, user, when, display=None):
 class MessageChip(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'e.sqlite')
+        self.store = machine_main.Store(Path(self.temp.name) / 'e.sqlite')
         self.store.owner_user_ids = {'U0OWNER001'}
-        self.app = object.__new__(a.App); self.app.store = self.store
+        self.app = object.__new__(machine_main.App); self.app.store = self.store
         self.app.config = {'accounts': [dict(x) for x in ACCOUNTS], 'prepare_ahead': False}
         self.store.accounts = self.app.config['accounts']
         self.store.commit_page('w', {}, [
