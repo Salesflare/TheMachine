@@ -100,12 +100,22 @@ const localCache=(()=>{const DB='tm-cache',MAX_AGE=7*864e5,MAX_BYTES=8e6,MAX_ITE
 // A screen's last data: on the first look this page, what the device kept (at once) while the live answer loads, then
 // `fresh` once it is in; later, live first and the kept copy only while the Machine can't be reached.
 const liveSeen=new Set(),liveNext=new Map();
-async function cachedGet(path,fresh){if(!localCache.on)return request(path);
+// delta: the path answers ?since=<its last _token> with only what changed (machine/web/status_delta.py), see deltaGet
+async function cachedGet(path,fresh,delta){const get=delta?deltaGet:request;if(!localCache.on)return get(path);
  if(liveNext.has(path)){const v=liveNext.get(path);liveNext.delete(path);return v}
  if(!liveSeen.has(path)){liveSeen.add(path);const hit=await localCache.read('get:'+path);
-  if(hit){request(path).then(v=>{localCache.put('get:'+path,v);if(JSON.stringify(v)===JSON.stringify(hit.value))return;liveNext.set(path,v);fresh?.()},e=>{if(e.offline)staleMark(hit.at)});return hit.value}}
- try{const v=await request(path,{restartWait:false});localCache.put('get:'+path,v);return v}
- catch(e){if(e.offline){const hit=await localCache.read('get:'+path);if(hit){staleMark(hit.at);return hit.value}if(e.restarting){const v=await request(path);localCache.put('get:'+path,v);return v}}throw e}}  // nothing kept: wait for the restart
+  if(hit){get(path).then(v=>{localCache.put('get:'+path,v);if(JSON.stringify(v)===JSON.stringify(hit.value))return;liveNext.set(path,v);fresh?.()},e=>{if(e.offline)staleMark(hit.at)});return hit.value}}
+ try{const v=await get(path,{restartWait:false});localCache.put('get:'+path,v);return v}
+ catch(e){if(e.offline){const hit=await localCache.read('get:'+path);if(hit){staleMark(hit.at);return hit.value}if(e.restarting){const v=await get(path);localCache.put('get:'+path,v);return v}}throw e}}  // nothing kept: wait for the restart
+// A GET whose answer comes as the changes since the one this page holds (its _token sent back as ?since=), put together
+// again (deltaJoin): the Graph tab's overview, asked on each visit and mostly the same. The answer held stays as the
+// server sent it; each caller gets its own copy, without the token. One that doesn't fit is asked again whole.
+const deltaHeld=new Map();
+async function deltaGet(path,opt){const held=deltaHeld.get(path);
+ let out=await request(held?path+(path.includes('?')?'&':'?')+'since='+encodeURIComponent(held._token):path,opt);
+ if(out._since)out=deltaJoin(held,out)||await request(path,opt);
+ if(out._token)deltaHeld.set(path,out);else deltaHeld.delete(path);
+ const v=JSON.parse(JSON.stringify(out));delete v._token;return v}
 const hhmm=t=>fmtHM(t);
 // What the screen shows is older than now: "Offline · updated 10:42", quietly at the foot of the sidebar
 // (said only once it is really offline, netOut: one failed read on opening the app is not)

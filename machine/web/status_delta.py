@@ -15,6 +15,9 @@ import threading
 KEEP = 32  # tokens kept: a few pages on a few devices, each asking again with its last one
 
 _SEEN = collections.OrderedDict()  # token -> {part: digest | (digest, {row id: digest})}
+# The Graph tab's overview (api/graph, handler.get_api_graph): some 600 KB on a big Graph, asked again on each visit to
+# the tab, and mostly the same. Its tokens are kept apart, so the status's polls never push them out.
+GRAPH = collections.OrderedDict()
 _LOCK = threading.Lock()
 
 
@@ -44,16 +47,18 @@ def digests(status):
     return out
 
 
-def changes(status, since=None):
+def changes(status, since=None, seen=None):
     """The answer for a page holding the answer of token `since`: all of it with a new `_token` when `since` is
-    unknown, else `_since` and only what changed (`_gone`: parts no longer there)."""
+    unknown, else `_since` and only what changed (`_gone`: parts no longer there). seen: where the tokens are kept
+    (_SEEN, the status's, unless given: GRAPH)."""
+    seen = _SEEN if seen is None else seen
     now = digests(status)
     token = secrets.token_urlsafe(9)
     with _LOCK:
-        before = _SEEN.get(since) if since else None
-        _SEEN[token] = now
-        while len(_SEEN) > KEEP:
-            _SEEN.popitem(last=False)
+        before = seen.get(since) if since else None
+        seen[token] = now
+        while len(seen) > KEEP:
+            seen.popitem(last=False)
     if before is None:
         return {**status, '_token': token}
     out = {'_token': token, '_since': since}

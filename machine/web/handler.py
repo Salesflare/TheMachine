@@ -799,7 +799,8 @@ def make_handler(app):
                             except (sqlite3.Error, ValueError, KeyError, TypeError):
                                 pass
                     found['owners'] = app.owner_choices()  # who can own a record: the Work Fleet
-                    self.output(200, found)
+                    # The Graph tab sends its last token back (?since=, graph-tabs.js): only what changed comes
+                    self.output(200, status_delta.changes(found, params.get('since', [''])[0], status_delta.GRAPH))
             except (ValueError, sqlite3.OperationalError):
                 self.output(404, {'error': 'Not in the graph'})
 
@@ -847,10 +848,22 @@ def make_handler(app):
             if not found:
                 self.output(404, {'error': 'Not available'})
                 return
+            # A photo keeps its address when it changes (a new one found, the owner's own): the browser shows the one it
+            # has at once for a month, and after an hour asks again on the side (stale-while-revalidate), which costs a
+            # 304 while it is the same. So a changed photo shows by the next look after that, never a day later.
+            etag = '"' + hashlib.blake2b(found[1].encode() + b'\0' + found[0], digest_size=12).hexdigest() + '"'
+            cache = 'private, max-age=3600, stale-while-revalidate=2592000'
+            if etag in [t.strip() for t in self.headers.get('If-None-Match', '').split(',')]:
+                self.send_response(304)
+                self.send_header('ETag', etag)
+                self.send_header('Cache-Control', cache)
+                self.end_headers()
+                return
             self.send_response(200)
             self.send_header('Content-Type', found[1])
             self.send_header('Content-Length', str(len(found[0])))
-            self.send_header('Cache-Control', 'private, max-age=86400')
+            self.send_header('ETag', etag)
+            self.send_header('Cache-Control', cache)
             self.send_header('X-Content-Type-Options', 'nosniff')
             self.send_header('Content-Security-Policy', "default-src 'none'; sandbox")
             self.end_headers()

@@ -11,9 +11,13 @@ const card=(id,title)=>({id,title,body:'',status:'pending',event_ids:[],scope:'w
 const base={suggestions:[card('c1','Reply to Ann'),card('c2','Send the invoice')],connectors:[],suggestion_counts:{pending:2},decisions:[],analyses:[],
  deliveries:[],review_health:{},review_runs:[]};
 const asked=[];let answer=()=>({...base,_token:'t1'});
+// The Graph tab's overview the same way (deltaGet): its token sent back, put together, the token kept out of the copy
+const person=(id,name)=>({id,name,kind:'person'});
+const graphAsked=[];let graphAnswer=()=>({people:[person('p1','Ann'),person('p2','Bo')],counts:{people:2},_token:'g1'});
 const server=createServer(async(req,res)=>{res.setHeader('Content-Type','application/json');
  if(req.url==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
  if(req.url.startsWith('/api/status')){const since=new URL(req.url,'http://x').searchParams.get('since');asked.push(since);res.end(JSON.stringify(answer(since)));return}
+ if(req.url.startsWith('/api/graph?view=x')){const since=new URL(req.url,'http://x').searchParams.get('since');graphAsked.push(since);res.end(JSON.stringify(graphAnswer(since)));return}
  if(req.url==='/api/action'){res.end('{}');return}
  res.statusCode=404;res.end('{}')});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
@@ -45,6 +49,17 @@ try{
  await page.evaluate(()=>refresh());
  assert.deepEqual(asked.slice(before),['t3',null]);
  assert.deepEqual(await page.evaluate(()=>[state.suggestions.map(s=>s.title),statusRaw._token]),[['Reply to Ann','Send the invoice'],'t4']);
+
+ const path='api/graph?view=x';
+ assert.deepEqual(await page.evaluate(p=>deltaGet(p),path),{people:[person('p1','Ann'),person('p2','Bo')],counts:{people:2}});
+ graphAnswer=since=>since==='g1'?{_token:'g2',_since:'g1',people:[{'=':'p1'},person('p2','Bo B.')]}:{_token:'gx'};
+ const g=await page.evaluate(p=>deltaGet(p).then(v=>{const out=JSON.parse(JSON.stringify(v));v.people[0].name='changed here';return out}),path);
+ assert.deepEqual(g,{people:[person('p1','Ann'),person('p2','Bo B.')],counts:{people:2}});
+ graphAnswer=since=>since==='g2'?{_token:'g3',_since:'g2',people:[{'=':'p1'},{'=':'p2'}]}:{_token:'gx'};
+ assert.deepEqual((await page.evaluate(p=>deltaGet(p),path)).people.map(x=>x.name),['Ann','Bo B.']);  // a caller's edit never reaches the held answer
+ graphAnswer=since=>since?{_token:'g9',_since:'g-other'}:{people:[person('p3','Cy')],_token:'g4'};  // doesn't fit: asked again whole
+ assert.deepEqual(await page.evaluate(p=>deltaGet(p),path),{people:[person('p3','Cy')]});
+ assert.deepEqual(graphAsked,[null,'g1','g2','g3',null]);
  assert.deepEqual(errors,[]);
  console.log('status delta dashboard ok');
 }finally{await browser.close();server.close()}

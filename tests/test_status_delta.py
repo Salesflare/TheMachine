@@ -61,6 +61,18 @@ class StatusDelta(unittest.TestCase):
             status_delta.changes(status())
         self.assertIn('suggestions', status_delta.changes(status(), first['_token']))  # forgotten: the whole answer again
 
+    def test_the_graph_overview_keeps_its_own_tokens(self):
+        graph = {'people': [{'id': 'p1', 'name': 'Ann'}, {'id': 'p2', 'name': 'Bo'}], 'counts': {'people': 2}}
+        first = status_delta.changes(graph, None, status_delta.GRAPH)
+        for _ in range(status_delta.KEEP + 1):  # the status's polls never push the Graph's token out
+            status_delta.changes(status())
+        now = {'people': [{'id': 'p1', 'name': 'Ann'}, {'id': 'p2', 'name': 'Bo B.'}], 'counts': {'people': 2}}
+        answer = status_delta.changes(now, first['_token'], status_delta.GRAPH)
+        self.assertEqual(answer['people'], [{'=': 'p1'}, {'id': 'p2', 'name': 'Bo B.'}])
+        self.assertNotIn('counts', answer)
+        self.assertEqual(merged(first, answer) | {'_token': None}, {**now, '_token': None})
+        self.assertNotIn('_since', status_delta.changes(now, first['_token']))  # a Graph token means nothing to the status
+
     def test_rows_without_ids_or_with_doubles_come_whole(self):
         first = status_delta.changes(status(deliveries=[{'id': 1, 'status': 'a'}, {'id': 1, 'status': 'b'}], promises=[{'what': 'x'}]))
         answer = status_delta.changes(status(deliveries=[{'id': 1, 'status': 'a'}, {'id': 1, 'status': 'c'}], promises=[{'what': 'y'}]),
