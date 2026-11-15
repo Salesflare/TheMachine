@@ -20,12 +20,14 @@ import section_notes
 
 # The parts of the children's lives a candidate can be about, each a note under Kids (English: its key; titled in the
 # owner's language through i18n)
-SECTIONS = ('School', 'Activities', 'Doctors and care', 'Bills and fees')
+SECTIONS = ('School', 'Activities', 'Childcare', 'Doctors and care', 'Bills and fees')
 PARTS = {
     'School': 'a child\'s school, class, teacher, the school\'s newsletters, school days, holidays, trips, what to bring, '
               'parents\' evenings, homework or report',
     'Activities': 'a child\'s sport, music, club, camp or lesson, its days and who runs it',
-    'Doctors and care': 'a child\'s doctor, dentist, allergy or medicine, a babysitter or childcare',
+    'Childcare': 'who looks after a child: a babysitter, daycare, after-school care, a day without care at school',
+    'Doctors and care': 'a child\'s health only: their doctor, dentist, allergy, medicine or a result, never a babysitter '
+                        'or childcare',
     'Bills and fees': 'a bill or subscription for a child: school fees, a club or camp fee, childcare, lessons',
 }
 

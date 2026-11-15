@@ -72,7 +72,7 @@ Health notes are always Personal, even when a bill came in on your work address.
 
 ## Kids
 
-Under **Kids**, your Machine keeps what it knows about your children: **School**, **Activities**, **Doctors and care** and **Bills and fees**. A part shows up once it has at least two lines.
+Under **Kids**, your Machine keeps what it knows about your children: **School**, **Activities**, **Childcare**, **Doctors and care** and **Bills and fees**. A babysitter or daycare goes under Childcare, never under Doctors and care. A part shows up once it has at least two lines.
 
 - What your Machine learned about your child, like their class teacher or swimming day, is a line that links to their page. It counts someone as your child when their **To you** says so, like daughter or son.
 - An event in your calendar that only you go to, like a parents' evening, gets a line with its next date, or its last one. **From your calendar** opens it.

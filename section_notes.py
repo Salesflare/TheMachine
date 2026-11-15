@@ -29,6 +29,7 @@ import re
 from email.utils import parseaddr
 
 from i18n import t
+from machine import kinds as event_kinds
 import todo_areas
 
 SCHEMA = '''
@@ -53,7 +54,7 @@ CHILD_WORDS = frozenset('''son daughter child children kid kids stepson stepdaug
 hijo hija figlio figlia filho filha'''.split())
 OWN_WORDS = ('my', 'the', "owner's", 'mijn', 'ma', 'mon', 'mes', 'mein', 'meine', 'mi', 'mis', 'mia', 'mio', 'miei', 'minha', 'meu', 'meus')
 # The owner's Personal mail (mail_senders)
-MAIL_KINDS = ('gmail.message', 'ms_graph.message', 'outlook.message')
+MAIL_KINDS = tuple(k for k in event_kinds.of(family=event_kinds.MAIL) if event_kinds.KINDS[k]['service'])  # the owner's own mailboxes
 MAIL_ASK_MAX = 80  # senders one mail call reads
 MAIL_CALLS = 3  # mail calls per round, while senders wait to be placed
 MAIL_EACH_MAX = 20  # dated lines per sender in a kind that keeps each mail (the newest)

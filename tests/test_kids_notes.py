@@ -114,6 +114,19 @@ class KidsNotes(unittest.TestCase):
         page = self.app.note_page(notes['Bills and fees']['id'])
         self.assertEqual(sorted(x.get('todo') for x in page['lines']), ['s2', 's3'], 'a fee opens its to-do')
 
+    def test_a_babysitter_goes_under_childcare_and_never_under_doctors(self):
+        jules = self.person('Jules Morgan', 'daughter')
+        self.places = {'babysitter': 'Childcare', 'daycare': 'Childcare'}
+        self.fact('The babysitter comes on Fridays', about=jules)
+        self.fact('Jules goes to daycare after school', about=jules)
+        notes = self.run_round()
+        self.assertEqual(sorted(notes), ['Childcare'])
+        prompt = self.asked[0]
+        self.assertIn('"Childcare" (who looks after a child: a babysitter', prompt)
+        doctors = prompt.split('"Doctors and care" (', 1)[1].split(')', 1)[0]
+        self.assertIn('never a babysitter or childcare', doctors)
+        self.assertNotIn('babysitter,', doctors)
+
     def test_the_owners_note_for_one_child_gets_what_is_about_them(self):
         jules = self.person('Jules Morgan', 'daughter')
         remy = self.person('Remy Morgan', 'son')
