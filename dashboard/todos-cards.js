@@ -24,7 +24,10 @@ return html`<div class="body${open?'':html` clamp`}" style="--lines:${lines}" da
 // Said once, in the For you header, when a prepared to-do is under it: nothing goes out before the owner's OK.
 const sectionNote=(key,items)=>key==='foryou'&&items.some(s=>s?.status==='prepared')?html`<p class="section-note">${t('Nothing goes out until you approve it.')}</p>`:'';
 // A ready to-do with a draft to read: its summary and the first 3 lines of the draft, then one Show more for the rest
-const DRAFT_LINES=3,draftRows=text=>{const per=innerWidth<600?34:64;return String(text).split('\n').reduce((n,l)=>n+(l.trim()?Math.ceil(l.length/per):0),0)};
+// Under 600px, as innerWidth<600 (scrollbar included) without reading innerWidth, which lays the page out again
+// when anything changed since: once per to-do while the list is drawn
+const DRAFT_NARROW=matchMedia('(max-width:599.98px)');
+const DRAFT_LINES=3,draftRows=text=>{const per=DRAFT_NARROW.matches?34:64;return String(text).split('\n').reduce((n,l)=>n+(l.trim()?Math.ceil(l.length/per):0),0)};
 const draftFolds=(s,a)=>a.kind!=='finish'&&(a.state||s.action_status)?.status!=='sent'&&draftRows(draftText(a))>DRAFT_LINES+1;  // 4 lines still show whole
 const cardDrafted=s=>s.status==='prepared'&&!closed(s)&&taskActions(s).some(a=>DRAFT_KINDS.includes(a.kind)&&draftText(a)&&draftFolds(s,a));
 const snoozedUntil=v=>localeDate(new Date(v),DL,{weekday:'short',day:'numeric',month:'short'})+' at '+fmtHM(v);
@@ -457,26 +460,33 @@ new MutationObserver(records=>{for(const m of records){const n=m.target.nodeType
 // Show more takes about a line itself, so a text one line over shows whole too, unless another text under the same Show
 // more (a ready draft's) needs it anyway: then each folds that is cut at all. A box out of sight keeps what it has.
 const clampBox=el=>[el,...el.querySelectorAll(':scope>.db')].find(x=>getComputedStyle(x).maxHeight!=='none')||el;
-// How far its text runs past its fold, in lines (0 when it fits), or null out of sight
-function clampCut(el){if(!el.getClientRects().length)return null;const had=el.classList.contains('clamp');el.classList.add('clamp');
- const box=clampBox(el),r=document.createRange();r.selectNodeContents(box);const end=r.getBoundingClientRect().bottom,b=box.getBoundingClientRect(),cs=getComputedStyle(box);
+// How far its text runs past its fold, in lines (0 when it fits), read with the fold on (clampKeys puts it on first)
+function clampCut(el){const box=clampBox(el),r=document.createRange();r.selectNodeContents(box);const end=r.getBoundingClientRect().bottom,b=box.getBoundingClientRect(),cs=getComputedStyle(box);
  const ls=getComputedStyle(box.querySelector('p,div')||box),lh=parseFloat(ls.lineHeight)||parseFloat(ls.fontSize)*1.4;
- const over=end-(b.bottom-parseFloat(cs.paddingBottom)-parseFloat(cs.borderBottomWidth))-1;if(!had)el.classList.remove('clamp');return over>0?over/lh:0}
-function clampKey(key){if(key==null)return;const k=CSS.escape(key),els=document.querySelectorAll(`[data-clamp="${k}"]`),btns=document.querySelectorAll(`button.more[data-more="${k}"]`);
- if(!els.length||!btns.length)return;const open=btns[0].getAttribute('aria-expanded')==='true';let any=false;
- const over=[...els].map(clampCut);any=over.some(o=>o==null||o>1);
- els.forEach((el,i)=>{if(over[i]!=null)el.classList.toggle('clamp',any&&over[i]>0&&!open)});
- for(const b of btns)b.hidden=!any}
+ const over=end-(b.bottom-parseFloat(cs.paddingBottom)-parseFloat(cs.borderBottomWidth))-1;return over>0?over/lh:0}
+// All these keys at once: which are in sight, then every fold on, then every measure, then what each shows. One layout
+// for them all: measured one by one (fold on, measure, fold off), each forced the whole page's layout again, most of
+// the frame that first shows the to-dos on a phone. Each text is measured in its own box, so the others' folds don't
+// change what it reads.
+function clampKeys(keys){const sets=[];
+ for(const key of keys){if(key==null)continue;const k=CSS.escape(key),els=[...document.querySelectorAll(`[data-clamp="${k}"]`)],btns=[...document.querySelectorAll(`button.more[data-more="${k}"]`)];
+  if(els.length&&btns.length)sets.push({els,btns,open:btns[0].getAttribute('aria-expanded')==='true',seen:els.map(el=>el.getClientRects().length>0)})}
+ for(const s of sets)s.els.forEach((el,i)=>{if(s.seen[i])el.classList.add('clamp')});
+ for(const s of sets)s.over=s.els.map((el,i)=>s.seen[i]?clampCut(el):null);  // null: out of sight, keeps what it has
+ for(const s of sets){const any=s.over.some(o=>o==null||o>1);
+  s.els.forEach((el,i)=>{if(s.over[i]!=null)el.classList.toggle('clamp',any&&s.over[i]>0&&!s.open)});
+  for(const b of s.btns)b.hidden=!any}}
+function clampKey(key){clampKeys([key])}
 // Behind an open modal (a phone's full-screen sheet, which also takes away the page's scrollbar gutter, so every to-do
 // widens a little) a text is measured once the modal closes, and only if its width then differs: measuring each one
 // costs the whole page's style and layout twice, and in the frame that opens the sheet that was most of Snooze's time.
 const clampLater=new Set();
-const clampSeen=new ResizeObserver(rows=>{const keys=new Set(),modal=modalOpen();for(const {target:e,contentRect:r} of rows)if(r.width&&e._fitW!==r.width){if(modal&&!e.closest('dialog[open]')){clampLater.add(e);continue}e._fitW=r.width;keys.add(e.dataset.clamp)}keys.forEach(clampKey)});
+const clampSeen=new ResizeObserver(rows=>{const keys=new Set(),modal=modalOpen();for(const {target:e,contentRect:r} of rows)if(r.width&&e._fitW!==r.width){if(modal&&!e.closest('dialog[open]')){clampLater.add(e);continue}e._fitW=r.width;keys.add(e.dataset.clamp)}if(keys.size)clampKeys(keys)});
 // Observed again, the observer reports each one's width now: no work when it is back where it was measured
 document.addEventListener('close',()=>{if(!clampLater.size||modalOpen())return;for(const e of clampLater)if(e.isConnected){clampSeen.unobserve(e);clampSeen.observe(e)}clampLater.clear()},true);
 let clampQueued=0;const clampNew=()=>{clampQueued=0;for(const e of document.querySelectorAll('[data-clamp]:not([data-cfit])')){e.dataset.cfit='';clampSeen.observe(e)}};
 new MutationObserver(()=>{if(!clampQueued)clampQueued=requestAnimationFrame(clampNew)}).observe(document.body,{childList:true,subtree:true});
-const clampAll=()=>new Set([...document.querySelectorAll('[data-clamp][data-cfit]')].map(e=>e.dataset.clamp)).forEach(clampKey);
+const clampAll=()=>clampKeys(new Set([...document.querySelectorAll('[data-clamp][data-cfit]')].map(e=>e.dataset.clamp)));
 document.fonts?.ready.then(clampAll);document.fonts?.addEventListener('loadingdone',clampAll);
 document.addEventListener('click',e=>{const m=e.target.closest?.('button.more[data-more]');if(m)clampKey(m.dataset.more)});  // after the list's own handler folded or opened it
 // A tap on folded text presses its Show more (or a chat text's More), which stays the keyboard's control. Not on open

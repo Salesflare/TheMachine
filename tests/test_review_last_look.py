@@ -95,6 +95,19 @@ class LastLook(unittest.TestCase):
         self.assertEqual(self.review('one')[1], [open_one])
         self.assertEqual(self.state(taken), (0, 2))
 
+    def test_the_listing_reads_the_owners_intercom_admins_once(self):
+        # Each read is up to 500 conversations, and the status lists these on every build: once per account, not per row
+        ids = [self.add(kind='intercom.conversation', conversation_id=f'c{n}') for n in range(4)]
+        self.store.accounts = [*ACCOUNTS, {'id': 'work', 'service': 'intercom', 'admin_id': '7'}]
+        reads, owner = [], self.store.intercom_owner
+        self.store.intercom_owner = lambda db, account_id: reads.append(account_id) or owner(db, account_id)
+        with self.store.connect() as db:
+            self.assertEqual({x['id'] for x in last_look.listing(self.store, db)}, set(ids))
+            self.assertEqual(reads, ['work'])
+            reads.clear()
+            last_look.due(self.store, db, ['work'])
+            self.assertLessEqual(len(reads), 1)
+
     def test_what_the_owner_decided_is_never_raised_again(self):
         dismissed, snoozed_thread, on_todo = self.add(), self.add(), self.add()
         later_in_snoozed = self.add(thread_id=f't{snoozed_thread}')
