@@ -25,7 +25,9 @@ function talkMain(){const was=talk?.main,first=chatOpen()?.id||null;if(talk)talk
  talkAfterDrawer(()=>{talkGoView();lazyRun('talk',()=>talkStart(true,first))})}
 // The phone drawer closes with a step back in history: Talk's view goes on after that, or that step would undo it
 function talkAfterDrawer(go){if(typeof drawerPopping!=='undefined'&&drawerPopping)addEventListener('popstate',()=>setTimeout(go),{once:true});else go()}
-function talkSide(){const b=$('#side-talk');if(b){b.hidden=!talkOk()&&!talk?.main;b.setAttribute('aria-pressed',String(!!talk?.main));b.setAttribute('aria-current',talkViewOn()?'page':'false')}}
+// Until the Machine has said whether it can talk, the row stays as it was last time (shell-main.html, skeleton-talk)
+function talkSide(){const b=$('#side-talk');if(talkInfo.ready!==null)try{localStorage.setItem('skeleton-talk',talkOk()?'1':'')}catch{}
+ if(b){if(talkInfo.ready!==null||talk)b.hidden=!talkOk()&&!talk?.main;b.setAttribute('aria-pressed',String(!!talk?.main));b.setAttribute('aria-current',talkViewOn()?'page':'false')}}
 // Talk's own view (#talk): one transcript for the whole conversation, the to-do it is about now (with its draft: the one
 // a spoken yes can send) and the bar. The voice opening a to-do changes that card, never the page the owner is on.
 // Each to-do's chat still gets what was said about it, what was decided and what was sent.

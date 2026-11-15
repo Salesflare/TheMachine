@@ -14,16 +14,12 @@ window.machineShare=function(d,tries=0){if(!(Array.isArray(state?.suggestions)&&
 {const m=/^#share=(s_[a-f0-9]{16})$/.exec(location.hash);if(m){history.replaceState(null,'',location.pathname+location.search);
  navigator.serviceWorker?.ready.then(r=>new Promise((ok,no)=>{const ch=new MessageChannel();ch.port1.onmessage=e=>ok(e.data);setTimeout(()=>no(Error('timeout')),15000);
   (navigator.serviceWorker.controller||r.active).postMessage({share:m[1]},[ch.port2])})).then(d=>{if(d)machineShare({text:d.text,files:d.files})}).catch(()=>{})}}
-// Entry points: a row under Search on a computer, "+" in the top bar on a phone, C, and the palette (Ctrl/⌘K) then "new".
-{const row=document.createElement('button');row.type='button';row.className='side-new';row.id='side-new';row.dataset.newCard='';row.title='New to-do (N)';row.setAttribute('aria-label','New to-do');
- setHTML(row,html`${NC_PLUS}<span>New to-do</span><kbd>N</kbd>`);$('#side-search').after(row);
- // Talk: the main live conversation, through what needs the owner (shows once this Machine can talk live)
- const talkRow=document.createElement('button');talkRow.type='button';talkRow.className='side-new side-talk';talkRow.id='side-talk';talkRow.dataset.talkMain='';talkRow.hidden=true;
- talkRow.title='Talk (T)';talkRow.setAttribute('aria-label','Talk');talkRow.setAttribute('aria-pressed','false');setHTML(talkRow,html`${WAVE}<span>Talk</span><kbd>T</kbd>`);row.after(talkRow);
- const plus=document.createElement('button');plus.type='button';plus.className='head-link settings-link new-card-link';plus.id='new-card-top';plus.dataset.newMenu='';plus.title='New';plus.setAttribute('aria-label','New');plus.setAttribute('aria-haspopup','menu');plus.setAttribute('aria-expanded','false');
- // With the phone drawer (#topbar), the sidebar row shows in the drawer and the "+" sits on the right of the top bar.
- const top=$('#topbar');if(top){plus.className='topbar-menu new-card-top';setHTML(plus,NC_PLUS);top.append(plus);document.documentElement.classList.add('nc-drawer')}
- else{setHTML(plus,html`${NC_PLUS}<span class="lbl">New</span>`);$('#open-settings').before(plus)}}
+// Entry points: a row under Search on a computer (#side-new), "+" in the top bar on a phone (#new-card-top), C, and the
+// palette (Ctrl/⌘K) then "new". Both are in the page's markup (shell-sidebar.html, the top bar), drawn with its first
+// paint: added here, after it, they pushed the sidebar and the top bar's Search aside. Talk (#side-talk), the main live
+// conversation through what needs the owner, shows under New to-do once this Machine can talk live (talkSide).
+// With the phone drawer (#topbar), the sidebar row shows in the drawer and the "+" sits on the right of the top bar.
+document.documentElement.classList.add('nc-drawer');
 // Opens New to-do once its dialog is in (at once when it is). byPointer: opened by a tap or click, not a key.
 const newTodo=(o,byPointer)=>lazyRun('newtodo',()=>{ncOpen(o);if(byPointer!=null)nc.byPointer=byPointer});
 document.addEventListener('click',e=>{if(e.target.closest('[data-new-card]')){e.preventDefault();if(typeof drawerClose==='function')drawerClose();newTodo(undefined,e.detail>0)}});

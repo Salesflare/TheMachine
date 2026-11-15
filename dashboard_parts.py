@@ -78,7 +78,8 @@ LAZY = {
     'whatsnew': ('shell-whats-new.css', 'shell-whats-new.js'),
 }
 # Groups the page fetches together with its main script (a preload link, serving.py) and runs at start: they draw over the
-# to-dos, so coming in after the first to-dos they pushed them down
+# to-dos, so coming in after the first to-dos they pushed them down. A first drawing that needs one still on its way
+# waits for it (render in shell-render.js)
 LAZY_EARLY = ('mailcheck', 'milestone')
 LAZY_RUN = re.compile(r'/\*@lazy\*/\n.*?(?:/\*@eager\*/\n|\Z)', re.S)
 FENCE = re.compile(r'/\*@(?:lazy|eager)\*/\n')
