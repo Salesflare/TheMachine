@@ -40,7 +40,26 @@ a.note-link{color:var(--text);text-decoration:underline;text-decoration-thicknes
 .note-suggest button:hover,.note-suggest button:focus-visible,.note-suggest button:first-child{background:var(--c-hover)}
 .note-suggest button>small{color:var(--muted);font-size:var(--fs-xs);flex:0 0 auto}.note-suggest>p{margin:4px 8px}
 .note-kids,.note-backlinks{margin-top:var(--sp-4)}
-/* A phone: a note under another one goes back to that one (‹ Home), as the breadcrumb on a wide screen shows */
-@media(max-width:560px){#people-view .graph-crumbs:has(>a.note-up)>a[data-crumb]{display:none}
-#people-view .graph-crumbs>a.note-up{display:inline-flex;align-items:center;gap:6px;min-width:0;min-height:44px;margin:-4px 0 -4px -6px;padding:0 14px 0 6px;color:var(--muted);font-size:var(--fs-md);font-weight:var(--fw-medium)}
-#people-view .graph-crumbs>a.note-up::before{content:'‹';content:'‹'/'';font-size:1.5em;line-height:1;margin-top:-2px}}
+/* A note's breadcrumb: Graph › Notes › Kids ›, each a link, and the note's title as the heading right under it; it takes
+   the page head's place at every width, so the path shows once. A long
+   name shortens with … (its title shows it whole); the heading wraps, so the title always shows in full. */
+body:has(#people:not([hidden]) .note-crumbs) #page-head{display:none}  /* the trail is the path: no Graph / Notes head over it */
+#people-view .note-crumbs .crumb-here{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+#people-view .note-crumbs a{max-width:32ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#people-view .note-crumbs .crumb-mid{display:contents}
+#people-view .note-crumbs .crumb-fold{display:none}
+#people-view .note-crumbs .crumb-fold>details{display:flex}
+#people-view .note-crumbs .crumb-fold>details>summary{width:32px;height:32px;margin:0 -4px;color:var(--muted);font-size:var(--fs-md)}
+#people-view .note-crumbs .crumb-fold .fact-menu-list{left:-6px;right:auto;min-width:180px;max-width:min(280px,80vw)}
+#people-view .note-crumbs .fact-menu-list a{max-width:none;padding:8px 10px;border-radius:var(--r-sm);color:var(--text);font:var(--fw-medium) var(--fs-sm)/1.3 var(--sans);text-decoration:none}
+#people-view .note-crumbs .fact-menu-list a:hover{background:var(--tile);text-decoration:none}
+.note-page>.name-row h3{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:break-word}
+/* A phone: one line, no Graph (the menu has it): Notes › Kids ›, and from two notes up Notes › ⋯ › Kids ›, the notes in
+   between in the ⋯ menu. Each link is a full-height tap target; Notes still goes back the way the phone came. */
+@media(max-width:560px){#people-view .note-crumbs{flex-wrap:nowrap;gap:0 6px;min-height:44px;margin:-6px 0 var(--sp-2)}
+#people-view .note-crumbs>:is(span,.crumb-fold){display:inline-flex;flex:none;align-items:center;gap:6px}
+#people-view .note-crumbs>.crumb-here{display:block}
+#people-view .note-crumbs>a[data-crumb=""],#people-view .note-crumbs>a[data-crumb=""]+span,#people-view .note-crumbs>.crumb-mid{display:none}
+#people-view .note-crumbs>a,#people-view .note-crumbs>a[data-crumb]:not([data-crumb=""]){display:block;flex:0 1 auto;min-width:min(4em,max-content);max-width:none;min-height:0;height:44px;margin:0;padding:0;line-height:44px;color:var(--muted);font-size:var(--fs-sm);font-weight:var(--fw-medium)}
+#people-view .note-crumbs>a[data-crumb="notes"]{flex:none}
+#people-view .note-crumbs>a[data-crumb]::before{content:none}}
