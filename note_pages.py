@@ -32,6 +32,7 @@ import datetime as dt
 import json
 import re
 
+from i18n import t
 from machine.owner_error import OwnerError
 
 SCHEMA = '''
@@ -526,9 +527,10 @@ def unmerge(db, note_id, at):
 
 
 def _folder(db, path, at):
-    """The note a kind's notes go under (['Home', 'Appliances']), made once by The Machine when it isn't there. A
-    folder the owner renamed or moved keeps its key, so it is still found there; one they merged leads to the note
-    they merged it into; one they deleted stays deleted, and what would go in it goes where it was instead."""
+    """The note a kind's notes go under (['Home', 'Appliances'], in English: its key), made once by The Machine when it
+    isn't there, titled in the owner's language. A folder the owner renamed or moved keeps its key, so it is still
+    found there; one they merged leads to the note they merged it into; one they deleted stays deleted, and what would
+    go in it goes where it was instead."""
     parent = None
     for depth in range(1, min(len(path), DEPTH_MAX) + 1):
         key = 'folder:' + '/'.join(p.casefold() for p in path[:depth])
@@ -542,7 +544,7 @@ def _folder(db, path, at):
             parent = row['id']
             continue
         parent = db.execute("INSERT INTO note_pages(kind,key,title,area,parent_id,by,created_at,updated_at) VALUES('note',?,?,?,?,'machine',?,?)",
-                            (key, _title(path[depth - 1]), PERSONAL, parent, at, at)).lastrowid
+                            (key, _title(t(path[depth - 1])), PERSONAL, parent, at, at)).lastrowid
     return parent
 
 

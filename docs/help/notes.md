@@ -3,7 +3,7 @@ title: Notes
 area: graph
 summary: One readable page per subject, like a trip or your home, linked to the people and projects in it.
 covers: notes
-code: note_pages.py, note_pages_app.py, dashboard/graph-notes.js
+code: note_pages.py, note_pages_app.py, trip_notes.py, bookings.py, dashboard/graph-notes.js
 order: 8
 ---
 A note is the overview of one subject: a trip, your home, how invoices are done. Notes sit in the Graph next to People, Organizations and Projects. They stay on your Machine and aren't shared with your team.
@@ -27,6 +27,12 @@ Your Machine also writes notes by itself, from your messages, and keeps them cur
 Your changes always stand. Rename a note, move it, change its dates or a line, and your Machine keeps it that way when it updates the note. Delete a line or a note and it doesn't come back. Later notes on the same subject go where you put the first one.
 
 **Back to the original** shows your Machine's own words again. Editing a line that came from what your Machine learned also changes it under **What I've learned**, so there's one version of it.
+
+## Trips
+
+When a flight, hotel, train, bus, ferry or rental car booking reaches your mail, your Machine adds it to a trip under **Trips**. Bookings for one journey go on one trip: the way out, the hotel and the way back. The trip has the booking code, seat and ticket for each line, in time order, and it shows its dates.
+
+It reads the booking details that airlines, hotels and booking sites put in their confirmation mail. A mail without them doesn't make a trip. A changed booking updates its line, and a canceled one goes. When every booking of a trip is canceled, the trip goes too.
 
 ## Merge, delete and undo
 

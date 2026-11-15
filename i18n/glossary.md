@@ -131,6 +131,7 @@ The sidebar pages (renamed 2026-11-01): Suggestions is now *To-dos* (the plural 
 | People / Organizations / Projects | Personen / Organisaties / Projecten | Personnes / Organisations / Projets | Personen / Organisationen / Projekte | Personas / Organizaciones / Proyectos | Persone / Organizzazioni / Progetti | Pessoas / Organizações / Projetos |
 | Note, Notes (a page of its own in the Graph, next to People; not meeting notes or the Notes field on a record) | Notitie, Notities | Note, Notes | Notiz, Notizen | Nota, Notas | Nota, Note | Nota, Notas |
 | Linked from (the notes that link to a page) | Gelinkt vanuit | Lié depuis | Verlinkt von | Enlazado desde | Collegato da | Vinculado de |
+| Trip, Trips (a dated note The Machine fills in from booking mail) | Reis, Reizen | Voyage, Voyages | Reise, Reisen | Viaje, Viajes | Viaggio, Viaggi | Viagem, Viagens |
 | board | bord | tableau | Board | tablero | bacheca | quadro |
 | chat | chat | chat | Chat | chat | chat | chat |
 | Careful / Standard (security) | Voorzichtig / Standaard | Prudent / Standard | Vorsichtig / Standard | Prudente / Estándar | Prudente / Standard | Cuidadoso / Padrão |
