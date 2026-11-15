@@ -562,7 +562,27 @@ def load_note_page(store, when):
                     'facts': [{'text': 'Northside Heating does the boiler service.', 'sources': [boiler]}],
                     'open': [{'text': 'The gutters are due again in November.', 'sources': [gutters]}],
                     'timeline': [{'date': when[:4] + '-10-15', 'text': 'Boiler service by Northside Heating.', 'sources': [boiler]}]}, when)
+        load_folder_overview(db, when)
         db.commit()
+
+
+def load_folder_overview(db, when):
+    """Home's daily overview (folder_overview.py), naming the notes under it it stands on, as the Machine's turn would
+    write it from what they say."""
+    import datetime as dt
+    import folder_overview
+    import timeutil
+    parts = {r['key']: r['id'] for r in db.execute("SELECT id,key FROM note_pages WHERE key IN ('folder:home','home:repairs-and-upkeep','home:bills-and-subscriptions') "
+                                                   'AND removed_at IS NULL')}
+    home, repairs, bills = parts.get('folder:home'), parts.get('home:repairs-and-upkeep'), parts.get('home:bills-and-subscriptions')
+    if not (home and repairs and bills):
+        return
+    today = timeutil.local_day(dt.datetime.fromisoformat(when)) or dt.date.fromisoformat(when[:10])
+    item = {'note_id': home, 'basis': folder_overview._basis(folder_overview._notes(db, home, today))}
+    folder_overview.save(db, item, {
+        'summary': {'text': 'The gutters are due for their November clean, after Northside Heating serviced the boiler in October.', 'sources': [repairs]},
+        'now': [{'text': 'Book the gutter clean for November.', 'sources': [repairs]},
+                {'text': 'Brightwater Energy bills every month; Clearbrook Water every three months.', 'sources': [bills]}]}, when)
 
 
 def load_share(db):

@@ -63,7 +63,8 @@ def ensure(db):
 
 def _clean(text, limit):
     """One tidy sentence or few, no em dashes; cut back to its last whole sentence when too long, '' when that fails."""
-    text = re.sub(r'\s*[—–]\s*', ', ', ' '.join(str(text or '').split())).strip(' ,')
+    text = re.sub(r'(\d)\s*[—–]\s*(?=\d)', r'\1 to ', ' '.join(str(text or '').split()))  # a range of times or dates
+    text = re.sub(r'\s*[—–]\s*', ', ', text).strip(' ,')
     if len(text) <= limit:
         return text
     cut = max(text.rfind('. ', 0, limit), text.rfind('! ', 0, limit), text.rfind('? ', 0, limit))

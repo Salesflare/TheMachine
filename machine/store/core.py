@@ -46,6 +46,7 @@ import section_notes
 import note_pages
 import topic_notes
 import note_writer
+import folder_overview
 import trip_notes
 import pacing
 import person_summary
@@ -546,6 +547,7 @@ class StoreCore:
             section_notes.ensure(db)  # where each Home, Health or Kids candidate goes (section_notes.py): Home's old tables moved over
             topic_notes.ensure(db)  # where each conversation went (topic_notes.py): new tables only
             note_writer.ensure(db)  # a note's written page (note_writer.py): a new table only
+            folder_overview.ensure(db)  # a folder's daily overview (folder_overview.py): a new table only
             # The question(s) a note of the owner's answered (Store._decide): its own line in the chat, the run's question
             db.execute('CREATE TABLE IF NOT EXISTS decision_asks(decision_id TEXT PRIMARY KEY,suggestion_id TEXT NOT NULL,'
                        'questions TEXT NOT NULL,created_at TEXT NOT NULL)')
