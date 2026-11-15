@@ -77,6 +77,9 @@ LAZY = {
     'talk': ('todos-chat-talk-view.js', 'todos-chat-talk-live.js'),
     'whatsnew': ('shell-whats-new.css', 'shell-whats-new.js'),
 }
+# Groups the page fetches together with its main script (a preload link, serving.py) and runs at start: they draw over the
+# to-dos, so coming in after the first to-dos they pushed them down
+LAZY_EARLY = ('mailcheck', 'milestone')
 LAZY_RUN = re.compile(r'/\*@lazy\*/\n.*?(?:/\*@eager\*/\n|\Z)', re.S)
 FENCE = re.compile(r'/\*@(?:lazy|eager)\*/\n')
 MARKER = re.compile(r'/\*@include dashboard/([a-z0-9-]+\.(?:js|css))\*/|<!--@include dashboard/([a-z0-9-]+\.html)-->')

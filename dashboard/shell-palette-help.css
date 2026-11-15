@@ -61,7 +61,7 @@ article.kb-on,article.kb-on:focus{outline:2px solid color-mix(in srgb,var(--c-ac
 }
 /* Loading: until the first real data, a calm outline of the cards that were there last time (the count only; no
    content), never "All clear" (docs/architecture.md, "On the device") */
-.skeleton{margin-top:var(--sp-5)}.skeleton .sk-head{width:9rem;height:14px;border-radius:var(--r-pill);background:var(--c-sunken);margin:0 0 var(--sp-4)}
+.skeleton{min-height:100vh}  /* where the first section head comes (the head over it keeps its place), and the footer out of sight until the to-dos are in: no jump when they come */.skeleton .sk-head{width:9rem;height:14px;border-radius:var(--r-pill);background:var(--c-sunken);margin:0 0 var(--sp-4)}
 .sk-card{border:1px solid var(--border);border-radius:var(--r-lg);background:var(--surface);padding:var(--sp-5);margin-bottom:var(--sp-3)}
 .sk-card i{display:block;height:11px;border-radius:var(--r-pill);background:var(--c-sunken);margin-top:12px}.sk-card i:first-child{width:5rem;margin-top:0}
 .sk-card i:nth-child(2){width:72%;height:15px}.sk-card i:nth-child(3){width:92%}.sk-card i:nth-child(4){width:58%}

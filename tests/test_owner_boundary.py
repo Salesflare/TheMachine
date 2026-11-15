@@ -391,6 +391,10 @@ class OwnerBoundary(unittest.TestCase):
         # Each group of parts that loads when first needed (dashboard_parts.LAZY) is a file like it, named in the page
         lazy = json.loads(re.search(r'<script>self\.LAZY_FILES=(\{[^<]*\})</script><script src="app-', page)[1])
         self.assertEqual(sorted(lazy), sorted(dashboard_parts.LAZY))
+        # The groups that draw over the to-dos (LAZY_EARLY) are fetched with the page: a preload link each, before it all
+        early = re.findall(r'<link rel="preload" as="script" href="(lazy-[a-z]+-[0-9a-f]{16}\.js)" data-lazy="([a-z]+)">', page)
+        self.assertEqual(early, [(lazy[group], group) for group in dashboard_parts.LAZY_EARLY])
+        self.assertLess(page.index('<link rel="preload"'), page.index('<script>self.LAZY_FILES='))
         for group, file in lazy.items():
             r, part = get('/' + file, owner)
             self.assertEqual((r.status, r.getheader('Cache-Control')), (200, 'private, max-age=31536000, immutable'))
