@@ -1,34 +1,36 @@
 ---
 title: Cronologia
 area: connections
-summary: Circa un anno di vecchie email, riunioni e messaggi WhatsApp, Slack e Teams, per cercare, leggere e conoscere le tue persone. Mai un'attività.
+summary: Circa un anno di vecchie email, riunioni e messaggi di WhatsApp, Slack e Teams da cercare e leggere, per conoscere meglio le persone. Non crea mai attività.
 covers: history
 code: machine/app/history.py, machine/store/history.py, machine/store/graph_history.py
 keywords: older messages, backfill, archive, past emails
-translated: 42069e80e6f85bdb
+translated: c10fe5fb8d7b2d8b
 ---
-## Cosa tiene
+## Cosa conserva
 
-Ogni account email, calendario, WhatsApp, Slack e Teams tiene circa un anno di vecchi messaggi e riunioni. La ricerca li trova, anche per significato, una conversazione li mostra e il [Calendario](calendar.md) mostra le riunioni passate.
+La tua Machine importa circa un anno di vecchie email, riunioni e messaggi di WhatsApp, Slack e Teams. Puoi trovarli con la ricerca, anche per significato. Le conversazioni li mostrano e il [Calendario](calendar.md) mostra le riunioni passate.
 
-La sua scheda dice fin dove arriva: **Cronologia: fino a** un mese, quando è arrivata.
+In **Connessioni**, ogni connessione indica fino a che data arriva, per esempio **Cronologia: fino a** novembre 2025.
 
 ## Cosa aggiunge al tuo Graph
 
-Il tuo [Graph](graph.md) la conta: quanto sei vicino alle persone, quando vi siete sentiti l'ultima volta, chi conosce chi, e le persone e le organizzazioni stesse. Anche la Cronologia di una persona o di un'organizzazione la mostra, così il suo ultimo contatto è sempre lì. Le risposte della tua Fleet a "chi conosce qualcuno" la usano dagli account di lavoro, con le stesse [regole di condivisione](sharing-rules.md) delle email nuove.
+Il tuo [Graph](graph.md) usa questi dati per calcolare quanto sei in contatto con le persone, quando avete parlato l'ultima volta e chi conosce chi, oltre a raccogliere informazioni sulle persone e sulle organizzazioni. Anche la cronologia di una persona o di un'organizzazione li mostra, così l'ultimo contatto è sempre visibile. Le risposte di Fleet a «chi conosce qualcuno» usano questi dati dagli account di lavoro, seguendo le stesse [regole di condivisione](sharing-rules.md) delle nuove email.
 
 ## Cosa non fa mai
 
-Non crea mai un'attività o una promessa, non conta mai come nuova, non avvia mai un controllo e non entra mai in un progetto. La cronologia personale resta personale, come le email personali. A parte la ricerca per significato, nessun modello di IA la legge.
+Non crea mai un'attività o una promessa, non considera mai questi dati come nuovi, non avvia mai un controllo e non li aggiunge mai a un progetto. La cronologia personale resta privata, come le email personali. A parte la ricerca per significato, nessun modello di AI la legge.
 
-## Quando funziona
+## Quando viene eseguita
 
-Comincia quando il primo sguardo ai tuoi messaggi è finito, e per ogni connessione solo quando la sua prima settimana è arrivata, anche per una che aggiungi dopo. Procede piano in background e aspetta mentre è in corso un controllo o una sincronizzazione, quando un servizio chiede di rallentare o quando la tua Machine ha poco spazio. I messaggi nuovi vengono sempre prima.
+Inizia dopo il primo controllo dei messaggi e, per ogni connessione, solo dopo aver completato la prima settimana. Lo stesso vale per le connessioni aggiunte in seguito. Funziona lentamente in background e si mette in pausa mentre è in corso un controllo o una sincronizzazione, quando un servizio chiede di rallentare o quando la tua Machine ha poco spazio. I nuovi messaggi hanno sempre la precedenza.
 
-Usa l'accesso che ogni connessione ha già. Non viene chiesto niente di nuovo.
+Quando la cronologia di una casella di posta è stata importata, la tua Machine rilegge una volta le email conservate per cercare dettagli di prenotazioni e biglietti. In questo modo, anche le prenotazioni più vecchie compaiono in [Viaggi ed eventi](notes.md). La lettura procede altrettanto lentamente e si mette in pausa per gli stessi motivi.
 
-## Fin dove
+Usa gli accessi già concessi a ogni connessione. Non devi approvare nulla di nuovo.
 
-Circa un anno di default. Le Machine self-hosted possono impostare `history_days` nella configurazione (0 la spegne, fino a 730). Telegram e le altre fonti tengono quello che leggono oggi.
+## Fino a che data
 
-I messaggi di LinkedIn e X risalgono a 90 giorni e vengono letti molto lentamente: poche piccole letture all’ora, solo di giorno, e nessuna per un giorno se il sito fa resistenza, così il tuo account resta al sicuro (`social_history_days`, 0 la spegne).
+Circa un anno. Sul tuo computer, puoi modificare questo periodo con `history_days` nel file delle impostazioni (0 lo disattiva, il massimo è 730). Telegram e le altre fonti non importano la cronologia più vecchia.
+
+I messaggi di LinkedIn e X risalgono a 90 giorni fa. La lettura è molto lenta: poche letture brevi all'ora, solo di giorno. Se il sito oppone resistenza, la lettura si interrompe per un giorno, così il tuo account resta al sicuro (`social_history_days`, 0 lo disattiva).
