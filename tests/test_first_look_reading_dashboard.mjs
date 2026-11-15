@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
 import {readFile} from 'node:fs/promises';
 import {dashboardPage} from './dashboard-page.mjs';
+import {quiet,trackRequests} from './page-calls.mjs';
 const {chromium}=await import('./browser.mjs');
 
 // The first look's line while a batch is being read. A batch saves what it read at its end (2026-11-09: the first 20
@@ -39,7 +40,7 @@ try{
   const id=n=>n+width+scheme;
   // The first batch, just started: 20 of the week's 132 are with the model, none read yet
   cards=[];done=null;run=batch(id('a'),20);dig={read:0,total:132,todos:0,goal:3,days:7,pace:1,unit:'message',names:[],first:null};
-  const context=await browser.newContext({viewport:{width,height},colorScheme:scheme}),page=await context.newPage();
+  const context=await browser.newContext({viewport:{width,height},colorScheme:scheme}),page=await context.newPage();trackRequests(page);
   const shot=async name=>{if(shots)await page.screenshot({path:`${shots}/${name}-${width}-${scheme}.png`})};
   await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
   page.on('pageerror',e=>errors.push(e.message));
@@ -109,18 +110,18 @@ try{
    // Early in the first batch (a few seconds in) and midway (half of what the batch is expected to take), no to-dos yet
    cards=[];done=null;run=batch(id('s1'),20,{duration_seconds:8});dig={read:0,total:132,todos:0,goal:3,days:7,pace:6,unit:'message',names:[],first:null};
    await page.evaluate(async()=>{flPeak=flRead=flTotal=0;await refresh()});
-   await page.locator(empty+' .fl-count').waitFor();await page.waitForTimeout(600);await shot('early-first');
+   await page.locator(empty+' .fl-count').waitFor();await quiet(page);await shot('early-first');
    run=batch(id('s2'),20,{duration_seconds:62});dig={...dig,names:['Mila','Acme Freight']};
    await page.evaluate(async()=>{flNamesAt=Date.now()-1e4;await refresh()});
-   await page.waitForTimeout(600);await shot('midway-first');
+   await quiet(page);await shot('midway-first');
    // The same in the second batch, with the first to-dos on the page
    cards=[card('c1','Reply to Mila about the launch date'),card('c2','Check the parking payment')];
    run=batch(id('s3'),40,{duration_seconds:8});dig={...dig,read:20,todos:2,pace:3};
    await page.evaluate(async()=>{await refresh()});
-   await page.locator(strip+' .fl-count').waitFor();await page.waitForTimeout(600);await shot('early-next');
+   await page.locator(strip+' .fl-count').waitFor();await quiet(page);await shot('early-next');
    run=batch(id('s4'),40,{duration_seconds:62});
    await page.evaluate(async()=>{await refresh()});
-   await page.waitForTimeout(600);await shot('midway-next');
+   await quiet(page);await shot('midway-next');
   }
   await context.close();
  }

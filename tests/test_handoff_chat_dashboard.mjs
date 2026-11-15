@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {dashboardPage} from './dashboard-page.mjs';
+import {settled} from './page-calls.mjs';
 const {chromium}=await import('./browser.mjs');
 
 // A handoff in the card chat. Handed off: a line with its time, the card's buttons under it (not above it on the
@@ -127,8 +128,8 @@ try{
   // Check in now asks for a drafted nudge on the to-do (the service drafts it; Send stays the owner's): no chat, no toast
   const before=calls.length;
   await b.locator('[data-handoff-checkin]').click();
-  for(let i=0;i<50&&!calls.slice(before).some(c=>c.action==='fleet_handoff_checkin');i++)await page.waitForTimeout(50);
-  await page.waitForTimeout(300);
+  await settled(()=>calls.slice(before).some(c=>c.action==='fleet_handoff_checkin'),true,'the check-in posts');
+  await page.waitForTimeout(300);  // a check that it posts once
   assert.deepEqual(calls.slice(before).filter(c=>c.action==='fleet_handoff_checkin').map(c=>c.args),[{suggestion_id:back.id}]);
   assert.notEqual(await page.evaluate(()=>location.hash),'#chat='+back.id);
   assert.equal(await page.locator('#toast.show').count(),0);
@@ -144,7 +145,8 @@ try{
   assert.equal(await page.locator('#suggestions > .card#task-'+later.id).count(),0);
   if(dir){await lat.scrollIntoViewIfNeeded();await lat.screenshot({path:`${dir}/handoff-later-${width}.png`})}
   // Nothing connected can message Pat: the chat opens, and says why calmly, about this to-do (no Report a bug)
-  const wb=w.locator('[data-handoff-checkin]');await wb.scrollIntoViewIfNeeded();await page.waitForTimeout(300);  // a tap, not the end of a scroll
+  const wb=w.locator('[data-handoff-checkin]');await wb.scrollIntoViewIfNeeded();  // a tap, not the end of a scroll: the page stays put for 5 frames first
+  await page.evaluate(()=>new Promise(r=>{let last=-1,same=0;const f=()=>{if(scrollY===last){if(++same>=5)return r()}else{same=0;last=scrollY}requestAnimationFrame(f)};f()}));
   await wb.click();
   await page.locator('#chat-log .chat-handoff-wait').waitFor();
   assert.equal(await page.evaluate(()=>location.hash),'#chat='+waiting.id);
@@ -177,7 +179,7 @@ try{
   assert.equal((await f.locator('.handoff-back').textContent()).trim(),'Take it back from Pat');
   assert.equal(calls.filter(c=>c.action==='fleet_handoff').length,sent);  // nothing sent without the owner's Hand off
   if(dir){await f.scrollIntoViewIfNeeded();await f.screenshot({path:`${dir}/handoff-redirect-form-${width}.png`})}
-  await f.locator('button.primary').click();await page.waitForTimeout(300);
+  await f.locator('button.primary').click();await settled(()=>calls.filter(c=>c.action==='fleet_handoff').at(-1)?.args.suggestion_id,redirect.id,'the redirect posts');
   assert.deepEqual(calls.filter(c=>c.action==='fleet_handoff').at(-1).args,{suggestion_id:redirect.id,fleet:'fl1',member_id:'kim1',title:redirect.title,summary:'Can you pick up Lou’s account recovery on Monday?',contact:'',sources:[],replace:true});
   // Under Later: who has it now, both when both do
   const ll=page.locator('#later-list');if(!await ll.evaluate(d=>d.open))await ll.locator(':scope > summary').click();
@@ -194,7 +196,7 @@ try{
   // Taken back by whoever handed it: their line in the chat of the card it made
   await open(taken.id);
   assert.equal((await page.locator('#chat-log .chat-event').last().textContent()).trim(),'Taken back by Pat · '+hm(t0+2*hour));
-  await page.evaluate(()=>document.querySelector('#toast')?.classList.remove('show'));await page.waitForTimeout(500);  // the earlier Hand off's toast
+  await page.evaluate(()=>document.querySelector('#toast')?.classList.remove('show'));await page.waitForFunction(()=>getComputedStyle(document.querySelector('#toast')).opacity==='0');  // the earlier Hand off's toast
   if(dir)await page.screenshot({path:`${dir}/handoff-taken-back-chat-${width}.png`});
   assert.deepEqual(errors,[]);
   await context.close();

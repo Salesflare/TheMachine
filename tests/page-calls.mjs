@@ -27,18 +27,21 @@ export async function waitForAction(calls,match,{timeout=15000}={}){const want=w
   if(Date.now()>end)assert.fail(`no ${typeof match==='string'?match+' ':''}call within ${timeout} ms`);
   await new Promise(r=>setTimeout(r,20))}}
 
-// The page's requests in flight, for quiet(): call it when the page is made, before it loads anything.
+// The page's requests in flight, for quiet(): call it when the page is made, before it loads anything. quiet(page)
+// then counts them by itself.
+const TRACKED=new WeakMap();
 export function trackRequests(page){let open=0;const done=()=>{open=Math.max(0,open-1)};
- page.on('request',()=>{open++});page.on('requestfinished',done);page.on('requestfailed',done);return ()=>open}
+ page.on('request',()=>{open++});page.on('requestfinished',done);page.on('requestfailed',done);const count=()=>open;TRACKED.set(page,count);return count}
 
-// The page has settled: no request in flight (requests: from trackRequests), and for `frames` animation frames in a
-// row no change to the page and no animation running (an endless one, a spinner, doesn't count). For a check that
+// The page has settled: no request in flight (from trackRequests), and for `frames` animation frames in a
+// row no change to the page, no scroll and no animation running (an endless one, a spinner, doesn't count). For a check that
 // measures where things are after something happened (nothing jumped, nothing shifted).
-export async function quiet(page,requests=()=>0,{frames=8,timeout=15000}={}){const end=Date.now()+timeout;
- const still=n=>new Promise(done=>{let changed=false,left=n;const watch=new MutationObserver(()=>{changed=true});
-  watch.observe(document,{subtree:true,childList:true,attributes:true,characterData:true});
+export async function quiet(page,requests=TRACKED.get(page)||(()=>0),{frames=8,timeout=15000}={}){const end=Date.now()+timeout;
+ const still=n=>new Promise(done=>{let changed=false,left=n;const mark=()=>{changed=true},watch=new MutationObserver(mark);
+  watch.observe(document,{subtree:true,childList:true,attributes:true,characterData:true});document.addEventListener('scroll',mark,{capture:true});
+  const stop=()=>{watch.disconnect();document.removeEventListener('scroll',mark,{capture:true})};
   const moving=()=>document.getAnimations().some(a=>a.playState==='running'&&a.effect?.getComputedTiming().iterations!==Infinity);
-  const frame=()=>{if(changed||moving()){watch.disconnect();return done(false)}if(--left<=0){watch.disconnect();return done(true)}requestAnimationFrame(frame)};
+  const frame=()=>{if(changed||moving()){stop();return done(false)}if(--left<=0){stop();return done(true)}requestAnimationFrame(frame)};
   requestAnimationFrame(frame)});
  for(;;){if(!requests()&&await page.evaluate(still,frames)&&!requests())return;
   if(Date.now()>end)assert.fail(`the page kept changing for ${timeout} ms`);

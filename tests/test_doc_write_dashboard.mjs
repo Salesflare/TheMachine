@@ -5,6 +5,7 @@ import assert from 'node:assert/strict';
 import {mkdir} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {dashboardPage} from './dashboard-page.mjs';
+import {quiet,trackRequests,waitForAction} from './page-calls.mjs';
 const {chromium}=await import('./browser.mjs');
 
 const dashboard=await dashboardPage();
@@ -52,7 +53,7 @@ let browser;
 try{
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
  for(const [width,height,scheme] of [[390,844,'light'],[390,844,'dark'],[1440,900,'dark'],[1440,900,'light'],[1440,700,'light']]){
-  const context=await browser.newContext({viewport:{width,height},colorScheme:scheme}),page=await context.newPage();
+  const context=await browser.newContext({viewport:{width,height},colorScheme:scheme}),page=await context.newPage();trackRequests(page);
   await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
   page.on('pageerror',e=>errors.push(e.message));
   await page.goto('http://127.0.0.1:'+server.address().port);
@@ -84,11 +85,11 @@ try{
   assert.equal(calls.filter(c=>c.action==='confirm_action').length,0);
   if(shots)await page.screenshot({path:`${shots}/edit-dialog-${name}.png`});
   await page.locator('#send-confirm').click();
-  for(let i=0;i<100&&!calls.some(c=>c.action==='confirm_action');i++)await page.waitForTimeout(20);
+  await waitForAction(calls,'confirm_action');
   const confirm=calls.find(c=>c.action==='confirm_action');
   assert.equal(confirm.args.suggestion_id,editId);assert.equal(confirm.args.revision,edit.revision);
   calls.length=0;
-  await page.waitForTimeout(400);  // the confirm's refresh draws the to-dos again
+  await quiet(page);  // the confirm's refresh draws the to-dos again
   // A new doc: all of it, headings as headings; Review and create, then Create
   const fresh=page.locator(`#task-${newId}`);
   assert.match(await fresh.locator('.draft.doc-write .dm').textContent(),/^New doc in Google Docs/);
@@ -150,19 +151,19 @@ try{
   assert.equal(await allow.getAttribute('data-signin'),null);  // not the Machine browser's sign-in dialog
   if(shots)await conn.screenshot({path:`${shots}/docs-card-${name}.png`});
   connectors=[docs({docs_writes:['create','edit']})];
-  await page.evaluate(()=>refresh());await page.waitForTimeout(200);
+  await page.evaluate(()=>refresh());await quiet(page);
   assert.ok((await conn.textContent()).includes('Creates private docs. Edits docs only after you OK each change.'));
   assert.equal(await conn.locator('button',{hasText:'Allow edits'}).count(),0);
   // A hosted Machine's own Google Docs sign-in (documents and drive.file): it says what it can open, nothing more
   connectors=[docs({docs_provider:'google',docs_linked_only:true,own_grant:true,docs_writes:['create','edit']})];
-  await page.evaluate(()=>refresh());await page.waitForTimeout(200);
+  await page.evaluate(()=>refresh());await quiet(page);
   const narrow=await conn.textContent();
   assert.ok(narrow.includes('Opens only docs linked in your mail and the docs it makes.'),narrow);
   assert.ok(!narrow.includes('Google Docs. Opens'),'the card names Google Docs already: '+narrow);
   assert.ok(!narrow.includes('Reads comments'),narrow);
   if(shots)await conn.screenshot({path:`${shots}/docs-card-google-hosted-${name}.png`});
   connectors=[docs({docs_provider:'google',docs_writes:['create','edit']})];
-  await page.evaluate(()=>refresh());await page.waitForTimeout(200);
+  await page.evaluate(()=>refresh());await quiet(page);
   assert.ok((await conn.textContent()).includes('Google Docs. Reads comments, mentions, suggestions and shares.'));
   connectors=[docs({docs_write_signin:'microsoft_docs_write',connect_name:'docs'})];
   await context.close();
