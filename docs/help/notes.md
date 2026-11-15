@@ -69,7 +69,7 @@ The first time, it goes through your past three months in a few hours, outside t
 
 ## Notes from OpenClaw memory
 
-If you used OpenClaw before, your Machine reads the topic pages in its memory folder once, like a page on a trip or your health. What lasts goes in the note on that subject, or a new one. Each line says the page it came from, like From memory/trips/lisbon.md, with its date.
+If you used OpenClaw before, your Machine reads the topic pages in its memory folder once, like a page on a trip or your health. What lasts goes in the note on that subject, or a new one. Each line says the page it came from, like **From your memory pages · Lisbon**, with its date. Hover it to see where that page is.
 
 It never changes those pages, and skips daily logs, pages about the assistant itself and folders marked sensitive or private. It reads at most 80 pages, a few at a time, then never again.
 

@@ -36,7 +36,7 @@ const noteWhen=(v,until)=>v?html`<time datetime="${v}">${until?t('{} to {}',note
 // Where a line came from, and the to-do it points to (a bill or a subscription: the details stay there)
 function noteSource(x){const from=x.source?.gone?t('From a message that is gone')
  :x.source?html`<button type="button" class="link" data-note-src="${x.source.id}" data-kind="${x.source.kind}" data-title="${x.source.title}">${x.source.kind==='calendar.event'?t('From your calendar'):t('From {}',x.source.from||x.source.title||t('a message'))}</button>`
- :x.fact_id?t('From what I learned'):x.data?.memory?t('From {}',x.data.memory):'';  // memory_seed.py: the OpenClaw memory page it came from
+ :x.fact_id?t('From what I learned'):x.data?.memory?html`<span title="${x.data.memory}">${t('From your memory pages · {}',x.data.page||t('a page'))}</span>`:'';  // memory_seed.py: the page it came from, its path on hover only
  // the to-do itself: an open one in the list, picked out; a done one (a paid bill) in its chat, as from Done
  const todo=x.todo?html`<a href="#card=${encodeURIComponent(x.todo)}&or=chat">${t('Open the to-do')}</a>`:'';
  return from||todo?html`<small class="note-src">${from}${from&&todo?' · ':''}${todo}</small>`:''}

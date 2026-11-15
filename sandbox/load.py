@@ -554,7 +554,7 @@ def load_memory_seed(store, when):
         row = db.execute("SELECT id FROM note_pages WHERE key='home:appliances' AND removed_at IS NULL").fetchone()
         if row:
             note_pages.add_kept(db, row['id'], [{'key': 'memory:sandbox:washer', 'text': 'The washing machine is a Lumo WM-700, bought in 2024.',
-                                                 'at': when[:4] + '-03-02', 'data': {'memory': 'memory/home/appliances.md'}}], 'memory', when)
+                                                 'at': when[:4] + '-03-02', 'data': {'memory': 'memory/home/appliances.md', 'page': 'Appliances'}}], 'memory', when)
         memory_seed.finish(db, when)
         db.commit()
 

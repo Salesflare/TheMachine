@@ -121,7 +121,8 @@ class Seed(unittest.TestCase):
             ('Lisbon', 'You stayed three nights at Hotel Example Garden in Alfama.')], 'a link, too few words or saying it again is no fact')
         self.assertIn('"path": "Home > Repairs and upkeep"', self.asked[0])
         self.assertNotIn('"path": "Home"}', self.asked[0], 'a folder is no place for a page: its subject gets a note in it')
-        self.assertEqual({json.loads(x['data'])['memory'] for x in got}, {'memory/home/boiler.md', 'memory/trips/lisbon.md'})
+        self.assertEqual({(json.loads(x['data'])['memory'], json.loads(x['data'])['page']) for x in got},
+                         {('memory/home/boiler.md', 'Boiler'), ('memory/trips/lisbon.md', 'Lisbon, May 2026')}, 'the path, and the page by its first heading')
         self.assertEqual([x['at'][:10] for x in got[1:]], ['2024-10-01', '2026-05-01', '2026-05-05'],
                          "a fact's own date, or else its page's: the newest day the page names")
         with self.store.connect() as db:
@@ -146,6 +147,10 @@ class Seed(unittest.TestCase):
             first = note_pages.add_kept(db, note_id, [{'key': 'k1', 'text': 'You stayed three nights in Alfama.', 'data': {'memory': 'memory/trips/lisbon.md'}}], 'memory', AT)
             note_pages.line_remove(db, first[0], AT)
             self.assertEqual(note_pages.add_kept(db, note_id, [{'key': 'k1', 'text': 'You stayed three nights in Alfama.'}], 'memory', AT), [])
+
+    def test_a_page_is_called_by_its_heading_or_its_name_in_words_never_its_path(self):
+        self.assertEqual(memory_seed.title('# **Kids** — activities\n\nText', 'memory/kids/a.md'), 'Kids, activities')
+        self.assertEqual(memory_seed.title('```\n# not a heading\n```\nNo heading here.', 'memory/people/helena-activities.md'), 'Helena activities')
 
     def test_an_answer_that_stops_before_closing_its_list_still_counts(self):
         batch = [{'rel': 'memory/home/boiler.md'}]

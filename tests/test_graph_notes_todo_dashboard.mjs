@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
+import {readFile} from 'node:fs/promises';
 import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import('./browser.mjs');
 
@@ -8,13 +9,14 @@ const {chromium}=await import('./browser.mjs');
 // line whose to-do is gone shows no link. At 390 the link stays on one line, nothing is wider than the screen, and the
 // breadcrumb shows the path up to the note it is under (Notes › Home).
 const dashboard=await dashboardPage();
+const brand={'/brand/avatar.png':'app-icon-192.png','/brand/avatar-blink.png':'avatar-blink.png','/brand/favicon-32.png':'app-icon-192.png'};
 const at=new Date().toISOString();
 const note={id:'note:4',kind:'home',name:'Bills and subscriptions',area:'personal',starts:null,ends:null,by:'machine',updated_at:at,parent:'note:1',depth:1,children:0,
  lines:[{id:1,text:'Example Energy: a bill every month',at:'2026-11-03',item:'bill',by:'machine',edited:false,event_id:7,fact_id:null,links:[],data:{todo:'0a1b2c3d4e5f6071'},todo:'0a1b2c3d4e5f6071',
          source:{id:7,kind:'gmail.message',title:'Your Example Energy bill',from:'Example Energy',occurred_at:at}},
         {id:2,text:'Example Water: a bill every three months',at:'2026-09-18',item:'bill',by:'machine',edited:false,event_id:null,fact_id:null,links:[],data:{todo:'s-gone'}},
         // brought in once from the owner's OpenClaw memory pages (memory_seed.py): the page it came from
-        {id:3,text:'The internet contract with Example Fiber runs until June 2027.',at:'2026-03-02',item:'',by:'memory',edited:false,event_id:null,fact_id:null,links:[],data:{memory:'memory/home/bills.md'}}]};
+        {id:3,text:'The internet contract with Example Fiber runs until June 2027.',at:'2026-03-02',item:'',by:'memory',edited:false,event_id:null,fact_id:null,links:[],data:{memory:'memory/home/bills.md',page:'Bills'}}]};
 const paid={id:'0a1b2c3d4e5f6071',title:'Pay the Example Energy bill',body:'The Example Energy bill, paid.',status:'completed',scope:'personal',
  created_at:at,updated_at:at,completed_at:at,event_ids:[7],account_ids:['home'],evidence:[],next_actions:[]};
 const home={id:'note:1',kind:'note',name:'Home',area:'personal',starts:null,ends:null,by:'owner',updated_at:at,parent:null,depth:0,children:1,lines:0};
@@ -26,6 +28,7 @@ const server=createServer(async(req,res)=>{const url=new URL(req.url,'http://fix
  if(url.pathname==='/api/cards/done'){res.end(JSON.stringify({cards:url.searchParams.get('id')==='0a1b2c3d4e5f6071'?[paid]:[]}));return}
  if(url.pathname==='/api/graph'&&url.searchParams.has('node')){res.end(JSON.stringify({...note,path:[{id:'note:1',name:'Home'}],created_at:at,renamed:false,owner_dates:false,dated:false,children:[],linked_from:[],tree:[home,{...note,lines:2}]}));return}
  if(url.pathname==='/api/graph'){res.end(JSON.stringify({list_counts:{people:0,quiet:0,new:0,orgs:0,warmup:0,projects:0,projects_done:0},counts:{person:0,org:0,project:0},boards:[],board_suggestions:[],notes:[home,{...note,lines:2}]}));return}
+ if(brand[url.pathname]){res.setHeader('Content-Type','image/png');res.end(await readFile(new URL('../brand/'+brand[url.pathname],import.meta.url)));return}  // as machine/config.py serves it
  res.statusCode=url.pathname.startsWith('/brand/')||url.pathname.startsWith('/assets/')?404:200;res.end('{}')});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
 const base='http://127.0.0.1:'+server.address().port+'/',errors=[];let browser;
@@ -36,10 +39,12 @@ try{
   await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
   page.on('pageerror',e=>errors.push(width+': '+e.message));await page.goto(base+'#graph/note%3A4');
   await page.locator('.note-lines li').nth(2).waitFor();
+  await page.waitForFunction(()=>[...document.querySelectorAll('img[src="brand/avatar.png"]')].some(i=>i.offsetWidth&&i.complete&&i.naturalWidth>0));  // the logo, as served
   if(process.env.SHOTS)await page.screenshot({path:`${process.env.SHOTS}/note-memory-line-${width}.png`,fullPage:true});
   const rows=await page.locator('.note-lines li').evaluateAll(l=>l.map(x=>({src:x.querySelector('.note-src')?.textContent.trim()||'',href:x.querySelector('.note-src a')?.getAttribute('href')||null,
    tall:x.querySelector('.note-src a')?x.querySelector('.note-src a').getClientRects().length:0})));
-  assert.deepEqual(rows.map(r=>[r.src,r.href]),[['From Example Energy · Open the to-do','#card=0a1b2c3d4e5f6071&or=chat'],['',null],['From memory/home/bills.md',null]],width+': '+JSON.stringify(rows));
+  assert.deepEqual(rows.map(r=>[r.src,r.href]),[['From Example Energy · Open the to-do','#card=0a1b2c3d4e5f6071&or=chat'],['',null],['From your memory pages · Bills',null]],width+': '+JSON.stringify(rows));
+  assert.equal(await page.locator('.note-lines li').nth(2).locator('.note-src span').getAttribute('title'),'memory/home/bills.md',width+': the path on hover only');
   assert.equal(rows[0].tall,1,width+': "Open the to-do" on one line');
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),width+': fits');
   const back=await page.locator('#people-view .graph-crumbs>a').evaluateAll(l=>l.filter(a=>a.getClientRects().length).map(a=>[a.textContent.trim(),a.getAttribute('href')]));

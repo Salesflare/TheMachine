@@ -62,6 +62,8 @@ DAY = re.compile(r'\b((?:19|20)\d{2})-([01]\d)-([0-3]\d)\b')
 FENCE = re.compile(r'```.*?(?:```|$)', re.S)
 COMMENT = re.compile(r'<!--.*?(?:-->|$)', re.S)
 FRONT = re.compile(r'\A---\n.*?\n---\n', re.S)
+HEADING = re.compile(r'^#{1,3}\s+(.+)$', re.M)
+TITLE_CHARS = 60
 WORD = re.compile(r'\w+')
 SAME = 0.6  # a fact sharing this much of its words with a line in the note says it again (note_writer.SAME)
 
@@ -142,6 +144,15 @@ def dated(text, path, today):
         return today.isoformat()
 
 
+def title(raw, path):
+    """What a line calls its page: its first heading, else its file name in words ('helena-activities' -> 'Helena
+    activities'). Never the path: that stays in the line's data, for a tooltip."""
+    found = HEADING.search(FENCE.sub('', FRONT.sub('', str(raw or ''))))
+    words = re.sub(r'[*_`\[\]#]+', '', found.group(1)) if found else re.sub(r'[-_\s]+', ' ', Path(path).stem)
+    words = re.sub(r'\s*[—–]\s*', ', ', ' '.join(words.split())).strip(' ,:')[:TITLE_CHARS].strip()
+    return (words[:1].upper() + words[1:]) or 'Note'
+
+
 def _id(text):
     """What the tables keep of a page's path or text: a hash, so its name stays in the sealed line data only."""
     return hashlib.sha256(str(text).encode()).hexdigest()[:16]
@@ -156,7 +167,8 @@ def picked(workspace, today):
         if len(text) < MIN_CHARS:
             continue
         rel = str(path.relative_to(Path(workspace)))
-        out.append({'path': path, 'rel': rel, 'id': _id(rel), 'hash': _id(raw), 'date': dated(text, path, today), 'text': text})
+        out.append({'path': path, 'rel': rel, 'id': _id(rel), 'hash': _id(raw), 'date': dated(text, path, today), 'text': text,
+                    'title': title(raw, path)})
     out.sort(key=lambda p: (p['date'], p['rel']), reverse=True)
     per, kept = {}, []
     for p in out:
@@ -316,7 +328,7 @@ def save(db, batch, found, at):
         live = note_id and db.execute('SELECT 1 FROM note_pages WHERE id=? AND removed_at IS NULL', (note_id,)).fetchone()
         facts = _new(db, note_id, got.get('facts') or []) if live else []
         ids = note_pages.add_kept(db, note_id, [{'key': 'memory:' + page['id'] + ':' + _id(f['text'])[:10],
-                                                 'text': f['text'], 'at': f['date'] or page['date'], 'data': {'memory': page['rel']}}
+                                                 'text': f['text'], 'at': f['date'] or page['date'], 'data': {'memory': page['rel'], 'page': page['title']}}
                                                 for f in facts], 'memory', at) if facts else []
         added += len(ids)
         db.execute('INSERT INTO memory_seed_pages(page,hash,tries,lines,read_at) VALUES(?,?,1,?,?) ON CONFLICT(page) DO UPDATE SET '
