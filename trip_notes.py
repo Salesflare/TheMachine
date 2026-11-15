@@ -2,7 +2,7 @@
 
 The mail source reads a confirmation's structured data (bookings.py) into the message's sealed metadata. collect()
 copies each mail's bookings into trip_bookings (sealed at rest, message_seal.DERIVED), from a cursor over events, so a
-round reads only new mail. drafts() then builds the trips from all of them, and NotesApp.trip_notes_step hands those
+round reads only new mail. Event tickets are kept there too, for event_notes.py; a trip leaves them out. drafts() then builds the trips from all of them, and NotesApp.trip_notes_step hands those
 to note_pages.sync, which keeps the owner's own edits, moves and deletes on top.
 
 How bookings become trips, without a model:

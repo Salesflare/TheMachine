@@ -3,7 +3,7 @@ title: Notes
 area: graph
 summary: One readable page per subject, like a trip or your home, linked to the people and projects in it.
 covers: notes
-code: note_pages.py, note_pages_app.py, trip_notes.py, bookings.py, section_notes.py, home_notes.py, health_notes.py, kids_notes.py, dashboard/graph-notes.js
+code: note_pages.py, note_pages_app.py, trip_notes.py, event_notes.py, bookings.py, section_notes.py, home_notes.py, health_notes.py, kids_notes.py, dashboard/graph-notes.js
 order: 8
 ---
 A note is the overview of one subject: a trip, your home, how invoices are done. Notes sit in the Graph next to People, Organizations and Projects. They stay on your Machine and aren't shared with your team.
@@ -33,6 +33,16 @@ Your changes always stand. Rename a note, move it, change its dates or a line, a
 When a flight, hotel, train, bus, ferry or rental car booking reaches your mail, your Machine adds it to a trip under **Trips**. Bookings for one journey go on one trip: the way out, the hotel and the way back. The trip has the booking code, seat and ticket for each line, in time order, and it shows its dates. In [Calendar](calendar.md) it shows as one band across those days, and opens the trip.
 
 It reads the booking details that airlines, hotels and booking sites put in their confirmation mail. A mail without them doesn't make a trip. A changed booking updates its line, and a canceled one goes. When every booking of a trip is canceled, the trip goes too.
+
+## Events
+
+When tickets for a concert, a match, a festival or a conference reach your mail, your Machine adds the event under **Events**, one note per event. A line says where it is, with the booking code, seat and number of tickets. A second order for the same event goes on the same note. Like a trip, the event shows its dates and is a band in [Calendar](calendar.md) that opens the note.
+
+- Each line says who the tickets came from, like **From Example Tickets**, and opens that mail.
+- If a to-do came from the ticket mail, like paying for the tickets, **Open the to-do** shows it.
+- An event booked on your work mailbox is Work, otherwise it's Personal.
+
+It reads the ticket details that ticket sellers put in their confirmation mail, without AI. A mail without them doesn't make an event. A canceled booking goes, and when all tickets for an event are canceled, the event goes too.
 
 ## Home
 

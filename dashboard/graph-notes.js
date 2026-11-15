@@ -5,7 +5,7 @@
 // name, pick one, and it shows as a plain link. Nothing here sends anything, and notes stay on this Machine.
 let noteList=null,noteEditing=null,noteAdding=false,noteFind=0;
 const notesOpen=new Set((()=>{try{return JSON.parse(sideStore.get('notes-open')||'[]')}catch{return[]}})());
-const NOTE_KIND={trip:'Trip'};
+const NOTE_KIND={trip:'Trip',event:'Event'};
 const noteDay=v=>v?shortDay(String(v).slice(0,10)):'';
 const noteDates=x=>x.starts?(x.ends&&x.ends!==x.starts?t('{} to {}',noteDay(x.starts),noteDay(x.ends)):noteDay(x.starts)):'';
 const noteMeta=x=>[NOTE_KIND[x.kind]?t(NOTE_KIND[x.kind]):'',noteDates(x),x.lines?t(['{} line','{} lines'],x.lines):x.children?t(['{} note','{} notes'],x.children):''].filter(Boolean).join(' · ');

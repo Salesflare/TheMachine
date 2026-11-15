@@ -430,9 +430,32 @@ def load_graph_notes(db, base):
                                      'message-id': f'<{key.replace(":", ".")}@mail.example>', 'bookings': rows,
                                      'source_url': f'https://mail.example/#inbox/t-{key.replace(":", "-")}'}}
                        for key, subject, sender, name, minutes, rows in mails], base)
+    # Events from ticket mail (event_notes.py): a concert with two orders on the personal mailbox, one with a to-do to
+    # pay, and a two-day conference on the work mailbox
+    import event_notes
+    show = lambda code, at, until=None, **more: {'type': 'event', 'code': code, 'status': 'confirmed', 'start': at, **({'end': until} if until else {}), **more}
+    concert = {'name': 'Northern Lights Live', 'where': 'Riverside Arena, Antwerp', 'by': 'Example Tickets'}
+    mails = [('event:concert', 'home-gmail', 'Your tickets for Northern Lights Live', 'orders@tickets.example', 'Example Tickets', 5 * 24 * 60,
+              [show('TK-4411', day(26) + 'T20:00', guests='2', seat='B 14', **concert)]),
+             ('event:concert2', 'home-gmail', 'Order confirmed: Northern Lights Live', 'orders@tickets.example', 'Example Tickets', 2 * 24 * 60,
+              [show('TK-5520', day(26) + 'T20:00', **concert)]),
+             ('event:summit', 'work-gmail', 'Registration confirmed: Example Dev Summit', 'events@devsummit.example', 'Example Dev Summit', 9 * 24 * 60,
+              [show('DS-2207', day(33) + 'T09:00', day(34) + 'T17:30', name='Example Dev Summit', where='Expo Hall, Lyon')])]
+    ids = insert_events(db, [{'key': key, 'account_id': account, 'kind': 'gmail.message', 'minutes_ago': minutes, 'title': subject,
+                              'body': f'Thank you for your order with {name}. Your tickets and booking code are below.',
+                              'metadata': {'from': f'{name} <{sender}>', 'to': 'alex@lumenlabs.example' if account == 'work-gmail' else 'alex.morgan@mail.example',
+                                           'labels': ['INBOX'], 'thread_id': 't-' + key.replace(':', '-'), 'message-id': f'<{key.replace(":", ".")}@mail.example>', 'bookings': rows,
+                                           'source_url': f'https://mail.example/#inbox/t-{key.replace(":", "-")}'}}
+                             for key, account, subject, sender, name, minutes, rows in mails], base)
+    db.execute("INSERT INTO suggestions(id,dedupe_key,title,body,event_ids,account_ids,created_at,status) VALUES(?,?,?,?,?,?,?,'completed')",
+               ('5e1f0a2b3c4d5e6f', 'sandbox:event-pay', 'Pay for the Northern Lights Live tickets', 'Pay the second order before it lapses.',
+                json.dumps([ids['event:concert2']]), json.dumps(['home-gmail']), stamp(2 * 24 * 60 - 30, base)))
     trip_notes.collect(db)
-    found, keep = trip_notes.drafts(db, [{'id': 'work-gmail', 'service': 'gmail', 'boundary': work}])
+    accounts = [{'id': 'work-gmail', 'service': 'gmail', 'boundary': work}, {'id': 'home-gmail', 'service': 'gmail', 'boundary': 'personal'}]
+    found, keep = trip_notes.drafts(db, accounts)
     note_pages.sync(db, 'trip', found, when, keep)
+    found, keep = event_notes.drafts(db, accounts)
+    note_pages.sync(db, 'event', found, when, keep)
     # Home's bills (home_notes.py): paid energy and water bills on the personal mailbox; load_home_notes makes the notes
     bills =[('Brightwater Energy', days) for days in (95, 64, 33, 3)] + [('Clearbrook Water', days) for days in (150, 58)]
     mails = insert_events(db, [{'key': f'home:bill{n}', 'account_id': 'home-gmail', 'kind': 'gmail.message', 'minutes_ago': days * 24 * 60,

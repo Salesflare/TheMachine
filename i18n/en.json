@@ -618,6 +618,7 @@
  "At most {} voices: work this into an existing channel or All": "At most {} voices: work this into an existing channel or All",
  "At stake": "At stake",
  "At stake: {}": "At stake: {}",
+ "At {}": "At {}",
  "Attach a message": "Attach a message",
  "Attach a message this to-do is about": "Attach a message this to-do is about",
  "Attach an email": "Attach an email",
@@ -6048,6 +6049,7 @@
  "Thursdays after {}": "Thursdays after {}",
  "Tick Save for next time when you sign in to a site.": "Tick Save for next time when you sign in to a site.",
  "Tick the skills to import": "Tick the skills to import",
+ "Tickets": "Tickets",
  "Time": "Time",
  "Time format": "Time format",
  "Time passed": "Time passed",
@@ -8078,6 +8080,7 @@
   "one": "{} thread",
   "other": "{} threads"
  },
+ "{} tickets": "{} tickets",
  "{} times": {
   "one": "{} time",
   "other": "{} times"

@@ -9,7 +9,9 @@ import logging
 import threading
 from datetime import date, timedelta
 from email.utils import parseaddr
+from time import monotonic
 
+import event_notes
 import health_notes
 import help_chat
 import home_notes
@@ -23,6 +25,7 @@ from timeutil import now, today
 
 LOG = logging.getLogger('personal-assistant')
 SECTION_KINDS = (home_notes.KIND, health_notes.KIND, kids_notes.KIND)  # the kinds kept in sections (section_notes.py)
+EVENTS_EVERY = 3600  # seconds: the events brought up to date without new ticket mail (a to-do made later)
 
 
 def _sender(metadata, mine):
@@ -58,15 +61,23 @@ class NotesApp:
         return [a['id'] for a in todo_areas.areas(self.config.get('accounts') or [])]
 
     def trip_notes_step(self):
-        """Every ten minutes, plain code: new booking mail kept (trip_notes.collect), then the trips brought up to date
-        when there was any. Returns the notes it changed."""
+        """Every ten minutes, plain code: new booking mail kept (trip_notes.collect), then the trips and events
+        (event_notes.py) brought up to date when there was any. The events also once an hour without new mail, so a
+        to-do made from a ticket mail later on opens from its line. Returns the notes it changed."""
         try:
+            accounts, clock = self.config.get('accounts') or [], monotonic()
             with self.store.connect() as db:
                 db.execute('BEGIN IMMEDIATE')
-                if not trip_notes.collect(db):
-                    return []
-                found, keep = trip_notes.drafts(db, self.config.get('accounts') or [])
-                return note_pages.sync(db, 'trip', found, now(), keep)
+                kept = trip_notes.collect(db)
+                touched = []
+                if kept:
+                    found, keep = trip_notes.drafts(db, accounts)
+                    touched = note_pages.sync(db, 'trip', found, now(), keep)
+                if kept or clock - getattr(self, 'event_notes_at', -EVENTS_EVERY) >= EVENTS_EVERY:
+                    self.event_notes_at = clock
+                    found, keep = event_notes.drafts(db, accounts)
+                    touched += note_pages.sync(db, 'event', found, now(), keep)
+                return touched
         except Exception as error:  # the next round tries again from the same mail
             LOG.warning('trip notes error=%s', type(error).__name__)
             return []
@@ -125,7 +136,7 @@ class NotesApp:
         return touched
 
     def calendar_notes(self, start, end):
-        """The dated notes (trips) that touch the Calendar's window, as bands: a day either side, since the window's
+        """The dated notes (trips, events) that touch the Calendar's window, as bands: a day either side, since the window's
         edges are instants and a note's dates are local days (the Calendar keeps what touches each week)."""
         try:
             first = (date.fromisoformat(start[:10]) - timedelta(days=1)).isoformat()
