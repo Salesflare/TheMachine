@@ -430,6 +430,7 @@ NOT_DASHBOARD = {'cli.py', 'installer.py', 'network_crypto.py', 'message_seal.py
 SERVER_TEXT = {
     'own_addresses.py': ['classify', 'SENT_ONLY', 'NAMED_ONLY', 'LABELS'],
     'onboarding.py': ['WHAT', 'LABELS'],
+    'machine/services.py': ['SERVICES'],  # each service's names and what its card counts (the page's SERVICE_ROWS)
     'home_notes.py': ['SECTIONS'],       # the Home notes' titles (t(section))
     'health_notes.py': ['SECTIONS'],     # the Health notes' titles (t(section))
     'kids_notes.py': ['SECTIONS'],       # the Kids notes' titles (t(section))

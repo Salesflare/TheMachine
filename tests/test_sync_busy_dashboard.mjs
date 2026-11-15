@@ -4,7 +4,10 @@ import {dashboardPage} from './dashboard-page.mjs';
 const html=await dashboardPage();
 const block=html.slice(html.indexOf('const syncError='),html.indexOf('const label='));
 const t=(s,...a)=>a.reduce((x,v)=>x.replace('{}',v),Array.isArray(s)?s[0]:s);
-const syncError=new Function('t',block+';return syncError')(t);
+// the names come from the page's services (machine/services.py `short`, shell-core.js SERVICE_NAMES)
+const rows=JSON.parse(html.match(/<script id="source-kinds" type="application\/json">(.*?)<\/script>/s)[1]).services;
+const SERVICE_NAMES=Object.fromEntries(Object.entries(rows).filter(([,r])=>r.short).map(([k,r])=>[k,r.short]));
+const syncError=new Function('t','SERVICE_NAMES',block+';return syncError')(t,SERVICE_NAMES);
 assert.equal(syncError('google_meet_http:HTTP_503'),'Google Meet had a problem on its side');
 assert.equal(syncError('trello_http:HTTP_502'),'Trello had a problem on its side');
 assert.equal(syncError('salesflare:HTTP_500'),'Salesflare CRM had a problem on its side');

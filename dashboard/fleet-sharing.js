@@ -14,7 +14,7 @@ function sharedStatus(g,d){
  return 'On. Client threads go about an hour after they\'re sorted.'}
 const sharedTitle=x=>x.event_id?html`<button type="button" class="shared-read ell" data-shared-read="${x.event_id}" title="${x.title}">${x.title||'(no subject)'}</button>`:html`<span class="ell" title="${x.title}">${x.title||'(no subject)'}</span>`;
 const sharedRow=(x,act)=>html`<li class="shared-row"><span class="grow">${sharedTitle(x)}<small class="muted">${[x.why,x.at&&shortDay(x.at)].filter(Boolean).join(' · ')}</small></span>${act}</li>`;
-const CONN_LABEL={gmail:'Gmail',outlook:'Outlook',calendar:'Google Calendar',outlook_calendar:'Outlook Calendar',icloud_calendar:'iCloud Calendar',caldav:'Other calendar',proton_calendar:'Proton Calendar',ics:'Calendar link (ICS)',exchange:'Exchange Server',slack:'Slack',salesflare:'Salesflare',whatsapp:'WhatsApp',intercom:'Intercom',linkedin:'LinkedIn',x:'X',telegram:'Telegram',signal:'Signal chats'};
+const CONN_LABEL=serviceField('sharing');  // a connection's name in Your connections, else its short name (machine/services.py)
 // d: the overview, or null while it comes (drawn first: its tiles at their size, its lists one Loading… box)
 function sharedHTML(work,g,d){const n=x=>d?Number(x||0).toLocaleString(DL):'\u00a0',fleet=work.id;
  const h=[html`<div class="fleet-box shared-status"><h3>${t('What\'s shared with {}',work.name)}</h3><p class="sub">${t(sharedStatus(g,d))}</p>`];

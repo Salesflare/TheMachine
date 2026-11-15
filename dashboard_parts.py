@@ -120,7 +120,7 @@ def expand(source, folder, kinds=KINDS):
 
 
 # The page's <script id="source-kinds" type="application/json">: every kind of event and of message the app knows
-# (machine/kinds.py) and the to-do status groups (machine/todo_states.py), for the page's scripts to read instead of
+# (machine/kinds.py), the to-do status groups (machine/todo_states.py) and the services (machine/services.py), for the page's scripts to read instead of
 # lists of their own. The same for every owner, so it's filled in here, where the demo and the tests get it too.
 KINDS_MARK = '__SOURCE_KINDS__'
 
@@ -144,13 +144,13 @@ def todo_groups(module):
 
 
 def kinds_json(root=None):
-    """machine/kinds.py and machine/todo_states.py of the app in root as the page's JSON: {"kinds": {...}, "sends":
-    {...}, "todo": {"CLOSED": [...], ...}}. Read from that folder's own files (leaves with no imports), so a page
+    """machine/kinds.py, machine/todo_states.py and machine/services.py of the app in root as the page's JSON: {"kinds":
+    {...}, "sends": {...}, "todo": {"CLOSED": [...], ...}, "services": {"gmail": {"short": "Email", ...}, ...}}. Read from that folder's own files (leaves with no imports), so a page
     assembled from another checkout gets that checkout's; a folder with only the page and its parts (a copy a test
     makes) gets the ones beside this file."""
-    kinds, states = _leaf(root, 'kinds'), _leaf(root, 'todo_states')
+    kinds, states, services = _leaf(root, 'kinds'), _leaf(root, 'todo_states'), _leaf(root, 'services')
     # </ can't end the script element early: no kind or name has one, and < keeps it so if one ever did
-    return json.dumps({'kinds': kinds.KINDS, 'sends': kinds.SENDS, 'todo': todo_groups(states)},
+    return json.dumps({'kinds': kinds.KINDS, 'sends': kinds.SENDS, 'todo': todo_groups(states), 'services': services.page()},
                       separators=(',', ':'), sort_keys=True).replace('<', '\\u003c')
 
 
