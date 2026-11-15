@@ -64,6 +64,8 @@ Only Personal bills, subscriptions and email are used, and Home notes are always
 
 For **Home**, **Health** and **Kids** together, your Machine also asks its AI once about each sender of your Personal email. It sends the sender's name, how many emails they sent and their newest subjects with the numbers hidden, never the email itself.
 
+Bulk email never goes in these notes and is never sent to the AI: spam, promotions, newsletters and other list mail, and no-reply notifications. Mail in a thread you replied in still counts, and so does booking mail for **Trips** and **Events**.
+
 The first time, it goes through your past year of email in a few hours, outside the night and only while your AI plan has room. After that it looks at new senders every six hours.
 
 ## Health
@@ -83,7 +85,7 @@ Under **Kids**, your Machine keeps what it knows about your children: **School**
 
 - What your Machine learned about your child, like their class teacher or swimming day, is a line that links to their page. It counts someone as your child when their **To you** says so, like daughter or son.
 - A bill for school, a club or childcare gets a line that opens its to-do. The amount stays there.
-- Each email from the school, a club or childcare, like the weekly letter or a note about a trip, is a dated line with its subject, so everything they send is in one place. Tapping it opens the email.
+- Each email from the school, a club or childcare, like a note about a trip or a change of plans, is a dated line with its subject, so everything they send is in one place. Tapping it opens the email.
 - Your own note for one child in a part, like one for Isla under **School**, gets what's about that child.
 
 Kids notes are always Personal, even when the school writes to your work address. Your Machine asks its AI once about each new thing, to tell whether it's about your children.
