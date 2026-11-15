@@ -32,7 +32,7 @@ class FakeCron:
 
     def __init__(self, jobs):
         self.jobs = {job['id']: job for job in jobs}
-        self.calls, self.down, self.refuse = [], False, False
+        self.calls, self.down, self.refuse, self.slow = [], False, False, False
 
     def __call__(self, command, **kwargs):
         self.calls.append(command[1:])
@@ -49,6 +49,10 @@ class FakeCron:
                 return subprocess.CompletedProcess(command, 1, '', 'system-owned monitor jobs cannot be edited by cron clients')
             found['enabled'] = command[2] == 'enable'
             return subprocess.CompletedProcess(command, 1 if self.refuse else 0, '{}', '')
+        if command[1:4] == ['gateway', 'call', 'memory.search']:
+            if self.slow:
+                raise subprocess.TimeoutExpired(command, kwargs.get('timeout'))
+            return subprocess.CompletedProcess(command, 0, json.dumps({'results': [{'snippet': 'private note'}]}), '')
         return subprocess.CompletedProcess(command, 1, '', 'unknown')
 
     def enabled(self):
@@ -192,6 +196,33 @@ class MemoryRebuildTest(unittest.TestCase):
         self.cron.down = True
         self.assertIsNone(self.step(at(23, day=15)))
         self.assertFalse((self.data / memory_rebuild.STATE).exists())
+
+    def test_opening_asks_the_gateway_for_one_search_that_starts_the_rebuild(self):
+        with self.assertLogs('personal-assistant', 'INFO') as logs:
+            self.assertEqual(self.step(at(23, minute=0)), 'opened')
+        searches = [call for call in self.cron.calls if call[:2] == ['gateway', 'call']]
+        self.assertEqual(len(searches), 1)  # through the running Gateway only, never `openclaw memory ...` on the index
+        self.assertEqual(json.loads(searches[0][searches[0].index('--params') + 1])['agentId'], 'main')
+        state = memory_rebuild.read_state(self.data)
+        self.assertEqual(state['started'], {'main': 'answered'})
+        self.assertNotIn('private note', json.dumps(state) + ''.join(logs.output))  # results are thrown away
+        self.assertEqual(self.step(at(23, minute=10)), 'open')
+        self.assertEqual(len([call for call in self.cron.calls if call[:2] == ['gateway', 'call']]), 1)  # once
+
+    def test_a_search_still_rebuilding_after_its_wait_is_no_answer_and_the_window_decides(self):
+        self.cron.slow = True
+        self.assertEqual(self.step(at(23, minute=0)), 'opened')
+        self.assertEqual(memory_rebuild.read_state(self.data)['started'], {'main': 'no answer'})
+        self.rebuilding(at(23, minute=9))
+        self.assertEqual(self.step(at(23, minute=10)), 'open')
+        self.assertEqual(self.step(at(23, minute=40)), 'open')  # it started: the window stays
+
+    def test_no_search_when_the_index_is_in_its_format(self):
+        self.save_meta(1)
+        self.log('2026-11-14', '2026-11-14T03:51:46.001+01:00', '2026-11-14T07:58:13.608+01:00', '2026-11-14T09:00:00.000+01:00')
+        self.assertEqual(self.step(at(23, minute=0)), 'opened')  # stuck on tries cut off, not on the format
+        self.assertNotIn('started', memory_rebuild.read_state(self.data))
+        self.assertFalse([call for call in self.cron.calls if call[:2] == ['gateway', 'call']])
 
     def test_a_window_no_rebuild_starts_in_closes_after_half_an_hour(self):
         self.assertEqual(self.step(at(23, minute=0)), 'opened')
