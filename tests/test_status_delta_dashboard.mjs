@@ -53,7 +53,7 @@ try{
  const path='api/graph?view=x';
  assert.deepEqual(await page.evaluate(p=>deltaGet(p),path),{people:[person('p1','Ann'),person('p2','Bo')],counts:{people:2}});
  graphAnswer=since=>since==='g1'?{_token:'g2',_since:'g1',people:[{'=':'p1'},person('p2','Bo B.')]}:{_token:'gx'};
- const g=await page.evaluate(p=>deltaGet(p).then(v=>{const out=structuredClone(v);v.people[0].name='changed here';return out}),path);
+ const g=await page.evaluate(p=>deltaGet(p).then(v=>{const out=JSON.parse(JSON.stringify(v));v.people[0].name='changed here';return out}),path);
  assert.deepEqual(g,{people:[person('p1','Ann'),person('p2','Bo B.')],counts:{people:2}});
  graphAnswer=since=>since==='g2'?{_token:'g3',_since:'g2',people:[{'=':'p1'},{'=':'p2'}]}:{_token:'gx'};
  assert.deepEqual((await page.evaluate(p=>deltaGet(p),path)).people.map(x=>x.name),['Ann','Bo B.']);  // a caller's edit never reaches the held answer

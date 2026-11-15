@@ -115,7 +115,7 @@ async function deltaGet(path,opt){const held=deltaHeld.get(path);
  let out=await request(held?path+(path.includes('?')?'&':'?')+'since='+encodeURIComponent(held._token):path,opt);
  if(out._since)out=deltaJoin(held,out)||await request(path,opt);
  if(out._token)deltaHeld.set(path,out);else deltaHeld.delete(path);
- const v=structuredClone(out);delete v._token;return v}
+ const v=JSON.parse(JSON.stringify(out));delete v._token;return v}
 const hhmm=t=>fmtHM(t);
 // What the screen shows is older than now: "Offline · updated 10:42", quietly at the foot of the sidebar
 // (said only once it is really offline, netOut: one failed read on opening the app is not)
