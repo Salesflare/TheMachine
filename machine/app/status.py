@@ -51,6 +51,7 @@ def agent_work_status(job):
 
 
 CLOSED = todo_states.CLOSED
+STATUS_RECENT = 180  # seconds a kept status may be a page's first read (StatusApp.status_recent)
 
 
 def compact_card(s):
@@ -195,7 +196,26 @@ class StatusApp:
             return self.agent_status(str(args.get('suggestion_id') or '').strip() or None)
         # done: how many done to-dos (the dashboard: its Done list's first page, it loads the rest itself); else the last 100
         done = args.get('done')
-        return self.status_fresh(self.status_kept(max(0, min(int(done), 100)) if isinstance(done, int) else None))
+        done = max(0, min(int(done), 100)) if isinstance(done, int) else None
+        if args.get('recent') and (recent := self.status_recent(done)):
+            return {**self.status_fresh(recent[0]), '_kept': recent[1]}
+        return self.status_fresh(self.status_kept(done))
+
+    def status_recent(self, done):
+        """(the status kept last, its age in seconds) when it was built (status_kept) less than STATUS_RECENT ago, for a
+        page's first read (api/status with X-Status-Kept): shown at once while the page asks again for the current one, which is
+        built from here on the side. In memory only, so a Machine that restarted (an update too) has none from before.
+        None otherwise: the page waits for the current one as before."""
+        kept = self.__dict__.get('_status_kept')
+        if not kept:
+            return None
+        with kept['lock']:
+            last = kept['last']
+            age = time.monotonic() - last['started'] if last else None
+            if age is None or last['done'] != done or not 0 <= age < STATUS_RECENT:
+                return None
+        aside(lambda: self.status_kept(done), 'status')
+        return last['result'], int(age)
 
     def status_mark(self, done, kept):
         """What the kept status was built from, as (the rest, the connections' cards): the database, the config, and the

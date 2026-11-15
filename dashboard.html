@@ -4,8 +4,9 @@
 <script>// The mobile app (its WebView says TheMachineApp/<n>): nothing that leads to buying is shown in it ([data-buy]).
 if(/ TheMachineApp\/\d/.test(navigator.userAgent))document.documentElement.classList.add('in-app');
 // The to-dos are what the page waits on: their request starts here, beside the page's own script, not after it has run
-// (shell-network.js statusFirst takes the answer). A failed one is asked again there.
-var statusEarly=fetch('api/status',{redirect:'manual'}).catch(()=>null);
+// (shell-network.js statusFirst takes the answer). A failed one is asked again there. X-Status-Kept: the Machine may answer
+// with the status it built a moment ago, and the page asks for the current one right after (shell-tabs.js refresh).
+var statusEarly=fetch('api/status',{redirect:'manual',headers:{'X-Status-Kept':'1'}}).catch(()=>null);
 // Older browsers (an Android System WebView before Chrome 92 lacks .at, findLast, crypto.randomUUID): the few newer
 // built-ins the page uses, filled in only where missing. tests/test_dashboard_compat.py keeps the rest of the page off newer ones.
 (()=>{const def=(o,k,f)=>{if(o&&!(k in o))Object.defineProperty(o,k,{value:f,writable:true,configurable:true})};

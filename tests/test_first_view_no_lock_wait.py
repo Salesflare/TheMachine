@@ -4,6 +4,7 @@ tables, counted the visit, marked the first view and made a new table's guards, 
 the import. Measured on a sealed sandbox install with another connection holding the write lock for 8 s: the first
 view complete after 8.7 s -> 0.3 s."""
 import http.client
+import json
 import secrets
 import sqlite3
 import tempfile
@@ -127,6 +128,22 @@ class FirstViewNoLockWait(unittest.TestCase):
         self.assertTrue(request_timing.aside_settled())
         with self.app.store.connect() as db:
             self.assertEqual([r['at'] for r in db.execute("SELECT at FROM milestones WHERE name='greeting'")], [at])
+
+    def test_a_pages_first_read_may_take_the_status_kept_a_moment_ago(self):
+        port = self.serve()
+        def status(path, first=False):
+            conn = http.client.HTTPConnection('127.0.0.1', port, timeout=60)
+            conn.request('GET', path, headers={**OWNER, **({'X-Status-Kept': '1'} if first else {})})
+            body = json.loads(conn.getresponse().read()); conn.close()  # no Accept-Encoding: plain
+            return body
+        self.assertNotIn('_kept', status('/api/status', first=True), 'nothing kept yet: built as before')
+        self.assertNotIn('_kept', status('/api/status'))
+        first = status('/api/status', first=True)
+        self.assertTrue(0 <= first['_kept'] < 180)
+        self.assertTrue(request_timing.aside_settled())  # the current one, built on the side
+        current = status('/api/status?since=' + first['_token'])
+        self.assertEqual(current['_since'], first['_token'])
+        self.assertIn('_kept', current['_gone'], 'the page asks again right after and gets the current one as a change list')
 
     def test_a_sealed_table_made_meanwhile_gets_its_guards_without_holding_a_page(self):
         port = self.serve()

@@ -12,6 +12,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import assistant as a
+from machine.app import status
 
 NOW = dt.datetime.now(dt.timezone.utc).replace(microsecond=0)
 WORK = {'id': 'work', 'email': 'owner@acme.example', 'service': 'gmail', 'boundary': 'work:Acme'}
@@ -112,6 +113,46 @@ class StatusKept(unittest.TestCase):
         self.app.store = type('Bare', (), {'path': None, '__getattr__': lambda s, n: getattr(self.store, n)})()
         self.status(); self.status()
         self.assertEqual(len(self.builds), 2)
+
+    # A page's first read (api/status with X-Status-Kept) may take the one kept a moment ago (status_recent): shown at once with its
+    # age while the current one is built on the side, and the page asks for that right after
+    def recent(self):
+        return self.app.action('status', {'full': True, 'done': 25, 'recent': True})
+
+    def test_a_first_read_takes_the_kept_one_and_the_current_one_is_built(self):
+        kept = self.app.status_kept(25)
+        self.store.commit_page('work', {}, [mail(1)])  # a change since
+        out = self.recent()
+        self.assertTrue(0 <= out.pop('_kept') < status.STATUS_RECENT)
+        for part in ('suggestions', 'promises', 'connectors'):
+            self.assertIs(out[part], kept[part], 'the one kept, as it was')
+        self.assertEqual(len(self.builds), 1, 'and the current one built on the side')
+        self.assertNotIn('_kept', self.status())
+        self.assertEqual(len(self.builds), 1, 'which the next read takes')
+
+    def test_a_first_read_has_what_changes_in_memory_fresh(self):
+        self.status()
+        self.app.model_usage = {'used': 7}
+        self.assertEqual(self.recent()['model_usage'], {'used': 7})
+
+    def test_a_first_read_never_takes_one_older_than_a_few_minutes(self):
+        self.status()
+        started = self.app._status_kept['last']['started']
+        with patch('machine.app.status.time.monotonic', return_value=started + status.STATUS_RECENT + 1):
+            self.assertNotIn('_kept', self.recent())
+
+    def test_a_restarted_machine_has_none_from_before(self):
+        self.status()
+        self.app = object.__new__(a.App)  # a new process: nothing kept in memory
+        self.app.store, self.app.config_path, self.app.config = self.store, None, {'accounts': [WORK]}
+        self.addCleanup(lambda: (self.app.__dict__.get('_status_kept') or {}).get('watch') and self.app._status_kept['watch'].close())
+        self.assertIsNone(self.app.status_recent(25))
+        self.assertNotIn('_kept', self.recent())
+
+    def test_only_a_first_read_of_the_same_done_page_takes_it(self):
+        self.status()
+        self.assertIsNone(self.app.status_recent(None))
+        self.assertNotIn('_kept', self.status())
 
 
 if __name__ == '__main__':
