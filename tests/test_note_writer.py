@@ -72,7 +72,7 @@ class Pages(unittest.TestCase):
         quote, lease = 'S' + str(ids['c1']), 'S' + str(ids['c2'])
         return lambda n: {'note': n['note'], 'summary': {'text': 'Moving the office to 12 Example Street; the movers come on Saturday 24 October.', 'sources': [quote, lease]},
                           'facts': [{'text': 'The move costs 2,400 euros.', 'sources': [quote]}, {'text': 'A bullet with nothing behind it.', 'sources': ['S999']}],
-                          'decisions': [{'text': 'You booked the movers for Saturday.', 'sources': [quote]}],
+                          'decisions': [{'text': 'Saturday over Sunday, since the building is closed then.', 'sources': [quote]}],
                           'open': [], 'timeline': [{'date': '2026-10-05', 'text': 'Lease signed for 12 Example Street.', 'sources': [lease]},
                                                     {'date': '2026-10-02', 'text': 'You booked the movers.', 'sources': [quote]}]}
 
@@ -167,6 +167,17 @@ class Pages(unittest.TestCase):
         self.note()
         with mock.patch.object(note_writer, 'DAY_CAP', 0), self.store.connect() as db:
             self.assertEqual(note_writer.due(db), [])
+
+    def test_a_page_says_each_thing_once_and_without_links(self):
+        notes = [{'note': 'N7', 'title': 'Office move', 'sources': [{'id': 'S1'}, {'id': 'S2'}]}]
+        answer = {'notes': [{'note': 'N7', 'summary': {'text': 'The office moves to the second floor on December 1.', 'sources': ['S1']},
+                             'facts': [{'text': 'Invoice 4411 for the movers: 900 euros, paid.', 'sources': ['S1']},
+                                       {'text': 'The call is at https://meet.example/abc-def for the movers.', 'sources': ['S2']}],
+                             'timeline': [{'date': '2026-11-02', 'text': 'Movers sent invoice 4411: 900 euros, paid.', 'sources': ['S1']},
+                                          {'date': '2026-11-05', 'text': 'Mila agreed on the December 1 date.', 'sources': ['S2']}]}]}
+        page = note_writer.parse(json.dumps(answer), notes)[7]
+        self.assertEqual([b['text'] for b in page['facts']], ['Invoice 4411 for the movers: 900 euros, paid.'])
+        self.assertEqual([b['text'] for b in page['timeline']], ['Mila agreed on the December 1 date.'])
 
 
 class Conversations(unittest.TestCase):

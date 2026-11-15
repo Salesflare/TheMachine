@@ -51,6 +51,9 @@ SAID_CHARS, SAID_EACH, SAID_MESSAGES = 700, 260, 4  # what it reads of each conv
 SUMMARY_CHARS, BULLET_CHARS = 360, 200
 SECTIONS = {'facts': 4, 'decisions': 3, 'open': 3, 'timeline': 6}  # the most bullets each shows
 DAY = re.compile(r'\d{4}-\d{2}-\d{2}')
+LINK = re.compile(r'https?://|www\.', re.I)  # the line itself opens the message: a link in a bullet is noise
+WORD = re.compile(r'\w+')
+SAME = 0.6  # a bullet sharing this much of its words with one already on the page says it again
 TIMEOUT = 180
 
 
@@ -147,6 +150,9 @@ The page goes above the note's sources, so it says what they add up to, in {pers
 - "open": up to {SECTIONS['open']} things still waiting, on whom, with the date when there is one.
 - "timeline": up to {SECTIONS['timeline']} dated steps, oldest first, each with its "date" (YYYY-MM-DD).
 Quality or nothing: each bullet states something concrete from the sources, with what and when. Leave a section empty rather than vague ("There were several emails", "Things are progressing"). When the sources say nothing concrete, give "summary": "" and nothing else: no page is better than a vague one.
+- Say each thing once on the page: a fact is not repeated in the timeline. The timeline is how the matter moved (asked, agreed, sent, changed), not one bullet per message.
+- Routine mail that repeats itself (receipts, invoices, notices) gets a summary of the pattern and at most a fact or two, no timeline.
+- Leave out what the owner can't use: links, meeting codes, email addresses, and what the sources don't say.
 Rules:
 - Every bullet and the summary list the source ids they stand on in "sources" (S…). One without a source is dropped.
 - Only what the sources say. "today" is the owner's date: never call something before today coming or still to do; something done is not open.
@@ -164,7 +170,7 @@ def _bullet(item, given, title, dated=False):
         return None
     sources = [int(s[1:]) for s in dict.fromkeys(str(s).strip().upper() for s in item.get('sources') or () if isinstance(s, (str, int))) if s in given]
     text = _clean(item.get('text'), BULLET_CHARS)
-    if not sources or len(text.split()) < 3 or text.casefold().strip('. ') == title.casefold():
+    if not sources or len(text.split()) < 3 or text.casefold().strip('. ') == title.casefold() or LINK.search(text):
         return None
     out = {'text': text, 'sources': sources[:6]}
     if dated:
@@ -198,13 +204,14 @@ def parse(answer, notes):
         if not top or len(top['text'].split()) < 6:
             out[note_id] = None
             continue
-        page = {'summary': top}
+        page, said = {'summary': top}, []
         for section, most in SECTIONS.items():
-            kept, seen = [], set()
+            kept = []
             for b in item.get(section) or () if isinstance(item.get(section), list) else ():
                 b = _bullet(b, given, note['title'], dated=section == 'timeline')
-                if b and b['text'].casefold() not in seen:
-                    seen.add(b['text'].casefold())
+                words = b and set(WORD.findall(b['text'].casefold()))
+                if b and not any(len(words & w) >= SAME * max(len(words), len(w)) for w in said):  # once per page
+                    said.append(words)
                     kept.append(b)
             if section == 'timeline':
                 kept.sort(key=lambda b: b['date'])
