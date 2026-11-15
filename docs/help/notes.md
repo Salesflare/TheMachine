@@ -3,7 +3,7 @@ title: Notes
 area: graph
 summary: One readable page per subject, like a trip or your home, linked to the people and projects in it.
 covers: notes
-code: note_pages.py, note_pages_app.py, trip_notes.py, bookings.py, section_notes.py, home_notes.py, health_notes.py, dashboard/graph-notes.js
+code: note_pages.py, note_pages_app.py, trip_notes.py, bookings.py, section_notes.py, home_notes.py, health_notes.py, kids_notes.py, dashboard/graph-notes.js
 order: 8
 ---
 A note is the overview of one subject: a trip, your home, how invoices are done. Notes sit in the Graph next to People, Organizations and Projects. They stay on your Machine and aren't shared with your team.
@@ -55,6 +55,17 @@ Under **Health**, your Machine keeps what it knows about your own health: **Appo
 - Your own note in a part, like one for your physio under **Appointments**, gets what's about that thing.
 
 Health notes are always Personal, even when a bill came in on your work address. Your Machine asks its AI once about each new appointment, bill or thing it learned, to tell whether it's about your own health. It sends an appointment's name, never its notes or who else is invited.
+
+## Kids
+
+Under **Kids**, your Machine keeps what it knows about your children: **School**, **Activities**, **Doctors and care** and **Bills and fees**. A part shows up once it has at least two lines.
+
+- What your Machine learned about your child, like their class teacher or swimming day, is a line that links to their page. It counts someone as your child when their **To you** says so, like daughter or son.
+- An event in your calendar that only you go to, like a parents' evening, gets a line with its next date, or its last one. **From your calendar** opens it.
+- A bill for school, a club or childcare gets a line that opens its to-do. The amount stays there.
+- Your own note for one child in a part, like one for Isla under **School**, gets what's about that child.
+
+Kids notes are always Personal, even when the school writes to your work address. Your Machine asks its AI once about each new thing, to tell whether it's about your children.
 
 ## Merge, delete and undo
 

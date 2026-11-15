@@ -1,7 +1,8 @@
 """Notes in sections (docs/help/notes.md): the engine behind the kinds The Machine keeps as a few notes under one folder
-note, like Home (home_notes.py) and Health (health_notes.py).
+note, like Home (home_notes.py), Health (health_notes.py) and Kids (kids_notes.py).
 
-A kind (Kind) brings its candidates, found in plain code (bills, subscriptions, appointments, what was learned), and
+A kind (Kind) brings its candidates, found in plain code (bills, subscriptions, the owner's own calendar events, what
+was learned, what was learned about the owner's children), and
 says what its parts are. This module does the rest, the same way for every kind:
 - Whether a candidate belongs to the kind, and in which part, is a matter of meaning: one small model call (the
   background model, no agent, no tools) over the new candidates only, at most ASK_MAX at a time. Each answer is kept
@@ -37,6 +38,14 @@ NOTES_MAX = 20  # the owner's notes per part the call sees
 LOOK_DAYS = 400  # a yearly bill's last two
 RHYTHMS = {'month': (26, 35), 'quarter': (85, 97), 'year': (350, 380)}  # days between two bills
 TEXT_MAX = 240
+EVENTS_BACK = 400  # days of the owner's own calendar events before today
+EVENTS_AHEAD = 120  # and after
+NAME_MAX = 120
+# What a person is to the owner when they are the owner's child ("To you": "daughter", "my son"), in the languages the
+# app speaks; only when graph.personal_relation says it is family too ("Emma's teacher" is not)
+CHILD_WORDS = frozenset('''son daughter child children kid kids stepson stepdaughter zoon dochter fils fille sohn tochter
+hijo hija figlio figlia filho filha'''.split())
+OWN_WORDS = ('my', 'the', "owner's", 'mijn', 'ma', 'mon', 'mes', 'mein', 'meine', 'mi', 'mis', 'mia', 'mio', 'miei', 'minha', 'meu', 'meus')
 
 
 class Kind:
@@ -303,18 +312,107 @@ def facts(db, accounts, personal=True):
     return out
 
 
+def _others(meta, mine):
+    """Whether someone besides the owner is on a calendar event (a booked room doesn't count)."""
+    for a in meta.get('attendees') or ():
+        if isinstance(a, dict):
+            if not a.get('self') and not a.get('resource') and a.get('email') and str(a['email']).casefold() not in mine:
+                return True
+        elif isinstance(a, str) and a.strip() and a.strip().casefold() not in mine:
+            return True
+    return False
+
+
+def _declined(meta):
+    return any(isinstance(a, dict) and a.get('self') and a.get('responseStatus') == 'declined' for a in meta.get('attendees') or ())
+
+
+def own_events(db, accounts, today):
+    """The calendar events only the owner is on (a dentist, a school play), within EVENTS_BACK days before today and
+    EVENTS_AHEAD after, not canceled or declined, one per name: [{key, name, count, at, coming, event_id}], its next
+    time if there is one, else its last. From every calendar: which kind an event is about is the call's to say."""
+    mine = {str(a.get('email') or '').casefold() for a in accounts} - {''}
+    ids = [a['id'] for a in accounts if a.get('id')]
+    if not ids:
+        return []
+    start = (today - dt.timedelta(days=EVENTS_BACK)).isoformat()
+    end = (today + dt.timedelta(days=EVENTS_AHEAD + 1)).isoformat()
+    now = today.isoformat()
+    found = {}
+    for r in db.execute(f"SELECT id,title,occurred_at,metadata FROM events WHERE kind='calendar.event' AND deleted=0 "
+                        f"AND account_id IN ({','.join('?' * len(ids))}) AND occurred_at>=? AND occurred_at<? ORDER BY occurred_at,id",
+                        [*ids, start, end]):
+        meta = r['metadata'] if isinstance(r['metadata'], dict) else _json(r['metadata'], {})
+        name = ' '.join(str(r['title'] or '').split())[:NAME_MAX]
+        if not name or meta.get('status') == 'cancelled' or _declined(meta) or _others(meta, mine):
+            continue
+        day = str(r['occurred_at'])[:10]
+        c = found.setdefault(name.casefold(), {'key': 'appt:' + key_of(name.casefold()), 'name': name, 'count': 0})
+        c['count'] += 1
+        if day < now or not c.get('coming'):  # the last one before today, until the first one from today on
+            c.update(at=day, coming=day >= now, event_id=r['id'])
+    return sorted(found.values(), key=lambda c: c['at'], reverse=True)
+
+
+def _child(role):
+    words = str(role or '').casefold().split()
+    while words and words[0] in OWN_WORDS:
+        words = words[1:]
+    return bool(words) and words[0].strip('.,;:()') in CHILD_WORDS
+
+
+def children(db):
+    """The owner's children in the Graph: people whose role to the owner says so ("daughter"): {node id: name}."""
+    import graph
+    out = {}
+    for r in db.execute("SELECT id,name,info FROM graph_nodes WHERE kind='person' AND info LIKE '%\"role\"%'"):
+        role = _json(r['info'], {}).get('role')
+        if _child(role) and graph.personal_relation(role):
+            out[r['id']] = ' '.join(str(r['name']).split())[:80]
+    return out
+
+
+def child_facts(db):
+    """What was learned about one of the owner's children (on their page, Known about): [{key, text, fact_id, child,
+    node}], not a passing event. A fact about more than one child goes with the first."""
+    kids = children(db)
+    if not kids or not db.execute("SELECT 1 FROM sqlite_master WHERE name='fact_about'").fetchone():
+        return []
+    have = {r[1] for r in db.execute('PRAGMA table_info(facts)')}
+    passing = "AND (f.fact_kind IS NULL OR f.fact_kind!='event') " if 'fact_kind' in have else ''
+    merged = 'AND f.merged_into IS NULL ' if 'merged_into' in have else ''
+    out = {}
+    for r in db.execute(f"SELECT f.id,f.text,a.node_id FROM facts f JOIN fact_about a ON a.fact_id=f.id AND a.removed_at IS NULL "
+                        f"WHERE f.removed_at IS NULL AND f.kind='fact' AND a.node_id IN ({','.join('?' * len(kids))}) {passing}{merged}"
+                        "ORDER BY f.id,a.node_id", list(kids)):
+        out.setdefault(r['id'], {'key': 'fact:' + str(r['id']), 'text': ' '.join(str(r['text']).split())[:TEXT_MAX], 'fact_id': r['id'],
+                                 'child': kids[r['node_id']], 'node': r['node_id']})
+    return list(out.values())
+
+
 def ask(c):
-    """What the call reads of a bill, a subscription or a fact: for a bill who it's from and how many, never the amount."""
+    """What the call reads of a candidate: for a bill who it's from and how many, never the amount; for a calendar
+    event its name and how often, never its notes or who else is invited; for a fact about a child, whom."""
     if c['key'].startswith('bill:'):
         return {'kind': 'bill', 'from': c['name'], 'bills': c['count']}
     if c['key'].startswith('sub:'):
         return {'kind': 'subscription', 'name': c['name'], 'period': c['period']}
-    return {'kind': 'learned', 'text': c['text']}
+    if c['key'].startswith('appt:'):
+        return {'kind': 'calendar', 'name': c['name'], 'times': c['count']}
+    return {'kind': 'learned', 'text': c['text'], **({'about': c['child']} if c.get('child') else {})}
 
 
 def line(db, c):
-    """A bill's, a subscription's or a fact's line. A bill's: the payee and how often (at: the day of the last one),
-    opening its to-do and mail; a subscription's opens its to-do; a fact's is that fact."""
+    """A candidate's line. A bill's: the payee and how often (at: the day of the last one), opening its to-do and
+    mail; a subscription's opens its to-do; a calendar event's says whether it is coming up (at: its next day, else its
+    last) and opens it; a fact's is that fact, linking the child it is about."""
+    if c['key'].startswith('appt:'):
+        said = t('{}: coming up', c['name']) if c['coming'] else t('{}: last time', c['name'])
+        return {'key': c['key'], 'item': 'appointment', 'text': said, 'at': c['at'], 'event_id': c['event_id']}
+    if c.get('node'):  # the link as the line names them: "Isla Morgan", else "Isla"
+        first = c['child'].split()[0] if c['child'].split() else c['child']
+        name = c['child'] if c['child'].casefold() in c['text'].casefold() or first.casefold() not in c['text'].casefold() else first
+        return {'key': c['key'], 'item': 'fact', 'text': c['text'], 'fact_id': c['fact_id'], 'links': [{'id': c['node'], 'name': name}]}
     if c['key'].startswith('bill:'):
         rhythm, name = _rhythm(c['days']), c['name']
         said = (t('{}: a bill every month', name) if rhythm == 'month' else t('{}: a bill every three months', name) if rhythm == 'quarter'

@@ -87,7 +87,7 @@ DERIVED = {'suggestions': ('title', 'body', 'handled_hint', 'owner_words', 'titl
            'talk_lines': ('text',),  # what the owner and The Machine said in Talk live (talk_live.py)
            'note_pages': ('title', 'owner_title', 'data'), 'note_page_lines': ('text', 'owner_text', 'links', 'data'),  # Notes in the Graph: a trip's bookings, a home's details (note_pages.py)
            'trip_bookings': ('rows',),  # the bookings a mail held, for its trip note (trip_notes.py)
-           'section_topics': ('note',),  # the name of the owner's note a Home or Health line went in (section_notes.py)
+           'section_topics': ('note',),  # the name of the owner's note a Home, Health or Kids line went in (section_notes.py)
            'recurring_series': ('text',), 'recurring_offers': ('title', 'text'),  # a recurring to-do's words (recurring.py)
            'routines': ('name', 'instructions'), 'routine_runs': ('result', 'why'),  # a routine's words and what its run read (routines.py)
            'routine_changes': ('instructions',),  # a routine's new words, offered on one of its to-dos (routine_changes.py)

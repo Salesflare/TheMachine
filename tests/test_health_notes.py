@@ -11,6 +11,7 @@ spec = importlib.util.spec_from_file_location('health_notes_assistant', Path(__f
 a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
 import health_notes  # noqa: E402
 import note_pages  # noqa: E402
+import section_notes  # noqa: E402
 from pinned import pinned  # noqa: E402
 
 HOME = {'id': 'home', 'email': 'sam@example.com', 'boundary': 'personal'}
@@ -80,11 +81,11 @@ class HealthNotes(unittest.TestCase):
         self.event('Team sync', '2026-11-03', attendees=['ana@acme.example'])  # someone else on it: a meeting
         self.event('Dentist cleaning', '2026-11-20', status='cancelled')
         self.event('Blood test', '2026-11-21', attendees=[{'email': 'sam@example.com', 'self': True, 'responseStatus': 'declined'}])
-        self.event('Old allergist visit', '2025-01-10')  # before LOOK_BACK
+        self.event('Old allergist visit', '2025-01-10')  # before EVENTS_BACK
         self.event('Room booking', '2026-10-15', attendees=[{'email': 'room@acme.example', 'resource': True}])
         with self.store.connect() as db:
             import timeutil
-            found = {c['name']: c for c in health_notes.appointments(db, [HOME, JOB], timeutil.today())}
+            found = {c['name']: c for c in section_notes.own_events(db, [HOME, JOB], timeutil.today())}
         self.assertEqual(sorted(found), ['Dentist check-up', 'Eye test', 'Physio', 'Room booking'])
         self.assertEqual((found['Dentist check-up']['at'], found['Dentist check-up']['coming'], found['Dentist check-up']['event_id']),
                          ('2026-12-02', True, coming))

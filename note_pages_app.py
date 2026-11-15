@@ -13,6 +13,7 @@ from email.utils import parseaddr
 import health_notes
 import help_chat
 import home_notes
+import kids_notes
 import note_pages
 import section_notes
 import todo_areas
@@ -21,7 +22,7 @@ from models import background_model
 from timeutil import now, today
 
 LOG = logging.getLogger('personal-assistant')
-SECTION_KINDS = (home_notes.KIND, health_notes.KIND)  # the kinds kept in sections (section_notes.py)
+SECTION_KINDS = (home_notes.KIND, health_notes.KIND, kids_notes.KIND)  # the kinds kept in sections (section_notes.py)
 
 
 def _sender(metadata, mine):
