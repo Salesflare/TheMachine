@@ -7,6 +7,7 @@ import re
 import time
 import urllib.parse
 
+import bookings
 import bounces
 from machine.sources.exclusions import email_subject_excluded
 from machine.sources.rows import SKIPPED, Skips
@@ -162,6 +163,9 @@ def message_event(account, raw, config=None):
     files = attachment_names(raw.get('payload'))
     if files:  # sealed at rest with the rest of what a message says (not in message_seal.PLAIN_METADATA)
         metadata['attachments'] = files
+    booked = bookings.read(bodies['text/html'])
+    if booked:  # a booking's structured data (flights, hotels, trains, cars): the trip notes are built from it (trip_notes.py)
+        metadata['bookings'] = booked
     metadata.update(thread_id=raw.get('threadId'), labels=sorted(raw.get('labelIds', [])),
                     source_url=raw.get('webLink') if account.get('service') in ('outlook', 'imap') else
                     'https://mail.google.com/mail/u/?authuser=' + urllib.parse.quote(account['email']) + '#all/' + raw['id'],

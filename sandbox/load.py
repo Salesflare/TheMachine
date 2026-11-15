@@ -406,10 +406,26 @@ def load_graph_notes(db, base):
                                                 (node('project', 'Northwind rollout'), 'Northwind rollout')) if i]
     note_pages.line_add(db, office, 'Movers booked for the last Friday of the month', when)
     note_pages.line_add(db, office, 'Mila Underhay helps plan the desks, after the Northwind rollout', when, links=links)
-    note_pages.sync(db, 'trip', [{'key': 'sandbox-lisbon', 'title': 'Lisbon', 'area': work, 'starts': day(18), 'ends': day(21), 'under': ['Trips'],
-                                  'lines': [{'key': 'out', 'at': day(18) + 'T07:10', 'text': 'Flight LX 2084 Brussels to Lisbon, booking K7PQ2M'},
-                                            {'key': 'hotel', 'at': day(18), 'text': 'Hotel Alfama Garden, 3 nights, check-in from 15:00'},
-                                            {'key': 'back', 'at': day(21) + 'T18:45', 'text': 'Flight LX 2087 Lisbon to Brussels, booking K7PQ2M'}]}], when)
+    # A trip from booking mail (trip_notes.py): the flights' and the hotel's confirmations, with the structured data the
+    # mail source reads (bookings.py), made into one trip under Trips as the Machine's ten-minute step does
+    import trip_notes
+    air = lambda number, dep, arr, at, until: {'type': 'flight', 'code': 'K7PQ2M', 'status': 'confirmed', 'start': at, 'end': until,
+                                                'from': dep, 'to': arr, 'number': 'LX ' + number, 'by': 'Skylink Air'}
+    mails = [('trip:flights', 'Your flights to Lisbon', 'booking@skylink-air.example', 'Skylink Air', 2 * 24 * 60,
+              [{**air('2084', 'Brussels', 'Lisbon', day(18) + 'T07:10', day(18) + 'T08:55'), 'seat': '14A'},
+               air('2087', 'Lisbon', 'Brussels', day(21) + 'T18:45', day(21) + 'T22:20')]),
+             ('trip:hotel', 'Booking confirmed: Hotel Alfama Garden', 'stay@alfama-garden.example', 'Hotel Alfama Garden', 30 * 60,
+              [{'type': 'hotel', 'code': 'AG-55190', 'status': 'confirmed', 'start': day(18) + 'T15:00', 'end': day(21) + 'T11:00',
+                'name': 'Hotel Alfama Garden', 'where': 'Lisbon', 'guests': '1'}])]
+    insert_events(db, [{'key': key, 'account_id': 'work-gmail', 'kind': 'gmail.message', 'minutes_ago': minutes, 'title': subject,
+                        'body': f'Thank you for booking with {name}. Your booking code and details are below.',
+                        'metadata': {'from': f'{name} <{sender}>', 'to': 'alex@lumenlabs.example', 'labels': ['INBOX'], 'thread_id': 't-' + key.replace(':', '-'),
+                                     'message-id': f'<{key.replace(":", ".")}@mail.example>', 'bookings': rows,
+                                     'source_url': f'https://mail.example/#inbox/t-{key.replace(":", "-")}'}}
+                       for key, subject, sender, name, minutes, rows in mails], base)
+    trip_notes.collect(db)
+    found, keep = trip_notes.drafts(db, [{'id': 'work-gmail', 'service': 'gmail', 'boundary': work}])
+    note_pages.sync(db, 'trip', found, when, keep)
     db.commit()
 
 

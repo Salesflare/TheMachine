@@ -4,9 +4,14 @@ The Notes list and a note's page (read through /api/graph, like the Graph's othe
 (NOTE_ACTIONS, from their dashboard only). The notes themselves, their kinds, the tree, links and how The Machine keeps
 its own notes current: note_pages.py. A line that came from a fact is that fact: editing it edits the fact under What
 I've learned first (Store.edit_fact), so there is one truth."""
+import logging
+
 import note_pages
 import todo_areas
+import trip_notes
 from timeutil import now, today
+
+LOG = logging.getLogger('personal-assistant')
 
 
 class NotesApp:
@@ -27,6 +32,20 @@ class NotesApp:
 
     def note_areas(self):
         return [a['id'] for a in todo_areas.areas(self.config.get('accounts') or [])]
+
+    def trip_notes_step(self):
+        """Every ten minutes, plain code: new booking mail kept (trip_notes.collect), then the trips brought up to date
+        when there was any. Returns the notes it changed."""
+        try:
+            with self.store.connect() as db:
+                db.execute('BEGIN IMMEDIATE')
+                if not trip_notes.collect(db):
+                    return []
+                found, keep = trip_notes.drafts(db, self.config.get('accounts') or [])
+                return note_pages.sync(db, 'trip', found, now(), keep)
+        except Exception as error:  # the next round tries again from the same mail
+            LOG.warning('trip notes error=%s', type(error).__name__)
+            return []
 
     def notes_list(self, db):
         """The Notes list, light: what each row shows, in tree order."""
