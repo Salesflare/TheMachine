@@ -46,6 +46,7 @@ from machine.chat import (
     chat_person,
     chat_reply,
     chat_result_files,
+    chat_final_step,
     CHAT_STEP_FAILED,
     CHAT_STEP_HOW,
     chat_text,
@@ -497,7 +498,8 @@ class CardChatApp:
             actions = args.get('next_actions') if isinstance(args.get('next_actions'), list) else [args.get('next_action')]
             body, files = chat_result_files(args.get('reply') if str(args.get('reply') or '').strip() else args.get('body'))
             text = chat_reply(re.sub(r'\[([^\]\n]{1,200})\]\((?!https?:)[^)\s]{1,500}\)', r'\1', chat_text(body)))[0]
-            drafts = [d for d in map(chat_draft, actions) if d][:3]
+            # its drafts, and a final step's (Book, Submit) what goes out, so the owner sees it before the tap
+            drafts = [d for d in (chat_draft(x) or chat_final_step(x) for x in actions) if d][:3]
             for d in drafts:
                 d['to'] = [chat_name(t, names, about) for t in d['to']]
             results.setdefault(r['job_id'], []).append({'kind': 'reply', 'text': text, 'drafts': drafts, 'files': files,

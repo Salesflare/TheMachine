@@ -187,6 +187,20 @@ def chat_draft(action):
             'body': chat_text(action['body'], chars=8000), 'reply': bool(action.get('in_reply_to') or action.get('thread_id'))}
 
 
+def chat_final_step(action):
+    """A final step in a saved result (kind finish: Book, Submit, Pay…), for the chat: what goes out as the owner checks
+    it before the tap (its message, else its preview) and who gets it. Without it the chat showed only the step's
+    button, so a calendar invitation was approved without its title, time and guests in sight (2026-11-15 agent users)."""
+    if not isinstance(action, dict) or action.get('kind') != 'finish':
+        return None
+    text = action.get('message') if isinstance(action.get('message'), str) and action['message'].strip() else action.get('preview')
+    if not isinstance(text, str) or not text.strip():
+        return None
+    to = str(action.get('to_name') or '').strip()
+    return {'kind': 'finish', 'to': [clamp(chat_plain_name(to), 200)] if to else [], 'subject': '',
+            'label': clamp(str(action.get('label') or ''), 120), 'body': chat_text(text, chars=8000), 'reply': False}
+
+
 def chat_excerpt(body, subject=''):
     """The new part of a message: its quoted history and signature left out, the first lines kept."""
     text = split_quoted_history(str(body or ''), subject)[0]
