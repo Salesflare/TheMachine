@@ -981,6 +981,20 @@ class NothingOutsideTheSealedFields(unittest.TestCase):
         self.assertEqual(message_seal.plain_leaks(event(1, 'new.connector'), {'cursor': 'abc'}), [])
         self.assertEqual(message_seal.plain_leaks(event(1, 'x'), {'last': 'the zanzibarquill contract is ready'}), ['cursor'])
 
+    def test_every_connector_is_tested_with_the_seal_audit_on(self):
+        """A connector in connectors/ is tested by its own test_connector_<name>.py, which the runner audits by its name,
+        or names its suite in SEAL_COVERED_BY. A new connector with neither fails here, so none is left out by hand."""
+        spec = importlib.util.spec_from_file_location('test_runner', ROOT / 'scripts' / 'test.py')
+        runner = importlib.util.module_from_spec(spec); spec.loader.exec_module(runner)
+        audited = set(runner.SEAL_AUDIT)
+        connectors = sorted(p.stem for p in (ROOT / 'connectors').glob('*.py') if not p.stem.startswith('_'))
+        self.assertTrue(connectors)
+        unaudited = [name for name in connectors
+                     if f'test_connector_{name}' not in audited and runner.SEAL_COVERED_BY.get(name) not in audited]
+        self.assertEqual(unaudited, [], 'add tests/test_connector_<name>.py, or name its suite in SEAL_COVERED_BY (scripts/test.py)')
+        self.assertLessEqual({p.stem for p in (ROOT / 'tests').glob('test_connector_*.py')}, audited)
+        self.assertEqual(sorted(set(runner.SEAL_COVERED_BY) - set(connectors)), [], 'SEAL_COVERED_BY names a connector that is gone')
+
     def test_every_connector_keeps_message_text_in_the_sealed_fields(self):
         """The connector suites again, with commit_page refusing any event whose text shows in a plain field. The test
         runner (scripts/test.py) runs them so itself, so there this would only run them twice."""
