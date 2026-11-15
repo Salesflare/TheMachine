@@ -116,6 +116,26 @@ class NotesFromMail(Mail):
                               ['Your blood test results are ready', 'Your vitamin D result'])
         self.assertEqual({n['area'] for n in notes.values()}, {'personal'})
 
+    def test_a_mail_and_its_copies_are_one_line(self):
+        """The same mail sent twice seconds apart, to two addresses or in two mailboxes, and a reply in its
+        conversation with the same subject, are one line (the newest). The same subject in another month stays."""
+        self.places = {'Example Dentist': ('health', 'Doctors and care')}
+        sender = 'Example Dentist <office@example-dentist.be>'  # not a no-reply address: bulk_mail would leave it out
+        self.mail(sender, 'Office closed', '2026-09-01', thread_id='t1', **{'message-id': '<a1@example-dentist.be>'})
+        self.mail(sender, 'Office closed', '2026-09-01', thread_id='t1', **{'message-id': '<a2@example-dentist.be>'})
+        self.mail(sender, 'Office closed', '2026-10-01', thread_id='t2', **{'message-id': '<b1@example-dentist.be>'})
+        self.mail(sender, 'Your appointment', '2026-10-05', thread_id='t3', **{'message-id': '<c1@example-dentist.be>'})
+        newest = self.mail(sender, 'Re: Your appointment', '2026-10-07', thread_id='t3', **{'message-id': '<c2@example-dentist.be>'})
+        copy = self.mail(sender, 'Your appointment', '2026-10-07', account='home2', thread_id='x9', **{'message-id': '<c2@example-dentist.be>'})
+        self.mail(sender, 'Reminder', '2026-10-20', account='home2', thread_id='x1', **{'message-id': '<d1@example-dentist.be>'})
+        self.mail(sender, 'Reminder', '2026-10-20', thread_id='t4', **{'message-id': '<d2@example-dentist.be>'})
+        self.app.config = {'accounts': [HOME, {'id': 'home2', 'email': 'sam@example.net', 'boundary': 'personal'}, JOB]}
+        lines = self.round()[('health', 'Doctors and care')]['lines']
+        self.assertCountEqual([(x['text'], x['at']) for x in lines],
+                              [('Office closed', '2026-09-01'), ('Office closed', '2026-10-01'), ('Your appointment', '2026-10-07'), ('Reminder', '2026-10-20')])
+        line = next(x for x in lines if x['text'] == 'Your appointment')
+        self.assertIn(line['event_id'], (newest, copy), 'the newest mail of the conversation, in either mailbox')
+
     def test_a_sender_is_asked_about_once_for_every_kind(self):
         self.places = {'Example Primary': ('kids', 'School')}
         self.mail('Example Primary <office@example-primary.be>', 'Weekly letter', '2026-10-06')
@@ -181,7 +201,8 @@ class BulkMail(Mail):
         self.mail('Example School <noreply@example-school.be>', 'Theater tickets', '2026-10-05',
                   bookings=[{'type': 'event', 'name': 'School play', 'start': '2026-12-01'}])
         notes = self.round()
-        self.assertCountEqual([x['text'] for x in notes[('kids', 'School')]['lines']], ['Trip forms', 'Trip forms', 'Theater tickets'])
+        # the school's reply in the thread has the same subject: one line for the conversation (section_notes._repeats)
+        self.assertCountEqual([x['text'] for x in notes[('kids', 'School')]['lines']], ['Trip forms', 'Theater tickets'])
 
     def test_bulk_lines_kept_before_go_on_the_next_round(self):
         from unittest import mock
