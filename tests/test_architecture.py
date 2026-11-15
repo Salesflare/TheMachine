@@ -16,6 +16,7 @@ split up. Static checks of the source only; nothing is imported or run.
 `python3 tests/test_architecture.py --owners` prints each module with the tables it owns."""
 import ast
 import builtins
+import fnmatch
 import functools
 import gzip
 import json
@@ -462,6 +463,39 @@ def owner(table, creates):
     return next(iter(found)) if len(found) == 1 else None
 
 
+def code_map_rows():
+    """(domain, modules cell, tables cell) of each row of docs/code-map.md's "Modules and the tables they own"."""
+    text = (ROOT / 'docs' / 'code-map.md').read_text(encoding='utf-8')
+    section = text[text.index('## Modules and the tables they own'):text.index('\n## ', text.index('## Modules and the tables they own') + 3)]
+    rows = []
+    for line in section.splitlines():
+        cells = [cell.strip() for cell in line.strip().strip('|').split('|')]
+        if line.startswith('| ') and len(cells) == 3 and cells[0] != 'domain' and not set(cells[0]) <= set('-: '):
+            rows.append(tuple(cells))
+    return rows
+
+
+def module_named(module, cell):
+    """Whether a modules cell names a module path ('fleet.py', 'machine/stamps.py'): as `fleet`, `machine/stamps.py` or
+    `machine/stamps`. Store and App's parts count as assistant.py (STORE_PARTS)."""
+    names = set(re.findall(r'`([A-Za-z0-9_./*]+)`', cell))
+    stem = module[:-3] if module.endswith('.py') else module
+    return bool({module, stem} & names) or ('/' not in module and stem in names)
+
+
+def outside_parentheses(text):
+    """text without what's in parentheses: notes such as (graph) or (`chats`, ...) of another database."""
+    out, depth = [], 0
+    for ch in text:
+        if ch == '(':
+            depth += 1
+        elif ch == ')' and depth:
+            depth -= 1
+        elif not depth:
+            out.append(ch)
+    return ''.join(out)
+
+
 # --- tests -----------------------------------------------------------------------------------------------------------
 
 # Aikido's code scan skips big files (some just over 500 KiB already go unscanned), so a page or script that big
@@ -630,6 +664,33 @@ class Architecture(unittest.TestCase):
                 stale = sorted(modules - set(writes.get(table, {})))
                 self.assertEqual(stale, [], f'{stale} no longer write {table}: remove them from OTHER_WRITERS[{table!r}]')
                 self.assertNotIn(owner(table, creates), modules, f'{table}: its owner is listed as another writer')
+
+    def test_the_code_map_names_each_table_owner(self):
+        """docs/code-map.md's owner table, checked against the code (--owners): every module that owns a table is in a
+        row, each table it names is owned by a module of that row (a name ending in * by at least one), and "the rest
+        of its N" is assistant.py's count. The domains and notes stay hand-written."""
+        creates, writes = schema_and_writes()
+        owners = {table: owner(table, creates) for table in set(creates) | set(writes)}
+        problems, listed = [], set()
+        for domain, modules, tables in code_map_rows():
+            mine = {module for module in set(owners.values()) if module and module_named(module, modules)}
+            listed |= mine
+            names = set(re.findall(r'`([a-z0-9_*]+)`', outside_parentheses(tables)))
+            for name in sorted(names - {pathlib.Path(module).stem for module in mine}):
+                hits = [t for t in owners if fnmatch.fnmatchcase(t, name)]
+                if not hits:
+                    problems.append(f'{domain}: `{name}` is no table')
+                elif not any(owners[t] in mine for t in hits):
+                    problems.append(f'{domain}: `{name}` is owned by {sorted({owners[t] for t in hits})}, not by this row')
+                elif '*' not in name and owners[hits[0]] not in mine:
+                    problems.append(f'{domain}: `{name}` is owned by {owners[hits[0]]}, not by this row')
+            rest = re.search(r'the rest of its (\d+)', tables)
+            if rest and int(rest.group(1)) != sum(1 for module in owners.values() if module == 'assistant.py'):
+                problems.append(f'{domain}: "the rest of its {rest.group(1)}" is not assistant.py\'s count (--owners)')
+        unlisted = sorted({m for m in owners.values() if m and m not in listed and not m.startswith('sandbox/')})
+        problems += [f'{module} owns tables but is in no row' for module in unlisted]
+        self.assertEqual(problems, [], 'update the table in docs/code-map.md ("Modules and the tables they own"); '
+                                       '`python3 tests/test_architecture.py --owners` lists the owners')
 
     def test_the_table_scan_sees_writes(self):
         tree = ast.parse('def f(db):\n    """INSERT INTO docs_only"""\n    db.execute("INSERT OR REPLACE INTO a(x) VALUES(1)")\n'
