@@ -20,7 +20,7 @@ A to-do about such a message says so plainly, like "This isn't Alex. It came fro
 ## What The Machine won't do
 
 - It never gives a lookalike sender a role in your Graph.
-- It never merges them with the person they imitate, and never suggests it under **Same person?**.
+- It never merges them with the person they imitate, and never suggests them under **Same person?**.
 - A reply it prepares goes to the address on record, not the lookalike one.
 
 Your own choice always wins: you can still give them a role, merge them or write to any address.

@@ -935,11 +935,11 @@ def signature_pairs(db, senders, best, known):
     return pairs
 
 
-def likely_same(people, union, together, projects):
-    """Pairs of people who may be one, for the owner to Merge or keep apart: [(a, b, why, score)]. The same full name
-    is enough to ask (it was not joined because two people on one channel carry it); a similar name needs something
-    shared besides: the same company, people seen with both, a project, or the same role. A name read from an address
-    (jane.doe@, pm_bounces@) is only ever similar: the same local part at two domains says nothing by itself."""
+def likely_same(people, union, together, projects, never=lambda a, b: False):
+    """Pairs of people who may be one, for the owner to Merge or keep apart: [(a, b, why, score)]. The same full name at a
+    domain in common (or no address on one side) is enough to ask; a similar name, or one across domains, needs something
+    shared: people seen with both, a project, the same role. A name read from an address (jane.doe@) is only ever similar;
+    never(a, b): pairs never asked (machine/graph/same_person.py)."""
     buckets = collections.defaultdict(list)
     for node, p in people.items():
         if p['words']:
@@ -960,8 +960,8 @@ def likely_same(people, union, together, projects):
                 match = name_match(pa['words'], pb['words'])
                 if match == 'same' and (pa.get('derived') or pb.get('derived')):
                     match = 'similar'
-                if not match or union.kept_apart(union.find(pair[0]), union.find(pair[1])) or lookalike.apart(pa['domains'], pb['domains']):
-                    continue  # nor when one's domain imitates the other's (lookalike.py)
+                if not match or union.kept_apart(union.find(pair[0]), union.find(pair[1])) or lookalike.apart(pa['domains'], pb['domains']) or never(*pair):
+                    continue  # nor when one's domain imitates the other's (lookalike.py), a lookalike or the owner's name
                 shared = []
                 if pa['domains'] & pb['domains']:
                     shared.append(f"both at {sorted(pa['domains'] & pb['domains'])[0]}")
@@ -971,7 +971,7 @@ def likely_same(people, union, together, projects):
                     shared.append('with the same people')
                 if projects.get(pair[0], set()) & projects.get(pair[1], set()):
                     shared.append('on the same project')
-                if match == 'same' and len(pa['words']) >= 2 or shared:
+                if match == 'same' and len(pa['words']) >= 2 and (not (pa.get('mail') and pb.get('mail')) or pa['mail'] & pb['mail']) or shared:
                     why = ', '.join([('Same name' if match == 'same' else 'Similar name')] + shared)
                     out.append((*pair, why, round(len(shared) + (2 if match == 'same' else 0) + min(pa['strength'], pb['strength']), 4)))
     return sorted(out, key=lambda s: -s[3])[:300]
@@ -1295,7 +1295,7 @@ def _build_in(db, config, now, team, kin, locked, history=False):
                                                                   nodes, stated, strength))
     lap('lookalikes', lookalike.mark(nodes, lookalike.first_seen(strength, node_events, history_events), owner.domains, FREEMAIL))  # no review role, no "Same person?"
     same_rows, nodes, kept = lap('same_person', find_same_people(event_people, node_events, project_people, alike, union, infos,
-                                                                 x_names, nodes))
+                                                                 x_names, nodes, [config.get('owner_name'), *owner.names]))
     lap('org_nodes', org_and_project_nodes(heat_day, history_events, live, named_orgs, said, manual, nodes, named, last_day,
                                            edits, links, members, inboxes, profiles, site_logos, org_name, paying_names,
                                            wrong, current, projects, project_events, tz, kept, project_people,
