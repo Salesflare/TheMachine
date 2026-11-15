@@ -27,6 +27,11 @@ from machine import services
 
 # The service's "busy, try again" statuses (5xx it recovers from by itself, 429): one quick retry, then the normal wait
 UPSTREAM_BUSY = {429, 500, 502, 503, 504}
+# Go runtime settings for each gog read: gog is a new process per message (it has no batched or long-running read of
+# whole messages), and most of its CPU is Go starting up on every core and collecting garbage it is about to drop at exit.
+# One core and no collection under 256 MiB cut a read's CPU by about a third; its output is the same. A value
+# already set in the service's own environment wins.
+GOG_RUNTIME = {'GOMAXPROCS': '1', 'GOGC': 'off', 'GOMEMLIMIT': '256MiB'}
 
 
 def rate_limited(error):
@@ -107,7 +112,7 @@ def gog_read(config, account, api, version, method, params, scope):
             raise SourceError(error.category, error.status, getattr(error, 'retry_after', None)) from None
     if account['transport'] != 'gog':
         raise SourceError('unsupported_transport')
-    env = os.environ.copy()
+    env = {**GOG_RUNTIME, **os.environ}
     env.update(GOG_KEYRING_BACKEND='file', GOG_KEYRING_PASSWORD=credential(config, 'gog-password'))
     env.pop('DBUS_SESSION_BUS_ADDRESS', None)
     params = json.dumps(params, ensure_ascii=False, sort_keys=True, separators=(',', ':'))  # as assistant.encoded

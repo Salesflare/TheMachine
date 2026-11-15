@@ -1,7 +1,9 @@
 """sources.py: reading the owner's sources (errors, credentials, gog_read, which accounts are mail or calendar)."""
+import json
 import os
 from pathlib import Path
 import stat
+import sys
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -109,6 +111,93 @@ class GogRead(unittest.TestCase):
             self.assertEqual(str(caught.exception), label)
         with self.assertRaisesRegex(sources.SourceError, 'unsupported_transport'):
             sources.gog_read({}, {'transport': 'imap'}, 'gmail', 'v1', 'm', {}, 's')
+
+    def test_gog_starts_lean_unless_the_service_says_otherwise(self):
+        with patch.dict(os.environ, {}, clear=False):
+            for key in sources.GOG_RUNTIME:
+                os.environ.pop(key, None)
+            _, call = self.read()
+            self.assertEqual({k: call.kwargs['env'][k] for k in sources.GOG_RUNTIME},
+                             {'GOMAXPROCS': '1', 'GOGC': 'off', 'GOMEMLIMIT': '256MiB'})
+            os.environ['GOMAXPROCS'] = '4'
+            _, call = self.read()
+            self.assertEqual((call.kwargs['env']['GOMAXPROCS'], call.kwargs['env']['GOGC']), ('4', 'off'))
+
+
+# A stand-in for `gog api call gmail v1 <method>`: a mailbox of FAKE_GOG_COUNT made-up messages; it appends the Go
+# runtime settings it was started with to FAKE_GOG_LOG. Never reaches Google.
+FAKE_GOG = r'''
+import base64, json, os, sys
+args = sys.argv[1:]
+method, params = args[4], json.loads(args[args.index('--params') + 1])
+count = int(os.environ['FAKE_GOG_COUNT'])
+with open(os.environ['FAKE_GOG_LOG'], 'a') as log:
+    log.write(json.dumps({k: os.environ.get(k) for k in ('GOMAXPROCS', 'GOGC', 'GOMEMLIMIT')}) + '\n')
+b64 = lambda text: base64.urlsafe_b64encode(text.encode()).decode().rstrip('=')
+if method == 'gmail.users.getProfile':
+    answer = {'emailAddress': 'owner@example.com', 'historyId': '900'}
+elif method == 'gmail.users.messages.list':
+    start, size = int(params.get('pageToken') or 0), int(params['maxResults'])
+    answer = {'messages': [{'id': 'm%04d' % i, 'threadId': 't%04d' % (i // 2)} for i in range(start, min(count, start + size))]}
+    if start + size < count:
+        answer['nextPageToken'] = str(start + size)
+elif method == 'gmail.users.messages.get':
+    i = int(params['id'][1:])
+    answer = {'id': params['id'], 'threadId': 't%04d' % (i // 2), 'labelIds': ['INBOX'], 'snippet': 'Fixture body %d.' % i,
+              'internalDate': str(1793000000000 - i * 60000),
+              'payload': {'mimeType': 'multipart/alternative', 'headers': [
+                  {'name': 'From', 'value': 'Sender %d <sender%d@example.org>' % (i, i)}, {'name': 'To', 'value': 'owner@example.com'},
+                  {'name': 'Subject', 'value': 'Fixture subject %d' % i}, {'name': 'Message-ID', 'value': '<m%d@example.org>' % i}],
+                  'parts': [{'mimeType': 'text/plain', 'body': {'data': b64('Fixture body %d.' % i)}},
+                            {'mimeType': 'text/html', 'body': {'data': b64('<p>Fixture body %d.</p>' % i)}}]}}
+else:
+    sys.exit('unexpected method ' + method)
+print(json.dumps(answer))
+'''
+
+
+class GogSync(unittest.TestCase):
+    """The Gmail sync through a gog stand-in: the lean Go runtime settings reach every gog process and the messages
+    synced are the same as without them."""
+
+    class Store:
+        def __init__(self):
+            self.state, self.events = None, []
+
+        def checkpoint(self, account):
+            return self.state
+
+        def commit_page(self, account, state, events, *args, **kwargs):
+            self.state = state
+            self.events.extend(events)
+
+    def sync(self, runtime):
+        from machine.sources.gmail import sync_gmail
+        with tempfile.TemporaryDirectory() as tmp:
+            script, gog, log, password = (Path(tmp) / name for name in ('fake_gog.py', 'gog', 'log', 'password'))
+            script.write_text(FAKE_GOG)
+            gog.write_text(f'#!/bin/sh\nexec "{sys.executable}" "{script}" "$@"\n')
+            gog.chmod(0o700)
+            password.write_text('fixture\n')
+            config = {'gog': str(gog), 'credentials': {'gog-password': str(password)}, 'bootstrap_days': 7}
+            account = {'id': 'work-gmail', 'service': 'gmail', 'transport': 'gog', 'email': 'owner@example.com', 'client': 'default'}
+            store = self.Store()
+            clean = {k: v for k, v in os.environ.items() if k not in sources.GOG_RUNTIME}
+            with patch.dict(os.environ, {**clean, 'FAKE_GOG_COUNT': '45', 'FAKE_GOG_LOG': str(log)}, clear=True), \
+                    patch.object(sources, 'GOG_RUNTIME', runtime):
+                while (store.state or {}).get('mode') != 'incremental':
+                    sync_gmail(store, config, account)
+            return store.events, [json.loads(line) for line in log.read_text().splitlines()]
+
+    def test_same_messages_synced_with_lean_gog(self):
+        before, plain = self.sync({})
+        after, lean = self.sync(sources.GOG_RUNTIME)
+        self.assertEqual(len(after), 45)
+        self.assertEqual(after, before)
+        self.assertEqual({json.dumps(started, sort_keys=True) for started in plain},
+                         {json.dumps({'GOMAXPROCS': None, 'GOGC': None, 'GOMEMLIMIT': None}, sort_keys=True)})
+        self.assertEqual(len(lean), len(plain))
+        self.assertTrue(all(started == {'GOMAXPROCS': '1', 'GOGC': 'off', 'GOMEMLIMIT': '256MiB'} for started in lean))
 
 
 if __name__ == '__main__':
