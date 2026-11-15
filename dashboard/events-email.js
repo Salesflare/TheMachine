@@ -44,7 +44,7 @@ const originalsFor=id=>{if(!originals.has(id))originals.set(id,request('api/orig
 // How each kind of message reads (its header, text, a chat as one thread) is the lazy part 'msgview' (events-message.js):
 // the viewer loads it with the message, so the first load doesn't carry it.
 // Files attached to this card's email draft, as links that open over the Tailscale dashboard.
-const draftFileLinks=(id,files)=>html`${(files||[]).map(a=>html`<a class="attachment" href="${'api/draft-attachment?id='+encodeURIComponent(id)+'&sha='+encodeURIComponent(a.sha256)}" target="_blank" rel="noreferrer">📎 ${a.name}<small>${fileSize(a.size)}</small></a>`)}`;
+const draftFileLinks=(id,files)=>html`${(files||[]).map(a=>html`<a class="attachment" href="${'api/draft-attachment?id='+encodeURIComponent(id)+'&sha='+encodeURIComponent(a.sha256)}" target="_blank" rel="noreferrer">${CLIP}${a.name}<small>${fileSize(a.size)}</small></a>`)}`;
 const draftFiles=s=>{const seen=new Set();return taskActions(s).filter(a=>['email','email_demo'].includes(a.kind)).flatMap(a=>a.attachments||[]).filter(a=>!seen.has(a.sha256)&&seen.add(a.sha256))};
 const draftFilesBlock=s=>{const files=draftFiles(s);return files.length?html`<div class="draft-files"><h3>Attached to your draft</h3><div class="attachments">${draftFileLinks(s.id,files)}</div></div>`:''};
 const emailViewFor=(id,ev)=>{const key=id+':'+ev;if(!emailViews.has(key))emailViews.set(key,request(`api/email?id=${id}&event=${encodeURIComponent(ev)}`).catch(e=>{emailViews.delete(key);return {html:'',failed:e?.status!==404||!!e.retry}}));return emailViews.get(key)};

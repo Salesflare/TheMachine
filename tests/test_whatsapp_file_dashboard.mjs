@@ -1,6 +1,6 @@
-// A file on WhatsApp (todos-send.js): Send now's dialog shows the file the message carries, which opens from there,
-// and its caption when it has one; a text message shows no file row.
-// At 1440x900 and 390x844. Made-up data, a local fixture server, nothing sent. SHOTS=<folder> saves shots.
+// A file on WhatsApp (todos-send.js): Send now's dialog leads with the file the message carries (the app's clip icon,
+// it opens from there), with a compact Caption (optional) field under it that grows as it's typed; a text message keeps
+// its full Message field and no file row. At 1440x900 and 390x844, light and dark. Made-up data, a local fixture server, nothing sent. SHOTS=<folder> saves shots.
 import assert from 'node:assert/strict';
 import {mkdir} from 'node:fs/promises';
 import {createServer} from 'node:http';
@@ -28,31 +28,44 @@ const shots=process.env.SHOTS;if(shots)await mkdir(shots,{recursive:true});
 let browser;
 try{
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
- for(const [width,height] of [[1440,900],[390,844]]){
-  const context=await browser.newContext({viewport:{width,height}}),page=await context.newPage();
+ for(const [width,height] of [[1440,900],[390,844]])for(const colorScheme of ['light','dark']){
+  const context=await browser.newContext({viewport:{width,height},colorScheme}),page=await context.newPage();
   await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
   page.on('pageerror',e=>errors.push(e.message));
   await page.goto('http://127.0.0.1:'+server.address().port);
   for([body,files] of [['',[file]],['Here is the report.',[file]],['Friday works.',[]]]){
-   const at=`${width} ${body?'caption':'bare'} ${files.length?'file':'text'}`;
+   const at=`${width} ${colorScheme} ${body?'caption':'bare'} ${files.length?'file':'text'}`;
    await page.evaluate(()=>refresh());
    await page.evaluate(([id,r])=>openSend(id,r),[sid,revision]);await page.locator('#send-dialog').waitFor({state:'visible'});
    assert.equal(await page.locator('#send-title').textContent(),'Send this WhatsApp message?',at);
    assert.match(await page.locator('#send-head').textContent(),/Sam Example/,at);
-   const link=page.locator('#send-files a.attachment');
+   const link=page.locator('#send-files a.attachment'),box=page.locator('#send-body');
+   const label=await page.evaluate(()=>document.querySelector('#send-body-label').firstChild.nodeValue);
    if(files.length){
     assert.ok(await page.locator('#send-files').isVisible(),at+': the file shows before Send now');
-    assert.match(await link.textContent(),/report\.pdf.*21 KB/,at);
+    assert.match(await link.textContent(),/report\.pdf.*21 KB/,at);assert.doesNotMatch(await link.textContent(),/\p{Extended_Pictographic}/u,at+': no emoji');
+    assert.equal(await link.locator('svg').count(),1,at+': the app’s own clip icon');
     assert.equal(await link.getAttribute('href'),`api/draft-attachment?id=${sid}&sha=${'c'.repeat(64)}`,at);
-   }else assert.ok(await page.locator('#send-files').isHidden(),at+': a text message lists no file');
+    // The file leads; the text under it is an optional caption, a few lines that grow as it's typed
+    const [chip,field]=[await page.locator('#send-files').boundingBox(),await box.boundingBox()];
+    assert.ok(chip.y+chip.height<=field.y,at+': the file is above the caption');
+    assert.equal(label,'Caption (optional)',at);assert.equal(await box.inputValue(),body,at);
+    assert.ok(field.height>=60&&field.height<=130,at+': a compact caption field, '+field.height);
+    if(shots)await page.screenshot({path:`${shots}/whatsapp-file-${width}-${colorScheme}-${body?'caption':'bare'}.png`});
+    await box.fill('One\nTwo\nThree\nFour\nFive\nSix');await box.dispatchEvent('input');
+    assert.ok((await box.boundingBox()).height>field.height,at+': it grows as it is typed');
+   }else{
+    assert.ok(await page.locator('#send-files').isHidden(),at+': a text message lists no file');
+    assert.equal(label,'Message',at);
+    assert.ok((await box.boundingBox()).height>130,at+': a text message keeps its full-size field');
+   }
    const sizes=await page.evaluate(()=>({page:document.documentElement.scrollWidth,viewport:innerWidth,dialog:document.querySelector('#send-dialog').getBoundingClientRect().width}));
    assert.ok(sizes.page<=sizes.viewport&&sizes.dialog<=sizes.viewport,at+': no overflow '+JSON.stringify(sizes));
-   if(shots)await page.screenshot({path:`${shots}/whatsapp-file-${width}-${body?'caption':'bare'}-${files.length?'file':'text'}.png`});
    await page.keyboard.press('Escape');
   }
   await context.close();
  }
  assert.deepEqual(calls.filter(c=>c.action==='confirm_action'),[],'nothing is sent');
  assert.deepEqual(errors,[]);
- console.log('WhatsApp file dashboard: the file shows in Send now at 1440 and 390, a text message lists none, nothing sent.');
+ console.log('WhatsApp file dashboard: the file leads above a compact caption in Send now at 1440 and 390, light and dark; a text message keeps Message; nothing sent.');
 }finally{await browser?.close();server.close()}

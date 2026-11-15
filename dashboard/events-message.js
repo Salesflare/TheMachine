@@ -25,7 +25,7 @@ const OPEN_VIA={gmail:'gmail',slack:'slack',whatsapp:'whatsapp',telegram:'telegr
 const outlookURL=u=>/^https:\/\/outlook\./.test(u);  // Outlook mail reads as gmail.message too: its link says which
 const openVia=o=>'via-'+(o.source==='gmail.message'&&outlookURL(o.url)?'outlook':OPEN_VIA[o.source?kindService(o.source):'']||(o.view==='email'||o.kind==='email'?'mail':'link'));
 const openLink=o=>!o.url||!safeURL(o.url)?'':html`<p class="email-open"><a class="read-original ${openVia(o)}" href="${onPhone()&&safeURL(o.phone_url||'')||o.url}" target="_blank" rel="noreferrer">${o.kind==='calendar'?t(calOpenLabel(o.url)):o.app?t('Open in {} ↗',o.app):o.kind==='email'?t('Open in {} ↗',outlookURL(o.url)?'Outlook':'Gmail'):t('Open original')}</a></p>`;
-const attachmentsHTML=(o,id)=>(o.attachments||[]).length?html`<div class="attachments">${o.attachments.map(a=>html`<a class="attachment" href="api/attachment?id=${id}&event=${encodeURIComponent(o.event_id)}&part=${encodeURIComponent(a.part)}" target="_blank" rel="noreferrer">📎 ${a.name}<small>${fileSize(a.size)}</small></a>`)}</div>`:'';
+const attachmentsHTML=(o,id)=>(o.attachments||[]).length?html`<div class="attachments">${o.attachments.map(a=>html`<a class="attachment" href="api/attachment?id=${id}&event=${encodeURIComponent(o.event_id)}&part=${encodeURIComponent(a.part)}" target="_blank" rel="noreferrer">${CLIP}${a.name}<small>${fileSize(a.size)}</small></a>`)}</div>`:'';
 const srcIcon=o=>o.source?html`<span class="icon">${markIco(sourceMark(o.source,o.account_id,o.app))}</span>`:'';
 // An email: the sender by name with the address quiet, "to Dana, Mira", the date, and the subject only when the
 // dialog's title isn't it already. A name that already says the address ("Sam via sales@…") has none after it.
