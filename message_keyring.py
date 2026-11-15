@@ -329,7 +329,7 @@ def unencrypted_keyring(collection):
 
 def _now():
     import timeutil
-    return timeutil.clock().isoformat(timespec='seconds')
+    return timeutil.stamp()
 
 
 def to_keyring(database, say=print):

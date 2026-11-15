@@ -43,7 +43,7 @@ def note(path, fingerprint, failed=None, now=None):
     """The bridge with `fingerprint` waits; `failed`: a quiet night tried and could not put it in (why, for the log).
     Attempts carry over a newer bridge: the owner's question is whether the bridge goes in at all. Returns the state."""
     import timeutil  # here, not at the top: the installer imports this module before it checks the time zone
-    path, stamp = Path(path), now or timeutil.clock().isoformat(timespec='seconds')
+    path, stamp = Path(path), now or timeutil.stamp()
     state = read(path) or {'attempts': 0, 'since': '', 'last': '', 'reason': ''}
     state.update(fingerprint=fingerprint, since=state['since'] or stamp)
     if failed:

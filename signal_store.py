@@ -70,7 +70,7 @@ def touches(m, weights):
 
 def now():
     import timeutil
-    return timeutil.clock().isoformat(timespec='seconds')
+    return timeutil.stamp()
 
 
 def private_dir(path):

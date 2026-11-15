@@ -210,7 +210,7 @@ def drop_received(db, fleet, mine):
 
 
 def now():
-    return timeutil.clock().isoformat(timespec='seconds')
+    return timeutil.stamp()
 
 
 def after(previous):

@@ -53,7 +53,7 @@ SOURCE = re.compile(r'^(?:([EFP])(\d{1,12})|T(\d{1,3})|[MNOD])$')
 
 
 def now():
-    return timeutil.clock().isoformat(timespec='seconds')
+    return timeutil.stamp()
 
 
 def ensure(db):

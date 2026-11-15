@@ -402,7 +402,7 @@ def pair(code, label, emails, timeout=30):
 
 
 def now():
-    return timeutil.clock().isoformat(timespec='seconds')
+    return timeutil.stamp()
 
 
 def ensure(db):
@@ -3353,7 +3353,7 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
         """Until when the owner allows support access on this Machine, or None. Kept here: the control plane's own
         record of it only lets it ask; this Machine answers only while this says so."""
         until = self.meta('support_access_until')
-        current = timeutil.clock().isoformat(timespec='seconds')
+        current = timeutil.stamp()
         return until if isinstance(until, str) and until > current else None
 
     def support_access(self, allow=None):

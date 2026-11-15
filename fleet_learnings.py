@@ -86,7 +86,7 @@ def ensure(db):
 
 
 def now():
-    return timeutil.clock().isoformat(timespec='seconds')
+    return timeutil.stamp()
 
 
 def on(db):

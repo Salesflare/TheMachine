@@ -58,6 +58,11 @@ def now():
     return clock().isoformat()
 
 
+def stamp():
+    """The current time in UTC, as ISO text to the second (what most tables store: '2026-11-15T08:30:00+00:00')."""
+    return clock().isoformat(timespec='seconds')
+
+
 # The owner's hours (`work_hours` in config.json, the dashboard's Work hours, `assistant hours`):
 # `days` are ISO weekdays (1 = Monday) when work cards go out and snoozed work and returning
 # threads come back; nothing is sent outside `start`–`end` (it may wrap past midnight); `morning`

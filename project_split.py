@@ -55,7 +55,7 @@ def ensure(db):
 
 
 def _now():
-    return timeutil.clock().isoformat(timespec='seconds')
+    return timeutil.stamp()
 
 
 def _meta(raw):

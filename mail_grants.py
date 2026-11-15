@@ -202,7 +202,7 @@ def forget(config, provider, email, revoke=True):
 def _now():
     import timeutil
     import datetime as dt
-    return timeutil.clock().isoformat(timespec='seconds')
+    return timeutil.stamp()
 
 
 def _age_minutes(stamp):

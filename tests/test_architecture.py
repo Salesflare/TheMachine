@@ -767,6 +767,14 @@ class Architecture(unittest.TestCase):
                     self.assertEqual(clock_reads(nodes(name)), [], f'{name}: read the time with timeutil.clock() or '
                                                                    'timeutil.today(), not datetime.now() or date.today(), so tests can pin it')
 
+    def test_the_time_to_the_second_is_timeutil_stamp(self):
+        """One way to write the current time to the second, so no module keeps a now() helper of its own for it."""
+        for name in python_files(tests=False):
+            if name != CLOCK_FILE and not name.startswith(CLOCK_FREE_DIRS):
+                with self.subTest(module=name):
+                    self.assertNotRegex((ROOT / name).read_text(encoding='utf-8'), r"\bclock\(\)\.isoformat\(timespec='seconds'\)",
+                                        'use timeutil.stamp()')
+
     def test_the_clock_check_finds_direct_reads(self):
         source = ('import datetime as dt\nfrom datetime import date, datetime\nimport timeutil\n'
                   'a = dt.datetime.now(dt.timezone.utc)\nb = datetime.now()\nc = dt.date.today()\nd = date.today()\n'

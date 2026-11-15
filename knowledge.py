@@ -157,7 +157,7 @@ def last_contact(db, node_id):
     if not row or not row['last_at']:
         return None
     nodes = _members(db, row)
-    current = timeutil.clock().isoformat(timespec='seconds')
+    current = timeutil.stamp()
     found = db.execute(f"SELECT max(e.occurred_at) FROM graph_events g JOIN events e ON e.id=g.event_id WHERE g.node_id IN "
                        f"({','.join('?' * len(nodes))}) AND e.deleted=0 AND e.kind NOT IN ('owner.card') AND e.occurred_at<=?", (*nodes, current)).fetchone()[0]
     return found or row['last_at']

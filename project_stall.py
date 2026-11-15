@@ -55,7 +55,7 @@ TITLE_CHARS, WHY_CHARS = 89, 300
 
 
 def now():
-    return timeutil.clock().isoformat(timespec='seconds')
+    return timeutil.stamp()
 
 
 def ensure(db):

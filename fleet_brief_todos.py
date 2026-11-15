@@ -193,7 +193,7 @@ class BriefTodos:
         found = self._brief_todos()
         mine = {k: dict(e) for k, e in (found.get(fleet) or {}).items()}
         accounts = self.fleet_accounts(fleet)
-        made, seen, stamp_now = 0, set(), timeutil.clock().isoformat(timespec='seconds')
+        made, seen, stamp_now = 0, set(), timeutil.stamp()
         for item in items:
             key, sig = item['key'], signature(item)
             seen.add(key)
@@ -349,7 +349,7 @@ class BriefTodos:
         out = []
         for r in db.execute(f"SELECT id,title,occurred_at,metadata FROM events WHERE id IN ({','.join('?' * len(ids))}) AND deleted=0 "
                             f"AND account_id IN ({marks}) AND occurred_at<=? ORDER BY occurred_at DESC LIMIT ?",
-                            (*ids, *accounts, timeutil.clock().isoformat(timespec='seconds'), limit)):
+                            (*ids, *accounts, timeutil.stamp(), limit)):
             m = json.loads(r['metadata'] or '{}')
             sender = str(m.get('from') or '')
             name = ' '.join(sender.split('<')[0].replace('"', '').split()) if '<' in sender else ''
@@ -363,7 +363,7 @@ class BriefTodos:
         """One line done with: its own to-do closes (choice, why) unless another open line still holds it; a to-do
         the line only joined stays the owner's."""
         entry = mine[key]
-        entry.update(closed=True, at=timeutil.clock().isoformat(timespec='seconds'))
+        entry.update(closed=True, at=timeutil.stamp())
         if entry.get('merged') or any(e['card'] == entry['card'] and not e.get('closed') for e in mine.values()):
             return
         with self.connect() as db:
@@ -394,7 +394,7 @@ class BriefTodos:
             raise OwnerError('That to-do is no longer in the team brief')
         own = not all(found[f][k].get('merged') for f, k in lines)
         for fleet, key in lines:
-            found[fleet][key] = {**found[fleet][key], 'closed': True, 'at': timeutil.clock().isoformat(timespec='seconds')}
+            found[fleet][key] = {**found[fleet][key], 'closed': True, 'at': timeutil.stamp()}
         self._brief_todos_save(found)
         for fleet, key in lines:
             try:
@@ -411,7 +411,7 @@ class BriefTodos:
             return
         found = self._brief_todos()
         for fleet, key in lines:
-            found[fleet][key] = {**found[fleet][key], 'closed': True, 'at': timeutil.clock().isoformat(timespec='seconds')}
+            found[fleet][key] = {**found[fleet][key], 'closed': True, 'at': timeutil.stamp()}
         self._brief_todos_save(found)
         if choice == 'reject':
             for fleet, key in lines:

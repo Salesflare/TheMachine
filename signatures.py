@@ -218,7 +218,7 @@ def save(config, account_id, value, source):
         if source != 'owner' and (current.get(account_id) or {}).get('source') == 'owner':
             return current[account_id]
         current[account_id] = {'html': clean(value, MAX_PASTED if source == 'owner' else MAX_HTML * 2), 'source': source,
-                               'updated_at': timeutil.clock().isoformat(timespec='seconds')}
+                               'updated_at': timeutil.stamp()}
         temp = where.with_name(where.name + '.tmp')
         fd = os.open(temp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
         with os.fdopen(fd, 'w') as handle:
