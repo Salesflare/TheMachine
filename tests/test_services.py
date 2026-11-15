@@ -35,7 +35,6 @@ JS_KEY = re.compile(r"(?:^|[,{\s])['\"]?([a-z_]+)['\"]?\s*:")
 # The hand-written lists of services each file has today: these only come down.
 SERVICE_LISTS = {
     'abilities.py': 1,
-    'assistant.py': 1,
     'calendar_app.py': 1,
     'calendar_clashes.py': 1,
     'discovery.py': 1,

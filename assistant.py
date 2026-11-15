@@ -1153,14 +1153,6 @@ from machine.main import (  # noqa: F401 - the service and its mixins (machine/m
 )
 
 
-VERIFIED_DECISION_SOURCES = ('telegram', 'dashboard')
-
-
-
-
-MAIL_SERVICES, CALENDAR_SERVICES = ('gmail', 'outlook', 'imap'), ('calendar', 'outlook_calendar', 'icloud_calendar', 'caldav', 'proton_calendar', 'ics', 'exchange')
-
-
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--config', type=Path, default=DEFAULT_CONFIG)

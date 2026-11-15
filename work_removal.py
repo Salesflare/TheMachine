@@ -137,7 +137,7 @@ def backup(config_path, config):
 
 
 def _store(config):
-    from assistant import Store
+    from machine.main import Store
     return Store(config['database'], protect=config.get('message_protection'))
 
 

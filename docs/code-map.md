@@ -388,8 +388,11 @@ The table checks read the SQL in each module's strings. A statement whose table 
 - Tests import names from their own modules (`machine.main.Store`, `sources.SourceError`), not through `assistant.py`,
   and patch them where the code looks them up. The shared test helpers (test_assistant, test_connectors, test_graph,
   test_intercom_replies, test_ux) do so too, so importing one doesn't run `assistant.py`; they still hand it out as `a`
-  (test_assistant: `assistant`), loaded on first use (tests/assistant_on_use.py), to the tests not yet converted. A test
-  that drives `onboarding` patches `onboarding.assistant` with `test_connectors.FOR_ONBOARDING` instead of loading it.
+  (test_assistant: `assistant`), loaded on first use (tests/assistant_on_use.py), to the tests not yet converted.
+- Only the entry points in `LOADS_ASSISTANT` load `assistant.py`. `onboarding.assistant()` hands setup what it reads
+  from the rest of the app (`onboarding._Reads`), each name looked up in its own module at every use, so a test's
+  `patch_everywhere` on that module reaches setup too; a test may still patch `onboarding.assistant` (as
+  `test_connectors.FOR_ONBOARDING`).
 - **Prefer plain modules to mixins.** A mixin still reaches into `App` (`self.store`, `self.config`, other mixins), so
   it moves code without separating it. New domain code goes to a flat module of plain functions that take `db`,
   `config` and the values they need as arguments (`notify.py`, `follow_ups.py`); `App` keeps a thin method that

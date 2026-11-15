@@ -408,8 +408,8 @@ def main(argv=None):
     config = json.loads(Path(args.config).expanduser().read_text())
     database = str(Path(config['database']).expanduser())
     sys.path.insert(0, str(Path(__file__).resolve().parent))
-    import assistant  # the service's own connection: sealed columns stay sealed
-    store = assistant.Store(database)
+    from machine.main import Store  # the service's own connection: sealed columns stay sealed
+    store = Store(database)
     zone = ZoneInfo(config.get('timezone') or 'Europe/Amsterdam')
     print(json.dumps(run(store.connect, database, local_tz=zone), indent=1))
     return 0
