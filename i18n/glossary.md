@@ -132,6 +132,7 @@ The sidebar pages (renamed 2026-11-01): Suggestions is now *To-dos* (the plural 
 | Note, Notes (a page of its own in the Graph, next to People; not meeting notes or the Notes field on a record) | Notitie, Notities | Note, Notes | Notiz, Notizen | Nota, Notas | Nota, Note | Nota, Notas |
 | Linked from (the notes that link to a page) | Gelinkt vanuit | Lié depuis | Verlinkt von | Enlazado desde | Collegato da | Vinculado de |
 | Trip, Trips (a dated note The Machine fills in from booking mail) | Reis, Reizen | Voyage, Voyages | Reise, Reisen | Viaje, Viajes | Viaggio, Viaggi | Viagem, Viagens |
+| Home (the notes about the owner's own home: its bills, appliances and upkeep; not the app's home page) | Thuis | Maison | Zuhause | Hogar | Casa | Casa |
 | board | bord | tableau | Board | tablero | bacheca | quadro |
 | chat | chat | chat | Chat | chat | chat | chat |
 | Careful / Standard (security) | Voorzichtig / Standaard | Prudent / Standard | Vorsichtig / Standard | Prudente / Estándar | Prudente / Standard | Cuidadoso / Padrão |

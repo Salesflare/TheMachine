@@ -28,9 +28,13 @@ function noteText(x){const text=x.text,low=text.toLowerCase(),spots=[];
  for(const l of x.links||[]){const i=low.indexOf(l.name.toLowerCase());if(i>=0&&!spots.some(s=>i<s.end&&i+l.name.length>s.i))spots.push({i,end:i+l.name.length,id:l.id})}
  spots.sort((a,b)=>a.i-b.i);const out=[];let at=0;for(const s of spots){out.push(text.slice(at,s.i),html`<a href="${graphHash(s.id)}" class="note-link">${text.slice(s.i,s.end)}</a>`);at=s.end}out.push(text.slice(at));return out}
 const noteWhen=v=>v?html`<time datetime="${v}">${noteDay(v)}${String(v).length>10?' '+fmtHM(new Date(v)):''}</time>`:'';
-const noteSource=x=>x.source?.gone?html`<small class="note-src">${t('From a message that is gone')}</small>`
- :x.source?html`<small class="note-src"><button type="button" class="link" data-note-src="${x.source.id}" data-kind="${x.source.kind}" data-title="${x.source.title}">${t('From {}',x.source.title||t('a message'))}</button></small>`
- :x.fact_id?html`<small class="note-src">${t('From what I learned')}</small>`:'';
+// Where a line came from, and the to-do it points to (a bill or a subscription: the details stay there)
+function noteSource(x){const from=x.source?.gone?t('From a message that is gone')
+ :x.source?html`<button type="button" class="link" data-note-src="${x.source.id}" data-kind="${x.source.kind}" data-title="${x.source.title}">${t('From {}',x.source.from||x.source.title||t('a message'))}</button>`
+ :x.fact_id?t('From what I learned'):'';
+ // the to-do itself: an open one in the list, picked out; a done one (a paid bill) in its chat, as from Done
+ const todo=x.todo?html`<a href="#card=${encodeURIComponent(x.todo)}&or=chat">${t('Open the to-do')}</a>`:'';
+ return from||todo?html`<small class="note-src">${from}${from&&todo?' · ':''}${todo}</small>`:''}
 const noteLineForm=x=>html`<form class="note-form note-line-form" data-note-line="${x.id}" data-links="${JSON.stringify(x.links||[])}"><textarea name="text" maxlength="${x.fact_id?240:1000}" rows="2" required aria-label="${t('Line')}">${x.text}</textarea><span class="note-acts"><button type="button" class="quiet" data-note-cancel>${t('Cancel')}</button><button class="primary">${t('Save')}</button></span></form>`;
 function noteLine(x){if(noteEditing===x.id)return html`<li>${noteLineForm(x)}</li>`;
  const menu=html`<details class="fact-menu"><summary aria-label="${t('Options for this line')}" title="${t('Options')}">⋯</summary><div class="fact-menu-list" role="menu"><button type="button" role="menuitem" data-note-line-edit="${x.id}">${t('Edit')}${x.fact_id?html`<small>${t('Also changes it under What I’ve learned')}</small>`:''}</button>${x.edited?html`<button type="button" role="menuitem" data-note-line-reset="${x.id}">${t('Back to the original')}</button>`:''}<button type="button" role="menuitem" class="danger" data-note-line-remove="${x.id}">${t('Remove')}</button></div></details>`;
@@ -40,7 +44,7 @@ function noteBelow(a,b){const by=new Map((noteList||[]).map(x=>[x.id,x]));for(le
 const noteOptions=(list,picked)=>list.map(x=>html`<option value="${x.id}"${x.id===picked?html` selected`:''}>${'  '.repeat(x.depth||0)}${x.name}</option>`);
 let noteFor='';
 function notePage(n){if(n.tree)noteList=n.tree;if(noteFor!==n.id){noteFor=n.id;noteAdding=false;noteEditing=null}const areas=n.areas||[],label=areas.find(x=>x.id===n.area)?.label||'',kids=n.children||[],lines=n.lines||[];
- const crumbs=html`<div class="graph-crumbs" role="navigation" aria-label="Breadcrumb"><a href="#graph" data-crumb="">Graph</a><span aria-hidden="true">›</span><a href="#graph=notes" data-crumb="notes">Notes</a>${(n.path||[]).map(p=>html`<span aria-hidden="true">›</span><a href="${graphHash(p.id)}">${p.name}</a>`)}<span aria-hidden="true">›</span><span aria-current="page">${n.name}</span></div>`;
+ const crumbs=html`<div class="graph-crumbs" role="navigation" aria-label="Breadcrumb"><a href="#graph" data-crumb="">Graph</a><span aria-hidden="true">›</span><a href="#graph=notes" data-crumb="notes">Notes</a>${(n.path||[]).map((p,i,all)=>html`<span aria-hidden="true">›</span><a href="${graphHash(p.id)}"${i===all.length-1?html` class="note-up"`:''}>${p.name}</a>`)}<span aria-hidden="true">›</span><span aria-current="page">${n.name}</span></div>`;
  const sub=[NOTE_KIND[n.kind]?t(NOTE_KIND[n.kind]):'',noteDates(n),areas.length>1?label:'',n.by==='owner'?'':t('Kept up to date by The Machine')].filter(Boolean).join(' · ');
  const menu=html`<details class="fact-menu person-menu"><summary aria-label="${t('More for this note')}" title="${t('More')}">⋯</summary><div class="fact-menu-list" role="menu"><button type="button" role="menuitem" data-note-child>${t('New note under this one')}</button><button type="button" role="menuitem" data-note-merge-open>${t('Merge into…')}</button><button type="button" role="menuitem" class="danger" data-note-delete>${t('Delete')}</button></div></details>`;
  const others=(noteList||[]).filter(x=>x.id!==n.id&&!noteBelow(n.id,x.id));

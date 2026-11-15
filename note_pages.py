@@ -54,6 +54,7 @@ CREATE INDEX IF NOT EXISTS note_page_links_target ON note_page_links(target);
 KINDS = {
     'note': {'label': 'Note', 'dated': False, 'personal': False},
     'trip': {'label': 'Trip', 'dated': True, 'personal': False},
+    'home': {'label': 'Home', 'dated': False, 'personal': True},  # home_notes.py: a part of the home, under Home
 }
 OWNER_KINDS = ('note',)        # what the owner can start by hand (New note)
 # The guidance The Machine builds the tree by. The starting tree: the top notes its own notes go under, each made only
@@ -526,6 +527,15 @@ def unmerge(db, note_id, at):
     return {'id': node_id(row['id'])}
 
 
+def _same(db, title, parent):
+    """A note the owner started with this name in this place (no key yet), to fill in instead of starting a second one."""
+    for row in db.execute('SELECT * FROM note_pages WHERE key IS NULL AND removed_at IS NULL AND merged_into IS NULL AND parent_id IS ? '
+                          'ORDER BY id', (parent,)):
+        if (row['owner_title'] or row['title']).casefold() == title.casefold():
+            return row
+    return None
+
+
 def _folder(db, path, at):
     """The note a kind's notes go under (['Home', 'Appliances'], in English: its key), made once by The Machine when it
     isn't there, titled in the owner's language. A folder the owner renamed or moved keeps its key, so it is still
@@ -543,6 +553,11 @@ def _folder(db, path, at):
         if row:
             parent = row['id']
             continue
+        own = _same(db, _title(t(path[depth - 1])), parent)
+        if own:  # the owner's own Home: it becomes the folder, wherever they move it later
+            db.execute('UPDATE note_pages SET key=? WHERE id=?', (key, own['id']))
+            parent = own['id']
+            continue
         parent = db.execute("INSERT INTO note_pages(kind,key,title,area,parent_id,by,created_at,updated_at) VALUES('note',?,?,?,?,'machine',?,?)",
                             (key, _title(t(path[depth - 1])), PERSONAL, parent, at, at)).lastrowid
     return parent
@@ -551,7 +566,8 @@ def _folder(db, path, at):
 def sync(db, kind, drafts, at, keep=None):
     """The notes of one kind The Machine keeps, from its sources. drafts: [{key, title, area, starts, ends, under,
     data, lines: [{key, text, at, item, event_id, fact_id, links, data}]}], the whole current set for that kind. under:
-    the folder notes it goes in (['Trips']). A note or line not there yet is added; one that is changes to what its
+    the folder notes it goes in (['Trips']); or inside: the key of a note of this kind earlier in drafts that it goes in
+    (skipped while that one isn't there). A note or line not there yet is added; one that is changes to what its
     draft says (the owner's title, place, dates and words stay on top); a line its draft no longer has goes (not the
     owner's own lines). A note no draft has any more stays as it is unless keep says otherwise (keep(key) False: the
     source is gone, so is the note), so mail that ages out of the mailbox never takes a trip with it. A note or line
@@ -574,7 +590,20 @@ def sync(db, kind, drafts, at, keep=None):
             continue
         if row and row['removed_at']:
             continue
-        parent = _folder(db, [str(p) for p in d['under']], at) if d.get('under') else None
+        if d.get('inside'):  # in another note of this kind, synced before it (an owner's Dishwasher in Appliances)
+            up = db.execute('SELECT id FROM note_pages WHERE key=? AND removed_at IS NULL AND merged_into IS NULL',
+                            (kind + ':' + str(d['inside']),)).fetchone()
+            if not up:
+                continue
+            parent = up['id']
+        else:
+            parent = _folder(db, [str(p) for p in d['under']], at) if d.get('under') else None
+        own = None if row else _same(db, title, parent)
+        if own:  # the owner's note of that name there: filled in beside their own lines, which stay theirs; their name stands
+            shown = own['owner_title'] or own['title']
+            db.execute('UPDATE note_pages SET key=?,kind=?,by=?,title=?,owner_title=? WHERE id=?',
+                       (key, kind, 'machine', title, None if shown == title else shown, own['id']))
+            row = db.execute('SELECT * FROM note_pages WHERE id=?', (own['id'],)).fetchone()
         if not row:
             note_id = db.execute('INSERT INTO note_pages(kind,key,title,area,starts,ends,parent_id,by,data,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?)',
                                  (kind, key, title, area, starts, ends, parent, 'machine', data, at, at)).lastrowid
