@@ -22,6 +22,7 @@ from __future__ import annotations
 import datetime as dt
 import json
 import re
+import timeutil
 from machine.owner_error import OwnerError
 
 FIELD = 'birthday'
@@ -38,7 +39,6 @@ def is_name(name):
 
 def clean(month, day, year=None, today=None):
     """The birthday as kept, from a month and a day and an optional year; ValueError when it isn't a real day."""
-    import timeutil
     try:
         month, day = int(month), int(day)
     except (TypeError, ValueError):
@@ -167,7 +167,6 @@ def _legacy(db):
 def fold_fields(db):
     """A person date field named Birthday the owner made is the built-in birthday now: its dates become the owner's
     birthdays (where the owner hasn't set one), and the field goes. Once; nothing to do after that."""
-    import timeutil
     found = _legacy(db)
     if not found:
         return 0

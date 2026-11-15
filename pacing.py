@@ -16,6 +16,7 @@ import datetime as dt
 import time
 
 import error_feed
+import timeutil
 
 SCHEMA = '''
 CREATE TABLE IF NOT EXISTS pacing_starts(id INTEGER PRIMARY KEY,started_at TEXT NOT NULL,ended_at TEXT,win TEXT NOT NULL,
@@ -128,7 +129,6 @@ def day_payload(db, day):
 
 def send(connect, call, current=None):
     """The finished days not sent yet (the last BACK_DAYS), one call each, at most every SEND_EVERY. Returns days sent."""
-    import timeutil
     current = current or timeutil.clock()
     with connect() as db:
         ensure(db)

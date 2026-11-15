@@ -34,6 +34,7 @@ import os
 import re
 import shutil
 import subprocess
+import timeutil
 import unicodedata
 import uuid
 from pathlib import Path
@@ -92,7 +93,6 @@ def on(config):
 
 
 def now():
-    import timeutil
     return timeutil.stamp()
 
 
@@ -612,7 +612,6 @@ def withdraw(db, call, node_id, row):
 def pull(db, call, limit=MAX_PULLS):
     """GBrain to The Machine: what the owner wrote on the pages of records that went in, as short notes. Pages changed
     since the last pull only (list_pages updated_after); the first pull reads them all, a round at a time."""
-    import timeutil
     ensure(db)
     mapped = {r['slug']: r['node_id'] for r in db.execute("SELECT slug,node_id FROM gbrain_pages WHERE state!='gone'") if r['node_id'] != 'the-machine:learnings'}
     if not mapped:

@@ -54,6 +54,7 @@ import time
 import urllib.parse
 
 import error_feed
+import timeutil
 from machine import names
 from machine.owner_error import OwnerError
 from machine.kinds import TO_PERSON
@@ -86,7 +87,6 @@ CREATE TABLE IF NOT EXISTS agent_result_receipts(ticket_hash TEXT PRIMARY KEY,re
 
 
 def now():
-    import timeutil
     return timeutil.clock().isoformat()
 
 
@@ -1650,7 +1650,6 @@ class AgentJobs:
 
     def live(self):
         """The jobs still going and those finished in the last minutes, for the dashboard to follow without a full refresh."""
-        import timeutil
         since = (timeutil.clock() - dt.timedelta(minutes=10)).isoformat()
         with self.connect() as db:
             rows = db.execute("SELECT * FROM agent_jobs WHERE status IN ('sent','running','waiting') OR updated_at>=? ORDER BY created_at", (since,)).fetchall()

@@ -30,6 +30,7 @@ import re
 import subprocess
 import tempfile
 import time
+import timeutil
 import unicodedata
 from urllib.parse import urlsplit
 from machine.owner_error import OwnerError
@@ -358,7 +359,6 @@ def reply_context(actions_list, spots, now=None):
     """Problems for a draft check: a Slack or WhatsApp reply to an older message a teammate's Machine carried in, which
     this Machine doesn't have itself, so it can't go in its thread or quote it. It then says in a few words what it
     answers, so the reader knows which conversation it belongs to."""
-    import timeutil
     now = now or timeutil.clock()
     problems = []
     for action in actions_list:
@@ -1213,7 +1213,6 @@ def mail_page(action, signature=''):
 
 
 def mime_bytes(action, job, signature='', config=None):
-    import timeutil
     message = EmailMessage(policy=email.policy.SMTP)
     message['From'] = action['from']
     message['To'] = ', '.join(action['to'])

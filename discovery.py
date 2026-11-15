@@ -39,6 +39,7 @@ import hashlib
 import json
 import re
 import secrets
+import timeutil
 
 from machine.store.graph_history import live
 from machine.owner_error import OwnerError
@@ -144,7 +145,6 @@ def number(value, code=None):
 
 
 def now():
-    import timeutil
     return timeutil.stamp()
 
 
@@ -280,7 +280,6 @@ class Discovery:
 
     def network_reasons(self, db, node_id):
         """What connecting would help with now: an open card with them, a meeting with them soon. Empty: no card."""
-        import timeutil
         from fleet import OPEN_CARD
         if not node_id:
             return []
@@ -304,7 +303,6 @@ class Discovery:
         """{email: reason} for the people just found on the Network (FRESH_DAYS), the strongest FRESH_CARDS of them: suggested
         right away, not only once there is a card or meeting with them. Found in the owner's first lookup: in their
         contacts; found later: they joined since."""
-        import timeutil
         settings = self.network_settings()
         since = (timeutil.clock() - dt.timedelta(days=FRESH_DAYS)).isoformat(timespec='seconds')
         rows = db.execute("SELECT p.email,p.found_at FROM network_people p LEFT JOIN graph_nodes g ON g.id=p.node_id "
@@ -368,7 +366,6 @@ class Discovery:
         return found
 
     def _findable_due(self):
-        import timeutil
         found = self.network_settings()
         return bool(found.get('discoverable')) and (found.get('findable_sent') != self._findable_wanted() or
                                                      found.get('numbers_sent', []) != self._numbers_wanted() or not found.get('findable_at') or
@@ -430,7 +427,6 @@ class Discovery:
 
     # -- the lookups
     def _ago(self, value, seconds):
-        import timeutil
         return not value or value < (timeutil.clock() - dt.timedelta(seconds=seconds)).isoformat(timespec='seconds')
 
     def _joined(self):
@@ -451,7 +447,6 @@ class Discovery:
         """With "Check which of my contacts have a Machine" on: look all the contacts up daily (or now, when forced), and every NEW_EVERY the ones
         not looked up yet or in a bucket where someone became findable; every time, bring the reasons of the people
         found up to date, and mark the ones who became friends."""
-        import timeutil
         self.network_defaults()
         if self._findable_due():
             try:

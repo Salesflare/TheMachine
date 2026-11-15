@@ -45,6 +45,7 @@ import uuid
 from pathlib import Path
 
 import network_crypto as nc
+import timeutil
 from machine.owner_error import OwnerError
 
 SCHEMA = '''
@@ -95,7 +96,6 @@ def ensure(db):
 
 
 def now():
-    import timeutil
     return timeutil.stamp()
 
 
@@ -382,7 +382,6 @@ def due(db, current=None):
     """A distillation is due: the owner wants to be offered, none ran in the last DAYS, no send is on its way, Not now
     was not tapped this week, and there is something new to learn from. An offer still waiting for the owner doesn't
     hold a new one back: the new run carries over what still holds and its batch replaces the waiting one (finish)."""
-    import timeutil
     current = current or timeutil.clock()
     ensure(db)
     if not TEAM_KEY_FINGERPRINT or not offer_on(db):
@@ -481,7 +480,6 @@ def evidence(db, quality=None, current=None, accounts=None):
     agent. Only the general patterns it writes from it come back. `personal` says whether any of it came from a to-do in
     the Personal area (a note on one, or a fact or rule taken from such a note), or from a waiting offer that did:
     learnings from it then wait for the owner's OK, also with Send automatically on (finish)."""
-    import timeutil
     current = current or timeutil.clock()
     start = since(db, current)
     week = max(start, (current - dt.timedelta(days=FAULT_DAYS)).isoformat())
@@ -861,7 +859,6 @@ def auto_send(db_connect, config, call, version=None):
     """Send automatically: the newest batch made while it was on goes as it is (no error excerpt, no email), while it
     is still on. A batch the check would change, or one that can't get through within AUTO_HOURS, waits for the owner
     under Learning, Shared instead. Returns the share result, or None."""
-    import timeutil
     with db_connect() as db:
         ensure(db)
         if not auto_on(db):
@@ -958,7 +955,6 @@ CHAT_MAX = 300         # characters of one request
 
 def votes_due(db, current=None):
     """Time to fetch candidates: voting is on, the team key is pinned, and the last fetch is VOTE_DAYS ago."""
-    import timeutil
     current = current or timeutil.clock()
     ensure(db)
     if not TEAM_KEY_FINGERPRINT or not vote_on(db):
@@ -1001,7 +997,6 @@ def vote_evidence(db):
     works (their rules, facts and channels, the past week's to-do decisions and to-do chat requests), to judge them by.
     Private: it stays in the run's evidence. With nothing from the past week, no turn runs: the waiting learnings are
     let go unjudged (fetched again on a later day) and nothing is sent."""
-    import timeutil
     ensure(db)
     rows = _rows(db, "SELECT candidate_id id,text,example,area,use_cases FROM team_learning_votes WHERE status='pending' ORDER BY fetched_at LIMIT ?", (VOTE_BATCH,))
     if not rows:
@@ -1092,7 +1087,6 @@ def send_votes(db_connect, call):
     its use case. Under On, an abstain goes as just that, so the learning isn't offered here again; it never shows as
     a vote under Activity. `judged` tells the control plane this Machine abstains when it has nothing to judge by, so its
     Not relevant is a real one. One that fails waits for the next try."""
-    import timeutil
     with db_connect() as db:
         ensure(db)
         mode = vote_mode(db)

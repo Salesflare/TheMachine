@@ -33,6 +33,7 @@ import time
 
 import agent_jobs as aj
 import network_crypto as nc
+import timeutil
 
 LOG = logging.getLogger('personal-assistant')
 SESSION = re.compile(r'(?:session_|cse_)[A-Za-z0-9]{8,64}')
@@ -185,7 +186,6 @@ def _poll(jobs):
 
 
 def fetch(jobs, rows=None):
-    import timeutil
     rows = _waiting(jobs) if rows is None else rows
     if not rows:
         return 0

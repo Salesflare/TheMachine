@@ -23,6 +23,7 @@ from __future__ import annotations
 import datetime as dt
 import json
 import re
+import timeutil
 from machine.owner_error import OwnerError
 
 SCHEMA = '''
@@ -55,7 +56,6 @@ def ensure(db):
 
 
 def now():
-    import timeutil
     return timeutil.stamp()
 
 
@@ -97,7 +97,6 @@ def floor(db, current=None):
     """Signals from before this are history, never read. Kept once: from a Machine's last pass that went through when
     it had passes before signals were tracked one by one (so it doesn't learn from its history twice, and a failed pass
     after it loses nothing), else FIRST_DAYS back."""
-    import timeutil
     row = db.execute("SELECT value FROM learning_state WHERE key='floor'").fetchone()
     if row:
         return row[0]
@@ -212,7 +211,6 @@ def settle(db):
 def due(db, current=None):
     """A pass is due: at least MIN_SIGNALS waiting, nothing else running, and none in the last HOURS (SOON_HOURS
     while more than one batch waits and the last pass went through)."""
-    import timeutil
     current = current or timeutil.clock()
     ensure(db)
     settle(db)
@@ -225,7 +223,6 @@ def due(db, current=None):
 
 
 def evidence(db, voices, current=None):
-    import timeutil
     current = current or timeutil.clock()
     since = floor(db, current)
     rows = batch(db, since)

@@ -16,13 +16,13 @@ from pathlib import Path
 import moving
 import portable
 import service
+import timeutil
 
 LOG = logging.getLogger('personal-assistant')
 RESULT = 'imported.json'
 
 
 def _now(now=None):
-    import timeutil
     return now or timeutil.clock()
 
 

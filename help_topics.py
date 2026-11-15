@@ -18,6 +18,7 @@ import datetime as dt
 import re
 
 import team_learnings
+import timeutil
 
 SCHEMA = '''CREATE TABLE IF NOT EXISTS help_topics(day TEXT NOT NULL,topic TEXT NOT NULL,answered INTEGER NOT NULL,n INTEGER NOT NULL,
   PRIMARY KEY(day,topic,answered));'''
@@ -66,7 +67,6 @@ def clean(raw, names=(), vocabulary=None):
 
 def record(db, config, topic, answered, today=None, vocabulary=None):
     """Count one Help question under its topic, when sharing is on. The topic kept, or None."""
-    import timeutil
     if not on(db):
         return None
     kept = clean(topic, team_learnings.known_names(db, config), vocabulary) or (None if answered else 'other')
@@ -80,7 +80,6 @@ def record(db, config, topic, answered, today=None, vocabulary=None):
 
 def send(db_connect, call, today=None):
     """Send each finished day (before today), one call a day, and delete it here once the control plane took it."""
-    import timeutil
     today = today or timeutil.today().isoformat()
     oldest = (dt.date.fromisoformat(today) - dt.timedelta(days=KEEP_DAYS)).isoformat()
     with db_connect() as db:

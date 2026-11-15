@@ -19,6 +19,7 @@ import sqlite3
 from pathlib import Path
 
 import message_seal
+import timeutil
 
 DB_NAME = 'telegram.sqlite'
 SESSION_NAME = 'session.sealed'
@@ -56,7 +57,6 @@ ERRORS = {
 
 
 def now():
-    import timeutil
     return timeutil.stamp()
 
 

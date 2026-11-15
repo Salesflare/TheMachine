@@ -37,6 +37,7 @@ import subprocess
 import tempfile
 import threading
 import time
+import timeutil
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -93,7 +94,6 @@ something went wrong.
 
 
 def now():
-    import timeutil
     return timeutil.stamp()
 
 
@@ -1259,7 +1259,6 @@ class Hints:
         self.connect, self.catalog = connect, catalog
 
     def room(self, db=None):
-        import timeutil
         since = (timeutil.clock() - dt.timedelta(days=7)).isoformat(timespec='seconds')
         if db is None:
             with self.connect() as db:
@@ -1334,7 +1333,6 @@ class Hints:
         self.close(row['skill'], 'dismissed')
 
     def open(self):
-        import timeutil
         since = (timeutil.clock() - dt.timedelta(days=30)).isoformat(timespec='seconds')
         with self.connect() as db:
             if not db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='suggestions'").fetchone():

@@ -18,6 +18,7 @@ import pickle
 import sqlite3
 import subprocess
 import sys
+import timeutil
 
 LOG = logging.getLogger('personal-assistant')
 TIMEOUT = 900  # seconds: a child that takes longer is stopped, and this round collects in-process as before
@@ -40,14 +41,12 @@ def _state():
     """What collect reads besides the database and its arguments: the clock (a pinned one too), the time zone and
     the owner's language and locale."""
     import locale_prefs
-    import timeutil
     return {'pinned': timeutil.PINNED.isoformat() if timeutil.PINNED else None, 'tz': timeutil.LOCAL_TZ.key,
             'locale': dict(locale_prefs._current)}
 
 
 def _set_state(state):
     import locale_prefs
-    import timeutil
     timeutil.pin(state['pinned'])
     timeutil.set_timezone(state['tz'])
     locale_prefs._current.update(state['locale'])

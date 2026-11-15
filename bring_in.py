@@ -28,6 +28,7 @@ import re
 from pathlib import Path
 
 import message_seal
+import timeutil
 
 from routine_imports import TOKEN
 
@@ -105,7 +106,6 @@ def ensure(db):
 
 
 def now():
-    import timeutil
     return timeutil.stamp()
 
 
@@ -202,7 +202,6 @@ def unread(db, workspace, config=None):
 def due(db, workspace, config=None, current=None):
     """Whether a pass should run now: not within a day of the last one, not while enough candidates wait, and only
     when a file holds lines no pass has read. Settles the hash of a file with nothing new, so it is not read again."""
-    import timeutil
     ensure(db)
     last = _state(db, 'last_pass')
     current = current or timeutil.clock()

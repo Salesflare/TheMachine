@@ -23,6 +23,7 @@ import uuid
 
 import next_actions
 import task_invites
+import timeutil
 from machine.owner_error import OwnerError
 
 LOG = logging.getLogger('personal-assistant')
@@ -36,12 +37,10 @@ STATUS_AFTER = {'on': 'in_progress', 'done': 'in_progress', 'cant': 'back'}  # t
 
 
 def today():
-    import timeutil
     return timeutil.today().isoformat()
 
 
 def stamp():
-    import timeutil
     return timeutil.stamp()
 
 

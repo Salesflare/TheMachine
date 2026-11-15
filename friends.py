@@ -14,6 +14,7 @@ from __future__ import annotations
 import datetime as dt
 import json
 import re
+import timeutil
 from machine.owner_error import OwnerError
 
 KIND = 'friends'
@@ -158,7 +159,6 @@ class Friends:
     def friends_meeting_round(self):
         """With meeting questions on: ask a friend about the other people in an open card's meeting this week that
         friend is in too (the relay only carries meeting questions to a friend who is among the attendees)."""
-        import timeutil
         ref = self.friends_ref()
         friends = self.teammates(ref) if ref else []
         if not friends:
