@@ -13,6 +13,8 @@ import assistant
 import fleet
 import support
 from test_device_connect import fleet_with
+import machine.actions as machine_actions
+import machine.main as machine_main
 
 TOKEN = 'sk-proj-abcdefghijklmnopqrstuvwxyz0123456789'
 BOT = '123456789:ABCdefGHIjklMNOpqrSTUvwxYZ0123456789'
@@ -169,10 +171,10 @@ class Consent(unittest.TestCase):
         self.assertEqual(self.reads, [])
 
     def test_only_from_the_owners_dashboard(self):
-        self.assertIn('support_access', assistant.SUPPORT_ACTIONS)
-        self.assertIn('support_access', assistant.OWNER_ACTIONS)
-        self.assertIn('support_access', assistant.DASHBOARD_ACTIONS)
-        app = object.__new__(assistant.App)
+        self.assertIn('support_access', machine_actions.SUPPORT_ACTIONS)
+        self.assertIn('support_access', machine_actions.OWNER_ACTIONS)
+        self.assertIn('support_access', machine_actions.DASHBOARD_ACTIONS)
+        app = object.__new__(machine_main.App)
         app.config, app.config_path, app.fleet = {'accounts': []}, None, self.f
         self.waiting()
         with self.assertRaises(ValueError):
@@ -184,7 +186,7 @@ class Consent(unittest.TestCase):
             app.action('support_access', {}, owner_dashboard=True)
 
     def test_unreachable_account_still_shows_the_switch_state(self):
-        app = object.__new__(assistant.App)
+        app = object.__new__(machine_main.App)
         app.config, app.config_path, app.fleet = {'accounts': []}, None, self.f
 
         def away(*args, **kwargs):

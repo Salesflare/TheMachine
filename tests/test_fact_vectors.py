@@ -5,6 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
+import machine.main as machine_main
 
 spec = importlib.util.spec_from_file_location('assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 assistant = importlib.util.module_from_spec(spec)
@@ -23,7 +24,7 @@ class FactVectors(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
-        self.store = assistant.Store(Path(self.temp.name) / 'events.sqlite')
+        self.store = machine_main.Store(Path(self.temp.name) / 'events.sqlite')
         self.store.commit_page('work', {}, [event()])
         sid = self.store.suggest('facts', 'Check the vendor', 'Body', [1])['id']
         self.store.decide(sid, 'reject', 'a note from the owner', 'owner-note', 'dashboard')

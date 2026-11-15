@@ -7,6 +7,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from seams import patch_everywhere  # noqa: E402,F401
+import machine.main as machine_main
 
 spec = importlib.util.spec_from_file_location('keep_found_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec)
@@ -23,7 +24,7 @@ class KeepFoundNews(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'events.sqlite')
+        self.store = machine_main.Store(Path(self.temp.name) / 'events.sqlite')
         self.now = dt.datetime.now(dt.timezone.utc).replace(microsecond=0)
 
     def state(self, source_id):

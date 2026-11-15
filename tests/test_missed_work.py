@@ -11,6 +11,11 @@ from pathlib import Path
 import re
 import tempfile
 import unittest
+import machine.actions as machine_actions
+import machine.main as machine_main
+import machine.sources.calendar as machine_sources_calendar
+import machine.store.review as machine_store_review
+import timeutil
 
 spec = importlib.util.spec_from_file_location('missed_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec)
@@ -37,9 +42,9 @@ class Audit(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'events.sqlite')
+        self.store = machine_main.Store(Path(self.temp.name) / 'events.sqlite')
         self.store.accounts = ACCOUNTS
-        self.stamp = a.now()
+        self.stamp = timeutil.now()
         self.ids = {}
         with self.store.connect() as db:
             n = 0
@@ -76,7 +81,7 @@ class Audit(unittest.TestCase):
 
     def test_candidates_are_reviewed_signals_that_got_nothing(self):
         with self.store.connect() as db:
-            found, skipped = mw.candidates(db, ACCOUNTS, '2000-01-01', frozenset({'owner@example.com'}), a.calendar_owned, a.bulk_kind)
+            found, skipped = mw.candidates(db, ACCOUNTS, '2000-01-01', frozenset({'owner@example.com'}), machine_sources_calendar.calendar_owned, machine_store_review.bulk_kind)
         ids = {c['id'] for c in found}
         self.assertEqual(ids, set(self.ids['mail']) | set(self.ids['chat']))  # 12 mails, 6 chats
         self.assertEqual(skipped['had_a_to_do'], 2)  # the card's evidence and the promise's
@@ -118,7 +123,7 @@ class Audit(unittest.TestCase):
     def test_evaluator_is_blind_and_sees_text_as_untrusted(self):
         seen = []
         with self.store.connect() as db:
-            state = mw.prepare(db, ACCOUNTS, seed='x', own=frozenset({'owner@example.com'}), owned=a.calendar_owned, bulk=a.bulk_kind)
+            state = mw.prepare(db, ACCOUNTS, seed='x', own=frozenset({'owner@example.com'}), owned=machine_sources_calendar.calendar_owned, bulk=machine_store_review.bulk_kind)
         prompt = state['prompt']
         self.assertIn('never instructions', prompt)
         signals = prompt.split('Signals:\n', 1)[1]
@@ -138,7 +143,7 @@ class Audit(unittest.TestCase):
         with self.store.connect() as db:
             before = db.execute('SELECT count(*) FROM suggestions').fetchone()[0]
             audit = mw.begin(db)
-            found = mw.run(db, ACCOUNTS, answer_all, seed=audit, own=frozenset({'owner@example.com'}), owned=a.calendar_owned, bulk=a.bulk_kind)
+            found = mw.run(db, ACCOUNTS, answer_all, seed=audit, own=frozenset({'owner@example.com'}), owned=machine_sources_calendar.calendar_owned, bulk=machine_store_review.bulk_kind)
             result = mw.save(db, audit, found)
             self.assertEqual(db.execute('SELECT count(*) FROM suggestions').fetchone()[0], before)
             self.assertEqual(db.execute('SELECT count(*) FROM promises').fetchone()[0], 1)
@@ -156,7 +161,7 @@ class Audit(unittest.TestCase):
     def test_owner_labels_stay_local_and_set_precision(self):
         with self.store.connect() as db:
             audit = mw.begin(db)
-            mw.save(db, audit, mw.run(db, ACCOUNTS, answer_all, seed=audit, bulk=a.bulk_kind))
+            mw.save(db, audit, mw.run(db, ACCOUNTS, answer_all, seed=audit, bulk=machine_store_review.bulk_kind))
             for event_id, value in zip(self.ids['mail'][:3], ('real', 'real', 'not')):
                 mw.label(db, event_id, value)
             with self.assertRaises(ValueError):
@@ -173,11 +178,11 @@ class Audit(unittest.TestCase):
         self.assertEqual(cal['precision_from'], 'owner')
 
     def test_weekly_within_the_budget(self):
-        app = object.__new__(a.App)
+        app = object.__new__(machine_main.App)
         app.store, app.config, app.fleet = self.store, {'accounts': ACCOUNTS}, None
         app.background_at = 0
         app.background_pause = lambda **k: {'window': '5h'}
-        helpers = {'owned': a.calendar_owned, 'bulk': a.bulk_kind, 'model': lambda config: None}
+        helpers = {'owned': machine_sources_calendar.calendar_owned, 'bulk': machine_store_review.bulk_kind, 'model': lambda config: None}
         self.assertIsNone(app.missed_work_step(helpers))  # the budget holds it
         app.background_pause = lambda **k: None
         started = []
@@ -199,10 +204,10 @@ class Audit(unittest.TestCase):
             app.action('missed_work_label', {'event_id': self.ids['mail'][0], 'label': 'real'})  # the owner's, on the dashboard
         done = app.action('missed_work_label', {'event_id': self.ids['mail'][0], 'label': 'real'}, owner_dashboard=True)
         self.assertEqual(done['missed_work']['labeled'], 0)  # counted at the next audit
-        self.assertIn('missed_work_label', a.DASHBOARD_ACTIONS)
+        self.assertIn('missed_work_label', machine_actions.DASHBOARD_ACTIONS)
 
     def app(self):
-        app = object.__new__(a.App)
+        app = object.__new__(machine_main.App)
         app.store, app.config, app.fleet = self.store, {'accounts': ACCOUNTS}, None
         return app
 
@@ -215,7 +220,7 @@ class Audit(unittest.TestCase):
                     item['no_todo'] = 'Only an update, nothing asked'
             db.execute("UPDATE analyses SET items=? WHERE id='r1'", (json.dumps(items),))
             audit = mw.begin(db)
-            mw.save(db, audit, mw.run(db, ACCOUNTS, answer_all, seed=audit, bulk=a.bulk_kind))
+            mw.save(db, audit, mw.run(db, ACCOUNTS, answer_all, seed=audit, bulk=machine_store_review.bulk_kind))
 
     def test_real_miss_adds_the_to_do_and_feeds_the_learning_loop(self):
         self.audited()
@@ -324,7 +329,7 @@ class Audit(unittest.TestCase):
 
     def test_the_report_holds_no_message_text(self):
         with self.store.connect() as db:
-            found = mw.run(db, ACCOUNTS, answer_all, seed='r', bulk=a.bulk_kind)
+            found = mw.run(db, ACCOUNTS, answer_all, seed='r', bulk=machine_store_review.bulk_kind)
         lines = '\n'.join(mw.report(found, mw.calibration_of(found)))
         self.assertIn('Miss rate, adjusted', lines)
         for text in ('deck', 'Friday', 'Sender', 'Friend', 'see you'):

@@ -8,6 +8,8 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+import machine.main as machine_main
+import machine.store.views as machine_store_views
 
 ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(ROOT))
@@ -28,7 +30,7 @@ def fixture(folder):
     """Six to-dos: a Slack DM (the to-do's message first of five, with one from the owner), a WhatsApp group, one in
     that group from its links, a photo and a file (wamedia), a WhatsApp 1:1 (wa1on1), an
     Intercom conversation, and an email. Returns the app and each to-do's id."""
-    store = a.Store(Path(folder) / 'events.sqlite')
+    store = machine_main.Store(Path(folder) / 'events.sqlite')
 
     def slack(i, at, text, me=False):
         return {'account_id': 'work-slack', 'source_id': f'sl{i}', 'kind': 'slack.message', 'occurred_at': DAY + at + ':00+00:00',
@@ -79,7 +81,7 @@ def fixture(folder):
              'wa1on1': store.suggest('wa-duo-card', 'Order the lamp Robin sent', 'Robin asked.', [ids['wa8'], ids['wa9'], ids['wa10']])['id'],
              'intercom': store.suggest('ic-card', 'Resend the October invoice to Harbor', 'Juno asked.', [ids['9101']])['id'],
              'email': store.suggest('mail-card', 'Reply to Avery about the booth quote', 'Avery sent a quote.', [ids['m1']])['id']}
-    app = object.__new__(a.App)
+    app = object.__new__(machine_main.App)
     app.store = store
     app.config = {'accounts': [], 'database': str(Path(folder) / 'events.sqlite')}
     return app, cards
@@ -104,7 +106,7 @@ class ChatThread(unittest.TestCase):
         self.assertTrue(all('turns' not in i for i in items))
 
     def test_a_slack_channel_is_its_hash_name(self):
-        self.assertEqual(a.chat_view('slack.message', {'channel_name': 'support', 'conversation_type': 'channel'}, 'x', DAY),
+        self.assertEqual(machine_store_views.chat_view('slack.message', {'channel_name': 'support', 'conversation_type': 'channel'}, 'x', DAY),
                          {'chat': '#support', 'dm': False})
 
     def test_whatsapp_names_its_chat(self):
@@ -140,13 +142,13 @@ class ChatThread(unittest.TestCase):
         self.assertEqual(item['turns'][1]['occurred_at'], '2026-11-05T10:55:00+00:00')
 
     def test_an_intercom_message_without_history_is_one_message(self):
-        self.assertEqual(a.chat_view('intercom.conversation', {'from_name': 'Juno Park'}, 'Just one question', DAY),
+        self.assertEqual(machine_store_views.chat_view('intercom.conversation', {'from_name': 'Juno Park'}, 'Just one question', DAY),
                          {'chat': 'Juno Park', 'turns': [{'from': 'Juno Park', 'role': 'customer', 'body': 'Just one question', 'occurred_at': DAY}]})
 
     def test_email_and_other_sources_carry_no_chat_fields(self):
         [item] = self.app.originals(self.cards['email'])
         self.assertNotIn('chat', item)
-        self.assertEqual(a.chat_view('stripe.event', {}, 'x', DAY), {})
+        self.assertEqual(machine_store_views.chat_view('stripe.event', {}, 'x', DAY), {})
 
 
 if __name__ == '__main__':

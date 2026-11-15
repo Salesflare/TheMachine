@@ -8,6 +8,11 @@ from pathlib import Path
 import tempfile
 import unittest
 from unittest.mock import patch
+import datetime as dt
+import machine.main as machine_main
+import machine.prompts.review as machine_prompts_review
+import machine.store.profile as machine_store_profile
+import timeutil
 
 spec = importlib.util.spec_from_file_location('loop_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec)
@@ -21,13 +26,13 @@ class LearningLoop(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'events.sqlite')
+        self.store = machine_main.Store(Path(self.temp.name) / 'events.sqlite')
         self.store.accounts = [{'id': 'work', 'service': 'gmail', 'email': 'owner@example.com'}]
-        self.app = object.__new__(a.App)
+        self.app = object.__new__(machine_main.App)
         self.app.store = self.store
         self.app.config = {'accounts': self.store.accounts, 'review_worker': {'enabled': True}}
         self.app.fleet = None
-        stamp = a.now()
+        stamp = timeutil.now()
         with self.store.connect() as db:
             db.execute("INSERT INTO milestones(name,at) VALUES('first_card_shown',?)", (stamp,))
             for i in range(4):
@@ -48,7 +53,7 @@ class LearningLoop(unittest.TestCase):
     def run_pass(self, changes):
         run_id = self.store.tune_due()
         self.assertTrue(run_id)
-        session = a.PROFILE_SESSION_PREFIX + run_id
+        session = machine_store_profile.PROFILE_SESSION_PREFIX + run_id
         page = self.store.profile_evidence(1, session)
 
         def runner(request):
@@ -135,7 +140,7 @@ class LearningLoop(unittest.TestCase):
                  (body + 'Please send the deck. ' + body, body + 'Send the deck by Friday. ' + body)]  # one line in the middle
         for before, after in edits:
             with self.subTest(after=after[-30:]):
-                seen = learning_loop.view([{'kind': 'edit', 'source': 'dashboard', 'at': a.now(), 'channel': 'email', 'title': 'T',
+                seen = learning_loop.view([{'kind': 'edit', 'source': 'dashboard', 'at': timeutil.now(), 'channel': 'email', 'title': 'T',
                                             'before': before, 'after': after}])[0]
                 self.assertGreater(len(before), learning_loop.CLIP)
                 self.assertNotEqual(seen['draft'], seen['theirs'])
@@ -143,7 +148,7 @@ class LearningLoop(unittest.TestCase):
                 changed = [w for w in after.split() if w not in before.split()]
                 self.assertTrue(all(w in seen['theirs'] for w in changed), seen)
                 self.assertTrue(all(w in seen['draft'] for w in before.split() if w not in after.split()), seen)
-        short = learning_loop.view([{'kind': 'edit', 'source': 'dashboard', 'at': a.now(), 'channel': 'email', 'title': 'T',
+        short = learning_loop.view([{'kind': 'edit', 'source': 'dashboard', 'at': timeutil.now(), 'channel': 'email', 'title': 'T',
                                      'before': 'Dear Sam,\nthanks', 'after': 'Hi Sam, thanks'}])[0]
         self.assertEqual((short['draft'], short['theirs']), ('Dear Sam, thanks', 'Hi Sam, thanks'))  # short ones stay whole
 
@@ -175,8 +180,8 @@ class LearningLoop(unittest.TestCase):
             db.execute("DELETE FROM decisions WHERE id IN ('d1','d2')")
             self.assertFalse(learning_loop.due(db))
         with self.store.connect() as db:
-            db.execute("INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES('d4','s1','snooze','','dashboard',?)", (a.now(),))
-            db.execute("INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES('d5','s2','reject','','telegram',?)", (a.now(),))
+            db.execute("INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES('d4','s1','snooze','','dashboard',?)", (timeutil.now(),))
+            db.execute("INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES('d5','s2','reject','','telegram',?)", (timeutil.now(),))
         self.run_pass([{'kind': 'voice', 'channel': 'Email', 'text': 'Short', 'why': 'x'}])  # drops most of the block: refused
         self.assertEqual(self.store.snapshot([])['learning_changes'], [])
         self.assertEqual(next(v for v in self.store.voices() if v['channel'] == 'Email')['text'], EMAIL)
@@ -186,8 +191,8 @@ class LearningLoop(unittest.TestCase):
         # filler; an older line that names the owner reads "You corrected …" on Learning, the stored line unchanged.
         self.assertIn('never their name', learning_loop.prompt('r1'))
         self.assertIn('"explicitly"', learning_loop.prompt('r1'))
-        self.assertIn(a.OWNER_YOU, a.FACT_KIND_HINT)
-        self.assertIn(a.FACTS_YOU, a.review_prompt('run', ['work'], '', '- You prefer short replies.'))
+        self.assertIn(machine_prompts_review.OWNER_YOU, machine_prompts_review.FACT_KIND_HINT)
+        self.assertIn(machine_prompts_review.FACTS_YOU, machine_prompts_review.review_prompt('run', ['work'], '', '- You prefer short replies.'))
         cases = {'Sam explicitly corrected the tax review to-do: “use the portal”.': 'You corrected the tax review to-do: “use the portal”.',
                  'On October 31, Sam corrected the coffee to-do. Sam’s note said online.': 'On October 31, you corrected the coffee to-do. Your note said online.',
                  'In the venue chat, Sam repeatedly asked for a doc.': 'In the venue chat, you repeatedly asked for a doc.',
@@ -216,7 +221,7 @@ class LearningLoop(unittest.TestCase):
                        "VALUES('old1','old1','Ana accepts the venue wording','','[]','[\"work\"]','completed','2026-01-01T09:00:00+00:00')")
             for i in range(105):
                 db.execute("INSERT INTO suggestions(id,dedupe_key,title,body,event_ids,account_ids,status,created_at) "
-                           "VALUES(?,?,?,'','[]','[\"work\"]','completed',?)", (f'n{i}', f'n{i}', f'Newer {i}', a.now()))
+                           "VALUES(?,?,?,'','[]','[\"work\"]','completed',?)", (f'n{i}', f'n{i}', f'Newer {i}', timeutil.now()))
             db.execute("INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES('d9','old1','complete','Sent: Send reply','assistant','2026-01-01T10:00:00+00:00')")  # closed long ago too
         snap = self.store.snapshot([])
         self.assertNotIn('old1', {s['id'] for s in snap['suggestions']})
@@ -233,18 +238,18 @@ class DurableSignals(LearningLoop):
 
     def setUp(self):
         super().setUp()
-        self.clock = a.dt.datetime.fromisoformat(a.now())
+        self.clock = dt.datetime.fromisoformat(timeutil.now())
 
     def add(self, n, at=None, prefix='x', feedback=''):
-        base = at or self.clock - a.dt.timedelta(days=3)
+        base = at or self.clock - dt.timedelta(days=3)
         with self.store.connect() as db:
             for i in range(n):
                 db.execute("INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,'s1',?,?,'dashboard',?)",
-                           (f'{prefix}{i:03}', 'other' if feedback else 'reject', feedback, (base + a.dt.timedelta(minutes=i)).isoformat()))
+                           (f'{prefix}{i:03}', 'other' if feedback else 'reject', feedback, (base + dt.timedelta(minutes=i)).isoformat()))
         return [f'{prefix}{i:03}' for i in range(n)]
 
     def later(self, hours=13):
-        self.clock += a.dt.timedelta(hours=hours)
+        self.clock += dt.timedelta(hours=hours)
         return self.clock
 
     def step(self, runner):
@@ -259,7 +264,7 @@ class DurableSignals(LearningLoop):
             return None
         with self.store.connect() as db:  # started on this test's clock, for the cadence
             db.execute('UPDATE profile_runs SET started_at=? WHERE run_id=?', (self.clock.isoformat(), run_id))
-        session = a.PROFILE_SESSION_PREFIX + run_id
+        session = machine_store_profile.PROFILE_SESSION_PREFIX + run_id
         page = self.store.profile_evidence(1, session)
 
         def runner(request):
@@ -353,7 +358,7 @@ class DurableSignals(LearningLoop):
         self.assertEqual({v for v in self.states().values()}, {('claimed', 0)})
 
     def test_a_poison_signal_is_given_up_after_max_tries_and_never_blocks_the_rest(self):
-        self.add(1, at=self.clock - a.dt.timedelta(hours=1), prefix='poison', feedback='POISON')
+        self.add(1, at=self.clock - dt.timedelta(hours=1), prefix='poison', feedback='POISON')
         failed = 0
         for _ in range(20):
             page = self.one_pass(fail=lambda page: 'POISON' in json.dumps(page))
@@ -372,8 +377,8 @@ class DurableSignals(LearningLoop):
             self.assertEqual(db.execute("SELECT count(*) FROM learning_signals WHERE kind='edit' AND status='done'").fetchone()[0], 2)
 
     def test_an_existing_machine_starts_from_its_last_pass(self):
-        before = (self.clock - a.dt.timedelta(hours=20)).isoformat()
-        self.add(40, at=self.clock - a.dt.timedelta(days=2), prefix='old')  # read (or skipped) by the old loop: history
+        before = (self.clock - dt.timedelta(hours=20)).isoformat()
+        self.add(40, at=self.clock - dt.timedelta(days=2), prefix='old')  # read (or skipped) by the old loop: history
         with self.store.connect() as db:
             db.execute("INSERT INTO profile_runs(run_id,status,started_at,updated_at,kind,auto) VALUES('old','ok',?,?,'tune',1)", (before, before))
         page = self.one_pass()
@@ -383,9 +388,9 @@ class DurableSignals(LearningLoop):
             self.assertEqual(learning_loop.floor(db), before)
 
     def test_an_existing_machine_recovers_what_its_failed_passes_after_the_last_good_one_read(self):
-        good, failed = (self.clock - a.dt.timedelta(hours=30)).isoformat(), (self.clock - a.dt.timedelta(hours=10)).isoformat()
-        self.add(40, at=self.clock - a.dt.timedelta(hours=40), prefix='old')  # before the last good pass: history
-        lost = self.add(4, at=self.clock - a.dt.timedelta(hours=20), prefix='lost')  # read by a pass that then failed
+        good, failed = (self.clock - dt.timedelta(hours=30)).isoformat(), (self.clock - dt.timedelta(hours=10)).isoformat()
+        self.add(40, at=self.clock - dt.timedelta(hours=40), prefix='old')  # before the last good pass: history
+        lost = self.add(4, at=self.clock - dt.timedelta(hours=20), prefix='lost')  # read by a pass that then failed
         with self.store.connect() as db:
             db.execute("INSERT INTO profile_runs(run_id,status,started_at,updated_at,kind,auto) VALUES('good','ok',?,?,'tune',1)", (good, good))
             db.execute("INSERT INTO profile_runs(run_id,status,error,started_at,updated_at,kind,auto) VALUES('bad','error','lost',?,?,'tune',1)",

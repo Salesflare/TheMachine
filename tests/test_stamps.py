@@ -6,6 +6,8 @@ from pathlib import Path
 
 import assistant as a
 from machine import stamps
+import machine.main as machine_main
+import timeutil
 
 
 class Stamps(unittest.TestCase):
@@ -85,7 +87,7 @@ class PageQueries(unittest.TestCase):
 
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 's.sqlite')
+        self.store = machine_main.Store(Path(self.temp.name) / 's.sqlite')
 
     def plan(self, sql, args=()):
         with self.store.connect() as db:
@@ -196,7 +198,7 @@ class PageQueries(unittest.TestCase):
         from unittest.mock import patch
         from machine.store import views
         views.CARDS.clear()
-        self.store.commit_page('w', {}, [{'account_id': 'w', 'source_id': 'w1', 'kind': 'gmail.message', 'occurred_at': a.now(),
+        self.store.commit_page('w', {}, [{'account_id': 'w', 'source_id': 'w1', 'kind': 'gmail.message', 'occurred_at': timeutil.now(),
                                           'title': 'Ann', 'body': 'Can you answer?', 'metadata': {}, 'deleted': False}])
         card = self.store.suggest('k1', 'Answer Ann', 'Ann asked.', [1])['id']
         with patch.object(views.ViewsStore, '_card_views', autospec=True, side_effect=views.ViewsStore._card_views) as made:

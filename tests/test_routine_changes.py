@@ -9,6 +9,7 @@ import time
 import unittest
 from pathlib import Path
 from unittest.mock import patch
+import machine.main as machine_main
 
 spec = importlib.util.spec_from_file_location('routine_changes_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
@@ -33,8 +34,8 @@ class Diff(unittest.TestCase):
 class Changes(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'e.sqlite')
-        self.app = object.__new__(a.App); self.app.store = self.store
+        self.store = machine_main.Store(Path(self.temp.name) / 'e.sqlite')
+        self.app = object.__new__(machine_main.App); self.app.store = self.store
         self.app.config = {'accounts': [{'id': 'w', 'boundary': 'work:acme.example'}], 'timezone': 'Europe/Brussels',
                            'openclaw_state': self.temp.name + '/none.sqlite'}
         self.store.accounts = self.app.config['accounts']  # as the App sets it (machine/main.py)
@@ -44,7 +45,7 @@ class Changes(unittest.TestCase):
                             ('preparation_gateway', lambda s, request: self.gateway(request)),
                             ('routine_spawn', lambda s, target, run_id: target(run_id)),
                             ('card_chat_gateway', lambda s, request: {'messages': []})):  # the run's own words: none here
-            p = patch.object(a.App, name, value); p.start(); self.addCleanup(p.stop)
+            p = patch.object(machine_main.App, name, value); p.start(); self.addCleanup(p.stop)
         self.answer = {'start': {'status': 'admitted'}, 'status': {'status': 'pending'}}
         self.rid = self.act('routine_new', words='every day at 9, ' + WORDS)['made']
         self.act('routine_run_now', id=self.rid); self.app.routines_step()

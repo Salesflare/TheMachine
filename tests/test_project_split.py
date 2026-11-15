@@ -8,6 +8,7 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+import machine.main as machine_main
 
 spec = importlib.util.spec_from_file_location('split_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec)
@@ -23,10 +24,10 @@ class ProjectSplit(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'events.sqlite', protect=True)
+        self.store = machine_main.Store(Path(self.temp.name) / 'events.sqlite', protect=True)
         self.accounts = [{'id': 'work', 'service': 'gmail', 'email': 'owner@example.com', 'boundary': 'work:Example'}]
         self.store.accounts = self.accounts
-        self.app = object.__new__(a.App)
+        self.app = object.__new__(machine_main.App)
         self.app.store = self.store
         self.app.config = {'accounts': self.accounts}
         self.app.fleet = None

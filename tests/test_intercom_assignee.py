@@ -11,6 +11,11 @@ import unittest
 from pathlib import Path
 
 from connectors import intercom
+import machine.main as machine_main
+import machine.sources.connectors as machine_sources_connectors
+import machine.store.review as machine_store_review
+import sources
+import timeutil
 
 ROOT = Path(__file__).parent.parent
 spec = importlib.util.spec_from_file_location('assignee_assistant', ROOT / 'assistant.py')
@@ -36,7 +41,7 @@ def said(admin, name, email, at=90):
             'author': {'type': 'admin', 'id': admin, 'name': name, 'email': email}}
 
 
-HELPERS = types.SimpleNamespace(SourceError=a.SourceError, iso=a.CONNECTOR_HELPERS.iso)
+HELPERS = types.SimpleNamespace(SourceError=sources.SourceError, iso=machine_sources_connectors.CONNECTOR_HELPERS.iso)
 
 
 class Connector(unittest.TestCase):
@@ -53,24 +58,24 @@ class Connector(unittest.TestCase):
 class Assignment(unittest.TestCase):
     def test_owner_nobody_team_or_a_teammate(self):
         mine = ({'42'}, {'owner@example.com'})
-        self.assertEqual(a.intercom_assignment({'admin_assignee_id': '42'}, *mine), 'owner')
-        self.assertEqual(a.intercom_assignment({}, *mine), 'nobody')
-        self.assertEqual(a.intercom_assignment({'team_assignee_id': '9'}, *mine), 'team')
-        self.assertEqual(a.intercom_assignment({'admin_assignee_id': '51', 'team_assignee_id': '9', 'assignee_name': 'Sam'}, *mine), ('teammate', 'Sam'))
-        self.assertEqual(a.intercom_assignment({'admin_assignee_id': '51'}, *mine), ('teammate', ''))
+        self.assertEqual(machine_store_review.intercom_assignment({'admin_assignee_id': '42'}, *mine), 'owner')
+        self.assertEqual(machine_store_review.intercom_assignment({}, *mine), 'nobody')
+        self.assertEqual(machine_store_review.intercom_assignment({'team_assignee_id': '9'}, *mine), 'team')
+        self.assertEqual(machine_store_review.intercom_assignment({'admin_assignee_id': '51', 'team_assignee_id': '9', 'assignee_name': 'Sam'}, *mine), ('teammate', 'Sam'))
+        self.assertEqual(machine_store_review.intercom_assignment({'admin_assignee_id': '51'}, *mine), ('teammate', ''))
         # The owner's own address on the assignee: theirs, whatever the id
-        self.assertEqual(a.intercom_assignment({'admin_assignee_id': '77', 'assignee_email': 'owner@example.com'}, *mine), 'owner')
+        self.assertEqual(machine_store_review.intercom_assignment({'admin_assignee_id': '77', 'assignee_email': 'owner@example.com'}, *mine), 'owner')
         # Who the owner is in Intercom unknown, and the assignee unnamed: left as it was, never closed on a guess
-        self.assertEqual(a.intercom_assignment({'admin_assignee_id': '51'}, set(), {'owner@example.com'}), 'unknown')
+        self.assertEqual(machine_store_review.intercom_assignment({'admin_assignee_id': '51'}, set(), {'owner@example.com'}), 'unknown')
 
 
 class Store(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'events.sqlite')
+        self.store = machine_main.Store(Path(self.temp.name) / 'events.sqlite')
         self.store.accounts = [OWN, MAIL]
-        self.app = object.__new__(a.App)
+        self.app = object.__new__(machine_main.App)
         self.app.store = self.store
         self.app.config = {'accounts': self.store.accounts, 'database': str(Path(self.temp.name) / 'events.sqlite'),
                            'openclaw_config': str(Path(self.temp.name) / 'openclaw.json')}
@@ -88,7 +93,7 @@ class Store(unittest.TestCase):
             self.store.suggest('c7', 'Answer Casey about export', 'Casey asks whether they can export.', [1])
         with self.store.connect() as db:
             row = dict(db.execute('SELECT * FROM events WHERE id=1').fetchone())
-            view = a.review_view(row, assigned=self.store.intercom_assignments(db, [row])[1])
+            view = machine_store_review.review_view(row, assigned=self.store.intercom_assignments(db, [row])[1])
         self.assertIn('Assigned in Intercom to Sam, not the owner', view['assigned'])
         self.assertFalse({'admin_assignee_id', 'assignee_email', 'admin_emails', 'assignee_name'} & set(view.get('metadata', {})))
 
@@ -120,7 +125,7 @@ class Store(unittest.TestCase):
 
     def test_a_to_do_with_other_evidence_too_stays(self):
         self.sync(conversation(None))
-        self.store.commit_page('mail', {}, [{'account_id': 'mail', 'source_id': 'm1', 'kind': 'gmail.message', 'occurred_at': a.now(),
+        self.store.commit_page('mail', {}, [{'account_id': 'mail', 'source_id': 'm1', 'kind': 'gmail.message', 'occurred_at': timeutil.now(),
                                              'title': 'Export', 'body': 'Also by mail', 'deleted': False, 'metadata': {'from': 'customer@example.com'}}])
         sid = self.store.suggest('c7', 'Answer Casey about export', 'Casey asks whether they can export.', [1, 2])['id']
         self.sync(conversation('51'))

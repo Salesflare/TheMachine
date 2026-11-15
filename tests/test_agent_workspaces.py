@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+import machine.main as machine_main
 
 spec = importlib.util.spec_from_file_location('assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 assistant = importlib.util.module_from_spec(spec)
@@ -25,7 +26,7 @@ class Workspaces(unittest.TestCase):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
         self.dir = Path(self.tmp.name)
-        self.store = assistant.Store(self.dir / 'events.sqlite', protect=True)
+        self.store = machine_main.Store(self.dir / 'events.sqlite', protect=True)
         self.root = self.dir / 'agent-jobs'
         self.jobs = agent_jobs.AgentJobs(self.store.connect, {'database': str(self.dir / 'events.sqlite'), 'accounts': [], 'agents': {}}, self.root)
         self.n = 0

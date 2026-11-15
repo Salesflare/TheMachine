@@ -10,6 +10,9 @@ import tempfile
 import time
 import unittest
 from pathlib import Path
+import machine.app.sync as machine_app_sync
+import machine.main as machine_main
+import sources
 
 ROOT = Path(__file__).parent.parent
 spec = importlib.util.spec_from_file_location('slack_read_now_assistant', ROOT / 'assistant.py')
@@ -44,9 +47,9 @@ class Base(unittest.TestCase):
     def setUp(self):
         slack_source.READ_NOW.clear(); self.addCleanup(slack_source.READ_NOW.clear)
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'e.sqlite')
+        self.store = machine_main.Store(Path(self.temp.name) / 'e.sqlite')
         self.store.accounts = self.accounts
-        self.app = object.__new__(a.App); self.app.store = self.store
+        self.app = object.__new__(machine_main.App); self.app.store = self.store
         self.app.config = {'accounts': self.accounts, 'prepare_ahead': False, 'database': str(Path(self.temp.name) / 'e.sqlite')}
         self.store.config = self.app.config
 
@@ -72,20 +75,20 @@ class ReadNow(Base):
         return self.app.action('slack_read', {'channel': '#proj-halvorsen', **args})
 
     def test_a_quiet_channel_waits_a_day_unless_a_run_asks_for_it(self):
-        self.assertFalse(a.sync_slack(self.store, {}, SLACK, self.slack)['more'])
+        self.assertFalse(machine_app_sync.sync_slack(self.store, {}, SLACK, self.slack)['more'])
         self.assertEqual(self.slack.calls, [])  # nothing due: Leo's message would wait until tomorrow
         asked = self.read()
         self.assertEqual((asked['status'], asked['channel'], asked['account_id']), ('reading', 'proj-halvorsen', 'work-slack'))
         self.assertIn('call slack_read again', asked['note'])
         self.assertEqual(self.read()['status'], 'reading')  # asking again changes nothing until the read is in
-        a.sync_slack(self.store, {}, SLACK, self.slack)
+        machine_app_sync.sync_slack(self.store, {}, SLACK, self.slack)
         self.assertEqual([(m, p['channel']) for m, p in self.slack.calls], [('conversations.history', 'C0HALVORS1')])  # first, before #general
         found = self.read()
         self.assertEqual(found['status'], 'read')
         events = self.store.events(['work-slack'], event_ids=found['event_ids'])
         self.assertEqual([e['body'] for e in events], ['Two homepage directions for Halvorsen are ready for a first look.'])
         self.assertIn('events', found['note'])
-        a.sync_slack(self.store, {}, SLACK, self.slack)
+        machine_app_sync.sync_slack(self.store, {}, SLACK, self.slack)
         self.assertEqual(len(self.slack.calls), 1)  # once read, it rests as before
 
     def test_by_id_too_and_a_conversation_they_are_not_in_is_named_plainly(self):
@@ -99,9 +102,9 @@ class ReadNow(Base):
     def test_a_channel_slack_refuses_ends_the_ask(self):
         class Refusing(Fake):
             def get(self, method, params=None):
-                raise a.SourceError('slack_not_in_channel:' + method)
+                raise sources.SourceError('slack_not_in_channel:' + method)
         self.read()
-        a.sync_slack(self.store, {}, SLACK, Refusing({}))  # the other conversations are read as before
+        machine_app_sync.sync_slack(self.store, {}, SLACK, Refusing({}))  # the other conversations are read as before
         self.assertEqual(self.read()['status'], 'cannot_read')
         self.assertFalse(slack_source.READ_NOW)
 
@@ -221,10 +224,10 @@ class TwoReads(Blocker):
         with self.assertRaisesRegex(ValueError, r'Not recorded: Slack is still reading mpdm-team-1, mpdm-team-2.*never a question for the owner'):
             self.block(sid, job, 'I still could not read the team discussion; paste any update here.')
         self.assertNotEqual(self.card(sid)['preparation_status'], 'blocked')
-        a.sync_slack(self.store, {}, SLACK, self.slack)  # one read: the first group
+        machine_app_sync.sync_slack(self.store, {}, SLACK, self.slack)  # one read: the first group
         with self.assertRaisesRegex(ValueError, r'still reading mpdm-team-2 for'):
             self.block(sid, job)
-        a.sync_slack(self.store, {}, SLACK, self.slack)  # the second, ahead of anything due
+        machine_app_sync.sync_slack(self.store, {}, SLACK, self.slack)  # the second, ahead of anything due
         self.assertEqual([p['channel'] for _, p in self.slack.calls], list(self.GROUPS))
         self.assertEqual([self.read(job, g)['status'] for g in self.GROUPS], ['read', 'read'])
         self.assertEqual(self.block(sid, job)['status'], 'blocked')  # a real blocker, once nothing is coming
@@ -240,7 +243,7 @@ class TwoReads(Blocker):
         self.assertEqual(self.block(sid, job)['status'], 'blocked')  # waited long enough: it may stand
         self.app.preparation_step(lambda req: {'status': 'admitted'})
         self.assertEqual(self.card(sid)['preparation_status'], 'blocked')  # still coming: it waits
-        a.sync_slack(self.store, {}, SLACK, self.slack); a.sync_slack(self.store, {}, SLACK, self.slack)
+        machine_app_sync.sync_slack(self.store, {}, SLACK, self.slack); machine_app_sync.sync_slack(self.store, {}, SLACK, self.slack)
         self.app.preparation_step(lambda req: {'status': 'admitted'})  # both in: no Try again to find
         self.assertNotEqual(self.card(sid)['preparation_status'], 'blocked')
         with self.store.connect() as db:
@@ -263,10 +266,10 @@ class TwoReads(Blocker):
     def test_a_refused_read_is_a_plain_blocker(self):
         class Refusing(Fake):
             def get(self, method, params=None):
-                raise a.SourceError('slack_not_in_channel:' + method)
+                raise sources.SourceError('slack_not_in_channel:' + method)
         sid, job, _ = self.start()
         self.read(job, self.GROUPS[0])
-        a.sync_slack(self.store, {}, SLACK, Refusing({}))
+        machine_app_sync.sync_slack(self.store, {}, SLACK, Refusing({}))
         self.assertEqual(self.read(job, self.GROUPS[0])['status'], 'cannot_read')
         self.assertEqual(self.block(sid, job, "Slack wouldn't let me read the team's group message, so paste its latest update here.")['status'], 'blocked')
 

@@ -11,6 +11,8 @@ import tempfile
 import unittest
 from pathlib import Path
 import dashboard_parts
+import machine.cards as machine_cards
+import machine.main as machine_main
 
 ROOT = Path(__file__).parent.parent
 spec = importlib.util.spec_from_file_location('title_on_done_assistant', ROOT / 'assistant.py')
@@ -30,8 +32,8 @@ class TitleOnDone(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'events.sqlite')
-        self.app = object.__new__(a.App)
+        self.store = machine_main.Store(Path(self.temp.name) / 'events.sqlite')
+        self.app = object.__new__(machine_main.App)
         self.app.store = self.store
         self.app.config = {'accounts': [{'id': 'work', 'service': 'gmail', 'transport': 'gog', 'email': 'owner@example.com', 'boundary': 'work:Example'}]}
         self.store.commit_page('work', {}, [mail(1, 'Thanks, it arrived. Could you send me a receipt?')])
@@ -74,13 +76,13 @@ class TitleOnDone(unittest.TestCase):
 
     def test_a_completed_final_step_or_an_approved_send_keeps_the_title(self):
         for kwargs in ({'finish_state': 'completed'}, {'send_now': True}):
-            self.assertTrue(a.title_kept(**kwargs))
+            self.assertTrue(machine_cards.title_kept(**kwargs))
             with self.subTest(**kwargs):
                 with self.store.connect() as db:
                     db.execute("UPDATE suggestions SET status='accepted',title=? WHERE id=?", (TITLE, self.sid))
                 self.store.prepare(self.sid, 'Done.', title='Receipt sent to Sam', **kwargs)
                 self.assertEqual(self.card()['title'], TITLE)
-        self.assertFalse(a.title_kept({'state': 'needs_you', 'needs': 'x'}))
+        self.assertFalse(machine_cards.title_kept({'state': 'needs_you', 'needs': 'x'}))
 
     # Updates on a done or dismissed to-do
 

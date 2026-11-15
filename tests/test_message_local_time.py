@@ -7,6 +7,9 @@ import importlib.util
 from pathlib import Path
 import unittest
 from seams import patch_everywhere  # noqa: E402,F401
+import machine.app.preparation as machine_app_preparation
+import machine.prompts.review as machine_prompts_review
+import machine.store.review as machine_store_review
 
 spec = importlib.util.spec_from_file_location('local_time_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec)
@@ -28,21 +31,21 @@ class LocalTime(unittest.TestCase):
 
     def test_a_message_carries_the_day_it_was_sent_in_the_owners_zone(self):
         # Sent on a Monday evening in Brussels: still Monday in UTC
-        self.assertEqual(a.review_view(mail('2026-11-09T20:54:00+00:00'))['local_time'], 'Mon 2026-11-09 21:54')
+        self.assertEqual(machine_store_review.review_view(mail('2026-11-09T20:54:00+00:00'))['local_time'], 'Mon 2026-11-09 21:54')
         # Sent just after midnight in Brussels: still the day before in UTC, so "tomorrow" there is a day later than UTC's
-        self.assertEqual(a.review_view(mail('2026-11-09T23:30:00+00:00'))['local_time'], 'Tue 2026-11-10 00:30')
-        self.assertIsNone(a.review_view({**mail('soon'), 'id': 8}).get('local_time'))  # an unreadable time gives none
+        self.assertEqual(machine_store_review.review_view(mail('2026-11-09T23:30:00+00:00'))['local_time'], 'Tue 2026-11-10 00:30')
+        self.assertIsNone(machine_store_review.review_view({**mail('soon'), 'id': 8}).get('local_time'))  # an unreadable time gives none
 
     def test_an_all_day_event_keeps_its_own_day(self):
         event = {**mail('2026-12-04T23:00:00+00:00'), 'kind': 'calendar.event',
                  'metadata': {'all_day': True, 'start': {'date': '2026-12-05'}, 'end': {'date': '2026-12-06'}}}
-        view = a.review_view(event)
+        view = machine_store_review.review_view(event)
         self.assertEqual(view['all_day_on'], '2026-12-05')
         self.assertNotIn('local_time', view)
 
     def test_both_prompts_count_a_relative_day_from_its_message(self):
-        self.assertIn('counts from the day it was sent (its local_time)', a.review_prompt('r1', ['work']))
-        self.assertIn('counts from the day it was sent (its local_time)', a.preparation_prompt({'job_id': 'j', 'suggestion_id': 's'}))
+        self.assertIn('counts from the day it was sent (its local_time)', machine_prompts_review.review_prompt('r1', ['work']))
+        self.assertIn('counts from the day it was sent (its local_time)', machine_app_preparation.preparation_prompt({'job_id': 'j', 'suggestion_id': 's'}))
 
 
 if __name__ == '__main__':

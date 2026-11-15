@@ -8,6 +8,11 @@ from pathlib import Path
 import tempfile
 import unittest
 from unittest.mock import patch
+import corrections_app
+import machine.actions as machine_actions
+import machine.app.preparation as machine_app_preparation
+import machine.main as machine_main
+import timeutil
 
 spec = importlib.util.spec_from_file_location('corrections_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec)
@@ -25,15 +30,15 @@ class Fixture(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'events.sqlite')
-        self.app = object.__new__(a.App)
+        self.store = machine_main.Store(Path(self.temp.name) / 'events.sqlite')
+        self.app = object.__new__(machine_main.App)
         self.app.store = self.store
         self.app.config = {'accounts': []}
         self.rebuilt = 0
-        build = patch.object(a.App, 'graph_build', side_effect=lambda: setattr(self, 'rebuilt', self.rebuilt + 1))
+        build = patch.object(machine_main.App, 'graph_build', side_effect=lambda: setattr(self, 'rebuilt', self.rebuilt + 1))
         build.start()
         self.addCleanup(build.stop)
-        stamp = a.now()
+        stamp = timeutil.now()
         with self.store.connect() as db:
             db.execute("INSERT INTO suggestions(id,dedupe_key,title,body,event_ids,account_ids,status,created_at) "
                        "VALUES('s1','s1','Reply to Ana about the proposal','','[]','[]','pending',?)", (stamp,))
@@ -92,7 +97,7 @@ class Corrections(Fixture):
         with self.store.connect() as db:
             role = db.execute('SELECT role,source FROM person_roles WHERE identifier=?', (ANA,)).fetchone()
             self.assertEqual(tuple(role), ('Head of Sales', 'owner'))  # the owner's word: a later review keeps it
-            self.assertEqual(graph.set_role(db, ANA, 'CEO', 'review', a.now()).get('kept'), 'The owner set this role; it stays.')
+            self.assertEqual(graph.set_role(db, ANA, 'CEO', 'review', timeutil.now()).get('kept'), 'The owner set this role; it stays.')
             self.assertEqual([tuple(r) for r in db.execute('SELECT old_role,new_role FROM role_corrections')], [('CEO', 'Head of Sales')])
         line = self.chat()
         self.assertEqual(line[0]['line'], ['{}’s role is {}', 'Ana Silva', 'Head of Sales'])
@@ -115,7 +120,7 @@ class Corrections(Fixture):
     def test_an_undo_never_overwrites_what_the_owner_changed_since(self):
         done = self.fix(kind='role', target=ANA, value='Head of Sales')
         with self.store.connect() as db:
-            graph.set_role(db, ANA, 'VP Sales', 'owner', a.now())
+            graph.set_role(db, ANA, 'VP Sales', 'owner', timeutil.now())
         with self.assertRaisesRegex(ValueError, 'changed since'):
             self.undo(done['id'])
         with self.store.connect() as db:
@@ -200,14 +205,14 @@ class Corrections(Fixture):
         self.assertEqual(len(before) - len(after), 1)
 
     def test_the_turns_are_told_and_the_tools_are_there(self):
-        prompt = a.chat_prompt({'job_id': 'j' * 32, 'suggestion_id': 's1'}, {})
+        prompt = machine_app_preparation.chat_prompt({'job_id': 'j' * 32, 'suggestion_id': 's1'}, {})
         self.assertIn('correction_sources', prompt)
         self.assertIn('fix_source', prompt)
         self.assertIn('stays theirs', corrections.PROMPT)  # the owner's own text on a GBrain page
         plugin = (ROOT / 'openclaw-plugin' / 'index.ts').read_text()
         self.assertIn("'correction_sources', 'fix_source'", plugin)
-        self.assertNotIn('fix_source', a.DASHBOARD_ACTIONS)  # the agent's call, never the page's
-        self.assertEqual(set(a.CorrectionsApp.ACTIONS), {'correction_sources', 'fix_source'})
+        self.assertNotIn('fix_source', machine_actions.DASHBOARD_ACTIONS)  # the agent's call, never the page's
+        self.assertEqual(set(corrections_app.CorrectionsApp.ACTIONS), {'correction_sources', 'fix_source'})
 
 
 class OtherDrafts(Fixture):
@@ -216,7 +221,7 @@ class OtherDrafts(Fixture):
 
     def setUp(self):
         super().setUp()
-        stamp = a.now()
+        stamp = timeutil.now()
         with self.store.connect() as db:
             for n in range(1, 4):  # mail with Ana: what the Graph links her to
                 db.execute("INSERT INTO events(id,account_id,source_id,kind,occurred_at,title,body,metadata,content_hash,ingested_at) "
@@ -229,8 +234,8 @@ class OtherDrafts(Fixture):
         draft = {'kind': 'email', 'label': 'Send', 'revision': 'r-' + sid, 'to': [to], 'subject': subject, 'body': body}
         with self.store.connect() as db:
             db.execute("INSERT INTO suggestions(id,dedupe_key,title,body,event_ids,account_ids,status,created_at,next_action,project) "
-                       "VALUES(?,?,?,'Drafted it.',?,'[]',?,?,?,?)", (sid, sid, 'To-do ' + sid, json.dumps(list(events)), status, a.now(), json.dumps(draft), project))
-            db.execute("INSERT INTO deliveries(suggestion_id,status,updated_at) VALUES(?,'sent',?)", (sid, a.now()))
+                       "VALUES(?,?,?,'Drafted it.',?,'[]',?,?,?,?)", (sid, sid, 'To-do ' + sid, json.dumps(list(events)), status, timeutil.now(), json.dumps(draft), project))
+            db.execute("INSERT INTO deliveries(suggestion_id,status,updated_at) VALUES(?,'sent',?)", (sid, timeutil.now()))
         return sid
 
     def job(self, sid):
@@ -253,10 +258,10 @@ class OtherDrafts(Fixture):
         snoozed = self.card('snoozed', 'Hi team.', events=[1], status='snoozed')
         with self.store.connect() as db:
             db.execute("INSERT INTO draft_edits(id,suggestion_id,old_revision,new_revision,kind,before_body,after_body,source,created_at) "
-                       "VALUES('e1','edited','x','r-edited','email','Before','Hi team.','dashboard',?)", (a.now(),))
+                       "VALUES('e1','edited','x','r-edited','email','Before','Hi team.','dashboard',?)", (timeutil.now(),))
             for sid, state in ((sending, 'sending'), (approved, 'queued')):
                 db.execute("INSERT INTO action_jobs(id,suggestion_id,revision,payload,status,created_at,updated_at,approval_id,source,rfc_message_id) "
-                           "VALUES(?,?,?,'{}',?,?,?,'ap','dashboard','rfc')", ('j-' + sid, sid, 'r-' + sid, state, a.now(), a.now()))
+                           "VALUES(?,?,?,'{}',?,?,?,'ap','dashboard','rfc')", ('j-' + sid, sid, 'r-' + sid, state, timeutil.now(), timeutil.now()))
         done = self.fix(kind='role', target=ANA, value='Head of Sales', came_from='her email signature')
         self.assertEqual((done['redoing'], done['left']), (8, 3))
         for sid in [*about, to_her, says]:
@@ -300,7 +305,7 @@ class OtherDrafts(Fixture):
         self.fix(kind='role', target=ANA, value='Head of Sales')
         self.store.decide(mine, 'other', 'Make it shorter', 'owner-note', 'dashboard')  # the owner's own ask, after the fix
         calls = []
-        with patch.object(a.App, 'background_pause', return_value=None):
+        with patch.object(machine_main.App, 'background_pause', return_value=None):
             self.app.preparation_step(lambda r: calls.append(r) or {'status': 'admitted'})
         with self.store.connect() as db:
             started = [r[0] for r in db.execute("SELECT suggestion_id FROM preparations WHERE status IN ('starting','running') ORDER BY suggestion_id")]

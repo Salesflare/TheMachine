@@ -9,6 +9,9 @@ import tempfile
 import unittest
 
 import chat_model
+import machine.actions as machine_actions
+import machine.main as machine_main
+import timeutil
 
 spec = importlib.util.spec_from_file_location('chat_model_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec)
@@ -130,11 +133,11 @@ class AppTest(unittest.TestCase):
         self.config_path = root / 'config.json'
         self.config = {'accounts': [], 'database': str(root / 'events.sqlite'), 'openclaw_config': str(self.oc)}
         self.config_path.write_text(json.dumps(self.config))
-        self.store = a.Store(root / 'events.sqlite')
-        self.store.commit_page('work', {}, [{'account_id': 'work', 'source_id': 'one', 'kind': 'gmail.message', 'occurred_at': a.now(),
+        self.store = machine_main.Store(root / 'events.sqlite')
+        self.store.commit_page('work', {}, [{'account_id': 'work', 'source_id': 'one', 'kind': 'gmail.message', 'occurred_at': timeutil.now(),
                                              'title': 'Evidence', 'body': 'Actual evidence', 'metadata': {}, 'deleted': False}], None)
         self.sid = self.store.suggest('task', 'Reply to the venue', 'I can draft this.', [1])['id']
-        self.app = object.__new__(a.App)
+        self.app = object.__new__(machine_main.App)
         self.app.store, self.app.config, self.app.config_path = self.store, self.config, self.config_path
         self.app.chat_catalog = chat_model.Catalog(reader=lambda config: chat_model.parse_catalog(REPLY, config))
 
@@ -144,8 +147,8 @@ class AppTest(unittest.TestCase):
         return [c for c in calls if c.get('action') == 'start']
 
     def test_dashboard_actions_are_the_owners(self):
-        self.assertIn('chat_model_default', a.DASHBOARD_ACTIONS)
-        self.assertIn('chat_model_set', a.OWNER_ACTIONS)
+        self.assertIn('chat_model_default', machine_actions.DASHBOARD_ACTIONS)
+        self.assertIn('chat_model_set', machine_actions.OWNER_ACTIONS)
         with self.assertRaises(ValueError):
             self.app.action('chat_model_set', {'suggestion_id': self.sid, 'model': 'acme/lm-2-mini'}, owner_dashboard=False)
 

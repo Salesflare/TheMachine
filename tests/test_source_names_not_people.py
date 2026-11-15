@@ -10,12 +10,13 @@ import graph
 from machine import names
 from machine.kinds import KINDS
 from machine.store import message_view, views
+import machine.main as machine_main
 
 
 class SourceNamesNotPeople(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'events.sqlite')
+        self.store = machine_main.Store(Path(self.temp.name) / 'events.sqlite')
 
     def person(self, db, node, name, *identifiers):
         db.execute("INSERT INTO graph_nodes(id,kind,name,strength,signals,info) VALUES(?,'person',?,1,0,?)",

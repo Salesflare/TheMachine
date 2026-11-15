@@ -14,6 +14,7 @@ import time
 import unittest
 from pathlib import Path
 from unittest.mock import patch
+import machine.main as machine_main
 
 spec = importlib.util.spec_from_file_location('facebook_people_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
@@ -37,15 +38,15 @@ class AddPeople(unittest.TestCase):
 
     def setUp(self):
         temp = tempfile.TemporaryDirectory(); self.addCleanup(temp.cleanup)
-        self.store = a.Store(Path(temp.name) / 'e.sqlite')
-        self.app = object.__new__(a.App); self.app.store = self.store
+        self.store = machine_main.Store(Path(temp.name) / 'e.sqlite')
+        self.app = object.__new__(machine_main.App); self.app.store = self.store
         self.app.config = {'accounts': [{'id': 'home', 'email': 'owner@mail.example', 'service': 'gmail', 'boundary': 'personal'}],
                            'timezone': 'Europe/Brussels', 'browser_cdp_url': 'http://127.0.0.1:9'}
         self.store.accounts = self.app.config['accounts']
         self.app.birthdays_facebook_inline = True
         self.answer, self.builds = {'items': self.ITEMS}, []
         for name, value in (('birthdays_facebook_base', lambda s: 'http://127.0.0.1:9'), ('graph_later', lambda s: self.builds.append(1))):
-            owner = a.BirthdaysTemplate if hasattr(a.BirthdaysTemplate, name) else a.App  # the template's own, else the App's
+            owner = machine_main.BirthdaysTemplate if hasattr(machine_main.BirthdaysTemplate, name) else machine_main.App  # the template's own, else the App's
             p = patch.object(owner, name, value); p.start(); self.addCleanup(p.stop)
         p = patch.object(fb, 'read', lambda base, url=fb.PAGE, limits=None: self.answer); p.start(); self.addCleanup(p.stop)
         p = patch('subprocess.run', lambda *x, **k: subprocess.CompletedProcess(x, 0, '', '')); p.start(); self.addCleanup(p.stop)  # the lease
@@ -242,7 +243,7 @@ class AddPeople(unittest.TestCase):
     def test_a_failed_read_leaves_none_and_no_browser_waits_for_the_next_start(self):
         sid = self.old('preview')
         self.app.stop = threading.Event()
-        with patch.object(a.BirthdaysTemplate, 'birthdays_facebook_base', lambda s: None), patch('birthdays_facebook_app.FILL_WAIT', 0):
+        with patch.object(machine_main.BirthdaysTemplate, 'birthdays_facebook_base', lambda s: None), patch('birthdays_facebook_app.FILL_WAIT', 0):
             self.app.template('birthdays').birthdays_facebook_fill_old()
         with self.store.connect() as db:
             self.assertEqual(fb.to_fill(db), [sid])  # no browser yet: tried again at the next start

@@ -11,6 +11,9 @@ import threading
 import unittest
 from pathlib import Path
 from unittest.mock import patch
+import machine.main as machine_main
+import mail_cleanup_app
+import sources
 
 spec = importlib.util.spec_from_file_location('birthdays_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
@@ -100,21 +103,21 @@ class Sources(unittest.TestCase):
 class Birthdays(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'e.sqlite')
-        self.app = object.__new__(a.App); self.app.store = self.store
+        self.store = machine_main.Store(Path(self.temp.name) / 'e.sqlite')
+        self.app = object.__new__(machine_main.App); self.app.store = self.store
         self.app.config = {'accounts': [dict(x) for x in ACCOUNTS], 'timezone': 'Europe/Brussels', 'openclaw_state': self.temp.name + '/none.sqlite'}
         self.store.accounts = self.app.config['accounts']
         self.sent, self.outlook, self.n = [], [], 0
         for name, value in (('background_pause', lambda s, **k: None), ('background_spaced', lambda s: True),
                             ('background_started', lambda s: None), ('preparation_gateway', lambda s, request: self.sent.append(request) or {}),
                             ('routine_spawn', lambda s, target, run_id: target(run_id)), ('cleanup_can_mark', lambda s, account: False)):
-            owner = next((t for t in (a.CleanupTemplate, a.BirthdaysTemplate) if hasattr(t, name)), a.App)  # a template's own, else the App's
+            owner = next((t for t in (mail_cleanup_app.CleanupTemplate, machine_main.BirthdaysTemplate) if hasattr(t, name)), machine_main.App)  # a template's own, else the App's
             p = patch.object(owner, name, value); p.start(); self.addCleanup(p.stop)
         p = patch.object(ms_graph, 'call', self.graph_call); p.start(); self.addCleanup(p.stop)
         # The run's Facebook offer runs inline, with no shared browser (test_birthdays_facebook.py covers it): in a thread it
         # could still open the store while the temp dir is removed, and it would ask the desktop's own browser
         self.app.birthdays_facebook_inline = True
-        p = patch.object(a.BirthdaysTemplate, 'birthdays_facebook_base', lambda s: None); p.start(); self.addCleanup(p.stop)
+        p = patch.object(machine_main.BirthdaysTemplate, 'birthdays_facebook_base', lambda s: None); p.start(); self.addCleanup(p.stop)
         threads = set(threading.enumerate())
         self.addCleanup(lambda: self.assertEqual([t.name for t in set(threading.enumerate()) - threads if t.is_alive()], []))
         # Noon of today in the owner's time zone, and the clock stays still: a birthday to-do lasts until 23:59 of its
@@ -301,7 +304,7 @@ class Birthdays(unittest.TestCase):
             self.assertEqual(self.app.template('birthdays').birthdays_save(self.app.template('birthdays').birthdays_google(self.today, local_tz()), '32'), 0)
 
         def fails(*args):
-            raise a.SourceError('calendar', 403)
+            raise sources.SourceError('calendar', 403)
         with patch('birthdays_app.gog_read', fails):  # a read that fails is skipped, the run still ends
             self.assertEqual(self.app.template('birthdays').birthdays_google(self.today, local_tz()), [])
 

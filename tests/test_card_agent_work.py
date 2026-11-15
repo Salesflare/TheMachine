@@ -8,6 +8,10 @@ import unittest
 
 import agent_jobs
 from machine.chat import AGENT_DO_IT_NOTE
+import machine.app.status as machine_app_status
+import machine.main as machine_main
+import machine.prompts.review as machine_prompts_review
+import timeutil
 
 spec = importlib.util.spec_from_file_location('card_agent_work_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec)
@@ -21,11 +25,11 @@ class CardAgentWork(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'events.sqlite')
-        self.store.commit_page('work', {}, [{'account_id': 'work', 'source_id': 'one', 'kind': 'gmail.message', 'occurred_at': a.now(),
+        self.store = machine_main.Store(Path(self.temp.name) / 'events.sqlite')
+        self.store.commit_page('work', {}, [{'account_id': 'work', 'source_id': 'one', 'kind': 'gmail.message', 'occurred_at': timeutil.now(),
                                              'title': 'Final entry', 'body': 'Pat sent the final entry.', 'metadata': {}, 'deleted': False}], None)
         self.sid = self.store.suggest('task', 'Acme sent the final entry', STALE, [1])['id']
-        self.app = object.__new__(a.App)
+        self.app = object.__new__(machine_main.App)
         self.app.store = self.store
         self.app.config = {'accounts': [], 'database': str(Path(self.temp.name) / 'events.sqlite')}
         with self.store.connect() as db:
@@ -43,7 +47,7 @@ class CardAgentWork(unittest.TestCase):
         self.store.decide(self.sid, 'accept', '', 'click', 'dashboard')
         self.app.preparation_step(lambda r: {'status': 'admitted'})
         with self.store.connect() as db:
-            db.execute("UPDATE preparation_runs SET status='ok',finished_at=?", (a.now(),))
+            db.execute("UPDATE preparation_runs SET status='ok',finished_at=?", (timeutil.now(),))
             db.execute("UPDATE preparations SET status='done'")
             db.execute("UPDATE suggestions SET status='prepared'")
         self.store.decide(self.sid, 'other', 'Alright, and what is the next step?', 'chat-' + 'b' * 36, 'dashboard')
@@ -164,10 +168,10 @@ class CardAgentWork(unittest.TestCase):
         with self.store.connect() as db:
             self.app.agents.annotate(db, snapshot['suggestions'])
         snapshot.update(analyses=[], decisions=snapshot.get('decisions', []))
-        card = next(s for s in a.compact_status(snapshot)['suggestions'] if s['id'] == self.sid)
+        card = next(s for s in machine_app_status.compact_status(snapshot)['suggestions'] if s['id'] == self.sid)
         self.assertEqual((card['agent_work']['tool'], card['agent_work']['status'], card['agent_work']['result']), ('Codex', 'result', DONE))
         self.assertEqual(card['agent_work']['at'], '2026-10-23T09:45:00+00:00')
-        self.assertIn('agent_work', a.review_prompt('run', ['work']))
+        self.assertIn('agent_work', machine_prompts_review.review_prompt('run', ['work']))
 
     def test_no_jobs_add_nothing(self):
         self.assertEqual(self.app.agent_work(self.sid), '')

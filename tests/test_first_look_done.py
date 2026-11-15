@@ -4,6 +4,11 @@ codes only, never a message's text. No Gateway, nothing sent: the review is play
 import datetime as dt, importlib.util, json, tempfile, unittest
 from pathlib import Path
 from unittest.mock import patch
+import machine.app.first_look as machine_app_first_look
+import machine.main as machine_main
+import machine.prompts.review as machine_prompts_review
+import machine.store.review as machine_store_review
+import timeutil
 
 spec = importlib.util.spec_from_file_location('first_look_done_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
@@ -18,8 +23,8 @@ def signal(source_id, account='work', kind='gmail.message', days_ago=1):
 class FirstLookDone(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'events.sqlite')
-        self.app = object.__new__(a.App); self.app.store = self.store
+        self.store = machine_main.Store(Path(self.temp.name) / 'events.sqlite')
+        self.app = object.__new__(machine_main.App); self.app.store = self.store
         self.app.config = {'accounts': [{'id': 'gateway', 'service': 'gateway'}, {'id': 'work', 'service': 'outlook'},
                                         {'id': 'work-cal', 'service': 'outlook_calendar'}], 'review_worker': {'enabled': True}}
 
@@ -31,16 +36,16 @@ class FirstLookDone(unittest.TestCase):
             ids = [r[0] for r in db.execute('SELECT id FROM events WHERE analyzed_version<version ORDER BY id')]
             cols = {'preview': 1, 'auto': 1, 'window_hours': 168, **columns}
             db.execute(f"INSERT INTO review_runs(run_id,status,started_at,updated_at,{','.join(cols)}) VALUES(?,'ok',?,?,{','.join('?' * len(cols))})",
-                       (run, a.now(), a.now(), *cols.values()))
+                       (run, timeutil.now(), timeutil.now(), *cols.values()))
             items = [{'id': i, 'version': 1, 'page': 0} for i in ids]
             db.execute("INSERT INTO analyses(id,started_at,items,status,owner_session,owner_run) VALUES(?,?,?,'running',?,?)",
-                       ('an-' + run, a.now(), json.dumps(items), a.REVIEW_SESSION_PREFIX + run, run))
-        self.store.finish_analysis('an-' + run, '', a.REVIEW_SESSION_PREFIX + run, run, read=read(ids) if callable(read) else read)
+                       ('an-' + run, timeutil.now(), json.dumps(items), machine_store_review.REVIEW_SESSION_PREFIX + run, run))
+        self.store.finish_analysis('an-' + run, '', machine_store_review.REVIEW_SESSION_PREFIX + run, run, read=read(ids) if callable(read) else read)
         return ids
 
     def done(self, why='covered', at=None):
         with self.store.connect() as db:
-            db.execute("INSERT OR REPLACE INTO milestones(name,at,detail) VALUES('first_dig_done',?,?)", (at or a.now(), why))
+            db.execute("INSERT OR REPLACE INTO milestones(name,at,detail) VALUES('first_dig_done',?,?)", (at or timeutil.now(), why))
 
     def test_it_says_what_it_read_in_counts_and_the_steps_that_fit(self):
         ids = self.look([signal(f'm{n}') for n in range(8)])
@@ -81,23 +86,23 @@ class FirstLookDone(unittest.TestCase):
         with self.store.connect() as db:
             for n in range(2):
                 db.execute("INSERT INTO suggestions(id,dedupe_key,title,body,event_ids,account_ids,created_at) VALUES(?,?,?,?,?,?,?)",
-                           (f's{n}', f'k{n}', 'Reply', '', '[1]', '["work"]', a.now()))
+                           (f's{n}', f'k{n}', 'Reply', '', '[1]', '["work"]', timeutil.now()))
         self.done('cards')
         got = self.app.first_look_done()
         self.assertEqual((got['todos'], got['acted']), (2, False))
         with self.store.connect() as db:
-            db.execute("INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES('d1','s0','complete','','dashboard',?)", (a.now(),))
+            db.execute("INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES('d1','s0','complete','','dashboard',?)", (timeutil.now(),))
         self.assertTrue(self.app.first_look_done()['acted'])
 
     def test_a_batch_still_reading_as_it_stopped_counts_its_to_dos_too(self):
         # 2026-11-09: it stopped digging at its third to-do while its last batch still read; that batch saved a fourth,
         # and the line said "found 3 to-dos" over a list of 4 (its reads counted, its to-dos not)
         self.look([signal('m0'), signal('m1')])
-        stopped = dt.datetime.fromisoformat(a.now())
+        stopped = dt.datetime.fromisoformat(timeutil.now())
         with self.store.connect() as db:
             for n in range(3):
                 db.execute("INSERT INTO suggestions(id,dedupe_key,title,body,event_ids,account_ids,created_at) VALUES(?,?,?,?,?,?,?)",
-                           (f's{n}', f'k{n}', 'Reply', '', '[1]', '["work"]', a.now()))
+                           (f's{n}', f'k{n}', 'Reply', '', '[1]', '["work"]', timeutil.now()))
             db.execute("UPDATE review_runs SET status='running',finished_at=NULL WHERE run_id='r1'")
         self.done('cards', stopped.isoformat())
         later = stopped + dt.timedelta(seconds=40)
@@ -118,7 +123,7 @@ class FirstLookDone(unittest.TestCase):
         self.assertIsNone(self.app.first_look_done())  # a review after it stopped digging is not the first look
         self.done()
         self.assertIsNotNone(self.app.first_look_done())
-        later = dt.datetime.fromisoformat(a.now()) + dt.timedelta(hours=a.FIRST_LOOK_DONE_HOURS, minutes=1)
+        later = dt.datetime.fromisoformat(timeutil.now()) + dt.timedelta(hours=machine_app_first_look.FIRST_LOOK_DONE_HOURS, minutes=1)
         self.assertIsNone(self.app.first_look_done(later))
         self.done('expired')
         self.assertIsNone(self.app.first_look_done())
@@ -135,16 +140,16 @@ class FirstLookDone(unittest.TestCase):
         self.look([signal('m0')])
         self.assertTrue(self.store.first_look_run('r1'))
         with self.store.connect() as db:
-            db.execute("INSERT INTO review_runs(run_id,status,started_at,updated_at) VALUES('regular','ok',?,?)", (a.now(), a.now()))
+            db.execute("INSERT INTO review_runs(run_id,status,started_at,updated_at) VALUES('regular','ok',?,?)", (timeutil.now(), timeutil.now()))
         self.assertFalse(self.store.first_look_run('regular'))
         self.done()
         self.assertFalse(self.store.first_look_run('r1'))  # once it stopped digging, no more
-        self.assertIn('finish_analysis also add read', a.review_prompt('r1', ['work'], first_look=True))
-        self.assertIn('Never make a to-do to have something to show', a.review_prompt('r1', ['work'], first_look=True))
-        self.assertNotIn('also add read', a.review_prompt('r1', ['work']))
+        self.assertIn('finish_analysis also add read', machine_prompts_review.review_prompt('r1', ['work'], first_look=True))
+        self.assertIn('Never make a to-do to have something to show', machine_prompts_review.review_prompt('r1', ['work'], first_look=True))
+        self.assertNotIn('also add read', machine_prompts_review.review_prompt('r1', ['work']))
 
     def test_signal_families(self):
-        self.assertEqual([a.signal_family(k) for k in ('gmail.message', 'outlook.message', 'calendar.event', 'outlook_calendar.event', 'zoom.transcript',
+        self.assertEqual([machine_app_first_look.signal_family(k) for k in ('gmail.message', 'outlook.message', 'calendar.event', 'outlook_calendar.event', 'zoom.transcript',
                                                         'slack.message', 'stripe.event', 'android.notification')],
                          ['email', 'email', 'meeting', 'meeting', 'meeting', 'message', 'other', 'other'])
 
@@ -168,5 +173,5 @@ if __name__ == '__main__':
         self.done()
         self.assertEqual(self.app.first_look_done()['connect'], [])  # one mail from GitHub: not worth it yet
         with self.store.connect() as db:
-            db.execute("INSERT INTO suggestions(id,dedupe_key,title,body,event_ids,account_ids,created_at) VALUES('s0','k0','Reply','','[1]','[\"work\"]',?)", (a.now(),))
+            db.execute("INSERT INTO suggestions(id,dedupe_key,title,body,event_ids,account_ids,created_at) VALUES('s0','k0','Reply','','[1]','[\"work\"]',?)", (timeutil.now(),))
         self.assertEqual(self.app.first_look_done()['connect'], [])

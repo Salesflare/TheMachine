@@ -8,6 +8,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
+import machine.main as machine_main
 
 spec = importlib.util.spec_from_file_location('graph_updates_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
@@ -20,7 +21,7 @@ SAM, KIM, LEE = 'email:sam@client.example', 'email:kim@client.example', 'email:l
 class GraphUpdates(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'e.sqlite')
+        self.store = machine_main.Store(Path(self.temp.name) / 'e.sqlite')
         zone = patch('timeutil.local_tz', lambda: dt.timezone.utc); zone.start(); self.addCleanup(zone.stop)
         with self.store.connect() as db:
             for node, kind, name in ((SAM, 'person', 'Sam Lee'), (KIM, 'person', 'Kim Park'), (LEE, 'person', 'Lee Ray'),
@@ -76,7 +77,7 @@ class GraphUpdates(unittest.TestCase):
         self.assertEqual([x['id'] for x in self.today()['people']['items']], [SAM])  # and one no longer in the graph is left out
 
     def test_a_list_marks_the_rows_updated_today(self):
-        app = object.__new__(a.App); app.store = self.store; app.config = {'accounts': []}
+        app = object.__new__(machine_main.App); app.store = self.store; app.config = {'accounts': []}
         at = dt.datetime.now(dt.timezone.utc).isoformat()
         with self.store.connect() as db:
             db.execute("INSERT INTO person_roles(identifier,role,source,created_at) VALUES(?,'head of ops','review',?)", (SAM, at))

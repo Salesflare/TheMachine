@@ -3,6 +3,11 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+import machine.app.review as machine_app_review
+import machine.app.status as machine_app_status
+import machine.main as machine_main
+import machine.store.review as machine_store_review
+import machine.text as machine_text
 
 spec = importlib.util.spec_from_file_location('assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 assistant = importlib.util.module_from_spec(spec)
@@ -19,7 +24,7 @@ class ReviewRecovery(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
-        self.store = assistant.Store(Path(self.temp.name)/'events.sqlite')
+        self.store = machine_main.Store(Path(self.temp.name)/'events.sqlite')
 
     def test_same_run_retry_resumes_exact_claim_and_keeps_error(self):
         self.store.commit_page('work',{},[event('work',1)])
@@ -137,10 +142,10 @@ class ReviewRecovery(unittest.TestCase):
         batch=self.store.begin_analysis(['work'],limit=120,owner_session='private',owner_run='one')
         self.assertEqual(batch['claimed'],120);self.assertGreater(batch['pages'],1)
         seen=[e['id'] for e in batch['events']]
-        self.assertLess(len(assistant.encoded(batch)),assistant.REVIEW_PAGE_CHARS+3000)
+        self.assertLess(len(machine_text.encoded(batch)),machine_store_review.REVIEW_PAGE_CHARS+3000)
         for page in range(1,batch['pages']):
             result=self.store.analysis_page(batch['analysis_id'],page)
-            self.assertLess(len(assistant.encoded(result)),assistant.REVIEW_PAGE_CHARS+3000)
+            self.assertLess(len(machine_text.encoded(result)),machine_store_review.REVIEW_PAGE_CHARS+3000)
             seen+=[e['id'] for e in result['events']]
         self.assertEqual(len(set(seen)),120)
         self.assertEqual(len(seen),120)
@@ -158,12 +163,12 @@ class ReviewRecovery(unittest.TestCase):
         body='word '*20000
         self.store.commit_page('work',{},[event('work',i,body) for i in range(5)])
         rows=self.store.events(['work'],limit=5)
-        views=assistant.fit_events(rows)
-        self.assertLess(len(assistant.encoded(views)),assistant.REVIEW_PAGE_CHARS)
+        views=machine_app_review.fit_events(rows)
+        self.assertLess(len(machine_text.encoded(views)),machine_store_review.REVIEW_PAGE_CHARS)
         self.assertTrue(all(v['body_clipped'] for v in views))
-        part=assistant.fit_events(rows[:1],offset=30000)[0]
+        part=machine_app_review.fit_events(rows[:1],offset=30000)[0]
         self.assertEqual(part['body_offset'],30000);self.assertTrue(part['body'].startswith('word'))
-        small=assistant.fit_events(self.store.events(['work'],limit=1))
+        small=machine_app_review.fit_events(self.store.events(['work'],limit=1))
         self.assertTrue(small[0].get('body_clipped'))  # 100,000 characters never fit whole
 
     def test_all_120_exact_ids_are_readable_with_bounded_continuation(self):
@@ -176,25 +181,25 @@ class ReviewRecovery(unittest.TestCase):
         self.assertEqual(self.store.events(['other'],event_ids=ids),[])
         remaining=rows;seen=[]
         while remaining:
-            page=assistant.event_page(remaining)
-            self.assertLessEqual(len(assistant.encoded(page)),assistant.REVIEW_PAGE_CHARS)
+            page=machine_app_review.event_page(remaining)
+            self.assertLessEqual(len(machine_text.encoded(page)),machine_store_review.REVIEW_PAGE_CHARS)
             self.assertTrue(page['events'])
             seen.extend(e['id'] for e in page['events'])
             self.assertTrue(all(e.get('metadata_clipped') for e in page['events']))
             remaining=[r for r in rows if r['id'] in page['remaining_event_ids']]
         self.assertEqual(len(seen),120);self.assertEqual(set(seen),set(ids))
-        page=assistant.event_page(rows,row_offset=119)
+        page=machine_app_review.event_page(rows,row_offset=119)
         self.assertEqual([e['id'] for e in page['events']],[rows[119]['id']])
         self.assertIsNone(page['next_row_offset'])
-        with self.assertRaises(ValueError):assistant.event_page(rows,row_offset=-1)
+        with self.assertRaises(ValueError):machine_app_review.event_page(rows,row_offset=-1)
 
     def test_body_continuations_reconstruct_every_character_and_version(self):
         text=('A \\" quoted \\\\ string with é漢字 '*3000).strip()
         self.store.commit_page('work',{},[event('work',1,text)])
         rows=self.store.events(['work']);parts=[];offset=0
         while True:
-            page=assistant.event_page(rows,offset=offset)
-            self.assertLessEqual(len(assistant.encoded(page)),assistant.REVIEW_PAGE_CHARS)
+            page=machine_app_review.event_page(rows,offset=offset)
+            self.assertLessEqual(len(machine_text.encoded(page)),machine_store_review.REVIEW_PAGE_CHARS)
             view=page['events'][0];parts.append(view['body'])
             self.assertEqual(view['version'],rows[0]['version'])
             next_offset=view.get('body_next_offset')
@@ -205,14 +210,14 @@ class ReviewRecovery(unittest.TestCase):
     def test_api_pages_report_unavailable_ids_and_metadata_is_lossless(self):
         e=event('work',1);e['metadata']={'big':'Quoted \\" \\\\ '+('é漢字 '*10000)}
         self.store.commit_page('work',{},[e])
-        app=object.__new__(assistant.App);app.store=self.store;app.config={'accounts':[{'id':'work'}]}
+        app=object.__new__(machine_main.App);app.store=self.store;app.config={'accounts':[{'id':'work'}]}
         page=app.action('events',{'account_ids':['work'],'event_ids':[1,999]})
         self.assertEqual(page['unavailable_event_ids'],[999])
         self.assertEqual(page['events'][0]['id'],1)
         chunks=[];offset=0
         while True:
             chunk=app.action('events',{'account_ids':['work'],'event_ids':[1],'metadata_offset':offset})
-            self.assertLessEqual(len(assistant.encoded(chunk)),assistant.REVIEW_PAGE_CHARS)
+            self.assertLessEqual(len(machine_text.encoded(chunk)),machine_store_review.REVIEW_PAGE_CHARS)
             chunks.append(chunk['metadata_text']);offset=chunk['metadata_next_offset']
             if offset is None:break
         self.assertEqual(json.loads(''.join(chunks)),e['metadata'])
@@ -226,7 +231,7 @@ class ReviewRecovery(unittest.TestCase):
         offset=0;seen=[]
         while True:
             page=self.store.analysis_page(claim['analysis_id'],0,offset)
-            self.assertLessEqual(len(assistant.encoded(page)),assistant.REVIEW_PAGE_CHARS)
+            self.assertLessEqual(len(machine_text.encoded(page)),machine_store_review.REVIEW_PAGE_CHARS)
             seen.extend(e['id'] for e in page['events'])
             offset=page['next_row_offset']
             if offset is None:break
@@ -239,8 +244,8 @@ class ReviewRecovery(unittest.TestCase):
             if batch.get('analysis_id'):self.store.finish_analysis(batch['analysis_id'],'Summary '*100,'s',str(run))
         full=self.store.snapshot([{'id':'work','email':'w','boundary':'work:x'}])
         full['review_health']['heartbeat']=None
-        compact=assistant.compact_status(full)
-        self.assertLess(len(assistant.encoded(compact)),len(assistant.encoded(full)))
+        compact=machine_app_status.compact_status(full)
+        self.assertLess(len(machine_text.encoded(compact)),len(machine_text.encoded(full)))
         self.assertLessEqual(len(compact['recent_reviews']),8)
         self.assertNotIn('items',compact['recent_reviews'][0])
 
@@ -251,8 +256,8 @@ class ReviewRecovery(unittest.TestCase):
         self.store.commit_page('work',{},[event('work',i) for i in range(5)])
         batch=self.store.begin_analysis(['work'],limit=5,owner_session='s',owner_run='r')
         self.store.finish_analysis(batch['analysis_id'],'Summary','s','r')
-        expected=assistant.compact_status(self.store.snapshot(accounts))
-        app=object.__new__(assistant.App)
+        expected=machine_app_status.compact_status(self.store.snapshot(accounts))
+        app=object.__new__(machine_main.App)
         app.store,app.config=self.store,{'accounts':accounts}
         def dashboard_only(*args,**kwargs):raise AssertionError('a dashboard view')
         for name in ('promises','quality_report'):setattr(self.store,name,dashboard_only)

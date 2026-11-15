@@ -17,6 +17,7 @@ import assistant as a
 from machine import stamps
 from machine.store import views
 from test_status_kept import NOW, WORK, mail
+import machine.main as machine_main
 
 LATER = '2099-01-01T00:00:00+00:00'
 
@@ -54,8 +55,8 @@ def write(path, *statements):
 class StatusKeptByTable(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'events.sqlite')
-        self.app = object.__new__(a.App)
+        self.store = machine_main.Store(Path(self.temp.name) / 'events.sqlite')
+        self.app = object.__new__(machine_main.App)
         self.app.store, self.app.config_path, self.app.config = self.store, None, {'accounts': [WORK]}
         self.builds, built = [], self.app.status_built
 

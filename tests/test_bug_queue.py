@@ -9,6 +9,8 @@ import unittest
 import urllib.error
 from pathlib import Path
 from unittest.mock import patch
+import machine.actions as machine_actions
+import machine.main as machine_main
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
@@ -51,7 +53,7 @@ class BugQueue(unittest.TestCase):
     def setUp(self):
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)
-        self.app = object.__new__(a.App)
+        self.app = object.__new__(machine_main.App)
         self.app.config = {'database': str(Path(temp.name) / 'events.sqlite')}
         self.app.config_path = ''
         self.clock = Clock()
@@ -81,7 +83,7 @@ class BugQueue(unittest.TestCase):
             self.assertEqual(cp.sent, [])
             self.assertEqual([i['what'] for i in bug_queue.view(self.app.config)], ['Slow checks'], 'kept before anything goes')
             self.assertEqual(bug_queue.flush(self.app.config, self.app.bug_with_report, clock=self.clock), 1, 'due now')
-        self.assertEqual(built, [a.App.REPORT_BUDGET], 'built within the time budget')
+        self.assertEqual(built, [machine_main.App.REPORT_BUDGET], 'built within the time budget')
         self.assertEqual(cp.sent[0]['description'], 'Slow checks')
         self.assertNotIn('diagnostics', cp.sent[0])
         self.assertEqual(cp.sent[0]['report']['settings'], {'model': 'm'})
@@ -185,7 +187,7 @@ class BugOffer(unittest.TestCase):
     def setUp(self):
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)
-        self.app = object.__new__(a.App)
+        self.app = object.__new__(machine_main.App)
         self.app.config = {'database': str(Path(temp.name) / 'events.sqlite'), 'accounts': [],
                            'manage_url': 'https://app.example.com/machines/m1', 'dashboard_host': 'm1.example.com', 'dashboard_path': '/'}
         self.app.fleet = None
@@ -209,8 +211,8 @@ class BugOffer(unittest.TestCase):
         found = self.app.action('bug_offer', {'words': 'x', 'summary': 'y'})
         with self.assertRaisesRegex(ValueError, 'from the dashboard'):
             self.app.action('bug_offer_open', {'id': found['id']})
-        self.assertIn('bug_offer_open', a.OWNER_ACTIONS)
-        self.assertNotIn('bug_offer', a.OWNER_ACTIONS)  # the agent can write one up; only the owner's Send sends it
+        self.assertIn('bug_offer_open', machine_actions.OWNER_ACTIONS)
+        self.assertNotIn('bug_offer', machine_actions.OWNER_ACTIONS)  # the agent can write one up; only the owner's Send sends it
 
     def test_sent_once_its_link_no_longer_fills_the_form(self):
         first = self.app.action('bug_offer', {'words': 'one', 'summary': 'First.'})

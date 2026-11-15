@@ -6,6 +6,7 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+import machine.main as machine_main
 
 spec = importlib.util.spec_from_file_location('notes_substance_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
@@ -25,8 +26,8 @@ class NotesSubstance(unittest.TestCase):
     def setUp(self):
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)
-        self.store = a.Store(Path(temp.name) / 'events.sqlite')
-        self.app = object.__new__(a.App)
+        self.store = machine_main.Store(Path(temp.name) / 'events.sqlite')
+        self.app = object.__new__(machine_main.App)
         self.app.store = self.store
         self.app.config = {'accounts': [HOME]}
         self.places = {}

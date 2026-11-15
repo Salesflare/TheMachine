@@ -9,6 +9,9 @@ import unittest
 
 import i18n
 import locale_prefs
+import machine.prompts.profile as machine_prompts_profile
+import machine.prompts.review as machine_prompts_review
+import machine.store.cards as machine_store_cards
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / 'scripts'))
@@ -219,12 +222,12 @@ class ServerTextTest(unittest.TestCase):
     def test_prompts_ask_for_the_owners_language_and_drafts_in_the_threads(self):
         import assistant
         locale_prefs.configure({'language': 'fr'})
-        prompt = assistant.review_prompt('run1', ['mail'])
+        prompt = machine_prompts_review.review_prompt('run1', ['mail'])
         self.assertIn('What the owner reads from you (to-do titles, summaries, bodies, notes, steps, chat replies) is in French', prompt)
         self.assertIn('a draft or message to someone else is in the language of that thread', prompt)
-        self.assertIn('Write in French.', assistant.import_prompt('run1'))
+        self.assertIn('Write in French.', machine_prompts_profile.import_prompt('run1'))
         locale_prefs.configure({})
-        self.assertIn('is in US English (organization, color, prioritize)', assistant.review_prompt('run1', ['mail']))
+        self.assertIn('is in US English (organization, color, prioritize)', machine_prompts_review.review_prompt('run1', ['mail']))
 
     def test_dates_read_in_the_owners_language(self):
         moment = dt.datetime(2026, 10, 24, 14, 5)
@@ -248,10 +251,10 @@ class ServerTextTest(unittest.TestCase):
                'metadata': {'from': 'Sam Lee <sam@example.com>'}, 'title': 'Intro'}
         for lang in ('nl', 'fr', 'en'):
             locale_prefs.configure({'locale': 'en-BE', 'language': lang})
-            self.assertTrue(assistant.source_text(row).endswith(' · Tue 27 Oct'), (lang, assistant.source_text(row)))
+            self.assertTrue(machine_store_cards.source_text(row).endswith(' · Tue 27 Oct'), (lang, machine_store_cards.source_text(row)))
             self.assertEqual(locale_prefs.day_text(dt.date(2026, 10, 27)), {'nl': 'di 27 okt', 'fr': 'mar. 27 oct.', 'en': 'Tue 27 Oct'}[lang])
         locale_prefs.configure({'locale': 'en-US', 'language': 'nl'})
-        self.assertTrue(assistant.source_text(row).endswith(' · Tue, Oct 27'), assistant.source_text(row))
+        self.assertTrue(machine_store_cards.source_text(row).endswith(' · Tue, Oct 27'), machine_store_cards.source_text(row))
         locale_prefs.configure({})
 
     def test_the_language_comes_from_the_choice_then_signup_then_english(self):

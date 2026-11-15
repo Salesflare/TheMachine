@@ -11,6 +11,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
+import machine.main as machine_main
 
 spec = importlib.util.spec_from_file_location('subs_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
@@ -34,8 +35,8 @@ def day(n):
 class Subs(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'e.sqlite')
-        self.app = object.__new__(a.App); self.app.store = self.store
+        self.store = machine_main.Store(Path(self.temp.name) / 'e.sqlite')
+        self.app = object.__new__(machine_main.App); self.app.store = self.store
         self.app.config = {'accounts': [dict(x) for x in ACCOUNTS], 'timezone': 'Europe/Brussels',
                            'openclaw_state': self.temp.name + '/none.sqlite'}
         self.store.accounts = self.app.config['accounts']
@@ -44,7 +45,7 @@ class Subs(unittest.TestCase):
                             ('background_spaced', lambda s: True), ('background_started', lambda s: None),
                             ('preparation_gateway', lambda s, request: self.sent.append(request) or {'status': 'pending'}),
                             ('routine_spawn', lambda s, target, run_id: target(run_id))):
-            p = patch.object(a.App, name, value); p.start(); self.addCleanup(p.stop)
+            p = patch.object(machine_main.App, name, value); p.start(); self.addCleanup(p.stop)
         self.app.subs_model = self.model
 
     def model(self, prompt):
@@ -252,7 +253,7 @@ class Subs(unittest.TestCase):
         or Cancel on a row shows on the next poll."""
         self.fixture()
         self.add()
-        self.store = self.app.store = a.Store(self.store.path)  # a restart: subs_items, made by the first run, is watched now
+        self.store = self.app.store = machine_main.Store(self.store.path)  # a restart: subs_items, made by the first run, is watched now
         self.store.accounts = self.app.config['accounts']
         sid = self.todos()[0]['id']
 

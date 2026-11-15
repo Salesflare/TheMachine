@@ -8,6 +8,7 @@ from pathlib import Path
 import assistant
 from machine.store.cards import source_kind, source_label, source_line
 from machine.store.views import source_lines_shown
+import machine.main as machine_main
 
 AT = '2026-11-12T09:00:00+00:00'
 
@@ -41,7 +42,7 @@ class SourceLineKinds(unittest.TestCase):
         cards = [{'id': 'a', 'source_line': 'Source: signal · Thu 12 Nov'}, {'id': 'b', 'source_line': 'Source: signal from Sam · Thu 12 Nov'},
                  {'id': 'c', 'source_line': 'Source: email from Robin · Thu 12 Nov'}]
         with tempfile.TemporaryDirectory() as tmp:
-            store = assistant.Store(Path(tmp) / 'events.sqlite')
+            store = machine_main.Store(Path(tmp) / 'events.sqlite')
             with store.connect() as db:
                 source_lines_shown(db, cards)
         self.assertEqual([c['source_line'] for c in cards], [None, None, 'Source: email from Robin · Thu 12 Nov'])

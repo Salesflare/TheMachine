@@ -10,6 +10,9 @@ import tempfile
 import unittest
 from pathlib import Path
 from unittest import mock
+import machine.main as machine_main
+import machine.sources.gmail as machine_sources_gmail
+import sources
 
 spec = importlib.util.spec_from_file_location('trip_notes_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
@@ -118,21 +121,21 @@ class Bookings(unittest.TestCase):
         self.assertEqual(bookings.read(['<div itemscope itemtype="http://schema.org/FlightReservation"><div><span itemprop="x">']), [])
 
     def test_the_mail_source_keeps_them_in_the_sealed_metadata(self):
-        event = a.message_event(MAIL, message('m1', OUT))
+        event = machine_sources_gmail.message_event(MAIL, message('m1', OUT))
         self.assertEqual(event['metadata']['bookings'][0]['code'], 'K7PQ2M')
-        self.assertNotIn('bookings', a.message_event(MAIL, {**message('m2', OUT), 'payload': {**message('m2', OUT)['payload'], 'parts': message('m2', OUT)['payload']['parts'][:1]}})['metadata'])
+        self.assertNotIn('bookings', machine_sources_gmail.message_event(MAIL, {**message('m2', OUT), 'payload': {**message('m2', OUT)['payload'], 'parts': message('m2', OUT)['payload']['parts'][:1]}})['metadata'])
 
 
 class TripNotes(unittest.TestCase):
     def setUp(self):
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)
-        self.store = a.Store(Path(temp.name) / 'events.sqlite', protect=True)
+        self.store = machine_main.Store(Path(temp.name) / 'events.sqlite', protect=True)
         self.n = 0
 
     def mail(self, *things, day=1):
         self.n += 1
-        self.store.commit_page('home', None, [a.message_event(MAIL, message(f'm{self.n}', *things, sent=dt.datetime(2026, 11, day, 9, 0, tzinfo=dt.timezone.utc)))], record_sync=False)
+        self.store.commit_page('home', None, [machine_sources_gmail.message_event(MAIL, message(f'm{self.n}', *things, sent=dt.datetime(2026, 11, day, 9, 0, tzinfo=dt.timezone.utc)))], record_sync=False)
 
     def sync(self):
         with self.store.connect() as db:
@@ -227,7 +230,7 @@ class HeldMail(unittest.TestCase):
                 return HeldMail.Reader.pages[(params or {}).get('pageToken')]
             found = HeldMail.Reader.messages.get(resource.split('/')[1])
             if found is None:
-                raise a.SourceError('not_found', status=404)
+                raise sources.SourceError('not_found', status=404)
             return found
 
     def setUp(self):
@@ -235,18 +238,18 @@ class HeldMail(unittest.TestCase):
         from machine.store import history
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)
-        self.store = a.Store(Path(temp.name) / 'events.sqlite', protect=True)
-        self.app = object.__new__(a.App)
+        self.store = machine_main.Store(Path(temp.name) / 'events.sqlite', protect=True)
+        self.app = object.__new__(machine_main.App)
         self.app.store, self.app.config = self.store, {'accounts': [MAIL], 'database': str(self.store.path)}
         self.app.collector_resting = {MAIL['id']}
-        self.app.HISTORY_SOURCES = {'mail': (HeldMail.Reader, a.message_event)}
+        self.app.HISTORY_SOURCES = {'mail': (HeldMail.Reader, machine_sources_gmail.message_event)}
         for x in (mock.patch.object(app_history, 'free_disk', return_value=True), mock.patch.object(app_history, 'free_memory', return_value=True)):
             x.start()
             self.addCleanup(x.stop)
         held = [message('m1', OUT, BACK), message('m2', STAY, sent=dt.datetime(2026, 11, 2, 9, 0, tzinfo=dt.timezone.utc)), message('m3')]
         events = []
         for raw in held:  # kept as they were before bookings were read: no bookings in their metadata
-            found = a.message_event(MAIL, raw)
+            found = machine_sources_gmail.message_event(MAIL, raw)
             found['metadata'].pop('bookings', None)
             events.append(found)
         self.store.commit_page(MAIL['id'], None, events, record_sync=False, history=True)
@@ -310,7 +313,7 @@ class HeldMail(unittest.TestCase):
         self.assertEqual(HeldMail.Reader.reads, [])
         with self.store.connect() as db:
             history.save(db, MAIL['id'], {'target': '2025-11-14T10:00:00+00:00'}, AT, done=True, depth_days=365)
-        limited = a.SourceError('HTTP_429', status=429)
+        limited = sources.SourceError('HTTP_429', status=429)
         with mock.patch.object(HeldMail.Reader, 'get', side_effect=limited):
             self.assertFalse(self.app.history_step())
         self.assertEqual(self.app.history_wait(), 'rate_limit')

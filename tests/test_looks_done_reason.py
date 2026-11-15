@@ -9,6 +9,8 @@ from pathlib import Path
 
 from machine.prompts.review import review_prompt
 from machine.text import no_you
+import machine.main as machine_main
+import timeutil
 
 ROOT = Path(__file__).parent.parent
 spec = importlib.util.spec_from_file_location('looks_done_reason_assistant', ROOT / 'assistant.py')
@@ -28,8 +30,8 @@ class Reason(unittest.TestCase):
 
     def test_a_stored_reason_never_starts_with_you(self):
         with tempfile.TemporaryDirectory() as temp:
-            store = a.Store(Path(temp) / 'e.sqlite')
-            store.commit_page('g', {}, [{'account_id': 'g', 'source_id': 'm1', 'kind': 'gmail.message', 'occurred_at': a.now(),
+            store = machine_main.Store(Path(temp) / 'e.sqlite')
+            store.commit_page('g', {}, [{'account_id': 'g', 'source_id': 'm1', 'kind': 'gmail.message', 'occurred_at': timeutil.now(),
                                          'title': 'Export', 'body': 'Is the export fixed?', 'deleted': False,
                                          'metadata': {'from': 'Casey <casey@example.com>', 'thread_id': 't1'}}])
             sid = store.suggest('export', 'Answer Casey about the export', 'Casey asks about the export.', [1])['id']

@@ -5,6 +5,8 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+import machine.actions as machine_actions
+import machine.main as machine_main
 
 ROOT = Path(__file__).parent.parent
 spec = importlib.util.spec_from_file_location('done_milestones_assistant', ROOT.joinpath('assistant.py'))
@@ -18,7 +20,7 @@ class DoneMilestones(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'events.sqlite')
+        self.store = machine_main.Store(Path(self.temp.name) / 'events.sqlite')
         self.done = 0
 
     def finish(self, n, status='completed'):
@@ -70,11 +72,11 @@ class DoneMilestones(unittest.TestCase):
 
     def test_only_the_owner_closes_it_from_the_dashboard(self):
         self.finish(10)
-        app = a.App.__new__(a.App)
+        app = machine_main.App.__new__(machine_main.App)
         app.store = self.store
-        self.assertIn('done_milestone_seen', a.DASHBOARD_ACTIONS)
-        self.assertIn('done_milestone_seen', a.OWNER_ACTIONS)
-        self.assertEqual(a.App.ACTION_HANDLERS['done_milestone_seen'], 'done_milestone_seen_action')
+        self.assertIn('done_milestone_seen', machine_actions.DASHBOARD_ACTIONS)
+        self.assertIn('done_milestone_seen', machine_actions.OWNER_ACTIONS)
+        self.assertEqual(machine_main.App.ACTION_HANDLERS['done_milestone_seen'], 'done_milestone_seen_action')
         with self.assertRaises(ValueError):
             app.done_milestone_seen_action('done_milestone_seen', {'count': 10})
         self.assertEqual(app.done_milestone_seen_action('done_milestone_seen', {'count': 10}, owner_dashboard=True), {'done_milestone': None})

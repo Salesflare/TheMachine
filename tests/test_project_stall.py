@@ -10,6 +10,7 @@ from pathlib import Path
 import tempfile
 import unittest
 from unittest.mock import patch
+import machine.main as machine_main
 
 spec = importlib.util.spec_from_file_location('stall_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec)
@@ -25,11 +26,11 @@ class ProjectStall(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'events.sqlite', protect=True)
+        self.store = machine_main.Store(Path(self.temp.name) / 'events.sqlite', protect=True)
         self.accounts = [{'id': 'work', 'service': 'gmail', 'email': OWNER, 'boundary': 'work:Example'}]
         self.store.accounts = self.accounts
-        self.addCleanup(setattr, a.Store, 'accounts', [])
-        self.app = object.__new__(a.App)
+        self.addCleanup(setattr, machine_main.Store, 'accounts', [])
+        self.app = object.__new__(machine_main.App)
         self.app.store = self.store
         self.app.config = {'accounts': self.accounts, 'review_worker': {'enabled': True}}
         self.app.fleet = None

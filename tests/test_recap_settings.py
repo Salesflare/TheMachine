@@ -7,6 +7,7 @@ from pathlib import Path
 
 import assistant
 from machine.actions import DASHBOARD_ACTIONS, OWNER_ACTIONS
+import machine.main as machine_main
 
 
 class RecapSwitch(unittest.TestCase):
@@ -15,7 +16,7 @@ class RecapSwitch(unittest.TestCase):
         self.addCleanup(self.tmp.cleanup)
         self.path = Path(self.tmp.name) / 'config.json'
         self.path.write_text(json.dumps({'accounts': [], 'digest_at': '08:30', 'weekly_recap': {'enabled': False, 'weekday': 4, 'at': '17:30'}}))
-        self.app = assistant.App.__new__(assistant.App)
+        self.app = machine_main.App.__new__(machine_main.App)
         self.app.config, self.app.config_path = json.loads(self.path.read_text()), self.path
 
     def test_on_by_default_with_its_day_and_time(self):
@@ -41,7 +42,7 @@ class RecapSwitch(unittest.TestCase):
     def test_only_the_owner_from_the_dashboard(self):
         self.assertIn('recap_set', OWNER_ACTIONS)
         self.assertIn('recap_set', DASHBOARD_ACTIONS)
-        self.assertEqual(assistant.App.ACTION_HANDLERS['recap_set'], 'recap_set_action')
+        self.assertEqual(machine_main.App.ACTION_HANDLERS['recap_set'], 'recap_set_action')
         with self.assertRaises(ValueError):
             self.app.recap_set_action('recap_set', {'on': True}, False)
         self.assertFalse(json.loads(self.path.read_text())['weekly_recap']['enabled'])

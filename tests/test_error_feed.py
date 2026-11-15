@@ -13,6 +13,10 @@ from pathlib import Path
 
 import agent_jobs
 import error_feed as ef
+import machine.faults as machine_faults
+import machine.main as machine_main
+import machine.store.events as machine_store_events
+import sources
 
 spec = importlib.util.spec_from_file_location('error_feed_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec)
@@ -116,8 +120,8 @@ class Scrub(Base):
                        'abc-defghijklmnopqrstuvwxyzabcdefg'):
             self.assertEqual(ef.normalize('sync failed ' + secret), 'sync failed <secret>', secret)
         self.assertEqual(ef.normalize('token=abc_def_ghi_jkl_mno_pqr'), 'token = <secret>')
-        self.assertEqual(a.fault_message(RuntimeError('feed failed error=android_feed_unavailable')), 'feed failed error=android_feed_unavailable')
-        self.assertEqual(a.fault_message(RuntimeError('bad ABCdefGHIjklMNOpqrSTUvwxYZ012345')), 'bad <secret>')
+        self.assertEqual(machine_faults.fault_message(RuntimeError('feed failed error=android_feed_unavailable')), 'feed failed error=android_feed_unavailable')
+        self.assertEqual(machine_faults.fault_message(RuntimeError('bad ABCdefGHIjklMNOpqrSTUvwxYZ012345')), 'bad <secret>')
 
     def test_arbitrary_lowercase_content_and_custom_names_are_redacted(self):
         for text in ('contract for riverbrook laboratory project maple', 'private_customer_error', 'RiverbrookError'):
@@ -298,8 +302,8 @@ class OptOut(Base):
 
 
 def types_app(path):
-    app = object.__new__(a.App)
-    app.store = a.Store(path)
+    app = object.__new__(machine_main.App)
+    app.store = machine_main.Store(path)
     app.fleet = None
     app.config = {'accounts': []}
     return app
@@ -345,8 +349,8 @@ class Sources(Base):
             self.assertEqual(ef.normalize(message), kept)
 
     def test_service_errors_come_through_the_fault_log(self):
-        store = a.Store(self.path)
-        log = a.FaultLog(store, 'abc123def456')
+        store = machine_main.Store(self.path)
+        log = machine_faults.FaultLog(store, 'abc123def456')
         try:
             {}['Sam Lee']
         except KeyError as error:
@@ -357,46 +361,46 @@ class Sources(Base):
         self.assertTrue(row['location'].startswith('tests/test_error_feed.py:test_service_errors_come_through_the_fault_log:'), row['location'])
 
     def test_a_failed_sync_names_the_service_only(self):
-        store = a.Store(self.path)
-        store.failed('gmail:sam.lee@globex.example', a.SourceError('Token for sam.lee@globex.example expired'))
+        store = machine_main.Store(self.path)
+        store.failed('gmail:sam.lee@globex.example', sources.SourceError('Token for sam.lee@globex.example expired'))
         with store.connect() as db:
             row = db.execute('SELECT source,kind,message,location FROM error_feed').fetchone()
         self.assertEqual(tuple(row), ('sync', 'SourceError', 'Token for <email> expired', 'sync:gmail'))
 
     def test_a_rate_limited_sync_is_not_an_error_until_it_keeps_failing(self):
-        store = a.Store(self.path)
-        for _ in range(a.TRANSIENT_REPORT_AFTER - 1):
-            store.failed('work-slack', a.SourceError('slack:conversations.history', 429, 120))
-            store.failed('work-slack-2', a.SourceError('slack_ratelimited:conversations.history', retry_after=60))
+        store = machine_main.Store(self.path)
+        for _ in range(machine_store_events.TRANSIENT_REPORT_AFTER - 1):
+            store.failed('work-slack', sources.SourceError('slack:conversations.history', 429, 120))
+            store.failed('work-slack-2', sources.SourceError('slack_ratelimited:conversations.history', retry_after=60))
         with store.connect() as db:
             self.assertEqual(db.execute('SELECT count(*) FROM error_feed').fetchone()[0], 0)
-        store.failed('work-slack', a.SourceError('slack:conversations.history', 429, 120))
-        store.failed('other-slack', a.SourceError('slack:conversations.history', 403))
+        store.failed('work-slack', sources.SourceError('slack:conversations.history', 429, 120))
+        store.failed('other-slack', sources.SourceError('slack:conversations.history', 403))
         with store.connect() as db:
             rows = sorted(tuple(r) for r in db.execute('SELECT message,location FROM error_feed'))
         self.assertEqual(rows, [('slack: conversations.history: HTTP forbidden', 'sync:other-slack'),
                                 ('slack: conversations.history: HTTP rate limited', 'sync:work-slack')])
 
     def test_a_busy_service_or_network_is_not_an_error_until_it_keeps_failing(self):
-        store = a.Store(self.path)
-        store.failed('salesflare-google-meet', a.SourceError('google_meet_http', 503))
-        store.failed('work-trello', a.SourceError('trello_network'))
-        store.failed('work-stripe', a.SourceError('network:IncompleteRead:stripe_read'))
+        store = machine_main.Store(self.path)
+        store.failed('salesflare-google-meet', sources.SourceError('google_meet_http', 503))
+        store.failed('work-trello', sources.SourceError('trello_network'))
+        store.failed('work-stripe', sources.SourceError('network:IncompleteRead:stripe_read'))
         with store.connect() as db:  # one 503, one dropped connection: no report
             self.assertEqual(db.execute('SELECT count(*) FROM error_feed').fetchone()[0], 0)
-        for _ in range(a.TRANSIENT_REPORT_AFTER - 2):
-            store.failed('salesflare-google-meet', a.SourceError('google_meet_http', 502))
+        for _ in range(machine_store_events.TRANSIENT_REPORT_AFTER - 2):
+            store.failed('salesflare-google-meet', sources.SourceError('google_meet_http', 502))
         with store.connect() as db:
             self.assertEqual(db.execute('SELECT count(*) FROM error_feed').fetchone()[0], 0)
-        store.failed('salesflare-google-meet', a.SourceError('google_meet_http', 503))  # the threshold: it keeps happening
+        store.failed('salesflare-google-meet', sources.SourceError('google_meet_http', 503))  # the threshold: it keeps happening
         with store.connect() as db:
             rows = [tuple(r) for r in db.execute('SELECT message,location FROM error_feed')]
         self.assertEqual(rows, [('google_meet_http: HTTP service unavailable', 'sync:salesflare-google-meet')])
 
     def test_a_sign_in_or_permission_error_is_reported_at_once(self):
-        store = a.Store(self.path)
-        store.failed('salesflare-google-meet', a.SourceError('google_meet_signin_expired', 401))
-        store.failed('work-trello', a.SourceError('trello_http', 403))
+        store = machine_main.Store(self.path)
+        store.failed('salesflare-google-meet', sources.SourceError('google_meet_signin_expired', 401))
+        store.failed('work-trello', sources.SourceError('trello_http', 403))
         with store.connect() as db:
             rows = sorted(tuple(r) for r in db.execute('SELECT message,location FROM error_feed'))
         self.assertEqual(rows, [('google_meet_signin_expired: HTTP unauthorized', 'sync:salesflare-google-meet'),
@@ -404,18 +408,18 @@ class Sources(Base):
 
     def test_what_counts_as_transient(self):
         for status in (429, 500, 502, 503, 504):
-            self.assertTrue(a.upstream_busy(a.SourceError('google_meet_http', status)), status)
+            self.assertTrue(sources.upstream_busy(sources.SourceError('google_meet_http', status)), status)
         for status in (400, 401, 403, 404, 501):
-            self.assertFalse(a.transient(a.SourceError('google_meet_http', status)), status)
+            self.assertFalse(sources.transient(sources.SourceError('google_meet_http', status)), status)
         for category in ('network:URLError:intercom_read', 'shortcut_network', 'google_broker_unreachable', 'timeout',
                          'linkedin_browser_stalled', 'x_browser_stalled', 'x_browser_busy', 'linkedin_read_timeout'):
-            self.assertTrue(a.transient(a.SourceError(category)), category)
-            self.assertFalse(a.upstream_busy(a.SourceError(category)), category)  # the network: no quick retry, the normal wait
+            self.assertTrue(sources.transient(sources.SourceError(category)), category)
+            self.assertFalse(sources.upstream_busy(sources.SourceError(category)), category)  # the network: no quick retry, the normal wait
         for category in ('google_meet_invalid_response', 'linkedin_signed_out', 'linkedin_security_check', 'x_browser_failed'):
-            self.assertFalse(a.transient(a.SourceError(category)), category)
+            self.assertFalse(sources.transient(sources.SourceError(category)), category)
 
     def test_a_failed_agent_job_names_the_tool_and_kind_only(self):
-        store = a.Store(self.path)
+        store = machine_main.Store(self.path)
         jobs = object.__new__(agent_jobs.AgentJobs)
         jobs.connect = store.connect
         with store.connect() as db:

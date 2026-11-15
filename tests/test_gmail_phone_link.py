@@ -6,6 +6,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+import machine.main as machine_main
 
 ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(ROOT))
@@ -32,7 +33,7 @@ class PhoneLink(unittest.TestCase):
 
     def test_a_gmail_message_view_carries_it_and_other_kinds_do_not(self):
         with tempfile.TemporaryDirectory() as folder:
-            store = a.Store(Path(folder) / 'events.sqlite')
+            store = machine_main.Store(Path(folder) / 'events.sqlite')
             mail = {'account_id': 'work', 'source_id': '18c0ffee00000002', 'kind': 'gmail.message', 'occurred_at': '2026-11-12T15:56:00+00:00',
                     'title': 'Account notice', 'body': 'Hello.', 'deleted': False,
                     'metadata': {'from': 'Example Cloud <hello@cloud.example>', 'thread_id': '18c0ffee00000001', 'source_url': DESKTOP}}

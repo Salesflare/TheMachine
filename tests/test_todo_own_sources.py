@@ -7,6 +7,9 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+import machine.app.preparation as machine_app_preparation
+import machine.main as machine_main
+import machine.sources.connectors as machine_sources_connectors
 
 ROOT = Path(__file__).parent.parent
 spec = importlib.util.spec_from_file_location('todo_own_sources_assistant', ROOT / 'assistant.py')
@@ -41,12 +44,12 @@ class Companies(unittest.TestCase):
                 todo_areas.company_accounts(wrong, ACCOUNTS)
 
     def test_the_review_is_told_the_companies_only_when_there_are_several(self):
-        line = a.companies_prompt({'accounts': ACCOUNTS})
+        line = machine_sources_connectors.companies_prompt({'accounts': ACCOUNTS})
         self.assertIn('work:Side (side.example, its to-dos are Personal)', line)
         self.assertIn('work:Acme (acme.example)', line)
         self.assertIn('add company=<its id> to suggest', line)
         self.assertIn('never by a name in the text alone', line)
-        one = a.companies_prompt({'accounts': ACCOUNTS[:2]})  # one company: only work on a personal account (test_work_on_personal_channel)
+        one = machine_sources_connectors.companies_prompt({'accounts': ACCOUNTS[:2]})  # one company: only work on a personal account (test_work_on_personal_channel)
         self.assertNotIn("The owner's companies", one)
         self.assertIn('Work is Work', one)
         self.assertIn('company:<its id>', (ROOT / 'AGENTS.md').read_text())
@@ -55,9 +58,9 @@ class Companies(unittest.TestCase):
 class Sources(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'e.sqlite')
+        self.store = machine_main.Store(Path(self.temp.name) / 'e.sqlite')
         self.store.accounts = ACCOUNTS
-        self.app = object.__new__(a.App); self.app.store = self.store
+        self.app = object.__new__(machine_main.App); self.app.store = self.store
         self.app.config = {'accounts': ACCOUNTS, 'prepare_ahead': False, 'database': str(Path(self.temp.name) / 'e.sqlite')}
         self.store.config = self.app.config
         # 1: the vendor's invoice for Side, forwarded to the Acme mailbox; 2: Side's own copy; 3: an older Side email
@@ -136,20 +139,20 @@ class Sources(unittest.TestCase):
 
     def test_a_run_prepared_ahead_gets_no_more_than_before(self):
         accounts = '["home-chat"]'
-        self.assertNotIn('Its own sources', a.area_prompt(self.app.config, accounts, [(1, 'acme-mail')], owner_started=False))
-        self.assertIn('Its own sources', a.area_prompt(self.app.config, accounts, [(1, 'acme-mail')], owner_started=True))
+        self.assertNotIn('Its own sources', machine_app_preparation.area_prompt(self.app.config, accounts, [(1, 'acme-mail')], owner_started=False))
+        self.assertIn('Its own sources', machine_app_preparation.area_prompt(self.app.config, accounts, [(1, 'acme-mail')], owner_started=True))
         # All its sources in its area: nothing to add
-        self.assertNotIn('Its own sources', a.area_prompt(self.app.config, '["acme-mail"]', [(1, 'acme-mail')], owner_started=True))
+        self.assertNotIn('Its own sources', machine_app_preparation.area_prompt(self.app.config, '["acme-mail"]', [(1, 'acme-mail')], owner_started=True))
 
     def test_a_mailbox_labeled_personal_is_in_personal_so_a_personal_to_do_never_asks_for_it(self):
         # A Personal to-do from a company mailbox the owner labeled personal: that mailbox is its area's, not another one
-        line = a.area_prompt(self.app.config, '["side-mail"]', [(1, 'side-mail')], owner_started=True)
+        line = machine_app_preparation.area_prompt(self.app.config, '["side-mail"]', [(1, 'side-mail')], owner_started=True)
         self.assertIn('this to-do is in Personal (its accounts: whatsapp, gmail, calendar)', line)
         self.assertNotIn('Its own sources', line)  # nothing outside its area to ask for
         self.assertEqual(todo_areas.sources_area(['side-mail', 'home-chat'], ACCOUNTS), 'personal')
         # Work and Personal still cross: a Personal to-do's Acme mail, and a Work to-do's Side mail, are outside
-        self.assertIn('wherever they live (acme-mail too)', a.area_prompt(self.app.config, '["side-mail"]', [(1, 'acme-mail')], owner_started=True))
-        self.assertIn('wherever they live (side-mail too)', a.area_prompt(self.app.config, '["acme-mail"]', [(1, 'side-mail')], owner_started=True))
+        self.assertIn('wherever they live (acme-mail too)', machine_app_preparation.area_prompt(self.app.config, '["side-mail"]', [(1, 'acme-mail')], owner_started=True))
+        self.assertIn('wherever they live (side-mail too)', machine_app_preparation.area_prompt(self.app.config, '["acme-mail"]', [(1, 'side-mail')], owner_started=True))
 
     def test_a_personal_handoff_sends_from_a_personal_mailbox_before_a_company_one_labeled_so(self):
         import next_actions
@@ -191,7 +194,7 @@ class Sources(unittest.TestCase):
 class Payment(unittest.TestCase):
     def test_a_bank_transfer_is_prepared_and_the_banks_approval_stays_the_owners(self):
         job = {'job_id': 'j' * 32, 'suggestion_id': 's' * 16}
-        for prompt in (a.preparation_prompt(job), a.preparation_prompt({**job, 'ahead': True})):
+        for prompt in (machine_app_preparation.preparation_prompt(job), machine_app_preparation.preparation_prompt({**job, 'ahead': True})):
             self.assertIn('A bank transfer for an invoice is a last step like Pay', prompt)
             self.assertIn('the IBAN, the payee and the payment reference from the invoice itself', prompt)
             self.assertIn("The bank's own approval (its app, card reader or code) is always the owner's", prompt)

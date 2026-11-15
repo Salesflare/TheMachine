@@ -10,6 +10,7 @@ import tempfile
 import unittest
 from unittest import mock
 from zoneinfo import ZoneInfo
+import machine.main as machine_main
 
 spec = importlib.util.spec_from_file_location('assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 assistant = importlib.util.module_from_spec(spec)
@@ -29,7 +30,7 @@ class Database(unittest.TestCase):
         self.tmp = tempfile.TemporaryDirectory()
         self.dir = Path(self.tmp.name)
         self.path = self.dir / 'events.sqlite'
-        self.store = assistant.Store(self.path)
+        self.store = machine_main.Store(self.path)
         self.connect = self.store.connect
 
     def tearDown(self):
@@ -68,7 +69,7 @@ class Database(unittest.TestCase):
             self.store.record_sync_activity(db, 'work-gmail', 'success', signals=1)
             self.assertEqual(db.execute('SELECT count(*) FROM sync_activity').fetchone()[0], 2)
         retention.prune_sync(self.connect, NOW)
-        app = assistant.App.__new__(assistant.App)
+        app = machine_main.App.__new__(machine_main.App)
         app.config, app.store = {}, self.store
         self.assertEqual(app.started_at()[:10], ago(45)[:10])
 

@@ -9,6 +9,8 @@ import unittest
 from pathlib import Path
 
 import message_seal
+import machine.main as machine_main
+import machine.prompts.review as machine_prompts_review
 
 ROOT = Path(__file__).parent.parent
 spec = importlib.util.spec_from_file_location('chat_asks_assistant', ROOT / 'assistant.py')
@@ -20,11 +22,11 @@ class ChatAsks(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'e.sqlite')
+        self.store = machine_main.Store(Path(self.temp.name) / 'e.sqlite')
         self.store.commit_page('g', {}, [{'account_id': 'g', 'source_id': f'm{n}', 'kind': 'gmail.message', 'occurred_at': f'2026-10-28T07:0{n}:00+00:00',
                                           'title': 'Venue dates', 'body': 'Monday 9:00 or Tuesday 10:00?', 'deleted': False,
                                           'metadata': {'from': 'Alex <alex@venue.example>', 'thread_id': 't1'}} for n in (1, 2)])
-        self.app = object.__new__(a.App)
+        self.app = object.__new__(machine_main.App)
         self.app.store = self.store
         self.app.config = {'accounts': [{'id': 'g'}], 'prepare_ahead': False}
 
@@ -55,7 +57,7 @@ class ChatAsks(unittest.TestCase):
         self.assertIn('chat_asks', message_seal.DERIVED['suggestions'])
 
     def test_the_review_is_told_to_leave_them_out_rather_than_be_generic(self):
-        prompt = a.review_prompt('r1', ['g'])
+        prompt = machine_prompts_review.review_prompt('r1', ['g'])
         self.assertIn('Chat asks:', prompt)
         self.assertIn('leave asks out rather than add one', prompt)
 

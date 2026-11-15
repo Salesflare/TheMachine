@@ -23,6 +23,9 @@ import tempfile
 import unittest
 import zipfile
 from pathlib import Path
+import machine.actions as machine_actions
+import machine.main as machine_main
+import machine.store.facts as machine_store_facts
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
@@ -78,7 +81,7 @@ def build(folder):
               'accounts': [{'id': 'work', 'service': 'gmail', 'email': 'sam@owner.example', 'boundary': 'work:Owner', 'token': TOKEN},
                            {'id': 'home', 'service': 'whatsapp', 'boundary': 'personal:'}],
               'slack_bot_token': TOKEN}
-    store = a.Store(config['database'], protect=True)
+    store = machine_main.Store(config['database'], protect=True)
     store.accounts = config['accounts']
     ago = lambda days: (NOW - dt.timedelta(days=days)).isoformat(timespec='seconds')
     with store.connect() as db:
@@ -213,15 +216,15 @@ class KnowledgeExport(unittest.TestCase):
         self.assertEqual(len(names), len(set(names)), 'a table is in two places in coverage.py')
 
     def test_every_kind_has_its_place(self):
-        self.assertEqual(knowledge.FACT_SORTS, a.FACT_SORTS)
-        self.assertEqual(set(a.FACT_KINDS), {'fact', 'draft'}, 'a new kind of fact: export it (facts or rules) in collect()')
+        self.assertEqual(knowledge.FACT_SORTS, machine_store_facts.FACT_SORTS)
+        self.assertEqual(set(machine_store_facts.FACT_KINDS), {'fact', 'draft'}, 'a new kind of fact: export it (facts or rules) in collect()')
         self.assertEqual(set(brain.KINDS), set(knowledge.KIND_FOLDERS))
         build = [ROOT / 'graph.py', *sorted((ROOT / 'machine' / 'graph').glob('*.py'))]  # the build and its passes
         built = set(re.findall(r"links\.append\(\([^\n]*?'([a-z_]+)', round", ''.join(p.read_text() for p in build)))
         self.assertTrue(built and built <= set(knowledge.LINKS), f'link kinds without a label: {built - set(knowledge.LINKS)}')
         self.assertEqual(set(skills.STATUSES) - set(knowledge.SKILL_STATUSES), {'proposed', 'incoming'})
         exported = {f['sort'] for f in self.bundle['facts']}
-        self.assertEqual(exported, set(a.FACT_SORTS))
+        self.assertEqual(exported, set(machine_store_facts.FACT_SORTS))
         self.assertEqual({s['kind'] for s in self.bundle['summaries']}, set(person_summary.KINDS) - {'open'})  # the open line is the private one
         self.assertEqual({e['kind'] for e in self.bundle['entities']}, set(brain.KINDS))
         self.assertEqual({r['kind'] for r in self.bundle['relationships']}, set(knowledge.LINKS))
@@ -377,10 +380,10 @@ class KnowledgeExport(unittest.TestCase):
         self.assertEqual(opened.stdout, data)
 
     def test_dashboard_action_packs_once_for_the_owner(self):
-        app = object.__new__(a.App)
+        app = object.__new__(machine_main.App)
         app.store, app.config, app.fleet = self.store, self.config, FakeFleet()
-        self.assertIn('knowledge_export', a.OWNER_ACTIONS)
-        self.assertIn('knowledge_export', a.DASHBOARD_ACTIONS)
+        self.assertIn('knowledge_export', machine_actions.OWNER_ACTIONS)
+        self.assertIn('knowledge_export', machine_actions.DASHBOARD_ACTIONS)
         with self.assertRaisesRegex(ValueError, 'dashboard'):
             app.knowledge_export_action('knowledge_export', {}, False)
         with self.assertRaisesRegex(ValueError, 'at least'):

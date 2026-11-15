@@ -5,6 +5,10 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+import datetime as dt
+import machine.main as machine_main
+import machine.store.cards as machine_store_cards
+import timeutil
 
 spec = importlib.util.spec_from_file_location('matter_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
@@ -18,14 +22,14 @@ def mail(source_id, thread, sender='Sam Example <sam@example.com>', when='2026-1
 class Matter(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'e.sqlite')
+        self.store = machine_main.Store(Path(self.temp.name) / 'e.sqlite')
         self.store.commit_page('g', {}, [
             mail('m1', 't1'),
             mail('m2', 't1', when='2026-10-20T16:50:05+00:00'),
             mail('m3', 't2', sender='Kim Other <kim@example.org>', title='Lunch'),
             mail('m4', 't1', when='2026-10-21T09:00:00+00:00'),
         ])
-        self.app = object.__new__(a.App); self.app.store = self.store
+        self.app = object.__new__(machine_main.App); self.app.store = self.store
         self.app.config = {'accounts': [{'id': 'g'}], 'prepare_ahead': False}
 
     def suggest(self, **args):
@@ -99,7 +103,7 @@ class Matter(unittest.TestCase):
         self.assertTrue(stale['attached']); self.assertNotIn('reopened', stale)
         self.assertEqual(self.card(first['id'])['status'], 'completed')
         # Nor is the owner's own reply sent after closing it
-        later = (a.dt.datetime.fromisoformat(a.now()) + a.dt.timedelta(minutes=5)).isoformat()
+        later = (dt.datetime.fromisoformat(timeutil.now()) + dt.timedelta(minutes=5)).isoformat()
         own = mail('m5', 't1', sender='owner@example.com', when=later)
         own['metadata']['labels'] = ['SENT']
         self.store.commit_page('g', {}, [own, mail('m6', 't1', when=later)])
@@ -134,8 +138,8 @@ class Matter(unittest.TestCase):
         rows = [{'account_id': 's', 'kind': 'slack.message', 'metadata': {'channel_id': 'C1', 'message_ts': '1.0', 'thread_ts': '1.0'}},
                 {'account_id': 's', 'kind': 'slack.message', 'metadata': {'channel_id': 'C1', 'message_ts': '2.0', 'thread_ts': '1.0'}},
                 {'account_id': 's', 'kind': 'slack.message', 'metadata': {'channel_id': 'C1', 'message_ts': '3.0', 'thread_ts': '3.0'}}]
-        self.assertEqual(a.thread_keys(rows[:1]), a.thread_keys(rows[1:2]))
-        self.assertFalse(a.thread_keys(rows[:1]) & a.thread_keys(rows[2:]))
+        self.assertEqual(machine_store_cards.thread_keys(rows[:1]), machine_store_cards.thread_keys(rows[1:2]))
+        self.assertFalse(machine_store_cards.thread_keys(rows[:1]) & machine_store_cards.thread_keys(rows[2:]))
 
 
 if __name__ == '__main__':

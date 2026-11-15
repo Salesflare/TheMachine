@@ -21,6 +21,9 @@ import unittest
 import urllib.request
 from pathlib import Path
 from unittest.mock import patch
+import browser_login
+import browser_viewer
+import machine.main as machine_main
 
 spec = importlib.util.spec_from_file_location('facebook_birthdays_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
@@ -242,7 +245,7 @@ class Import(unittest.TestCase):
     def setUpClass(cls):
         # The made-up people, built once (a new database's schema takes most of a test) and copied for every test
         cls.kept = tempfile.TemporaryDirectory(); cls.addClassCleanup(cls.kept.cleanup)
-        store = a.Store(Path(cls.kept.name) / 'e.sqlite')
+        store = machine_main.Store(Path(cls.kept.name) / 'e.sqlite')
         store.accounts = cls.ACCOUNTS
         with store.connect() as db:
             graph.ensure(db)
@@ -255,14 +258,14 @@ class Import(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
         shutil.copytree(self.kept.name, self.temp.name, dirs_exist_ok=True)
-        self.store = a.Store(Path(self.temp.name) / 'e.sqlite')
-        self.app = object.__new__(a.App); self.app.store = self.store
+        self.store = machine_main.Store(Path(self.temp.name) / 'e.sqlite')
+        self.app = object.__new__(machine_main.App); self.app.store = self.store
         self.app.config = {'accounts': self.ACCOUNTS, 'timezone': 'Europe/Brussels', 'browser_cdp_url': 'http://127.0.0.1:9'}
         self.store.accounts = self.app.config['accounts']
         self.app.birthdays_facebook_inline = True
         self.reads, self.answer = [], {'items': self.ITEMS}
         for name, value in (('birthdays_facebook_base', lambda s: 'http://127.0.0.1:9'),):
-            p = patch.object(a.BirthdaysTemplate, name, value); p.start(); self.addCleanup(p.stop)
+            p = patch.object(machine_main.BirthdaysTemplate, name, value); p.start(); self.addCleanup(p.stop)
         p = patch.object(fb, 'read', lambda base, url=fb.PAGE, limits=None: self.reads.append(url) or self.answer); p.start(); self.addCleanup(p.stop)
         p = patch('subprocess.run', lambda *x, **k: subprocess.CompletedProcess(x, 0, '', '')); p.start(); self.addCleanup(p.stop)  # the lease
 
@@ -284,7 +287,7 @@ class Import(unittest.TestCase):
         self.assertEqual(self.reads, [])
 
     def test_no_browser_no_todo(self):
-        with patch.object(a.BirthdaysTemplate, 'birthdays_facebook_base', lambda s: None):
+        with patch.object(machine_main.BirthdaysTemplate, 'birthdays_facebook_base', lambda s: None):
             self.assertIsNone(self.offer())
         self.assertTrue(self.offer())  # offered once it has one
 
@@ -344,7 +347,7 @@ class Import(unittest.TestCase):
         self.answer = {'items': [{**i, 'photo': 'https://scontent.test.fbcdn.net/v/%d.jpg' % n} for n, i in enumerate(self.ITEMS)]}
         self.fetched = []
         fetch = lambda link: self.fetched.append(link) or ((self.PNG, 'image/png') if got else None)  # noqa: E731
-        for target, name, value in ((enrichment, 'download_photo', fetch), (a.App, 'graph_later', lambda s: None)):
+        for target, name, value in ((enrichment, 'download_photo', fetch), (machine_main.App, 'graph_later', lambda s: None)):
             p = patch.object(target, name, value); p.start(); self.addCleanup(p.stop)
 
     def photos(self):
@@ -414,9 +417,9 @@ class Import(unittest.TestCase):
         self.assertEqual(self.card(sid), {'state': 'signed_out'})
         # Sign in to Facebook on the to-do: Facebook's sign-in page in the Machine's browser, for the dashboard's
         # sign-in dialog, the way LinkedIn and X sign in. Only from the dashboard, and nothing is read by it.
-        cdp = a.browser_login.browser_cdp
+        cdp = browser_login.browser_cdp
         with patch.object(cdp, '_http', return_value=[]), patch.object(cdp, 'open_tab', return_value='t1') as opened, \
-                patch.object(a.browser_viewer, 'focus') as focus:
+                patch.object(browser_viewer, 'focus') as focus:
             self.assertTrue(self.app.action('connect_site_signin', {'site': 'facebook'}, owner_dashboard=True)['opened'])
             with self.assertRaises(ValueError):
                 self.app.action('connect_site_signin', {'site': 'facebook'}, owner_dashboard=False)

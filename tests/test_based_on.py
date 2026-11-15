@@ -6,6 +6,12 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+import machine.app.preparation as machine_app_preparation
+import machine.cards as machine_cards
+import machine.main as machine_main
+import machine.prompts.review as machine_prompts_review
+import machine.store.cards as machine_store_cards
+import machine.store.views as machine_store_views
 
 spec = importlib.util.spec_from_file_location('based_on_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec)
@@ -33,9 +39,9 @@ class BasedOn(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'events.sqlite')
+        self.store = machine_main.Store(Path(self.temp.name) / 'events.sqlite')
         self.store.owner_user_ids = {'U0OWNER001'}
-        self.app = object.__new__(a.App)
+        self.app = object.__new__(machine_main.App)
         self.app.store = self.store
         self.app.config = {'accounts': [{'id': 'ic', 'service': 'intercom', 'boundary': 'work:Acme'},
                                         {'id': 'sl', 'service': 'slack', 'boundary': 'work:Acme'}], 'prepare_ahead': False}
@@ -63,7 +69,7 @@ class BasedOn(unittest.TestCase):
     def shown(self, sid):
         with self.store.connect() as db:
             cards = [dict(db.execute('SELECT * FROM suggestions WHERE id=?', (sid,)).fetchone())]
-            a.based_on_views(db, cards)
+            machine_store_views.based_on_views(db, cards)
         return cards[0]
 
     def test_the_review_names_the_teammate_input_and_the_to_do_shows_it_by_name_with_its_link(self):
@@ -121,15 +127,15 @@ class BasedOn(unittest.TestCase):
     def test_a_google_group_sender_reads_as_people_say_it(self):
         row = {'kind': 'gmail.message', 'occurred_at': '2026-11-06T09:00:00+00:00',
                'metadata': {'from': '"\'Zapier Alerts\' via info@acme.example readers" <info@acme.example>'}}
-        self.assertEqual(a.source_text(row).split(' · ')[0], 'email from Zapier Alerts via info@acme.example')
-        self.assertEqual(a.source_line_shown("Source: email from 'Zapier Alerts' via info@acme.example readers · Fri 6 Nov (+1 more)"),
+        self.assertEqual(machine_store_cards.source_text(row).split(' · ')[0], 'email from Zapier Alerts via info@acme.example')
+        self.assertEqual(machine_cards.source_line_shown("Source: email from 'Zapier Alerts' via info@acme.example readers · Fri 6 Nov (+1 more)"),
                          'Source: email from Zapier Alerts via info@acme.example · Fri 6 Nov (+1 more)')  # stored before
-        self.assertEqual(a.group_sender("'Sam Lee' via Sales"), 'Sam Lee via Sales')
-        self.assertEqual(a.sender_first_name(row['metadata']), 'Zapier')
+        self.assertEqual(machine_cards.group_sender("'Sam Lee' via Sales"), 'Sam Lee via Sales')
+        self.assertEqual(machine_store_views.sender_first_name(row['metadata']), 'Zapier')
 
     def test_the_review_and_the_drafting_step_are_told(self):
-        self.assertIn('based_on', a.review_prompt('r1', ['sl']))
-        self.assertIn('based_on', a.preparation_prompt({'job_id': 'j', 'suggestion_id': 's'}))
+        self.assertIn('based_on', machine_prompts_review.review_prompt('r1', ['sl']))
+        self.assertIn('based_on', machine_app_preparation.preparation_prompt({'job_id': 'j', 'suggestion_id': 's'}))
 
 
 if __name__ == '__main__':

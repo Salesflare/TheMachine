@@ -13,6 +13,7 @@ import tempfile
 import unittest
 
 import dashboard_parts
+import machine.web.serving as machine_web_serving
 
 ROOT = Path(__file__).resolve().parent.parent
 # Files that may name dashboard.html as a file to read or write: the two readers, the scripts that rewrite the source
@@ -86,10 +87,10 @@ class DashboardParts(unittest.TestCase):
 
     def test_the_service_serves_the_assembled_page(self):
         import assistant
-        page = assistant.dashboard_page('token', 'owner', '/base/')
+        page = machine_web_serving.dashboard_page('token', 'owner', '/base/')
         self.assertEqual(page, dashboard_parts.assemble(ROOT).replace('__CSRF__', '')
-                         .replace('__UI_VERSION__', assistant.dashboard_version()).replace('__BASE__', '/base/')
-                         .replace('__CACHE_SCOPE__', assistant.dashboard_cache_scope('token', 'owner')))
+                         .replace('__UI_VERSION__', machine_web_serving.dashboard_version()).replace('__BASE__', '/base/')
+                         .replace('__CACHE_SCOPE__', machine_web_serving.dashboard_cache_scope('token', 'owner')))
         self.assertNotIn('/*@include dashboard/', page)
 
     def test_the_parts_that_load_later_are_whole_parts_and_lose_nothing(self):

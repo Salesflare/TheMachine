@@ -10,6 +10,7 @@ from pathlib import Path
 import re
 import sys
 import unittest
+import machine.main as machine_main
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
@@ -232,10 +233,10 @@ class StatusCarriesThem(unittest.TestCase):
     def test_status_gives_each_card_its_title_and_subtitle(self):
         import tempfile
         temp = tempfile.TemporaryDirectory(); self.addCleanup(temp.cleanup)
-        app = object.__new__(a.App)
+        app = object.__new__(machine_main.App)
         signal = {'id': 'personal-signal', 'service': 'signal', 'boundary': 'personal:signal', 'transport': 'signal_mirror'}
         mail = {'id': 'work', 'email': 'owner@acme.example', 'service': 'gmail', 'boundary': 'work:Acme'}
-        app.store, app.config_path, app.config = a.Store(Path(temp.name) / 'events.sqlite'), None, {'accounts': [mail, signal]}
+        app.store, app.config_path, app.config = machine_main.Store(Path(temp.name) / 'events.sqlite'), None, {'accounts': [mail, signal]}
         app.store.commit_page('personal-signal', {'account_name': 'Sam Example'}, [])
         cards = {c['id']: (c.get('card_title'), c.get('card_subtitle')) for c in app.status_built(None)['connectors']}
         self.assertEqual(cards, {'work': ('owner@acme.example', 'Work'), 'personal-signal': ('Sam’s Signal', 'Personal')})

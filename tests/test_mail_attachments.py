@@ -11,6 +11,8 @@ import tempfile
 import types
 import unittest
 from unittest import mock
+import machine.app.mail as machine_app_mail
+import machine.main as machine_main
 
 ROOT = Path(__file__).resolve().parent.parent
 spec = importlib.util.spec_from_file_location('assistant', ROOT / 'assistant.py')
@@ -96,7 +98,7 @@ class AtRest(unittest.TestCase):
         self.config = {'database': str(base / 'data/events.sqlite'), 'attachment_root': str(self.attachments),
                        'open_attachment_dir': str(base / 'open'), 'attachment_dir': str(self.store_dir),
                        'attachment_sources': [str(self.attachments), str(self.workspace / 'memory/assistant')], 'accounts': []}
-        self.store = assistant.Store(self.config['database'], protect=True)
+        self.store = machine_main.Store(self.config['database'], protect=True)
 
     def test_a_saved_attachment_is_sealed_and_the_run_reads_a_private_copy(self):
         saved = mail_attachments.save(self.config, self.attachments / 'job-1', 'invoice.pdf', CANARY)
@@ -111,7 +113,7 @@ class AtRest(unittest.TestCase):
 
     def test_without_protection_it_stays_a_plain_file(self):
         config = self.config | {'database': str(Path(self.temp.name) / 'plain/events.sqlite')}
-        assistant.Store(config['database'], protect=False)
+        machine_main.Store(config['database'], protect=False)
         saved = mail_attachments.save(config, self.attachments / 'job-1', 'invoice.pdf', CANARY)
         self.assertEqual(saved, {'saved': str(self.attachments / 'job-1/invoice.pdf')})
         self.assertEqual(Path(saved['saved']).read_bytes(), CANARY)
@@ -199,12 +201,12 @@ class AtRest(unittest.TestCase):
                               'body': {'size': len(CANARY), 'data': next_actions.base64.urlsafe_b64encode(CANARY).decode()}}]}
         app = types.SimpleNamespace(config=self.config | {'accounts': [account]}, store=self.store,
                                     gmail_message=lambda account_id, message_id: (account, {'payload': payload}))
-        listed = assistant.App.mail_attachment(app, {'account_id': 'acme-gmail', 'message_id': '1a2b'})['attachments']
+        listed = machine_main.App.mail_attachment(app, {'account_id': 'acme-gmail', 'message_id': '1a2b'})['attachments']
         self.assertEqual([(a['id'], a['name']) for a in listed], [('1', 'invoice.pdf')])
-        saved = assistant.App.mail_attachment(app, {'account_id': 'acme-gmail', 'message_id': '1a2b', 'save': 'invoice.pdf', 'job_id': 'job-1'})
+        saved = machine_main.App.mail_attachment(app, {'account_id': 'acme-gmail', 'message_id': '1a2b', 'save': 'invoice.pdf', 'job_id': 'job-1'})
         self.assertEqual(Path(saved['saved']).read_bytes(), CANARY)
         self.assertTrue(message_seal.is_sealed_file(saved['sealed']))
-        opened = assistant.App.mail_attachment(app, {'open': saved['sealed'], 'job_id': 'job-9'})
+        opened = machine_main.App.mail_attachment(app, {'open': saved['sealed'], 'job_id': 'job-9'})
         self.assertEqual(Path(opened['saved']).read_bytes(), CANARY)
 
 
@@ -215,8 +217,8 @@ class AtRest(unittest.TestCase):
                                "VALUES('acme-outlook','AAMk1','ms_graph.message','2026-11-04T09:00:00Z','Settlement','','{}',0,'h','2026-11-04T09:00:00Z')").lastrowid
         seen = []
         app = types.SimpleNamespace(config=self.config | {'accounts': [account]}, store=self.store)
-        with mock.patch.object(assistant.MailApp, 'outlook_attachments', lambda self, acc, message_id, save=None: seen.append((acc['id'], message_id)) or ([{'id': 'x1', 'name': 'settlement.pdf'}], None)):
-            listed = assistant.App.mail_attachment(app, {'event_id': event})['attachments']
+        with mock.patch.object(machine_app_mail.MailApp, 'outlook_attachments', lambda self, acc, message_id, save=None: seen.append((acc['id'], message_id)) or ([{'id': 'x1', 'name': 'settlement.pdf'}], None)):
+            listed = machine_main.App.mail_attachment(app, {'event_id': event})['attachments']
         self.assertEqual((seen, listed[0]['name']), ([('acme-outlook', 'AAMk1')], 'settlement.pdf'))
 
     def test_runs_read_attachments_through_the_connection_before_the_browser(self):

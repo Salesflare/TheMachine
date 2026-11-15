@@ -12,6 +12,7 @@ import assistant as a
 import graph
 import graph_apart as apart
 import timeutil
+import machine.main as machine_main
 
 CONFIG = {**tg.CONFIG, 'embeddings': {'model': 'test', 'dims': 4}}
 GRAPH = ('SELECT id,kind,name,strength,signals FROM graph_nodes ORDER BY id', 'SELECT * FROM graph_links ORDER BY 1,2,3',
@@ -28,7 +29,7 @@ class Apart(unittest.TestCase):
     def store(self):
         """A store with the same three messages each time."""
         temp = tempfile.TemporaryDirectory(); self.addCleanup(temp.cleanup)
-        store = a.Store(Path(temp.name) / 'events.sqlite', protect=self.PROTECT)
+        store = machine_main.Store(Path(temp.name) / 'events.sqlite', protect=self.PROTECT)
         for e in (tg.mail(9, 'Sam <sam@acme.com>', 'Ann Lee <ann@partner.example>', ('SENT',), thread='deal'),
                   tg.mail(3, 'Ann Lee <ann@partner.example>', 'sam@acme.com', thread='deal', title='Re: the listing'),
                   tg.mail(1, 'Sam <sam@acme.com>', 'Bo <bo@other.example>', ('SENT',), thread='other')):
@@ -78,11 +79,11 @@ class Apart(unittest.TestCase):
     def test_the_worker_builds_apart_and_here_when_no_child_can(self):
         app = mock.Mock(store=self.stores[0], config=CONFIG, fleet_addresses=set, fleet_circles=dict)
         with mock.patch.object(apart, 'run', return_value=None) as run:
-            summary = a.App.graph_build(app, apart=True)
+            summary = machine_main.App.graph_build(app, apart=True)
         run.assert_called_once()
         self.assertTrue(summary['people'], 'built here instead')
         with mock.patch.object(apart, 'run') as run:
-            a.App.graph_build(app)
+            machine_main.App.graph_build(app)
         run.assert_not_called()  # an owner's edit that waits on the build (graph_build) builds here, as before
 
 

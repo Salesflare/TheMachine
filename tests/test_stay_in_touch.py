@@ -10,6 +10,7 @@ import threading
 import unittest
 from pathlib import Path
 from unittest.mock import patch
+import machine.main as machine_main
 
 spec = importlib.util.spec_from_file_location('touch_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
@@ -33,15 +34,15 @@ class StayInTouch(unittest.TestCase):
     def setUp(self):
         self.pin = pinned(NOW); self.clock = self.pin.__enter__(); self.addCleanup(self.pin.__exit__, None, None, None)
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'e.sqlite')
-        self.app = object.__new__(a.App); self.app.store = self.store
+        self.store = machine_main.Store(Path(self.temp.name) / 'e.sqlite')
+        self.app = object.__new__(machine_main.App); self.app.store = self.store
         self.app.config = {'accounts': [dict(x) for x in ACCOUNTS], 'timezone': 'Europe/Brussels', 'openclaw_state': self.temp.name + '/none.sqlite'}
         self.store.accounts = self.app.config['accounts']
         self.n, self.asked, self.answer = 0, [], {'nudges': []}
         for name, value in (('background_pause', lambda s, **k: None), ('background_spaced', lambda s: True),
                             ('background_started', lambda s: None), ('preparation_gateway', lambda s, request: {}),
                             ('routine_spawn', lambda s, target, run_id: target(run_id))):
-            p = patch.object(a.App, name, value); p.start(); self.addCleanup(p.stop)
+            p = patch.object(machine_main.App, name, value); p.start(); self.addCleanup(p.stop)
         self.app.touch_model = self.model
         threads = set(threading.enumerate())
         self.addCleanup(lambda: self.assertEqual([t.name for t in set(threading.enumerate()) - threads if t.is_alive()], []))

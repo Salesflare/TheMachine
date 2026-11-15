@@ -7,6 +7,9 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+import machine.main as machine_main
+import machine.text as machine_text
+import machine.web.handler as machine_web_handler
 
 ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(ROOT))
@@ -25,13 +28,13 @@ SECOND_MAIL = ('For ABC exchange, here is the alternative.\nLink: https://exampl
 def fixture(folder):
     """Two emails from Sam on one to-do, stored the way mail sync stores them (with the marker); the dashboard test
     (test_quoted_history_dashboard.mjs) reads its chat and originals from here."""
-    store = a.Store(Path(folder) / 'events.sqlite')
-    bodies = [a.trim_quoted_history(FIRST_MAIL, 'Re: Link')[0], a.trim_quoted_history(SECOND_MAIL, 'Re: Link')[0]]
+    store = machine_main.Store(Path(folder) / 'events.sqlite')
+    bodies = [machine_text.trim_quoted_history(FIRST_MAIL, 'Re: Link')[0], machine_text.trim_quoted_history(SECOND_MAIL, 'Re: Link')[0]]
     event = lambda sid, body, at: {'account_id': 'work', 'source_id': sid, 'kind': 'gmail.message', 'occurred_at': at, 'title': 'Re: Link',
                                    'body': body, 'metadata': {'from': 'Sam Z <sam@example.net>'}, 'deleted': False}
     store.commit_page('work', {}, [event('m1', bodies[0], '2026-10-28T08:40:00+00:00'), event('m2', bodies[1], '2026-10-28T08:47:00+00:00')], None)
     sid = store.suggest('task', 'Reply to Sam', 'Sam sent the link details.', [1, 2])['id']
-    app = object.__new__(a.App)
+    app = object.__new__(machine_main.App)
     app.store = store
     app.config = {'accounts': [], 'database': str(Path(folder) / 'events.sqlite')}
     return app, sid, bodies
@@ -46,13 +49,13 @@ class QuotedMarker(unittest.TestCase):
         self.assertTrue(all('[Quoted earlier messages:' in b for b in self.bodies))
 
     def test_shown_body_drops_the_marker_and_keeps_the_history(self):
-        body, clipped = a.shown_body(self.bodies[0])
+        body, clipped = machine_text.shown_body(self.bodies[0])
         self.assertEqual(body, FIRST + '\n\nOn Mon, 26 Oct 2026 at 10:00, Owner <me@example.com> wrote:\n> Sounds good, send me the details.\n> Owner')
         self.assertFalse(clipped)
-        long = a.trim_quoted_history('Thanks!\n\nOn Mon, Ann <a@b.c> wrote:\n' + '> old line\n' * 1000)[0]
-        self.assertEqual(a.shown_body(long)[1], True)
-        self.assertNotIn('Quoted earlier', a.shown_body(long)[0])
-        self.assertEqual(a.shown_body('Plain [note]'), ('Plain [note]', False))
+        long = machine_text.trim_quoted_history('Thanks!\n\nOn Mon, Ann <a@b.c> wrote:\n' + '> old line\n' * 1000)[0]
+        self.assertEqual(machine_text.shown_body(long)[1], True)
+        self.assertNotIn('Quoted earlier', machine_text.shown_body(long)[0])
+        self.assertEqual(machine_text.shown_body('Plain [note]'), ('Plain [note]', False))
 
     def test_chat_shows_each_new_message_with_its_history_apart(self):
         with self.store.connect() as db:
@@ -71,7 +74,7 @@ class QuotedMarker(unittest.TestCase):
         self.assertFalse(any('Quoted earlier' in o['body'] for o in shown))
         self.assertTrue(shown[1]['body'].startswith('For ABC exchange') and 'Sam Z <sam@example.net> wrote:' in shown[1]['body'])
         short = {'kind': 'gmail.message', 'metadata': {}, 'body': 'Ok!\n\n[Quoted earlier messages: first 9 of 9 characters kept. Earlier messages in this thread are separate signals.]\nOn x wrote:'}
-        self.assertNotIn('Quoted earlier', a.event_glance(short, [])['preview'])
+        self.assertNotIn('Quoted earlier', machine_web_handler.event_glance(short, [])['preview'])
 
     def test_the_model_still_reads_the_marker(self):
         self.assertTrue(all('[Quoted earlier messages:' in v['body'] for v in self.store.event_views([1, 2])))

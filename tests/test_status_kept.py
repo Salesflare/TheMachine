@@ -13,6 +13,7 @@ from unittest.mock import patch
 
 import assistant as a
 from machine.app import status
+import machine.main as machine_main
 
 NOW = dt.datetime.now(dt.timezone.utc).replace(microsecond=0)
 WORK = {'id': 'work', 'email': 'owner@acme.example', 'service': 'gmail', 'boundary': 'work:Acme'}
@@ -28,8 +29,8 @@ def mail(n):
 class StatusKept(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'events.sqlite')
-        self.app = object.__new__(a.App)
+        self.store = machine_main.Store(Path(self.temp.name) / 'events.sqlite')
+        self.app = object.__new__(machine_main.App)
         self.app.store, self.app.config_path, self.app.config = self.store, None, {'accounts': [WORK]}
         self.builds, built = [], self.app.status_built
 
@@ -143,7 +144,7 @@ class StatusKept(unittest.TestCase):
 
     def test_a_restarted_machine_has_none_from_before(self):
         self.status()
-        self.app = object.__new__(a.App)  # a new process: nothing kept in memory
+        self.app = object.__new__(machine_main.App)  # a new process: nothing kept in memory
         self.app.store, self.app.config_path, self.app.config = self.store, None, {'accounts': [WORK]}
         self.addCleanup(lambda: (self.app.__dict__.get('_status_kept') or {}).get('watch') and self.app._status_kept['watch'].close())
         self.assertIsNone(self.app.status_recent(25))

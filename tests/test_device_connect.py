@@ -20,6 +20,7 @@ import network_crypto as nc
 import onboarding
 from test_intercom_replies import Fake, REPLY
 from test_connectors import a
+import machine.main as machine_main
 
 TOKEN = REPLY
 
@@ -328,7 +329,7 @@ class Dashboard(unittest.TestCase):
         path = Path(temp.name) / 'config.json'
         config = {'accounts': [], 'database': str(Path(temp.name) / 'events.sqlite'), **({'manage_url': manage} if manage else {})}
         path.write_text(json.dumps(config))
-        app = object.__new__(assistant.App)
+        app = object.__new__(machine_main.App)
         app.config, app.config_path = config, path
         app.fleet = fleet_with(self, []) if paired else None
         return app

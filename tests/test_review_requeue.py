@@ -14,6 +14,7 @@ from contextlib import closing
 from pathlib import Path
 from seams import patch_everywhere  # noqa: E402,F401
 from machine.store import review_requeue, review_saves  # noqa: E402
+import machine.main as machine_main
 
 spec = importlib.util.spec_from_file_location('review_requeue_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec)
@@ -69,7 +70,7 @@ class RequeueFailedSaves(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.dir = Path(self.temp.name)
-        self.store = a.Store(self.dir / 'events.sqlite')
+        self.store = machine_main.Store(self.dir / 'events.sqlite')
         # 1 reviewed, 2 set aside, 3 in a to-do, 4 too old, 5 saved fine, 6 "read what came after first", 7 a later failure
         self.store.commit_page('work', {}, [mail('m1', 2), mail('m2', 2), mail('m3', 2), mail('m4', 20), mail('m5', 2), mail('m6', 2), mail('m7', 1)])
         with self.store.connect() as db:

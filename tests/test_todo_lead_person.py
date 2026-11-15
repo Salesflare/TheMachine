@@ -8,6 +8,10 @@ import tempfile
 import unittest
 from pathlib import Path
 from seams import patch_everywhere  # noqa: E402,F401
+import graph
+import machine.app.preparation as machine_app_preparation
+import machine.main as machine_main
+import machine.prompts.review as machine_prompts_review
 
 spec = importlib.util.spec_from_file_location('lead_person_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec)
@@ -32,7 +36,7 @@ class LeadPerson(unittest.TestCase):
     def setUp(self):
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
-        self.store = a.Store(Path(tmp.name) / 'events.sqlite')
+        self.store = machine_main.Store(Path(tmp.name) / 'events.sqlite')
         with self.store.connect() as db:
             for node, name, strength in (('email:lena@client.example', 'Lena Ortiz', 0.8), ('email:marco@client.example', 'Marco Bell', 1.3)):
                 db.execute("INSERT INTO graph_nodes(id,kind,name,strength,signals,info) VALUES(?,'person',?,?,1,'{}')", (node, name, strength))
@@ -44,7 +48,7 @@ class LeadPerson(unittest.TestCase):
     def people(self, ids, unlinked=True):
         """As the to-do's chip shows them (unlinked: its sender also before the graph links their message)."""
         with self.store.connect() as db:
-            return [p['name'] for p in a.graph.card_people(db, ids, unlinked=unlinked)[0]]
+            return [p['name'] for p in graph.card_people(db, ids, unlinked=unlinked)[0]]
 
     def test_the_main_sources_person_comes_first(self):
         self.assertEqual(self.people([101, 102, 103]), ['Lena Ortiz', 'Marco Bell'])
@@ -77,8 +81,8 @@ class LeadPerson(unittest.TestCase):
         self.assertEqual(self.people([own, 103, 104]), ['Marco Bell', 'Ada Kim'])
 
     def test_the_rules_are_in_the_prompts(self):
-        self.assertTrue('Automated mail alone makes a to-do only when it asks the owner to act' in a.review_prompt('r1', ['work']))
-        self.assertTrue('nor a message you only read to answer the owner' in a.preparation_prompt({'job_id': 'j', 'suggestion_id': 's'}))
+        self.assertTrue('Automated mail alone makes a to-do only when it asks the owner to act' in machine_prompts_review.review_prompt('r1', ['work']))
+        self.assertTrue('nor a message you only read to answer the owner' in machine_app_preparation.preparation_prompt({'job_id': 'j', 'suggestion_id': 's'}))
 
 
 if __name__ == '__main__':

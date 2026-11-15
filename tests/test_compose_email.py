@@ -8,6 +8,8 @@ import unittest
 from pathlib import Path
 
 import assistant as a
+import machine.actions as machine_actions
+import machine.main as machine_main
 
 WORK = {'id': 'work', 'email': 'owner@acme.example', 'service': 'gmail', 'transport': 'gog', 'boundary': 'work:acme.example'}
 HOME = {'id': 'home', 'email': 'owner@mail.example', 'service': 'gmail', 'transport': 'gog', 'boundary': 'personal'}
@@ -19,7 +21,7 @@ class ComposeEmail(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'events.sqlite')
+        self.store = machine_main.Store(Path(self.temp.name) / 'events.sqlite')
         with self.store.connect() as db:
             for node, name, email, side, accounts in (('p_sam', 'Sam Lee', 'sam@client.example', 'work', ['work']),
                                                       ('p_dana', 'Dana Roe', 'dana@family.example', 'personal', ['home'])):
@@ -27,7 +29,7 @@ class ComposeEmail(unittest.TestCase):
                            (node, name, json.dumps({'emails': [email], 'side': side, 'accounts': accounts})))
 
     def app(self, accounts=(WORK, HOME, SLACK)):
-        app = object.__new__(a.App)
+        app = object.__new__(machine_main.App)
         app.store, app.config = self.store, {'accounts': [dict(x) for x in accounts]}
         return app
 
@@ -111,8 +113,8 @@ class ComposeEmail(unittest.TestCase):
 
     def test_owner_and_dashboard_only(self):
         for name in ('compose_email', 'compose_from'):
-            self.assertIn(name, a.OWNER_ACTIONS)
-            self.assertIn(name, a.DASHBOARD_ACTIONS)
+            self.assertIn(name, machine_actions.OWNER_ACTIONS)
+            self.assertIn(name, machine_actions.DASHBOARD_ACTIONS)
 
 
 if __name__ == '__main__':

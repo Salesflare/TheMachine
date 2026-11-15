@@ -15,6 +15,7 @@ import next_actions
 import onboarding
 import slack_api
 from test_connectors import a, Response
+import machine.main as machine_main
 
 KEY = 't0team123:u0me12345'
 BROKER = {'id': 'work-slack', 'service': 'slack', 'transport': 'broker', 'boundary': 'work:Acme', 'team_id': 'T0TEAM123',
@@ -163,9 +164,9 @@ class SlackSignin(unittest.TestCase):
     def test_add_on_a_hosted_machine_signs_in_with_slack(self):
         """+ Add's Slack tile is Sign in with Slack on a hosted Machine too (Maton is the other way, on the account page)."""
         import assistant
-        app = object.__new__(assistant.App)
+        app = object.__new__(machine_main.App)
         app.config = {**self.config, 'manage_url': 'https://cp.example/account'}
-        app.store = assistant.Store(Path(self.config['database']))
+        app.store = machine_main.Store(Path(self.config['database']))
         found = {s['name']: s for s in app.action('connect_sources', {}, owner_dashboard=True)['sources']}
         self.assertIn('slack', a.HOSTED_SIGNINS)
         self.assertEqual(found['slack'].get('hosted_signin'), 'slack')

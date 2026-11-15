@@ -9,6 +9,10 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+import machine.app.preparation as machine_app_preparation
+import machine.main as machine_main
+import machine.sources.connectors as machine_sources_connectors
+import next_actions
 
 ROOT = Path(__file__).parent.parent
 spec = importlib.util.spec_from_file_location('work_personal_channel_assistant', ROOT / 'assistant.py')
@@ -28,26 +32,26 @@ def chat(source_id, text, thread):
 
 class Prompt(unittest.TestCase):
     def test_one_company_and_a_personal_account_the_review_may_place_work(self):
-        line = a.companies_prompt({'accounts': ACCOUNTS})
+        line = machine_sources_connectors.companies_prompt({'accounts': ACCOUNTS})
         self.assertIn('Work is Work', line)
         self.assertIn('home-chat, home-mail', line)
         self.assertIn('company=<its id> to suggest (work:Acme)', line)
         self.assertIn('never by a word or a name in the text alone', line)
         self.assertNotIn("The owner's companies", line)  # one company: nothing about mail for another one
-        self.assertEqual(a.companies_prompt({'accounts': ACCOUNTS[2:]}), '')  # no personal account
-        self.assertEqual(a.companies_prompt({'accounts': ACCOUNTS[:2]}), '')  # no company
+        self.assertEqual(machine_sources_connectors.companies_prompt({'accounts': ACCOUNTS[2:]}), '')  # no personal account
+        self.assertEqual(machine_sources_connectors.companies_prompt({'accounts': ACCOUNTS[:2]}), '')  # no company
 
     def test_a_company_whose_to_dos_are_personal_is_not_offered(self):
         side = [{**ACCOUNTS[2], 'scope': 'personal'}, ACCOUNTS[0]]
-        self.assertEqual(a.companies_prompt({'accounts': side}), '')
+        self.assertEqual(machine_sources_connectors.companies_prompt({'accounts': side}), '')
 
 
 class Placing(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'e.sqlite')
+        self.store = machine_main.Store(Path(self.temp.name) / 'e.sqlite')
         self.store.accounts = ACCOUNTS
-        self.app = object.__new__(a.App); self.app.store = self.store
+        self.app = object.__new__(machine_main.App); self.app.store = self.store
         self.app.config = {'accounts': ACCOUNTS, 'prepare_ahead': False, 'database': str(Path(self.temp.name) / 'e.sqlite')}
         self.store.config = self.app.config
         self.store.commit_page('home-chat', {}, [chat('w1', 'Can you send the signed quote for the pilot?', 'c1'),
@@ -103,11 +107,11 @@ class Placing(unittest.TestCase):
             self.assertEqual((self.scope(sid), json.loads(row['account_ids'])), ('work', ['acme-mail']))
             # the run is told to answer in its own chat, from the account it came in on, and not to ask for a move
             with self.store.connect() as db:
-                line = a.area_prompt(self.app.config, row['account_ids'], a.card_sources(db, sid), owner_started=True)
+                line = machine_app_preparation.area_prompt(self.app.config, row['account_ids'], machine_app_preparation.card_sources(db, sid), owner_started=True)
             self.assertIn('A reply in one of its own chats goes in that chat, from the account it came in on (home-chat), also one labeled Personal', line)
             self.assertIn('It stays Work.', line)
             # and the WhatsApp reply in that chat is valid for the Work to-do
-            action = a.next_actions.validate({'kind': 'whatsapp', 'account_id': 'home-chat', 'chat_id': 'c1', 'body': 'Sent it, thanks!'},
+            action = next_actions.validate({'kind': 'whatsapp', 'account_id': 'home-chat', 'chat_id': 'c1', 'body': 'Sent it, thanks!'},
                                              self.app.config, json.loads(row['account_ids']), whatsapp_chats={'c1': {'account_id': 'home-chat', 'name': 'Sam'}})
             self.assertEqual((action['kind'], action['account_id']), ('whatsapp', 'home-chat'))
 
@@ -115,11 +119,11 @@ class Placing(unittest.TestCase):
         replied = {'<order@shop.example>': {'account_id': 'home-mail', 'thread_id': 't9', 'homes': {}}}
         draft = {'kind': 'email', 'account_id': 'home-mail', 'to': ['orders@shop.example'], 'subject': 'Re: Your order',
                  'body': 'Thanks, the invoice is fine.', 'in_reply_to': '<order@shop.example>'}
-        action = a.next_actions.validate(draft, self.app.config, ['acme-mail'], replied=replied)
+        action = next_actions.validate(draft, self.app.config, ['acme-mail'], replied=replied)
         self.assertEqual((action['account_id'], action['from']), ('home-mail', 'robin@home.example'))
         new = {k: v for k, v in draft.items() if k != 'in_reply_to'}
         with self.assertRaises(ValueError):  # a new email is not its thread: it goes from the area's accounts
-            a.next_actions.validate(new, self.app.config, ['acme-mail'], replied=replied)
+            next_actions.validate(new, self.app.config, ['acme-mail'], replied=replied)
 
     def test_an_unmoved_card_is_placed_on_a_later_signal(self):
         sid = self.suggest()
