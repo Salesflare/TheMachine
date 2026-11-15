@@ -11,8 +11,9 @@ bridge swap waits for it on every update.
 
 stuck() says when that is so. The installer then stops waiting for the rebuild (installer.gateway_idle), and the
 service opens one quiet window a night (step): from `start` local time until `end`, The Machine's background turns wait
-(App.background_pause) and the OpenClaw jobs that run agent turns (the heartbeat among them) are turned off. OpenClaw's
-own rebuild then runs to the end. The window closes once the saved index has the format its model wants, or at `end`,
+(App.background_pause) and the OpenClaw jobs that run agent turns are turned off. OpenClaw's
+own rebuild then runs to the end. OpenClaw's own heartbeat monitor ("heartbeat:<agent>") is the exception: OpenClaw
+refuses any edit to it from a cron client, so it keeps running. The window closes once the saved index has the format its model wants, or at `end`,
 and every job it turned off is turned on again. The owner's own turns (chat, Do it, Review now) still go; one only
 makes that night's try start again.
 
@@ -40,6 +41,8 @@ REINDEX_FRESH = 120  # seconds since the last write to a rebuild's copy within w
 WINDOW = (23, 7)  # local hours: the quiet window opens in the hour from `start` and always closes at `end`
 TURN_KINDS = ('agentTurn', 'heartbeat')  # OpenClaw jobs that run an agent turn; scripts and commands keep running
 STATE = 'memory-rebuild.json'  # in the data folder: the window that is open or was last open, and the jobs it turned off
+SYSTEM_MONITOR = 'heartbeat:'  # declarationKey of OpenClaw's own heartbeat jobs, which no cron client may edit
+CLOSE_TRIES = 6  # looks (ten minutes apart) that try to turn a closed window's jobs on again before it gives up
 
 
 def local_search(settings):
@@ -192,21 +195,32 @@ def holding(folder, now=None):
     return None
 
 
-def turn_jobs(openclaw, run=subprocess.run):
-    """The enabled OpenClaw jobs that run an agent turn (TURN_KINDS), by id; None when the Gateway can't say."""
+def list_jobs(openclaw, run=subprocess.run):
+    """Every OpenClaw job, disabled ones too (`cron list` hides those without --all); None when the Gateway can't say."""
     try:
-        result = run([openclaw, 'cron', 'list', '--json'], capture_output=True, text=True, timeout=60)
+        result = run([openclaw, 'cron', 'list', '--all', '--json'], capture_output=True, text=True, timeout=60)
         jobs = json.loads(result.stdout or 'null').get('jobs') if result.returncode == 0 else None
     except (OSError, ValueError, AttributeError, subprocess.SubprocessError):
         return None
     if not isinstance(jobs, list):
         return None
-    return [job['id'] for job in jobs if isinstance(job, dict) and job.get('enabled') and isinstance(job.get('id'), str)
-            and ((job.get('payload') or {}).get('kind') in TURN_KINDS)]
+    return [job for job in jobs if isinstance(job, dict) and isinstance(job.get('id'), str)]
+
+
+def turn_jobs(openclaw, run=subprocess.run):
+    """The enabled OpenClaw jobs that run an agent turn (TURN_KINDS), by id; None when the Gateway can't say.
+    OpenClaw's own heartbeat monitors (declarationKey "heartbeat:<agent>") are left out: OpenClaw refuses every edit to
+    them from a cron client ("system-owned monitor jobs cannot be edited"), so they can't be turned off."""
+    jobs = list_jobs(openclaw, run)
+    if jobs is None:
+        return None
+    return [job['id'] for job in jobs if job.get('enabled') and (job.get('payload') or {}).get('kind') in TURN_KINDS
+            and not str(job.get('declarationKey') or '').startswith(SYSTEM_MONITOR)]
 
 
 def switch_jobs(openclaw, ids, on, run=subprocess.run):
-    """Turn these OpenClaw jobs off or on again; the ids that did not change."""
+    """Turn these OpenClaw jobs off or on again; the ids that are not in that state. The exit code alone doesn't say:
+    when a switch fails, `cron list` does. A job already in the wanted state, or one that is gone, counts as done."""
     failed = []
     for job in ids:
         try:
@@ -216,6 +230,11 @@ def switch_jobs(openclaw, ids, on, run=subprocess.run):
             ok = False
         if not ok:
             failed.append(job)
+    if failed:
+        jobs = list_jobs(openclaw, run)
+        if jobs is not None:
+            enabled = {job['id']: bool(job.get('enabled')) for job in jobs}
+            failed = [job for job in failed if job in enabled and enabled[job] != on]
     return failed
 
 
@@ -241,9 +260,16 @@ def finished(state, folders, now):
 
 
 def close(folder, openclaw, state, why, now, run=subprocess.run):
-    """Turn the window's jobs on again; the window stays closing (and holds nothing) until all of them are."""
+    """Turn the window's jobs on again; the window stays closing (and holds nothing) until all of them are, or until
+    CLOSE_TRIES looks have tried: then it logs once and gives up, and the ones left stay in `not_on`."""
+    tries = int(state.get('tries') or 0) + 1
     left = switch_jobs(openclaw, state.get('jobs') or [], True, run)
-    write_state(folder, {**state, 'jobs': left, 'closed': now, 'outcome': why})
+    closing = {**state, 'jobs': left, 'closed': state.get('closed') or now, 'outcome': why, 'tries': tries}
+    if left and tries >= CLOSE_TRIES:
+        write_state(folder, {**closing, 'jobs': [], 'not_on': left})
+        LOG.warning('memory rebuild window gave up turning jobs on again jobs_left=%s tries=%s', len(left), tries)
+        return
+    write_state(folder, closing)
     if left:
         LOG.warning('memory rebuild window closing jobs_left=%s', len(left))
     else:
