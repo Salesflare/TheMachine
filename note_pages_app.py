@@ -229,8 +229,10 @@ class NotesApp:
                 db.execute('BEGIN IMMEDIATE')
                 topic_notes.ensure(db)
                 section_notes.ensure(db)
-                convs = topic_notes.conversations(db, accounts, today(), slack)
+                gone = set()
+                convs = topic_notes.conversations(db, accounts, today(), slack, gone=gone)
                 topic_notes.refresh(db, convs)
+                topic_notes.forget(db, gone)  # a meeting's mail placed before: it stays in Calendar
                 topic_notes.ran(db, now())
             for n in range(calls):
                 if n and self.background_pause(job='topic-notes'):
