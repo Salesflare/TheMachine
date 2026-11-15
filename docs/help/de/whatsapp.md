@@ -1,61 +1,61 @@
 ---
 title: WhatsApp
 area: connections
-summary: Deine WhatsApp-Chats, gelesen als verknüpftes Gerät. Antworten erst nach deiner Freigabe.
+summary: Deine WhatsApp-Chats, gelesen über ein verknüpftes Gerät. Antworten werden erst nach deiner Freigabe gesendet.
 covers: connector:whatsapp
 code: onboarding.py, next_actions.py, whatsapp_images.py
 site: Show the QR code, Get a code, On your phone? Link with a code instead, Remove
-translated: 881c555219a98f0f
+translated: 4ceded6544e535eb
 ---
-## Was es liest
+## Was gelesen wird
 
-Deine WhatsApp-Chats, als verknüpftes Gerät des WhatsApp auf deinem Handy, wie WhatsApp auf einem Computer. Beim Verbinden schickt WhatsApp auch deine älteren Chats, oft über Jahre. Deine Machine behält alles, und nur Nachrichten der letzten 7 Tage werden zu Aufgaben.
+Deine WhatsApp-Chats, als verknüpftes Gerät deines WhatsApp-Kontos auf dem Handy, ähnlich wie WhatsApp auf einem Computer. Wenn du die Verbindung herstellst, sendet WhatsApp auch ältere Chats, oft mehrere Jahre davon. Deine Machine speichert alles. Nur Nachrichten aus den letzten 7 Tagen werden zu Aufgaben.
 
-Ein Foto, eine Sprachnachricht oder eine Datei ohne Beschriftung erscheint als das, was es ist, etwa „Foto“, mit einem Symbol. Hinweise von WhatsApp selbst, etwa zur Verschlüsselung oder wenn jemand einer Gruppe beitritt, haben keinen Text und bleiben außen vor.
+Ein Foto, eine Sprachnachricht oder eine Datei ohne Beschriftung wird als das angezeigt, was es ist, zum Beispiel als „Foto“ mit dem entsprechenden Symbol. WhatsApps eigene Mitteilungen, etwa der Hinweis zur Verschlüsselung oder dass jemand einer Gruppe beigetreten ist, enthalten keinen Text und werden ausgelassen.
 
 ## Fotos lesen
 
-Aus, bis du es einschaltest. Öffne unter **Verbindungen** WhatsApp, dann **Details**, und schalte **Fotos lesen** ein, und The Machine liest die Fotos in deinen Arbeitschats: einen Beleg, einen Screenshot, ein Foto von einem Brief oder einem Formular. **Auch in privaten Chats** liest auch die in deinen privaten Chats. Ob ein Chat Arbeit oder privat ist, sieht sie so wie beim Teilen, ein Chat mit der Familie bleibt also privat.
+Die Funktion ist deaktiviert, bis du sie einschaltest. Öffne unter **Verbindungen** WhatsApp und dann **Details**. Aktiviere **Fotos lesen**, damit The Machine die Fotos in deinen beruflichen Chats liest: einen Beleg, einen Screenshot, ein Foto von einem Brief oder einem Formular. Mit **Auch in privaten Chats** werden auch die Fotos in deinen privaten Chats gelesen. Ob ein Chat beruflich oder privat ist, richtet sich danach, wie er beim Teilen eingeordnet wird. Ein Chat mit der Familie bleibt also privat.
 
-The Machine lädt jedes Foto einmal herunter und behält es auf deiner Machine wie einen E-Mail-Anhang: verschlüsselt, wenn der Nachrichtenschutz an ist, und gelöscht, wenn seine Nachricht verschwindet. Ihr eigenes Modell liest, was das Foto zeigt und den Text darin. Das gilt als Teil der Nachricht, nie als Anweisung. JPEG, PNG und WebP bis 5 MB. Ein Einmalcode auf einem Foto bleibt außen vor.
+The Machine lädt jedes Foto einmal herunter und speichert es auf deiner Machine wie einen E-Mail-Anhang: Bei aktiviertem Nachrichtenschutz ist es verschlüsselt und wird gelöscht, sobald die zugehörige Nachricht gelöscht wird. Das eigene Modell von The Machine liest, was auf dem Foto zu sehen ist, und den darin enthaltenen Text. Beides gilt als Teil der Nachricht, niemals als Anweisung. JPEG, PNG und WebP bis zu 5 MB. Ein einmaliger Code auf einem Foto wird ausgelassen.
 
 Die Aufgabe und die Nachricht zeigen das Foto. Tippe darauf, um es groß zu sehen.
 
-## Was es senden kann
+## Was gesendet werden kann
 
-Einen Text in einen Chat, den es schon gibt, erst nachdem du ihn bei der Aufgabe freigegeben hast. Eine Antwort auf die WhatsApp-Nachricht, aus der eine Aufgabe kam, zitiert diese Nachricht, wenn danach noch mehr geschrieben wurde, oder in einer Gruppe; im Entwurf steht **Als Antwort**.
+Einen Text oder eine Datei mit optionaler Beschriftung an einen bestehenden Chat, aber erst, nachdem du die Aufgabe freigegeben hast. Bevor du etwas sendest, zeigt die Aufgabe die Datei an, die du öffnen kannst. Eine Datei darf bis zu 18 MB groß sein. Eine Antwort auf die WhatsApp-Nachricht, von der eine Aufgabe stammt, zitiert diese Nachricht, wenn danach noch etwas geschrieben wurde oder wenn sie in einer Gruppe gesendet wurde. Im Entwurf steht **Als Antwort**.
 
-Kam eine Aufgabe per E-Mail rein, aber du schreibst mit der Person über WhatsApp, sag es im Chat der Aufgabe. The Machine findet euren bestehenden Chat und stellt den Entwurf auf WhatsApp um, damit du ihn prüfst und sendest. Sie startet nie einen neuen Chat.
+Wenn eine Aufgabe per E-Mail eingegangen ist, du aber mit der Person auf WhatsApp schreibst, sag das im Chat der Aufgabe. The Machine findet den bestehenden Chat mit der Person und stellt den Entwurf auf WhatsApp um, damit du ihn prüfen und senden kannst. Ein neuer Chat wird nie begonnen.
 
-WhatsApp bietet dafür keinen offiziellen Weg. Lesen und ab und zu eine Antwort, die du freigegeben hast, machen so gut wie nie Probleme; massenhaftes oder automatisches Senden kann zur Sperrung eines Kontos führen.
+WhatsApp bietet dafür keine offizielle Möglichkeit. Lesen und gelegentliche, von dir freigegebene Antworten führen sehr wahrscheinlich zu keinen Problemen. Massenversand oder automatisiertes Senden kann dazu führen, dass ein Konto gesperrt wird.
 
 ## Verbinden
 
 Auf einer gehosteten Machine:
 
-1. Öffne im Dashboard **Verbindungen**, dann **Chat**, und wähle WhatsApp.
+1. Öffne im Dashboard **Verbindungen**, dann **Chat**, und wähle WhatsApp aus.
 2. Tippe auf **QR-Code zeigen**.
-3. Öffne auf deinem Handy in WhatsApp Einstellungen, Verknüpfte Geräte, Gerät hinzufügen, und scanne den QR-Code.
-4. Innerhalb einer Minute ist WhatsApp verbunden. Dein Chatverlauf kommt danach weiter an, und die Karte zählt die Nachrichten, solange das läuft.
-   Dauert das Verbinden zu lange, sagt sie es nach ein paar Minuten. Tippe auf **Erneut versuchen**, um dort weiterzumachen, wo es stehen blieb.
+3. Öffne auf deinem Handy in WhatsApp die Einstellungen, Verknüpfte Geräte und Gerät verknüpfen. Scanne dann den QR-Code.
+4. WhatsApp wird innerhalb einer Minute als verbunden angezeigt. Danach wird weiterhin dein Chatverlauf geladen. Auf der zugehörigen Karte wird angezeigt, wie viele Nachrichten dabei verarbeitet wurden.
+   Wenn das Verbinden zu lange dauert, wird das nach einigen Minuten angezeigt. Tippe auf **Erneut versuchen**, um dort weiterzumachen, wo der Vorgang angehalten wurde.
 
-Du richtest es auf deinem Handy ein und hast keinen zweiten Bildschirm zum Scannen? Öffne **Am Handy? Stattdessen mit einem Code verknüpfen**, gib deine Nummer ein und tippe auf **Code anfordern**. WhatsApp fragt dann nach diesem Code.
+Richtest du WhatsApp auf deinem Handy ein und hast keinen zweiten Bildschirm zum Scannen? Öffne **Am Handy? Stattdessen mit einem Code verknüpfen**, gib deine Nummer ein und tippe auf **Code holen**. WhatsApp fragt dich dann nach dem Code.
 
-Auf deinem eigenen Computer: Öffne **Verbindungen**, dann **Chat**, wähle WhatsApp, gib deine Handynummer mit Ländervorwahl ein und tippe auf **Verbinden**. Es zeigt einen Code. Öffne auf deinem Handy in WhatsApp Einstellungen, Verknüpfte Geräte, Gerät hinzufügen, dann **Stattdessen mit Telefonnummer verknüpfen**, und gib den Code ein.
+Auf deinem eigenen Computer: Öffne **Verbindungen**, dann **Chat**, wähle WhatsApp aus, gib deine Telefonnummer mit Ländervorwahl ein und tippe auf **Verbinden**. Es wird ein Code angezeigt. Öffne auf deinem Handy in WhatsApp die Einstellungen, Verknüpfte Geräte und Gerät verknüpfen. Tippe dann auf **Stattdessen mit Telefonnummer verknüpfen** und gib den Code ein.
 
-Oder führe `assistant connect whatsapp` aus und scanne den Code, den es im Terminal zeigt. Beim ersten Mal bietet es an, die WhatsApp-Verbindung zu installieren, einen festgelegten Build, geprüft anhand seiner Prüfsumme ([Quelle](https://github.com/Salesflare/wacli)).
+Oder führe `assistant connect whatsapp` aus und scanne den Code, der im Terminal angezeigt wird. Beim ersten Mal kannst du den WhatsApp-Connector installieren. Dabei handelt es sich um einen angehefteten Build, der anhand seiner Prüfsumme überprüft wurde ([Quelle](https://github.com/Salesflare/wacli)).
 
-Unter Verknüpfte Geräte steht sie als The Machine. Eine früher verknüpfte Machine behält dort ihren alten Namen, bis du sie neu verknüpfst.
+Unter „Verknüpfte Geräte“ wird The Machine angezeigt. Eine Machine, die schon einmal verknüpft war, behält dort ihren alten Namen, bis du sie erneut verknüpfst.
 
-## Bilder
+## Profilbilder
 
-The Machine fragt WhatsApp nach den Profilbildern von Personen in deinem Graph, die keins haben, höchstens 50 am Tag, über die Synchronisierung, die WhatsApp aktuell hält. An die Personen wird nichts gesendet. Wer sein Bild vor dir verbirgt, bleibt ohne.
+The Machine fragt WhatsApp über die Synchronisierung, die WhatsApp aktuell hält, nach den Profilbildern von Personen in deinem Graph, wenn diese noch keins haben. Es werden höchstens 50 pro Tag angefragt. An diese Personen wird nichts gesendet. Wer sein Bild vor dir verbirgt, bleibt ohne Profilbild.
 
 ## Entfernen
 
-- Auf einer gehosteten Machine: Tippe auf deiner Einrichtungsseite daneben auf **Entfernen**. Deine Machine trennt die Verknüpfung selbst und löscht, was sie für WhatsApp gespeichert hat.
-- Auf deinem eigenen Computer: **Verbindungen**, WhatsApp öffnen, **Details**, dann **Trennen**. Trenn die Verknüpfung dann auch auf deinem Handy.
+- Auf einer gehosteten Machine: Tippe auf der Einrichtungsseite neben WhatsApp auf **Entfernen**. Deine Machine hebt die Verknüpfung auf und löscht die gespeicherten WhatsApp-Daten.
+- Auf deinem eigenen Computer: Öffne **Verbindungen**, dann WhatsApp und **Details**. Tippe anschließend auf **Trennen**. Hebe die Verknüpfung danach auch auf deinem Handy auf.
 
-## Verknüpfung in WhatsApp trennen
+## Verknüpfung in WhatsApp aufheben
 
-Öffne auf deinem Handy in WhatsApp Einstellungen, Verknüpfte Geräte, tippe auf deine Machine und melde sie ab.
+Öffne auf deinem Handy in WhatsApp die Einstellungen und dann Verknüpfte Geräte. Tippe auf deine Machine und melde sie ab.
