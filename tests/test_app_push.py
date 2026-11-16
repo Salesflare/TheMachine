@@ -11,7 +11,6 @@ from seams import patch_everywhere  # noqa: E402
 import datetime as dt
 import fleet
 import machine.actions as machine_actions
-import machine.app.serve as machine_app_serve
 import machine.config as machine_config
 import machine.delivery.deliver as machine_delivery_deliver
 import machine.delivery.push as machine_delivery_push
@@ -19,10 +18,9 @@ import machine.delivery.telegram as machine_delivery_telegram
 import machine.main as machine_main
 import qr
 import security_levels
-import signal
+import served  # noqa: E402
 import sources
 import timeutil
-import machine.web.loopback as machine_web_loopback
 
 SUB = {'endpoint': 'https://fcm.googleapis.com/fcm/send/abc', 'keys': {'p256dh': 'B' + 'x' * 86, 'auth': 'y' * 22}}
 TOKEN = 'fcm-token:' + 'A' * 140
@@ -232,21 +230,11 @@ class AppPush(unittest.TestCase):
         app.graph_dirty = threading.Event()
         app.owner_token = 'owner-key'
         app.config = {'accounts': [], 'tailscale_owner': 'owner@example.com', 'dashboard_host': 'machine.example:8443', 'port': 0, 'http_timeout': 1}
-        servers, real = [], machine_web_loopback.Server
-        def capture(*args, **kwargs):
-            servers.append(real(*args, **kwargs)); return servers[-1]
-        # The service reads the agent's transcripts once at start (review_requeue); here that is no file, never the computer's own
-        for patcher in (patch.object(machine_web_loopback, 'Server', side_effect=capture), patch.object(signal, 'signal'),
-                        patch.object(machine_main.App, 'preparation_worker'), patch.object(machine_main.App, 'delivery_worker'),
-                        patch.object(machine_app_serve, 'AGENT_DB', Path(self.temp.name) / 'no-agent.sqlite')):
-            patcher.start(); self.addCleanup(patcher.stop)
-        thread = threading.Thread(target=app.serve, daemon=True)
-        thread.start()
-        while not servers:
-            pass
-        self.addCleanup(lambda: (app.stop.set(), thread.join(5)))
+        self.app = app
+        # workers stubbed, the start's transcript read (review_requeue) too, every thread joined before the folder goes
+        port = served.serve(self)
         def get(path, login='owner@example.com'):
-            conn = http.client.HTTPConnection('127.0.0.1', servers[0].server_address[1], timeout=10)
+            conn = http.client.HTTPConnection('127.0.0.1', port, timeout=10)
             conn.request('GET', path, headers={'Host': 'machine.example:8443', 'Tailscale-User-Login': login})
             r = conn.getresponse()
             body = json.loads(r.read())

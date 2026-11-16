@@ -8,7 +8,8 @@ import threading
 import unittest
 from pathlib import Path
 from unittest.mock import patch
-import machine.web.loopback as machine_web_loopback
+
+import served  # noqa: E402
 
 spec = importlib.util.spec_from_file_location('graph_parts_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
@@ -26,17 +27,7 @@ class GraphParts(unittest.TestCase):
         self.app.config = {'accounts': [], 'tailscale_owner': 'owner@example.com', 'dashboard_host': 'machine.example:8443', 'port': 0, 'http_timeout': 1}
 
     def serve(self):
-        servers, real = [], machine_web_loopback.Server
-        def capture(*args, **kwargs):
-            servers.append(real(*args, **kwargs)); return servers[-1]
-        for patcher in (patch.object(machine_web_loopback, 'Server', side_effect=capture), patch.object(a.signal, 'signal'),
-                        patch.object(a.App, 'preparation_worker'), patch.object(a.App, 'delivery_worker')):
-            patcher.start(); self.addCleanup(patcher.stop)
-        thread = threading.Thread(target=self.app.serve, daemon=True); thread.start()
-        while not servers:
-            pass
-        self.addCleanup(lambda: (self.app.stop.set(), thread.join(5)))
-        return servers[0].server_address[1]
+        return served.serve(self)  # workers stubbed, every thread joined before the folder goes
 
     def get(self, port, path):
         conn = http.client.HTTPConnection('127.0.0.1', port, timeout=10)

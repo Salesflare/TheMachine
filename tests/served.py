@@ -4,13 +4,15 @@
 also starts the account readers and every background worker; tests over the request handler need none of them, and
 they would write into the test's temporary folder, also while it is removed after the test ("Directory not empty").
 So they are stubbed, the error log serve() hangs on the shared logger comes off again, and on cleanup serve() and every
-thread it started (the server's request threads too) are joined, with a check that each stopped and the server closed.
+thread it started (the server's request threads too) are joined, with a check that each stopped and the server closed;
+the requests' writes on the side (machine/timing.py aside) are made by then too.
 
 Register the temporary folder's cleanup before calling this: cleanups run last in, first out, so this one runs first."""
 import signal
 import threading
 from unittest.mock import patch
 
+from machine import timing as request_timing
 from machine.config import LOG
 import machine.main as machine_main
 import machine.web.loopback as machine_web_loopback
@@ -59,7 +61,10 @@ def serve(test, a=None, patches=()):
         test.app.stop.set()
         thread.join(10)
         test.assertFalse(thread.is_alive(), 'serve() still running after the test')
-        for other in set(threading.enumerate()) - before:
+        # a request's writes on the side (a visit counted, a first view marked) go to the store in this test's folder
+        # on one thread the whole process shares: those made, not that thread ended
+        test.assertTrue(request_timing.aside_settled(), 'writes on the side still waiting after the test')
+        for other in set(threading.enumerate()) - before - {request_timing._ASIDE_THREAD}:
             other.join(10)
             test.assertFalse(other.is_alive(), f'{other.name} still running after the test')
         test.assertEqual(servers[0].socket.fileno(), -1, 'serve() did not close its server')

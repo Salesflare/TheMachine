@@ -4,13 +4,13 @@ Machine") that lands in the error reports. An email with no full copy to read st
 import http.client
 import importlib.util
 import json
-import sys
 import tempfile
 import threading
 import unittest
 from pathlib import Path
 from unittest.mock import patch
-import machine.web.loopback as machine_web_loopback
+
+import served  # noqa: E402
 
 spec = importlib.util.spec_from_file_location('email_view_errors_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
@@ -23,23 +23,10 @@ class EmailViewErrors(unittest.TestCase):
         self.app.store, self.app.token, self.app.stop = a.Store(Path(self.temp.name) / 'e.sqlite'), 'test-token', threading.Event()
         self.app.graph_dirty = threading.Event()
         self.app.owner_token = 'owner-key'
-        self.app.config = {'accounts': [], 'tailscale_owner': 'owner@example.com', 'dashboard_host': 'machine.example:8443', 'port': 0, 'http_timeout': 1}
-        self.port = self.serve()
-
-    def serve(self):
-        servers, real = [], machine_web_loopback.Server
-        def capture(*args, **kwargs):
-            servers.append(real(*args, **kwargs)); return servers[-1]
-        # The service reads the agent's transcripts once at start (review_requeue); here that is no file, never the computer's own
-        for patcher in (patch.object(machine_web_loopback, 'Server', side_effect=capture), patch.object(a.signal, 'signal'),
-                        patch.object(a.App, 'preparation_worker'), patch.object(a.App, 'delivery_worker'),
-                        patch.object(sys.modules['machine.app.serve'], 'AGENT_DB', Path(self.temp.name) / 'no-agent.sqlite')):
-            patcher.start(); self.addCleanup(patcher.stop)
-        thread = threading.Thread(target=self.app.serve, daemon=True); thread.start()
-        while not servers:
-            pass
-        self.addCleanup(lambda: (self.app.stop.set(), thread.join(5)))
-        return servers[0].server_address[1]
+        self.app.config = {'accounts': [], 'database': str(Path(self.temp.name) / 'e.sqlite'), 'tailscale_owner': 'owner@example.com',
+                           'dashboard_host': 'machine.example:8443', 'port': 0, 'http_timeout': 1}
+        # serve()'s workers are stubbed and every thread it started is joined before the folder goes (tests/served.py)
+        self.port = served.serve(self)
 
     def get(self):
         conn = http.client.HTTPConnection('127.0.0.1', self.port, timeout=10)
