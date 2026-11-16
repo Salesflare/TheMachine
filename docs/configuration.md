@@ -54,6 +54,7 @@
 | `browser_novnc` | `~/.local/share/machine-browser/web` | The noVNC files the dashboard serves for `browser_vnc` (`python3 browser_viewer.py web DIR [NOVNC]` builds them) |
 | `browser_lease_script` | `integrations/browser-lease.py` | Lease helper Do it runs use for the shared browser |
 | `delivery_enabled` | `false` | Send to-dos to Telegram (leave off while you test) |
+| `notes_enabled` | `false` | Notes in the Graph, written from your messages ([notes](notes.md)). Off: no Notes anywhere and no notes model calls; kept notes stay in the database, and trips and events still show in Calendar. The first start with it on sorts the notes from conversations again and moves the earlier ones to an Earlier notes folder |
 | `delivery_batch_size` | `5` | To-dos per delivery pass |
 | `digest_at` | `08:30` | Morning digest time, but at least 5 minutes after `work_hours.morning` so the snoozes that came back are in it; also when work held over a day off goes out |
 | `evening_at` | none: 15 minutes before `work_hours.end` | Evening digest time on work days: what got done and what's open for the next work day (Settings, Notifications, Work hours, or `assistant hours --evening 17:30`; `auto` goes back to the default). Turn it off in its Notifications row |

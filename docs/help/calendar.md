@@ -3,7 +3,7 @@ title: Calendar
 area: calendar
 summary: The week ahead in one place: meetings, to-dos that are due, snoozed to-dos and promises.
 covers: tab:calendar
-code: dashboard.html, meeting_notes.py, meeting_writer.py, calendar_clashes.py, meeting_prep.py
+code: dashboard.html, meeting_notes.py, meeting_writer.py, calendar_clashes.py, meeting_prep.py, trip_notes.py, event_notes.py, bookings.py
 order: 1
 ---
 ## What it shows
@@ -14,7 +14,7 @@ Your days from today on, with:
 - to-dos due that day, and snoozed to-dos on the day they come back,
 - check-ins on work you handed off,
 - promises with a date,
-- [notes](notes.md) with dates, like a trip.
+- [trips and events](calendar.md#trips-and-events) from your booking and ticket mail.
 
 A meeting on two calendars shows once. A calendar someone shared with you shows their events muted, with their first name; those never make a to-do. All-day and multi-day events show as all day, on each day they cover. A trip is first on each of its days in Agenda, and one band across its days in Week and Month, like "Lisbon trip".
 
@@ -34,11 +34,23 @@ In the week grid, events at the same time sit side by side while each stays read
 
 ## Open something
 
-Click a row to open its to-do's chat, the promise, the note, or the meeting. A meeting you can't change here, like someone else's or one with guests, shows its details: when, where and who. Someone your Graph knows, and the organizations and projects the meeting is on, are links to their page. **Open in Google Calendar** (or **Open in Outlook**) under them opens it there. Looking changes nothing.
+Click a row to open its to-do's chat, the promise, the trip or event, or the meeting. A meeting you can't change here, like someone else's or one with guests, shows its details: when, where and who. Someone your Graph knows, and the organizations and projects the meeting is on, are links to their page. **Open in Google Calendar** (or **Open in Outlook**) under them opens it there. Looking changes nothing.
 
 A meeting room booked on a meeting shows under where, never as a person or in your Graph.
 
 A meeting link shows as its service, like Zoom, Google Meet or Teams, or as **Video call**. Open the meeting to join.
+
+## Trips and events
+
+When a flight, hotel, train, bus, ferry or rental car booking reaches your mail, your Machine adds it to a trip. Bookings for one journey go on one trip: the way out, the hotel and the way back. The trip shows as one band across its days. Open it for the booking code, seat and ticket of each booking, in time order.
+
+Tickets for a concert, a match, a festival or a conference make an event, one per event, with where it is, the booking code, seat and number of tickets. A second order for the same event goes on the same one. An event booked on your work mailbox is Work, otherwise it's Personal.
+
+- Each line says who the booking came from, like **From Example Tickets**, and opens that mail.
+- If a to-do came from the mail, like paying for the tickets, **Open the to-do** shows it.
+- A changed booking updates its line, and a canceled one goes. When every booking is canceled, the trip or event goes too.
+
+It reads the details airlines, hotels, booking sites and ticket sellers put in their confirmation mail, without AI. A mail without them makes nothing. Booking mail from the year of [history](history.md) your Machine keeps is read in the background once that history is in.
 
 ## Meeting notes and transcript
 

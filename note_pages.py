@@ -58,9 +58,11 @@ KINDS = {
     'health': {'label': 'Health', 'dated': False, 'personal': True},  # health_notes.py: a part of the owner's health, under Health
     'kids': {'label': 'Kids', 'dated': False, 'personal': True},  # kids_notes.py: a part of the owner's children's lives, under Kids
     'event': {'label': 'Event', 'dated': True, 'personal': False},  # event_notes.py: one event the owner has tickets for, under Events
-    'topic': {'label': 'Note', 'dated': False, 'personal': False},  # topic_notes.py: an ongoing matter, from the conversations about it
+    'topic': {'label': 'Note', 'dated': False, 'personal': False},  # topic_notes.py: a subject, from the conversations and notifications about it
     'memory': {'label': 'Note', 'dated': False, 'personal': False},  # memory_seed.py: a subject from the owner's OpenClaw memory pages
+    'archived': {'label': 'Note', 'dated': False, 'personal': False},  # archive: a note kept before the notes started over, as it was
 }
+ARCHIVE = 'Earlier notes'  # the folder archive() puts them in
 OWNER_KINDS = ('note',)        # what the owner can start by hand (New note)
 # The guidance The Machine builds the tree by. The starting tree: the top notes its own notes go under, each made only
 # when a first real note lands in it (never an empty one). PLACING: the rules any code or model turn that adds notes
@@ -407,15 +409,26 @@ def add_kept(db, note_id, lines, by, at):
             continue
         text = _text(str(line['text'])[:LINE_MAX])
         kept = _links(db, text, None, row['id'])
-        ids.append(db.execute('INSERT INTO note_page_lines(note_id,key,pos,at,text,data,links,by,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?)',
-                              (row['id'], key, pos + len(ids), _when(line.get('at')), text,
+        ids.append(db.execute('INSERT INTO note_page_lines(note_id,key,pos,at,item,text,data,links,event_id,by,created_at,updated_at) '
+                              'VALUES(?,?,?,?,?,?,?,?,?,?,?,?)',
+                              (row['id'], key, pos + len(ids), _when(line.get('at')), line.get('item'), text,
                                json.dumps(line['data'], sort_keys=True) if line.get('data') else None, json.dumps(kept) if kept else None,
-                               by, at, at)).lastrowid)
+                               line.get('event_id'), by, at, at)).lastrowid)
         _index(db, ids[-1], row['id'], kept)
         have.add(key)
     if ids:
         _touch(db, row['id'], at)
     return ids
+
+
+def drop_kept(db, note_id, key, by):
+    """A line add_kept brought in (by: from where) that turned out not to be about its note goes, as if never added;
+    the owner's lines and a kind's own lines stay."""
+    if by in ('owner', 'machine'):
+        return
+    for r in db.execute('SELECT id FROM note_page_lines WHERE note_id=? AND key=? AND by=?', (int(note_id), key, by)).fetchall():
+        db.execute('DELETE FROM note_page_links WHERE line_id=?', (r['id'],))
+        db.execute('DELETE FROM note_page_lines WHERE id=?', (r['id'],))
 
 
 def _line_row(db, line_id, removed=False):
@@ -593,6 +606,28 @@ def _folder(db, path, at):
         parent = db.execute("INSERT INTO note_pages(kind,key,title,area,parent_id,by,created_at,updated_at) VALUES('note',?,?,?,?,'machine',?,?)",
                             (key, _title(t(path[depth - 1])), PERSONAL, parent, at, at)).lastrowid
     return parent
+
+
+def archive(db, kinds, at):
+    """The notes of these kinds The Machine kept go to the ARCHIVE folder, as they were: their lines and written page
+    stay and open as before, nothing is deleted, and no sync or page writer touches them again (kind 'archived', key
+    'archived:<old key>'). Not one the owner renamed, moved, wrote in or keeps notes of their own under: those stay where
+    they are, as they are. Returns how many went."""
+    kinds = [k for k in kinds if k in KINDS and k not in OWNER_KINDS]
+    if not kinds:
+        return 0
+    rows = db.execute(
+        f"SELECT p.id,p.key FROM note_pages p WHERE p.kind IN ({','.join('?' * len(kinds))}) AND p.by='machine' AND p.removed_at IS NULL "
+        'AND p.merged_into IS NULL AND p.owner_title IS NULL AND p.owner_parent=0 '
+        "AND NOT EXISTS(SELECT 1 FROM note_page_lines l WHERE l.note_id=p.id AND l.by='owner' AND l.removed_at IS NULL) "
+        "AND NOT EXISTS(SELECT 1 FROM note_pages c WHERE c.parent_id=p.id AND c.removed_at IS NULL AND c.kind NOT IN ("
+        + ','.join('?' * len(kinds)) + '))', (*kinds, *kinds)).fetchall()
+    if not rows:
+        return 0
+    folder = _folder(db, [ARCHIVE], at)
+    for r in rows:
+        db.execute("UPDATE note_pages SET kind='archived',key=?,parent_id=? WHERE id=?", ('archived:' + str(r['key'] or r['id']), folder, r['id']))
+    return len(rows)
 
 
 def drop_empty_folder(db, path):

@@ -508,7 +508,7 @@ def make_handler(app):
             # a page's first read (dashboard.html statusEarly), which may take the status kept a moment ago (StatusApp.status_recent)
             recent = self.headers.get('X-Status-Kept') == '1'
             self.output(200, status_delta.changes({**dashboard_status(app.action('status', {'full': True, 'done': DONE_FIRST, 'recent': recent})), 'talk_ready': app.talk_ready(), 'ui_version': dashboard_version(), 'source_url': source_url(), 'meaning': {'on': bool(embeddings.settings(app.config))}, 'fixed': list(getattr(getattr(app, 'fleet', None), 'fixed_now', None) or ()), 'browser_link': browser_link(app.config),
-                              'browser_embed': browser_embed(app.config, self.headers.get('Host', ''))}, since))
+                              'notes_on': app.notes_on(), 'browser_embed': browser_embed(app.config, self.headers.get('Host', ''))}, since))
             # after the answer and off the request: on its thread the next request of this connection would wait
             aside(lambda: (app.store.note_card_shown(), app.store.note_activity('dashboard')), 'dashboard shown')
 
@@ -726,7 +726,8 @@ def make_handler(app):
                     try:  # Recent changes: what The Machine changed or learned about it, each with its source (record_log.py)
                         with app.store.connect() as db:
                             found['log'] = record_log.recent(db, graph.resolve(db, found['id']))
-                            found['linked_from'] = note_pages.linked_from(db, found['id'])  # notes that link here
+                            if app.notes_on():
+                                found['linked_from'] = note_pages.linked_from(db, found['id'])  # notes that link here
                     except (sqlite3.Error, ValueError, KeyError, TypeError) as error:
                         LOG.info('recent changes error=%s', type(error).__name__)
                     if found.get('kind') == 'project':  # its follow-ups: on or not, the next one, what went out (follow_ups.py)

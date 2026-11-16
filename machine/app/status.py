@@ -446,7 +446,7 @@ class StatusApp:
         except sqlite3.Error as error:
             LOG.warning('first tips error=%s', type(error).__name__); result['first_tips'] = []
         try:  # What's new: one notice for bigger changes since they got started (machine/store/whats_new.py)
-            result['whats_new'] = self.store.whats_new()
+            result['whats_new'] = self.store.whats_new(notes=self.notes_on())
         except (sqlite3.Error, ValueError, TypeError) as error:
             LOG.warning('whats new error=%s', type(error).__name__); result['whats_new'] = None
         try:  # a milestone on done to-dos, celebrated once on To-dos (machine/store/done_milestones.py)
@@ -483,7 +483,7 @@ class StatusApp:
         try:  # the sidebar's People, Organizations and Projects counts, kept by the graph's stamp: a page load no longer
             # fetches the whole Graph overview (some 600 KB) for three numbers; the overview comes when Graph opens
             with self.store.connect() as db:
-                result['graph_counts'] = {**graph.counts(db), 'note': note_pages.count(db)}
+                result['graph_counts'] = {**graph.counts(db), **({'note': note_pages.count(db)} if self.notes_on() else {})}
         except sqlite3.Error as error:
             LOG.warning('graph counts error=%s', type(error).__name__); result['graph_counts'] = None
         return result

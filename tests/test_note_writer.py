@@ -25,7 +25,7 @@ class Pages(unittest.TestCase):
         self.store = machine_main.Store(Path(temp.name) / 'events.sqlite')
         self.app = object.__new__(machine_main.App)
         self.app.store = self.store
-        self.app.config = {'accounts': [HOME]}
+        self.app.config = {'accounts': [HOME], 'notes_enabled': True}
         self.app.note_writer_model = self.model
         self.app.background_pause = lambda **_: None
         self.app.background_spaced = lambda: True
@@ -163,16 +163,20 @@ class Pages(unittest.TestCase):
         self.assertIn('page', self.app.note_page(note_pages.node_id(note_id)))
         self.assertFalse(self.step(), 'it tried: it waits NOTE_HOURS')
 
-    def test_a_conversation_not_about_the_matter_leaves_the_note_and_is_never_cited(self):
+    def test_a_conversation_not_about_the_subject_leaves_the_note_and_is_sorted_once_more(self):
         note_id, ids = self.note()
-        self.answer = self.written(ids, belongs=['S' + str(ids['c1']), 'S' + str(ids['c2'])])
+        self.answer = self.written(ids, belongs=['S' + str(ids['c1']), 'S' + str(ids['c2'])],
+                                   open=[{'text': 'Hand in the old keys by Friday 30 October.', 'sources': ['S' + str(ids['c2'])]}])
         self.step()
-        self.assertNotIn('page', self.app.note_page(note_pages.node_id(note_id)),
-                         'two conversations of the matter left: under MIN_CONVERSATIONS, no page')
+        page = self.app.note_page(note_pages.node_id(note_id))['page']
+        self.assertNotIn(ids['c3'], {s for b in page['facts'] for s in b['sources']}, 'never cited')
         with self.store.connect() as db:
-            self.assertEqual(db.execute("SELECT place FROM topic_routes WHERE conv='c3'").fetchone()['place'], '', 'it is asked about no more')
+            route = db.execute("SELECT place,left FROM topic_routes WHERE conv='c3'").fetchone()
+            self.assertEqual((route['place'], route['left']), (topic_notes.AGAIN, 'topic:x'), 'asked once more, told where it was')
             self.assertEqual(db.execute("SELECT place FROM topic_routes WHERE conv='c1'").fetchone()['place'], 'topic:x')
-            self.assertNotIn('Office move', {x['name'] for x in self.app.notes_list(db)}, 'a matter without a page is not listed')
+            db.execute('BEGIN IMMEDIATE')
+            topic_notes.unroute(db, 'c3')
+            self.assertEqual(db.execute("SELECT place FROM topic_routes WHERE conv='c3'").fetchone()['place'], '', 'a second time: nowhere')
 
     def test_a_source_left_out_of_belongs_is_never_cited(self):
         notes = [{'note': 'N7', 'title': 'Office move', 'sources': [{'id': f'S{i}'} for i in (1, 2, 3, 4)], '_convs': [1, 2, 3, 4]}]
@@ -199,10 +203,24 @@ class Pages(unittest.TestCase):
         with self.store.connect() as db:
             self.assertIn('Office move', {x['name'] for x in self.app.notes_list(db)}, 'the owner wrote in it: it is theirs to see')
 
-    def test_trips_and_notes_with_one_message_get_no_page(self):
-        self.note(kind='trip')
+    def test_a_trip_gets_a_page_a_note_kept_from_before_and_one_with_one_message_dont(self):
+        trip, _ = self.note(kind='trip')
         with self.store.connect() as db:
-            self.assertEqual(note_writer.candidates(db), [])
+            self.assertEqual(note_writer.candidates(db), [trip], 'its bookings and mail hold the times and what to bring')
+            db.execute('BEGIN IMMEDIATE')
+            note_pages.archive(db, ('trip',), AT)
+            self.assertEqual(note_writer.candidates(db), [], 'kept from before: never written again')
+        one = self.mail('Example Garage <desk@garage.example>', 'Your car service', '2026-10-01', 'Booked for Monday.', 'g')
+        with self.store.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            note_pages.sync(db, 'topic', [{'key': 'car', 'title': 'Car', 'area': 'personal', 'lines': [{'key': 'conv:g', 'text': 'Your car service', 'event_id': one}]}], AT)
+            self.assertEqual(note_writer.candidates(db), [], 'one message: its line says it all')
+        self.assertFalse(self.step())
+        self.assertEqual(self.asked, [])
+
+    def test_notes_off_writes_nothing_and_calls_no_model(self):
+        self.note()
+        self.app.config = {'accounts': [HOME]}
         self.assertFalse(self.step())
         self.assertEqual(self.asked, [])
 

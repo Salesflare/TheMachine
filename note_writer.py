@@ -1,7 +1,7 @@
 """A note's written page: what the note is about, read from its sources, at the top of its page in Notes. A note's lines
 are its sources (a conversation, a bill, a fact, the owner's own line); the page says what they add up to:
 
-- summary: two to four sentences, what the matter is and where it stands now (the latest state, the next date);
+- summary: two to four sentences, what the subject is and where it stands now (the latest state, the next date);
 - who: the people and organizations in it, and their part;
 - facts: what holds (amounts the owner will look for, references, places, names of things, choices);
 - decisions: what was decided, by whom;
@@ -15,18 +15,20 @@ Written in the background, never in a request (the dashboard reads the stored pa
 at most once a PASS_MINUTES for notes whose sources changed since their page (basis: a hash of the lines it read), and
 writes up to PER_PASS of them in one turn on the background model, within the usage budget like every background turn.
 Each note at most once a NOTE_HOURS, at most DAY_CAP notes a day. A note with fewer than MIN_SOURCES lines from a
-message or a fact has no page: its lines say it all. Dated notes (a trip, an event) are timelines already and get none.
-Each line from a conversation reads nearly all that was said in it (topic_notes.said: up to SAID_MESSAGES messages,
-SAID_CHARS, quotes and signatures cut; NOTE_CHARS a note, the oldest lines go first past it), so the page stands on
-the messages themselves, not on their subjects or a snippet.
+message or a fact has no page: its lines say it all. A trip gets one too (its bookings and the mail about it), a note
+kept from before the notes started over (note_pages.archive) never. Runs only with Notes on (NotesApp.notes_on).
+Each line from a conversation or a notification reads nearly all that was said in it (topic_notes.said: up to
+SAID_MESSAGES messages, SAID_CHARS, quotes and signatures cut; NOTE_CHARS a note, the oldest lines go first past it),
+so the page stands on the messages themselves, not on their subjects or a snippet. One page from all of them, the
+newest fact replacing an older one, never a line per mail.
 
-The turn also checks each conversation of a matter (a 'topic' note) belongs to it: one that does not leaves the note
-(save: its route is cleared, so its line goes on the next sync).
+The turn also checks each conversation on a note belongs to its subject: one that does not leaves the note (save:
+topic_notes.unroute sorts it once more, told where it was, so a notice about another child goes to that child's note).
 
 Quality or nothing: a bullet that cites no line it was given, or says too little, is dropped; a page without a summary
-that cites a line, MIN_BULLETS facts, decisions and open items together and, for a matter, topic_notes.MIN_CONVERSATIONS
-conversations that belong, is no page. A matter's note without a page is not in the Notes list (note_pages_app). When
-the evidence says nothing concrete, the note keeps its lines only. A line the owner
+that cites a line and MIN_BULLETS facts, decisions and open items together is no page. A subject's note without a page
+is not in the Notes list (note_pages_app). When the evidence says nothing concrete, the note keeps its lines only.
+Health details stay on a note under Health, and only the owner's or their child's. A line the owner
 removes takes the bullets that stood only on it with it, at once (view), and the note is due again.
 
 A project or organization has its own description already (project_about.py, person_summary.py): conversations that
@@ -94,13 +96,13 @@ def _basis(lines):
 
 
 def candidates(db):
-    """The notes that may have a page: live, not dated, with MIN_SOURCES lines from a message, a fact or the owner's
-    earlier memory pages (memory_seed.py)."""
-    dated = [k for k, v in note_pages.KINDS.items() if v['dated']]
+    """The notes that may have a page: live, of any kind but the ones kept from before (note_pages.archive), with
+    MIN_SOURCES lines from a message, a fact or the owner's earlier memory pages (memory_seed.py). A trip too: its
+    bookings and the mail about it hold the times, the places and what to bring."""
     return [r['id'] for r in db.execute(
-        f"SELECT p.id FROM note_pages p WHERE p.removed_at IS NULL AND p.merged_into IS NULL AND p.kind NOT IN ({','.join('?' * len(dated))}) "
+        "SELECT p.id FROM note_pages p WHERE p.removed_at IS NULL AND p.merged_into IS NULL AND p.kind<>'archived' "
         'AND (SELECT count(*) FROM note_page_lines l WHERE l.note_id=p.id AND l.removed_at IS NULL AND (l.event_id IS NOT NULL OR l.fact_id IS NOT NULL OR l.by=\'memory\'))>=? '
-        'ORDER BY p.updated_at DESC', (*dated, MIN_SOURCES))]
+        'ORDER BY p.updated_at DESC', (MIN_SOURCES,))]
 
 
 def due(db, current=None, limit=PER_PASS):
@@ -137,7 +139,7 @@ def evidence(db, item, owner_slack=()):
     sources, convs_of = [], []
     for r in lines:
         entry = {'id': f"S{r['id']}", 'date': str(r['at'] or '')[:10] or None, 'line': person_summary.clip(r['owner_text'] or r['text'], 200)}
-        if str(r['key'] or '').startswith('conv:') and r['by'] != 'owner':
+        if str(r['key'] or '').startswith('conv:') and r['by'] in ('machine', topic_notes.KEPT_BY):
             convs_of.append(r['id'])
         if r['by'] == 'owner':
             entry['from'] = 'the owner'
@@ -156,27 +158,29 @@ def evidence(db, item, owner_slack=()):
     if current:
         out['current_page'] = {k: v for k, v in current.items() if k != 'at'}
     out = {k: v for k, v in out.items() if v is not None}
-    # for parse only, never in the prompt: the conversation lines a matter's page must find about it (belongs)
-    out['_convs'] = [i for i in convs_of if f'S{i}' in {s['id'] for s in sources}] if row['kind'] == 'topic' else []
+    # for parse only, never in the prompt: the conversation lines the page must find about its subject (belongs)
+    out['_convs'] = [i for i in convs_of if f'S{i}' in {s['id'] for s in sources}]
     return out
 
 
 def prompt(notes, lang='en'):
     notes = [{k: v for k, v in n.items() if not k.startswith('_')} for n in notes]
-    return f'''Write the page for each note below: the top of the owner's own wiki page about one matter of their life or work. This is a background task of the personal-assistant service, not a chat with the owner.
-The owner opens the page to know at a glance what this is, who is involved, where it stands, what was decided and what is next, without searching their mail. Each source's "said" is what was said in it, nearly in full.
-First check the sources: "belongs" lists the ids (S…) of the sources that are really about this matter. One about something else is left out of "belongs" and not used anywhere on the page.
-Then write, from the sources that belong only, in {person_summary._language(lang)}:
-- "summary": two to four sentences, at most {SUMMARY_CHARS} characters: what the matter is and where it stands NOW (the latest state, the next date), not its history.
-- "who": up to {SECTIONS['who']} people or organizations and their part in this matter ("Dana, the contractor").
-- "facts": up to {SECTIONS['facts']} lasting things the owner will look up: amounts, dates, references and booking codes, places, terms, sizes, choices.
+    return f'''Write the page for each note below: the top of the owner's own wiki page about one subject of their life or work (a child's school or club, a trip, the house or a renovation, a hire, a customer, a project). This is a background task of the personal-assistant service, not a chat with the owner.
+The owner opens the page to know at a glance what this is, who is involved, where it stands, the dates and facts that matter and what is next, without searching their mail. Each source's "said" is what was said in it, nearly in full: a conversation, or a notification (a school's or a club's mail, a booking, an appointment, an invoice, a delivery). A notification's facts count as much as a conversation's.
+First check the sources: "belongs" lists the ids (S…) of the sources that are really about this one subject. One about something else (another child, another trip, another house job) is left out of "belongs" and not used anywhere on the page.
+Then write one page from all the sources that belong together, not a line per message, in {person_summary._language(lang)}:
+- "summary": two to four sentences, at most {SUMMARY_CHARS} characters: what the subject is and where it stands NOW (the latest state, the next date), not its history.
+- "who": up to {SECTIONS['who']} people or organizations and their part ("Dana, the contractor", "Ms Lee, Ava's class teacher").
+- "facts": up to {SECTIONS['facts']} things the owner will look up, as they hold now: dates and times (term dates, departure and arrival, appointment times), places, amounts, what to bring or do, names of things, choices. A booking reference only when the owner needs it to check in or change something.
 - "decisions": up to {SECTIONS['decisions']} things decided, and by whom.
 - "open": up to {SECTIONS['open']} things still to do or waiting, on whom, with the date when there is one.
 - "timeline": up to {SECTIONS['timeline']} dated steps, oldest first, each with its "date" (YYYY-MM-DD).
 Quality or nothing: each bullet states something concrete from the sources, with what and when. Leave a section empty rather than vague ("There were several emails", "Things are progressing"). When the sources say nothing concrete, give "summary": "" and nothing else: no page is better than a vague one.
-- Say each thing once on the page: a fact is not repeated in the timeline. The timeline is how the matter moved (asked, agreed, sent, changed), not one bullet per message.
-- Routine mail that repeats itself (receipts, invoices, notices) gets a summary of the pattern and at most a fact or two, no timeline.
-- Leave out what the owner can't use: links, meeting codes, email addresses, and what the sources don't say.
+- The newest source wins: a changed time, date, place or amount replaces the old one, never both. Something past and done leaves "open".
+- Say each thing once on the page: a fact is not repeated in the timeline. The timeline is how the subject moved (asked, agreed, booked, changed), not one bullet per message.
+- Routine mail that repeats itself (receipts, invoices, the same newsletter) gets a summary of the pattern and at most a fact or two, no timeline.
+- Leave out what the owner can't use: links, meeting codes, email addresses, marketing, and what the sources don't say.
+- Sensitive: health details only on a note under Health, and only the owner's own or their child's. Someone else's health, a family conflict, money trouble or anything intimate stays off the page.
 Rules:
 - Every bullet and the summary list the source ids they stand on in "sources" (S…). One without a source is dropped.
 - Only what the sources say. "today" is the owner's date: never call something before today coming or still to do; something done is not open.
@@ -207,9 +211,9 @@ def _bullet(item, given, title, dated=False, least=3):
 
 def parse(answer, notes):
     """{note_id: page or None} for each note the answer covers (None: nothing concrete, so no page). None when the
-    answer can't be read at all. A source left out of "belongs" is not cited; a matter's conversation left out goes from
-    the note (the page's "off", which save() acts on). Quality or nothing: no page without a summary, MIN_BULLETS facts,
-    decisions and open items together, and, for a matter, topic_notes.MIN_CONVERSATIONS conversations that belong."""
+    answer can't be read at all. A source left out of "belongs" is not cited; a conversation left out goes from the note
+    (the page's "off", which save() acts on). Quality or nothing: no page without a summary and MIN_BULLETS facts,
+    decisions and open items together."""
     text = str(answer or '')
     start, end = text.find('{'), text.rfind('}')
     try:
@@ -249,8 +253,7 @@ def parse(answer, notes):
             if kept:
                 page[section] = kept[:most]
         enough = sum(len(page.get(s) or ()) for s in ('facts', 'decisions', 'open')) >= MIN_BULLETS
-        matter = len([i for i in note.get('_convs') or () if i not in off])
-        if not enough or (note.get('_convs') and matter < topic_notes.MIN_CONVERSATIONS):
+        if not enough:
             page = {}
         if off:
             page['off'] = off
@@ -260,14 +263,16 @@ def parse(answer, notes):
 
 def save(db, item, page, current=None):
     """A turn's page for one note (None or no summary: no page). Either way the note waits for its sources to change.
-    A conversation the page found not to be about the matter (its "off" lines) leaves it: its route is cleared, so the
-    next sync of the notes takes its line out, and no call asks about it again."""
+    A conversation the page found not to be about the subject (its "off" lines) leaves it: sorted once more, told where
+    it was (topic_notes.unroute), so the next sync takes its line out, or it goes at once from a note this writer did
+    not start (note_pages.drop_kept)."""
     ensure(db)
     page = dict(page or {})
     for line_id in page.pop('off', ()):
-        r = db.execute('SELECT key FROM note_page_lines WHERE id=?', (line_id,)).fetchone()
+        r = db.execute('SELECT note_id,key,by FROM note_page_lines WHERE id=?', (line_id,)).fetchone()
         if r and str(r['key'] or '').startswith('conv:'):
             topic_notes.unroute(db, r['key'][5:])
+            note_pages.drop_kept(db, r['note_id'], r['key'], r['by'])
     page = page if page.get('summary') else None
     stamp = current or timeutil.stamp()
     db.execute('INSERT INTO note_writeups(note_id,page,basis,written_at,tried_at) VALUES(?,?,?,?,?) ON CONFLICT(note_id) DO UPDATE SET '

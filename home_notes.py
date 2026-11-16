@@ -1,4 +1,4 @@
-"""Home notes (docs/help/notes.md, "Home"): what the owner's Machine knows about their home, in a few notes under Home,
+"""Home notes (docs/notes.md, "Home"): what the owner's Machine knows about their home, in a few notes under Home,
 kept the way every kind in sections is (section_notes.py: one small model call over what is new only, the owner's own
 notes in a part filled in, a part only from two lines).
 

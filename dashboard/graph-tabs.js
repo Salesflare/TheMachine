@@ -90,12 +90,12 @@ async function people(node=graphNode,quiet=false){graphLoadedAt=Date.now();graph
  const panes=team?[{id:'people',label:'People',html:html`${start}${graphTabs('people')||html`<div class="empty all-clear"><img class="sticker" src="brand/thinking.webp" alt=""><div><strong>Nothing from the team yet.</strong></div></div>`}`},
   {id:'projects',label:'Projects',html:projectsPane(g)},
   {id:'orgs',label:'Organizations',html:graphTabs('orgs')||graphEmpty('orgs',true)},
-  {id:'notes',label:'Notes',html:notesPane()},  /* notes stay on this Machine: the owner's own, also in Team */
+  ...(notesOn()?[{id:'notes',label:'Notes',html:notesPane()}]:[]),  /* notes stay on this Machine: the owner's own, also in Team */
   ...(g.held?.length||graphPane==='held'?[{id:'held',label:'Held back',html:heldPane(g.held)}]:[])].filter(p=>p.html)
  :[{id:'people',label:'People',html:waitTop(g,html`${todayLine('people')}${sameList(g.same_person)}${graphTabs('people')||graphEmpty('people',false,g.read)}${hiddenSenders(g.hidden_senders)}`)},
   {id:'projects',label:'Projects',html:(h=>h&&waitTop(g,html`${todayLine('projects')}${h}`))(projectsPane(g))},
   {id:'orgs',label:'Organizations',html:waitTop(g,html`${todayLine('orgs')}${orgDoubles(g.org_doubles)}${graphTabs('orgs')||graphEmpty('orgs')}`)},
-  {id:'notes',label:'Notes',html:notesPane(g.notes||[])}].filter(p=>p.html);
+  ...(notesOn()?[{id:'notes',label:'Notes',html:notesPane(g.notes||[])}]:[])].filter(p=>p.html);
  const current=(panes.find(p=>p.id===graphPane)||panes.find(p=>p.id==='people')||panes[0])?.id;graphCountsSet(g.counts);if(version===graphRequest){graphShown=current||'';graphHashSync();graphSubSync()}
  // A refresh that starts the lists over loads as many rows as were there before it draws, so the page keeps its height
  if(had)for(const [k,n] of had){const p=pagers.get(k);if(!p||p.items.length||p.busy)continue;for(let i=0;i<10&&p.items.length<n&&p.next!=null&&!p.failed;i++){p.pending=pagerLoad(k,p,false);await p.pending}}

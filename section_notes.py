@@ -1,4 +1,4 @@
-"""Notes in sections (docs/help/notes.md): the engine behind the kinds The Machine keeps as a few notes under one folder
+"""Notes in sections (docs/notes.md): the engine behind the kinds The Machine keeps as a few notes under one folder
 note, like Home (home_notes.py), Health (health_notes.py) and Kids (kids_notes.py).
 
 A kind (Kind) brings its candidates, found in plain code (bills, subscriptions, what was learned, what was learned

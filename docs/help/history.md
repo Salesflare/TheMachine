@@ -24,7 +24,7 @@ It never makes a to-do or a promise, never counts as new, never starts a check a
 
 It starts after the first look at your messages, and for each connection only once its first week is in, also for one you add later. It runs slowly in the background and pauses while a check or a sync runs, when a service asks it to slow down, or when your Machine is short on space. New messages always come first.
 
-Once a mailbox's history is in, your Machine reads the mail it keeps once more for booking and ticket details, so older bookings show under [Trips and Events](notes.md) too. It goes just as slowly and pauses for the same reasons.
+Once a mailbox's history is in, your Machine reads the mail it keeps once more for booking and ticket details, so older bookings show under [trips and events](calendar.md#trips-and-events) too. It goes just as slowly and pauses for the same reasons.
 
 It uses the access each connection already has. Nothing new to approve.
 

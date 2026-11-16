@@ -1,4 +1,4 @@
-"""Trip notes (docs/help/notes.md, "Trips"): one note per journey under Trips, filled in from booking mail by plain code.
+"""Trip notes (docs/help/calendar.md, "Trips and events"): one note per journey under Trips, filled in from booking mail by plain code.
 
 The mail source reads a confirmation's structured data (bookings.py) into the message's sealed metadata. collect()
 copies each mail's bookings into trip_bookings (sealed at rest, message_seal.DERIVED), from a cursor over events, so a

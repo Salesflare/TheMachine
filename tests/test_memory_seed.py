@@ -48,7 +48,7 @@ class Seed(unittest.TestCase):
         self.store = machine_main.Store(Path(temp.name) / 'events.sqlite')
         self.app = object.__new__(machine_main.App)
         self.app.store = self.store
-        self.app.config = {'accounts': []}
+        self.app.config = {'accounts': [], 'notes_enabled': True}
         self.app.bring_in_dir = self.ws
         self.app.memory_seed_model = self.model
         self.app.background_pause = lambda **_: None

@@ -211,7 +211,7 @@ class NotesAppTests(unittest.TestCase):
         self.store = machine_main.Store(Path(temp.name) / 'events.sqlite')
         self.app = object.__new__(machine_main.App)
         self.app.store = self.store
-        self.app.config = {'accounts': [{'id': 'home', 'email': 'sam@example.com'}]}
+        self.app.config = {'accounts': [{'id': 'home', 'email': 'sam@example.com'}], 'notes_enabled': True}
 
     def test_the_actions_are_the_owners_from_their_dashboard(self):
         self.assertLessEqual(set(machine_main.App.ACTIONS) & {n for n in machine_main.App.ACTIONS if n.startswith('note_')}, actions.OWNER_ACTIONS)

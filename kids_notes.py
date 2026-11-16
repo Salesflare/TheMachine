@@ -1,4 +1,4 @@
-"""Kids notes (docs/help/notes.md, "Kids"): what the owner's Machine knows about the owner's children and their
+"""Kids notes (docs/notes.md, "Kids"): what the owner's Machine knows about the owner's children and their
 school, in a few notes under Kids, kept the way every kind in sections is (section_notes.py: one small model call over
 what is new only, the owner's own notes in a part filled in, a part only from two lines).
 

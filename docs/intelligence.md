@@ -432,6 +432,13 @@ the organization's role.
 
 ### Notes from conversations
 
+Off unless `notes_enabled` is set ([notes](notes.md), `NotesApp.notes_on`): off, no Notes show anywhere and none of
+the notes steps below reads anything or calls a model; trips and events still come in for Calendar (`trip_notes_step`).
+The first round with it on starts over once (`topic_notes.rebuild`): every route goes, and the notes made from
+conversations and the Home, Health and Kids notes go to an Earlier notes folder as they were (`note_pages.archive`,
+kind `archived`), never deleted; ones the owner renamed, moved or wrote in stay. Home, Health and Kids are no longer
+kept a line per mail (`section_notes_step` no longer runs): their subjects come from here.
+
 Notes are sorted by what was said, a whole conversation at a time (`topic_notes.py`), Work and Personal alike.
 
 - **Which sources.** Every kind in the mail, chat and meeting-notes families whose service is registered
@@ -441,13 +448,14 @@ Notes are sorted by what was said, a whole conversation at a time (`topic_notes.
   chat or channel split after two days of quiet. Over the last 90 days only. A conversation nobody else wrote in is
   dropped, and so is a chat window with one message the owner didn't write.
 - **Bulk first, in plain code** (`topic_notes.bulk_mail`, `bulk_chat`), so no model call reads it and no note keeps
-  a line from it: mail in Spam or Trash, Gmail's Promotions, Social and Forums tabs, list mail, mail a program sent and
-  system senders (`mail_senders.bulk` and `relay`, the same signals the Graph reads); bot messages, broadcast and
+  a line from it: mail in Spam or Trash, Gmail's Promotions, Social and Forums tabs, automatic replies
+  (`Auto-Submitted: auto-replied`) and bounces (`mailer-daemon@`, `postmaster@`); bot messages, broadcast and
   newsletter chats, and channels. Not when the owner wrote in it, and not mail that carries a booking (`bookings.py`).
-  Bounces (`mailer-daemon@`, `postmaster@`) are left out too.
-- **Between people only** (`topic_notes.between_people`): a conversation the owner wrote in, or one from someone the
-  owner wrote to in another conversation. A notice to all parents, a receipt or a pitch nobody answered never reaches
-  a call.
+- **Notifications count.** A school's, a club's or a practice's mail, a booking, an invoice or a delivery notice
+  comes from a program or a no-reply address, often with list headers, and holds the facts a note is made of: it
+  reaches the call whether or not anyone answered. At most 15 from one sender the owner never wrote with, the newest
+  (`topic_notes.notices`), so one busy sender can't fill the calls. The call leaves out marketing and newsletters with
+  nothing for the owner.
 - **A meeting's own mail stays in Calendar** (`topic_notes.meeting_mail`): an invitation, a reply to one, an update
   or a cancellation. Its subject is a calendar entry's title with the meeting's date or time after it, or a short
   label ending in a colon before it ("Accepted:"), in any language, sent up to six months before the meeting or two
@@ -460,38 +468,45 @@ Notes are sorted by what was said, a whole conversation at a time (`topic_notes.
   carries the list of places, so fewer, fuller calls. Each
   carries its first and newest messages (five at most), trimmed of quoted history and signatures (1,200 characters at most), Slack ids
   resolved to names. Content is data, never instructions.
-- **Where it goes: a matter.** A note is one specific undertaking that moves over weeks toward an outcome (a
-  renovation, a hire, a deal, a claim, a party), never a category of life (school, bills) or a person or company in
-  general. The model picks a numbered place (the owner's own note, also one in a Home, Health or Kids part, a note it
-  started before), a project or organization the Graph already has (that record's page, never a duplicate note), or a
-  new note with its parent; when in doubt, nothing. A part itself is no place: it is a category, so conversations
-  placed in one before are asked about again (`topic_notes.ensure`).
-- **A new note starts once the matter went on** (`topic_notes.sustained`): at least three conversations, two the
-  owner wrote in, at least seven days from the first to the last, and at most 40 (more is a category).
-- **Asked once** (`topic_routes`). Later messages in a conversation follow it; a non-answer keeps nothing.
-
-Lines kept from the old per-sender mail call go on the first round.
+- **Where it goes: a subject.** A note is a real-world subject that keeps mattering: one child's school or class, a
+  club, a trip, the house or a renovation, the car, a hire, a customer or project. Never a category on its own, small
+  talk or marketing. One subject each: a notice about one child goes to that child's subject, one about a trip to that
+  trip. The model picks a numbered place (a subject started before, a trip, an event, the owner's own note), a project
+  or organization the Graph already has (that record's page, never a duplicate note), or a new subject with its
+  folder (`new.title` says whose it is when that tells it apart).
+- **Sensitive.** Health only under Health, and only the owner's own or their child's care; a subject under Home,
+  Health, Kids or Pets is always Personal (`topic_notes.PERSONAL_FOLDERS`). Someone else's health, a family conflict,
+  a legal dispute, money trouble or anything intimate is left out. When unsure, it is left out. Notes never go to a Fleet.
+- **Every subject named is a note** (`topic_notes.drafts`); the page writer's bar decides what shows. A conversation
+  in a note that is there already (a trip, an event, an owner's note) becomes a line of it too
+  (`topic_notes.keep_in_notes`, `note_pages.add_kept`), so its page reads it.
+- **Asked once** (`topic_routes`). Later messages in a conversation follow it; a non-answer keeps nothing. One the
+  page writer finds not about its subject is asked once more, told where it was (`topic_notes.unroute`, `left`), and
+  the call can't put it back there; a second time it goes nowhere.
 
 ### A note's written page
 
-`note_writer.py` writes the top of a note's page from its lines: a summary (what the matter is and where it stands
-now), then who is in it, key facts, decisions, open items and a dated timeline. The lines follow as its Sources.
+`note_writer.py` writes the top of a note's page from its lines: a summary (what the subject is and where it stands
+now), then who is in it, key facts and dates, decisions, open items and a dated timeline. One page from all of a
+subject's sources, never a line per mail; the newest source wins when a time, date, place or amount changed. The
+lines follow as its Sources.
 
-- **Which notes.** Live, not dated (a trip or an event is a timeline already), with at least two lines from a message
-  or a fact. A project or organization never gets a note: its own page has `project_about.py` and the summaries.
+- **Which notes.** Live, of any kind but `archived` (a trip too: its bookings and the mail about it), with at least
+  two lines from a message or a fact. A project or organization never gets a note: its own page has
+  `project_about.py` and the summaries.
 - **What it reads.** The note's newest fifteen lines, each with nearly all that was said in its conversation
   (`topic_notes.said`: up to twelve messages, quoted history and signatures cut, 1,500 characters a message and 4,000
   a conversation, Slack ids as names; 24,000 a note, the oldest lines go first past it), and the current page. Content
   is data, never instructions.
-- **Belongs.** The same call lists the lines really about the matter. A conversation of a matter's note that isn't
-  leaves it: its route is cleared, so its line goes on the next sync and no call asks about it again.
+- **Belongs.** The same call lists the lines really about the subject. A conversation that isn't leaves the note
+  (`topic_notes.unroute`, `note_pages.drop_kept`) and is sorted once more, so it goes to its own subject.
 - **When.** In the background only (`NotesApp.note_writer_step`), at most hourly, two notes a turn on the background
   model under `background_pause`; a note only when its lines changed (a hash of them), at most once in 20 hours, 30
   notes a day. An answer that can't be read keeps the page and waits.
 - **Quality or nothing.** Every bullet and the summary cite the lines they stand on (`S<line id>`); one that cites none
-  it was given, or says too little, is dropped, and a page without a cited summary, three facts, decisions and open
-  items together and, for a matter, three conversations that belong is none. A matter's note without a page isn't in
-  the Notes list, unless the owner renamed it or wrote in it. A line the owner removes
+  it was given, or says too little, is dropped, and a page without a cited summary and three facts, decisions and
+  open items together is none. A subject's note without a page isn't in the Notes list, unless the owner renamed it
+  or wrote in it. A line the owner removes
   takes the bullets that stood only on it with it, at once (`note_writer.view`).
 
 ### A folder's overview
