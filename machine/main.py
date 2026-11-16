@@ -96,9 +96,9 @@ from birthdays_facebook_app import BirthdaysFacebook
 from bring_in_app import BringInApp
 from missed_work_app import MissedWorkApp
 import next_actions
+from learned_skills_app import LearnedSkillsApp
 from note_pages_app import NotesApp
 import notify
-from procedures_app import ProceduresApp
 from recurring_app import RecurringApp
 import routine_templates
 from routines_app import RoutinesApp
@@ -147,7 +147,7 @@ APP_MIXINS += (MeetingPrepApp,)
 APP_MIXINS += (ConnectApp,)
 APP_MIXINS += (PageWatchApp,)
 APP_MIXINS += (NotesApp,)
-APP_MIXINS += (ProceduresApp,)
+APP_MIXINS += (LearnedSkillsApp,)
 
 
 class BirthdaysTemplate(BirthdaysFacebook, Birthdays):

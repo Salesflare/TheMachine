@@ -403,7 +403,7 @@ class WorkersApp:
             self.store.voice_study_due()
             self.store.tune_due()  # keep learning from edits, dismissals, snoozes and chat corrections (learning_loop.py)
             self.fact_ties_step()  # one time, after the name pass: loose facts tied to who they are about (fact_ties.py)
-            self.procedures_step()  # what Do it runs handed in, checked by meaning before later tasks get it (procedures.py)
+            self.learned_step()  # what Do it runs handed in, checked by meaning before it becomes a skill (learned_skills.py)
             self.bring_in_step({'model': background_model})  # once a day at most: new lines in the owner's OpenClaw notes worth keeping (bring_in.py)
             self.notes_people_step({'model': background_model})  # facts kept from those notes: on who they are about, in the owner's words (notes_people.py)
             self.missed_work_step({'owned': calendar_owned, 'bulk': bulk_kind, 'model': background_model})  # once a week: how many reviewed signals without a to-do needed one (missed_work.py)

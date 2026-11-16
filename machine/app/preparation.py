@@ -42,13 +42,13 @@ from machine.store.decisions import owner_area_open, pause_idle_steps
 from machine.store.cards import pressing_cutoff
 from machine.store.machine_cards import parked_redo
 from machine.text import encoded
+import learned_skills
 import memory_use
 import model_budget
 from models import background_model
 import next_actions
 import parked_fixes
 import preparation_state
-import procedures
 import recurring
 import routine_changes
 import talk_live
@@ -549,8 +549,7 @@ class PreparationApp:
                 try:style=self.store.style_text(job['suggestion_id'])
                 except Exception as error:  # a draft without the owner's voice beats no preparation
                     LOG.error('style context error=%s',type(error).__name__);style=''
-                # what was learned that this card needs, not all of it; a run the owner started may hand in a procedure (procedures.py)
-                memory=recall(self,'preparation',{'todo':job['suggestion_id'],'job':job['job_id'],'learn':not job['ahead']},PROMPT_LIMIT)
+                memory=recall(self,'preparation',{'todo':job['suggestion_id']},PROMPT_LIMIT)  # what was learned that this card needs, not all of it
                 rules=memory.text('rules')
                 try:gaps=self.gap_lines(job['suggestion_id'])  # what isn't known about the people on it (gap_note.py)
                 except Exception as error:LOG.error('gap note error=%s',type(error).__name__);gaps=''
@@ -596,10 +595,7 @@ class PreparationApp:
                 try:  # the owner's skill that fits this to-do (or follow-up): its instructions, ranked above the defaults
                     request['message']+=memory.fit('skills',len(request['message']),1000,rules,PROMPT_LIMIT-1000-len(request['message']))
                 except Exception as error:LOG.error('skill lines error=%s',type(error).__name__)
-                try:  # after the owner's own: data, never permission; one left out for room isn't counted for this run
-                    found=memory.fit('procedures',len(request['message']),1000);request['message']+=found
-                    if not found:self.procedures_left_out(job['job_id'])
-                except Exception as error:LOG.error('procedure lines error=%s',type(error).__name__)
+                if not job['ahead']:request['message']+=learned_skills.LEARN  # a run the owner started may teach a skill (learned_skills.py)
                 if getattr(self, 'fleet', None):
                     try:request['message']+=memory.fit('team',len(request['message']),1000)
                     except Exception as error:LOG.error('fleet lines error=%s',type(error).__name__)
@@ -673,7 +669,6 @@ class PreparationApp:
                 details={'run_ended_without_preparation':'The AI run ended without saving a result or a blocker.',
                          'ai_run_timed_out':'The AI run hit its time limit.'}.get(error,'The AI run failed (often a model timeout or overload).')+' The automatic retry ended the same way.'
                 db.execute("UPDATE preparations SET status='blocked',reason=?,details=?,error=?,updated_at=? WHERE job_id=?",(reason,details,error,now(),job['job_id']))
-                procedures.settle(db,job['suggestion_id'],False)  # the procedures it was given count a failure
                 pause_idle_steps(db,job['suggestion_id'])
                 db.execute("UPDATE deliveries SET status='queued',reminder=1,needs_edit=1,error=NULL WHERE suggestion_id=? AND status IN ('queued','sent','uncertain')",(job['suggestion_id'],))
             elif status=='unavailable' and action=='start' and result.get('reason')=='offline':
@@ -811,5 +806,5 @@ class PreparationApp:
         if reading and result.get('status') == 'blocked':
             self.__dict__.setdefault('_slack_read_resumes', {})[str(args['job_id'])] = args['suggestion_id']
         if result.get('status') == 'blocked' and not any(args.get(k) for k in ('questions', 'move_to', 'use_event_ids', 'connect')):
-            self.procedure_failed(args['suggestion_id'])  # stuck, not a question or a missing connection: a failure (procedures.py)
+            self.learned_failed(args['suggestion_id'])  # stuck, not a question or a missing connection: a failure (learned_skills.py)
         return result

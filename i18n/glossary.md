@@ -118,8 +118,6 @@ English strings the check skips, with why:
 
 The user-facing name is *to-do* (decided 2026-10-26): Dutch keeps "to-do", the others use their own word, the same one every time.
 
-A *procedure* is how a task gets done on one site or in one workflow, learned from a Do it run (procedures.py). Learning lists them under **Sites and workflows**: say "procedure" (nl procedure, fr procédure, de Ablauf, es procedimiento, it procedura, pt-BR procedimento), never "skill", which is the owner's own.
-
 **For you** is the one list of open to-dos that wait on the owner (it replaced Ready for you and To decide). Each one's chip says **Prepared**, **Needs you** or **Preparing…** (there is no Preparing list any more, so a to-do never moves while it prepares), and the help pages use the same words: For you is Voor jou, Pour vous, Für dich, Para ti, Per te, Para você; Prepared is Klaargezet, Préparée, Vorbereitet, Preparada, Preparata, Preparada; Needs you is Wacht op jou, Vous attend, Braucht dich, Te necesita, Serve il tuo intervento, Precisa de você. In zh-CN, ja, ko, ru: For you is 给你, 確認待ち, 내 확인, Для вас; Prepared is 已备好, 準備済み, 준비됨, Подготовлено; Needs you is 需要你, 対応が必要, 확인 필요, Ждёт вас; Preparing… is 准备中…, 準備中…, 준비 중…, Готовится….
 
 The sidebar pages (renamed 2026-11-01): Suggestions is now *To-dos* (the plural of to-do, as above), Feedback is now *Learning* (the page; in nl and de "Leren" and "Lernen", while one learning stays inzicht and Erkenntnis), and the Events search is *Messages*. Learning: Leren, Apprentissage, Lernen, Aprendizaje, Apprendimento, Aprendizado. Messages: Berichten, Messages, Nachrichten, Mensajes, Messaggi, Mensagens. In zh-CN, ja, ko, ru: To-dos is 待办, ToDo, 할 일, Задачи; Learning is 心得, 学び, 배운 점, Обучение; Messages is 消息, メッセージ, 메시지, Сообщения.
@@ -159,6 +157,7 @@ The sidebar pages (renamed 2026-11-01): Suggestions is now *To-dos* (the plural 
 
 - German *du* and French *vous*: right register for the customers?
 - *skill*: kept in Dutch and German, translated in French and Spanish.
+- *Learned from a task*: a skill The Machine wrote itself from a Do it task that went well; *task* as in to-do work, not a new term.
 - Italian uses informal *tu*, like Apple, Google and Spotify in Italian. Keeps "skill" in English, like Dutch and German.
 - Brazilian Portuguese uses *você*. Settings reads "Configurações" (Android and web apps); iOS says "Ajustes".
 - Portuguese from Portugal (and plain pt) reads Brazilian Portuguese until it has its own catalog.

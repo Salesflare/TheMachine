@@ -55,8 +55,7 @@ class Before:
             'rules': lambda: store.facts_for(todo, 'draft', known), 'records': lambda: app.graph_lines(todo),
             'skills': lambda rules, room: app.prep_skill_lines(todo, rules, room), 'team': lambda: app.fleet.lines(todo),
             'related': lambda: app.related_lines(todo), 'sources': search_ask.ask,
-            'retained': lambda: '',  # nothing was set aside, ended or replaced here: the prompt is the one it was
-            'procedures': lambda: app.procedure_lines(todo, (about or {}).get('job'), bool((about or {}).get('learn')))}  # newer than recall()
+            'retained': lambda: ''}  # nothing was set aside, ended or replaced here: the prompt is the one it was
         if purpose == 'ask':  # what matches the question, each picker with (what it goes on, room)
             self.pickers.update({name: functools.partial(picker, app) for name, picker in ask_memory.BLOCKS.items()})
 

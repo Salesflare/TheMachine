@@ -350,7 +350,7 @@ class CardActionsApp:
             method=recurring.clean_method(args['method'])
             with self.store.connect() as db:
                 if not recurring.method_series(db,args['suggestion_id']):raise ValueError('method is only for a to-do that repeats; leave it out')
-        procedure,procedure_note=self.procedure_check(args,outcome,early)  # how a site or workflow is done, for later tasks (procedures.py)
+        procedure,procedure_note=self.learned_check(args,outcome,early)  # how a site or workflow is done: a skill for later tasks (learned_skills.py)
         if args.get('routine_change') is not None:  # a lasting change to the to-do's routine, from the owner's note: offered, not saved
             with self.store.connect() as db:routine_change=routine_changes.check(db,args['suggestion_id'],args.get('job_id'),args['routine_change'])
         if not turn and args.get('send_now') is not True and args.get('do_now') is not True and (outcome or {}).get('state')!='already_done':
@@ -371,9 +371,9 @@ class CardActionsApp:
                 recurring.save_method(db,args['suggestion_id'],method,now())
                 skills.drop_task_proposal(db,args['suggestion_id'])  # its way of working is kept here: no Create skill for it as well
             saved={**saved,'method':'saved: the to-do shows it with Edit and Undo, and the next one follows it'}
-        if not saved.get('replayed'):  # a run that got it done settles the procedures it was given, and its own waits for the check
-            try:procedure_note=self.procedure_saved(args['suggestion_id'],procedure,outcome) or procedure_note
-            except Exception as error:LOG.error('procedure save error=%s',type(error).__name__)
+        if not saved.get('replayed'):  # a run that got it done settles the learned skills it touched, and its own waits for the check
+            try:procedure_note=self.learned_saved(args['suggestion_id'],procedure,outcome) or procedure_note
+            except Exception as error:LOG.error('learned skill save error=%s',type(error).__name__)
             if args.get('procedure') is not None and procedure_note:saved={**saved,'procedure':procedure_note}
         if (outcome or {}).get('state')=='already_done' and not saved.get('replayed') and self.handled_close(args['suggestion_id'],args.get('job_id'),args['body']):
             saved={**saved,'status':'completed','note':'Done already, as those messages show: the to-do closed by itself (Undo for a day).'}

@@ -92,7 +92,6 @@ DERIVED = {'suggestions': ('title', 'body', 'handled_hint', 'owner_words', 'titl
            'recurring_series': ('text',), 'recurring_offers': ('title', 'text'),  # a recurring to-do's words (recurring.py)
            'routines': ('name', 'instructions'), 'routine_runs': ('result', 'why'),  # a routine's words and what its run read (routines.py)
            'routine_changes': ('instructions',),  # a routine's new words, offered on one of its to-dos (routine_changes.py)
-           'procedure_drafts': ('body', 'task'),  # what a Do it run handed in as a procedure, until it is checked (procedures.py)
            'mail_cleanup_items': ('link',),  # a list's unsubscribe page, left for the owner to open (mail_cleanup.py)
            'digest_items': ('feedback',),  # More or Less like this on a Daily digest's pick (reading_digest.py)
            'recap_items': ('line', 'data'),
