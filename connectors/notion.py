@@ -604,6 +604,8 @@ def sync(store, config, account, helpers):
     source = Source(config, account, helpers)
     me = source.verify()
     owner = me['id']
+    # the owner and this connection itself: a page it made or an edit it applied (each one approved) is never news
+    us = {owner, getattr(source, 'bot_user', ''), plain_id((source.signin or {}).get('bot_id'))} - {''}
     state = dict(store.checkpoint(account['id']) or {})
     now = stamp(helpers.now())
     since = stamp(state.get('since'))
@@ -643,7 +645,7 @@ def sync(store, config, account, helpers):
             tasks.pop(page_id)  # no longer the owner's
         # a new page someone else added
         key = short_id(page_id, 'page')
-        if parent != 'database_id' and created and created >= start and creator and creator != owner and key not in seen \
+        if parent != 'database_id' and created and created >= start and creator and creator not in us and key not in seen \
                 and (page.get('created_by') or {}).get('object') == 'user' and since is not None:
             seen[key] = 'page'
             name, email = source.person(creator, people)
@@ -652,7 +654,7 @@ def sync(store, config, account, helpers):
                                     f'{name or "Someone"} added “{title}” in Notion.',
                                     {**meta, 'from': sender(name, email), 'from_name': name, **({'from_email': email} if email else {}),
                                      'to': account.get('member_email') or ''}))
-        elif key not in seen and created and creator and creator != owner:
+        elif key not in seen and created and creator and creator not in us:
             seen[key] = 'page'
         # comments: on the page, and inline on the first blocks of a page the owner made
         comments = source.comments(page_id)
@@ -663,7 +665,7 @@ def sync(store, config, account, helpers):
         # someone changed a page the owner asked to have changed (an open comment of theirs): a quiet heads-up
         editor = plain_id((page.get('last_edited_by') or {}).get('id'))
         edited = str(page.get('last_edited_time') or '')
-        if page_id in asked and editor and editor != owner and edited > asked[page_id] and edits.get(page_id) != edited:
+        if page_id in asked and editor and editor not in us and edited > asked[page_id] and edits.get(page_id) != edited:
             edits[page_id] = edited
             name, email = source.person(editor, people)
             events.append(event(account, 'notion.edit', page_id + ':' + short_id(edited)[:12], (stamp(edited) or now).isoformat(), title,

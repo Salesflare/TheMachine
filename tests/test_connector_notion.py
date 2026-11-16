@@ -200,6 +200,8 @@ class NotionTests(unittest.TestCase):
         self.assertEqual(self.sync()['events'], 0)  # the same again is nothing new
         # a page someone else adds after the first sync is news; the owner's own is not
         self.api.pages['ab' * 16] = page('ab' * 16, 'Partner pricing', OTHER, at='2026-11-16T11:00:00.000Z', edited='2026-11-16T11:00:00.000Z')
+        # nor one this connection made itself (an approved new page)
+        self.api.pages['ba' * 16] = page('ba' * 16, 'Draft the owner approved', BOT, at='2026-11-16T11:00:00.000Z', edited='2026-11-16T11:00:00.000Z')
         self.sync()
         added = [e for e in self.events() if e['kind'] == 'notion.page']
         self.assertEqual([e['title'] for e in added], ['Partner pricing'])
@@ -244,6 +246,10 @@ class NotionTests(unittest.TestCase):
         self.sync()
         heads_up = [e for e in self.events() if e['kind'] == 'notion.edit']
         self.assertEqual([e['title'] for e in heads_up], ['Pricing page'])
+        self.api.pages[ASKED]['last_edited_time'] = '2026-11-16T11:20:00.000Z'
+        self.api.pages[ASKED]['last_edited_by'] = user(BOT)  # an edit this connection applied after the owner's OK
+        self.sync()
+        self.assertEqual(len([e for e in self.events() if e['kind'] == 'notion.edit']), 1)
         sid = self.store.suggest('n2', 'Check the pricing page', 'It changed.', [heads_up[0]['id']])['id']
         with self.store.connect() as db:
             self.assertTrue(todo_kinds.quiet(db, sid))  # never a buzz
