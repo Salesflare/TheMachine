@@ -107,8 +107,15 @@ function deltaJoin(held,r){if(!held||r._since!==held._token)return null;
   if(Array.isArray(v)&&v.some(statusRow)){const was=new Map((held[k]||[]).map(x=>[typeof x?.id+':'+x?.id,x]));out[k]=v.map(x=>statusRow(x)?was.get(typeof x['=']+':'+x['=']):x);if(out[k].includes(undefined))return null}
   else out[k]=v}
  return out}
-function statusMerge(r){if(!r._since){statusRaw=r;return JSON.parse(JSON.stringify(r))}const out=deltaJoin(statusRaw,r);if(!out)return null;
- statusRaw=out;return JSON.parse(JSON.stringify(out))}
+// A deep copy of JSON values, the same as JSON.parse(JSON.stringify(v)) gives (a key whose value is undefined left out,
+// undefined in a list as null, a "__proto__" key a key like any other) in a fifth of the time: the status is a few
+// hundred KB and was copied that way on every load, before the first drawing (tests/test_status_copy_dashboard.mjs)
+function jsonCopy(v){if(v===null||typeof v!=='object')return typeof v==='function'?undefined:v;
+ if(Array.isArray(v)){const n=v.length,o=new Array(n);for(let i=0;i<n;i++){const x=jsonCopy(v[i]);o[i]=x===undefined?null:x}return o}
+ const o={};for(const k of Object.keys(v)){const x=jsonCopy(v[k]);if(x===undefined)continue;
+  if(k==='__proto__')Object.defineProperty(o,k,{value:x,enumerable:true,writable:true,configurable:true});else o[k]=x}return o}
+function statusMerge(r){if(!r._since){statusRaw=r;return jsonCopy(r)}const out=deltaJoin(statusRaw,r);if(!out)return null;
+ statusRaw=out;return jsonCopy(out)}
 // What only Settings shows: not in the status, Settings fetches them (loadSettingsViews)
 const SETTINGS_ONLY=['agents_settings','signatures','lookups','own_addresses'];
 async function statusGet(){const since=statusRaw?._token,got=statusMerge(await request('api/status'+(since?'?since='+encodeURIComponent(since):''),{redirect:'manual'}));
