@@ -22,6 +22,7 @@ import security_levels
 import signal
 import sources
 import timeutil
+import machine.web.loopback as machine_web_loopback
 
 SUB = {'endpoint': 'https://fcm.googleapis.com/fcm/send/abc', 'keys': {'p256dh': 'B' + 'x' * 86, 'auth': 'y' * 22}}
 TOKEN = 'fcm-token:' + 'A' * 140
@@ -231,11 +232,11 @@ class AppPush(unittest.TestCase):
         app.graph_dirty = threading.Event()
         app.owner_token = 'owner-key'
         app.config = {'accounts': [], 'tailscale_owner': 'owner@example.com', 'dashboard_host': 'machine.example:8443', 'port': 0, 'http_timeout': 1}
-        servers, real = [], http.server.ThreadingHTTPServer
+        servers, real = [], machine_web_loopback.Server
         def capture(*args, **kwargs):
             servers.append(real(*args, **kwargs)); return servers[-1]
         # The service reads the agent's transcripts once at start (review_requeue); here that is no file, never the computer's own
-        for patcher in (patch.object(http.server, 'ThreadingHTTPServer', side_effect=capture), patch.object(signal, 'signal'),
+        for patcher in (patch.object(machine_web_loopback, 'Server', side_effect=capture), patch.object(signal, 'signal'),
                         patch.object(machine_main.App, 'preparation_worker'), patch.object(machine_main.App, 'delivery_worker'),
                         patch.object(machine_app_serve, 'AGENT_DB', Path(self.temp.name) / 'no-agent.sqlite')):
             patcher.start(); self.addCleanup(patcher.stop)

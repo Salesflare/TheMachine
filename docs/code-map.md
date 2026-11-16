@@ -245,6 +245,7 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   Machine's own to-dos, through `Store.machine_card`), `machine/web/serving.py` (the dashboard page, hosts, CSRF,
   compression, ETags, status) and `machine/web/waiting.py` (`KeyWaitingPage`, `message_key_keeper`),
   `machine/web/handler.py` (`make_handler(app)`: the dashboard's HTTP `Handler`, out of `App.serve`),
+  `machine/web/loopback.py` (`Server`: both web servers on 127.0.0.1, bound without a reverse DNS lookup),
   `machine/app/talk.py` (`TalkApp`: Talk's view, actions, tools, drafts and sends), `machine/app/fleet.py`
   (`FleetApp`: attaching the Fleet, its pings, notices, votes, shared learnings and connectors), follow-up and promise
   steps into `FollowUpsApp` and `PromiseChecksApp` (`machine/app/follow_ups.py`, `promise_checks.py`; a refund

@@ -10,6 +10,7 @@ import threading
 import unittest
 from pathlib import Path
 from unittest.mock import patch
+import machine.web.loopback as machine_web_loopback
 
 spec = importlib.util.spec_from_file_location('email_view_errors_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
@@ -26,11 +27,11 @@ class EmailViewErrors(unittest.TestCase):
         self.port = self.serve()
 
     def serve(self):
-        servers, real = [], a.http.server.ThreadingHTTPServer
+        servers, real = [], machine_web_loopback.Server
         def capture(*args, **kwargs):
             servers.append(real(*args, **kwargs)); return servers[-1]
         # The service reads the agent's transcripts once at start (review_requeue); here that is no file, never the computer's own
-        for patcher in (patch.object(a.http.server, 'ThreadingHTTPServer', side_effect=capture), patch.object(a.signal, 'signal'),
+        for patcher in (patch.object(machine_web_loopback, 'Server', side_effect=capture), patch.object(a.signal, 'signal'),
                         patch.object(a.App, 'preparation_worker'), patch.object(a.App, 'delivery_worker'),
                         patch.object(sys.modules['machine.app.serve'], 'AGENT_DB', Path(self.temp.name) / 'no-agent.sqlite')):
             patcher.start(); self.addCleanup(patcher.stop)

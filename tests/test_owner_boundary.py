@@ -12,6 +12,7 @@ import unittest
 from unittest.mock import patch
 import dashboard_parts
 from seams import patch_everywhere  # noqa: E402
+import machine.web.loopback as machine_web_loopback
 
 spec = importlib.util.spec_from_file_location('owner_boundary_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec)
@@ -96,7 +97,7 @@ class OwnerBoundary(unittest.TestCase):
 
     def serve(self):
         servers = []
-        real = a.http.server.ThreadingHTTPServer
+        real = machine_web_loopback.Server
         def capture(*args, **kwargs):
             servers.append(real(*args, **kwargs)); return servers[-1]
         # Keep the patches for the whole test: serve() installs signal handlers after
@@ -114,7 +115,7 @@ class OwnerBoundary(unittest.TestCase):
             self.addCleanup(unwatch)
             return log
         for patcher in (patch.object(serve_module, 'watch_faults', side_effect=watch),
-                        patch.object(a.http.server, 'ThreadingHTTPServer', side_effect=capture),
+                        patch.object(machine_web_loopback, 'Server', side_effect=capture),
                         patch.object(a.signal, 'signal'), patch('machine.store.review_requeue.requeue', return_value=0),
                         *(patch.object(a.App, name) for name in self.BACKGROUND)):
             patcher.start()

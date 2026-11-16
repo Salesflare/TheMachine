@@ -15,6 +15,7 @@ import machine.app.workers as machine_app_workers
 import machine.main as machine_main
 import signal
 import sources
+import machine.web.loopback as machine_web_loopback
 
 graph = tg.graph
 enrichment = enrichment
@@ -94,7 +95,7 @@ class Enrichment(unittest.TestCase):
     ids = tg.Graph.ids
     def setUp(self):
         tg.Graph.setUp(self)
-        self.server = http.server.ThreadingHTTPServer(('127.0.0.1', 0), Service)
+        self.server = machine_web_loopback.Server(('127.0.0.1', 0), Service)
         threading.Thread(target=self.server.serve_forever, daemon=True).start()
         self.addCleanup(self.server.server_close); self.addCleanup(self.server.shutdown)
         self.key = Path(self.temp.name) / 'enrich.key'; self.key.write_text(KEY + '\n')
@@ -802,10 +803,10 @@ class Enrichment(unittest.TestCase):
         app = object.__new__(machine_main.App)
         app.store, app.token, app.stop, app.graph_dirty, app.owner_token = self.store, 'test-token', threading.Event(), threading.Event(), 'owner-key'
         app.config = {'accounts': [], 'tailscale_owner': 'owner@example.com', 'dashboard_host': 'machine.example:8443', 'port': 0, 'http_timeout': 1}
-        servers, real = [], http.server.ThreadingHTTPServer
+        servers, real = [], machine_web_loopback.Server
         def capture(*args, **kwargs):
             servers.append(real(*args, **kwargs)); return servers[-1]
-        for patcher in (patch.object(http.server, 'ThreadingHTTPServer', side_effect=capture), patch.object(signal, 'signal'),
+        for patcher in (patch.object(machine_web_loopback, 'Server', side_effect=capture), patch.object(signal, 'signal'),
                         patch.object(machine_main.App, 'preparation_worker'), patch.object(machine_main.App, 'delivery_worker')):
             patcher.start()
             self.addCleanup(patcher.stop)

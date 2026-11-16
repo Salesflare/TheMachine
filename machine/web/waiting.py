@@ -8,6 +8,7 @@ import threading
 import time
 
 from machine.config import LOG
+from machine.web import loopback
 import message_seal
 
 
@@ -56,7 +57,7 @@ class KeyWaitingPage:
             do_POST = do_GET
 
         try:
-            self.server = http.server.ThreadingHTTPServer(('127.0.0.1', self.config.get('port', 8787)), Handler)
+            self.server = loopback.Server(('127.0.0.1', self.config.get('port', 8787)), Handler)
         except OSError:
             return  # the port is taken: the log says why it waits
         self.server.daemon_threads = True

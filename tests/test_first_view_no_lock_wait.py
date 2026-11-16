@@ -16,6 +16,7 @@ from unittest.mock import patch
 
 import assistant as a
 from machine import timing as request_timing
+import machine.web.loopback as machine_web_loopback
 
 OWNER = {'Host': 'machine.example:8443', 'Tailscale-User-Login': 'owner@example.com'}
 FIRST_VIEW = ('/', '/api/status', '/api/session', '/api/reviews/live', '/api/browser-now')  # what a page asks for at once
@@ -53,11 +54,11 @@ class FirstViewNoLockWait(unittest.TestCase):
         self.addCleanup(request_timing.aside_settled)
 
     def serve(self):
-        servers, real = [], a.http.server.ThreadingHTTPServer
+        servers, real = [], machine_web_loopback.Server
         def capture(*args, **kwargs):
             servers.append(real(*args, **kwargs)); return servers[-1]
         workers = [name for name in dir(a.App) if name.endswith('_worker') or name in ('collector', 'ability_checker', 'gbrain_start', 'meeting_write_resume')]
-        for patcher in (patch.object(a.http.server, 'ThreadingHTTPServer', side_effect=capture), patch.object(a.signal, 'signal'),
+        for patcher in (patch.object(machine_web_loopback, 'Server', side_effect=capture), patch.object(a.signal, 'signal'),
                         *(patch.object(a.App, name) for name in workers)):
             patcher.start(); self.addCleanup(patcher.stop)
         thread = threading.Thread(target=self.app.serve, daemon=True); thread.start()
