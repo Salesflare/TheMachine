@@ -647,7 +647,8 @@ def load_notes(store, config, directory):
 
 
 def load_skills(db, states, fixture, base):
-    """Settings > Skills: the example as the owner's own, one the Machine proposes, and in a Fleet one a teammate shared."""
+    """Settings > Skills: the example as the owner's own, one the Machine proposes, one it learned from a Do it task
+(learned_skills.py), and in a Fleet one a teammate shared."""
     import skills
     skills.ensure(db)
     example = skills.EXAMPLES['customer-inquiries']
@@ -655,7 +656,13 @@ def load_skills(db, states, fixture, base):
             ('sk_sandbox_proposed', {'name': 'Prepare the weekly pipeline update',
                                      'description': 'When the owner asks for the weekly pipeline numbers for the team call.',
                                      'body': '1. Count new, won and lost deals since last Monday.\n2. List the three largest open deals with their next step.\n3. Draft five lines for the owner to post.'},
-             'proposed', 'proposed', None, None, 'You asked for this four Mondays in a row.')]
+             'proposed', 'proposed', None, None, 'You asked for this four Mondays in a row.'),
+            ('sk_sandbox_learned', {'name': 'Download an invoice from the supplier portal',
+                                    'description': 'Use when working on portal.harborlinehealth.example: download an invoice from the supplier portal.',
+                                    'body': "## Steps\n1. Sign in with the saved sign-in.\n2. Open Billing, then Statements; Invoices moved there.\n"
+                                            "3. Download the PDF and attach it to the to-do.\n\n## Didn't work\n- The search box ignores invoice numbers.\n\n"
+                                            "## Workarounds\n- Sort by date instead of searching.\n\n## Done when\nThe PDF is saved and its number matches the to-do."},
+             'on', 'learned', None, None, None)]
     if {'fleet', 'all'} & set(states):
         team = fixture['network']['work']
         rows.append(('sk_sandbox_shared', {'name': 'Qualify an inbound demo request before the first call',

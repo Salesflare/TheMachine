@@ -42,6 +42,7 @@ from machine.store.decisions import owner_area_open, pause_idle_steps
 from machine.store.cards import pressing_cutoff
 from machine.store.machine_cards import parked_redo
 from machine.text import encoded
+import learned_skills
 import memory_use
 import model_budget
 from models import background_model
@@ -594,6 +595,7 @@ class PreparationApp:
                 try:  # the owner's skill that fits this to-do (or follow-up): its instructions, ranked above the defaults
                     request['message']+=memory.fit('skills',len(request['message']),1000,rules,PROMPT_LIMIT-1000-len(request['message']))
                 except Exception as error:LOG.error('skill lines error=%s',type(error).__name__)
+                if not job['ahead']:request['message']+=learned_skills.LEARN  # a run the owner started may teach a skill (learned_skills.py)
                 if getattr(self, 'fleet', None):
                     try:request['message']+=memory.fit('team',len(request['message']),1000)
                     except Exception as error:LOG.error('fleet lines error=%s',type(error).__name__)
@@ -803,4 +805,6 @@ class PreparationApp:
                                                 args.get('move_to'),args.get('use_event_ids'),args.get('connect'))
         if reading and result.get('status') == 'blocked':
             self.__dict__.setdefault('_slack_read_resumes', {})[str(args['job_id'])] = args['suggestion_id']
+        if result.get('status') == 'blocked' and not any(args.get(k) for k in ('questions', 'move_to', 'use_event_ids', 'connect')):
+            self.learned_failed(args['suggestion_id'])  # stuck, not a question or a missing connection: a failure (learned_skills.py)
         return result

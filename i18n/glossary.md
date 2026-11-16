@@ -157,6 +157,7 @@ The sidebar pages (renamed 2026-11-01): Suggestions is now *To-dos* (the plural 
 
 - German *du* and French *vous*: right register for the customers?
 - *skill*: kept in Dutch and German, translated in French and Spanish.
+- *Learned from a task*: a skill The Machine wrote itself from a Do it task that went well; *task* as in to-do work, not a new term.
 - Italian uses informal *tu*, like Apple, Google and Spotify in Italian. Keeps "skill" in English, like Dutch and German.
 - Brazilian Portuguese uses *você*. Settings reads "Configurações" (Android and web apps); iOS says "Ajustes".
 - Portuguese from Portugal (and plain pt) reads Brazilian Portuguese until it has its own catalog.
