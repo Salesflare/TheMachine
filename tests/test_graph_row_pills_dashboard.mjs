@@ -52,7 +52,9 @@ try{
   await page.evaluate(()=>document.querySelector('nav [data-tab="people"]').click());await page.locator('#people-view').waitFor({state:'attached'});
   for(const pane of ['people','orgs','projects']){
    await page.evaluate(n=>document.querySelector(`[data-graph-sub="${n}"]`).click(),pane);
-   await page.locator('#people-view .sub-pane:not([hidden]) .graph-row').first().waitFor();await page.waitForTimeout(150);
+   await page.locator('#people-view .sub-pane:not([hidden]) .graph-row').first().waitFor();
+   // The Graph styles and fonts are in: a row's name may shrink (min-width 0 comes from graph-pages.css)
+   await page.waitForFunction(()=>{const n=document.querySelector('#people-view .sub-pane:not([hidden]) .graph-row>.node');return document.fonts.status==='loaded'&&!!n&&getComputedStyle(n).minWidth==='0px'});
    if(process.env.PILLS_SHOT)await page.screenshot({path:`${process.env.PILLS_SHOT}/${pane}-${width}-${scheme}.png`});
    const pills=await page.evaluate(measure),where=`${pane} ${width} ${scheme}`;
    assert.ok(pills.filter(p=>!p.chip.startsWith('(')).length>=(pane==='people'?4:2),`${where}: the pills are there ${JSON.stringify(pills)}`);
