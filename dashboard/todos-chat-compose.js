@@ -63,8 +63,8 @@ function chatMount(id,body){const box=$('#suggestions'),cur=box.querySelector(':
 // two fingers, the column keeps the window's size. Keep the latest message in view when you were at the end.
 let chatAtEnd=false;
 const chatEndNow=(gap=80)=>{const l=chatScroller();return l?l.scrollTop+l.clientHeight>=l.scrollHeight-gap:innerHeight+scrollY>=document.documentElement.scrollHeight-gap};
-function chatKeyboard(){const v=window.visualViewport;if(!v)return;const kb=Math.max(0,Math.round(innerHeight-v.height-v.offsetTop)),typing=document.activeElement?.id==='chat-input',zoomed=Math.abs((v.scale||1)-1)>.01,r=document.documentElement.style;
- r.setProperty('--vv-h',(zoomed?innerHeight:v.height)+'px');r.setProperty('--vv-top',(zoomed?0:Math.max(0,v.offsetTop))+'px');document.body.classList.toggle('kb-open',typing&&(kb>0||innerHeight<screen.height*.6));
+function chatKeyboard(){const v=window.visualViewport;if(!v)return;const kb=Math.max(0,Math.round(innerHeight-v.height-v.offsetTop)),typing=document.activeElement?.id==='chat-input';
+ vvVars();document.body.classList.toggle('kb-open',typing&&(kb>0||innerHeight<screen.height*.6));
  if(typing&&chatAtEnd)requestAnimationFrame(chatToEnd)}
 window.visualViewport?.addEventListener('resize',chatKeyboard);window.visualViewport?.addEventListener('scroll',chatKeyboard);addEventListener('resize',chatKeyboard);chatKeyboard();
 function paintChat(){const log=$('#chat-log'),s=chatOpen();if(!log||!s)return;chatKeepPlace(()=>chatPatch(log,chatLog(s)));

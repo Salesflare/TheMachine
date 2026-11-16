@@ -48,7 +48,10 @@ document.addEventListener('click',async e=>{const b=e.target.closest('#fixed-not
  if(d.fixedWorks){fixedDrop(d.fixedWorks);try{await fixedPost({answer:'works',report:d.fixedWorks})}catch{}return}
  if(d.fixedOff)lazyRun('help',()=>{fixedOpen=fixedOpen===d.fixedOff?null:d.fixedOff;fixedShot=null;renderFixed();$('#fixed-notice textarea')?.focus()})});  // its box: help-panel.js
 // On a phone a to-do chat is a fixed column; a usage limit sits over it as a bar (todos-talk.css), and the column starts under it
-{const b=$('#banners'),fit=()=>document.documentElement.style.setProperty('--chat-banner-h',(getComputedStyle(b).position==='fixed'?b.offsetHeight:0)+'px');
+// Its height as --chat-banner-h on <html>, only when it changes and gone when 0 (the CSS falls back to 0px): a custom
+// property changed on <html> restyles every element.
+{const b=$('#banners'),fit=()=>{const r=document.documentElement.style,h=getComputedStyle(b).position==='fixed'?b.offsetHeight:0;
+ if(!h)r.removeProperty('--chat-banner-h');else if(r.getPropertyValue('--chat-banner-h')!==h+'px')r.setProperty('--chat-banner-h',h+'px')};
  if(b&&window.ResizeObserver)new ResizeObserver(fit).observe(b)}
 function renderLimitBanner(){const b=$('#limit-banner');if(!b)return;const p=state.model_pause?['model',state.model_pause]:['review',state.review_pause],nodes=p[0]==='model'?limitBanner(p[1]):reviewBanner(p[1]);
  bannerSet(b,JSON.stringify([p,pauseWhen(p[1]?.until),document.documentElement.lang]),nodes)}
