@@ -67,6 +67,78 @@ class Probe(unittest.TestCase):
         self.assertEqual(mc.probe({}, None, run=slow), (False, 'No answer within 90 seconds.'))
 
 
+class Routes(unittest.TestCase):
+    """2026-11-16: every Machine on a Claude sign-in failed the check ("No API key found for provider anthropic"):
+    `infer model run` never takes the Claude CLI route, while reviews ran fine through the Gateway's agent runtime."""
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
+        self.made = 0
+
+    def config(self, model, models=None):
+        self.made += 1
+        path = Path(self.temp.name) / f'openclaw-{self.made}.json'
+        path.write_text(json.dumps({'agents': {'defaults': {'model': {'primary': model}, 'models': models or {}}}}))
+        return {'openclaw': 'oc', 'openclaw_config': str(path)}
+
+    def agent_reply(self, text='OK.', fallback=False, status='ok'):
+        attempts = [{'provider': 'anthropic', 'model': 'claude-opus-5-5', 'result': 'candidate_failed', 'reason': 'auth'}] if fallback else []
+        trace = {'fallbackUsed': fallback, 'attempts': attempts + [{'provider': 'claude-cli', 'result': 'success'}]}
+        return Answer(0, json.dumps({'runId': 'r', 'status': status, 'result': {'payloads': [{'text': text}], 'meta': {'executionTrace': trace}}}))
+
+    def test_a_claude_sign_in_is_checked_through_the_agent_runtime_and_its_session_deleted(self):
+        pinned = {'anthropic/*': {'agentRuntime': {'id': 'claude-cli'}}}
+        for config, model in ((self.config('anthropic/claude-opus-5-5', pinned), None), (self.config(MAIN), None),
+                              (self.config(OTHER, pinned), 'anthropic/claude-sonnet-5')):
+            seen = []
+            def run(args, **kw):
+                seen.append(args)
+                return self.agent_reply() if args[1] == 'agent' else Answer(0, '{"ok": true}')
+            self.assertEqual(mc.probe(config, model, run=run), (True, None))
+            self.assertEqual(seen[0][:3], ['oc', 'agent', '--session-key'])
+            key = seen[0][3]
+            self.assertTrue(key.startswith(mc.model_fallback.CHECK_KEY) and len(key) > len(mc.model_fallback.CHECK_KEY))
+            self.assertEqual(seen[0][seen[0].index('--message') + 1], mc.PROMPT)  # nothing of the owner's goes out
+            if model:
+                self.assertEqual(seen[0][-2:], ['--model', model])
+            else:
+                self.assertNotIn('--model', seen[0])
+            self.assertNotIn('infer', seen[0])
+            self.assertEqual(seen[1][:4], ['oc', 'gateway', 'call', 'sessions.delete'])
+            self.assertEqual(json.loads(seen[1][seen[1].index('--params') + 1]), {'key': key, 'deleteTranscript': True})
+
+    def test_on_the_claude_route_a_fallback_answering_or_an_error_is_no_answer(self):
+        config = self.config(MAIN)
+        ok, error = mc.probe(config, None, run=lambda args, **kw: self.agent_reply(fallback=True))
+        self.assertFalse(ok)
+        self.assertIn('fallback answered', error)
+        self.assertEqual(mc.probe(config, None, run=lambda args, **kw: self.agent_reply(text=' ')), (False, 'The model gave an empty answer.'))
+        failed = {'ok': False, 'runId': 'r', 'origin': 'gateway', 'error': {'type': 'cli_error', 'message': 'Claude Code is not signed in.'}}
+        self.assertEqual(mc.probe(config, None, run=lambda args, **kw: Answer(1, json.dumps(failed))), (False, 'Claude Code is not signed in.'))
+        deleted = []
+        def slow(args, **kw):
+            if args[1] == 'agent':
+                raise subprocess.TimeoutExpired(args, 90)
+            deleted.append(args)
+            return Answer(0)
+        self.assertEqual(mc.probe(config, None, run=slow), (False, 'No answer within 90 seconds.'))
+        self.assertEqual(len(deleted), 1)  # the check's session goes also after a timeout
+        self.assertFalse(mc.model_fallback.probe(config, None, lambda args, **kw: self.agent_reply(fallback=True)))
+        self.assertTrue(mc.model_fallback.probe(config, None, lambda args, **kw: self.agent_reply()))
+
+    def test_keys_and_the_chatgpt_sign_in_keep_the_raw_model_call(self):
+        pinned = {'openai/gpt-6.1-sol': {'agentRuntime': {'id': 'openclaw'}}, 'anthropic/*': {'agentRuntime': {'id': 'claude-cli'}}}
+        for config, model in ((self.config('openai/gpt-6.1-sol', pinned), None), (self.config('anthropic/claude-opus-5-5'), None),
+                              (self.config(MAIN), OTHER), (self.config('work-api/gpt-6.1-sol'), None)):
+            seen = []
+            def run(args, **kw):
+                seen.append(args)
+                return Answer(0, json.dumps({'ok': True, 'outputs': [{'text': 'OK'}]}))
+            self.assertEqual(mc.probe(config, model, run=run), (True, None))
+            self.assertEqual(len(seen), 1)
+            self.assertEqual(seen[0][:6], ['oc', 'infer', 'model', 'run', '--gateway', '--json'])
+            self.assertEqual('--model' in seen[0], bool(model))
+
+
 class WarmUp(unittest.TestCase):
     def test_gateway_rpcs_only_and_the_throwaway_session_is_always_deleted(self):
         seen = []
@@ -153,6 +225,18 @@ class Check(unittest.TestCase):
         with self.later(2):
             self.assertEqual(self.app.review_step(runner), 'admitted')
         self.assertNotIn('model', runner.requests[0])  # on the main model
+
+    def test_every_failed_check_counts_in_the_error_reports_as_one_signature(self):
+        """A check that failed hundreds of times in a row only ever logged a line, so the error reports never showed it."""
+        import error_feed
+        with self.assertLogs(a.LOG, 'INFO'):
+            self.checked(StandIn(main=(False, 'No API key found for provider "anthropic".')))
+            self.checked(StandIn(main=(False, 'No API key found for provider "anthropic".')), 1.1)
+            self.checked(StandIn(main=(True, None)), 3.2)
+        with self.store.connect() as db:
+            error_feed.ensure(db)
+            rows = [dict(r) for r in db.execute('SELECT source,kind,location,count FROM error_feed')]
+        self.assertEqual(rows, [{'source': 'service', 'kind': 'ModelCheckFailed', 'location': 'machine/app/first_look.py:model_check_run', 'count': 2}])
 
     def test_a_failed_first_look_comes_back_within_minutes(self):
         self.checked(StandIn(main=(True, None)))

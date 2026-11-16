@@ -1,4 +1,5 @@
-"""Whether the AI really answers: one tiny model call with no content of the owner's (model_fallback.PROMPT), made when an
+"""Whether the AI really answers: one tiny model call with no content of the owner's (model_fallback.PROMPT; on a Claude
+sign-in a Gateway agent turn in a throwaway session, the route reviews take: model_fallback.turn), made when an
 AI connects (a sign-in or a key: the main model changed, or nothing was checked yet), before the first look starts.
 
 A sign-in that exists is not enough (models.model_ready reads only that): a first look once started while the Claude
@@ -33,7 +34,7 @@ PROMPT = model_fallback.PROMPT  # fixed: nothing of the owner's goes out
 RETRY_SECONDS = (60, 120, 300)  # a failed check is made again this long after its 1st, 2nd, 3rd and later failure in a row
 SOON_SECONDS = 20  # never two checks closer than this, also when a sign-in changed in between
 FALLBACK_SECONDS = 300  # a fallback is looked for again at most this often
-TIMEOUT = 90
+TIMEOUT = model_fallback.TIMEOUT
 ERROR_CHARS = 300
 FALLBACKS = 3  # at most this many other models checked per round
 
@@ -65,7 +66,8 @@ def short_error(text):
 
 
 def _error(data, stderr):
-    """The provider's message from `openclaw infer model run --json`: its error, else the last lines it wrote."""
+    """The provider's message from `openclaw infer model run --json` or `openclaw agent --json`: its error, else the
+    last lines it wrote."""
     for value in (data.get('error'), data.get('message'), data.get('errorMessage')):
         if isinstance(value, dict):
             value = value.get('message') or value.get('error')
@@ -77,25 +79,18 @@ def _error(data, stderr):
 
 def probe(config, model=None, run=subprocess.run):
     """(ok, error): one tiny turn through the Gateway, on `model` alone when given, else on the main model. `error` is
-    the provider's own message, short (short_error), or why there was none."""
-    args = [str((config or {}).get('openclaw') or 'openclaw'), 'infer', 'model', 'run', '--gateway', '--json', '--prompt', PROMPT]
-    if model:
-        args += ['--model', model]
+    the provider's own message, short (short_error), or why there was none. The turn goes the way the model's work does
+    (model_fallback.turn): a raw model call for keys and the ChatGPT sign-in, the Gateway's agent runtime for a Claude
+    sign-in (its Claude CLI route), which `infer model run` never takes."""
     try:
-        result = run(args, capture_output=True, text=True, timeout=TIMEOUT)
+        ok, data, stderr = model_fallback.turn(config, model, run)
     except subprocess.TimeoutExpired:
         return False, f'No answer within {TIMEOUT} seconds.'
     except OSError:
         return False, 'OpenClaw could not be started.'
-    try:
-        data = json.loads(result.stdout or '{}')
-    except ValueError:
-        data = {}
-    data = data if isinstance(data, dict) else {}
-    texts = [o.get('text') for o in data.get('outputs') or [] if isinstance(o, dict) and isinstance(o.get('text'), str)]
-    if result.returncode == 0 and data.get('ok') is True and any(t.strip() for t in texts):
+    if ok:
         return True, None
-    return False, _error(data, result.stderr) or 'The model gave an empty answer.'
+    return False, _error(data, stderr) or 'The model gave an empty answer.'
 
 
 WARM_KEY = 'agent:main:assistant-warm-up'

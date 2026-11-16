@@ -17,6 +17,12 @@ They resolve their model the same way your chats do: `agents.defaults.model.prim
 
 Don't copy a model name from an old screenshot, or assume a model on one computer is there on another.
 
+**The short test.** Before the first look starts, and again when a sign-in or the main model changes, The Machine sends
+one fixed prompt ("Reply with OK.") to check that the AI answers (`model_check.py`). With an API key or a ChatGPT
+sign-in that is `openclaw infer model run --gateway`, a raw model call. A Claude model that runs through Claude Code
+goes the way reviews do: a Gateway `agent` turn in a throwaway session (`agent:main:assistant-model-check-<id>`, deleted
+right after), since `infer model run` never takes the Claude Code route. An answer from a fallback doesn't count.
+
 ### Your Claude plan
 
 To use your own Claude plan (Pro, Max or Team), install Claude Code with Anthropic's installer and sign in with `claude auth login`. `openclaw models list` then shows Claude's models as `claude-cli/*`, and OpenClaw runs them through Claude Code without reading its sign-in.
@@ -95,7 +101,8 @@ depending on the plan), **Settings → Model** shows the model in use, how much 
 it once the main model's limit is reached, so The Machine sets the pacing aside while that fallback works
 (`model_fallback.py`):
 
-- One tiny fixed-prompt turn on the fallback alone (`openclaw infer model run --model`), made only while the limits would
+- One tiny fixed-prompt turn on the fallback alone (`openclaw infer model run --model`, or the short test's `agent` turn
+  for a Claude Code model), made only while the limits would
   hold work back and at most every 15 minutes, counts for an hour.
 - A failed check, or a run that still ended on the usage limit, brings the pacing back.
 
