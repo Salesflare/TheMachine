@@ -2270,7 +2270,7 @@ GRANT_LABELS = {'google': 'Google', 'microsoft': 'Microsoft', 'zoom': 'Zoom', 's
 # Each one's services: the rows of machine/services.py its sign-in connects (Google Meet: its own Google sign-in, apart from Gmail's)
 GRANT_SERVICES = {provider: service_registry.of(signin=provider) for provider in GRANT_LABELS}
 SLACK_KEY = r'[te][a-z0-9]{6,20}:[uw][a-z0-9]{6,20}'  # a Slack sign-in's name: '<team id>:<user id>' (slack_api.key)
-DELIVERED = {'intercom', 'trello', 'microsoft_docs', 'microsoft_docs_write', 'microsoft_teams', *GRANT_SERVICES}  # sources a sign-in started on the dashboard connects on a paired self-hosted Machine (fleet.SIGNIN_SOURCES)
+DELIVERED = {'intercom', 'trello', 'shortcut', 'microsoft_docs', 'microsoft_docs_write', 'microsoft_teams', *GRANT_SERVICES}  # sources a sign-in started on the dashboard connects on a paired self-hosted Machine (fleet.SIGNIN_SOURCES)
 
 
 class AnswersUI(UI):
@@ -2325,7 +2325,7 @@ def connect_delivered(config_path, args, team_domains=()):
     prompt = setup_of(service)['secret']
     given = args.get('secrets') if isinstance(args.get('secrets'), dict) else {}
     token = given.get(prompt)
-    if set(given) != {prompt} or not isinstance(token, str) or not 8 <= len(token) <= 512 or any(c.isspace() for c in token):
+    if set(given) != {prompt} or not isinstance(token, str) or not 8 <= len(token) <= 4096 or any(c.isspace() for c in token):
         raise SetupError(f'No {prompt} came with it', 'sign in again from Connections, + Add')
     answers = {k: v for k, v in (args.get('answers') or {}).items() if isinstance(k, str) and isinstance(v, str) and len(k) < 200 and len(v) < 200} \
         if isinstance(args.get('answers'), dict) else {}

@@ -49,18 +49,29 @@ class ShortcutTests(unittest.TestCase):
         self.pages = [{'data': [story()], 'next': None, 'total': 1}]
         self.histories = {1: [history()]}
         self.requests = []
+        self.auth = ('Shortcut-token', 'fixture-token')
+        self.refreshes, self.refreshed = [], []
         self.http = patch('urllib.request.OpenerDirector.open', side_effect=self.respond).start()
         self.addCleanup(patch.stopall)
 
     def respond(self, request, timeout):
+        self.assertEqual(timeout, 30)
+        if request.full_url == shortcut.OAUTH_TOKEN:  # Sign in with Shortcut's refresh: a form POST, no secret
+            self.assertEqual(request.get_method(), 'POST')
+            self.assertIsNone(request.get_header('Authorization'))
+            self.refreshes.append(dict(urllib.parse.parse_qsl(request.data.decode())))
+            answer = self.refreshed.pop(0)
+            if isinstance(answer, Exception):
+                raise answer
+            return Response(json.dumps(answer).encode())
         self.assertEqual(request.get_method(), 'GET')
         self.assertIsNone(request.data)
-        self.assertEqual(timeout, 30)
         parts = urllib.parse.urlsplit(request.full_url)
         self.assertEqual(parts.scheme, 'https')
         self.assertEqual(parts.netloc, 'api.app.shortcut.com')
-        self.assertEqual(request.get_header('Shortcut-token'), 'fixture-token')
-        self.assertNotIn('fixture-token', request.full_url)
+        self.assertEqual(request.get_header(self.auth[0]), self.auth[1])
+        self.assertNotIn('Shortcut-token' if self.auth[0] == 'Authorization' else 'Authorization', request.headers)
+        self.assertNotIn(self.auth[1].split()[-1], request.full_url)
         self.requests.append((parts.path, urllib.parse.parse_qs(parts.query)))
         if parts.path == '/api/v3/member':
             result = self.member
@@ -309,6 +320,83 @@ class ShortcutTests(unittest.TestCase):
         form = onboarding.web_form({'accounts': []}, 'shortcut')
         self.assertEqual((form['ask'], form['secret'], form['token_url']),
                          ([], 'Shortcut API token', 'https://app.shortcut.com/settings/account/api-tokens'))
+
+    def signed_in(self, expires_at=0, refresh='fixture-refresh-1'):
+        """A sign-in from Sign in with Shortcut in a real private credential file, as the control plane hands it over."""
+        path = Path(self.temp.name) / 'shortcut.env'
+        grant = {'client_id': 'fixture-client', 'access_token': 'fixture-access-1', 'expires_at': expires_at,
+                 **({'refresh_token': refresh} if refresh else {})}
+        path.write_text(json.dumps(grant, separators=(',', ':')) + '\n')
+        path.chmod(0o600)
+        self.credential.side_effect = lambda config, name: path.read_text().strip()
+        self.auth = ('Authorization', 'Bearer fixture-access-1')
+        return {'credentials': {'shortcut': str(path)}}, path
+
+    def test_a_sign_in_reads_with_its_access_token_as_bearer(self):
+        config, path = self.signed_in(expires_at=4102444800)  # far ahead: no refresh
+        shortcut.check(config, {**shortcut.SETUP['account']}, self.helpers)
+        self.assertEqual([p for p, _ in self.requests], ['/api/v3/member'])
+        self.assertEqual(self.refreshes, [])
+
+    def test_a_sign_in_about_to_run_out_is_refreshed_and_kept_privately(self):
+        config, path = self.signed_in(expires_at=1)
+        self.refreshed = [{'access_token': 'fixture-access-2', 'refresh_token': 'fixture-refresh-2', 'expires_in': 3600}]
+        self.auth = ('Authorization', 'Bearer fixture-access-2')
+        shortcut.check(config, {**shortcut.SETUP['account']}, self.helpers)
+        self.assertEqual(self.refreshes, [{'grant_type': 'refresh_token', 'refresh_token': 'fixture-refresh-1', 'client_id': 'fixture-client'}])
+        kept = json.loads(path.read_text())
+        self.assertEqual((kept['access_token'], kept['refresh_token'], kept['client_id']), ('fixture-access-2', 'fixture-refresh-2', 'fixture-client'))
+        self.assertGreater(kept['expires_at'], 1)
+        self.assertEqual(path.stat().st_mode & 0o777, 0o600)
+        self.assertEqual(sorted(p.name for p in path.parent.iterdir() if p.name.startswith('.shortcut')), [])  # no temp file left
+
+    def test_a_turned_down_sign_in_refreshes_once_then_asks_to_sign_in_again(self):
+        config, path = self.signed_in(expires_at=4102444800)
+        calls = []
+        respond = self.respond
+
+        def refused_once(request, timeout):
+            if request.full_url.endswith('/api/v3/member') and not calls:
+                calls.append(1)
+                raise urllib.error.HTTPError('unused', 401, 'fixture-access-1', {}, None)
+            return respond(request, timeout)
+        self.http.side_effect = refused_once
+        self.refreshed = [{'access_token': 'fixture-access-2', 'expires_in': 3600}]
+        self.auth = ('Authorization', 'Bearer fixture-access-2')
+        shortcut.check(config, {**shortcut.SETUP['account']}, self.helpers)
+        self.assertEqual(json.loads(path.read_text())['refresh_token'], 'fixture-refresh-1')  # not rotated: kept as it was
+        # turned down again after a refresh, or a refresh refused: sign in again, never the token in the error
+        self.http.side_effect = lambda request, timeout: (_ for _ in ()).throw(urllib.error.HTTPError('unused', 401, 'x', {}, None)) \
+            if request.full_url != shortcut.OAUTH_TOKEN else respond(request, timeout)
+        self.refreshed = [{'access_token': 'fixture-access-3', 'expires_in': 3600}]
+        with self.assertRaisesRegex(sources.SourceError, '^shortcut_signin_expired:HTTP_401$'):
+            shortcut.check(config, {**shortcut.SETUP['account']}, self.helpers)
+        self.signed_in(expires_at=1)
+        self.refreshed = [urllib.error.HTTPError('unused', 400, 'invalid_grant', {}, None)]
+        with self.assertRaisesRegex(sources.SourceError, '^shortcut_signin_expired:HTTP_400$'):
+            shortcut.check(config, {**shortcut.SETUP['account']}, self.helpers)
+        self.signed_in(expires_at=1, refresh='')
+        with self.assertRaisesRegex(sources.SourceError, '^shortcut_signin_expired$'):
+            shortcut.check(config, {**shortcut.SETUP['account']}, self.helpers)
+
+    def test_a_malformed_sign_in_is_no_credential(self):
+        for value in ('{"client_id":"fixture-client"}', '{"client_id":"a b","access_token":"fixture-access"}', '{not json',
+                      '{"client_id":"fixture-client","access_token":"fixture-access","expires_at":"soon"}', '[]'):
+            self.credential.return_value = value
+            with self.subTest(value=value), self.assertRaisesRegex(sources.SourceError, '^shortcut_credential_unavailable$'):
+                shortcut.Source({}, ACCOUNT, self.helpers)
+
+    def test_shortcut_signs_in_through_the_control_plane_with_a_token_as_the_fallback(self):
+        from machine import services
+        import fleet
+        import onboarding
+        self.assertEqual(services.field('signin')['shortcut'], 'shortcut')
+        self.assertIn('shortcut', fleet.SIGNIN_SOURCES)
+        self.assertIn('shortcut', onboarding.DELIVERED)
+        self.assertIn('shortcut', machine_sources_connectors.HOSTED_SIGNINS)
+        self.assertNotIn('shortcut', machine_sources_connectors.SIGNIN_ONLY)  # the pasted token stays
+        self.assertEqual((shortcut.SETUP['account_page'], shortcut.SETUP['secret']), ('source-shortcut', 'Shortcut API token'))
+        self.assertNotIn('no_oauth', shortcut.SETUP)
 
     def test_a_refused_token_says_so_in_plain_words(self):
         self.member = urllib.error.HTTPError('unused', 401, 'fixture-token refused', {}, None)

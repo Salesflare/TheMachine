@@ -34,7 +34,7 @@ Collectors read existing source content. The optional Salesflare `join_pipelines
 | `teams` (plugin) | None: Connect Microsoft Teams (hosted, or a paired self-hosted Machine through the control plane: `microsoft_teams`, `microsoft_grants.teams`) adds Teams scopes to the Microsoft sign-in for that address, or signs in for Teams alone (`transport` `broker`). Work or school accounts only | `email`, `bootstrap_days` (7); config `teams_consent` |
 | `salesforce` (plugin) | None: Connect Salesforce on a hosted Machine's setup page signs in with your own Salesforce user, through a token broker (`salesforce_broker`) | `email` |
 | `docs` (plugin) | The owner's own Google (broker) or Microsoft sign-in for that address, plus a separate consent for files | `email`, `transport` (borrowed from the mail account), `provider` (`google` or `microsoft`, else from the mail account), `boundary` |
-| `shortcut` (plugin) | A Shortcut API token | `credential` (`workspace` is filled in from the token) |
+| `shortcut` (plugin) | Sign in with Shortcut, or a Shortcut API token | `credential` (`workspace` is filled in from the sign-in or token) |
 | `rss` (plugin) | none | `url` |
 | `web_page` (plugin) | none: a public https page | `url`, `display_name` (the page, set when you add it), `poll_seconds` (21600; never under an hour) |
 
@@ -343,9 +343,9 @@ The first read is the baseline: one event per page, kept as reviewed, with the p
 
 ### Shortcut
 
-Story moves between workflow states (`shortcut.move`), with their owners and deadlines (`connectors/shortcut.py`). Connect it with `assistant connect shortcut`: only an API token, from Shortcut's API Tokens page (https://app.shortcut.com/settings/account/api-tokens). The token's own member check (`GET /api/v3/member`) fills in the workspace, and the account stays with that workspace.
+Story moves between workflow states (`shortcut.move`), with their owners and deadlines (`connectors/shortcut.py`). Connect it with **Sign in with Shortcut** (Connections, **+ Add**, on a hosted Machine or one paired with your account): the control plane runs Shortcut's OAuth consent with scope `read` only, for The Machine's public client (PKCE, no client secret), and hands the sign-in to the Machine, which keeps it in the account's credential file and refreshes it itself at Shortcut's token endpoint. The fallback is `assistant connect shortcut` with an API token from Shortcut's API Tokens page (https://app.shortcut.com/settings/account/api-tokens). Either way the member check (`GET /api/v3/member`) fills in the workspace, and the account stays with that workspace.
 
-- Shortcut tokens have full account access (there is no read-only scope). This connector only reads: GET-only story search and story history, and it checks that the token belongs to the chosen workspace.
+- A sign-in reads only (scope `read`). A pasted token has full account access (there is no read-only token); this connector only reads with it: GET-only story search and story history, and it checks that the token belongs to the chosen workspace.
 - It starts with the last seven days, searches with a one-day overlap and commits its paging checkpoints. The story's current context may be newer than a single move.
 
 ### History

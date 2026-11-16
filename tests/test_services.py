@@ -151,7 +151,7 @@ BEFORE = {
     'fleet.SIGNIN_OF': {
         'intercom': 'intercom', 'gmail': 'google', 'calendar': 'google', 'outlook': 'microsoft', 'outlook_calendar': 'microsoft',
         'zoom': 'zoom', 'docs': 'microsoft_docs', 'teams': 'microsoft_teams', 'stripe': 'stripe', 'slack': 'slack', 'trello': 'trello',
-        'google_meet': 'google_meet', 'salesforce': 'salesforce'},
+        'google_meet': 'google_meet', 'salesforce': 'salesforce', 'shortcut': 'shortcut'},
     'onboarding.LABELS': {
         'gmail': 'Gmail', 'calendar': 'Google Calendar', 'outlook': 'Outlook', 'outlook_calendar': 'Outlook Calendar', 'imap': 'Other email',
         'slack': 'Slack', 'salesflare': 'Salesflare CRM', 'android': 'Android notifications', 'whatsapp': 'WhatsApp',

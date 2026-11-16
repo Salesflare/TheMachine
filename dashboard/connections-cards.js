@@ -234,6 +234,7 @@ async function connectSetup(form){const name=form.dataset.connectSetup,err=form.
 const SIGNIN_COPY={intercom:{label:'Intercom',about:'Reads your conversations. Replies only after you approve them, as yourself. Never assigns or closes.'},
  salesforce:{label:'Salesforce',about:'Deals, tasks and activity. Changes contact details only if you turn that on.'},
  trello:{label:'Trello',about:'Reads cards, comments and activity on one board you pick next. Never changes anything in Trello.'},
+ shortcut:{label:'Shortcut',about:'Reads stories that change state, with their owners and deadlines. Never changes anything in Shortcut.',other:'Or paste an API token',how:'A personal API token from Shortcut’s settings.',go:'Paste a token',off:'Sign in with {} isn’t available yet. Paste an API token instead.'},
  google:{label:'Google',about:'Gmail and Google Calendar. Sends only emails you approved.',other:'Use your own app',how:'Your own Google Cloud app, step by step.',go:'Set it up',off:'Sign in with {} isn’t available yet. Use your own app instead.'},
  microsoft:{label:'Microsoft',about:'Outlook mail and calendar. Sends only emails you approved.',other:'Use your own app',how:'Your own Microsoft app registration, step by step.',go:'Set it up',off:'Sign in with {} isn’t available yet. Use your own app instead.'},
  github:{label:'GitHub',about:'Review requests, mentions, assignments and failed CI runs. Files issues only when you confirm.'},
@@ -259,7 +260,7 @@ const signinOf=(x,state,command)=>{const hosted=!!(connectList?.manage_url&&x.ho
  return {source:x.name,provider:p,label:SIGNIN_COPY[p]?.label||x.label,own:!x.broker,hosted,another:!!x.connected,state,...(command?{command}:{}),...(!hosted&&x.signin_off?{off:true}:{})}};
 // A hosted Machine: Work or Personal here, then Sign in goes to the provider in this tab and comes back to this form.
 // Pasting a key or token stays on the account page's tile.
-const HOSTED_TILE={google:'#google',microsoft:'#microsoft',microsoft_teams:'#teams',zoom:'#source-zoom',stripe:'#source-stripe',slack:'#source-slack',intercom:'#source-intercom',trello:'#source-trello',github:'#source-github',salesforce:'#source-salesforce'};
+const HOSTED_TILE={google:'#google',microsoft:'#microsoft',microsoft_teams:'#teams',zoom:'#source-zoom',stripe:'#source-stripe',slack:'#source-slack',intercom:'#source-intercom',trello:'#source-trello',shortcut:'#source-shortcut',github:'#source-github',salesforce:'#source-salesforce'};
 // GitHub, WhatsApp and the phone have no provider page to come back from: the Machine gets a code, shown right here
 // (GitHub's to type at GitHub, WhatsApp's QR code or pairing code, the OpenClaw app's setup code)
 const GITHUB_DEVICE=/^https:\/\/github\.com\/login\/device[\w/.-]*$/;
@@ -293,7 +294,7 @@ const signinLater=copy=>copy.later?html`<p class="muted">${copy.later}</p>`:'';
 function hostedSigninGo(s,way){const form=document.createElement('form'),box=$('#connect-add'),add=(name,value)=>{const i=document.createElement('input');i.type='hidden';i.name=name;i.value=value;form.append(i)};
  form.method='post';form.action='/_machine/connect';form.hidden=true;add('source',s.provider);
  if(!NO_SCOPE_SIGNIN.includes(s.provider)){add('scope',box.querySelector('input[name="signin-scope"]:checked')?.value||'work');add('boundary','')}
- if((s.provider==='intercom'||s.provider==='trello')&&s.another)add('another','1');
+ if(['intercom','trello','shortcut'].includes(s.provider)&&s.another)add('another','1');
  if(['microsoft_docs','microsoft_docs_write','microsoft_teams'].includes(s.provider)&&s.email)add('email',s.email);  // Reconnect on its card: that address
  if(s.provider==='whatsapp'&&way==='code'){add('way','code');add('phone',box.querySelector('input[name="signin-phone"]')?.value||'')}
  if(s.provider==='whatsapp'&&s.account)add('account_id',s.account);  // Link again: the one that is not linked any more
