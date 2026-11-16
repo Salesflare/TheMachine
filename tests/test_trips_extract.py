@@ -68,7 +68,7 @@ class Parse(unittest.TestCase):
                   {'type': 'spaceship', 'start': '2026-06-13'},
                   {'type': 'flight', 'start': 'soon', 'from': 'A', 'to': 'B'},
                   {'type': 'flight', 'start': '2026-06-13T17:20', 'from': 'Brussels', 'to': 'Portavia', 'owner_on_it': 'no'}],
-            '2': [{'type': 'parking', 'status': 'Cancelled', 'code': '7F2C9A10'}],
+            '2': [{'type': 'parking', 'status': 'CANCELED','code': '7F2C9A10'}],
             '9': [{'type': 'hotel', 'start': '2026-01-01', 'name': 'Not asked'}]}) + '\n```'
         found = bookings.parse(reply, ['1', '2', '3'])
         self.assertEqual(found['1'], [

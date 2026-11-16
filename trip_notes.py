@@ -39,6 +39,7 @@ import unicodedata
 from i18n import t
 import bookings as bookings_mail
 import mail_cleanup
+import timeutil
 import todo_areas
 
 SCHEMA = '''
@@ -579,7 +580,7 @@ def _order(line):
 
 
 def _today():
-    return dt.date.today().isoformat()
+    return timeutil.today().isoformat()
 
 
 def drafts(db, accounts, lang=None, today=None):
