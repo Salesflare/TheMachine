@@ -1,38 +1,40 @@
 ---
 title: Exchange Server
 area: connections
-summary: Les réunions d’un Exchange Server géré par votre entreprise (2013 à 2019 ou Subscription Edition). Lecture seule.
+summary: Réunions depuis un Exchange Server géré par votre entreprise (de 2013 à 2019 ou Subscription Edition). En lecture seule.
 covers: connector:exchange
 code: ews_calendar.py, machine/sources/calendar_setup.py
 order: 16
-translated: a437b18fcb879c1b
+translated: f2b98c9bd4f08dba
 ---
-## Ce qu’il lit
+## Ce qui est lu
 
-Vos réunions, avec leurs invités, salles et notes : la semaine passée et le mois à venir quand vous connectez, puis chaque changement. Elles apparaissent dans l’Agenda et dans la préparation des réunions.
+À la connexion, vos réunions de la semaine passée et du mois à venir, avec leurs invités, leurs salles et leurs notes. Ensuite, chaque modification. Elles apparaissent dans Agenda et dans la préparation des réunions.
 
-Il est en lecture seule : il n’ajoute, ne déplace et ne supprime jamais de réunion. Les e-mails d’Exchange Server ne sont pas encore lus.
+La connexion est en lecture seule : elle n’ajoute, ne déplace ni ne supprime jamais de réunion. Les e-mails d’Exchange Server ne sont pas encore lus.
 
 ## Microsoft 365 ou Exchange Server ?
 
-Exchange Server tourne dans votre entreprise. Microsoft 365 (Exchange Online) est le cloud de Microsoft : choisissez plutôt **Outlook Calendar** pour lui. Si votre adresse s’avère être sur Microsoft 365, le formulaire le dit.
+Exchange Server est hébergé par votre entreprise. Microsoft 365 (Exchange Online) est le service cloud de Microsoft : choisissez plutôt **Outlook Calendar**.
 
-## Le connecter
+Saisissez d’abord votre adresse. Si elle est associée à Microsoft 365, le formulaire l’indique et affiche **Se connecter avec Microsoft** à la place du champ du mot de passe. Cela ouvre la connexion à Outlook Calendar, sans mot de passe. Si le serveur est introuvable après quelques secondes, ou si votre entreprise gère son propre serveur, le formulaire de mot de passe reste affiché.
+
+## Connecter le calendrier
 
 1. Dans le tableau de bord, ouvrez **Connexions**, puis **Agenda**, et choisissez **Exchange Server**.
 2. Saisissez votre adresse e-mail professionnelle et votre mot de passe Windows.
-3. Appuyez sur **Se connecter**.
+3. Sélectionnez **Se connecter**.
 
-Le serveur est trouvé à partir de votre adresse (Autodiscover). Pas trouvé ? Ouvrez **Réglages du serveur** et saisissez le serveur que votre équipe informatique indique pour Outlook, comme `mail.example.com`. Vous vous connectez avec un autre nom que votre adresse ? Saisissez-le sous la forme `DOMAIN\name` dans **Nom d’utilisateur**.
+Le serveur est détecté à partir de votre adresse (Autodiscover). S’il est introuvable, ouvrez **Réglages du serveur** et saisissez le serveur Outlook indiqué par votre équipe informatique, par exemple `mail.example.com`. Si vous vous connectez avec un nom différent de votre adresse, saisissez-le dans **Nom d’utilisateur** sous la forme `DOMAIN\name`.
 
-Il se connecte avec NTLM ou Basic, uniquement en https.
+La connexion utilise NTLM ou Basic, uniquement via https.
 
-## Quand il s’arrête
+## En cas de problème
 
-- **Le serveur d’agenda a refusé le mot de passe** : votre mot de passe Windows a changé. Reconnectez-le.
-- **Une boîte Microsoft 365** : votre boîte est passée sur Microsoft 365. Déconnectez celle-ci et connectez **Outlook Calendar**.
-- **Le serveur d’agenda est injoignable** : il réessaie tout seul. Certains serveurs ne sont joignables que depuis le réseau de l’entreprise ou par VPN.
+- **Le serveur d’agenda a refusé le mot de passe** : votre mot de passe Windows a changé. Reconnectez le calendrier.
+- **Une boîte aux lettres Microsoft 365** : votre boîte aux lettres a été déplacée vers Microsoft 365. Déconnectez ce calendrier et connectez **Outlook Calendar**.
+- **Le serveur d’agenda est injoignable** : une nouvelle tentative est lancée automatiquement. Certains serveurs ne sont accessibles que depuis le réseau de l’entreprise ou via un VPN.
 
-## Le retirer
+## Supprimer le calendrier
 
-**Connexions**, ouvrez l’agenda, **Détails**, puis **Déconnecter**. Ce qu’il a déjà récupéré reste.
+**Connexions**, ouvrez l’agenda, **Détails**, puis **Déconnecter**. Les réunions déjà importées restent.

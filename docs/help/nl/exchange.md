@@ -1,38 +1,40 @@
 ---
 title: Exchange Server
 area: connections
-summary: Afspraken uit een Exchange Server die je bedrijf zelf draait (2013 tot 2019 of Subscription Edition). Alleen lezen.
+summary: Afspraken van een Exchange Server die je bedrijf zelf beheert (2013 tot en met 2019 of Subscription Edition). Alleen-lezen.
 covers: connector:exchange
 code: ews_calendar.py, machine/sources/calendar_setup.py
 order: 16
-translated: a437b18fcb879c1b
+translated: f2b98c9bd4f08dba
 ---
-## Wat het leest
+## Wat wordt gelezen
 
-Je afspraken, met hun gasten, zalen en notities: de afgelopen week en de volgende maand als je koppelt, daarna elke wijziging. Ze verschijnen in Agenda en in de voorbereiding van je afspraken.
+Je afspraken, met de gasten, vergaderruimtes en notities: de afgelopen week en de komende maand wanneer je verbinding maakt, en daarna elke wijziging. Ze verschijnen in **Agenda** en bij de voorbereiding van vergaderingen.
 
-Het leest alleen: het voegt nooit een afspraak toe, verplaatst er geen en verwijdert er geen. Mail uit Exchange Server wordt nog niet gelezen.
+De koppeling is alleen-lezen: er worden nooit afspraken toegevoegd, verplaatst of verwijderd. Mail uit Exchange Server wordt nog niet gelezen.
 
 ## Microsoft 365 of Exchange Server?
 
-Exchange Server draait bij je bedrijf. Microsoft 365 (Exchange Online) is de cloud van Microsoft: kies daarvoor **Outlook-agenda**. Blijkt je adres op Microsoft 365 te staan, dan zegt het formulier dat.
+Exchange Server draait bij je bedrijf. Microsoft 365 (Exchange Online) is de cloud van Microsoft. Kies daarvoor **Outlook-agenda**.
+
+Vul eerst je e-mailadres in. Als het om Microsoft 365 gaat, staat dat op het formulier en zie je **Aanmelden met Microsoft** in plaats van het wachtwoordveld. Daarmee open je de aanmeldpagina van Outlook-agenda, zonder wachtwoord. Wordt het adres niet binnen een paar seconden gevonden, of beheert je bedrijf een eigen server? Dan blijft het wachtwoordformulier staan.
 
 ## Koppelen
 
-1. Open in het dashboard **Koppelingen**, dan **Agenda**, en kies **Exchange Server**.
-2. Vul je werkadres en je Windows-wachtwoord in.
-3. Druk op **Verbinden**.
+1. Open in het dashboard **Koppelingen**, daarna **Agenda**, en kies **Exchange Server**.
+2. Vul je zakelijke e-mailadres en Windows-wachtwoord in.
+3. Klik op **Verbinden**.
 
-De server wordt gevonden via je adres (Autodiscover). Niet gevonden? Open **Serverinstellingen** en typ de server die je IT-team opgeeft voor Outlook, zoals `mail.example.com`. Log je in met een andere naam dan je adres? Typ die als `DOMAIN\name` onder **Gebruikersnaam**.
+De server wordt gevonden op basis van je e-mailadres (Autodiscover). Wordt de server niet gevonden? Open **Serverinstellingen** en vul de server in die je IT-afdeling voor Outlook opgeeft, bijvoorbeeld `mail.example.com`. Meld je je aan met een andere naam dan je e-mailadres? Vul die dan in bij **Gebruikersnaam**, als `DOMAIN\name`.
 
-Het logt in met NTLM of Basic, alleen via https.
+Aanmelden gebeurt via NTLM of Basic, alleen via https.
 
-## Als het stopt
+## Als de koppeling niet meer werkt
 
-- **De agendaserver weigerde het wachtwoord**: je Windows-wachtwoord is gewijzigd. Koppel opnieuw.
-- **Een Microsoft 365-mailbox**: je mailbox is verhuisd naar Microsoft 365. Ontkoppel deze en koppel **Outlook-agenda**.
-- **De agendaserver was niet bereikbaar**: hij probeert het zelf opnieuw. Sommige servers zijn alleen bereikbaar binnen het bedrijfsnetwerk of via VPN.
+- **De agendaserver weigerde het wachtwoord**: je Windows-wachtwoord is gewijzigd. Koppel de agenda opnieuw.
+- **Een Microsoft 365-mailbox**: je mailbox is verplaatst naar Microsoft 365. Ontkoppel deze agenda en koppel **Outlook-agenda**.
+- **De agendaserver was niet bereikbaar**: er wordt automatisch opnieuw geprobeerd. Sommige servers zijn alleen bereikbaar via het bedrijfsnetwerk of VPN.
 
-## Verwijderen
+## De koppeling verwijderen
 
-**Koppelingen**, open de agenda, **Details**, dan **Ontkoppelen**. Wat al binnen is, blijft.
+Open **Koppelingen**, open de agenda en kies **Details** en daarna **Ontkoppelen**. Wat al is overgezet, blijft staan.

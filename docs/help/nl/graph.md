@@ -5,7 +5,7 @@ summary: De mensen, organisaties en projecten in je berichten, die zichzelf up-t
 covers: tab:people
 code: graph.py, graph_updates.py, crm.py, crm_import.py, crm_fixes.py, crm_fields.py, dashboard.html
 order: 1
-translated: 850a4e2905f54511
+translated: 9052c679e45207f7
 ---
 Je Machine maakt op basis van je berichten, vergaderingen en beslissingen een overzicht van wie je spreekt en wat er speelt. Je hoeft niets in te stellen en alles blijft op je Machine.
 
@@ -15,49 +15,49 @@ Je Machine maakt op basis van je berichten, vergaderingen en beslissingen een ov
 
 ## Vandaag bijgewerkt
 
-Boven aan elke lijst staat een subtiele regel met wat je Machine vandaag heeft bijgewerkt, zoals **Vandaag 4 mensen bijgewerkt**. Tik erop om te zien wie en wat er is veranderd. Tik op een naam om de pagina te openen, met **Recente wijzigingen** open. Een kleine stip markeert elke rij en tegel op een bord die vandaag is gewijzigd. Alleen wijzigingen van je Machine zelf sinds middernacht tellen mee.
+Boven aan elke lijst staat een subtiele regel met wat je Machine vandaag heeft bijgewerkt, bijvoorbeeld **Vandaag 4 mensen bijgewerkt**. Tik erop om te zien wie en wat er is veranderd. Tik op een naam om de pagina te openen, met **Recente wijzigingen** open. Een kleine stip markeert elke rij en tegel op het bord die vandaag is gewijzigd. Je ziet alleen wijzigingen die je Machine zelf heeft aangebracht, vanaf middernacht.
 
 ## Filteren en sorteren
 
 Met **Filteren** naast de tabbladen beperk je de lijst. Elke lijst heeft eigen filters. Mensen: hoe goed je iemand kent, laatste contact, organisatie, eigenaar, tag en **Heeft een open project**. Organisaties: branche, specialisme, grootte, land, laatste contact, eigenaar, tag en **Heeft een open project**. Projecten: eigenaar, bord, fase, tag, organisatie, waarde, verwachte afsluitdatum en **Geen antwoord in 10+ dagen**.
 
-De gekozen filters staan boven de lijst, met **Wissen**. Bij Projecten gebruiken de lijst en het bord hetzelfde filter. Op een telefoon openen filters in een uitschuifvenster.
+De filters die je hebt gekozen, staan boven de lijst, met **Wissen**. Bij Projecten gebruiken de lijst en het bord hetzelfde filter. Op een telefoon openen filters in een paneel.
 
-Met het sorteermenu sorteer je de lijst. Mensen en Organisaties worden gesorteerd op hoe goed je iemand kent, nieuwste of oudste contact en naam. Organisaties kun je ook op grootte sorteren. Projecten worden gesorteerd op laatste activiteit, naam, fase, **Waarde** en **Afsluitdatum**. Met **CSV downloaden** onder het sorteermenu sla je het huidige tabblad op als spreadsheet.
+Met het sorteermenu sorteer je de lijst. Mensen en Organisaties worden gesorteerd op hoe goed je iemand kent, nieuwste of oudste contact en naam. Organisaties kunnen ook op grootte worden gesorteerd. Projecten worden gesorteerd op laatste activiteit, naam, fase, **Waarde** en **Afsluitdatum**. Met **CSV downloaden** onder het sorteermenu sla je het tabblad dat je bekijkt op als spreadsheet.
 
 ## Velden en tags
 
-Klik onder Velden bij een persoon, organisatie of project op een waarde om die te wijzigen. Met **Opslaan** of Enter bewaar je de wijziging. Met **Annuleren** of Escape sluit je af zonder op te slaan. Met **Verwijderen** maak je het veld leeg.
+Klik onder Velden bij een persoon, organisatie of project op een waarde om die te wijzigen: met **Opslaan** of Enter bewaar je de wijziging, met **Annuleren** of Escape laat je die staan zoals hij was, en met **Verwijderen** maak je het veld leeg.
 
-Met **Velden beheren** (of **Veld toevoegen** als er nog geen velden zijn) voeg je velden toe of verwijder je ze voor alle items van dat type. Met **Nieuw veld** voeg je een veld toe: tekst, getal, datum of een keuze uit een lijst.
+Met **Velden beheren** (of **Veld toevoegen** als er nog geen velden zijn) voeg je velden toe of verwijder je ze voor alle records van dat type. Met **Nieuw veld** voeg je een veld toe: tekst, getal, datum of een keuze uit een lijst.
 
-Met **+ Tag** voeg je een tag toe, zoals VIP of partner. Met **×** verwijder je die. Tags staan in de lijsten en je kunt ze vinden met **Filteren**.
+Met **+ Tag** voeg je een tag toe, zoals VIP of partner. Met **×** verwijder je een tag. Tags staan in de lijsten (op een telefoon staan de tags van een persoon op diens pagina) en met **Filteren** kun je ze vinden.
 
 ## Verjaardag
 
-De verjaardag van iemand staat onder Contact, met de bron erbij: diens Google-contact, een verjaardag in Google Calendar (de routine Verjaardagen slaat die op voor iemand met wie je veel contact hebt), een Facebook-import, je notities of jijzelf. Met **Bewerken** stel je de verjaardag in of corrigeer je die: maand en dag, en het jaar als je dat weet. Dan wordt ook de leeftijd getoond.
+De verjaardag van een persoon staat onder Contact, samen met de bron: het Google-contact, een verjaardag in Google Agenda (de routine Verjaardagen slaat die op voor een contact dat je goed kent), een Facebook-import, je notities of jijzelf. Met **Bewerken** stel je de verjaardag in of corrigeer je die: een maand en dag, en het jaar als je dat weet. Dan wordt ook de leeftijd getoond.
 
-Wat je zelf instelt, gaat voor op alle andere bronnen en blijft staan. Met **Verwijderen** haal je de verjaardag weg. Een contact of import voegt die niet opnieuw toe.
+Jouw versie heeft voorrang op alle bronnen en blijft staan. Met **Verwijderen** haal je de verjaardag weg. Een contact of import voegt hem niet opnieuw toe.
 
-Als er nog geen verjaardag is, kun je die toevoegen met **Verjaardag toevoegen** onder Velden. De routine Verjaardagen leest dezelfde verjaardag als op de pagina. Een verjaardag is persoonlijk: die wordt nooit met je team gedeeld, ook niet bij een gedeeld item.
+Als er nog geen verjaardag is, voeg je die met **Verjaardag toevoegen** onder Velden toe. De routine Verjaardagen leest dezelfde verjaardag als de pagina. Een verjaardag is persoonlijk: hij wordt nooit met je team gedeeld, ook niet bij een gedeeld record.
 
 ## Een spreadsheet importeren
 
-Met **CSV importeren…** onder het sorteermenu bij Mensen, Organisaties of Projecten voeg je een spreadsheet toe die als CSV is opgeslagen.
+Met **CSV importeren…** onder het sorteermenu bij Mensen, Organisaties of Projecten voeg je een spreadsheet toe die is opgeslagen als CSV.
 
-1. Controleer de kolommen. Je Machine raadt aan de hand van de koppen en inhoud welke kolom waarvoor is. Je kunt dit aanpassen. Als je model kan worden uitgevoerd, controleert het de kolommen ook en geeft het een korte uitleg als het ergens niet zeker van is. Het ziet alleen de koppen, een paar waarden per kolom en de cellen die de regels niet konden lezen.
-2. Controleer de correcties. **Nakijken** toont ze als voor en na: extra spaties, namen in hoofdletters, telefoonnummers in internationale notatie, typefouten in e-mailadressen (gmial.com), websites als domein, datums en waarden in elke notatie ("€12k" is 12000), meerdere tags in één cel, een anders gespelde fase en dubbele rijen. Vink een soort correctie of rij uit om die ongewijzigd te laten.
-3. Controleer het voorbeeld. Elke rij is nieuw, komt overeen met een item in je Graph of wordt overgeslagen. Je ziet waarom. Een persoon wordt gekoppeld op e-mailadres, of anders op naam en organisatie. Een organisatie wordt gekoppeld op website of naam. Een project wordt gekoppeld op naam.
-4. Met **Importeren** voeg je nieuwe items toe en vul je bestaande overeenkomsten aan. Een lege cel verandert niets.
+1. Controleer de kolommen. Je Machine raadt op basis van de kopteksten en inhoud aan wat elke kolom bevat. Je kunt die indeling aanpassen. Als je model kan draaien, controleert het de kolommen ook en geeft het een korte reden als het ergens niet zeker van is. Het model ziet alleen de kopteksten, een paar waarden per kolom en de cellen die de regels niet konden lezen.
+2. Controleer de aanpassingen. Met **Nakijken** bekijk je ze als voor en na: extra spaties, namen in hoofdletters, telefoonnummers in internationaal formaat, typefouten in e-mailadressen (gmial.com), websites als domein, datums en waarden in elk formaat ("€12k" is 12000), meerdere tags in één cel, een anders gespelde fase en dubbele rijen. Haal het vinkje bij een type of rij weg om die ongewijzigd te laten.
+3. Controleer het voorbeeld. Elke rij is nieuw, komt overeen met een bestaand item in je Graph of wordt overgeslagen, met uitleg waarom. Een persoon wordt herkend aan het e-mailadres (of anders aan de naam en organisatie), een organisatie aan de website of naam en een project aan de naam.
+4. Met **Importeren** voeg je nieuwe items toe en vul je de overeenkomsten aan. Een lege cel verandert niets.
 
-Met **Ongedaan maken** direct na het importeren, of **Laatste import ongedaan maken** onder het sorteermenu, maak je de laatste import ongedaan zolang die items sindsdien niet zijn gewijzigd. Als daarmee een latere correctie zou worden overschreven, krijg je in plaats daarvan te zien waarom dat niet kan. Het bestand blijft op je Machine.
+Met **Ongedaan maken** direct na het importeren, of **Laatste import ongedaan maken** onder het sorteermenu, maak je de laatste import ongedaan zolang die records sindsdien niet zijn gewijzigd. Als daarmee een latere correctie zou worden overschreven, krijg je in plaats daarvan te zien waarom dat niet kan. Het bestand blijft op je Machine.
 
 ## Eigenaar
 
-In een Work Fleet heeft elke persoon, organisatie en elk project een eigenaar. Je vindt **Eigenaar** onder Bij jou op de pagina. Jij bent de eigenaar, tenzij je iemand uit je Work Fleet kiest. Met **Eigenaar** bij Filteren zie je alleen je eigen items. Elke wijziging staat in de tijdlijn.
+In een Work Fleet heeft elke persoon, organisatie en elk project een eigenaar: **Eigenaar** onder Bij jou op de pagina. Jij bent de eigenaar, tenzij je iemand uit je Work Fleet kiest. Met **Eigenaar** bij Filteren toon je alleen items waarvan jij eigenaar bent. Elke wijziging staat in de tijdlijn.
 
 ## Team
 
-Met **Team** naast Mine zie je wat je teamgenoten delen, met dezelfde tabbladen en hetzelfde sorteermenu. Met **Filteren** beperk je de lijst op wie iets heeft gedeeld, organisatie (Mensen) of status (Projecten). Wat je daar toevoegt, is van jou.
+Met **Team** naast Mijn zie je wat je teamgenoten delen, met dezelfde tabbladen en hetzelfde sorteermenu. Met **Filteren** beperk je de lijst op wie iets heeft gedeeld, een organisatie (Mensen) of status (Projecten). Wat je daar toevoegt, is van jou.
 
-Werk voor klanten wordt gedeeld met de Machines van je teamgenoten, inclusief eigenaar, velden en tags. Wat zij delen, verschijnt ook in jouw Machine. Bij elke thread staat **Team** of **Alleen jij**. Bekijk [Team Graph](team-graph.md).
+Werk voor klanten wordt gedeeld met de Machines van je teamgenoten, inclusief eigenaar, velden en tags. Wat zij toevoegen, staat ook op jouw Machine. Bij elke thread staat **Team** of **Alleen jij**. Bekijk [Team Graph](team-graph.md).
