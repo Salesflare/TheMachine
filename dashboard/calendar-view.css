@@ -33,7 +33,6 @@ a.cal-item:hover{background:var(--c-hover)}a.cal-item:hover+.cal-item::before,a.
 /*@lazy*/
 .cal-item.past .cal-time,.cal-item.past .cal-main,.cal-chip.past{opacity:.55}
 /*@eager*/
-.cal-free{margin:0;padding:12px 0 4px;color:var(--c-text-3);font-size:var(--fs-sm)}
 /*@lazy*/
 .cal-note{margin:4px 0 0;color:var(--c-text-3);font-size:var(--fs-sm)}.cal-note a{color:var(--c-text-2)}
 .cal-note.cal-start{margin:0 0 12px}
