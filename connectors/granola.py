@@ -10,7 +10,10 @@ opaque: any printable text without spaces, never a fixed prefix or length. Grano
 turns down (401) asks the owner for a new one.
 
     {"id": "granola", "service": "granola", "transport": "api", "boundary": "work", "credential": "granola",
-     "email": "sam@example.com", "poll_seconds": 900}
+     "poll_seconds": 900}
+
+Granola's API has no "who am I": the key's own address (the card's name, and whose notes are theirs) is the owner of
+the notes it lists (whose()), learned when it connects and on each run.
 
 Each run lists the notes updated since the last one (a two-hour overlap; the first run reads bootstrap_days back) and
 reads each new or changed one with its transcript. Only notes of meetings the owner was in come in: theirs, or one
@@ -41,19 +44,15 @@ SETUP = {
     'what': 'Meeting notes and transcripts from Granola.',
     'account': {'id': 'granola', 'service': 'granola', 'transport': 'api', 'boundary': 'work', 'credential': 'granola',
                 'poll_seconds': 900},
-    # The card's name, and whose notes are theirs: Granola's API has no "who am I"
-    'ask': [('email', 'The address you use for Granola')],
     'secret': 'Granola API key',
     'token_url': KEY_URL,
-    'note': 'Create a key with Personal notes in Granola’s desktop app: Settings, Connectors, API keys. '
-            'It needs a Business or Enterprise plan. It only reads.',
+    'note': 'In Granola: Settings, Connectors, API keys. Needs a Business or Enterprise plan. Only reads.',
     'hints': {'granola_key_rejected': 'Granola asks for a new API key',
               'granola_http:HTTP_403': 'Granola refused: API keys need a Business or Enterprise plan'},
     # What the owner reads when the check turns the key down (onboarding.connect): plain words and what to do.
     'errors': {'granola_key_rejected': ('Granola didn’t accept that key', 'create a new one in Granola and paste it here'),
                'granola_http:HTTP_403': ('Granola didn’t allow that key', 'API keys need a Business or Enterprise plan'),
                'granola_credential_unavailable': ('That doesn’t look like a Granola API key', 'copy it again from Granola and paste it here'),
-               'granola_no_email': ('Add the address you use for Granola', 'then connect again'),
                'granola_network': ('Granola didn’t answer', 'try again in a minute')},
 }
 BASE = 'https://public-api.granola.ai'
@@ -111,6 +110,7 @@ class Source:
             raise helpers.SourceError('granola_credential_unavailable')
         self.headers = {'Authorization': 'Bearer ' + secret, 'Accept': 'application/json', 'User-Agent': 'TheMachine/1'}
         self.opener = urllib.request.build_opener(NoRedirect())
+        self.owners = []  # the owner address of each note listed (whose())
 
     def get(self, path, params=None):
         """One GET to Granola's API: the notes list, one note, or one note's transcript. Never any other method,
@@ -149,6 +149,7 @@ class Source:
             page = self.get('/v1/notes', params)
             if not isinstance(page, dict) or not isinstance(page.get('notes'), list):
                 raise self.helpers.SourceError('granola_invalid_page')
+            self.owners += [clean(item['owner'].get('email')) for item in page['notes'] if isinstance(item, dict) and isinstance(item.get('owner'), dict)]
             for item in page['notes']:
                 if isinstance(item, dict) and isinstance(item.get('id'), str) and re.fullmatch(NOTE_ID, item['id']):
                     found.append((item['id'], str(item.get('updated_at') or ''), bool(item.get('deleted_at'))))
@@ -194,13 +195,20 @@ class Source:
         return items
 
 
+def whose(owners, known):
+    """The key's own address from the owners of the notes it lists: one of the owner's known addresses, else the one
+    that owns most of them (a personal key lists its own notes and the few shared with it). '' when it lists none."""
+    owners = [a for a in owners if '@' in a]
+    return next((a for a in owners if a in known), '') or max(sorted(set(owners)), key=owners.count, default='')
+
+
 def owner_addresses(config, account):
-    """The owner's own addresses: the one given for Granola, their mailboxes and calendars, and config owner_emails."""
+    """The owner's own addresses: Granola's, their mailboxes and calendars, and config owner_emails."""
     found = {clean(account.get('email'))}
     try:
         import own_addresses
         found |= set(own_addresses.primaries(config)) | own_addresses.configured(config)[0]
-    except Exception:  # noqa: BLE001 - the address given for Granola is enough on its own
+    except Exception:  # noqa: BLE001 - Granola's own address is enough on its own
         pass
     return found - {''}
 
@@ -316,8 +324,6 @@ def gone(account, note_id, now):
 
 
 def sync(store, config, account, helpers):
-    if '@' not in clean(account.get('email')):
-        raise helpers.SourceError('granola_no_email')
     source = Source(config, account, helpers)
     state = dict(store.checkpoint(account['id']) or {})
     now = stamp(helpers.now())
@@ -325,6 +331,7 @@ def sync(store, config, account, helpers):
     start = since - dt.timedelta(hours=OVERLAP_HOURS) if since else now - dt.timedelta(days=int(config.get('bootstrap_days', 7)))
     listed, cut = source.listed(start)
     mine = owner_addresses(config, account)
+    mine |= {whose(source.owners, mine)} - {''}
     seen = dict(state.get('seen') or {})
     skipped = helpers.Skips('granola_invalid_note')
     count = read = waiting = 0
@@ -361,8 +368,13 @@ def sync(store, config, account, helpers):
 
 
 def check(config, account, helpers):
-    """A real read without storing anything: the key lists notes."""
-    if '@' not in clean(account.get('email')):
-        raise helpers.SourceError('granola_no_email')
-    Source(config, account, helpers).get('/v1/notes', {'page_size': 1})
+    """A real read without storing anything: the key lists notes. It learns the key's address from them (the account is
+    saved after this, onboarding.connect), so the card reads as that address."""
+    source = Source(config, account, helpers)
+    page = source.get('/v1/notes', {'page_size': PAGE})
+    notes = page.get('notes') if isinstance(page, dict) and isinstance(page.get('notes'), list) else []
+    found = whose([clean(n['owner'].get('email')) for n in notes if isinstance(n, dict) and isinstance(n.get('owner'), dict)],
+                  owner_addresses(config, account))
+    if found and '@' not in clean(account.get('email')):
+        account['email'] = found
     return None

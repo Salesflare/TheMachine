@@ -81,8 +81,8 @@ class GranolaTests(unittest.TestCase):
             result = found if query.get('include') == 'transcript' else {k: v for k, v in found.items() if k != 'transcript'}
         return Response(json.dumps(result).encode())
 
-    def sync(self, config=None):
-        return granola.sync(self.store, config or {}, ACCOUNT, self.helpers)
+    def sync(self, config=None, account=None):
+        return granola.sync(self.store, config or {}, account or ACCOUNT, self.helpers)
 
     def rows(self):
         with self.store.connect() as db:
@@ -205,14 +205,21 @@ class GranolaTests(unittest.TestCase):
                 source.get(path)
         self.assertTrue(any(isinstance(h, granola.NoRedirect) for h in source.opener.handlers))
 
-    def test_an_address_is_needed_and_the_form_asks_for_it_with_the_key(self):
-        with self.assertRaises(sources.SourceError) as caught:
-            granola.sync(self.store, {}, {**ACCOUNT, 'email': ''}, self.helpers)
-        self.assertEqual(caught.exception.category, 'granola_no_email')
+    def test_the_form_asks_only_for_the_key_and_the_address_comes_from_granola(self):
         import onboarding
         form = onboarding.web_form({'accounts': []}, 'granola')
-        self.assertEqual((form['secret'], form['token_url']), ('Granola API key', granola.KEY_URL))
-        self.assertEqual([f[0] if isinstance(f, (list, tuple)) else f.get('name') for f in form['ask']], ['email'])
+        self.assertEqual((form['secret'], form['token_url'], form['ask']), ('Granola API key', granola.KEY_URL, []))
+        shared = {'id': 'not_SharedNote0001', 'owner': {'name': 'Someone', 'email': 'someone@client.example'}}
+        mine = {**self.listing[0]['notes'][0], 'owner': {'name': 'Owner Example', 'email': 'Owner@Example.com'}}
+        self.listing = [{'notes': [mine, shared], 'hasMore': False}]
+        account = {**ACCOUNT, 'email': ''}
+        self.assertIsNone(granola.check({}, account, self.helpers))
+        self.assertEqual(account['email'], 'owner@example.com')  # whose notes most of them are: the card's name
+        self.assertEqual(granola.whose(['someone@client.example', 'owner@example.com'], {'owner@example.com'}), 'owner@example.com')
+        self.assertEqual(granola.whose([], set()), '')
+        self.listing = [{'notes': [mine], 'hasMore': False}]
+        self.sync(account={**ACCOUNT, 'email': ''})  # a run without it learns it too: the owner's own notes come in
+        self.assertIn('granola.notes', self.rows())
 
     def test_only_granola_links_are_kept(self):
         for n, link in enumerate(('https://evil.example/granola.ai', 'https://evilgranola.ai/d/x', 'http://notes.granola.ai/d/x')):
