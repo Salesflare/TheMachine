@@ -4,7 +4,7 @@ import {dirname, resolve} from 'node:path';
 import {createHash} from 'node:crypto';
 import {homedir} from 'node:os';
 import {fileURLToPath} from 'node:url';
-import {notePrompt, noteToolResult, outboundCheck} from './outbound-urls.ts';
+import {notePrompt, noteToolResult, outboundCheck, commandText, commandStages} from './outbound-urls.ts';
 
 const HOME = homedir();
 const CONFIG_PATH = process.env.ASSISTANT_CONFIG || `${HOME}/.local/share/personal-assistant/config.json`;
@@ -162,22 +162,8 @@ const CONTENT_READERS = /(?:^|[\s|;&(])(?:rg|grep|egrep|ag|ack|cat|tar|zip|cp|rs
 // Sending mail or chat directly is never allowed; it belongs on the reviewed Send button.
 const OWNER_SERVICE = /owner-token|X-Assistant-Owner|confirm_action/i;
 
-export function commandText(params: any) {
-  const command = params?.command ?? params?.cmd;
-  return Array.isArray(command) ? command.join(' ') : String(command ?? '');
-}
-
-// Small shell lexer: keep quoted arguments together, but check every separate command.
-// This catches ordinary mistakes; Python and other legitimate tools remain available.
-export function commandStages(text: string) {
-  const tokens = text.match(/(?:"(?:\\.|[^"\\])*"|'[^']*'|\\.|[^\s;&|<>])+|&&|\|\||[;&|<>]+/g) || [];
-  const stages: string[][] = [[]];
-  for (const token of tokens) {
-    if (/^[;&|]+$/.test(token)) stages.push([]);
-    else stages.at(-1)!.push(token.replace(/^(['"])(.*)\1$/, '$2'));
-  }
-  return stages.filter(s => s.length);
-}
+// The shell lexer (commandText, commandStages) lives in outbound-urls.ts, which reads network commands with it too.
+export {commandText, commandStages};
 function protectedOutput(stage: string[], cwd: string) {
   const paths: string[] = [];
   for (let i=0;i<stage.length;i++) {

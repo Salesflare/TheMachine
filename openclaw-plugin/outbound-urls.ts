@@ -207,10 +207,95 @@ export function serviceAddress(url: URL, ownerDomains: string[] = []) {
 
 // --- the check -------------------------------------------------------------------------------------------------------
 
+// --- shell commands that reach the network ----------------------------------------------------------------------------
+
+export function commandText(params: any) {
+  const command = params?.command ?? params?.cmd;
+  return Array.isArray(command) ? command.join(' ') : String(command ?? '');
+}
+
+// Small shell lexer: keep quoted arguments together, but check every separate command.
+// This catches ordinary mistakes; Python and other legitimate tools remain available.
+export function commandStages(text: string) {
+  const tokens = text.match(/(?:"(?:\\.|[^"\\])*"|'[^']*'|\\.|[^\s;&|<>])+|&&|\|\||[;&|<>]+/g) || [];
+  const stages: string[][] = [[]];
+  for (const token of tokens) {
+    if (/^[;&|]+$/.test(token)) stages.push([]);
+    else stages.at(-1)!.push(token.replace(/^(['"])(.*)\1$/, '$2'));
+  }
+  return stages.filter(s => s.length);
+}
+
+// The Machine's own service and anything else on this computer: nothing leaves it.
+const LOCAL_HOST = /^(?:localhost|.*\.localhost|127(?:\.\d{1,3}){3}|\[?::1\]?|0\.0\.0\.0)$/i;
+const localUrl = (url: URL) => LOCAL_HOST.test(url.hostname);
+const base = (token: string) => token.replace(/^.*\//, '');
+// Programs that send a request to an address on their command line: curl, wget, HTTPie and its kin, raw sockets.
+const HTTP_CLIENTS = /^(?:curl|wget2?|https?|xh|xhs|curlie)$/;
+const SOCKET_CLIENTS = /^(?:nc|ncat|netcat|socat|telnet)$/;
+const INTERPRETERS = /^(?:python[\d.]*|node|nodejs|deno|bun|ruby|perl|php)$/;
+// Options that send something besides the address (a body, a header, a cookie, a user name, another method, an upload,
+// a config or proxy that changes where it goes), as one letter (curl -d, wget -U) or long (--data, --post-data).
+const SENDS_SHORT = /^-[a-zA-Z]*[dFTHAebuKxXU]/;
+const SENDS_LONG = /^--(?:data|form|upload|header|user-agent|referer|cookie|load-cookies|user|password|json|request|method|post|body|config|proxy|socks|preproxy|resolve|connect-to|url-query|variable|input-file|execute|raw|multipart|auth)/;
+// In inline code: a scheme with no address after it (the code puts the address together), and text joined or formatted
+// onto a written address, or a named argument (a body, params, headers) handed over next to it.
+const BUILT_ADDRESS = /[a-z][a-z0-9+.-]*:\/\/(?=["'`{\s$]|$)/i;
+const AFTER_ADDRESS = /^(?:[{$%]|["'`]\s*(?:[+%.]|,\s*\w+\s*=(?!=)))/;
+
+// What a shell command reaches: the addresses it names (urls), those it sends more to than the address (sends: a
+// body, headers, a cookie, or text the code adds), and refuse when it names one that can't be read from the command
+// (a $variable, an address the code builds, a raw connection off this computer).
+export function shellReach(params: any): {urls: string[]; sends: string[]; refuse: boolean} {
+  const text = commandText(args(params));
+  const urls: string[] = [], sends: string[] = [];
+  let refuse = false;
+  const target = (token: string) => {
+    if (/[$`]/.test(token)) { refuse = true; return; }  // made while it runs: can't be checked
+    const raw = /^[a-z][a-z0-9+.-]*:\/\//i.test(token) ? token : `https://${token}`;
+    const url = parsed(raw);
+    if (!url) { refuse = true; return; }
+    urls.push(url.href);
+  };
+  for (const stage of commandStages(text)) {
+    stage.forEach((token, at) => {
+      const program = base(token), rest = stage.slice(at + 1);
+      if (HTTP_CLIENTS.test(program)) {
+        const named = rest.filter(arg => !arg.startsWith('-') && (/^[a-z][a-z0-9+.-]*:\/\//i.test(arg) || /^[\w.-]+\.[a-z]{2,}(?::\d+)?(?:[/?#]|$)/i.test(arg) || /^localhost\b/.test(arg) || /^[$`]/.test(arg)));
+        named.forEach(target);
+        const more = rest.some(arg => SENDS_SHORT.test(arg) || SENDS_LONG.test(arg)) ||
+          (/^(?:https?|xhs?)$/.test(program) && rest.some(arg => !arg.startsWith('-') && !named.includes(arg) && /[=:@]/.test(arg)));
+        if (more) sends.push(...urls.slice(urls.length - named.length));
+      } else if (SOCKET_CLIENTS.test(program)) {
+        // A raw connection sends whatever it is given: only to this computer.
+        for (const arg of rest.filter(arg => !arg.startsWith('-'))) {
+          const host = arg.replace(/^(?:tcp|udp|ssl|openssl|tcp4|tcp6)[^:]*:/i, '').replace(/:\d+$/, '');
+          if (/[$`]/.test(host) || (/[a-z]/i.test(host) && /\./.test(host) && !LOCAL_HOST.test(host)) || (/^\d{1,3}(?:\.\d{1,3}){3}$/.test(host) && !LOCAL_HOST.test(host))) refuse = true;
+        }
+      } else if (INTERPRETERS.test(program) && at === stage.findIndex(t => INTERPRETERS.test(base(t)))) {
+        // Inline code (-c, -e, a heredoc): every address written in it gets the same check. An address the code puts
+        // together, or hands over with more next to it, can't be checked unless it stays on this computer.
+        const inline = rest.some(arg => /^-[a-zA-Z]*[ceEr]$/.test(arg) || arg === '-') || text.includes('<<');
+        if (!inline) return;
+        const code = decode(text);
+        if (BUILT_ADDRESS.test(code)) refuse = true;
+        for (const match of code.matchAll(URL_IN_TEXT)) {
+          const written = match[0].replace(TRAILING, ''), url = parsed(written);
+          if (!url) continue;
+          if (AFTER_ADDRESS.test(code.slice(match.index! + match[0].length))) sends.push(url.href);
+          urls.push(url.href);
+        }
+      }
+    });
+  }
+  return {urls, sends, refuse};
+}
+
 // The addresses a call opens: web_fetch's url, the browser's (or computer's) open or navigate address.
 export function addressesOf(toolName: string, params: any): string[] {
   params = args(params) || {};
   if (toolName === 'web_fetch') return [params.url].filter(value => typeof value === 'string');
+  if (SHELL_TOOLS.has(toolName)) return shellReach(params).urls;
   if (toolName !== 'browser' && toolName !== 'computer') return [];
   const request = params.request && typeof params.request === 'object' ? params.request : {};
   return [params.url, params.targetUrl, request.url, request.targetUrl].filter(value => typeof value === 'string' && value.trim());
@@ -222,10 +307,20 @@ export const BLOCKED_ADDRESS = 'This run only opens an address it read (in a mes
 // undefined: the call may open its addresses; else why not (for the agent).
 export function outboundCheck(session: string, toolName: string, params: any, ownerDomains: string[] = []): undefined | string {
   const seen = seenBySession.get(session) || new Set<string>();
+  if (SHELL_TOOLS.has(toolName)) {
+    // Shell: an address it makes while it runs can't be checked; what it sends besides the address goes only to this
+    // computer, the owner's own domains or a known service.
+    const reach = shellReach(params);
+    if (reach.refuse) return BLOCKED_ADDRESS;
+    for (const raw of reach.sends) {
+      const url = parsed(raw);
+      if (url && !localUrl(url) && !serviceAddress(url, ownerDomains)) return BLOCKED_ADDRESS;
+    }
+  }
   for (const raw of addressesOf(toolName, params)) {
     const url = parsed(raw.trim());
-    if (!url) continue;  // about:blank, a file or another scheme: not a request to a web server
-    const fragmentSent = toolName !== 'web_fetch';  // web_fetch never sends #fragment; a page's script can read it
+    if (!url || localUrl(url)) continue;  // about:blank, a file, this computer: nothing leaves it
+    const fragmentSent = toolName === 'browser' || toolName === 'computer';  // only a page's script reads #fragment
     if (seen.has(fragmentSent ? url.href : withoutFragment(url))) continue;
     if (plainAddress(url, fragmentSent) || serviceAddress(url, ownerDomains)) continue;
     return BLOCKED_ADDRESS;

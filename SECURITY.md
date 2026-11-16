@@ -65,8 +65,11 @@ invalid receipt or timeout blocks it as well. The token is never included in rel
   well-known service where nobody else sees what is asked (search, maps, Wikipedia, weather, LinkedIn, GitHub, the
   owner's account in Google, Microsoft, Stripe, Zapier or Slack), or to the owner's own company's sites. Anything else
   is refused with a hint to search instead. `web_search` is never limited. Do it, a Confirm and the owner's chats
-  are not checked: the owner asked for that work. The check covers `web_fetch` and the browser's open and navigate
-  addresses, not shell commands (`curl`), typing or scripts on a page, which a to-do prepared ahead can still use
+  are not checked: the owner asked for that work. The check covers `web_fetch`, the browser's open and navigate
+  addresses, and shell commands that reach the network (curl, wget, HTTPie, nc, inline Python or Node code). From
+  the shell, a body, header or cookie goes only to this computer, the owner's sites or those services, and an address
+  the command builds while it runs (a variable, joined text) is refused. The Machine's own service, localhost, `gog`,
+  `gh` and `assistant` stay open. Typing and scripts on a page, and a script file a command runs, are not checked
   ([openclaw-plugin/outbound-urls.ts](openclaw-plugin/outbound-urls.ts)).
 - Text a model wrote never loads anything by itself. The dashboard shows it escaped, with links only to tap (no
   pictures, frames or previews from it), and the installer turns off Telegram's link previews
