@@ -3258,10 +3258,12 @@ def personal_mail(db, domain):
 def infer_org(db, project_id, cache=None):
     """The organization a project is with, from its people: the people on it and on its messages, leaving out the
     owner's colleagues. Their organizations weigh by how many of its messages each is on; someone with none (personal
-    mail) counts against all of them. One organization with at least ORG_SHARE of it is the answer; else None (unsure)."""
+    mail) counts against all of them. One organization with at least ORG_SHARE of it is the answer; else None (unsure).
+    It also needs someone there the owner wrote to or met: a project opened on mail from strangers (a fake IT desk, a
+    claimed approval, a customs fee) gets no organization from the sender's domain until the owner engages."""
     node = 'project:' + str(int(project_id))
     cache = {} if cache is None else cache
-    weight = collections.Counter()
+    weight, engaged = collections.Counter(), set()
     for r in db.execute("SELECT g2.node_id,count(*) n FROM graph_events g JOIN graph_events g2 ON g2.event_id=g.event_id AND g2.probable=0 "
                         "WHERE g.node_id=? AND g.probable=0 AND g2.node_id<>? GROUP BY g2.node_id", (node, node)):
         weight[r['node_id']] += r['n']
@@ -3288,10 +3290,12 @@ def infer_org(db, project_id, cache=None):
                 cache[key] = False
         if key and cache[key]:
             by_org[key] += w
+            if info.get('engaged'):
+                engaged.add(key)
     if not by_org or not total:
         return None
     key, top = by_org.most_common(1)[0]
-    return key if top >= ORG_SHARE * total else None
+    return key if top >= ORG_SHARE * total and key in engaged else None
 
 
 def fill_orgs(db, now):

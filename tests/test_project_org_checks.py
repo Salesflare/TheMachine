@@ -29,7 +29,8 @@ class ProjectOrgChecks(unittest.TestCase):
 
     def two(self):
         internet = self.project('Home internet', mail(4, 'Pat <pat@bigcorp.example>', 'sam@acme.com', thread='h'))
-        trial = self.project('Bigcorp trial', mail(3, 'Pat <pat@bigcorp.example>', 'sam@acme.com', thread='t'))
+        trial = self.project('Bigcorp trial', mail(3, 'Pat <pat@bigcorp.example>', 'sam@acme.com', thread='t'),
+                             mail(2, 'Sam <sam@acme.com>', 'pat@bigcorp.example', ('SENT',), thread='t'))
         self.build()
         self.assertEqual((self.row(internet), self.row(trial)), ({'org': 'bigcorp.example', 'org_by': 'backfill'},) * 2)
         return internet, trial

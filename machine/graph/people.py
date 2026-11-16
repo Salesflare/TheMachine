@@ -104,6 +104,8 @@ def person_nodes(db, owner, names, strength, union, keys, x_names, roles, last_d
         info = {'ids': sorted({shown_id(i, x_names) for i in group if not i.startswith('manual:')}), 'org': ('org:' + domains[0]) if domains and not said_org else None,
                 'org_by': 'email' if domains and not said_org else None, 'has_headline': any(i in headlines for i in group),
                 'wrote': len(live_roles[node]['owner']), 'heard': len(live_roles[node]['them']), 'met': len(live_roles[node]['met']),
+                # the owner ever wrote to them or met them (history too): only then can a project be with their organization
+                'engaged': bool(roles[node]['owner'] or roles[node]['met']),
                 'accounts': sorted(accounts[node]), 'next_meeting': next_meeting[node].isoformat() if node in next_meeting else None,
                 'colleague': colleague, 'role': role, 'role_by': role_by, 'role_id': role_id, 'identifiers': group, 'hints': hints, 'seen_only': not talk,
                 'profile': person_profile, 'edited': sorted(edited), 'side': side, 'side_by': 'owner' if edited.get('side') else None,

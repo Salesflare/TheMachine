@@ -16,7 +16,12 @@ class ProjectOrgs(unittest.TestCase):
     setUp, add, build = tg.Boards.setUp, tg.Boards.add, tg.Boards.build
     STAGES = tg.Boards.STAGES
 
-    def project(self, name, *mails):
+    def project(self, name, *mails, answered=True):
+        """answered: the owner replied in its first thread, to everyone on it (an organization needs someone there the
+        owner wrote to or met)."""
+        if answered:
+            first = mails[0]['metadata']
+            mails += (mail(1, 'Sam <sam@acme.com>', first['from'] + ', ' + first['to'], ('SENT',), thread=first['thread_id']),)
         self.add(*mails)
         with self.store.connect() as db:
             ids = [r[0] for r in db.execute('SELECT id FROM events ORDER BY id DESC LIMIT ?', (len(mails),))]
@@ -65,6 +70,27 @@ class ProjectOrgs(unittest.TestCase):
         self.assertEqual(self.row(mostly_personal), {'org': None, 'org_by': None})
         self.assertEqual(self.row(split), {'org': None, 'org_by': None})
         self.assertEqual(self.row(with_colleague)['org'], 'client.example')
+
+    def test_a_project_on_mail_from_strangers_gets_their_organization_only_once_the_owner_engages(self):
+        """A review opened projects on unverified mail from senders the owner never dealt with (a fake IT desk, a
+        claimed approval), and the sender's domain became the project's organization: an attacker's story looked like
+        real work with a real counterpart. A new prospect's request is still a project; its organization waits until
+        the owner writes back or meets them."""
+        desk = self.project('Mailbox migration', mail(3, 'IT desk <it@desk-support.example>', 'sam@acme.com', thread='d'), answered=False)
+        lead = self.project('Packaging redesign', mail(3, 'Ana <ana@saltfield.example>', 'sam@acme.com', thread='s'), answered=False)
+        self.build()
+        self.assertEqual((self.row(desk), self.row(lead)), ({'org': None, 'org_by': None},) * 2)
+        self.add(mail(2, 'Sam <sam@acme.com>', 'ana@saltfield.example', ('SENT',), thread='s'))  # the owner answers the prospect
+        self.build()
+        self.assertEqual(self.row(lead)['org'], 'saltfield.example')
+        self.assertEqual(self.row(desk), {'org': None, 'org_by': None})
+        with self.store.connect() as db:
+            self.assertFalse(json.loads(db.execute("SELECT info FROM graph_nodes WHERE id='email:it@desk-support.example'").fetchone()[0])['engaged'])
+        met = self.project('Studio visit', {**mail(2, 'Kim <kim@studio.example>', 'sam@acme.com', thread='v'), 'kind': 'calendar.event',
+                                            'metadata': {'attendees': [{'email': 'sam@acme.com', 'self': True}, {'email': 'kim@studio.example'}]}},
+                           answered=False)
+        self.build()
+        self.assertEqual(self.row(met)['org'], 'studio.example')  # a meeting with them is engaging too
 
     def test_a_mail_provider_not_on_any_list_looks_like_one_by_its_people(self):
         self.add(*[mail(3, f'P{i} <p{i}@isp.example>', 'sam@acme.com', thread=f'isp{i}') for i in range(7)],
