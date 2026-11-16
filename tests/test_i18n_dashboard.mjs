@@ -127,7 +127,11 @@ try{
  deliveries=todos.map((s,i)=>({id:i+1,suggestion_id:s.id,status:'sent',updated_at:'2026-11-14T09:30:00Z'}));
  for(const lang of ['ru','zh-CN','ja','ko','fr']){locale=view(lang);
   [context,page]=await open('en-US');await page.waitForFunction(l=>document.documentElement.lang===l,lang);
+  // Connections is drawn when it first shows: in the language already chosen
+  await page.waitForFunction(()=>typeof drawnWhole!=='undefined'&&drawnWhole);await page.evaluate(()=>showTab('health'));
   await page.waitForFunction(()=>document.querySelectorAll('#deliveries>div').length===3);
+  const checks=await page.evaluate(()=>[i18nLookup('Checks'),document.querySelector('#health-tabs').textContent]);
+  assert.ok(checks[0]&&checks[1].includes(checks[0])&&!checks[1].includes('Checks'),lang+': '+checks);
   const seen=await page.evaluate(ts=>{const p=document.createElement('p');p.textContent=ts[0];document.body.append(p);
    return new Promise(r=>setTimeout(()=>{const changed=[],w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);
     for(let n;(n=w.nextNode());){const en=(I18N.orig.get(n)??n.nodeValue).replace(/\s+/g,' ').trim();if(ts.includes(en)&&n.nodeValue.replace(/\s+/g,' ').trim()!==en)changed.push(n.nodeValue)}

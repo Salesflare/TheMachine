@@ -44,8 +44,8 @@ async function open(scheme,width){
  await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
  page.on('pageerror',e=>errors.push(e.message));
  await page.goto(base);
- await page.waitForFunction(()=>typeof showTab==='function'&&document.documentElement.lang==='nl'&&document.querySelector('#connectors article'));
- await page.evaluate(()=>showTab('health'));
+ await page.waitForFunction(()=>typeof showTab==='function'&&document.documentElement.lang==='nl'&&typeof drawnWhole!=='undefined'&&drawnWhole);
+ await page.evaluate(()=>showTab('health'));  // its cards are drawn as it shows
  return {context,page}}
 const shoot=async(p,name)=>{if(shots)await p.screenshot({path:`${shots}/${name}.png`})};
 try{

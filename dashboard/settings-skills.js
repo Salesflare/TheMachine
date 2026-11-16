@@ -26,7 +26,9 @@ let installedTries=0;
 async function loadInstalled(refresh=false){if(installedLoading)return;installedLoading=true;
  try{installedView=await skillCall('skill_installed',{refresh})}catch(err){errCaught(err);installedView={installed:[],error:err.message}}finally{installedLoading=false}
  // updating: the list kept from before a restart shows now, and the fresh one replaces it when asked again
- const again=installedView?.loading||installedView?.updating;if(again&&installedTries++<20)setTimeout(()=>loadInstalled(),3000);else if(!again)installedTries=0;renderInstalled()}
+ const again=installedView?.loading||installedView?.updating;if(again&&installedTries++<20)setTimeout(()=>loadInstalled(),3000);else if(!again)installedTries=0;tabDraw('settings','installed',renderInstalled)}
+// The installed list is read with the page (a first read after a restart took 8-16 s), and drawn when Settings shows
+function skillsSoon(){if(state.skills?.openclaw&&!installedView)loadInstalled()}
 const SKILL_GROUPS=[['workspace','Workspace'],['bundled','Bundled with The Machine'],['other','Other']];
 function installedRow(i){const meta=[i.state==='ready'?'<span class="skill-ready">Ready</span>':i.state==='off'?'Off':i.state==='blocked'?'Not allowed for this agent':'Needs setup'];
  if(i.needs&&i.state!=='ready'&&i.needs!=='Not allowed for this agent')meta.push(esc(i.needs));if(i.group==='other')meta.push(esc(i.source));
@@ -60,7 +62,7 @@ async function lookHub(ref,why=''){$('#hub-status').textContent='';const d=await
    ['Once installed, your Machine can use it in any task, like your other skills.']],d.body,
   html`<button type="button" class="primary" data-hub-install="${d.ref}">Install</button><a class="btn-link ghost" href="${safeURL(d.url)}" target="_blank" rel="noopener">On ClawHub ↗</a><button type="button" class="ghost" data-look-close>Close</button>`)}
 async function hintLook(id){const h=(state.skills?.hints||[]).find(x=>x.id===id);if(!h)return;return h.kind==='clawhub'?lookHub(h.skill,h.why):lookInstalled(h.skill,h.why)}
-async function hintDismiss(id){const v=await skillCall('skill_hint_dismiss',{id});if(v?.skills)state.skills=v;skillsKey='';renderSkills();render()}
+async function hintDismiss(id){const v=await skillCall('skill_hint_dismiss',{id});if(v?.skills)state.skills=v;skillsKey='';tabDraw('settings','skills',renderSkills);render()}
 function hubRow(r){const meta=['Third-party',`@${esc(r.owner)}`,`${Number(r.downloads||0).toLocaleString(DL)} downloads`];if(r.official)meta.push('Official');if(r.suspicious)meta.push('Flagged');
  return `<div data-hub="${esc(r.ref)}"><span class="grow"><strong title="${esc(r.name)}">${esc(r.name)}</strong><small>${esc(r.summary)}</small><small class="skill-meta">${meta.join(' · ')}</small></span><span class="skill-buttons">${r.installed?'<span class="fine">Installed</span>':`<button type="button" class="ghost" data-hub-read="${esc(r.ref)}">Read</button>`}</span></div>`}
 $('#hub-search').addEventListener('submit',async e=>{e.preventDefault();const q=$('#hub-query').value.trim();if(!q)return;$('#hub-go').disabled=true;$('#hub-status').textContent='Searching ClawHub…';

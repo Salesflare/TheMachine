@@ -168,7 +168,8 @@ try{
  mode='ok';cards=null;await tab.evaluate(()=>refresh());await tab.locator('#suggestions article[id]').first().waitFor();
 
  // 7. Sign out wipes the device before it goes
- await tab.evaluate(()=>{$('#sign-out').hidden=false;$('#settings').hidden=false});  // Settings' Sign out (shown on a hosted Machine)
+ // Settings' Sign out (shown on a hosted Machine): Settings first, since it's drawn as it shows (that hides a self-hosted one)
+ await tab.evaluate(()=>{$('#settings').hidden=false});await tab.evaluate(()=>{$('#sign-out').hidden=false});
  await Promise.all([tab.waitForURL(base+'bye'),tab.click('#sign-out button')]);
  assert.ok(posts.includes('logout'));
  assert.equal(await kept(tab),null,'no data left after Sign out');

@@ -21,7 +21,7 @@ function settingsSync(){const s=$('#settings'),bar=$('#settings-tabs'),shown=new
 new MutationObserver(settingsSync).observe($('#settings'),{childList:true,subtree:true,attributes:true,attributeFilter:['hidden']});
 const settingsHash=()=>{if(!$('#settings').hidden)history.replaceState(null,'',location.pathname+location.search+'#settings/'+settingsNow)};
 function settingsOpen(tab){tab=SETTINGS_OLD[tab]||tab;if(SETTINGS_TABS.some(t=>t[0]===tab)){settingsTab=tab;localStorage.setItem('settings-tab',tab)}const was=!$('#settings').hidden;
- for(const b of document.querySelectorAll('nav button[data-tab]')){b.classList.remove('active');b.setAttribute('aria-current','false')}for(const x of document.querySelectorAll('main>section'))x.hidden=x.id!=='settings';$('#open-settings').setAttribute('aria-current','page');
+ for(const b of document.querySelectorAll('nav button[data-tab]')){b.classList.remove('active');b.setAttribute('aria-current','false')}for(const x of document.querySelectorAll('main>section'))x.hidden=x.id!=='settings';tabsDue();$('#open-settings').setAttribute('aria-current','page');
  settingsSync();settingsHash();if(!was)scrollTo(0,0);requestAnimationFrame(()=>{tabsShow($('#settings-tabs'));if(!was)kbLand()})}
 // Settings' panels load when first needed: Settings opens once they're in (and a Writing link's voice gets the focus)
 function showSettings(tab){if(lazyIn('settings'))return settingsOpen(tab);lazyRun('settings',()=>{settingsOpen(tab);voiceEditShow()})}

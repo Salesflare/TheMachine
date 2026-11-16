@@ -132,9 +132,11 @@ try{
   await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
   page.on('pageerror',e=>errors.push(e.message));
   await page.goto('http://127.0.0.1:'+server.address().port);
-  await page.locator('#skills-installed [data-installed="client-meeting-prep"]').waitFor({state:'attached'});  // read with the page
-  assert.equal(await page.locator('#skills-installed [data-installed="trello"]').count(),0);
-  await page.locator('#skills-installed [data-installed="trello"]').waitFor({state:'attached',timeout:8000});
+  // read with the page (drawn when Settings shows)
+  const read=()=>page.evaluate(()=>(installedView?.installed||[]).map(i=>i.name));
+  await page.waitForFunction(()=>(installedView?.installed||[]).some(i=>i.name==='client-meeting-prep'));
+  assert.ok(!(await read()).includes('trello'));
+  await page.waitForFunction(()=>(installedView?.installed||[]).some(i=>i.name==='trello'),null,{timeout:8000});
   await navClick(page.locator('#open-settings'));await page.locator('#settings-tabs [data-settings-tab="skills"]').click();
   await page.locator('details[data-group="bundled"] summary').click();
   await page.locator('#skills-installed [data-installed="trello"]').waitFor();

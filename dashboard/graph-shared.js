@@ -92,7 +92,8 @@ function tabsFade(row){const max=row.scrollWidth-row.clientWidth;row.classList.t
 function tabsShow(row){if(!row)return;const t=row.querySelector('[aria-selected="true"]');if(t&&row.scrollWidth>row.clientWidth)row.scrollLeft=Math.max(0,t.offsetLeft-row.offsetLeft-(row.clientWidth-t.offsetWidth)/2);tabsFade(row)}
 const allTabsFade=()=>document.querySelectorAll('.fleet-tabs,.sub-tabs').forEach(tabsFade);
 document.addEventListener('scroll',e=>{if(e.target.matches?.('.fleet-tabs,.sub-tabs'))tabsFade(e.target)},{capture:true,passive:true});addEventListener('resize',allTabsFade);
-new MutationObserver(()=>document.querySelectorAll('.fleet-tabs:not([data-faded]),.sub-tabs:not([data-faded])').forEach(r=>{r.dataset.faded='';tabsShow(r)})).observe(document.querySelector('main'),{childList:true,subtree:true});
+// a row in a hidden tab or pane, or a closed dialog, waits until it shows: measuring it laid out the whole page for nothing
+new MutationObserver(()=>document.querySelectorAll('.fleet-tabs:not([data-faded]),.sub-tabs:not([data-faded])').forEach(r=>{if(r.closest('[hidden],dialog:not([open])'))return;r.dataset.faded='';tabsShow(r)})).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['hidden','open']});
 // people() lives in the Graph's own part: callers outside it that await the redraw go through here.
 const graphPeople=(...a)=>lazyIn('graph')?people(...a):lazyPart('graph').then(()=>people(...a));
 // Graph: People (closest, gone quiet, new), Projects and Organizations.

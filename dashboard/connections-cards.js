@@ -626,17 +626,15 @@ ${connBackfill(c)}
 ${chatNote(c)}
 <div class="conn-more">${synced?html`<details id="sync-recent-${c.id}" ${open.has('sync-recent-'+c.id)?html`open`:''}><summary>Recent syncs</summary>${syncRows(c.sync_activity)}${(c.sync_activity||[]).length?'':html`<p>No recent syncs recorded yet.</p>`}</details>`:''}<details id="sync-details-${c.id}" ${open.has('sync-details-'+c.id)?html`open`:''}><summary>Details</summary>${!synced?'':c.failures_24h?html`<p>${t(['{} failed sync in the last 24 hours.','{} failed syncs in the last 24 hours.'],c.failures_24h)}${c.error?'':' '+t('The last sync worked.')}</p>`:html`<p>No failed syncs in the last 24 hours.</p>`}${synced&&c.last_failure?html`<p>${t('Last failure: {}, {}',syncError(c.last_failure.error),humanTime(c.last_failure.at))}</p>`:''}${synced&&c.error&&c.failures?html`<p>${t(['{} failed attempt in a row','{} failed attempts in a row'],c.failures)}</p>`:''}${synced?syncPlain(c).map(l=>html`<p class="conn-plain">${l}</p>`):''}${c.service==='intercom'&&c.replies_as&&c.replies_as!=='you'?html`<p class="conn-plain conn-replies-as">${t('Replies as {}, only after you press Send.',c.replies_as)}</p>`:''}${connAbilities(c)}${photosRow(c)}${scopeRow(c)}${connActions(c)}</details></div></div></article>`;
 }
-// The cards are drawn once; after that a refresh redraws them only while Connections is on screen. Elsewhere they wait
-// and are drawn the moment it shows again (before it paints), so the cards seen are never older than the last refresh.
-let cardsStale=false;
-function connCardsDraw(){if($('#health').hidden&&$('#connectors').childElementCount){cardsStale=true;return}cardsStale=false;drawConnectors()}
-new MutationObserver(()=>{if(cardsStale)connCardsDraw()}).observe($('#health'),{attributes:true,attributeFilter:['hidden']});
+// A refresh redraws the cards only while Connections is on screen. Elsewhere they wait and are drawn the moment it
+// shows (before it paints, tabDraw), so the cards seen are never older than the last refresh.
+function connCardsDraw(){tabDraw('health','cards',drawConnectors)}
 // The connection cards (a refresh keeps the opened ones open) and the disconnected ones: A to Z by their name on each tab,
 // a catch-all (Other email, Other calendar, a calendar link) after the rest, Machine health last
 function drawConnectors(){const expandedSync=new Set([...document.querySelectorAll('#connectors details[open]')].map(d=>d.id)),fresh=new Set([...document.querySelectorAll('#connectors .conn-new')].map(a=>a.dataset.conn)),folds=[...document.querySelectorAll('#connectors details:not([id])')].filter(d=>d.open).map(d=>d.closest('article')?.dataset.conn+' '+d.className),order=new Intl.Collator(I18N.lang||'en',{sensitivity:'base'});
  setHTML($('#connectors'),html`${[...state.connectors].sort((a,b)=>(a.service==='gateway')-(b.service==='gateway')||!!a.last-!!b.last||order.compare(a.display_name||a.email||'',b.display_name||b.email||'')).map(c=>connectorCard(c,expandedSync))}${connExtra.map(e=>html`<article data-group="${e.g}" class="conn-extra"><button type="button" class="conn-row"${e.k==='codex'?html` data-codex-signin`:e.k==='gbrain'?html` data-gbrain`:html` data-connect-card="${e.k}"`}>${connLogo(e.c)}<span class="conn-row-text"><span class="conn-name">${e.c.card_title}</span><small>${e.c.card_subtitle?html`<span class="conn-sub">${e.c.card_subtitle}</span> · `:''}<span class="state-dot t-mint" aria-hidden="true"></span> <span class="connection-status">${e.on}</span></small></span><span class="cs-go" aria-hidden="true">›</span></button></article>`)}`);
  for(const a of $('#connectors').children){a.hidden=a.dataset.group!==connShown;if(fresh.has(a.dataset.conn))a.classList.add('conn-new');for(const d of a.querySelectorAll('details:not([id])'))if(folds.includes(a.dataset.conn+' '+d.className))d.open=true}renderDisconnected()}  // what was open stays open
 // Served as a part that loads when first needed (dashboard_parts.LAZY): a page drawn before it came draws Connections
-// now (render skipped it; it can't call render, which counts the part in only once this file has run). Inline (the
-// tests, the demo) this part runs before shell-render.js, which draws it itself.
-if(self.LAZY_FILES?.connections&&drawnWhole)try{drawConnectors();renderHealthTabs()}catch(e){errCaught(e);console.error(e)}
+// when it shows (tabDraw; render skipped it, and it can't call render, which counts the part in only once this file has
+// run). Inline (the tests, the demo) this part runs before shell-render.js, which draws it itself.
+if(self.LAZY_FILES?.connections&&drawnWhole)try{connCardsDraw();tabDraw('health','tabs',renderHealthTabs)}catch(e){errCaught(e);console.error(e)}
