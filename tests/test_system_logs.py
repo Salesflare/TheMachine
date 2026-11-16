@@ -1,6 +1,7 @@
 """The computer's own logs (machine/system_logs.py): read only and local, only real problems become to-dos (routine
 restarts stay silent, per the owner's decision of October 10, 2026), quietly, and no log text is ever kept. All records
 here are synthetic."""
+import contextlib
 import datetime as dt
 import importlib.util
 import json
@@ -512,15 +513,25 @@ class DoIt(unittest.TestCase):
     def todo(self, fix='restart_unit'):
         finding = {'key': 'stays_failed:backup', 'kind': 'stays_failed', 'name': 'backup', 'unit': 'backup.service', 'count': 1,
                    'fix': fix, 'last_at': None}
-        with mock.patch('shutil.which', self.which):
+        with self.found_here():
             self.store.system_log_cards(GATEWAY['id'], [finding])
         with self.store.connect() as db:
             return dict(db.execute('SELECT * FROM suggestions').fetchone())
 
     def views(self, card):
-        with mock.patch('shutil.which', self.which), self.store.connect() as db:
+        with self.found_here(), self.store.connect() as db:
             self.store.machine_fix_views(db, [card])
         return card
+
+    @contextlib.contextmanager
+    def found_here(self):
+        """systemctl and Omarchy's command are on this computer, whatever runs the test (macOS has no systemctl). The
+        store calls card and fix_command without `which`, and their default is shutil.which as it was at import, so
+        the stand-in is their default here; a `which` passed in still counts."""
+        fix_command, card = s.fix_command, s.card
+        with mock.patch.object(s, 'fix_command', lambda finding, which=self.which: fix_command(finding, which)), \
+                mock.patch.object(s, 'card', lambda finding, which=self.which: card(finding, which)):
+            yield
 
     def job(self, sid):
         with self.store.connect() as db:
