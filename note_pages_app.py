@@ -272,11 +272,35 @@ class NotesApp:
                 db.execute('BEGIN IMMEDIATE')
                 touched = note_pages.sync(db, 'topic', topic_notes.drafts(db), now(), topic_notes.keep(db))
                 topic_notes.keep_in_notes(db, now())  # a conversation in a trip, an event or the owner's own note
+            touched += self.topic_notes_merge()
         except Exception as error:  # noqa: BLE001 - the next round tries again
             LOG.warning('topic notes error=%s', type(error).__name__)
             return done
         LOG.info('topic notes placed=%s notes=%s', done, len(touched))
         return done
+
+    def topic_notes_merge(self):
+        """After new subjects (topic_notes.merge_due): one call looks for notes about the same real-world thing (the
+        same trip from a booking and from mail, several threads with one customer, orders from one shop) and each group
+        becomes one note. Returns the note ids the sync after it touched."""
+        with self.store.connect() as db:
+            if not topic_notes.merge_due(db, now()):
+                return []
+            notes = topic_notes.merge_candidates(db)
+        groups = []
+        if len(notes) > 1 and not self.background_pause(job='topic-notes'):
+            groups = topic_notes.merge_reply(self.topic_notes_ask(topic_notes.merge_prompt(notes)), notes)
+            if groups is None:
+                return []  # an answer that isn't one: the next round looks again
+        with self.store.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            topic_notes.merged(db, now())
+            if not topic_notes.merge(db, groups or [], now()):
+                return []
+            touched = note_pages.sync(db, 'topic', topic_notes.drafts(db), now(), topic_notes.keep(db))
+            topic_notes.keep_in_notes(db, now())
+        LOG.info('topic notes merged=%s', sum(len(g[1]) for g in groups))
+        return touched
 
     def note_writer_step(self):
         """At most once a note_writer.PASS_MINUTES: one background turn writes the pages of a few notes whose sources

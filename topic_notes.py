@@ -29,13 +29,24 @@ the name of a project or organization in the Graph goes to that record instead. 
 here is a line of that note. One in a trip, an event or an owner's own note, or on a record, is kept as its route only:
 the page writer reads it there. Turning Notes on starts the notes from conversations over once (rebuild).
 
+One order, delivery, receipt, booking or account is never a subject of its own (its trip, project, shop or account is),
+and a work subject is a whole customer, partner, supplier, project or hire, never one thread or deal. A title never
+holds a reference (clean_title: an order, account, booking or invoice number or code is cut, and a title of nothing
+else is no subject), so orders from one shop land on one note. After new subjects, at most once a MERGE_EVERY, one call
+reads the notes (merge_prompt: subjects started here, trips and events with their dates) and names the ones about the
+same real-world thing: the same trip from a booking and from mail, several threads with one customer. Each group
+becomes one note (merge): a trip or event takes the others, else one the owner touched, else the one with the most
+sources; a note the owner touched is never merged away. A later call naming a merged subject goes to the note it went
+into (topic_aliases).
+
 The first fill (filling) reads LOOK_DAYS back, FIRST_CALLS calls a round every FIRST_EVERY outside the quiet hours,
 each within the budget; then CALLS a round every EVERY.
 
 Tables (this module owns them): topic_routes (each conversation's place: '' for none, 'topic:<key>', 'note:<id>',
 'record:<graph id>' or AGAIN; the title it proposed, sealed; the conversation's title, newest message, last time and
 area; left: the place a page sent it back from) and topic_state (when the last round ran, when the first fill began and
-ended, whether the rebuild ran)."""
+ended, whether the rebuild ran, when the last look for twins ran) and topic_aliases (a merged subject's place: the place
+it went into)."""
 import datetime as dt
 import hashlib
 import json
@@ -54,6 +65,7 @@ CREATE TABLE IF NOT EXISTS topic_routes(conv TEXT PRIMARY KEY,place TEXT NOT NUL
   title TEXT,kind TEXT,event_id INTEGER,last_at TEXT,area TEXT,replied INTEGER NOT NULL DEFAULT 0,at TEXT NOT NULL);
 CREATE INDEX IF NOT EXISTS topic_routes_place ON topic_routes(place);
 CREATE TABLE IF NOT EXISTS topic_state(name TEXT PRIMARY KEY,at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS topic_aliases(key TEXT PRIMARY KEY,target TEXT NOT NULL,at TEXT NOT NULL);
 '''
 LOOK_DAYS = 90  # how far back conversations are read
 GAP = dt.timedelta(days=2)  # a chat's messages this far apart are two conversations
@@ -87,7 +99,11 @@ SIGN_OFF = re.compile(
     r'^\s*(?:--\s*|_{2,}|sent from my\b.*|verzonden (?:vanaf|met)\b.*|envoy[ée] de\b.*|von meinem\b.*gesendet.*|'
     r'(?:kind |best |warm |many )?regards,?|best(?: wishes)?,?|cheers,?|(?:met )?(?:vriendelijke |hartelijke |beste )?groet(?:en|jes)?,?|'
     r'mvg,?|cordialement,?|bien [àa] (?:vous|toi),?|(?:mit )?freundliche[n]? gr[üu](?:ß|ss)e,?|saludos,?|un saluto,?)\s*$', re.I)
-ROUND, FILLING, FILLED = 'round', 'began', 'filled'  # topic_state rows
+ROUND, FILLING, FILLED, MERGED = 'round', 'began', 'filled', 'merged'  # topic_state rows
+MERGE_EVERY = dt.timedelta(hours=6)  # a look for notes about the same thing (merge_*), at most this often, after new subjects
+MERGE_MAX = 400  # notes one such look reads
+# A word of a title that is a reference, not a name (clean_title): an order, account, booking or invoice number or code
+REFERENCE = re.compile(r'^#?(?=(?:\D*\d){5})[\w./-]+$|^#?(?=[A-Z0-9-]{6,}$)(?=(?:\D*\d){2})(?=.*[A-Z])[A-Z0-9-]+$|^#\d+$')
 
 
 def ensure(db):
@@ -506,9 +522,10 @@ def places(db, kinds):
         if r['place'] not in started and r['place'] not in pending:
             pending[r['place']] = {'place': r['place'], 'path': ((t(r['under']) + ' > ') if r['under'] else '') + str(r['note'] or '')}
     out.extend(pending.values())
-    for r in db.execute("SELECT id FROM note_pages WHERE removed_at IS NULL AND merged_into IS NULL AND (kind IN ('trip','event') "
+    for r in db.execute("SELECT id,starts,ends FROM note_pages WHERE removed_at IS NULL AND merged_into IS NULL AND (kind IN ('trip','event') "
                         "OR (kind='note' AND by='owner')) ORDER BY updated_at DESC LIMIT ?", (PLACES_MAX,)):
-        out.append({'place': 'note:' + str(r['id']), 'path': _path(db, r['id'])})
+        out.append({'place': 'note:' + str(r['id']), 'path': _path(db, r['id']),
+                    **({'about': ' to '.join(str(x)[:10] for x in (r['starts'], r['ends']) if x)} if r['starts'] else {})})
     out = out[:PLACES_MAX]
     for n, p in enumerate(out, 1):
         p['id'] = 'P' + str(n)
@@ -558,7 +575,11 @@ def prompt(items, where, linked):
         'club\'s mail, a booking, an appointment, an invoice or a delivery for one subject. They hold its facts and dates.',
         'NOT a subject: a category on its own ("school", "bills", "doctors"), small talk, a one-off errand with nothing to '
         'keep, marketing, a newsletter or offer with no fact for the owner, an automatic reply, a meeting\'s invitation or '
-        'a reply, update or cancellation of one (the meeting stays in the calendar).',
+        'a reply, update or cancellation of one (the meeting stays in the calendar). Never one order, delivery, receipt, '
+        'booking, ticket or account on its own: it is a source for its subject (the trip it books, the house project it '
+        'is for, the shop, provider or account it came from when that keeps mattering), or for nothing.',
+        'At work a subject is one customer, partner, supplier, project or hire as a whole, never one thread, deal, '
+        'request or listing of it: everything with the same company goes to one subject.',
         'Sensitive: a health matter only under "Health", and only the owner\'s own or their child\'s care. Someone else\'s '
         'health, a family conflict, a legal dispute, money trouble or anything intimate: leave it out. When unsure whether '
         'it is sensitive, leave it out.',
@@ -571,16 +592,27 @@ def prompt(items, where, linked):
         'child\'s subject, not a sibling\'s; one about one trip to that trip. A step within a subject (a gala of the club, '
         'the tiles for the renovation, an interview for the hire) goes to that subject.',
         '- "place": the id of the place above for that subject. Check the places first: the same subject goes to its '
-        'place, never a second new title.',
+        'place, never a second new title. A trip is the same trip when it goes to the same place on the same dates.',
         '- "record": the id of one of its records, when the subject is that project or organization as a whole (a deal, a '
         'customer, a supplier): its page covers it, so no note.',
         '- "new": {"title": a short name for the subject, with whose it is when that tells it apart ("Ava\'s school"), '
+        'never a number, code or reference (no order, account, booking or invoice number), '
         '"under": one of ' + json.dumps(list(FOLDERS)) + '} when no place fits. Give every conversation of the same '
         'subject the same title.',
         'Leave everything else out.',
         'Answer with JSON only: {"places": [{"n": 1, "place": "P3"}, {"n": 2, "record": "R1"}, '
         '{"n": 3, "new": {"title": "Kitchen renovation", "under": "Home"}}]}',
     ]), {v: k for k, v in refs.items()}
+
+
+def clean_title(title):
+    """A subject's title as a name: no dashes, and no reference in it (REFERENCE: an order, account, booking or invoice
+    number or code; the page holds those when they are useful). '' when nothing but references is left."""
+    title = re.sub(r'\s*[—–]\s*', ', ', ' '.join(str(title or '').split()))
+    words = [w for w in title.split() if not REFERENCE.match(w.strip('.,:;()[]'))]
+    title = re.sub(r'\s+([,.:;])', r'\1', ' '.join(words))
+    title = re.sub(r'\(\s*\)|\[\s*\]', '', title)
+    return ' '.join(title.split())[:TITLE_MAX].strip(' ,.:;-#')
 
 
 def reply(text, items, where, refs):
@@ -609,7 +641,7 @@ def reply(text, items, where, refs):
         elif p.get('record') in refs:
             out[conv]['place'] = 'record:' + refs[p['record']]
         elif isinstance(p.get('new'), dict) and isinstance(p['new'].get('title'), str):
-            title = re.sub(r'\s*[—–]\s*', ', ', ' '.join(p['new']['title'].split()))[:TITLE_MAX].strip(' ,')
+            title = clean_title(p['new']['title'])
             under = p['new'].get('under') if p['new'].get('under') in FOLDERS else None
             if title:
                 out[conv].update(place='topic:' + key_of((under or '').casefold(), title.casefold()), note=title, under=under,
@@ -622,8 +654,12 @@ def remember(db, items, placed, at, kinds):
     a new note named like a project or organization in the Graph goes to that record instead."""
     import section_notes
     by_kind = {k.kind: k for k in kinds}
+    aliases = {r['key']: r for r in db.execute('SELECT key,target FROM topic_aliases')}
     for c in items:
         route = dict(placed[c['id']])
+        if route['place'] in aliases:  # a subject merged into another (merge): the same title goes there
+            into = aliases[route['place']]['target']
+            route.update(place=into, **(_named(db, into) if into.startswith('topic:') else {'note': None, 'under': None}))
         if route['place'].startswith('topic:') and _table(db, 'graph_nodes'):
             same = db.execute("SELECT id FROM graph_nodes WHERE kind IN ('project','org') AND name=? COLLATE NOCASE LIMIT 1", (route['note'],)).fetchone()
             if same:
@@ -690,6 +726,117 @@ def keep_in_notes(db, at):
         except (ValueError, KeyError, TypeError):
             continue  # a note gone since
     return added
+
+
+def _named(db, place):
+    """The title and folder a subject started here goes by: {note, under}."""
+    r = db.execute('SELECT note,under FROM topic_routes WHERE place=? AND note IS NOT NULL ORDER BY at LIMIT 1', (place,)).fetchone()
+    return {'note': r['note'], 'under': r['under']} if r else {'note': None, 'under': None}
+
+
+def merge_due(db, at):
+    """Whether to look for notes about the same thing (merge_prompt): a subject started since the last look, which was
+    MERGE_EVERY ago or more, or before the first fill ended."""
+    ensure(db)
+    last = db.execute('SELECT at FROM topic_state WHERE name=?', (MERGED,)).fetchone()
+    last = last['at'] if last else ''
+    if not db.execute("SELECT 1 FROM note_pages WHERE kind='topic' AND by='machine' AND removed_at IS NULL AND created_at>? LIMIT 1",
+                      (last,)).fetchone():
+        return False
+    filled_at = db.execute('SELECT at FROM topic_state WHERE name=?', (FILLED,)).fetchone()
+    if not last or (filled_at and filled_at['at'] > last):
+        return True
+    try:
+        return dt.datetime.fromisoformat(at) - dt.datetime.fromisoformat(last) >= MERGE_EVERY
+    except (TypeError, ValueError):
+        return True
+
+
+def merged(db, at):
+    db.execute('INSERT OR REPLACE INTO topic_state(name,at) VALUES(?,?)', (MERGED, at))
+
+
+def merge_candidates(db):
+    """The notes a look for twins reads: the subjects started here and the trips and events, the most recently changed
+    first (MERGE_MAX): [{id: 'N1', place, path, sources, dates, mine}]. mine: the owner renamed it, moved it or wrote in
+    it, so it is never merged away (it can take the others)."""
+    out = []
+    for r in db.execute(
+            "SELECT p.id,p.kind,p.key,p.starts,p.ends,p.owner_title IS NOT NULL OR p.owner_parent=1 OR EXISTS(SELECT 1 FROM note_page_lines o "
+            "WHERE o.note_id=p.id AND o.by='owner') mine,(SELECT count(*) FROM note_page_lines l WHERE l.note_id=p.id AND l.removed_at IS NULL) n "
+            "FROM note_pages p WHERE p.removed_at IS NULL AND p.merged_into IS NULL AND (p.kind IN ('trip','event') OR (p.kind='topic' AND p.by='machine')) "
+            'ORDER BY p.updated_at DESC LIMIT ?', (MERGE_MAX,)):
+        out.append({'place': r['key'] if r['kind'] == 'topic' else 'note:' + str(r['id']), 'path': _path(db, r['id']), 'sources': r['n'],
+                    'dates': ' to '.join(str(x)[:10] for x in (r['starts'], r['ends']) if x), 'mine': bool(r['mine']), 'kind': r['kind']})
+    for n, x in enumerate(out, 1):
+        x['id'] = 'N' + str(n)
+    return out
+
+
+def merge_prompt(notes):
+    """The look for twins: notes about the same real-world thing, which become one."""
+    return '\n'.join([
+        'These are the owner\'s notes, one wiki page per subject of their life or work, one JSON object per line ("dates": '
+        'when a trip or event is; "sources": how many messages it is written from).',
+        '<<<', *(json.dumps({k: x[k] for k in ('id', 'path', 'dates', 'sources') if x.get(k)}, ensure_ascii=False) for x in notes), '>>>',
+        'Find the notes that are about the same real-world thing and should be one note: the same trip (the same place on '
+        'the same dates, from a booking and from the mail about it), the same child\'s school or club, the same house or '
+        'project, the same customer, partner, supplier or project at work (several deals, threads, requests or listings '
+        'with one company are one note), the same shop, provider or account (orders, deliveries and receipts from one shop '
+        'are one note about that shop). Never put together two different people\'s things, two different trips or two '
+        'different companies. When unsure, leave them apart.',
+        'For each group give its notes and a short title for the one note: a name, never a number, code or reference.',
+        'Answer with JSON only: {"same": [{"notes": ["N3", "N7"], "title": "Porto weekend"}]}; {"same": []} when there are none.',
+    ])
+
+
+def merge_reply(text, notes):
+    """[(into, [places merged into it], title)], or None when the answer isn't one. Into: a trip or an event of the
+    group first, else one the owner touched, else the one with the most sources; a note the owner touched, a trip and
+    an event are never merged away."""
+    text = str(text or '')
+    start, end = text.find('{'), text.rfind('}')
+    try:
+        found = json.loads(text[start:end + 1]) if 0 <= start < end else None
+    except ValueError:
+        return None
+    if not isinstance(found, dict) or not isinstance(found.get('same'), list):
+        return None
+    by_id, used, out = {x['id']: x for x in notes}, set(), []
+    for g in found['same']:
+        if not isinstance(g, dict) or not isinstance(g.get('notes'), list):
+            continue
+        group = [by_id[i] for i in dict.fromkeys(x for x in g['notes'] if isinstance(x, str)) if i in by_id and i not in used]
+        if len(group) < 2:
+            continue
+        group.sort(key=lambda x: (x['kind'] == 'topic', not x['mine'], -x['sources']))
+        into, rest = group[0], [x for x in group[1:] if x['kind'] == 'topic' and not x['mine']]
+        if not rest:
+            continue
+        used.update(x['id'] for x in [into, *rest])
+        out.append((into['place'], [x['place'] for x in rest], clean_title(g.get('title')) if not into['mine'] else ''))
+    return out
+
+
+def merge(db, groups, at):
+    """Every conversation of the merged subjects goes to the one they merge into (its title as the look named it, when
+    the owner didn't name it), and a later call naming a merged one goes there too (topic_aliases). The merged notes go
+    with the next sync (keep). Returns how many notes were merged away."""
+    gone = 0
+    for into, rest, title in groups:
+        if into.startswith('topic:'):
+            named = _named(db, into)
+            note, under = (title or named['note']), named['under']
+        else:
+            note = under = None
+        for place in rest:
+            db.execute('UPDATE topic_routes SET place=?,note=?,under=? WHERE place=?', (into, note, under, place))
+            db.execute('UPDATE topic_aliases SET target=? WHERE target=?', (into, place))
+            db.execute('INSERT OR REPLACE INTO topic_aliases(key,target,at) VALUES(?,?,?)', (place, into, at))
+            gone += 1
+        if into.startswith('topic:') and title:
+            db.execute('UPDATE topic_routes SET note=? WHERE place=?', (title, into))
+    return gone
 
 
 def part_candidates(db, kind):
