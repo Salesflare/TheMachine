@@ -135,7 +135,9 @@ oldest signal from a person has waited `max_wait_minutes` (15), it starts one is
   little more than its last message. Never paused: the first look and its first batches, a new install's first day,
   a review running or recovering, Check now, and anything outside the reviews (chat, Do it, routines, outward
   safety). Any use of the Machine at night (a dashboard or the app in use, a chat or Telegram message, a tap on a
-  to-do) lets reviews run as usual until it has been unused for an hour, and what waited goes right away. The owner's
+  to-do) lets reviews run as usual until it has been unused for an hour, and what waited goes right away. In use
+  takes a person's own input on a page in front and in focus: a page loading or reloading itself, its polls, push
+  subscription or service worker, a background tab and a headless or automated browser never count. The owner's
   own hours (`work_hours`) are never night. Time-sensitive titles wait too: nothing reaches the owner outside their
   hours anyway. `review_worker.night_pause: false` turns it off (`machine/night_pause.py`).
 - **A new mailbox first.** A newly connected mailbox (Gmail or Outlook, on a new install or added later) doesn't wait:

@@ -15,7 +15,10 @@ It holds only the reviews of new signals. Never the first look and its first bat
 review that is running or recovering, the owner's Check now, anything the owner asked for (chat, Do it, routines at
 their time), or outward safety flows: those run outside the reviews. And never while the owner uses The Machine: a
 dashboard or the app in use, a message in their chat or on Telegram, a tap on a to-do. After that, reviews run as
-usual until IDLE_SECONDS passed without use, and what waited is reviewed right away. The owner's own hours
+usual until IDLE_SECONDS passed without use, and what waited is reviewed right away. In use means a person's own
+input on a page in front and in focus (notify.mark_active): never a page that only loaded or reloaded itself, its
+polls, push subscription or service worker, a tab in the background, or a headless or automated browser. Those woke
+the reviews most nights on a desktop that keeps the dashboard open and checks it with automated browsers. The owner's own hours
 (work_hours) are never night, so a Machine whose hours run through the night never pauses.
 
 A time-sensitive title (review_wait.TIME_SENSITIVE: "urgent", "security alert", "starts in 10 min") waits too: its

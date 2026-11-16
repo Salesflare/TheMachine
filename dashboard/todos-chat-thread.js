@@ -1,12 +1,15 @@
 // Like Slack: in use means visible, in focus and touched in the last 10 minutes. Open in the background, minimized or
 // idle, it isn't, and the Machine notifies (a push a minute after, an email if still unseen later). The page says so
 // at once when that changes, and every minute while in use; the Machine forgets a page after two.
-const notifyPresence=(()=>{const id=Math.random().toString(36).slice(2,12)||'page',IDLE=6e5;let input=Date.now(),last=0,was=null;
- const inUse=()=>document.visibilityState==='visible'&&document.hasFocus()&&Date.now()-input<IDLE;
+// Touched means a person's own input: a press, a key, a wheel, a touch or a mouse that really moved. Never the page
+// loading or reloading itself (an update, a restart), a scroll the page made, the browser's own still mouse moves, or
+// a browser under automation: none of those is the owner, and in use at night lets the reviews run (night_pause.py).
+const notifyPresence=(()=>{const id=Math.random().toString(36).slice(2,12)||'page',IDLE=6e5;let input=0,last=0,was=null;
+ const inUse=()=>!!input&&!navigator.webdriver&&document.visibilityState==='visible'&&document.hasFocus()&&Date.now()-input<IDLE;
  const beat=()=>{if(!state?.notify)return;const on=inUse();if(on===was&&(!on||Date.now()-last<55e3))return;was=on;last=Date.now();
-  notifyPost('notify_active',{client:id,active:on,idle:Math.round((Date.now()-input)/1e3)}).catch(()=>{was=null})};
- const touched=()=>{input=Date.now();if(!was)beat()};
- for(const ev of ['pointerdown','pointermove','keydown','wheel','touchstart','scroll'])addEventListener(ev,touched,{passive:true,capture:true});
+  notifyPost('notify_active',{client:id,active:on,idle:input?Math.round((Date.now()-input)/1e3):86400}).catch(()=>{was=null})};
+ const touched=e=>{if(!e.isTrusted||e.type==='pointermove'&&!e.movementX&&!e.movementY)return;input=Date.now();if(!was)beat()};
+ for(const ev of ['pointerdown','pointermove','keydown','wheel','touchstart'])addEventListener(ev,touched,{passive:true,capture:true});
  setInterval(beat,3e4);addEventListener('focus',beat);addEventListener('blur',beat);document.addEventListener('visibilitychange',beat);addEventListener('pagehide',beat);
  return {beat,inUse,id}})();
 function openCardLink(){

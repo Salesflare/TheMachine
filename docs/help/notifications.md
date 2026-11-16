@@ -34,7 +34,7 @@ Everything else lands quietly on the dashboard (and silently in Telegram) and wa
 
 It checks whether you're actually using the dashboard, not just whether it's open:
 
-- Using it (in front, and you clicked, typed or scrolled in the last 10 minutes): nothing buzzes. Telegram arrives silently.
+- Using it (in front, and you clicked, typed or scrolled in the last 10 minutes): nothing buzzes. Telegram arrives silently. Opening or reloading it alone doesn't count.
 - Away (in the background, closed, or idle for 10 minutes): a push goes a minute after you left, unless you came back and saw it.
 - Still unseen 15 minutes later, and it can't wait: one email for it, at most one an hour. What you already handled is left out. Most days the morning summary is the only email.
 - A teammate hands you a to-do and your Machine has no phone or Telegram to reach you: one email with its title and a link, 15 minutes later if still unseen. **Email** for **Results and questions** turns it off.

@@ -83,14 +83,27 @@ try{
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'fits '+width);
   await context.close();
  }
- // Presence, like Slack: in use (visible, focused, touched) says active; the window losing focus says away at once;
- // ten minutes without input says away too, with how long it was idle; touching it again says active.
+ // Presence, like Slack: in use (visible, focused, touched by a person) says active; the window losing focus says away
+ // at once; ten minutes without input says away too, with how long it was idle; touching it again says active.
+ // Only a person's own input counts (the night pause lets go for it, night_pause.py): never the page loading or
+ // reloading itself, a scroll the page made, an event a script made, a mouse that didn't move, or a browser under
+ // automation. A person here: a browser that doesn't say it is automated.
  const context=await browser.newContext({viewport:{width:1280,height:900}}),page=await context.newPage();
  await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
+ await context.addInitScript(()=>Object.defineProperty(Navigator.prototype,'webdriver',{get:()=>false}));
  await page.clock.install();beats.length=0;
- await page.goto(base);await page.locator('#updated',{hasText:/\d/}).waitFor({state:'attached'});
- await page.bringToFront();await page.evaluate(()=>{document.hasFocus=()=>true;dispatchEvent(new Event('focus'))});
- const lastBeat=async()=>{await page.waitForTimeout(50);await new Promise(r=>setTimeout(r,150));return beats.filter(Boolean).at(-1)};
+ const opened=async()=>{await page.locator('#updated',{hasText:/\d/}).waitFor({state:'attached'});
+  await page.bringToFront();await page.evaluate(()=>{document.hasFocus=()=>true;dispatchEvent(new Event('focus'))})};
+ await page.goto(base);await opened();
+ const lastBeat=async(on=page)=>{await on.waitForTimeout(50);await new Promise(r=>setTimeout(r,150));return beats.filter(Boolean).at(-1)};
+ assert.equal((await lastBeat())?.active,false,'only opened: not in use');
+ await page.evaluate(()=>{scrollTo(0,400);dispatchEvent(new PointerEvent('pointerdown'));dispatchEvent(new KeyboardEvent('keydown',{key:'a'}))});
+ assert.equal((await lastBeat())?.active,false,'a scroll or events the page made: not in use');
+ beats.length=0;await page.reload();await opened();
+ assert.equal((await lastBeat())?.active,false,'reloaded by itself (an update): not in use');
+ await page.mouse.move(0,0);
+ assert.notEqual((await lastBeat())?.active,true,'a mouse that did not move: not in use');
+ await page.mouse.move(60,60);
  assert.equal((await lastBeat())?.active,true,'in use');
  await page.evaluate(()=>{document.hasFocus=()=>false;dispatchEvent(new Event('blur'))});
  assert.equal((await lastBeat())?.active,false,'in the background');
@@ -103,6 +116,15 @@ try{
  assert.equal((await lastBeat())?.active,true,'touched again');
  const id=beats.filter(Boolean)[0].client;assert.match(id,/^[a-z0-9]{1,16}$/);assert.ok(beats.filter(Boolean).every(b=>b.client===id));
  await context.close();
+ // A browser under automation (an agent's check, a headless run) is never in use, also when it clicks and types
+ const robot=await browser.newContext({viewport:{width:1280,height:900}}),bot=await robot.newPage();
+ await robot.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
+ assert.equal(await bot.evaluate(()=>navigator.webdriver).catch(()=>true),true);beats.length=0;
+ await bot.goto(base);await bot.locator('#updated',{hasText:/\d/}).waitFor({state:'attached'});
+ await bot.bringToFront();await bot.evaluate(()=>{document.hasFocus=()=>true;dispatchEvent(new Event('focus'))});
+ await bot.mouse.move(0,0);await bot.mouse.move(60,60);await bot.mouse.click(60,60);await bot.keyboard.press('Shift');await lastBeat(bot);
+ assert.ok(beats.filter(Boolean).length>0&&beats.filter(Boolean).every(b=>b.active===false),'automated: never in use');
+ await robot.close();
  assert.deepEqual(errors,[]);
 }finally{await browser?.close();server.close()}
 console.log('notify dashboard ok');

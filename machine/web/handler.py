@@ -77,6 +77,9 @@ from machine.owner_error import OwnerError
 
 
 UPLOAD_REQUEST_BYTES = 9 * 1024 * 1024
+# A browser no person sits at (headless Chrome, PhantomJS, Playwright's own headless shell): its page never counts as
+# the owner using the dashboard (notify_active), so it can't wake the night's reviews (machine/night_pause.py)
+AUTOMATED_AGENT = re.compile(r'Headless|PhantomJS|Playwright', re.I)
 
 # The page's policy (every answer through output()). blob: is the page's own images and files made in the browser:
 # the milestone's share image shows as one (img-src), and the phone app reads it to save it (connect-src). Without it
@@ -1152,6 +1155,8 @@ def make_handler(app):
                     return
                 if dashboard:
                     request.setdefault('args', {})['source'] = 'dashboard'
+                    if request['action'] == 'notify_active':  # a headless browser is never the owner in use
+                        request['args']['automated'] = bool(AUTOMATED_AGENT.search(self.headers.get('User-Agent') or ''))
                 result = app.action(request['action'], request.get('args', {}), owner_dashboard=bool(dashboard))
                 # what a review, preparation or other agent reads names Slack members, never their ids
                 self.output(200, result if dashboard else app.store.slack_named_out(result))
