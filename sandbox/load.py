@@ -550,7 +550,7 @@ def load_logins(directory, fixture):
     message_seal.load_key(directory / 'events.sqlite', create=True)  # the app makes it at start too; sealed in-process, no openssl
     logins = browser_login.LoginStore(directory)
     for entry in fixture.get('saved_logins', []):
-        logins.save(entry['site'], entry['username'], 'sandbox-placeholder')
+        logins.save(entry['site'], entry['username'], 'sandbox-placeholder', account=entry.get('account'))
 
 
 def load_roles(db, base):

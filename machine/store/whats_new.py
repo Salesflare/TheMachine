@@ -31,6 +31,10 @@ import i18n
 from timeutil import local_day, local_tz, now
 
 ENTRIES = [
+    {'id': 'login-accounts', 'date': '2026-11-16', 'weight': 2, 'title': 'Import sign-ins, several accounts',
+     'text': 'Bring in sign-ins from 1Password, LastPass, Bitwarden or Chrome, and keep a Work and a Personal account '
+             'for one site. A to-do signs in with the one that fits.',
+     'action': {'label': 'Open Connections', 'run': 'go-connections'}},
     {'id': 'watch-a-page', 'date': '2026-11-14', 'weight': 2, 'title': 'Watch a web page',
      'text': 'Ask the chat to watch a page, or add one under Connections. A to-do comes only when something that '
              'matters on it changes.',

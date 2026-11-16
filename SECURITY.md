@@ -122,6 +122,12 @@ invalid receipt or timeout blocks it as well. The token is never included in rel
 - Saved passwords never go to the model, the logs or a support bundle. An export holds them only with a passphrase.
 - On a self-hosted install the key sits next to them for the service user: protect that user's account and disk
   (full-disk encryption) accordingly. Without message protection they keep a key of their own next to them.
+- A saved sign-in is bound to its exact origins (scheme, host and port). The fill checks the page before typing and
+  before submitting, so a lookalike address, another subdomain, `http` or another port never gets it.
+- Import from a password manager reads a CSV the owner picks, or 1Password's `op` and LastPass's `lpass` only when the
+  owner already signed in to them on this computer. The Machine never signs in to a password manager and never asks
+  for or keeps a master password; it reads a password only for the sign-ins the owner ticks to keep. Delete the
+  export file afterwards: it holds every password in plain text.
 - The browser's own cookies and sign-ins (its profile) belong to the browser: protected by the account and the disk,
   not by The Machine's keys. Anything running as the service user, the agent included, can use them.
 

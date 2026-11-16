@@ -12,8 +12,17 @@ browser-logins.enc with a key of their own next to it (browser-logins.key, reada
 there is a message key they move over and the old file and its key are overwritten and removed. Saved sign-ins are
 listed and forgotten on the dashboard; a move (moving.py) only takes them along with a passphrase. One-time codes are
 never saved.
+
+Accounts: a site can have several saved sign-ins, each a named account ("Work", "Personal"), each bound to exact
+origins (scheme, host and port, as the browser's location.origin says them). A saved password goes only into a page
+whose origin is one of them: never a lookalike, a subdomain or plain http. They live in browser-logins.v2.sealed (or
+.v2.enc without a message key). The first save, or the service's start, writes that file from the older one (one site,
+one sign-in), each becoming a "Default" account bound to https://site and https://www.site (the older key had dropped
+the www and the scheme). The older file stays as it was, as the backup: revert() removes the newer file and the older
+one is used again, and Forget takes a sign-in out of both. login_import.py brings sign-ins in from a password
+manager's export or its command-line tool.
 """
-import datetime as dt, json, os, re, secrets, subprocess, sys, threading, time, urllib.parse
+import datetime as dt, hashlib, json, os, re, secrets, subprocess, sys, threading, time, urllib.parse
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / 'integrations'))
@@ -26,6 +35,8 @@ from machine.owner_error import OwnerError
 LOOPBACK = ('127.0.0.1', 'localhost', '::1')
 SEALED = 'browser-logins.sealed'  # sealed with the message key
 STORE, KEY = 'browser-logins.enc', 'browser-logins.key'  # only without a message key, and what older versions kept
+ACCOUNTS, ACCOUNTS_STORE = 'browser-logins.v2.sealed', 'browser-logins.v2.enc'  # accounts per site; the older file is its backup
+DEFAULT_ACCOUNT = 'Default'
 OPENSSL = 'openssl'
 SETTLE = 10  # seconds a submitted page has to move on before the dialog says it is still there
 
@@ -117,7 +128,7 @@ const others = f => {
 DETECT = '() => {' + _FIELDS + _WORDS + '''
   const f = fields();
   if (!f) return null;
-  const found = {host: location.host, secure: location.protocol === 'https:', title: document.title.slice(0, 80),
+  const found = {host: location.host, origin: location.origin, secure: location.protocol === 'https:', title: document.title.slice(0, 80),
                  username: !!f.u, password: !!f.p, code: !!f.c};
   if (f.c) {
     const meta = document.querySelector('meta[property="og:site_name"]');
@@ -137,9 +148,10 @@ CHOOSE = 'function(host, label) {' + _FIELDS + _WORDS + '''
   return 'clicked';
 }'''
 
-# Focuses one field after checking the page is still on `host`, and selects what is in it, so typing replaces it.
-FOCUS = 'function(host, which) {' + _FIELDS + '''
-  if (location.host !== host) return 'moved';
+# Focuses one field after checking the page is still on `host` (and, for a saved sign-in, on one of its exact
+# `origins`), and selects what is in it, so typing replaces it.
+FOCUS = 'function(host, which, origins) {' + _FIELDS + '''
+  if (location.host !== host || (origins && !origins.includes(location.origin))) return 'moved';
   const f = fields(), e = f && f[which];
   if (!e) return 'missing';
   e.scrollIntoView({block: 'center'}); e.focus();
@@ -147,8 +159,8 @@ FOCUS = 'function(host, which) {' + _FIELDS + '''
   return 'ok';
 }'''
 
-SUBMIT = 'function(host, mark) {' + _FIELDS + '''
-  if (location.host !== host) return 'moved';
+SUBMIT = 'function(host, mark, origins) {' + _FIELDS + '''
+  if (location.host !== host || (origins && !origins.includes(location.origin))) return 'moved';
   window.__machineLogin = mark;
   const f = fields() || {}, field = f.p || f.c || f.u, form = field && field.form;
   const button = (form && [...form.querySelectorAll('button:not([type=button]):not([type=reset]), input[type=submit]')].find(b => b.offsetParent)) || f.next;
@@ -185,6 +197,47 @@ def endpoints(config):
 def site(host):
     host = str(host or '').lower().split(':')[0]
     return host[4:] if host.startswith('www.') else host
+
+
+_PORTS = {'http': 80, 'https': 443}
+
+
+def origin(address):
+    """scheme://host[:port] of an address, as a browser's location.origin says it (lowercase, the host in punycode,
+    no default port), or None for anything that is not an http(s) address with a host. A bare host is taken as https.
+    Two addresses share a saved sign-in only when these are equal: a lookalike, a subdomain or http never match."""
+    text = str(address or '').strip()
+    if not text or len(text) > 2000 or any(c in text for c in '\r\n\t '):
+        return None
+    if '://' not in text:
+        text = 'https://' + text
+    try:
+        parts = urllib.parse.urlsplit(text)
+        scheme, host, port = parts.scheme.lower(), parts.hostname, parts.port
+    except ValueError:
+        return None
+    if scheme not in _PORTS or not host or parts.username or parts.password:
+        return None
+    if ':' in host:
+        host = '[' + host + ']'
+    else:
+        try:
+            host = host.encode('idna').decode('ascii').lower()
+        except UnicodeError:
+            return None
+    return f'{scheme}://{host}' + (f':{port}' if port and port != _PORTS[scheme] else '')
+
+
+def origin_label(value):
+    """An origin as the dashboard shows it: the host (and port), with the scheme only when it is not https."""
+    value = str(value or '')
+    return value[len('https://'):] if value.startswith('https://') else value
+
+
+def _host_origins(host):
+    """The origins a host the dialog or an older version named stands for: https on it (http on loopback)."""
+    name = str(host or '').lower()
+    return [o for o in [origin(('http://' if urllib.parse.urlsplit('//' + name).hostname in LOOPBACK else 'https://') + name)] if o]
 
 
 def brand(host, name=''):
@@ -280,9 +333,10 @@ def describe(form):
 
 
 def pages(config, store=None, account=None):
-    """The open tabs that show a sign-in form: [{id, host, title, username, password, code, saved}]. Looks in the
-    browser of `account` (an account id) when it has one of its own, else in the shared one: asking a browser that is
-    not running can start it."""
+    """The open tabs that show a sign-in form: [{id, host, origin, title, username, password, code, saved, accounts}].
+    `accounts`: the saved sign-ins bound to that page's exact origin, [{id, account, username}], never a password;
+    `saved`: the first of them, as older dashboards read it. Looks in the browser of `account` (an account id) when it
+    has one of its own, else in the shared one: asking a browser that is not running can start it."""
     found, bases = [], endpoints(config)
     for base, tab in _tabs(config, account):
         try:
@@ -290,9 +344,9 @@ def pages(config, store=None, account=None):
         except (browser_cdp.CdpError, OSError):
             continue
         if isinstance(form, dict) and form.get('host'):
-            saved = store.get(form['host']) if store else None
+            saved = store.for_origin(form.get('origin')) if store else []
             found.append({**describe(form), 'id': f'{bases.index(base)}:{tab["id"]}', 'site': site(form['host']),
-                          'saved': {'username': saved['username']} if saved else None})
+                          'accounts': saved, 'saved': {'username': saved[0]['username']} if saved else None})
     return found
 
 
@@ -317,14 +371,20 @@ _store_locks = {}
 _store_locks_guard = threading.Lock()
 
 
-def fill(config, page, host, username=None, password=None, code=None, settle=SETTLE):
+def fill(config, page, host, username=None, password=None, code=None, settle=SETTLE, origins=None, seen=None):
     """Types what the owner gave into the sign-in page `page` (an id from pages()) on `host`, and submits it.
+    `origins`: for a saved sign-in, the exact origins it is bound to; nothing is typed unless the page's own origin
+    is one of them, checked before and while typing. `seen`: a dict that gets the 'origin' of the page it typed into.
 
     Returns {'result': 'next'|'done'|'approve'|'captcha'|'blocked'|'still_here', 'page': the sign-in form now shown, if
-    any}. 'approve': no form left, but the tab is still at a sign-in step (approve it in the site's app); watch() says
-    when it is past. 'captcha': that step is a robot check, for the browser itself. 'blocked': after a code, the site
-    asks for the username and password again (it stopped this sign-in).
+    any}. 'approve': no form left, but the tab is still at a sign-in step (approve
+    it in the site's app); watch() says when it is past. 'captcha': that step is a robot check, for the browser itself.
+    'blocked': after a code, the site asks for the username and password again (it stopped this sign-in).
     Errors are plain ValueErrors that never contain a value given here."""
+    if origins is not None:
+        origins = [o for o in origins if isinstance(o, str) and o]
+        if not origins:
+            raise OwnerError('That saved sign-in has no address to go to')
     index, _, target = str(page or '').partition(':')
     bases = endpoints(config)
     if not index.isdigit() or int(index) >= len(bases) or not target:
@@ -345,16 +405,21 @@ def fill(config, page, host, username=None, password=None, code=None, settle=SET
                     raise OwnerError(f'The page in the browser is no longer the sign-in to {site(host)}')
                 if not form['secure'] and urllib.parse.urlsplit('//' + host).hostname not in LOOPBACK:
                     raise OwnerError('That page is not on a secure (https) address; open the browser to sign in there')
+                filled_origin = form.get('origin') if isinstance(form.get('origin'), str) else None
+                if origins is not None and filled_origin not in origins:
+                    raise OwnerError('That saved sign-in is for another address, so it was not filled in')
+                if seen is not None:
+                    seen['origin'] = filled_origin
                 wanted = {k: v for k, v in given.items() if form[{'u': 'username', 'p': 'password', 'c': 'code'}[k]]}
                 if not wanted:
                     raise OwnerError('The page does not ask for that right now')
                 tab.call('Page.bringToFront')
                 for which, value in wanted.items():
-                    if tab.run(FOCUS, host, which) != 'ok':
+                    if tab.run(FOCUS, host, which, origins) != 'ok':
                         raise OwnerError(f'The page in the browser is no longer the sign-in to {site(host)}')
                     tab.call('Input.insertText', {'text': value})
                 mark, last = secrets.token_hex(8), 'p' if 'p' in wanted else 'c' if 'c' in wanted else 'u'
-                how = tab.run(SUBMIT, host, mark)
+                how = tab.run(SUBMIT, host, mark, origins)
                 if how == 'moved':
                     raise OwnerError(f'The page in the browser is no longer the sign-in to {site(host)}')
                 if how == 'enter':
@@ -519,14 +584,20 @@ def watch(config, page):
 
 
 class LoginStore:
-    """Saved sign-ins, {site: {username, password, saved_at}}, encrypted at rest: sealed with the message key (SEALED),
-    or, without one, AES-256 with openssl and a key in a file of its own (STORE, KEY). Only the service reads them;
-    list() never returns a password, and no error quotes one."""
+    """Saved sign-ins, encrypted at rest: sealed with the message key, or, without one, AES-256 with openssl and a key
+    in a file of its own (KEY). Only the service reads them; list() and for_origin() never return a password, and no
+    error quotes one.
+
+    The current file (ACCOUNTS, or ACCOUNTS_STORE without a message key) holds {'version': 2, 'logins': [{id, origins,
+    account, username, password, saved_at, source}], 'picks': {to-do id: login id}}. The older file (SEALED or STORE)
+    held {site: {username, password, saved_at}}, one per site: until the current file exists it is read as that, each
+    site one "Default" account; once it does, the older file is only the backup that revert() goes back to."""
 
     def __init__(self, folder):
         self.folder = Path(folder)
         self.sealed_path = self.folder / SEALED
         self.path, self.key_path = self.folder / STORE, self.folder / KEY
+        self.accounts_path, self.accounts_store = self.folder / ACCOUNTS, self.folder / ACCOUNTS_STORE
         # API requests construct separate stores, but their read/change/write must share one lock.
         with _store_locks_guard:
             self.lock = _store_locks.setdefault(str(self.sealed_path.resolve()), threading.Lock())
@@ -553,37 +624,43 @@ class LoginStore:
             raise OwnerError('Saved sign-ins could not be ' + ('read' if decrypt else 'saved'))
         return run.stdout
 
-    def _read(self):
+    def _read_file(self, sealed, own):
+        """What one pair of files holds (`sealed` with the message key, `own` with the key of its own), or None when
+        neither is there. A file opened by an export and put here by an import, or one still under the key of its own
+        while there is a message key, is encrypted again with the message key at once."""
         key = self._message_key()
-        if self.sealed_path.exists():
-            data = self.sealed_path.read_bytes()
+        if sealed.exists():
+            data = sealed.read_bytes()
             if message_seal.is_sealed_bytes(data):
                 if not key:
                     raise OwnerError('Saved sign-ins are encrypted with the message key, which is not here '
-                                     + ('yet' if message_seal.held_elsewhere(self.sealed_path) else 'any more'))
+                                     + ('yet' if message_seal.held_elsewhere(sealed) else 'any more'))
                 try:
                     return json.loads(message_seal.Sealer(key).open_bytes(data))
                 except message_seal.SealError:
                     raise OwnerError('Saved sign-ins could not be read') from None
-            logins = json.loads(data)  # opened by an export and put here by an import: encrypted again at once
-            self._write(logins)
-            return logins
-        if self.path.exists():
-            logins = json.loads(self._openssl(self.path.read_bytes(), True))
-            if key:  # a message key now: over to it, and the old file and its own key go
-                self._write(logins)
-            return logins
-        return {}
+            try:
+                content = json.loads(data)
+            except ValueError:
+                raise OwnerError('Saved sign-ins could not be read') from None
+            self._write_file(sealed, own, content)
+            return content
+        if own.exists():
+            content = json.loads(self._openssl(own.read_bytes(), True))
+            if key:  # a message key now: over to it, and the old file goes
+                self._write_file(sealed, own, content)
+            return content
+        return None
 
-    def _write(self, logins):
+    def _write_file(self, sealed, own, content):
         key = self._message_key()
         if key:
-            target, data = self.sealed_path, message_seal.Sealer(key).seal_bytes(json.dumps(logins).encode())
-        elif message_seal.held_elsewhere(self.sealed_path):
-            raise OwnerError('Saved sign-ins wait for the message key ' + ('from your keyring' if message_seal.in_keyring(self.sealed_path) else 'your hosting keeps')
+            target, data = sealed, message_seal.Sealer(key).seal_bytes(json.dumps(content).encode())
+        elif message_seal.held_elsewhere(sealed):
+            raise OwnerError('Saved sign-ins wait for the message key ' + ('from your keyring' if message_seal.in_keyring(sealed) else 'your hosting keeps')
                              + '; try again in a minute')
         else:
-            target, data = self.path, self._openssl(json.dumps(logins).encode(), False)
+            target, data = own, self._openssl(json.dumps(content).encode(), False)
         temp = target.with_name(target.name + '.tmp')
         fd = os.open(temp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
         with os.fdopen(fd, 'wb') as handle:
@@ -591,48 +668,259 @@ class LoginStore:
             handle.flush()
             os.fsync(handle.fileno())
         os.replace(temp, target)
-        for older in ((self.path, self.key_path) if key else (self.sealed_path,)):
-            portable.shred(older)
+        portable.shred(own if key else sealed)
+        if key and not (self.path.exists() or self.accounts_store.exists()):
+            portable.shred(self.key_path)  # nothing left under the key of its own
+
+    def _older(self):
+        return self._read_file(self.sealed_path, self.path)
+
+    def _read(self):
+        """The current sign-ins: {'version': 2, 'logins': [...], 'picks': {...}}; from the older file, as Default
+        accounts, while the current one isn't there yet."""
+        doc = self._read_file(self.accounts_path, self.accounts_store)
+        if isinstance(doc, dict) and doc.get('version') == 2:
+            doc.setdefault('logins', [])
+            doc.setdefault('picks', {})
+            return doc
+        return {'version': 2, 'logins': upgrade(self._older() or {}), 'picks': {}}
+
+    def _write(self, doc):
+        self._write_file(self.accounts_path, self.accounts_store, doc)
 
     def migrate(self):
-        """At the service's start: sign-ins in the older file (or opened by an import) go over to the message key.
-        Returns whether anything moved."""
+        """At the service's start: the older file (or one opened by an import) goes over to the message key, and the
+        current file is written from it when there isn't one yet, the older file staying as its backup. Running it
+        again changes nothing. Returns whether anything moved."""
         with self.lock:
-            if not self._message_key():
-                return False
-            plain = self.sealed_path.exists() and not message_seal.is_sealed_file(self.sealed_path)
-            if not (plain or self.path.exists()):
-                return False
-            self._read()
-            return True
+            moved = False
+            key = self._message_key()
+            try:
+                for sealed, own in ((self.sealed_path, self.path), (self.accounts_path, self.accounts_store)):
+                    plain = sealed.exists() and not message_seal.is_sealed_file(sealed)
+                    if plain or (key and own.exists()):
+                        self._read_file(sealed, own)
+                        moved = True
+                if not (self.accounts_path.exists() or self.accounts_store.exists()) and (self.sealed_path.exists() or self.path.exists()):
+                    self._write({'version': 2, 'logins': upgrade(self._older() or {}), 'picks': {}})
+                    moved = True
+            except OwnerError:
+                return moved  # the message key isn't here yet: the next start does it
+            return moved
 
-    def get(self, host):
+    def revert(self):
+        """Undoes the move to accounts: the current file goes, and the older file (its backup, less anything forgotten
+        since) is used again. Sign-ins saved since the move go with it. Returns whether there was anything to undo."""
         with self.lock:
-            return self._read().get(site(host))
+            found = self.accounts_path.exists() or self.accounts_store.exists()
+            for path in (self.accounts_path, self.accounts_store):
+                portable.shred(path)
+            if not self.path.exists() and self.key_path.exists() and not self.accounts_store.exists():
+                portable.shred(self.key_path)
+            return found
 
-    def save(self, host, username=None, password=None):
+    # Reading
+
+    def get(self, login):
+        """One saved sign-in with its password, by its id; or, for a host or address, the one bound to that origin
+        (its Default account, else the only one). None when there is none."""
         with self.lock:
-            logins = self._read()
-            entry = logins.get(site(host)) or {}
+            logins = self._read()['logins']
+        found = next((e for e in logins if e.get('id') == login), None)
+        if found:
+            return dict(found)
+        wanted = origin(login) if '://' in str(login or '') else (_host_origins(login) or [None])[0]
+        here = [e for e in logins if wanted in e.get('origins', ())]
+        pick = next((e for e in here if e.get('account') == DEFAULT_ACCOUNT), None) or (here[0] if len(here) == 1 else None)
+        return dict(pick) if pick else None
+
+    def for_origin(self, page_origin):
+        """The saved sign-ins bound to this exact origin: [{id, account, username}], never a password."""
+        if not page_origin:
+            return []
+        with self.lock:
+            logins = self._read()['logins']
+        return [{'id': e['id'], 'account': e.get('account') or DEFAULT_ACCOUNT, 'username': e.get('username') or ''}
+                for e in sorted(logins, key=_order) if page_origin in e.get('origins', ())]
+
+    def list(self):
+        with self.lock:
+            logins = self._read()['logins']
+        # whether a password is kept, never the password or anything from it (not even its length)
+        return [{'id': e['id'], 'site': origin_label(e['origins'][0]), 'origin': e['origins'][0],
+                 'account': e.get('account') or DEFAULT_ACCOUNT, 'username': e.get('username') or '',
+                 'saved_at': e.get('saved_at'), 'password_saved': bool(e.get('password')), 'source': e.get('source') or 'dialog'}
+                for e in sorted(logins, key=_order) if e.get('origins')]
+
+    def pick(self, page_origin, task=None, area=None):
+        """Which saved sign-in a to-do uses on this origin: the one the owner chose for it before; else the only one;
+        else the account named for the to-do's side ('work' or 'personal', or its company's name); else None, and the
+        dialog asks once."""
+        here = self.for_origin(page_origin)
+        if not here:
+            return None
+        if task:
+            with self.lock:
+                chosen = self._read()['picks'].get(task)
+            if any(e['id'] == chosen for e in here):
+                return chosen
+        if len(here) == 1:
+            return here[0]['id']
+        names = [str(n).lower() for n in area_names(area)]
+        matched = [e for e in here if e['account'].lower() in names]
+        return matched[0]['id'] if len(matched) == 1 else None
+
+    # Changing
+
+    def save(self, where, username=None, password=None, account=None, source='dialog'):
+        """Keeps a sign-in for an origin (or a host, taken as https) under `account` (Default when not named), replacing
+        what that account had there. Returns its id."""
+        bound = [origin(where)] if '://' in str(where or '') else _host_origins(where)
+        bound = [o for o in bound if o]
+        if not bound:
+            raise OwnerError('That address can’t keep a sign-in')
+        name = account_name(account)
+        with self.lock:
+            doc = self._read()
+            entry = next((e for e in doc['logins'] if bound[0] in e.get('origins', ()) and (e.get('account') or DEFAULT_ACCOUNT).lower() == name.lower()), None)
+            if entry is None:
+                entry = {'id': secrets.token_hex(8), 'origins': bound, 'account': name}
+                doc['logins'].append(entry)
             if username:
                 entry['username'] = username
             if password:
                 entry['password'] = password
-            entry['saved_at'] = timeutil.stamp()
-            logins[site(host)] = entry
-            self._write(logins)
+            entry['saved_at'], entry['source'] = timeutil.stamp(), source
+            self._write(doc)
+            return entry['id']
 
-    def list(self):
+    def save_many(self, items, account=None, source='import'):
+        """Keeps several sign-ins at once ([{origin, username, password}], each with its own `account` or the one
+        given), in one write. Returns how many."""
         with self.lock:
-            # whether a password is kept, never the password or anything from it (not even its length)
-            return sorted(({'site': k, 'username': v.get('username') or '', 'saved_at': v.get('saved_at'),
-                            'password_saved': bool(v.get('password'))}
-                           for k, v in self._read().items()), key=lambda x: x['site'])
+            doc = self._read()
+            count = 0
+            for item in items:
+                bound = origin(item.get('origin'))
+                if not bound or not (item.get('username') or item.get('password')):
+                    continue
+                name = account_name(item.get('account') or account)
+                entry = next((e for e in doc['logins'] if bound in e.get('origins', ()) and (e.get('account') or DEFAULT_ACCOUNT).lower() == name.lower()), None)
+                if entry is None:
+                    entry = {'id': secrets.token_hex(8), 'origins': [bound], 'account': name}
+                    doc['logins'].append(entry)
+                entry.update({k: item[k] for k in ('username', 'password') if item.get(k)})
+                entry['saved_at'], entry['source'] = timeutil.stamp(), source
+                count += 1
+            if count:
+                self._write(doc)
+            return count
 
-    def forget(self, host):
+    def remember(self, task, login):
+        """The owner chose this saved sign-in for this to-do: it uses that one again without asking."""
+        if not (isinstance(task, str) and task and isinstance(login, str)):
+            return
         with self.lock:
-            logins = self._read()
-            gone = logins.pop(site(host), None) is not None
-            if gone:
-                self._write(logins)
-            return gone
+            doc = self._read()
+            if not any(e.get('id') == login for e in doc['logins']):
+                return
+            doc['picks'] = {k: v for k, v in list(doc['picks'].items())[-199:] if k != task}
+            doc['picks'][task] = login
+            self._write(doc)
+
+    def rename(self, login, account):
+        """Names a saved sign-in's account (a Default one moved over from one per site gets Work or Personal).
+        Refuses a name another account on the same address already has. Returns whether it changed."""
+        name = account_name(account)
+        with self.lock:
+            doc = self._read()
+            entry = next((e for e in doc['logins'] if e.get('id') == login), None)
+            if entry is None:
+                raise OwnerError('That sign-in isn’t saved any more')
+            if (entry.get('account') or DEFAULT_ACCOUNT) == name:
+                return False
+            if any(e is not entry and set(e.get('origins', ())) & set(entry.get('origins', ()))
+                   and (e.get('account') or DEFAULT_ACCOUNT).lower() == name.lower() for e in doc['logins']):
+                raise OwnerError('That site already has a sign-in for ' + name)
+            entry['account'] = name
+            self._write(doc)
+            return True
+
+    def forget(self, login):
+        """Forgets one saved sign-in by its id, or every account of a site by its host. Also from the older file
+        kept as the backup, so a forgotten password is nowhere. Returns whether anything went."""
+        with self.lock:
+            doc = self._read()
+            gone = [e for e in doc['logins'] if e.get('id') == login]
+            if not gone and isinstance(login, str) and '://' not in login:
+                wanted = set(_host_origins(login)) | set(_host_origins('www.' + site(login)))
+                gone = [e for e in doc['logins'] if wanted & set(e.get('origins', ()))]
+            if not gone:
+                return False
+            doc['logins'] = [e for e in doc['logins'] if e not in gone]
+            ids = {e['id'] for e in gone}
+            doc['picks'] = {k: v for k, v in doc['picks'].items() if v not in ids}
+            self._write(doc)
+            older_sites = {e['older'] for e in gone if e.get('older')}
+            if older_sites:
+                older = self._older() or {}
+                if older_sites & set(older):
+                    self._write_file(self.sealed_path, self.path, {k: v for k, v in older.items() if k not in older_sites})
+            return True
+
+    def forget_all(self):
+        """Every saved sign-in, and the backup, gone. Returns how many there were."""
+        with self.lock:
+            count = len(self._read()['logins'])
+            for path in (self.accounts_path, self.accounts_store, self.sealed_path, self.path, self.key_path):
+                portable.shred(path)
+            return count
+
+
+def _order(entry):
+    return (site((entry.get('origins') or [''])[0].split('://')[-1]), (entry.get('origins') or [''])[0],
+            (entry.get('account') or '') != DEFAULT_ACCOUNT, (entry.get('account') or '').lower())
+
+
+def account_name(value):
+    """An account's name as kept: trimmed, at most 40 characters, Default when empty."""
+    name = re.sub(r'\s+', ' ', str(value or '')).strip()[:40]
+    return name or DEFAULT_ACCOUNT
+
+
+def side_of(area):
+    """The account a new sign-in for a to-do is saved under by default: Personal for its Personal side, Work for
+    its Work side, None when there is no to-do."""
+    if not area:
+        return None
+    return 'Personal' if str(area).lower() == 'personal' else 'Work'
+
+
+def area_names(area):
+    """The account names that fit a to-do's area: 'personal' for Personal; for Work, 'work' and the company's name
+    ('work:Acme' or 'Acme')."""
+    if not area:
+        return []
+    area = str(area)
+    if area.lower() == 'personal':
+        return ['personal']
+    company = area.partition(':')[2] if area.lower().startswith('work:') else ('' if area.lower() == 'work' else area)
+    return ['work'] + ([company] if company else [])
+
+
+def upgrade(older):
+    """The older file's {site: {username, password, saved_at}} as accounts: each one Default, bound to https on the
+    site and on its www (the older key had dropped both), and marked with the site it came from."""
+    logins = []
+    for name, entry in sorted((older or {}).items()):
+        if not isinstance(entry, dict):
+            continue
+        bound = _host_origins(name)
+        if bound and bound[0].startswith('https://') and not name.startswith('www.') and not re.fullmatch(r'[\d.]+', name):
+            bound.append(origin('https://www.' + name))
+        if not bound:
+            continue
+        logins.append({'id': hashlib.sha256(('older:' + name).encode()).hexdigest()[:16], 'origins': [o for o in bound if o],
+                       'account': DEFAULT_ACCOUNT, 'username': entry.get('username') or '', 'password': entry.get('password') or '',
+                       'saved_at': entry.get('saved_at'), 'source': 'dialog', 'older': name})
+    return logins

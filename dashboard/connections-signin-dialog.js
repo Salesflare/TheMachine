@@ -36,7 +36,7 @@ if(!page){signinFail(message||'No sign-in page is open right now. Open the brows
 signinMode('form');$('#signin-error').textContent=message||'';
 $('#signin-title').textContent=signinSite?`Sign in to ${signinSite.name} on your Machine`:'Sign in to '+page.site;$('#signin-form').dataset.page=page.id;$('#signin-form').dataset.host=page.host;
 $('#signin-user-row').hidden=!page.username;$('#signin-pass-row').hidden=!page.password;$('#signin-code-row').hidden=!page.code;if(page.code)signinCode(page,message);$('#signin-save-row').hidden=!(page.username||page.password)||state.security?.settings?.save_logins==='off';$('#signin-go').hidden=false;
-const saved=page.saved&&(page.username||page.password);$('#signin-saved').hidden=!saved;if(saved)$('#signin-use-saved').textContent=page.saved.username?t('Sign in as {}',page.saved.username):t('Sign in as the saved user');
+$('#signin-saved').hidden=true;lazyRun('logins',()=>signinAccounts(page));
 if(!d.open)d.showModal();(page.username&&!$('#signin-user').value?$('#signin-user'):page.password?$('#signin-pass'):page.code?$('#signin-code'):$('#signin-go')).focus()}
 // `task`: the card waiting on this sign-in; once the page is past it, that task carries on by itself. `page`: its tab.
 let signinTask=null,signinTab=null,signinRun=0,signinArgs=[],signinSite=null,signinApproving=null,signinAfter=null,signinFresh=false;
@@ -93,17 +93,16 @@ try{const p=await request('api/progress?id='+encodeURIComponent(signinTask));if(
 $('#signin-retry').onclick=async()=>{const site=signinArgs[4];if(signinFresh&&SIGNIN_SITES[site]&&CONNECT_SITES.includes(site)){try{await connectPost('connect_site_signin',{site,fresh:true})}catch(err){errCaught(err)}}openSignin(...signinArgs)};
 $('#signin-continue').onclick=async()=>{if(signinApproving){signinCheck(signinRun,true);return}if(signinAfter){signinDone();return}const id=signinTask;$('#signin-dialog').close();try{await saveDecision(id,'retry')}catch(err){errCaught(err);toast(err.message,true)}};
 $('#signin-page').onchange=e=>signinShow(signinPages[Number(e.target.value)]);
-async function signinSend(args){const f=$('#signin-form'),go=$('#signin-go'),saved=$('#signin-use-saved');go.disabled=saved.disabled=true;$('#signin-error').textContent='Signing in…';
+async function signinSend(args){const f=$('#signin-form'),go=$('#signin-go'),saved=[...document.querySelectorAll('#signin-saved button')];go.disabled=true;for(const b of saved)b.disabled=true;$('#signin-error').textContent='Signing in…';
 try{const r=await signinPost('browser_login_fill',{page:f.dataset.page,host:f.dataset.host,...(signinTask?{suggestion_id:signinTask}:{}),...args});
 if(r.result==='done'){signinDone(r.resumed);return}if(r.result==='approve'){signinApprove(r.page,signinRun);return}
 if(r.result==='captcha'){signinBrowser({site:siteName(r.page),kind:'captcha'},signinRun);return}
 if(r.result==='blocked'){signinShow(r.page,t('{} went back to the start, so it stopped this sign-in. Wait a minute, then try again.',r.page.brand||siteName(r.page)));signinHome();return}
 if(r.result==='next')signinShow(r.page,'');else signinShow(r.page||null,r.page?.error?`${r.page.brand||r.page.site} says: “${r.page.error}”`:'The site didn’t accept that. Check and try again, or open the browser.')}
-catch(err){errCaught(err);$('#signin-error').textContent=err.message}finally{go.disabled=saved.disabled=false;$('#signin-pass').value='';$('#signin-code').value=''}}
-$('#signin-form').onsubmit=e=>{e.preventDefault();const args={save:$('#signin-save').checked};
+catch(err){errCaught(err);$('#signin-error').textContent=err.message}finally{go.disabled=false;for(const b of saved)b.disabled=false;$('#signin-pass').value='';$('#signin-code').value=''}}
+$('#signin-form').onsubmit=e=>{e.preventDefault();const args={save:$('#signin-save').checked,account:$('#signin-account')?.value||$('#signin-account-name')?.value.trim()||undefined};
 if(!$('#signin-user-row').hidden&&$('#signin-user').value)args.username=$('#signin-user').value;if(!$('#signin-pass-row').hidden&&$('#signin-pass').value)args.password=$('#signin-pass').value;if(!$('#signin-code-row').hidden&&$('#signin-code').value.trim())args.code=$('#signin-code').value.trim();
 if(!args.username&&!args.password&&!args.code){$('#signin-error').textContent='Fill in what the site asks for.';return}signinSend(args)};
-$('#signin-use-saved').onclick=()=>signinSend({use_saved:true,...(!$('#signin-code-row').hidden&&$('#signin-code').value.trim()?{code:$('#signin-code').value.trim()}:{})});
 $('#signin-browser').onclick=async()=>{const link=state.browser_link;if(browserPane())$('#signin-dialog').close();else if(link)window.open(link,'_blank','noopener');try{const r=await signinPost('browser_focus',signinTask?{suggestion_id:signinTask}:{page:signinTab});if(!link||!r.shown)toast(r.shown?'The browser is in front now.':r.unknown?'I don’t know which tab this task uses; find it in the browser.':'I couldn’t reach the browser on this computer.',!r.shown)}catch(err){errCaught(err);if(!link)toast(err.message,true)}};
 // Full size: the sign-in's browser over the whole window, for a small screen in the view; the same button goes back.
 const signinFull=on=>{$('#signin-dialog').classList.toggle('signin-full',on);$('#signin-full').setAttribute('aria-pressed',String(on));$('#signin-full').textContent=on?'Exit full size':'Full size'};

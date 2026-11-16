@@ -1,6 +1,6 @@
 /* Saved sign-ins (Connections, Sign-ins): one calm row per site, a letter tile, the username, a faint "Password saved"
    line and a quiet Forget; the explainer sits under the heading. */
-.logins-head{flex-direction:column;align-items:flex-start;gap:3px}.logins-head p{margin:0}.logins-head p span{display:block}
+.logins-head{display:grid;grid-template-columns:1fr auto;align-items:center;gap:3px 12px}.logins-head p{margin:0;grid-column:1/-1}.logins-head p span{display:block}.logins-import{min-height:0;padding:6px 14px;font-size:var(--fs-sm)}
 .saved-logins>.saved-login{flex-wrap:nowrap;gap:14px;padding:14px 12px 14px 16px}
 .login-mark{flex:none;width:36px;height:36px;border-radius:var(--r-md);display:grid;place-items:center;background:var(--sunken);color:var(--muted);font:var(--fw-strong) var(--fs-md)/1 var(--sans)}
 .saved-login .grow{min-width:0;display:flex;flex-direction:column;gap:1px}
