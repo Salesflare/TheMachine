@@ -506,7 +506,7 @@ def load_section_notes(store, base):
         import crm_import
         import graph_show
         at, personal = stamp(3 * 24 * 60, base), {'side': 'personal'}
-        done = graph.create_record(db, 'person', {'name': 'Isla Morgan', 'email': 'isla.morgan@example.net'}, at)  # an address: the same node id each load
+        done = graph.create_record(db, 'person', {'name': 'Isla Morgan', 'email': 'isla.morgan@mail.example'}, at)  # an address: the same node id each load
         if done.get('created'):
             crm_import.details_made(db, [done['node_id']], personal, at)
             graph_show.show_new_people(db, [done], personal)
