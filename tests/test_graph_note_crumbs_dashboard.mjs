@@ -18,7 +18,7 @@ const page_=id=>({...tree.find(x=>x.id===id),path:paths[id],areas:[{id:'personal
  children:tree.filter(x=>x.parent===id),lines:[{id:1,text:'Example line',at:null,item:null,by:'machine',edited:false,event_id:null,fact_id:null,links:[],data:{}}]});
 const server=createServer(async(req,res)=>{const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
- if(url.pathname==='/api/status'){res.end(JSON.stringify({suggestions:[],promises:[],connectors:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[]}));return}
+ if(url.pathname==='/api/status'){res.end(JSON.stringify({notes_on:true,suggestions:[],promises:[],connectors:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[]}));return}
  if(url.pathname==='/api/graph'&&url.searchParams.has('node')){const id=url.searchParams.get('node');res.end(JSON.stringify(paths[id]?page_(id):{}));return}
  if(url.pathname==='/api/graph'){res.end(JSON.stringify({list_counts:{people:0,quiet:0,new:0,orgs:0,warmup:0,projects:0,projects_done:0},counts:{person:0,org:0,project:0,note:4},boards:[],board_suggestions:[],notes:tree}));return}
  res.statusCode=url.pathname.startsWith('/brand/')||url.pathname.startsWith('/assets/')?404:200;res.end('{}')});

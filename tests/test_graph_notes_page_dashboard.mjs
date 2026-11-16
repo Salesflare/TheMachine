@@ -29,7 +29,7 @@ const page={summary:{text:'Moving the team to the new office on Example Street b
  timeline:[{date:`${year-1}-12-18`,text:'Ana sent three office options.',sources:[14]},{date:`${year}-01-09`,text:'Lease signed for Example Street.',sources:[12]},{date:`${year}-01-14`,text:'Movers sent their quote.',sources:[11]}],at};
 const server=createServer(async(req,res)=>{const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
- if(url.pathname==='/api/status'){res.end(JSON.stringify({suggestions:[],promises:[],connectors:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[]}));return}
+ if(url.pathname==='/api/status'){res.end(JSON.stringify({notes_on:true,suggestions:[],promises:[],connectors:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[]}));return}
  if(url.pathname==='/api/graph'&&url.searchParams.has('node')){const x=notes.find(n=>n.id===url.searchParams.get('node'));const own=x.id==='note:2';
   res.end(JSON.stringify({...x,lines:own?lines:[],path:x.parent?[{id:x.parent,name:'Work'}]:[],created_at:at,renamed:false,owner_dates:false,dated:false,children:notes.filter(c=>c.parent===x.id),linked_from:[],tree:notes,...(own?{page}:{}),...(x.id==='note:1'?{overview}:{})}));return}
  if(url.pathname==='/api/graph'){res.end(JSON.stringify({list_counts:{people:0,quiet:0,new:0,orgs:0,warmup:0,projects:0,projects_done:0},counts:{person:0,org:0,project:0},boards:[],board_suggestions:[],notes}));return}

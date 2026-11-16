@@ -219,7 +219,7 @@ class WorkersApp:
             except Exception as error:  # noqa: BLE001 - tried again in ten minutes
                 LOG.error('retention error=%s', type(error).__name__)
             try:  # What's new: the morning's pick from the pool, once a day (machine/store/whats_new.py)
-                self.store.whats_new_pick(team=self.whats_new_team())
+                self.store.whats_new_pick(team=self.whats_new_team(), notes=self.notes_on())
             except Exception as error:  # noqa: BLE001 - tried again in ten minutes
                 LOG.warning('whats new pick error=%s', type(error).__name__)
             try:  # files added to a chat message and never sent, and those of cards that are gone (chat_files.py)
@@ -406,8 +406,8 @@ class WorkersApp:
             self.bring_in_step({'model': background_model})  # once a day at most: new lines in the owner's OpenClaw notes worth keeping (bring_in.py)
             self.notes_people_step({'model': background_model})  # facts kept from those notes: on who they are about, in the owner's words (notes_people.py)
             self.missed_work_step({'owned': calendar_owned, 'bulk': bulk_kind, 'model': background_model})  # once a week: how many reviewed signals without a to-do needed one (missed_work.py)
-            self.section_notes_step()  # about every six hours: the Home, Health and Kids notes, one small model call only for what is new (section_notes.py)
-            self.topic_notes_step()  # every two hours: new conversations sorted into notes, one call per forty (topic_notes.py)
+            # Notes, only with notes_enabled (NotesApp.notes_on): off, none of these reads anything or calls a model
+            self.topic_notes_step()  # every two hours: new conversations and notifications sorted into subjects, one call per forty (topic_notes.py)
             self.memory_seed_step()  # once per Machine: the OpenClaw workspace's memory topic pages read into Notes, a few a turn (memory_seed.py)
             self.note_writer_step()  # at most hourly: the written pages of a few notes whose sources changed (note_writer.py)
             self.folder_overview_step()  # every few hours: a folder's daily overview, when its notes changed (folder_overview.py)

@@ -9,7 +9,7 @@ function showTab(tab,pane){if(tab==='people'&&pane){graphPane=pane;localStorage.
  if(tab==='health'&&pane){healthPane=pane==='phone'?'other':pane;healthPicked=true}if(tab==='feedback'&&pane==='team')pane='shared';if(tab==='feedback'&&LEARN_PANES.some(([id])=>id===pane)){learnPane=pane;try{localStorage.setItem('learn-pane',pane)}catch{}}
  document.querySelector(`nav [data-tab="${tab}"]`)?.click();if(tab==='health')lazyRun('connections',()=>renderHealthTabs());if(tab==='feedback')lazyRun('learning',()=>learnTabs())}
 function openTabLink(){if(openRoutineLink())return;const st=/^#settings(?:[/=]([a-z]+))?$/.exec(location.hash);if(st){if($('#settings').hidden||st[1]&&st[1]!==settingsNow)showSettings(st[1]);return}const m=/^#([a-z]+)(?:=([a-z]+))?$/.exec(location.hash);if(!m||!TAB_LINKS[m[1]])return;
- const tab=TAB_LINKS[m[1]];if(tab==='people'&&GRAPH_PANES.includes(m[2])){if(!$('#people').hidden&&!graphNode&&graphShown===m[2])return;showTab(tab,m[2]);return}
+ const tab=TAB_LINKS[m[1]];if(tab==='people'&&graphPaneOk(m[2])){if(!$('#people').hidden&&!graphNode&&graphShown===m[2])return;showTab(tab,m[2]);return}
  // a tab's own link stays in the address, so a reload lands there again; a refresh with the tab on screen leaves it be.
  // A link that does something there (#connections=add) goes once handled, so the same link works again.
  if(!m[2]){if($('#'+tab).hidden)showTab(tab);return}history.replaceState(null,'',location.pathname+location.search);showTab(tab,m[2])}

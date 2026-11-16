@@ -26,7 +26,7 @@ class HomeNotes(unittest.TestCase):
         self.store = machine_main.Store(Path(temp.name) / 'events.sqlite')
         self.app = object.__new__(machine_main.App)
         self.app.store = self.store
-        self.app.config = {'accounts': [HOME, JOB]}
+        self.app.config = {'accounts': [HOME, JOB], 'notes_enabled': True}
         self.asked = []
         self.places = {}
         self.app.section_notes_model = self.model

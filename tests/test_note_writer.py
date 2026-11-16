@@ -25,7 +25,7 @@ class Pages(unittest.TestCase):
         self.store = machine_main.Store(Path(temp.name) / 'events.sqlite')
         self.app = object.__new__(machine_main.App)
         self.app.store = self.store
-        self.app.config = {'accounts': [HOME]}
+        self.app.config = {'accounts': [HOME], 'notes_enabled': True}
         self.app.note_writer_model = self.model
         self.app.background_pause = lambda **_: None
         self.app.background_spaced = lambda: True
@@ -55,26 +55,31 @@ class Pages(unittest.TestCase):
         reply = self.mail('Sam <sam@example.com>', 'Re: Office move: a quote', '2026-10-02',
                           'Saturday works. Please book it.\n\nOn Thu, Pat wrote:\n> We can move you on Saturday', 'a', labels=['SENT'])
         lease = self.mail('Example Realty <desk@example-realty.be>', 'Lease signed', '2026-10-05', 'The lease for 12 Example Street is signed.', 'b')
+        crates = self.mail('Example Movers <desk@example-movers.be>', 'Office move: crates', '2026-10-12',
+                           'Forty crates arrive on Thursday 22 October; pack them by Friday evening.', 'c')
         with self.store.connect() as db:
             db.execute('BEGIN IMMEDIATE')
-            for conv, ids in (('c1', [first, reply]), ('c2', [lease])):
+            for conv, ids in (('c1', [first, reply]), ('c2', [lease]), ('c3', [crates])):
                 db.execute("INSERT INTO topic_routes(conv,place,kind,event_id,at,events) VALUES(?,'topic:x','gmail.message',?,?,?)",
                            (conv, ids[-1], AT, json.dumps(ids)))
             drafts = [{'key': 'move', 'title': 'Office move', 'area': 'personal', 'under': ['Work'], **({'starts': '2026-10-24', 'ends': '2026-10-24'} if kind == 'trip' else {}),
-                       'lines': lines or [{'key': 'c1', 'text': 'Office move: a quote', 'at': '2026-10-02', 'event_id': reply},
-                                          {'key': 'c2', 'text': 'Lease signed', 'at': '2026-10-05', 'event_id': lease}]}]
+                       'lines': lines or [{'key': 'conv:c1', 'text': 'Office move: a quote', 'at': '2026-10-02', 'event_id': reply},
+                                          {'key': 'conv:c2', 'text': 'Lease signed', 'at': '2026-10-05', 'event_id': lease},
+                                          {'key': 'conv:c3', 'text': 'Office move: crates', 'at': '2026-10-12', 'event_id': crates}]}]
             note_pages.sync(db, kind, drafts, AT)
             note_id = db.execute('SELECT id FROM note_pages WHERE key=?', (kind + ':move',)).fetchone()['id']
-            ids = {r['key']: r['id'] for r in db.execute('SELECT id,key FROM note_page_lines WHERE note_id=?', (note_id,))}
+            ids = {str(r['key']).removeprefix('conv:'): r['id'] for r in db.execute('SELECT id,key FROM note_page_lines WHERE note_id=?', (note_id,))}
         return note_id, ids
 
-    def written(self, ids):
-        quote, lease = 'S' + str(ids['c1']), 'S' + str(ids['c2'])
+    def written(self, ids, **more):
+        quote, lease, crates = ('S' + str(ids[c]) for c in ('c1', 'c2', 'c3'))
         return lambda n: {'note': n['note'], 'summary': {'text': 'Moving the office to 12 Example Street; the movers come on Saturday 24 October.', 'sources': [quote, lease]},
-                          'facts': [{'text': 'The move costs 2,400 euros.', 'sources': [quote]}, {'text': 'A bullet with nothing behind it.', 'sources': ['S999']}],
+                          'who': [{'text': 'Pat, the movers', 'sources': [quote]}],
+                          'facts': [{'text': 'The move costs 2,400 euros.', 'sources': [quote]}, {'text': 'A bullet with nothing behind it.', 'sources': ['S999']},
+                                    {'text': 'Forty crates arrive on Thursday 22 October.', 'sources': [crates]}],
                           'decisions': [{'text': 'Saturday over Sunday, since the building is closed then.', 'sources': [quote]}],
                           'open': [], 'timeline': [{'date': '2026-10-05', 'text': 'Lease signed for 12 Example Street.', 'sources': [lease]},
-                                                    {'date': '2026-10-02', 'text': 'You booked the movers.', 'sources': [quote]}]}
+                                                    {'date': '2026-10-02', 'text': 'You booked the movers.', 'sources': [quote]}], **more}
 
     def step(self):
         self.app.note_writer_next = 0
@@ -94,7 +99,9 @@ class Pages(unittest.TestCase):
             self.assertNotIn(cut, prompt)
         page = self.app.note_page(note_pages.node_id(note_id))['page']
         self.assertEqual(page['summary']['sources'], [ids['c1'], ids['c2']])
-        self.assertEqual([b['text'] for b in page['facts']], ['The move costs 2,400 euros.'], 'a bullet citing no line it was given goes')
+        self.assertEqual([b['text'] for b in page['facts']], ['The move costs 2,400 euros.', 'Forty crates arrive on Thursday 22 October.'],
+                         'a bullet citing no line it was given goes')
+        self.assertEqual([b['text'] for b in page['who']], ['Pat, the movers'])
         self.assertEqual([b['date'] for b in page['timeline']], ['2026-10-02', '2026-10-05'], 'oldest first')
         self.assertNotIn('open', page)
         with self.store.connect() as db:
@@ -156,10 +163,64 @@ class Pages(unittest.TestCase):
         self.assertIn('page', self.app.note_page(note_pages.node_id(note_id)))
         self.assertFalse(self.step(), 'it tried: it waits NOTE_HOURS')
 
-    def test_trips_and_notes_with_one_message_get_no_page(self):
-        self.note(kind='trip')
+    def test_a_conversation_not_about_the_subject_leaves_the_note_and_is_sorted_once_more(self):
+        note_id, ids = self.note()
+        self.answer = self.written(ids, belongs=['S' + str(ids['c1']), 'S' + str(ids['c2'])],
+                                   open=[{'text': 'Hand in the old keys by Friday 30 October.', 'sources': ['S' + str(ids['c2'])]}])
+        self.step()
+        page = self.app.note_page(note_pages.node_id(note_id))['page']
+        self.assertNotIn(ids['c3'], {s for b in page['facts'] for s in b['sources']}, 'never cited')
         with self.store.connect() as db:
-            self.assertEqual(note_writer.candidates(db), [])
+            route = db.execute("SELECT place,left FROM topic_routes WHERE conv='c3'").fetchone()
+            self.assertEqual((route['place'], route['left']), (topic_notes.AGAIN, 'topic:x'), 'asked once more, told where it was')
+            self.assertEqual(db.execute("SELECT place FROM topic_routes WHERE conv='c1'").fetchone()['place'], 'topic:x')
+            db.execute('BEGIN IMMEDIATE')
+            topic_notes.unroute(db, 'c3')
+            self.assertEqual(db.execute("SELECT place FROM topic_routes WHERE conv='c3'").fetchone()['place'], '', 'a second time: nowhere')
+
+    def test_a_source_left_out_of_belongs_is_never_cited(self):
+        notes = [{'note': 'N7', 'title': 'Office move', 'sources': [{'id': f'S{i}'} for i in (1, 2, 3, 4)], '_convs': [1, 2, 3, 4]}]
+        bullet = {'text': 'Forty crates arrive on Thursday 22 October.', 'sources': ['S4']}
+        answer = {'notes': [{'note': 'N7', 'belongs': ['S1', 'S2', 'S3'], 'summary': {'text': 'The office moves to the second floor on December 1.', 'sources': ['S1']},
+                             'facts': [{'text': 'Invoice 4411 for the movers: 900 euros, paid.', 'sources': ['S1']}, bullet],
+                             'decisions': [{'text': 'Mila picked the December 1 date.', 'sources': ['S2']}],
+                             'open': [{'text': 'Keys go back to the landlord by December 3.', 'sources': ['S3', 'S4']}]}]}
+        page = note_writer.parse(json.dumps(answer), notes)[7]
+        self.assertEqual(page['off'], [4])
+        self.assertEqual(len(page['facts']), 1)
+        self.assertEqual(page['open'][0]['sources'], [3])
+
+    def test_a_thin_page_is_no_page(self):
+        note_id, ids = self.note()
+        full = self.written(ids)
+        self.answer = lambda n: {**full(n), 'facts': [], 'decisions': []}
+        self.step()
+        self.assertNotIn('page', self.app.note_page(note_pages.node_id(note_id)), 'fewer than MIN_BULLETS facts, decisions and open items')
+        with self.store.connect() as db:
+            self.assertNotIn('Office move', {x['name'] for x in self.app.notes_list(db)})
+            db.execute('BEGIN IMMEDIATE')
+            note_pages.line_add(db, note_pages.node_id(note_id), 'Keys go to the new landlord', AT)
+        with self.store.connect() as db:
+            self.assertIn('Office move', {x['name'] for x in self.app.notes_list(db)}, 'the owner wrote in it: it is theirs to see')
+
+    def test_a_trip_gets_a_page_a_note_kept_from_before_and_one_with_one_message_dont(self):
+        trip, _ = self.note(kind='trip')
+        with self.store.connect() as db:
+            self.assertEqual(note_writer.candidates(db), [trip], 'its bookings and mail hold the times and what to bring')
+            db.execute('BEGIN IMMEDIATE')
+            note_pages.archive(db, ('trip',), AT)
+            self.assertEqual(note_writer.candidates(db), [], 'kept from before: never written again')
+        one = self.mail('Example Garage <desk@garage.example>', 'Your car service', '2026-10-01', 'Booked for Monday.', 'g')
+        with self.store.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            note_pages.sync(db, 'topic', [{'key': 'car', 'title': 'Car', 'area': 'personal', 'lines': [{'key': 'conv:g', 'text': 'Your car service', 'event_id': one}]}], AT)
+            self.assertEqual(note_writer.candidates(db), [], 'one message: its line says it all')
+        self.assertFalse(self.step())
+        self.assertEqual(self.asked, [])
+
+    def test_notes_off_writes_nothing_and_calls_no_model(self):
+        self.note()
+        self.app.config = {'accounts': [HOME]}
         self.assertFalse(self.step())
         self.assertEqual(self.asked, [])
 
@@ -173,6 +234,8 @@ class Pages(unittest.TestCase):
         answer = {'notes': [{'note': 'N7', 'summary': {'text': 'The office moves to the second floor on December 1.', 'sources': ['S1']},
                              'facts': [{'text': 'Invoice 4411 for the movers: 900 euros, paid.', 'sources': ['S1']},
                                        {'text': 'The call is at https://meet.example/abc-def for the movers.', 'sources': ['S2']}],
+                             'decisions': [{'text': 'The second floor, since the first is let.', 'sources': ['S2']}],
+                             'open': [{'text': 'Keys go back to the landlord by December 3.', 'sources': ['S2']}],
                              'timeline': [{'date': '2026-11-02', 'text': 'Movers sent invoice 4411: 900 euros, paid.', 'sources': ['S1']},
                                           {'date': '2026-11-05', 'text': 'Mila agreed on the December 1 date.', 'sources': ['S2']}]}]}
         page = note_writer.parse(json.dumps(answer), notes)[7]

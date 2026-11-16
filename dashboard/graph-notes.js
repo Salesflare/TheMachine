@@ -41,10 +41,10 @@ function noteSource(x){const from=x.source?.gone?t('From a message that is gone'
  const todo=x.todo?html`<a href="#card=${encodeURIComponent(x.todo)}&or=chat">${t('Open the to-do')}</a>`:'';
  return from||todo?html`<small class="note-src">${from}${from&&todo?' · ':''}${todo}</small>`:''}
 const noteLineForm=x=>html`<form class="note-form note-line-form" data-note-line="${x.id}" data-links="${JSON.stringify(x.links||[])}"><textarea name="text" maxlength="${x.fact_id?240:1000}" rows="2" required aria-label="${t('Line')}">${x.text}</textarea><span class="note-acts"><button type="button" class="quiet" data-note-cancel>${t('Cancel')}</button><button class="primary">${t('Save')}</button></span></form>`;
-// The written page (note_writer.py): a summary, then facts, decisions, open items and a timeline; each bullet ends in
-// the numbers of the lines it stands on (its sources, numbered under it), and a number takes you to that line
+// The written page (note_writer.py): a summary, then who is in it, facts, decisions, open items and a timeline; each
+// bullet ends in the numbers of the lines it stands on (its sources, numbered under it), and a number takes you to that line
 function noteWritten(pg,num){const cite=ids=>{const own=(ids||[]).filter(i=>num.has(i));return own.length?html`<span class="note-cites">${own.map(i=>html`<a href="#note-line-${i}" class="note-cite" data-note-cite="${i}" aria-label="${t('Source {}',num.get(i))}">${num.get(i)}</a>`)}</span>`:''};
- const parts=[['facts',t('Key facts')],['decisions',t('Decisions')],['open',t('Open items')],['timeline',t('Timeline')]];
+ const parts=[['who',t('Who')],['facts',t('Key facts')],['decisions',t('Decisions')],['open',t('Open items')],['timeline',t('Timeline')]];
  return html`<section class="note-written"><p class="note-summary">${pg.summary.text}${cite(pg.summary.sources)}</p>${parts.map(([k,label])=>pg[k]?.length?html`<h4>${label}</h4><ul class="note-bullets${k==='timeline'?' note-timeline':''}">${pg[k].map(b=>html`<li>${b.date?html`<time datetime="${b.date}">${noteDay(b.date)}</time>`:''}<span>${b.text}${cite(b.sources)}</span></li>`)}</ul>`:'')}<h4 class="note-sources-head">${t('Sources')}</h4></section>`}
 // A folder's daily overview (folder_overview.py): each sentence ends in the names of the notes under it that it stands on, each a link
 function noteOverview(o){const cite=s=>s?.length?html`<span class="note-cites">${s.map(x=>html`<a href="${graphHash(x.id)}" class="note-cite note-cite-name" title="${x.name}">${x.name}</a>`)}</span>`:'';

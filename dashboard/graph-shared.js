@@ -98,4 +98,9 @@ new MutationObserver(()=>document.querySelectorAll('.fleet-tabs:not([data-faded]
 const graphPeople=(...a)=>lazyIn('graph')?people(...a):lazyPart('graph').then(()=>people(...a));
 // Graph: People (closest, gone quiet, new), Projects and Organizations.
 const GRAPH_PANES=['people','projects','orgs','notes'];
+// Notes, the feature, only on a Machine with notes_enabled (the status says notes_on): off, no Notes in the sidebar,
+// the Graph, the palette or search; a trip's or an event's page still opens from its band in Calendar
+const notesOn=()=>state.notes_on===true;
+const graphPaneOk=p=>GRAPH_PANES.includes(p)&&(p!=='notes'||notesOn());
+function notesShow(){const a=document.querySelector('#graph-sub a[data-graph-sub="notes"]');if(a)a.hidden=!notesOn()}
 const graphPost=(action,args)=>(fuKept=null,request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action,args})}).then(r=>(pagerDrop('gsearch'),r)));  // an edit: the board's follow-ups are asked again, and a search asks the Machine again (a merged pair showed twice there)

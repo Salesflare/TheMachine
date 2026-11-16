@@ -105,6 +105,7 @@ FEATURES = {
 }
 # Features that exist in the code but have no article yet, each with the reason. Keep this short.
 PENDING = {
+    'notes': 'off unless notes_enabled is set, so not promised in Help: docs/notes.md',
 }
 # Where app text may live: the dashboard and the code that writes what it shows.
 TEXT_FILES = ('dashboard.html', '*.py', 'machine/**/*.py', '*.mjs', 'connectors/*.py', 'integrations/*.py', 'openclaw-plugin/*.ts', 'install.sh')

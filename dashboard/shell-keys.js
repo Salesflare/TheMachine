@@ -41,7 +41,7 @@ actionAdd(
  {id:'go-people',group:'Go to',label:'People',keywords:'graph contacts',keys:'g p',run:kbNav('.side-sub a[data-graph-sub="people"]')},
  {id:'go-orgs',group:'Go to',label:'Organizations',keywords:'graph companies organizations',keys:'g o',run:kbNav('.side-sub a[data-graph-sub="orgs"]')},
  {id:'go-projects',group:'Go to',label:'Projects',keywords:'graph',keys:'g j',run:kbNav('.side-sub a[data-graph-sub="projects"]')},
- {id:'go-notes',group:'Go to',label:'Notes',keywords:'graph wiki trips pages',run:kbNav('.side-sub a[data-graph-sub="notes"]')},
+ {id:'go-notes',group:'Go to',label:'Notes',keywords:'graph wiki trips pages',when:notesOn,run:kbNav('.side-sub a[data-graph-sub="notes"]')},
  {id:'go-fleet',group:'Go to',label:'Fleet',keywords:'team teammates',keys:'g f',when:()=>kbHas($('#tab-fleet')),run:kbNav('#tab-fleet')},
  {id:'go-learning',group:'Go to',label:'Learning',keywords:'feedback quality learned decided changes how it is going',keys:'g l',run:kbNav('nav [data-tab="feedback"]')},
  {id:'go-feedback',group:'Go to',alias:true,keys:'g b',run:kbNav('nav [data-tab="feedback"]')},  // the old key, still working, not listed
@@ -54,7 +54,7 @@ actionAdd(
  {id:'event-new',group:'Actions',label:'New event',keywords:'event meeting calendar appointment add create invite',run:()=>lazyRun('calendar',()=>calNew())},
  {id:'project-new',group:'Actions',label:'New project',keywords:'project deal opportunity add create crm',run:()=>lazyRun('graph',()=>pjOpen())},
  {id:'person-new',group:'Actions',label:'New person',keywords:'person contact add create crm people',run:()=>lazyRun('graph',()=>recOpen('person'))},
- {id:'note-new',group:'Actions',label:'New note',keywords:'note page wiki add create',run:()=>lazyRun('graph',()=>noteNew())},
+ {id:'note-new',group:'Actions',label:'New note',keywords:'note page wiki add create',when:notesOn,run:()=>lazyRun('graph',()=>noteNew())},
  {id:'org-new',group:'Actions',label:'New organization',keywords:'organisation organization company account add create crm',run:()=>lazyRun('graph',()=>recOpen('org'))},
  {id:'project-edit',group:'Actions',label:'Edit this project',keywords:'project rename value notes people stage',when:()=>!$('#people').hidden&&/^project:/.test(graphNode||''),run:()=>lazyRun('graph',()=>pjOpen({node:graphNode}))},
  {id:'project-won',group:'Actions',label:'Mark this project done or won',keywords:'project won done finish close deal',when:()=>!$('#people').hidden&&/^project:/.test(graphNode||''),run:()=>lazyRun('graph',()=>pjOpen({node:graphNode,mode:'won'}))},

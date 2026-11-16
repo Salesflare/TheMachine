@@ -119,6 +119,10 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
     `api/graph?node=note:<id>` with Linked from, and the owner's edits (`NOTE_ACTIONS`). A kind The Machine fills in
     by itself is a line in `note_pages.KINDS` and an extractor that hands drafts to `note_pages.sync`, which places
     them in the tree (`STARTING_TREE`, `PLACING`) and keeps the owner's changes on top. Dashboard: `dashboard/graph-notes.js`.
+    All of Notes is behind `notes_enabled` (`NotesApp.notes_on`, off by default; the status says `notes_on` for the
+    dashboard): off, the list, pages other than a trip's or an event's, search, Linked from, the owner's edits and every
+    notes model step stay off, and only trips and events go on for Calendar. On, the first round starts the notes from
+    conversations over (`topic_notes.rebuild`, `note_pages.archive`) and `section_notes_step` no longer runs.
     Trips: the mail source reads a confirmation's schema.org reservations, JSON-LD or microdata (`bookings.py`), into the message's sealed
     metadata; `trip_notes.py` keeps them (`trip_bookings`), groups one journey into one trip, and `trip_notes_step`
     (every ten minutes, plain code) syncs them under Trips. Events: ticket mail's EventReservation rows, kept with them,
@@ -130,8 +134,8 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
     per kind places only the new ones in a section or an owner's note in it (`section_topics`, asked once each), and
     `section_notes_step` syncs the sections; a bill's line opens its to-do. Conversations from every mail, chat and
     meeting-notes source (`topic_notes.py`, kinds from the kinds and services registries) are sorted by what was said,
-    forty to a call (`topic_notes_step`, `topic_notes_run`): into a Home, Health or Kids part, an owner's note, a
-    project or organization page, or a new note (`topic` in `note_pages.KINDS`). Bulk mail and chats are left out
+    forty to a call (`topic_notes_step`, `topic_notes_run`), notifications too: into a subject, a trip, an event, an
+    owner's note, a project or organization page, or a new subject (`topic` in `note_pages.KINDS`). Bulk mail and chats are left out
     before any call (`topic_notes.bulk_mail`, `bulk_chat`), and so is a meeting's own mail: its invitation, replies,
     updates and cancellation (`topic_notes.meeting_mail`, `forget`). The first fill (`topic_notes.filling`) runs rounds every
     twenty minutes with more calls, outside the quiet hours and under `background_pause`, then every two hours.

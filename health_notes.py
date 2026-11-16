@@ -1,4 +1,4 @@
-"""Health notes (docs/help/notes.md, "Health"): what the owner's Machine knows about the owner's own health, in a few
+"""Health notes (docs/notes.md, "Health"): what the owner's Machine knows about the owner's own health, in a few
 notes under Health, kept the way every kind in sections is (section_notes.py: one small model call over what is new
 only, the owner's own notes in a part filled in, a part only from two lines).
 

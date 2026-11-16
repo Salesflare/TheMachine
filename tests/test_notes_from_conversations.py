@@ -30,7 +30,7 @@ class Conversations(unittest.TestCase):
         self.store = machine_main.Store(Path(temp.name) / 'events.sqlite')
         self.app = object.__new__(machine_main.App)
         self.app.store = self.store
-        self.app.config = {'accounts': [HOME, JOB, CHAT, TEAM]}
+        self.app.config = {'accounts': [HOME, JOB, CHAT, TEAM], 'notes_enabled': True}
         self.asked, self.routes, self.n = [], {}, 0
         self.app.topic_notes_model = self.model
         self.app.section_notes_model = lambda prompt: json.dumps({'places': []})
@@ -42,7 +42,7 @@ class Conversations(unittest.TestCase):
         """Answers by title: self.routes maps a title's words to {'place': a path} | {'record': a name} | {'new': ...}."""
         self.asked.append(prompt)
         places = {}
-        for line in prompt.split('The places that exist, one JSON object per line:\n', 1)[1].split('\nThe conversations', 1)[0].splitlines():
+        for line in prompt.split('The subjects that have a place already, one JSON object per line:\n', 1)[1].split('The conversations, one', 1)[0].splitlines():
             p = json.loads(line)
             places[p['path']] = p['id']
         out = []
@@ -83,7 +83,9 @@ class Conversations(unittest.TestCase):
 
 
 class SortedByWhatWasSaid(Conversations):
-    def test_a_conversation_from_any_mailbox_or_chat_goes_in_the_part_it_is_about(self):
+    def test_the_call_reads_what_was_said_in_any_mailbox_or_chat_and_a_part_is_no_place(self):
+        """A part of Home, Health or Kids is a category, not a matter: no conversation goes there (only the owner's own
+        notes in it are places)."""
         self.routes = {'Trip to the zoo': {'place': 'Kids > School'}, 'Lunch boxes': {'place': 'Kids > School'},
                        'Swimming': {'place': 'Kids > Activities'}, 'Coach Robin': {'place': 'Kids > Activities'}}
         self.mail('Example Primary <office@example-primary.be>', 'Trip to the zoo on 21 November', '2026-11-03', thread_id='t1',
@@ -96,13 +98,11 @@ class SortedByWhatWasSaid(Conversations):
         self.event('whatsapp.message', 'Coach Robin', '2026-11-06T18:05:00+00:00', 'chat', 'Great, thanks', chat_id='3200@s.whatsapp.net',
                    chat_name='Coach Robin', from_me=True)
         notes = self.round()
-        school = notes[('kids', 'School')]
-        self.assertEqual([x['name'] for x in school['path']], ['Kids'])
-        self.assertCountEqual([x['text'] for x in school['lines']], ['Trip to the zoo on 21 November', 'Lunch boxes'],
-                              'one line per conversation, the work mailbox too')
-        self.assertEqual([x['item'] for x in school['lines']], ['conversation', 'conversation'])
-        self.assertNotIn(('kids', 'Activities'), notes, 'one conversation: not a part yet (MIN_LINES)')
+        self.assertNotIn(('kids', 'School'), notes)
+        self.assertEqual(set(self.routed().values()), {''})
         prompt = self.asked[0]
+        self.assertNotIn('"path": "Kids > School"', prompt)
+        self.assertIn('Lunch boxes', prompt, 'a notification nobody answered reaches the call too')
         self.assertIn('Bring a packed lunch.', prompt, 'the call reads what was said')
         self.assertIn('Owner: Thanks, she will be there.', prompt)
         for cut in ('Kind regards', '+32 000', '> The class goes'):
@@ -110,34 +110,87 @@ class SortedByWhatWasSaid(Conversations):
         self.assertIn('"source": "WhatsApp"', prompt)
         self.assertIn('Swimming moves to 17:00', prompt)
 
-    def test_a_new_note_starts_with_two_conversations_or_one_ongoing_matter(self):
-        self.routes = {'Office move': {'new': {'title': 'Office move', 'under': 'Work'}},
-                       'Hiring a designer': {'new': {'title': 'Hiring a designer', 'under': 'Work'}, 'ongoing': True},
-                       'Pool': {'new': {'title': 'Pool', 'under': 'Home'}, 'ongoing': True},
-                       'Kitchen': {'new': {'title': 'Kitchen renovation', 'under': 'Home'}}}
-        self.mail('Example Movers <desk@example-movers.be>', 'Office move: a quote', '2026-10-01', account='job', thread_id='a')
-        self.mail('Example Landlord <desk@example-landlord.be>', 'Kitchen tiles', '2026-10-02', thread_id='k')
-        self.mail('Example Agency <ana@example-agency.be>', 'Hiring a designer: three profiles', '2026-10-03', account='job', thread_id='h')
-        self.mail('Sam <sam@acme.example>', 'Re: Hiring a designer: three profiles', '2026-10-04', account='job', thread_id='h', labels=['SENT'])
-        self.mail('Example Pools <desk@example-pools.be>', 'Pool: your quote', '2026-10-03', thread_id='p')
+    def test_every_subject_named_is_a_note_and_one_under_kids_is_personal(self):
+        """No count of replies or conversations: a school's notices nobody answered make a subject, the page writer's
+        bar decides what shows. Under Home, Health, Kids or Pets it is Personal, wherever the mail came in."""
+        self.routes = {'Term dates': {'new': {'title': "Ava's school", 'under': 'Kids'}},
+                       'Swimming gala': {'new': {'title': "Ava's school", 'under': 'Kids'}},
+                       'Office move': {'new': {'title': 'Office move', 'under': 'Work'}}}
+        self.mail('Example Primary <noreply@example-primary.be>', 'Term dates for spring', '2026-10-01', account='job', thread_id='a',
+                  list_unsubscribe=True, body='Spring term runs from 6 January to 3 April.')
+        self.mail('Example Primary <noreply@example-primary.be>', 'Swimming gala on Friday', '2026-10-03', account='job', thread_id='b',
+                  body='Bring a towel and goggles; the bus leaves at 9:00.')
+        self.mail('Example Movers <desk@example-movers.be>', 'Office move: a quote', '2026-10-05', account='job', thread_id='c')
         notes = self.round()
-        self.assertIn(('topic', 'Hiring a designer'), notes, 'one ongoing matter the owner wrote in is enough')
-        self.assertNotIn(('topic', 'Pool'), notes, "the call's word alone starts no note")
-        self.assertNotIn(('topic', 'Kitchen renovation'), notes)
-        self.assertNotIn(('topic', 'Office move'), notes, 'one conversation: not yet a note')
-        self.mail('Example Movers <desk@example-movers.be>', 'Office move: the date', '2026-10-09', account='job', thread_id='b')
+        school = notes[('topic', "Ava's school")]
+        self.assertEqual([x['name'] for x in school['path']], ['Kids'])
+        self.assertEqual(school['area'], 'personal', 'under Kids: Personal, though it came in on the work mailbox')
+        self.assertEqual([x['text'] for x in school['lines']], ['Swimming gala on Friday', 'Term dates for spring'], 'newest first')
+        self.assertEqual(notes[('topic', 'Office move')]['area'], 'work:Acme', 'one conversation is enough to start')
+
+    def test_notifications_reach_the_call_bounces_and_automatic_replies_dont(self):
+        self.mail('Example Primary <office@example-primary.be>', 'Note to all parents', '2026-10-06', thread_id='n', list_id='<parents.example-primary.be>')
+        self.mail('Example Shop <no-reply@shop.example>', 'Your order shipped', '2026-10-06', thread_id='o', precedence='bulk')
+        self.mail('Example Clinic <desk@example-clinic.be>', 'Appointment on 12 November at 9:30', '2026-10-06', thread_id='p', auto_submitted='auto-generated')
+        self.mail('Mail Delivery Subsystem <mailer-daemon@example.com>', 'Delivery Status Notification (Failure)', '2026-10-07', thread_id='x')
+        self.mail('Dana <dana@example.net>', 'Out of office', '2026-10-08', thread_id='d', auto_submitted='auto-replied')
+        self.round()
+        prompt = '\n'.join(self.asked)
+        for kept in ('Note to all parents', 'Your order shipped', 'Appointment on 12 November'):
+            self.assertIn(kept, prompt, 'a notification holds the facts a note is made of')
+        for left in ('Delivery Status', 'Out of office'):
+            self.assertNotIn(left, prompt)
+
+    def test_one_busy_sender_cannot_fill_the_calls(self):
+        for i in range(topic_notes.NOTICES_EACH + 5):
+            self.mail('Example Shop <no-reply@shop.example>', f'Order {i} shipped', f'2026-10-{i + 1:02d}', thread_id=f'o{i}')
+        with self.store.connect() as db:
+            waiting = topic_notes.unasked(db, topic_notes.conversations(db, self.app.config['accounts'], __import__('datetime').date(2026, 11, 14), ()))
+        self.assertEqual(len(waiting), topic_notes.NOTICES_EACH)
+        self.assertEqual(waiting[0]['title'], f'Order {topic_notes.NOTICES_EACH + 4} shipped', 'the newest')
+
+    def test_a_notice_sent_back_by_its_page_goes_to_its_own_subject(self):
+        """The page writer found it is about another child (topic_notes.unroute): asked once more, told where it was,
+        and the call can't put it back there."""
+        self.routes = {'Class trip': {'new': {'title': "Ava's school", 'under': 'Kids'}}}
+        self.mail('Example Primary <office@example-primary.be>', 'Class trip for year 3', '2026-10-06', thread_id='n')
+        self.round()
+        with self.store.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            topic_notes.unroute(db, next(iter(r['conv'] for r in db.execute('SELECT conv FROM topic_routes'))))
+        self.routes = {'Class trip': {'new': {'title': "Leo's school", 'under': 'Kids'}}}
         notes = self.round()
-        self.assertIn('Work > Office move', self.asked[1], 'the next call sees the topic proposed before')
-        move = notes[('topic', 'Office move')]
-        self.assertEqual([x['name'] for x in move['path']], ['Work'])
-        self.assertEqual(move['area'], 'work:Acme')
-        self.assertEqual([x['text'] for x in move['lines']], ['Office move: the date', 'Office move: a quote'], 'newest first')
+        self.assertIn('"not": "Kids > Ava', self.asked[-1])
+        self.assertIn(('topic', "Leo's school"), notes)
+        self.assertNotIn(('topic', "Ava's school"), notes, 'nothing is placed in it any more: it goes')
+
+    def test_the_place_a_page_sent_it_back_from_is_refused(self):
+        self.routes = {'Class trip': {'new': {'title': "Ava's school", 'under': 'Kids'}}}
+        self.mail('Example Primary <office@example-primary.be>', 'Class trip for year 3', '2026-10-06', thread_id='n')
+        self.round()
+        with self.store.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            topic_notes.unroute(db, next(iter(r['conv'] for r in db.execute('SELECT conv FROM topic_routes'))))
+        self.routes = {'Class trip': {'place': "Kids > Ava's school"}}
+        self.round()
+        self.assertEqual(list(self.routed().values()), [''], 'the same place again: nowhere')
+
+    def test_a_conversation_placed_in_a_trip_is_a_line_of_it(self):
+        with self.store.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            note_pages.sync(db, 'trip', [{'key': 'lisbon', 'title': 'Lisbon trip', 'area': 'personal', 'starts': '2026-12-01', 'ends': '2026-12-04',
+                                          'lines': [{'key': 'b1', 'text': 'Flight to Lisbon'}]}], AT)
+        self.routes = {'Airport transfer': {'place': 'Lisbon trip'}}
+        self.mail('Example Transfers <bookings@transfers.example>', 'Airport transfer confirmed', '2026-11-02', thread_id='t')
+        notes = self.round()
+        self.assertIn('Airport transfer confirmed', [x['text'] for x in notes[('trip', 'Lisbon trip')]['lines']])
 
     def test_a_matter_the_graph_has_goes_to_that_record_not_a_second_note(self):
         with self.store.connect() as db:
             db.execute("INSERT INTO graph_nodes(id,kind,name,strength,signals,info) VALUES('project:p1','project','Example Rollout',1,3,'{}')")
             db.execute("INSERT INTO graph_nodes(id,kind,name,strength,signals,info) VALUES('org:example.org','org','Example Org',1,3,'{}')")
         first = self.mail('Ana <ana@example.org>', 'Rollout plan', '2026-10-01', account='job', thread_id='r')
+        self.mail('Sam <sam@acme.example>', 'Re: Rollout plan', '2026-10-01', account='job', thread_id='r', labels=['SENT'])
         self.mail('Ana <ana@example.org>', 'Rollout week two', '2026-10-08', account='job', thread_id='s')
         with self.store.connect() as db:
             db.execute("INSERT INTO graph_events(node_id,event_id,at,direct) VALUES('project:p1',?,?,1)", (first, AT))
@@ -148,16 +201,19 @@ class SortedByWhatWasSaid(Conversations):
         self.assertFalse([k for k in notes if k[0] == 'topic'])
 
     def test_each_conversation_is_asked_about_once_and_its_later_messages_follow_it(self):
-        self.routes = {'Boiler': {'place': 'Home > Repairs and upkeep'}, 'Gutter': {'place': 'Home > Repairs and upkeep'}}
+        self.routes = {'Boiler': {'new': {'title': 'Boiler', 'under': 'Home'}}, 'Gutter': {'new': {'title': 'Gutter', 'under': 'Home'}}}
         self.mail('Example Plumber <office@example-plumber.be>', 'Boiler service', '2026-10-20', thread_id='b')
+        self.mail('Sam <sam@example.com>', 'Re: Boiler service', '2026-10-20', thread_id='b', labels=['SENT'])
         self.mail('Example Roofer <office@example-roofer.be>', 'Gutter repair', '2026-10-21', thread_id='g')
+        self.mail('Sam <sam@example.com>', 'Re: Gutter repair', '2026-10-21', thread_id='g', labels=['SENT'])
         self.round()
         self.assertEqual(len(self.asked), 1)
         later = self.mail('Example Plumber <office@example-plumber.be>', 'Re: Boiler service', '2026-11-02', thread_id='b')
-        notes = self.round()
+        self.round()
         self.assertEqual(len(self.asked), 1, 'nothing new: no call')
-        line = next(x for x in notes[('home', 'Repairs and upkeep')]['lines'] if x['text'] == 'Boiler service')
-        self.assertEqual((line['at'], line['event_id']), ('2026-11-02', later))
+        with self.store.connect() as db:
+            route = db.execute("SELECT last_at,event_id FROM topic_routes WHERE title='Boiler service'").fetchone()
+        self.assertEqual((str(route['last_at'])[:10], route['event_id']), ('2026-11-02', later))
 
     def test_a_reply_that_isnt_one_keeps_nothing(self):
         self.app.topic_notes_model = lambda prompt: 'not now'
@@ -173,11 +229,12 @@ class SortedByWhatWasSaid(Conversations):
 
 
 class LeftOutFirst(Conversations):
-    """Bulk never reaches a call or a note: spam always; promotions, list mail, mail a program sent and system senders
-    unless the owner wrote in the thread or it carries a booking; bots, broadcasts and lone chat messages."""
+    """Bulk never reaches a call or a note: spam always; Gmail's marketing tabs, automatic replies and bounces unless
+    the owner wrote in the thread or it carries a booking; bots, broadcasts and lone chat messages."""
 
     def test_bulk_mail_and_bulk_chat_are_left_out_before_any_call(self):
-        self.mail('Example Clinic <desk@example-clinic.be>', 'Your referral letter', '2026-10-08')
+        self.mail('Example Clinic <desk@example-clinic.be>', 'Your referral letter', '2026-10-08', thread_id='ref')
+        self.mail('Sam <sam@example.com>', 'Re: Your referral letter', '2026-10-08', thread_id='ref', labels=['SENT'])
         self.mail('Example Clinic <desk@example-clinic.be>', 'Clinic newsletter', '2026-10-09', list_unsubscribe=True)
         self.mail('Example Clinic <desk@example-clinic.be>', 'Autumn offer', '2026-10-10', labels=['CATEGORY_PROMOTIONS', 'INBOX'])
         self.mail('Example Clinic <desk@example-clinic.be>', 'Member update', '2026-10-11', list_id='<members.example-clinic.be>')
@@ -190,9 +247,9 @@ class LeftOutFirst(Conversations):
         self.event('whatsapp.message', 'Ana', '2026-10-17', 'chat', 'hi!', chat_id='3201@s.whatsapp.net', chat_name='Ana')
         self.round()
         prompt = '\n'.join(self.asked)
-        self.assertIn('Your referral letter', prompt)
-        for bulk in ('Clinic newsletter', 'Autumn offer', 'Member update', 'Weekly digest', 'Rate your visit', 'Free whitening',
-                     'build passed', 'Deal of the day', '"title": "Ana"'):
+        for notice in ('Your referral letter', 'Clinic newsletter', 'Member update', 'Weekly digest', 'Rate your visit'):
+            self.assertIn(notice, prompt, 'a notification reaches the call: the call leaves out the ones with nothing for the owner')
+        for bulk in ('Autumn offer', 'Free whitening', 'build passed', 'Deal of the day', '"title": "Ana"'):
             self.assertNotIn(bulk, prompt)
 
     def test_a_thread_the_owner_wrote_in_a_booking_and_a_chat_they_answered_stay(self):
@@ -215,9 +272,9 @@ class LeftOutFirst(Conversations):
         self.mail('Example Org <ana@example.org>', 'Board review', '2026-10-20', thread_id='talk')  # people talking
         self.mail('Sam <sam@example.com>', 'Re: Board review', '2026-10-21', thread_id='talk', labels=['SENT'])
         self.mail('Example Org <ana@example.org>', 'Board review: the numbers for it', '2026-10-22', thread_id='plan')
-        self.routes = {'Board review': {'place': 'Home > Repairs and upkeep'}, 'Pottery': {'place': 'Home > Repairs and upkeep'}}
-        self.mail('Ana <ana@example.org>', 'Invitation: Pottery class @ Tue Nov 3, 2026 18:00 - 19:00 (CET)', '2026-10-01', thread_id='i0')
-        self.mail('Ana <ana@example.org>', 'Updated invitation: Pottery class @ Tue Nov 3, 2026 18:30', '2026-10-02', thread_id='i1')
+        self.routes = {'Board review': {'new': {'title': 'Board review', 'under': 'Work'}}, 'Pottery': {'new': {'title': 'Board review', 'under': 'Work'}}}
+        self.mail('Example Org <ana@example.org>', 'Invitation: Pottery class @ Tue Nov 3, 2026 18:00 - 19:00 (CET)', '2026-10-01', thread_id='i0')
+        self.mail('Example Org <ana@example.org>', 'Updated invitation: Pottery class @ Tue Nov 3, 2026 18:30', '2026-10-02', thread_id='i1')
         with mock.patch.object(topic_notes, 'meeting_mail', lambda *a: False):  # before it knew: placed
             self.round()
         self.assertIn('Invitation: Pottery class @ Tue Nov 3, 2026 18:00 - 19:00 (CET)', self.routed())
@@ -226,13 +283,12 @@ class LeftOutFirst(Conversations):
                                      'Nieuwe afspraak: Board review op vr 20 nov 2026 09:00', 'Canceled event: Board review @ Fri Nov 20, 2026')):
             self.mail('Ana <ana@example.org>', subject, f'2026-11-0{n + 1}', thread_id=f'm{n}')
         self.mail('Sam <sam@example.com>', 'Accepted: Board review', '2026-11-06', thread_id='m9', labels=['SENT'])
-        notes = self.round()
+        self.round()
         prompt = '\n'.join(self.asked)
         for invite in ('Invitation:', 'Accepted:', 'Nieuwe afspraak', 'Canceled event'):
             self.assertNotIn(invite, prompt)
         self.assertNotIn('Pottery', ' '.join(self.routed()), 'placed before: forgotten')
         self.assertEqual(sorted(self.routed()), ['Board review', 'Board review: the numbers for it'])
-        self.assertCountEqual([x['text'] for x in notes[('home', 'Repairs and upkeep')]['lines']], ['Board review', 'Board review: the numbers for it'])
 
     def test_a_chat_that_went_quiet_starts_a_new_conversation_and_a_slack_thread_is_one(self):
         for day in ('2026-10-01', '2026-10-01', '2026-10-10', '2026-10-10'):
@@ -275,6 +331,7 @@ class FirstFill(Conversations):
     def threads(self, n, start=0):
         for i in range(start, start + n):
             self.mail(f'Example Shop {i} <office@shop{i}.example>', f'Order {i}', '2026-10-06', thread_id=f'o{i}')
+            self.mail('Sam <sam@example.com>', f'Re: Order {i}', '2026-10-06', thread_id=f'o{i}', labels=['SENT'])
 
     def step(self):
         self.assertTrue(self.app.topic_notes_step())
@@ -311,11 +368,12 @@ class FirstFill(Conversations):
         self.assertTrue(self.filled())
         asked = len(self.asked)
         self.mail('Example Garage <desk@garage.example>', 'Your car service', '2026-11-14T09:00:00+00:00', thread_id='g1')
+        self.mail('Sam <sam@example.com>', 'Re: Your car service', '2026-11-14T09:00:00+00:00', thread_id='g1', labels=['SENT'])
         self.again()
         self.assertEqual(self.step(), asked, 'one fresh conversation waits for more')
         with self.store.connect() as db:
             self.assertEqual(len(topic_notes.unasked(db, topic_notes.conversations(db, self.app.config['accounts'], note_pages_app.today(), ()))), 1)
-        self.mail('Example Garage <desk@garage.example>', 'Tyres', '2026-11-13T20:00:00+00:00', thread_id='g2')
+        self.mail('Example Garage <desk@garage.example>', 'Tyres', '2026-11-13T20:00:00+00:00', thread_id='g2')  # from someone the owner wrote to
         self.again()
         self.assertEqual(self.step(), asked + 1, 'one waiting for half a day is asked, with the rest')
 

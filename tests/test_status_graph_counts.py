@@ -27,7 +27,8 @@ class StatusGraphCounts(unittest.TestCase):
         self.app.store, self.app.config_path, self.app.config = self.store, None, {'accounts': [WORK]}
 
     def test_status_has_the_counts_the_graph_overview_has(self):
-        self.assertEqual(self.app.action('status', {'full': True})['graph_counts'], {'person': 0, 'org': 0, 'project': 0, 'note': 0})
+        self.assertEqual(self.app.action('status', {'full': True})['graph_counts'], {'person': 0, 'org': 0, 'project': 0}, 'Notes off: no count')
+        self.app.config['notes_enabled'] = True
         self.store.commit_page('work', {}, [mail(1, 'Sam Lee <sam@client.example>'), mail(2, 'Kim Ito <kim@other.example>')])
         with self.store.connect() as db:
             db.isolation_level = None

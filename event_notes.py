@@ -1,4 +1,4 @@
-"""Event notes (docs/help/notes.md, "Events"): one dated note per event the owner has tickets for, under Events, filled in
+"""Event notes (docs/help/calendar.md, "Trips and events"): one dated note per event the owner has tickets for, under Events, filled in
 from ticket mail by plain code.
 
 Ticket sellers put a schema.org EventReservation in their confirmation mail, as airlines do with a flight: bookings.py
