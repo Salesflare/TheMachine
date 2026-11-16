@@ -14,7 +14,7 @@ $('#saved-logins').onclick=async e=>{const b=e.target.closest('[data-forget-logi
 // for that to-do. `all`: Other account. Save for next time gets a Save as choice (Default, Work, Personal).
 let signinNow=null;
 function signinAccounts(page,all){signinNow=page;const box=$('#signin-saved'),list=page.accounts||(page.saved?[{id:'',account:'Default',username:page.saved.username}]:[]);
- if(!$('#signin-account'))$('#signin-save-row').append(make('select',{id:'signin-account','aria-label':t('Save as')},...LI_ACCOUNTS.map(a=>make('option',{value:a},t(a)))));
+ if(!$('#signin-account'))$('#signin-save-row').append(make('select',{id:'signin-account',class:'signin-as','aria-label':t('Save as')},...LI_ACCOUNTS.map(a=>make('option',{value:a},t(a)))));
  const show=list.length&&(page.username||page.password);box.hidden=!show;if(!show)return setHTML(box,'');
  const many=list.length>1,pick=list.find(a=>a.id&&a.id===page.pick)||(!many?list[0]:null),ask=many&&!pick&&!!signinTask;
  const label=a=>a.username?(many?`${a.username} (${t(a.account)})`:a.username):t(a.account);
