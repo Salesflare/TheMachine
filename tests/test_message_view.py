@@ -3,7 +3,6 @@ kind declares its view (email, chat, notification or card), and one made-up mess
 no raw ids, Unix times or internal type names; nothing said twice; Slack's link brackets and ids gone; mail headers out
 of the body; the real author, not the notifying bot. A new connector kind fails here until it has a view and a sample.
 The dashboard test (test_message_view_dashboard.mjs) renders the same samples (dump()). All names and data are made up."""
-import importlib.util
 import json
 import re
 import sys
@@ -13,11 +12,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(ROOT))
-spec = importlib.util.spec_from_file_location('message_view_assistant', ROOT / 'assistant.py')
-a = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(a)
 from machine.store import message_view, views  # noqa: E402
 from machine.sources.connectors import connector_services, load_connector  # noqa: E402
+import machine.main as machine_main
 
 AT = '2026-11-10T14:01:00+00:00'
 GH_ISSUE = ('Exports stop at 10,000 rows. Steps:\n\n1. Open **Reports**\n2. Run `export --all`\n\n'
@@ -154,7 +151,7 @@ RAW = re.compile(r'<[@#!][A-Z0-9^]|<https?://|\b[UWC]0[A-Z0-9]{8,10}\b|\bcom\.\w
 
 
 def fixture(folder):
-    store = a.Store(Path(folder) / 'events.sqlite')
+    store = machine_main.Store(Path(folder) / 'events.sqlite')
     by_account = {}
     for key, e in SAMPLES.items():
         by_account.setdefault(e['account_id'], []).append(e)
@@ -167,7 +164,7 @@ def fixture(folder):
         for node, name in (('email:avery@booths.example', 'Avery Stone'), ('email:robin@owner.example', 'Robin Hale')):
             db.execute("INSERT INTO graph_nodes(id,kind,name,strength,signals,info) VALUES(?,'person',?,1,1,?)",
                        (node, name, json.dumps({'identifiers': [node], 'emails': [node[6:]]})))
-    app = object.__new__(a.App)
+    app = object.__new__(machine_main.App)
     app.store = store
     app.store.accounts = []
     app.config = {'accounts': [], 'database': str(Path(folder) / 'events.sqlite')}
@@ -302,7 +299,7 @@ class Rules(unittest.TestCase):
     def test_an_unnamed_slack_sender_is_never_the_channel(self):
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)
-        store = a.Store(Path(temp.name) / 'e.sqlite')
+        store = machine_main.Store(Path(temp.name) / 'e.sqlite')
         store.accounts = []
         e = dict(SAMPLES['slack.message'], source_id='C1:2.2', metadata={**SAMPLES['slack.message']['metadata'], 'sender_display': ''})
         store.commit_page('slack', {}, [e], None)

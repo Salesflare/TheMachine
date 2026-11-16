@@ -13,8 +13,13 @@ import unittest
 import zipfile
 from pathlib import Path
 
+import browser_login
 import skills
+import time
+import machine.app.profile as machine_app_profile
+import machine.main as machine_main
 import machine.prompts.profile as machine_prompts_profile
+import machine.store.profile as machine_store_profile
 
 SKILL = '---\nname: {name}\ndescription: {description}\n{extra}---\n\n# {name}\n\n{body}\n'
 
@@ -308,21 +313,20 @@ class FindTurn(unittest.TestCase):
 
     def app(self):
         import test_profile as tp
-        a = tp.a
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)
-        store = a.Store(Path(temp.name) / 'events.sqlite')
-        app = object.__new__(a.App)
+        store = machine_main.Store(Path(temp.name) / 'events.sqlite')
+        app = object.__new__(machine_main.App)
         app.store, app.config = store, {'accounts': [{'id': 'work', 'service': 'gmail'}], 'browser_lease_script': '/bin/true'}
-        app.skills = a.skills.Skills(store.connect, Path(temp.name) / 'ws', home=Path(temp.name) / 'home')
+        app.skills = skills.Skills(store.connect, Path(temp.name) / 'ws', home=Path(temp.name) / 'home')
         app.skills.finder = app.skills_find_start
-        return tp, a, app
+        return tp, app
 
     def test_only_the_picked_account_is_read_and_its_skills_listed(self):
-        tp, a, app = self.app()
+        tp, app = self.app()
         read = []
-        app.skills_read = lambda sites: read.append(sites) or {'chatgpt': {'state': 'ok', 'where': a.SKILLS_PAGES['chatgpt'], 'skills': [
-            {'name': 'follow-ups', 'description': 'Chase late replies.', 'zip': skill_zip('follow-ups', 'Chase late replies.'), 'url': a.SKILLS_PAGES['chatgpt']}]}}
+        app.skills_read = lambda sites: read.append(sites) or {'chatgpt': {'state': 'ok', 'where': machine_prompts_profile.SKILLS_PAGES['chatgpt'], 'skills': [
+            {'name': 'follow-ups', 'description': 'Chase late replies.', 'zip': skill_zip('follow-ups', 'Chase late replies.'), 'url': machine_prompts_profile.SKILLS_PAGES['chatgpt']}]}}
         view = app.action('skill_import_find', {'sites': ['chatgpt']})
         self.assertEqual([s['key'] for s in view['sources'] if s['key'] != 'local'], ['chatgpt'])  # not claude.ai
         run = view['finding']['run_id']
@@ -342,21 +346,21 @@ class FindTurn(unittest.TestCase):
         self.assertIn('chatgpt:account:follow-ups: follow-ups', message)
         self.assertIn('do not open a browser', message)
         self.assertNotIn('/backend-api/', message)
-        out = app.action('skills_found', {'_skills_session': a.SKILLS_SESSION_PREFIX + run,
+        out = app.action('skills_found', {'_skills_session': machine_app_profile.SKILLS_SESSION_PREFIX + run,
                                           'recommended': [{'key': 'chatgpt:account:follow-ups', 'why': 'Many follow-up cards'}]})
         self.assertEqual(out, {'added': 0})
         with self.assertRaisesRegex(ValueError, 'Only the Find my skills turn'):
-            app.action('skills_found', {'_skills_session': a.PROFILE_SESSION_PREFIX + run})
+            app.action('skills_found', {'_skills_session': machine_store_profile.PROFILE_SESSION_PREFIX + run})
         app.profile_step(runner)
         status = app.action('skill_import_status', {'token': view['token']})
         self.assertEqual(status['finding']['status'], 'ok')
         self.assertEqual(status['items'][0]['why'], 'Many follow-up cards')
 
     def test_nothing_found_says_where_it_looked_and_starts_no_turn(self):
-        tp, a, app = self.app()
-        app.skills_read = lambda sites: {'claude': {'state': 'ok', 'where': a.SKILLS_PAGES['claude'], 'skills': [],
+        tp, app = self.app()
+        app.skills_read = lambda sites: {'claude': {'state': 'ok', 'where': machine_prompts_profile.SKILLS_PAGES['claude'], 'skills': [],
                                                     'detail': 'none you made or uploaded yourself'},
-                                         'chatgpt': {'state': 'signed_out', 'where': a.SKILLS_PAGES['chatgpt']}}
+                                         'chatgpt': {'state': 'signed_out', 'where': machine_prompts_profile.SKILLS_PAGES['chatgpt']}}
         view = app.action('skill_import_find', {})  # no source picked: both, as before
         runner = tp.Runner('admitted')
         self.assertEqual(app.profile_step(runner), 'ok')
@@ -368,15 +372,15 @@ class FindTurn(unittest.TestCase):
         self.assertEqual(shown['chatgpt']['state'], 'signed_out')
         self.assertEqual((status['finding']['status'], status['browser']), ('ok', {'claude': 'ok', 'chatgpt': 'signed_out'}))
         # Signed in since: a look in just ChatGPT, on the same list.
-        app.skills_read = lambda sites: {'chatgpt': {'state': 'ok', 'where': a.SKILLS_PAGES['chatgpt'], 'skills': [
-            {'name': 'notes', 'description': 'Keep notes.', 'zip': skill_zip('notes', 'Keep short notes of every customer call, with the next step.'), 'url': a.SKILLS_PAGES['chatgpt']}]}}
+        app.skills_read = lambda sites: {'chatgpt': {'state': 'ok', 'where': machine_prompts_profile.SKILLS_PAGES['chatgpt'], 'skills': [
+            {'name': 'notes', 'description': 'Keep notes.', 'zip': skill_zip('notes', 'Keep short notes of every customer call, with the next step.'), 'url': machine_prompts_profile.SKILLS_PAGES['chatgpt']}]}}
         app.action('skill_import_find', {'token': view['token'], 'sites': ['chatgpt']})
         runner = tp.Runner('admitted')
         app.profile_step(runner)
         self.assertIn('chatgpt:account:notes', runner.requests[0]['message'])
 
     def test_read_opens_the_skills_page_never_the_home_page_and_closes_it(self):
-        tp, a, app = self.app()
+        tp, app = self.app()
         opened, closed = [], []
 
         class Cdp:
@@ -396,9 +400,9 @@ class FindTurn(unittest.TestCase):
             @staticmethod
             def close_tab(base, tab):
                 closed.append(tab)
-        old = a.browser_login.browser_cdp, a.time.sleep
-        a.browser_login.browser_cdp, a.time.sleep = Cdp, lambda s: None
-        self.addCleanup(lambda: (setattr(a.browser_login, 'browser_cdp', old[0]), setattr(a.time, 'sleep', old[1])))
+        old = browser_login.browser_cdp, time.sleep
+        browser_login.browser_cdp, time.sleep = Cdp, lambda s: None
+        self.addCleanup(lambda: (setattr(browser_login, 'browser_cdp', old[0]), setattr(time, 'sleep', old[1])))
         app.config['browser_cdp_url'] = 'http://127.0.0.1:18800'
         got = app.skills_read(['chatgpt'])
         self.assertEqual(opened, ['https://chatgpt.com/skills?collection=installed'])

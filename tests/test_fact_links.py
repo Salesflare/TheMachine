@@ -2,7 +2,6 @@
 the facts already there (shown under Learning, Changes, with Undo), and a preparation picks facts by its to-do's
 records first, never from the other side (work or personal)."""
 import datetime as dt
-import importlib.util
 import json
 import tempfile
 import unittest
@@ -12,11 +11,13 @@ from unittest.mock import patch
 from seams import patch_everywhere
 
 ROOT = Path(__file__).parent.parent
-spec = importlib.util.spec_from_file_location('fact_links_assistant', ROOT / 'assistant.py')
-a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
 import fact_links  # noqa: E402
 import memory_use  # noqa: E402
 from machine.app.recall import recall  # noqa: E402
+import embeddings
+import graph
+import machine.main as machine_main
+import timeutil
 
 NOW = dt.datetime(2026, 10, 16, 12, tzinfo=dt.timezone.utc)
 SETTINGS = {'url': 'http://embed.invalid', 'model': 'm', 'dims': 2}
@@ -38,18 +39,18 @@ class FactLinks(unittest.TestCase):
     def setUp(self):
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)
-        self.store = a.Store(Path(temp.name) / 'events.sqlite')
-        self.app = object.__new__(a.App)
+        self.store = machine_main.Store(Path(temp.name) / 'events.sqlite')
+        self.app = object.__new__(machine_main.App)
         self.app.store = self.store
         self.app.config = {**CONFIG, 'database': str(Path(temp.name) / 'events.sqlite')}
-        for started in (patch_everywhere(a, 'now', lambda: NOW.isoformat()), patch.object(a.embeddings, 'embed', side_effect=embed)):
+        for started in (patch_everywhere(timeutil, 'now', lambda: NOW.isoformat()), patch.object(embeddings, 'embed', side_effect=embed)):
             started.start()
             self.addCleanup(started.stop)
         self.store.commit_page('work', {}, [mail(1, 'Ann Example <ann@client.example>', 'Pilot timing', 'Can the pilot move to March?'),
                                             mail(2, 'Lee Park <lee@globex.example>', 'Invoice', 'The September invoice is still open.')])
         with self.store.connect() as db:
             db.isolation_level = None
-            a.graph.build(db, self.app.config, NOW.isoformat())
+            graph.build(db, self.app.config, NOW.isoformat())
             db.execute("UPDATE graph_nodes SET name='Globex' WHERE id=?", (GLOBEX,))
         self.todo = self.store.suggest('pilot', 'Answer Ann about the pilot', 'Ann asks to move the pilot.', [1])['id']
         self.other = self.store.suggest('other', 'Pay the vendor', 'Body', [2])['id']
@@ -180,7 +181,7 @@ class FactLinks(unittest.TestCase):
             self.assertEqual(self.store.link_named(db, fact['id'], 'Ann Example wants invoices as a PDF.'), (None, 'tied'))
 
     def test_the_record_page_is_where_its_facts_live_add_edit_not_about_them_and_remove(self):
-        app = a.App.__new__(a.App)
+        app = machine_main.App.__new__(machine_main.App)
         app.store, app.config = self.store, self.app.config
         with self.assertRaises(ValueError):  # only the owner, on the dashboard
             app.action('graph_fact_add', {'node_id': ANN, 'text': 'Ann Example runs the pilot team.'})
@@ -189,7 +190,7 @@ class FactLinks(unittest.TestCase):
         with self.store.connect() as db:
             row = db.execute('SELECT text,kind,kept_at IS NOT NULL kept,source FROM facts WHERE id=?', (added['id'],)).fetchone()
             self.assertEqual(tuple(row), ('Ann Example runs the pilot team.', 'fact', 1, None))  # their own words: kept, never set aside
-            page = a.graph.detail(db, ANN)['open']['known']
+            page = graph.detail(db, ANN)['open']['known']
         self.assertEqual([f['text'] for f in page], ['Ann Example runs the pilot team.'])
         # the same text again ties the one already learned instead of saving it twice; also to a second record
         self.assertEqual(app.action('graph_fact_add', {'node_id': GLOBEX, 'text': 'ann example runs the pilot team.'}, owner_dashboard=True),
@@ -209,8 +210,8 @@ class FactLinks(unittest.TestCase):
         for n in range(8):
             self.store.fact_add(ANN, f'Ann Example detail number {n}.')
         with self.store.connect() as db:
-            self.assertEqual(len(a.graph.detail(db, ANN)['open']['known']), 9)
-            self.assertEqual(len(a.graph.open_between(db, ANN)['known']), 6)
+            self.assertEqual(len(graph.detail(db, ANN)['open']['known']), 9)
+            self.assertEqual(len(graph.open_between(db, ANN)['known']), 6)
 
     def test_the_one_time_pass_ties_the_facts_already_there_and_one_undo_takes_it_back(self):
         self.node('li:lee-park-2', 'Lee Park')

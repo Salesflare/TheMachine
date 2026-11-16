@@ -9,8 +9,15 @@ from zoneinfo import ZoneInfo
 import test_ux as ux
 import timeutil
 from seams import patch_everywhere  # noqa: E402
-a = ux.a
-dt = a.dt
+import datetime as dt  # noqa: E402
+import machine.actions as machine_actions
+import machine.app.recap as machine_app_recap
+import machine.delivery.push as machine_delivery_push
+import machine.delivery.telegram as machine_delivery_telegram
+import machine.main as machine_main
+import notify
+import security_levels
+import threading
 
 FRIDAY = '2026-10-23T14:05:00+00:00'  # 16:05 in Brussels
 WA = {'id': 'wa', 'service': 'whatsapp', 'display_name': 'Phone WhatsApp', 'boundary': 'personal:Owner'}
@@ -26,15 +33,15 @@ class WeeklyRecap(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
-        for p in (patch.object(timeutil, 'LOCAL_TZ', ZoneInfo('Europe/Brussels')), patch_everywhere(a, 'now', return_value=FRIDAY)):
+        for p in (patch.object(timeutil, 'LOCAL_TZ', ZoneInfo('Europe/Brussels')), patch_everywhere(timeutil, 'now', return_value=FRIDAY)):
             p.start()
             self.addCleanup(p.stop)
         self.path = Path(self.tmp.name) / 'config.json'
         self.config = {'accounts': [WA, MAIL, CAL], 'dashboard_host': 'm.example', 'dashboard_path': '/assistant/', 'telegram_owner': '1',
                        'weekly_recap': {'enabled': True}, 'database': str(Path(self.tmp.name) / 'events.sqlite')}
         self.path.write_text(json.dumps(self.config))
-        self.store = a.Store(self.config['database'])
-        self.app = object.__new__(a.App)
+        self.store = machine_main.Store(self.config['database'])
+        self.app = object.__new__(machine_main.App)
         self.app.store, self.app.config, self.app.config_path = self.store, json.loads(self.path.read_text()), self.path
         self.store.exclusions = {}
         # A busy WhatsApp group that never led to a card, and a person's own chat that is never a filter candidate.
@@ -68,7 +75,7 @@ class WeeklyRecap(unittest.TestCase):
     def send(self):
         """The recap (message 555), then each choice as its own message (556, 557, ...), as sent to Telegram."""
         sent = []
-        with patch_everywhere(a, 'telegram_request', side_effect=lambda config, args: sent.append(args) or {'messageId': str(555 + len(sent) - 1)}):
+        with patch_everywhere(machine_delivery_telegram, 'telegram_request', side_effect=lambda config, args: sent.append(args) or {'messageId': str(555 + len(sent) - 1)}):
             self.assertEqual(self.app.recap_step(current=dt.datetime.fromisoformat(FRIDAY)), 'sent')
         self.assertTrue(sent[0]['message'].startswith('**Your week with The Machine**'))
         self.assertEqual([m['action'] for m in sent], ['send'] * len(sent))
@@ -80,8 +87,8 @@ class WeeklyRecap(unittest.TestCase):
 
     def tap(self, item, choice, message_id=None, decision='telegram:1'):
         message_id = message_id or next(i['message_id'] for i in self.items() if i['id'] == item)
-        with patch_everywhere(a, 'telegram_request', side_effect=lambda config, args: self.edits.append(args) or {'messageId': args.get('messageId')}), \
-                patch.object(a.threading, 'Thread', side_effect=lambda target, args, daemon: type('T', (), {'start': lambda s: target(*args)})()):
+        with patch_everywhere(machine_delivery_telegram, 'telegram_request', side_effect=lambda config, args: self.edits.append(args) or {'messageId': args.get('messageId')}), \
+                patch.object(threading, 'Thread', side_effect=lambda target, args, daemon: type('T', (), {'start': lambda s: target(*args)})()):
             return self.app.action('recap_decide', {'id': item, 'choice': choice, 'source': 'telegram', 'message_id': message_id, 'decision_id': decision})
 
     def items(self):
@@ -97,7 +104,7 @@ class WeeklyRecap(unittest.TestCase):
         self.promise('theirs', 'Alex', 'send the Q3 deck', due='2026-10-26')  # the same plan from both sides shows once, as the owner's
         self.promise('theirs', 'Dee', 'sign the form', due='2026-10-23')  # due today: still on time, in neither
         self.promise('theirs', 'Eli', 'pay the invoice', due='2026-10-31')  # Saturday after next: past the week ahead
-        text = a.weekly_recap(self.store, self.config, dt.datetime.fromisoformat(FRIDAY))
+        text = machine_app_recap.weekly_recap(self.store, self.config, dt.datetime.fromisoformat(FRIDAY))
         lines = text.split('\n')
         self.assertEqual(lines[0], '**Your week with The Machine** · Oct 16–23')
         self.assertEqual(lines[2], '**Needs you**')
@@ -133,7 +140,7 @@ class WeeklyRecap(unittest.TestCase):
         with self.store.connect() as db:
             board = db.execute("SELECT id FROM events WHERE source_id='b'").fetchone()[0]
         prep = self.store.suggest('prep', 'Prep notes for the board', 'Body.', [board])['id']
-        text = a.weekly_recap(self.store, self.config, dt.datetime.fromisoformat(FRIDAY))
+        text = machine_app_recap.weekly_recap(self.store, self.config, dt.datetime.fromisoformat(FRIDAY))
         self.assertIn(f'**Next week**\n• Wed, Oct 28 09:00 Board meeting, 1 person · [to-do](https://m.example/assistant/#card={prep}&or=chat)', text)
         self.assertEqual(text.count('Team offsite'), 1)
         self.assertIn('• Fri, Oct 30 17:00 Parents evening, 2 people', text)  # the partner and the school, not the owner
@@ -147,7 +154,7 @@ class WeeklyRecap(unittest.TestCase):
                 db.execute("INSERT INTO graph_nodes(id,kind,name,strength,last_at,signals,gap_days,quiet,trend,info) VALUES(?,'person',?,1,?,2,NULL,0,0,?)",
                            (node, name, ago(2), json.dumps({'org': org})))
             db.execute("INSERT OR REPLACE INTO graph_state(id,built_at,signals,took_ms) VALUES(1,?,10,1)", (FRIDAY,))
-        text = a.weekly_recap(self.store, self.config, dt.datetime.fromisoformat(FRIDAY))
+        text = machine_app_recap.weekly_recap(self.store, self.config, dt.datetime.fromisoformat(FRIDAY))
         line = next(l for l in text.split('\n') if l.startswith('• New people'))
         self.assertEqual(line, '• New people: Lena Zwick, Zeb, and 1 more known only by address')  # no address, no company desk as a person
 
@@ -159,18 +166,18 @@ class WeeklyRecap(unittest.TestCase):
                 self.store.decide(sid, then, 'Shorter please', f'q{i}b', 'telegram')
         with self.store.connect() as db:
             db.execute("INSERT INTO rule_changes(at,kind,text) VALUES(?,'draft_rule','Draft rule: keep it short')", (ago(3),))
-        text = a.weekly_recap(self.store, self.config, dt.datetime.fromisoformat(FRIDAY) + dt.timedelta(minutes=1))
+        text = machine_app_recap.weekly_recap(self.store, self.config, dt.datetime.fromisoformat(FRIDAY) + dt.timedelta(minutes=1))
         self.assertIn('**What changed**\n• 67% of to-dos worth it (2 of 3). Do it was right first time in 1 of 2.\n• Adjusted: 1 writing rule.\n', text)
         self.assertNotIn('got it right the first time', text)
-        recap = a.weekly_recap_message(self.store, self.config, dt.datetime.fromisoformat(FRIDAY) + dt.timedelta(minutes=1))['text']
+        recap = machine_app_recap.weekly_recap_message(self.store, self.config, dt.datetime.fromisoformat(FRIDAY) + dt.timedelta(minutes=1))['text']
         self.assertEqual(recap.split('\n')[-1], '_Behind the scenes: 0 signals checked this week, 61 still waiting._')  # one short line, at the end
         self.assertEqual(text.count('Behind the scenes'), 1)
 
     def test_no_brief_ever_shows_a_cost(self):
         # The recap may go to anyone with a Machine: what it reviewed, never an API price estimate, on Telegram or the push.
         self.snoozed_card('Pay the painter', 3)
-        self.assertNotRegex(a.weekly_recap(self.store, self.config, dt.datetime.fromisoformat(FRIDAY)), r'[$€]|list price|subscription')
-        self.assertFalse(hasattr(a, 'assistant_token_usage'))
+        self.assertNotRegex(machine_app_recap.weekly_recap(self.store, self.config, dt.datetime.fromisoformat(FRIDAY)), r'[$€]|list price|subscription')
+        self.assertNotIn('assistant_token_usage', (Path(__file__).resolve().parent.parent / 'assistant.py').read_text())  # gone, not just unused
         sent = self.send()
         self.assertFalse([m for m in sent if '$' in m['message'] or 'price' in m['message']])
 
@@ -210,7 +217,7 @@ class WeeklyRecap(unittest.TestCase):
             self.assertEqual([r[0] for r in db.execute("SELECT text FROM rule_changes WHERE kind='filter' ORDER BY id")],
                              ['Filter: School parents (Phone WhatsApp)', 'Removed filter: School parents (Phone WhatsApp)'])
             db.execute('DELETE FROM recaps')
-        self.assertNotIn('School parents', a.weekly_recap(self.store, self.config, dt.datetime.fromisoformat(FRIDAY)))  # kept: not asked again
+        self.assertNotIn('School parents', machine_app_recap.weekly_recap(self.store, self.config, dt.datetime.fromisoformat(FRIDAY)))  # kept: not asked again
 
     def test_group_chats_of_friends_and_family_are_never_offered_as_noise(self):
         def chat(chat_id, name, n, senders, mine=0):
@@ -220,7 +227,7 @@ class WeeklyRecap(unittest.TestCase):
         self.store.commit_page('wa', {}, chat('9@g.us', 'Weekend crew', 40, 12, mine=3)  # the owner writes in it: their own chat
                                + chat('8@g.us', 'Cousins', 40, 5)  # a handful of people: a circle, even when the owner only reads
                                + chat('7@g.us', 'Street announcements', 25, 20))  # many people, the owner never writes: a feed
-        text = a.weekly_recap(self.store, self.config, dt.datetime.fromisoformat(FRIDAY))
+        text = machine_app_recap.weekly_recap(self.store, self.config, dt.datetime.fromisoformat(FRIDAY))
         busy = [m.split('\n')[1] for m in text.split('\n\n') if m.startswith('**Busy without results**')]
         self.assertEqual(busy, ['School parents (Phone WhatsApp): 30 this week, no to-dos', 'Street announcements (Phone WhatsApp): 25 this week, no to-dos'])
 
@@ -248,7 +255,7 @@ class WeeklyRecap(unittest.TestCase):
             self.tap(items[now]['id'], 'keep', message_id='557', decision='telegram:5')  # another choice's message
         with self.store.connect() as db:
             db.execute('DELETE FROM recaps')
-        self.assertNotIn('Book the dentist', a.weekly_recap(self.store, self.config, dt.datetime.fromisoformat(FRIDAY)))  # kept until snoozed again
+        self.assertNotIn('Book the dentist', machine_app_recap.weekly_recap(self.store, self.config, dt.datetime.fromisoformat(FRIDAY)))  # kept until snoozed again
 
     def test_taps_come_only_from_telegram_on_that_message(self):
         self.edits = []
@@ -258,7 +265,7 @@ class WeeklyRecap(unittest.TestCase):
             self.app.action('recap_decide', {'id': item['id'], 'choice': 'filter', 'source': 'assistant'})
         with self.assertRaisesRegex(ValueError, 'Unknown choice'):
             self.tap(item['id'], 'drop')
-        self.assertIn('recap_decide', a.OWNER_ACTIONS)  # the plugin's owner key, never the API token alone
+        self.assertIn('recap_decide', machine_actions.OWNER_ACTIONS)  # the plugin's owner key, never the API token alone
 
     def test_without_telegram_the_push_leads_with_what_needs_the_owner(self):
         self.promise('mine', 'Alex', 'send the Q3 deck', due='2026-10-26')
@@ -266,8 +273,8 @@ class WeeklyRecap(unittest.TestCase):
         pushed = []
         with self.store.connect() as db:
             db.execute("INSERT INTO push_subscriptions(endpoint,p256dh,auth,created_at) VALUES('https://push.example/1','k','a',?)", (FRIDAY,))
-        with patch_everywhere(a, 'push_node', side_effect=lambda config, request: pushed.append(request) or {'results': []}), \
-                patch_everywhere(a, 'telegram_request', side_effect=AssertionError('no Telegram')):
+        with patch_everywhere(machine_delivery_push, 'push_node', side_effect=lambda config, request: pushed.append(request) or {'results': []}), \
+                patch_everywhere(machine_delivery_telegram, 'telegram_request', side_effect=AssertionError('no Telegram')):
             self.assertEqual(self.app.recap_step(current=dt.datetime.fromisoformat(FRIDAY)), 'sent')
         self.assertTrue(pushed[0]['payload']['body'].startswith('Needs you • Promised Alex: send the Q3 deck, due Mon, Oct 26'), pushed[0]['payload']['body'])
         self.assertEqual(self.items(), [])  # no buttons to tap without Telegram
@@ -297,13 +304,13 @@ class WeeklyRecap(unittest.TestCase):
         self.app.config['telegram_owner'] = ''
         with self.store.connect() as db:
             for kind_channel, on in (prefs or {}).items():
-                a.notify.set_pref(db, *kind_channel, on)
+                notify.set_pref(db, *kind_channel, on)
             if careful:
-                a.security_levels.set_pref(db, 'notify_text', 'off')
+                security_levels.set_pref(db, 'notify_text', 'off')
         mails = []
         self.app.notify_mail_target = lambda: ('https://cloud.example/api', 'token')
-        with patch_everywhere(a, 'push_node', side_effect=lambda config, request: {'results': []}), \
-                patch_everywhere(a, 'telegram_request', side_effect=AssertionError('no Telegram')):
+        with patch_everywhere(machine_delivery_push, 'push_node', side_effect=lambda config, request: {'results': []}), \
+                patch_everywhere(machine_delivery_telegram, 'telegram_request', side_effect=AssertionError('no Telegram')):
             status = self.app.recap_step(current=dt.datetime.fromisoformat(FRIDAY),
                                          mail=lambda url, token, subject, text, delivery=None: mails.append((subject, text, delivery)) or True)
         self.assertEqual(status, 'sent')
@@ -326,14 +333,14 @@ class WeeklyRecap(unittest.TestCase):
     def test_the_email_counts_when_telegram_did_not_take_it(self):
         mails = []
         self.app.notify_mail_target = lambda: ('https://cloud.example/api', 'token')
-        with patch_everywhere(a, 'telegram_request', side_effect=a.DeliveryNotSent('delivery_not_admitted')):
+        with patch_everywhere(machine_delivery_telegram, 'telegram_request', side_effect=machine_delivery_telegram.DeliveryNotSent('delivery_not_admitted')):
             self.assertEqual(self.app.recap_step(current=dt.datetime.fromisoformat(FRIDAY), mail=lambda *args, **kw: mails.append(args) or True), 'sent')
         self.assertEqual(len(mails), 1)
         self.assertIsNone(self.app.recap_step(current=dt.datetime.fromisoformat(FRIDAY), mail=lambda *args, **kw: self.fail('once a week')))
 
     def test_mail_text_keeps_what_the_owner_wrote(self):
         from machine.app.recap import recap_mail_text
-        self.assertEqual(recap_mail_text('**Needs you**\n• ' + a.recap_escape('snake_case *x* [y]') + ': [open](https://m.example/#chat=1)\n_Behind the scenes._'),
+        self.assertEqual(recap_mail_text('**Needs you**\n• ' + machine_app_recap.recap_escape('snake_case *x* [y]') + ': [open](https://m.example/#chat=1)\n_Behind the scenes._'),
                          'Needs you\n• snake_case *x* [y]: open (https://m.example/#chat=1)\nBehind the scenes.')
 
     def test_a_choice_that_did_not_go_out_is_forgotten(self):
@@ -342,9 +349,9 @@ class WeeklyRecap(unittest.TestCase):
         def deliver(config, args):
             sent.append(args)
             if len(sent) == 2:
-                raise a.DeliveryNotSent('delivery_not_admitted')
+                raise machine_delivery_telegram.DeliveryNotSent('delivery_not_admitted')
             return {'messageId': str(554 + len(sent))}
-        with patch_everywhere(a, 'telegram_request', side_effect=deliver):
+        with patch_everywhere(machine_delivery_telegram, 'telegram_request', side_effect=deliver):
             self.assertEqual(self.app.recap_step(current=dt.datetime.fromisoformat(FRIDAY)), 'sent')
         self.assertEqual([(i['kind'], i['message_id']) for i in self.items()], [('snoozed', '557')])  # the busy source comes up next week
 

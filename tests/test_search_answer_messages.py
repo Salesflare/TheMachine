@@ -9,7 +9,7 @@ from unittest.mock import patch
 
 import test_embeddings as te
 
-a, emb = te.a, te.emb
+emb = te.emb
 import search_ask  # noqa: E402
 from machine.text import fold_previews  # noqa: E402
 

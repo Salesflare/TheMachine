@@ -2,7 +2,6 @@
 questions and answers end to end between two Machines, pinned keys and key-change warnings, nothing ever in the
 clear (a Machine without keys gets nothing, and anything unsealed is dropped), the outbox while the Network is away, delivery state and endpoint failover. A fake Network stands in
 for the control plane; no network."""
-import importlib.util
 import json
 import os
 import tempfile
@@ -10,11 +9,10 @@ import unittest
 import urllib.error
 from pathlib import Path
 
-spec = importlib.util.spec_from_file_location('network_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
-a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
-fleet = a.fleet
+import fleet
 import network
 import network_crypto as nc
+import machine.main as machine_main
 
 CONFIG = {'accounts': [{'id': 'work', 'email': 'owner@acme.example', 'service': 'gmail', 'boundary': 'work:Acme'}],
           'fleet': {'url': 'https://cp.example/api/fleet'}, 'credentials': {}}
@@ -199,7 +197,7 @@ class Machines(unittest.TestCase):
     def machine(self, me, sealed=True, where=''):
         root = Path(self.temp.name) / where / me
         root.mkdir(parents=True, exist_ok=True)
-        store = a.Store(root / 'events.sqlite')
+        store = machine_main.Store(root / 'events.sqlite')
         relay = FakeRelay(self.net, me)
         config = {**CONFIG, **({'network_keys': str(root / 'network-keys.json')} if sealed else {})}
         box = fleet.Fleet(store.connect, config, lambda: 'token', relay=relay)

@@ -10,8 +10,8 @@ import unittest
 
 import meet
 import test_preparation as p
+import machine.main as machine_main
 
-a = p.a
 
 OWN = {'id': 'cal', 'email': 'owner@example.com', 'service': 'calendar', 'transport': 'gog', 'client': 'c', 'boundary': 'work:Example'}
 MAIL = {'id': 'mail', 'email': 'owner@example.com', 'service': 'gmail', 'transport': 'gog', 'client': 'c', 'boundary': 'work:Example'}
@@ -45,8 +45,8 @@ class StandInFleet:
 class MeetApp(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory();self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'events.sqlite')
-        self.app = object.__new__(a.App);self.app.store, self.app.config = self.store, CONFIG
+        self.store = machine_main.Store(Path(self.temp.name) / 'events.sqlite')
+        self.app = object.__new__(machine_main.App);self.app.store, self.app.config = self.store, CONFIG
         self.app.fleet = StandInFleet()
         self.writes = []
         self.app.calendar_write = lambda args: self.writes.append(args) or {'status': 'done'}

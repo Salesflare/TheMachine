@@ -10,9 +10,10 @@ from pathlib import Path
 from unittest.mock import patch
 
 import test_chat_finish as cf
-
-a = cf.a
-github_route, i18n = a.github_route, a.i18n
+import github_route
+import i18n
+import machine.cards as machine_cards
+import next_actions
 
 ISSUE = {'kind': 'finish', 'label': 'Submit GitHub issue', 'url': 'https://github.com/example-org/example-app/issues/new',
          'instructions': 'In example-org/example-app file one issue with the title and text below, label BUG.',
@@ -80,9 +81,9 @@ class Route(unittest.TestCase):
         self.assertNotIn('via', github_route.route(shop, self.config(), run=FakeGh()))
         self.assertEqual(github_route.finish_rule(shop), '')
         with patch.object(github_route, 'access', return_value={'gh': None, 'mcp': None}):
-            step = a.next_actions.validate({**ISSUE, 'via': 'gh', 'via_login': 'someone-else'}, {'accounts': []}, [])
+            step = next_actions.validate({**ISSUE, 'via': 'gh', 'via_login': 'someone-else'}, {'accounts': []}, [])
         self.assertEqual(step['via'], 'browser');self.assertNotIn('via_login', step)
-        self.assertEqual(step['kind'], 'finish');self.assertIn('finish', a.next_actions.FINISH_KINDS)
+        self.assertEqual(step['kind'], 'finish');self.assertIn('finish', next_actions.FINISH_KINDS)
 
 
 class Flow(unittest.TestCase):
@@ -122,10 +123,10 @@ class ButtonNames(unittest.TestCase):
         self.assertNotIn('Name the dashboard', i18n.prompt_rule('en'))
 
     def test_a_blocker_in_the_owners_language_resumes_with_continue(self):
-        self.assertEqual(a.retry_label('Vul je code in op de open pagina in de browser van je Machine, en tik daarna op Doorgaan.'), 'Continue')
-        self.assertEqual(a.retry_label('Gib den Code im offenen Tab ein und tippe dann auf Weiter.'), 'Continue')
-        self.assertEqual(a.retry_label('De site was niet bereikbaar. Tik op Opnieuw proberen.'), 'Try again')
-        self.assertEqual(a.retry_label('The site was down.'), 'Try again')
+        self.assertEqual(machine_cards.retry_label('Vul je code in op de open pagina in de browser van je Machine, en tik daarna op Doorgaan.'), 'Continue')
+        self.assertEqual(machine_cards.retry_label('Gib den Code im offenen Tab ein und tippe dann auf Weiter.'), 'Continue')
+        self.assertEqual(machine_cards.retry_label('De site was niet bereikbaar. Tik op Opnieuw proberen.'), 'Try again')
+        self.assertEqual(machine_cards.retry_label('The site was down.'), 'Try again')
 
 
 if __name__ == '__main__':

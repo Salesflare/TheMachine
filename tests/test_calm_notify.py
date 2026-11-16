@@ -4,22 +4,29 @@ day, and summary only after AWAY_DAYS without a visit. Made-up data; every send 
 import tempfile, unittest
 from pathlib import Path
 from unittest.mock import patch
-import assistant as a
 import locale_prefs
 import notify
 from machine.delivery import deliver
 from seams import patch_everywhere  # noqa: E402
+import datetime as dt
+import machine.config as machine_config
+import machine.delivery.deliver as machine_delivery_deliver
+import machine.delivery.push as machine_delivery_push
+import machine.delivery.telegram as machine_delivery_telegram
+import machine.main as machine_main
+import subprocess
+import timeutil
 
-UTC = a.dt.timezone.utc
+UTC = dt.timezone.utc
 DAY = '2026-10-12'
 
 
-class Daytime(a.dt.datetime):
+class Daytime(dt.datetime):
     @classmethod
     def now(cls, tz=None): return cls(2026, 10, 12, 10, 0, tzinfo=tz or UTC)  # a Monday, within hours
 
 
-class Sunday(a.dt.datetime):
+class Sunday(dt.datetime):
     @classmethod
     def now(cls, tz=None): return cls(2026, 10, 11, 10, 0, tzinfo=tz or UTC)
 
@@ -28,12 +35,12 @@ class Calm(unittest.TestCase):
     def setUp(self):
         notify.reset_active(); self.addCleanup(notify.reset_active)
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'events.sqlite')
+        self.store = machine_main.Store(Path(self.temp.name) / 'events.sqlite')
         self.config = {'accounts': [], 'dashboard_host': 'the-machine.example', 'dashboard_path': '/assistant/'}
         self.clock = [1_800_000_000.0]
 
     def card(self, key='one', title='Book the venue', **extra):
-        self.store.commit_page('home', {}, [{'account_id': 'home', 'source_id': key, 'kind': 'gmail.message', 'occurred_at': a.now(),
+        self.store.commit_page('home', {}, [{'account_id': 'home', 'source_id': key, 'kind': 'gmail.message', 'occurred_at': timeutil.now(),
                                              'title': 'Evidence', 'body': 'Evidence', 'metadata': {}, 'deleted': False}])
         sid = self.store.suggest(key, title, 'Body', [1], **extra)['id']
         with self.store.connect() as db:
@@ -75,22 +82,22 @@ class Calm(unittest.TestCase):
         self.assertEqual(self.reason('urgent'), '')
         self.clock[0] += notify.AWAY_DAYS * 86400 + 60
         sid = self.card()
-        at = a.dt.datetime.fromtimestamp(self.clock[0] - 3600, UTC).isoformat()
+        at = dt.datetime.fromtimestamp(self.clock[0] - 3600, UTC).isoformat()
         with self.store.connect() as db:
             db.execute("INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES('d1',?,'accept','','telegram',?)", (sid, at))
         self.assertEqual(self.reason('urgent'), '')  # a Telegram answer counts as being here
 
     def deliver(self, now=Daytime, config=None):
-        fake = patch_everywhere(a, 'telegram', side_effect=lambda c, row, action: self.told.append(row) or {'messageId': '7'}) if config is None \
-            else patch.object(a.subprocess, 'run', side_effect=AssertionError('no Telegram helper'))
-        with patch.object(a.dt, 'datetime', now), fake, patch_everywhere(a, 'push_notify') as push, patch_everywhere(a, 'hold_mail') as mail:
-            self.assertTrue(a.deliver_one(self.store, config or dict(self.config, telegram_owner='42'), edit_cards=False))
+        fake = patch_everywhere(machine_delivery_telegram, 'telegram', side_effect=lambda c, row, action: self.told.append(row) or {'messageId': '7'}) if config is None \
+            else patch.object(subprocess, 'run', side_effect=AssertionError('no Telegram helper'))
+        with patch.object(dt, 'datetime', now), fake, patch_everywhere(machine_delivery_push, 'push_notify') as push, patch_everywhere(machine_delivery_push, 'hold_mail') as mail:
+            self.assertTrue(machine_delivery_deliver.deliver_one(self.store, config or dict(self.config, telegram_owner='42'), edit_cards=False))
         return push, mail
 
     def test_a_to_do_that_can_wait_arrives_quietly_and_writes_its_line(self):
         self.told = []
         sid = self.card()
-        with self.assertLogs(a.LOG, 'INFO') as logs:
+        with self.assertLogs(machine_config.LOG, 'INFO') as logs:
             push, mail = self.deliver()
         self.assertEqual((push.call_count, mail.call_count), (0, 0))
         self.assertTrue(self.told[0]['_silent'])
@@ -126,9 +133,9 @@ class Calm(unittest.TestCase):
         # (A to-do the owner accepted themselves keeps going at once: tests/test_preparation.py.)
         sid = self.prepared_before_its_first_delivery()
         config = dict(self.config, telegram_owner='42', accounts=[{'id': 'home', 'boundary': 'work:example'}])
-        with patch.object(a.dt, 'datetime', Sunday), patch_everywhere(a, 'telegram', side_effect=AssertionError('no Telegram on a day off')), \
-                patch_everywhere(a, 'push_notify', side_effect=AssertionError('no push')):
-            self.assertFalse(a.deliver_one(self.store, config, edit_cards=False))
+        with patch.object(dt, 'datetime', Sunday), patch_everywhere(machine_delivery_telegram, 'telegram', side_effect=AssertionError('no Telegram on a day off')), \
+                patch_everywhere(machine_delivery_push, 'push_notify', side_effect=AssertionError('no push')):
+            self.assertFalse(machine_delivery_deliver.deliver_one(self.store, config, edit_cards=False))
         with self.store.connect() as db:
             self.assertTrue(db.execute('SELECT deliver_after FROM suggestions WHERE id=?', (sid,)).fetchone()[0].startswith('2026-10-12'))
 
@@ -136,9 +143,9 @@ class Calm(unittest.TestCase):
         later = self.prepared_before_its_first_delivery()
         with self.store.connect() as db:
             db.execute("UPDATE suggestions SET deliver_after='2026-10-12T15:00:00+00:00' WHERE id=?", (later,))
-        with patch.object(a.dt, 'datetime', Daytime), patch_everywhere(a, 'now', return_value='2026-10-12T10:00:00+00:00'), \
-                patch_everywhere(a, 'telegram', side_effect=AssertionError('not yet')):
-            self.assertFalse(a.deliver_one(self.store, dict(self.config, telegram_owner='42'), edit_cards=False))
+        with patch.object(dt, 'datetime', Daytime), patch_everywhere(timeutil, 'now', return_value='2026-10-12T10:00:00+00:00'), \
+                patch_everywhere(machine_delivery_telegram, 'telegram', side_effect=AssertionError('not yet')):
+            self.assertFalse(machine_delivery_deliver.deliver_one(self.store, dict(self.config, telegram_owner='42'), edit_cards=False))
 
     def test_a_quiet_delivery_never_silences_the_next_one_that_cannot_wait(self):
         self.told = []
@@ -161,9 +168,9 @@ class Calm(unittest.TestCase):
         sent = []
         sender = lambda request: sent.append(request) or {'results': []}
         sub = [{'endpoint': 'https://push.example/abc', 'p256dh': 'p', 'auth': 'x'}]
-        with patch_everywhere(a, 'local_tz', return_value=UTC), patch.object(a.dt, 'datetime', Daytime):
-            a.push_send(self.store, self.config, sub, {'title': 'T'}, 'todo', sender, kind='todo')
-            a.push_send(self.store, self.config, sub, {'title': 'T', 'silent': True}, 'todo', sender, kind='todo')
+        with patch_everywhere(timeutil, 'local_tz', return_value=UTC), patch.object(dt, 'datetime', Daytime):
+            machine_delivery_push.push_send(self.store, self.config, sub, {'title': 'T'}, 'todo', sender, kind='todo')
+            machine_delivery_push.push_send(self.store, self.config, sub, {'title': 'T', 'silent': True}, 'todo', sender, kind='todo')
         with self.store.connect() as db:
             self.assertEqual(notify.pushed_today(db, DAY), 1)
 

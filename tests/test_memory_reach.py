@@ -3,7 +3,6 @@ in (the owner's chat and corrections, what a review learns from messages, the ow
 workflow that should use it (chat answers, reviews, preparations and drafts, routines, the morning digest), the path
 from one to the other, on a temporary store with made-up data. No model call, no send."""
 import datetime as dt
-import importlib.util
 import json
 import tempfile
 import unittest
@@ -13,8 +12,6 @@ from unittest.mock import patch
 from seams import patch_everywhere
 
 ROOT = Path(__file__).parent.parent
-spec = importlib.util.spec_from_file_location('memory_reach_assistant', ROOT / 'assistant.py')
-a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
 import bring_in  # noqa: E402
 import memory_use  # noqa: E402
 from machine.app import ask_memory  # noqa: E402
@@ -23,6 +20,11 @@ from machine.app import recall as recall_module  # noqa: E402
 from machine.app.recall import recall  # noqa: E402
 from machine.store import facts  # noqa: E402
 from machine.store import voices  # noqa: E402
+import embeddings
+import graph
+import machine.config as machine_config
+import machine.main as machine_main
+import timeutil
 
 NOW = dt.datetime(2026, 11, 10, 7, tzinfo=dt.timezone.utc)  # a Tuesday, 08:00 in Brussels
 TODAY = '2026-11-10'
@@ -59,7 +61,7 @@ def fly(settings, texts, timeout=120):
 def plane(settings, texts, timeout=120):
     """Made-up vectors: flying, flights and planes are close; any other question far from every fact."""
     return [[1.0, 0.0, 0.0] if any(w in t for w in ('fly', 'flight', 'plane')) else
-            [0.0, 0.0, 1.0] if t.startswith(a.embeddings.QUERY_PREFIX) else [0.0, 1.0, 0.0] for t in texts]
+            [0.0, 0.0, 1.0] if t.startswith(embeddings.QUERY_PREFIX) else [0.0, 1.0, 0.0] for t in texts]
 
 
 class MemoryReach(unittest.TestCase):
@@ -67,15 +69,15 @@ class MemoryReach(unittest.TestCase):
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)
         self.dir = Path(temp.name)
-        self.store = a.Store(self.dir / 'events.sqlite')
+        self.store = machine_main.Store(self.dir / 'events.sqlite')
         self.config = {'accounts': [{'id': 'work', 'email': 'sam@acme.example', 'boundary': 'work:acme.example'}], 'telegram_owner': '1000001',
                        'owner_name': 'Sam Owner', 'timezone': 'Europe/Brussels', 'database': str(self.dir / 'events.sqlite'),
                        'openclaw_workspace': str(self.dir / 'ws'), 'openclaw_state': str(self.dir / 'none.sqlite')}
         self.store.config = self.config
         self.store.accounts = self.config['accounts']
-        self.app = object.__new__(a.App)
+        self.app = object.__new__(machine_main.App)
         self.app.store, self.app.config = self.store, self.config
-        started = patch_everywhere(a, 'now', lambda: NOW.isoformat())
+        started = patch_everywhere(timeutil, 'now', lambda: NOW.isoformat())
         started.start()
         self.addCleanup(started.stop)
         self.store.commit_page('work', {}, [
@@ -83,7 +85,7 @@ class MemoryReach(unittest.TestCase):
             mail(2, 'Sam Owner <sam@acme.example>', 'ann@client.example', 'Re: Contract', 'I will send the revised quote tomorrow.', ('SENT',))])
         with self.store.connect() as db:
             db.isolation_level = None
-            a.graph.build(db, self.config, NOW.isoformat())
+            graph.build(db, self.config, NOW.isoformat())
         self.todo = self.store.suggest('contract', 'Answer Ann about the contract', 'Ann asks to sign this week.', [1])['id']
         # 1. The owner's chat: a fact they state in their own private chat, and a correction on a to-do
         self.app.action('feedback_reply', {'text': 'remember that I only book aisle seats', 'message_id': '501', 'timestamp': NOW.timestamp(), 'reply_to_id': ''})
@@ -94,7 +96,7 @@ class MemoryReach(unittest.TestCase):
         # 2. Messages: what a review learned from the mail (a promise the owner made, Ann's role)
         self.store.promise({'direction': 'mine', 'event_id': 2, 'who': 'Ann Example', 'what': PROMISED, 'due': TODAY})
         with self.store.connect() as db:
-            a.graph.set_role(db, ANN, ROLE, 'agent', NOW.isoformat(), 1, ROLE)
+            graph.set_role(db, ANN, ROLE, 'agent', NOW.isoformat(), 1, ROLE)
         # 3. The owner's OpenClaw notes: lines they ticked under Bring these in, one then put on Ann's page
         with self.store.connect() as db:
             bring_in.ensure(db)
@@ -168,7 +170,7 @@ class MemoryReach(unittest.TestCase):
         first = next(c['message'] for c in calls if c.get('message'))
         self.assertIn(NOTE, first)
         clock = [NOW + dt.timedelta(hours=1)]
-        later = patch_everywhere(a, 'now', lambda: clock[0].isoformat())
+        later = patch_everywhere(timeutil, 'now', lambda: clock[0].isoformat())
         later.start()
         self.addCleanup(later.stop)
         # learned after the preparation started: in the owner's chat, an edit of one it had, and one the owner removed
@@ -202,7 +204,7 @@ class MemoryReach(unittest.TestCase):
     def test_a_to_do_chat_skips_new_facts_that_dont_bear_on_it_once_the_list_is_long(self):
         self.store.decide(self.todo, 'accept', '', 'click', 'dashboard')
         self.app.preparation_step(lambda r: {'status': 'admitted'})
-        later = patch_everywhere(a, 'now', lambda: (NOW + dt.timedelta(hours=1)).isoformat())
+        later = patch_everywhere(timeutil, 'now', lambda: (NOW + dt.timedelta(hours=1)).isoformat())
         later.start()
         self.addCleanup(later.stop)
         self.owner_says('Contracts with Client Co are signed through the e-sign portal.')
@@ -257,7 +259,7 @@ class MemoryReach(unittest.TestCase):
         about = {'area': None, 'subjects': [{'id': ANN, 'name': 'Ann Example'}], 'accounts': ['work'], 'question': 'What does Ann eat?'}
         self.assertIn(NOTE_ANN, ask_memory.facts(self.app, about, 1000))  # the notes fact, on her page
         self.app.config = {**self.config, 'embeddings': SETTINGS}
-        with patch.object(a.embeddings, 'embed', side_effect=embed):
+        with patch.object(embeddings, 'embed', side_effect=embed):
             found = ask_memory.facts(self.app, {**about, 'subjects': [], 'question': 'Which seat do I like?'}, 1000)
         self.assertIn(SAID, found)  # the chat fact, by meaning
 
@@ -301,13 +303,13 @@ class MemoryReach(unittest.TestCase):
         self.assertEqual({i.how for i in memory.picked()['fact']}, {'match'})  # logged as picked by words
         # embeddings on: by meaning, the same left out
         self.app.config = {**self.config, 'embeddings': SETTINGS}
-        with patch.object(a.embeddings, 'embed', side_effect=embed):
+        with patch.object(embeddings, 'embed', side_effect=embed):
             found = ask(seats)
         self.assertIn(SAID, found)
         for text in outside[:3]:
             self.assertNotIn(text, found)
         # embeddings on but the server down: the words again
-        with patch.object(a.embeddings, 'embed', side_effect=a.embeddings.EmbeddingError('down')):
+        with patch.object(embeddings, 'embed', side_effect=embeddings.EmbeddingError('down')):
             found = ask(seats)
         self.assertIn(SAID, found)
         self.assertNotIn('first class', found)
@@ -333,14 +335,14 @@ class MemoryReach(unittest.TestCase):
 
     def test_talk_recalls_beyond_the_exact_words_with_and_without_embeddings(self):
         self.app.memory_search = lambda request: {'error': 'off'}
-        texts = lambda words: [f['text'] for f in ask_memory.learned(self.store, words, a.embeddings.settings(self.app.config))]
+        texts = lambda words: [f['text'] for f in ask_memory.learned(self.store, words, embeddings.settings(self.app.config))]
         gone = self.store.remember_fact('You fly economy on short trips.', 'note-1', quote=NOTE_WORDS)['id']
         ended = self.store.remember_fact('You fly to the fair on Friday.', 'note-1', quote=NOTE_WORDS)['id']
         old = self.store.remember_fact('You fly through the travel desk.', 'note-1', quote=NOTE_WORDS)['id']
         with self.store.connect() as db:
             db.execute("INSERT INTO facts(text,decision_id,created_at,kind,source,side) VALUES('You fly first class on long trips.','ai:c1',?,'fact','ai:Claude','work')",
                        (NOW.isoformat(),))  # a connected AI's, not the owner's word
-        with patch.object(a.embeddings, 'embed', side_effect=fly):  # what a preparation stores: every fact's vector
+        with patch.object(embeddings, 'embed', side_effect=fly):  # what a preparation stores: every fact's vector
             self.store.facts_ranked('none', self.store.facts(), SETTINGS)
         self.store.forget_fact(gone)
         new = 'You fly with your own booking tool now.'
@@ -350,7 +352,7 @@ class MemoryReach(unittest.TestCase):
         self.store.retire_expired()
         outside = ('economy', 'the fair', 'travel desk', 'first class')
         # no embeddings: the words in their plain form
-        with patch.object(a.embeddings, 'embed', side_effect=AssertionError('no embedding request without embeddings')):
+        with patch.object(embeddings, 'embed', side_effect=AssertionError('no embedding request without embeddings')):
             self.assertEqual(texts('seat'), [SAID])  # "seat" finds "seats"
             self.assertEqual(texts('booking an aisle seat'), [SAID])  # "booking" finds "book"
             self.assertEqual(texts('quoting in PDF'), [NOTE])
@@ -359,7 +361,7 @@ class MemoryReach(unittest.TestCase):
             self.assertNotIn(SAID, texts('flying'))  # "flights" is another stem: by meaning only
         # embeddings on: the stored vectors bring what means the same, never more than LEARNED
         self.app.config = {**self.config, 'embeddings': SETTINGS}
-        with patch.object(a.embeddings, 'embed', side_effect=fly) as embed_call:
+        with patch.object(embeddings, 'embed', side_effect=fly) as embed_call:
             found = self.app.talk_recall('flying')['found']
             self.assertEqual(embed_call.call_count, 1)  # the words only: the facts' vectors were stored
             said = [f['text'] for f in found]
@@ -372,7 +374,7 @@ class MemoryReach(unittest.TestCase):
         with self.store.connect() as db:
             self.assertIn('closeness', {r[0] for r in db.execute("SELECT how FROM memory_use WHERE purpose='talk'")})
         # the embedding server down: words only, no error
-        with patch.object(a.embeddings, 'embed', side_effect=a.embeddings.EmbeddingError('down')):
+        with patch.object(embeddings, 'embed', side_effect=embeddings.EmbeddingError('down')):
             self.assertEqual(texts('flying'), [new])
             self.assertEqual(texts('seats'), [SAID])
 
@@ -434,7 +436,7 @@ class MemoryReach(unittest.TestCase):
         with self.store.connect() as db:  # a connected AI's, not the owner's word
             db.execute("INSERT INTO facts(text,decision_id,created_at,kind,source,side) VALUES('You fly first class on long trips.','ai:c1',?,'fact','ai:Claude','work')",
                        (NOW.isoformat(),))
-        with patch.object(a.embeddings, 'embed', side_effect=plane):
+        with patch.object(embeddings, 'embed', side_effect=plane):
             self.store.facts_ranked('none', self.store.facts(), SETTINGS)
         self.app.action('forget_fact', {'id': gone}, owner_dashboard=True)
         with self.store.connect() as db:
@@ -445,7 +447,7 @@ class MemoryReach(unittest.TestCase):
     def test_the_owners_chat_finds_what_was_learned_by_meaning(self):
         klm = self.flights_learned()
         self.app.config = {**self.config, 'embeddings': SETTINGS}
-        with patch.object(a.embeddings, 'embed', side_effect=plane) as embed_call:
+        with patch.object(embeddings, 'embed', side_effect=plane) as embed_call:
             for question in ('flying', 'which airline for my flights', 'plane trip next week'):
                 embed_call.reset_mock()
                 found = self.chat(question)['found']
@@ -470,9 +472,9 @@ class MemoryReach(unittest.TestCase):
         def busy(settings, texts, timeout=120):
             waits.append(timeout)
             if timeout < 5:  # a loaded desktop: a query vector takes 2-7 seconds
-                raise a.embeddings.EmbeddingError('timeout')
+                raise embeddings.EmbeddingError('timeout')
             return plane(settings, texts, timeout)
-        with patch.object(a.embeddings, 'embed', side_effect=busy):
+        with patch.object(embeddings, 'embed', side_effect=busy):
             self.assertIn(klm, self.chat('plane trip next week')['found'])
         self.assertEqual(waits, [ask_memory.CHAT_TIMEOUT])
         self.assertGreater(ask_memory.CHAT_TIMEOUT, ask_memory.LEARNED_TIMEOUT)
@@ -480,7 +482,7 @@ class MemoryReach(unittest.TestCase):
     def test_the_owners_chat_never_finds_a_forgotten_fact_by_meaning(self):
         klm = self.flights_learned()
         self.app.config = {**self.config, 'embeddings': SETTINGS}
-        with patch.object(a.embeddings, 'embed', side_effect=plane):
+        with patch.object(embeddings, 'embed', side_effect=plane):
             for question in ('flying', 'which airline for my flights', 'plane trip next week', 'small airport'):
                 self.assertNotIn('small airport', self.chat(question)['found'], question)  # its vector is still stored
             self.assertIn(klm, self.chat('plane trip next week')['found'])
@@ -501,13 +503,13 @@ class MemoryReach(unittest.TestCase):
             ai = db.execute("INSERT INTO facts(text,decision_id,created_at,kind,source,side) VALUES('You fly first class on long trips.','ai:c1',?,'fact','ai:Claude','work')",
                             (NOW.isoformat(),)).lastrowid
         self.app.config = {**self.config, 'embeddings': SETTINGS}
-        with patch.object(a.embeddings, 'embed', side_effect=plane):
+        with patch.object(embeddings, 'embed', side_effect=plane):
             self.assertNotIn('KLM', self.chat('plane trip next week')['found'])  # no vector yet: words only
         sent = []
         def embed(settings, texts, timeout=120):
             sent.append(list(texts))
             return plane(settings, texts, timeout)
-        with patch.object(a.embeddings, 'embed', side_effect=embed), patch.object(a.embeddings, 'embed_pending', return_value=0), \
+        with patch.object(embeddings, 'embed', side_effect=embed), patch.object(embeddings, 'embed_pending', return_value=0), \
                 patch.object(self.app, 'passage_step', return_value=300, create=True), patch.object(self.app, 'history_embed_step', return_value=300, create=True):
             self.assertEqual(self.app.embed_pass(SETTINGS), 5)  # a full batch: the next pass comes soon
             self.assertEqual([len(batch) for batch in sent], [facts.FACT_VECTOR_BATCH])  # one request, bounded
@@ -522,16 +524,16 @@ class MemoryReach(unittest.TestCase):
         self.assertEqual(stored, own)
         self.assertNotIn(gone, stored)
         self.assertNotIn(ai, stored)
-        with patch.object(a.embeddings, 'embed', side_effect=AssertionError('nothing waits')):
+        with patch.object(embeddings, 'embed', side_effect=AssertionError('nothing waits')):
             self.assertEqual(self.store.embed_new_facts(SETTINGS), 0)
         # edited: its old vector goes, and the next pass embeds the new text
         self.store.edit_fact(klm, 'You only fly KLM or Brussels Airlines.')
-        with patch.object(a.embeddings, 'embed', side_effect=embed):
+        with patch.object(embeddings, 'embed', side_effect=embed):
             self.assertEqual(self.store.embed_new_facts(SETTINGS), 1)
         self.assertIn('Brussels Airlines', sent[-1][0])
         # the embedding server down: left for the next pass, logged once, never an error
         self.store.remember_fact('You fly economy on short trips.', 'note-1', quote=NOTE_WORDS)
-        with patch.object(a.embeddings, 'embed', side_effect=a.embeddings.EmbeddingError('unreachable')), self.assertLogs(a.LOG, 'INFO') as logs:
+        with patch.object(embeddings, 'embed', side_effect=embeddings.EmbeddingError('unreachable')), self.assertLogs(machine_config.LOG, 'INFO') as logs:
             self.assertEqual(self.store.embed_new_facts(SETTINGS), 0)
             self.assertEqual(self.store.embed_new_facts(SETTINGS), 0)
         self.assertEqual([line.split(':', 2)[2] for line in logs.output], ['fact vectors wait error=unreachable'])
@@ -540,13 +542,13 @@ class MemoryReach(unittest.TestCase):
     def test_the_owners_chat_without_embeddings_finds_by_words(self):
         klm = self.flights_learned()
         # none configured: words in their plain form, no embedding request; "flights" and "plane" are other stems
-        with patch.object(a.embeddings, 'embed', side_effect=AssertionError('no embedding request without embeddings')):
+        with patch.object(embeddings, 'embed', side_effect=AssertionError('no embedding request without embeddings')):
             self.assertIn(klm, self.chat('which airline when flying')['found'])
             self.assertNotIn(klm, self.chat('which airline for my flights')['found'])
             self.assertEqual(self.chat('plane trip next week')['found'], '')
         # the embedding server down: the same words, no error
         self.app.config = {**self.config, 'embeddings': SETTINGS}
-        with patch.object(a.embeddings, 'embed', side_effect=a.embeddings.EmbeddingError('down')):
+        with patch.object(embeddings, 'embed', side_effect=embeddings.EmbeddingError('down')):
             self.assertIn(klm, self.chat('flying')['found'])
             self.assertEqual(self.chat('plane trip next week')['found'], '')
 
@@ -555,7 +557,7 @@ class MemoryReach(unittest.TestCase):
         for n in range(40):
             self.store.remember_fact(f'You fly route {n} on the early plane when the meeting is before ten in the morning.', 'note-1', quote=NOTE_WORDS)
         self.app.config = {**self.config, 'embeddings': SETTINGS}
-        with patch.object(a.embeddings, 'embed', side_effect=plane):
+        with patch.object(embeddings, 'embed', side_effect=plane):
             self.store.facts_ranked('none', self.store.facts(), SETTINGS)
             found = self.chat('plane trip next week')['found']
         self.assertGreater(len(found.splitlines()), 3)
@@ -567,7 +569,7 @@ class MemoryReach(unittest.TestCase):
                             ('background_pause', lambda s, **k: None), ('background_spaced', lambda s: True), ('background_started', lambda s: None),
                             ('preparation_gateway', lambda s, request: sent.append(request) or {'status': 'admitted'}),
                             ('routine_spawn', lambda s, target, run_id: target(run_id))):
-            p = patch.object(a.App, name, value); p.start(); self.addCleanup(p.stop)
+            p = patch.object(machine_main.App, name, value); p.start(); self.addCleanup(p.stop)
         made = self.app.action('routine_new', {'words': 'every weekday at 8, draft a short update for the team'}, owner_dashboard=True)['made']
         self.app.action('routine_run_now', {'id': made}, owner_dashboard=True)
         self.app.routines_step()
@@ -589,7 +591,7 @@ class MemoryReach(unittest.TestCase):
                             ('background_pause', lambda s, **k: None), ('background_spaced', lambda s: True), ('background_started', lambda s: None),
                             ('preparation_gateway', lambda s, request: sent.append(request) or {'status': 'admitted'}),
                             ('routine_spawn', lambda s, target, run_id: target(run_id))):
-            p = patch.object(a.App, name, value); p.start(); self.addCleanup(p.stop)
+            p = patch.object(machine_main.App, name, value); p.start(); self.addCleanup(p.stop)
         made = made or self.app.action('routine_new', {'words': words}, owner_dashboard=True)['made']
         self.app.action('routine_run_now', {'id': made}, owner_dashboard=True)
         self.app.routines_step()

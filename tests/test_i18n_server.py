@@ -8,11 +8,13 @@ import sqlite3
 import unittest
 from unittest import mock
 
-import assistant
 import fleet
 import i18n
 import locale_prefs
 from seams import patch_everywhere  # noqa: E402
+import machine.delivery.telegram as machine_delivery_telegram
+import machine.store.decisions as machine_store_decisions
+import machine.store.promises as machine_store_promises
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
@@ -132,14 +134,14 @@ class OwnersLanguageTest(unittest.TestCase):
         config = {'dashboard_host': 'machine.example', 'telegram_owner': '1'}
         row = {'_result_notice': True, 'title': 'Quote for Acme', 'status': 'prepared', 'id': 'c1', 'message_id': 'web-1'}
         for lang in self.each():
-            with patch_everywhere(assistant, 'telegram_request', side_effect=lambda config, args: args):
-                sent = assistant.telegram(config, row, 'send')
+            with patch_everywhere(machine_delivery_telegram, 'telegram_request', side_effect=lambda config, args: args):
+                sent = machine_delivery_telegram.telegram(config, row, 'send')
             self.assertTrue(sent['message'].startswith(i18n.t('Ready: {}', '**Quote for Acme**', lang=lang)), sent['message'])
             self.assertIn({'nl': 'Klaargezet', 'fr': 'Prêt'}[lang], sent['message'])
             self.assertIn('[' + i18n.t('View result', lang=lang) + ']', sent['message'])
             self.assertNotIn('View result', sent['message'])
-        with patch_everywhere(assistant, 'telegram_request', side_effect=lambda config, args: args):
-            self.assertTrue(assistant.telegram(config, row, 'send')['message'].startswith('Ready: **Quote for Acme**'))
+        with patch_everywhere(machine_delivery_telegram, 'telegram_request', side_effect=lambda config, args: args):
+            self.assertTrue(machine_delivery_telegram.telegram(config, row, 'send')['message'].startswith('Ready: **Quote for Acme**'))
 
     def test_an_event_line(self):
         for lang in self.each():
@@ -150,7 +152,7 @@ class OwnersLanguageTest(unittest.TestCase):
                              "CREATE TABLE decisions(id,suggestion_id,choice,feedback,source,created_at);"  # a check-in's send re-waits (checking_in)
                              "INSERT INTO suggestions VALUES('c1','prepared',NULL,'Draft ready.',NULL);")
             store = mock.Mock()
-            self.assertTrue(assistant.settle_sent(store, db, 'c1', 'job1', label='Reply to Pat'))
+            self.assertTrue(machine_store_decisions.settle_sent(store, db, 'c1', 'job1', label='Reply to Pat'))
             line = store._decide.call_args.args[3]
             self.assertEqual(line, i18n.t('Sent: {}', 'Reply to Pat', lang=lang))
             self.assertNotEqual(line, 'Sent: Reply to Pat')
@@ -159,11 +161,11 @@ class OwnersLanguageTest(unittest.TestCase):
     def test_a_handoff_title(self):
         promise = {'direction': 'theirs', 'who': 'Pat', 'what': 'send the deck', 'made_at': '2026-10-26T10:00:00+00:00', 'due': None}
         for lang in self.each():
-            title, body = assistant.promise_text(promise)
+            title, body = machine_store_promises.promise_text(promise)
             self.assertEqual(title, i18n.t('Waiting on {}: {}', 'Pat', 'send the deck', lang=lang))
             self.assertNotIn('Waiting on', title)
             self.assertNotIn('Promised', body)
-        self.assertEqual(assistant.promise_text(promise)[0], 'Waiting on Pat: send the deck')
+        self.assertEqual(machine_store_promises.promise_text(promise)[0], 'Waiting on Pat: send the deck')
 
     def test_a_push_notification(self):
         row = {'id': 'q1', 'name': 'Pat', 'kind': 'relationships', 'question': json.dumps({'about': 'Acme'})}

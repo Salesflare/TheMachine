@@ -8,8 +8,10 @@ import unittest
 import agent_jobs
 from machine.delivery import deliver
 import test_preparation as p
+import machine.cards as machine_cards
+import machine.delivery.push as machine_delivery_push
+import timeutil
 
-a = p.a
 OLD = '2026-01-05T09:00:00+00:00'  # the stuck run, before any job
 LATER = '2999-01-01T00:00:00+00:00'  # a run stuck after the job started
 
@@ -54,8 +56,8 @@ class StuckThenHandedOff(unittest.TestCase):
     def test_stuck_before_the_handoff(self):
         card = self.card()
         self.assertEqual((card['preparation_status'], card['preparation_error']), ('blocked', 'completion_unconfirmed'))
-        self.assertEqual(a.app_notice(self.store, self.app.config, self.sid)['line'], 'Stuck: Prepare a useful draft')
-        self.assertIn('I’m stuck', a.card(self.telegram_row()))
+        self.assertEqual(machine_delivery_push.app_notice(self.store, self.app.config, self.sid)['line'], 'Stuck: Prepare a useful draft')
+        self.assertIn('I’m stuck', machine_cards.card(self.telegram_row()))
 
     def test_a_running_handoff_shows_working_everywhere_then_its_result_decides(self):
         job = self.hand_off()
@@ -64,18 +66,18 @@ class StuckThenHandedOff(unittest.TestCase):
         self.assertEqual(card['preparation_status'], agent_jobs.WORKING)
         self.assertIsNone(card['preparation_error'])
         self.assertIsNone(card['preparation_reason'])
-        self.assertFalse(a.ask_blocked(card))
-        notice = a.app_notice(self.store, self.app.config, self.sid)
+        self.assertFalse(machine_cards.ask_blocked(card))
+        notice = machine_delivery_push.app_notice(self.store, self.app.config, self.sid)
         self.assertEqual(notice['line'], 'Working: Prepare a useful draft')
         row = self.telegram_row()
         self.assertEqual(row['preparation_status'], agent_jobs.WORKING)
-        self.assertNotIn('I’m stuck', a.card(row))
-        self.assertIn('Working…', a.card(row))
+        self.assertNotIn('I’m stuck', machine_cards.card(row))
+        self.assertIn('Working…', machine_cards.card(row))
         # The stuck run's own row keeps what happened
         self.assertEqual(self.q('SELECT status,error FROM preparations WHERE suggestion_id=?', self.sid), {'status': 'blocked', 'error': 'completion_unconfirmed'})
         # Running (claimed by its worker) is still working
         with self.store.connect() as db:
-            db.execute("UPDATE agent_jobs SET status='running',started_at=? WHERE id=?", (a.now(), job['id']))
+            db.execute("UPDATE agent_jobs SET status='running',started_at=? WHERE id=?", (timeutil.now(), job['id']))
         self.assertEqual(self.card()['preparation_status'], agent_jobs.WORKING)
         # It ends with a result: not Stuck, not Preparing, nothing runs on it
         with self.store.connect() as db:
@@ -84,8 +86,8 @@ class StuckThenHandedOff(unittest.TestCase):
         self.assertEqual(self.needs_edit(), 1)
         card = self.card()
         self.assertEqual(card['preparation_status'], agent_jobs.HANDED_BACK)
-        self.assertNotIn(a.app_notice(self.store, self.app.config, self.sid)['line'].split(':')[0], ('Stuck', 'Preparing', 'Working'))
-        self.assertNotIn('I’m stuck', a.card(self.telegram_row()))
+        self.assertNotIn(machine_delivery_push.app_notice(self.store, self.app.config, self.sid)['line'].split(':')[0], ('Stuck', 'Preparing', 'Working'))
+        self.assertNotIn('I’m stuck', machine_cards.card(self.telegram_row()))
 
     def test_a_failed_job_leaves_it_stuck(self):
         job = self.hand_off()
@@ -93,8 +95,8 @@ class StuckThenHandedOff(unittest.TestCase):
         self.jobs.finish(job['id'], 'failed', error='It stopped.', error_kind='exit')
         card = self.card()
         self.assertEqual((card['preparation_status'], card['preparation_error']), ('blocked', 'completion_unconfirmed'))
-        self.assertEqual(a.app_notice(self.store, self.app.config, self.sid)['line'], 'Stuck: Prepare a useful draft')
-        self.assertIn('I’m stuck', a.card(self.telegram_row()))
+        self.assertEqual(machine_delivery_push.app_notice(self.store, self.app.config, self.sid)['line'], 'Stuck: Prepare a useful draft')
+        self.assertIn('I’m stuck', machine_cards.card(self.telegram_row()))
 
     def test_a_run_stuck_after_the_job_started_is_the_newer_word(self):
         self.hand_off()

@@ -5,7 +5,6 @@ moment (a confirmation or reminder before a meeting: the review's expires_at) cl
 "No longer needed", with Undo. A title or summary never keeps "today" or "tomorrow": the day itself is saved, in the
 words' own language (locale_prefs.undated)."""
 import datetime as dt
-import importlib.util
 import re
 import tempfile
 import unittest
@@ -15,17 +14,18 @@ from unittest.mock import patch
 import locale_prefs
 import timeutil
 from seams import patch_everywhere  # noqa: E402
+import machine.cards as machine_cards
+import machine.main as machine_main
+import machine.prompts.review as machine_prompts_review
+import zoneinfo
 
 ROOT = Path(__file__).parent.parent
-spec = importlib.util.spec_from_file_location('moment_assistant', ROOT / 'assistant.py')
-a = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(a)
 
 WED = dt.datetime(2026, 10, 28, 9, 0)  # Wed Oct 28, the day the to-do was written
 
 
 def at(text):
-    return patch_everywhere(a, 'now', lambda: text)
+    return patch_everywhere(timeutil, 'now', lambda: text)
 
 
 class RelativeDayWords(unittest.TestCase):
@@ -69,7 +69,7 @@ class Store(unittest.TestCase):
         locale_prefs._current.update(locale='nl-BE', language='en')
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'e.sqlite')
+        self.store = machine_main.Store(Path(self.temp.name) / 'e.sqlite')
         self.store.commit_page('g', {}, [{'account_id': 'g', 'source_id': 'm1', 'kind': 'gmail.message', 'occurred_at': '2026-10-28T07:00:00+00:00',
                                           'title': 'Angular migration', 'body': 'Woensdag op kantoor?', 'deleted': False,
                                           'metadata': {'from': 'Kevin <kevin@example.com>', 'thread_id': 't1'}}])
@@ -77,10 +77,10 @@ class Store(unittest.TestCase):
                                           'title': 'Angular migration', 'body': 'Office', 'deleted': False,
                                           'metadata': {'start': {'dateTime': '2026-10-28T13:30:00+01:00'}, 'end': {'dateTime': '2026-10-28T15:00:00+01:00'},
                                                        'timezone': 'Europe/Brussels', 'status': 'confirmed'}}])
-        self.app = object.__new__(a.App)
+        self.app = object.__new__(machine_main.App)
         self.app.store = self.store
         self.app.config = {'accounts': [{'id': 'g'}, {'id': 'c'}], 'prepare_ahead': False}
-        tz = patch.object(timeutil, 'LOCAL_TZ', a.ZoneInfo('Europe/Brussels'))
+        tz = patch.object(timeutil, 'LOCAL_TZ', zoneinfo.ZoneInfo('Europe/Brussels'))
         tz.start()
         self.addCleanup(tz.stop)
 
@@ -129,9 +129,9 @@ class Store(unittest.TestCase):
             self.assertEqual(db.execute("SELECT source FROM decisions WHERE suggestion_id=? AND choice='complete'", (sid,)).fetchone()[0], 'expiry')
             self.assertEqual(db.execute("SELECT status FROM deliveries WHERE suggestion_id=?", (sid,)).fetchone()[0], 'cancelled')
         # Telegram keeps the line as written, so it names the day; never "Overdue" or a stored "today"
-        self.assertEqual(a.expired_text(card), 'No longer needed: the meeting with Kevin was on Wed 28 Oct at 13:30.')
-        self.assertIn('No longer needed: the meeting with Kevin', a.card(card))
-        self.assertNotIn('Due', a.card({**card, 'due': '2026-10-28'}))
+        self.assertEqual(machine_cards.expired_text(card), 'No longer needed: the meeting with Kevin was on Wed 28 Oct at 13:30.')
+        self.assertIn('No longer needed: the meeting with Kevin', machine_cards.card(card))
+        self.assertNotIn('Due', machine_cards.card({**card, 'due': '2026-10-28'}))
         # Undo brings it back and it stays: its moment no longer closes it
         with at('2026-10-29T08:01:00+00:00'):
             self.assertEqual(self.store.decide(sid, 'undo', '', 'u1', 'dashboard')['status'], 'pending')
@@ -147,7 +147,7 @@ class Store(unittest.TestCase):
         self.assertEqual(self.card(sid)['expires_at'], '2026-10-28T12:30:00+00:00')
         with at('2026-10-29T08:00:00+00:00'):
             self.store.expire_passed()
-        self.assertTrue(a.expired_text(self.card(sid)).endswith('at 13:30.'))
+        self.assertTrue(machine_cards.expired_text(self.card(sid)).endswith('at 13:30.'))
 
     def test_a_moment_without_what_it_is_or_already_past_is_refused(self):
         with self.assertRaisesRegex(ValueError, 'expires_what'):
@@ -169,7 +169,7 @@ class Store(unittest.TestCase):
 class ReviewRules(unittest.TestCase):
     def test_the_review_knows_the_three_rules(self):
         agents = (ROOT / 'AGENTS.md').read_text()
-        prompt = a.review_prompt('r1', ['g'])
+        prompt = machine_prompts_review.review_prompt('r1', ['g'])
         for text in (agents, prompt):
             self.assertRegex(text, r'in the calendar needs no to-do to confirm it')
             self.assertIn('expires_at', text)

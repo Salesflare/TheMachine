@@ -5,14 +5,27 @@ here goes to a fake opener; nothing is sent."""
 import http.client, io, json, re, subprocess, tempfile, threading, unittest
 from pathlib import Path
 from unittest.mock import patch
-import assistant as a
 import dashboard_parts
 import notify
 from seams import patch_everywhere  # noqa: E402
+import datetime as dt
+import fleet
+import machine.actions as machine_actions
+import machine.app.serve as machine_app_serve
+import machine.config as machine_config
+import machine.delivery.deliver as machine_delivery_deliver
+import machine.delivery.push as machine_delivery_push
+import machine.delivery.telegram as machine_delivery_telegram
+import machine.main as machine_main
+import qr
+import security_levels
+import signal
+import sources
+import timeutil
 
 SUB = {'endpoint': 'https://fcm.googleapis.com/fcm/send/abc', 'keys': {'p256dh': 'B' + 'x' * 86, 'auth': 'y' * 22}}
 TOKEN = 'fcm-token:' + 'A' * 140
-UTC = a.dt.timezone.utc
+UTC = dt.timezone.utc
 
 
 class Answer(io.BytesIO):
@@ -42,12 +55,12 @@ class AppPush(unittest.TestCase):
     def setUp(self):
         notify.reset_active(); self.addCleanup(notify.reset_active)
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'events.sqlite')
-        self.app = object.__new__(a.App); self.app.store = self.store
+        self.store = machine_main.Store(Path(self.temp.name) / 'events.sqlite')
+        self.app = object.__new__(machine_main.App); self.app.store = self.store
         self.config = self.app.config = {'accounts': [], 'dashboard_host': 'the-machine.example', 'dashboard_path': '/assistant/',
                                          'credentials': {'fleet': 'fleet'}, 'fleet': {'url': 'https://cp.example/api/fleet'}}
         self.cloud = Cloud()
-        for patcher in (patch_everywhere(a, 'credential', return_value='tok'),
+        for patcher in (patch_everywhere(sources, 'credential', return_value='tok'),
                         patch.object(notify.urllib.request, 'urlopen', side_effect=lambda r, timeout: self.cloud(r, timeout))):
             patcher.start(); self.addCleanup(patcher.stop)
         self.web = []
@@ -94,7 +107,7 @@ class AppPush(unittest.TestCase):
         self.assertEqual(self.app.action('app_push_register', {'platform': 'apns', 'token': 'ab' * 32}, owner_dashboard=True)['label'], 'iPhone')
         self.assertIs(self.cloud.seen[-1]['sandbox'], False)
         for name in ('app_push_register', 'app_push_unregister'):
-            self.assertIn(name, a.DASHBOARD_ACTIONS)
+            self.assertIn(name, machine_actions.DASHBOARD_ACTIONS)
 
     def test_off_the_network_a_plain_answer_not_an_error(self):
         self.config.pop('fleet'); self.config['credentials'] = {}
@@ -117,28 +130,28 @@ class AppPush(unittest.TestCase):
         # The cloud down: kept here, so it can be removed again; already gone there (404): gone here too
         self.register()
         self.cloud.answers['unregister'] = 503
-        with self.assertLogs(a.LOG, 'WARNING'), self.assertRaisesRegex(ValueError, 'Try again'):
+        with self.assertLogs(machine_config.LOG, 'WARNING'), self.assertRaisesRegex(ValueError, 'Try again'):
             self.app.action('app_push_unregister', {'id': 'dev_1'}, owner_dashboard=True)
         self.assertEqual(len(self.app.notify_view()['app_devices']), 1)
         self.cloud.answers['unregister'] = 404
-        with self.assertLogs(a.LOG, 'WARNING'):
+        with self.assertLogs(machine_config.LOG, 'WARNING'):
             self.app.action('app_push_unregister', {'id': 'dev_1'}, owner_dashboard=True)
         self.assertEqual(self.app.notify_view()['app_devices'], [])
 
     # -- wakeups
     def test_a_new_todo_wakes_the_phones_with_its_kind_and_tag_and_no_text(self):
         self.register()
-        with self.assertLogs(a.LOG, 'INFO') as logs:
-            results = a.push_notify(self.store, self.config, {'id': 'card_42', 'title': 'Pay the secret invoice', 'body': 'Hidden', 'status': 'pending'}, self.sender)
+        with self.assertLogs(machine_config.LOG, 'INFO') as logs:
+            results = machine_delivery_push.push_notify(self.store, self.config, {'id': 'card_42', 'title': 'Pay the secret invoice', 'body': 'Hidden', 'status': 'pending'}, self.sender)
         self.assertEqual(results, [{'status': 200, 'app': 1}])  # no web push device: the app alone
         self.assertEqual(self.wakes(), [{'url': 'https://cp.example/api/fleet/app-push', 'auth': 'Bearer tok', 'action': 'wake', 'kind': 'todo', 'tag': 'card_42'}])
         self.assertNotIn('secret', json.dumps(self.cloud.seen))
         self.assertNotIn('tok', '\n'.join(logs.output).replace('kind=todo', ''))
-        a.push_notify(self.store, self.config, {'id': 'card_42', 'title': 'T', 'body': 'B', 'status': 'prepared', '_result_notice': True}, self.sender)
-        a.push_notify(self.store, self.config, {'id': 'card_43', 'title': 'T', 'body': 'B', 'status': 'pending', 'reminder': True}, self.sender)
+        machine_delivery_push.push_notify(self.store, self.config, {'id': 'card_42', 'title': 'T', 'body': 'B', 'status': 'prepared', '_result_notice': True}, self.sender)
+        machine_delivery_push.push_notify(self.store, self.config, {'id': 'card_43', 'title': 'T', 'body': 'B', 'status': 'pending', 'reminder': True}, self.sender)
         self.assertEqual([(w['kind'], w['tag']) for w in self.wakes()], [('todo', 'card_42'), ('result', 'card_42'), ('reminder', 'card_43')])
         # a later to-do of a batch is silent: no second wakeup
-        a.push_notify(self.store, self.config, {'id': 'card_44', 'title': 'T', 'body': 'B', 'status': 'pending', '_silent': True}, self.sender)
+        machine_delivery_push.push_notify(self.store, self.config, {'id': 'card_44', 'title': 'T', 'body': 'B', 'status': 'pending', '_silent': True}, self.sender)
         self.assertEqual(len(self.wakes()), 3)
 
     def test_the_app_line_says_what_is_ready_and_stays_here(self):
@@ -155,7 +168,7 @@ class AppPush(unittest.TestCase):
                  ({'status': 'pending', 'reminder': True}, 'reminder', None, 'Reminder: ')]
         for i, (row, kind, state, lead) in enumerate(cases):
             with self.subTest(kind=kind, state=state):
-                a.push_notify(self.store, self.config, {'id': f'card_{i}', 'title': title, 'body': 'B', **row}, self.sender)
+                machine_delivery_push.push_notify(self.store, self.config, {'id': f'card_{i}', 'title': title, 'body': 'B', **row}, self.sender)
                 wake = self.wakes()[-1]
                 self.assertEqual((wake['kind'], wake['tag'], wake.get('state')), (kind, f'card_{i}', state))
                 with self.store.connect() as db:
@@ -166,17 +179,17 @@ class AppPush(unittest.TestCase):
         # The title never goes to the cloud, only the kind, the state and the to-do's id
         self.assertNotIn('landlord', json.dumps(self.cloud.seen))
         # A short title stays whole
-        a.push_notify(self.store, self.config, {'id': 'card_9', 'title': 'Pick a time with Sam', 'body': 'B', 'status': 'prepared',
+        machine_delivery_push.push_notify(self.store, self.config, {'id': 'card_9', 'title': 'Pick a time with Sam', 'body': 'B', 'status': 'prepared',
                                                 '_result_notice': True}, self.sender)
         with self.store.connect() as db:
             self.assertEqual(notify.app_line(db, 'card_9'), 'Ready: Pick a time with Sam')
 
     def test_text_in_notifications_off_keeps_the_app_line_plain(self):
         self.register(fetch=True)
-        with patch.object(a.security_levels, 'notify_text', return_value=False):
-            a.push_notify(self.store, self.config, {'id': 'card_1', 'title': 'Pay the secret invoice', 'body': 'B', 'status': 'prepared',
+        with patch.object(security_levels, 'notify_text', return_value=False):
+            machine_delivery_push.push_notify(self.store, self.config, {'id': 'card_1', 'title': 'Pay the secret invoice', 'body': 'B', 'status': 'prepared',
                                                     '_result_notice': True}, self.sender)
-            a.push_notify(self.store, self.config, {'id': 'card_2', 'title': 'Pay the secret invoice', 'body': 'B', 'status': 'pending'}, self.sender)
+            machine_delivery_push.push_notify(self.store, self.config, {'id': 'card_2', 'title': 'Pay the secret invoice', 'body': 'B', 'status': 'pending'}, self.sender)
         with self.store.connect() as db:
             self.assertEqual((notify.app_line(db, 'card_1'), notify.app_line(db, 'card_2')), ('Ready', 'New to-do'))
             self.assertNotIn('secret', json.dumps([list(r) for r in db.execute('SELECT * FROM notify_app_lines')]))
@@ -184,12 +197,12 @@ class AppPush(unittest.TestCase):
     def test_a_held_push_keeps_its_line_for_the_app(self):
         self.register(fetch=True)
         notify.mark_active(client='desk', on=True)
-        a.push_notify(self.store, self.config, {'id': 'card_1', 'title': 'Pick a time with Sam', 'body': 'B', 'status': 'prepared',
+        machine_delivery_push.push_notify(self.store, self.config, {'id': 'card_1', 'title': 'Pick a time with Sam', 'body': 'B', 'status': 'prepared',
                                                 '_result_notice': True}, self.sender)
         self.assertEqual(self.wakes(), [])
         with self.store.connect() as db:
             payload = json.loads(db.execute("SELECT payload FROM notify_queue WHERE channel='push'").fetchone()[0])
-        a.push_send(self.store, self.config, [{'endpoint': SUB['endpoint']}], payload, 'held', self.sender, kind='result', held=True)
+        machine_delivery_push.push_send(self.store, self.config, [{'endpoint': SUB['endpoint']}], payload, 'held', self.sender, kind='result', held=True)
         self.assertEqual(self.wakes()[-1].get('state'), 'ready')
         self.assertNotIn('_line', json.dumps(self.web))  # the web push gets its own payload only
         with self.store.connect() as db:
@@ -213,16 +226,18 @@ class AppPush(unittest.TestCase):
     def test_the_app_asks_for_its_line_with_the_owners_sign_in(self):
         with self.store.connect() as db:
             notify.app_line_save(db, 'card_1', 'Ready: Pick a time with Sam')
-        app = object.__new__(a.App)
+        app = object.__new__(machine_main.App)
         app.store, app.token, app.stop = self.store, 'test-token', threading.Event()
         app.graph_dirty = threading.Event()
         app.owner_token = 'owner-key'
         app.config = {'accounts': [], 'tailscale_owner': 'owner@example.com', 'dashboard_host': 'machine.example:8443', 'port': 0, 'http_timeout': 1}
-        servers, real = [], a.http.server.ThreadingHTTPServer
+        servers, real = [], http.server.ThreadingHTTPServer
         def capture(*args, **kwargs):
             servers.append(real(*args, **kwargs)); return servers[-1]
-        for patcher in (patch.object(a.http.server, 'ThreadingHTTPServer', side_effect=capture), patch.object(a.signal, 'signal'),
-                        patch.object(a.App, 'preparation_worker'), patch.object(a.App, 'delivery_worker')):
+        # The service reads the agent's transcripts once at start (review_requeue); here that is no file, never the computer's own
+        for patcher in (patch.object(http.server, 'ThreadingHTTPServer', side_effect=capture), patch.object(signal, 'signal'),
+                        patch.object(machine_main.App, 'preparation_worker'), patch.object(machine_main.App, 'delivery_worker'),
+                        patch.object(machine_app_serve, 'AGENT_DB', Path(self.temp.name) / 'no-agent.sqlite')):
             patcher.start(); self.addCleanup(patcher.stop)
         thread = threading.Thread(target=app.serve, daemon=True)
         thread.start()
@@ -269,7 +284,7 @@ class AppPush(unittest.TestCase):
         return sid
 
     def test_the_notice_has_the_title_and_next_step_and_the_buttons_for_where_it_is(self):
-        new = a.app_notice(self.store, self.config, self.card())
+        new = machine_delivery_push.app_notice(self.store, self.config, self.card())
         self.assertEqual((new['title'], new['body'], new['actions']),
                          ('New to-do: Pay the Monizze invoice', 'The Monizze invoice of 120 EUR is due Friday.', ['prepare', 'snooze', 'done']))
         self.assertEqual(new['labels'], {'prepare': 'Do it', 'snooze': 'Snooze', 'done': 'Mark done', 'open': 'Open'})
@@ -278,19 +293,19 @@ class AppPush(unittest.TestCase):
         self.assertEqual(new['line'], new['title'])  # what an older app shows
         reply = json.dumps({'kind': 'email', 'account_id': 'work', 'to': ['Sam Lee <sam@client.example>'], 'subject': 'Re: Meeting',
                             'body': 'Hi Sam,\n\nTuesday 10:00 works for me. See you then.', 'revision': 'r1'})
-        ready = a.app_notice(self.store, self.config, self.card('Pick a time with Sam', status='prepared', next_action=reply))
+        ready = machine_delivery_push.app_notice(self.store, self.config, self.card('Pick a time with Sam', status='prepared', next_action=reply))
         self.assertEqual((ready['title'], ready['body'], ready['actions']),
                          ('Pick a time with Sam', 'Send to Sam Lee: Tuesday 10:00 works for me.', ['snooze', 'done']))
         labelled = json.dumps({'kind': 'email', 'label': 'Reply to Sam', 'to': ['sam@client.example'], 'body': 'Confirm Tuesday 10:00.', 'revision': 'r1'})
-        self.assertEqual(a.app_notice(self.store, self.config, self.card('Meeting', status='prepared', next_action=labelled))['body'],
+        self.assertEqual(machine_delivery_push.app_notice(self.store, self.config, self.card('Meeting', status='prepared', next_action=labelled))['body'],
                          'Reply to Sam: Confirm Tuesday 10:00.')
-        asks = a.app_notice(self.store, self.config, self.card('Book the trip', status='prepared', outcome=json.dumps({'needs': 'Which dates work?'})))
+        asks = machine_delivery_push.app_notice(self.store, self.config, self.card('Book the trip', status='prepared', outcome=json.dumps({'needs': 'Which dates work?'})))
         self.assertEqual(asks['body'], 'Which dates work?')
-        self.assertEqual(a.app_notice(self.store, self.config, self.card('Draft the plan', status='accepted'))['title'], 'Preparing: Draft the plan')
-        long = a.app_notice(self.store, self.config, self.card('Pay ' + 'the very long invoice ' * 3, 'Pay ' + 'y' * 300 + '.'))
-        self.assertLessEqual((len(long['title']), len(long['body'])), (notify.APP_LINE, a.APP_BODY))
-        for status in a.APP_GONE:
-            self.assertEqual(a.app_notice(self.store, self.config, self.card('Gone ' + status, status=status)), {'gone': True})
+        self.assertEqual(machine_delivery_push.app_notice(self.store, self.config, self.card('Draft the plan', status='accepted'))['title'], 'Preparing: Draft the plan')
+        long = machine_delivery_push.app_notice(self.store, self.config, self.card('Pay ' + 'the very long invoice ' * 3, 'Pay ' + 'y' * 300 + '.'))
+        self.assertLessEqual((len(long['title']), len(long['body'])), (notify.APP_LINE, machine_delivery_push.APP_BODY))
+        for status in machine_delivery_push.APP_GONE:
+            self.assertEqual(machine_delivery_push.app_notice(self.store, self.config, self.card('Gone ' + status, status=status)), {'gone': True})
 
     def test_a_ready_draft_leads_with_what_it_is_about_and_says_who_and_how_it_starts(self):
         # The phone has room for one short title: no "Ready:" in front, and the generic "check the draft and send it"
@@ -299,7 +314,7 @@ class AppPush(unittest.TestCase):
                             'body': 'Hey Jo,\n\nUpdated the address on every page:\nhttps://blog.example.com/best-agencies\n\nThanks for flagging it!',
                             'revision': 'r1'})
         generic = json.dumps({'needs': 'check the draft and send it', 'state': 'needs_you'})
-        notice = a.app_notice(self.store, self.config, self.card('Correct the agency location', status='prepared', next_action=draft,
+        notice = machine_delivery_push.app_notice(self.store, self.config, self.card('Correct the agency location', status='prepared', next_action=draft,
                                                                 outcome=generic), 'result', 2)
         self.assertEqual((notice['title'], notice['body'], notice['actions']),
                          ('Correct the agency location', 'Send to Jo Park: Updated the address on every page: Thanks for flagging it!',
@@ -307,16 +322,16 @@ class AppPush(unittest.TestCase):
         self.assertNotIn('Ready', notice['title'])
         # a question for the owner still leads, draft or not; a result without a draft says what it found
         asks = json.dumps({'needs': 'Send it from the work address?', 'state': 'needs_you'})
-        self.assertEqual(a.app_notice(self.store, self.config, self.card('Reply to Jo', status='prepared', next_action=draft,
+        self.assertEqual(machine_delivery_push.app_notice(self.store, self.config, self.card('Reply to Jo', status='prepared', next_action=draft,
                                                                         outcome=asks))['body'], 'Send it from the work address?')
-        found = a.app_notice(self.store, self.config, self.card('Assess the Swiss tax review', 'The review found no tax due. Details below.',
+        found = machine_delivery_push.app_notice(self.store, self.config, self.card('Assess the Swiss tax review', 'The review found no tax due. Details below.',
                                                                status='prepared', outcome=json.dumps({'state': 'answered'})))
         self.assertEqual((found['title'], found['body']), ('Assess the Swiss tax review', 'The review found no tax due.'))
         # other states keep their word in front, and Text in notifications off still says only "Ready"
-        self.assertEqual(a.app_notice(self.store, self.config, self.card('Draft the memo', status='accepted'))['title'], 'Preparing: Draft the memo')
+        self.assertEqual(machine_delivery_push.app_notice(self.store, self.config, self.card('Draft the memo', status='accepted'))['title'], 'Preparing: Draft the memo')
         with self.store.connect() as db:
-            a.security_levels.set_pref(db, 'notify_text', 'off')
-        hidden = a.app_notice(self.store, self.config, self.card('Correct the location', status='prepared', next_action=draft, outcome=generic))
+            security_levels.set_pref(db, 'notify_text', 'off')
+        hidden = machine_delivery_push.app_notice(self.store, self.config, self.card('Correct the location', status='prepared', next_action=draft, outcome=generic))
         self.assertEqual((hidden['title'], hidden['body']), ('Ready', 'Tap to open.'))
 
     # -- quick buttons (push.QUICK): every kind has its own, and none of them sends anything
@@ -329,15 +344,15 @@ class AppPush(unittest.TestCase):
                 'preparing': self.card('Draft the plan', status='accepted')}
 
     def test_no_quick_button_sends_publishes_pays_or_submits(self):
-        ids = {a for which in a.QUICK.values() for where in which.values() for a in where}
-        self.assertLessEqual(ids, set(a.QUICK_OPENS) | set(a.QUICK_RUNS))
-        self.assertEqual({choice for choice, _ in a.QUICK_RUNS.values()}, {'accept', 'snooze', 'complete'})
+        ids = {a for which in machine_delivery_push.QUICK.values() for where in which.values() for a in where}
+        self.assertLessEqual(ids, set(machine_delivery_push.QUICK_OPENS) | set(machine_delivery_push.QUICK_RUNS))
+        self.assertEqual({choice for choice, _ in machine_delivery_push.QUICK_RUNS.values()}, {'accept', 'snooze', 'complete'})
         # Prepare (accept) only on a to-do not started yet: on a draft accept is Do it, never a notification button
-        self.assertEqual([k for k, which in a.QUICK.items() if 'prepare' in which['app'] + which['web']], ['new'])
-        for which in a.QUICK.values():
+        self.assertEqual([k for k, which in machine_delivery_push.QUICK.items() if 'prepare' in which['app'] + which['web']], ['new'])
+        for which in machine_delivery_push.QUICK.values():
             self.assertLessEqual(len(which['web']), 2)  # what a browser shows
             self.assertLessEqual(len(which['app']), 3)  # what Android and iOS show
-        self.assertEqual(set(a.QUICK_LABELS), ids)
+        self.assertEqual(set(machine_delivery_push.QUICK_LABELS), ids)
 
     def test_the_notice_has_quick_buttons_for_an_app_that_knows_them(self):
         cards = self.quick_cards()
@@ -345,25 +360,25 @@ class AppPush(unittest.TestCase):
                   'question': ['answer', 'snooze2h', 'done'], 'preparing': ['snooze2h', 'done']}
         for which, sid in cards.items():
             with self.subTest(which):
-                notice = a.app_notice(self.store, self.config, sid, version=2)
+                notice = machine_delivery_push.app_notice(self.store, self.config, sid, version=2)
                 self.assertEqual(notice['actions'], expect[which])
                 self.assertEqual(notice['labels']['snooze2h'], 'Snooze')
                 self.assertEqual(notice['labels']['draft'], 'Open draft')
                 self.assertEqual(notice['events']['snooze2h'], 'Snoozed it')
                 # an older app keeps the three it knows
-                self.assertLessEqual(set(a.app_notice(self.store, self.config, sid)['actions']), {'prepare', 'snooze', 'done'})
-        reminder = a.app_notice(self.store, self.config, cards['new'], 'reminder', 2)
+                self.assertLessEqual(set(machine_delivery_push.app_notice(self.store, self.config, sid)['actions']), {'prepare', 'snooze', 'done'})
+        reminder = machine_delivery_push.app_notice(self.store, self.config, cards['new'], 'reminder', 2)
         self.assertEqual(reminder['actions'], ['done', 'snooze', 'open'])
         self.assertTrue(reminder['title'].startswith('Reminder: '), reminder['title'])  # as its web push says it
-        self.assertTrue(a.app_notice(self.store, self.config, cards['new'], version=2)['title'].startswith('New to-do: '))
+        self.assertTrue(machine_delivery_push.app_notice(self.store, self.config, cards['new'], version=2)['title'].startswith('New to-do: '))
         stuck = self.card('Pay the invoice', status='accepted')
         with self.store.connect() as db:
             db.execute("INSERT INTO preparations(suggestion_id,decision_id,job_id,status,reason,error,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?)",
                        (stuck, 'd1', 'j1', 'blocked', 'Exact needs a login.', '', 'x', 'x'))
-        self.assertEqual(a.app_notice(self.store, self.config, stuck, version=2)['actions'], ['open', 'snooze2h', 'done'])
+        self.assertEqual(machine_delivery_push.app_notice(self.store, self.config, stuck, version=2)['actions'], ['open', 'snooze2h', 'done'])
         with self.store.connect() as db:
             notify.app_line_save(db, 'digest', 'Your morning')
-        self.assertEqual(a.app_notice(self.store, self.config, 'digest', version=2)['actions'], [])  # the tap opens it
+        self.assertEqual(machine_delivery_push.app_notice(self.store, self.config, 'digest', version=2)['actions'], [])  # the tap opens it
 
     def test_web_push_quick_buttons_by_kind(self):
         self.app.action('push_subscribe', SUB, owner_dashboard=True)
@@ -373,20 +388,20 @@ class AppPush(unittest.TestCase):
         for which, want in expect.items():
             with self.subTest(which), self.store.connect() as db:
                 row = dict(db.execute('SELECT * FROM suggestions WHERE id=?', (cards[which],)).fetchone(), _result_notice=which != 'new')
-            a.push_notify(self.store, self.config, row, self.sender)
+            machine_delivery_push.push_notify(self.store, self.config, row, self.sender)
             self.assertEqual([(b['action'], b['title']) for b in self.web[-1]['payload']['actions']], want)
         with self.store.connect() as db:
             back = dict(db.execute('SELECT * FROM suggestions WHERE id=?', (cards['new'],)).fetchone(), reminder=1)
-        a.push_notify(self.store, self.config, back, self.sender)
+        machine_delivery_push.push_notify(self.store, self.config, back, self.sender)
         self.assertEqual([b['action'] for b in self.web[-1]['payload']['actions']], ['done', 'snooze'])
         row = {'id': '0123456789abcdef', 'title': 'Top up Wise', 'body': '', 'status': 'accepted', '_result_notice': True, 'preparation_status': 'blocked',
                'preparation_reason': 'Sign in to Wise.', 'preparation_browser': {'signin_url': 'https://the-machine.example/assistant/browser/signin'}}
-        a.push_notify(self.store, self.config, row, self.sender)
+        machine_delivery_push.push_notify(self.store, self.config, row, self.sender)
         self.assertEqual([b['action'] for b in self.web[-1]['payload']['actions']], ['signin', 'snooze2h'])
         self.assertEqual(self.web[-1]['payload']['url'], 'https://the-machine.example/assistant/browser/signin')
         with self.store.connect() as db:
-            a.security_levels.set_pref(db, 'notify_text', 'off')  # no text on the lock screen: the buttons stay, they say nothing of it
-        a.push_notify(self.store, self.config, back, self.sender)
+            security_levels.set_pref(db, 'notify_text', 'off')  # no text on the lock screen: the buttons stay, they say nothing of it
+        machine_delivery_push.push_notify(self.store, self.config, back, self.sender)
         self.assertEqual([b['action'] for b in self.web[-1]['payload']['actions']], ['done', 'snooze'])
 
     def test_telegram_result_notice_has_the_quick_buttons(self):
@@ -395,8 +410,8 @@ class AppPush(unittest.TestCase):
         def sent(which, **extra):
             with self.store.connect() as db:
                 row = dict(db.execute('SELECT * FROM suggestions WHERE id=?', (cards[which],)).fetchone(), _result_notice=True, message_id='41', **extra)
-            with patch_everywhere(a, 'telegram_request', side_effect=lambda config, args: args):
-                return [(b['label'], b['action'].get('url') or b['action'].get('value')) for b in a.telegram(config, row, 'send')['presentation']['blocks'][0]['buttons']]
+            with patch_everywhere(machine_delivery_telegram, 'telegram_request', side_effect=lambda config, args: args):
+                return [(b['label'], b['action'].get('url') or b['action'].get('value')) for b in machine_delivery_telegram.telegram(config, row, 'send')['presentation']['blocks'][0]['buttons']]
         sid = cards['draft']
         self.assertEqual(sent('draft'), [('Open draft', 'https://machine.example/assistant/#card=' + sid + '&or=chat'), ('Snooze', f'assistant:{sid}:snooze_2h')])
         sid = cards['ready']
@@ -431,31 +446,31 @@ class AppPush(unittest.TestCase):
                 db.execute("UPDATE suggestions SET status='prepared',next_action=? WHERE id=?", (handoff, sid))
             return sid
         waiting = promised(theirs, 'Waiting on Sam Lee: the quote')
-        self.assertEqual(a.app_notice(self.store, self.config, waiting)['title'], 'Waiting on Sam Lee: the quote')
-        self.assertEqual(a.app_notice(self.store, self.config, promised(mine, 'Send Sam the deck'))['title'], 'Send Sam the deck')
+        self.assertEqual(machine_delivery_push.app_notice(self.store, self.config, waiting)['title'], 'Waiting on Sam Lee: the quote')
+        self.assertEqual(machine_delivery_push.app_notice(self.store, self.config, promised(mine, 'Send Sam the deck'))['title'], 'Send Sam the deck')
         back = self.card('Call the plumber', status='prepared', outcome=json.dumps({'state': 'snoozed'}))
-        self.assertEqual(a.app_notice(self.store, self.config, back)['title'], 'Reminder: Call the plumber')
+        self.assertEqual(machine_delivery_push.app_notice(self.store, self.config, back)['title'], 'Reminder: Call the plumber')
         # the web push, the phone's line and Telegram say the same
         self.app.action('push_subscribe', SUB, owner_dashboard=True)
         self.register(fetch=True)
         with self.store.connect() as db:
             row = dict(db.execute('SELECT * FROM suggestions WHERE id=?', (waiting,)).fetchone(), _result_notice=True)
-            row['_lead'] = a.result_lead(db, row)
-        a.push_notify(self.store, self.config, row, self.sender)
+            row['_lead'] = machine_delivery_push.result_lead(db, row)
+        machine_delivery_push.push_notify(self.store, self.config, row, self.sender)
         with self.store.connect() as db:
             self.assertEqual(notify.app_line(db, waiting), 'Waiting on Sam Lee: the quote')
         self.assertEqual(self.web[-1]['payload']['title'], 'Waiting on Sam Lee: the quote')
-        with patch_everywhere(a, 'telegram_request', side_effect=lambda config, args: args):
-            sent = a.telegram({**self.config, 'dashboard_host': 'machine.example'}, {**row, 'message_id': 'web-1'}, 'send')
+        with patch_everywhere(machine_delivery_telegram, 'telegram_request', side_effect=lambda config, args: args):
+            sent = machine_delivery_telegram.telegram({**self.config, 'dashboard_host': 'machine.example'}, {**row, 'message_id': 'web-1'}, 'send')
         self.assertTrue(sent['message'].startswith('**Waiting on Sam Lee: the quote**'), sent['message'])
         with self.store.connect() as db:
-            a.security_levels.set_pref(db, 'notify_text', 'off')
-        self.assertEqual(a.app_notice(self.store, self.config, waiting)['title'], 'To-do')
+            security_levels.set_pref(db, 'notify_text', 'off')
+        self.assertEqual(machine_delivery_push.app_notice(self.store, self.config, waiting)['title'], 'To-do')
 
     def test_text_in_notifications_off_the_notice_keeps_to_the_fixed_words(self):
         with self.store.connect() as db:
-            a.security_levels.set_pref(db, 'notify_text', 'off')
-        notice = a.app_notice(self.store, self.config, self.card('Pay the secret invoice', status='prepared'))
+            security_levels.set_pref(db, 'notify_text', 'off')
+        notice = machine_delivery_push.app_notice(self.store, self.config, self.card('Pay the secret invoice', status='prepared'))
         self.assertEqual((notice['title'], notice['body'], notice['actions']), ('Ready', 'Tap to open.', ['snooze', 'done']))
         self.assertNotIn('secret', json.dumps(notice))
 
@@ -463,84 +478,84 @@ class AppPush(unittest.TestCase):
         self.register()
         done, waiting = self.card('Done one'), self.card('Still waiting')
         for sid in (done, waiting):
-            a.push_notify(self.store, self.config, {'id': sid, 'title': 'T', 'body': 'B', 'status': 'pending'}, self.sender)
+            machine_delivery_push.push_notify(self.store, self.config, {'id': sid, 'title': 'T', 'body': 'B', 'status': 'pending'}, self.sender)
         with self.store.connect() as db:
             notify.app_line_save(db, 'digest', 'Your morning')
-        self.assertEqual(a.app_clear_step(self.store, self.config), [])
+        self.assertEqual(machine_delivery_push.app_clear_step(self.store, self.config), [])
         with self.store.connect() as db:
             db.execute("UPDATE suggestions SET status='completed' WHERE id=?", (done,))
-        self.assertEqual(a.app_clear_step(self.store, self.config), [done])
+        self.assertEqual(machine_delivery_push.app_clear_step(self.store, self.config), [done])
         self.assertEqual(self.wakes()[-1], {'url': 'https://cp.example/api/fleet/app-push', 'auth': 'Bearer tok', 'action': 'wake', 'kind': 'clear', 'tag': done})
-        self.assertEqual(a.app_clear_step(self.store, self.config), [])  # once
+        self.assertEqual(machine_delivery_push.app_clear_step(self.store, self.config), [])  # once
         with self.store.connect() as db:
             db.execute("UPDATE suggestions SET status='snoozed' WHERE id=?", (waiting,))
             self.assertEqual(sorted(notify.app_lines(db)), sorted(['digest', waiting]))
-        self.assertEqual(a.app_clear_step(self.store, self.config), [waiting])
+        self.assertEqual(machine_delivery_push.app_clear_step(self.store, self.config), [waiting])
         self.assertEqual(len([w for w in self.wakes() if w['kind'] == 'clear']), 2)
 
     def test_the_morning_notice_has_a_body_from_the_digest(self):
         # The phone showed "Your morning" with an empty body: the digest's line and body are kept for its wakeup and
         # GET /api/notice returns both. Neither goes to the cloud.
         self.register()
-        a.push_send(self.store, self.config, [], {'title': 'Your morning', 'body': '2 to-dos: Reply to Sam, Pay the invoice · First meeting 10:00',
+        machine_delivery_push.push_send(self.store, self.config, [], {'title': 'Your morning', 'body': '2 to-dos: Reply to Sam, Pay the invoice · First meeting 10:00',
                                                   'url': '.', 'tag': 'digest', '_line': 'Your morning',
                                                   '_body': '2 to-dos: Reply to Sam, Pay the invoice · First meeting 10:00'}, 'digest', self.sender, wake='digest')
         self.assertEqual(self.wakes()[-1], {'url': 'https://cp.example/api/fleet/app-push', 'auth': 'Bearer tok', 'action': 'wake', 'kind': 'digest', 'tag': 'digest'})
-        notice = a.app_notice(self.store, self.config, 'digest')
+        notice = machine_delivery_push.app_notice(self.store, self.config, 'digest')
         self.assertEqual((notice['title'], notice['body']), ('Your morning', '2 to-dos: Reply to Sam, Pay the invoice · First meeting 10:00'))
         self.assertNotIn('Sam', json.dumps(self.wakes()))
 
     def test_the_morning_digest_wakes_the_phone_with_its_body(self):
         self.register()
         self.card('Reply to Sam about Tuesday')
-        morning = a.dt.datetime(2026, 10, 12, 9, 10, tzinfo=a.dt.timezone.utc)
-        with patch_everywhere(a, 'local_tz', return_value=a.dt.timezone.utc):
+        morning = dt.datetime(2026, 10, 12, 9, 10, tzinfo=dt.timezone.utc)
+        with patch_everywhere(timeutil, 'local_tz', return_value=dt.timezone.utc):
             self.app.digest_step(current=morning, push=self.sender)
-        notice = a.app_notice(self.store, self.config, 'digest')
+        notice = machine_delivery_push.app_notice(self.store, self.config, 'digest')
         self.assertEqual((notice['title'], notice['body']), ('Good morning, 1 new to-do', 'Reply to Sam about Tuesday'))
 
     def test_a_clear_with_a_broken_cloud_is_quiet(self):
         self.register()
         sid = self.card()
-        a.push_notify(self.store, self.config, {'id': sid, 'title': 'T', 'body': 'B', 'status': 'pending'}, self.sender)
+        machine_delivery_push.push_notify(self.store, self.config, {'id': sid, 'title': 'T', 'body': 'B', 'status': 'pending'}, self.sender)
         self.cloud.answers['wake'] = 500
         with self.store.connect() as db:
             db.execute("UPDATE suggestions SET status='completed' WHERE id=?", (sid,))
-        self.assertEqual(a.app_clear_step(self.store, self.config), [sid])
+        self.assertEqual(machine_delivery_push.app_clear_step(self.store, self.config), [sid])
 
     def test_web_push_and_app_together_and_a_broken_cloud_never_stops_web_push(self):
         self.app.action('push_subscribe', SUB, owner_dashboard=True)
         self.register()
-        results = a.push_notify(self.store, self.config, {'id': 'c1', 'title': 'T', 'body': 'B', 'status': 'pending'}, self.sender)
+        results = machine_delivery_push.push_notify(self.store, self.config, {'id': 'c1', 'title': 'T', 'body': 'B', 'status': 'pending'}, self.sender)
         self.assertEqual(results, [{'endpoint': SUB['endpoint'], 'status': 201}, {'status': 200, 'app': 1}])
         self.cloud.answers['wake'] = 500
-        with self.assertLogs(a.LOG, 'WARNING'):
-            results = a.push_notify(self.store, self.config, {'id': 'c2', 'title': 'T', 'body': 'B', 'status': 'pending'}, self.sender)
+        with self.assertLogs(machine_config.LOG, 'WARNING'):
+            results = machine_delivery_push.push_notify(self.store, self.config, {'id': 'c2', 'title': 'T', 'body': 'B', 'status': 'pending'}, self.sender)
         self.assertEqual(results, [{'endpoint': SUB['endpoint'], 'status': 201}])
         self.assertEqual(len(self.web), 2)
         # nothing registered: no request to the cloud at all
         with self.store.connect() as db:
             notify.app_device_remove(db, ['dev_1'])
         before = len(self.cloud.seen)
-        a.push_notify(self.store, self.config, {'id': 'c3', 'title': 'T', 'body': 'B', 'status': 'pending'}, self.sender)
+        machine_delivery_push.push_notify(self.store, self.config, {'id': 'c3', 'title': 'T', 'body': 'B', 'status': 'pending'}, self.sender)
         self.assertEqual(len(self.cloud.seen), before)
 
     def test_prefs_and_holds_apply_to_the_app_too(self):
         self.register()
         self.app.action('notify_set', {'kind': 'todo', 'channel': 'push', 'on': False}, owner_dashboard=True)
-        self.assertEqual(a.push_notify(self.store, self.config, {'id': 'c1', 'title': 'T', 'body': 'B', 'status': 'pending'}, self.sender), [])
+        self.assertEqual(machine_delivery_push.push_notify(self.store, self.config, {'id': 'c1', 'title': 'T', 'body': 'B', 'status': 'pending'}, self.sender), [])
         self.assertEqual(self.wakes(), [])
         self.app.action('notify_set', {'kind': 'todo', 'channel': 'push', 'on': True}, owner_dashboard=True)
         # A dashboard in use: held, then sent by notify_step once they are away, unless they saw it
-        t0 = a.dt.datetime(2026, 10, 12, 10, 0, tzinfo=UTC).timestamp()
+        t0 = dt.datetime(2026, 10, 12, 10, 0, tzinfo=UTC).timestamp()
         notify.mark_active(lambda: t0, client='desk', on=True)
         notify.mark_active(lambda: t0 + 5, client='desk', on=False)  # just left: held for a minute
         with patch.object(notify.time, 'time', return_value=t0 + 10):
-            a.push_notify(self.store, self.config, {'id': 'c1', 'title': 'T', 'body': 'B', 'status': 'pending'}, self.sender)
+            machine_delivery_push.push_notify(self.store, self.config, {'id': 'c1', 'title': 'T', 'body': 'B', 'status': 'pending'}, self.sender)
         self.assertEqual(self.wakes(), [])
         later = t0 + 5 + notify.AWAY_GRACE
-        with patch.object(notify.time, 'time', return_value=later), patch_everywhere(a, 'local_tz', return_value=UTC):
-            went = self.app.notify_step(current=a.dt.datetime.fromtimestamp(later, UTC), push=self.sender, mail=lambda *x: True)
+        with patch.object(notify.time, 'time', return_value=later), patch_everywhere(timeutil, 'local_tz', return_value=UTC):
+            went = self.app.notify_step(current=dt.datetime.fromtimestamp(later, UTC), push=self.sender, mail=lambda *x: True)
         self.assertEqual(went, ['push'])
         self.assertEqual([(w['kind'], w['tag']) for w in self.wakes()], [('todo', 'c1')])
         with self.store.connect() as db:
@@ -549,26 +564,26 @@ class AppPush(unittest.TestCase):
     def test_fleet_digest_and_held_fleet_keep_their_kind(self):
         self.register()
         rows = [{'id': 'q_1', 'name': 'Kim Lee', 'kind': 'intro', 'question': json.dumps({'about': 'Acme'})}]
-        with patch.object(a.fleet, 'push_payload', return_value={'title': 'Kim asks', 'body': 'x', 'url': '.', 'tag': 'fleet-q_1'}):
-            a.fleet_push(self.store, self.config, rows, self.sender)
+        with patch.object(fleet, 'push_payload', return_value={'title': 'Kim asks', 'body': 'x', 'url': '.', 'tag': 'fleet-q_1'}):
+            machine_delivery_deliver.fleet_push(self.store, self.config, rows, self.sender)
         self.assertEqual((self.wakes()[-1]['kind'], self.wakes()[-1]['tag']), ('fleet', 'fleet-q_1'))
         # held while in use, it still wakes as a Fleet one later
         notify.mark_active(client='desk', on=True)
-        with patch.object(a.fleet, 'push_payload', return_value={'title': 'Kim asks', 'body': 'x', 'url': '.', 'tag': 'fleet-q_2'}):
-            a.fleet_push(self.store, self.config, rows, self.sender)
+        with patch.object(fleet, 'push_payload', return_value={'title': 'Kim asks', 'body': 'x', 'url': '.', 'tag': 'fleet-q_2'}):
+            machine_delivery_deliver.fleet_push(self.store, self.config, rows, self.sender)
         with self.store.connect() as db:
             payload = json.loads(db.execute("SELECT payload FROM notify_queue WHERE channel='push'").fetchone()[0])
         self.assertEqual(payload['_wake'], 'fleet')
-        a.push_send(self.store, self.config, [], payload, 'held', self.sender, kind='result', held=True)
+        machine_delivery_push.push_send(self.store, self.config, [], payload, 'held', self.sender, kind='result', held=True)
         self.assertEqual((self.wakes()[-1]['kind'], self.wakes()[-1]['tag']), ('fleet', 'fleet-q_2'))
         # the digest; silent at the dashboard: no wakeup
-        a.push_send(self.store, self.config, [], {'title': 'Your morning', 'body': '', 'url': '.', 'tag': 'digest'}, 'digest', self.sender, wake='digest')
+        machine_delivery_push.push_send(self.store, self.config, [], {'title': 'Your morning', 'body': '', 'url': '.', 'tag': 'digest'}, 'digest', self.sender, wake='digest')
         self.assertEqual(self.wakes()[-1]['kind'], 'digest')
         n = len(self.wakes())
-        a.push_send(self.store, self.config, [], {'title': 'Your morning', 'tag': 'digest', 'silent': True}, 'digest', self.sender, wake='digest')
+        machine_delivery_push.push_send(self.store, self.config, [], {'title': 'Your morning', 'tag': 'digest', 'silent': True}, 'digest', self.sender, wake='digest')
         self.assertEqual(len(self.wakes()), n)
         # a tag that isn't an id is never passed on
-        a.push_send(self.store, self.config, [], {'title': 'x', 'tag': 'a b/c'}, 'x', self.sender, wake='digest')
+        machine_delivery_push.push_send(self.store, self.config, [], {'title': 'x', 'tag': 'a b/c'}, 'x', self.sender, wake='digest')
         self.assertEqual(self.wakes()[-1]['tag'], 'digest')
 
     def test_the_brief_and_the_morning_name_their_own_view(self):
@@ -591,37 +606,37 @@ class AppPush(unittest.TestCase):
         fl = 'fl_' + 'b' * 16
         titles = ['Acme is waiting for a reply (3 emails)', 'Globex went quiet', 'Kim and Sam meet Initech on Tuesday']
         self.app.fleet_notify_brief('Your Fleet today\n• ...', 'https://m.example/#fleet-brief=' + fl, titles)
-        notice = a.app_notice(self.store, self.config, 'fleet-brief-' + fl)
+        notice = machine_delivery_push.app_notice(self.store, self.config, 'fleet-brief-' + fl)
         self.assertEqual((notice['title'], notice['body']), ('What your Fleet saw', '3 things for the team: Acme is waiting for a reply (3 emails), Globex went quiet, …'))
         self.assertNotIn('Acme', json.dumps(self.wakes()))
         self.app.fleet_notify_brief('Your Fleet today', '', [])
-        self.assertEqual(a.app_notice(self.store, self.config, 'fleet-brief')['body'], 'Nothing that needs the team.')
+        self.assertEqual(machine_delivery_push.app_notice(self.store, self.config, 'fleet-brief')['body'], 'Nothing that needs the team.')
         with self.store.connect() as db:
-            a.security_levels.set_pref(db, 'notify_text', 'off')
+            security_levels.set_pref(db, 'notify_text', 'off')
         self.app.fleet_notify_brief('Your Fleet today', 'https://m.example/#fleet-brief=' + fl, titles)
-        self.assertEqual(a.app_notice(self.store, self.config, 'fleet-brief-' + fl)['body'], '3 things for the team')
+        self.assertEqual(machine_delivery_push.app_notice(self.store, self.config, 'fleet-brief-' + fl)['body'], '3 things for the team')
 
     def test_a_fleet_update_has_its_line_under_a_title_that_says_what_it_is(self):
         # The phone showed "Your Fleet" with nothing under it (fleet_tell): its line was the title, its body never kept
         self.register(fetch=True)
         self.app.action('push_subscribe', SUB, owner_dashboard=True)
-        web = patch_everywhere(a, 'push_node', side_effect=lambda config, request: self.sender(request))
+        web = patch_everywhere(machine_delivery_push, 'push_node', side_effect=lambda config, request: self.sender(request))
         web.start(); self.addCleanup(web.stop)
         self.app.fleet_tell('Pat accepted your handoff.', 'q_' + 'c' * 16)
-        notice = a.app_notice(self.store, self.config, 'fleet-q_' + 'c' * 16)
+        notice = machine_delivery_push.app_notice(self.store, self.config, 'fleet-q_' + 'c' * 16)
         self.assertEqual((notice['title'], notice['body']), ('Fleet update', 'Pat accepted your handoff.'))
         self.assertEqual((self.web[-1]['payload']['title'], self.web[-1]['payload']['body']), ('Fleet update', 'Pat accepted your handoff.'))
         self.assertNotIn('Pat', json.dumps(self.wakes()))  # the line stays on the Machine
         # a Fleet question and a notice keep their body for the app too
         rows = [{'id': 'q_1', 'name': 'Kim Lee', 'kind': 'intro', 'question': json.dumps({'about': 'Acme'})}]
-        with patch.object(a.fleet, 'push_payload', return_value={'title': "Kim's Machine asks", 'body': 'An intro to Acme?', 'url': '.', 'tag': 'fleet-q_1'}):
-            a.fleet_push(self.store, self.config, rows, self.sender)
-        self.assertEqual(a.app_notice(self.store, self.config, 'fleet-q_1')['body'], 'An intro to Acme?')
+        with patch.object(fleet, 'push_payload', return_value={'title': "Kim's Machine asks", 'body': 'An intro to Acme?', 'url': '.', 'tag': 'fleet-q_1'}):
+            machine_delivery_deliver.fleet_push(self.store, self.config, rows, self.sender)
+        self.assertEqual(machine_delivery_push.app_notice(self.store, self.config, 'fleet-q_1')['body'], 'An intro to Acme?')
         # Text in notifications off: the title and a plain line, nothing of what happened
         with self.store.connect() as db:
-            a.security_levels.set_pref(db, 'notify_text', 'off')
+            security_levels.set_pref(db, 'notify_text', 'off')
         self.app.fleet_tell('Pat accepted your handoff.', 'q_' + 'd' * 16)
-        notice = a.app_notice(self.store, self.config, 'fleet-q_' + 'd' * 16)
+        notice = machine_delivery_push.app_notice(self.store, self.config, 'fleet-q_' + 'd' * 16)
         self.assertEqual((notice['title'], notice['body']), ('Fleet update', 'Tap to open.'))
         self.assertEqual(self.web[-1]['payload']['body'], 'Tap to open.')
 
@@ -631,21 +646,21 @@ class AppPush(unittest.TestCase):
         self.register(fetch=True)
         self.app.action('push_subscribe', SUB, owner_dashboard=True)
         for sid, row, state in (('card_r1', {'status': 'prepared'}, 'ready'), ('card_r2', {'status': 'accepted', 'preparation_status': 'blocked'}, 'needs')):
-            a.push_notify(self.store, self.config, {'id': sid, 'title': 'Pay the invoice', 'body': 'B', 'reminder': True, **row}, self.sender)
+            machine_delivery_push.push_notify(self.store, self.config, {'id': sid, 'title': 'Pay the invoice', 'body': 'B', 'reminder': True, **row}, self.sender)
             self.assertEqual((self.wakes()[-1]['kind'], self.wakes()[-1].get('state')), ('result', state))
         # Every push has a line under its title: the web push and the phone's notice, also with Text in notifications off
         with self.store.connect() as db:
-            a.security_levels.set_pref(db, 'notify_text', 'off')
+            security_levels.set_pref(db, 'notify_text', 'off')
         sid = self.card('Pay the secret invoice', status='prepared')
-        a.push_notify(self.store, self.config, {'id': sid, 'title': 'Pay the secret invoice', 'body': 'B', 'status': 'prepared', '_result_notice': True}, self.sender)
+        machine_delivery_push.push_notify(self.store, self.config, {'id': sid, 'title': 'Pay the secret invoice', 'body': 'B', 'status': 'prepared', '_result_notice': True}, self.sender)
         self.assertEqual((self.web[-1]['payload']['title'], self.web[-1]['payload']['body']), ('Ready', 'Tap to open.'))
-        self.assertEqual(a.app_notice(self.store, self.config, sid)['body'], 'Tap to open.')
+        self.assertEqual(machine_delivery_push.app_notice(self.store, self.config, sid)['body'], 'Tap to open.')
         self.assertNotIn('secret', json.dumps(self.web[-1]))
 
     def test_the_weekly_recap_wakes_the_phone_with_a_line_and_a_body(self):
         self.register(fetch=True)
         self.app.recap_push('Your week\nNeeds you first: Reply to Sam\nDone: 4', '2026-W45')
-        notice = a.app_notice(self.store, self.config, 'recap-2026-W45')
+        notice = machine_delivery_push.app_notice(self.store, self.config, 'recap-2026-W45')
         self.assertEqual((notice['title'], notice['body']), ('Your week', 'Needs you first: Reply to Sam Done: 4'))
 
     def test_devices_the_cloud_dropped_go_here_too(self):
@@ -653,19 +668,19 @@ class AppPush(unittest.TestCase):
         self.cloud.answers.update(register={'id': 'dev_2'})
         self.register(label='Old phone')
         self.cloud.answers.update(wake={'sent': 1, 'removed': 1}, list={'devices': [{'id': 'dev_1', 'platform': 'fcm', 'label': 'Pixel 8'}]})
-        a.push_notify(self.store, self.config, {'id': 'c1', 'title': 'T', 'body': 'B', 'status': 'pending'}, self.sender)
+        machine_delivery_push.push_notify(self.store, self.config, {'id': 'c1', 'title': 'T', 'body': 'B', 'status': 'pending'}, self.sender)
         self.assertEqual([d['id'] for d in self.app.notify_view()['app_devices']], ['dev_1'])
         self.cloud.answers.update(wake={'sent': 0, 'removed': ['dev_1']})
-        a.push_notify(self.store, self.config, {'id': 'c2', 'title': 'T', 'body': 'B', 'status': 'pending'}, self.sender)
+        machine_delivery_push.push_notify(self.store, self.config, {'id': 'c2', 'title': 'T', 'body': 'B', 'status': 'pending'}, self.sender)
         self.assertEqual(self.app.notify_view()['app_devices'], [])
 
     def test_reach_counts_the_app(self):
-        self.assertEqual(a.reminder_channels(self.store, self.config)['push'], 0)
+        self.assertEqual(machine_delivery_push.reminder_channels(self.store, self.config)['push'], 0)
         self.register()
-        self.assertEqual(a.reminder_channels(self.store, self.config)['push'], 1)
+        self.assertEqual(machine_delivery_push.reminder_channels(self.store, self.config)['push'], 1)
         self.assertTrue(self.app.fleet_pings())
         self.config['credentials'] = {}  # unpaired: the app can't be reached
-        self.assertEqual(a.reminder_channels(self.store, self.config)['push'], 0)
+        self.assertEqual(machine_delivery_push.reminder_channels(self.store, self.config)['push'], 0)
 
     def test_push_test_from_the_app_wakes_that_phone_only(self):
         self.register()
@@ -684,30 +699,30 @@ class AppPush(unittest.TestCase):
 class PhoneApp(unittest.TestCase):
     """Settings, Phone app: a QR code of the app's connect link for a self-hosted Machine, a line for a hosted one."""
     def test_self_hosted_gets_the_connect_link_and_its_code(self):
-        view = a.phone_app({'dashboard_host': 'machine.tailnet.ts.net', 'dashboard_path': '/assistant/'})
+        view = machine_delivery_push.phone_app({'dashboard_host': 'machine.tailnet.ts.net', 'dashboard_path': '/assistant/'})
         self.assertEqual(view['url'], 'https://machine.tailnet.ts.net/assistant/')
         self.assertEqual(view['link'], 'computer.themachine.app://connect?u=https%3A%2F%2Fmachine.tailnet.ts.net%2Fassistant%2F')
-        self.assertEqual(view['qr'], a.qr.encode(view['link']))
+        self.assertEqual(view['qr'], qr.encode(view['link']))
         self.assertEqual(set(view), {'hosted', 'url', 'link', 'qr'})  # nothing secret in it
-        self.assertEqual(a.phone_app({'manage_url': 'https://app.example/manage', 'dashboard_host': 'x.example'}), {'hosted': True})
-        self.assertEqual(a.phone_app({}), {'hosted': False})
+        self.assertEqual(machine_delivery_push.phone_app({'manage_url': 'https://app.example/manage', 'dashboard_host': 'x.example'}), {'hosted': True})
+        self.assertEqual(machine_delivery_push.phone_app({}), {'hosted': False})
 
     def test_on_the_network_it_signs_in_like_a_hosted_machine(self):
         config = {'dashboard_host': 'machine.tailnet.ts.net'}
-        with patch_everywhere(a, 'cloud_target', return_value=('https://app.example', 'token')):
-            self.assertEqual(a.phone_app(config), {'hosted': True})  # no code: the account finds it
-        with patch_everywhere(a, 'cloud_target', return_value=None):
-            self.assertIn('qr', a.phone_app(config))
+        with patch_everywhere(machine_delivery_push, 'cloud_target', return_value=('https://app.example', 'token')):
+            self.assertEqual(machine_delivery_push.phone_app(config), {'hosted': True})  # no code: the account finds it
+        with patch_everywhere(machine_delivery_push, 'cloud_target', return_value=None):
+            self.assertIn('qr', machine_delivery_push.phone_app(config))
 
     def test_the_dashboard_shows_it_and_the_network_line_once(self):
-        apps = (Path(a.ROOT) / 'dashboard' / 'settings-apps.js').read_text(encoding='utf-8')
+        apps = (Path(machine_config.ROOT) / 'dashboard' / 'settings-apps.js').read_text(encoding='utf-8')
         body = re.search(r'^function appsSignIn\(.*?(?=^\S)', apps, re.M | re.S)[0]
         self.assertIn('qrSvg(p.qr)', body)  # in Settings, Apps, under the stores (not General: one place for the app)
         self.assertIn("t('Install the app, then scan this with the phone’s camera.')", body)
         self.assertIn("t('The app signs in with your account.')", body)
         self.assertIn("t('Not on the Network?')", body)  # the code only folded, for a Machine not on the Network
         self.assertLess(body.index("<details class=\"connect-alt phone-own\">"), body.index('qrSvg(p.qr)'))
-        device = (Path(a.ROOT) / 'dashboard' / 'settings-device.js').read_text(encoding='utf-8')
+        device = (Path(machine_config.ROOT) / 'dashboard' / 'settings-device.js').read_text(encoding='utf-8')
         body = re.search(r'^function phoneAppRender\(\).*?(?=^\S)', device, re.M | re.S)[0]
         self.assertIn("devStore.set('app-push-network',1)", body)  # remembered: said once
         self.assertIn("t('Notifications in the app need The Machine Network. The app works without them.')", body)
@@ -716,8 +731,8 @@ class PhoneApp(unittest.TestCase):
 
 class Share(unittest.TestCase):
     def test_new_todo_defines_machine_share_that_only_opens_the_dialog(self):
-        source = (Path(a.ROOT) / 'dashboard' / 'new-todo.js').read_text(encoding='utf-8')
-        page = dashboard_parts.assemble(Path(a.ROOT))
+        source = (Path(machine_config.ROOT) / 'dashboard' / 'new-todo.js').read_text(encoding='utf-8')
+        page = dashboard_parts.assemble(Path(machine_config.ROOT))
         self.assertIn('window.machineShare=function', page)
         body = re.search(r'window\.machineShare=function.*?return true};', source, re.S)[0]
         self.assertIn('ncOpen()', body)
@@ -732,13 +747,13 @@ class InApp(unittest.TestCase):
     """In the mobile app (Apple 3.1.3(b), Google Play the same) nothing leads to buying: the page marks itself .in-app
     from the WebView's user agent and hides every [data-buy]. Open account stays, for deleting the account (5.1.1(v))."""
     def test_detection_and_rule(self):
-        page = dashboard_parts.assemble(Path(a.ROOT))
+        page = dashboard_parts.assemble(Path(machine_config.ROOT))
         head = page[:page.index('</script>')]  # set before anything renders
         self.assertIn("/ TheMachineApp\\/\\d/.test(navigator.userAgent))document.documentElement.classList.add('in-app')", head)
         self.assertIn('.in-app [data-buy]{display:none!important}', page)
 
     def test_account_buttons_that_buy_are_marked_and_open_account_is_not(self):
-        source = (Path(a.ROOT) / 'dashboard' / 'settings-general.js').read_text(encoding='utf-8')
+        source = (Path(machine_config.ROOT) / 'dashboard' / 'settings-general.js').read_text(encoding='utf-8')
         code = '\n'.join(re.search(rf'^(?:const|function) {name}\b.*?$(?:\n .*$)*', source, re.M)[0] for name in ('ACCT_GO', 'ACCT_BUY', 'acctGo'))
         script = ('const esc=s=>String(s);' + code + ';const links={account:"https://a.example/a",plan:"https://a.example/p",portal:"https://a.example/b",'
                   'cancel:"https://a.example/c",fleet:"https://a.example/f",network:"https://a.example/n",connections:"https://a.example/s"},actions=Object.keys(links);'
@@ -752,7 +767,7 @@ class InApp(unittest.TestCase):
         # The quiet end of the tab also holds Delete account, which the app keeps: each buying link is marked, and the
         # line goes when nothing in it is left to show
         self.assertIn("end.innerHTML=quiet.join('')", source)
-        self.assertIn('.in-app .acct-danger:not(:has(>:not([data-buy]))){display:none}', dashboard_parts.assemble(Path(a.ROOT)))
+        self.assertIn('.in-app .acct-danger:not(:has(>:not([data-buy]))){display:none}', dashboard_parts.assemble(Path(machine_config.ROOT)))
         self.assertIn("const ACCT_BUY=new Set(['plan','portal','cancel','fleet','billing','withdraw','network']);", source)
         self.assertIn("b.toggleAttribute('data-buy',!paired)", source)  # Join the Network (a sign-up) when not paired
 

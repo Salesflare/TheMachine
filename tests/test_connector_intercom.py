@@ -9,7 +9,11 @@ import urllib.error
 from unittest.mock import Mock, patch
 
 from connectors import intercom
-from test_connectors import a, Response
+from test_connectors import FOR_ONBOARDING, Response
+import machine.main as machine_main
+import machine.sources.connectors as machine_sources_connectors
+import machine.store.cards as machine_store_cards
+import sources
 
 TOKEN = 'fixture-intercom-token'
 ACCOUNT = {**intercom.SETUP['account'], 'workspace_id': 'abc123', 'admin_id': '42', 'region': 'us'}
@@ -28,9 +32,9 @@ class IntercomTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'events.sqlite')
+        self.store = machine_main.Store(Path(self.temp.name) / 'events.sqlite')
         self.credential = Mock(return_value=TOKEN + '\n')
-        self.helpers = types.SimpleNamespace(SourceError=a.SourceError, Skips=a.CONNECTOR_HELPERS.Skips, iso=a.CONNECTOR_HELPERS.iso, credential=self.credential)
+        self.helpers = types.SimpleNamespace(SourceError=sources.SourceError, Skips=machine_sources_connectors.CONNECTOR_HELPERS.Skips, iso=machine_sources_connectors.CONNECTOR_HELPERS.iso, credential=self.credential)
         self.me = copy.deepcopy(ME)
         self.hosts = {'api.intercom.io'}  # where the token is known
         self.pages = [{'type': 'conversation.list', 'conversations': [{'id': '1'}], 'total_count': 1,
@@ -71,8 +75,8 @@ class IntercomTests(unittest.TestCase):
         return self.store.events([ACCOUNT['id']])
 
     def test_it_is_a_connector_with_setup(self):
-        self.assertIs(a.load_connector('intercom'), a.load_connector('intercom'))
-        self.assertEqual(a.source_kind('intercom.conversation'), 'Intercom')
+        self.assertIs(machine_sources_connectors.load_connector('intercom'), machine_sources_connectors.load_connector('intercom'))
+        self.assertEqual(machine_store_cards.source_kind('intercom.conversation'), 'Intercom')
         setup = intercom.SETUP
         self.assertEqual((setup['label'], setup['secret'], setup.get('ask')), ('Intercom', 'Intercom access token', None))
         self.assertIn('Sign in with Intercom', setup['note'])  # never a token from a developer console
@@ -86,7 +90,7 @@ class IntercomTests(unittest.TestCase):
                              ('POST', '/conversations/1/tags'), ('DELETE', '/conversations/1'), ('POST', '/messages'),
                              ('GET', '/conversations/1?token=x'), ('GET', '/contacts'), ('POST', '/me'), ('GET', '/conversations/search'),
                              ('GET', '/conversations/../admins')):
-            with self.subTest(method=method, path=path), self.assertRaisesRegex(a.SourceError, '^unsupported_intercom_method$'):
+            with self.subTest(method=method, path=path), self.assertRaisesRegex(sources.SourceError, '^unsupported_intercom_method$'):
                 source.request(method, path, {})
         self.credential.assert_not_called()
         self.assertEqual(self.requests, [])
@@ -102,14 +106,14 @@ class IntercomTests(unittest.TestCase):
         self.assertEqual(account['workspace_id'], 'abc123')
         # an account keeps its workspace: a token from another one is refused, nothing changes
         other = {**intercom.SETUP['account'], 'workspace_id': 'other1', 'workspace_name': 'Other'}
-        with self.assertRaisesRegex(a.SourceError, '^account_identity_mismatch$'):
+        with self.assertRaisesRegex(sources.SourceError, '^account_identity_mismatch$'):
             intercom.check({}, other, self.helpers)
         self.assertEqual((other['workspace_id'], other['workspace_name']), ('other1', 'Other'))
         self.assertNotIn('admin_id', other)
         for broken in ({'app': None}, {'app': {'id_code': '../x'}}, {'id': 'x'}):
             with self.subTest(broken=broken):
                 self.me = {**copy.deepcopy(ME), **broken}
-                with self.assertRaisesRegex(a.SourceError, '^intercom_invalid_profile$'):
+                with self.assertRaisesRegex(sources.SourceError, '^intercom_invalid_profile$'):
                     intercom.check({}, dict(intercom.SETUP['account']), self.helpers)
         self.me = {**copy.deepcopy(ME), 'app': {'id_code': 'abc123'}}
         unnamed = dict(intercom.SETUP['account'])
@@ -128,7 +132,7 @@ class IntercomTests(unittest.TestCase):
 
     def test_a_rejected_token_says_so_without_the_token(self):
         self.hosts = set()
-        with self.assertRaises(a.SourceError) as caught:
+        with self.assertRaises(sources.SourceError) as caught:
             intercom.check({}, dict(intercom.SETUP['account']), self.helpers)
         self.assertEqual(str(caught.exception), 'intercom:HTTP_401')
         self.assertNotIn(TOKEN, repr(caught.exception.__dict__))
@@ -139,11 +143,11 @@ class IntercomTests(unittest.TestCase):
             with self.subTest(change=change):
                 self.me = {**copy.deepcopy(ME), **change}
                 self.requests.clear()
-                with self.assertRaisesRegex(a.SourceError, '^account_identity_mismatch$'):
+                with self.assertRaisesRegex(sources.SourceError, '^account_identity_mismatch$'):
                     self.sync()
                 self.assertEqual([p for _, _, p, _ in self.requests], ['/me'])
         self.me = copy.deepcopy(ME)
-        with self.assertRaisesRegex(a.SourceError, '^account_identity_mismatch$'):
+        with self.assertRaisesRegex(sources.SourceError, '^account_identity_mismatch$'):
             self.sync({k: v for k, v in ACCOUNT.items() if k != 'admin_id'})
         self.assertEqual(self.rows(), [])
 
@@ -187,7 +191,7 @@ class IntercomTests(unittest.TestCase):
         self.assertNotIn('watermark', first)
         self.assertEqual(len(self.rows()), 1)
         self.pages = [urllib.error.HTTPError('unused', 400, 'expired', {}, None)]
-        with self.assertRaisesRegex(a.SourceError, '^intercom:HTTP_400$'):
+        with self.assertRaisesRegex(sources.SourceError, '^intercom:HTTP_400$'):
             self.sync()
         after = self.store.checkpoint(ACCOUNT['id'])
         self.assertEqual(after['window']['before'], first['window']['before'])
@@ -198,7 +202,7 @@ class IntercomTests(unittest.TestCase):
         before = {'mode': 'incremental', 'watermark': 100, 'next_full': 9999999999}
         self.store.commit_page(ACCOUNT['id'], before, [], record_sync=False)
         self.details['1'] = urllib.error.HTTPError('unused', 503, 'down', {'Retry-After': '30'}, None)
-        with self.assertRaises(a.SourceError) as caught:
+        with self.assertRaises(sources.SourceError) as caught:
             self.sync()
         self.assertEqual((str(caught.exception), caught.exception.retry_after), ('intercom:HTTP_503', 30))
         self.assertEqual(self.store.checkpoint(ACCOUNT['id']), before)
@@ -213,7 +217,7 @@ class IntercomTests(unittest.TestCase):
                 self.pages = [copy.deepcopy(page), copy.deepcopy(page)]
                 if cursor == 'repeated':
                     self.sync()
-                with self.assertRaisesRegex(a.SourceError, '^intercom_invalid_cursor$'):
+                with self.assertRaisesRegex(sources.SourceError, '^intercom_invalid_cursor$'):
                     self.sync()
                 after = self.store.checkpoint(ACCOUNT['id'])
                 self.assertNotIn('window', after)
@@ -234,12 +238,12 @@ class IntercomTests(unittest.TestCase):
                             ({'type': 'error.list', 'errors': []}, 'intercom_invalid_response')):
             with self.subTest(label=label):
                 self.pages = [page]
-                with self.assertRaisesRegex(a.SourceError, '^' + label + '$'):
+                with self.assertRaisesRegex(sources.SourceError, '^' + label + '$'):
                     self.sync()
                 self.assertIsNone(self.store.checkpoint(ACCOUNT['id']))
         self.pages = [{'conversations': [{'id': '1'}], 'pages': {}}]
         self.details['1'] = {**conversation(), 'id': '2'}
-        with self.assertRaisesRegex(a.SourceError, '^intercom_conversation_identity_mismatch$'):
+        with self.assertRaisesRegex(sources.SourceError, '^intercom_conversation_identity_mismatch$'):
             self.sync()
         self.assertEqual(self.rows(), [])
 
@@ -248,7 +252,7 @@ class IntercomTests(unittest.TestCase):
         self.sync({**ACCOUNT, 'credential_variable': 'INTERCOM_ACCESS_TOKEN'})
         self.assertEqual(len(self.rows()), 1)
         self.credential.return_value = ''
-        with self.assertRaisesRegex(a.SourceError, '^missing_intercom_credential$'):
+        with self.assertRaisesRegex(sources.SourceError, '^missing_intercom_credential$'):
             self.sync()
 
     def test_connect_through_onboarding_saves_the_checked_account(self):
@@ -275,8 +279,8 @@ class IntercomTests(unittest.TestCase):
                 return options[0][0]
 
         ui = UI()
-        real = a.CONNECTOR_HELPERS.credential
-        with patch.object(onboarding, 'assistant', return_value=a):
+        real = machine_sources_connectors.CONNECTOR_HELPERS.credential
+        with patch.object(onboarding, 'assistant', return_value=FOR_ONBOARDING):
             account = onboarding.connect(config_path, 'intercom', ui, restart=False)
         self.assertEqual((account['admin_id'], account['region'], account['workspace_id'], account['workspace_name']),
                          ('42', 'us', 'abc123', 'Example Support'))
@@ -290,7 +294,7 @@ class IntercomTests(unittest.TestCase):
         token_file = Path(saved['credentials'][account['credential']])
         self.assertEqual(token_file.read_text().strip(), TOKEN)
         self.assertEqual(token_file.stat().st_mode & 0o777, 0o600)
-        self.assertIs(a.CONNECTOR_HELPERS.credential, real)
+        self.assertIs(machine_sources_connectors.CONNECTOR_HELPERS.credential, real)
 
 
 if __name__ == '__main__':

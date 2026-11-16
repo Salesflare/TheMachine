@@ -7,19 +7,23 @@ import tempfile, unittest
 from pathlib import Path
 from unittest.mock import patch
 from zoneinfo import ZoneInfo
-import assistant as a
 import locale_prefs
 import notify
 from seams import patch_everywhere  # noqa: E402
+import datetime as dt
+import machine.app.recap as machine_app_recap
+import machine.main as machine_main
+import sources
+import timeutil
 
-UTC = a.dt.timezone.utc
+UTC = dt.timezone.utc
 BXL = ZoneInfo('Europe/Brussels')
 SUB = {'endpoint': 'https://fcm.googleapis.com/fcm/send/abc', 'keys': {'p256dh': 'B' + 'x' * 86, 'auth': 'y' * 22}}
 work_day = lambda day: day.isoweekday() <= 5
 
 
 def at(day, h, m=0, tz=BXL):
-    return a.dt.datetime(2026, 11, day, h, m, tzinfo=tz)  # 2026-11-12 is a Thursday, the 13th a Friday
+    return dt.datetime(2026, 11, day, h, m, tzinfo=tz)  # 2026-11-12 is a Thursday, the 13th a Friday
 
 
 class When(unittest.TestCase):
@@ -33,17 +37,17 @@ class When(unittest.TestCase):
 
     def test_a_quarter_of_an_hour_before_the_end_of_the_hours_on_a_work_day(self):
         self.assertIsNone(self.due(at(12, 17, 44)))
-        self.assertEqual(self.due(at(12, 17, 45)), a.dt.date(2026, 11, 12))
-        self.assertEqual(self.due(at(12, 17, 59)), a.dt.date(2026, 11, 12))
+        self.assertEqual(self.due(at(12, 17, 45)), dt.date(2026, 11, 12))
+        self.assertEqual(self.due(at(12, 17, 59)), dt.date(2026, 11, 12))
         self.assertIsNone(self.due(at(12, 18, 0)))  # the hours ended: nothing goes outside them
         self.assertIsNone(self.due(at(14, 17, 50)))  # a Saturday
         self.assertIsNone(self.due(at(12, 17, 50), sent={'2026-11-12'}))  # once a day
-        self.assertEqual(self.due(at(13, 17, 50), sent={'2026-11-12'}), a.dt.date(2026, 11, 13))  # the next day is its own
+        self.assertEqual(self.due(at(13, 17, 50), sent={'2026-11-12'}), dt.date(2026, 11, 13))  # the next day is its own
 
     def test_a_time_of_its_own(self):
         self.assertIsNone(self.due(at(12, 16, 29), own='16:30'))
-        self.assertEqual(self.due(at(12, 16, 30), own='16:30'), a.dt.date(2026, 11, 12))
-        self.assertEqual(self.due(at(12, 17, 50), own='16:30'), a.dt.date(2026, 11, 12))  # the Machine was off: later that day
+        self.assertEqual(self.due(at(12, 16, 30), own='16:30'), dt.date(2026, 11, 12))
+        self.assertEqual(self.due(at(12, 17, 50), own='16:30'), dt.date(2026, 11, 12))  # the Machine was off: later that day
         self.assertIsNone(self.due(at(12, 18, 30), own='16:30'))  # never outside the hours
         self.assertIsNone(self.due(at(12, 7, 0), own='06:00'))  # a time before the hours waits for them: none that day
 
@@ -51,15 +55,15 @@ class When(unittest.TestCase):
         # 17:50 in Brussels is 16:50 UTC: the same moment read in UTC is before its time, in Brussels it is due
         moment = at(12, 16, 50, UTC)
         self.assertIsNone(self.due(moment))
-        self.assertEqual(self.due(moment.astimezone(BXL)), a.dt.date(2026, 11, 12))
+        self.assertEqual(self.due(moment.astimezone(BXL)), dt.date(2026, 11, 12))
         # New York's 17:45 is 23:45 in Brussels
-        self.assertEqual(self.due(at(12, 17, 45, ZoneInfo('America/New_York'))), a.dt.date(2026, 11, 12))
+        self.assertEqual(self.due(at(12, 17, 45, ZoneInfo('America/New_York'))), dt.date(2026, 11, 12))
 
     def test_hours_past_midnight_and_round_the_clock(self):
         # Thursday 20:00 to 02:00: its evening is Friday 01:45, still Thursday's work day
-        self.assertEqual(self.due(at(13, 1, 50), start='20:00', end='02:00'), a.dt.date(2026, 11, 12))
+        self.assertEqual(self.due(at(13, 1, 50), start='20:00', end='02:00'), dt.date(2026, 11, 12))
         self.assertIsNone(self.due(at(15, 1, 50), start='20:00', end='02:00'))  # Saturday night's belongs to the Saturday
-        self.assertEqual(self.due(at(12, 7, 50), start='08:00', end='08:00'), a.dt.date(2026, 11, 12))  # round the clock
+        self.assertEqual(self.due(at(12, 7, 50), start='08:00', end='08:00'), dt.date(2026, 11, 12))  # round the clock
 
 
 class Compose(unittest.TestCase):
@@ -150,17 +154,17 @@ class Step(unittest.TestCase):
     def setUp(self):
         notify.reset_active(); self.addCleanup(notify.reset_active)
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'events.sqlite')
-        self.app = object.__new__(a.App); self.app.store = self.store
+        self.store = machine_main.Store(Path(self.temp.name) / 'events.sqlite')
+        self.app = object.__new__(machine_main.App); self.app.store = self.store
         self.config = self.app.config = {'accounts': [{'id': 'home', 'boundary': 'personal:me'}, {'id': 'office', 'boundary': 'work:Acme'}], 'dashboard_host': 'the-machine.example', 'dashboard_path': '/assistant/'}
-        a.set_work_hours({'start': '08:00', 'end': '18:00'}); self.addCleanup(a.set_work_hours, None)
+        timeutil.set_work_hours({'start': '08:00', 'end': '18:00'}); self.addCleanup(timeutil.set_work_hours, None)
         self.sent = []
         self.sender = lambda request: self.sent.append(request) or {'results': [{'endpoint': SUB['endpoint'], 'status': 201}]}
         self.n = 0
 
     def card(self, title, account='office', **extra):
         self.n += 1
-        self.store.commit_page(account, {}, [{'account_id': account, 'source_id': f'm{self.n}', 'kind': 'gmail.message', 'occurred_at': a.now(),
+        self.store.commit_page(account, {}, [{'account_id': account, 'source_id': f'm{self.n}', 'kind': 'gmail.message', 'occurred_at': timeutil.now(),
                                              'title': 'Evidence', 'body': 'Evidence', 'metadata': {}, 'deleted': False}])
         sid = self.store.suggest(f'k{self.n}', title, 'Body', [self.n], **extra)['id']
         with self.store.connect() as db:
@@ -188,7 +192,7 @@ class Step(unittest.TestCase):
         self.card('Send the signed contract', due='2026-11-13')
         self.done(self.card('Book the dentist', account='home'), at(12, 13, 0))
         self.card('Answer the school', account='home')
-        with patch_everywhere(a, 'local_tz', return_value=BXL), patch_everywhere(a, 'recap_meetings', side_effect=self.meetings):
+        with patch_everywhere(timeutil, 'local_tz', return_value=BXL), patch_everywhere(machine_app_recap, 'recap_meetings', side_effect=self.meetings):
             out = self.app.evening_digest(evening.astimezone(UTC))
         self.assertTrue(out['text'].startswith('Good evening, 3 to-dos done today\n\nWork\nDone today\n'), out['text'])
         self.assertIn('\n• +2 meetings: Pricing call and 1 more\nOpen for tomorrow\n',
@@ -209,12 +213,12 @@ class Step(unittest.TestCase):
         mail = lambda url, token, subject, text: mailed.append(subject) or True
         self.config.update(credentials={'fleet': 'fleet'}, fleet={'url': 'https://cp.example/api/fleet'})
         self.done(self.card('Send the order form'), at(12, 10, 0))
-        with patch_everywhere(a, 'local_tz', return_value=BXL), patch_everywhere(a, 'credential', return_value='token'), \
-                patch_everywhere(a, 'recap_meetings', return_value=[]):
+        with patch_everywhere(timeutil, 'local_tz', return_value=BXL), patch_everywhere(sources, 'credential', return_value='token'), \
+                patch_everywhere(machine_app_recap, 'recap_meetings', return_value=[]):
             self.assertIsNone(self.app.evening_step(at(12, 17, 30).astimezone(UTC), push=self.sender, mail=mail))  # not yet
             self.assertEqual(self.app.evening_step(at(12, 17, 46).astimezone(UTC), push=self.sender, mail=mail), ['push', 'email'])
             # a restart: a new App on the same database finds the day taken
-            again = object.__new__(a.App); again.store = a.Store(self.store.path); again.config = self.config
+            again = object.__new__(machine_main.App); again.store = machine_main.Store(self.store.path); again.config = self.config
             self.assertIsNone(again.evening_step(at(12, 17, 50).astimezone(UTC), push=self.sender, mail=lambda *x: self.fail('twice')))
         self.assertEqual(self.sent[0]['payload']['title'], 'Good evening, 1 to-do done today')
         self.assertEqual(self.sent[0]['payload']['tag'], 'evening')
@@ -225,7 +229,7 @@ class Step(unittest.TestCase):
     def test_a_day_with_nothing_a_day_off_and_every_channel_off_send_nothing(self):
         self.app.action('push_subscribe', SUB, owner_dashboard=True)
         self.card('Answer the school')  # waiting, but nothing done today
-        with patch_everywhere(a, 'local_tz', return_value=BXL), patch_everywhere(a, 'recap_meetings', return_value=[]):
+        with patch_everywhere(timeutil, 'local_tz', return_value=BXL), patch_everywhere(machine_app_recap, 'recap_meetings', return_value=[]):
             self.assertEqual(self.app.evening_step(at(12, 17, 50).astimezone(UTC), push=self.sender), [])
             self.assertIsNone(self.app.evening_step(at(14, 17, 50).astimezone(UTC), push=self.sender))  # Saturday
             self.done(self.card('Send the order form'), at(13, 10, 0))
@@ -242,7 +246,7 @@ class Step(unittest.TestCase):
         self.app.action('push_subscribe', SUB, owner_dashboard=True)
         self.config['evening_at'] = '16:00'
         self.done(self.card('Send the order form'), at(12, 10, 0))
-        with patch_everywhere(a, 'local_tz', return_value=BXL), patch_everywhere(a, 'recap_meetings', return_value=[]):
+        with patch_everywhere(timeutil, 'local_tz', return_value=BXL), patch_everywhere(machine_app_recap, 'recap_meetings', return_value=[]):
             self.assertIsNone(self.app.evening_step(at(12, 15, 59).astimezone(UTC), push=self.sender))
             self.assertEqual(self.app.evening_step(at(12, 16, 0).astimezone(UTC), push=self.sender), ['push'])
 

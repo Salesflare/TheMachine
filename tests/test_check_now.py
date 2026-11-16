@@ -1,7 +1,6 @@
 """Check now (check_now.py and its wiring in assistant.py, cli.py and the dashboard): every source reads now and a review
 of what came in starts right away, whatever the time of day. 2026-11-05: an owner saw "Checked 19 minutes ago. Back to
 my nap." on an empty list and asked how to make it check now. No Gateway, no model call, nothing is sent."""
-import importlib.util
 import threading
 import time
 import tempfile
@@ -14,10 +13,13 @@ from seams import patch_everywhere
 import check_now
 import cli
 import dashboard_parts
+import datetime as dt
+import machine.actions as machine_actions
+import machine.app.sync as machine_app_sync
+import machine.main as machine_main
+import timeutil
 
 ROOT = Path(__file__).parent.parent
-spec = importlib.util.spec_from_file_location('check_assistant', ROOT / 'assistant.py')
-a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
 
 
 class Runner:
@@ -34,15 +36,15 @@ class FastStop:
 
 
 def event(n, prefix='s'):
-    return {'account_id': 'work', 'source_id': f'{prefix}{n}', 'kind': 'gmail.message', 'occurred_at': a.now(), 'title': 'Question',
+    return {'account_id': 'work', 'source_id': f'{prefix}{n}', 'kind': 'gmail.message', 'occurred_at': timeutil.now(), 'title': 'Question',
             'body': 'Can you confirm?', 'metadata': {}, 'deleted': False}
 
 
 class CheckNow(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'events.sqlite')
-        self.app = object.__new__(a.App); self.app.store = self.store
+        self.store = machine_main.Store(Path(self.temp.name) / 'events.sqlite')
+        self.app = object.__new__(machine_main.App); self.app.store = self.store
         self.app.config = {'accounts': [{'id': 'work', 'service': 'gmail'}, {'id': 'li', 'service': 'linkedin'},
                                         {'id': 'docs', 'service': 'google_docs', 'signals': False}], 'review_worker': {'enabled': True}}
         self.app.stop = FastStop()
@@ -74,13 +76,13 @@ class CheckNow(unittest.TestCase):
         # The source reads every few minutes are not what the owner waits for; the review into to-dos is
         with self.store.connect() as db:
             db.execute("INSERT INTO review_runs(run_id,status,started_at,updated_at,finished_at) VALUES('r1','ok',?,?,?)",
-                       (a.now(), a.now(), '2026-11-06T10:05:00+00:00'))
+                       (timeutil.now(), timeutil.now(), '2026-11-06T10:05:00+00:00'))
         view = self.app.check_view()
         self.assertEqual((view['reviewed'], view['waiting'], view['next_review'], view['soon']), ('2026-11-06T10:05:00+00:00', 0, None, False))
         self.store.commit_page('work', {}, [event(n) for n in range(12)])
         view = self.app.check_view()
         self.assertEqual((view['waiting'], view['soon']), (12, False))
-        due = a.dt.datetime.fromisoformat(view['next_review']) - a.dt.datetime.now(a.dt.timezone.utc)
+        due = dt.datetime.fromisoformat(view['next_review']) - dt.datetime.now(dt.timezone.utc)
         self.assertAlmostEqual(due.total_seconds(), 900, delta=60)  # once the oldest waited 15 minutes
         self.store.commit_page('work', {}, [event(n, 'b') for n in range(20)])
         self.assertTrue(self.app.check_view()['soon'])  # 32 of 40: the batch is nearly full
@@ -90,7 +92,7 @@ class CheckNow(unittest.TestCase):
         # A new owner's first look (or the usual rhythm) reviews: the head's Check now is busy, and pressing starts no check
         self.store.commit_page('work', {}, [event(1)])
         with self.store.connect() as db:
-            db.execute("INSERT INTO review_runs(run_id,status,started_at,updated_at,window_hours) VALUES('first','running',?,?,168)", (a.now(), a.now()))
+            db.execute("INSERT INTO review_runs(run_id,status,started_at,updated_at,window_hours) VALUES('first','running',?,?,168)", (timeutil.now(), timeutil.now()))
         view = self.app.check_view()
         self.assertEqual((view['phase'], view['reviewing']), (None, True))
         with patch.object(threading, 'Thread') as thread:
@@ -111,7 +113,7 @@ class CheckNow(unittest.TestCase):
         account = {'id': 'work', 'service': 'gmail', 'poll_seconds': 300}
         self.app.config['accounts'][0] = account
         self.app.stop = threading.Event()
-        with patch.object(self.app, 'resume_wait', return_value=0), patch_everywhere(a, 'sync_source', side_effect=sync):
+        with patch.object(self.app, 'resume_wait', return_value=0), patch_everywhere(machine_app_sync, 'sync_source', side_effect=sync):
             collector = threading.Thread(target=self.app.collector, args=(account,), daemon=True); collector.start()
             self.wait_for(lambda: 'work' in self.app.collector_resting)
             self.assertEqual(reads, ['work'])  # the first read; the next is 5 minutes away
@@ -125,8 +127,8 @@ class CheckNow(unittest.TestCase):
                 self.assertEqual(self.app.check.phase(), 'reviewing')
                 self.assertEqual(self.app.review_step(Runner()), 'admitted')
                 with self.store.connect() as db:
-                    db.execute("UPDATE review_runs SET status='ok',finished_at=?", (a.now(),))
-                    db.execute("INSERT INTO suggestions(id,dedupe_key,title,body,event_ids,account_ids,created_at) VALUES('s1','k1','Reply','','[]','[]',?)", (a.now(),))
+                    db.execute("UPDATE review_runs SET status='ok',finished_at=?", (timeutil.now(),))
+                    db.execute("INSERT INTO suggestions(id,dedupe_key,title,body,event_ids,account_ids,created_at) VALUES('s1','k1','Reply','','[]','[]',?)", (timeutil.now(),))
                 self.wait_for(lambda: self.app.check.phase() is None)
         view = self.app.action('check_now', {'status': True})['check']
         self.assertEqual((view['phase'], view['found']), (None, 1))
@@ -161,8 +163,8 @@ class CheckNow(unittest.TestCase):
         self.assertIsNone(self.app.check.phase())
 
     def test_the_dashboard_the_phone_app_and_chat_may_ask_but_it_is_no_owner_decision(self):
-        self.assertIn('check_now', a.DASHBOARD_ACTIONS)
-        self.assertNotIn('check_now', a.OWNER_ACTIONS)  # the agent's `assistant check` may call it too
+        self.assertIn('check_now', machine_actions.DASHBOARD_ACTIONS)
+        self.assertNotIn('check_now', machine_actions.OWNER_ACTIONS)  # the agent's `assistant check` may call it too
         args = cli.parser().parse_args(['check', '--wait'])
         self.assertEqual((args.func, args.wait), (cli.cmd_check, True))
         page = dashboard_parts.assemble(ROOT)

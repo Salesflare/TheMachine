@@ -6,8 +6,10 @@ from unittest.mock import patch
 import test_action_recovery as r
 import test_preparation as p
 from seams import patch_everywhere  # noqa: E402
+import datetime as dt
+import machine.delivery.push as machine_delivery_push
+import notify
 
-a = p.a
 STEP = {'kind': 'finish', 'label': 'Submit issue', 'url': 'https://tracker.invalid/new',
         'instructions': 'File ONE issue in acme/app titled "Show every linked account". Return its link.',
         'preview': 'New issue in acme/app: Show every linked account'}
@@ -29,8 +31,8 @@ class DoneReport(unittest.TestCase):
 
     def finish(self, state, body=RESULT, pushes=None):
         sent = [] if pushes is None else pushes
-        with patch_everywhere(a, 'push_reach', return_value=([{'endpoint': 'https://push.invalid/1'}], 0)), \
-             patch_everywhere(a, 'push_send', side_effect=lambda store, config, subs, payload, label, sender=None, **k: sent.append((payload, k)) or [{'status': 201}]):
+        with patch_everywhere(machine_delivery_push, 'push_reach', return_value=([{'endpoint': 'https://push.invalid/1'}], 0)), \
+             patch_everywhere(machine_delivery_push, 'push_send', side_effect=lambda store, config, subs, payload, label, sender=None, **k: sent.append((payload, k)) or [{'status': 201}]):
             self.app.action('prepare', {'suggestion_id': self.sid, 'job_id': self.job()['job_id'], 'body': body,
                                         'next_actions': [{'kind': 'open', 'label': 'Open issue', 'url': 'https://tracker.invalid/acme/app/42'}] if state == 'completed' else [STEP],
                                         'outcome': 'done' if state == 'completed' else 'needs_you', 'needs': 'Sign in',
@@ -44,7 +46,7 @@ class DoneReport(unittest.TestCase):
         card = self.card()
         self.assertEqual(card['status'], 'completed')
         self.assertTrue(card['done_report'])
-        self.assertTrue(a.reported(card))
+        self.assertTrue(machine_delivery_push.reported(card))
         # The phone hears it is done, with what happened, replacing the to-do's earlier notification
         self.assertEqual(len(pushes), 1)
         payload, kind = pushes[0]
@@ -54,20 +56,20 @@ class DoneReport(unittest.TestCase):
         self.assertEqual(payload['tag'], self.sid)
         self.assertEqual(kind['kind'], 'result')
         # The phone app's own line says done, not "gone"; its notification stays until the owner saw it
-        notice = a.app_notice(self.store, self.app.config, self.sid)
+        notice = machine_delivery_push.app_notice(self.store, self.app.config, self.sid)
         self.assertEqual(notice['line'], 'Done: Prepare a useful draft')
         self.assertIn('#42', notice['body'])
         with self.store.connect() as db:
-            a.notify.app_line_save(db, self.sid, 'Ready: Prepare a useful draft')
-        with patch_everywhere(a, 'app_wake') as wake:
-            self.assertEqual(a.app_clear_step(self.store, self.app.config), [])
+            notify.app_line_save(db, self.sid, 'Ready: Prepare a useful draft')
+        with patch_everywhere(machine_delivery_push, 'app_wake') as wake:
+            self.assertEqual(machine_delivery_push.app_clear_step(self.store, self.app.config), [])
         wake.assert_not_called()
         # Got it: only in Done from then on, and the phone's notification goes
         self.assertEqual(self.app.action('card_report_seen', {'ids': [self.sid]}, owner_dashboard=True), {'seen': 1})
         self.assertIsNone(self.card()['done_report'])
-        self.assertEqual(a.app_notice(self.store, self.app.config, self.sid), {'gone': True})
-        with patch_everywhere(a, 'app_wake') as wake:
-            self.assertEqual(a.app_clear_step(self.store, self.app.config), [self.sid])
+        self.assertEqual(machine_delivery_push.app_notice(self.store, self.app.config, self.sid), {'gone': True})
+        with patch_everywhere(machine_delivery_push, 'app_wake') as wake:
+            self.assertEqual(machine_delivery_push.app_clear_step(self.store, self.app.config), [self.sid])
 
     def test_got_it_is_the_owners_own(self):
         self.start()
@@ -84,7 +86,7 @@ class DoneReport(unittest.TestCase):
         card = self.card()
         self.assertEqual(card['status'], 'prepared')
         self.assertIsNone(card['done_report'])
-        self.assertFalse(a.reported(card))
+        self.assertFalse(machine_delivery_push.reported(card))
         self.assertEqual(pushes, [])
         self.assertEqual(self.q('SELECT status FROM action_jobs')['status'], 'needs_input')
 
@@ -112,9 +114,9 @@ class DoneReport(unittest.TestCase):
         self.finish('completed')
         with self.store.connect() as db:
             db.execute('UPDATE suggestions SET done_report=? WHERE id=?',
-                       ((a.dt.datetime.now(a.dt.timezone.utc) - a.dt.timedelta(hours=a.REPORT_HOURS + 1)).isoformat(), self.sid))
-        self.assertFalse(a.reported(self.card()))
-        self.assertEqual(a.app_notice(self.store, self.app.config, self.sid), {'gone': True})
+                       ((dt.datetime.now(dt.timezone.utc) - dt.timedelta(hours=machine_delivery_push.REPORT_HOURS + 1)).isoformat(), self.sid))
+        self.assertFalse(machine_delivery_push.reported(self.card()))
+        self.assertEqual(machine_delivery_push.app_notice(self.store, self.app.config, self.sid), {'gone': True})
 
     def q(self, sql, *args):
         with self.store.connect() as db:

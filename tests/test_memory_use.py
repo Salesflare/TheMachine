@@ -1,7 +1,6 @@
 """One way to read memory (machine/app/recall.py) and the log of what was read (memory_use.py)."""
 import datetime as dt
 import functools
-import importlib.util
 import json
 import re
 import tempfile
@@ -12,8 +11,6 @@ from unittest.mock import patch
 from seams import patch_everywhere
 
 ROOT = Path(__file__).parent.parent
-spec = importlib.util.spec_from_file_location('memory_use_assistant', ROOT / 'assistant.py')
-a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
 import memory_use  # noqa: E402
 import retention  # noqa: E402
 import search_ask  # noqa: E402
@@ -22,6 +19,11 @@ from machine.app import preparation as preparation_app, review as review_app, se
 from machine.app import ask_memory  # noqa: E402
 from machine.app.recall import recall  # noqa: E402
 from machine.export import inventory  # noqa: E402
+import embeddings
+import graph
+import machine.config as machine_config
+import machine.main as machine_main
+import timeutil
 
 NOW = dt.datetime(2026, 10, 16, 12, tzinfo=dt.timezone.utc)
 OLD = '2026-09-01T00:00:00+00:00'
@@ -44,7 +46,7 @@ class Before:
     length check, and nothing kept of what was picked."""
 
     def __init__(self, app, purpose, about=None, budget=0):
-        store, todo, known = app.store, (about or {}).get('todo'), a.embeddings.settings(app.config)
+        store, todo, known = app.store, (about or {}).get('todo'), embeddings.settings(app.config)
         self.budget, self.purpose = budget, purpose
         self.pickers = {
             'history': lambda: store.preference_summary(), 'promises': lambda: store.promises_text(), 'batch_facts': lambda: '',
@@ -78,12 +80,12 @@ class MemoryUseTests(unittest.TestCase):
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)
         self.dir = Path(temp.name)
-        self.store = a.Store(self.dir / 'events.sqlite')
-        self.app = object.__new__(a.App)
+        self.store = machine_main.Store(self.dir / 'events.sqlite')
+        self.app = object.__new__(machine_main.App)
         self.app.store = self.store
         self.app.config = {**CONFIG, 'database': str(self.dir / 'events.sqlite'), 'openclaw_workspace': str(self.dir / 'ws')}
-        for started in (patch_everywhere(a, 'now', lambda: NOW.isoformat()), patch.object(a.embeddings, 'embed', side_effect=embed),
-                        patch.object(a.embeddings, 'related', return_value=[(2, 0.83)])):
+        for started in (patch_everywhere(timeutil, 'now', lambda: NOW.isoformat()), patch.object(embeddings, 'embed', side_effect=embed),
+                        patch.object(embeddings, 'related', return_value=[(2, 0.83)])):
             started.start()
             self.addCleanup(started.stop)
         search_ask._asked.clear()
@@ -92,7 +94,7 @@ class MemoryUseTests(unittest.TestCase):
                                             mail(3, 9, 'Lee Park <lee@globex.example>', 'Invoice', 'The September invoice is still open.')])
         with self.store.connect() as db:
             db.isolation_level = None
-            a.graph.build(db, self.app.config, NOW.isoformat())
+            graph.build(db, self.app.config, NOW.isoformat())
         other = self.store.suggest('other', 'Pay the vendor', 'Body', [3])['id']
         self.store.decide(other, 'reject', 'we stopped using them', 'owner-note', 'dashboard')
         self.other = other
@@ -134,7 +136,7 @@ class MemoryUseTests(unittest.TestCase):
             return 'It moves to March [1].'
         self.app.ask_model = model
         search_ask._asked.clear()
-        with patch.object(a.embeddings, 'related', return_value=[(1, 0.9), (2, 0.7)]):
+        with patch.object(embeddings, 'related', return_value=[(1, 0.9), (2, 0.7)]):
             self.app.search_ask('When does the pilot move?', None, None)
         return prompts[0]
 
@@ -218,11 +220,11 @@ class MemoryUseTests(unittest.TestCase):
     def test_a_failed_log_write_does_not_fail_the_build(self):
         with self.store.connect() as db:
             db.execute('DROP TABLE memory_use')
-        with self.assertLogs(a.LOG, 'ERROR'):
+        with self.assertLogs(machine_config.LOG, 'ERROR'):
             self.assertIn('General fact number 3 ', self.prepare()['message'])
         with self.store.connect() as db:
             self.assertEqual('running', db.execute('SELECT status FROM preparations WHERE suggestion_id=?', (self.todo,)).fetchone()[0])
-        with self.assertLogs(a.LOG, 'ERROR'):
+        with self.assertLogs(machine_config.LOG, 'ERROR'):
             self.assertEqual(0, memory_use.record(self.store, 'ask', [['signal', '1', 'search', None, 10, 0]]))
 
     def test_a_picker_outside_a_recall_notes_nothing(self):
