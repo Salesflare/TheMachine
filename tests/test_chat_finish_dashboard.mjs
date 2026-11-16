@@ -45,9 +45,12 @@ try{
  assert.ok((await page.locator(`#task-${legacy} .draft .db`).textContent()).includes('Legacy preview text.'));
  // A sent card: one green status, no needs-you line, no draft to approve.
  const done=page.locator(`#task-${sent}`);
+ assert.equal(await done.isVisible(),false,'a sent to-do leaves For you');
+ await page.evaluate(()=>{const d=$('#finished-list');d.open=true;listShow(d)});  // in Done, which draws its rows as it opens
  assert.equal(await done.count(),1);assert.equal(await done.locator('.outcome').count(),0);
  assert.match(await done.textContent(),/Email sent( at \d\d:\d\d)?\./);assert.ok(!(await done.textContent()).includes('Needs you'));
- assert.equal(await done.isVisible(),false,'a sent to-do leaves For you');
+ assert.equal(await page.locator(`#finished-list #task-${sent}`).count(),1,'a sent to-do leaves For you, for Done');
+ await page.evaluate(()=>{const d=$('#finished-list');d.open=false});
  const widths=[];
  for(const width of [390,1280]){
   await page.setViewportSize({width,height:900});

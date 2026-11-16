@@ -38,16 +38,22 @@ try{
  const seen=await page.evaluate(()=>window.seen);
  assert.doesNotMatch(seen.at.updated,/Updated/,'the to-dos are drawn before the rest: '+JSON.stringify(seen));
  assert.match(seen.after.updated,/Updated/,'the rest follows right after: '+JSON.stringify(seen));
- assert.equal(seen.at.done,0,'the Done list waits for the first paint too');assert.equal(seen.after.done,1,'and follows right after');
+ assert.equal(seen.at.done,0,'the Done list waits for the first paint too');assert.equal(seen.after.done,0,'folded, nor after it');
+ // Done opens with its rows at once (its first page, drawn as it opens)
+ assert.ok(await page.evaluate(()=>{document.querySelector('#finished-head').click();const r=!!document.querySelector('#finished-list[open] #task-b2b2b2b2b2b2b2b2');document.querySelector('#finished-head').click();return r}),'Done opened, its rows at once');
  // Folded lists show their heads and counts at once; their rows (out of sight) follow right after too
  assert.deepEqual(seen.at.folds,['1','1'],'the folds and their counts are there at once');
  assert.deepEqual([seen.at.later,seen.at.waiting],[0,0],'a folded list\'s rows wait for the first paint');
- assert.deepEqual([seen.after.later,seen.after.waiting],[1,1],'and follow right after');
+ assert.deepEqual([seen.after.later,seen.after.waiting],[0,0],'nor after it: they are drawn as the list opens');
  // For you: the first screen's worth at once (its count says all 12), the rest right after, in order
  assert.deepEqual([seen.at.foryou,seen.at.foryouCount],[8,'12'],'the first For you to-dos that fit a screen, and the full count');
  assert.equal(seen.after.foryou,12,'the rest follow right after');
  const order=()=>page.evaluate(()=>[...document.querySelectorAll('#suggestions > article.card')].map(c=>c.id).join());const drawn=await order();
- await page.locator('#later-head').click();assert.ok(await page.locator('#task-c3c3c3c3c3c3c3c3').isVisible(),'opened, Later shows its to-do');
+ // opening it draws its rows in the same task as the click: the first frame that shows it open has them
+ assert.ok(await page.evaluate(()=>{document.querySelector('#later-head').click();return !!document.querySelector('#later-list[open] #task-c3c3c3c3c3c3c3c3')}),'opened, its rows at once');
+ assert.ok(await page.locator('#task-c3c3c3c3c3c3c3c3').isVisible(),'opened, Later shows its to-do');
+ // Waiting on others by keyboard (→ on its head) the same
+ assert.ok(await page.evaluate(()=>{kbFold(document.querySelector('#waiting-head'),true);return document.querySelector('#waiting-list').open&&document.querySelectorAll('#waiting-list article.card').length>0}),'opened by key, its rows at once');
  // At the very top nothing is held (shell-place.js), so a change there measures nothing: a first draw is all at the top
  const measured=await page.evaluate(()=>{scrollTo(0,0);let n=0;const f=Element.prototype.getBoundingClientRect;Element.prototype.getBoundingClientRect=function(){n++;return f.call(this)};
   try{placeNote()}finally{Element.prototype.getBoundingClientRect=f}return n});

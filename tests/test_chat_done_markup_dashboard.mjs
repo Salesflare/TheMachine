@@ -30,6 +30,8 @@ try{
   const frag=h=>htmlNodes(h),wrap=h=>{const d=document.createElement('div');d.append(htmlNodes(h));return d};
   const out={};
   // the to-do list itself: Ready, Coming back later with its day heading, Done, all drawn with html``
+  // (Later opened: a folded list's rows are drawn as it opens)
+  {const l=$('#later-list');l.open=true;listShow(l)}
   const list=$('#suggestions');out.list=[bad(list),list.querySelector('#later-list')?.textContent.includes('Reply '+EVIL)??false,list.querySelectorAll('#later-list .day-head').length,!!list.querySelector('#finished-list'),list.textContent.includes('Reply '+EVIL)];
   // chatParts: the chat's pieces of the card
   const s=state.suggestions[0],p=chatParts(s);
