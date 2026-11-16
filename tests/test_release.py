@@ -1,5 +1,7 @@
 """Signed releases (scripts/release.py): only a release tag signed with the pinned key is installed."""
+import contextlib
 import importlib.util
+import io
 import subprocess
 import sys
 import tempfile
@@ -16,6 +18,17 @@ WHO = ['-c', 'user.name=t', '-c', 'user.email=t@example.invalid']
 
 
 REQUIRE_GREEN = release.require_green_tests  # the tests below patch it out; one calls it itself
+
+
+class FakeClock:
+    """time for release.wait_for: sleep moves the clock on."""
+    now = 0.0
+
+    def time(self):
+        return self.now
+
+    def sleep(self, seconds):
+        self.now += seconds
 
 
 def run(*args, cwd):
@@ -421,12 +434,71 @@ class Releases(unittest.TestCase):
         waited.assert_not_called()
 
     def test_waiting_for_a_run_polls_until_it_is_done(self):
-        states = iter([{'status': 'in_progress'}, {'status': 'completed'}])
+        states = iter([{'status': 'in_progress'}, {'total_count': 3}, {'status': 'completed'}])
         with mock.patch.object(release, '_gh_api', side_effect=lambda path: next(states)), mock.patch.object(release.time, 'sleep'):
             release.wait_for({'id': 7, 'head_sha': 'a' * 40, 'html_url': 'https://example.invalid/run'})
-        with mock.patch.object(release, '_gh_api', return_value={'status': 'queued'}), mock.patch.object(release.time, 'sleep'):
+        with mock.patch.object(release, '_gh_api', return_value={'status': 'in_progress', 'total_count': 3}), \
+                mock.patch.object(release.time, 'sleep'):
             with self.assertRaisesRegex(RuntimeError, 'did not finish'):
                 release.wait_for({'id': 7, 'head_sha': 'a' * 40, 'html_url': 'https://example.invalid/run'}, limit=0)
+
+    def test_a_run_github_holds_without_jobs_is_waited_for_longer_and_says_why(self):
+        clock = FakeClock()
+        run = {'id': 7, 'head_sha': 'a' * 40, 'html_url': 'https://example.invalid/run', 'created_at': '2026-01-01T00:00:00Z'}
+        clock.now = release._epoch(run['created_at'])
+        jobs = {'total_count': 0}
+
+        def api(path):
+            if path.endswith('/jobs?filter=latest&per_page=1'):
+                return jobs
+            if clock.now - release._epoch(run['created_at']) >= 70 * 60:  # GitHub makes the jobs after 70 minutes
+                jobs['total_count'] = 4
+            return {'status': 'completed' if clock.now - release._epoch(run['created_at']) >= 80 * 60 else 'queued'}
+        out = io.StringIO()
+        with mock.patch.object(release, '_gh_api', side_effect=api), mock.patch.object(release, 'time', clock), \
+                contextlib.redirect_stdout(out):
+            release.wait_for(run)  # past the 45 minutes a run with jobs gets
+        self.assertIn('GitHub has made no jobs for it yet', out.getvalue())
+        self.assertIn('our runners are not the hold-up', out.getvalue())
+        # never any jobs: it gives up after the longer limit, and says where the run is
+        jobs['total_count'] = 0
+        clock.now = release._epoch(run['created_at'])
+        with mock.patch.object(release, '_gh_api', side_effect=lambda path: jobs if 'jobs' in path else {'status': 'queued'}), \
+                mock.patch.object(release, 'time', clock), contextlib.redirect_stdout(io.StringIO()):
+            with self.assertRaisesRegex(RuntimeError, 'GitHub made no jobs for the full test run on aaaaaaa in 180 minutes'):
+                release.wait_for(run)
+        self.assertGreaterEqual(clock.now - release._epoch(run['created_at']), release.QUEUED_LIMIT)
+
+    def test_full_run_keeps_its_branch_until_its_run_is_done(self):
+        sha = self.commit('two')
+        run('git', 'fetch', '-q', 'origin', cwd=self.app)
+        branch = f'full-run/{sha[:12]}'
+        mine = {'id': 9, 'event': 'workflow_dispatch', 'head_branch': branch, 'head_sha': sha, 'status': 'queued',
+                'created_at': '2999-01-01T00:00:00Z', 'html_url': 'https://example.invalid/run'}
+        seen = []
+
+        def waited(found, poll):
+            self.assertIs(found, mine)
+            seen.append(run('git', 'branch', '--list', branch, cwd=self.origin))  # still there while it waits
+            mine['status'] = 'completed'
+        real = subprocess.run
+        no_gh = lambda args, **kw: subprocess.CompletedProcess(args, 0, '', '') if args[0] == 'gh' else real(args, **kw)
+        with mock.patch.object(release, 'ci_runs', return_value=[mine]), mock.patch.object(release, 'wait_for', side_effect=waited), \
+                mock.patch.object(release.subprocess, 'run', side_effect=no_gh), \
+                mock.patch.object(release.time, 'sleep'), contextlib.redirect_stdout(io.StringIO()):
+            release.full_run(sha, poll=0)
+        self.assertTrue(seen[0])
+        self.assertEqual(run('git', 'branch', '--list', branch, cwd=self.origin), '')  # gone once the run is done
+        self.green.assert_called_once_with(sha)
+        # a run still queued when the wait gives up: the branch stays for it
+        mine['status'] = 'queued'
+        with mock.patch.object(release, 'ci_runs', return_value=[mine]), \
+                mock.patch.object(release, 'wait_for', side_effect=RuntimeError('GitHub made no jobs')), \
+                mock.patch.object(release.subprocess, 'run', side_effect=no_gh), \
+                mock.patch.object(release.time, 'sleep'), contextlib.redirect_stdout(io.StringIO()):
+            with self.assertRaisesRegex(RuntimeError, 'GitHub made no jobs'):
+                release.full_run(sha, poll=0)
+        self.assertTrue(run('git', 'branch', '--list', branch, cwd=self.origin))
 
     def test_cut_an_older_tested_commit_of_main(self):
         older = self.commit('two')

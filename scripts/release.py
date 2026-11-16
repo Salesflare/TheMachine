@@ -82,42 +82,97 @@ class Going(RuntimeError):
         self.run = run
 
 
-def wait_for(run, poll=30, limit=45 * 60):
-    """Waits until a run of CI is done."""
-    started = time.time()
-    print(f'A full test run is going on {run["head_sha"][:7]} ({run["html_url"]}): waiting for it...', flush=True)
-    while time.time() - started < limit:
+RUN_LIMIT = 45 * 60  # a run whose jobs exist: about 12 minutes on our runners
+# A run GitHub has made no jobs for yet ("queued", no jobs) is held by GitHub, not by our runners: they can only pick
+# up a job that exists. GitHub has held a manual run that way for about an hour while other runs got their jobs at
+# once, and then ran it normally. Waiting longer for that costs nothing; starting another run would not help.
+QUEUED_LIMIT = 3 * 3600
+SAY_EVERY = 10 * 60
+
+
+def _epoch(stamp):
+    return dt.datetime.fromisoformat(stamp.replace('Z', '+00:00')).timestamp()
+
+
+def _has_jobs(run):
+    return bool(_gh_api(f'repos/{REPO}/actions/runs/{run["id"]}/jobs?filter=latest&per_page=1').get('total_count'))
+
+
+def wait_for(run, poll=30, limit=RUN_LIMIT, queued_limit=QUEUED_LIMIT):
+    """Waits until a run of CI is done: up to `limit` once GitHub has made its jobs, and before that up to
+    `queued_limit` from the run's start, saying why every SAY_EVERY seconds."""
+    sha = run['head_sha'][:7]
+    print(f'A full test run is going on {sha} ({run["html_url"]}): waiting for it...', flush=True)
+    created = _epoch(run['created_at']) if run.get('created_at') else time.time()
+    jobs_since = said = None
+    while True:
         try:
             if _gh_api(f'repos/{REPO}/actions/runs/{run["id"]}').get('status') == 'completed':
                 return
+            if jobs_since is None and _has_jobs(run):
+                jobs_since = time.time()
         except (OSError, ValueError, subprocess.SubprocessError):
             pass
+        now = time.time()
+        if jobs_since is not None:
+            if now - jobs_since >= limit:
+                raise RuntimeError(f'the full test run on {sha} did not finish in {limit // 60} minutes ({run["html_url"]})')
+        elif now - created >= queued_limit:
+            raise RuntimeError(f'GitHub made no jobs for the full test run on {sha} in {queued_limit // 60} minutes '
+                               f'(the run is queued at GitHub, not waiting for our runners: {run["html_url"]}); '
+                               'cut again with --full-run later, which waits for this same run')
+        elif said is None or now - said >= SAY_EVERY:
+            print(f'GitHub has made no jobs for it yet (queued {int(now - created) // 60} minutes; GitHub holds it, '
+                  f'our runners are not the hold-up): waiting up to {queued_limit // 60} minutes...', flush=True)
+            said = now
         time.sleep(poll)
-    raise RuntimeError(f'the full test run on {run["head_sha"][:7]} did not finish in {limit // 60} minutes')
 
 
-def full_run(sha, poll=30, limit=45 * 60):
+def drop_finished_branches():
+    """Deletes each full-run/<sha> branch whose runs are all done. A branch with a run still queued or going stays:
+    that run needs it, and the next cut --full-run waits for that run instead of starting another."""
+    try:
+        heads = git('ls-remote', '--heads', 'origin', 'refs/heads/full-run/*', check=False).stdout.split()[1::2]
+    except (OSError, ValueError):
+        return
+    for ref in heads:
+        branch = ref.removeprefix('refs/heads/')
+        try:
+            going = [r for r in ci_runs(f'branch={branch}') if r['status'] != 'completed']
+        except (OSError, ValueError, KeyError, subprocess.SubprocessError):
+            continue  # can't tell: keep it
+        if going:
+            print(f'Kept {branch}: its run is not done yet ({going[0]["html_url"]}).', flush=True)
+        else:
+            git('push', '--quiet', 'origin', '--delete', branch, check=False)
+
+
+def full_run(sha, poll=30):
     """Starts the full test run on exactly this commit on our runner (ci.yml, workflow_dispatch with own_runner, from a
-    short-lived branch at the commit), waits for it and raises RuntimeError unless it passed."""
+    short-lived branch at the commit), waits for it and raises RuntimeError unless it passed. The branch goes once
+    its run is done (drop_finished_branches)."""
     branch = f'full-run/{sha[:12]}'
     git('push', '--quiet', 'origin', f'{sha}:refs/heads/{branch}')
     started = time.time()
     try:
         subprocess.run(['gh', 'workflow', 'run', 'ci.yml', '-R', REPO, '--ref', branch, '-f', 'own_runner=true'],
                        capture_output=True, text=True, timeout=60, check=True)
-        print(f'Full test run started on {sha[:7]}: waiting for it (about 12 minutes)...', flush=True)
-        while time.time() - started < limit:
+        print(f'Full test run started on {sha[:7]}: waiting for it (about 12 minutes once it has jobs)...', flush=True)
+        run = None
+        while run is None:
+            if time.time() - started > SAY_EVERY:
+                raise RuntimeError(f'GitHub shows no run for the full test run on {sha[:7]} after {SAY_EVERY // 60} minutes')
             time.sleep(poll)
-            mine = [r for r in ci_runs(f'head_sha={sha}') if r['event'] == 'workflow_dispatch'
-                    and dt.datetime.fromisoformat(r['created_at'].replace('Z', '+00:00')).timestamp() >= started - 60]
-            if mine and all(r['status'] == 'completed' for r in mine):
-                break
-        else:
-            raise RuntimeError(f'the full test run on {sha[:7]} did not finish in {limit // 60} minutes')
+            try:
+                run = next((r for r in ci_runs(f'head_sha={sha}') if r['event'] == 'workflow_dispatch'
+                            and r.get('head_branch') == branch and _epoch(r['created_at']) >= started - 60), None)
+            except (OSError, ValueError, KeyError, subprocess.SubprocessError):
+                pass
+        wait_for(run, poll=poll)
     except subprocess.SubprocessError as error:
         raise RuntimeError(f'the full test run on {sha[:7]} could not be started ({error})') from error
     finally:
-        git('push', '--quiet', 'origin', '--delete', branch, check=False)
+        drop_finished_branches()
     require_green_tests(sha)
 
 
@@ -289,7 +344,10 @@ def cut(args):
         except Going as going:
             if not args.full_run:
                 raise
-            wait_for(going.run)  # the one going already, then the same check
+            try:
+                wait_for(going.run)  # the one going already (never a second one), then the same check
+            finally:
+                drop_finished_branches()
             require_green_tests(sha)
         except RuntimeError as missing:
             if not args.full_run or 'no full test run passed' not in str(missing):
