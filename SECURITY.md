@@ -57,7 +57,8 @@ invalid receipt or timeout blocks it as well. The token is never included in rel
   its data settings accordingly.
 - **Do it grants broad account and machine access for the accepted task.** The plugin's guards are not a sandbox.
   Source messages are untrusted and may contain prompt injection. Read the [README's security model](README.md#security-model)
-  before turning on reviews or delivery.
+  before turning on reviews or delivery. The attack set we test against, and its latest results, are in
+  [evals/prompt-injection](evals/prompt-injection/README.md).
 - Pages a run opens by itself: opening a page sends its address to whoever runs that site, so an address the model
   put together could carry what it read. A to-do prepared ahead (nobody tapped Do it yet) and a routine open a page
   with `web_fetch` or the browser only when its address was written in what the run read (a message, a search result,
