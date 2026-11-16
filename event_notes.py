@@ -14,7 +14,10 @@ How tickets become events, without a model:
   a band in Calendar, like a trip.
 - A to-do made from the ticket mail (pay, pick up the tickets) opens from its line.
 - An event whose tickets were all canceled goes. One whose mail aged out of the mailbox stays.
-Its area is the mailbox's: a conference booked on the work address is Work."""
+- A ticket for something during a trip (a tour, a museum, a match while away) goes on that trip instead
+  (trip_notes.drafts), so the journey is one band; an event note made before stays.
+Its area is the mailbox's: a conference booked on the work address is Work. Tickets read from mail without structured
+data (bookings.looks_booked, read by the model) come in the same way."""
 import hashlib
 import json
 
@@ -73,6 +76,8 @@ def _todos(db, event_ids):
 def drafts(db, accounts, lang=None):
     """The events as note_pages.sync drafts, and keep(key) for the events no booking holds any more."""
     found, canceled = tickets(db)
+    during = trip_notes.trip_spans(db)
+    found = [b for b in found if not trip_notes.on_a_trip(b, during)]  # a ticket during a trip is on the trip (trip_notes.drafts)
     todos = _todos(db, {b['event_id'] for b in found})
     groups = {}
     for b in found:

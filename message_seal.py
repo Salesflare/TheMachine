@@ -94,6 +94,7 @@ DERIVED = {'suggestions': ('title', 'body', 'handled_hint', 'owner_words', 'titl
            'routine_changes': ('instructions',),  # a routine's new words, offered on one of its to-dos (routine_changes.py)
            'purchases': ('title', 'variant'),  # an item bought, as its order mail names it (reorder.py); matched in SQL by its plain key, item
            'mail_cleanup_items': ('link',),  # a list's unsubscribe page, left for the owner to open (mail_cleanup.py)
+           'trip_pending': ('text',),  # a booking mail's text the history walk read, waiting for the model (trip_notes.py)
            'digest_items': ('feedback',),  # More or Less like this on a Daily digest's pick (reading_digest.py)
            'recap_items': ('line', 'data'),
            'graph_imports': ('undo',),  # an import's Undo: what it changed, which can hold a project's notes

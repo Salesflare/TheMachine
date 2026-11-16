@@ -129,6 +129,9 @@ class TripNotes(unittest.TestCase):
         self.addCleanup(temp.cleanup)
         self.store = machine_main.Store(Path(temp.name) / 'events.sqlite', protect=True)
         self.n = 0
+        today = mock.patch.object(trip_notes, '_today', return_value=AT[:10])  # the trips are ahead: their gaps show
+        today.start()
+        self.addCleanup(today.stop)
 
     def mail(self, *things, day=1):
         self.n += 1
@@ -150,15 +153,17 @@ class TripNotes(unittest.TestCase):
                          [('Lisbon', '2026-12-02', '2026-12-05'), ('London St Pancras', '2027-01-20', '2027-01-20')])
         lisbon = trips[0]
         self.assertEqual([x['text'] for x in lisbon['lines']], [
-            'Flight EX 2084 Brussels to Lisbon, booking K7PQ2M, seat 14A',
+            'Flight EX 2084 Brussels to Lisbon, arrives 08:55, booking K7PQ2M, seat 14A',
+            'Nothing booked from Lisbon airport to Hotel Alfama Garden',
             'Hotel Alfama Garden, 3 nights, booking H-2231',
             'Check out of Hotel Alfama Garden',
-            'Flight EX 2087 Lisbon to Brussels, booking K7PQ2M'])
-        self.assertTrue(all(x['event_id'] for x in lisbon['lines']))
+            'Nothing booked from Hotel Alfama Garden to Lisbon airport',
+            'Flight EX 2087 Lisbon to Brussels, arrives 22:20, booking K7PQ2M'])
+        self.assertTrue(all(x['event_id'] for x in lisbon['lines'] if 'Nothing booked' not in x['text']))
         with self.store.connect() as db:
             self.assertEqual(db.execute('SELECT f.title FROM note_pages p JOIN note_pages f ON f.id=p.parent_id WHERE p.id=?',
                                         (note_pages.parse_id(lisbon['id']),)).fetchone()['title'], 'Trips')
-        self.assertEqual(trips[1]['lines'][0]['text'], 'Train 9114 Brussels-Midi to London St Pancras, booking TR8812, seat 5 61, ticket 0042')
+        self.assertEqual(trips[1]['lines'][0]['text'], 'Train 9114 Brussels-Midi to London St Pancras, arrives 09:22, booking TR8812, seat 5 61, ticket 0042')
 
     def test_a_trip_is_a_band_in_the_calendar_windows_it_touches(self):
         self.mail(OUT, BACK)
@@ -197,7 +202,7 @@ class TripNotes(unittest.TestCase):
         trip = self.sync()[0]
         self.assertEqual(trip['name'], 'Lisbon with the team')
         self.assertEqual(trip['lines'][0]['text'], 'Flight out, aisle seat asked')
-        self.assertEqual(len(trip['lines']), 4)
+        self.assertEqual(len(trip['lines']), 6)  # two flights, the stay and its check-out, nothing booked to and from the airport
 
     def test_an_older_confirmation_read_later_joins_the_trip_already_made(self):
         """Mail is read in the order it reached the Machine: an earlier confirmation of the same booking, with one leg
@@ -207,7 +212,7 @@ class TripNotes(unittest.TestCase):
         first = self.sync()
         self.mail(OUT, via, BACK, day=1)
         trips = self.sync()
-        self.assertEqual([(x['id'], x['name'], len(x['lines'])) for x in trips], [(first[0]['id'], 'Lisbon', 3)])
+        self.assertEqual([(x['id'], x['name'], len(x['lines'])) for x in trips], [(first[0]['id'], 'Porto', 3)])  # it waits longest in Porto
 
     def test_a_trip_split_before_heals_into_its_first_note(self):
         via = flight('2090', 'K7PQ2M', 'Lisbon', 'Porto', '2026-12-02T10:00:00+00:00', '2026-12-02T11:00:00+00:00')
@@ -267,6 +272,9 @@ class HeldMail(unittest.TestCase):
         self.app = object.__new__(machine_main.App)
         self.app.store, self.app.config = self.store, {'accounts': [MAIL], 'database': str(self.store.path)}
         self.app.collector_resting = {MAIL['id']}
+        today = mock.patch.object(trip_notes, '_today', return_value=AT[:10])
+        today.start()
+        self.addCleanup(today.stop)
         self.app.HISTORY_SOURCES = {'mail': (HeldMail.Reader, machine_sources_gmail.message_event)}
         for x in (mock.patch.object(app_history, 'free_disk', return_value=True), mock.patch.object(app_history, 'free_memory', return_value=True)):
             x.start()
@@ -301,7 +309,7 @@ class HeldMail(unittest.TestCase):
         self.assertTrue(self.app.history_step())  # the last page: m3 has no bookings, and what isn't held isn't read
         self.assertEqual(HeldMail.Reader.reads[2:], ['messages', 'messages/m2', 'messages/m3'])
         self.app.trip_notes_step()
-        self.assertEqual(self.trips(), [('Lisbon', 4)])
+        self.assertEqual(self.trips(), [('Lisbon', 6)])  # and the stay: its check-out, nothing booked to and from the airport
         HeldMail.Reader.reads = []
         self.assertFalse(self.app.history_step())  # done for this version: nothing read again
         self.assertEqual(HeldMail.Reader.reads, [])

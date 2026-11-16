@@ -396,8 +396,9 @@ def load_trips(db, base):
     import note_pages
     when, day = stamp(2 * 24 * 60, base), lambda days: (base + dt.timedelta(days=days)).date().isoformat()
     work = 'work:Lumen Labs'
-    # A trip from booking mail (trip_notes.py): the flights' and the hotel's confirmations, with the structured data the
-    # mail source reads (bookings.py), made into one trip under Trips as the Machine's ten-minute step does
+    # A trip from booking mail (trip_notes.py): the flights', the hotel's, the train's and the taxi's confirmations, with
+    # the structured data the mail source reads or the model reads (bookings.py), and a show's tickets during it, made
+    # into one trip under Trips as the Machine's ten-minute step does; nothing is booked from the airport to the hotel
     import trip_notes
     air = lambda number, dep, arr, at, until: {'type': 'flight', 'code': 'K7PQ2M', 'status': 'confirmed', 'start': at, 'end': until,
                                                 'from': dep, 'to': arr, 'number': 'LX ' + number, 'by': 'Skylink Air'}
@@ -406,7 +407,16 @@ def load_trips(db, base):
                air('2087', 'Lisbon', 'Brussels', day(21) + 'T18:45', day(21) + 'T22:20')]),
              ('trip:hotel', 'Booking confirmed: Hotel Alfama Garden', 'stay@alfama-garden.example', 'Hotel Alfama Garden', 30 * 60,
               [{'type': 'hotel', 'code': 'AG-55190', 'status': 'confirmed', 'start': day(18) + 'T15:00', 'end': day(21) + 'T11:00',
-                'name': 'Hotel Alfama Garden', 'where': 'Lisbon', 'guests': '1'}])]
+                'name': 'Hotel Alfama Garden', 'where': 'Lisbon', 'address': 'Rua de São Miguel 12, Lisbon', 'guests': '1'}]),
+             ('trip:train', 'Your e-ticket: Antwerp to Brussels Airport', 'tickets@rail.example', 'Example Rail', 26 * 60,
+              [{'type': 'train', 'code': 'RX-30418', 'status': 'confirmed', 'start': day(18) + 'T05:12', 'end': day(18) + 'T05:49',
+                'from': 'Antwerp', 'to': 'Brussels Airport', 'number': 'IC 3510', 'seat': '42', 'read': 'text'}]),
+             ('trip:taxi', 'Ride booked: hotel to Lisbon airport', 'rides@cabs.example', 'Example Cabs', 20 * 60,
+              [{'type': 'taxi', 'code': 'LT-7731', 'status': 'confirmed', 'start': day(21) + 'T16:30', 'from': 'Hotel Alfama Garden',
+                'to': 'Lisbon Airport', 'read': 'text'}]),
+             ('trip:show', 'Your tickets: Fado night at Casa Azul', 'tickets@fado.example', 'Casa Azul', 18 * 60,
+              [{'type': 'event', 'code': 'FD-118', 'status': 'confirmed', 'start': day(19) + 'T21:00', 'name': 'Fado night',
+                'where': 'Casa Azul, Lisbon', 'guests': '2', 'read': 'text'}])]
     insert_events(db, [{'key': key, 'account_id': 'work-gmail', 'kind': 'gmail.message', 'minutes_ago': minutes, 'title': subject,
                         'body': f'Thank you for booking with {name}. Your booking code and details are below.',
                         'metadata': {'from': f'{name} <{sender}>', 'to': 'alex@lumenlabs.example', 'labels': ['INBOX'], 'thread_id': 't-' + key.replace(':', '-'),

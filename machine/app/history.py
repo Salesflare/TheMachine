@@ -22,6 +22,7 @@ import threading
 import time
 
 import abilities
+import bookings
 import check_now
 import embeddings
 import graph
@@ -316,7 +317,9 @@ class HistoryApp:
         """After a mailbox's own history walk: the mail it holds read once more for bookings (trip_notes.WALK_VERSION),
         one page a step at history's pace and under history's holds, so mail held from before The Machine read bookings
         (or read them as it does now) makes trips and events too. Only held mail without bookings is read again; nothing
-        is kept as a message. Personal mailboxes go first: bookings come there mostly, and a work mailbox can take days.
+        is kept as a message, except that a booking-like mail without structured data waits for the model with the text
+        read now (trip_notes.queue: a stub text kept before reads in full now). Personal mailboxes go first: bookings
+        come there mostly, and a work mailbox can take days.
         True when it did a step."""
         resting = self.__dict__.get('collector_resting')
         personal_first = sorted(self.history_accounts(), key=lambda a: todo_areas.area_of_account(a) != todo_areas.PERSONAL)
@@ -370,8 +373,9 @@ class HistoryApp:
             with self.store.connect() as db:
                 held = {r[0]: (r[1], r[2]) for r in db.execute(
                     'SELECT e.source_id,e.id,e.occurred_at FROM events e WHERE e.account_id=? AND e.source_id IN (' + ','.join('?' * len(refs)) + ') '
-                    'AND NOT EXISTS (SELECT 1 FROM trip_bookings b WHERE b.event_id=e.id)', (account['id'], *refs))}
-        found = []
+                    'AND NOT EXISTS (SELECT 1 FROM trip_bookings b WHERE b.event_id=e.id) '
+                    'AND NOT EXISTS (SELECT 1 FROM trip_pending p WHERE p.event_id=e.id AND p.text IS NOT NULL)', (account['id'], *refs))}
+        found, booked = [], []
         for ref in refs:
             if ref not in held:
                 continue  # not held (outside what the Machine keeps) or its bookings are in already
@@ -381,14 +385,18 @@ class HistoryApp:
                 if error.status != 404:
                     raise
                 continue
-            rows = ((message or {}).get('metadata') or {}).get('bookings')
-            if rows:
-                found.append((*held[ref], rows))
+            meta = (message or {}).get('metadata') or {}
+            if meta.get('bookings'):
+                found.append((*held[ref], meta['bookings']))
+            elif message and bookings.looks_booked(message.get('title'), meta.get('from'), message.get('body')):
+                booked.append((*held[ref], message.get('body')))  # for the model (TripsApp.trip_extract_step), with the text read now
         kept = 0
-        if found:
+        if found or booked:
             with self.store.connect() as db:
                 for event_id, occurred_at, rows in found:
                     kept += trip_notes.keep(db, event_id, account['id'], occurred_at, rows)
+                for event_id, occurred_at, text in booked:
+                    trip_notes.queue(db, event_id, account['id'], occurred_at, text)
         walk['token'] = page.get('nextPageToken')
         walk['done'] = not walk['token']
         return kept

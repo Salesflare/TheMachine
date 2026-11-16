@@ -83,7 +83,9 @@ QUOTED_HISTORY_KEPT = 3000
 
 # Text parts that only tell the reader to open the HTML version.
 PLAIN_PLACEHOLDER = re.compile(r'(?i)plain[- ]text version (?:is )?not available|requires an? html|'
-                               r'view (?:this|the) (?:email|message) in (?:a|your) (?:web )?browser|use an html[- ]capable')
+                               r'view (?:this|the) (?:email|message) in (?:a|your) (?:web )?browser|use an html[- ]capable|'
+                               r'(?:does not|doesn\'t|cannot|can\'t) (?:support|display|show) html|in html-opmaak|'
+                               r'online versie van (?:deze|dit) (?:e-?mail|bericht)')
 
 
 def split_quoted_history(text, subject=''):
@@ -192,7 +194,7 @@ def email_body(plain, html_parts):
     plain = visible_text(plain)
     rendered = visible_text(plain_html('\n'.join(html_parts))) if html_parts else ''
     stub = len(plain.strip()) < 40 and len(rendered.strip()) > 200
-    placeholder = len(plain.strip()) < 300 and PLAIN_PLACEHOLDER.search(plain)
+    placeholder = len(plain.strip()) < 500 and PLAIN_PLACEHOLDER.search(plain)  # a booking's "sent in HTML" note runs a few lines
     if plain.strip() and not stub and not placeholder:
         return plain
     return rendered if rendered.strip() else plain
