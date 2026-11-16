@@ -47,6 +47,7 @@ Tables (this module owns them): topic_routes (each conversation's place: '' for 
 area; left: the place a page sent it back from) and topic_state (when the last round ran, when the first fill began and
 ended, whether the rebuild ran, when the last look for twins ran) and topic_aliases (a merged subject's place: the place
 it went into)."""
+import collections
 import datetime as dt
 import hashlib
 import json
@@ -802,8 +803,12 @@ def merge_reply(text, notes):
         return None
     if not isinstance(found, dict) or not isinstance(found.get('same'), list):
         return None
+    names = collections.defaultdict(list)  # the same name in two folders is one subject, without asking
+    for x in notes:
+        names[x['path'].rsplit(' > ', 1)[-1].casefold()].append(x['id'])
+    same = [{'notes': ids, 'title': ''} for ids in names.values() if len(ids) > 1]
     by_id, used, out = {x['id']: x for x in notes}, set(), []
-    for g in found['same']:
+    for g in same + found['same']:
         if not isinstance(g, dict) or not isinstance(g.get('notes'), list):
             continue
         group = [by_id[i] for i in dict.fromkeys(x for x in g['notes'] if isinstance(x, str)) if i in by_id and i not in used]

@@ -237,6 +237,16 @@ class SortedByWhatWasSaid(Conversations):
         self.assertEqual([k for k in notes if k[0] == 'topic'], [('topic', 'Example Co partnership')], 'the merged title leads to the note it went in')
         self.assertEqual(len(notes[('topic', 'Example Co partnership')]['lines']), 4)
 
+    def test_the_same_name_in_two_folders_is_one_note_without_asking(self):
+        self.routes = {'Vouchers': {'new': {'title': 'Example Vouchers', 'under': 'Work'}}, 'Card': {'new': {'title': 'Example vouchers', 'under': 'Home'}},
+                       'Topup': {'new': {'title': 'Example Vouchers', 'under': 'Work'}}}
+        self.mail('Example Vouchers <desk@vouchers.example>', 'Vouchers for November', '2026-11-02', account='job', thread_id='v')
+        self.mail('Example Vouchers <desk@vouchers.example>', 'Topup done', '2026-11-03', account='job', thread_id='t')
+        self.mail('Example Vouchers <desk@vouchers.example>', 'Card blocked', '2026-11-04', thread_id='c')
+        notes = self.round()
+        self.assertEqual([k for k in notes if k[0] == 'topic'], [('topic', 'Example Vouchers')], 'the one with the most sources takes the other')
+        self.assertEqual(len(notes[('topic', 'Example Vouchers')]['lines']), 3)
+
     def test_a_note_the_owner_wrote_in_is_never_merged_away(self):
         self.routes = {'Tiles': {'new': {'title': 'Kitchen tiles', 'under': 'Home'}}, 'Worktop': {'new': {'title': 'Kitchen worktop', 'under': 'Home'}}}
         self.mail('Dana <dana@build.example>', 'Tiles', '2026-11-02', thread_id='t')

@@ -480,7 +480,7 @@ Notes are sorted by what was said, a whole conversation at a time (`topic_notes.
   cut from a title (a year or a model name stays); a title of nothing else is no subject.
 - **Twins become one** (`NotesApp.topic_notes_merge`). After new subjects, at most every six hours, one call reads up
   to 400 notes (subjects started here, trips and events with their dates) and names the ones about the same
-  real-world thing (`topic_notes.merge_prompt`). Each group's conversations move to one note: a trip or event first,
+  real-world thing (`topic_notes.merge_prompt`); the same name in two folders is one without asking. Each group's conversations move to one note: a trip or event first,
   else one the owner touched, else the one with the most sources; a note the owner touched is never merged away. A
   later call naming a merged subject goes where it went (`topic_aliases`).
 - **Sensitive.** Health only under Health, and only the owner's own or their child's care; a subject under Home,
