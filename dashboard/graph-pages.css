@@ -136,7 +136,7 @@ button.node:hover{text-decoration:underline;background:none}
 /*@lazy*/
 /* A phone: a person's, organization's or project's page has one ‹ People (Organizations, Projects) back link for the
    section's head and the breadcrumb; the name shows once, on the page */
-@media(max-width:560px){body:has(#people:not([hidden]) .graph-crumbs>a[data-crumb]:not([data-crumb=""])) #page-head{display:none}
+@media(max-width:560px){body.m-trail #page-head{display:none}
 .graph-crumbs:has(>a[data-crumb]:not([data-crumb=""]))>:not(a[data-crumb]:not([data-crumb=""])){display:none}
 .graph-crumbs>a[data-crumb]:not([data-crumb=""]){display:inline-flex;align-items:center;gap:6px;min-height:44px;margin:-4px 0 -4px -6px;padding:0 14px 0 6px;color:var(--muted);font-size:var(--fs-md);font-weight:var(--fw-medium)}
 .graph-crumbs>a[data-crumb]:not([data-crumb=""])::before{content:'‹';content:'‹'/'';font-size:1.5em;line-height:1;margin-top:-2px}

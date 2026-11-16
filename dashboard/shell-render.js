@@ -77,7 +77,7 @@ if(!chatOpen())listBack(),drawKept($('#suggestions'),html`${milestoneSlot()}${re
 // For you in the sidebar: the same items as its count, the header and the section, a Fleet item as its row (fleetSide)
 const sideRows=l=>fuSide(l).map(x=>x?.side||x).filter(plainTodo),sideForYou=sideRows(fuv.foryou);
 sideCounts={foryou:sideForYou.filter(s=>!toRead(s)).length,preparing:fuv.ready.filter(s=>plainTodo(s)&&placeOf(s)==='preparing').length,later:later.length,promises:(state.promises||[]).filter(p=>['open','card'].includes(p.state)).length};sideCards([[sideForYou,'For you','foryou'],[waitingOn,'Waiting on others','waiting'],[later,'Later','later'],[[...lookDone,...recent],'Done','done']]);
-{const c=chatOpen();document.body.classList.toggle('chat-open',!!c);if(c)chatMount(c.id,chatView(c,[[sideForYou,'For you','foryou'],[waitingOn,'Waiting on others','waiting'],[later,'Later','later'],[[...lookDone,...recent],'Done','done']]))}pageHead();
+{const c=chatOpen();document.body.classList.toggle('chat-open',!!c);pageMarks();if(c)chatMount(c.id,chatView(c,[[sideForYou,'For you','foryou'],[waitingOn,'Waiting on others','waiting'],[later,'Later','later'],[[...lookDone,...recent],'Done','done']]))}pageHead();
 for(const[id,v]of Object.entries(drafts)){const t=document.getElementById(id);if(t&&t.value!==v){t.value=v;t.classList.add('filled')}}
 for(const id of moreOpen){const menu=document.getElementById(id)?.querySelector('.more-actions');if(menu)menu.open=true}foldsBack();
 if(pk&&!pk.isConnected)(pkIn?document.getElementById(pkIn):$('.chat-main'))?.append(pk);

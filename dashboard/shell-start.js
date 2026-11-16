@@ -40,7 +40,7 @@ const bpPhone=()=>!matchMedia('(min-width:1024px)').matches&&(DEV.mobile||matchM
  $('#bp-tab').hidden=inApp()||DEV.phoneApp;  // the installed app would open it as a second app window; the mobile app in place of the dashboard
  const show=()=>{const src=state?.browser_embed;if(!src||!wide())return false;
   if(pane.hidden)bpBack=!$('#settings').hidden?'settings':document.querySelector('nav button.active')?.dataset.tab||'inbox';
-  for(const x of document.querySelectorAll('main>section'))x.hidden=x!==pane;
+  for(const x of document.querySelectorAll('main>section'))x.hidden=x!==pane;pageMarks();
   for(const b of document.querySelectorAll('nav button')){b.classList.remove('active');b.setAttribute('aria-current','false')}
   $('#open-settings').setAttribute('aria-current','false');row.setAttribute('aria-current','page');
   const f=$('#bp-frame');if(f.dataset.src!==src){f.dataset.src=src;f.src=src}

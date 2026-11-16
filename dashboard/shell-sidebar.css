@@ -154,14 +154,14 @@ body main{padding-top:0}
   .site-footer{grid-column:2;grid-row:2;width:100%;max-width:calc(var(--measure) + 112px);padding-left:56px;padding-right:56px;background-size:calc(100% - 112px) 1px}
   /* A chat open: the list is in the sidebar, so the chat gets the whole main area */
   /* the thread scrolls across the whole main area, so its thin bar sits at the window's right edge */
-  html:has(body.chat-open #inbox:not([hidden])){scrollbar-gutter:auto}body.chat-open:has(#inbox:not([hidden])) main{max-width:none;padding:0}
+  html.m-chat{scrollbar-gutter:auto}body.m-chat main{max-width:none;padding:0}
   /* The chat's header spans the whole main area, like Claude: back and title on the left, ⋯ on the right, a hairline under it; the thread and the box stay in the column */
-  body.chat-open:has(#inbox:not([hidden])) .chat-head{align-self:stretch;width:auto;margin:0;padding:10px 16px 10px 12px;gap:6px;border-bottom:1px solid var(--c-line);background:color-mix(in srgb,var(--bg) 92%,transparent);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
-  body.chat-open:has(#inbox:not([hidden])) .chat-head::after{display:none}
-  body.chat-open:has(#inbox:not([hidden])) .chat-title{text-overflow:ellipsis}
-  body.chat-open:has(#inbox:not([hidden])) .chat-title.fade{-webkit-mask-image:none;mask-image:none}
-  body.chat-open:has(#inbox:not([hidden])) .chat-log{padding-top:12px}
-  body.chat-open:has(#inbox:not([hidden])) .chat-log{padding-left:max(24px,calc((100% - var(--chat-col))/2));padding-right:max(24px,calc((100% - var(--chat-col))/2))}
+  body.m-chat .chat-head{align-self:stretch;width:auto;margin:0;padding:10px 16px 10px 12px;gap:6px;border-bottom:1px solid var(--c-line);background:color-mix(in srgb,var(--bg) 92%,transparent);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+  body.m-chat .chat-head::after{display:none}
+  body.m-chat .chat-title{text-overflow:ellipsis}
+  body.m-chat .chat-title.fade{-webkit-mask-image:none;mask-image:none}
+  body.m-chat .chat-log{padding-top:12px}
+  body.m-chat .chat-log{padding-left:max(24px,calc((100% - var(--chat-col))/2));padding-right:max(24px,calc((100% - var(--chat-col))/2))}
   /* Folded to icons: the labels, the filter text and the list step out; the order and the places stay */
   :root[data-side="collapsed"] .app-side{padding:12px 8px 10px}
   :root[data-side="collapsed"] .app-side .brand{justify-content:center;padding:0}
@@ -195,7 +195,7 @@ body main{padding-top:0}
   @media(hover:hover) and (pointer:fine){.topbar-menu:hover{background:var(--c-hover);color:var(--text)}}
   .topbar-menu svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
   .topbar-menu .dot{position:absolute;margin:-14px 0 0 16px;width:7px;height:7px;border-radius:50%;background:var(--c-orange)}.topbar-menu .dot[hidden]{display:none}
-  body.chat-open:has(#inbox:not([hidden])) .topbar{display:none}
+  body.m-chat .topbar{display:none}
   /* Search on a phone: the search icon in the top bar opens the palette (cards, the Graph and commands in one field) */
   #side-search{display:none}
   #find-open{margin-left:auto}.topbar #find-open:not([hidden])~.new-card-top{margin-left:0}
