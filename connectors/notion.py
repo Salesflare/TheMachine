@@ -40,7 +40,6 @@ import json
 import os
 from pathlib import Path
 import re
-import sqlite3
 import tempfile
 import time
 import urllib.error
@@ -97,7 +96,7 @@ TEXT_BLOCKS = ('paragraph', 'heading_1', 'heading_2', 'heading_3', 'bulleted_lis
                'quote', 'callout', 'toggle')
 NEW_BLOCK = {'h1': 'heading_1', 'h2': 'heading_2', 'h3': 'heading_3', 'p': 'paragraph'}
 FIXED = '￼'  # a mention or an equation in a paragraph: never part of a change
-DONE_WORDS = re.compile(r'(?i)\s*(?:done|complete|completed|closed|finished|resolved|canceled|cancelled|archived)\s*')
+DONE_WORDS = re.compile(r'(?i)\s*(?:done|complete|completed|closed|finished|resolved|cancell?ed|archived)\s*')
 DUE_WORDS = re.compile(r'(?i)due|deadline|date|when')
 # The calls this connector makes, as (method, path pattern). Writes only through Writer and Replier.
 READS = (('GET', r'users/me'), ('GET', r'users/[0-9a-f-]{32,36}'), ('GET', r'users'), ('POST', r'search'),
@@ -539,7 +538,7 @@ def graph_email(store, name):
     try:
         with store.connect() as db:
             rows = db.execute("SELECT info FROM graph_nodes WHERE kind='person' AND name=? COLLATE NOCASE LIMIT 3", (name,)).fetchall()
-    except (sqlite3.Error, AttributeError, TypeError):
+    except Exception:  # noqa: BLE001  (a Graph that is busy or not built yet: nobody linked, never a failed sync)
         return ''
     if len(rows) != 1:
         return ''

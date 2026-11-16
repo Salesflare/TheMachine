@@ -155,8 +155,7 @@ DECISION_WEIGHT = {'accept': 1.0, 'send': 1.0, 'complete': 1.0, 'other': 0.5, 'r
 PROBABLE = 0.72
 UNNAMED = 0.75
 UNNAMED_DAYS = 45
-DOC_KINDS = of(service='docs')  # machine/kinds.py
-NOTION_KINDS = of(service='notion')
+DOC_KINDS, NOTION_KINDS = of(service='docs'), of(service='notion')  # machine/kinds.py
 UNNAMED_KINDS = {'gmail.message', 'calendar.event', 'salesflare.email', 'salesflare.meeting', 'intercom.conversation', 'github.notification'}
 OPEN_CARD = todo_states.OPEN
 # Boards: projects of one kind (partner listings, buyers, onboardings) in stages. Every board ends in this row too.
@@ -572,10 +571,8 @@ def _touches(kind, m, owner, wrote_to):
         found = customer or addresses(m.get('from'))
         return [('email:' + found[0][1], (m.get('contact_name') if customer else m.get('from_name')) or None, 0.05, 'about' if customer else 'seen')] if found and not owner.mine(found[0][1]) and not bulk(found[0][1]) else []
     if kind in DOC_KINDS or kind in NOTION_KINDS:
-        # Docs (connectors/docs.py): who commented, @mentioned the owner, suggested edits or shared a doc with them.
-        # Drive shows an author's address only when they let it; without one there is nobody to link. Notion
-        # (connectors/notion.py) the same, by the address Notion gives, else the one Graph person with exactly that full
-        # name (matched_by: name); never a guess on a first name. Sharing, a new page or a task: only seen.
+        # Docs and Notion: who commented, @mentioned the owner, suggested edits or shared a doc (seen only). By the address
+        # given; Notion's else by a full name exactly one Graph person has (connectors/notion.py graph_email), never a guess.
         found = addresses(m.get('from'))
         if not found or owner.mine(found[0][1]) or bulk(found[0][1]):
             return []

@@ -46,6 +46,7 @@ import re
 import uuid
 import zipfile
 from machine.owner_error import OwnerError
+import timeutil
 
 LOG = logging.getLogger('assistant')
 
@@ -928,7 +929,7 @@ class DocWriteTransport:
                 return
             proof = action.setdefault('proof', {})
             if writer.provider == 'notion':
-                proof.setdefault('since', dt.datetime.now(dt.timezone.utc).replace(second=0, microsecond=0).isoformat())  # Notion stamps to the minute
+                proof.setdefault('since', timeutil.clock().replace(second=0, microsecond=0).isoformat())  # Notion stamps to the minute
             elif writer.provider == 'google':
                 proof.setdefault('token', uuid.uuid4().hex)  # set once, before the write: what reconcile looks for
             elif not proof.get('name'):
