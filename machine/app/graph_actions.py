@@ -754,6 +754,9 @@ class GraphActionsApp:
             if not dirty and time.monotonic() - built < wait and fresh == seen:
                 continue
             self.graph_dirty.clear()
+            # a fix at the source asked for this build (correction_refresh): GBrain follows once the build has it; one
+            # asked during the build sets it again, for the next build
+            gbrain = self.__dict__.pop('gbrain_after_build', False)
             built, seen = time.monotonic(), fresh  # a failing build is not retried every minute
             try:
                 self.own_addresses_fetch()  # once a day per mailbox: its aliases, before the build tells the owner apart
@@ -762,10 +765,16 @@ class GraphActionsApp:
                 line = slow_build_line(self.graph_build(lock_last=time.monotonic() - published > GRAPH_LOCK_AFTER, apart=True))
                 if line:
                     LOG.info(line)
+                if gbrain:
+                    gbrain = False
+                    with contextlib.suppress(Exception):  # GBrain is optional; the fix stands without it
+                        self.gbrain_start()
                 published, seen, wait = time.monotonic(), self.graph_freshness(), 600
                 if self.history_graph_step():  # a slice of history taken in: the next build counts it, in a minute
                     wait = 60
             except graph.Outdated:
+                if gbrain:
+                    self.gbrain_after_build = True
                 self.graph_dirty.set()
                 self.stop.wait(GRAPH_RETRY_SECONDS)
             except Exception as error:
