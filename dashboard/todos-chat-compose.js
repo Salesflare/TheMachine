@@ -77,13 +77,17 @@ async function chatKept(id){const hit=await localCache.read('chat:'+id);if(!hit|
 // chat the Machine can't read isn't asked again every few seconds
 let chatFails=0;
 const chatWait=()=>chatFails?Math.min(60000,4000*2**(chatFails-1)):chat?.active?1000:chat?.unavailable||chat?.stale?4000:10000;
+// Messages shown at once while the Machine still saves them (chatSubmitNow), each with its to-do: a read of the chat
+// that lands meanwhile doesn't have them yet, and keeps them shown after what it brings (never in the device's copy)
+const chatSaves=new Map();
+const chatWithSaves=(id,items)=>{const add=[...chatSaves].filter(([m,sid])=>sid===id&&!items?.includes(m)).map(([m])=>m);return add.length?[...(items||[]),...add]:items};
 async function chatPoll(){clearTimeout(chatTimer);const id=chatId;if(!id)return;
  if(!document.hidden&&!$('#inbox').hidden)try{const r=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'card_chat',args:{suggestion_id:id,...(chat?.cursor&&chat.items?{cursor:chat.cursor}:{})}})});
   if(id!==chatId)return;chatFails=0;const was=chat?.active,first=!chat;
   // A read that failed while the chat was already on screen changes nothing but whether the run still goes: what was
   // shown stays (with the live answer), quietly, and the next ask catches up
   if(r.unavailable&&chat?.items?.length&&!chat.unavailable)chat={...chat,active:r.active,status:r.status,live:r.active?chat.live:null,stale:true};
-  else{const keep=r.unchanged;chat={...r,items:keep?chat.items:r.items,cursor:(keep?chat.cursor:r.cursor)||null}}paintChat();if(!r.unchanged&&!r.unavailable)localCache.put('chat:'+id,{...chat,cursor:null});if(first){requestAnimationFrame(chatScrollStart);setTimeout(chatScrollStart,150)}if(was&&!r.active){refresh();talkTurnDone()}}catch(e){errCaught(e);if(id===chatId)chatFails++;if(id===chatId&&!chat){chat={items:[],unavailable:true};paintChat()}
+  else{const keep=r.unchanged;chat={...r,items:chatWithSaves(id,keep?chat.items:r.items),cursor:(keep?chat.cursor:r.cursor)||null}}paintChat();if(!r.unchanged&&!r.unavailable)localCache.put('chat:'+id,{...chat,items:chat.items?.filter(m=>!chatSaves.has(m)),cursor:null});if(first){requestAnimationFrame(chatScrollStart);setTimeout(chatScrollStart,150)}if(was&&!r.active){refresh();talkTurnDone()}}catch(e){errCaught(e);if(id===chatId)chatFails++;if(id===chatId&&!chat){chat={items:[],unavailable:true};paintChat()}
   // the to-do is gone from the Machine (a list kept from before): the fresh list closes its chat with the line, at once
   if(id===chatId&&e.status===400&&/^Unknown suggestion/.test(e.message||''))refresh()}
  if(id===chatId)chatTimer=setTimeout(chatPoll,chatWait())}
@@ -151,8 +155,8 @@ async function chatSubmitNow(){const b=$('[data-chat-send]'),input=$('#chat-inpu
  const steps=[...(s.status==='completed'?[{choice:'reopen',feedback:'',decision_id:crypto.randomUUID()}]:[]),{choice:'other',feedback:text,decision_id:'chat-'+crypto.randomUUID()}];
  // A message without files shows in the chat at once, while the Machine saves it; should it not take it, the message
  // goes back in the box
- const mine={kind:'you',text,at:Date.now()},drop=()=>{if(chat?.items?.includes(mine))chat={...chat,items:chat.items.filter(i=>i!==mine)}};
- if(!sending.length){input.value='';chatGrow(input);chatDraftKeep(s.id,'');chat={...(chat||{}),items:[...(chat?.items||[]),mine]};paintChat();chatToEnd()}
+ const mine={kind:'you',text,at:Date.now()},drop=()=>{chatSaves.delete(mine);if(chat?.items?.includes(mine))chat={...chat,items:chat.items.filter(i=>i!==mine)}};
+ if(!sending.length){input.value='';chatGrow(input);chatDraftKeep(s.id,'');chatSaves.set(mine,s.id);chat={...(chat||{}),items:[...(chat?.items||[]),mine]};paintChat();chatToEnd()}
  try{if(!sending.length){const r=await decideOrWait(s.id,steps,'other');if(r?.waiting){drop();b.disabled=false;chatSendState();paintChat();chatToEnd();return}}
   else{for(const a of steps.slice(0,-1))await decide(a);await decide({...steps.at(-1),files:sending.map(f=>f.id)})}
   const files=sending.map(f=>({id:f.id,name:f.name,type:f.type,size:f.size}));chatDropFiles();chatTray();chatFileError('');
