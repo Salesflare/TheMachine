@@ -73,6 +73,7 @@ LAZY = {
     'digest': ('todos-digest.css', 'todos-digest.js'),
     'secondhand': ('todos-secondhand.css', 'todos-secondhand.js'),
     'subs': ('todos-subs.css', 'todos-subs.js'),
+    'reorder': ('todos-reorder.css', 'todos-reorder.js'),
     'areadigest': ('todos-area-digest.css', 'todos-area-digest.js'),
     'talk': ('todos-chat-talk-view.js', 'todos-chat-talk-live.js'),
     'whatsnew': ('shell-whats-new.css', 'shell-whats-new.js'),

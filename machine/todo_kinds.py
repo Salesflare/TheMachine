@@ -67,6 +67,10 @@ KINDS = (
     # It buzzes like any to-do (a good listing goes fast); the listings open on the site, so no Do it.
     TodoKind('secondhand', 'secondhand', test='is_secondhand', table='secondhand_todos', close_only=True,
              refused=lambda: i18n.t('Open it on the site from the to-do. The Machine never contacts a seller or buys.')),
+    # Reorders (reorder.py): something bought again and again at an online store, likely due again. Quiet; its link
+    # opens the store, nothing is bought here, so no Do it until a Shop connection can check out.
+    TodoKind('reorder', 'reorder', test='is_reorder', metas=False, table='reorder_todos', quiet=True, close_only=True,
+             refused=lambda: i18n.t('Open it at the store from the to-do.')),
     # A Notion heads-up (notion_heads_up.py): a page the owner asked to have changed was changed. Quiet, never a buzz.
     TodoKind('notion_heads_up', 'notion_heads_up', test='is_heads_up', table='events', quiet=True),
 )

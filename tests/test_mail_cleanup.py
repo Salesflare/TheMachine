@@ -572,8 +572,8 @@ class Cleanup(unittest.TestCase):
         # in Gmail, with the mail's link; nothing is written to the mailbox and no permission is asked for
         templates = self.app.routines_view()['templates']
         self.assertEqual([x['key'] for x in templates], ['newsletters', 'spam', 'digest', 'birthdays', 'subscriptions', 'touch',
-                                                         'secondhand'])
-        self.assertEqual([x.get('needs') for x in templates], [None] * 7)
+                                                         'secondhand', 'reorder'])
+        self.assertEqual([x.get('needs') for x in templates], [None] * 8)
         self.add('spam')
         self.mail('Growth Team <seo@ranks.example>', 'Page one on Google in 30 days', hours_ago=-0.01)
         with self.store.connect() as db:

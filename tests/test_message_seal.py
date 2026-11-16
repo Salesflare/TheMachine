@@ -941,6 +941,7 @@ class NothingOutsideTheSealedFields(unittest.TestCase):
             'bring_in_items.status': 'offered, saved or dismissed',
             'missed_audit_items.what': 'one of missed_work.WHAT, a kind of work', 'missed_audits.result': 'counts and rates (missed_work.summarize)',
             'team_wants.body': 'times and counts of what a teammate\'s Machine misses (shared_graph.py)',
+            'reorder_mail.state': 'order or other (reorder.py)',
             'own_addresses.state': 'yours, maybe or shared', 'own_addresses.reason': 'one of own_addresses.classify\'s fixed reasons',
         }
         sealed = {f'{t}.{c}' for t, cs in message_seal.DERIVED.items() for c in cs} | {f'{t}.{c}' for t, c, _ in message_seal.DERIVED_JSON}

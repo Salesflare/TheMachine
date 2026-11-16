@@ -3,9 +3,9 @@ title: Routines
 area: cards
 summary: Work your Machine does on its own, on a rhythm, like a Monday summary of your open deals. It only reads.
 covers: tab:routines
-code: routines.py, routines_app.py, routine_recipe.py, routine_imports.py, routine_patterns.py, routine_changes.py, routine_templates.py, mail_cleanup.py, mail_cleanup_app.py, birthdays.py, birthdays_app.py, birthdays_facebook.py, birthdays_facebook_app.py, reading_digest.py, reading_digest_app.py, subscriptions.py, subscriptions_app.py, stay_in_touch.py, stay_in_touch_app.py, secondhand.py, secondhand_app.py, dashboard/routines-page.js, dashboard/todos-digest.js, dashboard/todos-cleanup.js, dashboard/todos-facebook-birthdays.js, dashboard/todos-facebook-people.js, dashboard/todos-subs.js
+code: routines.py, routines_app.py, routine_recipe.py, routine_imports.py, routine_patterns.py, routine_changes.py, routine_templates.py, mail_cleanup.py, mail_cleanup_app.py, birthdays.py, birthdays_app.py, birthdays_facebook.py, birthdays_facebook_app.py, reading_digest.py, reading_digest_app.py, subscriptions.py, subscriptions_app.py, stay_in_touch.py, stay_in_touch_app.py, secondhand.py, secondhand_app.py, reorder.py, reorder_app.py, dashboard/routines-page.js, dashboard/todos-digest.js, dashboard/todos-cleanup.js, dashboard/todos-facebook-birthdays.js, dashboard/todos-facebook-people.js, dashboard/todos-subs.js, dashboard/todos-reorder.js
 order: 10
-keywords: routine, daily digest, interests, automation, scheduled, every week, every morning, report, suggested, digest, newsletter, birthday, facebook birthdays, import birthdays, subscriptions, free trial, renewal, cancel subscription, stay in touch, keep in touch, reach out, check in, second-hand, secondhand, marketplace, listings, every 3 hours
+keywords: routine, daily digest, interests, automation, scheduled, every week, every morning, report, suggested, digest, newsletter, birthday, facebook birthdays, import birthdays, subscriptions, free trial, renewal, cancel subscription, stay in touch, keep in touch, reach out, check in, second-hand, secondhand, marketplace, listings, every 3 hours, reorder, reorders, buy again, running low, order confirmation, shopify
 ---
 ## Make one
 
@@ -80,6 +80,10 @@ It stays polite and cheap: one read of the search per run, at most 6 listings op
 When the site asks you to sign in, shows a robot check or stops the read, a to-do says so, with **Open** to see it in The Machine’s browser. Sign in or pass the check there yourself; the next run reads again. The Machine never signs in or solves a check for you, and it never contacts a seller, bids or buys.
 
 **Change search** on its routine’s card takes a new address or filters, and **Change when** another rhythm, like “every 6 hours”.
+
+**Reorders** reads the order confirmations from online stores in your mail and notices what you buy again and again, like coffee, pet food or vitamins. When one is likely due again, it makes a to-do with the item, the store, the last price and when you last bought it. **Open at the store** takes you to its page there, to buy it yourself. Nothing is bought for you.
+
+It needs at least three orders of the same item at a steady pace, so a one-off or an odd gap makes no to-do. For now it reads stores that run on Shopify. Your AI reads only new order mail from those stores, in one short question per run. These to-dos never send a notification, and ordering the item again closes the open one.
 
 While a template’s routine keeps the template’s words, it runs on its own code, without your AI plan (Spam cleanup first lists new mail from unknown senders in code, and asks your AI one short question only when there is some; Stay in touch asks only about the one or two people it picked). A new name keeps that. Once you change its words, it runs like any routine on your words.
 

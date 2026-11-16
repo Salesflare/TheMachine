@@ -228,7 +228,7 @@ class AppMixins(unittest.TestCase):
         self.assertIs(template.app, app)
         self.assertEqual((name, args, owner), ('digest_interest', {'topic': 'x'}, True))
         self.assertIs(app.template('newsletters'), app.template('spam'))  # one per App, whichever key loads it
-        self.assertEqual(app.templates(), [app.template(k) for k in ('spam', 'digest', 'birthdays', 'subscriptions', 'touch', 'secondhand')])
+        self.assertEqual(app.templates(), [app.template(k) for k in ('spam', 'digest', 'birthdays', 'subscriptions', 'touch', 'secondhand', 'reorder')])
         self.assertIsNone(app.template('gone'))
         # Birthdays' two modules are one template: its Facebook import's action reaches it
         with patch.object(a.BirthdaysTemplate, 'birthdays_facebook_action', lambda s, name, args, owner: s):
