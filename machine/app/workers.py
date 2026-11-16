@@ -437,6 +437,7 @@ class WorkersApp:
             self.intercom_swept = time.monotonic()
             self.store.close_taken_intercom()
             self.store.close_handled_intercom()
+            self.store.close_done_notion()  # a task assigned to the owner that Notion shows done
             self.store.close_looks_done()
 
     def thread_snooze_step(self,gmail=None):

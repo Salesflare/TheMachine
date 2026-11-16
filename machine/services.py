@@ -90,6 +90,7 @@ SERVICES = {
     'trello': {**_NO, 'name': 'Trello', 'short': 'Trello', 'unit': 'card changes', 'group': WORK, 'signin': 'trello'},
     'shortcut': {**_NO, 'name': 'Shortcut', 'short': 'Shortcut', 'group': WORK, 'signin': 'shortcut'},
     'docs': {**_NO, 'name': 'Docs', 'short': 'Microsoft OneDrive', 'unit': 'items', 'group': DOCS, 'signin': 'microsoft_docs'},
+    'notion': {**_NO, 'name': 'Notion', 'short': 'Notion', 'unit': 'items', 'group': DOCS, 'signin': 'notion'},
     'google_meet': {**_NO, 'name': 'Google Meet', 'short': 'Google Meet', 'unit': 'meetings', 'group': MEETINGS, 'signin': 'google_meet',
                     'video': 'meet', 'video_links': ('meet.google.com/',)},
     # after Zoom and Google Meet: a tie between video links goes to the first row (meet.video_habit)

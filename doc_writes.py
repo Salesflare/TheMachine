@@ -1,6 +1,10 @@
-"""Writes to documents: a new doc, or an owner-approved edit to a doc of the task's own doc events. Google Docs, and Word
-on OneDrive and SharePoint. connectors/docs.py (Writer) does the reading and writing; this module decides what is
-written and checks it.
+"""Writes to documents: a new doc, or an owner-approved edit to a doc of the task's own doc events. Google Docs, Word
+on OneDrive and SharePoint, and Notion pages. connectors/docs.py (Writer) does the reading and writing (a Notion page
+through connectors/notion.py); this module decides what is written and checks it.
+
+Notion differs in three ways: a new page waits for the owner's OK like an edit (Store.make_new_docs leaves it), and goes
+in their Private section or under a Notion page of the to-do (file_id); an edit's version is a digest of the page's
+blocks; and done {op: done, file_id} marks a task assigned to the owner done, after their OK.
 
 A preparation offers {kind: doc_write} as a next action. A new doc is made right away (Store.make_new_docs): a private
 doc in the owner's own Drive or OneDrive, shared with nobody, so nothing goes to anyone and it needs no OK; the to-do
@@ -33,6 +37,7 @@ owner's OK again (assistant.settle_doc_write)."""
 from __future__ import annotations
 
 import bisect
+import datetime as dt
 import html
 import io
 import json
@@ -41,13 +46,15 @@ import re
 import uuid
 import zipfile
 from machine.owner_error import OwnerError
+import timeutil
 
 LOG = logging.getLogger('assistant')
 
 KIND = 'doc_write'
 NEW_DOC = 'new-doc:'  # the approval id of a new doc made while its to-do was prepared, without an OK (Store.make_new_docs)
 WRITE_KEY = 'themachine_write'  # a new Google Doc's appProperties key (connectors/docs.py WRITE_KEY): this write's token
-OPS = ('create', 'edit')
+DOC_SERVICES = ('docs', 'notion')  # the connections a doc write goes through (abilities.DOC_SERVICES), besides a gog sign-in
+OPS = ('create', 'edit', 'done')  # done: a Notion task assigned to the owner, marked done (connectors/notion.py)
 KEYS = {'kind', 'op', 'label', 'account_id', 'title', 'body', 'file_id', 'changes', 'last', 'then'}
 MAX_THEN = 300
 MAX_CHANGES = 20
@@ -57,8 +64,8 @@ MAX_INSERT = 20_000
 MAX_BODY = 100_000
 MAX_TITLE = 200
 MAX_LINES = 400
-LABELS = re.compile(r'(?:Create|Save|Update|Add|Edit)\b')
-WHERE = {'google': 'Google Docs', 'microsoft': 'Word'}
+LABELS = re.compile(r'(?:Create|Save|Update|Add|Edit|Mark)\b')
+WHERE = {'google': 'Google Docs', 'microsoft': 'Word', 'notion': 'Notion'}
 HEADING = re.compile(r'(#{1,3}) +(.*)')
 FIXED = '\t\u000b￼'  # a tab, a line break or an object (an image) in a paragraph: never part of a change
 DOCX = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
@@ -265,11 +272,11 @@ def validate(value, context):
         raise ValueError('A doc write has op, account_id and title and body (create), or file_id and changes (edit), and last or then')
     op = value.get('op')
     if op not in OPS:
-        raise ValueError('op is create (a new doc) or edit (a doc of this task)')
+        raise ValueError('op is create (a new doc), edit (a doc of this task) or done (a Notion task of this task)')
     result = {'kind': KIND, 'op': op}
     if value.get('label') is not None:
         if not LABELS.match(value['label']):
-            raise ValueError('Doc write button labels say Create, Save, Update, Add or Edit, such as Create doc')
+            raise ValueError('Doc write button labels say Create, Save, Update, Add, Edit or Mark, such as Create doc')
         result['label'] = value['label']
     if value.get('last') not in (None, True, False):
         raise ValueError('last is true when this doc finishes the to-do (nothing to send or share after it)')
@@ -280,8 +287,27 @@ def validate(value, context):
         if then:
             result['then'] = then
     accounts = context.get('accounts') or {}
+    if op == 'done':
+        if set(value) - {'kind', 'op', 'label', 'file_id', 'account_id', 'last', 'then'}:
+            raise ValueError('Marking a task done has file_id only')
+        file_id = file_id_of(value.get('file_id'))
+        known = (context.get('files') or {}).get(file_id)
+        if not known or not known.get('task'):
+            raise ValueError('That file_id is not a Notion task of this to-do (the metadata.file_id of its notion.task event)')
+        account = accounts.get(known['account_id'])
+        if not account or 'done' not in (account.get('writes') or ()):
+            raise ValueError('Marking tasks done is not allowed for this Notion connection. Say it in the to-do instead')
+        result.update(account_id=known['account_id'], provider=account['provider'], file_id=file_id,
+                      doc_title=str(known.get('doc_title') or 'the task')[:200])
+        return result
     if op == 'create':
-        if set(value) - {'kind', 'op', 'label', 'account_id', 'title', 'body', 'last', 'then'}:
+        parent = None
+        if value.get('file_id') is not None:
+            parent = file_id_of(value['file_id'])
+            under = (context.get('files') or {}).get(parent)
+            if not under or under.get('provider') != 'notion' or under.get('account_id') != value.get('account_id'):
+                raise ValueError('file_id on a new doc is the Notion page of this to-do it goes under; leave it out for a private page')
+        if set(value) - {'kind', 'op', 'label', 'account_id', 'title', 'body', 'last', 'then', 'file_id'}:
             raise ValueError('A new doc has account_id, title and body only (and last or then)')
         area = context.get('area')
         fitting = {k: a for k, a in accounts.items() if fits(a.get('boundary'), area)}
@@ -304,7 +330,7 @@ def validate(value, context):
         if not title:
             raise ValueError('A new doc needs a title')
         result.update(account_id=value['account_id'], provider=account['provider'], account_name=account.get('name', ''),
-                      title=title, body=_new_text(value.get('body'), 'body'))
+                      title=title, body=_new_text(value.get('body'), 'body'), **({'parent': parent} if parent else {}))
         return result
     if set(value) - {'kind', 'op', 'label', 'file_id', 'changes', 'account_id', 'last', 'then'}:
         raise ValueError('An edit has file_id and changes only')
@@ -343,10 +369,16 @@ def validate(value, context):
 
 
 def file_id_of(value):
-    """The doc id an edit names: the id itself, or the id in a Google Docs link to it (with /edit or any suffix)."""
+    """The doc id an edit names: the id itself, or the id in a Google Docs or Notion link to it (with /edit or any suffix)."""
     text = str(value or '').strip()
     found = re.search(r'docs\.google\.com/document/(?:u/\d+/)?d/([A-Za-z0-9_-]{1,200})', text)
-    return found[1] if found else text
+    if found:
+        return found[1]
+    page = re.search(r'notion\.(?:so|site)/[^\s?#]*?([0-9a-f]{32})(?:[?#]|$)', text)  # a Notion page by its link
+    if page:
+        return page[1]
+    plain = text.replace('-', '').lower()
+    return plain if re.fullmatch(r'[0-9a-f]{32}', plain) and len(text) == 36 else text  # a dashed Notion id
 
 
 def can_edit(account, known):
@@ -358,7 +390,8 @@ def can_edit(account, known):
 
 
 def label(action):
-    return action.get('label') or ('Create doc' if action['op'] == 'create' else 'Save changes')
+    return action.get('label') or {'create': 'Create page' if action.get('provider') == 'notion' else 'Create doc',
+                                   'done': 'Mark done'}.get(action['op'], 'Save changes')
 
 
 def where(action):
@@ -369,6 +402,8 @@ def done(action):
     """What happened, once written: "Created “Plan” in Google Docs" or "Saved 2 changes to “Plan”"."""
     if action['op'] == 'create':
         return f'Created “{action["title"]}” in {where(action)}'
+    if action['op'] == 'done':
+        return f'Marked “{action["doc_title"]}” done in {where(action)}'
     n = len(action['changes'])
     return f'Saved {n} change{"s" if n > 1 else ""} to “{action["doc_title"]}”'
 
@@ -392,7 +427,9 @@ def untitled(action):
 def preview(action):
     """The whole write as plain text: the new doc in full, or every change as before and after."""
     if action['op'] == 'create':
-        return f'New doc in {where(action)}: “{action["title"]}”\n\n{untitled(action)}'
+        return f'New {"page" if action.get("provider") == "notion" else "doc"} in {where(action)}: “{action["title"]}”\n\n{untitled(action)}'
+    if action['op'] == 'done':
+        return f'Mark “{action["doc_title"]}” done in {where(action)}'
     n = len(action['changes'])
     blocks = [f'Edit “{action["doc_title"]}” in {where(action)}: {n} change{"s" if n > 1 else ""}']
     for i, change in enumerate(action['changes'], 1):
@@ -460,9 +497,12 @@ def made_by_itself(job):
     return bool(job) and str(job['approval_id'] or '').startswith(NEW_DOC)
 
 
-def link_of(message_id):
-    """A made Google Doc's link from its write's message id (docwrite:<file id>); None for Word or anything else."""
+def link_of(message_id, provider=None):
+    """A made Google Doc's link from its write's message id (docwrite:<file id>), or a Notion page's; None for Word or
+    anything else."""
     found = re.fullmatch(r'docwrite:([\w-]{1,200})', str(message_id or ''))
+    if found and provider == 'notion':
+        return f'https://www.notion.so/{found[1]}' if re.fullmatch(r'[0-9a-f]{32}', found[1]) else None
     return google_link(found[1]) if found else None
 
 
@@ -864,7 +904,7 @@ class DocWriteTransport:
             raise ValueError('Only an approved doc write uses the doc transport')
         gog = getattr(self.connector, 'gog_google', lambda a: False)
         account = next((a for a in self.config.get('accounts', []) if a.get('id') == action['account_id']
-                        and (a.get('service') == 'docs' or (action['op'] == 'create' or action.get('made')) and gog(a))), None)
+                        and (a.get('service') in DOC_SERVICES or (action['op'] == 'create' or action.get('made')) and gog(a))), None)
         if not account:
             raise OwnerError('That Docs connection is no longer here. Nothing was changed.')
         writes = self.connector.writes_on(self.config, account, self.helpers)
@@ -879,6 +919,8 @@ class DocWriteTransport:
     def preflight(self, action):
         writer = self.writer(action)
         try:
+            if action['op'] == 'done':
+                return  # marking a task done twice leaves it done
             if action['op'] == 'edit':
                 current = self.snapshot(writer, action['file_id'])
                 if current['version'] != action['version']:
@@ -886,7 +928,9 @@ class DocWriteTransport:
                 resolve(current, action['changes'])
                 return
             proof = action.setdefault('proof', {})
-            if writer.provider == 'google':
+            if writer.provider == 'notion':
+                proof.setdefault('since', timeutil.clock().replace(second=0, microsecond=0).isoformat())  # Notion stamps to the minute
+            elif writer.provider == 'google':
                 proof.setdefault('token', uuid.uuid4().hex)  # set once, before the write: what reconcile looks for
             elif not proof.get('name'):
                 proof['name'] = next((name for name in (word_name(action['title'], n) for n in range(1, 10))
@@ -899,6 +943,8 @@ class DocWriteTransport:
     def send(self, action, job):
         writer = self.writer(action)
         try:
+            if action['op'] == 'done':
+                return writer.mark_done(action['file_id'])
             if action['op'] == 'create':
                 return self.create(writer, action, job)
             return self.edit(writer, action)
@@ -916,6 +962,12 @@ class DocWriteTransport:
 
     def create(self, writer, action, job):
         proof = action.get('proof') or {}
+        if writer.provider == 'notion':
+            if not proof.get('since'):
+                return {}  # never made without its start: reconcile looks for it from then
+            made = writer.create(action['title'], action['body'], action.get('parent'))
+            return {'message_id': 'docwrite:' + made['id'], **({'url': made['url']} if str(made.get('url') or '').startswith('https://') else {})} \
+                if re.fullmatch(r'[0-9a-f]{32}', str(made.get('id') or '')) else {}
         if writer.provider == 'google':
             if not proof.get('token'):
                 return {}  # never made without its token: reconcile checks the older kind
@@ -931,6 +983,8 @@ class DocWriteTransport:
                 **({'url': made['webUrl']} if str(made.get('webUrl') or '').startswith('https://') else {})}
 
     def edit(self, writer, action):
+        if writer.provider == 'notion':  # read again right before, pinned to the version the owner approved
+            return writer.edit(action['file_id'], action['changes'], action['version'])
         if writer.provider == 'google':
             doc = writer.document(action['file_id'])
             if str(doc.get('revisionId') or '') != action['version']:
@@ -954,8 +1008,15 @@ class DocWriteTransport:
     def reconcile(self, action, job):
         try:
             writer = self.writer(action)
+            if action['op'] == 'done':
+                return {'message_id': 'docwrite:' + action['file_id']} if writer.task(action['file_id'])[2] is None else {}
             if action['op'] == 'create':
                 proof = action.get('proof') or {}
+                if writer.provider == 'notion':
+                    since = dt.datetime.fromisoformat(proof['since']) if proof.get('since') else None
+                    found = writer.written(action['title'], since) if since else None
+                    return {'message_id': 'docwrite:' + found['id'], **({'url': found['url']} if str(found.get('url') or '').startswith('https://') else {})} \
+                        if found else {}
                 if writer.provider == 'google':
                     # an older write's generated id (proof file_id, before 2026-11-03) is still looked up by that id
                     found = (writer.written(proof['token']) if proof.get('token') else None) or (
@@ -980,6 +1041,8 @@ class DocWriteTransport:
 
 def snapshot(writer, file_id):
     """The doc as it is now, for an edit: its version, title, link and paragraphs."""
+    if writer.provider == 'notion':
+        return writer.snapshot(file_id)
     if writer.provider == 'google':
         return google_snapshot(writer.document(file_id), file_id)
     item, data = writer.item_and_bytes(file_id)
@@ -996,15 +1059,17 @@ def targets(config, connector, helpers, check=True):
     out = {}
     gog = getattr(connector, 'gog_google', lambda a: False)
     for a in config.get('accounts', []):
-        if a.get('shared') or not (a.get('service') == 'docs' or gog(a)) or a.get('actions') is False:
+        own = a.get('service') in DOC_SERVICES
+        if a.get('shared') or not (own or gog(a)) or a.get('actions') is False:
             continue  # a Fleet's share only reads; Can do things off (abilities.py) writes nothing
-        writes = sorted(connector.writes_on(config, a, helpers)) if check or a.get('service') != 'docs' else None
-        if a.get('service') != 'docs' and not writes:
+        writes = sorted(connector.writes_on(config, a, helpers)) if check or not own else None
+        if not own and not writes:
             continue
-        out[a['id']] = {'name': str(a.get('display_name') or a.get('email') or a['id']), 'email': str(a.get('email') or '').lower(),
-                        'provider': connector.provider(config, a) if a.get('service') == 'docs' else 'google',
+        out[a['id']] = {'name': str(a.get('display_name') or a.get('workspace_name') or a.get('email') or a['id']),
+                        'email': str(a.get('email') or a.get('member_email') or '').lower(),
+                        'provider': connector.provider(config, a) if own else 'google',
                         'boundary': a.get('boundary') or '', 'writes': writes,
-                        **({'gog': True} if a.get('service') != 'docs' else {})}
+                        **({'gog': True} if not own else {})}
     return out
 
 

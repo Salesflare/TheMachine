@@ -2,11 +2,13 @@
 // before and after, with what goes struck through and what comes in marked. A new private doc is made while the to-do
 // is prepared, and Open the doc leads its buttons (Store.make_new_docs, cardActions); an edit is written only after the owner confirms it in the
 // dialog, and only into the doc as it was when this was drafted (the server pins its version).
-const DOC_DO={create:'New doc in {}',edit:'Edit “{}” in {}'},DOC_DID={create:'Created in {}',edit:'Saved in {}'};
-const DOC_LABEL={create:'Review and create',edit:'Review changes'};
-const docWhere=a=>a.provider==='microsoft'?'Word':'Google Docs';
-const docHead=(a,done)=>done?t(DOC_DID[a.op]||DOC_DID.edit,docWhere(a)):a.op==='create'?t(DOC_DO.create,docWhere(a)):t(DOC_DO.edit,a.doc_title||'',docWhere(a));
-const docDoneText=(a,sent)=>a.op==='create'?sentNote(sent,'Doc created.','Doc created at {}.'):sentNote(sent,'Changes saved in the doc.','Changes saved in the doc at {}.');
+// Notion (connectors/notion.py): a page is a doc here; done marks a task assigned to the owner done, after their OK.
+const DOC_DO={create:'New doc in {}',edit:'Edit “{}” in {}',done:'Mark “{}” done in {}'},DOC_DID={create:'Created in {}',edit:'Saved in {}',done:'Marked done in {}'};
+const DOC_LABEL={create:'Review and create',edit:'Review changes',done:'Mark done'};
+const docWhere=a=>a.provider==='microsoft'?'Word':a.provider==='notion'?'Notion':'Google Docs';
+const docHead=(a,done)=>done?t(DOC_DID[a.op]||DOC_DID.edit,docWhere(a)):a.op==='create'?t(a.provider==='notion'?'New page in {}':DOC_DO.create,docWhere(a)):t(DOC_DO[a.op]||DOC_DO.edit,a.doc_title||'',docWhere(a));
+const docDoneText=(a,sent)=>a.op==='create'?(a.provider==='notion'?sentNote(sent,'Page created.','Page created at {}.'):sentNote(sent,'Doc created.','Doc created at {}.'))
+ :a.op==='done'?sentNote(sent,'Marked done in Notion.','Marked done in Notion at {}.'):sentNote(sent,'Changes saved in the doc.','Changes saved in the doc at {}.');
 // New text as the doc gets it: "# " to "### " lines are headings, the rest paragraphs (doc_writes.lines).
 const docLines=(text,tag)=>String(text||'').split('\n').filter(l=>l.trim()).map(l=>{const m=/^(#{1,3}) +(.*)$/.exec(l);
  const x=m?m[2]:l;return html`<p class="dw-p${m?' dw-h'+m[1].length:''}">${tag==='ins'?html`<ins>${x}</ins>`:x}</p>`});
@@ -21,9 +23,9 @@ const docChange=(c,n,total)=>{const head=total>1?html`<div class="dw-n">${t('Cha
 const docSame=x=>String(x||'').trim().replace(/\s+/g,' ').toLowerCase();
 const docBody=a=>{const ls=String(a.body||'').split('\n').filter(l=>l.trim()),m=ls.length?/^#{1,3} +(.*)$/.exec(ls[0].trim()):null;
  return m&&docSame(m[1])===docSame(a.title)?ls.slice(1).join('\n'):String(a.body||'')};
-const docWriteHtml=a=>a.op==='create'?html`<p class="dw-p dw-h1">${a.title}</p>${docLines(docBody(a))}`:html`${(a.changes||[]).map((c,i,all)=>html`<div class="dw-ch">${docChange(c,i+1,all.length)}</div>`)}`;
+const docWriteHtml=a=>a.op==='done'?html`<p class="dw-p">${t('Mark “{}” done in {}',a.doc_title||'',docWhere(a))}</p>`:a.op==='create'?html`<p class="dw-p dw-h1">${a.title}</p>${docLines(docBody(a))}`:html`${(a.changes||[]).map((c,i,all)=>html`<div class="dw-ch">${docChange(c,i+1,all.length)}</div>`)}`;
 // Plain text of the same, for chat and copy (doc_writes.preview).
-const docWriteText=a=>a.op==='create'?a.title+'\n\n'+docBody(a):(a.changes||[]).map(c=>'find' in c?t('Before')+': '+c.before+'\n'+t('After')+': '+c.after:'after' in c?t('Add after “{}”',c.before)+'\n'+c.insert:t('Add at the end')+'\n'+c.append).join('\n\n');
+const docWriteText=a=>a.op==='done'?t('Mark “{}” done in {}',a.doc_title||'',docWhere(a)):a.op==='create'?a.title+'\n\n'+docBody(a):(a.changes||[]).map(c=>'find' in c?t('Before')+': '+c.before+'\n'+t('After')+': '+c.after:'after' in c?t('Add after “{}”',c.before)+'\n'+c.insert:t('Add at the end')+'\n'+c.append).join('\n\n');
 function docWriteBox(s,a){const st=a.state||s.action_status,done=st?.status==='sent',url=a.url||(done?st?.url:''),key='draft-'+s.id+'-'+a.revision,open=expandedBodies.has(key);
- const size=a.op==='create'?String(a.body||'').split('\n').length:(a.changes||[]).length*4,fold=size>16;
- return html`<div class="draft doc-write${done?' sent':''}${fold&&!open?' clamp':''}" data-clamp="${key}" role="group" aria-label="${a.op==='create'?t('New doc'):t('Doc changes')}"><div class="dm">${viaIco(actionVia(a))}<span>${docHead(a,done)}${!done&&safeURL(url)?html` · <a href="${safeHref(safeURL(url))}" target="_blank" rel="noreferrer">${t('Open the doc')}</a>`:''}</span></div><div class="db dw">${docWriteHtml(a)}</div></div>${fold?html`<button type="button" class="more" data-more="${key}" aria-expanded="${open}">${open?'Show less':'Show more'}</button>`:''}`}
+ const size=a.op==='create'?String(a.body||'').split('\n').length:(a.changes||[]).length*4,fold=size>16,open_=a.provider==='notion'?t('Open the page'):t('Open the doc');
+ return html`<div class="draft doc-write${done?' sent':''}${fold&&!open?' clamp':''}" data-clamp="${key}" role="group" aria-label="${a.op==='create'?t('New doc'):t('Doc changes')}"><div class="dm">${viaIco(actionVia(a))}<span>${docHead(a,done)}${!done&&safeURL(url)?html` · <a href="${safeHref(safeURL(url))}" target="_blank" rel="noreferrer">${open_}</a>`:''}</span></div><div class="db dw">${docWriteHtml(a)}</div></div>${fold?html`<button type="button" class="more" data-more="${key}" aria-expanded="${open}">${open?'Show less':'Show more'}</button>`:''}`}

@@ -113,8 +113,8 @@ Object.entries({outlook:ICONS.gmail,outlook_calendar:ICONS.calendar,teams:'<path
  .forEach(([k,v])=>{if(!ICONS[k])ICONS[k]=v});
 const CONNECT_ICON={google_meet:'zoom',google_docs:'docs',crm:'salesflare'};
 // The service's own logo (dashboard/logos, its NOTICE.md), loaded when shown; Machine health is our robot. Else a line icon.
-const LOGOS=/^(android|calendar|codex|crm|docs|exchange|github|gmail|google_docs|google_meet|icloud_calendar|intercom|linkedin|outlook|outlook_calendar|proton_calendar|rss|salesforce|shortcut|signal|slack|stripe|teams|telegram|trello|whatsapp|x|zoom)$/,
- connectLogo=(x,n=x.name)=>n==='gateway'||LOGOS.test(n)?html`<span class="icon brand${/^(x|github|intercom|codex)$/.test(n)?' mono':''}" aria-hidden="true"><img src="brand/${n==='gateway'?'avatar.png':'logos/'+n+(n==='zoom'?'.png':'.svg')}" alt="" loading="lazy" width="20" height="20"></span>`:icon(CONNECT_ICON[n]||x.service||n);
+const LOGOS=/^(android|calendar|codex|crm|docs|exchange|github|gmail|google_docs|google_meet|icloud_calendar|intercom|linkedin|notion|outlook|outlook_calendar|proton_calendar|rss|salesforce|shortcut|signal|slack|stripe|teams|telegram|trello|whatsapp|x|zoom)$/,
+ connectLogo=(x,n=x.name)=>n==='gateway'||LOGOS.test(n)?html`<span class="icon brand${/^(x|github|intercom|codex|notion)$/.test(n)?' mono':''}" aria-hidden="true"><img src="brand/${n==='gateway'?'avatar.png':'logos/'+n+(n==='zoom'?'.png':'.svg')}" alt="" loading="lazy" width="20" height="20"></span>`:icon(CONNECT_ICON[n]||x.service||n);
 // Already connected: which account, on the row ("Connected: kris@…"), and on the source's add view a line that this adds
 // another connection beside it, with a way to its card. Adding one more stays possible. Its own accounts only (not one a
 // teammate shares), matched by service as connect_sources counts them, or the sign-ins it rests on (`via`: Google Docs
@@ -230,11 +230,13 @@ async function connectSetup(form){const name=form.dataset.connectSetup,err=form.
 // Sign in with <provider> on a self-hosted Machine: the Machine asks the control plane for a one-time start link,
 // signed with its own key, and it opens in a new tab. The token comes back sealed for this Machine, which checks it.
 // off: what it says when the control plane has no app for this sign-in (connect_sources signin_off), above the other way
+// many: a second sign-in adds another account (another), not a reconnect of the first
 // later: one line under `about` on what to expect while it reads (Slack: its read limit, new messages first)
-const SIGNIN_COPY={intercom:{label:'Intercom',about:'Reads your conversations. Replies only after you approve them, as yourself. Never assigns or closes.'},
+const SIGNIN_COPY={intercom:{many:1,label:'Intercom',about:'Reads your conversations. Replies only after you approve them, as yourself. Never assigns or closes.'},
  salesforce:{label:'Salesforce',about:'Deals, tasks and activity. Changes contact details only if you turn that on.'},
- trello:{label:'Trello',about:'Reads cards, comments and activity on one board you pick next. Never changes anything in Trello.'},
- shortcut:{label:'Shortcut',about:'Reads stories that change state, with their owners and deadlines. Never changes anything in Shortcut.',other:'Or paste an API token',how:'A personal API token from Shortcut’s settings.',go:'Paste a token',off:'Sign in with {} isn’t available yet. Paste an API token instead.'},
+ trello:{many:1,label:'Trello',about:'Reads cards, comments and activity on one board you pick next. Never changes anything in Trello.'},
+ shortcut:{many:1,label:'Shortcut',about:'Reads stories that change state, with their owners and deadlines. Never changes anything in Shortcut.',other:'Or paste an API token',how:'A personal API token from Shortcut’s settings.',go:'Paste a token',off:'Sign in with {} isn’t available yet. Paste an API token instead.'},
+ notion:{many:1,label:'Notion',about:'Comments, mentions and tasks assigned to you. Replies, new pages and edits wait for your OK.',other:'Or paste an integration token',how:'An internal integration token from Notion, with your pages shared with it.',go:'Paste a token',off:'Sign in with {} isn’t available yet. Paste an integration token instead.'},
  google:{label:'Google',about:'Gmail and Google Calendar. Sends only emails you approved.',other:'Use your own app',how:'Your own Google Cloud app, step by step.',go:'Set it up',off:'Sign in with {} isn’t available yet. Use your own app instead.'},
  microsoft:{label:'Microsoft',about:'Outlook mail and calendar. Sends only emails you approved.',other:'Use your own app',how:'Your own Microsoft app registration, step by step.',go:'Set it up',off:'Sign in with {} isn’t available yet. Use your own app instead.'},
  github:{label:'GitHub',about:'Review requests, mentions, assignments and failed CI runs. Files issues only when you confirm.'},
@@ -260,7 +262,7 @@ const signinOf=(x,state,command)=>{const hosted=!!(connectList?.manage_url&&x.ho
  return {source:x.name,provider:p,label:SIGNIN_COPY[p]?.label||x.label,own:!x.broker,hosted,another:!!x.connected,state,...(command?{command}:{}),...(!hosted&&x.signin_off?{off:true}:{})}};
 // A hosted Machine: Work or Personal here, then Sign in goes to the provider in this tab and comes back to this form.
 // Pasting a key or token stays on the account page's tile.
-const HOSTED_TILE={google:'#google',microsoft:'#microsoft',microsoft_teams:'#teams',zoom:'#source-zoom',stripe:'#source-stripe',slack:'#source-slack',intercom:'#source-intercom',trello:'#source-trello',shortcut:'#source-shortcut',github:'#source-github',salesforce:'#source-salesforce'};
+const HOSTED_TILE={google:'#google',microsoft:'#microsoft',microsoft_teams:'#teams',zoom:'#source-zoom',stripe:'#source-stripe',slack:'#source-slack',intercom:'#source-intercom',trello:'#source-trello',shortcut:'#source-shortcut',notion:'#source-notion',github:'#source-github',salesforce:'#source-salesforce'};
 // GitHub, WhatsApp and the phone have no provider page to come back from: the Machine gets a code, shown right here
 // (GitHub's to type at GitHub, WhatsApp's QR code or pairing code, the OpenClaw app's setup code)
 const GITHUB_DEVICE=/^https:\/\/github\.com\/login\/device[\w/.-]*$/;
@@ -294,7 +296,7 @@ const signinLater=copy=>copy.later?html`<p class="muted">${copy.later}</p>`:'';
 function hostedSigninGo(s,way){const form=document.createElement('form'),box=$('#connect-add'),add=(name,value)=>{const i=document.createElement('input');i.type='hidden';i.name=name;i.value=value;form.append(i)};
  form.method='post';form.action='/_machine/connect';form.hidden=true;add('source',s.provider);
  if(!NO_SCOPE_SIGNIN.includes(s.provider)){add('scope',box.querySelector('input[name="signin-scope"]:checked')?.value||'work');add('boundary','')}
- if(['intercom','trello','shortcut'].includes(s.provider)&&s.another)add('another','1');
+ if(SIGNIN_COPY[s.provider]?.many&&s.another)add('another','1');
  if(['microsoft_docs','microsoft_docs_write','microsoft_teams'].includes(s.provider)&&s.email)add('email',s.email);  // Reconnect on its card: that address
  if(s.provider==='whatsapp'&&way==='code'){add('way','code');add('phone',box.querySelector('input[name="signin-phone"]')?.value||'')}
  if(s.provider==='whatsapp'&&s.account)add('account_id',s.account);  // Link again: the one that is not linked any more

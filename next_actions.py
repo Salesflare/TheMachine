@@ -884,7 +884,7 @@ def validate(value, config, allowed_accounts, recipient_options=None, linkedin_t
         # answered through Microsoft Graph: there the reply stays text for the owner to post.
         if set(value) - {'kind', 'label', 'account_id', 'comment_id', 'body'}:
             raise OwnerError('Unsupported doc reply fields; a plain reply to one comment only')
-        account = next((a for a in config['accounts'] if a['id'] == value.get('account_id') and a.get('service') == 'docs'), None)
+        account = next((a for a in config['accounts'] if a['id'] == value.get('account_id') and a.get('service') in abilities.DOC_SERVICES), None)
         if not account or account['id'] not in allowed_accounts:
             raise OwnerError('Use the Docs account belonging to this task')
         comment = (doc_comments or {}).get(str(value.get('comment_id') or ''))
@@ -2279,7 +2279,7 @@ class DocReplyTransport:
         self.config, self.connector, self.helpers = config, connector, helpers
 
     def replier(self, action):
-        account = next((a for a in self.config['accounts'] if a['id'] == action['account_id'] and a.get('service') == 'docs'), None)
+        account = next((a for a in self.config['accounts'] if a['id'] == action['account_id'] and a.get('service') in abilities.DOC_SERVICES), None)
         if not account:
             raise OwnerError('That Docs account is no longer connected. Nothing was posted.')
         if not self.connector.replies_on(self.config, account, self.helpers):

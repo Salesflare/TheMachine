@@ -92,8 +92,19 @@ W = '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}'
 R = '{http://schemas.openxmlformats.org/officeDocument/2006/relationships}'
 
 
+def notion(account):
+    """The Notion connector (connectors/notion.py) for a Notion connection, else None: Docs' reads, replies and writes
+    hand a Notion page to it, so doc_reply and doc_write work the same way for both."""
+    if not isinstance(account, dict) or account.get('service') != 'notion':
+        return None
+    from machine.sources.connectors import load_connector  # noqa: PLC0415
+    return load_connector('notion')
+
+
 def provider(config, account):
-    """google or microsoft: as set, else the provider of the owner's mail or calendar sign-in on this address."""
+    """google, microsoft or notion: as set, else the provider of the owner's mail or calendar sign-in on this address."""
+    if account.get('service') == 'notion':
+        return 'notion'
     if account.get('provider') in ('google', 'microsoft'):
         return account['provider']
     email = str(account.get('email') or '').lower()
@@ -734,7 +745,9 @@ def check(config, account, helpers):
 
 def replies_on(config, account, helpers):
     """Google only, with the separate reply consent: posting a reply to a comment. Microsoft Graph cannot reply to a
-    Word comment, and a Fleet-shared connection only reads."""
+    Word comment, and a Fleet-shared connection only reads. Notion: its own (connectors/notion.py)."""
+    if notion(account):
+        return notion(account).replies_on(config, account, helpers)
     if account.get('shared') or provider(config, account) != 'google':
         return False
     try:
@@ -745,6 +758,8 @@ def replies_on(config, account, helpers):
 
 def read_text(config, account, file_id, helpers):
     """A doc's title, link and text (at most MAX_TEXT characters), read once for a run the owner started."""
+    if notion(account):
+        return notion(account).read_text(config, account, file_id, helpers)
     info, text = source_for(config, account, helpers).text(file_id)
     return {'title': info.get('name'), 'url': info.get('webViewLink') or info.get('webUrl'), 'text': text[:MAX_TEXT],
             'truncated': len(text) > MAX_TEXT}
@@ -752,6 +767,8 @@ def read_text(config, account, file_id, helpers):
 
 def find(config, account, words, helpers):
     """Docs of this connection that match the words (at most MAX_FOUND), for a run the owner started: read-only."""
+    if notion(account):
+        return notion(account).find(config, account, words, helpers)
     words = ' '.join(str(words or '').split())[:200]
     if not words:
         raise helpers.SourceError('docs_find_empty')
@@ -761,6 +778,12 @@ def find(config, account, words, helpers):
 def doc_links(text):
     """The Google Doc ids linked in a text (docs.google.com/document/d/<id>), in order, once each."""
     return list(dict.fromkeys(DOC_LINK.findall(str(text or ''))))
+
+
+def doc_links_of(account, text):
+    """The doc ids linked in a text that this connection opens: Notion page ids for Notion, else Google Doc ids."""
+    found = notion(account)
+    return found.notion_links(text) if found else doc_links(text)
 
 
 def refresh(store, config, account, helpers):
@@ -773,7 +796,11 @@ def refresh(store, config, account, helpers):
 
 
 class Replier(Google):
-    """The one write: a reply to one comment, as the owner, only with the reply consent."""
+    """The one write: a reply to one comment, as the owner, only with the reply consent. Notion's own for a Notion page."""
+
+    def __new__(cls, config, account, helpers):
+        found = notion(account)
+        return found.Replier(config, account, helpers) if found else super().__new__(cls)
 
     def __init__(self, config, account, helpers):
         if account.get('shared') or provider(config, account) != 'google':
@@ -863,6 +890,8 @@ def writes_on(config, account, helpers):
     drive scope (the same consent as posting replies) for both, drive.file for a new doc only. Microsoft:
     Files.ReadWrite.All, from Allow edits. A gog Google sign-in: a new doc only, when it has drive or drive.file
     already. A Fleet-shared connection only reads; unknown means nothing."""
+    if notion(account):
+        return notion(account).writes_on(config, account, helpers)
     if account.get('shared'):
         return set()
     if gog_google(account):
@@ -886,7 +915,12 @@ def writes_on(config, account, helpers):
 
 
 class Writer:
-    """The doc writes (doc_writes.py decides what): a new doc, or an edit pinned to the version the owner approved."""
+    """The doc writes (doc_writes.py decides what): a new doc, or an edit pinned to the version the owner approved.
+    Notion's own (connectors/notion.py) for a Notion connection."""
+
+    def __new__(cls, config, account, helpers):
+        found = notion(account)
+        return found.Writer(config, account, helpers) if found else super().__new__(cls)
 
     def __init__(self, config, account, helpers):
         if account.get('shared'):

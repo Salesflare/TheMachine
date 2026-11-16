@@ -337,7 +337,8 @@ WEB_NOTES = {
     'whatsapp': 'Next, you link your Machine in WhatsApp, Linked devices, with a code shown here.',
     'telegram': 'Next, you scan a QR code in Telegram.', 'signal': 'Next, you scan a QR code in Signal on your phone. It uses an unofficial Signal client, so it may stop working.', 'imap': 'Many providers need an app password for mail apps. Server settings are filled in for most.',
     'android': 'Install the OpenClaw app on your phone and pair it with your Machine first: https://themachine.computer/help/android#connect-it', **calendar_setup.NOTES,
-    'shortcut': 'It only reads, never changes anything in Shortcut.'}  # Get your token (SETUP token_url) opens the page
+    'shortcut': 'It only reads, never changes anything in Shortcut.',
+    'notion': 'Replies, new pages and edits wait for your OK.'}  # Get your token (SETUP token_url) opens the page
 WEB_LEARN = {'telegram': 'telegram-chats', 'signal': 'signal-chats', 'imap': 'imap', **calendar_setup.LEARN}  # its help article, behind Learn more: how it reads, and that it isn't the to-dos bot
 WEB_SECRETS = {'slack': 'Maton API key', 'salesflare': 'Salesflare API key', 'imap': 'Password', **calendar_setup.SECRETS}
 WEB_ASKS = {'whatsapp': [['phone', 'Your WhatsApp phone number, with its country code (+32 470 12 34 56)']], 'gmail': [['email', 'Google account']], 'calendar': [['email', 'Google account']], 'imap': [['email', 'Email address']], **calendar_setup.ASKS}
@@ -2270,7 +2271,9 @@ GRANT_LABELS = {'google': 'Google', 'microsoft': 'Microsoft', 'zoom': 'Zoom', 's
 # Each one's services: the rows of machine/services.py its sign-in connects (Google Meet: its own Google sign-in, apart from Gmail's)
 GRANT_SERVICES = {provider: service_registry.of(signin=provider) for provider in GRANT_LABELS}
 SLACK_KEY = r'[te][a-z0-9]{6,20}:[uw][a-z0-9]{6,20}'  # a Slack sign-in's name: '<team id>:<user id>' (slack_api.key)
-DELIVERED = {'intercom', 'trello', 'shortcut', 'microsoft_docs', 'microsoft_docs_write', 'microsoft_teams', *GRANT_SERVICES}  # sources a sign-in started on the dashboard connects on a paired self-hosted Machine (fleet.SIGNIN_SOURCES)
+# Sources signed in under their own name that bring a token of their own (Intercom, Trello, Shortcut, Notion)
+OWN_SIGNINS = tuple(k for k, row in service_registry.SERVICES.items() if row['signin'] == k and k not in GRANT_LABELS)
+DELIVERED = {*OWN_SIGNINS, 'microsoft_docs', 'microsoft_docs_write', 'microsoft_teams', *GRANT_SERVICES}  # sources a sign-in started on the dashboard connects on a paired self-hosted Machine (fleet.SIGNIN_SOURCES)
 
 
 class AnswersUI(UI):

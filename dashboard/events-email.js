@@ -20,7 +20,7 @@ const STEP_VIA={slack:'slack',whatsapp:'whatsapp',telegram:'telegram',signal:'si
 // A final step on GitHub that runs with gh or a GitHub MCP server (github_route.py) shows GitHub's logo, else the browser.
 // Mail and calendar steps by their account: Gmail or Outlook, Google or Outlook Calendar, else the plain line icon
 const mailVia=svc=>['gmail','outlook'].includes(svc)?svc:'mail',calVia=svc=>svc==='calendar'?'gcal':svc==='outlook_calendar'?svc:'cal';
-const actionVia=a=>a?.kind==='finish'&&['gh','mcp'].includes(a.via)?'github':['email','email_demo'].includes(a?.kind)?mailVia(svcOf(a.account_id)):a?.kind==='calendar'?calVia(svcOf(a.account_id)):['doc_write','doc_reply'].includes(a?.kind)?(a.provider==='microsoft'?'docs':'gdocs'):STEP_VIA[a?.kind]||'';
+const actionVia=a=>a?.kind==='finish'&&['gh','mcp'].includes(a.via)?'github':['email','email_demo'].includes(a?.kind)?mailVia(svcOf(a.account_id)):a?.kind==='calendar'?calVia(svcOf(a.account_id)):['doc_write','doc_reply'].includes(a?.kind)?(a.provider==='microsoft'?'docs':a.provider==='notion'||svcOf(a.account_id)==='notion'?'notion':'gdocs'):STEP_VIA[a?.kind]||'';
 // A to-do's source by the message its line names (views.source_marks), never another one's; else by the line's words
 const srcHead=s=>(/^Source:\s*([^·\n]+)/i.exec(s.source_line||'')?.[1]||'').trim();
 const cardViaIcon=s=>{const v=srcHead(s),svc=(Array.isArray(s.account_ids)?s.account_ids:(()=>{try{return JSON.parse(s.account_ids||'[]')}catch{return []}})()).map(svcOf),m=s.source_mark,k=m&&sourceMark(m.kind,m.account_id,m.app);
@@ -34,7 +34,7 @@ const cardViaIcon=s=>{const v=srcHead(s),svc=(Array.isArray(s.account_ids)?s.acc
  return /^the machine$/i.test(v)?'gateway':/note/i.test(v)?'note':/calendar/i.test(v)?calVia(svc.find(x=>/calendar/.test(x))):marks.length===1?marks[0]:'chat'};
 // The source a line's first word names
 const lineNamed=v=>{const w=v.toLowerCase().replace(/^(microsoft|google) /,'').split(/[^a-z]/)[0];
- return w==='doc'||w==='suggested'?'gdocs':w==='meet'?'google_meet':/^(slack|whatsapp|telegram|signal|linkedin|x|intercom|teams|zoom|github|stripe|salesflare|salesforce|trello|shortcut)$/.test(w)?w:''};
+ return w==='doc'||w==='suggested'?'gdocs':w==='meet'?'google_meet':/^(slack|whatsapp|telegram|signal|linkedin|x|intercom|teams|zoom|github|stripe|salesflare|salesforce|trello|shortcut|notion)$/.test(w)?w:''};
 // A card the owner added has their own words as its only signal until the review links an email: nothing to open yet.
 const hasOriginal=s=>Boolean(s.source_line||(!['owner','machine'].includes(s.origin)&&eventIds(s).length)||(s.original_urls||[]).length);  // machine: an update's note, no thread
 // A meeting's notes lead ("Source: notes from Board meeting", meeting_mail.py): not an email, even with its notes mail among the originals

@@ -189,8 +189,9 @@ $('#send-dialog').close();toast(sendDraft.kind==='merge'?'Testing and merging th
 }catch(e){errCaught(e);$('#send-error').textContent=e.offline&&!e.slow?t('Offline. Send again when you’re back online.'):e.message;b.disabled=false}};
 // The review dialog for it: everything that goes in, then Create or Save. The tap here writes it, once.
 function openDocWrite(id,draft){sendTask=id;sendRevision=draft.revision;sendDraft=draft;$('#send-editor').hidden=true;$('#send-edit').hidden=true;
- $('#send-title').textContent=draft.op==='create'?t('Create this doc?'):t('Save these changes?');$('#send-confirm').textContent=draft.op==='create'?t('Create'):t('Save');
+ const page=draft.provider==='notion';
+ $('#send-title').textContent=draft.op==='done'?t('Mark it done in Notion?'):draft.op==='create'?(page?t('Create this page?'):t('Create this doc?')):t('Save these changes?');$('#send-confirm').textContent=draft.op==='done'?t('Mark done'):draft.op==='create'?t('Create'):t('Save');
  $('#send-preview').classList.remove('code','mail');$('#send-confirm').hidden=false;$('#send-confirm').disabled=false;$('#send-cancel').textContent='Cancel';$('#send-recipients').hidden=true;$('#send-files').hidden=true;$('#send-error').textContent='';
- sendHeader=()=>sendRows(draft.op==='create'?[['Doc',draft.title],['Where',docWhere(draft)+(draft.account_name?' · '+draft.account_name:'')]]:[['Doc',draft.doc_title],['Where',docWhere(draft)],['Changes',String((draft.changes||[]).length)]]);sendHeader();
+ sendHeader=()=>sendRows(draft.op==='done'?[['Task',draft.doc_title],['Where',docWhere(draft)]]:draft.op==='create'?[[page?'Page':'Doc',draft.title],['Where',docWhere(draft)+(draft.account_name?' · '+draft.account_name:'')]]:[['Doc',draft.doc_title],['Where',docWhere(draft)],['Changes',String((draft.changes||[]).length)]]);sendHeader();
  $('#send-preview').hidden=false;setHTML($('#send-preview'),html`<div class="dw">${docWriteHtml(draft)}</div>`);
- sendFine(draft.op==='create'?t('Only you can see the new doc until you share it.'):t('Only these changes are made, and only if the doc hasn’t changed since.'));$('#send-dialog').showModal()}
+ sendFine(draft.op==='done'?t('Only its status changes.'):draft.op==='create'?(page?t('Only you can see the new page until you share it.'):t('Only you can see the new doc until you share it.')):t('Only these changes are made, and only if the doc hasn’t changed since.'));$('#send-dialog').showModal()}

@@ -67,6 +67,8 @@ KINDS = (
     # It buzzes like any to-do (a good listing goes fast); the listings open on the site, so no Do it.
     TodoKind('secondhand', 'secondhand', test='is_secondhand', table='secondhand_todos', close_only=True,
              refused=lambda: i18n.t('Open it on the site from the to-do. The Machine never contacts a seller or buys.')),
+    # A Notion heads-up (notion_heads_up.py): a page the owner asked to have changed was changed. Quiet, never a buzz.
+    TodoKind('notion_heads_up', 'notion_heads_up', test='is_heads_up', table='events', quiet=True),
 )
 
 
