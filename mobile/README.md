@@ -7,6 +7,13 @@ dashboard release reaches the app at once, with no store update. The app itself 
 - **Sign-in through the system** (`MachineShellPlugin`): the account's sign-in opens in the system's sign-in sheet
   (`ASWebAuthenticationSession` on iOS, a Custom Tab on Android), so passkeys, Face ID and saved Google or Microsoft
   sign-ins work. It comes back on `computer.themachine.app://signed-in` and the app opens the Machine.
+- **Connections' sign-ins** ("Sign in with Shortcut", Notion, Slack, Zoom and the rest): the hosted dashboard's hop to
+  the account (`/hop?t=...&app=1`, which the account gives the app's WebView only) and a self-hosted Machine's start link
+  (`/connect/start/<id>`, the app adds `app=1`) open in the same sheet (`connectionStart` in `www/machine-url.js`, and
+  natively). The account's end comes back on `computer.themachine.app://connected?h=<part>`, and the app opens the saved
+  Machine's dashboard at `#<part>` (`connectedPart`: + Add's form or "connected", nothing else; no sign-in token). A
+  sign-in started in a browser keeps coming back to the browser. Connections then follows the new connection by itself
+  (`connectionsSettle` in `dashboard/connections-shared.js`), as it does whenever the page is in front again.
 - **Push**: native notifications through APNs and FCM. They are content-free wakeups ("New to-do"); on Android the
   app asks the Machine for the to-do's short line and shows that, and the rest is fetched when the owner opens it.
 - **Share to The Machine**: text, links and up to 5 files from any app's share sheet open the dashboard's New to-do,
@@ -44,7 +51,7 @@ The app sign-in is bound to the app that started it: the app sends a challenge (
 The cloud side is in the cloud repo's `docs/mobile-app.md`.
 
 The WebView only opens the saved Machine (and, for a hosted Machine, other `*.app.themachine.computer` names after a
-rename). Every other link opens in the system browser. Only the app's own start page can change the saved Machine.
+rename). Every other link opens in the system browser, except a connection's sign-in (the sheet, above). Only the app's own start page can change the saved Machine.
 
 ## Push
 

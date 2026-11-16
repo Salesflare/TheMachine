@@ -52,4 +52,25 @@ public class MachineAddressTest {
         };
         for (String a : bad) assertFalse(a, MachineShellPlugin.publicOrTailnet(InetAddress.getByName(a)));
     }
+
+    @Test
+    public void aConnectionsSignInOpensInACustomTabAndComesBackToAPartOfTheDashboard() {
+        String t = "A".repeat(43), link = "B".repeat(32);
+        assertEquals("https://app.themachine.computer/hop?t=" + t + "&app=1",
+            MachineShellPlugin.connectionStart("https://app.themachine.computer/hop?t=" + t + "&app=1"));
+        assertEquals("https://app.themachine.computer/connect/start/" + link + "?app=1",
+            MachineShellPlugin.connectionStart("https://app.themachine.computer/connect/start/" + link));
+        String[] bad = {
+            null, "", "https://app.themachine.computer/hop?t=" + t, "https://app.themachine.computer/hop?t=" + t + "&app=1&x=1",
+            "https://evil.com/hop?t=" + t + "&app=1", "http://app.themachine.computer/hop?t=" + t + "&app=1",
+            "https://sam.app.themachine.computer/connect/start/" + link, "https://app.themachine.computer/connect/start/" + link + "?x=1",
+            "https://app.themachine.computer/account", "https://app.themachine.computer/open",
+        };
+        for (String url : bad) assertNull(url, MachineShellPlugin.connectionStart(url));
+        assertEquals("connect=shortcut/c_0123456789abcdef", MachineShellPlugin.connectedPart("connect=shortcut/c_0123456789abcdef"));
+        assertEquals("signed-in=microsoft_docs/again", MachineShellPlugin.connectedPart("signed-in=microsoft_docs/again"));
+        for (String h : new String[] {null, "", "connect=x/https://evil.com", "chat=1", "signed-in=x/again\njavascript:1"}) {
+            assertNull(h, MachineShellPlugin.connectedPart(h));
+        }
+    }
 }

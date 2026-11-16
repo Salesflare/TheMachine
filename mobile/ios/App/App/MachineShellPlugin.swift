@@ -34,6 +34,7 @@ public class MachineShellPlugin: CAPPlugin, CAPBridgedPlugin, ASWebAuthenticatio
     static let appGroup = "group.computer.themachine.app"
     private let store = UserDefaults.standard
     private var session: ASWebAuthenticationSession?
+    private var connecting: ASWebAuthenticationSession?  // a connection's sign-in (startConnection)
     private var loading: NSKeyValueObservation?
     private var pendingShare: [String: Any]?
     private var mediaGate: MediaGate?
@@ -174,10 +175,40 @@ public class MachineShellPlugin: CAPPlugin, CAPBridgedPlugin, ASWebAuthenticatio
                 return true
             }
         }
+        if machine != nil, let start = MachineShellPlugin.connectionStart(url) { // a connection's sign-in: the sign-in sheet
+            DispatchQueue.main.async { self.startConnection(start) }
+            return true
+        }
         if ["https", "http", "mailto", "tel"].contains(url.scheme ?? "") {
             DispatchQueue.main.async { UIApplication.shared.open(url) } // links in mail, the account's other pages
         }
         return true
+    }
+
+    /// A connection's sign-in the Machine's page starts ("Sign in with Shortcut"): the hosted dashboard's hop to the
+    /// account (/hop?t=...&app=1, which the account gives the app's WebView only) or a self-hosted Machine's start link
+    /// (/connect/start/<id>). The address to open in the sign-in sheet, with app=1, or nil for anything else (the
+    /// account's other pages keep opening in Safari). Same as www/machine-url.js connectionStart.
+    static func connectionStart(_ url: URL) -> URL? {
+        guard url.scheme == "https", url.host == hosted, url.port == nil, url.user == nil, url.fragment == nil else { return nil }
+        let query = url.query
+        if url.path == "/hop", let q = query, q.hasPrefix("t="), q.hasSuffix("&app=1"),
+           String(q.dropFirst(2).dropLast(6)).range(of: "^[A-Za-z0-9_-]{20,100}\\z", options: .regularExpression) != nil {
+            return url
+        }
+        if query == nil, url.path.range(of: "^/connect/start/[A-Za-z0-9_-]{32}\\z", options: .regularExpression) != nil {
+            return URL(string: "https://\(hosted)\(url.path)?app=1")
+        }
+        return nil
+    }
+
+    /// Where such a sign-in ends (computer.themachine.app://connected?h=...): the part of the saved Machine's dashboard to
+    /// open, + Add's form (connect=<source>[/<ref>|/stopped]) or "connected" (signed-in=<source>[/again]); nil otherwise.
+    /// Same as www/machine-url.js connectedPart.
+    static func connectedPart(_ h: String?) -> String? {
+        guard let h = h, h.range(of: "^(?:connect=[a-z_]{1,32}(?:/(?:[cf]_[0-9a-f]{16}|stopped))?|signed-in=[a-z_]{1,32}(?:/again)?)\\z",
+                                 options: .regularExpression) != nil else { return nil }
+        return h
     }
 
     // MARK: methods for the start page (www/app.js)
@@ -432,6 +463,36 @@ public class MachineShellPlugin: CAPPlugin, CAPBridgedPlugin, ASWebAuthenticatio
         call?.resolve()
     }
 
+    /// A connection's sign-in in the same sheet as the account's, so it never leaves the owner in Safari: it ends on
+    /// computer.themachine.app://connected?h=<part> (cloud docs/mobile-app.md), and the Machine's dashboard opens at that
+    /// part. Closed or stopped in the sheet: the dashboard as it was.
+    private func startConnection(_ start: URL) {
+        guard session == nil, connecting == nil else { return }
+        let sheet = ASWebAuthenticationSession(url: start, callbackURLScheme: MachineShellPlugin.scheme) { [weak self] url, _ in
+            DispatchQueue.main.async {
+                self?.connecting = nil
+                guard let url = url, url.host == "connected" else { return }
+                self?.connected(url)
+            }
+        }
+        sheet.presentationContextProvider = self
+        sheet.prefersEphemeralWebBrowserSession = false // the account's own sign-in in Safari carries over
+        connecting = sheet
+        sheet.start()
+    }
+
+    /// Back from a connection's sign-in: the saved Machine's dashboard at that part (on it already: only its #part).
+    private func connected(_ url: URL) {
+        let h = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems?.first(where: { $0.name == "h" })?.value
+        guard let part = MachineShellPlugin.connectedPart(h), let saved = machine, let webView = bridge?.webView,
+              let target = URL(string: saved + "#" + part) else { return }
+        if let now = webView.url?.absoluteString, now.hasPrefix(saved) {
+            webView.evaluateJavaScript("location.hash=\"\(part)\"", completionHandler: nil) // part: checked, no quotes
+        } else {
+            webView.load(URLRequest(url: target))
+        }
+    }
+
     public func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
         bridge?.webView?.window ?? ASPresentationAnchor()
     }
@@ -474,6 +535,8 @@ public class MachineShellPlugin: CAPPlugin, CAPBridgedPlugin, ASWebAuthenticatio
                 }
             } else if url.host == "share" {
                 self.becameActive()
+            } else if url.host == "connected" { // a connection's sign-in the app started that ended in Safari: the same
+                self.connected(url)
             }
         }
     }

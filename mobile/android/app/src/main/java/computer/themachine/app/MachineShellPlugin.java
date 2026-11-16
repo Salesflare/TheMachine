@@ -478,6 +478,42 @@ public class MachineShellPlugin extends Plugin {
         return "https://" + host + path;
     }
 
+    private static final Pattern START_LINK = Pattern.compile("/connect/start/[A-Za-z0-9_-]{32}");
+    private static final Pattern DASHBOARD_PART =
+        Pattern.compile("connect=[a-z_]{1,32}(?:/(?:[cf]_[0-9a-f]{16}|stopped))?|signed-in=[a-z_]{1,32}(?:/again)?");
+
+    /**
+     * A connection's sign-in the Machine's page starts ("Sign in with Shortcut"): the hosted dashboard's hop to the
+     * account (/hop?t=...&app=1, which the account gives the app's WebView only) or a self-hosted Machine's start link
+     * (/connect/start/&lt;id&gt;). The address to open in a Custom Tab, with app=1, or null for anything else (the
+     * account's other pages keep opening in the phone's browser). Same as www/machine-url.js connectionStart.
+     */
+    static String connectionStart(String url) {
+        if (url == null) return null;
+        URI u;
+        try {
+            u = new URI(url);
+        } catch (URISyntaxException e) {
+            return null;
+        }
+        if (!"https".equals(u.getScheme()) || !HOSTED.equals(u.getHost()) || u.getPort() != -1 || u.getRawUserInfo() != null
+                || u.getRawFragment() != null) return null;
+        String path = u.getRawPath() == null ? "" : u.getRawPath(), query = u.getRawQuery();
+        if ("/hop".equals(path) && query != null && query.startsWith("t=") && query.endsWith("&app=1")
+                && TOKEN.matcher(query.substring(2, query.length() - 6)).matches()) return url;
+        if (START_LINK.matcher(path).matches() && query == null) return "https://" + HOSTED + path + "?app=1";
+        return null;
+    }
+
+    /**
+     * Where such a sign-in ends (computer.themachine.app://connected?h=...): the part of the saved Machine's dashboard to
+     * open, + Add's form (connect=&lt;source&gt;[/&lt;ref&gt;|/stopped]) or "connected" (signed-in=&lt;source&gt;[/again]);
+     * null otherwise. Same as www/machine-url.js connectedPart.
+     */
+    static String connectedPart(String h) {
+        return h != null && DASHBOARD_PART.matcher(h).matches() ? h : null;
+    }
+
     SharedPreferences prefs() {
         return getContext().getSharedPreferences(PREFS, Context.MODE_PRIVATE);
     }
@@ -510,8 +546,33 @@ public class MachineShellPlugin extends Plugin {
                 }
             }
         }
+        String connection = saved == null ? null : connectionStart(url.toString());
+        if (connection != null) { // a connection's sign-in: a Custom Tab, back into the app at its end (handleIntent)
+            bridge.executeOnMainThread(() -> openSignInTab(Uri.parse(connection)));
+            return true;
+        }
         openOutside(url); // everything else (links in mail, the account's other pages): the phone's browser
         return true;
+    }
+
+    private void openSignInTab(Uri url) {
+        try {
+            new CustomTabsIntent.Builder().setShowTitle(true).build().launchUrl(getActivity(), url);
+        } catch (Exception e) {
+            openOutside(url);
+        }
+    }
+
+    /** Back from a connection's sign-in: the saved Machine's dashboard at that part (on it already: only its #part). */
+    private void connected(String h) {
+        String part = connectedPart(h), saved = machine();
+        if (part == null || saved == null) return;
+        String now = bridge.getWebView().getUrl();
+        if (now != null && now.startsWith(saved)) {
+            bridge.getWebView().evaluateJavascript("location.hash=" + JSONObject.quote(part) + ";", null);
+        } else {
+            bridge.getWebView().loadUrl(saved + "#" + part);
+        }
     }
 
     private void openOutside(Uri url) {
@@ -761,6 +822,8 @@ public class MachineShellPlugin extends Plugin {
                 returning = true;
                 if (data.getQueryParameter("m") != null) signedInOwn(data.getQueryParameter("m"));
                 else signedIn(data.getQueryParameter("u"));
+            } else if ("connected".equals(data.getHost())) { // a connection's sign-in, done in the Custom Tab
+                connected(data.getQueryParameter("h"));
             } else if ("connect".equals(data.getHost())) {
                 String url = normalMachine(data.getQueryParameter("u"));
                 if (url != null && tailnetHost(Uri.parse(url).getHost())) { // asked on the start page before it counts
