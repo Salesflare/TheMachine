@@ -5,9 +5,11 @@ import unittest.mock
 from pathlib import Path
 
 import test_graph as tg
+import enrichment
+import threading
 
-a, graph = tg.a, tg.graph
-enrichment = a.enrichment
+graph = tg.graph
+enrichment = enrichment
 STAMP = tg.NOW.isoformat()
 
 
@@ -53,7 +55,7 @@ class SamePerson(unittest.TestCase):
         self.build()
         pair = ('email:rivera@one.example', 'email:sam.rivera@one.example')
         self.assertIn(pair[1], [s['id'] for s in self.node(pair[0])['same']])
-        self.app.graph_worker_on, self.app.graph_dirty = True, tg.a.threading.Event()  # as on a running Machine: rebuilds go to the graph worker
+        self.app.graph_worker_on, self.app.graph_dirty = True, threading.Event()  # as on a running Machine: rebuilds go to the graph worker
         builds = []
         self.app.graph_build = lambda **k: builds.append(k)
         self.say(*pair, True)
@@ -74,7 +76,7 @@ class SamePerson(unittest.TestCase):
         one, two, three = 'email:sam.rivera@one.example', 'email:rivera@one.example', 'email:sam@one.example'
         listed = lambda: {frozenset((s['a']['id'], s['b']['id'])) for s in self.app.graph_action({})['same_person']}
         self.assertEqual(listed(), {frozenset(p) for p in ((one, two), (one, three), (two, three))})
-        self.app.graph_worker_on, self.app.graph_dirty = True, tg.a.threading.Event()  # rebuilds go to the graph worker
+        self.app.graph_worker_on, self.app.graph_dirty = True, threading.Event()  # rebuilds go to the graph worker
         self.app.graph_build = lambda **k: None
         self.say(one, two, True)
         self.say(two, three, True)
@@ -102,7 +104,7 @@ class SamePerson(unittest.TestCase):
 
     def test_the_graph_worker_tries_again_soon_when_edits_kept_coming(self):
         app, calls = self.app, []
-        app.graph_dirty, app.stop = tg.a.threading.Event(), tg.a.threading.Event()
+        app.graph_dirty, app.stop = threading.Event(), threading.Event()
         app.graph_freshness, app.own_addresses_fetch, app.history_graph_step = (lambda: 1), (lambda: None), (lambda: False)
 
         def build(lock_last=True, apart=False):

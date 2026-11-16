@@ -8,7 +8,7 @@ import unittest
 
 import test_graph as tg
 
-a, graph = tg.a, tg.graph
+graph = tg.graph
 PNG = base64.b64decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==')
 
 

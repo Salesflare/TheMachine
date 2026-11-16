@@ -6,11 +6,16 @@ from pathlib import Path
 
 import test_graph as tg
 
-a, graph = tg.a, tg.graph
+graph = tg.graph
 import crm  # noqa: E402
 import crm_import  # noqa: E402
 import shared_graph  # noqa: E402
 from seams import patch_everywhere  # noqa: E402
+import enrichment
+import machine.actions as machine_actions
+import machine.store.profile as machine_store_profile
+import models
+import threading
 
 DIRECTORY = {'w1': {'kind': 'work', 'name': 'Acme', 'members': [
     {'member_id': 'm-me', 'name': 'Sam', 'emails': ['sam@acme.com'], 'me': True},
@@ -130,7 +135,7 @@ class Crm(unittest.TestCase):
 
     def test_same_organisation_answers_at_once_and_the_worker_moves_its_people(self):
         self.mails()
-        self.app.graph_worker_on, self.app.graph_dirty = True, tg.a.threading.Event()  # rebuilds go to the graph worker
+        self.app.graph_worker_on, self.app.graph_dirty = True, threading.Event()  # rebuilds go to the graph worker
         builds = []
         self.app.graph_build = lambda **k: builds.append(k)
         done = self.act('graph_org_merge', node_id='org:globex.io', into='org:globex.example')
@@ -185,7 +190,7 @@ class Crm(unittest.TestCase):
         # Tapped, the pair came back on the next redraw (the list was kept until the rebuild), and its second Merge said
         # "That is the same organization already".
         self.mails()
-        self.app.graph_worker_on, self.app.graph_dirty = True, tg.a.threading.Event()  # rebuilds go to the graph worker
+        self.app.graph_worker_on, self.app.graph_dirty = True, threading.Event()  # rebuilds go to the graph worker
         self.app.graph_build = lambda **k: None
         with self.store.connect() as db:
             self.assertEqual(len(crm.org_doubles(db)), 1)  # worked out and kept
@@ -464,12 +469,12 @@ class Crm(unittest.TestCase):
         text = 'Klant,Bedrag,Fase,Wie\nTeal,ongeveer vijf,Mondeling ja,Ann\nUmber,8000,Lead,Bo\n'
         self.app.model_room = lambda most=80: True
         # through patch_everywhere, so machine/app/card_actions.py's import check sees it too
-        with patch_everywhere(a, 'model_ready', lambda config=None, run=None: False):
+        with patch_everywhere(models, 'model_ready', lambda config=None, run=None: False):
             self.assertEqual(self.act('graph_import_ai', kind='project', text=text), {'ai': False, 'why': 'model'})
-        with patch_everywhere(a, 'model_ready', lambda config=None, run=None: True):
+        with patch_everywhere(models, 'model_ready', lambda config=None, run=None: True):
             started = self.act('graph_import_ai', kind='project', text=text)
         self.assertTrue(started['ai'])
-        session = a.PROFILE_SESSION_PREFIX + started['run_id']
+        session = machine_store_profile.PROFILE_SESSION_PREFIX + started['run_id']
         sent = []
         self.app.profile_step(lambda request: sent.append(request) or {'status': 'admitted'})
         self.assertIn('CSV import check', sent[0]['message'])
@@ -525,11 +530,11 @@ class Crm(unittest.TestCase):
     def test_only_the_owner_on_the_dashboard(self):
         with self.assertRaisesRegex(ValueError, 'Only the owner'):
             self.app.action('graph_import_run', {'kind': 'person', 'text': 'Name\nA\n'}, owner_dashboard=False)
-        self.assertTrue({'graph_owner', 'graph_import_run', 'graph_org_merge'} <= a.OWNER_ACTIONS)
+        self.assertTrue({'graph_owner', 'graph_import_run', 'graph_org_merge'} <= machine_actions.OWNER_ACTIONS)
 
 
 def enrichment_due(db):
-    return a.enrichment.due(db, tg.NOW.isoformat(), 50)
+    return enrichment.due(db, tg.NOW.isoformat(), 50)
 
 
 if __name__ == '__main__':

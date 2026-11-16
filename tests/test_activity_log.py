@@ -8,12 +8,14 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from test_assistant import assistant as a, event
+from test_assistant import event
 import activity_log
 from machine import action_basis
 import fleet
 import follow_ups
 from seams import patch_everywhere  # noqa: E402
+import machine.main as machine_main
+import timeutil
 
 GMAIL = {'id': 'work', 'service': 'gmail', 'email': 'sam@acme.example'}
 
@@ -21,9 +23,9 @@ GMAIL = {'id': 'work', 'service': 'gmail', 'email': 'sam@acme.example'}
 class Activity(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory(); self.addCleanup(self.tmp.cleanup)
-        self.store = a.Store(Path(self.tmp.name) / 'events.sqlite')
+        self.store = machine_main.Store(Path(self.tmp.name) / 'events.sqlite')
         self.store.commit_page('work', {}, [event()])
-        with patch_everywhere(a, 'now', return_value='2026-10-30T08:00:00+00:00'):
+        with patch_everywhere(timeutil, 'now', return_value='2026-10-30T08:00:00+00:00'):
             self.card = self.store.suggest('task-1', 'Reply to Robin', 'Body', [1])['id']
         self.config = {'accounts': [GMAIL]}
 
@@ -181,7 +183,7 @@ class Activity(unittest.TestCase):
 
     def test_a_done_to_do_opens_from_its_line(self):
         self.store.decide(self.card, 'complete', '', 'done-1', 'dashboard')
-        with patch_everywhere(a, 'now', return_value='2026-10-30T09:00:00+00:00'):
+        with patch_everywhere(timeutil, 'now', return_value='2026-10-30T09:00:00+00:00'):
             other = self.store.suggest('task-2', 'Other', 'Body', [1])['id']
         self.store.decide(other, 'complete', '', 'done-2', 'dashboard')
         self.assertEqual([c['id'] for c in self.store.done_page(only=self.card)['cards']], [self.card])

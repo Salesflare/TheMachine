@@ -10,7 +10,14 @@ from unittest.mock import patch
 
 import test_ux as ux
 from seams import patch_everywhere  # noqa: E402
-a = ux.a
+import graph
+import machine.app.preparation as machine_app_preparation
+import machine.app.promise_checks as machine_app_promise_checks
+import machine.cards as machine_cards
+import machine.main as machine_main
+import models
+import threading
+import timeutil
 
 GMAIL = {'id': 'work', 'email': 'owner@example.com', 'service': 'gmail', 'transport': 'gog', 'boundary': 'work:Example'}
 SLACK = {'id': 'slack', 'service': 'slack', 'transport': 'maton', 'boundary': 'work:Example', 'user_id': 'UOWNER1'}
@@ -27,30 +34,30 @@ class HandledFirst(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
-        self.clock = patch_everywhere(a, 'now', return_value=MONDAY)
+        self.clock = patch_everywhere(timeutil, 'now', return_value=MONDAY)
         self.clock.start()
         self.addCleanup(lambda: self.clock.stop())
-        self.store = a.Store(Path(self.tmp.name) / 'events.sqlite')
+        self.store = machine_main.Store(Path(self.tmp.name) / 'events.sqlite')
         self.store.owner_user_ids = {'UOWNER1'}
         self.commit(email('ask', '2026-10-19T08:00:00+00:00'))
         self.ask = self.event('ask')
 
     def at(self, stamp):
         self.clock.stop()
-        self.clock = patch_everywhere(a, 'now', return_value=stamp)
+        self.clock = patch_everywhere(timeutil, 'now', return_value=stamp)
         self.clock.start()
 
     def commit(self, *events):
         self.store.commit_page('work', {}, list(events))
         with self.store.connect() as db:
-            a.graph.build(db, {'accounts': [GMAIL, SLACK]}, a.now())
+            graph.build(db, {'accounts': [GMAIL, SLACK]}, timeutil.now())
 
     def event(self, source_id):
         with self.store.connect() as db:
             return db.execute('SELECT id FROM events WHERE source_id=?', (source_id,)).fetchone()[0]
 
     def app(self):
-        app = object.__new__(a.App)
+        app = object.__new__(machine_main.App)
         app.store = self.store
         app.config = {'accounts': [GMAIL, SLACK], 'digest_at': '08:30', 'review_worker': {'enabled': True}, 'prepare_ahead': False,
                       'openclaw_config': str(Path(self.tmp.name) / 'no-openclaw.json')}  # no model here: never a live turn
@@ -67,10 +74,10 @@ class HandledFirst(unittest.TestCase):
                     email('stranger', '2026-10-19T08:25:00+00:00', who='pat@other.example', thread='t3'),
                     email('older', '2026-10-18T08:00:00+00:00', sent=True, thread='t4'))
         with self.store.connect() as db:
-            found = a.activity_since(db, [self.ask], {'UOWNER1'})
+            found = machine_app_promise_checks.activity_since(db, [self.ask], {'UOWNER1'})
         self.assertEqual([(x['id'], x['who'], x['where']) for x in found], [(self.event('elsewhere'), 'the owner', 'elsewhere')])
-        self.assertIn('on another channel', a.activity_lines(found))
-        self.assertNotIn('Contract attached', a.activity_lines(found))  # who and when only
+        self.assertIn('on another channel', machine_app_preparation.activity_lines(found))
+        self.assertNotIn('Contract attached', machine_app_preparation.activity_lines(found))  # who and when only
 
     # a new to-do from a review
 
@@ -161,7 +168,7 @@ class HandledFirst(unittest.TestCase):
         ran = []
         app.promise_check_run = lambda pages: ran.append([p['id'] for p, _ in pages])
         self.at('2026-10-22T07:00:00+00:00')
-        with patch_everywhere(a, 'openclaw_model', return_value='openai/gpt-test'), patch.object(a.threading, 'Thread') as thread:
+        with patch_everywhere(models, 'openclaw_model', return_value='openai/gpt-test'), patch.object(threading, 'Thread') as thread:
             thread.return_value.is_alive.return_value = False
             self.assertEqual(app.promise_checks(self.due()), {pid})
             thread.assert_called_once()
@@ -170,7 +177,7 @@ class HandledFirst(unittest.TestCase):
             app._promise_check_thread = None
             self.assertEqual(app.promise_checks(self.due()), set())
         # no model known (a fresh install): the to-do comes as before
-        with patch_everywhere(a, 'openclaw_model', return_value=None):
+        with patch_everywhere(models, 'openclaw_model', return_value=None):
             self.assertEqual(app.promise_checks(self.due()), set())
 
     def due(self):
@@ -183,7 +190,7 @@ class HandledFirst(unittest.TestCase):
         own = self.store.owner_card('Send Sam the signed contract tonight', 'work', project='Contract')
         other = self.store.owner_card('Book the team offsite', 'work', project='Contract')
         with self.store.connect() as db:
-            a.graph.label(db, [self.event('yes')], 'Contract', 'card', a.now())
+            graph.label(db, [self.event('yes')], 'Contract', 'card', timeutil.now())
         self.commit()  # the graph again: the reply is on the project
         prompts = []
         app = self.app()
@@ -201,7 +208,7 @@ class HandledFirst(unittest.TestCase):
         pid = self.promise(direction='mine')
         other = self.store.owner_card('Book the team offsite', 'work', project='Contract')
         with self.store.connect() as db:
-            a.graph.label(db, [self.event('yes')], 'Contract', 'card', a.now())
+            graph.label(db, [self.event('yes')], 'Contract', 'card', timeutil.now())
         self.commit()  # the graph again: the reply is on the project
         app = self.app()
         calls = []
@@ -257,7 +264,7 @@ class HandledFirst(unittest.TestCase):
     def test_waiting_on_them_with_only_a_nudge_waits_on_others(self):
         card = self.prepared()
         self.assertEqual(json.loads(card['outcome']), {'state': 'waiting', 'waiting_on': 'Sam Lee'})
-        self.assertEqual(a.todo_state(card), 'waiting on others')
+        self.assertEqual(machine_cards.todo_state(card), 'waiting on others')
         self.assertTrue(card['next_action'])  # the nudge is still there to send
 
     def test_a_nudge_the_owner_asked_for_stays_ready(self):

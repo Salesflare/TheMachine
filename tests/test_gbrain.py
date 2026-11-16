@@ -11,7 +11,9 @@ from unittest.mock import patch
 
 import gbrain
 import graph
-from test_assistant import assistant as a
+import machine.actions as machine_actions
+import machine.main as machine_main
+import threading
 
 ON = {'on': True, 'consent_at': '2026-10-28T08:00:00+00:00', 'linked': 'machine'}
 SECRET_BODY = 'The quarterly numbers are confidential: 4.2M'
@@ -109,9 +111,9 @@ class OffByDefault(Base):
         self.assertTrue(gbrain.on({'gbrain': ON}))
 
     def test_the_service_starts_no_sync_thread_while_off(self):
-        app = object.__new__(a.App)
+        app = object.__new__(machine_main.App)
         app.config, app.stop = {}, None
-        with patch.object(a.threading, 'Thread') as thread:
+        with patch.object(threading, 'Thread') as thread:
             self.assertFalse(app.gbrain_start())
         thread.assert_not_called()
 
@@ -359,9 +361,9 @@ class Dashboard(unittest.TestCase):
         self.tmp = tempfile.TemporaryDirectory()
         self.path = Path(self.tmp.name) / 'config.json'
         self.path.write_text(json.dumps({'database': 'x', 'accounts': []}))
-        self.app = object.__new__(a.App)
+        self.app = object.__new__(machine_main.App)
         self.app.config_path, self.app.config = self.path, json.loads(self.path.read_text())
-        self.app.store = a.Store(str(Path(self.tmp.name) / 'db.sqlite'))
+        self.app.store = machine_main.Store(str(Path(self.tmp.name) / 'db.sqlite'))
         self.binary = Path(self.tmp.name) / 'gbrain'
         self.binary.write_text('#!/bin/sh\n')
         self.binary.chmod(0o755)
@@ -374,7 +376,7 @@ class Dashboard(unittest.TestCase):
             view = self.app.action('gbrain_status', {}, owner_dashboard=True)
         self.assertEqual((view['on'], view['installed']), (False, False))
         for name in ('gbrain_status', 'gbrain_on', 'gbrain_off', 'gbrain_work'):
-            self.assertIn(name, a.DASHBOARD_ACTIONS)
+            self.assertIn(name, machine_actions.DASHBOARD_ACTIONS)
             with self.assertRaises(ValueError):
                 self.app.action(name, {'consent': True})  # not from the dashboard: the agent can't turn it on
 
@@ -382,7 +384,7 @@ class Dashboard(unittest.TestCase):
         started = []
         with patch.object(gbrain.Brain, 'binary', return_value=str(self.binary)), patch.object(gbrain.Brain, 'version', return_value='0.60.479.0'), \
                 patch.object(gbrain.Brain, 'link', return_value='machine') as linked, patch.object(gbrain.Brain, 'unlink', return_value=True) as unlinked, \
-                patch.object(a.App, 'gbrain_start', lambda app: started.append(1)):
+                patch.object(machine_main.App, 'gbrain_start', lambda app: started.append(1)):
             for args in ({}, {'consent': 'yes'}, {'consent': False}):
                 with self.assertRaises(ValueError):
                     self.app.action('gbrain_on', args, owner_dashboard=True)

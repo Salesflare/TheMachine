@@ -14,8 +14,11 @@ import crm
 import enrichment
 import graph
 import linkedin_connections as lc
+import machine.main as machine_main
+import machine.sources.connectors as machine_sources_connectors
+import sources
+import timeutil
 
-a = ux.a
 ACCOUNT = {'id': 'li', 'service': 'linkedin', 'transport': 'linkedin-inbox', 'boundary': 'work'}
 NOW = '2026-11-09T10:00:00+00:00'  # 11:00 in Amsterdam: waking hours
 
@@ -32,7 +35,7 @@ class Reader:
     def __call__(self, start, count):
         self.calls.append(start)
         if self.fail:
-            raise a.SourceError(self.fail)
+            raise sources.SourceError(self.fail)
         page = self.pages[start // count] if start // count < len(self.pages) else []
         return {'connections': page, 'more': start // count + 1 < len(self.pages)}
 
@@ -41,8 +44,8 @@ class LinkedInConnections(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
-        self.store = a.Store(Path(self.tmp.name) / 'a.sqlite')
-        a.set_timezone('Europe/Amsterdam')
+        self.store = machine_main.Store(Path(self.tmp.name) / 'a.sqlite')
+        timeutil.set_timezone('Europe/Amsterdam')
         with self.store.connect() as db:
             graph.ensure(db)
             crm.ensure(db)
@@ -298,18 +301,18 @@ class LinkedInConnections(unittest.TestCase):
         self.assertEqual([x['id'] for x in lc.accounts(config)], ['li'])
 
     def test_the_connector_reads_a_page_and_names_a_security_check(self):
-        li = a.load_connector('linkedin')
-        source = li.Source({}, ACCOUNT, a.CONNECTOR_HELPERS)
+        li = machine_sources_connectors.load_connector('linkedin')
+        source = li.Source({}, ACCOUNT, machine_sources_connectors.CONNECTOR_HELPERS)
         page = {'connections': [conn('Bo Tamsin', 'VP at Acme', slug='bo-tamsin')], 'more': False}
         with patch.object(li.subprocess, 'run', return_value=subprocess.CompletedProcess([], 0, json.dumps(page), '')) as run:
             self.assertEqual(source.connections(40), page)
         self.assertEqual(run.call_args[0][0][1:], ['connections', '--start', '40', '--count', '40'])
         failed = subprocess.CompletedProcess([], 2, '', 'linkedin-inbox: LinkedIn asked for a security check; finish it in the OpenClaw browser')
-        with patch.object(li.subprocess, 'run', return_value=failed), self.assertRaises(a.SourceError) as caught:
+        with patch.object(li.subprocess, 'run', return_value=failed), self.assertRaises(sources.SourceError) as caught:
             source.connections(0)
         self.assertEqual(caught.exception.category, 'linkedin_security_check')
         with patch.object(li.subprocess, 'run', return_value=subprocess.CompletedProcess([], 0, '{"connections": "no"}', '')), \
-                self.assertRaises(a.SourceError):
+                self.assertRaises(sources.SourceError):
             source.connections(0)
 
 

@@ -10,7 +10,7 @@ import fleet
 import person_summary
 from machine.store import graph_history
 
-a, graph, mail = tg.a, tg.graph, tg.mail
+graph, mail = tg.graph, tg.mail
 HOME = {'id': 'home', 'email': 'sam@home.example', 'boundary': 'personal:Home'}
 CONFIG = {**tg.CONFIG, 'accounts': [*tg.CONFIG['accounts'], HOME]}
 

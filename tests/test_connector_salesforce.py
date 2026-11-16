@@ -10,12 +10,15 @@ import urllib.error
 import urllib.parse
 from unittest.mock import patch
 
-from test_connectors import a, Response
+from test_connectors import Response
 from connectors import salesforce
 import crm
 import crm_sync
 import enrichment
 import mail_grants
+import machine.main as machine_main
+import machine.sources.connectors as machine_sources_connectors
+import sources
 
 NOW = '2026-11-09T12:00:00+00:00'
 ACCOUNT = {**salesforce.SETUP['account'], 'email': 'owner@acme.example'}
@@ -75,14 +78,14 @@ class OrgCase(unittest.TestCase):
     def setUp(self):
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
-        self.store = a.Store(Path(tmp.name) / 'events.sqlite')
+        self.store = machine_main.Store(Path(tmp.name) / 'events.sqlite')
         self.config = {'database': str(Path(tmp.name) / 'events.sqlite'), 'salesforce_broker': {'url': 'https://cp.example/api/salesforce/token'}}
         mail_grants.put(self.config, 'salesforce', 'owner@acme.example', 'refresh-1')
         salesforce._tokens.clear()
         self.offered = []
-        self.helpers = types.SimpleNamespace(SourceError=a.SourceError, Skips=a.CONNECTOR_HELPERS.Skips, now=lambda: NOW, iso=a.CONNECTOR_HELPERS.iso,
+        self.helpers = types.SimpleNamespace(SourceError=sources.SourceError, Skips=machine_sources_connectors.CONNECTOR_HELPERS.Skips, now=lambda: NOW, iso=machine_sources_connectors.CONNECTOR_HELPERS.iso,
                                              credential=lambda config, name: 'app-token' if name == 'salesforce-broker' else 1 / 0,
-                                             remember_profiles=lambda store, source, offers: self.offered.extend(offers) or a.remember_profiles(store, source, offers))
+                                             remember_profiles=lambda store, source, offers: self.offered.extend(offers) or machine_sources_connectors.remember_profiles(store, source, offers))
         self.org, self.instance = FakeOrg(), INSTANCE
         self.reads, self.writes, self.broker_calls, self.patch_status = [], [], [], 204
         patch('urllib.request.urlopen', side_effect=self.respond).start()
@@ -199,18 +202,18 @@ class SalesforceTests(OrgCase):
             self.assertIsNone(salesforce.instance_url(bad), bad)
         self.assertEqual(salesforce.instance_url('https://acme.my.salesforce.com/'), 'https://acme.my.salesforce.com')
         self.instance = 'https://evil.example'
-        with self.assertRaises(a.SourceError) as caught:
+        with self.assertRaises(sources.SourceError) as caught:
             self.sync()
         self.assertEqual(caught.exception.category, 'salesforce_broker')
 
     def test_reads_and_writes_stay_on_the_allowlist(self):
         source = salesforce.Source(self.config, ACCOUNT, self.helpers)
         for path in ('/services/data/v62.0/sobjects/Contact/' + ANN, '/services/data/v62.0/sobjects/User', '/services/apexrest/x'):
-            with self.assertRaises(a.SourceError):
+            with self.assertRaises(sources.SourceError):
                 source.get(path)
         for contact, fields in ((ANN, {'Email': 'x@y.example'}), (ANN, {'AccountId': '001000000000009AAA'}), (ANN, {'Title': ''}),
                                 ('006000000000001AAA', {'Title': 'CTO'}), (ANN, {})):
-            with self.assertRaises(a.SourceError):
+            with self.assertRaises(sources.SourceError):
                 source.update(contact, fields)
         self.assertEqual(self.writes, [])
         self.assertEqual(salesforce.quoted("o'neil@x.example"), "'o\\'neil@x.example'")
@@ -230,7 +233,7 @@ class SalesforceTests(OrgCase):
 
     def test_wrong_signin_is_refused(self):
         mail_grants.put(self.config, 'salesforce', 'someone@else.example', 'refresh-2')
-        with self.assertRaises(a.SourceError) as caught:
+        with self.assertRaises(sources.SourceError) as caught:
             self.sync({**ACCOUNT, 'email': 'someone@else.example'})
         self.assertEqual(caught.exception.category, 'account_identity_mismatch')
 
@@ -248,7 +251,7 @@ class ContactSyncTests(OrgCase):
     def turn_on(self):
         app = types.SimpleNamespace(config={**self.config, 'accounts': [ACCOUNT]}, store=self.store, sync_lock=lambda _: __import__('threading').Lock(),
                                     sync_soon=lambda _: None)
-        bound = lambda args: a.App.connector_contact_sync(app, args)
+        bound = lambda args: machine_main.App.connector_contact_sync(app, args)
         with patch('machine.app.sync.CONNECTOR_HELPERS', self.helpers):
             with self.assertRaises(ValueError):
                 bound({'account': ACCOUNT['id'], 'do': 'on'})  # not before the owner saw what would change

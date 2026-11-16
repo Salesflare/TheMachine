@@ -7,7 +7,10 @@ from pathlib import Path
 
 import next_actions as n
 import test_ux as ux
-a = ux.a
+import machine.app.follow_ups as machine_app_follow_ups
+import machine.app.preparation as machine_app_preparation
+import machine.cards as machine_cards
+import machine.main as machine_main
 
 GMAIL = {'id': 'work', 'email': 'owner@example.com', 'service': 'gmail', 'transport': 'gog', 'boundary': 'work:Example'}
 SLACK = {'id': 'slack', 'service': 'slack', 'transport': 'maton', 'boundary': 'work:Example', 'user_id': 'UOWNER1'}
@@ -26,7 +29,7 @@ class HonestStatus(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
-        self.store = a.Store(Path(self.tmp.name) / 'events.sqlite')
+        self.store = machine_main.Store(Path(self.tmp.name) / 'events.sqlite')
         self.store.owner_user_ids = {'UOWNER1'}
         self.store.commit_page('work', {}, [email('m1', '2026-10-15T08:00:00+00:00')])
         with self.store.connect() as db:
@@ -34,7 +37,7 @@ class HonestStatus(unittest.TestCase):
         self.sid = self.store.suggest('invoice-question', 'Invoice question from Client', 'They ask about an invoice.', [self.event_id])['id']
 
     def app(self):
-        app = object.__new__(a.App)
+        app = object.__new__(machine_main.App)
         app.store = self.store
         app.config = {'accounts': [GMAIL, SLACK]}
         return app
@@ -51,11 +54,11 @@ class HonestStatus(unittest.TestCase):
             self.save(next_actions=[self.DRAFT], outcome='done')
         self.assertNotEqual(self.row()['status'], 'prepared')
         self.save(next_actions=[self.DRAFT], outcome='needs_you', needs='check the draft and send it')
-        self.assertIn('Needs you: check the draft and send it.', a.card(self.row()))
+        self.assertIn('Needs you: check the draft and send it.', machine_cards.card(self.row()))
         # Nothing waiting: done is done.
         self.decide('accept')
         self.save(body='Looked it up: paid on Monday.', outcome='done')
-        self.assertIn('Finished. Mark it done if it looks right.', a.card(self.row()))
+        self.assertIn('Finished. Mark it done if it looks right.', machine_cards.card(self.row()))
 
     def test_a_step_already_approved_or_carried_out_is_not_waiting(self):
         self.decide('accept')
@@ -81,7 +84,7 @@ class HonestStatus(unittest.TestCase):
         self.save(next_actions=[self.DRAFT], outcome='needs_you', needs='check the draft and send it')
         with self.store.connect() as db:
             db.execute("UPDATE suggestions SET outcome='{\"state\":\"done\"}' WHERE id=?", (self.sid,))
-        text = a.card(self.row())
+        text = machine_cards.card(self.row())
         self.assertIn('Ready to approve. Nothing goes out until you do.', text)
         self.assertNotIn('Finished', text)
 
@@ -92,22 +95,22 @@ class HonestStatus(unittest.TestCase):
             email('m4', '2026-10-16T11:00:00+00:00', sender='other@client.example', thread='t2'),
             email('m0', '2026-10-14T11:00:00+00:00', sender='old@client.example')])
         with self.store.connect() as db:
-            found = a.newer_activity(db, [self.event_id], {'UOWNER1'}, {'dana@example.com': 'Dana'}, ['example.com'])
+            found = machine_app_follow_ups.newer_activity(db, [self.event_id], {'UOWNER1'}, {'dana@example.com': 'Dana'}, ['example.com'])
         self.assertEqual([x['who'] for x in found], ['Dana (a teammate)', 'the owner'])  # not the other thread, not older ones
-        lines = a.newer_activity_lines(found)
+        lines = machine_app_preparation.newer_activity_lines(found)
         self.assertIn("outcome:'already_done'", lines)
         self.assertNotIn('Can someone check', lines)  # who and when only
         with self.store.connect() as db:
-            self.assertEqual(a.newer_activity(db, [], {'UOWNER1'}), [])
-            only_domain = a.newer_activity(db, [self.event_id], set(), {}, ['example.com'])
+            self.assertEqual(machine_app_follow_ups.newer_activity(db, [], {'UOWNER1'}), [])
+            only_domain = machine_app_follow_ups.newer_activity(db, [self.event_id], set(), {}, ['example.com'])
         self.assertEqual(only_domain[0]['who'], 'dana@example.com (same company)')
-        self.assertEqual(a.newer_activity_lines([]), '')
+        self.assertEqual(machine_app_preparation.newer_activity_lines([]), '')
 
     def test_the_job_message_asks_for_these(self):
         self.decide('accept')
         with self.store.connect() as db:
             job = dict(db.execute('SELECT * FROM preparations WHERE suggestion_id=?', (self.sid,)).fetchone())
-        prompt = a.preparation_prompt(job)
+        prompt = machine_app_preparation.preparation_prompt(job)
         self.assertIn('Keep prepared, sent and done apart', prompt)
         self.assertIn('Before a follow-up, nudge or handoff, check the conversation for newer activity', prompt)
         self.assertIn("{kind:open,label:'Open <what it is>'", prompt)

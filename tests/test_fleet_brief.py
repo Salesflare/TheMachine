@@ -9,7 +9,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from test_fleet import CONFIG, NOW, TEAM, FakeRelay, a, fleet, graph, mail
+from test_fleet import CONFIG, NOW, TEAM, FakeRelay, fleet, graph, mail
+import machine.main as machine_main
 
 SECRET = 's' * 64
 
@@ -65,7 +66,7 @@ class Hours:
 class Brief(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'events.sqlite')
+        self.store = machine_main.Store(Path(self.temp.name) / 'events.sqlite')
         asked = mail('work', 2, 'Sam Lee <sam@client.example>', 'owner@acme.example', message_id='<open-1@client.example>')
         answered = mail('work', 3, 'Kim Ito <kim@globex.example>', 'owner@acme.example', message_id='<done-1@globex.example>')
         events = [asked, answered, reply('work', 1, 'kim@globex.example', answered['metadata']['thread_id'], '<r1@acme.example>'),
@@ -518,7 +519,7 @@ class OtherCompanyAccount(unittest.TestCase):
         relay.directory = {'fleets': [{'id': 'fl_' + 'a' * 16, 'kind': 'work', 'name': 'Acme', 'secret': SECRET, 'members': [
             {'member_id': 'me1', 'name': 'Owner', 'me': True, 'account_email': 'owner@acme.example', 'emails': ['owner@acme.example', 'owner@sideco.example']},
             {'member_id': 'pat1', 'name': 'Pat', 'emails': [TEAM]}]}]}  # the owner's own entry lists every address of theirs
-        machine = fleet.Fleet(a.Store(Path(temp.name) / 'events.sqlite').connect, config, lambda: 'token', relay=relay)
+        machine = fleet.Fleet(machine_main.Store(Path(temp.name) / 'events.sqlite').connect, config, lambda: 'token', relay=relay)
         machine.directory(refresh=True)
         self.assertEqual(machine.fleet_accounts('fl_' + 'a' * 16), ['work', 'crm', 'x'])
 
@@ -529,7 +530,7 @@ class SeveralFleets(unittest.TestCase):
         temp = tempfile.TemporaryDirectory(); self.addCleanup(temp.cleanup)
         beta = {'id': 'beta', 'email': 'owner@beta.example', 'service': 'gmail', 'boundary': 'work:Beta'}
         config = {**CONFIG, 'accounts': CONFIG['accounts'] + [beta]}
-        store = a.Store(Path(temp.name) / 'events.sqlite')
+        store = machine_main.Store(Path(temp.name) / 'events.sqlite')
         for e in [mail('work', 1, 'Sam <sam@client.example>', 'owner@acme.example'), mail('beta', 1, 'Vic <vic@supplier.example>', 'owner@beta.example'),
                   {**mail('work', 1, 'owner@acme.example', 'sam@client.example'), 'metadata': {**mail('work', 1, 'x', 'y')['metadata'], 'from': 'owner@acme.example', 'to': 'sam@client.example', 'labels': ['SENT']}},
                   {**mail('beta', 1, 'owner@beta.example', 'vic@supplier.example'), 'metadata': {**mail('beta', 1, 'x', 'y')['metadata'], 'from': 'owner@beta.example', 'to': 'vic@supplier.example', 'labels': ['SENT']}}]:

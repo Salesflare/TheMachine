@@ -9,9 +9,12 @@ import urllib.error
 import urllib.parse
 from unittest.mock import patch
 
-from test_connectors import a, Response
+from test_connectors import Response
 from connectors import zoom
 import mail_grants
+import machine.main as machine_main
+import machine.sources.connectors as machine_sources_connectors
+import sources
 
 NOW = '2026-10-23T12:00:00+00:00'
 ACCOUNT = {**zoom.SETUP['account'], 'email': 'owner@acme.example'}
@@ -30,11 +33,11 @@ class ZoomTests(unittest.TestCase):
     def setUp(self):
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
-        self.store = a.Store(Path(tmp.name) / 'events.sqlite')
+        self.store = machine_main.Store(Path(tmp.name) / 'events.sqlite')
         self.config = {'database': str(Path(tmp.name) / 'events.sqlite'), 'zoom_broker': {'url': 'https://cp.example/api/zoom/token'}}
         mail_grants.put(self.config, 'zoom', 'owner@acme.example', 'refresh-1')
         zoom._tokens.clear()
-        self.helpers = types.SimpleNamespace(SourceError=a.SourceError, Skips=a.CONNECTOR_HELPERS.Skips, now=lambda: NOW, iso=a.CONNECTOR_HELPERS.iso,
+        self.helpers = types.SimpleNamespace(SourceError=sources.SourceError, Skips=machine_sources_connectors.CONNECTOR_HELPERS.Skips, now=lambda: NOW, iso=machine_sources_connectors.CONNECTOR_HELPERS.iso,
                                              credential=lambda config, name: 'app-token' if name == 'zoom-broker' else 1 / 0)
         self.listed = {'summaries': [{'meeting_uuid': UUID, 'summary_last_modified_time': '2026-10-23T08:50:00Z'}], 'next_page_token': ''}
         self.summary, self.transcript, self.list_status, self.instances_status = dict(SUMMARY), True, 200, 200
@@ -150,38 +153,38 @@ class ZoomTests(unittest.TestCase):
 
     def test_a_download_link_off_zoom_is_never_followed_with_the_token(self):
         self.transcript = 'https://evil.example/steal'
-        with self.assertRaises(a.SourceError) as caught:
+        with self.assertRaises(sources.SourceError) as caught:
             self.sync()
         self.assertEqual(caught.exception.category, 'zoom_unexpected_host')
 
     def test_a_refused_sign_in_asks_to_connect_again_without_saying_more(self):
         def refuse(request, timeout):
             raise urllib.error.HTTPError(request.full_url, 401, 'revoked', {}, None)
-        with patch('urllib.request.urlopen', side_effect=refuse), self.assertRaises(a.SourceError) as caught:
+        with patch('urllib.request.urlopen', side_effect=refuse), self.assertRaises(sources.SourceError) as caught:
             self.sync()
         self.assertEqual(caught.exception.category, 'zoom_signin_expired')
         self.assertNotIn('refresh', repr(caught.exception))
         mail_grants.forget(self.config, 'zoom', 'owner@acme.example')
         zoom._tokens.clear()
-        with self.assertRaises(a.SourceError) as caught:
+        with self.assertRaises(sources.SourceError) as caught:
             self.sync()
         self.assertEqual(caught.exception.category, 'zoom_signin_expired')
 
     def test_rate_limits_and_errors_are_content_free(self):
         self.list_status = 429
-        with self.assertRaises(a.SourceError) as caught:
+        with self.assertRaises(sources.SourceError) as caught:
             self.sync()
         self.assertEqual((caught.exception.category, caught.exception.status), ('zoom_http', 429))
 
     def test_check_reads_who_is_signed_in_and_stores_nothing(self):
         self.assertIsNone(zoom.check(self.config, ACCOUNT, self.helpers))
         self.assertEqual(self.rows(), [])
-        with self.assertRaises(a.SourceError) as caught:
+        with self.assertRaises(sources.SourceError) as caught:
             zoom.check(self.config, {**ACCOUNT, 'email': 'someone@else.example'}, self.helpers)
         self.assertIn(caught.exception.category, ('account_identity_mismatch', 'zoom_signin_expired'))
 
     def test_without_a_broker_it_says_so(self):
-        with self.assertRaises(a.SourceError) as caught:
+        with self.assertRaises(sources.SourceError) as caught:
             zoom.sync(self.store, {'database': self.config['database']}, ACCOUNT, self.helpers)
         self.assertEqual(caught.exception.category, 'zoom_broker_not_configured')
 
@@ -200,9 +203,9 @@ class ZoomThroughMaton(unittest.TestCase):
         self.addCleanup(tmp.cleanup)
         self.config = {'database': str(Path(tmp.name) / 'events.sqlite'), 'credentials': {'maton-zoom': str(Path(tmp.name) / 'maton.env')}}
         Path(self.config['credentials']['maton-zoom']).write_text('MATON_ZOOM_KEY=maton-secret\n')
-        self.store = a.Store(Path(self.config['database']))
+        self.store = machine_main.Store(Path(self.config['database']))
         self.account = {**ACCOUNT, 'transport': 'maton', 'credential': 'maton-zoom', 'credential_variable': 'MATON_ZOOM_KEY'}
-        self.helpers = types.SimpleNamespace(SourceError=a.SourceError, Skips=a.CONNECTOR_HELPERS.Skips, now=lambda: NOW, iso=a.CONNECTOR_HELPERS.iso,
+        self.helpers = types.SimpleNamespace(SourceError=sources.SourceError, Skips=machine_sources_connectors.CONNECTOR_HELPERS.Skips, now=lambda: NOW, iso=machine_sources_connectors.CONNECTOR_HELPERS.iso,
                                              credential=lambda config, name: Path(config['credentials'][name]).read_text())
         self.calls = []
         patch('urllib.request.urlopen', side_effect=self.respond).start()
@@ -239,7 +242,7 @@ class ZoomThroughMaton(unittest.TestCase):
 
     def test_a_download_link_never_gets_the_maton_key(self):
         source = zoom.Source(self.config, self.account, self.helpers)
-        with self.assertRaises(a.SourceError) as caught:
+        with self.assertRaises(sources.SourceError) as caught:
             source.get('', url='https://us02web.zoom.us/rec/download/t1', raw=True)
         self.assertEqual(caught.exception.category, 'zoom_unexpected_host')
         self.assertEqual(self.calls, [])

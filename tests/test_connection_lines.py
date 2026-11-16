@@ -4,17 +4,17 @@ import unittest
 
 import onboarding
 from connectors import intercom
-from test_connectors import a
+import machine.sources.connectors as machine_sources_connectors
 
 SHARED = {'fleet': 'f1', 'fleet_name': 'Example', 'grant': 'g1'}
 
 
 class ConnectionLines(unittest.TestCase):
     def says(self, account):
-        return a.connector_says(account, account.get('service', 'gmail'))
+        return machine_sources_connectors.connector_says(account, account.get('service', 'gmail'))
 
     def test_every_source_says_what_it_brings_in(self):
-        for service in [*onboarding.LABELS, *a.connector_services()]:
+        for service in [*onboarding.LABELS, *machine_sources_connectors.connector_services()]:
             with self.subTest(service=service):
                 what = self.says({'id': 'x', 'service': service}).get('what')
                 self.assertTrue(what and what.endswith('.') and len(what) <= 80, what)
@@ -45,7 +45,7 @@ class ConnectionLines(unittest.TestCase):
                 self.assertEqual(self.says({'id': 'x', **account}).get('acts', ''), acts)
 
     def test_no_account_still_says_what(self):
-        self.assertEqual(a.connector_says(None, 'zoom'), {'what': 'Meeting summaries and transcripts from Zoom.'})
+        self.assertEqual(machine_sources_connectors.connector_says(None, 'zoom'), {'what': 'Meeting summaries and transcripts from Zoom.'})
 
 
 if __name__ == '__main__':

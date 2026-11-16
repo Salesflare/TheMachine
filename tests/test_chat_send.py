@@ -2,7 +2,7 @@
 import unittest
 import test_next_actions as tn
 import test_ux as ux
-a = ux.a
+import machine.cards as machine_cards
 
 
 class ChatSend(unittest.TestCase):
@@ -35,7 +35,7 @@ class ChatSend(unittest.TestCase):
         self.save(job, 'The email to Pat is ready for you to check and send.')
         self.assertEqual(self.row()['next_action']['body'], 'Exact approved draft.')
         self.assertEqual(self.sends(), 0)
-        self.assertIn('Send', [b['label'] for b in a.controls(self.row())['blocks'][0]['buttons']])
+        self.assertIn('Send', [b['label'] for b in machine_cards.controls(self.row())['blocks'][0]['buttons']])
 
     def test_a_shown_draft_goes_out_after_the_owner_says_send_it(self):
         job = self.say('Email Pat at acme.example', 'chat-1')

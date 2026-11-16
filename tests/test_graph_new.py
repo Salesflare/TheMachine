@@ -4,7 +4,7 @@ import unittest
 
 import test_graph as tg
 
-a, graph = tg.a, tg.graph
+graph = tg.graph
 
 
 class GraphNew(unittest.TestCase):

@@ -6,8 +6,11 @@ from pathlib import Path
 
 from seams import patch_everywhere
 import test_graph as tg
+import fleet
+import machine.main as machine_main
+import timeutil
 
-a, graph = tg.a, tg.graph
+graph = tg.graph
 
 
 def member(member_id, name, emails, machine=True, me=False):
@@ -44,10 +47,10 @@ def work(*members, name='Acme'):
 class GraphFleet(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'events.sqlite')
-        self.app = object.__new__(a.App); self.app.store = self.store; self.app.config = tg.CONFIG
+        self.store = machine_main.Store(Path(self.temp.name) / 'events.sqlite')
+        self.app = object.__new__(machine_main.App); self.app.store = self.store; self.app.config = tg.CONFIG
         self.app.graph_build = lambda: None
-        self.enterContext(patch_everywhere(a, 'now', lambda: tg.NOW.isoformat()))
+        self.enterContext(patch_everywhere(timeutil, 'now', lambda: tg.NOW.isoformat()))
         for days in (1, 3, 6):
             self.add(tg.mail(days, 'kim <kim@acme.com>', 'sam@acme.com'), tg.mail(days, 'sam@acme.com', 'kim@acme.com', labels=('SENT',)),
                      tg.mail(days, 'Lee Park <lee@acme.com>', 'sam@acme.com'), tg.mail(days, 'sam@acme.com', 'lee@acme.com', labels=('SENT',)),
@@ -137,7 +140,7 @@ class NetworkMachines(GraphFleet):
     owner added to someone (Edit) counts like one the messages show."""
     def found(self, *emails, gone=()):
         with self.store.connect() as db:
-            a.fleet.discovery.ensure(db)
+            fleet.discovery.ensure(db)
             for e in emails:
                 db.execute("INSERT INTO network_people(email,node_id,username,name,hint,status,found_at,gone_at) VALUES(?,?,?,?,?,?,?,?)",
                            (e, 'email:' + e, e.split('@')[0], 'Someone', 'personal', 'later', tg.NOW.isoformat(), tg.NOW.isoformat() if e in gone else None))

@@ -11,8 +11,10 @@ import types
 import unittest
 from unittest.mock import patch
 
-from test_connectors import a
 from connectors import web_page
+import machine.main as machine_main
+import machine.sources.connectors as machine_sources_connectors
+import sources
 
 ACCOUNT = {**web_page.SETUP['account'], 'boundary': 'work:Acme', 'url': 'https://tools.example/pricing'}
 NOW = '2026-11-14T09:00:00+00:00'
@@ -38,8 +40,8 @@ class WebPageTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
-        self.store = a.Store(Path(self.tmp.name) / 'events.sqlite')
-        self.helpers = types.SimpleNamespace(SourceError=a.SourceError, iso=a.CONNECTOR_HELPERS.iso, now=lambda: NOW)
+        self.store = machine_main.Store(Path(self.tmp.name) / 'events.sqlite')
+        self.helpers = types.SimpleNamespace(SourceError=sources.SourceError, iso=machine_sources_connectors.CONNECTOR_HELPERS.iso, now=lambda: NOW)
         self.page, self.robots, self.requests = html(*PLANS), b'User-agent: *\nDisallow: /admin\n', []
         self.clock = 1_800_000_000.0
         patch.object(web_page, 'get', side_effect=self.respond).start()
@@ -110,23 +112,23 @@ class WebPageTests(unittest.TestCase):
 
     def test_robots_txt_is_asked_first_and_kept_a_day(self):
         self.robots = b'User-agent: *\nDisallow: /pricing\n'
-        with self.assertRaisesRegex(a.SourceError, '^web_page_robots$'):
+        with self.assertRaisesRegex(sources.SourceError, '^web_page_robots$'):
             self.sync()
         self.assertEqual(self.requests, ['https://tools.example/robots.txt'])
         self.robots = b'User-agent: TheMachine\nDisallow: /\n\nUser-agent: *\nAllow: /\n'
-        with self.assertRaisesRegex(a.SourceError, '^web_page_robots$'):
+        with self.assertRaisesRegex(sources.SourceError, '^web_page_robots$'):
             web_page.check({}, dict(ACCOUNT), self.helpers)
         self.robots = None  # no robots.txt at all: fine to read
         self.assertIsNone(web_page.check({}, dict(ACCOUNT), self.helpers))
 
     def test_errors_are_safe_labels(self):
         self.page = 404
-        with self.assertRaisesRegex(a.SourceError, '^web_page_http:HTTP_404$'):
+        with self.assertRaisesRegex(sources.SourceError, '^web_page_http:HTTP_404$'):
             self.sync()
         self.page = b'<html><body><div id="root"></div><script>render()</script></body></html>'
-        with self.assertRaisesRegex(a.SourceError, '^web_page_empty$'):
+        with self.assertRaisesRegex(sources.SourceError, '^web_page_empty$'):
             self.sync()
-        with self.assertRaisesRegex(a.SourceError, '^web_page_address$'):
+        with self.assertRaisesRegex(sources.SourceError, '^web_page_address$'):
             web_page.sync(self.store, {}, {**ACCOUNT, 'url': 'ftp://tools.example/x'}, self.helpers)
 
     def test_setup_names_it_after_the_page_and_keeps_https(self):
@@ -159,8 +161,8 @@ class Addresses(unittest.TestCase):
             def close(self):
                 Sock.closed = True
         with patch.object(socket, 'create_connection', return_value=Sock()):
-            connection = web_page._connection('tools.example', 5, a.SourceError)
-            with self.assertRaisesRegex(a.SourceError, '^web_page_address$'):
+            connection = web_page._connection('tools.example', 5, sources.SourceError)
+            with self.assertRaisesRegex(sources.SourceError, '^web_page_address$'):
                 connection.connect()
         self.assertTrue(Sock.closed)
 
@@ -184,8 +186,8 @@ class Addresses(unittest.TestCase):
             def close(self):
                 pass
         with patch.object(web_page, '_connection', side_effect=Connection):
-            with self.assertRaisesRegex(a.SourceError, '^web_page_address$'):
-                web_page.get('https://tools.example/pricing', a.SourceError)
+            with self.assertRaisesRegex(sources.SourceError, '^web_page_address$'):
+                web_page.get('https://tools.example/pricing', sources.SourceError)
 
 
 if __name__ == '__main__':
