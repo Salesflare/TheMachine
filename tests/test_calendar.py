@@ -10,6 +10,7 @@ import tempfile
 import threading
 import unittest
 from unittest.mock import patch
+import machine.web.loopback as machine_web_loopback
 
 spec = importlib.util.spec_from_file_location('calendar_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec)
@@ -252,10 +253,10 @@ class Calendar(unittest.TestCase):
         app.owner_token = 'owner-key'
         app.config = {'accounts': [ACCOUNT], 'tailscale_owner': 'owner@example.com', 'dashboard_host': 'machine.example:8443',
                       'port': 0, 'http_timeout': 1}
-        servers, real = [], a.http.server.ThreadingHTTPServer
+        servers, real = [], machine_web_loopback.Server
         def capture(*args, **kwargs):
             servers.append(real(*args, **kwargs)); return servers[-1]
-        for patcher in (patch.object(a.http.server, 'ThreadingHTTPServer', side_effect=capture), patch.object(a.signal, 'signal'),
+        for patcher in (patch.object(machine_web_loopback, 'Server', side_effect=capture), patch.object(a.signal, 'signal'),
                         patch.object(a.App, 'preparation_worker'), patch.object(a.App, 'delivery_worker')):
             patcher.start()
             self.addCleanup(patcher.stop)

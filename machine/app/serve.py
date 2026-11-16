@@ -1,7 +1,6 @@
 """The service itself: serve() starts every worker, the collectors and the loopback web server (machine/web/handler.py)
 and runs until stopped; packed_page keeps the dashboard page compressed once per page and coding. Moved out of
 assistant.App as is. A mixin of assistant.App (APP_MIXINS)."""
-import http.server
 from pathlib import Path
 import signal
 import threading
@@ -17,6 +16,7 @@ from machine.config import LOG
 from machine.model_usage import node_bin
 from machine.store import review_requeue
 from machine.faults import watch_faults
+from machine.web import loopback
 from machine.web.handler import make_handler
 from machine.web.serving import compress_body
 import shared_connectors
@@ -57,7 +57,7 @@ class ServeApp:
 
         Handler = make_handler(app)
 
-        server = http.server.ThreadingHTTPServer(('127.0.0.1', self.config.get('port', 8787)), Handler)
+        server = loopback.Server(('127.0.0.1', self.config.get('port', 8787)), Handler)
         watch_faults(self.store)
         if getattr(self, 'agents', None):
             self.agents.version = self.store.code_version  # failed jobs in the error reports carry it

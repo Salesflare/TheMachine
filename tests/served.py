@@ -1,15 +1,19 @@
 """Run the app's real web server (App.serve) in a test, and stop it completely before the test's folder goes.
 
-`port = serve(self, a)` starts `a.App.serve` on `self.app` in a thread and returns the port it listens on. serve()
+`port = serve(self)` starts `App.serve` on `self.app` in a thread and returns the port it listens on. serve()
 also starts the account readers and every background worker; tests over the request handler need none of them, and
 they would write into the test's temporary folder, also while it is removed after the test ("Directory not empty").
 So they are stubbed, the error log serve() hangs on the shared logger comes off again, and on cleanup serve() and every
 thread it started (the server's request threads too) are joined, with a check that each stopped and the server closed.
 
 Register the temporary folder's cleanup before calling this: cleanups run last in, first out, so this one runs first."""
-import socket
+import signal
 import threading
 from unittest.mock import patch
+
+from machine.config import LOG
+import machine.main as machine_main
+import machine.web.loopback as machine_web_loopback
 
 # What serve() starts besides the web server (machine/app/serve.py)
 BACKGROUND = ('collector', 'ability_checker', 'delivery_worker', 'preparation_worker', 'whatsapp_photo_worker',
@@ -19,18 +23,15 @@ BACKGROUND = ('collector', 'ability_checker', 'delivery_worker', 'preparation_wo
               'gbrain_start')
 
 
-def serve(test, a, patches=()):
-    """Start `test.app` serving with the assistant module `a` (the test's own copy of it), with `patches` (more patchers)
-    on for the whole test; the port it listens on."""
+def serve(test, a=None, patches=()):
+    """Start `test.app` serving, with `patches` (more patchers) on for the whole test; the port it listens on. `a`, an
+    assistant module some tests still pass, is not read: App, LOG and signal are the same objects in it."""
     import machine.app.serve as serve_module
     servers, started = [], threading.Event()
-    real_server, real_watch = a.http.server.ThreadingHTTPServer, serve_module.watch_faults
+    real_server, real_watch = machine_web_loopback.Server, serve_module.watch_faults
 
     def capture(*args, **kwargs):
-        # binding names the server with socket.getfqdn('127.0.0.1'), a reverse lookup that can take more than the 10 s
-        # wait below on macOS; the tests never read that name
-        with patch.object(socket, 'getfqdn', return_value='localhost'):
-            servers.append(real_server(*args, **kwargs))
+        servers.append(real_server(*args, **kwargs))
         started.set()
         return servers[-1]
 
@@ -39,14 +40,14 @@ def serve(test, a, patches=()):
         log = real_watch(store, *args)
 
         def unwatch():
-            a.LOG.removeHandler(log)
+            LOG.removeHandler(log)
             threading.excepthook = hook
         test.addCleanup(unwatch)
         return log
     for patcher in (patch.object(serve_module, 'watch_faults', side_effect=watch),
-                    patch.object(a.http.server, 'ThreadingHTTPServer', side_effect=capture), patch.object(a.signal, 'signal'),
+                    patch.object(machine_web_loopback, 'Server', side_effect=capture), patch.object(signal, 'signal'),
                     patch('machine.store.review_requeue.requeue', return_value=0),
-                    *(patch.object(a.App, name) for name in BACKGROUND), *patches):
+                    *(patch.object(machine_main.App, name) for name in BACKGROUND), *patches):
         patcher.start()
         test.addCleanup(patcher.stop)
     before = set(threading.enumerate())
