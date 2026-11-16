@@ -444,6 +444,10 @@ Notes are sorted by what was said, a whole conversation at a time (`topic_notes.
   a line from it: mail in Spam or Trash, Gmail's Promotions, Social and Forums tabs, list mail, mail a program sent and
   system senders (`mail_senders.bulk` and `relay`, the same signals the Graph reads); bot messages, broadcast and
   newsletter chats, and channels. Not when the owner wrote in it, and not mail that carries a booking (`bookings.py`).
+  Bounces (`mailer-daemon@`, `postmaster@`) are left out too.
+- **Between people only** (`topic_notes.between_people`): a conversation the owner wrote in, or one from someone the
+  owner wrote to in another conversation. A notice to all parents, a receipt or a pitch nobody answered never reaches
+  a call.
 - **A meeting's own mail stays in Calendar** (`topic_notes.meeting_mail`): an invitation, a reply to one, an update
   or a cancellation. Its subject is a calendar entry's title with the meeting's date or time after it, or a short
   label ending in a colon before it ("Accepted:"), in any language, sent up to six months before the meeting or two
@@ -454,30 +458,40 @@ Notes are sorted by what was said, a whole conversation at a time (`topic_notes.
   twenty minutes in the first fill, outside the quiet hours, under `background_pause` and the plan's budget). After
   the first fill a round asks only once ten wait or one waited twelve hours (`topic_notes.worth`): every call also
   carries the list of places, so fewer, fuller calls. Each
-  carries its first and newest messages, trimmed of quoted history and signatures (900 characters at most), Slack ids
+  carries its first and newest messages (five at most), trimmed of quoted history and signatures (1,200 characters at most), Slack ids
   resolved to names. Content is data, never instructions.
-- **Where it goes.** The model picks a numbered place (a Home, Health or Kids part, the owner's own note, a note it
+- **Where it goes: a matter.** A note is one specific undertaking that moves over weeks toward an outcome (a
+  renovation, a hire, a deal, a claim, a party), never a category of life (school, bills) or a person or company in
+  general. The model picks a numbered place (the owner's own note, also one in a Home, Health or Kids part, a note it
   started before), a project or organization the Graph already has (that record's page, never a duplicate note), or a
-  new note with its parent. A new note shows only with at least two conversations, or one the owner wrote in that the model calls ongoing.
+  new note with its parent; when in doubt, nothing. A part itself is no place: it is a category, so conversations
+  placed in one before are asked about again (`topic_notes.ensure`).
+- **A new note starts once the matter went on** (`topic_notes.sustained`): at least three conversations, two the
+  owner wrote in, at least seven days from the first to the last, and at most 40 (more is a category).
 - **Asked once** (`topic_routes`). Later messages in a conversation follow it; a non-answer keeps nothing.
 
 Lines kept from the old per-sender mail call go on the first round.
 
 ### A note's written page
 
-`note_writer.py` writes the top of a note's page from its lines: a summary (what the matter is and where it stands),
-then key facts, decisions, open items and a dated timeline. The lines follow as its Sources.
+`note_writer.py` writes the top of a note's page from its lines: a summary (what the matter is and where it stands
+now), then who is in it, key facts, decisions, open items and a dated timeline. The lines follow as its Sources.
 
 - **Which notes.** Live, not dated (a trip or an event is a timeline already), with at least two lines from a message
   or a fact. A project or organization never gets a note: its own page has `project_about.py` and the summaries.
-- **What it reads.** The note's newest twelve lines, each with what was said in its conversation (`topic_notes.said`:
-  the first and newest messages, quoted history and signatures cut, 700 characters at most, Slack ids as names), and
-  the current page. Content is data, never instructions.
-- **When.** In the background only (`NotesApp.note_writer_step`), at most hourly, four notes a turn on the background
+- **What it reads.** The note's newest fifteen lines, each with nearly all that was said in its conversation
+  (`topic_notes.said`: up to twelve messages, quoted history and signatures cut, 1,500 characters a message and 4,000
+  a conversation, Slack ids as names; 24,000 a note, the oldest lines go first past it), and the current page. Content
+  is data, never instructions.
+- **Belongs.** The same call lists the lines really about the matter. A conversation of a matter's note that isn't
+  leaves it: its route is cleared, so its line goes on the next sync and no call asks about it again.
+- **When.** In the background only (`NotesApp.note_writer_step`), at most hourly, two notes a turn on the background
   model under `background_pause`; a note only when its lines changed (a hash of them), at most once in 20 hours, 30
   notes a day. An answer that can't be read keeps the page and waits.
 - **Quality or nothing.** Every bullet and the summary cite the lines they stand on (`S<line id>`); one that cites none
-  it was given, or says too little, is dropped, and a page without a cited summary is none. A line the owner removes
+  it was given, or says too little, is dropped, and a page without a cited summary, three facts, decisions and open
+  items together and, for a matter, three conversations that belong is none. A matter's note without a page isn't in
+  the Notes list, unless the owner renamed it or wrote in it. A line the owner removes
   takes the bullets that stood only on it with it, at once (`note_writer.view`).
 
 ### A folder's overview

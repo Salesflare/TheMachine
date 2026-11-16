@@ -421,15 +421,23 @@ class NotesApp:
 
     def notes_list(self, db):
         """The Notes list, light: what each row shows, in tree order, with a folder's overview (folder_overview) or a
-        written page's summary (note_writer)."""
+        written page's summary (note_writer). Quality or nothing: a matter's note (topic_notes) shows once its page is
+        written (note_writer's bar), or once the owner renamed it or wrote in it."""
         found = note_pages.listing(db, today().isoformat())
         ids = [note_pages.parse_id(x['id']) for x in found]
         about = {**note_writer.about(db, ids), **folder_overview.about(db, ids)}
+        owned = {r[0] for r in db.execute("SELECT id FROM note_pages WHERE kind='topic' AND (owner_title IS NOT NULL OR "
+                                          "EXISTS(SELECT 1 FROM note_page_lines l WHERE l.note_id=note_pages.id AND l.by='owner' AND l.removed_at IS NULL))")}
+        shown = []
         for x in found:
-            text = about.get(note_pages.parse_id(x['id']))
+            note_id = note_pages.parse_id(x['id'])
+            text = about.get(note_id)
             if text:
                 x['about'] = text
-        return found
+            if x['kind'] == 'topic' and not text and note_id not in owned:
+                continue
+            shown.append(x)
+        return shown
 
     def note_page(self, node):
         """One note's page (with the whole tree, light), each line with the message it came from (what and when), so it opens from there."""

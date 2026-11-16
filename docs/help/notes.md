@@ -36,13 +36,13 @@ Your changes always stand. Rename a note, move it, change its dates or a line, a
 
 ## Written pages
 
-Once a note has at least two lines from your messages or from what your Machine learned, your Machine writes its page at the top. It reads the conversations themselves, not just their subjects:
+Once a note has at least two lines from your messages or from what your Machine learned, your Machine writes its page at the top. It reads the whole conversations, not just their subjects:
 
-- A short summary: what it's about and where it stands.
-- **Key facts**, **Decisions**, **Open items** and a **Timeline**, each only when there's something concrete to say.
+- A short summary: what it's about and where it stands now.
+- **Who** is in it, then **Key facts**, **Decisions**, **Open items** and a **Timeline**, each only when there's something concrete to say.
 - The note's lines come after, numbered, under **Sources**. Each sentence ends with the numbers of the lines it comes from: tap one to go to that line.
 
-The page is rewritten only when the note's lines change, at most about once a day. If its sources say nothing concrete, there's no page, just the lines. Remove a line and what came only from it goes from the page too. The Notes list shows the start of each page's summary under the note's name.
+The page is rewritten only when the note's lines change, at most about once a day. If its sources say too little, there's no page, just the lines. A note your Machine started without a page isn't in the list, until you rename it or add a line. Remove a line and what came only from it goes from the page too. The Notes list shows the start of each page's summary under the note's name.
 
 A project or organization has its own page in the Graph already, with its description at the top. Conversations about one go there, not in a note.
 
@@ -54,12 +54,13 @@ It's read from the pages and newest lines of the notes under it, at most once a 
 
 ## Notes from your conversations
 
-Your Machine reads whole conversations and sorts each into the note it's about: an email thread from any of your mailboxes, a chat in WhatsApp, Slack, Telegram, LinkedIn or another connected app, and your meeting notes. Chat messages count as one conversation until the chat goes quiet for two days.
+Your Machine keeps a note for each matter you're dealing with, like a renovation, a hire, a deal or a party. It reads whole conversations and sorts each into the matter it's about: an email thread from any of your mailboxes, a chat in WhatsApp, Slack, Telegram, LinkedIn or another connected app, and your meeting notes. Chat messages count as one conversation until the chat goes quiet for two days.
 
+- Only conversations between people count: one you wrote in, or one from someone you write with. A notice to all parents, a receipt or a pitch nobody answered never goes in a note.
 - A conversation about a project or organization in your Graph goes on that page, not on a new note.
-- A conversation can go in a part of **Home**, **Health** or **Kids**, in a note of your own, or in a note your Machine starts under **Work**, **Car**, **Taxes** or another folder.
-- Your Machine starts a new note only for a subject with at least two conversations, or one you wrote in that's clearly still going.
-- Each line is one conversation, newest first. Tapping it opens the conversation.
+- A conversation can go in a note of your own, or in a note your Machine starts under **Work**, **Car**, **Taxes** or another folder. A general subject like school or bills is no matter, so it gets no note.
+- Your Machine starts a new note once a matter goes on: at least three conversations over a week or more, and you wrote in two.
+- Each line is one conversation, newest first. Tapping it opens the conversation. One that turns out to be about something else leaves the note.
 
 It sends the AI a short part of each conversation, without quoted replies or signatures. Each conversation is asked about once, and new messages in it follow it.
 
@@ -103,7 +104,7 @@ Under **Home**, your Machine keeps what it knows about your home: **Bills and su
 
 Only Personal bills, subscriptions and email are used, and Home notes are always Personal. Your Machine asks its AI once about each new bill, subscription or thing it learned, to tell whether it's about your home. For a bill it sends who it's from, never the amount.
 
-Your conversations go in these notes too, as **Notes from your conversations** above says.
+Your conversations go in your own notes here, as **Notes from your conversations** above says.
 
 ## Health
 
