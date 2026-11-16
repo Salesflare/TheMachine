@@ -76,6 +76,29 @@ test('a sign-in only comes back to a hosted Machine\'s own handoff', () => {
   }
 });
 
+test('a connection\'s sign-in opens in the sign-in sheet, the account\'s other pages do not', () => {
+  const t = 'A'.repeat(43), link = 'B'.repeat(32);
+  assert.equal(MachineUrl.connectionStart(`https://app.themachine.computer/hop?t=${t}&app=1`), `https://app.themachine.computer/hop?t=${t}&app=1`);
+  assert.equal(MachineUrl.connectionStart(`https://app.themachine.computer/connect/start/${link}`), `https://app.themachine.computer/connect/start/${link}?app=1`);
+  for (const bad of [`https://app.themachine.computer/hop?t=${t}`, `https://app.themachine.computer/hop?t=${t}&app=1&x=1`,
+    `https://evil.com/hop?t=${t}&app=1`, `http://app.themachine.computer/hop?t=${t}&app=1`, `https://app.themachine.computer:8443/hop?t=${t}&app=1`,
+    `https://sam.app.themachine.computer/connect/start/${link}`, `https://app.themachine.computer/connect/start/${link}?x=1`,
+    'https://app.themachine.computer/connect/start/short', 'https://app.themachine.computer/account', 'https://app.themachine.computer/open', '']) {
+    assert.equal(MachineUrl.connectionStart(bad), null, bad);
+  }
+});
+
+test('a connection\'s sign-in comes back only to a part of the dashboard', () => {
+  for (const ok of ['connect=shortcut/c_0123456789abcdef', 'connect=zoom/f_0123456789abcdef', 'connect=stripe/stopped', 'connect=notion',
+    'signed-in=shortcut', 'signed-in=microsoft_docs/again']) {
+    assert.equal(MachineUrl.connectedPart(ok), ok);
+  }
+  for (const bad of ['connect=shortcut/c_0123', 'connect=x/https://evil.com', 'signed-in=Shortcut', 'chat=1', 'connect=a#b', '', null,
+    'signed-in=x/again\njavascript:1']) {
+    assert.equal(MachineUrl.connectedPart(bad), null, String(bad));
+  }
+});
+
 test('every start page word is in every language, and the pages use only known words', () => {
   const ctx = {};
   vm.runInNewContext(fs.readFileSync(path.join(www, 'strings.js'), 'utf8'), ctx);

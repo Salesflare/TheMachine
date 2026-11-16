@@ -17,6 +17,8 @@ On any phone, [themachine.computer/app](https://themachine.computer/app) opens t
 
 On a hosted Machine the app signs in with your account. On a self-hosted one, open **Settings**, **Apps** on a computer: under the stores, **Not on the Network?** shows a code. Install the app, then scan it with the phone's camera, or type the address shown under it into the app. The app asks before it connects, and your Machine's own sign-in still applies.
 
+**Sign in with** a service under **Connections** (Shortcut, Notion, Slack, Zoom and the others) opens your phone's sign-in sheet. When you're done there, you're back in the app, and the new connection shows in **Connections** by itself.
+
 ## Notifications
 
 The app asks to allow notifications when it first opens. Tap one to open what it is about: a to-do shows in your list, highlighted, the morning opens today in the **Calendar**, the team brief opens To-dos, and a Fleet question opens its to-do. No text of a to-do passes through Apple, Google or The Machine's service: they only carry a fixed line, like "A to-do needs you".

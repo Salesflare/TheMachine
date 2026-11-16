@@ -50,6 +50,17 @@ async function connectAdd(force){if(!lazyIn('connections'))try{await lazyPart('c
 async function connectOpen(name){if(!lazyIn('connections'))try{await lazyPart('connections')}catch(e){toast(e.message,true);return}return connectOpenNow(name)}
 function openConnectLink(){if(/^#connect=/.test(location.hash))lazyRun('connections',()=>openConnectLinkNow());
  else if(/^#signed-in=/.test(location.hash))lazyRun('connections',()=>openSignedInLink())}
+// Connections keeps itself current, never needing a manual refresh: when a sign-in ends, and when the page is in front
+// again (back from another app, the phone app's sign-in sheet or another tab) while Connections shows or a sign-in is
+// going, it asks the Machine at once and a few times more while a new connection settles (it restarts to read it).
+let settleTimers=[],connWokeAt=0;
+function connectionsSettle(after){for(const x of settleTimers)clearTimeout(x);connectList=null;
+ settleTimers=[0,3e3,8e3,20e3].map(ms=>setTimeout(()=>{if(document.hidden||refreshes)return;refresh(true).then(()=>after?.(),()=>{})},ms))}
+function connectionsWake(){if(document.hidden||Date.now()-connWokeAt<2000)return;
+ const going=['started','connecting','checking','starting'].includes(connectSignin?.state);
+ if(!going&&$('#health').hidden)return;connWokeAt=Date.now();
+ connectionsSettle(()=>{if(lazyIn('connections')&&connectSignin){$('#connect-add').dataset.sig='';renderConnectSignin()}})}
+document.addEventListener('visibilitychange',connectionsWake);addEventListener('focus',connectionsWake);addEventListener('pageshow',e=>{if(e.persisted)connectionsWake()});
 // Reconnect buttons elsewhere (cards, Needs you) work before the views are in: the click waits for them, then goes on.
 document.addEventListener('click',e=>{if(lazyIn('connections'))return;const b=e.target.closest('[data-reconnect],[data-hosted-reconnect]');if(!b)return;
  e.preventDefault();e.stopImmediatePropagation();lazyRun('connections',()=>b.click())},true);

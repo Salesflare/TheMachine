@@ -327,15 +327,15 @@ function hostedPoll(){clearTimeout(signinTimer);const s=connectSignin;if(!s?.hos
     answered:now,mark,moved:mark===s.mark?s.moved||s.began:now}}
   if(HOSTED_GOING.includes(connectSignin.state)&&hostedStalled(connectSignin,now)){const at=connectSignin;connectSignin={...at,state:'stalled'};
    try{throw Object.assign(new Error(`${at.provider}: ${at.phase||at.state}`),{name:'ConnectStalled'})}catch(e){errReport(e,'ConnectStalled')}}
-  $('#connect-add').dataset.sig='';renderConnectSignin();if(connectSignin.state==='done')setTimeout(()=>{connectList=null;refresh().then(()=>{$('#connect-add').dataset.sig='';if(connectSignin?.state==='done')renderConnectSignin()},()=>{})},8000);hostedPoll()},s.state==='checking'?0:2500)}
+  $('#connect-add').dataset.sig='';renderConnectSignin();if(connectSignin.state==='done'&&s.state!=='done')connectionsSettle(()=>{$('#connect-add').dataset.sig='';if(connectSignin?.state==='done')renderConnectSignin()});hostedPoll()},s.state==='checking'?0:2500)}
 // Back from the provider (cloud: open_dashboard to=connect): + Add, that sign-in's form, following how it goes
 // c_: the command its callback queued; f_: why the provider's answer was refused, which the account keeps for this form
 const ON_DASHBOARD=['github','whatsapp','android','codex'];
 function openSignedInLink(){const m=/^#signed-in=([a-z_]{1,32})(\/again)?$/.exec(location.hash);if(!m)return;
- history.replaceState(null,'',location.pathname+location.search);showTab('health');const s=m[1].split('_');
- if(/^(google|microsoft|zoom|stripe|slack|salesforce|intercom|trello|google_(meet|docs)|microsoft_(docs(_write)?|teams))$/.test(m[1]))
+ history.replaceState(null,'',location.pathname+location.search);showTab('health');const s=m[1].split('_');connectionsSettle();
+ if(/^(google|microsoft|zoom|stripe|slack|salesforce|intercom|trello|shortcut|notion|google_(meet|docs)|microsoft_(docs(_write)?|teams))$/.test(m[1]))
   toast(t(m[2]?'Reconnected to {}.':'Connected to {}.',s[0]=='microsoft'&&s[1]?(s[1]=='teams'?'Microsoft Teams':'Microsoft OneDrive'):s.slice(0,2).map(w=>w[0].toUpperCase()+w.slice(1)).join(' ')))}
-async function openConnectLinkNow(){const m=/^#connect=(google|microsoft|microsoft_docs|microsoft_docs_write|microsoft_teams|google_meet|google_docs|zoom|stripe|slack|intercom|trello|github|whatsapp|android|codex|salesforce)(?:\/([cf]_[0-9a-f]{16}|stopped))?$/.exec(location.hash);if(!m||!state.manage_url)return;
+async function openConnectLinkNow(){const m=/^#connect=(google|microsoft|microsoft_docs|microsoft_docs_write|microsoft_teams|google_meet|google_docs|zoom|stripe|slack|intercom|trello|shortcut|notion|github|whatsapp|android|codex|salesforce)(?:\/([cf]_[0-9a-f]{16}|stopped))?$/.exec(location.hash);if(!m||!state.manage_url)return;
  history.replaceState(null,'',location.pathname+location.search);connectRun=null;connectForm=null;showTab('health','add');await connectAdd(true);
  const docs=m[1]==='microsoft_docs_write'&&connectList?.sources.find(v=>v.hosted_signin==='microsoft_docs');  // Allow edits: the Docs source, its own consent
  const x=m[1]==='codex'?connectList?.codex&&codexSource():docs?{...docs,hosted_signin:m[1]}:connectList?.sources.find(v=>v.hosted_signin===m[1]);if(!x||!connectList.manage_url)return;const command=m[2]&&m[2]!=='stopped'?m[2]:'';
@@ -364,7 +364,7 @@ function renderConnectSignin(){const s=connectSignin,box=$('#connect-add'),paire
  const sig=JSON.stringify(['signin',s.state,s.source,s.name,s.error,s.replies,paired,s.hosted,s.code,s.until,s.pending,s.phone,s.off,s.phase,!!connectCard({account:s.made}),s.provider==='codex'&&connectList?.codex?.status]);if(box.dataset.sig===sig)return;box.dataset.sig=sig;connectDraw(box,'signin',panel)}
 function signinPoll(){clearTimeout(signinTimer);if(!connectSignin||!['started','connecting'].includes(connectSignin.state))return;
  signinTimer=setTimeout(async()=>{try{const r=await connectPost('connect_signin_state',{name:connectSignin.start||connectSignin.source});if(!connectSignin)return;
-  if(r.state!=='none')connectSignin={...connectSignin,...r};renderConnectSignin();if(r.state==='done')setTimeout(()=>{connectList=null;refresh()},8000)}catch{}signinPoll()},2500)}
+  if(r.state!=='none')connectSignin={...connectSignin,...r};renderConnectSignin();if(r.state==='done')connectionsSettle()}catch{}signinPoll()},2500)}
 async function signinGo(way){const s=connectSignin;if(!s)return;
  if(s.provider==='codex'&&!s.hosted)return codexGo(s);
  if(s.hosted){if(s.state==='intro')return hostedSigninGo(s,way);connectSignin={...s,state:'intro',error:''};$('#connect-add').dataset.sig='';return renderConnectSignin()}  // Try again: Work or Personal first
@@ -372,7 +372,8 @@ async function signinGo(way){const s=connectSignin;if(!s)return;
  // Still within the click's few seconds of user activation; a browser that blocks it goes there in this tab instead.
  try{const r=await connectPost('connect_signin',{name:s.start||s.source});
   if(r.state==='unavailable'){const x=connectList?.sources?.find(v=>v.name===s.source);if(x)x.signin_off=true;connectSignin={...s,state:'intro',error:'',off:true}}
-  else{const tab=window.open('about:blank','_blank');if(tab){tab.opener=null;tab.location.href=r.url}else location.assign(r.url);
+  // the phone app: in this page, where the app takes it into the phone's sign-in sheet and comes back here when done
+  else{const tab=DEV.phoneApp?null:window.open('about:blank','_blank');if(tab){tab.opener=null;tab.location.href=r.url}else location.assign(r.url);
    connectSignin={source:s.source,provider:s.provider,start:s.start,label:s.label,own:s.own,state:'started'}}}catch(err){errCaught(err);connectSignin={...s,state:'failed',error:err.message}}
  $('#connect-add').dataset.sig='';renderConnectSignin();signinPoll()}
 // The phone's pairing request, shown while its setup code waits: Approve, a POST from this page to the account

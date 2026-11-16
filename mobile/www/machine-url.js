@@ -87,7 +87,28 @@
     return {auth: url.href, machine: 'https://' + url.hostname + '/'};
   }
 
-  const api = {HOSTED, parse, valid, signinTarget, hostedHost, tailnetHost, ownHost, isMachine};
+  // A connection's sign-in the Machine's page starts ("Sign in with Shortcut"): the hosted dashboard's hop to the account
+  // (/hop?t=...&app=1, which the account gives the app's WebView only) or a self-hosted Machine's start link
+  // (/connect/start/<id>). The address to open in the system's sign-in sheet, with app=1, or null for anything else
+  // (the account's other pages keep opening in the phone's browser).
+  function connectionStart(u) {
+    let url;
+    try { url = new URL(String(u || '')); } catch (e) { return null; }
+    if (url.protocol !== 'https:' || url.hostname !== HOSTED || url.port || url.username || url.password) return null;
+    const t = url.searchParams.get('t') || '';
+    if (url.pathname === '/hop' && url.search === '?t=' + t + '&app=1' && /^[A-Za-z0-9_-]{20,100}$/.test(t)) return url.href;
+    if (/^\/connect\/start\/[A-Za-z0-9_-]{32}$/.test(url.pathname) && !url.search) return url.href + '?app=1';
+    return null;
+  }
+
+  // Where such a sign-in ends (computer.themachine.app://connected?h=...): the part of the saved Machine's dashboard to
+  // open, + Add's form (connect=<source>[/<ref>|/stopped]) or "connected" (signed-in=<source>[/again]); null otherwise.
+  const PART = /^(?:connect=[a-z_]{1,32}(?:\/(?:[cf]_[0-9a-f]{16}|stopped))?|signed-in=[a-z_]{1,32}(?:\/again)?)$/;
+  function connectedPart(h) {
+    return typeof h === 'string' && PART.test(h) ? h : null;
+  }
+
+  const api = {HOSTED, parse, valid, signinTarget, connectionStart, connectedPart, hostedHost, tailnetHost, ownHost, isMachine};
   if (typeof module === 'object' && module.exports) module.exports = api;
   else root.MachineUrl = api;
 })(typeof self !== 'undefined' ? self : this);
