@@ -4,127 +4,129 @@ area: graph
 summary: Tutte le persone con cui sei in contatto: la loro pagina, il riepilogo e la cronologia, e come aggiungere, modificare, unire o eliminare una persona.
 code: graph.py, crm.py, bounces.py, enrichment.py, record_log.py, dashboard.html
 order: 2
-translated: 907cec019dc70184
+translated: 0eb2dcc70fba84c2
 ---
-Tutte le persone con cui sei in contatto, dalle più vicine in poi, in base ai messaggi e alle riunioni. Le newsletter, le ricevute e le altre comunicazioni non aggiungono nessuno finché non rispondi. Le trovi in Mittenti nascosti, sotto l’elenco: **Mostra come persona** aggiunge una persona. Campi, tag e importazioni funzionano allo stesso modo in tutti e tre gli elenchi, ma ognuno ha i propri filtri: vedi [The Graph](graph.md).
+Tutte le persone con cui sei in contatto, dalle più vicine in poi, in base ai messaggi e alle riunioni. Newsletter, ricevute e altri invii non aggiungono nessuno finché non rispondi. Li trovi in Mittenti nascosti, sotto l’elenco: **Mostra come persona** aggiunge una persona. Campi, tag e importazioni funzionano allo stesso modo in tutti e tre gli elenchi, ma ognuno ha i propri filtri: vedi [The Graph](graph.md).
 
-Una casella condivisa (info@, assistenza clienti, il nome di un negozio) viene associata alla sua organizzazione, non a una persona, anche se le scrivi.
+Una casella condivisa (info@, assistenza clienti, il nome di un negozio) è associata alla sua organizzazione, non a una persona, anche se le scrivi.
 
 ## La pagina di una persona
 
-In alto trovi la foto, il nome, il ruolo, l’organizzazione e la località, oltre a una riga che riassume i vostri contatti ("Vi sentite ogni giorno · ultimo contatto ieri · prossima riunione mar 27 ott"). Il contatto più recente è indicato con formule come "proprio ora", "3 ore fa", "ieri" o "3 giorni fa"; per i contatti meno recenti, viene mostrata la data. Passaci sopra il puntatore per vedere la data esatta. Più in basso trovi:
+Inizia con la foto, il nome, il ruolo, l’organizzazione e il luogo della persona, poi una riga che spiega come siete in contatto ("Parlate ogni giorno · ultimo contatto ieri · prossima riunione mar 27 ott"). Il contatto recente è indicato con formule come "proprio ora", "3 ore fa", "ieri" o "3 giorni fa"; per i contatti meno recenti viene mostrata una data. Passaci sopra con il puntatore per vedere la data esatta. Sotto trovi:
 
-- **Contatto**: numeri di telefono e indirizzi email. Tocca un numero o un indirizzo per chiamare o scrivere, oppure **Copia** per copiarlo. Qui trovi anche il **Compleanno**, con la fonte (Google contacts, Google Calendar, Facebook, le tue note o tu): vedi [The Graph](graph.md#birthday).
-- **Con te**: che rapporto avete, se è un contatto di Lavoro o Personale e se fa parte della tua famiglia o del tuo Fleet, con **Vedi in Fleet**.
-- **Anche su**: gli altri luoghi in cui vi sentite. **Slack** apre il suo profilo in Slack oppure la conversazione più recente che avete avuto su Slack.
-- Le **Persone** e i **Progetti** di cui fa parte, le **In sospeso tra voi** (promesse in entrambe le direzioni, con **Segna come fatto** e **Lascia perdere**) e la sua **Cronologia**.
+- **Contatto**: i numeri di telefono e gli indirizzi email della persona. Tocca un numero per chiamare o un indirizzo per scrivere, oppure **Copia**. Qui trovi anche il **Compleanno** e la fonte (Google Contacts, Google Calendar, Facebook, le tue note o tu): vedi [The Graph](graph.md#birthday).
+- **Con te**: il ruolo che ha per te, se è un contatto di Lavoro o Personale, e se fa parte della tua famiglia o del tuo Fleet, con **Vedi in Fleet**.
+- **Anche su**: gli altri luoghi in cui parli con questa persona. **Slack** la apre su Slack oppure mostra la conversazione più recente che avete avuto lì.
+- **Persone** e **Progetti** a cui partecipa, **In sospeso tra voi** (le promesse di entrambi, con **Segna come fatto** e **Lascia perdere**) e la sua **Cronologia**.
 
-Gli indirizzi e le chat della stessa persona vengono collegati automaticamente quando è chiaro che appartengono alla stessa persona, per esempio un indirizzo email di lavoro con il suo indirizzo personale in CC.
+Gli indirizzi e le chat di una persona vengono collegati automaticamente quando è chiaro che appartengono alla stessa persona, per esempio quando un’email di lavoro è in copia conoscenza con il suo indirizzo personale.
 
-Se la pagina mostra **Impossibile caricare questa pagina.**, tocca **Riprova**. Se il messaggio continua a comparire, usa **Qualcosa non va?** in fondo alla pagina.
+Se una pagina mostra **Impossibile caricare questa pagina.**, tocca **Riprova**. Se il messaggio continua a comparire, usa **Qualcosa non va?** in fondo alla pagina.
 
 ## Riepilogo
 
-In cima alla pagina di una persona trovi alcune brevi righe che riassumono decisioni, richieste, piani o promesse, indicando tutti i nomi. The Machine lo riscrive quando ci sono novità, solo per le persone con cui sei davvero in contatto, e verifica ogni riga prima di mostrarla. Di solito lo aggiorna una volta al giorno; quando cambia qualcosa che riguarda quella persona, come una nuova scadenza o una richiesta ritirata, lo aggiorna entro poche ore.
+In cima alla pagina di una persona trovi alcune brevi righe su decisioni, richieste, piani o promesse, con i nomi di tutte le persone coinvolte. The Machine le riscrive quando ci sono novità, solo per le persone con cui sei davvero in contatto, e controlla ogni riga prima di mostrarla. Di solito una volta al giorno; entro poche ore se cambia qualcosa che le riguarda, per esempio una nuova scadenza o una richiesta ritirata.
 
-Le righe vaghe vengono omesse; se non c’è nulla di specifico da dire, il riepilogo non viene mostrato. Ogni riga rimanda alla fonte: i messaggi dello stesso giorno condividono una data che indica quanti sono e si aprono insieme.
+Le informazioni vaghe vengono escluse. Se non c’è nulla di specifico da dire, il riepilogo non viene mostrato. Ogni riga rimanda alla fonte: i messaggi dello stesso giorno sono raggruppati sotto un’unica data con il loro numero, e si aprono insieme.
 
-**Modifica** il riepilogo per riscriverlo a modo tuo. Quando ci sono novità, The Machine mostra un **Aggiornamento suggerito**, con le opzioni **Usalo** e **Tieni la mia**. **Lascia che lo scriva The Machine** per affidarle di nuovo il riepilogo.
+Usa **Modifica** per riscriverlo a modo tuo. Quando ci sono novità, The Machine mostra un **Aggiornamento suggerito** con le opzioni **Usalo** e **Tieni la mia**. **Lascia che lo scriva The Machine** le restituisce il riepilogo.
 
-Le preparazioni per le riunioni usano il riepilogo, ma solo le righe relative all’attività di Lavoro o Personale. Rimane sulla tua Machine: il team non lo vede.
+La preparazione delle riunioni usa il riepilogo, ma solo le righe relative a quel tipo di attività (Lavoro o Personale). Resta sulla tua Machine e il tuo team non la vede.
 
 ## Cronologia
 
-Ogni pagina di una persona o organizzazione ha una cronologia, dalla più recente alla meno recente: email, riunioni e relativi riepiloghi Zoom, conversazioni Intercom (con **Apri in Intercom**), chat WhatsApp, Telegram, Slack, LinkedIn e X, attività, promesse e aggiornamenti sui progetti. I filtri in alto mostrano una fonte alla volta. **Mostra altro** carica gli elementi meno recenti.
+Ogni pagina di una persona o organizzazione ha una cronologia, dalla più recente in poi: email, riunioni e relativi riepiloghi Zoom, conversazioni Intercom (con **Apri in Intercom**), chat di WhatsApp, Telegram, Slack, LinkedIn e X, attività, promesse e cambiamenti di progetto. I filtri in alto mostrano una fonte alla volta. **Mostra altro** carica gli elementi meno recenti.
 
-Le riunioni future compaiono in cima, in **In arrivo**, dalla più vicina alla più lontana. **Mostra tutti i prossimi** mostra anche le altre. Per ogni riunione vengono indicati i partecipanti, una sola volta a testa. Se ci sono note o una trascrizione, trovi **Note** o **Trascrizione**: fai clic per leggerle.
+Le riunioni future sono in cima, sotto **In arrivo**, dalla più vicina in poi; **Mostra tutti i prossimi** mostra le altre. Per ogni riunione vengono indicate le persone che vi hanno partecipato, una sola volta ciascuna. Se ci sono note o una trascrizione, viene mostrato **Note** o **Trascrizione**: fai clic per leggerle.
 
-Le tue cronologie sono private: il Graph del team mostra solo ciò che consentono le tue regole di condivisione. Nella pagina, **Team** sopra la cronologia aggiunge ciò che hanno condiviso i tuoi colleghi e indica chi ha condiviso ogni elemento; **Miei** mostra solo i tuoi.
+Le tue cronologie sono solo tue: il Graph del team mostra solo ciò che consentono le tue regole di condivisione. In una pagina, **Team** sopra la Cronologia aggiunge ciò che hanno condiviso i colleghi e indica chi ha condiviso ogni elemento; **Miei** mostra solo i tuoi.
 
 ## Lavoro e Personale
 
-Le schede **Lavoro** e **Personale** elencano le persone in base al tipo indicato nella loro pagina. La tua scelta (**Modifica**) ha la precedenza. Altrimenti, la tua famiglia e i tuoi amici, e i tuoi familiari o amici (come una moglie o un padre), vengono considerati Personali, qualunque sia l’indirizzo da cui scrivono. Il tuo team non vede i contatti Personali.
+Le schede **Lavoro** e **Personale** elencano le persone in base al loro tipo, indicato nella pagina. La scelta che fai tu (**Modifica**) ha la priorità. Altrimenti, i tuoi familiari e amici, e i familiari o gli amici per te (una moglie, un padre), sono considerati Personali, a prescindere dall’indirizzo da cui scrivono. Il tuo team non vede i contatti Personali.
 
 ## Aggiungere una persona
 
-Tocca **Nuova persona** in cima a Persone, oppure **+** nella barra superiore sul telefono. Inserisci un nome e, se li hai, un indirizzo email e un’organizzazione. Se nel tuo Graph c’è già una persona simile, il modulo te la mostra per prima, così puoi aprire la sua pagina. **Aggiungi** crea la nuova pagina.
+Usa **Nuova persona** in cima a Persone, oppure **+** nella barra superiore sul telefono. Inserisci un nome e, se li hai, un indirizzo email e un’organizzazione. Se nel tuo Graph c’è già una persona simile, il modulo la mostra per prima, così puoi aprire quella pagina. **Aggiungi** apre la nuova pagina.
 
-La persona che aggiungi rimane anche se non ci sono ancora messaggi. Il primo messaggio che ricevi da lei viene collegato al suo profilo.
+La persona che aggiungi resta nell’elenco anche se non ci sono ancora messaggi. Il suo primo messaggio verrà associato al suo profilo.
 
 ## Modificare una persona
 
-**Modifica**, in cima alla sua pagina, ti permette di cambiare nome, ruolo, organizzazione, località, LinkedIn, numeri di telefono e indirizzi email, il vostro rapporto e il tipo, Lavoro o Personale. Il campo **Note** serve a ricordare quello che vuoi; le note rimangono anche dopo un’unione. **Salva** applica le modifiche, mentre **Annulla** le annulla.
+**Modifica**, in cima alla pagina, permette di cambiare nome, ruolo, organizzazione, luogo, profilo LinkedIn, numeri di telefono e indirizzi email, il suo ruolo per te e se è una persona di Lavoro o Personale. Il campo **Note** serve per annotare ciò che vuoi ricordare; le note restano anche dopo un’unione. **Salva** conserva le modifiche, mentre **Annulla** lascia tutto com’era.
 
-Le modifiche che fai rimangono anche quando i dettagli vengono cercati di nuovo, e dopo **Unisci** e **Annulla**. Svuota un campo per usare di nuovo il valore trovato automaticamente. Se svuoti il nome, viene ripristinato quello usato nei messaggi.
+Le modifiche restano anche quando i dati della persona vengono cercati di nuovo, e dopo **Unisci** e **Annulla**. Svuota un campo per usare di nuovo il valore trovato. Se svuoti il nome, viene ripristinato quello usato nei suoi messaggi.
 
-Per cambiare la foto, fai clic su di essa: puoi **Carica un’immagine**, sceglierne una trovata per la persona oppure **Rimuovi foto**. La foto rimane sulla tua Machine.
+Per cambiare la foto, fai clic su di essa: scegli **Carica un’immagine**, una foto trovata per quella persona oppure **Rimuovi foto**. La foto resta sulla tua Machine.
 
 ## Unire due persone
 
-Quando due profili potrebbero appartenere alla stessa persona, la pagina te lo chiede e l’elenco Persone li mostra in **Stessa persona?**. **Unisci** li collega, insieme a tutti i messaggi, le note, i ruoli e i progetti. **Non è la stessa** li tiene separati definitivamente. La tua risposta viene mostrata per qualche istante nella coppia, che poi scompare dall’elenco. L’elenco scompare quando non ci sono più coppie da controllare.
+Se due profili potrebbero appartenere alla stessa persona, nella pagina compare la domanda e Persone li mostra sotto **Stessa persona?**. **Unisci** li fonde, includendo tutti i messaggi, le note, i ruoli e i progetti. **Non è la stessa** li mantiene separati. La tua risposta appare per un po’ sulla coppia, poi la coppia scompare dall’elenco. L’elenco scompare quando non ci sono più domande.
 
-Un indirizzo che somiglia a uno che conosci, come acme-corp.example rispetto ad acmecorp.example, non viene mai proposto come appartenente alla stessa persona. Solo tu puoi assegnare un ruolo a chi lo usa.
+Una persona con un indirizzo che assomiglia soltanto a uno che conosci, per esempio acme-corp.example e acmecorp.example, non viene mai proposta come la stessa persona. Solo tu puoi assegnarle un ruolo.
 
-Il solo nome non basta mai per unire due persone di domini diversi, perché chiunque può inserirlo: due indirizzi con domini diversi vengono proposti solo se c’è un altro collegamento, come le stesse persone o un progetto. Un indirizzo che usa il tuo nome ma non è tuo non viene mai proposto. Aggiungi invece gli altri tuoi indirizzi in Impostazioni, [I tuoi indirizzi](settings.md#your-addresses).
+Un nome da solo non basta mai per collegare due persone con domini diversi, perché chiunque può scrivere un nome: due indirizzi con domini diversi vengono proposti solo se c’è un altro collegamento, come le stesse persone o un progetto. Una persona che usa il tuo nome a un indirizzo che non è tuo non viene mai proposta. Aggiungi invece gli altri tuoi indirizzi in Impostazioni, [I tuoi indirizzi](settings.md#your-addresses).
 
-Un indirizzo condiviso, come info@ o una lista di distribuzione, non viene mai collegato alle persone che lo usano per scrivere. Un contatto di lavoro esterno alla tua azienda e una chat personale che hanno in comune solo il nome non vengono collegati automaticamente: vengono mostrati come una domanda.
+Se corrisponde solo il nome di battesimo, ma i domini sono diversi, per esempio "Sam" e "Sam Lee", le persone vengono proposte solo se hanno lo stesso numero di telefono o profilo LinkedIn.
 
-**Unisci tutti** unisce in una volta tutte le coppie nell’elenco, tranne quelle che hai contrassegnato con **Non è la stessa**. **Annulla** subito dopo le separa di nuovo.
+Un indirizzo condiviso, come info@ o una mailing list, non viene mai associato alle persone che lo usano per scrivere. Un contatto di lavoro esterno alla tua azienda e una chat personale che hanno in comune solo un nome non vengono uniti automaticamente: vengono mostrati come una domanda.
 
-Per unire due persone manualmente, apri una delle loro pagine, poi tocca **⋯**, **Stessa persona di…** e scegli l’altra persona. Nella pagina della persona unita trovi i motivi dell’unione in **Unita da**, con **Annulla** per separarle.
+**Unisci tutti** unisce in una volta tutte le coppie nell’elenco, tranne quelle che hai contrassegnato con **Non è la stessa**. **Annulla** subito dopo le separa di nuovo tutte.
 
-## Eliminare una persona definitivamente
+Per unire due persone manualmente, apri una delle loro pagine, poi **⋯**, **Stessa persona di…** e scegli l’altra persona. Nella pagina del profilo unito, la sezione **Unito da** spiega il motivo e offre l’opzione **Annulla** per separare di nuovo i profili.
 
-Nella sua pagina, apri il menu ⋯ e scegli **Elimina definitivamente…**, poi **Elimina**. La persona e tutte le informazioni che la tua Machine conosce su di lei verranno rimosse: il suo profilo, gli indirizzi, i dettagli trovati automaticamente, i messaggi scambiati solo tra voi e le note che la riguardano.
+## Eliminare definitivamente una persona
 
-Le attività che la coinvolgono rimangono, ma il suo nome viene rimosso. Non verrà aggiunta di nuovo, neanche tramite un’importazione o un’attività sui compleanni di Facebook con il suo nome o indirizzo. L’operazione non si può annullare.
+Nella sua pagina, apri il menu ⋯ e scegli **Elimina definitivamente…**, poi **Elimina**. La persona viene rimossa insieme a ciò che la tua Machine sa di lei: il suo profilo, gli indirizzi, i dettagli trovati, i messaggi scambiati solo tra voi e le note che la riguardano.
+
+Le attività che la riguardano restano, ma senza il suo nome. Non verrà aggiunta di nuovo, nemmeno con un’importazione o un’attività dei compleanni di Facebook che riporti il suo nome o indirizzo. L’operazione non si può annullare.
 
 ## Email respinta
 
-Quando un’email inviata a una persona viene respinta, il suo indirizzo mostra **Respinta** con la data e, se disponibile, viene messo in cima un altro suo indirizzo. Le nuove bozze non vengono mai inviate a quell’indirizzo se se ne conosce un altro. Se è l’unico indirizzo disponibile, la schermata di invio ti avvisa, ma puoi comunque inviare l’email.
+Quando un’email inviata a una persona viene respinta, accanto al suo indirizzo compare **Respinta** con la data, e viene mostrato per primo un suo altro indirizzo. Le nuove bozze non vengono mai inviate a quell’indirizzo se ne è noto un altro. Se è l’unico indirizzo, la schermata di invio ti avvisa, ma puoi comunque inviare l’email.
 
-Un’email viene considerata respinta se il server di posta segnala che l’indirizzo non esiste oppure dopo 3 errori temporanei nell’arco di una settimana. La segnalazione viene cancellata quando la persona scrive di nuovo da quell’indirizzo o quando un’email inviata a quell’indirizzo viene recapitata.
+Un’email si considera respinta quando il server di posta segnala che l’indirizzo non esiste oppure dopo 3 errori temporanei nell’arco di una settimana. L’indicazione viene rimossa quando la persona scrive di nuovo da quell’indirizzo o quando un’email inviata lì viene consegnata.
 
 ## Ruolo e foto
 
-Le persone con un indirizzo aziendale hanno un ruolo, una foto, LinkedIn e una città, cercati come i [dettagli dell’organizzazione](organization-data.md). Su una Machine ospitata, la ricerca usa solo il nome e il dominio aziendale. Per la foto, Gravatar riceve l’hash dell’indirizzo di lavoro, mai l’indirizzo stesso. Puoi disattivare questa opzione in **Impostazioni**, nella sezione Sicurezza: **Cerca i contatti di lavoro**.
+Le persone con un indirizzo aziendale ricevono un ruolo, una foto, un profilo LinkedIn e una città, cercati come i [dati dell’organizzazione](organization-data.md). Su una Machine ospitata, la ricerca usa solo il nome e il dominio aziendale. Per la foto, Gravatar riceve l’hash dell’indirizzo di lavoro, mai l’indirizzo stesso. Puoi disattivare questa funzione in **Impostazioni**, nella sezione Sicurezza: **Cerca i contatti di lavoro**.
 
-Se le informazioni vengono trovate, la pagina mostra anche la descrizione, da quando la persona ricopre il ruolo attuale e i due ruoli precedenti. Le preparazioni usano anche queste informazioni; la descrizione viene inclusa solo se la persona non ne ha una propria.
+Quando trova queste informazioni, la pagina mostra anche il testo della sezione Informazioni, da quanto tempo la persona ricopre il ruolo attuale e i due ruoli precedenti. Anche la preparazione delle riunioni le legge, ma usa il testo della sezione Informazioni solo se la persona non ha una propria biografia.
 
-I tuoi contatti si arricchiscono anche delle informazioni che hanno già condiviso: ruolo, telefono e fuso orario da Slack; descrizione e località da X; titolo e foto da LinkedIn; ruoli da Google contacts e Salesflare; e la foto del contatto da Salesflare, se è stata salvata lì. Passa il puntatore sulla riga sotto il nome per vedere da dove provengono le informazioni.
+Le tue connessioni completano i profili con le informazioni che hanno già letto: un ruolo, un numero di telefono e il fuso orario da Slack, una biografia e un luogo da X, un titolo e una foto da LinkedIn, i ruoli dai contatti Google e Salesflare e la foto di un contatto da Salesflare, se la conserva. Passa il puntatore sulla riga sotto il nome per vedere da dove proviene l’informazione.
 
 Outlook aggiunge le foto dei colleghi della tua organizzazione e dei tuoi contatti Outlook, oltre ai ruoli e alle aziende dei tuoi contatti ([Microsoft](microsoft.md#photos-of-colleagues-and-contacts)).
 
-Le foto WhatsApp e Telegram vengono aggiunte tramite la sincronizzazione WhatsApp e la connessione alle chat Telegram: fino a 50 al giorno per ciascuna app, solo per le persone già presenti nel tuo Graph. Non viene inviato loro nulla. Un’importazione dei compleanni di Facebook aggiunge la foto del profilo delle persone senza foto quando la salvi ([Routine](routines.md)). Tutto rimane sulla tua Machine.
+Le foto di WhatsApp e Telegram arrivano dalla sincronizzazione di WhatsApp e dalla connessione alle chat di Telegram: fino a 50 al giorno per ciascun servizio, solo per le persone già presenti nel tuo Graph. Non viene inviato loro nulla. L’importazione dei compleanni di Facebook aggiunge la foto del profilo di una persona che non ne ha una quando la salvi ([Routine](routines.md)). Tutto resta sulla tua Machine.
 
-Nel [Team Graph](team-graph.md) di un Fleet di Lavoro, una copia ridotta della foto di lavoro accompagna il profilo condiviso della persona. Le foto da Google contacts, WhatsApp, Telegram o Facebook, così come quelle che hai modificato o rimosso, non vengono mai condivise.
+Nel [Graph del team](team-graph.md) di un Fleet di Lavoro, una copia ridotta della foto di lavoro viene inclusa nel profilo condiviso della persona. Le foto da Google Contacts, WhatsApp, Telegram o Facebook, così come quelle che hai modificato o rimosso, non vengono mai condivise.
 
 ## Su di te
 
-I tuoi indirizzi e numeri, compresi gli alias, appartengono sempre a te e non sono mai una persona nel tuo Graph. Se cerchi te stesso o aggiungi una persona usando uno dei tuoi indirizzi, si apre **Su di te**. Le importazioni ignorano la tua riga.
+I tuoi indirizzi e numeri, compresi gli alias, sono sempre tuoi e non vengono mai considerati come un’altra persona nel tuo Graph. Se cerchi te stesso o aggiungi una persona con uno dei tuoi indirizzi, si apre **Su di te**; durante un’importazione la tua riga viene ignorata.
 
-La sezione Su di te mostra i tuoi indirizzi e la relativa fonte. Per modificarli, vai in **Impostazioni**, nella sezione Account. Per inviare il tuo contatto a un collega o a un amico, scegli **Condividi il mio contatto**. Vedi [Condividere un contatto](share-contact.md).
+La sezione Su di te mostra i tuoi indirizzi e la relativa fonte. Per modificarli, vai in **Impostazioni**, nella sezione Account. Per inviare i tuoi recapiti a un collega o a un amico, scegli **Condividi il mio contatto**. Vedi [Condividere un contatto](share-contact.md).
 
-## Il suo rapporto con te
+## Il suo ruolo per te
 
-I ruoli che la tua Machine rileva nei messaggi vengono mostrati nella pagina della persona, sotto **Per te**, insieme alla frase da cui sono stati dedotti. Non serve aspettare che ti venga chiesto. Se un ruolo è sbagliato, correggilo con **Modifica** nella sua pagina oppure con **⋯** sulla relativa riga in **Modifiche recenti**. La tua Machine impara dalle modifiche.
+I ruoli che la tua Machine individua nei messaggi compaiono nella pagina della persona, sotto **Per te**, insieme alla frase da cui sono stati dedotti. Non devi aspettare che ti venga chiesto. C’è un errore? **Modifica** nella pagina della persona lo corregge, oppure puoi usare **⋯** sulla relativa riga in **Modifiche recenti**. La tua Machine impara dalle modifiche.
 
 ## Cosa sa di una persona
 
-Le informazioni su una persona si trovano nella sua pagina, sotto **Informazioni note**; Apprendimento conserva quelle generali. **Aggiungi** ti permette di inserire altre informazioni con parole tue. Ogni informazione ha un menu:
+Le informazioni su una persona si trovano nella sua pagina, sotto **Informazioni note**; Apprendimento raccoglie quelle generali. Usa **Aggiungi** per aggiungerne un’altra con parole tue. Ogni informazione ha un menu:
 
-- **Modifica** la modifica direttamente.
-- **Non riguarda** quella persona la riporta tra le informazioni generali, sotto **Apprendimento**, **Fatti**.
+- **Modifica** la cambia direttamente lì.
+- **Non riguarda** quella persona: l’informazione torna a essere generale e passa sotto **Apprendimento**, **Fatti**.
 - **Rimuovi** la elimina ovunque.
 
 ## Modifiche recenti
 
-**Modifiche recenti**, che puoi espandere sopra la cronologia di una persona, un’organizzazione o un progetto, elenca ciò che la tua Machine ha modificato o imparato: un ruolo, il luogo di lavoro di una persona, il rapporto tra due persone, un fatto o un cambiamento di progetto. Ogni riga mostra la data e la fonte; toccala per leggere il messaggio.
+**Modifiche recenti**, nella sezione espandibile appena sopra la cronologia di una persona, organizzazione o progetto, mostra ciò che la tua Machine ha modificato o appreso: un ruolo, il luogo di lavoro, il rapporto tra due persone, un fatto o un cambiamento di progetto. Ogni riga mostra la data e la fonte; tocca la fonte per leggere il messaggio.
 
-Se una riga è sbagliata, il menu **⋯** ti permette di correggerla direttamente: **Modifica**, **Rimuovi**, **Non riguarda** quella persona oppure **Annulla** per ripristinare la posizione precedente di un progetto. Vengono mostrate tre righe; **Mostra altro** mostra le altre.
+Se una riga è sbagliata, il menu **⋯** permette di correggerla direttamente: **Modifica**, **Rimuovi**, **Non riguarda** quella persona oppure **Annulla** per riportare un progetto alla posizione precedente. Vengono mostrate tre righe; **Mostra altro** mostra le altre.
 
-Se la tua Machine ha aggiornato una persona oggi, nell’elenco Persone compare un piccolo punto e in cima all’elenco trovi **4 persone aggiornate oggi**, con i loro nomi. Vedi [The Graph](graph.md).
+Una persona aggiornata oggi dalla tua Machine è contrassegnata da un puntino nell’elenco Persone; in cima all’elenco, **4 persone aggiornate oggi** indica quali sono. Vedi [The Graph](graph.md).
 
 ## Un’attività su una persona
 
-**Nuova attività** nel menu **⋯** di una persona, un’organizzazione o un progetto crea un’attività che la riguarda.
+**Nuova attività** nel menu **⋯** di una persona, organizzazione o progetto crea un’attività che la riguarda.
