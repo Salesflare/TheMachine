@@ -127,6 +127,41 @@ class TeamLearnings(unittest.TestCase):
         self.assertEqual(tl.strip('It will help Will.', [('Will', 'person')])[0], 'It will help someone.')
         self.assertEqual(tl.strip('Drafts should introduce the context first.', names), ('Drafts should introduce the context first.', []))
 
+    def test_strip_takes_out_exactly_what_trying_every_name_took_out(self):
+        """strip only tries the names whose word is in the text, each compiled once (a Graph's tens of thousands of names
+        were compiled again for every text: some 20 s a save). What it takes out stays what trying every name took out."""
+        def every_name(text, names):  # strip as it was: each name's pattern, in order, on every text
+            out, taken = tl.strip(text)
+            for name, kind in names:
+                pattern = tl._name_pattern(name)
+                if pattern and pattern.search(out):
+                    out, n = pattern.subn(tl.PLACEHOLDER.get(kind, 'someone'), out)
+                    taken += ['name'] * n
+            if taken and out[:1].islower() and str(text or '').lstrip()[:1].isupper():
+                out = out[:1].upper() + out[1:]
+            return out, taken
+        odd = ['Ana Silva', 'ana', 'Will', 'will', 'Kim', 'Iris', 'ıris', 'Sofia', 'ſofia', 'Kelvin', 'Kelvin', 'µarc', 'Μarc',
+               'ẞtrasse', 'straße', 'O’Brien', 'J. Doe', 'Doe', 'Smith-Jones', 'someone', 'company', 'Acme Inc.', 'acme', 'x', '']
+        names = [(f'Person{i} Name{i % 97}', 'person') for i in range(600)] + [(n, k) for n in odd for k in ('person', 'org')]
+        names.sort(key=lambda n: -len(n[0]))
+        texts = ['Ana Silva and ANA SILVA asked Will if it will help.', 'IRIS, iris and ıris met ſofia and SOFIA at Kelvin and KELVIN.',
+                 'µarc, μarc and ΜARC wrote to STRASSE and straße.', 'O’Brien and J. Doe and j.  doe and Smith-Jones.',
+                 'Person12 Name12 and person199 name5 and Person599  Name17 asked someone at a company.',
+                 'acme and Acme Inc. and ACME INC. and x and X.', 'Nothing personal here at all.', '', 'Someone said so.']
+        for text in texts:
+            self.assertEqual(tl.strip(text, names), every_name(text, names), text)
+            self.assertEqual(tl.strip(text, tuple(names)), every_name(text, names), text)
+            self.assertEqual(tl.strip(text, iter(names)), every_name(text, names), text)
+        names.append(('Nothing', 'org'))  # the same list, changed: its new name counts
+        self.assertEqual(tl.strip(texts[6], names), every_name(texts[6], names))
+        self.assertTrue(tl.strip(texts[6], names)[0].startswith('A company personal here'))
+        # the quick check never skips a letter the regex engine takes for another, ignoring case
+        extra = {c for low, more in tl._EXTRA_CASES.items() for c in (low, *more)}
+        letters = ''.join(map(chr, sorted(set(range(0x600)) | extra | {0x1e9e, 0x2126, 0x212a, 0x212b})))
+        for char in letters:
+            for match in re.finditer('(?i)' + re.escape(char), letters):
+                self.assertEqual(match.group().translate(tl._FOLD), char.translate(tl._FOLD), (char, match.group()))
+
     def test_a_week_of_notes_becomes_learnings_the_owner_reads_edits_and_sends_sealed(self):
         ask = self.distil([
             {'text': 'Drafts for people who don’t know Sam Lee or Globex yet should introduce the context first.',
