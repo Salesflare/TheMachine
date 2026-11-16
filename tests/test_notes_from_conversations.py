@@ -127,12 +127,17 @@ class SortedByWhatWasSaid(Conversations):
         self.mail('Example Primary <noreply@example-primary.be>', 'Swimming gala on Friday', '2026-10-03', account='job', thread_id='b',
                   body='Bring a towel and goggles; the bus leaves at 9:00.')
         self.mail('Example Movers <desk@example-movers.be>', 'Office move: a quote', '2026-10-05', account='job', thread_id='c')
+        self.mail('Example Cloud <billing@cloud.example>', 'Office move: your invoice', '2026-10-06', account='job', thread_id='d')
+        notes = self.round()
+        self.assertNotIn(('topic', 'Office move'), notes, 'at work, notices alone are no relationship: no note until the owner writes')
+        self.mail('Sam <sam@acme.example>', 'Re: Office move: a quote', '2026-10-07', account='job', thread_id='c', labels=['SENT'])
         notes = self.round()
         school = notes[('topic', "Ava's school")]
         self.assertEqual([x['name'] for x in school['path']], ['Kids'])
         self.assertEqual(school['area'], 'personal', 'under Kids: Personal, though it came in on the work mailbox')
         self.assertEqual([x['text'] for x in school['lines']], ['Swimming gala on Friday', 'Term dates for spring'], 'newest first')
-        self.assertEqual(notes[('topic', 'Office move')]['area'], 'work:Acme', 'one conversation is enough to start')
+        self.assertEqual(notes[('topic', 'Office move')]['area'], 'work:Acme', 'one conversation the owner wrote in is enough to start')
+        self.assertEqual(len(notes[('topic', 'Office move')]['lines']), 2, 'and its notices come with it')
 
     def test_notifications_reach_the_call_bounces_and_automatic_replies_dont(self):
         self.mail('Example Primary <office@example-primary.be>', 'Note to all parents', '2026-10-06', thread_id='n', list_id='<parents.example-primary.be>')
@@ -221,6 +226,8 @@ class SortedByWhatWasSaid(Conversations):
         self.mail('Ana <ana@example.co>', 'Listing update', '2026-11-03', account='job', thread_id='l')
         self.mail('Ana <ana@example.co>', 'Affiliate terms', '2026-11-04', account='job', thread_id='a')
         self.mail('Ana <ana@example.co>', 'Article draft', '2026-11-05', account='job', thread_id='g')
+        for subject, thread in (('Listing update', 'l'), ('Affiliate terms', 'a'), ('Article draft', 'g')):
+            self.mail('Sam <sam@acme.example>', 'Re: ' + subject, '2026-11-05', account='job', thread_id=thread, labels=['SENT'])
         self.same = [(['Trips > Holiday park cabin', 'Holiday park trip'], 'Holiday park'),
                      (['Work > Example Co listing', 'Work > Example Co affiliate deal', 'Work > Example Co guest article'], 'Example Co partnership 12345')]
         notes = self.round()
@@ -243,9 +250,37 @@ class SortedByWhatWasSaid(Conversations):
         self.mail('Example Vouchers <desk@vouchers.example>', 'Vouchers for November', '2026-11-02', account='job', thread_id='v')
         self.mail('Example Vouchers <desk@vouchers.example>', 'Topup done', '2026-11-03', account='job', thread_id='t')
         self.mail('Example Vouchers <desk@vouchers.example>', 'Card blocked', '2026-11-04', thread_id='c')
+        self.mail('Sam <sam@acme.example>', 'Re: Topup done', '2026-11-04', account='job', thread_id='t', labels=['SENT'])
         notes = self.round()
         self.assertEqual([k for k in notes if k[0] == 'topic'], [('topic', 'Example Vouchers')], 'the one with the most sources takes the other')
         self.assertEqual(len(notes[('topic', 'Example Vouchers')]['lines']), 3)
+
+    def test_a_vendors_notices_and_a_persons_name_make_no_note(self):
+        """A vendor's billing and notices at work make no note (no working relationship until the owner writes); a title
+        that is a person's name goes to their page in the Graph, never a note."""
+        with self.store.connect() as db:
+            db.execute("INSERT INTO graph_nodes(id,kind,name,strength,signals,info) VALUES('person:ana','person','Ana Example',1,3,'{}')")
+        self.routes = {'Usage': {'new': {'title': 'Example Cloud', 'under': 'Work'}}, 'Invoice': {'new': {'title': 'Example Cloud', 'under': 'Work'}},
+                       'Coffee': {'new': {'title': 'Ana Example', 'under': 'Work'}}}
+        self.mail('Example Cloud <billing@cloud.example>', 'Invoice for October', '2026-11-02', account='job', thread_id='i')
+        self.mail('Example Cloud <alerts@cloud.example>', 'Usage alert', '2026-11-03', account='job', thread_id='u')
+        self.mail('Ana <ana@example.co>', 'Coffee next week?', '2026-11-03', account='job', thread_id='c')
+        self.mail('Sam <sam@acme.example>', 'Re: Coffee next week?', '2026-11-04', account='job', thread_id='c', labels=['SENT'])
+        notes = self.round()
+        self.assertEqual([k for k in notes if k[0] == 'topic'], [])
+        self.assertEqual(self.routed()['Coffee next week?'], 'record:person:ana', "on the person's page")
+        for rule in ('A vendor or service the owner uses', 'A person is never a subject'):
+            self.assertIn(rule, self.asked[0])
+
+    def test_the_look_for_twins_sees_when_each_notes_messages_came_in(self):
+        self.routes = {'Cabin': {'new': {'title': 'Holiday park', 'under': 'Trips'}}, 'Birthday': {'new': {'title': 'Holiday park birthday trip', 'under': 'Trips'}}}
+        self.mail('Holiday Park <desk@park.example>', 'Cabin booked', '2026-10-02', thread_id='c')
+        self.mail('Holiday Park <desk@park.example>', 'Birthday package', '2026-10-09', thread_id='b')
+        self.same = [(['Trips > Holiday park', 'Trips > Holiday park birthday trip'], 'Holiday park')]
+        notes = self.round()
+        self.assertIn('"period": "2026-10-02 to 2026-10-02"', self.looked[0])
+        self.assertIn('without dates, the same destination', self.looked[0])
+        self.assertEqual([k for k in notes if k[0] == 'topic'], [('topic', 'Holiday park')])
 
     def test_a_note_the_owner_wrote_in_is_never_merged_away(self):
         self.routes = {'Tiles': {'new': {'title': 'Kitchen tiles', 'under': 'Home'}}, 'Worktop': {'new': {'title': 'Kitchen worktop', 'under': 'Home'}}}

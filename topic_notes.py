@@ -30,7 +30,9 @@ here is a line of that note. One in a trip, an event or an owner's own note, or 
 the page writer reads it there. Turning Notes on starts the notes from conversations over once (rebuild).
 
 One order, delivery, receipt, booking or account is never a subject of its own (its trip, project, shop or account is),
-and a work subject is a whole customer, partner, supplier, project or hire, never one thread or deal. A title never
+and a work subject is a whole customer, partner, supplier, project or hire, never one thread or deal. A vendor whose
+mail is billing and notices is no subject, and no work subject is a note before the owner wrote in one of its
+conversations (drafts). A person is never a subject: a title that is a person's name goes to their record. A title never
 holds a reference (clean_title: an order, account, booking or invoice number or code is cut, and a title of nothing
 else is no subject), so orders from one shop land on one note. After new subjects, at most once a MERGE_EVERY, one call
 reads the notes (merge_prompt: subjects started here, trips and events with their dates) and names the ones about the
@@ -581,6 +583,12 @@ def prompt(items, where, linked):
         'is for, the shop, provider or account it came from when that keeps mattering), or for nothing.',
         'At work a subject is one customer, partner, supplier, project or hire as a whole, never one thread, deal, '
         'request or listing of it: everything with the same company goes to one subject.',
+        'A vendor or service the owner uses (cloud, software, an AI or other subscription, a bank, telecom or utility '
+        'provider, an online account) is no subject when its mail is billing, receipts, usage and notices: those go to '
+        'its record, or nowhere. It is a subject only when there is a real working relationship: people there the owner '
+        'writes with about more than billing, or a project with them.',
+        'A person is never a subject: people have their own page in the Graph. Mail with one person goes to the subject '
+        'it is about, or nowhere; never a title that is a person\'s name.',
         'Sensitive: a health matter only under "Health", and only the owner\'s own or their child\'s care. Someone else\'s '
         'health, a family conflict, a legal dispute, money trouble or anything intimate: leave it out. When unsure whether '
         'it is sensitive, leave it out.',
@@ -652,7 +660,7 @@ def reply(text, items, where, refs):
 
 def remember(db, items, placed, at, kinds):
     """Keep each answer. A conversation in a part of a kind in sections is that kind's candidate too (section_notes);
-    a new note named like a project or organization in the Graph goes to that record instead."""
+    a new note named like a project, an organization or a person in the Graph goes to that record instead."""
     import section_notes
     by_kind = {k.kind: k for k in kinds}
     aliases = {r['key']: r for r in db.execute('SELECT key,target FROM topic_aliases')}
@@ -661,8 +669,9 @@ def remember(db, items, placed, at, kinds):
         if route['place'] in aliases:  # a subject merged into another (merge): the same title goes there
             into = aliases[route['place']]['target']
             route.update(place=into, **(_named(db, into) if into.startswith('topic:') else {'note': None, 'under': None}))
-        if route['place'].startswith('topic:') and _table(db, 'graph_nodes'):
-            same = db.execute("SELECT id FROM graph_nodes WHERE kind IN ('project','org') AND name=? COLLATE NOCASE LIMIT 1", (route['note'],)).fetchone()
+        if route['place'].startswith('topic:') and _table(db, 'graph_nodes'):  # a person's name too: their page covers it
+            same = db.execute("SELECT id FROM graph_nodes WHERE kind IN ('project','org','person') AND name=? COLLATE NOCASE "
+                              "ORDER BY kind='person' LIMIT 1", (route['note'],)).fetchone()
             if same:
                 route.update(place='record:' + same['id'], note=None, under=None, ongoing=0)
         if route['place'].startswith('part:'):
@@ -685,8 +694,9 @@ def _line(r):
 
 
 def drafts(db):
-    """The notes started here, as note_pages.sync drafts for the 'topic' kind: every subject a call named, whoever
-    wrote and however many sources it has (the page writer's bar decides what shows: note_writer.parse), its sources
+    """The notes started here, as note_pages.sync drafts for the 'topic' kind: every subject a call named, however many
+    sources it has (the page writer's bar decides what shows: note_writer.parse), but at work only once the owner wrote
+    in one of its conversations (a vendor's billing and notices are no working relationship), its sources
     newest first, in the area most of them came in on (Personal under Home, Health, Kids or Pets: PERSONAL_FOLDERS),
     under the folder the call named."""
     groups = {}
@@ -699,15 +709,17 @@ def drafts(db):
         under = rows[0]['under']
         if under in PERSONAL_FOLDERS:
             area = todo_areas.PERSONAL
+        if area != todo_areas.PERSONAL and not any(r['replied'] for r in rows):
+            continue  # at work, no note until the owner writes in one of them: notices alone are a vendor's, not a relationship
         lines = [_line(r) for r in sorted(rows, key=lambda r: str(r['last_at'] or ''), reverse=True)]
         out.append({'key': place[len('topic:'):], 'title': rows[0]['note'] or t('Note'), 'area': area, 'under': [under] if under else None, 'lines': lines})
     return out
 
 
 def keep(db):
-    """For note_pages.sync: a note started here that no conversation is placed in any more (each one left it: unroute)
-    goes, unless the owner renamed it, moved it or wrote in it."""
-    placed = {r['place'][len('topic:'):] for r in db.execute("SELECT DISTINCT place FROM topic_routes WHERE place LIKE 'topic:%'")}
+    """For note_pages.sync: a note started here that no conversation is placed in any more (each one left it: unroute),
+    or that makes no note any more (drafts), goes, unless the owner renamed it, moved it or wrote in it."""
+    placed = {d['key'] for d in drafts(db)}
     owned = {r['key'][len('topic:'):] for r in db.execute(
         "SELECT key FROM note_pages p WHERE kind='topic' AND (owner_title IS NOT NULL OR owner_parent=1 OR "
         "EXISTS(SELECT 1 FROM note_page_lines l WHERE l.note_id=p.id AND l.by='owner'))")}
@@ -764,11 +776,13 @@ def merge_candidates(db):
     out = []
     for r in db.execute(
             "SELECT p.id,p.kind,p.key,p.starts,p.ends,p.owner_title IS NOT NULL OR p.owner_parent=1 OR EXISTS(SELECT 1 FROM note_page_lines o "
-            "WHERE o.note_id=p.id AND o.by='owner') mine,(SELECT count(*) FROM note_page_lines l WHERE l.note_id=p.id AND l.removed_at IS NULL) n "
+            "WHERE o.note_id=p.id AND o.by='owner') mine,(SELECT count(*) FROM note_page_lines l WHERE l.note_id=p.id AND l.removed_at IS NULL) n,"
+            "(SELECT min(substr(at,1,10))||' to '||max(substr(at,1,10)) FROM note_page_lines l WHERE l.note_id=p.id AND l.removed_at IS NULL AND at IS NOT NULL) period "
             "FROM note_pages p WHERE p.removed_at IS NULL AND p.merged_into IS NULL AND (p.kind IN ('trip','event') OR (p.kind='topic' AND p.by='machine')) "
             'ORDER BY p.updated_at DESC LIMIT ?', (MERGE_MAX,)):
         out.append({'place': r['key'] if r['kind'] == 'topic' else 'note:' + str(r['id']), 'path': _path(db, r['id']), 'sources': r['n'],
-                    'dates': ' to '.join(str(x)[:10] for x in (r['starts'], r['ends']) if x), 'mine': bool(r['mine']), 'kind': r['kind']})
+                    'dates': ' to '.join(str(x)[:10] for x in (r['starts'], r['ends']) if x), 'period': r['period'] or '',
+                    'mine': bool(r['mine']), 'kind': r['kind']})
     for n, x in enumerate(out, 1):
         x['id'] = 'N' + str(n)
     return out
@@ -778,10 +792,11 @@ def merge_prompt(notes):
     """The look for twins: notes about the same real-world thing, which become one."""
     return '\n'.join([
         'These are the owner\'s notes, one wiki page per subject of their life or work, one JSON object per line ("dates": '
-        'when a trip or event is; "sources": how many messages it is written from).',
-        '<<<', *(json.dumps({k: x[k] for k in ('id', 'path', 'dates', 'sources') if x.get(k)}, ensure_ascii=False) for x in notes), '>>>',
+        'when a trip or event is; "period": when its messages came in; "sources": how many messages it is written from).',
+        '<<<', *(json.dumps({k: x[k] for k in ('id', 'path', 'dates', 'period', 'sources') if x.get(k)}, ensure_ascii=False) for x in notes), '>>>',
         'Find the notes that are about the same real-world thing and should be one note: the same trip (the same place on '
-        'the same dates, from a booking and from the mail about it), the same child\'s school or club, the same house or '
+        'the same dates, from a booking and from the mail about it; without dates, the same destination with bookings and '
+        'mail from the same weeks is one trip), the same child\'s school or club, the same house or '
         'project, the same customer, partner, supplier or project at work (several deals, threads, requests or listings '
         'with one company are one note), the same shop, provider or account (orders, deliveries and receipts from one shop '
         'are one note about that shop). Never put together two different people\'s things, two different trips or two '
