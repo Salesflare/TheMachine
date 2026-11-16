@@ -1133,8 +1133,9 @@ most five per note.
 - Each fix is kept in `learning_changes` (kind `source`) with what it replaced and where the wrong one came from.
 - The chat shows it as **Fixed: …, from …** with **Undo**, and so does Learning, Changes. An undo puts back exactly what
   was there, and is refused when that changed since.
-- A fix in the Graph rebuilds it and wakes the GBrain sync, so The Machine's section on a page follows. The owner's own
-  text on a page is never changed.
+- A fix in the Graph rebuilds it and wakes the GBrain sync, so The Machine's section on a page follows. The rebuild runs
+  in the graph worker, so the fix answers at once, and GBrain wakes after that build. The owner's own text on a page is
+  never changed.
 - A note fixed this way is no signal for the learning loop, so no rule is added on top. When no source holds it, the
   note is learned as before.
 

@@ -42,7 +42,13 @@ class CorrectionsApp:
         return redoing
 
     def correction_refresh(self):
-        """After a fix or its undo in the Graph: rebuild it, and let GBrain's section follow (gbrain_start wakes a running sync)."""
+        """After a fix or its undo in the Graph: rebuild it, and let GBrain's section follow (gbrain_start wakes a running sync).
+        With the graph worker running, the worker builds and then wakes GBrain (graph_worker): the fix answers at once
+        instead of after a whole build in the request (some 20 s of the service's Python on a big Graph)."""
+        if self.__dict__.get('graph_worker_on'):
+            self.gbrain_after_build = True
+            self.graph_dirty.set()
+            return
         self.graph_build()
         try:
             self.gbrain_start()

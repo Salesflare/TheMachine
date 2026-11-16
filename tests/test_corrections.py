@@ -5,6 +5,7 @@ with Undo; an undo puts back exactly what was there unless it changed since; a f
 import json
 from pathlib import Path
 import tempfile
+import threading
 import unittest
 from unittest.mock import patch
 import corrections_app
@@ -112,6 +113,29 @@ class Corrections(Fixture):
         self.assertTrue(self.chat()[0]['undone'])
         with self.assertRaisesRegex(ValueError, 'already undone'):
             self.undo(done['id'])
+
+    def test_with_the_graph_worker_a_fix_answers_at_once_and_the_worker_builds_then_wakes_gbrain(self):
+        """A whole build in the fix's own request held it some 20 s of the service's Python on a big Graph. With the
+        graph worker running, the fix is saved and answered the same, the worker builds, and GBrain follows that build."""
+        self.app.graph_worker_on, self.app.graph_dirty, self.app.stop = True, threading.Event(), threading.Event()
+        woke = []
+        self.app.gbrain_start = lambda: woke.append(self.rebuilt)
+        self.app.own_addresses_fetch = self.app.history_graph_step = lambda: None
+        self.app.graph_freshness = lambda: None
+        done = self.fix(kind='role', target=ANA, value='Head of Sales', came_from='her email signature')
+        self.assertEqual(done['fixed'], 'Ana Silva’s role is Head of Sales')
+        self.assertEqual((self.rebuilt, woke), (0, []))  # nothing built in the request
+        self.assertTrue(self.app.graph_dirty.is_set())
+        with self.store.connect() as db:
+            self.assertEqual(db.execute('SELECT role FROM person_roles WHERE identifier=?', (ANA,)).fetchone()[0], 'Head of Sales')
+
+        def one_build(**kwargs):  # the worker's build; the worker stops after it
+            self.rebuilt += 1
+            self.app.stop.set()
+        with patch.object(machine_main.App, 'graph_build', side_effect=one_build):
+            self.app.graph_worker()
+        self.assertEqual((self.rebuilt, woke), (1, [1]))  # GBrain after the build that has the fix
+        self.assertFalse(self.app.__dict__.get('gbrain_after_build'))
 
     def test_an_undo_never_overwrites_what_the_owner_changed_since(self):
         done = self.fix(kind='role', target=ANA, value='Head of Sales')
