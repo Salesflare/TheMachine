@@ -30,7 +30,8 @@ What your messages, to-dos, drafts or chats say. Names, email addresses, phone n
 - background work: checks of new messages, preparing to-dos, chat, connections and syncs;
 - the dashboard, in your browser or the app, including errors it showed you;
 - requests from the dashboard that fail or time out: which one, never what it sent;
-- coding agent jobs that fail: the tool and the kind of failure only.
+- coding agent jobs that fail: the tool and the kind of failure only;
+- your AI's short test when it fails: the AI's error, with anything specific taken out.
 
 Repeats of the same error are counted, not sent again. At most one batch goes every 10 minutes. We keep them 30 days.
 

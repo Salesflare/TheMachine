@@ -263,6 +263,10 @@ class FirstLookApp:
                 with self.store.connect() as db:
                     note_model_check(db, found)
                 LOG.info('model check ok=%s failed=%s', found['ok'], found['failed'])
+                if not found['ok']:
+                    # In the error reports too (a signature, the provider's words normalized): a log line alone never
+                    # reached them, and a check that failed on every Machine on a Claude sign-in went unseen (2026-11-16)
+                    self.store.record_error('service', 'ModelCheckFailed', found.get('error') or '', 'machine/app/first_look.py', 'model_check_run')
                 if found['ok']:
                     self.agent_warm_up(run)
             with self.store.connect() as db:
