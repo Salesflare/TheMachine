@@ -28,7 +28,7 @@ from machine import todo_states
 # The meeting apps' own sending address for their notes mail, read from the From address: a sender, never the words
 MAIL_FROM = {'no-reply@zoom.us': 'Zoom', 'gemini-notes@google.com': 'Google Meet'}
 MAIL_KINDS = ('gmail.message', 'ms_graph.message', 'outlook.message')
-RECORDS = meeting_notes.KINDS + ('zoom.transcript', 'google_meet.transcript', 'teams.transcript')
+RECORDS = meeting_notes.KINDS + ('zoom.transcript', 'google_meet.transcript', 'teams.transcript', 'granola.transcript')
 MAIL_AFTER_HOURS = 6  # a notes mail comes within hours of the meeting's end
 MAIL_EARLY_MINUTES = 45  # a call can end before its calendar slot does
 CLEAR_MINUTES = 30  # by time alone, the nearest ending meeting only when the next nearest is this much further

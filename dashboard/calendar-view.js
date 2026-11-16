@@ -360,7 +360,7 @@ function calView(m){const [a,b0]=calTimes(m),b=isNaN(b0)||b0<=a?new Date(a.getTi
  calNotesOpen(m);if(!$('#cal-view').open)$('#cal-view').showModal();calNotesFit()}
 // A meeting's two records (meeting_notes.py): Notes (a summary, decisions, action items) first and open, then its
 // Transcript (what was said), folded until opened. Each is the one added to the meeting, by the owner here (pasted, or a
-// file) or by a Do it run, and the meeting app's that matches it, marked From Zoom or From Google Meet: both show when both are there, and neither
+// file) or by a Do it run, and the meeting app's that matches it, marked From Zoom, From Google Meet, From Teams or From Granola: both show when both are there, and neither
 // replaces the other. Reading is a GET; Save and Remove change only that field, never the other, and reviews use them
 // for the meeting's follow-ups. Remove asks twice.
 let calNote=null;
@@ -399,7 +399,7 @@ function calNotesPoll(){clearTimeout(calNotesTimer);const n=calNote;if(!calWriti
   if(calNote!==n)return;if(d){const had=!!n.data.notes;n.data=d;if(d.notes&&!had){calNotesMark(n.m,calNotesMarks(d));toast('Notes written.')}if(!n.editing.notes){calNotesShow();calNotesFit()}}calNotesPoll()},3000)}
 // A transcript reads as it was written, line by line; notes are Markdown
 // The meeting apps whose notes and transcripts match a meeting: the block's id, and its key in the API
-const CAL_APPS=[['zoom','zoom'],['meet','google_meet'],['teams','teams']];
+const CAL_APPS=[['zoom','zoom'],['meet','google_meet'],['teams','teams'],['granola','granola']];
 const calNotesHtml=(f,text)=>f==='tr'?esc(text):chatMarkdown(text);
 function calNotesShow(){const n=calNote,d=n?.data,ready=!!d;
  for(const [f,c] of Object.entries(CAL_FIELDS)){const added=d?.[c.api],editing=!!n?.editing[f],q=id=>$('#cal-v-'+f+'-'+id);

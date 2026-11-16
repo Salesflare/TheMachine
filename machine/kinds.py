@@ -62,6 +62,8 @@ KINDS = {
     'google_meet.transcript': {**_NO, 'service': 'google_meet', 'name': 'Meet transcript', 'view': 'card', 'family': MEETING, 'mark': 'google_meet'},
     'teams.notes': {**_NO, 'service': 'teams', 'name': 'Teams notes', 'view': 'card', 'family': MEETING, 'mark': 'teams', 'markdown': True},
     'teams.transcript': {**_NO, 'service': 'teams', 'name': 'Teams transcript', 'view': 'card', 'family': MEETING, 'mark': 'teams'},
+    'granola.notes': {**_NO, 'service': 'granola', 'name': 'Granola notes', 'view': 'card', 'family': MEETING, 'mark': 'granola', 'markdown': True},
+    'granola.transcript': {**_NO, 'service': 'granola', 'name': 'Granola transcript', 'view': 'card', 'family': MEETING, 'mark': 'granola'},
     # notifications
     'android.notification': {**_NO, 'service': 'android', 'name': 'phone', 'view': 'notification', 'family': NOTIFICATION, 'mark': 'android'},
     'gateway.alert': {**_NO, 'service': 'gateway', 'name': 'The Machine', 'view': 'notification', 'family': NOTIFICATION, 'mark': 'gateway'},

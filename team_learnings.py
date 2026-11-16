@@ -176,7 +176,7 @@ PATTERNS = ((EMAIL, 'an address', 'address'), (URL, 'a link', 'link'), (HANDLE, 
             (MONEY, 'an amount', 'amount'), (PHONE, 'a number', 'number'), (LONG_NUMBER, 'a number', 'number'))
 # What The Machine itself works with stays: a learning about WhatsApp or Gmail is about the product, not a person.
 PRODUCTS = {'google', 'gmail', 'calendar', 'microsoft', 'outlook', 'teams', 'slack', 'whatsapp', 'linkedin', 'telegram', 'signal', 'zoom', 'stripe',
-            'github', 'intercom', 'trello', 'shortcut', 'linear', 'salesflare', 'x', 'twitter', 'android', 'iphone', 'apple', 'claude', 'chatgpt',
+            'github', 'intercom', 'trello', 'shortcut', 'linear', 'granola', 'salesflare', 'x', 'twitter', 'android', 'iphone', 'apple', 'claude', 'chatgpt',
             'openai', 'anthropic', 'codex', 'openclaw', 'the machine', 'rss', 'drive', 'docs', 'sheets', 'peppol'}
 # Plain words a learning and its use cases are written in, never taken for a name (an account called owner@ or info@)
 GENERIC = {'owner', 'customer', 'customers', 'colleague', 'client', 'supplier', 'partner', 'team', 'someone', 'user', 'admin', 'info',

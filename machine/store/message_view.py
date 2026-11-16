@@ -57,7 +57,7 @@ BUILT_IN_APP = {'gmail': 'Gmail', 'salesflare': 'Salesflare', 'slack': 'Slack', 
 MARKDOWN_KINDS = {'github.notification', 'github.ci', 'shortcut.move', 'trello.action', 'slack.message', 'whatsapp.message',
                   'telegram.message', 'teams.message', 'fleet.message', 'docs.comment', 'docs.mention', 'docs.suggestion',
                   'notion.comment', 'notion.mention', 'notion.task', 'linear.issue', 'linear.mention', 'linear.comment',
-                  'linear.review', 'linear.triage', 'linear.due', 'zoom.summary', 'google_meet.notes', 'teams.notes', 'meeting.notes'}
+                  'linear.review', 'linear.triage', 'linear.due', 'zoom.summary', 'google_meet.notes', 'teams.notes', 'granola.notes', 'meeting.notes'}
 
 
 def _connector(kind):

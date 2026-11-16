@@ -213,6 +213,23 @@ class MeetingNotes(unittest.TestCase):
         read = self.app.action('meeting_notes', {'event_id': self.ids['board']})
         self.assertEqual((read['notes']['text'], read['google_meet']['notes']['text']), ('Newer notes', 'Summary: the board approved the plan.'))
 
+    def test_granola_lands_on_the_calendar_event_it_names_even_away_from_its_time(self):
+        granola = {'id': 'granola', 'service': 'granola', 'boundary': 'work:Example'}
+        self.app.config['accounts'].append(granola)
+        meta = {'start_at': '2026-10-28T10:30:00+00:00', 'end_at': None, 'calendar_event_id': 'board', 'truncated': False,
+                'source_url': 'https://notes.granola.ai/d/fixture'}
+        self.store.commit_page('granola', {}, [  # as connectors/granola.py writes them: the event id Granola gives
+            {'account_id': 'granola', 'source_id': 'notes:' + 'c' * 32, 'kind': 'granola.notes', 'occurred_at': meta['start_at'],
+             'title': 'Board meeting Q4', 'body': '## Action items\n\n- Dana sends the deck', 'metadata': meta, 'deleted': False},
+            {'account_id': 'granola', 'source_id': 'transcript:' + 'c' * 32, 'kind': 'granola.transcript', 'occurred_at': meta['start_at'],
+             'title': 'Board meeting Q4', 'body': 'Dana: I will send the deck.', 'metadata': meta, 'deleted': False}])
+        got = self.app.action('meeting_notes', {'event_id': self.ids['board']})['granola']
+        self.assertEqual((got['notes']['text'], got['notes']['url']), ('## Action items\n\n- Dana sends the deck', 'https://notes.granola.ai/d/fixture'))
+        self.assertEqual(got['transcript']['text'], 'Dana: I will send the deck.')
+        self.assertIsNone(self.app.action('meeting_notes', {'event_id': self.ids['standup']})['granola'])  # nearer in time, not named
+        self.assertEqual(meeting_notes.SOURCE['granola.notes'], 'Granola')
+        self.assertIn('granola.notes', meeting_notes.KINDS)
+
     def test_notes_saved_before_the_split_that_are_a_transcript_move_to_transcript_once(self):
         board, standup, dinner = self.ids['board'], self.ids['standup'], self.ids['dinner']
         def legacy(account, meeting, body):  # as saved before Notes and Transcript were apart: no field

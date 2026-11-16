@@ -12,8 +12,8 @@ are Work or Personal as the meeting is, are reviewed like other notes, and go to
 below it. Text is never moved from one to the other on its own, except once for notes saved before the two were apart
 (transcript_moves, at the start).
 
-The app's are matched by plain code, never by a model: the Zoom meeting ID in the calendar event (its join link or "Meeting ID" in the
-location or description) at about the same time; else the time alone, all Google Meet gives (start within a few minutes, or mostly
+The app's are matched by plain code, never by a model: the calendar event the notes name (Granola gives its event id); the Zoom
+meeting ID in the calendar event (its join link or "Meeting ID" in the location or description) at about the same time; else the time alone, all Google Meet gives (start within a few minutes, or mostly
 overlapping), preferring the event the notes' host was in. Two events that fit equally well match neither: no notes is
 better than another meeting's notes. What the notes say is read by the review, which judges it by meaning."""
 from __future__ import annotations
@@ -22,6 +22,7 @@ import datetime as dt
 import hashlib
 import json
 import re
+from machine import kinds as kind_rows
 from machine.owner_error import OwnerError
 
 NOTES, TRANSCRIPT = 'meeting.notes', 'meeting.transcript'
@@ -31,10 +32,12 @@ PREFIX = {NOTES: 'notes:', TRANSCRIPT: 'transcript:'}
 ZOOM = {'notes': 'zoom.summary', 'transcript': 'zoom.transcript'}
 GOOGLE_MEET = {'notes': 'google_meet.notes', 'transcript': 'google_meet.transcript'}
 TEAMS = {'notes': 'teams.notes', 'transcript': 'teams.transcript'}  # Copilot's notes, Teams' transcript (connectors/teams.py)
-SOURCES = {'zoom': ZOOM, 'google_meet': GOOGLE_MEET, 'teams': TEAMS}  # a meeting app's records of each field, by its key in read()
-KINDS = (NOTES, TRANSCRIPT, 'zoom.summary', 'google_meet.notes', 'teams.notes')  # a meeting's record for its follow-ups, in this order (for_event)
+GRANOLA = {'notes': 'granola.notes', 'transcript': 'granola.transcript'}  # Granola's notes and transcript (connectors/granola.py)
+# a meeting app's records of each field, by its key in read(): its service (machine/kinds.py)
+SOURCES = {kind_rows.KINDS[app['notes']]['service']: app for app in (ZOOM, GOOGLE_MEET, TEAMS, GRANOLA)}
+KINDS = (NOTES, TRANSCRIPT, 'zoom.summary', 'google_meet.notes', 'teams.notes', 'granola.notes')  # a meeting's record for its follow-ups, in this order (for_event)
 SOURCE = {'zoom.summary': 'Zoom', 'zoom.transcript': 'Zoom', 'google_meet.notes': 'Google Meet', 'google_meet.transcript': 'Google Meet',
-          'teams.notes': 'Teams', 'teams.transcript': 'Teams',
+          'teams.notes': 'Teams', 'teams.transcript': 'Teams', 'granola.notes': 'Granola', 'granola.transcript': 'Granola',
           NOTES: 'Meeting', TRANSCRIPT: 'Meeting'}
 MAX_CHARS = 400_000  # a long meeting's full transcript fits
 READ_CHARS = 20_000  # one read of a field for a tool result; the rest with offset
@@ -95,10 +98,15 @@ def match(db, notes):
     end = stamp(m.get('end_at')) or start + dt.timedelta(hours=1)
     meeting_id = re.sub(r'\D', '', str(m.get('meeting_id') or ''))
     host = str(m.get('host_email') or '').lower()
+    named = str(m.get('calendar_event_id') or '')
     by_id, by_time = [], []
     for event in candidates(db, start):
         begun, ended, em = _span(event)
-        if not begun or em.get('all_day') or em.get('status') == 'cancelled':
+        if not begun or em.get('status') == 'cancelled':
+            continue
+        if named and event.get('source_id') == named:
+            return event  # the calendar event the notes name, by its own id
+        if em.get('all_day'):
             continue
         if meeting_id and meeting_id in zoom_ids(em.get('location'), event.get('body')) and abs(begun - start) <= dt.timedelta(hours=SAME_ID_HOURS):
             by_id.append((abs(begun - start), event))
@@ -282,7 +290,7 @@ def _page(body, offset, limit):
 def read(db, event_id, offset=0, limit=READ_CHARS, field=None):
     """A meeting and its two records: notes and transcript, each the one added to it ({text, by, at, chars,
     next_offset}, and written_from when The Machine wrote the notes from the transcript; the transcript also with minutes, how long it runs) or None, and the meeting app's that match it
-    under zoom, google_meet and teams ({notes, transcript, url}, each item with its own url, or None). field ('notes' or 'transcript') reads only that one, from offset."""
+    under zoom, google_meet, teams and granola ({notes, transcript, url}, each item with its own url, or None). field ('notes' or 'transcript') reads only that one, from offset."""
     event = meeting(db, event_id)
     if not event:
         raise ValueError('No meeting with that event_id')
@@ -290,7 +298,7 @@ def read(db, event_id, offset=0, limit=READ_CHARS, field=None):
     offset = max(0, int(offset or 0))
     em = json.loads(event['metadata'] or '{}')
     out = {'event_id': event['id'], 'title': event['title'], 'start': event['occurred_at'], 'end': em.get('end_at') or event['occurred_at'],
-           'notes': None, 'transcript': None, 'zoom': None, 'google_meet': None, 'teams': None}
+           'notes': None, 'transcript': None, **{name: None for name in SOURCES}}
     meeting_minutes = _minutes(dict(event))
     for kind, key in ((NOTES, 'notes'), (TRANSCRIPT, 'transcript')):
         if only and kind != only:
