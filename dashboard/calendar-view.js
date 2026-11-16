@@ -400,6 +400,10 @@ function calNotesPoll(){clearTimeout(calNotesTimer);const n=calNote;if(!calWriti
 // A transcript reads as it was written, line by line; notes are Markdown
 // The meeting apps whose notes and transcripts match a meeting: the block's id, and its key in the API
 const CAL_APPS=[['zoom','zoom'],['meet','google_meet'],['teams','teams'],['granola','granola']];
+// Each app's block under Notes and Transcript, made here (this part loads when Calendar opens) instead of in the first load
+{const said={zoom:[t('From Zoom'),t('Open in Zoom ↗')],meet:[t('From Google Meet'),t('Open in Google Docs ↗')],teams:[t('From Teams'),t('Open in Teams ↗')],granola:[t('From Granola'),t('Open in Granola ↗')]};
+ for(const f of ['notes','tr'])$('#cal-v-'+f+'-in').insertAdjacentHTML('beforeend',CAL_APPS.map(([k])=>{const id=`cal-v-${f}-${k}`,[from,open]=said[k];
+  return `<div id="${id}" class="cal-v-src" hidden><div class="cal-v-nh"><span class="cal-v-from">${esc(from)}</span><a id="${id}-open" class="cal-v-mail" target="_blank" rel="noopener" hidden>${esc(open)}</a></div><div id="${id}-body" class="cal-v-nb"></div><button type="button" id="${id}-more" class="cal-v-more" hidden>${esc(t('Show all'))}</button></div>`}).join(''))}
 const calNotesHtml=(f,text)=>f==='tr'?esc(text):chatMarkdown(text);
 function calNotesShow(){const n=calNote,d=n?.data,ready=!!d;
  for(const [f,c] of Object.entries(CAL_FIELDS)){const added=d?.[c.api],editing=!!n?.editing[f],q=id=>$('#cal-v-'+f+'-'+id);
