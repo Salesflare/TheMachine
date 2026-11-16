@@ -7799,6 +7799,7 @@
  "{} is not connected. Open the OpenClaw app on it.": "{} is not connected. Open the OpenClaw app on it.",
  "{} is not valid JSON: {}": "{} is not valid JSON: {}",
  "{} is not {}": "{} is not {}",
+ "{} is on Microsoft 365, so no password is needed.": "{} is on Microsoft 365, so no password is needed.",
  "{} is on it · {}": "{} is on it · {}",
  "{} is on it.": "{} is on it.",
  "{} is on the Network": "{} is on the Network",

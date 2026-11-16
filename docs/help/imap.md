@@ -35,6 +35,8 @@ The server settings are filled in for most providers. Yours not found? Open **Se
 
 Gmail or Microsoft mail, also on your own domain? Pick **Gmail** or **Outlook** instead. They sign in without a password. Their servers typed in Server settings go there too: Microsoft no longer takes passwords from mail apps.
 
+Typed an address on Microsoft 365? The form says so and shows **Sign in with Microsoft** in place of the password. It opens the Outlook sign-in. Not found in a few seconds? The password form stays.
+
 ## When it stops
 
 - **The mail server refused the password**: you changed it, or the app password was removed. Connect it again with the new one.

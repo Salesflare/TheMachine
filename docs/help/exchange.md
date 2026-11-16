@@ -14,7 +14,9 @@ It is read-only: it never adds, moves or removes a meeting. Mail from Exchange S
 
 ## Microsoft 365 or Exchange Server?
 
-Exchange Server runs at your company. Microsoft 365 (Exchange Online) is Microsoft's cloud: pick **Outlook Calendar** for it instead. When your address turns out to be on Microsoft 365, the form says so.
+Exchange Server runs at your company. Microsoft 365 (Exchange Online) is Microsoft's cloud: pick **Outlook Calendar** for it instead.
+
+Type your address first. When it's on Microsoft 365, the form says so and shows **Sign in with Microsoft** in place of the password. It opens the Outlook Calendar sign-in, with no password. Not found in a few seconds, or your company runs its own server? The password form stays.
 
 ## Connect it
 
