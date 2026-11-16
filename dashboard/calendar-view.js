@@ -66,8 +66,10 @@ function calUnion(){const seen=new Set(),all=[],notes=new Map();let any=false;fo
 const calFailedIn=(a,b)=>calMondays(a,b).some(d=>calWeeks.get(localDay(d))?.failed);
 // What is on show comes first, in one ask: the period's weeks (the agenda: the week at the top and the next one), and
 // any week in it not loaded yet. After it, the other loaded weeks and the weeks either side follow one at a time.
-function calFetch(force){const [a,b]=calRange(),now=calMonday(new Date()),weeks=calMondays(a,b);if(!weeks.some(d=>+d===+now))weeks.push(now);
- const top=calMonday(calList()?calAt:a),seen=calList()?[top,calAdd(top,7)]:calMondays(a,b),has=(l,d)=>l.some(x=>+x===+d);
+function calFetch(force){const [a,b]=calRange(),weeks=calMondays(a,b),has=(l,d)=>l.some(x=>+x===+d);
+ const top=calMonday(calList()?calAt:a),seen=calList()?[top,calAdd(top,7)]:calMondays(a,b);
+ // this week, and the agenda's two weeks on show also when its days end on a Monday (a Monday's [today, today+7))
+ for(const d of [calMonday(new Date()),...seen])if(!has(weeks,d))weeks.push(d);
  const first=weeks.filter(d=>has(seen,d)||!calWeeks.get(localDay(d))?.meetings);
  const shown=Promise.all(calRuns(first).map(r=>calFetchSpan(r,force)));
  if(!$('#calendar').hidden){const last=seen[seen.length-1],rest=[...weeks.filter(d=>!has(first,d)),calAdd(seen[0],-7),calAdd(last,7)];shown.finally(()=>calQueue(rest))}
