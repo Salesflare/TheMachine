@@ -16,7 +16,11 @@ const target=state.suggestions.find(s=>s.id===m[1]);
 // its row drawn), never its chat. &or=chat, on links sent before, means nothing anymore. One that isn't here: an
 // older done one is asked for first; one still missing after that says so, never a view with nothing picked out.
 const gone=()=>{history.replaceState(null,'',location.pathname+location.search);toast(t('That to-do isn’t here anymore.'))};
-if(!target){if(doneFetch(m[1],()=>{if(location.hash===m[0])openCardLink()}))return;if(shownCached||Date.now()-shownAt>5e3)refresh();else gone();return}  // a list from before is read again first
+// The link stays while it waits: a to-do that hasn't come in yet lands once it has. Missing from a list read after the
+// link came: gone. A list from before is read again first.
+if(!target){if(doneFetch(m[1],()=>{if(location.hash===m[0])openCardLink()}))return;if(cardMiss?.id!==m[1]){cardMiss={id:m[1],at:Date.now()};setTimeout(()=>{if(cardMiss?.id===m[1]&&location.hash===m[0])refresh()},3e3)}
+ if(!shownCached&&shownAt>cardMiss.at){cardMiss=null;gone()}else if(shownCached||Date.now()-shownAt>5e3)refresh();return}
+cardMiss=null;
 linkedCardId=target.id;const fuEl=()=>target.follow_up?.group&&document.getElementById('fu-'+target.follow_up.group.replace(':','-'));
 // Reveal this destination without overwriting the device's saved filter/fold preferences.
 if(scopeFilter!=='all'&&target.scope!==scopeFilter)scopeFilter='all';
@@ -36,7 +40,7 @@ const tall=c.offsetHeight>innerHeight*.7;c.style.scrollMarginTop=tall?'72px':'';
 // a notification's "Done: …" found the to-do where it waited, and the next read folded it away into Done. The first
 // read asked after the link (refresh, asked at once when the list on screen is a few seconds old) lands it again where
 // it is now, never a silent miss.
-let cardLanding=null;
+let cardLanding=null,cardMiss=null;  // cardMiss: a linked to-do not in the list yet, and since when
 function cardLandAgain(asked){const l=cardLanding;if(!l||shownCached||asked<l.at)return;cardLanding=null;
  if(Date.now()-l.at>6e4||location.hash||chatId)return;const s=state.suggestions?.find(x=>x.id===l.id);if(!s||s.status===l.status)return;
  history.replaceState(null,'',location.pathname+location.search+'#card='+l.id)}
