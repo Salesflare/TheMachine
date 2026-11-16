@@ -63,6 +63,11 @@ try{
   assert.deepEqual((await shop.locator('.login-acct .login-user').allTextContents()).map(s=>s.replace(/\u00a0/g,' ')),['sam@home.example · Personal','sam@acme.example · Work']);
   assert.equal(await shop.locator('.login-acct button').count(),2);
   assert.ok(await page.locator('#saved-logins strong').evaluateAll(s=>s.every(x=>x.scrollWidth<=x.clientWidth)),'a site name is never cut short');
+  // the username takes the free width, its side right after it with no gap, cut short only when the row is full
+  const who=await shop.locator('.login-who').evaluateAll(ws=>ws.map(w=>{const n=w.querySelector('.login-name').getBoundingClientRect(),s=w.querySelector('.login-side-name').getBoundingClientRect(),g=w.closest('.grow').getBoundingClientRect(),name=w.querySelector('.login-name');
+   return {gap:Math.round(s.left-n.right),cut:name.scrollWidth>name.clientWidth,room:Math.round(g.right-s.right)}}));
+  if(width===390)assert.ok(!who.some(w=>w.cut),'both accounts fit a phone row: '+JSON.stringify(who));
+  for(const w of who){assert.ok(Math.abs(w.gap)<=1,'no gap before the side: '+JSON.stringify(who));assert.ok(!w.cut||w.room<=1,'cut short only when full: '+JSON.stringify(who))}
   // a sign-in moved over as Default: its side is set right there
   assert.deepEqual(await page.locator('#saved-logins [data-login-side] option').allInnerTexts(),['Default','Work','Personal']);
   await clean(page,'list');
