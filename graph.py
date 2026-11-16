@@ -858,7 +858,6 @@ JOINED_WHY = {'owner': 'merged by you', 'agent': 'merged by a review', 'director
 PHONE = re.compile(r'(?<![\w+])(?:\+|00)?\d[\d ()./-]{7,18}\d(?![\w])')
 QUOTED = re.compile(r'^(?:>|On .{4,200} wrote:\s*$|-{2,} ?(?:Original|Forwarded) |From: |Van: |Le .{4,200} a écrit|Am .{4,200} schrieb)', re.M)
 SIGNATURE_MAILS = 12     # recent mails read per address for a phone number in its own text
-SAME_BUCKET = 60         # more people than this with one first name: too common to compare
 
 
 def name_words(name, identifier=None):
@@ -897,18 +896,6 @@ def linkedin_key(url):
     return found[1].casefold() if found else None
 
 
-def phone_key(value):
-    """A phone number as two records compare it: its last nine digits (+32 470 and 0470 are one number), else None."""
-    digits = re.sub(r'\D', '', str(value or ''))
-    return digits[-9:] if len(digits) >= 9 else None
-
-
-def first_name_only(a, b):
-    """Whether two similar names agree on no more than a first name: "Gary" and "Gary Wilson", "Frank" and "Frank".
-    "Alex Lee" and "Alexander Lee" share a surname too."""
-    return not (len(a) >= 2 and len(b) >= 2 and a[-1] == b[-1] and len(a[-1]) >= 2)
-
-
 def own_text(body):
     """A message's own text: without the quoted mail it answers or forwards, where other people's signatures are."""
     body = str(body or '')
@@ -945,56 +932,6 @@ def signature_pairs(db, senders, best, known):
                 if name_match(words, wa_names[wa]):
                     pairs.append((identifier, wa))
     return pairs
-
-
-def likely_same(people, union, together, projects, never=lambda a, b: False):
-    """Pairs of people who may be one, for the owner to Merge or keep apart: [(a, b, why, score)]. The same full name at a
-    domain in common (or no address on one side) is enough to ask; a similar name, or one across domains, needs something
-    shared: people seen with both, a project, the same role. Only a first name in common ("Gary" and "Gary Wilson") at
-    domains with none in common needs strong evidence instead: the same company domain, phone number or LinkedIn profile.
-    A name read from an address (jane.doe@) is only ever similar; never(a, b): pairs never asked (machine/graph/same_person.py)."""
-    buckets = collections.defaultdict(list)
-    for node, p in people.items():
-        if p['words']:
-            buckets[p['words'][0]].append(node)
-            if len(p['words'][0]) >= 3:
-                buckets[p['words'][0][:3]].append(node)  # "Alex" and "Alexander"
-    seen, out = set(), []
-    for members in buckets.values():
-        if len(members) > SAME_BUCKET:
-            continue
-        for i, a in enumerate(members):
-            for b in members[i + 1:]:
-                pair = tuple(sorted((a, b)))
-                if pair in seen or a == b:
-                    continue
-                seen.add(pair)
-                pa, pb = people[pair[0]], people[pair[1]]
-                match = name_match(pa['words'], pb['words'])
-                if match == 'same' and (pa.get('derived') or pb.get('derived')):
-                    match = 'similar'
-                if not match or union.kept_apart(union.find(pair[0]), union.find(pair[1])) or lookalike.apart(pa['domains'], pb['domains']) or never(*pair):
-                    continue  # nor when one's domain imitates the other's (lookalike.py), a lookalike or the owner's name
-                shared = []
-                if pa['domains'] & pb['domains']:
-                    shared.append(f"both at {sorted(pa['domains'] & pb['domains'])[0]}")
-                if pa.get('phones', set()) & pb.get('phones', set()):
-                    shared.append('the same phone number')
-                if pa.get('linkedin', set()) & pb.get('linkedin', set()):
-                    shared.append('the same LinkedIn profile')
-                if match == 'similar' and first_name_only(pa['words'], pb['words']) and pa.get('mail') and pb.get('mail') \
-                        and not pa['mail'] & pb['mail'] and not shared:
-                    continue  # only a first name in common, at other domains: a project, a role or people around them are no evidence
-                if pa['role'] and pa['role'] == pb['role']:
-                    shared.append('the same role')
-                if together(pair[0]) & together(pair[1]):
-                    shared.append('with the same people')
-                if projects.get(pair[0], set()) & projects.get(pair[1], set()):
-                    shared.append('on the same project')
-                if match == 'same' and len(pa['words']) >= 2 and (not (pa.get('mail') and pb.get('mail')) or pa['mail'] & pb['mail']) or shared:
-                    why = ', '.join([('Same name' if match == 'same' else 'Similar name')] + shared)
-                    out.append((*pair, why, round(len(shared) + (2 if match == 'same' else 0) + min(pa['strength'], pb['strength']), 4)))
-    return sorted(out, key=lambda s: -s[3])[:300]
 
 
 class Union:
