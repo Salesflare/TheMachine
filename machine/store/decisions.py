@@ -992,6 +992,41 @@ class DecisionsStore:
         events = db.execute('SELECT id,account_id,kind,metadata FROM events WHERE id IN (' + ','.join('?' * len(ids)) + ')', ids).fetchall() if ids else []
         return events if events and all(e['kind'] == 'intercom.conversation' for e in events) else []
 
+    def close_done_notion(self, undo_hours=24):
+        """Open to-dos made only from Notion tasks assigned to the owner (connectors/notion.py notion.task) that Notion
+        now shows done close by themselves: Done, "Done in Notion", with Undo for a day. Once per task version: after an
+        Undo it stays open until the task changes again. Not while a send of it is under way. Returns the closed ids."""
+        stamp, found = now(), []
+        with self.connect() as db:
+            if not db.execute("SELECT 1 FROM events WHERE kind='notion.task' LIMIT 1").fetchone():
+                return []
+            rows = db.execute(f"SELECT s.* FROM suggestions s WHERE s.status IN {todo_states.sql(todo_states.OPEN)} "
+                              "AND EXISTS(SELECT 1 FROM json_each(s.event_ids) j JOIN events e ON e.id=j.value WHERE e.kind='notion.task')").fetchall()
+            for row in rows:
+                events = db.execute('SELECT e.id,e.kind,e.version,e.metadata FROM events e JOIN json_each(?) j ON j.value=e.id',
+                                    (row['event_ids'],)).fetchall()
+                if not events or any(e['kind'] != 'notion.task' or json.loads(e['metadata'] or '{}').get('done') is not True for e in events):
+                    continue
+                decision_id = 'notion-done:' + hashlib.sha256(f"{row['id']}:{sorted((e['id'], e['version']) for e in events)}".encode()).hexdigest()[:32]
+                found.append((row['id'], decision_id))
+        closed = []
+        if not found:
+            return closed
+        with self.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            for sid, decision_id in found:
+                row = db.execute(f"SELECT * FROM suggestions WHERE id=? AND status IN {todo_states.sql(todo_states.OPEN)}", (sid,)).fetchone()
+                if not row or db.execute('SELECT 1 FROM decisions WHERE id=?', (decision_id,)).fetchone():
+                    continue  # closed already, or closed for this before and the owner took it back
+                if db.execute("SELECT 1 FROM action_jobs WHERE suggestion_id=? AND status IN ('sending','uncertain')", (sid,)).fetchone():
+                    continue  # a send on its way settles first
+                close_by_itself(db, row, decision_id, '', 'notion', stamp, undo_hours)
+                db.execute('UPDATE suggestions SET early=0 WHERE id=?', (sid,))
+                closed.append(sid)
+        if closed:
+            LOG.info('notion done closed=%s', len(closed))
+        return closed
+
     def close_handled_intercom(self, undo_hours=24):
         """Open to-dos made only from Intercom conversations that Intercom shows handled since the to-do was made close by
         themselves: Done, "Closed in Intercom" or "Answered in Intercom" (by whom, when a teammate), with Undo for a day.
@@ -1475,7 +1510,8 @@ class DecisionsStore:
                 if done.get('kind') == doc_writes.KIND and done.get('op') == 'create':
                     made.add(str(done.get('title') or '').strip().lower())
             wanted = [a for a in next_actions.visible_actions(row['next_action'])
-                      if a['kind'] == doc_writes.KIND and a.get('op') == 'create' and str(a.get('title') or '').strip().lower() not in made]
+                      if a['kind'] == doc_writes.KIND and a.get('op') == 'create' and str(a.get('title') or '').strip().lower() not in made
+                      and a.get('provider') != 'notion']  # a Notion page waits for the owner's OK, like every Notion write
         queued = []
         for item in wanted:
             try:

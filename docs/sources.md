@@ -35,10 +35,11 @@ Collectors read existing source content. The optional Salesflare `join_pipelines
 | `salesforce` (plugin) | None: Connect Salesforce on a hosted Machine's setup page signs in with your own Salesforce user, through a token broker (`salesforce_broker`) | `email` |
 | `docs` (plugin) | The owner's own Google (broker) or Microsoft sign-in for that address, plus a separate consent for files | `email`, `transport` (borrowed from the mail account), `provider` (`google` or `microsoft`, else from the mail account), `boundary` |
 | `shortcut` (plugin) | Sign in with Shortcut, or a Shortcut API token | `credential` (`workspace` is filled in from the sign-in or token) |
+| `notion` (plugin) | Sign in with Notion, or a Notion internal integration token | `credential` (`workspace_name` and the member are filled in from the sign-in or token), `boundary` |
 | `rss` (plugin) | none | `url` |
 | `web_page` (plugin) | none: a public https page | `url`, `display_name` (the page, set when you add it), `poll_seconds` (21600; never under an hour) |
 
-Add a plugin account with `assistant connect github` (or `stripe`, `intercom`, `x`, `linkedin`, `trello`, `google_meet`, `shortcut`, `rss`, `web_page`): it asks for the fields that connector needs. The dashboard does the same under Connections, **+ Add** (see [Usage](usage.md#adding-a-source)). You can also add accounts to `config.json` by hand, using the keys above (each connector's header has a full example), and restart the service.
+Add a plugin account with `assistant connect github` (or `stripe`, `intercom`, `x`, `linkedin`, `trello`, `google_meet`, `shortcut`, `notion`, `rss`, `web_page`): it asks for the fields that connector needs. The dashboard does the same under Connections, **+ Add** (see [Usage](usage.md#adding-a-source)). You can also add accounts to `config.json` by hand, using the keys above (each connector's header has a full example), and restart the service.
 
 ## How each source reads
 
@@ -347,6 +348,17 @@ Story moves between workflow states (`shortcut.move`), with their owners and dea
 
 - A sign-in reads only (scope `read`). A pasted token has full account access (there is no read-only token); this connector only reads with it: GET-only story search and story history, and it checks that the token belongs to the chosen workspace.
 - It starts with the last seven days, searches with a one-day overlap and commits its paging checkpoints. The story's current context may be newer than a single move.
+
+### Notion
+
+Comments, mentions, assigned database items, new pages and heads-ups from a Notion workspace (`connectors/notion.py`): `notion.comment` and `notion.mention` (a comment on the owner's page, a reply in a discussion they're in, or one that @mentions them), `notion.task` (a database item whose people property names the owner, with its due date and status), `notion.page` (a page someone else added, after the first sync) and `notion.edit` (someone else changed a page the owner left an open comment on: a quiet heads-up, `notion_heads_up.py`, never a buzz). The first sync goes back seven days; later ones search pages by last edit with a two-hour overlap.
+
+Connect it with **Sign in with Notion** (Connections, **+ Add**, on a hosted Machine or one paired with your account): the control plane runs Notion's OAuth consent for The Machine's public integration and hands the sign-in to the Machine sealed for it, keeping nothing. The Machine keeps it in the account's credential file and refreshes it through the control plane (`/api/notion/token` hosted, the Network's `/notion-token` paired), which adds the client secret; only the refresh token goes there. The fallback is `assistant connect notion` with an internal integration token from https://www.notion.so/profile/integrations; its owner is found among the workspace's people by the owner's own addresses.
+
+- The integration asks for read, update and insert content, read and insert comments, and user information with email addresses (to link people to the Graph). Without an address, a person links only by a full name exactly one Graph person has.
+- Reads: the API allowlist is search, pages, page blocks, comments, databases (for a task's status options) and users. A to-do or meeting prep reads one page's text only while it runs (`doc_text`, `doc_find`).
+- Writes, each only after the owner's OK and through `doc_writes.py`: a reply in a comment's discussion (`doc_reply`), a new private page (`create`, at the workspace level), an edit (`edit`, pinned to a hash of the page's blocks as the owner saw it: a newer page writes nothing) and marking an assigned task done (`done`: its status set to a Done option of the Complete group, else its checkbox ticked, else a Done option of a Status select). An item done in Notion closes its to-do by itself (`Store.close_done_notion`), with Undo.
+- Notion has no "shared with me" list: a new page someone else made that the connection can now see stands in for it.
 
 ### History
 

@@ -156,6 +156,7 @@ PROBABLE = 0.72
 UNNAMED = 0.75
 UNNAMED_DAYS = 45
 DOC_KINDS = of(service='docs')  # machine/kinds.py
+NOTION_KINDS = of(service='notion')
 UNNAMED_KINDS = {'gmail.message', 'calendar.event', 'salesflare.email', 'salesflare.meeting', 'intercom.conversation', 'github.notification'}
 OPEN_CARD = todo_states.OPEN
 # Boards: projects of one kind (partner listings, buyers, onboardings) in stages. Every board ends in this row too.
@@ -570,14 +571,16 @@ def _touches(kind, m, owner, wrote_to):
         customer = addresses(m.get('contact_email'))
         found = customer or addresses(m.get('from'))
         return [('email:' + found[0][1], (m.get('contact_name') if customer else m.get('from_name')) or None, 0.05, 'about' if customer else 'seen')] if found and not owner.mine(found[0][1]) and not bulk(found[0][1]) else []
-    if kind in DOC_KINDS:
+    if kind in DOC_KINDS or kind in NOTION_KINDS:
         # Docs (connectors/docs.py): who commented, @mentioned the owner, suggested edits or shared a doc with them.
-        # Drive shows an author's address only when they let it; without one there is nobody to link.
+        # Drive shows an author's address only when they let it; without one there is nobody to link. Notion
+        # (connectors/notion.py) the same, by the address Notion gives, else the one Graph person with exactly that full
+        # name (matched_by: name); never a guess on a first name. Sharing, a new page or a task: only seen.
         found = addresses(m.get('from'))
         if not found or owner.mine(found[0][1]) or bulk(found[0][1]):
             return []
-        weight = {'docs.mention': WEIGHTS['them'], 'docs.comment': 0.2, 'docs.suggestion': 0.15}.get(kind, 0.1)
-        return [('email:' + found[0][1], found[0][0] or m.get('from_name'), weight, 'them' if kind != 'docs.shared' else 'seen')]
+        weight = {'docs.mention': WEIGHTS['them'], 'docs.comment': 0.2, 'docs.suggestion': 0.15}.get(kind.replace('notion.', 'docs.'), 0.1)
+        return [('email:' + found[0][1], found[0][0] or m.get('from_name'), weight, 'seen' if weight == 0.1 else 'them')]
     if kind == 'stripe.event':
         found = addresses(m.get('from'))
         return [('email:' + found[0][1], None, 0.05, 'seen')] if found and not owner.mine(found[0][1]) and not bulk(found[0][1]) else []
@@ -749,7 +752,7 @@ def thread_key(kind, m):
         return 'gh:' + str(m['repo']) + '#' + str(m['number']), True
     if kind == 'calendar.event' and m.get('recurring_event_id'):
         return 'cal:' + str(m['recurring_event_id']), True
-    if kind in ('docs.comment', 'docs.mention') and m.get('file_id') and m.get('comment_id'):
+    if kind in ('docs.comment', 'docs.mention', 'notion.comment', 'notion.mention') and m.get('file_id') and m.get('comment_id'):
         return 'doc:' + str(m['file_id']) + ':' + str(m['comment_id']), True
     return None, False
 

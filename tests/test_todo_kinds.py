@@ -32,6 +32,7 @@ class TodoKindsTest(unittest.TestCase):
             'digest': (True, True, True, True, True),
             'facebook_birthdays': (False, False, False, False, False),  # only its view is its own
             'secondhand': (False, False, True, True, False),  # it buzzes: a good listing goes fast
+            'notion_heads_up': (True, False, False, False, False),  # a page changed as asked: quiet, a to-do like any other
         })
         # the owner's decision asked cleanup, then Subscriptions, then the digest
         self.assertEqual([k.key for k in todo_kinds.KINDS if k.refused], ['cleanup', 'subs', 'digest', 'secondhand'])

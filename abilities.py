@@ -17,6 +17,7 @@ from machine.owner_error import OwnerError
 SIGNALS, ACTIONS = 'signals', 'actions'
 ABILITIES = (SIGNALS, ACTIONS)
 REPLY_SERVICES = ('slack', 'whatsapp', 'telegram', 'signal', 'linkedin', 'x')
+DOC_SERVICES = ('docs', 'notion')  # pages and docs: read for a to-do, a reply to a comment and a write after the owner's OK (doc_writes.py)
 
 
 def can_act(account):
@@ -28,7 +29,7 @@ def can_act(account):
         return False
     service = account.get('service', 'gmail')
     return bool(next_actions.mail_account(account) or calendar_writes.writable(account) or service in REPLY_SERVICES
-                or service == 'docs' or service == 'intercom' and next_actions.intercom_replies_on(account))
+                or service in DOC_SERVICES or service == 'intercom' and next_actions.intercom_replies_on(account))
 
 
 def switchable(account):

@@ -19,6 +19,7 @@ Simple Icons lists them. One-color marks are drawn dark and inverted in the dark
 | `google_docs.svg` | Google Docs | googledocs |
 | `icloud_calendar.svg` | iCloud Calendar | icloud |
 | `intercom.svg` | Intercom | intercom |
+| `notion.svg` | Notion | notion |
 | `rss.svg` | RSS | rss |
 | `shortcut.svg` | Shortcut | shortcut |
 | `signal.svg` | Signal | signal |

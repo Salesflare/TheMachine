@@ -195,7 +195,7 @@ class Registry(unittest.TestCase):
                     self.assertEqual(row['send'], follow_ups.CHANNEL_KINDS[kind], 'send: follow_ups.CHANNEL_KINDS')
         # A reply goes out on these too, though a follow-up doesn't switch to them (follow_ups.CHANNELS)
         self.assertEqual({k for k, row in kinds.KINDS.items() if row['send'] and k not in follow_ups.CHANNEL_KINDS},
-                         {'x.dm', 'x.mention', 'docs.comment', 'docs.mention', 'docs.suggestion'})
+                         {'x.dm', 'x.mention', 'docs.comment', 'docs.mention', 'docs.suggestion', 'notion.comment', 'notion.mention'})
         self.assertEqual(tuple(kinds.SENDS), __import__('activity').SEND_KINDS)
         self.assertEqual({k: s['name'] for k, s in kinds.SENDS.items()},
                          {k: v for k, v in __import__('activity_log').MESSAGE_KINDS.items() if k in kinds.SENDS})

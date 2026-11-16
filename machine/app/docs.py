@@ -26,18 +26,18 @@ class DocsApp:
             if not str(event_id).isdigit():
                 raise ValueError('Give the event_id of the doc event and the job_id of this preparation')
             with self.store.connect() as db:
-                row = db.execute("SELECT account_id,metadata FROM events WHERE id=? AND kind LIKE 'docs.%' AND id IN "
+                row = db.execute("SELECT account_id,metadata FROM events WHERE id=? AND (kind LIKE 'docs.%' OR kind LIKE 'notion.%') AND id IN "
                                  "(SELECT value FROM json_each(?))", (int(event_id), run['event_ids'])).fetchone()
             if not row:
                 raise OwnerError('That doc is not one of this task’s own doc events')
-            account = next((a for a in self.config['accounts'] if a['id'] == row['account_id'] and a.get('service') == 'docs'), None)
+            account = next((a for a in self.config['accounts'] if a['id'] == row['account_id'] and a.get('service') in abilities.DOC_SERVICES), None)
             file_id = json.loads(row['metadata']).get('file_id')
         elif re.fullmatch(r'[A-Za-z0-9_!.-]{10,300}', file_id):
             found = self.__dict__.setdefault('_docs_found', {}).get(job, {})
             if file_id in found:
                 account = next((a for a in self.config['accounts'] if a['id'] == found[file_id]), None)
             elif file_id in links:
-                account = next(iter(self.doc_connections(area, 'google')), None)
+                account = next((a for a in self.doc_connections(area) if a['id'] == links[file_id]), None)
                 if not account:
                     raise ValueError(self.NO_DOC_CONNECTION)
             else:
@@ -94,7 +94,7 @@ class DocsApp:
                                     run['id'])
             file_id = None
             if args.get('event_id') is not None:
-                row = db.execute("SELECT metadata FROM events WHERE id=? AND kind LIKE 'docs.%' AND id IN (SELECT value FROM json_each(?))",
+                row = db.execute("SELECT metadata FROM events WHERE id=? AND (kind LIKE 'docs.%' OR kind LIKE 'notion.%') AND id IN (SELECT value FROM json_each(?))",
                                  (int(args['event_id']) if str(args['event_id']).isdigit() else -1, run['event_ids'])).fetchone()
                 file_id = row and str(json.loads(row['metadata']).get('file_id') or '')
                 if not file_id:
@@ -146,17 +146,23 @@ class DocsApp:
                              "WHERE p.job_id=? AND p.status IN ('queued','starting','running','blocked')", (job,)).fetchone()
             if not run:
                 raise OwnerError('Docs are read only for a running preparation of the task the owner started')
+            area = doc_writes.area(self.config, json.loads(run['account_ids'] or '[]'))
+            # a doc linked in the task's messages -> the owner's connection that opens it here (Google Docs, or Notion)
             links, plugin = {}, load_connector('docs')
-            for r in db.execute("SELECT e.account_id,e.body,e.metadata FROM events e JOIN json_each(?) ids ON ids.value=e.id",
+            via = {}
+            for account in self.doc_connections(area) if plugin else ():
+                via.setdefault(plugin.provider(self.config, account), account)
+            for r in db.execute("SELECT e.body,e.metadata FROM events e JOIN json_each(?) ids ON ids.value=e.id",
                                 (run['event_ids'],)) if plugin else ():
-                for file_id in plugin.doc_links(str(r['body'] or '') + ' ' + str(r['metadata'] or '')):
-                    links.setdefault(file_id, r['account_id'])
-        return job, run, links, doc_writes.area(self.config, json.loads(run['account_ids'] or '[]'))
+                for account in (via.get('google'), via.get('notion')):
+                    for file_id in plugin.doc_links_of(account, str(r['body'] or '') + ' ' + str(r['metadata'] or '')) if account else ():
+                        links.setdefault(file_id, account['id'])
+        return job, run, links, area
 
     def doc_connections(self, area, provider=None):
         """The owner's own Docs connections in this area that can do things (abilities.py), Google or Microsoft."""
         plugin = load_connector('docs')
-        return [a for a in self.config.get('accounts', []) if a.get('service') == 'docs' and plugin and abilities.actions_on(a)
+        return [a for a in self.config.get('accounts', []) if a.get('service') in abilities.DOC_SERVICES and plugin and abilities.actions_on(a)
                 and doc_writes.fits(a.get('boundary'), area) and (provider is None or plugin.provider(self.config, a) == provider)]
 
     def doc_read_error(self, error):

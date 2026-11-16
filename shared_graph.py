@@ -103,7 +103,7 @@ ITEM_WORDS = {'meetings': 'Meeting', 'intercom': 'Intercom', 'chats': 'Chat', 'e
 def _source(kind):
     """What a shared item is, for its label: meetings, intercom, chats or email."""
     return ('meetings' if kind in MEETING_KINDS else 'intercom' if kind == 'intercom.conversation'
-            else 'email' if kind in MAIL_KINDS else 'docs' if kind in graph.DOC_KINDS else 'chats')
+            else 'email' if kind in MAIL_KINDS else 'docs' if kind in graph.DOC_KINDS + graph.NOTION_KINDS else 'chats')
 HEX = re.compile(r'[a-f0-9]{32}')
 ISO_AT = re.compile(r'\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\+00:00')  # now()'s form
 # One fixed statement per table that holds a Fleet's shared Graph: what goes when a Fleet's sharing is purged or left.
