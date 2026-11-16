@@ -17,11 +17,12 @@ They resolve their model the same way your chats do: `agents.defaults.model.prim
 
 Don't copy a model name from an old screenshot, or assume a model on one computer is there on another.
 
-**The short test.** Before the first look starts, and again when a sign-in or the main model changes, The Machine sends
-one fixed prompt ("Reply with OK.") to check that the AI answers (`model_check.py`). With an API key or a ChatGPT
-sign-in that is `openclaw infer model run --gateway`, a raw model call. A Claude model that runs through Claude Code
-goes the way reviews do: a Gateway `agent` turn in a throwaway session (`agent:main:assistant-model-check-<id>`, deleted
-right after), since `infer model run` never takes the Claude Code route. An answer from a fallback doesn't count.
+**The short test.** Before the first look starts, and again when the main model changes, The Machine sends one fixed
+prompt ("Reply with OK.") to check that the AI answers (`model_check.py`). A test that passed isn't repeated; a failed
+one is retried after 1, 2, then every 5 minutes, and at once after a new sign-in. With an API key or a ChatGPT sign-in
+that is `openclaw infer model run --gateway`, a raw model call. A Claude model that runs through Claude Code goes
+through Claude Code's own print mode (`claude_print.py`, about 550 tokens), since `infer model run` never takes the
+Claude Code route. Only that model can answer: no fallback stands in.
 
 ### Your Claude plan
 
@@ -30,7 +31,7 @@ To use your own Claude plan (Pro, Max or Team), install Claude Code with Anthrop
 - Pick one as main model or fallback like any other; your current main model stays until you do. (`openclaw models auth login --provider anthropic --method cli --set-default` also makes a Claude model the main model; it needs a terminal.)
 - Usage counts against your plan. With a Claude model as main model, Settings → Model says "Uses your Claude plan".
 - Sign out with `claude auth logout`.
-- One-shot turns (Help, bringing in a CSV, the bug report check, mail cleanup, notes, subscriptions) run through
+- One-shot turns (the short test, Help, bringing in a CSV, the bug report check, mail cleanup, notes, subscriptions) run through
   Claude Code's own print mode (`claude -p`, `claude_print.py`): no tools, MCP servers, skills, settings files or saved
   session, and a one-line system prompt. `openclaw infer model run` never takes the Claude Code route. `"claude":
   "/path/to/claude"` in config.json uses another binary.
@@ -105,8 +106,8 @@ depending on the plan), **Settings → Model** shows the model in use, how much 
 it once the main model's limit is reached, so The Machine sets the pacing aside while that fallback works
 (`model_fallback.py`):
 
-- One tiny fixed-prompt turn on the fallback alone (`openclaw infer model run --model`, or the short test's `agent` turn
-  for a Claude Code model), made only while the limits would
+- One tiny fixed-prompt turn on the fallback alone (`openclaw infer model run --model`, or Claude Code's print mode for a
+  Claude Code model), made only while the limits would
   hold work back and at most every 15 minutes, counts for an hour.
 - A failed check, or a run that still ended on the usage limit, brings the pacing back.
 

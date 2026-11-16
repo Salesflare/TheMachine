@@ -8,7 +8,8 @@ treats a usage limit as a rate limit and moves to the next model), so holding wo
 
 So the rules are set aside while such a fallback is known to work: its last check answered within OK_SECONDS and
 nothing failed since. The check is one tiny one-shot turn on that model alone (`openclaw infer model run --model`, or
-the Gateway's `agent` call on the Claude CLI route: turn; strict: no other model answers for it), made only while the main model's limits would hold work back, at most every
+Claude Code's own print mode on the Claude CLI route: turn; strict: no other model answers for it), made only while
+the main model's limits would hold work back, at most every
 CHECK_GAP. A failed check, or a run that still ended on a usage limit, brings the rules back until a check passes.
 No content goes out: the prompt is fixed."""
 from __future__ import annotations
@@ -17,10 +18,9 @@ import json
 import subprocess
 import threading
 import time
-import uuid
 from pathlib import Path
 
-import chat_model
+import claude_print
 import model_budget
 
 OK_SECONDS = 3600       # a check that passed counts this long
@@ -53,16 +53,12 @@ def separate(primary, fallbacks):
     return [m for m in fallbacks if model_budget.provider_of(m) and model_budget.provider_of(m) != own]
 
 
-CHECK_KEY = 'agent:main:assistant-model-check-'  # + a fresh id: the Claude CLI route's check turn, deleted right after
-
-
 def claude_route(config, model=None):
     """Whether `model` (else the main model) runs through Claude Code: OpenClaw's Claude CLI route (a `claude-cli/*` ref,
     or an `anthropic/*` one pinned to it, chat_model.claude_code). `openclaw infer model run` never takes that route: it
     looks for an Anthropic API key and fails ("No API key found"), while reviews and preparations run fine on the same
-    sign-in through the Gateway's agent runtime."""
-    ref = model or configured(config)[0]
-    return bool(ref) and chat_model.claude_code(config, ref)
+    sign-in through Claude Code."""
+    return bool(claude_print.ref(config, model or configured(config)[0] or None))
 
 
 def _run_json(run, args, timeout):
@@ -79,34 +75,20 @@ def turn(config, model=None, run=subprocess.run):
     """(ok, data, stderr): one tiny fixed-prompt turn through the Gateway on `model` alone, else on the main model.
 
     API keys and the ChatGPT sign-in: `openclaw infer model run --gateway`, a raw model call (no tools, no session).
-    The Claude CLI route (claude_route): the Gateway's `agent` call, the way reviews and preparations reach the model,
-    in a session of its own (CHECK_KEY and a fresh id, so two checks at once never share one), deleted afterwards. A
-    fallback that answered for the model is no answer: the error then names the model's own failure. Raises OSError and
-    TimeoutExpired."""
-    binary = str((config or {}).get('openclaw') or 'openclaw')
-    if not claude_route(config, model):
-        args = [binary, 'infer', 'model', 'run', '--gateway', '--json'] + (['--model', model] if model else []) + ['--prompt', PROMPT]
-        code, data, stderr = _run_json(run, args, TIMEOUT)
-        texts = [o.get('text') for o in data.get('outputs') or [] if isinstance(o, dict) and isinstance(o.get('text'), str)]
-        return code == 0 and data.get('ok') is True and any(t.strip() for t in texts), data, stderr
-    key = CHECK_KEY + uuid.uuid4().hex[:16]
-    args = [binary, 'agent', '--session-key', key, '--message', PROMPT, '--json', '--timeout', str(TIMEOUT - 10)]
-    try:
-        code, data, stderr = _run_json(run, args + (['--model', model] if model else []), TIMEOUT)
-    finally:
+    The Claude CLI route: Claude Code's own print mode on that model (claude_print.py), the executable and sign-in
+    reviews run on, with no tools, skills or workspace files: about 550 tokens, where a Gateway agent turn took about
+    48,000. It has no fallbacks, so only that model can answer. Raises OSError and TimeoutExpired."""
+    claude = claude_print.ref(config, model or configured(config)[0] or None)
+    if claude:
         try:
-            run([binary, 'gateway', 'call', 'sessions.delete', '--json', '--timeout', '30000',
-                 '--params', json.dumps({'key': key, 'deleteTranscript': True})], capture_output=True, text=True, timeout=60)
-        except (OSError, subprocess.TimeoutExpired):
-            pass
-    result = data.get('result') if isinstance(data.get('result'), dict) else {}
-    trace = (result.get('meta') or {}).get('executionTrace') if isinstance(result.get('meta'), dict) else None
-    if isinstance(trace, dict) and trace.get('fallbackUsed'):
-        first = next((a for a in trace.get('attempts') or [] if isinstance(a, dict)), {})
-        why = first.get('reason') or first.get('result') or 'failed'
-        return False, {'error': {'message': f'The model did not answer ({why}); a fallback answered instead.'}}, stderr
-    texts = [p.get('text') for p in result.get('payloads') or [] if isinstance(p, dict) and isinstance(p.get('text'), str)]
-    return code == 0 and data.get('status') == 'ok' and any(t.strip() for t in texts), data, stderr
+            return True, {'outputs': [{'text': claude_print.run(config, PROMPT, claude, 'off', TIMEOUT, run)}]}, ''
+        except claude_print.Failed as error:
+            return False, {'error': {'message': str(error)}}, ''
+    binary = str((config or {}).get('openclaw') or 'openclaw')
+    args = [binary, 'infer', 'model', 'run', '--gateway', '--json'] + (['--model', model] if model else []) + ['--prompt', PROMPT]
+    code, data, stderr = _run_json(run, args, TIMEOUT)
+    texts = [o.get('text') for o in data.get('outputs') or [] if isinstance(o, dict) and isinstance(o.get('text'), str)]
+    return code == 0 and data.get('ok') is True and any(t.strip() for t in texts), data, stderr
 
 
 def probe(config, model, run=subprocess.run):
