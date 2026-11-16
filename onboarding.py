@@ -2328,7 +2328,7 @@ def connect_delivered(config_path, args, team_domains=()):
     prompt = setup_of(service)['secret']
     given = args.get('secrets') if isinstance(args.get('secrets'), dict) else {}
     token = given.get(prompt)
-    if set(given) != {prompt} or not isinstance(token, str) or not 8 <= len(token) <= 4096 or any(c.isspace() for c in token):
+    if set(given) != {prompt} or not isinstance(token, str) or not 8 <= len(token) <= 12000 or any(c.isspace() for c in token):
         raise SetupError(f'No {prompt} came with it', 'sign in again from Connections, + Add')
     answers = {k: v for k, v in (args.get('answers') or {}).items() if isinstance(k, str) and isinstance(v, str) and len(k) < 200 and len(v) < 200} \
         if isinstance(args.get('answers'), dict) else {}

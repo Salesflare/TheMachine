@@ -65,7 +65,22 @@ LIMIT = 25
 # Shortcut's OAuth token endpoint (its authorization server metadata at BASE/.well-known/oauth-authorization-server)
 OAUTH_TOKEN = BASE + '/oauth-authorization-code-flow/token'
 REFRESH_EARLY = 120  # seconds before the access token runs out that it is refreshed
-TOKEN = re.compile(r'[A-Za-z0-9_.~+/=-]{8,2048}')
+TOKEN = re.compile(r'[\x21-\x7e]{8,4000}')  # Shortcut's sign-in tokens are opaque: any printable text without spaces
+
+
+def expires_at(answer):
+    """When the access token runs out, epoch seconds: expires_in, else Shortcut's access_token_expires_at (ISO 8601). 0: not said."""
+    seconds = answer.get('expires_in')
+    if isinstance(seconds, (int, float)) and not isinstance(seconds, bool) and seconds > 0:
+        return int(time.time() + seconds)
+    stamp = answer.get('access_token_expires_at')
+    if isinstance(stamp, str):
+        try:
+            when = dt.datetime.fromisoformat(stamp.replace('Z', '+00:00'))
+            return int((when if when.tzinfo else when.replace(tzinfo=dt.timezone.utc)).timestamp())
+        except ValueError:
+            pass
+    return 0
 
 
 def signin(secret):
@@ -154,10 +169,9 @@ class Source:
         if not isinstance(access, str) or not TOKEN.fullmatch(access):
             raise self.helpers.SourceError('shortcut_signin_expired')
         rotated = answer.get('refresh_token')
-        expires = answer.get('expires_in')
         self.signin = {**self.signin, 'access_token': access,
                        **({'refresh_token': rotated} if isinstance(rotated, str) and TOKEN.fullmatch(rotated) else {}),
-                       'expires_at': int(time.time() + expires) if isinstance(expires, int) and expires > 0 else 0}
+                       'expires_at': expires_at(answer)}
         self.headers['Authorization'] = 'Bearer ' + access
         self.keep()
 
