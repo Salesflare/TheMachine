@@ -46,7 +46,7 @@ SCHEMAS = (SCHEMA, SKIP_SCHEMA, PASSAGE_SCHEMA)
 # Kinds whose late parts are worth finding by meaning: meetings and support conversations. Mail is left out: quoted
 # history is cut before embedding, and what is long in its own words is mostly newsletters (keywords still find those).
 PASSAGE_KINDS = frozenset({'meeting.notes', 'meeting.transcript', 'zoom.summary', 'zoom.transcript', 'google_meet.notes',
-                           'google_meet.transcript', 'teams.notes', 'teams.transcript', 'salesflare.meeting', 'intercom.conversation'})
+                           'google_meet.transcript', 'teams.notes', 'teams.transcript', 'granola.notes', 'granola.transcript', 'salesflare.meeting', 'intercom.conversation'})
 # A passage: whole lines up to PASSAGE_BYTES, ended early at a new paragraph or speaker's turn once it has
 # PASSAGE_SOFT. About 250 to 400 tokens: what a retrieval model matches a short question against best, far inside
 # EmbeddingGemma's 2,048-token input with its title, and a quarter of the CPU time of a full input each.

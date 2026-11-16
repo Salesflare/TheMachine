@@ -88,7 +88,8 @@ def owner_last_word(db, watch, owner_slack_ids=()):
 
 # Where a matter may have been handled on another channel: messages with its people, their meetings and those notes
 ELSEWHERE_KINDS = NEWER_KINDS + ('calendar.event', 'meeting.notes', 'meeting.transcript', 'google_meet.notes', 'google_meet.transcript',
-                                 'zoom.summary', 'zoom.transcript', 'teams.notes', 'teams.transcript')
+                                 'zoom.summary', 'zoom.transcript', 'teams.notes', 'teams.transcript',
+                                 'granola.notes', 'granola.transcript')
 
 
 def activity_since(db, event_ids, owner_slack_ids=(), teammates=(), domains=(), limit=8, people=()):

@@ -60,7 +60,7 @@ If they don't load, it tries again by itself for about half a minute. After that
 
 Each has its own **Add notes** or **Add transcript**, **Upload file** for a Markdown or text file, **Edit** and **Remove** (tap twice). What goes in one stays there. On a meeting you can change, **Notes** under its form opens them.
 
-With [Zoom](zoom.md) or [Google Meet](google-meet.md) connected, its notes show in Notes and its transcript in Transcript, marked **From Zoom** or **From Google Meet**. They never replace what you added: when both are there, both show.
+With [Zoom](zoom.md), [Google Meet](google-meet.md) or [Granola](granola.md) connected, its notes show in Notes and its transcript in Transcript, marked **From Zoom**, **From Google Meet** or **From Granola**. They never replace what you added: when both are there, both show.
 
 Notes can also come in the meeting's own calendar event, added after it started, or by mail from Zoom or Gemini. After the meeting ends, The Machine makes to-dos from them only for clear next steps. The same notes coming two ways make one to-do, with the meeting as its source: "Source: notes from" the meeting.
 

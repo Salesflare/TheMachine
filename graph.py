@@ -481,20 +481,20 @@ def _touches(kind, m, owner, wrote_to):
         out = [('email:' + addr, name, (WEIGHTS['them'] if addr in wrote_to else 0.15) if direct else 0.1, 'them' if direct else 'seen')]
         others = [(n, a) for n, a in to + cc if not owner.mine(a) and a != addr and not bulk(a)]
         return out + ([('email:' + a, n, 0.05, 'seen') for n, a in others] if len(others) <= 8 else [])
-    if kind == 'calendar.event':
+    if kind == 'calendar.event' or kind == 'granola.notes':  # Granola's attendees (its notes are the owner's meetings): met only off the calendar
         if m.get('status') == 'cancelled':
             return []
         attendees = [a for a in m.get('attendees') or () if isinstance(a, dict)]
         organizer = m.get('organizer') if isinstance(m.get('organizer'), dict) else {}
         if len(attendees) > 25:
             return []
-        mine = any(a.get('self') or str(a.get('email', '')).lower() in owner.emails for a in attendees + [organizer])
+        mine = not m.get('calendar_event_id') if kind == 'granola.notes' else any(a.get('self') or str(a.get('email', '')).lower() in owner.emails for a in attendees + [organizer])
         people = {}
         for a in attendees + [organizer]:
             addr = str(a.get('email') or '').lower()
             if ('@' in addr and not a.get('self') and not a.get('resource') and not owner.mine(addr)
                     and a.get('responseStatus') != 'declined' and not bulk(addr)):
-                people.setdefault(addr, a.get('displayName'))
+                people.setdefault(addr, a.get('displayName') or a.get('name'))
         if not people:
             return []
         share = (WEIGHTS['met'] if mine else 0.1) / math.sqrt(len(people))

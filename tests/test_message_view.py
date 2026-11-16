@@ -128,6 +128,8 @@ SAMPLES = {
     'google_meet.transcript': ev('meet', 'm2', 'google_meet.transcript', 'Design review', 'Kit: Shall we start?', **{}),
     'teams.notes': ev('teams', 'tn1', 'teams.notes', 'Planning', 'Action items: send the deck', **{}),
     'teams.transcript': ev('teams', 'tt1', 'teams.transcript', 'Planning', 'Kit: Hello', **{}),
+    'granola.notes': ev('granola', 'gn1', 'granola.notes', 'Quarterly review', '## Action items\n\n- Send the pricing by Friday', **{}),
+    'granola.transcript': ev('granola', 'gt1', 'granola.transcript', 'Quarterly review', "Kit: I'll send the pricing by Friday.", **{}),
     # a transcript the owner pasted on a meeting (meeting_notes.py), with its raw stamps
     'meeting.transcript': ev('cal', 'transcript:1', 'meeting.transcript', 'Weekly sync',
                              '[0:00:00] Kit Navarro: Morning all.\n[0:00:03] Kit Navarro: Shall we start with the export fix?\n'

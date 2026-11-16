@@ -97,6 +97,7 @@ SERVICES = {
     # after Zoom and Google Meet: a tie between video links goes to the first row (meet.video_habit)
     'teams': {**_NO, 'name': 'Microsoft Teams', 'short': 'Teams', 'group': CHAT, 'signin': 'microsoft_teams',
               'video': 'teams', 'video_links': ('teams.microsoft.com/', 'teams.live.com/')},
+    'granola': {**_NO, 'name': 'Granola', 'short': 'Granola', 'unit': 'meetings', 'group': MEETINGS},
     'rss': {**_NO, 'name': 'RSS', 'short': 'Feed', 'unit': 'items'},
     'web_page': {**_NO, 'name': 'Web page', 'short': 'Web page', 'unit': 'updates'},
     'gateway': {**_NO, 'name': 'Machine health', 'label': 'Machine health', 'short': 'Machine health', 'unit': 'alerts',

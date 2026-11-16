@@ -107,6 +107,7 @@ service.
 | `exchange.svg` | Exchange Server (its "E" beside the Exchange shape) |
 | `gateway.svg` | The Machine (its own health) |
 | `gbrain.svg` | GBrain |
+| `granola.svg` | Granola (its spiral, as thin lines) |
 | `outlook.svg` | Outlook (its "O" beside an envelope) |
 | `outlook_calendar.svg` | Outlook Calendar (its "O" beside a calendar) |
 | `source.svg` | Any other source |

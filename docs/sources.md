@@ -32,6 +32,7 @@ Collectors read existing source content. The optional Salesflare `join_pipelines
 | `zoom` (plugin) | A Zoom sign-in through a token broker, or a [Maton](https://maton.ai) Zoom connection (a paid plan with AI Companion for summaries) | `transport` (`broker` or `maton`), `email`, `bootstrap_days` (7); broker: config `zoom_broker`, `zoom_transcripts` (true); Maton: `credential` + `credential_variable` (file with `MATON_ZOOM_KEY=`), optional `connection_id` |
 | `google_meet` (plugin) | None: Connect Google Meet signs in with Meet's own Google app (`meetings.space.readonly`, `documents.readonly`), apart from Gmail (`transport` `broker`) | `email`, `bootstrap_days` (7, at most 30); config `google_meet_broker` |
 | `teams` (plugin) | None: Connect Microsoft Teams (hosted, or a paired self-hosted Machine through the control plane: `microsoft_teams`, `microsoft_grants.teams`) adds Teams scopes to the Microsoft sign-in for that address, or signs in for Teams alone (`transport` `broker`). Work or school accounts only | `email`, `bootstrap_days` (7); config `teams_consent` |
+| `granola` (plugin) | A Granola personal API key (Settings, Connectors, API keys, Personal notes; Business and Enterprise plans), pasted, read-only | `email` (the address used for Granola), `credential`, `bootstrap_days` (7), `boundary` |
 | `salesforce` (plugin) | None: Connect Salesforce on a hosted Machine's setup page signs in with your own Salesforce user, through a token broker (`salesforce_broker`) | `email` |
 | `docs` (plugin) | The owner's own Google (broker) or Microsoft sign-in for that address, plus a separate consent for files | `email`, `transport` (borrowed from the mail account), `provider` (`google` or `microsoft`, else from the mail account), `boundary` |
 | `shortcut` (plugin) | Sign in with Shortcut, or a Shortcut API token | `credential` (`workspace` is filled in from the sign-in or token) |
@@ -40,7 +41,7 @@ Collectors read existing source content. The optional Salesflare `join_pipelines
 | `rss` (plugin) | none | `url` |
 | `web_page` (plugin) | none: a public https page | `url`, `display_name` (the page, set when you add it), `poll_seconds` (21600; never under an hour) |
 
-Add a plugin account with `assistant connect github` (or `stripe`, `intercom`, `x`, `linkedin`, `trello`, `google_meet`, `shortcut`, `notion`, `linear`, `rss`, `web_page`): it asks for the fields that connector needs. The dashboard does the same under Connections, **+ Add** (see [Usage](usage.md#adding-a-source)). You can also add accounts to `config.json` by hand, using the keys above (each connector's header has a full example), and restart the service.
+Add a plugin account with `assistant connect github` (or `stripe`, `intercom`, `x`, `linkedin`, `trello`, `google_meet`, `shortcut`, `notion`, `linear`, `granola`, `rss`, `web_page`): it asks for the fields that connector needs. The dashboard does the same under Connections, **+ Add** (see [Usage](usage.md#adding-a-source)). You can also add accounts to `config.json` by hand, using the keys above (each connector's header has a full example), and restart the service.
 
 ## How each source reads
 
@@ -242,6 +243,10 @@ Generated transcripts (`google_meet.transcript`) and Gemini notes (`google_meet.
 ### Salesforce
 
 What changed in the owner's Salesforce (`connectors/salesforce.py`), the way Salesflare's CRM comes in: new opportunities and each change of their stage or amount (`salesforce.opportunity`, on a Graph project named after the opportunity, with its account and contact roles), open tasks assigned to the owner and when one is done (`salesforce.task`), and calls, tasks and meetings logged with notes (`salesforce.activity`; logged emails are left out, since the owner's mail comes in already). The sign-in is the owner's own (OAuth with PKCE, scopes `api` and `refresh_token`) through The Machine's Salesforce app at a token broker; the refresh token stays on the Machine. Calls go only to the org's own `*.salesforce.com` or `*.force.com` instance, GET only, except **Update contact details** (off by default, shown as a preview first): a contact's job title, phone or LinkedIn field, never anything else.
+
+### Granola
+
+Granola's notes (`granola.notes`: its summary, plus the owner's own notes) and transcripts (`granola.transcript`) of meetings the owner was in (`connectors/granola.py`), GET only, from Granola's public API (`public-api.granola.ai/v1`: `/notes`, `/notes/{id}`, `/notes/{id}/transcript`) with a personal API key. Granola offers OAuth only on its MCP server, whose tool answers are free text with no documented shape, so the connector uses the documented REST API and a pasted key. The key is opaque (no prefix or length is assumed) and has no expiry field; a 401 asks for a new key. Each run lists notes updated since the last one (a two-hour overlap), reads at most 25 per run at Granola's pace (5 requests a second), and keeps a note Granola is still writing for the next run. A note matches its Calendar meeting by the calendar event id Granola gives, else by time and host (`meeting_notes.match`); attendees link to the Graph by address. Notes Granola deletes are removed here too.
 
 ### Microsoft Teams
 

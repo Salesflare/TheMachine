@@ -51,6 +51,12 @@ trademarks of OpenAI.
 `crm.svg`: the Salesflare mark, from the logo on https://salesflare.com (https://salesflare.com/assets/imported/3afca39ea94f7c9797dc.svg),
 without the word mark. Salesflare is a trademark of Salesflare BV.
 
+## Drawn for The Machine
+
+`granola.svg`: Granola's spiral, drawn here as one thin line in one color (AGPL like the rest of The Machine), since
+Granola publishes no mark under open terms. The same file is its one-color mark (`mono/granola.svg`). Granola is a
+trademark of its owner and only names the service.
+
 ## Used by the owner's decision
 
 The owner of The Machine decided to show these services' own app icons, although each owner's published terms ask for a
