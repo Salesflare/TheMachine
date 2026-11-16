@@ -58,6 +58,16 @@ invalid receipt or timeout blocks it as well. The token is never included in rel
 - **Do it grants broad account and machine access for the accepted task.** The plugin's guards are not a sandbox.
   Source messages are untrusted and may contain prompt injection. Read the [README's security model](README.md#security-model)
   before turning on reviews or delivery.
+- Pages a run opens by itself: opening a page sends its address to whoever runs that site, so an address the model
+  put together could carry what it read. A to-do prepared ahead (nobody tapped Do it yet) and a routine open a page
+  with `web_fetch` or the browser only when its address was written in what the run read (a message, a search result,
+  a page, the owner's words), is a plain page address (no query, no user name, short ordinary words), goes to a
+  well-known service where nobody else sees what is asked (search, maps, Wikipedia, weather, LinkedIn, GitHub, the
+  owner's account in Google, Microsoft, Stripe, Zapier or Slack), or to the owner's own company's sites. Anything else
+  is refused with a hint to search instead. `web_search` is never limited. Do it, a Confirm and the owner's chats
+  are not checked: the owner asked for that work. The check covers `web_fetch` and the browser's open and navigate
+  addresses, not shell commands (`curl`), typing or scripts on a page, which a to-do prepared ahead can still use
+  ([openclaw-plugin/outbound-urls.ts](openclaw-plugin/outbound-urls.ts)).
 - Text a model wrote never loads anything by itself. The dashboard shows it escaped, with links only to tap (no
   pictures, frames or previews from it), and the installer turns off Telegram's link previews
   (`channels.telegram.linkPreview`), which Telegram's servers would otherwise fetch as a message arrives. An HTML email

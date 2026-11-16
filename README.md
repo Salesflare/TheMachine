@@ -138,6 +138,7 @@ In plain words: [themachine.computer/security](https://themachine.computer/secur
 - The local API stays on loopback. The dashboard checks the owner's identity: on your own computer that's your Tailscale login, so put a passkey on that account. A hosted Machine signs in with Google or Microsoft plus an authenticator code, or a passkey.
 - The CLI and the agent can't make owner decisions. The dashboard and Telegram share one store of them.
 - Reviews only read. **Do it** allows broad work on the accepted task; the plugin's guards are not an OS sandbox.
+- A to-do prepared ahead and a routine open only pages whose address they read, plain page addresses and well-known services, so a message can't get what they read sent out in an address ([SECURITY.md](SECURITY.md#the-model-and-do-it)).
 - Credentials never go into the model's context.
 - Private evidence goes to the model provider you chose. Local embeddings don't make model calls local.
 - Message contents are encrypted in the database by default, with a key next to it (`message-content.key`). Back the key up with the database: without it the messages are lost ([configuration](docs/configuration.md#message-protection)).
