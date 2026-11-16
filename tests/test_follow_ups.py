@@ -626,9 +626,10 @@ class FollowUps(unittest.TestCase):
             self.assertEqual({r[0] for r in db.execute('SELECT status FROM suggestions WHERE id IN (?,?)', (acme, kim))}, {'instructions'})
         self.assertEqual(self.jobs(), [])
         # The owner's ask, not background work: not held by the follow-up pause, at most DRAFTING at once
-        with patch.object(machine_main.App, 'follow_up_pause', return_value={'window': '5h'}), patch.object(machine_main.App, 'background_pause', return_value=None), \
+        with patch.object(machine_main.App, 'follow_up_pause', return_value={'window': '5h'}) as pause, patch.object(machine_main.App, 'background_pause', return_value=None), \
                 patch.object(follow_ups, 'DRAFTING', 1):
             starts = self.model_turns(app, lambda sid, message, draft: None)[0]
+        pause.assert_not_called()  # the pause is on, but it holds only background drafts: the owner's ask isn't checked against it
         self.assertEqual(len(starts), 1)
         self.assertIn(follow_ups.CHANGE_NOTE, starts[0]['message'])
         self.assertNotIn('background', starts[0])
@@ -644,8 +645,9 @@ class FollowUps(unittest.TestCase):
             if sid == kim and tries.count(kim) == 1:
                 out['to'] = ['someone@else.example']
             return out
-        with patch.object(machine_main.App, 'follow_up_pause', return_value={'window': '5h'}), patch.object(machine_main.App, 'background_pause', return_value=None):
+        with patch.object(machine_main.App, 'follow_up_pause', return_value={'window': '5h'}) as pause, patch.object(machine_main.App, 'background_pause', return_value=None):
             starts, refused = self.model_turns(app, rewrite)
+        pause.assert_not_called()
         self.assertEqual(len(starts), 2)  # both at once
         self.assertEqual([r[0] for r in refused], [kim], refused)
         self.assertIn("keep the draft's to as it was", refused[0][1])
@@ -796,8 +798,9 @@ class FollowUps(unittest.TestCase):
             path = next(Path(line.rsplit('(', 1)[1].rstrip(')')) for line in message.splitlines() if line.startswith('- Listing exchanges:'))
             follow = path.read_text().strip().splitlines()[-1]  # the skill's instructions, read as the agent would
             return {**first, 'body': 'Hi Sam, ' + follow.split(',')[0].lower() + '?\n\nRegards,\n\nOwen'}
-        with patch.object(machine_main.App, 'follow_up_pause', return_value={'window': '5h'}), patch.object(machine_main.App, 'background_pause', return_value=None):
+        with patch.object(machine_main.App, 'follow_up_pause', return_value={'window': '5h'}) as pause, patch.object(machine_main.App, 'background_pause', return_value=None):
             starts, refused = self.model_turns(app, rewrite)
+        pause.assert_not_called()  # the owner's Change: never held by the follow-up pause, so it isn't asked
         self.assertEqual((len(starts), refused), (1, []))
         message = seen[0]
         self.assertNotIn('The owner wrote to you in the chat', message)  # not the short chat turn
@@ -1663,11 +1666,14 @@ class FollowUps(unittest.TestCase):
         self.prepared(acme, kind='whatsapp', account_id='wa', chat_id='3247@s.whatsapp.net', body='Hi Sam, a short follow-up.')
         self.send(acme)
         rows = [{'MsgID': 'w1', 'Timestamp': '2026-10-12T09:00:00Z', 'FromMe': True}]
-        with patch.object(machine_main.App, 'follow_up_chat', return_value=rows + [{'MsgID': 'w2', 'Timestamp': '2026-10-19T08:00:00Z', 'FromMe': False}]):
+        with patch.object(machine_main.App, 'follow_up_chat', return_value=rows + [{'MsgID': 'w2', 'Timestamp': '2026-10-19T08:00:00Z', 'FromMe': False}]) as chat:
             self.assertEqual(self.outbox(transport)('2026-10-19T09:00:00+00:00'), 'held')
+        chat.assert_called_once()
+        self.assertEqual(self.hold_of(acme)['why'], 'changed')  # their new message in the chat holds it, not a failed read
         self.send(acme, 'again')
-        with patch.object(machine_main.App, 'follow_up_chat', side_effect=ValueError('I couldn’t reach WhatsApp on this computer.')):
+        with patch.object(machine_main.App, 'follow_up_chat', side_effect=ValueError('I couldn’t reach WhatsApp on this computer.')) as chat:
             self.assertEqual(self.outbox(transport)('2026-10-19T09:01:00+00:00'), 'held')
+        chat.assert_called_once()
         self.assertEqual(self.hold_of(acme)['why'], 'unchecked')
         self.send(acme, 'third')
         with patch.object(machine_main.App, 'follow_up_chat', return_value=rows):
