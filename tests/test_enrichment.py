@@ -13,7 +13,7 @@ import enrichment
 import machine.actions as machine_actions
 import machine.app.workers as machine_app_workers
 import machine.main as machine_main
-import signal
+import served  # noqa: E402
 import sources
 import machine.web.loopback as machine_web_loopback
 
@@ -803,21 +803,11 @@ class Enrichment(unittest.TestCase):
         app = object.__new__(machine_main.App)
         app.store, app.token, app.stop, app.graph_dirty, app.owner_token = self.store, 'test-token', threading.Event(), threading.Event(), 'owner-key'
         app.config = {'accounts': [], 'tailscale_owner': 'owner@example.com', 'dashboard_host': 'machine.example:8443', 'port': 0, 'http_timeout': 1}
-        servers, real = [], machine_web_loopback.Server
-        def capture(*args, **kwargs):
-            servers.append(real(*args, **kwargs)); return servers[-1]
-        for patcher in (patch.object(machine_web_loopback, 'Server', side_effect=capture), patch.object(signal, 'signal'),
-                        patch.object(machine_main.App, 'preparation_worker'), patch.object(machine_main.App, 'delivery_worker')):
-            patcher.start()
-            self.addCleanup(patcher.stop)
-        thread = threading.Thread(target=app.serve, daemon=True)
-        thread.start()
-        while not servers:
-            pass
-        self.addCleanup(lambda: (app.stop.set(), thread.join(5)))
+        self.app = app
+        port = served.serve(self)  # workers stubbed, every thread joined before the folder goes
         sent = {}
         def get(path, owner=True, etag=None):
-            conn = http.client.HTTPConnection('127.0.0.1', servers[0].server_address[1], timeout=10)
+            conn = http.client.HTTPConnection('127.0.0.1', port, timeout=10)
             conn.request('GET', path, headers={'Host': 'machine.example:8443', **({'Tailscale-User-Login': 'owner@example.com'} if owner else {}),
                                                **({'If-None-Match': etag} if etag else {})})
             r = conn.getresponse()

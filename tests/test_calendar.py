@@ -9,8 +9,8 @@ import sys
 import tempfile
 import threading
 import unittest
-from unittest.mock import patch
-import machine.web.loopback as machine_web_loopback
+
+import served  # noqa: E402
 
 spec = importlib.util.spec_from_file_location('calendar_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec)
@@ -253,19 +253,8 @@ class Calendar(unittest.TestCase):
         app.owner_token = 'owner-key'
         app.config = {'accounts': [ACCOUNT], 'tailscale_owner': 'owner@example.com', 'dashboard_host': 'machine.example:8443',
                       'port': 0, 'http_timeout': 1}
-        servers, real = [], machine_web_loopback.Server
-        def capture(*args, **kwargs):
-            servers.append(real(*args, **kwargs)); return servers[-1]
-        for patcher in (patch.object(machine_web_loopback, 'Server', side_effect=capture), patch.object(a.signal, 'signal'),
-                        patch.object(a.App, 'preparation_worker'), patch.object(a.App, 'delivery_worker')):
-            patcher.start()
-            self.addCleanup(patcher.stop)
-        thread = threading.Thread(target=app.serve, daemon=True)
-        thread.start()
-        while not servers:
-            pass
-        self.addCleanup(lambda: (app.stop.set(), thread.join(5)))
-        port = servers[0].server_address[1]
+        self.app = app
+        port = served.serve(self)  # workers stubbed, every thread joined before the folder goes
         owner = {'Host': 'machine.example:8443', 'Tailscale-User-Login': 'owner@example.com'}
         def get(path):
             conn = http.client.HTTPConnection('127.0.0.1', port, timeout=10)

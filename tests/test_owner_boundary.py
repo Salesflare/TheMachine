@@ -12,7 +12,7 @@ import unittest
 from unittest.mock import patch
 import dashboard_parts
 from seams import patch_everywhere  # noqa: E402
-import machine.web.loopback as machine_web_loopback
+import served  # noqa: E402
 
 spec = importlib.util.spec_from_file_location('owner_boundary_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec)
@@ -85,52 +85,8 @@ class OwnerBoundary(unittest.TestCase):
         self.assertEqual(get(url,owner),(200,expected))
 
 
-    # What serve() starts beside the HTTP server: workers and the start's one-off steps. These tests check the page and
-    # the API, so all of it stays off. Left on, they wrote events.sqlite's journal in the temporary folder after the
-    # test had ended (the failed-saves requeue alone reads this computer's real agent database for seconds, and the
-    # routines worker sleeps 30 s before it looks at stop), and removing the folder failed with "Directory not empty".
-    BACKGROUND = ('delivery_worker', 'preparation_worker', 'whatsapp_photo_worker', 'voice_warm_worker', 'action_worker',
-                  'review_worker', 'graph_worker', 'model_usage_worker', 'retention_worker', 'plain_keys_worker',
-                  'history_worker', 'embedding_worker', 'enrichment_worker', 'linkedin_connections_worker',
-                  'recurring_worker', 'routines_worker', 'protection_waiter', 'routine_templates_start',
-                  'meeting_write_resume', 'gbrain_start')
-
     def serve(self):
-        servers = []
-        real = machine_web_loopback.Server
-        def capture(*args, **kwargs):
-            servers.append(real(*args, **kwargs)); return servers[-1]
-        # Keep the patches for the whole test: serve() installs signal handlers after
-        # creating the server, so ending them early races the server thread.
-        # serve() hangs the error log (machine/faults.py) on the shared logger, writing into this test's database: it
-        # comes off again, or an error logged later (another test's thread) writes into the folder while it is removed.
-        import machine.app.serve as serve_module
-        real_watch = serve_module.watch_faults
-        def watch(store, *args):
-            hook = threading.excepthook
-            log = real_watch(store, *args)
-            def unwatch():
-                a.LOG.removeHandler(log)
-                threading.excepthook = hook
-            self.addCleanup(unwatch)
-            return log
-        for patcher in (patch.object(serve_module, 'watch_faults', side_effect=watch),
-                        patch.object(machine_web_loopback, 'Server', side_effect=capture),
-                        patch.object(a.signal, 'signal'), patch('machine.store.review_requeue.requeue', return_value=0),
-                        *(patch.object(a.App, name) for name in self.BACKGROUND)):
-            patcher.start()
-            self.addCleanup(patcher.stop)
-        thread = threading.Thread(target=self.app.serve, daemon=True)
-        thread.start()
-        while not servers:
-            pass
-
-        def stop():  # the server ends within its 1 s timeout; the temporary folder goes only after that
-            self.app.stop.set()
-            thread.join(10)
-            self.assertFalse(thread.is_alive(), 'serve() still running after the test')
-        self.addCleanup(stop)
-        return servers[0].server_address[1]
+        return served.serve(self)  # workers stubbed, every thread joined before the folder goes
 
     def post(self, port, body, headers):
         conn = http.client.HTTPConnection('127.0.0.1', port, timeout=10)
