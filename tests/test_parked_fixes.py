@@ -30,7 +30,7 @@ class ParkedFixes(unittest.TestCase):
     def setUp(self):
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
-        self.app = Path(tmp.name) / 'app'
+        self.app = Path(tmp.name).resolve() / 'app'  # resolved, as the Machine names it (macOS: /var is /private/var)
         self.app.mkdir()
         git(self.app, 'init', '-q', '-b', 'main')
         self.start = self.commit('app.py', 'one', 'Start')

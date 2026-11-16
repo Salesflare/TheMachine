@@ -9,7 +9,10 @@ import {OPENCLAW} from '../openclaw-root.mjs';
 const coreDist=join(OPENCLAW,'dist');
 const callbackChunk=(await readdir(coreDist)).find(name=>/^native-command-callback-data-.*\.mjs$/.test(name));
 assert.ok(callbackChunk,'installed Telegram callback codec is available');
-const {a:decodeCallback}=await import(join(coreDist,callbackChunk));
+// The chunk's exports are renamed letters that change between OpenClaw releases: find the decoder by its own name.
+const decoderAlias=(await readFile(join(coreDist,callbackChunk),'utf8')).match(/\bparseTelegramOpaqueCallbackData as (\w+)\b/)?.[1];
+assert.ok(decoderAlias,'installed Telegram callback decoder is exported');
+const decodeCallback=(await import(join(coreDist,callbackChunk)))[decoderAlias];
 let source=await readFile(new URL('../openclaw-plugin/index.ts',import.meta.url),'utf8');
 source=source.replace("import { buildCallback } from './telegram-callback.ts';",`import { buildCallback } from ${JSON.stringify(new URL('../openclaw-plugin/telegram-callback.ts',import.meta.url).pathname)};`);
 source=source.replace("import { t, useLanguage } from './i18n.ts';",`import { t, useLanguage } from ${JSON.stringify(new URL('../openclaw-plugin/i18n.ts',import.meta.url).pathname)};`);
