@@ -201,4 +201,16 @@ const tabDue=new Map();
 function tabDraw(id,key,draw){const due=tabDue.get(id)||tabDue.set(id,new Map()).get(id);if(document.getElementById(id)?.hidden){due.set(key,draw);return}due.delete(key);draw()}
 function tabsDue(){for(const[id,due]of tabDue){if(!due.size||document.getElementById(id)?.hidden)continue;const draws=[...due.values()];due.clear();for(const draw of draws)try{draw()}catch(e){errCaught(e);console.error(e)}}}
 {const o=new MutationObserver(tabsDue);for(const s of document.querySelectorAll('main>section'))o.observe(s,{attributes:true,attributeFilter:['hidden']})}
+// What the whole page's layout follows (a chat open on To-dos, the calendar, the browser pane, Talk, a Graph trail...) is a
+// class on <html> and <body>, m-…, each on exactly while its selector here finds something. The CSS asks the class, not
+// body:has(…): one of those made every change anywhere in the page check the whole page's style again (about a second
+// of a phone's main thread when the Graph opens). pageMarks() runs where these states change and, for the rest, from the
+// watcher before the next paint (tests/test_page_marks_dashboard.mjs).
+const PAGE_MARKS=[['m-chat','body.chat-open #inbox:not([hidden])'],['m-limit','#limit-banner:not([hidden])'],['m-browser','#browser-pane:not([hidden])'],
+ ['m-cal','#calendar:not([hidden])'],['m-week','#calendar.week:not([hidden])'],['m-talk','#talk-view:not([hidden])'],['m-dock','body #talk-dock'],
+ ['m-signin-full','#signin-dialog.signin-full[open]'],['m-modal','dialog[open]:modal:not(#palette):not(#new-card)']];  // + the Graph's and Connections' own, from their parts
+function pageMarks(){const b=document.body;for(const[c,q]of PAGE_MARKS){let on=false;try{on=!!document.querySelector(q)}catch{}if(b.classList.contains(c)!==on)for(const e of[document.documentElement,b])e.classList.toggle(c,on)}}
+const PAGE_MARK_ATTRS=['hidden','class','open'],pageMarksSeen=new MutationObserver(pageMarks);
+// (a part that adds marks adds the attributes they read, and calls this again)
+function pageMarksWatch(){pageMarksSeen.observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:PAGE_MARK_ATTRS});pageMarks()}pageMarksWatch();
 function lazyRun(group,fn){if(lazyIn(group))return fn();const w=lazyWait[group]??=new Set;if(w.has(fn))return;w.add(fn);lazyPart(group).then(fn,e=>toast(e.message,true)).finally(()=>w.delete(fn))}

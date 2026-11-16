@@ -60,11 +60,11 @@
 /* The Machine's browser in the main area on a computer: a slim header over the viewer, the sidebar beside it (from
    1024px) or the top bar above it (a narrower window). The script never shows it on a phone. Full size: the whole window. */
 .browser-pane{display:none}
-html:has(#browser-pane:not([hidden])){scrollbar-gutter:auto;overflow:hidden}
-body:has(#browser-pane:not([hidden])) main{max-width:none;height:100dvh;padding:0;display:flex;flex-direction:column}
-body:has(#browser-pane:not([hidden])) :is(#page-head,#needs-you,#notice,#limit-banner,#fixed-notice),body:has(#browser-pane:not([hidden])) .site-footer{display:none}  /* banners wait for the other views */
+html.m-browser{scrollbar-gutter:auto;overflow:hidden}
+body.m-browser main{max-width:none;height:100dvh;padding:0;display:flex;flex-direction:column}
+body.m-browser :is(#page-head,#needs-you,#notice,#limit-banner,#fixed-notice),body.m-browser .site-footer{display:none}  /* banners wait for the other views */
 .browser-pane:not([hidden]){display:flex;flex-direction:column;flex:1 1 0;min-height:0}
-@media(max-width:1023px){body:has(#browser-pane:not([hidden])) main{height:calc(100dvh - 52px - env(safe-area-inset-top))}}
+@media(max-width:1023px){body.m-browser main{height:calc(100dvh - 52px - env(safe-area-inset-top))}}
 :root[data-bp-full] .browser-pane:not([hidden]){position:fixed;inset:0;z-index:80;background:var(--bg)}
 @media all{
   /* The same header as a card's chat on a computer: height, title, hairline, the round button on the right */
@@ -193,7 +193,7 @@ body:has(#browser-pane:not([hidden])) :is(#page-head,#needs-you,#notice,#limit-b
 #banners #needs-you li{justify-content:flex-start;gap:var(--sp-3);padding:0}#banners #needs-you li>span{flex:1 1 auto;min-width:0}
 #banners #needs-you li::before{content:"";flex:none;width:6px;height:6px;border-radius:50%;background:var(--amber)}
 #banners>:not([hidden])~:is(#fixed-notice,#needs-you):not([hidden]),#banners #fixed-notice .notice-card+.notice-card{border-top:1px solid var(--border)}
-body:has(#browser-pane:not([hidden])) .banner-stack{display:none}
+body.m-browser .banner-stack{display:none}
 .limit-banner{flex-wrap:nowrap;align-items:flex-start}.limit-banner::before{content:"";flex:none;width:6px;height:6px;margin-top:.55em;border-radius:50%;background:var(--amber)}
 .nudge-text{flex:1 1 240px;min-width:0}.nudge-text>span{display:block}
 .nudge-text strong{display:block;margin-bottom:1px;color:var(--cream);font-size:var(--fs-md);font-weight:var(--fw-strong)}

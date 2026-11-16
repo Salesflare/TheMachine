@@ -62,7 +62,7 @@ a.note-link{color:var(--text);text-decoration:underline;text-decoration-thicknes
 /* A note's breadcrumb: Graph › Notes › Kids, each a link, and the note's title as the heading right under it; it takes
    the page head's place at every width, so the path shows once. A long
    name shortens with … (its title shows it whole); the heading wraps, so the title always shows in full. */
-body:has(#people:not([hidden]) .note-crumbs) #page-head{display:none}  /* the trail is the path: no Graph / Notes head over it */
+body.m-note-trail #page-head{display:none}  /* the trail is the path: no Graph / Notes head over it */
 #people-view .note-crumbs .crumb-here{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 #people-view .note-crumbs a{max-width:32ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #people-view .note-crumbs .crumb-mid{display:contents}

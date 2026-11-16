@@ -104,3 +104,6 @@ async function people(node=graphNode,quiet=false){graphLoadedAt=Date.now();graph
   ||html`<div class="empty all-clear"><img class="sticker" src="brand/thinking.webp" alt=""><div><strong>Nothing mapped yet.</strong>People appear as messages and meetings come in.</div></div>`);
  if(version===graphRequest&&!team&&graphBoards.length&&!graphBoards.some(b=>'follow_ups'in b))fuLoad(version);
  if(version===graphRequest){graphAt=Date.now();pagerMount(view);if(back!=null&&version===graphRequest){graphScroll=null;if(!$('#people').hidden)scrollTo(0,back)}}if(!quiet)notice('')}catch(e){errCaught(e);if(version===graphRequest&&(!quiet||!oldHtml))notice(e.message,true)}}
+// The Graph's own page marks (pageMarks, shell-core.js): a project board, a note's trail, a trail with a way back
+PAGE_MARKS.push(['m-board','#people:not([hidden]) .sub-pane:not([hidden]) .proj-board:not([hidden])'],['m-note-trail','#people:not([hidden]) .note-crumbs'],
+ ['m-trail','#people:not([hidden]) .graph-crumbs>a[data-crumb]:not([data-crumb=""])']);PAGE_MARK_ATTRS.push('data-crumb');pageMarksWatch();
