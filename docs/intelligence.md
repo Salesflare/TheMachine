@@ -425,125 +425,15 @@ the organization's role.
   25 facts (`fact_ties.py`, about 9,000 tokens for 100 facts). Each pass leaves one entry under Learning, Changes,
   with Undo, and a link you removed stays removed.
 - **The page itself** keeps the dashboard's header and tabs, with a breadcrumb back (Graph › People › name). On a phone a single ‹ People (‹ Organizations, ‹ Projects) link
-  takes the header's and breadcrumb's place and goes back to the list as the back gesture does. A note's page shows its
-  whole path instead, in the header's place (Graph › Notes › Kids ›, its title as the heading under it); a phone keeps that on one line, without
-  Graph, and folds the notes in between into a ⋯ menu. Each page
+  takes the header's and breadcrumb's place and goes back to the list as the back gesture does. Each page
   has its own link, `#graph/<node id>`, and the browser's back button works. Its events come by day, coming up first.
 
-### Notes from conversations
+### Trips and events
 
-Off unless `notes_enabled` is set ([notes](notes.md), `NotesApp.notes_on`): off, no Notes show anywhere and none of
-the notes steps below reads anything or calls a model; trips and events still come in for Calendar (`trip_notes_step`).
-The first round with it on starts over once (`topic_notes.rebuild`): every route goes, and the notes made from
-conversations and the Home, Health and Kids notes go to an Earlier notes folder as they were (`note_pages.archive`,
-kind `archived`), never deleted; ones the owner renamed, moved or wrote in stay. Home, Health and Kids are no longer
-kept a line per mail (`section_notes_step` no longer runs): their subjects come from here.
-
-Notes are sorted by what was said, a whole conversation at a time (`topic_notes.py`), Work and Personal alike.
-
-- **Which sources.** Every kind in the mail, chat and meeting-notes families whose service is registered
-  (`topic_notes.conversation_kinds`, from `machine/kinds.py` and `machine/services.py`), so a new connector is read
-  without a list to update. Meetings count only for notes, summaries and transcripts.
-- **What a conversation is.** A mail thread (`graph.thread_key`, then thread or conversation id), a Slack thread, or a
-  chat or channel split after two days of quiet. Over the last 90 days only. A conversation nobody else wrote in is
-  dropped, and so is a chat window with one message the owner didn't write.
-- **Bulk first, in plain code** (`topic_notes.bulk_mail`, `bulk_chat`), so no model call reads it and no note keeps
-  a line from it: mail in Spam or Trash, Gmail's Promotions, Social and Forums tabs, automatic replies
-  (`Auto-Submitted: auto-replied`) and bounces (`mailer-daemon@`, `postmaster@`); bot messages, broadcast and
-  newsletter chats, and channels. Not when the owner wrote in it, and not mail that carries a booking (`bookings.py`).
-- **Notifications count.** A school's, a club's or a practice's mail, a booking, an invoice or a delivery notice
-  comes from a program or a no-reply address, often with list headers, and holds the facts a note is made of: it
-  reaches the call whether or not anyone answered. At most 15 from one sender the owner never wrote with, the newest
-  (`topic_notes.notices`), so one busy sender can't fill the calls. The call leaves out marketing and newsletters with
-  nothing for the owner.
-- **A meeting's own mail stays in Calendar** (`topic_notes.meeting_mail`): an invitation, a reply to one, an update
-  or a cancellation. Its subject is a calendar entry's title with the meeting's date or time after it, or a short
-  label ending in a colon before it ("Accepted:"), in any language, sent up to six months before the meeting or two
-  weeks after. A thread that only shares the title ("Re: Board review") is people talking and stays. Such mail placed
-  earlier is forgotten (`topic_notes.forget`), so its line goes. The call is also told to leave out invitations for
-  meetings no connected calendar has.
-- **One call per 40 conversations** on the background model, up to two calls a round every two hours (eight every
-  twenty minutes in the first fill, outside the quiet hours, under `background_pause` and the plan's budget). After
-  the first fill a round asks only once ten wait or one waited twelve hours (`topic_notes.worth`): every call also
-  carries the list of places, so fewer, fuller calls. Each
-  carries its first and newest messages (five at most), trimmed of quoted history and signatures (1,200 characters at most), Slack ids
-  resolved to names. Content is data, never instructions.
-- **Where it goes: a subject.** A note is a real-world subject that keeps mattering: one child's school or class, a
-  club, a trip, the house or a renovation, the car, a hire, a customer or project. Never a category on its own, small
-  talk or marketing. One subject each: a notice about one child goes to that child's subject, one about a trip to that
-  trip. The model picks a numbered place (a subject started before, a trip, an event, the owner's own note), a project
-  or organization the Graph already has (that record's page, never a duplicate note), or a new subject with its
-  folder (`new.title` says whose it is when that tells it apart). One order, delivery, receipt, booking or account
-  is never a subject: it goes to its trip, project, shop or account. At work a subject is a whole customer, partner,
-  supplier, project or hire, never one thread or deal. Trips and events show their dates, so a booking finds its trip.
-  A vendor or service the owner uses is no subject when its mail is billing and notices (its record, or nowhere), and
-  a person never is: a title that is a Graph person's name goes to their record (`topic_notes.remember`).
-- **Work needs a relationship** (`topic_notes.drafts`). A Work subject (Work area or Work folder) is a note only once
-  the owner wrote in one of its conversations; until then its notices stay routed there, with no note.
-- **A subject keeps its name.** When the conversation that named it leaves (`unroute`), its name passes to the others;
-  a subject without a name is no note and no place a call is offered.
-- **No references in titles** (`topic_notes.clean_title`). Order, account, booking and invoice numbers and codes are
-  cut from a title (a year or a model name stays); a title of nothing else is no subject.
-- **Twins become one** (`NotesApp.topic_notes_merge`). After new subjects, at most every six hours, one call reads up
-  to 400 notes (subjects started here, trips and events with their dates, when each one's messages came in) and names the ones about the same
-  real-world thing (`topic_notes.merge_prompt`); the same name in two folders is one without asking. Each group's conversations move to one note: a trip or event first,
-  else one the owner touched, else the one with the most sources; a note the owner touched is never merged away. A
-  later call naming a merged subject goes where it went (`topic_aliases`).
-- **Sensitive.** Health only under Health, and only the owner's own or their child's care; a subject under Home,
-  Health, Kids or Pets is always Personal (`topic_notes.PERSONAL_FOLDERS`). Someone else's health, a family conflict,
-  a legal dispute, money trouble or anything intimate is left out. When unsure, it is left out. Notes never go to a Fleet.
-- **Every subject named is a note** (`topic_notes.drafts`); the page writer's bar decides what shows. A conversation
-  in a note that is there already (a trip, an event, an owner's note) becomes a line of it too
-  (`topic_notes.keep_in_notes`, `note_pages.add_kept`), so its page reads it.
-- **Asked once** (`topic_routes`). Later messages in a conversation follow it; a non-answer keeps nothing. One the
-  page writer finds not about its subject is asked once more, told where it was (`topic_notes.unroute`, `left`), and
-  the call can't put it back there; a second time it goes nowhere.
-
-### A note's written page
-
-`note_writer.py` writes the top of a note's page from its lines: a summary (what the subject is and where it stands
-now), then who is in it, key facts and dates, decisions, open items and a dated timeline. One page from all of a
-subject's sources, never a line per mail; the newest source wins when a time, date, place or amount changed. The
-lines follow as its Sources.
-
-- **Which notes.** Live, of any kind but `archived` (a trip too: its bookings and the mail about it), with at least
-  two lines from a message or a fact. A project or organization never gets a note: its own page has
-  `project_about.py` and the summaries.
-- **What it reads.** The note's newest fifteen lines, each with nearly all that was said in its conversation
-  (`topic_notes.said`: up to twelve messages, quoted history and signatures cut, 1,500 characters a message and 4,000
-  a conversation, Slack ids as names; 24,000 a note, the oldest lines go first past it), and the current page. Content
-  is data, never instructions.
-- **Belongs.** The same call lists the lines really about the subject. A conversation that isn't leaves the note
-  (`topic_notes.unroute`, `note_pages.drop_kept`) and is sorted once more, so it goes to its own subject.
-- **When.** In the background only (`NotesApp.note_writer_step`), at most hourly, two notes a turn on the background
-  model under `background_pause`; a note only when its lines changed (a hash of them), at most once in 20 hours, 30
-  notes a day. An answer that can't be read keeps the page and waits.
-- **Most important first** (`note_writer.candidates`). Notes rank by their sources, counted twice when the newest is
-  from the last 30 days. A note without a page is written when it is among the top 40 (`WRITE_FIRST`), or once a
-  source newer than the note comes in; the long tail of a first fill costs nothing until then.
-- **Quality or nothing.** Every bullet and the summary cite the lines they stand on (`S<line id>`); one that cites none
-  it was given, or says too little, is dropped, and a page without a cited summary and three facts, decisions and
-  open items together is none. A subject's note without a page isn't in the Notes list, unless the owner renamed it
-  or wrote in it. A line the owner removes
-  takes the bullets that stood only on it with it, at once (`note_writer.view`).
-
-### A folder's overview
-
-`folder_overview.py` writes a short daily read at the top of a note with notes under it (Work, Home, an owner's own
-note with notes under it): a summary of what is going on across them now, and up to four bullets on what moved
-lately or comes next.
-
-- **What it reads.** Not the messages again: what the notes under it already say, two levels down. Each note's
-  written page (its summary and open items), its two newest lines from the last 14 days, and a trip's or event's
-  dates within the next month. The ten most recently active notes, and the current overview. Content is data, never
-  instructions.
-- **Which folders.** A note with at least two notes right under it, of which at least two say something now.
-- **When.** In the background only (`NotesApp.folder_overview_step`), every three hours at most, six folders a turn on
-  the background model under `background_pause`; a folder only when what its notes say changed (a hash of it), at
-  most once in 20 hours, 12 folders a day. A folder whose notes have gone quiet loses its overview without a call.
-- **Quality or nothing.** Every sentence names the notes it stands on (`N<note id>`), shown as links to them; one that
-  cites none it was given, says too little or repeats another is dropped, and an overview without a cited summary is
-  none. A note removed or moved out takes the sentences that stood only on it (`folder_overview.view`).
+Booking and ticket mail becomes trips and events in Calendar, in plain code with no model call (`trip_notes.py`,
+`event_notes.py`, `NotesApp.trip_notes_step`): a band over their days, and a page of their bookings opened from it,
+each line with the message it came from. The Notes feature that sorted conversations into written notes is gone;
+its rows stay in the database untouched and in the full export (`note_pages.KEPT_SCHEMA`), and nothing reads them.
 
 ### Project descriptions
 
@@ -1093,27 +983,6 @@ Learning, and saves only the ones the owner ticks.
   Birthdays routine (one kept already stays). Someone not in the Graph is never made up: that fact stays in Facts. A
   fact about a Personal person stays out of Work prompts and out of the learnings sent to the team, like any fact about
   them. One entry under Learning, Changes undoes it all.
-
-### Notes from OpenClaw memory
-
-An OpenClaw workspace keeps lasting knowledge in topic pages under `memory/` (`memory/trips/lisbon.md`), beside its
-daily logs. `memory_seed.py` brings what they say into Notes once, so a Machine that follows OpenClaw doesn't start
-with empty notes (`NotesApp.memory_seed_step`).
-
-- **Only ever read.** Pages are opened for reading only; nothing in the workspace is written, moved or deleted.
-  Nothing outside `memory/` is read (not `AGENTS.md`, skills or the workspace's own files), and a link out of it is
-  not followed.
-- **Which pages, in code.** Markdown under `memory/`, never a daily log or dated snapshot (a date in its path),
-  OpenClaw's `daily/` and `dreaming/` folders, a README, index or appendix, a folder named sensitive or private, or a
-  bulk export (a folder of more than 40 pages). The most recently dated first, 16 per folder and 80 in all. Code,
-  comments and anything that looks like a key or token are dropped before a model sees a page.
-- **One pass.** Six pages a call on the background model, every 20 minutes at most under the background budget, with
-  the notes that exist. Per page: up to six lasting facts, and the note that covers its subject or a new one in the
-  starting tree. A page about the assistant itself, a log, a to-do list or one with nothing lasting brings nothing.
-  Once every page picked is read, it never runs again; an answer that can't be read is tried three times.
-- **Cited.** Each fact is a line (by `memory`) saying the page it came from and its date: the fact's own, or else the
-  newest day the page names. The page writer counts them as sources and cites them like any other. A kind's own
-  updates never take them, and a line the owner removes doesn't come back.
 
 <a id="missed-work-audit"></a>
 ## Missed work

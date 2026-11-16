@@ -1,37 +1,24 @@
-"""Notes in the Graph, the App's part: a domain mixin of App (only machine/main.py composes it; docs/code-map.md).
+"""Trips and events, the App's part: a domain mixin of App (only machine/main.py composes it; docs/code-map.md).
 
-The Notes list and a note's page (read through /api/graph, like the Graph's other records) and the owner's edits
-(NOTE_ACTIONS, from their dashboard only). The notes themselves, their kinds, the tree, links and how The Machine keeps
-its own notes current: note_pages.py. A line that came from a fact is that fact: editing it edits the fact under What
-I've learned first (Store.edit_fact), so there is one truth."""
+Trips (trip_notes.py) and events (event_notes.py) come in from booking and ticket mail in plain code and show in
+Calendar as bands (calendar_notes); a band opens its page (note_page, read through /api/graph), each line with the
+message it came from. They are kept in note_pages.py's tables. The Notes feature that used those tables too is gone:
+its notes stay in the database untouched (note_pages, note_page_lines, note_page_links and the tables listed under
+"Notes in the Graph" in machine/export/coverage.py), and no code reads or writes them."""
 import json
 import logging
-import threading
 from datetime import date, timedelta
 from email.utils import parseaddr
 from time import monotonic
 
 import event_notes
-import folder_overview
-import health_notes
-import help_chat
-import home_notes
-import kids_notes
-import locale_prefs
-import memory_seed
 import note_pages
-import note_writer
-import section_notes
 import todo_areas
-import topic_notes
 import trip_notes
-from models import background_model
-from timeutil import clock, local_tz, now, quiet_hours, today
+from timeutil import now
 
 LOG = logging.getLogger('personal-assistant')
-SECTION_KINDS = (home_notes.KIND, health_notes.KIND, kids_notes.KIND)  # the kinds kept in sections (section_notes.py)
 EVENTS_EVERY = 3600  # seconds: the events brought up to date without new ticket mail (a to-do made later)
-SPACED_WAIT_SECONDS = 3600  # a due section round waits at most this long for the space between background turns
 
 
 def _sender(metadata, mine):
@@ -48,37 +35,14 @@ def _sender(metadata, mine):
 
 
 class NotesApp:
-    # action name -> the method that handles it, called as method(name, args, owner_dashboard) (App.action)
-    ACTIONS = dict.fromkeys((
-        'note_delete',
-        'note_edit',
-        'note_line_add',
-        'note_line_edit',
-        'note_line_remove',
-        'note_line_reset',
-        'note_line_restore',
-        'note_merge',
-        'note_new',
-        'note_restore',
-        'note_unmerge',
-    ), 'note_action')
-
-    def note_areas(self):
-        return [a['id'] for a in todo_areas.areas(self.config.get('accounts') or [])]
-
-    def notes_on(self):
-        """Notes, the feature (config notes_enabled, off unless set to true): the Notes list, a note's page, search,
-        the owner's edits and every notes model call (topic_notes, note_writer, folder_overview, memory_seed). Off, the
-        notes kept stay in the database untouched, and trips and events still come in as Calendar's bands
-        (trip_notes_step, calendar_notes)."""
-        return self.config.get('notes_enabled') is True
+    ACTIONS = {}
 
     def trip_notes_step(self):
         """Every ten minutes, plain code: new booking mail kept (trip_notes.collect), then the trips and events
         (event_notes.py) brought up to date when there was any. The events also once an hour without new mail, so a
         to-do made from a ticket mail later on opens from its line. Bookings the history worker found in mail held from
         before (HistoryApp.history_bookings) count as new mail, and so does the first round after a start. Returns the
-        notes it changed."""
+        trips and events it changed."""
         try:
             accounts, clock = self.config.get('accounts') or [], monotonic()
             added = self.__dict__.pop('trip_bookings_added', False) or not getattr(self, 'trip_notes_built', False)
@@ -101,362 +65,9 @@ class NotesApp:
                 self.trip_bookings_added = True
             return []
 
-    def section_notes_step(self):
-        """About every six hours (section_notes.EVERY) for each kind in sections (Home, Health, Kids): its notes from
-        plain code, with one small model call per kind over the candidates no call placed yet, in a thread of its own
-        once the budget allows and there is space after the last background turn, or it waited SPACED_WAIT_SECONDS for
-        that. Nothing new to place: no model, the notes still brought up to date. Conversations come in through
-        topic_notes_step. True when a round started. Not with Notes off (notes_on), nor on: Home, Health and Kids are
-        subjects now (topic_notes.py), not a line per mail, so the background worker no longer runs it."""
-        if not self.notes_on():
-            return False
-        running = getattr(self, 'section_notes_thread', None)
-        if running and running.is_alive():
-            return False
-        at, accounts = now(), self.config.get('accounts') or []
-        with self.store.connect() as db:
-            section_notes.ensure(db)
-            kinds = [k for k in SECTION_KINDS if section_notes.due(db, k, at)]
-            ask = kinds and any(section_notes.unasked(db, k, k.candidates(db, accounts, today())) for k in kinds)
-        if not kinds:
-            return False
-        if ask and not self.notes_turn_free('section-notes'):
-            return False
-        self.section_notes_thread = threading.Thread(target=lambda: [self.section_notes_run(k) for k in kinds], daemon=True, name='section-notes')
-        self.section_notes_thread.start()
-        return True
-
-    def notes_turn_free(self, job):
-        """Whether a notes round that calls the model may start now: within the budget, and after the space since the
-        last background turn, or once it waited SPACED_WAIT_SECONDS for that. Marks the turn started when it may."""
-        if self.background_pause(job=job):
-            return False
-        # This step comes round once every ten minutes, and the space after the last background turn is ten minutes
-        # too: work that runs more often (reviews, drafts ahead) took that space every time, and a round never came.
-        # After SPACED_WAIT_SECONDS of waiting it goes anyway (still within the budget, background_pause above).
-        waiting = self.__dict__.setdefault(job + '-waiting', monotonic())
-        if not self.background_spaced() and monotonic() - waiting < SPACED_WAIT_SECONDS:
-            return False
-        self.__dict__.pop(job + '-waiting', None)
-        self.background_started()
-        return True
-
-    def section_notes_ask(self, prompt):
-        ask = getattr(self, 'section_notes_model', None)  # tests and the sandbox: (prompt) -> reply
-        try:
-            if ask:
-                return ask(prompt)
-            model = background_model(self.config)
-            return help_chat.openclaw_model_run(self.config, prompt, '/'.join(model) if model else None, timeout=section_notes.TIMEOUT)
-        except help_chat.Unavailable:
-            return None
-
-    def section_notes_run(self, kind):
-        """One round of one kind: what is new placed by the model (kept, so it is asked once), then its notes synced
-        (section_notes_sync). Returns the notes it changed."""
-        accounts, at = self.config.get('accounts') or [], now()
-        try:
-            with self.store.connect() as db:
-                section_notes.ensure(db)
-                items = section_notes.unasked(db, kind, kind.candidates(db, accounts, today()))
-                under = section_notes.notes_under(db, kind)
-            placed = section_notes.reply(kind, self.section_notes_ask(section_notes.prompt(kind, items, under)), items, under) if items else {}
-            with self.store.connect() as db:
-                db.execute('BEGIN IMMEDIATE')
-                section_notes.remember(db, kind, placed or {}, at)
-                section_notes.ran(db, kind, at)
-        except Exception as error:  # noqa: BLE001 - the next round tries again
-            LOG.warning('section notes kind=%s error=%s', kind.kind, type(error).__name__)
-            return []
-        touched = self.section_notes_sync(kind)
-        LOG.info('section notes kind=%s asked=%s placed=%s notes=%s', kind.kind, len(items), len(placed or {}), len(touched))
-        return touched
-
-    def section_notes_sync(self, kind):
-        """One kind's notes brought up to date in plain code: its candidates and the conversations placed in its parts
-        (topic_notes.part_candidates). Returns the notes it changed."""
-        accounts, at = self.config.get('accounts') or [], now()
-        try:
-            with self.store.connect() as db:
-                db.execute('BEGIN IMMEDIATE')
-                section_notes.ensure(db)
-                topic_notes.ensure(db)
-                found, keep = section_notes.drafts(db, kind, [*kind.candidates(db, accounts, today()), *topic_notes.part_candidates(db, kind)])
-                touched = note_pages.sync(db, kind.kind, found, at, keep)
-                gone = note_pages.drop_empty_folder(db, [kind.folder])  # the kind has nothing left to show: no empty Health
-                if gone:
-                    touched.append(gone)
-            return touched
-        except Exception as error:  # noqa: BLE001 - the next round tries again
-            LOG.warning('section notes sync kind=%s error=%s', kind.kind, type(error).__name__)
-            return []
-
-    def owner_slack_ids(self):
-        accounts = self.config.get('accounts') or []
-        return {a['user_id'] for a in accounts if a.get('service') == 'slack' and a.get('user_id')} | set(getattr(self.store, 'owner_user_ids', None) or ())
-
-    def topic_notes_step(self):
-        """Every topic_notes.EVERY (every FIRST_EVERY in the first fill, outside the quiet hours, topic_notes.filling):
-        the owner's conversations no call placed yet sorted into notes, in a thread of its own once the budget allows
-        (notes_turn_free). Nothing new to place, or too little to be worth a call yet (topic_notes.worth): no model,
-        the notes still brought up to date. True when a round started. Only with Notes on (notes_on); the first time,
-        the notes from conversations start over the subject way (topic_notes.rebuild)."""
-        if not self.notes_on():
-            return False
-        running = getattr(self, 'topic_notes_thread', None)
-        if running and running.is_alive():
-            return False
-        at = now()
-        with self.store.connect() as db:
-            db.execute('BEGIN IMMEDIATE')
-            if topic_notes.rebuild(db, at):
-                LOG.info('topic notes rebuilt')
-        with self.store.connect() as db:
-            if not topic_notes.due(db, at, topic_notes.FIRST_EVERY if not topic_notes.filled(db) else topic_notes.EVERY):
-                return False  # after the first fill, conversations aren't even read between rounds
-            pending = topic_notes.unasked(db, topic_notes.conversations(db, self.config.get('accounts') or [], today(), self.owner_slack_ids()))
-            fast = (not topic_notes.quiet(clock(local_tz()), quiet_hours())) and topic_notes.filling(db, at, lambda: bool(pending))
-            if not fast and not topic_notes.due(db, at, topic_notes.EVERY):
-                return False
-        waiting = bool(pending) and (fast or topic_notes.worth(pending, at))
-        if waiting and not self.notes_turn_free('topic-notes'):
-            return False
-        calls = (topic_notes.FIRST_CALLS if fast else topic_notes.CALLS) if waiting else 0
-        self.topic_notes_thread = threading.Thread(target=self.topic_notes_run, args=(calls,), daemon=True, name='topic-notes')
-        self.topic_notes_thread.start()
-        return True
-
-    def topic_notes_ask(self, prompt):
-        ask = getattr(self, 'topic_notes_model', None)  # tests and the sandbox: (prompt) -> reply
-        try:
-            if ask:
-                return ask(prompt)
-            model = background_model(self.config)
-            return help_chat.openclaw_model_run(self.config, prompt, '/'.join(model) if model else None, timeout=topic_notes.TIMEOUT)
-        except help_chat.Unavailable:
-            return None
-
-    def topic_notes_run(self, calls=topic_notes.CALLS):
-        """One round: the conversations that went on keep their place (plain code); the ones no call placed yet go to
-        the model ASK_MAX at a time, up to `calls` calls (each after the first waits for the budget and stops the round
-        when it holds; a reply that isn't one keeps nothing and stops it too); then the notes started here are brought
-        up to date. Returns how many conversations it placed."""
-        accounts, done, slack = self.config.get('accounts') or [], 0, self.owner_slack_ids()
-        try:
-            with self.store.connect() as db:
-                db.execute('BEGIN IMMEDIATE')
-                topic_notes.ensure(db)
-                section_notes.ensure(db)
-                gone = set()
-                convs = topic_notes.conversations(db, accounts, today(), slack, gone=gone)
-                topic_notes.refresh(db, convs)
-                topic_notes.forget(db, gone)  # a meeting's mail placed before: it stays in Calendar
-                topic_notes.ran(db, now())
-            for n in range(calls):
-                if n and self.background_pause(job='topic-notes'):
-                    break
-                with self.store.connect() as db:
-                    items = topic_notes.texts(db, topic_notes.unasked(db, convs), slack)
-                    where, linked = topic_notes.places(db, SECTION_KINDS), topic_notes.records(db, items)
-                if not items:
-                    break
-                text, refs = topic_notes.prompt(items, where, linked)
-                placed = topic_notes.reply(self.topic_notes_ask(text), items, where, refs)
-                if placed is None:
-                    break
-                with self.store.connect() as db:
-                    db.execute('BEGIN IMMEDIATE')
-                    topic_notes.remember(db, items, placed, now(), SECTION_KINDS)
-                done += len(items)
-            with self.store.connect() as db:
-                db.execute('BEGIN IMMEDIATE')
-                touched = note_pages.sync(db, 'topic', topic_notes.drafts(db), now(), topic_notes.keep(db))
-                topic_notes.keep_in_notes(db, now())  # a conversation in a trip, an event or the owner's own note
-            touched += self.topic_notes_merge()
-        except Exception as error:  # noqa: BLE001 - the next round tries again
-            LOG.warning('topic notes error=%s', type(error).__name__)
-            return done
-        LOG.info('topic notes placed=%s notes=%s', done, len(touched))
-        return done
-
-    def topic_notes_merge(self):
-        """After new subjects (topic_notes.merge_due): one call looks for notes about the same real-world thing (the
-        same trip from a booking and from mail, several threads with one customer, orders from one shop) and each group
-        becomes one note. Returns the note ids the sync after it touched."""
-        with self.store.connect() as db:
-            if not topic_notes.merge_due(db, now()):
-                return []
-            notes = topic_notes.merge_candidates(db)
-        groups = []
-        if len(notes) > 1 and not self.background_pause(job='topic-notes'):
-            groups = topic_notes.merge_reply(self.topic_notes_ask(topic_notes.merge_prompt(notes)), notes)
-            if groups is None:
-                return []  # an answer that isn't one: the next round looks again
-        with self.store.connect() as db:
-            db.execute('BEGIN IMMEDIATE')
-            topic_notes.merged(db, now())
-            if not topic_notes.merge(db, groups or [], now()):
-                return []
-            touched = note_pages.sync(db, 'topic', topic_notes.drafts(db), now(), topic_notes.keep(db))
-            topic_notes.keep_in_notes(db, now())
-        LOG.info('topic notes merged=%s', sum(len(g[1]) for g in groups))
-        return touched
-
-    def note_writer_step(self):
-        """At most once a note_writer.PASS_MINUTES: one background turn writes the pages of a few notes whose sources
-        changed (note_writer.py), in a thread of its own once the budget allows (notes_turn_free). Never in a request.
-        True when a turn started. Only with Notes on (notes_on)."""
-        if not self.notes_on():
-            return False
-        running = getattr(self, 'note_writer_thread', None)
-        if (running and running.is_alive()) or monotonic() < getattr(self, 'note_writer_next', 0):
-            return False
-        with self.store.connect() as db:
-            items = note_writer.due(db)
-        if not items:
-            self.note_writer_next = monotonic() + note_writer.PASS_MINUTES * 60
-            return False
-        if not self.notes_turn_free('note-writer'):
-            return False
-        self.note_writer_next = monotonic() + note_writer.PASS_MINUTES * 60
-        self.note_writer_thread = threading.Thread(target=self.note_writer_run, args=(items,), daemon=True, name='note-writer')
-        self.note_writer_thread.start()
-        return True
-
-    def note_writer_run(self, items):
-        """One turn: the notes' sources, one call, their pages saved. An answer that can't be read keeps every page as
-        it was and tries again after note_writer.NOTE_HOURS. Returns how many pages it wrote."""
-        try:
-            with self.store.connect() as db:
-                notes = [note_writer.evidence(db, item, self.owner_slack_ids()) for item in items]
-            text = note_writer.prompt(notes, locale_prefs.language_of(self.config))
-            found = note_writer.parse(self.notes_model_ask(text, getattr(self, 'note_writer_model', None), note_writer.TIMEOUT), notes)
-            written = 0
-            with self.store.connect() as db:
-                db.execute('BEGIN IMMEDIATE')
-                if found is None:
-                    note_writer.tried(db, items)
-                else:
-                    for item in items:
-                        if item['note_id'] in found:
-                            written += note_writer.save(db, item, found[item['note_id']]) == 'written'
-                        else:
-                            note_writer.tried(db, [item])
-        except Exception as error:  # noqa: BLE001 - the next turn tries again
-            LOG.warning('note writer error=%s', type(error).__name__)
-            return 0
-        LOG.info('note writer asked=%s written=%s', len(items), written)
-        return written
-
-    def notes_model_ask(self, text, ask, timeout):
-        """One background-model call for a notes turn (no agent, no tools), or ask(text) in tests and the sandbox. None
-        when the model can't be reached."""
-        try:
-            if ask:
-                return ask(text)
-            model = background_model(self.config)
-            return help_chat.openclaw_model_run(self.config, text, '/'.join(model) if model else None, timeout=timeout)
-        except help_chat.Unavailable:
-            return None
-
-    def folder_overview_step(self):
-        """At most once a folder_overview.PASS_MINUTES: one background turn writes the daily overview of a few folders
-        whose notes changed (folder_overview.py), in a thread of its own once the budget allows. True when a turn started.
-        Only with Notes on (notes_on)."""
-        if not self.notes_on():
-            return False
-        running = getattr(self, 'folder_overview_thread', None)
-        if (running and running.is_alive()) or monotonic() < getattr(self, 'folder_overview_next', 0):
-            return False
-        with self.store.connect() as db:
-            items = folder_overview.due(db)
-        if not items:
-            self.folder_overview_next = monotonic() + folder_overview.PASS_MINUTES * 60
-            return False
-        if any(not folder_overview.quiet(x) for x in items) and not self.notes_turn_free('folder-overview'):
-            return False
-        self.folder_overview_next = monotonic() + folder_overview.PASS_MINUTES * 60
-        self.folder_overview_thread = threading.Thread(target=self.folder_overview_run, args=(items,), daemon=True, name='folder-overview')
-        self.folder_overview_thread.start()
-        return True
-
-    def folder_overview_run(self, items):
-        """One turn: what the folders' notes say, one call, their overviews saved; a quiet folder's goes without a call.
-        An answer that can't be read keeps every overview and tries again after folder_overview.FOLDER_HOURS. Returns
-        how many it wrote."""
-        try:
-            asked = [x for x in items if not folder_overview.quiet(x)]
-            found = {}
-            if asked:
-                with self.store.connect() as db:
-                    folders = [folder_overview.evidence(db, x) for x in asked]
-                text = folder_overview.prompt(folders, locale_prefs.language_of(self.config))
-                found = folder_overview.parse(self.notes_model_ask(text, getattr(self, 'folder_overview_model', None), folder_overview.TIMEOUT), folders)
-            written = 0
-            with self.store.connect() as db:
-                db.execute('BEGIN IMMEDIATE')
-                for item in items:
-                    if folder_overview.quiet(item):
-                        folder_overview.save(db, item, None)
-                    elif found is None:
-                        folder_overview.tried(db, [item])
-                    elif item['note_id'] in found:
-                        written += folder_overview.save(db, item, found[item['note_id']]) == 'written'
-                    else:
-                        folder_overview.tried(db, [item])
-        except Exception as error:  # noqa: BLE001 - the next turn tries again
-            LOG.warning('folder overview error=%s', type(error).__name__)
-            return 0
-        LOG.info('folder overview asked=%s written=%s', len(asked), written)
-        return written
-
-    def memory_seed_step(self):
-        """Once per Machine: the topic pages of the OpenClaw workspace's memory/ read into Notes (memory_seed.py), a
-        few pages a turn at most every memory_seed.PASS_MINUTES, in a thread of its own once the budget allows. Only
-        ever reads the workspace. True when a turn started. Only with Notes on (notes_on)."""
-        if not self.notes_on():
-            return False
-        running = getattr(self, 'memory_seed_thread', None)
-        if (running and running.is_alive()) or monotonic() < getattr(self, 'memory_seed_next', 0):
-            return False
-        self.memory_seed_next = monotonic() + memory_seed.PASS_MINUTES * 60
-        with self.store.connect() as db:
-            if memory_seed.done(db):
-                self.memory_seed_next = float('inf')
-                return False
-            db.execute('BEGIN IMMEDIATE')
-            batch = memory_seed.due(db, self.bring_in_workspace())
-        if not batch or not self.notes_turn_free('memory-seed'):
-            return False
-        self.memory_seed_thread = threading.Thread(target=self.memory_seed_run, args=(batch,), daemon=True, name='memory-seed')
-        self.memory_seed_thread.start()
-        return True
-
-    def memory_seed_run(self, batch):
-        """One turn: the pages and the notes there are, one call, the facts saved as lines. An answer that can't be read
-        leaves the pages for a later turn. Returns how many lines it added."""
-        try:
-            with self.store.connect() as db:
-                where = memory_seed.places(db)
-            text = memory_seed.prompt(batch, where, locale_prefs.language_of(self.config))
-            answer = self.notes_model_ask(text, getattr(self, 'memory_seed_model', None), memory_seed.TIMEOUT)  # tests: (prompt) -> reply
-            found = memory_seed.parse(answer, batch, where)
-            added = 0
-            with self.store.connect() as db:
-                db.execute('BEGIN IMMEDIATE')
-                if found is None:
-                    memory_seed.tried(db, batch)
-                else:
-                    added = memory_seed.save(db, batch, found, now())
-        except Exception as error:  # noqa: BLE001 - the next turn tries again
-            LOG.warning('memory seed error=%s', type(error).__name__)
-            return 0
-        LOG.info('memory seed pages=%s lines=%s', len(batch), added)
-        return added
-
     def calendar_notes(self, start, end):
-        """The dated notes (trips, events) that touch the Calendar's window, as bands: a day either side, since the window's
-        edges are instants and a note's dates are local days (the Calendar keeps what touches each week)."""
+        """The trips and events that touch the Calendar's window, as bands: a day either side, since the window's edges
+        are instants and their dates are local days (the Calendar keeps what touches each week)."""
         try:
             first = (date.fromisoformat(start[:10]) - timedelta(days=1)).isoformat()
             last = (date.fromisoformat(end[:10]) + timedelta(days=1)).isoformat()
@@ -465,48 +76,13 @@ class NotesApp:
         with self.store.connect() as db:
             return [{k: x[k] for k in ('id', 'kind', 'name', 'starts', 'ends')} for x in note_pages.dated(db, first, last)]
 
-    def notes_list(self, db):
-        """The Notes list, light: what each row shows, in tree order, with a folder's overview (folder_overview) or a
-        written page's summary (note_writer). Quality or nothing: a matter's note (topic_notes) shows once its page is
-        written (note_writer's bar), or once the owner renamed it or wrote in it. Empty with Notes off (notes_on)."""
-        if not self.notes_on():
-            return []
-        found = note_pages.listing(db, today().isoformat())
-        ids = [note_pages.parse_id(x['id']) for x in found]
-        about = {**note_writer.about(db, ids), **folder_overview.about(db, ids)}
-        owned = {r[0] for r in db.execute("SELECT id FROM note_pages WHERE kind='topic' AND (owner_title IS NOT NULL OR "
-                                          "EXISTS(SELECT 1 FROM note_page_lines l WHERE l.note_id=note_pages.id AND l.by='owner' AND l.removed_at IS NULL))")}
-        shown = []
-        for x in found:
-            note_id = note_pages.parse_id(x['id'])
-            text = about.get(note_id)
-            if text:
-                x['about'] = text
-            if x['kind'] == 'topic' and not text and note_id not in owned:
-                continue
-            shown.append(x)
-        return shown
-
     def note_page(self, node):
-        """One note's page (with the whole tree, light), each line with the message it came from (what and when), so it
-        opens from there. With Notes off (notes_on) only a trip's or an event's, opened from its band in Calendar, without
-        the tree; any other is not found (ValueError, a 404)."""
-        on = self.notes_on()
+        """A trip's or an event's page, opened from its band in Calendar: each line with the message it came from (what
+        and when), so it opens from there. Any other kind is not found (ValueError, a 404)."""
         with self.store.connect() as db:
-            if not on:
-                row = db.execute('SELECT kind FROM note_pages WHERE id=?', (note_pages.parse_id(node),)).fetchone()
-                if not row or row['kind'] not in ('trip', 'event'):
-                    raise ValueError('Not a note')
             found = note_pages.page(db, node)
-            found['tree'] = note_pages.listing(db, today().isoformat()) if on else []  # for Under and Merge into, and @ links
-            written = note_writer.view(db, note_pages.parse_id(node))  # the written page above the lines, its bullets citing them
-            if written:
-                found['page'] = written
-            overview = folder_overview.view(db, note_pages.parse_id(node))  # a folder's daily overview, naming the notes under it
-            if overview:
-                found['overview'] = overview
         todos = sorted({str(x['data']['todo']) for x in found['lines'] if isinstance(x.get('data'), dict) and x['data'].get('todo')})
-        if todos:  # a bill's or a subscription's line opens its to-do, while it is there
+        if todos:  # a ticket's line opens its to-do, while it is there
             with self.store.connect() as db:
                 there = {r['id'] for r in db.execute(f"SELECT id FROM suggestions WHERE id IN ({','.join('?' * len(todos))})", todos)}
             for x in found['lines']:
@@ -528,35 +104,3 @@ class NotesApp:
                     x['source'] = {'gone': True}
         found['areas'] = todo_areas.areas(self.config.get('accounts') or [])
         return found
-
-    def note_action(self, name, args, owner_dashboard=False):
-        if not owner_dashboard:
-            raise ValueError('Notes are changed from the owner’s dashboard')
-        if not self.notes_on():
-            raise ValueError('Notes are off')
-        at = now()
-        if name == 'note_line_edit':  # one truth: a line from a fact edits that fact first (What I've learned says it too)
-            with self.store.connect() as db:
-                row = db.execute('SELECT fact_id FROM note_page_lines WHERE id=? AND removed_at IS NULL', (int(args.get('line') or 0),)).fetchone()
-            if row and row['fact_id']:
-                self.store.edit_fact(row['fact_id'], args.get('text'))
-        with self.store.connect() as db:
-            db.execute('BEGIN IMMEDIATE')
-            if name == 'note_new':
-                lines = args.get('lines') or []
-                return note_pages.create(db, args.get('title'), args.get('area'), at, self.note_areas(),
-                                         lines if isinstance(lines, list) else str(lines).splitlines(), args.get('starts'), args.get('ends'),
-                                         parent=args.get('parent'))
-            if name == 'note_edit':
-                fields = {k: args[k] for k in ('title', 'area', 'starts', 'ends', 'parent') if k in args}
-                return note_pages.edit(db, args.get('id'), at, self.note_areas(), **fields)
-            if name in ('note_delete', 'note_restore', 'note_unmerge'):
-                return {'note_delete': note_pages.remove, 'note_restore': note_pages.restore, 'note_unmerge': note_pages.unmerge}[name](db, args.get('id'), at)
-            if name == 'note_merge':
-                return note_pages.merge(db, args.get('id'), args.get('into'), at)
-            if name == 'note_line_add':
-                return note_pages.line_add(db, args.get('id'), args.get('text'), at, args.get('at'), args.get('links'))
-            if name == 'note_line_edit':
-                return note_pages.line_edit(db, args.get('line'), args.get('text'), at, args.get('links'))
-            return {'note_line_reset': note_pages.line_reset, 'note_line_remove': note_pages.line_remove,
-                    'note_line_restore': note_pages.line_restore}[name](db, args.get('line'), at)

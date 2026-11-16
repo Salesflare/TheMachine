@@ -168,7 +168,7 @@ try{
  // screen is lit, the counts show, and the group folds (remembered); folded to icons each row has its name and count
  {const {context,page}=await open(1440,900);
   await page.waitForFunction(()=>document.querySelector('#count-people').textContent==='214');
-  assert.deepEqual(await page.locator('.side-sub a:not([hidden])').evaluateAll(a=>a.map(x=>x.textContent)),['People214','Organizations38','Projects9'],'Notes is off (notes_enabled): no row');
+  assert.deepEqual(await page.locator('.side-sub a:not([hidden])').evaluateAll(a=>a.map(x=>x.textContent)),['People214','Organizations38','Projects9']);
   const lit=()=>page.evaluate(()=>[...document.querySelectorAll('.side-sub a[aria-current="page"]')].map(a=>a.dataset.graphSub).join());
   const pane=()=>page.evaluate(()=>[...document.querySelectorAll('[data-graph-panel]')].find(p=>!p.hidden)?.dataset.graphPanel);
   await page.locator('.side-sub a[data-graph-sub="orgs"]').click();await page.locator('[data-graph-panel="orgs"]').waitFor();

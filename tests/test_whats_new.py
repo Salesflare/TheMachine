@@ -190,7 +190,7 @@ class WhatsNew(unittest.TestCase):
         self.assertEqual(whats_new.problems(ENTRIES[2]), [])
         bad = {'id': 'Big One', 'date': '2026-3-1', 'weight': 5, 'title': 'Wow!', 'text': 'x', 'who': 'all', 'shade': 1}
         self.assertEqual(whats_new.problems(bad), ['unknown key shade', 'id: lowercase letters, digits and dashes only', 'date: YYYY-MM-DD',
-                                                   'weight: 1, 2 or 3', "who: 'team', 'notes' or left out", 'no em or en dashes and no exclamation marks'])
+                                                   'weight: 1, 2 or 3', "who: 'team' or left out", 'no em or en dashes and no exclamation marks'])
         self.assertEqual(whats_new.problems({'id': 'a', 'date': '2026-03-01', 'title': 'A', 'text': 'B'}), ['no weight'])
 
     def test_a_release_checks_only_its_new_candidates(self):

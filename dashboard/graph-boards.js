@@ -342,7 +342,7 @@ $('#record-form').addEventListener('submit',async e=>{e.preventDefault();if(!rec
  catch(x){errCaught(x);say(x.message)}finally{btn.disabled=false}});
 $('#record-dialog').addEventListener('close',e=>{if(!e.currentTarget.open)rec=null});  // a close event comes later: the dialog may be open again by then
 // New person, organization or project from a Graph page's head; New card, Same person as… and Delete on a page
-document.addEventListener('click',async e=>{const n=e.target.closest('[data-graph-new]');if(n){e.preventDefault();return n.dataset.graphNew==='project'?pjOpen({}):n.dataset.graphNew==='note'?noteNew():recOpen(n.dataset.graphNew)}
+document.addEventListener('click',async e=>{const n=e.target.closest('[data-graph-new]');if(n){e.preventDefault();return n.dataset.graphNew==='project'?pjOpen({}):recOpen(n.dataset.graphNew)}
  const t=e.target.closest('[data-card-here],[data-same-as],[data-org-delete]');if(!t||!t.closest('#people-view'))return;e.preventDefault();t.closest('details')?.removeAttribute('open');
  const name=$('#people-view .graph-detail>.name-row h3')?.textContent||'';
  if(t.hasAttribute('data-card-here'))return newTodo({about:[{id:graphNode,name}]});

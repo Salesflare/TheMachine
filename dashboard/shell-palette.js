@@ -58,7 +58,7 @@ function palRows(){const q=pal.q.trim(),ctx=pal.ctx,recent=palRecent(),groups=[]
   // Done cards in their own group under the open ones: the loaded ones and what the Machine found among all of them
   {const seen=new Set(),done=[...(state.suggestions||[]).filter(closed),...pal.done||[]].filter(s=>!seen.has(s.id)&&seen.add(s.id)).map(s=>({s,score:palCardScore(q,s)})).filter(x=>x.score>=40).sort((x,y)=>y.score-x.score).slice(0,5);
    if(done.length)groups.push(['Done',done.map(({s})=>({a:{id:'card:'+s.id,run:()=>{doneExtra.set(s.id,s);cardsMerge();chatGo(s.id)},entity:true},label:s.title,sub:palCardSub(s)}))])}
-  for(const [kind,name] of [['person','People'],['org','Organizations'],['project','Projects'],['note','Notes']]){const xs=(pal.found||[]).filter(n=>kind==='note'?/^note:/.test(n.id):n.kind===kind).slice(0,5);
+  for(const [kind,name] of [['person','People'],['org','Organizations'],['project','Projects']]){const xs=(pal.found||[]).filter(n=>n.kind===kind).slice(0,5);
    if(xs.length)groups.push([name,xs.map(n=>({a:{id:'graph:'+n.id,run:()=>{location.hash=graphHash(n.id)},entity:true},label:n.name||n.id,sub:kind==='person'?(n.ids||[])[0]||'':kind==='org'&&n.domain!==n.name?n.domain||'':''}))])}
   // Messages: the top few of everything the Machine read (the results page's own search), then See all results
   // (a message the answer links to shows once, under the answer). A question about someone or some days lists the

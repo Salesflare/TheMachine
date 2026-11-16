@@ -108,7 +108,6 @@ WAITS = {
     'tests/test_graph_detail_dashboard.mjs': 1,
     'tests/test_graph_fleet_dashboard.mjs': 8,
     'tests/test_graph_load_error_dashboard.mjs': 2,
-    'tests/test_graph_notes_todo_dashboard.mjs': 1,
     'tests/test_graph_parts_dashboard.mjs': 1,
     'tests/test_graph_phone_overflow_dashboard.mjs': 1,
     'tests/test_greeting_dashboard.mjs': 1,
