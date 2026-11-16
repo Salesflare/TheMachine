@@ -22,6 +22,7 @@ from machine.app.action_runs import ActionRunsApp
 from machine.app.browser import BrowserApp
 from machine.app.calendar_clashes import CalendarClashesApp
 from machine.app.meeting_prep import MeetingPrepApp
+from machine.app.trips import TripsApp
 from machine.app.card_actions import CardActionsApp
 from machine.app.card_chat import CardChatApp
 from machine.app.check_now import CheckNowApp
@@ -146,6 +147,7 @@ APP_MIXINS += (SearchAskApp,)
 APP_MIXINS += (ReviewSavesApp,)
 APP_MIXINS += (CalendarClashesApp,)
 APP_MIXINS += (MeetingPrepApp,)
+APP_MIXINS += (TripsApp,)
 APP_MIXINS += (ConnectApp,)
 APP_MIXINS += (PageWatchApp,)
 APP_MIXINS += (NotesApp,)

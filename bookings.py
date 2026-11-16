@@ -1,24 +1,32 @@
-"""Bookings in mail: the travel and ticket reservations a confirmation mail carries as structured data, read with plain code.
+"""Bookings in mail: the travel and ticket reservations a confirmation mail carries, as short flat rows.
 
-Airlines, hotels, rail, bus and car rental companies, ticket sellers and booking sites put a schema.org reservation in
-their mail so mail apps can show it, as JSON-LD (a <script type="application/ld+json"> block) or as microdata
-(itemscope, itemtype and itemprop attributes on the mail's own HTML; many airlines and hotels use this): FlightReservation,
-LodgingReservation, TrainReservation, BusReservation, BoatReservation, RentalCarReservation and EventReservation. read()
-turns those into short, flat rows that the mail source keeps in the message's metadata (sealed at rest with the rest of
-it, message_seal.py). A trip note (trip_notes.py) is built from the travel rows, an event note (event_notes.py) from
-the event rows (name: the event; where: its venue and town; guests: how many seats). Nothing is guessed: a mail without the structured data gives nothing,
-and a reservation without a start time is left out.
+Two ways in:
+- Structured data, read with plain code (read): airlines, hotels, rail, bus and car rental companies, ticket sellers and
+  booking sites put a schema.org reservation in their mail so mail apps can show it, as JSON-LD (a <script
+  type="application/ld+json"> block) or as microdata (itemscope, itemtype and itemprop attributes on the mail's own
+  HTML): FlightReservation, LodgingReservation, TrainReservation, BusReservation, BoatReservation, RentalCarReservation,
+  TaxiReservation and EventReservation. The mail source keeps the rows in the message's metadata (sealed at rest with
+  the rest of it, message_seal.py).
+- Many confirmations carry none (a holiday home, a parking, a rail ticket, a forward, a smaller hotel or airline). A
+  mail without it that looks like a booking (looks_booked: a confirmation word, something to travel to or attend, a
+  date and a code, plain code) is read by a small model call instead (extract_prompt, TripsApp.trip_extract_step), a
+  few mails per call, its answer checked field by field (parse, checked) into the same rows.
 
-A row: {type, code, status, start, end, from, to, name, number, by, seat, ticket, guests, where}. start and end are
-local wall-clock times as the booking states them ('2026-12-02T07:10', or a day), so a flight shows the time on the
-ticket wherever the owner reads it. No link is kept (a manage-booking link can sign someone in)."""
+A trip (trip_notes.py) is built from the travel rows, an event (event_notes.py) from the event rows (name: the event;
+where: its venue and town; guests: how many seats). A reservation without a start time is left out.
+
+A row: {type, code, status, start, end, from, to, name, number, by, seat, ticket, guests, where, address}; type is one
+of KINDS. start and end are local wall-clock times as the booking states them ('2026-12-02T07:10', or a day), so a
+flight shows the time on the ticket wherever the owner reads it. A row from the model has read: 'text', and others: 1
+when it names other people and not the owner (a colleague's booking forwarded). No link is kept (a manage-booking link
+can sign someone in)."""
 import html
 import html.parser
 import json
 import re
 
-TYPES = {'FlightReservation': 'flight', 'LodgingReservation': 'hotel', 'TrainReservation': 'train',
-         'BusReservation': 'bus', 'BoatReservation': 'boat', 'RentalCarReservation': 'car', 'EventReservation': 'event'}
+TYPES = {'FlightReservation': 'flight', 'LodgingReservation': 'hotel', 'TrainReservation': 'train', 'BusReservation': 'bus',
+         'BoatReservation': 'boat', 'RentalCarReservation': 'car', 'TaxiReservation': 'taxi', 'EventReservation': 'event'}
 ROWS_MAX = 12  # per message
 TEXT_MAX = 120
 SCRIPT = re.compile(r'<script\b[^>]*type\s*=\s*["\']?application/ld\+json["\']?[^>]*>(.*?)</script\s*>', re.I | re.S)
@@ -52,6 +60,14 @@ def _place(value):
     address = value.get('address')
     city = _text(address.get('addressLocality')) if isinstance(address, dict) else ''
     return city or _text(value.get('name')) or _text(value.get('iataCode'))
+
+
+def _street(address):
+    """A postal address as one line: street, then town."""
+    if not isinstance(address, dict):
+        return _text(address)
+    parts = [_text(address.get(k)) for k in ('streetAddress', 'postalCode', 'addressLocality')]
+    return ', '.join(x for x in (parts[0], ' '.join(x for x in parts[1:] if x)) if x)[:TEXT_MAX] if parts[0] else ''
 
 
 def _things(found):
@@ -99,12 +115,17 @@ def _row(thing):
     elif kind == 'hotel':
         address = what.get('address') if isinstance(what.get('address'), dict) else {}
         row.update(start=_when(thing.get('checkinTime') or thing.get('checkinDate')), end=_when(thing.get('checkoutTime') or thing.get('checkoutDate')),
-                   name=_text(what.get('name')), where=_text(address.get('addressLocality')), guests=_text(thing.get('numGuests')))
+                   name=_text(what.get('name')), where=_text(address.get('addressLocality')), guests=_text(thing.get('numGuests')),
+                   address=_street(address))
     elif kind == 'car':
         company = what.get('rentalCompany') or what.get('brand') or thing.get('provider')
+        pickup = thing.get('pickupLocation') if isinstance(thing.get('pickupLocation'), dict) else {}
         row.update(start=_when(thing.get('pickupTime')), end=_when(thing.get('dropoffTime')),
                    **{'from': _place(thing.get('pickupLocation')), 'to': _place(thing.get('dropoffLocation'))},
-                   by=_text(company), name=_text(what.get('name')))
+                   by=_text(company), name=_text(what.get('name')), address=_street(pickup.get('address')))
+    elif kind == 'taxi':  # a taxi or an airport transfer: where it picks up, at what time
+        row.update(start=_when(thing.get('pickupTime')), **{'from': _place(thing.get('pickupLocation')), 'to': _place(thing.get('dropoffLocation'))},
+                   by=_text(thing.get('provider') or what.get('provider')), guests=_text(thing.get('partySize')))
     elif kind == 'event':  # a concert, a match, a festival, a conference: where it is, the venue and its town
         place = what.get('location')
         place = place[0] if isinstance(place, list) and place else place
@@ -127,7 +148,7 @@ def _row(thing):
         return None
     if kind in ('hotel', 'event') and not row.get('name'):
         return None
-    if kind not in ('hotel', 'event') and not (row.get('from') or row.get('to')):
+    if kind not in ('hotel', 'event') and not (row.get('from') or row.get('to')):  # a ride, a rental car, a taxi
         return None
     return {k: v for k, v in row.items() if v}
 
@@ -226,6 +247,145 @@ def _microdata(part):
     except Exception:  # noqa: BLE001 - a part the parser can't read gives nothing; nothing is guessed
         return []
     return reader.items
+
+
+_M = (r'jan|feb|m[aä]r|apr|ma[iy]|mei|jun|jul|aug|sep|o[ck]t|nov|de[cz]|janv|f[eé]v|avr|mai|juin|juil|ao[uû]t|d[eé]c|ene|abr|ago|dic|'
+      r'gen|giu|lug|set|ott|maart|juni|juli|januari|februari|augustus|september|oktober|november|december')
+BOOKED = re.compile(r'confirm|bevestig|best[aä]tig|\breserv(ation|ering|ierung|a)\b|r[eé]servation|boeking|booking|buchung|'
+                    r'prenotazion|itinerar|reisoverzicht|e-?ticket|\btickets?\b|boarding ?pass|instapkaart|bordkarte|'
+                    r'embarque|your (trip|stay|ride|rental|car)\b|je (reis|verblijf)\b|online aankoop', re.I)
+TRAVEL = re.compile(r'flight|vlucht|vuelo|\bvolo\b|\bflug|boarding|instapkaart|hotel|airbnb|check-?in|incheck|accommodat|'
+                    r'verblijf|resort|vakantiepark|camping|\btrain\b|trein|\bzug\b|\btren\b|treno|bus ?ticket|busreis|ferry|'
+                    r'veerboot|car rental|rental car|rent a car|huurauto|mietwagen|pick-?up location|parking|parkeren|'
+                    r'airport transfer|taxi|airport|luchthaven|flughafen|a[eé]roport|aeropuerto|concert|festival|museum|'
+                    r'excursi|attractie|attraction|pretpark|theme park|dierentuin|\bzoo\b|cinema|bioscoop|theater|theatre', re.I)
+DATED = re.compile(r'\b\d{1,2}[./-]\d{1,2}[./-]\d{2,4}\b|\b\d{4}-\d{2}-\d{2}\b|'
+                   rf'\b\d{{1,2}}\.? ?(?:{_M})[a-zé]*\.?,? ?(?:\d{{4}})?\b|\b(?:{_M})[a-zé]*\.? \d{{1,2}}\b', re.I)
+_CODE = r'(?=[A-Z0-9-]*\d)(?=[A-Z0-9-]*[A-Z])[A-Z0-9][A-Z0-9-]{4,13}\b|\d{6,14}\b|[A-Z]{6}\b'
+CODED = re.compile(rf'(?:booking|reserv\w*|r[eé]servation|confirmation|bevestigings?|boekings?|buchungs?|order|bestel|ticket|'
+                   rf'pnr|dossier|referen\w*|prenotazione|localizador|code|nummer|number|nr)\W{{0,3}}(?:\w+\W{{1,3}}){{0,2}}(?:{_CODE})', re.I)
+CODED_TITLE = re.compile(rf'\b(?:{_CODE})')
+NOT_BOOKED = re.compile(r'verification code|verificatiecode|one-time password|\bOTP\b|code de v[eé]rification|'
+                        r'how was your|review|survey|beoordeel|rate your|newsletter|nieuwsbrief|webinar|% ?(off|korting)|'
+                        r'\bdeals?\b|aanbieding|last minute|price alert|tracked flight|is now €|receipt|payment|invoice|'
+                        r'factuur|betaling|subscription|abonnement|save \d|order receipt', re.I)
+FORWARD = re.compile(r'^\s*(fwd?|fw|tr|wg|rv|i)\s*:', re.I)
+
+
+def looks_booked(title, sender, text, own=()):
+    """Whether a mail without structured data looks like a booking a model may read (extract): a confirmation word,
+    something to travel to or attend, a date and a code. Plain code, to keep the model's reading to the few mails that
+    can hold one. own: the owner's addresses; their own mail counts only when it forwards one."""
+    title, text = str(title or ''), str(text or '')
+    if NOT_BOOKED.search(title):
+        return False
+    if any(a and a.casefold() in str(sender or '').casefold() for a in own) and not FORWARD.match(title):
+        return False
+    head, body = title + '\n' + text[:2000], text[:6000]
+    return bool(BOOKED.search(head) and TRAVEL.search(title + '\n' + body) and DATED.search(title + '\n' + body)
+                and (CODED_TITLE.search(title) or CODED.search(body)))
+
+
+KINDS = ('flight', 'train', 'bus', 'boat', 'hotel', 'car', 'taxi', 'parking', 'event')
+FIELDS = ('code', 'start', 'end', 'from', 'to', 'name', 'where', 'address', 'number', 'by', 'seat', 'ticket', 'guests')
+MAIL_CHARS = 3500  # of one mail's text in a prompt: a confirmation's details come first, its small print after
+LINK = re.compile(r'https?://\S+|<https?://[^>]*>|\[https?://[^\]]*\]')
+
+
+def clean(text):
+    """A mail's text for the prompt: no links (a manage-booking link can sign someone in), no empty lines, short."""
+    text = LINK.sub('', html.unescape(str(text or '')))
+    lines = [' '.join(x.split()) for x in text.splitlines()]
+    return '\n'.join(x for x in lines if x and not set(x) <= set('-=_*|>'))[:MAIL_CHARS]
+
+
+def extract_prompt(mails, owner=''):
+    """The prompt that reads bookings from mail without structured data: mails [{id, title, sender, text}]. The
+    answer is JSON only, checked by parse()."""
+    shown = '\n\n'.join(f'<<<MAIL {m["id"]}\nSubject: {m["title"]}\nFrom: {m["sender"]}\nSent: {str(m.get("occurred_at") or "")[:10]}\n\n'
+                        f'{clean(m["text"])}\n>>>' for m in mails)
+    who = f'The owner is {owner}. ' if owner else ''
+    return f'''Read travel bookings and tickets from these emails. This is a background task of the personal-assistant service; answer with JSON only.
+
+{who}For each email, list what it books for the owner: a flight, train, bus or ferry ride (one per leg), a hotel, holiday home or other stay, a rental car, a taxi or airport transfer, airport or station parking, or a ticket for an event or activity (a tour, a museum, a show, a match). Only what is booked: a confirmation, a ticket, an itinerary, a change or a cancellation. Nothing from ads, offers, newsletters, price alerts, searches, surveys, receipts for other things, or verification codes; an email with none gives [].
+
+Copy values as the email writes them; never guess. Leave a value out when the email doesn't give it.
+- type: flight, train, bus, boat, hotel, car, taxi, parking or event.
+- status: "canceled" when the email cancels it, else "confirmed".
+- code: the booking code or reservation number.
+- start, end: local times as on the booking, "YYYY-MM-DDTHH:MM", or "YYYY-MM-DD" when there is no time (never 00:00 for a time it doesn't give). A day without a year is the first such day after the email was sent. A connecting leg without its own day or time has the day of the leg before it. A ride: departure and arrival. A stay: check-in and check-out. A rental car or parking: pick-up and return. An event: its start and end.
+- from, to: a ride's or taxi's departure and arrival city, airport or station, as named; a rental car's pick-up and return place.
+- name: the hotel's or stay's name, the event's name, the parking's name.
+- where: the town of a stay, an event or a parking.
+- address: the street address of a stay, an event, a parking, or a rental car's pick-up desk.
+- number: a flight or train number (like "EX 3410").
+- by: the airline, rail or bus company, rental company or ticket seller.
+- seat, ticket, guests: the owner's seat, ticket number, and how many guests or tickets.
+- owner_on_it: "yes" when the owner is named as a passenger, guest or driver, "no" when others are named and the owner is not, else "unknown".
+
+Answer: {{"<id after MAIL>": [{{"type": "...", ...}}], ...}} with every email's id, like {{"{mails[0]["id"] if mails else 1}": []}}.
+
+{shown}'''
+
+
+def _parse_json(reply):
+    text = str(reply or '').strip()
+    if text.startswith('```'):
+        text = text.strip('`').split('\n', 1)[-1].rsplit('```', 1)[0]
+    start = text.find('{')
+    try:
+        found = json.loads(text[start:text.rfind('}') + 1]) if start >= 0 else None
+    except ValueError:
+        return None
+    return found if isinstance(found, dict) else None
+
+
+def checked(item):
+    """One booking from the model as the same flat row read() gives, or None when it isn't one: a known type, a start
+    in the booking's own time, and what that type needs (a name for a stay or an event, a place for the rest)."""
+    if not isinstance(item, dict) or item.get('type') not in KINDS:
+        return None
+    row = {'type': item['type'], 'status': 'canceled' if str(item.get('status') or '').lower().startswith('cancel') else 'confirmed'}
+    for key in FIELDS:
+        value = _when(item.get(key)) if key in ('start', 'end') else _text(item.get(key))
+        if key in ('start', 'end') and value and value.endswith('T00:00'):
+            value = value[:10]  # a time the mail didn't give, read as midnight: the day alone
+        elif value and key not in ('start', 'end'):
+            value = re.sub(r'\s*,(?:\s*,)+', ',', value).strip(' ,')  # "Avenue 10,, 6220": one comma
+        if value:
+            row[key] = value
+    if str(item.get('owner_on_it') or '').lower() == 'no':
+        row['others'] = 1  # someone else's booking: it can join the owner's trip, never make one (trip_notes.journeys)
+    if row['status'] == 'canceled' and row.get('code'):
+        return row  # a cancellation names its code; the rest may be gone
+    if not row.get('start') or (row['type'] in ('hotel', 'event') and not row.get('name')):
+        return None
+    if row['type'] not in ('hotel', 'event', 'parking') and not (row.get('from') or row.get('to')):
+        return None
+    if row['type'] == 'parking' and not (row.get('name') or row.get('where') or row.get('address')):
+        return None
+    return row
+
+
+def parse(reply, ids):
+    """The model's answer as {mail id: [rows]} for the mails asked about; None when the answer isn't one (asked again
+    later). A mail it left out has no bookings."""
+    found = _parse_json(reply)
+    if found is None:
+        return None
+    found = {re.sub(r'(?i)^\W*mail\W*', '', str(k)).strip(): v for k, v in found.items()}  # "MAIL 12" is mail 12
+    out = {}
+    for i in ids:
+        items = found.get(i) if isinstance(found.get(i), list) else []
+        rows, seen = [], set()
+        for item in items:
+            row = checked(item)
+            same = json.dumps(row, sort_keys=True)
+            if row and same not in seen and len(rows) < ROWS_MAX:
+                seen.add(same)
+                rows.append({**row, 'read': 'text'})
+        out[i] = rows
+    return out
 
 
 def read(html_parts):

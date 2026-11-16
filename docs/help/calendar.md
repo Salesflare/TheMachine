@@ -42,15 +42,20 @@ A meeting link shows as its service, like Zoom, Google Meet or Teams, or as **Vi
 
 ## Trips and events
 
-When a flight, hotel, train, bus, ferry or rental car booking reaches your mail, your Machine adds it to a trip. Bookings for one journey go on one trip: the way out, the hotel and the way back. The trip shows as one band across its days. Open it for the booking code, seat and ticket of each booking, in time order.
+When a flight, hotel, holiday home, train, bus, ferry, rental car, taxi or airport parking booking reaches your mail, your Machine adds it to a trip. Bookings for one journey go on one trip, from any of your mailboxes: the train to the airport, the flights, the car, the stay and the way back. Bookings join when their days overlap or one picks up where the other ends.
 
-Tickets for a concert, a match, a festival or a conference make an event, one per event, with where it is, the booking code, seat and number of tickets. A second order for the same event goes on the same one. An event booked on your work mailbox is Work, otherwise it's Personal.
+The trip shows as one band across its days. Open it for each booking in time order, with its times, address, booking code and seat.
+
+Tickets for a concert, a match, a festival or a conference make an event, one per event, with where it is, the booking code, seat and number of tickets. A second order for the same event goes on the same one. An event booked on your work mailbox is Work, otherwise it's Personal. Tickets for something during a trip go on the trip instead.
+
+For a trip still ahead, your Machine says what is missing, like **No place to stay booked for 2 nights**, or nothing booked from the airport to your hotel. Those lines are muted and tagged **No booking**. A trip with no stays at all says nothing about nights.
 
 - Each line says who the booking came from, like **From Example Tickets**, and opens that mail.
 - If a to-do came from the mail, like paying for the tickets, **Open the to-do** shows it.
 - A changed booking updates its line, and a canceled one goes. When every booking is canceled, the trip or event goes too.
+- A booking for someone else, like a colleague's flight sent on to you, stays off your trips.
 
-It reads the details airlines, hotels, booking sites and ticket sellers put in their confirmation mail, without AI. A mail without them makes nothing. Booking mail from the year of [history](history.md) your Machine keeps is read in the background once that history is in.
+Most confirmations carry their details in a form your Machine reads without AI. For one that doesn't, like a forwarded mail or a small booking site, your [model](model.md) reads the mail in the background, a few at a time, and waits while you're near your usage limit. Booking mail from the year of [history](history.md) your Machine keeps is read in the background once that history is in.
 
 ## Meeting notes and transcript
 
