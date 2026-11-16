@@ -1,100 +1,102 @@
 ---
 title: Projekte
 area: graph
-summary: Was los ist, aus deinen Nachrichten oder von Hand angelegt, auf Boards mit Phasen wie Deals in einem CRM.
+summary: Was gerade läuft: aus deinen Nachrichten erkannt oder manuell hinzugefügt, auf Boards mit Phasen wie Deals in einem CRM.
 code: graph.py, crm.py, dashboard.html
 order: 4
-translated: b42abbf107368175
+translated: 8ab2cc22d536a168
 ---
-Deine Machine benennt Projekte danach, worum es in deinen Nachrichten geht. Nachrichten, die dazuzugehören scheinen, erscheinen als „wahrscheinlich Teil davon“. Wenn du ein Projekt in den Namen eines anderen umbenennst, werden die beiden zusammengeführt. Oder führe sie von Hand, wie Deals in einem CRM.
+Deine Machine benennt Projekte danach, worum es in deinen Nachrichten geht. Nachrichten, die dazugehören könnten, werden als „wahrscheinlich gehört es dazu“ angezeigt. Benennst du ein Projekt nach einem anderen Projekt, werden beide zusammengeführt. Oder verwalte sie manuell, wie Deals in einem CRM.
 
-## Ein Projekt hinzufügen
+## Projekt hinzufügen
 
-**Neues Projekt** oben auf einem Board, **+ Hinzufügen** unter einer Phase, **Neues Projekt** oben in der Liste, **+** in der oberen Leiste auf dem Handy oder von der Seite einer Person oder Organisation aus.
+**Neues Projekt** oben auf einem Board, **+ Hinzufügen** unter einer Phase, **Neues Projekt** oben in der Liste, **+** in der oberen Leiste auf dem Smartphone oder auf der Seite einer Person oder Organisation.
 
-Gib ihm einen Namen, ein Board und eine Phase, eine Organisation (such in deinem Graph oder **Hinzufügen** einer neuen), einen Wert, ein erwartetes Abschlussdatum, Personen und Notizen. Projekte mit ähnlichem Namen, die schon in deinem Graph sind, erscheinen zuerst.
+Gib einen Namen, ein Board und eine Phase, eine Organisation (durchsuche deinen Graph oder füge mit **Hinzufügen** eine neue hinzu), einen Wert, ein voraussichtliches Abschlussdatum, Personen und Notizen an. Projekte in deinem Graph mit einem ähnlichen Namen werden zuerst angezeigt.
 
-## Ein Projekt bearbeiten, gewinnen oder verlieren
+## Projekt bearbeiten, gewinnen oder verlieren
 
-- **Bearbeiten** auf der Seite eines Projekts, oder **Bearbeiten** in seinem **⋯** auf dem Board (oder drück E), ändert alles oben Genannte.
-- **Gewonnen** oder **Verloren**, mit Grund, für einen Deal: ein Projekt mit Wert oder erwartetem Abschluss, oder auf einem Board, wo eines das hat. Gewonnen verschiebt es in die letzte Phase des Boards, Verloren nach Stalled or declined. Andere Projekte enden mit **Erledigt**. **Wieder öffnen** macht das rückgängig.
-- **Archivieren** nimmt es vom Board und aus den Listen; eine neue Nachricht dazu holt es zurück.
-- **Löschen** entfernt es endgültig; seine Nachrichten und Personen bleiben.
+- **Bearbeiten** auf der Projektseite oder **Bearbeiten** im **⋯** des Projekts auf dem Board (oder drücke E) ändert alle oben genannten Angaben.
+- **Gewonnen** oder **Verloren**, jeweils mit Begründung, für einen Deal: ein Projekt mit einem Wert oder voraussichtlichen Abschlussdatum oder ein Projekt auf einem Board, auf dem es solche Angaben gibt. Gewonnen verschiebt es in die letzte Phase des Boards, Verloren nach „Ins Stocken geraten“ oder „Abgelehnt“. Bei anderen Projekten kannst du **Erledigt** auswählen. Mit **Wieder öffnen** machst du das rückgängig.
+- **Archivieren** entfernt das Projekt vom Board und aus den Listen. Eine neue Nachricht dazu bringt es zurück.
+- **Löschen** entfernt das Projekt endgültig. Die Nachrichten und Personen bleiben erhalten.
 
 ## Beschreibung
 
-Ein oder zwei Sätze unter dem Namen eines Projekts: worum es geht und wo es steht. Deine Machine schreibt sie aus den Nachrichten, Aufgaben, Versprechen, Fakten und der Phase des Projekts und aktualisiert sie, wenn sich etwas ändert, etwa eine neue Nachricht, ein Phasenwechsel oder ein Gewinn oder Verlust. Hat sie noch nichts Konkretes zu sagen, zeigt sie keine.
+Ein oder zwei Sätze unter dem Projektnamen: worum es geht und wo es gerade steht. Deine Machine verfasst die Beschreibung anhand der Nachrichten, Aufgaben, Versprechen, Fakten und Phase des Projekts. Ändert sich etwas, etwa durch eine neue Nachricht, einen Phasenwechsel oder einen Gewinn oder Verlust, aktualisiert sie die Beschreibung. Gibt es noch nichts Konkretes zu sagen, wird keine Beschreibung angezeigt.
 
-Ändere sie unter **Beschreibung** in **Bearbeiten** des Projekts. Dann ist sie deine: "Von dir bearbeitet", und deine Machine lässt sie in Ruhe. **Aktuell halten**, darunter oder in **Bearbeiten**, gibt sie zurück. Leer gespeichert, zeigt sie keine.
+Du kannst die Beschreibung unter **Beschreibung** in **Bearbeiten** beim Projekt ändern. Danach gehört sie dir: „Von dir bearbeitet“, und deine Machine lässt sie unverändert. Mit **Aktuell halten** darunter oder in **Bearbeiten** übergibst du sie wieder deiner Machine. Wenn du sie leer speicherst, wird keine Beschreibung angezeigt.
 
-Bei einem geteilten Work-Projekt sieht dein Team die Beschreibung nur, wenn alles, worauf sie beruht, auch an das Team ging. Deine eigene Änderung bleibt bei dir.
+Bei einem gemeinsam genutzten Work-Projekt sieht dein Team die Beschreibung nur, wenn auch alle Informationen, auf denen sie basiert, mit dem Team geteilt wurden. Deine eigenen Änderungen bleiben für dich sichtbar.
 
-## Ein Projekt verschieben
+## Projekt verschieben
 
-Zieh es in eine andere Phase, oder nutze auf dem Handy **⋯**, **Verschieben nach**. Deine Verschiebung gilt, bis eine neuere Nachricht sie verschiebt.
+Zieh das Projekt in eine andere Phase oder tippe auf dem Smartphone auf **⋯** und dann auf **Verschieben nach**. Deine Änderung bleibt bestehen, bis eine neuere Nachricht das Projekt verschiebt.
 
-**Phasen**, oben auf einem Board, zeigt nur die Phasen, die du auswählst, pro Board. **Entfernen** zeigt wieder alle.
+Unter **Phasen** oben auf einem Board kannst du auswählen, welche Phasen angezeigt werden. Die Auswahl gilt nur für dieses Board. Mit **Entfernen** werden wieder alle Phasen angezeigt.
 
-„4 ohne Antwort seit 10+ Tagen“ unter einer Phase: Tippe darauf, um nur diese zu zeigen, auf dem Board und in der Liste. Tippe noch einmal, um alle zu zeigen.
+„4 ohne Antwort seit mehr als 10 Tagen“ unter einer Phase: Tippe darauf, um nur diese Projekte auf dem Board und in der Liste anzuzeigen. Tippe noch einmal, um alle anzuzeigen.
 
-## Ein Projekt aufteilen
+## Projekt aufteilen
 
-Wenn ein Projekt mehr als eine Sache enthält, bittet **Aufteilen…** in seinem **⋯** deine Machine um zwei bis vier neue Projekte, jedes mit einem Namen, einer Zeile dazu, worum es geht, und welche Verläufe, Aufgaben und Personen wohin gehören. Noch ändert sich nichts: Benenne sie um, verschiebe ein Element in einen anderen Teil, lass es beim Projekt oder entferne es, dann bestätige.
+Wenn ein Projekt mehrere Dinge umfasst, schlägt deine Machine über **Aufteilen…** im **⋯** zwei bis vier neue Projekte vor. Jedes bekommt einen Namen, eine Beschreibung und eine Zuordnung der Threads, Aufgaben und Personen. Zunächst wird nichts geändert: Benenne die Projekte um, verschiebe Einträge in einen anderen Teil, lass sie im Projekt oder entferne sie. Bestätige anschließend.
 
-Die neuen Projekte stehen auf demselben Board in derselben Phase und sind mit denselben Personen geteilt wie das Original, nie mit mehr. Die Seite sagt dann, worin es aufgeteilt wurde, mit **Rückgängig**, das alles zurücksetzt.
+Die neuen Projekte werden auf demselben Board und in derselben Phase angelegt und mit denselben Personen wie das ursprüngliche Projekt geteilt, aber niemals mit mehr Personen. Auf der Seite steht anschließend, in welche Projekte es aufgeteilt wurde. Mit **Rückgängig** wird alles wiederhergestellt.
 
 ## Aufgaben eines Projekts
 
-Eine Aufgabe kann zu einem Projekt gehören. Deine Machine wählt es, wenn ihr Thread oder die Personen, um die es geht, zu genau einem offenen Projekt gehören, und die Aufgabe zeigt seinen Namen unter dem Titel. **Projekt** unter den **Details** der Aufgabe oder **Einem Projekt zuordnen** im Befehlsmenü (Ctrl K) ändert es oder entfernt es. Deine Wahl bleibt.
+Eine Aufgabe kann zu einem Projekt gehören. Deine Machine ordnet sie einem Projekt zu, wenn ihr Thread oder die Personen, um die es geht, nur in einem offenen Projekt vorkommen. Der Projektname steht dann unter dem Titel der Aufgabe. Mit **Projekt** unter **Details** der Aufgabe oder **Einem Projekt zuordnen** im Befehlsmenü (Ctrl K) kannst du die Zuordnung ändern oder entfernen. Deine Auswahl bleibt bestehen.
 
-Die Seite eines Projekts listet seine Aufgaben unter **Aufgaben**, die offenen zuerst, und das Board sagt, wie viele offen sind. Eine Aufgabe mit einem geteilten Projekt zu verknüpfen teilt nichts weiter: Dein Team sieht weiterhin nur, was aus geteilten Nachrichten kam.
+Auf der Projektseite werden die Aufgaben unter **Aufgaben** aufgeführt, offene zuerst. Auf dem Board steht, wie viele Aufgaben offen sind. Wenn du eine Aufgabe mit einem gemeinsam genutzten Projekt verknüpfst, wird dadurch nichts weiter geteilt: Dein Team sieht weiterhin nur Inhalte aus gemeinsam genutzten Nachrichten.
 
-Einmal pro Woche sucht deine Machine nach Projekten, bei denen es still geworden ist: seit 10 Tagen oder länger nichts Neues, keine offene Aufgabe, nichts versprochen. Für höchstens drei legt sie eine Aufgabe mit einem konkreten nächsten Schritt an, etwa „Sam das unterschriebene Bestellformular schicken“, verknüpft mit der Nachricht, an die sie anknüpft. Sieht sie keinen klaren Schritt, legt sie keine an. Verwirfst du eine, schlägt sie dieses Projekt vier Wochen lang nicht wieder vor.
+Einmal pro Woche sucht deine Machine nach Projekten, bei denen es ruhig geworden ist: Seit mindestens 10 Tagen gibt es nichts Neues, keine offene Aufgabe und kein offenes Versprechen. Bei höchstens drei Projekten fügt sie eine Aufgabe mit einem konkreten nächsten Schritt hinzu, zum Beispiel „Schick Sam das unterschriebene Bestellformular“, und verknüpft sie mit der Nachricht, aus der sie den Schritt abgeleitet hat. Findet sie keinen klaren nächsten Schritt, fügt sie keine Aufgabe hinzu. Verwirfst du einen Vorschlag, wird das Projekt vier Wochen lang nicht erneut vorgeschlagen.
 
-## Die Organisation eines Projekts
+## Organisation eines Projekts
 
-Jedes Projekt kann mit einer Organisation verknüpft sein. Seine Seite, die Liste und das Board zeigen sie, mit Link.
+Jedes Projekt kann mit einer Organisation verknüpft werden. Die Organisation wird auf der Projektseite, in der Liste und auf dem Board mit einem Link angezeigt.
 
-Wenn niemand eine gewählt hat, setzt deine Machine sie anhand der Personen im Projekt und seiner Nachrichten, ohne deine Kolleginnen und Kollegen. Das macht sie nur, wenn eindeutig eine Organisation die Gegenseite ist: Private E-Mail wie Gmail zählt nie, und ein Projekt mit mehreren Firmen bleibt ohne. Das Projektformular sagt dann „Aus seinen Personen“.
+Wenn niemand eine Organisation ausgewählt hat, ordnet deine Machine dem Projekt anhand der Personen und Nachrichten eine zu. Deine Kolleginnen und Kollegen lässt sie dabei außen vor. Das macht sie nur, wenn klar ist, wer die andere Seite ist: Persönliche E-Mail-Adressen wie Gmail zählen nie, und bei Projekten mit mehreren Unternehmen bleibt die Organisation leer. Im Projektformular steht dann „Aus den Personen“.
 
-Eine Prüfung schaut danach, worum es im Projekt geht: Ist die Organisation nur der Arbeitgeber von jemandem darin (die Firma eines Freundes bei einem Konzert), fällt sie weg.
+Sie wartet außerdem, bis du jemandem bei dieser Organisation geschrieben oder die Person getroffen hast. So wird einem Projekt nicht die Organisation einer fremden Person zugeordnet, nur weil sie dir eine E-Mail geschickt hat.
 
-Deine Wahl in **Bearbeiten** bleibt immer, auch wenn du sie entfernst. **Gleiche Organisation wie…** nimmt die Projekte einer Organisation mit, und **Abtrennen** verschiebt sie zurück.
+Bei einer weiteren Prüfung wird die Organisation mit dem Projektthema abgeglichen. Eine Organisation, bei der lediglich jemand aus dem Projekt arbeitet, etwa der Arbeitgeber eines Freundes bei einem Konzert, wird entfernt.
+
+Deine Auswahl unter **Bearbeiten** bleibt immer bestehen, auch wenn du die Organisation entfernst. Mit **Gleiche Organisation wie…** ordnest du Projekte derselben Organisation zu. Mit **Abtrennen** löst du sie wieder davon.
 
 ## Boards
 
-Projekte einer Art in Phasen, etwa eine Pipeline für Evaluierungen. **⋯** auf einem Board: **Board bearbeiten** (Name, Phasen, welche Projekte dazugehören), **Auf diesem Board öffnen** und **Neues Board**.
+Auf einem Board werden Projekte einer Art in Phasen organisiert, wie in einer Pipeline für die Bewertung von Deals. Über **⋯** auf einem Board kannst du **Board bearbeiten** (Name, Phasen und zugehörige Projekte), **Auf diesem Board öffnen** und **Neues Board** auswählen.
 
-Prüfungen fügen weiter passende Projekte hinzu und setzen sie in eine Phase. Wenn sie unsicher sind, zeigt das Board „2 Projekte könnten hierher gehören“: **Hinzufügen** oder **Auslassen**. Hake ein paar an, oder **Alle auswählen**, um sie auf einmal zu bearbeiten, und **Rückgängig** direkt danach, wenn du es dir anders überlegst. Ein Projekt, das mehrere Gegenüber bündelt, wird beim Hinzufügen zu einem Projekt pro Gegenüber.
+Prüfungen fügen passende Projekte hinzu und ordnen sie einer Phase zu. Wenn sie unsicher sind, zeigt das Board „2 Projekte könnten hierher gehören“ an: **Hinzufügen** oder **Auslassen**. Wähle einzelne Projekte oder **Alle auswählen**, um mehrere auf einmal zu bearbeiten. Falls du es dir anders überlegst, kannst du direkt danach **Rückgängig** wählen. Wird ein Projekt mit mehreren Gegenparteien hinzugefügt, entsteht für jede Gegenpartei ein eigenes Projekt.
 
-Ein neues Board, oder ein vorgeschlagenes Board, das du speicherst, durchsucht einmal deinen ganzen Verlauf. Es legt ein Projekt pro passender Organisation an und setzt jedes in eine Phase. Die Kopfzeile sagt „Durchsuche deinen Verlauf…“, solange es arbeitet, und dann, wie viele es hinzugefügt hat und wie viele auf dich warten. Ein Board mit Nur du behält, was es findet, für dich.
+Ein neues Board oder ein gespeichertes Board aus den Vorschlägen durchsucht einmal deinen gesamten Verlauf. Es erstellt für jede passende Organisation ein Projekt und ordnet es einer Phase zu. Währenddessen steht in der Kopfzeile „Dein Verlauf wird durchsucht …“. Anschließend wird angezeigt, wie viele Projekte hinzugefügt wurden und auf wie viele noch deine Rückmeldung wartet. Bei einem Board nur für dich bleiben die gefundenen Projekte für dich sichtbar.
 
-**Nachfassen…** im **⋯** eines Boards fasst von selbst nach, wenn jemand nicht antwortet. Siehe [Nachfassen](follow-ups.md).
+Mit **Nachfassen…** im **⋯** eines Boards wird automatisch nachgefasst, wenn jemand nicht antwortet. Mehr dazu unter [Nachfassen](follow-ups.md).
 
 ## Fertig, wenn
 
-**Fertig, wenn** unter **Bearbeiten** bei jedem Projekt, auf einem Board oder nicht, sagt in einfachen Worten, was es abschließt, mit Beleg: **Eine Live-Seite** (The Machine öffnet den Link aus ihrer Nachricht und prüft, ob er auf dich verlinkt) oder **Ihre Nachricht**. Prüfungen schlagen eine für Partner-Einträge vor.
+Unter **Bearbeiten** eines beliebigen Projekts, auf einem Board oder nicht, kannst du mit **Fertig, wenn** in einfachen Worten festlegen, woran man erkennt, dass es abgeschlossen ist: **Eine Live-Seite** (The Machine öffnet den Link aus der Nachricht und prüft, ob dort auf dich verwiesen wird) oder **Ihre Nachricht**. Bei Einträgen von Partnern schlagen Prüfungen eine passende Option vor.
 
-Eine Prüfung setzt ein Projekt nur mit diesem Beleg in die letzte Phase, verlinkt auf seiner Seite. Ein Projekt ohne Board wird stattdessen als erledigt markiert, mit **Rückgängig** in seinem **⋯** unter Letzte Änderungen.
+Eine Prüfung verschiebt ein Projekt nur dann mit dem entsprechenden Nachweis, der auf der Projektseite verlinkt ist, in die letzte Phase. Ist das Projekt keinem Board zugeordnet, wird es stattdessen als erledigt markiert. Im **⋯** unter „Kürzliche Änderungen“ kannst du das mit **Rückgängig** rückgängig machen.
 
-Änderst du **Fertig, wenn** später und passt der Beleg nicht mehr, wird es wieder geöffnet; seine Aufgabe folgt dem neuen. **Erledigt** oder **Gewonnen** von Hand geht immer. Die Seite zeigt auch, was es aufhält (seit 10+ Tagen keine Antwort, ein überfälliges Versprechen), und legt eine Aufgabe dafür an, wenn es keine hat. Geprüft wird jeden Arbeitstag, auch wenn keine neuen Nachrichten kamen. Nichts wird ohne dich gesendet.
+Änderst du später **Fertig, wenn** und ein erledigtes Projekt erfüllt den neuen Nachweis nicht mehr, wird es wieder geöffnet. Die zugehörige Aufgabe wird ebenfalls angepasst. **Erledigt** oder **Gewonnen** kannst du weiterhin manuell auswählen. Auf der Projektseite wird außerdem angezeigt, was noch fehlt, zum Beispiel eine Antwort, die seit mehr als 10 Tagen aussteht, oder ein überfälliges Versprechen. Wenn es noch keine Aufgabe dafür gibt, wird eine hinzugefügt. Die Prüfung findet an jedem Arbeitstag statt, auch wenn keine neuen Nachrichten eingegangen sind. Ohne dich wird nichts verschickt.
 
 ## Pipeline
 
-**Pipeline**, oben auf einem Board, rechnet den Wert der offenen Projekte pro Phase zusammen, und was pro Monat laut Abschlussdatum abgeschlossen werden soll. Gewonnene, verlorene und festgefahrene Projekte sind nicht offen; was du diesen Monat gewonnen hast, steht getrennt.
+**Pipeline** oben auf einem Board zeigt für jede Phase den Gesamtwert der offenen Projekte sowie den voraussichtlichen Abschlusswert pro Monat anhand der jeweiligen Abschlussdaten. Gewonnene, verlorene und ins Stocken geratene Projekte gelten nicht als offen. Was du diesen Monat gewonnen hast, wird separat angezeigt.
 
-Werte sind in Euro, außer deine Machine ist auf eine andere Währung eingestellt. Mit **Inhaber** in Filtern zählt sie nur deine.
+Die Werte werden in Euro angezeigt, sofern für deine Machine nicht eine andere Währung festgelegt ist. Ist im Filter **Inhaber** ausgewählt, werden nur deine Projekte gezählt.
 
-## Das Board eines Teammitglieds
+## Board eines Teammitglieds
 
-In **Team** erscheinen Boards, die deine Teammitglieder teilen, neben deinen, die mit den meisten deiner Projekte zuerst. Die Kopfzeile sagt, wessen Board es ist und wer es hat: das ganze Team („Board von Ada, mit dem Team geteilt“) oder nur die Teammitglieder, die die Person gewählt hat („Ada hat dieses Board mit dir geteilt“).
+Unter **Team** werden die Boards angezeigt, die deine Teammitglieder mit dir teilen. Die Boards mit den meisten deiner Projekte stehen zuerst. In der Kopfzeile siehst du, wem das Board gehört und mit wem es geteilt wird: mit dem ganzen Team („Adas Board, mit dem Team geteilt“) oder nur mit ausgewählten Teammitgliedern („Ada hat dieses Board mit dir geteilt“).
 
-Jedes Projekt sagt, was zuletzt passiert ist, mit Datum: die neueste Zeile, die mit dem Team geteilt ist, oder seine letzte Verschiebung, wenn die später kam. Auf einem Board mit Projekten von mehr als einem Teammitglied endet diese Zeile damit, wessen Projekt es ist („von Ada“).
+Bei jedem Projekt steht mit Datum, was zuletzt passiert ist: die neueste mit dem Team geteilte Zeile oder, falls später, die letzte Verschiebung. Auf einem Board mit Projekten von mehreren Teammitgliedern steht am Ende der Zeile, wem das Projekt gehört („von Ada“).
 
-Das Board eines Teammitglieds kann weniger Projekte haben, als die Person selbst sieht: Ein Projekt, das sie privat hält oder zu dem ein privates Gespräch gehört, verlässt ihre Machine nie. Jemand, der für sie Privat ist, bleibt aus den geteilten Projekten draußen. Auf deinem eigenen Board sagt die Kopfzeile „Mit dem Team geteilt“ und wie viele bei dir bleiben, und diese Projekte haben ein Schloss.
+Auf dem Board eines Teammitglieds können weniger Projekte stehen, als die Person selbst sieht: Ein Projekt, das sie privat hält oder das eine persönliche Unterhaltung enthält, verlässt ihre Machine nicht. Personen, die für sie als privat markiert sind, erscheinen nicht in den geteilten Projekten. Auf deinem eigenen Board steht in der Kopfzeile „Mit dem Team geteilt“ und wie viele Projekte nur für dich sichtbar bleiben. Diese Projekte sind mit einem Schloss gekennzeichnet.
 
-**Meine**, **Wartet auf mich** und **Alle** wählen, was ein geteiltes Board zeigt, und die Team-Liste der Projekte gleich mit. Meine ist, woran du beteiligt bist: ein Thread dazu, ein Projekt, dessen Inhaber du bist, oder eine Aufgabe von dir dazu. Wartet auf mich ist, was auf dich wartet: eine offene Aufgabe dazu oder ein Thread, dessen neueste Nachricht an dich ging.
+Mit **Meine**, **Wartet auf mich** und **Alle** legst du fest, welche Projekte ein geteiltes Board und die zugehörige Projektliste unter Team anzeigen. **Meine** zeigt Projekte, an denen du beteiligt bist: über einen Thread, als Projektinhaberin oder mit einer eigenen Aufgabe dazu. **Wartet auf mich** zeigt Projekte, bei denen etwas von dir erwartet wird: eine offene Aufgabe dazu oder ein Thread, in dem die neueste Nachricht an dich gerichtet war.
 
-Jedes Projekt sieht aus wie auf dem Board seines Inhabers, in derselben Reihenfolge: seine Organisation, Tage in der Phase, nächster Schritt und „Seit N Tagen keine Antwort“. Ein nächster Schritt oder Grund aus einer Nachricht, die bei der Person bleibt, erscheint nicht. Der Rest einer Phase klappt in **N weitere anzeigen** zusammen. Nichts davon ändert, was geteilt wird.
+Jedes Projekt sieht genauso aus wie auf dem Board der Person, der es gehört, und steht an derselben Stelle: mit Organisation, Tagen in der Phase, nächstem Schritt und „Keine Antwort seit N Tagen“. Ein nächster Schritt oder Grund aus einer Nachricht, die nur diese Person sehen kann, wird nicht angezeigt. Der Rest einer Phase wird unter **N weitere anzeigen** eingeklappt. Nichts davon ändert, was geteilt wird.
 
-Auf jedem Board erscheint ein Projekt, das nach seinem Board benannt ist, ohne den Namen des Boards („Listings: Acme“ heißt auf Listings „Acme“).
+Auf jedem Board wird bei einem Projekt, das nach dem Board benannt ist, der Boardname nicht angezeigt („Listings: Acme“ wird auf Listings als „Acme“ angezeigt).

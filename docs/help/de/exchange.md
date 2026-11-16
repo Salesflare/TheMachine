@@ -1,38 +1,40 @@
 ---
 title: Exchange Server
 area: connections
-summary: Meetings aus einem Exchange Server, den deine Firma betreibt (2013 bis 2019 oder Subscription Edition). Nur lesend.
+summary: Termine von einem Exchange Server, den dein Unternehmen betreibt (2013 bis 2019 oder Subscription Edition). Nur lesender Zugriff.
 covers: connector:exchange
 code: ews_calendar.py, machine/sources/calendar_setup.py
 order: 16
-translated: a437b18fcb879c1b
+translated: f2b98c9bd4f08dba
 ---
-## Was es liest
+## Was gelesen wird
 
-Deine Meetings, mit Gästen, Räumen und Notizen: beim Verbinden die letzte Woche und der nächste Monat, danach jede Änderung. Sie erscheinen im Kalender und in der Meeting-Vorbereitung.
+Deine Termine mit Gästen, Räumen und Notizen: die vergangene Woche und der nächste Monat beim Verbinden, danach jede Änderung. Sie erscheinen in **Kalender** und in der Meeting-Vorbereitung.
 
-Es liest nur: Es fügt nie ein Meeting hinzu, verschiebt keins und entfernt keins. Mail aus Exchange Server wird noch nicht gelesen.
+Der Zugriff ist nur lesend: Es werden keine Termine hinzugefügt, verschoben oder gelöscht. E-Mails von Exchange Server werden noch nicht gelesen.
 
 ## Microsoft 365 oder Exchange Server?
 
-Exchange Server läuft bei deiner Firma. Microsoft 365 (Exchange Online) ist die Cloud von Microsoft: Wähle dafür **Outlook-Kalender**. Liegt deine Adresse auf Microsoft 365, sagt das Formular es dir.
+Exchange Server wird von deinem Unternehmen betrieben. Microsoft 365 (Exchange Online) ist die Cloud von Microsoft. Wähle dafür stattdessen **Outlook-Kalender**.
+
+Gib zuerst deine Adresse ein. Wenn sie zu Microsoft 365 gehört, zeigt das Formular einen entsprechenden Hinweis und statt des Passwortfelds **Mit Microsoft anmelden**. Dadurch öffnet sich die Anmeldung für Outlook-Kalender, ganz ohne Passwort. Wird das nicht innerhalb weniger Sekunden erkannt oder betreibt dein Unternehmen einen eigenen Server, bleibt das Passwortfeld sichtbar.
 
 ## Verbinden
 
 1. Öffne im Dashboard **Verbindungen**, dann **Kalender**, und wähle **Exchange Server**.
-2. Gib deine Arbeitsadresse und dein Windows-Passwort ein.
-3. Drücke **Verbinden**.
+2. Gib deine geschäftliche E-Mail-Adresse und dein Windows-Passwort ein.
+3. Klicke auf **Verbinden**.
 
-Der Server wird über deine Adresse gefunden (Autodiscover). Nicht gefunden? Öffne **Servereinstellungen** und gib den Server ein, den dein IT-Team für Outlook nennt, etwa `mail.example.com`. Meldest du dich mit einem anderen Namen als deiner Adresse an? Gib ihn als `DOMAIN\name` unter **Benutzername** ein.
+Der Server wird anhand deiner Adresse gefunden (Autodiscover). Wird er nicht gefunden? Öffne **Servereinstellungen** und gib den Server ein, den dir dein IT-Team für Outlook nennt, zum Beispiel `mail.example.com`. Meldest du dich mit einem anderen Namen als deiner Adresse an? Gib ihn unter **Benutzername** als `DOMAIN\name` ein.
 
-Es meldet sich mit NTLM oder Basic an, nur über https.
+Die Anmeldung erfolgt über NTLM oder Basic und ausschließlich über HTTPS.
 
-## Wenn es stoppt
+## Wenn die Verbindung abbricht
 
-- **Der Kalenderserver hat das Passwort abgelehnt**: Dein Windows-Passwort hat sich geändert. Verbinde neu.
-- **Ein Microsoft-365-Postfach**: Dein Postfach ist zu Microsoft 365 umgezogen. Trenne dieses und verbinde **Outlook-Kalender**.
-- **Der Kalenderserver war nicht erreichbar**: Es versucht es selbst noch einmal. Manche Server sind nur im Firmennetz oder per VPN erreichbar.
+- **Der Kalenderserver hat das Passwort abgelehnt**: Dein Windows-Passwort hat sich geändert. Verbinde den Kalender erneut.
+- **Ein Microsoft 365-Postfach**: Dein Postfach wurde zu Microsoft 365 verschoben. Trenne diese Verbindung und verbinde **Outlook-Kalender**.
+- **Der Kalenderserver war nicht erreichbar**: Es wird automatisch erneut versucht. Manche Server sind nur über das Unternehmensnetzwerk oder VPN erreichbar.
 
-## Entfernen
+## Verbindung entfernen
 
-**Verbindungen**, den Kalender öffnen, **Details**, dann **Trennen**. Was schon da ist, bleibt.
+Öffne **Verbindungen**, dann den Kalender und **Details**, und wähle **Trennen**. Bereits importierte Daten bleiben erhalten.
