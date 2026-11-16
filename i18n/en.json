@@ -986,6 +986,8 @@
  "Clashes with {} ({})": "Clashes with {} ({})",
  "Claude": "Claude",
  "Claude Code": "Claude Code",
+ "Claude Code could not be started.": "Claude Code could not be started.",
+ "Claude Code is not installed.": "Claude Code is not installed.",
  "Claude Code result": "Claude Code result",
  "Claude Code session": "Claude Code session",
  "Claude results need The Machine Network.": "Claude results need The Machine Network.",

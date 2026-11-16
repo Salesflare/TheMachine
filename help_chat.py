@@ -5,7 +5,8 @@ the person writes in another one.
 
 Cheap by design: only the few sections that match the question go in (never every article), with a short prompt,
 as a one-shot turn on the Machine's own model through OpenClaw (`openclaw infer model run --gateway`: its own
-session, no tools, no workspace files), so it can answer and change nothing. Nothing about the owner goes in: no
+session, no tools, no workspace files; on a Claude sign-in Claude Code's own print mode, the same way: claude_print.py),
+so it can answer and change nothing. Nothing about the owner goes in: no
 messages, people or settings, only the question, the last few turns of this help chat, the public docs and code, and
 one line on how technical they likely are (level), guessed here from their setup, the role in USER.md and how they
 write; the role itself stays out.
@@ -22,6 +23,7 @@ import threading
 import time
 from pathlib import Path
 
+import claude_print
 import i18n
 import locale_prefs
 from i18n import t
@@ -350,8 +352,17 @@ def prompt(question, history, sections, snippets, audience=None, lang='en'):
 
 
 def openclaw_model_run(config, text, model=None, thinking=None, timeout=TIMEOUT):
-    """One raw model turn through the Gateway (its own session, no tools); the reply's text. timeout: seconds."""
-    args = [str((config or {}).get('openclaw') or 'openclaw'), 'infer', 'model', 'run', '--gateway', '--json', '--prompt', text]
+    """One raw model turn through the Gateway (its own session, no tools); the reply's text. timeout: seconds. On a
+    Claude sign-in, Claude Code's own print mode instead (claude_print.py): `infer model run` never takes that route."""
+    claude = claude_print.ref(config, model)
+    if claude:
+        try:
+            return claude_print.run(config, text, claude, thinking, timeout)
+        except subprocess.TimeoutExpired:
+            raise Unavailable(t('Help took too long to answer. Try again.')) from None
+        except claude_print.Failed:
+            raise Unavailable(t('Help can’t reach your model right now.')) from None
+    args =[str((config or {}).get('openclaw') or 'openclaw'), 'infer', 'model', 'run', '--gateway', '--json', '--prompt', text]
     if model:
         args += ['--model', model]
     if thinking:
