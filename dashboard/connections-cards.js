@@ -643,6 +643,18 @@ function drawConnectors(){const expandedSync=new Set([...document.querySelectorA
  for(const a of $('#connectors').children){a.hidden=a.dataset.group!==connShown;if(fresh.has(a.dataset.conn))a.classList.add('conn-new');for(const d of a.querySelectorAll('details:not([id])'))if(folds.includes(a.dataset.conn+' '+d.className))d.open=true}renderDisconnected()}  // what was open stays open
 // Connections' own page mark (pageMarks, shell-core.js): a category open beside the list, not the index
 PAGE_MARKS.push(['m-conn-split','#health.conn-split:not(.conn-index):not([hidden])']);pageMarks();
+// Connections keeps itself current, never needing a manual refresh: when a sign-in ends, and when the page is in front
+// again (back from another app, the phone app's sign-in sheet or another tab) while Connections shows or a sign-in is
+// going, it asks the Machine at once and a few times more while a new connection settles (it restarts to read it).
+// Here, in Connections' own part: before it is in, nothing of it shows and no sign-in is going.
+let settleTimers=[],connWokeAt=0;
+function connectionsSettle(after){for(const x of settleTimers)clearTimeout(x);connectList=null;
+ settleTimers=[0,3e3,8e3,20e3].map(ms=>setTimeout(()=>{if(document.hidden||refreshes)return;refresh(true).then(()=>after?.(),()=>{})},ms))}
+function connectionsWake(){if(document.hidden||Date.now()-connWokeAt<2000)return;
+ const going=['started','connecting','checking','starting'].includes(connectSignin?.state);
+ if(!going&&$('#health').hidden)return;connWokeAt=Date.now();
+ connectionsSettle(()=>{if(connectSignin){$('#connect-add').dataset.sig='';renderConnectSignin()}})}
+document.addEventListener('visibilitychange',connectionsWake);addEventListener('focus',connectionsWake);addEventListener('pageshow',e=>{if(e.persisted)connectionsWake()});
 // Served as a part that loads when first needed (dashboard_parts.LAZY): a page drawn before it came draws Connections
 // when it shows (tabDraw; render skipped it, and it can't call render, which counts the part in only once this file has
 // run). Inline (the tests, the demo) this part runs before shell-render.js, which draws it itself.
