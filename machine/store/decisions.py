@@ -1027,6 +1027,48 @@ class DecisionsStore:
             LOG.info('notion done closed=%s', len(closed))
         return closed
 
+    def close_done_linear(self, undo_hours=24):
+        """Open to-dos made only from Linear (connectors/linear.py) whose every issue Linear now shows done (its latest
+        linear.issue event: a state of type completed or canceled) close by themselves: Done, "Done in Linear", with Undo
+        for a day. Once per issue version: after an Undo it stays open until the issue changes again. Not while a change of
+        it is under way. Returns the closed ids."""
+        stamp, found = now(), []
+        with self.connect() as db:
+            if not db.execute("SELECT 1 FROM events WHERE kind='linear.issue' LIMIT 1").fetchone():
+                return []
+            rows = db.execute(f"SELECT s.* FROM suggestions s WHERE s.status IN {todo_states.sql(todo_states.OPEN)} "
+                              "AND EXISTS(SELECT 1 FROM json_each(s.event_ids) j JOIN events e ON e.id=j.value WHERE e.kind LIKE 'linear.%')").fetchall()
+            newest = {}  # (account, issue id) -> its latest linear.issue event
+            for e in db.execute("SELECT id,version,account_id,metadata FROM events WHERE kind='linear.issue' ORDER BY occurred_at,rowid") if rows else ():
+                newest[(e['account_id'], json.loads(e['metadata'] or '{}').get('issue_id'))] = e
+            for row in rows:
+                events = db.execute('SELECT e.kind,e.account_id,e.metadata FROM events e JOIN json_each(?) j ON j.value=e.id', (row['event_ids'],)).fetchall()
+                issues = {(e['account_id'], json.loads(e['metadata'] or '{}').get('issue_id')) for e in events}
+                if not events or any(not e['kind'].startswith('linear.') for e in events) or any(not i[1] for i in issues):
+                    continue
+                latest = [newest.get(i) for i in issues]
+                if any(not e or json.loads(e['metadata'] or '{}').get('done') is not True for e in latest):
+                    continue
+                decision_id = 'linear-done:' + hashlib.sha256(f"{row['id']}:{sorted((e['id'], e['version']) for e in latest)}".encode()).hexdigest()[:32]
+                found.append((row['id'], decision_id))
+        closed = []
+        if not found:
+            return closed
+        with self.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            for sid, decision_id in found:
+                row = db.execute(f"SELECT * FROM suggestions WHERE id=? AND status IN {todo_states.sql(todo_states.OPEN)}", (sid,)).fetchone()
+                if not row or db.execute('SELECT 1 FROM decisions WHERE id=?', (decision_id,)).fetchone():
+                    continue  # closed already, or closed for this before and the owner took it back
+                if db.execute("SELECT 1 FROM action_jobs WHERE suggestion_id=? AND status IN ('sending','uncertain')", (sid,)).fetchone():
+                    continue  # a change on its way settles first
+                close_by_itself(db, row, decision_id, '', 'linear', stamp, undo_hours)
+                db.execute('UPDATE suggestions SET early=0 WHERE id=?', (sid,))
+                closed.append(sid)
+        if closed:
+            LOG.info('linear done closed=%s', len(closed))
+        return closed
+
     def close_handled_intercom(self, undo_hours=24):
         """Open to-dos made only from Intercom conversations that Intercom shows handled since the to-do was made close by
         themselves: Done, "Closed in Intercom" or "Answered in Intercom" (by whom, when a teammate), with Undo for a day.
@@ -1414,7 +1456,7 @@ class DecisionsStore:
             # A review to-do (fleet_reviews.py) never sends or acts for anyone: the review goes back to the one who asked.
             if row and str(row['dedupe_key']).startswith('fleet-review:'):
                 raise OwnerError('A review to-do never sends anything. Your review goes back to its owner, who sends it themselves.')
-            if not row or row['status']!='prepared' or not action or action['kind'] not in (*SEND,'merge','prepare','finish','calendar','doc_write'):
+            if not row or row['status']!='prepared' or not action or action['kind'] not in (*SEND,'merge','prepare','finish','calendar','doc_write','linear'):
                 raise OwnerError('This result changed or is no longer ready. Use its current buttons.')
             off=abilities.refuse(self.config,action.get('account_id'))  # its Can do things was turned off since the draft
             if off:raise ValueError(off)

@@ -18,6 +18,7 @@
 .card .draft .dm{margin:0 0 6px;font-size:.8rem;color:var(--faint);overflow-wrap:anywhere}
 .card .draft .db{white-space:pre-wrap;overflow-wrap:anywhere}
 .dw{white-space:normal}.dw .dw-p{margin:2px 0 6px;white-space:pre-wrap}.dw .dw-h1{font-weight:700;font-size:1.12em}.dw .dw-h2{font-weight:700;font-size:1.04em}.dw .dw-h3{font-weight:600}.dw .dw-ch+.dw-ch{margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}.dw .dw-k,.dw .dw-n{font-size:.8rem;color:var(--faint);margin:6px 0 2px}.dw .dw-n{color:var(--muted);font-weight:600}.dw del{background:color-mix(in srgb,var(--danger,#e5484d) 22%,transparent);text-decoration:line-through;border-radius:3px}.dw ins{background:color-mix(in srgb,var(--mint) 30%,transparent);text-decoration:none;border-radius:3px}
+.draft.cal-change .lin-text{margin:6px 0 0;white-space:pre-wrap;overflow-wrap:anywhere;font:400 var(--fs-md,.95rem)/1.5 var(--sans);color:var(--text)}
 .draft.cal-change .cal-rows{margin:4px 0 0;font:400 var(--fs-md,.95rem)/1.5 var(--sans);color:var(--text)}.draft.cal-change .cal-rows div{display:flex;gap:12px;padding:2px 0}.draft.cal-change .cal-rows dt{flex:0 0 56px;color:var(--faint)}.draft.cal-change .cal-rows dd{margin:0;min-width:0;overflow-wrap:anywhere;white-space:pre-wrap}
 .card .draft.sent{opacity:.75}
 .card .draft.clamp .db{max-height:calc(14*1.5em);overflow:hidden;-webkit-mask-image:linear-gradient(#000 70%,transparent);mask-image:linear-gradient(#000 70%,transparent)}

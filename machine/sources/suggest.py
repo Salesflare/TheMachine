@@ -18,12 +18,13 @@ COUNT_UP_TO = 99
 DAYS = 30
 MESSAGES_READ = 400  # the latest mail and chat messages looked through for links
 # Mail from these senders too, on top of the setup hints' (HINT_SOURCES)
-MAIL_DOMAINS = {**{service: domains for service, _, domains in HINT_SOURCES}, 'trello': ('trello.com',), 'shortcut': ('shortcut.com',)}
+MAIL_DOMAINS = {**{service: domains for service, _, domains in HINT_SOURCES}, 'trello': ('trello.com',), 'shortcut': ('shortcut.com',), 'linear': ('linear.app',)}
 # The + Add tile a meeting's video link points to
 MEETING_TILES = {'zoom': 'zoom', 'meet': 'google_meet', 'teams': 'teams'}
 # The + Add tile a link in a message points to: (host, path it starts with)
 LINKS = {'google_docs': (('docs.google.com', '/'),), 'docs': (('sharepoint.com', '/'), ('onedrive.live.com', '/'), ('1drv.ms', '/')),
          'github': (('github.com', '/'),), 'trello': (('trello.com', '/c/'), ('trello.com', '/b/')), 'shortcut': (('app.shortcut.com', '/'),),
+         'linear': (('linear.app', '/'),),
          'zoom': (('zoom.us', '/j/'),), 'google_meet': (('meet.google.com', '/'),), 'teams': (('teams.microsoft.com', '/l/meetup-join'),)}
 LINK_RE = {name: re.compile('|'.join(r'https?://(?:[a-z0-9-]+\.)*' + re.escape(host) + re.escape(path) for host, path in marks), re.I)
            for name, marks in LINKS.items()}

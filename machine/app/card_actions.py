@@ -11,6 +11,7 @@ import chat_files
 import crm_fixes
 import crm_import
 import doc_writes
+import linear_writes
 import fleet
 import follow_ups
 import graph
@@ -233,11 +234,15 @@ class CardActionsApp:
             signal_chats.update(owner_signal_chats(self.config,db,args.get('next_actions',args.get('next_action')),signal_chats))
             calendar_events=calendar_write_events(db,calendar_write_ids(args.get('next_actions',args.get('next_action'))),self.owner_emails())
             spots=reply_spots(self.config,db,row['event_ids'])  # a Slack reply in its message's thread, a WhatsApp one quoting it
+            linear_issues=linear_writes.issues_of(db,row['event_ids'])
             doc_files=doc_write_files(db,row['event_ids'],self.config,doc_writes.area(self.config,json.loads(row['account_ids'] or '[]')),args['suggestion_id'])
         # A doc write: the owner's Docs connections, and each doc an edit names read now, its version pinned (doc_writes.py)
         doc_context=doc_writes.context(self.config,load_connector('docs'),CONNECTOR_HELPERS,doc_files,args.get('next_actions',args.get('next_action')),
                                        doc_writes.area(self.config,json.loads(row['account_ids'] or '[]')))
-        action=next_actions.validate(args.get('next_actions',args.get('next_action')),self.config,json.loads(row['account_ids']),options,threads,x_threads,whatsapp_chats,intercom_conversations,calendar_events,docs,senders,replied_to(emails),telegram_chats,doc_context,spots,signal_chats)
+        # A Linear change: the to-do's own issues, and the team's states, people or teams read now (linear_writes.py)
+        linear_context=linear_writes.context(self.config,load_connector('linear'),CONNECTOR_HELPERS,linear_issues,args.get('next_actions',args.get('next_action')),
+                                             doc_writes.area(self.config,json.loads(row['account_ids'] or '[]')))
+        action=next_actions.validate(args.get('next_actions',args.get('next_action')),self.config,json.loads(row['account_ids']),options,threads,x_threads,whatsapp_chats,intercom_conversations,calendar_events,docs,senders,replied_to(emails),telegram_chats,doc_context,spots,signal_chats,linear_context)
         for item in next_actions.actions(action):
             if item['kind']=='handoff' and not (getattr(self,'fleet',None) and self.fleet.teammate(item)):
                 raise OwnerError('Hand off through The Machine only to a teammate in a Work Fleet (their email as listed); use a Slack message or email for anyone else')

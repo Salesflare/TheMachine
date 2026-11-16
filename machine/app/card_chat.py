@@ -344,7 +344,7 @@ class CardChatApp:
         # A note that answered the to-do's question (decision_asks): the question shows as its own line, the note alone
         answered = {r['decision_id']: json.loads(r['questions']) for r in db.execute('SELECT decision_id,questions FROM decision_asks WHERE suggestion_id=?', (suggestion_id,))}
         loose = []  # notes saved before that: one a quick pick glued to its question comes apart below (chat_unglued)
-        for r in db.execute("SELECT id,choice,feedback,source,created_at FROM decisions WHERE suggestion_id=? AND (source IN ('dashboard','telegram','fleet','expiry','placed','intercom','intercom_replies','notion','handled','plan','correction') OR id LIKE 'outcome-wait:%') "
+        for r in db.execute("SELECT id,choice,feedback,source,created_at FROM decisions WHERE suggestion_id=? AND (source IN ('dashboard','telegram','fleet','expiry','placed','intercom','intercom_replies','notion','linear','handled','plan','correction') OR id LIKE 'outcome-wait:%') "
                             'ORDER BY rowid', (suggestion_id,)):
             at, via = chat_ms(r['created_at']), (' in Telegram' if r['source'] == 'telegram' else '')
             if r['source'] == 'expiry':  # its moment passed (Store.expire_passed); Undo takes this back like a tap
@@ -380,6 +380,9 @@ class CardChatApp:
                 continue
             if r['source'] == 'notion':  # the task was done in Notion (Store.close_done_notion); Undo takes this back like a tap
                 owner.append({'kind': 'event', 'text': i18n.t('Done in Notion'), 'choice': 'complete', 'at': at})
+                continue
+            if r['source'] == 'linear':  # every issue of it was done in Linear (Store.close_done_linear)
+                owner.append({'kind': 'event', 'text': i18n.t('Done in Linear'), 'choice': 'complete', 'at': at})
                 continue
             if r['source'] == 'intercom':  # a teammate was assigned the conversation (Store.close_taken_intercom)
                 owner.append({'kind': 'event', 'text': i18n.t('Closed by itself: {} took it in Intercom', r['feedback']) if r['feedback']

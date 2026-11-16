@@ -155,7 +155,7 @@ DECISION_WEIGHT = {'accept': 1.0, 'send': 1.0, 'complete': 1.0, 'other': 0.5, 'r
 PROBABLE = 0.72
 UNNAMED = 0.75
 UNNAMED_DAYS = 45
-DOC_KINDS, NOTION_KINDS = of(service='docs'), of(service='notion')  # machine/kinds.py
+DOC_KINDS, NOTION_KINDS, LINEAR_KINDS = of(service='docs'), of(service='notion'), of(service='linear')  # machine/kinds.py
 UNNAMED_KINDS = {'gmail.message', 'calendar.event', 'salesflare.email', 'salesflare.meeting', 'intercom.conversation', 'github.notification'}
 OPEN_CARD = todo_states.OPEN
 # Boards: projects of one kind (partner listings, buyers, onboardings) in stages. Every board ends in this row too.
@@ -578,6 +578,15 @@ def _touches(kind, m, owner, wrote_to):
             return []
         weight = {'docs.mention': WEIGHTS['them'], 'docs.comment': 0.2, 'docs.suggestion': 0.15}.get(kind.replace('notion.', 'docs.'), 0.1)
         return [('email:' + found[0][1], found[0][0] or m.get('from_name'), weight, 'seen' if weight == 0.1 else 'them')]
+    if kind in LINEAR_KINDS:
+        # Linear (connectors/linear.py): who mentioned the owner, commented, asked for a review or made the issue, by the
+        # address Linear gives for them
+        found = addresses(m.get('from'))
+        if not found or owner.mine(found[0][1]) or bulk(found[0][1]):
+            return []
+        what = kind.partition('.')[2]  # asked something of the owner: as one of theirs; a comment: less; the rest: seen
+        weight = WEIGHTS['them'] if what in ('mention', 'review') else 0.2 if what == 'comment' else 0.1
+        return [('email:' + found[0][1], found[0][0] or m.get('from_name'), weight, 'seen' if weight == 0.1 else 'them')]
     if kind == 'stripe.event':
         found = addresses(m.get('from'))
         return [('email:' + found[0][1], None, 0.05, 'seen')] if found and not owner.mine(found[0][1]) and not bulk(found[0][1]) else []
@@ -749,6 +758,8 @@ def thread_key(kind, m):
         return 'gh:' + str(m['repo']) + '#' + str(m['number']), True
     if kind == 'calendar.event' and m.get('recurring_event_id'):
         return 'cal:' + str(m['recurring_event_id']), True
+    if kind in LINEAR_KINDS and m.get('issue_id'):  # everything on one Linear issue
+        return 'linear:' + str(m['issue_id']), True
     if kind in ('docs.comment', 'docs.mention', 'notion.comment', 'notion.mention') and m.get('file_id') and m.get('comment_id'):
         return 'doc:' + str(m['file_id']) + ':' + str(m['comment_id']), True
     return None, False

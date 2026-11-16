@@ -659,7 +659,7 @@ def controls(row, root=''):
                 choice=('next_' if action['kind']=='prepare' else 'send_')+action['revision']
                 buttons.append({'label':next_actions.label(action),'action':{'type':'callback','value':f"assistant:{row['id']}:{choice}"}})
             elif action['kind']=='open' and str(action.get('url') or '').startswith(('https://','http://')):buttons.append({'label':action['label'],'action':{'type':'url','url':action['url']}})
-            elif action['kind'] in ('calendar','doc_write') and root and not action_busy(state):buttons.append({'label':next_actions.label(action),'action':{'type':'url','url':f"{root}#send={row['id']}&revision={action['revision']}"}})  # shown in the dashboard first, then tapped there
+            elif action['kind'] in ('calendar','doc_write','linear') and root and not action_busy(state):buttons.append({'label':next_actions.label(action),'action':{'type':'url','url':f"{root}#send={row['id']}&revision={action['revision']}"}})  # shown in the dashboard first, then tapped there
             elif action['kind']=='handoff' and root and not row.get('handled_hint'):buttons.append({'label':next_actions.label(action),'action':{'type':'url','url':f"{root}#task-{row['id']}"}})  # the Fleet handoff form is on the dashboard
     if row['status'] in todo_states.WITH_RESULT and any(a['kind']=='merge' and (a.get('state') or row.get('action_status') or {}).get('undo_until','')>now() for a in actions):
         buttons.append({'label':t('Undo merge'),'action':{'type':'callback','value':f"assistant:{row['id']}:unmerge"}})  # a merged fix stays reversible for a day

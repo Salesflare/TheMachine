@@ -132,7 +132,7 @@ BEFORE = {
         'icloud_calendar': 'iCloud Calendar', 'caldav': 'Calendar', 'proton_calendar': 'Proton Calendar', 'ics': 'Calendar', 'exchange': 'Exchange',
         'slack': 'Slack', 'teams': 'Microsoft Teams', 'salesflare': 'Salesflare', 'salesforce': 'Salesforce', 'android': 'Android',
         'whatsapp': 'WhatsApp', 'telegram': 'Telegram', 'signal': 'Signal', 'linkedin': 'LinkedIn', 'x': 'X', 'intercom': 'Intercom',
-        'zoom': 'Zoom', 'stripe': 'Stripe', 'github': 'GitHub', 'trello': 'Trello', 'shortcut': 'Shortcut', 'docs': 'Docs',
+        'zoom': 'Zoom', 'stripe': 'Stripe', 'github': 'GitHub', 'trello': 'Trello', 'shortcut': 'Shortcut', 'linear': 'Linear', 'docs': 'Docs',
         'notion': 'Notion', 'google_meet': 'Google Meet', 'rss': 'RSS', 'web_page': 'Web page', 'gateway': 'Machine health'},
     'names.TRANSPORT_SERVICES': {
         'gog': 'gmail', 'gogcli': 'gmail', 'wacli': 'whatsapp', 'wacli-local': 'whatsapp', 'existing_wacli_local_store': 'whatsapp',
@@ -146,12 +146,12 @@ BEFORE = {
         'icloud_calendar': 'calendar', 'caldav': 'calendar', 'proton_calendar': 'calendar', 'ics': 'calendar', 'exchange': 'calendar',
         'slack': 'chat', 'teams': 'chat', 'whatsapp': 'chat', 'telegram': 'chat', 'signal': 'chat', 'linkedin': 'chat', 'x': 'chat',
         'zoom': 'meetings', 'google_meet': 'meetings', 'docs': 'docs', 'google_docs': 'docs', 'salesflare': 'customers',
-        'salesforce': 'customers', 'intercom': 'customers', 'stripe': 'customers', 'github': 'work', 'shortcut': 'work', 'trello': 'work', 'notion': 'docs'},
+        'salesforce': 'customers', 'intercom': 'customers', 'stripe': 'customers', 'github': 'work', 'shortcut': 'work', 'trello': 'work', 'notion': 'docs', 'linear': 'work'},
     'groups.CATCH_ALL': frozenset({'imap', 'caldav', 'ics'}),
     'fleet.SIGNIN_OF': {
         'intercom': 'intercom', 'gmail': 'google', 'calendar': 'google', 'outlook': 'microsoft', 'outlook_calendar': 'microsoft',
         'zoom': 'zoom', 'docs': 'microsoft_docs', 'teams': 'microsoft_teams', 'stripe': 'stripe', 'slack': 'slack', 'trello': 'trello',
-        'google_meet': 'google_meet', 'salesforce': 'salesforce', 'shortcut': 'shortcut', 'notion': 'notion'},
+        'google_meet': 'google_meet', 'salesforce': 'salesforce', 'shortcut': 'shortcut', 'notion': 'notion', 'linear': 'linear'},
     'onboarding.LABELS': {
         'gmail': 'Gmail', 'calendar': 'Google Calendar', 'outlook': 'Outlook', 'outlook_calendar': 'Outlook Calendar', 'imap': 'Other email',
         'slack': 'Slack', 'salesflare': 'Salesflare CRM', 'android': 'Android notifications', 'whatsapp': 'WhatsApp',
@@ -190,7 +190,7 @@ BEFORE_PAGE = {
         'telegram': 'Telegram chats', 'signal': 'Signal chats', 'linkedin': 'LinkedIn', 'android': 'Android notifications',
         'gateway': 'Machine health', 'github': 'GitHub', 'intercom': 'Intercom', 'zoom': 'Zoom', 'google_meet': 'Google Meet',
         'teams': 'Teams', 'trello': 'Trello', 'stripe': 'Stripe', 'rss': 'Feed', 'web_page': 'Web page', 'docs': 'Microsoft OneDrive',
-        'shortcut': 'Shortcut', 'notion': 'Notion', 'x': 'X'},
+        'shortcut': 'Shortcut', 'notion': 'Notion', 'linear': 'Linear', 'x': 'X'},
     # dashboard/fleet-sharing.js
     'CONN_LABEL': {
         'gmail': 'Gmail', 'outlook': 'Outlook', 'calendar': 'Google Calendar', 'outlook_calendar': 'Outlook Calendar',
@@ -202,7 +202,7 @@ BEFORE_PAGE = {
         'calendar': 'events', 'outlook_calendar': 'events', 'icloud_calendar': 'events', 'caldav': 'events', 'proton_calendar': 'events',
         'ics': 'events', 'exchange': 'events', 'intercom': 'conversations', 'android': 'notifications', 'gateway': 'alerts',
         'github': 'notifications', 'stripe': 'events', 'rss': 'items', 'docs': 'items', 'google_meet': 'meetings',
-        'trello': 'card changes', 'salesforce': 'updates', 'web_page': 'updates', 'notion': 'items'},
+        'trello': 'card changes', 'salesforce': 'updates', 'web_page': 'updates', 'notion': 'items', 'linear': 'items'},
     # dashboard/connections-cards.js and calendar-view.js (a set: read with includes)
     'CALENDAR_SERVICES': {'calendar', 'outlook_calendar', 'icloud_calendar', 'caldav', 'proton_calendar', 'ics', 'exchange'},
 }

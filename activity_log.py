@@ -165,7 +165,7 @@ def _to(payload):
 def _job_kind(kind):
     if kind in MESSAGE_KINDS:
         return 'messages'
-    return {'doc_write': 'docs', 'calendar': 'calendar', 'finish': 'web', 'merge': 'fixes'}.get(kind)
+    return {'doc_write': 'docs', 'linear': 'docs', 'calendar': 'calendar', 'finish': 'web', 'merge': 'fixes'}.get(kind)
 
 
 def _job_status(kind, status):
@@ -407,7 +407,7 @@ def _stamp(value):
     return moment if moment.tzinfo else moment.replace(tzinfo=dt.timezone.utc)
 
 
-OUTBOX = {'messages': tuple(MESSAGE_KINDS), 'docs': ('doc_write',), 'calendar': ('calendar',), 'web': ('finish',), 'fixes': ('merge',)}
+OUTBOX = {'messages': tuple(MESSAGE_KINDS), 'docs': ('doc_write', 'linear'), 'calendar': ('calendar',), 'web': ('finish',), 'fixes': ('merge',)}
 
 
 def page(db, config=None, kind='', offset=0, limit=PAGE, outcome='', actor=''):
