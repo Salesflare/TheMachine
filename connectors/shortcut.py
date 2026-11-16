@@ -1,9 +1,16 @@
 """Shortcut pipeline moves, via GET-only story search and history.
 
-Uses the standard library, with no SDK or write endpoints. Shortcut tokens have
-full account access (no read-only token scope); this reader never uses it to write.
-Search uses a one-day overlap for date precision and indexing delays. History
-supplies individual transitions, including multiple moves between polls.
+Uses the standard library, with no SDK or write endpoints. Search uses a one-day overlap for date precision and
+indexing delays. History supplies individual transitions, including multiple moves between polls.
+
+Two ways in:
+- Sign in with Shortcut (the usual one): the hosting control plane runs Shortcut's OAuth consent with scope `read`
+  only, for The Machine's public client (no client secret, PKCE), and hands the result here as the credential, JSON:
+  {"client_id", "access_token", "refresh_token", "expires_at"}. The access token goes as a Bearer token. Shortly
+  before it runs out (or when Shortcut turns it down once), this Machine refreshes it itself at Shortcut's token
+  endpoint with the client id and the refresh token, and keeps the new pair in the same private credential file.
+- A pasted personal API token (the fallback): it has full account access (Shortcut has no read-only token);
+  this reader never uses it to write.
 """
 import copy
 import datetime as dt
@@ -11,7 +18,11 @@ import hashlib
 import html
 import http.client
 import json
+import os
+from pathlib import Path
 import re
+import tempfile
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -29,14 +40,19 @@ SETUP = {
     'what': 'Stories that change state, with their owners and deadlines.',
     'account': {'id': 'shortcut', 'service': 'shortcut', 'transport': 'api',
                 'boundary': 'work', 'credential': 'shortcut', 'poll_seconds': 300},
-    # No workspace to type: the token's own member check (GET /member) says which workspace it is.
+    # No workspace to type: the token's own member check (GET /member) says which workspace it is. Sign in with
+    # Shortcut answers this same prompt with its read-only sign-in (JSON); pasting a personal token is the fallback.
     'secret': 'Shortcut API token',
     'token_url': TOKEN_URL,
-    'no_oauth': 'Shortcut has no OAuth for other apps, only personal API tokens.',
-    'note': 'Get a token at https://app.shortcut.com/settings/account/api-tokens and paste it here. '
+    # Signed in at the hosting control plane (hosted: its account page; self-hosted: paired, from Connections, + Add)
+    'account_page': 'source-shortcut',
+    'note': 'Sign in with Shortcut from Connections, + Add. Or get a token at '
+            'https://app.shortcut.com/settings/account/api-tokens and paste it here. '
             'It only reads, never changes anything in Shortcut.',
+    'hints': {'shortcut_signin_expired': 'Shortcut asks you to sign in again'},
     # What the owner reads when the check turns the token down (onboarding.connect): plain words and what to do.
-    'errors': {'shortcut_http:HTTP_401': ('Shortcut didn’t accept that token', 'copy it again from Shortcut and paste it here'),
+    'errors': {'shortcut_signin_expired': ('Shortcut didn’t accept that sign-in', 'sign in with Shortcut again'),
+               'shortcut_http:HTTP_401': ('Shortcut didn’t accept that token', 'copy it again from Shortcut and paste it here'),
                'shortcut_http:HTTP_403': ('Shortcut didn’t accept that token', 'copy it again from Shortcut and paste it here'),
                'shortcut_credential_unavailable': ('That doesn’t look like a Shortcut token', 'copy it again from Shortcut and paste it here'),
                'shortcut_network': ('Shortcut didn’t answer', 'try again in a minute'),
@@ -46,6 +62,26 @@ BASE = 'https://api.app.shortcut.com'
 PREFIX = '/api/v3/'
 PAGES = 3
 LIMIT = 25
+# Shortcut's OAuth token endpoint (its authorization server metadata at BASE/.well-known/oauth-authorization-server)
+OAUTH_TOKEN = BASE + '/oauth-authorization-code-flow/token'
+REFRESH_EARLY = 120  # seconds before the access token runs out that it is refreshed
+TOKEN = re.compile(r'[A-Za-z0-9_.~+/=-]{8,2048}')
+
+
+def signin(secret):
+    """The sign-in from Sign in with Shortcut ({client_id, access_token, refresh_token?, expires_at?}), or None for a
+    pasted token."""
+    if not secret.startswith('{'):
+        return None
+    try:
+        value = json.loads(secret)
+    except ValueError:
+        return None
+    if not isinstance(value, dict) or not all(isinstance(value.get(k), str) and TOKEN.fullmatch(value[k]) for k in ('client_id', 'access_token')) \
+            or not isinstance(value.get('refresh_token', ''), str) or (value.get('refresh_token') and not TOKEN.fullmatch(value['refresh_token'])) \
+            or not isinstance(value.get('expires_at', 0), (int, float)):
+        return None
+    return value
 
 
 def timestamp(value, helpers):
@@ -80,16 +116,73 @@ class Source:
         self.workspace = match[1] if match else workspace
         if self.workspace and not re.fullmatch(r'[a-zA-Z0-9_-]+', self.workspace):
             raise helpers.SourceError('shortcut_invalid_workspace')
-        secret = helpers.credential(config, account.get('credential', 'shortcut'))
+        self.config, self.name = config, account.get('credential', 'shortcut')
+        secret = helpers.credential(config, self.name)
         if not isinstance(secret, str):
             raise helpers.SourceError('shortcut_credential_unavailable')
         secret = secret.strip()
-        if not secret or not re.fullmatch(r'[A-Za-z0-9_-]+', secret):
+        self.signin = signin(secret)
+        if self.signin is None and (not secret or not re.fullmatch(r'[A-Za-z0-9_-]+', secret)):
             raise helpers.SourceError('shortcut_credential_unavailable')
-        self.headers = {'Shortcut-Token': secret, 'Accept': 'application/json', 'User-Agent': 'TheMachine/1'}
+        self.headers = {'Accept': 'application/json', 'User-Agent': 'TheMachine/1'}
+        self.headers.update({'Authorization': 'Bearer ' + self.signin['access_token']} if self.signin else {'Shortcut-Token': secret})
         self.opener = urllib.request.build_opener(NoRedirect())
+        if self.signin and self.signin.get('expires_at') and self.signin['expires_at'] - REFRESH_EARLY < time.time():
+            self.refresh()
 
-    def get(self, path):
+    def refresh(self):
+        """A new access token for the sign-in, from Shortcut's token endpoint (public client: the client id, no secret),
+        kept in the credential file. A sign-in that can't be refreshed any more: shortcut_signin_expired."""
+        if not self.signin.get('refresh_token'):
+            raise self.helpers.SourceError('shortcut_signin_expired')
+        form = urllib.parse.urlencode({'grant_type': 'refresh_token', 'refresh_token': self.signin['refresh_token'],
+                                       'client_id': self.signin['client_id']}).encode()
+        request = urllib.request.Request(OAUTH_TOKEN, data=form, method='POST', headers={
+            'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json', 'User-Agent': 'TheMachine/1'})
+        try:
+            with self.opener.open(request, timeout=30) as response:
+                answer = json.loads(response.read(200_001))
+        except urllib.error.HTTPError as error:
+            if error.code in (400, 401):
+                raise self.helpers.SourceError('shortcut_signin_expired', error.code) from None
+            raise self.helpers.SourceError('shortcut_http', error.code) from None
+        except (urllib.error.URLError, TimeoutError, OSError, http.client.HTTPException):
+            raise self.helpers.SourceError('shortcut_network') from None
+        except (ValueError, UnicodeError):
+            raise self.helpers.SourceError('shortcut_invalid_json') from None
+        access = answer.get('access_token') if isinstance(answer, dict) else None
+        if not isinstance(access, str) or not TOKEN.fullmatch(access):
+            raise self.helpers.SourceError('shortcut_signin_expired')
+        rotated = answer.get('refresh_token')
+        expires = answer.get('expires_in')
+        self.signin = {**self.signin, 'access_token': access,
+                       **({'refresh_token': rotated} if isinstance(rotated, str) and TOKEN.fullmatch(rotated) else {}),
+                       'expires_at': int(time.time() + expires) if isinstance(expires, int) and expires > 0 else 0}
+        self.headers['Authorization'] = 'Bearer ' + access
+        self.keep()
+
+    def keep(self):
+        """The refreshed sign-in, written over the credential file (mode 600, replaced whole). A credential handed in by
+        the service manager (CREDENTIALS_DIRECTORY) is read-only: then only this run uses the new token."""
+        directory = os.environ.get('CREDENTIALS_DIRECTORY')
+        if directory and (Path(directory) / self.name).exists():
+            return
+        place = (self.config.get('credentials') or {}).get(self.name)
+        if not place:
+            return
+        path = Path(place).expanduser()
+        fd, temp = tempfile.mkstemp(dir=path.parent, prefix='.' + path.name + '.')
+        try:
+            with os.fdopen(fd, 'w') as handle:
+                handle.write(json.dumps(self.signin, separators=(',', ':')) + '\n')
+            os.chmod(temp, 0o600)
+            os.replace(temp, path)
+        except OSError:
+            if os.path.exists(temp):
+                os.unlink(temp)
+            raise self.helpers.SourceError('shortcut_credential_unwritable') from None
+
+    def get(self, path, again=True):
         # Only these read endpoints are allowed, including server-provided continuations.
         parts = urllib.parse.urlsplit(path)
         if parts.scheme or parts.netloc or parts.fragment or not (
@@ -104,6 +197,11 @@ class Source:
                 raise self.helpers.SourceError('shortcut_response_too_large')
             return json.loads(raw)
         except urllib.error.HTTPError as error:
+            if error.code == 401 and self.signin and again:  # ran out early, or revoked: one refresh, then it says so
+                self.refresh()
+                return self.get(path, again=False)
+            if error.code == 401 and self.signin:
+                raise self.helpers.SourceError('shortcut_signin_expired', 401) from None
             retry = error.headers.get('Retry-After', '') if error.headers else ''
             delay = min(3600, max(1, int(retry))) if retry.isdigit() else (60 if error.code == 429 else None)
             raise self.helpers.SourceError('shortcut_http', error.code, retry_after=delay) from None

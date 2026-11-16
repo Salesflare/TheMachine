@@ -316,7 +316,7 @@ def load_connector(service):
 # Slack too: Sign in with Slack is the way to connect it, a Maton API key the other way (the account page's tile). Until
 # The Machine's Slack app is in the Slack Marketplace, Slack allows it 1 history read a minute: the reader paces itself
 # (sources/slack.py SLACK_LIMITS), new messages and DMs first, older ones gradually.
-HOSTED_SIGNINS = {'google', 'microsoft', 'zoom', 'stripe', 'intercom', 'trello', 'github', 'whatsapp', 'android', 'microsoft_docs',
+HOSTED_SIGNINS = {'google', 'microsoft', 'zoom', 'stripe', 'intercom', 'trello', 'shortcut', 'github', 'whatsapp', 'android', 'microsoft_docs',
                   'microsoft_docs_write', 'codex', 'google_meet', 'google_docs', 'microsoft_teams', 'slack', 'salesforce'}
 
 

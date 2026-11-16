@@ -88,7 +88,7 @@ SERVICES = {
     'stripe': {**_NO, 'name': 'Stripe', 'short': 'Stripe', 'unit': 'events', 'group': CUSTOMERS, 'signin': 'stripe'},
     'github': {**_NO, 'name': 'GitHub', 'short': 'GitHub', 'unit': 'notifications', 'group': WORK, 'transports': ('gh',)},
     'trello': {**_NO, 'name': 'Trello', 'short': 'Trello', 'unit': 'card changes', 'group': WORK, 'signin': 'trello'},
-    'shortcut': {**_NO, 'name': 'Shortcut', 'short': 'Shortcut', 'group': WORK},
+    'shortcut': {**_NO, 'name': 'Shortcut', 'short': 'Shortcut', 'group': WORK, 'signin': 'shortcut'},
     'docs': {**_NO, 'name': 'Docs', 'short': 'Microsoft OneDrive', 'unit': 'items', 'group': DOCS, 'signin': 'microsoft_docs'},
     'google_meet': {**_NO, 'name': 'Google Meet', 'short': 'Google Meet', 'unit': 'meetings', 'group': MEETINGS, 'signin': 'google_meet',
                     'video': 'meet', 'video_links': ('meet.google.com/',)},
