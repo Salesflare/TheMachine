@@ -86,7 +86,7 @@ class DocsApp:
         if not re.fullmatch(r'[A-Za-z0-9_-]{1,80}', job):
             raise ValueError('Give the job_id of this preparation')
         with self.store.connect() as db:
-            run = db.execute("SELECT s.event_ids,s.account_ids FROM preparations p JOIN suggestions s ON s.id=p.suggestion_id "
+            run = db.execute("SELECT s.id,s.event_ids,s.account_ids FROM preparations p JOIN suggestions s ON s.id=p.suggestion_id "
                              "WHERE p.job_id=? AND p.status IN ('queued','starting','running','blocked')", (job,)).fetchone()
             if not run:
                 raise ValueError('Doc drafts are checked only for a running preparation of the task the owner started')

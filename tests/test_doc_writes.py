@@ -343,6 +343,19 @@ class Google(unittest.TestCase):
         broker = {r[1] for r in self.fake.requests if r[0] == 'BROKER' and r[1]}
         self.assertTrue(broker <= {docs.READ_SCOPE, docs.REPLY_SCOPE}, broker)  # never Gmail's
 
+    def test_a_draft_check_from_a_running_preparation_reads_the_doc(self):
+        """The draft check looks up the to-do the run is for (its docs, and the docs made for it): it once read the to-do's id
+        from a row that never selected it and failed on every call."""
+        self.fake.granted.add(docs.REPLY_SCOPE)
+        with self.store.connect() as db:
+            db.execute("INSERT INTO preparations(suggestion_id,decision_id,job_id,status,created_at,updated_at) "
+                       "VALUES(?,'d','job-1','running','2026-11-16T08:00:00+00:00','2026-11-16T08:00:00+00:00')", (self.sid,))
+            event_id = db.execute("SELECT id FROM events WHERE kind='docs.comment'").fetchone()[0]
+        for args in ({'event_id': event_id}, {'file_id': 'doc1'}):
+            found = self.app().action('doc_write_draft', {'job_id': 'job-1', **args})
+            self.assertEqual((found['file_id'], found['version']), ('doc1', 'r1'))
+            self.assertEqual([p['text'] for p in found['paragraphs']], ['Q4 plan', 'Launch in week 2.'])
+
     def test_a_doc_that_changed_after_the_draft_is_not_written(self):
         self.fake.granted.add(docs.REPLY_SCOPE)
         self.decide('accept')
