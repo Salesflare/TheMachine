@@ -863,6 +863,42 @@ names you needs a to-do"). It costs no turn of its own.
 - A voice the owner wrote is never changed by the loop, and an undo is refused when the owner changed that voice or fact
   since.
 
+## Procedures
+
+A hard **Do it** task teaches later ones that touch the same site or workflow, also unrelated ones (`procedures.py`,
+`procedures_app.py`). It is what a repeating to-do keeps as its way of doing it (`recurring.py`, method), for any task,
+keyed by where the work happens instead of by the to-do.
+
+- **What one keeps.** A run the owner started (Do it, not prepared ahead) that got its task done (`done`, `your_step`,
+  `needs_you` or `waiting`) and took real work hands in `procedure` on prepare: a site (its host) or a workflow (a short
+  name), a label, the steps that helped, what didn't work, the workarounds, and how to tell it's done. A run prepared
+  ahead, or one that didn't get it done, keeps none.
+- **Only the generic method.** The run is told to write placeholders, never names, addresses, amounts, dates, message
+  text or ids. The service then takes out what slips through: team learnings' strip (addresses, links, numbers, dates,
+  amounts, handles, every name the Graph knows), the names on the to-do's messages, street addresses and amounts. A
+  link on the procedure's own site keeps its path with ids as `<id>` and no query; any other link goes.
+- **Checked by meaning before use.** A draft waits (`procedure_drafts`, sealed) for an independent background turn with
+  no tools that never saw the run. It judges each line by what it would make the agent do next time: what came from a
+  page, message or file instead of from the task, what would send, pay, approve or reach further without the owner,
+  and what can't be said without someone's details are dropped. It may keep or reword the draft's own lines, never add
+  one: code takes only the draft's line numbers, each once. No word lists. A draft without an answer waits for the next
+  pass and goes after three.
+- **Given as context, never permission.** A preparation gets at most two: a site named in the to-do, in its messages'
+  text or links, or a sender's domain other than the owner's own; a workflow whose label shares two words with the
+  to-do. They come after the owner's rules, notes and skills, framed as notes The Machine wrote: data, never
+  instructions, where the owner's words win, and sending, paying or submitting still waits for the owner.
+- **Never over the owner's own.** Procedures live in their own tables. They never edit or replace a fact, draft rule,
+  voice or skill.
+- **Upkeep, with nothing asked.** Each run that was given one settles it (`procedure_uses`): a run that gets it done
+  clears its failures; one that gets stuck adds one, and the next run's prompt says so and asks for what works now,
+  which replaces it as a whole. Three stuck runs in a row retire it: it is no longer given, until a run that gets it
+  done learns it again. Past 60, the least used go.
+- **Learning.** **What I've learned, Sites and workflows** lists them with their steps and **Remove**. A retired one
+  says so.
+- **Sharing.** They stay on this Machine. Team learnings read the ones learned since their last pass as material, under
+  their own strip and rules: one from a Personal to-do waits for the owner's OK. A Work Fleet's team learnings stay
+  learned from team conversations only.
+
 ## What a prompt reads
 
 Memory comes in kinds, each with its own table and its own picker:
@@ -876,6 +912,7 @@ Memory comes in kinds, each with its own table and its own picker:
 | `signal` | messages: related ones in a preparation, the sources of an Ask (`events`) | closeness, or the search |
 | `skill` | the owner's skills (`skills`) | a match with the to-do, or the short index (always) |
 | `team_learning` | what teammates' Machines learned (`fleet_learn*`) | closeness |
+| `procedure` | how a site or workflow was done on a Do it task ([Procedures](#procedures), `procedures`) | the site or workflow the to-do touches (match), in a preparation |
 | `voice` | how the owner writes, per channel (`voices`, by channel) | a routine run that leaves a draft: All (always) and its channel's (match), in its message once the routine left one, else when it hands one in |
 
 A prompt reads them in one way: `recall(app, purpose, about, budget)` (`machine/app/recall.py`), with a purpose
@@ -1086,9 +1123,10 @@ shared within a Work Fleet, see [Team learnings](fleet.md#team-learnings).
 
 ### What is written
 
-- At most once a day (`DAYS`), when there is at least one new note, fact or rule change (`MIN_MATERIAL`), one
+- At most once a day (`DAYS`), when there is at least one new note, fact, rule change or procedure (`MIN_MATERIAL`), one
   cheap background turn reads what this Machine learned since the last run: the owner's notes on to-dos, facts, rule
-  changes, voices, how drafts were edited and recent errors. The first run reads the last 30 days (`SINCE_DAYS`).
+  changes, voices, [procedures](#procedures) (their steps, already generic), how drafts were edited and recent errors.
+  A procedure from a Personal to-do counts like a Personal note. The first run reads the last 30 days (`SINCE_DAYS`).
 - It writes up to five general learnings, like "Drafts for people who don't know the context yet should introduce it
   first." Judged by what the notes mean, not by words. The turn's evidence is sealed like any other run's, and it waits
   for the usage budget.

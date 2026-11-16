@@ -188,6 +188,7 @@ def load(directory, states, port=8870, network_port=8871, fixture_path=HERE / 'f
         if not fresh:
             load_learned_facts(store)
             load_home_facts(store, base)
+            load_procedures(store, base)
         load_recurring(store, config, base)
         if not fresh:  # a fresh Machine has no routines yet: the page's empty state
             load_routines(store, base)
@@ -288,6 +289,28 @@ def load_recurring(store, config, base):
         # how it's done, kept from an earlier week for the next one (recurring.save_method): its chat shows Edit and Undo
         recurring.save_method(db, card['id'], '1. Take signups, revenue and churn for last Monday to Sunday from the metrics board.\n'
                               '2. Compare each with the week before.\n3. Draft one short Slack message to the team channel; you send it.', base.isoformat())
+
+
+def load_procedures(store, base):
+    """Procedures learned from Do it (procedures.py), already checked: one per site and one per workflow, and one that
+    kept getting stuck, for Learning, What I've learned, Sites and workflows."""
+    import procedures
+    stamp = base.isoformat()
+    with store.connect() as db:
+        for key, label, steps, check, area in (
+                ('site:portal.harborlinehealth.example', 'Download an invoice from the supplier portal',
+                 ['Sign in with the saved sign-in.', 'Open Billing, then Statements; Invoices moved there.',
+                  'Sort by date; the search box ignores invoice numbers.', 'Download the PDF and attach it to the to-do.'],
+                 'The PDF is saved and its number matches the to-do.', 'work'),
+                ('flow:expense-report', 'File an expense report',
+                 ['Collect the receipts for <month> from the mail.', 'Fill in one line per receipt with the amount and category.',
+                  'Leave Submit for the owner.'], 'The report shows every receipt, ready to submit.', 'work')):
+            procedures.keep(db, {'key': key, 'label': label, 'steps': steps, 'failed': [], 'workarounds': [], 'check': check}, area, stamp)
+        gone = procedures.keep(db, {'key': 'site:tickets.example', 'label': 'Book train tickets', 'steps': ['Search the route and pick <date>.'],
+                                    'failed': [], 'workarounds': [], 'check': 'The booking page shows the seats.'}, 'personal', stamp)
+        for n in range(procedures.RETIRE):  # three runs that got stuck with it retire it
+            procedures.record_uses(db, f'sandbox-procedure-{n}', 'sandbox-procedure', [gone], stamp)
+            procedures.settle(db, 'sandbox-procedure', False, stamp)
 
 
 def sandbox_jobs(monday, today):

@@ -37,7 +37,8 @@ def recall(app, purpose, about=None, budget=0):
       knows something specific about, senders.lines; read when the batch is claimed, with the claim's reply as its
       budget), retained (set-aside facts and history that bear on the waiting signals, retained_facts.py).
     - preparation: rules and facts (for this to-do), retained (set-aside facts and history that bear on it), records (the people and projects on it), skills(rules, room),
-      team (the Work Fleet's lines, team learnings among them), related (signals close in meaning).
+      procedures (the sites and workflows it touches, procedures.py; about's job and learn: the run, and whether it may
+      hand one in), team (the Work Fleet's lines, team learnings among them), related (signals close in meaning).
     - ask: sources (search_ask.ask with its own arguments: the messages that fit the prompt), and what matches the
       question of promises, facts, records (a person's summary, a named project or organization) and meetings
       (machine/app/ask_memory.py, each with (what it goes on, room)).
@@ -74,6 +75,8 @@ def recall(app, purpose, about=None, budget=0):
         # a fact about a record on the to-do is in the facts block (picked by record): the record's line doesn't say it again
         memory.add('records', lambda: app.graph_lines(todo, {int(i.row_id) for i in memory.blocks.get('facts', ()) if i.kind == 'fact'}))
         memory.add('skills', lambda rules, room: app.prep_skill_lines(todo, rules, room))
+        # what earlier Do it runs worked out for the sites and workflows it touches, below the owner's own (procedures.py)
+        memory.add('procedures', lambda: app.procedure_lines(todo, about.get('job'), bool(about.get('learn'))))
         memory.add('team', lambda: app.fleet.lines(todo))
         memory.add('related', lambda: app.related_lines(todo))
     elif purpose == 'todo_chat':

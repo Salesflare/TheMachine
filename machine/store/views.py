@@ -23,6 +23,7 @@ import graph
 import lookalike
 import learning_loop
 import locale_prefs
+import procedures
 from machine.browser import (
     browser_link,
     browser_view_link,
@@ -927,6 +928,7 @@ class ViewsStore(ConversationStore):
             result['moved'] = [dict(r) for r in db.execute("SELECT substr(f.merged_into,7) skill_id,coalesce(k.name,'a skill') name,count(*) notes FROM facts f "
                                                            "LEFT JOIN skills k ON k.id=substr(f.merged_into,7) WHERE f.merged_into LIKE 'skill:%' GROUP BY 1,2")] \
                 if db.execute("SELECT 1 FROM sqlite_master WHERE name='skills'").fetchone() else []
+            result['procedures'] = procedures.view(db)  # how sites and workflows are done, learned from Do it, each with Remove
             last = db.execute("SELECT at FROM rule_changes WHERE kind='condense' AND text LIKE 'Condensed%' ORDER BY at DESC LIMIT 1").fetchone()
             if last:  # the latest pass: every note merged that day
                 day = last['at'][:10]

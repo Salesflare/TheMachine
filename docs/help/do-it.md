@@ -14,6 +14,8 @@ While it works in its browser, the to-do and its chat show that page live, also 
 
 Before a follow-up or handoff, it checks for newer replies, also from a teammate. If it's already handled, the to-do says so. When it changed a document or page, the to-do links to it.
 
+When a hard task works out on a site or in a workflow, your Machine keeps the steps, without anyone's details. Later to-dos on that site get them as a guide, never as permission: sending or paying still waits for you. Find them in **Learning**, under **Sites and workflows**.
+
 ## Nothing goes out before your yes
 
 - A reply comes back as a draft. **Review and send** opens it ready to edit; it only goes out when you press **Send now**.

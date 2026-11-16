@@ -90,6 +90,7 @@ LEFT_OUT = {
         'notify_digests', 'notify_queue', 'pacing_starts', 'person_summary_runs', 'preparation_calls', 'preparation_runs', 'preparations',
         'profile_runs', 'project_org_backfill', 'project_org_checks', 'project_splits', 'project_stall_items', 'project_stall_runs', 'project_success', 'project_success_checks', 'promise_log', 'promises_next', 'recap_items', 'recaps', 'record_changes', 'review_misses',
         'recurring_cards', 'recurring_offers', 'recurring_series', 'mail_cleanup_items', 'mail_cleanup_senders', 'facebook_birthdays', 'digest_items', 'digest_spend', 'secondhand_seen', 'secondhand_spend', 'secondhand_todos', 'subs_items', 'subs_state','ms_photo_accounts', 'reconnect_asks', 'retention_runs', 'routine_changes', 'routine_offers', 'routine_runs', 'routines', 'review_runs', 'review_save_failures', 'rule_changes', 'self_record_backups',
+        'procedures', 'procedure_drafts', 'procedure_uses',  # kept by the full export, like a recurring to-do's way of doing it
         'skill_task_decided', 'slipped', 'state', 'store_fixes', 'plain_key_pass', 'suggestion_keys', 'sync_activity', 'sync_daily', 'task_pages',
         'thread_snoozes', 'voice_merges',
     },

@@ -48,6 +48,7 @@ import pacing
 import person_summary
 import portable
 import preparation_state
+import procedures
 import recurring
 import routines
 import retention
@@ -534,6 +535,7 @@ class StoreCore:
             follow_ups.ensure(db)  # automated follow-ups on boards and projects (follow_ups.py): new tables only
             bounces.ensure(db)  # addresses that bounce (bounces.py): new tables only
             recurring.ensure(db)  # recurring to-dos (recurring.py): new tables only
+            procedures.ensure(db)  # how a site or workflow is done, learned from Do it (procedures.py): new tables only
             routines.ensure(db)  # routines (routines.py): new tables only
             mail_cleanup.ensure(db)  # a routine template's cleanup to-dos (mail_cleanup.py): new tables only
             reading_digest.ensure(db)  # the Daily digest template's to-dos and interests (reading_digest.py): new tables only

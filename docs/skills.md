@@ -131,6 +131,9 @@ take in, and **Create skill** (or **Update <skill>**, after the [check](#checked
   skill or adding the instructions twice.
 - What I've learned shows **Moved into skills** with **Put back**, which returns the notes (the skill stays).
 
+How a site or workflow was done on a Do it task is kept apart, as a procedure ([Procedures](intelligence.md#procedures)):
+your Machine learns and updates those itself, they come after your skills in a preparation, and they never change one.
+
 ## Sharing with your Fleet or a friend
 
 Next to each skill, **Share** sends it over The Machine Network:
