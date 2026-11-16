@@ -57,7 +57,8 @@ if(dig&&dig.total){const total=flTotal=Math.max(flTotal,0,+dig.total|0),todos=+d
 // "30 of 132" looked like it went back (2026-11-09); the ending's line says what it read
 if(run&&state.first_look_done&&!(run.started_at>state.first_look_done.at))return null;
 if(run){const total=run.planned||run.claimed_count||0;flMark();return{title:t('Taking a first look at your last {} days',firstLookDays(fl,run)),done:flRunDone(run,6),read:Math.min(total,flInt(run.done_count)),batch:flLeft(run),total}}
-if(startsByItself()&&fl?.state!=='due')return setupStep()?{title:t('Your first to-dos show up here'),wait:false}:flBack()?{title:t('Taking a first look at your last {} days',firstLookDays(fl))}:{title:setupLine(),working:!!aiConnecting()};  // not "All clear" before the first read ends
+// not "All clear" before the first read ends
+if(startsByItself()&&fl?.state!=='due')return setupStep()?{title:t('Your first to-dos show up here'),wait:false}:flBack()?{title:t('Taking a first look at your last {} days',firstLookDays(fl))}:{title:setupLine(),working:!!aiConnecting()};
 if((fl?.state==='waiting'&&fl.why!=='model')||fl?.state==='due')return{title:t('A first look at your last {} days starts soon',firstLookDays(fl)),wait:fl.state==='due'?t(FIRST_LOOK_WAIT.due):flWait(fl),detail:fl.error};return null}
 // the counts are whole numbers before they reach the page, whatever the status says
 // How far it read, in the robot's voice (messages when not every source is mail). read is what its batches saved
@@ -78,7 +79,10 @@ function flNames(i){const names=(i.names||[]).slice(0,3);if(!names.length){flNam
  const shown=names.slice(0,Math.min(names.length,1+Math.floor((Date.now()-flNamesAt)/4000)));let list;
  try{list=new Intl.ListFormat(I18N.lang||'en',{type:'conjunction'}).format(shown)}catch{list=shown.join(', ')}return t('Bumped into {} so far.',list)}
 const flNamesNode=i=>{const line=flNames(i);return line?make('span',{class:'fl-names',translate:'no'},line):''};
-const firstLookInner=i=>[make('img',{class:'sticker',src:'brand/wave.webp','data-blink':'brand/wave-blink.webp','data-look':'brand/wave-look.webp','data-hand':'brand/wave-hand.webp',alt:''}),make('div',{},make('strong',i.working?{class:'backfill-run'}:{},i.title),firstLookBar(i),flNamesNode(i),i.wait===false?'':make('small',{},i.wait||(firstEta()?t('First to-dos in about {} min.',firstEta()):t('To-dos show up here as they come.'))),flDetail(i))];
+const firstLookInner=i=>[make('img',{class:'sticker',src:'brand/wave.webp','data-blink':'brand/wave-blink.webp','data-look':'brand/wave-look.webp','data-hand':'brand/wave-hand.webp',alt:''}),make('div',{},make('strong',i.working?{class:'backfill-run'}:{},i.title),firstLookBar(i),flNamesNode(i),i.wait===false?'':make('small',{},i.wait||(firstEta()?t('First to-dos in about {} min.',firstEta()):t('To-dos show up here as they come.'))),flDetail(i),flImport())];
+// While it reads: one quiet, optional button to import what another AI knows (setup-card.js memoryImportOpen); never
+// in a frame or the site's demo, and gone once something was imported
+const flImport=()=>DEV.framed||state?.setup_card?.demo||state?.setup_card?.memory?'':make('button',{type:'button',class:'quiet fl-import','data-memory-import':''},t('While you wait: import what another AI knows'));
 // The list's empty state while the first look runs: a place the list fills with firstLookFill once it is on the page
 const firstLookEmpty=i=>i?html`<div class="empty all-clear first-look-empty"></div>`:'';
 function firstLookFill(){const box=$('#suggestions .first-look-empty'),i=box&&firstLookInfo(state.review_live||{});if(i)box.replaceChildren(...firstLookInner(i))}
@@ -122,6 +126,7 @@ const waitingForAI=()=>!!state?.manage_url&&state.reviews_on===false&&/^model/.t
 const firstLookPending=()=>['due','waiting'].includes(state?.review_live?.first_look?.state)&&state.review_live.first_look.why!=='model'||!!state?.review_live?.first_dig||waitingForAI();
 setInterval(async()=>{if(document.hidden||!state||!((state.review_live?.runs||[]).length||reviewWasLive||cardWaiting||firstLookPending()))return;try{const live=await request('api/reviews/live');const running=(live.runs||[]).length;
 const before=state.review_live?.cards,fresh=live.cards&&before&&(live.cards.newest!==before.newest||live.cards.count!==before.count);
-if(fresh&&!canRefresh()){reviewWasLive=!!running;cardWaiting=true;state.review_live={...live,cards:before};renderReviewLive();return}  // typing: on the next look, also once the review ended
+// typing: on the next look, also once the review ended
+if(fresh&&!canRefresh()){reviewWasLive=!!running;cardWaiting=true;state.review_live={...live,cards:before};renderReviewLive();return}
 const aiReady=waitingForAI()&&!/^model/.test(live.first_look?.why),aiChanged=(live.ai_connecting?.name||null)!==(state.review_live?.ai_connecting?.name||null);
 if((!running&&reviewWasLive)||fresh||aiReady){reviewWasLive=!!running;cardWaiting=false;state.review_live=live;refresh();return}cardWaiting=false;reviewWasLive=!!running;state.review_live=live;renderReviewLive();if(aiChanged)renderNeedsYou()}catch(e){}},5000);

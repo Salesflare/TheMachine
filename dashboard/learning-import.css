@@ -1,0 +1,38 @@
+/*@lazy*/
+/* Import from another AI (learning-import.js): the prompt to copy, the paste, then the lines to keep and the facts that disagree */
+#memory-import{width:min(600px,calc(100vw - 24px));padding:18px 18px 16px}
+#memory-import .snooze-heading{margin:0 0 6px}#memory-import h2{margin:0;color:var(--text);font-size:1.2rem}
+.mi-fine{margin:0 0 14px;color:var(--c-text-3);font-size:var(--fs-sm)}
+.mi-from{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 14px}
+.mi-pill{position:relative;display:inline-flex}.mi-pill input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
+.mi-pill span{display:inline-flex;align-items:center;min-height:34px;padding:4px 14px;border:1px solid var(--c-line-strong);border-radius:999px;color:var(--text);font-size:var(--fs-sm)}
+.mi-pill input:checked+span{border-color:var(--c-accent);box-shadow:0 0 0 1px var(--c-accent);font-weight:var(--fw-medium,500)}
+.mi-pill input:focus-visible+span{outline:2px solid var(--c-accent);outline-offset:2px}
+.mi-steps{margin:0;padding-inline-start:20px;display:flex;flex-direction:column;gap:14px}
+.mi-step{display:block;margin:0 0 6px;color:var(--text);font-size:var(--fs-sm);font-weight:var(--fw-medium,500)}
+.mi-prompt{margin:0 0 8px;max-height:7.5em;overflow:auto;padding:10px 12px;border:1px solid var(--c-line);border-radius:var(--r-sm);background:var(--c-sunken);color:var(--c-text-2);font:inherit;font-size:var(--fs-xs);line-height:var(--lh-body);white-space:pre-wrap;overflow-wrap:anywhere}
+.mi-copy{min-height:32px;margin:0;padding:3px 12px;font-size:var(--fs-sm)}
+#mi-text{display:block;width:100%;box-sizing:border-box;min-height:7.5em;resize:vertical;font-size:var(--fs-sm)}
+#memory-import .actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;margin-top:16px}
+.mi-error{margin:12px 0 0;font-size:var(--fs-sm)}
+.mi-left{margin:0 0 10px;color:var(--c-text-3);font-size:var(--fs-sm)}.mi-left strong{color:var(--c-text-2);font-weight:var(--fw-medium,500)}
+.mi-empty{margin:8px 0;color:var(--c-text-2)}
+.mi-list{list-style:none;margin:0;padding:0;border:1px solid var(--c-line);border-radius:var(--r-md);max-height:min(52dvh,460px);overflow:auto}
+.mi-row{display:flex;align-items:flex-start;gap:10px;padding:8px 12px}.mi-row+.mi-row{border-top:1px solid var(--c-line)}
+.mi-row>input[type=checkbox]{flex:none;width:18px;height:18px;min-height:0;margin:9px 0 0}
+.mi-line{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.mi-text{display:block;width:100%;box-sizing:border-box;min-height:34px;resize:none;overflow:hidden;line-height:1.4;margin:0;padding:5px 8px;border:1px solid transparent;border-radius:var(--r-sm);background:none;color:var(--text);font:inherit;font-size:var(--fs-sm)}
+.mi-text:hover{border-color:var(--c-line)}.mi-text:focus{border-color:var(--c-accent);background:var(--c-surface)}
+.mi-line small{padding:0 9px;color:var(--c-text-3);font-size:var(--fs-xs)}
+.mi-row.off .mi-text{color:var(--c-text-3)}
+.mi-conflict{flex-direction:column;gap:6px;background:var(--c-sunken)}
+.mi-label{color:var(--c-text-2);font-size:var(--fs-xs);font-weight:var(--fw-medium,500)}
+.mi-sides{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%}
+.mi-side{display:flex;align-items:flex-start;gap:8px;padding:8px 10px;border:1px solid var(--c-line);border-radius:var(--r-sm);background:var(--c-surface);color:var(--text);font-size:var(--fs-sm);cursor:pointer;overflow-wrap:anywhere}
+.mi-side input{flex:none;width:16px;height:16px;min-height:0;margin:2px 0 0}.mi-side small{display:block;color:var(--c-text-3);font-size:var(--fs-xs)}
+.mi-side.on{border-color:var(--c-accent);box-shadow:0 0 0 1px var(--c-accent)}
+@media(max-width:560px){
+  #memory-import{width:100%;max-width:100%;max-height:92dvh;margin:auto 0 0;border-radius:16px 16px 0 0;padding:16px}
+  .mi-sides{grid-template-columns:1fr}.mi-list{max-height:none;overflow:visible}
+  #memory-import .actions{padding-bottom:env(safe-area-inset-bottom)}
+}

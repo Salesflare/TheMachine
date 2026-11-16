@@ -37,6 +37,9 @@ made-up data, no model call), and what is still missing. How memory is picked fo
   (`openclaw-plugin/review-recovery.ts`); `MEMORY.md` is searched by OpenClaw's memory search. Lines the owner ticks
   under Bring these in become facts and rules (`bring_in.py`, source `notes:<file>`); `notes_people.py` puts the ones
   about someone on that person's page, and a date of birth on the Birthdays routine.
+- **Another AI.** Lines the owner keeps from ChatGPT's, Claude's or Gemini's answer become facts (`memory_import.py`,
+  source `import:<assistant>`). Until the owner edits one, it reaches prompts only in the block of facts saved by an
+  AI, as data ([Import from another AI](intelligence.md#import-from-another-ai)).
 
 ## Matrix
 

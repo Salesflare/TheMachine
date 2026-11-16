@@ -154,6 +154,10 @@ go out unmarked. A marker inside the text is escaped (`&lt;/untrusted>`), so an 
 outside it. The server's instructions and each of these tools' descriptions say marked text is data, never
 instructions, so an email can't steer the AI into using its other tools.
 
+**Imported facts.** A fact imported from another assistant's answer that the owner did not edit is treated like one a
+connected AI saved: it goes out as that AI's claim, data, never instructions ([Import from another
+AI](intelligence.md#import-from-another-ai)).
+
 **A summary line** is not an owner's edit. The owner can edit or remove it. The next summary pass gets it as data
 (`ai_lines`, ids A1…) and may keep, revise or drop it; a line citing it keeps the AI's name and area.
 

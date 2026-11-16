@@ -999,6 +999,43 @@ Learning, and saves only the ones the owner ticks.
   fact about a Personal person stays out of Work prompts and out of the learnings sent to the team, like any fact about
   them. One entry under Learning, Changes undoes it all.
 
+## Import from another AI
+
+Someone who used ChatGPT, Claude or Gemini has years of context there. Import from another AI (`memory_import.py`,
+`memory_import_app.py`, `dashboard/learning-import.js`) brings it in as facts the owner reviewed first. It is on the
+setup to-do (an optional row, closed with its × like any other), as a quiet button while the first look reads, and on
+top of Learning, What I've learned. It never blocks setup: nothing waits for it.
+
+- **Copy prompt.** The dialog's prompt (`memory_import.PROMPT`, as Nod does it) asks the other assistant for what it
+  knows, one line per fact under About me, Preferences, People, Work and Routines, in one code block, without passwords,
+  codes, keys or card and account numbers. The owner pastes its answer back. The answer is never stored.
+- **Read in code.** ChatGPT's Markdown, Claude's fenced block and Gemini's bold headings and numbered lists read the
+  same (`parse`): only bullet lines when there are any, the talk around a code block left out, long lines split, at
+  most 80 lines of 240 characters.
+- **Secrets out first.** Any line that looks like a secret is dropped before it is shown, sent to a model or kept
+  (`secret`): the chat's key and token patterns (`chat.CHAT_SECRETS`), token-shaped strings, IBANs (checksum checked),
+  card numbers (Luhn checked), social security numbers, and a password, PIN or code with its value. The review says how
+  many, never which. A line edited on the review goes through the same check before it is saved.
+- **Duplicates and conflicts, by meaning.** One small turn on the background model, within the usage budget, reads the
+  lines as data next to the current facts and says per line: the same as a current fact (skipped, counted under
+  Left out), contradicting one (shown side by side, the current fact picked until the owner picks the new one), and
+  whether it grants a permission. No word lists. Without a model, only a line with the same words as a current fact
+  is skipped, and every other line is shown.
+- **Context, never permission.** A line that would grant a permission, approve something, send by itself or trust a
+  sender is left out. Every kept line is a fact or preference, never a rule, whatever the line or the request asks
+  (`Store.import_fact`). Until the owner edits it, an imported fact is that assistant's claim: prompts give it inside
+  the block of facts saved by an AI, as data, never instructions (`ai_fact_by`, "saved by an import from ChatGPT"),
+  and it is never tied to a person's page, where it would read as the owner's word. Editing it on the review or later
+  on Learning makes it the owner's (`kept_at`).
+- **Provenance.** Each kept fact has `import:<assistant>` as its source and the batch in its `decision_id`. Learning
+  shows "Imported from ChatGPT, Nov 16", plus "Context only until you edit it" for one not edited. The knowledge
+  export says it was said by that AI.
+- **Never overwritten silently.** Picking the imported side of a conflict keeps the current fact as merged history
+  (`merged_into`), with **Undo merge** on Learning and an entry under Changes. Keeping the current one saves nothing.
+- The review is held in memory between the two actions (`memory_import_review`, `memory_import_save`), at most 4 for
+  2 hours, so an edit is told from the line as imported. Both are the owner's dashboard only. The log keeps counts,
+  never text.
+
 <a id="missed-work-audit"></a>
 ## Missed work
 
