@@ -90,7 +90,7 @@ class Compose(unittest.TestCase):
                          'Done today\n• Send the order form\n• Reply to the supplier\n• Pay the invoice\n• +1 more\n'
                          '• +2 meetings: Pricing call and 1 more\n'
                          'Open for tomorrow\n• 10:00 Roadmap review\n'
-                         '• Due: Send the signed contract · [Open](https://m.example/#card=e1b2c3d4e5f60718&or=chat)\n\n'
+                         '• Due: Send the signed contract · [Open](https://m.example/#card=e1b2c3d4e5f60718)\n\n'
                          'Personal\nDone today\n• Book the dentist\nOpen for tomorrow\n• Due: Pick up the parcel\n\n'
                          '6 to-dos still need you.\n\n'
                          'Open The Machine: https://m.example/#digest=evening')

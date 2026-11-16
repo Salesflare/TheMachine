@@ -89,6 +89,8 @@ const lookDoneNow=()=>(state?.suggestions||[]).filter(s=>looksDone(s)&&(scopeFil
 function doneRows(items){const p=pagers.get(doneKey()),last=p?.next!=null&&items.length?doneAt(items.at(-1)):'',looks=lookDoneNow().filter(s=>doneAt(s)>=last);
  const rows=[...looks,...doneFold(items)].sort((a,b)=>doneAt(b).localeCompare(doneAt(a)));
  return html`${rows.map(x=>x.fuFold?doneFoldCard(x):looksDone(x)?lookDoneCard(x):suggestionCard(x))}`}
+// Whether Done's loaded part draws this one (doneRows): a link to one past it gets its own row at the top of Done
+const doneDrawn=s=>{const p=pagers.get(doneKey());if(!p)return false;return looksDone(s)?p.next==null||!p.items.length||doneAt(s)>=doneAt(p.items.at(-1)):p.items.some(x=>x.id===s.id)};
 function doneFoldCard(g){const open=donePageOpen.has(g.fuFold);
  return html`<article class="card todo t-faint fu-done" id="${g.id.replace(/[^\w-]/g,'-')}" data-status="completed"><details data-done-fold-card="${g.fuFold}"${open?html` open`:''}><summary><h3 translate="no">${g.title}</h3>${doneFoldSkipped(g)?html`<span class="done-fold-n">${doneFoldSkipped(g)}</span>`:''}<span class="meta-side">${time(g.closed_at,true)}</span></summary><ul class="fu-done-list">${g.items.map(s=>html`<li><a href="#chat=${s.id}" translate="no">${frName(s.follow_up)}</a><span>${doneFoldWho(s)}</span><span class="muted">${doneFoldWhen(s)}</span></li>`)}</ul></details></article>`}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-done-fold]');if(!b)return;e.preventDefault();const k=b.dataset.doneFold;doneOpen.has(k)?doneOpen.delete(k):doneOpen.add(k);const inSide=!!b.closest('#side-cards');sideCards();if(chatOpen())render();

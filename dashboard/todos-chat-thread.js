@@ -12,14 +12,11 @@ const notifyPresence=(()=>{const id=Math.random().toString(36).slice(2,12)||'pag
 function openCardLink(){
 const m=/^#card=([a-f0-9]{16})(&or=chat)?$/.exec(location.hash);if(!m||!state.suggestions)return;
 const target=state.suggestions.find(s=>s.id===m[1]);
-// &or=chat (the morning digest's Open): a to-do no longer on the list as shown (done, snoozed, another scope, or not
-// here) opens its chat instead, as these links did before; openChatLink asks for an older done one itself
-const toChat=()=>{history.replaceState(null,'',location.pathname+location.search+'#chat='+m[1]);openChatLink()};
-if(m[2]&&(!target||closed(target)||target.status==='snoozed'||scopeFilter!=='all'&&target.scope!==scopeFilter)){toChat();return}
-if(!target){doneFetch(m[1],()=>{if(location.hash==='#card='+m[1])openCardLink()});return} // an older done one: asked for; else kept for a later refresh
-// One that looks done sits in Done, paged and folded, often past its first page: its chat is where it shows, so a
-// link to it opens that; so does one with no row in the list for another reason, never a view with nothing picked out.
-if(looksDone(target)){toChat();return}
+// It lands on the to-do itself, wherever it is now (Just done, For you, Coming back later, Done: that list opens with
+// its row drawn), never its chat. &or=chat, on links sent before, means nothing anymore. One that isn't here: an
+// older done one is asked for first; one still missing after that says so, never a view with nothing picked out.
+const gone=()=>{history.replaceState(null,'',location.pathname+location.search);toast(t('That to-do isn’t here anymore.'))};
+if(!target){if(doneFetch(m[1],()=>{if(location.hash===m[0])openCardLink()}))return;if(shownCached||Date.now()-shownAt>5e3)refresh();else gone();return}  // a list from before is read again first
 linkedCardId=target.id;const fuEl=()=>target.follow_up?.group&&document.getElementById('fu-'+target.follow_up.group.replace(':','-'));
 // Reveal this destination without overwriting the device's saved filter/fold preferences.
 if(scopeFilter!=='all'&&target.scope!==scopeFilter)scopeFilter='all';
@@ -27,19 +24,22 @@ folded.delete('foryou');
 // a link to this to-do (Open draft from a notification) shows it whole: its summary and its draft, never behind Show more
 expandedBodies.add(target.id);for(const a of target.next_actions||(target.next_action?.kind==='menu'?target.next_action.actions:target.next_action?[target.next_action]:[]))expandedBodies.add('draft-'+target.id+'-'+a.revision);
 render();document.querySelector('nav [data-tab="inbox"]').click();
-const c=document.getElementById('task-'+target.id)||fuEl();if(!c){toChat();return}
+const c=document.getElementById('task-'+target.id)||fuEl();if(!c){gone();return}
 for(let parent=c.parentElement;parent;parent=parent.parentElement)if(parent.tagName==='DETAILS')parent.open=true;
-history.replaceState(null,'',location.pathname+location.search);cardLanding={id:target.id,or:!!m[2],status:target.status,at:Date.now()};if(shownCached||Date.now()-shownAt>5e3)refresh();
-// a tall card (a draft in full) from its top, under the header, so its title shows too
+history.replaceState(null,'',location.pathname+location.search);cardLanding={id:target.id,status:target.status,at:Date.now()};if(shownCached||Date.now()-shownAt>5e3)refresh();
+// a tall card (a draft in full) from its top, under the header, so its title shows too. A glide to where it was a moment
+// ago (a landing on a list from before) stops first: a smooth scroll that starts where the page already is does
+// nothing in Chrome, and the old glide would carry on past it
+if(Date.now()<place.glide)scrollTo({top:scrollY,behavior:'instant'});
 const tall=c.offsetHeight>innerHeight*.7;c.style.scrollMarginTop=tall?'72px':'';c.scrollIntoView({block:tall?'start':'center',behavior:'smooth'});c.classList.remove('flash');void c.offsetWidth;c.classList.add('flash');kbFocus(c,false)}
 // A link opened on a list read before the to-do moved (a page back from the background, or its kept copy on a start):
 // a notification's "Done: …" found the to-do where it waited, and the next read folded it away into Done. The first
 // read asked after the link (refresh, asked at once when the list on screen is a few seconds old) lands it again where
-// it is now, or its chat as the link says, never a silent miss.
+// it is now, never a silent miss.
 let cardLanding=null;
 function cardLandAgain(asked){const l=cardLanding;if(!l||shownCached||asked<l.at)return;cardLanding=null;
  if(Date.now()-l.at>6e4||location.hash||chatId)return;const s=state.suggestions?.find(x=>x.id===l.id);if(!s||s.status===l.status)return;
- history.replaceState(null,'',location.pathname+location.search+'#card='+l.id+(l.or?'&or=chat':''))}
+ history.replaceState(null,'',location.pathname+location.search+'#card='+l.id)}
 // Card chat (#chat=<id>): a card's whole story as a conversation, strictly by time: the messages it is about, what the
 // Machine did (its steps folded into one quiet line before each reply) and the drafts it wrote, what you said and
 // what went out. The card's buttons sit in a slim bar above the message box. A message is a Change (the same decide

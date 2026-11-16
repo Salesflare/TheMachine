@@ -6,7 +6,7 @@ const INJECT=readFileSync(new URL('../mobile/www/inject.js',import.meta.url),'ut
 const {chromium}=await import('./browser.mjs');
 
 // Where a tapped notification lands. The phone app opens the dashboard where mobile/www/inject.js (run here as the app
-// runs it) points: a to-do at #card=<id>&or=chat, anything else at #chat=<the push's tag> (Android without a tag for
+// runs it) points: a to-do at #card=<id> (&or=chat from the app as built, ignored), anything else at #chat=<the push's tag> (Android without a tag for
 // several at once: the kind); the web push at its url. Each kind opens its own view, never a to-do chat: a to-do the
 // to-do itself in the list, in view and highlighted, the morning and evening digest that digest, the team brief To-dos (its lines are
 // to-dos there), a Fleet question its card, a Fleet notice its line, the week's recap and a test To-dos. Each case starts

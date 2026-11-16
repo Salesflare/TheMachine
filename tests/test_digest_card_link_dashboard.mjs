@@ -3,9 +3,10 @@ import {createServer} from 'node:http';
 import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import('./browser.mjs');
 
-// The morning digest's Open (notify.compose: #card=<id>&or=chat) shows the to-do in the To-dos list: scrolled into
-// view, highlighted and in full. One that isn't on the list as shown (done, snoozed, another scope, or gone) opens
-// its chat instead, as the link did before. SHOT_DIR=<folder> saves the opened list at 390 in light and dark.
+// The morning digest's Open (notify.todo_link: #card=<id>) shows the to-do in the To-dos list: scrolled into view,
+// highlighted and in full, never its chat. Done, snoozed or in another scope than the one shown: the to-do too, where
+// it is now. A link sent before with &or=chat lands the same way; one that is gone says so. SHOT_DIR=<folder> saves
+// the opened list at 390 in light and dark.
 const dashboard=await dashboardPage();
 const now=new Date().toISOString(),later=new Date(Date.now()+864e5).toISOString();
 const id=n=>n.toString(16).padStart(16,'a');
@@ -45,18 +46,19 @@ try{
   if(shots){await page.waitForTimeout(700);await page.screenshot({path:`${shots}/digest-open-390-${scheme}.png`})}
   await page.close();
   if(scheme==='dark')break;
-  // Done, snoozed or gone: its chat, as before (the chat shows "isn't here anymore" for one that is gone)
-  for(const other of [DONE,SNOOZED]){page=await open('#card='+other+'&or=chat');
-   await page.waitForFunction(i=>chatOpen()?.id===i,other,{timeout:8000});
-   assert.equal(await page.evaluate(()=>location.hash),'#chat='+other);await page.close()}
+  // Done or snoozed: that to-do, highlighted where it is now (Done, Coming back later); no chat
+  for(const [other,list] of [[DONE,'#finished-list'],[SNOOZED,'#later-list']]){page=await open('#card='+other+'&or=chat');
+   await page.waitForFunction(([i,l])=>document.querySelector(l+'[open] #task-'+i)?.classList.contains('flash'),[other,list],{timeout:8000});
+   assert.equal(await page.evaluate(()=>chatId),null);assert.equal(await page.evaluate(()=>location.hash),'');await page.close()}
   page=await open('#card='+GONE+'&or=chat');
   await page.waitForFunction(()=>/isn.t here anymore/.test(document.querySelector('#toast')?.textContent||''),null,{timeout:8000});
+  assert.equal(await page.evaluate(()=>chatId),null);
   await page.close();
-  // Another scope than the one shown: its chat, and the owner's Work filter stays
+  // Another scope than the one shown: the to-do too, shown under All for now; no chat
   page=await open('');await page.evaluate(()=>{scopeFilter='work';render()});
   await page.evaluate(i=>{location.hash='#card='+i+'&or=chat'},PERSONAL);
-  await page.waitForFunction(i=>chatOpen()?.id===i,PERSONAL,{timeout:8000});
-  assert.equal(await page.evaluate(()=>scopeFilter),'work');
+  await page.waitForFunction(i=>document.getElementById('task-'+i)?.classList.contains('flash'),PERSONAL,{timeout:8000});
+  assert.equal(await page.evaluate(()=>chatId),null);
   await page.close();
   // Other #card links (a person's page, Open draft) keep revealing it: a done one shows in Done
   page=await open('#card='+DONE);
