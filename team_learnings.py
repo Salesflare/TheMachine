@@ -37,6 +37,7 @@ takes it from this Machine's token and keeps no link to the account unless the o
 from __future__ import annotations
 
 import datetime as dt
+import functools
 import hashlib
 import json
 import re
@@ -236,17 +237,71 @@ def _name_pattern(name):
     return re.compile(r'(?i)(?<!\w)' + body + r'(?!\w)') if not name.isalpha() or len(name) >= 5 else None
 
 
+class _Fold(dict):
+    """A character as the regex engine compares it ignoring case: its lowercase, and one of the lowercase letters that
+    share an uppercase (i and dotless i, s and long s, ...): a name's word can only match where its fold is in the text's."""
+    def __missing__(self, char):
+        low = _sre.unicode_tolower(char)
+        self[char] = rep = min((low, *_EXTRA_CASES.get(low, ())))
+        return rep
+
+
+try:
+    import _sre
+    from re._casefix import _EXTRA_CASES
+    _FOLD = _Fold()
+except ImportError:  # another Python: no quick check, every name's pattern runs as before
+    _FOLD = None
+
+
+@functools.lru_cache(maxsize=1 << 16)
+def _name_word(name):
+    """A word of the name it can't match without, folded ('' when there is no such quick check)."""
+    words = name.split()
+    return max((w.translate(_FOLD) for w in words), key=len) if words and _FOLD is not None else ''
+
+
+@functools.lru_cache(maxsize=1 << 16)
+def _cached_pattern(name):
+    """Compiled once per name, and only for a name whose word is in the text. A Graph has tens of thousands of names,
+    past re's own cache, so a save compiled them all again for every text (some 20 s of CPU a run)."""
+    return _name_pattern(name)
+
+
+_WORDS = (None, [], [])  # the last names list strip saw, a copy of it and its words: one save strips many texts
+
+
+def _words_of(names):
+    """(the names as a list, each one's word): worked out once for the same unchanged list of names. One tuple swapped
+    whole, so a thread never reads one list's names with another's words."""
+    global _WORDS
+    seen = _WORDS
+    if seen[0] is not names or seen[1] != names:
+        listed = list(names)
+        seen = _WORDS = (names, listed, [_name_word(name) for name, _ in listed])
+    return seen[1], seen[2]
+
+
 def strip(text, names=()):
     """(text without anything personal, what was taken out: ['name', 'address', ...])."""
     out, taken = ' '.join(str(text or '').split()), []
     for pattern, replacement, what in PATTERNS:  # addresses and links first, so a name inside one doesn't break it up
         out, n = pattern.subn(replacement, out)
         taken += [what] * n
-    for name, kind in names:
-        pattern = _name_pattern(name)
-        if pattern and pattern.search(out):
-            out, n = pattern.subn(PLACEHOLDER.get(kind, 'someone'), out)
-            taken += ['name'] * n
+    names, words = _words_of(names)
+    start, found = 0, None
+    while found is None or start < len(names):
+        folded = out.translate(_FOLD) if _FOLD is not None else ''
+        found = [i for i, word in enumerate(words[start:], start) if word in folded]  # most names aren't in the text at all
+        start = len(names)
+        for i in found:
+            name, kind = names[i]
+            pattern = _cached_pattern(name)
+            if pattern and pattern.search(out):
+                out, n = pattern.subn(PLACEHOLDER.get(kind, 'someone'), out)
+                taken += ['name'] * n
+                start = i + 1  # the text changed: the names after this one look again
+                break
     if taken and out[:1].islower() and str(text or '').lstrip()[:1].isupper():
         out = out[:1].upper() + out[1:]
     return out, taken
