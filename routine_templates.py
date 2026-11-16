@@ -22,6 +22,9 @@ Second-hand finds (secondhand.py, secondhand_app.py) is the one template added m
 each routine with its own search page and filters (`many`): every 3 hours it reads the search in The Machine's own
 browser, filters the new listings in plain code, and only then has a small model call per listing judge its photo and
 seller, under a daily cap. A rename alone keeps this cheap path.
+Reorders (reorder.py, reorder_app.py): every morning plain code lists the Shopify stores' order mail not read yet, and
+only when there is any does one small model call read just those; plain code then makes a quiet to-do per item bought
+at a steady pace that is nearly due again, with a link to the store.
 
 Once the owner edits its words (or adds script steps), it runs as a normal routine on them: a read-only turn each run.
 Its origin still names the template, so Templates shows it as added. An edited Newsletter or Spam cleanup still sees
@@ -72,6 +75,9 @@ TEMPLATES = {
                    'words': 'Look at my second-hand search for new listings that fit my filters. For each, judge its condition from '
                             'the photos and description, and the seller from their reviews. Put the good ones in one to-do, each '
                             'with a one-line verdict, its photo and a link. Never contact a seller, bid or buy.'},
+    'reorder': {'name': 'Reorders', 'what': 'A to-do when something you buy again and again from an online store is likely due again.',
+                'words': 'Find things I buy again and again in my order confirmations from online stores. When one is likely '
+                         'due again, make a to-do with the item, the store, the last price and when I last bought it. Never buy anything.'},
 }
 CLEANUP = ('newsletters', 'spam')  # an edited one may still end in the cleanup to-do (mail_cleanup_app.routine_cleanup_lines)
 

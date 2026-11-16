@@ -32,10 +32,11 @@ class TodoKindsTest(unittest.TestCase):
             'digest': (True, True, True, True, True),
             'facebook_birthdays': (False, False, False, False, False),  # only its view is its own
             'secondhand': (False, False, True, True, False),  # it buzzes: a good listing goes fast
+            'reorder': (True, False, True, True, False),  # due again: quiet, and its link opens the store
             'notion_heads_up': (True, False, False, False, False),  # a page changed as asked: quiet, a to-do like any other
         })
         # the owner's decision asked cleanup, then Subscriptions, then the digest
-        self.assertEqual([k.key for k in todo_kinds.KINDS if k.refused], ['cleanup', 'subs', 'digest', 'secondhand'])
+        self.assertEqual([k.key for k in todo_kinds.KINDS if k.refused], ['cleanup', 'subs', 'digest', 'secondhand', 'reorder'])
 
     def test_core_paths_ask_the_registry_not_a_kinds_module(self):
         modules = {k.module for k in todo_kinds.KINDS}

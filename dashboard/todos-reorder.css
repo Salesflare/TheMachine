@@ -1,0 +1,8 @@
+/*@lazy*/
+/* A Reorders to-do (todos-reorder.js): the item, then the store, last price, when it was last bought and how often,
+   and the link that opens it at the store */
+.ro-item{margin:8px 0 0;display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 8px}.ro-item b{overflow-wrap:anywhere}
+.ro-sub{color:var(--c-text-2);font-size:var(--fs-sm)}
+.ro-facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px 16px;margin:10px 0 0;padding:10px 0 0;border-top:1px solid var(--c-line)}
+.ro-facts div{min-width:0}.ro-facts dt{color:var(--c-text-2);font-size:var(--fs-sm)}.ro-facts dd{margin:2px 0 0;overflow-wrap:anywhere}
+.ro-open{display:inline-block;margin:12px 0 0}
