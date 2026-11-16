@@ -537,8 +537,8 @@ class Notifications(unittest.TestCase):
     def test_the_summary_gives_each_line_one_open_link_and_telegram_drops_it(self):
         ready = [{'id': 'a1b2c3d4e5f60718', 'title': 'Send the reply to Robin'}]
         out = notify.compose([], [], [], 'https://m.example/', total=1, ready=ready, replies=['a1b2c3d4e5f60718'], name='Robin')
-        # Open shows the to-do in the dashboard's list (#card=), its chat when it isn't there anymore (&or=chat)
-        self.assertIn('• Send the reply to Robin · [Open](https://m.example/#card=a1b2c3d4e5f60718&or=chat)\n', out['text'])
+        # Open shows the to-do in the dashboard's list (#card=), done or snoozed too, never its chat
+        self.assertIn('• Send the reply to Robin · [Open](https://m.example/#card=a1b2c3d4e5f60718)\n', out['text'])
         self.assertNotIn('#chat=', out['text'])
         self.assertEqual(out['subject'], 'Morning Robin, 1 reply is ready to send')
         # Telegram gets the line without the link, the push no per-to-do link: it opens today in the Calendar
@@ -556,8 +556,8 @@ class Notifications(unittest.TestCase):
         out = notify.compose([], [], [], 'https://m.example/', total=8, ready=ready, promised=promised)
         self.assertEqual(out['subject'], 'Good morning, ready for your OK: Fix the venue booking form')
         self.assertEqual(out['text'].split('\n')[2:5], [
-            '• Fix the venue booking form · [Open](https://m.example/#card=a1b2c3d4e5f60718&or=chat)',
-            '• Due today: Double-check the pilot recap for Wren · [Open](https://m.example/#card=b1b2c3d4e5f60718&or=chat)',
+            '• Fix the venue booking form · [Open](https://m.example/#card=a1b2c3d4e5f60718)',
+            '• Due today: Double-check the pilot recap for Wren · [Open](https://m.example/#card=b1b2c3d4e5f60718)',
             '• Due today: Send the rate card to Jonah · [Open](https://m.example/#promise/8)'])  # no to-do yet: the promise's own page
         # Telegram drops every link alike
         self.assertNotIn('[Open]', notify.LINKS.sub('', out['text']))
@@ -728,7 +728,7 @@ class Notifications(unittest.TestCase):
         self.assertTrue(digest['text'].startswith('Good morning, ready for your OK: Reply to Sam about the pilot\n\n'
                                                   '• Reply to Sam about the pilot · [Open]('), digest['text'])
         # the promise's line opens the to-do made from it
-        self.assertIn(f'\n• Due today: Send the pilot recap for Wren · [Open](https://the-machine.example/assistant/#card={recap}&or=chat)\n', digest['text'])
+        self.assertIn(f'\n• Due today: Send the pilot recap for Wren · [Open](https://the-machine.example/assistant/#card={recap})\n', digest['text'])
         self.assertEqual(digest['text'].count('• Reply to Sam about the pilot'), 1)
         self.assertNotIn('Send Wren the pilot recap', digest['text'])  # the promise's own to-do: listed as the promise
         self.assertNotIn('rate limits', digest['text'])  # tomorrow's

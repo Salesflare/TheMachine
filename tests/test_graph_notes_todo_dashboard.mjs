@@ -5,7 +5,7 @@ import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import('./browser.mjs');
 
 // A Home line that points to a to-do (a bill): under its words, who its message came from (not the mail's subject) and
-// "Open the to-do", which opens that to-do itself (#card=…&or=chat: a done one, a paid bill, opens in its chat). A
+// "Open the to-do", which opens that to-do itself (#card=…; a done one, a paid bill, its chat: #chat=…). A
 // line whose to-do is gone shows no link. At 390 the link stays on one line, nothing is wider than the screen, and the
 // breadcrumb shows the path up to the note it is under (Notes › Home).
 const dashboard=await dashboardPage();
@@ -43,7 +43,7 @@ try{
   if(process.env.SHOTS)await page.screenshot({path:`${process.env.SHOTS}/note-memory-line-${width}.png`,fullPage:true});
   const rows=await page.locator('.note-lines li').evaluateAll(l=>l.map(x=>({src:x.querySelector('.note-src')?.textContent.trim()||'',href:x.querySelector('.note-src a')?.getAttribute('href')||null,
    tall:x.querySelector('.note-src a')?x.querySelector('.note-src a').getClientRects().length:0})));
-  assert.deepEqual(rows.map(r=>[r.src,r.href]),[['From Example Energy · Open the to-do','#card=0a1b2c3d4e5f6071&or=chat'],['',null],['From your memory pages · Bills',null]],width+': '+JSON.stringify(rows));
+  assert.deepEqual(rows.map(r=>[r.src,r.href]),[['From Example Energy · Open the to-do','#chat=0a1b2c3d4e5f6071'],['',null],['From your memory pages · Bills',null]],width+': '+JSON.stringify(rows));
   assert.equal(await page.locator('.note-lines li').nth(2).locator('.note-src span').getAttribute('title'),'memory/home/bills.md',width+': the path on hover only');
   assert.equal(rows[0].tall,1,width+': "Open the to-do" on one line');
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),width+': fits');

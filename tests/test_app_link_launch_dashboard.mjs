@@ -3,7 +3,7 @@ import {createServer} from 'node:http';
 import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import('./browser.mjs');
 
-// A link the installed desktop app catches (the morning summary's Open, #card=<id>&or=chat) shows that to-do, with the
+// A link the installed desktop app catches (the morning summary's Open, #card=<id>; &or=chat on one sent before) shows that to-do, with the
 // app closed (it opens with the link) and open (launch_handler focus-existing hands the link to the open page through
 // launchQueue). Also: the same link again, any other # link (a chat, a promise), and a release waiting for a quiet
 // moment: the update never reloads the page under a link that just came in, and after an update's reload the

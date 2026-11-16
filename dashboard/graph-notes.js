@@ -38,7 +38,8 @@ function noteSource(x){const from=x.source?.gone?t('From a message that is gone'
  :x.source?html`<button type="button" class="link" data-note-src="${x.source.id}" data-kind="${x.source.kind}" data-title="${x.source.title}">${x.source.kind==='calendar.event'?t('From your calendar'):t('From {}',x.source.from||x.source.title||t('a message'))}</button>`
  :x.fact_id?t('From what I learned'):x.data?.memory?html`<span title="${x.data.memory}">${t('From your memory pages · {}',x.data.page||t('a page'))}</span>`:'';  // memory_seed.py: the page it came from, its path on hover only
  // the to-do itself: an open one in the list, picked out; a done one (a paid bill) in its chat, as from Done
- const todo=x.todo?html`<a href="#card=${encodeURIComponent(x.todo)}&or=chat">${t('Open the to-do')}</a>`:'';
+ const todoOpen=(state?.suggestions||[]).some(s=>s.id===x.todo&&!closed(s)&&!looksDone(s)&&s.status!=='snoozed');
+ const todo=x.todo?html`<a href="${todoOpen?'#card=':'#chat='}${encodeURIComponent(x.todo)}">${t('Open the to-do')}</a>`:'';
  return from||todo?html`<small class="note-src">${from}${from&&todo?' · ':''}${todo}</small>`:''}
 const noteLineForm=x=>html`<form class="note-form note-line-form" data-note-line="${x.id}" data-links="${JSON.stringify(x.links||[])}"><textarea name="text" maxlength="${x.fact_id?240:1000}" rows="2" required aria-label="${t('Line')}">${x.text}</textarea><span class="note-acts"><button type="button" class="quiet" data-note-cancel>${t('Cancel')}</button><button class="primary">${t('Save')}</button></span></form>`;
 // The written page (note_writer.py): a summary, then who is in it, facts, decisions, open items and a timeline; each

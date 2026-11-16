@@ -6,7 +6,7 @@ const {chromium}=await import('./browser.mjs');
 
 // A to-do link in a record's "Open between you" (a person, an organization, a project) lands on that to-do in To-dos
 // and stays there: the list drawn in again a moment later (its first paint's late parts, the next refresh) never takes
-// the view away. A to-do with no row in the list (one that looks done sits in Done) opens its chat instead of nothing.
+// the view away. A to-do that looks done lands on its row in Done, never its chat.
 // OPEN_LINK_SHOT=<dir> also writes screenshots at 390, light and dark.
 process.env.TZ='Europe/Brussels';
 const dashboard=await dashboardPage();
@@ -67,10 +67,11 @@ try{
   for(const [what,w] of [['a moment later',settled],['after the next refresh',after]])
    assert.ok(w.shown&&Math.abs(w.top-first.top)<40,`${node}: the to-do stays in view ${what}: ${JSON.stringify({first,w})}`);
   if(shots&&node.startsWith('email:'))await page.screenshot({path:`${shots}/open-between-${scheme}-390.png`});
-  // the one with no row in the list: its chat opens
+  // one that looks done (no row in For you): its row in Done, highlighted, never its chat
   await toRecord();
   const other=page.locator(`#people-view .graph-open a[href="#card=${DONEISH.id}"]`);await other.waitFor();await other.scrollIntoViewIfNeeded();await other.tap();
-  await page.waitForFunction(i=>chatOpen()?.id===i,DONEISH.id,{timeout:8000});
+  await page.waitForFunction(i=>document.querySelector('#finished-list[open] #task-'+i)?.classList.contains('flash'),DONEISH.id,{timeout:8000});
+  assert.equal(await page.evaluate(()=>chatId),null,`${node}: no chat`);
   if(shots&&node.startsWith('email:'))await page.screenshot({path:`${shots}/open-between-no-row-${scheme}-390.png`});
   await context.close();
  }

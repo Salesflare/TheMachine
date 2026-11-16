@@ -285,11 +285,11 @@ class UX(unittest.TestCase):
         self.assertNotIn('memory/assistant/',payload['message']);self.assertIn('https://machine.example/assistant/#card=',payload['message'])
     def test_telegram_links_open_the_to_do_in_the_list_not_its_chat(self):
         """A tap on a Telegram link opened the old Result modal (Copy draft) over the list, later the to-do's chat. Every
-        link now opens the to-do itself in the list (#card=<id>), its chat only when it isn't there (&or=chat)."""
+        link now opens the to-do itself in the list (#card=<id>), wherever it is, never its chat."""
         config={'dashboard_host':'machine.example','dashboard_path':'/assistant/','telegram_owner':'owner'}
         row=self.row();row.update(status='prepared',body='Draft.',message_id=5)
         with patch_everywhere(machine_delivery_telegram, 'telegram_request',side_effect=lambda config,args:args):
             texts=[machine_delivery_telegram.telegram(config,row,'send')['message'],machine_delivery_telegram.telegram(config,{**row,'_result_notice':True},'send')['message'],
                    machine_delivery_telegram.telegram(config,{**row,'status':'instructions','preparation_status':'blocked','_result_notice':True},'send')['message']]
         for text in texts:
-            self.assertIn('https://machine.example/assistant/#card='+self.sid+'&or=chat)',text);self.assertNotIn('#result=',text);self.assertNotIn('#chat=',text)
+            self.assertIn('https://machine.example/assistant/#card='+self.sid+')',text);self.assertNotIn('#result=',text);self.assertNotIn('#chat=',text)

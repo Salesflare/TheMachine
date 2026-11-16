@@ -141,7 +141,7 @@ class WeeklyRecap(unittest.TestCase):
             board = db.execute("SELECT id FROM events WHERE source_id='b'").fetchone()[0]
         prep = self.store.suggest('prep', 'Prep notes for the board', 'Body.', [board])['id']
         text = machine_app_recap.weekly_recap(self.store, self.config, dt.datetime.fromisoformat(FRIDAY))
-        self.assertIn(f'**Next week**\n• Wed, Oct 28 09:00 Board meeting, 1 person · [to-do](https://m.example/assistant/#card={prep}&or=chat)', text)
+        self.assertIn(f'**Next week**\n• Wed, Oct 28 09:00 Board meeting, 1 person · [to-do](https://m.example/assistant/#card={prep})', text)
         self.assertEqual(text.count('Team offsite'), 1)
         self.assertIn('• Fri, Oct 30 17:00 Parents evening, 2 people', text)  # the partner and the school, not the owner
         for routine in ('Weekly one-on-one', 'Declined lunch', 'Next month', 'Dentist with Robin'):
@@ -235,7 +235,7 @@ class WeeklyRecap(unittest.TestCase):
         self.edits = []
         drop, now, keep = (self.snoozed_card(t, n) for t, n in (('Share the tow-bar cost', 4), ('Pay the painter', 3), ('Book the dentist', 2)))
         sent = self.send()
-        self.assertEqual(sent[2]['message'], f'**Snoozed more than once**\n[Share the tow-bar cost](https://m.example/assistant/#card={drop}&or=chat), 4 times')
+        self.assertEqual(sent[2]['message'], f'**Snoozed more than once**\n[Share the tow-bar cost](https://m.example/assistant/#card={drop}), 4 times')
         items = {i['ref']: i for i in self.items() if i['kind'] == 'snoozed'}
         self.assertEqual(self.labels(sent[2]), [['Not needed', 'Do it', 'Keep']])
         self.assertEqual([items[x]['message_id'] for x in (drop, now, keep)], ['557', '558', '559'])

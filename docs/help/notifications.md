@@ -62,7 +62,7 @@ On the phone app, Snooze and Mark done ask you to unlock first. In a browser the
 
 Emails have Open links (and Snooze for what waits). They only open the dashboard.
 
-Tapping a notification, or Open in an email or on Telegram, shows the to-do in your list, highlighted. One that's done, snoozed or in another view opens its chat. If the page hadn't caught up yet, it follows the to-do once it has.
+Tapping a notification, or Open in an email or on Telegram, shows the to-do in your list, highlighted, wherever it is now: **Just done**, **Done**, **Coming back later** or another view. It never opens the chat. If the page hadn't caught up yet, it follows the to-do once it has.
 
 ## The morning digest
 
@@ -74,7 +74,7 @@ It comes on work days at your **Morning digest** time, unless there's nothing to
 - how many more can wait, and how long they take at your pace, like "12 more can wait, about 5 min to clear." To-dos that wait on your answer aren't in that time, and a snoozed one that's due today isn't counted until it's back.
 - your meetings in one line.
 
-Open shows that to-do in your list, highlighted. One that's done, snoozed or in another view opens its chat. A promise opens its to-do, or its own page when it has none yet.
+Open shows that to-do in your list, highlighted, also when it's done or snoozed. A promise opens its to-do, or its own page when it has none yet.
 
 The push says the same without links. Tap it, or the link at the end of the email, to read this digest again in **To-dos**.
 

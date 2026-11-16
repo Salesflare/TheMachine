@@ -239,10 +239,9 @@ self.addEventListener('notificationclick', event => {
   event.notification.close();
   let url = event.notification.data?.url || self.registration.scope;
   if (['once', 'decline'].includes(event.action) && /#fleet=q_[a-f0-9]{16}$/.test(url)) url += '&choice=' + event.action;
-  // A to-do's notification opens the to-do in the list (#card=, its chat only when it isn't there: &or=chat), never
-  // its chat. One shown before this worker (#chat=<id>) too. Open draft: the to-do where its draft shows in full.
-  url = url.replace(/#chat=([a-f0-9]{16})$/, '#card=$1&or=chat');
-  if (event.action === 'draft') url = url.replace(/#card=([a-f0-9]{16})&or=chat$/, '#card=$1');
+  // A to-do's notification opens the to-do itself in the list (#card=), wherever it is now, never its chat. One shown
+  // before this worker (#chat=<id>, or #card=<id>&or=chat) too. Open draft lands there as well, its draft in full.
+  url = url.replace(/#chat=([a-f0-9]{16})$/, '#card=$1').replace(/#card=([a-f0-9]{16})&or=chat$/, '#card=$1');
   const tag = event.notification.tag, quick = QUICK.includes(event.action) && /^[a-f0-9]{16}$/.test(tag || '');
   event.waitUntil((async () => {
     if (quick) url = new URL('#quick=' + await quickKeep(tag, event.action), scopeUrl()).href;

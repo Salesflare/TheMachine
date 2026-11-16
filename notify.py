@@ -352,9 +352,9 @@ def mailed(db, clock=wall):
 
 def todo_link(root, ident):
     """Where a notification about a to-do opens it (a push, an email, Telegram, a digest or recap): the to-do itself,
-    in view and highlighted in the To-dos list (#card=), never its chat. One no longer in the list as shown (done,
-    snoozed, another scope, gone) opens its chat instead (&or=chat, the dashboard's openCardLink)."""
-    return f'{root}#card={ident}&or=chat'
+    in view and highlighted in the To-dos list (#card=), wherever it is now (Just done, Coming back later, Done: the
+    dashboard's openCardLink opens that list), never its chat."""
+    return f'{root}#card={ident}'
 
 
 def mail_links(ref, root=''):
@@ -784,8 +784,7 @@ def compose(meetings, due, overnight, root='', show_text=True, clock=lambda iso:
     tail = after(picks)
 
     def link(item):
-        """Open: the to-do in the dashboard's list, in view and highlighted (#card=); one no longer there (done,
-        snoozed, another scope) opens its chat instead (&or=chat, openCardLink). A promise opens the to-do made from it
+        """Open: the to-do in the dashboard's list, in view and highlighted (todo_link), done or snoozed too. A promise opens the to-do made from it
         (covers), else its own page (#promise/<id>, as the Graph links it): every listed to-do or promise has one."""
         if not root or not item:
             return ''
@@ -795,7 +794,7 @@ def compose(meetings, due, overnight, root='', show_text=True, clock=lambda iso:
             number = item['id'][len('promise:'):]
             if not re.fullmatch(r'[a-f0-9]{16}', ident) and re.fullmatch(r'\d+', number):
                 return f" · [{t('Open')}]({root}#promise/{number})"
-        return f" · [{t('Open')}]({root}#card={ident}&or=chat)" if re.fullmatch(r'[a-f0-9]{16}', ident) else ''
+        return f" · [{t('Open')}]({todo_link(root, ident)})" if re.fullmatch(r'[a-f0-9]{16}', ident) else ''
     # The headline's own list right under it, then how many more wait, then the day's meetings: a meeting line between
     # "3 due today" and its list read as if the list were the meeting's
     lines = [head, '']
@@ -930,7 +929,7 @@ def evening_compose(done, held, waiting, due, ahead, root='', show_text=True, cl
 
     def link(item):
         ident = str(item.get('id') or '')
-        return f" · [{t('Open')}]({root}#card={ident}&or=chat)" if root and re.fullmatch(r'[a-f0-9]{16}', ident) else ''
+        return f" · [{t('Open')}]({todo_link(root, ident)})" if root and re.fullmatch(r'[a-f0-9]{16}', ident) else ''
 
     opened = t('Open for tomorrow') if tomorrow else t('Open for {}', next_day)
 
