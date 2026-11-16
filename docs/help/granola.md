@@ -24,7 +24,7 @@ A personal API key from Granola. Granola has API keys on its Business and Enterp
 
 ## Connect it
 
-1. In Granola's desktop app: **Settings**, **Connectors**, **API keys**. Create a key with **Personal notes** and copy it.
+1. In Granola's desktop app: **Settings**, **Connectors**, **API keys**. Create a key with Personal notes access and copy it.
 2. In the dashboard: **Connections**, **Meetings**, Granola. Or on a hosted Machine's setup page at app.themachine.computer/setup: **More sources**, Granola. On your own computer, `assistant connect granola` asks for it too.
 3. Paste the key, pick **Work** or **Personal** and press **Connect**.
 
