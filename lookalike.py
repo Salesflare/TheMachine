@@ -7,8 +7,13 @@ name is one letter apart (fjordlinefreigth), or when one is the other's whole na
 larkspurstudio-mail). The same name at another ending (example.nl for example.com) is the organization's other domain,
 never a lookalike. Free mail domains never count: everyone there is someone else.
 
-Of a confusable pair, the lookalike is the one that showed up later; the owner's own domains always come first. The
-Graph build marks each person at a lookalike domain (`lookalike` on their node: the domain it imitates, and the
+Of a confusable pair, the lookalike is the one the owner has less to do with: the owner's own domains always come
+first, then a domain where the owner has an established relationship with someone (the owner wrote to them or replied,
+met them, set their role, added or edited them by hand, or they pay through Stripe), then one whose people only ever
+wrote in. Within the same standing, the one that showed up first comes first. Never the order alone: an imitation can
+arrive before the real contact first writes in the window read, and it never outranks the one the owner deals with.
+A review never sets a project's organization to a lookalike domain either (of_domain: graph.set_stage,
+graph_board_reviews.counterpart_org). The Graph build marks each person at a lookalike domain (`lookalike` on their node: the domain it imitates, and the
 person on record there with the same name, when there is one). What follows from it:
 
 - a review never gives them a role (graph.set_role), and a role a review gave them before is not shown;
@@ -97,11 +102,12 @@ def _keys(domain):
     return keys
 
 
-def imitations(first_seen, own=()):
+def imitations(first_seen, own=(), known=()):
     """{lookalike domain: the domain it imitates} among the domains in first_seen ({domain: when it first showed up,
-    any comparable value}). own: the owner's own domains, always first."""
+    any comparable value}). own: the owner's own domains, always first; known: domains where the owner has an
+    established relationship with someone, before any that only ever wrote in, whichever showed up first."""
     order = {d: (0, '') for d in own}
-    order.update({d: (1, at) for d, at in first_seen.items() if d not in order})
+    order.update({d: (1 if d in known else 2, at) for d, at in first_seen.items() if d not in order})
     by_key = collections.defaultdict(set)
     for domain in order:
         for key in _keys(domain):
@@ -136,15 +142,26 @@ def first_seen(nodes, *events):
             for node in nodes if any(found.get(node) for found in events)}
 
 
-def mark(nodes, times, own, skip=frozenset()):
+def established(node, info, known=()):
+    """Whether the owner has an established relationship with a person: they wrote to them or replied, or met them
+    (known: such nodes, from the build's contact roles, history included), or gave their own word about them (a role,
+    added or edited by hand). Their own messages in never make it: anyone can write in."""
+    return node in known or info.get('role_by') == 'owner' or bool(info.get('manual') or info.get('edited'))
+
+
+def mark(nodes, times, own, skip=frozenset(), known=frozenset(), known_domains=frozenset()):
     """The Graph build's pass: marks each person node at a lookalike domain with what it imitates ({'from', 'domain',
     'name', 'node', 'address'}: the person on record there with the same name, when there is one), and drops a role a
     review gave them (only the owner's own word stays). nodes: the build's rows, info a dict; times: node -> when it was
-    first seen (comparable values); own: the owner's domains; skip: free mail domains. Returns {node: mark}."""
+    first seen (comparable values); own: the owner's domains; skip: free mail domains; known: person nodes the owner
+    wrote to or met (established); known_domains: domains established otherwise (a paying customer's). Of a confusable
+    pair, a domain with an established relationship comes before one whose people only wrote in. Returns {node: mark}."""
     first, people = {}, collections.defaultdict(list)
+    standing = {registrable(d) for d in known_domains} - {''}
     for n in nodes:
         if n[1] != 'person' or not isinstance(n[9], dict):
             continue
+        sure = established(n[0], n[9], known)
         for identifier in n[9].get('identifiers') or (n[0],):
             if not identifier.startswith('email:') or '@' not in identifier:
                 continue
@@ -152,10 +169,12 @@ def mark(nodes, times, own, skip=frozenset()):
             if not domain or domain in skip:
                 continue
             people[domain].append((n, identifier[6:]))
+            if sure:
+                standing.add(domain)
             if n[0] in times and (domain not in first or times[n[0]] < first[domain]):
                 first[domain] = times[n[0]]
     own = {registrable(d) for d in own} - {''}
-    found = imitations(first, own)
+    found = imitations(first, own, standing)
     marked = {}
     for domain, real in found.items():
         for n, sender in people[domain]:
@@ -183,6 +202,14 @@ def of_node(db, row):
                            "AND json_extract(n.info,'$.lookalike') IS NOT NULL LIMIT 1", (row['id'],)).fetchone()
         return json.loads(found[0]) if found else None
     return None
+
+
+def of_domain(db, domain):
+    """The last build's mark for a lookalike domain (its people's), else None: a review never makes it a project's
+    organization."""
+    found = registrable(domain) and db.execute("SELECT json_extract(info,'$.lookalike') FROM graph_nodes WHERE kind='person' "
+                                               "AND json_extract(info,'$.lookalike.from')=? LIMIT 1", (registrable(domain),)).fetchone()
+    return json.loads(found[0]) if found else None
 
 
 def refuse_role(db, row, source):

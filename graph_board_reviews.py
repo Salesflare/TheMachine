@@ -9,6 +9,7 @@ import secrets
 import sqlite3
 
 import graph
+import lookalike
 import timeutil
 from machine.owner_error import OwnerError
 
@@ -276,9 +277,10 @@ def split_plan(db, project_id):
 
 
 def counterpart_org(db, key):
-    """The organization key of a look-through-the-history counterpart (an org:… node id), unless it is personal mail."""
+    """The organization key of a look-through-the-history counterpart (an org:… node id), unless it is personal mail,
+    the owner's own or a lookalike domain (lookalike.py)."""
     found = graph.org_key(key)
-    return found if found and not graph.personal_mail(db, found) and not graph.own_domain(db, found) else None
+    return found if found and not graph.personal_mail(db, found) and not graph.own_domain(db, found) and not lookalike.of_domain(db, found) else None
 
 
 def _remember(db, steps, project_id):

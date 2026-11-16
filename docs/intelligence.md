@@ -163,13 +163,18 @@ A name is what anyone can type, so it never pairs two addresses across domains b
 A domain that imitates one the owner deals with (`lookalike.py`) is a lookalike: beyond its ending, its name reads the
 same once hyphens and the letters people mix up are folded (kestrel-bikes for kestrelbikes, studlo for studio), a long
 name is one letter apart, or it is the other's whole name plus a word (quillpress-payments). Of a pair, the lookalike
-is the one seen later; the owner's own domains always come first. The same name at another ending (example.nl next to
-example.com) and free mail domains never count.
+is the one the owner has less to do with: the owner's own domains always come first, then a domain where the owner has
+an established relationship with someone (the owner wrote to them or replied, met them, set their role, added or edited
+them by hand, or they pay through Stripe; history counts), then one whose people only ever wrote in. Within the same
+standing, the one seen first comes first. So an imitation that arrives before the real contact's first message in the
+window read never pushes the real contact aside once the owner has dealt with them. The same name at another ending
+(example.nl next to example.com) and free mail domains never count.
 
 - Each build marks the people at a lookalike domain (`lookalike` on their node: the domain it imitates, and the person
   on record there with the same name, when there is one).
 - A review never gives them a role (`graph.set_role` refuses it), and one a review gave them before is not shown. Only
-  the owner's own word gives them a role.
+  the owner's own word gives them a role. A review never makes a lookalike domain a project's organization either
+  (`lookalike.of_domain`, in `graph.set_stage` and a board review's counterpart).
 - "Same person?" never pairs them with anyone, nor two people at confusable domains or the same name at another ending,
   and a shared name in one message or thread never joins them.
 - A prepared email to a lookalike address is checked before it is saved (`lookalike.problems`): a check about their
