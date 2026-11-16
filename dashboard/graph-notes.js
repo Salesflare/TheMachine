@@ -18,8 +18,10 @@ function noteSource(x){const from=x.source?.gone?t('From a message that is gone'
  const todoOpen=(state?.suggestions||[]).some(s=>s.id===x.todo&&!closed(s)&&!looksDone(s)&&s.status!=='snoozed');
  const todo=x.todo?html`<a href="${todoOpen?'#card=':'#chat='}${encodeURIComponent(x.todo)}">${t('Open the to-do')}</a>`:'';
  return from||todo?html`<small class="note-src">${from}${from&&todo?' · ':''}${todo}</small>`:''}
-const noteLine=x=>html`<li id="note-line-${x.id}">${noteWhen(x.at,x.data?.until)}<span class="note-text">${noteText(x)}${noteSource(x)}</span></li>`;
-// Calendar › its name, and its name as the heading right under it (the crumb is for screen readers and the tab's title)
+// What a trip is missing (trip_notes.py gaps) is muted and tagged No booking, so it doesn't read like a booking
+const noteLine=x=>x.item==='gap'?html`<li id="note-line-${x.id}" class="note-gap">${noteWhen(x.at,x.data?.until)}<span class="note-text"><span class="note-tag">${t('No booking')}</span>${noteText(x)}</span></li>`
+ :html`<li id="note-line-${x.id}">${noteWhen(x.at,x.data?.until)}<span class="note-text">${noteText(x)}${noteSource(x)}</span></li>`;
+// ‹ Calendar, and its name as the heading right under it (the crumb is for screen readers and the tab's title)
 function notePage(n){const areas=n.areas||[],label=areas.find(x=>x.id===n.area)?.label||'',lines=n.lines||[],sep=html`<span aria-hidden="true">›</span>`;
  const crumbs=html`<div class="graph-crumbs note-crumbs" role="navigation" aria-label="${t('Breadcrumb')}"><a href="#calendar">${t('Calendar')}</a><span class="crumb-here" aria-current="page">${sep}${n.name}</span></div>`;
  const sub=[NOTE_KIND[n.kind]?t(NOTE_KIND[n.kind]):'',noteDates(n),areas.length>1?label:'',t('Kept up to date by The Machine')].filter(Boolean).join(' · ');

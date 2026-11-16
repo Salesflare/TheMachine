@@ -48,7 +48,7 @@ The trip shows as one band across its days. Open it for each booking in time ord
 
 Tickets for a concert, a match, a festival or a conference make an event, one per event, with where it is, the booking code, seat and number of tickets. A second order for the same event goes on the same one. An event booked on your work mailbox is Work, otherwise it's Personal. Tickets for something during a trip go on the trip instead.
 
-For a trip still ahead, your Machine says what is missing, like **No place to stay booked for 2 nights**, or nothing booked from the airport to your hotel. A trip with no stays at all says nothing about nights.
+For a trip still ahead, your Machine says what is missing, like **No place to stay booked for 2 nights**, or nothing booked from the airport to your hotel. Those lines are muted and tagged **No booking**. A trip with no stays at all says nothing about nights.
 
 - Each line says who the booking came from, like **From Example Tickets**, and opens that mail.
 - If a to-do came from the mail, like paying for the tickets, **Open the to-do** shows it.

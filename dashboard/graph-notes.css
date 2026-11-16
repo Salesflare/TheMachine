@@ -9,17 +9,22 @@
 .note-lines li:has(>time){grid-template-columns:minmax(0,1fr);gap:0 12px}.note-lines li>time{grid-row:1}.note-lines li:has(>time)>.note-text{grid-column:1;grid-row:2}
 .note-text .note-src{display:block;margin-top:2px;color:var(--faint);font-size:var(--fs-xs);white-space:normal}
 .note-src>a{color:inherit;text-underline-offset:2px;white-space:nowrap}
+.note-gap>.note-text,.note-gap a.note-link{color:var(--muted)}.note-gap>time{color:var(--faint)}
+.note-tag{display:inline-block;margin-right:8px;padding:0 7px;border:1px dashed var(--border);border-radius:999px;color:var(--muted);font-size:var(--fs-xs);font-weight:var(--fw-medium);line-height:1.6;white-space:nowrap;vertical-align:1px}
 .note-src button.link{min-height:0;margin:0;padding:0;border:0;background:none;box-shadow:none;color:inherit;font:inherit;text-decoration:underline;text-underline-offset:2px;text-align:left}
 a.note-link{color:var(--text);text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px}
 .note-page .note-lines{margin-top:var(--sp-2)}
 .note-empty{margin:4px 0 0;color:var(--muted)}
-/* Its breadcrumb: Calendar, and the page's name as the heading right under it; it takes the page head's place at every
-   width. The heading wraps, so the name always shows in full. */
+/* Its back link, ‹ Calendar (as ‹ Connections and a phone's ‹ People), and the page's name as the heading right under
+   it; it takes the page head's place at every width. The heading wraps, so the name always shows in full. */
 body.m-note-trail #page-head{display:none}  /* the trail is the path: no Graph head over it */
 #people-view .note-crumbs .crumb-here{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
-#people-view .note-crumbs a{max-width:32ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#people-view .note-crumbs>a{display:inline-flex;align-items:center;gap:6px;min-height:36px;color:var(--muted);font-size:var(--fs-sm);font-weight:var(--fw-medium)}
+#people-view .note-crumbs>a::before{content:'‹';content:'‹'/'';font-size:1.5em;line-height:1;margin-top:-2px}
 .note-page>.name-row h3{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:break-word}
+/* A trip or event is Calendar's, opened from its band: the sidebar shows Calendar, not Graph */
+body.m-note-trail .app-side nav button[data-tab="people"].active{background:none;color:var(--side-ink);font-weight:var(--fw-medium)}
+body.m-note-trail .app-side nav button[data-tab="calendar"]{background:color-mix(in srgb,var(--text) 11%,transparent);color:var(--text);font-weight:600}
 /* A phone: one line, a full-height tap target */
 @media(max-width:560px){#people-view .note-crumbs{flex-wrap:nowrap;gap:0 6px;min-height:44px;margin:-6px 0 var(--sp-2)}
-#people-view .note-crumbs>a{display:block;flex:none;max-width:none;min-height:0;height:44px;margin:0;padding:0;line-height:44px;color:var(--muted);font-size:var(--fs-sm);font-weight:var(--fw-medium)}
-#people-view .note-crumbs>a::before{content:none}}
+#people-view .note-crumbs>a{flex:none;min-height:44px;margin:0 0 0 -6px;padding:0 14px 0 6px;font-size:var(--fs-md)}}
