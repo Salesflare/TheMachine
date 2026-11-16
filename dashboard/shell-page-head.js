@@ -7,7 +7,10 @@ function openRoutineLink(){const m=/^#routines\/([a-f0-9]{32})$/.exec(location.h
  history.replaceState(null,'',location.pathname+location.search+'#routines');rtWant=m[1];if($('#routines').hidden)showTab('routines');else routinesView();return true}
 document.addEventListener('click',e=>{const a=e.target.closest('a[href^="#routines/"]');if(!a||e.ctrlKey||e.metaKey||e.shiftKey||e.defaultPrevented)return;
  e.preventDefault();history.replaceState(null,'',location.pathname+location.search+a.getAttribute('href'));openRoutineLink()});
-$('nav').addEventListener('click',e=>{const t=e.target.closest('button')?.dataset.tab;if(t==='routines')routinesView();if(t==='feedback')lazyRun('learning',()=>{});
+// A tab tapped whose views are a part not in yet (Learning, Connections) asks for it now: the page's own fetching of the
+// parts goes one at a time after a few quiet seconds each, and Connections waited its turn, its cards missing meanwhile.
+// The part draws itself once in (learning-missed.js, connections-cards.js).
+$('nav').addEventListener('click',e=>{const t=e.target.closest('button')?.dataset.tab;if(t==='routines')routinesView();if(t==='feedback')lazyRun('learning',()=>{});if(t==='health')lazyRun('connections',()=>{});
  if(t==='calendar')lazyRun('calendar',()=>{if(!calRouting&&(e.isTrusted||!/^#calendar\?/.test(location.hash))){calSetAll(calDay(0));calFrom=calDay(0);calTo=calDay(7);calMoreFailed={};calUp=false;calPush(true);scrollTo({top:0})}calendarView(true)});
  else if(t&&/^#calendar\?/.test(location.hash))history.replaceState(null,'',location.pathname+location.search)});
 DESK.addEventListener?.('change',()=>{if(!$('#calendar').hidden&&lazyIn('calendar')){calPush(true);calShowNow()}});
