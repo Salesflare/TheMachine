@@ -16,6 +16,8 @@ const preview=[{name:'Avery Example',email:'avery@example.org',changes:[change('
  {name:'Sam Sample',email:'sam@example.net',changes:[change('phone','Phone','+32 470 00 00 00',null),change('linkedin_url','LinkedIn','https://linkedin.com/in/sam-sample',null)]}];
 const state={suggestions:[],promises:[],connectors:[sf],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[]};
 const calls=[];
+// The card's last sync call: Connections may ask for its list (connect_sources) at any moment, so never just the last call
+const lastSync=()=>calls.filter(c=>c.action==='connector_contact_sync').at(-1);
 const server=createServer(async(req,res)=>{const url=new URL(req.url,'http://x.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
  if(url.pathname==='/api/status'){res.end(JSON.stringify(state));return}
@@ -51,14 +53,14 @@ try{
   // Show what would change
   await card.locator('[data-crm-sync="preview"]').click();
   await card.locator('[data-crm-sync="on"]').waitFor();
-  assert.deepEqual(calls.at(-1),{action:'connector_contact_sync',args:{account:'salesforce-work',do:'preview'}});
+  assert.deepEqual(lastSync(),{action:'connector_contact_sync',args:{account:'salesforce-work',do:'preview'}});
   assert.equal(await card.locator('.crm-sync-line').innerText(),'Turning it on now changes 2 contacts:');
   assert.match(await card.locator('.crm-sync-list').innerText(),/Avery Example[\s\S]*VP Sales[\s\S]*\(was Sales Director\)/);
   await inside();await shot('preview');
   // Turn on: it lists what it updated
   await card.locator('[data-crm-sync="on"]').click();
   await card.locator('[data-crm-sync="off"]').waitFor();
-  assert.equal(calls.at(-1).args.do,'on');
+  assert.equal(lastSync().args.do,'on');
   assert.equal(await card.locator('.crm-sync-line').innerText(),'Updates contact details in Salesforce.');
   const refused=card.locator('.crm-sync-refused');
   assert.equal(await refused.locator('summary').innerText(),'1 contact not updated: Salesforce refused the change');
@@ -69,7 +71,7 @@ try{
   // Turn off
   await card.locator('[data-crm-sync="off"]').click();
   await card.locator('[data-crm-sync="preview"]').waitFor();
-  assert.equal(calls.at(-1).args.do,'off');
+  assert.equal(lastSync().args.do,'off');
   await context.close();
  }
  // A connection a Fleet shares only reads: no box
