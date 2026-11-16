@@ -139,7 +139,7 @@ class TripNotes(unittest.TestCase):
             trip_notes.collect(db)
             found, keep = trip_notes.drafts(db, [MAIL])
             note_pages.sync(db, 'trip', found, AT, keep)
-            return [note_pages.page(db, x['id']) for x in note_pages.listing(db, '2026-11-14') if x['kind'] == 'trip']
+            return [note_pages.page(db, x['id']) for x in note_pages.dated(db, '0001-01-01', '9999-12-31') if x['kind'] == 'trip']
 
     def test_flights_and_a_hotel_of_one_journey_are_one_trip_in_time_order(self):
         self.mail(OUT, BACK)
@@ -155,7 +155,9 @@ class TripNotes(unittest.TestCase):
             'Check out of Hotel Alfama Garden',
             'Flight EX 2087 Lisbon to Brussels, booking K7PQ2M'])
         self.assertTrue(all(x['event_id'] for x in lisbon['lines']))
-        self.assertEqual([p['name'] for p in lisbon['path']], ['Trips'])
+        with self.store.connect() as db:
+            self.assertEqual(db.execute('SELECT f.title FROM note_pages p JOIN note_pages f ON f.id=p.parent_id WHERE p.id=?',
+                                        (note_pages.parse_id(lisbon['id']),)).fetchone()['title'], 'Trips')
         self.assertEqual(trips[1]['lines'][0]['text'], 'Train 9114 Brussels-Midi to London St Pancras, booking TR8812, seat 5 61, ticket 0042')
 
     def test_a_trip_is_a_band_in_the_calendar_windows_it_touches(self):
@@ -185,12 +187,12 @@ class TripNotes(unittest.TestCase):
         self.mail({**OUT, 'reservationStatus': 'http://schema.org/ReservationCancelled'}, day=4)
         self.assertEqual(self.sync(), [])
 
-    def test_the_owners_edits_stay_over_later_mail(self):
+    def test_the_owners_earlier_edits_stay_over_later_mail(self):
         self.mail(OUT, BACK)
         trip = self.sync()[0]
-        with self.store.connect() as db:
-            note_pages.edit(db, trip['id'], AT, title='Lisbon with the team')
-            note_pages.line_edit(db, trip['lines'][0]['id'], 'Flight out, aisle seat asked', AT)
+        with self.store.connect() as db:  # renamed and a line in their words, while Notes could still edit a trip
+            db.execute("UPDATE note_pages SET owner_title='Lisbon with the team' WHERE id=?", (note_pages.parse_id(trip['id']),))
+            db.execute("UPDATE note_page_lines SET owner_text='Flight out, aisle seat asked' WHERE id=?", (trip['lines'][0]['id'],))
         self.mail(STAY, day=2)
         trip = self.sync()[0]
         self.assertEqual(trip['name'], 'Lisbon with the team')
@@ -216,11 +218,11 @@ class TripNotes(unittest.TestCase):
             self.assertEqual(len(self.sync()), 2)
         trips = self.sync()
         self.assertEqual([(x['id'], len(x['lines'])) for x in trips], [(first['id'], 3)])
-        # a second note the owner wrote on stays, for them to merge or delete
+        # a second trip the owner renamed before stays as it is
         with mock.patch.object(trip_notes, '_kept', return_value=({}, {})):
             second = next(x for x in self.sync() if x['id'] != first['id'])
         with self.store.connect() as db:
-            note_pages.edit(db, second['id'], AT, title='The second week')
+            db.execute("UPDATE note_pages SET owner_title='The second week' WHERE id=?", (note_pages.parse_id(second['id']),))
         self.assertEqual(len(self.sync()), 2)
 
     def test_bookings_are_sealed_at_rest_and_read_once(self):
@@ -287,7 +289,7 @@ class HeldMail(unittest.TestCase):
 
     def trips(self):
         with self.store.connect() as db:
-            return [(x['name'], len(note_pages.page(db, x['id'])['lines'])) for x in note_pages.listing(db, '2026-11-14') if x['kind'] == 'trip']
+            return [(x['name'], len(note_pages.page(db, x['id'])['lines'])) for x in note_pages.dated(db, '0001-01-01', '9999-12-31') if x['kind'] == 'trip']
 
     def test_held_mail_is_read_again_once_and_the_trips_follow(self):
         self.app.trip_notes_step()

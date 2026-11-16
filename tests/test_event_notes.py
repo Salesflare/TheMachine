@@ -75,7 +75,7 @@ class EventNotes(unittest.TestCase):
         self.app.event_notes_at = float('-inf')  # an hour went by
         self.app.trip_notes_step()
         with self.store.connect() as db:
-            return {x['name']: self.app.note_page(x['id']) for x in note_pages.listing(db, '2026-11-14') if x['kind'] == 'event'}
+            return {x['name']: self.app.note_page(x['id']) for x in note_pages.dated(db, '0001-01-01', '9999-12-31') if x['kind'] == 'event'}
 
     def test_every_order_for_one_event_is_one_dated_note_under_events(self):
         self.mail(CONCERT)
@@ -84,7 +84,10 @@ class EventNotes(unittest.TestCase):
         events = self.sync()
         self.assertEqual(sorted(events), ['Harbor Sound Festival', 'Northern Lights Live'])
         concert = events['Northern Lights Live']
-        self.assertEqual((concert['starts'], concert['ends'], [x['name'] for x in concert['path']]), ('2026-12-12', '2026-12-12', ['Events']))
+        self.assertEqual((concert['starts'], concert['ends']), ('2026-12-12', '2026-12-12'))
+        with self.store.connect() as db:
+            self.assertEqual(db.execute('SELECT f.title FROM note_pages p JOIN note_pages f ON f.id=p.parent_id WHERE p.id=?',
+                                        (note_pages.parse_id(concert['id']),)).fetchone()['title'], 'Events')
         self.assertCountEqual([x['text'] for x in concert['lines']], ['At Example Arena, Antwerp, 2 tickets, booking TK-4411, seat B 14, ticket 0042',
                                                                       'At Example Arena, Antwerp, booking TK-5520, ticket 0042'])
         self.assertEqual({x['source']['from'] for x in concert['lines']}, {'Example Tickets'}, 'each line says who the tickets came from')
@@ -96,7 +99,7 @@ class EventNotes(unittest.TestCase):
         self.assertNotIn('data', concert['lines'][0], 'an evening has no end day')
         self.assertEqual((festival['starts'], festival['ends'], festival['area']), ('2027-07-09', '2027-07-11', 'personal'))
         with self.store.connect() as db:
-            self.assertEqual([x for x in note_pages.listing(db, '2026-11-14') if x['kind'] == 'trip'], [], 'tickets make no trip')
+            self.assertEqual([x for x in note_pages.dated(db, '0001-01-01', '9999-12-31') if x['kind'] == 'trip'], [], 'tickets make no trip')
         week = self.app.calendar_notes('2026-12-07T00:00:00+01:00', '2026-12-14T00:00:00+01:00')
         self.assertEqual([(x['kind'], x['name']) for x in week], [('event', 'Northern Lights Live')])
 

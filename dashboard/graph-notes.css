@@ -1,84 +1,25 @@
-/* Notes in the Graph (graph-notes.js): the folded tree, a note's page, its forms and the @ link picker */
+/* A trip's or an event's page (graph-notes.js): its lines, each with where it came from */
 /*@lazy*/
-/* One card, a row per note; a note's own notes sit a step in, with a faint guide under each caret above them */
-.note-tree{gap:0;border:1px solid var(--border);border-radius:var(--r-lg);background:var(--surface);box-shadow:var(--shadow-sm);overflow:hidden}
-.note-tree .note-item{display:flex;align-items:center;gap:6px;margin:0;padding:8px 14px 8px calc(10px + var(--note-in,0px));border:0;border-radius:0;box-shadow:none;background:none;
- position:relative;background-image:repeating-linear-gradient(to right,transparent 0 23px,color-mix(in srgb,var(--border) 70%,transparent) 23px 24px);background-size:var(--note-in,0px) 100%;background-repeat:no-repeat}
-.note-tree .note-item+.note-item::before{content:"";position:absolute;top:0;right:0;left:calc(44px + var(--note-in,0px));height:1px;background:var(--border)}  /* the line between rows starts where the row does */
-.note-item[data-depth="1"]{--note-in:24px}.note-item[data-depth="2"]{--note-in:48px}.note-item[data-depth="3"],.note-item[data-depth="4"],.note-item[data-depth="5"],.note-item[data-depth="6"]{--note-in:72px}
-@media(hover:hover) and (pointer:fine){.note-tree .note-item:hover{background-color:var(--c-hover)}}
-.note-tree article.kb-on,.note-tree article.kb-on:focus{outline-offset:-2px}  /* inside the card, which clips; a row stays square */
-.note-tree .note-item>.graph-row{flex:1;min-width:0;flex-wrap:wrap}.note-item .graph-row>.node{flex-shrink:0;max-width:100%}
-.note-item .graph-row>small{color:var(--muted);font-size:var(--fs-sm)}
-.note-fold{flex:0 0 28px;width:28px;height:28px;min-height:0;padding:0;border:0;background:none;box-shadow:none;display:grid;place-items:center;color:var(--muted);border-radius:8px}
-.note-fold svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;transition:transform .15s}
-.note-fold[aria-expanded="true"] svg{transform:rotate(90deg)}button.note-fold:hover{background:var(--c-hover)}
 .note-lines{list-style:none;margin:0;padding:0}
-.note-lines li{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:4px 12px;padding:10px 0;border-top:1px solid var(--border);font-size:var(--fs-sm);line-height:1.5}
+.note-lines li{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:4px 12px;padding:10px 0;border-top:1px solid var(--border);font-size:var(--fs-sm);line-height:1.5}
 .note-lines li:first-child{border-top:0}.note-lines li>time{grid-column:1;color:var(--muted);font-size:var(--fs-xs);white-space:nowrap;font-variant-numeric:tabular-nums}
-.note-lines li>.note-text{grid-column:2;min-width:0;overflow-wrap:anywhere;white-space:pre-line}.note-lines li>details{grid-column:3}
+.note-lines li>.note-text{grid-column:2;min-width:0;overflow-wrap:anywhere;white-space:pre-line}
 .note-lines li:not(:has(>time))>.note-text{grid-column:1/3}
 /* A dated line, at every width: its day above, its text where an undated line's starts */
-.note-lines li:has(>time){grid-template-columns:minmax(0,1fr) auto;gap:0 12px}.note-lines li>time{grid-row:1}.note-lines li:has(>time)>.note-text{grid-column:1;grid-row:2}.note-lines li:has(>time)>details{grid-column:2;grid-row:1/span 2}.note-lines li:has(>form){display:block}
+.note-lines li:has(>time){grid-template-columns:minmax(0,1fr);gap:0 12px}.note-lines li>time{grid-row:1}.note-lines li:has(>time)>.note-text{grid-column:1;grid-row:2}
 .note-text .note-src{display:block;margin-top:2px;color:var(--faint);font-size:var(--fs-xs);white-space:normal}
 .note-src>a{color:inherit;text-underline-offset:2px;white-space:nowrap}
 .note-src button.link{min-height:0;margin:0;padding:0;border:0;background:none;box-shadow:none;color:inherit;font:inherit;text-decoration:underline;text-underline-offset:2px;text-align:left}
 a.note-link{color:var(--text);text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px}
-.note-page .note-add-line{margin:6px 0 0 -8px;min-height:0;padding:4px 8px;font-size:var(--fs-sm);color:var(--muted)}.note-page .note-lines{margin-top:var(--sp-2)}
+.note-page .note-lines{margin-top:var(--sp-2)}
 .note-empty{margin:4px 0 0;color:var(--muted)}
-/* The written page above the lines (note_writer.py): a summary, short sections, each bullet's sources as small numbers */
-.note-item .graph-row:has(>.note-about){flex-wrap:wrap}  /* the summary on its own line, under Notes under this one too */
-.note-item .graph-row>.note-about{flex-basis:100%;margin:2px 0 0;color:var(--muted);font-size:var(--fs-sm);line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.note-written{margin-top:var(--sp-2);font-size:var(--fs-md);line-height:1.55}
-.note-written .note-summary{margin:0 0 var(--sp-2);max-width:70ch}
-.note-written h4{margin:var(--sp-3) 0 4px;color:var(--muted);font-size:var(--fs-xs);font-weight:var(--fw-medium);letter-spacing:.04em;text-transform:uppercase}
-.note-bullets{margin:0;padding-left:1.2em;max-width:70ch}.note-bullets li{margin:2px 0;font-size:var(--fs-sm)}
-.note-timeline{list-style:none;padding:0}.note-timeline li{display:grid;grid-template-columns:5.5em minmax(0,1fr);gap:8px}
-.note-timeline time{color:var(--muted);font-size:var(--fs-xs);line-height:1.9;white-space:nowrap;font-variant-numeric:tabular-nums}
-.note-cites{white-space:nowrap}.note-cite{display:inline-block;min-width:1.5em;margin-left:3px;padding:0 4px;border-radius:6px;background:var(--tile);color:var(--muted);font-size:var(--fs-xs);line-height:1.5;text-align:center;text-decoration:none;font-variant-numeric:tabular-nums;vertical-align:1px}
-.note-cite:hover{color:var(--text)}
-.note-written .note-sources-head{margin-bottom:0}
-/* A folder's overview: its sources are the notes under it, by name, shortened with … and free to wrap */
-.note-overview .note-cites{white-space:normal}
-.note-cite-name{max-width:18ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:-3px}
-.note-num{display:inline-block;min-width:1.5em;margin-right:6px;padding:0 4px;border-radius:6px;background:var(--tile);color:var(--muted);font-size:var(--fs-xs);font-weight:var(--fw-medium);text-align:center;font-variant-numeric:tabular-nums}
-.note-lines li.note-flash{animation:note-flash 1.6s ease-out}
-@keyframes note-flash{from{background:color-mix(in srgb,var(--c-accent) 14%,transparent)}to{background:transparent}}
-@media(prefers-reduced-motion:reduce){.note-lines li.note-flash{animation:none;outline:2px solid var(--border)}}
-.note-form{display:grid;gap:10px;width:100%;margin:8px 0 12px}
-.note-form label{display:grid;gap:4px;color:var(--muted);font-size:var(--fs-sm)}.note-form label>:is(input,select){width:100%;box-sizing:border-box;color:var(--text)}
-.note-form textarea,.note-form textarea:focus,.note-form textarea.filled{width:100%;box-sizing:border-box;height:auto;min-height:64px;field-sizing:content;max-height:240px;resize:vertical;transition:none;font:inherit}
-.note-form>p.graph-sub{margin:0;white-space:normal}
-.note-days{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.note-acts{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap}
-.note-new-form{grid-template-columns:minmax(0,1fr) auto;align-items:center;margin:0 0 12px}.note-new-form .note-acts{flex-wrap:nowrap}
-@media(max-width:560px){.note-new-form{grid-template-columns:minmax(0,1fr)}}
-.note-under-form{margin:0 0 10px}
-.note-suggest{display:grid;gap:2px;padding:4px;border:1px solid var(--border);border-radius:10px;background:var(--surface);box-shadow:var(--shadow-pop)}
-.note-suggest button{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:36px;padding:6px 10px;border:0;background:none;box-shadow:none;text-align:left;color:var(--text);border-radius:8px}
-.note-suggest button:hover,.note-suggest button:focus-visible,.note-suggest button:first-child{background:var(--c-hover)}
-.note-suggest button>small{color:var(--muted);font-size:var(--fs-xs);flex:0 0 auto}.note-suggest>p{margin:4px 8px}
-.note-kids,.note-backlinks{margin-top:var(--sp-4)}
-/* A note's breadcrumb: Graph › Notes › Kids, each a link, and the note's title as the heading right under it; it takes
-   the page head's place at every width, so the path shows once. A long
-   name shortens with … (its title shows it whole); the heading wraps, so the title always shows in full. */
-body.m-note-trail #page-head{display:none}  /* the trail is the path: no Graph / Notes head over it */
+/* Its breadcrumb: Calendar, and the page's name as the heading right under it; it takes the page head's place at every
+   width. The heading wraps, so the name always shows in full. */
+body.m-note-trail #page-head{display:none}  /* the trail is the path: no Graph head over it */
 #people-view .note-crumbs .crumb-here{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 #people-view .note-crumbs a{max-width:32ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-#people-view .note-crumbs .crumb-mid{display:contents}
-#people-view .note-crumbs .crumb-fold{display:none}
-#people-view .note-crumbs .crumb-fold>details{display:flex}
-#people-view .note-crumbs .crumb-fold>details>summary{width:32px;height:32px;margin:0 -4px;color:var(--muted);font-size:var(--fs-md)}
-#people-view .note-crumbs .crumb-fold .fact-menu-list{left:-6px;right:auto;min-width:180px;max-width:min(280px,80vw)}
-#people-view .note-crumbs .fact-menu-list a{max-width:none;padding:8px 10px;border-radius:var(--r-sm);color:var(--text);font:var(--fw-medium) var(--fs-sm)/1.3 var(--sans);text-decoration:none}
-#people-view .note-crumbs .fact-menu-list a:hover{background:var(--tile);text-decoration:none}
 .note-page>.name-row h3{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:break-word}
-/* A phone: one line, no Graph (the menu has it): Notes › Kids ›, and from two notes up Notes › ⋯ › Kids ›, the notes in
-   between in the ⋯ menu. Each link is a full-height tap target; Notes still goes back the way the phone came. */
+/* A phone: one line, a full-height tap target */
 @media(max-width:560px){#people-view .note-crumbs{flex-wrap:nowrap;gap:0 6px;min-height:44px;margin:-6px 0 var(--sp-2)}
-#people-view .note-crumbs>:is(span,.crumb-fold){display:inline-flex;flex:none;align-items:center;gap:6px}
-#people-view .note-crumbs>.crumb-here{display:block}
-#people-view .note-crumbs>a[data-crumb=""],#people-view .note-crumbs>a[data-crumb=""]+span,#people-view .note-crumbs>.crumb-mid{display:none}
-#people-view .note-crumbs>a,#people-view .note-crumbs>a[data-crumb]:not([data-crumb=""]){display:block;flex:0 1 auto;min-width:min(4em,max-content);max-width:none;min-height:0;height:44px;margin:0;padding:0;line-height:44px;color:var(--muted);font-size:var(--fs-sm);font-weight:var(--fw-medium)}
-#people-view .note-crumbs>a[data-crumb="notes"]{flex:none}
-#people-view .note-crumbs>a[data-crumb]::before{content:none}}
+#people-view .note-crumbs>a{display:block;flex:none;max-width:none;min-height:0;height:44px;margin:0;padding:0;line-height:44px;color:var(--muted);font-size:var(--fs-sm);font-weight:var(--fw-medium)}
+#people-view .note-crumbs>a::before{content:none}}

@@ -42,8 +42,8 @@ try{
  await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
  page.on('pageerror',e=>errors.push(e.message));
  await page.goto(base);
- // Graph: its panes are rows in the sidebar (no pills on the page): People, Organizations, Projects (Notes only with
- // notes_enabled on). No Who's who row, and nothing counted on the Graph row.
+ // Graph: its panes are rows in the sidebar (no pills on the page): People, Organizations, Projects. No Who's who
+ // row, and nothing counted on the Graph row.
  await navClick(page.locator('nav [data-tab="people"]'));
  await page.locator('[data-graph-panel="people"]:not([hidden])').waitFor();assert.equal(await page.locator('#people-view [data-graph-pane]').count(),0);
  assert.deepEqual(await rows(page),['People','Organizations','Projects']);

@@ -177,7 +177,7 @@ def load(directory, states, port=8870, network_port=8871, fixture_path=HERE / 'f
             load_roles(db, base)
             load_learned(db, base)
             load_fields(db, base)
-            load_graph_notes(db, base)
+            load_trips(db, base)
             load_skills(db, states, fixture, base)
             # The owner's first view after setup (Store.greeting): the hello by name, leading with who waits longest
             assistant.Store.greeting_on(db, base.isoformat())
@@ -187,7 +187,7 @@ def load(directory, states, port=8870, network_port=8871, fixture_path=HERE / 'f
         load_logins(directory, fixture)
         if not fresh:
             load_learned_facts(store)
-            load_section_notes(store, base)
+            load_home_facts(store, base)
         load_recurring(store, config, base)
         if not fresh:  # a fresh Machine has no routines yet: the page's empty state
             load_routines(store, base)
@@ -390,29 +390,12 @@ def load_fields(db, base):
     db.commit()
 
 
-def load_graph_notes(db, base):
-    """Graph, Notes (note_pages.py): a few of the owner's own notes in a small tree, one linking a person and a
-    project, and a trip The Machine keeps (under Trips), so the list, a page and Linked from all show something."""
+def load_trips(db, base):
+    """Trips and events in Calendar (note_pages.py): a trip The Machine keeps from booking mail and events from ticket
+    mail, so their bands and their pages show something."""
     import note_pages
     when, day = stamp(2 * 24 * 60, base), lambda days: (base + dt.timedelta(days=days)).date().isoformat()
-    node = lambda kind, name: (db.execute('SELECT id FROM graph_nodes WHERE kind=? AND name=?', (kind, name)).fetchone() or [None])[0]
     work = 'work:Lumen Labs'
-    home = note_pages.create(db, 'Home', 'personal', when, ['personal', work])['id']
-    appliances = note_pages.create(db, 'Appliances', 'personal', when, ['personal', work], parent=home)['id']
-    note_pages.create(db, 'Dishwasher', 'personal', when, ['personal', work], parent=appliances,
-                      lines=['Bought in March, warranty for two years', 'Filter cleaned every month'])
-    note_pages.create(db, 'Internet', 'personal', when, ['personal', work], parent=home, lines=['Fiber, 1 Gbit, contract runs to next June'])
-    health = note_pages.create(db, 'Health', 'personal', when, ['personal', work])['id']
-    visits = note_pages.create(db, 'Appointments', 'personal', when, ['personal', work], parent=health)['id']
-    note_pages.create(db, 'Physio', 'personal', when, ['personal', work], parent=visits, lines=['Knee exercises twice a day'])
-    kids = note_pages.create(db, 'Kids', 'personal', when, ['personal', work])['id']
-    school = note_pages.create(db, 'School', 'personal', when, ['personal', work], parent=kids)['id']
-    note_pages.create(db, 'Isla', 'personal', when, ['personal', work], parent=school, lines=['Pick-up at 15:30 on Fridays'])
-    office = note_pages.create(db, 'Office move', work, when, ['personal', work])['id']
-    links = [{'id': i, 'name': n} for i, n in ((node('person', 'Mila Underhay'), 'Mila Underhay'),
-                                                (node('project', 'Northwind rollout'), 'Northwind rollout')) if i]
-    note_pages.line_add(db, office, 'Movers booked for the last Friday of the month', when)
-    note_pages.line_add(db, office, 'Mila Underhay helps plan the desks, after the Northwind rollout', when, links=links)
     # A trip from booking mail (trip_notes.py): the flights' and the hotel's confirmations, with the structured data the
     # mail source reads (bookings.py), made into one trip under Trips as the Machine's ten-minute step does
     import trip_notes
@@ -456,7 +439,7 @@ def load_graph_notes(db, base):
     note_pages.sync(db, 'trip', found, when, keep)
     found, keep = event_notes.drafts(db, accounts)
     note_pages.sync(db, 'event', found, when, keep)
-    # Home's bills (home_notes.py): paid energy and water bills on the personal mailbox; load_home_notes makes the notes
+    # Home's bills: paid energy and water bills on the personal mailbox, each with its done to-do
     bills =[('Brightwater Energy', days) for days in (95, 64, 33, 3)] + [('Clearbrook Water', days) for days in (150, 58)]
     mails = insert_events(db, [{'key': f'home:bill{n}', 'account_id': 'home-gmail', 'kind': 'gmail.message', 'minutes_ago': days * 24 * 60,
                                 'title': f'Your {payee} bill', 'body': f'Your new bill from {payee} is ready.',
@@ -468,8 +451,8 @@ def load_graph_notes(db, base):
                    (hashlib.sha256(f'home-bill{n}'.encode()).hexdigest()[:16], f'sandbox:home-bill{n}', f'Pay the {payee} bill', f'The {payee} bill, paid.',
                     json.dumps([mails[f'home:bill{n}']]), json.dumps(['home-gmail']), stamp(days * 24 * 60, base),
                     json.dumps({'payee': payee, 'invoice': f'HB-{4410 + n}', 'amount': 'EUR 64.20'})))
-    # Health's (health_notes.py) and Kids' (kids_notes.py): events only the owner goes to on the personal calendar
-    # (days before now; below 0 still to come) and paid bills; load_section_notes makes the notes
+    # Health and the kids: events only the owner goes to on the personal calendar (days before now; below 0 still to
+    # come) and paid bills
     me = 'alex.morgan@mail.example'
     for kind, visits, bills in (('health', (('Dentist check-up', 170), ('Dentist check-up', -20), ('GP visit', 41), ('Physio', 16),
                                             ('Physio', 9), ('Physio', 2)), (('Smileline Dental', 12), ('Northcare Health Insurance', 26))),
@@ -491,17 +474,10 @@ def load_graph_notes(db, base):
     db.commit()
 
 
-def load_section_notes(store, base):
-    """Home, Health and Kids (section_notes.py): a few things the owner said in their chat about the house, their health
-    and their daughter Isla, kept the way the chat keeps them (Store.remember_fact), and those and load_graph_notes'
-    bills and calendar events placed as the Machine's model call would place them, filled in beside the owner's own
-    notes (Home's Appliances and Dishwasher, Health's Appointments and Physio, Kids' School and Isla)."""
+def load_home_facts(store, base):
+    """A few things the owner said in their chat about the house, their health and their daughter Isla, kept the way
+    the chat keeps them (Store.remember_fact)."""
     import graph
-    import health_notes
-    import home_notes
-    import kids_notes
-    import note_pages
-    import section_notes
     with store.connect() as db:  # Isla, added by hand as Personal (as on a person's page), and what she is to the owner (To you)
         import crm_import
         import graph_show
@@ -520,85 +496,6 @@ def load_section_notes(store, base):
         store.remember_fact(text, f'webchat-said:sandbox-home-{n}', said=True, quote=text, said_text=text)
     for n, text in enumerate(('Isla is in class 4B, her teacher is Ms Okafor', 'Isla has hockey practice on Wednesdays until 5') if row else ()):
         store.remember_fact(text, f'webchat-said:sandbox-kids-{n}', said=True, quote=text, said_text=text, about=[row[0]])
-    accounts = [{'id': 'home-gmail', 'service': 'gmail', 'boundary': 'personal'},
-                {'id': 'home-calendar', 'service': 'calendar', 'email': 'alex.morgan@mail.example', 'boundary': 'personal'}]
-    when = stamp(2 * 24 * 60, base)
-    places = {home_notes.KIND: {'Brightwater': 'Bills and subscriptions', 'Clearbrook': 'Bills and subscriptions', 'boiler': 'Repairs and upkeep',
-                                'gutters': 'Repairs and upkeep', 'fridge': 'Appliances', 'dishwasher': ('Appliances', 'Dishwasher')},
-              health_notes.KIND: {'Dentist': 'Appointments', 'GP visit': 'Appointments', 'Physio': ('Appointments', 'Physio'),
-                                  'Smileline': 'Bills and insurance', 'Northcare': 'Bills and insurance', 'penicillin': 'Allergies and conditions',
-                                  'Blood type': 'Allergies and conditions', 'vitamin D': 'Medicines'},
-              kids_notes.KIND: {'Oakfield': 'Bills and fees', 'Riverside Hockey': 'Bills and fees', 'class 4B': ('School', 'Isla'),
-                                'Parents evening': 'School', 'autumn term': 'School', 'hockey': 'Activities', 'Hockey': 'Activities'}}  # the owner's own sub-notes
-    with store.connect() as db:
-        db.execute('BEGIN IMMEDIATE')
-        section_notes.ensure(db)
-        for kind, place in places.items():
-            items = section_notes.unasked(db, kind, kind.candidates(db, accounts, base.date()))
-            section_notes.remember(db, kind, {c['key']: next((s for k, s in place.items() if k in (c.get('name') or c.get('text') or '')), '')
-                                              for c in items}, when)
-            found, keep = section_notes.drafts(db, kind, kind.candidates(db, accounts, base.date()))
-            note_pages.sync(db, kind.kind, found, when, keep)
-        db.commit()
-    load_memory_seed(store, when)
-    load_note_page(store, when)
-
-
-def load_memory_seed(store, when):
-    """What the memory seed (memory_seed.py) brought in from the owner's earlier OpenClaw memory pages: a line on
-    Appliances, saying the page it came from."""
-    import memory_seed
-    import note_pages
-    with store.connect() as db:
-        db.execute('BEGIN IMMEDIATE')
-        row = db.execute("SELECT id FROM note_pages WHERE key='home:appliances' AND removed_at IS NULL").fetchone()
-        if row:
-            note_pages.add_kept(db, row['id'], [{'key': 'memory:sandbox:washer', 'text': 'The washing machine is a Lumo WM-700, bought in 2024.',
-                                                 'at': when[:4] + '-03-02', 'data': {'memory': 'memory/home/appliances.md', 'page': 'Appliances'}}], 'memory', when)
-        memory_seed.finish(db, when)
-        db.commit()
-
-
-def load_note_page(store, when):
-    """A written page (note_writer.py) on Home's Repairs and upkeep, as the Machine's turn would write it from its lines,
-    each bullet citing the lines it stands on."""
-    import note_writer
-    with store.connect() as db:
-        db.execute('BEGIN IMMEDIATE')
-        row = db.execute("SELECT id FROM note_pages WHERE kind='home' AND title='Repairs and upkeep' AND removed_at IS NULL").fetchone()
-        lines = {r['text']: r['id'] for r in db.execute('SELECT id,text FROM note_page_lines WHERE note_id=? AND removed_at IS NULL', (row['id'],))} if row else {}
-        line = lambda word: next((i for text, i in lines.items() if word in text), None)  # noqa: E731
-        boiler, gutters = line('boiler'), line('gutters')
-        if boiler and gutters:
-            item = next((x for x in note_writer.due(db, limit=50) if x['note_id'] == row['id']), None)
-            if item:
-                note_writer.save(db, item, {
-                    'summary': {'text': 'Two jobs come back every autumn: Northside Heating services the boiler in October, and the gutters are cleaned in November.',
-                                'sources': [boiler, gutters]},
-                    'facts': [{'text': 'Northside Heating does the boiler service.', 'sources': [boiler]}],
-                    'open': [{'text': 'The gutters are due again in November.', 'sources': [gutters]}],
-                    'timeline': [{'date': when[:4] + '-10-15', 'text': 'Boiler service by Northside Heating.', 'sources': [boiler]}]}, when)
-        load_folder_overview(db, when)
-        db.commit()
-
-
-def load_folder_overview(db, when):
-    """Home's daily overview (folder_overview.py), naming the notes under it it stands on, as the Machine's turn would
-    write it from what they say."""
-    import datetime as dt
-    import folder_overview
-    import timeutil
-    parts = {r['key']: r['id'] for r in db.execute("SELECT id,key FROM note_pages WHERE key IN ('folder:home','home:repairs-and-upkeep','home:bills-and-subscriptions') "
-                                                   'AND removed_at IS NULL')}
-    home, repairs, bills = parts.get('folder:home'), parts.get('home:repairs-and-upkeep'), parts.get('home:bills-and-subscriptions')
-    if not (home and repairs and bills):
-        return
-    today = timeutil.local_day(dt.datetime.fromisoformat(when)) or dt.date.fromisoformat(when[:10])
-    item = {'note_id': home, 'basis': folder_overview._basis(folder_overview._notes(db, home, today))}
-    folder_overview.save(db, item, {
-        'summary': {'text': 'The gutters are due for their November clean, after Northside Heating serviced the boiler in October.', 'sources': [repairs]},
-        'now': [{'text': 'Book the gutter clean for November.', 'sources': [repairs]},
-                {'text': 'Brightwater Energy bills every month; Clearbrook Water every three months.', 'sources': [bills]}]}, when)
 
 
 def load_share(db):

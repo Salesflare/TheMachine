@@ -17,8 +17,7 @@ top with a new id and the day it merges, then add its strings to the catalogs (s
 - weight: how much a person would care, 1 to 3 (3: a new thing most people will use; 2: a clear improvement to
   something they use; 1: a small change worth a line). It decides the order, so set it honestly.
 - title: a few words. text: one or two short sentences: what changed and what the person can do now.
-- who (optional): 'team' for something only someone in a Work Fleet can use; 'notes' for Notes, told only on a Machine
-  with notes_enabled (NotesApp.notes_on).
+- who (optional): 'team' for something only someone in a Work Fleet can use.
 - action (optional): {'label': the button, 'run': a command id of the dashboard's palette (dashboard/shell-keys.js
   ACTIONS, like 'go-routines'), or 'search' for Search}. tests/test_whats_new.py checks it exists.
 - art (optional): the name of its picture in WN_ART (dashboard/shell-whats-new.js): a small drawing of the feature in
@@ -32,24 +31,6 @@ import i18n
 from timeutil import local_day, local_tz, now
 
 ENTRIES = [
-    {'id': 'note-folder-overviews', 'date': '2026-11-15', 'weight': 2, 'who': 'notes', 'title': 'What’s going on, per folder',
-     'text': 'Work, Home and your other folders open with a short daily overview of the notes under them.',
-     'action': {'label': 'Open Notes', 'run': 'go-notes'}, 'art': 'notes'},
-    {'id': 'note-pages-written', 'date': '2026-11-15', 'weight': 3, 'who': 'notes', 'title': 'Notes read like pages',
-     'text': 'A note now opens with a summary, key facts, decisions, open items and a timeline, written from your '
-             'conversations. Each line links to where it came from.',
-     'action': {'label': 'Open Notes', 'run': 'go-notes'}, 'art': 'notes'},
-    {'id': 'notes-from-openclaw-memory', 'date': '2026-11-15', 'weight': 1, 'who': 'notes', 'title': 'Your earlier memory pages in Notes',
-     'text': 'What lasts from the memory pages your assistant kept before goes in your notes once. Each line says the page it came from.',
-     'action': {'label': 'Open Notes', 'run': 'go-notes'}, 'art': 'notes'},
-    {'id': 'notes-from-conversations', 'date': '2026-11-15', 'weight': 2, 'who': 'notes', 'title': 'Notes from your conversations',
-     'text': 'Email, chats and meeting notes go in the note they’re about, Work too. A project or organization keeps '
-             'its own page.',
-     'action': {'label': 'Open Notes', 'run': 'go-notes'}, 'art': 'notes'},
-    {'id': 'graph-notes', 'date': '2026-11-15', 'weight': 3, 'who': 'notes', 'title': 'Notes in the Graph',
-     'text': 'One page per subject, like your home or a trip, next to People and Projects. Type @ in a line to link a '
-             'person, project or another note.',
-     'action': {'label': 'Open Notes', 'run': 'go-notes'}, 'art': 'notes'},
     {'id': 'watch-a-page', 'date': '2026-11-14', 'weight': 2, 'title': 'Watch a web page',
      'text': 'Ask the chat to watch a page, or add one under Connections. A to-do comes only when something that '
              'matters on it changes.',
@@ -128,8 +109,8 @@ def problems(entry):
         found.append('date: YYYY-MM-DD')
     if entry.get('weight') is not None and (type(entry['weight']) is not int or not 1 <= entry['weight'] <= 3):
         found.append('weight: 1, 2 or 3')
-    if entry.get('who') not in (None, 'team', 'notes'):
-        found.append("who: 'team', 'notes' or left out")
+    if entry.get('who') not in (None, 'team'):
+        found.append("who: 'team' or left out")
     action = entry.get('action')
     if action is not None and not (isinstance(action, dict) and action.get('label') and action.get('run')):
         found.append('action: {label, run}')
@@ -173,10 +154,10 @@ def seen(db):
     return at, {str(i) for i in ids} if isinstance(ids, list) else set()
 
 
-def candidates(db, current, entries=None, team=False, notes=False):
+def candidates(db, current, entries=None, team=False):
     """The candidates this person could be told about today, best first (weight, then the newest): dated after the day
     they finished getting started and at most KEEP_DAYS old, not seen yet, for the team only on a Machine in a Work
-    Fleet, for Notes only with Notes on. None while they are getting started (and SETTLE_HOURS after)."""
+    Fleet. None while they are getting started (and SETTLE_HOURS after)."""
     start = onboarded(db)
     if not start or dt.datetime.fromisoformat(start) + dt.timedelta(hours=SETTLE_HOURS) > current:
         return []
@@ -185,11 +166,11 @@ def candidates(db, current, entries=None, team=False, notes=False):
     first, oldest = local_day(start).isoformat(), (today - dt.timedelta(days=KEEP_DAYS)).isoformat()
     pool = [e for e in (ENTRIES if entries is None else entries)
             if first < e['date'] <= today.isoformat() and e['date'] >= oldest and e['id'] not in known
-            and (team or e.get('who') != 'team') and (notes or e.get('who') != 'notes')]
+            and (team or e.get('who') != 'team')]
     return sorted(pool, key=lambda e: (e.get('weight') or 1, e['date']), reverse=True)
 
 
-def pick_step(db, current=None, entries=None, team=False, notes=False):
+def pick_step(db, current=None, entries=None, team=False):
     """The morning's pick: once a day, in the owner's MORNING hours, the top PICKED candidates are what today's notice
     shows. Outside those hours, or when today's pick is made, nothing changes. The ids picked, or None."""
     current = current or dt.datetime.fromisoformat(now())
@@ -199,15 +180,15 @@ def pick_step(db, current=None, entries=None, team=False, notes=False):
     day = local.date().isoformat()
     if _detail(db, PICK)[1].get('day') == day:
         return None
-    ids = [e['id'] for e in candidates(db, current, entries, team, notes)[:PICKED]]
+    ids = [e['id'] for e in candidates(db, current, entries, team)[:PICKED]]
     db.execute('INSERT OR REPLACE INTO milestones(name,at,detail) VALUES(?,?,?)',
                (PICK, current.isoformat(), json.dumps({'day': day, 'ids': ids})))
     return ids
 
 
-def due(db, current=None, entries=None, notes=False):
-    """The entries to tell this person about now: this morning's pick, in its order, less what they saw already (and
-    Notes' with Notes off). None before the morning's pick, on a day it picked nothing, or once today's notice was closed."""
+def due(db, current=None, entries=None):
+    """The entries to tell this person about now: this morning's pick, in its order, less what they saw already. None
+    before the morning's pick, on a day it picked nothing, or once today's notice was closed."""
     current = current or dt.datetime.fromisoformat(now())
     detail = _detail(db, PICK)[1]
     if detail.get('day') != local_day(current).isoformat():
@@ -217,13 +198,13 @@ def due(db, current=None, entries=None, notes=False):
         return []
     by_id = {e['id']: e for e in (ENTRIES if entries is None else entries)}
     ids = detail.get('ids') if isinstance(detail.get('ids'), list) else []
-    return [by_id[i] for i in ids if i in by_id and i not in known and (notes or by_id[i].get('who') != 'notes')]
+    return [by_id[i] for i in ids if i in by_id and i not in known]
 
 
-def view(db, current=None, entries=None, notes=False):
+def view(db, current=None, entries=None):
     """The notice for the dashboard's status, in the person's language: {'entries': [{'id', 'title', 'text',
     'action': {'label', 'run'} or None, 'art': its picture or None}]} (this morning's pick), or None."""
-    new = due(db, current, entries, notes)
+    new = due(db, current, entries)
     if not new:
         return None
     return {'entries': [{'id': e['id'], 'title': i18n.t(e['title']), 'text': i18n.t(e['text']), 'art': e.get('art'),
@@ -247,15 +228,15 @@ def mark_seen(db, current=None, entries=None):
 class WhatsNewStore:
     """Store methods for the dashboard's What's new notice."""
 
-    def whats_new(self, current=None, entries=None, notes=False):
+    def whats_new(self, current=None, entries=None):
         with self.connect() as db:
-            return view(db, current, entries, notes)
+            return view(db, current, entries)
 
     def whats_new_seen(self, current=None, entries=None):
         with self.connect() as db:
             mark_seen(db, current, entries)
         return {'whats_new': None}
 
-    def whats_new_pick(self, current=None, entries=None, team=False, notes=False):
+    def whats_new_pick(self, current=None, entries=None, team=False):
         with self.connect() as db:
-            return pick_step(db, current, entries, team, notes)
+            return pick_step(db, current, entries, team)

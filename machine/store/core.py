@@ -42,12 +42,7 @@ import reading_digest
 import meet_link
 import memory_use
 import message_seal
-import section_notes
 import note_pages
-import topic_notes
-import note_writer
-import folder_overview
-import memory_seed
 import trip_notes
 import pacing
 import person_summary
@@ -543,13 +538,8 @@ class StoreCore:
             mail_cleanup.ensure(db)  # a routine template's cleanup to-dos (mail_cleanup.py): new tables only
             reading_digest.ensure(db)  # the Daily digest template's to-dos and interests (reading_digest.py): new tables only
             memory_use.ensure(db)  # what prompts read of what was learned (memory_use.py): a new table, empty
-            note_pages.ensure(db)  # Notes in the Graph (note_pages.py): new tables only
-            trip_notes.ensure(db)  # the bookings trip notes are built from (trip_notes.py): new tables only
-            section_notes.ensure(db)  # where each Home, Health or Kids candidate goes (section_notes.py): Home's old tables moved over
-            topic_notes.ensure(db)  # where each conversation went (topic_notes.py): new tables only
-            note_writer.ensure(db)  # a note's written page (note_writer.py): a new table only
-            folder_overview.ensure(db)  # a folder's daily overview (folder_overview.py): a new table only
-            memory_seed.ensure(db)  # which OpenClaw memory pages were read into Notes (memory_seed.py): new tables only
+            note_pages.ensure(db)  # where trips and events are kept (note_pages.py): new tables only
+            trip_notes.ensure(db)  # the bookings trips are built from (trip_notes.py): new tables only
             # The question(s) a note of the owner's answered (Store._decide): its own line in the chat, the run's question
             db.execute('CREATE TABLE IF NOT EXISTS decision_asks(decision_id TEXT PRIMARY KEY,suggestion_id TEXT NOT NULL,'
                        'questions TEXT NOT NULL,created_at TEXT NOT NULL)')

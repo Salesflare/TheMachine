@@ -68,16 +68,10 @@ class StatesTest(unittest.TestCase):
                 self.assertEqual(bool(config.get('fleet')), 'all' in state)
                 self.assertEqual(cards == 0, state == 'fresh')
                 self.assertEqual(errors, 2 if 'expired' in state else 0)
-                seeded = db.execute("SELECT count(*) FROM note_page_lines WHERE by='memory'").fetchone()[0]  # memory_seed.py, in the demo too
-                self.assertEqual(bool(seeded), state != 'fresh')
                 self.assertTrue(config['fleet']['url'].startswith('http://127.0.0.1:') if config.get('fleet') else True)
-                # the demo (recorded from all) shows a note's written page (note_writer.py); a fresh Machine has none
-                pages = db.execute("SELECT count(*) FROM sqlite_master WHERE name='note_writeups'").fetchone()[0] and \
-                    db.execute('SELECT count(*) FROM note_writeups WHERE page IS NOT NULL').fetchone()[0]
-                self.assertEqual(bool(pages), state != 'fresh')
-                overviews = db.execute("SELECT count(*) FROM sqlite_master WHERE name='folder_overviews'").fetchone()[0] and \
-                    db.execute('SELECT count(*) FROM folder_overviews WHERE page IS NOT NULL').fetchone()[0]
-                self.assertEqual(bool(overviews), state != 'fresh', 'and a folder its overview (folder_overview.py)')
+                # the demo (recorded from all) has trips and events in Calendar, and nothing of the Notes that are gone
+                kinds = {r[0] for r in db.execute("SELECT DISTINCT kind FROM note_pages WHERE key IS NULL OR key NOT LIKE 'folder:%'")}
+                self.assertEqual(kinds, set() if state == 'fresh' else {'trip', 'event'})
 
 
 class SendStubTest(unittest.TestCase):

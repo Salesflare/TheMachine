@@ -349,22 +349,6 @@ CRM_ACTIONS = {
     'graph_tag',
 }
 OWNER_ACTIONS |= CRM_ACTIONS
-# Notes in the Graph (note_pages.py): new notes, their lines, the tree, merges and Undo; the owner's own, from their
-# dashboard only.
-NOTE_ACTIONS = {
-    'note_delete',
-    'note_edit',
-    'note_line_add',
-    'note_line_edit',
-    'note_line_remove',
-    'note_line_reset',
-    'note_line_restore',
-    'note_merge',
-    'note_new',
-    'note_restore',
-    'note_unmerge',
-}
-OWNER_ACTIONS |= NOTE_ACTIONS
 # Help (help_chat.py) and Report a bug (support.report): the owner's own, from their dashboard only. help_ask answers
 # and changes nothing; help_article reads one public help article in the owner's language; bug_send sends what the
 # owner wrote, after their tap, with the scrubbed support report (bug_preview, the same report) only when they left
@@ -476,7 +460,6 @@ DASHBOARD_ACTIONS = frozenset({
     *GRAPH_SHARE_ACTIONS,
     *LEARNING_ACTIONS,
     *MEET_ACTIONS,
-    *NOTE_ACTIONS,
     *ROUTINE_ACTIONS,
     *SEARCH_ASK_ACTIONS,
     *SHARE_ACTIONS,
