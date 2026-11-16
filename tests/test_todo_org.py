@@ -96,7 +96,8 @@ class TodoOrg(unittest.TestCase):
         self.assertEqual((card.get('org_node'), card['org_said']), (None, True))
 
     def test_a_todos_project_brings_its_organization_only_when_the_owner_or_a_review_set_it(self):
-        pid = self.project('Hallway painting', mail(4, 'Lee <lee@brushworks.example>', 'sam@acme.com', thread='h'))
+        pid = self.project('Hallway painting', mail(4, 'Lee <lee@brushworks.example>', 'sam@acme.com', thread='h'),
+                           mail(3, 'Sam <sam@acme.com>', 'lee@brushworks.example', ('SENT',), thread='h'))
         self.build()
         with self.store.connect() as db:
             self.assertEqual(db.execute('SELECT org,org_by FROM projects WHERE id=?', (pid,)).fetchone()[:], ('brushworks.example', 'backfill'))

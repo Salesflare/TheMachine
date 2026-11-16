@@ -213,7 +213,13 @@ the same rule ("last seen" for someone never in direct contact).
 ### Projects
 
 Projects are named by the review agent (`finish_analysis` `projects: {"name": [event_ids]}`, `suggest` `project`) and
-with `graph` `project` + `event_ids`. `begin_analysis` returns the live names to reuse.
+with `graph` `project` + `event_ids`. `begin_analysis` returns the live names to reuse. A project is the owner's own
+work, one they are doing or are asked to do (a new client's request counts); a review never names one from a message's
+own story of work the owner has no part in, or from a message it treats as unverified or suspicious.
+
+- A project's organization, when nobody set one, comes from its people (`graph.infer_org`): one organization with at
+  least 75% of its outside people, and someone there the owner wrote to or met (history too). A project on mail from
+  senders the owner never dealt with gets none until the owner engages.
 
 - A label spreads to the rest of its thread (email thread, Slack thread, Intercom conversation, GitHub issue, recurring
   meeting; chats within two days).
