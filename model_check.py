@@ -1,5 +1,5 @@
 """Whether the AI really answers: one tiny model call with no content of the owner's (model_fallback.PROMPT; on a Claude
-sign-in a Gateway agent turn in a throwaway session, the route reviews take: model_fallback.turn), made when an
+sign-in Claude Code's own print mode, the executable and sign-in reviews run on: model_fallback.turn), made when an
 AI connects (a sign-in or a key: the main model changed, or nothing was checked yet), before the first look starts.
 
 A sign-in that exists is not enough (models.model_ready reads only that): a first look once started while the Claude
@@ -80,7 +80,7 @@ def _error(data, stderr):
 def probe(config, model=None, run=subprocess.run):
     """(ok, error): one tiny turn through the Gateway, on `model` alone when given, else on the main model. `error` is
     the provider's own message, short (short_error), or why there was none. The turn goes the way the model's work does
-    (model_fallback.turn): a raw model call for keys and the ChatGPT sign-in, the Gateway's agent runtime for a Claude
+    (model_fallback.turn): a raw model call for keys and the ChatGPT sign-in, Claude Code's own print mode for a Claude
     sign-in (its Claude CLI route), which `infer model run` never takes."""
     try:
         ok, data, stderr = model_fallback.turn(config, model, run)

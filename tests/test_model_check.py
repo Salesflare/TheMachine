@@ -69,7 +69,8 @@ class Probe(unittest.TestCase):
 
 class Routes(unittest.TestCase):
     """2026-11-16: every Machine on a Claude sign-in failed the check ("No API key found for provider anthropic"):
-    `infer model run` never takes the Claude CLI route, while reviews ran fine through the Gateway's agent runtime."""
+    `infer model run` never takes the Claude CLI route, while reviews ran fine through Claude Code. A Gateway agent turn
+    fixed it at about 48,000 tokens a check; Claude Code's own print mode takes about 550."""
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
         self.made = 0
@@ -78,52 +79,42 @@ class Routes(unittest.TestCase):
         self.made += 1
         path = Path(self.temp.name) / f'openclaw-{self.made}.json'
         path.write_text(json.dumps({'agents': {'defaults': {'model': {'primary': model}, 'models': models or {}}}}))
-        return {'openclaw': 'oc', 'openclaw_config': str(path)}
+        return {'openclaw': 'oc', 'claude': '/opt/claude', 'openclaw_config': str(path)}
 
-    def agent_reply(self, text='OK.', fallback=False, status='ok'):
-        attempts = [{'provider': 'anthropic', 'model': 'claude-opus-5-5', 'result': 'candidate_failed', 'reason': 'auth'}] if fallback else []
-        trace = {'fallbackUsed': fallback, 'attempts': attempts + [{'provider': 'claude-cli', 'result': 'success'}]}
-        return Answer(0, json.dumps({'runId': 'r', 'status': status, 'result': {'payloads': [{'text': text}], 'meta': {'executionTrace': trace}}}))
+    def claude_reply(self, text='OK.', error=False):
+        return Answer(1 if error else 0, json.dumps({'type': 'result', 'is_error': error, 'result': text}))
 
-    def test_a_claude_sign_in_is_checked_through_the_agent_runtime_and_its_session_deleted(self):
+    def test_a_claude_sign_in_is_checked_through_claude_code_alone_on_that_model(self):
         pinned = {'anthropic/*': {'agentRuntime': {'id': 'claude-cli'}}}
-        for config, model in ((self.config('anthropic/claude-opus-5-5', pinned), None), (self.config(MAIN), None),
-                              (self.config(OTHER, pinned), 'anthropic/claude-sonnet-5')):
+        for config, model, name in ((self.config('anthropic/claude-opus-5-5', pinned), None, 'claude-opus-5-5'),
+                                    (self.config(MAIN), None, 'claude-opus-5-5'),
+                                    (self.config(OTHER, pinned), 'anthropic/claude-sonnet-5', 'claude-sonnet-5')):
             seen = []
             def run(args, **kw):
-                seen.append(args)
-                return self.agent_reply() if args[1] == 'agent' else Answer(0, '{"ok": true}')
+                seen.append((args, kw))
+                return self.claude_reply()
             self.assertEqual(mc.probe(config, model, run=run), (True, None))
-            self.assertEqual(seen[0][:3], ['oc', 'agent', '--session-key'])
-            key = seen[0][3]
-            self.assertTrue(key.startswith(mc.model_fallback.CHECK_KEY) and len(key) > len(mc.model_fallback.CHECK_KEY))
-            self.assertEqual(seen[0][seen[0].index('--message') + 1], mc.PROMPT)  # nothing of the owner's goes out
-            if model:
-                self.assertEqual(seen[0][-2:], ['--model', model])
-            else:
-                self.assertNotIn('--model', seen[0])
-            self.assertNotIn('infer', seen[0])
-            self.assertEqual(seen[1][:4], ['oc', 'gateway', 'call', 'sessions.delete'])
-            self.assertEqual(json.loads(seen[1][seen[1].index('--params') + 1]), {'key': key, 'deleteTranscript': True})
+            self.assertEqual(len(seen), 1)  # no Gateway session to make or delete
+            args, kw = seen[0]
+            self.assertEqual(args[:2], ['/opt/claude', '-p'])
+            self.assertEqual(args[args.index('--model') + 1], name)
+            self.assertEqual(args[args.index('--tools') + 1], '')
+            self.assertEqual(kw['input'], mc.PROMPT)  # nothing of the owner's goes out
+            self.assertNotIn('infer', args)
 
-    def test_on_the_claude_route_a_fallback_answering_or_an_error_is_no_answer(self):
+    def test_on_the_claude_route_claude_codes_own_error_or_a_timeout_is_no_answer(self):
         config = self.config(MAIN)
-        ok, error = mc.probe(config, None, run=lambda args, **kw: self.agent_reply(fallback=True))
-        self.assertFalse(ok)
-        self.assertIn('fallback answered', error)
-        self.assertEqual(mc.probe(config, None, run=lambda args, **kw: self.agent_reply(text=' ')), (False, 'The model gave an empty answer.'))
-        failed = {'ok': False, 'runId': 'r', 'origin': 'gateway', 'error': {'type': 'cli_error', 'message': 'Claude Code is not signed in.'}}
-        self.assertEqual(mc.probe(config, None, run=lambda args, **kw: Answer(1, json.dumps(failed))), (False, 'Claude Code is not signed in.'))
-        deleted = []
+        self.assertEqual(mc.probe(config, None, run=lambda args, **kw: self.claude_reply(' ')), (False, 'Claude Code gave an empty answer.'))
+        self.assertEqual(mc.probe(config, None, run=lambda args, **kw: self.claude_reply('Not logged in. Please run /login', True)),
+                         (False, 'Not logged in. Please run /login'))
         def slow(args, **kw):
-            if args[1] == 'agent':
-                raise subprocess.TimeoutExpired(args, 90)
-            deleted.append(args)
-            return Answer(0)
+            raise subprocess.TimeoutExpired(args, 90)
         self.assertEqual(mc.probe(config, None, run=slow), (False, 'No answer within 90 seconds.'))
-        self.assertEqual(len(deleted), 1)  # the check's session goes also after a timeout
-        self.assertFalse(mc.model_fallback.probe(config, None, lambda args, **kw: self.agent_reply(fallback=True)))
-        self.assertTrue(mc.model_fallback.probe(config, None, lambda args, **kw: self.agent_reply()))
+        def gone(args, **kw):
+            raise OSError('missing')
+        self.assertEqual(mc.probe(config, None, run=gone), (False, 'Claude Code could not be started.'))
+        self.assertFalse(mc.model_fallback.probe(config, None, lambda args, **kw: self.claude_reply('x', True)))
+        self.assertTrue(mc.model_fallback.probe(config, None, lambda args, **kw: self.claude_reply()))
 
     def test_keys_and_the_chatgpt_sign_in_keep_the_raw_model_call(self):
         pinned = {'openai/gpt-6.1-sol': {'agentRuntime': {'id': 'openclaw'}}, 'anthropic/*': {'agentRuntime': {'id': 'claude-cli'}}}
