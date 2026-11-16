@@ -11,7 +11,7 @@ const {chromium}=await import('./browser.mjs');
 // draw, and the Fleet tab draws once its views are in. Settings opened while its panels are on their way opens once
 // they're in, drawn (Skills and Connected AIs too). They're fetched one at a time, not all at once with the page's data. A link straight to Calendar opens it once its part is in. When they can't load, the rest is drawn
 // all the same, and Calendar, the Graph, Settings, the Fleet, Connections, Routines, Talk and the game say so. Connections
-// draws once its views are in, its cards too. Learning and Connections in while another tab shows are drawn as they
+// draws once its views are in, its cards too; tapped in the nav, it asks for its part at once. Learning and Connections in while another tab shows are drawn as they
 // open, in that same task; a link straight to one, and the way back to it, show it drawn. Routines opened while its part is on its way draws once it's in, and a
 // conversation by Talk starts with its session's part. A follow-up group's Review tapped while its part is on its way
 // opens once it's in, and so do New to-do and Search. The same redraw asked many times while its part is on its way
@@ -95,6 +95,17 @@ try{
   await p.locator('#suggestions .all-clear .play').click();await p.locator('#game-dialog[open]').waitFor();
   await context.close();
  }
+ // Connections tapped in the nav before its part came by itself: the tap asks for it at once (not in its turn, a part
+ // every few quiet seconds), and its cards are drawn once it's in
+ for(const width of [390,1440]){let release;hold=new Promise(r=>release=r);holdOnly='lazy-connections-';asked.length=0;const context=await browser.newContext({viewport:{width,height:900}});
+  await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
+  const p=await context.newPage();p.on('pageerror',e=>errors.push('nav tap '+width+': '+e.message+' '+e.stack));
+  await p.goto(base,{waitUntil:'load'});await wholeDrawn(p);
+  await p.evaluate(()=>document.querySelector('nav [data-tab="health"]').click());
+  for(const until=Date.now()+1500;!asked.some(n=>n.startsWith('lazy-connections-'));){assert.ok(Date.now()<until,'the tap asks for Connections at once');await new Promise(r=>setTimeout(r,25))}
+  release();hold=null;holdOnly=null;
+  await p.waitForFunction(()=>document.querySelector('#connectors [data-conn="mail"]')&&document.querySelector('#health-tabs').children.length>0,null,{timeout:3000});
+  await context.close()}
  // A link straight to Calendar, its part held back: Calendar opens once the part is in
  {let release;hold=new Promise(r=>release=r);holdOnly='lazy-calendar-';asked.length=0;const context=await browser.newContext({viewport:{width:390,height:900}});
   await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
