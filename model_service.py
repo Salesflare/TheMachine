@@ -12,6 +12,7 @@ import threading
 import uuid
 from pathlib import Path
 
+import claude_print
 import help_chat
 from machine.model_usage import node_bin, node_env
 
@@ -129,7 +130,10 @@ def warm(config):
 
 def run(config, text, model=None, thinking=None, timeout=help_chat.TIMEOUT):
     """One model turn, as help_chat.openclaw_model_run (same arguments, same reply and errors), through the helper;
-    through the CLI when the helper can't take it."""
+    through the CLI when the helper can't take it. A Claude sign-in goes straight there: the helper's Gateway call
+    never takes the Claude CLI route (claude_print.py)."""
+    if claude_print.ref(config, model):
+        return help_chat.openclaw_model_run(config, text, model, thinking, timeout=timeout)
     try:
         return service(config).run(text, model, thinking, timeout)
     except Down:
