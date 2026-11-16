@@ -6,7 +6,9 @@ from pathlib import Path
 from unittest.mock import patch
 import test_ux as ux
 from seams import patch_everywhere  # noqa: E402
-a = ux.a
+import machine.main as machine_main
+import machine.prompts.review as machine_prompts_review
+import timeutil
 
 NOW = '2026-10-16T10:00:00+00:00'
 ACCOUNTS = [{'id': 'work', 'email': 'owner@example.com', 'service': 'gmail', 'transport': 'gog', 'boundary': 'work:Example'}]
@@ -25,7 +27,7 @@ class Slipped(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
-        self.store = a.Store(Path(self.tmp.name) / 'events.sqlite')
+        self.store = machine_main.Store(Path(self.tmp.name) / 'events.sqlite')
         self.store.accounts = ACCOUNTS
         self.store.commit_page('work', {}, [
             # Sam has written before, so this isn't outreach.
@@ -54,7 +56,7 @@ class Slipped(unittest.TestCase):
             return [db.execute('SELECT id FROM events WHERE source_id=?', (s,)).fetchone()[0] for s in source_ids]
 
     def test_candidates_are_real_unanswered_questions(self):
-        with patch_everywhere(a, 'now', return_value=NOW):
+        with patch_everywhere(timeutil, 'now', return_value=NOW):
             text = self.store.slipped('run-1')
         s1, q1 = self.ids('s1', 'q1')
         self.assertEqual(text.splitlines(), [
@@ -62,21 +64,21 @@ class Slipped(unittest.TestCase):
             f'- Waiting 4 days on the owner: sam@client.example asked "Invoice" on Mon, Oct 12 (work, event {q1}).'])
 
     def test_offered_once_to_a_review_that_saves(self):
-        with patch_everywhere(a, 'now', return_value=NOW):
+        with patch_everywhere(timeutil, 'now', return_value=NOW):
             self.assertTrue(self.store.slipped('run-1'))
             self.assertEqual(self.store.slipped('run-2'), '')  # just offered
         later = '2026-10-16T18:00:00+00:00'
-        with patch_everywhere(a, 'now', return_value=later):
+        with patch_everywhere(timeutil, 'now', return_value=later):
             self.assertEqual(len(self.store.slipped('run-3').splitlines()), 2)  # run-1 never saved: offered again
             with self.store.connect() as db:
                 db.execute("INSERT INTO analyses(id,started_at,items,status,owner_run) VALUES('x',?,'[]','complete','run-3')", (later,))
-        with patch_everywhere(a, 'now', return_value='2026-10-17T10:00:00+00:00'):
+        with patch_everywhere(timeutil, 'now', return_value='2026-10-17T10:00:00+00:00'):
             self.assertEqual(self.store.slipped('run-4'), '')
         # Something already on a card isn't offered at all.
         self.store.commit_page('work', {}, [sent('s7', '2026-10-09T09:00:00+00:00', 'kim@client.example', 'Demo', 'Free on Friday?', 't12')])
         [s7] = self.ids('s7')
         self.store.suggest('demo-kim', 'Follow up with Kim', 'Kim hasn’t answered.', [s7])
-        with patch_everywhere(a, 'now', return_value='2026-10-17T10:00:00+00:00'):
+        with patch_everywhere(timeutil, 'now', return_value='2026-10-17T10:00:00+00:00'):
             self.assertEqual(self.store.slipped('run-5'), '')
 
     def test_outreach_is_left_out(self):
@@ -90,7 +92,7 @@ class Slipped(unittest.TestCase):
         # Someone who pitched the owner and got a question back is a conversation, not their outreach.
         self.store.commit_page('work', {}, [mail('p1', '2026-10-07T09:00:00+00:00', 'Pat <pat@vendor.example>', 'owner@example.com', 'Collab', 'Shall we work together?', 'tp1'),
                                             sent('p2', '2026-10-08T09:00:00+00:00', 'pat@vendor.example', 'Re: Collab', 'What do you have in mind?', 'tp1')])
-        with patch_everywhere(a, 'now', return_value=NOW):
+        with patch_everywhere(timeutil, 'now', return_value=NOW):
             text = self.store.slipped('run-1')
         self.assertNotIn('ceo', text)
         self.assertNotIn('lee@prospect.example', text)
@@ -114,7 +116,7 @@ class Slipped(unittest.TestCase):
                     yield db
                 finally:
                     db.set_trace_callback(None)
-        with patch_everywhere(a, 'now', return_value=NOW), patch.object(self.store, 'connect', traced):
+        with patch_everywhere(timeutil, 'now', return_value=NOW), patch.object(self.store, 'connect', traced):
             text = self.store.slipped('run-1')
         every = [s for s in seen if "FROM events WHERE kind='gmail.message'" in s]
         self.assertEqual(len(every), 1, every)
@@ -123,8 +125,8 @@ class Slipped(unittest.TestCase):
         self.assertNotIn('x0@other.example', text)  # the owner never wrote to them
 
     def test_review_prompt_section(self):
-        self.assertNotIn('Possibly slipped', a.review_prompt('r', ['work']))
-        prompt = a.review_prompt('r', ['work'], slipped='- No answer for 8 days: …')
+        self.assertNotIn('Possibly slipped', machine_prompts_review.review_prompt('r', ['work']))
+        prompt = machine_prompts_review.review_prompt('r', ['work'], slipped='- No answer for 8 days: …')
         self.assertIn('Possibly slipped. Each is shown once.', prompt)
         self.assertIn('- No answer for 8 days: …', prompt)
 

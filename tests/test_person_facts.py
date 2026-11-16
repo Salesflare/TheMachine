@@ -7,10 +7,17 @@ import unittest
 from seams import patch_everywhere
 import test_graph as tg
 
-a, graph = tg.a, tg.graph
-enrichment = a.enrichment
-x = a.load_connector('x')
-linkedin = a.load_connector('linkedin')
+graph = tg.graph
+import enrichment
+import datetime as dt
+import machine.app.sync as machine_app_sync
+import machine.app.workers as machine_app_workers
+import machine.sources.connectors as machine_sources_connectors
+import machine.sources.slack as machine_sources_slack
+import message_seal
+import timeutil
+x = machine_sources_connectors.load_connector('x')
+linkedin = machine_sources_connectors.load_connector('linkedin')
 NOW = tg.NOW.isoformat()
 
 
@@ -76,9 +83,9 @@ class PersonFacts(unittest.TestCase):
         # Through a sync: the reader's page goes in, the facts and their own photo come out, nothing else is asked.
         page = {'account': {'screen_name': 'sam'}, 'mentions': [{'id': '9', 'at': 1792700000000, 'text': '@sam hi', 'author': {'id': '101', 'name': 'Lee Parker', 'screen_name': 'lee_p'}}],
                 'dms': [], 'state': {}, **data}
-        helpers = types.SimpleNamespace(**{k: getattr(a.CONNECTOR_HELPERS, k) for k in vars(a.CONNECTOR_HELPERS)})
-        helpers.local_tz = lambda: a.dt.timezone.utc
-        self.enterContext(patch_everywhere(a, 'now', lambda: '2026-10-16T12:00:00+00:00'))
+        helpers = types.SimpleNamespace(**{k: getattr(machine_sources_connectors.CONNECTOR_HELPERS, k) for k in vars(machine_sources_connectors.CONNECTOR_HELPERS)})
+        helpers.local_tz = lambda: dt.timezone.utc
+        self.enterContext(patch_everywhere(timeutil, 'now', lambda: '2026-10-16T12:00:00+00:00'))
         x.sync(self.store, {}, {'id': 'me-x', 'handle': 'sam', 'active_hours': [0, 24]}, helpers, source=types.SimpleNamespace(page=lambda since, state: page))
         self.assertEqual(self.facts('x:101')['bio'], ('Sales at Globex. https://lee.example', 2, 'x'))
         self.assertEqual(self.facts('x:303'), {})
@@ -107,11 +114,11 @@ class PersonFacts(unittest.TestCase):
         self.assertEqual((view['headline'], view['bio']['text'], view['bio']['from']), ('Engineering at Globex', 'Builds APIs.', 'LinkedIn'))
 
     def test_slack_profiles_give_title_phone_and_time_zone_from_the_lookup_already_done(self):
-        slack = object.__new__(a.Slack); slack.account = {'user_id': 'U0OWNER'}
+        slack = object.__new__(machine_sources_slack.Slack); slack.account = {'user_id': 'U0OWNER'}
         calls = []
         slack.get = lambda method, params: calls.append(method) or {'user': {'id': params['user'], 'tz': 'Europe/Brussels', 'profile': {
             'real_name': 'Ari Moss', 'title': 'Designer', 'phone': '+32 470 00 00 01'}}}
-        a.remember_slack_names(self.store, slack, [{'metadata': {'user_id': 'U0ARI', 'channel_name': 'general'}}])
+        machine_app_sync.remember_slack_names(self.store, slack, [{'metadata': {'user_id': 'U0ARI', 'channel_name': 'general'}}])
         self.assertEqual(calls, ['users.info'])  # the same one lookup as for their name
         self.assertEqual(self.facts('slack:U0ARI'), {'title': ('Designer', 2, 'slack'), 'phone': ('+32 470 00 00 01', 2, 'slack'),
                                                      'timezone': ('Europe/Brussels', 2, 'slack')})
@@ -127,9 +134,9 @@ class PersonFacts(unittest.TestCase):
         def read(config, account, api, version, method, params, scope):
             asked.append((method, params.get('personFields') or params.get('readMask'), scope))
             return {'connections': [contact]} if method == 'people.connections.list' else {}
-        a.google_photo_offers({}, {'email': 'sam@acme.com'}, read=read, facts=facts)
+        machine_app_workers.google_photo_offers({}, {'email': 'sam@acme.com'}, read=read, facts=facts)
         self.assertEqual(len(facts), 2)
-        self.assertEqual([s for _, _, s in asked], [s for _, _, s, _ in a.GOOGLE_PHOTO_LISTS])  # the same lists and scopes as for photos
+        self.assertEqual([s for _, _, s in asked], [s for _, _, s, _ in machine_app_workers.GOOGLE_PHOTO_LISTS])  # the same lists and scopes as for photos
         self.assertNotIn('organizations', asked[2][1])  # other contacts don't have them: that list is asked as before
 
     def test_facts_already_in_stored_signals_are_kept_once_and_go_with_the_person(self):
@@ -140,7 +147,7 @@ class PersonFacts(unittest.TestCase):
         self.assertEqual(enrichment.facts_from_signals(self.store.connect, NOW), 0)  # once
         self.assertEqual(self.facts('li:c-robin')['headline'], ('Engineering at Globex', 2, 'linkedin'))
         self.assertEqual(self.facts('email:lee@globex.com')['title'], ('President', 1, 'salesflare'))
-        self.assertIn('person_facts', a.message_seal.DERIVED)  # sealed with message contents
+        self.assertIn('person_facts', message_seal.DERIVED)  # sealed with message contents
         self.add(tg.mail(2, 'Lee Parker <lee@globex.com>', 'sam@acme.com'), tg.mail(1, 'Sam <sam@acme.com>', 'lee@globex.com', ('SENT',)))
         self.build()
         with self.store.connect() as db:

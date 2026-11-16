@@ -16,8 +16,8 @@ import bounces
 import enrichment
 import message_seal
 from machine.store import core, first_look
+import machine.main as machine_main
 
-a = ux.a
 
 
 def sealed_run(case, name):
@@ -44,7 +44,7 @@ class OnBoth(unittest.TestCase):
     def both(self, check):
         for protect in (False, True):
             with self.subTest(sealed=protect), tempfile.TemporaryDirectory() as temp:
-                store = a.Store(Path(temp) / 'events.sqlite', protect=protect)
+                store = machine_main.Store(Path(temp) / 'events.sqlite', protect=protect)
                 with store.connect() as db:
                     self.assertEqual(message_seal.is_protected(db), protect)
                 check(store)
@@ -156,7 +156,7 @@ class ExistingTestsSealed(unittest.TestCase):
     def test_a_failing_test_is_reported_and_one_without_a_store_does_not_count(self):
         class Fails(unittest.TestCase):
             def test_it(self):
-                a.Store(Path(self.enterContext(tempfile.TemporaryDirectory())) / 'events.sqlite')
+                machine_main.Store(Path(self.enterContext(tempfile.TemporaryDirectory())) / 'events.sqlite')
                 self.fail('as expected')
 
             def test_no_store(self):

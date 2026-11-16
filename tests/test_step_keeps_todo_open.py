@@ -7,8 +7,12 @@ import unittest
 import test_chat_do_now as dn
 import test_next_actions as tn
 import test_ux as ux
+import json
+import machine.cards as machine_cards
+import machine.store.decisions as machine_store_decisions
+import next_actions
+import timeutil
 
-a = ux.a
 CLEANUP, PLACEMENT = dn.CLEANUP, dn.PLACEMENT
 OPEN = {'kind': 'open', 'label': 'Open Google Doc', 'url': 'https://docs.example.invalid/d/42/edit'}
 
@@ -29,7 +33,7 @@ class StepKeepsTodoOpen(unittest.TestCase):
             return dict(db.execute('SELECT * FROM preparations').fetchone())
 
     def steps(self):
-        return {a.next_actions.label(s): s for s in self.row()['next_actions']}
+        return {next_actions.label(s): s for s in self.row()['next_actions']}
 
     def ready(self, steps):
         """The to-do as an owner had it: a doc cleanup to confirm and the reply email to send."""
@@ -68,14 +72,14 @@ class StepKeepsTodoOpen(unittest.TestCase):
         self.assertIn('Open Google Doc', after)
         self.assertNotIn('Confirm document cleanup', after)  # that step is done
         self.assertIsNone(row['outcome'])
-        self.assertIn('Send', [b['label'] for b in a.controls(row)['blocks'][0]['buttons']])
+        self.assertIn('Send', [b['label'] for b in machine_cards.controls(row)['blocks'][0]['buttons']])
         with self.store.connect() as db:
             self.assertEqual(db.execute("SELECT status FROM action_jobs WHERE revision=?", (before['Confirm document cleanup']['revision'],)).fetchone()[0], 'done')
         # Sending the email is the last step: then the to-do is done
         with self.store.connect() as db:
             db.execute("INSERT INTO action_jobs(id,suggestion_id,revision,payload,status,created_at,updated_at,approval_id,source,rfc_message_id) "
-                       "VALUES('send-1',?,?,'{}','sent',?,?,'send','dashboard','')", (self.sid, email['revision'], a.now(), a.now()))
-            self.assertTrue(a.settle_sent(self.store, db, self.sid, 'send-1', 'Send'))
+                       "VALUES('send-1',?,?,'{}','sent',?,?,'send','dashboard','')", (self.sid, email['revision'], timeutil.now(), timeutil.now()))
+            self.assertTrue(machine_store_decisions.settle_sent(self.store, db, self.sid, 'send-1', 'Send'))
         self.assertEqual(self.row()['status'], 'completed')
 
     def test_a_result_that_keeps_needs_you_also_keeps_the_draft(self):
@@ -84,7 +88,7 @@ class StepKeepsTodoOpen(unittest.TestCase):
         self.app().action('prepare', {'suggestion_id': self.sid, 'job_id': run, 'body': 'Cleaned up the doc formatting.',
                                       'next_actions': [OPEN], 'outcome': 'needs_you', 'needs': 'check the doc', 'finish_state': 'completed'})
         self.assertEqual(self.steps()['Send'], before['Send'])
-        self.assertEqual(a.json.loads(self.row()['outcome'])['needs'], 'check the doc')
+        self.assertEqual(json.loads(self.row()['outcome'])['needs'], 'check the doc')
 
     def test_another_confirm_stays_too(self):
         before = self.ready([CLEANUP, PLACEMENT, self.draft()])
@@ -127,10 +131,10 @@ class StepKeepsTodoOpen(unittest.TestCase):
 
     def test_which_steps_count_as_the_same(self):
         email = {'kind': 'email', 'to': ['Pat@example.com']}
-        self.assertEqual(a.next_actions.step_target(email), a.next_actions.step_target({'kind': 'email', 'to': ['pat@example.com']}))
-        self.assertNotEqual(a.next_actions.step_target(email), a.next_actions.step_target({'kind': 'email', 'to': ['sam@example.com']}))
-        self.assertNotEqual(a.next_actions.step_target(CLEANUP), a.next_actions.step_target(PLACEMENT))  # two Confirms on one doc
-        self.assertEqual(a.next_actions.step_target({'kind': 'email', 'thread_id': 't1', 'to': ['x@example.com']})[1], 't1')
+        self.assertEqual(next_actions.step_target(email), next_actions.step_target({'kind': 'email', 'to': ['pat@example.com']}))
+        self.assertNotEqual(next_actions.step_target(email), next_actions.step_target({'kind': 'email', 'to': ['sam@example.com']}))
+        self.assertNotEqual(next_actions.step_target(CLEANUP), next_actions.step_target(PLACEMENT))  # two Confirms on one doc
+        self.assertEqual(next_actions.step_target({'kind': 'email', 'thread_id': 't1', 'to': ['x@example.com']})[1], 't1')
 
 
 if __name__ == '__main__':

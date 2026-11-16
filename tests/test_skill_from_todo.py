@@ -7,7 +7,9 @@ import tempfile
 import unittest
 
 import skills
-from test_voices import a, mail
+from test_voices import mail
+import machine.delivery.push as machine_delivery_push
+import machine.main as machine_main
 
 BODY = '1. Open the payroll site.\n2. Enter the vacation days.\n3. Import, then submit.'
 
@@ -16,9 +18,9 @@ class SkillFromTodo(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'events.sqlite')
+        self.store = machine_main.Store(Path(self.temp.name) / 'events.sqlite')
         self.store.accounts = [{'id': 'work', 'service': 'gmail', 'email': 'owner@example.com'}]
-        self.app = object.__new__(a.App)
+        self.app = object.__new__(machine_main.App)
         self.app.store = self.store
         self.app.config = {'accounts': self.store.accounts}
         self.workspace = Path(self.temp.name) / 'workspace'
@@ -109,9 +111,9 @@ class SkillFromTodo(unittest.TestCase):
         self.assertEqual((self.card()['status'], self.card()['proposed_skill']), ('completed', {'created': True, 'name': 'Payroll'}))
 
     def test_a_sentence_that_only_pointed_at_a_stripped_path_goes_too(self):
-        self.assertEqual(a.strip_result_links('Proposed for approval, replacing the earlier version. The draft is at memory/assistant/x.md.'),
+        self.assertEqual(machine_delivery_push.strip_result_links('Proposed for approval, replacing the earlier version. The draft is at memory/assistant/x.md.'),
                          'Proposed for approval, replacing the earlier version.')
-        self.assertEqual(a.strip_result_links('Saved [the notes](memory/assistant/x.md) for you.\nNext line.'), 'Saved the notes for you.\nNext line.')
+        self.assertEqual(machine_delivery_push.strip_result_links('Saved [the notes](memory/assistant/x.md) for you.\nNext line.'), 'Saved the notes for you.\nNext line.')
 
 
 if __name__ == '__main__':

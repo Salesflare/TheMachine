@@ -12,7 +12,15 @@ import next_actions as n
 import test_ux as ux
 from test_gateway import FakeJournal
 from seams import patch_everywhere  # noqa: E402
-a = ux.a
+import machine.cards as machine_cards
+import machine.config as machine_config
+import machine.faults as machine_faults
+import machine.main as machine_main
+import machine.sources.gateway as machine_sources_gateway
+import sources
+import sqlite3
+import timeutil
+
 # What a fix says about the bug it fixes (bug_gate.evidence): the graph.py of the test app shows the intent
 BUG = {'verdict': 'bug', 'type': 'error', 'broken': 'The graph rebuild stops with a KeyError when a row has no key.',
        'intent': 'rebuild reads rows that may lack the key; a missing key means no value.', 'shown_in': ['graph.py:2']}
@@ -27,8 +35,8 @@ class Faults(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
-        self.store = a.Store(Path(self.tmp.name) / 'a.sqlite')
-        self.log = a.FaultLog(self.store, 'abc123')
+        self.store = machine_main.Store(Path(self.tmp.name) / 'a.sqlite')
+        self.log = machine_faults.FaultLog(self.store, 'abc123')
 
     def rows(self):
         with self.store.connect() as db:
@@ -63,12 +71,12 @@ class Faults(unittest.TestCase):
             'Unknown person <text>': ValueError('Unknown person "Sam Example"'),
         }
         for expected, error in cases.items():
-            self.assertEqual(('KeyError: ' if isinstance(error, KeyError) else '') + a.fault_message(error), expected)
-        self.assertIsNone(a.fault_message(ValueError()))
-        self.assertLessEqual(len(a.fault_message(ValueError('word ' * 200))), 200)
+            self.assertEqual(('KeyError: ' if isinstance(error, KeyError) else '') + machine_faults.fault_message(error), expected)
+        self.assertIsNone(machine_faults.fault_message(ValueError()))
+        self.assertLessEqual(len(machine_faults.fault_message(ValueError('word ' * 200))), 200)
 
     def test_trouble_outside_the_code_is_not_a_bug(self):
-        for error in (a.SourceError('gmail'), TimeoutError(), ConnectionResetError(), a.sqlite3.OperationalError('database is locked')):
+        for error in (sources.SourceError('gmail'), TimeoutError(), ConnectionResetError(), sqlite3.OperationalError('database is locked')):
             self.fail_in_code(error)
         self.log.emit(logging.LogRecord('personal-assistant', logging.ERROR, __file__, 1, 'no exception here', (), None))
         self.assertEqual(self.rows(), [])
@@ -77,7 +85,7 @@ class Faults(unittest.TestCase):
         previous = threading.excepthook
         self.addCleanup(setattr, threading, 'excepthook', previous)
         threading.excepthook = lambda args: None  # keep the test output quiet
-        self.addCleanup(a.LOG.removeHandler, a.watch_faults(self.store, Path(__file__).resolve().parent.parent))
+        self.addCleanup(machine_config.LOG.removeHandler, machine_faults.watch_faults(self.store, Path(__file__).resolve().parent.parent))
         thread = threading.Thread(target=lambda: 1 / 0, name='graph')
         thread.start()
         thread.join()
@@ -87,9 +95,9 @@ class Faults(unittest.TestCase):
         gateway, other = {'id': 'openclaw-gateway', 'service': 'gateway'}, {'id': 'second-gateway', 'service': 'gateway'}
         config = {'accounts': [gateway, other], 'app_dir': '/srv/machine', 'fix_dir': '/tmp/fixes'}
         self.fail_in_code(KeyError('x'))
-        a.sync_gateway(self.store, config, other, FakeJournal())
+        machine_sources_gateway.sync_gateway(self.store, config, other, FakeJournal())
         self.assertEqual(self.store.events([other['id']]), [])  # only the first Gateway source carries them
-        a.sync_gateway(self.store, config, gateway, FakeJournal())
+        machine_sources_gateway.sync_gateway(self.store, config, gateway, FakeJournal())
         [event] = self.store.events([gateway['id']])
         self.assertEqual(event['kind'], 'machine.fault')
         self.assertIn('Graph failed 1 time', event['body'])
@@ -101,12 +109,12 @@ class Faults(unittest.TestCase):
         # the fix is judged against the product vision, as one short line rather than the whole file
         self.assertIn('docs/vision.md', meta['fix_by'])
         self.assertLess(len(meta['fix_by']), 200)
-        self.assertTrue((Path(a.ROOT) / 'docs/vision.md').exists())
+        self.assertTrue((Path(machine_config.ROOT) / 'docs/vision.md').exists())
         self.fail_in_code(KeyError('x'))
-        a.sync_gateway(self.store, config, gateway, FakeJournal())
+        machine_sources_gateway.sync_gateway(self.store, config, gateway, FakeJournal())
         self.assertEqual(self.store.events([gateway['id']])[0]['title'], 'The Machine: KeyError in fail_in_code')  # 2 is not a step
         self.fail_in_code(KeyError('x'))
-        a.sync_gateway(self.store, config, gateway, FakeJournal())
+        machine_sources_gateway.sync_gateway(self.store, config, gateway, FakeJournal())
         self.assertEqual(self.store.events([gateway['id']])[0]['title'], 'The Machine: KeyError in fail_in_code (3×)')
 
 
@@ -118,7 +126,7 @@ class Faults(unittest.TestCase):
                 raise ValueError('The Network said 500')
             except ValueError:
                 self.log.emit(logging.LogRecord('personal-assistant', logging.ERROR, __file__, 1, 'fleet error=%s at=%s', ('ValueError', 'x'), None))
-        a.sync_gateway(self.store, config, gateway, FakeJournal())
+        machine_sources_gateway.sync_gateway(self.store, config, gateway, FakeJournal())
         [view] = self.store.event_views([e['id'] for e in self.store.events([gateway['id']])])
         self.assertEqual(view['from'], 'The Machine')
         self.assertEqual(view['body'].splitlines()[0], 'Talking with your Fleet on The Machine Network failed. Teammates’ questions and answers may come late; '
@@ -127,9 +135,9 @@ class Faults(unittest.TestCase):
         self.assertNotIn('test_self_fix.py', view['body'])
         self.assertTrue(view['details'].startswith('Where (innermost last):\n  tests/test_self_fix.py:'))
         self.assertIn('Code version: abc123', view['details'])
-        self.assertIn('you review it and tap Merge', a.fault_plain('fleet', 3, {'self_fix_auto': False}))
-        self.assertTrue(a.fault_plain('thread graph', 1, {}).startswith('Updating who knows whom failed.'))
-        self.assertTrue(a.fault_plain('odd place', 1, {}).startswith('Part of The Machine (odd place) failed. Probably nothing yet'))
+        self.assertIn('you review it and tap Merge', machine_faults.fault_plain('fleet', 3, {'self_fix_auto': False}))
+        self.assertTrue(machine_faults.fault_plain('thread graph', 1, {}).startswith('Updating who knows whom failed.'))
+        self.assertTrue(machine_faults.fault_plain('odd place', 1, {}).startswith('Part of The Machine (odd place) failed. Probably nothing yet'))
 
 
     def test_an_outside_service_failing_is_named_retried_and_needs_nothing(self):
@@ -147,37 +155,37 @@ class Faults(unittest.TestCase):
             try:
                 error_at()
             except ValueError as error:
-                self.assertEqual(a.fault_origin(error), {'service': 'Google', 'status': 500})
+                self.assertEqual(machine_faults.fault_origin(error), {'service': 'Google', 'status': 500})
         try:
             raise fleet.NetworkUnavailable('The Network had a problem')
         except ValueError as error:
-            self.assertEqual(a.fault_origin(error), {'service': 'The Machine Network', 'status': None})
+            self.assertEqual(machine_faults.fault_origin(error), {'service': 'The Machine Network', 'status': None})
         self.assertIs(fleet.Unavailable, fleet.NetworkUnavailable)
         try:
             translated(400, 'https://slack.com/api/x')  # a refusal may be The Machine's own mistake
         except ValueError as error:
-            self.assertIsNone(a.fault_origin(error))
+            self.assertIsNone(machine_faults.fault_origin(error))
         try:
             try:
                 raise TimeoutError()
             except TimeoutError:
                 {}['missing']  # a bug while handling a timeout is still a bug
         except KeyError as error:
-            self.assertIsNone(a.fault_origin(error))
+            self.assertIsNone(machine_faults.fault_origin(error))
         try:
             try:
                 raise urllib.error.URLError('down')
             except urllib.error.URLError as cause:
                 raise ValueError('Slack did not answer') from cause
         except ValueError as error:
-            self.assertEqual(a.fault_origin(error), {'service': 'An outside service', 'status': None})
+            self.assertEqual(machine_faults.fault_origin(error), {'service': 'An outside service', 'status': None})
 
         for _ in range(3):
             try:
                 translated(503, 'https://app.themachine.computer/api/fleet/directory')
             except ValueError:
                 self.log.emit(logging.LogRecord('personal-assistant', logging.ERROR, __file__, 1, 'fleet error=%s', ('ValueError',), None))
-        a.sync_gateway(self.store, {'accounts': [gateway]}, gateway, FakeJournal())
+        machine_sources_gateway.sync_gateway(self.store, {'accounts': [gateway]}, gateway, FakeJournal())
         [event] = self.store.events([gateway['id']])
         self.assertTrue(event['body'].startswith('Talking with your Fleet on The Machine Network failed because The Machine Network had a problem '
                                                  '(it answered 503), not The Machine. Teammates’ questions and answers may come late; your own to-dos '
@@ -245,7 +253,7 @@ class MergeRestartsMirrors(unittest.TestCase):
 class FaultCardsSettle(unittest.TestCase):
     """A card about an error that an update fixed closes by itself."""
     def setUp(self):
-        clock = patch_everywhere(a, 'now', return_value='2026-10-22T12:00:00+00:00')  # the fixture's error is two days old
+        clock = patch_everywhere(timeutil, 'now', return_value='2026-10-22T12:00:00+00:00')  # the fixture's error is two days old
         clock.start(); self.addCleanup(clock.stop)
         ux.UX.setUp(self)
         with self.store.connect() as db:
@@ -271,7 +279,7 @@ class FaultCardsSettle(unittest.TestCase):
 
     def test_a_recent_error_or_a_card_about_more_stays_open(self):
         with self.store.connect() as db:
-            db.execute('UPDATE faults SET last_at=?', (a.now(),))
+            db.execute('UPDATE faults SET last_at=?', (timeutil.now(),))
         self.assertEqual(self.store.settle_faults('new222'), [])
         with self.store.connect() as db:
             db.execute("UPDATE faults SET last_at='2026-10-20T20:04:00+00:00'")
@@ -379,18 +387,18 @@ class Merge(unittest.TestCase):
 
     def test_the_owner_merges_from_the_card_and_the_agent_cannot(self):
         self.decide('accept')
-        app = object.__new__(a.App)
+        app = object.__new__(machine_main.App)
         app.store, app.config = self.store, self.config
         merge = {'kind': 'merge', 'clone': str(self.fix()), 'summary': 'The graph rebuild no longer stops on a missing key.', 'bug': BUG}
         with self.assertRaisesRegex(ValueError, 'send_now'):
             app.action('prepare', {'suggestion_id': self.sid, 'body': 'Fixed and tested in a copy.', 'next_action': merge, 'send_now': True})
         app.action('prepare', {'suggestion_id': self.sid, 'body': 'Fixed and tested in a copy.', 'next_action': merge})
         row = self.row()
-        self.assertEqual([b['label'] for b in a.controls(row)['blocks'][0]['buttons']][:1], ['Merge fix'])
+        self.assertEqual([b['label'] for b in machine_cards.controls(row)['blocks'][0]['buttons']][:1], ['Merge fix'])
         self.assertEqual(git(self.app_dir, 'log', '--format=%s', '-1'), 'Start')  # saving the result changed nothing
         app.action('confirm_action', {'suggestion_id': self.sid, 'revision': row['next_action']['revision'], 'approval_id': 'owner-tap'}, owner_dashboard=True)
         self.assertEqual(app.action_step(next_actions_transport(self)), 'sent')
-        self.assertIn('Merged. The Machine restarts with the fix.', a.card(self.row()))
+        self.assertIn('Merged. The Machine restarts with the fix.', machine_cards.card(self.row()))
         self.assertEqual(git(self.app_dir, 'log', '--format=%s', '-1'), 'Graph: a missing key is not a crash')
         self.assertEqual(app.action_step(next_actions_transport(self)), None)  # merged once
         self.assertEqual(self.restarts, [1])
@@ -409,7 +417,7 @@ class AutoMerge(unittest.TestCase):
         self.setUp_merge()
         with self.store.connect() as db:
             db.execute("UPDATE events SET kind='machine.fault',metadata=? WHERE id=1", (json.dumps({'fingerprint': 'fp-graph'}),))
-        self.app = object.__new__(a.App)
+        self.app = object.__new__(machine_main.App)
         self.app.store, self.app.config = self.store, self.config
         self.decide('accept')
         self.asked = []  # the second bug check's pages; it agrees unless a test says otherwise
@@ -430,12 +438,12 @@ class AutoMerge(unittest.TestCase):
                                            'next_action': {'kind': 'merge', 'clone': str(clone), 'summary': 'The graph rebuild no longer stops on a missing key.', 'bug': bug or BUG}})
 
     def labels(self):
-        return [b['label'] for block in a.controls(self.row())['blocks'] for b in block['buttons']]
+        return [b['label'] for block in machine_cards.controls(self.row())['blocks'] for b in block['buttons']]
 
     def merged(self):
         saved = self.save(self.fix())
         self.assertTrue(saved['auto_merge'].startswith('queued'))
-        self.assertIn('It merges by itself if every check passes.', a.card(self.row()))
+        self.assertIn('It merges by itself if every check passes.', machine_cards.card(self.row()))
         self.assertNotIn('Merge fix', self.labels())
         self.assertEqual(self.app.action_step(next_actions_transport(self)), 'sent')
         self.assertEqual(git(self.app_dir, 'log', '--format=%s', '-1'), 'Test the missing key')
@@ -463,21 +471,21 @@ class AutoMerge(unittest.TestCase):
     def test_a_small_tested_fix_merges_by_itself_and_the_owner_can_undo_it(self):
         start = git(self.upstream, 'rev-parse', 'main')
         head = self.merged()
-        self.assertIn('Merged by itself and restarted. You can undo it for 24 hours', a.card(self.row()))
-        self.assertIn('Kept on this machine, not pushed upstream', a.card(self.row()))
+        self.assertIn('Merged by itself and restarted. You can undo it for 24 hours', machine_cards.card(self.row()))
+        self.assertIn('Kept on this machine, not pushed upstream', machine_cards.card(self.row()))
         self.assertEqual(git(self.upstream, 'rev-parse', 'main'), start)  # sharing it is the owner's call
         self.assertIn('Undo merge', self.labels())
         with self.assertRaisesRegex(ValueError, 'owner'):  # the agent cannot undo or redo it
             self.app.action('undo_merge', {'suggestion_id': self.sid, 'approval_id': 'agent'})
         self.app.action('undo_merge', {'suggestion_id': self.sid, 'approval_id': 'owner-undo'}, owner_dashboard=True)
-        self.assertIn('Undoing the merge…', a.card(self.row()))
+        self.assertIn('Undoing the merge…', machine_cards.card(self.row()))
         self.assertEqual(self.app.undo_step(self.transport()), 'undone')
         self.assertIn('rows["missing"]', (self.app_dir / 'graph.py').read_text())
         self.assertFalse((self.app_dir / 'test_graph.py').exists())
         self.assertEqual(git(self.upstream, 'rev-parse', 'main'), start)  # neither the fix nor its undo went out
         self.assertTrue(git(self.app_dir, 'log', '--format=%s', '-1').startswith('Undo: The graph rebuild'))
         self.assertEqual(self.restarts, [1, 1])
-        self.assertIn('Merge undone. The Machine restarts on the previous code.', a.card(self.row()))
+        self.assertIn('Merge undone. The Machine restarts on the previous code.', machine_cards.card(self.row()))
         self.assertFalse({'Merge fix', 'Undo merge'} & set(self.labels()))
         self.assertTrue(self.app.action('undo_merge', {'suggestion_id': self.sid, 'approval_id': 'again'}, owner_dashboard=True)['duplicate'])
         self.assertNotEqual(head, git(self.app_dir, 'rev-parse', 'HEAD'))
@@ -519,14 +527,14 @@ class AutoMerge(unittest.TestCase):
         self.assertIsNone(self.app.undo_step(self.transport()))
         self.store.record_fault('fp-graph', 'KeyError', [], 'graph', head[:12])
         self.assertEqual(self.app.undo_step(self.transport()), 'undone')
-        self.assertIn('The error it fixed (KeyError) came back, so I undid the merge.', a.card(self.row()))
+        self.assertIn('The error it fixed (KeyError) came back, so I undid the merge.', machine_cards.card(self.row()))
         self.assertIsNone(self.app.undo_step(self.transport()))  # once
 
     def test_it_undoes_itself_when_a_new_error_shows_up_right_after(self):
         head = self.merged()
         self.store.record_fault('fp-new', 'TypeError', [], 'digest', head[:12])
         self.assertEqual(self.app.undo_step(self.transport()), 'undone')
-        self.assertIn('A new error (TypeError) showed up right after the merge, so I undid it.', a.card(self.row()))
+        self.assertIn('A new error (TypeError) showed up right after the merge, so I undid it.', machine_cards.card(self.row()))
 
     def test_anything_less_than_safe_waits_for_the_owner(self):
         action = {'kind': 'merge', 'files': ['graph.py', 'test_graph.py'], 'lines': 2, 'commits': 2, 'plugin': False, 'diff': '+x', 'bug': BUG}
@@ -540,13 +548,13 @@ class AutoMerge(unittest.TestCase):
         # A test that passes without the fix proves nothing: the card waits for Merge fix, which still works.
         self.assertTrue(self.save(self.fix(proof=False))['auto_merge'].startswith('queued'))
         self.assertEqual(self.app.action_step(next_actions_transport(self)), 'blocked')
-        self.assertIn('doesn’t prove the fix. Not merged by itself. Tap Merge fix to merge it anyway.', a.card(self.row()))
+        self.assertIn('doesn’t prove the fix. Not merged by itself. Tap Merge fix to merge it anyway.', machine_cards.card(self.row()))
         self.assertIn('Merge fix', self.labels())
         self.assertEqual(git(self.app_dir, 'log', '--format=%s', '-1'), 'Start')
         revision = self.row()['next_action']['revision']
         self.app.action('confirm_action', {'suggestion_id': self.sid, 'revision': revision, 'approval_id': 'owner-tap'}, owner_dashboard=True)
         self.assertEqual(self.app.action_step(next_actions_transport(self)), 'sent')
-        self.assertIn('Merged. The Machine restarts with the fix.', a.card(self.row()))
+        self.assertIn('Merged. The Machine restarts with the fix.', machine_cards.card(self.row()))
 
     def test_only_fixes_to_its_own_errors_and_one_a_day(self):
         with self.store.connect() as db:
@@ -554,7 +562,7 @@ class AutoMerge(unittest.TestCase):
         self.assertIn('recorded errors', self.save(self.fix())['auto_merge'])
         with self.store.connect() as db:
             db.execute("UPDATE events SET kind='machine.fault' WHERE id=1")
-            db.execute("INSERT INTO action_jobs VALUES('old','other','r','{\"kind\":\"merge\"}','sent',?,?,'owner','dashboard','','merge:abc',NULL,NULL,NULL)", (a.now(), a.now()))
+            db.execute("INSERT INTO action_jobs VALUES('old','other','r','{\"kind\":\"merge\"}','sent',?,?,'owner','dashboard','','merge:abc',NULL,NULL,NULL)", (timeutil.now(), timeutil.now()))
         self.assertEqual(self.store.auto_merge(self.sid, self.config), 'another merge happened in the last day')
 
 

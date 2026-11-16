@@ -6,24 +6,27 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from test_assistant import assistant as a, event
+from test_assistant import event
 import graph
 from seams import patch_everywhere  # noqa: E402
 from machine.store.views import DONE_FIRST  # noqa: E402
+import machine.cards as machine_cards
+import machine.main as machine_main
+import timeutil
 
 
 class DonePages(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory(); self.addCleanup(self.tmp.cleanup)
-        self.store = a.Store(Path(self.tmp.name) / 'events.sqlite')
+        self.store = machine_main.Store(Path(self.tmp.name) / 'events.sqlite')
         self.store.commit_page('work', {}, [event()])
         self.ids = []
         for n in range(75):
-            with patch_everywhere(a, 'now', return_value=f'2026-10-01T10:{n // 60:02d}:{n % 60:02d}+00:00'):
+            with patch_everywhere(timeutil, 'now', return_value=f'2026-10-01T10:{n // 60:02d}:{n % 60:02d}+00:00'):
                 sid = self.store.suggest(f'task-{n}', f'Card {n:02d}' + (' invoice' if n % 10 == 0 else ''), 'Body', [1])['id']
             self.ids.append(sid)
         for n, sid in enumerate(self.ids):  # closed in the reverse order they were made
-            with patch_everywhere(a, 'now', return_value=f'2026-10-02T10:{(74 - n) // 60:02d}:{(74 - n) % 60:02d}+00:00'):
+            with patch_everywhere(timeutil, 'now', return_value=f'2026-10-02T10:{(74 - n) // 60:02d}:{(74 - n) % 60:02d}+00:00'):
                 self.store.decide(sid, 'complete', '', 'done-' + sid, 'dashboard')
         self.store.suggest('task-open', 'Still open', 'Body', [1])
 
@@ -55,13 +58,13 @@ class DonePages(unittest.TestCase):
 
     def test_the_dashboard_gets_its_first_page_and_every_one_done_in_the_last_day(self):
         done = lambda snap: [s['title'] for s in snap['suggestions'] if s['status'] == 'completed']
-        with patch_everywhere(a, 'now', return_value='2026-10-09T10:00:00+00:00'):  # a week on: the first page only
+        with patch_everywhere(timeutil, 'now', return_value='2026-10-09T10:00:00+00:00'):  # a week on: the first page only
             week = self.store.snapshot([], done=DONE_FIRST)
         self.assertEqual(sorted(done(week)), sorted(c['title'] for c in self.store.done_page(0, DONE_FIRST)['cards']))  # the first page, so it pages on from 30
         self.assertEqual(week['done_counts']['all'], 75)  # the Done list still counts them all and pages the rest
-        with patch_everywhere(a, 'now', return_value='2026-10-02T20:00:00+00:00'):  # the same day: all of them (Undo, done reports)
+        with patch_everywhere(timeutil, 'now', return_value='2026-10-02T20:00:00+00:00'):  # the same day: all of them (Undo, done reports)
             self.assertEqual(len(done(self.store.snapshot([], done=30))), 75)
-        with patch_everywhere(a, 'now', return_value='2026-10-09T10:00:00+00:00'):  # the CLI and the rest: the last 100 as before
+        with patch_everywhere(timeutil, 'now', return_value='2026-10-09T10:00:00+00:00'):  # the CLI and the rest: the last 100 as before
             self.assertEqual(len(done(self.store.snapshot([]))), 75)
 
 
@@ -70,14 +73,14 @@ class DoneByWhenClosed(unittest.TestCase):
     status payload too, with when it closed (the card says "Done 5 minutes ago"). A search finds it by who it went to."""
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory(); self.addCleanup(self.tmp.cleanup)
-        self.store = a.Store(Path(self.tmp.name) / 'events.sqlite')
+        self.store = machine_main.Store(Path(self.tmp.name) / 'events.sqlite')
         self.store.commit_page('work', {}, [event()])
         self.ids = []
         for n in range(101):
-            with patch_everywhere(a, 'now', return_value=f'2026-10-01T10:{n // 60:02d}:{n % 60:02d}+00:00'):
+            with patch_everywhere(timeutil, 'now', return_value=f'2026-10-01T10:{n // 60:02d}:{n % 60:02d}+00:00'):
                 self.ids.append(self.store.suggest(f'task-{n}', f'Card {n:03d}', 'Body', [1])['id'])
         for n, sid in enumerate(self.ids[1:] + self.ids[:1]):  # the oldest one closed last, like a send tonight
-            with patch_everywhere(a, 'now', return_value=f'2026-10-02T10:{n // 60:02d}:{n % 60:02d}+00:00'):
+            with patch_everywhere(timeutil, 'now', return_value=f'2026-10-02T10:{n // 60:02d}:{n % 60:02d}+00:00'):
                 self.store.decide(sid, 'complete', '', 'done-' + sid, 'dashboard')
 
     def test_status_sends_the_hundred_closed_last_with_when(self):
@@ -95,12 +98,12 @@ class DoneByWhenClosed(unittest.TestCase):
             db.execute('UPDATE suggestions SET next_action=? WHERE id=?', (json.dumps(action), self.ids[5]))
         for q in ('lena', 'Moss', 'uni.example.edu', 'ari@'):
             self.assertEqual([c['id'] for c in self.store.done_page(0, 30, q)['cards']], [self.ids[5]], q)
-        self.assertEqual(a.card_recipients(json.dumps({'kind': 'menu', 'actions': [action, {'kind': 'open', 'url': 'https://x.example'}]})),
+        self.assertEqual(machine_cards.card_recipients(json.dumps({'kind': 'menu', 'actions': [action, {'kind': 'open', 'url': 'https://x.example'}]})),
                          'Lena Moss lena.moss@uni.example.edu ari@uni.example.edu')
-        self.assertEqual(a.card_recipients(None), '')
+        self.assertEqual(machine_cards.card_recipients(None), '')
 
     def test_one_that_looks_done_says_since_when(self):
-        with patch_everywhere(a, 'now', return_value='2026-10-03T09:00:00+00:00'):
+        with patch_everywhere(timeutil, 'now', return_value='2026-10-03T09:00:00+00:00'):
             sid = self.store.suggest('task-hint', 'Answer Elif', 'Body', [1])['id']
         with self.store.connect() as db:
             db.execute('UPDATE suggestions SET handled_hint=? WHERE id=?', (json.dumps({'reason': 'Elif confirmed it', 'at': '2026-10-03T11:00:00+00:00'}), sid))
@@ -112,8 +115,8 @@ class DoneByWhenClosed(unittest.TestCase):
 class GraphTabs(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory(); self.addCleanup(self.tmp.cleanup)
-        self.store = a.Store(Path(self.tmp.name) / 'events.sqlite')
-        self.app = object.__new__(a.App); self.app.store = self.store; self.app.config = {'accounts': []}
+        self.store = machine_main.Store(Path(self.tmp.name) / 'events.sqlite')
+        self.app = object.__new__(machine_main.App); self.app.store = self.store; self.app.config = {'accounts': []}
         with self.store.connect() as db:
             graph.ensure(db)
             db.execute("INSERT INTO graph_state VALUES(1,'2026-10-20T09:00:00+00:00',10,1)")

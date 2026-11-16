@@ -9,9 +9,11 @@ from pathlib import Path
 
 import test_ux as ux
 from seams import patch_everywhere  # noqa: E402
-a = ux.a
 
 from machine.store import review_requeue, review_saves  # noqa: E402
+import machine.main as machine_main
+import machine.prompts.review as machine_prompts_review
+import timeutil
 
 MAIL = {'id': 'work', 'email': 'owner@example.com', 'service': 'gmail', 'transport': 'gog', 'boundary': 'work:Example'}
 CAL = {'id': 'work-cal', 'email': 'owner@example.com', 'service': 'calendar', 'transport': 'gog', 'boundary': 'work:Example'}
@@ -36,10 +38,10 @@ class AutomatedMailAlone(unittest.TestCase):
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
         self.tmp = tmp
-        clock = patch_everywhere(a, 'now', return_value=NOW)
+        clock = patch_everywhere(timeutil, 'now', return_value=NOW)
         clock.start()
         self.addCleanup(clock.stop)
-        self.store = a.Store(Path(tmp.name) / 'events.sqlite')
+        self.store = machine_main.Store(Path(tmp.name) / 'events.sqlite')
         self.store.commit_page('work', {}, [
             mail('booking', 'Rail Travel <bookings@rail.example>', 'Your train booking is confirmed', 'Outbound Tuesday 08:15, return 17:40.',
                  labels=('INBOX', 'CATEGORY_UPDATES'), list_unsubscribe=True),
@@ -57,7 +59,7 @@ class AutomatedMailAlone(unittest.TestCase):
             return db.execute('SELECT id FROM events WHERE source_id=?', (source_id,)).fetchone()[0]
 
     def app(self):
-        app = object.__new__(a.App)
+        app = object.__new__(machine_main.App)
         app.store = self.store
         app.config = {'accounts': [MAIL, CAL], 'digest_at': '08:30', 'review_worker': {'enabled': True}, 'prepare_ahead': False,
                       'openclaw_config': str(Path(self.tmp.name) / 'no-openclaw.json')}  # no model here: never a live turn
@@ -102,7 +104,7 @@ class AutomatedMailAlone(unittest.TestCase):
         self.assertFalse(review_requeue.failed(told))
 
     def test_the_rule_is_in_the_review_prompt(self):
-        self.assertIn('Automated mail alone makes a to-do only when it asks the owner to act (add mail_asks)', a.review_prompt('r1', ['work']))
+        self.assertIn('Automated mail alone makes a to-do only when it asks the owner to act (add mail_asks)', machine_prompts_review.review_prompt('r1', ['work']))
 
 
 def a_message():

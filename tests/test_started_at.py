@@ -1,11 +1,11 @@
 import unittest
 import test_ux as ux
-a=ux.a
+import machine.main as machine_main
 
 class StartedAt(unittest.TestCase):
     setUp=ux.UX.setUp
     def app(self, **config):
-        app=object.__new__(a.App);app.store=self.store
+        app=object.__new__(machine_main.App);app.store=self.store
         app.config={'accounts':[{'id':'work','email':'owner@example.com','boundary':'work:Acme'}],'telegram_owner':'1000001',**config}
         return app
     def test_first_own_activity_is_the_start(self):

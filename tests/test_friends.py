@@ -6,9 +6,10 @@ import json
 import unittest
 
 import test_fleet as tf
-from test_fleet import CONFIG, NOW, FakeRelay, a
+from test_fleet import CONFIG, NOW, FakeRelay
 
-fleet, friends = a.fleet, a.fleet.friends
+import fleet
+friends = fleet.friends
 FR = 'fr_' + 'a' * 16
 WORK_ID = 'fl_' + 'b' * 16
 

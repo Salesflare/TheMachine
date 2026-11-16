@@ -12,10 +12,18 @@ from unittest.mock import patch
 
 import test_ux as ux
 from seams import patch_everywhere  # noqa: E402
+import fleet
+import machine.actions as machine_actions
+import machine.cards as machine_cards
+import machine.delivery.deliver as machine_delivery_deliver
+import machine.delivery.telegram as machine_delivery_telegram
+import machine.main as machine_main
+import sources
+import timeutil
+import zoneinfo
 
-a = ux.a
-BXL = a.ZoneInfo('Europe/Amsterdam')
-NYC = a.ZoneInfo('America/New_York')
+BXL = zoneinfo.ZoneInfo('Europe/Amsterdam')
+NYC = zoneinfo.ZoneInfo('America/New_York')
 
 
 def at(y, m, d, h, mi=0, zone=BXL):
@@ -24,62 +32,62 @@ def at(y, m, d, h, mi=0, zone=BXL):
 
 class Hours(unittest.TestCase):
     def setUp(self):
-        a.set_timezone('Europe/Amsterdam')
-        a.set_work_hours(None)
-        self.addCleanup(a.set_work_hours, None)
-        self.addCleanup(a.set_timezone, 'Europe/Amsterdam')
+        timeutil.set_timezone('Europe/Amsterdam')
+        timeutil.set_work_hours(None)
+        self.addCleanup(timeutil.set_work_hours, None)
+        self.addCleanup(timeutil.set_timezone, 'Europe/Amsterdam')
 
     def test_defaults_keep_the_old_fixed_hours(self):
-        self.assertEqual(a.work_hours(), {'days': [1, 2, 3, 4, 5], 'start': '08:00', 'end': '23:00', 'morning': '08:00'})
-        self.assertEqual(a.work_hours({}), a.WORK_HOURS_DEFAULT)
+        self.assertEqual(timeutil.work_hours(), {'days': [1, 2, 3, 4, 5], 'start': '08:00', 'end': '23:00', 'morning': '08:00'})
+        self.assertEqual(timeutil.work_hours({}), timeutil.WORK_HOURS_DEFAULT)
         local = lambda h, mi=0: dt.datetime(2026, 10, 14, h, mi, tzinfo=BXL)
-        self.assertEqual([a.in_hours(local(h, m)) for h, m in [(7, 59), (8, 0), (22, 59), (23, 0), (2, 0)]], [False, True, True, False, False])
-        with patch_everywhere(a, 'now', return_value=at(2026, 10, 9, 15)):  # Friday
-            self.assertEqual(a.snooze_time('tomorrow', work=True), at(2026, 10, 12, 8))
-            self.assertEqual(a.snooze_time('tomorrow'), at(2026, 10, 10, 8))
-            self.assertEqual(a.thread_return_time(1), at(2026, 10, 12, 8))
-            self.assertEqual(a.snooze_choices(True)[1], ['tomorrow', 'Monday · 8:00'])
+        self.assertEqual([timeutil.in_hours(local(h, m)) for h, m in [(7, 59), (8, 0), (22, 59), (23, 0), (2, 0)]], [False, True, True, False, False])
+        with patch_everywhere(timeutil, 'now', return_value=at(2026, 10, 9, 15)):  # Friday
+            self.assertEqual(machine_cards.snooze_time('tomorrow', work=True), at(2026, 10, 12, 8))
+            self.assertEqual(machine_cards.snooze_time('tomorrow'), at(2026, 10, 10, 8))
+            self.assertEqual(machine_cards.thread_return_time(1), at(2026, 10, 12, 8))
+            self.assertEqual(machine_cards.snooze_choices(True)[1], ['tomorrow', 'Monday · 8:00'])
         saturday = dt.datetime(2026, 10, 10, 16, tzinfo=BXL)
-        self.assertEqual(a.delivery_time('now', current=saturday, work=True), at(2026, 10, 12, 8, 30))
+        self.assertEqual(machine_delivery_deliver.delivery_time('now', current=saturday, work=True), at(2026, 10, 12, 8, 30))
 
     def test_days_parse_names_ranges_and_numbers(self):
-        self.assertEqual(a.work_hours({'days': 'mon-fri'})['days'], [1, 2, 3, 4, 5])
-        self.assertEqual(a.work_hours({'days': 'sun-thu'})['days'], [1, 2, 3, 4, 7])
-        self.assertEqual(a.work_hours({'days': 'Mon, Wed,friday'})['days'], [1, 3, 5])
-        self.assertEqual(a.work_hours({'days': [6, 7, 6]})['days'], [6, 7])
-        self.assertEqual(a.work_hours({'start': '7:05'})['start'], '07:05')
+        self.assertEqual(timeutil.work_hours({'days': 'mon-fri'})['days'], [1, 2, 3, 4, 5])
+        self.assertEqual(timeutil.work_hours({'days': 'sun-thu'})['days'], [1, 2, 3, 4, 7])
+        self.assertEqual(timeutil.work_hours({'days': 'Mon, Wed,friday'})['days'], [1, 3, 5])
+        self.assertEqual(timeutil.work_hours({'days': [6, 7, 6]})['days'], [6, 7])
+        self.assertEqual(timeutil.work_hours({'start': '7:05'})['start'], '07:05')
         for bad in ({'days': []}, {'days': [0]}, {'days': 'funday'}, {'days': [True]}, {'start': '25:00'}, {'morning': 'nine'}, []):
             with self.assertRaises(ValueError):
-                a.work_hours(bad)
+                timeutil.work_hours(bad)
 
     def test_custom_week_and_hours_move_everything(self):
-        a.set_timezone('America/New_York')
-        a.set_work_hours({'days': 'sun-thu', 'start': '09:00', 'end': '17:30', 'morning': '08:15'})
-        with patch_everywhere(a, 'now', return_value=at(2026, 10, 15, 15, zone=NYC)):  # Thursday
-            self.assertEqual(a.snooze_time('tomorrow', work=True), at(2026, 10, 18, 8, 15, NYC))  # Friday and Saturday off
-            self.assertEqual(a.snooze_time('tomorrow'), at(2026, 10, 16, 8, 15, NYC))
-            self.assertEqual(a.thread_return_time(1), at(2026, 10, 18, 8, 15, NYC))
-            self.assertEqual(a.snooze_choices(True)[1], ['tomorrow', 'Sunday · 8:15'])
+        timeutil.set_timezone('America/New_York')
+        timeutil.set_work_hours({'days': 'sun-thu', 'start': '09:00', 'end': '17:30', 'morning': '08:15'})
+        with patch_everywhere(timeutil, 'now', return_value=at(2026, 10, 15, 15, zone=NYC)):  # Thursday
+            self.assertEqual(machine_cards.snooze_time('tomorrow', work=True), at(2026, 10, 18, 8, 15, NYC))  # Friday and Saturday off
+            self.assertEqual(machine_cards.snooze_time('tomorrow'), at(2026, 10, 16, 8, 15, NYC))
+            self.assertEqual(machine_cards.thread_return_time(1), at(2026, 10, 18, 8, 15, NYC))
+            self.assertEqual(machine_cards.snooze_choices(True)[1], ['tomorrow', 'Sunday · 8:15'])
         friday = dt.datetime(2026, 10, 16, 10, tzinfo=NYC)
-        self.assertEqual(a.delivery_time('now', current=friday, work=True), at(2026, 10, 18, 8, 30, NYC))
-        self.assertIsNone(a.delivery_time('now', current=dt.datetime(2026, 10, 18, 10, tzinfo=NYC), work=True))  # Sunday works
-        self.assertIsNone(a.delivery_time('now', current=friday, work=False))
-        self.assertTrue(a.in_hours(dt.datetime(2026, 10, 16, 9, tzinfo=NYC)))
-        self.assertFalse(a.in_hours(dt.datetime(2026, 10, 16, 17, 30, tzinfo=NYC)))
+        self.assertEqual(machine_delivery_deliver.delivery_time('now', current=friday, work=True), at(2026, 10, 18, 8, 30, NYC))
+        self.assertIsNone(machine_delivery_deliver.delivery_time('now', current=dt.datetime(2026, 10, 18, 10, tzinfo=NYC), work=True))  # Sunday works
+        self.assertIsNone(machine_delivery_deliver.delivery_time('now', current=friday, work=False))
+        self.assertTrue(timeutil.in_hours(dt.datetime(2026, 10, 16, 9, tzinfo=NYC)))
+        self.assertFalse(timeutil.in_hours(dt.datetime(2026, 10, 16, 17, 30, tzinfo=NYC)))
 
     def test_hours_may_wrap_past_midnight_and_equal_means_always(self):
-        a.set_work_hours({'start': '20:00', 'end': '04:00'})
+        timeutil.set_work_hours({'start': '20:00', 'end': '04:00'})
         local = lambda h: dt.datetime(2026, 10, 14, h, tzinfo=BXL)
-        self.assertEqual([a.in_hours(local(h)) for h in (19, 20, 23, 0, 3, 4, 12)], [False, True, True, True, True, False, False])
-        a.set_work_hours({'start': '00:00', 'end': '00:00'})
-        self.assertTrue(all(a.in_hours(local(h)) for h in range(24)))
+        self.assertEqual([timeutil.in_hours(local(h)) for h in (19, 20, 23, 0, 3, 4, 12)], [False, True, True, True, True, False, False])
+        timeutil.set_work_hours({'start': '00:00', 'end': '00:00'})
+        self.assertTrue(all(timeutil.in_hours(local(h)) for h in range(24)))
 
 
 class Saving(unittest.TestCase):
     setUp = ux.UX.setUp
 
     def app(self, path):
-        app = object.__new__(a.App)
+        app = object.__new__(machine_main.App)
         app.store, app.config_path = self.store, path
         app.config = json.loads(path.read_text()) if path else {}
         app.config.setdefault('accounts', [])
@@ -92,15 +100,15 @@ class Saving(unittest.TestCase):
         return path
 
     def tearDown(self):
-        a.set_work_hours(None)
-        a.set_timezone('Europe/Amsterdam')
+        timeutil.set_work_hours(None)
+        timeutil.set_timezone('Europe/Amsterdam')
 
     def test_owner_saves_on_the_dashboard_into_config_json(self):
         path = self.config_file()
         app = self.app(path)
         with self.assertRaises(ValueError):
             app.action('set_work_hours', {'days': [1]})  # not the owner's dashboard
-        self.assertIn('set_work_hours', a.OWNER_ACTIONS)  # the local CLI's service call refuses it too
+        self.assertIn('set_work_hours', machine_actions.OWNER_ACTIONS)  # the local CLI's service call refuses it too
         saved = app.action('set_work_hours', {'days': [1, 2, 3, 4], 'start': '09:00', 'end': '18:00', 'morning': '09:30',
                                               'digest_at': '9:00', 'timezone': 'Europe/London'}, owner_dashboard=True)
         self.assertEqual(saved, {'days': [1, 2, 3, 4], 'start': '09:00', 'end': '18:00', 'morning': '09:30', 'timezone': 'Europe/London',
@@ -110,7 +118,7 @@ class Saving(unittest.TestCase):
         self.assertEqual((written['timezone'], written['digest_at'], written['other']), ('Europe/London', '09:35', {'kept': True}))
         self.assertEqual(oct(path.stat().st_mode & 0o777), '0o600')
         self.assertEqual(json.loads(path.with_name('config.json.bak').read_text())['digest_at'], '08:30')
-        self.assertEqual((a.WORK_HOURS['days'], a.local_tz().key, app.config['digest_at']), ([1, 2, 3, 4], 'Europe/London', '09:35'))
+        self.assertEqual((timeutil.WORK_HOURS['days'], timeutil.local_tz().key, app.config['digest_at']), ([1, 2, 3, 4], 'Europe/London', '09:35'))
         self.assertEqual(app.action('status', {'full': True})['hours']['morning'], '09:30')
         # the evening digest's own time, saved with the rest; none follows Until again
         self.assertEqual(app.action('set_work_hours', {'evening_at': '7:30'}, owner_dashboard=True)['evening_at'], '07:30')
@@ -126,18 +134,18 @@ class Saving(unittest.TestCase):
             with self.assertRaises(ValueError):
                 app.action('set_work_hours', bad, owner_dashboard=True)
         self.assertEqual(path.read_text(), before)
-        self.assertEqual(a.WORK_HOURS, a.WORK_HOURS_DEFAULT)
+        self.assertEqual(timeutil.WORK_HOURS, timeutil.WORK_HOURS_DEFAULT)
 
     def test_cards_wait_for_the_hours(self):
-        a.set_work_hours({'start': '09:00', 'end': '17:00'})
+        timeutil.set_work_hours({'start': '09:00', 'end': '17:00'})
 
         def deliver(hour):
-            class Clock(a.dt.datetime):
+            class Clock(dt.datetime):
                 @classmethod
-                def now(cls, tz=None): return cls(2026, 10, 14, hour, 0, tzinfo=BXL).astimezone(tz or a.dt.timezone.utc)
-            with patch.object(a.dt, 'datetime', Clock), patch_everywhere(a, 'now', return_value=at(2026, 10, 14, hour)), \
-                    patch_everywhere(a, 'telegram', return_value={'messageId': '7'}) as send:
-                a.deliver_one(self.store, {'telegram_owner': '1000001', 'accounts': []}, edit_cards=False)
+                def now(cls, tz=None): return cls(2026, 10, 14, hour, 0, tzinfo=BXL).astimezone(tz or dt.timezone.utc)
+            with patch.object(dt, 'datetime', Clock), patch_everywhere(timeutil, 'now', return_value=at(2026, 10, 14, hour)), \
+                    patch_everywhere(machine_delivery_telegram, 'telegram', return_value={'messageId': '7'}) as send:
+                machine_delivery_deliver.deliver_one(self.store, {'telegram_owner': '1000001', 'accounts': []}, edit_cards=False)
             return [call.args[2] for call in send.call_args_list]
         self.assertEqual(deliver(18), [])  # 08:00-23:00 would have sent it
         self.assertEqual(deliver(8), [])
@@ -145,11 +153,11 @@ class Saving(unittest.TestCase):
 
     def test_a_digest_before_the_snoozes_is_saved_after_them_at_start(self):
         path = self.config_file({'work_hours': {'morning': '09:00'}})
-        with patch_everywhere(a, 'Store'), patch_everywhere(a, 'credential'), patch_everywhere(a, 'owner_credential'), patch.object(a.fleet, 'settings', return_value=None):
-            app = a.App(json.loads(path.read_text()), path)
+        with patch_everywhere(machine_main, 'Store'), patch_everywhere(sources, 'credential'), patch_everywhere(sources, 'owner_credential'), patch.object(fleet, 'settings', return_value=None):
+            app = machine_main.App(json.loads(path.read_text()), path)
             self.assertEqual((app.config['digest_at'], json.loads(path.read_text())['digest_at']), ('09:05', '09:05'))
             stamp = path.stat().st_mtime_ns
-            a.App(json.loads(path.read_text()), path)  # once: a digest already after them stays as it is
+            machine_main.App(json.loads(path.read_text()), path)  # once: a digest already after them stays as it is
         self.assertEqual(path.stat().st_mtime_ns, stamp)
         self.assertEqual(json.loads(path.read_text())['other'], {'kept': True})
 
@@ -160,9 +168,9 @@ class Saving(unittest.TestCase):
             app.action('set_work_hours', {'days': [1]}, owner_dashboard=True)
 
     def test_a_broken_setting_falls_back_to_the_defaults(self):
-        with patch_everywhere(a, 'Store'), patch_everywhere(a, 'credential'), patch_everywhere(a, 'owner_credential'), patch.object(a.fleet, 'settings', return_value=None):
-            a.App({'database': 'x', 'accounts': [], 'work_hours': {'days': []}})
-        self.assertEqual(a.WORK_HOURS, a.WORK_HOURS_DEFAULT)
+        with patch_everywhere(machine_main, 'Store'), patch_everywhere(sources, 'credential'), patch_everywhere(sources, 'owner_credential'), patch.object(fleet, 'settings', return_value=None):
+            machine_main.App({'database': 'x', 'accounts': [], 'work_hours': {'days': []}})
+        self.assertEqual(timeutil.WORK_HOURS, timeutil.WORK_HOURS_DEFAULT)
 
 
 class Cli(unittest.TestCase):

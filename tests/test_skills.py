@@ -8,9 +8,11 @@ import unittest
 from pathlib import Path
 
 import test_fleet as tf
-from test_fleet import a, fleet
+from test_fleet import fleet
 
-skills = a.skills
+import skills
+import machine.actions as machine_actions
+import machine.main as machine_main
 BODY = 'Read the thread first.\n\n1. Find the answer.\n2. Draft a reply for the owner.'
 
 
@@ -247,8 +249,8 @@ class Skills(unittest.TestCase):
 
     def test_skill_decisions_are_the_owners_and_proposing_is_not(self):
         for action in ('skill_save', 'skill_toggle', 'skill_delete', 'skill_share', 'skill_decide', 'skill_get', 'skill_example'):
-            self.assertIn(action, a.OWNER_ACTIONS)
-        self.assertNotIn('skill_propose', a.OWNER_ACTIONS)
+            self.assertIn(action, machine_actions.OWNER_ACTIONS)
+        self.assertNotIn('skill_propose', machine_actions.OWNER_ACTIONS)
 
 
 LISTED = {'workspaceDir': '/w', 'skills': [
@@ -599,7 +601,7 @@ class OpenClawSkills(unittest.TestCase):
 
     def test_the_agent_adds_a_hint_to_the_card_it_suggests(self):
         self.keeper.installed()
-        app = object.__new__(a.App)
+        app = object.__new__(machine_main.App)
         app.store, app.skills, app.config = self.store, self.keeper, {'accounts': [{'id': 'work', 'boundary': 'work:Acme'}]}
         with self.store.connect() as db:
             event = db.execute('SELECT id FROM events LIMIT 1').fetchone()[0]
@@ -614,7 +616,7 @@ class OpenClawSkills(unittest.TestCase):
 
     def test_installing_and_turning_on_are_the_owners_only(self):
         for action in ('skill_installed', 'skill_installed_get', 'skill_installed_toggle', 'skill_hub_search', 'skill_hub_get', 'skill_hub_install', 'skill_hint_dismiss'):
-            self.assertIn(action, a.OWNER_ACTIONS)
+            self.assertIn(action, machine_actions.OWNER_ACTIONS)
 
 
 if __name__ == '__main__':

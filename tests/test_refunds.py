@@ -13,9 +13,10 @@ from zoneinfo import ZoneInfo
 import test_ux as ux
 import timeutil
 from seams import patch_everywhere  # noqa: E402
-a = ux.a
 
 import refunds  # noqa: E402
+import machine.main as machine_main
+import machine.prompts.review as machine_prompts_review
 
 ROOT = Path(__file__).parent.parent
 MAIL = {'id': 'home', 'email': 'owner@example.com', 'service': 'gmail', 'transport': 'gog', 'boundary': 'personal'}
@@ -39,10 +40,10 @@ class Refunds(unittest.TestCase):
         zone = patch.object(timeutil, 'LOCAL_TZ', ZoneInfo('Europe/Brussels'))
         zone.start()
         self.addCleanup(zone.stop)
-        self.clock = patch_everywhere(a, 'now', return_value='2026-11-02T10:00:00+00:00')
+        self.clock = patch_everywhere(timeutil, 'now', return_value='2026-11-02T10:00:00+00:00')
         self.clock.start()
         self.addCleanup(lambda: self.clock.stop())
-        self.store = a.Store(Path(tmp.name) / 'events.sqlite', protect=True)
+        self.store = machine_main.Store(Path(tmp.name) / 'events.sqlite', protect=True)
         self.store.commit_page('home', {}, [
             mail('shop', 'Example Shop <orders@shop.example>', 'Order A-1042 canceled', PROMISED),
             mail('noreply', 'Air Example <no-reply@air.example>', 'Claim approved',
@@ -51,7 +52,7 @@ class Refunds(unittest.TestCase):
 
     def at(self, stamp):
         self.clock.stop()
-        self.clock = patch_everywhere(a, 'now', return_value=stamp)
+        self.clock = patch_everywhere(timeutil, 'now', return_value=stamp)
         self.clock.start()
 
     def id(self, source_id):
@@ -59,7 +60,7 @@ class Refunds(unittest.TestCase):
             return db.execute('SELECT id FROM events WHERE source_id=?', (source_id,)).fetchone()[0]
 
     def app(self):
-        app = object.__new__(a.App)
+        app = object.__new__(machine_main.App)
         app.store = self.store
         app.config = {'accounts': [MAIL, PHONE], 'digest_at': '08:30', 'review_worker': {'enabled': True}, 'prepare_ahead': False,
                       'owner_name': 'Robin Example', 'openclaw_config': str(Path(self.tmp.name) / 'no-openclaw.json')}
@@ -87,7 +88,7 @@ class Refunds(unittest.TestCase):
         self.app().promise_step()
 
     def test_the_review_is_told_to_record_refunds_as_promises_never_to_dos(self):
-        prompt = a.review_prompt('r1', ['home'])
+        prompt = machine_prompts_review.review_prompt('r1', ['home'])
         for words in ('Refunds:', 'refund {"amount", "currency", "ref", "contact"}', '5-10 business days', 'Only when the amount',
                       'status kept', 'looks_handled paid:true'):
             self.assertIn(words, prompt)

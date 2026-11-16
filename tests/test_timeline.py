@@ -5,7 +5,7 @@ import unittest
 
 import test_graph as tg
 
-a, graph = tg.a, tg.graph
+graph = tg.graph
 ACCOUNTS = tg.CONFIG['accounts'] + [{'id': 'help', 'service': 'intercom'}, {'id': 'zoom', 'service': 'zoom'}]
 
 

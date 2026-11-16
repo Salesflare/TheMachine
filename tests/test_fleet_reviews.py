@@ -9,10 +9,12 @@ import unittest
 from pathlib import Path
 
 import test_fleet as tf
-from test_fleet import a, graph, NOW, mail
+from test_fleet import graph, NOW, mail
 
-fleet = a.fleet
-fleet_reviews = a.fleet_reviews
+import fleet
+import fleet_reviews
+import machine.main as machine_main
+import next_actions
 WORK_ID, FAM_ID = 'fl_' + 'a' * 16, 'fl_' + 'f' * 16
 ASKS = {'work': list(fleet.ASKS['work']), 'family': list(fleet.ASKS['family'])}
 OWNER_CONFIG = {'accounts': [{**tf.WORK, 'transport': 'gog'}, tf.HOME], 'fleet': {'url': 'https://cp.example/api/fleet'},
@@ -98,7 +100,7 @@ class Machine:
     def __init__(self, test, net, member_id, config, mails=()):
         self.temp = tempfile.TemporaryDirectory()
         test.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'events.sqlite')
+        self.store = machine_main.Store(Path(self.temp.name) / 'events.sqlite')
         for e in mails:
             self.store.commit_page(e['account_id'], {}, [e])
         with self.store.connect() as db:
@@ -106,7 +108,7 @@ class Machine:
             graph.build(db, config, NOW.isoformat())
         self.fleet = fleet.Fleet(self.store.connect, config, lambda: 'token', relay=net.link(member_id))
         self.fleet.directory(refresh=True)
-        self.app = object.__new__(a.App)
+        self.app = object.__new__(machine_main.App)
         self.app.store, self.app.config, self.app.fleet = self.store, config, self.fleet
         self.told = []
         f = self.fleet
@@ -154,7 +156,7 @@ class AskToReview(unittest.TestCase):
         with self.owner.store.connect() as db:
             db.execute("UPDATE suggestions SET status='accepted' WHERE id=?", (card,))
             ids = json.loads(db.execute('SELECT account_ids FROM suggestions WHERE id=?', (card,)).fetchone()[0])
-        draft = a.next_actions.validate({'kind': 'email', 'account_id': account, 'to': ['sam@client.example'], 'subject': 'Pricing',
+        draft = next_actions.validate({'kind': 'email', 'account_id': account, 'to': ['sam@client.example'], 'subject': 'Pricing',
                                          'body': DRAFT}, OWNER_CONFIG, ids)
         self.owner.store.prepare(card, 'A reply with the price.', next_action=draft, outcome={'state': 'needs_you', 'needs': 'send the reply'})
         return card
@@ -190,7 +192,7 @@ class AskToReview(unittest.TestCase):
         mine = self.review_card(self.pat)
         self.assertEqual((mine['title'], mine['review_in']['from'], mine['review_in']['subject']), ('Review: Reply to Sam about pricing', 'Owner Example', 'Pricing'))
         sent = mine['review_in']['body']
-        self.assertEqual(sent, a.next_actions.draft_text(json.loads(before)))  # the draft as the owner sees it
+        self.assertEqual(sent, next_actions.draft_text(json.loads(before)))  # the draft as the owner sees it
         self.assertIn('Their note: “Is the tone ok?”', mine['body'])
         self.assertEqual(len(json.loads(mine['event_ids'])), 2)  # the request and one carried email
         self.assertIn('never send', self.pat.fleet.lines(mine['id']).lower())  # a chat or Do it there is told it's a review
@@ -244,7 +246,7 @@ class AskToReview(unittest.TestCase):
         with self.pat.store.connect() as db:
             db.execute("UPDATE suggestions SET status='accepted' WHERE id=?", (mine['id'],))
             ids = json.loads(db.execute('SELECT account_ids FROM suggestions WHERE id=?', (mine['id'],)).fetchone()[0])
-        draft = a.next_actions.validate({'kind': 'email', 'account_id': 'work', 'to': ['sam@client.example'], 'subject': 'Pricing', 'body': EVIL},
+        draft = next_actions.validate({'kind': 'email', 'account_id': 'work', 'to': ['sam@client.example'], 'subject': 'Pricing', 'body': EVIL},
                                         PAT_CONFIG, ids)
         self.pat.store.prepare(mine['id'], 'A chat turn left a draft.', next_action=draft)
         with self.assertRaisesRegex(ValueError, 'never sends'):

@@ -9,7 +9,7 @@ from zoneinfo import ZoneInfo
 import test_ux as ux
 import timeutil
 from seams import patch_everywhere  # noqa: E402
-a = ux.a
+import machine.main as machine_main
 
 MONDAY = '2026-11-09T01:30:00+00:00'
 
@@ -27,10 +27,10 @@ class PromiseBeforeDeadline(unittest.TestCase):
         zone = patch.object(timeutil, 'LOCAL_TZ', ZoneInfo('Europe/Brussels'))
         zone.start()
         self.addCleanup(zone.stop)
-        clock = patch_everywhere(a, 'now', return_value=MONDAY)
+        clock = patch_everywhere(timeutil, 'now', return_value=MONDAY)
         clock.start()
         self.addCleanup(clock.stop)
-        self.store = a.Store(Path(tmp.name) / 'events.sqlite')
+        self.store = machine_main.Store(Path(tmp.name) / 'events.sqlite')
         self.store.commit_page('work', {}, [
             email('invite', '2026-11-08T15:00:00+00:00', 'Would you give a talk? Please confirm by Friday, November 13 to keep the slot.'),
             email('date', '2026-11-09T01:20:00+00:00', 'I will send you the exact date in March as soon as the venue confirms.'),

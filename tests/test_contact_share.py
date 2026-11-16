@@ -6,9 +6,11 @@ import unittest
 
 import test_fleet as tf
 import test_friends as tfr
-from test_fleet import CONFIG, a
+from test_fleet import CONFIG
 
-fleet, graph, contact_share = a.fleet, a.graph, a.fleet.contact_share
+import fleet
+import graph
+contact_share = fleet.contact_share
 SAM = 'email:sam@client.example'
 
 

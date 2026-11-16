@@ -14,16 +14,19 @@ import sqlite3
 from unittest.mock import patch
 
 import skills
-from test_voices import a, mail
+from test_voices import mail
+import machine.cards as machine_cards
+import machine.main as machine_main
+import timeutil
 
 
 class SkillsFromNotes(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'events.sqlite')
+        self.store = machine_main.Store(Path(self.temp.name) / 'events.sqlite')
         self.store.accounts = [{'id': 'work', 'service': 'gmail', 'email': 'owner@example.com'}]
-        self.app = object.__new__(a.App)
+        self.app = object.__new__(machine_main.App)
         self.app.store = self.store
         self.app.config = {'accounts': self.store.accounts}
         self.app.skills = skills.Skills(self.store.connect, Path(self.temp.name) / 'workspace')
@@ -61,7 +64,7 @@ class SkillsFromNotes(unittest.TestCase):
         self.assertIn('## Steps', card['skill_proposal']['body'])
         with self.store.connect() as db:
             row=dict(db.execute('SELECT * FROM suggestions WHERE id=?',(card['id'],)).fetchone());row.update(self.store.suggestion_result(row,db))
-        buttons=[b for block in a.controls(row,'https://fixture.invalid/')['blocks'] for b in block['buttons']]
+        buttons=[b for block in machine_cards.controls(row,'https://fixture.invalid/')['blocks'] for b in block['buttons']]
         self.assertTrue(any(b['label']=='Create skill' for b in buttons))
         self.assertTrue(any(b['label']=='Read instructions' for b in buttons))
         self.assertEqual(card['labels'], {'accept': 'Create skill', 'reject': 'Not now'})
@@ -88,7 +91,7 @@ class SkillsFromNotes(unittest.TestCase):
         self.app.skills.save(None, 'Partner listings', 'When partners swap listings.', 'Be generous with partners, always.')
         with self.store.connect() as db:
             db.execute("INSERT INTO skills(id,slug,name,description,body,status,origin,sha,author,created_at,updated_at) "
-                       "VALUES('sk_theirs','theirs','Team listings','theirs','Theirs.','on','shared',?, 'Sam',?,?)", (secrets.token_hex(32), a.now(), a.now()))
+                       "VALUES('sk_theirs','theirs','Team listings','theirs','Theirs.','on','shared',?, 'Sam',?,?)", (secrets.token_hex(32), timeutil.now(), timeutil.now()))
         with self.assertRaisesRegex(ValueError, "teammate's"):
             self.propose(self.notes[9:12] + self.notes[6:8], skill='Team listings')
         with self.assertRaisesRegex(ValueError, 'Partner listings'):
@@ -136,7 +139,7 @@ class SkillsFromNotes(unittest.TestCase):
         self.store.decide(out['suggestion_id'],'snooze','', 'later','dashboard')
         with self.store.connect() as db:
             row=dict(db.execute('SELECT * FROM suggestions WHERE id=?',(out['suggestion_id'],)).fetchone());row.update(self.store.suggestion_result(row,db))
-        labels=[b['label'] for block in a.controls(row,'https://fixture.invalid/')['blocks'] for b in block['buttons']]
+        labels=[b['label'] for block in machine_cards.controls(row,'https://fixture.invalid/')['blocks'] for b in block['buttons']]
         self.assertIn('Unsnooze',labels)
         self.assertNotIn('Create skill',labels)
         self.app.action('decide',{'suggestion_id':out['suggestion_id'],'choice':'accept','decision_id':'back'},owner_dashboard=True)
@@ -149,7 +152,7 @@ class SkillsFromNotes(unittest.TestCase):
     def buttons(self, sid):
         with self.store.connect() as db:
             row = dict(db.execute('SELECT * FROM suggestions WHERE id=?', (sid,)).fetchone()); row.update(self.store.suggestion_result(row, db))
-        return [b for block in a.controls(row, 'https://fixture.invalid/')['blocks'] for b in block['buttons']]
+        return [b for block in machine_cards.controls(row, 'https://fixture.invalid/')['blocks'] for b in block['buttons']]
 
     def test_existing_skills_are_checked_first_by_their_names_and_descriptions(self):
         self.assertIn('They have no skills yet', self.app.skills_from_notes_prompt())

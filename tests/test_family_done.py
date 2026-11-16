@@ -7,10 +7,13 @@ from pathlib import Path
 
 import test_family as tfam
 import test_fleet as tf
-from test_fleet import NOW, a, mail
+from test_fleet import NOW, mail
 
-fleet, family = a.fleet, a.fleet.family
-family_done = a.fleet.family_done
+import fleet
+import machine.actions as machine_actions
+import machine.main as machine_main
+family = fleet.family
+family_done = fleet.family_done
 FAM = tfam.FAM
 BILL = 'Please pay EUR 37.77 to BE71 0961 2345 6769 with reference +++090/9337/55493+++ by the 19th.'
 BILL_KEY = 'bill:BE71096123456769|090933755493'
@@ -42,7 +45,7 @@ class FamilyDone(unittest.TestCase):
         self.relay.directory['fleets'] = self.relay.directory['fleets'][1:]  # a Family only: no Work rules in the way
         self.fleet = fleet.Fleet(self.store.connect, tf.CONFIG, lambda: 'token', relay=self.relay)
         self.fleet.directory(refresh=True)
-        self.app = object.__new__(a.App)
+        self.app = object.__new__(machine_main.App)
         self.app.store, self.app.config, self.app.fleet = self.store, tf.CONFIG, self.fleet
 
     def todo(self, key, status='pending', message_id=None, body='Sign up for the school trip.', decided=None, mail_body=None):
@@ -121,7 +124,7 @@ class FamilyDone(unittest.TestCase):
         self.assertIsNone(self.line(card))
 
     def test_a_form_link_counts_the_same_in_a_sealed_store(self):
-        sealed = a.Store(Path(self.temp.name) / 'sealed.sqlite', protect=True)
+        sealed = machine_main.Store(Path(self.temp.name) / 'sealed.sqlite', protect=True)
         for n in range(2):
             letter = mail('home', 1, 'School <office@school.example>', 'owner@gmail.com')
             letter['body'] = f'Letter {n}: https://forms.gle/AbC123xyz789'
@@ -168,7 +171,7 @@ class FamilyDone(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'dashboard'):  # the owner's own tap, never an agent's
             self.app.action('family_still_needed', {'suggestion_id': card})
         self.assertEqual(self.app.action('family_still_needed', {'suggestion_id': card}, owner_dashboard=True), {'kept': True})
-        self.assertIn('family_still_needed', a.FAMILY_ACTIONS)
+        self.assertIn('family_still_needed', machine_actions.FAMILY_ACTIONS)
         self.fleet.handled_round()
         self.assertTrue(self.line(card)['kept'])
         self.assertEqual(self.row(card)['status'], 'pending')

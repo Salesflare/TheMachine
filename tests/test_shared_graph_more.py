@@ -14,7 +14,10 @@ import network_crypto as nc
 import shared_graph as sg
 import shared_graph_kept as sg_kept
 import test_shared_graph as base  # by module: its test classes run in its own file, not again here
-from test_shared_graph import BODY, DEAL, FLEET, HEALTH, PERSONAL, a, ago, fleet, graph, mail
+from test_shared_graph import BODY, DEAL, FLEET, HEALTH, PERSONAL, ago, fleet, graph, mail
+import machine.main as machine_main
+import machine.prompts.profile as machine_prompts_profile
+import timeutil
 
 
 class SharedGraphMore(base.SharedGraph):
@@ -160,7 +163,7 @@ class SharedGraphMore(base.SharedGraph):
         self.olive_mail()
         self.rounds()
         phone = self.machine('mem3', '-new')  # Mo's new Machine: new keys, same person
-        phone.set_meta('graph_start:' + FLEET, {'shown': a.now(), 'started': a.now()})
+        phone.set_meta('graph_start:' + FLEET, {'shown': timeutil.now(), 'started': timeutil.now()})
         self.boxes = [self.own, self.adm, phone]
         self.rounds()
         self.assertFalse([p for p in self.adm._prompts() if p['kind'] == 'member'])  # no tap for a known person
@@ -410,8 +413,8 @@ class SharedGraphMore(base.SharedGraph):
         self.rounds()
         self.assertIn(BODY, self.received(self.mem))
         with self.own.store.connect() as db:  # this project is Only you
-            db.execute("INSERT INTO projects(id,name,created_at,visibility) VALUES(77,'Quiet deal',?,'only_you')", (a.now(),))
-            db.execute("INSERT INTO event_projects(event_id,project_id,source,created_at) VALUES(?,77,'test',?)", (self.event_id(self.own, 'work-2'), a.now()))
+            db.execute("INSERT INTO projects(id,name,created_at,visibility) VALUES(77,'Quiet deal',?,'only_you')", (timeutil.now(),))
+            db.execute("INSERT INTO event_projects(event_id,project_id,source,created_at) VALUES(?,77,'test',?)", (self.event_id(self.own, 'work-2'), timeutil.now()))
         self.rounds()
         self.assertNotIn(BODY, self.received(self.mem))  # the whole thread, also its other messages
         self.assertNotIn('Quiet deal', json.dumps(self.team(self.mem)))
@@ -436,7 +439,7 @@ class SharedGraphMore(base.SharedGraph):
         view = self.own.graph_overview(FLEET)
         self.assertEqual([x['title'] for x in view['unsure']], ['Swap listings?'])
         self.assertEqual(view['sorted']['other'], 1)
-        app = object.__new__(a.App); app.store, app.fleet, app.config = self.own.store, self.own, self.own.config
+        app = object.__new__(machine_main.App); app.store, app.fleet, app.config = self.own.store, self.own, self.own.config
         app.graph_share_action('graph_share_many', {'event_ids': [self.event_id(self.own, 'work-30')], 'share': 'team'})
         self.rounds()
         self.assertIn('Shall we list each other?', self.received(self.mem))
@@ -489,7 +492,7 @@ class SharedGraphMore(base.SharedGraph):
 
     def test_share_with_chosen_teammates_from_share_these_reaches_only_them(self):
         self.peers()
-        app = object.__new__(a.App); app.store, app.fleet, app.config = self.own.store, self.own, self.own.config
+        app = object.__new__(machine_main.App); app.store, app.fleet, app.config = self.own.store, self.own, self.own.config
         fund = self.event_id(self.own, 'work-42')
         with self.assertRaisesRegex(ValueError, 'Choose who'):
             app.graph_share_action('graph_share_many', {'event_ids': [fund], 'share': 'people', 'people': []})
@@ -568,7 +571,7 @@ class SharedGraphMore(base.SharedGraph):
     def test_choosing_twice_for_one_company_asks_once_to_make_it_a_rule(self):
         self.add(self.own, *[mail('work', 50 + i, 'Lee Park <lee@client.example>', 'own1@acme.example', f'Note {i}', f'Note body {i}', 1, f't-note-{i}') for i in range(3)])
         self.judge(self.own, *[(f'work-{50 + i}', 'client', 'Lee wrote') for i in range(3)])
-        app = object.__new__(a.App); app.store, app.fleet, app.config = self.own.store, self.own, self.own.config
+        app = object.__new__(machine_main.App); app.store, app.fleet, app.config = self.own.store, self.own, self.own.config
         first = app.graph_share_action('graph_share', {'event_id': self.event_id(self.own, 'work-50'), 'share': 'only_you'})
         self.assertIsNone(first['suggest'])
         second = app.graph_share_action('graph_share', {'event_id': self.event_id(self.own, 'work-51'), 'share': 'only_you'})
@@ -628,17 +631,17 @@ class SharedGraphMore(base.SharedGraph):
 
     def test_the_review_is_told_billing_security_and_recruiting_are_never_client(self):
         for words in ('own bills', 'support tickets with the tools and suppliers', 'security', 'recruiting', 'never choose client'):
-            self.assertIn(words, a.SHARE_VERDICTS)
+            self.assertIn(words, machine_prompts_profile.SHARE_VERDICTS)
 
     def test_the_review_calls_deals_sensitive_and_partner_listings_client_and_groups_the_rest(self):
         for words in ('possible buyer, acquirer or investor', 'board matters and investor updates', 'fundraising',  # sensitive, not unsure
                       'partner company, also one in the same market', 'listing or link exchange',  # business as usual: client
                       'group:', 'suggest:', '"people"', 'share_groups'):
-            self.assertIn(words, a.SHARE_VERDICTS)
-        prompt = a.share_history_prompt('r1', 2, ['Partner and listing exchanges'])
+            self.assertIn(words, machine_prompts_profile.SHARE_VERDICTS)
+        prompt = machine_prompts_profile.share_history_prompt('r1', 2, ['Partner and listing exchanges'])
         self.assertIn('"group", "suggest"', prompt)
         self.assertIn('["Partner and listing exchanges"]', prompt)
-        self.assertNotIn('share_groups (', a.share_history_prompt('r1', 2))
+        self.assertNotIn('share_groups (', machine_prompts_profile.share_history_prompt('r1', 2))
 
     def test_a_second_companys_mailbox_starts_off_and_its_owner_decides(self):
         self.olive_mail()
@@ -785,7 +788,7 @@ class SharedGraphMore(base.SharedGraph):
                  mail('work', 24, 'Bo Hale <bo@buyer.example>', 'own1@acme.example', 'Closing date', 'We aim to close on June 3.', 1, 't-close'),
                  mail('work', 25, 'Lee Park <lee@client.example>', 'own1@acme.example', 'Support question', 'How do I export a report?', 0, 't-support'))
         with self.own.store.connect() as db:
-            graph.label(db, [self.event_id(self.own, 'work-24')], 'Sale: Buyer', 'review', a.now())
+            graph.label(db, [self.event_id(self.own, 'work-24')], 'Sale: Buyer', 'review', timeutil.now())
         self.own.graph_board_share(board, [{'fleet': FLEET, 'member': 'mem3'}])
         waiting = self.own.graph_unjudged(1)
         self.assertEqual([w['subject'] for w in waiting], ['Closing date'])  # the owner waits on it: before the rest
@@ -802,7 +805,7 @@ class SharedGraphMore(base.SharedGraph):
                  mail('side', 3, 'Pat Moss <pat@buyer.example>', 'olive@sidecorp.example', 'Side deal', 'Sidecorp side letter.', 1, 't-side-deal'),
                  mail('home', 24, 'Bo Hale <bo@buyer.example>', 'own1@home.example', 'From home', 'Home note on the sale.', 1, 't-home-deal'))
         with self.own.store.connect() as db:
-            graph.label(db, [self.event_id(self.own, 'side-3'), self.event_id(self.own, 'home-24')], 'Sale: Buyer', 'review', a.now())
+            graph.label(db, [self.event_id(self.own, 'side-3'), self.event_id(self.own, 'home-24')], 'Sale: Buyer', 'review', timeutil.now())
         self.own.graph_board_share(board, [{'fleet': FLEET, 'member': 'mem3'}])
         subjects = [w['subject'] for w in self.own.graph_unjudged()]
         self.assertNotIn('Side deal', subjects)  # never even queued to be sorted
@@ -874,7 +877,7 @@ class SharedGraphMore(base.SharedGraph):
             sg.set_hand(db, self.event_id(self.own, 'li-2'), 'private')
         self.add(self.own, meet('cal', 6, 'Lee raise', 'Lee asked about a raise for his team.'))
         with self.own.store.connect() as db:
-            graph.label(db, [self.event_id(self.own, 'cal-6')], 'Renewal: Client', 'review', a.now())
+            graph.label(db, [self.event_id(self.own, 'cal-6')], 'Renewal: Client', 'review', timeutil.now())
         self.judge(self.own, ('cal-2', 'unsure', 'Lee and seats'), ('cal-5', 'personal', 'Family talk'))
         waiting = [w['subject'] for w in self.own.graph_unjudged()]
         self.assertEqual(sorted(waiting[:3]), ['Lee raise', 'LinkedIn conversation', 'Renewal call'])  # the board's: sorted first
@@ -913,9 +916,9 @@ class SharedGraphMore(base.SharedGraph):
                                          'team_id': 'T0ACME0001', 'user_id': 'U0OLIVE001'}]
         with self.own.store.connect() as db:
             db.executemany('INSERT OR REPLACE INTO identity_names(identifier,name,email,checked_at) VALUES(?,?,?,?)',
-                           [('slack:U0ADA00001', 'ada', 'adm2@acme.example', a.now()), ('slack:U0LEE00001', 'Lee Park', 'lee@client.example', a.now())])
+                           [('slack:U0ADA00001', 'ada', 'adm2@acme.example', timeutil.now()), ('slack:U0LEE00001', 'Lee Park', 'lee@client.example', timeutil.now())])
             db.executemany('INSERT OR REPLACE INTO slack_members(user_id,outside,checked_at) VALUES(?,?,?)',
-                           [('U0ADA00001', 0, a.now()), ('U0LEE00001', 1, a.now())])
+                           [('U0ADA00001', 0, timeutil.now()), ('U0LEE00001', 1, timeutil.now())])
         self.add(self.own, self.slack(1, 'D0ADA00001', 'DM U0ADA00001', 'U0ADA00001', 'Lee wants the renewal by Friday, can you call him?'),
                  self.slack(2, 'D0ADA00001', 'DM U0ADA00001', 'U0OLIVE001', 'Sure, I will ping <@U0LEE00001> after lunch'),
                  self.slack(3, 'C0SUPPORT1', 'support', 'U0ADA00001', 'Lee is asking about the renewal seats'),
@@ -956,18 +959,18 @@ class SharedGraphMore(base.SharedGraph):
         self.add(self.own, mail('work', 30, 'Cy Ross <cy@fund.example>', 'own1@acme.example', 'Term sheet', 'Our term sheet for the round.', 1, 't-fund'))
         self.judge(self.own, ('work-30', 'sensitive', 'Cy sent a term sheet'))
         with self.own.store.connect() as db:
-            graph.label(db, [self.event_id(self.own, 'work-30')], 'Raise: Fund', 'review', a.now())
+            graph.label(db, [self.event_id(self.own, 'work-30')], 'Raise: Fund', 'review', timeutil.now())
         self.own.graph_board_share(board, [{'fleet': FLEET, 'member': 'mem3'}])
         self.rounds()
         self.assertNotIn('term sheet for the round', self.received(self.mem))
         edit = {'board_id': board, 'name': 'Acquisition conversations', 'stages': ['Talks', 'Signed'], 'about': 'M&A', 'visibility': 'people'}
         with self.own.store.connect() as db:
-            graph.save_board(db, {**edit, 'projects': ['Sale: Buyer', 'Raise: Fund']}, a.now())
+            graph.save_board(db, {**edit, 'projects': ['Sale: Buyer', 'Raise: Fund']}, timeutil.now())
         self.rounds()
         self.assertIn('term sheet for the round', self.received(self.mem))
         self.assertNotIn('term sheet for the round', self.received(self.adm))
         with self.own.store.connect() as db:
-            graph.save_board(db, {**edit, 'projects': ['Sale: Buyer']}, a.now())
+            graph.save_board(db, {**edit, 'projects': ['Sale: Buyer']}, timeutil.now())
             self.assertEqual(db.execute('SELECT visibility FROM boards WHERE id=?', (board,)).fetchone()[0], 'people')
         self.rounds()
         self.assertNotIn('term sheet for the round', self.received(self.mem))  # moved off: taken back
@@ -1032,7 +1035,7 @@ class SharedGraphMore(base.SharedGraph):
             with self.assertRaises(ValueError):
                 graph.clean_visibility('people')
             with self.assertRaises(ValueError):
-                graph.save_board(db, {'board_id': board, 'name': 'Acquisition conversations', 'stages': ['Talks'], 'about': 'M&A', 'visibility': 'people'}, a.now())
+                graph.save_board(db, {'board_id': board, 'name': 'Acquisition conversations', 'stages': ['Talks'], 'about': 'M&A', 'visibility': 'people'}, timeutil.now())
 
     # -- whose it is: each Machine shares what its own owner took part in
     def test_a_teammates_mail_seen_through_the_crm_never_goes_from_this_machine(self):
@@ -1283,7 +1286,7 @@ class SharedGraphMore(base.SharedGraph):
         text = 'Refund requests go out from the support inbox <b>with</b> the refund template.'
         with self.mem.connect() as db:  # kept before the plain-text check, say: what is used is plain words
             db.execute("INSERT INTO team_records(fleet,member,rid,kind,body,at) VALUES(?,?,?,?,?,?)",
-                       (FLEET, 'adm2', 'e' * 32, 'learning', json.dumps({'fp': 'e' * 32, 'kind': 'process', 'text': text, 'at': '2026-10-30'}), a.now()))
+                       (FLEET, 'adm2', 'e' * 32, 'learning', json.dumps({'fp': 'e' * 32, 'kind': 'process', 'text': text, 'at': '2026-10-30'}), timeutil.now()))
             texts = [i['text'] for i in fleet_learnings.usable(db, FLEET)]
         self.assertIn('Refund requests go out from the support inbox with the refund template.', texts)
         self.assertFalse(any('<' in t for t in texts))
@@ -1298,7 +1301,7 @@ class SharedGraphMore(base.SharedGraph):
             texts = [f'Refund requests get a reply from the support inbox with the {n} template.' for n in ('alpha', 'bravo', 'charlie', 'delta', 'echo')]
             for t in texts:
                 db.execute('INSERT INTO fleet_learnings(fleet,fp,kind,text,confidence,run_id,at) VALUES(?,?,?,?,?,?,?)',
-                           (FLEET, fleet_learnings.fingerprint(t), 'process', t, 0.9, 'r', a.now()))
+                           (FLEET, fleet_learnings.fingerprint(t), 'process', t, 0.9, 'r', timeutil.now()))
             self.assertEqual(len(fleet_learnings.pick(db, FLEET, 'Refund request', 'A customer wants a refund via the support inbox.')), fleet_learnings.USE_TOP)
             # by meaning when embeddings are on: closest first, none under the floor
             near = lambda text: [1.0, 0.0] if 'refund' in text.lower() and 'alpha' in text.lower() or text.startswith('title: Refund') else [0.0, 1.0]

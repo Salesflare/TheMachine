@@ -10,6 +10,9 @@ from pathlib import Path
 import ms_graph
 import own_addresses as oa
 import test_graph as tg
+import machine.sources.calendar as machine_sources_calendar
+import machine.store.review as machine_store_review
+import threading
 
 graph = tg.graph
 
@@ -225,7 +228,7 @@ class CompanyDomains(unittest.TestCase):
                                          {'id': 'x-me', 'service': 'x', 'email': '@SamTest'}, {'id': 'wa', 'service': 'whatsapp', 'email': 'Personal WhatsApp'}]}
         self.assertEqual([d['domain'] for d in oa.view(self.db, config)['domains']], ['acme.test', 'sideco.test'])
         self.assertEqual(oa.detected_domains(None, config), {'acme.test', 'sideco.test'})
-        self.assertNotIn('acmehq', tg.a.company_domains(config))
+        self.assertNotIn('acmehq', machine_sources_calendar.company_domains(config))
         self.assertEqual((oa.email_domain('Sam@Acme.Test'), oa.email_domain('@acmehq'), oa.email_domain('sam@localhost')), ('acme.test', '', ''))
 
     def test_never_a_free_mail_domain_or_nonsense(self):
@@ -353,8 +356,8 @@ class TheTeams(unittest.TestCase):
             rows = [dict(r) for r in db.execute('SELECT * FROM events ORDER BY occurred_at')]
         teams = self.store.team_inboxes(rows)
         self.assertEqual(teams, {self.ids[0]: 'support@acme.com'})
-        self.assertIn("marked as the team's", tg.a.review_view(rows[0], team_inbox=teams.get(rows[0]['id']))['team_inbox'])
-        self.assertNotIn('team_inbox', tg.a.review_view(rows[1]))
+        self.assertIn("marked as the team's", machine_store_review.review_view(rows[0], team_inbox=teams.get(rows[0]['id']))['team_inbox'])
+        self.assertNotIn('team_inbox', machine_store_review.review_view(rows[1]))
 
     def test_mine_makes_it_the_owners_again(self):
         with self.store.connect() as db:
@@ -377,7 +380,7 @@ class Dashboard(unittest.TestCase):
     """Settings, Account: the list in status, and Confirm or Remove from the dashboard only."""
     def setUp(self):
         tg.Graph.setUp(self)
-        self.app.graph_dirty = tg.a.threading.Event()
+        self.app.graph_dirty = threading.Event()
         with self.store.connect() as db:
             oa.save_fetched(db, 'work', oa.send_as_entries(sendas({'sendAsEmail': 'sales@acme.com', 'treatAsAlias': True}), 'sam@acme.com'), NOW)
             oa.refresh(db, tg.CONFIG, [], (), NOW)

@@ -9,9 +9,15 @@ from unittest.mock import patch
 
 import test_calendar_writes as tcw
 import test_fleet as tf
-from test_fleet import CONFIG, NOW, FakeRelay, a
+from test_fleet import CONFIG, NOW, FakeRelay
 
-fleet, family = a.fleet, a.fleet.family
+import fleet
+import calendar_writes
+import machine.actions as machine_actions
+import machine.main as machine_main
+import next_actions
+import timeutil
+family = fleet.family
 cw = tcw.cw
 FAM = 'fl_' + 'f' * 16
 WORK_ID = 'fl_' + 'b' * 16
@@ -43,7 +49,7 @@ class Family(unittest.TestCase):
         self.relay = FamilyRelay()
         self.fleet = fleet.Fleet(self.store.connect, CONFIG, lambda: 'token', relay=self.relay)
         self.fleet.directory(refresh=True)
-        self.app = object.__new__(a.App)
+        self.app = object.__new__(machine_main.App)
         self.app.store, self.app.config, self.app.fleet = self.store, CONFIG, self.fleet
         self.told = []
         self.fleet.make_card, self.fleet.tell = self.app.fleet_card, lambda text, anchor: self.told.append(text)
@@ -258,7 +264,7 @@ class PlanOnCalendar(unittest.TestCase):
 
     def tap(self, name, args, scopes=WRITE):
         transport = cw.CalendarTransport(self.app.config, lambda *x: 'pw', self.google.read, run=self.google.run)
-        with patch.object(a.next_actions, 'granted_scopes', lambda config, credential, account: set(scopes)), \
+        with patch.object(next_actions, 'granted_scopes', lambda config, credential, account: set(scopes)), \
                 patch.object(cw, 'CalendarTransport', lambda *x: transport):
             return self.app.action(name, args, owner_dashboard=True)
 
@@ -279,7 +285,7 @@ class PlanOnCalendar(unittest.TestCase):
         self.assertEqual((payload['summary'], payload['location']), ('Dinner at grandma’s', 'Grandma’s'))
         self.assertNotIn('description', payload)  # the member's note stays on the to-do, out of the event
         start = dt.datetime.fromisoformat(payload['start']['dateTime'])
-        self.assertEqual((start.hour, start.utcoffset()), (18, dt.datetime.combine(start.date(), dt.time(18), a.local_tz()).utcoffset()))
+        self.assertEqual((start.hour, start.utcoffset()), (18, dt.datetime.combine(start.date(), dt.time(18), timeutil.local_tz()).utcoffset()))
         self.assertEqual(dt.datetime.fromisoformat(payload['end']['dateTime']) - start, dt.timedelta(hours=1))
         self.assertEqual(command[command.index('--account') + 1], 'owner@gmail.com')
         body = self.card(done['card_id'])['body']
@@ -289,13 +295,13 @@ class PlanOnCalendar(unittest.TestCase):
         # Undo: the event goes (nobody told), the yes stays, the to-do gets its link back
         self.assertEqual(self.tap('family_plan_undo', {'id': 'fe1'}), {'removed': True})
         method, params, payload, _ = self.google.writes[-1]
-        self.assertEqual((method, params['eventId'], params['sendUpdates'], payload), ('calendar.events.delete', a.calendar_writes.event_id(family.plan_request('fe1')), 'none', None))
+        self.assertEqual((method, params['eventId'], params['sendUpdates'], payload), ('calendar.events.delete', calendar_writes.event_id(family.plan_request('fe1')), 'none', None))
         self.assertIn('calendar.google.com', self.card(done['card_id'])['body'])
         self.assertEqual(self.card(done['card_id'])['status'], 'pending')
         with self.assertRaisesRegex(ValueError, 'isn’t on your calendar'):
             self.tap('family_plan_undo', {'id': 'fe1'})
         self.assertEqual(len(self.google.writes), 2)
-        self.assertIn('family_plan_undo', a.FAMILY_ACTIONS)
+        self.assertIn('family_plan_undo', machine_actions.FAMILY_ACTIONS)
         with self.assertRaises(ValueError):  # the owner's own dashboard only
             self.app.action('family_plan_undo', {'id': 'fe1'})
 
@@ -325,7 +331,7 @@ class PlanOnCalendar(unittest.TestCase):
     def test_only_the_owners_tap_writes(self):
         # Always, by the Family's rule: accepted by itself, so no calendar write; the link is there
         self.fleet.set_rule(FAM, fleet.ALL, 'event', 'always')
-        with patch.object(a.next_actions, 'granted_scopes', lambda *x: set(WRITE)):
+        with patch.object(next_actions, 'granted_scopes', lambda *x: set(WRITE)):
             self.assertEqual(self.family_ask('event', {'title': 'Zoo trip', 'start': self.day}, 'fe5'), 'answered')
         self.assertEqual(self.google.writes, [])
         # a to-do (not a plan) never touches a calendar either
@@ -337,7 +343,7 @@ class PlanOnCalendar(unittest.TestCase):
     def test_undo_leaves_an_event_that_has_guests_now(self):
         self.family_ask('event', {'title': 'Zoo trip', 'start': self.day}, 'fe6')
         self.tap('fleet_decide', {'id': 'fe6', 'choice': 'once'})
-        google_id = a.calendar_writes.event_id(family.plan_request('fe6'))
+        google_id = calendar_writes.event_id(family.plan_request('fe6'))
         self.google.events[google_id]['attendees'] = [{'email': 'guest@home.example'}]
         with self.assertRaisesRegex(ValueError, 'has guests now'):
             self.tap('family_plan_undo', {'id': 'fe6'})

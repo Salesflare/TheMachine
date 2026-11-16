@@ -6,7 +6,8 @@ import unittest
 
 import test_next_actions as na
 import test_ux as ux
-a = ux.a
+import machine.app.review as machine_app_review
+import machine.store.decisions as machine_store_decisions
 
 
 class ValueMilestones(unittest.TestCase):
@@ -23,7 +24,7 @@ class ValueMilestones(unittest.TestCase):
 
     def report(self):
         with self.store.connect() as db:
-            return a.first_cards_report(db, [])
+            return machine_app_review.first_cards_report(db, [])
 
     def value(self):
         report = self.report()
@@ -54,7 +55,7 @@ class ValueMilestones(unittest.TestCase):
         self.assertGreaterEqual(first, value['first_prepared_at'])
         # Kept once: a later confirmed action doesn't move it
         with self.store.connect() as db:
-            a.note_first(db, 'first_verified_action', 'calendar')
+            machine_store_decisions.note_first(db, 'first_verified_action', 'calendar')
         self.assertEqual((self.value()['first_verified_action_at'], self.value()['first_verified_action']), (first, 'email'))
         text = json.dumps(self.report())
         for secret in ('Verified subject', 'Exact approved draft', 'recipient@example.com'):

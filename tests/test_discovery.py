@@ -11,9 +11,13 @@ import test_fleet as tf
 import test_friends as tfr
 from test_fleet import CONFIG, NOW
 
-discovery = tf.a.fleet.discovery
-fleet = tf.a.fleet
-graph = tf.a.graph
+import fleet  # noqa: E402
+import graph  # noqa: E402
+import machine.sources.whatsapp as machine_sources_whatsapp
+import own_addresses
+import security_levels
+
+discovery = fleet.discovery
 
 ON_NETWORK = {'nia@nia.example': ('nia', 'Nia North', False), 'lou@lou.example': ('lou', 'Lou', True),
               'sam@acme.example': ('sam', 'Sam', False)}
@@ -151,9 +155,9 @@ class Discovery(unittest.TestCase):
 
     def level(self, name):
         with self.store.connect() as db:
-            rules = tf.a.security_levels.apply(db, name)
+            rules = security_levels.apply(db, name)
         for ref, kind, rule in rules:  # as the dashboard does (assistant.py, security_level)
-            self.fleet.set_rule(ref, tf.a.security_levels.ALL, kind, rule)
+            self.fleet.set_rule(ref, security_levels.ALL, kind, rule)
         self.fleet.network_defaults()
 
     def defaults_log(self):
@@ -248,7 +252,7 @@ class Discovery(unittest.TestCase):
         self.fleet.discovery_round()  # this Machine joined earlier
         self.person('p-dad', 'dad@home.example', strength=8)
         with self.store.connect() as db:
-            tf.a.graph.set_role(db, 'p-dad', 'Father', 'owner', discovery.now())
+            graph.set_role(db, 'p-dad', 'Father', 'owner', discovery.now())
         self.ago(first_done=60, new_at=discovery.NEW_EVERY + 1, joined_checked=discovery.JOINED_EVERY + 1)
         self.fleet.discovery_round()
         self.assertNotIn('dad', self.people())  # not findable yet: nothing
@@ -558,7 +562,7 @@ class Discovery(unittest.TestCase):
             {'id': 'info', 'email': 'info@acme.example', 'transport': 'gog'}, {'id': 'desk', 'email': 'desk@acme.example', 'transport': 'gog'},
             {'id': 'pat', 'email': 'pat@acme.example', 'transport': 'gog'}]}
         with self.store.connect() as db:
-            tf.a.own_addresses.ensure(db)
+            own_addresses.ensure(db)
             db.execute("INSERT INTO own_address_choices(address,choice,at) VALUES('desk@acme.example','team',?)", (discovery.now(),))
         self.fleet.discovery_round()  # on by default
         sent = [b for b in self.relay.sent('/discover') if b['action'] == 'discoverable'][-1]
@@ -668,7 +672,7 @@ class PhoneDiscovery(unittest.TestCase):
             def read(self, command):
                 return {'messages': []}
         self.assertIsNone(graph.linked_number('12025550101@lid'))
-        tf.a.sync_whatsapp(self.store, self.config, {'id': 'wa', 'store': '/nonexistent'}, Linked())
+        machine_sources_whatsapp.sync_whatsapp(self.store, self.config, {'id': 'wa', 'store': '/nonexistent'}, Linked())
         with self.store.connect() as db:  # kept in plain form here only: the Network gets it hashed
             self.assertEqual([tuple(r) for r in db.execute('SELECT number,source FROM owner_numbers')], [('+12025550101', 'whatsapp')])
         self.assertEqual(self.fleet.own_numbers(), ['+12025550100', '+12025550101'])

@@ -18,8 +18,11 @@ from connectors import intercom
 from machine import names
 from machine.app import serve
 import shared_connectors as sc
-from test_intercom_replies import ACCOUNT, Fake, READ, REPLY, SHARED, a, conversation
+from test_intercom_replies import ACCOUNT, Fake, READ, REPLY, SHARED, conversation
 import types
+import machine.main as machine_main
+import machine.sources.connectors as machine_sources_connectors
+import sources
 
 MAIL = {'id': 'mail', 'service': 'gmail', 'transport': 'gog', 'email': 'alex@example.com', 'boundary': 'work:Example Support'}
 STRIPE_SHARED = {'id': 'stripe-f1', 'service': 'stripe', 'transport': 'api', 'stripe_account': 'acct_1', 'credential': 'shared-stripe-f1',
@@ -68,12 +71,12 @@ class OwnSignIn(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'events.sqlite')
+        self.store = machine_main.Store(Path(self.temp.name) / 'events.sqlite')
         self.fake = Fake(self)
         patch('urllib.request.OpenerDirector.open', side_effect=self.fake.respond).start()
         self.addCleanup(patch.stopall)
         tokens = {'intercom': READ, 'intercom-reply': REPLY, 'shared-intercom-f1': READ}
-        self.helpers = types.SimpleNamespace(SourceError=a.SourceError, Skips=a.CONNECTOR_HELPERS.Skips, iso=a.CONNECTOR_HELPERS.iso,
+        self.helpers = types.SimpleNamespace(SourceError=sources.SourceError, Skips=machine_sources_connectors.CONNECTOR_HELPERS.Skips, iso=machine_sources_connectors.CONNECTOR_HELPERS.iso,
                                              credential=lambda config, name: tokens[name])
         self.accounts = [dict(SHARED), dict(MAIL)]  # only the share at first
         self.store.accounts = self.accounts
@@ -85,7 +88,7 @@ class OwnSignIn(unittest.TestCase):
         self.store.decide(self.sid, 'accept', '', 'accept-' + self.sid, 'dashboard')
 
     def app(self):
-        app = object.__new__(a.App)
+        app = object.__new__(machine_main.App)
         app.store, app.config = self.store, {'accounts': self.accounts}
         return app
 
