@@ -351,7 +351,7 @@ class Cli(unittest.TestCase):
         self.assertEqual(brain.link(), 'existing')
         self.assertFalse(gbrain.Brain({'gbrain': {'linked': 'existing'}}, run=run, which=lambda _: None, environ=env).unlink())
         self.assertIn('gbrain', servers)
-        self.assertTrue(gbrain.Brain({'gbrain': {'linked': 'machine', 'bin': str(binary)}}, run=run, which=lambda _: None, environ=env).unlink())
+        self.assertTrue(gbrain.Brain({'gbrain': {'linked': 'machine', 'bin': str(binary.resolve())}}, run=run, which=lambda _: None, environ=env).unlink())
         self.assertNotIn('gbrain', servers)
 
 

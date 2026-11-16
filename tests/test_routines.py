@@ -4,6 +4,7 @@ time that waits for the usage budget, three honest ends (Ready, Nothing new, Did
 result didn't work), a result only from the run's own session, and the owner's Pause, Resume, Change when, Stop and Run
 now from the dashboard only. Separate from recurring to-dos: only recurring.py's rhythm math is shared."""
 import datetime as dt
+import os
 import shlex
 import sys
 import tempfile
@@ -484,8 +485,12 @@ class Runs(unittest.TestCase):
             with self.assertRaises(ValueError):
                 self.app.action(action, {'id': rid, 'words': 'x', 'steps': {'get': {'command': 'true'}}}, owner_dashboard=False)
         self.assertEqual(self.app.routines_view()['routines'][0]['steps'], {})
+        # A short folder: a run sees no string of 40 or more key-like characters (routine_imports.TOKEN), and a path such
+        # as macOS's /var/folders/… temporary folder is one
+        folder = tempfile.TemporaryDirectory(dir='/tmp')
+        self.addCleanup(folder.cleanup)
         self.act('routine_edit', id=rid, words='Sum up my open deals', steps={'get': {
-            'command': self.py("import os; print('3 open deals in', os.getcwd(), 'key sk-abcdefghijklmnop1234')"), 'cwd': self.temp.name}})
+            'command': self.py("import os; print('3 open deals in', os.getcwd(), 'key sk-abcdefghijklmnop1234')"), 'cwd': folder.name}})
         self.assertEqual(self.app.routines_view()['routines'][0]['steps']['get']['timeout'], 60)
         self.act('routine_run_now', id=rid)
         self.app.routines_step()  # Get data first: no turn yet
@@ -494,7 +499,7 @@ class Runs(unittest.TestCase):
         self.app.routines_step()
         message = self.starts()[0]['message']
         self.assertIn('Get data ran on the owner\'s Machine', message)
-        self.assertIn('3 open deals in ' + self.temp.name, message)  # in its folder
+        self.assertIn('3 open deals in ' + os.path.realpath(folder.name), message)  # in its folder (macOS: /tmp is /private/tmp)
         self.assertNotIn('sk-abcdefghijklmnop1234', message)  # token-like strings never reach a run
         self.report('**3** open deals.')
         self.assertEqual(self.app.routines_view()['routines'][0]['runs'][0]['result'], '**3** open deals.')
