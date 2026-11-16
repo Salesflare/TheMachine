@@ -469,7 +469,9 @@ class FactsStore:
         messages is kept only when the quote is in it (text.quoted_in: case, spacing, quote marks, dashes and Unicode
         forms aside), and keeps that stretch as its source; otherwise nothing is saved and it is logged, never an error
         for the owner. A rule steers every later task of its kind, so it needs the owner's own words as much as a fact
-        does, and a note that only points at a message ("do what they ask") has no words that say one."""
+        does, and a note that only points at a message ("do what they ask") has no words that say one. This checks only
+        that the quote is the owner's; that it says the fact (what holds, about whom, that it lasts, and no trust the
+        owner didn't give) is the prompts' contract with the model (machine/prompts/review.py FACT_FROM_WORDS)."""
         text = ' '.join(str(text or '').split())
         contact, kind = kind == contact_facts.KIND, 'fact' if kind == contact_facts.KIND else kind
         notes = source is not None and str(source).startswith('notes:') and str(decision_id).startswith(str(source) + ':') and not replaces

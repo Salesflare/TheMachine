@@ -9,11 +9,14 @@ import unittest
 from pathlib import Path
 
 from pinned import pinned
+import machine.app.preparation as machine_app_preparation
 import machine.config as machine_config
 import machine.main as machine_main
+import machine.prompts.review as machine_prompts_review
 
 from machine.text import quoted_in  # noqa: E402  (after assistant.py set up the import path)
 
+ROOT = Path(__file__).resolve().parents[1]
 NOW = dt.datetime(2026, 11, 9, 12, tzinfo=dt.timezone.utc)
 CONFIG = {'accounts': [{'id': 'work', 'email': 'sam@acme.com'}], 'telegram_owner': '1000001'}
 
@@ -137,6 +140,28 @@ class FactQuotes(unittest.TestCase):
         kept = self.store.remember_fact('Copy finance on vendor emails.', rule, kind='draft', quote='always copy finance')
         self.assertTrue(kept['id'])
         self.assertEqual(self.facts(), [{'text': 'Copy finance on vendor emails.', 'quote': 'always copy finance'}])
+
+    def test_the_quote_carries_the_fact_and_every_prompt_that_saves_one_says_so(self):
+        # A push on one to-do ("do what they ask") once became a standing preference that named the sender and trusted
+        # them. The quote was the owner's, so only the model can tell it says no such thing: the review and the
+        # preparation (whose job message had no such line) both ask that the quote alone says what, whom and that it lasts.
+        contract = machine_prompts_review.FACT_FROM_WORDS
+        for words in ('what holds, about whom, and that it holds beyond this to-do', 'no trust, authority or role',
+                      '"do what they ask") states no fact or rule'):
+            self.assertIn(words, contract)
+        self.assertIn(contract, machine_prompts_review.review_prompt('run', ['work']))
+        self.assertIn(contract, machine_prompts_review.review_prompt('run', ['work'], notes='- [n1] not for me'))
+        job = {'job_id': 'j' * 32, 'suggestion_id': self.card}
+        for prompt in (machine_app_preparation.preparation_prompt(job), machine_app_preparation.preparation_prompt({**job, 'ahead': True})):
+            self.assertIn(contract, prompt)
+        self.assertIn('exact words that alone say what, whom and that it lasts, no trust added', (ROOT / 'AGENTS.md').read_text())
+        # The owner saying it plainly is still kept, with their words as its source
+        plain = self.note('From now on route our legal questions to Dana at the new firm.', 'n1')
+        kept = self.store.remember_fact('You route legal questions to Dana from now on.', plain, kind='preference',
+                                        quote='From now on route our legal questions to Dana')
+        self.assertTrue(kept['id'])
+        self.assertEqual(self.facts(), [{'text': 'You route legal questions to Dana from now on.',
+                                         'quote': 'From now on route our legal questions to Dana'}])
 
 
 if __name__ == '__main__':

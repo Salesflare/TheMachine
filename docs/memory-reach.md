@@ -14,7 +14,10 @@ made-up data, no model call), and what is still missing. How memory is picked fo
   (`webchat-said:<id>`). Every fact from the owner's own words (a chat message or a note on a to-do) carries a short
   `quote` of them, copied exactly in the language they wrote; `Store.remember_fact` keeps it only when the quote is in
   that message (`text.quoted_in`: case, spacing, quote marks, dashes and Unicode forms aside), else it logs it and saves
-  nothing. The quote shows under the fact as its source. The model saves without being asked: a durable fact said in passing counts, small talk and
+  nothing. The quote shows under the fact as its source. The quote carries the fact: the review and preparation
+  prompts (`FACT_FROM_WORDS`) ask that those words alone say what holds, about whom and that it lasts, and that
+  the fact adds no one and no trust the owner didn't give. A push on one to-do, an OK, or "do what they ask" is no
+  fact, so what someone else's message asks never becomes a standing preference. The model saves without being asked: a durable fact said in passing counts, small talk and
   one-off requests don't. In OpenClaw's Code Mode tool descriptions never reach the model, so the bridge also puts
   this habit (save with the chat's own tool, look up with `assistant_memory` before answering) in the system prompt of
   the owner's main chat (`before_prompt_build`, `MEMORY_HABIT`). A note or correction on a to-do (Change, Not needed, a
