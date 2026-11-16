@@ -5,12 +5,15 @@ added by hand."""
 import collections
 import json
 
+import lookalike
 from graph import Union, linkedin_key, person_name, signature_pairs
 
 
 def join_identities(db, per_event, gone, names, keys, senders):
     merges = db.execute('SELECT a,b,same,source FROM graph_merges ORDER BY created_at').fetchall()
-    union = Union(frozenset((r['a'], r['b'])) for r in merges if not r['same'])  # Not the same, and an undone merge
+    # Not the same, and an undone merge; and never an address with one at a domain imitating it, by any join but the
+    # owner's own merge (lookalike.py): the imitation would read as the real contact
+    union = Union((frozenset((r['a'], r['b'])) for r in merges if not r['same']), refuse=lookalike.apart_people)
     known = {identifier for (_, _, _, _, found) in per_event.values() for identifier, _, _, _ in found}
     for identifier in sorted(known):
         union.find(identifier)

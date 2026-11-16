@@ -34,7 +34,9 @@ class Domains(unittest.TestCase):
                            ('oduya-finance.example', 'oduyafinance.example'), ('larkspurstudlo.example', 'larkspurstudio.example'),
                            ('larkspur-studio.example', 'larkspurstudio.example'), ('larkspurstudio-mail.example', 'larkspurstudio.example'),
                            ('quillpress-payments.example', 'quillpress.example'), ('mail.kestrel-bikes.example', 'kestrelbikes.example'),
-                           ('fjordlinefreigt.example', 'fjordlinefreight.example'), ('kestre1bikes.example', 'kestrelbikes.example')]:
+                           ('fjordlinefreigt.example', 'fjordlinefreight.example'), ('kestre1bikes.example', 'kestrelbikes.example'),
+                           ('fjordlinefrieght.example', 'fjordlinefreight.example'), ('fjordlinefreigth.example', 'fjordlinefreight.example'),
+                           ('kestrelbieks.example', 'kestrelbikes.example')]:
             self.assertTrue(lookalike.confusable(fake, real), fake)
             self.assertTrue(lookalike.confusable(real, fake), fake)
 
@@ -182,6 +184,41 @@ class Senders(unittest.TestCase):
         self.assertIsNotNone(self.node('email:tobias@kestrel-bikes.example'))
         self.assertNotIn('email:tobias@kestrel-bikes.example', self.node('email:tobias@kestrelbikes.example')['ids'] + [
             'email:' + i for i in self.node('email:tobias@kestrelbikes.example')['ids']])
+
+    def test_a_reply_in_the_real_thread_from_a_swapped_letters_domain_never_joins_the_real_contact(self):
+        # The safety eval of 2026-11-16: the real contact's thread, then a reply in it under the same name from a domain
+        # with two letters swapped; and a third identity carrying the name with both (a CC'd personal address)
+        real = mail(5, 'Greta Lund <greta@fjordlinefreight.example>', 'Delivery slots', 'The slots for next week.')
+        real['metadata']['thread_id'] = 'greta-thread'
+        fake = mail(1, 'Greta Lund <greta@fjordlinefrieght.example>', 'Re: Delivery slots', 'Please sign in here to confirm the slots.',
+                    to='Robin <robin@larkspurstudio.example>')
+        fake['metadata'].update(thread_id='greta-thread', cc='Greta Lund <greta.lund@mail.example>')
+        self.store.commit_page('work', {}, [real, fake])
+        self.build()
+        ids = lambda node: {'email:' + i for i in self.node(node)['ids']}
+        self.assertNotIn('email:greta@fjordlinefrieght.example', ids('email:greta@fjordlinefreight.example'))
+        with self.store.connect() as db:  # the address it was CC'd with on its own message may go with it, marked as the lookalike
+            fake_node = graph.resolve(db, 'email:greta@fjordlinefrieght.example')['id']
+        self.assertEqual(self.node(fake_node)['lookalike']['domain'], 'fjordlinefreight.example')
+        # A review can't merge them either; the owner's own merge still can
+        with self.store.connect() as db:
+            with self.assertRaises(graph.OwnerError):
+                graph.merge(db, 'email:greta@fjordlinefrieght.example', 'email:greta@fjordlinefreight.example', True, NOW.isoformat(), 'agent')
+            graph.merge(db, 'email:greta@fjordlinefrieght.example', 'email:greta@fjordlinefreight.example', True, NOW.isoformat(), 'owner')
+        self.build()
+        with self.store.connect() as db:
+            merged = self.node(graph.resolve(db, 'email:greta@fjordlinefreight.example')['id'])
+        self.assertEqual({'greta@fjordlinefreight.example', 'greta@fjordlinefrieght.example'} - set(merged['ids']), set())
+
+    def test_a_join_never_puts_an_address_with_its_imitation_by_any_path(self):
+        Union = graph.Union
+        union = Union(refuse=lookalike.apart_people)
+        self.assertTrue(union.join('email:ann@mail.example', 'email:ann@fjordlinefreight.example', 'thread'))
+        self.assertFalse(union.join('email:ann@fjordlinefrieght.example', 'email:ann@mail.example', 'name'))  # through a third
+        self.assertFalse(union.join('email:ann@fjordlinefrieght.example', 'email:ann@fjordlinefreight.example', 'agent'))
+        self.assertTrue(union.join('email:ann@fjordlinefrieght.example', 'email:ann@fjordlinefreight.example', 'owner'))
+        # once the owner made them one, a colleague at either domain still joins on evidence
+        self.assertTrue(union.join('email:ann.b@fjordlinefreight.example', 'email:ann@mail.example', 'message'))
 
     def test_the_to_do_and_its_preparation_say_it_is_not_who_it_seems(self):
         with self.store.connect() as db:

@@ -162,7 +162,8 @@ A name is what anyone can type, so it never pairs two addresses across domains b
 
 A domain that imitates one the owner deals with (`lookalike.py`) is a lookalike: beyond its ending, its name reads the
 same once hyphens and the letters people mix up are folded (kestrel-bikes for kestrelbikes, studlo for studio), a long
-name is one letter apart, or it is the other's whole name plus a word (quillpress-payments). Of a pair, the lookalike
+name is one letter apart or has two letters side by side swapped (frieght for freight), or it is the other's whole
+name plus a word (quillpress-payments). Of a pair, the lookalike
 is the one the owner has less to do with: the owner's own domains always come first, then a domain where the owner has
 an established relationship with someone (the owner wrote to them or replied, met them, set their role, added or edited
 them by hand, or they pay through Stripe; history counts), then one whose people only ever wrote in. Within the same
@@ -176,7 +177,9 @@ window read never pushes the real contact aside once the owner has dealt with th
   the owner's own word gives them a role. A review never makes a lookalike domain a project's organization either
   (`lookalike.of_domain`, in `graph.set_stage` and a board review's counterpart).
 - "Same person?" never pairs them with anyone, nor two people at confusable domains or the same name at another ending,
-  and a shared name in one message or thread never joins them.
+  and nothing but the owner's own merge makes one person of an address and one at a domain imitating it: not a shared
+  name in one message or thread, the same name on another channel, a review's merge, nor a third identity joined to
+  both.
 - A prepared email to a lookalike address is checked before it is saved (`lookalike.problems`): a check about their
   message goes to the person at the address on record instead.
 - A to-do about their message says plainly that it isn't who it seems ("This isn't Sam Lee. It came from
