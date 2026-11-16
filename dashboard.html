@@ -3,6 +3,12 @@
 <meta name="theme-color" content="#1b1c1f">
 <script>// The mobile app (its WebView says TheMachineApp/<n>): nothing that leads to buying is shown in it ([data-buy]).
 if(/ TheMachineApp\/\d/.test(navigator.userAgent))document.documentElement.classList.add('in-app');
+// The visible part of the window as --vv-h and --vv-top on <html> (the chat column and sheets on a phone follow it,
+// todos-chat-compose.js chatKeyboard). Set here first, while the page is still empty: a custom property changed on <html>
+// later restyles every element. Written only when it changes, for the same reason.
+function vvVars(){const v=window.visualViewport;if(!v)return;const z=Math.abs((v.scale||1)-1)>.01,r=document.documentElement.style,
+ set=(k,x)=>{if(r.getPropertyValue(k)!==x)r.setProperty(k,x)};set('--vv-h',(z?innerHeight:v.height)+'px');set('--vv-top',(z?0:Math.max(0,v.offsetTop))+'px')}
+vvVars();
 // The to-dos are what the page waits on: their request starts here, beside the page's own script, not after it has run
 // (shell-network.js statusFirst takes the answer). A failed one is asked again there. X-Status-Kept: the Machine may answer
 // with the status it built a moment ago, and the page asks for the current one right after (shell-tabs.js refresh).
