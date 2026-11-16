@@ -162,6 +162,36 @@ class SamePerson(unittest.TestCase):
         self.assertEqual([(s['id'], s['why']) for s in asked], [('email:k.lane@globex.example', 'Similar name, both at globex.example')])
         self.assertNotIn('email:kit@initech.example', {s['id'] for s in asked})  # nothing shared: not even a question
 
+    def test_only_a_first_name_at_other_domains_needs_strong_evidence(self):
+        # Cold senders who share a first name, at unrelated domains, on one big project or with one common role
+        self.add(tg.mail(3, 'Rory <rory@quill-law.example>', 'sam@acme.com'),
+                 tg.mail(3, 'Rory <rory@harbor-homes.example>', 'sam@acme.com'),
+                 tg.mail(2, 'Wren Ash <wren@ironfleet.example>', 'sam@acme.com'),
+                 tg.mail(2, 'Wren <wren@carcare.example>', 'sam@acme.com'),
+                 tg.mail(2, 'Tam Olsen <tam@gradeup.example>', 'sam@acme.com'),
+                 tg.mail(2, 'Tam <tam@capital.example>', 'sam@acme.com'),
+                 tg.mail(1, 'Ivo <ivo@north.example>', 'sam@acme.com'),
+                 tg.mail(1, 'Ivo <ivo@south.example>', 'sam@acme.com'))
+        on_project = ['email:rory@quill-law.example', 'email:rory@harbor-homes.example', 'email:wren@ironfleet.example', 'email:wren@carcare.example']
+        with self.store.connect() as db:
+            db.execute("INSERT INTO projects(id,name,created_at) VALUES(7,'Early testers',?)", (STAMP,))
+            db.executemany('INSERT INTO project_people(project_id,node_id,created_at) VALUES(7,?,?)', [(n, STAMP) for n in on_project])
+            db.executemany("INSERT INTO person_roles(identifier,role,source,created_at) VALUES(?,'former trial user','review',?)",
+                           [(n, STAMP) for n in ('email:tam@gradeup.example', 'email:tam@capital.example')])
+            # the same number on record for both Ivos: that is evidence
+            db.executemany('INSERT INTO person_edits(identifier,fields,updated_at) VALUES(?,?,?)',
+                           [(n, json.dumps({'phones': {'added': [number]}}), STAMP)
+                            for n, number in (('email:ivo@north.example', '+32 470 00 00 51'), ('email:ivo@south.example', '0470 00 00 51'))])
+            db.execute("INSERT INTO graph_same(a,b,why,score) VALUES('email:rory@harbor-homes.example','email:rory@quill-law.example',"
+                       "'Similar name, on the same project',1.5)")  # what an older build asked
+        self.build()
+        self.assertEqual(self.same_pairs(), {('email:ivo@north.example', 'email:ivo@south.example')})
+        self.assertEqual(self.node('email:rory@quill-law.example')['same'], [])  # its person page asks nothing either
+        self.assertEqual(self.node('email:ivo@north.example')['same'][0]['why'], 'Similar name, the same phone number')
+        self.assertEqual(len(self.people()), 8)  # an older question just goes: nothing merged
+        with self.store.connect() as db:
+            self.assertFalse(db.execute('SELECT 1 FROM graph_merges').fetchone())  # nor kept apart as Not the same
+
     def test_her_number_in_her_own_mail_joins_a_colleagues_does_not(self):
         own = tg.mail(3, 'Ann Ito <ann@client.example>', 'sam@acme.com')
         own['body'] = 'Thanks!\n\nAnn Ito\nClient Co\n+32 470 00 00 41'

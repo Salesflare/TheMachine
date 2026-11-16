@@ -64,7 +64,7 @@ When two people might be one, their page asks if they are the same person, and P
 
 Someone at an address that only looks like one you know, like acme-corp.example for acmecorp.example, is never offered as the same person, and only you can give them a role.
 
-A name alone is never enough across two domains, since anyone can type one: two addresses at different domains are only offered when something else links them, like the same people or a project. Someone using your own name at an address that isn't yours is never offered. Add your other addresses under Settings, [Your addresses](settings.md#your-addresses), instead.
+A name alone is never enough across two domains, since anyone can type one: two addresses at different domains are only offered when something else links them, like the same people or a project. When only a first name matches, like "Sam" and "Sam Lee", it takes the same phone number or LinkedIn profile. Someone using your own name at an address that isn't yours is never offered. Add your other addresses under Settings, [Your addresses](settings.md#your-addresses), instead.
 
 A shared address, like info@ or a mailing list, is never joined to the people who write through it. A work contact from outside your company and a personal chat with only a name in common are not joined by themselves: they are listed as a question.
 

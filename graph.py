@@ -14,7 +14,7 @@ full name is on two identities in one message or conversation, a lookup found th
 profile for both, their WhatsApp number is in their own mail, the same full name appears on two
 different channels (one person with it per channel; never through a shared address, graph_joins.py), or the owner or agent says so (merges). Weaker
 evidence (that name shared by two people on one channel or by a work contact and a personal chat, a similar name with the same company, people,
-project or role) is only offered as "Same person?" (graph_same); the owner's Merge or Not the same is
+project or role; only a first name in common across domains, with the same company domain, phone or LinkedIn) is only offered as "Same person?" (graph_same); the owner's Merge or Not the same is
 kept in graph_merges, and Not the same also undoes a merge for good. Projects are named
 by the review agent and the owner, and spread to the rest of their threads; a signal that reads like
 a labeled one and shares a person with it is probably part of it too (weaker, until a review
@@ -897,6 +897,18 @@ def linkedin_key(url):
     return found[1].casefold() if found else None
 
 
+def phone_key(value):
+    """A phone number as two records compare it: its last nine digits (+32 470 and 0470 are one number), else None."""
+    digits = re.sub(r'\D', '', str(value or ''))
+    return digits[-9:] if len(digits) >= 9 else None
+
+
+def first_name_only(a, b):
+    """Whether two similar names agree on no more than a first name: "Gary" and "Gary Wilson", "Frank" and "Frank".
+    "Alex Lee" and "Alexander Lee" share a surname too."""
+    return not (len(a) >= 2 and len(b) >= 2 and a[-1] == b[-1] and len(a[-1]) >= 2)
+
+
 def own_text(body):
     """A message's own text: without the quoted mail it answers or forwards, where other people's signatures are."""
     body = str(body or '')
@@ -938,8 +950,9 @@ def signature_pairs(db, senders, best, known):
 def likely_same(people, union, together, projects, never=lambda a, b: False):
     """Pairs of people who may be one, for the owner to Merge or keep apart: [(a, b, why, score)]. The same full name at a
     domain in common (or no address on one side) is enough to ask; a similar name, or one across domains, needs something
-    shared: people seen with both, a project, the same role. A name read from an address (jane.doe@) is only ever similar;
-    never(a, b): pairs never asked (machine/graph/same_person.py)."""
+    shared: people seen with both, a project, the same role. Only a first name in common ("Gary" and "Gary Wilson") at
+    domains with none in common needs strong evidence instead: the same company domain, phone number or LinkedIn profile.
+    A name read from an address (jane.doe@) is only ever similar; never(a, b): pairs never asked (machine/graph/same_person.py)."""
     buckets = collections.defaultdict(list)
     for node, p in people.items():
         if p['words']:
@@ -965,6 +978,13 @@ def likely_same(people, union, together, projects, never=lambda a, b: False):
                 shared = []
                 if pa['domains'] & pb['domains']:
                     shared.append(f"both at {sorted(pa['domains'] & pb['domains'])[0]}")
+                if pa.get('phones', set()) & pb.get('phones', set()):
+                    shared.append('the same phone number')
+                if pa.get('linkedin', set()) & pb.get('linkedin', set()):
+                    shared.append('the same LinkedIn profile')
+                if match == 'similar' and first_name_only(pa['words'], pb['words']) and pa.get('mail') and pb.get('mail') \
+                        and not pa['mail'] & pb['mail'] and not shared:
+                    continue  # only a first name in common, at other domains: a project, a role or people around them are no evidence
                 if pa['role'] and pa['role'] == pb['role']:
                     shared.append('the same role')
                 if together(pair[0]) & together(pair[1]):
