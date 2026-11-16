@@ -401,7 +401,7 @@ def collect(reader, options=Options(), now=None):
             leave('private_facts')  # about a record that stays out
             continue
         base = {'id': 'fact-' + str(f['id']), 'text': clip(f['text'], 2000), 'said_at': f.get('confirmed_at') or f['created_at'],
-                'learned_at': f['created_at'], 'said_by': _said_by(f.get('source')), 'sources': refs_of(f['events'])}
+                'learned_at': f['created_at'], 'said_by': _said_by(f.get('source'), f.get('kept_at')), 'sources': refs_of(f['events'])}
         if f['kind'] == 'draft':
             rule_rows.append({**base, 'id': 'rule-' + str(f['id']), 'applies_to': 'drafts'})
             continue
@@ -531,8 +531,12 @@ def collect(reader, options=Options(), now=None):
     }
 
 
-def _said_by(source):
+def _said_by(source, kept_at=None):
+    """ai:<name> for a connected AI's fact, and for one imported from another assistant that the owner didn't edit
+    (memory_import.py: ai:<assistant> import); else owner."""
     source = str(source or '')
+    if source.startswith('import:') and not kept_at:
+        return 'ai:' + {'chatgpt': 'ChatGPT', 'claude': 'Claude', 'gemini': 'Gemini'}.get(source[7:], 'another AI') + ' import'
     return 'ai:' + (' '.join(source[3:].split())[:60] or 'a connected AI') if source.startswith('ai:') else 'owner'
 
 
@@ -553,7 +557,7 @@ def _history(past, alias, private, refs_of, leave):
             continue
         rule, removed = f['kind'] == 'draft', f.get('removed_at')
         source = str(f.get('source') or '')
-        said_by = _said_by(source) if source.startswith('ai:') else 'the-machine' if f.get('condensed') and not f.get('kept_at') else 'owner'
+        said_by = _said_by(source, f.get('kept_at')) if source.startswith(('ai:', 'import:')) else 'the-machine' if f.get('condensed') and not f.get('kept_at') else 'owner'
         rows.append({'id': ('rule-' if rule else 'fact-') + str(f['id']), 'kind': 'rule' if rule else 'fact', 'status': status,
                      'text': clip(f['text'], 2000), 'sort': None if rule else f.get('fact_kind') if f.get('fact_kind') in FACT_SORTS else 'fact',
                      'about': about, 'side': f.get('side'), 'said_by': said_by, 'said_at': f.get('confirmed_at') or f['created_at'],

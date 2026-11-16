@@ -16,7 +16,7 @@ const cards=Array.from({length:12},(_,i)=>({id:'e5e5e5e5e5e5e5'+String(i).padSta
 let extra={};
 const state=()=>({suggestions:cards,promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],review_live:{runs:[]},
  connectors:[],fleet:{on:false,fleets:[]},...extra});
-const KEPT={greeting:{name:'Sam'},setup_card:{since:daysAgo(3),mail_accounts:1,calendar:true,phones:0,more:false,dismissed:[]},
+const KEPT={greeting:{name:'Sam'},setup_card:{since:daysAgo(3),mail_accounts:1,calendar:true,phones:0,more:false,memory:true,dismissed:[]},
  connectors:[{id:'mail',service:'gmail',email:'owner@example.org',display_name:'Mail',status:'ok'}],fleet:{on:true,fleets:[]},talk_ready:true};
 let release=null,held=null;
 const frames=page=>page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(()=>setTimeout(r)))));  // what's drawn is painted

@@ -44,6 +44,7 @@ textarea:focus,textarea.filled{height:84px;border-color:var(--border-strong)}
 .first-look .fl-names{flex-basis:100%;color:var(--muted)}
 .first-look .fl-first{color:var(--cream);font-weight:600;animation:fl-in .4s ease}
 .all-clear.first-look-empty .fl-names{display:block;margin-top:6px}
+.all-clear.first-look-empty .fl-import{display:block;margin:12px auto 0;min-height:32px;padding:4px 12px;font-size:var(--fs-sm)}  /* While you wait: import (flImport) */
 @keyframes fl-in{from{opacity:0}to{opacity:1}}
 @media (prefers-reduced-motion:reduce){.fl-names,.fl-bar.fl-on{animation:none}}
 .all-clear.first-look-empty .fl-bar{width:220px;max-width:70vw;margin:10px auto 4px}

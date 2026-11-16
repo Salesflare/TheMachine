@@ -17,7 +17,7 @@ const CAL={id:'cal',service:'calendar',email:'owner@example.org',display_name:'C
 const TODO={id:'ab'.repeat(8),title:'Reply to Robin about the garden plan',body:'Robin asked for the dates.',status:'pending',scope:'personal',created_at:now,event_ids:[1]};
 let connectors=[],suggestions=[],manage=null,paired=false,reviewsOn=true,live={runs:[]},setup={};
 const fresh=()=>({closed:false,dismissed:[],phones:0,whatsapp:false,calendar:connectors.some(c=>c.service==='calendar'),
- mail_accounts:connectors.filter(c=>['gmail','outlook'].includes(c.service)).length,add:'google',more:false,since:now});
+ mail_accounts:connectors.filter(c=>['gmail','outlook'].includes(c.service)).length,add:'google',more:false,memory:true,since:now});
 const status=()=>({suggestions,promises:[],connectors,suggestion_counts:{pending:suggestions.length},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],
  review_live:live,reviews_on:reviewsOn,setup_card:setup,...(manage?{manage_url:manage,reviews_auto:true}:{})});
 const SOURCES=[['gmail','Gmail','gmail','google'],['calendar','Google Calendar','calendar','google'],['outlook','Outlook','outlook','microsoft'],['outlook_calendar','Outlook Calendar','outlook_calendar','microsoft']]

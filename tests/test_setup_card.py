@@ -24,7 +24,7 @@ class SetupCard(unittest.TestCase):
         card = self.card()
         self.assertTrue(card.pop('since'))  # when this Machine started counting, until a first to-do shows
         self.assertEqual(card, {'closed': False, 'dismissed': [], 'phones': 0, 'whatsapp': False, 'calendar': True,
-                                'mail_accounts': 1, 'add': 'google', 'more': False})
+                                'mail_accounts': 1, 'add': 'google', 'more': False, 'memory': False})
 
     def test_the_calendar_step_follows_mail(self):
         # mail without a calendar: the card's first row offers the calendar next; Outlook's counts as one too

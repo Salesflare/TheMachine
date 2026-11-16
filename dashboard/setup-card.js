@@ -1,5 +1,5 @@
 // The setup to-do at the top of To-dos, "Get more out of The Machine": one small card with a row per step, in this order:
-// the calendar (once mail is connected), the phone app, notifications, WhatsApp, the app on this computer, another mail account, more connections, then what
+// the calendar (once mail is connected), importing what another AI knows (memoryImportOpen), the phone app, notifications, WhatsApp, the app on this computer, another mail account, more connections, then what
 // setup left out once it is relevant (state.setup_hints). At most SETUP_MAX rows; each has one button that does the step
 // itself, leaves the card once done (only what is left shows, under "3 steps left"), and closes for good with its × (setup_dismiss, kept on the Machine so every device
 // agrees, with Undo in the toast); the card's own × closes all of it. Closed rows come back with "Show 1 hidden" at the
@@ -23,6 +23,7 @@ const SETUP_ICON={
  install:'<rect x="3" y="4" width="18" height="12.5" rx="2"/><path d="M8.5 20h7M12 16.5V20"/>',
  account:'<rect x="3" y="5.5" width="18" height="13" rx="2"/><path d="m3.5 7.5 8.5 6 8.5-6"/>',
  connect:'<path d="M9 3v4.5M15 3v4.5M7 7.5h10V11a5 5 0 0 1-10 0z"/><path d="M12 16v5"/>',
+ memory:'<path d="M4 13.5V18a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4.5"/><path d="M12 3.5v11M7.5 10l4.5 4.5 4.5-4.5"/>',
  scope:'<rect x="3.5" y="7.5" width="17" height="12" rx="2"/><path d="M9 7.5v-2a1.5 1.5 0 0 1 1.5-1.5h3A1.5 1.5 0 0 1 15 5.5v2M3.5 12.5h17"/>',
  hint:'<path d="M12 3.5v3M12 17.5v3M3.5 12h3M17.5 12h3M6 6l2 2M16 16l2 2M6 18l2-2M16 8l2-2"/>'};
 const setupSvg=k=>raw(`<svg class="setup-ic" viewBox="0 0 24 24" aria-hidden="true">${SETUP_ICON[k]||SETUP_ICON.hint}</svg>`);
@@ -38,6 +39,7 @@ function setupRows(all=false){const s=state?.setup_card;if(!s)return [];const cl
  const hosted=!!state.manage_url,p=state.phone_app_store,rows=[];
  const add=(id,applies,done,hint)=>{if(applies&&!closed.has(id))rows.push({id,done:!!done,...(hint?{hint}:{})})};
  add('calendar',s.mail_accounts>0,s.calendar);
+ add('memory',true,s.memory);
  add('phone',!!p&&!DEV.phoneApp&&(DEV.mobile?!!setupStore():!!(p.ios||p.android)),s.phones>0);
  add('push',!DEV.phoneApp&&(pushOn()||pushOK&&devicePush.checked&&devicePush.perm!=='denied'&&devStore.get('push-off')!=='1'),pushOn());
  add('whatsapp',hosted,s.whatsapp);
@@ -52,8 +54,8 @@ function setupRows(all=false){const s=state?.setup_card;if(!s)return [];const cl
 // The closed rows that would still apply here and aren't done: what Show hidden brings back
 function setupHidden(){const closed=new Set(state?.setup_card?.dismissed||[]);return setupRows(true).filter(r=>closed.has(r.id)&&!r.done).length}
 const setupLabel=r=>r.hint?r.hint.title:
- {calendar:t('Connect your calendar'),phone:'Get the phone app',push:'Turn on notifications',whatsapp:'Connect WhatsApp',install:'Install on this computer',account:'Add another email account',connect:'Add more connections'}[r.id];
-const setupButton=r=>r.hint?r.hint.button||'Open':{calendar:t('Connect'),phone:'Get it',push:'Turn on',whatsapp:'Connect',install:'Install',account:'Add',connect:'Browse'}[r.id];
+ {calendar:t('Connect your calendar'),phone:'Get the phone app',push:'Turn on notifications',whatsapp:'Connect WhatsApp',install:'Install on this computer',account:'Add another email account',connect:'Add more connections',memory:t('Import what another AI knows')}[r.id];
+const setupButton=r=>r.hint?r.hint.button||'Open':{calendar:t('Connect'),phone:'Get it',push:'Turn on',whatsapp:'Connect',install:'Install',account:'Add',connect:'Browse',memory:t('Import')}[r.id];
 // On a computer: a QR code that opens the right store on the phone (one, or one per store before the redirect is live).
 // On a phone whose store isn't known (onPhone, not DEV.mobile): the two store links, no code to scan.
 function setupQRHTML(){const p=state?.phone_app_store||{},rows=v=>Array.isArray(v)?v.filter(r=>/^[01]+$/.test(r)):[];
@@ -142,7 +144,12 @@ async function setupClick(e){const b=e.target.closest('button');if(!b)return;con
  if(step==='whatsapp'){location.hash='#connect=whatsapp';return}
  if(step==='account'){location.hash='#connections=add';return}  // the picker, with Google and Microsoft
  if(step==='connect'){location.hash='#connections=add';return}
+ if(step==='memory'){memoryImportOpen();return}
  if(step==='calendar'){connectOpen(s.add==='microsoft'?'outlook_calendar':'calendar');return}  // the calendar of the mail they have
  b.disabled=true;
  try{if(step==='push')await pushEnable();else if(step==='install'){if(installEvt)await appInstall();else toast(DEV.macSafari?'In Safari’s menu bar: File, then Add to Dock.':'Find Install in the browser’s menu.')}}
  finally{b.disabled=false;setupRender()}}
+// Import from another AI (learning-import.js, a lazy part): from the setup row, the first look's quiet button and
+// Learning, each a [data-memory-import] button. Not in a frame or the site's demo.
+function memoryImportOpen(){if(DEV.framed||state?.setup_card?.demo)return;lazyRun('memimport',memoryImportShow)}
+document.addEventListener('click',e=>{const b=e.target.closest?.('[data-memory-import]');if(!b)return;e.preventDefault();memoryImportOpen()});

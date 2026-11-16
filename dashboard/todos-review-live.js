@@ -78,7 +78,10 @@ function flNames(i){const names=(i.names||[]).slice(0,3);if(!names.length){flNam
  const shown=names.slice(0,Math.min(names.length,1+Math.floor((Date.now()-flNamesAt)/4000)));let list;
  try{list=new Intl.ListFormat(I18N.lang||'en',{type:'conjunction'}).format(shown)}catch{list=shown.join(', ')}return t('Bumped into {} so far.',list)}
 const flNamesNode=i=>{const line=flNames(i);return line?make('span',{class:'fl-names',translate:'no'},line):''};
-const firstLookInner=i=>[make('img',{class:'sticker',src:'brand/wave.webp','data-blink':'brand/wave-blink.webp','data-look':'brand/wave-look.webp','data-hand':'brand/wave-hand.webp',alt:''}),make('div',{},make('strong',i.working?{class:'backfill-run'}:{},i.title),firstLookBar(i),flNamesNode(i),i.wait===false?'':make('small',{},i.wait||(firstEta()?t('First to-dos in about {} min.',firstEta()):t('To-dos show up here as they come.'))),flDetail(i))];
+const firstLookInner=i=>[make('img',{class:'sticker',src:'brand/wave.webp','data-blink':'brand/wave-blink.webp','data-look':'brand/wave-look.webp','data-hand':'brand/wave-hand.webp',alt:''}),make('div',{},make('strong',i.working?{class:'backfill-run'}:{},i.title),firstLookBar(i),flNamesNode(i),i.wait===false?'':make('small',{},i.wait||(firstEta()?t('First to-dos in about {} min.',firstEta()):t('To-dos show up here as they come.'))),flDetail(i),flImport())];
+// While it reads: one quiet, optional button to import what another AI knows (setup-card.js memoryImportOpen); never
+// in a frame or the site's demo, and gone once something was imported
+const flImport=()=>DEV.framed||state?.setup_card?.demo||state?.setup_card?.memory?'':make('button',{type:'button',class:'quiet fl-import','data-memory-import':''},t('While you wait: import what another AI knows'));
 // The list's empty state while the first look runs: a place the list fills with firstLookFill once it is on the page
 const firstLookEmpty=i=>i?html`<div class="empty all-clear first-look-empty"></div>`:'';
 function firstLookFill(){const box=$('#suggestions .first-look-empty'),i=box&&firstLookInfo(state.review_live||{});if(i)box.replaceChildren(...firstLookInner(i))}

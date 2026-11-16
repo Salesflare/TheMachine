@@ -39,7 +39,7 @@ const look=page=>page.evaluate(()=>{const el=document.querySelector('#setup-card
 const shot=async(page,name)=>{if(shots)await page.screenshot({path:`${shots}/${name}.png`})};
 try{
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
- const FRESH={closed:false,dismissed:[],phones:0,whatsapp:false,calendar:true,mail_accounts:1,add:'google',more:false};
+ const FRESH={closed:false,dismissed:[],phones:0,whatsapp:false,calendar:true,mail_accounts:1,add:'google',more:false,memory:true};  // the import row: test_memory_import_dashboard.mjs
 
  // The first day: the full card, as before.
  {setup={...FRESH,since:hoursAgo(3)};banners=false;const {context,page}=await open();

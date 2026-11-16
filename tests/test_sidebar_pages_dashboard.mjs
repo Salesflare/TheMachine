@@ -136,10 +136,13 @@ try{
  {const {context,page}=await open(1440,900,'#learning=going',{quality:{...QUALITY,trend:trendOf(0)}});
   assert.match(await page.locator('#quality').innerText(),/The chart starts after a few more days\./);assert.equal(await page.locator('#quality .bars').count(),0);
   await context.close()}
- // Too little to show: the waiting line (tests/test_quality_wait_dashboard.mjs) and no tab row
+ // Too little to show: the waiting line (tests/test_quality_wait_dashboard.mjs); What I've learned still holds its Import
+ // from another AI (learning-import.js), so a new Machine has both tabs
  {const {context,page}=await open(390,844,'#learning',{quality:{cards:0,by_source:{},previous:{},trend:{daily:[],weekly:[]}},facts:[]});
+  assert.deepEqual(await learnTabs(page),['What I’ve learned','How it’s going']);
+  assert.ok(await page.locator('#facts [data-memory-import]').isVisible());
+  await page.locator('#learn-tab-going').click();
   assert.match(await page.locator('#quality').innerText(),/Too early for numbers\.[\s\S]*0 of 3 to-dos decided/);
-  assert.ok(await page.locator('#learn-tabs').isHidden());
   await context.close()}
  // The sidebar's All / Work / Personal: the pick stands out in light and dark (a tint like the selected nav row, full ink,
  // heavier type), and every option keeps text at 4.5:1 or more on the sidebar

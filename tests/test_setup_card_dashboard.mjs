@@ -18,7 +18,7 @@ const now=new Date().toISOString();
 // Real codes for the store links (qr.py, as assistant.phone_app_nudge makes them)
 const codes=JSON.parse(execFileSync('python3',['-c','import json,qr;print(json.dumps([qr.encode(u) for u in ("https://apps.example.test/ios","https://play.example.test/android","https://example.test/app")]))'],{cwd:new URL('..',import.meta.url)}).toString());
 const STORE={ios:'https://apps.example.test/ios',android:'https://play.example.test/android',phones:0,qr_ios:codes[0],qr_android:codes[1]};
-const FRESH={closed:false,dismissed:[],phones:0,whatsapp:false,calendar:true,mail_accounts:1,add:'google',more:false};
+const FRESH={closed:false,dismissed:[],phones:0,whatsapp:false,calendar:true,mail_accounts:1,add:'google',more:false,memory:true};  // the import row: test_memory_import_dashboard.mjs
 let setupHints=[],phoneStore=STORE,setup={...FRESH},manage='https://app.example.test/setup',firstLook=null;
 let connectors=[{id:'mail',service:'gmail',email:'owner@example.org',display_name:'Mail',status:'ok'}];
 const status=()=>({suggestions:[{id:'ab'.repeat(8),title:'Reply to Robin about the garden plan',body:'Robin asked for the dates.',status:'pending',scope:'personal',created_at:now,event_ids:[1]}],
