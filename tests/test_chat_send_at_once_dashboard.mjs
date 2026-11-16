@@ -38,6 +38,8 @@ try{
  const ms=await send(tab,'Use the March numbers');
  assert.ok(ms!=null&&ms<SLOW/2,`the message showed after ${ms} ms, not before the Machine saved it (${SLOW} ms)`);
  assert.equal(await tab.locator('#chat-input').inputValue(),'','the box empties at once');
+ // A read of the chat that lands while the Machine still saves it (it doesn't have the message yet) keeps it shown
+ assert.ok(await tab.evaluate(async()=>{await chatPoll();return [...document.querySelectorAll('#chat-log *')].some(e=>!e.childElementCount&&e.textContent.includes('Use the March numbers'))}),'a chat read meanwhile keeps the message');
  await tab.waitForFunction(()=>!document.querySelector('[data-chat-send]').disabled||chat?.active);
 
  // A second message while the first is still being saved: typed into the freed box and sent with the keys, it goes
