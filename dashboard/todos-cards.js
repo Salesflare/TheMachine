@@ -11,10 +11,12 @@ const bodyAfterTitle=(title,body)=>{const words=x=>[...String(x||'').matchAll(/[
  const end=b[n-1].index+b[n-1][0].length;return !/…$/.test(head)&&/[\n.!?:;…]/.test(head.slice(-1)+text.slice(end,b[n].index))?text.slice(end).replace(/^[\s.!?:;,…–—-]+/,''):text};
 function cardBody(s,section){const asked=section==='Chat'?'':askedBody(s);if(asked)return asked;const named=resultLinks(s);let text=s.step_stopped||named.text,lead='';
 if(s.skill_proposal?.related)text=text.split(/\n\s*\n/).filter(p=>!p.trim().startsWith('Related to ')).join('\n\n');const m=text.match(/^\*\*([^*\n]+)\*\*\s*\n([\s\S]+)$/);if(m){lead=m[1];text=m[2].trim()}
-if(!lead&&!s.step_stopped)text=bodyAfterTitle(s.title,text);  // no body that only repeats the title, only what follows it
+// no body that only repeats the title, only what follows it
+if(!lead&&!s.step_stopped)text=bodyAfterTitle(s.title,text);
 const body=html`${lead?html`<p class="lead-line" translate="no">${named.fill(lead)}</p>`:''}${text.split(/\n\s*\n/).map(p=>p.trim()).filter(Boolean).map(p=>html`<p>${richText(p,true,{br:true,pieces:(x,mark)=>named.mark(cardLinks(x,s,mark),mark)})}</p>`)}`;
 const proposal=html`${skillProposal(s)}${proposedSkillBox(s)}`;
-if(!lead&&!named.plain(text).trim())return proposal;  // nothing more to say than the title
+// nothing more to say than the title
+if(!lead&&!named.plain(text).trim())return proposal;
 // Short by default: the status line says where it stands; the rest folds behind Show more. A ready draft's card has one
 // Show more, under the draft, that opens both (cardDrafted). The length only rules out a text too short to ever need it;
 // whether it is really cut off is measured once drawn (clampKey).
@@ -28,7 +30,8 @@ const sectionNote=(key,items)=>key==='foryou'&&items.some(s=>s?.status==='prepar
 // when anything changed since: once per to-do while the list is drawn
 const DRAFT_NARROW=matchMedia('(max-width:599.98px)');
 const DRAFT_LINES=3,draftRows=text=>{const per=DRAFT_NARROW.matches?34:64;return String(text).split('\n').reduce((n,l)=>n+(l.trim()?Math.ceil(l.length/per):0),0)};
-const draftFolds=(s,a)=>a.kind!=='finish'&&(a.state||s.action_status)?.status!=='sent'&&draftRows(draftText(a))>DRAFT_LINES+1;  // 4 lines still show whole
+// 4 lines still show whole
+const draftFolds=(s,a)=>a.kind!=='finish'&&(a.state||s.action_status)?.status!=='sent'&&draftRows(draftText(a))>DRAFT_LINES+1;
 const cardDrafted=s=>s.status==='prepared'&&!closed(s)&&taskActions(s).some(a=>DRAFT_KINDS.includes(a.kind)&&draftText(a)&&draftFolds(s,a));
 const snoozedUntil=v=>localeDate(new Date(v),DL,{weekday:'short',day:'numeric',month:'short'})+' at '+fmtHM(v);
 // With a teammate who hasn't answered a handoff: Later is when it comes back to check in with them, not a snooze.
@@ -52,7 +55,8 @@ const sourceText=v=>{let s=String(v||'').replace(/^Source:\s*/i,''),more='';
 const routineSource=s=>{const r=s.routine,v=String(s.source_line||''),i=v.lastIndexOf(' · '),day=i<0?'':sourceDay(v.slice(i+3).replace(/ \(\+\d+ more\)$/,''));
  const name=r.live?html`<a class="rt-link" href="#routines/${r.id}" translate="no">${r.name}</a>`:html`<span translate="no">${r.name}</span>`;
  return html`<p class="source"><span class="src">${htmlT('From your routine {}',name)}${day?html` · <span class="src-date">${day}</span>`:''}</span></p>`};
-const sourceHtml=v=>{const t=sourceText(v),i=t.lastIndexOf(' · ');return html`<span class="src">${i<0?t:html`${t.slice(0,i+3)}<span class="src-date">${t.slice(i+3)}</span>`}</span>`};  // the date never splits over two lines
+// the date never splits over two lines
+const sourceHtml=v=>{const t=sourceText(v),i=t.lastIndexOf(' · ');return html`<span class="src">${i<0?t:html`${t.slice(0,i+3)}<span class="src-date">${t.slice(i+3)}</span>`}</span>`};
 const syncError=v=>v==='android_feed_unavailable'?'Notification bridge unavailable':v==='android_offline'?'Phone disconnected':v==='android_notifications_unavailable'?'Phone notifications unavailable':v==='android_gateway_unavailable'?'Connection to The Machine unavailable':v?.startsWith('network')?'Connection problem':v==='timeout'?'Connection timed out':['slack:HTTP_429','slack_ratelimited'].includes(v)?'Slack rate limit':readableError(v);
 // Error codes like linkedin_read_failed, in words: the source's name and what went wrong.
 // Telegram chats stopped for a reason only the owner can fix: said on its card, never a silent gap (telegram_store.ERRORS)
@@ -160,7 +164,8 @@ const icon=s=>html`<span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24
 const kindService=k=>({'calendar.event':'calendar','meeting.notes':'calendar','slack.message':'slack','android.notification':'android','whatsapp.message':'whatsapp','telegram.message':'telegram','signal.message':'signal','salesflare.email':'salesflare','salesflare.meeting':'salesflare','gateway.alert':'gateway','machine.system_log':'gateway'}[k]||(/^[a-z][a-z0-9_]*\./.test(k)&&k!=='gmail.message'?k.split('.')[0]:'gmail'));
 // The team brief's to-dos (fleet-brief-todo.js, LAZY 'brief'): loaded when one is on screen
 const briefOwn=s=>!!s.fleet_brief?.own&&!closed(s)&&s.status!=='snoozed',briefIn=s=>!!s.fleet_brief&&(lazyIn('brief')||(lazyRun('brief',render),false));
-const changing=new Set(),dismissing=new Set(),askPicks=new Map(),askMissing=new Map();  // by to-do: each question's answer so far; those Answer found without one
+// by to-do: each question's answer so far; those Answer found without one
+const changing=new Set(),dismissing=new Set(),askPicks=new Map(),askMissing=new Map();
 const taskActions=s=>{const choices=s?.next_actions||(s?.next_action?.kind==='menu'?s.next_action.actions:s?.next_action?[s.next_action]:[]);const ready=choices.some(a=>[...SENDS,'email_demo','merge','finish','handoff','calendar','doc_write','linear'].includes(a.kind));return choices.filter(a=>a.kind!=='prepare'||(!ready&&!/^Draft (shorter|longer|another|alternative|follow-up)\b/i.test(a.label||'')))};
 // Messages to send: several go out together (openSendAll)
 const sendReady=s=>s?.status!=='prepared'?[]:taskActions(s).filter(a=>CHAT_SENDS.includes(a.kind)&&!sendBusy(a.state));
@@ -177,9 +182,11 @@ const gapOr=list=>{try{return new Intl.ListFormat(I18N.lang||'en',{type:'disjunc
 const basedOnLine=s=>{const b=s.based_on;if(!b||typeof b!=='object')return '';
  const what=b.who&&b.where?t('Based on {} in {}',b.who,b.where):b.who?t('Based on {}',b.who):b.where?t('Based on a message in {}',b.where):t('Based on a message');
  const day=b.at?localeDate(new Date(b.at),DL,{weekday:'short',day:'numeric',month:'short'}):'';
- const label=html`${what}${day?html` · <span class="src-date">${day}</span>`:''}`;  // opens here, so no ↗ (that is for links out)
+ // opens here, so no ↗ (that is for links out)
+ const label=html`${what}${day?html` · <span class="src-date">${day}</span>`:''}`;
  return html`<p class="note gap-line based-on"><button type="button" class="link" data-id="${s.id}"${b.event_id!=null?html` data-held-read="${b.event_id}"`:html` data-original="read"`}>${label}</button></p>`};
-const GAP_CONNECT={WhatsApp:'whatsapp',LinkedIn:'linkedin',Telegram:'telegram',Signal:'signal',Slack:'slack',X:'x'};  // gap_note.py ELSEWHERE
+// gap_note.py ELSEWHERE
+const GAP_CONNECT={WhatsApp:'whatsapp',LinkedIn:'linkedin',Telegram:'telegram',Signal:'signal',Slack:'slack',X:'x'};
 const gapLine=(s,hint)=>{const g=s.gap;let w={};try{w=JSON.parse(s.awaiting||'{}')||{}}catch{}
  if(!g||closed(s)||s.status==='snoozed'||hint||w.delegated||s.follow_up||withTeammate(s))return '';
  const via=g.channel==='email'?t('email'):g.channel,more=g.unsynced?.length?' '+t('They may have replied on {} (not synced).',gapOr(g.unsynced)):'';
@@ -405,7 +412,8 @@ function cardActions(s,choices,smartButtons,unmerge,hint,smart){const skill=skil
  const answered=s.status==='prepared'&&(()=>{try{return JSON.parse(s.outcome||'{}').state==='answered'}catch{return false}})();
  const ask=askQuestion(s,smart,hint);
  const mine=ownerStep(s)&&!ask;
- const base=c=>c==='send'||(c==='complete'&&toRead(s))||(c==='complete'&&made&&!madeLink)||(c==='checkin'&&withTeammate(s))||(c==='retry'&&!ask&&!asked)||c==='answer'||(c==='complete'&&mine&&!ownFix(s))||(c==='complete'&&!copy&&!withTeammate(s)&&(hint||(s.status==='prepared'&&!answered&&!ask&&!finalStep(s)&&!smart.some(a=>a.kind!=='open'))))||(c==='accept'&&(s.status==='pending'||answered)&&!hint&&(!mine||!!ownFix(s)));  // machine_fix: Do it runs its one fix
+ // machine_fix: Do it runs its one fix
+ const base=c=>c==='send'||(c==='complete'&&toRead(s))||(c==='complete'&&made&&!madeLink)||(c==='checkin'&&withTeammate(s))||(c==='retry'&&!ask&&!asked)||c==='answer'||(c==='complete'&&mine&&!ownFix(s))||(c==='complete'&&!copy&&!withTeammate(s)&&(hint||(s.status==='prepared'&&!answered&&!ask&&!finalStep(s)&&!smart.some(a=>a.kind!=='open'))))||(c==='accept'&&(s.status==='pending'||answered)&&!hint&&(!mine||!!ownFix(s)));
  // Nothing else leads and nothing waits (a pick, a run, a send): Mark done leads, never only in the …
  const waits=ask||/^(queued|starting|running|working)$/.test(s.preparation_status)||s.cleanup&&!cleanupSettled(s)||s.facebook_birthdays||smart.some(a=>{const x=a.state||s.action_status;return sendBusy(x)&&!/^(sent|undone)$/.test(x.status)});
  const lone=/^(pending|prepared)$/.test(s.status)&&!waits&&!smartButtons.length&&!choices.some(([c])=>c!=='complete'&&base(c));
@@ -417,7 +425,8 @@ function cardActions(s,choices,smartButtons,unmerge,hint,smart){const skill=skil
  const handing=([c])=>c==='handoff'||c.startsWith('agent:');
  // The lead: the prepared action, else the to-do's primary choice, else its first plain one in order (Check in now while a teammate has it, Unsnooze on a snoozed one)
  const leads=[...smartButtons,...head.map(x=>k=>btn(x,'',k))];
- const first=leads.findIndex(f=>/^<\w+[^>]* class="[^"]*\bprimary\b/.test(String(f(ID))));if(first>0)leads.unshift(...leads.splice(first,1));  // a primary leads over a plain link (Open in Maps)
+ // a primary leads over a plain link (Open in Maps)
+ const first=leads.findIndex(f=>/^<\w+[^>]* class="[^"]*\bprimary\b/.test(String(f(ID))));if(first>0)leads.unshift(...leads.splice(first,1));
  let others=rest;if(!leads.length){const plain=x=>!handing(x)&&x[0]!=='reject',i=[rest.findIndex(x=>plain(x)&&order.includes(x[0])),rest.findIndex(plain)].find(j=>j>=0)??-1;if(i>=0){leads.push(k=>btn(rest[i],'',k));others=rest.filter((_,j)=>j!==i)}}
  // Hand off…: who or what can take it, on one small sheet; a single one is a plain item with its whole name
  const agentName=c=>agentTools().find(t=>'agent:'+t.id===c)?.name;
@@ -428,14 +437,16 @@ function cardActions(s,choices,smartButtons,unmerge,hint,smart){const skill=skil
  // In sight: Ask for changes on a decision, a draft or a result (each right after the lead), Snooze, and Mark
  // done on a ready one without a draft
  const draft=smart.some(a=>DRAFT_KINDS.includes(a.kind)),ready=s.status==='prepared'&&!answered&&!ask&&!mine&&!withTeammate(s);
- const doneShown=ready&&(!draft||made),doneTop=ready&&draft&&!made;  // with a draft, Mark done tops the … so the row stays one line
+ // with a draft, Mark done tops the … so the row stays one line
+ const doneShown=ready&&(!draft||made),doneTop=ready&&draft&&!made;
  const review=s.status==='prepared'||(s.status==='pending'&&!mine)||!!agentAsk(s);
  const shown=x=>(x[0]==='snooze'&&!made)||(x[0]==='change'&&review)||(x[0]==='complete'&&(doneShown||!!ownFix(s)||shStopped(s)));
  const quiet=x=>x[0]==='change';
  const plain=others.filter(x=>!handing(x)&&x[0]!=='reject'&&x[0]!=='takeback');
  const items=html`${[...plain.filter(x=>x[0]==='complete'&&(doneTop||!shown(x))).map(x=>btn(x)),...leads.slice(1).map(mmPlain),...plain.filter(x=>!shown(x)&&!quiet(x)&&x[0]!=='complete').map(x=>btn(x)),sheet,repeat,unmerge,...others.filter(x=>x[0]==='reject').map(b=>html`<hr class="mm-sep">${btn(b)}`)].filter(Boolean)}`;
  // Snooze folds into the … when its line runs out of room (a long label, a narrow phone), so the … never sits alone on a line: actionsSize below
- const two=(leads[0]?1:0)+plain.filter(shown).length>2||useAsk(s);  // on a phone: the lead on its own row, the rest on one (a long Use … lead too)
+ // on a phone: the lead on its own row, the rest on one (a long Use … lead too)
+ const two=(leads[0]?1:0)+plain.filter(shown).length>2||useAsk(s);
  const fold=String(items)&&plain.find(x=>x[0]==='snooze'&&shown(x));
  const row=html`${plain.filter(shown).sort((a,b)=>made?(a[0]==='complete'?-1:b[0]==='complete'?1:0):(b[0]==='change')-(a[0]==='change')).map(x=>btn(x,fold&&x===fold?html` data-row-fold`:''))}`;
  const hiddenBtns=html`${plain.filter(x=>!shown(x)&&quiet(x)).map(b=>btn(b,html` hidden`))}`;
@@ -481,7 +492,8 @@ function clampKeys(keys){const sets=[];
  for(const key of keys){if(key==null)continue;const k=CSS.escape(key),els=[...document.querySelectorAll(`[data-clamp="${k}"]`)],btns=[...document.querySelectorAll(`button.more[data-more="${k}"]`)];
   if(els.length&&btns.length)sets.push({els,btns,open:btns[0].getAttribute('aria-expanded')==='true',seen:els.map(el=>el.getClientRects().length>0)})}
  for(const s of sets)s.els.forEach((el,i)=>{if(s.seen[i])el.classList.add('clamp')});
- for(const s of sets)s.over=s.els.map((el,i)=>s.seen[i]?clampCut(el):null);  // null: out of sight, keeps what it has
+ // null: out of sight, keeps what it has
+ for(const s of sets)s.over=s.els.map((el,i)=>s.seen[i]?clampCut(el):null);
  for(const s of sets){const any=s.over.some(o=>o==null||o>1);
   s.els.forEach((el,i)=>{if(s.over[i]!=null)el.classList.toggle('clamp',any&&s.over[i]>0&&!s.open)});
   for(const b of s.btns)b.hidden=!any}}
@@ -497,7 +509,8 @@ let clampQueued=0;const clampNew=()=>{clampQueued=0;for(const e of document.quer
 new MutationObserver(()=>{if(!clampQueued)clampQueued=requestAnimationFrame(clampNew)}).observe(document.body,{childList:true,subtree:true});
 const clampAll=()=>clampKeys(new Set([...document.querySelectorAll('[data-clamp][data-cfit]')].map(e=>e.dataset.clamp)));
 document.fonts?.ready.then(clampAll);document.fonts?.addEventListener('loadingdone',clampAll);
-document.addEventListener('click',e=>{const m=e.target.closest?.('button.more[data-more]');if(m)clampKey(m.dataset.more)});  // after the list's own handler folded or opened it
+// after the list's own handler folded or opened it
+document.addEventListener('click',e=>{const m=e.target.closest?.('button.more[data-more]');if(m)clampKey(m.dataset.more)});
 // A tap on folded text presses its Show more (or a chat text's More), which stays the keyboard's control. Not on open
 // text, a link, a selection, a drag or a long press; stopped here so the card's handlers see only the press.
 let fDown;document.addEventListener('pointerdown',e=>{fDown=e},true);
@@ -589,7 +602,8 @@ async function cardMove(id,area,b,undo){if(b)b.disabled=true;
  try{const r=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'card_move',args:{suggestion_id:id,decision_id:crypto.randomUUID(),...(undo?{undo}:{area})}})});
   document.querySelector('.area-picker')?.remove();await refresh();if(typeof chatId!=='undefined'&&chatId===id&&typeof chatPoll==='function')chatPoll();
   if(undo){toast(t('Undone.'));return}
-  toast(movedText(r.area));  // one that asked for it carries on by itself: Preparing shows on it
+  // one that asked for it carries on by itself: Preparing shows on it
+  toast(movedText(r.area));
   const tt=$('#toast'),u=document.createElement('button');u.type='button';u.dataset.moveUndo=r.decision_id;u.dataset.id=id;u.textContent=t('Undo');tt.append(' ',u);clearTimeout(toastTimer);toastTimer=setTimeout(()=>tt.classList.remove('show'),15000)}
  catch(err){errCaught(err);toast(err.message,true)}finally{if(b)b.disabled=false}}
 function cardAreaPick(id,anchor){const s=(state.suggestions||[]).find(x=>x.id===id)||{},to=moveTargets(s);document.querySelector('.area-picker')?.remove();if(!to.length)return;
@@ -651,7 +665,8 @@ const statusLine=(()=>{const line=(text,cls='')=>html`<p class="note status-line
  if(closed(s)&&expiredLine(s))return line(expiredLine(s),' outcome done');
  if(closed(s))return doneLine(s);if(s.status==='snoozed')return '';let o=null;if(s.status==='prepared'&&s.outcome)try{o=JSON.parse(s.outcome)}catch{}
  if(o?.state==='already_done')return line('Looks done already. Mark it done if that’s right.',' outcome done');
- if(cleanupSettled(s)){const n=s.cleanup.items.filter(i=>i.state==='yours').length;return line(n?t(s.cleanup.kind==='spam'?'Done, except {} to mark as spam yourself.':'Done, except {} to unsubscribe by hand.',n):'Finished. Mark it done if it looks right.',' outcome done')}  // rows left by hand
+ // rows left by hand
+ if(cleanupSettled(s)){const n=s.cleanup.items.filter(i=>i.state==='yours').length;return line(n?t(s.cleanup.kind==='spam'?'Done, except {} to mark as spam yourself.':'Done, except {} to unsubscribe by hand.',n):'Finished. Mark it done if it looks right.',' outcome done')}
  // Back by itself after waiting on someone (return_waiting): why it is here again
  if(!hint&&stillWaiting(s))return line(stillWaiting(s),' outcome');
  if(hint)return line((handled.fleet?'Done: ':'Looks handled: ')+hint,' handled');
@@ -664,9 +679,11 @@ const statusLine=(()=>{const line=(text,cls='')=>html`<p class="note status-line
  if(o?.state==='needs_you'&&!skillDecided(s))return line('Needs you: '+sentence(o.needs),' outcome');
  // Waiting on a step still open elsewhere (a review, a merge, their reply): an open to-do, never "Looks done"
  if(o?.state==='waiting')return line(t('Waiting on: {}',sentence(o.waiting_on||'')),' outcome');
- if(s.early&&s.status==='prepared'&&smart.some(a=>a.kind!=='open'))return '';  // For you's header says it once (sectionNote)
+ // For you's header says it once (sectionNote)
+ if(s.early&&s.status==='prepared'&&smart.some(a=>a.kind!=='open'))return '';
  // Prepared is not done: while a draft, change or final click still waits for them, never "Finished" (next_actions.WAITING_KINDS).
- if(s.status==='prepared'&&(!o||o.state==='done')&&smart.some(a=>[...DRAFT_KINDS,'merge'].includes(a.kind)))return '';  // said once, in For you's header
+ // said once, in For you's header
+ if(s.status==='prepared'&&(!o||o.state==='done')&&smart.some(a=>[...DRAFT_KINDS,'merge'].includes(a.kind)))return '';
  if(o?.state==='answered')return line('Answered. Nothing done yet.');
  if(o?.state==='snoozed')return line('Back, as you asked.');
  if(o?.state==='your_step')return line('Ready for you to check and '+o.step+'.',' outcome');
@@ -678,14 +695,17 @@ const drafts=s.status==='prepared'&&!tpSent?smart.filter(a=>DRAFT_KINDS.includes
     const calOnly=smart.length&&smart.every(a=>a.kind==='calendar')&&!s.result_files?.length;
     const results=(s.status==='prepared'&&!calOnly&&!waitsAfterOwner(s))||s.result_files?.length?html`<span class="foot-links"><button type="button" class="link" data-id="${s.id}" data-result="read">Read result</button>${(messageDrafts(s).length||s.result_files?.length)&&!copyLead(s,smart)&&!s.proposed_skill?html`<button type="button" class="link" data-id="${s.id}" data-result="copy">Copy draft</button>`:''}</span>`:'';
     const readLabel=isEmail(s)?'Read email':'Read message',src=s.source_line?sourceHtml(s.source_line):'';
-    const srcOut=!closed(s)&&section!=='Chat';  // an open to-do shows where it came from on the to-do itself, a closed one under Details
+    // an open to-do shows where it came from on the to-do itself, a closed one under Details
+    const srcOut=!closed(s)&&section!=='Chat';
     const original=s.routine?.name?routineSource(s):hasOriginal(s)?html`<button type="button" class="link read-original via-${cardViaIcon(s)}" data-id="${s.id}" data-original="read" aria-label="${readLabel}" title="${readLabel}">${src||readLabel}</button>`:src?html`<p class="source">${src}</p>`:'';
 // What only matters on a second look folds behind one Details: a closed to-do's coding agent result and the files it was
 // made with, your note and the source line. The row under it keeps
 // Details, when it comes back and the result links; a closed to-do's Reopen sits on the same row.
     const panel=html`${section==='Chat'||!briefIn(s)?'':fleetBriefDetails(s)}${section==='Chat'?'':cardFields(s)}${section==='Chat'?'':techPanel(s,ask)}${closed(s)?html`${agentBlock(s)}${cardFiles(s)}`:''}${teamLearningsUsed(s)}${s.latest_feedback?html`<div class="saved-feedback" data-chat-open="${s.id}" title="Open the chat"><div class="row"><strong>${s.latest_feedback.asked?.length?'Your answer':'Your note'}</strong>${time(s.latest_feedback.created_at,true)}<a class="see-chat" href="#chat=${s.id}">See in chat ›</a></div><blockquote>${format(s.latest_feedback.feedback)}</blockquote></div>`:''}${original&&!srcOut?html`<div class="card-source">${original}</div>`:''}`;
-    const detailsOpen=expandedDetails.has(s.id),toggle=String(panel)||closed(s)&&section!=='Chat'&&String(s.body||'').length>40;  // a closed one's body is one line until Details opens
-    const shared=section!=='Chat'&&cardDrafted(s),sharedOpen=expandedBodies.has(s.id);  // the one Show more of a short ready to-do leads the row
+    // a closed one's body is one line until Details opens
+    const detailsOpen=expandedDetails.has(s.id),toggle=String(panel)||closed(s)&&section!=='Chat'&&String(s.body||'').length>40;
+    // the one Show more of a short ready to-do leads the row
+    const shared=section!=='Chat'&&cardDrafted(s),sharedOpen=expandedBodies.has(s.id);
     const foot=shared||toggle||s.snoozed_until&&!s.handoff_wait||results||section!=='Chat'?html`<div class="card-foot">${shared?html`<button type="button" class="more" data-more="${s.id}" aria-expanded="${sharedOpen}">${sharedOpen?'Show less':'Show more'}</button>`:''}${toggle?html`<button type="button" class="link details-toggle" data-details="${s.id}" aria-expanded="${detailsOpen}" aria-controls="details-${s.id}">Details</button>`:''}${s.snoozed_until&&!s.handoff_wait?html`<span class="back-on" title="${date(s.snoozed_until)}">${backLabel(s.snoozed_until)}</span>`:''}${results}${section==='Chat'?'':chatLink(s)}</div>${toggle?html`<div class="card-details" id="details-${s.id}"${detailsOpen?'':html` hidden`}>${panel}</div>`:''}`:'';
 // A step without a draft box above it (one with nothing to read first) carries its service's logo on its button instead.
 // A page the task's own run worked on opens in the Machine's browser (its viewer, with that tab in front), never in yours.

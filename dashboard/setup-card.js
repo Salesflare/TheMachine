@@ -12,7 +12,8 @@
 // Loaded before settings-device.js, whose deviceRender() draws it (setupRender).
 const SETUP_MAX=5;
 const SETUP_DAY=864e5;
-let setupOpen=false;  // the folded line opened with a tap, until the next load
+// the folded line opened with a tap, until the next load
+let setupOpen=false;
 // Past the first day with to-dos: one line (the Machine always says since when; without it, the full card)
 const setupQuiet=s=>{const at=Date.parse(s?.since||'');return at>0&&at<=Date.now()-SETUP_DAY};
 const SETUP_ICON={
@@ -30,7 +31,8 @@ const setupSvg=k=>raw(`<svg class="setup-ic" viewBox="0 0 24 24" aria-hidden="tr
 // Store marks (simple-icons, CC0)
 const STORE_APPLE='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"/></svg>';
 const STORE_PLAY='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22.018 13.298l-3.919 2.218-3.515-3.493 3.543-3.521 3.891 2.202a1.49 1.49 0 0 1 0 2.594zM1.337.924a1.486 1.486 0 0 0-.112.568v21.017c0 .217.045.419.124.6l11.155-11.087L1.337.924zm12.207 10.065l3.258-3.238L3.45.195a1.466 1.466 0 0 0-.946-.179l11.04 10.973zm0 2.067l-11 10.933c.298.036.612-.016.906-.183l13.324-7.54-3.23-3.21z"/></svg>';
-let setupQR=false;  // the phone row's QR code, open on a computer (on a phone of no known store: its two store links)
+// the phone row's QR code, open on a computer (on a phone of no known store: its two store links)
+let setupQR=false;
 // The phone's own store on a phone's browser; null where there is none (a phone that is neither iPhone nor Android)
 const setupStore=()=>{const p=state?.phone_app_store||{},u=DEV.ios?p.ios:DEV.android?p.android:'';return /^https:\/\//.test(u||'')?u:null};
 // [{id, done, hint?}] in order, the rows that apply here and aren't closed (all: closed ones too, before the cut to SETUP_MAX)
@@ -97,7 +99,8 @@ function setupShape(el){if(!state?.suggestions||shownCached||setupOpen||pushOK&&
 function setupRender(){const s=state?.setup_card,el=setupBox(),first=setupMailFirst();
  // the outline's place until the first answer, and this browser's notifications are known (a row of their own)
  if(el.classList.contains('sk-setup')){if(!state?.suggestions||pushOK&&!devicePush.checked&&performance.now()<8000)return;el.classList.remove('sk-setup');el.style.removeProperty('height')}
- el.classList.toggle('mail-first',first);$('#inbox')?.classList.toggle('mail-first',first);  // its empty state hides (setup-card.css)el.setAttribute('aria-label',first?t('Connect mail'):'Get more out of The Machine');
+ // its empty state hides (setup-card.css)el.setAttribute('aria-label',first?t('Connect mail'):'Get more out of The Machine');
+ el.classList.toggle('mail-first',first);$('#inbox')?.classList.toggle('mail-first',first);
  if(first){const h=String(setupMailHTML());if(el.dataset.html!==h){setHTML(el,raw(h));el.dataset.html=h}el.hidden=false;el.classList.remove('quiet');setupSettings(false);setupShape(el);return}
  const off=!s||settingUp()||(DEV.framed&&!s.demo);
  // Only what is left: a done step leaves the card (its label says what to do, so a ticked "Connect WhatsApp" read as not done)
@@ -131,8 +134,10 @@ async function setupClick(e){const b=e.target.closest('button');if(!b)return;con
  if(b.matches('[data-setup-restore]')){if(b.closest('#settings-setup'))toast('Back at the top of To-dos.');return setupRestore(b.dataset.setupRestore)}
  if(b.matches('[data-setup-dismiss]'))return setupDismiss(b.dataset.setupDismiss);
  const step=b.dataset.setupGo;if(!step)return;
- if(step==='phone'&&!DEV.mobile){setupQR=!setupQR;setupRender();return}  // the QR code opens right in the row
- if(s.demo)return;  // the site's demo: nothing happens
+ // the QR code opens right in the row
+ if(step==='phone'&&!DEV.mobile){setupQR=!setupQR;setupRender();return}
+ // the site's demo: nothing happens
+ if(s.demo)return;
  const row=setupRows().find(r=>r.id===step),hint=row?.hint;
  // Work or Personal, when its mail says the other (scope_check.py): Change sets it, and the row closes for good
  if(hint?.scope){b.disabled=true;try{const r=await connectPost('connect_scope',{account:String(hint.scope.account),boundary:String(hint.scope.boundary)});
@@ -142,10 +147,12 @@ async function setupClick(e){const b=e.target.closest('button');if(!b)return;con
  if(hint){const u=String(hint.href||'');if(/^https:\/\//.test(u))window.open(u,'_blank','noopener');else if(/^#connect(?:=[a-z_]+|ions=add)$/.test(u))location.hash=u;return}
  if(step==='phone'){const u=setupStore();if(u)window.open(u,'_blank','noopener');return}
  if(step==='whatsapp'){location.hash='#connect=whatsapp';return}
- if(step==='account'){location.hash='#connections=add';return}  // the picker, with Google and Microsoft
+ // the picker, with Google and Microsoft
+ if(step==='account'){location.hash='#connections=add';return}
  if(step==='connect'){location.hash='#connections=add';return}
  if(step==='memory'){memoryImportOpen();return}
- if(step==='calendar'){connectOpen(s.add==='microsoft'?'outlook_calendar':'calendar');return}  // the calendar of the mail they have
+ // the calendar of the mail they have
+ if(step==='calendar'){connectOpen(s.add==='microsoft'?'outlook_calendar':'calendar');return}
  b.disabled=true;
  try{if(step==='push')await pushEnable();else if(step==='install'){if(installEvt)await appInstall();else toast(DEV.macSafari?'In Safari’s menu bar: File, then Add to Dock.':'Find Install in the browser’s menu.')}}
  finally{b.disabled=false;setupRender()}}
