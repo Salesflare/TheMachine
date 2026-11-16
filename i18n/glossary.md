@@ -114,6 +114,30 @@ English strings the check skips, with why:
 - `WhatsApp, Telegram, Signal and other chats now look like the app they came from.` names the Signal app, not a signal.
 - `Connect Signal chats, any mailbox over IMAP, and calendars from iCloud, Proton, Exchange or any CalDAV server.` names the Signal app, not a signal.
 
+## Buttons and calls to action
+
+Buttons: a button, link, menu item, tab, chip or status label is what a native app in that language would print there,
+never the English verb carried over. The test: would a native speaker say it? "Get the phone app" takes the verb that
+language's own apps use for it, not its word for "get", "obtain" or "fetch"; "Get help" asks for help. A section label
+("For you") is the label a native app gives that section. Machine stays Machine and The Machine stays The Machine
+(never machine, máquina, 机器); an owner's Machine is "your Machine" in the language's own way (je Machine, 내 Machine),
+never The Machine. The table gives each language's verbs for starting and trying, and the literal ones to avoid.
+`scripts/translate.py` sends this paragraph and the language's row with every request. The control plane's glossary
+(cloud/i18n/glossary.md) has the same section for the site.
+
+| Language | Rule |
+|---|---|
+| nl | Start: Start je Machine, Aan de slag. Try: Probeer, Bekijk. Never Haal je, Krijg, Verkrijg on a button or for a feature ("Ontvang je to-do's", not "Krijg je to-do's"). Buttons are an infinitive (Opslaan, Hulp vragen) or a short je-imperative. |
+| fr | Start: Lancer votre Machine, Commencer. Try: Essayer, Découvrir. Never Obtenir for an app, a sign-up or help (Contacter le support, Télécharger l’app). Buttons are an infinitive (Enregistrer, Essayer). |
+| de | Start: Hol dir deine Machine, Loslegen. Try: Ausprobieren, Ansehen. Never Bekommen or Erhalten on a button (Hilfe holen, Support kontaktieren). Buttons are an infinitive or a short du-imperative. |
+| es | Start: Consigue tu Machine, Empieza. Try: Prueba, Descubre. Never Obtener on a button (Pedir ayuda, Descargar la app). |
+| it | Start: Attiva la tua Machine, Inizia. Try: Prova, Scopri. Never Prendi or Ottieni on a button (Chiedi aiuto, Scarica l’app). |
+| pt-BR | Start: Quero minha Machine, Começar. Try: Experimente, Conheça. Never Obter or Pegue on a button (Pedir ajuda, Baixar o app). |
+| zh-CN | Start: 开通你的Machine, 开始使用. Try: 试用, 查看. Never 获取 for an app or a sign-up (获取验证码 for a code is fine; 下载手机应用 for the app). Labels are short: 查看, not 查看它们. |
+| ja | Start: Machineを始める, 始める. Try: 試す, 見る. Never 入手 or 取得 for an app or a sign-up (アプリをダウンロード). No あなた and no それら: 確認する, not それらを見る. |
+| ko | Start: Machine 시작하기, 시작하기. Try: 사용해 보기, 보기. Never 받기 for an app or a sign-up (앱 다운로드). An owner's Machine is 내 Machine, never The Machine. |
+| ru | Start: Создать свою Machine, Начать. Try: Попробовать, Посмотреть. Never Получить for an app or a sign-up (Скачать приложение). Buttons are an infinitive (Начать, Сохранить). |
+
 ## Not checked, but use these
 
 The user-facing name is *to-do* (decided 2026-10-26): Dutch keeps "to-do", the others use their own word, the same one every time.

@@ -146,6 +146,19 @@ class Checks(unittest.TestCase):
         self.assertIn('nl', words['gender'])
         self.assertIn('fr', T.wrong_gender())
 
+    def test_every_request_says_how_buttons_read_in_its_language(self):
+        # a button translated word for word ("Haal je Machine" for "Get your Machine"): each request carries the
+        # glossary's button rule and the language's own verbs, so short UI copy reads the way a native app says it
+        words = T.glossary()
+        self.assertIn('native', words['button_rule'])
+        self.assertNotIn('scripts/translate.py', words['button_rule'])
+        self.assertEqual(sorted(words['buttons']), sorted(T.languages()))
+        nl = T.instructions('nl', ['Get the phone app'], 'app strings', words)
+        self.assertIn(words['button_rule'], nl)
+        self.assertIn('Never Haal je', nl)
+        self.assertNotIn('Lancer votre Machine', nl)  # only its own language's row
+        self.assertIn('开通你的Machine', T.instructions('zh-CN', ['Get it'], 'app strings', words))
+
     def test_an_answer_is_checked_like_the_catalog_test_does(self):
         words = T.glossary()
         self.assertEqual(T.string_problems('Open {}', 'Ouvrir {}', 'fr', words), [])

@@ -76,9 +76,14 @@ def glossary(text=None):
     names_line = ' '.join(line for line in names_part.splitlines()[3:] if line.strip())
     names = [n for n in (re.sub(r'\s*\(.*?\)', '', n).strip() for n in re.sub(r'\(.*?\)', '', names_line).rstrip('.').split(',')) if n]
     terms, gender, checked = {}, {}, {}
+    button_rule, buttons = '', {}
     for section in re.split(r'\n## ', text)[1:]:
         heading, _, body = section.partition('\n')
         rows = [[c.strip() for c in line.strip().strip('|').split('|')] for line in body.splitlines() if line.startswith('|')]
+        if heading.startswith('Buttons') and 'Buttons:' in body:  # the rule (without its notes on the table), | Language | Rule |
+            button_rule = ' '.join(body.split('Buttons:', 1)[1].split('\n\n', 1)[0].split()).split(' The table gives', 1)[0]
+            buttons = {row[0]: row[1] for row in rows[2:] if len(row) > 1}
+            continue
         if len(rows) < 3:
             continue
         head = rows[0]
@@ -96,7 +101,7 @@ def glossary(text=None):
     plurals = ' '.join(text.split('Plurals:', 1)[1].split('\n\n', 1)[0].split()) if 'Plurals:' in text else ''
     exceptions = set(re.findall(r'^- `(.+?)`', text.split('## Exceptions', 1)[1].split('##', 1)[0], re.M)) if '## Exceptions' in text else set()
     return {'names': names, 'terms': terms, 'gender': gender, 'tone': ' '.join(p for p in (tone, plurals) if p),
-            'checked': checked, 'exceptions': exceptions}
+            'checked': checked, 'exceptions': exceptions, 'button_rule': button_rule, 'buttons': buttons}
 
 
 def term_in(term, english):
@@ -139,6 +144,8 @@ def instructions(lang, texts, what, words=None):
         'Write it the way a native product would say it: short, natural, plain. Never word for word. Keep the meaning, '
         'every fact and every qualification; do not add, summarize or leave out anything.',
         f'Tone and conventions: {words["tone"]}' if words['tone'] else '',
+        f'Short UI copy: {words["button_rule"]}' if words.get('button_rule') else '',
+        f'Buttons in {name}: {words["buttons"][lang]}' if lang in words.get('buttons', {}) else '',
         'Never use an em dash (—), also where this language\'s own typography would (as in Russian "X — это Y"): '
         'write a colon, a comma or two sentences instead.',
         'Keep these names exactly as written, never translated or inflected into another word: ' + ', '.join(words['names']) + '.',
