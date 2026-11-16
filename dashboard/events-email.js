@@ -16,7 +16,7 @@ const svcOf=id=>(state?.connectors||[]).find(c=>c.id===id)?.service||'';
 const VIA_NAME={gmail:'Gmail',mail:'Email',slack:'Slack',whatsapp:'WhatsApp',telegram:'Telegram',signal:'Signal',linkedin:'LinkedIn',x:'X',intercom:'Intercom',gdocs:'Google Docs',file:'Doc',gcal:'Google Calendar',cal:'Calendar',handoff:'Hand off',browser:'Browser',github:'GitHub'};
 // On a button that already says what it does, the logo is only a picture (hidden from screen readers).
 const viaIco=(k,quiet)=>k?quiet?html`<i class="via-ico via-${k}" aria-hidden="true"></i>`:html`<i class="via-ico via-${k}" role="img" aria-label="${t(VIA_NAME[k]||service(k)||'The source')}" title="${t(VIA_NAME[k]||service(k)||'The source')}"></i>`:'';
-const STEP_VIA={slack:'slack',whatsapp:'whatsapp',telegram:'telegram',signal:'signal',linkedin:'linkedin',x:'x',intercom:'intercom',handoff:'handoff',finish:'browser'};
+const STEP_VIA={slack:'slack',whatsapp:'whatsapp',telegram:'telegram',signal:'signal',linkedin:'linkedin',x:'x',intercom:'intercom',linear:'linear',handoff:'handoff',finish:'browser'};
 // A final step on GitHub that runs with gh or a GitHub MCP server (github_route.py) shows GitHub's logo, else the browser.
 // Mail and calendar steps by their account: Gmail or Outlook, Google or Outlook Calendar, else the plain line icon
 const mailVia=svc=>['gmail','outlook'].includes(svc)?svc:'mail',calVia=svc=>svc==='calendar'?'gcal':svc==='outlook_calendar'?svc:'cal';
@@ -34,7 +34,7 @@ const cardViaIcon=s=>{const v=srcHead(s),svc=(Array.isArray(s.account_ids)?s.acc
  return /^the machine$/i.test(v)?'gateway':/note/i.test(v)?'note':/calendar/i.test(v)?calVia(svc.find(x=>/calendar/.test(x))):marks.length===1?marks[0]:'chat'};
 // The source a line's first word names
 const lineNamed=v=>{const w=v.toLowerCase().replace(/^(microsoft|google) /,'').split(/[^a-z]/)[0];
- return w==='doc'||w==='suggested'?'gdocs':w==='meet'?'google_meet':/^(slack|whatsapp|telegram|signal|linkedin|x|intercom|teams|zoom|github|stripe|salesflare|salesforce|trello|shortcut|notion)$/.test(w)?w:''};
+ return w==='doc'||w==='suggested'?'gdocs':w==='meet'?'google_meet':/^(slack|whatsapp|telegram|signal|linkedin|x|intercom|teams|zoom|github|stripe|salesflare|salesforce|trello|shortcut|notion|linear)$/.test(w)?w:''};
 // A card the owner added has their own words as its only signal until the review links an email: nothing to open yet.
 const hasOriginal=s=>Boolean(s.source_line||(!['owner','machine'].includes(s.origin)&&eventIds(s).length)||(s.original_urls||[]).length);  // machine: an update's note, no thread
 // A meeting's notes lead ("Source: notes from Board meeting", meeting_mail.py): not an email, even with its notes mail among the originals

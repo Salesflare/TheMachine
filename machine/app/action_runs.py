@@ -13,12 +13,13 @@ import agent_jobs
 import calendar_writes
 import doc_writes
 import follow_ups
+import linear_writes
 from machine.cards import ACTION_WORKING, PREPARATION_WORKING, thread_return_time
 from machine.config import LOG
 from machine.delivery.deliver import deliver
 from machine.delivery.push import app_clear_step
 from machine.faults import loop_failed, restart_with_mirrors
-from machine.sources.connectors import docs_transport, docs_write_transport, intercom_transport
+from machine.sources.connectors import docs_transport, docs_write_transport, intercom_transport, linear_transport
 from machine.store.decisions import note_first, NOTHING_SENT, settle_sent
 from machine.store.first_look import VERIFIED_KINDS
 from machine.store.machine_cards import parked_redo
@@ -130,7 +131,7 @@ class ActionRunsApp:
                 loop_failed(LOG, 'delivery', error)
 
     def action_step(self,transport=None):
-        transport=transport or next_actions.ActionTransport(next_actions.EmailTransport(self.config,credential,gog_read),next_actions.LinkedInTransport(self.config),next_actions.SlackTransport(self.config,credential),next_actions.XTransport(self.config),next_actions.MergeTransport(self.config,restart_with_mirrors),next_actions.WhatsAppTransport(self.config),intercom_transport(self.config),calendar_writes.CalendarTransport(self.config,credential,gog_read),docs_transport(self.config),next_actions.TelegramTransport(self.config),docs_write_transport(self.config),signal_send.SignalTransport(self.config))
+        transport=transport or next_actions.ActionTransport(next_actions.EmailTransport(self.config,credential,gog_read),next_actions.LinkedInTransport(self.config),next_actions.SlackTransport(self.config,credential),next_actions.XTransport(self.config),next_actions.MergeTransport(self.config,restart_with_mirrors),next_actions.WhatsAppTransport(self.config),intercom_transport(self.config),calendar_writes.CalendarTransport(self.config,credential,gog_read),docs_transport(self.config),next_actions.TelegramTransport(self.config),docs_write_transport(self.config),signal_send.SignalTransport(self.config),linear_transport(self.config))
         with self.store.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             for candidate in db.execute("SELECT j.id,j.revision,s.status,s.next_action FROM action_jobs j JOIN suggestions s ON s.id=j.suggestion_id WHERE j.status IN ('queued','blocked')").fetchall():
@@ -157,13 +158,13 @@ class ActionRunsApp:
                         note_first(db,'first_verified_action',action['kind'])  # the provider confirmed it (first_cards_report)
                     queue_thread_snooze(db,action,job);queue_delegate_wait(db,action,job,result);self.handoff_mail.sent(db,action,job,result)
                     if action['kind']=='doc_write':settle_doc_write(self.store,db,job['suggestion_id'],job['id'],action,result.get('url'))
-                    elif action['kind']!='merge':settle_sent(self.store,db,job['suggestion_id'],job['id'],next_actions.label(action),calendar_writes.done(action) if action['kind']=='calendar' else doc_writes.done(action) if action['kind']=='doc_write' else None)
+                    elif action['kind']!='merge':settle_sent(self.store,db,job['suggestion_id'],job['id'],next_actions.label(action),calendar_writes.done(action) if action['kind']=='calendar' else doc_writes.done(action) if action['kind']=='doc_write' else linear_writes.done(action) if action['kind']=='linear' else None)
                     if action['kind']=='merge' and result.get('commit'):db.execute('INSERT OR IGNORE INTO merge_effects VALUES(?,?,?,?,?)',(job['id'],'merge',encoded(result),'pending',now()))
                     db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=?',(job['suggestion_id'],))
                 else:
                     # Keep checking Sent mail, every five minutes for a day, then hourly.
                     wait=dt.timedelta(minutes=5 if dt.datetime.fromisoformat(job['created_at'])>dt.datetime.fromisoformat(now())-dt.timedelta(days=1) else 60)
-                    db.execute("UPDATE action_jobs SET status='uncertain',error=?,retry_at=? WHERE id=? AND status IN ('sending','uncertain')",('I couldn’t confirm whether the fix was merged. I’m checking the code; I won’t merge it again.' if action['kind']=='merge' else doc_writes.UNCLEAR if action['kind']=='doc_write' else 'I couldn’t confirm the calendar change. I’m checking the calendar; I won’t make it twice.' if action['kind']=='calendar' else 'I couldn’t confirm whether this X '+('reply' if action.get('reply_to') else 'message')+' was sent. I’m checking X; I won’t send it again.' if action['kind']=='x' else 'I couldn’t confirm whether this WhatsApp message was sent. I’m checking the chat; I won’t send it again.' if action['kind']=='whatsapp' else 'I couldn’t confirm whether this Telegram message was sent. I’m checking the chat; I won’t send it again.' if action['kind']=='telegram' else 'I couldn’t confirm whether this Signal message was sent. I’m checking the chat; I won’t send it again.' if action['kind']=='signal' else 'I couldn’t confirm whether this Intercom reply was sent. I’m checking the conversation; I won’t send it again.' if action['kind']=='intercom' else 'I couldn’t confirm whether this doc reply was posted. I’m checking the comment; I won’t post it again.' if action['kind']=='doc_reply' else 'I couldn’t confirm whether this '+('LinkedIn' if action['kind']=='linkedin' else 'Slack')+' message was sent. I’m checking the conversation; I won’t send it again.' if action['kind'] in ('linkedin','slack') else 'I couldn’t confirm whether this email was sent. I’m checking Sent mail; I won’t send it again.',(dt.datetime.fromisoformat(now())+wait).isoformat(),job['id']))
+                    db.execute("UPDATE action_jobs SET status='uncertain',error=?,retry_at=? WHERE id=? AND status IN ('sending','uncertain')",('I couldn’t confirm whether the fix was merged. I’m checking the code; I won’t merge it again.' if action['kind']=='merge' else linear_writes.UNCLEAR if action['kind']=='linear' else doc_writes.UNCLEAR if action['kind']=='doc_write' else 'I couldn’t confirm the calendar change. I’m checking the calendar; I won’t make it twice.' if action['kind']=='calendar' else 'I couldn’t confirm whether this X '+('reply' if action.get('reply_to') else 'message')+' was sent. I’m checking X; I won’t send it again.' if action['kind']=='x' else 'I couldn’t confirm whether this WhatsApp message was sent. I’m checking the chat; I won’t send it again.' if action['kind']=='whatsapp' else 'I couldn’t confirm whether this Telegram message was sent. I’m checking the chat; I won’t send it again.' if action['kind']=='telegram' else 'I couldn’t confirm whether this Signal message was sent. I’m checking the chat; I won’t send it again.' if action['kind']=='signal' else 'I couldn’t confirm whether this Intercom reply was sent. I’m checking the conversation; I won’t send it again.' if action['kind']=='intercom' else 'I couldn’t confirm whether this doc reply was posted. I’m checking the comment; I won’t post it again.' if action['kind']=='doc_reply' else 'I couldn’t confirm whether this '+('LinkedIn' if action['kind']=='linkedin' else 'Slack')+' message was sent. I’m checking the conversation; I won’t send it again.' if action['kind'] in ('linkedin','slack') else 'I couldn’t confirm whether this email was sent. I’m checking Sent mail; I won’t send it again.',(dt.datetime.fromisoformat(now())+wait).isoformat(),job['id']))
             if result.get('message_id') and action['kind']=='merge':
                 self.merge_effect(job,action,result,'merge',transport.pick(action) if hasattr(transport,'pick') else transport)
             return
@@ -174,7 +175,7 @@ class ActionRunsApp:
                 db.execute("UPDATE action_jobs SET retry_at=?,updated_at=? WHERE id=? AND status='queued'",((dt.datetime.fromisoformat(now())+dt.timedelta(minutes=2)).isoformat(),now(),job['id']))
             return 'waiting'
         except Exception as error:
-            reason=str(error) if isinstance(error,ValueError) else 'The fix could not be checked. Nothing was merged.' if action['kind']=='merge' else 'The doc could not be checked. Nothing was changed.' if action['kind']=='doc_write' else 'The calendar could not be checked. Nothing was changed.' if action['kind']=='calendar' else ({'linkedin':'LinkedIn','slack':'Slack','x':'X','whatsapp':'WhatsApp','telegram':'Telegram','signal':'Signal','intercom':'Intercom','doc_reply':'The doc'}.get(action['kind'],mailbox_name(self.config,action))+' could not be checked. Nothing was sent.')
+            reason=str(error) if isinstance(error,ValueError) else 'The fix could not be checked. Nothing was merged.' if action['kind']=='merge' else 'The doc could not be checked. Nothing was changed.' if action['kind']=='doc_write' else 'Linear could not be checked. Nothing was changed.' if action['kind']=='linear' else 'The calendar could not be checked. Nothing was changed.' if action['kind']=='calendar' else ({'linkedin':'LinkedIn','slack':'Slack','x':'X','whatsapp':'WhatsApp','telegram':'Telegram','signal':'Signal','intercom':'Intercom','doc_reply':'The doc'}.get(action['kind'],mailbox_name(self.config,action))+' could not be checked. Nothing was sent.')
             with self.store.connect() as db:
                 stamp=now()
                 if db.execute("UPDATE action_jobs SET status='blocked',error=?,updated_at=? WHERE id=? AND status='queued'",(reason,stamp,job['id'])).rowcount:
@@ -223,6 +224,9 @@ class ActionRunsApp:
                    'uncertain':f'I couldn’t confirm whether {what} was sent. I won’t resend it.'}[status]
             if action['kind']=='doc_write':
                 error={'sent':None,'failed':doc_writes.failed(action,result.get('rejected'),result.get('reason')),'uncertain':doc_writes.UNCLEAR}[status]
+            if action['kind']=='linear':
+                error={'sent':None,'failed':f"Last attempt failed: Linear refused it (error {result.get('rejected')}). Nothing was changed; try again or change it.",
+                       'uncertain':linear_writes.UNCLEAR}[status]
             if action['kind']=='calendar':
                 error={'sent':None,'failed':f"Last attempt failed: Google Calendar refused it (error {result.get('rejected')}). Nothing was changed; try again or change it.",
                        'uncertain':'I couldn’t confirm the calendar change. I’m checking the calendar; I won’t make it twice.'}[status]
@@ -240,7 +244,7 @@ class ActionRunsApp:
                 if action['kind'] in VERIFIED_KINDS:note_first(db,'first_verified_action',action['kind'])  # the provider accepted it (first_cards_report)
                 queue_thread_snooze(db,action,job);queue_delegate_wait(db,action,job,result);self.handoff_mail.sent(db,action,job,result)
                 if action['kind']=='doc_write':settle_doc_write(self.store,db,job['suggestion_id'],job['id'],action,result.get('url'))
-                elif action['kind']!='merge':settle_sent(self.store,db,job['suggestion_id'],job['id'],next_actions.label(action),calendar_writes.done(action) if action['kind']=='calendar' else doc_writes.done(action) if action['kind']=='doc_write' else None)
+                elif action['kind']!='merge':settle_sent(self.store,db,job['suggestion_id'],job['id'],next_actions.label(action),calendar_writes.done(action) if action['kind']=='calendar' else doc_writes.done(action) if action['kind']=='doc_write' else linear_writes.done(action) if action['kind']=='linear' else None)
             if status=='sent' and action['kind']=='merge' and result.get('commit'):db.execute('INSERT OR IGNORE INTO merge_effects VALUES(?,?,?,?,?)',(job['id'],'merge',encoded(result),'pending',now()))
             db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=?',(job['suggestion_id'],))
         if status=='sent' and action['kind']=='merge':

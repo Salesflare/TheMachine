@@ -36,10 +36,11 @@ Collectors read existing source content. The optional Salesflare `join_pipelines
 | `docs` (plugin) | The owner's own Google (broker) or Microsoft sign-in for that address, plus a separate consent for files | `email`, `transport` (borrowed from the mail account), `provider` (`google` or `microsoft`, else from the mail account), `boundary` |
 | `shortcut` (plugin) | Sign in with Shortcut, or a Shortcut API token | `credential` (`workspace` is filled in from the sign-in or token) |
 | `notion` (plugin) | Sign in with Notion, or a Notion internal integration token | `credential` (`workspace_name` and the member are filled in from the sign-in or token), `boundary` |
+| `linear` (plugin) | Sign in with Linear, or a Linear personal API key | `credential` (`workspace_name` and the member are filled in from the sign-in or key), `boundary` |
 | `rss` (plugin) | none | `url` |
 | `web_page` (plugin) | none: a public https page | `url`, `display_name` (the page, set when you add it), `poll_seconds` (21600; never under an hour) |
 
-Add a plugin account with `assistant connect github` (or `stripe`, `intercom`, `x`, `linkedin`, `trello`, `google_meet`, `shortcut`, `notion`, `rss`, `web_page`): it asks for the fields that connector needs. The dashboard does the same under Connections, **+ Add** (see [Usage](usage.md#adding-a-source)). You can also add accounts to `config.json` by hand, using the keys above (each connector's header has a full example), and restart the service.
+Add a plugin account with `assistant connect github` (or `stripe`, `intercom`, `x`, `linkedin`, `trello`, `google_meet`, `shortcut`, `notion`, `linear`, `rss`, `web_page`): it asks for the fields that connector needs. The dashboard does the same under Connections, **+ Add** (see [Usage](usage.md#adding-a-source)). You can also add accounts to `config.json` by hand, using the keys above (each connector's header has a full example), and restart the service.
 
 ## How each source reads
 
@@ -359,6 +360,16 @@ Connect it with **Sign in with Notion** (Connections, **+ Add**, on a hosted Mac
 - Reads: the API allowlist is search, pages, page blocks, comments, databases (for a task's status options) and users. A to-do or meeting prep reads one page's text only while it runs (`doc_text`, `doc_find`).
 - Writes, each only after the owner's OK and through `doc_writes.py`: a reply in a comment's discussion (`doc_reply`), a new private page (`create`, at the workspace level), an edit (`edit`, pinned to a hash of the page's blocks as the owner saw it: a newer page writes nothing) and marking an assigned task done (`done`: its status set to a Done option of the Complete group, else its checkbox ticked, else a Done option of a Status select). An item done in Notion closes its to-do by itself (`Store.close_done_notion`), with Undo.
 - Notion has no "shared with me" list: a new page someone else made that the connection can now see stands in for it.
+
+### Linear
+
+Issues assigned to the owner and their own Linear inbox (`connectors/linear.py`, Linear's GraphQL API): `linear.issue` (an issue assigned to the owner that is new or whose state, due date or title changed; once its state is of type completed or canceled the to-do closes by itself, `Store.close_done_linear`, with Undo), and from the owner's notifications, by Linear's own category: `linear.mention`, `linear.comment` (comments and replies), `linear.review`, `linear.triage` and `linear.due` (due date reminders). Assignment notifications are left to `linear.issue`; the owner's own actions never come in. Whether one needs the owner is the to-do review's call. The first sync goes back seven days; later ones overlap two hours.
+
+Connect it with **Sign in with Linear** (Connections, **+ Add**, on a hosted Machine or one paired with your account): the control plane runs Linear's OAuth 2.0 consent (PKCE, `actor=user`) for The Machine's public app and hands the sign-in to the Machine sealed for it, keeping nothing. Access tokens last a day; the Machine refreshes through the control plane (`/api/linear/token` hosted, the Network's `/linear-token` paired), which adds the client secret; only the refresh token goes there, and Linear's rotated refresh token is kept in the account's credential file. The fallback is `assistant connect linear` with a personal API key from Linear's Settings, Security & access.
+
+- Scopes: `read,write`. `write` is what a status or assignee change needs, and it covers comments and new issues; a sign-in without it only reads.
+- Reads: a fixed list of GraphQL operations (viewer, notifications, assigned issues, an issue, a comment, teams, a team's states and members).
+- Writes, each only after the owner's OK and through `linear_writes.py`: a comment on an issue the to-do's own events are about (or a reply in its thread), its status (one of its team's states), its assignee (one person on its team) and a new issue in one of the connection's teams. Comments and new issues carry an id made from the approval, so a retry never makes a second one; an unclear outcome is checked by reading Linear back.
 
 ### History
 

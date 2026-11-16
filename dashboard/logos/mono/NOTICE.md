@@ -43,6 +43,7 @@ From [Simple Icons](https://simpleicons.org) 16.30, released under
 | `intercom.svg` | Intercom | intercom |
 | `komoot.svg` | komoot | komoot |
 | `lastpass.svg` | LastPass | lastpass |
+| `linear.svg` | Linear | linear |
 | `messenger.svg` | Messenger | messenger |
 | `netflix.svg` | Netflix | netflix |
 | `notion.svg` | Notion | notion |

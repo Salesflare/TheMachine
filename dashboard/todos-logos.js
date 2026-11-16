@@ -5,7 +5,7 @@
 // .via-ico. A new connector ships with its mark here: tests/test_source_icons.py fails on one without.
 const MONO=['airbnb','android','bol','booking','calendar','claude','discord','docs','dropbox','duolingo','etsy','exchange','facebook','fitbit','gateway',
  'gbrain','github','gmail','google_docs','google_meet','googlechrome','googledrive','googlekeep','googlemaps','googlemessages','googlephotos',
- 'googleplay','googletasks','hubspot','icloud_calendar','instagram','intercom','komoot','lastpass','linkedin','medium','messenger','netflix',
+ 'googleplay','googletasks','hubspot','icloud_calendar','instagram','intercom','komoot','lastpass','linear','linkedin','medium','messenger','netflix',
  'notion','openai','outlook','outlook_calendar','paypal','pinterest','podcastaddict','producthunt','proton_calendar','reddit','revolut','rss',
  'salesflare','salesforce','shopify','shortcut','signal','slack','snapchat','source','spotify','strava','stremio','stripe','tailscale','teams',
  'telegram','tiktok','trello','uber','vinted','waze','web_page','whatsapp','wise','x','youtube','zoom'];

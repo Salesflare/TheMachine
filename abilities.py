@@ -29,7 +29,7 @@ def can_act(account):
         return False
     service = account.get('service', 'gmail')
     return bool(next_actions.mail_account(account) or calendar_writes.writable(account) or service in REPLY_SERVICES
-                or service in DOC_SERVICES or service == 'intercom' and next_actions.intercom_replies_on(account))
+                or service in DOC_SERVICES or service == 'linear' or service == 'intercom' and next_actions.intercom_replies_on(account))
 
 
 def switchable(account):

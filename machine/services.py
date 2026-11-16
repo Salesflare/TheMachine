@@ -89,6 +89,7 @@ SERVICES = {
     'github': {**_NO, 'name': 'GitHub', 'short': 'GitHub', 'unit': 'notifications', 'group': WORK, 'transports': ('gh',)},
     'trello': {**_NO, 'name': 'Trello', 'short': 'Trello', 'unit': 'card changes', 'group': WORK, 'signin': 'trello'},
     'shortcut': {**_NO, 'name': 'Shortcut', 'short': 'Shortcut', 'group': WORK, 'signin': 'shortcut'},
+    'linear': {**_NO, 'name': 'Linear', 'short': 'Linear', 'unit': 'items', 'group': WORK, 'signin': 'linear'},
     'docs': {**_NO, 'name': 'Docs', 'short': 'Microsoft OneDrive', 'unit': 'items', 'group': DOCS, 'signin': 'microsoft_docs'},
     'notion': {**_NO, 'name': 'Notion', 'short': 'Notion', 'unit': 'items', 'group': DOCS, 'signin': 'notion'},
     'google_meet': {**_NO, 'name': 'Google Meet', 'short': 'Google Meet', 'unit': 'meetings', 'group': MEETINGS, 'signin': 'google_meet',

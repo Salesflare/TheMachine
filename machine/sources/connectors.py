@@ -153,6 +153,19 @@ def docs_write_offered(config, kind):
     return not config.get('manage_url') or (isinstance(consent, list) and kind in consent) or consent is True
 
 
+def linear_transport(config):
+    """Owner-approved Linear changes (linear_writes.py), when the Linear connector is here."""
+    import linear_writes  # noqa: PLC0415
+    plugin = load_connector('linear')
+    return linear_writes.LinearTransport(config, plugin, CONNECTOR_HELPERS) if plugin and hasattr(plugin, 'Writer') else None
+
+
+def linear_prompt(config):
+    """The preparation's lines on Linear changes."""
+    import linear_writes  # noqa: PLC0415
+    return linear_writes.prompt(config)
+
+
 def docs_write_transport(config):
     """Owner-approved doc writes (doc_writes.py), when the Docs connector with its Writer is here."""
     plugin = load_connector('docs')
@@ -325,7 +338,7 @@ def load_connector(service):
 # Slack too: Sign in with Slack is the way to connect it, a Maton API key the other way (the account page's tile). Until
 # The Machine's Slack app is in the Slack Marketplace, Slack allows it 1 history read a minute: the reader paces itself
 # (sources/slack.py SLACK_LIMITS), new messages and DMs first, older ones gradually.
-HOSTED_SIGNINS = {'google', 'microsoft', 'zoom', 'stripe', 'intercom', 'trello', 'shortcut', 'notion', 'github', 'whatsapp', 'android', 'microsoft_docs',
+HOSTED_SIGNINS = {'google', 'microsoft', 'zoom', 'stripe', 'intercom', 'trello', 'shortcut', 'notion', 'linear', 'github', 'whatsapp', 'android', 'microsoft_docs',
                   'microsoft_docs_write', 'codex', 'google_meet', 'google_docs', 'microsoft_teams', 'slack', 'salesforce'}
 
 

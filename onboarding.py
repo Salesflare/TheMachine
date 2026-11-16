@@ -338,7 +338,8 @@ WEB_NOTES = {
     'telegram': 'Next, you scan a QR code in Telegram.', 'signal': 'Next, you scan a QR code in Signal on your phone. It uses an unofficial Signal client, so it may stop working.', 'imap': 'Many providers need an app password for mail apps. Server settings are filled in for most.',
     'android': 'Install the OpenClaw app on your phone and pair it with your Machine first: https://themachine.computer/help/android#connect-it', **calendar_setup.NOTES,
     'shortcut': 'It only reads, never changes anything in Shortcut.',
-    'notion': 'Replies, new pages and edits wait for your OK.'}  # Get your token (SETUP token_url) opens the page
+    'notion': 'Replies, new pages and edits wait for your OK.',
+    'linear': 'Comments and changes wait for your OK.'}  # Get your token (SETUP token_url) opens the page
 WEB_LEARN = {'telegram': 'telegram-chats', 'signal': 'signal-chats', 'imap': 'imap', **calendar_setup.LEARN}  # its help article, behind Learn more: how it reads, and that it isn't the to-dos bot
 WEB_SECRETS = {'slack': 'Maton API key', 'salesflare': 'Salesflare API key', 'imap': 'Password', **calendar_setup.SECRETS}
 WEB_ASKS = {'whatsapp': [['phone', 'Your WhatsApp phone number, with its country code (+32 470 12 34 56)']], 'gmail': [['email', 'Google account']], 'calendar': [['email', 'Google account']], 'imap': [['email', 'Email address']], **calendar_setup.ASKS}

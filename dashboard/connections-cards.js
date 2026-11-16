@@ -76,7 +76,8 @@ const connectResume=()=>connectResuming||=connectResumeNow().finally(()=>{connec
 async function connectResumeNow(){if(connectPicking||connectStopping)return false;const cut=connectCut;try{const r=await connectPost('connect_running');if(!r?.session||connectRun||connectStopping||cut!==connectCut)return false;
  connectRun=r;connectSignin=null;connectForm=null;connectGbrain=null;$('#connect-add').dataset.sig='';connectPoll();return true}catch{return false}}
 async function connectAddNow(force){if(connectRun)return;if(!force&&connectList&&Date.now()-connectListAt<60000)return;connectListAt=Date.now();
- const n=++connectAddSeq;  // before the wait: a later call (a forced one from a sign-in's way back) wins over this one
+ // before the wait: a later call (a forced one from a sign-in's way back) wins over this one
+ const n=++connectAddSeq;
  const box=$('#connect-add');if(!box.childElementCount)setHTML(box,html`<p class="muted">Loading…</p>`);  // a restart's few seconds: not an empty box
  if(await connectResume()){renderConnectRun();return}
  if(n!==connectAddSeq)return;
@@ -113,8 +114,8 @@ Object.entries({outlook:ICONS.gmail,outlook_calendar:ICONS.calendar,teams:'<path
  .forEach(([k,v])=>{if(!ICONS[k])ICONS[k]=v});
 const CONNECT_ICON={google_meet:'zoom',google_docs:'docs',crm:'salesflare'};
 // The service's own logo (dashboard/logos, its NOTICE.md), loaded when shown; Machine health is our robot. Else a line icon.
-const LOGOS=/^(android|calendar|codex|crm|docs|exchange|github|gmail|google_docs|google_meet|icloud_calendar|intercom|linkedin|notion|outlook|outlook_calendar|proton_calendar|rss|salesforce|shortcut|signal|slack|stripe|teams|telegram|trello|whatsapp|x|zoom)$/,
- connectLogo=(x,n=x.name)=>n==='gateway'||LOGOS.test(n)?html`<span class="icon brand${/^(x|github|intercom|codex|notion)$/.test(n)?' mono':''}" aria-hidden="true"><img src="brand/${n==='gateway'?'avatar.png':'logos/'+n+(n==='zoom'?'.png':'.svg')}" alt="" loading="lazy" width="20" height="20"></span>`:icon(CONNECT_ICON[n]||x.service||n);
+const LOGOS=/^(android|calendar|codex|crm|docs|exchange|github|gmail|google_docs|google_meet|icloud_calendar|intercom|linear|linkedin|notion|outlook|outlook_calendar|proton_calendar|rss|salesforce|shortcut|signal|slack|stripe|teams|telegram|trello|whatsapp|x|zoom)$/,
+ connectLogo=(x,n=x.name)=>n==='gateway'||LOGOS.test(n)?html`<span class="icon brand${/^(x|github|intercom|codex|notion|linear|shortcut)$/.test(n)?' mono':''}" aria-hidden="true"><img src="brand/${n==='gateway'?'avatar.png':'logos/'+n+(n==='zoom'?'.png':'.svg')}" alt="" loading="lazy" width="20" height="20"></span>`:icon(CONNECT_ICON[n]||x.service||n);
 // Already connected: which account, on the row ("Connected: kris@…"), and on the source's add view a line that this adds
 // another connection beside it, with a way to its card. Adding one more stays possible. Its own accounts only (not one a
 // teammate shares), matched by service as connect_sources counts them, or the sign-ins it rests on (`via`: Google Docs
@@ -237,6 +238,7 @@ const SIGNIN_COPY={intercom:{many:1,label:'Intercom',about:'Reads your conversat
  trello:{many:1,label:'Trello',about:'Reads cards, comments and activity on one board you pick next. Never changes anything in Trello.'},
  shortcut:{many:1,label:'Shortcut',about:'Reads stories that change state, with their owners and deadlines. Never changes anything in Shortcut.',other:'Or paste an API token',how:'A personal API token from Shortcut’s settings.',go:'Paste a token',off:'Sign in with {} isn’t available yet. Paste an API token instead.'},
  notion:{many:1,label:'Notion',about:'Comments, mentions and tasks assigned to you. Replies, new pages and edits wait for your OK.',other:'Or paste an integration token',how:'An internal integration token from Notion, with your pages shared with it.',go:'Paste a token',off:'Sign in with {} isn’t available yet. Paste an integration token instead.'},
+ linear:{many:1,label:'Linear',about:'Issues, mentions, reviews and due dates. Changes wait for your OK.',other:'Or paste an API key',how:'A personal API key from Linear’s security settings.',go:'Paste a key',off:'Sign in with {} isn’t available yet. Paste an API key instead.'},
  google:{label:'Google',about:'Gmail and Google Calendar. Sends only emails you approved.',other:'Use your own app',how:'Your own Google Cloud app, step by step.',go:'Set it up',off:'Sign in with {} isn’t available yet. Use your own app instead.'},
  microsoft:{label:'Microsoft',about:'Outlook mail and calendar. Sends only emails you approved.',other:'Use your own app',how:'Your own Microsoft app registration, step by step.',go:'Set it up',off:'Sign in with {} isn’t available yet. Use your own app instead.'},
  github:{label:'GitHub',about:'Review requests, mentions, assignments and failed CI runs. Files issues only when you confirm.'},
@@ -262,7 +264,7 @@ const signinOf=(x,state,command)=>{const hosted=!!(connectList?.manage_url&&x.ho
  return {source:x.name,provider:p,label:SIGNIN_COPY[p]?.label||x.label,own:!x.broker,hosted,another:!!x.connected,state,...(command?{command}:{}),...(!hosted&&x.signin_off?{off:true}:{})}};
 // A hosted Machine: Work or Personal here, then Sign in goes to the provider in this tab and comes back to this form.
 // Pasting a key or token stays on the account page's tile.
-const HOSTED_TILE={google:'#google',microsoft:'#microsoft',microsoft_teams:'#teams',zoom:'#source-zoom',stripe:'#source-stripe',slack:'#source-slack',intercom:'#source-intercom',trello:'#source-trello',shortcut:'#source-shortcut',notion:'#source-notion',github:'#source-github',salesforce:'#source-salesforce'};
+const HOSTED_TILE={google:'#google',microsoft:'#microsoft',microsoft_teams:'#teams',zoom:'#source-zoom',stripe:'#source-stripe',slack:'#source-slack',intercom:'#source-intercom',trello:'#source-trello',shortcut:'#source-shortcut',notion:'#source-notion',linear:'#source-linear',github:'#source-github',salesforce:'#source-salesforce'};
 // GitHub, WhatsApp and the phone have no provider page to come back from: the Machine gets a code, shown right here
 // (GitHub's to type at GitHub, WhatsApp's QR code or pairing code, the OpenClaw app's setup code)
 const GITHUB_DEVICE=/^https:\/\/github\.com\/login\/device[\w/.-]*$/;
@@ -351,7 +353,8 @@ function renderConnectSignin(){const s=connectSignin,box=$('#connect-add'),paire
  else if(s.off&&paired)body=html`<p class="muted">${copy.about||''}</p><p class="note signin-off">${t(s.own&&copy.other&&copy.off||'Sign in with {} isn’t available yet.',s.label)}</p>`;
  else body=html`<p class="muted">${copy.about||''}</p>${signinLater(copy)}${paired?html`<div class="actions"><button type="button" class="primary" data-signin-go>Sign in with ${s.label}</button>${back}</div>${msAdmin(s)}`
   :html`<p>${t(s.own&&copy.other?'Sign in with {} goes through your account on themachine.computer. Pair this Machine with it once, or use your own app below.':'Sign in with {} goes through your account on themachine.computer. Pair this Machine with it once.',s.label)}</p><div class="actions"><button type="button" class="primary" data-connect-pair>Pair this Machine</button>${back}</div>`}`;
- const off=!s.hosted&&s.off&&paired&&s.state==='intro';  // the other way is the way: open, its button first, Back after it
+ // the other way is the way: open, its button first, Back after it
+ const off=!s.hosted&&s.off&&paired&&s.state==='intro';
  // Not paired yet: pairing needs an account, so the other way shows open beside it, never folded away as the only way on
  const unpaired=!s.hosted&&!paired&&s.state==='intro';
  const paste=s.hosted||s.state==='done'||s.state==='connecting'||!s.own||!copy.other?'':html`<details class="connect-other"${off||unpaired?html` open`:''}><summary>${copy.other||''}</summary><p>${copy.how||''}</p><div class="actions"><button type="button"${off?html` class="primary"`:''} data-connect="${s.source}">${copy.go||''}</button>${off?back:''}</div></details>`;
