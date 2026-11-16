@@ -6,9 +6,10 @@ import json
 
 import enrichment
 from graph import (
-    FLOOR, FREEMAIL, JOINED_WHY, auto_side, name_words, org_from_name, person_shown, personal_relation, plain_name,
-    shown_id, shown_name,
+    FLOOR, FREEMAIL, JOINED_WHY, auto_side, linkedin_key, name_words, org_from_name, person_shown, personal_relation,
+    plain_name, shown_id, shown_name,
 )
+from machine.graph.same_person import phone_key
 from mail_senders import address_name, bulk, relay, shared_inbox
 
 
@@ -121,8 +122,11 @@ def person_nodes(db, owner, names, strength, union, keys, x_names, roles, last_d
         alike[node] = {'words': [] if sender_org or all(keys.several(i) for i in group) else name_words(name, node if no_name else None), 'derived': no_name, 'strength': value,
                        'domains': set(domains), 'role': ' '.join(str(role).casefold().split()) if role else None,
                        # every domain they write from, free mail and the owner's own too: two people at none in common
-                       # are one only with more than a name (graph.likely_same)
-                       'mail': {d for d in (enrichment.registrable(i.rsplit('@', 1)[1]) for i in group if i.startswith('email:') and '@' in i) if d}}
+                       # are one only with more than a name (same_person.likely_same)
+                       'mail': {d for d in (enrichment.registrable(i.rsplit('@', 1)[1]) for i in group if i.startswith('email:') and '@' in i) if d},
+                       # what can tell two such people are one after all: a number or a LinkedIn profile on record for both
+                       'phones': {k for k in (phone_key(r['value']) for r in contacts.get('phones', ())) if k},
+                       'linkedin': {k for k in (linkedin_key((person_profile or {}).get('linkedin_url')),) if k}}
         nodes.append((node, 'person', name[:200], round(value, 4), last_day[node].isoformat() if node in last_day else None,
                       len(node_events[node]), usual, int(quiet), None, info))
     return (nodes, links, members, inboxes, named, said, related, profiles, wrong, site_logos, edits, stated,

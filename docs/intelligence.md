@@ -127,10 +127,14 @@ shared besides (the same company domain, people seen with both, a project, the s
 initial ("P") is no name, and a sender named for their own company ("Blue Harbor" at blueharbor.com) has no person's
 name to compare.
 
-A name is what anyone can type, so it never pairs two addresses across domains by itself (`graph.likely_same`):
+A name is what anyone can type, so it never pairs two addresses across domains by itself (`machine/graph/same_person.py`):
 
 - two people who write from no domain in common (free mail and the owner's own domains count as domains here) are
   asked only with something shared besides the name: people seen with both, a project, the same role;
+- when those two have only a first name in common ("Sam" and "Sam", "Sam" and "Sam Lee"), people, a project or a role
+  are no evidence (a big project or a common role takes in many strangers): only the same phone number or LinkedIn
+  profile on record for both is. Each build works the questions out again, so one an older version asked just goes;
+  nothing is merged or marked Not the same;
 - two whose domains imitate one another (Lookalike senders, below), or carry the same name at another ending
   (acme.co next to acme.com), are never asked;
 - a person marked as a lookalike is never asked with anyone;

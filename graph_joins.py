@@ -14,7 +14,7 @@ A name joins two identities only when each of them is one person's own:
   one, they are one person as before when something else agrees (Keys.agree): the work side is a colleague (an
   address at the owner's own domain), the chat's number is known for the work side (a connector's profile, the
   owner's own edit), both are on one project, both are at one organization, or one signal has both. When the name is
-  all there is, each side joins within itself only, and the pair is left for "Same person?" (graph.likely_same) to ask.
+  all there is, each side joins within itself only, and the pair is left for "Same person?" (machine/graph/same_person.py likely_same) to ask.
 
 Nothing is stored: it is worked out again each build, from the signals. The owner's and the agent's own merges
 (graph_merges) are joined before any of this and are never undone by it. So a person an older build made of several

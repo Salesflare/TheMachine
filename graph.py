@@ -14,7 +14,7 @@ full name is on two identities in one message or conversation, a lookup found th
 profile for both, their WhatsApp number is in their own mail, the same full name appears on two
 different channels (one person with it per channel; never through a shared address, graph_joins.py), or the owner or agent says so (merges). Weaker
 evidence (that name shared by two people on one channel or by a work contact and a personal chat, a similar name with the same company, people,
-project or role) is only offered as "Same person?" (graph_same); the owner's Merge or Not the same is
+project or role; only a first name in common across domains, with the same company domain, phone or LinkedIn) is only offered as "Same person?" (graph_same); the owner's Merge or Not the same is
 kept in graph_merges, and Not the same also undoes a merge for good. Projects are named
 by the review agent and the owner, and spread to the rest of their threads; a signal that reads like
 a labeled one and shares a person with it is probably part of it too (weaker, until a review
@@ -858,7 +858,6 @@ JOINED_WHY = {'owner': 'merged by you', 'agent': 'merged by a review', 'director
 PHONE = re.compile(r'(?<![\w+])(?:\+|00)?\d[\d ()./-]{7,18}\d(?![\w])')
 QUOTED = re.compile(r'^(?:>|On .{4,200} wrote:\s*$|-{2,} ?(?:Original|Forwarded) |From: |Van: |Le .{4,200} a écrit|Am .{4,200} schrieb)', re.M)
 SIGNATURE_MAILS = 12     # recent mails read per address for a phone number in its own text
-SAME_BUCKET = 60         # more people than this with one first name: too common to compare
 
 
 def name_words(name, identifier=None):
@@ -933,48 +932,6 @@ def signature_pairs(db, senders, best, known):
                 if name_match(words, wa_names[wa]):
                     pairs.append((identifier, wa))
     return pairs
-
-
-def likely_same(people, union, together, projects, never=lambda a, b: False):
-    """Pairs of people who may be one, for the owner to Merge or keep apart: [(a, b, why, score)]. The same full name at a
-    domain in common (or no address on one side) is enough to ask; a similar name, or one across domains, needs something
-    shared: people seen with both, a project, the same role. A name read from an address (jane.doe@) is only ever similar;
-    never(a, b): pairs never asked (machine/graph/same_person.py)."""
-    buckets = collections.defaultdict(list)
-    for node, p in people.items():
-        if p['words']:
-            buckets[p['words'][0]].append(node)
-            if len(p['words'][0]) >= 3:
-                buckets[p['words'][0][:3]].append(node)  # "Alex" and "Alexander"
-    seen, out = set(), []
-    for members in buckets.values():
-        if len(members) > SAME_BUCKET:
-            continue
-        for i, a in enumerate(members):
-            for b in members[i + 1:]:
-                pair = tuple(sorted((a, b)))
-                if pair in seen or a == b:
-                    continue
-                seen.add(pair)
-                pa, pb = people[pair[0]], people[pair[1]]
-                match = name_match(pa['words'], pb['words'])
-                if match == 'same' and (pa.get('derived') or pb.get('derived')):
-                    match = 'similar'
-                if not match or union.kept_apart(union.find(pair[0]), union.find(pair[1])) or lookalike.apart(pa['domains'], pb['domains']) or never(*pair):
-                    continue  # nor when one's domain imitates the other's (lookalike.py), a lookalike or the owner's name
-                shared = []
-                if pa['domains'] & pb['domains']:
-                    shared.append(f"both at {sorted(pa['domains'] & pb['domains'])[0]}")
-                if pa['role'] and pa['role'] == pb['role']:
-                    shared.append('the same role')
-                if together(pair[0]) & together(pair[1]):
-                    shared.append('with the same people')
-                if projects.get(pair[0], set()) & projects.get(pair[1], set()):
-                    shared.append('on the same project')
-                if match == 'same' and len(pa['words']) >= 2 and (not (pa.get('mail') and pb.get('mail')) or pa['mail'] & pb['mail']) or shared:
-                    why = ', '.join([('Same name' if match == 'same' else 'Similar name')] + shared)
-                    out.append((*pair, why, round(len(shared) + (2 if match == 'same' else 0) + min(pa['strength'], pb['strength']), 4)))
-    return sorted(out, key=lambda s: -s[3])[:300]
 
 
 class Union:

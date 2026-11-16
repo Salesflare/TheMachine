@@ -66,6 +66,8 @@ Someone at an address that only looks like one you know, like acme-corp.example 
 
 A name alone is never enough across two domains, since anyone can type one: two addresses at different domains are only offered when something else links them, like the same people or a project. Someone using your own name at an address that isn't yours is never offered. Add your other addresses under Settings, [Your addresses](settings.md#your-addresses), instead.
 
+When only a first name matches at different domains, like "Sam" and "Sam Lee", they are offered only with the same phone number or LinkedIn profile.
+
 A shared address, like info@ or a mailing list, is never joined to the people who write through it. A work contact from outside your company and a personal chat with only a name in common are not joined by themselves: they are listed as a question.
 
 **Merge all** merges every pair in the list at once, except the ones you marked **Not the same**. **Undo** right after splits them all again.
