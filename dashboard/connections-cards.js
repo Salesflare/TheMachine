@@ -222,8 +222,22 @@ function renderConnectForm(){const x=connectList?.sources?.find(v=>v.name===conn
  // Folded-away settings (an IMAP mailbox's servers): left empty, the Machine fills them in for the address
  const advanced=f.advanced?.length?html`<details class="connect-alt connect-advanced"><summary>Server settings</summary><p class="fine muted">Filled in for most providers. Change them only if yours says so.</p><div class="connect-advanced-grid">${f.advanced.map(([k,q,o])=>o?html`<label>${q}<select name="ask" data-key="${k}"><option value="">Automatic</option>${o.map(v=>html`<option value="${v}">${v}</option>`)}</select></label>`:html`<label class="${/^(username|caldav_url|calendar_name|ews_url)$/.test(k)?'wide':''}">${q}<input name="ask" data-key="${k}" type="text"${/port$/.test(k)?html` inputmode="numeric" maxlength="5"`:''} spellcheck="false" autocomplete="off"></label>`)}</div></details>`:'';
  const scope=f.scope&&!f.auto?html`<fieldset class="connect-scope"><legend>Work or personal?</legend><label><input type="radio" name="scope" value="work"${f.personal?'':html` checked`}> Work</label><label><input type="radio" name="scope" value="personal"${f.personal?html` checked`:''}> Personal</label></fieldset><label class="connect-company"${f.personal?html` hidden`:''}>Company<input name="company" maxlength="60" value="${f.company||''}"${f.company?html` data-typed="1"`:''} placeholder="Acme" autocomplete="organization"${f.personal?'':html` required`}><small class="fine muted">Working for yourself? Use your business name.</small></label>`:'';
- connectDraw(box,'form',html`<div class="connect-run"><h3>${x.label}</h3>${x.what||f.learn?html`<p class="muted">${x.what||''}${f.learn?html` <a class="learn" href="${safeHref('https://themachine.computer/help/'+encodeURIComponent(f.learn))}" target="_blank" rel="noopener">${t('Learn more')}</a>`:''}</p>`:''}${f.note?html`<p class="fine connect-note">${linkify(f.note)}</p>`:''}${connectHaveNote(x)}<form class="connect-form connect-setup" data-connect-setup="${x.name}" novalidate>${asks}${secret}${advanced}${scope}<p class="error" role="status"></p><div class="actions"><button class="primary">Connect</button><button type="button" data-connect-back>Back</button></div></form></div>`,'input:not([type="radio"]):not([hidden])')}
-async function connectSetup(form){const name=form.dataset.connectSetup,err=form.querySelector('.error'),go=form.querySelector('button.primary');
+ const ms=MS_INSTEAD.includes(x.service)?html`<p class="connect-ms" role="status" hidden></p>`:'';
+ connectDraw(box,'form',html`<div class="connect-run"><h3>${x.label}</h3>${x.what||f.learn?html`<p class="muted">${x.what||''}${f.learn?html` <a class="learn" href="${safeHref('https://themachine.computer/help/'+encodeURIComponent(f.learn))}" target="_blank" rel="noopener">${t('Learn more')}</a>`:''}</p>`:''}${f.note?html`<p class="fine connect-note">${linkify(f.note)}</p>`:''}${connectHaveNote(x)}<form class="connect-form connect-setup" data-connect-setup="${x.name}" novalidate>${asks}${ms}${secret}${advanced}${scope}<p class="error" role="status"></p><div class="actions"><button class="primary">Connect</button>${ms?html`<button type="button" class="primary" data-connect-ms>${t('Sign in with {}','Microsoft')}</button>`:''}<button type="button" data-connect-back>Back</button></div></form></div>`,'input:not([type="radio"]):not([hidden])')}
+// Other email and Exchange Server: an address on Microsoft 365 (or Outlook.com) signs in with Microsoft, so the form
+// offers that sign-in in place of the password and goes to its tile (connect_address_signin). The Machine looks it up
+// from the domain's mail servers, a few seconds at most; nothing found or no answer leaves the password form as it is.
+const MS_INSTEAD=['imap','exchange'];let msLook=0,msTimer=0;
+function connectMsShow(form,to,email){form.dataset.msTo=to||'';form.classList.toggle('ms',!!to);
+ const p=form.querySelector('.connect-ms');if(p){p.hidden=!to;p.textContent=to?t('{} is on Microsoft 365, so no password is needed.',email):''}}
+async function connectMsCheck(form){const name=form.dataset.connectSetup,email=form.querySelector('[data-key="email"]')?.value.trim().toLowerCase()||'',n=++msLook;
+ if(form.dataset.looked===email)return;let to=null;
+ if(/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){try{to=(await connectPost('connect_address_signin',{name,email}))?.signin||null}catch{}}
+ if(n!==msLook||!form.isConnected)return;form.dataset.looked=email;connectMsShow(form,to,email)}
+function connectMsGo(to){clearTimeout(msTimer);msLook++;connectForm=null;$('#connect-add').dataset.sig='';connectOpenNow(to)}
+function connectMsSoon(form){clearTimeout(msTimer);const email=form.querySelector('[data-key="email"]')?.value.trim().toLowerCase()||'';if(email===form.dataset.looked)return;
+ msLook++;form.dataset.looked='';connectMsShow(form,null);msTimer=setTimeout(()=>connectMsCheck(form),700)}
+async function connectSetup(form){const name=form.dataset.connectSetup,err=form.querySelector('.error'),go=form.querySelector('button.primary');if(form.dataset.msTo){connectMsGo(form.dataset.msTo);return}
  const missing=[...form.querySelectorAll('input[required]')].find(i=>!i.closest('[hidden]')&&!i.value.trim());if(missing){{const what=(missing.closest('label')?.firstChild?.textContent||'').trim();err.textContent=what?t('Fill in {}.',what):t('Fill this in.')}missing.focus();return}
  const answers={};for(const i of form.querySelectorAll('[name="ask"]'))answers[i.dataset.key]=i.value.trim();
  const scope=form.querySelector('input[name="scope"]:checked')?.value,payload={form:true,answers,secret:form.querySelector('input[name="secret"]')?.value||'',...(scope?{scope,company:scope==='work'&&form.querySelector('input[name="company"]')?.value.trim()||''}:{})};
@@ -446,6 +460,7 @@ async function connectSiteSignin(site){try{await connectPost('connect_site_signi
  const after=()=>connectPoll();after.says='Signed in. Connecting it now.';openSignin(null,true,null,null,site,after)}
 async function connectAnswer(value){const q=connectRun?.question;if(!q)return;try{connectRun={...connectRun,...await connectPost('connect_answer',{session:connectRun.session,question:q.id,value})}}catch(e){errCaught(e);toast(e.message,true)}renderConnectRun();connectPoll()}
 const connectClick=async e=>{const t=e.target;
+ const ms=t.closest('[data-connect-ms]');if(ms){const to=ms.closest('form')?.dataset.msTo;if(to)connectMsGo(to);return}
  if(t.closest('[data-codex-signin]')){connectSignin=signinOf(codexSource(),'intro');$('#connect-add').dataset.sig='';renderConnectSignin();return}
  const signin=t.closest('[data-connect-signin]');if(signin){const x=connectList.sources.find(v=>v.name===signin.dataset.connectSignin);connectSignin=signinOf(x,'intro');$('#connect-add').dataset.sig='';renderConnectSignin();return}
  if(t.closest('[data-signin-go]')){signinGo(t.closest('[data-signin-go]').dataset.way);return}
@@ -471,7 +486,7 @@ const WEBMAIL=/^(gmail|googlemail|outlook|hotmail|live|msn|yahoo|icloud|me|mac|a
 function companyOf(email){const p=String(email||'').split('@')[1]?.toLowerCase().split('.').slice(0,-1)||[];if(p.length>1&&/^(co|com|org|net|ac|gov)$/.test(p[p.length-1]))p.pop();
  const n=p[p.length-1]||'';return !n||WEBMAIL.test(n)?'':n[0].toUpperCase()+n.slice(1)}
 $('#connect-add').addEventListener('input',e=>{const i=e.target;if(i.name==='company'){i.dataset.typed=i.value?'1':'';return}
- if(i.dataset.key!=='email')return;const co=i.closest('form')?.querySelector('input[name="company"]');if(co&&!co.dataset.typed)co.value=companyOf(i.value)});
+ if(i.dataset.key!=='email')return;const f=i.closest('form');if(f&&MS_INSTEAD.includes(f.dataset.connectSetup))connectMsSoon(f);const co=f?.querySelector('input[name="company"]');if(co&&!co.dataset.typed)co.value=companyOf(i.value)});
 $('#connect-add').addEventListener('change',e=>{if(e.target.name!=='scope')return;const form=e.target.closest('form'),co=form.querySelector('.connect-company'),personal=e.target.value==='personal';
  co.hidden=personal;co.querySelector('input').required=!personal});
 // "Connect your own Intercom" on a to-do (also its "not synced" line and the first look's ending): Connections, + Add, at that source. A source that signs in here opens its

@@ -13,8 +13,10 @@ import agent_jobs
 import browser_login
 import browser_viewer
 import codex_signin
+import ews_calendar
 import fleet
 import gbrain
+import imap_presets
 from machine.browser import LINKEDIN_SIGNIN_PATH, browser_link, site_language
 from machine.config import LOG, SIGNIN_ERROR
 from machine.faults import restart_self
@@ -25,7 +27,7 @@ from machine.owner_error import OwnerError
 
 class ConnectApp:
     # action name -> the method that handles it, called as method(name, args, owner_dashboard) (App.action)
-    ACTIONS = dict.fromkeys(('codex_signin', 'codex_signin_state', 'connect_abilities', 'connect_answer', 'connect_cancel',
+    ACTIONS = dict.fromkeys(('codex_signin', 'codex_signin_state', 'connect_abilities', 'connect_address_signin', 'connect_answer', 'connect_cancel',
                              'connect_poll', 'connect_remove', 'connect_running', 'connect_scope', 'connect_signin',
                              'connect_signin_state', 'connect_site_signin', 'connect_sources', 'connect_start'),
                             'connect_owner_action')  # CONNECT_ACTIONS
@@ -111,6 +113,10 @@ class ConnectApp:
                 return {'url': self.fleet.connect_start(source), 'state': 'started'}
             except fleet.SigninUnavailable:
                 return {'state': 'unavailable'}  # no tab: the dashboard opens the other way
+        if name == 'connect_address_signin':
+            # + Add, Other email or Exchange Server: an address on Microsoft 365 goes to Sign in with Microsoft instead
+            source, email = args.get('name'), args.get('email')
+            return {'signin': microsoft_signin(source, email) if isinstance(source, str) and isinstance(email, str) else None}
         if name == 'connect_site_signin':
             # LinkedIn or X while its connect waits for the owner to sign in there (or Facebook for its birthdays
             # to-do): the site's sign-in page in front
@@ -339,6 +345,28 @@ def signin_url(site, config=None):
 
 
 CONNECT_SIGNIN_WAIT = 600
+
+# Other email and Exchange Server: the Microsoft sign-in an address on Microsoft 365 (or Outlook.com) takes instead
+MICROSOFT_INSTEAD = {'imap': 'outlook', 'exchange': 'outlook_calendar'}
+ADDRESS = re.compile(r'[^@\s]+@[^@\s]+\.[^@\s]+')
+
+
+def microsoft_signin(source, email, wait=4):
+    """'outlook' or 'outlook_calendar' when this address on the + Add form of Other email or Exchange Server signs in
+    with Microsoft, else None. From the domain's mail servers (imap_presets.microsoft_365), and for Exchange also
+    Microsoft's own autodiscover (mail that passes a filter first). Waits `wait` seconds at most: nothing found in time
+    leaves the password form."""
+    email = email.strip().lower()
+    if source not in MICROSOFT_INSTEAD or len(email) > 254 or not ADDRESS.fullmatch(email):
+        return None
+    found = []
+
+    def look():
+        found.append(imap_presets.microsoft_365(email) or (source == 'exchange' and ews_calendar.microsoft_365(email)))
+    worker = threading.Thread(target=look, daemon=True, name='microsoft-365-lookup')
+    worker.start()
+    worker.join(wait)
+    return MICROSOFT_INSTEAD[source] if found and found[0] else None
 
 
 def connect_form(source, args):

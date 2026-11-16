@@ -14,6 +14,7 @@ import urllib.parse
 import urllib.request
 
 TIMEOUT = 5  # seconds per lookup
+QUICK = 3  # seconds for a lookup while the + Add form is open (microsoft_365)
 MAX_ANSWER = 65536
 DOH = 'https://cloudflare-dns.com/dns-query'
 
@@ -146,7 +147,7 @@ def oauth_of(email):
     return 'outlook' if MICROSOFT_CONSUMER.fullmatch(domain) else None
 
 
-def _fetch(url):
+def _fetch(url, timeout=TIMEOUT):
     """An https answer's text, small; None when it isn't there."""
     if not url.startswith('https://'):
         return None
@@ -154,7 +155,7 @@ def _fetch(url):
     accept = 'application/dns-json' if url.startswith(DOH) else '*/*'
     request = urllib.request.Request(url, headers={'User-Agent': 'TheMachine-mail-setup', 'Accept': accept})
     try:
-        with urllib.request.urlopen(request, timeout=TIMEOUT) as reply:
+        with urllib.request.urlopen(request, timeout=timeout) as reply:
             return reply.read(MAX_ANSWER + 1)[:MAX_ANSWER].decode('utf-8', 'replace')
     except (OSError, ValueError):
         return None
@@ -218,6 +219,19 @@ def mx_hosts(domain, fetch=_fetch):
 
 def _mx_match(host, table):
     return next((v for suffix, v in table.items() if host == suffix or host.endswith('.' + suffix)), None)
+
+
+def microsoft_365(email, fetch=None):
+    """True when the address signs in with Microsoft: Outlook.com, or a domain whose mail servers are Microsoft 365's
+    (MX at *.mail.protection.outlook.com). + Add asks while its form is open, so the lookup waits QUICK seconds at most;
+    no answer is False, and the password form stays."""
+    domain = domain_of(email)
+    if oauth_of(email):
+        return oauth_of(email) == 'outlook'
+    if not re.fullmatch(r'[a-z0-9.-]+\.[a-z]{2,}', domain):
+        return False
+    hosts = mx_hosts(domain, fetch or (lambda url: _fetch(url, QUICK)))[:3]
+    return any(_mx_match(host, OAUTH_MX) == 'outlook' for host in hosts)
 
 
 def lookup(email, fetch=_fetch, network=True):

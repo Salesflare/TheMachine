@@ -14,6 +14,7 @@ CONNECT_ACTIONS = (
     'codex_signin',
     'codex_signin_state',
     'connect_abilities',
+    'connect_address_signin',
     'connect_answer',
     'connect_cancel',
     'connect_poll',
