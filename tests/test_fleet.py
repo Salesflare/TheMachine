@@ -1,7 +1,6 @@
 """The Fleet on a Machine (fleet.py): fixed-form answers from the graph, approvals and rules, untrusted questions and
 answers, claims on shared emails and meeting context. A fake relay stands in for the control plane; no network."""
 import datetime as dt
-import importlib.util
 import json
 import tempfile
 import unittest
@@ -9,9 +8,13 @@ from unittest import mock
 from pathlib import Path
 from seams import patch_everywhere  # noqa: E402
 
-spec = importlib.util.spec_from_file_location('fleet_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
-a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
-fleet, graph = a.fleet, a.graph
+import fleet
+import graph
+import machine.actions as machine_actions
+import machine.delivery.deliver as machine_delivery_deliver
+import machine.delivery.telegram as machine_delivery_telegram
+import machine.main as machine_main
+
 NOW = dt.datetime.now(dt.timezone.utc).replace(microsecond=0)
 WORK = {'id': 'work', 'email': 'owner@acme.example', 'service': 'gmail', 'boundary': 'work:Acme'}
 HOME = {'id': 'home', 'email': 'owner@gmail.com', 'service': 'gmail', 'boundary': 'personal:Home'}
@@ -62,7 +65,7 @@ class FakeRelay:
 class Fleet(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'events.sqlite')
+        self.store = machine_main.Store(Path(self.temp.name) / 'events.sqlite')
         for e in [mail('work', 3, 'Sam Lee <sam@client.example>', 'owner@acme.example'),
                   mail('work', 40, 'owner@acme.example', 'sam@client.example'),
                   mail('work', 10, 'Kim Ito <kim@eu.client.example>', 'owner@acme.example'),
@@ -161,12 +164,12 @@ class Fleet(unittest.TestCase):
         self.assertIsNone(fleet.clean_answer('meeting', 'a string'))
 
     def test_owner_actions_only_from_the_dashboard(self):
-        app = object.__new__(a.App)
+        app = object.__new__(machine_main.App)
         app.store, app.config, app.fleet = self.store, CONFIG, self.fleet
         with self.assertRaisesRegex(ValueError, 'dashboard'):
             app.action('fleet_rule', {'member_id': 'pat1', 'kind': 'relationships', 'rule': 'always'})
         app.action('fleet_rule', {'member_id': 'pat1', 'kind': 'relationships', 'rule': 'always'}, owner_dashboard=True)
-        self.assertTrue(set(a.OWNER_ACTIONS) >= {'fleet_ask', 'fleet_decide', 'fleet_rule', 'fleet_take', 'fleet_meetings'})
+        self.assertTrue(set(machine_actions.OWNER_ACTIONS) >= {'fleet_ask', 'fleet_decide', 'fleet_rule', 'fleet_take', 'fleet_meetings'})
         with self.assertRaises(ValueError):
             app.action('fleet_rule', {'member_id': 'nobody', 'kind': 'relationships', 'rule': 'always'}, owner_dashboard=True)
         with self.assertRaises(ValueError):
@@ -344,15 +347,15 @@ class Fleet(unittest.TestCase):
             rows = db.execute('SELECT * FROM fleet_in ORDER BY at,id').fetchall()
         config = {**CONFIG, 'dashboard_host': 'machine.example', 'dashboard_path': '/', 'telegram_owner': '1000001'}
         pushed = []
-        a.fleet_push(self.store, config, rows[:1], sender=lambda request: pushed.append(request['payload']) or {'results': []})
+        machine_delivery_deliver.fleet_push(self.store, config, rows[:1], sender=lambda request: pushed.append(request['payload']) or {'results': []})
         self.assertEqual(pushed[0]['title'], "Pat's Machine asks")
         self.assertEqual(pushed[0]['body'], 'Who knows someone at Client?')  # the company, not its domain
         self.assertEqual(pushed[0]['url'], 'https://machine.example/#fleet=q_' + 'a' * 16)
         self.assertEqual([x['action'] for x in pushed[0]['actions']], ['once', 'decline'])
-        a.fleet_push(self.store, config, rows[:2], sender=lambda request: pushed.append(request['payload']) or {'results': []})
+        machine_delivery_deliver.fleet_push(self.store, config, rows[:2], sender=lambda request: pushed.append(request['payload']) or {'results': []})
         self.assertEqual(pushed[1]['title'], '2 Fleet questions wait for you')
         sent = []
-        a.fleet_telegram(config, fleet.telegram_message(rows[:2], 'https://machine.example/'), request=lambda c, args: sent.append(args) or {'messageId': '78'})
+        machine_delivery_telegram.fleet_telegram(config, fleet.telegram_message(rows[:2], 'https://machine.example/'), request=lambda c, args: sent.append(args) or {'messageId': '78'})
         values = [b['action'].get('value') for block in sent[0]['presentation']['blocks'] for b in block['buttons']]
         self.assertIn('assistant:fleet:q_' + 'a' * 16 + ':once', values)
         self.assertIn('assistant:fleet:q_' + 'b' * 16 + ':decline', values)
@@ -361,8 +364,8 @@ class Fleet(unittest.TestCase):
         everything = json.dumps([pushed, sent])
         for private in ('Sam', '40k', 'Kim', 'owner@acme.example', 'closeness', '"knows"', 'last_contact'):
             self.assertNotIn(private, everything)
-        with patch_everywhere(a, 'telegram_request', lambda c, args: sent.append(args) or {'messageId': '79'}):
-            app = object.__new__(a.App)
+        with patch_everywhere(machine_delivery_telegram, 'telegram_request', lambda c, args: sent.append(args) or {'messageId': '79'}):
+            app = object.__new__(machine_main.App)
             app.store, app.config, app.fleet = self.store, {**config, 'telegram_owner': ''}, self.fleet
             self.assertIsNone(app.fleet_notify(rows[:1]))  # Telegram off: the phone only
             self.assertEqual(len(sent), 1)
@@ -376,7 +379,7 @@ class Fleet(unittest.TestCase):
         self.ask('relationships', {'about': 'client.example'}, one)
         self.ask('relationships', {'about': 'eu.client.example'}, two)
         self.fleet.notify_round(dt.datetime.now(dt.timezone.utc) + dt.timedelta(seconds=30))
-        app = object.__new__(a.App)
+        app = object.__new__(machine_main.App)
         app.store, app.config, app.fleet = self.store, {**CONFIG, 'dashboard_host': 'machine.example'}, self.fleet
         self.fleet.config = app.config
         tap = lambda ask_id, choice, message='77': app.action('fleet_decide', {'id': ask_id, 'choice': choice, 'source': 'telegram', 'message_id': message})
@@ -432,7 +435,7 @@ class Fleet(unittest.TestCase):
         self.assertEqual([[b['text'] for b in row] for row in told[1][1]['buttons']], [['Open']])  # info: Open only, never a choice
         self.assertEqual(self.fleet.summary()['waiting'], 1)
         self.assertEqual(self.fleet.notice_round(), [])  # once each
-        app = object.__new__(a.App)
+        app = object.__new__(machine_main.App)
         app.store, app.config, app.fleet = self.store, CONFIG, self.fleet
         tap = lambda choice, message='501': app.action('fleet_notice_decide', {'id': nid, 'choice': choice, 'source': 'telegram', 'message_id': message})
         with self.assertRaisesRegex(ValueError, 'not the one sent'):
@@ -486,7 +489,7 @@ class Fleet(unittest.TestCase):
             db.execute("INSERT INTO push_subscriptions(endpoint,p256dh,auth,created_at) VALUES('https://push.example/1','k','a',?)", (NOW.isoformat(),))
         pushed = []
         config = {**CONFIG, 'dashboard_host': 'machine.example', 'dashboard_path': '/'}
-        a.fleet_notice_push(self.store, config, told[0][0], sender=lambda request: pushed.append(request['payload']) or {'results': []})
+        machine_delivery_deliver.fleet_notice_push(self.store, config, told[0][0], sender=lambda request: pushed.append(request['payload']) or {'results': []})
         self.assertEqual(pushed[0]['body'], 'Ann wants a Standard server in Acme: €30/month, new total €60/month.')
         self.assertEqual(pushed[0]['url'], 'https://machine.example/#fleet=' + nid)
 
@@ -588,7 +591,7 @@ class AccountSummary(unittest.TestCase):
         relay = FakeRelay()
         relay.call = lambda method, path, body=None, timeout=40: relay.calls.append((method, path)) or answer
         with tempfile.TemporaryDirectory() as temp:
-            store = a.Store(Path(temp) / 'events.sqlite')
+            store = machine_main.Store(Path(temp) / 'events.sqlite')
             config = {'fleet': {'url': 'https://cp.example.org/api/fleet'}, 'credentials': {'fleet': '/t'}}
             box = fleet.Fleet(store.connect, config, lambda: 'fd_x', relay=relay)
             found = box.account()
@@ -606,11 +609,11 @@ class AccountSummary(unittest.TestCase):
 
     def test_the_dashboard_gets_off_or_a_short_note(self):
         import types
-        self.assertEqual(a.App.account_view(types.SimpleNamespace(fleet=None)), {'on': False})
+        self.assertEqual(machine_main.App.account_view(types.SimpleNamespace(fleet=None)), {'on': False})
         class Away:
             def account(self):
                 raise fleet.NetworkUnavailable('The Network is restarting; try again in a minute.')
-        self.assertEqual(a.App.account_view(types.SimpleNamespace(fleet=Away())), {'on': True, 'error': 'Can’t reach your account right now.'})
+        self.assertEqual(machine_main.App.account_view(types.SimpleNamespace(fleet=Away())), {'on': True, 'error': 'Can’t reach your account right now.'})
 
 
 class TwoNodes(unittest.TestCase):
@@ -710,7 +713,7 @@ class TwoNodes(unittest.TestCase):
     def test_an_unknown_or_known_receipt_keeps_its_node_after_restart(self):
         from unittest.mock import patch
         with tempfile.TemporaryDirectory() as folder:
-            store = a.Store(Path(folder) / 'events.sqlite')
+            store = machine_main.Store(Path(folder) / 'events.sqlite')
             before = fleet.NetworkClient(self.MAIN, lambda: 'test', [self.SECOND], connect=store.connect)
             with patch.object(before, '_call', side_effect=TimeoutError('response was lost')):
                 with self.assertRaises(fleet.Unavailable):
@@ -1028,7 +1031,7 @@ class RelayRestart(unittest.TestCase):
                 relay.call('GET', '/directory')
 
         with tempfile.TemporaryDirectory() as tmp:
-            store = a.Store(str(Path(tmp) / 'events.sqlite'))
+            store = machine_main.Store(str(Path(tmp) / 'events.sqlite'))
             stop, steps, waits = threading.Event(), [], []
             box = fleet.Fleet(store.connect, CONFIG, lambda: 'fd_x', relay=FakeRelay())
 
@@ -1050,7 +1053,7 @@ class RelayRestart(unittest.TestCase):
     def test_another_error_says_where_it_came_from(self):
         import threading
         with tempfile.TemporaryDirectory() as tmp:
-            store = a.Store(str(Path(tmp) / 'events.sqlite'))
+            store = machine_main.Store(str(Path(tmp) / 'events.sqlite'))
             stop = threading.Event()
             box = fleet.Fleet(store.connect, CONFIG, lambda: 'fd_x', relay=FakeRelay())
 

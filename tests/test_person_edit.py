@@ -5,8 +5,10 @@ import time
 import unittest
 
 import test_graph as tg
+import enrichment
+import machine.actions as machine_actions
 
-a, graph = tg.a, tg.graph
+graph = tg.graph
 
 
 class PersonEdit(unittest.TestCase):
@@ -102,7 +104,7 @@ class PersonEdit(unittest.TestCase):
         self.add(tg.mail(3, 'Ivy Park <ivy@globex.example>', 'sam@acme.com'))
         self.build()
         with self.store.connect() as db:
-            a.enrichment.fact_tables(db)
+            enrichment.fact_tables(db)
             db.execute("INSERT INTO person_facts VALUES('email:ivy@globex.example','phone','+32 470 00 00 52',2,'slack',?)", (tg.NOW.isoformat(),))
             db.execute("INSERT INTO person_facts VALUES('email:ivy@globex.example','title','Buyer',2,'slack',?)", (tg.NOW.isoformat(),))
         self.build()
@@ -146,7 +148,7 @@ class PersonEdit(unittest.TestCase):
                             ({'title': 'x' * 121}, 'up to 120')):
             with self.assertRaisesRegex(ValueError, why):
                 self.edit('email:ivy@globex.example', **fields)
-        self.assertIn('graph_person_edit', a.OWNER_ACTIONS)
+        self.assertIn('graph_person_edit', machine_actions.OWNER_ACTIONS)
 
     def test_delete_permanently_takes_the_edits_too(self):
         self.add(tg.mail(3, 'Ivy Park <ivy@globex.example>', 'sam@acme.com'))

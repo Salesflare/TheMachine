@@ -21,8 +21,14 @@ import next_actions as n
 import onboarding
 import test_ux as ux
 from seams import patch_everywhere  # noqa: E402
+import machine.app.card_actions as machine_app_card_actions
+import machine.main as machine_main
+import machine.sources.calendar as machine_sources_calendar
+import machine.sources.gmail as machine_sources_gmail
+import machine.text as machine_text
+import sources
+import timeutil
 
-a = ux.a
 BROKER = 'https://cloud.example/api/microsoft/token'
 G = 'https://graph.microsoft.com/v1.0'
 INBOX, SENT, SNOOZED = 'f-inbox', 'f-sent', 'f-snoozed'
@@ -191,7 +197,7 @@ class Base(unittest.TestCase):
                        'accounts': [self.mail, self.cal], 'bootstrap_days': 7, 'database': str(Path(self.temp.name) / 'events.sqlite')}
         self.fake = FakeGraph()
         patcher = mock.patch.object(ms_graph.urllib.request, 'urlopen', self.fake); patcher.start(); self.addCleanup(patcher.stop)
-        self.store = a.Store(Path(self.temp.name) / 'events.sqlite')
+        self.store = machine_main.Store(Path(self.temp.name) / 'events.sqlite')
 
 
 class Calls(Base):
@@ -208,9 +214,9 @@ class Calls(Base):
         self.assertEqual(ms_graph.url_for('messages.mime', {'id': 'a/b'})[2], G + '/me/messages/a%2Fb/$value')
 
     def test_the_broker_gives_one_token_per_scope_and_identity_is_checked(self):
-        profile = a.Gmail(self.config, self.mail).profile()
+        profile = machine_sources_gmail.Gmail(self.config, self.mail).profile()
         self.assertEqual(profile['emailAddress'], 'alex@acme.test')  # personal accounts: the sign-in name when mail is empty
-        a.Gmail(self.config, self.mail).profile()
+        machine_sources_gmail.Gmail(self.config, self.mail).profile()
         asks = [json.loads(c[3]) for c in self.fake.calls if c[1] == BROKER]
         self.assertEqual(asks, [{'email': 'alex@acme.test', 'scope': 'User.Read'}])
         self.assertIsNone(onboarding.check(self.config, self.mail))
@@ -222,48 +228,48 @@ class Calls(Base):
     def test_access_and_folder_caches_do_not_cross_independent_connections(self):
         other = {**self.config, 'microsoft_broker': {'url': 'https://other.example/token'}}
         with mock.patch.object(ms_graph, '_broker', side_effect=lambda config, *args: {'access_token': config['microsoft_broker']['url'], 'expires_in': 3600}):
-            first = ms_graph.token(self.config, a.credential, self.mail, 'Mail.Read')
-            second = ms_graph.token(other, a.credential, self.mail, 'Mail.Read')
+            first = ms_graph.token(self.config, sources.credential, self.mail, 'Mail.Read')
+            second = ms_graph.token(other, sources.credential, self.mail, 'Mail.Read')
         self.assertNotEqual(first, second)
         with mock.patch.object(ms_graph, 'call', side_effect=lambda config, *args: {'id': config['microsoft_broker']['url']}):
-            self.assertNotEqual(ms_graph.folders(self.config, a.credential, self.mail), ms_graph.folders(other, a.credential, self.mail))
+            self.assertNotEqual(ms_graph.folders(self.config, sources.credential, self.mail), ms_graph.folders(other, sources.credential, self.mail))
 
     def test_reconnecting_invalidates_the_cached_access(self):
         with mock.patch.object(ms_graph, '_broker', side_effect=[{'access_token': 'first', 'expires_in': 3600}, {'access_token': 'second', 'expires_in': 3600}]):
-            first = ms_graph.token(self.config, a.credential, self.mail, 'Mail.Read')
-            second = ms_graph.token(self.config, a.credential, {**self.mail, 'connected_at': '2026-10-21T09:00:00Z'}, 'Mail.Read')
+            first = ms_graph.token(self.config, sources.credential, self.mail, 'Mail.Read')
+            second = ms_graph.token(self.config, sources.credential, {**self.mail, 'connected_at': '2026-10-21T09:00:00Z'}, 'Mail.Read')
         self.assertNotEqual(first, second)
 
     def test_graph_throttle_preserves_the_requested_wait(self):
         with mock.patch.object(ms_graph.urllib.request, 'urlopen', side_effect=urllib.error.HTTPError(G, 429, 'busy', {'Retry-After': '420'}, io.BytesIO())):
             with mock.patch.object(ms_graph, 'token', return_value='test'):
                 with self.assertRaises(ms_graph.GraphError) as got:
-                    ms_graph.call(self.config, a.credential, self.mail, 'me')
+                    ms_graph.call(self.config, sources.credential, self.mail, 'me')
         self.assertEqual(got.exception.retry_after, 420)
 
     def test_a_failed_mail_read_names_its_graph_call_without_ids(self):
         with mock.patch.object(ms_graph.urllib.request, 'urlopen', side_effect=urllib.error.HTTPError(G, 504, 'busy', {}, io.BytesIO())):
             with mock.patch.object(ms_graph, 'token', return_value='test'):
-                with self.assertRaises(a.SourceError) as got:
-                    a.gog_read(self.config, self.mail, 'gmail', 'v1', 'gmail.users.messages.get', {'id': 'msg-7f3a'}, 'scope')
+                with self.assertRaises(sources.SourceError) as got:
+                    sources.gog_read(self.config, self.mail, 'gmail', 'v1', 'gmail.users.messages.get', {'id': 'msg-7f3a'}, 'scope')
         self.assertEqual((got.exception.status, got.exception.route), (504, '/me/messages/{id}'))
         self.assertEqual(str(got.exception), 'outlook:HTTP_504')  # the error feed's message stays the same
         with mock.patch.object(ms_graph.urllib.request, 'urlopen', side_effect=TimeoutError()):
             with mock.patch.object(ms_graph, 'token', return_value='test'):
                 with self.assertRaises(ms_graph.GraphError) as got:
-                    ms_graph.call(self.config, a.credential, self.mail, 'messages.mime', {'id': 'msg-7f3a'}, raw=True)
+                    ms_graph.call(self.config, sources.credential, self.mail, 'messages.mime', {'id': 'msg-7f3a'}, raw=True)
         self.assertEqual(got.exception.route, '/me/messages/{id}/$value')
 
     def test_oversized_raw_response_never_becomes_a_successful_partial_file(self):
         with mock.patch.object(ms_graph, 'token', return_value='test'), mock.patch.object(ms_graph.urllib.request, 'urlopen', return_value=Response(b'x' * 40_000_001)):
             with self.assertRaises(ms_graph.GraphError):
-                ms_graph.call(self.config, a.credential, self.mail, 'messages.mime', {'id': 'm1'}, raw=True)
+                ms_graph.call(self.config, sources.credential, self.mail, 'messages.mime', {'id': 'm1'}, raw=True)
 
     def test_attachment_listing_follows_every_page_and_keeps_call_scope(self):
         link = G + '/me/messages/m1/attachments?$skip=1'
         pages = [{'value': [{'id': 'one', 'name': 'one.pdf'}], '@odata.nextLink': link}, {'value': [{'id': 'two', 'name': 'two.pdf'}]}]
         with mock.patch.object(ms_graph, 'call', side_effect=pages) as called:
-            found = ms_graph.attachments(self.config, a.credential, self.mail, 'm1')
+            found = ms_graph.attachments(self.config, sources.credential, self.mail, 'm1')
         self.assertEqual([f['id'] for f in found], ['one', 'two'])
         self.assertEqual(called.call_args_list[1].args[4], {'id': 'm1', '$link': link})
 
@@ -274,7 +280,7 @@ class Calls(Base):
         def refused(account):
             ms_graph._tokens.clear()
             with self.assertRaises(ms_graph.GraphError) as caught:
-                ms_graph.token(self.config, a.credential, account, 'User.Read')
+                ms_graph.token(self.config, sources.credential, account, 'User.Read')
             return caught.exception.category, caught.exception.retry_after
 
         self.fake.broker_fail = (401, {})
@@ -292,9 +298,9 @@ class Calls(Base):
         self.assertTrue(onboarding.check(self.config, self.mail).startswith(onboarding.BUSY))
 
     def test_connecting_again_ends_the_wait(self):
-        app = object.__new__(a.App)
+        app = object.__new__(machine_main.App)
         app.config, app.store, app.stop = self.config, self.store, threading.Event()
-        self.store.failed(self.mail['id'], a.SourceError('outlook:microsoft_signin_expired', 401, retry_after=3600))
+        self.store.failed(self.mail['id'], sources.SourceError('outlook:microsoft_signin_expired', 401, retry_after=3600))
         with self.store.connect() as db:
             row = db.execute('SELECT retry_at,error,error_at FROM checkpoints WHERE account_id=?', (self.mail['id'],)).fetchone()
         waits = []
@@ -314,8 +320,8 @@ class MailSync(Base):
     def test_bootstrap_and_changes_flow_through_the_gmail_sync(self):
         self.fake.add('m1', INBOX, '2099-01-01T08:00:00Z', '2099-01-01T08:00:00Z', mime('Quote', 'Bo <bo@client.test>', 'alex@acme.test', 'Caf\xe9 at 10?', '<m1@client.test>'), read=False)
         self.fake.add('m2', SENT, '2099-01-01T09:00:00Z', '2099-01-01T09:00:00Z', mime('Re: Quote', 'alex@acme.test', 'bo@client.test', 'Yes', '<m2@acme.test>'))
-        a.sync_gmail(self.store, self.config, self.mail)   # bootstrap page
-        a.sync_gmail(self.store, self.config, self.mail)   # incremental from here
+        machine_sources_gmail.sync_gmail(self.store, self.config, self.mail)   # bootstrap page
+        machine_sources_gmail.sync_gmail(self.store, self.config, self.mail)   # incremental from here
         with self.store.connect() as db:
             rows = {r['source_id']: r for r in db.execute('SELECT * FROM events')}
         first = json.loads(rows['m1']['metadata'])
@@ -329,7 +335,7 @@ class MailSync(Base):
         self.assertEqual(state['mode'], 'incremental')
         # Moved to Deleted Items: the same as Gmail's trash label
         self.fake.messages['m1'].update(parentFolderId='f-trash', lastModifiedDateTime='2099-01-02T08:00:00Z')
-        a.sync_gmail(self.store, self.config, self.mail)
+        machine_sources_gmail.sync_gmail(self.store, self.config, self.mail)
         with self.store.connect() as db:
             labels = json.loads(db.execute("SELECT metadata FROM events WHERE source_id='m1'").fetchone()[0])['labels']
         self.assertIn('TRASH', labels)
@@ -339,28 +345,28 @@ class MailSync(Base):
         """Graph's /me can fail for hours while the mailbox reads fine: the identity checked once holds for the connection,
         a reconnect checks again, and a mailbox never checked still fails closed."""
         self.fake.add('m1', INBOX, '2099-01-01T08:00:00Z', '2099-01-01T08:00:00Z', mime('Quote', 'Bo <bo@client.test>', 'alex@acme.test', 'Hi', '<m1@client.test>'))
-        a.sync_gmail(self.store, self.config, self.mail)
+        machine_sources_gmail.sync_gmail(self.store, self.config, self.mail)
         self.fake.fail['GET /me'] = 504
-        a.sync_gmail(self.store, self.config, self.mail)  # reads on: no /me asked
+        machine_sources_gmail.sync_gmail(self.store, self.config, self.mail)  # reads on: no /me asked
         self.assertEqual(self.store.checkpoint('acme-outlook')['mode'], 'incremental')
-        with self.assertRaises(a.SourceError) as got:
-            a.sync_gmail(self.store, self.config, {**self.mail, 'connected_at': '2099-01-02T09:00:00Z'})
+        with self.assertRaises(sources.SourceError) as got:
+            machine_sources_gmail.sync_gmail(self.store, self.config, {**self.mail, 'connected_at': '2099-01-02T09:00:00Z'})
         self.assertEqual(got.exception.status, 504)
-        with self.assertRaises(a.SourceError):
-            a.Gmail(self.config, {**self.mail, 'email': 'other@acme.test'}).profile()
+        with self.assertRaises(sources.SourceError):
+            machine_sources_gmail.Gmail(self.config, {**self.mail, 'email': 'other@acme.test'}).profile()
 
     def test_the_checked_address_outlives_a_restart_but_not_its_six_hours(self):
         """The checked address is kept with the mailbox's checkpoint: a restart during a /me outage reads on; a checkpoint
         whose time ran out, from another connection, or claiming more than six hours asks /me again."""
         self.fake.add('m1', INBOX, '2099-01-01T08:00:00Z', '2099-01-01T08:00:00Z', mime('Quote', 'Bo <bo@client.test>', 'alex@acme.test', 'Hi', '<m1@client.test>'))
-        a.sync_gmail(self.store, self.config, self.mail)
-        a.sync_gmail(self.store, self.config, self.mail)
+        machine_sources_gmail.sync_gmail(self.store, self.config, self.mail)
+        machine_sources_gmail.sync_gmail(self.store, self.config, self.mail)
         kept = self.store.checkpoint('acme-outlook')['identity']
         self.assertEqual(kept['address'], 'alex@acme.test')
         self.assertNotIn('machine-token', json.dumps(kept))  # a hash of the connection, never its credential
         self.fake.fail['GET /me'] = 504
         ms_graph._identities.clear(); ms_graph._tokens.clear()  # a restart
-        a.sync_gmail(self.store, self.config, self.mail)
+        machine_sources_gmail.sync_gmail(self.store, self.config, self.mail)
         self.assertEqual(self.store.checkpoint('acme-outlook')['identity'], kept)  # never stretched past its first check
 
         def restarted_with(identity):
@@ -368,16 +374,16 @@ class MailSync(Base):
             with self.store.connect() as db:
                 state = {**self.store.checkpoint('acme-outlook'), 'identity': identity}
                 db.execute('UPDATE checkpoints SET state=? WHERE account_id=?', (json.dumps(state), 'acme-outlook'))
-            with self.assertRaises(a.SourceError) as got:
-                a.sync_gmail(self.store, self.config, self.mail)
+            with self.assertRaises(sources.SourceError) as got:
+                machine_sources_gmail.sync_gmail(self.store, self.config, self.mail)
             self.assertEqual(got.exception.status, 504)
         later = (dt.datetime.now(dt.timezone.utc) + dt.timedelta(hours=7)).isoformat()
         restarted_with({**kept, 'until': (dt.datetime.now(dt.timezone.utc) - dt.timedelta(minutes=1)).isoformat()})
         restarted_with({**kept, 'key': 'another-connection'})
         restarted_with({**kept, 'until': later})
         ms_graph._identities.clear()
-        with self.assertRaises(a.SourceError):  # a reconnect is another connection: its checkpoint's address doesn't count
-            a.sync_gmail(self.store, self.config, {**self.mail, 'connected_at': '2099-01-02T09:00:00Z'})
+        with self.assertRaises(sources.SourceError):  # a reconnect is another connection: its checkpoint's address doesn't count
+            machine_sources_gmail.sync_gmail(self.store, self.config, {**self.mail, 'connected_at': '2099-01-02T09:00:00Z'})
 
     def test_a_card_reads_attachments_from_the_message_itself(self):
         body = (b'From: bo@client.test\r\nTo: alex@acme.test\r\nSubject: Invoice\r\nMIME-Version: 1.0\r\n'
@@ -385,8 +391,8 @@ class MailSync(Base):
                 b'--XX\r\nContent-Type: application/pdf\r\nContent-Disposition: attachment; filename="inv.pdf"\r\n'
                 b'Content-Transfer-Encoding: base64\r\n\r\nJVBERi0x\r\n--XX--\r\n')
         self.fake.add('m3', INBOX, '2099-01-01T08:00:00Z', '2099-01-01T08:00:00Z', body)
-        message = a.gog_read(self.config, self.mail, 'gmail', 'v1', 'gmail.users.messages.get', {'userId': 'me', 'id': 'm3', 'format': 'full'}, 'x')
-        found = a.message_attachments(message['payload'])
+        message = sources.gog_read(self.config, self.mail, 'gmail', 'v1', 'gmail.users.messages.get', {'userId': 'me', 'id': 'm3', 'format': 'full'}, 'x')
+        found = machine_text.message_attachments(message['payload'])
         self.assertEqual([f['name'] for f in found], ['inv.pdf'])
         pdf = message['payload']['parts'][1]['body']['data']
         self.assertEqual(base64.urlsafe_b64decode(pdf + '=' * (-len(pdf) % 4)), b'%PDF-1')
@@ -408,7 +414,7 @@ class MailSync(Base):
                 raise IndexError('list index out of range')
             return parsed(name, raw)
         with mock.patch.object(ms_graph, '_parsed', side_effect=fails):
-            a.sync_gmail(self.store, self.config, self.mail)
+            machine_sources_gmail.sync_gmail(self.store, self.config, self.mail)
             headers = {h['name']: h['value'] for h in ms_graph.payload(body)['headers']}
         self.assertEqual((headers['Message-ID'], headers['From'], headers['Subject']), ('<>', '"', 'Welcome to your mailbox'))
         with self.store.connect() as db:
@@ -439,10 +445,10 @@ class CalendarSync(Base):
                 timeutil.set_timezone(owner)
                 item = ms_graph.calendar_item(raw, 'alex@acme.test')
                 self.assertEqual((item['start'], item['end']), ({'date': '2099-12-05'}, {'date': '2099-12-06'}))
-                event = a.calendar_event({'id': 'cal', 'email': 'alex@acme.test'}, item, 'UTC')
+                event = machine_sources_calendar.calendar_event({'id': 'cal', 'email': 'alex@acme.test'}, item, 'UTC')
                 self.assertEqual(event['occurred_at'], midnight)  # midnight on Dec 5 where the owner is, not in UTC
                 self.assertEqual(timeutil.local_day(event['occurred_at'], event['metadata']), dt.date(2099, 12, 5))
-                self.assertEqual(a.all_day_span(event['metadata']), ('2099-12-05', '2099-12-06'))
+                self.assertEqual(machine_sources_calendar.all_day_span(event['metadata']), ('2099-12-05', '2099-12-06'))
 
     def test_delta_window_then_changes_and_removals(self):
         self.fake.delta = [
@@ -454,8 +460,8 @@ class CalendarSync(Base):
                         'webLink': 'https://outlook.office365.com/owa/?itemid=e1', 'lastModifiedDateTime': '2099-01-01T00:00:00Z'}],
              '@odata.deltaLink': G + '/me/calendarView/delta?$deltatoken=one'},
             {'value': [{'id': 'e1', '@removed': {'reason': 'deleted'}}], '@odata.deltaLink': G + '/me/calendarView/delta?$deltatoken=two'}]
-        with patch_everywhere(a, 'now', return_value='2099-01-01T00:00:00+00:00'):
-            a.sync_calendar(self.store, self.config, self.cal)
+        with patch_everywhere(timeutil, 'now', return_value='2099-01-01T00:00:00+00:00'):
+            machine_sources_calendar.sync_calendar(self.store, self.config, self.cal)
             with self.store.connect() as db:
                 row = db.execute("SELECT * FROM events WHERE source_id='e1'").fetchone()
             meta = json.loads(row['metadata'])
@@ -464,7 +470,7 @@ class CalendarSync(Base):
             self.assertTrue(meta['attendees'][1]['resource'])  # a booked room: never a person on the Graph or in Calendar
             self.assertEqual(meta['source_url'], 'https://outlook.office365.com/owa/?itemid=e1')
             self.assertEqual(self.store.checkpoint(self.cal['id'])['sync_token'], G + '/me/calendarView/delta?$deltatoken=one')
-            a.sync_calendar(self.store, self.config, self.cal)
+            machine_sources_calendar.sync_calendar(self.store, self.config, self.cal)
             with self.store.connect() as db:
                 self.assertEqual(db.execute("SELECT deleted FROM events WHERE source_id='e1'").fetchone()[0], 1)
         delta = [c for c in self.fake.calls if '/calendarView/delta' in c[1]]
@@ -491,8 +497,8 @@ class CalendarSync(Base):
              'location': {'displayName': 'Room 7'}, 'isAllDay': False, 'lastModifiedDateTime': '2098-12-02T00:00:00Z'},
             {'id': 'p1', 'type': 'occurrence', 'seriesMasterId': 'S2', 'start': when(4, 16), 'end': when(4, 17)}],
             '@odata.deltaLink': G + '/me/calendarView/delta?$deltatoken=one'}]
-        with patch_everywhere(a, 'now', return_value='2099-01-01T00:00:00+00:00'):
-            a.sync_calendar(self.store, self.config, self.cal)
+        with patch_everywhere(timeutil, 'now', return_value='2099-01-01T00:00:00+00:00'):
+            machine_sources_calendar.sync_calendar(self.store, self.config, self.cal)
         with self.store.connect() as db:
             rows = {r['source_id']: r for r in db.execute("SELECT source_id,title,metadata FROM events WHERE kind='calendar.event'")}
         self.assertEqual(sorted(rows), ['o1', 'o2', 'p1'])  # the series master is no event of its own
@@ -508,11 +514,11 @@ class CalendarSync(Base):
 
     def test_an_outlook_calendar_read_before_series_titles_is_read_again(self):
         self.fake.delta = [{'value': [], '@odata.deltaLink': G + '/me/calendarView/delta?$deltatoken=two'}]
-        with patch_everywhere(a, 'now', return_value='2099-01-01T00:00:00+00:00'):
+        with patch_everywhere(timeutil, 'now', return_value='2099-01-01T00:00:00+00:00'):
             self.store.commit_page(self.cal['id'], {'mode': 'incremental', 'sync_token': G + '/me/calendarView/delta?$deltatoken=old',
                                                     'refresh_at': '2099-01-02T00:00:00+00:00', 'time_min': '2098-12-25T00:00:00+00:00',
                                                     'time_max': '2099-01-31T00:00:00+00:00'}, [], record_sync=False)
-            a.sync_calendar(self.store, self.config, self.cal)
+            machine_sources_calendar.sync_calendar(self.store, self.config, self.cal)
         delta = [c[1] for c in self.fake.calls if '/calendarView/delta' in c[1]]
         self.assertIn('startDateTime=', delta[0])  # the whole window again, not the old delta
         self.assertEqual(self.store.checkpoint(self.cal['id'])['outlook_read'], ms_graph.CALENDAR_READ)
@@ -527,7 +533,7 @@ class Sending(Base):
         action = self.action()
         self.assertEqual((action['from'], action['signature'], action['snooze_days']), ('alex@acme.test', True, 3))
         self.fake.sent_html = [SENT_SIGNED.format(n) for n in range(4)]
-        email = n.EmailTransport(self.config, a.credential, a.gog_read)
+        email = n.EmailTransport(self.config, sources.credential, sources.gog_read)
         with self.assertRaisesRegex(ValueError, 'Outlook is connected read-only'):
             email.preflight(action)
         self.fake.granted |= {'Mail.ReadWrite', 'Mail.Send'}
@@ -573,7 +579,7 @@ class ReplyInItsConversation(Base):
                 'account_id': account_id, 'source_id': 'in1' if account_id == 'acme-outlook' else 'g1', 'title': 'Quote'}
 
     def reply(self, rows, allowed=('acme-outlook',)):
-        replied = a.replied_to(rows)
+        replied = machine_app_card_actions.replied_to(rows)
         value = {'kind': 'email', 'label': 'Send reply', 'account_id': 'acme-outlook', 'to': ['bo@client.test'],
                  'subject': 'Re: Quote', 'body': 'Yes, 10 works.\n\nAlex'}
         return n.validate(n.fill_reply(value, replied), self.config, list(allowed), replied=replied)
@@ -584,7 +590,7 @@ class ReplyInItsConversation(Base):
     def test_a_reply_in_the_same_mailbox_goes_out_with_create_reply(self):
         action = self.reply([self.email()])
         self.assertEqual((action['in_reply_to'], action['thread_id'], action['reply_to_id']), ('<m1@client.test>', 'conv-9', 'in1'))
-        email = n.EmailTransport(self.config, a.credential, a.gog_read)
+        email = n.EmailTransport(self.config, sources.credential, sources.gog_read)
         email.preflight(action)
         result = email.send(action, {'rfc_message_id': '<job-1@acme.test>'})
         self.assertEqual(result['rfc_message_id'], f"<{result['message_id']}@outlook.test>")  # Outlook's own, kept on the job
@@ -602,7 +608,7 @@ class ReplyInItsConversation(Base):
         self.config.update(attachment_sources=[str(root / 'files')], attachment_dir=str(root / 'store'))
         action = self.reply([self.email()])
         action = {**action, 'attachments': n.store_attachments([str(root / 'files' / 'receipt.pdf')], self.config)}
-        email = n.EmailTransport(self.config, a.credential, a.gog_read)
+        email = n.EmailTransport(self.config, sources.credential, sources.gog_read)
         result = email.send(action, {'rfc_message_id': '<job-4@acme.test>'})
         files = self.fake.messages[result['message_id']]['_files']
         self.assertEqual((files[0]['name'], base64.b64decode(files[0]['contentBytes'])), ('receipt.pdf', b'%PDF receipt'))
@@ -613,7 +619,7 @@ class ReplyInItsConversation(Base):
     def test_an_original_gone_from_the_mailbox_still_threads_by_its_headers(self):
         action = self.reply([self.email()])
         del self.fake.messages['in1']
-        result = n.EmailTransport(self.config, a.credential, a.gog_read).send(action, {'rfc_message_id': '<job-2@acme.test>'})
+        result = n.EmailTransport(self.config, sources.credential, sources.gog_read).send(action, {'rfc_message_id': '<job-2@acme.test>'})
         self.assertTrue(result['message_id'].startswith('draft-'))
         sent = base64.b64decode(self.posted('/me/messages')[0][3]).decode()
         self.assertIn('In-Reply-To: <m1@client.test>', sent)
@@ -626,7 +632,7 @@ class ReplyInItsConversation(Base):
         self.assertEqual((action['in_reply_to'], action['reply_elsewhere']), ('<m1@client.test>', 'alex@acme.example'))
         self.assertNotIn('thread_id', action)
         self.assertNotIn('reply_to_id', action)
-        result = n.EmailTransport(self.config, a.credential, a.gog_read).send(action, {'rfc_message_id': '<job-3@acme.test>'})
+        result = n.EmailTransport(self.config, sources.credential, sources.gog_read).send(action, {'rfc_message_id': '<job-3@acme.test>'})
         self.assertTrue(result['message_id'].startswith('draft-'))
         self.assertEqual([c for c in self.fake.calls if c[1].endswith('/createReply')], [])
         self.assertIn('In-Reply-To: <m1@client.test>', base64.b64decode(self.posted('/me/messages')[0][3]).decode())
@@ -634,7 +640,7 @@ class ReplyInItsConversation(Base):
 
 class Snooze(Base):
     def test_snooze_moves_the_inbox_messages_and_wake_brings_them_back_unread(self):
-        snooze = n.ThreadSnooze(self.config, a.credential, a.gog_read)
+        snooze = n.ThreadSnooze(self.config, sources.credential, sources.gog_read)
         self.fake.add('in1', INBOX, '2099-01-01T08:00:00Z', '2099-01-01T08:00:00Z')
         self.fake.add('out1', SENT, '2099-01-01T09:00:00Z', '2099-01-01T09:00:00Z')
         self.assertEqual(snooze.snooze('acme-outlook', 'conv-1', 'out1'), 'no_permission')
@@ -652,7 +658,7 @@ class Snooze(Base):
         self.assertEqual(snooze.wake('acme-outlook', 'conv-1'), 'returned')  # already back: left alone
 
     def test_a_reply_already_in_never_gets_hidden_and_keeps_its_read_state(self):
-        snooze = n.ThreadSnooze(self.config, a.credential, a.gog_read)
+        snooze = n.ThreadSnooze(self.config, sources.credential, sources.gog_read)
         self.fake.granted |= {'Mail.ReadWrite', 'Mail.Send'}
         self.fake.add('in1', INBOX, '2099-01-01T08:00:00Z', '2099-01-01T08:00:00Z')
         self.fake.add('out1', SENT, '2099-01-01T09:00:00Z', '2099-01-01T09:00:00Z')
@@ -692,7 +698,7 @@ class Signatures(Base):
         gmail = {'id': 'acme-gmail', 'service': 'gmail', 'transport': 'broker', 'email': 'alex@acme.test', 'boundary': 'work:Acme'}
         self.config['accounts'].append(gmail)
         reads = []
-        email = n.EmailTransport(self.config, a.credential, lambda *args: reads.append(args) or {'signature': '<i>Gmail</i>'})
+        email = n.EmailTransport(self.config, sources.credential, lambda *args: reads.append(args) or {'signature': '<i>Gmail</i>'})
         action = {'kind': 'email', 'account_id': 'acme-gmail', 'from': 'alex@acme.test', 'signature': True}
         self.assertEqual(email.signature(action, gmail), '<i>Gmail</i>')  # empty: Gmail's own
         signatures.save(self.config, 'acme-gmail', '<b>Override</b>', 'owner')
@@ -704,7 +710,7 @@ class Signatures(Base):
     def settings_app(self, read):
         app = types.SimpleNamespace(config=self.config, mail_read=read)
         for name in ('mailbox_signature', 'signature_view', 'signature_action'):
-            setattr(app, name, getattr(a.App, name).__get__(app))
+            setattr(app, name, getattr(machine_main.App, name).__get__(app))
         return app
 
     def test_settings_imports_each_mailboxs_own_cleaned_and_keeps_the_owners(self):
@@ -742,7 +748,7 @@ class Signatures(Base):
         self.assertEqual(signatures.get(self.config, 'acme-gmail')['html'], '<b>Alex</b><img>')
         # A mailbox that can't be read now says so; nothing is kept.
         signatures.remove(self.config, 'acme-gmail')
-        app.mail_read = lambda *args: (_ for _ in ()).throw(a.SourceError('network'))
+        app.mail_read = lambda *args: (_ for _ in ()).throw(sources.SourceError('network'))
         with self.assertRaisesRegex(ValueError, 'Gmail could not be read now'):
             app.signature_action('detect_signature', {'account_id': 'acme-gmail'})
         self.assertIsNone(signatures.get(self.config, 'acme-gmail'))
@@ -755,26 +761,26 @@ class Attachments(Base):
                                   'size': 6, 'isInline': False, 'data': b'%PDF-1'},
                            'a2': {'@odata.type': '#microsoft.graph.referenceAttachment', 'id': 'a2', 'name': 'Deck', 'size': 0},
                            'a3': {'@odata.type': '#microsoft.graph.itemAttachment', 'id': 'a3', 'name': 'Fwd: older mail', 'size': 900}}
-        a.sync_gmail(self.store, self.config, self.mail)
+        machine_sources_gmail.sync_gmail(self.store, self.config, self.mail)
         with self.store.connect() as db:
             event = db.execute("SELECT id FROM events WHERE source_id='m4'").fetchone()[0]
         app = types.SimpleNamespace(config=self.config, store=self.store)
-        listed = a.App.mail_attachment(app, {'event_id': event})['attachments']
+        listed = machine_main.App.mail_attachment(app, {'event_id': event})['attachments']
         self.assertEqual([(x['name'], x['kind']) for x in listed], [('../inv.pdf', 'file'), ('Deck', 'link'), ('Fwd: older mail', 'item')])
         self.assertIn('browser', listed[1]['note'])
         folder = Path(self.temp.name) / 'attachments'
-        saved = a.App.mail_attachment(app, {'event_id': event, 'save': 'a1', 'job_id': 'job-1', '_folder': str(folder)})
+        saved = machine_main.App.mail_attachment(app, {'event_id': event, 'save': 'a1', 'job_id': 'job-1', '_folder': str(folder)})
         self.assertEqual(Path(saved['saved']), folder / 'job-1' / '_inv.pdf')  # no way out of the folder
         self.assertEqual(Path(saved['saved']).read_bytes(), b'%PDF-1')
         with self.assertRaisesRegex(ValueError, 'Only file attachments'):
-            a.App.mail_attachment(app, {'event_id': event, 'save': 'a2', 'job_id': 'job-1', '_folder': str(folder)})
+            machine_main.App.mail_attachment(app, {'event_id': event, 'save': 'a2', 'job_id': 'job-1', '_folder': str(folder)})
         with self.assertRaisesRegex(ValueError, 'job_id'):
-            a.App.mail_attachment(app, {'event_id': event, 'save': 'a1', 'job_id': '../x', '_folder': str(folder)})
+            machine_main.App.mail_attachment(app, {'event_id': event, 'save': 'a1', 'job_id': '../x', '_folder': str(folder)})
         self.fake.files['a1']['size'] = n.MAX_ATTACHMENT_BYTES + 1
         with self.assertRaisesRegex(ValueError, '18 MB'):
-            a.App.mail_attachment(app, {'event_id': event, 'save': 'a1', 'job_id': 'job-1', '_folder': str(folder)})
+            machine_main.App.mail_attachment(app, {'event_id': event, 'save': 'a1', 'job_id': 'job-1', '_folder': str(folder)})
         with self.assertRaisesRegex(ValueError, 'Gmail or Outlook mailbox'):
-            a.App.mail_attachment(app, {'account_id': 'acme-outlook-calendar', 'message_id': 'm4'})
+            machine_main.App.mail_attachment(app, {'account_id': 'acme-outlook-calendar', 'message_id': 'm4'})
 
 
 class BriefLinks(Base):
@@ -784,7 +790,7 @@ class BriefLinks(Base):
         self.assertEqual(ms_graph.open_link(self.mail, 'AA', 'https://outlook.office365.com/owa/?ItemID=AA'), 'https://outlook.office365.com/owa/?ItemID=AA')
         self.assertFalse(ms_graph.personal({'email': 'sam@live.nation.test'}))
         self.fake.add('m1', INBOX, '2099-01-01T08:00:00Z', '2099-01-01T08:00:00Z', mime('Quote', 'Bo <bo@client.test>', 'alex@acme.test', 'Hi', '<m1@client.test>'))
-        a.sync_gmail(self.store, self.config, self.mail)
+        machine_sources_gmail.sync_gmail(self.store, self.config, self.mail)
         opener = fleet.Fleet.brief_opener(types.SimpleNamespace(config=self.config, connect=self.store.connect))
         self.assertEqual(opener('client.test'), 'https://outlook.office365.com/owa/?ItemID=m1')
         self.assertTrue(opener('other.test').startswith('https://mail.google.com/'))
@@ -800,17 +806,17 @@ class OtherCalendars(Base):
         self.fake.calendars = {'team': [{'value': [], '@odata.deltaLink': G + '/me/calendars/team/calendarView/delta?$deltatoken=t1'},
                                         {'value': [], '@odata.deltaLink': G + '/me/calendars/team/calendarView/delta?$deltatoken=t2'}],
                                'other': [404]}
-        first = ms_graph.calendar_call(self.config, a.credential, shared, 'events.list', {'timeMin': '2099-01-01T00:00:00Z', 'timeMax': '2099-02-01T00:00:00Z'})
+        first = ms_graph.calendar_call(self.config, sources.credential, shared, 'events.list', {'timeMin': '2099-01-01T00:00:00Z', 'timeMax': '2099-02-01T00:00:00Z'})
         self.assertEqual(first['nextSyncToken'], G + '/me/calendars/team/calendarView/delta?$deltatoken=t1')
-        again = ms_graph.calendar_call(self.config, a.credential, shared, 'events.list', {'syncToken': first['nextSyncToken']})
+        again = ms_graph.calendar_call(self.config, sources.credential, shared, 'events.list', {'syncToken': first['nextSyncToken']})
         self.assertEqual(again['nextSyncToken'], G + '/me/calendars/team/calendarView/delta?$deltatoken=t2')
         with self.assertRaises(ms_graph.GraphError):  # another calendar's link is never followed
-            ms_graph.calendar_call(self.config, a.credential, {**shared, 'calendar_id': 'other'}, 'events.list', {'syncToken': first['nextSyncToken']})
-        whole = ms_graph.calendar_call(self.config, a.credential, {**shared, 'calendar_id': 'other'}, 'events.list',
+            ms_graph.calendar_call(self.config, sources.credential, {**shared, 'calendar_id': 'other'}, 'events.list', {'syncToken': first['nextSyncToken']})
+        whole = ms_graph.calendar_call(self.config, sources.credential, {**shared, 'calendar_id': 'other'}, 'events.list',
                                        {'timeMin': '2099-01-01T00:00:00Z', 'timeMax': '2099-02-01T00:00:00Z'})
         self.assertEqual(whole['nextSyncToken'], 'none')  # no delta for this one: read whole each round
         with self.assertRaises(ms_graph.GraphError) as caught:
-            ms_graph.calendar_call(self.config, a.credential, shared, 'events.list', {'syncToken': 'none'})
+            ms_graph.calendar_call(self.config, sources.credential, shared, 'events.list', {'syncToken': 'none'})
         self.assertEqual(caught.exception.status, 410)
 
 
@@ -851,16 +857,16 @@ class OwnApp(unittest.TestCase):
         ms_graph.save_signin(self.path, refresh, granted)
         self.assertEqual(self.path.stat().st_mode & 0o777, 0o600)
         with self.login([(200, {'access_token': 'a2', 'refresh_token': 'r2', 'expires_in': 3600, 'scope': 'https://graph.microsoft.com/Mail.Read https://graph.microsoft.com/User.Read'})]):
-            self.assertEqual(ms_graph.token(self.config, a.credential, self.account, 'Mail.Read'), 'a2')
+            self.assertEqual(ms_graph.token(self.config, sources.credential, self.account, 'Mail.Read'), 'a2')
         self.assertEqual(self.posts[-1][1]['refresh_token'], 'r1')
         self.assertEqual(json.loads(self.path.read_text())['refresh_token'], 'r2')  # rotated, saved
         with self.assertRaises(ms_graph.GraphError) as caught:
-            ms_graph.token(self.config, a.credential, self.account, 'Mail.Send')
+            ms_graph.token(self.config, sources.credential, self.account, 'Mail.Send')
         self.assertEqual(caught.exception.category, 'microsoft_scope_not_granted')
         ms_graph._tokens.clear()
         with self.login([(400, {'error': 'invalid_grant'})]):
             with self.assertRaises(ms_graph.GraphError) as caught:
-                ms_graph.token(self.config, a.credential, self.account, 'Mail.Read')
+                ms_graph.token(self.config, sources.credential, self.account, 'Mail.Read')
         self.assertTrue(caught.exception.category.startswith('outlook:microsoft_signin_expired'))
         self.assertEqual(caught.exception.retry_after, 3600)
 

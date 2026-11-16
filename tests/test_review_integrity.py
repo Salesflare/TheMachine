@@ -4,6 +4,9 @@ from unittest.mock import patch
 from contextlib import redirect_stdout
 root=Path(__file__).resolve().parent.parent;sys.path.insert(0,str(root))
 import test_graph as tg,test_promises as tp,cli
+import enrichment
+import machine.main as machine_main
+import machine.prompts.review as machine_prompts_review
 class GraphFixes(unittest.TestCase):
     setUp=tg.Graph.setUp;add=tg.Graph.add;build=tg.Graph.build;node=tg.Graph.node;ids=tg.Graph.ids;vectors=tg.Graph.vectors
     def test_current_vectors_only(self):
@@ -54,17 +57,15 @@ class GraphFixes(unittest.TestCase):
         with self.store.connect() as db:db.execute("UPDATE projects SET closed_at=? WHERE name='Hire: backend'",(tg.at(0),));db.execute("DELETE FROM board_offers")
         self.assertEqual(self.store.boards_text('r5'),'')  # fewer than three on no board
     def test_the_board_check_is_done_first_as_its_own_task_not_about_the_batch(self):
-        a=tg.a if hasattr(tg,'a') else __import__('assistant')
-        p=a.review_prompt('r1',['acct'],boards='- Hire: designer (project:1)')
+        p=machine_prompts_review.review_prompt('r1',['acct'],boards='- Hire: designer (project:1)')
         # Said in words, not by its place: it is this run's own, so it comes after the instructions every review shares
         # (their cached prefix, tests/test_review_cache_prefix.py)
         self.assertIn('Also in this turn, before the signal review: boards to suggest',p)
         self.assertGreater(p.index('Hire: designer'),p.index('End with exactly the line Done.'))
         self.assertIn('not about this batch',p)
-        self.assertNotIn('Two tasks',a.review_prompt('r1',['acct']))
+        self.assertNotIn('Two tasks',machine_prompts_review.review_prompt('r1',['acct']))
     def test_a_suggested_boards_lost_or_declined_ending_is_its_stalled_row_not_a_stage(self):
-        a=tg.a if hasattr(tg,'a') else __import__('assistant')
-        p=a.review_prompt('r1',['acct'],boards='- Hire: designer (project:1)')
+        p=machine_prompts_review.review_prompt('r1',['acct'],boards='- Hire: designer (project:1)')
         self.assertIn('own Stalled or declined row, so an ending where it didn',p)
         self.assertIn('is never a stage',p)
     def test_a_review_with_a_board_check_answers_it_before_it_finishes(self):
@@ -128,8 +129,8 @@ class GraphFixes(unittest.TestCase):
     def test_enrichment_error_retains_last_known_profile(self):
         self.build()
         with self.store.connect() as db:
-            tg.a.enrichment.save(db,'client.com','found',{'name':'Client Ltd'},tg.at(1))
-            tg.a.enrichment.save(db,'client.com','error',None,tg.at(0))
+            enrichment.save(db,'client.com','found',{'name':'Client Ltd'},tg.at(1))
+            enrichment.save(db,'client.com','error',None,tg.at(0))
             self.assertEqual(json.loads(db.execute('SELECT profile FROM org_profiles').fetchone()[0]),{'name':'Client Ltd'})
 class PromiseFixes(unittest.TestCase):
     setUp=tp.Promises.setUp;at=tp.Promises.at;app=tp.Promises.app;record=tp.Promises.record;row=tp.Promises.row
@@ -157,7 +158,7 @@ class PromiseFixes(unittest.TestCase):
             sql=db.execute("SELECT sql FROM sqlite_master WHERE name='promises'").fetchone()[0]
             db.execute(sql.replace('promises(', 'old_promises(',1).replace('UNIQUE(event_id,direction,who,what)','UNIQUE(event_id,direction,who)'))
             db.execute('INSERT INTO old_promises SELECT * FROM promises');db.execute('DROP TABLE promises');db.execute('ALTER TABLE old_promises RENAME TO promises')
-        reopened=tp.a.Store(self.store.path)
+        reopened=machine_main.Store(self.store.path)
         with reopened.connect() as db:self.assertEqual(dict(db.execute('SELECT * FROM promises').fetchone()),before)
         self.assertNotEqual(self.record(what='send the pricing sheet')['id'],pid)
     def test_moved_promise_cannot_publish_stale_card(self):

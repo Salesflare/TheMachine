@@ -12,7 +12,15 @@ import cli
 import test_ux as ux
 import timeutil
 from seams import patch_everywhere  # noqa: E402
-a = ux.a
+import datetime as dt
+import machine.actions as machine_actions
+import machine.app.preparation as machine_app_preparation
+import machine.app.promise_checks as machine_app_promise_checks
+import machine.app.recap as machine_app_recap
+import machine.cards as machine_cards
+import machine.main as machine_main
+import machine.prompts.review as machine_prompts_review
+import machine.sources.slack as machine_sources_slack
 
 GMAIL = {'id': 'work', 'email': 'owner@example.com', 'service': 'gmail', 'transport': 'gog', 'boundary': 'work:Example'}
 SLACK = {'id': 'slack', 'service': 'slack', 'transport': 'maton', 'boundary': 'work:Example', 'user_id': 'UOWNER1'}
@@ -33,10 +41,10 @@ class Promises(unittest.TestCase):
         zone = patch.object(timeutil, 'LOCAL_TZ', ZoneInfo('Europe/Brussels'))
         zone.start()
         self.addCleanup(zone.stop)
-        self.clock = patch_everywhere(a, 'now', return_value=MONDAY)
+        self.clock = patch_everywhere(timeutil, 'now', return_value=MONDAY)
         self.clock.start()
         self.addCleanup(lambda: self.clock.stop())  # at() swaps the patcher: stop whichever one runs last, or now() stays faked for later tests
-        self.store = a.Store(Path(self.tmp.name) / 'events.sqlite')
+        self.store = machine_main.Store(Path(self.tmp.name) / 'events.sqlite')
         self.store.owner_user_ids = {'UOWNER1'}
         self.store.commit_page('work', {}, [email('theirs', '2026-10-19T08:00:00+00:00'),
                                             email('mine', '2026-10-19T08:30:00+00:00', sent=True, title='Re: Deck')])
@@ -45,11 +53,11 @@ class Promises(unittest.TestCase):
 
     def at(self, stamp):
         self.clock.stop()
-        self.clock = patch_everywhere(a, 'now', return_value=stamp)
+        self.clock = patch_everywhere(timeutil, 'now', return_value=stamp)
         self.clock.start()
 
     def app(self):
-        app = object.__new__(a.App)
+        app = object.__new__(machine_main.App)
         app.store = self.store
         app.config = {'accounts': [GMAIL, SLACK], 'digest_at': '08:30', 'review_worker': {'enabled': True}}
         app.promise_check_model = lambda config, text: '[]'  # the check before a card (test_handled_first): nothing kept
@@ -215,7 +223,7 @@ class Promises(unittest.TestCase):
         self.at('2026-10-24T07:00:00+00:00')
         self.app().promise_step()
         card = next(s for s in self.store.snapshot([])['suggestions'] if s['dedupe_key'] == f'promise:{theirs}')
-        self.assertEqual(a.json.loads(card['event_ids'])[:2], [last, ask])
+        self.assertEqual(json.loads(card['event_ids'])[:2], [last, ask])
         self.assertRegex(card['source_line'], r'^Source: email to Sam Lee · ')
         self.assertIsNotNone(card['awaiting'])  # their reply still closes it
 
@@ -267,12 +275,12 @@ class Promises(unittest.TestCase):
         self.assertEqual(card['title'], 'Come by in the afternoon for the paint order for Sam at the paint shop')
         self.assertEqual(card['body'], 'Promised Sam at the paint shop on Mon, Oct 19 for Tue, Oct 20. Nothing shows it done yet.')
         self.assertEqual((card['status'], card['owner_step']), ('pending', 1))
-        labels = [b['label'] for block in a.controls(card)['blocks'] for b in block['buttons']]
+        labels = [b['label'] for block in machine_cards.controls(card)['blocks'] for b in block['buttons']]
         self.assertEqual(labels[:2], ['Mark done', 'Plan it'])
         self.assertNotIn('Do it', labels)
-        prompt = a.preparation_prompt({'job_id': 'j' * 32, 'suggestion_id': card['id'], 'owner_step': True})
+        prompt = machine_app_preparation.preparation_prompt({'job_id': 'j' * 32, 'suggestion_id': card['id'], 'owner_step': True})
         self.assertIn('only the owner can do themselves', prompt)
-        self.assertNotIn('only the owner can do themselves', a.preparation_prompt({'job_id': 'j' * 32, 'suggestion_id': card['id']}))
+        self.assertNotIn('only the owner can do themselves', machine_app_preparation.preparation_prompt({'job_id': 'j' * 32, 'suggestion_id': card['id']}))
         # Someone else's promise is never the owner's own step, whatever the review says
         theirs = self.record(owner_step=True)['id']
         self.assertEqual(self.row(theirs)['owner_step'], 0)
@@ -309,7 +317,7 @@ class Promises(unittest.TestCase):
         for _ in range(4):
             self.app().promise_step()
         with self.store.connect() as db:
-            self.assertEqual(db.execute("SELECT count(*) FROM promises WHERE status='carded'").fetchone()[0], a.PROMISE_CARDS_PER_DAY)
+            self.assertEqual(db.execute("SELECT count(*) FROM promises WHERE status='carded'").fetchone()[0], machine_app_promise_checks.PROMISE_CARDS_PER_DAY)
 
     def test_a_review_closes_or_moves_an_open_promise(self):
         promise = self.record(due='2026-10-23')['id']
@@ -328,7 +336,7 @@ class Promises(unittest.TestCase):
             self.app().action('promise_close', {'id': promise, 'status': 'kept'})
         self.app().action('promise_close', {'id': promise, 'status': 'dropped'}, owner_dashboard=True)
         self.assertEqual(self.row(promise)['status'], 'dropped')
-        self.assertIn('promise_close', a.OWNER_ACTIONS)
+        self.assertIn('promise_close', machine_actions.OWNER_ACTIONS)
 
     def asked(self, card):
         """A to-do's status, and the owner's Do it on it with its note."""
@@ -357,8 +365,8 @@ class Promises(unittest.TestCase):
         with self.store.connect() as db:
             self.assertEqual(db.execute('SELECT count(*) FROM suggestions').fetchone()[0], 1)
             self.assertEqual(db.execute("SELECT count(*) FROM decisions WHERE id LIKE 'promise-ask:%'").fetchone()[0], 1)
-        self.assertIn('promise_todo', a.OWNER_ACTIONS)
-        self.assertIn('promise_todo', a.DASHBOARD_ACTIONS)
+        self.assertIn('promise_todo', machine_actions.OWNER_ACTIONS)
+        self.assertIn('promise_todo', machine_actions.DASHBOARD_ACTIONS)
 
     def test_do_it_on_the_owners_promise_prepares_its_to_do_or_opens_the_one_it_has(self):
         mine = self.app().action('promise', {'direction': 'mine', 'event_id': self.mine, 'who': 'Alex', 'what': 'send the Q3 deck', 'due': '2026-10-29'})['id']
@@ -417,8 +425,8 @@ class Promises(unittest.TestCase):
         other = self.store.suggest('work:deck', 'Send Sam the contract', 'Body.', [self.mine], 'now')['id']
         with self.store.connect() as db:  # what merge_answer leaves behind
             db.execute("UPDATE suggestions SET status='rejected',closed_from=status WHERE id=?", (card,))
-            db.execute("INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES('m1',?,'merge','','dashboard',?)", (card, a.now()))
-            db.execute('INSERT INTO suggestion_keys(dedupe_key,suggestion_id,created_at) VALUES(?,?,?)', (f'promise:{promise}', other, a.now()))
+            db.execute("INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES('m1',?,'merge','','dashboard',?)", (card, timeutil.now()))
+            db.execute('INSERT INTO suggestion_keys(dedupe_key,suggestion_id,created_at) VALUES(?,?,?)', (f'promise:{promise}', other, timeutil.now()))
         listed = self.store.promises()[0]
         self.assertEqual((listed['state'], listed['suggestion_id']), ('card', other))
         self.assertEqual(self.store.promise_page(promise)['card']['id'], other)
@@ -458,16 +466,16 @@ class Promises(unittest.TestCase):
         text = self.store.promises_text()
         self.assertIn('Sam Lee → you: send the signed contract (due Fri, Oct 23; said Mon, Oct 19', text)
         self.assertIn('you → Alex: send the Q3 deck (no date;', text)
-        prompt = a.review_prompt('run', ['work'], promises=text)
+        prompt = machine_prompts_review.review_prompt('run', ['work'], promises=text)
         self.assertIn('record it with promise', prompt)
         self.assertIn('Open promises (the owner\'s and those made to them):\n- #', prompt)
-        self.assertNotIn('Open promises', a.review_prompt('run', ['work']))
+        self.assertNotIn('Open promises', machine_prompts_review.review_prompt('run', ['work']))
 
     def test_weekly_recap_leaves_out_settled_and_undated_promises(self):
         promise = self.record(due='2026-10-16')['id']
         self.app().action('promise', {'direction': 'mine', 'event_id': self.mine, 'who': 'Alex', 'what': 'send the Q3 deck'})
         self.app().action('promise_close', {'id': promise, 'status': 'kept'}, owner_dashboard=True)
-        recap = a.weekly_recap(self.store, {'accounts': [GMAIL]}, a.dt.datetime.fromisoformat('2026-10-23T15:00:00+00:00'))
+        recap = machine_app_recap.weekly_recap(self.store, {'accounts': [GMAIL]}, dt.datetime.fromisoformat('2026-10-23T15:00:00+00:00'))
         self.assertNotIn('Sam Lee', recap)  # kept: nothing left to do
         self.assertNotIn('Alex', recap)  # open, but without a date it isn't due yet
 
@@ -498,7 +506,7 @@ class Promises(unittest.TestCase):
             db.execute("UPDATE promises SET who='Slack teammate U0TEAMMATE' WHERE id=?", (saved['id'],))
         self.assertEqual([p['who'] for p in self.store.promises()], ['Robin Example'])
         self.assertEqual(self.store.promise_page(saved['id'])['who'], 'Robin Example')
-        self.assertEqual(a.slack_ids_named(None, 'U0UNKNOWN1 said it', {}), 'U0UNKNOWN1 said it')  # an unknown id stays
+        self.assertEqual(machine_sources_slack.slack_ids_named(None, 'U0UNKNOWN1 said it', {}), 'U0UNKNOWN1 said it')  # an unknown id stays
 
     def test_a_sender_noted_by_number_or_address_shows_by_name(self):
         # The review noted a WhatsApp promise by the sender's graph id, so Promises said "From wa:32470000999"

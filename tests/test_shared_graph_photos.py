@@ -15,7 +15,9 @@ import shared_graph_photos as photos
 import test_shared_graph as base  # by module: its test classes run in its own file, not again here
 from test_jpeg_image import jpeg, portrait
 from test_logo_image import chunk, png
-from test_shared_graph import FLEET, a, ago, graph, mail
+from test_shared_graph import FLEET, ago, graph, mail
+import enrichment
+import timeutil
 
 LEE = 'email:lee@client.example'
 KEYED = lambda text: hashlib.sha256(text.encode()).hexdigest()[:32]
@@ -23,7 +25,7 @@ KEYED = lambda text: hashlib.sha256(text.encode()).hexdigest()[:32]
 
 def save_photo(db, identifier, data, at, kind='image/jpeg'):
     db.execute('INSERT INTO person_photos(identifier,key,type,data,saved_at) VALUES(?,?,?,?,?) ON CONFLICT(identifier) DO UPDATE SET '
-               'type=excluded.type,data=excluded.data,saved_at=excluded.saved_at', (identifier, a.enrichment.photo_key(identifier), kind, data, at))
+               'type=excluded.type,data=excluded.data,saved_at=excluded.saved_at', (identifier, enrichment.photo_key(identifier), kind, data, at))
 
 
 def looked_up(db, identifier, data, at, kind='image/jpeg'):
@@ -35,7 +37,7 @@ def looked_up(db, identifier, data, at, kind='image/jpeg'):
 
 def contact_photo(db, identifier, data, at, source, tried=None):
     """A contact photo (enrichment.contact_photos_step) offered by a source and saved when it was tried."""
-    a.enrichment.contact_tables(db)
+    enrichment.contact_tables(db)
     db.execute('INSERT OR REPLACE INTO contact_photo_links(identifier,url,chosen,source,seen_at,tried_at) VALUES(?,?,1,?,?,?)',
                (identifier, 'https://lh3.googleusercontent.com/a/x=s160-c', source, at, tried or at))
     save_photo(db, identifier, data, at)
@@ -118,9 +120,9 @@ class SharedGraphPhotos(base.SharedGraph):
             self.assertFalse(mine().get('team_only'))
             self.assertEqual(mine()['profile']['photo'], shown)
             node = self.lee(self.mem)[0]
-            graph.set_picture(db, node, None, a.now())  # Mo took the picture off
+            graph.set_picture(db, node, None, timeutil.now())  # Mo took the picture off
             self.assertIsNone((mine().get('profile') or {}).get('photo'))
-            graph.set_picture(db, node, png(16, 16), a.now())  # Mo's own picture
+            graph.set_picture(db, node, png(16, 16), timeutil.now())  # Mo's own picture
         self.add(self.mem)
         with self.mem.store.connect() as db:
             self.assertNotEqual(mine()['profile']['photo'], shown)
@@ -135,8 +137,8 @@ class SharedGraphPhotos(base.SharedGraph):
         self.olive_mail()
         with self.own.store.connect() as db:
             contact_photo(db, LEE, jpeg(portrait(32, 32)), ago(1), 'google')
-            a.enrichment.offer_facts(db, [([LEE], {'title': 'Chief Example Officer', 'company': 'Example Co', 'phone': '+15550100',
-                                                   'birthday': '1990-04-02'}, a.enrichment.RECORD)], 'google', ago(1))
+            enrichment.offer_facts(db, [([LEE], {'title': 'Chief Example Officer', 'company': 'Example Co', 'phone': '+15550100',
+                                                   'birthday': '1990-04-02'}, enrichment.RECORD)], 'google', ago(1))
         self.add(self.own)
         bodies = []
         with self.spy(self.own, bodies):
@@ -162,15 +164,15 @@ class SharedGraphPhotos(base.SharedGraph):
             'WhatsApp': (lambda db: save_photo(db, 'wa:3255501', picture, ago(1)), False),
             'Telegram': (lambda db: save_photo(db, 'tg:77', picture, ago(1)), False),
             'a Google contact by phone': (lambda db: contact_photo(db, 'wa:3255501', picture, ago(1), 'google'), False),
-            'the Facebook import': (lambda db: a.enrichment.keep_photo(db, node, (picture, 'image/jpeg'), ago(1)), False),
+            'the Facebook import': (lambda db: enrichment.keep_photo(db, node, (picture, 'image/jpeg'), ago(1)), False),
             'the Facebook import after a look-up found none': (lambda db: (db.execute('INSERT INTO person_photo_tries(identifier,tried_at) VALUES(?,?)', (node, ago(3))),
-                                                                          a.enrichment.keep_photo(db, node, (picture, 'image/jpeg'), ago(1))), False),
+                                                                          enrichment.keep_photo(db, node, (picture, 'image/jpeg'), ago(1))), False),
             'an unknown source': (lambda db: contact_photo(db, LEE, picture, ago(1), 'somewhere'), False),
             'no record of where it came from': (lambda db: save_photo(db, LEE, picture, ago(1)), False),
             'offered again since (another source)': (lambda db: contact_photo(db, LEE, picture, ago(2), 'linkedin', tried=ago(1)), False),
             'WebP': (lambda db: looked_up(db, LEE, b'RIFF\x00\x00\x00\x00WEBPVP8 ', ago(1), 'image/webp'), False),
-            'the owner took it off': (lambda db: (looked_up(db, LEE, picture, ago(1)), graph.set_picture(db, node, None, a.now())), False),
-            'the owner set a picture': (lambda db: (looked_up(db, LEE, picture, ago(1)), graph.set_picture(db, node, png(16, 16), a.now())), False),
+            'the owner took it off': (lambda db: (looked_up(db, LEE, picture, ago(1)), graph.set_picture(db, node, None, timeutil.now())), False),
+            'the owner set a picture': (lambda db: (looked_up(db, LEE, picture, ago(1)), graph.set_picture(db, node, png(16, 16), timeutil.now())), False),
         }
         for why, (save, goes) in cases.items():
             with self.subTest(why), self.own.store.connect() as db:

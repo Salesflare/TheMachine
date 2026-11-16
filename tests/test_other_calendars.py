@@ -33,7 +33,8 @@ import onboarding
 import sources
 from caldav_calendar import CalendarError
 from machine.sources import calendar_setup
-from test_ux import a
+import machine.main as machine_main
+import machine.sources.calendar as machine_sources_calendar
 
 PASSWORD = 'pw-Fake-5521-cal'  # made up; the tests look for it everywhere it must not be
 LINK_KEY = 'k-Fake-9931-share'  # the secret part of a made-up calendar link
@@ -376,7 +377,7 @@ class Base(unittest.TestCase):
             memory.clear()
         self.config = {'credentials': {}, 'accounts': [], 'database': str(Path(self.temp.name) / 'events.sqlite'),
                        'data_dir': self.temp.name}
-        self.store = a.Store(Path(self.temp.name) / 'events.sqlite')
+        self.store = machine_main.Store(Path(self.temp.name) / 'events.sqlite')
         self.logs = []
         handler = logging.Handler(logging.DEBUG)
         handler.emit = lambda record: self.logs.append(record.getMessage())
@@ -422,7 +423,7 @@ class Base(unittest.TestCase):
 class CalDAV(Base):
     def test_window_then_nothing_new_then_a_removal(self):
         account = self.account('acme-caldav', 'caldav', PASSWORD, caldav_url='https://caldav.acme.test/')
-        a.sync_calendar(self.store, self.config, account)
+        machine_sources_calendar.sync_calendar(self.store, self.config, account)
         self.assertEqual(self.titles(account), {'Daily standup': 4, 'Lunch with Bo': 1, 'Dentist': 1})  # 5 days, one left out
         standups = [r for r in self.events(account) if r['title'] == 'Daily standup']
         first = self.fake.standup.astimezone(dt.timezone.utc).isoformat()
@@ -437,17 +438,17 @@ class CalDAV(Base):
         self.assertEqual(self.store.checkpoint(account['id'])['mode'], 'incremental')
         # nothing changed: one listing, no calendar read
         before = len(self.fake.made(method='REPORT'))
-        self.assertEqual(a.sync_calendar(self.store, self.config, account)['events'], 0)
+        self.assertEqual(machine_sources_calendar.sync_calendar(self.store, self.config, account)['events'], 0)
         self.assertEqual(len(self.fake.made(method='REPORT')), before)
         # the lunch is removed on the server: the window is read again, and it is gone here too
         del self.fake.calendars['work']['objects']['lunch.ics']
         self.fake.calendars['work']['token'] = 'https://caldav.acme.test/sync/2'
-        self.assertEqual(a.sync_calendar(self.store, self.config, account)['mode'], 'resync')
-        a.sync_calendar(self.store, self.config, account)
+        self.assertEqual(machine_sources_calendar.sync_calendar(self.store, self.config, account)['mode'], 'resync')
+        machine_sources_calendar.sync_calendar(self.store, self.config, account)
         self.assertEqual(self.titles(account, deleted=1), {'Lunch with Bo': 1})
         # a calendar without a sync-token or ctag: its etags tell the change
         self.fake.calendars['family']['objects']['dentist.ics'] = ('"e3b"', self.fake.calendars['family']['objects']['dentist.ics'][1])
-        self.assertEqual(a.sync_calendar(self.store, self.config, account)['mode'], 'resync')
+        self.assertEqual(machine_sources_calendar.sync_calendar(self.store, self.config, account)['mode'], 'resync')
         self.assert_secret_kept(json.dumps(self.config))
         self.assertFalse([r for r in self.fake.requests if r[1] not in ('PROPFIND', 'REPORT')])  # reads only
 
@@ -476,7 +477,7 @@ class CalDAV(Base):
         self.assertEqual((account['caldav_url'], account['calendar_name']), ('https://caldav.acme.test/', 'family'))
         self.assertEqual(ui.lines[0], '  Family found')
         self.config['accounts'] = [account]
-        a.sync_calendar(self.store, self.config, account)
+        machine_sources_calendar.sync_calendar(self.store, self.config, account)
         self.assertEqual(self.titles(account), {'Dentist': 1})
         with self.assertRaises(onboarding.SetupError) as caught:
             calendar_setup.step(self.config, {'id': 'x', 'service': 'caldav'},
@@ -502,32 +503,32 @@ class CalendarLink(Base):
 
     def test_window_then_a_polite_poll_then_a_change(self):
         account = self.account('acme-proton', 'proton_calendar', self.link())
-        a.sync_calendar(self.store, self.config, account)
+        machine_sources_calendar.sync_calendar(self.store, self.config, account)
         self.assertEqual(self.titles(account), {'Team sync': 4, 'Team sync (moved)': 1})
         moved = next(r for r in self.events(account) if r['title'] == 'Team sync (moved)')
         self.assertEqual(moved['occurred_at'], (self.fake.team + dt.timedelta(days=7)).replace(hour=11).astimezone(dt.timezone.utc).isoformat())
         self.assertEqual(len(self.fake.made('feeds.acme.test')), 1)
         # asked a moment ago: not asked again
-        a.sync_calendar(self.store, self.config, account)
+        machine_sources_calendar.sync_calendar(self.store, self.config, account)
         self.assertEqual(len(self.fake.made('feeds.acme.test')), 1)
         # later: asked with its ETag, and unchanged costs a 304
         ics_feed._seen[account['id']]['at'] -= ics_feed.POLL_SECONDS + 1
-        self.assertEqual(a.sync_calendar(self.store, self.config, account)['mode'], 'incremental')
+        self.assertEqual(machine_sources_calendar.sync_calendar(self.store, self.config, account)['mode'], 'incremental')
         last = self.fake.made('feeds.acme.test')[-1]
         self.assertEqual((last[3].get('If-None-Match'), last[3].get('If-Modified-Since')), ('"v1"', 'Mon, 02 Nov 2026 08:00:00 GMT'))
         # the series is cut short: read again, the later meetings gone
         self.fake.feed_events[0] = self.fake.feed_events[0].replace('COUNT=6', 'COUNT=2')
         self.fake.feed_etag = '"v2"'
         ics_feed._seen[account['id']]['at'] -= ics_feed.POLL_SECONDS + 1
-        self.assertEqual(a.sync_calendar(self.store, self.config, account)['mode'], 'resync')
-        a.sync_calendar(self.store, self.config, account)
+        self.assertEqual(machine_sources_calendar.sync_calendar(self.store, self.config, account)['mode'], 'resync')
+        machine_sources_calendar.sync_calendar(self.store, self.config, account)
         self.assertEqual(self.titles(account), {'Team sync': 1, 'Team sync (moved)': 1})
         self.assertEqual(self.titles(account, deleted=1), {'Team sync': 3})
         # the link stops working: a fixed label, without the link
         self.fake.feed_status = 404
         ics_feed._seen[account['id']]['at'] -= ics_feed.POLL_SECONDS + 1
         with self.assertRaises(sources.SourceError) as caught:
-            a.sync_calendar(self.store, self.config, account)
+            machine_sources_calendar.sync_calendar(self.store, self.config, account)
         self.assertIn('ics_gone', str(caught.exception))
         self.assert_secret_kept(caught.exception, repr(caught.exception), json.dumps(self.config))
 
@@ -558,10 +559,10 @@ class CalendarLink(Base):
 class Exchange(Base):
     def test_window_in_pages_then_nothing_new_then_a_removal(self):
         account = self.account('acme-ews', 'exchange', PASSWORD, username='ACME\\alex', ews_url='https://mail.acme.test/EWS/Exchange.asmx')
-        a.sync_calendar(self.store, self.config, account)  # the first month
+        machine_sources_calendar.sync_calendar(self.store, self.config, account)  # the first month
         self.assertEqual(self.titles(account), {'Weekly 1:1': 2, 'Quarterly plan': 1})
         self.assertEqual(self.store.checkpoint(account['id'])['mode'], 'bootstrap')
-        a.sync_calendar(self.store, self.config, account)  # the rest
+        machine_sources_calendar.sync_calendar(self.store, self.config, account)  # the rest
         self.assertEqual(self.titles(account), {'Weekly 1:1': 2, 'Quarterly plan': 1, 'Offsite': 1})
         state = self.store.checkpoint(account['id'])
         self.assertEqual((state['mode'], state['sync_token']), ('incremental', 'state-1'))
@@ -576,15 +577,15 @@ class Exchange(Base):
         self.assertEqual({r['metadata']['recurring_event_id'] for r in ones}, {ical.event_id('oneone@acme.test', 'ews')})
         # nothing changed
         finds = len([r for r in self.fake.requests if '<m:FindItem' in r[4]])
-        self.assertEqual(a.sync_calendar(self.store, self.config, account)['events'], 0)
+        self.assertEqual(machine_sources_calendar.sync_calendar(self.store, self.config, account)['events'], 0)
         self.assertEqual(len([r for r in self.fake.requests if '<m:FindItem' in r[4]]), finds)
         # the plan is removed: read again, gone here too
         del self.fake.items['AAMk-plan']
         self.fake.version += 1
         self.fake.known_states.add('state-2')
-        self.assertEqual(a.sync_calendar(self.store, self.config, account)['mode'], 'resync')
-        a.sync_calendar(self.store, self.config, account)
-        a.sync_calendar(self.store, self.config, account)
+        self.assertEqual(machine_sources_calendar.sync_calendar(self.store, self.config, account)['mode'], 'resync')
+        machine_sources_calendar.sync_calendar(self.store, self.config, account)
+        machine_sources_calendar.sync_calendar(self.store, self.config, account)
         self.assertEqual(self.titles(account, deleted=1), {'Quarterly plan': 1})
         self.assertEqual(self.store.checkpoint(account['id'])['sync_token'], 'state-2')
         self.assertFalse(self.fake.basic_used)  # NTLM: the password itself never went over the wire

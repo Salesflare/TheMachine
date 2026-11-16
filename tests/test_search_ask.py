@@ -7,11 +7,14 @@ from unittest import mock
 
 import test_graph as tg
 
-a, graph = tg.a, tg.graph
+graph = tg.graph
 import help_chat  # noqa: E402
 import search_ask  # noqa: E402
 import shared_graph  # noqa: E402
 from machine.app import ask_memory, search_ask as app_ask  # noqa: E402
+import embeddings
+import machine.actions as machine_actions
+import person_summary
 
 CONFIG = {'accounts': [{'id': 'work', 'email': 'sam@acme.example', 'scope': 'work'},
                        {'id': 'chat', 'service': 'whatsapp', 'email': 'Personal WhatsApp', 'scope': 'personal'}]}
@@ -117,8 +120,8 @@ class SearchAsk(unittest.TestCase):
         with self.store.connect() as db:
             after = [db.execute(f'SELECT count(*) FROM {t}').fetchone()[0] for t in ('suggestions', 'decisions', 'action_jobs')]
         self.assertEqual(before, after)
-        self.assertIn('search_ask', a.DASHBOARD_ACTIONS)
-        self.assertIn('search_ask', a.OWNER_ACTIONS)  # never from the CLI the agent runs
+        self.assertIn('search_ask', machine_actions.DASHBOARD_ACTIONS)
+        self.assertIn('search_ask', machine_actions.OWNER_ACTIONS)  # never from the CLI the agent runs
         with self.assertRaises(ValueError):
             self.app.action('search_ask', {'query': 'what about the pilot?'}, owner_dashboard=False)
 
@@ -243,8 +246,8 @@ class PersonAndDays(unittest.TestCase):
         self.assertEqual(self.plans, [])  # no first turn: it knows who and when
         self.assertIn('The rollout slips to Thursday.', self.prompts[-1])
         self.assertTrue(found['answer'])
-        self.assertIn('search_ask_examples', a.DASHBOARD_ACTIONS)
-        self.assertIn('search_ask_examples', a.OWNER_ACTIONS)
+        self.assertIn('search_ask_examples', machine_actions.DASHBOARD_ACTIONS)
+        self.assertIn('search_ask_examples', machine_actions.OWNER_ACTIONS)
 
     def test_not_a_question_takes_one_small_turn(self):
         self.plan = {'question': False, 'person': 'Andrea', 'said_by': 'both', 'from': None, 'to': None, 'about': ''}
@@ -327,7 +330,7 @@ class AskMemory(unittest.TestCase):
         self.store.promise({'id': gone['id'], 'status': 'kept', 'reason': 'The logo came in', 'event_ids': [self.event('Older still')]})
         self.store.promise({'direction': 'theirs', 'event_id': self.event('Lunch'), 'who': 'Lee Park', 'what': 'book the table'})  # someone else's
         with self.store.connect() as db:
-            a.person_summary.save(db, self.KIM, [{'kind': 'now', 'text': 'Moving the pilot to March with the budget unchanged.',
+            person_summary.save(db, self.KIM, [{'kind': 'now', 'text': 'Moving the pilot to March with the budget unchanged.',
                                                  'sources': [f"E{self.event('Pilot timing')}"]}], tg.NOW.isoformat(), {'work': 'work', 'chat': 'personal'})
         self.about_kim()
         self.reply = 'Kim still owes the signed contract [P1] and is moving the pilot to March [S1].'
@@ -370,8 +373,8 @@ class AskMemory(unittest.TestCase):
         self.app.config = {**CONFIG, 'embeddings': {'url': 'http://embed.invalid', 'model': 'm', 'dims': 2}}
         close = self.fact('Flights are booked through the travel desk.')
         vector = lambda t: [1.0, 0.0] if 'travel desk' in t or 'book a flight' in t else [0.3, 0.954] if 'Tuesdays' in t else [0.0, 1.0]
-        with mock.patch.object(a.embeddings, 'embed', side_effect=lambda settings, texts, timeout=120: [vector(t) for t in texts]) as embed, \
-                mock.patch.object(a.embeddings, 'related', side_effect=a.embeddings.EmbeddingError('down')):
+        with mock.patch.object(embeddings, 'embed', side_effect=lambda settings, texts, timeout=120: [vector(t) for t in texts]) as embed, \
+                mock.patch.object(embeddings, 'related', side_effect=embeddings.EmbeddingError('down')):
             self.ask('how do i book a flight here?', 'work')
             self.assertEqual(embed.call_count, 1)
         self.assertIn('travel desk', self.memory())
@@ -432,7 +435,7 @@ class AskMemory(unittest.TestCase):
             row = db.execute("SELECT id,kind,metadata FROM events WHERE title='Pilot appointment'").fetchone()
             db.execute('INSERT INTO share_threads(thread,verdict,at) VALUES(?,?,?)',
                        (shared_graph.thread_of(row['kind'], json.loads(row['metadata']), row['id']), 'personal', tg.NOW.isoformat()))
-            a.person_summary.save(db, self.KIM, [{'kind': 'who', 'text': 'Plays in the same tennis club.', 'sources': [f'E{robin}']},
+            person_summary.save(db, self.KIM, [{'kind': 'who', 'text': 'Plays in the same tennis club.', 'sources': [f'E{robin}']},
                                                  {'kind': 'now', 'text': 'Moving the pilot to March.', 'sources': [f"E{self.event('Pilot timing')}"]}],
                                   tg.NOW.isoformat(), {'work': 'work', 'chat': 'personal'})
         self.store.promise({'direction': 'theirs', 'event_id': row['id'], 'who': 'Dr. Ash', 'what': 'send the pilot results'})

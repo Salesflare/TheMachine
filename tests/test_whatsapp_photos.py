@@ -8,8 +8,10 @@ from unittest import mock
 
 import test_graph as tg
 
-a, graph = tg.a, tg.graph
-enrichment = a.enrichment
+graph = tg.graph
+import enrichment
+import machine.sources.whatsapp as machine_sources_whatsapp
+import sources
 NOW = tg.NOW.isoformat()
 JPEG = (b'\xff\xd8\xff' + b'0' * 50, 'image/jpeg')
 
@@ -114,10 +116,10 @@ class PictureRead(unittest.TestCase):
 
     def run_with(self, stdout, returncode=0):
         result = subprocess.CompletedProcess([], returncode, stdout=json.dumps(stdout), stderr='')
-        with mock.patch.object(a.subprocess, 'run', return_value=result) as run:
+        with mock.patch.object(subprocess, 'run', return_value=result) as run:
             try:
-                return a.WhatsApp({}, self.ACCOUNT).picture('3255501@s.whatsapp.net'), run
-            except a.SourceError as error:
+                return machine_sources_whatsapp.WhatsApp({}, self.ACCOUNT).picture('3255501@s.whatsapp.net'), run
+            except sources.SourceError as error:
                 return error, run
 
     def test_the_picture_is_asked_read_only(self):
@@ -130,15 +132,15 @@ class PictureRead(unittest.TestCase):
 
     def test_none_hidden_or_refused(self):
         self.assertEqual(self.run_with({'success': True, 'data': {'jid': '3255501@s.whatsapp.net', 'none': True}, 'error': None})[0], {})
-        self.assertIsInstance(self.run_with({'success': False, 'data': None, 'error': 'read-only mode'}, returncode=1)[0], a.SourceError)
+        self.assertIsInstance(self.run_with({'success': False, 'data': None, 'error': 'read-only mode'}, returncode=1)[0], sources.SourceError)
         for jid in ('120363000000000001@g.us', 'status@broadcast', '--store=/x'):
-            with self.assertRaises(a.SourceError):
-                a.WhatsApp({}, self.ACCOUNT).picture(jid)
-        with self.assertRaises(a.SourceError):
-            a.WhatsApp({}, self.ACCOUNT).read(['profile', 'get-about', '--jid', '3255501@s.whatsapp.net'])
+            with self.assertRaises(sources.SourceError):
+                machine_sources_whatsapp.WhatsApp({}, self.ACCOUNT).picture(jid)
+        with self.assertRaises(sources.SourceError):
+            machine_sources_whatsapp.WhatsApp({}, self.ACCOUNT).read(['profile', 'get-about', '--jid', '3255501@s.whatsapp.net'])
 
     def test_only_the_owners_own_accounts_are_asked(self):
-        accounts, ask = a.whatsapp_photo_asker({'accounts': [self.ACCOUNT, {'id': 'team', 'service': 'whatsapp', 'store': '/x', 'shared': True}]})
+        accounts, ask = machine_sources_whatsapp.whatsapp_photo_asker({'accounts': [self.ACCOUNT, {'id': 'team', 'service': 'whatsapp', 'store': '/x', 'shared': True}]})
         self.assertEqual(accounts, ['chat'])
         self.assertIsNone(ask('team', '3255501@s.whatsapp.net'))
 

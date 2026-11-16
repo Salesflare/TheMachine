@@ -8,6 +8,11 @@ import unittest
 from unittest.mock import patch
 import test_self_fix as sf
 import test_preparation as p
+import datetime as dt
+import machine.cards as machine_cards
+import machine.main as machine_main
+import next_actions
+import timeutil
 
 STEP={'kind':'finish','label':'Submit expense claim','url':'https://expenses.invalid/E42',
       'instructions':'Submit ONLY E42 for EUR 42.50, 16 Oct 2026, Travel, receipt.pdf.',
@@ -23,13 +28,13 @@ class Finish(unittest.TestCase):
         self.app.action('prepare',{'suggestion_id':self.sid,'job_id':self.job()['job_id'],'body':'Ready to submit.',
                                   'next_actions':[STEP],'outcome':'needs_you','needs':'Confirm'})
         self.ended()
-        with self.store.connect() as db:action=p.a.next_actions.actions(db.execute('SELECT next_action FROM suggestions').fetchone()[0])[0]
+        with self.store.connect() as db:action=next_actions.actions(db.execute('SELECT next_action FROM suggestions').fetchone()[0])[0]
         self.app.action('confirm_action',{'suggestion_id':self.sid,'revision':action['revision'],'approval_id':'confirm'},owner_dashboard=True)
         self.app.preparation_step(lambda r:{'status':'admitted'})
         return action
 
     def ended(self):
-        with self.store.connect() as db:db.execute("UPDATE preparation_runs SET status='ok',finished_at=?",(p.a.now(),))
+        with self.store.connect() as db:db.execute("UPDATE preparation_runs SET status='ok',finished_at=?",(timeutil.now(),))
 
     def message(self):
         calls=[];self.app.preparation_step(lambda r:calls.append(r) or {'status':'admitted'})
@@ -38,7 +43,7 @@ class Finish(unittest.TestCase):
     def test_finish_owner_retry_retains_exact_contract_after_database_reopen(self):
         self.start_finish();old=self.job()
         self.store.preparation_blocked(self.sid,old['job_id'],'The site is unavailable.');self.ended()
-        self.store=p.a.Store(self.store.path);self.app.store=self.store
+        self.store=machine_main.Store(self.store.path);self.app.store=self.store
         self.store.decide(self.sid,'retry','','retry','dashboard')
         message=self.message()
         self.assertIn(STEP['instructions'],message);self.assertIn(STEP['preview'],message)
@@ -78,7 +83,7 @@ class Finish(unittest.TestCase):
                                   'next_actions':[STEP],'outcome':'done','finish_state':'completed'})
         self.ended()
         row=self.store.snapshot([])['suggestions'][0]
-        self.assertNotIn(STEP['label'],[b['label'] for block in p.a.controls(row)['blocks'] for b in block['buttons']])
+        self.assertNotIn(STEP['label'],[b['label'] for block in machine_cards.controls(row)['blocks'] for b in block['buttons']])
         self.assertTrue(self.app.action('confirm_action',{'suggestion_id':self.sid,'revision':action['revision'],'approval_id':'again'},owner_dashboard=True)['duplicate'])
         self.assertEqual(self.job()['status'],'done')
 
@@ -95,7 +100,7 @@ class Finish(unittest.TestCase):
                                   'next_actions':[STEP],'outcome':'needs_you','needs':'Confirm','note_kind':'fact'})
         self.ended()
         row=self.store.snapshot([])['suggestions'][0]
-        self.assertIn(STEP['label'],[b['label'] for block in p.a.controls(row)['blocks'] for b in block['buttons']])
+        self.assertIn(STEP['label'],[b['label'] for block in machine_cards.controls(row)['blocks'] for b in block['buttons']])
         self.assertEqual(self.app.action('confirm_action',{'suggestion_id':self.sid,'revision':action['revision'],'approval_id':'again'},owner_dashboard=True),{'status':'queued'})
         message=self.message();self.assertIn('UNKNOWN outcome',message);self.assertIn(STEP['instructions'],message)
         with self.store.connect() as db:self.assertEqual(db.execute('SELECT count(*) FROM action_jobs').fetchone()[0],1)
@@ -120,7 +125,7 @@ class MergeRecovery(unittest.TestCase):
             def revert(self,action):real.revert(action);raise SystemExit('restart before SQLite')
         with self.assertRaises(SystemExit):self.app.undo_step(Interrupted())
         commit=sf.git(self.app_dir,'rev-parse','HEAD');self.assertIn('Machine-Undo:',sf.git(self.app_dir,'show','-s','--format=%B','HEAD'))
-        self.store=sf.a.Store(self.store.path);self.app.store=self.store
+        self.store=machine_main.Store(self.store.path);self.app.store=self.store
         self.assertEqual(self.app.undo_step(real),'undone')
         self.assertEqual(sf.git(self.app_dir,'rev-parse','HEAD'),commit)
         with self.store.connect() as db:self.assertEqual(db.execute('SELECT status FROM action_jobs').fetchone()[0],'undone')
@@ -155,11 +160,11 @@ class MergeRecovery(unittest.TestCase):
         self.assertEqual(sf.git(self.app_dir,'log','-1','--format=%s'),'Start');self.assertEqual(self.restarts,[])
 
     def test_old_version_recurrence_outside_hour_does_not_undo(self):
-        head=self.merged();now=sf.a.dt.datetime.fromisoformat(sf.a.now())
+        head=self.merged();now=dt.datetime.fromisoformat(timeutil.now())
         self.store.record_fault('other','TypeError',[],'digest','old')
         with self.store.connect() as db:
-            db.execute('UPDATE faults SET first_at=?',((now-sf.a.dt.timedelta(hours=5)).isoformat(),))
-            db.execute('UPDATE action_jobs SET updated_at=?',((now-sf.a.dt.timedelta(hours=2)).isoformat(),))
+            db.execute('UPDATE faults SET first_at=?',((now-dt.timedelta(hours=5)).isoformat(),))
+            db.execute('UPDATE action_jobs SET updated_at=?',((now-dt.timedelta(hours=2)).isoformat(),))
         self.store.record_fault('other','TypeError',[],'digest',head[:12])
         self.assertEqual(self.store.misbehaving_merges(),[])
         self.store.record_fault('fp-graph','KeyError',[],'graph',head[:12])

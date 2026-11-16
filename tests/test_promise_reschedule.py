@@ -12,8 +12,8 @@ import test_ux as ux
 import timeutil
 from seams import patch_everywhere  # noqa: E402
 from test_promises import GMAIL, MONDAY, SLACK, email
+import machine.main as machine_main
 
-a = ux.a
 
 
 class PromiseReschedule(unittest.TestCase):
@@ -23,10 +23,10 @@ class PromiseReschedule(unittest.TestCase):
         zone = patch.object(timeutil, 'LOCAL_TZ', ZoneInfo('Europe/Brussels'))
         zone.start()
         self.addCleanup(zone.stop)
-        self.clock = patch_everywhere(a, 'now', return_value=MONDAY)
+        self.clock = patch_everywhere(timeutil, 'now', return_value=MONDAY)
         self.clock.start()
         self.addCleanup(lambda: self.clock.stop())
-        self.store = a.Store(Path(self.tmp.name) / 'events.sqlite')
+        self.store = machine_main.Store(Path(self.tmp.name) / 'events.sqlite')
         self.store.owner_user_ids = {'UOWNER1'}
         first = email('first', '2026-10-19T08:00:00+00:00', title='The new app')
         first['body'] = 'Sure, I will take a look at the new app by Friday.'
@@ -43,11 +43,11 @@ class PromiseReschedule(unittest.TestCase):
 
     def at(self, stamp):
         self.clock.stop()
-        self.clock = patch_everywhere(a, 'now', return_value=stamp)
+        self.clock = patch_everywhere(timeutil, 'now', return_value=stamp)
         self.clock.start()
 
     def app(self, same=None):
-        app = object.__new__(a.App)
+        app = object.__new__(machine_main.App)
         app.store = self.store
         app.config = {'accounts': [GMAIL, SLACK], 'digest_at': '08:30', 'review_worker': {'enabled': True}, 'prepare_ahead': False}
         app.promise_check_model = lambda config, text: '[]'  # the check before a to-do: nothing kept

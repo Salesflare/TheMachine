@@ -14,8 +14,11 @@ import activity
 import still_needed
 import timeutil
 from seams import patch_everywhere  # noqa: E402
+import machine.app.recap as machine_app_recap
+import machine.delivery.push as machine_delivery_push
+import machine.main as machine_main
+import recurring
 
-a = ux.a
 NOW = '2026-11-06T09:00:00+00:00'
 TZ = ZoneInfo('Europe/Brussels')
 
@@ -28,13 +31,13 @@ class StillNeeded(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
-        for p in (patch.object(timeutil, 'LOCAL_TZ', TZ), patch_everywhere(a, 'now', return_value=NOW)):
+        for p in (patch.object(timeutil, 'LOCAL_TZ', TZ), patch_everywhere(timeutil, 'now', return_value=NOW)):
             p.start()
             self.addCleanup(p.stop)
         self.config = {'accounts': [{'id': 'work', 'service': 'gmail', 'email': 'owner@example.com', 'boundary': 'work:Example'}],
                        'database': str(Path(self.tmp.name) / 'events.sqlite')}
-        self.store = a.Store(self.config['database'])
-        self.app = object.__new__(a.App)
+        self.store = machine_main.Store(self.config['database'])
+        self.app = object.__new__(machine_main.App)
         self.app.store, self.app.config = self.store, self.config
         self.n = 0
 
@@ -55,7 +58,7 @@ class StillNeeded(unittest.TestCase):
         return sid
 
     def step(self, at=NOW):
-        with patch_everywhere(a, 'now', return_value=at):
+        with patch_everywhere(timeutil, 'now', return_value=at):
             return self.app.still_needed_step(at)
 
     def shown(self, sid, at=NOW):
@@ -157,7 +160,7 @@ class StillNeeded(unittest.TestCase):
                    self.card('Snoozed', 10, 'snoozed'),
                    self.card('Preparing', 10, 'accepted')]
         with self.store.connect() as db:
-            a.recurring.ensure(db)
+            recurring.ensure(db)
             repeat = self.card('Weekly numbers', 10)
             db.execute("INSERT INTO recurring_cards(suggestion_id,series_id,due,created_at) VALUES(?,'s1',?,?)", (repeat, ago(10)[:10], ago(10)))
         self.assertEqual(self.step(), [])
@@ -169,11 +172,11 @@ class StillNeeded(unittest.TestCase):
         brochure, venue = self.card('Send the brochure', 8), self.card('Book the venue', 2)
         self.assertEqual(self.step(), [brochure])
         def badge(at):
-            with patch_everywhere(a, 'now', return_value=at), self.store.connect() as db:
-                return a.waiting_count(db), still_needed.folded(db, at, TZ)
+            with patch_everywhere(timeutil, 'now', return_value=at), self.store.connect() as db:
+                return machine_delivery_push.waiting_count(db), still_needed.folded(db, at, TZ)
         self.assertEqual(badge(ago(-1)), (2, set()))  # asked, not folded yet
         self.assertEqual(badge(ago(-7.5)), (1, {brochure}))
-        with patch_everywhere(a, 'now', return_value=ago(-7.5)), patch_everywhere(a, 'recap_meetings', return_value=[]):
+        with patch_everywhere(timeutil, 'now', return_value=ago(-7.5)), patch_everywhere(machine_app_recap, 'recap_meetings', return_value=[]):
             digest = self.app.digest(dt.datetime.fromisoformat(ago(-7.5)))
         self.assertIn('\n• Book the venue', digest['text'])
         self.assertNotIn('brochure', digest['text'])

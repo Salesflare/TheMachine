@@ -10,16 +10,25 @@ from unittest.mock import patch
 from machine.sources.rows import SKIPPED, Skips
 from seams import patch_everywhere
 import ms_graph
-from test_connectors import FEED, RSS, a, served
+from test_connectors import FEED, RSS, served
+import machine.app.sync as machine_app_sync
+import machine.main as machine_main
+import machine.sources.android as machine_sources_android
+import machine.sources.calendar as machine_sources_calendar
+import machine.sources.connectors as machine_sources_connectors
+import machine.sources.gmail as machine_sources_gmail
+import machine.sources.telegram as machine_sources_telegram
+import sources
+import timeutil
 
-H = a.CONNECTOR_HELPERS
+H = machine_sources_connectors.CONNECTOR_HELPERS
 
 
 class SkipsTests(unittest.TestCase):
     def test_counts_refused_rows_by_reason_and_keeps_the_rest(self):
         def convert(row):
             if row == 'odd':
-                raise a.SourceError('sample_invalid_row')
+                raise sources.SourceError('sample_invalid_row')
             return row['n']
         skipped = Skips('sample_malformed')
         self.assertEqual(skipped.every([{'n': 1}, 'odd', {}, {'n': 2}], convert), [(1, {'n': 1}), (2, {'n': 2})])
@@ -29,8 +38,8 @@ class SkipsTests(unittest.TestCase):
         self.assertEqual(state['skipped_rows'], {'sample_invalid_row': 4, 'sample_malformed': 1})
 
     def test_a_failed_read_is_no_odd_row(self):
-        for error in (a.SourceError('sample_http', 503), a.SourceError('network:TimeoutError:sample')):
-            with self.subTest(error=str(error)), self.assertRaises(a.SourceError):
+        for error in (sources.SourceError('sample_http', 503), sources.SourceError('network:TimeoutError:sample')):
+            with self.subTest(error=str(error)), self.assertRaises(sources.SourceError):
                 Skips('sample_malformed').take(lambda: (_ for _ in ()).throw(error))
         with self.assertRaises(KeyError):  # without a malformed reason, a missing field still raises
             Skips().take(lambda: {}['n'])
@@ -40,17 +49,17 @@ class SkipsTests(unittest.TestCase):
         self.assertEqual(skipped.every([{}] * 9, lambda row: row['n']), [])
         self.assertIs(skipped.check(), skipped)  # a few odd rows: fine
         skipped.take(lambda: {}['n'])
-        with self.assertRaises(a.SourceError) as caught:
+        with self.assertRaises(sources.SourceError) as caught:
             skipped.check()
         self.assertEqual(caught.exception.category, 'sample_malformed')
-        self.assertIs(Skips().take(lambda: (_ for _ in ()).throw(a.SourceError('x'))), SKIPPED)
+        self.assertIs(Skips().take(lambda: (_ for _ in ()).throw(sources.SourceError('x'))), SKIPPED)
 
 
 class Base(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
-        self.store = a.Store(Path(self.tmp.name) / 'a.sqlite')
+        self.store = machine_main.Store(Path(self.tmp.name) / 'a.sqlite')
 
     def kept(self, account_id):
         return self.store.events([account_id])
@@ -67,8 +76,8 @@ def telegram_row(mid, **changes):
 class TelegramTests(Base):
     def sync(self, rows):
         source = types.SimpleNamespace(profile=lambda: {}, messages=lambda after: rows)
-        with patch_everywhere(a, 'now', return_value='2026-10-10T12:00:00+00:00'):
-            return a.sync_telegram(self.store, {}, TELEGRAM, source)
+        with patch_everywhere(timeutil, 'now', return_value='2026-10-10T12:00:00+00:00'):
+            return machine_sources_telegram.sync_telegram(self.store, {}, TELEGRAM, source)
 
     def test_odd_rows_are_skipped_and_counted(self):
         result = self.sync([telegram_row(1), telegram_row('two'), telegram_row(3, occurred_at='2026-10-09T12:00:00'),
@@ -79,7 +88,7 @@ class TelegramTests(Base):
                          {'telegram_invalid_message': 2, 'telegram_missing_timezone': 1})
 
     def test_only_odd_rows_still_fail(self):
-        with self.assertRaises(a.SourceError):
+        with self.assertRaises(sources.SourceError):
             self.sync([telegram_row(str(n)) for n in range(10)])
         self.assertIsNone(self.store.checkpoint(TELEGRAM['id']))
 
@@ -95,7 +104,7 @@ class SlackTests(Base):
         messages = [{'ts': '1791000000.000100', 'user': 'U2', 'text': 'First'}, {'ts': 'soon', 'text': 'Odd'},
                     {'subtype': 'message_deleted'}, {'ts': '1791000001.000100', 'user': 'U2', 'text': 'Second'}]
         source = types.SimpleNamespace(profile=lambda: {}, get=lambda method, params: {'messages': messages, 'has_more': False})
-        result = a.sync_slack(self.store, {}, SLACK, source)
+        result = machine_app_sync.sync_slack(self.store, {}, SLACK, source)
         self.assertEqual((result['events'], result['skipped']), (2, 2))
         self.assertEqual(sorted(r['body'] for r in self.kept(SLACK['id'])), ['First', 'Second'])
         self.assertEqual(self.store.checkpoint(SLACK['id'])['skipped_rows'], {'invalid_slack_timestamp': 1, 'slack_invalid_message': 1})
@@ -121,8 +130,8 @@ class GmailTests(Base):
             def profile(self): return {'historyId': '9'}
             def get(self, resource, params=None):
                 return {'messages': [{'id': m} for m in messages]} if resource == 'messages' else messages[resource.split('/')[1]]
-        with patch_everywhere(a, 'Gmail', Fake):
-            result = a.sync_gmail(self.store, {}, MAIL)
+        with patch_everywhere(machine_sources_gmail, 'Gmail', Fake):
+            result = machine_sources_gmail.sync_gmail(self.store, {}, MAIL)
         self.assertEqual((result['events'], result['skipped']), (1, 2))
         self.assertEqual([r['source_id'] for r in self.kept(MAIL['id'])], ['m1'])
         state = self.store.checkpoint(MAIL['id'])
@@ -140,7 +149,7 @@ def appointment(source, start='2026-10-12T09:00:00+02:00'):
 
 class CalendarTests(Base):
     def test_an_event_it_cannot_read_is_skipped_and_not_removed_as_absent(self):
-        self.store.commit_page(CALENDAR['id'], {}, [a.calendar_event(CALENDAR, appointment('kept-before'), 'UTC')])
+        self.store.commit_page(CALENDAR['id'], {}, [machine_sources_calendar.calendar_event(CALENDAR, appointment('kept-before'), 'UTC')])
         items = [appointment('good'), {**appointment('no-start'), 'start': {}},
                  {'id': 'kept-before', 'unreadable': 'outlook_invalid_event'}]
 
@@ -148,8 +157,8 @@ class CalendarTests(Base):
             def __init__(self, *_): pass
             def profile(self): return {'id': 'owner@example.com', 'timeZone': 'Europe/Brussels'}
             def get(self, method, params): return {'items': items, 'nextSyncToken': 'done'}
-        with patch_everywhere(a, 'Calendar', Fake), patch_everywhere(a, 'now', return_value='2026-10-09T12:00:00+00:00'):
-            result = a.sync_calendar(self.store, {}, CALENDAR)
+        with patch_everywhere(machine_sources_calendar, 'Calendar', Fake), patch_everywhere(timeutil, 'now', return_value='2026-10-09T12:00:00+00:00'):
+            result = machine_sources_calendar.sync_calendar(self.store, {}, CALENDAR)
         self.assertEqual(result['skipped'], 2)
         self.assertEqual(sorted(r['source_id'] for r in self.kept(CALENDAR['id']) if not r['deleted']), ['good', 'kept-before'])
         self.assertEqual(self.store.checkpoint(CALENDAR['id'])['skipped_rows'],
@@ -171,7 +180,7 @@ class AndroidTests(Base):
         rows = [{'key': 'k1', 'packageName': 'com.example.chat', 'postTimeMs': 1791000000000, 'title': 'Sample'},
                 {'key': 'k2', 'packageName': 'com.example.chat', 'postTimeMs': 'soon'}, 'not a notification']
         source = types.SimpleNamespace(snapshot=lambda: {'enabled': True, 'connected': True, 'count': 3, 'notifications': rows})
-        result = a.sync_android(self.store, {}, ANDROID, source)
+        result = machine_sources_android.sync_android(self.store, {}, ANDROID, source)
         self.assertEqual((result['events'], result['skipped']), (1, 2))
         self.assertEqual(self.store.checkpoint(ANDROID['id'])['skipped_rows'], {'android_invalid_notification': 2})
 
@@ -179,10 +188,10 @@ class AndroidTests(Base):
 class FeedTests(Base):
     def test_a_feed_item_without_a_date_is_skipped(self):
         feed = RSS.replace(b'Wed, 14 Oct 2026 09:00:00 +0200', b'not a date')
-        rss = a.load_connector('rss')
+        rss = machine_sources_connectors.load_connector('rss')
         with served(feed):
             self.assertIsNone(rss.check({}, FEED, H))  # one odd item is no reason to refuse the feed at setup
-            result = a.sync_source(self.store, {}, FEED)
+            result = machine_app_sync.sync_source(self.store, {}, FEED)
         self.assertEqual((result['events'], result['skipped']), (1, 1))
         self.assertEqual(self.store.checkpoint(FEED['id'])['skipped_rows'], {'rss_invalid_timestamp': 1})
 
@@ -192,13 +201,13 @@ LINKEDIN = {'id': 'linkedin-sample', 'service': 'linkedin'}
 
 class LinkedInTests(unittest.TestCase):
     def test_an_odd_message_is_skipped_and_counted(self):
-        li = a.load_connector('linkedin')
+        li = machine_sources_connectors.load_connector('linkedin')
         good = {'urn': 'urn:li:msg_message:1', 'conversation': 'urn:li:msg_conversation:2', 'at': 1791000000000, 'fromMe': False}
         skipped = H.Skips('linkedin_invalid_message')
         found = li.events(LINKEDIN, {'messages': [good, {**good, 'at': 'soon'}, None]}, H, skipped)
         self.assertEqual(len(found), 1)
         self.assertEqual(dict(skipped), {'linkedin_invalid_message': 2})
-        with self.assertRaises(a.SourceError):
+        with self.assertRaises(sources.SourceError):
             li.events(LINKEDIN, {'messages': [None] * 10}, H)
 
 

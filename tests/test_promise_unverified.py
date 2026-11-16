@@ -9,7 +9,7 @@ from zoneinfo import ZoneInfo
 import test_ux as ux
 import timeutil
 from seams import patch_everywhere  # noqa: E402
-a = ux.a
+import machine.main as machine_main
 
 GMAIL = {'id': 'work', 'email': 'robin@larkspurstudio.example', 'service': 'gmail', 'transport': 'gog', 'boundary': 'work:Example'}
 MONDAY = '2026-10-19T09:00:00+00:00'
@@ -28,10 +28,10 @@ class UnverifiedPromises(unittest.TestCase):
         zone = patch.object(timeutil, 'LOCAL_TZ', ZoneInfo('Europe/Brussels'))
         zone.start()
         self.addCleanup(zone.stop)
-        self.clock = patch_everywhere(a, 'now', return_value=MONDAY)
+        self.clock = patch_everywhere(timeutil, 'now', return_value=MONDAY)
         self.clock.start()
         self.addCleanup(lambda: self.clock.stop())
-        self.store = a.Store(Path(self.tmp.name) / 'events.sqlite')
+        self.store = machine_main.Store(Path(self.tmp.name) / 'events.sqlite')
         self.store.accounts = [GMAIL]
         self.store.commit_page('work', {}, [
             # The owner wrote to the real Mattias before; never to the lookalike domain
@@ -49,11 +49,11 @@ class UnverifiedPromises(unittest.TestCase):
 
     def at(self, stamp):
         self.clock.stop()
-        self.clock = patch_everywhere(a, 'now', return_value=stamp)
+        self.clock = patch_everywhere(timeutil, 'now', return_value=stamp)
         self.clock.start()
 
     def app(self):
-        app = object.__new__(a.App)
+        app = object.__new__(machine_main.App)
         app.store = self.store
         app.config = {'accounts': [GMAIL], 'digest_at': '08:30', 'review_worker': {'enabled': True}}
         app.promise_check_model = lambda config, text: '[]'

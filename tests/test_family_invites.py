@@ -7,9 +7,13 @@ import unittest
 import urllib.parse
 
 import test_fleet as tf
-from test_fleet import CONFIG, a
+from test_fleet import CONFIG
 
-fleet, family_invites = a.fleet, a.fleet.family.family_invites
+import fleet
+import machine.actions as machine_actions
+import machine.main as machine_main
+import machine.prompts.review as machine_prompts_review
+family_invites = fleet.family.family_invites
 FAM = 'fl_' + 'f' * 16
 WORK_ID = 'fl_' + 'b' * 16
 HOSTED = {**CONFIG, 'manage_url': 'https://cp.example/setup'}
@@ -141,15 +145,15 @@ class FamilyInvites(unittest.TestCase):
         self.assertEqual(self.offer('nobody')[1], 'no address')
 
     def test_the_review_passes_family_with_and_the_app_wires_it(self):
-        app = object.__new__(a.App)
+        app = object.__new__(machine_main.App)
         app.store, app.config, app.fleet = self.store, {**HOSTED, 'digest_at': '08:30'}, self.fleet
         with self.store.connect() as db:
             home = db.execute("SELECT id FROM events WHERE account_id='home'").fetchone()[0]
         saved = app.action('suggest', {'dedupe_key': 'pickup', 'title': 'Who picks up the kids on Wednesday?',
                                        'body': 'Sasha asked who does Wednesday.', 'event_ids': [home], 'family_with': 'p_sasha'})
         self.assertEqual(saved['family_invite'], 'offered')
-        self.assertIn('family_invite', a.FAMILY_ACTIONS)
-        self.assertIn('family_with', a.review_prompt('r1', ['home']))
+        self.assertIn('family_invite', machine_actions.FAMILY_ACTIONS)
+        self.assertIn('family_with', machine_prompts_review.review_prompt('r1', ['home']))
         with self.assertRaisesRegex(ValueError, 'dashboard'):  # the owner's own taps, never the agent's
             app.action('family_invite', {'suggestion_id': saved['id'], 'do': 'open'})
         self.assertEqual(app.action('family_invite_setting', {'on': False}, owner_dashboard=True), {'on': False})
@@ -161,7 +165,7 @@ class PersonInvite(unittest.TestCase):
     setUp, use = FamilyInvites.setUp, FamilyInvites.use
 
     def invite(self, node, mark=None, side=None, config=HOSTED, owner=('owner@gmail.com',)):
-        app = object.__new__(a.App)
+        app = object.__new__(machine_main.App)
         app.store, app.config, app.fleet = self.store, {**config, 'owner_emails': list(owner)}, self.fleet
         page = {'id': node, 'kind': 'person', **({'fleet': mark} if mark else {}), **({'side': side} if side else {})}
         return app.person_invite(page)
@@ -204,7 +208,7 @@ class PersonInviteDraft(unittest.TestCase):
     setUp, use = FamilyInvites.setUp, FamilyInvites.use
 
     def app(self, transport='gog'):
-        app = object.__new__(a.App)
+        app = object.__new__(machine_main.App)
         accounts = [{**x, **({'transport': transport} if transport else {})} for x in CONFIG['accounts']]
         app.store, app.config, app.fleet = self.store, {**HOSTED, 'accounts': accounts, 'owner_emails': ['owner@gmail.com']}, self.fleet
         return app

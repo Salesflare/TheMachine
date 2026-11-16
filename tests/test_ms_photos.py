@@ -13,8 +13,8 @@ from machine.app import reconnect_asks, workers
 import ms_graph
 import ms_photos
 
-a = tg.a
-enrichment = a.enrichment
+import enrichment
+import graph
 NOW = tg.NOW.isoformat()
 SCOPES = {'User.Read', 'Mail.ReadWrite', 'User.ReadBasic.All', 'Contacts.Read'}
 OUTLOOK = {'id': 'mail', 'service': 'outlook', 'transport': 'broker', 'email': 'sam@acme.com'}
@@ -242,7 +242,7 @@ class MicrosoftPhotos(unittest.TestCase):
         self.step(Graph())
         with self.store.connect() as db:
             self.assertEqual(db.execute('SELECT count(*) FROM ms_photo_asks').fetchone()[0], 1)
-            a.graph.delete_person(db, 'email:kim@acme.com', tg.CONFIG, NOW)
+            graph.delete_person(db, 'email:kim@acme.com', tg.CONFIG, NOW)
             self.assertEqual(db.execute('SELECT count(*) FROM ms_photo_asks').fetchone()[0], 0)
 
 

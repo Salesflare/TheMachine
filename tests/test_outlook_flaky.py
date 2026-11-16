@@ -18,8 +18,11 @@ from unittest import mock
 import ms_graph
 from machine.sources import gmail
 import test_ms_graph as t
+import machine.sources.calendar as machine_sources_calendar
+import machine.sources.gmail as machine_sources_gmail
+import sources
+import timeutil
 
-a = t.a
 
 
 class FlakyGraph(t.FakeGraph):
@@ -51,8 +54,8 @@ class FlakyBase(t.Base):
         self.fake = FlakyGraph()
         patcher = mock.patch.object(ms_graph.urllib.request, 'urlopen', self.fake); patcher.start(); self.addCleanup(patcher.stop)
         pauses = mock.patch.object(ms_graph, '_pause'); self.pause = pauses.start(); self.addCleanup(pauses.stop)
-        a.sync_gmail(self.store, self.config, self.mail)  # an empty mailbox's first import: incremental from here
-        a.sync_gmail(self.store, self.config, self.mail)
+        machine_sources_gmail.sync_gmail(self.store, self.config, self.mail)  # an empty mailbox's first import: incremental from here
+        machine_sources_gmail.sync_gmail(self.store, self.config, self.mail)
         self.assertEqual(self.store.checkpoint('acme-outlook')['mode'], 'incremental')
         self.fake.graph = 0
 
@@ -76,7 +79,7 @@ class FlakyGraphRounds(FlakyBase):
     def test_every_other_request_failing_reads_each_message_once_in_one_round(self):
         wanted = self.add(8)
         self.fake.fails = lambda n: n % 2 == 0
-        result = a.sync_gmail(self.store, self.config, self.mail)
+        result = machine_sources_gmail.sync_gmail(self.store, self.config, self.mail)
         self.assertEqual(set(self.stored()), wanted)
         self.assertEqual(set(self.fake.served), wanted)
         self.assertEqual(set(self.fake.served.values()), {1})  # each message's content read once
@@ -96,9 +99,9 @@ class FlakyGraphRounds(FlakyBase):
             rounds += 1
             before = len(self.stored())
             try:
-                result = a.sync_gmail(self.store, self.config, self.mail)
-            except a.SourceError as error:  # nothing from Graph at all: a transient failure, nothing lost
-                self.assertTrue(a.transient(error))
+                result = machine_sources_gmail.sync_gmail(self.store, self.config, self.mail)
+            except sources.SourceError as error:  # nothing from Graph at all: a transient failure, nothing lost
+                self.assertTrue(sources.transient(error))
                 self.assertEqual(len(self.stored()), before)
                 continue
             self.assertEqual(self.errors(), (None, 0))  # a partial round is a success, not a failure
@@ -113,7 +116,7 @@ class FlakyGraphRounds(FlakyBase):
         wanted = self.add(5)
         self.fake.fail['GET /me/messages/m2/$value'] = 502
         for _ in range(3):
-            result = a.sync_gmail(self.store, self.config, self.mail)
+            result = machine_sources_gmail.sync_gmail(self.store, self.config, self.mail)
         self.assertEqual(set(self.stored()), wanted - {'m2'})
         state = self.store.checkpoint('acme-outlook')
         self.assertEqual(list(state['waiting']), ['m2'])
@@ -123,7 +126,7 @@ class FlakyGraphRounds(FlakyBase):
         since = state['waiting']['m2']['since']
         del self.fake.fail['GET /me/messages/m2/$value']
         self.fake.graph = 0
-        a.sync_gmail(self.store, self.config, self.mail)
+        machine_sources_gmail.sync_gmail(self.store, self.config, self.mail)
         self.assertEqual(set(self.stored()), wanted)
         self.assertEqual(set(self.fake.served.values()), {1})
         self.assertEqual(self.fake.graph, 1 + 2)  # the listing, then m2: the rest isn't read again
@@ -133,59 +136,59 @@ class FlakyGraphRounds(FlakyBase):
     def test_a_message_gone_while_waiting_is_tombstoned(self):
         self.add(2)
         self.fake.fail['GET /me/messages/m1/$value'] = 504
-        a.sync_gmail(self.store, self.config, self.mail)
+        machine_sources_gmail.sync_gmail(self.store, self.config, self.mail)
         del self.fake.fail['GET /me/messages/m1/$value']
         del self.fake.messages['m1']
-        a.sync_gmail(self.store, self.config, self.mail)
+        machine_sources_gmail.sync_gmail(self.store, self.config, self.mail)
         self.assertNotIn('waiting', self.store.checkpoint('acme-outlook'))
 
     def test_a_dead_graph_fails_the_round_and_loses_nothing(self):
         wanted = self.add(4)
         self.fake.fails = lambda n: True
-        with self.assertRaises(a.SourceError) as got:
-            a.sync_gmail(self.store, self.config, self.mail)
-        self.assertTrue(a.transient(got.exception))
+        with self.assertRaises(sources.SourceError) as got:
+            machine_sources_gmail.sync_gmail(self.store, self.config, self.mail)
+        self.assertTrue(sources.transient(got.exception))
         self.assertLessEqual(self.fake.graph, ms_graph.READ_TRIES)  # the listing's tries, nothing more
         self.fake.fails = None
-        a.sync_gmail(self.store, self.config, self.mail)
+        machine_sources_gmail.sync_gmail(self.store, self.config, self.mail)
         self.assertEqual(set(self.stored()), wanted)
 
     def test_graph_failing_every_read_stops_the_round_after_a_few_messages(self):
         self.add(10)
         self.fake.fails = lambda n: n > 1  # the listing answers, then nothing does
-        a.sync_gmail(self.store, self.config, self.mail)  # listed: a success, every message waiting
+        machine_sources_gmail.sync_gmail(self.store, self.config, self.mail)  # listed: a success, every message waiting
         tried = self.fake.graph
         self.assertLessEqual(tried, 1 + gmail.FAILED_IN_A_ROW * ms_graph.READ_TRIES)
         state = self.store.checkpoint('acme-outlook')
         self.assertEqual(len(state['waiting']), 10)
         self.assertEqual(sum(v['tries'] for v in state['waiting'].values()), gmail.FAILED_IN_A_ROW)
         self.fake.fails = lambda n: True
-        with self.assertRaises(a.SourceError):  # nothing new listed or read: a failure (counted, reported only if it lasts)
-            a.sync_gmail(self.store, self.config, self.mail)
+        with self.assertRaises(sources.SourceError):  # nothing new listed or read: a failure (counted, reported only if it lasts)
+            machine_sources_gmail.sync_gmail(self.store, self.config, self.mail)
         self.assertEqual(len(self.store.checkpoint('acme-outlook')['waiting']), 10)  # nothing dropped
 
     def test_the_rounds_time_up_leaves_the_rest_waiting(self):
         wanted = self.add(3)
         with mock.patch.object(gmail, 'ROUND_SECONDS', 0):
-            a.sync_gmail(self.store, self.config, self.mail)
+            machine_sources_gmail.sync_gmail(self.store, self.config, self.mail)
         self.assertEqual(len(self.store.checkpoint('acme-outlook')['waiting']), 3)
         self.assertFalse(self.stored())
-        a.sync_gmail(self.store, self.config, self.mail)
+        machine_sources_gmail.sync_gmail(self.store, self.config, self.mail)
         self.assertEqual(set(self.stored()), wanted)
         self.assertEqual(set(self.fake.served.values()), {1})
 
     def test_a_healthy_graph_costs_no_extra_requests(self):
         self.add(3)
-        a.sync_gmail(self.store, self.config, self.mail)
+        machine_sources_gmail.sync_gmail(self.store, self.config, self.mail)
         folders = len(self.fake.folders)  # the well-known folders, looked up once per run
         self.assertEqual(self.fake.graph, 1 + folders + 3 * 2)
         self.fake.graph = 0
-        result = a.sync_gmail(self.store, self.config, self.mail)
+        result = machine_sources_gmail.sync_gmail(self.store, self.config, self.mail)
         self.assertEqual(self.fake.graph, 1)  # the listing only: the last change isn't read again
         self.assertEqual((result['events'], self.fake.failed), (0, 0))
         self.pause.assert_not_called()
         self.fake.messages['m2']['lastModifiedDateTime'] = '2099-01-01T09:00:00Z'  # changed: read again
-        a.sync_gmail(self.store, self.config, self.mail)
+        machine_sources_gmail.sync_gmail(self.store, self.config, self.mail)
         self.assertEqual(self.fake.served['m2'], 2)
 
 
@@ -203,7 +206,7 @@ class ReadRetries(FlakyBase):
         return mock.patch.object(ms_graph.urllib.request, 'urlopen', urlopen), replies
 
     def me(self):
-        return ms_graph.call(self.config, a.credential, self.mail, 'me')
+        return ms_graph.call(self.config, sources.credential, self.mail, 'me')
 
     def test_a_read_in_a_round_is_tried_again_on_a_5xx_or_no_answer(self):
         patcher, left = self.answers(504, 'timeout', 200)
@@ -231,7 +234,7 @@ class ReadRetries(FlakyBase):
         patcher, left = self.answers(504, 200)
         with patcher, mock.patch.object(ms_graph, 'token', return_value='test'), ms_graph.budget(60):
             with self.assertRaises(ms_graph.GraphError):
-                ms_graph.call(self.config, a.credential, self.mail, 'sendMail', {}, body={}, write=True)
+                ms_graph.call(self.config, sources.credential, self.mail, 'sendMail', {}, body={}, write=True)
         self.assertEqual(left, [200])
 
     def test_a_short_retry_after_is_honored(self):
@@ -258,8 +261,8 @@ class OtherGraphRounds(t.Base):
 
     def test_a_calendar_round_reads_on_through_a_5xx_and_no_answer(self):
         self.fake.fails = lambda n: n in (1, 3)  # the calendar's own read answers 502, the delta not at all, each once
-        with t.patch_everywhere(a, 'now', return_value='2099-01-01T00:00:00+00:00'):
-            result = a.sync_calendar(self.store, self.config, self.cal)
+        with t.patch_everywhere(timeutil, 'now', return_value='2099-01-01T00:00:00+00:00'):
+            result = machine_sources_calendar.sync_calendar(self.store, self.config, self.cal)
         self.assertEqual((result['events'], self.fake.failed, self.pause.call_count), (1, 2, 2))
         with self.store.connect() as db:
             row = db.execute('SELECT error, failures FROM checkpoints WHERE account_id=?', (self.cal['id'],)).fetchone()
@@ -267,10 +270,10 @@ class OtherGraphRounds(t.Base):
 
     def test_a_calendar_round_that_keeps_failing_is_a_passing_failure(self):
         self.fake.fails = lambda n: True
-        with t.patch_everywhere(a, 'now', return_value='2099-01-01T00:00:00+00:00'), self.assertRaises(a.SourceError) as got:
-            a.sync_calendar(self.store, self.config, self.cal)
+        with t.patch_everywhere(timeutil, 'now', return_value='2099-01-01T00:00:00+00:00'), self.assertRaises(sources.SourceError) as got:
+            machine_sources_calendar.sync_calendar(self.store, self.config, self.cal)
         self.assertEqual(self.fake.graph, ms_graph.READ_TRIES)
-        self.assertTrue(a.transient(got.exception))  # only reported when it keeps happening
+        self.assertTrue(sources.transient(got.exception))  # only reported when it keeps happening
 
     def test_photos_and_birthdays_read_inside_a_round(self):
         import birthdays_app

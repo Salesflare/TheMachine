@@ -8,6 +8,11 @@ import next_actions as n
 import test_ux as ux
 from seams import patch_everywhere  # noqa: E402
 import timeutil
+import machine.actions as machine_actions
+import machine.cards as machine_cards
+import machine.config as machine_config
+import machine.delivery.telegram as machine_delivery_telegram
+import machine.main as machine_main
 
 
 def setUpModule():  # these read snoozes landing at 09:00, the old default (now 08:00, before the 08:30 digest)
@@ -16,7 +21,6 @@ def setUpModule():  # these read snoozes landing at 09:00, the old default (now 
 
 def tearDownModule():
     timeutil.set_work_hours(None)
-a=ux.a
 
 
 class NextActions(unittest.TestCase):
@@ -26,7 +30,7 @@ class NextActions(unittest.TestCase):
     decide=ux.UX.decide
 
     def app(self):
-        app=object.__new__(a.App);app.store=self.store
+        app=object.__new__(machine_main.App);app.store=self.store
         app.config={'accounts':[{'id':'work','email':'owner@example.com','client':'existing','service':'gmail','transport':'gog'}]}
         return app
 
@@ -53,7 +57,7 @@ class NextActions(unittest.TestCase):
         return Transport()
 
     def test_prepare_adds_send_but_never_sends_or_approves(self):
-        self.ready();self.assertEqual(a.controls(self.row())['blocks'][0]['buttons'][0]['label'],'Send')
+        self.ready();self.assertEqual(machine_cards.controls(self.row())['blocks'][0]['buttons'][0]['label'],'Send')
         with self.store.connect() as db:self.assertEqual(db.execute('SELECT count(*) FROM action_jobs').fetchone()[0],0)
         self.app().action_step(self.transport(send=lambda *_:self.fail('Preparation cannot send')))
 
@@ -80,7 +84,7 @@ class NextActions(unittest.TestCase):
         app.action_step(self.transport(send=lambda *_:self.fail('Duplicate send')))
         self.assertEqual(len(calls),1);self.assertEqual(calls[0]['body'],'Exact approved draft.')
         self.assertEqual(self.action_job()['status'],'sent');self.assertEqual(self.row()['status'],'completed')
-        self.assertNotIn('Send',[b['label'] for b in a.controls(self.row())['blocks'][0]['buttons']])
+        self.assertNotIn('Send',[b['label'] for b in machine_cards.controls(self.row())['blocks'][0]['buttons']])
 
     def test_owner_edit_sends_exactly_the_edited_draft_and_is_remembered(self):
         old=self.ready();app=self.app()
@@ -105,7 +109,7 @@ class NextActions(unittest.TestCase):
         self.ready(thread_id='abc123',in_reply_to='<orig@x>');self.confirm();app=self.app()
         app.action_step(self.transport(send=lambda *_:{'message_id':'gm1'}))
         rfc=self.action_job()['rfc_message_id']
-        later=(a.dt.datetime.fromisoformat(a.now())+a.dt.timedelta(minutes=5)).isoformat()
+        later=(dt.datetime.fromisoformat(timeutil.now())+dt.timedelta(minutes=5)).isoformat()
         mail=lambda sid,meta:{'account_id':'work','source_id':sid,'kind':'gmail.message','occurred_at':later,'title':'Re: Verified subject','body':'Sounds good, but Tuesday?','metadata':meta,'deleted':False}
         self.store.commit_page('work',{},[mail('r1',{'in-reply-to':rfc,'labels':['INBOX']}),mail('r2',{'thread_id':'abc123','labels':['INBOX']}),
                                           mail('r3',{'thread_id':'abc123','labels':['SENT']}),mail('r4',{'thread_id':'other','labels':['INBOX']})])
@@ -168,7 +172,7 @@ class NextActions(unittest.TestCase):
         with self.assertRaises(ValueError):n.validate(self.draft(),self.app().config,['other'])
 
     def test_confirmation_refused_from_agent_cli_and_unscoped_input(self):
-        self.ready();self.assertIn('confirm_action',a.OWNER_ACTIONS)
+        self.ready();self.assertIn('confirm_action',machine_actions.OWNER_ACTIONS)
         with self.assertRaises(ValueError):self.app().action('confirm_action',{'suggestion_id':self.sid,'revision':self.row()['next_action']['revision'],'approval_id':'agent-generated'})
 
     def test_exact_mime_sender_recipients_reply_and_unique_identity(self):
@@ -196,8 +200,8 @@ class NextActions(unittest.TestCase):
         self.confirm();msg=n.mime_bytes(self.row()['next_action'],self.action_job(),config=self.app().config).decode()
         self.assertIn('filename="credit note.pdf"',msg);self.assertIn('Content-Type: application/pdf',msg)
         app=self.app();app.config.setdefault('accounts',[])
-        self.assertEqual(a.App.draft_attachment(app,self.sid,other['attachments'][0]['sha256'])[1:],('application/pdf','credit note.pdf'))
-        with self.assertRaises(ValueError):a.App.draft_attachment(app,self.sid,'0'*64)  # only this card's own draft files
+        self.assertEqual(machine_main.App.draft_attachment(app,self.sid,other['attachments'][0]['sha256'])[1:],('application/pdf','credit note.pdf'))
+        with self.assertRaises(ValueError):machine_main.App.draft_attachment(app,self.sid,'0'*64)  # only this card's own draft files
 
     def test_attachments_outside_allowed_folders_or_oversized_are_refused(self):
         src,_=self.attach_setup();outside=self.root/'secret.txt';outside.write_text('token')
@@ -266,8 +270,8 @@ class NextActions(unittest.TestCase):
     def test_gmail_refusal_is_failed_not_uncertain_and_send_can_be_tapped_again(self):
         self.ready();self.confirm();self.app().action_step(self.transport(send=lambda *_:{'rejected':400}))
         job=self.action_job();self.assertEqual(job['status'],'failed');self.assertIn('Nothing was sent',job['error'])
-        self.assertIn('Gmail refused this email',a.card(self.row()))
-        self.assertIn('Send',[b['label'] for b in a.controls(self.row())['blocks'][0]['buttons']])
+        self.assertIn('Gmail refused this email',machine_cards.card(self.row()))
+        self.assertIn('Send',[b['label'] for b in machine_cards.controls(self.row())['blocks'][0]['buttons']])
         self.app().action_step(self.transport(send=lambda *_:self.fail('No automatic retry after a refusal')))
         self.confirm(key='second-tap');self.assertEqual(self.action_job()['status'],'queued')
         self.app().action_step(self.transport());self.assertEqual(self.action_job()['status'],'sent')
@@ -305,7 +309,7 @@ class NextActions(unittest.TestCase):
         return self.row()['next_actions']
 
     def test_smart_menu_labels_owner_selected_preparation_and_replay(self):
-        choices=self.menu(with_email=False);buttons=[b['label'] for block in a.controls(self.row())['blocks'] for b in block['buttons']]
+        choices=self.menu(with_email=False);buttons=[b['label'] for block in machine_cards.controls(self.row())['blocks'] for b in block['buttons']]
         for label in ('Draft support email','Open the Zap'):self.assertIn(label,buttons)
         self.confirm(choices[0]['revision']);job=self.job()
         self.assertEqual(self.row()['status'],'accepted');self.assertEqual(job['status'],'queued')
@@ -323,7 +327,7 @@ class NextActions(unittest.TestCase):
             {'kind':'prepare','label':'Draft support email','instructions':'Draft an email about the exact field-mapping error; do not send it.'}]})
         self.assertEqual(self.action_job()['status'],'done')
         again=self.row()['next_actions'][0];self.assertEqual(again['revision'],choices[0]['revision'])
-        self.assertIn('Draft support email',[b['label'] for block in a.controls(self.row())['blocks'] for b in block['buttons']])
+        self.assertIn('Draft support email',[b['label'] for block in machine_cards.controls(self.row())['blocks'] for b in block['buttons']])
         self.confirm(again['revision'],key='second-step');self.assertEqual(self.action_job()['status'],'local_preparation')
         self.assertEqual(self.row()['status'],'accepted')
 
@@ -331,8 +335,8 @@ class NextActions(unittest.TestCase):
         choices=self.menu();self.confirm(choices[0]['revision']);sent=[]
         self.app().action_step(self.transport(send=lambda action,job:(sent.append(action),{'message_id':'approved'})[1]))
         self.assertEqual(sent[0]['body'],choices[0]['body']);self.assertEqual(self.row()['next_actions'][0]['state']['status'],'sent')
-        self.assertIn('✓ Email sent to recipient@example.com at ',a.card(self.row()))
-        self.assertNotIn('Send reply',[b['label'] for block in a.controls(self.row())['blocks'] for b in block['buttons']])
+        self.assertIn('✓ Email sent to recipient@example.com at ',machine_cards.card(self.row()))
+        self.assertNotIn('Send reply',[b['label'] for block in machine_cards.controls(self.row())['blocks'] for b in block['buttons']])
 
     def test_menu_cannot_start_new_preparation_while_send_is_unknown(self):
         choices=self.menu();self.confirm(choices[0]['revision']);self.app().action_step(self.transport(send=lambda *_:{}))
@@ -370,7 +374,7 @@ class NextActions(unittest.TestCase):
 
     def test_finished_email_uses_send_and_change_not_more_drafting(self):
         self.menu();row=self.row()
-        labels=[b['label'] for block in a.controls(row)['blocks'] for b in block['buttons']]
+        labels=[b['label'] for block in machine_cards.controls(row)['blocks'] for b in block['buttons']]
         self.assertEqual(labels,['Send reply','Open the Zap','Mark done','Snooze','Ask for changes','Not needed'])
         hidden=row['next_action']['actions'][1]
         with self.assertRaises(ValueError):self.confirm(hidden['revision'])
@@ -382,7 +386,7 @@ class NextActions(unittest.TestCase):
             {'kind':'prepare','label':'Draft shorter reply','instructions':'Shorten this'},
             {'kind':'prepare','label':'Draft follow-up','instructions':'Rewrite it'}]})
         self.assertEqual(self.row()['next_actions'],[])
-        self.assertEqual([b['label'] for block in a.controls(self.row())['blocks'] for b in block['buttons']],['Mark done','Snooze','Ask for changes','Not needed'])
+        self.assertEqual([b['label'] for block in machine_cards.controls(self.row())['blocks'] for b in block['buttons']],['Mark done','Snooze','Ask for changes','Not needed'])
 
     def test_demo_preview_cannot_send_or_approve_and_requires_test_evidence(self):
         self.decide('accept');demo={'kind':'email_demo','label':'Send','subject':'Demo supplier reply','body':'Thanks for the proposal.'}
@@ -419,16 +423,16 @@ class ThreadSnoozes(unittest.TestCase):
         self.assertIn('Leaves your inbox for 5 days',n.email_preview(n.validate(self.draft(**self.reply,snooze_days=5),config,['work'])))
 
     def test_return_time_is_nine_on_a_weekday(self):
-        with patch_everywhere(a,'now',return_value='2026-10-12T08:00:00+00:00'):  # Monday
-            self.assertEqual(a.thread_return_time(3),'2026-10-15T07:00:00+00:00')  # Thursday 09:00 local
-            self.assertEqual(a.thread_return_time(5),'2026-10-19T07:00:00+00:00')  # Saturday -> Monday
-        with patch_everywhere(a,'now',return_value='2026-10-23T08:00:00+00:00'):  # Friday, across the DST change
-            self.assertEqual(a.thread_return_time(2),'2026-10-26T08:00:00+00:00')
+        with patch_everywhere(timeutil,'now',return_value='2026-10-12T08:00:00+00:00'):  # Monday
+            self.assertEqual(machine_cards.thread_return_time(3),'2026-10-15T07:00:00+00:00')  # Thursday 09:00 local
+            self.assertEqual(machine_cards.thread_return_time(5),'2026-10-19T07:00:00+00:00')  # Saturday -> Monday
+        with patch_everywhere(timeutil,'now',return_value='2026-10-23T08:00:00+00:00'):  # Friday, across the DST change
+            self.assertEqual(machine_cards.thread_return_time(2),'2026-10-26T08:00:00+00:00')
 
     def test_sent_reply_is_archived_then_returned_and_shown_on_the_card(self):
         self.ready(**self.reply);self.confirm();self.app().action_step(self.transport())
         [row]=self.snoozes();self.assertEqual((row['thread_id'],row['status']),('abc123','queued'))
-        self.assertIn('Thread out of your inbox until',a.card(self.row()))
+        self.assertIn('Thread out of your inbox until',machine_cards.card(self.row()))
         calls=[]
         class Gmail:
             def snooze(self,account,thread,sent):calls.append(('snooze',account,thread));return 'snoozed'
@@ -437,17 +441,17 @@ class ThreadSnoozes(unittest.TestCase):
         self.assertEqual(calls,[('snooze','work','abc123')]);self.assertEqual(self.snoozes()[0]['status'],'snoozed')
         with self.store.connect() as db:db.execute("UPDATE thread_snoozes SET until='2000-01-01T00:00:00+00:00'")
         app.thread_snooze_step(Gmail());self.assertEqual(calls[-1],('wake','work','abc123'))
-        self.assertEqual(self.snoozes()[0]['status'],'returned');self.assertNotIn('Thread out',a.card(self.row()))
+        self.assertEqual(self.snoozes()[0]['status'],'returned');self.assertNotIn('Thread out',machine_cards.card(self.row()))
 
     def test_a_reply_outlook_is_still_sending_is_asked_again_soon_without_an_error(self):
         self.ready(**self.reply);self.confirm();self.app().action_step(self.transport())
         answers=['sending','snoozed']
         class Outlook:
             def snooze(self,*_):return answers.pop(0)
-        with self.assertNoLogs(a.LOG,'ERROR'):self.app().thread_snooze_step(Outlook())
+        with self.assertNoLogs(machine_config.LOG,'ERROR'):self.app().thread_snooze_step(Outlook())
         row=self.snoozes()[0]
         self.assertEqual((row['status'],row['attempts'],row['error']),('queued',0,None))
-        self.assertLessEqual(row['retry_at'],(dt.datetime.fromisoformat(a.now())+dt.timedelta(minutes=2)).isoformat())
+        self.assertLessEqual(row['retry_at'],(dt.datetime.fromisoformat(timeutil.now())+dt.timedelta(minutes=2)).isoformat())
         with self.store.connect() as db:db.execute('UPDATE thread_snoozes SET retry_at=NULL')
         self.app().thread_snooze_step(Outlook());self.assertEqual(self.snoozes()[0]['status'],'snoozed')
         # Still not in Sent Items long after the send: an error, with the usual backoff.
@@ -460,11 +464,11 @@ class ThreadSnoozes(unittest.TestCase):
         class Gmail:
             def snooze(self,*_):return 'no_permission'
         self.app().thread_snooze_step(Gmail())
-        self.assertEqual(self.snoozes()[0]['status'],'failed');self.assertIn('modify permission',a.card(self.row()))
+        self.assertEqual(self.snoozes()[0]['status'],'failed');self.assertIn('modify permission',machine_cards.card(self.row()))
         with self.store.connect() as db:db.execute("UPDATE thread_snoozes SET status='snoozed',until='2000-01-01T00:00:00+00:00',error=NULL")
         class Down:
             def wake(self,*_):raise RuntimeError('down')
-        with self.assertLogs(a.LOG,'ERROR'):self.app().thread_snooze_step(Down())
+        with self.assertLogs(machine_config.LOG,'ERROR'):self.app().thread_snooze_step(Down())
         row=self.snoozes()[0];self.assertEqual(row['status'],'snoozed');self.assertIsNotNone(row['retry_at'])
 
     def test_outlook_down_for_a_moment_retries_without_an_error_report(self):
@@ -477,7 +481,7 @@ class ThreadSnoozes(unittest.TestCase):
             except urllib.error.HTTPError as error:raise n.ms_graph.GraphError('outlook',502) from error
         class Outlook:
             def wake(self,*_):return n.OutlookSnooze({},None).folder({'id':'work'})
-        with patch.object(n.ms_graph,'call',bad_gateway),self.assertNoLogs(a.LOG,'ERROR'),self.assertLogs(a.LOG,'WARNING'):
+        with patch.object(n.ms_graph,'call',bad_gateway),self.assertNoLogs(machine_config.LOG,'ERROR'),self.assertLogs(machine_config.LOG,'WARNING'):
             self.app().thread_snooze_step(Outlook())
         row=self.snoozes()[0]
         self.assertEqual((row['status'],row['attempts'],row['error']),('snoozed',1,'RuntimeError'));self.assertIsNotNone(row['retry_at'])
@@ -485,7 +489,7 @@ class ThreadSnoozes(unittest.TestCase):
         with self.store.connect() as db:db.execute("UPDATE thread_snoozes SET status='queued',attempts=11,retry_at=NULL,until='2999-01-01T00:00:00+00:00'")
         class Snooze:
             def snooze(self,*_):return n.OutlookSnooze({},None).folder({'id':'work'})
-        with patch.object(n.ms_graph,'call',bad_gateway),self.assertLogs(a.LOG,'ERROR'):self.app().thread_snooze_step(Snooze())
+        with patch.object(n.ms_graph,'call',bad_gateway),self.assertLogs(machine_config.LOG,'ERROR'):self.app().thread_snooze_step(Snooze())
         self.assertEqual(self.snoozes()[0]['status'],'failed')
 
     def test_gmail_wake_respects_a_reply_or_owner_move(self):
@@ -564,8 +568,8 @@ class CardDraft(unittest.TestCase):
     CONFIG={'dashboard_host':'machine.example','dashboard_path':'/','telegram_owner':'owner'}
 
     def send(self):
-        with patch_everywhere(a,'telegram_request',side_effect=lambda config,args:args):
-            return a.telegram(self.CONFIG,self.row(),'send')
+        with patch_everywhere(machine_delivery_telegram,'telegram_request',side_effect=lambda config,args:args):
+            return machine_delivery_telegram.telegram(self.CONFIG,self.row(),'send')
 
     def buttons(self,payload):
         return [(b['label'],b['action'].get('value') or b['action'].get('url')) for block in payload['presentation']['blocks'] for b in block['buttons']]
@@ -598,15 +602,15 @@ class CardDraft(unittest.TestCase):
     def test_long_feedback_shares_the_draft_budget(self):
         self.ready(body='*_' * 1150)
         row = {**self.row(), 'requested_feedback': '*_' * 250}
-        with patch_everywhere(a, 'telegram_request', side_effect=lambda config, args: args):
-            payload = a.telegram(self.CONFIG, row, 'send')
+        with patch_everywhere(machine_delivery_telegram, 'telegram_request', side_effect=lambda config, args: args):
+            payload = machine_delivery_telegram.telegram(self.CONFIG, row, 'send')
         self.assertLess(len(payload['message'].encode('utf-16-le')) // 2, 4096)
 
     def test_a_recipient_still_to_choose_keeps_the_review(self):
         revision=self.ready()['revision'];row=self.row()
         row['next_actions']=[{**row['next_actions'][0],'to':[],'to_options':['a@example.com','b@example.com']}]  # set by the service
-        with patch_everywhere(a,'telegram_request',side_effect=lambda config,args:args):
-            payload=a.telegram(self.CONFIG,row,'send')
+        with patch_everywhere(machine_delivery_telegram,'telegram_request',side_effect=lambda config,args:args):
+            payload=machine_delivery_telegram.telegram(self.CONFIG,row,'send')
         self.assertNotIn('**Draft**',payload['message'])
         self.assertEqual(self.buttons(payload)[0],('Send',f'assistant:{self.sid}:send_{revision}'))
 
@@ -620,5 +624,5 @@ class CardDraft(unittest.TestCase):
         self.ready();action=self.row()['next_action']
         self.app().action('confirm_action',{'suggestion_id':self.sid,'revision':action['revision'],'approval_id':'telegram:1'},owner_dashboard=True)
         self.app().action_step(NextActions.transport(self,send=lambda *_:{'message_id':'sent'}))
-        self.assertRegex(a.card(self.row()),r'✓ Email sent to recipient@example\.com at \d\d:\d\d\.')
+        self.assertRegex(machine_cards.card(self.row()),r'✓ Email sent to recipient@example\.com at \d\d:\d\d\.')
         self.assertNotIn('**Draft**',self.send()['message'])

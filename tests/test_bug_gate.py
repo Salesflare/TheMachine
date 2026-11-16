@@ -14,8 +14,8 @@ import unittest
 import bug_gate
 import next_actions as n
 import test_self_fix as sf
+import machine.cards as machine_cards
 
-a = sf.a
 REAL = sf.BUG
 
 
@@ -147,7 +147,7 @@ class BugGate(unittest.TestCase):
                 self.judge = lambda page, answer=answer: self.asked.append(page) or (answer if isinstance(answer, str) else json.dumps(answer))
                 self.assertTrue(self.save(self.disguised_fix())['auto_merge'].startswith('queued'))
                 self.assertEqual(self.step(), 'blocked')
-                card = a.card(self.row())
+                card = machine_cards.card(self.row())
                 self.assertIn('Parked for you: a second check ' + said, card)
                 self.assertIn('Not merged by itself.', card)
                 self.assertIn('Merge fix', self.labels())  # the owner decides; nothing changed
@@ -161,7 +161,7 @@ class BugGate(unittest.TestCase):
         self.judge = down
         self.save(self.fix())
         self.assertEqual(self.step(), 'blocked')
-        self.assertIn('Parked for you: a second check could not judge it. Not merged by itself.', a.card(self.row()))
+        self.assertIn('Parked for you: a second check could not judge it. Not merged by itself.', machine_cards.card(self.row()))
         self.assertEqual(self.head(), 'Start')
 
     def test_the_second_check_reads_the_evidence_as_data(self):

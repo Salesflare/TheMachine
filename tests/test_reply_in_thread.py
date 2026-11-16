@@ -11,7 +11,7 @@ from pathlib import Path
 from unittest.mock import patch
 import next_actions as n
 import test_ux as ux
-a = ux.a
+import machine.main as machine_main
 
 GMAIL = {'id': 'work', 'email': 'owner@example.com', 'service': 'gmail', 'transport': 'gog', 'boundary': 'work:Example'}
 SLACK = {'id': 'slack', 'service': 'slack', 'transport': 'maton', 'boundary': 'work:Example', 'credential': 'maton',
@@ -42,7 +42,7 @@ class ReplyPlace(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
-        self.store = a.Store(Path(self.tmp.name) / 'events.sqlite')
+        self.store = machine_main.Store(Path(self.tmp.name) / 'events.sqlite')
         self.store.owner_user_ids = {'UOWNER1'}
 
     def card(self, account, events, evidence=None):
@@ -53,7 +53,7 @@ class ReplyPlace(unittest.TestCase):
         self.sid = self.store.suggest('card-' + events[0]['source_id'], 'Reply to Sam', 'Sam asked something.', ids)['id']
 
     def app(self):
-        app = object.__new__(a.App)
+        app = object.__new__(machine_main.App)
         app.store = self.store
         app.config = {'accounts': [GMAIL, SLACK, WHATSAPP]}
         return app

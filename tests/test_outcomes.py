@@ -10,10 +10,12 @@ import test_promises as tp
 import test_ux as ux
 from pinned import pinned  # noqa: E402
 from seams import patch_everywhere  # noqa: E402
-a = ux.a
 from machine.store import outcomes  # noqa: E402  (on the path once test_ux loaded the app)
 from machine.store.cards import return_waiting  # noqa: E402
 from machine.store import todo_moves  # noqa: E402
+import machine.main as machine_main
+import machine.prompts.review as machine_prompts_review
+import timeutil
 
 GMAIL = {'id': 'work', 'email': 'owner@example.com', 'service': 'gmail', 'transport': 'gog', 'boundary': 'work:Example'}
 RESULT = 'Sam signed the order form'
@@ -31,14 +33,14 @@ class Outcomes(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
-        self.store = a.Store(Path(self.tmp.name) / 'events.sqlite')
+        self.store = machine_main.Store(Path(self.tmp.name) / 'events.sqlite')
         self.store.commit_page('work', {}, [email('m1', '2026-10-15T08:00:00+00:00')])
         with self.store.connect() as db:
             self.event = db.execute('SELECT id FROM events').fetchone()[0]
         self.sid = self.store.suggest('order-form', 'Send Sam the order form', 'Sam asked for the order form.', [self.event])['id']
 
     def app(self):
-        app = object.__new__(a.App)
+        app = object.__new__(machine_main.App)
         app.store = self.store
         app.config = {'accounts': [GMAIL]}
         return app
@@ -64,7 +66,7 @@ class Outcomes(unittest.TestCase):
             def preflight(self, action): return None
             def send(self, action, job): return {'message_id': 'gm-1'}
             def reconcile(self, action, job): return {}
-        with patch_everywhere(a, 'now', return_value=at):
+        with patch_everywhere(timeutil, 'now', return_value=at):
             self.app().action_step(T())
 
     def test_the_run_owns_the_line_and_a_review_only_fills_it(self):
@@ -76,7 +78,7 @@ class Outcomes(unittest.TestCase):
         with self.assertRaises(ValueError):
             outcomes.clean('x' * (outcomes.MAX + 1))
         self.assertEqual(outcomes.clean(' Sam  signed\nit '), 'Sam signed it')
-        self.assertIn('add done_when to suggest', a.review_prompt('r1', []))  # the review knows the arg
+        self.assertIn('add done_when to suggest', machine_prompts_review.review_prompt('r1', []))  # the review knows the arg
 
     def test_a_review_revises_its_own_line_when_the_goal_changes_never_the_owners(self):
         from machine.app import status
@@ -97,7 +99,7 @@ class Outcomes(unittest.TestCase):
         self.set('The order is in', 'run')  # what the owner said in its chat, through the run
         rewrite('Something else')
         self.assertEqual((self.suggestion()['done_when'], self.suggestion()['done_when_by']), ('The order is in', 'run'))
-        prompt = a.review_prompt('r1', [])
+        prompt = machine_prompts_review.review_prompt('r1', [])
         self.assertIn('the new done_when; one the owner set stays', prompt)
         self.assertIn('its title, body, draft and done_when following the new plan', prompt)
 
@@ -115,7 +117,7 @@ class Outcomes(unittest.TestCase):
         with self.store.connect() as db:  # its chat says what it waits for
             self.assertIn('Waiting for the result: ' + RESULT, json.dumps(self.app().card_chat_service(db, self.sid), ensure_ascii=False))
         # Stalled: back as Still waiting, with a nudge one tap away in its chat
-        with self.store.connect() as db, patch_everywhere(a, 'now', return_value='2026-12-01T09:00:00+00:00'):
+        with self.store.connect() as db, patch_everywhere(timeutil, 'now', return_value='2026-12-01T09:00:00+00:00'):
             self.assertEqual(return_waiting(db), 1)
         row = self.suggestion()
         self.assertEqual((row['status'], json.loads(row['outcome'])['state']), ('pending', 'still_waiting'))

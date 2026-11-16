@@ -5,8 +5,8 @@ from pathlib import Path
 
 import test_graph as tg
 
-a, graph = tg.a, tg.graph
-enrichment = a.enrichment
+graph = tg.graph
+import enrichment
 
 
 class DeletePermanently(unittest.TestCase):
