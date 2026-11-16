@@ -62,7 +62,7 @@ On the phone app, Snooze and Mark done ask you to unlock first. In a browser the
 
 Emails have Open links (and Snooze for what waits). They only open the dashboard.
 
-Tapping a notification, or Open in an email or on Telegram, shows the to-do in your list, highlighted. One that's done, snoozed or in another view opens its chat.
+Tapping a notification, or Open in an email or on Telegram, shows the to-do in your list, highlighted. One that's done, snoozed or in another view opens its chat. If the page hadn't caught up yet, it follows the to-do once it has.
 
 ## The morning digest
 
