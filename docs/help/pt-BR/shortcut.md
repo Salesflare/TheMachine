@@ -1,33 +1,37 @@
 ---
 title: Shortcut
 area: connections
-summary: Stories que mudam de estado, com seus responsáveis e prazos. Ele só lê.
+summary: Histórias que mudam de estado, com responsáveis e prazos. Ela só lê.
 covers: connector:shortcut
 code: connectors/shortcut.py
-site: Connect, More sources, Remove
-translated: 2298e2fcb1af74b3
+site: Sign in with Shortcut, Connect, More sources, Remove
+translated: 68419e11fabc157c
 ---
-## O que ele lê
+## O que ela lê
 
-Stories no seu workspace do Shortcut que mudam de estado, com seus responsáveis e prazos.
+Histórias no seu espaço de trabalho do Shortcut que mudam de estado, com responsáveis e prazos.
 
-## O que ele pode fazer
+## O que ela pode fazer
 
-Nada no Shortcut. Ele só lê, mesmo que os tokens do Shortcut possam fazer mais.
+Nada no Shortcut. Ela só lê.
 
 ## Conectar
 
-1. Em uma Machine hospedada: abra sua página de configuração em app.themachine.computer/setup, vá em **Mais fontes** e abra Shortcut. No seu próprio computador: **Conexões**, **Projetos e código**, Shortcut, ou `assistant connect shortcut`.
-2. Clique em **Pegue seu token**. O Shortcut abre a página API Tokens em uma nova aba: crie um token e copie.
-3. Cole e clique em **Conectar**. O token é verificado na hora, e você vê como quem e em qual workspace conectou.
+1. No painel: **Conexões**, **Projetos e código**, Shortcut. Ou, na página de configuração de uma Machine hospedada, em app.themachine.computer/setup: **Mais fontes**, Shortcut. No seu computador, primeiro conecte sua conta a ela.
+2. Pressione **Fazer login com Shortcut** e permita o acesso de leitura. Ela pede ao Shortcut somente acesso de leitura.
+3. Ao voltar para The Machine, ela verifica o login na hora e mostra com qual conta se conectou e em qual espaço de trabalho.
 
-Em mais de um workspace do Shortcut? Um token pertence a um só workspace, então troque para ele no Shortcut primeiro.
+Tem mais de um espaço de trabalho no Shortcut? Primeiro, mude para o espaço desejado no Shortcut. Para outro espaço de trabalho, adicione Shortcut novamente.
+
+## Cole um token
+
+Em **Ou cole um token de API**, pressione **Pegue seu token**. O Shortcut abre a página API Tokens em uma nova guia: crie um token, copie, cole e pressione **Conectar**. No seu computador, `assistant connect shortcut` também solicita o token. Ele dá acesso total à sua conta, mas The Machine só o usa para leitura.
 
 ## Remover
 
-- No painel: **Conexões**, abra Shortcut, **Detalhes** e depois **Desconectar**. O que ele já trouxe continua.
-- Em uma Machine hospedada, você também pode clicar em **Remover** ao lado dele na sua página de configuração.
+- No painel: **Conexões**, abra Shortcut, **Detalhes** e depois **Desconectar**. O que ela já importou continua lá.
+- Em uma Machine hospedada, você também pode pressionar **Remover** ao lado dela na página de configuração.
 
 ## Revogar no Shortcut
 
-Exclua o token na mesma página API Tokens.
+Se você colou um token, exclua-o na página API Tokens. Se você fez login, desconectar aqui interrompe toda a leitura.

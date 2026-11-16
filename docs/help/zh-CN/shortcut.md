@@ -1,33 +1,37 @@
 ---
 title: Shortcut
 area: connections
-summary: 会改变状态的故事及其负责人和截止日期。它只读取数据。
+summary: 状态发生变化的故事及其负责人和截止日期。The Machine 只能读取数据。
 covers: connector:shortcut
 code: connectors/shortcut.py
-site: Connect, More sources, Remove
-translated: 2298e2fcb1af74b3
+site: Sign in with Shortcut, Connect, More sources, Remove
+translated: 68419e11fabc157c
 ---
-## 读取内容
+## 读取的内容
 
-Shortcut工作区中会改变状态的故事，以及这些故事的负责人和截止日期。
+Shortcut 工作区中状态发生变化的故事，以及这些故事的负责人和截止日期。
 
-## 能做什么
+## 可以执行的操作
 
-什么也做不了。即使Shortcut令牌允许执行更多操作，它也只读取数据。
+无法在 Shortcut 中执行任何操作。The Machine 只能读取数据。
 
 ## 连接
 
-1. 如果使用托管版Machine：打开app.themachine.computer/setup中的设置页面，前往**更多来源**，然后打开Shortcut。如果使用自己的电脑：依次打开**连接**、**项目和代码**、Shortcut，或运行`assistant connect shortcut`。
-2. 点击**获取令牌**。Shortcut会在新标签页中打开API令牌页面：创建令牌并复制。
-3. 粘贴令牌，然后点击**连接**。系统会立即验证令牌，并显示连接的账号和工作区。
+1. 在仪表板中依次选择：**连接**、**项目与代码**、Shortcut。也可以在托管版 Machine 的设置页面 app.themachine.computer/setup 中选择：**更多来源**、Shortcut。在自己的电脑上使用时，请先将它与你的账户配对。
+2. 点击 **使用 Shortcut 登录**，并允许读取权限。它只会向 Shortcut 请求读取权限。
+3. 返回 The Machine 后，The Machine 会立即检查登录状态，并显示连接的账户和工作区。
 
-你有多个Shortcut工作区？令牌只能对应一个工作区，所以请先在Shortcut中切换到要连接的工作区。
+如果你有多个 Shortcut 工作区，请先在 Shortcut 中切换到要连接的工作区。要连接其他工作区，请再次添加 Shortcut。
+
+## 改用粘贴令牌
+
+在 **或粘贴 API 令牌** 下方，点击 **获取你的令牌**。Shortcut 会在新标签页中打开 API 令牌页面：创建并复制令牌，然后粘贴并点击 **连接**。在自己的电脑上使用时，`assistant connect shortcut` 也会提示你输入令牌。令牌可以完全访问你的账户，但 The Machine 只会用它读取数据。
 
 ## 移除连接
 
-- 在控制面板中：打开**连接**，选择Shortcut，再依次打开**详情**和**断开连接**。已导入的内容会保留。
-- 如果使用托管版Machine，也可以在设置页面中点击Shortcut旁边的**移除**。
+- 在仪表板中选择 **连接**，打开 Shortcut，点击 **详情**，然后点击 **断开连接**。已导入的内容会保留。
+- 在托管版 Machine 的设置页面中，也可以点击 Shortcut 旁边的 **移除**。
 
-## 在Shortcut中撤销令牌
+## 在 Shortcut 中撤销访问权限
 
-在同一个API令牌页面中删除令牌。
+如果使用的是粘贴的令牌，请在 API 令牌页面将其删除。如果使用登录方式，在此处断开连接后，读取操作就会停止。
