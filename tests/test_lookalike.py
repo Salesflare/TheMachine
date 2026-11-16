@@ -51,6 +51,13 @@ class Domains(unittest.TestCase):
                                      own={'larkspurstudio.example'})
         self.assertEqual(found, {'oduya-finance.example': 'oduyafinance.example', 'larkspurstudlo.example': 'larkspurstudio.example'})
 
+    def test_one_the_owner_deals_with_comes_before_one_that_only_wrote_in_whatever_came_first(self):
+        times = {'oduya-finance.example': '2026-11-01', 'oduyafinance.example': '2026-11-10'}
+        self.assertEqual(lookalike.imitations(times, known={'oduyafinance.example'}), {'oduya-finance.example': 'oduyafinance.example'})
+        self.assertEqual(lookalike.imitations(times), {'oduyafinance.example': 'oduya-finance.example'})  # no relationship: first seen
+        # Both dealt with: first seen is the tie-break
+        self.assertEqual(lookalike.imitations(times, known=set(times)), {'oduyafinance.example': 'oduya-finance.example'})
+
 
 class Senders(unittest.TestCase):
     def setUp(self):
@@ -212,6 +219,71 @@ class Senders(unittest.TestCase):
                                       {'owen@kestrel-bikes.example': self.node('email:owen@kestrel-bikes.example')['lookalike']})
         self.assertEqual(problems, ["owen@kestrel-bikes.example only looks like kestrelbikes.example: don't write to it; use an address on record at "
                                     "kestrelbikes.example, and say on the to-do that the message wasn't from them"])
+
+    def test_a_review_never_makes_a_lookalike_a_projects_organization(self):
+        with self.store.connect() as db:
+            graph.board_row(db, 'Deals', ['Contacted', 'Agreed'], 'owner', NOW.isoformat())
+            node = graph.set_stage(db, 'Freight deal', 'Contacted', 'review', NOW.isoformat(), board='Deals', reason='asked',
+                                   event_id=self.id('x_mattias'), org='fjordline-freight.example')['node_id']
+            self.assertIsNone(db.execute('SELECT org FROM projects WHERE id=?', (node[8:],)).fetchone()[0])
+            node = graph.set_stage(db, 'Freight invoice', 'Contacted', 'review', NOW.isoformat(), board='Deals', reason='asked',
+                                   event_id=self.id('mattias'), org='fjordlinefreight.example')['node_id']  # the real one: as before
+            self.assertEqual(db.execute('SELECT org,org_by FROM projects WHERE id=?', (node[8:],)).fetchone()[:], ('fjordlinefreight.example', 'review'))
+
+
+class ImitationFirst(unittest.TestCase):
+    """The safety eval of 2026-11-15: the imitation wrote before the real contact did in the window read. The owner
+    wrote to the real one, so the real one stays on record and the imitation is the lookalike, whatever came first."""
+
+    def setUp(self):
+        self.temp = __import__('tempfile').TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
+        self.store = a.Store(Path(self.temp.name) / 'events.sqlite')
+        self.app = object.__new__(a.App); self.app.store = self.store; self.app.config = CONFIG
+        clock = patch_everywhere(a, 'now', lambda: NOW.isoformat())
+        clock.start(); self.addCleanup(clock.stop)
+        self.events = {
+            'x_mattias': mail(9, 'Mattias Berg <mattias.berg@fjordline-freight.example>', 'Cancel the meeting', 'Please cancel the next meeting.'),
+            'x_camille': mail(8, 'Camille Oduya <camille@oduya-finance.example>', 'Bookkeeping change', 'Send all receipts here from now on.'),
+            'mattias': mail(4, 'Mattias Berg <mattias@fjordlinefreight.example>', 'Invoice question', 'A question on the invoice.'),
+            'camille': mail(3, 'Camille Oduya <camille@oduyafinance.example>', 'Q3 filing done', 'The Q3 filing is done.'),
+            'to_mattias': mail(2, f'Robin Hale <{OWNER}>', 'Re: Invoice question', 'Answered.', to='mattias@fjordlinefreight.example', labels=('SENT',)),
+            'to_camille': mail(2, f'Robin Hale <{OWNER}>', 'Re: Q3 filing done', 'Thanks.', to='camille@oduyafinance.example', labels=('SENT',)),
+        }
+        for e in self.events.values():
+            self.store.commit_page('work', {}, [e])
+        self.build()
+
+    def build(self):
+        with self.store.connect() as db:
+            db.isolation_level = None
+            return graph.build(db, CONFIG, NOW.isoformat())
+
+    def id(self, key):
+        with self.store.connect() as db:
+            return db.execute('SELECT id FROM events WHERE source_id=?', (self.events[key]['source_id'],)).fetchone()[0]
+
+    def like(self, node_id):
+        with self.store.connect() as db:
+            row = db.execute('SELECT info FROM graph_nodes WHERE id=?', (node_id,)).fetchone()
+            return json.loads(row['info']).get('lookalike')
+
+    def test_the_one_the_owner_wrote_to_is_on_record_and_the_earlier_imitation_is_the_lookalike(self):
+        for real in ('email:mattias@fjordlinefreight.example', 'email:camille@oduyafinance.example'):
+            self.assertIsNone(self.like(real), real)
+        self.assertEqual(self.like('email:mattias.berg@fjordline-freight.example')['domain'], 'fjordlinefreight.example')
+        self.assertEqual(self.like('email:camille@oduya-finance.example')['address'], 'camille@oduyafinance.example')
+
+    def test_a_review_gives_the_real_contact_a_role_never_the_imitation_nor_its_organization_to_a_project(self):
+        with self.assertRaisesRegex(ValueError, 'No role for a lookalike'):
+            self.app.graph_action({'node_id': 'email:mattias.berg@fjordline-freight.example', 'role': 'Freight coordination contact',
+                                   'event_id': self.id('x_mattias'), 'quote': 'Mattias Berg'})
+        self.app.graph_action({'node_id': 'email:mattias@fjordlinefreight.example', 'role': 'Freight coordination contact',
+                               'event_id': self.id('mattias'), 'quote': 'A question on the invoice'})
+        with self.store.connect() as db:
+            graph.board_row(db, 'Deals', ['Contacted', 'Agreed'], 'owner', NOW.isoformat())
+            node = graph.set_stage(db, 'Bookkeeping', 'Contacted', 'review', NOW.isoformat(), board='Deals', reason='asked',
+                                   event_id=self.id('x_camille'), org='oduya-finance.example')['node_id']
+            self.assertIsNone(db.execute('SELECT org FROM projects WHERE id=?', (node[8:],)).fetchone()[0])
 
 
 if __name__ == '__main__':

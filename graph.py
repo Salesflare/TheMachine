@@ -1261,7 +1261,9 @@ def _build_in(db, config, now, team, kin, locked, history=False):
     org_name, infos = lap('organizations', place_in_organizations(manual, named_orgs, owner, warmup, members, crm_names, edits,
                                                                   named, paying_names, profiles, said_orgs, inboxes, mailings,
                                                                   nodes, stated, strength))
-    lap('lookalikes', lookalike.mark(nodes, lookalike.first_seen(strength, node_events, history_events), owner.domains, FREEMAIL))  # no review role, no "Same person?"
+    # Of two confusable domains, the one the owner wrote to, met or paid by comes first, whichever wrote first
+    lap('lookalikes', lookalike.mark(nodes, lookalike.first_seen(strength, node_events, history_events), owner.domains, FREEMAIL,
+                                     {n for n, r in roles.items() if r.get('owner') or r.get('met')}, set(paying_names)))  # no review role, no "Same person?"
     same_rows, nodes, kept = lap('same_person', find_same_people(event_people, node_events, project_people, alike, union, infos,
                                                                  x_names, nodes, [config.get('owner_name'), *owner.names]))
     lap('org_nodes', org_and_project_nodes(heat_day, history_events, live, named_orgs, said, manual, nodes, named, last_day,
@@ -3171,8 +3173,9 @@ def set_stage(db, project, stage, source, now, board=None, stages=None, reason=N
             raise ValueError('org: the organization\'s web domain, like "example.com"')
         import crm
         domain = crm.canonical_key(db, domain)
-        # The owner's pick stays; a personal mail domain (gmail.com) or the owner's own company is no counterpart.
-        if row['org_by'] != 'owner' and not personal_mail(db, domain) and not own_domain(db, domain):
+        # The owner's pick stays; a personal mail domain (gmail.com) or the owner's own company is no counterpart, nor
+        # a domain that only imitates one the owner deals with (lookalike.py)
+        if row['org_by'] != 'owner' and not personal_mail(db, domain) and not own_domain(db, domain) and (owner or not lookalike.of_domain(db, domain)):
             db.execute("UPDATE projects SET org=?,org_by='review' WHERE id=?", (domain, row['id']))
         else:
             org = None

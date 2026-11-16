@@ -9,7 +9,7 @@ keywords: phishing, fake address, spoof, scam, impersonation, lookalike domain, 
 ---
 ## What it catches
 
-Some scams come from an address that looks like one you know: `examp1e.com` for `example.com`, `example-billing.com`, or one letter off. The Machine compares each sender's domain with the ones you already deal with. When the newer one only looks like a known one, it counts as a lookalike.
+Some scams come from an address that looks like one you know: `examp1e.com` for `example.com`, `example-billing.com`, or one letter off. The Machine compares each sender's domain with the ones you already deal with. Of two that look alike, the one you have written to, met or set up yourself is the real one, even when the other wrote first. When neither stands out that way, the newer one counts as the lookalike.
 
 The same name at another ending, like `example.nl` next to `example.com`, is the same organization, not a lookalike. Free mail like gmail.com never counts.
 
@@ -19,7 +19,7 @@ A to-do about such a message says so plainly, like "This isn't Alex. It came fro
 
 ## What The Machine won't do
 
-- It never gives a lookalike sender a role in your Graph.
+- It never gives a lookalike sender a role in your Graph, and never makes their domain a project's organization.
 - It never merges them with the person they imitate, and never suggests them under **Same person?**.
 - A reply it prepares goes to the address on record, not the lookalike one.
 
