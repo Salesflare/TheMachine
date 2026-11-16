@@ -7,7 +7,7 @@ The flow, on the dashboard (dashboard/learning-import.js), from the setup to-do,
    block. The owner pastes its answer back.
 2. Review (review()): plain code reads the answer (parse: ChatGPT's Markdown, Claude's fenced block, Gemini's bold
    headings and numbered lists all read the same), drops every line that looks like a secret before anything is shown
-   or kept (secret(): the app's own key and token patterns, plus card numbers, IBANs and labelled passwords and codes),
+   or kept (secret(): the app's own key and token patterns, plus card numbers, IBANs and labeled passwords and codes),
    then one small turn on the background model compares the rest with what is learned already, by meaning: a line that
    says what a current fact says is skipped; one that contradicts a current fact is shown next to it, for the owner to
    pick; one that tries to grant permission, approval, sending by itself or trust in a sender is left out. Nothing is

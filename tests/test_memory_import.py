@@ -44,7 +44,7 @@ CLAUDE = '''I'll list what I know, grouped as you asked.
 
 **Preferences**
 • Prefers tea over coffee. Drinks it without sugar.
-  • Likes Earl Grey best.
+  • Likes Darjeeling best.
 
 **Routines**
 1. Runs on Tuesday and Thursday mornings.
@@ -102,7 +102,7 @@ class Parsing(unittest.TestCase):
     def test_claude_answer(self):
         rows = memory_import.parse(CLAUDE)
         self.assertEqual([r['text'] for r in rows], ['Lives in Antwerp.', 'Speaks Dutch, English and some French.',
-                                                     'Prefers tea over coffee. Drinks it without sugar.', 'Likes Earl Grey best.',
+                                                     'Prefers tea over coffee. Drinks it without sugar.', 'Likes Darjeeling best.',
                                                      'Runs on Tuesday and Thursday mornings.'])
         self.assertEqual([r['area'] for r in rows], ['about', 'about', 'preferences', 'preferences', 'routines'])
 
@@ -152,7 +152,7 @@ class Store(unittest.TestCase):
         self.known = {f['text']: f['id'] for f in self.store.facts()}
 
     def review(self, text, ask=None, frm='claude'):
-        self.app.memory_import_model = ask
+        self.app.memory_import_model = ask or (lambda prompt: None)  # None: the model is away, never a real turn
         return self.app.action('memory_import_review', {'from': frm, 'text': text}, owner_dashboard=True)
 
     def test_only_the_owner_on_the_dashboard(self):
