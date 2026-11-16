@@ -1,33 +1,37 @@
 ---
 title: Shortcut
 area: connections
-summary: Les stories qui changent d’état, avec leurs responsables et leurs échéances. Il ne fait que lire.
+summary: Stories dont l’état change, avec leurs responsables et leurs échéances. Lecture seule.
 covers: connector:shortcut
 code: connectors/shortcut.py
-site: Connect, More sources, Remove
-translated: 2298e2fcb1af74b3
+site: Sign in with Shortcut, Connect, More sources, Remove
+translated: 68419e11fabc157c
 ---
-## Ce qu’il lit
+## Ce qu’elle lit
 
-Les stories de votre espace de travail Shortcut qui changent d’état, avec leurs responsables et leurs échéances.
+Les stories de votre espace de travail Shortcut dont l’état change, avec leurs responsables et leurs échéances.
 
-## Ce qu’il peut faire
+## Ce qu’elle peut faire
 
-Rien dans Shortcut. Il ne fait que lire, même si les jetons Shortcut permettent plus.
+Elle ne modifie rien dans Shortcut. Elle se contente de lire.
 
-## Le connecter
+## Connecter Shortcut
 
-1. Sur une Machine hébergée : ouvrez votre page de configuration sur app.themachine.computer/setup, allez dans **Plus de sources** et ouvrez Shortcut. Sur votre propre ordinateur : **Connexions**, **Projets et code**, Shortcut, ou `assistant connect shortcut`.
-2. Appuyez sur **Obtenir votre jeton**. Shortcut ouvre sa page API Tokens dans un nouvel onglet : créez un jeton et copiez-le.
-3. Collez-le et appuyez sur **Se connecter**. Le jeton est vérifié tout de suite, avec le nom et l’espace de travail connectés.
+1. Dans le tableau de bord : **Connexions**, **Projets et code**, Shortcut. Ou, sur la page de configuration d’une Machine hébergée, à l’adresse app.themachine.computer/setup : **Autres sources**, Shortcut. Sur votre propre ordinateur, associez-la d’abord à votre compte.
+2. Appuyez sur **Se connecter avec Shortcut** et autorisez l’accès en lecture. Elle ne demande à Shortcut qu’un accès en lecture.
+3. De retour dans The Machine, elle vérifie immédiatement la connexion et indique sous quelle identité elle s’est connectée et dans quel espace de travail.
 
-Dans plusieurs espaces Shortcut ? Un jeton appartient à un seul espace : passez d’abord à celui-ci dans Shortcut.
+Vous avez plusieurs espaces de travail Shortcut ? Sélectionnez d’abord celui que vous voulez dans Shortcut. Pour en connecter un autre, ajoutez Shortcut de nouveau.
 
-## Le retirer
+## Coller un jeton à la place
 
-- Dans le tableau de bord : **Connexions**, ouvrez Shortcut, **Détails**, puis **Déconnecter**. Ce qu’il a déjà récupéré reste.
-- Sur une Machine hébergée, vous pouvez aussi appuyer sur **Retirer** à côté sur votre page de configuration.
+Sous **Ou collez un jeton d’API**, appuyez sur **Obtenir votre jeton**. Shortcut ouvre la page des jetons d’API dans un nouvel onglet : créez un jeton, copiez-le, collez-le, puis appuyez sur **Se connecter**. Sur votre propre ordinateur, `assistant connect shortcut` vous le demande aussi. Un jeton donne un accès complet à votre compte, mais The Machine ne fait que lire avec ce jeton.
 
-## Le révoquer dans Shortcut
+## Supprimer la connexion
 
-Supprimez le jeton sur la même page API Tokens.
+- Dans le tableau de bord : **Connexions**, ouvrez Shortcut, puis **Détails** et **Déconnecter**. Les données déjà importées restent disponibles.
+- Sur une Machine hébergée, vous pouvez aussi appuyer sur **Retirer** à côté de Shortcut sur la page de configuration.
+
+## Révoquer l’accès dans Shortcut
+
+Pour un jeton collé : supprimez-le sur la page des jetons d’API. Si vous vous êtes connecté, déconnecter Shortcut ici met fin à toute lecture.

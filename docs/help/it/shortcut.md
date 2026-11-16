@@ -1,33 +1,37 @@
 ---
 title: Shortcut
 area: connections
-summary: Le storie che cambiano stato, con i loro responsabili e le scadenze. Legge soltanto.
+summary: Storie che cambiano stato, con assegnatari e scadenze. Può solo leggerle.
 covers: connector:shortcut
 code: connectors/shortcut.py
-site: Connect, More sources, Remove
-translated: 2298e2fcb1af74b3
+site: Sign in with Shortcut, Connect, More sources, Remove
+translated: 68419e11fabc157c
 ---
 ## Cosa legge
 
-Le storie nel tuo workspace Shortcut che cambiano stato, con i loro responsabili e le scadenze.
+Le storie nel tuo workspace di Shortcut che cambiano stato, con i relativi assegnatari e le scadenze.
 
 ## Cosa può fare
 
-Niente in Shortcut. Legge soltanto, anche se i token di Shortcut possono fare di più.
+Non può fare nulla in Shortcut. Può solo leggere.
 
-## Collegalo
+## Collega Shortcut
 
-1. Su una Machine in hosting: apri la tua pagina di configurazione su app.themachine.computer/setup, vai su **Altre fonti** e apri Shortcut. Sul tuo computer: **Connessioni**, **Progetti e codice**, Shortcut, oppure `assistant connect shortcut`.
-2. Premi **Ottieni il tuo token**. Shortcut apre la sua pagina API Tokens in una nuova scheda: crea un token e copialo.
-3. Incollalo e premi **Collegati**. Il token viene controllato subito, con il nome e il workspace collegati.
+1. Nella dashboard: **Connessioni**, **Progetti e codice**, Shortcut. Oppure, nella pagina di configurazione di una Machine ospitata, vai su app.themachine.computer/setup e scegli **Altre fonti**, Shortcut. Sul tuo computer, prima devi associarla al tuo account.
+2. Premi **Accedi con Shortcut** e consenti l'accesso in lettura. Shortcut richiede solo l'accesso in lettura.
+3. Tornata in The Machine, la tua Machine verifica subito l'accesso e mostra l'account usato e il workspace a cui si è collegata.
 
-In più di un workspace Shortcut? Un token appartiene a un solo workspace, quindi passa prima a quello in Shortcut.
+Hai più di un workspace Shortcut? Passa prima a quello giusto in Shortcut. Per un altro workspace, aggiungi di nuovo Shortcut.
 
-## Rimuovilo
+## In alternativa, incolla un token
 
-- Nella dashboard: **Connessioni**, apri Shortcut, **Dettagli**, poi **Disconnetti**. Ciò che ha già importato resta.
-- Su una Machine in hosting puoi anche premere **Rimuovi** accanto a Shortcut nella tua pagina di configurazione.
+In **Oppure incolla un token API**, premi **Ottieni il tuo token**. Shortcut apre la pagina API Tokens in una nuova scheda: crea un token, copialo e incollalo, poi premi **Collegati**. Sul tuo computer, `assistant connect shortcut` te lo chiede a sua volta. Un token dà accesso completo al tuo account, ma The Machine lo usa solo per leggere.
 
-## Revocalo in Shortcut
+## Rimuovi la connessione
 
-Elimina il token nella stessa pagina API Tokens.
+- Nella dashboard: **Connessioni**, apri Shortcut, **Dettagli**, poi **Disconnetti**. I dati già importati restano.
+- Su una Machine ospitata, puoi anche premere **Rimuovi** accanto a Shortcut nella pagina di configurazione.
+
+## Revoca l'accesso in Shortcut
+
+Se hai incollato un token, eliminalo dalla pagina API Tokens. Se hai effettuato l'accesso, disconnetterlo qui interrompe ogni lettura.
