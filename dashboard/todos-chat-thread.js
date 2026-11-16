@@ -29,9 +29,17 @@ expandedBodies.add(target.id);for(const a of target.next_actions||(target.next_a
 render();document.querySelector('nav [data-tab="inbox"]').click();
 const c=document.getElementById('task-'+target.id)||fuEl();if(!c){toChat();return}
 for(let parent=c.parentElement;parent;parent=parent.parentElement)if(parent.tagName==='DETAILS')parent.open=true;
-history.replaceState(null,'',location.pathname+location.search);
+history.replaceState(null,'',location.pathname+location.search);cardLanding={id:target.id,or:!!m[2],status:target.status,at:Date.now()};if(shownCached||Date.now()-shownAt>5e3)refresh();
 // a tall card (a draft in full) from its top, under the header, so its title shows too
 const tall=c.offsetHeight>innerHeight*.7;c.style.scrollMarginTop=tall?'72px':'';c.scrollIntoView({block:tall?'start':'center',behavior:'smooth'});c.classList.remove('flash');void c.offsetWidth;c.classList.add('flash');kbFocus(c,false)}
+// A link opened on a list read before the to-do moved (a page back from the background, or its kept copy on a start):
+// a notification's "Done: …" found the to-do where it waited, and the next read folded it away into Done. The first
+// read asked after the link (refresh, asked at once when the list on screen is a few seconds old) lands it again where
+// it is now, or its chat as the link says, never a silent miss.
+let cardLanding=null;
+function cardLandAgain(asked){const l=cardLanding;if(!l||shownCached||asked<l.at)return;cardLanding=null;
+ if(Date.now()-l.at>6e4||location.hash||chatId)return;const s=state.suggestions?.find(x=>x.id===l.id);if(!s||s.status===l.status)return;
+ history.replaceState(null,'',location.pathname+location.search+'#card='+l.id+(l.or?'&or=chat':''))}
 // Card chat (#chat=<id>): a card's whole story as a conversation, strictly by time: the messages it is about, what the
 // Machine did (its steps folded into one quiet line before each reply) and the drafts it wrote, what you said and
 // what went out. The card's buttons sit in a slim bar above the message box. A message is a Change (the same decide
