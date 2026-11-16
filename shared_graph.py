@@ -3045,6 +3045,7 @@ class SharedGraph(shared_graph_takeback.TakeBack, shared_graph_boards.TeamBoards
         found = {}
         for fleet, scope in scopes.items():
             week = [{**dict(e), 'metadata': json.loads(e['metadata'] or '{}')} for e in _events(db, sorted(scope.accounts), since)]
+            scope.automated_only({thread_of(e['kind'], e['metadata'], e['id']) for e in week})  # the same: not a pass over all mail
             scope.private_among({unit_of(e['kind'], e['metadata'], e['id']) for e in week},  # this week's threads only, not all mail
                                 {e['account_id'] for e in week if e['kind'] in CHAT_KINDS})
             for e in week:

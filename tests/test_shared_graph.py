@@ -338,6 +338,31 @@ class SharedGraph(unittest.TestCase):
         self.assertEqual(before[receipt_id]['why'], 'Only you: not a client conversation')  # automated mail, by rule
         self.assertNotEqual(before[self.event_id(self.own, 'work-81')]['view'], 'other')  # answered by the owner
 
+    def test_held_back_reads_only_this_weeks_threads_for_automated_mail_and_says_the_same(self):
+        """The Team tab's held-back list asks whether this week's threads are automated mail from their own messages,
+        never from every mail message (seconds on each load of a real mailbox), with the same list."""
+        self.olive_mail()
+        self.add(self.own, mail('work', 90, 'Bo Hale <bo@buyer.example>', 'own1@acme.example', 'Acquisition terms', 'Term sheet attached.', 1, 't-deal'),
+                 mail('work', 91, 'Alerts <no-reply@bank.example>', 'own1@acme.example', 'Wire alert', 'A wire went out.', 1, 't-wire'),
+                 mail('work', 92, 'Bo Hale <bo@buyer.example>', 'own1@acme.example', 'Old terms', 'Last year.', 30, 't-old'))
+        self.judge(self.own, ('work-90', 'sensitive', 'Bo sent terms'), ('work-91', 'sensitive', 'A wire'), ('work-92', 'sensitive', 'Old terms'))
+        full_set = sg.Scope.automated.fget
+
+        def never_all(scope):
+            if scope._automated is None:
+                raise AssertionError('read every mail message')
+            return full_set(scope)
+        with self.own.store.connect() as db:
+            with patch.object(sg.Scope, 'automated', property(never_all)):
+                fast = self.own.held_back(db)
+            with patch.object(sg.Scope, 'automated_only', lambda scope, threads: None):  # every mail message, as before
+                before = self.own.held_back(db)
+        self.assertEqual(fast, before)
+        titles = [h['title'] for h in fast]
+        self.assertIn('Acquisition terms', titles)
+        self.assertNotIn('Wire alert', titles)  # automated mail
+        self.assertNotIn('Old terms', titles)  # not this week
+
     def test_a_personal_thread_in_a_work_account_never_goes_not_by_hand_nor_a_later_review(self):
         self.add(self.own, mail('work', 6, 'Lee Park <lee@client.example>', 'own1@acme.example', 'Your daughter', 'Congrats on the graduation!', 1, 't-p'))
         self.judge(self.own, ('work-6', 'personal', 'Lee wrote'))
