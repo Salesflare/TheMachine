@@ -8973,11 +8973,23 @@
  "saved_logins": [
   {
    "site": "billing.cobaltandfinch.example",
-   "username": "alex@lumenlabs.example"
+   "username": "alex@lumenlabs.example",
+   "account": "Work"
   },
   {
    "site": "portal.vantagerail.example",
-   "username": "alex.morgan"
+   "username": "alex.morgan",
+   "account": "Default"
+  },
+  {
+   "site": "shop.tidewell.example",
+   "username": "alex@lumenlabs.example",
+   "account": "Work"
+  },
+  {
+   "site": "shop.tidewell.example",
+   "username": "alex.morgan@mail.example",
+   "account": "Personal"
   }
  ],
  "boards": [

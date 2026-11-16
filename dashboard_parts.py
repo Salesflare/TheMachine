@@ -43,6 +43,7 @@ LAZY = {
     'palette': ('shell-palette.js',),
     'compose': ('todos-send.js', 'todos-compose.js'),
     'signin': ('connections-signin-dialog.js',),
+    'logins': ('connections-logins.css', 'connections-logins.js'),
     'emailframe': ('events-email-frame.js',),
     'msgview': ('events-message.css', 'events-message.js'),
     'voice': ('todos-chat-voice-rec.js',),

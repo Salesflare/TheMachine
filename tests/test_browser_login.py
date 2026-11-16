@@ -325,12 +325,12 @@ class StoreTest(unittest.TestCase):
     def test_saved_encrypted_listed_without_password_and_forgotten(self):
         with tempfile.TemporaryDirectory() as folder:
             store = browser_login.LoginStore(folder)
-            store.save('www.example.invalid', USER, None)  # a two-step sign-in: the username first
+            store.save('example.invalid', USER, None)  # a two-step sign-in: the username first
             store.save('example.invalid', None, SECRET)
             self.assertEqual(store.get('example.invalid')['password'], SECRET)
-            self.assertNotIn(SECRET.encode(), (Path(folder) / browser_login.STORE).read_bytes())
-            self.assertNotIn(USER.encode(), (Path(folder) / browser_login.STORE).read_bytes())
-            for name in (browser_login.STORE, browser_login.KEY):
+            self.assertNotIn(SECRET.encode(), (Path(folder) / browser_login.ACCOUNTS_STORE).read_bytes())
+            self.assertNotIn(USER.encode(), (Path(folder) / browser_login.ACCOUNTS_STORE).read_bytes())
+            for name in (browser_login.ACCOUNTS_STORE, browser_login.KEY):
                 self.assertEqual(os.stat(Path(folder) / name).st_mode & 0o777, 0o600)
             [entry] = store.list()
             self.assertEqual((entry['site'], entry['username']), ('example.invalid', USER))
@@ -344,7 +344,8 @@ class StoreTest(unittest.TestCase):
             self.assertEqual(store.list(), [])
 
     def test_moves_only_with_a_passphrase(self):
-        self.assertTrue({browser_login.SEALED, browser_login.STORE, browser_login.KEY} <= moving.SECRET_NAMES)
+        self.assertTrue({browser_login.SEALED, browser_login.STORE, browser_login.KEY, browser_login.ACCOUNTS,
+                         browser_login.ACCOUNTS_STORE} <= moving.SECRET_NAMES)
 
 
 def message_key(folder):
@@ -364,14 +365,14 @@ class SealedStoreTest(unittest.TestCase):
             message_key(folder)
             store = browser_login.LoginStore(folder)
             store.save('example.invalid', USER, SECRET)
-            sealed = (Path(folder) / browser_login.SEALED).read_bytes()
+            sealed = (Path(folder) / browser_login.ACCOUNTS).read_bytes()
             self.assertTrue(browser_login.message_seal.is_sealed_bytes(sealed))
             self.assertNotIn(SECRET.encode(), sealed)
             self.assertNotIn(USER.encode(), sealed)
-            self.assertEqual(os.stat(Path(folder) / browser_login.SEALED).st_mode & 0o777, 0o600)
-            self.assertFalse((Path(folder) / browser_login.KEY).exists())
-            self.assertFalse((Path(folder) / browser_login.STORE).exists())
-            self.assertEqual(browser_login.LoginStore(folder).get('www.example.invalid')['password'], SECRET)
+            self.assertEqual(os.stat(Path(folder) / browser_login.ACCOUNTS).st_mode & 0o777, 0o600)
+            for name in (browser_login.KEY, browser_login.STORE, browser_login.ACCOUNTS_STORE):
+                self.assertFalse((Path(folder) / name).exists(), name)
+            self.assertEqual(browser_login.LoginStore(folder).get('example.invalid')['password'], SECRET)
             self.assertEqual([e['site'] for e in store.list()], ['example.invalid'])
             self.assertTrue(store.forget('example.invalid'))
             self.assertEqual(store.list(), [])
@@ -385,9 +386,9 @@ class SealedStoreTest(unittest.TestCase):
             store = browser_login.LoginStore(folder)
             self.assertTrue(store.migrate())
             self.assertFalse(store.migrate())
-            for name in (browser_login.KEY, browser_login.STORE):
+            for name in (browser_login.KEY, browser_login.STORE, browser_login.ACCOUNTS_STORE):
                 self.assertFalse((Path(folder) / name).exists(), name)
-            self.assertTrue(browser_login.message_seal.is_sealed_file(Path(folder) / browser_login.SEALED))
+            self.assertTrue(browser_login.message_seal.is_sealed_file(Path(folder) / browser_login.ACCOUNTS))
             saved = store.get('example.invalid')
             self.assertEqual((saved['username'], saved['password']), (USER, SECRET))
 
@@ -420,8 +421,8 @@ class SealedStoreTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder:
             message_key(folder)
             browser_login.LoginStore(folder).save('example.invalid', USER, SECRET)
-            opened = moving._open_file(Path(folder) / browser_login.SEALED, {'database': str(Path(folder) / 'events.sqlite')})
-            self.assertEqual(json.loads(opened)['example.invalid']['password'], SECRET)
+            opened = moving._open_file(Path(folder) / browser_login.ACCOUNTS, {'database': str(Path(folder) / 'events.sqlite')})
+            self.assertEqual(json.loads(opened)['logins'][0]['password'], SECRET)
 
 
 @unittest.skipUnless(shutil.which('openssl'), 'needs openssl')
@@ -432,14 +433,16 @@ class ListActionTest(unittest.TestCase):
             app = machine_main.App.__new__(machine_main.App)
             app.config = {'accounts': [], 'database': str(Path(folder) / 'events.sqlite')}
             sent = app.action('browser_logins', {}, owner_dashboard=True)
-            self.assertEqual(sent['logins'], [{'site': 'example.invalid', 'username': USER, 'password_saved': True,
-                                              'saved_at': sent['logins'][0]['saved_at']}])
+            self.assertEqual(sent['logins'], [{'id': sent['logins'][0]['id'], 'site': 'example.invalid', 'origin': 'https://example.invalid',
+                                               'account': 'Default', 'username': USER, 'password_saved': True, 'source': 'dialog',
+                                               'saved_at': sent['logins'][0]['saved_at']}])
             self.assertNotIn(SECRET, json.dumps(sent))
 
 
 class OwnerOnlyTest(unittest.TestCase):
     def test_not_for_the_agent_or_the_cli(self):
-        for name in ('browser_login_pages', 'browser_login_fill', 'browser_login_choose', 'browser_logins', 'browser_login_forget'):
+        for name in ('browser_login_pages', 'browser_login_fill', 'browser_login_choose', 'browser_logins', 'browser_login_forget',
+                     'browser_login_import'):
             self.assertIn(name, machine_actions.OWNER_ACTIONS)
             app = machine_main.App.__new__(machine_main.App)
             app.config = {'accounts': [], 'database': '/nonexistent/x.db'}

@@ -279,10 +279,11 @@ def sealed_checks(database, key):
                         if message_seal.is_sealed(value) or message_seal.is_sealed_json(value):
                             sealer.open_any(value)
                             checked += 1
-    logins = path.parent / 'browser-logins.sealed'
-    if message_seal.is_sealed_file(logins):
-        sealer.open_bytes(logins.read_bytes())
-        checked += 1
+    for name in ('browser-logins.sealed', 'browser-logins.v2.sealed'):  # saved sign-ins, and their accounts per site
+        logins = path.parent / name
+        if message_seal.is_sealed_file(logins):
+            sealer.open_bytes(logins.read_bytes())
+            checked += 1
     return checked
 
 

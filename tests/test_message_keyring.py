@@ -225,7 +225,7 @@ class Keyring(unittest.TestCase):
 
     def test_a_keyring_that_can_not_be_read_never_gets_a_new_key(self):
         self.moved()
-        sealed_logins = (self.data / browser_login.SEALED).read_bytes()
+        sealed_logins = (self.data / browser_login.ACCOUNTS).read_bytes()
         for broken in ('down', 'locked', 'lie', 'missing'):
             self.reboot()
             if broken == 'lie':
@@ -247,8 +247,8 @@ class Keyring(unittest.TestCase):
             self.assertFalse(message_seal.wait_for_key(self.path, say=self.said.append, every=0.01, limit=0.03, protect=True))
             self.assertEqual([p[0] for p in message_seal.problems(self.path)], ['message-key-keyring-waiting'])
             self.assertTrue(self.key_file.is_symlink() and not self.key_file.exists())  # no new key anywhere
-            self.assertEqual((self.data / browser_login.SEALED).read_bytes(), sealed_logins)
-            self.assertFalse((self.data / browser_login.STORE).exists() or (self.data / browser_login.KEY).exists())
+            self.assertEqual((self.data / browser_login.ACCOUNTS).read_bytes(), sealed_logins)
+            self.assertFalse(any((self.data / n).exists() for n in (browser_login.STORE, browser_login.KEY, browser_login.ACCOUNTS_STORE)))
             self.keyring.down = self.keyring.locked = False
             self.keyring.lie = None
             if broken == 'missing':

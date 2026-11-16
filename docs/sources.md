@@ -471,10 +471,20 @@ A small dialog that signs the assistant's browser in for you. It shows on a sign
 
 **Save for next time:**
 
-- Keeps that site's username and password in `browser-logins.sealed` in the data folder (mode 600), encrypted with the message key ([message protection](configuration.md#message-protection); a hosted Machine keeps that key off its disk), on this machine only.
-- Without message protection they go in `browser-logins.enc` with a key of their own (`browser-logins.key`, mode 600), and move over to the message key once there is one.
-- Connections, Sign-ins lists them: one row per site with its username, "Password saved" (never the password or its length) and the day it was saved, with **Forget**.
+- Keeps that page's username and password in `browser-logins.v2.sealed` in the data folder (mode 600), encrypted with the message key ([message protection](configuration.md#message-protection); a hosted Machine keeps that key off its disk), on this machine only.
+- Without message protection they go in `browser-logins.v2.enc` with a key of their own (`browser-logins.key`, mode 600), and move over to the message key once there is one.
+- **Accounts:** a site can keep several, each named (Default, Work, Personal; **Save as** in the dialog). Saving again under the same name replaces that one, never another.
+- **Exact address:** each is bound to the origins it was saved or imported for (scheme, host and port, as the browser says `location.origin`). The fill checks the page's origin before it types anything and again before it submits; a lookalike, another subdomain, `http` or another port gets nothing.
+- **Which account:** for a to-do, the dialog offers the one picked for it before, else the only one, else the one named for the to-do's Work or Personal side (or its company). Otherwise it asks once ("Which account for this to-do?") and remembers the choice for that to-do. Using one is still the owner's tap in the dialog; Do it stops at a sign-in as before.
+- **The move from one per site:** an older `browser-logins.sealed` (or `.enc`) stays as it is, as the backup; each site in it becomes a Default account for `https://site` and `https://www.site`. The move runs once at start-up and again changes nothing. `LoginStore.revert()` removes the new file to go back. Forget takes a sign-in out of both.
+- Connections, Sign-ins lists them: one row per account with its username, the account's name where it matters, "Password saved" (never the password or its length) and the day it was saved, with **Forget**.
 - When a site logs the Machine's browser out, the dialog's **Sign in as** fills them in with one tap.
+
+**Import** (`login_import.py`, Connections, Sign-ins):
+
+- From a CSV export of 1Password (7 and 8), LastPass, Bitwarden or Chrome (and Firefox's or Safari's columns), at most 5 MB and 5,000 rows. Rows without an `https` address (loopback `http` aside) or without a password are left out and counted.
+- From 1Password's `op` or LastPass's `lpass` when it is installed and the owner signed in to it on this computer. The Machine only asks whether it is signed in (`op whoami`, `lpass status`), never signs in, never asks for or keeps a master password, and runs it without a terminal or pinentry. The list holds titles, addresses and usernames; a password is read only for the rows the owner keeps.
+- Then a review: tick which to keep and the account they go under. The review lives in the service's memory for 10 minutes and is dropped on close. The export's passwords never reach the page, the model, the logs, an event or an error.
 - A move to another computer takes them along only with a passphrase. One-time codes are never saved.
 - Anything running as the service's own user, the agent's shell included, can in principle read the key. So this keeps passwords out of the model's context, logs, support bundles and disk backups, not away from a compromised machine.
 

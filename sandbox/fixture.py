@@ -210,7 +210,9 @@ PROMISES = [('mine', 'recap', 0, 'Wren Fairhaven', 'send the pilot recap', 0, 'o
 JOB = {'story': 'api', 'tool': 'claude', 'files': ['rate-limits.md'],
        'summary': 'Checked the API docs: the contacts endpoint allows 600 requests a minute per key and answers 429 with Retry-After past that.\n\n'
                   'Wrote the answer in rate-limits.md, with the bulk export as the faster option.'}
-SAVED_LOGINS = [('billing.cobaltandfinch.example', 'alex@lumenlabs.example'), ('portal.vantagerail.example', 'alex.morgan')]
+# (site, username, account): a site can keep a Work and a Personal sign-in side by side
+SAVED_LOGINS = [('billing.cobaltandfinch.example', 'alex@lumenlabs.example', 'Work'), ('portal.vantagerail.example', 'alex.morgan', 'Default'),
+                ('shop.tidewell.example', 'alex@lumenlabs.example', 'Work'), ('shop.tidewell.example', 'alex.morgan@mail.example', 'Personal')]
 
 
 # Boards (Graph › Projects, Board): projects of one kind in stages, each moved by a message. Made up like the rest.
@@ -693,7 +695,7 @@ def build(profile):
     return {'note': 'Synthetic. Every name, company and address is invented; see sandbox/fixture.py.', 'seed': SEED,
             'owner': OWNER, 'accounts': ACCOUNTS, 'companies': companies, 'people': people, 'projects': PROJECTS,
             'events': events + board_events + check_events, 'cards': cards + board_cards, 'promises': promises, 'network': network, 'agent_job': job,
-            'saved_logins': [{'site': site, 'username': user} for site, user in SAVED_LOGINS], 'boards': boards, 'last_check': last_check}
+            'saved_logins': [{'site': site, 'username': user, 'account': account} for site, user, account in SAVED_LOGINS], 'boards': boards, 'last_check': last_check}
 
 
 if __name__ == '__main__':

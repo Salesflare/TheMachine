@@ -12,6 +12,8 @@ import urllib.parse
 
 import browser_login
 import browser_viewer
+import login_import
+import todo_areas
 from machine.browser import (browser_lease_script, browser_link, browser_wait, preparation_steps, run_tab,
                              same_site, signin_address, signin_handoff, signin_kind, signin_name, SIGNIN_WATCH,
                              site_language, task_page)
@@ -30,7 +32,43 @@ class BrowserApp:
                'browser_login_open': 'browser_login_action', 'browser_login_pages': 'browser_login_action',
                'browser_login_fill': 'browser_login_action', 'browser_login_choose': 'browser_login_action',
                'browser_login_check': 'browser_login_action', 'browser_logins': 'browser_login_action',
-               'browser_login_forget': 'browser_login_action'}
+               'browser_login_forget': 'browser_login_action', 'browser_login_import': 'browser_login_import_action'}
+
+    def browser_login_import_action(self, name, args, owner_dashboard=False):
+        """Bringing sign-ins in from a password manager (login_import.py): a CSV export, or 1Password's op or
+        LastPass's lpass when the owner has signed in to it on this computer, then a review where the owner ticks which
+        to keep. Owner, dashboard only; passwords never come back in an answer."""
+        if not owner_dashboard:
+            raise OwnerError('Only the owner imports sign-ins, from the dashboard')
+        logins = browser_login.LoginStore(Path(self.config['database']).expanduser().parent)
+        step = args.get('do')
+        if step == 'tools':
+            return {'tools': {m: login_import.tool_state(m) for m in login_import.TOOLS}}
+        if step == 'file':
+            kind, rows, skipped = login_import.parse(args.get('text'))
+            return login_import.start(kind, rows, skipped, logins)
+        if step == 'tool':
+            manager = args.get('manager') if args.get('manager') in login_import.TOOLS else None
+            if not manager:
+                raise OwnerError('Which password manager?')
+            return login_import.start(manager, login_import.tool_list(manager), 0, logins)
+        if step == 'keep':
+            return {'kept': login_import.keep(logins, args.get('token'), args.get('keys'), args.get('account'))}
+        if step == 'drop':
+            return {'dropped': login_import.drop(args.get('token'))}
+        raise OwnerError('Which step?')
+
+    def task_area(self, suggestion_id):
+        """A to-do's area (todo_areas.current: 'personal', 'work' or a company), or None when unknown."""
+        store = getattr(self, 'store', None)
+        if store is None or not isinstance(suggestion_id, str):
+            return None
+        try:
+            with store.connect() as db:
+                row = db.execute('SELECT account_ids,area FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
+        except sqlite3.Error:
+            return None
+        return todo_areas.current(row[0], self.config.get('accounts', []), row[1]) if row else None
 
     def browser_focus_action(self, name, args, owner_dashboard=False):
         if not owner_dashboard:
@@ -82,6 +120,11 @@ class BrowserApp:
                 page = self.signin_page(args['suggestion_id'])
                 found = [p for p in found if page and same_site(p['host'], page)]
                 walls = [w for w in walls if page and same_site(w['host'], page)]
+                # Which saved account this to-do uses there: chosen before, the only one, or the one named for its
+                # Work or Personal side; None when that is unclear, and the dialog asks once.
+                area = self.task_area(args['suggestion_id']) if any(len(p.get('accounts') or ()) > 1 for p in found) else None
+                for p in found:
+                    p['pick'] = logins.pick(p.get('origin'), args['suggestion_id'], area) if p.get('accounts') else None
                 return {'pages': found, 'walls': walls, 'task_site': browser_login.site(urllib.parse.urlsplit(page).hostname) if page else None}
             return {'pages': found, 'walls': walls}
         if name == 'browser_logins':
@@ -93,25 +136,34 @@ class BrowserApp:
             return {'logins': logins.list(), 'save': offer}
         if name == 'browser_login_forget':
             if args.get('all') is True:  # Settings, Security: Forget all saved sign-ins
-                return {'forgotten': sum(1 for x in logins.list() if logins.forget(x['site']))}
-            return {'forgotten': logins.forget(args.get('site'))}
+                return {'forgotten': logins.forget_all()}
+            return {'forgotten': logins.forget(args.get('id') if isinstance(args.get('id'), str) else args.get('site'))}
         host = args.get('host') if isinstance(args.get('host'), str) else ''
         if name == 'browser_login_choose':  # the page's own "use another method" or "resend": a click, nothing typed
             return browser_login.choose(self.config, args.get('page'), host, args.get('option'))
         username, password = (v if isinstance(v, str) else None for v in (args.get('username'), args.get('password')))
-        if args.get('use_saved') is True:
-            saved = logins.get(host)
+        task = args.get('suggestion_id') if isinstance(args.get('suggestion_id'), str) else None
+        origins, used = None, args.get('use_saved')
+        if used is True or isinstance(used, str):
+            # A saved sign-in: by its id (an account), or, from an older dashboard, the one for this host. It only
+            # ever goes into a page on one of its own exact origins (fill checks).
+            saved = logins.get(used if isinstance(used, str) else host)
             if not saved:
                 raise OwnerError('Nothing is saved for ' + browser_login.site(host))
-            username, password = username or saved.get('username'), saved.get('password')
+            username, password, origins = username or saved.get('username'), saved.get('password'), list(saved.get('origins') or [])
         code = args.get('code') if isinstance(args.get('code'), str) else None
-        done = browser_login.fill(self.config, args.get('page'), host, username, password, code)
+        seen = {}
+        done = browser_login.fill(self.config, args.get('page'), host, username, password, code, origins=origins, seen=seen)
+        if isinstance(used, str) and task:
+            logins.remember(task, used)  # asked once: this to-do uses that account from now on
         may_save = True
         if getattr(self, 'store', None) is not None:
             with self.store.connect() as db:
                 may_save = security_levels.save_logins(db)  # Careful: Save for next time isn't offered
-        if may_save and args.get('save') is True and args.get('use_saved') is not True and done['result'] != 'still_here' and (username or password):
-            logins.save(host, username, password)
+        if may_save and args.get('save') is True and not used and done['result'] != 'still_here' and (username or password):
+            saved_id = logins.save(seen.get('origin') or host, username, password, account=args.get('account'))
+            if task:
+                logins.remember(task, saved_id)
         if done['result'] == 'done':  # no sign-in form left: the task that waited on it carries on
             task = args.get('suggestion_id') if isinstance(args.get('suggestion_id'), str) else None
             done['resumed'] = self.resume_signed_in(host=host, suggestion_id=task)

@@ -49,9 +49,10 @@ class ServeApp:
     def serve(self):
         app = self
         self._packed, self._packed_lock = {}, threading.Lock()
-        try:  # saved sign-ins kept with a key of their own (or opened by an import) go over to the message key
+        try:  # saved sign-ins kept with a key of their own (or opened by an import) go over to the message key, and
+            # one sign-in per site becomes accounts per site (the older file stays as the backup)
             if browser_login.LoginStore(Path(self.config['database']).expanduser().parent).migrate():
-                LOG.info('saved sign-ins are now encrypted with the message key')
+                LOG.info('saved sign-ins moved: message key and accounts per site')
         except Exception as error:  # they stay as they were; the next start tries again
             LOG.warning('saved sign-ins not moved to the message key: %s', type(error).__name__)
 

@@ -54,7 +54,7 @@ WORKSPACE_SKIP = {'tools'}
 SKIP_SUFFIXES = ('.bak', '.lock', '.tmp', '-wal', '-shm', '-journal')
 # Files in the data folder that are keys even when config.json does not point at them
 SECRET_NAMES = {'network-keys.json', 'learnings-keys.json', 'owner-token', 'api-token', 'vapid.json', 'gog-password', 'browser-logins.sealed', 'browser-logins.enc',
-                'browser-logins.key', 'session.sealed', 'fleet-token'}
+                'browser-logins.key', 'browser-logins.v2.sealed', 'browser-logins.v2.enc', 'session.sealed', 'fleet-token'}
 SECRET_SUFFIXES = ('.key', '.pem', '.sealed', '.p12')  # a Telegram session, a store's own key, a private key
 # Folders that only hold keys (a copied gog keyring, OpenClaw's credentials), and copies of OpenClaw's own settings
 SECRET_DIRS = {'keyring', 'credentials', '.ssh', '.gnupg', 'signal-keys'}
