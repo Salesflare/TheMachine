@@ -272,6 +272,29 @@ class SortedByWhatWasSaid(Conversations):
         for rule in ('A vendor or service the owner uses', 'A person is never a subject'):
             self.assertIn(rule, self.asked[0])
 
+    def test_a_subject_keeps_its_name_when_the_conversation_that_named_it_leaves(self):
+        self.routes = {'Tiles': {'new': {'title': 'Kitchen', 'under': 'Home'}}, 'Worktop': {'place': 'Home > Kitchen'}, 'Sink': {'place': 'Home > Kitchen'}}
+        self.mail('Dana <dana@build.example>', 'Tiles', '2026-11-02', thread_id='t')
+        self.round()
+        self.mail('Dana <dana@build.example>', 'Worktop', '2026-11-03', thread_id='w')
+        self.mail('Dana <dana@build.example>', 'Sink', '2026-11-04', thread_id='s')
+        self.round()
+        with self.store.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            topic_notes.unroute(db, next(r['conv'] for r in db.execute("SELECT conv FROM topic_routes WHERE title='Tiles'")))
+            topic_notes.unroute(db, next(r['conv'] for r in db.execute("SELECT conv FROM topic_routes WHERE title='Tiles'")))
+            self.assertEqual(topic_notes.drafts(db)[0]['title'], 'Kitchen', 'its name stays with the others')
+            self.assertEqual(topic_notes.drafts(db)[0]['under'], ['Home'])
+            db.execute("UPDATE topic_routes SET note=NULL WHERE place LIKE 'topic:%'")
+            self.assertEqual(topic_notes.drafts(db), [], 'a subject without a name is no note')
+            self.assertEqual([p for p in topic_notes.places(db, []) if not p['path']], [], 'and no place a call is offered')
+
+    def test_a_work_folder_note_from_a_personal_mailbox_needs_the_owner_to_write_too(self):
+        self.routes = {'Profile': {'new': {'title': 'Example Listing', 'under': 'Work'}}}
+        self.mail('Example Listing <reports@listing.example>', 'Profile report', '2026-11-02', thread_id='p')
+        self.mail('Example Listing <reports@listing.example>', 'Profile report for October', '2026-11-03', thread_id='q')
+        self.assertEqual([k for k in self.round() if k[0] == 'topic'], [])
+
     def test_the_look_for_twins_sees_when_each_notes_messages_came_in(self):
         self.routes = {'Cabin': {'new': {'title': 'Holiday park', 'under': 'Trips'}}, 'Birthday': {'new': {'title': 'Holiday park birthday trip', 'under': 'Trips'}}}
         self.mail('Holiday Park <desk@park.example>', 'Cabin booked', '2026-10-02', thread_id='c')

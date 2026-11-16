@@ -458,9 +458,11 @@ def unroute(db, conv):
     """A conversation the page writer found not to be about its subject (note_writer.save): asked about once more, told
     the place it left (left), so a notice about another child or another trip goes to that one's note. One that leaves a
     second time goes nowhere."""
-    r = db.execute('SELECT place,left FROM topic_routes WHERE conv=?', (conv,)).fetchone()
+    r = db.execute('SELECT place,left,note,under FROM topic_routes WHERE conv=?', (conv,)).fetchone()
     if not r:
         return
+    if r['note'] and str(r['place']).startswith('topic:'):  # the one that named the subject: its name stays with the others
+        db.execute('UPDATE topic_routes SET note=?,under=? WHERE place=? AND conv<>? AND note IS NULL', (r['note'], r['under'], r['place'], conv))
     if r['left']:
         db.execute("UPDATE topic_routes SET place='',note=NULL,under=NULL WHERE conv=?", (conv,))
     else:
@@ -522,8 +524,9 @@ def places(db, kinds):
         out.append({'place': r['key'], 'path': _path(db, r['id'])})
     pending = {}
     for r in db.execute("SELECT place,note,under FROM topic_routes WHERE place LIKE 'topic:%' ORDER BY at DESC"):
-        if r['place'] not in started and r['place'] not in pending:
-            pending[r['place']] = {'place': r['place'], 'path': ((t(r['under']) + ' > ') if r['under'] else '') + str(r['note'] or '')}
+        if r['place'] not in started and r['place'] not in pending and r['note']:  # a subject without its name is no place
+            pending[r['place']] = {'place': r['place'], 'path': ((t(r['under']) + ' > ') if r['under'] else '') + str(r['note']),
+                                   'note': r['note'], 'under': r['under']}
     out.extend(pending.values())
     for r in db.execute("SELECT id,starts,ends FROM note_pages WHERE removed_at IS NULL AND merged_into IS NULL AND (kind IN ('trip','event') "
                         "OR (kind='note' AND by='owner')) ORDER BY updated_at DESC LIMIT ?", (PLACES_MAX,)):
@@ -647,6 +650,8 @@ def reply(text, items, where, refs):
             if by_id[p['place']]['place'] == items[p['n'] - 1].get('left'):
                 continue  # where a page sent it back from: nowhere
             out[conv]['place'] = by_id[p['place']]['place']
+            if by_id[p['place']].get('note'):  # a subject not started yet: its name goes with it
+                out[conv].update(note=by_id[p['place']]['note'], under=by_id[p['place']]['under'])
         elif p.get('record') in refs:
             out[conv]['place'] = 'record:' + refs[p['record']]
         elif isinstance(p.get('new'), dict) and isinstance(p['new'].get('title'), str):
@@ -706,13 +711,16 @@ def drafts(db):
     for place, rows in groups.items():
         areas = [r['area'] or todo_areas.PERSONAL for r in rows]
         area = max(set(areas), key=lambda a: (areas.count(a), a == todo_areas.PERSONAL))
-        under = rows[0]['under']
+        title = next((r['note'] for r in rows if r['note']), None)
+        if not title:
+            continue  # no name, no note
+        under = next((r['under'] for r in rows if r['note']), None)
         if under in PERSONAL_FOLDERS:
             area = todo_areas.PERSONAL
-        if area != todo_areas.PERSONAL and not any(r['replied'] for r in rows):
+        if (area != todo_areas.PERSONAL or under == 'Work') and not any(r['replied'] for r in rows):
             continue  # at work, no note until the owner writes in one of them: notices alone are a vendor's, not a relationship
         lines = [_line(r) for r in sorted(rows, key=lambda r: str(r['last_at'] or ''), reverse=True)]
-        out.append({'key': place[len('topic:'):], 'title': rows[0]['note'] or t('Note'), 'area': area, 'under': [under] if under else None, 'lines': lines})
+        out.append({'key': place[len('topic:'):], 'title': title, 'area': area, 'under': [under] if under else None, 'lines': lines})
     return out
 
 
