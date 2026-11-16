@@ -132,7 +132,8 @@ article h3{font-size:var(--fs-lg);line-height:1.35;letter-spacing:-.005em;color:
 :is(.card-foot,.card-source) .read-original:hover{color:var(--text)}
 .more{color:var(--faint);font-weight:var(--fw-medium)}.more:hover{color:var(--text)}
 .chip,.chip.scope{--c:var(--faint);font:var(--fw-medium) var(--fs-xs)/1.5 var(--sans);letter-spacing:0;color:var(--muted);padding:1px 9px 1px 8px;border:0;border-radius:var(--r-pill);background:var(--sunken);gap:6px}
-.chip::before{width:6px;height:6px}
+/* A pill's dot is always a round dot: it never gives up width when the pill is squeezed */
+.chip::before{width:6px;height:6px;flex:none}
 .chip.scope::before{display:none}
 .chip.scope{padding-left:9px}
 .card-badges .chip,.card-badges .chip.scope{font:var(--fw-medium) var(--fs-xs)/1.5 var(--sans);letter-spacing:0;padding:1px 9px 1px 8px;min-height:0}

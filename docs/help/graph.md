@@ -30,7 +30,7 @@ Under Fields on a person, organization or project, click a value to change it: *
 
 **Manage fields** (**Add a field** while there are none) adds or removes fields for all records of that kind. **New field** adds one: text, number, date or a choice from a list.
 
-**+ Tag** adds a tag, like VIP or partner; **×** takes it off. Tags show in the lists and **Filter** finds them.
+**+ Tag** adds a tag, like VIP or partner; **×** takes it off. Tags show in the lists (on a phone, a person's tags show on their page) and **Filter** finds them.
 
 ## Birthday
 
