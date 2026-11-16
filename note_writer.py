@@ -17,6 +17,9 @@ writes up to PER_PASS of them in one turn on the background model, within the us
 Each note at most once a NOTE_HOURS, at most DAY_CAP notes a day. A note with fewer than MIN_SOURCES lines from a
 message or a fact has no page: its lines say it all. A trip gets one too (its bookings and the mail about it), a note
 kept from before the notes started over (note_pages.archive) never. Runs only with Notes on (NotesApp.notes_on).
+The most important notes first (candidates: the most sources, more when they are recent): a note without a page is
+written when it is among the WRITE_FIRST most important, or once a new source came in after it started; the long tail
+of a first fill waits for one, so it costs nothing until it matters.
 Each line from a conversation or a notification reads nearly all that was said in it (topic_notes.said: up to
 SAID_MESSAGES messages, SAID_CHARS, quotes and signatures cut; NOTE_CHARS a note, the oldest lines go first past it),
 so the page stands on the messages themselves, not on their subjects or a snippet. One page from all of them, the
@@ -55,6 +58,8 @@ PASS_MINUTES = 60     # a turn at most this often
 NOTE_HOURS = 20       # one note rewritten at most this often
 DAY_CAP = 30          # notes written in a day, all turns together
 MIN_SOURCES = 2       # lines from a message or a fact before there is a page to write
+WRITE_FIRST = 40      # notes without a page written without waiting for a new source: the most important (candidates)
+RECENT_DAYS = 30      # a note with a source this recent counts its sources twice (candidates)
 SOURCES_MAX = 15      # the newest lines a turn reads of one note
 SAID_CHARS, SAID_EACH, SAID_MESSAGES = 4000, 1500, 12  # what it reads of each conversation: nearly all of it
 NOTE_CHARS = 24000    # what it reads of one note in all; the oldest sources go first past it
@@ -95,14 +100,20 @@ def _basis(lines):
     return hashlib.sha256(json.dumps(parts, default=str).encode()).hexdigest()[:16]
 
 
-def candidates(db):
+def candidates(db, current=None, rows=False):
     """The notes that may have a page: live, of any kind but the ones kept from before (note_pages.archive), with
     MIN_SOURCES lines from a message, a fact or the owner's earlier memory pages (memory_seed.py). A trip too: its
-    bookings and the mail about it hold the times, the places and what to bring."""
-    return [r['id'] for r in db.execute(
-        "SELECT p.id FROM note_pages p WHERE p.removed_at IS NULL AND p.merged_into IS NULL AND p.kind<>'archived' "
-        'AND (SELECT count(*) FROM note_page_lines l WHERE l.note_id=p.id AND l.removed_at IS NULL AND (l.event_id IS NOT NULL OR l.fact_id IS NOT NULL OR l.by=\'memory\'))>=? '
-        'ORDER BY p.updated_at DESC', (MIN_SOURCES,))]
+    bookings and the mail about it hold the times, the places and what to bring. The most important first: the most
+    sources, counted twice when the newest is from the last RECENT_DAYS, then the newest. rows: with each note's
+    newest source date and the day it started ({id, newest, started})."""
+    current = current or timeutil.clock()
+    recent = (current - dt.timedelta(days=RECENT_DAYS)).date().isoformat()
+    found = db.execute(
+        "SELECT p.id,substr(p.created_at,1,10) started,s.n,s.newest FROM note_pages p JOIN (SELECT note_id,count(*) n,max(at) newest "
+        "FROM note_page_lines WHERE removed_at IS NULL AND (event_id IS NOT NULL OR fact_id IS NOT NULL OR by='memory') GROUP BY note_id) s "
+        "ON s.note_id=p.id WHERE p.removed_at IS NULL AND p.merged_into IS NULL AND p.kind<>'archived' AND s.n>=?", (MIN_SOURCES,)).fetchall()
+    found = sorted(found, key=lambda r: (r['n'] * (2 if str(r['newest'] or '')[:10] >= recent else 1), str(r['newest'] or '')), reverse=True)
+    return [{'id': r['id'], 'newest': str(r['newest'] or '')[:10], 'started': r['started']} for r in found] if rows else [r['id'] for r in found]
 
 
 def due(db, current=None, limit=PER_PASS):
@@ -116,9 +127,12 @@ def due(db, current=None, limit=PER_PASS):
     fresh = (current - dt.timedelta(hours=NOTE_HOURS)).isoformat()
     have = {r['note_id']: r for r in db.execute('SELECT note_id,basis,tried_at FROM note_writeups')}
     out = []
-    for note_id in candidates(db):
-        basis = _basis(_lines(db, note_id))
+    for rank, row in enumerate(candidates(db, current, rows=True)):
+        note_id = row['id']
         before = have.get(note_id)
+        if not before and rank >= WRITE_FIRST and not row['newest'] > row['started']:
+            continue  # the long tail: written once a new source comes in
+        basis = _basis(_lines(db, note_id))
         if before and (before['basis'] == basis or (before['tried_at'] or '') > fresh):
             continue
         out.append({'note_id': note_id, 'basis': basis})

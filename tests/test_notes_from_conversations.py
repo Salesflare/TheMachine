@@ -31,7 +31,7 @@ class Conversations(unittest.TestCase):
         self.app = object.__new__(machine_main.App)
         self.app.store = self.store
         self.app.config = {'accounts': [HOME, JOB, CHAT, TEAM], 'notes_enabled': True}
-        self.asked, self.routes, self.n = [], {}, 0
+        self.asked, self.routes, self.n, self.looked, self.same = [], {}, 0, [], []
         self.app.topic_notes_model = self.model
         self.app.section_notes_model = lambda prompt: json.dumps({'places': []})
         pin = pinned(AT)
@@ -39,7 +39,13 @@ class Conversations(unittest.TestCase):
         self.addCleanup(pin.__exit__, None, None, None)
 
     def model(self, prompt):
-        """Answers by title: self.routes maps a title's words to {'place': a path} | {'record': a name} | {'new': ...}."""
+        """Answers by title: self.routes maps a title's words to {'place': a path} | {'record': a name} | {'new': ...}.
+        The look for notes about the same thing (topic_notes.merge_prompt) goes to self.looked and answers self.same:
+        [([paths], title)]."""
+        if prompt.startswith("These are the owner's notes"):
+            self.looked.append(prompt)
+            ids = {json.loads(line)['path']: json.loads(line)['id'] for line in prompt.split('<<<\n', 1)[1].split('\n>>>', 1)[0].splitlines()}
+            return json.dumps({'same': [{'notes': [ids.get(p, 'N999') for p in paths], 'title': title} for paths, title in self.same]})
         self.asked.append(prompt)
         places = {}
         for line in prompt.split('The subjects that have a place already, one JSON object per line:\n', 1)[1].split('The conversations, one', 1)[0].splitlines():
@@ -184,6 +190,79 @@ class SortedByWhatWasSaid(Conversations):
         self.mail('Example Transfers <bookings@transfers.example>', 'Airport transfer confirmed', '2026-11-02', thread_id='t')
         notes = self.round()
         self.assertIn('Airport transfer confirmed', [x['text'] for x in notes[('trip', 'Lisbon trip')]['lines']])
+
+    def test_a_title_never_carries_a_reference_and_one_that_is_only_a_reference_is_no_subject(self):
+        self.assertEqual(topic_notes.clean_title('Example Shop order 302-3037924-2949104'), 'Example Shop order')
+        self.assertEqual(topic_notes.clean_title('Holiday park reservation 00526018702'), 'Holiday park reservation')
+        self.assertEqual(topic_notes.clean_title('Cloud billing account 0180A3-CB8A25-B85193'), 'Cloud billing account')
+        self.assertEqual(topic_notes.clean_title('Flights KX7P2Q (Porto)'), 'Flights (Porto)')
+        self.assertEqual(topic_notes.clean_title('Order #4410'), 'Order')
+        for kept in ('Hiring in 2027', 'Lenovo M75s G2', 'Parking space P51'):
+            self.assertEqual(topic_notes.clean_title(kept), kept, 'a year or a model is a name')
+        self.routes = {'Your order': {'new': {'title': 'Example Shop 302-3037924', 'under': 'Home'}},
+                       'Receipt': {'new': {'title': '#88213', 'under': 'Home'}}}
+        self.mail('Example Shop <orders@shop.example>', 'Your order 302-3037924 shipped', '2026-11-02', thread_id='o1')
+        self.mail('Example Shop <orders@shop.example>', 'Your order 302-9999999 shipped', '2026-11-03', thread_id='o2')
+        self.mail('Example Café <desk@cafe.example>', 'Receipt 88213', '2026-11-03', thread_id='r')
+        notes = self.round()
+        self.assertEqual([k for k in notes if k[0] == 'topic'], [('topic', 'Example Shop')], 'orders from one shop: one note about the shop')
+        self.assertIn('Never one order, delivery, receipt', self.asked[0])
+
+    def test_notes_about_the_same_thing_become_one_and_a_later_call_naming_one_goes_there(self):
+        with self.store.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            note_pages.sync(db, 'trip', [{'key': 'park', 'title': 'Holiday park trip', 'area': 'personal', 'starts': '2026-12-01', 'ends': '2026-12-04',
+                                          'lines': [{'key': 'b1', 'text': 'Cabin booked'}]}], AT)
+        self.routes = {'Cabin': {'new': {'title': 'Holiday park cabin', 'under': 'Trips'}},
+                       'Listing': {'new': {'title': 'Example Co listing', 'under': 'Work'}},
+                       'Affiliate': {'new': {'title': 'Example Co affiliate deal', 'under': 'Work'}},
+                       'Article': {'new': {'title': 'Example Co guest article', 'under': 'Work'}}}
+        self.mail('Holiday Park <desk@park.example>', 'Cabin check-in times', '2026-11-02', thread_id='c')
+        self.mail('Ana <ana@example.co>', 'Listing update', '2026-11-03', account='job', thread_id='l')
+        self.mail('Ana <ana@example.co>', 'Affiliate terms', '2026-11-04', account='job', thread_id='a')
+        self.mail('Ana <ana@example.co>', 'Article draft', '2026-11-05', account='job', thread_id='g')
+        self.same = [(['Trips > Holiday park cabin', 'Holiday park trip'], 'Holiday park'),
+                     (['Work > Example Co listing', 'Work > Example Co affiliate deal', 'Work > Example Co guest article'], 'Example Co partnership 12345')]
+        notes = self.round()
+        self.assertEqual(len(self.looked), 1)
+        self.assertNotIn(('topic', 'Holiday park cabin'), notes)
+        self.assertIn('Cabin check-in times', [x['text'] for x in notes[('trip', 'Holiday park trip')]['lines']], 'the trip from the booking takes it')
+        work = [k for k in notes if k[0] == 'topic']
+        self.assertEqual(work, [('topic', 'Example Co partnership')], 'one company at work: one note, its title without the number')
+        self.assertEqual(len(notes[work[0]]['lines']), 3)
+        self.routes = {'Invoice': {'new': {'title': 'Example Co affiliate deal', 'under': 'Work'}}}
+        self.same = []
+        self.mail('Ana <ana@example.co>', 'Invoice for October', '2026-11-06', account='job', thread_id='i')
+        notes = self.round()
+        self.assertEqual([k for k in notes if k[0] == 'topic'], [('topic', 'Example Co partnership')], 'the merged title leads to the note it went in')
+        self.assertEqual(len(notes[('topic', 'Example Co partnership')]['lines']), 4)
+
+    def test_the_same_name_in_two_folders_is_one_note_without_asking(self):
+        self.routes = {'Vouchers': {'new': {'title': 'Example Vouchers', 'under': 'Work'}}, 'Card': {'new': {'title': 'Example vouchers', 'under': 'Home'}},
+                       'Topup': {'new': {'title': 'Example Vouchers', 'under': 'Work'}}}
+        self.mail('Example Vouchers <desk@vouchers.example>', 'Vouchers for November', '2026-11-02', account='job', thread_id='v')
+        self.mail('Example Vouchers <desk@vouchers.example>', 'Topup done', '2026-11-03', account='job', thread_id='t')
+        self.mail('Example Vouchers <desk@vouchers.example>', 'Card blocked', '2026-11-04', thread_id='c')
+        notes = self.round()
+        self.assertEqual([k for k in notes if k[0] == 'topic'], [('topic', 'Example Vouchers')], 'the one with the most sources takes the other')
+        self.assertEqual(len(notes[('topic', 'Example Vouchers')]['lines']), 3)
+
+    def test_a_note_the_owner_wrote_in_is_never_merged_away(self):
+        self.routes = {'Tiles': {'new': {'title': 'Kitchen tiles', 'under': 'Home'}}, 'Worktop': {'new': {'title': 'Kitchen worktop', 'under': 'Home'}}}
+        self.mail('Dana <dana@build.example>', 'Tiles', '2026-11-02', thread_id='t')
+        self.mail('Dana <dana@build.example>', 'Worktop', '2026-11-03', thread_id='w')
+        self.round()
+        with self.store.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            tiles = db.execute("SELECT id FROM note_pages WHERE title='Kitchen tiles'").fetchone()['id']
+            note_pages.edit(db, note_pages.node_id(tiles), AT, ['personal'], title='Tiles we picked')
+        self.mail('Dana <dana@build.example>', 'Sink', '2026-11-04', thread_id='s')
+        self.routes['Sink'] = {'new': {'title': 'Kitchen sink', 'under': 'Home'}}
+        self.same = [(['Home > Tiles we picked', 'Home > Kitchen worktop'], 'Kitchen renovation')]
+        notes = self.round()
+        titles = sorted(k[1] for k in notes if k[0] == 'topic')
+        self.assertIn('Tiles we picked', titles, 'the owner named it: it takes the other, keeps its name')
+        self.assertNotIn('Kitchen worktop', titles)
 
     def test_a_matter_the_graph_has_goes_to_that_record_not_a_second_note(self):
         with self.store.connect() as db:

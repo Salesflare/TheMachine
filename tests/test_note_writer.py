@@ -229,6 +229,25 @@ class Pages(unittest.TestCase):
         with mock.patch.object(note_writer, 'DAY_CAP', 0), self.store.connect() as db:
             self.assertEqual(note_writer.due(db), [])
 
+    def test_the_most_important_notes_first_and_the_long_tail_waits_for_a_new_source(self):
+        """A first fill writes the WRITE_FIRST notes with the most (recent) sources; a note past them gets its page once
+        a source newer than the note itself comes in."""
+        note_id, _ = self.note()
+        small = [self.mail('Example Garage <desk@garage.example>', subject, '2026-11-0' + day, 'Booked.', 'g' + day) for subject, day in (('Car service', '1'), ('Tyres', '2'))]
+        with self.store.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            note_pages.sync(db, 'topic', [{'key': 'car', 'title': 'Car', 'area': 'personal',
+                                           'lines': [{'key': f'conv:{e}', 'text': 'Garage', 'at': f'2026-11-0{n}', 'event_id': e} for n, e in enumerate(small, 1)]}], AT)
+            car = db.execute("SELECT id FROM note_pages WHERE key='topic:car'").fetchone()['id']
+            self.assertEqual(note_writer.candidates(db), [car, note_id], 'two sources this month count over three from October')
+        with mock.patch.object(note_writer, 'WRITE_FIRST', 1), self.store.connect() as db:
+            self.assertEqual([x['note_id'] for x in note_writer.due(db, limit=5)], [car], 'the long tail waits')
+            db.execute('BEGIN IMMEDIATE')
+            db.execute("INSERT INTO note_page_lines(note_id,key,pos,text,event_id,at,by,created_at,updated_at) "
+                       "VALUES(?,'conv:x',9,'Office move: keys',?,'2026-11-15','machine',?,?)",
+                       (note_id, small[0], AT, AT))
+            self.assertIn(note_id, [x['note_id'] for x in note_writer.due(db, limit=5)], 'a source newer than the note brings it in')
+
     def test_a_page_says_each_thing_once_and_without_links(self):
         notes = [{'note': 'N7', 'title': 'Office move', 'sources': [{'id': 'S1'}, {'id': 'S2'}]}]
         answer = {'notes': [{'note': 'N7', 'summary': {'text': 'The office moves to the second floor on December 1.', 'sources': ['S1']},

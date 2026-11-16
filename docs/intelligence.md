@@ -473,7 +473,16 @@ Notes are sorted by what was said, a whole conversation at a time (`topic_notes.
   talk or marketing. One subject each: a notice about one child goes to that child's subject, one about a trip to that
   trip. The model picks a numbered place (a subject started before, a trip, an event, the owner's own note), a project
   or organization the Graph already has (that record's page, never a duplicate note), or a new subject with its
-  folder (`new.title` says whose it is when that tells it apart).
+  folder (`new.title` says whose it is when that tells it apart). One order, delivery, receipt, booking or account
+  is never a subject: it goes to its trip, project, shop or account. At work a subject is a whole customer, partner,
+  supplier, project or hire, never one thread or deal. Trips and events show their dates, so a booking finds its trip.
+- **No references in titles** (`topic_notes.clean_title`). Order, account, booking and invoice numbers and codes are
+  cut from a title (a year or a model name stays); a title of nothing else is no subject.
+- **Twins become one** (`NotesApp.topic_notes_merge`). After new subjects, at most every six hours, one call reads up
+  to 400 notes (subjects started here, trips and events with their dates) and names the ones about the same
+  real-world thing (`topic_notes.merge_prompt`); the same name in two folders is one without asking. Each group's conversations move to one note: a trip or event first,
+  else one the owner touched, else the one with the most sources; a note the owner touched is never merged away. A
+  later call naming a merged subject goes where it went (`topic_aliases`).
 - **Sensitive.** Health only under Health, and only the owner's own or their child's care; a subject under Home,
   Health, Kids or Pets is always Personal (`topic_notes.PERSONAL_FOLDERS`). Someone else's health, a family conflict,
   a legal dispute, money trouble or anything intimate is left out. When unsure, it is left out. Notes never go to a Fleet.
@@ -503,6 +512,9 @@ lines follow as its Sources.
 - **When.** In the background only (`NotesApp.note_writer_step`), at most hourly, two notes a turn on the background
   model under `background_pause`; a note only when its lines changed (a hash of them), at most once in 20 hours, 30
   notes a day. An answer that can't be read keeps the page and waits.
+- **Most important first** (`note_writer.candidates`). Notes rank by their sources, counted twice when the newest is
+  from the last 30 days. A note without a page is written when it is among the top 40 (`WRITE_FIRST`), or once a
+  source newer than the note comes in; the long tail of a first fill costs nothing until then.
 - **Quality or nothing.** Every bullet and the summary cite the lines they stand on (`S<line id>`); one that cites none
   it was given, or says too little, is dropped, and a page without a cited summary and three facts, decisions and
   open items together is none. A subject's note without a page isn't in the Notes list, unless the owner renamed it
