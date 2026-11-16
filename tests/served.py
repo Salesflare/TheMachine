@@ -7,6 +7,7 @@ So they are stubbed, the error log serve() hangs on the shared logger comes off 
 thread it started (the server's request threads too) are joined, with a check that each stopped and the server closed.
 
 Register the temporary folder's cleanup before calling this: cleanups run last in, first out, so this one runs first."""
+import socket
 import threading
 from unittest.mock import patch
 
@@ -26,7 +27,10 @@ def serve(test, a, patches=()):
     real_server, real_watch = a.http.server.ThreadingHTTPServer, serve_module.watch_faults
 
     def capture(*args, **kwargs):
-        servers.append(real_server(*args, **kwargs))
+        # binding names the server with socket.getfqdn('127.0.0.1'), a reverse lookup that can take more than the 10 s
+        # wait below on macOS; the tests never read that name
+        with patch.object(socket, 'getfqdn', return_value='localhost'):
+            servers.append(real_server(*args, **kwargs))
         started.set()
         return servers[-1]
 
