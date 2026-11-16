@@ -63,6 +63,7 @@ try{
   assert.equal(confirm.args.suggestion_id,sid);assert.equal(confirm.args.revision,revision);
   calls.length=0;
   // A sent reply says as whom it went, without "You"
+  await page.evaluate(()=>{const d=$('#finished-list');if(d&&!d.open){d.open=true;listShow(d)}});  // Done draws its rows as it opens
   const sent=page.locator(`#task-${done}`);
   const text=await sent.evaluate(n=>n.textContent);
   assert.match(text,/Sent as Alex Example in Intercom( at \d\d:\d\d)?\./);

@@ -2,7 +2,7 @@
 // Tapping a count tile (or a section heading) folds or unfolds that section; remembered on this device.
 const folded=new Set(JSON.parse(localStorage.getItem('folded-sections')||'[]'));
 function toggleSection(key){
-if(key==='later'){const l=$('#later-list');if(!l)return;l.open=!l.open;if(l.open)l.scrollIntoView({behavior:'smooth',block:'start'});return}
+if(key==='later'){const l=$('#later-list');if(!l)return;l.open=!l.open;listShow(l);if(l.open)l.scrollIntoView({behavior:'smooth',block:'start'});return}
 folded.has(key)?folded.delete(key):folded.add(key);localStorage.setItem('folded-sections',JSON.stringify([...folded]));render();
 if(!folded.has(key))document.getElementById('section-'+key)?.scrollIntoView({behavior:'smooth',block:'start'})}
 $('#suggestions').addEventListener('click',e=>{const h=e.target.closest('.section-head[data-fold]');if(h)toggleSection(h.dataset.fold);const m=e.target.closest('[data-more]');if(!m)return;const id=m.dataset.more,open=!expandedBodies.has(id);open?expandedBodies.add(id):expandedBodies.delete(id);m.previousElementSibling?.classList.toggle('clamp',!open);
@@ -53,7 +53,7 @@ const doneLocal=()=>{const items=(state?.suggestions||[]).filter(s=>closed(s)&&(
 function donePager(){const fresh=!pagers.has(doneKey()),p=pager(doneKey(),cursor=>request(`api/cards/done?cursor=${encodeURIComponent(cursor)}${scopeFilter==='all'?'':'&scope='+scopeFilter}`).catch(()=>null).then(r=>{
   if(!Array.isArray(r?.cards)){const l=doneLocal(),n=Number(cursor)||0;return {items:l.items.slice(n,n+30),next:n+30<l.items.length?String(n+30):null,total:l.total}}
   for(const c of r.cards)doneExtra.set(c.id,c);cardsMerge();return {items:r.cards,next:r.next,total:r.total}}),s=>suggestionCard(s),doneRows);
- if(fresh){const l=doneLocal(),n=Math.min(30,l.items.length),total=Math.max(l.total,state?.done_counts?.[scopeFilter]??0);p.items=l.items.slice(0,n);p.html=doneRows(p.items);p.total=total;p.next=total>n?String(n):null}
+ if(fresh){const l=doneLocal(),n=Math.min(30,l.items.length),total=Math.max(l.total,state?.done_counts?.[scopeFilter]??0);p.items=l.items.slice(0,n);p.total=total;p.next=total>n?String(n):null}
  return p}
 // Done: sent and skipped follow-ups fold into one row per board (or the projects' own rules) and day: "13 follow-ups
 // sent for Partner listings". Opening it lists them (project, to, when), each a link to its to-do. A search (the
@@ -128,6 +128,9 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-prom
 document.addEventListener('keydown',e=>{const f=e.target;if(e.key!=='Enter'||!(e.ctrlKey||e.metaKey)||e.isComposing||e.defaultPrevented||!f.matches?.('textarea,input:not([type]),input[type=text],input[type=email],input[type=search],input[type=url],input[type=tel],input[type=number]')||!f.value.trim())return;const shown=b=>b.getClientRects().length>0;for(let box=f.parentElement;box&&box!==document.body;box=box.parentElement){const b=[...box.querySelectorAll('button.primary')].find(shown);if(b){e.preventDefault();if(!b.disabled)b.click();return}if(box.matches('form,dialog,article,.chat-compose'))return}});
 $('#suggestions').addEventListener('keydown',e=>{const h=e.target.closest('.section-head[data-fold]');if(h&&(e.key==='Enter'||e.key===' ')){e.preventDefault();toggleSection(h.dataset.fold)}});
 $('#suggestions').addEventListener('toggle',e=>{if(e.target.id==='later-list')$('[data-fold-tile="later"]')?.setAttribute('aria-expanded',e.target.open)},true);
+// A folded list's head opens it with its rows drawn at once (listShow); one opened another way draws them on its toggle
+$('#suggestions').addEventListener('click',e=>{const s=e.target.closest('#waiting-head,#later-head,#finished-head');if(!s)return;e.preventDefault();const d=s.parentElement;d.open=!d.open;listShow(d)});
+$('#suggestions').addEventListener('toggle',e=>{const d=e.target;if(d.open&&(d.id==='finished-list'?!d.querySelector(':scope>.pager'):d.children.length<2))listShow(d)},true);
 // The To-dos filter (All, Work, Personal) is kept on the Machine with the language (locale_prefs.todo_scope), so every
 // device shows the same list. A filter this browser kept from before goes to the Machine once, then this browser forgets
 // it; a Machine that can't save it (no config.json) keeps it on this device. A card link may show All for a while

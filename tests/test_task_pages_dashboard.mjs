@@ -69,6 +69,7 @@ try{
  email.state={status:'sent',sent_at:'2026-10-23T09:10:00+00:00'};card.task_page.lead='alex@other.example is on it: “Signing tomorrow.”';
  Object.assign(card,{status:'completed'});state.suggestion_counts={completed:1};
  await page.evaluate(()=>refresh());
+ await page.locator('#finished-head').click();  // in Done, which draws its rows as it opens
  for(const d of await page.locator('details:has(#task-c1)').all())await d.evaluate(x=>x.open=true);
  assert.equal(await c.locator('.tp-lead').innerText(),'alex@other.example is on it: “Signing tomorrow.”');
  assert.doesNotMatch(await c.innerText(),/Read it, change it|Email sent/);

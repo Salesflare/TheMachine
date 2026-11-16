@@ -17,7 +17,8 @@ const base0=()=>[
  {id:id(1),title:'Send Sam the signed contract',body:'Sam asked on Monday.',status:'pending',scope:'work',created_at:now,event_ids:[1]},
  {id:id(2),title:'Reply to Pat about the offsite',body:'Draft ready.',status:'prepared',scope:'work',created_at:now,event_ids:[2],
   next_actions:[{kind:'email',label:'Send reply',revision:'ab12cd34ef56',to:['pat@acme.example'],subject:'Offsite',body:'Hi Pat, Thursday works.'}]},
- {id:id(3),title:'Book the dentist',body:'',status:'pending',scope:'personal',created_at:now,event_ids:[3]}];
+ {id:id(3),title:'Book the dentist',body:'',status:'pending',scope:'personal',created_at:now,event_ids:[3]},
+ {id:id(4),title:'Renew the kayak permit',body:'',status:'snoozed',snoozed_until:new Date(Date.now()+3*864e5).toISOString(),scope:'personal',created_at:now,event_ids:[4]}];
 let cards,actions,graphQueries,lateAnswer;
 const reset=()=>{cards=base0();actions=[];graphQueries=[]};reset();
 const state=()=>({suggestions:cards,promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],review_live:{runs:[]},connectors:[],fleet:{on:false,fleets:[]}});
@@ -99,6 +100,9 @@ try{
   assert.ok(graphQueries.includes('acme'));
   await page.locator('#pal-q').fill('contract');await page.locator('#pal-list .pal-group',{hasText:'To-dos'}).waitFor();
   assert.ok((await labels(page)).includes('Send Sam the signed contract'));
+  // a Later to-do is found while Later is folded, its rows not drawn yet (they are as it opens)
+  assert.deepEqual(await page.evaluate(i=>[document.querySelector('#later-list').open,!!document.getElementById('task-'+i)],id(4)),[false,false]);
+  await page.locator('#pal-q').fill('kayak');await page.locator('#pal-list .pal-item',{hasText:'Renew the kayak permit'}).waitFor();
   await page.locator('#pal-q').fill('pat');await page.locator('#pal-list .pal-group',{hasText:'People'}).waitFor();
   await page.locator('#pal-list .pal-item',{hasText:'Pat Doe'}).click();assert.ok(!(await isOpen(page)));
   await page.waitForFunction(()=>location.hash==='#graph/'+encodeURIComponent('email:pat@acme.example'));assert.equal(await tab(page),'people');

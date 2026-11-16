@@ -319,6 +319,7 @@ try{
  // Back leaves the chat and shows the card in its list
  await page.locator('.chat-back').click();
  await page.locator('#suggestions .chat-layout').waitFor({state:'detached'});
+ if(!await page.locator('#finished-list').evaluate(d=>d.open))await page.locator('#finished-head').click();  // Done, folded, draws its rows as it opens
  assert.ok(await page.locator('#task-c3c3c3c3c3c3c3c3').count()===1);
  assert.ok(await page.locator('#page-head').isVisible(),'the overview and its title come back');
  // The "Asked" note (behind Details) opens the chat too

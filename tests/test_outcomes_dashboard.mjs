@@ -31,7 +31,8 @@ try{
   for(const id of ['o1','o2','o3','o4'])assert.equal(await page.locator('#task-'+id+' > p').filter({hasText:/Done when/}).count(),0,id);  // not on the face
   assert.equal(await row('o1').locator('dd').textContent(),'Sam signed the order form');
   assert.equal(await page.locator('#details-o1').isHidden(),true);  // folded until Details opens
-  // Waiting for its result after the Send: under Waiting on others, the row under its Details
+  // Waiting for its result after the Send: under Waiting on others (opened: its rows are drawn as it opens), the row under its Details
+  await page.locator('#waiting-head').click();
   assert.equal(await page.locator('#waiting-list #task-o3').count(),1);
   assert.equal(await row('o3').locator('dd').textContent(),'Sam sent the quote');
   if(process.env.OUTCOMES_SHOT){await page.locator('#waiting-list').evaluate(d=>{d.open=true});await page.locator('#task-o1 .details-toggle').click();await page.locator('#details-o1').waitFor();

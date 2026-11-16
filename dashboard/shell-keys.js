@@ -153,7 +153,7 @@ document.addEventListener('focusin',e=>{const t=e.target;
  // focus that comes back to an item (a dialog closing, Tab) picks it, so J/K go on from there
  if(t!==kbSel&&t.closest?.('#suggestions')&&kbItems().includes(t)){kbSel=t;if(kbKeyed())t.classList.add('kb-on')}});
 // → opens a folded list's head, ← folds it
-function kbFold(el,open){if(!el)return false;if(el.matches('summary')){const d=el.parentElement;if(d.open===open)return false;d.open=open;return true}
+function kbFold(el,open){if(!el)return false;if(el.matches('summary')){const d=el.parentElement;if(d.open===open)return false;d.open=open;listShow(d);return true}
  if(el.matches('.section-head[data-fold]')){if((el.getAttribute('aria-expanded')==='true')===open)return false;toggleSection(el.dataset.fold);return true}return false}
 const kbInChat=()=>!!chatId&&!$('#inbox').hidden;
 // Esc closes the open chat, as its Back does; the card it was about gets focus again

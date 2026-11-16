@@ -72,7 +72,7 @@ try{
  await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
  const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
  await page.goto('http://127.0.0.1:'+server.address().port+'/#done');await page.locator('#task-mail').waitFor();
- await page.evaluate(()=>{state.suggestions=state.suggestions.map(s=>s.id==='mail'?{...s,status:'completed'}:s);render()});
+ await page.evaluate(()=>{state.suggestions=state.suggestions.map(s=>s.id==='mail'?{...s,status:'completed'}:s);render();const d=$('#finished-list');if(d&&!d.open){d.open=true;listShow(d)}});  // Done draws its rows as it opens
  await page.locator('#task-mail').waitFor({state:'attached'});
  assert.equal(await page.locator('#task-mail>.card-source').count(),0);
  assert.equal(await page.locator('#task-mail .card-details .card-source').count(),1);

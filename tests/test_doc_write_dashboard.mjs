@@ -105,6 +105,7 @@ try{
   await page.locator('#send-dialog .snooze-heading button').click();
   assert.equal(calls.filter(c=>c.action==='confirm_action').length,0);
   // Saved: what happened, without "You"
+  await page.evaluate(()=>{const d=$('#finished-list');if(d&&!d.open){d.open=true;listShow(d)}});  // Done draws its rows as it opens
   const text=await page.locator(`#task-${doneId}`).evaluate(n=>n.textContent);
   assert.match(text,/Changes saved in the doc( at \d\d:\d\d)?\./);
   assert.ok(!/\bYou (saved|changed|edited)/.test(text));
