@@ -71,7 +71,7 @@ It comes on work days at your **Morning digest** time, unless there's nothing to
 - a greeting with what matters today, like "Morning Sam, 2 replies are ready to send" or, for one to-do, "Morning Sam, ready for your OK: Send the order form";
 - the to-dos the greeting counts, each with an Open link, and what's due today; otherwise at most three things to do;
 - to-dos you added yourself that wait on you, up to five, whatever the greeting counts;
-- how many more can wait, and how long they take at your pace, like "12 more can wait, about 5 min to clear." To-dos that wait on your answer aren't in that time, and a snoozed one that's due today isn't counted until it's back.
+- how many more can wait, and how long they take at your pace, like "12 more can wait, about 5 min to clear." To-dos that wait on your answer aren't in that time, and one that's due today but snoozed until later, or that The Machine is still working on, isn't counted until it waits on you. The count matches the to-dos waiting in your list.
 - your meetings in one line.
 
 Open shows that to-do in your list, highlighted. One that's done, snoozed or in another view opens its chat. A promise opens its to-do, or its own page when it has none yet.
