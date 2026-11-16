@@ -174,7 +174,7 @@ class NotificationsApp:
             meetings = [m for m in meetings if m['at'] >= utc(local)] or []
             open_states = todo_states.sql(todo_states.OPEN_NOT_SNOOZED)
             due = [dict(r) for r in db.execute(
-                f"SELECT id,title FROM suggestions WHERE (status IN {open_states} AND due=? AND NOT {NOT_FOR_OWNER_SQL}) OR (status='snoozed' AND snoozed_until>=? AND snoozed_until<?) "
+                f"SELECT id,title,status FROM suggestions WHERE (status IN {open_states} AND due=? AND NOT {NOT_FOR_OWNER_SQL}) OR (status='snoozed' AND snoozed_until>=? AND snoozed_until<?) "
                 "ORDER BY created_at LIMIT 20", (local.date().isoformat(), utc(local), utc(end)))]
             overnight = [dict(r) for r in db.execute(
                 "SELECT id,title FROM suggestions WHERE status='pending' AND handled_hint IS NULL AND created_at>=? AND (due IS NULL OR due!=?) "
@@ -184,7 +184,7 @@ class NotificationsApp:
             # what an earlier part already listed (notify.compose), so a pile still gets one
             later = still_needed.folded(db, utc(current), local_tz())  # a Still needed? left unanswered waits in Later
             top = notify.open_order([dict(r) for r in db.execute(
-                f"SELECT id,title,status,due,due_at,created_at,event_ids,next_action,outcome FROM suggestions WHERE status IN {todo_states.sql(todo_states.WAITING_ON_OWNER)} AND NOT " + NOT_FOR_OWNER_SQL + " "
+                f"SELECT id,title,status,due,due_at,created_at,event_ids,next_action,outcome,origin FROM suggestions WHERE status IN {todo_states.sql(todo_states.WAITING_ON_OWNER)} AND NOT " + NOT_FOR_OWNER_SQL + " "
                 "AND (deliver_after IS NULL OR deliver_after<=?) LIMIT 2000", (utc(current),)) if r['id'] not in later], local)
             ready = [r for r in top if r['status'] == 'prepared']
             # The ones that wait on the owner's answer (a run that stopped to ask, a result that asks): in the count, not
@@ -198,7 +198,8 @@ class NotificationsApp:
         root = dashboard_link(self.config)
         when = lambda iso: locale_prefs.clock_text(dt.datetime.fromisoformat(iso).astimezone(local_tz()))
         digest = notify.compose(meetings, due, overnight, root, show, when, total=total, top=top, ready=ready, promised=promised,
-                                per=per, name=notify.first_name(self.config.get('owner_name')), replies=[r['id'] for r in ready if reply_waits(r)], asking=asking)
+                                per=per, name=notify.first_name(self.config.get('owner_name')), replies=[r['id'] for r in ready if reply_waits(r)], asking=asking,
+                                own=[r['id'] for r in top if r.get('origin') == 'owner'])  # "Added by you": always named
         if digest:  # the to-dos it speaks of, listed or counted: their held email lines go with it (digest_step)
             digest['covers'] = sorted({r['id'] for r in due + overnight + top if r.get('id')} |
                                       {p['covers'] for p in promised if p.get('covers')})

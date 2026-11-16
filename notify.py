@@ -96,6 +96,7 @@ OWNER_SOURCES = ('dashboard', 'telegram', 'owner-chat', 'voice')  # decisions th
 PILE = 10  # this many waiting: the morning summary's headline names the pile and the time to clear it
 HEAD_TITLE = 50  # the one to-do the morning summary's headline names: at most this long
 HEAD_LISTED = 5  # the to-dos the morning summary's headline counts (ready, due today): listed under it up to this many
+OWN_LISTED = 5  # the owner's own waiting to-dos (New to-do, "Added by you") the morning summary names besides those
 LINKS = re.compile(r' · \[[^\]\n]+\]\([^)\s]+\)')  # a summary line's Open link: Telegram gets the line without it
 
 
@@ -674,7 +675,7 @@ def headline(name, ready=0, replies=0, due=0, piled=0, minutes=0, first_at='', n
 
 
 def compose(meetings, due, overnight, root='', show_text=True, clock=lambda iso: iso[11:16], waiting=None, total=None,
-            top=None, ready=(), promised=(), per=None, name='', replies=(), asking=()):
+            top=None, ready=(), promised=(), per=None, name='', replies=(), asking=(), own=()):
     """The morning summary from its parts, short and scannable: meetings [{at, title}], due and overnight [{id?, title}].
     Returns None when there is nothing to say, else {push: {title, body, url, tag}, text, subject}.
 
@@ -695,7 +696,10 @@ def compose(meetings, due, overnight, root='', show_text=True, clock=lambda iso:
     The lines: ready [{id?, title}] (prepared, waiting for the owner's OK; replies: the ids of those that are a reply
     someone waits for) and promised [{id?, title}] (the owner's own promises due today; covers: the id of a to-do made
     from that promise) first, then what is due, the first meeting, what came in overnight, and the waiting to-dos in the
-    dashboard's order (top, open_order). A to-do is listed once (by id, else by title). total: how many to-dos wait
+    dashboard's order (top, open_order). A to-do is listed once (by id, else by title). own: the ids of the owner's
+    own to-dos (made with New to-do): the waiting ones not listed yet are named too, up to OWN_LISTED, whatever the
+    headline counts, so a to-do they wrote down themselves never hides in "N more can wait". A due line for a to-do
+    still snoozed (status 'snoozed': it comes back later today) isn't one of the waiting ones. total: how many to-dos wait
     (waiting_count); left out, the ones given here. waiting is kept for callers that pass it and not used.
     Without show_text (Careful, or notify_text off) only counts and the meeting time: no titles anywhere. The push's
     body never names a meeting or a person's words beyond the to-do titles the lock screen already allows."""
@@ -705,7 +709,7 @@ def compose(meetings, due, overnight, root='', show_text=True, clock=lambda iso:
 
     def counts(item):
         """Whether a listed line is one of the waiting to-dos: a promise is when its to-do waits too (covers)."""
-        if item is None:
+        if item is None or item.get('status') == 'snoozed':
             return False
         ident = str(item.get('id') or '')
         return item.get('covers') in waiting_ids if ident.startswith('promise:') else True
@@ -736,6 +740,11 @@ def compose(meetings, due, overnight, root='', show_text=True, clock=lambda iso:
     else:
         picks = [(None, clock(meetings[0]['at']) + ' ' + meetings[0]['title'])] if meetings else []
         picks = (picks + [(i, i['title']) for i in overnight + rest])[:3] if show_text else []
+    if show_text and own:  # the owner's own to-dos that wait on them, in the dashboard's order, named after the rest
+        own = set(own)
+        named_own = [i for i, _ in picks if i is not None and i.get('id') in own]
+        extra = [i for i in overnight + rest if i.get('id') in own and not any(i is x for x, _ in picks)]
+        picks += [(i, i['title']) for i in extra[:max(0, OWN_LISTED - len(named_own))]]
     asking = set(asking)
 
     def about(count, shown):
