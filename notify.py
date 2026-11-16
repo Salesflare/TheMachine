@@ -699,20 +699,25 @@ def compose(meetings, due, overnight, root='', show_text=True, clock=lambda iso:
     dashboard's order (top, open_order). A to-do is listed once (by id, else by title). own: the ids of the owner's
     own to-dos (made with New to-do): the waiting ones not listed yet are named too, up to OWN_LISTED, whatever the
     headline counts, so a to-do they wrote down themselves never hides in "N more can wait". A due line for a to-do
-    still snoozed (status 'snoozed': it comes back later today) isn't one of the waiting ones. total: how many to-dos wait
+    still snoozed (status 'snoozed': it comes back later today), or one not in top (The Machine still preparing it),
+    isn't one of the waiting ones: listed and counted add up to total (tests/test_digest_completeness.py). total: how many to-dos wait
     (waiting_count); left out, the ones given here. waiting is kept for callers that pass it and not used.
     Without show_text (Careful, or notify_text off) only counts and the meeting time: no titles anywhere. The push's
     body never names a meeting or a person's words beyond the to-do titles the lock screen already allows."""
     seen = set()
     key = lambda i: i.get('id') or ('title', i['title'])
     waiting_ids = {i['id'] for i in [*ready, *due, *overnight, *(top or [])] if i.get('id')}
+    top_ids = {i['id'] for i in top or [] if i.get('id')}
 
     def counts(item):
-        """Whether a listed line is one of the waiting to-dos: a promise is when its to-do waits too (covers)."""
+        """Whether a listed line is one of the waiting to-dos: a promise is when its to-do waits too (covers). With top
+        given, only what is in it: a due line for a to-do The Machine is still preparing waits on it, not the owner."""
         if item is None or item.get('status') == 'snoozed':
             return False
         ident = str(item.get('id') or '')
-        return item.get('covers') in waiting_ids if ident.startswith('promise:') else True
+        if ident.startswith('promise:'):
+            return item.get('covers') in waiting_ids
+        return ident in top_ids if top is not None and ident else True
 
     def once(items):
         fresh = [i for i in items if key(i) not in seen]
