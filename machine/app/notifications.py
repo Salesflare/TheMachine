@@ -95,7 +95,8 @@ class NotificationsApp:
             client = str(args.get('client') or 'page')
             if not re.fullmatch(r'[a-z0-9]{1,16}', client):
                 raise ValueError('Invalid page')
-            on = args.get('active', True) is not False
+            # A headless browser (the web handler's automated, from its User-Agent) is never the owner in use
+            on = args.get('active', True) is not False and not args.get('automated')
             try:
                 idle = max(0, min(int(args.get('idle') or 0), 86400))
             except (TypeError, ValueError):
