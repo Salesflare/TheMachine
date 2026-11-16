@@ -1,98 +1,110 @@
 ---
 title: Calendario
 area: calendar
-summary: La settimana che ti aspetta, tutta in un unico posto: riunioni, attività in scadenza, attività posticipate e promesse.
+summary: La settimana che ti aspetta in un unico posto: riunioni, attività in scadenza, attività posticipate e promesse.
 covers: tab:calendar
-code: dashboard.html, meeting_notes.py, meeting_writer.py, calendar_clashes.py, meeting_prep.py
+code: dashboard.html, meeting_notes.py, meeting_writer.py, calendar_clashes.py, meeting_prep.py, trip_notes.py, event_notes.py, bookings.py
 order: 1
-translated: d85b3eff63ea503d
+translated: 93fe9794660b0ab2
 ---
 ## Cosa mostra
 
-I tuoi giorni a partire da oggi, con:
+I tuoi giorni da oggi in poi, con:
 
 - le riunioni dei calendari che hai collegato,
 - le attività in scadenza quel giorno e quelle posticipate nel giorno in cui tornano,
-- i promemoria sui lavori che hai delegato,
+- i check-in sul lavoro che hai delegato,
 - le promesse con una data,
-- le [note](notes.md) con date, come un viaggio.
+- [viaggi ed eventi](calendar.md#trips-and-events) dalle email di prenotazione e dei biglietti.
 
-Una riunione presente in due calendari viene mostrata una sola volta. Un calendario condiviso con te mostra gli eventi di chi lo ha condiviso in tono attenuato, con il suo nome; da questi eventi non vengono mai create attività. Gli eventi di un'intera giornata e quelli di più giorni vengono mostrati come eventi di un'intera giornata in tutti i giorni interessati. In Agenda, un viaggio appare per primo in ciascuno dei suoi giorni; in Settimana e Mese, appare come una sola fascia che copre tutti i giorni, per esempio «Viaggio a Lisbona».
+Una riunione presente in due calendari viene mostrata una sola volta. Un calendario condiviso con te mostra gli eventi di chi l’ha condiviso in tono attenuato, con il suo nome; questi eventi non generano mai attività. Gli eventi che durano tutto il giorno o più giorni sono indicati come eventi di un’intera giornata in ciascun giorno interessato. In **Agenda**, un viaggio è il primo elemento di ciascuno dei suoi giorni; in **Settimana** e **Mese** appare come una fascia che li attraversa, per esempio «Viaggio a Lisbona».
 
-Un piano concordato insieme è una sola promessa, contrassegnata da «Con» e dal nome dell'altra persona. Una promessa relativa a una riunione di quel giorno con la stessa persona appare nella riga della riunione.
+Un piano fatto insieme è una sola promessa, contrassegnata da «Con» e dal nome dell’altra persona. Una promessa relativa a una riunione di quel giorno con la stessa persona compare nella riga della riunione.
 
-**In ritardo** viene mostrato per primo. Una riunione con un'attività ancora aperta mostra il suo stato: **Preparazione pronta**, **In preparazione** o **Attività**. Un'attività che sembra completata, perché hai già risposto o perché la sua esecuzione l'ha trovata completata, non viene mostrata come **Scadenza**.
+**In ritardo** viene prima di tutto. Una riunione con un’attività ancora aperta mostra il relativo stato: **Preparazione pronta**, **In preparazione** o **Attività**. Un’attività che sembra completata, perché hai già risposto o perché la sua esecuzione ha rilevato che è stata completata, non viene mostrata come **Scadenza**.
 
 ## Agenda, settimana o mese
 
-- **Agenda** elenca ogni giorno. Scorri verso il basso per i giorni successivi o verso l'alto, oppure tocca **Mostra giorni precedenti**, per i giorni passati. Torna indietro fino a una settimana prima che collegassi il calendario e una riga in alto indica da quale giorno. Una volta caricata la [cronologia](history.md), torna indietro di circa un anno.
+- **Agenda** elenca i singoli giorni. Scorri verso il basso per vedere i giorni successivi oppure verso l’alto, o tocca **Mostra giorni precedenti**, per vedere quelli precedenti. Torna indietro fino a una settimana prima di quando hai collegato il calendario e mostra in alto una riga che indica da quale giorno parte. Una volta caricata la [cronologia](history.md), torna indietro di circa un anno.
 - **Settimana** mostra una griglia dal lunedì alla domenica. Sul telefono mostra tre giorni.
-- **Mese** mostra tutto il mese. Su un computer mostra fino a tre elementi al giorno; sul telefono mostra dei puntini e, toccandone uno, elenca gli elementi di quel giorno.
+- **Mese** mostra tutto il mese. Sul computer mostra fino a tre elementi al giorno; sul telefono mostra dei punti e, toccandone uno, elenca gli elementi di quel giorno.
 
-**Oggi**, ‹ e › in alto ti permettono di spostarti tra le settimane o i mesi. La visualizzazione scelta viene salvata su quel dispositivo.
+**Oggi**, ‹ e › in alto ti permettono di spostarti tra le settimane o i mesi. La visualizzazione scelta viene ricordata su quel dispositivo.
 
-Nella griglia settimanale, gli eventi che si svolgono allo stesso orario appaiono affiancati, ma restano leggibili. Gli altri sono indicati con **+N**: toccalo per aprire quel giorno nell'agenda.
+Nella griglia settimanale, gli eventi che si svolgono alla stessa ora sono affiancati e restano leggibili. Gli altri sono indicati con **+N**; toccandolo si apre quel giorno nell’agenda.
 
-## Aprire un elemento
+## Apri un elemento
 
-Seleziona una riga per aprire la chat dell'attività, la promessa, la nota o la riunione. Se non puoi modificare una riunione da qui, per esempio perché appartiene a un'altra persona o ha degli invitati, ne vedrai i dettagli: quando, dove e chi. Le persone che Graph riconosce e le organizzazioni e i progetti associati alla riunione sono link alle rispettive pagine. **Apri in Google Calendar** o **Apri in Outlook**, sotto questi elementi, apre la riunione nel rispettivo calendario. Visualizzarla non modifica nulla.
+Tocca una riga per aprire la chat dell’attività, la promessa, il viaggio o l’evento, oppure la riunione. Se non puoi modificare una riunione, per esempio perché è di qualcun altro o ha degli invitati, ne vedi i dettagli: quando, dove e chi partecipa. Le persone che Graph riconosce e le organizzazioni e i progetti a cui è collegata la riunione rimandano alle rispettive pagine. **Apri in Google Calendar** (o **Apri in Outlook**) sotto di loro apre la riunione nel relativo servizio. Aprirla non cambia nulla.
 
-Una sala prenotata per una riunione appare sotto «Dove», mai come persona o in Graph.
+Una sala riunioni prenotata per una riunione appare sotto **Dove**, mai come persona o in Graph.
 
-Il link della riunione mostra il nome del servizio, come Zoom, Google Meet o Teams, oppure **Videochiamata**. Apri la riunione per partecipare.
+Il link di una riunione mostra il nome del servizio, per esempio Zoom, Google Meet o Teams, oppure **Videochiamata**. Apri la riunione per partecipare.
+
+## Viaggi ed eventi
+
+Quando ricevi un’email di prenotazione per un volo, un hotel, un treno, un autobus, un traghetto o un’auto a noleggio, la tua Machine la aggiunge a un viaggio. Le prenotazioni dello stesso itinerario vengono raggruppate in un unico viaggio: andata, hotel e ritorno. Il viaggio appare come una fascia che attraversa i suoi giorni. Aprilo per vedere, in ordine cronologico, il codice di prenotazione, il posto e il biglietto di ciascuna prenotazione.
+
+I biglietti per un concerto, una partita, un festival o una conferenza creano un evento, uno per ciascun evento, con il luogo, il codice di prenotazione, il posto e il numero di biglietti. Un secondo ordine per lo stesso evento viene aggiunto allo stesso evento. Un evento prenotato tramite la tua casella di lavoro è Lavoro; altrimenti è Personale.
+
+- Ogni riga indica da chi arriva la prenotazione, per esempio **Da Example Tickets**, e apre l’email.
+- Se dall’email è stata creata un’attività, per esempio per pagare i biglietti, **Apri l’attività** la mostra.
+- Se una prenotazione cambia, la sua riga viene aggiornata; se viene annullata, viene rimossa. Quando tutte le prenotazioni sono annullate, viene rimosso anche il viaggio o l’evento.
+
+La tua Machine legge i dettagli riportati nelle email di conferma di compagnie aeree, hotel, siti di prenotazione e rivenditori di biglietti, senza usare l’AI. Un’email che non contiene questi dettagli non crea nulla. Le email di prenotazione dell’anno coperto dalla [cronologia](history.md) che la tua Machine conserva vengono lette in background una volta caricata la cronologia.
 
 ## Note e trascrizione della riunione
 
-I dettagli di una riunione hanno due sezioni. **Note** contiene il riepilogo: decisioni e attività da svolgere. **Trascrizione** riporta parola per parola ciò che è stato detto. All'inizio è chiusa e mostra la sua durata; tocca **Mostra** per aprirla.
+I dettagli di una riunione hanno due sezioni. **Note** è il riepilogo: decisioni e attività da svolgere. **Trascrizione** riporta parola per parola ciò che è stato detto. All’inizio è chiusa e mostra quanto dura; **Mostra** la apre.
 
-Se non si caricano, il sistema riprova automaticamente per circa mezzo minuto. Poi tocca **Riprova**.
+Se non si caricano, la riunione riprova da sola per circa mezzo minuto. Dopodiché, tocca **Riprova**.
 
-Per ciascuna sezione puoi scegliere **Aggiungi note** o **Aggiungi trascrizione**, **Carica file** per un file Markdown o di testo, **Modifica** e **Rimuovi** (tocca due volte). I contenuti di una sezione non vengono spostati nell'altra. In una riunione che puoi modificare, tocca **Note** sotto il modulo per aprirle.
+Per ciascuna sezione puoi usare **Aggiungi note** o **Aggiungi trascrizione**, **Carica file** per un file Markdown o di testo, **Modifica** e **Rimuovi** (tocca due volte). Il contenuto di una sezione resta lì. In una riunione che puoi modificare, **Note** sotto il modulo le apre.
 
-Se hai collegato [Zoom](zoom.md) o [Google Meet](google-meet.md), le relative note appaiono in Note e la trascrizione in Trascrizione, contrassegnate da **Da Zoom** o **Da Google Meet**. Non sostituiscono mai ciò che hai aggiunto: se sono presenti entrambi i contenuti, vengono mostrati entrambi.
+Se hai collegato [Zoom](zoom.md) o [Google Meet](google-meet.md), le note della riunione compaiono in Note e la trascrizione in Trascrizione, con l’indicazione **Da Zoom** o **Da Google Meet**. Non sostituiscono mai ciò che hai aggiunto: se sono presenti entrambe le versioni, vengono mostrate entrambe.
 
-Le note possono arrivare anche dall'evento della riunione nel calendario, aggiunte dopo l'inizio, oppure via email da Zoom o Gemini. Al termine della riunione, The Machine crea attività da queste note solo se indicano chiaramente i prossimi passi. Se le stesse note arrivano in due modi diversi, viene creata una sola attività, con la riunione come fonte: «Fonte: note di» seguito dal nome della riunione.
+Le note possono arrivare anche dall’evento della riunione nel calendario, se aggiunte dopo l’inizio, oppure via email da Zoom o Gemini. Dopo la riunione, The Machine crea attività a partire da queste note solo per i passaggi successivi chiaramente indicati. Se le stesse note arrivano in due modi, viene creata una sola attività, con la riunione come origine: «Origine: note da» la riunione.
 
-Una riunione con una trascrizione ma senza note mostra **Genera note**. The Machine le scrive a partire dalla trascrizione: un breve riepilogo, le decisioni e le attività da svolgere, con i nomi di chi se ne occupa, nella lingua della riunione.
+Se una riunione ha una trascrizione ma non ha note, trovi **Genera note**. The Machine le crea a partire dalla trascrizione: un breve riepilogo, le decisioni e le attività con le persone incaricate, nella lingua della riunione.
 
-Viene mostrato **Sto scrivendo le note…**. La generazione continua anche se chiudi la riunione. Per una riunione lunga possono volerci alcuni minuti e viene usato il tuo modello. Le note indicano **Scritte da The Machine** e non sostituiscono quelle che hai aggiunto.
+Viene mostrato **Sto scrivendo le note…** e la scrittura continua anche se chiudi la riunione. Per una riunione lunga possono servire alcuni minuti, usando il tuo modello. Le note riportano **Scritto da The Machine** e non sostituiscono mai quelle che hai aggiunto.
 
-Puoi anche chiedere a The Machine di aggiungerle. Per esempio, chiedile in un'attività: «aggiungi questa trascrizione alla riunione del consiglio di oggi». Una trascrizione viene inserita in Trascrizione, un riepilogo in Note. Nel Calendario, una riunione con note o trascrizione mostra **Note** o **Trascrizione**.
+Puoi chiedere anche a The Machine di aggiungerle. Per esempio, chiedi in un’attività: «aggiungi questa trascrizione alla riunione del consiglio di oggi». La trascrizione viene inserita in Trascrizione e il riepilogo in Note. Nel Calendario, una riunione che le contiene indica **Note** o **Trascrizione**.
 
-The Machine legge entrambi i contenuti per trovare le attività da svolgere dopo la riunione. Sono di tipo Work o Personal, come la riunione, e vengono condivise con il tuo team solo se lo è anche la riunione.
+The Machine legge entrambe le sezioni per trovare le attività da fare dopo la riunione. Sono Lavoro o Personali a seconda della riunione e vengono condivise con il tuo team solo se lo è anche la riunione.
 
-Puoi aprire una riunione con questi dettagli ovunque la trovi: in una cronologia, nei risultati di una ricerca nei messaggi o come fonte di un'attività. **Invito originale** in fondo mostra l'invito così come è arrivato.
+La riunione si apre con questi dettagli ovunque la trovi: nella cronologia, nei risultati di una ricerca nei messaggi o come origine di un’attività. **Invito originale** in fondo mostra l’invito così come è arrivato.
 
-## Aggiungere o modificare un evento
+## Aggiungi o modifica un evento
 
-Da qui puoi modificare il tuo calendario Google. Outlook e gli altri calendari sono di sola lettura. **Nuovo evento** ne aggiunge uno (sul telefono lo trovi sotto **+** nella barra superiore): scegli il calendario, un titolo e l'orario. Seleziona un evento senza invitati in quel calendario per modificarlo, oppure tocca **Elimina** (due volte).
+Da qui puoi modificare il tuo calendario Google. Outlook e gli altri calendari sono di sola visualizzazione. **Nuovo evento** ne aggiunge uno (sul telefono è nel menu **+** nella barra superiore): scegli il calendario, un titolo e l’orario. Tocca un evento senza invitati in quel calendario per modificarlo oppure **Elimina** per cancellarlo (tocca due volte).
 
-**Dove** suggerisce dei luoghi mentre scrivi: prima quelli che hai già usato e quelli delle tue organizzazioni, poi gli indirizzi di [OpenStreetMap](https://www.openstreetmap.org), una mappa gratuita. Per cercarli vengono inviate solo le parole che scrivi. Scegli uno dei suggerimenti o lascia il testo che hai inserito.
+**Dove** suggerisce luoghi mentre scrivi: prima quelli che hai già usato e le tue organizzazioni, poi gli indirizzi di [OpenStreetMap](https://www.openstreetmap.org), una mappa gratuita. Per cercare vengono inviate solo le parole che scrivi. Scegli un suggerimento o lascia il testo che hai inserito.
 
-**Invita** aggiunge persone da Graph o qualsiasi indirizzo email. Questa opzione è disponibile solo nel tuo calendario. Chi riceverà un invito è indicato sopra il pulsante, che mostra anche il numero di invitati: **Aggiungi e invita 2**. Google invia gli inviti quando tocchi il pulsante, non prima. Se non aggiungi invitati, nessuno riceve un invito o un aggiornamento.
+**Invita** aggiunge persone da Graph o qualsiasi indirizzo email. È disponibile solo nel tuo calendario. Le persone che riceveranno un invito sono elencate sopra il pulsante, che indica anche quante sono: **Aggiungi e invita 2**. Google invia gli inviti quando tocchi il pulsante, non prima. Se non ci sono invitati, nessuno riceve un invito o un aggiornamento.
 
-Un'attività può proporti anche una modifica, per esempio aggiungere un passaggio a prendere qualcuno. Mostra esattamente cosa cambierà; la modifica viene applicata solo se tocchi **Aggiungi**, **Salva** o **Elimina**.
+Anche un’attività può proporti una modifica, per esempio aggiungere un ritiro. Mostra esattamente cosa cambierà: la modifica viene applicata solo se tocchi **Aggiungi**, **Salva** o **Elimina**.
 
-Non hai ancora riunioni? Se non hai collegato un calendario, tocca **Collega il tuo calendario** per aprire Connessioni e collegare [Google Calendar](google-calendar.md), [Outlook Calendar](microsoft.md) o [un altro calendario](other-calendars.md).
+Non hai ancora riunioni? Se non hai un calendario, **Collega il tuo calendario** apre Connessioni: collega [Google Calendar](google-calendar.md), [Outlook Calendar](microsoft.md) o [un altro calendario](other-calendars.md).
 
-## Conflitti con l'altro calendario
+## Conflitti con il tuo altro calendario
 
-Quando una riunione di lavoro si sovrappone a un evento del tuo calendario personale, o viceversa, The Machine crea un'attività relativa all'evento più recente. Può preparare una breve nota per spostarlo o proporti di rifiutarlo. Non viene inviato nulla finché non approvi.
+Se una riunione di lavoro si sovrappone a un impegno nel tuo calendario personale, o viceversa, The Machine crea un’attività sulla più recente delle due. Può preparare una breve nota per spostarla o proporti di rifiutarla. Non viene inviato nulla finché non approvi.
 
-Gli eventi di un'intera giornata, quelli in cui risulti libero e quelli provvisori non vengono conteggiati. Ogni conflitto viene segnalato una sola volta. Un'attività Work indica solo che c'è un conflitto, così il tuo team non vede mai l'evento personale. Solo tu puoi vedere con quale evento è in conflitto.
+Gli eventi di un’intera giornata, quelli con stato libero e quelli provvisori non vengono considerati; ogni conflitto viene segnalato una sola volta. Un’attività di Lavoro indica solo che c’è un conflitto, così il tuo team non vede mai l’evento personale. Solo tu puoi vedere con quale evento si sovrappone.
 
 ## Preparati alle riunioni
 
-Prima di una riunione con persone esterne alla tua azienda, The Machine crea un'attività: **Preparati per** la riunione. È un breve riepilogo:
+Prima di una riunione con persone esterne alla tua azienda, The Machine crea un’attività: **Preparati per** la riunione. È un breve briefing:
 
 - **Chi:** chi sono, secondo Graph.
-- **Ultimo contatto:** l'ultimo scambio di messaggi con loro. Dopo la riunione, quel messaggio diventa la fonte dell'attività.
+- **Ultimo contatto:** il tuo ultimo scambio con loro. Dopo la riunione, quel messaggio viene indicato come origine dell’attività.
 - **Promesse aperte:** ciò che tu o loro dovete ancora fare.
 - **Domande aperte:** ciò che è ancora senza risposta.
-- **Da decidere o portare:** ciò che devi definire o portare con te.
+- **Decidi o porta:** cosa definire o portare con te.
 
-L'attività arriva la mattina di un giorno lavorativo: il giorno stesso della riunione, se è nel pomeriggio, altrimenti il giorno lavorativo precedente. Usa solo le informazioni già presenti sulla tua Machine. Serve solo per consultazione: tocca **Fatto** dopo averla letta. Se contiene una promessa o una domanda che richiede un'azione, questa ha una propria attività.
+L’attività arriva la mattina di un giorno lavorativo: il giorno stesso della riunione se si svolge nel pomeriggio, altrimenti il giorno lavorativo precedente. Usa solo ciò che è già sulla tua Machine. Serve solo per consultare le informazioni: tocca **Fatto** quando l’hai letta. Se una promessa o una domanda richiede un’azione, ha una sua attività.
 
-Se non ci sono informazioni utili nella cronologia, non viene creata nessuna attività. Le riunioni ricorrenti, interne, personali o rifiutate non ne generano. Se una riunione viene spostata, la sua attività resta la stessa e viene aggiornata al nuovo orario. Un'attività scartata non ricompare e quella di una riunione annullata si chiude da sola.
+Se la cronologia non contiene informazioni utili, non viene creata alcuna attività. Le riunioni ricorrenti, interne, personali o rifiutate non ne generano. Se una riunione viene spostata, la sua attività resta la stessa, ma cambia orario. Un’attività scartata non ricompare e quella di una riunione annullata si chiude da sola.
 
-I dettagli della riunione mostrano l'attività sotto **Attività**; toccala per aprire la chat.
+Nei dettagli della riunione trovi la relativa attività sotto **Attività**, a un tocco dalla sua chat.

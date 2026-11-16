@@ -1,36 +1,36 @@
 ---
 title: Geschiedenis
 area: connections
-summary: Ongeveer een jaar aan oudere e-mail, vergaderingen en berichten in WhatsApp, Slack en Teams, zodat je kunt zoeken, lezen en je mensen leert kennen. Nooit een to-do.
+summary: Ongeveer een jaar aan oudere e-mail, vergaderingen en berichten uit WhatsApp, Slack en Teams, om te doorzoeken, te lezen en je mensen te leren kennen. Nooit een to-do.
 covers: history
 code: machine/app/history.py, machine/store/history.py, machine/store/graph_history.py
 keywords: older messages, backfill, archive, past emails
-translated: c10fe5fb8d7b2d8b
+translated: 93575cd78b3085f7
 ---
-## Wat er wordt bewaard
+## Wat hij bewaart
 
-Je Machine haalt ongeveer een jaar aan oudere e-mails, vergaderingen en berichten in WhatsApp, Slack en Teams op. Met Zoeken vind je ze terug, ook op betekenis. Threads tonen ze en in de [Agenda](calendar.md) zie je eerdere vergaderingen.
+Je Machine haalt ongeveer een jaar aan oudere e-mail, vergaderingen en berichten uit WhatsApp, Slack en Teams op. Je kunt ze doorzoeken, ook op betekenis. Gesprekken tonen ze en de [Agenda](calendar.md) toont eerdere vergaderingen.
 
-Bij elke koppeling in **Koppelingen** staat hoever die teruggaat, bijvoorbeeld **Geschiedenis: terug tot** november 2025.
+Bij elke koppeling in **Koppelingen** staat hoever hij teruggaat, bijvoorbeeld **Geschiedenis: terug tot** november 2025.
 
-## Wat er aan je Graph wordt toegevoegd
+## Wat hij toevoegt aan je Graph
 
-Je [Graph](graph.md) houdt bij hoe dicht je bij mensen staat, wanneer je voor het laatst met ze hebt gepraat en wie wie kent. Ook de mensen en organisaties zelf worden erin bijgehouden. Je ziet dit ook op de tijdlijn van een persoon of organisatie, zodat het laatste contact altijd zichtbaar is. De antwoorden van je Fleet op de vraag 'wie kent iemand?' gebruiken deze gegevens uit werkaccounts, volgens dezelfde [deelregels](sharing-rules.md) als voor nieuwe e-mail.
+Je [Graph](graph.md) houdt bij hoe close je bent met mensen, wanneer je voor het laatst contact had, wie wie kent en wie de mensen en organisaties zelf zijn. Je ziet het ook op de tijdlijn van een persoon of organisatie, zodat het laatste contact er altijd bij staat. Antwoorden van je Fleet op de vraag ‘wie kent iemand’ gebruiken dit voor werkaccounts, met dezelfde [deelregels](sharing-rules.md) als voor nieuwe e-mail.
 
-## Wat er nooit gebeurt
+## Wat hij nooit doet
 
-Er wordt nooit een to-do of belofte van gemaakt, het telt nooit als nieuw, start nooit een controle en wordt nooit aan een project toegevoegd. Persoonlijke geschiedenis blijft persoonlijk, net als persoonlijke e-mail. Behalve bij Zoeken op betekenis leest geen enkel AI-model deze gegevens.
+Hij maakt nooit een to-do of belofte, telt nooit als nieuw, start nooit een controle en voegt nooit iets toe aan een project. Persoonlijke geschiedenis blijft privé, net als persoonlijke e-mail. Behalve voor Zoeken op betekenis leest geen enkel AI-model deze geschiedenis.
 
-## Wanneer het gebeurt
+## Wanneer hij draait
 
-Het begint nadat je berichten voor het eerst zijn bekeken. Per koppeling begint het pas zodra de eerste week ervan is verwerkt, ook bij een koppeling die je later toevoegt. Het gebeurt langzaam op de achtergrond en pauzeert terwijl een controle of synchronisatie loopt, als een dienst vraagt om het rustiger aan te doen of als je Machine weinig ruimte heeft. Nieuwe berichten gaan altijd voor.
+Hij start nadat hij je berichten voor het eerst heeft bekeken. Voor elke koppeling begint hij pas nadat de eerste week is verstreken, ook als je de koppeling later toevoegt. Hij draait langzaam op de achtergrond en pauzeert zolang er een controle of synchronisatie loopt, als een dienst vraagt om het rustiger aan te doen of als je Machine weinig ruimte heeft. Nieuwe berichten krijgen altijd voorrang.
 
-Zodra de geschiedenis van een mailbox is opgehaald, leest je Machine de bewaarde e-mails nog een keer om boekings- en ticketgegevens te vinden. Zo verschijnen oudere boekingen ook onder [Reizen en evenementen](notes.md). Dit gebeurt net zo langzaam en pauzeert om dezelfde redenen.
+Nadat de geschiedenis van een mailbox is opgehaald, leest je Machine de e-mail die hij bewaart nog een keer voor boekings- en ticketgegevens. Zo worden oudere boekingen ook getoond bij [reizen en evenementen](calendar.md#trips-and-events). Dit gebeurt net zo langzaam en met dezelfde pauzes.
 
-Je Machine gebruikt de toegang die elke koppeling al heeft. Je hoeft niets nieuws goed te keuren.
+Hij gebruikt de toegang die elke koppeling al heeft. Je hoeft niets nieuws goed te keuren.
 
-## Hoe ver terug
+## Hoe ver hij teruggaat
 
-Ongeveer een jaar. Op je eigen computer pas je dit aan met `history_days` in het instellingenbestand (0 schakelt het uit, maximaal 730). Telegram en andere bronnen halen geen oudere geschiedenis op.
+Ongeveer een jaar. Op je eigen computer kun je `history_days` in het instellingenbestand wijzigen (0 schakelt dit uit, maximaal 730 dagen). Telegram en andere bronnen halen geen oudere geschiedenis op.
 
-Berichten in LinkedIn en X gaan 90 dagen terug en worden heel langzaam opgehaald: een paar kleine ophaalacties per uur, alleen overdag. Als de site tegenwerkt, wordt er een dag lang niets opgehaald, zodat je account veilig blijft (`social_history_days`, 0 schakelt het uit).
+LinkedIn- en X-berichten gaan 90 dagen terug en worden heel langzaam ingelezen: een paar kleine leesacties per uur, alleen overdag. Als de site tegenwerkt, leest hij een dag lang niets in, zodat je account veilig blijft (`social_history_days`, 0 schakelt dit uit).

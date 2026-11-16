@@ -1,94 +1,95 @@
 ---
 title: Benachrichtigungen
 area: settings
-summary: Was dich wo und wann erreicht: Nur was nicht warten kann, meldet sich, der Rest steht in einer morgendlichen Zusammenfassung.
+summary: Was dich wann und wo erreicht: Nur, was nicht warten kann, macht sich bemerkbar. Alles andere findest du in einer morgendlichen Zusammenfassung.
 covers: settings:notify
 code: notify.py, dashboard.html, assistant.py, sw.js
 order: 2
 keywords: alerts, notify, ping, buzz, quiet, too many, push, sound, interrupt
-translated: 334224e0b479ef47
+translated: ee3ba81a8441704f
 ---
-Wähle in **Einstellungen**, **Benachrichtigungen** für jede Art, wo sie dich erreicht:
+Weniger Benachrichtigungen oder andere? Wähle unter **Einstellungen** und **Benachrichtigungen** aus, wo du die einzelnen Arten erhältst:
 
-- **Neue Aufgaben**: nur was nicht warten kann, etwa etwas, das heute fällig oder dringend ist.
-- **Ergebnisse und Fragen**: eine Antwort, bereit zum Senden, eine Anmeldung, die eine Aufgabe braucht, eine Frage aus der Fleet.
-- **Erinnerungen**: Zurückgestelltes und Wartendes, das zurückkommt.
-- **Morgendliche Zusammenfassung**: eine kurze Übersicht über deinen Tag. Siehe unten.
-- **Abendliche Zusammenfassung**: was heute erledigt wurde und was morgen offen ist. Siehe unten.
+- **Neue Aufgaben**: nur, was nicht warten kann, zum Beispiel etwas, das heute fällig oder dringend ist.
+- **Ergebnisse und Fragen**: eine versandbereite Antwort, eine Aufgabe, für die du dich anmelden musst, oder eine Frage von Fleet.
+- **Erinnerungen**: zurückgestellte Aufgaben und Antworten, auf die du wartest und die wieder anstehen.
+- **Morgendliche Zusammenfassung**: eine kurze Zusammenfassung deines Tages. Mehr dazu weiter unten.
+- **Abendliche Zusammenfassung**: was du heute erledigt hast und was morgen noch offen ist. Mehr dazu weiter unten.
 
-Jede hat einen Schalter für **Push** (die App auf deinem Handy oder Computer), **Telegram**, wenn es eingerichtet ist, und **E-Mail** auf einer gehosteten Machine oder einer im The Machine Network. Alle sind an, außer den Zusammenfassungen auf Telegram.
+Für jede Art gibt es einen Schalter für **Push** (die App auf deinem Smartphone oder Computer), **Telegram**, sobald du es eingerichtet hast, und **E-Mail** auf einer gehosteten Machine oder einer Machine im The Machine Network. Alles ist eingeschaltet, außer den Zusammenfassungen auf Telegram.
 
-Die **Arbeitszeiten** stehen im selben Tab: deine Arbeitstage, die Stunden, in denen Benachrichtigungen rausgehen dürfen, wann Zurückgestelltes zurückkommt, die Uhrzeit der Zusammenfassung und deine Zeitzone. Siehe [Arbeitszeiten](work-hours.md).
+Deine **Arbeitszeiten** findest du im selben Tab: Arbeitstage, wann Benachrichtigungen gesendet werden dürfen, wann zurückgestellte Aufgaben wieder anstehen, die Zeiten der Zusammenfassungen und deine Zeitzone. Mehr dazu unter [Arbeitszeiten](work-hours.md).
 
-## Nur was nicht warten kann
+## Nur, was nicht warten kann
 
-Ein Push, eine Telegram-Benachrichtigung oder eine E-Mail geht nur für:
+Eine Push-Benachrichtigung, eine Telegram-Nachricht oder eine E-Mail erhältst du nur bei:
 
-- eine Aufgabe, die heute fällig oder dringend ist;
-- eine Antwort, auf die jemand wartet, als Entwurf bereit zum Senden;
-- eine Aufgabe, für die du dich anmelden musst;
-- Zurückgestelltes, das zur gewählten Zeit zurückkommt.
+- einer Aufgabe, die heute fällig oder als dringend markiert ist;
+- einer Antwort, auf die jemand wartet und die als Entwurf bereit zum Senden ist;
+- einer Aufgabe, für die du dich anmelden musst;
+- einer zurückgestellten Aufgabe, die zum von dir gewählten Zeitpunkt wieder ansteht.
 
-Alles andere landet still im Dashboard (und ohne Ton in Telegram) und wartet auf die morgendliche Zusammenfassung. An einem freien Tag meldet sich nur Dringendes oder heute Fälliges. Höchstens 8 Pushes am Tag. Nach 3 Tagen ohne Blick ins Dashboard kommt nur noch die morgendliche Zusammenfassung, bis du zurück bist.
+Alles andere erscheint unauffällig auf dem Dashboard und ohne Ton in Telegram. Dort wartet es auf die morgendliche Zusammenfassung. An einem freien Tag machen sich nur dringende oder heute fällige Aufgaben bemerkbar. Du erhältst höchstens 8 Push-Benachrichtigungen pro Tag. Wenn du das Dashboard 3 Tage lang nicht öffnest, erhältst du nur noch die morgendliche Zusammenfassung, bis du wieder da bist.
 
-## Wann du benachrichtigt wirst
+## Wann Benachrichtigungen gesendet werden
 
-Wie Slack schaut es, ob du das Dashboard benutzt, nicht nur, ob es offen ist:
+Es wird geprüft, ob du das Dashboard tatsächlich verwendest, nicht nur, ob es geöffnet ist:
 
-- In Benutzung: Das Dashboard ist vor dir, im Fokus, und du hast in den letzten 10 Minuten geklickt, getippt, gescrollt oder es berührt. Nichts vibriert. Telegram kommt ohne Ton an.
-- Weg: Das Dashboard ist im Hintergrund, minimiert, geschlossen oder seit 10 Minuten unbenutzt. Ein Push geht eine Minute, nachdem du es verlassen hast, raus, außer du kommst zurück und siehst es vorher.
-- 15 Minuten später noch ungesehen, und es kann nicht warten: eine E-Mail dazu, höchstens eine pro Stunde. Was du schon erledigt hast, fehlt darin. Meist ist die morgendliche Zusammenfassung die einzige E-Mail.
-- Ein Teammitglied übergibt dir eine Aufgabe, und deine Machine hat kein Handy und kein Telegram, um dich zu erreichen: eine E-Mail dazu, 15 Minuten später, falls du sie noch nicht gesehen hast. Nur ihr Titel und ein Link. **E-Mail** bei **Ergebnisse und Fragen** schaltet das aus.
-- Außerhalb deiner Arbeitszeiten: nichts. Die morgendliche Zusammenfassung enthält, was reinkam.
-- Eine neue Arbeitsaufgabe, die an einem freien Tag reinkommt, wartet bis zur Zusammenfassungszeit deines nächsten Arbeitstags. Die Aufgabe zeigt, wo und wann sie dich erreicht, etwa Benachrichtigung Mo., 2. Nov. · 08:30, nach der Zeile **Neue Aufgaben**. Sind dort Push und Telegram beide aus, steht nichts da.
+- Wenn du es verwendest (es ist im Vordergrund und du hast in den letzten 10 Minuten geklickt, getippt oder gescrollt), erhältst du keine Benachrichtigung. Telegram-Nachrichten kommen ohne Ton an.
+- Wenn du nicht da bist (das Dashboard ist im Hintergrund, geschlossen oder seit 10 Minuten inaktiv), wird eine Minute nach deinem Weggehen eine Push-Benachrichtigung gesendet, sofern du nicht zurückgekommen bist und sie gesehen hast.
+- Wenn du die Benachrichtigung auch 15 Minuten später noch nicht gesehen hast und sie nicht warten kann, erhältst du dafür eine E-Mail, höchstens eine pro Stunde. Was du bereits erledigt hast, wird ausgelassen. An den meisten Tagen ist die morgendliche Zusammenfassung die einzige E-Mail.
+- Wenn dir ein Teammitglied eine Aufgabe gibt und deine Machine weder ein Smartphone noch Telegram hat, über das sie dich erreichen kann, erhältst du eine E-Mail mit dem Titel und einem Link. Sie kommt nach 15 Minuten, wenn du die Aufgabe bis dahin noch nicht gesehen hast. Wenn du **E-Mail** für **Ergebnisse und Fragen** ausschaltest, wird diese E-Mail nicht gesendet.
+- Außerhalb deiner Arbeitszeiten erhältst du nichts. Die morgendliche Zusammenfassung enthält die Informationen.
+- Eine neue Arbeitsaufgabe an einem freien Tag wartet bis zur Zusammenfassungszeit deines nächsten Arbeitstags. Die Aufgabe zeigt an, wann sie dich erreicht, zum Beispiel „Benachrichtigung Mo., 2. Nov. · 08:30“.
 
-Nur was dich braucht, benachrichtigt. Fortschritt und Änderungen nicht. Ein neueres Ergebnis zu einer Aufgabe, die du noch nicht gesehen hast, aktualisiert sie ohne neue Benachrichtigung. Viele auf einmal vibrieren nur einmal. Das App-Symbol zeigt, wie viele Aufgaben dich brauchen.
+Fortschritte und Änderungen lösen keine Benachrichtigungen aus. Wenn ein neues Ergebnis zu einer Aufgabe hinzukommt, die du noch nicht gesehen hast, wird die Aufgabe aktualisiert, ohne dass eine neue Benachrichtigung gesendet wird. Mehrere Benachrichtigungen kurz hintereinander lösen nur eine aus. Das App-Symbol zeigt an, wie viele Aufgaben deine Aufmerksamkeit brauchen.
 
-## Buttons in Benachrichtigungen
+## Schaltflächen in Benachrichtigungen
 
-Jede Benachrichtigung hat Buttons für den nächsten Schritt. In der App auf dem Handy:
+Jede Benachrichtigung bietet Schaltflächen für den nächsten Schritt. In der Smartphone-App:
 
-- Neues To-do: Ausführen, Zurückstellen, Als erledigt markieren.
-- Entwurf fertig: Entwurf öffnen, Zurückstellen, Als erledigt markieren.
-- Ergebnis fertig: Öffnen, Als erledigt markieren, Zurückstellen.
-- Frage, hängt fest oder Anmeldung nötig: Antworten, Öffnen oder Anmelden, dann Zurückstellen und Als erledigt markieren.
-- Erinnerung: Als erledigt markieren, Zurückstellen, Öffnen.
-- Morgendliche Zusammenfassung: zum Öffnen antippen.
+- Neue Aufgabe: **Ausführen**, **Zurückstellen**, **Erledigt**.
+- Entwurf bereit: **Entwurf öffnen**, **Zurückstellen**, **Erledigt**.
+- Ergebnis bereit: **Öffnen**, **Erledigt**, **Zurückstellen**.
+- Frage, Problem oder Anmeldung: **Antworten**, **Öffnen** oder **Anmelden**, danach **Zurückstellen** und **Erledigt**.
+- Erinnerung: **Erledigt**, **Zurückstellen**, **Öffnen**.
+- Morgendliche Zusammenfassung: Zum Öffnen antippen.
 
-Ein Browser und Telegram zeigen zwei davon. Fleet-Fragen behalten Einmal antworten und Ablehnen.
+Im Browser und auf Telegram werden zwei davon angezeigt. Bei Fragen von Fleet bleiben **Einmal antworten** und **Ablehnen** verfügbar.
 
-Aus einer Benachrichtigung wird nie etwas gesendet, bezahlt oder eingereicht. Ein Entwurf öffnet sich immer zuerst, damit du ihn siehst, bevor er rausgeht. Entwurf öffnen zeigt die Aufgabe in deiner Liste mit dem ganzen Entwurf. Ausführen startet nur die Arbeit an einer neuen Aufgabe.
+Über eine Benachrichtigung wird nichts gesendet, bezahlt oder eingereicht. Ein Entwurf wird immer zuerst geöffnet, damit du ihn vor dem Senden sehen kannst. **Entwurf öffnen** zeigt die Aufgabe in deiner Liste mit dem vollständigen Entwurf. **Ausführen** startet nur die Arbeit an einer neuen Aufgabe.
 
-In der App fragen Zurückstellen und Als erledigt markieren zuerst nach dem Entsperren. Im Browser öffnen sie das Dashboard, das es erledigt und Rückgängig anbietet. Zurückstellen bringt das To-do in zwei Stunden zurück, bei einer Erinnerung morgen früh.
+In der Smartphone-App musst du zum **Zurückstellen** und **Erledigen** zuerst dein Gerät entsperren. Im Browser wird das Dashboard geöffnet. Dort wird die Aktion ausgeführt und **Rückgängig** angezeigt. Durch **Zurückstellen** steht die Aufgabe in zwei Stunden wieder an, bei einer Erinnerung am nächsten Morgen.
 
-E-Mails mit dem, was auf dich wartet, haben die Links Öffnen und Zurückstellen. Sie öffnen nur das Dashboard.
+E-Mails enthalten Links zum Öffnen und für wartende Aufgaben auch zum Zurückstellen. Sie öffnen nur das Dashboard.
 
-Ein Tipp auf eine Benachrichtigung oder auf Öffnen in einer E-Mail oder in Telegram zeigt die Aufgabe hervorgehoben in deiner Liste. Ist sie erledigt, zurückgestellt oder in einer anderen Ansicht, öffnet sich ihr Chat.
+Wenn du eine Benachrichtigung antippst oder in einer E-Mail oder auf Telegram auf **Öffnen** tippst, wird die Aufgabe in deiner Liste hervorgehoben, egal wo sie sich gerade befindet: **Gerade erledigt**, **Erledigt**, **Kommt später zurück** oder eine andere Ansicht. Der Chat wird dabei nie geöffnet. Wenn die Seite noch nicht aktualisiert war, wird der Aufgabe gefolgt, sobald sie aktualisiert ist.
 
 ## Die morgendliche Zusammenfassung
 
-Sie kommt an Arbeitstagen zu deiner Uhrzeit für die **Morgendliche Zusammenfassung**, außer es gibt nichts zu sagen. Liegt diese vor **Zurückgestelltes kommt um**, wartet sie bis 5 Minuten danach, damit die Aufgaben, die an dem Morgen zurückkommen, darin stehen. **Vorschau** in ihrer Zeile zeigt sie, ohne sie zu senden. Standardmäßig kommt sie als Push und als E-Mail, kurz genug für einen Blick:
+Sie wird an Arbeitstagen zur Zeit deiner **Morgendlichen Zusammenfassung** gesendet, sofern es etwas zu berichten gibt. Liegt dieser Zeitpunkt vor **Zurückgestelltes kommt um**, wartet sie bis 5 Minuten danach. So sind die Aufgaben enthalten, die an diesem Morgen wieder anstehen. Mit **Vorschau** kannst du sie ansehen, ohne sie zu senden. Standardmäßig kommt sie als Push-Benachrichtigung und E-Mail. Sie ist kurz genug, um sie auf einen Blick zu lesen:
 
-- ein Gruß mit dem, was heute zählt, etwa "Guten Morgen Sam, 2 Antworten sind bereit zum Senden" oder, bei einer Aufgabe, "Guten Morgen Sam, wartet auf dein OK: Schick das Bestellformular";
-- die Aufgaben, die der Gruß zählt, jede mit einem Link Öffnen, und was heute fällig ist; sonst höchstens drei Dinge zu tun;
-- wie viele weitere warten können und wie lange sie in deinem Tempo dauern, etwa "12 weitere können warten, etwa 5 Min. zum Erledigen." Aufgaben, die auf deine Antwort warten, zählen bei der Zeit nicht mit.
+- eine Begrüßung mit dem Wichtigsten für heute, zum Beispiel „Guten Morgen Sam, 2 Antworten sind versandbereit“ oder, bei einer Aufgabe, „Guten Morgen Sam, bereit für deine Freigabe: Bestellformular senden“;
+- die Aufgaben, die in der Begrüßung gezählt werden, jeweils mit einem Link zum Öffnen, sowie alles, was heute fällig ist. Andernfalls werden höchstens drei Aufgaben angezeigt;
+- bis zu fünf Aufgaben, die du selbst hinzugefügt hast und die noch deine Aufmerksamkeit brauchen, unabhängig davon, was in der Begrüßung gezählt wird;
+- wie viele weitere Aufgaben warten können und wie lange sie bei deinem Tempo dauern, zum Beispiel „12 weitere können warten, dauert etwa 5 Min. zum Erledigen“. Aufgaben, die auf deine Antwort warten, werden bei dieser Zeit nicht berücksichtigt. Eine zurückgestellte Aufgabe, die heute fällig ist, wird erst gezählt, wenn sie wieder ansteht;
 - deine Termine in einer Zeile.
 
-Öffnen zeigt die Aufgabe hervorgehoben in deiner Liste. Ist sie erledigt, zurückgestellt oder in einer anderen Ansicht, öffnet sich ihr Chat. Ein Versprechen öffnet seine Aufgabe oder, solange es keine hat, seine eigene Seite.
+**Öffnen** zeigt die Aufgabe hervorgehoben in deiner Liste, auch wenn sie erledigt oder zurückgestellt ist. Ein Versprechen öffnet die zugehörige Aufgabe oder, wenn es noch keine gibt, die eigene Seite.
 
-Der Push sagt dasselbe ohne Links. Tippst du darauf oder auf den Link am Ende der E-Mail, liest du diese Zusammenfassung in **Aufgaben** noch einmal.
+Die Push-Benachrichtigung enthält denselben Text ohne Links. Tippe darauf oder auf den Link am Ende der E-Mail, um die Zusammenfassung unter **Aufgaben** erneut zu lesen.
 
 ## Die abendliche Zusammenfassung
 
-Sie kommt an Arbeitstagen einmal zu ihrer Uhrzeit unter **Arbeitszeiten**, standardmäßig 15 Minuten vor **Bis**, auf den Wegen, die du oben in ihrer Zeile wählst. Ein Tag ohne erledigte Aufgabe oder gehaltenen Termin bekommt keine. Sie beginnt mit deinem Tag in einer Zahl, etwa "Guten Abend Sam, heute 4 Aufgaben erledigt", dann folgen ein Teil **Arbeit** und ein Teil **Privat**. Ein leerer Teil fällt weg. Jeder Teil hat:
+Sie wird an Arbeitstagen einmal zu der unter **Arbeitszeiten** festgelegten Zeit gesendet, standardmäßig 15 Minuten vor **Bis**, und über die oben in der Zeile ausgewählten Kanäle. Wenn du an einem Tag keine Aufgabe erledigt und keinen Termin wahrgenommen hast, erhältst du keine Zusammenfassung. Sie beginnt mit einer Zählung des Tages, zum Beispiel „Guten Abend Sam, heute 4 Aufgaben erledigt“, gefolgt von einem Abschnitt **Arbeit** und einem Abschnitt **Privat**. Abschnitte ohne Inhalt werden ausgelassen. Jeder Abschnitt enthält:
 
-- **Heute erledigt**: bis zu drei Aufgaben, die du oder deine Machine erledigt habt, dann "+12 weitere" und die Termine des Tages, etwa "+3 Termine: Preisgespräch und 2 weitere";
-- **Offen für morgen** (an einem Freitag dein nächster Arbeitstag): die ersten Termine und was fällig ist.
+- **Heute erledigt**: bis zu drei Aufgaben, die du oder deine Machine erledigt habt, danach „+12 weitere“ und die Termine des Tages, zum Beispiel „+3 Termine: Preisgespräch und 2 weitere“;
+- **Offen für morgen** (am Freitag für deinen nächsten Arbeitstag): die ersten Termine und alles, was fällig ist.
 
-Am Ende steht, wie viele Aufgaben dich noch brauchen. Tippst du auf den Push oder auf den Link am Ende der E-Mail, liest du sie noch einmal, mit **Arbeit kopieren** und **Privat kopieren**. Willst du sie nicht, schalte ihre Zeile aus.
+Am Ende steht, wie viele Aufgaben noch deine Aufmerksamkeit brauchen. Tippe auf die Push-Benachrichtigung oder auf den Link am Ende der E-Mail, um die Zusammenfassung mit **Arbeit kopieren** und **Privat kopieren** erneut zu lesen. Zum Beenden schaltest du die zugehörige Zeile aus.
 
 ## Datenschutz
 
-Push geht von deiner Machine direkt an dein Gerät, verschlüsselt für dieses Gerät. Die Steuerungsebene sieht ihn nie. E-Mails verschickt der Mailserver von The Machine an die Adresse deines Kontos, der Text geht also über ihn und deinen Mailanbieter. Wenn [Vorsichtig](security-levels.md) den Text von Aufgaben in Benachrichtigungen ausblendet, enthalten E-Mails nur Anzahlen. Schalte **E-Mail** für eine Art aus, damit sie gar nicht per E-Mail kommt.
+Push wird von deiner Machine direkt und verschlüsselt an dein Gerät gesendet. E-Mails laufen über den Mailserver von The Machine und deinen E-Mail-Anbieter. Wenn [Vorsichtig](security-levels.md) Aufgabentexte in Benachrichtigungen ausblendet, enthalten E-Mails nur Zahlen. Schalte **E-Mail** für eine Art aus, damit sie nicht per E-Mail gesendet wird.
 
-Schalte Push für ein Gerät unter **Dieses Gerät** ein, oder siehe [App installieren](phone-app.md). Die [mobile App](mobile-app.md) bekommt über Apple oder Google eine feste Zeile, ohne Text einer Aufgabe. Dann fragt sie deine Machine nach dem Titel und dem nächsten Schritt.
+Aktiviere Push für ein Gerät unter **Dieses Gerät** oder lies [App installieren](phone-app.md). Die [Mobile App](mobile-app.md) erhält über Apple oder Google eine einfache Textzeile und fragt dann deine Machine nach dem Titel und dem nächsten Schritt.
