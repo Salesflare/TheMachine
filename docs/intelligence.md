@@ -476,10 +476,16 @@ Notes are sorted by what was said, a whole conversation at a time (`topic_notes.
   folder (`new.title` says whose it is when that tells it apart). One order, delivery, receipt, booking or account
   is never a subject: it goes to its trip, project, shop or account. At work a subject is a whole customer, partner,
   supplier, project or hire, never one thread or deal. Trips and events show their dates, so a booking finds its trip.
+  A vendor or service the owner uses is no subject when its mail is billing and notices (its record, or nowhere), and
+  a person never is: a title that is a Graph person's name goes to their record (`topic_notes.remember`).
+- **Work needs a relationship** (`topic_notes.drafts`). A Work subject (Work area or Work folder) is a note only once
+  the owner wrote in one of its conversations; until then its notices stay routed there, with no note.
+- **A subject keeps its name.** When the conversation that named it leaves (`unroute`), its name passes to the others;
+  a subject without a name is no note and no place a call is offered.
 - **No references in titles** (`topic_notes.clean_title`). Order, account, booking and invoice numbers and codes are
   cut from a title (a year or a model name stays); a title of nothing else is no subject.
 - **Twins become one** (`NotesApp.topic_notes_merge`). After new subjects, at most every six hours, one call reads up
-  to 400 notes (subjects started here, trips and events with their dates) and names the ones about the same
+  to 400 notes (subjects started here, trips and events with their dates, when each one's messages came in) and names the ones about the same
   real-world thing (`topic_notes.merge_prompt`); the same name in two folders is one without asking. Each group's conversations move to one note: a trip or event first,
   else one the owner touched, else the one with the most sources; a note the owner touched is never merged away. A
   later call naming a merged subject goes where it went (`topic_aliases`).

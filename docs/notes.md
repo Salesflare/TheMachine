@@ -35,8 +35,12 @@ A subject that keeps mattering: one child's school or class, a club, a trip, the
 hire, a customer or project. Not a category on its own ("bills"), small talk or marketing. One order, delivery,
 receipt, booking or account is never a note of its own: it is a source of its trip, project or shop. At work a note is a
 whole customer, partner or project, not one thread or deal. Titles never carry order, account or booking numbers.
+A vendor or service you use (cloud, software, a subscription, a provider) is no note when all it sends is billing and
+notices; a work note starts once you write with someone there. A person is never a note: their page in the Graph has
+them.
 
-Notes about the same thing become one: the same trip from a booking and from mail (same place, same dates), or several
+Notes about the same thing become one: the same trip from a booking and from mail (same place, same dates, or without
+dates the same place with mail from the same weeks), or several
 threads with one customer. A note you renamed or wrote in is never merged away.
 
 ## Where it reads from
