@@ -6,7 +6,6 @@ import unittest
 
 import test_new_card as nc
 
-a = nc.a
 
 
 class ChatRequestSameTodo(unittest.TestCase):

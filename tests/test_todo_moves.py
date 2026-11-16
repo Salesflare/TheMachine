@@ -93,9 +93,9 @@ class TodoMoves(unittest.TestCase):
                     self.assertTrue(ts.allowed(before, after, reason))
 
     def test_the_store_makes_the_history_table(self):
-        from test_assistant import assistant
+        from machine.main import Store
         with tempfile.TemporaryDirectory() as tmp:
-            store = assistant.Store(Path(tmp) / 'events.sqlite')
+            store = Store(Path(tmp) / 'events.sqlite')
             with store.connect() as db:
                 columns = [r[1] for r in db.execute('PRAGMA table_info(todo_moves)')]
         self.assertEqual(columns, ['id', 'suggestion_id', 'at', 'from_status', 'to_status', 'reason'])

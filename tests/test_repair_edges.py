@@ -9,6 +9,7 @@ from unittest.mock import patch
 import test_preparation as p
 import next_actions as n
 import rollout_health
+import timeutil
 
 spec=importlib.util.spec_from_file_location('linkedin_dependency',Path(__file__).parent.parent/'integrations/linkedin_inbox.py')
 li=importlib.util.module_from_spec(spec);spec.loader.exec_module(li)
@@ -57,7 +58,7 @@ class Overlap(unittest.TestCase):
     def test_older_snooze_does_not_wake_newer_snooze(self):
         with self.store.connect() as db:
             for job,until in [('a','2000-01-01T00:00:00+00:00'),('b','2099-01-01T00:00:00+00:00')]:
-                db.execute("INSERT INTO thread_snoozes(job_id,account_id,thread_id,until,status,created_at,updated_at) VALUES(?,'work','thread',?,'snoozed',?,?)",(job,until,p.a.now(),p.a.now()))
+                db.execute("INSERT INTO thread_snoozes(job_id,account_id,thread_id,until,status,created_at,updated_at) VALUES(?,'work','thread',?,'snoozed',?,?)",(job,until,timeutil.now(),timeutil.now()))
         class Gmail:
             def wake(*_):raise AssertionError('woke newer snooze early')
         self.app.thread_snooze_step(Gmail())

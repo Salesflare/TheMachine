@@ -1,7 +1,6 @@
 """Calendar clashes (calendar_clashes.py): a work meeting overlapping something in a personal calendar, or the other way
 around, found by plain code and raised once as a to-do that names only its own side. Made-up events only."""
 import datetime as dt
-import importlib.util
 import json
 import tempfile
 import unittest
@@ -12,11 +11,11 @@ import calendar_clashes
 import locale_prefs
 import timeutil
 from seams import patch_everywhere  # noqa: E402
+import graph
+import machine.main as machine_main
+import machine.sources.calendar as machine_sources_calendar
 
 ROOT = Path(__file__).parent.parent
-spec = importlib.util.spec_from_file_location('clash_assistant', ROOT / 'assistant.py')
-a = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(a)
 
 NOW = '2026-11-09T08:00:00+00:00'
 GUEST = {'email': 'sam@acme.example', 'responseStatus': 'accepted'}  # Mon Nov 9
@@ -48,9 +47,9 @@ class Clashes(unittest.TestCase):
         self.addCleanup(tz.stop)
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'c.sqlite', protect=True)  # sealed, as every Machine is by default
+        self.store = machine_main.Store(Path(self.temp.name) / 'c.sqlite', protect=True)  # sealed, as every Machine is by default
         self.store.accounts = ACCOUNTS
-        self.app = object.__new__(a.App)
+        self.app = object.__new__(machine_main.App)
         self.app.store = self.store
         self.app.config = {'accounts': ACCOUNTS, 'prepare_ahead': False}
 
@@ -59,7 +58,7 @@ class Clashes(unittest.TestCase):
             self.store.commit_page(e['account_id'], {}, [e])
 
     def raise_now(self, at=NOW):
-        with patch_everywhere(a, 'now', lambda: at):
+        with patch_everywhere(timeutil, 'now', lambda: at):
             return self.app.raise_clashes(dt.datetime.fromisoformat(at))
 
     def cards(self):
@@ -67,9 +66,9 @@ class Clashes(unittest.TestCase):
             return [dict(r) for r in db.execute('SELECT * FROM suggestions ORDER BY created_at')]
 
     def found(self, at=NOW):
-        sides = calendar_clashes.calendar_sides(ACCOUNTS, a.graph.account_side)
+        sides = calendar_clashes.calendar_sides(ACCOUNTS, graph.account_side)
         with self.store.connect() as db:
-            return calendar_clashes.find(db, sides, dt.datetime.fromisoformat(at), a.calendar_owned)
+            return calendar_clashes.find(db, sides, dt.datetime.fromisoformat(at), machine_sources_calendar.calendar_owned)
 
     def test_a_work_meeting_over_a_personal_event_is_one_work_to_do_that_keeps_the_personal_side_private(self):
         self.add(event('pcal', 'p1', 'Dentist with Dr. Lee', '14:00', '15:00'),
@@ -179,9 +178,9 @@ class Clashes(unittest.TestCase):
     def test_a_free_event_from_google_or_outlook_is_kept_as_free(self):
         raw = {'id': 'x', 'summary': 'Focus', 'start': {'dateTime': '2026-11-10T10:00:00Z'}, 'end': {'dateTime': '2026-11-10T11:00:00Z'},
                'transparency': 'transparent'}
-        self.assertEqual(a.calendar_event(ACCOUNTS[1], raw, 'UTC')['metadata']['transparency'], 'transparent')
+        self.assertEqual(machine_sources_calendar.calendar_event(ACCOUNTS[1], raw, 'UTC')['metadata']['transparency'], 'transparent')
         raw.pop('transparency')
-        self.assertNotIn('transparency', a.calendar_event(ACCOUNTS[1], raw, 'UTC')['metadata'])
+        self.assertNotIn('transparency', machine_sources_calendar.calendar_event(ACCOUNTS[1], raw, 'UTC')['metadata'])
 
 
 if __name__ == '__main__':

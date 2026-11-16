@@ -2,7 +2,6 @@
 a model, a pick outside a fact's own candidates is never written, the owner and their own organization are never
 candidates, and one entry under Learning, Changes undoes it. And a fact a model says is about the owner stays general."""
 import datetime as dt
-import importlib.util
 import json
 import tempfile
 import unittest
@@ -12,9 +11,9 @@ from unittest.mock import patch
 from seams import patch_everywhere
 
 ROOT = Path(__file__).parent.parent
-spec = importlib.util.spec_from_file_location('fact_ties_assistant', ROOT / 'assistant.py')
-a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
 import fact_ties  # noqa: E402
+import machine.main as machine_main
+import timeutil
 
 NOW = dt.datetime(2026, 10, 16, 12, tzinfo=dt.timezone.utc)
 CONFIG = {'accounts': [{'id': 'work', 'email': 'sam@acme.example', 'boundary': 'work:acme'}], 'owner_name': 'Sam Owner'}
@@ -25,11 +24,11 @@ class FactTies(unittest.TestCase):
     def setUp(self):
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)
-        self.store = a.Store(Path(temp.name) / 'events.sqlite')
+        self.store = machine_main.Store(Path(temp.name) / 'events.sqlite')
         self.store.config = CONFIG
-        self.app = object.__new__(a.App)
+        self.app = object.__new__(machine_main.App)
         self.app.store, self.app.config = self.store, CONFIG
-        started = patch_everywhere(a, 'now', lambda: NOW.isoformat())
+        started = patch_everywhere(timeutil, 'now', lambda: NOW.isoformat())
         started.start()
         self.addCleanup(started.stop)
         for node, name, kind in ((ANN, 'Ann Example', 'person'), (ANNA, 'Ann Other', 'person'), (GLOBEX, 'Globex', 'org'),

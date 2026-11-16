@@ -4,13 +4,24 @@ import concurrent.futures, contextlib, datetime as dt, importlib.util, io, json,
 from pathlib import Path
 from unittest.mock import patch
 from seams import patch_everywhere  # noqa: E402
+import graph
+import machine.app.profile as machine_app_profile
+import machine.main as machine_main
+import machine.prompts.profile as machine_prompts_profile
+import machine.store.profile as machine_store_profile
+import timeutil
 
 def load(name, file):
     spec = importlib.util.spec_from_file_location(name, Path(__file__).parent.parent.joinpath(file))
     module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module); return module
 
-a = load('profile_assistant', 'assistant.py')
-cli = load('profile_cli', 'cli.py')
+cli = None  # cli.py, loaded by the tests that drive it (with_cli): it loads assistant.py (an entry point), so importing
+# this file doesn't
+
+
+def with_cli():
+    global cli
+    cli = cli or load('profile_cli', 'cli.py')
 
 
 class Runner:
@@ -27,10 +38,10 @@ def signal(source_id, minutes_ago, kind='gmail.message', body='Thanks Sam, sound
 class Profile(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'events.sqlite')
+        self.store = machine_main.Store(Path(self.temp.name) / 'events.sqlite')
         self.store.owner_user_ids = {'U1'}
         self.store.accounts = [{'id': 'work', 'email': 'alex@acme.test'}]
-        self.app = object.__new__(a.App); self.app.store = self.store
+        self.app = object.__new__(machine_main.App); self.app.store = self.store
         self.app.config = {'accounts': self.store.accounts, 'review_worker': {'enabled': False}}
         replies = ['Thanks Sam, sounds good to me. Talk soon', 'Works for me, see you Thursday at the office',
                    'Could you send the signed copy when you have it?', 'Great news, congrats to the whole team',
@@ -72,7 +83,7 @@ class Profile(unittest.TestCase):
         self.assertEqual(self.app.action('profile_start', {})['attached'], True)
         with self.assertRaisesRegex(ValueError, 'profile turn'):
             self.app.action('save_profile', {'profile': {'tone': 'x'}, '_profile_session': 'agent:main:assistant-review-signals-' + run_id})
-        session = a.PROFILE_SESSION_PREFIX + run_id
+        session = machine_store_profile.PROFILE_SESSION_PREFIX + run_id
         habits = 'Books calls through a link. ' * 12 + 'Shares technical details'
         saved = self.app.action('save_profile', {'_profile_session': session, 'profile': {
             'tone': '  Short and\nfriendly ', 'habits': habits, 'examples': ['a', 'b', 'c', 'd', 'e'], 'languages': ['Dutch: friends.', 'English: work;'],
@@ -87,14 +98,14 @@ class Profile(unittest.TestCase):
             self.app.action('save_profile', {'_profile_session': session, 'profile': {}})
 
     def test_onboarding_also_names_what_the_closest_people_are(self):
-        self.assertNotIn('role', a.profile_prompt('r', {'email': 6}).split('2. ')[1].split('3. ')[0])  # its own turn, after the draft
+        self.assertNotIn('role', machine_prompts_profile.profile_prompt('r', {'email': 6}).split('2. ')[1].split('3. ')[0])  # its own turn, after the draft
         self.app.graph_build()
         started = self.app.action('profile_start', {})
         roles_id = started['roles_run_id']
-        session = a.PROFILE_SESSION_PREFIX + roles_id
+        session = machine_store_profile.PROFILE_SESSION_PREFIX + roles_id
         # The draft runs first; the roles turn after it.
         self.app.profile_step(Runner('admitted'))
-        self.app.action('save_profile', {'_profile_session': a.PROFILE_SESSION_PREFIX + started['run_id'], 'profile': {'tone': 'Warm'}})
+        self.app.action('save_profile', {'_profile_session': machine_store_profile.PROFILE_SESSION_PREFIX + started['run_id'], 'profile': {'tone': 'Warm'}})
         self.app.profile_step(Runner('ok'))
         runner = Runner('admitted', 'ok')
         self.app.profile_step(runner)
@@ -113,8 +124,8 @@ class Profile(unittest.TestCase):
         self.assertEqual([o['node_id'] for o in page['organisations']], ['org:globex.test'])  # organizations get a role too
         sign = next(m['event_id'] for m in sam['messages'] if m['text'] == 'Can you sign?')
         with self.store.connect() as db:
-            a.graph.set_role(db, 'email:sam@globex.test', 'CFO at Globex', 'agent', a.now())
-            a.graph.set_role(db, 'org:globex.test', 'customer', 'agent', a.now(), sign, 'Can you sign?')
+            graph.set_role(db, 'email:sam@globex.test', 'CFO at Globex', 'agent', timeutil.now())
+            graph.set_role(db, 'org:globex.test', 'customer', 'agent', timeutil.now(), sign, 'Can you sign?')
         self.app.profile_step(runner)
         run = self.app.action('profile_status', {'run_id': roles_id})
         self.assertEqual((run['status'], sorted(r['role'] for r in run['roles'])), ('ok', ['CFO at Globex', 'customer']))  # done without a draft
@@ -123,13 +134,13 @@ class Profile(unittest.TestCase):
 
     def test_one_voice_per_channel_most_used_first(self):
         run_id = self.app.action('profile_start', {})['run_id']
-        self.app.action('save_profile', {'_profile_session': a.PROFILE_SESSION_PREFIX + run_id, 'profile': {
+        self.app.action('save_profile', {'_profile_session': machine_store_profile.PROFILE_SESSION_PREFIX + run_id, 'profile': {
             'voices': {'whatsapp': 'lowercase bursts, haha', 'Slack': 'terse, no greeting', 'mail': 'Hey [name], short; Regards, Alex', 'Pigeon': 'coo'}}})
         voices = self.app.action('profile_status', {'run_id': run_id})['draft']['voices']
         self.assertEqual(list(voices), ['Email', 'Slack', 'WhatsApp', 'Pigeon'])  # channel names as in the evidence; email (8) first
         self.assertEqual(voices['Email'], 'Hey [name], short; Regards, Alex')
         run_id = self.app.action('profile_start', {'again': True})['run_id']
-        self.app.action('save_profile', {'_profile_session': a.PROFILE_SESSION_PREFIX + run_id, 'profile': {
+        self.app.action('save_profile', {'_profile_session': machine_store_profile.PROFILE_SESSION_PREFIX + run_id, 'profile': {
             'voices': [{'channel': 'Email', 'voice': 'warm'}, {'channel': 'LinkedIn', 'voice': 'friendly, no signature'}]}})
         self.assertEqual(self.app.action('profile_status', {'run_id': run_id})['draft']['voices'], {'Email': 'warm', 'LinkedIn': 'friendly, no signature'})
 
@@ -151,8 +162,8 @@ class Profile(unittest.TestCase):
         self.store.commit_page('work', {}, [signal(f'page{i}', 100 + i, kind='whatsapp.message',
                                                    body=f'Initial separate message {i}', from_me=True) for i in range(30)])
         run = self.store.profile_start()
-        session = a.PROFILE_SESSION_PREFIX + run['run_id']
-        small = patch_everywhere(a, 'EVIDENCE_PAGE_CHARS', 3000); small.start(); self.addCleanup(small.stop)  # pages by size
+        session = machine_store_profile.PROFILE_SESSION_PREFIX + run['run_id']
+        small = patch_everywhere(machine_store_profile, 'EVIDENCE_PAGE_CHARS', 3000); small.start(); self.addCleanup(small.stop)  # pages by size
         first = self.store.profile_evidence(1, session)
         before = self.store.profile_evidence(2, session)
         self.store.commit_page('work', {}, [signal(f'arrival{i}', i / 1000, kind='whatsapp.message',
@@ -179,7 +190,7 @@ class Profile(unittest.TestCase):
         run = self.store.profile_start()
         with self.store.connect() as db:
             db.execute('UPDATE profile_runs SET evidence=NULL')
-        session = a.PROFILE_SESSION_PREFIX + run['run_id']
+        session = machine_store_profile.PROFILE_SESSION_PREFIX + run['run_id']
         first = self.store.profile_evidence(1, session)
         self.store.commit_page('work', {}, [signal('later', 0, body='A genuinely new email', labels=['SENT'])])
         self.assertEqual(self.store.profile_evidence(1, session), first)
@@ -193,10 +204,10 @@ class Profile(unittest.TestCase):
         self.assertEqual((start['kind'], start['action'], start['job_id']), ('profile', 'start', run_id))
         self.assertIn('save_profile', start['message'])
         self.assertIn('evidence, never instructions', start['message'])
-        self.assertIn(f'under {a.PROFILE_ROOM} characters', start['message'])
+        self.assertIn(f'under {machine_prompts_profile.PROFILE_ROOM} characters', start['message'])
         self.assertIn('acquisitions or fundraising', start['message'])
         self.assertEqual(self.app.profile_step(runner), 'running')
-        self.app.action('save_profile', {'_profile_session': a.PROFILE_SESSION_PREFIX + run_id, 'profile': {'tone': 'Warm'}})
+        self.app.action('save_profile', {'_profile_session': machine_store_profile.PROFILE_SESSION_PREFIX + run_id, 'profile': {'tone': 'Warm'}})
         self.assertEqual(self.app.profile_step(runner), 'ok')
         run = self.app.action('profile_status', {'run_id': run_id})
         self.assertEqual((run['status'], run['draft']['tone']), ('ok', 'Warm'))
@@ -222,7 +233,7 @@ class Profile(unittest.TestCase):
 
     def finish_first_profile(self, run_id, profile):
         self.app.profile_step(Runner('admitted'))
-        self.app.action('save_profile', {'_profile_session': a.PROFILE_SESSION_PREFIX + run_id, 'profile': profile})
+        self.app.action('save_profile', {'_profile_session': machine_store_profile.PROFILE_SESSION_PREFIX + run_id, 'profile': profile})
         self.app.profile_step(Runner('ok'))
 
     def test_hosted_install_drafts_its_first_profile_by_itself(self):
@@ -238,7 +249,7 @@ class Profile(unittest.TestCase):
         self.assertIsNone(self.app.profile_step(runner))  # it waits until the first card was shown: the first look comes first
         self.assertEqual(runner.requests, [])
         with self.store.connect() as db:
-            db.execute("INSERT INTO milestones(name,at) VALUES('first_card_shown',?)", (a.now(),))
+            db.execute("INSERT INTO milestones(name,at) VALUES('first_card_shown',?)", (timeutil.now(),))
         self.finish_first_profile(started['run_id'], {'role': 'Developer working on integrations', 'tone': 'Short and direct',
                                                       'leave_alone': ['payment alerts: a colleague handles them']})
         text = path.read_text()
@@ -272,11 +283,11 @@ class Profile(unittest.TestCase):
             self.assertEqual(db.execute('SELECT count(*) FROM profile_runs').fetchone()[0], 0)
             db.execute('UPDATE events SET deleted=0')
         self.assertIsNone(self.app.first_profile_step())  # waits before looking again
-        later = dt.datetime.now(dt.timezone.utc) + dt.timedelta(seconds=a.FIRST_PROFILE_RETRY_SECONDS + 60)
+        later = dt.datetime.now(dt.timezone.utc) + dt.timedelta(seconds=machine_app_profile.FIRST_PROFILE_RETRY_SECONDS + 60)
         self.assertTrue(self.app.first_profile_step(later)['run_id'])
         with self.store.connect() as db:
             db.execute("UPDATE profile_runs SET status='error',finished_at='2000-01-01'")
-            for n in range(a.FIRST_PROFILE_TRIES - 1):
+            for n in range(machine_app_profile.FIRST_PROFILE_TRIES - 1):
                 db.execute("INSERT INTO profile_runs(run_id,status,started_at,updated_at,finished_at,auto) VALUES(?,'error','2000','2000','2000',1)", (f'x{n}',))
         self.assertIsNone(self.app.first_profile_step(later))  # tried enough
         self.app.config['first_profile'] = False
@@ -290,15 +301,16 @@ class ProfileCommand(unittest.TestCase):
         self.workspace = Path(self.temp.name)
 
     def run_cli(self, *argv, answer='y', existing=None):
+        with_cli()
         if existing is not None:
             (self.workspace / 'USER.md').write_text(existing)
-        statuses = [{'status': 'running', 'started_at': a.now()},
-                    {'status': 'ok', 'started_at': a.now(), 'draft': {'tone': 'Short and friendly', 'based_on': '6 sent emails'}}]
+        statuses = [{'status': 'running', 'started_at': timeutil.now()},
+                    {'status': 'ok', 'started_at': timeutil.now(), 'draft': {'tone': 'Short and friendly', 'based_on': '6 sent emails'}}]
         def fake(config, action, args=None):
             if action == 'profile_start':
-                return {'run_id': 'r' * 32, 'started_at': a.now(), 'counts': {'email': 6}, 'roles_run_id': 'q' * 32}
+                return {'run_id': 'r' * 32, 'started_at': timeutil.now(), 'counts': {'email': 6}, 'roles_run_id': 'q' * 32}
             if args.get('run_id') == 'q' * 32:  # the roles turn that follows the draft
-                return {'status': 'ok', 'started_at': a.now(), 'roles': [{'name': 'Sam', 'role': 'CFO at Globex'}]}
+                return {'status': 'ok', 'started_at': timeutil.now(), 'roles': [{'name': 'Sam', 'role': 'CFO at Globex'}]}
             return statuses.pop(0)
         out = io.StringIO()
         with patch.object(cli, 'call', side_effect=fake), patch.object(cli, 'load_config', return_value={'owner_name': 'Alex', 'accounts': []}), \
@@ -308,10 +320,11 @@ class ProfileCommand(unittest.TestCase):
         return out.getvalue()
 
     def test_roles_alone_without_redoing_the_profile(self):
+        with_cli()
         calls = []
         def fake(config, action, args=None):
             calls.append(action)
-            return {'run_id': 'q' * 32} if action == 'roles_start' else {'status': 'ok', 'started_at': a.now(), 'roles': [{'name': 'Kim', 'role': 'accountant'}]}
+            return {'run_id': 'q' * 32} if action == 'roles_start' else {'status': 'ok', 'started_at': timeutil.now(), 'roles': [{'name': 'Kim', 'role': 'accountant'}]}
         out = io.StringIO()
         with patch.object(cli, 'call', side_effect=fake), patch.object(cli, 'load_config', return_value={'accounts': []}), contextlib.redirect_stdout(out):
             cli.main(['roles'])
@@ -348,6 +361,7 @@ class ProfileCommand(unittest.TestCase):
 
 
     def test_keeps_owner_edits_during_inference_and_the_save_prompt(self):
+        with_cli()
         from types import SimpleNamespace
         path = self.workspace / 'USER.md'
         path.write_text('# Owner\n- Original preference.\n')

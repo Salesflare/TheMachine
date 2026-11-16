@@ -6,8 +6,12 @@ from unittest.mock import patch
 
 import search_ask
 import test_embeddings as te
+import graph
+import machine.main as machine_main
+import sys
+import timeutil
 
-a, emb, SETTINGS, event = te.a, te.emb, te.SETTINGS, te.event
+emb, SETTINGS, event = te.emb, te.SETTINGS, te.event
 ASKED = 'zeppelin hangar lease'
 
 
@@ -141,12 +145,12 @@ class Passages(unittest.TestCase):
             self.assertEqual(self.vectors()[call]['passages'], len(parts))
         self.assertEqual(emb.passage_pass(self.store.connect, SETTINGS), (0, False))
         # The service: only when nothing holds history back, and it rests ten times as long as a pass took
-        app_history = a.sys.modules[a.App.history_hold.__module__]
+        app_history = sys.modules[machine_main.App.history_hold.__module__]
         self.add('t2')
-        with patch.object(a.App, 'history_hold', return_value='first_look'), patch.object(emb, 'passage_pass') as held:
+        with patch.object(machine_main.App, 'history_hold', return_value='first_look'), patch.object(emb, 'passage_pass') as held:
             self.assertEqual(self.app.passage_step(SETTINGS), app_history.WAIT_SECONDS)
         held.assert_not_called()
-        with patch.object(a.App, 'history_hold', return_value=None):
+        with patch.object(machine_main.App, 'history_hold', return_value=None):
             self.assertEqual(self.app.passage_step(SETTINGS), app_history.PASSAGE_GAP_SECONDS)
             with patch.object(app_history.time, 'monotonic', side_effect=[100.0, 109.0]):
                 self.assertEqual(self.app.passage_step(SETTINGS), 9.0 * app_history.PASSAGE_REST)
@@ -179,7 +183,7 @@ class Passages(unittest.TestCase):
         self.assertNotIn(home, ids(emb.related(self.store.connect, SETTINGS, ['work'], [home])))  # nor as what to look for
         # Like the first vector, they are an index of this Machine's own messages: nothing that shares, publishes or
         # sends reads either table, and an export leaves both out the same way
-        root = Path(a.__file__).parent
+        root = Path(__file__).resolve().parent.parent
         for name in ('shared_graph.py', 'shared_graph_app.py', 'shared_graph_kept.py', 'fleet.py', 'graph_publish.py', 'network.py', 'contact_share.py', 'portable.py'):
             source = root.joinpath(name).read_text()
             self.assertNotIn('event_passages', source, name); self.assertNotIn('event_vectors', source, name)
@@ -197,9 +201,9 @@ class Passages(unittest.TestCase):
         config = {'accounts': [{'id': 'work', 'email': 'sam@acme.example'}, {'id': 'home', 'email': 'sam@home.example'}]}
         with self.store.connect() as db:
             db.isolation_level = None
-            a.graph.build(db, config, a.now())
+            graph.build(db, config, timeutil.now())
         with self.store.connect() as db:
-            a.graph.delete_person(db, 'email:lee@globex.example', config, a.now())
+            graph.delete_person(db, 'email:lee@globex.example', config, timeutil.now())
             self.assertIsNone(db.execute('SELECT 1 FROM events WHERE id=?', (gone,)).fetchone())
         self.assertEqual(self.stored(gone), [])
         self.assertTrue(self.stored(work))
@@ -215,7 +219,7 @@ class Passages(unittest.TestCase):
             before = [tuple(r) for r in db.execute('SELECT event_id,version,model,dims,vector FROM event_vectors ORDER BY event_id')]
             db.execute('DROP INDEX event_vectors_unsplit'); db.execute('DROP TABLE event_passages')
             db.execute('ALTER TABLE event_vectors DROP COLUMN passages')
-        store = a.Store(self.store.path)
+        store = machine_main.Store(self.store.path)
         with store.connect() as db:
             self.assertEqual([tuple(r) for r in db.execute('SELECT event_id,version,model,dims,vector FROM event_vectors ORDER BY event_id')], before)
             self.assertEqual(db.execute('SELECT count(*) FROM event_vectors WHERE passages IS NULL').fetchone()[0], len(before))

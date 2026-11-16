@@ -1,7 +1,6 @@
 """Help in the dashboard (help_chat.py) and Report a bug: answers come from the few help sections that match, with
 links, on the Machine's own model and with no tools; a bug report is the scrubbed support report the owner sees, sent
 only to the control plane and only on Send. No model, network or control plane: stand-ins."""
-import importlib.util
 import json
 import sys
 import tempfile
@@ -13,10 +12,9 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 import help_chat  # noqa: E402
 import support  # noqa: E402
+import machine.actions as machine_actions
+import machine.main as machine_main
 
-spec = importlib.util.spec_from_file_location('help_assistant', ROOT / 'assistant.py')
-a = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(a)
 
 ARTICLE = '''---
 title: Snooze
@@ -93,7 +91,7 @@ class Retrieval(unittest.TestCase):
         self.assertEqual(help_chat.article('gmail', 'nl', folder=self.help)['lang'], 'en')  # not translated yet: the English
         with self.assertRaises(ValueError):
             help_chat.article('../secrets', 'nl', folder=self.help)
-        self.assertIn('help_article', a.SUPPORT_ACTIONS)
+        self.assertIn('help_article', machine_actions.SUPPORT_ACTIONS)
 
     def test_code_fills_in_only_what_the_help_leaves_open(self):
         sections, snippets = help_chat.retrieve('When does a snooze wake?', folder=self.help, root=self.code)
@@ -252,7 +250,7 @@ class Topics(unittest.TestCase):
             self.assertEqual(db.execute('SELECT n FROM help_topics').fetchone()[0], 1)
 
     def test_help_keeps_the_topic_only_with_the_network_and_never_shows_it(self):
-        app = object.__new__(a.App)
+        app = object.__new__(machine_main.App)
         app.config, app.fleet = {}, None
         app.help_model = lambda c, t, m: 'Tap **Snooze** [1].\nTOPIC: snooze a to-do'
         store = type('S', (), {'connect': staticmethod(self.connect)})()
@@ -278,7 +276,7 @@ class BugReports(unittest.TestCase):
         self.config.write_text(json.dumps({'model': 'openai/gpt-5', 'signature': 'Sam Smith, +32 470 12 34 56',
                                            'telegram': {'bot_token': '123456:ABCdefGHIjklMNOpqrSTUvwxYZ012345'},
                                            'database': '/home/jane/.local/share/machine/events.sqlite'}))
-        self.app = object.__new__(a.App)
+        self.app = object.__new__(machine_main.App)
         self.app.config = json.loads(self.config.read_text())
         self.app.config_path = str(self.config)
         self.app.fleet = None
@@ -319,9 +317,9 @@ class BugReports(unittest.TestCase):
         self.assertEqual(self.app.support_action('bug_fixed', {}), {'fixed': []})
 
     def test_the_actions_are_the_owners_dashboard_only(self):
-        for name in a.SUPPORT_ACTIONS:
-            self.assertIn(name, a.DASHBOARD_ACTIONS)
-            self.assertIn(name, a.OWNER_ACTIONS)
+        for name in machine_actions.SUPPORT_ACTIONS:
+            self.assertIn(name, machine_actions.DASHBOARD_ACTIONS)
+            self.assertIn(name, machine_actions.OWNER_ACTIONS)
 
     def test_settings_that_name_a_person_or_what_the_owner_keeps_out_are_left_out(self):
         self.config.write_text(json.dumps({'accounts': [{'service': 'intercom', 'reply_admin_name': 'Robin Vale', 'workspace_name': 'Acme',

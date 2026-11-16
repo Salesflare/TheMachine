@@ -3,7 +3,6 @@ read it, with the token sealed for each approved Machine only and checked agains
 stands in for the control plane, honest or not; no network, no Intercom."""
 import hashlib
 import copy
-import importlib.util
 import json
 import secrets
 import stat
@@ -13,12 +12,12 @@ import unittest
 from unittest.mock import patch
 from pathlib import Path
 
-spec = importlib.util.spec_from_file_location('shared_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
-a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
-fleet = a.fleet
+import fleet
 import fleet_trust as ft
 import network_crypto as nc
 from kept_connections import kept_connections
+import machine.main as machine_main
+import machine.sources.connectors as machine_sources_connectors
 
 FLEET = 'fl_' + '2' * 16
 TOKEN = 'fixture-intercom-token'
@@ -118,7 +117,7 @@ class Shared(unittest.TestCase):
             config['credentials']['intercom'] = str(secret)
             config['accounts'].append({'id': 'intercom', 'service': 'intercom', 'transport': 'api', 'boundary': 'work:Acme', 'credential': 'intercom',
                                        'workspace_id': 'abc123', 'workspace_name': 'Acme Support', 'region': 'us', 'admin_id': '7'})
-        store = a.Store(root / 'events.sqlite')
+        store = machine_main.Store(root / 'events.sqlite')
         # connections kept for the next call (kept_connections.py): a fresh one reads the whole schema, and a round asks for hundreds
         box = fleet.Fleet(kept_connections(store, self.addCleanup), config, lambda: 'token', relay=FakeRelay(self.net, me))
         box.member_id = me
@@ -197,7 +196,7 @@ class Shared(unittest.TestCase):
         with self.mem.connect() as db:  # nothing of it in the Fleet's tables either
             for table in ('fleet_in', 'fleet_out', 'fleet_log', 'fleet_meta'):
                 self.assertNotIn(TOKEN, json.dumps([list(r) for r in db.execute(f'SELECT * FROM {table}')]))
-        self.assertEqual(a.reconnect_help(self.held(self.mem), None), {'shared_by': 'Acme'})  # no Reconnect or Disconnect
+        self.assertEqual(machine_sources_connectors.reconnect_help(self.held(self.mem), None), {'shared_by': 'Acme'})  # no Reconnect or Disconnect
 
     def test_a_key_that_opens_more_than_the_account_is_never_sent(self):
         """A Stripe account reached through Maton has a key for every connection behind it: shown, never shareable."""

@@ -1,4 +1,3 @@
-import importlib.util
 import math
 import re
 import tempfile
@@ -6,10 +5,13 @@ import unittest
 import zlib
 from pathlib import Path
 from unittest.mock import patch
+import embeddings
+import machine.config as machine_config
+import machine.faults as machine_faults
+import machine.main as machine_main
+import timeutil
 
-spec = importlib.util.spec_from_file_location('embeddings_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
-a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
-emb = a.embeddings
+emb = embeddings
 REAL_REQUEST = emb.request  # the HTTP call; every other test replaces it with fake vectors
 SETTINGS = {'url': 'http://127.0.0.1:9', 'model': 'embeddinggemma-300m', 'dims': 256, 'floor': 0.3, 'query_floor': 0.2}
 PROMPT_WORDS = {'title', 'text', 'task', 'search', 'result', 'query', 'none'}
@@ -29,14 +31,14 @@ def fake_request(settings, texts, timeout=120):
 
 
 def event(source_id, title, body, account='work', kind='gmail.message', metadata=None):
-    return {'account_id': account, 'source_id': source_id, 'kind': kind, 'occurred_at': a.now(), 'title': title,
+    return {'account_id': account, 'source_id': source_id, 'kind': kind, 'occurred_at': timeutil.now(), 'title': title,
             'body': body, 'metadata': metadata or {'from': 'Ann Example <ann@example.com>'}, 'deleted': False}
 
 
 class Embeddings(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'events.sqlite')
+        self.store = machine_main.Store(Path(self.temp.name) / 'events.sqlite')
         patcher = patch.object(emb, 'request', side_effect=fake_request); self.calls = patcher.start(); self.addCleanup(patcher.stop)
         self.store.commit_page('work', {}, [
             event('1', 'Invoice overdue', 'The invoice for September is still unpaid, please pay the invoice'),
@@ -44,7 +46,7 @@ class Embeddings(unittest.TestCase):
             event('3', 'Lunch on Friday', 'Shall we grab lunch on Friday near the office?'),
             event('4', 'Team offsite', 'Planning the offsite agenda and the hotel booking')])
         self.store.commit_page('home', {}, [event('5', 'Invoice unpaid', 'Your invoice is unpaid, pay the invoice today', account='home')])
-        self.app = object.__new__(a.App); self.app.store = self.store
+        self.app = object.__new__(machine_main.App); self.app.store = self.store
         self.app.config = {'accounts': [{'id': 'work'}, {'id': 'home'}], 'embeddings': SETTINGS}
 
     def ids(self, account, source):
@@ -221,12 +223,12 @@ class Embeddings(unittest.TestCase):
 
     def test_server_down_falls_back_to_keywords_and_the_worker_retries_later(self):
         self.calls.side_effect = emb.EmbeddingError('unreachable')
-        with self.assertLogs(a.LOG, 'ERROR') as logs:
+        with self.assertLogs(machine_config.LOG, 'ERROR') as logs:
             result = self.app.action('related', {'account_ids': ['work'], 'query': 'invoice'})
         self.assertFalse(result['semantic']); self.assertEqual(len(result['events']), 2)
         self.assertIn('related error=unreachable', logs.output[0])
         self.app.stop = type('Stop', (), {'n': 0, 'wait': lambda s, t: (setattr(s, 'n', s.n + 1), s.n > 1)[1]})()
-        with self.assertLogs(a.LOG, 'ERROR') as logs:
+        with self.assertLogs(machine_config.LOG, 'ERROR') as logs:
             self.app.embedding_worker()
         self.assertEqual([line.split(':', 2)[2] for line in logs.output], ['embeddings error=unreachable'])  # redacted class only
         self.assertEqual(self.vectors(), {})
@@ -339,7 +341,7 @@ class Embeddings(unittest.TestCase):
     def test_an_input_the_server_still_refuses_is_set_aside_and_the_rest_embedded(self):
         self.store.commit_page('work', {}, [event('6', 'Poison', 'this one breaks the server'), event('7', 'Invoice paid', 'The invoice is paid')])
         sent = self.llama(refuse=lambda text: 'breaks the server' in text)
-        with self.assertNoLogs(a.LOG, 'ERROR'):
+        with self.assertNoLogs(machine_config.LOG, 'ERROR'):
             self.app.stop = type('Stop', (), {'n': 0, 'wait': lambda s, t: (setattr(s, 'n', s.n + 1), s.n > 1)[1]})()
             self.app.embedding_worker()
         poison = self.ids('work', '6')
@@ -403,9 +405,9 @@ class Embeddings(unittest.TestCase):
         try:
             broken()
         except TypeError as error:
-            where = a.fault_where(error)
+            where = machine_faults.fault_where(error)
         self.assertRegex(where, r'^tests/test_embeddings\.py:\d+ broken < tests/test_embeddings\.py:\d+ test_a_related')
-        self.assertEqual(a.fault_where(ValueError('no traceback')), '-')
+        self.assertEqual(machine_faults.fault_where(ValueError('no traceback')), '-')
 
     def test_cosine_scores_as_the_plain_sum_in_c(self):
         # A search scores every stored vector against the query: the score is the dot product, in C (math.sumprod).

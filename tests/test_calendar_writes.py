@@ -9,9 +9,19 @@ import unittest
 from unittest.mock import patch
 
 import test_preparation as p
+import calendar_writes
+import machine.app.preparation as machine_app_preparation
+import machine.config as machine_config
+import machine.main as machine_main
+import machine.sources.calendar as machine_sources_calendar
+import machine.sources.connectors as machine_sources_connectors
+import next_actions
+import places
+import sources
+import timeutil
+import urllib
 
-a = p.a
-cw = a.calendar_writes
+cw = calendar_writes
 
 OWN = {'id': 'cal', 'email': 'owner@example.com', 'service': 'calendar', 'transport': 'gog', 'client': 'c', 'boundary': 'work:Example'}
 KID = {'id': 'kid-cal', 'email': 'owner@example.com', 'service': 'calendar', 'transport': 'gog', 'client': 'c', 'boundary': 'personal:Kid',
@@ -41,7 +51,7 @@ class FakeGoogle:
             return {'id': params['calendarId'], 'accessRole': self.role}
         if method == 'calendar.events.get':
             if params['eventId'] not in self.events:
-                raise a.SourceError('calendar', 404)
+                raise sources.SourceError('calendar', 404)
             return self.events[params['eventId']]
         raise AssertionError(method)
 
@@ -61,7 +71,7 @@ class FakeGoogle:
 
 
 def granted(google):
-    return patch.object(a.next_actions, 'granted_scopes', lambda config, credential, account: google.scopes)
+    return patch.object(next_actions, 'granted_scopes', lambda config, credential, account: google.scopes)
 
 
 class WhichCalendars(unittest.TestCase):
@@ -89,9 +99,9 @@ class WhichCalendars(unittest.TestCase):
             raise ValueError('no keyring')
         cw.GRANTS.clear()
         self.assertEqual(cw.calendars(CONFIG, lambda account: cw.may_write(CONFIG, None, account, down)), [])
-        with patch.object(a.next_actions, 'granted_scopes', scopes):
+        with patch.object(next_actions, 'granted_scopes', scopes):
             cw.GRANTS.clear()
-            self.assertEqual([c['id'] for c in a.writable_calendars(CONFIG)], ['kid-cal'])
+            self.assertEqual([c['id'] for c in machine_sources_connectors.writable_calendars(CONFIG)], ['kid-cal'])
 
     def test_the_calendar_page_never_checks_inside_its_ask(self):
         # 2026-11-10 speed audit: each week's ask ran gog auth list (or the Graph check) inline, 43 asks at once, and
@@ -138,8 +148,8 @@ class WhichCalendars(unittest.TestCase):
         self.assertNotIn('writable_calendars(app.config)', route)
         cw.GRANTS.clear();self.addCleanup(cw.GRANTS.clear)
         slow = []
-        with patch.object(a.next_actions, 'granted_scopes', lambda *x: slow.append(1) or set()), patch.object(cw, '_later', lambda work: None):
-            self.assertEqual(a.writable_calendars(CONFIG, wait=False), [])
+        with patch.object(next_actions, 'granted_scopes', lambda *x: slow.append(1) or set()), patch.object(cw, '_later', lambda work: None):
+            self.assertEqual(machine_sources_connectors.writable_calendars(CONFIG, wait=False), [])
         self.assertEqual(slow, [])
 
     def test_a_read_only_shared_calendar_is_refused_before_anything(self):
@@ -289,13 +299,13 @@ class Transport(unittest.TestCase):
 class Store(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory();self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'events.sqlite')
+        self.store = machine_main.Store(Path(self.temp.name) / 'events.sqlite')
         self.store.commit_page('kid-cal', {}, [
-            a.calendar_event(KID, raw('swim', 'Swimming', {'dateTime': '2026-10-28T10:00:00+01:00'}, {'dateTime': '2026-10-28T11:00:00+01:00'},
+            machine_sources_calendar.calendar_event(KID, raw('swim', 'Swimming', {'dateTime': '2026-10-28T10:00:00+01:00'}, {'dateTime': '2026-10-28T11:00:00+01:00'},
                                       organizer={'email': 'kid.example@example.net', 'self': True}), 'Europe/Brussels'),
-            a.calendar_event(KID, raw('party', 'Party', {'date': '2026-10-29'}, {'date': '2026-10-30'},
+            machine_sources_calendar.calendar_event(KID, raw('party', 'Party', {'date': '2026-10-29'}, {'date': '2026-10-30'},
                                       attendees=[{'email': 'other@example.org'}]), 'Europe/Brussels')])
-        self.store.commit_page('partner-cal', {}, [a.calendar_event(PARTNER, raw('away', 'Away', {'dateTime': '2026-10-28T09:00:00+01:00'},
+        self.store.commit_page('partner-cal', {}, [machine_sources_calendar.calendar_event(PARTNER, raw('away', 'Away', {'dateTime': '2026-10-28T09:00:00+01:00'},
                                                                                  {'dateTime': '2026-10-28T12:00:00+01:00'}), 'Europe/Brussels')])
         self.window = ('2026-10-26T00:00:00Z', '2026-11-01T00:00:00Z')
 
@@ -306,16 +316,16 @@ class Store(unittest.TestCase):
         self.assertNotIn('edit', rows['Away'])
         with self.store.connect() as db:
             ids = {r['source_id']: r['id'] for r in db.execute('SELECT id,source_id FROM events')}
-            found = a.calendar_write_events(db, [ids['swim'], ids['party'], 'x'], {'owner@example.com'})
+            found = machine_sources_calendar.calendar_write_events(db, [ids['swim'], ids['party'], 'x'], {'owner@example.com'})
         self.assertEqual(found[ids['swim']]['guests'], 0)
         self.assertEqual((found[ids['party']]['start'], found[ids['party']]['end'], found[ids['party']]['guests']), ('2026-10-29', '2026-10-29', 1))
 
 
     def test_marked_with_the_name_its_config_gives(self):
-        self.assertEqual(a.calendar_account_owner(KID), 'Kid')
-        self.assertEqual(a.calendar_account_owner({'display_name': "Sam's calendar"}), 'Sam')
-        self.assertEqual(a.calendar_account_owner({'display_name': 'Family', 'calendar_owner': 'Robin'}), 'Robin')
-        self.assertIsNone(a.calendar_account_owner({'display_name': 'Family'}))
+        self.assertEqual(machine_sources_calendar.calendar_account_owner(KID), 'Kid')
+        self.assertEqual(machine_sources_calendar.calendar_account_owner({'display_name': "Sam's calendar"}), 'Sam')
+        self.assertEqual(machine_sources_calendar.calendar_account_owner({'display_name': 'Family', 'calendar_owner': 'Robin'}), 'Robin')
+        self.assertIsNone(machine_sources_calendar.calendar_account_owner({'display_name': 'Family'}))
         rows = self.store.calendar(['kid-cal', 'partner-cal'], *self.window, {'owner@example.com'}, (), {'kid-cal': 'Kid'})
         self.assertEqual({r['title']: r['shared'] for r in rows}, {'Swimming': 'Kid', 'Party': 'Kid', 'Away': 'Partner'})
 
@@ -325,8 +335,8 @@ class CalendarForm(unittest.TestCase):
 
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory();self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'events.sqlite')
-        self.app = object.__new__(a.App);self.app.store, self.app.config = self.store, CONFIG
+        self.store = machine_main.Store(Path(self.temp.name) / 'events.sqlite')
+        self.app = object.__new__(machine_main.App);self.app.store, self.app.config = self.store, CONFIG
         self.google = FakeGoogle()
         self.synced = []
         self.app.sync_soon = self.synced.append
@@ -368,11 +378,11 @@ class CardChange(unittest.TestCase):
         self.app.action('prepare', {'suggestion_id': self.sid, 'job_id': self.job()['job_id'], 'body': 'Ready to add it.',
                                     'next_actions': [{**NEW, 'label': 'Add to calendar'}], 'outcome': 'needs_you', 'needs': 'Add it'})
         with self.store.connect() as db:
-            db.execute("UPDATE preparation_runs SET status='ok',finished_at=?", (a.now(),))
-            action = a.next_actions.actions(db.execute('SELECT next_action FROM suggestions').fetchone()[0])[0]
-        self.assertEqual((action['kind'], action['account_id'], a.next_actions.label(action)), ('calendar', 'kid-cal', 'Add to calendar'))
+            db.execute("UPDATE preparation_runs SET status='ok',finished_at=?", (timeutil.now(),))
+            action = next_actions.actions(db.execute('SELECT next_action FROM suggestions').fetchone()[0])[0]
+        self.assertEqual((action['kind'], action['account_id'], next_actions.label(action)), ('calendar', 'kid-cal', 'Add to calendar'))
         google = FakeGoogle()
-        transport = a.next_actions.ActionTransport(None, None, calendar=google.transport())
+        transport = next_actions.ActionTransport(None, None, calendar=google.transport())
         with granted(google):
             self.assertIsNone(self.app.action_step(transport))  # nothing approved yet: nothing runs
             self.assertEqual(google.writes, [])
@@ -389,12 +399,12 @@ class CardChange(unittest.TestCase):
         self.enterContext(granted(FakeGoogle()))
         self.accept()
         job = dict(self.job(), next_step='x' * 2000)
-        limit = int(__import__('re').search(r'message\.length>(\d+)', (a.ROOT / 'preparation-run.mjs').read_text())[1])
-        prompt = a.preparation_prompt(job, '- ' + 'f' * 3000 + '\n…', config=CONFIG)
+        limit = int(__import__('re').search(r'message\.length>(\d+)', (machine_config.ROOT / 'preparation-run.mjs').read_text())[1])
+        prompt = machine_app_preparation.preparation_prompt(job, '- ' + 'f' * 3000 + '\n…', config=CONFIG)
         self.assertIn('Calendars you can change: cal (owner@example.com), kid-cal (Kid’s calendar)', prompt)
         self.assertNotIn('partner-cal', prompt)
         self.assertLess(len(prompt), limit - 1000)
-        self.assertNotIn('Calendars you can change', a.preparation_prompt(job, '', config={'accounts': [PARTNER]}))
+        self.assertNotIn('Calendars you can change', machine_app_preparation.preparation_prompt(job, '', config={'accounts': [PARTNER]}))
 
 
 class Invites(unittest.TestCase):
@@ -471,9 +481,9 @@ class Suggestions(unittest.TestCase):
 
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory();self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'events.sqlite')
+        self.store = machine_main.Store(Path(self.temp.name) / 'events.sqlite')
         self.store.commit_page('cal', {}, [
-            a.calendar_event(OWN, raw(f'e{i}', 'Coffee', {'dateTime': f'2026-10-2{i}T10:00:00+01:00'}, {'dateTime': f'2026-10-2{i}T11:00:00+01:00'},
+            machine_sources_calendar.calendar_event(OWN, raw(f'e{i}', 'Coffee', {'dateTime': f'2026-10-2{i}T10:00:00+01:00'}, {'dateTime': f'2026-10-2{i}T11:00:00+01:00'},
                                       location=place), 'Europe/Brussels')
             for i, place in enumerate(['Café Labath, Oude Houtlei 1, Gent', 'Café Labath, Oude Houtlei 1, Gent', 'https://zoom.us/j/1'])])
         with self.store.connect() as db:
@@ -486,29 +496,29 @@ class Suggestions(unittest.TestCase):
                 db.execute('INSERT INTO graph_nodes(id,kind,name,strength,signals,info) VALUES(?,?,?,?,0,?)', (node, kind, name, strength, json.dumps(info)))
             db.execute("INSERT INTO org_profiles(domain,status,profile,fetched_at) VALUES('acme.example','found',?,'2026-10-01')",
                        (json.dumps({'location': 'Ghent, Belgium'}),))
-        a.places._cache.clear();self.addCleanup(a.places._cache.clear)
+        places._cache.clear();self.addCleanup(places._cache.clear)
 
     def test_people_from_the_graph(self):
         with self.store.connect() as db:
-            self.assertEqual(a.invite_people(db, 'sam', {'owner@example.com'}),
+            self.assertEqual(machine_sources_calendar.invite_people(db, 'sam', {'owner@example.com'}),
                              [{'name': 'Sam Lee', 'email': 'sam@acme.example'}, {'name': 'Kim', 'email': 'kim.sammy@example.net'}])
-            self.assertEqual(a.invite_people(db, 's'), [])
-            self.assertEqual(a.invite_people(db, 'owner', {'owner@example.com'}), [])
+            self.assertEqual(machine_sources_calendar.invite_people(db, 's'), [])
+            self.assertEqual(machine_sources_calendar.invite_people(db, 'owner', {'owner@example.com'}), [])
 
     def test_teammates_by_email_come_from_the_company_domain(self):
         # Hand off, By email: Fleet teammates first, then Graph people on the company's domains, then what is typed
         # completed with each domain; never someone at another domain, a free mail domain or the owner
         mates = [{'name': 'Samuel Ortiz', 'email': 'samuel@acme.example'}, {'name': 'Pat Ray', 'email': 'pat@gmail.com'}]
         with self.store.connect() as db:
-            self.assertEqual(a.team_people(db, 'sam', {'owner@acme.example'}, ['acme.example'], mates),
+            self.assertEqual(machine_sources_calendar.team_people(db, 'sam', {'owner@acme.example'}, ['acme.example'], mates),
                              [{'name': 'Samuel Ortiz', 'email': 'samuel@acme.example'}, {'name': 'Sam Lee', 'email': 'sam@acme.example'}])
-            self.assertEqual(a.team_people(db, 'bo', set(), ['acme.example'], mates), [{'name': '', 'email': 'bo@acme.example'}])
-            self.assertEqual(a.team_people(db, 'bo@ac', set(), ['acme.example', 'beta.example']), [{'name': '', 'email': 'bo@acme.example'}])
-            self.assertEqual(a.team_people(db, 'pat', set(), [], mates[1:]), [{'name': 'Pat Ray', 'email': 'pat@gmail.com'}])  # gmail.com is never completed
-            self.assertEqual(a.team_people(db, 'owner', {'owner@acme.example'}, ['acme.example']), [])
-            self.assertEqual(a.team_people(db, 'samuel o', set(), ['acme.example'], mates), [{'name': 'Samuel Ortiz', 'email': 'samuel@acme.example'}])
-            self.assertEqual(a.team_people(db, 's', set(), ['acme.example'], mates), [])
-        self.assertEqual(a.company_domains({'accounts': [{'email': 'o@acme.example', 'boundary': 'work:Acme'}, {'email': 'o@gmail.com', 'boundary': 'work:Side'},
+            self.assertEqual(machine_sources_calendar.team_people(db, 'bo', set(), ['acme.example'], mates), [{'name': '', 'email': 'bo@acme.example'}])
+            self.assertEqual(machine_sources_calendar.team_people(db, 'bo@ac', set(), ['acme.example', 'beta.example']), [{'name': '', 'email': 'bo@acme.example'}])
+            self.assertEqual(machine_sources_calendar.team_people(db, 'pat', set(), [], mates[1:]), [{'name': 'Pat Ray', 'email': 'pat@gmail.com'}])  # gmail.com is never completed
+            self.assertEqual(machine_sources_calendar.team_people(db, 'owner', {'owner@acme.example'}, ['acme.example']), [])
+            self.assertEqual(machine_sources_calendar.team_people(db, 'samuel o', set(), ['acme.example'], mates), [{'name': 'Samuel Ortiz', 'email': 'samuel@acme.example'}])
+            self.assertEqual(machine_sources_calendar.team_people(db, 's', set(), ['acme.example'], mates), [])
+        self.assertEqual(machine_sources_calendar.company_domains({'accounts': [{'email': 'o@acme.example', 'boundary': 'work:Acme'}, {'email': 'o@gmail.com', 'boundary': 'work:Side'},
                                                          {'email': 'o@home.example', 'boundary': 'personal'}]}), ['acme.example'])
 
     def test_own_places_first_then_the_map_with_only_the_text(self):
@@ -519,26 +529,26 @@ class Suggestions(unittest.TestCase):
                                                             'postcode': '9000', 'city': 'Gent', 'country': 'België / Belgique / Belgien'}},
                                             {'properties': {'name': 'Gent', 'city': 'Gent', 'country': 'Belgium'}}]}).encode()
         with self.store.connect() as db:
-            found = a.places.suggest(db, {}, 'labath', fetch)
+            found = places.suggest(db, {}, 'labath', fetch)
             self.assertEqual([(f['value'], f['source']) for f in found],
                              [('Café Labath, Oude Houtlei 1, Gent', 'calendar'), ('Gent, Belgium', 'map')])  # the café once: the owner's own
             self.assertEqual(asked, ['https://photon.komoot.io/api/?q=labath&limit=6'])
-            a.places.suggest(db, {}, 'Labath ', fetch)
+            places.suggest(db, {}, 'Labath ', fetch)
             self.assertEqual(len(asked), 1, 'cached')
-            self.assertEqual([f['value'] for f in a.places.local(db, 'ghent')], ['Acme, Ghent, Belgium'])
-            self.assertEqual([f['source'] for f in a.places.local(db, 'labath')], ['calendar'], 'an organization only when its name or place matches')
-            self.assertEqual(a.places.local(db, 'zoom'), [], 'a link is not a place')
-            a.places.suggest(db, {'place_search': False}, 'somewhere', fetch)
-            a.places.suggest(db, {}, 'ab', fetch)
+            self.assertEqual([f['value'] for f in places.local(db, 'ghent')], ['Acme, Ghent, Belgium'])
+            self.assertEqual([f['source'] for f in places.local(db, 'labath')], ['calendar'], 'an organization only when its name or place matches')
+            self.assertEqual(places.local(db, 'zoom'), [], 'a link is not a place')
+            places.suggest(db, {'place_search': False}, 'somewhere', fetch)
+            places.suggest(db, {}, 'ab', fetch)
             self.assertEqual(len(asked), 1, 'off in the config, or too short: nothing goes out')
             def down(url, timeout):
-                raise a.urllib.error.URLError('offline')
-            self.assertEqual([f['source'] for f in a.places.suggest(db, {}, 'labath gent', down)], ['calendar'])
+                raise urllib.error.URLError('offline')
+            self.assertEqual([f['source'] for f in places.suggest(db, {}, 'labath gent', down)], ['calendar'])
 
     def test_one_outside_request_a_second(self):
         t, slept = [10.0], []
-        a.places._last[0] = 9.7
-        a.places.photon('first place', fetch=lambda u, s: b'{}', clock=lambda: t[0], sleep=slept.append)
+        places._last[0] = 9.7
+        places.photon('first place', fetch=lambda u, s: b'{}', clock=lambda: t[0], sleep=slept.append)
         self.assertEqual([round(x, 1) for x in slept], [0.7])
 
 

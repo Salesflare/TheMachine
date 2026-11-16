@@ -2,7 +2,6 @@
 Machine already has, written in one background turn, or nothing when there is nothing useful. Once per meeting, also
 after a move or a dismissal. Made-up people and events only."""
 import datetime as dt
-import importlib.util
 import json
 import tempfile
 import unittest
@@ -13,11 +12,9 @@ import locale_prefs
 import meeting_prep
 import timeutil
 from seams import patch_everywhere  # noqa: E402
+import machine.main as machine_main
 
 ROOT = Path(__file__).parent.parent
-spec = importlib.util.spec_from_file_location('prep_assistant', ROOT / 'assistant.py')
-a = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(a)
 
 MONDAY = '2026-11-09T09:00:00+00:00'  # Mon Nov 9; the meetings are on Tue Nov 10
 ACCOUNTS = [{'id': 'wcal', 'service': 'calendar', 'boundary': 'work:Acme', 'email': 'robin@acme.example'},
@@ -49,9 +46,9 @@ class MeetingPrep(unittest.TestCase):
         self.addCleanup(tz.stop)
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'p.sqlite', protect=True)
+        self.store = machine_main.Store(Path(self.temp.name) / 'p.sqlite', protect=True)
         self.store.accounts = ACCOUNTS
-        self.app = object.__new__(a.App)
+        self.app = object.__new__(machine_main.App)
         self.app.store = self.store
         self.app.config = {'accounts': ACCOUNTS, 'review_worker': {'enabled': True}}
         self.prompts, self.answer = [], dict(ANSWER)
@@ -74,7 +71,7 @@ class MeetingPrep(unittest.TestCase):
 
     def run_pass(self, at=MONDAY):
         """One pass as the worker runs it: the next meeting due, then its turn."""
-        with patch_everywhere(a, 'now', lambda: at):
+        with patch_everywhere(timeutil, 'now', lambda: at):
             found = self.app.meeting_prep_next(dt.datetime.fromisoformat(at))
             return self.app.meeting_prep_run(found) if found else None
 
@@ -187,7 +184,7 @@ class MeetingPrep(unittest.TestCase):
         self.add(meeting('g5', '10:00'))
         self.run_pass()
         self.add(meeting('g5', '2026-11-11T10:00'))  # moved to Wednesday: the same meeting
-        with patch_everywhere(a, 'now', lambda: '2026-11-10T09:00:00+00:00'):
+        with patch_everywhere(timeutil, 'now', lambda: '2026-11-10T09:00:00+00:00'):
             self.app.meeting_prep_follow(dt.datetime.fromisoformat('2026-11-10T09:00:00+00:00'))
         self.assertIsNone(self.run_pass('2026-11-10T09:00:00+00:00'))
         [card] = self.cards()
@@ -211,7 +208,7 @@ class MeetingPrep(unittest.TestCase):
         self.add(meeting('g7', '10:00'))
         self.run_pass()
         self.add({**meeting('g7', '10:00'), 'deleted': True})
-        with patch_everywhere(a, 'now', lambda: '2026-11-09T10:00:00+00:00'):
+        with patch_everywhere(timeutil, 'now', lambda: '2026-11-09T10:00:00+00:00'):
             self.app.meeting_prep_follow(dt.datetime.fromisoformat('2026-11-09T10:00:00+00:00'))
         self.assertEqual([c['status'] for c in self.cards()], ['completed'])
 

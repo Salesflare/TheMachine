@@ -5,7 +5,6 @@ each block; a style note on a card rewrites that channel's block; the owner edit
 channel lines fill empty ones. A preparation gets every voice (its card's channel
 marked), the owner's own recent messages on that channel (same conversation first) and earlier edits on that channel
 only. A draft the owner answered themselves instead becomes an edit to learn from. All local; nothing is sent."""
-import importlib.util
 import json
 from pathlib import Path
 import tempfile
@@ -13,10 +12,17 @@ import unittest
 from unittest.mock import patch
 from seams import patch_everywhere  # noqa: E402
 
-spec = importlib.util.spec_from_file_location('voices_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
-a = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(a)
 from machine.store import outcomes  # noqa: E402
+import datetime as dt
+import embeddings
+import locale_prefs
+import machine.app.preparation as machine_app_preparation
+import machine.cards as machine_cards
+import machine.main as machine_main
+import machine.prompts.profile as machine_prompts_profile
+import machine.store.profile as machine_store_profile
+import machine.store.voices as machine_store_voices
+import timeutil
 
 
 def mail(source_id, at, body, thread='t1', sender='Sam <sam@example.com>', to='Owner <owner@example.com>', labels=('INBOX',)):
@@ -36,9 +42,9 @@ class Voices(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'events.sqlite')
+        self.store = machine_main.Store(Path(self.temp.name) / 'events.sqlite')
         self.store.accounts = [{'id': 'work', 'service': 'gmail', 'email': 'owner@example.com'}, {'id': 'phone', 'service': 'whatsapp'}]
-        self.app = object.__new__(a.App)
+        self.app = object.__new__(machine_main.App)
         self.app.store = self.store
         self.app.config = {'accounts': self.store.accounts}
         self.store.commit_page('work', {}, [
@@ -110,43 +116,43 @@ class Voices(unittest.TestCase):
     def test_a_voice_study_reads_own_messages_per_channel_and_keeps_the_owners_own_blocks(self):
         self.study_messages()
         with self.store.connect() as db:
-            db.execute("INSERT INTO note_kinds VALUES(?,?,'style','assistant',?)", (self.note_id(), self.chat_sid, a.now()))
+            db.execute("INSERT INTO note_kinds VALUES(?,?,'style','assistant',?)", (self.note_id(), self.chat_sid, timeutil.now()))
         self.app.action('set_voice', {'channel': 'All', 'text': 'Natural dates.'}, owner_dashboard=True)
         self.store.commit_page('work', {}, [mail(f'ann{i}', f'2026-10-07T1{i}:00:00+00:00', f'Hi Ann,\n\nPart {i} of a long thread, all fine.\n\nOwner',
                                                  thread='tann', sender='Owner <owner@example.com>', to='Ann <ann@example.org>', labels=('SENT',)) for i in range(4)])
         sample = self.store.voice_sample()
         self.assertEqual({m['channel'] for m in sample['messages']}, {'Email'})  # one WhatsApp message says too little
-        self.assertEqual(sum(m['to'] == 'Ann' for m in sample['messages']), a.VOICE_STUDY_PER)  # one long thread doesn't decide
-        with patch.dict(a.VOICE_STUDY, {'gmail.message': 5}):  # evenly across what was read, newest first
+        self.assertEqual(sum(m['to'] == 'Ann' for m in sample['messages']), machine_store_voices.VOICE_STUDY_PER)  # one long thread doesn't decide
+        with patch.dict(machine_store_voices.VOICE_STUDY, {'gmail.message': 5}):  # evenly across what was read, newest first
             self.assertEqual([m['date'] for m in self.store.voice_sample()['messages']],
                              ['2026-10-07', '2026-10-07', '2026-10-05', '2026-10-03', '2026-10-02'])
         self.assertTrue(all(m['text'].startswith(('Hi ', 'Hey ')) for m in sample['messages']))
         self.assertEqual(sample['notes'][0]['note'], 'no capitals on whatsapp please')
         started = self.store.voice_study_start()
-        session = a.PROFILE_SESSION_PREFIX + started['run_id']
+        session = machine_store_profile.PROFILE_SESSION_PREFIX + started['run_id']
         page = self.store.profile_evidence(1, session)
         self.assertEqual((page['counts'], page['current_voices'][0]['written_by_owner']), ({'Email': 10}, True))
-        prompt = a.voices_prompt(started['run_id'], page['counts'], page['pages'])
+        prompt = machine_prompts_profile.voices_prompt(started['run_id'], page['counts'], page['pages'])
         self.assertIn('greeting per language', prompt)
         with self.assertRaisesRegex(ValueError, 'at most 5 lines'):
             self.store.save_profile({'voices': {'Email': '\n'.join(['Short line.'] * 6)}}, session)
         email_block = 'English: Hi + first name, a blank line\nRegards, a blank line, then the name\nShort paragraphs; questions to close'
         self.store.save_profile({'voices': {'Email': email_block, 'All': 'Overwrites nothing of theirs.'}}, session)
         with self.store.connect() as db:
-            db.execute("UPDATE profile_runs SET status='ok',finished_at=? WHERE run_id=?", (a.now(), started['run_id']))
+            db.execute("UPDATE profile_runs SET status='ok',finished_at=? WHERE run_id=?", (timeutil.now(), started['run_id']))
         self.assertEqual(self.store.apply_voice_study(started['run_id']), 1)
         self.assertEqual(self.store.apply_voice_study(started['run_id']), 0)  # once
         self.assertEqual({v['channel']: (v['text'], v['source']) for v in self.store.voices()},
                          {'All': ('Natural dates.', 'owner'), 'Email': (email_block, 'study')})
         self.assertIsNone(self.store.voice_study_due())  # read again only after a while
-        with patch_everywhere(a, 'now', return_value=(a.dt.datetime.fromisoformat(a.now()) + a.dt.timedelta(days=31)).isoformat()):
+        with patch_everywhere(timeutil, 'now', return_value=(dt.datetime.fromisoformat(timeutil.now()) + dt.timedelta(days=31)).isoformat()):
             self.assertIn('run_id', self.store.voice_study_due())
 
     def test_voice_study_excludes_misattributed_style_notes(self):
         self.study_messages()
         decision = self.note_id()
         with self.store.connect() as db:
-            db.execute("INSERT INTO note_kinds VALUES(?,?,'style','assistant',?)", (decision, self.chat_sid, a.now()))
+            db.execute("INSERT INTO note_kinds VALUES(?,?,'style','assistant',?)", (decision, self.chat_sid, timeutil.now()))
             db.execute("INSERT INTO decision_annotations(decision_id,status,reason) VALUES(?,'misattributed','wrong card')", (decision,))
         self.assertNotIn(decision, {n['decision_id'] for n in self.store.voice_sample()['notes']})
 
@@ -159,7 +165,7 @@ class Voices(unittest.TestCase):
             sent.append(request)
             if request['action'] == 'start':
                 self.store.save_profile({'voices': {'Email': 'Hi + first name\nRegards, a blank line, then the name'}},
-                                        a.PROFILE_SESSION_PREFIX + started['run_id'])
+                                        machine_store_profile.PROFILE_SESSION_PREFIX + started['run_id'])
                 return {'status': 'admitted'}
             return {'status': 'ok'}
         self.app.profile_step(runner)
@@ -184,9 +190,9 @@ class Voices(unittest.TestCase):
         self.app.action('set_voice', {'channel': 'WhatsApp', 'text': 'lowercase, no full stop.'}, owner_dashboard=True)
         with self.store.connect() as db:
             db.execute("INSERT INTO draft_edits(id,suggestion_id,old_revision,new_revision,kind,before_body,after_body,source,created_at) "
-                       "VALUES('e1',?,'a','b','whatsapp','Ah ok. See you.','ah ok, tot straks','dashboard',?)", (self.chat_sid, a.now()))
+                       "VALUES('e1',?,'a','b','whatsapp','Ah ok. See you.','ah ok, tot straks','dashboard',?)", (self.chat_sid, timeutil.now()))
             db.execute("INSERT INTO draft_edits(id,suggestion_id,old_revision,new_revision,kind,before_body,after_body,source,created_at) "
-                       "VALUES('e2',?,'a','b','email','Dear Sam, kindly find','Hey Sam, here it is','dashboard',?)", (self.sid, a.now()))
+                       "VALUES('e2',?,'a','b','email','Dear Sam, kindly find','Hey Sam, here it is','dashboard',?)", (self.sid, timeutil.now()))
         text = self.store.style_text(self.sid)
         self.assertIn('- Email (this card):\n  - Hey name', text)
         self.assertIn('- WhatsApp:\n  - lowercase', text)  # every voice, so a draft on another channel still has one
@@ -200,7 +206,7 @@ class Voices(unittest.TestCase):
         self.assertIn('(this conversation) ja tuurlijk, tot straks', chat_text)
         self.assertNotIn('Sent a photo', chat_text)  # media placeholders say nothing about how they write
         self.assertNotIn('Hey Sam', chat_text)
-        prompt = a.preparation_prompt({'job_id': 'j' * 16, 'suggestion_id': self.sid}, '', None, '', '- Offer the booking link.', text)
+        prompt = machine_app_preparation.preparation_prompt({'job_id': 'j' * 16, 'suggestion_id': self.sid}, '', None, '', '- Offer the booking link.', text)
         self.assertLess(prompt.index('Draft rules'), prompt.index('How the owner writes, per channel'))
         self.assertIn('kind=voice, channel=', prompt)
 
@@ -213,14 +219,14 @@ class Voices(unittest.TestCase):
                        (self.sid, '2026-10-03T09:00:00+00:00', '2026-10-03T09:00:00+00:00'))
         self.store.commit_page('work', {}, [mail('out3', '2026-10-03T11:00:00+00:00', 'Hey Sam,\n\nhere you go\n\nRegards,\n\nOwner\n\n[Quoted earlier messages]\nold', **SENT),
                                             mail('out4', '2026-10-03T12:00:00+00:00', 'Other thread entirely', thread='t9', **{k: v for k, v in SENT.items()})])
-        with patch_everywhere(a, 'now', return_value='2026-10-03T13:00:00+00:00'):
+        with patch_everywhere(timeutil, 'now', return_value='2026-10-03T13:00:00+00:00'):
             self.assertEqual(self.store.learn_sent_elsewhere(), 1)
             self.assertEqual(self.store.learn_sent_elsewhere(), 0)
         with self.store.connect() as db:
             row = dict(db.execute("SELECT * FROM draft_edits WHERE source='elsewhere'").fetchone())
         self.assertEqual((row['kind'], row['old_revision']), ('email', 'r1'))
         self.assertEqual(row['after_body'], 'Hey Sam,\n\nhere you go\n\nRegards,\n\nOwner')
-        with patch_everywhere(a, 'now', return_value='2026-10-03T13:00:00+00:00'):
+        with patch_everywhere(timeutil, 'now', return_value='2026-10-03T13:00:00+00:00'):
             self.assertIn('They wrote this themselves instead: Hey Sam', self.store.style_text(self.sid))
             # A review gets it once to fold a lasting habit into the channel's voice.
             lines = self.store.edits_to_learn('run1')
@@ -235,17 +241,17 @@ class Voices(unittest.TestCase):
         with self.store.connect() as db:
             db.execute("UPDATE suggestions SET status='prepared',next_action=? WHERE id=?", (json.dumps(draft), self.chat_sid))
             db.execute("UPDATE preparations SET status='done',updated_at=? WHERE suggestion_id=?", ('2026-10-01T09:00:00+00:00', self.chat_sid))
-        with patch_everywhere(a, 'now', return_value='2026-10-01T12:00:00+00:00'):
+        with patch_everywhere(timeutil, 'now', return_value='2026-10-01T12:00:00+00:00'):
             self.assertEqual(self.store.learn_sent_elsewhere(), 0)  # their earlier message came before the draft
         self.store.commit_page('phone', {}, [chat('w4', '2026-10-01T10:00:00+00:00', 'ja ik kom', mine=True)])
         with self.store.connect() as db:
             db.execute("INSERT INTO action_jobs(id,suggestion_id,revision,payload,status,created_at,updated_at,approval_id,source,rfc_message_id) "
-                       "VALUES('j',?,'r1','{}','sent',?,?,'x','dashboard','')", (self.chat_sid, a.now(), a.now()))
-        with patch_everywhere(a, 'now', return_value='2026-10-01T12:00:00+00:00'):
+                       "VALUES('j',?,'r1','{}','sent',?,?,'x','dashboard','')", (self.chat_sid, timeutil.now(), timeutil.now()))
+        with patch_everywhere(timeutil, 'now', return_value='2026-10-01T12:00:00+00:00'):
             self.assertEqual(self.store.learn_sent_elsewhere(), 0)  # sent from the card: that message is the draft itself
         with self.store.connect() as db:
             db.execute("UPDATE action_jobs SET status='cancelled'")
-        with patch_everywhere(a, 'now', return_value='2026-10-01T12:00:00+00:00'):
+        with patch_everywhere(timeutil, 'now', return_value='2026-10-01T12:00:00+00:00'):
             self.assertEqual(self.store.learn_sent_elsewhere(), 1)  # not sent from the card: their own reply teaches
 
     def ready(self, sid, draft):
@@ -274,7 +280,7 @@ class Voices(unittest.TestCase):
             out3 = db.execute("SELECT id FROM events WHERE source_id='out3'").fetchone()[0]
             row = dict(db.execute('SELECT * FROM suggestions WHERE id=?', (self.sid,)).fetchone())
         self.assertEqual(hint['event_ids'], [out3])  # Done shows "Done: Answered in the email thread" under the title
-        self.assertEqual(a.todo_state(row), 'done')
+        self.assertEqual(machine_cards.todo_state(row), 'done')
         self.assertTrue(row['undo_until'])
         with self.store.connect() as db:
             self.assertEqual(tuple(db.execute("SELECT source,feedback FROM decisions WHERE suggestion_id=? AND choice='complete'", (self.sid,)).fetchone()),
@@ -293,7 +299,7 @@ class Voices(unittest.TestCase):
         self.assertIsNone(self.hint(self.sid))
         with self.store.connect() as db:
             row = dict(db.execute('SELECT * FROM suggestions WHERE id=?', (self.sid,)).fetchone())
-        self.assertEqual(a.todo_state(row), 'waiting on others')
+        self.assertEqual(machine_cards.todo_state(row), 'waiting on others')
         self.assertEqual(json.loads(row['outcome'])['waiting_on'], 'Sam has the signed contract')
         self.assertIsNone(row['next_action'])
         self.assertEqual(self.store.answered_elsewhere(), [])  # once
@@ -339,11 +345,11 @@ class Voices(unittest.TestCase):
         self.store.commit_page('phone', {}, [chat('w4', '2026-10-01T10:00:00+00:00', 'ja ik kom', mine=True)])
         with self.store.connect() as db:
             db.execute("INSERT INTO action_jobs(id,suggestion_id,revision,payload,status,created_at,updated_at,approval_id,source,rfc_message_id) "
-                       "VALUES('j',?,'r1','{}','sent',?,?,'x','dashboard','')", (self.chat_sid, a.now(), a.now()))
+                       "VALUES('j',?,'r1','{}','sent',?,?,'x','dashboard','')", (self.chat_sid, timeutil.now(), timeutil.now()))
         self.assertEqual(self.store.answered_elsewhere(), [])  # sent from the card: Sent closes it, not this
         with self.store.connect() as db:
             db.execute("UPDATE action_jobs SET status='cancelled'")
-        with patch.object(a.locale_prefs, 'language', return_value='nl'):
+        with patch.object(locale_prefs, 'language', return_value='nl'):
             self.assertEqual(self.store.answered_elsewhere(), [self.chat_sid])
         self.assertEqual(self.hint(self.chat_sid)['reason'], 'Beantwoord op WhatsApp')
 
@@ -354,8 +360,8 @@ class Learned(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'events.sqlite')
-        self.app = object.__new__(a.App)
+        self.store = machine_main.Store(Path(self.temp.name) / 'events.sqlite')
+        self.app = object.__new__(machine_main.App)
         self.app.store = self.store
         self.store.accounts = [{'id': 'work', 'service': 'gmail', 'email': 'owner@example.com'}]
         self.app.config = {'accounts': self.store.accounts}
@@ -388,7 +394,7 @@ class Learned(unittest.TestCase):
         def embed(settings, texts, timeout=120):
             return [[1.0, 0.0] if 'listing' in t or 'Answer the listing' in t else [0.6, 0.8] if 'paint' in t or 'tax' in t else [0.0, 1.0] for t in texts]
         settings = {'url': 'http://embed.invalid', 'model': 'm', 'dims': 2}
-        with patch.object(a.embeddings, 'embed', side_effect=embed) as called:
+        with patch.object(embeddings, 'embed', side_effect=embed) as called:
             picked = self.store.facts_for(self.sid, settings=settings, top=2, floor=0.5).splitlines()
             self.assertEqual(len(called.call_args.args[1]), len(topics) + 3)  # every fact once, plus the card
             self.store.facts_for(self.sid, settings=settings, top=2, floor=0.5)
@@ -396,7 +402,7 @@ class Learned(unittest.TestCase):
         self.assertEqual(picked[0], '- This card’s own note: they write listing copy themselves.')
         self.assertEqual([('listing' in p, 'paint' in p or 'tax' in p) for p in picked[1:]], [(True, False), (False, True)])
         self.assertFalse(any('garden' in p or 'Fridays' in p for p in picked))  # below the floor
-        with patch.object(a.embeddings, 'embed', side_effect=a.embeddings.EmbeddingError('down')):
+        with patch.object(embeddings, 'embed', side_effect=embeddings.EmbeddingError('down')):
             self.assertIn('lunch', self.store.facts_for(self.sid, settings=settings, limit=400).splitlines()[1])  # down: the newest
         del few, ids
 
@@ -438,18 +444,18 @@ class Learned(unittest.TestCase):
         self.assertEqual(self.store.condense_text(), '')  # offered: not again until the list changes and a day passed
         self.fact('Another fact.')
         self.assertEqual(self.store.condense_text(), '')
-        with patch_everywhere(a, 'now', return_value='2099-01-01T00:00:00+00:00'):
+        with patch_everywhere(timeutil, 'now', return_value='2099-01-01T00:00:00+00:00'):
             self.fact('A much later fact.')
             self.assertTrue(self.store.condense_text())
         # A style note nothing was learned from is offered once.
         with self.store.connect() as db:
-            db.execute("INSERT INTO note_kinds VALUES(?,?,?,?,?)", (self.decision, self.other, 'style', 'assistant', a.now()))
+            db.execute("INSERT INTO note_kinds VALUES(?,?,?,?,?)", (self.decision, self.other, 'style', 'assistant', timeutil.now()))
         self.assertEqual(self.store.style_notes_to_learn(), '')  # facts came from it already
         sid = self.store.suggest('mail', 'Answer Ann', 'Ann asks.', [3])['id']
         self.store.decide(sid, 'other', 'less formal please, always', 'n2', 'dashboard')
         with self.store.connect() as db:
             note = db.execute("SELECT id FROM decisions WHERE suggestion_id=? AND feedback!=''", (sid,)).fetchone()['id']
-            db.execute("INSERT INTO note_kinds VALUES(?,?,?,?,?)", (note, sid, 'style', 'assistant', a.now()))
+            db.execute("INSERT INTO note_kinds VALUES(?,?,?,?,?)", (note, sid, 'style', 'assistant', timeutil.now()))
         self.assertIn('less formal please', self.store.style_notes_to_learn('r1'))
         self.assertEqual(self.store.style_notes_to_learn(), '')
 
@@ -469,13 +475,13 @@ class ReviewRegressions(unittest.TestCase):
             db.execute("UPDATE suggestions SET status='prepared',next_action=? WHERE id=?", (json.dumps(draft), self.sid))
             db.execute("INSERT INTO preparations(suggestion_id,decision_id,job_id,status,created_at,updated_at) VALUES(?,'d','j','done',?,?)",
                        (self.sid, '2026-10-03T09:00:00+00:00', '2026-10-03T09:00:00+00:00'))
-        with patch_everywhere(a, 'now', return_value='2026-10-03T13:00:00+00:00'):
+        with patch_everywhere(timeutil, 'now', return_value='2026-10-03T13:00:00+00:00'):
             self.assertEqual(self.store.learn_sent_elsewhere(), 0)
         with self.store.connect() as db:
             private_id=db.execute("SELECT id FROM events WHERE source_id='private-out' AND account_id='personal'").fetchone()[0]
         private_sid=self.store.suggest('personal-card','Private card','Private body',[private_id])['id']
         with self.store.connect() as db:
-            db.execute("INSERT INTO draft_edits(id,suggestion_id,old_revision,new_revision,kind,before_body,after_body,source,created_at) VALUES('private-edit',?,'a','b','email','Secret private draft.','Secret private final.','dashboard',?)",(private_sid,a.now()))
+            db.execute("INSERT INTO draft_edits(id,suggestion_id,old_revision,new_revision,kind,before_body,after_body,source,created_at) VALUES('private-edit',?,'a','b','email','Secret private draft.','Secret private final.','dashboard',?)",(private_sid,timeutil.now()))
         self.assertNotIn('Secret private',self.store.style_text(self.sid))
         # An inbound sender or arbitrary metadata value spelling SENT is not an outgoing label.
         incoming = mail('not-sent', '2026-10-03T14:00:00+00:00', 'NOT OWNER WRITING', thread='t1')
@@ -520,9 +526,9 @@ class ReviewRegressions(unittest.TestCase):
         for i in range(6):
             self.store.remember_fact('Fact to condense number ' + str(i), self.note_id(), quote='no capitals on whatsapp please')
         with self.store.connect() as db:
-            db.execute("INSERT INTO draft_edits(id,suggestion_id,old_revision,new_revision,kind,before_body,after_body,source,created_at) VALUES('retry-edit',?,'a','b','email','Long stiff draft.','Hey, natural reply.','dashboard',?)", (self.sid, a.now()))
-            db.execute("INSERT INTO note_kinds VALUES(?,?,?,?,?)", (self.note_id(), self.chat_sid, 'style', 'assistant', a.now()))
-            db.execute("INSERT INTO review_runs(run_id,status,started_at,updated_at,attempts,planned) VALUES('review-learning','starting',?,?,0,1)", (a.now(), a.now()))
+            db.execute("INSERT INTO draft_edits(id,suggestion_id,old_revision,new_revision,kind,before_body,after_body,source,created_at) VALUES('retry-edit',?,'a','b','email','Long stiff draft.','Hey, natural reply.','dashboard',?)", (self.sid, timeutil.now()))
+            db.execute("INSERT INTO note_kinds VALUES(?,?,?,?,?)", (self.note_id(), self.chat_sid, 'style', 'assistant', timeutil.now()))
+            db.execute("INSERT INTO review_runs(run_id,status,started_at,updated_at,attempts,planned) VALUES('review-learning','starting',?,?,0,1)", (timeutil.now(), timeutil.now()))
         self.app.config.update(review_worker={'enabled': True})
         requests=[]
         def unavailable(request):
@@ -547,12 +553,12 @@ class ReviewRegressions(unittest.TestCase):
     def test_habits_are_recorded_and_followed_exactly_and_a_saved_one_shows_on_its_card(self):
         # "No caps in chat" meant sentence starts: every prompt that writes a block asks for the exact habit, and a draft
         # follows the lines as written, on their own channel only.
-        self.assertIn(a.VOICE_PRECISE, a.VOICE_TEXT)
-        self.assertIn('names', a.VOICE_PRECISE)
-        self.assertIn(a.VOICE_PRECISE, a.voices_prompt('r1', {'WhatsApp': 5}, 1))
-        self.assertNotIn('lowercase bursts', a.profile_prompt('r1', {'WhatsApp': 5}))
-        prompt = a.preparation_prompt({'job_id': 'j' * 16, 'suggestion_id': self.chat_sid}, '', None, '', '', '')
-        self.assertIn(a.VOICE_PRECISE, prompt)
+        self.assertIn(machine_prompts_profile.VOICE_PRECISE, machine_prompts_profile.VOICE_TEXT)
+        self.assertIn('names', machine_prompts_profile.VOICE_PRECISE)
+        self.assertIn(machine_prompts_profile.VOICE_PRECISE, machine_prompts_profile.voices_prompt('r1', {'WhatsApp': 5}, 1))
+        self.assertNotIn('lowercase bursts', machine_prompts_profile.profile_prompt('r1', {'WhatsApp': 5}))
+        prompt = machine_app_preparation.preparation_prompt({'job_id': 'j' * 16, 'suggestion_id': self.chat_sid}, '', None, '', '', '')
+        self.assertIn(machine_prompts_profile.VOICE_PRECISE, prompt)
         self.app.action('set_voice', {'channel': 'WhatsApp', 'text': 'Sentences start lowercase, names keep their capitals.'}, owner_dashboard=True)
         style = self.store.style_text(self.sid)
         self.assertIn('no broader', style)

@@ -2,7 +2,6 @@
 with origin 'owner' and their words kept. The review fills it in but never dismisses it, folds it into another card or
 rewrites their words; a same-matter card is offered as a merge the owner decides. Creating one sends nothing. Old
 cards and an upgrade from the schema before this change are unaffected."""
-import importlib.util
 import json
 import sqlite3
 import tempfile
@@ -10,9 +9,15 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 from seams import patch_everywhere  # noqa: E402
+import datetime as dt
+import graph
+import machine.actions as machine_actions
+import machine.delivery.deliver as machine_delivery_deliver
+import machine.delivery.telegram as machine_delivery_telegram
+import machine.main as machine_main
+import subprocess
+import timeutil
 
-spec = importlib.util.spec_from_file_location('newcard_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
-a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
 
 ACCOUNTS = [{'id': 'w', 'boundary': 'work:acme.example'}, {'id': 'p', 'boundary': 'personal:pat@home.example'}]
 
@@ -23,17 +28,17 @@ def mail(source_id, thread='t1', sender='Sam Lee <sam@client.example>', when='20
             'deleted': False}
 
 
-class Daytime(a.dt.datetime):
+class Daytime(dt.datetime):
     @classmethod
     def now(cls, tz=None):
-        return cls(2026, 10, 21, 10, 0, tzinfo=tz or a.dt.timezone.utc)
+        return cls(2026, 10, 21, 10, 0, tzinfo=tz or dt.timezone.utc)
 
 
 class NewCard(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'e.sqlite')
-        self.app = object.__new__(a.App); self.app.store = self.store
+        self.store = machine_main.Store(Path(self.temp.name) / 'e.sqlite')
+        self.app = object.__new__(machine_main.App); self.app.store = self.store
         self.app.config = {'accounts': [dict(x) for x in ACCOUNTS], 'prepare_ahead': True}
 
     def mail_id(self, source_id):
@@ -63,8 +68,8 @@ class NewCard(unittest.TestCase):
         self.assertEqual(moves, [('pending', 'accepted', 'owner_do_it')])
 
     def test_a_new_card_goes_through_the_same_suggest_as_the_reviews(self):
-        real = a.Store.suggest
-        with patch.object(a.Store, 'suggest', autospec=True, side_effect=real) as suggest:
+        real = machine_main.Store.suggest
+        with patch.object(machine_main.Store, 'suggest', autospec=True, side_effect=real) as suggest:
             made = self.new(scope='work', due='2026-10-30')
         suggest.assert_called_once()
         card = self.row(made['id'])
@@ -117,7 +122,7 @@ class NewCard(unittest.TestCase):
 
     def test_only_the_owner_on_the_dashboard_makes_renames_or_merges_cards(self):
         for name in ('card_new', 'card_rename', 'card_merge'):
-            self.assertIn(name, a.OWNER_ACTIONS)
+            self.assertIn(name, machine_actions.OWNER_ACTIONS)
             with self.assertRaisesRegex(ValueError, 'by the owner, on the dashboard'):
                 self.app.action(name, {'text': 'x', 'suggestion_id': 'x', 'title': 'x', 'decision_id': 'x'})
 
@@ -256,8 +261,8 @@ class NewCard(unittest.TestCase):
         self.store.commit_page('w', {}, [mail('m1')])
         made = self.new(attach=[1], scope='work')
         self.review(event_ids=[made['event_id']])
-        with patch.object(a.dt, 'datetime', Daytime), patch_everywhere(a, 'telegram') as telegram, patch.object(a.subprocess, 'run') as run:
-            a.deliver(self.store, {'telegram_owner': 'owner', 'accounts': ACCOUNTS})
+        with patch.object(dt, 'datetime', Daytime), patch_everywhere(machine_delivery_telegram, 'telegram') as telegram, patch.object(subprocess, 'run') as run:
+            machine_delivery_deliver.deliver(self.store, {'telegram_owner': 'owner', 'accounts': ACCOUNTS})
         telegram.assert_not_called(); run.assert_not_called()
         with self.store.connect() as db:
             self.assertEqual(db.execute('SELECT count(*) FROM action_jobs').fetchone()[0], 0)
@@ -293,10 +298,10 @@ class NewCard(unittest.TestCase):
         with self.store.connect() as db:
             meta = json.loads(db.execute('SELECT metadata FROM events WHERE id=?', (made['event_id'],)).fetchone()[0])
             self.assertEqual([x['id'] for x in meta['about']], ['email:pat@acme.example', 'org:acme.example'])
-            a.graph.build(db, self.app.config, a.now())
-            people, _ = a.graph.card_people(db, [made['event_id']])
+            graph.build(db, self.app.config, timeutil.now())
+            people, _ = graph.card_people(db, [made['event_id']])
             self.assertEqual([p['id'] for p in people], ['email:pat@acme.example'])
-            self.assertIn(made['id'], [c['id'] for c in a.graph.open_between(db, 'org:acme.example').get('cards', [])])
+            self.assertIn(made['id'], [c['id'] for c in graph.open_between(db, 'org:acme.example').get('cards', [])])
         first = self.app.card_chat(made['id'])['items'][0]
         self.assertEqual((first['kind'], first['from'], first['mine'], first['text']), ('source', 'You', True, 'Send Pat the signed contract'))
         with self.assertRaisesRegex(ValueError, 'no longer in the Graph'):
@@ -308,8 +313,8 @@ class NewCard(unittest.TestCase):
         with self.store.connect() as db:
             db.execute("INSERT INTO graph_nodes(id,kind,name,strength,signals,info) VALUES('email:pat@acme.example','person','Pat Example',1,1,'{}'),"
                        "('org:acme.example','org','Acme',1,1,'{}')")
-            a.graph._watch(db)
-            edits = a.graph._edits(db)
+            graph._watch(db)
+            edits = graph._edits(db)
         made = self.new(about=['email:pat@acme.example', 'org:acme.example'], scope='personal')
         self.store.accounts = self.app.config['accounts']
         shown = next(s for s in self.store.snapshot([])['suggestions'] if s['id'] == made['id'])
@@ -317,9 +322,9 @@ class NewCard(unittest.TestCase):
         with self.store.connect() as db:
             rows = db.execute('SELECT node_id,probable,direct FROM graph_events WHERE event_id=?', (made['event_id'],)).fetchall()
             self.assertEqual([tuple(r) for r in rows], [('email:pat@acme.example', 0, 1)])
-            self.assertGreater(a.graph._edits(db), edits)  # a build computing from an older read computes again
-            a.graph.build(db, self.app.config, a.now())  # the next build makes the same link: nothing changes on the card
-            people, _ = a.graph.card_people(db, [made['event_id']])
+            self.assertGreater(graph._edits(db), edits)  # a build computing from an older read computes again
+            graph.build(db, self.app.config, timeutil.now())  # the next build makes the same link: nothing changes on the card
+            people, _ = graph.card_people(db, [made['event_id']])
         self.assertEqual([p['id'] for p in people], ['email:pat@acme.example'])
         # Without a person picked, nothing is linked by hand: the Machine's own links come with the build, as before
         plain = self.new(text='Book the venue')
@@ -343,7 +348,7 @@ class Upgrade(unittest.TestCase):
         leaves the cards as they were; then those cards work as before and new cards can be made."""
         temp = tempfile.TemporaryDirectory(); self.addCleanup(temp.cleanup)
         path = Path(temp.name) / 'e.sqlite'
-        store = a.Store(path, protect=False)
+        store = machine_main.Store(path, protect=False)
         store.commit_page('w', {}, [mail('m1')])
         sid = store.suggest('w:sam', 'Send Sam the contract', 'Sam asked for it.', [1])['id']
         with sqlite3.connect(path) as db:
@@ -351,7 +356,7 @@ class Upgrade(unittest.TestCase):
                 db.execute('ALTER TABLE suggestions DROP COLUMN ' + column)
             before = db.execute('SELECT * FROM suggestions').fetchall()
             columns_before = [r[1] for r in db.execute('PRAGMA table_info(suggestions)')]
-        store = a.Store(path)
+        store = machine_main.Store(path)
         with store.connect() as db:
             columns = [r[1] for r in db.execute('PRAGMA table_info(suggestions)')]
             self.assertEqual(columns[:len(columns_before)], columns_before)
@@ -359,7 +364,7 @@ class Upgrade(unittest.TestCase):
             row = dict(db.execute('SELECT * FROM suggestions WHERE id=?', (sid,)).fetchone())
         self.assertEqual(tuple(row[c] for c in columns_before), tuple(before[0]))  # read through the app: opened if it sealed them
         self.assertEqual((row['title'], row['body'], row['origin']), ('Send Sam the contract', 'Sam asked for it.', None))
-        app = object.__new__(a.App); app.store = store; app.config = {'accounts': ACCOUNTS}
+        app = object.__new__(machine_main.App); app.store = store; app.config = {'accounts': ACCOUNTS}
         self.assertEqual(app.action('card_new', {'text': 'Call Pat'}, owner_dashboard=True)['status'], 'pending')
         self.assertTrue(app.action('card_rename', {'suggestion_id': sid, 'title': 'Contract', 'decision_id': 'r1'}, owner_dashboard=True)['renamed'])
 

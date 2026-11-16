@@ -16,8 +16,11 @@ import mail_grants
 import onboarding
 import shared_connectors
 from connectors import stripe
-from test_connectors import a, Response
+from test_connectors import FOR_ONBOARDING, Response
 from test_shared_connectors import FLEET, FakeNetwork, FakeRelay
+import machine.main as machine_main
+import machine.sources.connectors as machine_sources_connectors
+import sources
 
 ACCOUNT = {'id': 'billing', 'service': 'stripe', 'transport': 'broker', 'boundary': 'work:Acme', 'stripe_account': 'acct_1AbCdEf',
            'account_name': 'Acme Billing', 'poll_seconds': 900}
@@ -30,11 +33,11 @@ class Broker(unittest.TestCase):
     def setUp(self):
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
-        self.store = a.Store(Path(tmp.name) / 'events.sqlite')
+        self.store = machine_main.Store(Path(tmp.name) / 'events.sqlite')
         self.config = {'database': str(Path(tmp.name) / 'events.sqlite'), 'stripe_broker': {'url': 'https://cp.example/api/stripe/token'}}
         mail_grants.put(self.config, 'stripe', 'acct_1abcdef', 'srt_1')
         stripe._tokens.clear()
-        self.helpers = types.SimpleNamespace(SourceError=a.SourceError, iso=a.CONNECTOR_HELPERS.iso,
+        self.helpers = types.SimpleNamespace(SourceError=sources.SourceError, iso=machine_sources_connectors.CONNECTOR_HELPERS.iso,
                                              credential=lambda config, name: 'app-token' if name == 'stripe-broker' else 1 / 0)
         self.broker_calls, self.calls, self.account_status, self.expired_once, self.broker_status = [], [], 200, False, 200
         patch('urllib.request.urlopen', side_effect=self.respond).start()
@@ -85,19 +88,19 @@ class Broker(unittest.TestCase):
         stripe.Source(self.config, ACCOUNT, self.helpers).verify()
         pasted = {**ACCOUNT, 'transport': 'api', 'credential': 'stripe'}
         helpers = types.SimpleNamespace(**{**vars(self.helpers), 'credential': lambda config, name: 'sat_pasted'})
-        with self.assertRaises(a.SourceError):  # a pasted key that can't read the account is still refused
+        with self.assertRaises(sources.SourceError):  # a pasted key that can't read the account is still refused
             stripe.Source(self.config, pasted, helpers).verify()
         self.account_status = 200
-        with self.assertRaisesRegex(a.SourceError, 'account_identity_mismatch'):  # the key reads another account
+        with self.assertRaisesRegex(sources.SourceError, 'account_identity_mismatch'):  # the key reads another account
             stripe.Source(self.config, {**pasted, 'stripe_account': 'acct_other1'}, helpers).verify()
 
     def test_a_revoked_sign_in_asks_to_sign_in_again(self):
         self.broker_status = 401
-        with self.assertRaisesRegex(a.SourceError, 'stripe_signin_expired'):
+        with self.assertRaisesRegex(sources.SourceError, 'stripe_signin_expired'):
             stripe.broker_token(self.config, ACCOUNT, self.helpers)
 
     def test_only_the_allowed_paths(self):
-        with self.assertRaisesRegex(a.SourceError, 'stripe_path_not_allowed'):
+        with self.assertRaisesRegex(sources.SourceError, 'stripe_path_not_allowed'):
             stripe.Source(self.config, ACCOUNT, self.helpers).get('v1/refunds')
 
     def test_what_a_fleet_admin_shares_is_an_access_token_with_its_time_never_the_sign_in(self):
@@ -121,7 +124,7 @@ class DeviceSignIn(unittest.TestCase):
         self.path = root / 'config.json'
         self.path.write_text(json.dumps({'database': str(root / 'events.sqlite'), 'credentials': {'fleet': str(root / 'fleet.token')}, 'accounts': []}))
         self.answer = None
-        patch.object(onboarding, 'assistant', return_value=a).start()
+        patch.object(onboarding, 'assistant', return_value=FOR_ONBOARDING).start()
         patch.object(onboarding, 'check', side_effect=lambda config, account: self.answer).start()
         self.addCleanup(patch.stopall)
 
@@ -164,7 +167,7 @@ class SharedStripe(unittest.TestCase):
                   'accounts': [{'id': 'work', 'email': me + '@acme.example', 'service': 'gmail', 'boundary': 'work:Acme'}]}
         if stripe_account:
             config['accounts'].append(dict(ACCOUNT))
-        box = fleet.Fleet(a.Store(root / 'events.sqlite').connect, config, lambda: 'token', relay=FakeRelay(self.net, me))
+        box = fleet.Fleet(machine_main.Store(root / 'events.sqlite').connect, config, lambda: 'token', relay=FakeRelay(self.net, me))
         box.member_id = me
         box.save_config = lambda change, restart, me=me: self.restarts.append((me, restart))
         return box
@@ -237,7 +240,7 @@ class SharedStripe(unittest.TestCase):
         dump = json.dumps(self.net.calls)
         self.assertNotIn('sat_', dump)  # the Network never sees a token, sealed envelopes included
         self.assertNotIn('srt_', dump)
-        self.assertEqual(a.reconnect_help(self.held(self.mem), None), {'shared_by': 'Acme'})  # members can't change it
+        self.assertEqual(machine_sources_connectors.reconnect_help(self.held(self.mem), None), {'shared_by': 'Acme'})  # members can't change it
 
     def test_someone_who_leaves_leaves_nothing_to_replace(self):
         self.own.share('billing', FLEET, ['mem3'])

@@ -10,7 +10,10 @@ import urllib.parse
 from unittest.mock import Mock, patch
 
 from connectors import shortcut
-from test_connectors import a, Response
+from test_connectors import FOR_ONBOARDING, Response
+import machine.main as machine_main
+import machine.sources.connectors as machine_sources_connectors
+import sources
 
 NOW = '2026-10-20T12:00:00+00:00'
 ACCOUNT = {**shortcut.SETUP['account'], 'workspace': 'example-workspace'}
@@ -38,10 +41,10 @@ class ShortcutTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'events.sqlite')
+        self.store = machine_main.Store(Path(self.temp.name) / 'events.sqlite')
         self.credential = Mock(return_value='fixture-token')
-        self.helpers = types.SimpleNamespace(SourceError=a.SourceError, now=lambda: NOW,
-                                             iso=a.CONNECTOR_HELPERS.iso, credential=self.credential)
+        self.helpers = types.SimpleNamespace(SourceError=sources.SourceError, now=lambda: NOW,
+                                             iso=machine_sources_connectors.CONNECTOR_HELPERS.iso, credential=self.credential)
         self.member = copy.deepcopy(MEMBER)
         self.pages = [{'data': [story()], 'next': None, 'total': 1}]
         self.histories = {1: [history()]}
@@ -127,7 +130,7 @@ class ShortcutTests(unittest.TestCase):
             self.assertEqual(checkpoint['catchup']['cursor'], NEXT)
             self.assertFalse(checkpoint['coverage_complete'])
             self.pages = [urllib.error.URLError('private error text')]
-            with self.assertRaisesRegex(a.SourceError, '^shortcut_network$'):
+            with self.assertRaisesRegex(sources.SourceError, '^shortcut_network$'):
                 self.sync()
             self.assertEqual(self.store.checkpoint(ACCOUNT['id']), checkpoint)
             second = history(2)
@@ -155,7 +158,7 @@ class ShortcutTests(unittest.TestCase):
         self.assertIsNone(self.store.checkpoint(ACCOUNT['id']))
         self.assertEqual(self.rows(), [])
         self.member['workspace2']['url_slug'] = 'other-workspace'
-        with self.assertRaisesRegex(a.SourceError, '^account_identity_mismatch$'):
+        with self.assertRaisesRegex(sources.SourceError, '^account_identity_mismatch$'):
             self.sync()
         self.assertEqual(self.rows(), [])
         self.assertEqual(shortcut.Source({}, {**ACCOUNT, 'workspace': 'https://app.shortcut.com/example-workspace/stories'}, self.helpers).workspace,
@@ -165,13 +168,13 @@ class ShortcutTests(unittest.TestCase):
         for status in (401, 403, 404, 429, 500):
             with self.subTest(status=status):
                 self.pages = [urllib.error.HTTPError('unused', status, 'private token', {'Retry-After': '120'}, None)]
-                with self.assertRaises(a.SourceError) as caught:
+                with self.assertRaises(sources.SourceError) as caught:
                     self.sync()
                 self.assertEqual(str(caught.exception), f'shortcut_http:HTTP_{status}')
                 self.assertEqual(caught.exception.retry_after, 120)
                 self.assertIsNone(self.store.checkpoint(ACCOUNT['id']))
         self.pages = [urllib.error.HTTPError('unused', 429, 'private', {}, None)]
-        with self.assertRaises(a.SourceError) as caught:
+        with self.assertRaises(sources.SourceError) as caught:
             self.sync()
         self.assertEqual(caught.exception.retry_after, 60)
 
@@ -183,7 +186,7 @@ class ShortcutTests(unittest.TestCase):
                                 ({'data': [], 'total': 1, 'next': NEXT}, 'shortcut_invalid_cursor')):
             with self.subTest(label=label):
                 self.pages = [response]
-                with self.assertRaisesRegex(a.SourceError, '^' + label + '$'):
+                with self.assertRaisesRegex(sources.SourceError, '^' + label + '$'):
                     self.sync()
                 self.assertIsNone(self.store.checkpoint(ACCOUNT['id']))
         for payload, label in (({}, 'shortcut_invalid_history'), ([{}], 'shortcut_invalid_history'),
@@ -191,7 +194,7 @@ class ShortcutTests(unittest.TestCase):
             with self.subTest(label=label):
                 self.pages = [{'data': [story()], 'total': 1}]
                 self.histories[1] = payload
-                with self.assertRaisesRegex(a.SourceError, '^' + label + '$'):
+                with self.assertRaisesRegex(sources.SourceError, '^' + label + '$'):
                     self.sync()
                 self.assertEqual(self.rows(), [])
 
@@ -200,26 +203,26 @@ class ShortcutTests(unittest.TestCase):
                       '/api/v3/member?next=x', '/api/v3/search/stories?next=x#fragment', 3):
             with self.subTest(value=value):
                 self.pages = [{'data': [story()], 'total': 2, 'next': value}]
-                with self.assertRaisesRegex(a.SourceError, '^shortcut_invalid_cursor$'):
+                with self.assertRaisesRegex(sources.SourceError, '^shortcut_invalid_cursor$'):
                     self.sync()
         source = shortcut.Source({}, ACCOUNT, self.helpers)
         for path in ('https://example.invalid/', '/api/v3/stories/1', '/api/v3/../member', '/api/v3/member#x'):
-            with self.subTest(path=path), self.assertRaisesRegex(a.SourceError, '^shortcut_path_not_allowed$'):
+            with self.subTest(path=path), self.assertRaisesRegex(sources.SourceError, '^shortcut_path_not_allowed$'):
                 source.get(path)
         self.pages = [{'data': [story()], 'total': 2, 'next': NEXT},
                       {'data': [story()], 'total': 2, 'next': NEXT}]
-        with self.assertRaisesRegex(a.SourceError, '^shortcut_invalid_cursor$'):
+        with self.assertRaisesRegex(sources.SourceError, '^shortcut_invalid_cursor$'):
             self.sync()
         self.assertEqual(len(self.rows()), 1)  # Only the successful first page was committed.
         self.assertFalse(self.store.checkpoint(ACCOUNT['id'])['coverage_complete'])
 
     def test_credentials_workspace_and_redirect_protection(self):
         for value in ('https://example.invalid/workspace', '../member', 'bad slug', 3):
-            with self.subTest(value=value), self.assertRaisesRegex(a.SourceError, '^shortcut_invalid_workspace$'):
+            with self.subTest(value=value), self.assertRaisesRegex(sources.SourceError, '^shortcut_invalid_workspace$'):
                 shortcut.Source({}, {**ACCOUNT, 'workspace': value}, self.helpers)
         for value in ('', 'bad\nheader', 'token with spaces'):
             self.credential.return_value = value
-            with self.subTest(value=value), self.assertRaisesRegex(a.SourceError, '^shortcut_credential_unavailable$'):
+            with self.subTest(value=value), self.assertRaisesRegex(sources.SourceError, '^shortcut_credential_unavailable$'):
                 shortcut.Source({}, ACCOUNT, self.helpers)
         self.assertEqual(self.requests, [])
         self.assertIsNone(shortcut.NoRedirect().redirect_request(None, None, 302, '', {}, 'https://example.invalid'))
@@ -259,12 +262,12 @@ class ShortcutTests(unittest.TestCase):
         self.assertNotIn('fixture-token', json.dumps(account))
         # Saved: a token from another workspace is refused, never switched to
         self.member['workspace2']['url_slug'] = 'other-workspace'
-        with self.assertRaisesRegex(a.SourceError, '^account_identity_mismatch$'):
+        with self.assertRaisesRegex(sources.SourceError, '^account_identity_mismatch$'):
             shortcut.check({}, account, self.helpers)
         self.assertEqual(account['workspace'], 'example-workspace')
         for slug in (None, '', '../x', 'bad slug'):
             self.member['workspace2']['url_slug'] = slug
-            with self.subTest(slug=slug), self.assertRaisesRegex(a.SourceError, '^shortcut_invalid_member$'):
+            with self.subTest(slug=slug), self.assertRaisesRegex(sources.SourceError, '^shortcut_invalid_member$'):
                 shortcut.check({}, {**shortcut.SETUP['account']}, self.helpers)
 
     def connect(self, token):
@@ -297,7 +300,7 @@ class ShortcutTests(unittest.TestCase):
         self.member.update(name='Example Member')
         self.member['workspace2']['name'] = 'Example Workspace'
         onboarding, config_path, ui, run = self.connect('fixture-token')
-        with patch.object(onboarding, 'assistant', return_value=a):
+        with patch.object(onboarding, 'assistant', return_value=FOR_ONBOARDING):
             account = run()
         self.assertFalse([q for q in ui.asked if 'workspace' in q.lower()])
         self.assertEqual((account['workspace'], account['member_name']), ('example-workspace', 'Example Member'))
@@ -310,7 +313,7 @@ class ShortcutTests(unittest.TestCase):
     def test_a_refused_token_says_so_in_plain_words(self):
         self.member = urllib.error.HTTPError('unused', 401, 'fixture-token refused', {}, None)
         onboarding, _, ui, run = self.connect('fixture-token')
-        with patch.object(onboarding, 'assistant', return_value=a), self.assertRaises(onboarding.SetupError) as caught:
+        with patch.object(onboarding, 'assistant', return_value=FOR_ONBOARDING), self.assertRaises(onboarding.SetupError) as caught:
             run()
         self.assertEqual((caught.exception.message, caught.exception.fix),
                          ('Shortcut didn’t accept that token', 'copy it again from Shortcut and paste it here'))

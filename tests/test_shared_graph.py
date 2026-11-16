@@ -4,7 +4,6 @@ the sealed blobs until every Machine they were sealed for took them, and can't r
 import contextlib
 import copy
 import datetime as dt
-import importlib.util
 import json
 import shutil
 import sqlite3
@@ -13,9 +12,8 @@ import unittest
 from unittest.mock import patch
 from pathlib import Path
 
-spec = importlib.util.spec_from_file_location('graph_share_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
-a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
-fleet, graph = a.fleet, a.graph
+import fleet
+import graph
 import fleet_trust as ft
 import message_seal
 import network_crypto as nc
@@ -23,6 +21,12 @@ import shared_graph as sg
 import shared_graph_kept as sg_kept
 import shared_graph_logos as sgl
 from kept_connections import kept_connections
+import enrichment
+import machine.app.recap as machine_app_recap
+import machine.main as machine_main
+import machine.store.profile as machine_store_profile
+import timeutil
+import uuid
 
 FLEET = 'fl_' + '3' * 16
 BODY = 'The renewal quote for 40 seats is attached, valid until Friday.'
@@ -148,9 +152,9 @@ class SharedGraph(unittest.TestCase):
                   'accounts': [{'id': 'work', 'email': email, 'service': 'gmail', 'boundary': 'work:Acme'},
                                {'id': 'home', 'email': me + '@home.example', 'service': 'gmail', 'boundary': 'personal:Home'}]}
         if kept is None:
-            store = a.Store(root / 'events.sqlite', protect=self.PROTECT)
+            store = machine_main.Store(root / 'events.sqlite', protect=self.PROTECT)
         else:
-            store = object.__new__(a.Store)
+            store = object.__new__(machine_main.Store)
             store.__dict__.update(kept, path=root / 'events.sqlite')
             if store.sealer:  # the copy's own key file (the same key)
                 store.sealer = message_seal.Sealer(message_seal.load_key(store.path))
@@ -202,7 +206,7 @@ class SharedGraph(unittest.TestCase):
             self.own.graph_pause(FLEET, False)  # an admin turned the team's Graph on (off by default: experimental)
         for box in self.boxes:
             if not self._testMethodName.startswith('test_the_first_share'):
-                box.set_meta('graph_start:' + FLEET, {'shown': a.now(), 'started': a.now()})  # the owners looked it over
+                box.set_meta('graph_start:' + FLEET, {'shown': timeutil.now(), 'started': timeutil.now()})  # the owners looked it over
         self.rounds()
 
     def rounds(self, n=2):
@@ -221,7 +225,7 @@ class SharedGraph(unittest.TestCase):
             box.store.commit_page(e['account_id'], {}, [e])
         with box.store.connect() as db:
             db.isolation_level = None
-            graph.build(db, box.config, a.now())
+            graph.build(db, box.config, timeutil.now())
 
     def event_id(self, box, source_id):
         with box.store.connect() as db:
@@ -344,7 +348,7 @@ class SharedGraph(unittest.TestCase):
                 sg.set_hand(db, self.event_id(self.own, 'work-6'), 'team')
             label = self.own.thread_labels(db, [dict(db.execute("SELECT * FROM events WHERE source_id='work-6'").fetchone())])
         self.assertEqual((label[self.event_id(self.own, 'work-6')]['fixed'], label[self.event_id(self.own, 'work-6')]['view']), (True, 'personal'))
-        app = object.__new__(a.App); app.store, app.fleet, app.config = self.own.store, self.own, self.own.config
+        app = object.__new__(machine_main.App); app.store, app.fleet, app.config = self.own.store, self.own, self.own.config
         with self.assertRaisesRegex(ValueError, 'Personal threads are never shared'):
             app.graph_share_action('graph_share', {'event_id': self.event_id(self.own, 'work-6'), 'share': 'team'})
         self.judge(self.own, ('work-6', 'client', 'Lee asked for a quote'), ('work-6', 'other', 'A note'), ('work-6', 'client', 'Lee wrote'))
@@ -378,10 +382,10 @@ class SharedGraph(unittest.TestCase):
                  mail('work', 9, 'Kim Moss <kim@pal.example>', 'own1@acme.example', 'Climbing trip', 'Trip is booked.', 1, 't-kim'),
                  mail('work', 10, 'Lee Park <lee@client.example>', 'own1@acme.example', 'Renewal quote', BODY, 1, 't-renewal', cc='hana@studio.example'))
         with self.own.store.connect() as db:
-            graph.person_edit(db, 'email:kim@pal.example', {'side': 'personal'}, a.now())
+            graph.person_edit(db, 'email:kim@pal.example', {'side': 'personal'}, timeutil.now())
             db.commit()
             db.isolation_level = None
-            graph.build(db, self.own.config, a.now())
+            graph.build(db, self.own.config, timeutil.now())
         self.judge(self.own, ('work-8', 'client', 'Hana wrote'), ('work-9', 'client', 'Kim wrote'), ('work-10', 'client', 'Lee asked for a quote'))
         self.rounds()
         received = json.dumps(self.team(self.mem) + self.team(self.mem, 'team_mail'))
@@ -399,7 +403,7 @@ class SharedGraph(unittest.TestCase):
                  mail('work', 11, 'Lee Park <lee@client.example>', 'own1@acme.example', 'Gym floor quote', BODY, 1, 't-floor'),
                  mail('work', 12, 'Rae Dunn <rae@vendor.example>', 'own1@acme.example', 'Wall panels', 'Panels ship Monday.', 1, 't-wall'))
         with self.own.store.connect() as db:
-            graph.person_edit(db, 'email:kim@pal.example', {'side': 'personal'}, a.now())
+            graph.person_edit(db, 'email:kim@pal.example', {'side': 'personal'}, timeutil.now())
         self.judge(self.own, ('work-9', 'client', 'Kim wrote'), ('work-11', 'client', 'Lee sent the floor quote'), ('work-12', 'client', 'Rae ships panels'))
         self.board(self.own, 'Gyms', 'team', {'Gym: Boulder': ['work-9', 'work-11'], 'Gym: Ridge': ['work-9'], 'Gym: Wall': ['work-12']})
         with self.own.store.connect() as db:
@@ -420,7 +424,7 @@ class SharedGraph(unittest.TestCase):
         self.rounds()
         self.assertNotIn(INTERNAL, json.dumps(self.team(self.mem, 'team_mail')))
         self.assertNotIn('Standup', json.dumps(self.team(self.mem, 'team_mail') + self.team(self.mem)))
-        app = object.__new__(a.App); app.store, app.fleet, app.config = self.own.store, self.own, self.own.config
+        app = object.__new__(machine_main.App); app.store, app.fleet, app.config = self.own.store, self.own, self.own.config
         with self.assertRaisesRegex(ValueError, 'Only colleagues'):
             app.graph_share_action('graph_share', {'event_id': self.event_id(self.own, 'work-4'), 'share': 'team'})
         with self.own.store.connect() as db:
@@ -537,7 +541,7 @@ class SharedGraph(unittest.TestCase):
             self.assertTrue(self.own.store.protected or not self.PROTECT)
             self.assertEqual(bool(db.execute("SELECT count(*) FROM events WHERE instr(metadata,'mc1_sealed')>0").fetchone()[0]), self.own.store.protected)
             db.executemany('INSERT OR REPLACE INTO identity_names(identifier,name,email,checked_at) VALUES(?,?,?,?)',
-                           [('slack:U0VERA0001', 'Vera Stone', 'vera@secret.example', a.now()), ('slack:U0LEE00001', 'Lee Park', 'lee@client.example', a.now())])
+                           [('slack:U0VERA0001', 'Vera Stone', 'vera@secret.example', timeutil.now()), ('slack:U0LEE00001', 'Lee Park', 'lee@client.example', timeutil.now())])
         self.add(self.own,
                  mail('work', 40, 'Lee Park <lee@client.example>', 'own1@acme.example', 'Old plan', 'From the import.', 300, 't-old', cc='Vera Stone <Vera@Secret.Example>'),
                  mail('work', 41, 'Lee Park <lee@client.example>', 'own1@acme.example', 'Re: Old plan', 'A reply this week.', 1, 't-old'),
@@ -554,7 +558,7 @@ class SharedGraph(unittest.TestCase):
         with self.own.store.connect() as db:
             db.execute("UPDATE events SET history=1 WHERE source_id='work-40'")
             db.execute('INSERT OR REPLACE INTO graph_events(node_id,event_id,at,probable) VALUES(?,?,?,0)',
-                       ('email:vera@secret.example', self.event_id(self.own, 'work-43'), a.now()))
+                       ('email:vera@secret.example', self.event_id(self.own, 'work-43'), timeutil.now()))
             row = lambda source: db.execute('SELECT * FROM events WHERE source_id=?', (source,)).fetchone()
             unit = lambda source: sg.unit_of(row(source)['kind'], json.loads(row(source)['metadata']), row(source)['id'])
             scope = lambda: sg.Scope(db, ['work', 'sl', 'cal', 'tm'], {'acme.example'}, {'own1@acme.example'})
@@ -634,8 +638,8 @@ class SharedGraph(unittest.TestCase):
                                          'team_id': 'T0ACME0001', 'user_id': 'U0OLIVE001'}]
         with self.own.store.connect() as db:
             db.execute('INSERT OR REPLACE INTO identity_names(identifier,name,email,checked_at) VALUES(?,?,?,?)',
-                       ('slack:U0LEE00001', 'Lee Park', 'lee@client.example', a.now()))
-            db.execute('INSERT OR REPLACE INTO slack_members(user_id,outside,checked_at) VALUES(?,?,?)', ('U0LEE00001', 1, a.now()))
+                       ('slack:U0LEE00001', 'Lee Park', 'lee@client.example', timeutil.now()))
+            db.execute('INSERT OR REPLACE INTO slack_members(user_id,outside,checked_at) VALUES(?,?,?)', ('U0LEE00001', 1, timeutil.now()))
         self.add(self.own, self.lee_dm(4, 'Lee here: the renewal seats look right'))
         self.judge(self.own, ('D0LEE00001:4.000100', 'client', 'Lee confirmed the seats'))
         with self.own.store.connect() as db:
@@ -761,13 +765,13 @@ class SharedGraph(unittest.TestCase):
     def board(self, box, name, visibility, projects, stage='Talks'):
         with box.store.connect() as db:
             for project, sources in projects.items():
-                graph.label(db, [self.event_id(box, x) for x in sources], project, 'review', a.now())
+                graph.label(db, [self.event_id(box, x) for x in sources], project, 'review', timeutil.now())
             graph.save_board(db, {'name': name, 'stages': [stage, 'Signed'], 'about': name, 'visibility': visibility,
-                                  'projects': list(projects)}, a.now())
+                                  'projects': list(projects)}, timeutil.now())
             board = db.execute('SELECT id FROM boards WHERE name=?', (name,)).fetchone()[0]
         with box.store.connect() as db:
             db.isolation_level = None
-            graph.build(db, box.config, a.now())
+            graph.build(db, box.config, timeutil.now())
         return board
 
     def projects_of(self, box):
@@ -781,7 +785,7 @@ class SharedGraph(unittest.TestCase):
                 with self.own.store.connect() as db:
                     eid = self.event_id(self.own, source)
                     db.execute('UPDATE events SET occurred_at=? WHERE id=?', (ago(0, 2-index), eid))
-                    graph.set_stage(db, 'project:1', 'Signed' if index == 0 else 'Talks', 'review', a.now(),
+                    graph.set_stage(db, 'project:1', 'Signed' if index == 0 else 'Talks', 'review', timeutil.now(),
                                     reason='Withheld project reason', event_id=eid, next_step='Withheld project next step')
                 self.rounds()
                 record = self.projects_of(self.mem)['Renewal: Lee']
@@ -793,12 +797,12 @@ class SharedGraph(unittest.TestCase):
         self.olive_mail()
         self.board(self.own, 'Renewals', 'team', {'Renewal: Lee': ['work-1', 'work-3']})
         with self.own.store.connect() as db:
-            graph.set_stage(db, 'project:1', 'Signed', 'review', a.now(), reason='Client signed',
+            graph.set_stage(db, 'project:1', 'Signed', 'review', timeutil.now(), reason='Client signed',
                             event_id=self.event_id(self.own, 'work-1'), next_step='Send the client a welcome')
         self.rounds()
         self.assertEqual(self.projects_of(self.mem)['Renewal: Lee']['next'], 'Send the client a welcome')
         with self.own.store.connect() as db:
-            graph.set_stage(db, 'project:1', 'Signed', 'review', a.now(), reason='Private health update',
+            graph.set_stage(db, 'project:1', 'Signed', 'review', timeutil.now(), reason='Private health update',
                             event_id=self.event_id(self.own, 'work-3'), next_step='Private follow-up for surgery')
         self.rounds()
         record = self.projects_of(self.mem)['Renewal: Lee']
@@ -810,7 +814,7 @@ class SharedGraph(unittest.TestCase):
         self.olive_mail()
         board = self.board(self.own, 'Renewals', 'only_you', {'Renewal: Lee': ['work-1', 'work-3']})
         with self.own.store.connect() as db:
-            graph.set_stage(db, 'project:1', 'Signed', 'review', a.now(), reason='Explicit sensitive reason',
+            graph.set_stage(db, 'project:1', 'Signed', 'review', timeutil.now(), reason='Explicit sensitive reason',
                             event_id=self.event_id(self.own, 'work-3'), next_step='Explicit sensitive next step')
         self.own.graph_board_share(board, [{'fleet': FLEET, 'member': 'mem3'}])
         self.rounds()
@@ -827,7 +831,7 @@ class SharedGraph(unittest.TestCase):
         self.assertIn('Renewal quote', [json.loads(r['body']).get('subject') for r in self.team(self.mem, 'team_mail')])
         with self.own.store.connect() as db:
             self.assertTrue(graph.visible_to_team(db, 'project:1'))
-            graph.save_board(db, {'board_id': board, 'name': 'Renewals', 'stages': ['Talks', 'Signed'], 'about': 'Renewals', 'visibility': 'only_you'}, a.now())
+            graph.save_board(db, {'board_id': board, 'name': 'Renewals', 'stages': ['Talks', 'Signed'], 'about': 'Renewals', 'visibility': 'only_you'}, timeutil.now())
             self.assertFalse(graph.visible_to_team(db, 'project:1'))
             self.assertEqual(graph.hidden_project_ids(db), {1})
         self.rounds()
@@ -866,7 +870,7 @@ class SharedGraph(unittest.TestCase):
         self.assertEqual((tiles['Pilot: Kim']['yours'], tiles['Pilot: Kim']['needs_you']), (True, True))  # cc'd, and Kim wrote last
         with self.mem.store.connect() as db:
             db.execute("INSERT INTO suggestions(id,dedupe_key,title,body,event_ids,account_ids,status,created_at,project) VALUES('c1','c1','Call Lee','',"
-                       "'[]','[]','pending',?,'Renewal: Lee')", (a.now(),))
+                       "'[]','[]','pending',?,'Renewal: Lee')", (timeutil.now(),))
         with self.mem.store.connect() as db:
             view = self.mem.team_overview(db, {})
             tiles = {p['name']: p for b in view['boards'] for p in b['projects']}
@@ -885,7 +889,7 @@ class SharedGraph(unittest.TestCase):
         self.olive_mail()
         with self.own.store.connect() as db:
             db.execute("INSERT OR REPLACE INTO org_profiles(domain,status,profile,fetched_at) VALUES('client.example','found',?,?)",
-                       (json.dumps({'name': 'Client Co', 'logo': logo}), a.now()))
+                       (json.dumps({'name': 'Client Co', 'logo': logo}), timeutil.now()))
         self.board(self.own, 'Renewals', 'team', {'Renewal: Lee': ['work-1']})
         with self.own.store.connect() as db:
             db.execute("UPDATE projects SET org='client.example' WHERE name='Renewal: Lee'")
@@ -937,7 +941,7 @@ class SharedGraph(unittest.TestCase):
         """A logo saved from an organization's own site (enrichment.site_logos_step), then the Graph built again."""
         with box.store.connect() as db:
             db.execute('INSERT OR REPLACE INTO person_photos(identifier,key,type,data,saved_at) VALUES(?,?,?,?,?)',
-                       ('logo:' + domain, a.enrichment.photo_key('logo:' + domain), 'image/png', data, a.now()))
+                       ('logo:' + domain, enrichment.photo_key('logo:' + domain), 'image/png', data, timeutil.now()))
         self.add(box)
 
     def test_a_logo_from_an_organizations_own_site_goes_as_a_small_picture_once_and_again_only_when_it_changes(self):
@@ -998,7 +1002,7 @@ class SharedGraph(unittest.TestCase):
         self.add(self.mem, mail('work', 9, 'Lee Park <lee@client.example>', 'mem3@acme.example', 'Hello', 'Hi Mo', 1, 't-mo'))
         with self.mem.store.connect() as db:
             db.execute("INSERT OR REPLACE INTO org_profiles(domain,status,profile,fetched_at) VALUES('client.example','found',?,?)",
-                       (json.dumps({'name': 'Client Co', 'logo': own_logo}), a.now()))
+                       (json.dumps({'name': 'Client Co', 'logo': own_logo}), timeutil.now()))
         self.add(self.mem)
         with self.mem.store.connect() as db:
             view = self.mem.team_overview(db, {})
@@ -1022,7 +1026,7 @@ class SharedGraph(unittest.TestCase):
         self.assertNotIn('logo_h', sg._clean_record({'r': 'a' * 32, 't': 'org', 'name': 'C', 'd': [], 'logo_h': 'x"><script>'}))
         # Only a logo saved from the organization's own site: a picture the owner set is never read for it
         with self.own.store.connect() as db:
-            db.execute("INSERT INTO person_photos(identifier,key,type,data,saved_at) VALUES('pic:x',?,'image/png',?,?)", ('d' * 32, png(8, 8), a.now()))
+            db.execute("INSERT INTO person_photos(identifier,key,type,data,saved_at) VALUES('pic:x',?,'image/png',?,?)", ('d' * 32, png(8, 8), timeutil.now()))
             self.assertIsNone(sgl.site_logo_thumb(db, 'api/person-photo?p=' + 'd' * 32))
             self.assertIsNone(sgl.site_logo_thumb(db, 'https://client.example/logo.png'))
 
@@ -1063,7 +1067,7 @@ class SharedGraph(unittest.TestCase):
         told = []
         self.own.tell = lambda text, anchor: told.append((text, anchor))
         for box in (self.adm, self.mem):
-            box.set_meta('graph_start:' + FLEET, {'shown': a.now(), 'started': a.now()})
+            box.set_meta('graph_start:' + FLEET, {'shown': timeutil.now(), 'started': timeutil.now()})
         self.own.set_meta('graph_start:' + FLEET, None)  # Olive's Machine, about to share with the team for the first time
         self.olive_mail()
         self.rounds()
@@ -1091,7 +1095,7 @@ class SharedGraph(unittest.TestCase):
 
     def test_the_first_share_skips_the_hour_on_start_now_and_an_updated_machine_gets_its_hour_too(self):
         for box in (self.adm, self.mem):
-            box.set_meta('graph_start:' + FLEET, {'shown': a.now(), 'started': a.now()})
+            box.set_meta('graph_start:' + FLEET, {'shown': timeutil.now(), 'started': timeutil.now()})
         self.own.set_meta('graph_start:' + FLEET, {'shown': ago(9)})  # waited for Start now before this version
         self.olive_mail()
         self.rounds()
@@ -1102,7 +1106,7 @@ class SharedGraph(unittest.TestCase):
 
     def test_the_first_share_keeps_what_its_owner_keeps_private_in_the_hour(self):
         for box in (self.adm, self.mem):
-            box.set_meta('graph_start:' + FLEET, {'shown': a.now(), 'started': a.now()})
+            box.set_meta('graph_start:' + FLEET, {'shown': timeutil.now(), 'started': timeutil.now()})
         self.olive_mail()
         self.rounds()
         self.own.graph_rule('@client.example', 'private', 'Client')
@@ -1155,12 +1159,12 @@ class SharedGraph(unittest.TestCase):
         run = 'r' * 32
         with self.own.store.connect() as db:
             db.execute("INSERT INTO profile_runs(run_id,status,started_at,updated_at,evidence,kind,auto) VALUES(?,'running',?,?,?,'share',1)",
-                       (run, a.now(), a.now(), json.dumps({'threads': waiting, 'page_size': 20})))
-        self.assertEqual(self.own.store.profile_evidence(1, a.PROFILE_SESSION_PREFIX + run)['threads'][0]['subject'], 'Old order')
+                       (run, timeutil.now(), timeutil.now(), json.dumps({'threads': waiting, 'page_size': 20})))
+        self.assertEqual(self.own.store.profile_evidence(1, machine_store_profile.PROFILE_SESSION_PREFIX + run)['threads'][0]['subject'], 'Old order')
         with self.assertRaises(ValueError):  # only threads this pass was given
-            self.own.store.save_profile({'team': [{'event_id': self.event_id(self.own, 'work-8'), 'share': 'client', 'line': 'x'}]}, a.PROFILE_SESSION_PREFIX + run)
+            self.own.store.save_profile({'team': [{'event_id': self.event_id(self.own, 'work-8'), 'share': 'client', 'line': 'x'}]}, machine_store_profile.PROFILE_SESSION_PREFIX + run)
         self.own.store.save_profile({'team': [{'event_id': waiting[0]['event_id'], 'share': 'client', 'line': 'Lee placed an old order'}]},
-                                    a.PROFILE_SESSION_PREFIX + run)
+                                    machine_store_profile.PROFILE_SESSION_PREFIX + run)
         self.assertEqual(self.own.graph_unjudged(), [])
         self.rounds()
         self.assertIn('Old order', {json.loads(r['body']).get('subject') for r in self.team(self.mem, 'team_mail')})
@@ -1245,9 +1249,9 @@ class SharedGraph(unittest.TestCase):
         self.rounds()
         self.own.graph_optout(FLEET, True)
         wish = self.own.meta('graph_off:' + FLEET)['at']
-        forged = ft.sign(self.mem._private(), ft.optout(FLEET, 'own1', self.net.keys['own1']['sign'], 'mem3', wish, a.now()))  # not an admin
-        own_ok = ft.sign(self.own._private(), ft.optout(FLEET, 'own1', self.net.keys['own1']['sign'], 'own1', wish, a.now()))  # their own
-        other = ft.sign(self.adm._private(), ft.optout(FLEET, 'own1', self.net.keys['own1']['sign'], 'adm2', 'an earlier ask', a.now()))
+        forged = ft.sign(self.mem._private(), ft.optout(FLEET, 'own1', self.net.keys['own1']['sign'], 'mem3', wish, timeutil.now()))  # not an admin
+        own_ok = ft.sign(self.own._private(), ft.optout(FLEET, 'own1', self.net.keys['own1']['sign'], 'own1', wish, timeutil.now()))  # their own
+        other = ft.sign(self.adm._private(), ft.optout(FLEET, 'own1', self.net.keys['own1']['sign'], 'adm2', 'an earlier ask', timeutil.now()))
         self.net.trust += [forged, own_ok, other]
         self.rounds()
         self.assertEqual(self.own.sharing()[0]['off'], 'asked')
@@ -1518,7 +1522,7 @@ class SharedGraph(unittest.TestCase):
         for c in self.net.calls:
             if c[2] == '/graph' and c[3] and c[3].get('op') == 'put':
                 self.assertNotIn('cp9', c[3]['blob']['wraps'])
-        header = {'v': 1, 'fleet': FLEET, 'from': 'cp9', 'id': 'ab' * 16, 'seq': 10**13, 'kind': 'snapshot', 'at': a.now(), 'to': ['mem3'], 'kv': 'x'}
+        header = {'v': 1, 'fleet': FLEET, 'from': 'cp9', 'id': 'ab' * 16, 'seq': 10**13, 'kind': 'snapshot', 'at': timeutil.now(), 'to': ['mem3'], 'kv': 'x'}
         blob, _ = sg.make(evil, header, {'records': [{'r': 'cd' * 16, 't': 'person', 'name': 'Planted'}]},
                           {'mem3': self.net.keys['mem3']})
         with self.assertRaisesRegex(ValueError, 'confirmed member'):
@@ -1529,7 +1533,7 @@ class SharedGraph(unittest.TestCase):
         self.net.people['mem4'] = ('Kim', 'member')
         kim = self.machine('mem4'); self.boxes.append(kim)
         self.rounds()
-        header = {'v': 1, 'fleet': FLEET, 'from': 'mem4', 'id': 'ef' * 16, 'seq': 10**12, 'kind': 'snapshot', 'at': a.now(), 'to': ['own1'], 'kv': None}
+        header = {'v': 1, 'fleet': FLEET, 'from': 'mem4', 'id': 'ef' * 16, 'seq': 10**12, 'kind': 'snapshot', 'at': timeutil.now(), 'to': ['own1'], 'kv': None}
         blob, _ = sg.make(kim.relay.private, header, {'records': [{'r': 'cd' * 16, 't': 'person', 'name': 'Noa Quill', 'score': 1}], 'threads': []},
                           {'own1': self.net.keys['own1']})
         self.net.blobs[header['id']] = {k: blob[k] for k in ('header', 'ct', 'sig')}
@@ -1586,7 +1590,7 @@ class SharedGraph(unittest.TestCase):
 
     def test_a_review_cant_set_team_or_only_you_by_hand(self):
         self.olive_mail()
-        app = object.__new__(a.App); app.store, app.fleet, app.config = self.own.store, self.own, self.own.config
+        app = object.__new__(machine_main.App); app.store, app.fleet, app.config = self.own.store, self.own, self.own.config
         with self.assertRaisesRegex(ValueError, 'finish_analysis team'):
             app.graph_action({'event_id': self.event_id(self.own, 'work-3'), 'share': 'team', '_review_session': 'agent:main:assistant-review-x'})
         with self.assertRaisesRegex(ValueError, 'finish_analysis team'):
@@ -1598,7 +1602,7 @@ class SharedGraph(unittest.TestCase):
     def test_weekly_report_line(self):
         self.olive_mail()
         self.rounds()
-        lines = a.recap_share_lines(self.own.store, {'dashboard_host': 'box.example', 'dashboard_path': '/'})
+        lines = machine_app_recap.recap_share_lines(self.own.store, {'dashboard_host': 'box.example', 'dashboard_path': '/'})
         self.assertEqual(len(lines), 1)
         self.assertEqual(lines[0], f"• Shared 1 thread with Acme this week, 1 held back. [What's shared](https://box.example/#shared={FLEET})")
 
@@ -1619,7 +1623,7 @@ class SharedGraph(unittest.TestCase):
         for ftag in attachments:
             self.own._put(group, me, 'file', None, ['mem3'], tag=ftag)
         self.own._put(group, me, 'mail', None, ['mem3'], tag=tag)
-        self.own._put(group, me, 'want', {'at': a.now(), 'snap': {}, 'got': {}}, ['mem3'], tag='a' * 32)
+        self.own._put(group, me, 'want', {'at': timeutil.now(), 'snap': {}, 'got': {}}, ['mem3'], tag='a' * 32)
         self.mem.graph_fetch()
         self.assertFalse([r for r in self.team(self.mem, 'team_mail') if r['tag'] == tag])
         self.assertFalse([r for r in self.team(self.mem, 'team_files') if r['tag'] in attachments])
@@ -1645,7 +1649,7 @@ class SharedGraph(unittest.TestCase):
         self.adm.graph_fetch()
         self.net.expire('mem3')
         self.mem._put(self.mem._group(FLEET), self.mem._me_in(self.mem._group(FLEET)), 'want',
-                      {'at': a.now(), 'snap': {}, 'got': {}}, ['adm2'], tag='b' * 32)
+                      {'at': timeutil.now(), 'snap': {}, 'got': {}}, ['adm2'], tag='b' * 32)
         self.adm.graph_fetch()
         self.adm.set_meta('graph_puts', [])
         adm_group = self.adm._group(FLEET)
@@ -1684,7 +1688,7 @@ class SharedGraph(unittest.TestCase):
         self.adm.graph_fetch()
         self.net.expire('mem3')
         self.mem._put(self.mem._group(FLEET), self.mem._me_in(self.mem._group(FLEET)), 'want',
-                      {'at': a.now(), 'snap': {}, 'got': {}}, ['adm2'], tag='b' * 32)
+                      {'at': timeutil.now(), 'snap': {}, 'got': {}}, ['adm2'], tag='b' * 32)
         self.adm.graph_fetch()
         self.adm.set_meta('graph_puts', [])
         adm_group = self.adm._group(FLEET)
@@ -1885,11 +1889,11 @@ class SharedGraph(unittest.TestCase):
                  meeting('sidecal', 1, 'Sidecorp board', 'Sidecorp board prep for the sale.', 'olive@sidecorp.example'),
                  meeting('homecal', 1, 'Dinner with Bo', 'Dinner at home, kids too.', 'own1@home.example'))
         with self.own.store.connect() as db:
-            graph.label(db, [self.event_id(self.own, x) for x in ('cal-1', 'zoom-1', 'ic-1', 'sidecal-1', 'homecal-1')], 'Sale: Buyer', 'review', a.now())
-            graph.set_stage(db, 'Sale: Buyer', 'Signed', 'review', a.now(), reason='Bo signed the letter of intent', event_id=self.event_id(self.own, 'work-20'))
-            graph.set_stage(db, 'Sale: Buyer', 'Talks', 'review', a.now(), reason='Sidecorp board wants to wait', event_id=self.event_id(self.own, 'sidecal-1'))
+            graph.label(db, [self.event_id(self.own, x) for x in ('cal-1', 'zoom-1', 'ic-1', 'sidecal-1', 'homecal-1')], 'Sale: Buyer', 'review', timeutil.now())
+            graph.set_stage(db, 'Sale: Buyer', 'Signed', 'review', timeutil.now(), reason='Bo signed the letter of intent', event_id=self.event_id(self.own, 'work-20'))
+            graph.set_stage(db, 'Sale: Buyer', 'Talks', 'review', timeutil.now(), reason='Sidecorp board wants to wait', event_id=self.event_id(self.own, 'sidecal-1'))
             db.isolation_level = None
-            graph.build(db, self.own.config, a.now())
+            graph.build(db, self.own.config, timeutil.now())
         return board
 
     def slack(self, n, channel, name, user, text, connect=False):
@@ -1935,10 +1939,10 @@ class SharedGraph(unittest.TestCase):
 
     def learn_run(self, box, evidence, names, learnings):
         import fleet_learnings
-        run_id = a.uuid.uuid4().hex
+        run_id = uuid.uuid4().hex
         with box.connect() as db:
             db.execute("INSERT INTO profile_runs(run_id,status,started_at,updated_at,evidence,kind,auto,draft) VALUES(?,'ok',?,?,?,'fleet_learn',1,?)",
-                       (run_id, a.now(), a.now(), json.dumps(evidence), json.dumps({'learnings': learnings})))
+                       (run_id, timeutil.now(), timeutil.now(), json.dumps(evidence), json.dumps({'learnings': learnings})))
             return fleet_learnings.finish(db, run_id, names, log=box.log)
 
     REFUNDS = {'kind': 'process', 'text': 'Refund requests are answered from the support inbox with the refund template.', 'confidence': 0.9, 'threads': [1, 2, 3]}
@@ -1947,7 +1951,7 @@ class SharedGraph(unittest.TestCase):
     def todo(self, box, sid, title, body, accounts):
         with box.store.connect() as db:
             db.execute('INSERT INTO suggestions(id,dedupe_key,title,body,event_ids,account_ids,status,created_at) VALUES(?,?,?,?,?,?,?,?)',
-                       (sid, sid, title, body, '[]', json.dumps(accounts), 'accepted', a.now()))
+                       (sid, sid, title, body, '[]', json.dumps(accounts), 'accepted', timeutil.now()))
         return sid
 
     def shared_refunds(self):
@@ -1994,7 +1998,7 @@ class AutomatedOnly(unittest.TestCase):
 
     def test_each_thread_as_the_full_set_says(self):
         temp = tempfile.TemporaryDirectory(); self.addCleanup(temp.cleanup)
-        store = a.Store(Path(temp.name) / 'events.sqlite', protect=True)
+        store = machine_main.Store(Path(temp.name) / 'events.sqlite', protect=True)
 
         def event(account, n, kind, sender, deleted=False, labels=('INBOX',), **meta):
             return {'account_id': account, 'source_id': f'{account}-{n}', 'kind': kind, 'occurred_at': ago(1), 'title': f'Message {n}', 'body': 'Text',

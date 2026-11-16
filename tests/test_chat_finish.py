@@ -5,9 +5,10 @@ import json
 import unittest
 import test_action_recovery as r
 import test_next_actions as tn
+import machine.cards as machine_cards
+import next_actions
 
 p = r.p
-a = p.a
 
 CHAT = {'kind': 'finish', 'label': 'Submit inbox reply', 'url': 'https://inbox.example.invalid/conversation/7',
         'instructions': 'Open conversation 7, choose Reply (not a note), post the message exactly.',
@@ -32,7 +33,7 @@ class ChatFinish(unittest.TestCase):
 
     def action_now(self):
         with self.store.connect() as db:
-            return a.next_actions.actions(db.execute('SELECT next_action FROM suggestions').fetchone()[0])[0]
+            return next_actions.actions(db.execute('SELECT next_action FROM suggestions').fetchone()[0])[0]
 
     def confirm(self, revision, key='confirm'):
         result = self.app.action('confirm_action', {'suggestion_id': self.sid, 'revision': revision, 'approval_id': key}, owner_dashboard=True)
@@ -42,9 +43,9 @@ class ChatFinish(unittest.TestCase):
     def test_message_and_recipient_are_kept_and_validated(self):
         action = self.ready_step(CHAT)
         self.assertEqual(action['message'], CHAT['message']);self.assertEqual(action['to_name'], 'Sam Example')
-        self.assertIn(CHAT['message'], a.next_actions.preview(action))
+        self.assertIn(CHAT['message'], next_actions.preview(action))
         for bad in ({**CHAT, 'message': ''}, {**CHAT, 'message': 'x' * 8001}, {**LEGACY, 'to_name': 'Sam'}, {**CHAT, 'edited': True}):
-            with self.assertRaises(ValueError):a.next_actions.validate(bad, {'accounts': []}, [])
+            with self.assertRaises(ValueError):next_actions.validate(bad, {'accounts': []}, [])
 
     def test_edit_changes_exactly_what_confirm_posts(self):
         action = self.ready_step(CHAT)
@@ -99,7 +100,7 @@ class ChatFinish(unittest.TestCase):
         self.assertEqual(saved['status'], 'completed')
         row = self.store.snapshot([])['suggestions'][0]
         self.assertEqual(row['status'], 'completed');self.assertIsNone(row['outcome'])
-        self.assertNotIn('Needs you', a.card(row));self.assertNotIn('Mark it done', a.card(row))
+        self.assertNotIn('Needs you', machine_cards.card(row));self.assertNotIn('Mark it done', machine_cards.card(row))
         # Undo brings it back as it was, without the stale needs-you line.
         self.store.decide(self.sid, 'undo', '', 'undo-1', 'dashboard')
         self.assertEqual(self.store.snapshot([])['suggestions'][0]['status'], 'prepared')
@@ -129,7 +130,7 @@ class SentCard(unittest.TestCase):
         row = self.row()
         self.assertEqual(row['status'], 'completed');self.assertIsNone(row['outcome'])
         self.assertEqual(row['body'], 'Drafted a short reply.')
-        text = a.card(row)
+        text = machine_cards.card(row)
         self.assertIn('Email sent', text);self.assertNotIn('Needs you', text);self.assertNotIn('Nothing sent', text);self.assertNotIn('Done.', text)
         with self.store.connect() as db:
             self.assertEqual(db.execute("SELECT choice,source FROM decisions WHERE id LIKE 'sent:%'").fetchone()[:], ('complete', 'assistant'))

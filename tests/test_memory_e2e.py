@@ -9,7 +9,6 @@ The chat model is played by the test: it calls the tools the bridge gives it (op
 arguments they take, through App.action as the bridge's call does. Embeddings are a made-up local function. No model
 call, no send."""
 import datetime as dt
-import importlib.util
 import json
 import tempfile
 import unittest
@@ -19,14 +18,17 @@ from unittest.mock import patch
 from seams import patch_everywhere
 
 ROOT = Path(__file__).parent.parent
-spec = importlib.util.spec_from_file_location('memory_e2e_assistant', ROOT / 'assistant.py')
-a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
 import team_learnings  # noqa: E402
 from machine.app import ask_memory  # noqa: E402
 from machine.app import retained_facts  # noqa: E402
 from machine.app.recall import recall  # noqa: E402
 from machine.export import knowledge  # noqa: E402
 from machine.store.facts import AI_FACTS_HEAD, suggestion_scope  # noqa: E402
+import embeddings
+import graph
+import machine.main as machine_main
+import machine.store.facts as machine_store_facts
+import timeutil
 
 NOW = dt.datetime(2026, 11, 10, 9, tzinfo=dt.timezone.utc)
 SETTINGS = {'url': 'http://embed.invalid', 'model': 'm', 'dims': 3}
@@ -67,10 +69,10 @@ class MemoryEndToEnd(unittest.TestCase):
                                     {'id': 'home', 'email': 'sam@mail.example'}],
                        'telegram_owner': '1000001', 'owner_name': 'Sam Owner', 'timezone': 'Europe/Brussels', 'database': str(self.path),
                        'openclaw_workspace': str(self.dir / 'ws'), 'openclaw_state': str(self.dir / 'none.sqlite'), 'embeddings': SETTINGS}
-        started = patch_everywhere(a, 'now', lambda: NOW.isoformat())
+        started = patch_everywhere(timeutil, 'now', lambda: NOW.isoformat())
         started.start()
         self.addCleanup(started.stop)
-        embedder = patch.object(a.embeddings, 'embed', side_effect=embed)
+        embedder = patch.object(embeddings, 'embed', side_effect=embed)
         embedder.start()
         self.addCleanup(embedder.stop)
         self.reopen()
@@ -78,12 +80,12 @@ class MemoryEndToEnd(unittest.TestCase):
         self.store.commit_page('home', {}, [mail(2, 'home', 'Mia Example <mia.example@gmail.com>', 'sam@mail.example', 'Sunday', 'Dinner at ours on Sunday?')])
         with self.store.connect() as db:
             db.isolation_level = None
-            a.graph.build(db, self.config, NOW.isoformat())
+            graph.build(db, self.config, NOW.isoformat())
         with self.store.connect() as db:
-            a.graph.person_edit(db, MIA, {'side': 'personal'}, NOW.isoformat())  # the owner set her Type to Personal
+            graph.person_edit(db, MIA, {'side': 'personal'}, NOW.isoformat())  # the owner set her Type to Personal
         with self.store.connect() as db:
             db.isolation_level = None
-            a.graph.build(db, self.config, NOW.isoformat())
+            graph.build(db, self.config, NOW.isoformat())
             events = {r[0]: r[1] for r in db.execute('SELECT source_id,id FROM events')}
         self.work_todo = self.store.suggest('fair', 'Book the flight to the Amsterdam fair', 'Ann asks to meet at the fair in Amsterdam.', [events['m1']])['id']
         self.home_todo = self.store.suggest('dinner', 'Answer Mia about Sunday dinner', 'Mia asks you to dinner on Sunday.', [events['m2']])['id']
@@ -91,10 +93,10 @@ class MemoryEndToEnd(unittest.TestCase):
 
     def reopen(self):
         """A fresh process: a new Store and App on the same database file, nothing carried over in memory."""
-        self.store = a.Store(self.path)
+        self.store = machine_main.Store(self.path)
         self.store.config = self.config
         self.store.accounts = self.config['accounts']
-        self.app = object.__new__(a.App)
+        self.app = object.__new__(machine_main.App)
         self.app.store, self.app.config = self.store, self.config
         self.app.memory_search = lambda request: {'error': 'off'}
 
@@ -183,7 +185,7 @@ class MemoryEndToEnd(unittest.TestCase):
         self.assertEqual((row['decision_id'], row['source'], row['side'], row['suggestion_id']), ('webchat-said:run-1', None, None, None))
         row = self.fact(klm)
         self.assertEqual((row['decision_id'], row['source'], row['side'], row['fact_kind']), ('telegram-said:801', None, None, 'preference'))
-        self.assertIsNone(a.ai_fact_by(row))  # the owner's own word; no area of its own: about no one, so it holds in Work and Personal
+        self.assertIsNone(machine_store_facts.ai_fact_by(row))  # the owner's own word; no area of its own: about no one, so it holds in Work and Personal
         with self.store.connect() as db:
             self.assertEqual(db.execute('SELECT count(*) FROM fact_about WHERE fact_id IN (?,?)', (ghent, klm)).fetchone()[0], 0)
         for restarted in (False, True):
@@ -208,7 +210,7 @@ class MemoryEndToEnd(unittest.TestCase):
         # The Work to-do's preparation starts, then the owner corrects in the web chat
         self.assertIn(GHENT, self.start_preparation())
         clock = [NOW + dt.timedelta(hours=1)]
-        later = patch_everywhere(a, 'now', lambda: clock[0].isoformat())
+        later = patch_everywhere(timeutil, 'now', lambda: clock[0].isoformat())
         later.start()
         self.addCleanup(later.stop)
         # 3. A correction in plain words: the new one takes the old one's place; the old one is history only
@@ -315,7 +317,7 @@ class MemoryEndToEnd(unittest.TestCase):
         self.assertLessEqual(len(memory.text('facts')), 3000)
         self.assertLessEqual(len(memory.text('retained')), retained_facts.CHARS)
         self.start_preparation()
-        clock = patch_everywhere(a, 'now', lambda: (NOW + dt.timedelta(hours=1)).isoformat())
+        clock = patch_everywhere(timeutil, 'now', lambda: (NOW + dt.timedelta(hours=1)).isoformat())
         clock.start()
         self.addCleanup(clock.stop)
         for n in range(6):

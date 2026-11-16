@@ -3,7 +3,6 @@ match of their own is forgotten as Learning's Remove does it and is gone from ev
 for the chat to ask; a connected AI's fact is never forgotten this way; Undo in Activity (or in the chat) brings it
 back. A temporary store with made-up data. No model call, no send."""
 import datetime as dt
-import importlib.util
 import tempfile
 import unittest
 from pathlib import Path
@@ -11,11 +10,12 @@ from pathlib import Path
 from seams import patch_everywhere
 
 ROOT = Path(__file__).parent.parent
-spec = importlib.util.spec_from_file_location('chat_forget_assistant', ROOT / 'assistant.py')
-a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
 import activity_log  # noqa: E402
 import learning_loop  # noqa: E402
 from machine.app import ask_memory  # noqa: E402
+import machine.actions as machine_actions
+import machine.main as machine_main
+import timeutil
 
 NOW = dt.datetime(2026, 11, 10, 7, tzinfo=dt.timezone.utc)
 MOVED = 'You moved to Ghent last spring.'
@@ -29,14 +29,14 @@ class ChatForget(unittest.TestCase):
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)
         self.dir = Path(temp.name)
-        self.store = a.Store(self.dir / 'events.sqlite')
+        self.store = machine_main.Store(self.dir / 'events.sqlite')
         self.config = {'accounts': [{'id': 'work', 'email': 'sam@acme.example'}], 'timezone': 'Europe/Brussels',
                        'database': str(self.dir / 'events.sqlite'), 'openclaw_workspace': str(self.dir / 'ws')}
         self.store.config = self.config
         self.store.accounts = self.config['accounts']
-        self.app = object.__new__(a.App)
+        self.app = object.__new__(machine_main.App)
         self.app.store, self.app.config = self.store, self.config
-        started = patch_everywhere(a, 'now', lambda: NOW.isoformat())
+        started = patch_everywhere(timeutil, 'now', lambda: NOW.isoformat())
         started.start()
         self.addCleanup(started.stop)
         with self.store.connect() as db:  # the owner's own, from their notes; and a connected AI's, not the owner's word
@@ -129,8 +129,8 @@ class ChatForget(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'Forget only when the owner asks'):
             self.forget(words='moved to Ghent')
         self.assertIn(MOVED, self.current())
-        self.assertIn('forget_learned', a.OWNER_ACTIONS)  # never the local CLI, the agent's own tool
-        self.assertNotIn('forget_learned', a.DASHBOARD_ACTIONS)
+        self.assertIn('forget_learned', machine_actions.OWNER_ACTIONS)  # never the local CLI, the agent's own tool
+        self.assertNotIn('forget_learned', machine_actions.DASHBOARD_ACTIONS)
 
 
 if __name__ == '__main__':

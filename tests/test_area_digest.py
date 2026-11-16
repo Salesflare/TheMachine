@@ -4,17 +4,20 @@ worth listing; only on the owner's own dashboard. The morning digest doesn't car
 import tempfile, unittest
 from pathlib import Path
 from zoneinfo import ZoneInfo
-import assistant as a
 import notify
 import reading_digest
 from seams import patch_everywhere  # noqa: E402
+import datetime as dt
+import machine.app.recap as machine_app_recap
+import machine.main as machine_main
+import timeutil
 
-UTC = a.dt.timezone.utc
+UTC = dt.timezone.utc
 BXL = ZoneInfo('Europe/Brussels')
 
 
 def at(day, h, m=0):
-    return a.dt.datetime(2026, 11, day, h, m, tzinfo=BXL)  # 2026-11-12 is a Thursday
+    return dt.datetime(2026, 11, day, h, m, tzinfo=BXL)  # 2026-11-12 is a Thursday
 
 
 class Text(unittest.TestCase):
@@ -48,17 +51,17 @@ class Text(unittest.TestCase):
 class FromTheMachine(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'events.sqlite')
-        self.app = object.__new__(a.App); self.app.store = self.store
+        self.store = machine_main.Store(Path(self.temp.name) / 'events.sqlite')
+        self.app = object.__new__(machine_main.App); self.app.store = self.store
         self.config = self.app.config = {'accounts': [{'id': 'home', 'boundary': 'personal:me'}, {'id': 'office', 'boundary': 'work:Acme'},
                                                       {'id': 'machine', 'boundary': 'owner:system'}],
                                          'dashboard_host': 'the-machine.example', 'dashboard_path': '/assistant/'}
-        a.set_work_hours({'start': '08:00', 'end': '18:00'}); self.addCleanup(a.set_work_hours, None)
+        timeutil.set_work_hours({'start': '08:00', 'end': '18:00'}); self.addCleanup(timeutil.set_work_hours, None)
         self.n = 0
 
     def card(self, title, account='office', **extra):
         self.n += 1
-        self.store.commit_page(account, {}, [{'account_id': account, 'source_id': f'm{self.n}', 'kind': 'gmail.message', 'occurred_at': a.now(),
+        self.store.commit_page(account, {}, [{'account_id': account, 'source_id': f'm{self.n}', 'kind': 'gmail.message', 'occurred_at': timeutil.now(),
                                              'title': 'Evidence', 'body': 'Evidence', 'metadata': {}, 'deleted': False}])
         sid = self.store.suggest(f'k{self.n}', title, 'Body', [self.n], **extra)['id']
         with self.store.connect() as db:
@@ -72,7 +75,7 @@ class FromTheMachine(unittest.TestCase):
             db.execute("UPDATE suggestions SET status='completed',closed_decision_id=? WHERE id=?", ('d-' + sid, sid))
 
     def digests(self, when):
-        with patch_everywhere(a, 'local_tz', return_value=BXL):
+        with patch_everywhere(timeutil, 'local_tz', return_value=BXL):
             return self.app.area_digests(when.astimezone(UTC))
 
     def test_each_area_as_the_to_dos_filter_places_it(self):
@@ -93,12 +96,12 @@ class FromTheMachine(unittest.TestCase):
         reading = self.card('Daily digest')
         with self.store.connect() as db:
             reading_digest.ensure(db)
-            db.execute("INSERT INTO digest_items(suggestion_id,item,account_id,address,updated_at) VALUES(?,1,'office','news@example.com',?)", (reading, a.now()))
+            db.execute("INSERT INTO digest_items(suggestion_id,item,account_id,address,updated_at) VALUES(?,1,'office','news@example.com',?)", (reading, timeutil.now()))
         self.assertEqual(self.digests(at(12, 9)), {'work': '', 'personal': ''})
 
     def test_only_on_the_owners_own_dashboard(self):
         self.card('Answer the school', account='home')
-        with patch_everywhere(a, 'local_tz', return_value=BXL):
+        with patch_everywhere(timeutil, 'local_tz', return_value=BXL):
             with self.assertRaises(ValueError):
                 self.app.action('area_digest', {}, owner_dashboard=False)
             self.assertEqual(self.app.action('area_digest', {}, owner_dashboard=True)['personal'], 'Still open\n• Answer the school')
@@ -111,7 +114,7 @@ class FromTheMachine(unittest.TestCase):
             self.card(title, account='home')
         for title in work:
             self.card(title)
-        with patch_everywhere(a, 'local_tz', return_value=BXL), patch_everywhere(a, 'recap_meetings', return_value=[]):
+        with patch_everywhere(timeutil, 'local_tz', return_value=BXL), patch_everywhere(machine_app_recap, 'recap_meetings', return_value=[]):
             digest = self.app.digest(at(12, 9).astimezone(UTC))
         text = digest['text']
         for word in ('\nWork\n', '\nPersonal\n', 'Done today', 'Still open', 'Send the order form'):

@@ -1,7 +1,6 @@
 """Card chat: card_chat reads the card's own session through the Gateway helper and shows it as a conversation (the
 owner's own notes from the service, never the service prompts; steps and replies redacted), and a chat message is the
 Change path with a short follow-up prompt."""
-import importlib.util
 import json
 from pathlib import Path
 import tempfile
@@ -10,10 +9,16 @@ from unittest.mock import patch
 from seams import patch_everywhere  # noqa: E402
 
 from machine.chat import CHAT_STEP_GROUPS, chat_final_step, chat_unglued  # noqa: E402
+import machine.actions as machine_actions
+import machine.app.preparation as machine_app_preparation
+import machine.chat as machine_chat
+import machine.config as machine_config
+import machine.main as machine_main
+import machine.model_usage as machine_model_usage
+import subprocess
+import threading
+import timeutil
 
-spec = importlib.util.spec_from_file_location('card_chat_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
-a = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(a)
 
 
 def row(role, content, run, ms):
@@ -24,11 +29,11 @@ class CardChat(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
-        self.store = a.Store(Path(self.temp.name) / 'events.sqlite')
-        self.store.commit_page('work', {}, [{'account_id': 'work', 'source_id': 'one', 'kind': 'gmail.message', 'occurred_at': a.now(),
+        self.store = machine_main.Store(Path(self.temp.name) / 'events.sqlite')
+        self.store.commit_page('work', {}, [{'account_id': 'work', 'source_id': 'one', 'kind': 'gmail.message', 'occurred_at': timeutil.now(),
                                              'title': 'Evidence', 'body': 'Actual evidence', 'metadata': {}, 'deleted': False}], None)
         self.sid = self.store.suggest('task', 'Reply to the venue', 'I can draft this.', [1])['id']
-        self.app = object.__new__(a.App)
+        self.app = object.__new__(machine_main.App)
         self.app.store = self.store
         self.app.config = {'accounts': [], 'database': str(Path(self.temp.name) / 'events.sqlite'),
                            'openclaw_config': str(Path(self.temp.name) / 'openclaw.json')}
@@ -53,7 +58,7 @@ class CardChat(unittest.TestCase):
             row('assistant', [{'type': 'text', 'text': 'Shorter now.'}], 'r2', 6000),
         ]
         owner = [{'kind': 'you', 'text': 'Do it', 'button': True, 'at': 1000}, {'kind': 'you', 'text': 'Make it shorter', 'button': False, 'at': 5000}]
-        items = a.chat_items(messages, owner)
+        items = machine_chat.chat_items(messages, owner)
         self.assertEqual([i['kind'] for i in items], ['you', 'steps', 'reply', 'you', 'reply'])
         self.assertEqual(items[1]['steps'], [{'text': 'Opening …', 'n': 1}, {'line': ['Ran a command'], 'n': 1}])
         self.assertEqual(items[1]['count'], 2)
@@ -75,7 +80,7 @@ class CardChat(unittest.TestCase):
                   {'type': 'toolCall', 'name': 'browser', 'arguments': {'action': 'open', 'url': 'http://127.0.0.1:18789/secret'}},
                   {'type': 'toolCall', 'name': 'web_fetch', 'arguments': {'url': 'file:///home/someone/notes.txt'}},
                   {'type': 'toolCall', 'name': 'mystery_tool', 'arguments': {'q': 'search words'}}]
-        items = a.chat_items([row('assistant', calls, 'r1', 1000), row('assistant', [{'type': 'text', 'text': 'Ordered.'}], 'r1', 2000)], [])
+        items = machine_chat.chat_items([row('assistant', calls, 'r1', 1000), row('assistant', [{'type': 'text', 'text': 'Ordered.'}], 'r1', 2000)], [])
         steps = items[0]
         self.assertEqual(steps['kind'], 'steps')
         self.assertEqual(steps['count'], 27)
@@ -90,7 +95,7 @@ class CardChat(unittest.TestCase):
     def test_steps_keep_the_most_frequent_kinds(self):
         calls = [{'type': 'toolCall', 'name': 'browser', 'arguments': {'url': f'https://site{n}.example.org/'}} for n in range(30)]
         calls += [{'type': 'toolCall', 'name': 'exec', 'arguments': {}}] * 5
-        steps = a.chat_items([row('assistant', calls, 'r1', 1000)], [])[0]
+        steps = machine_chat.chat_items([row('assistant', calls, 'r1', 1000)], [])[0]
         self.assertEqual(steps['count'], 35)
         self.assertEqual(len(steps['steps']), CHAT_STEP_GROUPS)
         self.assertIn({'line': ['Ran a command'], 'n': 5}, steps['steps'])
@@ -100,7 +105,7 @@ class CardChat(unittest.TestCase):
                 row('assistant', [{'type': 'text', 'text': '\U0001F4BE Learned: updated `some-skill` (Capture it.). Say "undo" to revert this skill change.'}], 'r1', 2000),
                 row('assistant', [{'type': 'text', 'text': '\u2705 Found it in `the-file`.'}], 'r2', 3000),
                 {'role': 'assistant', 'content': [{'type': 'text', 'text': 'Late.'}], 'timestamp': 'x', '__openclaw': {'runId': 'r3', 'recordTimestampMs': 4000}}]
-        items = a.chat_items(msgs, [])
+        items = machine_chat.chat_items(msgs, [])
         self.assertEqual([i['kind'] for i in items], ['reply', 'reply', 'reply'])
         self.assertTrue(items[0]['noted'])  # "Saved to what I’ve learned" on the reply the learning came with
         self.assertNotIn('noted', items[1])
@@ -122,14 +127,14 @@ class CardChat(unittest.TestCase):
             cli([{'type': 'text', 'text': 'Need the card details.'}], 'tool_use', ms + 4000),
             cli([{'type': 'text', 'text': f'The answer for {run}.'}], 'end_turn', ms + 5000),
             row('assistant', [{'type': 'text', 'text': f'Look up the thread first.\n\nNeed the card details.\n\nThe answer for {run}.'}], run, ms + 5500)]
-        items = a.chat_items(turn('r1', 1000) + turn('r2', 100000), [{'kind': 'you', 'text': 'Again', 'at': 100000}])
+        items = machine_chat.chat_items(turn('r1', 1000) + turn('r2', 100000), [{'kind': 'you', 'text': 'Again', 'at': 100000}])
         replies = [i['text'] for i in items if i['kind'] == 'reply']
         self.assertEqual(replies, ['The answer for r1.', 'The answer for r2.'])
         self.assertNotIn('Need the card details', json.dumps(items))
         self.assertEqual([i['kind'] for i in items], ['reply', 'you', 'reply'])
         # Without the CLI's last turn (an older session), the record shows without the notes
         record_only = [m for m in turn('r1', 1000) if m.get('stopReason') != 'end_turn']
-        self.assertEqual([i['text'] for i in a.chat_items(record_only, []) if i['kind'] == 'reply'], ['The answer for r1.'])
+        self.assertEqual([i['text'] for i in machine_chat.chat_items(record_only, []) if i['kind'] == 'reply'], ['The answer for r1.'])
 
     def test_progress_commentary_never_shows_as_the_reply(self):
         sig = lambda phase: json.dumps({'v': 1, 'id': 'msg_1', 'phase': phase})
@@ -138,7 +143,7 @@ class CardChat(unittest.TestCase):
                 {**row('assistant', [{'type': 'text', 'text': 'Checking the inbox first.'}], 'r1', 1000),
                  'openclawStreamFallback': {'source': 'segment', 'itemId': 'msg_1', 'replacementText': 'Checking the inbox first.'}},
                 row('assistant', [{'type': 'text', 'text': 'Drafted the reply.', 'textSignature': sig('final_answer')}], 'r1', 3000)]
-        items = a.chat_items(msgs, [])
+        items = machine_chat.chat_items(msgs, [])
         self.assertEqual([(i['kind'], i.get('text')) for i in items], [('steps', None), ('reply', 'Drafted the reply.')])
 
     def test_steps_come_before_the_reply_and_saved_results_win(self):
@@ -146,7 +151,7 @@ class CardChat(unittest.TestCase):
                 row('assistant', [{'type': 'text', 'text': 'Free text the run also wrote.'}], 'r1', 4000)]
         saved = {'r1': [{'kind': 'reply', 'text': 'Drafted the reply.', 'drafts': [{'kind': 'email', 'body': 'Hi'}], 'at': 2000}],
                  'gone': [{'kind': 'reply', 'text': 'An older result.', 'drafts': [], 'at': 500}]}
-        items = a.chat_items(msgs, [{'kind': 'source', 'text': 'Can you help?', 'at': 100}, {'kind': 'you', 'text': 'Shorter', 'at': 1000}], saved)
+        items = machine_chat.chat_items(msgs, [{'kind': 'source', 'text': 'Can you help?', 'at': 100}, {'kind': 'you', 'text': 'Shorter', 'at': 1000}], saved)
         self.assertEqual([(i['kind'], i.get('text')) for i in items],
                          [('source', 'Can you help?'), ('reply', 'An older result.'), ('you', 'Shorter'), ('steps', None), ('reply', 'Drafted the reply.')])
         self.assertLess(items[3]['at'], items[4]['at'])
@@ -159,15 +164,15 @@ class CardChat(unittest.TestCase):
         job = {'job_id': 'job1'}
         draft = {'kind': 'email', 'to': ['alex@example.com'], 'subject': 'Re: Evidence', 'body': 'Hi Alex, done.', 'thread_id': 't1'}
         with self.store.connect() as db:
-            db.execute("INSERT INTO preparation_runs(job_id,suggestion_id,session_job_id,status,started_at) VALUES('job1',?,'job1','ok',?)", (self.sid, a.now()))
+            db.execute("INSERT INTO preparation_runs(job_id,suggestion_id,session_job_id,status,started_at) VALUES('job1',?,'job1','ok',?)", (self.sid, timeutil.now()))
             db.execute('INSERT INTO preparation_calls(job_id,call_id,tool,params,started_at) VALUES(?,?,?,?,?)',
                        (job['job_id'], 'c1', 'assistant_signals', json.dumps({'action': 'prepare', 'args': {
-                           'suggestion_id': self.sid, 'body': 'Drafted it. See [notes](file:///x/notes.md).', 'next_actions': [draft]}}), a.now()))
+                           'suggestion_id': self.sid, 'body': 'Drafted it. See [notes](file:///x/notes.md).', 'next_actions': [draft]}}), timeutil.now()))
             db.execute('INSERT INTO preparation_calls(job_id,call_id,tool,params,error,started_at) VALUES(?,?,?,?,?,?)',
-                       (job['job_id'], 'c2', 'assistant_signals', json.dumps({'action': 'prepare', 'args': {'suggestion_id': self.sid, 'body': 'Failed one'}}), 'bad', a.now()))
+                       (job['job_id'], 'c2', 'assistant_signals', json.dumps({'action': 'prepare', 'args': {'suggestion_id': self.sid, 'body': 'Failed one'}}), 'bad', timeutil.now()))
             for n, (source, status) in enumerate((('dashboard', 'sent'), ('auto', 'failed'))):
                 db.execute('INSERT INTO action_jobs(id,suggestion_id,revision,payload,status,created_at,updated_at,approval_id,source,rfc_message_id) VALUES(?,?,?,?,?,?,?,?,?,?)',
-                           (f'j{n}', self.sid, f'r{n}', json.dumps(draft), status, a.now(), a.now(), 'ap', source, ''))
+                           (f'j{n}', self.sid, f'r{n}', json.dumps(draft), status, timeutil.now(), timeutil.now(), 'ap', source, ''))
             owner, results = self.app.card_chat_service(db, self.sid)
         source = owner[0]
         self.assertEqual((source['kind'], source['from'], source['via'], source['text']), ('source', 'Alex Doe', 'email', 'Actual evidence'))
@@ -185,9 +190,9 @@ class CardChat(unittest.TestCase):
         step = {'kind': 'finish', 'label': 'Book intro call', 'instructions': 'Create the event and invite Robin.', 'preview': preview,
                 'url': 'https://calendar.example.invalid/'}
         with self.store.connect() as db:
-            db.execute("INSERT INTO preparation_runs(job_id,suggestion_id,session_job_id,status,started_at) VALUES('job1',?,'job1','ok',?)", (self.sid, a.now()))
+            db.execute("INSERT INTO preparation_runs(job_id,suggestion_id,session_job_id,status,started_at) VALUES('job1',?,'job1','ok',?)", (self.sid, timeutil.now()))
             db.execute('INSERT INTO preparation_calls(job_id,call_id,tool,params,started_at) VALUES(?,?,?,?,?)', ('job1', 'c1', 'assistant_signals', json.dumps(
-                {'action': 'prepare', 'args': {'suggestion_id': self.sid, 'body': 'The invitation is ready.', 'next_actions': [step]}}), a.now()))
+                {'action': 'prepare', 'args': {'suggestion_id': self.sid, 'body': 'The invitation is ready.', 'next_actions': [step]}}), timeutil.now()))
             _, results = self.app.card_chat_service(db, self.sid)
         [draft] = results['job1'][0]['drafts']
         self.assertEqual((draft['kind'], draft['label'], draft['body'], draft['to']), ('finish', 'Book intro call', preview, []))
@@ -201,14 +206,14 @@ class CardChat(unittest.TestCase):
         with self.store.connect() as db:
             for n, (label, status) in enumerate((('Add to calendar', 'sent'), ('Merge fix', 'failed'), ('Merge fix', 'cancelled'), ('Finish', 'finish_uncertain'))):
                 db.execute('INSERT INTO action_jobs(id,suggestion_id,revision,payload,status,created_at,updated_at,approval_id,source,rfc_message_id) VALUES(?,?,?,?,?,?,?,?,?,?)',
-                           (f's{n}', self.sid, f'r{n}', json.dumps({'kind': 'merge', 'label': label}), status, a.now(), a.now(), 'ap', 'dashboard', ''))
+                           (f's{n}', self.sid, f'r{n}', json.dumps({'kind': 'merge', 'label': label}), status, timeutil.now(), timeutil.now(), 'ap', 'dashboard', ''))
             owner, _ = self.app.card_chat_service(db, self.sid)
         self.assertEqual([(i['text'], i['mine']) for i in owner if i['kind'] == 'event'],
                          [('Add to calendar', True), ('Merge fix: didn’t work', False), ('Merge fix: canceled', True), ('Finish: not sure it finished', False)])
 
     def test_no_fleet_no_handoff_lines(self):
         with self.store.connect() as db:
-            self.assertEqual(a.card_chat_handoffs(db, self.sid), [])
+            self.assertEqual(machine_chat.card_chat_handoffs(db, self.sid), [])
 
     def test_a_chat_answer_is_the_reply_and_the_card_keeps_its_status(self):
         """Card chat: "I hope it went well". The answer ("Yes, it went through") shows in the chat; the card's own text
@@ -221,13 +226,13 @@ class CardChat(unittest.TestCase):
                                     'outcome': 'answered', 'note_kind': 'continue'})
         with self.store.connect() as db:
             card = db.execute('SELECT status,body FROM suggestions WHERE id=?', (self.sid,)).fetchone()
-            db.execute("INSERT INTO preparation_runs(job_id,suggestion_id,session_job_id,status,started_at) VALUES(?,?,?,'ok',?)", (job, self.sid, job, a.now()))
+            db.execute("INSERT INTO preparation_runs(job_id,suggestion_id,session_job_id,status,started_at) VALUES(?,?,?,'ok',?)", (job, self.sid, job, timeutil.now()))
             db.execute('INSERT INTO preparation_calls(job_id,call_id,tool,params,started_at) VALUES(?,?,?,?,?)', (job, 'c1', 'assistant_signals', json.dumps(
-                {'action': 'prepare', 'args': {'suggestion_id': self.sid, 'reply': 'Yes, the venue confirmed it went through.', 'body': 'I can draft this.'}}), a.now()))
+                {'action': 'prepare', 'args': {'suggestion_id': self.sid, 'reply': 'Yes, the venue confirmed it went through.', 'body': 'I can draft this.'}}), timeutil.now()))
             owner, results = self.app.card_chat_service(db, self.sid)
         self.assertEqual((card['status'], card['body']), ('prepared', 'I can draft this.'))
         self.assertEqual(results[job][0]['text'], 'Yes, the venue confirmed it went through.')
-        self.assertIn('reply=<your answer to their message', a.chat_prompt({'job_id': job, 'suggestion_id': self.sid}))
+        self.assertIn('reply=<your answer to their message', machine_app_preparation.chat_prompt({'job_id': job, 'suggestion_id': self.sid}))
         with self.assertRaises(ValueError):
             self.app.action('prepare', {'suggestion_id': self.sid, 'job_id': job, 'reply': 'x' * 1001})
 
@@ -237,9 +242,9 @@ class CardChat(unittest.TestCase):
         follows it when it is edited, removed (Undo) or condensed."""
         self.store.decide(self.sid, 'other', 'I hope it went well - next time keep it open in the browser for me', 'chat-1', 'dashboard')
         with self.store.connect() as db:
-            db.execute("INSERT INTO preparation_runs(job_id,suggestion_id,session_job_id,status,started_at) VALUES('job1',?,'job1','ok',?)", (self.sid, a.now()))
+            db.execute("INSERT INTO preparation_runs(job_id,suggestion_id,session_job_id,status,started_at) VALUES('job1',?,'job1','ok',?)", (self.sid, timeutil.now()))
             db.execute('INSERT INTO preparation_calls(job_id,call_id,tool,params,started_at) VALUES(?,?,?,?,?)', ('job1', 'c1', 'assistant_signals', json.dumps(
-                {'action': 'prepare', 'args': {'suggestion_id': self.sid, 'body': 'It went through. I’ve noted your preference.'}}), a.now()))
+                {'action': 'prepare', 'args': {'suggestion_id': self.sid, 'body': 'It went through. I’ve noted your preference.'}}), timeutil.now()))
             owner, results = self.app.card_chat_service(db, self.sid)
         self.assertEqual([i for i in owner if i['kind'] == 'learned'], [], 'a claim in the reply is not a learning')
         rule = 'After signing or submitting in the browser, leave the confirmation page open for the owner to check.'
@@ -250,7 +255,7 @@ class CardChat(unittest.TestCase):
         self.assertEqual([(i['what'], i.get('id'), i.get('text'), i.get('channel'), i['state']) for i in learned],
                          [('draft', saved['id'], rule, None, 'saved')])
         # Under the reply it came with (it was saved before the reply), not before it
-        items = a.chat_items([], [o for o in owner if o['kind'] != 'learned'] + learned, results)
+        items = machine_chat.chat_items([], [o for o in owner if o['kind'] != 'learned'] + learned, results)
         kinds = [i['kind'] for i in items]
         self.assertEqual(kinds[kinds.index('reply') + 1:], ['learned'])
         self.assertTrue(all(i['at'] >= items[kinds.index('reply')]['at'] for i in items if i['kind'] == 'learned'))
@@ -286,7 +291,7 @@ class CardChat(unittest.TestCase):
     def test_only_the_owner_edits_what_was_learned(self):
         self.store.decide(self.sid, 'other', 'we stopped using that tool, and the team meets on mondays', 'n1', 'dashboard')
         fact = self.store.remember_fact('The team stopped using the old translation tool.', 'n1', quote='we stopped using that tool')
-        self.assertIn('edit_fact', a.OWNER_ACTIONS)
+        self.assertIn('edit_fact', machine_actions.OWNER_ACTIONS)
         with self.assertRaises(ValueError):
             self.app.action('edit_fact', {'id': fact['id'], 'text': 'Something else entirely.'})
         for bad in ('', 'tiny', 'x' * 241):
@@ -299,18 +304,18 @@ class CardChat(unittest.TestCase):
         self.assertIn('The team uses DeepL now.', [f['text'] for f in self.store.facts()])
 
     def test_result_file_links_are_chips_not_bare_titles(self):
-        body, files = a.chat_result_files('Drafted it. Nothing sent.\n\n[Draft and sources](memory/assistant/261023-note.md)\n'
+        body, files = machine_chat.chat_result_files('Drafted it. Nothing sent.\n\n[Draft and sources](memory/assistant/261023-note.md)\n'
                                           'See [the plan](/home/x/.openclaw/workspace/memory/assistant/plan.md) too. [Bad](memory/assistant/../secret.md)')
         self.assertEqual(files, [{'label': 'Draft and sources', 'path': 'memory/assistant/261023-note.md'},
                                  {'label': 'the plan', 'path': 'memory/assistant/plan.md'}])
         self.assertNotIn('Draft and sources', body)
         self.assertIn('See too.', body)
-        self.assertEqual(a.chat_reply(body)[0].splitlines()[0], 'Drafted it. Nothing sent.')
+        self.assertEqual(machine_chat.chat_reply(body)[0].splitlines()[0], 'Drafted it. Nothing sent.')
 
     def test_names_read_as_people_say_them(self):
-        self.assertEqual(a.chat_person('Lee, Sam'), 'Sam Lee')
-        self.assertEqual(a.chat_person('"Alex Doe"'), 'Alex Doe')
-        self.assertEqual(a.chat_person('Acme, Inc, Sales'), 'Acme, Inc, Sales')
+        self.assertEqual(machine_chat.chat_person('Lee, Sam'), 'Sam Lee')
+        self.assertEqual(machine_chat.chat_person('"Alex Doe"'), 'Alex Doe')
+        self.assertEqual(machine_chat.chat_person('Acme, Inc, Sales'), 'Acme, Inc, Sales')
 
     def test_a_tap_taken_back_at_once_is_left_out(self):
         for n, (choice, at) in enumerate((('complete', '2026-01-01T10:00:00+00:00'), ('reopen', '2026-01-01T10:00:20+00:00'),
@@ -323,7 +328,7 @@ class CardChat(unittest.TestCase):
 
     def test_a_conversation_source_names_who_the_card_is_about(self):
         body = 'Can you confirm the plan?\n1792672698 · Fin · conversation_attribute_updated_by_admin:\n1792673603 · Sam Lee · note: Hi there, we need your call.\nThanks\n1792674070 · Owner Person · note: ask why'
-        self.store.commit_page('work', {}, [{'account_id': 'work', 'source_id': 'two', 'kind': 'intercom.conversation', 'occurred_at': a.now(),
+        self.store.commit_page('work', {}, [{'account_id': 'work', 'source_id': 'two', 'kind': 'intercom.conversation', 'occurred_at': timeutil.now(),
                                              'title': 'Plan', 'body': body, 'metadata': {'from': ''}, 'deleted': False}], None)
         with self.store.connect() as db:
             event = db.execute("SELECT id FROM events WHERE source_id='two'").fetchone()['id']
@@ -336,7 +341,7 @@ class CardChat(unittest.TestCase):
     def test_a_conversation_source_is_what_was_asked_then_the_note(self):
         body = ('Can I sync all inboxes on this plan?\n1792673603 · Sam Lee · note: Hi there.\n1792683559 · user · comment: They belong to different people\n'
                 '1792683579 · user · comment: Great!\n1792683630 · user · comment: Maybe 3 to 6 users\n1792685607 · Sam Lee · note: We need to ask for this')
-        self.store.commit_page('work', {}, [{'account_id': 'work', 'source_id': 'three', 'kind': 'intercom.conversation', 'occurred_at': a.now(),
+        self.store.commit_page('work', {}, [{'account_id': 'work', 'source_id': 'three', 'kind': 'intercom.conversation', 'occurred_at': timeutil.now(),
                                              'title': 'Plan', 'body': body, 'metadata': {'from': '', 'created_at': 1792672698}, 'deleted': False}], None)
         with self.store.connect() as db:
             event = db.execute("SELECT id FROM events WHERE source_id='three'").fetchone()['id']
@@ -349,10 +354,10 @@ class CardChat(unittest.TestCase):
                           ('Sam Lee', 'We need to ask for this', 1792685607000, True)])
 
     def test_an_agent_result_leads_with_what_it_found(self):
-        text, quiet = a.chat_agent_text('I wrote `summary.md` in this folder. Nothing else was changed, sent or posted.\n\nThe price is lower.\n\n'
+        text, quiet = machine_chat.chat_agent_text('I wrote `summary.md` in this folder. Nothing else was changed, sent or posted.\n\nThe price is lower.\n\n'
                                         'Saved [reply-draft.md](/home/x/reply-draft.md). Left for you: send it. Nothing sent or published.', ['summary.md', 'reply-draft.md'])
         self.assertEqual((text, quiet), ('The price is lower.\n\nLeft for you: send it.', True))
-        self.assertEqual(a.chat_agent_text('Fixed the bug in parser.py.', ['parser.py']), ('Fixed the bug in parser.py.', False))
+        self.assertEqual(machine_chat.chat_agent_text('Fixed the bug in parser.py.', ['parser.py']), ('Fixed the bug in parser.py.', False))
 
     def test_changes_asked_of_a_coding_agent_show_before_its_answer(self):
         import agent_jobs
@@ -405,7 +410,7 @@ class CardChat(unittest.TestCase):
         (folder / 'turn-3.jsonl').write_text(line(msg('I don’t know that. I read the files and edited `summary.md`; I didn’t check any shops.')))
         import os
         for n, at in ((1, '2026-01-01T10:00:20+00:00'), (2, '2026-01-01T10:01:10+00:00'), (3, '2026-01-01T10:20:30+00:00')):
-            stamp = a.chat_ms(at) / 1000
+            stamp = machine_chat.chat_ms(at) / 1000
             os.utime(folder / f'turn-{n}.jsonl', (stamp, stamp))
         asks = [{'at': '2026-01-01T10:01:00+00:00', 'text': 'Make it two lines shorter'}, {'at': '2026-01-01T10:20:00+00:00', 'text': 'Did it check shops?'}]
         with self.store.connect() as db:
@@ -436,9 +441,9 @@ class CardChat(unittest.TestCase):
         self.assertIsNone(agent_jobs.transcript_answer(folder / 'missing.jsonl'))
 
     def test_a_shortened_agent_answer_keeps_what_it_says_after_a_semicolon(self):
-        self.assertEqual(a.chat_agent_text('I edited `summary.md`; I didn’t check any shops.', ['summary.md'], full=True),
+        self.assertEqual(machine_chat.chat_agent_text('I edited `summary.md`; I didn’t check any shops.', ['summary.md'], full=True),
                          ('I didn’t check any shops.', False, 'I edited summary.md; I didn’t check any shops.'))
-        self.assertEqual(a.chat_agent_text('Fixed it; tests pass.', ['x.py'], full=True), ('Fixed it; tests pass.', False, ''))
+        self.assertEqual(machine_chat.chat_agent_text('Fixed it; tests pass.', ['x.py'], full=True), ('Fixed it; tests pass.', False, ''))
 
     def test_card_chat_reads_the_cards_session_with_its_own_notes(self):
         with self.gateway({}):
@@ -449,13 +454,13 @@ class CardChat(unittest.TestCase):
         self.store.decide(self.sid, 'other', 'Make it shorter', 'chat-1', 'dashboard')
         job = self.job()
         with self.store.connect() as db:  # a send is shown by its action's own label, not as a decision too
-            db.execute("INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES('s1',?,'send','','dashboard',?)", (self.sid, a.now()))
-        history = {'messages': [row('assistant', [{'type': 'text', 'text': 'On it.'}], job['job_id'], a.chat_ms(a.now()) + 1000)],
+            db.execute("INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES('s1',?,'send','','dashboard',?)", (self.sid, timeutil.now()))
+        history = {'messages': [row('assistant', [{'type': 'text', 'text': 'On it.'}], job['job_id'], machine_chat.chat_ms(timeutil.now()) + 1000)],
                    'deltaCursor': 'cur1', 'hasMore': False, 'inFlightRun': {'runId': job['job_id'], 'text': 'Writing to /home/x/y'}}
         with self.gateway(history):
             chat = self.app.card_chat(self.sid)
         self.assertEqual(self.calls[0]['session_key'], 'agent:main:assistant-review-preparation-' + job['session_job_id'])
-        self.assertEqual((self.calls[0]['limit'], self.calls[0]['cursor']), (a.CHAT_HISTORY_LIMIT, None))
+        self.assertEqual((self.calls[0]['limit'], self.calls[0]['cursor']), (machine_chat.CHAT_HISTORY_LIMIT, None))
         self.assertTrue(chat['active'])
         self.assertEqual(chat['cursor'].split('|')[0], 'cur1')
         self.assertEqual(chat['live'], {'text': 'Writing to …'})
@@ -470,7 +475,7 @@ class CardChat(unittest.TestCase):
         with self.store.connect() as db:
             db.execute("INSERT INTO action_jobs(id,suggestion_id,revision,payload,status,created_at,updated_at,approval_id,source,rfc_message_id) "
                        "VALUES('j1',?,'r1',?,'queued',?,?,'ap1','dashboard','')",
-                       (self.sid, json.dumps({'kind': 'email', 'to': ['sam@example.com'], 'to_name': 'Sam', 'subject': 'Hi', 'body': 'Hello Sam'}), a.now(), a.now()))
+                       (self.sid, json.dumps({'kind': 'email', 'to': ['sam@example.com'], 'to_name': 'Sam', 'subject': 'Hi', 'body': 'Hello Sam'}), timeutil.now(), timeutil.now()))
         with self.gateway({'kind': 'delta', 'messages': [], 'deltaCursor': 'cur3'}):
             moved = self.app.card_chat(self.sid, delta['cursor'])
         self.assertIsNone(self.calls[-1]['cursor'])  # asked for the whole conversation again
@@ -494,7 +499,7 @@ class CardChat(unittest.TestCase):
         self.store.decide(self.sid, 'other', 'Make it shorter', 'chat-1', 'dashboard')
         job = self.job()
         flight = {'runId': job['job_id'], 'text': 'Check the inbox first.\n\nNeed the card details.\n\nHere is a short'}
-        earlier = {'role': 'assistant', 'provider': 'claude-cli', 'content': [{'type': 'text', 'text': 'On it.'}], 'timestamp': a.chat_ms(a.now()),
+        earlier = {'role': 'assistant', 'provider': 'claude-cli', 'content': [{'type': 'text', 'text': 'On it.'}], 'timestamp': machine_chat.chat_ms(timeutil.now()),
                    '__openclaw': {'runId': 'r0'}}
         with self.gateway({'messages': [earlier], 'deltaCursor': 'c1', 'inFlightRun': flight}):
             chat = self.app.card_chat(self.sid)
@@ -517,15 +522,15 @@ class CardChat(unittest.TestCase):
         # The helper waits up to 15 s for a busy Gateway's greeting; the service gives it more than that before it gives up
         def slow(*args, **kwargs):
             self.assertGreaterEqual(kwargs['timeout'], 30)
-            raise a.subprocess.TimeoutExpired('node', kwargs['timeout'])
-        with patch.object(a.subprocess, 'run', side_effect=slow), patch_everywhere(a, 'node_bin', return_value='node'), patch_everywhere(a, 'node_env', return_value={}):
+            raise subprocess.TimeoutExpired('node', kwargs['timeout'])
+        with patch.object(subprocess, 'run', side_effect=slow), patch_everywhere(machine_model_usage, 'node_bin', return_value='node'), patch_everywhere(machine_model_usage, 'node_env', return_value={}):
             self.assertEqual(self.app.card_chat_gateway({'session_key': 'x'}), {'error': 'unavailable', 'reason': 'timeout'})
 
     def test_missing_node_packages_are_put_in_so_the_next_read_works(self):
         # npm ci failed during the install (or never ran): the helper can't start. Instead of "Trying again…" for good,
         # the service puts the pinned packages in once, in the background, and says why in the log.
         import installer
-        missing = a.subprocess.CompletedProcess(['node'], 1, '', "Error [ERR_MODULE_NOT_FOUND]: Cannot find package '@openclaw/gateway-client'")
+        missing = subprocess.CompletedProcess(['node'], 1, '', "Error [ERR_MODULE_NOT_FOUND]: Cannot find package '@openclaw/gateway-client'")
 
         class Now:  # the repair's thread, run at once
             def __init__(self, target, **kwargs):
@@ -533,16 +538,16 @@ class CardChat(unittest.TestCase):
 
             def start(self):
                 self.target()
-        with patch.object(a.subprocess, 'run', return_value=missing), patch_everywhere(a, 'node_bin', return_value='/opt/node/bin/node'), \
-                patch_everywhere(a, 'node_env', return_value={}), patch.object(a.threading, 'Thread', Now), \
+        with patch.object(subprocess, 'run', return_value=missing), patch_everywhere(machine_model_usage, 'node_bin', return_value='/opt/node/bin/node'), \
+                patch_everywhere(machine_model_usage, 'node_env', return_value={}), patch.object(threading, 'Thread', Now), \
                 patch.object(installer, 'install_node_packages', return_value=True) as install, self.assertLogs('personal-assistant', 'WARNING') as logged:
             self.assertEqual(self.app.card_chat_gateway({'session_key': 'x'}), {'error': 'unavailable', 'reason': 'setup'})
             self.app.card_chat_gateway({'session_key': 'x'})  # the dashboard asks again 4 s later: one install at a time
-        install.assert_called_once_with('/opt/node/bin/node', a.ROOT)
+        install.assert_called_once_with('/opt/node/bin/node', machine_config.ROOT)
         self.assertEqual(logged.output, ['WARNING:personal-assistant:card chat node packages missing; installed=True'])
         # Any other failure stays a plain "unavailable", with no install
-        with patch.object(a.subprocess, 'run', return_value=a.subprocess.CompletedProcess(['node'], 1, '', 'boom')), \
-                patch_everywhere(a, 'node_bin', return_value='node'), patch_everywhere(a, 'node_env', return_value={}), \
+        with patch.object(subprocess, 'run', return_value=subprocess.CompletedProcess(['node'], 1, '', 'boom')), \
+                patch_everywhere(machine_model_usage, 'node_bin', return_value='node'), patch_everywhere(machine_model_usage, 'node_env', return_value={}), \
                 patch.object(installer, 'install_node_packages') as install:
             self.app._chat_packages_tried = -1e9
             self.assertEqual(self.app.card_chat_gateway({'session_key': 'x'}), {'error': 'unavailable'})
@@ -556,7 +561,7 @@ class CardChat(unittest.TestCase):
             self.app.card_chat(self.sid, 'x' * 5000)
 
     def test_card_chat_is_an_owner_dashboard_action(self):
-        self.assertIn('card_chat', a.OWNER_ACTIONS)
+        self.assertIn('card_chat', machine_actions.OWNER_ACTIONS)
         with self.gateway({}):
             self.assertEqual(self.app.action('card_chat', {'suggestion_id': self.sid, 'source': 'dashboard'}, owner_dashboard=True)['session'], False)
 
@@ -567,7 +572,7 @@ class CardChat(unittest.TestCase):
         first = next(c['message'] for c in calls if c.get('message'))
         self.assertIn('the owner tapped Do it', first)
         with self.store.connect() as db:
-            db.execute("UPDATE preparation_runs SET status='ok',finished_at=?", (a.now(),))
+            db.execute("UPDATE preparation_runs SET status='ok',finished_at=?", (timeutil.now(),))
             db.execute("UPDATE preparations SET status='done'")
             db.execute("UPDATE suggestions SET status='prepared'")
         self.store.decide(self.sid, 'other', 'Make it shorter', 'chat-' + 'a' * 36, 'dashboard')
@@ -580,7 +585,7 @@ class CardChat(unittest.TestCase):
         self.assertLess(len(chat), len(first))
         # A Change from the card itself keeps the full prompt
         with self.store.connect() as db:
-            db.execute("UPDATE preparation_runs SET status='ok',finished_at=?", (a.now(),))
+            db.execute("UPDATE preparation_runs SET status='ok',finished_at=?", (timeutil.now(),))
             db.execute("UPDATE preparations SET status='done'")
             db.execute("UPDATE suggestions SET status='prepared'")
         self.store.decide(self.sid, 'other', 'Another note', 'd-change', 'dashboard')
@@ -608,7 +613,7 @@ class CardChat(unittest.TestCase):
             owner, results = self.app.card_chat_service(db, self.sid)
         card = next(c for c in self.store.snapshot([])['suggestions'] if c['id'] == self.sid)
         self.assertEqual((card['latest_feedback']['feedback'], card['latest_feedback']['asked']), ('October now', [question]))
-        items = a.chat_items([], owner, results)
+        items = machine_chat.chat_items([], owner, results)
         said = [(i['kind'], i['text']) for i in items if i['kind'] in ('you', 'event') and i['text'] != 'Do it']
         self.assertEqual(said, [('event', 'Asked: ' + question), ('you', 'October now')])
         self.assertFalse(next(i for i in items if i['text'].startswith('Asked')).get('mine'), 'The Machine asked, not the owner')
@@ -623,7 +628,7 @@ class CardChat(unittest.TestCase):
         self.assertEqual([i['text'] for i in owner if i['kind'] == 'event' and i['text'].startswith('Asked')], ['Asked: ' + question])
         card = next(c for c in self.store.snapshot([])['suggestions'] if c['id'] == self.sid)
         self.assertNotIn('asked', card['latest_feedback'])
-        self.assertIn('When latest_feedback has asked', a.chat_prompt({'job_id': 'j', 'suggestion_id': self.sid}))
+        self.assertIn('When latest_feedback has asked', machine_app_preparation.chat_prompt({'job_id': 'j', 'suggestion_id': self.sid}))
 
     def test_a_result_that_asks_keeps_its_question_beside_the_answer(self):
         """A result whose Needs you line is a question (nothing to send) takes the answer the same way."""
@@ -653,7 +658,7 @@ class CardChat(unittest.TestCase):
             db.execute("INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES('older',?,'other',?,'dashboard','2026-01-05T09:00:00+00:00')",
                        (self.sid, question + ' Maybe'))
             owner, results = self.app.card_chat_service(db, self.sid)
-        items = a.chat_items([], owner, results)
+        items = machine_chat.chat_items([], owner, results)
         said = [(i['kind'], i['text']) for i in items if i['kind'] == 'you' or i['text'].startswith('Asked')]
         self.assertEqual(said, [('you', question + ' Maybe'), ('event', 'Asked: ' + question), ('you', 'October now'),
                                 ('you', 'Should I invoice both? No'), ('you', question + '\nOctober now')])
@@ -677,7 +682,7 @@ class CardChat(unittest.TestCase):
                        "VALUES('aj_3',?,'codex','local','failed','b',?,'',2,'2026-01-05T10:03:00+00:00','2026-01-05T10:05:00+00:00')",
                        (self.sid, json.dumps([{'at': '2026-01-05T10:04:00+00:00', 'text': 'Make it shorter'}])))
             owner, results = self.app.card_chat_service(db, self.sid)
-        items = a.chat_items([], owner, results)
+        items = machine_chat.chat_items([], owner, results)
         said = [(i['kind'], i['text']) for i in items if (i['kind'] == 'you' and not i.get('to')) or i['text'].startswith('Asked')]
         self.assertEqual(said, [('event', 'Asked: ' + question), ('you', 'October now')])
         self.assertIn(('you', 'Make it shorter'), [(i['kind'], i['text']) for i in items if i.get('to') == 'Codex'])
@@ -697,7 +702,7 @@ class CardChat(unittest.TestCase):
             owner, results = self.app.card_chat_service(db, self.sid)
         card = next(c for c in self.store.snapshot([])['suggestions'] if c['id'] == self.sid)
         self.assertEqual((card['latest_feedback']['feedback'], card['latest_feedback']['asked']), (reply, [one, two]))
-        said = [(i['kind'], i['text']) for i in a.chat_items([], owner, results) if i['kind'] in ('you', 'event') and i['text'] != 'Do it']
+        said = [(i['kind'], i['text']) for i in machine_chat.chat_items([], owner, results) if i['kind'] in ('you', 'event') and i['text'] != 'Do it']
         self.assertEqual(said, [('event', 'Asked: ' + one + ' ' + two + '.'), ('you', '2\nRoom C')])
 
     def test_answer_lines_split_only_on_the_runs_own_questions(self):
