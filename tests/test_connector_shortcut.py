@@ -350,6 +350,21 @@ class ShortcutTests(unittest.TestCase):
         self.assertEqual(path.stat().st_mode & 0o777, 0o600)
         self.assertEqual(sorted(p.name for p in path.parent.iterdir() if p.name.startswith('.shortcut')), [])  # no temp file left
 
+    def test_shortcuts_opaque_tokens_and_its_own_expiry_field_are_taken(self):
+        """Shortcut's own answer shape: opaque tokens (here with ':' and '!') and access_token_expires_at, no expires_in."""
+        config, path = self.signed_in(expires_at=1)
+        grant = {**json.loads(path.read_text()), 'access_token': 'sc:oat!fixture-access-1' + 'x' * 900}
+        path.write_text(json.dumps(grant, separators=(',', ':')) + '\n')
+        self.assertEqual(shortcut.signin(path.read_text().strip())['access_token'], grant['access_token'])
+        self.refreshed = [{'access_token': 'sc:oat!fixture-access-2', 'refresh_token': 'sc:ort!fixture-refresh-2',
+                           'access_token_expires_at': '2030-01-01T00:00:00Z', 'workspace2_slug': 'acme', 'token_type': 'Bearer'}]
+        self.auth = ('Authorization', 'Bearer sc:oat!fixture-access-2')
+        shortcut.check(config, {**shortcut.SETUP['account']}, self.helpers)
+        kept = json.loads(path.read_text())
+        self.assertEqual((kept['access_token'], kept['refresh_token'], kept['expires_at']),
+                         ('sc:oat!fixture-access-2', 'sc:ort!fixture-refresh-2', 1893456000))
+        self.assertIsNone(shortcut.signin(json.dumps({**kept, 'access_token': 'has a space'})))
+
     def test_a_turned_down_sign_in_refreshes_once_then_asks_to_sign_in_again(self):
         config, path = self.signed_in(expires_at=4102444800)
         calls = []
