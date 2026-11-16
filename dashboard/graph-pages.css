@@ -100,6 +100,10 @@
 .graph-row.one{flex-wrap:nowrap}
 .graph-row>.node{min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis}
 .graph-row.one>.node{flex:0 1 auto}
+/* In a Graph row only the name ends in …: the pills beside it (gone quiet, tags, a project's heat) and the closeness bar keep their size */
+.graph-row>:is(.chip,.tag-mini,.today-mark,.graph-bar){flex:none;white-space:nowrap}.graph-row>.chip,.graph-row>.tag-mini>.chip{max-width:none}
+/* On a phone a person's row has no room for tags beside the name: they show on the person's page */
+@media(max-width:600px){.person-item .graph-row.one>.tag-mini{display:none}}
 .graph-row small{min-width:0;overflow-wrap:anywhere}
 /*@eager*/
 .graph-sub{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}

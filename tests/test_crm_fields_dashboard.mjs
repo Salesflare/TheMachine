@@ -110,7 +110,9 @@ try{
   await page.waitForFunction(()=>[...document.querySelectorAll('#people-view .crm-fields .kv .k')].map(k=>k.textContent).join()==='Seats,Renewal,Tags');
   // A tag in the lists' filter
   await page.evaluate(()=>graphBack('people'));await page.evaluate(()=>document.querySelector('[data-graph-sub="people"]').click());
-  await page.locator('#people-view [data-graph-panel="people"] .graph-list article .tag-chip').first().waitFor();
+  // A person's tags show beside their name in the list; on a phone there is no room, so they show on the person's page only
+  const listTag=page.locator('#people-view [data-graph-panel="people"] .graph-list article .tag-chip').first();
+  await listTag.waitFor({state:mobile?'attached':'visible'});if(mobile)assert.ok(await listTag.isHidden(),'on a phone, tags are not beside the name in the list');
   await click('#people-view [data-crm-filter="people"]');await page.locator('#crm-dialog[open]').waitFor();
   await page.locator('#crm-form select[name=tag]').selectOption('VIP');await click('#crm-form button.primary');
   await until(()=>lists.some(l=>l.list==='people'&&l.tag==='VIP'),'filtered by tag');
