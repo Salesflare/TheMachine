@@ -947,9 +947,10 @@ def signature_pairs(db, senders, best, known):
 
 class Union:
     """Identifiers joined into people; a pair said to be different is never joined, directly or through others.
-    Each join is kept as (a, b, why), so a person's page can say why they are one and undo it."""
-    def __init__(self, apart=()):
-        self.parent, self.members, self.apart, self.edges = {}, {}, set(apart), []
+    Each join is kept as (a, b, why), so a person's page can say why they are one and undo it. refuse: (members,
+    members) -> True for two groups only the owner's own merge (why 'owner') may join (lookalike.apart_people)."""
+    def __init__(self, apart=(), refuse=None):
+        self.parent, self.members, self.apart, self.edges, self.refuse = {}, {}, set(apart), [], refuse
 
     def find(self, x):
         if x not in self.parent:
@@ -962,7 +963,7 @@ class Union:
     def join(self, a, b, why=None):
         first, second = a, b
         a, b = self.find(a), self.find(b)
-        if a == b or self.kept_apart(a, b):
+        if a == b or self.kept_apart(a, b) or why != 'owner' and self.refuse and self.refuse(self.members[a], self.members[b]):
             return False
         # An email address names the node when there is one: stable and recognizable.
         if b.startswith('email:') and not a.startswith('email:'):
@@ -3892,6 +3893,12 @@ def merge(db, a, b, same, now, source='agent', keep=None):
     said = db.execute('SELECT source FROM graph_merges WHERE a=? AND b=?', (a, b)).fetchone()
     if said and said['source'] == 'owner' and source != 'owner':
         raise OwnerError('The owner already decided about these two; their word stays')
+    if same and source != 'owner':  # a review never makes one person of an address and its imitation (lookalike.py)
+        def held(node):
+            row = db.execute('SELECT info FROM graph_nodes WHERE id=?', (node,)).fetchone()
+            return (json.loads(row[0] or '{}').get('identifiers') if row else None) or [node]
+        if lookalike.apart_people(held(a), held(b)):
+            raise OwnerError('One of these two writes from a domain that imitates the other\'s; only the owner can merge them')
     db.execute('INSERT OR REPLACE INTO graph_merges(a,b,same,created_at,source) VALUES(?,?,?,?,?)', (a, b, int(bool(same)), now, source))
     db.execute('DELETE FROM graph_same WHERE a=? AND b=?', (a, b))
     for node, other in ((a, b), (b, a)):  # their pages stop asking too, before the rebuild that joins them (graph_later)

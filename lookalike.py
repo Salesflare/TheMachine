@@ -3,8 +3,8 @@ Lookalike senders).
 
 Two domains are confusable when, beyond the ending (.com, .co.uk), their names read the same once hyphens and the
 letters people mix up are folded (kestrel-bikes for kestrelbikes, larkspurstudlo for larkspurstudio), when a long
-name is one letter apart (fjordlinefreigth), or when one is the other's whole name plus a word (quillpress-payments,
-larkspurstudio-mail). The same name at another ending (example.nl for example.com) is the organization's other domain,
+name is one letter apart or has two letters side by side swapped (fjordlinefreigt, fjordlinefrieght), or when one is
+the other's whole name plus a word (quillpress-payments, larkspurstudio-mail). The same name at another ending (example.nl for example.com) is the organization's other domain,
 never a lookalike. Free mail domains never count: everyone there is someone else.
 
 Of a confusable pair, the lookalike is the one the owner has less to do with: the owner's own domains always come
@@ -18,7 +18,8 @@ person on record there with the same name, when there is one). What follows from
 
 - a review never gives them a role (graph.set_role), and a role a review gave them before is not shown;
 - "Same person?" never pairs them with anyone, nor two people whose domains are confusable or the same name at another
-  ending, and a shared name never joins them;
+  ending, and nothing but the owner's own merge ever makes one person of an address and one at a domain imitating it
+  (apart_people: not a shared name in one thread, a review's merge, nor a third identity joined to both);
 - a prepared email to a lookalike address is checked before it is saved: it goes to the address on record instead
   (problems, from the Do it prepare step);
 - a to-do about their message says that it isn't who it seems (graph.card_people, the dashboard).
@@ -59,13 +60,16 @@ def fold(name):
 
 
 def one_apart(a, b):
-    """Whether a and b differ by one letter: one changed, added or left out."""
+    """Whether a and b differ by one letter: one changed, added or left out, or two side by side swapped (freight and
+    frieght read the same at a glance)."""
     if a == b or abs(len(a) - len(b)) > 1:
         return False
     if len(a) > len(b):
         a, b = b, a
     i = next((n for n, (x, y) in enumerate(zip(a, b)) if x != y), len(a))
-    return a[i + 1:] == b[i + 1:] if len(a) == len(b) else a[i:] == b[i + 1:]
+    if len(a) != len(b):
+        return a[i:] == b[i + 1:]
+    return a[i + 1:] == b[i + 1:] or a[i:i + 2] == b[i:i + 2][::-1] and a[i + 2:] == b[i + 2:]
 
 
 def _runs(name):
@@ -134,6 +138,20 @@ def apart_same_person(domains, others):
     a stranger can register it too, and nothing in their mail tells the two apart."""
     return any(confusable(a, b) or (registrable(a) != registrable(b) and name_of(a) and name_of(a) == name_of(b))
                for a in domains for b in others)
+
+
+def domains_of(identifiers):
+    """The registrable domains of a person's email identifiers."""
+    return {registrable(i.rsplit('@', 1)[-1]) for i in identifiers if str(i).startswith('email:') and '@' in i} - {''}
+
+
+def apart_people(identifiers, others):
+    """True when making one person of these two sets of identifiers would put an address next to one at a domain that
+    imitates it: never one person by anything but the owner's own merge (a name in one message or thread, the same
+    name on another channel, a profile, a review's merge, or a third identity both were joined to). A pair the one
+    side already holds both of (the owner merged them) does not keep out the rest of that domain."""
+    mine, theirs = domains_of(identifiers), domains_of(others)
+    return apart(mine - theirs, theirs - mine)
 
 
 def first_seen(nodes, *events):
