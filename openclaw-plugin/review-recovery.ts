@@ -4,12 +4,19 @@ import {dirname, resolve} from 'node:path';
 import {createHash} from 'node:crypto';
 import {homedir} from 'node:os';
 import {fileURLToPath} from 'node:url';
+import {notePrompt, noteToolResult, outboundCheck, commandText, commandStages} from './outbound-urls.ts';
 
 const HOME = homedir();
 const CONFIG_PATH = process.env.ASSISTANT_CONFIG || `${HOME}/.local/share/personal-assistant/config.json`;
 function assistantConfig(): any {
   try { return JSON.parse(readFileSync(CONFIG_PATH, 'utf8')); } catch { return {}; }
 }
+// The domains of the owner's connected addresses (config accounts' email, owner_emails): their own company's sites.
+const ownerDomains = () => {
+  const config = assistantConfig();
+  const emails = [config.owner_emails, ...(config.accounts || []).flatMap((a: any) => [a?.email, a?.owner_emails])].flat();
+  return [...new Set(emails.map(email => String(email || '').toLowerCase().split('@')[1] || '').filter(Boolean))];
+};
 // The owner's private Telegram chat (config `telegram_owner`). Empty means nothing matches.
 const ownerChat = () => String(assistantConfig().telegram_owner || '');
 const sameChat = (value: any) => { const owner = ownerChat(); return !!owner && String(value).replace(/^telegram:/, '') === owner; };
@@ -155,22 +162,8 @@ const CONTENT_READERS = /(?:^|[\s|;&(])(?:rg|grep|egrep|ag|ack|cat|tar|zip|cp|rs
 // Sending mail or chat directly is never allowed; it belongs on the reviewed Send button.
 const OWNER_SERVICE = /owner-token|X-Assistant-Owner|confirm_action/i;
 
-export function commandText(params: any) {
-  const command = params?.command ?? params?.cmd;
-  return Array.isArray(command) ? command.join(' ') : String(command ?? '');
-}
-
-// Small shell lexer: keep quoted arguments together, but check every separate command.
-// This catches ordinary mistakes; Python and other legitimate tools remain available.
-export function commandStages(text: string) {
-  const tokens = text.match(/(?:"(?:\\.|[^"\\])*"|'[^']*'|\\.|[^\s;&|<>])+|&&|\|\||[;&|<>]+/g) || [];
-  const stages: string[][] = [[]];
-  for (const token of tokens) {
-    if (/^[;&|]+$/.test(token)) stages.push([]);
-    else stages.at(-1)!.push(token.replace(/^(['"])(.*)\1$/, '$2'));
-  }
-  return stages.filter(s => s.length);
-}
+// The shell lexer (commandText, commandStages) lives in outbound-urls.ts, which reads network commands with it too.
+export {commandText, commandStages};
 function protectedOutput(stage: string[], cwd: string) {
   const paths: string[] = [];
   for (let i=0;i<stage.length;i++) {
@@ -230,7 +223,8 @@ export function preparationToolPolicy(event: any, ctx: any): undefined | {block:
 }
 
 // What a routine may read beyond REVIEW_TOOLS: web search and pages, the browser to look (open, read, scroll, never
-// click, type or submit), and read-only gh or git. A test run and a real run read alike; neither posts or sends.
+// click, type or submit), and read-only gh or git. A test run and a real run read alike; neither posts or sends. Pages
+// and browser addresses it opens pass outboundCheck: read in the run, plain or a lookup (outbound-urls.ts).
 const ROUTINE_BROWSER_ACTIONS = new Set(['status', 'start', 'profiles', 'tabs', 'open', 'focus', 'close', 'snapshot', 'screenshot', 'navigate', 'console', 'requests', 'errors', 'text']);
 const ROUTINE_ACT_KINDS = new Set(['hover', 'scrollIntoView', 'wait', 'resize', 'press']);
 const ROUTINE_KEYS = /^(?:PageDown|PageUp|ArrowDown|ArrowUp|ArrowLeft|ArrowRight|Home|End|Escape|Esc)$/;
@@ -387,7 +381,10 @@ export function registerReviewRecovery(api: any, call: (action: string, args?: a
     call('review_context', {owner_session: ctx.sessionKey, owner_run: ctx.runId})
       .then(state => done(state || {}), () => done({})).finally(() => clearTimeout(timer));
   });
-  api.on('before_prompt_build', async (_event: any, ctx: any) => {
+  api.on('before_prompt_build', async (event: any, ctx: any) => {
+    // The addresses this run read (its job, evidence, the owner's words, earlier tool results): a run nobody is watching
+    // opens those, plain page addresses and lookups only (outbound-urls.ts).
+    if ((preparationSession(ctx.sessionKey) || routineSession(ctx.sessionKey)) && privateReviewContext(ctx)) notePrompt(ctx.sessionKey, event);
     if (preparationSession(ctx.sessionKey) && privateReviewContext(ctx)) {
       if (ctx.runId) sessionRuns.set(ctx.sessionKey,ctx.runId);
       // In the system prompt, like a review's: it is there once on every turn of the session. In the turn's message it
@@ -441,15 +438,23 @@ export function registerReviewRecovery(api: any, call: (action: string, args?: a
         (plainToolName(event.toolName) === 'assistant_signals' && !ROUTINE_ACTIONS.has(event.params?.action)))) {
       return {block: true, blockReason: 'A routine reads but never posts, sends or changes anything: web search and pages, the browser to open, read and scroll (no clicking or typing), read-only gh or git, assistant_signals status, events, related or graph, memory lookups and read-only file tools, then routine_result. Put what it would post or send in the result as a draft.'};
     }
+    if (routineSession(ctx.sessionKey) && !toolRunner(event, ctx)) {
+      const refused = outboundCheck(ctx.sessionKey, plainToolName(event.toolName), event.params, ownerDomains());
+      if (refused) return {block: true, blockReason: refused};
+    }
     const policy = preparationSession(ctx.sessionKey) ? preparationToolPolicy(event, ctx) : undefined;
     if (policy && 'block' in policy) return {block: true, blockReason: policy.block};
     if (preparationSession(ctx.sessionKey) && !codeModeRunner(event,ctx)) {
       const job_id=ctx.runId || event.runId || sessionRuns.get(ctx.sessionKey);
       if (job_id) {
+        // An address this run didn't read and that could carry what it read: the service refuses it in a to-do prepared
+        // ahead (nobody asked yet), never in Do it or the owner's chat (preparation_state.tool_intent).
+        const unread=outboundCheck(ctx.sessionKey,plainToolName(event.toolName),event.params,ownerDomains());
         const admitted=await call('preparation_tool_intent',{job_id,call_id:ctx.toolCallId || event.toolCallId || `${event.toolName}:${JSON.stringify(event.params)}`,
           tool:plainToolName(event.toolName),tool_action:typeof event.params?.action==='string' ? event.params.action : null,
-          params:journalValue(event.params),read_only:preparationReadOnly(event)});
+          params:journalValue(event.params),read_only:preparationReadOnly(event),...(unread ? {unread_address:true} : {})});
         if (!admitted.active) return {block:true,blockReason:admitted.reason || 'This task is no longer running. End this turn.'};
+        if (admitted.refused) return {block:true,blockReason:String(admitted.refused)};
       }
     }
     const owner = runs.get(ctx.runId || event.runId);
@@ -458,6 +463,8 @@ export function registerReviewRecovery(api: any, call: (action: string, args?: a
   });
 
   api.on('after_tool_call',async (event:any,ctx:any)=>{
+    if ((preparationSession(ctx.sessionKey) || routineSession(ctx.sessionKey)) && !codeModeRunner(event,ctx) && !event.error)
+      noteToolResult(ctx.sessionKey,plainToolName(event.toolName),event.params,event.result);
     if (!preparationSession(ctx.sessionKey) || codeModeRunner(event,ctx)) return;
     const job_id=ctx.runId || event.runId || sessionRuns.get(ctx.sessionKey);
     if (job_id) await call('preparation_tool_result',{job_id,call_id:ctx.toolCallId || event.toolCallId || `${event.toolName}:${JSON.stringify(event.params)}`,

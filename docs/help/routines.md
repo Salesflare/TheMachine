@@ -89,7 +89,7 @@ Newsletter cleanup and Spam cleanup still end in the same to-do with a choice pe
 
 At its time your Machine reads what it needs, like your messages, meetings and the Graph, and puts the result on the Routines page. Each result says **Ready**, **Nothing new** (with why) or **Didn’t work** (with why). A run that ends without a result counts as one that didn't work, never as done.
 
-Routines only read: your messages, web pages, GitHub and sites like X in the browser. They don’t send, reply, post or change anything. Only a template changes mail, and only what you confirm on its to-do.
+Routines only read: your messages, web pages, GitHub and sites like X in the browser. They don’t send, reply, post or change anything. They open pages they found in what they read or in a search, plain page addresses and well-known sites, never an address made up to carry what they read. Only a template changes mail, and only what you confirm on its to-do.
 
 When a routine’s job ends in a post or a message, it does everything up to that step and shows the draft, like **Would post on X:**. After a real run you get it as a to-do to approve; a test run only shows it. Its name says what it is about and where it goes, its button names the step, like **Post it**, and **From your routine** under it opens the routine.
 

@@ -59,9 +59,25 @@ def start_settled(db, job_id):
     db.execute('DELETE FROM gateway_starts WHERE job_id=?', (job_id,))
 
 
+# A page address a to-do prepared ahead didn't read and that could carry what it read (the plugin's outbound-urls.ts
+# says which: unread_address). Opening it would hand that to the site's owner with nobody asked; SECURITY.md.
+UNREAD_ADDRESS = ('A to-do prepared ahead only opens an address it read (in a message, a search result or a page) or a '
+                  'plain page address without a query. Search for it with web_search and open a result, or open the '
+                  'address exactly as it was written.')
+OWNER_ASKED = ('todo', 'telegram', 'voice', 'chat', 'doit')  # action_basis kinds: the owner's own tap or words
+
+
+def prepared_ahead(db, run):
+    """This run is work nobody asked for yet: a to-do prepared ahead (its decision, or the card still early with no
+    tap or words of the owner's behind the run). Do it, a Confirm and the owner's chat are never this."""
+    basis = action_basis.read(run['basis']) or action_basis.from_decision(db, run['decision_id'], run['action_id'])
+    kind = basis.get('kind')
+    return kind == 'ahead' or (bool(run['early']) and kind not in OWNER_ASKED)
+
+
 def tool_intent(db, args, stamp):
     db.execute('BEGIN IMMEDIATE')
-    run = db.execute('''SELECT r.*,p.status current_status,p.job_id current_job,p.decision_id,p.action_id,s.status owner_status
+    run = db.execute('''SELECT r.*,p.status current_status,p.job_id current_job,p.decision_id,p.action_id,s.status owner_status,s.early
         FROM preparation_runs r JOIN preparations p USING(suggestion_id) JOIN suggestions s ON s.id=r.suggestion_id
         WHERE r.job_id=?''', (args['job_id'],)).fetchone()
     if not run or run['current_job'] != args['job_id'] or run['current_status'] not in ('starting','running') or run['owner_status'] not in todo_states.PREPARING:
@@ -70,6 +86,8 @@ def tool_intent(db, args, stamp):
                          (run['suggestion_id'], args['job_id'])).fetchone()
     if earlier and not run['history_read'] and not args.get('read_only') and not finishing(args):
         return {'active': False, 'reason': 'Read preparation_history first, then reconcile completed or uncertain steps before continuing. Do not repeat the whole task.'}
+    if args.get('unread_address') and prepared_ahead(db, run):
+        return {'active': True, 'refused': UNREAD_ADDRESS}
     db.execute('INSERT OR IGNORE INTO preparation_calls(job_id,call_id,tool,params,started_at) VALUES(?,?,?,?,?)',
                (args['job_id'], args['call_id'], args['tool'], json.dumps(args.get('params',{}),ensure_ascii=False), stamp))
     note_basis(db, run, args)
