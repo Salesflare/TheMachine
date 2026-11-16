@@ -58,8 +58,11 @@ class StillNeeded(unittest.TestCase):
         return sid
 
     def step(self, at=NOW):
-        with patch_everywhere(timeutil, 'now', return_value=at):
-            return self.app.still_needed_step(at)
+        """One pass as the service runs it: no time passed in, so it reads the clock (here: at)."""
+        with patch_everywhere(timeutil, 'now', return_value=at) as clock:
+            asked = self.app.still_needed_step()
+        clock.assert_called()
+        return asked
 
     def shown(self, sid, at=NOW):
         with self.store.connect() as db:
