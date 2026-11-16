@@ -108,7 +108,7 @@ About you lists your addresses with where each came from; change them in **Setti
 
 ## What they are to you
 
-Roles your Machine reads in your messages show on their page under **To you**, with the line it read. Someone saying they're your accountant or customer isn't enough: that needs your side too, like your own messages or meetings with them. Nothing waits for your word. Wrong? **Edit** on their page fixes it, or **⋯** on its line in **Recent changes**. It learns from your edits.
+Roles your Machine reads in your messages show on their page under **To you**, with only the words that show the role, like a title. Someone saying they're your accountant or customer isn't enough: that needs your side too, like your own messages or meetings with them. Nothing waits for your word. Wrong? **Edit** on their page fixes it, or **⋯** on its line in **Recent changes**. It learns from your edits.
 
 ## What it knows about someone
 

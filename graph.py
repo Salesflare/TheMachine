@@ -2250,7 +2250,9 @@ def projects_for(db, event_ids):
 def set_role(db, node_id, role, source, now, event_id=None, quote=None):
     """Say what someone (or an organization) is to the owner ("accountant", "Ann's partner", "customer at
     Globex", "accounting firm"). A review gives the message it read it in (event_id) and the line that
-    shows it (quote, words from that message), so the owner can confirm it. The owner's word stays until
+    shows it (quote, words from that message), so the owner can confirm it. This checks only that the quote is in
+    that message; that it shows the role and carries nothing else of it (a rule, a request, a claim about the owner)
+    is the prompts' contract with the model (machine/prompts/profile.py ROLE_QUOTE). The owner's word stays until
     the owner changes it; the owner saying the same role confirms it; an empty role from the owner
     clears it. When the owner replaces a review's role, the correction is kept for later reviews to learn from."""
     if not db.in_transaction:
