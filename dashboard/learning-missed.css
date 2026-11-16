@@ -5,4 +5,4 @@
 /* How it's going before enough decided to-dos (qualityWait): the mascot, one line, how far along */
 .q-wait>div{max-width:30rem;text-wrap:balance}.q-wait span{display:block}.q-wait .fl-bar{width:220px;max-width:70vw;margin:14px auto 6px}.q-wait .q-count{display:block;color:var(--faint)}
 /* Import from another AI (learning-import.js): one quiet row on top of What I've learned */
-#facts>.learn-import{display:flex;align-items:center;gap:12px;padding:12px 16px;border:1px solid var(--border);border-radius:var(--r-md)}#facts>.learn-import .grow{min-width:0}#facts>.learn-import strong{display:block;font-weight:600}#facts>.learn-import small{display:block;color:var(--muted);font-size:.85rem}#facts>.learn-import button{flex:none;min-height:32px;padding:4px 14px}
+#facts>.learn-import{display:flex;align-items:center;gap:12px;padding:12px 16px;border:1px solid var(--border);border-radius:var(--r-md)}#facts>.learn-import .grow{flex:1;min-width:0}#facts>.learn-import strong{display:block;font-weight:600}#facts>.learn-import small{display:block;color:var(--muted);font-size:.85rem}#facts>.learn-import button{flex:none;min-height:32px;padding:4px 14px}
