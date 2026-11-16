@@ -442,7 +442,7 @@ class ListActionTest(unittest.TestCase):
 class OwnerOnlyTest(unittest.TestCase):
     def test_not_for_the_agent_or_the_cli(self):
         for name in ('browser_login_pages', 'browser_login_fill', 'browser_login_choose', 'browser_logins', 'browser_login_forget',
-                     'browser_login_import'):
+                     'browser_login_import', 'browser_login_rename'):
             self.assertIn(name, machine_actions.OWNER_ACTIONS)
             app = machine_main.App.__new__(machine_main.App)
             app.config = {'accounts': [], 'database': '/nonexistent/x.db'}

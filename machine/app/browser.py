@@ -32,7 +32,8 @@ class BrowserApp:
                'browser_login_open': 'browser_login_action', 'browser_login_pages': 'browser_login_action',
                'browser_login_fill': 'browser_login_action', 'browser_login_choose': 'browser_login_action',
                'browser_login_check': 'browser_login_action', 'browser_logins': 'browser_login_action',
-               'browser_login_forget': 'browser_login_action', 'browser_login_import': 'browser_login_import_action'}
+               'browser_login_forget': 'browser_login_action', 'browser_login_rename': 'browser_login_action',
+               'browser_login_import': 'browser_login_import_action'}
 
     def browser_login_import_action(self, name, args, owner_dashboard=False):
         """Bringing sign-ins in from a password manager (login_import.py): a CSV export, or 1Password's op or
@@ -121,10 +122,12 @@ class BrowserApp:
                 found = [p for p in found if page and same_site(p['host'], page)]
                 walls = [w for w in walls if page and same_site(w['host'], page)]
                 # Which saved account this to-do uses there: chosen before, the only one, or the one named for its
-                # Work or Personal side; None when that is unclear, and the dialog asks once.
-                area = self.task_area(args['suggestion_id']) if any(len(p.get('accounts') or ()) > 1 for p in found) else None
+                # Work or Personal side; None when that is unclear, and the dialog asks once. `side`: what Save as
+                # starts at for a new one.
+                area = self.task_area(args['suggestion_id']) if found else None
                 for p in found:
                     p['pick'] = logins.pick(p.get('origin'), args['suggestion_id'], area) if p.get('accounts') else None
+                    p['side'] = browser_login.side_of(area)
                 return {'pages': found, 'walls': walls, 'task_site': browser_login.site(urllib.parse.urlsplit(page).hostname) if page else None}
             return {'pages': found, 'walls': walls}
         if name == 'browser_logins':
@@ -134,6 +137,10 @@ class BrowserApp:
             with store.connect() as db:
                 offer = security_levels.save_logins(db)
             return {'logins': logins.list(), 'save': offer}
+        if name == 'browser_login_rename':  # Sign-ins: give a sign-in moved over as Default its side (Work, Personal)
+            if not isinstance(args.get('id'), str) or not isinstance(args.get('account'), str):
+                raise OwnerError('Which sign-in?')
+            return {'renamed': logins.rename(args['id'], args['account'])}
         if name == 'browser_login_forget':
             if args.get('all') is True:  # Settings, Security: Forget all saved sign-ins
                 return {'forgotten': logins.forget_all()}

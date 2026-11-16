@@ -29,13 +29,14 @@ const server=createServer(async(req,res)=>{
  if(url.pathname==='/api/progress'){res.end(JSON.stringify({status:'blocked'}));return}
  if(url.pathname==='/api/action'){let body='';for await(const b of req)body+=b;const {action,args}=JSON.parse(body);calls.push([action,args]);
   if(action==='browser_logins'){res.end(JSON.stringify({logins}));return}
+  if(action==='browser_login_rename'){const l=logins.find(x=>x.id===args.id);l.account=args.account;res.end(JSON.stringify({renamed:true}));return}
   if(action==='browser_login_import'){
    if(args.do==='tools'){res.end(JSON.stringify({tools:{'1password':'ready',lastpass:'missing'}}));return}
    if(args.do==='file'||args.do==='tool'){res.end(JSON.stringify(review));return}
    if(args.do==='keep'){res.end(JSON.stringify({kept:args.keys.length}));return}
    res.end(JSON.stringify({dropped:true}));return}
   if(action==='browser_login_open'){res.end(JSON.stringify({site:'shop.tidewell.example',kind:'password'}));return}
-  if(action==='browser_login_pages'){res.end(JSON.stringify({pages:[{id:'0:tab',site:'shop.tidewell.example',host:'shop.tidewell.example',origin:'https://shop.tidewell.example',username:true,password:true,code:false,accounts,saved:{username:accounts[0].username},pick}],walls:[]}));return}
+  if(action==='browser_login_pages'){res.end(JSON.stringify({pages:[{id:'0:tab',site:'shop.tidewell.example',host:'shop.tidewell.example',origin:'https://shop.tidewell.example',username:true,password:true,code:false,accounts,saved:{username:accounts[0].username},pick,side:'Work'}],walls:[]}));return}
   if(action==='browser_login_fill'){res.end(JSON.stringify({result:'next',page:{id:'0:tab',site:'shop.tidewell.example',host:'shop.tidewell.example',username:false,password:false,code:true}}));return}}
  res.end('{}');
 });
@@ -55,12 +56,23 @@ try{
   await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
   page.on('pageerror',e=>errors.push(e.message));
   // The list: one row per account, the account named where a site has several.
-  await page.goto(base+'/#connections=signins');await page.locator('#saved-logins .saved-login').nth(2).waitFor();
-  const chips=await page.locator('#saved-logins .saved-login .login-account').allInnerTexts();
-  assert.deepEqual(chips,['Personal','Work']);
+  await page.goto(base+'/#connections=signins');await page.locator('#saved-logins .saved-login').nth(1).waitFor();
+  // one row per site; its accounts underneath, each labeled; a short host is never cut short
+  assert.equal(await page.locator('#saved-logins .saved-login').count(),2);
+  const shop=page.locator('#saved-logins .saved-login.many');
+  assert.deepEqual((await shop.locator('.login-acct .login-user').allTextContents()).map(s=>s.replace(/\u00a0/g,' ')),['sam@home.example · Personal','sam@acme.example · Work']);
+  assert.equal(await shop.locator('.login-acct button').count(),2);
+  assert.ok(await page.locator('#saved-logins strong').evaluateAll(s=>s.every(x=>x.scrollWidth<=x.clientWidth)),'a site name is never cut short');
+  // a sign-in moved over as Default: its side is set right there
+  assert.deepEqual(await page.locator('#saved-logins [data-login-side] option').allInnerTexts(),['Default','Work','Personal']);
   await clean(page,'list');
   await page.evaluate(()=>scrollTo(0,Math.max(0,document.querySelector('#health-tabs').getBoundingClientRect().top+scrollY-24)));
   await shot(page,'signins-accounts',width,scheme);
+  calls.length=0;await page.locator('#saved-logins [data-login-side]').selectOption('Personal');
+  await page.locator('#saved-logins [data-login-side]').waitFor({state:'detached'});
+  assert.deepEqual(calls.find(([a])=>a==='browser_login_rename')[1],{id:'c3c3c3c3c3c3c3c3',account:'Personal'});
+  assert.match((await page.locator('#saved-logins').textContent()).replace(/\u00a0/g,' '),/test-user · Personal/);
+  logins[2].account='Default';
   // Import: where from (1Password signed in, LastPass not installed), then the review.
   calls.length=0;
   await page.locator('#logins-import').click();
@@ -87,8 +99,16 @@ try{
   await page.goto('about:blank');await page.goto(base+'/#signin-for='+TASK);
   await page.locator('#signin-saved button').nth(1).waitFor();
   assert.match(await page.locator('#signin-saved').innerText(),/Which account for this to-do\?/);
-  assert.deepEqual(await page.locator('#signin-saved button').allInnerTexts(),['Sign in as sam@home.example (Personal)','Sign in as sam@acme.example (Work)']);
-  assert.deepEqual(await page.locator('#signin-account option').allInnerTexts(),['Default','Work','Personal']);
+  assert.deepEqual(await page.locator('#signin-saved button').allInnerTexts(),['Sign in as sam@home.example · Personal','Sign in as sam@acme.example · Work']);
+  assert.deepEqual(await page.locator('#signin-account option').allInnerTexts(),['Work','Personal','Other name…']);
+  assert.equal(await page.locator('#signin-account').inputValue(),'Work','starts at the to-do’s own side');
+  const sizes=await page.locator('#signin-saved button').evaluateAll(bs=>bs.map(b=>{const r=b.getBoundingClientRect();return [Math.round(r.left),Math.round(r.width),Math.round(r.height)].join()}));
+  assert.equal(new Set(sizes).size,1,'the account buttons are one size: '+sizes.join(' / '));
+  const formW=await page.locator('#signin-user').evaluate(e=>Math.round(e.getBoundingClientRect().width));
+  assert.equal(Number(sizes[0].split(',')[1]),formW,'full width');
+  await page.locator('#signin-account').selectOption('');
+  assert.ok(await page.locator('#signin-account-name').isVisible(),'Other name… asks for one');
+  await page.locator('#signin-account').selectOption('Work');
   await clean(page,'dialog');await shot(page,'signin-ask',width,scheme);
   await page.locator('#signin-saved button',{hasText:'Work'}).click();
   await page.locator('#signin-code-row:not([hidden])').waitFor();
@@ -98,7 +118,7 @@ try{
   pick='b2b2b2b2b2b2b2b2';
   await page.goto('about:blank');await page.goto(base+'/#signin-for='+TASK);
   await page.locator('#signin-saved button.primary').waitFor();
-  assert.equal(await page.locator('#signin-saved button.primary').innerText(),'Sign in as sam@acme.example (Work)');
+  assert.equal(await page.locator('#signin-saved button.primary').innerText(),'Sign in as sam@acme.example · Work');
   assert.ok(!/Which account/.test(await page.locator('#signin-saved').innerText()));
   await shot(page,'signin-picked',width,scheme);
   await page.locator('#signin-saved [data-login-other]').click();

@@ -1,37 +1,53 @@
 // A lazy part (dashboard_parts.LAZY 'logins'): Connections, Sign-ins. The saved sign-ins, one row per account, and
 // Import (loginImportOpen). connections-signin.js calls in through lazyRun.
 const savedOn=v=>{const d=v&&new Date(v);if(!d||isNaN(d))return '';return localeDate(d,DL,d.getFullYear()===new Date().getFullYear()?{day:'numeric',month:'short'}:{month:'short',year:'numeric'})};
-// A site with several accounts (Work, Personal) shows one row each, its account named; a lone Default account doesn't.
-function savedLoginRow(l,i,all){const site=String(l.site||''),user=String(l.username||''),on=savedOn(l.saved_at),account=String(l.account||'Default'),many=all.filter(x=>x.site===site).length>1;
- return html`<div class="saved-login"><span class="login-mark" aria-hidden="true">${(site.replace(/^www\./,'')[0]||'?').toUpperCase()}</span><span class="grow"><strong title="${site}">${site}${many||account!=='Default'?html` <span class="login-account">${t(account)}</span>`:''}</strong>${user?html`<span class="login-user" title="${user}">${user}</span>`:''}<small class="login-pass">${l.password_saved?LOCK:''}<span>${l.password_saved?'Password saved':'No password saved'}${on?` · ${on}`:''}</span></small></span><button type="button" class="quiet" data-forget-login="${l.id||site}" aria-label="${t('Forget {}',site+(many?' · '+t(account):''))}">Forget</button></div>`}
+// One row per site, its name never cut short by a label. Its accounts sit underneath, each with its username and
+// its side ("sam@acme.example · Work") and its own Forget. A sign-in moved over from one per site is Default until
+// the owner gives it a side here (browser_login_rename); Default is the only place that word shows.
+const loginWho=(l,many)=>{const user=String(l.username||''),account=String(l.account||'Default'),side=/^[0-9a-f]{16}$/.test(l.id||'')&&account==='Default';
+ return html`<span class="login-user login-who" title="${user}"><span class="login-name">${user||(many?t('No username'):'')}</span>${account!=='Default'?html`<span class="login-side-name">&nbsp;· ${t(account)}</span>`:''}</span>${side?html`<label class="login-side"><select data-login-side="${l.id}" aria-label="${t('Side for {}',user||l.site)}"><option value="Default" selected>${t('Default')}</option>${LI_ACCOUNTS.map(a=>html`<option value="${a}">${t(a)}</option>`)}</select></label>`:''}`};
+const loginPass=l=>{const on=savedOn(l.saved_at);return html`<small class="login-pass">${l.password_saved?LOCK:''}<span>${l.password_saved?'Password saved':'No password saved'}${on?` · ${on}`:''}</span></small>`};
+const loginForget=(l,label)=>html`<button type="button" class="quiet" data-forget-login="${l.id||l.site}" aria-label="${t('Forget {}',label)}">Forget</button>`;
+function savedLoginRow([site,list]){const mark=html`<span class="login-mark" aria-hidden="true">${(site.replace(/^www\./,'')[0]||'?').toUpperCase()}</span>`;
+ if(list.length===1){const l=list[0];return html`<div class="saved-login">${mark}<span class="grow"><strong title="${site}">${site}</strong>${loginWho(l,false)}${loginPass(l)}</span>${loginForget(l,site)}</div>`}
+ return html`<div class="saved-login many">${mark}<span class="grow"><strong title="${site}">${site}</strong><span class="login-accts">${list.map(l=>html`<span class="login-acct"><span class="grow">${loginWho(l,true)}${loginPass(l)}</span>${loginForget(l,site+' · '+t(String(l.account||'Default')))}</span>`)}</span></span></div>`}
+const loginSites=logins=>{const by=new Map();for(const l of logins){const s=String(l.site||'');if(!by.has(s))by.set(s,[]);by.get(s).push(l)}return [...by]};
 async function savedLoginsDraw(){try{const r=await signinPost('browser_logins',{}),logins=Array.isArray(r.logins)?r.logins:[];if(savedLoginCount!==logins.length){savedLoginCount=logins.length;if(lazyIn('connections'))renderHealthTabs()}
  $('#saved-logins').classList.toggle('empty',!logins.length);
- setHTML($('#saved-logins'),logins.length?html`${logins.map(savedLoginRow)}`:html`<div><strong>No saved sign-ins</strong><span>Tick Save for next time when you sign in to a site, or import them.</span></div>`)}catch{}}
+ setHTML($('#saved-logins'),logins.length?html`${loginSites(logins).map(savedLoginRow)}`:html`<div><strong>No saved sign-ins</strong><span>Tick Save for next time when you sign in to a site, or import them.</span></div>`)}catch{}}
+$('#saved-logins').onchange=async e=>{const s=e.target.closest('[data-login-side]');if(!s)return;s.disabled=true;
+ try{await signinPost('browser_login_rename',{id:s.dataset.loginSide,account:s.value});toast(t('Saved as {}.',t(s.value)));savedLoginsDraw()}catch(err){errCaught(err);s.disabled=false;s.value='Default';toast(err.message,true)}};
 $('#saved-logins').onclick=async e=>{const b=e.target.closest('[data-forget-login]');if(!b)return;b.disabled=true;const v=b.dataset.forgetLogin;try{await signinPost('browser_login_forget',/^[0-9a-f]{16}$/.test(v)?{id:v}:{site:v});toast('Forgotten.');savedLoginsDraw()}catch(err){errCaught(err);b.disabled=false;toast(err.message,true)}};
 // The sign-in dialog's saved sign-ins (connections-signin-dialog.js signinShow): those for the page's exact address,
 // one per account. The to-do's own (`pick`: chosen before, the only one, or the one named for its Work or Personal
 // side) is the one button; with several and none picked, the dialog asks once which one, and the service remembers it
-// for that to-do. `all`: Other account. Save for next time gets a Save as choice (Default, Work, Personal).
+// for that to-do. `all`: Other account. Save for next time gets Save as: Work or Personal (starting at the to-do's own
+// side, `page.side`), a name this site already has, or a name of the owner's own.
 let signinNow=null;
-function signinAccounts(page,all){signinNow=page;const box=$('#signin-saved'),list=page.accounts||(page.saved?[{id:'',account:'Default',username:page.saved.username}]:[]);
- if(!$('#signin-account'))$('#signin-save-row').append(make('select',{id:'signin-account',class:'signin-as','aria-label':t('Save as')},...LI_ACCOUNTS.map(a=>make('option',{value:a},t(a)))));
+function signinSaveAs(page){const list=page.accounts||[],own=[...new Set(list.map(a=>String(a.account||'')).filter(a=>a&&a!=='Default'&&!LI_ACCOUNTS.includes(a)))];
+ let sel=$('#signin-account');if(!sel){sel=make('select',{id:'signin-account',class:'signin-as','aria-label':t('Save as')});
+  const name=make('input',{id:'signin-account-name',class:'signin-as-name',maxlength:'40',placeholder:t('Account name'),'aria-label':t('Account name'),hidden:''});
+  sel.onchange=()=>{name.hidden=sel.value!=='';if(!name.hidden)name.focus()};$('#signin-save-row').after(name);$('#signin-save-row').append(sel)}
+ setHTML(sel,html`${[...LI_ACCOUNTS,...own].map(a=>html`<option value="${a}">${t(a)}</option>`)}<option value="">${t('Other name…')}</option>`);
+ sel.value=page.side&&LI_ACCOUNTS.includes(page.side)?page.side:'Personal';$('#signin-account-name').hidden=true;$('#signin-account-name').value=''}
+function signinAccounts(page,all){signinNow=page;signinSaveAs(page);const box=$('#signin-saved'),list=page.accounts||(page.saved?[{id:'',account:'Default',username:page.saved.username}]:[]);
  const show=list.length&&(page.username||page.password);box.hidden=!show;if(!show)return setHTML(box,'');
  const many=list.length>1,pick=list.find(a=>a.id&&a.id===page.pick)||(!many?list[0]:null),ask=many&&!pick&&!!signinTask;
- const label=a=>a.username?(many?`${a.username} (${t(a.account)})`:a.username):t(a.account);
- const btn=(a,cls)=>html`<button type="button" class="${cls}" data-login="${a.id}">${a.username||many?t('Sign in as {}',label(a)):t('Sign in as the saved user')}</button>`;
+ const label=a=>{const side=a.account&&a.account!=='Default'?t(a.account):'';return a.username?(side?`${a.username} · ${side}`:a.username):side};
+ const btn=(a,cls)=>html`<button type="button" class="${cls}" data-login="${a.id}">${label(a)?t('Sign in as {}',label(a)):t('Sign in as the saved user')}</button>`;
  setHTML(box,html`${ask?html`<p class="signin-which">${t('Which account for this to-do?')}</p>`:''}<div class="signin-acct">${pick&&!all?html`${btn(pick,'primary')}${many?html`<button type="button" class="quiet" data-login-other>${t('Other account')}</button>`:''}`:html`${list.map(a=>btn(a,a===pick?'primary':''))}`}</div>`)}
 $('#signin-saved').onclick=e=>{const b=e.target.closest('button');if(!b)return;
  if('loginOther' in b.dataset){signinAccounts(signinNow||{},true);return}
  signinSend({use_saved:b.dataset.login||true,...(!$('#signin-code-row').hidden&&$('#signin-code').value.trim()?{code:$('#signin-code').value.trim()}:{})})};
 // Import: sign-ins from a password manager's CSV export (1Password, LastPass, Bitwarden, Chrome), or from 1Password's op or
 // LastPass's lpass when the owner has signed in to it on this computer; then a review where they tick which to keep and
-// the account they go under (Work, Personal or Default). No password ever reaches the page: the service holds what it
+// the account they go under (Work or Personal). No password ever reaches the page: the service holds what it
 // read until Keep, then drops it (login_import.py). Nothing here signs in to a password manager.
 const LI_ICON={file:html`<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 1.75h5l3 3v9.5H4z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M8.75 1.75v3.25H12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>`,
  '1password':html`<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.25" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M8 4.75v6.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>`,
  lastpass:html`<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="2.9" cy="8" r="1.25" fill="currentColor"/><circle cx="6.4" cy="8" r="1.25" fill="currentColor"/><circle cx="9.9" cy="8" r="1.25" fill="currentColor"/><path d="M13.4 4.5v7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>`};
 const LI_TOOLS={'1password':'1Password',lastpass:'LastPass'};
-const LI_ACCOUNTS=['Default','Work','Personal'];
+const LI_ACCOUNTS=['Work','Personal'];
 let liReview=null,liTools={};
 const liPost=args=>signinPost('browser_login_import',args);
 function liDialog(){let d=$('#login-import');if(d)return d;
@@ -50,7 +66,7 @@ async function loginImportOpen(){liReview=null;liPick();
  try{const r=await liPost({do:'tools'});liTools=r.tools||{};if(!liReview&&$('#login-import')?.open)liPick()}catch(err){errCaught(err)}}
 function liRow(r,account){const replaces=(r.saved||[]).some(a=>a.toLowerCase()===account.toLowerCase());
  return html`<label class="li-row"><input type="checkbox" data-li-key="${r.key}" checked><span class="login-mark" aria-hidden="true">${(r.site.replace(/^www\./,'')[0]||'?').toUpperCase()}</span><span class="grow"><strong title="${r.site}">${r.site}</strong><span class="login-user" title="${r.username}">${r.username||t('No username')}</span>${replaces?html`<small class="li-note">${t('Replaces the saved {} sign-in',t(account))}</small>`:''}</span></label>`}
-function liShow(){const d=liDialog(),r=liReview,account=d.querySelector('[data-li-account]')?.value||r.account||'Default';r.account=account;
+function liShow(){const d=liDialog(),r=liReview,account=d.querySelector('[data-li-account]')?.value||r.account||'Work';r.account=account;
  const keep=[...d.querySelectorAll('[data-li-key]')].filter(x=>x.checked).map(x=>x.dataset.liKey),picked=d.querySelector('[data-li-key]')?new Set(keep):null;
  setHTML(d,html`${liHead(t('Choose sign-ins to keep'))}<p class="li-lead">${t(['{} sign-in found in {}.','{} sign-ins found in {}.'],r.rows.length,r.manager)}${r.skipped?' '+t(['{} without a secure web address left out.','{} without a secure web address left out.'],r.skipped):''}</p>
  ${r.rows.length?html`<div class="li-bar"><label class="li-all"><input type="checkbox" data-li-all checked> ${t('All')}</label><label class="li-as">${t('Save as')}<select data-li-account>${LI_ACCOUNTS.map(a=>html`<option value="${a}"${a===account?html` selected`:''}>${t(a)}</option>`)}</select></label></div>
@@ -61,7 +77,7 @@ function liCount(){const d=$('#login-import'),boxes=[...d.querySelectorAll('[dat
  if(b){b.textContent=t(['Keep {} sign-in','Keep {} sign-ins'],n);b.disabled=!n}if(all){all.checked=n===boxes.length;all.indeterminate=n>0&&n<boxes.length}}
 function liFail(err){errCaught(err);const e=$('#login-import .li-error');if(e)e.textContent=err.message}
 async function liStart(args,busy){const d=liDialog();for(const b of d.querySelectorAll('button,input'))b.disabled=true;const e=d.querySelector('.li-error');if(e)e.textContent=busy;
- try{const r=await liPost(args);if(!d.open){liPost({do:'drop',token:r.token}).catch(()=>{});return}liReview={...r,account:'Default'};liShow()}catch(err){liPick();liFail(err)}}
+ try{const r=await liPost(args);if(!d.open){liPost({do:'drop',token:r.token}).catch(()=>{});return}liReview={...r,account:'Work'};liShow()}catch(err){liPick();liFail(err)}}
 async function liChange(e){const d=$('#login-import');
  if(e.target.matches('[data-li-file]')){const f=e.target.files?.[0];e.target.value='';if(!f)return;
   if(f.size>5*1024*1024){liFail(Error(t('That file is too big (5 MB at most)')));return}
@@ -76,5 +92,5 @@ async function liClick(e){const d=$('#login-import'),b=e.target.closest('button'
  if('liBack' in b.dataset){const r=liReview;liReview=null;if(r)liPost({do:'drop',token:r.token}).catch(()=>{});liPick();return}
  if('liKeep' in b.dataset&&liReview){const keys=[...d.querySelectorAll('[data-li-key]')].filter(x=>x.checked).map(x=>x.dataset.liKey);if(!keys.length)return;
   b.disabled=true;const r=liReview;
-  try{const done=await liPost({do:'keep',token:r.token,keys,account:d.querySelector('[data-li-account]')?.value||'Default'});liReview=null;d.close();toast(t(['Kept {} sign-in.','Kept {} sign-ins.'],done.kept||0));savedLoginsDraw()}
+  try{const done=await liPost({do:'keep',token:r.token,keys,account:d.querySelector('[data-li-account]')?.value||'Work'});liReview=null;d.close();toast(t(['Kept {} sign-in.','Kept {} sign-ins.'],done.kept||0));savedLoginsDraw()}
   catch(err){b.disabled=false;liFail(err);if(/expired/i.test(err.message)){liReview=null}}}}

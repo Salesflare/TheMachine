@@ -138,6 +138,20 @@ class AccountsTest(Folder):
         self.assertTrue(self.store.forget(work))
         self.assertEqual([x['account'] for x in self.store.list()], ['Personal'])
 
+    def test_a_moved_over_default_gets_its_side_but_never_a_name_taken_there(self):
+        site = 'https://crm.example.invalid'
+        old = self.store.save(site, 'me@acme.example.invalid', 'o')  # as one moved over: Default
+        work = self.store.save(site, 'me@home.example.invalid', 'w', account='Work')
+        with self.assertRaisesRegex(ValueError, 'already has'):
+            self.store.rename(old, 'work')
+        self.assertTrue(self.store.rename(old, 'Personal'))
+        self.assertFalse(self.store.rename(old, 'Personal'))
+        self.assertEqual([(x['id'], x['account']) for x in self.store.list()], [(old, 'Personal'), (work, 'Work')])
+        self.assertEqual(self.store.get(old)['password'], 'o')
+        with self.assertRaisesRegex(ValueError, 'any more'):
+            self.store.rename('0' * 16, 'Work')
+        self.assertEqual([browser_login.side_of(a) for a in (None, 'personal', 'work', 'work:Acme')], [None, 'Personal', 'Work', 'Work'])
+
     def test_a_to_do_picks_by_meaning_or_asks_once(self):
         site = 'https://crm.example.invalid'
         work = self.store.save(site, 'me@acme.example.invalid', 'w', account='Work')

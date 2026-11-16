@@ -828,6 +828,24 @@ class LoginStore:
             doc['picks'][task] = login
             self._write(doc)
 
+    def rename(self, login, account):
+        """Names a saved sign-in's account (a Default one moved over from one per site gets Work or Personal).
+        Refuses a name another account on the same address already has. Returns whether it changed."""
+        name = account_name(account)
+        with self.lock:
+            doc = self._read()
+            entry = next((e for e in doc['logins'] if e.get('id') == login), None)
+            if entry is None:
+                raise OwnerError('That sign-in isn’t saved any more')
+            if (entry.get('account') or DEFAULT_ACCOUNT) == name:
+                return False
+            if any(e is not entry and set(e.get('origins', ())) & set(entry.get('origins', ()))
+                   and (e.get('account') or DEFAULT_ACCOUNT).lower() == name.lower() for e in doc['logins']):
+                raise OwnerError('That site already has a sign-in for ' + name)
+            entry['account'] = name
+            self._write(doc)
+            return True
+
     def forget(self, login):
         """Forgets one saved sign-in by its id, or every account of a site by its host. Also from the older file
         kept as the backup, so a forgotten password is nowhere. Returns whether anything went."""
@@ -868,6 +886,14 @@ def account_name(value):
     """An account's name as kept: trimmed, at most 40 characters, Default when empty."""
     name = re.sub(r'\s+', ' ', str(value or '')).strip()[:40]
     return name or DEFAULT_ACCOUNT
+
+
+def side_of(area):
+    """The account a new sign-in for a to-do is saved under by default: Personal for its Personal side, Work for
+    its Work side, None when there is no to-do."""
+    if not area:
+        return None
+    return 'Personal' if str(area).lower() == 'personal' else 'Work'
 
 
 def area_names(area):

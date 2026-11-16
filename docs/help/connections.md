@@ -62,7 +62,9 @@ Open the source, **Details**, then **Disconnect**. It stops reading. What it alr
 
 For sites like LinkedIn or X, tick **Save for next time** when you sign in. **Sign-ins** then lists them, and when a site logs your Machine out, it signs back in with one tap. Passwords stay encrypted on your Machine. **Forget** removes one.
 
-A site can keep several accounts, such as **Work** and **Personal**. Pick one in **Save as**. A to-do signs in with the account that fits it. When that isn't clear, the dialog asks once which one, and remembers it for that to-do.
+A site can keep several accounts, such as **Work** and **Personal**. **Save as** starts at the to-do's own side, and **Other name…** takes a name of your own. A to-do signs in with the account that fits it. When that isn't clear, the dialog asks once which one, and remembers it for that to-do.
+
+**Sign-ins** lists each site once, with its accounts underneath. Sign-ins saved before accounts existed show as **Default** until you pick their side there.
 
 **Import** brings in sign-ins from a password manager: a CSV export from 1Password, LastPass, Bitwarden or Chrome, or 1Password and LastPass straight from their command-line tools when you're signed in to them on this computer. You tick which ones to keep. Your Machine never signs in to your password manager and never asks for its master password. Delete the export file once you're done.
 
