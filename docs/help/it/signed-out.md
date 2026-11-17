@@ -1,28 +1,28 @@
 ---
 title: Disconnessione da un sito
 area: troubleshooting
-summary: LinkedIn o X hanno disconnesso la tua Machine. Accedi di nuovo, una volta sola o in modo permanente.
+summary: LinkedIn o X hanno disconnesso la tua Machine. Accedi di nuovo, una volta o definitivamente.
 covers:
-code: browser_login.py, dashboard.html, dashboard/connections-signin.js
+code: browser_login.py, login_import.py, dashboard.html, dashboard/connections-signin.js, dashboard/connections-logins.js
 order: 2
-translated: 96c09e57cd3dca62
+translated: 060f7ca4f870ad0a
 ---
-I siti come LinkedIn e X vengono consultati nel browser della tua Machine. A volte un sito ti disconnette.
+Siti come LinkedIn e X si aprono nel browser della tua Machine. A volte un sito ti disconnette.
 
 ## Accedi di nuovo
 
-In **Connessioni** e in cima alle tue attività trovi l’avviso che ti sei disconnesso. Premi **Accedi qui** e accedi nella piccola finestra che si apre nel pannello di controllo.
+**Connessioni** e la parte superiore delle tue attività indicano che hai effettuato la disconnessione. Premi **Accedi qui** e accedi nella piccola finestra sulla dashboard.
 
-Seleziona **Salva per la prossima volta** per accedere di nuovo con un solo tocco quando succede. La password resta crittografata sulla tua Machine e l’IA non la vede mai.
+Seleziona **Salva per la prossima volta** per accedere di nuovo con un tocco quando succede ancora. La password resta crittografata sulla tua Machine e l’AI non può vederla. Se hai più account sullo stesso sito, **Salva come** assegna un nome a questo account (Lavoro, Personale) e, se l’attività non specifica quale usare, la finestra di dialogo te lo chiede.
 
 ## Password e codici
 
-Inserisci tu le password. Anche i codici di verifica in due passaggi devi inserirli tu.
+Inserisci tu le password. Anche i codici per la verifica in due passaggi devi inserirli tu.
 
-Trovi gli accessi salvati in **Connessioni**, **Accessi**. Con **Dimentica** ne rimuovi uno.
+Gli accessi salvati si trovano in **Connessioni**, **Accessi**. **Dimentica** rimuove un accesso. **Importa** li importa da un gestore di password.
 
-## Se il sito rifiuta l’accesso o richiede una verifica anti-robot
+## Se il sito rifiuta l’accesso o chiede una verifica anti-robot
 
-LinkedIn, X e i siti che richiedono una verifica di Cloudflare spesso rifiutano gli accessi da un browser nel cloud. Su una Machine ospitata, compare quindi **Accedi dalla tua connessione di casa**. Si apre la pagina di configurazione, dove il browser della tua Machine può connettersi a Internet tramite la tua rete di casa con Tailscale oppure tramite un tuo proxy. Poi accedi di nuovo.
+LinkedIn, X e i siti che usano una verifica Cloudflare spesso rifiutano gli accessi da un browser nel cloud. Su una Machine ospitata, per accedere appare **Accedi dalla tua connessione di casa**. Si apre la pagina di configurazione, dove il browser della tua Machine può connettersi a Internet tramite la rete di casa con Tailscale o tramite un proxy tuo. Poi accedi di nuovo.
 
-Sul tuo computer non serve: il suo browser è già a casa.
+Sul tuo computer non serve: il suo browser è già sulla tua rete di casa.

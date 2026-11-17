@@ -5,106 +5,111 @@ summary: La semana que tienes por delante, en un solo lugar: reuniones, tareas q
 covers: tab:calendar
 code: dashboard.html, meeting_notes.py, meeting_writer.py, calendar_clashes.py, meeting_prep.py, trip_notes.py, event_notes.py, bookings.py
 order: 1
-translated: 970b39054ae39543
+translated: c1941aa6ca09b134
 ---
 ## Qué muestra
 
 Tus días a partir de hoy, con:
 
 - reuniones de los calendarios que has conectado,
-- tareas que vencen ese día y tareas pospuestas para el día en que vuelven,
-- seguimientos del trabajo que delegaste,
+- tareas que vencen ese día y tareas pospuestas que vuelven ese día,
+- seguimientos de trabajos que has delegado,
 - promesas con fecha,
 - [viajes y eventos](calendar.md#trips-and-events) de los correos de reservas y entradas.
 
-Una reunión que aparece en dos calendarios se muestra una sola vez. Los eventos de un calendario que alguien compartió contigo aparecen atenuados y con el nombre de pila de esa persona. Nunca generan una tarea. Los eventos de todo el día y los que duran varios días aparecen como eventos de todo el día, en cada uno de los días que abarcan. En Agenda, cada día de un viaje aparece primero. En Semana y Mes, el viaje aparece como una sola franja que abarca esos días, por ejemplo, «Viaje a Lisboa».
+Una reunión que aparece en dos calendarios solo se muestra una vez. Los eventos de un calendario que alguien ha compartido contigo aparecen atenuados y con el nombre de pila de esa persona; nunca generan una tarea. Los eventos de todo el día y de varios días aparecen como eventos de todo el día en cada uno de los días que abarcan. En **Agenda**, un viaje aparece primero en cada uno de sus días. En **Semana** y **Mes**, aparece como una sola franja que abarca esos días, por ejemplo, «Viaje a Lisboa».
 
-Un plan hecho en conjunto es una sola promesa, marcada como «Con» y el nombre de la otra persona. Si una promesa está relacionada con una reunión de ese día con la misma persona, aparece en la fila de esa reunión.
+Un plan hecho entre varias personas cuenta como una sola promesa, marcada con «Con» y el nombre de la otra persona. Si hay una promesa sobre una reunión de ese día con esa misma persona, aparece en la fila de la reunión.
 
-**Vencida** aparece primero. Si una reunión tiene una tarea pendiente, se muestra su estado: **Preparación lista**, **Preparando** o **Tarea**. Las tareas que parecen estar hechas, porque ya respondiste o porque su ejecución confirmó que estaban hechas, no aparecen como **Vence**.
+**Vencida** aparece primero. Si una reunión tiene una tarea pendiente, muestra su estado: **Preparación lista**, **Preparando** o **Tarea**. Las tareas que parecen completadas, porque ya has respondido o porque una ejecución las encontró hechas, no aparecen como **Vence**.
 
 ## Agenda, semana o mes
 
-- **Agenda** muestra cada día. Desplázate hacia abajo para ver días posteriores o hacia arriba, o toca **Mostrar días anteriores**, para ver los anteriores. Retrocede hasta una semana antes de que conectaras tu calendario; una línea en la parte superior indica desde qué día. Cuando se cargue el [historial](history.md), podrás retroceder alrededor de un año.
+- **Agenda** muestra cada día. Desplázate hacia abajo para ver los días siguientes, o hacia arriba (o toca **Mostrar días anteriores**) para ver los anteriores. Retrocede hasta una semana antes de que conectaras tu calendario y verás una línea en la parte superior que indica desde qué día. Cuando esté disponible tu [historial](history.md), podrás retroceder aproximadamente un año.
 - **Semana** muestra una cuadrícula de lunes a domingo. En el móvil, muestra tres días.
-- **Mes** muestra el mes completo. En una computadora se muestran hasta tres elementos por día. En el móvil aparecen puntos; tócalos para ver la lista de ese día.
+- **Mes** muestra el mes entero. En un ordenador, muestra hasta tres elementos por día; en el móvil, muestra puntos. Toca un día para ver la lista de ese día.
 
-**Hoy**, ‹ y › en la parte superior te permiten avanzar o retroceder por las semanas o los meses. La vista que elijas se recuerda en ese dispositivo.
+**Hoy**, ‹ y ›, en la parte superior, te permiten avanzar o retroceder por las semanas o los meses. La vista que elijas se recuerda en ese dispositivo.
 
-En la cuadrícula semanal, los eventos que coinciden en horario aparecen uno al lado del otro y se pueden leer. El resto se indica como **+N**. Tócalo para abrir ese día en la agenda.
+En la cuadrícula semanal, los eventos que coinciden en el horario aparecen uno junto al otro, sin perder legibilidad. El resto se muestra como **+N**. Tócalo para abrir ese día en la agenda.
 
-## Abrir un elemento
+## Abrir algo
 
-Haz clic en una fila para abrir el chat de su tarea, la promesa, el viaje o evento, o la reunión. Si no puedes cambiar una reunión desde aquí, por ejemplo, porque pertenece a otra persona o tiene invitados, verás sus detalles: cuándo, dónde y quiénes participan. Las personas que conoce tu Graph y las organizaciones y proyectos asociados a la reunión enlazan a sus páginas. **Abrir en Google Calendar** (o **Abrir en Outlook**) debajo de esos datos la abre en ese servicio. Consultarla no cambia nada.
+Haz clic en una fila para abrir el chat de una tarea, la promesa, el viaje o evento, o la reunión. Si no puedes cambiar una reunión desde aquí, por ejemplo, porque pertenece a otra persona o tiene invitados, verás sus detalles: cuándo, dónde y quiénes asisten. Las personas que conoce tu Graph y las organizaciones y proyectos relacionados con la reunión enlazan a sus páginas. **Abrir en Google Calendar** (o **Abrir en Outlook**) abre la reunión en ese servicio. Consultarla no cambia nada.
 
-Si una reunión tiene reservada una sala, aparece en el campo de ubicación, nunca como persona ni en tu Graph.
+Si una reunión tiene una sala reservada, aparece en «Dónde», nunca como persona ni en tu Graph.
 
-El enlace de una reunión aparece con el nombre del servicio, como Zoom, Google Meet o Teams, o como **Videollamada**. Abre la reunión para unirte.
+Los enlaces a reuniones muestran el servicio, como Zoom, Google Meet o Teams, o el texto **Videollamada**. Abre la reunión para unirte.
 
 ## Viajes y eventos
 
-Cuando llega a tu correo una reserva de vuelo, hotel, tren, autobús, ferry o coche de alquiler, tu Machine la añade a un viaje. Las reservas de un mismo recorrido se agrupan en un viaje: la ida, el hotel y la vuelta. El viaje aparece como una sola franja que abarca los días correspondientes. Ábrelo para ver el código de reserva, el asiento y el billete de cada reserva, en orden cronológico.
+Cuando recibes en tu correo una reserva de vuelo, hotel, casa de vacaciones, tren, autobús, ferry, coche de alquiler, taxi o aparcamiento en el aeropuerto, tu Machine la añade a un viaje. Las reservas de un mismo trayecto se agrupan en un solo viaje, aunque lleguen a cualquiera de tus buzones: el tren al aeropuerto, los vuelos, el coche, el alojamiento y el viaje de vuelta. Las reservas se agrupan cuando coinciden en fechas o cuando una empieza justo al terminar la otra.
 
-Las entradas para conciertos, partidos, festivales o conferencias crean un evento, uno por cada evento, con su ubicación, el código de reserva, el asiento y el número de entradas. Si haces otro pedido para el mismo evento, se añade al mismo. Los eventos reservados desde tu correo de trabajo son de Trabajo; los demás, de Personal.
+El viaje aparece como una sola franja que abarca sus días. Ábrelo para ver cada reserva en orden cronológico, con sus horarios, dirección, código de reserva y asiento.
 
-- Cada línea indica quién envió la reserva, por ejemplo, **De Example Tickets**, y abre ese correo.
+Las entradas para un concierto, un partido, un festival o una conferencia crean un evento por cada actividad, con el lugar, el código de reserva, el asiento y el número de entradas. Si haces un segundo pedido para el mismo evento, se añade al mismo. Si la entrada se reservó en tu buzón de trabajo, el evento es de Trabajo; de lo contrario, es Personal. Las entradas para algo que ocurre durante un viaje se añaden al viaje.
+
+Si todavía falta para el viaje, tu Machine te indica qué falta, por ejemplo, **No hay alojamiento reservado para 2 noches** o que no has reservado cómo ir del aeropuerto al hotel. Estas líneas aparecen atenuadas y marcadas como **Sin reserva**. Si el viaje no incluye alojamiento, no se muestra información sobre las noches.
+
+- Cada línea indica de quién procede la reserva, por ejemplo, **De Example Tickets**, y abre ese correo.
 - Si el correo generó una tarea, como pagar las entradas, **Abrir la tarea** la muestra.
-- Si se modifica una reserva, se actualiza su línea. Si se cancela, desaparece. Cuando se cancelan todas las reservas, también desaparece el viaje o evento.
+- Si cambia una reserva, se actualiza su línea. Si se cancela, desaparece. Cuando se cancelan todas las reservas, también desaparece el viaje o el evento.
+- Las reservas de otras personas, como el vuelo de un compañero que te han reenviado, no aparecen en tus viajes.
 
-La información se extrae, sin IA, de los detalles que las aerolíneas, los hoteles, los sitios de reservas y los vendedores de entradas incluyen en sus correos de confirmación. Si el correo no incluye esos detalles, no se crea nada. Los correos de reservas del año de [historial](history.md) que tu Machine conserva se leen en segundo plano cuando se carga ese historial.
+La mayoría de las confirmaciones incluyen los detalles en un formato que tu Machine puede leer sin IA. Si alguna no está en ese formato, por ejemplo, un correo reenviado o de un sitio de reservas pequeño, tu [modelo](model.md) lee el correo en segundo plano, de unos pocos en pocos, y espera si estás cerca del límite de uso. Cuando tu Machine haya terminado de guardar el [historial](history.md) del año, también leerá en segundo plano los correos de reservas de ese año.
 
 ## Notas y transcripción de reuniones
 
-Los detalles de una reunión tienen dos secciones. **Notas** es el resumen: decisiones y tareas pendientes. **Transcripción** reproduce palabra por palabra lo que se dijo. Al principio aparece contraída y muestra su duración. Toca **Mostrar** para abrirla.
+Los detalles de una reunión tienen dos partes. **Notas** es el resumen: decisiones y tareas pendientes. **Transcripción** recoge palabra por palabra lo que se dijo. Al principio aparece plegada y muestra cuánto dura. Toca **Mostrar** para abrirla.
 
-Si no se carga, vuelve a intentarlo automáticamente durante aproximadamente medio minuto. Después, toca **Reintentar**.
+Si no se cargan, se vuelven a cargar automáticamente durante aproximadamente medio minuto. Después, toca **Reintentar**.
 
-Cada sección tiene sus propias opciones: **Añadir notas** o **Añadir transcripción**, **Subir archivo** para añadir un archivo Markdown o de texto, **Editar** y **Quitar** (toca dos veces). El contenido añadido a una sección se queda ahí. En una reunión que puedes cambiar, toca **Notas** debajo del formulario para abrirlas.
+Cada parte tiene sus propias opciones **Añadir notas** o **Añadir transcripción**, **Subir archivo** para subir un archivo Markdown o de texto, **Editar** y **Quitar** (toca dos veces). Lo que añadas a una parte se queda ahí. Si puedes cambiar la reunión, **Notas**, debajo del formulario, las abre.
 
-Si conectas [Zoom](zoom.md), [Google Meet](google-meet.md) o [Granola](granola.md), sus notas aparecen en Notas y su transcripción en Transcripción, con la etiqueta **De Zoom**, **De Google Meet** o **De Granola**. Nunca reemplazan lo que añadiste. Si están ambas, se muestran las dos.
+Si has conectado [Zoom](zoom.md), [Google Meet](google-meet.md) o [Granola](granola.md), sus notas aparecen en **Notas** y su transcripción en **Transcripción**, marcadas como **De Zoom**, **De Google Meet** o **De Granola**. Nunca sustituyen lo que has añadido: si están las dos, se muestran las dos.
 
-También pueden añadirse notas al evento de calendario de la reunión después de que empiece, o llegar por correo de Zoom o Gemini. Cuando termina la reunión, The Machine solo crea tareas a partir de ellas si hay pasos siguientes concretos. Si las mismas notas llegan por dos vías, se crea una sola tarea con la reunión como origen: «Origen: notas de» la reunión.
+También pueden añadirse notas al evento de calendario de la propia reunión, una vez que haya empezado, o llegar por correo desde Zoom o Gemini. Cuando termina la reunión, The Machine solo crea tareas a partir de ellas si indican claramente los siguientes pasos. Si llegan las mismas notas por dos medios, se crea una sola tarea y la reunión aparece como origen: «Origen: notas de» la reunión.
 
-Si una reunión tiene transcripción, pero no notas, aparece la opción **Generar notas**. The Machine las redacta a partir de la transcripción: un resumen breve, las decisiones y las tareas pendientes con quién debe encargarse, en el idioma de la reunión.
+Si una reunión tiene transcripción, pero no notas, aparece la opción **Generar notas**. The Machine las redacta a partir de la transcripción: un breve resumen, decisiones y tareas pendientes con quién se encargará de ellas, en el idioma de la reunión.
 
-Aparece **Escribiendo notas…** y el proceso continúa aunque cierres la reunión. Si es una reunión larga, puede tardar unos minutos y usa tu propio modelo. Las notas indican **Redactadas por The Machine** y nunca reemplazan las que añadiste.
+Aparece **Escribiendo notas…** y el proceso continúa aunque cierres la reunión. Si la transcripción es larga, puede tardar unos minutos y se usa tu propio modelo. Las notas indican **Redactadas por The Machine** y nunca sustituyen las que hayas añadido.
 
-The Machine también puede añadirlas. Pídelo en un chat de una tarea, por ejemplo: «añade la transcripción de la reunión de hoy del equipo». La transcripción se añade a Transcripción y el resumen, a Notas. Si una reunión tiene notas o transcripción, aparece **Notas** o **Transcripción** en el Calendario.
+También puedes pedirle a The Machine que las añada. Por ejemplo, en una tarea puedes decirle «añade esta transcripción a la reunión de equipo de hoy». La transcripción se añade a **Transcripción** y el resumen a **Notas**. En el **Calendario**, las reuniones que las tienen muestran **Notas** o **Transcripción**.
 
-The Machine lee ambas para identificar los seguimientos de la reunión. Son de Trabajo o Personal, igual que la reunión, y solo se comparten con tu equipo si la reunión también se comparte con él.
+The Machine lee ambas para identificar tareas de seguimiento de la reunión. Son de Trabajo o Personales, igual que la reunión, y solo se comparten con tu equipo si la reunión también se comparte.
 
-La reunión muestra estos detalles dondequiera que la abras: en una cronología, en una búsqueda de mensajes o como origen de una tarea. **Invitación original**, en la parte inferior, muestra la invitación tal como llegó.
+La reunión se abre con estos detalles estés donde estés: en una cronología, en una búsqueda de mensajes o como origen de una tarea. **Invitación original**, al final, muestra la invitación tal como llegó.
 
 ## Añadir o cambiar un evento
 
-Desde aquí puedes cambiar tu propio calendario de Google. Outlook y otros calendarios solo se pueden consultar. **Nuevo evento** añade un evento (en el móvil, está en **+**, en la barra superior): elige el calendario, un título y la hora. Haz clic en un evento de ese calendario sin invitados para cambiarlo o **Eliminarlo** (toca dos veces).
+Desde aquí puedes cambiar tu propio calendario de Google. Outlook y otros calendarios solo se pueden consultar. **Nuevo evento** añade uno (en el móvil, está en **+**, en la barra superior): elige el calendario, un título y la hora. Haz clic en un evento sin invitados de ese calendario para cambiarlo o para **Eliminarlo** (toca dos veces).
 
-**Dónde** sugiere ubicaciones mientras escribes: primero, las que ya usaste y las de tus organizaciones; después, direcciones de [OpenStreetMap](https://www.openstreetmap.org), un mapa gratuito. Solo se envían las palabras que escribes para buscarlas. Elige una sugerencia o deja tu propio texto.
+**Dónde** sugiere lugares a medida que escribes: primero los que has usado antes y tus organizaciones, y después direcciones de [OpenStreetMap](https://www.openstreetmap.org), un mapa gratuito. Solo se envían las palabras que escribes para buscarlas. Elige un lugar o deja el texto que has escrito.
 
-**Invitar** añade personas de tu Graph o cualquier dirección de correo electrónico. Esta opción solo está disponible en tu propio calendario. Los invitados aparecen encima del botón, que indica cuántos hay: **Añadir e invitar a 2**. Google envía las invitaciones cuando lo tocas, no antes. Si no hay invitados, no se invita ni se avisa a nadie.
+**Invitar** te permite añadir personas de tu Graph o cualquier dirección de correo. Esta opción solo está disponible en tu propio calendario. Los invitados aparecen encima del botón, que indica cuántos hay: **Añadir e invitar a 2 personas**. Google envía las invitaciones cuando lo tocas, no antes. Si no hay invitados, nadie recibe una invitación ni una actualización.
 
-Una tarea también puede sugerir un cambio, como añadir una recogida. Muestra exactamente qué cambiará y solo se aplica si tocas **Añadir**, **Guardar** o **Eliminar**.
+Una tarea también puede sugerir un cambio, como añadir una recogida. Verás exactamente qué cambiará. Solo se hará si tocas **Añadir**, **Guardar** o **Eliminar**.
 
-¿Aún no tienes reuniones? Si no tienes un calendario conectado, **Conecta tu calendario** abre Conexiones: conecta [Google Calendar](google-calendar.md), [Outlook Calendar](microsoft.md) u [otro calendario](other-calendars.md).
+¿Todavía no tienes reuniones? Si no tienes un calendario conectado, **Conecta tu calendario** abre **Conexiones**. Desde ahí puedes conectar [Google Calendar](google-calendar.md), [Outlook Calendar](microsoft.md) u [otro calendario](other-calendars.md).
 
 ## Conflictos con tu otro calendario
 
-Si una reunión de trabajo coincide con algo de tu calendario personal, o al revés, The Machine crea una tarea sobre la más reciente de las dos. Puede redactar una nota breve para cambiarla o sugerir que la rechaces. No se envía nada hasta que lo apruebes.
+Si una reunión de trabajo coincide con algo de tu calendario personal, o al revés, The Machine crea una tarea sobre el evento más reciente. Puede redactar una nota breve para cambiarlo u ofrecerte la opción de rechazarlo. No se envía nada hasta que lo apruebes.
 
-Los eventos de todo el día, marcados como libres o provisionales nunca cuentan, y cada conflicto se muestra una sola vez. Una tarea de Trabajo solo indica que hay un conflicto, así que tu equipo nunca ve el evento personal. Solo tú ves con qué coincide.
+Los eventos de todo el día, los marcados como libre y los provisionales no cuentan. Cada conflicto aparece una sola vez. Las tareas de Trabajo solo indican que hay un conflicto, así que tu equipo nunca verá el evento personal. Solo tú puedes ver con qué entra en conflicto.
 
 ## Prepárate para tus reuniones
 
-Antes de una reunión con personas ajenas a tu empresa, The Machine crea una tarea: **Prepararse para** la reunión. Es un resumen breve:
+Antes de una reunión con personas ajenas a tu empresa, The Machine crea una tarea: **Prepararte para** la reunión. Es un breve resumen:
 
 - **Quién:** quiénes son, según tu Graph.
-- **Último contacto:** tu último intercambio con ellas. Después de la reunión, ese mensaje aparece como origen de la tarea.
-- **Promesas pendientes:** lo que tú o ellas aún tienen pendiente.
+- **Último contacto:** tu último intercambio con esas personas. Ese mensaje aparece como origen de la tarea, después de la reunión.
+- **Promesas pendientes:** lo que tú o esas personas aún tienen pendiente.
 - **Preguntas pendientes:** lo que aún no tiene respuesta.
-- **Decidir o llevar:** qué hay que resolver o llevar.
+- **Decidir o llevar:** qué hay que decidir o llevar.
 
-La tarea aparece la mañana de un día laborable: el mismo día de la reunión si es por la tarde; si no, el día laborable anterior. Solo usa información que ya está en tu Machine. Es solo para consultar: toca **Hecho** cuando la hayas leído. Si incluye una promesa o pregunta que requiere acción, tendrá su propia tarea.
+La tarea aparece la mañana de un día laborable: el mismo día de la reunión si es por la tarde, o el día laborable anterior si no. Solo usa información que ya está en tu Machine. Es solo para consultar: toca **Hecho** cuando la hayas leído. Si hay una promesa o pregunta que requiere hacer algo, tendrá su propia tarea.
 
-Si no hay historial útil, no se crea ninguna tarea. Las reuniones periódicas, internas, personales y rechazadas no generan tareas. Si cambia la hora de una reunión, conserva su tarea y la actualiza con la nueva hora. Una tarea descartada no vuelve a aparecer; si se cancela la reunión, la tarea se cierra automáticamente.
+Si no hay información útil en tu historial, no se crea ninguna tarea. Las reuniones recurrentes, internas, personales y rechazadas no generan tareas. Si cambia la hora de una reunión, su tarea se mantiene y se actualiza con la nueva hora. Si descartas una tarea, no vuelve a aparecer. La tarea de una reunión cancelada se cierra automáticamente.
 
-Los detalles de la reunión muestran su tarea debajo de **Tarea**, a un toque de distancia de su chat.
+Los detalles de la reunión muestran su tarea debajo de **Tarea**, a un solo toque de su chat.
