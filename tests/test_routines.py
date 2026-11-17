@@ -16,6 +16,7 @@ import machine.main as machine_main
 import routines as rt  # noqa: E402
 import routines_app  # noqa: E402
 from machine.actions import DASHBOARD_ACTIONS, OWNER_ACTIONS, ROUTINE_ACTIONS  # noqa: E402
+from machine.prompts import bias  # noqa: E402
 
 D, T = dt.date, dt.datetime
 ACCOUNTS = [{'id': 'w', 'boundary': 'work:acme.example'}]
@@ -116,6 +117,7 @@ class Runs(unittest.TestCase):
         self.assertEqual(len(start), 1)
         self.assertEqual((start[0]['kind'], start[0]['background']), ('routine', True))
         self.assertIn('never send', start[0]['message'])
+        self.assertIn(bias.PLAIN_WRITING, start[0]['message'])  # a draft it leaves is written plainly (machine/prompts/bias.py)
         run = self.runs()[0]
         self.assertEqual((run['period'], run['state'], bool(run['admitted_at'])), ('2026-11-09', 'running', True))
         self.app.routines_step(); self.app.routines_step()  # still running: never a second start, never a second run

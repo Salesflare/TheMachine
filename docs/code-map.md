@@ -203,7 +203,8 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   (`ROOT`, `WORKSPACE`, `DEFAULT_CONFIG`, `LOG`, the brand assets and rule files), `machine/timing.py` (a request's
   timing, `SLOW_REQUEST_SECONDS`, `aside`: a write a request leaves for after its answer), `machine/text.py` (message text: quoted history, bodies, attachments, `clamp`,
   `encoded`, `seal_copy`, `body_after_title`: a to-do's body without its title again, as the dashboard's `bodyAfterTitle`), `machine/prompts/` (`review.py`: the review prompt, source notes, how facts are worded;
-  `profile.py`: the profile, voices, skills, roles, organizations, history and import prompts), `machine/cards.py`
+  `profile.py`: the profile, voices, skills, roles, organizations, history and import prompts; `bias.py`: model bias
+  corrections, such as plain drafts, per model family), `machine/cards.py`
   (how a to-do reads: snooze times, titles, source lines, handoffs, ask and blocker text, controls, to-do states),
   `machine/browser.py` (browser leases, sign-in handoffs, tab peeks, safe links, preparation steps), `machine/chat.py`
   (a to-do's chat: its items, replies, drafts, handoffs and redaction), `machine/faults.py` (the Machine's own errors:

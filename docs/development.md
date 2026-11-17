@@ -85,3 +85,12 @@ node tests/click-speed.mjs --baseline                        # make these median
 ```
 
 `tests/test_click_speed_dashboard.mjs` fails when a click is clearly slower than `tests/click-speed-baseline.json`: more than twice its baseline and 60 ms over it, after scaling to how fast the computer is at that moment (a fixed piece of work timed alongside). On a busy computer, use `--compare`: both pages are slowed alike.
+
+## Model bias corrections
+
+Some prompt lines only counter a habit of today's models. They live in `machine/prompts/bias.py`, apart from the prompts that include them, so they are easy to change or drop when models change.
+
+- `PLAIN_WRITING`: models write long, elaborate and formal text, and testers rewrote drafts as "too complex". Drafts get it from `preparation_prompt` (Do it, prepared ahead, follow-ups, Ask for changes) and a routine run that may leave a draft. It is a default: the owner's voice per channel, their own messages and edits win where they differ.
+- `PLAIN_WRITING_FOR` turns it on or off per model family (`family()`: gpt, claude, mistral, glm…); a family not listed gets `DEFAULT`.
+
+To change one, edit its text. To turn it off for a family, set that family to `False`; to drop it, set `DEFAULT = False` and empty the table, or remove the constant and its two call sites. Check before and after with a few made-up mails on the models in use (word count and a read of the drafts), and say the numbers in the pull request.
