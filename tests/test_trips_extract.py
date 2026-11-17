@@ -165,6 +165,12 @@ class Journey(unittest.TestCase):
         self.assertEqual((gap['at'], gap['data']), ('2026-09-10', {'gap': 1, 'until': '2026-09-11'}))
         self.assertFalse([x for x in self.trips(today='2026-11-01')[0]['lines'] if x.get('item') == 'gap'])
 
+    def test_one_night_without_a_stay_keeps_the_count(self):
+        # Every count form keeps the key's {}: the daily translator holds each language's forms to it (Russian "one"
+        # is also 21 nights), so a "for the night" form stayed English in every language with a one form.
+        self.assertEqual(trip_notes.t('No place to stay booked for {} nights', 1, lang='en'), 'No place to stay booked for 1 night')
+        self.assertEqual(trip_notes.t('No place to stay booked for {} nights', 3, lang='en'), 'No place to stay booked for 3 nights')
+
     def test_a_trip_without_any_stay_flags_no_nights(self):
         self.mail([flight('EX 701', 'Brussels', 'Lisbon', '2026-03-03T17:55', '2026-03-03T19:40', code='J3XKPF'),
                    flight('EX 703', 'Lisbon', 'Natal', '2026-03-03T23:25', '2026-03-04T05:00', code='J3XKPF'),
