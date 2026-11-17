@@ -8,9 +8,10 @@ edits, USER.md) still wins where it differs. Drafts get it from preparation_prom
 Ask for changes, which carry on in that session) and from a routine run that leaves a draft."""
 import re
 
-PLAIN_WRITING = ("Write drafts plainly: short sentences, everyday words, only what the reader needs. No filler, pleasantries or "
-                 "recap of their message, and no bullet lists or headings unless the owner writes that way. About as long as the "
-                 "message it answers. How the owner writes (their voice, messages and edits below) wins where it differs.")
+PLAIN_WRITING = ("Write drafts plainly and friendly: short sentences, everyday words, only what the reader needs; short, not blunt. "
+                 "Keep a greeting and a short sign-off where the channel and their message have them (an email: yes; a chat: none "
+                 "needed). No filler, recap of their message, bullet lists or headings unless the owner writes that way. About as "
+                 "long as the message it answers. How the owner writes (their voice, messages and edits below) wins where it differs.")
 
 # Which model families get it, from a before/after eval on made-up mails (2026-11-17, in the pull request that added
 # it): on where a family's drafts came out long or formal without it. A family not listed gets DEFAULT.
