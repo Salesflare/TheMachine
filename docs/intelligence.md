@@ -340,7 +340,9 @@ time passed.
 - Every organization, or person without one, with messages or meetings in no project yet (leaving out colleagues and
   anyone an open project is with) is a candidate. They are ranked once, by meaning with local embeddings, else by how
   many messages they have, at most 400 per board.
-- Each review gets the next 30 (about 14,000 characters) as "Looking through the history for new boards". It makes each
+- Each review gets the next 30 (at most about 14,000 characters, fewer when the review's prompt has less room left: it
+  is fit after the rest, which keeps at least 4,000 characters for it) as "Looking through the history for new
+  boards". It makes each
   that clearly fits one project per organization on the board, or answers it in `finish_analysis` `fits` with its key
   (`org:<domain>` or a person id).
 - Each candidate's line says how you and they talk, or "inbound only". Inbound work for you (a trial, a product

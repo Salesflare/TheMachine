@@ -280,6 +280,13 @@ Your decisions and written reasons are summarized into every review prompt. Last
 (`remember_fact`) and listed, removable, under Learning: from a note on a to-do, in a to-do's chat, or said to your
 assistant in your own private Telegram chat (tied to the message you wrote, whose words are not kept). More on the Graph and facts: [Intelligence](intelligence.md).
 
+A review prompt always fits its limit (60,000 characters, less 4,000 for blocks added after it). While it is over,
+context a review can do without is left out, in this order: the decision summary, open promises, the facts picked for
+the batch, notes not learned from yet, your facts, the reading notes per source. A board's look through the history and
+the once-a-day board check then take the room left. A review refused for its size (by the runner, or by the model's
+context) makes the next one smaller (3/4 each time, down to half), until one ends well; its signals are never claimed,
+so the next review reads them. The log says once which blocks went, with their sizes.
+
 **How you write** is kept per channel: a short block (up to five lines) each for Email, Slack, WhatsApp, Telegram, LinkedIn,
 X DMs and any other channel, plus Everywhere. They're under Settings → Writing → **How you write**, where you can edit or
 remove them.
