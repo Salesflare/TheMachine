@@ -54,7 +54,7 @@ from shared_graph_lines import unique_lines
 import shared_graph_logos as logos
 import shared_graph_photos as photos
 from shared_graph_logos import team_logo
-import shared_graph_apart as apart
+import shared_graph_since as incremental
 import shared_graph_boards
 import shared_graph_takeback
 from machine.owner_error import OwnerError
@@ -192,6 +192,7 @@ def _ensure(db):
     stamps.watch(db, shared_graph_kept.WATCHED)
     stamps.watch_graph_who(db)
     stamps.watch_events_shared(db)
+    stamps.watch_graph_shared(db)
 
 
 def drop_received(db, fleet, mine):
@@ -792,7 +793,7 @@ def _bodies(db, event_ids):
     return found
 
 
-def collect(db, scope, key, secret, today=None, held=None, kept=()):
+def collect(db, scope, key, secret, today=None, held=None, kept=(), nodes=None):
     """Everything this Machine shares with one Fleet: (records {rid: record}, threads {tag: body}, stats, files). key: the
     Fleet graph key (hashes); secret: this Machine's own (record ids and thread tags). Threads go as far back as the
     Machine has mail, the newest first. files: {tag: [(event id, account id, kind)]}, the messages of each whole thread,
@@ -800,7 +801,7 @@ def collect(db, scope, key, secret, today=None, held=None, kept=()):
     tags of threads that wait to be sorted again, or wait out the hour after the review called them client (all their
     messages 'pending' or 'wait'): one that went before stays with the team as it is until then, and goes on or is taken
     back after (graph_publish). kept: the tags of threads that went before: while one waits to be sorted again, the
-    people, organizations and projects it is with stay shared too."""
+    people, organizations and projects it is with stay shared too. nodes: gets 'top', the people it looked at."""
     today = today or timeutil.clock()
     rid = lambda local: keyed(secret, 'record|' + local)
     keys = key if isinstance(key, list) else [key]
@@ -921,7 +922,9 @@ def collect(db, scope, key, secret, today=None, held=None, kept=()):
 
     records = {}
     people = {}
+    top = [] if nodes is None else nodes.setdefault('top', [])  # the people it looked at
     for row in db.execute("SELECT * FROM graph_nodes WHERE kind='person' ORDER BY strength DESC LIMIT ?", (MAX_RECORDS,)):
+        top.append(row['id'])
         info = json.loads(row['info'] or '{}')
         emails = sorted({i[6:].lower() for i in [row['id'], *info.get('identifiers', [])] if str(i).startswith('email:')})
         if (not scope.shareable(row['id']) or not emails or info.get('colleague') or any(not outside(e, scope.internal) or e in scope.mine for e in emails)
@@ -1006,9 +1009,11 @@ def collect(db, scope, key, secret, today=None, held=None, kept=()):
 
 
 def went_records(db, fleet, hashes):
-    """share_out's records for a Fleet: {rid: hash} of what its Machines have of this one's now."""
-    db.execute("DELETE FROM share_out WHERE fleet=? AND kind='record'", (fleet,))
-    db.executemany('INSERT INTO share_out(fleet,kind,key,hash,at) VALUES(?,?,?,?,?)', [(fleet, 'record', k, h, now()) for k, h in hashes.items()])
+    """share_out's records for a Fleet: {rid: hash} of what its Machines have of this one's now (only what changed)."""
+    have = {r[0]: r[1] for r in db.execute("SELECT key,hash FROM share_out WHERE fleet=? AND kind='record'", (fleet,))}
+    db.executemany("DELETE FROM share_out WHERE fleet=? AND kind='record' AND key=?", [(fleet, k) for k in have if k not in hashes])
+    db.executemany('INSERT OR REPLACE INTO share_out(fleet,kind,key,hash,at) VALUES(?,?,?,?,?)',
+                   [(fleet, 'record', k, h, now()) for k, h in hashes.items() if have.get(k) != h])
 
 
 def header_addresses(body):
@@ -2027,8 +2032,7 @@ class SharedGraph(shared_graph_takeback.TakeBack, shared_graph_boards.TeamBoards
             if served.get('at') != body['at']:
                 served = {'at': body['at'], 'snap': {}, 'low': {}}
             if kept is None:  # what each blob is, once a round for everyone who asked; the blob itself only when it goes
-                with self.connect() as db:
-                    kept = [dict(r) for r in db.execute(BLOB_LIST, (fleet,))]
+                kept = incremental.blob_list(self, fleet)
             rows = [r for r in kept if r['member'] != who and for_them(r, who)]  # shared by name with others: never passed on to this teammate
             sign_of = lambda p: (nc.public_keys(self._private())['sign'] if p == me['member_id'] else
                                  (self._public(group, p) or {}).get('sign') if p in found else signs.get(p))
@@ -2132,12 +2136,15 @@ class SharedGraph(shared_graph_takeback.TakeBack, shared_graph_boards.TeamBoards
                 by_grant[granted.get(m)].append(m)
             base_to = by_grant.pop(None, [])
             order = sorted(by_grant.items(), key=lambda x: x[1])
-        # The reads themselves in a process of their own (shared_graph_apart.py): page requests don't wait on them
-        found = apart.run(getattr(self.connect, '__self__', None), scope_args, [key, *others], secret, went, [g for g, _ in order])
-        if found is None:  # where a child can't run: here, as before
-            with self.connect() as db:
-                found = apart.collect(db, {'scope': scope_args, 'keys': [key, *others], 'secret': secret, 'kept': went,
-                                           'grants': [g for g, _ in order]})
+        state = self.meta('graph_out:' + fleet, {}) or {}
+        kept = self.meta('graph_chains:' + fleet, {}) or {}
+        daily = lambda st: not st.get('snapshot_at') or time.time() - st.get('snapshot_at', 0) > SNAPSHOT_EVERY
+        request ={'scope': scope_args, 'keys': [key, *others], 'secret': secret, 'kept': went, 'grants': [g for g, _ in order]}
+        found, keep = incremental.collect(self, fleet, request, {'order': order, 'to': base_to, 'kv': kv, 'learned': learned}, state,
+                                    daily(state) or any(daily(c) for c in kept.values()))
+        if found is None:
+            return  # nothing it reads changed since a round that sent everything (shared_graph_since.py): nothing to send
+        complete = True  # everything went: what this round read is kept for the next (incremental.kept)
         (records, threads, stats, files, held), chained = found[0], found[1:]
         records.update(learned)
         chains = {}
@@ -2165,16 +2172,15 @@ class SharedGraph(shared_graph_takeback.TakeBack, shared_graph_boards.TeamBoards
         try:
             for tag in [k for (kind, k) in before if kind == 'thread' and k not in bodies and k not in held]:  # no longer shared: gone from the team's Machines
                 if gone <= 0:
+                    complete = False
                     break
                 gone -= self._unshare(group, me, to, tag, before)
         except Exception as error:  # noqa: BLE001 - the Network's own limit, or away: the rest next round
+            complete = False
             LOG.info('shared graph take-backs paused fleet=%s error=%s', fleet, type(error).__name__)
         if self._budget() <= 0:
             return
-        state = self.meta('graph_out:' + fleet, {}) or {}
-        kept = self.meta('graph_chains:' + fleet, {}) or {}
         hashes = {rid: hashlib.sha256(canon(r)).hexdigest() for rid, r in records.items()}
-        daily = lambda st: not st.get('snapshot_at') or time.time() - st.get('snapshot_at', 0) > SNAPSHOT_EVERY
         snapshot = (state.get('to') != base_to or state.get('kv') != kv or daily(state) or set(kept) != set(chains)
                     or any(kept[c].get('to') != chains[c]['to'] or kept[c].get('kv') != kv or daily(kept[c])
                            or kept[c].get('snapshot_at', 0) < state.get('snapshot_at', 0) for c in chains))
@@ -2209,6 +2215,7 @@ class SharedGraph(shared_graph_takeback.TakeBack, shared_graph_boards.TeamBoards
                 header = self._put(group, me, 'snapshot', {'kv': kv, 'records': c_out, 'threads': c_listed}, c['to'],
                                    kv=kv, only=True, tag=chain)
                 if not header:
+                    complete = False
                     continue
                 st = {'to': c['to'], 'kv': kv, 'snapshot_at': time.time(), 'last': header['seq'], **logo_state}
             else:
@@ -2219,6 +2226,7 @@ class SharedGraph(shared_graph_takeback.TakeBack, shared_graph_boards.TeamBoards
                     header = self._put(group, me, 'delta', {'kv': kv, 'prev': st.get('last'), 'records': c_out,
                                                              'removed': removed, 'threads': c_listed}, c['to'], kv=kv, only=True, tag=chain)
                     if not header:
+                        complete = False
                         continue
                     st.update(last=header['seq'], **logo_state)
             out[chain] = {**st, 'threads': c_listed, 'hashes': c_hashes}
@@ -2226,25 +2234,30 @@ class SharedGraph(shared_graph_takeback.TakeBack, shared_graph_boards.TeamBoards
         budget = self._budget()
         try:
             for tag in sorted(bodies, key=lambda t: bodies[t]['at'], reverse=True):  # the newest first
-                if budget <= 0:
-                    break
                 if before.get(('thread', tag)) == thread_hashes[tag]:
                     continue
+                if budget <= 0:
+                    complete = False
+                    break
                 extra = {'only': True} if only(tag) else {}
                 body, used = self._with_files(group, me, recipients[tag], tag, bodies[tag], thread_files.get(tag) or [], before, budget - 1,
                                               mark(tag), extra)
                 if body is None:
+                    complete = False
                     break  # the budget is spent halfway through its files: the rest next round
                 self._put(group, me, 'mail', body, recipients[tag], tag=tag, **extra)
                 budget -= used + 1
                 with self.connect() as db:
                     db.execute('INSERT OR REPLACE INTO share_out(fleet,kind,key,hash,at) VALUES(?,?,?,?,?)', (fleet, 'thread', tag, thread_hashes[tag], now()))
         except Exception as error:  # noqa: BLE001 - the Network's own limit, or away: what went is kept, the rest next round
+            complete = False
             LOG.info('shared graph threads paused fleet=%s error=%s', fleet, type(error).__name__)
         with self.connect() as db:
             sent = {r['key'] for r in db.execute("SELECT key FROM share_out WHERE fleet=? AND kind='thread'", (fleet,))}
         stats['waiting'] = sum(1 for t in threads if t not in sent)
         self.set_meta('graph_week:' + fleet, {**stats, 'at': now()})
+        if complete and keep:
+            incremental.kept(self, fleet, state, keep, records, chains)
 
     def _unshare(self, group, me, to, tag, before):
         """A thread no longer shared: an empty blob for it and each of its files. Returns how many blobs went."""
