@@ -1,37 +1,39 @@
 ---
 title: Scrittura
 area: settings
-summary: Le firme delle tue email e qualche indicazione per ogni canale su come scrivi. Le bozze le seguono.
+summary: Le tue firme email e poche righe per canale sul tuo modo di scrivere. Le bozze seguono queste indicazioni.
 covers: settings:writing
 code: dashboard.html, signatures.py, authorship.py, learning_loop.py
 order: 3
 keywords: tone, style, voice, write like me, sound like me, my style, wording, formal, informal
-translated: c6c475c8005473c3
+translated: 18fa88290fd2be2e
 ---
 ## Firme
 
-In **Impostazioni**, **Scrittura**, ogni account email ha una firma per le email che invii. **Importa da Gmail** importa quella che hai in Gmail; per Outlook, **Trova nella posta inviata** la cerca tra le email inviate. Modificala come preferisci e premi **Salva**, che compare appena cambi qualcosa.
+In **Impostazioni**, **Scrittura**, ogni account email ha una firma per i messaggi che invii. **Importa da Gmail** importa quella che usi su Gmail; per Outlook, **Trova nella posta inviata** la cerca nei messaggi inviati. Modificala come preferisci, poi premi **Salva**, che compare appena cambi qualcosa.
 
 ## Come scrivi
 
-Qualche indicazione per ogni canale, come Email o Slack, più una valida ovunque. Le bozze le seguono. Si aggiornano automaticamente in base ai tuoi messaggi, alle note e alle modifiche. Modifica un’indicazione e premi **Salva**, oppure **Rimuovi**.
+Poche righe per canale, come Email o Slack, e una valida ovunque. Le bozze seguono queste indicazioni. Si aggiornano automaticamente in base ai tuoi messaggi, appunti e modifiche. Modificane una e premi **Salva**, oppure **Rimuovi**.
 
-Il modo più veloce per insegnarle come scrivi è modificare una bozza prima di inviarla. Impara da quello che hai cambiato.
+Finché non conosce il tuo modo di scrivere, le bozze restano semplici: frasi brevi, parole comuni e più o meno della stessa lunghezza del messaggio a cui rispondono. Se scrivi in modo più lungo o formale, prevalgono le tue indicazioni.
+
+Il modo più rapido per insegnarle: modifica una bozza prima di inviarla. Impara da quello che hai cambiato.
 
 Impara solo da ciò che scrivi tu. Una bozza inviata così com’è non viene mai considerata un tuo testo.
 
 ### Continua a imparare
 
-Circa due volte al giorno, quando ci sono abbastanza novità, esamina le bozze che hai modificato, le attività che hai segnato come non necessarie o posticipato e le correzioni nella chat di un’attività. Poi aggiorna alcune indicazioni sul tuo modo di scrivere, le tue regole e i tuoi fatti. Questi controlli vengono sospesi quando ti restano pochi utilizzi previsti dal piano.
+Circa due volte al giorno, se ci sono abbastanza nuovi contenuti, analizza le bozze che hai modificato, le attività che hai scartato o posticipato e le correzioni nella chat di un’attività. Poi apporta qualche piccolo aggiornamento al tuo modo di scrivere, alle tue regole e ai tuoi fatti. Queste verifiche vengono sospese quando i limiti del tuo piano stanno per esaurirsi.
 
-**Apprendimento**, **Modifiche** mostra ogni aggiornamento e il motivo. **Annulla** lo annulla. Le indicazioni che hai scritto tu restano come le hai scritte.
+In **Apprendimento** > **Modifiche** trovi ogni aggiornamento e il motivo. **Annulla** lo annulla. Le righe che hai scritto tu restano come le hai scritte.
 
-### Quando un’indicazione è sbagliata
+### Quando una riga non va bene
 
 Correggila dove la trovi:
 
-- In **Impostazioni**, **Scrittura**, modifica il testo nel riquadro di quel canale e premi **Salva**. Da quel momento, verrà mantenuto il testo che hai scelto.
-- Oppure scrivilo nella chat di un’attività, per esempio «Metto in minuscolo solo l’inizio delle frasi, non i nomi». Nella chat compare **Salvato in Come scrivi**, con **Modifica**.
-- **Apprendimento**, **Cosa ho imparato** elenca anche tutte le indicazioni, ognuna con **Modifica**.
+- In **Impostazioni**, **Scrittura**, modifica il testo nella casella del canale e premi **Salva**. Da quel momento, mantiene la tua formulazione.
+- Oppure scrivi la correzione nella chat di un’attività, per esempio: «Metto in minuscolo solo l’inizio delle frasi, non i nomi». Nella chat compare **Salvato in Come scrivi**, con **Modifica**.
+- In **Apprendimento**, **Cosa ho imparato** trovi anche tutte le righe, ciascuna con **Modifica**.
 
-Sii precisa: le bozze seguono le indicazioni alla lettera. «In minuscolo» da solo mette in minuscolo anche i nomi; «le frasi iniziano in minuscolo, i nomi mantengono le maiuscole» no. Le abitudini restano legate al loro canale, quindi un’abitudine imparata da una chat non influisce sulle tue email.
+Sii precisa: le bozze seguono le indicazioni alla lettera. «Minuscolo» da solo mette in minuscolo anche i nomi; «le frasi iniziano in minuscolo, i nomi mantengono le maiuscole» no. Le abitudini restano associate al loro canale, quindi un’abitudine della chat non si applica mai alle tue email.

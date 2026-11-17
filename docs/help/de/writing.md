@@ -1,37 +1,39 @@
 ---
 title: Schreiben
 area: settings
-summary: Deine E-Mail-Signaturen und ein paar Zeilen pro Kanal dazu, wie du schreibst. Entwürfe folgen ihnen.
+summary: Deine E-Mail-Signaturen und ein paar Zeilen pro Kanal dazu, wie du schreibst. Entwürfe richten sich danach.
 covers: settings:writing
 code: dashboard.html, signatures.py, authorship.py, learning_loop.py
 order: 3
 keywords: tone, style, voice, write like me, sound like me, my style, wording, formal, informal
-translated: c6c475c8005473c3
+translated: 18fa88290fd2be2e
 ---
 ## Signaturen
 
-In **Einstellungen**, **Schreiben** hat jedes Mailkonto eine Signatur, die unter die E-Mails kommt, die du sendest. **Aus Gmail importieren** übernimmt die aus Gmail. Für Outlook findet **In gesendeter Mail suchen** sie in deinen gesendeten Mails. Ändere sie nach Wunsch und tippe dann auf **Speichern**, das erscheint, sobald du etwas änderst.
+Unter **Einstellungen** und **Schreiben** hat jedes E-Mail-Konto eine Signatur für deine ausgehenden E-Mails. Mit **Aus Gmail importieren** übernimmst du die Signatur aus Gmail. Für Outlook findest du sie mit **In gesendeter Mail suchen** in deinen gesendeten E-Mails. Passe sie nach Wunsch an und klicke auf **Speichern**. Die Schaltfläche erscheint, sobald du etwas änderst.
 
-## Wie du schreibst
+## So schreibst du
 
-Ein paar Zeilen pro Kanal, etwa E-Mail oder Slack, und eine für überall. Entwürfe folgen ihnen. Deine Nachrichten, Notizen und Änderungen halten sie von selbst aktuell, und du kannst sie jederzeit ändern: **Speichern**, oder eine Zeile **Entfernen**.
+Ein paar Zeilen pro Kanal, etwa für E-Mail oder Slack, und eine für alle Kanäle. Entwürfe richten sich danach. Die Zeilen werden automatisch anhand deiner Nachrichten, Notizen und Änderungen aktualisiert. Ändere eine Zeile und klicke auf **Speichern**, oder **Entfernen**.
 
-Ein schneller Weg, es ihr beizubringen: Wenn du einen Entwurf vor dem Senden bearbeitest, lernt sie aus dem Unterschied.
+Bis die Maschine deinen Schreibstil kennt, bleiben Entwürfe schlicht: kurze Sätze, Alltagssprache und ungefähr so lang wie die Nachricht, auf die sie antworten. Wenn du länger oder formeller schreibst, haben deine Vorgaben Vorrang.
 
-Sie lernt nur aus dem, was du selbst geschrieben hast. Ein Entwurf von ihr, den du unverändert gesendet hast, zählt nie als dein Text, auch mit deinem Namen darunter. Ein Entwurf, den du geändert hast, lehrt nur durch das, was du geändert hast.
+Am schnellsten bringst du ihr deinen Schreibstil bei, indem du einen Entwurf vor dem Senden bearbeitest. Sie lernt aus deinen Änderungen.
+
+Sie lernt nur aus Texten, die du selbst geschrieben hast. Ein Entwurf, den du unverändert sendest, zählt nicht als dein Schreibstil.
 
 ### Sie lernt weiter
 
-Etwa zweimal am Tag, wenn genug Neues da ist, schaut sie sich Entwürfe an, die du geändert hast, Aufgaben, die du verworfen oder zurückgestellt hast, und was du im Chat einer Aufgabe korrigiert hast. Dann nimmt sie ein paar kleine Änderungen daran vor, wie du schreibst, an deinen Regeln und Fakten. Diese kurzen Prüfungen warten, wenn die Limits deines Tarifs knapp werden.
+Etwa zweimal täglich prüft sie, ob genug Neues zusammengekommen ist. Dann sieht sie sich Entwürfe an, die du geändert hast, Aufgaben, die du verworfen oder zurückgestellt hast, und Korrekturen im Chat einer Aufgabe. Anschließend nimmt sie ein paar kleine Änderungen an deinem Schreibstil, deinen Regeln und Fakten vor. Wenn du dich den Limits deines Tarifs näherst, warten diese Prüfungen.
 
-**Lernen**, **Änderungen** zeigt jede Änderung und warum. **Rückgängig** macht sie rückgängig. Zeilen, die du selbst geschrieben hast, bleiben, wie du sie geschrieben hast.
+Unter **Lernen** > **Änderungen** siehst du jedes Update und den Grund dafür. Mit **Rückgängig** machst du es rückgängig. Zeilen, die du selbst geschrieben hast, bleiben unverändert.
 
-### Wenn eine Zeile falsch ist
+### Wenn eine Zeile nicht stimmt
 
 Korrigiere sie dort, wo du sie siehst:
 
-- Ändere in **Einstellungen**, **Schreiben** die Wörter im Feld dieses Kanals und dann **Speichern**. Spätere Durchläufe über deine Nachrichten lassen deine Formulierung in Ruhe.
-- Oder sag es im Chat einer beliebigen Aufgabe: „Ich schreibe nur Satzanfänge klein, keine Namen“. Dieser Chat zeigt dann eine Zeile **In Wie du schreibst gespeichert** für diesen Kanal, mit **Bearbeiten**, um sie zu öffnen.
-- **Lernen**, **Was ich gelernt habe** listet auch jede Zeile auf, jeweils mit **Bearbeiten**.
+- Ändere unter **Einstellungen** und **Schreiben** den Text im Feld des jeweiligen Kanals und klicke auf **Speichern**. Deine Formulierung bleibt dann so bestehen.
+- Oder schreib es in den Chat einer beliebigen Aufgabe, zum Beispiel: „Ich schreibe nur den Anfang von Sätzen klein, nicht Namen“. Im Chat erscheint **In „So schreibst du“ gespeichert** mit **Bearbeiten**.
+- Unter **Lernen** > **Was ich gelernt habe** findest du ebenfalls alle Zeilen, jeweils mit **Bearbeiten**.
 
-Sei genau, denn Entwürfe folgen den Zeilen so, wie sie geschrieben sind. „Kleinschreibung“ allein schreibt auch Namen klein. „Satzanfänge klein, Namen behalten ihre Großbuchstaben“ nicht. Die Gewohnheiten eines Kanals bleiben bei diesem Kanal, also erreicht eine Chat-Gewohnheit nie deine E-Mails.
+Formuliere genau: Entwürfe übernehmen die Zeilen Wort für Wort. „Klein schreiben“ allein führt dazu, dass auch Namen kleingeschrieben werden. „Sätze beginnen klein, Namen behalten ihre Großbuchstaben“ dagegen nicht. Gewohnheiten gelten nur für den jeweiligen Kanal. Eine Gewohnheit aus einem Chat wirkt sich also nie auf deine E-Mails aus.
