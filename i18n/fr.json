@@ -3216,6 +3216,10 @@
  "No password saved": "Aucun mot de passe enregistré",
  "No personal account is connected": "Aucun compte perso n’est connecté",
  "No personal to-dos": "Aucune tâche perso",
+ "No place to stay booked for {} nights": {
+  "one": "Aucun hébergement réservé pour {} nuit",
+  "other": "Aucun hébergement réservé pour {} nuits"
+ },
  "No preparation": "Aucune préparation",
  "No private folder for the run": "Aucun dossier privé pour l’exécution",
  "No project": "Aucun projet",

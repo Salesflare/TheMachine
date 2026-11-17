@@ -3216,6 +3216,10 @@
  "No password saved": "Geen wachtwoord opgeslagen",
  "No personal account is connected": "Er is geen privéaccount gekoppeld",
  "No personal to-dos": "Geen privé-to-do's",
+ "No place to stay booked for {} nights": {
+  "one": "Geen accommodatie geboekt voor {} nacht",
+  "other": "Geen accommodatie geboekt voor {} nachten"
+ },
  "No preparation": "Geen voorbereiding",
  "No private folder for the run": "Geen privémap voor de run",
  "No project": "Geen project",
