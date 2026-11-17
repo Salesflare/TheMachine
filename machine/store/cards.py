@@ -928,6 +928,13 @@ class CardsStore:
                            "updated_at=? WHERE suggestion_id=? AND status IN ('queued','sent','uncertain')", (now(), suggestion_id))
             return bool(changed)
 
+    @staticmethod
+    def briefing_rewrite(db, suggestion_id, body):
+        """A meeting briefing written again in a newer format (meeting_prep.stale), in the caller's transaction: only its
+        text; title, sources, status and time stay. A sent copy is edited. Quiet: where it is stays."""
+        db.execute('UPDATE suggestions SET body=? WHERE id=?', (body[:meeting_prep.BODY_CHARS], suggestion_id))
+        db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=? AND message_id IS NOT NULL', (suggestion_id,))
+
     def brief_reword(self, suggestion_id, title, body):
         """A team brief's open to-do in the words its line has now (fleet_brief_todos.py): its title (unless the owner
         wrote one), text and Fleet evidence, so the chat on it reads the same. Quiet: where it is stays. False when it

@@ -10,18 +10,21 @@ import time
 import enrichment
 import graph
 import i18n
+import learning_loop
 import locale_prefs
 import meeting_prep
 import person_summary
 from machine.config import LOG
 from machine.sources.calendar import calendar_owned
 from machine.store.review import CARD_OPEN
+from machine.todo_states import OPEN_NOT_SNOOZED
 from models import background_model
 from timeutil import local_tz, now
 
 MEETING_PREP_SECONDS = 600  # how often the calendar is looked at
 MEETING_PREP_TURN_SECONDS = 180
 MEETING_PREP_SEARCH_SECONDS = 30
+STALE_ONCE = 'meeting_prep_format_'  # + meeting_prep.FORMAT, in learning_state: open briefings written again once
 
 
 class MeetingPrepApp:
@@ -29,7 +32,8 @@ class MeetingPrepApp:
 
     def meeting_prep_step(self, every=MEETING_PREP_SECONDS):
         """About every ten minutes: a moved or canceled meeting's briefing follows it, and the next meeting due a
-        briefing gets its one turn, in a thread of its own, within the usage budget like every background turn."""
+        briefing gets its one turn, in a thread of its own, within the usage budget like every background turn. With
+        none due, an open briefing still in an older format is written again (once after an upgrade that changed it)."""
         if self.config.get('meeting_prep') is False or not (self.config.get('review_worker') or {}).get('enabled'):
             return None
         if time.monotonic() - self.__dict__.get('meeting_prep_at', -every) < every:
@@ -41,11 +45,13 @@ class MeetingPrepApp:
             return None
         if not self.background_spaced() or self.background_pause(job='meeting-prep'):
             return None
-        meeting = self.meeting_prep_next()
+        meeting, run = self.meeting_prep_next(), self.meeting_prep_run
+        if not meeting:
+            meeting, run = self.meeting_prep_stale_next(), self.meeting_prep_rebuild
         if not meeting:
             return None
         self.background_started()
-        self._meeting_prep_thread = threading.Thread(target=self.meeting_prep_run, args=(meeting,), name='meeting-prep', daemon=True)
+        self._meeting_prep_thread = threading.Thread(target=run, args=(meeting,), name='meeting-prep', daemon=True)
         self._meeting_prep_thread.start()
         return meeting['id']
 
@@ -126,17 +132,21 @@ class MeetingPrepApp:
         found['web'] = web
         return web
 
-    def meeting_prep_run(self, meeting):
-        """The meeting's one turn, then its to-do, or nothing when the turn found nothing useful. Returns the to-do's id."""
-        import help_chat
-        tz = local_tz()
+    def meeting_prep_brief(self, meeting):
+        """Research when it warrants it, then the meeting's one turn: its answer checked (meeting_prep.parse), or None.
+        Raises help_chat.Unavailable when there is no model now, and what the turn raised."""
         try:
             self.meeting_prep_research(meeting)
         except (sqlite3.Error, OSError, ValueError, TypeError) as error:  # a briefing without research beats none
             LOG.warning('meeting prep research error=%s', type(error).__name__)
-        text = meeting_prep.prompt(meeting, meeting['evidence'], tz, i18n.prompt_rule(locale_prefs.language_of(self.config)))
+        text = meeting_prep.prompt(meeting, meeting['evidence'], local_tz(), i18n.prompt_rule(locale_prefs.language_of(self.config)))
+        return meeting_prep.parse(self.meeting_prep_model_turn(text), meeting['evidence'])
+
+    def meeting_prep_run(self, meeting):
+        """The meeting's one turn, then its to-do, or nothing when the turn found nothing useful. Returns the to-do's id."""
+        import help_chat
         try:
-            reply = self.meeting_prep_model_turn(text)
+            found = self.meeting_prep_brief(meeting)
         except help_chat.Unavailable:
             LOG.info('meeting prep: no model now')
             return None  # not judged: the next pass asks again
@@ -145,7 +155,6 @@ class MeetingPrepApp:
             with self.store.connect() as db:
                 meeting_prep.keep(db, meeting, 'failed', None, now())
             return None
-        found = meeting_prep.parse(reply, meeting['evidence'])
         with self.store.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             if meeting_prep.judged(db, [meeting['key']]):
@@ -163,9 +172,73 @@ class MeetingPrepApp:
                 LOG.info('meeting prep skipped reason=%s', str(error)[:80])
                 meeting_prep.keep(db, meeting, 'nothing', None, now())
                 return None
-            meeting_prep.keep(db, meeting, 'made', saved['id'], now())
+            made = db.execute('SELECT body FROM suggestions WHERE id=?', (saved['id'],)).fetchone()
+            meeting_prep.keep(db, meeting, 'made', saved['id'], now(), made['body'] if made else body)
         LOG.info('meeting prep made=1')
         return saved['id']
+
+    def meeting_prep_stale_next(self, current=None):
+        """Once after an upgrade that raised meeting_prep.FORMAT: the soonest open briefing still in an older format to
+        write again (meeting_prep.stale), with what it reads; None when there is none now or the day's turns are used.
+        Once none is left the pass is kept as done (learning_state) and never looks again, until the next format."""
+        current = current or dt.datetime.fromisoformat(now())
+        sides = {a['id']: graph.account_side(a) for a in self.config.get('accounts', []) if a.get('id')}
+        picked = []
+
+        def pick(db):
+            emails, domains = self.meeting_prep_owner(db)
+            for meeting in meeting_prep.stale(db, OPEN_NOT_SNOOZED, current, emails, domains, i18n.t):
+                side = sides.get(meeting['account_id'])
+                found = meeting_prep.evidence(db, meeting, side, sides, emails, current, CARD_OPEN, graph.resolve,
+                                              person_summary.prep_lines, graph.excerpt)
+                if not meeting_prep.worth_asking(found):
+                    meeting_prep.stamp(db, meeting['key'], db.execute('SELECT body FROM suggestions WHERE id=?', (meeting['suggestion_id'],)).fetchone()[0])
+                    continue  # nothing to write it from now: it stays as it is
+                picked.append({**meeting, 'side': side, 'evidence': found})
+                return None  # one at a time: the pass is done once none is left
+            return []
+        try:
+            with self.store.connect() as db:
+                db.execute('BEGIN IMMEDIATE')
+                if meeting_prep.judged_today(db, (current - dt.timedelta(days=1)).isoformat()) >= meeting_prep.PER_DAY:
+                    return None
+                learning_loop.run_once(db, STALE_ONCE + str(meeting_prep.FORMAT), pick)
+        except sqlite3.Error as error:  # a busy database: the next pass tries again
+            LOG.warning('meeting prep stale error=%s', type(error).__name__)
+            return None
+        return picked[0] if picked else None
+
+    def meeting_prep_rebuild(self, meeting):
+        """A briefing in an older format written again: only its body changes; title, sources, status and time stay.
+        The old one stays when the turn finds nothing useful, or when meanwhile the owner changed, snoozed or closed it
+        or the meeting came too close. Returns the to-do's id when written."""
+        import help_chat
+        try:
+            found = self.meeting_prep_brief(meeting)
+        except help_chat.Unavailable:
+            LOG.info('meeting prep: no model now')
+            return None  # not stamped: a later pass asks again
+        except (OSError, ValueError, TypeError) as failure:  # the turn may have run: never a second one for it
+            LOG.warning('meeting prep rebuild error=%s', type(failure).__name__)
+            found = None
+        sid = meeting['suggestion_id']
+        with self.store.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            row = db.execute('SELECT body,status,title_source,outcome FROM suggestions WHERE id=?', (sid,)).fetchone()
+            if not row:
+                return None
+            ahead = meeting['start'] - dt.datetime.fromisoformat(now()) > meeting_prep.REBUILD_LEAD
+            as_left = (row['status'] in OPEN_NOT_SNOOZED and meeting_prep.body_sha(row['body']) == meeting['was']
+                       and row['title_source'] == 'auto' and not row['outcome'])
+            body = meeting_prep.body_text(found['fields'], i18n.t, found.get('links')) if found and found['area'] == 'work' else ''
+            if not (body and ahead and as_left):
+                meeting_prep.stamp(db, meeting['key'], row['body'], now())
+                LOG.info('meeting prep rebuild kept')
+                return None
+            self.store.briefing_rewrite(db, sid, body)
+            meeting_prep.stamp(db, meeting['key'], body, now())
+        LOG.info('meeting prep rebuilt=1')
+        return sid
 
     def meeting_prep_follow(self, current=None):
         """A briefing follows its meeting: a new time moves when it closes by itself; a canceled meeting's closes now."""

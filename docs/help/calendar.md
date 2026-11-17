@@ -114,4 +114,6 @@ It uses what is already on your Machine. For a first meeting with someone at a c
 
 No useful history means no to-do. Recurring, internal, personal and declined meetings get none. A meeting that moves keeps its one to-do, at the new time. A dismissed one doesn't come back, and a canceled meeting's closes by itself.
 
+When an update changes what a briefing holds, open briefings for meetings still ahead are written again once, in the new form. Their title, sources and place in your list stay. One you changed, snoozed or closed stays as it is, and so does one for a meeting starting in the next few minutes.
+
 The meeting's details show its to-do under **To-do**, one tap from its chat.
