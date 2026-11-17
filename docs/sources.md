@@ -60,7 +60,7 @@ Instead of `gog`, a Gmail or Calendar account can use `"transport": "broker"`. A
 
 Follows Gmail history after a seven-day import, and replays the retained window when history expires. Replies keep their new text whole and only 3,000 characters of quoted history. Sending approved drafts and snoozing threads use separate workers and only scopes already granted.
 
-Through `gog`, each message is one `gog api call` (gog has no batched or long-running read of whole messages). Each runs with `GOMAXPROCS=1`, `GOGC=off` and `GOMEMLIMIT=256MiB`, which cut its CPU by about a third with the same output; any of the three set in the service's own environment wins.
+Through `gog`, Gmail reads run in the service itself with gog's own current access token: one `gog auth tokens export` hands it over, and `google_api.py` makes the reads (only its fixed list of read methods) until the token is a minute from expiring. gog keeps refreshing that token in its keyring as before. It is the same account, OAuth client and grant, nothing new is asked of Google, and the token stays in memory; the refresh token the export also carries is dropped at once. When there is no token to take (a gog without that command, Windows, a token Google refuses), each read is one `gog api call` as before, and so is every Calendar read. Each gog process runs with `GOMAXPROCS=1`, `GOGC=off` and `GOMEMLIMIT=256MiB`, which cut its CPU by about a third with the same output; any of the three set in the service's own environment wins.
 
 ### Outlook and Outlook Calendar
 

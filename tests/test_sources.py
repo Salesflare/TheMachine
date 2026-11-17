@@ -1,4 +1,5 @@
 """sources.py: reading the owner's sources (errors, credentials, gog_read, which accounts are mail or calendar)."""
+import datetime as dt
 import json
 import os
 from pathlib import Path
@@ -88,6 +89,10 @@ class Accounts(unittest.TestCase):
 class GogRead(unittest.TestCase):
     account = {'email': 'owner@example.com', 'client': 'mine', 'transport': 'gog'}
 
+    def setUp(self):
+        sources._gog_tokens.clear()
+        self.addCleanup(sources._gog_tokens.clear)
+
     def read(self, returncode=0, stdout='{"id": "x"}', stderr=''):
         result = type('R', (), {'returncode': returncode, 'stdout': stdout, 'stderr': stderr})()
         with patch.object(sources, 'credential', return_value='pw'), patch.object(sources.subprocess, 'run', return_value=result) as run:
@@ -126,33 +131,46 @@ class GogRead(unittest.TestCase):
 
 # A stand-in for `gog api call gmail v1 <method>`: a mailbox of FAKE_GOG_COUNT made-up messages; it appends the Go
 # runtime settings it was started with to FAKE_GOG_LOG. Never reaches Google.
-FAKE_GOG = r'''
-import base64, json, os, sys
+FAKE_MAILBOX = r'''
+import base64
+
+
+def answer(method, params, count):
+    b64 = lambda text: base64.urlsafe_b64encode(text.encode()).decode().rstrip('=')
+    if method == 'gmail.users.getProfile':
+        return {'emailAddress': 'owner@example.com', 'historyId': '900'}
+    if method == 'gmail.users.messages.list':
+        start, size = int(params.get('pageToken') or 0), int(params['maxResults'])
+        found = {'messages': [{'id': 'm%04d' % i, 'threadId': 't%04d' % (i // 2)} for i in range(start, min(count, start + size))]}
+        if start + size < count:
+            found['nextPageToken'] = str(start + size)
+        return found
+    if method == 'gmail.users.messages.get':
+        i = int(params['id'][1:])
+        return {'id': params['id'], 'threadId': 't%04d' % (i // 2), 'labelIds': ['INBOX'], 'snippet': 'Fixture body %d.' % i,
+                'internalDate': str(1793000000000 - i * 60000),
+                'payload': {'mimeType': 'multipart/alternative', 'headers': [
+                    {'name': 'From', 'value': 'Sender %d <sender%d@example.org>' % (i, i)}, {'name': 'To', 'value': 'owner@example.com'},
+                    {'name': 'Subject', 'value': 'Fixture subject %d' % i}, {'name': 'Message-ID', 'value': '<m%d@example.org>' % i}],
+                    'parts': [{'mimeType': 'text/plain', 'body': {'data': b64('Fixture body %d.' % i)}},
+                              {'mimeType': 'text/html', 'body': {'data': b64('<p>Fixture body %d.</p>' % i)}}]}}
+    raise SystemExit('unexpected method ' + method)
+'''
+# `gog auth tokens export` hands over FAKE_GOG_TOKEN (a made-up access token) expiring FAKE_GOG_EXPIRES, when set; without
+# it the export fails, as on a gog without that command.
+FAKE_GOG = FAKE_MAILBOX + r'''
+import json, os, sys
 args = sys.argv[1:]
-method, params = args[4], json.loads(args[args.index('--params') + 1])
-count = int(os.environ['FAKE_GOG_COUNT'])
 with open(os.environ['FAKE_GOG_LOG'], 'a') as log:
     log.write(json.dumps({k: os.environ.get(k) for k in ('GOMAXPROCS', 'GOGC', 'GOMEMLIMIT')}) + '\n')
-b64 = lambda text: base64.urlsafe_b64encode(text.encode()).decode().rstrip('=')
-if method == 'gmail.users.getProfile':
-    answer = {'emailAddress': 'owner@example.com', 'historyId': '900'}
-elif method == 'gmail.users.messages.list':
-    start, size = int(params.get('pageToken') or 0), int(params['maxResults'])
-    answer = {'messages': [{'id': 'm%04d' % i, 'threadId': 't%04d' % (i // 2)} for i in range(start, min(count, start + size))]}
-    if start + size < count:
-        answer['nextPageToken'] = str(start + size)
-elif method == 'gmail.users.messages.get':
-    i = int(params['id'][1:])
-    answer = {'id': params['id'], 'threadId': 't%04d' % (i // 2), 'labelIds': ['INBOX'], 'snippet': 'Fixture body %d.' % i,
-              'internalDate': str(1793000000000 - i * 60000),
-              'payload': {'mimeType': 'multipart/alternative', 'headers': [
-                  {'name': 'From', 'value': 'Sender %d <sender%d@example.org>' % (i, i)}, {'name': 'To', 'value': 'owner@example.com'},
-                  {'name': 'Subject', 'value': 'Fixture subject %d' % i}, {'name': 'Message-ID', 'value': '<m%d@example.org>' % i}],
-                  'parts': [{'mimeType': 'text/plain', 'body': {'data': b64('Fixture body %d.' % i)}},
-                            {'mimeType': 'text/html', 'body': {'data': b64('<p>Fixture body %d.</p>' % i)}}]}}
-else:
-    sys.exit('unexpected method ' + method)
-print(json.dumps(answer))
+if args[:3] == ['auth', 'tokens', 'export']:
+    if not os.environ.get('FAKE_GOG_TOKEN'):
+        sys.exit('unexpected argument tokens')
+    print(json.dumps({'email': args[3], 'client': args[args.index('--client') + 1], 'refresh_token': 'fixture-refresh',
+                      'access_token': os.environ['FAKE_GOG_TOKEN'], 'access_token_expires_at': os.environ['FAKE_GOG_EXPIRES']}, indent=2))
+    sys.exit(0)
+method, params = args[4], json.loads(args[args.index('--params') + 1])
+print(json.dumps(answer(method, params, int(os.environ['FAKE_GOG_COUNT']))))
 '''
 
 
@@ -171,8 +189,14 @@ class GogSync(unittest.TestCase):
             self.state = state
             self.events.extend(events)
 
-    def sync(self, runtime):
+    def setUp(self):
+        sources._gog_tokens.clear()
+        self.addCleanup(sources._gog_tokens.clear)
+
+    def sync(self, runtime, env=None, count=45):
+        """The whole first import through the gog stand-in: (events, the runtime of each gog process it started)."""
         from machine.sources.gmail import sync_gmail
+        sources._gog_tokens.clear()
         with tempfile.TemporaryDirectory() as tmp:
             script, gog, log, password = (Path(tmp) / name for name in ('fake_gog.py', 'gog', 'log', 'password'))
             script.write_text(FAKE_GOG)
@@ -183,7 +207,7 @@ class GogSync(unittest.TestCase):
             account = {'id': 'work-gmail', 'service': 'gmail', 'transport': 'gog', 'email': 'owner@example.com', 'client': 'default'}
             store = self.Store()
             clean = {k: v for k, v in os.environ.items() if k not in sources.GOG_RUNTIME}
-            with patch.dict(os.environ, {**clean, 'FAKE_GOG_COUNT': '45', 'FAKE_GOG_LOG': str(log)}, clear=True), \
+            with patch.dict(os.environ, {**clean, 'FAKE_GOG_COUNT': str(count), 'FAKE_GOG_LOG': str(log), **(env or {})}, clear=True), \
                     patch.object(sources, 'GOG_RUNTIME', runtime):
                 while (store.state or {}).get('mode') != 'incremental':
                     sync_gmail(store, config, account)
@@ -198,6 +222,102 @@ class GogSync(unittest.TestCase):
                          {json.dumps({'GOMAXPROCS': None, 'GOGC': None, 'GOMEMLIMIT': None}, sort_keys=True)})
         self.assertEqual(len(lean), len(plain))
         self.assertTrue(all(started == {'GOMAXPROCS': '1', 'GOGC': 'off', 'GOMEMLIMIT': '256MiB'} for started in lean))
+
+
+class FakeGmail:
+    """Gmail's REST API for the made-up mailbox (FAKE_MAILBOX), in place of urlopen: it records each request and can
+    refuse the next ones with a status. Never reaches Google."""
+
+    def __init__(self, count=45, refuse=()):
+        self.mailbox, self.count, self.refuse, self.seen = {}, count, list(refuse), []
+        exec(FAKE_MAILBOX, self.mailbox)  # noqa: S102 - the test's own fixture
+
+    def __call__(self, request, timeout=None):
+        import io
+        import urllib.error
+        import urllib.parse
+        parts = urllib.parse.urlsplit(request.full_url)
+        self.seen.append((request.get_method(), parts.hostname, request.get_header('Authorization')))
+        if self.refuse:
+            status, body = self.refuse.pop(0)
+            raise urllib.error.HTTPError(request.full_url, status, 'refused', {}, io.BytesIO(body.encode()))
+        path = parts.path.split('/gmail/v1/users/me/')[1]
+        params = {k: v[0] for k, v in urllib.parse.parse_qs(parts.query).items()}
+        method = {'profile': 'gmail.users.getProfile', 'messages': 'gmail.users.messages.list'}.get(path, 'gmail.users.messages.get')
+        if method == 'gmail.users.messages.get':
+            params['id'] = path.split('/')[1]
+        answer = json.dumps(self.mailbox['answer'](method, params, self.count)).encode()
+        return type('Answer', (io.BytesIO,), {'__enter__': lambda s: s, '__exit__': lambda s, *a: s.close()})(answer)
+
+
+class GogToken(unittest.TestCase):
+    """A self-hosted Gmail account reads with gog's own access token in-process (sources.gog_token): one gog process
+    for the token instead of one per message, the same messages, and gog for every read again whenever that token can't
+    be used."""
+    TOKEN = 'fixture-access-token'
+    Store, setUp, sync = GogSync.Store, GogSync.setUp, GogSync.sync
+
+    def expires(self, seconds):
+        return (dt.datetime.now(dt.timezone.utc) + dt.timedelta(seconds=seconds)).isoformat().replace('+00:00', 'Z')
+
+    def test_one_gog_process_instead_of_one_per_message(self):
+        gog_only, processes = self.sync(sources.GOG_RUNTIME, count=100)
+        web = FakeGmail(count=100)
+        with patch.object(sources.google_api.urllib.request, 'urlopen', web):
+            in_process, exports = self.sync(sources.GOG_RUNTIME, {'FAKE_GOG_TOKEN': self.TOKEN, 'FAKE_GOG_EXPIRES': self.expires(3600)}, count=100)
+        self.assertEqual(in_process, gog_only)
+        self.assertEqual(len(in_process), 100)
+        self.assertEqual(len(processes), 1 + 3 * 2 + 100)  # the failed export, then a profile and a list per page of 40, a read each
+        self.assertEqual(len(exports), 1)  # the token, once
+        self.assertEqual(len(web.seen), 3 * 2 + 100)
+        self.assertEqual({seen for seen in web.seen}, {('GET', 'gmail.googleapis.com', 'Bearer ' + self.TOKEN)})
+
+    def test_an_expired_or_refused_token_goes_back_to_gog(self):
+        for env in ({'FAKE_GOG_TOKEN': self.TOKEN, 'FAKE_GOG_EXPIRES': self.expires(-60)},  # gog doesn't keep a fresh one
+                    {'FAKE_GOG_TOKEN': self.TOKEN, 'FAKE_GOG_EXPIRES': 'not a time'},
+                    {'FAKE_GOG_TOKEN': self.TOKEN, 'FAKE_GOG_EXPIRES': self.expires(30)}):  # inside GOG_TOKEN_MARGIN
+            web = FakeGmail()
+            with self.subTest(env=env), patch.object(sources.google_api.urllib.request, 'urlopen', web):
+                events, processes = self.sync(sources.GOG_RUNTIME, env)
+                self.assertEqual(len(events), 45)
+                self.assertEqual(web.seen, [])
+                self.assertLessEqual(len(processes), 2 + 2 * 2 + 45)  # at most two exports over the whole import
+        scope = '{"error": {"details": [{"reason": "ACCESS_TOKEN_SCOPE_INSUFFICIENT"}]}}'
+        for refused, more_tries in ((401, 1), (403, 0)):
+            web = FakeGmail(refuse=[(refused, scope)])
+            with self.subTest(refused=refused), patch.object(sources.google_api.urllib.request, 'urlopen', web):
+                events, processes = self.sync(sources.GOG_RUNTIME, {'FAKE_GOG_TOKEN': self.TOKEN, 'FAKE_GOG_EXPIRES': self.expires(3600)})
+                self.assertEqual(len(events), 45)
+                # the refused read went through gog; after a 401 the next read takes the keyring's token again
+                self.assertEqual(len(web.seen), 1 + more_tries * (2 * 2 + 45 - 1))
+
+    def test_google_refusals_are_labels_never_the_token(self):
+        web = FakeGmail(refuse=[(404, '{}'), (429, '{"error": {"errors": [{"reason": "rateLimitExceeded"}]}}')])
+        held = (self.TOKEN, dt.datetime.now().timestamp() + 3600)
+        with patch.object(sources, 'credential', return_value='pw'), patch.object(sources, '_gog_export', return_value=held), \
+                patch.object(sources.google_api.urllib.request, 'urlopen', web), patch.object(sources.subprocess, 'run') as run:
+            account = {'email': 'owner@example.com', 'client': 'mine', 'transport': 'gog'}
+            for status in (404, 429):
+                with self.assertRaises(sources.SourceError) as caught:
+                    sources.gog_read({'gog': 'gog'}, account, 'gmail', 'v1', 'gmail.users.messages.get', {'userId': 'me', 'id': 'm1'}, 'scope')
+                self.assertEqual((caught.exception.category, caught.exception.status), ('gmail', status))
+                self.assertNotIn(self.TOKEN, str(caught.exception))
+        run.assert_not_called()
+
+    def test_only_gmail_reads_and_only_the_accounts_own_sign_in(self):
+        export = patch.object(sources, '_gog_export', return_value=(self.TOKEN, dt.datetime.now().timestamp() + 3600))
+        result = type('R', (), {'returncode': 0, 'stdout': '{"items": []}', 'stderr': ''})()
+        with export as exported, patch.object(sources, 'credential', return_value='pw'), \
+                patch.object(sources.subprocess, 'run', return_value=result) as run:
+            sources.gog_read({'gog': 'gog'}, {'email': 'owner@example.com', 'client': 'mine', 'transport': 'gog'},
+                             'calendar', 'v3', 'calendar.events.list', {'calendarId': 'primary'}, 'scope')
+        exported.assert_not_called()
+        self.assertEqual(run.call_count, 1)
+        sources._gog_tokens.clear()
+        other = json.dumps({'email': 'someone@example.com', 'client': 'mine', 'access_token': 'x', 'access_token_expires_at': self.expires(3600)})
+        exported = type('R', (), {'returncode': 0, 'stdout': other, 'stderr': ''})()
+        with patch.object(sources, 'credential', return_value='pw'), patch.object(sources.subprocess, 'run', return_value=exported):
+            self.assertIsNone(sources.gog_token({'gog': 'gog'}, {'email': 'owner@example.com', 'client': 'mine'}))
 
 
 if __name__ == '__main__':

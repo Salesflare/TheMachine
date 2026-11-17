@@ -15,6 +15,8 @@ import secrets
 import shlex
 import subprocess
 import sys
+import threading
+import time
 
 import caldav_calendar
 import ews_calendar
@@ -27,10 +29,11 @@ from machine import services
 
 # The service's "busy, try again" statuses (5xx it recovers from by itself, 429): one quick retry, then the normal wait
 UPSTREAM_BUSY = {429, 500, 502, 503, 504}
-# Go runtime settings for each gog read: gog is a new process per message (it has no batched or long-running read of
-# whole messages), and most of its CPU is Go starting up on every core and collecting garbage it is about to drop at exit.
-# One core and no collection under 256 MiB cut a read's CPU by about a third; its output is the same. A value
-# already set in the service's own environment wins.
+# Go runtime settings for each gog process: a gog read is a new process per message when there is no token to read
+# Gmail with in-process (gog_token; gog has no batched or long-running read of whole messages), and most of its CPU is
+# Go starting up on every core and collecting garbage it is about to drop at exit. One core and no collection under
+# 256 MiB cut a read's CPU by about a third; its output is the same. A value already set in the service's own
+# environment wins.
 GOG_RUNTIME = {'GOMAXPROCS': '1', 'GOGC': 'off', 'GOMEMLIMIT': '256MiB'}
 
 
@@ -112,9 +115,119 @@ def gog_read(config, account, api, version, method, params, scope):
             raise SourceError(error.category, error.status, getattr(error, 'retry_after', None)) from None
     if account['transport'] != 'gog':
         raise SourceError('unsupported_transport')
+    if api == 'gmail' and method in google_api.READ:
+        access = gog_token(config, account)
+        if access:
+            try:
+                data = google_api.read_with(access, method, params)
+            except google_api.BrokerError as error:
+                if error.status not in (401, 403) or (error.status == 403 and error.reason not in SCOPE_REFUSALS):
+                    raise SourceError(error.category, error.status, error.retry_after) from None
+                gog_token_refused(account, error.status)  # gog's own call below says what is wrong, or refreshes it
+            else:
+                if not isinstance(data, dict):
+                    raise SourceError('invalid_response')
+                return data
+    data = gog_call(config, account, api, version, method, params, scope)
+    if api == 'gmail':
+        gog_token_refreshed(account)
+    return data
+
+
+# A self-hosted Gmail account's reads without a gog process each (gog_read): gog keeps the account's current access
+# token in its file keyring and refreshes it there; `gog auth tokens export` hands it over, so one gog process serves
+# every read until GOG_TOKEN_MARGIN before it expires. Same account, client and grant as gog's own calls, nothing new
+# asked of Google, only the allowlisted reads in google_api.READ, and the token stays in memory (never logged or written).
+# The refresh token the export also carries is dropped at once: gog alone refreshes. When there is no token to take
+# (an older gog without the export, Windows, a token about to expire), each read goes through gog as before.
+GOG_TOKEN_MARGIN = 60  # seconds before its expiry a token is no longer used
+GOG_EXPORT_WAIT = 3600  # after an export that gave nothing usable (an older gog, a token refused): gog alone this long
+SCOPE_REFUSALS = {'ACCESS_TOKEN_SCOPE_INSUFFICIENT', 'insufficientPermissions'}
+_gog_tokens: dict = {}  # (email, client) -> {'access', 'expires', 'retry_at', 'stale', 'waiting'}
+_gog_lock = threading.Lock()
+
+
+def _gog_key(account):
+    return (str(account.get('email') or '').lower(), str(account.get('client') or ''))
+
+
+def gog_token(config, account):
+    """The account's current access token from gog's keyring, or None: then the read goes through gog."""
+    if os.name == 'nt' or not account.get('email') or not account.get('client'):
+        return None
+    with _gog_lock:
+        held = _gog_tokens.setdefault(_gog_key(account), {})
+        if held.get('access') and held['expires'] - GOG_TOKEN_MARGIN > time.time():
+            return held['access']
+        if time.time() < held.get('retry_at', 0):
+            return None
+        access, expires = _gog_export(config, account)
+        if access and expires - GOG_TOKEN_MARGIN > time.time():
+            held.update(access=access, expires=expires, retry_at=0, stale=0, waiting=False)
+            return access
+        if access and expires > time.time():  # about to expire: gog refreshes it only once it has, so try again then
+            held.pop('access', None)
+            held.update(retry_at=expires, waiting=False)
+            return None
+        # Expired in the keyring: gog's next read refreshes it there, and the try after that (gog_token_refreshed) takes
+        # it. A second stale one, or none at all, means this gog doesn't keep one: gog alone for GOG_EXPORT_WAIT.
+        _gog_wait(held, held.get('stale', 0) + 1 if access else 2)
+        return None
+
+
+def _gog_wait(held, stale):
+    held.pop('access', None)
+    held.update(stale=stale, waiting=stale == 1, retry_at=time.time() + GOG_EXPORT_WAIT)
+
+
+def gog_token_refreshed(account):
+    """A gog read just went through: when the token held was stale, the keyring now holds a fresh one."""
+    with _gog_lock:
+        held = _gog_tokens.get(_gog_key(account))
+        if held and held.get('waiting'):
+            held.update(retry_at=0, waiting=False)
+
+
+def gog_token_refused(account, status):
+    """Google refused the token (401: expired early; 403: it lacks Gmail's read scope): not used again. A 401 tries the
+    keyring once more after gog's own read; a 403 leaves the account to gog for GOG_EXPORT_WAIT."""
+    with _gog_lock:
+        _gog_wait(_gog_tokens.setdefault(_gog_key(account), {}), 1 if status == 401 else 2)
+
+
+def _gog_export(config, account):
+    """(access token, expiry as a Unix time) from `gog auth tokens export`, or (None, 0). Its output goes to a pipe."""
+    command = [config['gog'], 'auth', 'tokens', 'export', account['email'], '--client', account['client'],
+               '--out', '/dev/stdout', '--overwrite', '--no-input']
+    try:
+        result = subprocess.run(command, env=gog_env(config), capture_output=True, text=True, timeout=30)
+        found, _ = json.JSONDecoder().raw_decode(result.stdout.lstrip()) if not result.returncode else ({}, 0)
+    except (subprocess.TimeoutExpired, OSError, ValueError, KeyError):
+        return None, 0
+    if not isinstance(found, dict):
+        return None, 0
+    access, at = found.get('access_token'), found.get('access_token_expires_at')
+    same = (str(found.get('email') or '').lower(), str(found.get('client') or account['client'])) == _gog_key(account)
+    found.clear()  # the refresh token with it: never kept here
+    if not same:  # only the account's own sign-in
+        return None, 0
+    try:
+        expires = dt.datetime.fromisoformat(str(at).replace('Z', '+00:00')).timestamp()
+    except ValueError:
+        return None, 0
+    return (access, expires) if isinstance(access, str) and access.strip() else (None, 0)
+
+
+def gog_env(config):
     env = {**GOG_RUNTIME, **os.environ}
     env.update(GOG_KEYRING_BACKEND='file', GOG_KEYRING_PASSWORD=credential(config, 'gog-password'))
     env.pop('DBUS_SESSION_BUS_ADDRESS', None)
+    return env
+
+
+def gog_call(config, account, api, version, method, params, scope):
+    """One `gog api call`: a new gog process."""
+    env = gog_env(config)
     params = json.dumps(params, ensure_ascii=False, sort_keys=True, separators=(',', ':'))  # as assistant.encoded
     command = [config['gog'], 'api', 'call', api, version, method, '--params', params,
                '--scope', scope, '--account', account['email'], '--client', account['client'],
