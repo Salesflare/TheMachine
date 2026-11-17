@@ -15,6 +15,8 @@ In **Settings**, **Writing**, each mail account has a signature for the emails y
 
 A few lines per channel, like Email or Slack, plus one for everywhere. Drafts follow them. They update by themselves from your messages, notes and edits. Change one and **Save**, or **Remove** it.
 
+Until it knows how you write, drafts stay plain: short sentences, everyday words, about as long as the message they answer. When you write longer or more formally, your lines win.
+
 The quickest way to teach it: edit a draft before sending. It learns from what you changed.
 
 It learns only from what you wrote yourself. A draft sent as is never counts as your writing.

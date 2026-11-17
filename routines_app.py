@@ -37,8 +37,10 @@ from machine.app.recall import recall
 from machine.app.review import fit_events
 from machine.config import WORKSPACE
 from machine.faults import loop_failed
+from machine.prompts import bias
 from machine.text import encoded
 import memory_use
+from models import openclaw_model
 import recurring
 import routine_changes
 import routine_imports
@@ -549,6 +551,7 @@ class RoutinesApp:
             + ('The owner reads it now; nothing goes out.' if routines.is_test(run) else
                'The owner gets it as a to-do to approve; nothing goes out without them.')
             + ' Never answer that you did nothing because you can only read.',
+            bias.plain_writing(openclaw_model(self.config)),  # a draft plainly, under the owner's voice (machine/prompts/bias.py)
             'Then call assistant_signals routine_result once, with text: the result itself, short and plain, at most 12 lines, '
             'Markdown bold for what matters, each claim from what you read. Nothing worth showing since last time: '
             'routine_result with nothing: true and why (a few words). Never make anything up; say what you could not read.',

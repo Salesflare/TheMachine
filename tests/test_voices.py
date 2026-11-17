@@ -19,6 +19,7 @@ import locale_prefs
 import machine.app.preparation as machine_app_preparation
 import machine.cards as machine_cards
 import machine.main as machine_main
+import machine.prompts.bias as machine_prompts_bias
 import machine.prompts.profile as machine_prompts_profile
 import machine.store.profile as machine_store_profile
 import machine.store.voices as machine_store_voices
@@ -209,6 +210,26 @@ class Voices(unittest.TestCase):
         prompt = machine_app_preparation.preparation_prompt({'job_id': 'j' * 16, 'suggestion_id': self.sid}, '', None, '', '- Offer the booking link.', text)
         self.assertLess(prompt.index('Draft rules'), prompt.index('How the owner writes, per channel'))
         self.assertIn('kind=voice, channel=', prompt)
+        # Plain drafts, a model bias correction, come before the owner's voice, which wins where they differ
+        self.assertLess(prompt.index(machine_prompts_bias.PLAIN_WRITING), prompt.index('How the owner writes, per channel'))
+        self.assertIn('wins where it differs', machine_prompts_bias.PLAIN_WRITING)
+
+    def test_plain_drafts_go_per_model_family_and_never_on_a_confirmed_last_step(self):
+        bias = machine_prompts_bias
+        self.assertEqual([bias.family(m) for m in ('openai/gpt-6.1-sol', 'salesflare-openai/gpt-6-astra', 'claude-cli/claude-opus-5-5',
+                                                   'anthropic/claude-sonnet-5-5', 'mistral/mistral-large-latest', 'ollama-cloud/glm-5.3-flash:cloud',
+                                                   'local/some-model', None)],
+                         ['gpt', 'gpt', 'claude', 'claude', 'mistral', 'glm', None, None])
+        job = {'job_id': 'j' * 16, 'suggestion_id': self.sid}
+        for model in ('openai/gpt-6.1-sol', 'claude-cli/claude-opus-5-5', None):
+            self.assertIn(bias.PLAIN_WRITING, machine_app_preparation.preparation_prompt(job, model=model))
+        with patch.dict(bias.PLAIN_WRITING_FOR, {'gpt': False}):  # one family off, the others and unknown ones keep it
+            self.assertNotIn(bias.PLAIN_WRITING, machine_app_preparation.preparation_prompt(job, model='openai/gpt-6.1-sol'))
+            self.assertIn(bias.PLAIN_WRITING, machine_app_preparation.preparation_prompt(job, model='anthropic/claude-opus-5-5'))
+        with patch.object(bias, 'DEFAULT', False):
+            self.assertEqual(bias.plain_writing('local/some-model'), '')
+        finish = {**job, 'finish': {'label': 'Submit form', 'instructions': 'Press Submit', 'preview': 'The form'}}
+        self.assertNotIn(bias.PLAIN_WRITING, machine_app_preparation.preparation_prompt(finish))  # the text was already confirmed
 
     def test_a_draft_answered_elsewhere_becomes_an_edit_once(self):
         draft = {'kind': 'email', 'label': 'Send', 'account_id': 'work', 'to': ['sam@example.com'], 'subject': 'Re: Contract',

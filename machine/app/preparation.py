@@ -35,6 +35,7 @@ from machine.chat import owner_time_line
 from machine.config import LOG, ROOT, RULE_FILES, WORKSPACE
 from machine.faults import fault_where, loop_failed
 from machine.model_usage import node_bin, node_env
+from machine.prompts import bias
 from machine.prompts.profile import VOICE_CHARS, VOICE_LINES, VOICE_PRECISE
 from machine.prompts.review import FACT_FROM_WORDS, FACT_KIND_HINT, FACT_QUOTE_HINT, FACTS_YOU, source_notes
 from machine.sources.connectors import calendar_prompt, calendars_prompt, chats_prompt, doc_write_prompt, linear_prompt, meeting_notes_prompt, slack_prompt
@@ -45,7 +46,7 @@ from machine.text import encoded
 import learned_skills
 import memory_use
 import model_budget
-from models import background_model
+from models import background_model, openclaw_model
 import next_actions
 import parked_fixes
 import preparation_state
@@ -266,10 +267,11 @@ This step is one only the owner can do themselves, in person or offline (going s
     '''Save with outcome:'needs_you' and needs:<the step itself, in a few words>, and a body of one or two short lines about what you prepared.''')
 
 
-def preparation_prompt(job, facts='', config=None, edits='', rules='', style='', gaps=''):
+def preparation_prompt(job, facts='', config=None, edits='', rules='', style='', gaps='', model=None):
     # The standing rules live in PREPARATION.md, which the plugin prepends to every preparation
     # session (outside the runner's message limit); this message carries only the job itself.
     j,sid=job['job_id'],job['suggestion_id']
+    plain='' if job.get('finish') else bias.plain_writing(model)  # drafts plainly, under the owner's voice (machine/prompts/bias.py)
     opening = (f'''Prepare suggestion {sid} ahead. This is a preparation task, not a signal-review task. The owner has NOT tapped Do it yet: the card reaches them once it's ready, so they can approve it in one tap. Preparation job ID: {j}.
 Prepared ahead, so these limits win over the preparation rules: take the task as far as it goes without committing anything, so the owner only confirms the last step. Research, read and draft freely (evidence, web, files, read-only commands, logged-in apps, signing in; open pages found in the evidence or a search rather than addresses you put together), and fill in what the last step needs (a form up to Submit, a cart or payment up to Pay, a booking up to Book, a post up to Publish). Do not change, submit, send, pay, sign, delete, book or post anything anywhere, and never use send_now. End with that last step as a next action: an email, LinkedIn, Slack or X message as a ready draft; a merge as kind:merge; anything else as {{kind:finish,label:'Submit …'/'Pay …'/'Book …',instructions:<the exact last step with every value it needs, so it can be redone from the start if the page or session expired>,preview:<what goes out, as the owner should check it: amounts, dates, names, the text; for a calendar invitation its title, day, start and end with the time zone, each guest and whether a video link is added>,url:<the page>}}; when that step posts a message (a reply in a support inbox, a chat or DM in a web app), also give message:<its exact text, which the owner can edit> and to_name:<who gets it>; when it uploads a file, attachments:[<paths>] (the card shows them; without it nothing is uploaded). Several separate changes become a follow-up {{kind:prepare,label:'Apply …',instructions:<the exact changes>}}. When something only the owner has or can decide is missing (a file, a number, a date or commitment), say plainly what is missing and save outcome:'needs_you' with needs:<what you need from them, as a question>. Draft only a step that can go without it: an answer to something else they asked that the evidence gives (confirming a date), or a short ask to the person the evidence shows has it (who is on a thread or meeting doesn't show that). When the missing thing is what the other side waits for, a reply that only acknowledges or says it will follow is not that step: save no draft unless the owner asked for one. Record a blocker only when you could not look at all (access refused, a source failing): the card then reaches them as a normal suggestion.''' if job.get('ahead') else
                f'''The owner confirmed the last step of suggestion {sid}: {job['finish']['label']}. This is a preparation task, not a signal-review task. Do only this step, which everything before it prepared: {job['finish']['instructions']}
@@ -315,6 +317,8 @@ Facts the owner told you earlier that bear on this card (true unless they say ot
 
 Draft rules from the owner's notes that fit this card (follow them unless their note on this card says otherwise; {FACTS_YOU}):
 {rules}''' if rules else '') + (f'''
+
+{plain}''' if plain else '') + (f'''
 
 {style}''' if style else '') + (f'''
 
@@ -555,7 +559,7 @@ class PreparationApp:
                 except Exception as error:LOG.error('gap note error=%s',type(error).__name__);gaps=''
                 facts='\n\n'.join(filter(None,(memory.text('facts'),memory.text('retained'))))  # set aside or history that bears on it (retained_facts.py)
                 request['message']=preparation_prompt(job,facts,self.config,'' if style else self.store.draft_edits_text(),
-                                                      rules,style,gaps)
+                                                      rules,style,gaps,request.get('model') or openclaw_model(self.config))
                 try:  # how to read the card's own sources (its accounts' notes only)
                     with self.store.connect() as db:
                         row=db.execute('SELECT account_ids FROM suggestions WHERE id=?',(job['suggestion_id'],)).fetchone()
