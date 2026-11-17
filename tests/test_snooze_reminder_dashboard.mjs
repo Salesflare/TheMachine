@@ -9,8 +9,11 @@ const {chromium}=await import('./browser.mjs');
 // back here, and offers Turn on notifications when this browser can have them (iPhone Safari: Add to Home Screen first;
 // blocked: nothing to offer). SHOTS=<folder> saves phone and desktop screenshots.
 const dashboard=await dashboardPage();
-const ID='cd'.repeat(8),now=new Date().toISOString();
-const tomorrow=new Date();tomorrow.setDate(tomorrow.getDate()+1);tomorrow.setHours(9,0,0,0);
+// One clock for the fixture and the page: today at noon (FAKE_NOW=<ISO time> to try another), so a run that crosses
+// midnight still means the same tomorrow on both sides
+const NOW=process.env.FAKE_NOW?new Date(process.env.FAKE_NOW):new Date(new Date().setHours(12,0,0,0));
+const ID='cd'.repeat(8),now=NOW.toISOString();
+const tomorrow=new Date(NOW);tomorrow.setDate(tomorrow.getDate()+1);tomorrow.setHours(9,0,0,0);
 let reminders={telegram:false,push:0};
 const status=()=>({suggestions:[{id:ID,title:'Send Robin the garden dates',body:'Robin asked for the dates.',status:'pending',scope:'personal',created_at:now,event_ids:[1]}],
  promises:[],connectors:[{id:'mail',service:'gmail',email:'owner@example.org',display_name:'Mail',status:'ok'}],suggestion_counts:{pending:1},
@@ -46,7 +49,7 @@ const errors=[];let browser;
 const snooze=async({width=1440,height=900,ua='chrome',shot,...o}={})=>{const mobile=width<600;
  const context=await browser.newContext({viewport:{width,height},isMobile:mobile,hasTouch:mobile,userAgent:UA[ua],colorScheme:'light',locale:'en-GB'});
  await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
- await context.addInitScript(fakeBrowser,o);
+ await context.clock.setFixedTime(NOW);await context.addInitScript(fakeBrowser,o);
  const page=await context.newPage();page.on('pageerror',e=>errors.push(ua+' '+width+': '+e.message));
  await page.goto(base);await page.locator('#task-'+ID).waitFor();
  await page.waitForFunction(()=>devicePush.checked||!pushOK);
