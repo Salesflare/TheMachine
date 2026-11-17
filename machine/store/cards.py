@@ -17,6 +17,7 @@ import i18n
 import todo_org
 import locale_prefs
 import meeting_mail
+import meeting_prep
 from machine.store import outcomes
 from machine.cards import current_title, delivery_time, group_sender
 from machine.config import LOG
@@ -528,7 +529,8 @@ class CardsStore:
                 due = dt.date.fromisoformat(str(due)[:10]).isoformat()
             except ValueError:
                 raise ValueError('due must be the deadline date as YYYY-MM-DD') from None
-        if len(title) > 90 or len(body) > 700:
+        # a meeting briefing is only for reading and folds behind Show more: its parts and source links get more room
+        if len(title) > 90 or len(body) > (meeting_prep.BODY_CHARS if meeting_prep.is_briefing(dedupe_key) else 700):
             raise OwnerError('Keep it simple: title under 90 characters; body under 700 characters, about three short sentences. Keep event IDs and internal details out of the message.')
         placed = todo_areas.company_accounts(company, getattr(self, 'accounts', None) or []) if company is not None else None
         with contextlib.nullcontext(_db) as db:

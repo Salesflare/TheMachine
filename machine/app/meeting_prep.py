@@ -1,10 +1,13 @@
 """Meeting prep, the App's part: the pass that turns an upcoming meeting with people from outside into one briefing
 to-do (meeting_prep.py has the rules). A mixin of assistant.App (APP_MIXINS)."""
 import datetime as dt
+import json
 import sqlite3
+import subprocess
 import threading
 import time
 
+import enrichment
 import graph
 import i18n
 import locale_prefs
@@ -18,6 +21,7 @@ from timeutil import local_tz, now
 
 MEETING_PREP_SECONDS = 600  # how often the calendar is looked at
 MEETING_PREP_TURN_SECONDS = 180
+MEETING_PREP_SEARCH_SECONDS = 30
 
 
 class MeetingPrepApp:
@@ -85,10 +89,51 @@ class MeetingPrepApp:
         swap = background_model(self.config)  # never the costliest model for background work
         return help_chat.openclaw_model_run(self.config, text, '/'.join(swap) if swap else None, timeout=MEETING_PREP_TURN_SECONDS)
 
+    def meeting_prep_search(self, query):
+        """One web search through OpenClaw (`openclaw infer web search`, the provider the owner set up): its results
+        [{'title', 'url', 'description', 'published'}], or None when there is no search or it failed. The query is
+        only a public name, organization and domain (meeting_prep.research_queries)."""
+        stand_in = getattr(self, 'meeting_prep_web_search', None)  # tests and the sandbox: (query)
+        if stand_in:
+            return stand_in(query)
+        args = [str(self.config.get('openclaw') or 'openclaw'), 'infer', 'web', 'search', '--json', '--limit', '5', '--query', query]
+        try:
+            result = subprocess.run(args, capture_output=True, text=True, timeout=MEETING_PREP_SEARCH_SECONDS)
+            data = json.loads(result.stdout or '{}')
+        except (OSError, ValueError, subprocess.TimeoutExpired) as failure:
+            LOG.info('meeting prep search error=%s', type(failure).__name__)
+            return None
+        outputs = [o.get('result') for o in data.get('outputs') or () if isinstance(o, dict) and isinstance(o.get('result'), dict)]
+        if result.returncode != 0 or not data.get('ok') or not outputs:
+            LOG.info('meeting prep search failed')
+            return None
+        return [r for r in outputs[0].get('results') or () if isinstance(r, dict)]
+
+    def meeting_prep_research(self, meeting):
+        """Short web research for a meeting that warrants it (meeting_prep.research_queries), when Look up work
+        contacts is on: the kept results as W ids, also put on the meeting's evidence."""
+        found = meeting['evidence']
+        if self.config.get('meeting_prep_research') is False:
+            return {}
+        with self.store.connect() as db:
+            if not enrichment.people_on(db):
+                return {}
+            asks = meeting_prep.research_queries(found, lambda domain: bool(enrichment.FREEMAIL.match(domain)))
+            if not asks:
+                return {}
+            web, ran = meeting_prep.web_results(db, asks, self.meeting_prep_search, dt.datetime.fromisoformat(now()))
+        LOG.info('meeting prep web asks=%d searched=%d kept=%d', len(asks), ran, len(web))
+        found['web'] = web
+        return web
+
     def meeting_prep_run(self, meeting):
         """The meeting's one turn, then its to-do, or nothing when the turn found nothing useful. Returns the to-do's id."""
         import help_chat
         tz = local_tz()
+        try:
+            self.meeting_prep_research(meeting)
+        except (sqlite3.Error, OSError, ValueError, TypeError) as error:  # a briefing without research beats none
+            LOG.warning('meeting prep research error=%s', type(error).__name__)
         text = meeting_prep.prompt(meeting, meeting['evidence'], tz, i18n.prompt_rule(locale_prefs.language_of(self.config)))
         try:
             reply = self.meeting_prep_model_turn(text)
@@ -110,7 +155,7 @@ class MeetingPrepApp:
                 LOG.info('meeting prep verdict=%s', 'personal' if found else 'nothing')
                 return None
             title = found['title'] if found['title'] else i18n.t('Prepare for {}', meeting['title'][:70])
-            body = meeting_prep.body_text(found['fields'], i18n.t)
+            body = meeting_prep.body_text(found['fields'], i18n.t, found.get('links'))
             try:
                 saved = self.store.suggest(meeting['key'], title[:90], body, [meeting['id'], *found['sources']], 'now', self.config.get('digest_at', '08:30'),
                                            work=True, _db=db, expires_at=meeting['start'].isoformat(), expires_what=title[:80])

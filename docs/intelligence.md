@@ -727,8 +727,8 @@ its own budget.
 - Self-hosted, it needs `people_url` in `enrichment`, with `{email}`, `{name}`, `{domain}`, `{first_name}`,
   `{last_name}` and `{key}`. The `peopledatalabs` and `hunter` presets have one, and Salesflare's lead API gets
   `…/enrich/people?name={name}&domain={domain}` by itself. `people_fields` adds paths like `fields`.
-- Turn it off in Settings, Security: **Look up work contacts** (also stops the Gravatar tries). Never in a Careful Work
-  Fleet.
+- Turn it off in Settings, Security: **Look up work contacts** (also stops the Gravatar tries and meeting prep's web
+  search, `meeting_prep.py`). Never in a Careful Work Fleet.
 
 ### Who is looked up
 

@@ -5,14 +5,18 @@ import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import('./browser.mjs');
 
 // A briefing before a meeting (meeting_prep.py) is a normal to-do, only for reading (Done, Snooze): its title, two lines of its briefing with Show more,
-// then every part with its label (Who, Last contact, Open promises, Open questions, Decide or bring). The meeting's own
+// then every part with its label (Who, Organization, So far, Open promises, Open questions, Decide or bring), a web source as a link. The meeting's own
 // details link to it under To-do, and a tap opens its chat. Nothing is wider than the screen, at 1440 and 390, light
 // and dark. MEETING_PREP_SHOT=<dir> writes the to-do and the meeting's details.
 const dashboard=await dashboardPage();
 const brand={'/brand/avatar.png':'brand/app-icon-192.png','/brand/serif.woff2':'brand/fonts/source-serif-4-latin.woff2','/brand/sans.woff2':'brand/fonts/inter-latin.woff2'};
 const NOW=Date.parse('2026-11-09T09:00:00+01:00'),now=new Date(NOW).toISOString();
 const ID='c'.repeat(16),TITLE='Prepare for the Globex pilot review';
-const PARTS=[['Who:','Sam Rivera, head of operations at Globex.'],['Last contact:','Sam asked on Nov 5 whether the pilot can start in December.'],
+// A line from the web carries its source link, shown by its site (Who, Organization)
+const SOURCE='https://globex.example/about';
+const PARTS=[['Who:','Sam Rivera, head of operations at Globex. Earlier ran pilots at Initech.'],
+ ['Organization:',`Globex builds logistics software for mid-size retailers. ([globex.example](${SOURCE}))`,'Globex builds logistics software for mid-size retailers. (globex.example)'],
+ ['So far:','On Nov 2 Sam asked whether the pilot can start in December; the plan was offered on Nov 5.'],
  ['Open promises:','Promised Sam the pilot plan by Tuesday.'],['Open questions:','Who signs the order form on their side.'],
  ['Decide or bring:','The pilot plan; decide on the start date.']];
 const card={id:ID,title:TITLE,body:PARTS.map(([k,v])=>`**${k}** ${v}`).join('\n\n'),status:'pending',scope:'work',created_at:now,event_ids:[41,43],
@@ -54,7 +58,10 @@ try{
   assert.ok(await todo.locator('.body.clamp').count(),'the briefing starts folded');
   await more.click();await todo.locator('.body:not(.clamp)').waitFor();
   const parts=await todo.locator('.body p').evaluateAll(ps=>ps.map(p=>[p.querySelector('strong')?.textContent||'',p.textContent.replace(/^[^:]*:\s*/,'')]));
-  assert.deepEqual(parts,PARTS);
+  assert.deepEqual(parts,PARTS.map(([k,v,shown])=>[k,shown||v]));
+  const source=todo.locator(`.body a[href="${SOURCE}"]`);
+  assert.equal(await source.innerText(),'globex.example');
+  assert.equal(await source.getAttribute('target'),'_blank');
   const box=await todo.boundingBox();assert.ok(box.x>=0&&box.x+box.width<=width+1,'the to-do fits the screen');
   assert.ok(await fits(page),'no sideways scroll');
   if(shots){await todo.scrollIntoViewIfNeeded();await page.screenshot({path:`${shots}/todo-${width}-${scheme}.png`})}
