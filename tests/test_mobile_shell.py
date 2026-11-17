@@ -235,18 +235,46 @@ class IOSNotifications(unittest.TestCase):
         for back in ('UIApplication.didBecomeActiveNotification', 'UIApplication.willEnterForegroundNotification',
                      'UIApplication.protectedDataDidBecomeAvailableNotification'):
             self.assertIn(back, plugin)
-        check = plugin[plugin.index('    func checkPage() {'):plugin.index('    private func reopen() {')]
+        check = plugin[plugin.index('    func checkPage() {'):plugin.index('    private func showOffline() {')]
         self.assertIn('if pageGone || webView.url == nil { return reopen() }', check)
-        self.assertIn('evaluateJavaScript("document.readyState")', check)
-        self.assertIn('asyncAfter(deadline: .now() + MachineShellPlugin.pageAnswer) { finish(false) }', check)
+        self.assertIn('evaluateJavaScript(MachineShellPlugin.pageProbe)', check)
+        self.assertIn('asyncAfter(deadline: .now() + MachineShellPlugin.pageAnswer) { finish(nil) }', check)
         self.assertIn('applicationState != .background', check)
         for caller in ('@objc private func becameActive() {\n        checkPage()', '@objc private func cameBack() { checkPage() }',
                        'if self.networkWasDown { self.networkWasDown = false; self.checkPage() }', 'if slept { self.checkPage() }'):
             self.assertIn(caller, plugin)
-        reopen = plugin[plugin.index('    private func reopen() {'):]
+        reopen = plugin[plugin.index('    private func reopen(force: Bool = false) {'):]
         reopen = reopen[:reopen.index('\n    }\n')]
-        self.assertIn('Date().timeIntervalSince(lastReopen) > MachineShellPlugin.reopenGap', reopen)
+        self.assertIn('force || Date().timeIntervalSince(lastReopen) > MachineShellPlugin.reopenGap', reopen)
         self.assertIn('webView.load(URLRequest(url: target))', reopen)
+
+    def test_ios_never_blank_when_the_page_answers_but_shows_nothing(self):
+        # A white page still answers a script: an empty answer on the way (an empty error page, the Machine's restarting
+        # note), a load that never ended, a window a Mac's sleep left white. The app asks what the page shows, opens it
+        # again once, then shows its own offline page with Try again; a stuck load gets that page too. A long sleep on
+        # a Mac opens the page again unless the owner has something typed or open. Cmd+R is always a way back.
+        plugin = (self.IOS / 'App/MachineShellPlugin.swift').read_text()
+        probe = plugin[plugin.index('static let pageProbe'):plugin.index('\n\n', plugin.index('static let pageProbe'))]
+        for part in ("document.contentType==='application/json'", "(b.innerText||'').trim()", "querySelector('img,svg,canvas,video,iframe')",
+                     "typeof pageInUse==='function'&&pageInUse()", "return 'empty'", "return 'busy'", "return 'shown'"):
+            self.assertIn(part, probe)
+        # the dashboard keeps the name the app asks for
+        self.assertIn('\nconst pageInUse=()=>', (ROOT / 'dashboard/shell-tabs.js').read_text())
+        check = plugin[plugin.index('    func checkPage() {'):plugin.index('    private func showOffline() {')]
+        self.assertIn('Date().timeIntervalSince(started) > MachineShellPlugin.loadLimit', check)
+        self.assertIn('webView.stopLoading()\n            return showOffline()', check)
+        self.assertIn('case "shown"? where slept: self.reopen(force: true)', check)
+        self.assertIn('if self.blankTries >= 2 { self.showOffline() } else { self.reopen(force: true) }', check)
+        self.assertIn('default: self.reopen()', check)
+        offline = plugin[plugin.index('    private func showOffline() {'):]
+        self.assertIn('appendingPathComponent("offline.html")', offline[:offline.index('\n    }\n')])
+        # a page that loaded is asked too, and a load that started is asked once it should have ended
+        self.assertIn('asyncAfter(deadline: .now() + MachineShellPlugin.afterLoad) { [weak self] in self?.checkPage() }', plugin)
+        self.assertIn('if self?.loadStarted == started { self?.checkPage() }', plugin)
+        self.assertIn('ProcessInfo.processInfo.isiOSAppOnMac, now.timeIntervalSince(self.lastTick) > MachineShellPlugin.longSleep', plugin)
+        self.assertIn('UIKeyCommand(input: "r", modifierFlags: .command, action: #selector(reloadPage))', plugin)
+        self.assertIn('@objc func reloadPage() { reopen(force: true) }', plugin)
+        self.assertEqual((MOBILE / 'capacitor.config.json').read_text().count('"errorPath": "offline.html"'), 1)
 
     def test_android_buttons_are_the_same_decisions(self):
         java = (MOBILE / 'android/app/src/main/java/computer/themachine/app/PushText.java').read_text()

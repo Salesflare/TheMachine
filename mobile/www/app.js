@@ -150,6 +150,8 @@
     };
     window.addEventListener('online', again);
     document.addEventListener('visibilitychange', () => { if (!document.hidden) again(); });
+    // and every half minute while it's in front: a Machine that was restarting is back without a click
+    setInterval(() => { if (!document.hidden) again(); }, 30000);
     $('other').onclick = async () => { if (shell) await shell.forget(); location.replace('index.html'); };
   }
   start();
