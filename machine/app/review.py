@@ -178,23 +178,44 @@ PROMPT_RESERVE = 4000
 
 # Context a review can do without, left out in this order (only while the prompt is still over its limit) instead of
 # failing every review with prompt_too_long: what the owner did with recent to-dos, the open promises, the facts picked
-# for this batch. The instructions, the batch and the blocks a review must answer (sorting, fits) always stay.
-REVIEW_TRIM = {'preferences': ('history',), 'promises': ('promises',), 'batch_facts': ('batch_facts', 'retained')}
+# for this batch, the card notes not learned from yet (shown again next time), the facts the owner told, the reading
+# notes per source. The instructions, the batch and the blocks a review must answer (sorting, fits) always stay.
+REVIEW_TRIM = {'preferences': ('history',), 'promises': ('promises',), 'batch_facts': ('batch_facts', 'retained'),
+               'notes': (), 'facts': ('facts',), 'sources': ()}
 
 
-def fit_review_parts(build, parts, limit, memory=None):
+# A new board's look through the history (backfill) is built after the rest, in the room left: it marks what it asks as
+# asked of this run, so it is never left out once built. While a board looks, the other context keeps this much room
+# for it, so the look goes on in smaller rounds instead of waiting behind a full prompt (2026-11: a new board's first
+# round pushed every review over the limit, and no signal became a to-do until it was done, which needed a review).
+BACKFILL_MIN_ROOM = 4000
+
+
+# After a run the runner or the model refused for its size, the next ones fit a smaller prompt: 3/4 each time, down to
+# half the limit; the first run that ends well goes back to the whole limit.
+SQUEEZE_STEP, SQUEEZE_MIN = 0.75, 0.5
+
+
+def fit_review_parts(build, parts, limit, memory=None, left=None):
     """parts with the REVIEW_TRIM blocks emptied, one at a time, until build(parts) fits limit characters (or none is
-    left to empty). A block left out is dropped from memory too, so it isn't logged as read. Logs which went, never
-    their text."""
+    left to empty). A block left out is dropped from memory too, so it isn't logged as read. left (a dict) gets
+    {key: chars} of each block left out, for one log line per run, never their text."""
     for key, blocks in REVIEW_TRIM.items():
         if len(build(parts)) <= limit:
             break
         if parts.get(key):
-            LOG.warning('review prompt over limit: left out %s chars=%s', key, len(parts[key]))
+            if left is not None:
+                left[key] = len(parts[key])
             parts = {**parts, key: ''}
             for block in blocks if memory is not None else ():
                 memory.drop(block)
     return parts
+
+
+def block_room(build, parts, key, limit, cap):
+    """The characters block key can take so build(parts) stays within limit, after its own heading (at most cap)."""
+    heading = len(build({**parts, key: 'x'})) - len(build({**parts, key: ''})) - 1
+    return min(cap, limit - len(build(parts)) - heading)
 
 
 REVIEW_FAILURE_PHASES = {'runtime','model','bridge','connection','queue','provider','tool','gateway_draining'}
@@ -568,14 +589,26 @@ class ReviewApp:
                          promises=memory.text('promises'), unnamed=self.store.unnamed_text(run['run_id']), roles=self.store.role_text(run['run_id']),
                          notes=self.store.notes_to_learn(), handoffs=self.waiting_handoffs_text(),
                          sorting=self.store.sort_text(run['run_id']), sources=source_notes(account_services(self.config)) + companies_prompt(self.config),
-                         fitting=self.store.fit_text(run['run_id']), backfill=self.backfill_text(run['run_id']), first_look=self.store.first_look_run(run['run_id']),
+                         fitting=self.store.fit_text(run['run_id']), backfill='', boards='', first_look=self.store.first_look_run(run['run_id']),
                          batch_facts='\n\n'.join(filter(None, (memory.text('batch_facts'), memory.text('retained')))),  # both differ per batch
                          orgs=self.store.org_check_text(run['run_id']))
             build = lambda parts: review_prompt(run['run_id'], [a['id'] for a in self.config['accounts']], **parts)
-            parts = fit_review_parts(build, parts, PROMPT_LIMIT - PROMPT_RESERVE, memory)
-            # The once-a-day board check takes the room that is left, so it never pushes the prompt over the limit
-            room = min(BOARDS_CHARS, PROMPT_LIMIT - PROMPT_RESERVE - len(build(parts)))
+            # Every block within one budget (smaller after a run refused for its size): what can go goes first, then a
+            # board's look through the history and the once-a-day board check take the room left, as they record what
+            # they ask of this run once built
+            limit = int((PROMPT_LIMIT - PROMPT_RESERVE) * getattr(self, 'review_squeeze', 1.0))
+            with self.store.connect() as db:
+                looking = db.execute("SELECT 1 FROM board_backfills WHERE state='running' LIMIT 1").fetchone()
+            left = {}
+            parts = fit_review_parts(build, parts, limit - (BACKFILL_MIN_ROOM if looking else 0), memory, left)
+            room = block_room(build, parts, 'backfill', limit, graph_board_reviews.BACKFILL_CHARS)
+            parts['backfill'] = self.backfill_text(run['run_id'], chars=room) if looking and room >= BACKFILL_MIN_ROOM // 2 else ''
+            parts = fit_review_parts(build, parts, limit, memory, left)  # a first counterpart bigger than its room
+            room = block_room(build, parts, 'boards', limit, BOARDS_CHARS)
             parts['boards'] = self.store.boards_text(run['run_id'], chars=room) if room > 0 else ''
+            if left and set(left) != getattr(self, 'review_left_out', set()):  # once while the same blocks go, not every run
+                LOG.warning('review prompt over limit: left out %s', ', '.join(f'{key} chars={size}' for key, size in left.items()))
+            self.review_left_out = set(left)
             request['message'] = build(parts)
             try:  # drafts the owner rewrote, or answered themselves instead: lasting habits go into that channel's voice
                 lines = self.store.edits_to_learn()
@@ -644,7 +677,8 @@ class ReviewApp:
                     LOG.error('fleet teammates error=%s', type(error).__name__)
         # Offering learning context is not delivery: a Gateway outage must leave it eligible on retry.
         if len(request.get('message') or '') > PROMPT_LIMIT:  # the runner would refuse it on every retry: say so and end the run
-            LOG.error('review prompt too long chars=%s limit=%s', len(request['message']), PROMPT_LIMIT)
+            if getattr(self, 'review_squeeze', 1.0) == 1.0:  # once, not on every smaller retry after it
+                LOG.error('review prompt too long chars=%s limit=%s', len(request['message']), PROMPT_LIMIT)
             receipt = {'status': 'error', 'error': 'prompt_too_long', 'error_phase': 'runtime'}
         else:
             if request['action'] == 'start':  # what this start offers; a retry resends the first start's, with its own list
@@ -680,6 +714,11 @@ class ReviewApp:
                 # (service_run): every batch it claimed is saved. The review didn't die: no failure, no error report.
                 resumed = result == 'lost' and self.store.review_batch_saved(db, run['run_id'])
                 status = 'ok' if resumed else status
+                # Refused for its size (here or by the model's context): the next run, a minute or so later, is smaller
+                if error == 'prompt_too_long' or receipt.get('reason') == 'context_overflow':
+                    self.review_squeeze = max(SQUEEZE_MIN, getattr(self, 'review_squeeze', 1.0) * SQUEEZE_STEP)
+                elif status == 'ok':
+                    self.review_squeeze = 1.0
                 db.execute('UPDATE review_runs SET status=?,error=?,error_phase=?,last_error=coalesce(?,last_error),last_error_phase=coalesce(?,last_error_phase),error_at=CASE WHEN ? IS NOT NULL THEN ? ELSE error_at END,finished_at=?,updated_at=?,retry_at=NULL,unavailable_since=NULL WHERE run_id=?',
                            (status,None if status == 'ok' else error,None if status == 'ok' else phase,error,phase,error,now(),now(),now(),run['run_id']))
                 # Terminal runtime proof makes its unfinished claim immediately

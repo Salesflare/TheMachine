@@ -83,6 +83,64 @@ class ReviewPromptFits(unittest.TestCase):
         self.assertTrue(any('left out preferences' in line for line in logs.output))
         self.assertNotIn('Made-up history line', ' '.join(logs.output))  # sizes only in the log, never the text
 
+    def looking(self):
+        with self.store.connect() as db:
+            db.execute("INSERT INTO board_backfills(board_id,state,started_at,ranked) VALUES(1,'running',?,'[]')", (a.now(),))
+
+    def test_a_board_looking_through_the_history_takes_the_room_left_and_never_fails_the_review(self):
+        # A new board's look used to be built at its full size before the rest was fit: every review went over the
+        # limit until the look was done, which needed a review, so no signal became a to-do
+        self.store.commit_page('work', {}, [signal(f'm{n}', days_ago=3) for n in range(30)])
+        self.looking()
+        asked = []
+        def backfill(app, run_id, chars):
+            asked.append(chars)
+            return ('- Made-up counterpart (org:example.test): 4 messages\n' * 1000)[:chars]
+        runner = Runner('admitted')
+        with self.later(4), patch.object(a.App, 'backfill_text', backfill, create=True), \
+                patch.object(review_app, 'source_notes', return_value='\n\nMade-up reading note. ' * 1200), \
+                patch.object(a.Store, 'preference_summary', return_value='Made-up history line. ' * 1000):
+            self.assertEqual(self.app.review_step(runner), 'admitted')
+        message = runner.requests[0]['message']
+        self.assertLessEqual(len(message), a.PROMPT_LIMIT - review_app.PROMPT_RESERVE)
+        self.assertEqual(len(asked), 1)  # built once: it marks what it asks as asked of this run
+        self.assertGreaterEqual(asked[0], review_app.BACKFILL_MIN_ROOM)  # room kept for it while context went
+        self.assertIn('Made-up counterpart', message)
+        self.assertNotIn('Made-up history line', message)
+
+    def test_a_first_counterpart_bigger_than_its_room_leaves_out_more_context_instead(self):
+        self.store.commit_page('work', {}, [signal(f'm{n}', days_ago=3) for n in range(30)])
+        self.looking()
+        over = lambda app, run_id, chars: 'Made-up counterpart line. ' * ((chars + 9000) // 26)
+        runner = Runner('admitted')
+        with self.later(4), patch.object(a.App, 'backfill_text', over, create=True), \
+                patch.object(review_app, 'source_notes', return_value='\n\nMade-up reading note. ' * 1500), \
+                self.assertLogs(a.LOG, 'WARNING') as logs:
+            self.assertEqual(self.app.review_step(runner), 'admitted')
+        message = runner.requests[0]['message']
+        self.assertLessEqual(len(message), a.PROMPT_LIMIT)
+        self.assertIn('Made-up counterpart line', message)
+        self.assertNotIn('Made-up reading note', message)
+        self.assertEqual(sum('left out' in line for line in logs.output), 1)  # one line for the run, sizes only
+        self.assertIn('sources chars=', ' '.join(logs.output))
+
+    def test_a_run_refused_for_its_size_makes_the_next_one_smaller_and_logs_once(self):
+        self.store.commit_page('work', {}, [signal(f'm{n}', days_ago=3) for n in range(30)])
+        requests = []
+        def runner(request):
+            requests.append(request)
+            return {'status': 'error', 'error': 'runtime_error', 'reason': 'context_overflow'} if len(requests) == 1 else {'status': 'admitted'}
+        history = 'Made-up history line. ' * 2000  # over the limit both times
+        with patch.object(a.Store, 'preference_summary', return_value=history), self.assertLogs(a.LOG, 'WARNING') as logs:
+            with self.later(4):
+                self.app.review_step(runner)
+            self.assertEqual(self.app.review_squeeze, review_app.SQUEEZE_STEP)
+            with self.later(30):
+                self.assertEqual(self.app.review_step(runner), 'admitted')
+        self.assertEqual(len(requests), 2)  # the batch was never claimed: the next run reviews the same signals
+        self.assertLessEqual(len(requests[1]['message']), (a.PROMPT_LIMIT - review_app.PROMPT_RESERVE) * review_app.SQUEEZE_STEP)
+        self.assertEqual(sum('left out preferences' in line for line in logs.output), 1)  # not once per attempt
+
     def test_trimming_stops_once_it_fits_and_drops_what_went_from_memory(self):
         dropped = []
         memory = type('Memory', (), {'drop': lambda self, block: dropped.append(block)})()

@@ -189,9 +189,10 @@ class ModelPacingApp:
                     scores[key] = best
         return scores
 
-    def backfill_text(self, run_id):
+    def backfill_text(self, run_id, chars=graph_board_reviews.BACKFILL_CHARS):
         """The next round of a new board's look through the history for this review (graph_board_reviews.backfill_brief), ranked by
-        meaning first when there are local embeddings. Empty while the model's limits are nearly used."""
+        meaning first when there are local embeddings, in about chars characters (the room the review's prompt has left).
+        Empty while the model's limits are nearly used."""
         try:
             if not self.model_room() or self.history_paced():
                 return ''
@@ -206,7 +207,7 @@ class ModelPacingApp:
                 with self.store.connect() as db:
                     graph_board_reviews.rank_backfill(db, board['id'], scores)
             with self.store.connect() as db:
-                return graph_board_reviews.backfill_brief(db, run_id, now(), self.graph_event_lines)
+                return graph_board_reviews.backfill_brief(db, run_id, now(), self.graph_event_lines, chars=chars)
         except (sqlite3.Error, ValueError, KeyError, TypeError) as error:
             LOG.error('backfill brief error=%s', type(error).__name__)
             return ''
