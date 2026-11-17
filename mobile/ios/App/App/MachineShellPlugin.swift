@@ -47,6 +47,9 @@ public class MachineShellPlugin: CAPPlugin, CAPBridgedPlugin, ASWebAuthenticatio
     private var pageGone = false
     private var probing = false
     private var lastReopen = Date.distantPast
+    private var loadStarted: Date?  // the load under way since then (none: no load)
+    private var blankTries = 0  // pages in a row that came up blank
+    private var sleptAt: Date?  // the computer or phone slept (a late timer tick), not checked since
 
     override public func load() {
         MachineActions.shared.install()  // in front of Capacitor's notification delegate, which it set by now
@@ -55,9 +58,20 @@ public class MachineShellPlugin: CAPPlugin, CAPBridgedPlugin, ASWebAuthenticatio
         NotificationCenter.default.addObserver(self, selector: #selector(cameBack), name: UIApplication.willEnterForegroundNotification, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(cameBack), name: UIApplication.protectedDataDidBecomeAvailableNotification, object: nil)
         loading = bridge?.webView?.observe(\.isLoading, options: [.new]) { [weak self] webView, change in
-            if change.newValue == false {
-                self?.pageGone = false
-                self?.onMachinePage(webView.url)
+            guard let self = self else { return }
+            if change.newValue == true {
+                let started = Date()
+                self.loadStarted = started
+                // a load that never ends (the link went away halfway) is checked without waiting for a return
+                DispatchQueue.main.asyncAfter(deadline: .now() + MachineShellPlugin.loadLimit + 1) { [weak self] in
+                    if self?.loadStarted == started { self?.checkPage() }
+                }
+            } else if change.newValue == false {
+                self.loadStarted = nil
+                self.pageGone = false
+                self.onMachinePage(webView.url)
+                // a page that loaded but shows nothing (an empty answer on the way) is caught at once, not on the next return
+                DispatchQueue.main.asyncAfter(deadline: .now() + MachineShellPlugin.afterLoad) { [weak self] in self?.checkPage() }
             }
         }
         DispatchQueue.main.async { [weak self] in
@@ -565,11 +579,22 @@ public class MachineShellPlugin: CAPPlugin, CAPBridgedPlugin, ASWebAuthenticatio
     // memory) or hang, and the WebView then stays white until the app is closed and opened again. Capacitor reloads when
     // it hears the process ended, but that reload is lost when it comes while the app is away (asleep, in the
     // background), and a hung process isn't reported at all. So whenever the app comes back (in front again, unlocked,
-    // the network back, a wake: the clock jumped between two ticks) the page is asked for a sign of life, and opened
-    // again when none comes in time.
+    // the network back, a wake: the clock jumped between two ticks) the page is asked whether it shows anything, and
+    // opened again when no answer comes in time or it shows nothing. A page alive but white still answers a script, so
+    // "it answered" is not enough: an empty page (an empty answer on the way, a load that never ended) is opened again
+    // once, then the app's own offline page says so with Try again. After a real sleep the page is opened again when
+    // nothing is typed or open in it, so whatever the sleep did to the window is gone.
 
     static let pageAnswer: TimeInterval = 8  // a busy page still answers in this time; a gone or hung one never does
     static let reopenGap: TimeInterval = 15  // never in a loop
+    static let loadLimit: TimeInterval = 30  // a load still going after this is stuck
+    static let afterLoad: TimeInterval = 3  // a finished page is asked this long after
+    static let longSleep: TimeInterval = 5 * 60  // a sleep this long opens the page again when it isn't in use
+    // What the page shows: "shown" (words or a picture), "empty" (a white page, or the Machine's restarting note in
+    // place of the page), "busy" (the dashboard has typing or an open panel: shell-tabs.js pageInUse)
+    static let pageProbe = "(()=>{const b=document.body;if(document.contentType==='application/json'||!b)return 'empty';"
+        + "if(!b.querySelector('img,svg,canvas,video,iframe')&&!(b.innerText||'').trim())return 'empty';"
+        + "try{if(typeof pageInUse==='function'&&pageInUse())return 'busy'}catch(e){}return 'shown'})()"
 
     private func watchForWake() {
         network.pathUpdateHandler = { [weak self] path in
@@ -584,6 +609,8 @@ public class MachineShellPlugin: CAPPlugin, CAPBridgedPlugin, ASWebAuthenticatio
         wakeTimer = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { [weak self] _ in
             guard let self = self else { return }
             let now = Date(), slept = now.timeIntervalSince(self.lastTick) > 90
+            // On a Mac only: the window stays open for days, where a phone's system ends the page itself
+            if ProcessInfo.processInfo.isiOSAppOnMac, now.timeIntervalSince(self.lastTick) > MachineShellPlugin.longSleep { self.sleptAt = self.lastTick }
             self.lastTick = now
             if slept { self.checkPage() }
         }
@@ -597,27 +624,54 @@ public class MachineShellPlugin: CAPPlugin, CAPBridgedPlugin, ASWebAuthenticatio
         DispatchQueue.main.asyncAfter(deadline: .now() + 3) { [weak self] in self?.checkPage() }
     }
 
-    /// Opens the page again when it has no address, its process ended without a page loading since, or it doesn't
-    /// answer a one-line script in time. Only while the app is in front: in the background it would be lost again.
+    /// Opens the page again when it has no address, its process ended without a page loading since, it doesn't answer
+    /// a one-line script in time, or it shows nothing; a load stuck for loadLimit, or a second empty page in a row, gets
+    /// the app's offline page (what happened, with Try again). Only while the app is in front: in the background it
+    /// would be lost again.
     func checkPage() {
         guard UIApplication.shared.applicationState != .background, let webView = bridge?.webView, !probing else { return }
         if pageGone || webView.url == nil { return reopen() }
-        if webView.isLoading { return }
+        if webView.isLoading {
+            guard let started = loadStarted, Date().timeIntervalSince(started) > MachineShellPlugin.loadLimit else { return }
+            webView.stopLoading()
+            return showOffline()
+        }
         probing = true
+        let slept = sleptAt != nil
+        sleptAt = nil
         var done = false
-        let finish: (Bool) -> Void = { [weak self] alive in
+        let finish: (String?) -> Void = { [weak self] shows in
             guard let self = self, !done else { return }
             done = true
             self.probing = false
-            if !alive { self.reopen() }
+            switch shows {
+            case "shown"? where slept: self.reopen(force: true)  // a long sleep: a fresh page, nothing in use is lost
+            case "shown"?, "busy"?: self.blankTries = 0
+            case "empty"?:
+                self.blankTries += 1
+                if self.blankTries >= 2 { self.showOffline() } else { self.reopen(force: true) }  // once at once, then offline
+            default: self.reopen()  // no answer: the page is gone or hung
+            }
         }
-        webView.evaluateJavaScript("document.readyState") { result, error in finish(error == nil && result is String) }
-        DispatchQueue.main.asyncAfter(deadline: .now() + MachineShellPlugin.pageAnswer) { finish(false) }
+        webView.evaluateJavaScript(MachineShellPlugin.pageProbe) { result, error in finish(error == nil ? result as? String : nil) }
+        DispatchQueue.main.asyncAfter(deadline: .now() + MachineShellPlugin.pageAnswer) { finish(nil) }
     }
 
+    /// The app's own offline page (www/offline.html: can't reach your Machine, Try again), which tries again by itself
+    /// once online or in front again. Never a white window, whatever came back instead of a page.
+    private func showOffline() {
+        guard let webView = bridge?.webView, let local = bridge?.config.localURL else { return }
+        blankTries = 0
+        lastReopen = Date()
+        webView.load(URLRequest(url: local.appendingPathComponent("offline.html")))
+    }
+
+    /// Cmd+R on a Mac or an iPad's keyboard: the page again, now.
+    @objc func reloadPage() { reopen(force: true) }
+
     /// The page it had (the Machine's, or the app's own start or offline page), else the saved Machine, else the start page.
-    private func reopen() {
-        guard let webView = bridge?.webView, Date().timeIntervalSince(lastReopen) > MachineShellPlugin.reopenGap else { return }
+    private func reopen(force: Bool = false) {
+        guard let webView = bridge?.webView, force || Date().timeIntervalSince(lastReopen) > MachineShellPlugin.reopenGap else { return }
         lastReopen = Date()
         pageGone = false
         let local = bridge?.config.localURL
@@ -684,9 +738,18 @@ extension MachineShellPlugin {
 
 /// The app's root view: Capacitor's, with MachineShellPlugin registered (it lives in the app, not in a package).
 class MachineViewController: CAPBridgeViewController {
+    private let shell = MachineShellPlugin()
+
     override open func capacitorDidLoad() {
-        bridge?.registerPluginInstance(MachineShellPlugin())
+        bridge?.registerPluginInstance(shell)
     }
+
+    // Cmd+R (a Mac, an iPad's keyboard): always a way to bring the page back by hand
+    override var keyCommands: [UIKeyCommand]? {
+        (super.keyCommands ?? []) + [UIKeyCommand(input: "r", modifierFlags: .command, action: #selector(reloadPage))]
+    }
+
+    @objc func reloadPage() { shell.reloadPage() }
 }
 
 /// The WebView's own delegate (Capacitor's), except for the microphone: granted to the saved Machine's page only.

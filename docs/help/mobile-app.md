@@ -19,6 +19,8 @@ On a hosted Machine the app signs in with your account. On a self-hosted one, op
 
 **Sign in with** a service under **Connections** (Shortcut, Notion, Slack, Zoom and the others) opens your phone's sign-in sheet. When you're done there, you're back in the app, and the new connection shows in **Connections** by itself.
 
+When the app can't reach your Machine, it says so and tries again by itself. On a Mac or an iPad with a keyboard, Cmd+R loads the page again.
+
 ## Notifications
 
 The app asks to allow notifications when it first opens. Tap one to open what it is about: a to-do shows in your list, highlighted, the morning opens today in the **Calendar**, the team brief opens To-dos, and a Fleet question opens its to-do. No text of a to-do passes through Apple, Google or The Machine's service: they only carry a fixed line, like "A to-do needs you".

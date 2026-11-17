@@ -378,8 +378,9 @@ test('the offline page tries the Machine again by itself once online or in front
     addEventListener: (k, f) => { (docListeners[k] = docListeners[k] || []).push(f); }};
   const nav = {languages: ['en'], onLine: true};
   const shell = {get: async () => ({machine: 'https://sam.app.themachine.computer/'}), info: async () => ({platform: 'ios'})};
+  const intervals = [];
   const ctx = {document: doc, navigator: nav, URL, Promise, Date, setTimeout, clearTimeout,
-    location: {replace: u => replaced.push(u)}};
+    setInterval: (f, ms) => intervals.push([f, ms]), location: {replace: u => replaced.push(u)}};
   ctx.window = Object.assign(ctx, {Capacitor: {Plugins: {MachineShell: shell}},
     addEventListener: (k, f) => { (listeners[k] = listeners[k] || []).push(f); }});
   for (const f of ['strings.js', 'machine-url.js', 'app.js']) vm.runInNewContext(fs.readFileSync(path.join(www, f), 'utf8'), ctx);
@@ -397,6 +398,20 @@ test('the offline page tries the Machine again by itself once online or in front
   for (const f of docListeners.visibilitychange) f();
   await settle();
   assert.equal(replaced.length, 1, 'at most every few seconds');
+  // every half minute while in front: a Machine that was restarting is back without a click
+  assert.deepEqual(intervals.map(([, ms]) => ms), [30000]);
+  const realNow = Date.now;
+  try {
+    Date.now = () => realNow() + 6000;
+    doc.hidden = true;
+    intervals[0][0]();
+    await settle();
+    assert.equal(replaced.length, 1, 'not while the app is away');
+    doc.hidden = false;
+    intervals[0][0]();
+    await settle();
+    assert.equal(replaced.length, 2, 'in front: tried again');
+  } finally { Date.now = realNow; }
 });
 
 test('Android keeps the keyboard\'s own suggestions and autocorrect', () => {
