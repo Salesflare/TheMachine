@@ -1,4 +1,5 @@
-"""Gmail and Google Calendar through a token broker instead of gog.
+"""Gmail and Google Calendar through a token broker instead of gog (and a self-hosted Gmail account's reads with gog's
+own access token, read_with).
 
 A broker is a service you run that holds the Google OAuth client and its secret (a hosted control plane, for
 example). The account's refresh token stays on this machine (mail_grants.py): it asks the broker for a short-lived
@@ -196,27 +197,42 @@ def call(config, credential, account, method, params, scope, body=None, write=Fa
         data, kind = (json.dumps(body).encode(), 'application/json') if body is not None else (None, None)
     for attempt in (0, 1):
         access = token(config, credential, account, scope, fresh=bool(attempt), provider=provider)
-        request = urllib.request.Request(url, method=verb, data=data,
-                                         headers={'Authorization': 'Bearer ' + access, 'Accept': 'application/json',
-                                                  **({'Content-Type': kind} if kind else {})})
         try:
-            with urllib.request.urlopen(request, timeout=timeout) as response:
-                if raw:
-                    data = response.read(limit + 1 if limit else -1)
-                    if limit and len(data) > limit:
-                        raise BrokerError('response_too_large')
-                    return data
-                return json.loads(response.read() or b'{}')
-        except urllib.error.HTTPError as error:
-            try:
-                said = error.read(65536).decode('utf-8', 'replace') if error.code in (400, 403, 429) else ''
-            except Exception:  # noqa: BLE001 - only a label is wanted; without one the status still says it
-                said = ''
-            error.close()
-            if error.code == 401 and not attempt and not write:
+            return send(method, verb, url, access, data, kind, timeout, raw, limit)
+        except BrokerError as error:
+            if error.status == 401 and not attempt and not write:
                 continue  # the access token expired early: one fresh one, for reads only
-            raise BrokerError(method.split('.')[0], error.code, retry_after(error), error_reason(said)) from None
-        except (urllib.error.URLError, TimeoutError, OSError, http.client.HTTPException):
-            raise BrokerError('timeout') from None
-        except ValueError:
-            raise BrokerError('invalid_json') from None
+            raise
+
+
+def read_with(access, method, params, timeout=60):
+    """One allowlisted read (READ) with an access token the caller already holds: gog's own for a self-hosted Gmail
+    account (sources.gog_token). The parsed JSON answer, or a BrokerError as call() raises it."""
+    verb, url = url_for(method, params)
+    return send(method, verb, url, access, timeout=timeout)
+
+
+def send(method, verb, url, access, data=None, kind=None, timeout=60, raw=False, limit=None):
+    """One request to a checked Google URL (url_for) with a bearer token; a content-free BrokerError when it fails."""
+    request = urllib.request.Request(url, method=verb, data=data,
+                                     headers={'Authorization': 'Bearer ' + access, 'Accept': 'application/json',
+                                              **({'Content-Type': kind} if kind else {})})
+    try:
+        with urllib.request.urlopen(request, timeout=timeout) as response:
+            if raw:
+                body = response.read(limit + 1 if limit else -1)
+                if limit and len(body) > limit:
+                    raise BrokerError('response_too_large')
+                return body
+            return json.loads(response.read() or b'{}')
+    except urllib.error.HTTPError as error:
+        try:
+            said = error.read(65536).decode('utf-8', 'replace') if error.code in (400, 403, 429) else ''
+        except Exception:  # noqa: BLE001 - only a label is wanted; without one the status still says it
+            said = ''
+        error.close()
+        raise BrokerError(method.split('.')[0], error.code, retry_after(error), error_reason(said)) from None
+    except (urllib.error.URLError, TimeoutError, OSError, http.client.HTTPException):
+        raise BrokerError('timeout') from None
+    except ValueError:
+        raise BrokerError('invalid_json') from None
