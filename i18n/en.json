@@ -3217,7 +3217,7 @@
  "No personal account is connected": "No personal account is connected",
  "No personal to-dos": "No personal to-dos",
  "No place to stay booked for {} nights": {
-  "one": "No place to stay booked for the night",
+  "one": "No place to stay booked for {} night",
   "other": "No place to stay booked for {} nights"
  },
  "No preparation": "No preparation",
