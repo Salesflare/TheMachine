@@ -12,6 +12,7 @@ from seams import patch_everywhere  # noqa: E402
 
 spec = importlib.util.spec_from_file_location('first_look_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
+HAS_MODEL = models.has_model  # the real one: each test patches it everywhere
 
 
 def model_patch(name, value):
@@ -73,6 +74,33 @@ class FirstLook(unittest.TestCase):
             db.execute("UPDATE events SET analyzed_version=version WHERE occurred_at>=?", ((dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=7)).isoformat(),))
         self.assertIsNone(self.state(60))  # the week looked through: done
         self.assertIsNone(self.app.review_step(Runner()))
+
+    def test_the_dashboard_s_live_view_never_waits_on_models_status(self):
+        # A new owner's AI sign-in on a busy Machine: one `openclaw models status` took 20 s and more, and the dashboard,
+        # which asks for the live view every 5 s while it waits for the AI, said the Machine was slow to answer
+        calls = []
+        with patch_everywhere(a, 'has_model', side_effect=lambda config=None, wait=True, answered=None, unknown=True: calls.append(wait) or False):
+            self.assertEqual(self.app.review_live()['first_look']['why'], 'model')
+            self.assertEqual(calls, [False])
+            self.assertEqual(self.state(10)['why'], 'model')  # the review worker's own round still reads it
+            self.assertEqual(calls, [False, True])
+        import time
+        reads = []
+        slow = patch.object(models, '_read_model_ready', side_effect=lambda *args: reads.append(1) or time.sleep(1.5) or False)
+        with slow, patch_everywhere(a, 'main_model', return_value='claude-cli/claude-opus-5-5'), \
+                patch_everywhere(a, 'has_model', side_effect=HAS_MODEL):
+            models._model_ready.clear()
+            self.addCleanup(models._model_ready.clear)
+            started = time.monotonic()
+            self.assertEqual(self.app.review_live()['first_look']['why'], 'model')  # not read yet: still connecting
+            self.assertLess(time.monotonic() - started, 0.5)
+            for _ in range(20):  # read meanwhile, beside the request
+                if reads:
+                    break
+                time.sleep(0.05)
+            self.assertEqual(reads, [1])
+            models._model_ready['claude-cli/claude-opus-5-5'] = (time.monotonic() + 600, True)  # read: it can run
+            self.assertEqual(self.app.review_live()['first_look']['why'], 'model_check')
 
     def test_a_review_prompt_over_the_runner_limit_ends_the_run_visibly_instead_of_retrying_as_unavailable(self):
         self.store.commit_page('work', {}, [signal(f'm{n}', days_ago=3) for n in range(30)])

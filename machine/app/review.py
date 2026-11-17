@@ -857,7 +857,7 @@ class ReviewApp:
                 run['steps'] = review_steps(db, run, self.config.get('agent_db'))
             # The newest card: the dashboard shows a card as soon as a running review saves it, not after the review
             newest = db.execute('SELECT count(*),max(created_at) FROM suggestions').fetchone()
-            queue, look = self.review_queue(db), self.first_look(db)
+            queue, look = self.review_queue(db), self.first_look(db, wait=False)  # polled every 5 s: never on `models status`
             # Before the first to-do ever: about when the first ones come (first_eta_minutes), for the empty state
             eta = None if newest[0] else first_eta_minutes(
                 {'planned': runs[0].get('planned') or runs[0].get('claimed_count') or 0, 'done': runs[0].get('done_count') or 0,
