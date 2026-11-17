@@ -58,6 +58,9 @@ GOOGLE_PHOTO_PAGES = 20
 # out instead of spent in its first minutes. A draft prepared ahead is on the owner's board as Preparing, so it doesn't
 # wait for this gap (2026-10-29: one waited 8 minutes behind a review's start); the usage budget still holds it.
 BACKGROUND_GAP_SECONDS = 600
+# The embedding server restarting or busy (embedding_worker): first retry after its own restart delay (30 s), then
+# twice as long each time up to 30 minutes; an error is logged once only when it lasts an hour.
+EMBED_RETRY_FIRST, EMBED_RETRY_MOST, EMBED_DOWN_ERROR_AFTER = 30, 1800, 3600
 # How long a sent Outlook reply may take to reach Sent Items before a thread snooze counts it as an error and backs off.
 SNOOZE_SENDING_GRACE = dt.timedelta(minutes=15)
 
@@ -253,13 +256,24 @@ class WorkersApp:
         return {'window': 'memory', 'until': found['until'], 'limited': False} if found else None
 
     def embedding_worker(self):
-        """Small background passes (embed_pass): signals first, then history. Never blocks
-        ingestion (no transaction spans the embedding call); failures wait and retry."""
-        wait=10
+        """Small background passes (embed_pass): signals first, then history, each request after any search waiting
+        for the server (embeddings.background). Never blocks ingestion (no transaction spans the embedding call). The
+        server restarting or busy (embeddings.WAITS) is a wait: tried again after 30 seconds, twice as long each time
+        up to 30 minutes, logged as an error once only when it lasts EMBED_DOWN_ERROR_AFTER. Other failures are errors
+        and wait five minutes."""
+        wait,down,told=10,None,False
         while not self.stop.wait(wait):
-            try:wait=self.embed_pass(embeddings.settings(self.config))
+            try:
+                with embeddings.background():wait=self.embed_pass(embeddings.settings(self.config))
+                down,told=None,False
             except Exception as error:
-                LOG.error('embeddings error=%s',error if isinstance(error,embeddings.EmbeddingError) else type(error).__name__);wait=300
+                if not embeddings.waiting(error):
+                    LOG.error('embeddings error=%s',error if isinstance(error,embeddings.EmbeddingError) else type(error).__name__);wait=300;continue
+                down=down or (time.monotonic(),0)
+                down=(down[0],down[1]+1);wait=min(EMBED_RETRY_MOST,EMBED_RETRY_FIRST*2**(down[1]-1))
+                if not told and time.monotonic()-down[0]>=EMBED_DOWN_ERROR_AFTER:
+                    told=True;LOG.error('embeddings error=%s',error)  # one error per outage, not one per try
+                else:LOG.info('embeddings waits error=%s retry=%ds',error,wait)
 
     def enrichment_worker(self):
         """Organization and work contact data from the configured enrichment service: a few domains (and people) every ten minutes, each

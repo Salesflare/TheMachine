@@ -858,7 +858,8 @@ class GraphActionsApp:
             return embeddings.related(self.store.connect,settings,accounts,event_ids,query,limit,exclude=exclude,timeout=timeout,
                                       signals_only=signals_only),True
         except embeddings.EmbeddingError as error:
-            if settings:LOG.error('related error=%s',error)
+            # The server restarting or busy is a wait: keywords answer, and the embedding worker reports a long outage
+            if settings:(LOG.info if embeddings.waiting(error) else LOG.error)('related error=%s',error)
             if not query.strip():return [],False
             skip={*map(int,event_ids),*map(int,exclude)}
             with self.store.connect() as db:
