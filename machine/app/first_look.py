@@ -139,7 +139,7 @@ class FirstLookApp:
                 fresh.append(account['id'])
         return {'filling': filling, 'fresh': fresh}
 
-    def first_look(self, db, current=None):
+    def first_look(self, db, current=None, wait=True):
         """The first look: on a new install with reviews still off, previews start by itself once a model and a source
         are connected. First a quick one: the QUICK_LOOK_SIGNALS of the week that most likely need the owner, as soon
         as the first page of mail is in, so the first cards come within minutes. Then it digs on, a batch at a time, until
@@ -148,7 +148,10 @@ class FirstLookApp:
         Read-only like any preview: its cards show on the dashboard, nothing is sent, nothing is prepared while reviews
         are off (Store.prepare_first_look, after), nothing is done in any account; turning reviews on stays the owner's choice. None when it is not (or no longer) for this
         install, else its state: 'due' (with `quick` for the quick one), or 'waiting' with why (model, sources,
-        settling, mail, retry; a retry with `failing`: Store.reviews_failing)."""
+        settling, mail, retry; a retry with `failing`: Store.reviews_failing).
+        wait=False (the dashboard's live view): whether the model can run is the last reading of `models status`, never
+        a new one on the request (that goes on beside it): on a busy Machine one took 20 s or more, and the page said
+        the Machine was slow. Before the first reading for a main model it says `model`, as while it connects."""
         settings = self.config.get('review_worker') or {}
         if settings.get('enabled') or settings.get('first_look') is False:
             return None
@@ -171,9 +174,9 @@ class FirstLookApp:
                                      f'AND account_id IN ({marks})', (SET_ASIDE_AFTER, since, *sources)).fetchone() if sources else (0, None)
         out = {'waiting': min(waiting, RUN_SIGNAL_BUDGET), 'days': PREVIEW_DAYS}
         mail = self.mail_backfill(db)
-        if not has_model(self.config):
+        if not has_model(self.config, wait=wait, unknown=wait):  # not read yet for a new main model: still connecting
             return {**out, 'state': 'waiting', 'why': 'model'}
-        if not has_model(self.config, answered=db):
+        if not has_model(self.config, wait=wait, answered=db):
             # Signed in, but the AI hasn't answered its real check yet (model_check.py): still checking, or it failed,
             # with the provider's own error for Details
             found = model_check.last(db) or {}
