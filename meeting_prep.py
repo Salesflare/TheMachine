@@ -33,7 +33,13 @@ dropped. The turn also judges Work or Personal by what the meeting is about; a p
 Once per meeting: meeting_preps keeps each meeting judged, by its iCalUID (the same on every calendar and after a move)
 or its own id, never its time. So a rescheduled meeting is the same one: its to-do follows the new time (expires_at)
 instead of a second one, and a dismissed to-do never comes back. A canceled meeting's to-do closes by itself.
-At most PER_DAY turns a day."""
+At most PER_DAY turns a day.
+
+A newer format (FORMAT, stamped on each briefing with a hash of the body it was made with): once after an upgrade
+that raises it, the open briefings still in an older one are written again (stale), one turn each within the same
+PER_DAY, soonest meeting first, when the owner left them as they were (same body, own title, no outcome), they are
+not snoozed or closed, and their meeting is more than REBUILD_LEAD ahead. Only the body changes: title, sources,
+status and time stay. A briefing from before the stamp is told by its labels (format 1: LABELS_1)."""
 from __future__ import annotations
 
 import datetime as dt
@@ -45,7 +51,14 @@ import timeutil
 from machine import todo_states
 
 SCHEMA = ('CREATE TABLE IF NOT EXISTS meeting_preps(dedupe_key TEXT PRIMARY KEY,event_id INTEGER NOT NULL,suggestion_id TEXT,'
-          'verdict TEXT NOT NULL,starts_at TEXT NOT NULL,created_at TEXT NOT NULL)')
+          'verdict TEXT NOT NULL,starts_at TEXT NOT NULL,created_at TEXT NOT NULL,format INTEGER,body_sha TEXT,rebuilt_at TEXT)')
+# format: the briefing format it was made in, or last written again in (NULL: made before the stamp, told by its labels);
+# body_sha: the body as The Machine wrote it, so an owner's change is seen; rebuilt_at: a turn writing it again (PER_DAY)
+FORMAT = 2                           # raise when a briefing's parts change: open briefings in an older one are written again
+REBUILD_LEAD = dt.timedelta(minutes=10)  # closer to the start a turn may not finish in time: the old briefing stays
+# The labels of format 1 (before Organization and So far), in the order it wrote them; NEW_LABELS came with format 2
+LABELS_1 = ('**Who:** {}', '**Last contact:** {}', '**Open promises:** {}', '**Open questions:** {}', '**Decide or bring:** {}')
+NEW_LABELS = ('**Organization:** {}', '**So far:** {}')
 AHEAD_DAYS = 5                       # meetings looked at: those starting within this many days
 MIN_LEAD = dt.timedelta(minutes=45)  # a briefing later than this before the start is too late to use
 NOON = dt.time(12, 0)
@@ -70,6 +83,14 @@ WEB_CHARS = 280
 def ensure(db):
     db.execute(SCHEMA)
     db.execute(WEB_SCHEMA)
+    have = {r[1] for r in db.execute('PRAGMA table_info(meeting_preps)')}
+    for column, kind in (('format', 'INTEGER'), ('body_sha', 'TEXT'), ('rebuilt_at', 'TEXT')):
+        if column not in have:  # a Machine from before the format stamp
+            db.execute(f'ALTER TABLE meeting_preps ADD COLUMN {column} {kind}')
+
+
+def body_sha(body):
+    return hashlib.sha256(str(body or '').encode()).hexdigest()[:24]
 
 
 def _at(value):
@@ -191,16 +212,78 @@ def judged(db, keys):
 
 def judged_today(db, since):
     ensure(db)
+    """Turns taken since `since`: briefings judged and briefings written again (stale)."""
     return db.execute("SELECT count(*) FROM meeting_preps WHERE created_at>=? AND verdict IN ('made','nothing','personal','failed')",
-                      (since,)).fetchone()[0]
+                      (since,)).fetchone()[0] + db.execute('SELECT count(*) FROM meeting_preps WHERE rebuilt_at>=?', (since,)).fetchone()[0]
 
 
-def keep(db, meeting, verdict, suggestion_id, stamp):
-    """Records a meeting as judged. After its turn: 'made' (its to-do), 'nothing' (nothing useful), 'personal' or
-    'failed'. Without one: 'taken' (another to-do already holds the meeting) or 'family' (only family and friends)."""
+def keep(db, meeting, verdict, suggestion_id, stamp, body=None):
+    """Records a meeting as judged. After its turn: 'made' (its to-do, with the body it got), 'nothing' (nothing
+    useful), 'personal' or 'failed'. Without one: 'taken' (another to-do already holds the meeting) or 'family' (only
+    family and friends)."""
     ensure(db)
-    db.execute('INSERT OR IGNORE INTO meeting_preps(dedupe_key,event_id,suggestion_id,verdict,starts_at,created_at) VALUES(?,?,?,?,?,?)',
-               (meeting['key'], meeting['id'], suggestion_id, verdict, meeting['start'].isoformat(), stamp))
+    db.execute('INSERT OR IGNORE INTO meeting_preps(dedupe_key,event_id,suggestion_id,verdict,starts_at,created_at,format,body_sha) VALUES(?,?,?,?,?,?,?,?)',
+               (meeting['key'], meeting['id'], suggestion_id, verdict, meeting['start'].isoformat(), stamp, FORMAT,
+                body_sha(body) if body is not None else None))
+
+
+def _label_heads(keys, t):
+    """Where each label's paragraph starts, in English and in the owner's language."""
+    return {h for k in keys for h in (k.split('{')[0], t(k).split('{')[0]) if h}
+
+
+def format_of(body, t):
+    """The format of a briefing made before the stamp: 1 or FORMAT by its labels, or None when a paragraph is not one
+    The Machine writes (the owner changed it)."""
+    paragraphs = [p for p in str(body or '').split('\n\n') if p.strip()]
+    old, new = _label_heads(LABELS_1, t), _label_heads(NEW_LABELS, t)
+    if not paragraphs or not all(p.startswith(tuple(old | new)) for p in paragraphs):
+        return None
+    return FORMAT if any(p.startswith(tuple(new)) for p in paragraphs) else 1
+
+
+def stale(db, open_states, current, owner_emails, owner_domains, t):
+    """The briefings to write again in this format, soonest meeting first, as upcoming() gives meetings, each with its
+    'suggestion_id' and 'was' (its body's hash): open (open_states), made in an older format, left as they were by
+    the owner, and their meeting still on, with a guest from outside and more than REBUILD_LEAD ahead. One from before
+    the stamp that is in this format already is stamped here."""
+    ensure(db)
+    rows = db.execute('SELECT m.dedupe_key,m.suggestion_id,m.format,m.body_sha,s.body,s.title_source,s.outcome,'
+                      'e.id,e.account_id,e.title,e.body AS about,e.occurred_at,e.deleted,e.metadata FROM meeting_preps m '
+                      'JOIN suggestions s ON s.id=m.suggestion_id JOIN events e ON e.id=m.event_id '
+                      f"WHERE m.verdict='made' AND coalesce(m.format,1)<? AND s.status IN ({','.join('?' * len(open_states))}) "
+                      'ORDER BY e.occurred_at,e.id', (FORMAT, *open_states)).fetchall()
+    out = []
+    for r in rows:
+        if r['format'] is None and r['body_sha'] is None:
+            told = format_of(r['body'], t)
+            if told == FORMAT:  # made by the release that brought this format, before the stamp
+                stamp(db, r['dedupe_key'], r['body'])
+            if told != 1:
+                continue
+        elif r['body_sha'] != body_sha(r['body']):
+            continue  # the owner changed it: theirs now
+        if r['title_source'] != 'auto' or r['outcome']:
+            continue
+        try:
+            meta = json.loads(r['metadata'] or '{}')
+        except ValueError:
+            continue
+        start = _at(r['occurred_at'])
+        if r['deleted'] or meta.get('status') == 'cancelled' or not start or start - current <= REBUILD_LEAD:
+            continue
+        guests = outside_guests(meta, owner_emails, owner_domains)
+        if guests:
+            out.append({'id': r['id'], 'account_id': r['account_id'], 'key': r['dedupe_key'], 'title': ' '.join(str(r['title'] or '').split())[:200],
+                        'body': str(r['about'] or ''), 'start': start, 'meta': meta, 'guests': guests[:GUESTS],
+                        'suggestion_id': r['suggestion_id'], 'was': body_sha(r['body'])})
+    return out
+
+
+def stamp(db, key, body, rebuilt_at=None):
+    """A briefing handled in this format: written again (rebuilt_at, a turn) or kept as it is."""
+    db.execute('UPDATE meeting_preps SET format=?,body_sha=?,rebuilt_at=coalesce(?,rebuilt_at) WHERE dedupe_key=?',
+               (FORMAT, body_sha(body), rebuilt_at, key))
 
 
 def moved_to(db, key, start):
@@ -287,7 +370,8 @@ def evidence(db, meeting, side, sides, owner_emails, current, open_states, resol
             if listed:
                 person['open_promises'] = listed
             todos = db.execute(f"SELECT DISTINCT s.title FROM suggestions s, json_each(s.event_ids) j WHERE s.status IN ({','.join('?' * len(open_states))}) "
-                               'AND j.value IN (SELECT event_id FROM graph_events WHERE node_id=?) LIMIT 3', (*open_states, node['id'])).fetchall()
+                               'AND j.value IN (SELECT event_id FROM graph_events WHERE node_id=?) AND substr(s.dedupe_key,1,?)!=? LIMIT 3',
+                               (*open_states, node['id'], len(KEY_PREFIX), KEY_PREFIX)).fetchall()  # a briefing is no to-do about them
             if todos:
                 person['open_todos'] = [str(t[0])[:120] for t in todos]
         people.append(person)

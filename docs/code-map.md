@@ -179,7 +179,9 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
     from outside, one briefing to-do from what the Machine already has (the Graph, looked-up profiles, where the
     conversation started and its latest messages, open promises) and, for a first meeting, a short cached web search on
     their name and organization (`openclaw infer web search`, `meeting_prep_web`), written in one background turn, or
-    none when there is nothing useful; once per meeting, by its iCalUID.
+    none when there is nothing useful; once per meeting, by its iCalUID. Each briefing carries its format
+    (`meeting_prep.FORMAT`); once after an upgrade that raises it, open, unedited briefings for meetings still ahead
+    are written again (`stale`, `meeting_prep_rebuild`; done per format in `learning_state`).
   - `machine/upkeep/agent_workspaces.py`: the nightly cleanup of Claude Code and Codex job folders nothing needs any
     more (retention.py runs it; it only reads `agent_jobs`, `suggestions` and `agent_relayed`).
   - `machine/upkeep/memory_rebuild.py`: an OpenClaw memory index rebuild that never ends by itself (the installer

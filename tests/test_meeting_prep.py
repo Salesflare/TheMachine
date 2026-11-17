@@ -309,6 +309,91 @@ class MeetingPrep(unittest.TestCase):
         self.app.config['meeting_prep'] = False
         self.assertIsNone(self.app.meeting_prep_step())
 
+    # A newer format: open briefings written again once --------------------------------------------------------------
+
+    OLD = '**Who:** Sam Rivera.\n\n**Last contact:** Sam asked about the pilot.\n\n**Decide or bring:** The pilot plan.'
+
+    def stale_pass(self, at=MONDAY):
+        """One pass as the worker runs it with no new meeting due: the next briefing in an older format, then its turn."""
+        with patch_everywhere(timeutil, 'now', lambda: at):
+            found = self.app.meeting_prep_stale_next(dt.datetime.fromisoformat(at))
+            return self.app.meeting_prep_rebuild(found) if found else None
+
+    def made_before_the_stamp(self, sid, body=None):
+        """A briefing as an older release left it: in format 1 (or the body given), with no stamp."""
+        with self.store.connect() as db:
+            db.execute('UPDATE suggestions SET body=? WHERE id=?', (body or self.OLD, sid))
+            db.execute('UPDATE meeting_preps SET format=NULL,body_sha=NULL WHERE suggestion_id=?', (sid,))
+
+    def test_an_open_briefing_in_the_old_format_is_written_again_once_only_its_body(self):
+        asked = self.mail('wmail', 'Sam Rivera <sam@globex.example>', 'Can the pilot start in December?', 4)
+        self.answer['sources'] = [f'E{asked}']
+        self.add(meeting('r1', '10:00'), meeting('r2', '11:00'))
+        old, new = self.run_pass(), self.run_pass()
+        self.made_before_the_stamp(old)
+        self.made_before_the_stamp(new, {c['id']: c['body'] for c in self.cards()}[new])  # made by the release that brought this format: kept
+        with self.store.connect() as db:
+            db.execute("UPDATE suggestions SET title='Prepare for Globex' WHERE id=?", (old,))
+            before = dict(db.execute('SELECT * FROM suggestions WHERE id=?', (old,)).fetchone())
+            turns = meeting_prep.judged_today(db, '2026-11-08T00:00:00+00:00')
+        self.app.config['meeting_prep_research'] = False  # Look up work contacts off: no search here either
+        self.app.meeting_prep_web_search = lambda q: self.fail('no search')
+        self.assertEqual(self.stale_pass(), old)
+        self.assertEqual(len(self.prompts), 3)
+        with self.store.connect() as db:
+            after = dict(db.execute('SELECT * FROM suggestions WHERE id=?', (old,)).fetchone())
+            self.assertEqual(meeting_prep.judged_today(db, '2026-11-08T00:00:00+00:00'), turns + 1)  # within the day's turns
+            stamps = {r['suggestion_id']: r['format'] for r in db.execute('SELECT suggestion_id,format FROM meeting_preps')}
+        self.assertIn('**So far:** Sam asked on Nov 5', after['body'])
+        self.assertNotIn('Last contact', after['body'])
+        for kept in ('title', 'status', 'event_ids', 'expires_at', 'snoozed_until'):
+            self.assertEqual(after[kept], before[kept], kept)
+        self.assertEqual(stamps, {old: meeting_prep.FORMAT, new: meeting_prep.FORMAT})
+        self.assertIsNone(self.stale_pass())  # none left: done for this format
+        with self.store.connect() as db:
+            self.assertTrue(db.execute('SELECT 1 FROM learning_state WHERE key=?', ('meeting_prep_format_%d' % meeting_prep.FORMAT,)).fetchone())
+        self.made_before_the_stamp(old)
+        self.assertIsNone(self.stale_pass())  # once
+        self.assertEqual(len(self.prompts), 3)
+
+    def test_a_changed_snoozed_closed_or_imminent_briefing_stays_as_it_is(self):
+        asked = self.mail('wmail', 'Sam Rivera <sam@globex.example>', 'Can the pilot start in December?', 4)
+        self.answer['sources'] = [f'E{asked}']
+        self.add(*(meeting(s, at) for s, at in (('c1', '10:30'), ('c2', '10:40'), ('c3', '10:50'), ('c4', '10:00'), ('c5', '11:00'))))
+        imminent, changed, snoozed, closed, open_ = (self.run_pass() for _ in range(5))  # soonest first
+        for sid in (changed, snoozed, closed, imminent, open_):
+            self.made_before_the_stamp(sid)
+        with self.store.connect() as db:
+            db.execute('UPDATE suggestions SET body=? WHERE id=?', (self.OLD + '\n\nMy own note.', changed))
+            db.execute("UPDATE suggestions SET status='snoozed',snoozed_until='2026-11-10T09:58:00+00:00' WHERE id=?", (snoozed,))
+            db.execute("UPDATE suggestions SET status='completed' WHERE id=?", (closed,))
+        later = '2026-11-10T09:55:00+00:00'  # c4 starts in 5 minutes: too close to write it again
+        def edit(config, prompt):  # the owner changes it while the turn runs: theirs wins
+            self.prompts.append(prompt)
+            with self.store.connect() as db:
+                db.execute('UPDATE suggestions SET body=? WHERE id=?', (self.OLD + '\n\nTyped meanwhile.', open_))
+            return json.dumps(self.answer)
+        self.app.meeting_prep_model = edit
+        self.assertIsNone(self.stale_pass(later))
+        self.assertIsNone(self.stale_pass(later))
+        bodies = {c['id']: c['body'] for c in self.cards()}
+        self.assertEqual(bodies[open_], self.OLD + '\n\nTyped meanwhile.')
+        for sid in (snoozed, closed, imminent):
+            self.assertEqual(bodies[sid], self.OLD)
+        self.assertEqual(len(self.prompts), 6)  # five briefings, then the one turn for c5
+
+    def test_the_format_stamp_is_added_to_an_older_table(self):
+        import sqlite3
+        db = sqlite3.connect(':memory:')
+        db.execute('CREATE TABLE meeting_preps(dedupe_key TEXT PRIMARY KEY,event_id INTEGER NOT NULL,suggestion_id TEXT,'
+                   'verdict TEXT NOT NULL,starts_at TEXT NOT NULL,created_at TEXT NOT NULL)')
+        meeting_prep.ensure(db)
+        self.assertLessEqual({'format', 'body_sha', 'rebuilt_at'}, {r[1] for r in db.execute('PRAGMA table_info(meeting_preps)')})
+        t = lambda k, *a: k
+        self.assertEqual(meeting_prep.format_of(self.OLD, t), 1)
+        self.assertEqual(meeting_prep.format_of('**Who:** Sam.\n\n**So far:** Asked about the pilot.', t), meeting_prep.FORMAT)
+        self.assertIsNone(meeting_prep.format_of(self.OLD + '\n\nMy own note.', t))
+
 
 if __name__ == '__main__':
     unittest.main()
