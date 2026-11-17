@@ -231,15 +231,81 @@ class Embeddings(unittest.TestCase):
 
     def test_server_down_falls_back_to_keywords_and_the_worker_retries_later(self):
         self.calls.side_effect = emb.EmbeddingError('unreachable')
-        with self.assertLogs(machine_config.LOG, 'ERROR') as logs:
+        with self.assertNoLogs(machine_config.LOG, 'ERROR'), self.assertLogs(machine_config.LOG, 'INFO') as logs:
             result = self.app.action('related', {'account_ids': ['work'], 'query': 'invoice'})
         self.assertFalse(result['semantic']); self.assertEqual(len(result['events']), 2)
-        self.assertIn('related error=unreachable', logs.output[0])
-        self.app.stop = type('Stop', (), {'n': 0, 'wait': lambda s, t: (setattr(s, 'n', s.n + 1), s.n > 1)[1]})()
+        self.assertIn('related error=unreachable', logs.output[0])  # a wait: keywords answer, no error report
+        self.calls.side_effect = emb.EmbeddingError('http_401')
         with self.assertLogs(machine_config.LOG, 'ERROR') as logs:
-            self.app.embedding_worker()
-        self.assertEqual([line.split(':', 2)[2] for line in logs.output], ['embeddings error=unreachable'])  # redacted class only
+            self.app.action('related', {'account_ids': ['work'], 'query': 'invoice'})
+        self.assertIn('related error=http_401', logs.output[0])  # anything else is still an error
         self.assertEqual(self.vectors(), {})
+
+    def run_worker(self, failures, clock):
+        """The embedding worker through len(failures) passes, the clock moved on by each wait: (waits, log lines)."""
+        waits = []
+        def wait(seconds):
+            if waits:
+                clock[0] += waits[-1]
+            waits.append(seconds)
+            return len(waits) > len(failures)
+        self.app.stop = type('Stop', (), {'wait': staticmethod(wait)})()
+        passes = iter(failures)
+        def embed_pass(settings):
+            failure = next(passes)
+            if failure:
+                raise failure
+            return 60
+        with patch.object(self.app, 'embed_pass', side_effect=embed_pass, create=True), \
+                patch('machine.app.workers.time.monotonic', side_effect=lambda: clock[0]), self.assertLogs(machine_config.LOG, 'INFO') as logs:
+            self.app.embedding_worker()
+        return waits[1:], [line.split(':', 2)[2] for line in logs.output]
+
+    def test_a_restarting_server_is_a_wait_with_back_off_and_one_error_per_long_outage(self):
+        down, busy = emb.EmbeddingError('unreachable'), emb.EmbeddingError('timeout')
+        waits, lines = self.run_worker([down, down, busy, down, None, down], [1000.0])
+        self.assertEqual(waits, [30, 60, 120, 240, 60, 30])  # doubling from the server's own restart delay; a pass that works starts over
+        self.assertEqual(lines[0], 'embeddings waits error=unreachable retry=30s')
+        self.assertFalse([line for line in lines if 'embeddings error' in line])  # minutes of restarts: no error report
+        # An outage of over an hour is reported once, with the class only; tries go on at 30 minutes at most
+        waits, lines = self.run_worker([down] * 12, [1000.0])
+        self.assertEqual(waits[-1], 1800)
+        self.assertEqual([line for line in lines if 'embeddings error' in line], ['embeddings error=unreachable'])
+        self.assertEqual(self.run_worker([ValueError('x')], [1000.0]), ([300], ['embeddings error=ValueError']))  # any other failure: an error, as before
+
+    def test_one_request_at_a_time_and_a_waiting_search_goes_first(self):
+        import threading
+        order, release, running = [], threading.Event(), threading.Event()
+        def slow(settings, texts, timeout=120):
+            order.append((texts[0], round(timeout)))
+            if texts[0] == 'first':
+                running.set(); release.wait(5)
+            return fake_request(settings, texts, timeout)
+        self.calls.side_effect = slow
+        def work(text):
+            with emb.background():
+                emb.embed(SETTINGS, [text])
+        first = threading.Thread(target=work, args=('first',)); first.start(); running.wait(5)
+        later = threading.Thread(target=work, args=('history',)); later.start()
+        search = threading.Thread(target=emb.embed, args=(SETTINGS, ['search'], 30)); search.start()
+        while emb.TURNS.searches < 1:
+            emb.time.sleep(0.01)
+        emb.time.sleep(0.05)
+        self.assertEqual([t for t, _ in order], ['first'])  # nothing next to a running request
+        release.set()
+        for thread in (first, later, search):
+            thread.join(5)
+        self.assertEqual([t for t, _ in order], ['first', 'search', 'history'])
+        self.assertEqual(order[0][1], 120)  # background work keeps its full timeout
+        self.assertLessEqual(order[1][1], 30)  # a search's wait counts toward its own
+        # A search that cannot get its turn in time gives up quietly (a wait), and background work goes on after it
+        emb.TURNS.busy = True
+        try:
+            with self.assertRaises(emb.EmbeddingError) as error:
+                emb.embed(SETTINGS, ['late'], 0.05)
+        finally:
+            emb.TURNS.busy = False
+        self.assertTrue(emb.waiting(error.exception)); self.assertEqual(emb.TURNS.searches, 0)
 
     def test_only_an_http_server_address_is_ever_opened(self):
         opened = []
@@ -384,18 +450,20 @@ class Embeddings(unittest.TestCase):
             self.assertFalse(emb.refused(emb.EmbeddingError(code)))
 
     def test_requests_stay_within_the_provider_limits(self):
-        self.assertEqual(emb.limits(SETTINGS), (2048, 8192, 64, 1.0))
+        self.assertEqual(emb.limits(SETTINGS), (2048, 4096, 16, 1.0))
         self.assertEqual(emb.limits({**SETTINGS, 'url': 'https://api.openai.com/v1'}), (8191, 300000, 2048, 1.0))
         custom = {**SETTINGS, 'max_input_tokens': 512, 'max_batch_tokens': 1024, 'bytes_per_token': 2}
-        self.assertEqual(emb.limits(custom), (512, 1024, 64, 2.0))
+        self.assertEqual(emb.limits(custom), (512, 1024, 16, 2.0))
         self.assertEqual(len(emb.fit('é' * 2000, 512, 2.0).encode()), (512 - emb.SPECIAL_TOKENS) * 2)  # never half a character
-        groups = list(emb.batches(['x' * 3000] * 10, SETTINGS))
-        self.assertEqual([len(g) for g in groups], [4, 4, 2])  # 2,048 tokens each at most, 8,192 a request
-        self.assertTrue(all(sum(emb.tokens(t) for t in g) <= 8192 for g in groups))
-        self.assertEqual([len(g) for g in emb.batches(['x'] * 100, SETTINGS)], [64, 36])
+        # A small server (512-token inputs): eight full inputs a request at most, never 16 long ones at once
+        small = {**SETTINGS, 'max_input_tokens': 512}
+        groups = list(emb.batches(['x' * 3000] * 10, small))
+        self.assertEqual([len(g) for g in groups], [8, 2])  # 512 tokens each at most, 4,096 a request
+        self.assertTrue(all(sum(emb.tokens(t) for t in g) <= 4096 for g in groups))
+        self.assertEqual([len(g) for g in emb.batches(['x'] * 100, SETTINGS)], [16] * 6 + [4])
         sent = self.llama()
-        self.assertEqual(len(emb.embed(SETTINGS, ['y ' * 3000] * 10)), 10)
-        self.assertEqual([len(batch) for batch in sent], [4, 4, 2])
+        self.assertEqual(len(emb.embed(SETTINGS, ['y ' * 3000] * 5)), 5)
+        self.assertEqual([len(batch) for batch in sent], [2, 2, 1])  # two full 2,048-token inputs a request
 
     def test_related_lines_name_the_owners_own_to_dos(self):
         """A to-do the owner added (owner.card) has no source line of its own: as a seed or a match it still gets listed."""

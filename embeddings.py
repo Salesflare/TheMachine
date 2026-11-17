@@ -83,9 +83,15 @@ QUOTED = re.compile(r'\n*\[Quoted earlier messages:.*', re.S)  # the stored mark
 QUERY_PREFIX = 'task: search result | query: '
 # Per input and per request, in tokens. llama-server refuses an input longer than its physical batch
 # (-ub, 2048 in deploy/embeddinggemma.service, also EmbeddingGemma's context) with HTTP 500, and
-# OpenAI's /v1/embeddings takes 8,191 tokens per input and 300,000 per request.
-LIMITS = {'local': (2048, 8192, 64), 'openai': (8191, 300000, 2048)}  # input, request, inputs per request
+# OpenAI's /v1/embeddings takes 8,191 tokens per input and 300,000 per request. A local request stays at 4,096
+# tokens counted a byte each, mostly 1,000 to 2,000 real ones: on a small 2-core server (about 130 tokens a second on
+# the one core it gets) some 10 to 30 seconds at worst, so it never nears its timeout while the server also serves
+# OpenClaw, and a search waits behind one such request at most. 8,192 and 64 inputs took over 2 minutes there.
+LIMITS = {'local': (2048, 4096, 16), 'openai': (8191, 300000, 2048)}  # input, request, inputs per request
 SPECIAL_TOKENS = 16  # room for BOS/EOS and the like the server adds
+# The server restarting (unreachable), busy (timeout), or the service's own queue full (busy): a wait, not a fault.
+WAITS = frozenset({'unreachable', 'timeout', 'busy'})
+TURN_WAIT = 600  # seconds background work waits for its turn in the queue before it gives up (busy)
 
 
 def settings(config):
@@ -98,6 +104,49 @@ def settings(config):
 
 class EmbeddingError(Exception):
     """A redacted failure class (never the text or the server's reply)."""
+
+
+def waiting(error):
+    """The server restarting or busy (WAITS): tried again later, not a fault."""
+    return isinstance(error, EmbeddingError) and str(error) in WAITS
+
+
+class Turns:
+    """One request at a time to the embedding server from all of the service's threads, a search first: on a small
+    server parallel requests only share its cores and each takes longer. Background work (foreground=False) waits
+    while a search waits; a search waits behind at most the one request already running, within its own timeout."""
+
+    def __init__(self):
+        self.ready = threading.Condition()
+        self.busy, self.searches = False, 0
+
+    @contextlib.contextmanager
+    def turn(self, foreground, timeout):
+        """Seconds left of `timeout` once it is this caller's turn (a search's wait counts; background work's does
+        not). EmbeddingError('busy') when the turn did not come in time."""
+        deadline = None  # the clock is read only when there is a wait
+        with self.ready:
+            self.searches += foreground
+            try:
+                while self.busy or (not foreground and self.searches):
+                    clock = time.monotonic()
+                    deadline = deadline or clock + (timeout if foreground else TURN_WAIT)
+                    if clock >= deadline:
+                        raise EmbeddingError('busy')
+                    self.ready.wait(deadline - clock)
+                self.busy = True
+            finally:
+                self.searches -= foreground
+                self.ready.notify_all()
+        try:
+            yield max(deadline - time.monotonic(), 1) if foreground and deadline else timeout
+        finally:
+            with self.ready:
+                self.busy = False
+                self.ready.notify_all()
+
+
+TURNS = Turns()
 
 
 def document(title, body):
@@ -268,13 +317,29 @@ def request(settings, texts, timeout=120):
     return [item['embedding'] for item in sorted(data, key=lambda d: d.get('index', 0))]
 
 
+LANE = threading.local()
+
+
+@contextlib.contextmanager
+def background():
+    """Embedding in this thread is background work (the service's embedding worker): it takes its turn after any
+    search someone waits on (TURNS). Every other caller is a search, a chat or a preparation and goes first."""
+    LANE.background = True
+    try:
+        yield
+    finally:
+        LANE.background = False
+
+
 def embed(settings, texts, timeout=120):
     """Normalized vectors at the configured Matryoshka size; long texts are cut to fit the server and
-    big lists go in several requests."""
+    big lists go in several requests, each in its turn (TURNS)."""
     dims = int(settings.get('dims', 256))
     raw = []
+    foreground = not getattr(LANE, 'background', False)
     for group in batches(texts, settings):
-        raw += request(settings, group, timeout)
+        with TURNS.turn(foreground, timeout) as left:
+            raw += request(settings, group, left)
     result = []
     for vector in raw:
         if len(vector) < dims:

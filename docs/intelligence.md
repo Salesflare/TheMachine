@@ -608,16 +608,22 @@ differently, the same topic in another source, an answer that already came in.
   running. A changed signal drops its old passages and is split again.
 - **Fitting the server.** Each input is cut to `max_input_tokens` (2,048 by default; 8,191 for api.openai.com), counted
   as one token per UTF-8 byte, the worst case (`bytes_per_token` raises that). A request holds up to
-  `max_batch_tokens` (8,192; 300,000 for OpenAI) and `max_batch_inputs` (64; 2,048). A signal the server still refuses
+  `max_batch_tokens` (4,096; 300,000 for OpenAI) and `max_batch_inputs` (16; 2,048). A signal the server still refuses
   is set aside (`event_vector_skips`) and tried again after a day or when it changes.
+- **One request at a time.** The service sends the server one request at a time from all its parts, and a search
+  someone waits on goes before background work (new signals, passages, history, facts). A local request stays small
+  (30 seconds at most on one core of a small server), so a search waits behind one at most and background work never
+  nears its 2-minute timeout while the server also serves OpenClaw.
 - **Queries.** `assistant_signals related` takes explicit `account_ids` and `event_ids` and/or a `query`, `limit` up to
   20 and optional `exclude_event_ids`, and returns the `events` shape plus a `similarity`. With a query, the meaning
   ranking is fused with full-text ranking; `events` with `semantic:true` uses the same. `account_ids:["all"]` searches
   every account (for `events` and `related` only).
 - **Search on the dashboard.** The Cmd+K search covers all accounts by default, by meaning and words together, and
   labels each result with its account.
-- **When the server is down**, the service logs `embeddings error=<class>` and retries after five minutes. Queries still
-  get keyword matches, and nothing else is affected.
+- **When the server is down**, restarting or busy (`unreachable`, `timeout`), the service logs `embeddings waits` and
+  tries again after 30 seconds, twice as long each time up to 30 minutes. Only an outage that lasts an hour is logged
+  as an error (`embeddings error=<class>`), once. Other failures are errors and wait five minutes. Queries still get
+  keyword matches, and nothing else is affected.
 - **What was learned, per task.** The facts and draft rules you taught it get a vector each too (`fact_vectors`). Once
   there are more than a few, a Do it run gets the ones learned on its to-do plus up to 8 closest in meaning (cosine 0.3
   or more), not the whole list. Without embeddings it gets the newest that fit.
