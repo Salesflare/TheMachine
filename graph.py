@@ -319,14 +319,6 @@ class Owner:
                     if plain_name(name):
                         self.names.add(plain_name(name))
 
-    def learn_sent(self, sent_by):
-        """learn() from what own_addresses.evidence read already: {From address of sent mail: the plain names on it}."""
-        for addr, names in sent_by.items():
-            if addr in self.excluded:
-                continue
-            self.emails.add(addr)
-            self.names |= names - {None, ''}
-
     def mine(self, address):
         """The owner's own address, one they marked as the team's, or a shared role address (info@, support@) at the
         owner's domains."""
@@ -1112,52 +1104,6 @@ BUILD_TRIES = 2
 GRAPH_WATCHED = ('graph_nodes', 'graph_same', 'graph_merges', 'graph_names', 'graph_relations', 'identity_names', 'manual_nodes',
                  'org_edits', 'person_edits', 'person_orgs', 'person_roles', 'project_people', 'projects', 'forgotten_people',
                  'graph_resources', 'hidden_domains', 'record_owners')
-# What a build reads, by the change counters of machine/stamps.py (events by events_shared: what a message shows, not
-# the review's bookkeeping on it). A build's summary carries its mark (the counters it was computed from, its own writes
-# added); while they are all the same, nothing a build reads changed and the graph worker skips the next one (unchanged).
-# tests/test_graph_skip.py traces a build to keep this list whole.
-GRAPH_INPUTS = tuple(sorted({
-    *GRAPH_WATCHED, 'contact_marks', 'crm_tags', 'decision_annotations', 'decisions', 'event_projects',
-    'event_vectors', 'forgotten_salt', 'graph_events', 'graph_history', 'graph_history_events', 'graph_links', 'graph_unnamed',
-    'mail_hidden', 'mail_shown', 'org_aliases', 'org_profiles', 'own_address_choices', 'own_address_fetched', 'own_addresses',
-    'own_domains', 'owner_numbers', 'person_facts', 'person_photos', 'person_profiles', 'project_org_backfill', 'promises',
-    'share_private', 'share_threads', 'side_rule', 'suggestions'}))
-INPUT_COUNTERS = ('events_shared', *GRAPH_INPUTS)
-
-
-def _unwatched(db):
-    """Whether a counter a build needs is missing (graph_edits' and those of GRAPH_INPUTS): made in the setup's write."""
-    tables = {r[0] for r in db.execute("SELECT name FROM sqlite_master WHERE type='table'")}
-    made = {r[0] for r in db.execute("SELECT name FROM sqlite_master WHERE type='trigger'")}
-    if 'graph_edits' not in tables or 'data_stamps' not in tables or not db.execute('SELECT 1 FROM graph_edits WHERE id=1').fetchone():
-        return True
-    return any(f'graph_edit_{t}_insert' not in made for t in GRAPH_WATCHED if t in tables) \
-        or any(f'stamp_{t}_insert' not in made for t in GRAPH_INPUTS if t in tables) \
-        or 'stamp_events_shared_insert' not in made
-
-
-def input_counters(db):
-    """{counter: n} for what a build reads and graph_edits, in the caller's snapshot; None without them."""
-    try:
-        found = dict(db.execute('SELECT name,n FROM data_stamps WHERE name IN (SELECT value FROM json_each(?))',
-                                (json.dumps(INPUT_COUNTERS),)).fetchall())
-        found['graph_edits'] = _edits(db)
-    except sqlite3.Error:
-        return None
-    return found
-
-
-def _mark(before, pre, post):
-    """The counters a build's graph stands for: those it was computed from, with what its own publish added (post - pre);
-    a change by anyone else since then makes them differ. None when a counter came or went meanwhile."""
-    if before is None or pre is None or post is None or set(before) != set(pre) or set(pre) != set(post):
-        return None
-    return {k: before[k] + post[k] - pre[k] for k in sorted(post)}
-
-
-def unchanged(db, mark):
-    """Nothing a build reads changed since the build that returned this mark (its summary's 'mark')."""
-    return bool(mark) and not db.in_transaction and input_counters(db) == mark
 
 
 class Outdated(Exception):
@@ -1228,16 +1174,11 @@ def _signals(db, horizon):
     return signals
 
 
-def _unusable_profiles(db):
-    """Organization profiles saved before the check (a shared host's domain, another company): their domains."""
-    return [r['domain'] for r in db.execute("SELECT domain,profile FROM org_profiles WHERE profile IS NOT NULL AND status='found'").fetchall()
-            if not enrichment.usable(r['domain'], json.loads(r['profile']))]
-
-
-def _drop_unusable_profiles(db, domains=None):
-    """Those profiles dropped."""
-    for domain in _unusable_profiles(db) if domains is None else domains:
-        db.execute("UPDATE org_profiles SET status='none',profile=NULL WHERE domain=? AND status='found'", (domain,))
+def _drop_unusable_profiles(db):
+    """Organization profiles saved before the check (a shared host's domain, another company): dropped."""
+    for r in db.execute("SELECT domain,profile FROM org_profiles WHERE profile IS NOT NULL AND status='found'").fetchall():
+        if not enrichment.usable(r['domain'], json.loads(r['profile'])):
+            db.execute("UPDATE org_profiles SET status='none',profile=NULL WHERE domain=? AND status='found'", (r['domain'],))
 
 
 def _build(db, config, now, team=(), kin=None, locked=True, history=False):
@@ -1272,7 +1213,7 @@ def _build_in(db, config, now, team, kin, locked, history=False):
     from machine.graph.relations import relation_links
     from machine.graph.rows import event_and_unnamed_rows
     from machine.graph.laps import Laps
-    import own_addresses
+    from machine.graph import setup
     started = timeutil.clock()
     lap = Laps()
     current = parse_time(now)
@@ -1284,36 +1225,12 @@ def _build_in(db, config, now, team, kin, locked, history=False):
     old = [(r[0], r[1], r[2], parse_time(r[3]), _metadata(r[4])) for r in graph_history.rows(db, horizon)] if history else []
     old = [r for r in old if r[4] is not None]
     past = {r[0] for r in old}
-    found = own_addresses.evidence(config, signals)  # read from the signals once, outside the write lock
-    # The setup writes only what changed, each under the write lock for a moment; with nothing to change (most builds)
-    # it takes no lock at all, so it never waits on a sync's or a request's write
-    if locked or _unwatched(db) or _unusable_profiles(db) or own_addresses.unsaved(
-            db, own_addresses.detect(config, own_addresses.fetched(db, config), found, team)):
-        if not locked:
-            db.execute('BEGIN IMMEDIATE')
-        _watch(db)
-        stamps.watch(db, GRAPH_INPUTS)
-        stamps.watch_events_shared(db)
-        own_addresses.refresh(db, config, signals, team, now, found)  # the owner's own addresses, before anyone is told apart from them
-        _drop_unusable_profiles(db)
-        if not locked:
-            db.execute('COMMIT')
-    owner = Owner(config, db)
-    if locked:  # the last try reads it all again, as every build once did (tests/test_graph_skip.py compares the two)
-        owner.learn(signals)
-    else:
-        owner.learn_sent(found['sent_by'])
-    if locked or self_records(db, owner):
-        if not locked:
-            db.execute('BEGIN IMMEDIATE')
-        fold_self_records(db, owner, now)  # a person made from the owner's own address goes into About you (2026-10-26)
-        if not locked:
-            db.execute('COMMIT')
+    owner = setup.prepare(db, config, signals, team, now, locked)  # writes only what changed (machine/graph/setup.py)
     if not locked:
         db.execute('BEGIN')  # deferred: its first read below is the snapshot all of this build is computed from
         seen = _edits(db)
         db.execute('PRAGMA query_only=ON')  # computing writes nothing: no lock is taken until the publish
-    before = input_counters(db)  # what this build is computed from (unchanged)
+    before = setup.counters(db)  # what this build is computed from (its mark)
     lap('setup')
     # The passes (machine/graph/), in the order they run: each one reads what the ones before it found; lap times each.
     (kept, mailings, listed, warmup, gone, per_event, names, x_names, crm_names, paying_names, said_orgs, appears,
@@ -1353,7 +1270,7 @@ def _build_in(db, config, now, team, kin, locked, history=False):
         db.execute('BEGIN IMMEDIATE')
         if _edits(db) != seen:
             raise Outdated()
-    pre = input_counters(db)
+    pre = setup.counters(db)
     side_rows = side_changes(db, nodes, now)
     if side_rows is not None:
         db.executemany('INSERT OR REPLACE INTO side_changes(node_id,rule,before,after,why,at) VALUES(?,?,?,?,?,?)', side_rows)
@@ -1365,7 +1282,7 @@ def _build_in(db, config, now, team, kin, locked, history=False):
     mailings.publish(db, nodes)  # Hidden senders, under People
     db.execute('INSERT OR REPLACE INTO graph_state(id,built_at,signals,took_ms) VALUES(1,?,?,?)', (now, len(signals), took))
     fill_orgs(db, now)  # projects with no organization yet get their people's, where that is clear
-    mark = _mark(before, pre, input_counters(db))
+    mark = setup.mark(before, pre, setup.counters(db))
     db.execute('COMMIT')
     lap('publish')
     return {'mark': mark,'people': sum(1 for n in nodes if n[1] == 'person'), 'projects': sum(1 for n in nodes if n[1] == 'project'),

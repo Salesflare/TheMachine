@@ -21,6 +21,7 @@ import gap_note
 import gbrain
 import graph
 import graph_apart
+from machine.graph import setup as graph_setup
 import graph_board_reviews
 import graph_show
 import graph_updates
@@ -53,7 +54,7 @@ GRAPH_CHECK_SECONDS = 60  # how often the graph worker looks for new organizatio
 GRAPH_RETRY_SECONDS = 5   # a build that met edits on the way: the next try
 GRAPH_LOCK_AFTER = 1800   # this long without a published build: the last try holds the write lock (graph.build lock_last)
 GRAPH_SLOW_MS = 10_000    # a build that takes this long logs its passes' times (slow_build_line)
-GRAPH_KEEP_SECONDS = 3600  # the graph worker skips a build with nothing changed (graph.unchanged) for this long at most
+GRAPH_KEEP_SECONDS = 3600  # the graph worker skips a build with nothing changed (graph_setup.unchanged) for this long at most
 
 
 def _plain(value):
@@ -577,14 +578,14 @@ class GraphActionsApp:
     def graph_build(self, lock_last=True, apart=False, keep=False):
         """apart: in a process of its own (graph_apart.py), as the graph worker builds, so page requests don't wait on it
         for Python; in this one where no child can run. keep: no build while nothing it reads changed since the last one
-        here (graph.unchanged: the database's change counters, the config and the owner's Fleets), for up to
+        here (graph_setup.unchanged: the database's change counters, the config and the owner's Fleets), for up to
         GRAPH_KEEP_SECONDS, after which a build counts the time gone by: {'skipped': True}."""
         args = (self.config, now(), self.fleet_addresses(), self.fleet_circles())
         inputs = hashlib.blake2b(json.dumps([args[0], args[2], args[3]], sort_keys=True, default=_plain).encode(), digest_size=16).digest()
         kept = self.__dict__.get('graph_mark')
         if keep and kept and kept[0] == inputs and time.monotonic() - kept[2] < GRAPH_KEEP_SECONDS:
             with self.store.connect() as db:
-                if graph.unchanged(db, kept[1]):
+                if graph_setup.unchanged(db, kept[1]):
                     return {'skipped': True}
         self.graph_mark = None
         built = graph_apart.run(self.store, *args, history=True, lock_last=lock_last) if apart else None

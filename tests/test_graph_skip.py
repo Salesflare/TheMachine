@@ -1,4 +1,4 @@
-"""A graph build only when something it reads changed (graph.unchanged, App.graph_build keep), and a setup that writes,
+"""A graph build only when something it reads changed (graph_setup.unchanged, App.graph_build keep), and a setup that writes,
 and takes the write lock, only for what changed: the graph comes out the same as a full build's, row for row."""
 import re
 import sqlite3
@@ -10,6 +10,7 @@ import graph
 import graph_golden
 import machine.app.graph_actions as graph_actions
 import machine.main as machine_main
+from machine.graph import setup as graph_setup
 import test_graph as tg
 from test_graph import CONFIG, NOW, chat, mail
 
@@ -99,26 +100,26 @@ class Skip(unittest.TestCase):
             db.isolation_level = None
             _, sql = self.traced(db, lambda: graph.build(db, SETTINGS, NOW.isoformat()))
         read = {t.lower() for s in sql for t in re.findall(r'\b(?:FROM|JOIN)\s+([A-Za-z_]\w*)', s)}
-        self.assertEqual(read - set(graph.GRAPH_INPUTS) - UNCOUNTED, set(), 'add these to graph.GRAPH_INPUTS')
+        self.assertEqual(read - set(graph_setup.GRAPH_INPUTS) - UNCOUNTED, set(), 'add these to graph_setup.GRAPH_INPUTS')
 
     def test_unchanged_until_something_a_build_reads_changes(self):
         self.fixture()
         mark = self.build()['mark']
         with self.store.connect() as db:
-            self.assertTrue(graph.unchanged(db, mark))
+            self.assertTrue(graph_setup.unchanged(db, mark))
             db.execute('UPDATE events SET ingested_at=ingested_at')  # the review's bookkeeping on a message: not read by a build
             db.commit()
-            self.assertTrue(graph.unchanged(db, mark))
-            self.assertFalse(graph.unchanged(db, None))
+            self.assertTrue(graph_setup.unchanged(db, mark))
+            self.assertFalse(graph_setup.unchanged(db, None))
         self.add(mail(0, 'Kim Lee <kim@initech.example>', 'sam@acme.com'))  # a new message
         with self.store.connect() as db:
-            self.assertFalse(graph.unchanged(db, mark))
+            self.assertFalse(graph_setup.unchanged(db, mark))
         mark = self.build()['mark']
         with self.store.connect() as db:
-            self.assertTrue(graph.unchanged(db, mark))
+            self.assertTrue(graph_setup.unchanged(db, mark))
             graph.rename(db, 'email:kim@initech.example', 'Kimberly Lee', NOW.isoformat())  # the owner's edit
             db.commit()
-            self.assertFalse(graph.unchanged(db, mark))
+            self.assertFalse(graph_setup.unchanged(db, mark))
 
     def test_the_worker_skips_a_timed_build_only_while_nothing_changed(self):
         self.fixture()
