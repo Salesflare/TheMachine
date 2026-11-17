@@ -90,6 +90,15 @@ class MobileShellTest(unittest.TestCase):
         for uses in re.findall(r'uses: (\S+)', flow):
             self.assertRegex(uses, r'@[0-9a-f]{40}$')
 
+    def test_android_opens_gmail_links_in_the_gmail_app(self):
+        # a mail's Open in Gmail on Android: the Gmail app by its package, else the phone's browser as any link
+        java = (MOBILE / 'android/app/src/main/java/computer/themachine/app/MachineShellPlugin.java').read_text()
+        self.assertIn('GMAIL_HOST = "mail.google.com", GMAIL_APP = "com.google.android.gm"', java)
+        outside = java[java.index('private void openOutside'):]
+        outside = outside[:outside.index('\n    }\n')]
+        self.assertLess(outside.index('.setPackage(GMAIL_APP)'), outside.index('Intent intent = new Intent(Intent.ACTION_VIEW, url);'))
+        self.assertIn('GMAIL_HOST.equals(url.getHost())', outside)
+
     def test_native_sides_agree(self):
         java = (MOBILE / 'android/app/src/main/java/computer/themachine/app/MachineShellPlugin.java').read_text()
         swift = (MOBILE / 'ios/App/App/MachineShellPlugin.swift').read_text()

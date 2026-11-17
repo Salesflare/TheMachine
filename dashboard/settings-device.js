@@ -18,6 +18,11 @@ const inApp=()=>['standalone','fullscreen','window-controls-overlay'].some(m=>ma
 let installEvt=null,relatedInstalled=false;
 // Seen as the app: kept, as a tab can't tell. An install offer: not installed.
 if(inApp())devStore.set('app-installed','1');
+// Android's browser keeps a Gmail link to itself: as an intent it opens the Gmail app, the browser without it.
+// The phone app hands links to Android (MachineShellPlugin.openOutside); iPhone has no app link to one mail.
+// On window: after the page's own handlers (a to-do's link that opens the viewer instead)
+const gmailIntent=u=>'intent://'+u.slice(8)+'#Intent;scheme=https;package=com.google.android.gm;S.browser_fallback_url='+encodeURIComponent(u)+';end';
+if(DEV.android&&!DEV.phoneApp)addEventListener('click',e=>{const a=e.target.closest?.('a[href^="https://mail.google.com/"]');if(a&&!e.defaultPrevented){e.preventDefault();location.href=gmailIntent(a.href)}});
 const appInstalled=()=>inApp()||!installEvt&&(relatedInstalled||devStore.get('app-installed')==='1');
 // Installing here: the browser's prompt (Chromium), steps (iPhone, Mac Safari) or nothing (Firefox).
 function installKind(){if(!nudgeable)return null;if(installEvt)return DEV.mobile?'android':'desktop';if(appInstalled())return null;return DEV.ios?'ios':DEV.macSafari?'mac':null}

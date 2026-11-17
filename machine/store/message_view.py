@@ -33,7 +33,6 @@ import sqlite3
 import graph
 from machine.cards import group_sender
 from machine.sources.android import android_app_shown, android_text_shown
-from machine.sources.gmail import phone_link
 from machine.sources.slack import slack_plain
 from machine.store import graph_identifiers
 from mail_senders import relay
@@ -482,7 +481,7 @@ def transcript_turns(body, start=None):
 
 def list_row(kind, title, body, m, occurred_at=''):
     """How one message reads as a row in a list of them (Messages, events-list.js), by the same rules as the viewer:
-    {'title', 'who', 'text', 'url', 'phone_url'?, 'app'}. `who` is who it's from by name (never an address, a package or
+    {'title', 'who', 'text', 'url', 'app'}. `who` is who it's from by name (never an address, a package or
     the title again), `text` its words without raw stamps, ids or markup, `url` where it opens outside (https only,
     else ''), and `app` the app that is ("Gmail"; '' is "Open original"). Every kind with a link gets it, the same way."""
     m = m if isinstance(m, dict) else {}
@@ -526,10 +525,6 @@ def list_row(kind, title, body, m, occurred_at=''):
     row = {'title': title, 'who': who, 'text': text.strip()[:2000], 'url': url, 'app': app_of(kind, url) if url else ''}
     if turns:  # a transcript's first turns, each by its speaker (the row shows three lines)
         row['turns'] = [{'from': t['from'], 'body': t['body'][:300]} for t in turns[:6]]
-    if url and kind == 'gmail.message':
-        phone = phone_link(url, m.get('thread_id'))
-        if phone:
-            row['phone_url'] = phone
     return row
 
 

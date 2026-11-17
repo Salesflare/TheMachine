@@ -6,17 +6,16 @@ const {chromium}=await import('./browser.mjs');
 // An HTML email reads whole in the viewer (dashboard/events-email-frame.js). A template that sets height:100% on its
 // <html>, <body> and wrapper made the frame as tall as the frame itself (120px): only the header logo showed, never
 // the text. The frame now takes the email's own height. In dark mode a logo drawn dark on a see-through background
-// keeps the light background it was drawn on, as Gmail shows it. And "Open in Gmail" on a phone opens the
-// conversation on Gmail's mobile site in the right account (views.event_views phone_url); a desktop keeps the desktop
+// keeps the light background it was drawn on, as Gmail shows it. And "Open in Gmail" is the same link on a phone and
+// a computer (test_gmail_app_dashboard.mjs: Android hands it to the Gmail app); no mobile-site
 // link. Made-up mail; nothing is sent. EMAIL_FRAME_SHOTS=dir saves screenshots.
 const dashboard=await dashboardPage();
 const now=new Date().toISOString();
 const DESKTOP='https://mail.google.com/mail/u/?authuser=owner%40example.com#all/18c0ffee00000002';
-const PHONE='https://mail.google.com/mail/mu/mp/?authuser=owner%40example.com#cv/All%20Mail/18c0ffee00000001';
 const cards=[{id:'m1',title:'Check the account notice',body:'A notice about the account.',status:'pending',scope:'work',created_at:now,event_ids:[7],source_line:'Email from Example Cloud · Thu 12 Nov'}];
 const state={suggestions:cards,promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],review_live:{runs:[]},connectors:[],fleet:{on:false,fleets:[]}};
 const original={kind:'email',view:'email',source:'gmail.message',event_id:7,from:'Example Cloud <hello@cloud.example>',to:'owner@example.com',
- occurred_at:now,title:'Account notice: a change to your sign-in',body:'Hello,\n\nA change to your sign-in.',url:DESKTOP,phone_url:PHONE};
+ occurred_at:now,title:'Account notice: a change to your sign-in',body:'Hello,\n\nA change to your sign-in.',url:DESKTOP};
 // A dark wordmark on a transparent background, like a mail's header logo
 const logo='data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="160" height="40"><text x="0" y="30" font-size="28" font-family="sans-serif" fill="#111">Example</text></svg>');
 const para=n=>Array.from({length:n},(_,i)=>`<p>Paragraph ${i+1} of the notice: what changed, what it means for the account and what to do next.</p>`).join('');
@@ -61,8 +60,8 @@ try{
   const rgb=(/rgba?\((\d+), (\d+), (\d+)/.exec(behind)||[]).slice(1).map(Number);
   if(scheme==='dark')assert.ok(rgb.length&&Math.min(...rgb)>200,`dark mode: the logo has ${behind} behind it`);
   else assert.match(behind,/rgba\(0, 0, 0, 0\)|transparent/);
-  // Open in Gmail: the mobile site's conversation on a phone, the desktop link on a computer
-  assert.equal(await page.locator('#email-content .email-open a').getAttribute('href'),phone?PHONE:DESKTOP);
+  // Open in Gmail: the one link, on a phone as on a computer
+  assert.equal(await page.locator('#email-content .email-open a').getAttribute('href'),DESKTOP);
   assert.equal(await page.locator('#email-content .email-open a').innerText(),'Open in Gmail ↗');
   if(shots)await page.screenshot({path:`${shots}/email-frame-${width}-${scheme}.png`,fullPage:false});
   await context.close();

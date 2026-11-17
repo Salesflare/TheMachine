@@ -16,18 +16,13 @@ import ms_graph
 from sources import MICROSOFT_SERVICES, SourceError, gog_read, transient
 from timeutil import now
 
-AUTHUSER = re.compile(r'^https://mail\.google\.com/mail/u/\?authuser=([^#&]+)#')
-THREAD = re.compile(r'[0-9a-f]{8,24}')
 
 
-def phone_link(url, thread):
-    """A Gmail message's link for a phone. On a phone mail.google.com serves its mobile site, which drops the desktop
-    link's #all/<message> and lands in the inbox; the mobile site opens a conversation as #cv/<label>/<thread> (the
-    thread's id, not the message's), in the account the link names. None when the link isn't Gmail's own."""
-    account = AUTHUSER.match(str(url or ''))
-    if not account or not THREAD.fullmatch(str(thread or '')):
-        return None
-    return f'https://mail.google.com/mail/mu/mp/?authuser={account[1]}#cv/All%20Mail/{thread}'
+def gmail_link(email, message):
+    """A Gmail message's link, on a computer and on a phone alike: /mail/u/?authuser=<address>#all/<message>, the
+    address encoded (it picks the account among the ones signed in) and the API's hex message id. The phone's Gmail
+    app opens this form; the old mobile-site link (/mail/mu/mp/...#cv/...) ended in an unrelated msgid: search."""
+    return 'https://mail.google.com/mail/u/?authuser=' + urllib.parse.quote(str(email)) + '#all/' + str(message)
 
 
 class Gmail:
@@ -168,7 +163,7 @@ def message_event(account, raw, config=None):
         metadata['bookings'] = booked
     metadata.update(thread_id=raw.get('threadId'), labels=sorted(raw.get('labelIds', [])),
                     source_url=raw.get('webLink') if account.get('service') in ('outlook', 'imap') else
-                    'https://mail.google.com/mail/u/?authuser=' + urllib.parse.quote(account['email']) + '#all/' + raw['id'],
+                    gmail_link(account['email'], raw['id']),
                     truncated=len(body) > 40000, quoted_history_chars=quoted,
                     quoted_history_shortened=quoted > QUOTED_HISTORY_KEPT)
     return {'account_id': account['id'], 'source_id': raw['id'], 'kind': 'gmail.message',
