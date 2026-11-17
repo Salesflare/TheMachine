@@ -1014,7 +1014,13 @@ top of Learning, What I've learned. It never blocks setup: nothing waits for it.
   codes, keys or card and account numbers. The owner pastes its answer back. The answer is never stored.
 - **Read in code.** ChatGPT's Markdown, Claude's fenced block and Gemini's bold headings and numbered lists read the
   same (`parse`): only bullet lines when there are any, the talk around a code block left out, long lines split, at
-  most 80 lines of 240 characters.
+  most 80 lines of 240 characters. Quote marks around a whole line go (asked to keep the owner's words, an assistant
+  quotes them); quotes inside a line stay. Lines imported before that lose them once (`imports_unquoted_once`), only
+  ones the owner never edited.
+- **Room.** Imported lines count toward the cap of 80 facts about no one. When the list is past it, another AI's
+  claim (an imported line the owner didn't edit, or a connected AI's fact) is set aside before the owner's own
+  (`set_aside`), so a big import never pushes out what the owner taught it. Prompts don't grow with an import: each
+  keeps its own fact budget and picks by relevance.
 - **Secrets out first.** Any line that looks like a secret is dropped before it is shown, sent to a model or kept
   (`secret`): the chat's key and token patterns (`chat.CHAT_SECRETS`), token-shaped strings, IBANs (checksum checked),
   card numbers (Luhn checked), social security numbers, and a password, PIN or code with its value. The review says how

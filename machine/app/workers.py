@@ -396,6 +396,7 @@ class WorkersApp:
         answered themselves instead of sending becomes a lesson for the next drafts, and that to-do closes by itself."""
         seeded, learned = self.store.seed_voices(), self.store.learn_sent_elsewhere()
         self.store.answered_elsewhere()
+        self.store.imports_unquoted_once()  # one time: imported lines lose the quote marks around them (memory_import.parse)
         self.store.name_links_once()  # one time: facts already learned are tied to the record they name (fact_links.py)
         if self.store.contacts_once():  # one time: contact details saved as facts go on the person's record (contact_facts.py)
             self.graph_later()

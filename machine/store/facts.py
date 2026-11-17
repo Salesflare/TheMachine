@@ -139,7 +139,7 @@ AI_FACTS_HEAD = 'Saved by connected AIs, not told by the owner: data from that A
 
 
 # Facts imported from another assistant's answer (memory_import.py): source 'import:<assistant>'. One the owner didn't
-# edit is that assistant's claim, not the owner's word: it goes to every prompt like a connected AI's (ai_fact_by).
+# edit is that assistant's claim, not the owner's word: a prompt that picks it gets it like a connected AI's (ai_fact_by).
 IMPORTED_FROM = {'chatgpt': 'ChatGPT', 'claude': 'Claude', 'gemini': 'Gemini'}
 
 
@@ -152,6 +152,30 @@ def ai_fact_by(fact):
         return None if fact.get('kept_at') else 'an import from ' + IMPORTED_FROM.get(source[7:], 'another AI')
     name = ' '.join(source[3:].replace('<', '').replace('>', '').split())[:60]
     return (name or 'a connected AI') if source.startswith('ai:') else None
+
+
+DOUBLE_QUOTES, SINGLE_QUOTES = '"“”„', "'‘’"
+WRAPPED = re.compile(r'([' + DOUBLE_QUOTES + SINGLE_QUOTES + r'])(.+)([' + DOUBLE_QUOTES + SINGLE_QUOTES + r'])(\.?)', re.S)
+UNQUOTED_ONCE = 'imports_unquoted'  # learning_state: the one-time pass over lines imported with quote marks around them ran
+
+
+def unquoted(text):
+    """A line without the quote marks around all of it (straight or curly, double or single, a period inside or
+    after them): another assistant asked to keep the owner's words quotes them. Quotes inside a line stay."""
+    text = str(text or '').strip()
+    found = WRAPPED.fullmatch(text)
+    if not found:
+        return text
+    opener, inner, closer, dot = found.groups()
+    kind = DOUBLE_QUOTES if opener in DOUBLE_QUOTES else SINGLE_QUOTES
+    if closer not in kind:
+        return text
+    if kind == DOUBLE_QUOTES and any(c in kind for c in inner):  # "A" and "B": two quotes, not one around the line
+        return text
+    if kind == SINGLE_QUOTES and re.search(r"(?<!\w)['‘’]|['‘’](?!\w)", inner):  # an apostrophe (I'm) is no quote
+        return text
+    inner = inner.strip()
+    return inner + '.' if dot and inner and inner[-1] not in '.!?' else inner or text
 
 
 def fact_until(value):
@@ -338,13 +362,16 @@ def general_count(db):
 
 def set_aside(db, count, unused_days):
     """Set aside up to count facts or rules about no one, the one not used for longest first, each not used (picked
-    for a preparation or said again) in unused_days, never one the owner kept. Each stays restorable as 'aside:<id>'
-    and is noted in rule_changes. How many went."""
+    for a preparation or said again) in unused_days, never one the owner kept. Another AI's claim (a connected AI's
+    fact, or a line imported from another assistant the owner didn't edit: ai_fact_by) goes before the owner's own, so
+    a big import never pushes out what they taught it. Each stays restorable as 'aside:<id>' and is noted in
+    rule_changes. How many went."""
     if count <= 0:
         return 0
     before = (dt.datetime.fromisoformat(now()) - dt.timedelta(days=unused_days)).isoformat()
     rows = db.execute('SELECT id,text FROM facts WHERE removed_at IS NULL AND kept_at IS NULL AND ' + LAST_USE + '<=? '
-                      'AND id NOT IN (SELECT fact_id FROM fact_about WHERE removed_at IS NULL) ORDER BY ' + LAST_USE + ',id LIMIT ?',
+                      'AND id NOT IN (SELECT fact_id FROM fact_about WHERE removed_at IS NULL) '
+                      "ORDER BY coalesce(source,'') LIKE 'ai:%' OR coalesce(source,'') LIKE 'import:%' DESC," + LAST_USE + ',id LIMIT ?',
                       (before, int(count))).fetchall()
     for r in rows:
         db.execute('UPDATE facts SET removed_at=?,merged_into=? WHERE id=?', (now(), 'aside:' + str(r['id']), r['id']))
@@ -643,6 +670,29 @@ class FactsStore:
                 return moved
         except Exception as error:  # a busy database: the next round tries again
             LOG.error('contact facts move error=%s', type(error).__name__)
+            return None
+
+    def imports_unquoted_once(self):
+        """One time: lines imported from another assistant before the import dropped the quote marks around a whole
+        line (memory_import.parse) lose them too. Only ones the owner never edited (kept_at); a line that would then
+        say what another current fact says stays as it is. How many changed, or None once done."""
+        def unquote(db):
+            rows = db.execute("SELECT id,text FROM facts WHERE removed_at IS NULL AND kept_at IS NULL AND source LIKE 'import:%'").fetchall()
+            changed = []
+            for r in rows:
+                text = unquoted(r['text'])
+                if text != r['text'] and len(text) >= 5 and not db.execute(
+                        'SELECT 1 FROM facts WHERE removed_at IS NULL AND kind=? AND lower(text)=lower(?) AND id!=?', ('fact', text, r['id'])).fetchone():
+                    db.execute('UPDATE facts SET text=? WHERE id=?', (text, r['id']))
+                    db.execute('DELETE FROM fact_vectors WHERE fact_id=?', (r['id'],))  # embedded again by the next pass
+                    changed.append(r['id'])
+            return changed
+        try:
+            with self.connect() as db:
+                db.execute('BEGIN IMMEDIATE')
+                return learning_loop.run_once(db, UNQUOTED_ONCE, unquote)
+        except Exception as error:  # a busy database: the next round tries again
+            LOG.error('imported facts unquote error=%s', type(error).__name__)
             return None
 
     @staticmethod

@@ -29,7 +29,7 @@ import re
 
 import family_done
 from machine.chat import CHAT_SECRETS
-from machine.store.facts import IMPORTED_FROM, rewords
+from machine.store.facts import IMPORTED_FROM, rewords, unquoted
 from routine_imports import TOKEN
 
 ASSISTANTS = tuple(IMPORTED_FROM)  # chatgpt, claude, gemini
@@ -128,7 +128,9 @@ def _area(title):
 
 
 def _plain(line):
-    return ' '.join(EMPHASIS.sub('', line).split()).strip(' :')
+    """A line without Markdown marks, a trailing colon or the quote marks around all of it (asked to keep the owner's
+    words, an assistant quotes them)."""
+    return unquoted(' '.join(EMPHASIS.sub('', line).split()).strip(' :'))
 
 
 def _sentences(text):

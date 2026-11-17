@@ -314,7 +314,8 @@ remove them.
   room. At the cap, the fact or rule not used for longest is set aside when it wasn't used in 21 days (used: a
   preparation picked it as close to its to-do, or a note said it again); else the list grows, up to 120. Each review
   also sets aside those not used in 21 days while there are more than 70. Learning lists them under **Set aside** with
-  **Bring back**. One the owner edited or brought back is never set aside. A set-aside fact, and an ended or replaced
+  **Bring back**. One the owner edited or brought back is never set aside, and another AI's claim (a connected AI's
+  fact, or an imported line not edited) goes before the owner's own. A set-aside fact, and an ended or replaced
   one marked as history, still reaches a review, preparation or to-do chat when it bears on it, in a small slice of
   its own ([how](intelligence.md)).
 - A review gets the facts used or said most lately first, up to its limit, so a long list leaves out the stalest.
