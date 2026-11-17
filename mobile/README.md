@@ -25,6 +25,7 @@ dashboard release reaches the app at once, with no store update. The app itself 
   the owner taps the mic or Turn on. Only once the phone won't ask again does the dashboard show one line with
   Open settings, the app's page in the phone's settings (`machinePhone` in `www/inject.js`).
   While notifications are off, the home screen has one line with Turn on and an X (7 days); a first sign-in asks once.
+  On Android, the dashboard's offline bar can open the Tailscale app itself (Open Tailscale, `machinePhone.tailscale`).
 - **The Machine's browser**: the dashboard's Browser pane, closed with its X or Back. Opened on its own (an older
   dashboard, a link straight to it) it gets a floating X back to the dashboard (`www/inject.js`).
 

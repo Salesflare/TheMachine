@@ -210,6 +210,20 @@ public class MachineShellPlugin extends Plugin {
             case "pushOn":
                 pushOn(reply, id);
                 break;
+            case "tailscale": // the offline bar's Open Tailscale: the Tailscale app (queried in AndroidManifest.xml); "off" when it isn't on the phone
+                Intent ts = getContext().getPackageManager().getLaunchIntentForPackage("com.tailscale.ipn");
+                if (ts == null) {
+                    answer(reply, id, "off", null);
+                    break;
+                }
+                ts.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                try {
+                    getContext().startActivity(ts);
+                    answer(reply, id, "ok", null);
+                } catch (ActivityNotFoundException e) {
+                    answer(reply, id, "off", null);
+                }
+                break;
             default:
                 break;
         }
