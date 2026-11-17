@@ -1,28 +1,28 @@
 ---
-title: Afgemeld bij een site
+title: Uitgelogd bij een site
 area: troubleshooting
-summary: LinkedIn of X heeft je Machine afgemeld. Log opnieuw in, eenmalig of blijvend.
+summary: LinkedIn of X heeft je Machine uitgelogd. Log opnieuw in, eenmalig of voorgoed.
 covers:
-code: browser_login.py, dashboard.html, dashboard/connections-signin.js
+code: browser_login.py, login_import.py, dashboard.html, dashboard/connections-signin.js, dashboard/connections-logins.js
 order: 2
-translated: 96c09e57cd3dca62
+translated: 060f7ca4f870ad0a
 ---
-Je Machine leest sites zoals LinkedIn en X in zijn eigen browser. Soms meldt een site hem af.
+Sites zoals LinkedIn en X worden geopend in de eigen browser van je Machine. Soms logt een site hem uit.
 
 ## Opnieuw inloggen
 
-Bij **Koppelingen** en bovenaan je to-do's zie je dat hij is afgemeld. Kies **Log hier in** en log in via een klein venster op het dashboard.
+Bij **Koppelingen** en bovenaan je to-do's staat dat je bent uitgelogd. Klik op **Log hier in** en log in via een klein venster op het dashboard.
 
-Vink **Bewaren voor de volgende keer** aan om de volgende keer met één tik weer in te loggen. Het wachtwoord blijft versleuteld op je Machine en de AI ziet het nooit.
+Vink **Bewaren voor de volgende keer** aan om de volgende keer met één tik opnieuw in te loggen. Het wachtwoord blijft versleuteld op je Machine en de AI ziet het nooit. Heb je meerdere accounts bij één site, dan geeft **Opslaan als** dit account een naam (Werk, Privé). Als in de to-do niet staat welk account je moet gebruiken, vraagt het venster dat aan je.
 
 ## Wachtwoorden en codes
 
-Voer wachtwoorden zelf in. Tweestapscodes moet je ook zelf invoeren.
+Vul wachtwoorden zelf in. Ook codes voor tweestapsverificatie moet je zelf invoeren.
 
-Opgeslagen logins vind je onder **Koppelingen**, **Logins**. Met **Vergeten** verwijder je een login.
+Opgeslagen logins vind je onder **Koppelingen**, **Logins**. Met **Vergeten** verwijder je een login. Met **Importeren** haal je logins uit een wachtwoordmanager.
 
-## Als de site je niet binnenlaat of een robotcheck vraagt
+## Als de site je toegang weigert of een robotcontrole vraagt
 
-LinkedIn, X en sites met een Cloudflare-controle weigeren vaak inloggen via een browser in de cloud. Op een gehoste Machine zie je dan **Inloggen via je thuisverbinding**. Hiermee open je de instellingenpagina, waar de browser van je Machine via Tailscale of je eigen proxy verbinding kan maken met internet via je thuisverbinding. Log daarna opnieuw in.
+LinkedIn, X en sites met een Cloudflare-controle weigeren vaak inloggen via een browser in de cloud. Op een gehoste Machine zie je dan **Inloggen via je thuisverbinding**. Daarmee open je je instelpagina. Daar kan de browser van je Machine via Tailscale of je eigen proxy verbinding maken via je thuisinternet. Log daarna opnieuw in.
 
-Op je eigen computer heb je dit niet nodig: de browser is daar al thuis.
+Op je eigen computer is dit niet nodig: de browser gebruikt al je thuisverbinding.
