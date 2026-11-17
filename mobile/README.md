@@ -52,7 +52,8 @@ The app sign-in is bound to the app that started it: the app sends a challenge (
 The cloud side is in the cloud repo's `docs/mobile-app.md`.
 
 The WebView only opens the saved Machine (and, for a hosted Machine, other `*.app.themachine.computer` names after a
-rename). Every other link opens in the system browser, except a connection's sign-in (the sheet, above). Only the app's own start page can change the saved Machine.
+rename). Every other link opens in the system browser, except a connection's sign-in (the sheet, above) and, on
+Android, a Gmail link, which opens in the Gmail app when it is installed. Only the app's own start page can change the saved Machine.
 
 ## Push
 

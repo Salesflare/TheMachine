@@ -37,7 +37,6 @@ from machine.faults import fault_frames, fault_message, fault_where, source_url
 from machine import omarchy
 from machine.sources.calendar import calendar_account_owner, company_domains, invite_people, team_people
 from machine.sources.connectors import writable_calendars
-from machine.sources.gmail import open_link
 from machine.store import message_view
 from machine.store.views import DONE_FIRST
 from machine.text import _address, ATTACHMENT_INLINE, encoded, shown_body
@@ -642,7 +641,7 @@ def make_handler(app):
                 rows = sorted(app.store.events([a['id'] for a in app.config['accounts']], event_ids=order),
                               key=lambda r: order.index(r['id']) if r['id'] in order else len(order))
                 found['source'] = [{'id': r['id'], 'account_id': r['account_id'], 'kind': r['kind'], 'occurred_at': r['occurred_at'], 'title': r['title'][:200],
-                                    'source_url': open_link(r['metadata'].get('source_url'), r['metadata'].get('thread_id')), **event_glance(r, app.config['accounts'], app.owner_emails())} for r in rows][:3]
+                                    'source_url': r['metadata'].get('source_url'), **event_glance(r, app.config['accounts'], app.owner_emails())} for r in rows][:3]
                 self.output(200, found)
             except (ValueError, sqlite3.OperationalError):
                 self.output(404, {'error': 'No such promise'})

@@ -41,7 +41,6 @@ import timeutil
 import uuid
 from pathlib import Path
 from machine.owner_error import OwnerError
-from machine.sources.gmail import open_link
 
 SCHEMA = '''
 CREATE TABLE IF NOT EXISTS missed_audits(id TEXT PRIMARY KEY,started_at TEXT NOT NULL,finished_at TEXT,status TEXT NOT NULL,
@@ -675,7 +674,7 @@ def summary(db):
                         'FROM missed_audit_items i LEFT JOIN events e ON e.id=i.event_id LEFT JOIN review_misses m ON m.event_id=i.event_id '
                         "LEFT JOIN suggestions s ON s.id=m.suggestion_id AND s.status!='rejected' "
                         'WHERE i.audit_id=? AND i.work=1 ORDER BY i.label IS NOT NULL,i.event_id DESC', (row['id'],)):
-        url = open_link(_metadata(r).get('source_url'), _metadata(r).get('thread_id')) if r['metadata'] else None
+        url = _metadata(r).get('source_url') if r['metadata'] else None
         misses.append({'event_id': r['event_id'], 'channel': r['channel'], 'area': r['area'], 'what': r['what'], 'reason': r['reason'] or '',
                        'label': r['label'], 'url': url if isinstance(url, str) and url.startswith('https://') else None,
                        'open': bool(r['kept'] and not r['deleted']), 'title': (r['title'] or '')[:200] if r['kept'] and not r['deleted'] else '',

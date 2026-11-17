@@ -38,7 +38,6 @@ from fleet_requests import card_reason
 from i18n import t
 from machine import todo_states
 from machine.owner_error import OwnerError
-from machine.sources.gmail import open_link
 import timeutil
 
 LOG = logging.getLogger('personal-assistant')
@@ -175,8 +174,7 @@ class HandoffMail:
             lines.append({'key': 'due', 'text': t('Due {}', str(card['due'])[:10]), 'due': str(card['due'])[:10]})
         links = []
         for r in rows:
-            m = json.loads(r['metadata'] or '{}')
-            url = str(open_link(m.get('source_url'), m.get('thread_id')) or '').strip()
+            url = str(json.loads(r['metadata'] or '{}').get('source_url') or '').strip()
             if r['id'] in team and url.startswith('https://') and len(url) <= 500 and all(x['url'] != url for x in links):
                 links.append({'key': f'link:{len(links)}', 'title': fleet.clean(r['title'], 120), 'url': url})
         draft = self.ready_draft(card) if shared else None

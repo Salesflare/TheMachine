@@ -588,7 +588,7 @@ class Cleanup(unittest.TestCase):
         row, extra = self.view(row['id'])
         item = extra['cleanup']['items'][0]
         self.assertEqual((item['state'], item['how'], item['link']),
-                         ('yours', 'in_mail', 'https://mail.google.com/mail/u/owner@acme.example/#all/m1'))
+                         ('yours', 'in_mail', 'https://mail.google.com/mail/u/?authuser=owner%40acme.example#all/m1'))
         self.assertNotEqual(row['status'], 'completed')  # the owner's step is left: they mark it done
         with self.store.connect() as db:
             self.assertEqual(db.execute("SELECT choice FROM mail_cleanup_senders WHERE kind='spam' AND address='seo@ranks.example'").fetchone()[0], 'gone')
@@ -634,7 +634,7 @@ class Cleanup(unittest.TestCase):
         self.act('routine_cleanup', suggestion_id=row['id'], picks={'0': 'go'})
         row, extra = self.view(row['id'])
         self.assertEqual((extra['cleanup']['items'][0]['state'], extra['cleanup']['items'][0]['how']), ('yours', 'in_mail'))
-        self.assertTrue(extra['cleanup']['items'][0]['link'].startswith('https://mail.google.com/mail/u/owner@acme.example/#all/'))
+        self.assertTrue(extra['cleanup']['items'][0]['link'].startswith('https://mail.google.com/mail/u/?authuser='))
 
     def at(self, hour, minute=0):
         """The owner's clock moves on, and the routines take a step."""

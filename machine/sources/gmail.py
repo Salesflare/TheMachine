@@ -16,25 +16,13 @@ import ms_graph
 from sources import MICROSOFT_SERVICES, SourceError, gog_read, transient
 from timeutil import now
 
-STORED = re.compile(r'^https://mail\.google\.com/mail/u/\?authuser=([^#&/?]+)#all/([0-9a-f]{8,24})$')
-THREAD = re.compile(r'[0-9a-f]{8,24}')
 
 
-def gmail_link(email, conversation):
-    """A Gmail conversation's link that opens it on a computer and on a phone, in the account it came to: the address
-    in the path (/mail/u/<address>/) picks the account among the ones signed in, and #all/<thread> opens the thread
-    wherever it is filed. Gmail's API ids are its hex ids (the thread's id is its first message's)."""
-    return f"https://mail.google.com/mail/u/{urllib.parse.quote(str(email), safe='@')}/#all/{conversation}"
-
-
-def open_link(url, thread=None):
-    """The link a Gmail message opens with. A message keeps the link it was synced with
-    (/mail/u/?authuser=<address>#all/<message>), which opens in the inbox or as an unrelated search on a phone; it
-    opens as gmail_link instead: its thread when known, else the message's own id. Any other link stays as it is."""
-    stored = STORED.match(str(url or ''))
-    if not stored:
-        return url
-    return gmail_link(urllib.parse.unquote(stored[1]), thread if THREAD.fullmatch(str(thread or '')) else stored[2])
+def gmail_link(email, message):
+    """A Gmail message's link, on a computer and on a phone alike: /mail/u/?authuser=<address>#all/<message>, the
+    address encoded (it picks the account among the ones signed in) and the API's hex message id. The phone's Gmail
+    app opens this form; the old mobile-site link (/mail/mu/mp/...#cv/...) ended in an unrelated msgid: search."""
+    return 'https://mail.google.com/mail/u/?authuser=' + urllib.parse.quote(str(email)) + '#all/' + str(message)
 
 
 class Gmail:
@@ -175,7 +163,7 @@ def message_event(account, raw, config=None):
         metadata['bookings'] = booked
     metadata.update(thread_id=raw.get('threadId'), labels=sorted(raw.get('labelIds', [])),
                     source_url=raw.get('webLink') if account.get('service') in ('outlook', 'imap') else
-                    'https://mail.google.com/mail/u/?authuser=' + urllib.parse.quote(account['email']) + '#all/' + raw['id'],
+                    gmail_link(account['email'], raw['id']),
                     truncated=len(body) > 40000, quoted_history_chars=quoted,
                     quoted_history_shortened=quoted > QUOTED_HISTORY_KEPT)
     return {'account_id': account['id'], 'source_id': raw['id'], 'kind': 'gmail.message',

@@ -77,6 +77,7 @@ public class MachineShellPlugin extends Plugin {
     static final String HOSTED = "app.themachine.computer";
     static final int OWN_PORT = 8443;
     static final String SCHEME = "computer.themachine.app";
+    static final String GMAIL_HOST = "mail.google.com", GMAIL_APP = "com.google.android.gm";
     private static final String PREFS = "machine_shell";
     private static final Pattern LABEL = Pattern.compile("[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?");
     private static final Pattern TOKEN = Pattern.compile("[A-Za-z0-9_-]{20,100}");
@@ -592,6 +593,14 @@ public class MachineShellPlugin extends Plugin {
     private void openOutside(Uri url) {
         String scheme = url.getScheme();
         if (!"https".equals(scheme) && !"http".equals(scheme) && !"mailto".equals(scheme) && !"tel".equals(scheme)) return;
+        if ("https".equals(scheme) && GMAIL_HOST.equals(url.getHost())) { // a mail in Gmail: the Gmail app, else the browser
+            try {
+                getContext().startActivity(new Intent(Intent.ACTION_VIEW, url).setPackage(GMAIL_APP).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+                return;
+            } catch (Exception e) {
+                // no Gmail app: as any other link
+            }
+        }
         try {
             Intent intent = new Intent(Intent.ACTION_VIEW, url);
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);

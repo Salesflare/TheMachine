@@ -26,7 +26,6 @@ import re
 
 import i18n
 import mail_cleanup
-from machine.sources.gmail import open_link
 from machine.store.review_wait import People, mail_wait
 from machine import todo_states
 from machine.owner_error import OwnerError
@@ -173,7 +172,7 @@ def candidates(db, accounts, since, known=None):
         rank = score(h) - (0.5 if 'CATEGORY_PROMOTIONS' in labels else 0)
         found.append((rank, r['occurred_at'], {
             'event': r['id'], 'account': r['account_id'], 'from': name or address, 'address': address,
-            'title': _flat(r['title'], 120), 'snippet': snippet(r['body']), 'url': str(open_link(m.get('source_url'), m.get('thread_id')) or '')[:500]}))
+            'title': _flat(r['title'], 120), 'snippet': snippet(r['body']), 'url': str(m.get('source_url') or '')[:500]}))
     found.sort(key=lambda x: (x[0], x[1]), reverse=True)
     return [c for _, _, c in found[:CANDIDATES]]
 

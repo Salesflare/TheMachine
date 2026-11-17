@@ -34,7 +34,7 @@ const spam=()=>({id:'cl2',title:'2 emails look like spam',status:'pending',scope
   {n:1,from:'Prize Desk',address:'win@prize.example',title:'You have been selected',event:21,why:'Prize claim from a sender never seen',count:1,state:'open',plan:'junk'},
   {n:2,from:'Crypto Gains',address:'x@gains.example',title:'Double your money',why:'Investment pitch from an unknown sender',count:1,state:'open',plan:'junk'}]}});
 // Spam in Gmail connected read-only (in_mail): Spam is the owner's own step, a link to the mail in Gmail (mail_cleanup.mail_link)
-const GMAIL='https://mail.google.com/mail/u/owner@example.com/#all/18c0ffee00000031';
+const GMAIL='https://mail.google.com/mail/u/?authuser=owner%40example.com#all/18c0ffee00000031';
 const readOnly=()=>({id:'cl3',title:'1 email looks like spam',status:'pending',scope:'personal',created_at:now,event_ids:[3],
  body:'Pick Spam or Not spam for each one, then confirm. Nothing changes before that.',
  cleanup:{kind:'spam',items:[{n:0,from:'Lead Lists',address:'sales@leads.example',title:'Verified leads',why:'Cold sales pitch',count:1,state:'open',plan:'in_mail'}]}});

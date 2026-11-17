@@ -33,7 +33,6 @@ import sqlite3
 import graph
 from machine.cards import group_sender
 from machine.sources.android import android_app_shown, android_text_shown
-from machine.sources.gmail import open_link
 from machine.sources.slack import slack_plain
 from machine.store import graph_identifiers
 from mail_senders import relay
@@ -521,7 +520,7 @@ def list_row(kind, title, body, m, occurred_at=''):
     who = ' '.join(who.split())
     if who and (words_in(who) <= words_in(title)):  # the title says it already ("Jamie Morgan", "#general: Tomasz Nowak")
         who = ''
-    url = open_link(m.get('source_url'), m.get('thread_id'))
+    url = m.get('source_url')
     url = url if isinstance(url, str) and re.match(r'https://[^\s/]+', url) else ''
     row = {'title': title, 'who': who, 'text': text.strip()[:2000], 'url': url, 'app': app_of(kind, url) if url else ''}
     if turns:  # a transcript's first turns, each by its speaker (the row shows three lines)
