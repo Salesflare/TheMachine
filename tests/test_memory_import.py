@@ -2,6 +2,7 @@
 answers read the same; secrets never reach the screen, the model or the store; what is learned already is skipped and
 a contradiction is shown next to the current fact for the owner to pick; nothing imported can grant a permission; every
 kept line says where it came from, and stays that assistant's claim until the owner edits it. All data here is made up."""
+import datetime as dt
 import json
 from pathlib import Path
 import re
@@ -12,7 +13,7 @@ import machine.actions as machine_actions
 import machine.app.setup_card as machine_app_setup_card
 import machine.main as machine_main
 from machine.owner_error import OwnerError
-from machine.store.facts import AI_FACTS_HEAD, ai_fact_by
+from machine.store.facts import AI_FACTS_HEAD, FACTS_GENERAL_HARD, ai_fact_by
 import memory_import
 
 CHATGPT = '''Here's everything I have saved about you:
@@ -118,6 +119,23 @@ class Parsing(unittest.TestCase):
         self.assertEqual([r['text'] for r in rows], ['Lives in Bruges.', 'Prefers calls in the afternoon.'])
         self.assertEqual(memory_import.parse(''), [])
         self.assertTrue(all(len(r['text']) <= 240 for r in memory_import.parse('- ' + 'word ' * 200)))
+
+    def test_quote_marks_around_a_whole_line_go_and_quotes_inside_stay(self):
+        answer = '''```
+## Preferences
+- “I love a long walk in the hills.”
+- "I read on the train most days".
+- ‘I’m happiest near the sea.’
+- 'Short replies'
+- “Thinks before speaking”.
+- Calls the old car "the tank" and the new one "the bean".
+- "Dune" is their favorite book.
+- Says 'later' a lot and means 'never'.
+```'''
+        self.assertEqual([r['text'] for r in memory_import.parse(answer)], [
+            'I love a long walk in the hills.', 'I read on the train most days.', 'I’m happiest near the sea.', 'Short replies',
+            'Thinks before speaking.', 'Calls the old car "the tank" and the new one "the bean".', '"Dune" is their favorite book.',
+            "Says 'later' a lot and means 'never'."])
 
 
 class Secrets(unittest.TestCase):
@@ -263,6 +281,34 @@ class Store(unittest.TestCase):
         self.assertIn('memory', machine_app_setup_card.SETUP_STEPS)
         self.store.import_fact('Has a dog called Pixel.', 'claude', 'b1')
         self.assertTrue(card()['memory'])
+
+    def test_lines_imported_with_quotes_lose_them_once_unless_the_owner_edited_them(self):
+        quoted = self.store.import_fact('“I love a long walk in the hills.”', 'chatgpt', 'b1')['id']
+        edited = self.store.import_fact('“I read on the train.”', 'chatgpt', 'b1', edited=True)['id']
+        twin = self.store.import_fact('"Lives in Antwerp."', 'chatgpt', 'b1')['id']  # unquoted, it says a current fact again
+        inside = self.store.import_fact('"Dune" is their favorite book.', 'chatgpt', 'b1')['id']
+        self.assertEqual(self.store.imports_unquoted_once(), [quoted])
+        text = {f['id']: f['text'] for f in self.store.facts()}
+        self.assertEqual(text[quoted], 'I love a long walk in the hills.')
+        self.assertEqual((text[edited], text[twin], text[inside]), ('“I read on the train.”', '"Lives in Antwerp."', '"Dune" is their favorite book.'))
+        self.assertEqual(ai_fact_by(next(f for f in self.store.facts() if f['id'] == quoted)), 'an import from ChatGPT')  # still that AI's claim
+        self.store.import_fact('“Runs on Sundays.”', 'chatgpt', 'b2')
+        self.assertIsNone(self.store.imports_unquoted_once())  # one time
+
+    def test_a_full_list_sets_aside_imported_claims_before_the_owners_own(self):
+        yesterday = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=1)).isoformat()
+        with self.store.connect() as db:  # every one used yesterday, so past the hard cap the one used longest ago goes
+            db.executemany("INSERT INTO facts(text,decision_id,created_at,kind,fact_kind) VALUES(?,'owner:graph','2026-01-01T09:00:00+00:00','fact','fact')",
+                           [(f'Owner fact number {i} about how they work.',) for i in range(FACTS_GENERAL_HARD - 2 - 3)])
+            db.execute('UPDATE facts SET used_at=?', (yesterday,))
+        claims = [self.store.import_fact(f'Imported line number {i} about a hobby.', 'chatgpt', 'b1')['id'] for i in range(3)]
+        own = {f['id'] for f in self.store.facts() if not f['source']}
+        self.store.import_fact('One more imported line about a hobby.', 'chatgpt', 'b1')
+        self.store.import_fact('Another imported line about a hobby.', 'chatgpt', 'b1')
+        current = {f['id'] for f in self.store.facts()}
+        self.assertLessEqual(own, current)  # none of the owner's own went, though each was used before the claims came
+        self.assertNotIn(claims[0], current)  # an imported claim made room
+        self.assertEqual(len(current), FACTS_GENERAL_HARD)
 
 
 if __name__ == '__main__':
