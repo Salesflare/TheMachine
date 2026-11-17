@@ -34,6 +34,7 @@ from i18n import t
 import next_actions
 from machine import todo_states
 from machine.owner_error import OwnerError
+from machine.sources.gmail import open_link
 import timeutil
 
 LOG = logging.getLogger('personal-assistant')
@@ -582,7 +583,8 @@ class Requests:
                               'ORDER BY occurred_at', (json.dumps(ids),)).fetchall()
         out = []
         for r in rows:
-            url = str(json.loads(r['metadata'] or '{}').get('source_url') or '').strip()
+            m = json.loads(r['metadata'] or '{}')
+            url = str(open_link(m.get('source_url'), m.get('thread_id')) or '').strip()
             if r['account_id'] in accounts and url.startswith('https://') and len(url) <= 500 and not any(u == url for _, u in out):
                 out.append((fleet.clean(r['title'], 120), url))
         return out[:2]

@@ -50,7 +50,7 @@ from machine.faults import FAULT_WHERE
 from machine.sources.connectors import crm_sync_health, docs_health, read_window, silent_failure, UNNAMED, whatsapp_history
 from machine.sources import groups
 from machine.sources.android import android_app_shown
-from machine.sources.gmail import phone_link
+from machine.sources.gmail import open_link
 from machine.sources.salesflare import salesflare_progress
 from machine.sources.slack import slack_first_import_progress, SLACK_ID, slack_name_table, slack_named
 from machine.store import history as history_store
@@ -343,7 +343,7 @@ def based_on_views(db, cards):
             continue
         m = row['metadata'] if isinstance(row['metadata'], dict) else json.loads(row['metadata'] or '{}')
         channel = str(m.get('channel_name') or '') if row['kind'] == 'slack.message' else ''
-        url = m.get('source_url')
+        url = open_link(m.get('source_url'), m.get('thread_id'))
         card['based_on'] = {'event_id': row['id'], 'who': sender_first_name(m) or None, 'kind': source_kind(row['kind']),
                             'where': '#' + channel.lstrip('#') if channel and not SOURCE_DM.fullmatch(channel) and not SLACK_ID.search(channel) else None,
                             'at': row['occurred_at'], 'url': url if isinstance(url, str) and urllib.parse.urlsplit(url).scheme == 'https' else None}
@@ -488,7 +488,7 @@ class ViewsStore(ConversationStore):
         result = []
         for r in rows:
             m = json.loads(r['metadata'])
-            url = m.get('source_url')
+            url = open_link(m.get('source_url'), m.get('thread_id'))
             mine = m.get('from_me') or (r['kind'] == 'gmail.message' and _address(m.get('from')) in own)  # also from another address of theirs
             if r['kind'] == 'android.notification':
                 m['app_name'] = android_app_shown(m.get('package_name'), m.get('app_name'))  # its app by name, never the package
@@ -518,7 +518,6 @@ class ViewsStore(ConversationStore):
                            'body': body[:20000], 'clipped': len(body) > 20000 or bool(m.get('truncated')),
                            **({'details': details[:4000]} if details else {}),
                            'url': url if isinstance(url, str) and urllib.parse.urlsplit(url).scheme == 'https' else None,
-                           **({'phone_url': phone} if r['kind'] == 'gmail.message' and (phone := phone_link(url, m.get('thread_id'))) else {}),
                            'event_id': r['id'], 'gmail': {'account_id': r['account_id'], 'message_id': r['source_id']} if r['kind'] == 'gmail.message' else None,
                            **({'photo': photo} if photo else {}), **media,
                            **chat_view(r['kind'], m, body, r['occurred_at'])}, m))
@@ -554,7 +553,8 @@ class ViewsStore(ConversationStore):
         rows=[{'id':i,'metadata':pre['events'][i]} for i in dict.fromkeys(ids) if i in pre['events']] if pre else \
             sorted(db.execute('SELECT id,metadata FROM events WHERE id IN ('+','.join('?' for _ in ids)+')',ids).fetchall() if ids else [],key=lambda r:ids.index(r['id']))
         for row in rows:
-            url=json.loads(row['metadata']).get('source_url')
+            m=json.loads(row['metadata'])
+            url=open_link(m.get('source_url'),m.get('thread_id'))
             if isinstance(url,str) and urllib.parse.urlsplit(url).scheme in ('https','http') and url not in originals:
                 originals.append(url)
         extra={'result_files':files,'original_urls':originals[:5]}
