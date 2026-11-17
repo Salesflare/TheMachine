@@ -100,7 +100,7 @@ CARDS = stamps.Kept(4)
 # test checks a status build reads none of them; a table not listed is counted, so a new one never leaves it stale.
 STATUS_QUIET = ('activity_accounts', 'activity_blocks', 'agent_result_receipts', 'ai_activity', 'ai_folded', 'ai_tokens', 'ai_writes',
                 'android_inbox', 'android_receipts', 'chat_fast_sessions', 'digest_spend', 'draft_seen', 'email_bounce_cc_scan',
-                'email_bounce_scan', 'event_passages', 'event_vector_skips', 'event_vectors', 'fact_vectors', 'fleet_learn_vectors',
+                'email_bounce_scan', 'event_passages', 'event_vector_changes', 'event_vector_skips', 'event_vectors', 'fact_vectors', 'fleet_learn_vectors',
                 'gateway_starts', 'meet_log', 'network_aliases', 'network_looked', 'network_outbox', 'network_pins', 'network_replies',
                 'network_sealed', 'network_taken', 'network_twins', 'person_summary_runs', 'plain_key_pass', 'record_changes',
                 'retention_runs', 'routine_runs', 'store_fixes', 'sync_daily', 'talk_lines', 'team_blobs', 'team_files', 'team_mail')

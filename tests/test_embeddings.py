@@ -115,6 +115,14 @@ class Embeddings(unittest.TestCase):
                 yield db
                 db.set_trace_callback(None)
         emb.related(connect, SETTINGS, ['work', 'home'], [self.ids('work', '1')])
+        self.assertEqual(len(seen), 2)  # which of the close ones the search may see (the in-memory index), then their vectors
+        with self.store.connect() as db:
+            for sql in seen:  # only the close signals, each vector by its id and its event by id
+                plan = ' | '.join(r[3] for r in db.execute('EXPLAIN QUERY PLAN ' + sql))
+                self.assertRegex(plan, r'^SEARCH v USING INTEGER PRIMARY KEY .*SEARCH e USING INTEGER PRIMARY KEY')
+        seen.clear()
+        with patch.object(emb, 'held_index', lambda *args: contextlib.nullcontext()):  # no index: every vector
+            emb.related(connect, SETTINGS, ['work', 'home'], [self.ids('work', '1')])
         sql, = seen
         with self.store.connect() as db:
             plan = ' | '.join(r[3] for r in db.execute('EXPLAIN QUERY PLAN ' + sql))

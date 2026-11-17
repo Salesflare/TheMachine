@@ -634,8 +634,11 @@ differently, the same topic in another source, an answer that already came in.
   300 MB more without it. A first `openclaw memory index` (below) took another 940 MB. Next to OpenClaw and a browser
   that is tight on 4 GB of RAM; 8 GB is comfortable. Give the unit its own `MemoryMax` and `MemorySwapMax=0`, so the
   kernel ends it alone when it grows too big and systemd restarts it.
-- Vectors are about 1 KB each at 256 dimensions (5 MB for 5,000 signals). Search is brute-force cosine in plain Python,
-  about 0.1 s over 5,000 vectors.
+- Vectors are about 1 KB each at 256 dimensions (5 MB for 5,000 signals). Search keeps an 8-bit copy of them in memory
+  (about 27 MB per 100,000 vectors), scores them all in one pass of plain Python and reads exactly only the ones that
+  could still rank, so results are the same as comparing every stored vector: about 0.3 s over 80,000 vectors, where
+  reading each took 0.7 to 0.9 s. The copy follows added, removed and re-embedded vectors through a change log; past
+  20,000 vectors a background thread reads it first, while searches compare every vector as before.
 
 ### OpenClaw's memory search on the same server
 
