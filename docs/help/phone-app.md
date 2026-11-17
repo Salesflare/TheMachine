@@ -58,6 +58,7 @@ On a plane or a train the dashboard keeps working. A bar at the top says **Offli
 - Messages to other people never wait: send again when you're back.
 - What you type in a chat stays on the device until you send it, also through a reload.
 - The app keeps trying by itself. **Try now** tries at once.
+- A Machine of your own is reached through Tailscale, and a phone can turn Tailscale off in the background. When your Machine can't be reached that way, the bar says **Tailscale may be off on this device**. On a phone, **Open Tailscale** opens it (or its store page) so you can turn it back on.
 - A busy Machine can take a while to answer. The app then says **Your Machine is slow to answer** and keeps what you see. That is not offline.
 
 ## More devices

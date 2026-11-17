@@ -124,6 +124,9 @@
         return 'on';
       },
     };
+    // Android: the Tailscale app itself, for the dashboard's offline bar (Open Tailscale). {state: 'ok'|'off'}; iOS
+    // can't open another app by name, so the dashboard links to its App Store page there.
+    if (android) window.machinePhone.tailscale = () => ask('tailscale');
     try { window.dispatchEvent(new Event('machinephone')); } catch (e) { /* a page that doesn't listen */ }  // Settings shows it
   }
 

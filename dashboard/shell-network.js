@@ -6,7 +6,8 @@ const offline=e=>Object.assign(Error('Can’t reach your Machine right now. Try 
 // it still waits and retries like offline (offline:true), but the screen only says so quietly (netSlow, slowPaint),
 // with no "Offline", no "Can’t reach" and no Report a bug. A quick failure is not slow: offline (netOut) decides.
 const NET_SLOW_TEXT='Your Machine is slow to answer.',NET_SLOW=8000,NET_HEARD=120000;
-let netHeardAt=0,netSlow=false,netWaits=0;
+// netCut: the last call got no answer at all (the device online), not a server's error: the link to the Machine is cut
+let netHeardAt=0,netSlow=false,netWaits=0,netCut=false;
 const slowErr=e=>Object.assign(offline(e),{message:NET_SLOW_TEXT,slow:true});
 // The host in front of the Machine answers (any answer, also a sign-in gate's redirect): the link is fine
 const hostAnswers=()=>{const stop=new AbortController(),timer=setTimeout(()=>stop.abort(),4000);
@@ -44,8 +45,8 @@ async function requestOnce(path,options){let r;if(options?.method&&options.metho
  const waitDone=()=>{clearTimeout(waitTimer);if(waiting==='counted'){netWaits--;slowPaint()}waiting=false};
  try{r=await(statusFirst(path,options)||fetch(path,options))}catch(e){waitDone();if(e?.name==='TimeoutError'||e?.name!=='AbortError'&&navigator.onLine!==false&&Date.now()-t0>=30000)errApi(path,options,'timeout');
   const slow=e?.name!=='AbortError'&&navigator.onLine!==false&&(e?.name==='TimeoutError'||Date.now()-t0>=NET_SLOW)&&(heardLately()||await hostAnswers());
-  slowSet(slow);throw slow?slowErr(e):offline(e)}
- waitDone();
+  if(e?.name!=='AbortError')netCut=navigator.onLine!==false&&!slow;slowSet(slow);throw slow?slowErr(e):offline(e)}
+ waitDone();netCut=false;
  // The sign-in gate in front of a hosted Machine answers with a redirect to its sign-in page (seen with redirect:'manual')
  if(r.type==='opaqueredirect')throw sessionGone();
  // Only a JSON answer is read; an empty or HTML 502 while the service restarts, a cut-off body or any 5xx is "offline"
@@ -201,17 +202,26 @@ function netSet(down,restarting=false){const was=netDown;netDown=!!down;netResta
 // The sidebar's line (and the phone's) says the same while offline: "Offline · updated 10:42", with the bar's dot
 function liveLine(){if(netRestarting){staleLine(netSetup?t('Setting up…'):t('Restarting · retrying'));return}const at=shownAt||staleAt;staleLine(at?t('Offline · updated {}',hhmm(at)):t('Offline.'))}
 const netShown=()=>netOut||outbox.items.length>0;
+// The link cut to a Machine reached over Tailscale: most often Tailscale off on this device (a phone stops it in the
+// background). A self-hosted Machine answers its owner over their tailnet only (owner in machine/web/handler.py), a
+// hosted one (manage_url) never; before any status, its address tells. On a phone, Open Tailscale: the app itself
+// (machinePhone.tailscale, the Android app), else its store page, which opens it.
+const netTs=()=>netCut&&netOut&&!netRestarting&&('manage_url' in state?!state.manage_url:/\.ts\.net$|^100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.|^\[fd7a:115c:a1e0:/i.test(location.hostname));
+const TS_GET=/Android/.test(navigator.userAgent)?'https://play.google.com/store/apps/details?id=com.tailscale.ipn':/iPhone|iPad/.test(navigator.userAgent)?'https://apps.apple.com/app/tailscale/id1470499037':'';
 function netText(){const n=outbox.items.length;
- const head=!netOut?'':netRestarting?(netSetup?t('Setting up…'):t('Your Machine is restarting.')):shownAt||staleAt?t('Offline. Showing what was here at {}.',hhmm(shownAt||staleAt)):t('Offline.');
+ const head=!netOut?'':netRestarting?(netSetup?t('Setting up…'):t('Your Machine is restarting.')):netTs()?t('Can’t reach your Machine. Tailscale may be off on this device.'):shownAt||staleAt?t('Offline. Showing what was here at {}.',hhmm(shownAt||staleAt)):t('Offline.');
  const waits=n?t(['{} change waits to send.','{} changes wait to send.'],n):'';
  return [head,waits].filter(Boolean).join(' ')}
 // A restart is a wait of seconds (it tries again by itself): no Try now, and a calm working dot, not the warning one
 const netRetry=()=>!netRestarting||!netOut;
-const netHtml=()=>html`<span class="offline-text">${netText()}</span>${netRetry()?html`<button type="button" class="link" data-net-retry>${t('Try now')}</button>`:''}`;  // the chat's first draw
-const netNodes=()=>[make('span',{class:'offline-text'},netText()),...(netRetry()?[make('button',{type:'button',class:'link','data-net-retry':''},t('Try now'))]:[])];
+const netNodes=()=>[make('span',{class:'offline-text'},netText()),...(TS_GET&&netTs()?[make('a',{class:'link',href:TS_GET,target:'_blank',rel:'noopener','data-ts-open':''},t('Open Tailscale'))]:[]),
+ ...(netRetry()?[make('button',{type:'button',class:'link','data-net-retry':''},t('Try now'))]:[])];
+const netHtml=()=>new SafeHTML(netNodes().map(n=>n.outerHTML).join(''));  // the chat's first draw
 // The same bar sits in an open chat too (#chat-offline, above the message box): the chat covers the page's own
-function netPaint(){slowPaint();const show=netShown(),html=show?netText()+'|'+(netRetry()?t('Try now'):''):'';for(const n of [$('#live'),$('#stale-note')])n?.classList.toggle('working',netOut&&netRestarting||slowShown);$('#stale-note')?.classList.toggle('covered',show);
+function netPaint(){slowPaint();const show=netShown(),html=show?netText()+'|'+(netRetry()?t('Try now'):'')+netTs():'';for(const n of [$('#live'),$('#stale-note')])n?.classList.toggle('working',netOut&&netRestarting||slowShown);$('#stale-note')?.classList.toggle('covered',show);
  for(const bar of [$('#offline-bar'),$('#chat-offline')]){if(!bar)continue;bar.hidden=!show;bar.classList.toggle('working',show&&netOut&&netRestarting);if(show)putOnce(bar,html,netNodes)}}
-document.addEventListener('click',e=>{if(!e.target.closest?.('#offline-bar [data-net-retry],#chat-offline [data-net-retry]'))return;outbox.wait=0;if(outbox.items.length)outboxFlush();micResume();retryIn=0;refreshWhenReady()});
-addEventListener('offline',()=>{netSlow=false;netSet(true)});
+document.addEventListener('click',e=>{const ts=e.target.closest?.('[data-ts-open]');
+ if(ts&&window.machinePhone?.tailscale){e.preventDefault();const store=()=>location.href=ts.href;machinePhone.tailscale().then(r=>r?.state==='ok'||store(),store)}
+ if(!e.target.closest?.('#offline-bar [data-net-retry],#chat-offline [data-net-retry]'))return;outbox.wait=0;if(outbox.items.length)outboxFlush();micResume();retryIn=0;refreshWhenReady()});
+addEventListener('offline',()=>{netSlow=netCut=false;netSet(true)});
 addEventListener('online',()=>{outbox.wait=0;outboxFlush()});

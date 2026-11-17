@@ -345,13 +345,15 @@ function phone(p, answers) {
 
 test('inject: the phone asks about the microphone and notifications; Open settings only once it won\'t ask again', async () => {
   const base = 'https://sam.app.themachine.computer/', device = {platform: 'fcm', label: 'Pixel'};
-  const p = page(base), asked = phone(p, {mic: {state: 'blocked'}, push: {state: 'blocked'}, pushOn: {state: 'blocked'}, settings: {state: 'ok'}});
+  const p = page(base), asked = phone(p, {mic: {state: 'blocked'}, push: {state: 'blocked'}, pushOn: {state: 'blocked'}, settings: {state: 'ok'}, tailscale: {state: 'off'}});
   await p.run({base, device});
   assert.equal(await p.win.machinePhone.state('mic'), 'blocked');
   assert.equal(await p.win.machinePhone.state('push'), 'blocked');
   assert.equal(await p.win.machinePhone.pushOn(), 'blocked');
   await p.win.machinePhone.settings();
-  assert.deepEqual(asked, ['mic', 'push', 'pushOn', 'settings']);
+  // The offline bar's Open Tailscale: the app opens Tailscale itself, or says it isn't on the phone
+  assert.equal((await p.win.machinePhone.tailscale()).state, 'off');
+  assert.deepEqual(asked, ['mic', 'push', 'pushOn', 'settings', 'tailscale']);
   assert.equal(p.calls.length, 0);
 
   const q = page(base);
