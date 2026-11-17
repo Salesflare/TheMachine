@@ -3216,6 +3216,10 @@
  "No password saved": "Sin contraseña guardada",
  "No personal account is connected": "No hay ninguna cuenta personal conectada",
  "No personal to-dos": "No hay tareas personales",
+ "No place to stay booked for {} nights": {
+  "one": "No tienes alojamiento reservado para {} noche",
+  "other": "No tienes alojamiento reservado para {} noches"
+ },
  "No preparation": "Sin preparación",
  "No private folder for the run": "No hay carpeta privada para la ejecución",
  "No project": "Sin proyecto",

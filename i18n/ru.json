@@ -3308,6 +3308,12 @@
  "No password saved": "Пароль не сохранён",
  "No personal account is connected": "Личный аккаунт не подключён",
  "No personal to-dos": "Личных задач нет",
+ "No place to stay booked for {} nights": {
+  "few": "Нет забронированного жилья на {} ночи",
+  "many": "Нет забронированного жилья на {} ночей",
+  "one": "Нет забронированного жилья на {} ночь",
+  "other": "Нет забронированного жилья на {} ночи"
+ },
  "No preparation": "Подготовка не требуется",
  "No private folder for the run": "Нет личной папки для запуска",
  "No project": "Нет проекта",

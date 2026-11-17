@@ -3216,6 +3216,10 @@
  "No password saved": "Nessuna password salvata",
  "No personal account is connected": "Nessun account personale collegato",
  "No personal to-dos": "Nessuna attività personale",
+ "No place to stay booked for {} nights": {
+  "one": "Nessun alloggio prenotato per {} notte",
+  "other": "Nessun alloggio prenotato per {} notti"
+ },
  "No preparation": "Nessuna preparazione",
  "No private folder for the run": "Nessuna cartella privata per l’esecuzione",
  "No project": "Nessun progetto",
