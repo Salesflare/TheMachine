@@ -109,7 +109,10 @@ LINKS_SHARED = (
 def watch_graph_shared(db):
     """graph_shared's, graph_scores' and links_shared's counters and triggers (for the tables there are), once."""
     db.execute('CREATE TABLE IF NOT EXISTS data_stamps(name TEXT PRIMARY KEY,n INTEGER NOT NULL)')
-    have = {r[0] for r in db.execute("SELECT name FROM sqlite_master WHERE type='table' AND name IN ('graph_nodes','graph_links')")}
+    # only on tables with every column a trigger compares (a test's or an old database's smaller graph_nodes has none:
+    # then stamp() gives None, and the publish reads every round)
+    needs = {'graph_nodes': {'id', 'kind', 'name', 'last_at', 'info', 'strength'}, 'graph_links': {'a', 'b', 'kind'}}
+    have = {t for t in needs if needs[t] <= {r[1] for r in db.execute(f'PRAGMA table_info({t})')}}
     for table, name, triggers in (('graph_nodes', 'graph_shared', GRAPH_SHARED), ('graph_nodes', 'graph_scores', GRAPH_SCORES),
                                   ('graph_links', 'links_shared', LINKS_SHARED)):
         if table in have:
