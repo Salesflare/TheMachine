@@ -68,6 +68,56 @@ def watch_graph_who(db):
         db.execute(sql)
 
 
+# graph_shared: graph_nodes as the Team Graph's publish reads it (shared_graph.collect), but for the score: who each
+# person, organization and project is (id, kind, name, info without 'live') and its last contact (last_at). A graph build
+# rewrites every person's strength, signals and live each few minutes, so graph_nodes' own counter moved every round and
+# the publish read everything again. Read by stamp(db, ('graph_shared',)).
+GRAPH_SHARED = (
+    "CREATE TRIGGER IF NOT EXISTS stamp_graph_shared_insert AFTER INSERT ON graph_nodes BEGIN "
+    "UPDATE data_stamps SET n=n+1 WHERE name='graph_shared'; END",
+    "CREATE TRIGGER IF NOT EXISTS stamp_graph_shared_update AFTER UPDATE ON graph_nodes WHEN old.id IS NOT new.id "
+    "OR old.kind IS NOT new.kind OR old.name IS NOT new.name OR old.last_at IS NOT new.last_at "
+    "OR (CASE WHEN json_valid(old.info) THEN json_remove(old.info,'$.live') ELSE old.info END) IS NOT "
+    "(CASE WHEN json_valid(new.info) THEN json_remove(new.info,'$.live') ELSE new.info END) BEGIN "
+    "UPDATE data_stamps SET n=n+1 WHERE name='graph_shared'; END",
+    "CREATE TRIGGER IF NOT EXISTS stamp_graph_shared_delete AFTER DELETE ON graph_nodes BEGIN "
+    "UPDATE data_stamps SET n=n+1 WHERE name='graph_shared'; END",
+)
+# graph_scores: the same rows' strength to three decimals alone, the score a shared record carries. It fades with time,
+# so some move on every build: the publish then puts the new scores on the records it has (shared_graph.rescored).
+GRAPH_SCORES = (
+    "CREATE TRIGGER IF NOT EXISTS stamp_graph_scores_update AFTER UPDATE ON graph_nodes WHEN "
+    "round(old.strength,3) IS NOT round(new.strength,3) BEGIN UPDATE data_stamps SET n=n+1 WHERE name='graph_scores'; END",
+    "CREATE TRIGGER IF NOT EXISTS stamp_graph_scores_delete AFTER DELETE ON graph_nodes BEGIN "
+    "UPDATE data_stamps SET n=n+1 WHERE name='graph_scores'; END",
+)
+
+
+# links_shared: graph_links as that publish reads it, which links there are (a, b, kind), not their strength or last
+# contact, which a graph build rewrites on thousands of links an hour (graph_publish changes them in place, so the
+# trigger can compare).
+LINKS_SHARED = (
+    "CREATE TRIGGER IF NOT EXISTS stamp_links_shared_insert AFTER INSERT ON graph_links BEGIN "
+    "UPDATE data_stamps SET n=n+1 WHERE name='links_shared'; END",
+    "CREATE TRIGGER IF NOT EXISTS stamp_links_shared_update AFTER UPDATE ON graph_links WHEN old.a IS NOT new.a "
+    "OR old.b IS NOT new.b OR old.kind IS NOT new.kind BEGIN UPDATE data_stamps SET n=n+1 WHERE name='links_shared'; END",
+    "CREATE TRIGGER IF NOT EXISTS stamp_links_shared_delete AFTER DELETE ON graph_links BEGIN "
+    "UPDATE data_stamps SET n=n+1 WHERE name='links_shared'; END",
+)
+
+
+def watch_graph_shared(db):
+    """graph_shared's, graph_scores' and links_shared's counters and triggers (for the tables there are), once."""
+    db.execute('CREATE TABLE IF NOT EXISTS data_stamps(name TEXT PRIMARY KEY,n INTEGER NOT NULL)')
+    have = {r[0] for r in db.execute("SELECT name FROM sqlite_master WHERE type='table' AND name IN ('graph_nodes','graph_links')")}
+    for table, name, triggers in (('graph_nodes', 'graph_shared', GRAPH_SHARED), ('graph_nodes', 'graph_scores', GRAPH_SCORES),
+                                  ('graph_links', 'links_shared', LINKS_SHARED)):
+        if table in have:
+            db.execute('INSERT OR IGNORE INTO data_stamps(name,n) VALUES(?,0)', (name,))
+            for sql in triggers:
+                db.execute(sql)
+
+
 # events_shared: events as the Shared Graph's What's shared reads them (shared_graph_kept.overview): a message in, out, or
 # changed in what it shows (its account, kind, time, title, body, metadata, or deleted or history). Not counted: the
 # review's own bookkeeping on each message (analyzed_version, deferrals), which changes all the time and is never read there.

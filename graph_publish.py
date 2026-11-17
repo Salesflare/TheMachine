@@ -26,9 +26,11 @@ TABLES = {
 
 
 # A row already there is changed in place: an UPDATE, which leaves its triggers the old row to compare with (an INSERT OR
-# REPLACE is a new row to them). stamps.GRAPH_WHO counts a node only when who it is changed, not its strength or profile.
+# REPLACE is a new row to them). stamps.GRAPH_WHO counts a node only when who it is changed, not its strength or profile;
+# stamps.GRAPH_SHARED and LINKS_SHARED count what the Team Graph's publish reads, not each link's new strength.
 UPDATES = {
     'graph_nodes': 'UPDATE graph_nodes SET kind=?,name=?,strength=?,last_at=?,signals=?,gap_days=?,quiet=?,trend=?,info=? WHERE id=?',
+    'graph_links': 'UPDATE graph_links SET kind=?,strength=?,last_at=? WHERE a=? AND b=?',
 }
 
 

@@ -52,10 +52,12 @@ def _set_state(state):
     locale_prefs._current.update(state['locale'])
 
 
-def run(store, scope_args, keys, secret, kept, grants):
+def run(store, scope_args, keys, secret, kept, grants, reads=False):
     """[(records, threads, stats, files, held)] for the Fleet's scope and then each grant's (scope.granted(*grant)),
     collected in a child process; None when that can't be done (the caller collects in-process instead).
-    store: the Store whose database it reads; scope_args: Scope's after db (accounts, internal, mine, personal)."""
+    store: the Store whose database it reads; scope_args: Scope's after db (accounts, internal, mine, personal).
+    reads: (that list, the tables it read, the people it looked at), so the next round can tell nothing it reads
+    changed, or only the records' scores (shared_graph_since.py)."""
     path, key = getattr(store, 'path', None), getattr(store, '_seal_key', None)
     if path is None or (getattr(store, 'sealer', None) and not key):
         return None
@@ -82,10 +84,12 @@ def run(store, scope_args, keys, secret, kept, grants):
                     (err or b'').decode('utf-8', 'replace').strip().rsplit('\n', 1)[-1].split(':', 1)[0][:80])
         return None
     try:
-        return _loads(out)
-    except (pickle.UnpicklingError, EOFError, ValueError, TypeError) as error:
+        answer = _loads(out)
+        found, read, nodes = answer['found'], sorted(answer['read']), answer['nodes']
+    except (pickle.UnpicklingError, EOFError, ValueError, TypeError, KeyError) as error:
         LOG.warning('shared graph collect in-process reason=%s', type(error).__name__)
         return None
+    return (found, read, nodes) if reads else found
 
 
 def _connect(path, key, protected):
@@ -99,18 +103,39 @@ def _connect(path, key, protected):
     return db
 
 
-def collect(db, request):
-    """The child's work: the same collect calls graph_publish makes, in one read transaction."""
+def collect(db, request, nodes=None):
+    """The child's work: the same collect calls graph_publish makes, in one read transaction. nodes: a dict to fill
+    with the people they looked at (shared_graph.collect's nodes; the same for each)."""
     import shared_graph
     scope = shared_graph.Scope(db, *request['scope'])
     out = []
     for grant in [None, *request['grants']]:
-        held = set()
+        held, looked = set(), {}
         records, threads, stats, files = shared_graph.collect(db, scope if grant is None else scope.granted(*grant), request['keys'],
                                                               request['secret'], held=held if grant is None else None,
-                                                              kept=request['kept'])
+                                                              kept=request['kept'], nodes=looked)
         out.append((records, threads, stats, files, held))
+        if nodes is not None:
+            nodes.setdefault('top', looked.get('top', []))
     return out
+
+
+def reading(db, request):
+    """(collect, the names of the tables it read (sqlite's authorizer, at each statement's prepare), the people it
+    looked at). A fresh connection only: on one that cached a statement before, or with answers kept between calls
+    (stamps.Kept), a read could go unseen, so the server's own connection never gives this (then a publish reads every
+    round)."""
+    read, nodes = set(), {}
+
+    def note(action, table, *_):
+        if action == sqlite3.SQLITE_READ and table:
+            read.add(table)
+        return sqlite3.SQLITE_OK
+    db.set_authorizer(note)
+    try:
+        return collect(db, request, nodes), read, nodes
+    finally:
+        db.set_authorizer(None)
 
 
 def main():
@@ -120,10 +145,10 @@ def main():
     try:
         with db:
             db.execute('BEGIN')  # one snapshot for all of it, as the server's one connection had
-            found = collect(db, request)
+            found, read, nodes = reading(db, request)
     finally:
         db.close()
-    sys.stdout.buffer.write(_dumps(found))
+    sys.stdout.buffer.write(_dumps({'found': found, 'read': sorted(read), 'nodes': nodes}))
     sys.stdout.buffer.flush()
 
 

@@ -59,6 +59,15 @@ class Apart(unittest.TestCase):
         self.assertEqual(sg.canon([[r, t, s, f, sorted(h)] for r, t, s, f, h in apart_]),
                          sg.canon([[r, t, s, f, sorted(h)] for r, t, s, f, h in here]))
 
+    def test_the_child_also_says_which_tables_it_read_and_the_people_it_looked_at(self):
+        found, read, looked = apart.run(self.store, self.scope, KEYS, SECRET, self.kept, self.grants, reads=True)
+        self.assertEqual(sg.canon([[r, t, s, f, sorted(h)] for r, t, s, f, h in found]),
+                         sg.canon([[r, t, s, f, sorted(h)] for r, t, s, f, h in self.here()]))
+        self.assertTrue({'events', 'graph_nodes', 'graph_links', 'share_threads', 'projects'} <= set(read), read)
+        with self.store.connect() as db:
+            people = [r[0] for r in db.execute("SELECT id FROM graph_nodes WHERE kind='person' ORDER BY strength DESC LIMIT ?", (sg.MAX_RECORDS,))]
+        self.assertEqual(sorted(looked['top']), sorted(people))
+
     def test_where_no_program_may_start_it_says_so_and_the_caller_collects_here(self):
         with mock.patch.object(subprocess, 'Popen', side_effect=PermissionError('sandbox: no programs')):
             self.assertIsNone(apart.run(self.store, self.scope, KEYS, SECRET, self.kept, self.grants))

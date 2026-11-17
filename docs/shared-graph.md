@@ -469,8 +469,23 @@ onto another blob.
 ### Publishing and receiving
 
 Each Machine publishes every few minutes when something changed and fetches with a cursor. The Network's inbox reports
-the newest wrap cursor (`graph=`), so a Machine fetches only when there is something new for it. A receiver opens a blob
-only when:
+the newest wrap cursor (`graph=`), so a Machine fetches only when there is something new for it.
+
+A round reads its messages and graph again only when something it reads could have changed since a round that sent
+everything (`shared_graph_since.py`):
+
+- Nothing changed: it reads and sends nothing. It checks change counters on the tables the last read used
+  (`machine/stamps.py`). For messages, people and links, the counters skip what a publish never reads: the review's
+  bookkeeping, a person's live status, a link's strength. The check also covers the hour, the threads still in the hold,
+  keys, grants and recipients.
+- Only scores moved (strength fades with time): the records from the last read get the new scores, unless the people
+  with the most strength changed.
+- Anything else, the daily snapshot, a round that couldn't send everything, or a restart: it reads everything. Who gets
+  what is decided by the same rules either way.
+
+Passing blobs on to a teammate who [asked](#catching-up) lists this Machine's copies again only when one came or went.
+
+A receiver opens a blob only when:
 
 - the sender is a confirmed member and the signature checks with their pinned key;
 - the wrap opens and its `h` matches;
