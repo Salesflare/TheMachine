@@ -212,7 +212,7 @@ def evidence(config, signals):
     import graph
     accounts = {a.get('id'): a for a in own_accounts(config)}
     mine = set(primaries(config))
-    sent, selves, names, called, received = set(), set(), {}, {}, {}
+    sent, selves, names, called, received, sent_by = set(), set(), {}, {}, {}, {}
     owner = {graph.plain_name(config.get('owner_name'))} - {None}
     note = lambda store, address, name: store.setdefault(address, set()).add(name) if name else None
     for _, account_id, kind, _, m in signals:
@@ -222,6 +222,8 @@ def evidence(config, signals):
             if sender:
                 name, address = sender[0]
                 full = graph.plain_name(name)
+                if 'SENT' in labels:  # from any mailbox: graph.Owner.learn_sent
+                    sent_by.setdefault(address, set()).add(full)
                 if 'SENT' in labels and account_id in accounts:
                     sent.add(address)
                     if address in mine and full:
@@ -242,7 +244,8 @@ def evidence(config, signals):
                 note(called, clean(a['email']), full)
                 if own and a.get('self'):
                     selves.add(clean(a['email']))
-    return {'sent': sent, 'calendar': selves, 'names': names, 'called': called, 'received': received, 'owner_names': owner}
+    return {'sent': sent, 'calendar': selves, 'names': names, 'called': called, 'received': received, 'owner_names': owner,
+            'sent_by': sent_by}
 
 
 def detect(config, sendas, found, teammates=()):
@@ -314,11 +317,20 @@ def save(db, detected, now):
                    [(a, json.dumps(d['sources']), d['state'], d['reason'], now) for a, d in sorted(detected.items())])
 
 
-def refresh(db, config, signals, teammates, now):
-    """Detect again from the signals and the kept send-as lists, and keep the result."""
-    found = detect(config, fetched(db, config), evidence(config, signals), teammates)
-    save(db, found, now)
+def refresh(db, config, signals, teammates, now, found_in=None):
+    """Detect again from the signals and the kept send-as lists, and keep the result when it changed. found_in: what
+    evidence() read from these signals already (a graph build reads them once, outside the write lock)."""
+    found = detect(config, fetched(db, config), evidence(config, signals) if found_in is None else found_in, teammates)
+    if unsaved(db, found):
+        save(db, found, now)
     return found
+
+
+def unsaved(db, detected):
+    """Whether save() would change what is kept (its time aside): a graph build takes the write lock for it only then."""
+    ensure(db)
+    kept = {r[0]: (r[1], r[2], r[3]) for r in db.execute('SELECT address,sources,state,reason FROM own_addresses')}
+    return kept != {a: (json.dumps(d['sources']), d['state'], d['reason']) for a, d in detected.items()}
 
 
 def choices(db):

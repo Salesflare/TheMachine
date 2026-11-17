@@ -153,6 +153,8 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
     project nodes, relations, rows. `graph.py` keeps the transactions and the publish. `tests/test_graph_golden.py`
     holds every `graph_*` row a sandbox build writes, so a change to a pass shows each row it changes.
     `machine/graph/card_lead.py` is no pass: it orders a to-do's people (`graph.card_people`), who asked first.
+    `machine/graph/setup.py` is the setup before the passes (writes only what changed) and a build's mark, by which the
+    graph worker skips a timed build while nothing it reads changed.
   - `machine/app/search_ask.py` (`SearchAskApp`): Ask from search: the messages a question in Search finds in the area
     in view and the one-shot turn that answers it (`search_ask.py` has the prompt and the answer).
   - `machine/app/ask_memory.py`: what Ask reads besides messages, as four blocks on the `ask` recall: promises, facts,

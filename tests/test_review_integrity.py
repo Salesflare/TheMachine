@@ -113,12 +113,13 @@ class GraphFixes(unittest.TestCase):
                 self.build()
             except Exception as e:fail.append(e)
             done.set()
-        original=tg.graph.Owner.learn
-        def learn(owner,signals):
-            original(owner,signals)
+        import machine.graph.setup as graph_setup
+        original=graph_setup.learn_sent
+        def learn(owner,sent_by):
+            original(owner,sent_by)
             if not threads:
                 t=threading.Thread(target=change);threads.append(t);t.start();self.assertTrue(started.wait(1));self.assertTrue(done.wait(3))  # the build holds no lock while it computes (test_graph_build_lock)
-        with patch.object(tg.graph.Owner,'learn',learn):self.build()
+        with patch.object(graph_setup,'learn_sent',learn):self.build()
         threads[0].join(3);self.assertTrue(done.is_set());self.assertFalse(fail);self.assertEqual(self.node('email:ann@client.com')['role'],'friend')
     def test_recent_roles_run_is_checked_inside_transaction(self):
         def evidence():

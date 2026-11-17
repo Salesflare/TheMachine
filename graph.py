@@ -1213,7 +1213,7 @@ def _build_in(db, config, now, team, kin, locked, history=False):
     from machine.graph.relations import relation_links
     from machine.graph.rows import event_and_unnamed_rows
     from machine.graph.laps import Laps
-    import own_addresses
+    from machine.graph import setup
     started = timeutil.clock()
     lap = Laps()
     current = parse_time(now)
@@ -1225,23 +1225,12 @@ def _build_in(db, config, now, team, kin, locked, history=False):
     old = [(r[0], r[1], r[2], parse_time(r[3]), _metadata(r[4])) for r in graph_history.rows(db, horizon)] if history else []
     old = [r for r in old if r[4] is not None]
     past = {r[0] for r in old}
+    owner = setup.prepare(db, config, signals, team, now, locked)  # writes only what changed (machine/graph/setup.py)
     if not locked:
-        db.execute('BEGIN IMMEDIATE')
-    _watch(db)
-    own_addresses.refresh(db, config, signals, team, now)  # the owner's own addresses, before anyone is told apart from them
-    _drop_unusable_profiles(db)
-    if not locked:
-        db.execute('COMMIT')
-    owner = Owner(config, db)
-    owner.learn(signals)
-    if not locked:
-        db.execute('BEGIN IMMEDIATE')
-    fold_self_records(db, owner, now)  # a person made from the owner's own address goes into About you (2026-10-26)
-    if not locked:
-        db.execute('COMMIT')
         db.execute('BEGIN')  # deferred: its first read below is the snapshot all of this build is computed from
         seen = _edits(db)
         db.execute('PRAGMA query_only=ON')  # computing writes nothing: no lock is taken until the publish
+    before = setup.counters(db)  # what this build is computed from (its mark)
     lap('setup')
     # The passes (machine/graph/), in the order they run: each one reads what the ones before it found; lap times each.
     (kept, mailings, listed, warmup, gone, per_event, names, x_names, crm_names, paying_names, said_orgs, appears,
@@ -1281,6 +1270,7 @@ def _build_in(db, config, now, team, kin, locked, history=False):
         db.execute('BEGIN IMMEDIATE')
         if _edits(db) != seen:
             raise Outdated()
+    pre = setup.counters(db)
     side_rows = side_changes(db, nodes, now)
     if side_rows is not None:
         db.executemany('INSERT OR REPLACE INTO side_changes(node_id,rule,before,after,why,at) VALUES(?,?,?,?,?,?)', side_rows)
@@ -1292,9 +1282,10 @@ def _build_in(db, config, now, team, kin, locked, history=False):
     mailings.publish(db, nodes)  # Hidden senders, under People
     db.execute('INSERT OR REPLACE INTO graph_state(id,built_at,signals,took_ms) VALUES(1,?,?,?)', (now, len(signals), took))
     fill_orgs(db, now)  # projects with no organization yet get their people's, where that is clear
+    mark = setup.mark(before, pre, setup.counters(db))
     db.execute('COMMIT')
     lap('publish')
-    return {'people': sum(1 for n in nodes if n[1] == 'person'), 'projects': sum(1 for n in nodes if n[1] == 'project'),
+    return {'mark': mark,'people': sum(1 for n in nodes if n[1] == 'person'), 'projects': sum(1 for n in nodes if n[1] == 'project'),
             'links': len(links), 'signals': len(signals), 'history': len(old), 'probable': len(probable), 'unnamed': len(unnamed_rows), 'same': len(same_rows),
             'joined': sum(1 for _, _, why in union.edges if why in ('message', 'thread', 'profile', 'signature', 'name')), 'took_ms': took,
             'passes_ms': lap.ms}
@@ -2658,14 +2649,19 @@ def keep_linked_number(db, jid, now):
     return number
 
 
+def self_records(db, owner):
+    """The people the owner made from one of their own addresses or numbers: what fold_self_records folds in."""
+    if not _table(db, 'self_record_backups'):
+        return []
+    return sorted({r[0] for r in db.execute("SELECT identifier FROM manual_nodes WHERE kind='person'") if owner.has(r[0])})
+
+
 def fold_self_records(db, owner, now):
     """A person the owner made from one of their own addresses or numbers (New person, an import) goes into About you:
     each row about it is backed up first (self_record_backups, kept on this Machine), the numbers the owner gave it
     become theirs, its facts are about the owner, and the rest goes, Keep private too. Runs with each build; nothing to
     do is one quick look. Returns how many records were folded in."""
-    if not _table(db, 'self_record_backups'):
-        return 0
-    mine = sorted({r[0] for r in db.execute("SELECT identifier FROM manual_nodes WHERE kind='person'") if owner.has(r[0])})
+    mine = self_records(db, owner)
     for identifier in mine:
         backup = {}
         for table, column in SELF_TABLES:

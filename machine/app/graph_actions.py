@@ -4,6 +4,7 @@ graph calls (graph_action), finding and listing people, organizations and projec
 import base64
 import binascii
 import contextlib
+import hashlib
 import json
 import re
 import sqlite3
@@ -20,6 +21,7 @@ import gap_note
 import gbrain
 import graph
 import graph_apart
+from machine.graph import setup as graph_setup
 import graph_board_reviews
 import graph_show
 import graph_updates
@@ -52,6 +54,12 @@ GRAPH_CHECK_SECONDS = 60  # how often the graph worker looks for new organizatio
 GRAPH_RETRY_SECONDS = 5   # a build that met edits on the way: the next try
 GRAPH_LOCK_AFTER = 1800   # this long without a published build: the last try holds the write lock (graph.build lock_last)
 GRAPH_SLOW_MS = 10_000    # a build that takes this long logs its passes' times (slow_build_line)
+GRAPH_KEEP_SECONDS = 3600  # the graph worker skips a build with nothing changed (graph_setup.unchanged) for this long at most
+
+
+def _plain(value):
+    """A set as a sorted list, for the key of what a build reads besides the database (graph_build keep)."""
+    return sorted(value, key=str) if isinstance(value, (set, frozenset)) else str(value)
 
 
 def slow_build_line(summary, slow_ms=GRAPH_SLOW_MS):
@@ -567,15 +575,26 @@ class GraphActionsApp:
         else:
             self.graph_build()
 
-    def graph_build(self, lock_last=True, apart=False):
+    def graph_build(self, lock_last=True, apart=False, keep=False):
         """apart: in a process of its own (graph_apart.py), as the graph worker builds, so page requests don't wait on it
-        for Python; in this one where no child can run."""
+        for Python; in this one where no child can run. keep: no build while nothing it reads changed since the last one
+        here (graph_setup.unchanged: the database's change counters, the config and the owner's Fleets), for up to
+        GRAPH_KEEP_SECONDS, after which a build counts the time gone by: {'skipped': True}."""
         args = (self.config, now(), self.fleet_addresses(), self.fleet_circles())
-        if apart and (built := graph_apart.run(self.store, *args, history=True, lock_last=lock_last)) is not None:
-            return built
-        with self.store.connect() as db:
-            db.isolation_level = None  # graph.build runs its own transaction
-            return graph.build(db, *args, history=True, lock_last=lock_last)
+        inputs = hashlib.blake2b(json.dumps([args[0], args[2], args[3]], sort_keys=True, default=_plain).encode(), digest_size=16).digest()
+        kept = self.__dict__.get('graph_mark')
+        if keep and kept and kept[0] == inputs and time.monotonic() - kept[2] < GRAPH_KEEP_SECONDS:
+            with self.store.connect() as db:
+                if graph_setup.unchanged(db, kept[1]):
+                    return {'skipped': True}
+        self.graph_mark = None
+        built = graph_apart.run(self.store, *args, history=True, lock_last=lock_last) if apart else None
+        if built is None:
+            with self.store.connect() as db:
+                db.isolation_level = None  # graph.build runs its own transaction
+                built = graph.build(db, *args, history=True, lock_last=lock_last)
+        self.graph_mark = (inputs, built.get('mark'), time.monotonic()) if isinstance(built, dict) else None
+        return built
 
     def graph_event_lines(self, event_ids, keep_order=False):
         """One line per signal, newest first (keep_order: in the order given): "<id> (<account>) <what, from whom, when> ·
@@ -758,8 +777,10 @@ class GraphActionsApp:
             try:
                 self.own_addresses_fetch()  # once a day per mailbox: its aliases, before the build tells the owner apart
                 # A build that keeps meeting edits tries again in a few seconds instead of holding the write lock for a
-                # whole build (every request that writes waited); only after half an hour without one does it hold it
-                line = slow_build_line(self.graph_build(lock_last=time.monotonic() - published > GRAPH_LOCK_AFTER, apart=True))
+                # whole build (every request that writes waited); only after half an hour without one does it hold it.
+                # A timed rebuild with nothing changed since the last one is skipped (keep); an edit's (dirty) never is
+                line = slow_build_line(self.graph_build(lock_last=time.monotonic() - published > GRAPH_LOCK_AFTER, apart=True,
+                                                        keep=not dirty and not gbrain))
                 if line:
                     LOG.info(line)
                 if gbrain:

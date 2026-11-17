@@ -14,6 +14,9 @@ A living map of who you deal with and what's going on, across every account.
 
 - `graph.py` rebuilds it from scratch every ten minutes (and soon after a label or merge), as a pure function of the
   signals, your to-do decisions, project labels and merges. So a rule change also applies to the past.
+- A timed rebuild is skipped while nothing it reads changed since the last one (the change counters of its tables,
+  the settings and your Fleets), for an hour at most. A build computes without the write lock and takes it only for a
+  setup step that changed something and for the publish.
 - It needs no setup, and nothing leaves the Machine (unless you turn on
   [organization data](#organization-data-optional-enrichment)).
 - A rebuild over 5,000 signals with probable links and unnamed work takes under half a second.

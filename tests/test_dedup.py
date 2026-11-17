@@ -107,7 +107,7 @@ class SamePerson(unittest.TestCase):
         app.graph_dirty, app.stop = threading.Event(), threading.Event()
         app.graph_freshness, app.own_addresses_fetch, app.history_graph_step = (lambda: 1), (lambda: None), (lambda: False)
 
-        def build(lock_last=True, apart=False):
+        def build(lock_last=True, apart=False, keep=False):
             self.assertTrue(apart)  # in a process of its own (graph_apart.py)
             calls.append(lock_last)
             if len(calls) == 1:
