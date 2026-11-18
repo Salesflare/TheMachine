@@ -18,6 +18,8 @@ top with a new id and the day it merges, then add its strings to the catalogs (s
   something they use; 1: a small change worth a line). It decides the order, so set it honestly.
 - title: a few words. text: one or two short sentences: what changed and what the person can do now.
 - who (optional): 'team' for something only someone in a Work Fleet can use.
+- model (optional): a main model's id without its provider (like 'gpt-6.2-sol'), for something only Machines whose
+  main model it is can use: the morning's pick leaves it out everywhere else (models.openclaw_model).
 - action (optional): {'label': the button, 'run': a command id of the dashboard's palette (dashboard/shell-keys.js
   ACTIONS, like 'go-routines'), or 'search' for Search}. tests/test_whats_new.py checks it exists.
 - art: the name of its picture in WN_ART (dashboard/shell-whats-new.js): a small drawing of the feature in the
@@ -31,6 +33,10 @@ import i18n
 from timeutil import local_day, local_tz, now
 
 ENTRIES = [
+    {'id': 'gpt-6-2-sol', 'date': '2026-11-18', 'weight': 2, 'model': 'gpt-6.2-sol', 'title': 'Faster answers on GPT-6.2 Sol',
+     'text': 'The Machine now runs on GPT-6.2 Sol with a ChatGPT sign-in: faster answers at the same price. Background '
+             'work uses it too.',
+     'action': {'label': 'Open Model settings', 'run': 'go-settings-model'}, 'art': 'sol'},
     {'id': 'login-accounts', 'date': '2026-11-16', 'weight': 2, 'title': 'Import sign-ins, several accounts',
      'text': 'Bring in sign-ins from 1Password, LastPass, Bitwarden or Chrome, and keep a Work and a Personal account '
              'for one site. A to-do signs in with the one that fits.',
@@ -95,7 +101,12 @@ MARK = 'whats_new'  # milestones: at = when a notice was last closed, detail = {
 
 PICK = 'whats_new_pick'  # milestones: at = when the morning's pick was made, detail = {"day": local day, "ids": [ids]}
 
-KEYS = {'id', 'date', 'weight', 'title', 'text', 'who', 'action', 'art'}
+KEYS = {'id', 'date', 'weight', 'title', 'text', 'who', 'model', 'action', 'art'}
+
+
+def model_id(model):
+    """A main model's id without its provider, in lowercase ('openai/GPT-6.2-Sol' -> 'gpt-6.2-sol'); '' when unknown."""
+    return str(model or '').strip().rpartition('/')[2].lower()
 
 
 def problems(entry):
@@ -118,6 +129,8 @@ def problems(entry):
         found.append('weight: 1, 2 or 3')
     if entry.get('who') not in (None, 'team'):
         found.append("who: 'team' or left out")
+    if 'model' in entry and not re.fullmatch(r'[a-z0-9][a-z0-9.-]*', str(entry['model'])):
+        found.append("model: a model's id without its provider, like 'gpt-6.2-sol'")
     action = entry.get('action')
     if action is not None and not (isinstance(action, dict) and action.get('label') and action.get('run')):
         found.append('action: {label, run}')
@@ -161,10 +174,11 @@ def seen(db):
     return at, {str(i) for i in ids} if isinstance(ids, list) else set()
 
 
-def candidates(db, current, entries=None, team=False):
+def candidates(db, current, entries=None, team=False, model=None):
     """The candidates this person could be told about today, best first (weight, then the newest): dated after the day
     they finished getting started and at most KEEP_DAYS old, not seen yet, for the team only on a Machine in a Work
-    Fleet. None while they are getting started (and SETTLE_HOURS after)."""
+    Fleet, for one model only where `model` (the main model, with or without its provider) is it. None while they are
+    getting started (and SETTLE_HOURS after)."""
     start = onboarded(db)
     if not start or dt.datetime.fromisoformat(start) + dt.timedelta(hours=SETTLE_HOURS) > current:
         return []
@@ -173,11 +187,11 @@ def candidates(db, current, entries=None, team=False):
     first, oldest = local_day(start).isoformat(), (today - dt.timedelta(days=KEEP_DAYS)).isoformat()
     pool = [e for e in (ENTRIES if entries is None else entries)
             if first < e['date'] <= today.isoformat() and e['date'] >= oldest and e['id'] not in known
-            and (team or e.get('who') != 'team')]
+            and (team or e.get('who') != 'team') and e.get('model') in (None, model_id(model))]
     return sorted(pool, key=lambda e: (e.get('weight') or 1, e['date']), reverse=True)
 
 
-def pick_step(db, current=None, entries=None, team=False):
+def pick_step(db, current=None, entries=None, team=False, model=None):
     """The morning's pick: once a day, in the owner's MORNING hours, the top PICKED candidates are what today's notice
     shows. Outside those hours, or when today's pick is made, nothing changes. The ids picked, or None."""
     current = current or dt.datetime.fromisoformat(now())
@@ -187,7 +201,7 @@ def pick_step(db, current=None, entries=None, team=False):
     day = local.date().isoformat()
     if _detail(db, PICK)[1].get('day') == day:
         return None
-    ids = [e['id'] for e in candidates(db, current, entries, team)[:PICKED]]
+    ids = [e['id'] for e in candidates(db, current, entries, team, model)[:PICKED]]
     db.execute('INSERT OR REPLACE INTO milestones(name,at,detail) VALUES(?,?,?)',
                (PICK, current.isoformat(), json.dumps({'day': day, 'ids': ids})))
     return ids
@@ -244,6 +258,6 @@ class WhatsNewStore:
             mark_seen(db, current, entries)
         return {'whats_new': None}
 
-    def whats_new_pick(self, current=None, entries=None, team=False):
+    def whats_new_pick(self, current=None, entries=None, team=False, model=None):
         with self.connect() as db:
-            return pick_step(db, current, entries, team)
+            return pick_step(db, current, entries, team, model)

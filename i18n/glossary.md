@@ -50,7 +50,7 @@ Product and brand names stay exactly as they are in every language, and the chec
 
 The Machine, Machine (an owner's own Machine: "your Machine"), The Machine Network, Network, Graph, Fleet, Telegram,
 Gmail, Google, Outlook, Microsoft, Slack, WhatsApp, LinkedIn, Intercom, Zoom, Stripe, GitHub, Salesflare, OpenClaw,
-ClawHub, Claude, Claude Code, Codex, ChatGPT, Trello, Shortcut, Granola, Tailscale.
+ClawHub, Claude, Claude Code, Codex, ChatGPT, Trello, Shortcut, Granola, Tailscale, GPT-6.2 Sol.
 
 ## Terms
 

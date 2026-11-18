@@ -235,7 +235,8 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   `ProfileStore` and `FirstLookStore` mixins), `machine/store/message_view.py` (how each event kind reads in the message
   viewer: its view, email, chat, notification or card, and the rules every source keeps there; connectors declare
   `VIEWS` and `APP`), `machine/store/whats_new.py` (the `WhatsNewStore` mixin and `ENTRIES`: the
-  pool of What's new candidates, the morning's pick of up to five (`pick_step`, run by `retention_worker`) and what a
+  pool of What's new candidates, the morning's pick of up to five (`pick_step`, run by `retention_worker`; an entry
+  for a Work Fleet or for one main model only goes where that fits) and what a
   person saw; its dialog is
   `dashboard/shell-whats-new.js`), `machine/store/done_milestones.py` (the `DoneMilestonesStore` mixin and
   `LEVELS`: the milestone on done to-dos due on To-dos, shown once; its card and share image are

@@ -59,10 +59,10 @@ class WhatsNew(unittest.TestCase):
                 store.first_look_ended(db, started.isoformat())
         return store
 
-    def morning(self, day, store=None, entries=ENTRIES, hour=8, month=3, team=False):
+    def morning(self, day, store=None, entries=ENTRIES, hour=8, month=3, team=False, model=None):
         """The morning's pick, then what the dashboard shows later that day (ids, or None for no notice)."""
         store = store or self.store
-        store.whats_new_pick(at(day, hour, month), entries, team)
+        store.whats_new_pick(at(day, hour, month), entries, team, model)
         return self.ids(day, store, entries, month=month)
 
     def ids(self, day, store=None, entries=ENTRIES, hour=10, month=3):
@@ -145,6 +145,25 @@ class WhatsNew(unittest.TestCase):
         team = ENTRIES + [{'id': 'boards', 'date': '2026-03-05', 'weight': 3, 'who': 'team', 'title': 'Boards', 'text': 'For a team.'}]
         self.assertEqual(self.morning(5, entries=team), ['one'])
         self.assertEqual(self.morning(5, self.machine(), team, team=True), ['boards', 'one'])
+
+    def test_model_entries_only_where_it_is_the_main_model(self):
+        sol = ENTRIES + [{'id': 'sol', 'date': '2026-03-05', 'weight': 3, 'model': 'gpt-6.2-sol', 'title': 'Sol', 'text': 'Faster.'}]
+        for model in (None, '', 'claude-cli/claude-opus-5-5', 'anthropic/claude-opus-5-5', 'openai/gpt-6.1-sol', 'openai/gpt-6.2-sol-mini'):
+            self.assertEqual(self.morning(5, self.machine(), sol, model=model), ['one'], model)  # Claude, an API key's 6.1, unknown
+        for model in ('openai/gpt-6.2-sol', 'openai-codex/GPT-6.2-Sol', 'gpt-6.2-sol'):
+            self.assertEqual(self.morning(5, self.machine(), sol, model=model), ['sol', 'one'], model)
+        self.assertEqual(whats_new.problems(dict(sol[-1], model='openai/gpt-6.2-sol')), ["model: a model's id without its provider, like 'gpt-6.2-sol'"])
+
+    def test_the_morning_worker_picks_with_the_main_model(self):
+        app = a.App.__new__(a.App)
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / 'openclaw.json'
+            app.config = {'openclaw_config': str(path)}
+            self.assertIsNone(app.whats_new_model())  # no openclaw.json: nothing tied to a model
+            path.write_text(json.dumps({'agents': {'defaults': {'model': {'primary': 'openai/gpt-6.2-sol'}}}}))
+            self.assertEqual(app.whats_new_model(), 'openai/gpt-6.2-sol')
+        sol = [e for e in whats_new.ENTRIES if e['id'] == 'gpt-6-2-sol']
+        self.assertEqual([e.get('model') for e in sol], ['gpt-6.2-sol'])  # the move to GPT-6.2 Sol: its owners only
 
     def test_nobody_gets_a_backlog(self):
         new = self.machine(started=at(9))  # someone who started after all of them
