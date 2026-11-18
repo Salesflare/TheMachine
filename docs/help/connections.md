@@ -72,7 +72,7 @@ A site can keep several accounts, such as **Work** and **Personal**. **Save as**
 - **1Password**: export a CSV from the 1Password app on a computer, then choose that file. If 1Password's `op` is signed in on your Machine, it reads from there instead (LastPass's `lpass` too).
 - **From an export file**: a CSV from 1Password, LastPass, Bitwarden or Chrome. Delete it once you're done.
 
-You tick which ones to keep. Your Machine never signs in to your password manager for you and never asks for its master password: you type that into the page yourself.
+Then tick which ones to keep. Your Machine never signs in to your password manager for you and never asks for its master password: you type that into the page yourself.
 
 A saved sign-in only goes into its own web address: the same site, `https`, and port. Not a lookalike address and not another subdomain.
 
