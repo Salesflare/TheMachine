@@ -20,9 +20,9 @@ top with a new id and the day it merges, then add its strings to the catalogs (s
 - who (optional): 'team' for something only someone in a Work Fleet can use.
 - action (optional): {'label': the button, 'run': a command id of the dashboard's palette (dashboard/shell-keys.js
   ACTIONS, like 'go-routines'), or 'search' for Search}. tests/test_whats_new.py checks it exists.
-- art (optional): the name of its picture in WN_ART (dashboard/shell-whats-new.js): a small drawing of the feature in
-  the dashboard's own look, without words (CONTRIBUTING.md says how to draw one). Without one the entry is text only,
-  or a plain stand-in when others in the same notice have a picture."""
+- art: the name of its picture in WN_ART (dashboard/shell-whats-new.js): a small drawing of the feature in the
+  dashboard's own look, without words (CONTRIBUTING.md says how to draw one). Every new candidate has one; the cut
+  refuses one without. (The dashboard still draws a plain stand-in for an entry that has none.)"""
 import datetime as dt
 import json
 import re
@@ -34,7 +34,7 @@ ENTRIES = [
     {'id': 'login-accounts', 'date': '2026-11-16', 'weight': 2, 'title': 'Import sign-ins, several accounts',
      'text': 'Bring in sign-ins from 1Password, LastPass, Bitwarden or Chrome, and keep a Work and a Personal account '
              'for one site. A to-do signs in with the one that fits.',
-     'action': {'label': 'Open Connections', 'run': 'go-connections'}},
+     'action': {'label': 'Open Connections', 'run': 'go-connections'}, 'art': 'logins'},
     {'id': 'watch-a-page', 'date': '2026-11-14', 'weight': 2, 'title': 'Watch a web page',
      'text': 'Ask the chat to watch a page, or add one under Connections. A to-do comes only when something that '
              'matters on it changes.',
@@ -104,9 +104,12 @@ def problems(entry):
     if not isinstance(entry, dict):
         return ['not a dict']
     found = [f'unknown key {k}' for k in sorted(set(entry) - KEYS)]
-    found += [f'no {k}' for k in ('id', 'date', 'weight', 'title', 'text') if entry.get(k) in (None, '')]
+    found += [f'no {k}' for k in ('id', 'date', 'weight', 'title', 'text', 'art') if entry.get(k) in (None, '')]
     if entry.get('id') and not re.fullmatch(r'[a-z0-9-]+', str(entry['id'])):
         found.append('id: lowercase letters, digits and dashes only')
+    art = entry.get('art')
+    if art and (not re.fullmatch(r'[a-z]+', str(art)) or art == 'new'):  # `new` is the stand-in, not a picture
+        found.append('art: the name of its own picture in WN_ART (lowercase letters)')
     try:
         dt.date.fromisoformat(str(entry.get('date')))
     except ValueError:
