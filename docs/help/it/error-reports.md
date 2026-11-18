@@ -1,51 +1,51 @@
 ---
 title: Segnalazioni di errore
 area: security
-summary: Quando si verifica un errore, la tua Machine comunica al team di The Machine cosa non ha funzionato e in quale punto del codice. Mai i tuoi messaggi, nomi o indirizzi.
+summary: Quando qualcosa si rompe, la tua Machine comunica al team di The Machine che cosa non ha funzionato e dove nel codice. Mai i tuoi messaggi, nomi o indirizzi.
 covers: error-reports
 code: error_feed.py, pacing.py, dashboard.html, sw.js
 order: 4
-translated: f67d18a44999cfce
+translated: 2253a0d695fe898c
 ---
-## Che cos'è
+## Che cosa sono
 
-Quando qualcosa non funziona nella tua Machine, la tua Machine invia al nostro team una breve nota anonima sull'errore, così possiamo risolverlo prima che qualcuno ce lo segnali. La funzione è attiva per impostazione predefinita e richiede [The Machine Network](/network).
+Quando qualcosa nella tua Machine si rompe, la tua Machine invia al nostro team una breve segnalazione anonima sull’errore, così possiamo risolverlo prima che qualcuno ce lo segnali. È attiva per impostazione predefinita e richiede [The Machine Network](/network).
 
-## Cosa viene inviato
+## Che cosa viene inviato
 
 Solo queste informazioni, per ogni tipo di errore:
 
-- il tipo di errore, ad esempio `KeyError`;
-- il messaggio, dopo aver rimosso tutti i dettagli specifici: numeri, ID, testo tra virgolette, indirizzi email, link, percorsi dei file, chiavi e qualsiasi parola che potrebbe essere un nome;
-- il punto del codice della Machine in cui si è verificato, mai una cartella del tuo computer;
-- la versione dell'app, quante volte si è verificato e la prima e l'ultima volta.
+- il tipo di errore, per esempio `KeyError`;
+- il messaggio, senza dettagli specifici: numeri, ID, testo tra virgolette, indirizzi email, link, percorsi dei file, chiavi e qualsiasi parola che potrebbe essere un nome;
+- il punto del codice di The Machine in cui si è verificato, mai una cartella del tuo computer;
+- la versione dell’app, quante volte si è verificato e quando è successo la prima e l’ultima volta.
 
-Ad esempio: `IndexError`, `list index out of range`, in `machine/faults.py:fault_event:246`, versione `05b17ee6ac79`, 1 volta.
+Per esempio: `IndexError`, `list index out of range`, in `machine/faults.py:fault_event:246`, versione `05b17ee6ac79`, 1 volta.
 
-## Cosa non viene mai inviato
+## Che cosa non viene mai inviato
 
-Il contenuto dei tuoi messaggi, delle attività, delle bozze o delle chat. Nomi, indirizzi email, numeri di telefono, link o password. L'account o la persona a cui si riferiva.
+Il contenuto dei tuoi messaggi, delle tue attività, bozze o chat. Nomi, indirizzi email, numeri di telefono, link o password. Quale account o persona riguardava.
 
-## Da dove arrivano gli errori
+## Da dove vengono gli errori
 
 - attività in background: controlli dei nuovi messaggi, preparazione delle attività, chat, connessioni e sincronizzazioni;
-- la dashboard, nel browser o nell'app, inclusi gli errori che ti mostra;
-- richieste della dashboard non riuscite o scadute: quale richiesta, mai cosa ha inviato;
-- processi degli agenti di programmazione non riusciti: solo lo strumento e il tipo di errore;
-- il breve test della tua AI quando non va a buon fine: l'errore dell'AI, senza dettagli specifici.
+- la dashboard, nel browser o nell’app, compresi gli errori che ti mostra;
+- richieste della dashboard che non vanno a buon fine o scadono: quale richiesta, mai che cosa ha inviato;
+- attività dell’agente di programmazione non riuscite: solo lo strumento e il tipo di errore;
+- il breve test della tua IA quando non va a buon fine: l’errore dell’IA, senza dettagli specifici.
 
-Un connettore che hai aggiunto tu (un tuo file in `connectors/`) non invia mai i suoi errori. Li trovi nella scheda della connessione.
+Un connettore che hai aggiunto tu (il tuo file in `connectors/`) invia solo il nome del servizio e l’etichetta dell’errore, per esempio `notes` e `notes_http: HTTP unauthorized`, così possiamo aiutarti a risolverlo. Nient’altro del suo codice. La scheda della connessione mostra l’errore completo.
 
-Gli errori ripetuti vengono conteggiati, ma non inviati di nuovo. Viene inviato al massimo un gruppo di segnalazioni ogni 10 minuti. Li conserviamo per 30 giorni.
+Gli errori ripetuti vengono conteggiati, non inviati di nuovo. Viene inviata al massimo una raccolta ogni 10 minuti. Li conserviamo per 30 giorni.
 
-## Limiti di invio
+## Gestione dei limiti
 
-Le attività in background vengono messe in pausa quando i limiti del tuo piano AI stanno per esaurirsi, per lasciare spazio alle tue chat (vedi [Il tuo modello AI](model.md)).
+Le attività in background vengono sospese quando i limiti del tuo piano IA stanno per esaurirsi, così resta spazio per le tue chat ([Il tuo modello IA](model.md)).
 
-Con le segnalazioni di errore attive, la tua Machine ci comunica anche una volta al giorno quante volte è successo: per ogni pausa, l'ora, quale limite, la durata e quanti processi sono rimasti in attesa. Non indica di quali processi si trattava.
+Con le segnalazioni di errore attive, la tua Machine ci comunica anche una volta al giorno quanto spesso succede: per ogni pausa, l’ora, il limite raggiunto, la durata e quante attività sono rimaste in attesa. Niente informazioni sul contenuto delle attività.
 
-## Disattivare
+## Disattivarle
 
-In **Impostazioni**, **Sicurezza**, disattiva **Invia segnalazioni di errore**. Non verrà registrato né inviato altro e i dati in attesa verranno eliminati. Gli errori continueranno a essere visibili sulla tua Machine, che può suggerirti una soluzione.
+In **Impostazioni**, **Sicurezza**, disattiva **Invia segnalazioni di errore**. Non vengono registrati né inviati altri dati e ciò che era in attesa viene eliminato. Gli errori continuano a essere visibili sulla tua Machine, che può proporti una soluzione.
 
 Vedi [Sicurezza e privacy](security-and-privacy.md).
