@@ -14,7 +14,8 @@ machine/web/handler.py), the dashboard (window errors, unhandled rejections and 
 try caught and showed, posted by the page), its service worker (source sw: its own errors and a failed shell update,
 passed on by the page), failed API calls the dashboard saw (source api: the endpoint and an action's name, a 5xx or a
 timeout, never the query or what was sent), failed reviews and coding-agent jobs (their error codes), syncs that
-fail (the source's service and the error type; not an owner's own connector's) and the AI's check when it fails (ModelCheckFailed, machine/app/first_look.py).
+fail (the source's service and the error type; an owner's own connector as sync:own:<service> with its error's label,
+own_message) and the AI's check when it fails (ModelCheckFailed, machine/app/first_look.py).
 
 Locally deduplicated by signature (a repeat only counts), at most MAX_SIGNATURES kept, at most BATCH sent at a time and
 SEND_EVERY apart, DAY_CAP a day; what was sent goes again only when its count grew. Kept 30 days. Sent over the Network
@@ -190,11 +191,39 @@ KIND = re.compile(r'[A-Za-z][A-Za-z0-9_.]{0,59}')
 FILE = re.compile(r'(?!/)(?!.*\.\.)[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+){0,3}')
 FUNCTION = re.compile(r'[A-Za-z_$<][A-Za-z0-9_$.<>-]{0,59}')
 VERSION = re.compile(r'[A-Za-z0-9._-]{1,40}')
+# An owner's own connector (connectors/<service>.py without a services row): its service id and the label its
+# SourceError names (notes_http), so the team can see whose connector fails and help. Nothing else of its code.
+OWN = 'sync:own'
+OWN_SERVICE = re.compile(r'[a-z0-9_]{1,40}')
+OWN_LABEL = re.compile(r'[a-z][a-z0-9_]{0,39}')
+OWN_MESSAGE = re.compile(r'(?:[a-z][a-z0-9_]{0,39}|<word>)(?:: HTTP ((?:[a-z]+ ){0,2}[a-z]+))?')
+
+
+def own(location):
+    return location == OWN or str(location).startswith(OWN + ':')
+
+
+def own_message(error):
+    """An own connector's failure as a report says it: its SourceError's label when it is a plain one, and the HTTP
+    status in words (notes_http: HTTP unauthorized). Any other label goes through normalize like every message."""
+    label = getattr(error, 'category', None)
+    if not isinstance(label, str) or not OWN_LABEL.fullmatch(label):
+        return normalize(str(error))
+    status = getattr(error, 'status', None)
+    return f'{label}: HTTP {http_reason(status)}' if isinstance(status, int) and 100 <= status <= 599 else label
+
+
+def own_allowed(message):
+    match = OWN_MESSAGE.fullmatch(str(message or ''))
+    return bool(match) and (not match.group(1) or match.group(1) in set(REASONS.values()) | {'redirect', 'client error', 'server error', 'status'})
 
 
 def where(file, function, line=None):
-    """file:function[:line] when it is a place in The Machine's own code, else None."""
+    """file:function[:line] when it is a place in The Machine's own code, else None. An owner's own connector's sync is
+    sync:own:<service> (its service id, when it is a plain one) or sync:own."""
     file, function = str(file or ''), str(function or '') or '<module>'
+    if (file, function) == ('sync', 'own') and line not in (None, ''):
+        return f'sync:own:{line}' if OWN_SERVICE.fullmatch(str(line)) else None
     if not FILE.fullmatch(file) or not FUNCTION.fullmatch(function):
         return None
     if line not in (None, '', 0):
@@ -208,7 +237,7 @@ def where(file, function, line=None):
 
 def signature_id(source, kind, location, message):
     """Stable across releases: the line number is left out, so a moved line is the same error."""
-    place = ':'.join(location.split(':')[:2])
+    place = location if own(location) else ':'.join(location.split(':')[:2])  # each own connector its own signature
     return hashlib.sha256(f'{source}|{kind}|{place}|{message}'.encode()).hexdigest()[:16]
 
 
@@ -221,7 +250,7 @@ def record(db, source, kind, message, file, function, line=None, version=None, a
     location = where(file, function, line)
     if not location:
         return None
-    text = normalize(message)
+    text = message if own(location) and own_allowed(message) else normalize(message)
     version = str(version) if version and VERSION.fullmatch(str(version)) else None
     sid = signature_id(source, kind, location, text)
     stamp = at or now()
@@ -303,11 +332,12 @@ def batch(db, current=None, names=()):
     lowered = {str(n).lower() for n in (names() if callable(names) else names) if n}
     out = []
     for sid, source, kind, message, location, version, count, done, first_at, last_at in rows:
-        scrubbed = normalize(message, lowered)
+        kept = own(location) and own_allowed(message)  # an own connector's label, as own_message made it
+        scrubbed = message if kept else normalize(message, lowered)
         if scrubbed != message:
             db.execute('UPDATE error_feed SET message=? WHERE id=?', (scrubbed, sid))
         message = scrubbed
-        if not allowed(message) or not where(*(location.split(':') + [None])[:3]) or not KIND.fullmatch(kind):
+        if not (kept or allowed(message)) or not where(*(location.split(':') + [None])[:3]) or not KIND.fullmatch(kind):
             db.execute('UPDATE error_feed SET sent=count WHERE id=?', (sid,))  # never goes: not offered again
             continue
         out.append({'id': sid, 'source': source, 'kind': kind, 'message': message, 'where': location, 'version': version,

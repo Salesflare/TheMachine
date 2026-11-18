@@ -377,7 +377,8 @@ class EventsStore:
     def failed(self, account, error, service=None):
         """A failed sync, kept for the connection's card. The error reports get `service` (the account's service, as
         sync_report_service names it), never the account's id: an id carries the company or person it is for
-        (acme-gmail). Without a service (an owner's own connector) nothing is reported: the card still says what went wrong."""
+        (acme-gmail). An owner's own connector ('own:<service>') goes as sync:own:<service> with its error's label only
+        (error_feed.own_message). Without a service nothing is reported: the card still says what went wrong."""
         with self.connect() as db:
             retry_at = (dt.datetime.fromisoformat(now()) + dt.timedelta(seconds=error.retry_after)).isoformat() if error.retry_after else None
             self.record_sync_activity(db, account, 'failed', error=str(error), retry_at=retry_at)
@@ -390,6 +391,9 @@ class EventsStore:
                 streak = (row[0] if row and row[0] else 0) + 1
                 if not service_name or (transient(error) and streak < TRANSIENT_REPORT_AFTER):
                     pass
+                elif service_name == 'own' or service_name.startswith('own:'):
+                    error_feed.record(db, 'sync', type(error).__name__, error_feed.own_message(error), 'sync', 'own',
+                                      service_name[4:] or None, self.code_version)
                 elif re.fullmatch(r'[a-z0-9_]{1,24}', service_name):
                     error_feed.record(db, 'sync', type(error).__name__, str(error), 'sync', service_name, None, self.code_version)
             except Exception:

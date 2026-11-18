@@ -375,14 +375,47 @@ class Sources(Base):
         with tempfile.TemporaryDirectory() as folder:
             Path(folder, 'notes.py').write_text('')
             with mock.patch.object(connectors, 'CONNECTORS', Path(folder)):
-                self.assertIsNone(connectors.sync_report_service({'id': 'globex-notes', 'service': 'notes'}))
+                self.assertEqual(connectors.sync_report_service({'id': 'globex-notes', 'service': 'notes'}), 'own:notes')
 
-    def test_an_own_connectors_failure_stays_on_its_card_not_in_the_reports(self):
+    def test_an_own_connectors_failure_reports_its_service_and_label_only(self):
         store = machine_main.Store(self.path)
-        store.failed('work-notes', sources.SourceError('notes_http', 401), None)
+        store.failed('globex-notes', sources.SourceError('notes_http', 401), 'own:notes')
+        store.failed('globex-notes-2', sources.SourceError('sam_lee_says_hi'), 'own:sam_notes')  # a plain label is the owner's own code word
+        store.failed('globex-wiki', sources.SourceError('Wiki for sam.lee@globex.example gone', 404), 'own:wiki')  # not a label: normalized
+        store.failed('globex-x', sources.SourceError('KeyError'), 'own')  # its file's name wasn't a plain id
+        store.failed('work-slack', sources.SourceError('slack_http', 401), 'slack')
         with store.connect() as db:
-            self.assertEqual(db.execute('SELECT count(*) FROM error_feed').fetchone()[0], 0)
-            self.assertEqual(db.execute("SELECT error FROM checkpoints WHERE account_id='work-notes'").fetchone()[0], 'notes_http:HTTP_401')
+            rows = sorted(tuple(r) for r in db.execute('SELECT source,kind,message,location FROM error_feed'))
+            self.assertEqual(db.execute("SELECT error FROM checkpoints WHERE account_id='globex-notes'").fetchone()[0], 'notes_http:HTTP_401')
+            payload = ef.batch(db, names=['Sam', 'Lee', 'Globex'])
+        self.assertEqual(rows, [('sync', 'SourceError', '<word> for <email> gone: HTTP not found', 'sync:own:wiki'),
+                                ('sync', 'SourceError', 'KeyError', 'sync:own'),
+                                ('sync', 'SourceError', 'notes_http: HTTP unauthorized', 'sync:own:notes'),
+                                ('sync', 'SourceError', 'sam_lee_says_hi', 'sync:own:sam_notes'),
+                                ('sync', 'SourceError', 'slack_http: HTTP unauthorized', 'sync:slack')])
+        sent = {(s['where'], s['message']) for s in payload['signatures']}
+        self.assertIn(('sync:own:notes', 'notes_http: HTTP unauthorized'), sent)  # the label survives the send's check
+        self.assertIn(('sync:own:sam_notes', 'sam_lee_says_hi'), sent)
+        self.assertEqual(len(sent), 5)
+
+    def test_an_own_connectors_place_and_label_stay_strict(self):
+        self.assertEqual(ef.where('sync', 'own', 'notes'), 'sync:own:notes')
+        self.assertEqual(ef.where('sync', 'own'), 'sync:own')
+        self.assertIsNone(ef.where('sync', 'own', 'Sam Lee'))
+        self.assertIsNone(ef.where('sync', 'own', 'x' * 41))
+        self.assertNotEqual(ef.signature_id('sync', 'SourceError', 'sync:own:notes', 'x'),
+                            ef.signature_id('sync', 'SourceError', 'sync:own:wiki', 'x'))  # each connector its own
+        self.assertEqual(ef.own_message(sources.SourceError('notes_http', 503)), 'notes_http: HTTP service unavailable')
+        self.assertEqual(ef.own_message(sources.SourceError('notes_http')), 'notes_http')
+        self.assertIn(ef.own_message(sources.SourceError('notes_' * 7 + 'http')), ('<word>', '<secret>'))  # too long for a label
+        self.assertEqual(ef.own_message(sources.SourceError('Notes failed for Sam')), '<word> failed for <word>')
+        for message in ('notes_http', 'notes_http: HTTP forbidden', '<word>: HTTP not found'):
+            self.assertTrue(ef.own_allowed(message), message)
+        for message in ('notes http', 'Notes_http', 'notes_http: HTTP sam lee', 'notes_http: sent to sam', '', 'a' * 41):
+            self.assertFalse(ef.own_allowed(message), message)
+        with sqlite3.connect(':memory:') as db:  # a shipped connector's message gets no such pass
+            ef.record(db, 'sync', 'SourceError', 'sam_lee_says_hi', 'sync', 'slack')
+            self.assertEqual(db.execute('SELECT message FROM error_feed').fetchone()[0], '<word>')
 
     def test_only_a_connector_the_machine_does_not_ship_is_the_owners_own(self):
         import machine.sources.connectors as connectors
