@@ -1,61 +1,61 @@
 ---
 title: Chat de la tarea
 area: cards
-summary: Pregunta sobre una tarea o cambia su borrador, en un chat propio de esa tarea.
+summary: Pregunta sobre una tarea o modifica su borrador en un chat que pertenece a esa tarea.
 covers: card-chat
 code: dashboard.html, assistant.py, chat_files.py, corrections.py
 order: 4
-translated: ba1206b5165695ce
+translated: 340b9cfc0e3a424d
 ---
-## Ábrelo
+## Abrir el chat
 
-En un teléfono, toca el título de la tarea. En un ordenador, usa el enlace al chat de la tarea o **Ver en el chat ›**. En un ordenador, hacer clic en el título cambia el nombre de la tarea.
+En el teléfono, toca el título de la tarea. En el ordenador, haz clic en **Ver en el chat ›** o en el enlace al chat de la tarea. Si haces clic en el título en el ordenador, cambiarás el nombre de la tarea.
 
-## Correos en el chat
+## Correos electrónicos en el chat
 
-Cada correo muestra solo lo nuevo. Los mensajes anteriores que cita quedan plegados bajo **Mensajes anteriores**. **Leer el hilo** abre los correos completos.
+Cada correo muestra solo lo nuevo. Los mensajes anteriores que cita están plegados bajo **Mensajes anteriores**. **Leer el hilo** abre los correos completos.
 
 ## Qué hizo
 
-Cada ejecución aparece como una línea discreta, como «12 cosas revisadas». Ábrela para ver cada tipo de paso una vez, con cuántas veces: «Usó el navegador en example.com · 7». Nombra el sitio, nunca la dirección, un comando ni un archivo.
+Cada ejecución aparece en una sola línea discreta, como «Comprobó 12 cosas». Ábrela para ver cada tipo de paso una vez, junto con el número de veces que se hizo: «Usó el navegador en example.com · 7». Indica el sitio, nunca la dirección, un comando ni un archivo.
 
-Si se detuvo para preguntarte algo, la pregunta también aparece como una línea discreta, como «Preguntó: ¿Lo envío hoy o el lunes?», y tu mensaje debajo muestra solo tu respuesta.
+Cuando se detiene para preguntarte algo, la pregunta también aparece en una línea discreta, como «Preguntó: ¿Lo envío hoy o el lunes?». Debajo, tu mensaje muestra solo tu respuesta.
 
-## Qué preguntar
+## Qué puedes preguntar
 
-Antes de escribir, el chat puede ofrecer hasta tres sugerencias hechas a partir de esta tarea, como «Ofrece el martes a las 10:00». Al tocar una, pasa al cuadro de mensaje para enviarla o cambiarla. Si nada concreto encaja, no hay ninguna.
+Antes de escribir, el chat puede ofrecerte hasta tres sugerencias basadas en esta tarea, como «Propón el martes a las 10:00 en su lugar». Al tocar una, aparece en el cuadro de mensaje para que la envíes o la modifiques. Si no hay ninguna sugerencia concreta adecuada, no aparece ninguna.
 
-- Sobre el hilo, las personas o el contexto: "¿Qué pidieron la última vez?"
-- Para cambiar el borrador: "Hazlo más corto" o "Menciona la nueva fecha".
+- Sobre el hilo, las personas o el contexto: «¿Qué pidieron la última vez?»
+- Para cambiar el borrador: «Hazlo más corto» o «Menciona la nueva fecha».
 
-Una pregunta recibe una respuesta y deja el borrador como está. Las aprobaciones siguen en los botones de la tarea: el chat nunca envía un borrador en la misma respuesta que lo escribió. Lo que pides en el chat y no llega a nadie, como ordenar un documento, lo hace enseguida, sin pedirte que lo confirmes. Todo lo que vaya más allá de lo que pediste sigue esperando tu OK.
+Una pregunta obtiene una respuesta y no modifica el borrador. Para enviar, usa los botones de la tarea: el chat nunca envía un borrador en la misma respuesta en que lo redacta. Los cambios que pidas y que no lleguen a nadie más, como limpiar un documento, se hacen de inmediato, sin pedirte otra confirmación. Cualquier cosa que vaya más allá de lo que pediste espera a que la apruebes. Una tarea con más de un paso permanece abierta hasta que se completen todos.
 
-En un ordenador, Enter o Ctrl+Enter (Cmd+Enter en un Mac) envía, y Mayús+Enter empieza una línea nueva. En un teléfono, usa el botón de enviar.
+En el ordenador, Enter o Ctrl+Enter (Cmd+Enter en un Mac) envía el mensaje y Shift+Enter crea una nueva línea. En el teléfono, usa el botón de envío.
 
-## Cuando algo está mal
+## Si algo está mal
 
-Dilo en el chat, por ejemplo «No es la CEO» o «Ya no trabaja en la empresa». The Machine lo corrige donde se originó: un rol, una empresa, un cargo, la etapa de un proyecto, el proyecto de la tarea o una regla aprendida. El chat muestra entonces qué cambió, por ejemplo **Corregido: El rol de Ana es Head of Sales, según su firma de correo**, con **Deshacer**. Deshacer devuelve lo que había, salvo que haya cambiado desde entonces.
+Dilo en el chat, por ejemplo: «No es el director ejecutivo» o «Dejó la empresa». The Machine corrige el dato en su origen: un cargo, una empresa, un título, la fase de un proyecto, el proyecto de la tarea o una regla que haya aprendido. El chat muestra qué cambió, por ejemplo: «Corregido: el cargo de Sam es responsable de ventas, según su firma de correo», con **Deshacer**. Al deshacer, se recupera el valor anterior, a menos que haya cambiado desde entonces.
 
-Tus otros borradores basados en el valor equivocado se rehacen, uno por uno. Su chat muestra **Rehaciendo el borrador tras una corrección**. Los borradores que editaste o aprobaste, y los que ya se están enviando, quedan como están. La respuesta dice cuántos de cada uno.
+Los demás borradores basados en el valor incorrecto se vuelven a redactar, de uno en uno. En sus chats aparece **Volviendo a redactar el borrador tras una corrección**. Los borradores que hayas editado o aprobado, y los que estén por enviarse, no cambian. La respuesta indica cuántos hay de cada tipo.
 
-En una página de GBrain solo cambia la sección propia de The Machine; lo que escribiste ahí sigue siendo tuyo. Si no encuentra de dónde vino algo, aprende de tu nota como antes.
+En una página de GBrain, solo cambia la sección de The Machine. Lo que hayas escrito ahí se conserva. Si no puede determinar de dónde viene algo, aprende de tu nota en su lugar.
 
 ## Modelo y razonamiento
 
-Debajo del cuadro de mensaje, el chat muestra su modelo y su nivel de razonamiento, como "GPT-6.1 Sol" y "Razonamiento bajo". Toca cualquiera de los dos para elegir otro solo para este chat. Los modelos aparecen bajo su proveedor. Los chats nuevos usan lo que pusiste en **Ajustes**, **Modelo** (consulta [Modelo](model.md)).
+Debajo del cuadro de mensaje, el chat muestra el modelo y el nivel de razonamiento, como «GPT-6.2 Sol» y «Razonamiento bajo». Toca cualquiera de los dos para elegir otro solo para este chat. Los chats nuevos usan lo que hayas elegido en **Ajustes**, **Modelo** (consulta [Modelo](model.md)).
 
-**Rápido**, al final del menú de modelos, hace que tus chats de tareas respondan más rápido, a un costo mayor (cerca del doble, o más de tu plan). Vale para todos tus chats de tareas, solo para los mensajes que envías y para Hazlo, nunca para el trabajo en segundo plano. Desactivado por defecto. En un modelo sin opción rápida aparece en gris.
+**Rápido**, al final del menú de modelos, hace que los chats de tareas respondan más rápido, con un coste aproximadamente doble (o el doble de tu plan). Se aplica a los mensajes que envías y a **Hazlo**, en todos tus chats de tareas, nunca al trabajo en segundo plano. Está desactivado de forma predeterminada y aparece en gris si el modelo no lo admite.
 
-## Detén una respuesta
+## Detener una respuesta
 
-Mientras se escribe una respuesta, el botón de enviar se convierte en **Detener**. Detener la termina al momento y guarda lo que llevaba escrito, marcado como **Detenida**. Escribe un mensaje nuevo para seguir, o toca **Reintentar**.
+Mientras se escribe una respuesta, el botón de envío se convierte en **Detener**. Al detenerla, termina de inmediato y conserva lo que había escrito hasta ese momento, marcado como **Detenida**. Escribe un mensaje nuevo para continuar o toca **Reintentar**.
 
-## Añade archivos
+## Añadir archivos
 
-Toca el clip, pega una captura o suelta archivos en el chat. Cada archivo aparece encima del cuadro de mensaje, y × lo quita. Un mensaje puede tener solo archivos.
+Toca el clip, pega una captura de pantalla o arrastra archivos al chat. Cada archivo aparece encima del cuadro de mensaje y × lo quita. El mensaje puede contener solo archivos.
 
-- Las imágenes (PNG, JPEG, GIF, WebP) de hasta 5 MB llegan al modelo como imágenes.
-- Los PDF, texto, CSV, JSON y archivos de Office de hasta 10 MB son archivos que The Machine lee, y puede adjuntarlos a un borrador.
+- Las imágenes (PNG, JPEG, GIF, WebP) de hasta 5 MB se envían al modelo como imágenes.
+- Los PDF, archivos de texto, hojas de cálculo (CSV) y archivos de Office de hasta 10 MB: The Machine los lee y puede adjuntarlos a un borrador.
 - Hasta 5 archivos por mensaje.
 
-Los archivos se quedan en tu Machine, en su carpeta de datos, cifrados como tus mensajes. Los archivos que añades pero nunca envías se quitan al cabo de un día. Una tarea nueva también puede llevar archivos, desde **Nueva tarea** (consulta [Crea una tú](cards.md#make-one-yourself)).
+Los archivos permanecen en tu Machine, cifrados como tus mensajes. Los archivos que añadas pero nunca envíes se eliminan al cabo de un día. También puedes adjuntar archivos a una tarea nueva desde **Nueva tarea** (consulta [Crear una tú mismo](cards.md#make-one-yourself)).

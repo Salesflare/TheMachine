@@ -1,61 +1,61 @@
 ---
 title: Chat d’une tâche
 area: cards
-summary: Posez une question sur une tâche ou changez son brouillon, dans un chat propre à cette tâche.
+summary: Posez des questions sur une tâche ou modifiez son brouillon dans un chat associé à cette tâche.
 covers: card-chat
 code: dashboard.html, assistant.py, chat_files.py, corrections.py
 order: 4
-translated: ba1206b5165695ce
+translated: 340b9cfc0e3a424d
 ---
-## L’ouvrir
+## Ouvrir le chat
 
-Sur un téléphone, appuyez sur le titre de la tâche. Sur ordinateur, utilisez le lien du chat de la tâche ou **Voir dans le chat ›**. Sur ordinateur, cliquer sur le titre renomme la tâche.
+Sur téléphone, touchez le titre de la tâche. Sur ordinateur, cliquez sur **Voir dans le chat ›** ou sur le lien du chat de la tâche. Cliquer sur le titre sur ordinateur renomme la tâche.
 
-## Les e-mails dans le chat
+## E-mails dans le chat
 
-Chaque e-mail ne montre que ce qui est nouveau. Les messages précédents qu’il cite sont repliés sous **Messages précédents**. **Lire le fil** ouvre les e-mails en entier.
+Chaque e-mail n’affiche que les nouveautés qu’il contient. Les messages précédents qu’il cite sont repliés sous **Messages précédents**. **Lire le fil** ouvre les e-mails en entier.
 
 ## Ce qu’elle a fait
 
-Chaque exécution tient en une ligne discrète, comme « 12 points vérifiés ». Ouvrez-la pour voir chaque type d’étape une fois, avec le nombre de fois : « A utilisé le navigateur sur example.com · 7 ». Elle nomme le site, jamais l’adresse, une commande ou un fichier.
+Chaque exécution apparaît sous la forme d’une ligne discrète, comme « 12 éléments vérifiés ». Ouvrez-la pour voir une seule fois chaque type d’étape, avec son nombre d’occurrences : « Navigateur utilisé sur example.com · 7 ». La ligne indique le nom du site, jamais l’adresse, une commande ou un fichier.
 
-Si elle s’est arrêtée pour vous demander quelque chose, la question tient aussi en une ligne discrète, comme « A demandé : Je l’envoie aujourd’hui ou lundi ? », et votre message en dessous ne montre que votre réponse.
+Quand elle s’arrête pour vous poser une question, celle-ci apparaît aussi sous la forme d’une ligne discrète, comme « Question posée : l’envoyer aujourd’hui ou lundi ? ». Votre message en dessous ne montre que votre réponse.
 
-## Quoi demander
+## Que demander
 
-Avant que vous écriviez, le chat peut proposer jusqu’à trois suggestions tirées de cette tâche, comme « Proposer mardi 10:00 à la place ». En toucher une la place dans la zone de message, à envoyer ou modifier. Si rien de précis ne convient, il n’y en a aucune.
+Avant que vous écriviez, le chat peut proposer jusqu’à trois suggestions à toucher, générées à partir de cette tâche, comme « Proposer mardi à 10 h à la place ». Touchez-en une pour l’ajouter au champ de message, où vous pouvez l’envoyer ou la modifier. Si aucune suggestion ne convient, le chat n’en propose pas.
 
-- Sur le fil, les personnes ou le contexte : « Qu’ont-ils demandé la dernière fois ? »
-- Pour changer le brouillon : « Fais plus court » ou « Mentionne la nouvelle date ».
+- À propos du fil, des personnes ou du contexte : « Qu’ont-ils demandé la dernière fois ? »
+- Pour modifier le brouillon : « Raccourcis-le » ou « Mentionne la nouvelle date ».
 
-Une question reçoit une réponse et laisse le brouillon tel quel. Les approbations restent sur les boutons de la tâche : le chat n’envoie jamais un brouillon dans la réponse qui l’a rédigé. Ce que vous demandez dans le chat et qui n’atteint personne, comme un nettoyage dans un document, elle le fait tout de suite, sans vous demander de confirmer. Tout ce qui va plus loin que votre demande attend toujours votre OK.
+Une question reçoit une réponse sans modifier le brouillon. Pour envoyer, utilisez les boutons de la tâche : le chat n’envoie jamais de brouillon dans la même réponse que celle qui l’a rédigé. Une modification demandée qui n’atteint personne d’autre, comme le nettoyage d’un document, est faite immédiatement, sans confirmation supplémentaire. Tout ce qui dépasse votre demande attend votre accord. Une tâche comportant plusieurs étapes reste ouverte jusqu’à ce qu’elles soient toutes terminées.
 
-Sur ordinateur, Entrée ou Ctrl+Entrée (Cmd+Entrée sur Mac) envoie, et Maj+Entrée passe à la ligne. Sur un téléphone, utilisez le bouton d’envoi.
+Sur ordinateur, Enter ou Ctrl+Enter (Cmd+Enter sur Mac) envoie le message. Shift+Enter crée une nouvelle ligne. Sur téléphone, utilisez le bouton d’envoi.
 
-## Quand quelque chose est faux
+## En cas d’erreur
 
-Dites-le dans le chat, par exemple « Elle n'est pas CEO » ou « Il a quitté l'entreprise ». The Machine le corrige à la source : un rôle, une entreprise, un poste, l'étape d'un projet, le projet de la to-do ou une règle apprise. Le chat montre alors ce qui a changé, par exemple **Corrigé : Le rôle de Ana est Head of Sales, d’après sa signature d'e-mail**, avec **Annuler**. Annuler remet ce qui était là, sauf si cela a changé depuis.
+Signalez-le dans le chat, par exemple : « Ce n’est pas le PDG » ou « Cette personne a quitté l’entreprise ». The Machine corrige l’information à la source : un poste, une entreprise, un titre, l’étape d’un projet, le projet de la tâche ou une règle qu’elle a apprise. Le chat indique ce qui a changé, par exemple : « Corrigé : Sam est directeur des ventes, d’après sa signature d’e-mail », avec **Annuler**. Annuler rétablit l’ancienne valeur, sauf si elle a changé depuis.
 
-Vos autres brouillons fondés sur la valeur erronée sont refaits, un par un. Leur chat indique **Le brouillon est refait après une correction**. Les brouillons que vous avez modifiés ou approuvés, et ceux en cours d'envoi, restent tels quels. La réponse dit combien de chaque.
+Les autres brouillons créés à partir de la valeur erronée sont rédigés à nouveau, un par un. Leur chat indique **Brouillon repris après correction**. Les brouillons que vous avez modifiés ou approuvés, ainsi que ceux en cours d’envoi, restent inchangés. La réponse indique combien il y en a dans chaque catégorie.
 
-Sur une page GBrain, seule la section de The Machine change ; ce que vous y avez écrit reste à vous. S'il ne trouve pas d'où vient l'information, il apprend de votre note comme avant.
+Sur une page GBrain, seule la section de The Machine change. Votre texte reste tel quel. Si The Machine ne peut pas déterminer l’origine d’une information, elle l’apprend plutôt à partir de votre note.
 
 ## Modèle et réflexion
 
-Sous la zone de message, le chat affiche son modèle et son niveau de réflexion, comme « GPT-6.1 Sol » et « Réflexion faible ». Appuyez sur l’un ou l’autre pour en choisir un autre pour ce chat seulement. Les modèles sont rangés sous leur fournisseur. Les nouveaux chats utilisent ce que vous avez réglé dans **Paramètres**, **Modèle** (voir [Modèle](model.md)).
+Sous le champ de message, le chat affiche son modèle et son niveau de réflexion, par exemple « GPT-6.2 Sol » et « Réflexion faible ». Touchez l’un ou l’autre pour en choisir un autre, uniquement pour ce chat. Les nouveaux chats utilisent vos réglages dans **Paramètres**, sous **Modèle** (voir [Modèle](model.md)).
 
-**Rapide**, en bas du menu des modèles, fait répondre les chats de vos tâches plus vite, pour un coût plus élevé (environ le double, ou plus de votre forfait). Cela vaut pour tous les chats de vos tâches, seulement pour les messages que vous envoyez et pour Faire, jamais pour le travail en arrière-plan. Désactivé par défaut. Pour un modèle sans option rapide, il est grisé.
+**Rapide**, au bas du menu des modèles, permet aux chats de tâche de répondre plus vite, pour un coût environ deux fois plus élevé (ou deux fois plus de votre forfait). Cette option concerne les messages que vous envoyez et l’action **Faire**, dans tous vos chats de tâche, jamais les tâches exécutées en arrière-plan. Elle est désactivée par défaut et grisée pour les modèles qui ne la prennent pas en charge.
 
 ## Arrêter une réponse
 
-Pendant qu’une réponse s’écrit, le bouton d’envoi devient **Arrêter**. Arrêter la termine tout de suite et garde ce qui est déjà écrit, marqué **Arrêté**. Écrivez un nouveau message pour continuer, ou appuyez sur **Réessayer**.
+Pendant la rédaction d’une réponse, le bouton d’envoi devient **Arrêter**. Touchez-le pour interrompre immédiatement la réponse et conserver ce qui a déjà été écrit, marqué **Arrêté**. Écrivez un nouveau message pour continuer ou touchez **Réessayer**.
 
 ## Ajouter des fichiers
 
-Appuyez sur le trombone, collez une capture d’écran, ou déposez des fichiers sur le chat. Chaque fichier s’affiche au-dessus de la zone de message, et × le retire. Un message peut ne contenir que des fichiers.
+Touchez le trombone, collez une capture d’écran ou déposez des fichiers dans le chat. Chaque fichier apparaît au-dessus du champ de message. Touchez × pour le retirer. Un message peut contenir uniquement des fichiers.
 
-- Les images (PNG, JPEG, GIF, WebP) jusqu’à 5 Mo vont au modèle sous forme d’images.
-- Les PDF, textes, CSV, JSON et fichiers Office jusqu’à 10 Mo sont des fichiers que The Machine lit, et peut joindre à un brouillon.
+- Les images (PNG, JPEG, GIF, WebP) de 5 MB maximum sont envoyées au modèle sous forme d’images.
+- Pour les PDF, les fichiers texte, les feuilles de calcul (CSV) et les fichiers Office de 10 MB maximum, The Machine les lit et peut les joindre à un brouillon.
 - Jusqu’à 5 fichiers par message.
 
-Les fichiers restent sur votre Machine, dans son dossier de données, chiffrés comme vos messages. Les fichiers ajoutés mais jamais envoyés sont supprimés au bout d’un jour. Une nouvelle tâche peut aussi avoir des fichiers, depuis **Nouvelle tâche** (voir [En créer une vous-même](cards.md#make-one-yourself)).
+Les fichiers restent sur votre Machine, chiffrés comme vos messages. Les fichiers ajoutés mais jamais envoyés sont supprimés après un jour. Une nouvelle tâche peut aussi contenir des fichiers, depuis **Nouvelle tâche** (voir [Créer une tâche](cards.md#make-one-yourself)).
