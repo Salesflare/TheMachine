@@ -8,8 +8,11 @@ company's own domain. Whatever it finds only fills in the form's server settings
 Gmail and Microsoft addresses, also on a company's own domain, are steered to their own connection (`oauth`): those
 sign in with Google or Microsoft and need no password. A server offered only in plaintext is never used."""
 import html
+import http.client
+import ipaddress
 import json
 import re
+import socket
 import urllib.parse
 import urllib.request
 
@@ -147,15 +150,56 @@ def oauth_of(email):
     return 'outlook' if MICROSOFT_CONSUMER.fullmatch(domain) else None
 
 
+def _public(ip):
+    if getattr(ip, 'ipv4_mapped', None):
+        ip = ip.ipv4_mapped
+    return ip.is_global and not ip.is_multicast
+
+
+def _public_socket(address, *args, **kwargs):
+    """socket.create_connection, refused unless the peer is a public address: checked on the socket after the name
+    resolved, so a domain that points (or rebinds) at this computer or its network is never asked."""
+    sock = socket.create_connection(address, *args, **kwargs)
+    try:
+        public = _public(ipaddress.ip_address(sock.getpeername()[0].split('%')[0]))
+    except (OSError, ValueError):
+        public = False
+    if not public:
+        sock.close()
+        raise ConnectionRefusedError  # mail setup lookups go to public addresses only
+    return sock
+
+
+class _PublicHTTPS(http.client.HTTPSConnection):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._create_connection = _public_socket
+
+
+class _PublicHTTPSHandler(urllib.request.HTTPSHandler):
+    def https_open(self, req):
+        return self.do_open(_PublicHTTPS, req, context=self._context)
+
+
+class _HttpsRedirects(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        if not newurl.startswith('https://'):
+            return None  # urllib raises HTTPError for the redirect itself: no answer
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
+_OPENER = urllib.request.build_opener(_PublicHTTPSHandler, _HttpsRedirects)
+
+
 def _fetch(url, timeout=TIMEOUT):
-    """An https answer's text, small; None when it isn't there."""
+    """An https answer's text, small; None when it isn't there. Public addresses only, redirects to https only."""
     if not url.startswith('https://'):
         return None
     # DNS over HTTPS answers in JSON only when asked for it in Accept (a ct= parameter alone is refused with a 400)
     accept = 'application/dns-json' if url.startswith(DOH) else '*/*'
     request = urllib.request.Request(url, headers={'User-Agent': 'TheMachine-mail-setup', 'Accept': accept})
     try:
-        with urllib.request.urlopen(request, timeout=timeout) as reply:
+        with _OPENER.open(request, timeout=timeout) as reply:
             return reply.read(MAX_ANSWER + 1)[:MAX_ANSWER].decode('utf-8', 'replace')
     except (OSError, ValueError):
         return None

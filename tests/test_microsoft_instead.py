@@ -39,7 +39,7 @@ class Microsoft365(unittest.TestCase):
         self.assertFalse(imap_presets.microsoft_365('alex@gmail.com', fetch=asked))
 
     def test_only_the_domain_is_asked_with_a_short_timeout(self):
-        with mock.patch.object(imap_presets.urllib.request, 'urlopen', side_effect=OSError) as opened:
+        with mock.patch.object(imap_presets._OPENER, 'open', side_effect=OSError) as opened:
             self.assertFalse(imap_presets.microsoft_365('alex@acme.test'))
         request = opened.call_args.args[0]
         self.assertTrue(request.full_url.startswith(imap_presets.DOH))
