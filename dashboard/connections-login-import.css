@@ -1,0 +1,36 @@
+/*@lazy*/
+/* Import sign-ins (connections-login-import.js): where from, the export page in the browser, then which to keep */
+#login-import{width:min(94vw,560px);box-sizing:border-box}
+#login-import .li-lead{margin:2px 0 14px;color:var(--muted)}
+#login-import .li-sources{display:grid;gap:8px}
+#login-import .li-source{position:relative;display:flex;align-items:center;gap:12px;width:100%;margin:0;padding:12px 14px;box-sizing:border-box;border:1px solid var(--border);border-radius:var(--r-md);background:var(--surface);color:var(--text);text-align:start;font:inherit;cursor:pointer;min-height:0;box-shadow:none}
+#login-import .li-source:hover:not([disabled]),#login-import .li-source:focus-within{border-color:color-mix(in srgb,var(--text) 35%,transparent)}
+#login-import .li-source[disabled]{cursor:default;opacity:.6}
+#login-import .li-source .grow{min-width:0;display:flex;flex-direction:column;gap:2px}
+#login-import .li-source strong{font-weight:var(--fw-strong)}
+#login-import .li-source small{color:var(--muted);font-size:var(--fs-sm)}
+#login-import .li-icon{flex:none;width:36px;height:36px;border-radius:var(--r-md);display:grid;place-items:center;background:var(--sunken);color:var(--muted)}
+#login-import .li-icon svg{width:18px;height:18px}
+#login-import .li-file{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+#login-import .li-error{color:var(--danger,#f87171);margin:10px 0 0;min-height:0}
+#login-import .li-error:empty{display:none}
+#login-import .fine{font-size:.8rem;color:var(--muted);margin:12px 0 0}
+#login-import .li-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 8px}
+#login-import .li-all{display:flex;align-items:center;gap:8px;color:var(--text)}
+#login-import .li-as{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:var(--fs-sm)}
+#login-import .li-as select{min-height:0;padding:4px 8px}
+#login-import .li-rows{max-height:min(52vh,420px);overflow:auto;margin:0 0 12px;border:1px solid var(--border);border-radius:var(--r-md)}
+#login-import .li-row{display:flex;align-items:center;gap:12px;padding:10px 12px;margin:0;cursor:pointer;color:var(--text)}
+#login-import .li-row+.li-row{border-top:1px solid var(--border)}
+#login-import .li-row .grow{min-width:0;display:flex;flex-direction:column;gap:1px}
+#login-import .li-row strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:var(--fw-strong)}
+#login-import input[type=checkbox]{flex:none;width:18px;height:18px;min-height:0;margin:0;accent-color:var(--mint)}
+#login-import .li-note{color:var(--muted);font-size:var(--fs-xs)}
+#login-import .actions{display:flex;gap:8px;flex-wrap:wrap}
+#login-import .li-steps{margin:2px 0 14px;padding-left:1.3em;color:var(--text);line-height:1.5}
+#login-import .li-steps+.li-sources{margin-bottom:12px}
+#login-import .li-wait{display:flex;gap:8px;align-items:center;color:var(--muted);margin:0 0 10px}
+#login-import .li-wait .spin{flex:none;width:14px;height:14px;border:2px solid var(--muted);border-right-color:transparent;border-radius:50%;animation:spin .8s linear infinite}
+#login-import .li-view{margin:0 0 12px}
+#login-import .li-view iframe{display:block;width:100%;height:min(56vh,520px);border:0;border-radius:var(--r-md);background:#111}
+#login-import:has(.li-view){width:min(96vw,980px)}

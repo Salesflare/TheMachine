@@ -36,7 +36,7 @@ Do it → isolated preparation turn of the same agent → result, draft + Send, 
 | `browser_viewer.py`, `deploy/browser/` | Optional: a browser of its own on a virtual display that you watch and use from yours (noVNC, 127.0.0.1 only), and bringing a tab to the front on a desktop |
 | `mail_attachments.py` | Email attachments a preparation saves: encrypted on disk with the message key, a private readable copy for the run, encrypted in place after runs that saved them with `gog` |
 | `browser_login.py` | The sign-in dialog: fills a sign-in page in the assistant's browser with what you type on the dashboard, and keeps saved sign-ins encrypted, several accounts per site, each bound to its exact origins |
-| `login_import.py` | Import sign-ins from a password manager: reads a CSV export (1Password, LastPass, Bitwarden, Chrome) or a signed-in `op` or `lpass`, then keeps only what the owner ticks |
+| `login_import.py` | Import sign-ins from a password manager: reads a CSV export (1Password, LastPass, Bitwarden, Chrome), the download from a manager's export page in the Machine's browser (read once, then deleted) or a signed-in `op` or `lpass`, then keeps only what the owner ticks |
 | `integrations/browser_cdp.py` | Talks to a browser's DevTools address directly, for the LinkedIn and X readers when one is set |
 | `deploy/cdp-relay.mjs` | Optional: one shared DevTools connection to your desktop Chrome, so its Allow prompt comes once per Chrome start ([sources](sources.md#your-own-chrome-one-allow-prompt)) |
 | `AGENTS.md`, `PREPARATION.md` | Instructions the plugin gives the agent for reviews and for Do it runs (templates; see below) |
