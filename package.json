@@ -2,10 +2,13 @@
   "name": "the-machine",
   "private": true,
   "license": "AGPL-3.0-only",
-  "description": "Node packages for The Machine's helpers. Exact pins: the Gateway client is tested together with the OpenClaw version The Machine asks for.",
+  "description": "Node packages for The Machine's helpers. Exact pins: the Gateway client is tested together with the OpenClaw version The Machine asks for. ws is overridden to 8.23.0 for AIKIDO-2026-844803 until the client asks for it.",
   "type": "module",
   "dependencies": {
     "@openclaw/gateway-client": "2026.8.1",
     "@openclaw/gateway-protocol": "2026.8.1"
+  },
+  "overrides": {
+    "ws": "8.23.0"
   }
 }

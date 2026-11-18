@@ -627,7 +627,7 @@ class Presets(unittest.TestCase):
 
     def test_the_mx_lookup_asks_for_json(self):
         # Cloudflare's DNS over HTTPS answers 400 to ct=application/dns-json alone: it wants it in Accept
-        with mock.patch.object(imap_presets.urllib.request, 'urlopen', side_effect=OSError) as opened:
+        with mock.patch.object(imap_presets._OPENER, 'open', side_effect=OSError) as opened:
             imap_presets.mx_hosts('shop.test')
         request = opened.call_args[0][0]
         self.assertEqual(request.get_header('Accept'), 'application/dns-json')
@@ -691,9 +691,38 @@ class Presets(unittest.TestCase):
         self.assertEqual(imap_presets.lookup('alex@nowhere.test', fetch=lambda url: None), {})  # nothing found: typed by hand
 
     def test_lookups_are_https_only(self):
-        with mock.patch.object(imap_presets.urllib.request, 'urlopen') as opened:
+        with mock.patch.object(imap_presets._OPENER, 'open') as opened:
             self.assertIsNone(imap_presets._fetch('http://autoconfig.acme.test/mail/config-v1.1.xml'))
             opened.assert_not_called()
+
+    def test_lookups_never_reach_this_computer_or_its_network(self):
+        # an address the owner types names the domain asked: one that points at a private address is refused on the
+        # connected socket, and a redirect may not leave https
+        class Sock:
+            def __init__(self, peer):
+                self.peer, self.closed = peer, False
+
+            def getpeername(self):
+                return (self.peer, 443)
+
+            def close(self):
+                self.closed = True
+        for peer in ('127.0.0.1', '10.0.0.5', '169.254.169.254', '192.168.1.1', '::1', 'fe80::1%eth0', '::ffff:127.0.0.1'):
+            sock = Sock(peer)
+            with mock.patch.object(imap_presets.socket, 'create_connection', return_value=sock):
+                with self.assertRaises(OSError):
+                    imap_presets._public_socket(('autoconfig.acme.test', 443))
+            self.assertTrue(sock.closed, peer)
+        with mock.patch.object(imap_presets.socket, 'create_connection', return_value=Sock('93.184.216.34')):
+            self.assertEqual(imap_presets._public_socket(('autoconfig.acme.test', 443)).peer, '93.184.216.34')
+        self.assertIs(imap_presets._PublicHTTPS('acme.test')._create_connection, imap_presets._public_socket)
+        handlers = {type(h) for h in imap_presets._OPENER.handlers}
+        self.assertIn(imap_presets._PublicHTTPSHandler, handlers)
+        self.assertNotIn(imap_presets.urllib.request.HTTPSHandler, handlers)
+        redirects = imap_presets._HttpsRedirects()
+        request = imap_presets.urllib.request.Request('https://acme.test/.well-known/autoconfig/mail/config-v1.1.xml')
+        self.assertIsNone(redirects.redirect_request(request, None, 302, 'Found', {}, 'http://169.254.169.254/'))
+        self.assertIsNotNone(redirects.redirect_request(request, None, 302, 'Found', {}, 'https://www.acme.test/x.xml'))
 
 
 class FakeUI:
