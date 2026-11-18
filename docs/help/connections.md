@@ -66,7 +66,13 @@ A site can keep several accounts, such as **Work** and **Personal**. **Save as**
 
 **Sign-ins** lists each site once, with its accounts underneath: the username, and a menu with its side. Change the side there any time. Sign-ins saved before accounts existed show **Work or personal?** until you pick one. A to-do that used a sign-in picks again after you change its side.
 
-**Import** brings in sign-ins from a password manager: a CSV export from 1Password, LastPass, Bitwarden or Chrome, or 1Password and LastPass straight from their command-line tools when you're signed in to them on this computer. You tick which ones to keep. Your Machine never signs in to your password manager and never asks for its master password. Delete the export file once you're done.
+**Import** brings in sign-ins from a password manager. Pick one:
+
+- **LastPass**, **Bitwarden** or **Google Password Manager**: its export page opens in your Machine's browser. Sign in and export there; the steps show next to it. Your Machine picks up the file, reads it once and deletes it.
+- **1Password**: export a CSV from the 1Password app on a computer, then choose that file. If 1Password's `op` is signed in on your Machine, it reads from there instead (LastPass's `lpass` too).
+- **From an export file**: a CSV from 1Password, LastPass, Bitwarden or Chrome. Delete it once you're done.
+
+Then tick which ones to keep. Your Machine never signs in to your password manager for you and never asks for its master password: you type that into the page yourself.
 
 A saved sign-in only goes into its own web address: the same site, `https`, and port. Not a lookalike address and not another subdomain.
 

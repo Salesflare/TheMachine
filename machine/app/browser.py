@@ -36,9 +36,10 @@ class BrowserApp:
                'browser_login_import': 'browser_login_import_action'}
 
     def browser_login_import_action(self, name, args, owner_dashboard=False):
-        """Bringing sign-ins in from a password manager (login_import.py): a CSV export, or 1Password's op or
-        LastPass's lpass when the owner has signed in to it on this computer, then a review where the owner ticks which
-        to keep. Owner, dashboard only; passwords never come back in an answer."""
+        """Bringing sign-ins in from a password manager (login_import.py): an export file, the manager's export page in
+        the Machine's browser (export: the owner signs in and exports there; export_check picks up the file), or
+        1Password's op or LastPass's lpass when the owner has signed in to it on this computer, then a review where the
+        owner ticks which to keep. Owner, dashboard only; passwords never come back in an answer."""
         if not owner_dashboard:
             raise OwnerError('Only the owner imports sign-ins, from the dashboard')
         logins = browser_login.LoginStore(Path(self.config['database']).expanduser().parent)
@@ -53,6 +54,20 @@ class BrowserApp:
             if not manager:
                 raise OwnerError('Which password manager?')
             return login_import.start(manager, login_import.tool_list(manager), 0, logins)
+        if step == 'export':
+            base = (browser_login.endpoints(self.config) or [None])[0]
+            if not base:
+                raise OwnerError('Your Machine has no browser. Use an export file instead.')
+            opened = login_import.export_open(base, args.get('manager'), Path(self.config['database']).expanduser().parent, logins)
+            try:
+                browser_viewer.focus(None, base, target=opened['tab'])
+            except (ValueError, OSError):
+                pass
+            return {'watch': opened['watch'], 'view': browser_link(self.config), 'page': login_import.EXPORT_PAGES[args['manager']]}
+        if step == 'export_check':
+            return login_import.export_check(args.get('watch'))
+        if step == 'export_stop':
+            return {'stopped': login_import.export_stop(args.get('watch'))}
         if step == 'keep':
             return {'kept': login_import.keep(logins, args.get('token'), args.get('keys'), args.get('account'))}
         if step == 'drop':

@@ -124,10 +124,12 @@ invalid receipt or timeout blocks it as well. The token is never included in rel
   (full-disk encryption) accordingly. Without message protection they keep a key of their own next to them.
 - A saved sign-in is bound to its exact origins (scheme, host and port). The fill checks the page before typing and
   before submitting, so a lookalike address, another subdomain, `http` or another port never gets it.
-- Import from a password manager reads a CSV the owner picks, or 1Password's `op` and LastPass's `lpass` only when the
-  owner already signed in to them on this computer. The Machine never signs in to a password manager and never asks
-  for or keeps a master password; it reads a password only for the sign-ins the owner ticks to keep. Delete the
-  export file afterwards: it holds every password in plain text.
+- Import from a password manager reads a CSV the owner picks, the export the owner downloads from the manager's own
+  page in the Machine's browser, or 1Password's `op` and LastPass's `lpass` only when the owner already signed in to
+  them on this computer. The Machine never signs in to a password manager and never asks for or keeps a master
+  password; it keeps a password only for the sign-ins the owner ticks to keep. A download from the export page goes
+  into a private folder made for it, is read once and deleted from disk right away, and the folder goes with it. Delete
+  an export file you picked yourself afterwards: it holds every password in plain text.
 - The browser's own cookies and sign-ins (its profile) belong to the browser: protected by the account and the disk,
   not by The Machine's keys. Anything running as the service user, the agent included, can use them.
 

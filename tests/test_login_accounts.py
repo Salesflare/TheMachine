@@ -2,7 +2,7 @@
 them in from a password manager (CSV exports and the op and lpass tools, both mocked: no real vault is ever called);
 and a planted fake password that must never show up in an answer, a log, an error, the database or a prompt.
 Made-up credentials and temporary folders only."""
-import base64, io, json, logging, os, shutil, sqlite3, tempfile, unittest
+import base64, io, json, logging, os, shutil, sqlite3, tempfile, time, unittest
 from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 from unittest.mock import patch
@@ -441,6 +441,123 @@ class TwoStepTest(unittest.TestCase):
         self.assertEqual(listed, {'Work': USER, 'Personal': ''})
 
 
+class ExportFileKindsTest(Folder):
+    def test_a_lastpass_or_1password_file_keeps_its_own_passwords_without_their_tools(self):
+        with FakeTools({'1password': 'missing', 'lastpass': 'missing'}) as tools:
+            for kind in ('lastpass', '1password'):
+                found, rows, skipped = login_import.parse(EXPORTS[kind].format(p=SECRET))
+                review = login_import.start(found, rows, skipped, self.store)
+                self.assertGreater(login_import.keep(self.store, review['token'], [r['key'] for r in review['rows']], kind.title()), 0)
+            self.assertEqual(tools.calls, [], 'a file never asks a tool')
+        self.assertEqual(sorted(x['account'] for x in self.store.list() if x['origin'] == 'https://example.invalid'), ['1Password', 'Lastpass'])
+
+    def test_bitwardens_json_and_an_encrypted_one(self):
+        doc = {'encrypted': False, 'items': [
+            {'type': 1, 'name': 'Example', 'login': {'username': 'me@example.invalid', 'password': SECRET,
+                                                     'uris': [{'uri': 'https://example.invalid/login'}, {'uri': 'http://insecure.example.invalid'}]}},
+            {'type': 2, 'name': 'A note', 'notes': 'note text'}]}
+        kind, rows, skipped = login_import.parse(json.dumps(doc))
+        self.assertEqual((kind, [r['origin'] for r in rows], skipped), ('bitwarden', ['https://example.invalid'], 1))
+        with self.assertRaisesRegex(ValueError, 'encrypted') as caught:
+            login_import.parse(json.dumps({'encrypted': True, 'items': [{'type': 1, 'login': {'password': PLANTED}}]}))
+        self.assertNotIn(PLANTED, str(caught.exception))
+
+
+class FakeBrowser:
+    """Stands in for the Machine's browser over DevTools: records the calls and tabs; never a real browser."""
+
+    def __init__(self):
+        self.calls, self.opened, self.closed = [], [], []
+
+    def session(self, base, timeout=30):
+        fake = self
+
+        class Session:
+            ws = type('WS', (), {'close': lambda self: fake.calls.append(('close', None))})()
+
+            def call(self, method, params=None):
+                fake.calls.append((method, params))
+                return {}
+        return Session()
+
+    def folder(self):
+        return Path(next(p['downloadPath'] for m, p in self.calls if m == 'Browser.setDownloadBehavior' and p['behavior'] == 'allow'))
+
+    def __enter__(self):
+        cdp = browser_login.browser_cdp
+        self.patches = [patch.object(cdp.Session, 'browser', self.session),
+                        patch.object(cdp, 'open_tab', lambda base, url: self.opened.append(url) or 'tab-1'),
+                        patch.object(cdp, 'close_tab', lambda base, tab: self.closed.append(tab)),
+                        patch.object(login_import, 'EXPORT_POLL', 0.02)]
+        for p in self.patches:
+            p.start()
+        return self
+
+    def __exit__(self, *a):
+        for p in self.patches:
+            p.stop()
+
+
+def wait_for(check, token, seconds=5):
+    until = time.monotonic() + seconds
+    while time.monotonic() < until:
+        got = check(token)
+        if got['state'] != 'waiting':
+            return got
+        time.sleep(0.02)
+    return got
+
+
+class ExportPageTest(Folder):
+    def test_the_download_is_read_once_deleted_and_the_browser_put_back(self):
+        with FakeBrowser() as browser:
+            opened = login_import.export_open('http://127.0.0.1:9', 'bitwarden', self.folder, self.store)
+            self.assertEqual(browser.opened, [login_import.EXPORT_PAGES['bitwarden']])
+            folder = browser.folder()
+            self.assertEqual(folder.parent, self.folder)
+            self.assertEqual(folder.stat().st_mode & 0o777, 0o700)
+            self.assertEqual(login_import.export_check(opened['watch'])['state'], 'waiting')
+            (folder / 'export.csv.crdownload').write_text('half')  # still coming: not read
+            (folder / 'export.csv.crdownload').rename(folder / 'bitwarden_export.csv')
+            (folder / 'bitwarden_export.csv').write_text(EXPORTS['bitwarden'].format(p=SECRET))
+            review = wait_for(login_import.export_check, opened['watch'])
+            self.assertEqual((review['state'], review['manager'], len(review['rows'])), ('review', 'Bitwarden', 2))
+            self.assertNotIn(SECRET, json.dumps(review))
+            for _ in range(100):
+                if not folder.exists():
+                    break
+                time.sleep(0.02)
+            self.assertFalse(folder.exists(), 'the file and its folder are gone from disk')
+            self.assertIn(('Browser.setDownloadBehavior', {'behavior': 'default'}), browser.calls)
+            self.assertEqual(browser.closed, ['tab-1'])
+            self.assertEqual(login_import.export_check(opened['watch'])['state'], 'expired', 'answered once')
+            self.assertEqual(login_import.keep(self.store, review['token'], [review['rows'][0]['key']], 'Work'), 1)
+
+    def test_a_file_that_isnt_an_export_says_so_and_is_deleted_too(self):
+        with FakeBrowser() as browser:
+            opened = login_import.export_open('http://127.0.0.1:9', 'lastpass', self.folder, self.store)
+            folder = browser.folder()
+            (folder / 'notes.csv').write_text('a,b\n1,' + PLANTED + '\n')
+            got = wait_for(login_import.export_check, opened['watch'])
+            self.assertEqual(got['state'], 'failed')
+            self.assertNotIn(PLANTED, got['error'])
+
+    def test_stop_puts_the_browser_back_and_an_unknown_manager_opens_nothing(self):
+        with FakeBrowser() as browser:
+            opened = login_import.export_open('http://127.0.0.1:9', 'chrome', self.folder, self.store)
+            folder = browser.folder()
+            self.assertTrue(login_import.export_stop(opened['watch']))
+            for _ in range(100):
+                if ('close', None) in browser.calls:
+                    break
+                time.sleep(0.02)
+            self.assertIn(('Browser.setDownloadBehavior', {'behavior': 'default'}), browser.calls)
+            self.assertFalse(folder.exists())
+            with self.assertRaisesRegex(ValueError, 'Which password manager'):
+                login_import.export_open('http://127.0.0.1:9', '1password', self.folder, self.store)
+            self.assertEqual(browser.opened, [login_import.EXPORT_PAGES['chrome']])
+
+
 class LeakScanTest(unittest.TestCase):
     """A planted fake password goes in through every way in (an export, both tools, the dialog), is used, and must
     never show up in an answer, a log line, stdout or stderr, an error, the database or the model's prompts."""
@@ -473,6 +590,16 @@ class LeakScanTest(unittest.TestCase):
             for manager in ('1password', 'lastpass'):
                 review = act('browser_login_import', {'do': 'tool', 'manager': manager})
                 act('browser_login_import', {'do': 'keep', 'token': review['token'], 'keys': [r['key'] for r in review['rows']], 'account': 'Personal'})
+            # the export page in the Machine's browser: its download read, kept and gone from disk
+            with FakeBrowser() as browser, patch('browser_viewer.focus', return_value=None):
+                started = act('browser_login_import', {'do': 'export', 'manager': 'bitwarden'})
+                (browser.folder() / 'bitwarden_export.csv').write_text(EXPORTS['bitwarden'].format(p=PLANTED))
+                review = wait_for(lambda w: act('browser_login_import', {'do': 'export_check', 'watch': w}), started['watch'])
+                act('browser_login_import', {'do': 'keep', 'token': review['token'], 'keys': [r['key'] for r in review['rows']], 'account': 'Work'})
+                for _ in range(250):
+                    if not any(p.name.startswith('login-export-') for p in data.iterdir()):
+                        break
+                    time.sleep(0.02)
             act('browser_login_import', {'do': 'tools'})
             listed = act('browser_logins', {})
             # each way it could go wrong: a bad file, a stale review, a fill on a lookalike

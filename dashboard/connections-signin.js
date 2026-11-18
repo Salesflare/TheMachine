@@ -27,9 +27,9 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-signin]');
 // Saved sign-ins: one row per site with its username and whether a password is kept. The password itself never
 // reaches the page (the list has none), so a row only ever says "Password saved".
 const LOCK=html`<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3.25" y="7" width="9.5" height="6.5" rx="1.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M5.5 7V5.2a2.5 2.5 0 0 1 5 0V7" fill="none" stroke="currentColor" stroke-width="1.4"/></svg>`;
-// The list draws in the lazy 'logins' part (connections-logins.js), with Import (a password manager's sign-ins).
+// The list draws in the lazy 'logins' part (connections-logins.js), Import (a password manager's sign-ins) in 'loginimport'.
 function savedLogins(){lazyRun('logins',()=>savedLoginsDraw())}
-$('#logins-import').onclick=()=>lazyRun('logins',()=>loginImportOpen());
+$('#logins-import').onclick=()=>lazyRun('loginimport',()=>loginImportOpen());
 // A task link from someone's email (task_invites.py), opened into this Machine: its card, then who sent it to connect with.
 {const m=/^#task=([A-Za-z0-9_-]{22}\.[A-Za-z0-9_-]{43})$/.exec(location.hash);if(m){history.replaceState(null,'',location.pathname);
  fleetPost('task_import',{link:m[1]}).then(async r=>{await refresh();const who=r.from||{};

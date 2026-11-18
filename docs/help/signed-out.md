@@ -3,7 +3,7 @@ title: Signed out of a site
 area: troubleshooting
 summary: LinkedIn or X signed your Machine out. Sign it back in, once or for good.
 covers:
-code: browser_login.py, login_import.py, dashboard.html, dashboard/connections-signin.js, dashboard/connections-logins.js
+code: browser_login.py, login_import.py, dashboard.html, dashboard/connections-signin.js, dashboard/connections-logins.js, dashboard/connections-login-import.js
 order: 2
 ---
 Sites like LinkedIn and X are read in your Machine's own browser. Sometimes a site signs it out.
@@ -18,7 +18,7 @@ Tick **Save for next time** to sign back in with one tap when it happens again. 
 
 Type passwords yourself. Two-step codes are yours to enter too.
 
-Saved sign-ins are under **Connections**, **Sign-ins**. **Forget** removes one. **Import** brings them in from a password manager.
+Saved sign-ins are under **Connections**, **Sign-ins**. **Forget** removes one. **Import** brings them in from a password manager, through its own export page in your Machine's browser or an export file.
 
 ## If the site refuses or wants a robot check
 

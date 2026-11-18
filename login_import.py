@@ -1,9 +1,14 @@
 """Bringing saved sign-ins in from a password manager, into the store the sign-in dialog uses (browser_login.LoginStore).
 
-Two ways, both started by the owner on the dashboard and both ending in a review where they tick which to keep:
+Three ways, all started by the owner on the dashboard and all ending in a review where they tick which to keep:
 
-- An export file (CSV) from 1Password, LastPass, Bitwarden or Chrome (Edge, Brave and Firefox write the same columns).
-  parse() reads it in memory; nothing of it is written anywhere until the owner keeps some.
+- An export file (CSV) from 1Password, LastPass, Bitwarden or Chrome (Edge, Brave and Firefox write the same columns),
+  or Bitwarden's unencrypted JSON. parse() reads it in memory; nothing of it is written anywhere until the owner keeps
+  some.
+- The password manager's own export page in the Machine's browser (export_open: LastPass's vault, Bitwarden's web
+  vault, Google Password Manager). The owner signs in and exports there themselves (any password, 2FA or confirm step
+  is theirs); the browser saves the download into a private folder of its own for this one export, and the file is
+  read and deleted from disk as soon as it is whole (it holds every password in plain text).
 - 1Password's `op` or LastPass's `lpass` command-line tool, when it is installed on this computer and the owner has
   signed in to it themselves. The list shows names, addresses and usernames only; a password is read from the tool
   only for the ones the owner keeps, at that moment. Nothing here signs in to a password manager, starts one's sign-in
@@ -21,6 +26,7 @@ import csv
 import io
 import json
 import os
+from pathlib import Path
 import secrets
 import shutil
 import subprocess
@@ -82,35 +88,69 @@ def parse(text):
     if len(text.encode('utf-8', 'ignore')) > MAX_BYTES:
         raise OwnerError('That file is too big (5 MB at most)')
     text = text.lstrip('﻿')
+    if text.lstrip().startswith('{'):
+        return 'bitwarden', *_collect(_bitwarden_json(text))
     try:
         reader = csv.DictReader(io.StringIO(text, newline=''))
-        header = reader.fieldnames or []
-        kind = kind_of(header)
+        kind = kind_of(reader.fieldnames or [])
         if not kind:
             raise OwnerError('That isn’t a password export this can read. Export a CSV from 1Password, LastPass, Bitwarden or Chrome.')
-        lower = {h: str(h or '').strip().lower() for h in header}
-        found, skipped, seen = [], 0, {}
-        for count, raw in enumerate(reader):
-            if count >= MAX_ROWS:
-                raise OwnerError('That file has too many rows (5,000 at most)')
-            row = {lower.get(k, k): v for k, v in raw.items() if isinstance(k, str)}
-            if kind == 'bitwarden' and _cell(row, 'type') not in ('', 'login'):
-                skipped += 1
-                continue
-            address = {'bitwarden': _cell(row, 'login_uri'), '1password': _cell(row, 'url', 'website')}.get(kind) or _cell(row, 'url')
-            username = _cell(row, 'login_username') if kind == 'bitwarden' else _cell(row, 'username')
-            password = (row.get('login_password') if kind == 'bitwarden' else row.get('password')) or ''
-            title = _cell(row, 'name', 'title')
-            origins = [o for o in (browser_login.origin(a) for a in _addresses(address)) if o and _fillable(o)]
-            if not origins or not password:
-                skipped += 1
-                continue
-            for bound in dict.fromkeys(origins):
-                seen[(bound, username, password)] = {'title': title[:80], 'origin': bound, 'username': username[:1000], 'password': password[:1000]}
+        return kind, *_collect(_csv_entries(reader, kind))
     except csv.Error:
         raise OwnerError('That file couldn’t be read as a CSV') from None
-    rows = [{'key': secrets.token_hex(6), **row} for row in seen.values()]
-    return kind, rows, skipped
+
+
+def _csv_entries(reader, kind):
+    """(title, addresses, username, password) per row; None for a row that isn't a login."""
+    lower = {h: str(h or '').strip().lower() for h in reader.fieldnames or []}
+    for raw in reader:
+        row = {lower.get(k, k): v for k, v in raw.items() if isinstance(k, str)}
+        if kind == 'bitwarden' and _cell(row, 'type') not in ('', 'login'):
+            yield None
+            continue
+        address = {'bitwarden': _cell(row, 'login_uri'), '1password': _cell(row, 'url', 'website')}.get(kind) or _cell(row, 'url')
+        username = _cell(row, 'login_username') if kind == 'bitwarden' else _cell(row, 'username')
+        password = (row.get('login_password') if kind == 'bitwarden' else row.get('password')) or ''
+        yield _cell(row, 'name', 'title'), _addresses(address), username, password
+
+
+def _bitwarden_json(text):
+    """Bitwarden's .json export, unencrypted: its logins (type 1). An encrypted one says so."""
+    try:
+        doc = json.loads(text)
+    except ValueError:
+        doc = None
+    if not isinstance(doc, dict) or not isinstance(doc.get('items'), list):
+        raise OwnerError('That isn’t a password export this can read. Export a CSV from 1Password, LastPass, Bitwarden or Chrome.')
+    if doc.get('encrypted') or doc.get('passwordProtected'):
+        raise OwnerError('That export is encrypted. Export it again as .csv or .json, without a file password.')
+    for item in doc['items']:
+        login = item.get('login') if isinstance(item, dict) and item.get('type') == 1 else None
+        if not isinstance(login, dict):
+            yield None
+            continue
+        uris = [str(u.get('uri') or '') for u in login.get('uris') or [] if isinstance(u, dict)]
+        yield str(item.get('name') or '').strip(), [u.strip() for u in uris if u.strip()], \
+            str(login.get('username') or '').strip(), str(login.get('password') or '')
+
+
+def _collect(entries):
+    """([{key, title, origin, username, password}], skipped) from (title, addresses, username, password) entries."""
+    skipped, seen = 0, {}
+    for count, entry in enumerate(entries):
+        if count >= MAX_ROWS:
+            raise OwnerError('That file has too many rows (5,000 at most)')
+        if entry is None:
+            skipped += 1
+            continue
+        title, addresses, username, password = entry
+        origins = [o for o in (browser_login.origin(a) for a in addresses) if o and _fillable(o)]
+        if not origins or not password:
+            skipped += 1
+            continue
+        for bound in dict.fromkeys(origins):
+            seen[(bound, username, password)] = {'title': title[:80], 'origin': bound, 'username': username[:1000], 'password': password[:1000]}
+    return [{'key': secrets.token_hex(6), **row} for row in seen.values()], skipped
 
 
 def _fillable(bound):
@@ -225,6 +265,141 @@ TOOL_SAYS = {
 }
 
 
+# Export pages in the Machine's browser
+
+# Where each password manager exports, on the web. 1Password has no web export (only its apps, or op).
+EXPORT_PAGES = {'lastpass': 'https://lastpass.com/vault/',
+                'bitwarden': 'https://vault.bitwarden.com/#/tools/export',
+                'chrome': 'https://passwords.google.com/options'}
+EXPORT_SECONDS = 1200  # how long an export page waits for its download
+EXPORT_POLL = 1.5
+_exports = {}
+_exports_lock = threading.Lock()
+
+
+def export_open(base, manager, data_dir, store):
+    """Opens the manager's export page in a new tab of the browser at `base` (loopback DevTools), with its downloads
+    going into a private folder made for this export only, and follows that folder in a thread of its own. Returns
+    {watch, tab}; export_check(watch) says when the review is ready. Starting one stops any other."""
+    if manager not in EXPORT_PAGES:
+        raise OwnerError('Which password manager?')
+    with _exports_lock:
+        for old in _exports.values():
+            old['stop'].set()
+        _exports.clear()
+    folder = Path(data_dir) / ('login-export-' + secrets.token_hex(8))
+    folder.mkdir(mode=0o700, parents=True)
+    cdp = browser_login.browser_cdp
+    session = None
+    try:
+        session = cdp.Session.browser(base, timeout=20)
+        # held while the export is followed: the browser keeps this download folder for as long as the session is open
+        session.call('Browser.setDownloadBehavior', {'behavior': 'allow', 'downloadPath': str(folder)})
+        tab = cdp.open_tab(base, EXPORT_PAGES[manager])
+    except (cdp.CdpError, OSError, ValueError, TypeError, KeyError):
+        if session:
+            session.ws.close()
+        _clear(folder)
+        raise OwnerError('I couldn’t open the export page in your Machine’s browser') from None
+    watch = {'token': secrets.token_urlsafe(18), 'manager': manager, 'state': 'waiting', 'stop': threading.Event(),
+             'until': time.monotonic() + EXPORT_SECONDS, 'base': base, 'tab': tab}
+    with _exports_lock:
+        _exports[watch['token']] = watch
+    threading.Thread(target=_follow, args=(watch, session, folder, store), daemon=True, name='login-export').start()
+    return {'watch': watch['token'], 'tab': tab}
+
+
+def _follow(watch, session, folder, store):
+    """Waits for the export's download, reads it, deletes it and holds its review; then puts the browser's downloads
+    back and removes the folder, whatever happened."""
+    sizes = {}
+    try:
+        while not watch['stop'].wait(EXPORT_POLL):
+            if time.monotonic() > watch['until']:
+                watch['state'] = 'expired'
+                return
+            path = _whole_file(folder, sizes)
+            if not path:
+                continue
+            try:
+                kind, rows, skipped = parse(_take(path))
+                watch['review'] = start(kind, rows, skipped, store)
+                watch['state'] = 'review'
+            except OwnerError as error:
+                watch['error'], watch['state'] = str(error), 'failed'
+            try:
+                browser_login.browser_cdp.close_tab(watch['base'], watch['tab'])
+            except (browser_login.browser_cdp.CdpError, OSError):
+                pass
+            return
+    finally:
+        try:
+            session.call('Browser.setDownloadBehavior', {'behavior': 'default'})
+        except (browser_login.browser_cdp.CdpError, OSError):
+            pass
+        session.ws.close()
+        _clear(folder)
+
+
+def _whole_file(folder, sizes):
+    """The download in `folder` once it is whole: no partial file left and its size the same as the last look."""
+    try:
+        files = [p for p in folder.iterdir() if p.is_file()]
+    except OSError:
+        return None
+    if any(p.name.endswith('.crdownload') for p in files):
+        return None
+    for path in files:
+        size = path.stat().st_size
+        if sizes.get(path.name) == size and size:
+            return path
+        sizes[path.name] = size
+    return None
+
+
+def _take(path):
+    """The file's text, read once, and the file gone from disk right after."""
+    try:
+        with open(path, 'rb') as handle:
+            data = handle.read(MAX_BYTES + 1)
+    finally:
+        path.unlink(missing_ok=True)
+    if len(data) > MAX_BYTES:
+        raise OwnerError('That file is too big (5 MB at most)')
+    return data.decode('utf-8-sig', 'replace')
+
+
+def _clear(folder):
+    """The export's folder and anything left in it (a partial download holds passwords too)."""
+    shutil.rmtree(folder, ignore_errors=True)
+
+
+def export_check(token):
+    """{state: waiting} while the export page is open; the review (state: review) once its file was read;
+    {state: failed, error} or {state: expired}. A finished one is answered once."""
+    with _exports_lock:
+        watch = _exports.get(token) if isinstance(token, str) else None
+        if not watch:
+            return {'state': 'expired'}
+        if watch['state'] != 'waiting':
+            _exports.pop(token, None)
+    if watch['state'] == 'review':
+        return {**watch['review'], 'state': 'review'}
+    if watch['state'] == 'failed':
+        return {'state': 'failed', 'error': watch['error']}
+    return {'state': watch['state']}
+
+
+def export_stop(token):
+    with _exports_lock:
+        watch = _exports.pop(token, None) if isinstance(token, str) else None
+    if watch:
+        watch['stop'].set()
+        if watch.get('review'):
+            drop(watch['review']['token'])
+    return watch is not None
+
+
 # Reviews
 
 def _sweep():
@@ -242,7 +417,9 @@ def start(kind, rows, skipped=0, store=None):
         _sweep()
         while len(_pending) >= 5:
             _pending.pop(next(iter(_pending)))
-        _pending[token] = {'at': time.monotonic(), 'kind': kind, 'rows': {r['key'] + '|' + r['origin']: r for r in rows}}
+        # a tool's rows carry no password (it is read at Keep); an export file's always do, also LastPass's or 1Password's
+        tool = kind in TOOLS and not any('password' in r for r in rows)
+        _pending[token] = {'at': time.monotonic(), 'kind': kind, 'tool': tool, 'rows': {r['key'] + '|' + r['origin']: r for r in rows}}
     have = {}
     for entry in (store.list() if store else []):
         have.setdefault(entry['origin'], []).append(entry['account'])
@@ -264,7 +441,7 @@ def keep(store, token, keys, account=None):
     if not isinstance(keys, list) or not all(isinstance(k, str) for k in keys):
         raise OwnerError('Which sign-ins?')
     chosen = [review['rows'][k] for k in dict.fromkeys(keys) if k in review['rows']]
-    if review['kind'] in TOOLS:
+    if review['tool']:
         items = []
         for row in chosen:
             username, password = _tool_secret(review['kind'], row['key'])
