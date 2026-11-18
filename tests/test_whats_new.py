@@ -147,7 +147,7 @@ class WhatsNew(unittest.TestCase):
         self.assertEqual(self.morning(5, self.machine(), team, team=True), ['boards', 'one'])
 
     def test_model_entries_only_where_it_is_the_main_model(self):
-        sol = ENTRIES + [{'id': 'sol', 'date': '2026-03-05', 'weight': 3, 'model': 'gpt-6.2-sol', 'title': 'Sol', 'text': 'Faster.'}]
+        sol = ENTRIES + [{'id': 'sol', 'date': '2026-03-05', 'weight': 3, 'model': 'gpt-6.2-sol', 'title': 'Sol', 'text': 'Faster.', 'art': 'sol'}]
         for model in (None, '', 'claude-cli/claude-opus-5-5', 'anthropic/claude-opus-5-5', 'openai/gpt-6.1-sol', 'openai/gpt-6.2-sol-mini'):
             self.assertEqual(self.morning(5, self.machine(), sol, model=model), ['one'], model)  # Claude, an API key's 6.1, unknown
         for model in ('openai/gpt-6.2-sol', 'openai-codex/GPT-6.2-Sol', 'gpt-6.2-sol'):
