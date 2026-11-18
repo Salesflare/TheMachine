@@ -15,7 +15,7 @@ from machine.config import LOG, SIGNIN_ERROR
 from machine.faults import db_busy, DB_BUSY_RETRY
 from machine.sources.android import feed_backoff, sync_android, sync_android_preferred
 from machine.sources.calendar import sync_calendar
-from machine.sources.connectors import ABILITY_CHECK_SECONDS, BUILT_IN_SERVICES, CONNECTOR_HELPERS, load_connector
+from machine.sources.connectors import ABILITY_CHECK_SECONDS, BUILT_IN_SERVICES, CONNECTOR_HELPERS, load_connector, sync_report_service
 from machine.sources.gateway import sync_gateway
 from machine.sources.gmail import sync_gmail
 from machine.sources.rows import Skips
@@ -636,6 +636,7 @@ class SyncApp:
 
     def collector(self, account):
         source = self.slack_source(account) if account.get('service') == 'slack' else None
+        report = sync_report_service(account)  # the service, never the id; own:<service> for an owner's own connector
         try:
             wait = self.resume_wait(account)
         except Exception as error:  # never keep a source from starting
@@ -676,7 +677,7 @@ class SyncApp:
                         # poll (feed_backoff). Phone fallback attempts keep their own durable cap.
                         delay = feed_backoff(account, row['failures'] if row else 0)
                     error.retry_after = delay
-                    self.store.failed(account['id'], error)
+                    self.store.failed(account['id'], error, report)
                     LOG.warning('sync account=%s error=%s%s', account['id'], error, error_route(error))
                     # Enter the checkpoint wait directly so renewed sign-ins are watched.
                     # Ordinary failures and rate limits retain their normal backoff.
@@ -685,14 +686,14 @@ class SyncApp:
                 except sqlite3.OperationalError as error:
                     if not db_busy(error):
                         safe = SourceError(type(error).__name__, retry_after=delay)
-                        self.store.failed(account['id'], safe)
+                        self.store.failed(account['id'], safe, report)
                         LOG.error('sync account=%s error=%s', account['id'], safe)
                     else:  # another writer held the database past the busy timeout: transient, read again soon
                         LOG.info('sync account=%s waits: database busy', account['id'])
                         delay = DB_BUSY_RETRY
                 except Exception as error:
                     safe = SourceError(type(error).__name__, retry_after=delay)
-                    self.store.failed(account['id'], safe)
+                    self.store.failed(account['id'], safe, report)
                     LOG.error('sync account=%s error=%s', account['id'], safe)
             except Exception as error:
                 # A database error here (locked, disk full) must never end this

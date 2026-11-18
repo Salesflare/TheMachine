@@ -22,6 +22,7 @@ import enrichment
 from machine.browser import browser_read_failure, recover_browser
 from machine.config import ROOT
 from machine import names
+from machine.services import SERVICES as SHIPPED_SERVICES
 from machine.sources.rows import Skips
 import next_actions
 from sources import CALENDAR_SERVICES, MICROSOFT_SERVICES, SourceError, credential
@@ -66,6 +67,23 @@ _connectors = {}
 
 def connector_services():
     return sorted(p.stem for p in CONNECTORS.glob('*.py') if re.fullmatch(r'[a-z][a-z0-9_]{0,30}', p.stem))
+
+
+def own_connector(service):
+    """A connector the owner added (connectors/<service>.py with no row in machine/services.py, as every connector The
+    Machine ships has): its failures are its own code's, not The Machine's, so they are reported as its own
+    (sync:own:<service>, error_feed.own_message), never as ours."""
+    return isinstance(service, str) and service not in SHIPPED_SERVICES and service in connector_services()
+
+
+def sync_report_service(account):
+    """What a failed sync's error report names (Store.failed): the account's service when The Machine ships it,
+    'other' for a service it doesn't know (a name the owner typed could say anything), 'own:<service>' for an owner's
+    own connector (its file's name; 'own' when that isn't a plain id). Never the account's id."""
+    service = account.get('service', 'gmail')
+    if own_connector(service):
+        return 'own:' + service if re.fullmatch(r'[a-z0-9_]{1,40}', service) else 'own'  # error_feed.OWN_SERVICE
+    return service if service in SHIPPED_SERVICES else 'other'
 
 
 def docs_transport(config):

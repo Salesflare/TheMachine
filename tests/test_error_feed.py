@@ -358,49 +358,117 @@ class Sources(Base):
 
     def test_a_failed_sync_names_the_service_only(self):
         store = machine_main.Store(self.path)
-        store.failed('gmail:sam.lee@globex.example', sources.SourceError('Token for sam.lee@globex.example expired'))
+        store.failed('gmail:sam.lee@globex.example', sources.SourceError('Token for sam.lee@globex.example expired'), 'gmail')
+        store.failed('globex-trello', sources.SourceError('trello_http', 403), 'trello')
         with store.connect() as db:
-            row = db.execute('SELECT source,kind,message,location FROM error_feed').fetchone()
-        self.assertEqual(tuple(row), ('sync', 'SourceError', 'Token for <email> expired', 'sync:gmail'))
+            rows = sorted(tuple(r) for r in db.execute('SELECT source,kind,message,location FROM error_feed'))
+        self.assertEqual(rows, [('sync', 'SourceError', 'Token for <email> expired', 'sync:gmail'),
+                                ('sync', 'SourceError', 'trello_http: HTTP forbidden', 'sync:trello')])  # never the id's company
+
+    def test_a_sync_report_names_a_shipped_service_never_the_account(self):
+        import machine.sources.connectors as connectors
+        from unittest import mock
+        self.assertEqual(connectors.sync_report_service({'id': 'globex-slack', 'service': 'slack'}), 'slack')
+        self.assertEqual(connectors.sync_report_service({'id': 'globex-gmail'}), 'gmail')  # no service: read as Gmail
+        self.assertEqual(connectors.sync_report_service({'id': 'globex-meet', 'service': 'google_meet'}), 'google_meet')
+        self.assertEqual(connectors.sync_report_service({'id': 'sam-lee', 'service': 'sam-lee'}), 'other')  # typed by the owner
+        with tempfile.TemporaryDirectory() as folder:
+            Path(folder, 'notes.py').write_text('')
+            with mock.patch.object(connectors, 'CONNECTORS', Path(folder)):
+                self.assertEqual(connectors.sync_report_service({'id': 'globex-notes', 'service': 'notes'}), 'own:notes')
+
+    def test_an_own_connectors_failure_reports_its_service_and_label_only(self):
+        store = machine_main.Store(self.path)
+        store.failed('globex-notes', sources.SourceError('notes_http', 401), 'own:notes')
+        store.failed('globex-notes-2', sources.SourceError('sam_lee_says_hi'), 'own:sam_notes')  # a plain label is the owner's own code word
+        store.failed('globex-wiki', sources.SourceError('Wiki for sam.lee@globex.example gone', 404), 'own:wiki')  # not a label: normalized
+        store.failed('globex-x', sources.SourceError('KeyError'), 'own')  # its file's name wasn't a plain id
+        store.failed('work-slack', sources.SourceError('slack_http', 401), 'slack')
+        with store.connect() as db:
+            rows = sorted(tuple(r) for r in db.execute('SELECT source,kind,message,location FROM error_feed'))
+            self.assertEqual(db.execute("SELECT error FROM checkpoints WHERE account_id='globex-notes'").fetchone()[0], 'notes_http:HTTP_401')
+            payload = ef.batch(db, names=['Sam', 'Lee', 'Globex'])
+        self.assertEqual(rows, [('sync', 'SourceError', '<word> for <email> gone: HTTP not found', 'sync:own:wiki'),
+                                ('sync', 'SourceError', 'KeyError', 'sync:own'),
+                                ('sync', 'SourceError', 'notes_http: HTTP unauthorized', 'sync:own:notes'),
+                                ('sync', 'SourceError', 'sam_lee_says_hi', 'sync:own:sam_notes'),
+                                ('sync', 'SourceError', 'slack_http: HTTP unauthorized', 'sync:slack')])
+        sent = {(s['where'], s['message']) for s in payload['signatures']}
+        self.assertIn(('sync:own:notes', 'notes_http: HTTP unauthorized'), sent)  # the label survives the send's check
+        self.assertIn(('sync:own:sam_notes', 'sam_lee_says_hi'), sent)
+        self.assertEqual(len(sent), 5)
+
+    def test_an_own_connectors_place_and_label_stay_strict(self):
+        self.assertEqual(ef.where('sync', 'own', 'notes'), 'sync:own:notes')
+        self.assertEqual(ef.where('sync', 'own'), 'sync:own')
+        self.assertIsNone(ef.where('sync', 'own', 'Sam Lee'))
+        self.assertIsNone(ef.where('sync', 'own', 'x' * 41))
+        self.assertNotEqual(ef.signature_id('sync', 'SourceError', 'sync:own:notes', 'x'),
+                            ef.signature_id('sync', 'SourceError', 'sync:own:wiki', 'x'))  # each connector its own
+        self.assertEqual(ef.own_message(sources.SourceError('notes_http', 503)), 'notes_http: HTTP service unavailable')
+        self.assertEqual(ef.own_message(sources.SourceError('notes_http')), 'notes_http')
+        self.assertIn(ef.own_message(sources.SourceError('notes_' * 7 + 'http')), ('<word>', '<secret>'))  # too long for a label
+        self.assertEqual(ef.own_message(sources.SourceError('Notes failed for Sam')), '<word> failed for <word>')
+        for message in ('notes_http', 'notes_http: HTTP forbidden', '<word>: HTTP not found'):
+            self.assertTrue(ef.own_allowed(message), message)
+        for message in ('notes http', 'Notes_http', 'notes_http: HTTP sam lee', 'notes_http: sent to sam', '', 'a' * 41):
+            self.assertFalse(ef.own_allowed(message), message)
+        with sqlite3.connect(':memory:') as db:  # a shipped connector's message gets no such pass
+            ef.record(db, 'sync', 'SourceError', 'sam_lee_says_hi', 'sync', 'slack')
+            self.assertEqual(db.execute('SELECT message FROM error_feed').fetchone()[0], '<word>')
+
+    def test_only_a_connector_the_machine_does_not_ship_is_the_owners_own(self):
+        import machine.sources.connectors as connectors
+        from unittest import mock
+        shipped = connectors.connector_services()
+        self.assertTrue(shipped)
+        self.assertFalse([s for s in shipped if connectors.own_connector(s)])  # every shipped one has a services row
+        with tempfile.TemporaryDirectory() as folder:
+            Path(folder, 'notes.py').write_text('')
+            with mock.patch.object(connectors, 'CONNECTORS', Path(folder)):
+                self.assertTrue(connectors.own_connector('notes'))
+                self.assertFalse(connectors.own_connector('gmail'))  # built in, no file
+                self.assertFalse(connectors.own_connector('gone'))  # no file: unsupported_service is still ours to hear about
+                self.assertFalse(connectors.own_connector(None))
 
     def test_a_rate_limited_sync_is_not_an_error_until_it_keeps_failing(self):
         store = machine_main.Store(self.path)
         for _ in range(machine_store_events.TRANSIENT_REPORT_AFTER - 1):
-            store.failed('work-slack', sources.SourceError('slack:conversations.history', 429, 120))
-            store.failed('work-slack-2', sources.SourceError('slack_ratelimited:conversations.history', retry_after=60))
+            store.failed('work-slack', sources.SourceError('slack:conversations.history', 429, 120), 'slack')
+            store.failed('work-slack-2', sources.SourceError('slack_ratelimited:conversations.history', retry_after=60), 'slack')
         with store.connect() as db:
             self.assertEqual(db.execute('SELECT count(*) FROM error_feed').fetchone()[0], 0)
-        store.failed('work-slack', sources.SourceError('slack:conversations.history', 429, 120))
-        store.failed('other-slack', sources.SourceError('slack:conversations.history', 403))
+        store.failed('work-slack', sources.SourceError('slack:conversations.history', 429, 120), 'slack')
+        store.failed('other-slack', sources.SourceError('slack:conversations.history', 403), 'slack')
         with store.connect() as db:
             rows = sorted(tuple(r) for r in db.execute('SELECT message,location FROM error_feed'))
-        self.assertEqual(rows, [('slack: conversations.history: HTTP forbidden', 'sync:other-slack'),
-                                ('slack: conversations.history: HTTP rate limited', 'sync:work-slack')])
+        self.assertEqual(rows, [('slack: conversations.history: HTTP forbidden', 'sync:slack'),
+                                ('slack: conversations.history: HTTP rate limited', 'sync:slack')])
 
     def test_a_busy_service_or_network_is_not_an_error_until_it_keeps_failing(self):
         store = machine_main.Store(self.path)
-        store.failed('salesflare-google-meet', sources.SourceError('google_meet_http', 503))
-        store.failed('work-trello', sources.SourceError('trello_network'))
-        store.failed('work-stripe', sources.SourceError('network:IncompleteRead:stripe_read'))
+        store.failed('salesflare-google-meet', sources.SourceError('google_meet_http', 503), 'google_meet')
+        store.failed('work-trello', sources.SourceError('trello_network'), 'trello')
+        store.failed('work-stripe', sources.SourceError('network:IncompleteRead:stripe_read'), 'stripe')
         with store.connect() as db:  # one 503, one dropped connection: no report
             self.assertEqual(db.execute('SELECT count(*) FROM error_feed').fetchone()[0], 0)
         for _ in range(machine_store_events.TRANSIENT_REPORT_AFTER - 2):
-            store.failed('salesflare-google-meet', sources.SourceError('google_meet_http', 502))
+            store.failed('salesflare-google-meet', sources.SourceError('google_meet_http', 502), 'google_meet')
         with store.connect() as db:
             self.assertEqual(db.execute('SELECT count(*) FROM error_feed').fetchone()[0], 0)
-        store.failed('salesflare-google-meet', sources.SourceError('google_meet_http', 503))  # the threshold: it keeps happening
+        store.failed('salesflare-google-meet', sources.SourceError('google_meet_http', 503), 'google_meet')  # the threshold: it keeps happening
         with store.connect() as db:
             rows = [tuple(r) for r in db.execute('SELECT message,location FROM error_feed')]
-        self.assertEqual(rows, [('google_meet_http: HTTP service unavailable', 'sync:salesflare-google-meet')])
+        self.assertEqual(rows, [('google_meet_http: HTTP service unavailable', 'sync:google_meet')])
 
     def test_a_sign_in_or_permission_error_is_reported_at_once(self):
         store = machine_main.Store(self.path)
-        store.failed('salesflare-google-meet', sources.SourceError('google_meet_signin_expired', 401))
-        store.failed('work-trello', sources.SourceError('trello_http', 403))
+        store.failed('salesflare-google-meet', sources.SourceError('google_meet_signin_expired', 401), 'google_meet')
+        store.failed('work-trello', sources.SourceError('trello_http', 403), 'trello')
         with store.connect() as db:
             rows = sorted(tuple(r) for r in db.execute('SELECT message,location FROM error_feed'))
-        self.assertEqual(rows, [('google_meet_signin_expired: HTTP unauthorized', 'sync:salesflare-google-meet'),
-                                ('trello_http: HTTP forbidden', 'sync:work-trello')])
+        self.assertEqual(rows, [('google_meet_signin_expired: HTTP unauthorized', 'sync:google_meet'),
+                                ('trello_http: HTTP forbidden', 'sync:trello')])
 
     def test_what_counts_as_transient(self):
         for status in (429, 500, 502, 503, 504):
