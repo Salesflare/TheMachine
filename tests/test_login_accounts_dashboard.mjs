@@ -129,6 +129,8 @@ try{
   await page.frameLocator('#login-import .li-view iframe').locator('body').waitFor();
   await clean(page,'export view');await shot(page,'import-export-view',width,scheme);
   await page.locator('#login-import [data-li-back]').click();
+  // Back sends the stop without waiting on it: give the request its moment to reach the fixture server
+  for(let i=0;i<100&&!calls.some(([a,x])=>a==='browser_login_import'&&x.do==='export_stop');i++)await page.waitForTimeout(50);
   assert.ok(calls.some(([a,x])=>a==='browser_login_import'&&x.do==='export_stop'),'Back stops the export');
   browserLink=null;await page.evaluate(async()=>{await refresh()});
   // 1Password without op: its app's export file, picked right there
