@@ -59,12 +59,15 @@ const codeModeRunner = (event: any, ctx: any) => event.toolKind === 'code_mode_e
 // Without Code Mode, OpenClaw lists a model's tools through tool search: tool_search and tool_describe only look them
 // up, and a tool that tool_call runs passes this hook on its own, by its own name. Allowed like Code Mode's runner, so
 // a review on a model without Code Mode can reach assistant_signals (it ended with "Done." and analyzed nothing).
-export const TOOL_SEARCH_TOOLS = new Set(['tool_search', 'tool_describe', 'tool_call']);
+// OpenClaw 2026.11 names the runner dispatch_action (tool_call before): blocked, every review, routine and preparation
+// on such a model stopped after three identical refusals (openclaw_repeated_tool_error).
+export const TOOL_SEARCH_TOOLS = new Set(['tool_search', 'tool_describe', 'tool_call', 'dispatch_action']);
+const toolSearchRunner = (event: any) => TOOL_SEARCH_TOOLS.has(plainToolName(event.toolName));
 // Code Mode's wait only resumes an exec that answered "waiting" (by its runId); the tools that exec runs still pass this hook
 // one by one. Blocked, every review's wait failed and cost a step (about 30 a day, 2026-11-08).
 const codeModeWait = (event: any) => plainToolName(event.toolName) === 'wait' && Object.keys(event.params || {}).join() === 'runId' &&
   typeof event.params.runId === 'string';
-const toolRunner = (event: any, ctx: any) => codeModeRunner(event, ctx) || codeModeWait(event) || TOOL_SEARCH_TOOLS.has(plainToolName(event.toolName));
+const toolRunner = (event: any, ctx: any) => codeModeRunner(event, ctx) || codeModeWait(event) || toolSearchRunner(event);
 const preparationSession = (key: string) => /^agent:main:assistant-review-preparation-/.test(key || '');
 // assistant profile: one read-only turn that drafts USER.md lines from the owner's own messages.
 const profileSession = (key: string) => /^agent:main:assistant-review-profile-/.test(key || '');
@@ -444,7 +447,9 @@ export function registerReviewRecovery(api: any, call: (action: string, args?: a
     }
     const policy = preparationSession(ctx.sessionKey) ? preparationToolPolicy(event, ctx) : undefined;
     if (policy && 'block' in policy) return {block: true, blockReason: policy.block};
-    if (preparationSession(ctx.sessionKey) && !codeModeRunner(event,ctx)) {
+    // Tool search's lookups and its runner are journaled like Code Mode's: not at all, the tool they run is, by its own name.
+    // Journaled, dispatch_action was not preparation_history, so a continued to-do refused every step.
+    if (preparationSession(ctx.sessionKey) && !codeModeRunner(event,ctx) && !toolSearchRunner(event)) {
       const job_id=ctx.runId || event.runId || sessionRuns.get(ctx.sessionKey);
       if (job_id) {
         // An address this run didn't read and that could carry what it read: the service refuses it in a to-do prepared
@@ -463,9 +468,9 @@ export function registerReviewRecovery(api: any, call: (action: string, args?: a
   });
 
   api.on('after_tool_call',async (event:any,ctx:any)=>{
-    if ((preparationSession(ctx.sessionKey) || routineSession(ctx.sessionKey)) && !codeModeRunner(event,ctx) && !event.error)
+    if ((preparationSession(ctx.sessionKey) || routineSession(ctx.sessionKey)) && !codeModeRunner(event,ctx) && !toolSearchRunner(event) && !event.error)
       noteToolResult(ctx.sessionKey,plainToolName(event.toolName),event.params,event.result);
-    if (!preparationSession(ctx.sessionKey) || codeModeRunner(event,ctx)) return;
+    if (!preparationSession(ctx.sessionKey) || codeModeRunner(event,ctx) || toolSearchRunner(event)) return;
     const job_id=ctx.runId || event.runId || sessionRuns.get(ctx.sessionKey);
     if (job_id) await call('preparation_tool_result',{job_id,call_id:ctx.toolCallId || event.toolCallId || `${event.toolName}:${JSON.stringify(event.params)}`,
       result:journalValue(event.result),error:event.error?.slice(0,2000)});
