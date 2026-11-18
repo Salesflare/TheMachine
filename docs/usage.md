@@ -393,6 +393,7 @@ For developers: a feature adds its own entries with `actionAdd({id, group, label
 
 - A run interrupted by a crash or outage resumes with its history instead of redoing finished steps.
 - A run that doesn't finish within 35 minutes is stopped and tried once more. Then the to-do says **Stuck**, with **Try again**.
+- A to-do stuck because its run failed (not a question, a Stop or a usage limit) gets one fresh try after the Machine updates (a new release or bridge), once per version, in its same session, one at a time, outside quiet hours and within usage. Only those stuck in the last 7 days, never a confirmed step or a snoozed to-do.
 - A confirmed last step whose run stopped (Stuck, a snooze) waits, paused, and carries on with **Try again** or when the snooze ends. Until then the to-do says in one line that it isn't done, why, and when it carries on, instead of the earlier result. That also holds when new work you asked for replaced that step ("not confirmed yet" when it may have gone through).
 
 <a id="prepared-ahead"></a>
