@@ -46,6 +46,7 @@ It can send an email, a Slack direct message, or a WhatsApp, Telegram, LinkedIn 
 - Asked more than one thing? Each question has its own choices or a short field, sometimes filled in with last time's answer. **Answer** sends them all together.
 - Missing something only you have? It asks you for it and drafts only what can go without it, like a reply confirming a date. It doesn't draft a reply that only says it's coming.
 - **Try again** runs it once more. **Ask for changes** asks for something else. On a stuck to-do, **Try again** leads, and **Details** shows what it tried.
+- Stuck because the run itself failed? After your Machine updates, it tries that to-do once more by itself.
 - While it prepares, the to-do says what your Machine is doing in a plain line, like "Reading the mail", "Reading the PDF" or "Writing the draft". The detailed steps stay in the to-do's chat.
 - A to-do marked **Preparing…** starts within seconds. When it has to wait, it says why and roughly when, like "Starts after the current one".
 - A site wants you to sign in: press **Sign in**, or **Open the browser** and sign in there. It then carries on by itself. If it doesn't, press **Continue**.

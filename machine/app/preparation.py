@@ -200,6 +200,61 @@ def preparation_overdue(db, job):
     db.execute("UPDATE deliveries SET status='queued',reminder=1,needs_edit=1,error=NULL WHERE suggestion_id=? AND status IN ('queued','sent','uncertain')",(job['suggestion_id'],))
 
 
+# A run that failed by itself, also on its automatic retry: the AI run failing, timing out, ending without a result or
+# never confirming it finished. Never a blocker the AI recorded (a question, a sign-in), the owner's Stop or a usage
+# limit (that one waits, queued, for the reset).
+RUNTIME_FAILURES = ('ai_run_failed', 'ai_run_timed_out', 'run_ended_without_preparation', 'completion_unconfirmed')
+UPDATE_RETRY_DAYS = 7  # stuck longer ago than this: only the owner's Try again starts it
+
+
+def machine_version(config, code=None):
+    """What this Machine runs: its code (faults.code_version) and the bridge in OpenClaw (the first line of the
+    installer's plugin-installed stamp in the data folder). '' when neither is known."""
+    bridge = ''
+    if config.get('database'):
+        try:
+            bridge = (Path(config['database']).expanduser().parent / 'plugin-installed').read_text().split('\n', 1)[0].strip()[:16]
+        except (OSError, ValueError):
+            pass
+    return f"{code or ''}:{bridge}" if code or bridge else ''
+
+
+def retry_after_update(db, version, held=lambda job: False):
+    """A stuck run a bug may have caused can work after a new release or bridge: each to-do stuck on RUNTIME_FAILURES
+    before this version arrived gets one fresh try for it, in its same session, one to-do at a time. Never twice for
+    one version, so a run that still fails stays stuck until the next one or the owner's Try again. Never a to-do
+    waiting on a confirmed step (its Try again is the owner's), one snoozed or set aside (not PREPARING), or one whose
+    old run hasn't ended. `held(job)`: why it waits now (quiet hours, usage), checked only when one is due. The
+    suggestion id it queued, or None."""
+    if not version:
+        return None
+    seen = db.execute("SELECT at,detail FROM milestones WHERE name='preparation_version'").fetchone()
+    if not seen or seen['detail'] != version:
+        since = now()
+        db.execute("INSERT INTO milestones(name,at,detail) VALUES('preparation_version',?,?) ON CONFLICT(name) DO UPDATE SET at=excluded.at,detail=excluded.detail",
+                   (since, version))
+    else:
+        since = seen['at']
+    if db.execute("SELECT 1 FROM preparations WHERE update_retry=? AND status IN ('queued','starting','running')", (version,)).fetchone():
+        return None  # one at a time
+    oldest = (dt.datetime.fromisoformat(since) - dt.timedelta(days=UPDATE_RETRY_DAYS)).isoformat()
+    marks = ','.join('?' * len(RUNTIME_FAILURES))
+    job = db.execute(f"""SELECT p.* FROM preparations p JOIN suggestions s ON s.id=p.suggestion_id
+        WHERE p.status='blocked' AND p.error IN ({marks}) AND (p.error<>'completion_unconfirmed' OR p.auto_retries>0)
+        AND p.action_id IS NULL AND coalesce(p.update_retry,'')<>? AND p.updated_at<? AND p.updated_at>=?
+        AND s.status IN {todo_states.sql(todo_states.PREPARING)}
+        AND NOT EXISTS(SELECT 1 FROM preparation_runs r WHERE r.finished_at IS NULL
+                       AND (r.suggestion_id=p.suggestion_id OR r.session_job_id=coalesce(p.session_job_id,p.job_id)))
+        ORDER BY p.updated_at DESC LIMIT 1""", (*RUNTIME_FAILURES, version, since, oldest)).fetchone()
+    if not job or held(dict(job)):
+        return None
+    db.execute("UPDATE preparations SET job_id=?,status='queued',reason=NULL,details=NULL,retry_at=NULL,started_at=NULL,updated_at=?,update_retry=? "
+               "WHERE job_id=? AND status='blocked'", (uuid.uuid4().hex, now(), version, job['job_id']))
+    db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=?', (job['suggestion_id'],))
+    LOG.info('preparation retried after update suggestion=%s', job['suggestion_id'])
+    return job['suggestion_id']
+
+
 def owner_details(config=None):
     """Optional owner facts from config: `owner_name` and `booking_links` ({purpose: url})."""
     config = config or {}
@@ -365,6 +420,10 @@ class PreparationApp:
             for row in db.execute(f"SELECT id FROM suggestions WHERE status IN {todo_states.sql(todo_states.PREPARING)} AND NOT EXISTS(SELECT 1 FROM preparations WHERE suggestion_id=suggestions.id)").fetchall():
                 decision=db.execute("SELECT id FROM decisions WHERE suggestion_id=? AND choice IN ('accept','other','reopen') AND id NOT IN (SELECT decision_id FROM decision_annotations) ORDER BY created_at DESC LIMIT 1",(row['id'],)).fetchone()
                 if decision:self.store.queue_preparation(db,row['id'],decision['id'])
+            # A new release or bridge: one to-do stuck on a failed run gets its one fresh try for it, as background work
+            # (quiet hours and the usage pacing hold it like a review of new signals)
+            retry_after_update(db,machine_version(self.config,self.store.code_version),
+                               lambda job:self.night_hold(db) or self.background_pause(job='update:'+job['job_id'],db=db))
             # Several cards can be worked on at once: they share the browser lease,
             # each in its own tabs. Check on every active run, then admit queued ones up to the limit.
             active=[dict(r) for r in db.execute("SELECT p.*,s.status suggestion_status FROM preparations p JOIN suggestions s ON s.id=p.suggestion_id WHERE p.status IN ('starting','running') ORDER BY p.created_at").fetchall()]
