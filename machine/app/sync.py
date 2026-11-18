@@ -15,7 +15,7 @@ from machine.config import LOG, SIGNIN_ERROR
 from machine.faults import db_busy, DB_BUSY_RETRY
 from machine.sources.android import feed_backoff, sync_android, sync_android_preferred
 from machine.sources.calendar import sync_calendar
-from machine.sources.connectors import ABILITY_CHECK_SECONDS, BUILT_IN_SERVICES, CONNECTOR_HELPERS, load_connector, own_connector
+from machine.sources.connectors import ABILITY_CHECK_SECONDS, BUILT_IN_SERVICES, CONNECTOR_HELPERS, load_connector, sync_report_service
 from machine.sources.gateway import sync_gateway
 from machine.sources.gmail import sync_gmail
 from machine.sources.rows import Skips
@@ -636,7 +636,7 @@ class SyncApp:
 
     def collector(self, account):
         source = self.slack_source(account) if account.get('service') == 'slack' else None
-        report = not own_connector(account.get('service'))  # an owner's own connector's failures are its card's, not the team's
+        report = sync_report_service(account)  # the service, never the id; None for an owner's own connector
         try:
             wait = self.resume_wait(account)
         except Exception as error:  # never keep a source from starting

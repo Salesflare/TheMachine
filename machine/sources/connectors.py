@@ -75,6 +75,16 @@ def own_connector(service):
     return isinstance(service, str) and service not in SHIPPED_SERVICES and service in connector_services()
 
 
+def sync_report_service(account):
+    """What a failed sync's error report names (Store.failed): the account's service when The Machine ships it,
+    'other' for a service it doesn't know (a name the owner typed could say anything), None for an owner's own
+    connector, which isn't reported. Never the account's id."""
+    service = account.get('service', 'gmail')
+    if own_connector(service):
+        return None
+    return service if service in SHIPPED_SERVICES else 'other'
+
+
 def docs_transport(config):
     """Doc comment replies, when the connector is here (connectors/docs.py Replier: the one write it allows)."""
     plugin = load_connector('docs')
