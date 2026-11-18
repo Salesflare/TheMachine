@@ -15,6 +15,12 @@ const WN_ART={
  // Search: the box with a question in it (its question mark drawn, not written), the answer under it, and the messages it used
  search:()=>`<rect class="c" x="60" y="16" width="320" height="40" rx="20"/><circle class="q" cx="84" cy="35" r="6"/><path class="q" d="M88.5 39.5l5 5"/>`+wnBar(106,33,128,'s')+`<path class="l" stroke-width="2.4" d="M243 30.5a4.5 4.5 0 1 1 6 4.2c-1.1.5-1.5 1.3-1.5 2.5v1"/><circle class="m" cx="247.5" cy="42.5" r="1.6"/><rect class="m" x="260" y="27" width="2" height="18" rx="1"/><rect class="c" x="60" y="66" width="320" height="98" rx="12"/><path class="m" d="M84 77l2.2 5.3 5.3 2.2-5.3 2.2-2.2 5.3-2.2-5.3-5.3-2.2 5.3-2.2z"/>`+wnBar(100,82,236)+wnBar(78,97,284)+wnBar(78,112,176)
   +[[78,82],[168,96],[272,74]].map(([x,w])=>`<rect class="t" x="${x}" y="130" width="${w}" height="22" rx="11"/><path class="l" d="M${x+9} 136.5h12v9h-12zl6 4.5 6-4.5"/>`+wnBar(x+28,138,w-40,'s')).join(''),
+ // A newer model: the old one faded on the left, the new one lit up with its sparkle, and what it does going out fast
+ // (speed lines): a chat's answer, and background work ticked off
+ sol:()=>{const star=(x,y,s)=>`M${x} ${y-s}l${.3*s} ${.7*s} ${.7*s} ${.3*s}-${.7*s} ${.3*s}-${.3*s} ${.7*s}-${.3*s}-${.7*s}-${.7*s}-${.3*s} ${.7*s}-${.3*s}z`;
+  return `<rect class="t" x="44" y="60" width="72" height="60" rx="14"/><path class="q" d="${star(80,90,13)}"/><path class="l" stroke-dasharray="2 7" d="M126 90h20"/><path class="l" d="M150 83l7 7-7 7"/>`
+  +`<rect class="f" x="172" y="44" width="92" height="92" rx="20"/><path class="m" d="${star(218,90,24)}"/><path class="l" d="M272 66h12M268 90h18M272 114h12"/>`
+  +`<rect class="c" x="296" y="44" width="96" height="34" rx="14"/>`+wnBar(310,58,66)+`<rect class="c" x="296" y="102" width="96" height="34" rx="12"/>`+wnBar(310,116,44)+wnTick(372,119,8)},
  // Export: the Machine's folder with files in it, and its files on their way out of it to a download
  export:()=>`<path class="c" d="M44 46a8 8 0 0 1 8-8h30l10 10h68a8 8 0 0 1 8 8v90a8 8 0 0 1-8 8H52a8 8 0 0 1-8-8z"/>`+wnFile(62,34,[26,20,24],-8)+wnFile(108,30,[22,28,16],6)
   +`<path class="f" d="M44 84h124v62a8 8 0 0 1-8 8H52a8 8 0 0 1-8-8z"/><rect class="m" x="96" y="110" width="20" height="6" rx="3"/>`

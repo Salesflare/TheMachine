@@ -8,6 +8,8 @@ order: 5
 ---
 **Settings**, **Model** shows which AI model does your **Background work** and how you're signed in, like with ChatGPT.
 
+On a hosted Machine with a ChatGPT sign-in, the main model is GPT-6.2 Sol: faster answers than GPT-6.1 Sol at the same price.
+
 A personal ChatGPT or Claude plan may train on your chats by default: **Turn off training with your data** opens that setting at the provider, and **Done** hides the line.
 
 ## Model and thinking for chats

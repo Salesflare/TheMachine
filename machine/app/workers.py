@@ -28,7 +28,7 @@ from machine.store import plain_keys
 from machine.store.review import bulk_kind
 from machine.upkeep import memory_rebuild
 import message_seal
-from models import background_model
+from models import background_model, openclaw_model
 import ms_photos
 import next_actions
 import retention
@@ -205,6 +205,11 @@ class WorkersApp:
         fleet = getattr(self, 'fleet', None)
         return bool(fleet and fleet.work_fleets())
 
+    def whats_new_model(self):
+        """This Machine's main model (openclaw.json), so What's new may pick what only that model's owners can use;
+        None when it can't be read (then nothing tied to a model is picked)."""
+        return openclaw_model(getattr(self, 'config', None) or {})
+
     def retention_worker(self):
         """Once a day at a quiet hour: old sync history and preparation logs go, the space goes back to the disk and
         local copies of the database rotate (retention.py). Also the morning's What's new pick. Checks every ten
@@ -222,7 +227,7 @@ class WorkersApp:
             except Exception as error:  # noqa: BLE001 - tried again in ten minutes
                 LOG.error('retention error=%s', type(error).__name__)
             try:  # What's new: the morning's pick from the pool, once a day (machine/store/whats_new.py)
-                self.store.whats_new_pick(team=self.whats_new_team())
+                self.store.whats_new_pick(team=self.whats_new_team(), model=self.whats_new_model())
             except Exception as error:  # noqa: BLE001 - tried again in ten minutes
                 LOG.warning('whats new pick error=%s', type(error).__name__)
             try:  # files added to a chat message and never sent, and those of cards that are gone (chat_files.py)
