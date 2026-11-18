@@ -22,6 +22,7 @@ import enrichment
 from machine.browser import browser_read_failure, recover_browser
 from machine.config import ROOT
 from machine import names
+from machine.services import SERVICES as SHIPPED_SERVICES
 from machine.sources.rows import Skips
 import next_actions
 from sources import CALENDAR_SERVICES, MICROSOFT_SERVICES, SourceError, credential
@@ -66,6 +67,12 @@ _connectors = {}
 
 def connector_services():
     return sorted(p.stem for p in CONNECTORS.glob('*.py') if re.fullmatch(r'[a-z][a-z0-9_]{0,30}', p.stem))
+
+
+def own_connector(service):
+    """A connector the owner added (connectors/<service>.py with no row in machine/services.py, as every connector The
+    Machine ships has): its failures are its own code's, not The Machine's, so they stay off the error reports."""
+    return isinstance(service, str) and service not in SHIPPED_SERVICES and service in connector_services()
 
 
 def docs_transport(config):

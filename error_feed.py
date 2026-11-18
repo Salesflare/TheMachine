@@ -14,7 +14,7 @@ machine/web/handler.py), the dashboard (window errors, unhandled rejections and 
 try caught and showed, posted by the page), its service worker (source sw: its own errors and a failed shell update,
 passed on by the page), failed API calls the dashboard saw (source api: the endpoint and an action's name, a 5xx or a
 timeout, never the query or what was sent), failed reviews and coding-agent jobs (their error codes), syncs that
-fail (the source's service and the error type) and the AI's check when it fails (ModelCheckFailed, machine/app/first_look.py).
+fail (the source's service and the error type; not an owner's own connector's) and the AI's check when it fails (ModelCheckFailed, machine/app/first_look.py).
 
 Locally deduplicated by signature (a repeat only counts), at most MAX_SIGNATURES kept, at most BATCH sent at a time and
 SEND_EVERY apart, DAY_CAP a day; what was sent goes again only when its count grew. Kept 30 days. Sent over the Network

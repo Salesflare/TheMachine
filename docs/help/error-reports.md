@@ -33,6 +33,8 @@ What your messages, to-dos, drafts or chats say. Names, email addresses, phone n
 - coding agent jobs that fail: the tool and the kind of failure only;
 - your AI's short test when it fails: the AI's error, with anything specific taken out.
 
+A connector you added yourself (your own file in `connectors/`) never sends its errors. Its connection card shows them.
+
 Repeats of the same error are counted, not sent again. At most one batch goes every 10 minutes. We keep them 30 days.
 
 ## Pacing

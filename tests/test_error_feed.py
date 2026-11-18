@@ -363,6 +363,27 @@ class Sources(Base):
             row = db.execute('SELECT source,kind,message,location FROM error_feed').fetchone()
         self.assertEqual(tuple(row), ('sync', 'SourceError', 'Token for <email> expired', 'sync:gmail'))
 
+    def test_an_own_connectors_failure_stays_on_its_card_not_in_the_reports(self):
+        store = machine_main.Store(self.path)
+        store.failed('work-notes', sources.SourceError('notes_http', 401), report=False)
+        with store.connect() as db:
+            self.assertEqual(db.execute('SELECT count(*) FROM error_feed').fetchone()[0], 0)
+            self.assertEqual(db.execute("SELECT error FROM checkpoints WHERE account_id='work-notes'").fetchone()[0], 'notes_http:HTTP_401')
+
+    def test_only_a_connector_the_machine_does_not_ship_is_the_owners_own(self):
+        import machine.sources.connectors as connectors
+        from unittest import mock
+        shipped = connectors.connector_services()
+        self.assertTrue(shipped)
+        self.assertFalse([s for s in shipped if connectors.own_connector(s)])  # every shipped one has a services row
+        with tempfile.TemporaryDirectory() as folder:
+            Path(folder, 'notes.py').write_text('')
+            with mock.patch.object(connectors, 'CONNECTORS', Path(folder)):
+                self.assertTrue(connectors.own_connector('notes'))
+                self.assertFalse(connectors.own_connector('gmail'))  # built in, no file
+                self.assertFalse(connectors.own_connector('gone'))  # no file: unsupported_service is still ours to hear about
+                self.assertFalse(connectors.own_connector(None))
+
     def test_a_rate_limited_sync_is_not_an_error_until_it_keeps_failing(self):
         store = machine_main.Store(self.path)
         for _ in range(machine_store_events.TRANSIENT_REPORT_AFTER - 1):

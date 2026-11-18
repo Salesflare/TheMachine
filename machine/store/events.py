@@ -374,7 +374,9 @@ class EventsStore:
     def record_sync_activity(self, db, account, status, signals=None, error=None, retry_at=None):
         return record_sync_activity(db, account, status, signals, error, retry_at)
 
-    def failed(self, account, error):
+    def failed(self, account, error, report=True):
+        """A failed sync, kept for the connection's card. `report=False` (an owner's own connector) leaves it off the
+        error reports: the card still says what went wrong."""
         with self.connect() as db:
             retry_at = (dt.datetime.fromisoformat(now()) + dt.timedelta(seconds=error.retry_after)).isoformat() if error.retry_after else None
             self.record_sync_activity(db, account, 'failed', error=str(error), retry_at=retry_at)
@@ -385,7 +387,7 @@ class EventsStore:
                 # tries is worth a report; a sign-in or permission error (401, 403) is reported at once.
                 row = db.execute('SELECT failures FROM checkpoints WHERE account_id=?', (account,)).fetchone()
                 streak = (row[0] if row and row[0] else 0) + 1
-                if transient(error) and streak < TRANSIENT_REPORT_AFTER:
+                if not report or (transient(error) and streak < TRANSIENT_REPORT_AFTER):
                     pass
                 elif re.fullmatch(r'[a-z0-9_-]{1,24}', service_name):
                     error_feed.record(db, 'sync', type(error).__name__, str(error), 'sync', service_name, None, self.code_version)
