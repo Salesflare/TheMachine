@@ -29,7 +29,7 @@ Every message, doc or calendar change, step on the web and merged fix says what 
 - **Follow-up, sent by itself**, **Small fix, merged by itself**, **New private doc, made by itself** or **Prepared ahead, by itself**: a setting of yours or one of The Machine's own rules
 - **No approval recorded**: nothing was recorded for it. It also goes to our [error reports](error-reports.md), so we can find the path that missed it.
 
-Steps on the web also lists a to-do's run that clicked or typed on a page, with what allowed that run.
+Steps on the web also lists a to-do's run that clicked or typed on a page, with what allowed that run. Work that carries on after a snooze keeps what allowed it before the snooze.
 
 Older lines, from before this was recorded, keep their old words, like **After your OK**.
 

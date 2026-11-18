@@ -70,9 +70,10 @@ OWNER_ASKED = ('todo', 'telegram', 'voice', 'chat', 'doit')  # action_basis kind
 def prepared_ahead(db, run):
     """This run is work nobody asked for yet: a to-do prepared ahead (its decision, or the card still early with no
     tap or words of the owner's behind the run). Do it, a Confirm and the owner's chat are never this."""
-    basis = action_basis.read(run['basis']) or action_basis.from_decision(db, run['decision_id'], run['action_id'])
+    basis = action_basis.read(run['basis']) or action_basis.from_decision(db, run['decision_id'], run['action_id'], run['suggestion_id'])
     kind = basis.get('kind')
-    return kind == 'ahead' or (bool(run['early']) and kind not in OWNER_ASKED)
+    # Work carried on after the owner's snooze is judged by the card's early flag alone, as before its basis was kept
+    return (kind == 'ahead' and not basis.get('resumed')) or (bool(run['early']) and kind not in OWNER_ASKED)
 
 
 def tool_intent(db, args, stamp):
@@ -112,7 +113,7 @@ def note_basis(db, run, args):
     once. Record only: the call goes on either way."""
     basis = action_basis.read(run['basis'])
     if basis is None:
-        basis = action_basis.from_decision(db, run['decision_id'], run['action_id'])
+        basis = action_basis.from_decision(db, run['decision_id'], run['action_id'], run['suggestion_id'])
     if basis['kind'] == 'none' and not basis.get('reported') and outward(args.get('tool'), args.get('params')):
         action_basis.missing(db, 'tool_intent.run')
         basis = {**basis, 'reported': True}
