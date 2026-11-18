@@ -829,8 +829,10 @@ class LoginStore:
             self._write(doc)
 
     def rename(self, login, account):
-        """Names a saved sign-in's account (a Default one moved over from one per site gets Work or Personal).
-        Refuses a name another account on the same address already has. Returns whether it changed."""
+        """Names a saved sign-in's account: Work, Personal, a name of the owner's own, or Default (not set) again. The
+        list keeps it changeable, so a wrong mark is undone there. Refuses a name another account on the same address
+        already has. The to-dos that remembered this sign-in forget it, so each picks again by the new name (the only
+        one, the one for its side, or the dialog asks once). Returns whether it changed."""
         name = account_name(account)
         with self.lock:
             doc = self._read()
@@ -843,6 +845,7 @@ class LoginStore:
                    and (e.get('account') or DEFAULT_ACCOUNT).lower() == name.lower() for e in doc['logins']):
                 raise OwnerError('That site already has a sign-in for ' + name)
             entry['account'] = name
+            doc['picks'] = {k: v for k, v in doc['picks'].items() if v != login}
             self._write(doc)
             return True
 

@@ -152,6 +152,20 @@ class AccountsTest(Folder):
             self.store.rename('0' * 16, 'Work')
         self.assertEqual([browser_login.side_of(a) for a in (None, 'personal', 'work', 'work:Acme')], [None, 'Personal', 'Work', 'Work'])
 
+    def test_a_wrong_side_is_changed_or_cleared_and_to_dos_pick_by_the_new_one(self):
+        site = 'https://crm.example.invalid'
+        home = self.store.save(site, 'me@home.example.invalid', 'h', account='Work')  # marked Work by mistake
+        acme = self.store.save(site, 'me@acme.example.invalid', 'w', account='Personal')
+        self.assertEqual(self.store.pick(site, 'task-w', 'work'), home)
+        self.store.remember('task-w', home)  # used once from the dialog
+        self.assertTrue(self.store.rename(acme, 'Default'))  # cleared: not set again
+        self.assertTrue(self.store.rename(home, 'Personal'))
+        self.assertTrue(self.store.rename(acme, 'Work'))
+        self.assertEqual({x['id']: x['account'] for x in self.store.list()}, {home: 'Personal', acme: 'Work'})
+        self.assertEqual(self.store.pick(site, 'task-w', 'work'), acme)  # the to-do follows the new mark
+        self.assertEqual(self.store.pick(site, 'task-p', 'personal'), home)
+        self.assertEqual(self.store.get(home)['password'], 'h')
+
     def test_a_to_do_picks_by_meaning_or_asks_once(self):
         site = 'https://crm.example.invalid'
         work = self.store.save(site, 'me@acme.example.invalid', 'w', account='Work')
@@ -392,6 +406,39 @@ class CsvImportTest(Folder):
         with patch.object(login_import.time, 'monotonic', return_value=login_import.time.monotonic() + 3600):
             with self.assertRaisesRegex(ValueError, 'expired'):
                 login_import.keep(self.store, review['token'], [rows[0]['key']], None)
+
+
+class PasswordStep(FakeTab):
+    """The second page of a two-step sign-in: a password field, no username field."""
+
+    def run(self, fn, *args):
+        found = super().run(fn, *args)
+        return {**found, 'username': False} if fn == '(' + browser_login.DETECT + ')' else found
+
+
+class TwoStepTest(unittest.TestCase):
+    """Username, Next, then the password on its own page: Save for next time at the password step keeps the username
+    typed before (save_username), and never types it into the page."""
+
+    def test_the_earlier_username_is_saved_with_the_password(self):
+        temp = tempfile.TemporaryDirectory()
+        self.addCleanup(temp.cleanup)
+        data = Path(temp.name)
+        message_key(data)
+        app = object.__new__(machine_main.App)
+        app.store, app.config = machine_main.Store(data / 'events.sqlite'), {'accounts': [], 'database': str(data / 'events.sqlite')}
+        typed = []
+        with patch.object(browser_login.browser_cdp, 'Session', lambda *a, **k: PasswordStep('https://example.invalid/login', typed)), \
+                patch.object(browser_login.browser_cdp, 'evaluate', return_value=None), \
+                patch.object(browser_login, '_wall', return_value=False), patch.object(browser_login, '_checkpoint', return_value=False), \
+                patch.object(browser_login.time, 'sleep'), patch.object(app, 'resume_signed_in', return_value=[]):
+            app.action('browser_login_fill', {'page': '0:tab', 'host': 'example.invalid', 'password': SECRET, 'save': True,
+                                              'save_username': USER, 'account': 'Work'}, owner_dashboard=True)
+            app.action('browser_login_fill', {'page': '0:tab', 'host': 'example.invalid', 'password': SECRET, 'save': True,
+                                              'save_username': 'two\nlines', 'account': 'Personal'}, owner_dashboard=True)
+        self.assertEqual(typed, [SECRET, SECRET])  # the username is never typed on the password page
+        listed = {x['account']: x['username'] for x in app.action('browser_logins', {}, owner_dashboard=True)['logins']}
+        self.assertEqual(listed, {'Work': USER, 'Personal': ''})
 
 
 class LeakScanTest(unittest.TestCase):

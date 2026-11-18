@@ -102,7 +102,9 @@ if(r.result==='next')signinShow(r.page,'');else signinShow(r.page||null,r.page?.
 catch(err){errCaught(err);$('#signin-error').textContent=err.message}finally{go.disabled=false;for(const b of saved)b.disabled=false;$('#signin-pass').value='';$('#signin-code').value=''}}
 $('#signin-form').onsubmit=e=>{e.preventDefault();const args={save:$('#signin-save').checked,account:$('#signin-account')?.value||$('#signin-account-name')?.value.trim()||undefined};
 if(!$('#signin-user-row').hidden&&$('#signin-user').value)args.username=$('#signin-user').value;if(!$('#signin-pass-row').hidden&&$('#signin-pass').value)args.password=$('#signin-pass').value;if(!$('#signin-code-row').hidden&&$('#signin-code').value.trim())args.code=$('#signin-code').value.trim();
-if(!args.username&&!args.password&&!args.code){$('#signin-error').textContent='Fill in what the site asks for.';return}signinSend(args)};
+if(!args.username&&!args.password&&!args.code){$('#signin-error').textContent='Fill in what the site asks for.';return}
+// a two-step sign-in: the username typed at the earlier step on this host is saved with the password (never typed again)
+const f=e.target,u=$('#signin-user').value;if(args.username)f.dataset.userHost=f.dataset.host;else if(args.save&&u&&f.dataset.userHost===f.dataset.host)args.save_username=u;signinSend(args)};
 $('#signin-browser').onclick=async()=>{const link=state.browser_link;if(browserPane())$('#signin-dialog').close();else if(link)window.open(link,'_blank','noopener');try{const r=await signinPost('browser_focus',signinTask?{suggestion_id:signinTask}:{page:signinTab});if(!link||!r.shown)toast(r.shown?'The browser is in front now.':r.unknown?'I don’t know which tab this task uses; find it in the browser.':'I couldn’t reach the browser on this computer.',!r.shown)}catch(err){errCaught(err);if(!link)toast(err.message,true)}};
 // Full size: the sign-in's browser over the whole window, for a small screen in the view; the same button goes back.
 const signinFull=on=>{$('#signin-dialog').classList.toggle('signin-full',on);$('#signin-full').setAttribute('aria-pressed',String(on));$('#signin-full').textContent=on?'Exit full size':'Full size'};

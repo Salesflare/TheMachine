@@ -13,13 +13,16 @@ const TASK='0123456789abcdef';
 const logins=[
  {id:'a1a1a1a1a1a1a1a1',site:'shop.tidewell.example',origin:'https://shop.tidewell.example',account:'Personal',username:'sam@home.example',saved_at:'2026-03-04T09:00:00+00:00',password_saved:true,password:LEAK},
  {id:'b2b2b2b2b2b2b2b2',site:'shop.tidewell.example',origin:'https://shop.tidewell.example',account:'Work',username:'sam@acme.example',saved_at:'2026-02-11T09:00:00+00:00',password_saved:true},
- {id:'c3c3c3c3c3c3c3c3',site:'portal.example.com',origin:'https://portal.example.com',account:'Default',username:'test-user',saved_at:'2025-12-01T09:00:00+00:00',password_saved:true}];
+ {id:'c3c3c3c3c3c3c3c3',site:'portal.example.com',origin:'https://portal.example.com',account:'Default',username:'test-user',saved_at:'2025-12-01T09:00:00+00:00',password_saved:true},
+ {id:'d4d4d4d4d4d4d4d4',site:'sso.northwind.example',origin:'https://sso.northwind.example',account:'Work',username:'',saved_at:'2026-01-20T09:00:00+00:00',password_saved:true},
+ {id:'e5e5e5e5e5e5e5e5',site:'webmail.example.org',origin:'https://webmail.example.org',account:'Personal',username:'sam.home@example.org',saved_at:'2025-11-02T09:00:00+00:00',password_saved:false}];
 const review={token:'tok-1',kind:'1password',manager:'1Password',skipped:1,rows:[
  {key:'k1',title:'Tidewell',site:'shop.tidewell.example',origin:'https://shop.tidewell.example',username:'sam@acme.example',saved:['Work']},
  {key:'k2',title:'Example',site:'billing.example.net',origin:'https://billing.example.net',username:'finance@example.net',saved:[]},
  {key:'k3',title:'Router',site:'portal.example.com',origin:'https://portal.example.com',username:'admin',saved:[]}]};
 const accounts=logins.slice(0,2).map(({id,account,username})=>({id,account,username}));
-let pick=null;const calls=[];
+let pick=null,twoStep=false;const calls=[];
+const tidewell={id:'0:tab',site:'shop.tidewell.example',host:'shop.tidewell.example',origin:'https://shop.tidewell.example',code:false};
 const server=createServer(async(req,res)=>{
  const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
@@ -36,6 +39,8 @@ const server=createServer(async(req,res)=>{
    if(args.do==='keep'){res.end(JSON.stringify({kept:args.keys.length}));return}
    res.end(JSON.stringify({dropped:true}));return}
   if(action==='browser_login_open'){res.end(JSON.stringify({site:'shop.tidewell.example',kind:'password'}));return}
+  if(action==='browser_login_pages'&&twoStep){res.end(JSON.stringify({pages:[{...tidewell,username:true,password:false,accounts:[],pick:null,side:'Work'}],walls:[]}));return}
+  if(action==='browser_login_fill'&&twoStep&&args.username){res.end(JSON.stringify({result:'next',page:{...tidewell,username:false,password:true}}));return}
   if(action==='browser_login_pages'){res.end(JSON.stringify({pages:[{id:'0:tab',site:'shop.tidewell.example',host:'shop.tidewell.example',origin:'https://shop.tidewell.example',username:true,password:true,code:false,accounts,saved:{username:accounts[0].username},pick,side:'Work'}],walls:[]}));return}
   if(action==='browser_login_fill'){res.end(JSON.stringify({result:'next',page:{id:'0:tab',site:'shop.tidewell.example',host:'shop.tidewell.example',username:false,password:false,code:true}}));return}}
  res.end('{}');
@@ -56,28 +61,41 @@ try{
   await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
   page.on('pageerror',e=>errors.push(e.message));
   // The list: one row per account, the account named where a site has several.
-  await page.goto(base+'/#connections=signins');await page.locator('#saved-logins .saved-login').nth(1).waitFor();
-  // one row per site; its accounts underneath, each labeled; a short host is never cut short
-  assert.equal(await page.locator('#saved-logins .saved-login').count(),2);
+  await page.goto(base+'/#connections=signins');await page.locator('#saved-logins .saved-login').nth(3).waitFor();
+  // one row per site; its accounts underneath; a short host is never cut short
+  assert.equal(await page.locator('#saved-logins .saved-login').count(),4);
   const shop=page.locator('#saved-logins .saved-login.many');
-  assert.deepEqual((await shop.locator('.login-acct .login-user').allTextContents()).map(s=>s.replace(/\u00a0/g,' ')),['sam@home.example · Personal','sam@acme.example · Work']);
+  assert.deepEqual(await shop.locator('.login-acct .login-user').allTextContents(),['sam@home.example','sam@acme.example']);
   assert.equal(await shop.locator('.login-acct button').count(),2);
   assert.ok(await page.locator('#saved-logins strong').evaluateAll(s=>s.every(x=>x.scrollWidth<=x.clientWidth)),'a site name is never cut short');
-  // the username takes the free width, its side right after it with no gap, cut short only when the row is full
-  const who=await shop.locator('.login-who').evaluateAll(ws=>ws.map(w=>{const n=w.querySelector('.login-name').getBoundingClientRect(),s=w.querySelector('.login-side-name').getBoundingClientRect(),g=w.closest('.grow').getBoundingClientRect(),name=w.querySelector('.login-name');
-   return {gap:Math.round(s.left-n.right),cut:name.scrollWidth>name.clientWidth,room:Math.round(g.right-s.right)}}));
-  if(width===390)assert.ok(!who.some(w=>w.cut),'both accounts fit a phone row: '+JSON.stringify(who));
-  for(const w of who){assert.ok(Math.abs(w.gap)<=1,'no gap before the side: '+JSON.stringify(who));assert.ok(!w.cut||w.room<=1,'cut short only when full: '+JSON.stringify(who))}
-  // a sign-in moved over as Default: its side is set right there
-  assert.deepEqual(await page.locator('#saved-logins [data-login-side] option').allInnerTexts(),['Default','Work','Personal']);
+  if(width===390)assert.ok(await shop.locator('.login-user').evaluateAll(us=>us.every(u=>u.scrollWidth<=u.clientWidth)),'both accounts fit a phone row');
+  // every account says which one it is: its username, or that none is saved; never a line that starts with a separator
+  const text=await page.locator('#saved-logins').innerText();
+  assert.match(text,/No username saved/);
+  assert.ok(!/(^|\n)\s*·/.test(text),'no dangling separator: '+text);
+  // every account's side is a menu that stays changeable; Default reads as a question; a name the site's other
+  // account has is greyed out
+  const sides=page.locator('#saved-logins [data-login-side]');
+  assert.equal(await sides.count(),5);
+  assert.deepEqual(await sides.evaluateAll(s=>s.map(x=>x.value)),['Personal','Work','Default','Work','Personal']);
+  assert.deepEqual(await page.locator('[data-login-side="c3c3c3c3c3c3c3c3"] option').allInnerTexts(),['Work or personal?','Work','Personal']);
+  assert.deepEqual(await page.locator('[data-login-side="a1a1a1a1a1a1a1a1"] option[disabled]').allInnerTexts(),['Work']);
+  // the password line sits under the menu, never cut short and never past the row
+  for(const m of await page.locator('#saved-logins .login-meta').all()){
+   const [cut,right,row]=await m.evaluate(x=>{const p=x.querySelector('.login-pass span');return [p.scrollWidth>p.clientWidth,p.getBoundingClientRect().right,x.closest('.saved-login').getBoundingClientRect().right]});
+   assert.ok(!cut&&right<=row,'the password line is whole: '+JSON.stringify([cut,right,row]))}
   await clean(page,'list');
   await page.evaluate(()=>scrollTo(0,Math.max(0,document.querySelector('#health-tabs').getBoundingClientRect().top+scrollY-24)));
   await shot(page,'signins-accounts',width,scheme);
-  calls.length=0;await page.locator('#saved-logins [data-login-side]').selectOption('Personal');
-  await page.locator('#saved-logins [data-login-side]').waitFor({state:'detached'});
-  assert.deepEqual(calls.find(([a])=>a==='browser_login_rename')[1],{id:'c3c3c3c3c3c3c3c3',account:'Personal'});
-  assert.match((await page.locator('#saved-logins').textContent()).replace(/\u00a0/g,' '),/test-user · Personal/);
-  logins[2].account='Default';
+  // the open menu: a native one isn't in a screenshot, so for the shot only it shows as a list box
+  if(shots){const l=page.locator('[data-login-side="d4d4d4d4d4d4d4d4"]');await l.evaluate(s=>{s.size=3;s.style.position='relative';s.style.zIndex=2});
+   await shot(page,'signins-menu',width,scheme);await l.evaluate(s=>{s.size=0;s.style.cssText=''})}
+  // Default gets a side, and a side set before changes again (a wrong mark is undone), back to not set too
+  for(const [id,to,i] of [['c3c3c3c3c3c3c3c3','Personal',2],['d4d4d4d4d4d4d4d4','Personal',3],['d4d4d4d4d4d4d4d4','Default',3]]){calls.length=0;
+   await page.locator(`[data-login-side="${id}"]`).selectOption(to);
+   await page.waitForFunction(([id,to])=>{const s=document.querySelector(`[data-login-side="${id}"]`);return s&&!s.disabled&&s.value===to},[id,to]);
+   assert.deepEqual(calls.find(([a])=>a==='browser_login_rename')[1],{id,account:to});assert.equal(logins[i].account,to)}
+  logins[2].account='Default';logins[3].account='Work';
   // Import: where from (1Password signed in, LastPass not installed), then the review.
   calls.length=0;
   await page.locator('#logins-import').click();
@@ -128,6 +146,20 @@ try{
   await shot(page,'signin-picked',width,scheme);
   await page.locator('#signin-saved [data-login-other]').click();
   assert.equal(await page.locator('#signin-saved button').count(),2);
+  // A two-step sign-in: the username on its own page, then the password. Save for next time at the password step
+  // keeps the username typed before (save_username), and never types it into the page again.
+  twoStep=true;calls.length=0;
+  await page.goto('about:blank');await page.goto(base+'/#signin-for='+TASK);
+  await page.locator('#signin-user-row:not([hidden])').waitFor();
+  await page.locator('#signin-user').fill('sam@acme.example');await page.locator('#signin-go').click();
+  await page.locator('#signin-pass-row:not([hidden])').waitFor();
+  assert.ok(await page.locator('#signin-user-row').isHidden());
+  await page.locator('#signin-save').check();await page.locator('#signin-pass').fill('two-step-pass');await page.locator('#signin-go').click();
+  await page.waitForFunction(()=>!document.querySelector('#signin-go').disabled);
+  const [first,second]=calls.filter(([a])=>a==='browser_login_fill').map(([,x])=>x);
+  assert.equal(first.username,'sam@acme.example');
+  assert.deepEqual([second.username,second.save_username,second.save,second.password],[undefined,'sam@acme.example',true,'two-step-pass']);
+  twoStep=false;
   await context.close();
  }
  assert.deepEqual(errors,[]);

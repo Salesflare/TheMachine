@@ -1,22 +1,23 @@
 // A lazy part (dashboard_parts.LAZY 'logins'): Connections, Sign-ins. The saved sign-ins, one row per account, and
 // Import (loginImportOpen). connections-signin.js calls in through lazyRun.
 const savedOn=v=>{const d=v&&new Date(v);if(!d||isNaN(d))return '';return localeDate(d,DL,d.getFullYear()===new Date().getFullYear()?{day:'numeric',month:'short'}:{month:'short',year:'numeric'})};
-// One row per site, its name never cut short by a label. Its accounts sit underneath, each with its username and
-// its side ("sam@acme.example · Work") and its own Forget. A sign-in moved over from one per site is Default until
-// the owner gives it a side here (browser_login_rename); Default is the only place that word shows.
-const loginWho=(l,many)=>{const user=String(l.username||''),account=String(l.account||'Default'),side=/^[0-9a-f]{16}$/.test(l.id||'')&&account==='Default';
- return html`<span class="login-user login-who" title="${user}"><span class="login-name">${user||(many?t('No username'):'')}</span>${account!=='Default'?html`<span class="login-side-name">&nbsp;· ${t(account)}</span>`:''}</span>${side?html`<label class="login-side"><select data-login-side="${l.id}" aria-label="${t('Side for {}',user||l.site)}"><option value="Default" selected>${t('Default')}</option>${LI_ACCOUNTS.map(a=>html`<option value="${a}">${t(a)}</option>`)}</select></label>`:''}`};
+// One row per site, its name never cut short by a label. Each account: its username (or a muted "No username saved"),
+// then its side as a menu that stays changeable (Work, Personal, a name of the owner's own, or not set yet: Default,
+// shown as "Work or personal?"; browser_login_rename), whether a password is kept, and its own Forget. A name another
+// account on the site has is greyed out.
+const loginWho=(l,list)=>{const user=String(l.username||''),a=String(l.account||'Default'),taken=list.filter(x=>x!==l).map(x=>String(x.account||'Default'));
+ return html`<span class="login-user${user?'':' login-none'}" title="${user}">${user||t('No username saved')}</span><span class="login-meta"><select data-login-side="${l.id}" aria-label="${t('Work or personal for {}',user||l.site)}">${[...new Set(['Default',...LI_ACCOUNTS,a])].map(o=>html`<option value="${o}"${o===a?html` selected`:taken.includes(o)?html` disabled`:''}>${o==='Default'?t('Work or personal?'):t(o)}</option>`)}</select>${loginPass(l)}</span>`};
 const loginPass=l=>{const on=savedOn(l.saved_at);return html`<small class="login-pass">${l.password_saved?LOCK:''}<span>${l.password_saved?'Password saved':'No password saved'}${on?` · ${on}`:''}</span></small>`};
 const loginForget=(l,label)=>html`<button type="button" class="quiet" data-forget-login="${l.id||l.site}" aria-label="${t('Forget {}',label)}">Forget</button>`;
 function savedLoginRow([site,list]){const mark=html`<span class="login-mark" aria-hidden="true">${(site.replace(/^www\./,'')[0]||'?').toUpperCase()}</span>`;
- if(list.length===1){const l=list[0];return html`<div class="saved-login">${mark}<span class="grow"><strong title="${site}">${site}</strong>${loginWho(l,false)}${loginPass(l)}</span>${loginForget(l,site)}</div>`}
- return html`<div class="saved-login many">${mark}<span class="grow"><strong title="${site}">${site}</strong><span class="login-accts">${list.map(l=>html`<span class="login-acct"><span class="grow">${loginWho(l,true)}${loginPass(l)}</span>${loginForget(l,site+' · '+t(String(l.account||'Default')))}</span>`)}</span></span></div>`}
+ if(list.length===1){const l=list[0];return html`<div class="saved-login">${mark}<span class="grow"><strong title="${site}">${site}</strong>${loginWho(l,list)}</span>${loginForget(l,site)}</div>`}
+ return html`<div class="saved-login many">${mark}<span class="grow"><strong title="${site}">${site}</strong><span class="login-accts">${list.map(l=>html`<span class="login-acct"><span class="grow">${loginWho(l,list)}</span>${loginForget(l,l.username||site)}</span>`)}</span></span></div>`}
 const loginSites=logins=>{const by=new Map();for(const l of logins){const s=String(l.site||'');if(!by.has(s))by.set(s,[]);by.get(s).push(l)}return [...by]};
 async function savedLoginsDraw(){try{const r=await signinPost('browser_logins',{}),logins=Array.isArray(r.logins)?r.logins:[];if(savedLoginCount!==logins.length){savedLoginCount=logins.length;if(lazyIn('connections'))renderHealthTabs()}
  $('#saved-logins').classList.toggle('empty',!logins.length);
  setHTML($('#saved-logins'),logins.length?html`${loginSites(logins).map(savedLoginRow)}`:html`<div><strong>No saved sign-ins</strong><span>Tick Save for next time when you sign in to a site, or import them.</span></div>`)}catch{}}
 $('#saved-logins').onchange=async e=>{const s=e.target.closest('[data-login-side]');if(!s)return;s.disabled=true;
- try{await signinPost('browser_login_rename',{id:s.dataset.loginSide,account:s.value});toast(t('Saved as {}.',t(s.value)));savedLoginsDraw()}catch(err){errCaught(err);s.disabled=false;s.value='Default';toast(err.message,true)}};
+ try{await signinPost('browser_login_rename',{id:s.dataset.loginSide,account:s.value});toast(t('Saved.'))}catch(err){errCaught(err);toast(err.message,true)}savedLoginsDraw()};
 $('#saved-logins').onclick=async e=>{const b=e.target.closest('[data-forget-login]');if(!b)return;b.disabled=true;const v=b.dataset.forgetLogin;try{await signinPost('browser_login_forget',/^[0-9a-f]{16}$/.test(v)?{id:v}:{site:v});toast('Forgotten.');savedLoginsDraw()}catch(err){errCaught(err);b.disabled=false;toast(err.message,true)}};
 // The sign-in dialog's saved sign-ins (connections-signin-dialog.js signinShow): those for the page's exact address,
 // one per account. The to-do's own (`pick`: chosen before, the only one, or the one named for its Work or Personal
