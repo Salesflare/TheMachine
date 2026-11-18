@@ -230,6 +230,13 @@ class Voices(unittest.TestCase):
             self.assertEqual(bias.plain_writing('local/some-model'), '')
         finish = {**job, 'finish': {'label': 'Submit form', 'instructions': 'Press Submit', 'preview': 'The form'}}
         self.assertNotIn(bias.PLAIN_WRITING, machine_app_preparation.preparation_prompt(finish))  # the text was already confirmed
+        # One model's own line, besides its family's: GPT-6.2 Sol only
+        self.assertEqual(bias.plain_writing('openai/gpt-6.2-sol'), bias.PLAIN_WRITING + ' ' + bias.GPT_62_SOL)
+        self.assertEqual(bias.plain_writing('openai-codex/GPT-6.2-Sol'), bias.PLAIN_WRITING + ' ' + bias.GPT_62_SOL)
+        self.assertEqual(bias.plain_writing('openai/gpt-6.1-sol'), bias.PLAIN_WRITING)
+        self.assertEqual((bias.model_note('openai/gpt-6.1-sol'), bias.model_note('openai/gpt'), bias.model_note(None)), ('', '', ''))
+        self.assertIn(bias.GPT_62_SOL, machine_app_preparation.preparation_prompt(job, model='openai/gpt-6.2-sol'))
+        self.assertNotIn(bias.GPT_62_SOL, machine_app_preparation.preparation_prompt(finish, model='openai/gpt-6.2-sol'))
 
     def test_a_draft_answered_elsewhere_becomes_an_edit_once(self):
         draft = {'kind': 'email', 'label': 'Send', 'account_id': 'work', 'to': ['sam@example.com'], 'subject': 'Re: Contract',

@@ -15,10 +15,11 @@ import locale_prefs
 import meeting_prep
 import person_summary
 from machine.config import LOG
+from machine.prompts import bias
 from machine.sources.calendar import calendar_owned
 from machine.store.review import CARD_OPEN
 from machine.todo_states import OPEN_NOT_SNOOZED
-from models import background_model
+from models import background_model, openclaw_model
 from timeutil import local_tz, now
 
 MEETING_PREP_SECONDS = 600  # how often the calendar is looked at
@@ -139,7 +140,9 @@ class MeetingPrepApp:
             self.meeting_prep_research(meeting)
         except (sqlite3.Error, OSError, ValueError, TypeError) as error:  # a briefing without research beats none
             LOG.warning('meeting prep research error=%s', type(error).__name__)
-        text = meeting_prep.prompt(meeting, meeting['evidence'], local_tz(), i18n.prompt_rule(locale_prefs.language_of(self.config)))
+        swap = background_model(self.config)  # the model meeting_prep_model_turn runs on, for its own bias correction
+        note = bias.model_note('/'.join(swap) if swap else openclaw_model(self.config))
+        text = meeting_prep.prompt(meeting, meeting['evidence'], local_tz(), i18n.prompt_rule(locale_prefs.language_of(self.config)), note)
         return meeting_prep.parse(self.meeting_prep_model_turn(text), meeting['evidence'])
 
     def meeting_prep_run(self, meeting):

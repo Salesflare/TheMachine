@@ -92,5 +92,6 @@ Some prompt lines only counter a habit of today's models. They live in `machine/
 
 - `PLAIN_WRITING`: models write long, elaborate and formal text, and testers rewrote drafts as "too complex". Drafts get it from `preparation_prompt` (Do it, prepared ahead, follow-ups, Ask for changes) and a routine run that may leave a draft. It is a default: the owner's voice per channel, their own messages and edits win where they differ.
 - `PLAIN_WRITING_FOR` turns it on or off per model family (`family()`: gpt, claude, mistral, glm…); a family not listed gets `DEFAULT`.
+- A model's own name in `PLAIN_WRITING_FOR` (like `gpt-6.2-sol`) holds a line just for that model (`model_note()`), which its drafts and meeting briefs get besides. `GPT_62_SOL`: GPT-6.2 Sol wrote meeting briefs about a quarter longer than GPT-6.1 Sol and once guessed a guest's gender from their name.
 
 To change one, edit its text. To turn it off for a family, set that family to `False`; to drop it, set `DEFAULT = False` and empty the table, or remove the constant and its two call sites. Check before and after with a few made-up mails on the models in use (word count and a read of the drafts), and say the numbers in the pull request.

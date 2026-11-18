@@ -513,8 +513,8 @@ def worth_asking(found):
     return bool(found['messages'] or found['promises'])
 
 
-def prompt(meeting, found, tz, lang_rule):
-    """The one turn's instructions and data."""
+def prompt(meeting, found, tz, lang_rule, note=''):
+    """The one turn's instructions and data. note: the answering model's own bias correction (bias.model_note)."""
     local = meeting['start'].astimezone(tz)
     about = {'title': meeting['title'], 'starts': local.strftime('%A %Y-%m-%d %H:%M'),
              'description': re.sub(r'\s+', ' ', meeting['body'].split('\nParticipants:')[0])[:600], 'outside_guests': found['people'],
@@ -556,7 +556,7 @@ def prompt(meeting, found, tz, lang_rule):
             f'Each line under {size("who")} characters (background {size("background")}, company {size("company")}, last '
             f'{size("last")}, bring {size("bring")}), plain words, no Markdown or links. Never start a line with "You", and never '
             'write "the owner": leave them out as the subject ("Offered a demo on Nov 9"). Only '
-            'state what the data shows; leave a field empty rather than guess.\n' + lang_rule + '\n\nData:\n' + json.dumps(about, ensure_ascii=False))
+            'state what the data shows; leave a field empty rather than guess.\n' + (note + '\n' if note else '') + lang_rule + '\n\nData:\n' + json.dumps(about, ensure_ascii=False))
 
 
 def parse(reply, found):

@@ -41,7 +41,7 @@ On a GBrain page, only The Machine's own section changes. What you wrote there s
 
 ## Model and thinking
 
-Under the message box, the chat shows its model and thinking level, like "GPT-6.1 Sol" and "Low thinking". Tap either to pick another for this chat only. New chats use what you set in **Settings**, **Model** (see [Model](model.md)).
+Under the message box, the chat shows its model and thinking level, like "GPT-6.2 Sol" and "Low thinking". Tap either to pick another for this chat only. New chats use what you set in **Settings**, **Model** (see [Model](model.md)).
 
 **Fast**, at the end of the model menu, makes to-do chats answer quicker, at about twice the cost (or twice as much of your plan). It covers the messages you send and Do it, in all your to-do chats, never background work. It's off by default, and grayed out for a model without it.
 
