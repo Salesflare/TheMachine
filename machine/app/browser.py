@@ -137,7 +137,7 @@ class BrowserApp:
             with store.connect() as db:
                 offer = security_levels.save_logins(db)
             return {'logins': logins.list(), 'save': offer}
-        if name == 'browser_login_rename':  # Sign-ins: give a sign-in moved over as Default its side (Work, Personal)
+        if name == 'browser_login_rename':  # Sign-ins: a sign-in's side (Work, Personal, or not set), changeable any time
             if not isinstance(args.get('id'), str) or not isinstance(args.get('account'), str):
                 raise OwnerError('Which sign-in?')
             return {'renamed': logins.rename(args['id'], args['account'])}
@@ -167,6 +167,12 @@ class BrowserApp:
         if getattr(self, 'store', None) is not None:
             with self.store.connect() as db:
                 may_save = security_levels.save_logins(db)  # Careful: Save for next time isn't offered
+        # A two-step sign-in (the username, Next, then the password on its own page) saves at the password step, where
+        # the page no longer asks for the username: the dialog sends the one typed at the earlier step on this host as
+        # `save_username`, kept with the password but never typed into the page.
+        earlier = args.get('save_username')
+        if not username and isinstance(earlier, str) and 0 < len(earlier) <= 1000 and '\n' not in earlier and '\r' not in earlier:
+            username = earlier
         if may_save and args.get('save') is True and not used and done['result'] != 'still_here' and (username or password):
             saved_id = logins.save(seen.get('origin') or host, username, password, account=args.get('account'))
             if task:
