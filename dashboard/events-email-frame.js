@@ -36,7 +36,15 @@ function openMailLink(e){const a=e.target.closest?.('a[href]');if(!a||e.button||
 function emailFrame(box,view,o,id){
 const frame=document.createElement('iframe');frame.className='email-frame';frame.title='Email';frame.setAttribute('sandbox','allow-same-origin allow-popups allow-popups-to-escape-sandbox');frame.setAttribute('referrerpolicy','no-referrer');
 frame.style.visibility='hidden';const reveal=()=>{const doc=frame.contentDocument;if(doc?.body&&dark())try{darkenEmail(doc)}catch{}frame.style.visibility=''};setTimeout(reveal,1500);
-frame.addEventListener('load',()=>{reveal();const doc=frame.contentDocument;if(!doc)return;doc.addEventListener('click',openMailLink);const fit=()=>{frame.style.height=Math.min(Math.max(Math.ceil(doc.documentElement.getBoundingClientRect().height),80),20000)+'px'};fit();new ResizeObserver(fit).observe(doc.body)});
+// The frame takes the email's own height. Templates tie theirs to the frame's (html,body{height:100%!important},
+// min-height:100vh): measured as drawn, the frame stayed as small as it started, or grew with every fit. So html and
+// body get their natural height (inline !important outranks the email's own), and the email is measured in a frame of
+// no height (no vh to fill), its box holding its place meanwhile so nothing above it scrolls.
+frame.addEventListener('load',()=>{reveal();const doc=frame.contentDocument,root=doc?.documentElement;if(!doc?.body)return;doc.addEventListener('click',openMailLink);
+ for(const el of [root,doc.body])for(const [k,v] of [['height','auto'],['min-height','0'],['max-height','none'],['overflow','visible']])el.style.setProperty(k,v,'important');
+ const fit=()=>{box.style.minHeight=frame.offsetHeight+'px';frame.style.height='0';
+  frame.style.height=Math.min(Math.max(root.scrollHeight,doc.body.scrollHeight,80),20000)+'px';box.style.minHeight=''};
+ fit();new ResizeObserver(fit).observe(doc.body);doc.addEventListener('load',fit,true);doc.fonts?.ready.then(fit)});
 frame.srcdoc=emailDoc(view.html,view.images||{},id,o.event_id,o.local);box.replaceChildren(frame)}
 // The dialog with a to-do's messages (openEmail in events-email.js opens it once this part is in)
 async function emailOpen(id,{keep}={}){const s=state.suggestions.find(s=>s.id===id);const dialog=$('#email-dialog');
