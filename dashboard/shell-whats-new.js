@@ -68,6 +68,13 @@ const WN_ART={
   +wnBar(52,60,118,'s',8)+wnBar(52,76,158)+`<rect class="f" x="46" y="90" width="192" height="44" rx="8"/>`+wnBar(58,100,96)+`<path class="q" d="M54 103h104"/>`+wnBar(58,116,124,'m')
   +wnBar(52,146,136)+`<path class="l" stroke-dasharray="2 7" d="M258 112h22"/><path class="l" d="M284 105l7 7-7 7"/>`
   +`<rect class="c" x="304" y="74" width="118" height="76" rx="12"/><circle class="m" cx="326" cy="96" r="9"/>`+wnBar(342,92,64,'s',8)+wnBar(318,116,90)+wnBar(318,130,66),
+ // Sign-ins coming in: a password manager's key and hidden password, on their way into the saved sign-ins, where the
+ // one arriving (lit up) is for the same site as the one there: one marked Work (briefcase), one Personal (house)
+ logins:()=>`<rect class="c" x="40" y="46" width="128" height="88" rx="12"/><circle class="m" cx="70" cy="76" r="16"/><g class="k" transform="translate(59 65) scale(.9)"><path d="m15.5 7.5 2.3 2.3a1 1 0 0 0 1.4 0l2.1-2.1a1 1 0 0 0 0-1.4L19 4M21 2l-9.6 9.6"/><circle cx="7.5" cy="15.5" r="5.5"/></g>`
+  +wnBar(96,70,52,'s')+wnBar(96,82,36)+[0,1,2,3,4].map(i=>`<circle class="b" cx="${60+i*12}" cy="114" r="3.5"/>`).join('')
+  +`<path class="l" stroke-dasharray="2 7" d="M176 90h16"/><path class="l" d="M196 83l7 7-7 7"/><rect class="c" x="214" y="18" width="160" height="148" rx="12"/>`+wnBar(230,32,64,'s')+`<path class="e" d="M214 48h160"/><rect class="f" x="222" y="55" width="144" height="34" rx="8"/>`
+  +[['m',56,'<path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/><rect width="20" height="14" x="2" y="6" rx="2"/>'],['m',42,'<path d="M3 10l9-7 9 7v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1zM9 21v-7h6v7"/>'],['t',36]].map(([c,w,p],i)=>{const y=72+i*38;
+   return `<rect class="${c}" x="232" y="${y-10}" width="20" height="20" rx="6"/>`+wnBar(262,y-8,i<2?66:54,'s')+wnBar(262,y+3,w)+(p?`<circle class="t" cx="350" cy="${y}" r="12"/><g class="l" transform="translate(342.2 ${y-7.8}) scale(.65)">${p}</g>`:'')}).join(''),
  new:()=>`<rect class="c" x="120" y="42" width="200" height="96" rx="12"/><path class="m" d="M152 62l4 9.5 9.5 4-9.5 4-4 9.5-4-9.5-9.5-4 9.5-4z"/>`+wnBar(180,68,110,'s')+wnBar(180,84,76)+wnBar(142,108,156)+wnBar(142,122,112)};
 let wn={list:[],i:0};
 // A tap on the backdrop (the dialog itself is the target there, and on its own padding too)

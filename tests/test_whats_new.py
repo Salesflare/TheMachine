@@ -189,19 +189,33 @@ class WhatsNew(unittest.TestCase):
     def test_a_bad_candidate_is_named(self):
         self.assertEqual(whats_new.problems(ENTRIES[2]), [])
         bad = {'id': 'Big One', 'date': '2026-3-1', 'weight': 5, 'title': 'Wow!', 'text': 'x', 'who': 'all', 'shade': 1}
-        self.assertEqual(whats_new.problems(bad), ['unknown key shade', 'id: lowercase letters, digits and dashes only', 'date: YYYY-MM-DD',
-                                                   'weight: 1, 2 or 3', "who: 'team' or left out", 'no em or en dashes and no exclamation marks'])
-        self.assertEqual(whats_new.problems({'id': 'a', 'date': '2026-03-01', 'title': 'A', 'text': 'B'}), ['no weight'])
+        self.assertEqual(whats_new.problems(bad), ['unknown key shade', 'no art', 'id: lowercase letters, digits and dashes only',
+                                                   'date: YYYY-MM-DD', 'weight: 1, 2 or 3', "who: 'team' or left out",
+                                                   'no em or en dashes and no exclamation marks'])
+        self.assertEqual(whats_new.problems({'id': 'a', 'date': '2026-03-01', 'title': 'A', 'text': 'B', 'art': 'routines'}), ['no weight'])
+
+    def test_a_new_candidate_needs_its_picture(self):
+        fine = {'id': 'a', 'date': '2026-03-01', 'weight': 2, 'title': 'A', 'text': 'B', 'art': 'routines'}
+        self.assertEqual(whats_new.problems(fine), [])
+        self.assertEqual(whats_new.problems({k: v for k, v in fine.items() if k != 'art'}), ['no art'])  # text only
+        bad = 'art: the name of its own picture in WN_ART (lowercase letters)'
+        for art in ('new', 'Sign-ins', 3):  # the stand-in, or not a picture's name
+            self.assertEqual(whats_new.problems(dict(fine, art=art)), [bad], art)
+        source = lambda entries: 'ENTRIES = ' + repr(entries) + '\n'
+        bare = {k: v for k, v in ENTRIES[3].items() if k != 'art'}  # released before pictures were required
+        self.assertEqual(release.whats_new_problems(source([dict(fine, id='fresh')] + [bare]), source([bare])), [])
+        self.assertEqual(release.whats_new_problems(source([dict(bare, id='fresh'), bare]), source([bare])), ['fresh: no art'])
 
     def test_a_release_checks_only_its_new_candidates(self):
         source = lambda entries: 'import x\nENTRIES = ' + repr(entries) + '\nPICKED = 5\n'
-        before = source(ENTRIES[:2])
-        self.assertEqual(release.whats_new_problems(source(ENTRIES), before), [])
-        broken = dict(ENTRIES[0], weight=None)  # already released: not this release's business
-        new = [{'id': 'fresh', 'date': '2026-03-09', 'weight': 0, 'title': 'Fresh', 'text': 'New.'}]
-        self.assertEqual(release.whats_new_problems(source(new + [broken, ENTRIES[1]]), source([broken, ENTRIES[1]])),
+        drawn = [dict(e, art='routines') for e in ENTRIES]
+        before = source(drawn[:2])
+        self.assertEqual(release.whats_new_problems(source(drawn), before), [])
+        broken = dict(drawn[0], weight=None)  # already released: not this release's business
+        new = [{'id': 'fresh', 'date': '2026-03-09', 'weight': 0, 'title': 'Fresh', 'text': 'New.', 'art': 'routines'}]
+        self.assertEqual(release.whats_new_problems(source(new + [broken, drawn[1]]), source([broken, drawn[1]])),
                          ['fresh: weight: 1, 2 or 3'])
-        self.assertEqual(release.whats_new_problems(source(ENTRIES + ENTRIES[-1:]), before), ['four: id used twice'])
+        self.assertEqual(release.whats_new_problems(source(drawn + drawn[-1:]), before), ['four: id used twice'])
         self.assertEqual(release.whats_new_problems('ENTRIES = [x for x in y]\n', before), ['ENTRIES is not a plain list'])
 
     def test_the_shipped_entries_are_well_formed(self):

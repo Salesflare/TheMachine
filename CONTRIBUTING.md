@@ -103,7 +103,7 @@ What every pull request needs:
   worth a line; set it honestly, it decides what gets shown), a short title, one or two short sentences on what changed
   and what they can do now, `who: 'team'` when only a Work Fleet can use it, and optionally a button that opens it (a
   palette command id). Fixes, polish and internal work get none. Add its strings to `i18n/en.json`.
-- Give it a picture: a small drawing of the feature in `WN_ART` (`dashboard/shell-whats-new.js`), named by the entry's
+- Give it a picture (every new candidate needs one; `scripts/release.py cut` refuses one without): a small drawing of the feature in `WN_ART` (`dashboard/shell-whats-new.js`), named by the entry's
   `art`. Draw it as inline SVG on the 440 by 180 canvas with the classes listed there (they use the theme's colors, so
   it is right in light and dark), no words in it, placeholder bars for text. It should read as its feature without
   the title. Check it at 390 and 1440 wide in both themes; `tests/test_whats_new.py` checks the name exists.
