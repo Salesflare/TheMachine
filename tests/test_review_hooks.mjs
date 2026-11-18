@@ -56,6 +56,9 @@ assert.equal(await hooks.before_tool_call({toolName:'openclawassistant_signals',
 assert.notEqual((await hooks.before_tool_call({toolName:'memory_search',params:{}},ctx))?.block,true);
 // Without Code Mode, tool search: looking tools up and tool_call pass; the tool it runs is checked by its own name
 for(const toolName of ['tool_search','tool_describe','tool_call'])assert.notEqual((await hooks.before_tool_call({toolName,params:{name:'assistant_signals'}},ctx))?.block,true,toolName);
+// OpenClaw 2026.11 calls the runner dispatch_action; blocked, a review on such a model stopped after three refusals
+const dispatched={toolName:'dispatch_action',params:{id:'assistant_signals',args:{action:'status',args:{}}}};
+assert.notEqual((await hooks.before_tool_call(dispatched,ctx))?.block,true);
 assert.equal((await hooks.before_tool_call({toolName:'exec',params:{command:'ls'}},ctx)).block,true);  // what tool_call would run
 assert.equal(await hooks.before_tool_call({toolName:'browser',params:{}},main),undefined);  // main session unaffected
 // Profile drafts (assistant profile) read the same way and get only the owner's USER.md, not review instructions.
@@ -76,6 +79,7 @@ for(const toolName of ['exec','write','message'])assert.equal((await hooks.befor
 // assistant_signals action that suggests, prepares or saves.
 {const routineCtx={...ctx,sessionKey:'agent:main:assistant-review-routine-'+'e'.repeat(32),runId:'routine-run'};
  for(const action of ['events','status','related','graph','routine_result'])assert.notEqual((await hooks.before_tool_call({toolName:'assistant_signals',params:{action}},routineCtx))?.block,true,action);
+ assert.notEqual((await hooks.before_tool_call(dispatched,routineCtx))?.block,true);  // tool search's runner
  assert.notEqual((await hooks.before_tool_call({toolName:'memory_search',params:{query:'deals'}},routineCtx))?.block,true);
  for(const action of ['suggest','prepare','promise','remember_fact','begin_analysis','meeting_notes'])assert.equal((await hooks.before_tool_call({toolName:'assistant_signals',params:{action}},routineCtx)).block,true,action);
  for(const toolName of ['exec','write','message','browser'])assert.equal((await hooks.before_tool_call({toolName,params:{command:'ls'}},routineCtx)).block,true,toolName);
@@ -177,6 +181,15 @@ await expect('run',[['assistant_signals',{action:'prepare'}],['openclawweb_fetch
   ['write',{path:'memory/assistant/261011-brief.md',content:'x'}],
   ['apply_patch',{input:'*** Begin Patch\n*** Add File: '+W+'/memory/assistant/261011-x.md\n+x\n*** End Patch'}]]);
 assert.equal(await prepOutcome('exec',{},{toolKind:'code_mode_exec'}),'run');  // the runner; its calls are checked one by one
+{ // Tool search's runner is not journaled either: journaled, dispatch_action was not preparation_history, so a continued
+  // to-do refused every step. The tool it runs passes the hook (and the journal) by its own name.
+ const before=calls.length;
+ for(const toolName of ['tool_search','tool_describe','dispatch_action'])assert.equal(await prepOutcome(toolName,{id:'assistant_signals',args:{action:'preparation_history'}}),'run',toolName);
+ await hooks.after_tool_call({toolName:'dispatch_action',params:{id:'assistant_signals',args:{}},result:{}},prepCtx);
+ assert.equal(calls.length,before);
+ await prepOutcome('assistant_signals',{action:'preparation_history'});
+ assert.equal(calls.at(-1).action,'preparation_tool_intent');assert.equal(calls.at(-1).args.tool,'assistant_signals');
+}
 // No ask tier any more (October 12): approvals can't reach a background run, so everything not blocked runs.
 await expect('run',[['sessions_spawn',{}],['browser',{action:'act',request:{kind:'click'}}],['browser',{}],
   ['exec',{command:'python3 assistant.py call'}],['exec',{command:'npm test'}],['exec',{command:'cat $(ls)'}],
