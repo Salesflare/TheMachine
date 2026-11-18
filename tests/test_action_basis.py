@@ -175,6 +175,34 @@ class ActionBasis(unittest.TestCase):
         self.call(job, 1, {'action': 'act', 'request': {'kind': 'fill'}})
         self.assertEqual(self.lines(kind='web')['web:run:' + job]['by'], 'Asked in chat: “Fill in the form on their site”')
 
+    def test_work_carried_on_after_a_snooze_keeps_what_allowed_it(self):
+        sid = self.store.suggest('task-z', 'Renew the plan', 'Body', [1])['id']
+        with self.store.connect() as db:
+            db.execute("INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES('again-1',?,'retry','','dashboard',?)", (sid, timeutil.now()))
+        first = self.run_of(sid, 'again-1')
+        self.call(first, 1, {'action': 'act', 'request': {'kind': 'click'}})
+        with self.store.connect() as db:  # the owner snoozed it while it was on it; the snooze is over now
+            db.execute("UPDATE preparations SET status='blocked' WHERE suggestion_id=?", (sid,))
+            db.execute("UPDATE preparation_runs SET status='ok' WHERE job_id=?", (first,))
+            db.execute("UPDATE suggestions SET status='snoozed',resume_status='accepted',snoozed_until='2000-01-01T00:00:00+00:00' WHERE id=?", (sid,))
+        self.assertEqual(self.store.wake_snoozed(), 1)
+        with self.store.connect() as db:
+            job, decision = db.execute('SELECT job_id,decision_id FROM preparations WHERE suggestion_id=?', (sid,)).fetchone()
+            self.assertTrue(decision.startswith(action_basis.SNOOZE_RESUMED))
+            db.execute("INSERT INTO preparation_runs(job_id,suggestion_id,session_job_id,status,started_at,history_read) VALUES(?,?,?,'running',?,1)",
+                       (job, sid, job, timeutil.now()))
+            db.execute("UPDATE preparations SET status='running' WHERE suggestion_id=?", (sid,))
+        self.assertEqual(self.call(job, 2, {'action': 'act', 'request': {'kind': 'click'}}), {'active': True})
+        self.assertEqual(self.lines(kind='web')['web:run:' + job]['by'], 'Approved in the to-do')
+        self.assertEqual(self.feed(), [])
+        with self.store.connect() as db:
+            run = db.execute('SELECT r.*,p.decision_id,p.action_id,s.early FROM preparation_runs r JOIN preparations p USING(suggestion_id) '
+                             'JOIN suggestions s ON s.id=r.suggestion_id WHERE r.job_id=?', (job,)).fetchone()
+            self.assertFalse(preparation_state.prepared_ahead(db, run))
+            db.execute("UPDATE preparation_runs SET basis=? WHERE job_id=?", (json.dumps({'kind': 'ahead'}), first))
+            self.assertEqual(action_basis.from_decision(db, decision, None, sid), {'kind': 'ahead', 'resumed': 'snooze'})
+            self.assertFalse(preparation_state.prepared_ahead(db, {**dict(run), 'basis': None}), 'never stricter than before')
+
 
 if __name__ == '__main__':
     unittest.main()

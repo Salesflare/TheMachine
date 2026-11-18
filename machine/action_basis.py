@@ -76,9 +76,13 @@ def read(value):
     return basis if isinstance(basis, dict) and isinstance(basis.get('kind'), str) else None
 
 
-def from_decision(db, decision_id, action_id=None):
+SNOOZE_RESUMED = 'snooze-resumed:'  # a to-do's work carrying on once its snooze is over (Store.wake_snoozed)
+
+
+def from_decision(db, decision_id, action_id=None, suggestion_id=None):
     """The basis of a preparation run, from the decision that started it (preparations.decision_id) and the outbox step
-    it carries on, if any (preparations.action_id). Reads only."""
+    it carries on, if any (preparations.action_id). Work that carries on after a snooze keeps what allowed it before
+    the snooze (that to-do's last run before then), marked 'resumed'. Reads only."""
     decision_id = str(decision_id or '')
     for job_id, own in ((action_id, True), (decision_id[len('after:'):] if decision_id.startswith('after:') else None, False)):
         if job_id:  # a confirmed step's own run ('job': that step), or the work after one: what allowed that step
@@ -86,6 +90,12 @@ def from_decision(db, decision_id, action_id=None):
             found = read(row[0]) if row else None
             if found and found['kind'] in KINDS:
                 return {**found, 'job': job_id} if own else found
+    if decision_id.startswith(SNOOZE_RESUMED) and suggestion_id:
+        row = db.execute('SELECT basis FROM preparation_runs WHERE suggestion_id=? AND started_at<? AND basis IS NOT NULL '
+                         'ORDER BY started_at DESC LIMIT 1', (suggestion_id, decision_id[len(SNOOZE_RESUMED):])).fetchone()
+        found = read(row[0]) if row else None
+        if found and found['kind'] in KINDS and found['kind'] != 'none':
+            return {**found, 'resumed': 'snooze'}
     row = db.execute('SELECT choice,feedback,source FROM decisions WHERE id=?', (decision_id,)).fetchone() if decision_id else None
     if not row:
         return {'kind': 'none', 'source': 'run'}
