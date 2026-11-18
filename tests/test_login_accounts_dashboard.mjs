@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {readFile,mkdir} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {dashboardPage} from './dashboard-page.mjs';
+import {callAfter} from './page-calls.mjs';
 const {chromium}=await import('./browser.mjs');
 
 // Saved sign-ins with several accounts per site, Import from a password manager, and the sign-in dialog picking the
@@ -128,10 +129,9 @@ try{
   await page.locator('#login-import .li-view iframe').waitFor();
   await page.frameLocator('#login-import .li-view iframe').locator('body').waitFor();
   await clean(page,'export view');await shot(page,'import-export-view',width,scheme);
-  await page.locator('#login-import [data-li-back]').click();
-  // Back sends the stop without waiting on it: give the request its moment to reach the fixture server
-  for(let i=0;i<100&&!calls.some(([a,x])=>a==='browser_login_import'&&x.do==='export_stop');i++)await page.waitForTimeout(50);
-  assert.ok(calls.some(([a,x])=>a==='browser_login_import'&&x.do==='export_stop'),'Back stops the export');
+  // Back sends the stop without waiting on its answer: wait for that call to be answered, not a fixed time
+  const stop=await callAfter(page,c=>c.action==='browser_login_import'&&c.args?.do==='export_stop',()=>page.locator('#login-import [data-li-back]').click());
+  assert.deepEqual(stop.args,{do:'export_stop',watch:'w-1'},'Back stops the export');
   browserLink=null;await page.evaluate(async()=>{await refresh()});
   // 1Password without op: its app's export file, picked right there
   tools={};await page.locator('[data-li-close]').click();await page.locator('#logins-import').click();
