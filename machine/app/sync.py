@@ -636,7 +636,7 @@ class SyncApp:
 
     def collector(self, account):
         source = self.slack_source(account) if account.get('service') == 'slack' else None
-        report = sync_report_service(account)  # the service, never the id; None for an owner's own connector
+        report = sync_report_service(account)  # the service, never the id; own:<service> for an owner's own connector
         try:
             wait = self.resume_wait(account)
         except Exception as error:  # never keep a source from starting
