@@ -137,6 +137,23 @@ class MeetingPrep(unittest.TestCase):
         self.assertIsNone(self.run_pass())  # once
         self.assertEqual(len(self.prompts), 1)
 
+    def test_the_briefing_turn_gets_its_models_own_bias_correction(self):
+        import machine.app.meeting_prep as app_meeting_prep
+        from machine.prompts import bias
+        self.mail('wmail', 'Sam Rivera <sam@globex.example>', 'Can the pilot start in December?', 4)
+        self.add(meeting('g1', '10:00'))
+        with patch.object(app_meeting_prep, 'background_model', return_value=None), \
+                patch.object(app_meeting_prep, 'openclaw_model', return_value='openai/gpt-6.2-sol'):
+            self.run_pass()
+        self.assertIn(bias.GPT_62_SOL, self.prompts[0])
+        self.assertIn("Never assume a person's gender from their name", bias.GPT_62_SOL)
+        self.add(meeting('g2', '11:00'))
+        with patch.object(app_meeting_prep, 'background_model', return_value=('openai', 'gpt-6.1-sol')), \
+                patch.object(app_meeting_prep, 'openclaw_model', return_value='openai/gpt-6.2-sol'):
+            self.run_pass()
+        self.assertEqual(len(self.prompts), 2)
+        self.assertNotIn(bias.GPT_62_SOL, self.prompts[1])  # the turn runs on the background model: its note, none here
+
     def test_a_briefing_is_only_for_reading(self):
         asked = self.mail('wmail', 'Sam Rivera <sam@globex.example>', 'Can the pilot start in December?', 4)
         self.answer['sources'] = [f'E{asked}']

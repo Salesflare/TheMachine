@@ -9,8 +9,10 @@ import subprocess
 import threading
 import time
 
-# Background work never runs on these models (several times the cost for the same result): the cheaper one instead.
-BACKGROUND_SWAP = {'gpt-6-astra': 'gpt-6.1-sol'}
+# Background work never runs on these models (several times the cost for the same result): a cheaper one instead, the
+# first the owner's model allowlist names. With an allowlist that allows any, the last: one every OpenClaw we support
+# knows (OpenClaw 2026.11.2 runs GPT-6.2 Sol only with its own entry in openclaw.json, docs/models.md).
+BACKGROUND_SWAP = {'gpt-6-astra': ('gpt-6.2-sol', 'gpt-6.1-sol')}
 
 
 def openclaw_model(config):
@@ -107,8 +109,8 @@ def _read_model_ready(model, config, run):
 
 def background_model(config):
     """(provider, model) for The Machine's background turns when the main model is one background work never uses
-    (BACKGROUND_SWAP), and the owner's model allowlist (`agents.defaults.models`, empty allows any) allows the other.
-    None: the main model."""
+    (BACKGROUND_SWAP): the first cheaper one the owner's model allowlist (`agents.defaults.models`) names, else the last
+    when it allows any (empty, or `provider/*`). None: the main model."""
     main = openclaw_model(config) or ''
     provider, _, name = main.partition('/')
     cheaper = BACKGROUND_SWAP.get(name)
@@ -119,9 +121,11 @@ def background_model(config):
         allowed = json.loads(path.read_text()).get('agents', {}).get('defaults', {}).get('models') or {}
     except (OSError, ValueError, AttributeError):
         allowed = {}
-    if isinstance(allowed, dict) and allowed and not ({f'{provider}/{cheaper}', f'{provider}/*'} & set(allowed)):
-        return None
-    return provider, cheaper
+    allowed = set(allowed) if isinstance(allowed, dict) else set()
+    named = next((m for m in cheaper if f'{provider}/{m}' in allowed), None)
+    if named:
+        return provider, named
+    return (provider, cheaper[-1]) if not allowed or f'{provider}/*' in allowed else None
 
 
 def has_model(config=None, wait=True, answered=None, unknown=True):

@@ -24,6 +24,22 @@ that is `openclaw infer model run --gateway`, a raw model call. A Claude model t
 through Claude Code's own print mode (`claude_print.py`, about 550 tokens), since `infer model run` never takes the
 Claude Code route. Only that model can answer: no fallback stands in.
 
+### Your ChatGPT plan
+
+GPT-6.2 Sol at thinking `low` is the recommended model with a ChatGPT sign-in. OpenClaw 2026.11.2 does not list it
+yet, so it runs only with its own entry in `openclaw.json` (hosted Machines write it themselves). The entry routes just
+this model through the ChatGPT sign-in and leaves every other `openai/` model as it was:
+
+```json
+{"models": {"providers": {"openai": {"models": [{"id": "gpt-6.2-sol", "name": "GPT-6.2 Sol",
+  "api": "openai-chatgpt-responses", "baseUrl": "https://chatgpt.com/backend-api/codex", "reasoning": true,
+  "input": ["text", "image"], "contextWindow": 1050000, "contextTokens": 500000, "maxTokens": 128000}]}}},
+ "agents": {"defaults": {"models": {"openai/gpt-6.2-sol": {"agentRuntime": {"id": "openclaw"}}}}}}
+```
+
+Then `openclaw models set openai/gpt-6.2-sol`. Background work uses GPT-6.2 Sol only when `agents.defaults.models`
+names it, else GPT-6.1 Sol (see below).
+
 ### Your Claude plan
 
 To use your own Claude plan (Pro, Max or Team), install Claude Code with Anthropic's installer and sign in with `claude auth login`. `openclaw models list` then shows Claude's models as `claude-cli/*`, and OpenClaw runs them through Claude Code without reading its sign-in.
@@ -55,7 +71,7 @@ A new install starts at thinking `low` (`NEW_THINKING` in installer.py): good re
 
 **Settings → Model → Chats** sets the model and thinking level for the owner's to-do chats (their Do it turns too) and Help; the pill under a chat's message box changes it for that chat only. The choices come from the running Gateway's `models.list` (the `configured` view, read every ten minutes, no model call): models whose provider is signed in (`available`) and that `agents.defaults.models` or `agents.defaults.modelPolicy.allow` allow, each with the thinking levels OpenClaw lists for it.
 
-A choice goes with each turn (`provider`, `model` and `thinking` on the Gateway's `agent` call; `--model` and `--thinking` for Help's `infer model run`, `--model` and `--effort` for Claude Code's print mode). OpenClaw's own config is not written, so the Gateway neither reloads nor restarts. The default is `chat_model` in config.json, for example `{"model": "openai/gpt-6.1-sol", "thinking": "high"}`; either key may be left out, and only what differs from OpenClaw's own is kept. A chat's own choice is in the `chat_models` table. Without any choice, turns go exactly as before. Reviews, the profile and drafts prepared ahead keep their own model: the main model, never GPT-6 Astra (they use GPT-6.1 Sol then).
+A choice goes with each turn (`provider`, `model` and `thinking` on the Gateway's `agent` call; `--model` and `--thinking` for Help's `infer model run`, `--model` and `--effort` for Claude Code's print mode). OpenClaw's own config is not written, so the Gateway neither reloads nor restarts. The default is `chat_model` in config.json, for example `{"model": "openai/gpt-6.2-sol", "thinking": "high"}`; either key may be left out, and only what differs from OpenClaw's own is kept. A chat's own choice is in the `chat_models` table. Without any choice, turns go exactly as before. Reviews, the profile and drafts prepared ahead keep their own model: the main model, never GPT-6 Astra (they use GPT-6.2 Sol then when `agents.defaults.models` names it, else GPT-6.1 Sol: `BACKGROUND_SWAP` in models.py).
 
 A change in OpenClaw applies to new OpenClaw turns; it does not change an already-running turn. The Machine's service needs no restart to choose a model.
 

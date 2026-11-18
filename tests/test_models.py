@@ -49,6 +49,13 @@ class Models(unittest.TestCase):
         self.assertIsNone(models.background_model(self.config))
         self.openclaw('openai/gpt-6-astra', {'openai/*': {}})
         self.assertEqual(models.background_model(self.config), ('openai', 'gpt-6.1-sol'))
+        # GPT-6.2 Sol only where the allowlist names it (its OpenClaw entry is written with it); 6.1 where only it is named
+        self.openclaw('openai/gpt-6-astra', {'openai/gpt-6-astra': {}, 'openai/gpt-6.2-sol': {}, 'openai/gpt-6.1-sol': {}})
+        self.assertEqual(models.background_model(self.config), ('openai', 'gpt-6.2-sol'))
+        self.openclaw('openai/gpt-6-astra', {'openai/gpt-6-astra': {}, 'openai/gpt-6.1-sol': {}})
+        self.assertEqual(models.background_model(self.config), ('openai', 'gpt-6.1-sol'))
+        self.openclaw('openai/gpt-6.2-sol')
+        self.assertIsNone(models.background_model(self.config))
 
     def test_main_model_reads_openclaw_settings(self):
         self.openclaw({'primary': 'openai/gpt-6-astra'})
