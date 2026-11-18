@@ -1,61 +1,61 @@
 ---
 title: Aufgaben-Chat
 area: cards
-summary: Frag etwas zu einer Aufgabe oder ändere ihren Entwurf, in einem Chat, der zu dieser Aufgabe gehört.
+summary: Stell Fragen zu einer Aufgabe oder ändere ihren Entwurf im Chat, der zu dieser Aufgabe gehört.
 covers: card-chat
 code: dashboard.html, assistant.py, chat_files.py, corrections.py
 order: 4
-translated: ba1206b5165695ce
+translated: 340b9cfc0e3a424d
 ---
 ## Öffnen
 
-Tippe auf dem Handy auf den Titel der Aufgabe. Auf einem Computer nutzt du den Chat-Link der Aufgabe oder **Im Chat ansehen ›**. Auf einem Computer benennt ein Klick auf den Titel die Aufgabe um.
+Tippe auf dem Smartphone auf den Titel der Aufgabe. Am Computer klickst du auf **Im Chat ansehen ›** oder auf den Chat-Link der Aufgabe. Wenn du am Computer auf den Titel klickst, benennst du die Aufgabe um.
 
 ## E-Mails im Chat
 
-Jede E-Mail zeigt nur, was neu darin ist. Die früheren Nachrichten, die sie zitiert, sind unter **Frühere Nachrichten** eingeklappt. **Thread lesen** öffnet die E-Mails vollständig.
+Jede E-Mail zeigt nur, was neu ist. Frühere zitierte Nachrichten sind unter **Frühere Nachrichten** eingeklappt. Über **Thread lesen** öffnest du die vollständigen E-Mails.
 
-## Was sie getan hat
+## Was ausgeführt wurde
 
-Jeder Lauf steht als eine ruhige Zeile da, etwa „12 Sachen geprüft“. Öffne sie, um jede Art von Schritt einmal zu sehen, mit der Anzahl: „Hat den Browser auf example.com benutzt · 7“. Sie nennt die Website, nie die Adresse, einen Befehl oder eine Datei.
+Jeder Durchlauf erscheint als unauffällige Zeile, zum Beispiel „12 Dinge geprüft“. Öffne sie, um jede Art von Schritt einmal zu sehen, mit der jeweiligen Anzahl: „Browser auf example.com verwendet · 7“. Dabei wird die Website genannt, niemals die Adresse, ein Befehl oder eine Datei.
 
-Hat sie angehalten, um dich etwas zu fragen, steht die Frage ebenfalls als ruhige Zeile da, etwa „Gefragt: Heute senden oder am Montag?“, und deine Nachricht darunter zeigt nur deine Antwort.
+Wenn die Machine angehalten hat, um dich etwas zu fragen, erscheint die Frage ebenfalls als unauffällige Zeile, zum Beispiel „Gefragt: Heute oder am Montag senden?“. Deine Nachricht darunter zeigt nur deine Antwort.
 
 ## Was du fragen kannst
 
-Bevor du schreibst, bietet der Chat vielleicht bis zu drei Vorschläge aus dieser Aufgabe an, etwa „Stattdessen Dienstag 10:00 anbieten“. Ein Tipp setzt ihn ins Nachrichtenfeld, zum Senden oder Ändern. Passt nichts Bestimmtes, gibt es keine.
+Bevor du etwas schreibst, schlägt der Chat möglicherweise bis zu drei Formulierungen vor, die auf dieser Aufgabe basieren, zum Beispiel „Stattdessen Dienstag um 10:00 Uhr anbieten“. Wenn du auf eine davon tippst, erscheint sie im Nachrichtenfeld. Du kannst sie dann senden oder ändern. Wenn nichts Bestimmtes passt, werden keine Vorschläge angezeigt.
 
-- Zum Verlauf, zu den Personen oder zum Hintergrund: „Was haben sie letztes Mal gefragt?“
-- Um den Entwurf zu ändern: „Mach ihn kürzer“ oder „Erwähne das neue Datum“.
+- Zum Thread, zu den Personen oder zum Hintergrund: „Was haben sie letztes Mal gefragt?“
+- Um den Entwurf zu ändern: „Kürzer machen“ oder „Das neue Datum erwähnen“.
 
-Eine Frage bekommt eine Antwort und lässt den Entwurf, wie er ist. Freigaben bleiben bei den Buttons der Aufgabe: Der Chat sendet einen Entwurf nie in derselben Antwort, in der er ihn geschrieben hat. Worum du im Chat bittest und was niemanden erreicht, etwa ein Aufräumen in einem Dokument, erledigt sie sofort, ohne dass du es bestätigen musst. Alles, was darüber hinausgeht, wartet weiter auf dein OK. Eine Aufgabe mit mehr als einem Schritt bleibt offen, bis jeder Schritt erledigt ist.
+Auf eine Frage erhältst du eine Antwort, und der Entwurf bleibt unverändert. Zum Senden verwendest du die Buttons der Aufgabe. Der Chat sendet niemals einen Entwurf in derselben Antwort, in der er ihn erstellt hat. Eine Änderung, die sonst niemanden erreicht, etwa eine Bereinigung in einem Dokument, wird sofort umgesetzt, ohne dass du noch einmal auf Bestätigen klicken musst. Alles, was über deine Bitte hinausgeht, wartet auf dein OK. Eine Aufgabe mit mehreren Schritten bleibt offen, bis alle Schritte erledigt sind.
 
-Auf einem Computer sendet Enter oder Strg+Enter (Cmd+Enter auf dem Mac), und Umschalt+Enter beginnt eine neue Zeile. Auf dem Handy nimm den Senden-Button.
+Am Computer sendet Enter oder Ctrl+Enter (Cmd+Enter auf dem Mac) deine Nachricht. Mit Shift+Enter beginnst du eine neue Zeile. Auf dem Smartphone verwendest du den Senden-Button.
 
 ## Wenn etwas nicht stimmt
 
-Sag es im Chat, etwa „Diese Person ist nicht CEO“ oder „Diese Person hat die Firma verlassen“. The Machine korrigiert es dort, wo es herkam: eine Rolle, eine Firma, ein Titel, die Phase eines Projekts, das Projekt der Aufgabe oder eine gelernte Regel. Der Chat zeigt dann, was sich geändert hat, etwa „Korrigiert: Die Rolle von Sam ist Head of Sales, aus der E-Mail-Signatur“, mit **Rückgängig**. Das stellt wieder her, was vorher da war, außer es hat sich seitdem geändert.
+Sag es im Chat, zum Beispiel „Sie ist nicht die CEO“ oder „Sie arbeitet nicht mehr für das Unternehmen“. Die Machine korrigiert den Fehler direkt an der Quelle: eine Rolle, ein Unternehmen, einen Titel, die Phase eines Projekts, das Projekt der Aufgabe oder eine Regel, die sie gelernt hat. Im Chat wird angezeigt, was geändert wurde, zum Beispiel „Korrigiert: Sams Rolle ist Head of Sales, laut E-Mail-Signatur“, mit **Rückgängig**. Damit wird der alte Wert wiederhergestellt, sofern er sich nicht inzwischen geändert hat.
 
-Deine anderen Entwürfe, die auf dem falschen Wert beruhen, werden nacheinander neu erstellt. Ihr Chat zeigt **Entwurf wird nach einer Korrektur neu erstellt**. Entwürfe, die du bearbeitet oder freigegeben hast, und solche, die gerade rausgehen, bleiben, wie sie sind. Die Antwort sagt, wie viele jeweils.
+Andere Entwürfe, die auf dem falschen Wert beruhen, werden nacheinander neu erstellt. In ihrem Chat steht **Entwurf wird nach einer Korrektur neu erstellt**. Entwürfe, die du bearbeitet oder freigegeben hast, und solche, die gerade versendet werden, bleiben unverändert. In der Antwort steht, wie viele es jeweils sind.
 
-Auf einer GBrain-Seite ändert sich nur der eigene Abschnitt von The Machine; was du dort geschrieben hast, bleibt deins. Findet sie nicht, woher etwas kam, lernt sie wie bisher aus deiner Notiz.
+Auf einer GBrain-Seite ändert sich nur der eigene Abschnitt der Machine. Was du dort geschrieben hast, bleibt erhalten. Wenn sie nicht erkennen kann, woher etwas stammt, berücksichtigt sie stattdessen deine Notiz.
 
 ## Modell und Nachdenken
 
-Unter dem Nachrichtenfeld zeigt der Chat sein Modell und seine Nachdenkstufe, etwa „GPT-6.1 Sol“ und „Wenig Nachdenken“. Tippe auf eins davon, um nur für diesen Chat etwas anderes zu wählen. Die Modelle stehen unter ihrem Anbieter. Neue Chats nutzen, was du in **Einstellungen**, **Modell** festgelegt hast (siehe [Modell](model.md)).
+Unter dem Nachrichtenfeld zeigt der Chat sein Modell und die Nachdenkstufe an, zum Beispiel „GPT-6.2 Sol“ und „Wenig Nachdenken“. Tippe auf eines davon, um es nur für diesen Chat zu ändern. Für neue Chats gelten die Einstellungen unter **Einstellungen** und **Modell** (siehe [Modell](model.md)).
 
-**Schnell**, am Ende des Modellmenüs, lässt die Chats deiner Aufgaben schneller antworten, zu höheren Kosten (etwa doppelt so teuer oder mehr von deinem Tarif). Es gilt für alle Chats deiner Aufgaben, nur für deine Nachrichten und für Ausführen, nie für Arbeit im Hintergrund. Standardmäßig aus. Bei einem Modell ohne schnelle Option ist es ausgegraut.
+Mit **Schnell** am Ende des Modellmenüs antworten Aufgaben-Chats schneller. Das kostet ungefähr doppelt so viel oder verbraucht doppelt so viel von deinem Kontingent. Die Option gilt für Nachrichten, die du sendest, und für Ausführen in all deinen Aufgaben-Chats, niemals für Hintergrundarbeit. Sie ist standardmäßig deaktiviert und für Modelle, die sie nicht unterstützen, ausgegraut.
 
-## Eine Antwort stoppen
+## Antwort anhalten
 
-Während eine Antwort geschrieben wird, wird der Senden-Button zu **Stopp**. Stopp beendet sie sofort und behält, was bis dahin geschrieben ist, markiert mit **Gestoppt**. Schreib eine neue Nachricht, um weiterzumachen, oder tippe auf **Erneut versuchen**.
+Während eine Antwort geschrieben wird, wird aus dem Senden-Button **Stopp**. Damit wird die Antwort sofort beendet und das bis dahin Geschriebene bleibt erhalten und wird als **Gestoppt** markiert. Schreib eine neue Nachricht, um fortzufahren, oder tippe auf **Erneut versuchen**.
 
 ## Dateien hinzufügen
 
-Tippe auf die Büroklammer, füge einen Screenshot ein oder zieh Dateien in den Chat. Jede Datei erscheint über dem Nachrichtenfeld, und × nimmt sie wieder weg. Eine Nachricht kann auch nur aus Dateien bestehen.
+Tippe auf die Büroklammer, füge einen Screenshot ein oder zieh Dateien in den Chat. Jede Datei wird über dem Nachrichtenfeld angezeigt. Mit × entfernst du sie wieder. Eine Nachricht kann auch nur aus Dateien bestehen.
 
-- Bilder (PNG, JPEG, GIF, WebP) bis 5 MB gehen als Bilder an das Modell.
-- PDFs, Text, CSV, JSON und Office-Dateien bis 10 MB sind Dateien, die The Machine liest und an einen Entwurf anhängen kann.
+- Bilder (PNG, JPEG, GIF, WebP) mit bis zu 5 MB werden als Bilder an das Modell gesendet.
+- PDFs, Textdateien, Tabellen (CSV) und Office-Dateien mit bis zu 10 MB: Die Machine liest sie und kann sie an einen Entwurf anhängen.
 - Bis zu 5 Dateien pro Nachricht.
 
-Dateien bleiben auf deiner Machine, in ihrem Datenordner, verschlüsselt wie deine Nachrichten. Dateien, die du hinzufügst, aber nie sendest, werden nach einem Tag entfernt. Auch eine neue Aufgabe kann Dateien haben, über **Neue Aufgabe** (siehe [Selbst eine erstellen](cards.md#make-one-yourself)).
+Dateien bleiben auf deiner Machine und sind wie deine Nachrichten verschlüsselt. Dateien, die du hinzufügst, aber nie sendest, werden nach einem Tag entfernt. Auch eine neue Aufgabe kann Dateien enthalten, wenn du sie über **Neue Aufgabe** erstellst (siehe [Selbst erstellen](cards.md#make-one-yourself)).

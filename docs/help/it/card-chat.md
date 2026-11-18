@@ -1,61 +1,61 @@
 ---
-title: Chat dell'attività
+title: Chat dell’attività
 area: cards
-summary: Fai domande su un'attività o cambia la sua bozza, in una chat che appartiene a quell'attività.
+summary: Fai domande su un’attività o modifica la bozza nella chat associata a quell’attività.
 covers: card-chat
 code: dashboard.html, assistant.py, chat_files.py, corrections.py
 order: 4
-translated: ba1206b5165695ce
+translated: 340b9cfc0e3a424d
 ---
-## Aprila
+## Apri la chat
 
-Su un telefono, tocca il titolo dell'attività. Su un computer, usa il link alla chat dell'attività o **Vedi nella chat ›**. Su un computer, fare clic sul titolo rinomina l'attività.
+Sul telefono, tocca il titolo dell’attività. Sul computer, fai clic su **Vedi nella chat ›** o sul link alla chat dell’attività. Se fai clic sul titolo dal computer, rinomini l’attività.
 
-## Le email nella chat
+## Email nella chat
 
-Ogni email mostra solo ciò che contiene di nuovo. I messaggi precedenti che cita sono chiusi sotto **Messaggi precedenti**. **Leggi il thread** apre le email per intero.
+Ogni email mostra solo le novità. I messaggi precedenti citati sono raccolti sotto **Messaggi precedenti**. **Leggi il thread** apre le email per intero.
 
 ## Cosa ha fatto
 
-Ogni esecuzione è una riga discreta, come «12 cose controllate». Aprila per vedere ogni tipo di passaggio una volta, con quante volte: «Ha usato il browser su example.com · 7». Indica il sito, mai l’indirizzo, un comando o un file.
+Ogni esecuzione compare su una sola riga discreta, per esempio «Controllati 12 elementi». Aprila per vedere ogni tipo di passaggio una sola volta, con il numero di occorrenze: «Usato il browser su example.com · 7». Indica il sito, mai l’indirizzo, un comando o un file.
 
-Se si è fermata per chiederti qualcosa, anche la domanda è una riga discreta, come «Ha chiesto: Lo invio oggi o lunedì?», e il tuo messaggio sotto mostra solo la tua risposta.
+Quando si è fermata per chiederti qualcosa, anche la domanda compare su una riga discreta, per esempio «Ha chiesto: inviarlo oggi o lunedì?». Il tuo messaggio sotto mostra solo la tua risposta.
 
 ## Cosa chiedere
 
-Prima che tu scriva, la chat può offrire fino a tre suggerimenti presi da questa attività, come «Proponi martedì alle 10:00». Toccandone uno finisce nella casella del messaggio, da inviare o cambiare. Se non c'è niente di specifico, non ne mostra.
+Prima che tu scriva, la chat può proporti fino a tre suggerimenti da toccare, basati sull’attività, per esempio «Proponi invece martedì alle 10:00». Toccane uno per inserirlo nel campo del messaggio, dove puoi inviarlo o modificarlo. Se non c’è un suggerimento adatto, non ne viene mostrato nessuno.
 
-- Sulla conversazione, sulle persone o sul contesto: "Cosa hanno chiesto l'ultima volta?"
-- Per cambiare la bozza: "Rendila più breve" o "Cita la nuova data".
+- Sul thread, sulle persone o sul contesto: «Cosa hanno chiesto l’ultima volta?»
+- Per modificare la bozza: «Accorciala» o «Aggiungi la nuova data».
 
-Una domanda riceve una risposta e lascia la bozza com'è. Le approvazioni restano sui pulsanti dell'attività: la chat non invia mai una bozza nella stessa risposta che l'ha scritta. Quello che chiedi nella chat e che non raggiunge nessuno, come sistemare un documento, lo fa subito, senza chiederti di confermare. Tutto ciò che va oltre quello che hai chiesto aspetta ancora il tuo OK.
+Una domanda riceve una risposta e non modifica la bozza. Per inviare, usa i pulsanti dell’attività: la chat non invia mai una bozza nella stessa risposta in cui l’ha scritta. Le modifiche che chiedi e che non coinvolgono nessun altro, come riordinare un documento, vengono applicate subito, senza chiederti un’altra conferma. Qualsiasi modifica che va oltre la tua richiesta aspetta il tuo via libera. Un’attività con più passaggi resta aperta finché non sono stati completati tutti.
 
-Su un computer, Invio o Ctrl+Invio (Cmd+Invio su Mac) invia e Maiusc+Invio va a capo. Su un telefono, usa il pulsante di invio.
+Sul computer, premi Invio o Ctrl+Invio (Cmd+Invio su Mac) per inviare, oppure Maiusc+Invio per iniziare una nuova riga. Sul telefono, usa il pulsante di invio.
 
-## Quando qualcosa è sbagliato
+## Quando qualcosa non va
 
-Dillo nella chat, per esempio "Non è la CEO" o "Ha lasciato l'azienda". The Machine lo corregge dove è nato: un ruolo, un'azienda, una qualifica, la fase di un progetto, il progetto del to-do o una regola imparata. La chat mostra poi cosa è cambiato, per esempio **Corretto: Il ruolo di Ana è Head of Sales, da una sua firma email**, con **Annulla**. Annulla rimette ciò che c'era, a meno che non sia cambiato nel frattempo.
+Dillo nella chat, per esempio «Non è il CEO» o «Ha lasciato l’azienda». The Machine corregge il dato alla fonte: un ruolo, un’azienda, un titolo, la fase di un progetto, il progetto dell’attività o una regola che ha imparato. La chat mostra cosa è cambiato, per esempio «Corretto: il ruolo di Sam è Head of Sales, come indicato nella firma email», con **Annulla**. Annulla ripristina il valore precedente, a meno che nel frattempo non sia cambiato.
 
-Le tue altre bozze basate sul valore sbagliato vengono rifatte, una alla volta. La loro chat mostra **La bozza viene rifatta dopo una correzione**. Le bozze che hai modificato o approvato, e quelle in invio, restano come sono. La risposta dice quante di ciascun tipo.
+Le altre bozze basate sul valore errato vengono rielaborate, una alla volta. Nelle rispettive chat compare «Riscrittura della bozza dopo una correzione». Le bozze che hai modificato o approvato, e quelle in fase di invio, restano come sono. La risposta indica quante ce ne sono per ciascun tipo.
 
-Su una pagina GBrain cambia solo la sezione di The Machine; ciò che hai scritto tu resta tuo. Se non trova da dove viene qualcosa, impara dalla tua nota come prima.
+In una pagina GBrain cambia solo la sezione di The Machine. Quello che hai scritto tu resta com’è. Se non riesce a capire da dove provenga un’informazione, la impara invece dalla tua nota.
 
 ## Modello e ragionamento
 
-Sotto la casella del messaggio, la chat mostra il suo modello e il livello di ragionamento, come "GPT-6.1 Sol" e "Ragionamento basso". Tocca uno dei due per sceglierne un altro solo per questa chat. I modelli sono elencati sotto il loro provider. Le nuove chat usano ciò che hai impostato in **Impostazioni**, **Modello** (vedi [Modello](model.md)).
+Sotto il campo del messaggio, la chat mostra il modello e il livello di ragionamento, per esempio «GPT-6.2 Sol» e «Ragionamento basso». Tocca uno dei due per sceglierne un altro, solo per questa chat. Le nuove chat usano le impostazioni scelte in **Impostazioni**, **Modello** (vedi [Modello](model.md)).
 
-**Veloce**, in fondo al menu dei modelli, fa rispondere più in fretta le chat delle tue attività, a un costo più alto (circa il doppio, o più del tuo piano). Vale per tutte le chat delle tue attività, solo per i messaggi che invii e per Fallo, mai per il lavoro in background. Disattivato di default. Per un modello senza opzione veloce appare in grigio.
+**Veloce**, in fondo al menu del modello, fa rispondere più in fretta le chat delle attività, con un costo circa doppio (o usando il doppio del tuo piano). Si applica ai messaggi che invii e a **Fallo**, in tutte le chat delle tue attività, mai al lavoro in background. È disattivata per impostazione predefinita e non è selezionabile per i modelli che non la supportano.
 
-## Ferma una risposta
+## Interrompi una risposta
 
-Mentre una risposta viene scritta, il pulsante di invio diventa **Ferma**. Ferma la interrompe subito e tiene ciò che ha scritto fin lì, segnato come **Interrotta**. Scrivi un nuovo messaggio per continuare, oppure tocca **Riprova**.
+Mentre viene scritta una risposta, il pulsante di invio diventa **Ferma**. Ferma interrompe subito la risposta e conserva quanto scritto fino a quel momento, contrassegnandolo come **Interrotta**. Scrivi un nuovo messaggio per continuare oppure tocca **Riprova**.
 
 ## Aggiungi file
 
-Tocca la graffetta, incolla uno screenshot o trascina i file nella chat. Ogni file compare sopra la casella del messaggio, e × lo toglie. Un messaggio può contenere solo file.
+Tocca la graffetta, incolla uno screenshot o trascina i file nella chat. Ogni file compare sopra il campo del messaggio; tocca × per rimuoverlo. Un messaggio può contenere solo file.
 
-- Le immagini (PNG, JPEG, GIF, WebP) fino a 5 MB vanno al modello come immagini.
-- PDF, testo, CSV, JSON e file Office fino a 10 MB sono file che The Machine legge e può allegare a una bozza.
+- Le immagini (PNG, JPEG, GIF, WebP) fino a 5 MB vengono inviate al modello come immagini.
+- I PDF, i file di testo, i fogli di calcolo (CSV) e i file di Office fino a 10 MB: The Machine li legge e può allegarli a una bozza.
 - Fino a 5 file per messaggio.
 
-I file restano sulla tua Machine, nella sua cartella dati, crittografati come i tuoi messaggi. I file che aggiungi ma non invii mai vengono rimossi dopo un giorno. Anche una nuova attività può avere dei file, da **Nuova attività** (vedi [Creane una tu](cards.md#make-one-yourself)).
+I file restano sulla tua Machine, cifrati come i tuoi messaggi. I file che aggiungi ma non invii vengono rimossi dopo un giorno. Puoi aggiungere file anche a una nuova attività con **Nuova attività** (vedi [Creane una tu](cards.md#make-one-yourself)).
