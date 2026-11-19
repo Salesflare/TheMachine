@@ -5946,6 +5946,7 @@
  "The check did not save a conclusion.": "Die Prüfung hat kein Ergebnis gespeichert.",
  "The check said it didn’t work.": "Die Prüfung sagt, es hat nicht geklappt.",
  "The check was saved; saved signal versions will not be replayed.": "Die Prüfung wurde gespeichert; gespeicherte Signal-Versionen werden nicht erneut abgespielt.",
+ "The code expired before WhatsApp took it": "Der Code ist abgelaufen, bevor WhatsApp ihn verwenden konnte.",
  "The code refreshes by itself.": "Der Code erneuert sich von selbst.",
  "The complete diff for this proposal is not available": "Der vollständige Diff dieses Vorschlags ist nicht verfügbar",
  "The contact is gone from Salesforce": "Der Kontakt ist nicht mehr in Salesforce",

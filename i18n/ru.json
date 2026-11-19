@@ -6100,6 +6100,7 @@
  "The check did not save a conclusion.": "Проверка не сохранила вывод.",
  "The check said it didn’t work.": "По результатам проверки ничего не получилось.",
  "The check was saved; saved signal versions will not be replayed.": "Проверка сохранена. Сохранённые версии сигнала не будут воспроизводиться повторно.",
+ "The code expired before WhatsApp took it": "Срок действия кода истёк, прежде чем WhatsApp его принял",
  "The code refreshes by itself.": "Код обновляется автоматически.",
  "The complete diff for this proposal is not available": "Полный список изменений в этом предложении недоступен",
  "The contact is gone from Salesforce": "Контакт удалён из Salesforce",

@@ -5869,6 +5869,7 @@
  "The check did not save a conclusion.": "检查未保存结论。",
  "The check said it didn’t work.": "检查结果显示未成功。",
  "The check was saved; saved signal versions will not be replayed.": "检查已保存；已保存的信号版本不会重放。",
+ "The code expired before WhatsApp took it": "WhatsApp 收到验证码前，验证码就已过期",
  "The code refreshes by itself.": "代码会自动刷新。",
  "The complete diff for this proposal is not available": "此提案的完整差异不可用",
  "The contact is gone from Salesforce": "Salesforce中已没有这个联系人",

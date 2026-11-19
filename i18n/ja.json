@@ -5869,6 +5869,7 @@
  "The check did not save a conclusion.": "チェックで結論が保存されませんでした。",
  "The check said it didn’t work.": "チェックの結果、うまくいかなかったようです。",
  "The check was saved; saved signal versions will not be replayed.": "チェックを保存しました。保存済みのシグナルバージョンは再生されません。",
+ "The code expired before WhatsApp took it": "WhatsAppがコードを受け取る前に、有効期限が切れました。",
  "The code refreshes by itself.": "コードは自動的に更新されます。",
  "The complete diff for this proposal is not available": "この提案の差分全体を表示できません",
  "The contact is gone from Salesforce": "Salesforceから連絡先が削除されています",
