@@ -248,8 +248,12 @@ project (scope `project`, which wins). Off by default. What the owner sets ([hel
   Drafting runs last in the preparation queue and pauses earlier than other work on usage
   (`model_budget.follow_up_pause`), unless the longest wait has passed. Follow-up drafts skip the one-draft-per-tick
   gap of other work prepared ahead: they have their own pacing.
+- Every draft run saves its draft (`card_actions` refuses one without it), unless they answered (`already_done`) or
+  something is needed first (`needs_you` with `needs`, which the review shows with **Write it**). An open one an earlier
+  run left prepared with neither is drafted again (`rewrite_judged`).
 - The preparation prompt adds the follow-up's number, channel and earlier texts. Past the minimum, the model judges
-  from the thread whether another one is worth it and can save `already_done` with `follow_up: stop`. Before drafting,
+  from the thread whether another one is worth it and can add `follow_up: stop` with `follow_up_why` to the draft
+  (`follow_ups.advise`); the owner decides. Before drafting,
   `newer_activity` skips projects with something newer.
 - With a standing approval, a single unrepeated draft goes through `confirm_action` (approval
   `auto-follow-up:<id>:<revision>`, so it never sends twice), only in work hours and never in Careful mode. Anything

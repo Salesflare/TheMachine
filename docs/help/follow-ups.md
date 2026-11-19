@@ -35,6 +35,8 @@ A board's follow-ups come as one to-do, never one per email. While they're draft
 
 **Review** shows them one under the other, each in full, so one scroll reads them all. **Send**, **Edit** and **Skip** show on the current one. On a keyboard, j and k (or the arrows) move, Enter sends, e edits, s skips (again to undo), x ticks or unticks, and c changes. **Send all checked** sends the ones still ticked.
 
+Every follow-up comes with its draft. When one can't be written, it says what's needed first ("No draft. Needed first: who it goes to.") and isn't ticked; **Write it** asks for the draft anyway. When a draft has more than one possible recipient, it says "Who gets it: pick on Send", and **Send** asks you to pick.
+
 **Skip** unticks a draft and moves it to the bottom, marked Skipped with an **Undo**; it's skipped for good when you close the review. A skipped one comes back with **Bring back** in the project's follow-ups or on its to-do in Done, as long as no newer follow-up came. A single project's follow-up is a normal to-do.
 
 **Ask for changes…** rewrites all checked drafts, or only the current one, the way you say; nothing is sent, and **Undo change** brings back the old text. While its box is open or a rewrite runs, nothing can be sent, and a draft that changed is shown again before it can go.

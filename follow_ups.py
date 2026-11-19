@@ -1463,7 +1463,7 @@ def _outcome(text):
 
 def rewrite_judged(db, now, mine=mine_default):
     """Follow-ups an earlier version closed on its own judgment (follow_up_ends.judged, the to-do stopped 'judged'), or
-    whose preparation still said follow_up:'stop' without a draft: open again, to be drafted on this pass, unless the
+    whose preparation still said follow_up:'stop' without a draft, or saved no draft and no reason: open again, to be drafted on this pass, unless the
     project had a reply since or the round's end moved it. Returns the to-dos to prepare again."""
     out = []
     rows = db.execute("SELECT f.suggestion_id,f.project_id,f.after_event,f.after_at,f.state FROM follow_up_cards f JOIN follow_up_ends e "
@@ -1472,6 +1472,11 @@ def rewrite_judged(db, now, mine=mine_default):
     rows += [r for r in db.execute("SELECT f.suggestion_id,f.project_id,f.after_event,f.after_at,f.state,s.outcome FROM follow_up_cards f "
                                    "JOIN suggestions s ON s.id=f.suggestion_id WHERE f.state='open' AND s.status='prepared' AND json_valid(s.outcome) "
                                    "AND json_extract(s.outcome,'$.state')='already_done'").fetchall() if _outcome(r['outcome']).get('follow_up') == 'stop']
+    # An open one whose preparation saved no draft and no reason the owner can act on (it said it was waiting, done, ...):
+    # the review showed it with nothing to send. Drafted on this pass too.
+    rows += db.execute("SELECT f.suggestion_id,f.project_id,f.after_event,f.after_at,f.state FROM follow_up_cards f JOIN suggestions s ON s.id=f.suggestion_id "
+                       "WHERE f.state='open' AND s.status='prepared' AND s.next_action IS NULL AND (s.outcome IS NULL OR NOT json_valid(s.outcome) "
+                       "OR coalesce(json_extract(s.outcome,'$.state'),'') NOT IN ('already_done','needs_you'))").fetchall()
     for r in rows:
         sid = r['suggestion_id']
         project = db.execute('SELECT * FROM projects WHERE id=?', (r['project_id'],)).fetchone()

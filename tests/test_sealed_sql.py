@@ -141,6 +141,10 @@ class ExistingTestsSealed(unittest.TestCase):
         import test_follow_ups
         sealed_run(test_follow_ups.FollowUps, 'test_follow_ups_an_earlier_version_stopped_on_judgment_are_drafted_after_all')
 
+    def test_a_follow_up_saved_without_a_draft_or_a_reason_is_drafted_again(self):
+        import test_follow_ups
+        sealed_run(test_follow_ups.FollowUps, 'test_a_follow_up_never_sits_in_the_review_without_its_draft_or_what_it_needs')
+
     def test_a_calendar_does_not_count_canceled_events_as_coming_up(self):
         import test_assistant
         sealed_run(test_assistant.Invariants, 'test_a_calendar_counts_its_events_in_the_next_7_days')
