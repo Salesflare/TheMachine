@@ -145,7 +145,7 @@ The plugin peeks OpenClaw's event queue for notifications from your phone node, 
 
 ### WhatsApp
 
-Reads your existing `wacli` store (`auth status`, `messages list` only, always `--read-only`), rereading the last seven days. With `wacli sync --follow --profile-picture-budget 50`, it also asks that sync for the pictures of people in your Graph, at most 50 a day ([WhatsApp pictures](intelligence.md)). New messages arrive through the `wacli sync` that `assistant connect whatsapp` sets up (or your own).
+Reads your existing `wacli` store (`auth status`, `messages list` only, always `--read-only`), rereading the last seven days. With `wacli sync --follow --profile-picture-budget 50`, it also asks that sync for the pictures of people in your Graph, at most 50 a day ([WhatsApp pictures](intelligence.md)). New messages arrive through the `wacli sync` that `assistant connect whatsapp` sets up (or your own). When WhatsApp logs the linked device out, wacli has no session left and the source stops with `whatsapp_unlinked` until you link it again; a session on another number is `account_identity_mismatch`.
 
 ### Telegram chats
 
