@@ -224,7 +224,9 @@ class FollowUpsApp:
                  f"Draft one short follow-up as a {channel} draft (kind {f['channel']}), in the same conversation as the last messages listed, "
                  'in the owner\'s voice: refer to the last exchange in a few words, add something useful or one easy question, no guilt and no "just '
                  'checking in". Never repeat what an earlier follow-up said. Leave send_now out: the service decides how it goes.',
-                 'If they or someone else answered since, or it is handled, save outcome:\'already_done\' instead.',
+                 "Only when a newer message in this same conversation shows they answered or someone already followed up, save "
+                 "outcome:'already_done' instead. Other projects, threads and follow-ups never count. When the next step is the "
+                 "owner's own (something they said they would do first), save no draft, with outcome:'needs_you' and needs:<that step>.",
                  "Otherwise always save the draft, also when rules or a wait seem to say otherwise. Only when it can't be written (no "
                  "address or chat for them, unclear who it goes to), save no draft, with outcome:'needs_you' and needs:<what the owner "
                  "has to give first>."]

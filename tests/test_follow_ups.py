@@ -1592,6 +1592,56 @@ class FollowUps(unittest.TestCase):
         self.assertEqual(transport.sent, [])
         self.assertEqual({c['project_id']: (c['state'], c['why']) for c in self.cards()}[self.acme], ('stopped', 'handled'))
 
+    def batch_with_one_found_done(self):
+        """A board's batch: Kim's follow-up went out in Kim's thread, and Acme's preparation said Acme's was done
+        already, with no newer message in Acme's own thread."""
+        acme, kim = self.drafted()
+        self.collect('kim-follow-up', '2026-10-19T08:30:00+00:00', mine=True, thread='t2', project='Kim trial', who='kim@other.example')
+        with self.store.connect() as db:
+            db.execute('UPDATE suggestions SET next_action=NULL,outcome=? WHERE id=?', (json.dumps({'state': 'already_done'}), acme))
+        return acme, kim
+
+    def test_found_done_closes_only_on_a_newer_message_in_its_own_conversation(self):
+        acme, kim = self.batch_with_one_found_done()
+        lines = self.app().follow_up_lines(acme)
+        self.assertIn('Only when a newer message in this same conversation shows', lines)
+        self.assertIn('Other projects, threads and follow-ups never count', lines)
+        self.app().follow_up_step()
+        cards = {c['suggestion_id']: c for c in self.cards()}
+        self.assertEqual((cards[acme]['state'], cards[acme]['status']), ('open', 'prepared'))  # the other follow-up's send never counts
+        self.assertEqual((cards[kim]['state'], cards[kim]['why']), ('stopped', 'handled'))  # Kim's own thread has the owner's newer email
+        # The owner's newer email in Acme's own thread (not labeled into the project yet) does count
+        self.store.commit_page('work', {}, [msg('acme-own', '2026-10-19T09:00:00+00:00', mine=True)])
+        self.app().follow_up_step()
+        cards = {c['suggestion_id']: c for c in self.cards()}
+        self.assertEqual((cards[acme]['state'], cards[acme]['why'], cards[acme]['status']), ('stopped', 'handled', 'rejected'))
+        with self.store.connect() as db:
+            self.assertEqual(db.execute('SELECT feedback FROM decisions WHERE id=?', ('follow-up-handled:' + acme,)).fetchone()[0],
+                             follow_ups.WHY['handled'])
+
+    def test_found_done_with_their_reply_in_its_own_conversation_closes_as_replied(self):
+        acme, _ = self.batch_with_one_found_done()
+        self.store.commit_page('work', {}, [msg('acme-reply', '2026-10-19T09:00:00+00:00')])
+        self.app().follow_up_step()
+        self.assertEqual({c['suggestion_id']: (c['state'], c['why']) for c in self.cards()}[acme], ('stopped', 'replied'))
+
+    def test_one_an_earlier_version_closed_as_handled_on_its_preparation_alone_opens_again(self):
+        acme, kim = self.batch_with_one_found_done()
+        with self.store.connect() as db:
+            follow_ups.close(db, acme, 'handled', NOW)  # what an earlier version did: "Someone already followed up"
+            db.execute("UPDATE preparations SET status='done'")
+        app = self.app()
+        app.follow_up_step()
+        cards = {c['suggestion_id']: c for c in self.cards()}
+        self.assertEqual((cards[acme]['state'], cards[acme]['why'], cards[acme]['status'], cards[acme]['early']), ('open', None, 'accepted', 1))
+        self.assertEqual((cards[kim]['state'], cards[kim]['why']), ('stopped', 'handled'))  # a real one stays closed
+        with self.store.connect() as db:
+            self.assertEqual(db.execute('SELECT status FROM preparations WHERE suggestion_id=?', (acme,)).fetchone()[0], 'queued')
+            db.execute("UPDATE preparations SET status='done'")
+        app.follow_up_step()  # once: nothing left to repair
+        with self.store.connect() as db:
+            self.assertEqual(db.execute("SELECT count(*) FROM decisions WHERE suggestion_id=? AND choice='prepare_ahead'", (acme,)).fetchone()[0], 2)
+
     def test_a_reply_in_between_holds_it_and_ends_the_follow_up(self):
         transport = FakeOutbox()
         acme, _ = self.drafted()
