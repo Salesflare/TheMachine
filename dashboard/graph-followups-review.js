@@ -9,35 +9,40 @@ const frList=()=>state.suggestions.filter(s=>s.follow_up?.group===fr.g&&s.follow
 // Every draft shows in full and the list is the only thing that scrolls; moving (j/k, a click) changes the current one
 // in place and scrolls it into view smoothly, a poll redraws only the drafts that changed and keeps where the list is
 const frPhase=s=>fr.skipped.has(s.id)?'skip':fr.changing.has(s.id)?'run':fr.failed.has(s.id)?'fail':fr.undo.has(s.id)?'done':'';
-const frItemSig=s=>s.id+':'+(frDraft(s)?.revision||'')+':'+s.status+':'+frPhase(s)+':'+(s.action_status?.error||'')+':'+(s.follow_up?.advice||'');
+const frItemSig=s=>s.id+':'+(frDraft(s)?.revision||'')+':'+s.status+':'+frPhase(s)+':'+(s.action_status?.error||'')+':'+(s.follow_up?.advice||'')+':'+(s.outcome||'');
 const frSig=list=>list.map(s=>s.id).join();
-const frReady=s=>s.status==='prepared'&&!fr.changing.has(s.id)&&!fr.skipped.has(s.id);
+const frWritable=s=>s.status==='prepared'&&!fr.changing.has(s.id)&&!fr.skipped.has(s.id);
+// Only one with a draft goes out or counts in Send all checked; one without says why and offers Write it
+const frReady=s=>frWritable(s)&&!!frDraft(s);
+// What its run said it needs first (outcome needs_you, saved with no draft), or ''
+const frNeeds=s=>{try{const o=JSON.parse(s.outcome||'null');return o?.state==='needs_you'&&o.needs||''}catch{return ''}};
+const frNone=s=>fr.changing.has(s.id)?'':html`<p class="fr-advice fr-none"><span>${frNeeds(s)?t('No draft. Needed first: {}',sentence(frNeeds(s))):t('No draft written.')}</span><button type="button" class="link" data-fr-write="${s.id}"${frWritable(s)&&!fr.box?'':html` disabled`}>${t('Write it')}</button></p>`;
 // Held right before it went because the thread got a new message (follow_ups.HELD): left out of Send all checked until the
 // owner ticks it again, and its Send is a plain one. "Couldn’t check the thread" stays checked: trying again is the point.
 const frStale=s=>s.action_status?.status==='blocked'&&s.action_status.error==='Not sent: new message in the thread.';
 // The Machine would stop here (follow_ups.advise): the draft is there, unchecked, and the owner decides
 const frAdvised=s=>!!s.follow_up?.advice;
 function frOpen(g){fr={g,at:0,cur:null,checked:null,editing:null,gone:new Set(),sent:0,busy:false,box:null,changing:new Map(),failed:new Map(),undo:new Map(),shown:new Map(),skipped:new Map()};
- const list=frList();fr.checked=new Set(list.filter(s=>!frStale(s)&&!frAdvised(s)).map(s=>s.id));fr.seen=new Set(list.map(s=>s.id));
+ const list=frList();fr.checked=new Set(list.filter(s=>!frStale(s)&&!frAdvised(s)&&frDraft(s)).map(s=>s.id));fr.seen=new Set(list.map(s=>s.id));
  const d=$('#fu-review');d.replaceChildren();frDraw();const ol=d.querySelector('.fr-list');if(!ol)return;if(!d.open)d.showModal();ol.scrollTop=0;d.querySelector('.fr-item.on')?.focus({preventScroll:true})}
 // A draft's text exactly as it goes out: every line and every blank line (the one between "Regards," and the name
 // too), only blank lines at its very start and end left out
 const frBody=text=>String(text).replace(/^(?:[ \t]*\n)+|\s+$/g,'');
 function frState(s){const ph=frPhase(s);
  if(ph==='skip')return html`<p class="fr-state skip">${t('Skipped')}<button type="button" class="link" data-fr-unskip="${s.id}">${t('Undo')}</button></p>`;
- if(ph==='run')return html`<p class="fr-state run" role="status"><i class="fr-spin" aria-hidden="true"></i>${t('Rewriting…')}</p>`;
+ if(ph==='run')return html`<p class="fr-state run" role="status"><i class="fr-spin" aria-hidden="true"></i>${fr.changing.get(s.id).from?t('Rewriting…'):t('Writing…')}</p>`;
  if(ph==='fail')return html`<p class="fr-state fail" role="status">${t('Couldn’t change this one, try again')}<button type="button" class="link" data-fr-retry="${s.id}">${t('Try again')}</button></p>`;
  if(ph==='done')return html`<p class="fr-state done"><button type="button" class="link" data-fr-undo="${s.id}">${t('Undo change')}</button></p>`;
  return ''}
-function frItem(s,i){const a=frDraft(s),f=s.follow_up,on=i===fr.at,edit=fr.editing===s.id;fr.shown.set(s.id,a?.revision);const to=a?[movedLine(a)||(a.to_name||(a.to||[]).join(', ')?t('To {}',a.to_name||(a.to||[]).join(', ')):''),a.from_options?.length>1&&a.from?t('From {}',a.from):''].filter(Boolean).join(' · '):'',ready=frReady(s);
+function frItem(s,i){const a=frDraft(s),f=s.follow_up,on=i===fr.at,edit=fr.editing===s.id;fr.shown.set(s.id,a?.revision);const to=a?[movedLine(a)||(a.to_name||(a.to||[]).join(', ')?t('To {}',a.to_name||(a.to||[]).join(', ')):a.to_options?.length?t('Who gets it: pick on Send'):''),a.from_options?.length>1&&a.from?t('From {}',a.from):''].filter(Boolean).join(' · '):'',ready=frReady(s);
  const skip=fr.skipped.has(s.id);
- return html`<li class="fr-item${on?html` on`:''}${fr.changing.has(s.id)?html` rewriting`:''}${skip?html` skipped`:''}" data-fr="${s.id}" data-fr-at="${i}" tabindex="${on?0:-1}" aria-current="${on}" aria-busy="${fr.changing.has(s.id)}"><div class="fr-head"><input type="checkbox" data-fr-check="${s.id}"${fr.checked.has(s.id)?html` checked`:''}${skip?html` disabled`:''} aria-label="${t('Include {}',frName(f))}"><b title="${f.project}">${frName(f)}</b><span class="fr-meta">${t('Follow-up {} of {}',f.n,f.max)} · ${FU_CHANNELS[f.channel]||f.channel}</span></div><div class="fr-sub"><p class="fr-to" title="${to}">${to}</p><div class="fr-actions">${edit?html`<button type="button" class="primary" data-fr-save="${s.id}">${t('Save')}</button><button type="button" class="ghost" data-fr-cancel>${t('Cancel')}</button>`:html`<button type="button" class="${frStale(s)||frAdvised(s)?'fr-plain':'primary'}" data-fr-send="${s.id}"${a&&ready&&!fr.box?'':html` disabled`}>${t('Send')}</button><button type="button" class="ghost" data-fr-edit="${s.id}"${a&&ready?'':html` disabled`}>${t('Edit')}</button><button type="button" class="ghost" data-fr-skip="${s.id}"${fr.changing.has(s.id)||skip?html` disabled`:''}>${t('Skip')}</button>`}</div></div>${s.action_status?.status==='blocked'&&s.action_status.error&&!fr.changing.has(s.id)?html`<p class="fr-held" role="status">${heldLine(s.action_status.error)}</p>`:''}${frState(s)}${frAdvised(s)&&!skip?html`<p class="fr-advice"><span>${t('The Machine would stop here: {}',f.advice)}</span><button type="button" class="link" data-fr-end="${s.id}"${fr.box?html` disabled`:''}>${t('Stop follow-ups here')}</button></p>`:''}${a?(edit?html`<textarea class="fr-edit" spellcheck="true" autocapitalize="sentences" data-fr-text="${s.id}" rows="6" aria-label="${t('Follow-up text')}">${plainDraft(draftText(a))}</textarea>`:html`<div class="fr-body">${frBody(plainDraft(draftText(a)))}</div>`):html`<p class="muted fr-none">${t('No draft yet.')}</p>`}</li>`}
+ return html`<li class="fr-item${on?html` on`:''}${fr.changing.has(s.id)?html` rewriting`:''}${skip?html` skipped`:''}" data-fr="${s.id}" data-fr-at="${i}" tabindex="${on?0:-1}" aria-current="${on}" aria-busy="${fr.changing.has(s.id)}"><div class="fr-head"><input type="checkbox" data-fr-check="${s.id}"${fr.checked.has(s.id)?html` checked`:''}${skip||!a?html` disabled`:''} aria-label="${t('Include {}',frName(f))}"><b title="${f.project}">${frName(f)}</b><span class="fr-meta">${t('Follow-up {} of {}',f.n,f.max)} · ${FU_CHANNELS[f.channel]||f.channel}</span></div><div class="fr-sub"><p class="fr-to" title="${to}">${to}</p><div class="fr-actions">${edit?html`<button type="button" class="primary" data-fr-save="${s.id}">${t('Save')}</button><button type="button" class="ghost" data-fr-cancel>${t('Cancel')}</button>`:html`${a?html`<button type="button" class="${frStale(s)||frAdvised(s)?'fr-plain':'primary'}" data-fr-send="${s.id}"${a&&ready&&!fr.box?'':html` disabled`}>${t('Send')}</button><button type="button" class="ghost" data-fr-edit="${s.id}"${a&&ready?'':html` disabled`}>${t('Edit')}</button>`:''}<button type="button" class="ghost" data-fr-skip="${s.id}"${fr.changing.has(s.id)||skip?html` disabled`:''}>${t('Skip')}</button>`}</div></div>${s.action_status?.status==='blocked'&&s.action_status.error&&!fr.changing.has(s.id)?html`<p class="fr-held" role="status">${heldLine(s.action_status.error)}</p>`:''}${frState(s)}${frAdvised(s)&&!skip?html`<p class="fr-advice"><span>${t('The Machine would stop here: {}',f.advice)}</span><button type="button" class="link" data-fr-end="${s.id}"${fr.box?html` disabled`:''}>${t('Stop follow-ups here')}</button></p>`:''}${a?(edit?html`<textarea class="fr-edit" spellcheck="true" autocapitalize="sentences" data-fr-text="${s.id}" rows="6" aria-label="${t('Follow-up text')}">${plainDraft(draftText(a))}</textarea>`:html`<div class="fr-body">${frBody(plainDraft(draftText(a)))}</div>`):frNone(s)}</li>`}
 // Change: what should change, for all checked drafts or only the current one (the c key opens it)
 function frBox(list){if(!fr.box)return '';const n=list.filter(s=>fr.checked.has(s.id)&&frReady(s)).length,one=list.find(s=>s.id===fr.box.one)||list[fr.at];
  if(!n&&fr.box.scope==='all')fr.box.scope='one';
  return html`<div class="fr-change" role="group" aria-labelledby="fr-change-q"><label class="fr-change-q" id="fr-change-q" for="fr-change-text">${t('What should change?')}</label><div class="mic-wrap"><textarea id="fr-change-text" spellcheck="true" autocapitalize="sentences" rows="2" maxlength="2000" enterkeyhint="send">${fr.box.text}</textarea>${micBtn()}</div><div class="fr-scope"><label class="fu-radio"><input type="radio" name="fr-scope" value="all"${fr.box.scope==='all'?html` checked`:''}${n?'':html` disabled`}><span>${t('All checked ({})',n)}</span></label><label class="fu-radio"><input type="radio" name="fr-scope" value="one"${fr.box.scope==='one'?html` checked`:''}><span class="fr-one" translate="no">${t('Only this one: {}',one?frName(one.follow_up):'')}</span></label></div><div class="fr-change-actions"><button type="button" class="ghost" data-fr-box-cancel>${t('Cancel')}</button><button type="button" class="primary" data-fr-box-go>${t('Rewrite')}</button></div></div>`}// The control that has focus, as a selector that finds it again after a redraw
 const frFocusSel=d=>{const a=document.activeElement;if(!a||!d.contains(a))return null;if(a.id==='fr-change-text')return '#fr-change-text';if(a.name==='fr-scope')return `[name=fr-scope][value=${a.value}]`;
- for(const k of ['frCheck','frSend','frEdit','frSkip','frUnskip','frUndo','frRetry'])if(a.dataset?.[k])return `[data-${k.replace(/[A-Z]/g,c=>'-'+c.toLowerCase())}="${CSS.escape(a.dataset[k])}"]`;
+ for(const k of ['frCheck','frSend','frEdit','frSkip','frUnskip','frUndo','frRetry','frWrite'])if(a.dataset?.[k])return `[data-${k.replace(/[A-Z]/g,c=>'-'+c.toLowerCase())}="${CSS.escape(a.dataset[k])}"]`;
  if(a.matches('.fr-item'))return `.fr-item[data-fr="${CSS.escape(a.dataset.fr)}"]`;return null};
 function frDraw(reveal){const d=$('#fu-review'),list=frList();if(!list.length){if(d.open)d.close();if(fr.sent)toast(t(['{} follow-up on its way','{} follow-ups on their way'],fr.sent));return}
  const was=list.findIndex(s=>s.id===fr.cur);if(was>=0)fr.at=was;fr.at=Math.max(0,Math.min(fr.at,list.length-1));fr.cur=list[fr.at].id;fr.sig=frSig(list);fr.item=new Map(list.map(s=>[s.id,frItemSig(s)]));
@@ -67,7 +72,7 @@ function frMove(i,click){const d=$('#fu-review'),items=[...d.querySelectorAll('.
 // hidden and no draft sends), and while a rewrite runs nothing is sent all at once
 function frModes(){const d=$('#fu-review'),main=d.querySelector('.fr-main');if(main)main.hidden=!!fr.box;
  for(const b of d.querySelectorAll('[data-fr-send]')){const s=state.suggestions.find(x=>x.id===b.dataset.frSend);b.disabled=!!fr.box||!s||!frDraft(s)||!frReady(s)}
- for(const b of d.querySelectorAll('[data-fr-end]'))b.disabled=!!fr.box}
+ for(const b of d.querySelectorAll('[data-fr-end],[data-fr-write]'))b.disabled=!!fr.box}
 function frCount(){const list=frList(),n=list.filter(s=>fr.checked.has(s.id)&&frReady(s)).length,all=$('#fu-review [data-fr-all]');if(all){all.textContent=t('Send all checked ({})',n);all.disabled=!n||!!fr.changing.size}frModes();
  const scope=$('#fu-review [name=fr-scope][value=all]');if(scope){scope.disabled=!n;scope.nextElementSibling.textContent=t('All checked ({})',n);if(!n&&scope.checked){scope.checked=false;fr.box.scope='one';$('#fu-review [name=fr-scope][value=one]').checked=true}}}
 // Where each rewrite stands, from the to-do itself: a new draft revision is done (the old text kept for Undo change); its
@@ -75,11 +80,11 @@ function frCount(){const list=frList(),n=list.filter(s=>fr.checked.has(s.id)&&fr
 function frTrack(){for(const [id,c] of fr.changing){const s=state.suggestions.find(x=>x.id===id);
   if(!s||s.follow_up?.state!=='open'||TODO.CLOSED_OR_SNOOZED.includes(s.status)){fr.changing.delete(id);fr.gone.add(id);continue}
   if(s.status!=='prepared')c.seen=true;const a=frDraft(s);
-  if(s.status==='prepared'&&a&&a.revision!==c.from){fr.changing.delete(id);fr.undo.set(id,{body:c.body,subject:c.subject})}
+  if(s.status==='prepared'&&a&&a.revision!==c.from){fr.changing.delete(id);if(c.body)fr.undo.set(id,{body:c.body,subject:c.subject})}
   else if(c.seen&&(s.status==='prepared'||s.preparation_status==='blocked')){fr.changing.delete(id);fr.failed.set(id,c.text)}}}
 // A poll: new drafts join (checked), sent or changed ones update in place; the draft being edited is left as it is
 function frRefresh(){const d=$('#fu-review');if(!fr||!d.open||fr.busy)return;frTrack();const list=frList();
- for(const s of list)if(!fr.seen.has(s.id)){fr.seen.add(s.id);if(!frStale(s)&&!frAdvised(s))fr.checked.add(s.id)}
+ for(const s of list)if(!fr.seen.has(s.id)){fr.seen.add(s.id);if(!frStale(s)&&!frAdvised(s)&&frDraft(s))fr.checked.add(s.id)}
  if(frSig(list)===fr.sig){let n=0;for(const s of list)if(s.id!==fr.editing&&fr.item.get(s.id)!==frItemSig(s)&&frPatch(s))n++;if(n)frCount();return}
  if(!fr.editing)frDraw()}
 const frSay=x=>{const p=$('#fu-review [data-fr-error]');if(p){p.textContent=x;p.hidden=!x}};
@@ -98,7 +103,7 @@ function frBoxOpen(){const d=$('#fu-review');if(!fr.box){const n=frList().filter
 // Machine; each shows "Rewriting…" where it is until its new text is back. Nothing is sent.
 function frBoxClose(){const d=$('#fu-review');fr.box=null;d.querySelector('.fr-change')?.remove();d.querySelector('[data-fr-change]')?.setAttribute('aria-expanded','false');frModes();
  d.querySelector('.fr-item.on')?.focus({preventScroll:true})}
-async function frChange(ids,text){const list=frList(),pick=list.filter(s=>ids.includes(s.id)&&(frReady(s)||fr.failed.has(s.id)));if(!pick.length||!text)return;
+async function frChange(ids,text){const list=frList(),pick=list.filter(s=>ids.includes(s.id)&&(frWritable(s)||fr.failed.has(s.id)));if(!pick.length||!text)return;
  const before=new Map(pick.map(s=>{const a=frDraft(s);return [s.id,{from:a?.revision,body:a?draftText(a):'',subject:a?.subject,text,seen:false}]}));
  const r=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'follow_up_change',args:{ids:pick.map(s=>s.id),text}})});
  for(const c of r.changing||[]){const b=before.get(c.id);if(!b)continue;fr.changing.set(c.id,{...b,from:c.revision});fr.failed.delete(c.id);fr.undo.delete(c.id)}
@@ -129,6 +134,7 @@ async function frAct(b){const d=$('#fu-review');frSay('');fr.busy=true;try{
  else if(b.hasAttribute('data-fr-box-go')){const text=($('#fr-change-text')?.value||'').trim();if(!text){$('#fr-change-text')?.focus();return}
   const scope=d.querySelector('[name=fr-scope]:checked')?.value||'one',list=frList(),ids=scope==='all'?list.filter(s=>fr.checked.has(s.id)&&frReady(s)).map(s=>s.id):[fr.box.one||fr.cur];
   b.disabled=true;await frChange(ids,text);frBoxClose()}
+ else if(b.dataset.frWrite){b.disabled=true;await frChange([b.dataset.frWrite],t('Write the draft for this follow-up.'))}  // the owner's word: drafted even when the run held back
  else if(b.dataset.frRetry){const id=b.dataset.frRetry;b.disabled=true;await frChange([id],fr.failed.get(id)||'')}
  else if(b.dataset.frUndo){const id=b.dataset.frUndo,s=state.suggestions.find(x=>x.id===id),a=s&&frDraft(s),was=fr.undo.get(id);if(!a||!was)return;b.disabled=true;
   const r=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'revise_draft',args:{suggestion_id:id,revision:a.revision,body:was.body,...(was.subject&&a.subject!==was.subject?{subject:was.subject}:{})}})});

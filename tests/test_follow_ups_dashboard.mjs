@@ -51,7 +51,7 @@ const server=createServer(async(req,res)=>{let body='';for await(const c of req)
   if(c.action==='follow_up_settings'||c.action==='follow_up_save'){const v=panel(a.scope,a.id);if(boardsNow&&a.scope==='board')v.settings.on=false;res.end(JSON.stringify(v));return}
   if(c.action==='revise_draft'){const s=suggestions.find(x=>x.id===a.suggestion_id);s.next_action={...s.next_action,body:a.body,revision:a.revision+'e'};res.end(JSON.stringify({revision:a.revision+'e',body:a.body}));return}
   if(c.action==='confirm_action'){suggestions=suggestions.filter(x=>x.id!==a.suggestion_id);res.end(JSON.stringify({status:'queued'}));return}
-  if(c.action==='follow_up_change'){const changing=[];for(const id of a.ids){const s=suggestions.find(x=>x.id===id);if(!s)continue;changing.push({id,revision:s.next_action.revision});
+  if(c.action==='follow_up_change'){const changing=[];for(const id of a.ids){const s=suggestions.find(x=>x.id===id);if(!s)continue;changing.push({id,revision:s.next_action?.revision??null});
    suggestions=suggestions.map(x=>x.id===id?{...x,status:'instructions',preparation_status:'queued'}:x)}res.end(JSON.stringify({changing,skipped:[]}));return}
   if(c.action==='follow_up_stop'){progress=progress.map(p=>p.batch===a.batch?{...p,going:false,done:p.total,stopped:p.total-p.sent}:p);res.end(JSON.stringify({stopped:1,sent:1}));return}
   if(c.action==='follow_up_end'){suggestions=suggestions.filter(x=>x.id!==a.id);res.end(JSON.stringify({id:a.id,state:'stopped'}));return}
@@ -515,6 +515,26 @@ try{
  {reset();suggestions=suggestions.map(s=>s.id==='f400000000000000'?{...s,follow_up:{...s.follow_up,advice:'No answer to four emails'}}:s);
   const {context,page}=await open(1440,900);const todo=page.locator('#task-f400000000000000');await todo.waitFor();
   assert.match(await todo.textContent(),/The Machine would stop here: No answer to four emails/);await shot(page,'advice-todo-1440-light',todo);
+  await context.close()}
+ // One without a draft says what's needed first and offers Write it, the owner's word; it is never ticked or counted in
+ // Send all checked (which once called it "needs you to pick who gets it"). One whose recipients are the owner's pick
+ // says so where its To would be.
+ for(const [width,height] of [[1440,900],[390,844]]){reset();
+  suggestions=suggestions.map(s=>s.id==='f200000000000000'?{...s,next_action:null,outcome:JSON.stringify({state:'needs_you',needs:'who it goes to'})}
+   :s.id==='f300000000000000'?{...s,next_action:draft(3,'Hi Lee, any first impressions from the team?',{to:[],to_options:['lee@client.example','team@client.example']})}:s);
+  const {context,page}=await open(width,height);
+  await page.locator('#suggestions .fu-group button.primary').click();const dlg=page.locator('#fu-review');await dlg.locator('.fr-item').first().waitFor();
+  const none=dlg.locator('.fr-item[data-fr="f200000000000000"]');
+  assert.equal((await none.locator('.fr-none span').textContent()).trim(),'No draft. Needed first: who it goes to.');
+  assert.equal(await none.locator('[data-fr-check]').isChecked(),false);assert.equal(await none.locator('[data-fr-check]').isDisabled(),true);
+  assert.equal(await none.locator('[data-fr-send],[data-fr-edit]').count(),0);assert.equal(await none.locator('[data-fr-skip]').count(),1);
+  assert.equal((await dlg.locator('.fr-item[data-fr="f300000000000000"] .fr-to').textContent()).trim(),'Who gets it: pick on Send');
+  assert.equal((await dlg.locator('[data-fr-all]').textContent()).trim(),'Send all checked (2)');
+  await none.click();await none.scrollIntoViewIfNeeded();await fits(page,`${width} no draft`);await shot(page,`no-draft-${width}`,width<600?null:dlg);
+  calls=[];await none.locator('[data-fr-write]').click();await until(()=>calls.some(c=>c.action==='follow_up_change'));
+  assert.deepEqual(calls.map(c=>[c.action,c.args.ids,c.args.text]),[['follow_up_change',['f200000000000000'],'Write the draft for this follow-up.']]);
+  await none.locator('.fr-state.run',{hasText:'Writing…'}).waitFor();assert.equal(await none.locator('.fr-none').count(),0);
+  await shot(page,`no-draft-writing-${width}`,width<600?null:dlg);
   await context.close()}
  // Done: the board's sent and skipped follow-ups of a day are one row ("13 follow-ups sent for Alpha testers", "2 skipped"),
  // projects' own ones one row per day, a single one stays itself; opening a row lists project, to and when, each linking

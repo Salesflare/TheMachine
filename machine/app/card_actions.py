@@ -344,6 +344,14 @@ class CardActionsApp:
             if not 3<=len(advice)<=follow_ups.ADVICE_MAX:raise ValueError(f"follow_up:'stop' needs follow_up_why: why you would stop, 3 to {follow_ups.ADVICE_MAX} characters")
             if not any(a['kind'] in ('email',)+next_actions.TEXT_KINDS for a in next_actions.actions(action)):
                 raise ValueError("follow_up:'stop' still comes with the draft: write the follow-up, the owner decides")
+        if following and (outcome or {}).get('state') not in ('already_done','needs_you') \
+                and not any(a['kind'] in ('email',)+next_actions.TEXT_KINDS for a in next_actions.actions(action)):
+            # An open automated follow-up is its draft: never left in the review without one and without saying why
+            # (follow_ups.rewrite_judged repairs ones saved that way before)
+            raise ValueError("An automated follow-up always comes with its draft: write it, whatever you judge or wait on. Only when it "
+                             "can't be written (no address or chat for them, unclear who it goes to), save no draft with outcome:'needs_you' "
+                             "and needs:<what the owner has to give first, e.g. who it goes to>; when they answered or it's handled, "
+                             "outcome:'already_done'")
         if args.get('based_on') is not None:
             with self.store.connect() as db:self.store.based_on_check(db,args['based_on'])
         if args.get('method') is not None:  # a repeating to-do's way of doing it, for the next one (recurring.method_lines)

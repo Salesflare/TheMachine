@@ -1079,6 +1079,36 @@ class FollowUps(unittest.TestCase):
         self.store.decide(acme, 'other', 'Keep trying.', 'chat-keep-2', 'dashboard')
         self.assertEqual(next(c['state'] for c in self.cards() if c['suggestion_id'] == acme), 'stopped')
 
+    def test_a_follow_up_never_sits_in_the_review_without_its_draft_or_what_it_needs(self):
+        self.turn_on(min=1, max=3)
+        app = self.app()
+        acme, kim, first = self.drafted_pair(app)
+        free = (patch.object(machine_main.App, 'follow_up_pause', return_value=None), patch.object(machine_main.App, 'background_pause', return_value=None))
+        self.assertIn('Otherwise always save the draft', app.follow_up_lines(acme))
+        # No draft because it judged it waits on them: refused, the draft is written anyway
+        with free[0], free[1]:
+            refused = self.model_turns(app, lambda sid, message, draft: first(sid), next_actions=None, outcome='waiting', waiting_on='their answer on the guide')[1]
+        self.assertEqual(sorted(r[0] for r in refused), sorted([acme, kim]))
+        self.assertIn('always comes with its draft', refused[0][1])
+        # No draft because something is missing: allowed, and it says what the owner gives first
+        self.requeue()
+        with free[0], free[1]:
+            refused = self.model_turns(app, lambda sid, message, draft: first(sid), next_actions=None, needs='who it goes to')[1]
+        self.assertEqual(refused, [])
+        self.assertEqual([c['status'] for c in self.cards()], ['prepared', 'prepared'])
+        # One an earlier version left without a draft or a reason is drafted again; the one that says what it needs stays
+        with self.store.connect() as db:
+            db.execute('UPDATE suggestions SET outcome=? WHERE id=?', (json.dumps({'state': 'waiting', 'waiting_on': 'their answer'}), acme))
+        app.follow_up_step()
+        status = {c['suggestion_id']: c['status'] for c in self.cards()}
+        self.assertEqual((status[acme], status[kim]), ('accepted', 'prepared'))
+        # Write it, from the review: the owner's word, through its chat; nothing kept in place, nothing sent
+        self.assertEqual(app.action('follow_up_change', {'ids': [kim], 'text': 'Write the draft for this follow-up.'}, owner_dashboard=True),
+                         {'changing': [{'id': kim, 'revision': None}], 'skipped': []})
+        with self.store.connect() as db:
+            self.assertEqual(db.execute('SELECT count(*) FROM follow_up_changes WHERE suggestion_id=?', (kim,)).fetchone()[0], 0)
+        self.assertEqual(self.jobs(), [])
+
     def test_follow_ups_an_earlier_version_stopped_on_judgment_are_drafted_after_all(self):
         self.turn_on(min=0, max=3, stall=False)
         app = self.app()

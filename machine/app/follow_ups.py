@@ -224,7 +224,10 @@ class FollowUpsApp:
                  f"Draft one short follow-up as a {channel} draft (kind {f['channel']}), in the same conversation as the last messages listed, "
                  'in the owner\'s voice: refer to the last exchange in a few words, add something useful or one easy question, no guilt and no "just '
                  'checking in". Never repeat what an earlier follow-up said. Leave send_now out: the service decides how it goes.',
-                 'If they or someone else answered since, or it is handled, save outcome:\'already_done\' instead.']
+                 'If they or someone else answered since, or it is handled, save outcome:\'already_done\' instead.',
+                 "Otherwise always save the draft, also when rules or a wait seem to say otherwise. Only when it can't be written (no "
+                 "address or chat for them, unclear who it goes to), save no draft, with outcome:'needs_you' and needs:<what the owner "
+                 "has to give first>."]
         if f['n'] > int(settings.get('min') or 0):
             lines.append(f"The minimum of {settings.get('min')} follow-ups went out. Judge from the thread and the project whether another one is still "
                          "worth it (by what was said, not by keywords). Either way, write the draft: you never end follow-ups yourself. When you would "
@@ -260,13 +263,16 @@ class FollowUpsApp:
                 ready = row and (row['status'] == 'prepared' or row['status'] in todo_states.PREPARING and row['job'] == 'blocked')
                 draft = next((x for x in next_actions.actions(row['next_action'] or 'null') if x['kind'] in ('email',) + next_actions.TEXT_KINDS),
                              None) if ready else None
-                if not draft or db.execute("SELECT 1 FROM action_jobs WHERE suggestion_id=? AND status IN ('queued','sending','local_preparation')", (sid,)).fetchone():
+                # One with no draft (its run said what it needs first) is written now, on the owner's word: nothing to keep in place
+                blank = row and row['status'] == 'prepared' and not row['next_action']
+                if not (draft or blank) or db.execute("SELECT 1 FROM action_jobs WHERE suggestion_id=? AND status IN ('queued','sending','local_preparation')", (sid,)).fetchone():
                     skipped.append(sid)
                     continue
                 decision = 'chat-' + uuid.uuid4().hex
                 self.store._decide(db, sid, 'other', text, decision, 'dashboard')
-                follow_ups.changing(db, sid, decision, draft['revision'], draft, now())
-                changing.append({'id': sid, 'revision': draft['revision']})
+                if draft:
+                    follow_ups.changing(db, sid, decision, draft['revision'], draft, now())
+                changing.append({'id': sid, 'revision': draft['revision'] if draft else None})
         return {'changing': changing, 'skipped': skipped}
 
     def follow_up_send(self):
