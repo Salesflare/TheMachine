@@ -13,6 +13,9 @@ const {chromium}=await import('./browser.mjs');
 // keeps "Join the Network". Self-hosted and paired, Unpair this Machine is the first quiet way out (ai_unpair; it was a
 // section of its own in Settings, Apps). Made-up data only. Set SHOTS=<dir> for screenshots.
 const dashboard=await dashboardPage();
+// The page's clock is pinned: dates read as "Today"/"Tomorrow" when near, and with the year when not this one, so the
+// invoice on Fri, Nov 20 read "Tomorrow" when the suite ran on Nov 19 from the real clock
+const NOW=new Date('2026-11-10T12:00:00Z');
 const hours={days:[0,1,2,3,4],start:'08:00',end:'18:00',morning:'09:00',digest_at:'08:30',timezone:'UTC'};
 const CP='https://account.example';
 const hostedSummary={email:'alex@example.org',hop:true,
@@ -45,7 +48,7 @@ const server=createServer(async(req,res)=>{
   if(action==='ai_unpair')mode='none';res.end(JSON.stringify({connections:[],areas:['work'],reach:{hosted:false,paired:false}}));return}
  if(url.pathname==='/api/account'){asked.push('machine');res.end(JSON.stringify(mode==='paired'?pairedSummary:{on:false}));return}
  if(url.pathname==='/api/status'){res.end(JSON.stringify({suggestions:[],promises:[],connectors:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],hours,
-  skills:{skills:[],waiting:0,targets:[],folder:'skills/the-machine'},model_usage:[],model_status:{model:'openai/example-model',provider:'openai',windows:[],checked_at:new Date().toISOString()},
+  skills:{skills:[],waiting:0,targets:[],folder:'skills/the-machine'},model_usage:[],model_status:{model:'openai/example-model',provider:'openai',windows:[],checked_at:NOW.toISOString()},
   signatures:[{account_id:'mail',email:'alex@example.org',service:'gmail',html:'<b>Alex</b>',source:'detected',saveable:true}],
   ...(mode==='hosted'?{manage_url:CP+'/setup',account_url:CP+'/account'}:{}),...(mode==='paired'?{fleet:{on:true,waiting:0},account_url:'https://app.themachine.computer/account'}:{})}));return}
  res.end('{}');
@@ -58,7 +61,7 @@ try{
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
  for(const width of [390,1440])for(const scheme of ['light','dark']){
   mode='hosted';fail=false;
-  const context=await browser.newContext({viewport:{width,height:900},colorScheme:scheme}),page=await context.newPage();
+  const context=await browser.newContext({viewport:{width,height:900},colorScheme:scheme});await context.clock.setFixedTime(NOW);const page=await context.newPage();
   await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
   page.on('pageerror',e=>errors.push(e.message));
   await page.goto(base);await page.locator('#updated',{hasText:/\d/}).waitFor({state:'attached'});
