@@ -113,6 +113,7 @@ HINTS = (
     ('missing_salesflare_credential', 'the Salesflare credential file needs a SALESFLARE_API_KEY=… line'),
     ('salesflare:HTTP_401', 'Salesflare rejected the API key'),
     ('whatsapp_source_unavailable', 'WhatsApp could not be read; is this Machine still linked in WhatsApp, Linked devices?'),
+    ('whatsapp_unlinked', 'WhatsApp unlinked this Machine; link it again from Connections'),
     ('whatsapp', 'WhatsApp did not answer as expected; it retries by itself'),
     ('telegram_app_blocked', 'Telegram stopped accepting this Machine’s app ID; add your own from my.telegram.org and connect Telegram again'),
     ('telegram_logged_out', 'Telegram logged this Machine out; connect Telegram again'),

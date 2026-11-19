@@ -34,8 +34,14 @@ class WhatsAppTests(unittest.TestCase):
   db.close()
  def test_account_mismatch_and_mutation_blocked(self):
   source=machine_sources_whatsapp.WhatsApp({},account)
-  with patch.object(source,'read',return_value={'authenticated':True,'linked_jid':'wrong'}),self.assertRaises(sources.SourceError):source.profile()
+  with patch.object(source,'read',return_value={'authenticated':True,'linked_jid':'wrong'}),self.assertRaisesRegex(sources.SourceError,'account_identity_mismatch'):source.profile()
   with self.assertRaises(sources.SourceError):source.read(['send','text'])
+ def test_logged_out_session_is_unlinked_not_another_number(self):
+  # WhatsApp logged the linked device out (wacli clears the session): link again, never "another account"
+  source=machine_sources_whatsapp.WhatsApp({},account)
+  for status in ({'authenticated':False},{'authenticated':False,'linked_jid':'123@s.whatsapp.net'},{'authenticated':True},{'authenticated':True,'linked_jid':''}):
+   with patch.object(source,'read',return_value=status),self.assertRaisesRegex(sources.SourceError,'whatsapp_unlinked'):source.profile()
+  with patch.object(source,'read',return_value={'authenticated':True,'linked_jid':'123@s.whatsapp.net'}):self.assertTrue(source.profile()['authenticated'])
  def test_group_sender_not_invented_and_native_identity_preserved(self):
   raw=message();raw['ChatJID']='123-456@g.us';event=machine_sources_whatsapp.whatsapp_event(account,raw);self.assertEqual(event['metadata']['sender_identity'],'unknown');self.assertEqual(event['metadata']['message_id'],'FULL-NATIVE-ID');self.assertEqual(event['title'],'Family')
  def test_outgoing_sender_is_owner_even_when_provider_labels_recipient(self):

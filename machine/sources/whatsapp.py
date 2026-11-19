@@ -50,10 +50,14 @@ class WhatsApp:
         return data['data']
 
     def profile(self):
+        """wacli's session, when it is linked to this account's number. No session (WhatsApp logged the linked device
+        out, from the phone or by itself; wacli then clears it) is whatsapp_unlinked: link again. Only a session on
+        another number is account_identity_mismatch."""
         data = self.read(['auth', 'status'])
         linked = data.get('linked_jid')
-        if (data.get('authenticated') is not True or not isinstance(linked, str)
-                or hashlib.sha256(linked.encode()).hexdigest() != self.account['identity_sha256']):
+        if data.get('authenticated') is not True or not isinstance(linked, str) or not linked:
+            raise SourceError('whatsapp_unlinked')
+        if hashlib.sha256(linked.encode()).hexdigest() != self.account['identity_sha256']:
             raise SourceError('account_identity_mismatch')
         return data
 

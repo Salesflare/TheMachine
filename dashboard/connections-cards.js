@@ -571,6 +571,7 @@ function syncPlain(c){let st={};try{st=JSON.parse(c.state||'{}')||{}}catch{}cons
 // Why a chat stopped, the way back
 function chatNote(c){const e=c.error,stop=e==='telegram_app_blocked'?t('Telegram stopped accepting this Machine’s app ID. Nothing is read or sent. Reconnect with your own app ID from my.telegram.org.')
  :e==='telegram_logged_out'?t('Telegram logged this Machine out. Reconnect to keep reading.'):e==='signal_unlinked'?t('Signal unlinked this Machine. Link it again to keep reading.')
+ :e==='whatsapp_unlinked'?t('WhatsApp unlinked this Machine. Link it again to keep reading.')
  :e==='signal_outdated'?t('Signal no longer accepts this Machine’s Signal client. Update The Machine.'):'';
  return stop?html`<p class="alert">${stop} ${reconnectButton(c)}</p>`:c.service==='signal'?html`<p class="note">${t('Signal gives a new linked device no older messages, so this reads from when you linked it.')}</p>`:''}
 // Under Connected, on every card: what it brings in (c.what, the line + Add shows for it) and what it can do, each only

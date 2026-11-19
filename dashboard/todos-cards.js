@@ -60,7 +60,7 @@ const sourceHtml=v=>{const t=sourceText(v),i=t.lastIndexOf(' · ');return html`<
 const syncError=v=>v==='android_feed_unavailable'?'Notification bridge unavailable':v==='android_offline'?'Phone disconnected':v==='android_notifications_unavailable'?'Phone notifications unavailable':v==='android_gateway_unavailable'?'Connection to The Machine unavailable':v?.startsWith('network')?'Connection problem':v==='timeout'?'Connection timed out':['slack:HTTP_429','slack_ratelimited'].includes(v)?'Slack rate limit':readableError(v);
 // Error codes like linkedin_read_failed, in words: the source's name and what went wrong.
 // Telegram chats stopped for a reason only the owner can fix: said on its card, never a silent gap (telegram_store.ERRORS)
-const TELEGRAM_STOP={telegram_logged_out:'Logged out of Telegram',telegram_app_blocked:'Telegram stopped accepting the app ID',signal_unlinked:'Signal unlinked this Machine',signal_outdated:'Update The Machine for Signal'};
+const TELEGRAM_STOP={telegram_logged_out:'Logged out of Telegram',telegram_app_blocked:'Telegram stopped accepting the app ID',signal_unlinked:'Signal unlinked this Machine',whatsapp_unlinked:'WhatsApp unlinked this Machine',signal_outdated:'Update The Machine for Signal'};
 function readableError(v){if(!v)return 'Sync error';const m=/^([a-z]+)[_:](.+)$/.exec(v),name=m?service(m[1]):'',what=m?m[2]:v;
 // The service busy (google_meet_http:HTTP_503, docs_drive:HTTP_429): the service by its full name, which can have a _ in it
 const busy=/:HTTP_(5\d\d|429)$/.exec(v);if(busy){const k=Object.keys(SERVICE_NAMES).filter(s=>v.startsWith(s)).sort((a,b)=>b.length-a.length)[0],who=k?SERVICE_NAMES[k]:t('The source');
