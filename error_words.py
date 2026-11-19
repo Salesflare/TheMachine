@@ -55,7 +55,7 @@ advancing opportunities join disabled method note transcript ratelimited browser
 search board action summary user host conference artifact maton shared replies off region profile conversation
 conversations parts identity mismatch entry encoding transport source content message person mention account scope
 notifications notification offline snapshot query unreachable stopped collector unsupported download no too large robots address html
-response timestamp media payment redirect required answered stalled unlinked'''.split())
+response timestamp media payment redirect required answered stalled unlinked outdated logged'''.split())
 SAFE_TYPES = set('''Error Exception Warning BaseException RuntimeError ValueError TypeError KeyError IndexError AttributeError NameError ImportError ModuleNotFoundError SyntaxError ReferenceError RangeError AbortError TimeoutError ConnectionError ConnectionResetError ConnectionRefusedError BrokenPipeError FileNotFoundError PermissionError OSError IOError EOFError UnicodeError UnicodeDecodeError UnicodeEncodeError RecursionError OverflowError MemoryError ZeroDivisionError AssertionError LookupError StopIteration SystemExit KeyboardInterrupt NotImplementedError OperationalError DatabaseError IntegrityError HttpError SourceError BrokerError'''.split())
 SAFE_TYPES |= set('''NetworkError QuotaExceededError NotAllowedError NotFoundError InvalidStateError SecurityError DataError
 DataCloneError TransactionInactiveError VersionError ConstraintError NotSupportedError DOMException UnknownError
