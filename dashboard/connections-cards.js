@@ -18,7 +18,7 @@ const connOpened=new Set(),connClosed=new Set();
 const connSrcCat=name=>{const x=connectList?.sources?.find(v=>v.name===name);return name==='codex'?'work':name==='gbrain'?'other':x?(connCat(x.group)?x.group:'other'):''};
 // The category of the setup on screen, if one is (else none): its source's, else the one it started from
 function connFlowCat(){const v=$('#connect-add').dataset.view;if(!v||v==='grid')return '';
- return connSrcCat(connectForm||connectSignin?.source||connectRun?.source||connectRun?.name||(connectGbrain?'gbrain':''))||(connCat(connShown)?connShown:'mail')}
+ return connSrcCat(connectForm||connectSignin?.source||connectRun?.source||connectRun?.name||(connectGbrain?'gbrain':''))||[connectRun?.group,connShown].find(connCat)||'mail'}
 function renderHealthTabs(){if(connDrawing)return;connDrawing=true;try{connDraw()}finally{connDrawing=false}}
 function connDraw(){const cs=state.connectors||[],of=g=>cs.filter(c=>healthGroup(c)===g),bad=g=>of(g).filter(c=>connectorTone(c)==='orange').length,phone=CONN_PHONE.matches;
  // a kind asked for (a link) stays, also while its sources are still on the way
@@ -357,8 +357,9 @@ async function openConnectLinkNow(){const m=/^#connect=(google|microsoft|microso
 function renderConnectSignin(){const s=connectSignin,box=$('#connect-add'),paired=connectList?.paired;
  const back=html`<button type="button" data-connect-back>Back</button>`;let body;
  const base=SIGNIN_COPY[s.provider]||{},copy=!s.hosted&&base.selfAbout?{...base,about:base.selfAbout}:base;
- if(s.provider==='codex')body=codexBody(s,back);  // Codex: its own code, on a hosted or a self-hosted Machine
- else if(s.hosted)body=hostedSigninBody(s,copy,back);  // a hosted Machine: its own form, never the pairing one
+ // Codex: its own code, on a hosted or a self-hosted Machine; a hosted Machine: its own form, never the pairing one
+ if(s.provider==='codex')body=codexBody(s,back);
+ else if(s.hosted)body=hostedSigninBody(s,copy,back);
  else if(s.state==='started')body=html`<p>Sign in at ${s.label} in the tab that opened. This updates by itself.</p><div class="actions"><button type="button" data-signin-go>Start again</button>${back}</div>`;
  else if(s.state==='connecting')body=html`<p class="muted">Connecting…</p>`;
  else if(s.state==='done')body=html`<p class="note sent-ok">✓ Connected${s.name?' to '+s.name:''}.${s.replies?' Replies go as you, after you approve each one.':''} Restarting to start reading it…</p><div class="actions">${back}</div>`;
@@ -413,7 +414,7 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-reco
  b.disabled=true;connectRun=null;if(await connectStart(b.dataset.reconnect,b.dataset.account)){showHealthPane('add');document.querySelector('nav button[data-tab="health"]')?.click();viewTop($('#connect-add'))}b.disabled=false});
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-disconnect]');if(!b||!confirm(`Disconnect ${b.dataset.name}? It stops syncing. What it already brought in stays.`))return;
  b.disabled=true;try{const r=await connectPost('connect_remove',{account:b.dataset.disconnect});if(r.restarting)restartSoon();toast(r.restarting?'Disconnected. Restarting…':'Disconnected. Restart the service to stop syncing it.');connectList=null;setTimeout(refresh,r.restarting?8000:500)}catch(err){errCaught(err);toast(err.message,true);b.disabled=false}});
-function renderConnectRun(){const r=connectRun,box=$('#connect-add'),q=r.question;
+function renderConnectRun(){const r=connectRun,box=$('#connect-add'),q=r?.question;if(!r)return;
  const head=html`<div class="connect-run"><h3>${r.state==='done'?'✓ ':''}${r.label||''}</h3><ul class="connect-lines">${(r.lines||[]).map(l=>html`<li>${linkify(l)}</li>`)}</ul>`;
  let body='';
  const code=r.state==='running'&&r.code?connectCodeHTML(r.code):'';

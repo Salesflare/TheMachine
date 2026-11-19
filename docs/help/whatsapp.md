@@ -3,7 +3,7 @@ title: WhatsApp
 area: connections
 summary: Your WhatsApp chats, read as a linked device. Replies only after you approve.
 covers: connector:whatsapp
-code: onboarding.py, next_actions.py, whatsapp_images.py
+code: onboarding.py, whatsapp_setup.py, next_actions.py, whatsapp_images.py
 site: Show the QR code, Get a code, On your phone? Link with a code instead, Remove
 ---
 ## What it reads
@@ -46,7 +46,9 @@ Or run `assistant connect whatsapp` and scan the code it shows in the terminal. 
 
 Under Linked devices, it shows as The Machine. A Machine linked before keeps its old name there until you link it again.
 
-If WhatsApp logs your Machine out, its card says **WhatsApp unlinked this Machine**. Press **Reconnect** and link it again.
+If WhatsApp logs your Machine out, its card says **WhatsApp unlinked this Machine**. Press **Reconnect** and link it again: enter your phone number, and enter the code it shows in WhatsApp, Linked devices, **Link with phone number instead**. It links into the same place as before, so your chats stay. If you set up your own service to keep WhatsApp synced, it pauses while you link and starts again after.
+
+If WhatsApp takes too long to answer, the setup says so. Press **Try again** a minute later for a new code.
 
 ## Pictures
 

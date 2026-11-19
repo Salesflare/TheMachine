@@ -33,7 +33,7 @@ from pathlib import Path
 import message_seal
 import portable
 import service
-import signal_setup, wacli_release  # noqa: E401 - Signal's setup steps (signal_setup.py)
+import signal_setup, wacli_release, whatsapp_setup  # noqa: E401 - Signal's and WhatsApp's setup steps
 from machine import services as service_registry
 from machine.sources import calendar_setup, groups, imap_setup, teams_setup
 from machine.dashboard_link import dashboard_address
@@ -1448,23 +1448,28 @@ def step_whatsapp(config, account, ui):
         raise SetupError('WhatsApp is not installed on this Machine',
                          '' if getattr(ui, 'web', False) else 'install wacli (https://wacli.sh), then run: assistant connect whatsapp')
     config['wacli'] = config.get('wacli') if config.get('wacli') not in (None, 'wacli') else wacli
-    account['store'] = ui.ask('wacli store directory', account.get('store') or str(home() / '.local/share/wacli'))
+    # The dashboard never asks for a folder: an account keeps the store it has (also a custom one), a new one takes the
+    # default. Another store is for a terminal (assistant connect whatsapp).
+    known = account.get('store') or str(home() / '.local/share/wacli')
+    account['store'] = known if getattr(ui, 'web', False) else ui.ask('wacli store directory', known)
     linked = whatsapp_linked(wacli, account['store'])
     if not linked and getattr(ui, 'web', False):  # the dashboard: a pairing code to enter in WhatsApp, for the QR code a terminal shows
-        linked = whatsapp_pair(wacli, account['store'], ui)
+        with whatsapp_setup.store_paused(account['store']):
+            linked = whatsapp_pair(wacli, account['store'], ui)
     if not linked and ui.yes('WhatsApp is not linked yet. Link it now? (scan the QR code in WhatsApp > Linked devices)', True):
         Path(account['store']).mkdir(parents=True, exist_ok=True)
-        try:
-            subprocess.run([wacli, '--store', account['store'], 'auth'], timeout=900, env={**os.environ, **WHATSAPP_DEVICE})
-        except (OSError, subprocess.TimeoutExpired):
-            pass
+        with whatsapp_setup.store_paused(account['store']):
+            try:
+                subprocess.run([wacli, '--store', account['store'], 'auth'], timeout=900, env={**os.environ, **WHATSAPP_DEVICE})
+            except (OSError, subprocess.TimeoutExpired):
+                pass
         linked = whatsapp_linked(wacli, account['store'])
     if not linked:
         raise SetupError('WhatsApp is not linked', f'wacli --store {account["store"]} auth, then: assistant connect whatsapp')
     account['identity_sha256'] = hashlib.sha256(linked.encode()).hexdigest()
     account['connected_at'] = timeutil.clock().strftime('%Y-%m-%dT%H:%M:%S+00:00')  # its card's first sync (assistant.whatsapp_history)
     ui.say('  WhatsApp: linked')
-    whatsapp_sync(wacli, account, ui)
+    whatsapp_setup.whatsapp_sync(wacli, account, ui)
 
 
 PHONE = re.compile(r'[1-9][0-9]{7,14}')
@@ -1492,21 +1497,22 @@ def whatsapp_pair(wacli, store, ui):
         if event.get('event') == 'pair_code' and isinstance(data.get('code'), str):
             ui.show_code({'kind': 'pair', 'code': data['code'][:16]})
         elif event.get('event') == 'connected':
-            ui.show_code(None)
-            ui.say('  WhatsApp: linked, reading your chats')
+            ui.show_code(None)  # "linked" is said once the store holds the session (step_whatsapp), never before
             # Connected now: the history WhatsApp keeps sending goes on in the sync (whatsapp_sync), not here. auth's
             # --idle-exit never fires while it arrives, so it ends shortly after linking (2026-11-06: minutes of waiting).
             ends[:] = [time.monotonic() + WHATSAPP_HANDOFF]
         elif event.get('event') == 'error':
             failed.append(str(data.get('message') or '')[-200:])
-    follow([wacli, '--store', str(store), '--events', 'auth', '--qr-format', 'text', '--idle-exit', '20s', '--history-days', '30',
-            'auth', '--phone', phone], ui, seen, env=WHATSAPP_DEVICE, ends=ends)
+    code = follow([wacli, '--store', str(store), '--events', 'auth', '--qr-format', 'text', '--idle-exit', '20s', '--history-days', '30',
+                   'auth', '--phone', phone], ui, seen, env=WHATSAPP_DEVICE, ends=ends)
     ui.show_code(None)
     if getattr(ui, 'cancelled', False):
         raise SetupError('Stopped')
     linked = whatsapp_linked(wacli, store)
+    if not linked and code is None and not ends:
+        raise SetupError('The code expired before WhatsApp took it', 'try again for a new code')
     if not linked:
-        raise SetupError('WhatsApp was not linked' + (': ' + failed[-1] if failed and failed[-1] else ''), 'add WhatsApp again for a new code')
+        raise SetupError('WhatsApp was not linked' + (': ' + failed[-1] if failed and failed[-1] else ''), 'try again for a new code')
     return linked
 
 
@@ -1526,52 +1532,6 @@ def install_wacli(config, ui):
     config['wacli'] = str(path)
     ui.say('  WhatsApp: installed' if getattr(ui, 'web', False) else f'  WhatsApp: installed wacli {wacli_release.version(data)}')
     return str(path)
-
-
-def store_busy(store):
-    """Whether another wacli (such as your own sync) holds the store: then that one keeps it synced."""
-    try:
-        with open(Path(store) / 'LOCK', 'a') as lock:
-            portable.lock(lock, blocking=False)
-            portable.unlock(lock)
-        return False
-    except BlockingIOError:
-        return True
-    except OSError:
-        return False
-
-
-def whatsapp_sync(wacli, account, ui):
-    """wacli only receives messages while its sync runs: keep one running as a user service (systemd on Linux,
-    launchd on macOS), the store's single writer. Sends hand off to it. Skipped when something else already syncs this store."""
-    name = f"the-machine-wacli-{re.sub(r'[^A-Za-z0-9_-]', '-', account['id'])}.service"
-    unit = service.definition_path(name, home())
-    if not unit.exists() and store_busy(account['store']):
-        ui.say('  WhatsApp: already kept in sync on this Machine')
-        return
-    if not service.available():
-        ui.say(f'  WhatsApp: keep it synced yourself: {wacli} --store {account["store"]} sync --follow')
-        return
-    if not unit.exists() and not ui.yes('Keep WhatsApp synced in the background?', True):
-        return
-    parts = (wacli, '--store', account['store'], 'sync', '--follow', '--presence-mode', 'quiet',
-             '--max-messages', '0', '--max-db-size', '2GB', '--max-reconnect', '10m')
-    if wacli_release.supports_pictures(run([wacli, 'sync', '--help'], timeout=30).stdout):
-        # People's profile pictures for the graph, asked read-only through this sync, at most 50 a day.
-        parts += (wacli_release.PICTURE_FLAG, str(wacli_release.PICTURES_PER_DAY))
-    unit.parent.mkdir(parents=True, exist_ok=True)
-    if service.manager() == 'launchd':
-        unit.write_text(service.plist_text(parts, unit=name, base=home(), throttle=30))
-        started = service.enable(name, run=run)
-        ui.say(f'  WhatsApp: synced by {service.label(name)}' if not started.returncode else
-               f'  WhatsApp: start it with {service.hint("enable", name)}')
-        return
-    command = ' '.join(shlex.quote(str(part)) for part in parts)
-    unit.write_text('[Unit]\nDescription=The Machine: keep WhatsApp (wacli) synced\nAfter=network-online.target\n\n'
-                    f'[Service]\nExecStart={command}\nRestart=always\nRestartSec=30\nMemoryMax=512M\n\n[Install]\nWantedBy=default.target\n')
-    run(['systemctl', '--user', 'daemon-reload'], timeout=30)
-    started = run(['systemctl', '--user', 'enable', '--now', unit.name], timeout=60)
-    ui.say(f'  WhatsApp: synced by {unit.name}' if not started.returncode else f'  WhatsApp: start it with systemctl --user enable --now {unit.name}')
 
 
 # Telegram chats (telegram_mirror.py): the owner's own Telegram account, logged in as a device of theirs. Not the
@@ -1938,6 +1898,17 @@ GH_CODE = re.compile(r'one-time code: ([A-Z0-9]{4}-[A-Z0-9]{4})')
 CODE_WAIT = 900  # seconds a sign-in code shown on the dashboard (GitHub, WhatsApp) waits to be used
 
 
+def end_process(process, grace=10):
+    """Ask it to stop, and stop it if it is still busy after `grace` seconds (wacli auth saving history once linked
+    took longer: the linked WhatsApp then showed as a failed setup)."""
+    process.terminate()
+    try:
+        process.wait(grace)
+    except subprocess.TimeoutExpired:
+        process.kill()
+        process.wait(10)
+
+
 def follow(command, ui, seen, wait=CODE_WAIT, env=None, ends=None):
     """Run a sign-in that shows a code (gh auth login, wacli auth) and hand each line to `seen` until it ends, the
     dashboard's Cancel, or `wait` seconds. Returns the exit code, or None when it was stopped. `ends`: a list `seen` may
@@ -1952,15 +1923,13 @@ def follow(command, ui, seen, wait=CODE_WAIT, env=None, ends=None):
     until = time.monotonic() + wait
     while process.poll() is None:
         if ends and time.monotonic() > ends[0]:
-            process.terminate()
-            process.wait(10)
+            end_process(process)
             reader.join(5)
             if not reader.is_alive():  # a child still holding the pipe: the daemon reader ends with it
                 process.stdout.close()
             return 0
         if getattr(ui, 'cancelled', False) or time.monotonic() > until:
-            process.terminate()
-            process.wait(10)
+            end_process(process)
             process.stdout.close()
             return None
         time.sleep(1)
