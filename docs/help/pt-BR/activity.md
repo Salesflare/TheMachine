@@ -1,45 +1,45 @@
 ---
 title: Atividade
 area: settings
-summary: Uma lista de tudo o que The Machine fez por você, o mais recente primeiro: mensagens, documentos, respostas do Fleet, aprendizados, conexões e mais.
+summary: Uma lista de tudo o que sua Machine fez por você, da atividade mais recente à mais antiga: mensagens, documentos, respostas do Fleet, aprendizados, conexões e muito mais.
 covers: settings:activity
 code: activity_log.py, dashboard/settings-activity.js
 order: 2
 keywords: log, history, audit, what did it do, sent, refused, blocked
-translated: 1b5a54aa775234bd
+translated: ebb6a4cf0474a020
 ---
-## O que mostra
+## O que ela mostra
 
-Abra **Configurações**, **Atividade**. Cada linha é algo que The Machine fez, o mais recente primeiro, por dia:
+Acesse **Configurações** e **Atividade**. Cada linha mostra uma coisa que a sua Machine fez, da mais recente à mais antiga, por dia:
 
-- o que ela fez e como terminou: enviado, recusado, com falha ou desfeito
-- quando, a conta ou o app que ela usou e [o que permitiu](activity.md#what-allowed-it)
-- um link para a tarefa, quando houver
-- para uma IA que você conectou, como ChatGPT ou Claude: o nome dela com **(IA conectada)**, para distinguir da The Machine
+- o que ela fez e como terminou: enviada, recusada, com erro ou desfeita
+- quando aconteceu, a conta ou o app que ela usou e [o que permitiu a ação](activity.md#what-allowed-it)
+- um link para a tarefa, se houver
+- no caso de uma IA conectada por você, como ChatGPT ou Claude: o nome seguido de **(IA conectada)**, para você não confundi-la com a própria The Machine
 
-Ela lista mensagens e respostas, mudanças em documentos e na agenda, etapas na web, correções que ela mesclou, agentes de código, perguntas e respostas do Fleet, aprendizados enviados à equipe da The Machine, habilidades, importações no Graph, fatos que você pediu para esquecer no chat (com **Desfazer**), conexões adicionadas ou removidas, e cada acesso da nossa equipe pelo [Acesso de suporte](get-support.md#support-access), inclusive os recusados.
+A lista inclui mensagens e respostas, alterações em documentos e no calendário, ações na web, correções que ela mesclou, agentes de programação, perguntas e respostas do Fleet, aprendizados enviados à equipe da The Machine, habilidades, importações do Graph, informações que você pediu no chat para esquecer (com **Desfazer**), conexões adicionadas ou removidas e cada acesso da nossa equipe em [Acesso do suporte](get-support.md#support-access), inclusive os recusados.
 
-## O que permitiu
+## O que permitiu a ação
 
-Cada mensagem, mudança em documento ou agenda, etapa na web e correção mesclada diz o que a deixou sair, como aconteceu:
+Cada mensagem, alteração em documento ou no calendário, ação na web e correção mesclada informa o que permitiu a ação, no momento em que aconteceu:
 
-- **Aprovado na tarefa** ou **Aprovado no Telegram**: o seu toque em Enviar, Confirmar ou Mesclar
-- **Aprovado por voz**: o seu sim no Talk
-- **“Fazer” tocado**: o seu Fazer na tarefa
-- **Pedido no chat**: você pediu com palavras, com o início da sua mensagem entre aspas. Uma citação só aparece enquanto essas palavras continuam na sua própria mensagem.
-- **Follow-up que ela enviou sozinha**, **Pequena correção, mesclada sozinha**, **Novo documento privado, criado sozinha** ou **Preparada com antecedência, sozinha**: uma configuração sua ou uma regra própria da The Machine
-- **Nenhuma aprovação registrada**: nada foi registrado. Também vai para os nossos [relatórios de erro](error-reports.md), para acharmos o caminho que não registrou.
+- **Aprovado na tarefa** ou **Aprovado no Telegram**: você tocou em Enviar, Confirmar ou Mesclar
+- **Aprovado por voz**: você disse sim no Talk
+- **“Fazer” tocado**: você tocou em Fazer na tarefa
+- **Pedido no chat**: você pediu em palavras, e o início da sua mensagem aparece entre aspas. A citação só aparece enquanto essas palavras ainda estiverem na sua mensagem.
+- **Follow-up que ela enviou sozinha**, **Pequena correção, mesclada sozinha**, **Novo documento privado, criado sozinha** ou **Preparada com antecedência, sozinha**: a ação foi permitida por uma configuração sua ou por uma regra da própria The Machine
+- **Nenhuma aprovação registrada**: nada foi registrado para essa ação. Ela também aparece nos nossos [relatórios de erro](error-reports.md), para podermos encontrar o caminho que não foi registrado.
 
-Etapas na web também lista a execução de uma tarefa que clicou ou digitou numa página, com o que permitiu essa execução.
+As ações na web também mostram a execução de uma tarefa que clicou ou digitou em uma página, junto com o que permitiu essa execução. O trabalho que continua depois de ser adiado mantém a permissão que tinha antes do adiamento.
 
-Linhas mais antigas, de antes deste registro, mantêm as palavras antigas, como **Depois do seu OK**.
+Linhas mais antigas, de antes desse registro, mantêm os termos anteriores, como **Depois do seu OK**.
 
 ## Filtrar
 
-Escolha um tipo na lista no topo, como **Mensagens** ou **Fleet**. **Recusado ou bloqueado** mostra só o que não foi, e por quê. **Mostrar mais** carrega linhas mais antigas.
+Escolha um tipo na lista no topo, como **Mensagens** ou **Fleet**. **Recusado ou bloqueado** mostra apenas o que não foi feito e o motivo. Toque em **Mostrar mais** para carregar linhas mais antigas.
 
 ## Outros lugares
 
-O chat de uma tarefa continua contando a própria história; Atividade leva até ele. Fleet, **Atividade** mostra as mesmas linhas para os seus Fleets e aprendizados, com **Retirar** para um aprendizado. Em Configurações, **Segurança**, **Ver cada acesso em Atividade** abre os acessos da nossa equipe.
+O chat de uma tarefa continua mostrando o que aconteceu nela; a Atividade tem um link para esse chat. Em Fleet, **Atividade** mostra as mesmas linhas dos seus Fleet e aprendizados, com a opção **Retirar** para um aprendizado. Em Configurações, **Segurança**, toque em **Ver cada acesso em Atividade** para abrir os acessos da nossa equipe.
 
-Atividade só mostra o que aconteceu. Nunca muda o que The Machine pode fazer.
+A Atividade mostra apenas o que aconteceu. Ela nunca muda o que a The Machine pode fazer.

@@ -1,45 +1,45 @@
 ---
 title: Aktivität
 area: settings
-summary: Eine Liste von allem, was The Machine für dich getan hat, das Neueste zuerst: Nachrichten, Dokumente, Fleet-Antworten, Erkenntnisse, Verbindungen und mehr.
+summary: Eine Liste mit allem, was The Machine für dich getan hat, neueste Einträge zuerst: Nachrichten, Dokumente, Fleet-Antworten, Erkenntnisse, Verbindungen und mehr.
 covers: settings:activity
 code: activity_log.py, dashboard/settings-activity.js
 order: 2
 keywords: log, history, audit, what did it do, sent, refused, blocked
-translated: 1b5a54aa775234bd
+translated: ebb6a4cf0474a020
 ---
-## Was sie zeigt
+## Was angezeigt wird
 
-Öffne **Einstellungen**, **Aktivität**. Jede Zeile ist eine Sache, die The Machine getan hat, das Neueste zuerst, nach Tag:
+Öffne **Einstellungen** und dann **Aktivität**. Jeder Eintrag steht für etwas, das The Machine getan hat. Die Einträge sind nach Tagen gruppiert und die neuesten stehen zuerst:
 
-- was sie getan hat und wie es ausging: gesendet, abgelehnt, fehlgeschlagen oder rückgängig gemacht
-- wann, welches Konto oder welche App sie genutzt hat und [was es erlaubte](activity.md#what-allowed-it)
-- ein Link zu ihrer Aufgabe, wenn es eine gibt
-- bei einer KI, die du verbunden hast, etwa ChatGPT oder Claude: ihr Name mit **(verbundene KI)**, damit du sie von The Machine selbst unterscheidest
+- was The Machine getan hat und wie es ausgegangen ist: gesendet, abgelehnt, fehlgeschlagen oder rückgängig gemacht
+- wann es passiert ist, welches Konto oder welche App The Machine verwendet hat und [was die Aktion erlaubt hat](activity.md#what-allowed-it)
+- einen Link zur zugehörigen Aufgabe, falls es eine gibt
+- bei einer KI, die du verbunden hast, wie ChatGPT oder Claude: ihren Namen mit **(verbundene KI)**, damit du sie von The Machine selbst unterscheiden kannst
 
-Sie zeigt Nachrichten und Antworten, Änderungen an Dokumenten und im Kalender, Schritte im Web, Korrekturen, die sie zusammengeführt hat, Coding-Agents, Fleet-Fragen und -Antworten, Erkenntnisse an das Team von The Machine, Skills, Graph-Importe, Fakten, die du im Chat vergessen ließest (mit **Rückgängig**), hinzugefügte oder entfernte Verbindungen und jeden Blick unseres Teams über den [Support-Zugriff](get-support.md#support-access), abgelehnte eingeschlossen.
+Aufgeführt werden Nachrichten und Antworten, Änderungen an Dokumenten und Kalendern, Schritte im Web, zusammengeführte Fixes, Coding-Agenten, Fleet-Fragen und -Antworten, Erkenntnisse, die an das Team von The Machine gesendet wurden, Skills, Graph-Importe, Fakten, die du deinen Chat hast vergessen lassen (mit **Rückgängig**), hinzugefügte oder entfernte Verbindungen und jeder Zugriff unseres Teams unter [Supportzugriff](get-support.md#support-access), auch abgelehnte Zugriffe.
 
-## Was es erlaubte
+## Was die Aktion erlaubt hat
 
-Jede Nachricht, jede Änderung an Dokumenten oder Kalender, jeder Schritt im Web und jeder gemergte Fix sagt, was ihn erlaubte, so wie es geschah:
+Bei jeder Nachricht, Änderung an einem Dokument oder Kalender, jedem Schritt im Web und jedem zusammengeführten Fix steht, was die Aktion im jeweiligen Moment ermöglicht hat:
 
-- **In der Aufgabe freigegeben** oder **In Telegram freigegeben**: dein Tippen auf Senden, Bestätigen oder Mergen
-- **Per Sprache freigegeben**: dein Ja in Talk
-- **„Ausführen“ getippt**: dein Ausführen in der Aufgabe
-- **Im Chat gebeten**: du hast in Worten darum gebeten, mit dem Anfang deiner Nachricht in Anführungszeichen. Ein Zitat erscheint nur, solange diese Worte noch in deiner eigenen Nachricht stehen.
-- **Nachfassen, von selbst gesendet**, **Kleiner Fix, von selbst gemergt**, **Neues privates Dokument, von selbst erstellt** oder **Vorbereitet, von selbst**: eine deiner Einstellungen oder eine eigene Regel von The Machine
-- **Keine Freigabe erfasst**: dafür wurde nichts erfasst. Es geht auch in unsere [Fehlerberichte](error-reports.md), damit wir den Weg finden, der es verpasst hat.
+- **In der Aufgabe freigegeben** oder **In Telegram freigegeben**: Du hast auf Senden, Bestätigen oder Zusammenführen getippt.
+- **Per Sprache freigegeben**: Du hast in Talk Ja gesagt.
+- **„Ausführen“ getippt**: Du hast bei der Aufgabe auf **Ausführen** getippt.
+- **Im Chat gebeten**: Du hast in einer Nachricht darum gebeten. Der Anfang deiner Nachricht steht in Anführungszeichen. Ein Zitat wird nur angezeigt, solange diese Worte noch in deiner eigenen Nachricht stehen.
+- **Nachfassen, von selbst gesendet**, **Kleiner Fix, von selbst gemergt**, **Neues privates Dokument, von selbst erstellt** oder **Vorbereitet, von selbst**: eine deiner Einstellungen oder eine eigene Regel von The Machine.
+- **Keine Freigabe erfasst**: Für die Aktion wurde nichts erfasst. Sie wird auch unseren [Fehlerberichten](error-reports.md) hinzugefügt, damit wir den Ablauf finden können, bei dem etwas übersehen wurde.
 
-Schritte im Web listet auch einen Lauf einer Aufgabe, der auf einer Seite geklickt oder getippt hat, mit dem, was diesen Lauf erlaubte.
+Unter den Schritten im Web wird auch der Durchlauf einer Aufgabe aufgeführt, bei dem auf einer Seite geklickt oder Text eingegeben wurde. Dabei steht auch, was diesen Durchlauf erlaubt hat. Arbeiten, die nach dem Zurückstellen fortgesetzt werden, behalten die vorherige Freigabe.
 
-Ältere Zeilen, von bevor dies erfasst wurde, behalten ihre alten Worte, wie **Nach deinem OK**.
+Ältere Einträge aus der Zeit, bevor diese Informationen erfasst wurden, behalten ihre frühere Bezeichnung, zum Beispiel **Nach deinem OK**.
 
 ## Filtern
 
-Wähle oben eine Art, etwa **Nachrichten** oder **Fleet**. **Abgelehnt oder blockiert** zeigt nur, was nicht ging, und warum. **Mehr anzeigen** lädt ältere Zeilen.
+Wähle oben in der Liste eine Kategorie aus, zum Beispiel **Nachrichten** oder **Fleet**. **Abgelehnt oder blockiert** zeigt nur Aktionen, die nicht ausgeführt wurden, und den Grund dafür. Über **Mehr anzeigen** lädst du ältere Einträge.
 
-## Andere Stellen
+## Weitere Orte
 
-Der Chat einer Aufgabe erzählt weiter seine eigene Geschichte; Aktivität verlinkt dorthin. Fleet, **Aktivität** zeigt dieselben Zeilen für deine Fleets und Erkenntnisse, mit **Zurückziehen** für eine Erkenntnis. In Einstellungen, **Sicherheit** öffnet **Jeden Blick in Aktivität ansehen** die Blicke unseres Teams.
+Der Chat einer Aufgabe zeigt weiterhin den zugehörigen Verlauf. **Aktivität** verlinkt dorthin. In Fleet zeigt **Aktivität** dieselben Einträge für deine Fleets und Erkenntnisse. Bei einer Erkenntnis kannst du **Zurückziehen** wählen. Unter **Einstellungen** und **Sicherheit** öffnet **Jeden Blick in Aktivität ansehen** die Einträge zu Zugriffen unseres Teams.
 
-Aktivität zeigt nur, was passiert ist. Sie ändert nie, was The Machine darf.
+Aktivität zeigt nur, was passiert ist. Sie ändert nie, was The Machine tun darf.
