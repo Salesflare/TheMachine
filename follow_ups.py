@@ -1477,15 +1477,26 @@ def rewrite_judged(db, now, mine=mine_default):
     rows += db.execute("SELECT f.suggestion_id,f.project_id,f.after_event,f.after_at,f.state FROM follow_up_cards f JOIN suggestions s ON s.id=f.suggestion_id "
                        "WHERE f.state='open' AND s.status='prepared' AND s.next_action IS NULL AND (s.outcome IS NULL OR NOT json_valid(s.outcome) "
                        "OR coalesce(json_extract(s.outcome,'$.state'),'') NOT IN ('already_done','needs_you'))").fetchall()
+    # Closed as "Someone already followed up" with no newer message in the project or its own conversation: an earlier
+    # version closed it on its preparation's word alone (settle). Open again unless the round went on without it.
+    rows += [{**dict(r), 'state': 'unhandled'} for r in db.execute(
+        "SELECT f.suggestion_id,f.project_id,f.after_event,f.after_at,f.created_at FROM follow_up_cards f JOIN suggestions s ON s.id=f.suggestion_id "
+        f"WHERE f.state='stopped' AND f.why='handled' AND s.status='{todo_states.REJECTED}' AND NOT EXISTS(SELECT 1 FROM follow_up_cards g "
+        "WHERE g.project_id=f.project_id AND g.suggestion_id<>f.suggestion_id AND (g.state='open' OR g.created_at>f.created_at))").fetchall()
+        if not thread_news(db, r['suggestion_id'], mine)]
     for r in rows:
         sid = r['suggestion_id']
         project = db.execute('SELECT * FROM projects WHERE id=?', (r['project_id'],)).fetchone()
         if project and paused(db, project, now):
             continue  # paused: drafted after the resume
-        if any(not m['mine'] and parse(m['at']) > parse(r['after_at']) and m['id'] != r['after_event'] for m in messages(db, r['project_id'], mine)):
-            continue  # they answered since: nothing to follow up
+        later = [m for m in messages(db, r['project_id'], mine) if parse(m['at']) > parse(r['after_at']) and m['id'] != r['after_event']]
+        if any(not m['mine'] for m in later) or r['state'] == 'unhandled' and later:
+            continue  # they answered since (or, for one closed as handled, anyone wrote): nothing to follow up
         if r['state'] == 'stopped' and not reopen(db, sid):
             continue
+        if r['state'] == 'unhandled':
+            db.execute("UPDATE follow_up_cards SET state='open',why=NULL,closed_at=NULL WHERE suggestion_id=?", (sid,))
+            db.execute('UPDATE suggestions SET undo_until=NULL,closed_decision_id=NULL,feedback_until=NULL WHERE id=?', (sid,))
         db.execute('UPDATE suggestions SET early=1,outcome=NULL WHERE id=?', (sid,))
         todo_moves.transition(db, sid, todo_states.ACCEPTED, 'follow_up_redraft', at=now)
         db.execute("UPDATE deliveries SET status='grouped' WHERE suggestion_id=? AND status='cancelled' AND message_id IS NULL "
@@ -1557,6 +1568,22 @@ def close(db, suggestion_id, why, now, state='stopped', source='assistant', deci
                    'WHERE suggestion_id=?', (now, suggestion_id))
 
 
+def thread_news(db, suggestion_id, mine=mine_default):
+    """Messages newer than a follow-up's evidence in its own conversations (the email thread or chat the to-do is
+    about; machine.app.follow_ups.newer_activity), oldest first: [{'id', 'mine'}]. Only these show that someone
+    followed it up already or answered."""
+    from machine.app.follow_ups import newer_activity  # the app's own check, so both judge one conversation alike
+    row = db.execute('SELECT event_ids FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
+    try:
+        ids = [i for i in json.loads(row[0] or '[]') if isinstance(i, int)] if row else []
+    except ValueError:
+        ids = []
+    found = [x['id'] for x in newer_activity(db, ids, limit=50)]
+    rows = {r['id']: r for r in db.execute('SELECT id,kind,occurred_at,metadata FROM events WHERE id IN (SELECT value FROM json_each(?))',
+                                           (json.dumps(found),))}
+    return [{'id': i, 'mine': mine(dict(rows[i]))} for i in found if i in rows]
+
+
 def settle(db, now, mine=mine_default):
     """Open follow-up to-dos: mark the ones the owner closed (sent, skipped), leave the ones a review took over as normal
     to-dos, and close the rest when a stop condition holds. A pause is none: paused ones stay open. Returns
@@ -1600,10 +1627,13 @@ def settle(db, now, mine=mine_default):
                 outcome = json.loads(outcome[0] or '{}') if outcome else {}
             except ValueError:
                 outcome = {}
-            # The preparation found it handled (someone already followed up). Never closed on its own judgment that
-            # another one isn't worth it: that comes as a draft with its advice, and the owner decides (advise)
+            # The preparation found it handled: closed only when its own conversation shows a newer message (theirs: a
+            # reply; the owner's or a teammate's: someone followed up). Never on the model's word alone, and never
+            # because of another project or another follow-up of the batch: without that message it stays open and
+            # says why, and the owner decides (as with advise)
             if outcome.get('state') == 'already_done' and outcome.get('follow_up') != 'stop':
-                why = 'handled'
+                news = thread_news(db, sid, mine)
+                why = ('replied' if any(not m['mine'] for m in news) else 'handled') if news else None
         if why:
             close(db, sid, why, now)
             closed.append((sid, why))

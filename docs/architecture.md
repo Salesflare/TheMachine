@@ -242,7 +242,10 @@ project (scope `project`, which wins). Off by default. What the owner sets ([hel
 
 **The round.** Every five minutes the action worker runs `App.follow_up_step`:
 
-- It settles open ones: sent, skipped, replied, won, lost, archived, a teammate's project, a stage turned off.
+- It settles open ones: sent, skipped, replied, won, lost, archived, a teammate's project, a stage turned off. A run's
+  `already_done` closes one only with a newer message in its own conversation (`follow_ups.thread_news`: theirs is
+  replied, anyone else's handled); without it the to-do stays open for the owner. One an earlier version closed as
+  handled on the run's word alone opens again and is drafted (`rewrite_judged`).
 - It ends rounds past the maximum (`follow_up_ends`, plus the optional move with source `follow_up`).
 - It drafts the due ones as early to-dos (`suggest(ahead=True)`, one per project; `follow_up_cards` remembers which).
   Drafting runs last in the preparation queue and pauses earlier than other work on usage
