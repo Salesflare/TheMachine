@@ -147,7 +147,7 @@ class Scrub(Base):
             self.assertTrue(ef.allowed(out), out)
             self.assertNotRegex(out, r'\d{3}')  # the control plane takes no 3-digit numbers
         for code in ('trello_http:HTTP_404', 'google_meet_invalid_page', 'hubspot_query_failed:HTTP_502', 'x_rate_limited',
-                     'linkedin_browser_stalled'):
+                     'linkedin_browser_stalled', 'whatsapp_unlinked', 'signal_unlinked'):
             self.assertNotIn('<word>', ef.normalize(code), code)
         # A code made of words that aren't ours, or free text after the service, is still taken out
         self.assertEqual(ef.normalize('riverbrook_maple_contract'), '<word>')
