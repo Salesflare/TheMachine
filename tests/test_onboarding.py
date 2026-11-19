@@ -1027,6 +1027,48 @@ class WhatsAppSyncTest(unittest.TestCase):
         self.assertIn('--profile-picture-budget 50\n', unit.read_text())
         self.assertNotIn('read-only', unit.read_text())
 
+    def test_the_dashboard_never_asks_for_a_store_folder(self):
+        # Reconnect keeps the account's own store (a custom one too); only a terminal asks for one
+        store = self.home / 'own-store'
+        store.mkdir()
+        wacli = self.stub('wacli', 'print(json.dumps({"success": True, "data": {"authenticated": True, "linked_jid": "1@s.whatsapp.net"}}))')
+        account = {'id': 'personal-whatsapp', 'service': 'whatsapp', 'store': str(store)}
+        ui = FakeUI(answers=['/somewhere/else'])
+        ui.web = True
+        onboarding.step_whatsapp({'wacli': wacli}, account, ui)
+        self.assertEqual(account['store'], str(store))
+        self.assertNotIn('store directory', ui.text())
+        self.assertIn('WhatsApp: linked', ui.text())
+
+    def test_an_own_sync_service_for_the_store_pauses_while_linking_and_reads_again_after(self):
+        # The owner's own service syncing this store (it stopped when WhatsApp logged the Machine out): linking stops a
+        # running one and starts it after; once linked, that one syncs again instead of a second service for one store
+        store = self.home / 'own-store'
+        (store).mkdir()
+        units = self.home / '.config/systemd/user'
+        units.mkdir(parents=True)
+        (units / 'my-mirror.service').write_text(f'[Unit]\nConditionPathExists={store}/session.db\n[Service]\nExecStart=/usr/bin/python3 mirror.py\n')
+        (units / 'unrelated.service').write_text(f'[Service]\nExecStart=/bin/true --store {store}-old\n')
+        self.stub('systemctl', 'print("active" if args[1:2] == ["is-active"] and args[2] == "my-mirror.service" else "inactive")')
+        wacli = self.stub('wacli', 'print(json.dumps({"success": True, "data": {"authenticated": False}}))')
+        account = {'id': 'personal-whatsapp', 'service': 'whatsapp', 'store': str(store)}
+        ui = FakeUI()
+        ui.web = True
+        paired = []
+
+        def pair(wacli_, store_, ui_):
+            paired.append(self.calls())
+            return '1@s.whatsapp.net'
+        with mock.patch.object(onboarding, 'whatsapp_pair', side_effect=pair):
+            onboarding.step_whatsapp({'wacli': wacli}, account, ui)
+        self.assertEqual(onboarding.whatsapp_setup.store_units(store), ['my-mirror.service'])
+        self.assertIn('systemctl --user stop my-mirror.service', paired[0])
+        self.assertNotIn('start my-mirror.service', paired[0])
+        self.assertIn('systemctl --user start my-mirror.service', self.calls().split(paired[0], 1)[1])
+        self.assertNotIn('unrelated.service', ''.join(line for line in self.calls().splitlines() if 'is-active' not in line))
+        self.assertFalse((units / 'the-machine-wacli-personal-whatsapp.service').exists())
+        self.assertIn('synced by its own service again', ui.text())
+
     def test_without_wacli_it_offers_the_pinned_build(self):
         store = self.home / 'wa'
         store.mkdir()

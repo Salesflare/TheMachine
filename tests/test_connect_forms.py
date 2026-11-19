@@ -3,8 +3,10 @@ choices, LinkedIn and X signed in right there while their connect waits, and Git
 dashboard, so nothing asks for work:<Company> or a command in a terminal."""
 import json
 import stat
+import subprocess
 import tempfile
 import time
+import types
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -439,6 +441,50 @@ class CodeTest(unittest.TestCase):
                 linked = onboarding.whatsapp_pair(wacli, Path(folder) / 'store', ui)
         self.assertEqual(linked, '3247@s.whatsapp.net')
         self.assertLess(time.monotonic() - began, 15)
+
+    def test_a_sign_in_tool_that_ignores_stop_is_ended_not_left_as_a_failed_setup(self):
+        # wacli auth still saving history once linked outlasted the grace: process.wait raised, and a linked WhatsApp
+        # showed "The setup stopped unexpectedly"
+        process = subprocess.Popen(['sh', '-c', 'trap "" TERM; sleep 30'], stdout=subprocess.DEVNULL)
+        time.sleep(0.2)
+        began = time.monotonic()
+        onboarding.end_process(process, grace=0.5)
+        self.assertIsNotNone(process.poll())
+        self.assertLess(time.monotonic() - began, 10)
+
+    def test_whatsapp_says_linked_only_once_it_is(self):
+        with tempfile.TemporaryDirectory() as folder:
+            wacli = self.script(folder, 'wacli', 'echo \'{"event":"pair_code","data":{"code":"K7P2-9QX4"}}\'; sleep 0.3\n'
+                                'echo \'{"event":"connected","data":{}}\'\n')
+            ui = onboarding.WebUI(wait=5)
+            ui.prefill({'Your WhatsApp phone number': '+32 470 12 34 56'})
+            with patch.object(onboarding, 'whatsapp_linked', return_value=None):
+                with self.assertRaisesRegex(onboarding.SetupError, 'WhatsApp was not linked') as stopped:
+                    onboarding.whatsapp_pair(wacli, Path(folder) / 'store', ui)
+        self.assertEqual(stopped.exception.fix, 'try again for a new code')
+        self.assertFalse([line for line in ui.view()['lines'] if 'linked' in line.lower()], ui.view()['lines'])
+
+    def test_a_whatsapp_code_nobody_entered_says_it_expired(self):
+        with tempfile.TemporaryDirectory() as folder:
+            wacli = self.script(folder, 'wacli', 'echo \'{"event":"pair_code","data":{"code":"K7P2-9QX4"}}\'; sleep 30\n')
+            ui = onboarding.WebUI(wait=5)
+            ui.prefill({'Your WhatsApp phone number': '+32 470 12 34 56'})
+            follow = onboarding.follow
+            with patch.object(onboarding, 'follow', lambda *a, **k: follow(*a, wait=1, **k)), \
+                    patch.object(onboarding, 'whatsapp_linked', return_value=None):
+                with self.assertRaisesRegex(onboarding.SetupError, 'The code expired') as stopped:
+                    onboarding.whatsapp_pair(wacli, Path(folder) / 'store', ui)
+        self.assertEqual(stopped.exception.fix, 'try again for a new code')
+
+    def test_a_step_that_timed_out_says_so_and_what_to_do(self):
+        import google_pair
+        from machine.app.connect import ConnectApp
+        app = types.SimpleNamespace(config_path='/nonexistent/config.json')
+        session = {'source': 'whatsapp', 'label': 'WhatsApp', 'group': 'chat', 'ui': onboarding.WebUI(wait=5), 'account_id': 'personal-whatsapp'}
+        with patch.object(google_pair, 'connect', side_effect=subprocess.TimeoutExpired(['wacli'], 10)):
+            ConnectApp.connect_run(app, session)
+        view = ConnectApp.connect_view(app, session)
+        self.assertEqual((view['state'], view['error'], view['fix'], view['group']), ('failed', 'It took too long to answer', 'try again in a minute', 'chat'))
 
     def test_whatsapp_number_must_have_its_country_code(self):
         ui = onboarding.WebUI(wait=5)

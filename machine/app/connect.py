@@ -3,6 +3,7 @@ Work Fleet's team domains, and an account's other sources on the same sign-in. M
 mixin of assistant.App (APP_MIXINS)."""
 import re
 import secrets
+import subprocess
 import sys
 import threading
 import time
@@ -250,7 +251,7 @@ class ConnectApp:
                     # LinkedIn, X: connected before the owner signed in there, it waits, and the dashboard offers that sign-in
                     ui.wait_signin, ui.explains = CONNECT_SIGNIN_WAIT, False
                 session = sessions[key] = {'ui': ui, 'state': 'running', 'source': source, 'account_id': account['id'] if again else None,
-                                           'label': known[source]['label'], 'at': time.monotonic(), 'hosted': hosted}
+                                           'label': known[source]['label'], 'group': known[source].get('group'), 'at': time.monotonic(), 'hosted': hosted}
             threading.Thread(target=self.connect_run, args=(session,), daemon=True).start()
             return {'session': key, **self.connect_view(session)}
         if name == 'connect_running':
@@ -300,6 +301,9 @@ class ConnectApp:
             session.update(account=account['id'], restarting=False if live else restart_self(3), live=live, state='done', guessed=guessed, who=who)
         except onboarding.SetupError as error:
             session.update(state='cancelled' if session['ui'].cancelled else 'failed', error=error.message, fix=error.fix)
+        except subprocess.TimeoutExpired:  # a step waited on something that never answered: nothing is wrong with what was typed
+            LOG.error('connect source=%s error=TimeoutExpired', session['source'])
+            session.update(state='failed', error='It took too long to answer', fix='try again in a minute')
         except Exception as error:  # the step's own text could quote what was typed: only its kind
             LOG.error('connect source=%s error=%s', session['source'], type(error).__name__)
             session.update(state='failed', error='The setup stopped unexpectedly', fix='try again, or run assistant connect '
@@ -318,7 +322,7 @@ class ConnectApp:
         return {d for d in found if onboarding.company_of('a@' + d)}
 
     def connect_view(self, session):
-        view = {**session['ui'].view(), **{k: session.get(k) for k in ('state', 'source', 'label', 'error', 'fix', 'account', 'restarting', 'live', 'guessed', 'who')}}
+        view = {**session['ui'].view(), **{k: session.get(k) for k in ('state', 'source', 'label', 'group', 'error', 'fix', 'account', 'restarting', 'live', 'guessed', 'who')}}
         if session.get('hosted') and re.search(r'\bterminal\b|\bassistant connect\b', view.get('fix') or ''):
             view['fix'] = 'try again, or get help from your account page'  # a hosted machine has no terminal to run it in
         elif re.fullmatch(r'rerun(?: this when you have it|: assistant connect [\w-]+)', view.get('fix') or ''):
