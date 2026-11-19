@@ -5946,6 +5946,7 @@
  "The check did not save a conclusion.": "Il controllo non ha salvato una conclusione.",
  "The check said it didn’t work.": "La verifica dice che non ha funzionato.",
  "The check was saved; saved signal versions will not be replayed.": "Il controllo è stato salvato; le versioni salvate dei segnali non verranno riprodotte.",
+ "The code expired before WhatsApp took it": "Il codice è scaduto prima che WhatsApp lo accettasse.",
  "The code refreshes by itself.": "Il codice si aggiorna da solo.",
  "The complete diff for this proposal is not available": "Il diff completo di questa proposta non è disponibile",
  "The contact is gone from Salesforce": "Il contatto non è più in Salesforce",

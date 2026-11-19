@@ -5946,6 +5946,7 @@
  "The check did not save a conclusion.": "De check sloeg geen conclusie op.",
  "The check said it didn’t work.": "De controle zegt dat het niet werkte.",
  "The check was saved; saved signal versions will not be replayed.": "De check is opgeslagen; opgeslagen versies van signalen worden niet opnieuw afgespeeld.",
+ "The code expired before WhatsApp took it": "De code is verlopen voordat WhatsApp hem kon gebruiken.",
  "The code refreshes by itself.": "De code vernieuwt zichzelf.",
  "The complete diff for this proposal is not available": "De volledige diff van dit voorstel is niet beschikbaar",
  "The contact is gone from Salesforce": "Het contact staat niet meer in Salesforce",

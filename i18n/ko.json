@@ -5869,6 +5869,7 @@
  "The check did not save a conclusion.": "확인 결과가 저장되지 않았어요.",
  "The check said it didn’t work.": "확인 결과, 작동하지 않았어요.",
  "The check was saved; saved signal versions will not be replayed.": "확인 결과가 저장됐어요. 저장된 신호 버전은 다시 재생되지 않아요.",
+ "The code expired before WhatsApp took it": "WhatsApp에서 코드를 사용하기 전에 코드가 만료됐어요",
  "The code refreshes by itself.": "코드가 자동으로 갱신돼요.",
  "The complete diff for this proposal is not available": "이 제안의 전체 diff를 사용할 수 없어요",
  "The contact is gone from Salesforce": "Salesforce에서 연락처가 사라졌어요",
