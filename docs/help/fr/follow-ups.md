@@ -1,65 +1,67 @@
 ---
 title: Relances
 area: graph
-summary: Relance d’elle-même quand quelqu’un ne répond pas, pour tout un tableau ou un seul projet. Demande d’abord, sauf si vous dites autrement.
+summary: Relancez automatiquement les personnes qui ne répondent pas, pour tout un tableau ou un seul projet. Une confirmation vous est demandée, sauf indication contraire de votre part.
 covers: follow-ups
 code: follow_ups.py, assistant.py, dashboard.html
 order: 7
-translated: db4d60eb468a206d
+translated: 0e7bdfb2c9b2deb5
 ---
-Quand une personne d’un tableau ne répond plus, votre Machine rédige la relance pour vous, avec votre ton et dans la même conversation. Désactivé tant que vous ne l’activez pas. Si l’une de vos compétences correspond au tableau, les brouillons la suivent, y compris pour ce qui vient en premier dans l’e-mail.
+Quand une personne sur un tableau ne répond plus, votre Machine rédige une relance à votre place, avec vos mots et dans la même conversation. Les relances sont désactivées jusqu’à ce que vous les activiez. Si une de vos compétences correspond au tableau, les brouillons en tiennent compte, y compris pour l’ordre des informations dans l’e-mail.
 
-## L’activer
+## Activer les relances
 
-**⋯** sur un tableau, puis **Relances…**, et cochez **Relancer sans réponse**. Cela vaut pour tous les projets de ce tableau. Ou touchez **Relances désactivées** sous le nom du tableau, ou **Les relancer** dans une étape avec des projets sans réponse depuis plus de 10 jours.
+Sur un tableau, sélectionnez **⋯**, puis **Relances…**, et cochez **Relancer sans réponse**. Les relances concernent alors tous les projets de ce tableau. Vous pouvez aussi sélectionner **Relances désactivées** sous le nom du tableau, ou **Les relancer** dans une étape contenant des projets sans réponse depuis au moins 10 jours.
 
-Pour un seul projet : **Relances…** dans le **⋯** de sa carte ou sur sa page. **Pour ce projet** choisit **Activé**, **Désactivée** ou le réglage du tableau. Le réglage propre d’un projet l’emporte sur celui du tableau.
+Pour un seul projet, sélectionnez **Relances…** dans son menu **⋯**, sur le tableau ou sur sa page. **Pour ce projet** permet de choisir **Activé**, **Désactivée** ou le paramètre du tableau. Le paramètre propre au projet prime sur celui du tableau.
 
-## Réglages
+## Paramètres
 
-- Attendre 3 à 7 jours sans réponse. Après l’attente la plus courte, une relance est rédigée. La plus longue est la limite à laquelle elle part, même quand votre utilisation est serrée.
-- **Seulement les jours de travail** : rien n’est rédigé ni envoyé vos jours de repos (selon **Paramètres** > **Notifications** > **Heures de travail**). Ce qui arrive à échéance ces jours-là attend votre prochain matin de travail. Activé pour Travail, désactivé pour Perso.
-- Relancer au moins 1 fois et au plus 3 fois. Le minimum part toujours. Entre les deux, elle rédige quand même chaque relance. Si elle pense qu’il vaut mieux arrêter, le brouillon dit pourquoi (« The Machine s’arrêterait ici : 9 e-mails sans réponse depuis août ») et n’est pas coché : envoyez-le, ignorez-le ou choisissez **Arrêter les relances ici**. Demandez-en une quand même dans le chat d’une relance et elle l’écrit. Jamais plus que le maximum.
-- **Étapes** : **Toutes les étapes ouvertes**, donc ni la dernière étape du tableau ni Au point mort ou refusé. **Personnaliser** active ou désactive des étapes et donne à une étape sa propre attente.
-- **Canaux** : ceux qui sont connectés et peuvent envoyer. Une relance part sur le même canal que le dernier message. **Changer de canal sans réponse** essaie le suivant autorisé.
-- **Déplacer vers « Au point mort ou refusé » après la dernière** : activé quand le tableau a cette ligne.
+- Par défaut, attendez de 3 à 7 jours sans réponse. Une relance est rédigée après le délai le plus court et envoyée au plus tard à la fin du délai le plus long, même si votre quota d’utilisation est presque atteint.
+- **Seulement les jours de travail** : aucun brouillon n’est rédigé et aucun message n’est envoyé pendant vos jours de congé (selon **Paramètres** > **Notifications** > **Heures de travail**). Les relances prévues ces jours-là attendent le prochain matin où vous travaillez. Cette option est activée pour Travail et désactivée pour Personnel.
+- Par défaut, envoyez de 1 à 3 relances. La relance minimale est toujours envoyée, et les autres sont rédigées sous forme de brouillons. Quand votre Machine estime qu’il vaut mieux s’arrêter, le brouillon en indique la raison (« The Machine s’arrêterait ici : 9 e-mails sans réponse depuis août ») et n’est pas coché. Vous pouvez l’envoyer, l’ignorer ou choisir **Arrêter les relances ici**. Le nombre maximal de relances ne sera jamais dépassé.
+- **Étapes** : **Toutes les étapes ouvertes** sont incluses, à l’exception de la dernière étape du tableau et de l’étape Au point mort ou refusé. **Personnaliser** permet d’activer ou de désactiver des étapes et de définir un délai propre à chacune.
+- **Canaux** : les canaux connectés qui permettent d’envoyer des messages. Une relance est envoyée sur le même canal que le dernier message. **Changer de canal sans réponse** permet d’essayer le prochain canal autorisé.
+- **Déplacer vers « Au point mort ou refusé » après la dernière** : cette option est activée si le tableau comporte cette ligne.
 
-## Demander ou envoyer seule
+## Demander confirmation ou envoyer automatiquement
 
-**Me demander avant d’envoyer** est le réglage par défaut : les brouillons attendent dans vos tâches. **Envoyer sans demander** est un oui permanent pour ce tableau ou ce projet. Ce qui sort de l’ordinaire vous attend quand même, tout comme ce qui échoue. En mode Prudent, elle demande toujours. Une relance ne part jamais deux fois. Les relances ne vous notifient jamais, ni par push ni par e-mail : leurs brouillons attendent dans votre liste et le récap du matin.
+Par défaut, l’option **Me demander avant d’envoyer** est activée : les brouillons attendent dans vos tâches. **Envoyer sans demander** donne une autorisation permanente pour ce tableau ou ce projet. Tout cas inhabituel ou échec attend tout de même votre intervention, et le niveau de prudence demande toujours votre confirmation. Une relance n’est jamais envoyée deux fois. Les relances ne vous envoient aucune notification, ni par e-mail ni par notification push : leurs brouillons apparaissent dans votre liste et dans le récap du matin.
 
-Juste avant l’envoi, le fil est vérifié à nouveau, et si quelqu’un a écrit depuis le brouillon, elle ne part pas : « Non envoyé : nouveau message dans le fil ». La tâche affiche ce message, qui l’a écrit et quand, avec **La lire** et **Refaire pour ce message**, qui demande un nouveau brouillon qui en tient compte.
+Juste avant l’envoi, la conversation est vérifiée une nouvelle fois. Si quelqu’un a écrit depuis la création du brouillon, celui-ci n’est pas envoyé : « Non envoyé : nouveau message dans la conversation ». La tâche affiche ce message, son auteur et sa date, avec **La lire** et **Refaire pour ce message**. Cette dernière option demande un nouveau brouillon qui tient compte du message.
 
-## Les vérifier
+## Vérifier les relances
 
-Les relances d’un tableau arrivent en une seule tâche, jamais une par e-mail. Pendant la rédaction, elle indique « Rédaction de 3 relances… », puis « 8 relances prêtes pour Alpha testers ».
+Les relances d’un tableau sont regroupées dans une seule tâche, et non dans une tâche par e-mail. Pendant la rédaction des brouillons, la tâche indique « Rédaction de 3 relances… », puis « 8 relances prêtes pour les testeurs Alpha ».
 
-**Vérifier** les affiche en entier, les unes sous les autres : un seul défilement suffit pour tout lire. **Envoyer**, **Modifier** et **Ignorer** apparaissent sur la relance en cours. Au clavier, j et k (ou les flèches) pour se déplacer, Entrée envoie, e modifie, s ignore (une seconde fois annule), x coche ou décoche, et c réécrit. **Envoyer tout ce qui est coché** envoie celles encore cochées.
+**Vérifier** les affiche les unes sous les autres, au complet, pour que vous puissiez toutes les lire en faisant défiler la page. Les options **Envoyer**, **Modifier** et **Ignorer** s’affichent pour la relance en cours. Au clavier, les touches j et k (ou les flèches) permettent de passer d’une relance à l’autre, Entrée l’envoie, e permet de la modifier, s de l’ignorer (et de rétablir l’action), x de la cocher ou de la décocher, et c d’y apporter des modifications. **Envoyer tous les éléments cochés** envoie ceux qui sont encore cochés.
 
-**Ignorer** décoche un brouillon et le place en bas, marqué Ignorée avec **Annuler** ; il n’est vraiment ignoré qu’à la fermeture de la vérification. Une relance ignorée revient avec **Récupérer** dans les relances du projet ou sur sa tâche dans Fait, tant qu’aucune relance plus récente n’est venue. La relance d’un seul projet est une tâche normale.
+Chaque relance est accompagnée de son brouillon. Si la rédaction est impossible, la tâche indique ce qu’il faut d’abord (« Pas de brouillon. À préciser : le destinataire. ») et n’est pas cochée. **Rédiger** demande tout de même de créer le brouillon. Si un brouillon a plusieurs destinataires possibles, la tâche indique « Destinataire : à choisir au moment de l’envoi », et **Envoyer** vous demande de faire un choix.
 
-**Demander des modifications…** réécrit tous les brouillons cochés, ou seulement celui en cours, comme vous le demandez ; rien n’est envoyé, et **Annuler la modification** rétablit l’ancien texte. Tant que la zone de modification est ouverte ou qu’une réécriture tourne, rien ne part, et un brouillon qui a changé s’affiche d’abord à nouveau.
+**Ignorer** décoche un brouillon et le déplace en bas de la liste, avec la mention « Ignorée » et une option **Annuler**. Il est définitivement ignoré lorsque vous fermez la vérification. Une relance ignorée peut être rétablie avec **Récupérer**, dans les relances du projet ou dans sa tâche sous Fait, à condition qu’aucune relance plus récente n’ait été envoyée. La relance d’un seul projet est une tâche normale.
 
-Quand plusieurs partent à la suite, aussi avec Envoyer sans demander, chaque boîte mail en envoie une toutes les 30 à 45 secondes, et la tâche montre où on en est : « Envoi de 3 sur 8… ». **Arrêter l’envoi** arrête le reste : celle déjà en route part quand même, les autres reviennent en brouillons dans la vérification, à envoyer plus tard (« Envoi arrêté. Envoyées : 1. 11 gardées en brouillons. »).
+**Demander des modifications…** réécrit tous les brouillons cochés, ou seulement celui en cours, selon vos indications. Rien n’est envoyé et **Annuler la modification** restaure le texte précédent. Tant que la zone de saisie est ouverte ou qu’une réécriture est en cours, aucun message ne peut être envoyé. Tout brouillon modifié s’affiche de nouveau avant son envoi.
 
-## E-mails envoyés avant votre Machine
+Lorsque plusieurs relances sont envoyées à la suite, y compris avec **Envoyer sans demander**, chaque boîte mail en envoie une toutes les 30 à 45 secondes. La tâche indique la progression : « Envoi de 3 sur 8… ». **Arrêter l’envoi** interrompt les envois restants. Un message déjà en cours d’envoi part tout de même, et les autres reviennent dans la vérification sous forme de brouillons, à envoyer plus tard (« Envoi interrompu. 1 envoyé, 11 conservés en brouillons. »).
 
-Les e-mails envoyés depuis une autre app, avant que votre Machine lise cette boîte, comptent aussi. Elle lit la conversation (ou, si elle ne peut pas, les e-mails précédents cités dans votre dernier), donc trois e-mails sans réponse comptent pour trois, et « Pas de réponse depuis » compte à partir du premier. Si le maximum est déjà atteint, elle n’en rédige pas d’autre.
+## E-mails envoyés avant que votre Machine les lise
 
-## Quand elles s’arrêtent
+Les e-mails que vous avez envoyés depuis une autre application avant que votre Machine ne lise cette boîte mail sont également pris en compte. Elle lit la conversation elle-même, ou, si elle n’y arrive pas, les e-mails précédents cités dans votre dernier message. Ainsi, trois e-mails sans réponse comptent comme trois, et le délai « Sans réponse depuis » commence à partir du premier. Si vous avez déjà atteint le maximum, aucun autre brouillon n’est créé.
 
-Les relances s’arrêtent quand la personne répond, quand le projet est gagné, perdu, archivé ou déplacé vers une étape fermée, et quand vous en mettez une en attente ou l’ignorez. Avant de rédiger, votre Machine vérifie s’il y a du nouveau dans la conversation, pour ne pas relancer quelqu’un qui a déjà répondu ailleurs.
+## Quand les relances s’arrêtent
 
-**Mettre en pause** dans **Relances…** suspend un tableau ou un projet sans désactiver les relances : rien n’est rédigé ni envoyé, aucune série ne se termine, et les tâches ouvertes restent ouvertes. Choisissez un jour de reprise, ou touchez **Reprendre** quand vous voulez. L’attente reprend là où elle était, et ce qui était dû arrive une par une. Entre-temps, il affiche **En pause**.
+Les relances s’arrêtent dès qu’une réponse est reçue, quand le projet est gagné, perdu, archivé ou déplacé dans une étape fermée, ainsi que lorsque vous mettez une relance en attente ou l’ignorez. Avant de rédiger un brouillon, votre Machine vérifie si la conversation contient un message plus récent. Elle ne relance donc pas quelqu’un qui a déjà répondu ailleurs.
 
-Après la dernière relance sans réponse, le projet affiche « Pas de réponse après 3 relances » et passe à Au point mort ou refusé si c’est activé. Arrêtées avant qu’une ne parte, il affiche « Relances arrêtées » et reste dans son étape.
+**Mettre en pause**, dans **Relances…**, suspend les relances d’un tableau ou d’un projet sans les désactiver. Aucun brouillon n’est rédigé et aucun message n’est envoyé, aucun cycle ne se termine et les tâches de relance en cours restent ouvertes. Choisissez une date de reprise ou sélectionnez **Reprendre** quand vous le souhaitez. Le délai reprend là où il en était et les relances arrivées à échéance sont envoyées une par une. Le statut **En pause** s’affiche entre-temps.
 
-Si son e-mail a été rejeté et qu'il existe une autre adresse, la relance y va ("Rejetée, maintenant à <adresse>"). Un brouillon dont l'adresse est rejetée avant l'envoi est retenu : "Non envoyé : <adresse> a été rejetée", et passe à son autre adresse, où il attend ton envoi.
+Après la dernière relance sans réponse, le projet affiche « Aucune réponse après 3 relances » et passe à l’étape Au point mort ou refusé si cette option est activée. Si les relances sont arrêtées avant tout envoi, le projet affiche « Relances arrêtées » et reste dans son étape.
 
-Sans autre adresse, les relances passent sur LinkedIn ou WhatsApp quand c'est autorisé et que vous y échangez. Sinon elles s'arrêtent avec "E-mail non distribué". Quand le projet compte, tu reçois un to-do pour trouver une nouvelle adresse.
+Si l’e-mail a été rejeté et que la personne a une autre adresse, la relance y est envoyée (« Adresse rejetée, envoi à <address> »). Si l’adresse d’un brouillon est rejetée avant son envoi, celui-ci est mis en attente : « Non envoyé : <address> a été rejetée ». Il est déplacé vers l’autre adresse de la personne et attend que vous sélectionniez **Envoyer**.
+
+S’il n’y a pas d’autre adresse, les relances passent sur LinkedIn ou WhatsApp si ces canaux sont autorisés et que vous y échangez avec la personne. Sinon, elles s’arrêtent avec la mention « E-mail rejeté ». Si le projet est important, une tâche vous invite à trouver une nouvelle adresse.
 
 ## Où les voir
 
-L’en-tête du tableau indique « Relances activées, la prochaine jeu. ». La carte d’un projet montre sa prochaine relance, ou qu’une relance est prête. La page du projet liste ce qui est parti, y compris ce qui a été envoyé automatiquement.
+L’en-tête du tableau indique « Relances activées, prochaine relance jeu. ». Un projet du tableau affiche sa prochaine relance ou indique qu’une relance est prête. La page du projet répertorie les relances envoyées, y compris celles envoyées automatiquement.
 
-Les relances attendent quand votre Machine est occupée par vos tâches ou proche de sa limite d’utilisation, puis rattrapent leur retard. Sur un tableau partagé, seule la Machine du propriétaire du projet relance.
+Les relances sont mises en attente pendant que votre Machine est occupée ou proche de sa limite d’utilisation, puis rattrapées plus tard. Sur un tableau partagé, seule la Machine de la personne propriétaire du projet effectue les relances.
