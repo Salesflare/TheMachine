@@ -1,45 +1,45 @@
 ---
 title: Activité
 area: settings
-summary: Une liste de tout ce que The Machine a fait pour vous, le plus récent d’abord : messages, documents, réponses de Fleet, apprentissages, connexions et plus.
+summary: Une liste de tout ce que The Machine a fait pour vous, du plus récent au plus ancien : messages, documents, réponses de Fleet, apprentissages, connexions et plus encore.
 covers: settings:activity
 code: activity_log.py, dashboard/settings-activity.js
 order: 2
 keywords: log, history, audit, what did it do, sent, refused, blocked
-translated: 1b5a54aa775234bd
+translated: ebb6a4cf0474a020
 ---
-## Ce qu’elle montre
+## Ce qu’elle affiche
 
-Ouvrez **Paramètres**, **Activité**. Chaque ligne est une chose que The Machine a faite, la plus récente d’abord, par jour :
+Ouvrez **Paramètres**, puis **Activité**. Chaque ligne correspond à une action de The Machine, par jour, de la plus récente à la plus ancienne :
 
-- ce qu’elle a fait, et comment cela s’est terminé : envoyé, refusé, échoué ou annulé
-- quand, le compte ou l’app utilisé, et [ce qui l’a permis](activity.md#what-allowed-it)
-- un lien vers sa tâche, quand il y en a une
-- pour une IA que vous avez connectée, comme ChatGPT ou Claude : son nom avec **(IA connectée)**, pour la distinguer de The Machine
+- ce qu’elle a fait et le résultat : envoyé, refusé, échoué ou annulé
+- quand elle l’a fait, le compte ou l’application utilisé, et [ce qui l’y a autorisée](activity.md#what-allowed-it)
+- un lien vers la tâche correspondante, le cas échéant
+- pour une IA que vous avez connectée, comme ChatGPT ou Claude : son nom suivi de **(IA connectée)**, pour la distinguer de The Machine
 
-Elle liste les messages et réponses, les modifications de documents et d’agenda, les étapes sur le web, les corrections qu’elle a fusionnées, les agents de code, les questions et réponses de Fleet, les apprentissages envoyés à l’équipe de The Machine, les compétences, les imports dans le Graph, les faits que vous lui avez demandé d’oublier dans le chat (avec **Annuler**), les connexions ajoutées ou retirées, et chaque consultation de notre équipe via l’[Accès du support](get-support.md#support-access), refusées comprises.
+La liste inclut les messages et les réponses, les modifications de documents et de calendriers, les actions sur le Web, les correctifs qu’elle a fusionnés, les agents de programmation, les questions et réponses de Fleet, les apprentissages transmis à l’équipe The Machine, les compétences, les importations de Graph, les informations que vous avez demandé à votre chat d’oublier (avec **Annuler**), les connexions ajoutées ou supprimées, ainsi que chaque consultation par notre équipe dans le cadre de [l’accès à l’assistance](get-support.md#support-access), y compris les consultations refusées.
 
-## Ce qui l’a permis
+## Ce qui l’a autorisée
 
-Chaque message, modification de document ou d’agenda, étape sur le web et correctif fusionné indique ce qui l’a laissé partir, au moment où c’est arrivé :
+Pour chaque message, modification de document ou de calendrier, action sur le Web et correctif fusionné, l’activité indique ce qui l’a autorisée, au moment où cela s’est passé :
 
-- **Approuvé dans la tâche** ou **Approuvé dans Telegram** : votre appui sur Envoyer, Confirmer ou Fusionner
-- **Approuvé à la voix** : votre oui dans Talk
-- **« Faire » touché** : votre Faire sur la tâche
-- **Demandé dans le chat** : vous l’avez demandé avec des mots, avec le début de votre message entre guillemets. Une citation ne s’affiche que tant que ces mots restent dans votre propre message.
-- **Relance qu’elle a envoyée d’elle-même**, **Petit correctif, fusionné d’elle-même**, **Nouveau document privé, créé d’elle-même** ou **Préparé à l’avance, d’elle-même** : un de vos réglages ou une règle propre à The Machine
-- **Aucune approbation enregistrée** : rien n’a été enregistré. Cela part aussi dans nos [rapports d’erreurs](error-reports.md), pour trouver le chemin qui l’a manqué.
+- **Approuvé dans la tâche** ou **Approuvé dans Telegram** : vous avez appuyé sur **Envoyer**, **Confirmer** ou **Fusionner**
+- **Approuvé à la voix** : vous avez répondu oui dans Talk
+- **« Faire » touché** : vous avez appuyé sur **Faire** dans la tâche
+- **Demandé dans le chat** : vous l’avez demandé par écrit. Le début de votre message apparaît entre guillemets. La citation reste affichée uniquement tant que ces mots figurent encore dans votre message.
+- **Relance qu’elle a envoyée d’elle-même**, **Petit correctif, fusionné d’elle-même**, **Nouveau document privé, créé d’elle-même** ou **Préparé à l’avance, d’elle-même** : un de vos réglages ou une règle interne de The Machine
+- **Aucune approbation enregistrée** : aucune approbation n’a été enregistrée. L’action apparaît aussi dans nos [rapports d’erreur](error-reports.md), pour nous aider à trouver ce qui n’a pas fonctionné.
 
-Étapes sur le web liste aussi l’exécution d’une tâche qui a cliqué ou tapé sur une page, avec ce qui a permis cette exécution.
+Les actions sur le Web incluent aussi les exécutions d’une tâche qui a cliqué ou saisi du texte sur une page, avec l’autorisation correspondante. Le travail qui se poursuit après une mise en attente conserve l’autorisation donnée avant celle-ci.
 
-Les lignes plus anciennes, d’avant cet enregistrement, gardent leurs anciens mots, comme **Après votre accord**.
+Les anciennes lignes, antérieures à l’enregistrement de ces informations, gardent leur ancien libellé, comme **Après votre accord**.
 
-## Filtrer
+## Filtrer la liste
 
-Choisissez un type dans la liste en haut, comme **Messages** ou **Fleet**. **Refusé ou bloqué** montre seulement ce qui n’est pas parti, et pourquoi. **Afficher plus** charge des lignes plus anciennes.
+Choisissez un type dans la liste en haut, comme **Messages** ou **Fleet**. **Refusé ou bloqué** affiche uniquement les actions qui n’ont pas abouti, et leur raison. **Afficher plus** charge des lignes plus anciennes.
 
-## Autres endroits
+## Autres emplacements
 
-Le chat d’une tâche raconte toujours sa propre histoire ; Activité y renvoie. Fleet, **Activité** montre les mêmes lignes pour vos Fleets et apprentissages, avec **Retirer** pour un apprentissage. Dans Paramètres, **Sécurité**, **Voir chaque consultation dans Activité** ouvre les consultations de notre équipe.
+Le chat d’une tâche conserve son propre historique. Activité contient un lien vers celui-ci. Dans Fleet, **Activité** affiche les mêmes lignes pour vos Fleet et vos apprentissages, avec **Retirer** pour un apprentissage. Dans **Sécurité**, sous Paramètres, **Voir chaque consultation dans Activité** ouvre la liste des consultations de notre équipe.
 
-Activité montre seulement ce qui s’est passé. Elle ne change jamais ce que The Machine a le droit de faire.
+Activité indique uniquement ce qui s’est passé. Elle ne change jamais ce que The Machine peut faire.
