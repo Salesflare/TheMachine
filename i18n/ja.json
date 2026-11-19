@@ -6730,6 +6730,8 @@
  "WhatsApp message sent at {}.": "{}にWhatsAppメッセージを送信しました。",
  "WhatsApp message sent.": "WhatsAppメッセージを送信しました。",
  "WhatsApp sending isn’t set up. Nothing was sent.": "WhatsAppの送信設定がされていません。何も送信されていません。",
+ "WhatsApp unlinked this Machine": "WhatsAppとこのMachineの連携が解除されました",
+ "WhatsApp unlinked this Machine. Link it again to keep reading.": "WhatsAppとこのMachineの連携が解除されました。引き続き閲覧するには、もう一度連携してください。",
  "WhatsApp was not linked{}": "WhatsAppはリンクされていません{}",
  "WhatsApp's device link": "WhatsAppのデバイスリンク",
  "WhatsApp, Telegram, Signal and other chats now look like the app they came from.": "WhatsApp、Telegram、シグナルなどのチャットが、元のアプリに合わせた見た目になりました。",

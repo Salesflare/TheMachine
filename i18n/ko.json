@@ -6730,6 +6730,8 @@
  "WhatsApp message sent at {}.": "{}에 WhatsApp 메시지를 보냈어요.",
  "WhatsApp message sent.": "WhatsApp 메시지를 보냈어요.",
  "WhatsApp sending isn’t set up. Nothing was sent.": "WhatsApp 전송이 설정되지 않았어요. 아무것도 전송되지 않았어요.",
+ "WhatsApp unlinked this Machine": "WhatsApp가 이 Machine의 연결을 해제했어요",
+ "WhatsApp unlinked this Machine. Link it again to keep reading.": "WhatsApp가 이 Machine의 연결을 해제했어요. 계속 읽으려면 다시 연결하세요.",
  "WhatsApp was not linked{}": "WhatsApp이 연결되지 않았어요{}",
  "WhatsApp's device link": "WhatsApp 기기 연결",
  "WhatsApp, Telegram, Signal and other chats now look like the app they came from.": "WhatsApp, Telegram, Signal 등에서 온 채팅이 이제 해당 앱의 모습으로 표시돼요.",
