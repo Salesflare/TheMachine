@@ -6730,6 +6730,8 @@
  "WhatsApp message sent at {}.": "WhatsApp消息已于{}发送。",
  "WhatsApp message sent.": "WhatsApp消息已发送。",
  "WhatsApp sending isn’t set up. Nothing was sent.": "尚未设置WhatsApp发送功能。未发送任何内容。",
+ "WhatsApp unlinked this Machine": "WhatsApp 已解除与这台 Machine 的关联",
+ "WhatsApp unlinked this Machine. Link it again to keep reading.": "WhatsApp 已解除与这台 Machine 的关联。重新关联即可继续阅读。",
  "WhatsApp was not linked{}": "WhatsApp未关联{}",
  "WhatsApp's device link": "WhatsApp设备关联",
  "WhatsApp, Telegram, Signal and other chats now look like the app they came from.": "WhatsApp、Telegram、Signal等聊天现在看起来和各自来源的应用一致。",

@@ -6976,6 +6976,8 @@
  "WhatsApp message sent at {}.": "Сообщение WhatsApp отправлено в {}.",
  "WhatsApp message sent.": "Сообщение WhatsApp отправлено.",
  "WhatsApp sending isn’t set up. Nothing was sent.": "Отправка сообщений в WhatsApp не настроена. Ничего не отправлено.",
+ "WhatsApp unlinked this Machine": "WhatsApp отключил эту Machine",
+ "WhatsApp unlinked this Machine. Link it again to keep reading.": "WhatsApp отключил эту Machine. Подключите её снова, чтобы продолжить читать.",
  "WhatsApp was not linked{}": "WhatsApp не был подключён{}",
  "WhatsApp's device link": "Привязка устройства WhatsApp",
  "WhatsApp, Telegram, Signal and other chats now look like the app they came from.": "Переписки в WhatsApp, Telegram, Signal и других чатах теперь выглядят так же, как в приложениях, откуда они пришли.",

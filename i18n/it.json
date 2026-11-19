@@ -6812,6 +6812,8 @@
  "WhatsApp message sent at {}.": "Messaggio WhatsApp inviato alle {}.",
  "WhatsApp message sent.": "Messaggio WhatsApp inviato.",
  "WhatsApp sending isn’t set up. Nothing was sent.": "L’invio su WhatsApp non è configurato. Non è stato inviato nulla.",
+ "WhatsApp unlinked this Machine": "WhatsApp ha scollegato questa Machine",
+ "WhatsApp unlinked this Machine. Link it again to keep reading.": "WhatsApp ha scollegato questa Machine. Ricollegala per continuare a leggere.",
  "WhatsApp was not linked{}": "WhatsApp non è stato collegato{}",
  "WhatsApp's device link": "Il collegamento del dispositivo WhatsApp",
  "WhatsApp, Telegram, Signal and other chats now look like the app they came from.": "Le chat di WhatsApp, Telegram, Signal e altre ora sembrano l’app da cui vengono.",
