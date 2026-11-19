@@ -27,6 +27,9 @@ class Reopen(unittest.TestCase):
         self.app.config = {'accounts': [{'id': 'home', 'boundary': 'personal:me'}, {'id': 'office', 'boundary': 'work:Acme'}],
                            'dashboard_host': 'the-machine.example', 'dashboard_path': '/assistant/'}
         timeutil.set_work_hours({'start': '08:00', 'end': '18:00'}); self.addCleanup(timeutil.set_work_hours, None)
+        # a digest sent on a fixed day is sent with the clock at that moment (timeutil.pin): digest_done lets a kept text go
+        # DIGEST_KEEP after the clock, so the real clock would turn these red by date alone a week later
+        self.addCleanup(timeutil.pin, None)
         self.sent = []
         self.sender = lambda request: self.sent.append(request) or {'results': [{'endpoint': SUB['endpoint'], 'status': 201}]}
 
@@ -49,8 +52,10 @@ class Reopen(unittest.TestCase):
         self.done_card('Send the order form', 'office', dt.datetime(2026, 11, 12, 10, tzinfo=BXL))
         self.done_card('Book the dentist', 'home', dt.datetime(2026, 11, 12, 12, tzinfo=BXL))
         self.assertEqual(self.shown('evening'), {})  # none sent yet: the dashboard shows today's digest instead
+        step = dt.datetime(2026, 11, 12, 17, 46, tzinfo=BXL).astimezone(UTC)
+        timeutil.pin(step)
         with patch_everywhere(timeutil, 'local_tz', return_value=BXL), patch_everywhere(machine_app_recap, 'recap_meetings', return_value=[]):
-            self.assertEqual(self.app.evening_step(dt.datetime(2026, 11, 12, 17, 46, tzinfo=BXL).astimezone(UTC), push=self.sender), ['push'])
+            self.assertEqual(self.app.evening_step(step, push=self.sender), ['push'])
         self.assertEqual(self.sent[0]['payload']['url'], 'https://the-machine.example/assistant/#digest=evening')
         got = self.shown('evening')
         self.assertEqual(got['title'], 'Good evening, 2 to-dos done today')
@@ -70,6 +75,7 @@ class Reopen(unittest.TestCase):
         self.assertTrue(out['text'].endswith('Open The Machine: https://m.example/#digest=morning'), out['text'])
         with self.store.connect() as db:
             notify.ensure(db)
+        timeutil.pin('2026-11-12T07:30:00+00:00')
         with self.store.connect() as db:
             notify.digest_claim(db, '2026-11-12', '2026-11-12T07:30:00+00:00')
         with self.store.connect() as db:
@@ -108,6 +114,7 @@ class Reopen(unittest.TestCase):
                 return notify.digest_row(db, current, BXL)
 
         def send(day, when, digest, status='sent'):
+            timeutil.pin(when)
             with self.store.connect() as db:
                 notify.digest_claim(db, day, when.isoformat())
             with self.store.connect() as db:
