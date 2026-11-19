@@ -8,10 +8,13 @@ const {chromium}=await import('./browser.mjs');
 // and where a week's row begins (a trip over a weekend wraps to the next row and is named again). It opens the note in
 // the Graph. One that ends before the window shows nowhere. CALENDAR_NOTES_SHOT=<dir> also writes screenshots at 390
 // and 1440 in light and dark.
+// The page's clock is pinned to NOW and every date is built from it: from the real clock, the Lisbon trip (today +2 to +4)
+// split over two weeks whenever the test ran on a Thursday or a Friday, and the Week view then had two pieces, not three.
 process.env.TZ='Europe/Brussels';
+const NOW=new Date('2026-11-16T10:00:00+01:00');  // a Monday: the trip is Wednesday to Friday
 const dashboard=await dashboardPage();
-const day=n=>{const d=new Date();d.setDate(d.getDate()+n);d.setHours(12,0,0,0);return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-')};
-const at=(n,h)=>{const d=new Date();d.setDate(d.getDate()+n);d.setHours(h,0,0,0);return d.toISOString()};
+const day=n=>{const d=new Date(NOW);d.setDate(d.getDate()+n);d.setHours(12,0,0,0);return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-')};
+const at=(n,h)=>{const d=new Date(NOW);d.setDate(d.getDate()+n);d.setHours(h,0,0,0);return d.toISOString()};
 const sat=(()=>{let n=14;while(new Date(day(n)+'T12:00').getDay()!==6)n++;return n})();  // a Saturday two weeks or more out
 const notes=[{id:'note:7',kind:'trip',name:'Lisbon',starts:day(2),ends:day(4)},{id:'note:9',kind:'trip',name:'Porto trip',starts:day(sat),ends:day(sat+3)},
  {id:'note:8',kind:'trip',name:'Old trip',starts:day(-40),ends:day(-38)}];
@@ -30,6 +33,7 @@ const base='http://127.0.0.1:'+server.address().port+'/';
 const errors=[];let browser;
 const open=async(width,scheme)=>{const mobile=width<600;
  const context=await browser.newContext({viewport:{width,height:mobile?844:900},isMobile:mobile,hasTouch:mobile,locale:'en-GB',timezoneId:'Europe/Brussels',colorScheme:scheme});
+ await context.clock.setFixedTime(NOW);
  await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
  const page=await context.newPage();page.on('pageerror',e=>errors.push(width+': '+e.message));
  await page.goto(base);await page.waitForFunction(()=>typeof showTab==='function');
