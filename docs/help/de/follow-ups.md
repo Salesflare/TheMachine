@@ -1,65 +1,67 @@
 ---
 title: Nachfassen
 area: graph
-summary: Fasst von selbst nach, wenn jemand nicht antwortet, für ein ganzes Board oder ein Projekt. Fragt zuerst, außer du sagst etwas anderes.
+summary: Automatisches Nachfassen, wenn jemand nicht antwortet, für ein ganzes Board oder ein einzelnes Projekt. Vor dem Senden wirst du gefragt, sofern du nichts anderes festlegst.
 covers: follow-ups
 code: follow_ups.py, assistant.py, dashboard.html
 order: 7
-translated: db4d60eb468a206d
+translated: 0e7bdfb2c9b2deb5
 ---
-Wenn jemand auf einem Board nicht mehr antwortet, entwirft deine Machine das Nachfassen für dich, in deinem Ton und im selben Gespräch. Aus, bis du es einschaltest. Passt einer deiner Skills zum Board, folgen die Entwürfe ihm, auch darin, was in der E-Mail zuerst kommt.
+Wenn jemand auf einem Board nicht mehr antwortet, erstellt deine Machine einen Entwurf für die Nachfassnachricht, in deinem Stil und im selben Gespräch. Die Funktion ist aus, bis du sie einschaltest. Wenn ein Skill von dir zum Board passt, richten sich die Entwürfe danach, auch bei der Reihenfolge der Inhalte in der E-Mail.
 
 ## Einschalten
 
-**⋯** auf einem Board, dann **Nachfassen…**, und hake **Nachfassen, wenn keine Antwort kommt** an. Das gilt für jedes Projekt auf diesem Board. Oder tippe unter dem Namen des Boards auf **Nachfassen aus**, oder in einer Phase mit Projekten ohne Antwort seit 10+ Tagen auf **Bei ihnen nachfassen**.
+Tippe auf einem Board auf **⋯** und dann auf **Nachfassen…**. Aktiviere anschließend **Nachfassen, wenn keine Antwort kommt**. Das gilt für alle Projekte auf diesem Board. Du kannst auch unter dem Boardnamen auf **Nachfassen aus** tippen oder in einer Phase mit Projekten, auf die seit mindestens 10 Tagen niemand geantwortet hat, auf **Bei ihnen nachfassen**.
 
-Für ein einzelnes Projekt: **Nachfassen…** im **⋯** seiner Karte oder auf seiner Seite. **Für dieses Projekt** wählt **An**, **Aus** oder die Einstellung des Boards. Die eigene Einstellung eines Projekts geht vor.
+Für ein einzelnes Projekt tippst du auf dem Board oder auf der Projektseite in **⋯** auf **Nachfassen…**. Mit **Für dieses Projekt** wählst du **An**, **Aus** oder die Einstellung des Boards. Die Einstellung eines Projekts hat Vorrang vor der des Boards.
 
 ## Einstellungen
 
-- 3 bis 7 Tage ohne Antwort warten. Nach der kürzesten Wartezeit entsteht ein Entwurf. Die längste ist der späteste Zeitpunkt, zu dem er rausgeht, auch wenn deine Nutzung knapp ist.
-- **Nur an Arbeitstagen**: An freien Tagen wird nichts entworfen oder gesendet (aus **Einstellungen** > **Benachrichtigungen** > **Arbeitszeiten**). Was dann fällig wird, wartet bis zum nächsten Arbeitsmorgen. An für Arbeit, aus für Privat.
-- Mindestens 1 und höchstens 3 Mal nachfassen. Das Minimum geht immer raus. Dazwischen schreibt sie trotzdem jedes Nachfassen. Meint sie, du hörst besser auf, steht beim Entwurf, warum („The Machine würde hier aufhören: 9 unbeantwortete E-Mails seit August“), und er ist nicht angehakt: senden, überspringen oder **Nachfassen hier beenden**. Bittest du im Chat eines Nachfassens trotzdem um eins, schreibt sie es. Nie mehr als das Maximum.
-- **Phasen**: **Alle offenen Phasen**, also weder die letzte Phase des Boards noch Ins Stocken geraten oder abgelehnt. **Anpassen** schaltet Phasen an oder aus und gibt einer Phase eine eigene Wartezeit.
-- **Kanäle**: die verbundenen, die senden können. Nachgefasst wird im selben Kanal wie die letzte Nachricht. **Kanal wechseln, wenn keine Antwort kommt** versucht den nächsten erlaubten.
-- **Nach dem letzten nach „Ins Stocken geraten oder abgelehnt“ verschieben**: an, wenn das Board diese Zeile hat.
+- Standardmäßig wird nach 3 bis 7 Tagen ohne Antwort nachgefasst. Nach der kürzesten Wartezeit wird ein Entwurf erstellt und spätestens nach der längsten Wartezeit verschickt, auch wenn dein Nutzungslimit knapp ist.
+- **Nur an Arbeitstagen**: An deinen freien Tagen wird nichts erstellt oder gesendet. Deine Arbeitstage findest du unter **Einstellungen** > **Benachrichtigungen** > **Arbeitszeiten**. Was an einem freien Tag fällig wäre, wartet bis zum nächsten Arbeitsmorgen. Bei „Arbeit“ ist die Option an, bei „Persönlich“ aus.
+- Standardmäßig wird 1 bis 3 Mal nachgefasst. Die Mindestanzahl wird immer gesendet, für alles Weitere werden Entwürfe erstellt. Wenn die Machine meint, dass du besser aufhören solltest, steht der Grund im Entwurf („The Machine würde hier aufhören: 9 unbeantwortete E-Mails seit August“). Der Entwurf ist nicht angekreuzt. Du kannst ihn senden, überspringen oder **Nachfassen hier beenden** auswählen. Die Höchstzahl wird nie überschritten.
+- **Phasen**: Standardmäßig sind **Alle offenen Phasen** ausgewählt. Die letzte Phase des Boards und „Ins Stocken geraten oder abgelehnt“ sind also ausgenommen. Mit **Anpassen** kannst du Phasen ein- oder ausschalten und für jede Phase eine eigene Wartezeit festlegen.
+- **Kanäle**: Hier siehst du die verbundenen Kanäle, über die Nachrichten gesendet werden können. Eine Nachfassnachricht wird über denselben Kanal wie die letzte Nachricht gesendet. **Kanal wechseln, wenn keine Antwort kommt** versucht den nächsten zugelassenen Kanal.
+- **Nach dem letzten nach „Ins Stocken geraten oder abgelehnt“ verschieben**: Ist aktiviert, wenn das Board diese Phase hat.
 
-## Fragen oder selbst senden
+## Erst fragen oder automatisch senden
 
-**Vor dem Senden fragen** ist der Standard: Entwürfe warten in deinen Aufgaben. **Ohne Nachfrage senden** ist ein dauerhaftes Ja für dieses Board oder Projekt. Alles Ungewöhnliche wartet trotzdem auf dich, genau wie alles, was fehlschlägt. Im Modus Vorsichtig fragt sie immer. Nichts geht doppelt raus. Nachfassen benachrichtigt dich nie, weder per Push noch per E-Mail: Die Entwürfe warten in deiner Liste und in der morgendlichen Zusammenfassung.
+**Vor dem Senden fragen** ist die Standardeinstellung: Entwürfe warten in deinen Aufgaben. **Ohne Nachfrage senden** bedeutet, dass du für dieses Board oder Projekt dauerhaft zustimmst. Ungewöhnliche Fälle und Fehler warten trotzdem auf dich. Bei der Stufe „Sorgfältig“ wird immer gefragt. Eine Nachfassnachricht wird nie zweimal gesendet. Nachfassnachrichten lösen keine Benachrichtigungen per Push oder E-Mail aus. Die Entwürfe warten in deiner Liste und in der morgendlichen Zusammenfassung.
 
-Direkt vor dem Senden wird der Thread noch einmal geprüft, und wenn seit dem Entwurf jemand geschrieben hat, geht nichts raus: „Nicht gesendet: neue Nachricht im Thread“. Die Aufgabe zeigt diese Nachricht, wer sie wann geschrieben hat, mit **Lesen** und **Für diese Nachricht neu machen**, das einen neuen Entwurf mit ihr anfragt.
+Unmittelbar vor dem Senden wird der Gesprächsverlauf noch einmal geprüft. Wenn seit dem Entwurf jemand geschrieben hat, wird er nicht gesendet: „Nicht gesendet: neue Nachricht im Gespräch“. Die Aufgabe zeigt die Nachricht, wer sie geschrieben hat und wann. Dort findest du **Lesen** und **Für diese Nachricht neu machen**. Damit wird ein neuer Entwurf angefordert, der die Nachricht berücksichtigt.
 
-## Prüfen
+## Entwürfe prüfen
 
-Die Entwürfe eines Boards kommen als eine Aufgabe, nie eine pro E-Mail. Während sie geschrieben werden, steht dort „3 Nachfassen werden geschrieben…“, danach „8 Nachfassen bereit für Alpha testers“.
+Die Nachfassnachrichten eines Boards erscheinen gesammelt in einer Aufgabe, nicht als einzelne Aufgabe pro E-Mail. Während die Entwürfe erstellt werden, steht dort „3 Nachfassnachrichten werden geschrieben …“. Danach steht dort zum Beispiel „8 Nachfassnachrichten für Alpha testers bereit“.
 
-**Prüfen** zeigt sie vollständig untereinander, du liest also alle in einem Durchlauf. **Senden**, **Bearbeiten** und **Überspringen** stehen bei der aktuellen. Auf der Tastatur bewegst du dich mit j und k (oder den Pfeiltasten), Enter sendet, e bearbeitet, s überspringt (noch einmal macht es rückgängig), x hakt an oder ab, und c ändert. **Alle markierten senden** sendet die, die noch angehakt sind.
+Unter **Prüfen** werden die Entwürfe untereinander und vollständig angezeigt, sodass du sie alle mit einem einzigen Scrollen lesen kannst. Beim aktuellen Entwurf werden **Senden**, **Bearbeiten** und **Überspringen** angezeigt. Mit j und k oder den Pfeiltasten wechselst du zwischen den Entwürfen. Mit der Eingabetaste sendest du, mit e bearbeitest du, mit s überspringst du. Drücke s erneut, um das rückgängig zu machen. Mit x markierst du Entwürfe oder hebst die Markierung auf, mit c forderst du Änderungen an. **Alle markierten senden** sendet die Entwürfe, die noch markiert sind.
 
-**Überspringen** nimmt den Haken weg und schiebt den Entwurf nach unten, markiert als Übersprungen mit **Rückgängig**; endgültig übersprungen ist er erst, wenn du die Prüfung schließt. Mit **Zurückholen** in den Nachfassen des Projekts oder an der Aufgabe unter Erledigt kommt er zurück, solange kein neueres Nachfassen da ist. Ein einzelnes Projekt bekommt eine normale Aufgabe.
+Zu jeder Nachfassnachricht gehört ein Entwurf. Wenn sich einer nicht erstellen lässt, steht dort, was zuerst benötigt wird („Kein Entwurf. Zuerst benötigt: Empfänger“). Er ist nicht markiert. Mit **Schreib es** forderst du trotzdem einen Entwurf an. Wenn für einen Entwurf mehrere Empfänger infrage kommen, steht dort „Empfänger beim Senden auswählen“. Wenn du auf **Senden** tippst, kannst du den Empfänger auswählen.
 
-**Änderungen anfragen…** schreibt alle markierten Entwürfe oder nur den aktuellen so um, wie du es sagst; nichts wird gesendet, und **Änderung rückgängig machen** holt den alten Text zurück. Solange das Feld zum Ändern offen ist oder umgeschrieben wird, geht nichts raus, und ein geänderter Entwurf wird erst wieder gezeigt.
+Mit **Überspringen** hebst du die Markierung eines Entwurfs auf und verschiebst ihn ans Ende. Er wird als „Übersprungen“ markiert und mit **Rückgängig** versehen. Sobald du die Prüfung schließt, ist er endgültig übersprungen. Einen übersprungenen Entwurf kannst du mit **Zurückholen** in den Nachfassnachrichten des Projekts oder in der Aufgabe unter Erledigt wiederherstellen, sofern kein neueres Follow-up hinzugekommen ist. Das Follow-up für ein einzelnes Projekt ist eine normale Aufgabe.
 
-Gehen mehrere nacheinander raus, auch mit Ohne Nachfrage senden, sendet jedes Postfach nur alle 30 bis 45 Sekunden eine, und die Aufgabe zeigt den Stand: „3 von 8 wird gesendet…“. **Senden stoppen** hält den Rest an: eine, die schon unterwegs ist, geht noch, die anderen sind wieder als Entwürfe in der Prüfung, zum späteren Senden („Gestoppt. 1 gesendet, 11 als Entwürfe behalten.“).
+Mit **Änderungen anfragen…** werden alle markierten Entwürfe oder nur der aktuelle so umgeschrieben, wie du es vorgibst. Es wird nichts gesendet. Mit **Änderung rückgängig machen** stellst du den alten Text wieder her. Solange das Eingabefeld geöffnet ist oder ein Entwurf umgeschrieben wird, kann nichts gesendet werden. Ein geänderter Entwurf wird noch einmal angezeigt, bevor er gesendet werden kann.
 
-## E-Mails von vor deiner Machine
+Wenn mehrere Nachrichten nacheinander gesendet werden, auch mit **Ohne Nachfrage senden**, verschickt jedes Postfach alle 30 bis 45 Sekunden eine Nachricht. In der Aufgabe siehst du den Fortschritt: „3 von 8 werden gesendet …“. Mit **Senden stoppen** hältst du die übrigen an. Eine Nachricht, die bereits unterwegs ist, wird trotzdem gesendet. Die anderen erscheinen wieder als Entwürfe in der Prüfung und können später gesendet werden („Gestoppt. 1 gesendet, 11 als Entwürfe behalten.“).
 
-E-Mails, die du aus einer anderen App gesendet hast, bevor deine Machine dieses Postfach gelesen hat, zählen mit. Sie liest den Verlauf selbst (oder, wenn das nicht geht, die zitierten früheren E-Mails in deiner letzten), also zählen drei E-Mails ohne Antwort als drei, und „Seit … keine Antwort“ zählt ab der ersten. Ist das Maximum schon erreicht, schreibt sie kein weiteres.
+## E-Mails, die vor deiner Machine gesendet wurden
 
-## Wann es aufhört
+Auch E-Mails, die du in einer anderen App gesendet hast, bevor deine Machine das Postfach gelesen hat, werden gezählt. Deine Machine liest den Gesprächsverlauf selbst. Wenn das nicht möglich ist, liest sie die früheren E-Mails, die in deiner letzten zitiert wurden. Drei E-Mails ohne Antwort zählen also als drei. Auch „Keine Antwort seit“ zählt ab der ersten E-Mail. Wenn du die Höchstzahl bereits erreicht hast, wird kein weiterer Entwurf erstellt.
 
-Das Nachfassen hört auf, wenn die Person antwortet, wenn das Projekt gewonnen, verloren, archiviert oder in eine geschlossene Phase verschoben wird, und wenn du einen Entwurf zurückstellst oder überspringst. Vor jedem Entwurf schaut deine Machine, ob es im Gespräch etwas Neueres gibt, damit sie niemanden nervt, der schon woanders geantwortet hat.
+## Wann das Nachfassen endet
 
-**Pausieren** in **Nachfassen…** hält ein Board oder Projekt an, ohne das Nachfassen auszuschalten: nichts wird entworfen oder gesendet, keine Runde endet, und offene Aufgaben bleiben offen. Wähle einen Tag zum Fortsetzen oder tippe auf **Fortsetzen**. Die Wartezeit läuft dort weiter, wo sie war, und Fälliges kommt eins nach dem anderen. Solange steht dort **Pausiert**.
+Das Nachfassen endet, wenn die Person antwortet, das Projekt gewonnen, verloren oder archiviert wird oder in eine geschlossene Phase verschoben wird. Es endet auch, wenn du eine Aufgabe zurückstellst oder überspringst. Bevor ein Entwurf erstellt wird, prüft deine Machine den Gesprächsverlauf auf neue Nachrichten, damit sie niemanden nervt, der schon woanders geantwortet hat.
 
-Nach dem letzten Nachfassen ohne Antwort zeigt das Projekt „Keine Antwort nach 3 Mal Nachfassen“ und wechselt zu Ins Stocken geraten oder abgelehnt, wenn das an ist. Gestoppt, bevor eins rausging, steht dort „Nachfassen gestoppt“, und es bleibt in seiner Phase.
+Mit **Pausieren** unter **Nachfassen…** hältst du das Nachfassen für ein Board oder Projekt an, ohne es auszuschalten. Es werden keine Entwürfe erstellt oder gesendet, keine Runde endet und offene Nachfassaufgaben bleiben offen. Wähle einen Tag für die Fortsetzung oder tippe auf **Fortsetzen**, wenn du so weit bist. Die Wartezeit läuft dort weiter, wo sie unterbrochen wurde. Fällige Nachrichten werden nacheinander bearbeitet. Bis dahin wird **Pausiert** angezeigt.
 
-Kam ihre E-Mail zurück und gibt es eine andere Adresse, geht das Nachfassen dorthin ("Zurückgekommen, jetzt an <Adresse>"). Ein Entwurf, dessen Adresse vor dem Senden zurückkommt, wird angehalten: "Nicht gesendet: <Adresse> kam zurück", und geht an die andere Adresse, wo er auf dein Senden wartet.
+Wenn nach dem letzten Follow-up keine Antwort kommt, wird beim Projekt „Keine Antwort nach 3 Nachfassnachrichten“ angezeigt. Ist die entsprechende Option aktiviert, wird das Projekt nach „Ins Stocken geraten oder abgelehnt“ verschoben. Wurde das Nachfassen beendet, bevor etwas gesendet wurde, steht dort „Nachfassen beendet“ und das Projekt bleibt in seiner Phase.
 
-Ohne andere Adresse geht das Nachfassen auf LinkedIn oder WhatsApp weiter, wenn das erlaubt ist und ihr dort schreibt. Sonst hört es auf mit "E-Mail kam zurück". Ist das Projekt wichtig, bekommst du ein To-do, eine neue Adresse zu finden.
+Wenn die E-Mail-Adresse der Person einen Zustellfehler verursacht und eine andere Adresse vorhanden ist, wird das Follow-up stattdessen dorthin gesendet („Zustellung fehlgeschlagen, jetzt an <address>“). Wenn die Adresse eines Entwurfs vor dem Senden einen Zustellfehler verursacht, wird er zurückgehalten: „Nicht gesendet: <address> hat einen Zustellfehler verursacht“. Er wird der anderen Adresse zugeordnet und wartet dort darauf, dass du auf **Senden** tippst.
+
+Wenn keine andere Adresse vorhanden ist, wird das Follow-up zu LinkedIn oder WhatsApp verschoben, sofern das erlaubt ist und du dort mit der Person kommunizierst. Andernfalls endet es mit „E-Mail nicht zugestellt“. Wenn das Projekt wichtig ist, erhältst du eine Aufgabe, eine neue Adresse zu finden.
 
 ## Wo du es siehst
 
-Im Kopf des Boards steht „Nachfassen an, nächstes am Do“. Die Karte eines Projekts zeigt das nächste Nachfassen oder dass eins bereit ist. Die Seite des Projekts listet, was rausging, auch was automatisch gesendet wurde.
+Im Boardkopf steht „Nachfassen an, nächstes Follow-up: Do.“ Bei einem Projekt auf dem Board wird das nächste Follow-up angezeigt oder dass eines bereit ist. Auf der Projektseite siehst du alle gesendeten Nachrichten, auch die automatisch gesendeten.
 
-Das Nachfassen wartet, solange deine Machine mit deinen Aufgaben beschäftigt ist oder nah an ihrem Nutzungslimit, und holt später auf. Auf einem geteilten Board fasst nur die Machine des Projektbesitzers nach.
+Nachfassnachrichten warten, wenn deine Machine beschäftigt ist oder sich deinem Nutzungslimit nähert, und werden später nachgeholt. Auf einem geteilten Board fasst nur die Machine der Person nach, der das Projekt gehört.

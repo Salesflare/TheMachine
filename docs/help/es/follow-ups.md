@@ -1,65 +1,67 @@
 ---
 title: Seguimientos
 area: graph
-summary: Hace seguimiento sola cuando alguien no responde, para todo un tablero o un solo proyecto. Pregunta antes, salvo que digas lo contrario.
+summary: Haz seguimiento automáticamente cuando alguien no responda, en todo un tablero o en un proyecto. Te pregunta antes, salvo que le indiques lo contrario.
 covers: follow-ups
 code: follow_ups.py, assistant.py, dashboard.html
 order: 7
-translated: db4d60eb468a206d
+translated: 0e7bdfb2c9b2deb5
 ---
-Cuando alguien de un tablero deja de responder, tu Machine redacta el seguimiento por ti, con tu estilo y en la misma conversación. Desactivado hasta que lo actives. Si una de tus habilidades encaja con el tablero, los borradores la siguen, también en lo que va primero en el email.
+Cuando alguien deja de responder en un tablero, tu Machine redacta el seguimiento por ti, con tu estilo y en la misma conversación. Está desactivado hasta que lo actives. Si una de tus habilidades encaja con el tablero, los borradores la siguen, incluido el orden del contenido del correo.
 
 ## Activarlo
 
-**⋯** en un tablero, luego **Seguimientos…**, y marca **Hacer seguimiento si no hay respuesta**. Se aplica a todos los proyectos de ese tablero. O toca **Seguimientos desactivados** bajo el nombre del tablero, o **Hacerles seguimiento** en una etapa con proyectos sin respuesta desde hace más de 10 días.
+Pulsa **⋯** en un tablero y luego **Seguimientos…**. Marca **Hacer seguimiento si no hay respuesta**. Se aplica a todos los proyectos de ese tablero. También puedes pulsar **Seguimientos desactivados** debajo del nombre del tablero o **Hacerles seguimiento** en una etapa con proyectos que llevan 10 días o más sin respuesta.
 
-Para un solo proyecto, **Seguimientos…** en el **⋯** de su tarjeta o en su página. **Para este proyecto** elige **Activado**, **Desactivada** o el ajuste del tablero. El ajuste propio de un proyecto manda sobre el del tablero.
+Para un solo proyecto, pulsa **Seguimientos…** en **⋯**, ya sea en el tablero o en su página. **Para este proyecto** te permite elegir **Activado**, **Desactivada** o el ajuste del tablero. El ajuste propio de un proyecto tiene prioridad sobre el del tablero.
 
 ## Ajustes
 
-- Espera de 3 a 7 días sin respuesta. Tras la espera más corta se redacta un seguimiento. La más larga es lo más tarde que sale, aunque tu uso vaya justo.
-- **Solo en días laborables**: en tus días libres no se redacta ni se envía nada (según **Ajustes** > **Notificaciones** > **Horario laboral**). Lo que toque entonces espera a tu siguiente mañana laboral. Activado para Trabajo, desactivado para Personal.
-- Haz seguimiento al menos 1 vez y como máximo 3. El mínimo siempre se envía. Entre ambos, igual redacta cada uno. Si cree que es mejor parar, el borrador dice por qué (“The Machine pararía aquí: 9 emails sin respuesta desde agosto”) y no queda marcado: envíalo, omítelo o elige **Parar los seguimientos aquí**. Si pides uno igual en el chat de un seguimiento, lo escribe. Nunca más del máximo.
-- **Etapas**: **Todas las etapas abiertas**, o sea, ni la última etapa del tablero ni Estancado o rechazado. **Personalizar** activa o desactiva etapas y le da a una etapa su propia espera.
-- **Canales**: los conectados que pueden enviar. Un seguimiento sale por el mismo canal que el último mensaje. **Cambiar de canal si no hay respuesta** prueba el siguiente permitido.
-- **Mover a Estancado o rechazado después del último**: activado si el tablero tiene esa fila.
+- De forma predeterminada, espera de 3 a 7 días sin respuesta. El seguimiento se redacta una vez transcurrido el plazo más corto y se envía antes de que termine el más largo, incluso si estás cerca del límite de uso.
+- **Solo en días laborables**: no se redacta ni se envía nada en tus días libres (según **Ajustes** > **Notificaciones** > **Horario laboral**). Lo que venza entonces esperará hasta la mañana de tu próximo día laborable. Está activado para Trabajo y desactivado para Personal.
+- De forma predeterminada, hace de 1 a 3 seguimientos. Siempre envía el mínimo y redacta los demás. Si cree que es mejor parar, el borrador explica por qué ("The Machine pararía aquí: 9 correos sin respuesta desde agosto") y no está marcado. Puedes enviarlo, omitirlo o elegir **Parar los seguimientos aquí**. Nunca superará el máximo.
+- **Etapas**: **Todas las etapas abiertas**, es decir, todas menos la última etapa del tablero y Estancado o rechazado. **Personalizar** te permite activar o desactivar etapas y definir un tiempo de espera para cada una.
+- **Canales**: los canales conectados que permiten enviar mensajes. El seguimiento se envía por el mismo canal que el último mensaje. **Cambiar de canal si no hay respuesta** prueba el siguiente canal permitido.
+- **Mover a Estancado o rechazado después del último**: está activado si el tablero tiene esa fila.
 
-## Preguntar o enviar sola
+## Preguntar antes de enviar o enviar automáticamente
 
-**Pregúntame antes de enviar** es lo predeterminado: los borradores esperan en tus tareas. **Enviar sin preguntar** es un sí permanente para ese tablero o proyecto. Lo inusual te sigue esperando, igual que lo que falla. Con el modo Prudente activado, siempre pregunta. Un seguimiento nunca sale dos veces. Los seguimientos nunca te avisan, ni por push ni por email: sus borradores esperan en tu lista y en el resumen matutino.
+**Pregúntame antes de enviar** es la opción predeterminada: los borradores esperan en tus tareas. **Enviar sin preguntar** es un permiso permanente para ese tablero o proyecto. Si algo falla o es inusual, seguirá esperando tu aprobación, y el nivel Cauteloso siempre pregunta. Un seguimiento nunca se envía dos veces. Los seguimientos nunca te avisan mediante notificaciones push o correo: los borradores esperan en tu lista y en el resumen de la mañana.
 
-Justo antes de enviarlo se revisa el hilo otra vez, y si alguien escribió desde el borrador, no sale: «No enviado: hay un mensaje nuevo en el hilo». La tarea muestra ese mensaje, quién lo escribió y cuándo, con **Leerla** y **Rehacer para este mensaje**, que pide un borrador nuevo que lo tenga en cuenta.
+Justo antes de enviar uno, se vuelve a comprobar el hilo. Si alguien escribió después de que se redactara el borrador, no se envía: "No se ha enviado: hay un mensaje nuevo en el hilo". La tarea muestra el mensaje, quién lo escribió y cuándo, con **Leerla** y **Rehacer para este mensaje**. Esta última opción pide un borrador nuevo que tenga en cuenta el mensaje.
 
 ## Revisarlos
 
-Los seguimientos de un tablero llegan como una sola tarea, nunca una por correo. Mientras se redactan dice “Escribiendo 3 seguimientos…” y luego “8 seguimientos listos para Alpha testers”.
+Los seguimientos de un tablero aparecen en una sola tarea, nunca en una por correo. Mientras se redactan, dice "Redactando 3 seguimientos…" y, cuando están listos, "8 seguimientos listos para probadores de Alpha".
 
-**Revisar** los muestra completos, uno debajo de otro, así que los lees todos de un vistazo. **Enviar**, **Editar** y **Omitir** aparecen en el actual. Con teclado, j y k (o las flechas) para moverte, Enter envía, e edita, s omite (otra vez lo deshace), x marca o desmarca, y c cambia. **Enviar todos los marcados** envía los que siguen marcados.
+**Revisar** los muestra uno debajo de otro, completos, para que puedas leerlos todos al desplazarte. **Enviar**, **Editar** y **Omitir** aparecen en el seguimiento actual. Con el teclado, j y k (o las flechas) te permiten moverte; Enter lo envía, e lo edita, s lo omite (y vuelve a pulsarlo para deshacer), x marca o desmarca, y c permite hacer cambios. **Enviar todos los marcados** envía los que sigan marcados.
 
-**Omitir** desmarca un borrador y lo lleva al final, marcado como Omitido con **Deshacer**; queda omitido del todo al cerrar la revisión. Uno omitido vuelve con **Recuperar** en los seguimientos del proyecto o en su tarea en Hecho, mientras no haya uno más reciente. El seguimiento de un solo proyecto es una tarea normal.
+Cada seguimiento incluye su borrador. Si no se puede redactar, indica qué hace falta primero ("No hay borrador. Primero hace falta: saber a quién va dirigido") y no aparece marcado. **Escríbelo** pide que se redacte de todos modos. Si un borrador tiene varios destinatarios posibles, dice "Destinatario: elige uno al enviar" y, al pulsar **Enviar**, te pide que elijas.
 
-**Pedir cambios…** reescribe todos los borradores marcados, o solo el actual, como digas; no se envía nada y **Deshacer cambio** recupera el texto anterior. Mientras el cuadro de cambio está abierto o se reescribe algo, no se envía nada, y un borrador que cambió se muestra otra vez antes de salir.
+**Omitir** desmarca un borrador y lo mueve al final. Aparece como Omitido, con la opción **Deshacer**. Se omite definitivamente al cerrar la revisión. Puedes recuperarlo con **Recuperar** en los seguimientos del proyecto o en su tarea de Hecho, siempre que no haya llegado un seguimiento más reciente. El seguimiento de un solo proyecto es una tarea normal.
 
-Cuando salen varios seguidos, también con Enviar sin preguntar, cada buzón envía uno cada 30 a 45 segundos y la tarea muestra cómo va: “Enviando 3 de 8…”. **Dejar de enviar** detiene el resto: el que ya está saliendo sale igual, y los demás vuelven como borradores a la revisión, para enviarlos más tarde (“Detenido. Enviados: 1. 11 guardados como borradores.”).
+**Pedir cambios…** reescribe todos los borradores marcados, o solo el actual, según lo que indiques. No se envía nada y **Deshacer cambio** recupera el texto anterior. Mientras el cuadro esté abierto o se esté reescribiendo un borrador, no se puede enviar nada. Además, cualquier borrador que haya cambiado vuelve a mostrarse antes de poder enviarse.
 
-## Correos enviados antes de tu Machine
+Si se envían varios seguidos, incluso con Enviar sin preguntar, cada buzón envía uno cada 30 a 45 segundos. La tarea indica el progreso: "Enviando 3 de 8…". **Dejar de enviar** detiene los demás. Si ya hay uno en camino, se envía; los demás vuelven a la revisión como borradores para enviarlos más tarde ("Se detuvo el envío. 1 enviado, 11 guardados como borradores").
 
-Los correos que enviaste desde otra app, antes de que tu Machine leyera ese buzón, también cuentan. Lee la conversación (o, si no puede, los correos anteriores citados en tu último), así que tres correos sin respuesta cuentan como tres, y “Sin respuesta desde hace” cuenta desde el primero. Si ya llegaste al máximo, no redacta otro.
+## Correos enviados antes de que tu Machine los leyera
+
+También se tienen en cuenta los correos que enviaste desde otra aplicación antes de que tu Machine leyera ese buzón. Lee la conversación (o, si no puede, los correos anteriores citados en el último mensaje que enviaste). Así, tres correos sin respuesta cuentan como tres, y el plazo de «Sin respuesta durante» empieza desde el primero. Si ya alcanzaste el máximo, no redacta otro.
 
 ## Cuándo se detienen
 
-Los seguimientos se detienen cuando la persona responde, cuando el proyecto se gana, se pierde, se archiva o pasa a una etapa cerrada, y cuando pospones u omites uno. Antes de redactar, tu Machine busca algo más reciente en la conversación, para no insistir a quien ya respondió por otro lado.
+Los seguimientos se detienen cuando responden, cuando el proyecto se gana, se pierde, se archiva o pasa a una etapa cerrada, y cuando pospones u omites uno. Antes de redactar, tu Machine comprueba si hay algo nuevo en la conversación para no insistirle a alguien que ya respondió por otro canal.
 
-**Pausar** en **Seguimientos…** detiene un tablero o proyecto sin desactivar los seguimientos: no se redacta ni se envía nada, ninguna ronda termina y las tareas abiertas siguen abiertas. Elige un día para reanudar, o toca **Reanudar** cuando quieras. La espera sigue donde estaba y lo pendiente llega de uno en uno. Mientras tanto se ve **En pausa**.
+**Pausar** en **Seguimientos…** suspende los seguimientos de un tablero o proyecto sin desactivarlos: no se redacta ni se envía nada, no termina ninguna ronda y las tareas de seguimiento abiertas siguen abiertas. Elige un día para reanudarlos o pulsa **Reanudar** cuando quieras. El tiempo de espera continúa desde donde quedó y lo que ya vencía se procesa de uno en uno. Mientras tanto, aparece **En pausa**.
 
-Tras el último seguimiento sin respuesta, el proyecto muestra “Sin respuesta tras 3 seguimientos” y pasa a Estancado o rechazado si eso está activado. Si se detienen antes de enviar alguno, muestra “Seguimientos detenidos” y se queda en su etapa.
+Después del último seguimiento sin respuesta, el proyecto muestra "Sin respuesta después de 3 seguimientos" y pasa a Estancado o rechazado si esa opción está activada. Si se detuvo antes de enviar alguno, muestra "Seguimientos detenidos" y permanece en su etapa.
 
-Si su email rebotó y tienen otra dirección, el seguimiento va allí ("Rebotó, ahora a <dirección>"). Un borrador cuya dirección rebota antes de salir se retiene: "No enviado: <dirección> rebotó", y pasa a su otra dirección, donde espera a que lo envíes.
+Si el correo rebotó y la persona tiene otra dirección, el seguimiento se envía allí ("Correo rebotado. Ahora se enviará a <address>"). Si el correo de un borrador rebota antes de enviarlo, se retiene: "No se ha enviado: <address> ha rebotado". Se cambia a la otra dirección de esa persona y queda a la espera de que pulses Enviar.
 
-Sin otra dirección, los seguimientos pasan a LinkedIn o WhatsApp cuando está permitido y habláis allí. Si no, se detienen con "El email rebotó". Cuando el proyecto importa, recibes un to-do para encontrar una dirección nueva.
+Si no hay otra dirección, los seguimientos pasan a LinkedIn o WhatsApp cuando esté permitido y converses por ahí. De lo contrario, se detienen y muestran "El correo ha rebotado". Si el proyecto es importante, recibirás una tarea para buscar una dirección nueva.
 
-## Dónde lo ves
+## Dónde verlo
 
-La cabecera del tablero dice “Seguimientos activados, el próximo el jue”. La tarjeta de un proyecto muestra su próximo seguimiento, o que hay uno listo. La página del proyecto lista lo que se envió, también lo enviado automáticamente.
+El encabezado del tablero indica "Seguimientos activados, el próximo jue". En el tablero, cada proyecto muestra su próximo seguimiento o que ya está listo. En la página del proyecto aparece una lista de los seguimientos enviados, incluidos los enviados automáticamente.
 
-Los seguimientos esperan mientras tu Machine está ocupada con tus tareas o cerca de su límite de uso, y se ponen al día después. En un tablero compartido, solo la Machine del propietario del proyecto hace seguimiento.
+Los seguimientos esperan si tu Machine está ocupada o cerca del límite de uso, y se ponen al día más tarde. En un tablero compartido, solo la Machine de quien sea propietario del proyecto hace el seguimiento.
