@@ -34,6 +34,15 @@ def answer_all(prompt, work=lambda view: 'deadline' in view['text'] or 'by Frida
     return json.dumps({'verdicts': verdicts})
 
 
+CASE_TEXTS = {'<<<' + c[5] + '>>>': c[7] for c in mw.CASES}
+
+
+def answer_right(prompt):
+    """A stand-in evaluator that follows the judging prompt: right on every made-up signal, work on a deadline, and no
+    work in the owner's own offer that waits for the other side."""
+    return answer_all(prompt, lambda view: CASE_TEXTS.get(view['text'], 'by Friday' in view['text']))
+
+
 class Audit(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
@@ -166,12 +175,79 @@ class Audit(unittest.TestCase):
                 mw.label(db, self.ids['mail'][0], 'maybe')
             cal = mw.calibration(db)
         self.assertEqual(cal['owner'], {'n': 3, 'precision': 2 / 3})
-        self.assertEqual(cal['precision_from'], 'made_up')  # too few labels yet
+        self.assertEqual(cal['precision_from'], 'owner')  # the stand-in flagged no made-up signal: no prior to blend
         with self.store.connect() as db:
             db.execute("UPDATE missed_audit_items SET label='real' WHERE work=0")  # stands in for more labeled misses
             db.execute('UPDATE missed_audit_items SET work=1')
             cal = mw.calibration(db)
-        self.assertEqual(cal['precision_from'], 'owner')
+        self.assertEqual(cal['owner']['n'], 18)
+
+    def test_not_a_miss_lowers_the_number_at_once(self):
+        with self.store.connect() as db:
+            audit = mw.begin(db)
+            mw.save(db, audit, mw.run(db, ACCOUNTS, answer_right, seed=audit, bulk=machine_store_review.bulk_kind))
+            before = mw.summary(db)
+            self.assertEqual(before['precision'], 1.0)  # the made-up signals alone: it is never wrong on them
+            self.assertFalse(before['few'])
+            for event_id in self.ids['mail'][:2]:
+                mw.label(db, event_id, 'not')
+            after = mw.summary(db)
+        self.assertEqual(after['labeled'], 2)
+        self.assertAlmostEqual(after['precision'], mw.OWNER_PRIOR / (2 + mw.OWNER_PRIOR))  # made-up 1.0 as 3 labels, then 2 Not a miss
+        self.assertAlmostEqual(after['adjusted']['rate'], before['adjusted']['rate'] * after['precision'])
+        self.assertLess(after['adjusted']['rate'], before['adjusted']['rate'])
+        self.assertLessEqual(after['adjusted']['low'], after['adjusted']['rate'])
+        self.assertGreater(after['adjusted']['high'] - after['adjusted']['low'],  # the labels' own uncertainty is in the range
+                           (before['adjusted']['high'] - before['adjusted']['low']) * after['precision'])
+        self.assertEqual((after['left'], after['few']), (1, True))  # one miss left: the page says Few, not a percentage
+
+    def add_sent(self, rows):
+        """Mails the owner sent (or got), reviewed with nothing made: [(body, from)], their event ids."""
+        ids = []
+        with self.store.connect() as db:
+            for n, (body, sender) in enumerate(rows):
+                ids.append(db.execute(
+                    'INSERT INTO events(account_id,source_id,kind,occurred_at,title,body,metadata,content_hash,version,analyzed_version,ingested_at) '
+                    'VALUES(?,?,?,?,?,?,?,?,1,1,?)', ('work', f'o{n}', 'gmail.message', self.stamp, 'Trying the app', body,
+                                                     json.dumps({'thread_id': f'to{n}', 'from': sender, 'labels': ['SENT']}), f'ho{n}', self.stamp)).lastrowid)
+            db.execute("INSERT INTO analyses(id,started_at,finished_at,items,status) VALUES('r2',?,?,?,'complete')",
+                       (self.stamp, self.stamp, json.dumps([{'id': i, 'version': 1} for i in ids])))
+        return ids
+
+    def test_one_text_sent_to_several_people_counts_once(self):
+        offer = ('Hi {}, thanks for signing up last week. If you give the app a try and tell me what you think, '
+                 'I will add three more months to your free plan. Cheers, the team')
+        names = ('Dana', 'Kai', 'Lior', 'Noor', 'Rami')
+        ids = self.add_sent([(offer.format(n), 'Owner <owner@example.com>') for n in names]
+                            + [(offer.format('Sol'), 'Sol <sol@other.example>'),  # someone else's copy is their own message
+                               ('Thanks, see you then.', 'owner@example.com'), ('Thanks, see you then.', 'owner@example.com'),  # too short to be a template
+                               ('Here is a whole different note about the quarterly plan we talked through on the phone yesterday.', 'owner@example.com')])
+        own = frozenset({'owner@example.com'})
+        with self.store.connect() as db:
+            found, skipped = mw.candidates(db, ACCOUNTS, '2000-01-01', own, machine_sources_calendar.calendar_owned, machine_store_review.bulk_kind)
+            state = mw.prepare(db, ACCOUNTS, size=40, seed='t', own=own, owned=machine_sources_calendar.calendar_owned, bulk=machine_store_review.bulk_kind)
+        kept = {c['id'] for c in found} & set(ids)
+        self.assertEqual(kept, {ids[0], *ids[5:]})  # the first copy only
+        self.assertEqual(skipped['sent_again'], len(names) - 1)
+        self.assertEqual(state['population'], 18 + 5)
+        self.assertEqual(sum(1 for i in state['sample'] if i['id'] in ids[:5]), 1)
+
+    def test_an_offer_that_waits_for_the_other_side_is_no_work(self):
+        """The judge's prompt says so as a principle, and the made-up signals check it blind every audit."""
+        self.assertIn('only holds once the other side\nacts first', mw.EVALUATOR)
+        self.assertIn('a promise the owner keeps in the same message', mw.EVALUATOR)
+        waits = [c for c in mw.CASES if c[2] == 'the owner' and not c[7]]
+        self.assertGreaterEqual(len(waits), 2)  # a conditional offer and a promise kept at once: expected no work
+        self.assertTrue(all('.example' in c[3] for c in waits))
+        # an outreach of such offers to several people: once in the sample, and judged no work it adds no miss
+        offer = 'Hello {}, if you try the app this month and send me feedback, I will extend your free access by a quarter. Best'
+        ids = self.add_sent([(offer.format(n), 'owner@example.com') for n in ('Dana', 'Kai', 'Lior', 'Noor')])
+        with self.store.connect() as db:
+            audit = mw.begin(db)
+            found = mw.run(db, ACCOUNTS, answer_right, seed=audit, size=40, own=frozenset({'owner@example.com'}), bulk=machine_store_review.bulk_kind)
+            mw.save(db, audit, found)
+        self.assertEqual([i['work'] for i in found['sampled'] if i['id'] in ids], [False])
+        self.assertEqual(sum(i['work'] for i in found['sampled']), 3)  # only the three real deadlines
 
     def test_weekly_within_the_budget(self):
         app = object.__new__(machine_main.App)
@@ -199,7 +275,7 @@ class Audit(unittest.TestCase):
         with self.assertRaises(ValueError):
             app.action('missed_work_label', {'event_id': self.ids['mail'][0], 'label': 'real'})  # the owner's, on the dashboard
         done = app.action('missed_work_label', {'event_id': self.ids['mail'][0], 'label': 'real'}, owner_dashboard=True)
-        self.assertEqual(done['missed_work']['labeled'], 0)  # counted at the next audit
+        self.assertEqual(done['missed_work']['labeled'], 1)  # counted at once
         self.assertIn('missed_work_label', machine_actions.DASHBOARD_ACTIONS)
 
     def app(self):

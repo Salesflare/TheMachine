@@ -1,5 +1,5 @@
 // Missed to-dos (Learning, How it's going): the weekly check of messages that got no to-do (missed_work.py). One
-// number (the share that likely needed one, with its range), the misses it found to check (each opens the message and
+// number (the share that likely needed one, with its range; Few when only a couple are left), the misses it found to check (each opens the message and
 // takes the owner's Real miss or Not a miss, kept on this Machine).
 const MW_CHANNEL={email:'Email',message:'Message',meeting:'Meeting'};
 const mwPct=v=>v==null?null:Math.round(100*v);
@@ -16,7 +16,8 @@ function missedNodes(m){if(!m)return [];const est=m.adjusted||m.raw;if(!est||est
    make('button',{type:'button','data-mw-label':'not','data-mw-id':id,'aria-pressed':x.label==='not'},t('Not a miss'))))};
 
  return [make('h3',{class:'q-h'},t('Missed to-dos')),make('p',{class:'learn-intro'},t('Each week I check a sample of messages that got no to-do. Last check {}.',day)),
-  make('div',{class:'q-tiles mw-tiles'},qTile(mwPct(est.rate),'Likely missed',t(['Of {} message with no to-do','Of {} messages with no to-do'],Number(m.population||0).toLocaleString(DL)),make('small',{class:'q-was'},t('Between {}% and {}%',mwPct(est.low),mwPct(est.high))))),
+  // under FEW misses left (m.few, after Not a miss): no percentage, the count it rests on
+  make('div',{class:'q-tiles mw-tiles'},m.few?qTile(t('Few'),'Likely missed',t('{} of {} checked messages',m.left,m.sampled)):qTile(mwPct(est.rate),'Likely missed',t(['Of {} message with no to-do','Of {} messages with no to-do'],Number(m.population||0).toLocaleString(DL)),make('small',{class:'q-was'},t('Between {}% and {}%',mwPct(est.low),mwPct(est.high))))),
   ...m.misses?.length?[make('div',{class:'list mw-list'},m.misses.map(row))]:[]]}
 // How it's going before enough decided to-dos (q.enough, QUALITY_ENOUGH in profile.py), when a share says nothing: one
 // line on what it will show and how far along it is, the mascot as on other empty states, and the Change notes by kind.
@@ -34,7 +35,7 @@ return parts.length?make('div',{class:'notes-split'},make('span',{},'What your C
 // all four. Then Worth it week by week (8 weeks, each bar its own %), the Change notes by kind, and Worth it per source.
 const qPct=(a,b)=>b?Math.round(100*a/b):null;
 function qWas(v,prev){if(v==null||prev==null)return'';return make('small',{class:'q-was'},v>prev?t('Up from {}% the 30 days before',prev):v<prev?t('Down from {}% the 30 days before',prev):t('Same as the 30 days before'))}
-function qTile(value,name,means,was=''){return make('div',{class:'q-tile'},make('span',{class:'q-name'},t(name)),make('b',{},value==null?'–':value+'%'),make('small',{class:'q-means'},means),was)}
+function qTile(value,name,means,was=''){return make('div',{class:'q-tile'},make('span',{class:'q-name'},t(name)),make('b',{},value==null?'–':typeof value=='string'?value:value+'%'),make('small',{class:'q-means'},means),was)}
 // Before enough decided to-dos (q.enough, QUALITY_ENOUGH in profile.py): qualityWait
 function qualityNodes(q){const decided=q?(q.worth_it||0)+(q.dismissed||0):0,enough=q?.enough||3;if(decided<enough)return qualityWait(decided,enough,q?.notes);
  const sent=(q.sent_as_written||0)+(q.sent_edited||0),few=t('Not enough to-dos yet');
