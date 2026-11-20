@@ -130,7 +130,7 @@ invalid receipt or timeout blocks it as well. The token is never included in rel
   password; it keeps a password only for the sign-ins the owner ticks to keep. On the export page the owner signs
   in; a fixed script (never the model) then only clicks the way to the export step and focuses the master password
   field. It never types, reads a field's value or takes a screenshot, and nothing from the page reaches the model, a
-  log or an error. A download from the export page goes
+  log or an error: only where the owner types sits in the window (four numbers), for a phone's live view to zoom to. A download from the export page goes
   into a private folder made for it, is read once and deleted from disk right away, and the folder goes with it. Delete
   an export file you picked yourself afterwards: it holds every password in plain text.
 - The browser's own cookies and sign-ins (its profile) belong to the browser: protected by the account and the disk,

@@ -81,12 +81,25 @@ SCRIPT = r'''function (r, s) {
   const words = (t) => String(t || '').replace(/\s+/g, ' ').trim().toLowerCase();
   const pw = [...document.querySelectorAll('input[type=password]')].find(shows);
   const signin = test(r.signin);
+  // Where the owner types, for the live view to zoom to on a phone: the field with the focus, else the password or
+  // the first text field, with its form or dialog around it when that fits. Its place in the window only.
+  const box = () => {
+    const a = document.activeElement, field = a && a.matches && a.matches('input') && shows(a) ? a : pw ||
+      [...document.querySelectorAll('input[type=email],input[type=text],input:not([type])')].find(shows);
+    if (!field) return null;
+    const area = field.closest('form,dialog,[role=dialog]'), b0 = area && shows(area) && area.getBoundingClientRect();
+    const b = b0 && b0.height < innerHeight * 0.8 && b0.width < innerWidth * 0.9 ? b0 : field.getBoundingClientRect();
+    const W = outerWidth || innerWidth, H = outerHeight || innerHeight, top = Math.max(0, H - innerHeight), left = Math.max(0, (W - innerWidth) / 2);
+    const x = Math.max(0, b.left), y = Math.max(0, b.top);
+    return {x: (left + x) / W, y: (top + y) / H, w: Math.min(b.right, innerWidth) - x, h: Math.min(b.bottom, innerHeight) - y, W, H};
+  };
+  const at = (word) => { const b = box(); return b && b.w > 0 && b.h > 0 ? {at: word, box: {x: b.x, y: b.y, w: b.w / b.W, h: b.h / b.H}} : {at: word}; };
   if (pw && (s.armed || test(r.at)) || s.armed && signin) {
     if (pw && s.focus && document.activeElement !== pw) pw.focus();
-    return {at: 'password'};
+    return at('password');
   }
-  if (pw || signin) return {at: 'signin'};
-  if (!test(r.vault)) return {at: 'elsewhere'};
+  if (pw || signin) return at('signin');
+  if (!test(r.vault)) return at('elsewhere');
   if (s.armed && r.email && document.body && new RegExp(r.email, 'i').test(document.body.innerText || '')) return {at: 'email'};
   if (r.go && !test(r.at)) { if (s.go) location.assign(r.go); return {at: 'going'}; }
   const clickable = 'button,a[href],[role=button],[role=menuitem],[role=link],[role=tab],[role=option],[role=radio],' +
@@ -115,7 +128,19 @@ AT = {'password', 'signin', 'elsewhere', 'email', 'going', 'held', 'click', 'mis
 
 def start():
     """A guide's state, kept by the export's watch: what was clicked when, and since when nothing happened."""
-    return {'clicks': {}, 'last': {}, 'goes': 0, 'armed': False, 'focused': False, 'progress': time.monotonic()}
+    return {'clicks': {}, 'last': {}, 'goes': 0, 'armed': False, 'focused': False, 'progress': time.monotonic(), 'box': None}
+
+
+def _box(box):
+    """Where the owner types, as fractions of the browser's window {x, y, w, h}, or None: numbers only, each checked."""
+    if not isinstance(box, dict):
+        return None
+    values = {k: box.get(k) for k in ('x', 'y', 'w', 'h')}
+    if not all(isinstance(v, (int, float)) and not isinstance(v, bool) and 0 <= v <= 1 for v in values.values()):
+        return None
+    if values['w'] <= 0 or values['h'] <= 0:
+        return None
+    return {k: round(float(v), 4) for k, v in values.items()}
 
 
 def look(base, tab, recipe, state):
@@ -140,7 +165,7 @@ def look(base, tab, recipe, state):
                     return None
                 for kind in ('mouseMoved', 'mousePressed', 'mouseReleased'):
                     session.call('Input.dispatchMouseEvent', {'type': kind, 'x': x, 'y': y, 'button': 'left', 'clickCount': 1})
-            return {'at': at, 'step': step}
+            return {'at': at, 'step': step, 'box': _box(got.get('box'))}
     except (browser_cdp.CdpError, OSError, ValueError, TypeError, KeyError, AttributeError):
         return None
 
@@ -148,13 +173,15 @@ def look(base, tab, recipe, state):
 def step(base, tab, manager, state):
     """One look at the export tab: what the owner is told now, one of 'signin' (sign in on the page), 'working' (the
     script is on it), 'password' (type the master password to export), 'email' (confirm the manager's email) or
-    'manual' (the page isn't as expected: the steps are the owner's). None: no new word (the page didn't answer)."""
+    'manual' (the page isn't as expected: the steps are the owner's). None: no new word (the page didn't answer).
+    At sign-in and password, state['box'] is where the owner types in the window (_box), for the live view."""
     recipe = RECIPES[manager]
     seen = look(base, tab, recipe, state)
     if seen is None:
         return None
     now, at = time.monotonic(), seen['at']
     said = {'signin': 'signin', 'elsewhere': 'signin', 'password': 'password', 'email': 'email'}.get(at)
+    state['box'] = seen['box'] if said in ('signin', 'password') else None
     if at == 'password':
         state['focused'], state['owner'] = True, now
     if at == 'going' and state['goes'] < GOES:

@@ -367,7 +367,7 @@ def _follow(watch, session, folder, store):
                 if watch['step'] != 'manual':
                     said = login_export_guide.step(watch['base'], watch['tab'], watch['manager'], guide)
                     if said:
-                        watch['step'] = said
+                        watch['step'], watch['focus'] = said, guide['box']
                     elif _tab_gone(watch):
                         watch['error'], watch['state'] = 'The export page was closed. Try again.', 'failed'
                         return
@@ -449,6 +449,13 @@ def export_check(token):
     if watch['state'] == 'waiting':
         return {'state': 'waiting', 'step': watch['step']}
     return {'state': watch['state']}
+
+
+def export_focus():
+    """Where the owner types on the export page now (sign-in or master password), as fractions of the browser's
+    window, for the live view to zoom to on a phone (browser_viewer.on_screen); None at any other step."""
+    with _exports_lock:
+        return next((w.get('focus') for w in _exports.values() if w['state'] == 'waiting' and w.get('focus')), None)
 
 
 def export_stop(token):

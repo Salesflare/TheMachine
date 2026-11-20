@@ -195,6 +195,16 @@ class GuideTest(unittest.TestCase):
         focused = self.owner(watch, '() => document.activeElement && document.activeElement.type')
         self.assertEqual(focused, 'password', 'the master password field is focused for the owner')
         self.assertEqual(self.owner(watch, '() => document.activeElement.value'), '', 'nothing typed into it')
+        # where the owner types, for a phone's live view to zoom to: its place in the window, numbers only, around the field
+        end = time.monotonic() + 5
+        while not login_import.export_focus() and time.monotonic() < end:
+            time.sleep(0.1)
+        box = login_import.export_focus()
+        self.assertEqual(set(box), {'x', 'y', 'w', 'h'}, box)
+        self.assertTrue(all(isinstance(v, float) and 0 <= v <= 1 for v in box.values()), box)
+        field = self.owner(watch, '() => { const b = document.activeElement.getBoundingClientRect(), W = outerWidth || innerWidth,'
+                                  ' H = outerHeight || innerHeight, t = H - innerHeight; return [(b.left + b.width / 2) / W, (t + b.top + b.height / 2) / H]; }')
+        self.assertTrue(box['x'] <= field[0] <= box['x'] + box['w'] and box['y'] <= field[1] <= box['y'] + box['h'], (box, field))
         return self.owner(watch, '() => { const f = document.activeElement; f.value = "' + MASTER + '"; f.form.requestSubmit(); return 1; }')
 
     def review(self, watch):

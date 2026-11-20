@@ -68,7 +68,7 @@ A site can keep several accounts, such as **Work** and **Personal**. **Save as**
 
 **Import** brings in sign-ins from a password manager. Pick one:
 
-- **LastPass**, **Bitwarden** or **Google Password Manager**: its export page opens in your Machine's browser. Sign in there, and your Machine clicks on to the export. One line says what's left for you, like typing your master password. If the page looks different than expected, the steps to finish by hand show instead. Your Machine picks up the file, reads it once and deletes it.
+- **LastPass**, **Bitwarden** or **Google Password Manager**: its export page opens in your Machine's browser. Sign in there, and your Machine clicks on to the export. One line says what's left for you, like typing your master password. On a phone the view zooms to where you type. If the page looks different than expected, the steps to finish by hand show instead. Your Machine picks up the file, reads it once and deletes it.
 - **1Password**: export a CSV from the 1Password app on a computer, then choose that file. If 1Password's `op` is signed in on your Machine, it reads from there instead (LastPass's `lpass` too).
 - **From an export file**: a CSV from 1Password, LastPass, Bitwarden or Chrome. Delete it once you're done.
 
