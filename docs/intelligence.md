@@ -1077,14 +1077,19 @@ whose to-do the owner dismissed or snoozed, is never looked at again. **Connecti
 
 - Once a week, within the usage budget like every background turn, it samples up to 30 of the last week's reviewed
   emails, messages and meetings, stratified by channel and area (Personal, or Work at one company). Mail in Spam or
-  Trash, mail the review saw as a title line, and meetings on someone else's calendar are left out.
+  Trash, mail the review saw as a title line, and meetings on someone else's calendar are left out. The same text the
+  owner sent to several people (an outreach, a mail merge, near word for word) counts once, in the sample and the
+  estimate.
 - One small model turn with its own prompt judges each: a reply owed, a promise made to or by the owner, a deadline, a
   request. It never sees what the review decided, and every message's text is marked as untrusted data. Ten made-up
-  signals with a known answer are mixed in blind.
+  signals with a known answer are mixed in blind. The owner's own offer that only holds once the other side acts first,
+  and a promise kept in the same message, are no work: the other side's answer comes in as a message of its own.
 - It keeps the share of misses with a 95% confidence interval, overall (each stratum weighted by its size) and per
   stratum, and adjusts it by the evaluator's precision and recall: recall from the made-up signals of the last eight
-  audits, precision from the owner's own labels once there are five (from the made-up ones before that).
-- **Learning, How it's going, Missed to-dos** shows the number, its range and the misses to check, each with **Open** (its line
+  audits, precision from those blended with the owner's own labels (the made-up ones weigh as three labels, so each
+  **Not a miss** lowers the number at once, and the interval widens for the labels' own uncertainty).
+- **Learning, How it's going, Missed to-dos** shows the number, its range and the misses to check (**Few** with the
+  count instead of a number when fewer than three are left after Not a miss), each with **Open** (its line
   opens it too, in the dashboard's own viewer; nothing when the message is no longer kept), **Real miss** and **Not a
   miss**, and **Open to-do** once a Real miss has one. The labels stay in `missed_audit_items` and are never sent. The reasons it gives are
   sealed like other text derived from messages.
