@@ -6,9 +6,11 @@ Three ways, all started by the owner on the dashboard and all ending in a review
   or Bitwarden's unencrypted JSON. parse() reads it in memory; nothing of it is written anywhere until the owner keeps
   some.
 - The password manager's own export page in the Machine's browser (export_open: LastPass's vault, Bitwarden's web
-  vault, Google Password Manager). The owner signs in and exports there themselves (any password, 2FA or confirm step
-  is theirs); the browser saves the download into a private folder of its own for this one export, and the file is
-  read and deleted from disk as soon as it is whole (it holds every password in plain text).
+  vault, Google Password Manager). The owner signs in there; then a fixed script (login_export_guide, never the
+  model) clicks on to the export step, and what proves it's them stays theirs: the sign-in, 2FA, the master password
+  asked again, an email to confirm. Nothing is typed for them and no field is read. The browser saves the download
+  into a private folder of its own for this one export, and the file is read and deleted from disk as soon as it is
+  whole (it holds every password in plain text).
 - 1Password's `op` or LastPass's `lpass` command-line tool, when it is installed on this computer and the owner has
   signed in to it themselves. The list shows names, addresses and usernames only; a password is read from the tool
   only for the ones the owner keeps, at that moment. Nothing here signs in to a password manager, starts one's sign-in
@@ -34,6 +36,7 @@ import threading
 import time
 
 import browser_login
+import login_export_guide
 from machine.owner_error import OwnerError
 
 MAX_BYTES = 5 * 1024 * 1024
@@ -272,54 +275,105 @@ EXPORT_PAGES = {'lastpass': 'https://lastpass.com/vault/',
                 'bitwarden': 'https://vault.bitwarden.com/#/tools/export',
                 'chrome': 'https://passwords.google.com/options'}
 EXPORT_SECONDS = 1200  # how long an export page waits for its download
+OPEN_SECONDS = 90  # how long opening it may take (a browser that starts first) before it fails with a sentence
 EXPORT_POLL = 1.5
+OPEN_FAILED = 'I couldn’t open the export page in your Machine’s browser'
 _exports = {}
 _exports_lock = threading.Lock()
 
 
-def export_open(base, manager, data_dir, store):
-    """Opens the manager's export page in a new tab of the browser at `base` (loopback DevTools), with its downloads
-    going into a private folder made for this export only, and follows that folder in a thread of its own. Returns
-    {watch, tab}; export_check(watch) says when the review is ready. Starting one stops any other."""
+def export_open(base, manager, data_dir, store, shown=None):
+    """Starts the export and answers at once with {watch}: a thread of its own opens the manager's export page in a new
+    tab of the browser at `base` (loopback DevTools), with its downloads going into a private folder made for this
+    export only, calls shown(tab) to bring it to the front, and follows the page and that folder. The browser can take
+    a while to start, so the dashboard's call never waits on it. export_check(watch) says how far it got: the step
+    the owner is on (login_export_guide) and the review once the file is in. Starting one stops any other."""
     if manager not in EXPORT_PAGES:
         raise OwnerError('Which password manager?')
     with _exports_lock:
         for old in _exports.values():
             old['stop'].set()
         _exports.clear()
-    folder = Path(data_dir) / ('login-export-' + secrets.token_hex(8))
+    watch = {'token': secrets.token_urlsafe(18), 'manager': manager, 'state': 'waiting', 'step': 'opening',
+             'stop': threading.Event(), 'opened': time.monotonic(), 'until': time.monotonic() + EXPORT_SECONDS,
+             'base': base, 'tab': None}
+    with _exports_lock:
+        _exports[watch['token']] = watch
+    threading.Thread(target=_open_and_follow, args=(watch, Path(data_dir), store, shown), daemon=True, name='login-export').start()
+    return {'watch': watch['token']}
+
+
+def _open_and_follow(watch, data_dir, store, shown):
+    folder = data_dir / ('login-export-' + secrets.token_hex(8))
     folder.mkdir(mode=0o700, parents=True)
     cdp = browser_login.browser_cdp
     session = None
     try:
-        session = cdp.Session.browser(base, timeout=20)
+        session = cdp.Session.browser(watch['base'], timeout=20)
         # held while the export is followed: the browser keeps this download folder for as long as the session is open
         session.call('Browser.setDownloadBehavior', {'behavior': 'allow', 'downloadPath': str(folder)})
-        tab = cdp.open_tab(base, EXPORT_PAGES[manager])
+        watch['tab'] = cdp.open_tab(watch['base'], EXPORT_PAGES[watch['manager']])
     except (cdp.CdpError, OSError, ValueError, TypeError, KeyError):
         if session:
             session.ws.close()
         _clear(folder)
-        raise OwnerError('I couldn’t open the export page in your Machine’s browser') from None
-    watch = {'token': secrets.token_urlsafe(18), 'manager': manager, 'state': 'waiting', 'stop': threading.Event(),
-             'until': time.monotonic() + EXPORT_SECONDS, 'base': base, 'tab': tab}
-    with _exports_lock:
-        _exports[watch['token']] = watch
-    threading.Thread(target=_follow, args=(watch, session, folder, store), daemon=True, name='login-export').start()
-    return {'watch': watch['token'], 'tab': tab}
+        watch['error'], watch['state'] = OPEN_FAILED, 'failed'
+        return
+    if watch['stop'].is_set():  # Back while it opened
+        _close_tab(watch)
+        _follow_end(session, folder)
+        return
+    watch['step'] = 'signin'
+    if shown:
+        try:
+            shown(watch['tab'])
+        except Exception:  # bringing it to the front is a nicety; the export goes on without it
+            pass
+    _follow(watch, session, folder, store)
+
+
+def _close_tab(watch):
+    try:
+        browser_login.browser_cdp.close_tab(watch['base'], watch['tab'])
+    except (browser_login.browser_cdp.CdpError, OSError):
+        pass
+
+
+def _tab_gone(watch):
+    """True only when the browser answers and the export's tab isn't among its tabs (the owner closed it, or the
+    browser started over)."""
+    try:
+        return watch['tab'] not in browser_login.browser_cdp.tab_ids(watch['base'])
+    except (browser_login.browser_cdp.CdpError, OSError, TypeError, KeyError, AttributeError):
+        return False
 
 
 def _follow(watch, session, folder, store):
-    """Waits for the export's download, reads it, deletes it and holds its review; then puts the browser's downloads
-    back and removes the folder, whatever happened."""
-    sizes = {}
+    """Waits for the export's download, reads it, deletes it and holds its review; meanwhile the guide clicks the page
+    on to its export step and says what is left for the owner. Then puts the browser's downloads back and removes the
+    folder, whatever happened."""
+    sizes, guide = {}, login_export_guide.start()
     try:
         while not watch['stop'].wait(EXPORT_POLL):
             if time.monotonic() > watch['until']:
                 watch['state'] = 'expired'
                 return
+            try:  # again each round: another DevTools client of the browser may have set its own download folder
+                session.call('Browser.setDownloadBehavior', {'behavior': 'allow', 'downloadPath': str(folder)})
+            except (browser_login.browser_cdp.CdpError, OSError):
+                pass
             path = _whole_file(folder, sizes)
             if not path:
+                if watch['step'] != 'manual':
+                    said = login_export_guide.step(watch['base'], watch['tab'], watch['manager'], guide)
+                    if said:
+                        watch['step'] = said
+                    elif _tab_gone(watch):
+                        watch['error'], watch['state'] = 'The export page was closed. Try again.', 'failed'
+                        return
+                elif _tab_gone(watch):
+                    watch['error'], watch['state'] = 'The export page was closed. Try again.', 'failed'
+                    return
                 continue
             try:
                 kind, rows, skipped = parse(_take(path))
@@ -327,18 +381,19 @@ def _follow(watch, session, folder, store):
                 watch['state'] = 'review'
             except OwnerError as error:
                 watch['error'], watch['state'] = str(error), 'failed'
-            try:
-                browser_login.browser_cdp.close_tab(watch['base'], watch['tab'])
-            except (browser_login.browser_cdp.CdpError, OSError):
-                pass
+            _close_tab(watch)
             return
     finally:
-        try:
-            session.call('Browser.setDownloadBehavior', {'behavior': 'default'})
-        except (browser_login.browser_cdp.CdpError, OSError):
-            pass
-        session.ws.close()
-        _clear(folder)
+        _follow_end(session, folder)
+
+
+def _follow_end(session, folder):
+    try:
+        session.call('Browser.setDownloadBehavior', {'behavior': 'default'})
+    except (browser_login.browser_cdp.CdpError, OSError):
+        pass
+    session.ws.close()
+    _clear(folder)
 
 
 def _whole_file(folder, sizes):
@@ -375,18 +430,24 @@ def _clear(folder):
 
 
 def export_check(token):
-    """{state: waiting} while the export page is open; the review (state: review) once its file was read;
-    {state: failed, error} or {state: expired}. A finished one is answered once."""
+    """{state: waiting, step} while the export page is open (step: opening, signin, working, password, email or
+    manual, login_export_guide.step); the review (state: review) once its file was read; {state: failed, error} or
+    {state: expired}. A finished one is answered once."""
     with _exports_lock:
         watch = _exports.get(token) if isinstance(token, str) else None
         if not watch:
             return {'state': 'expired'}
+        if watch['step'] == 'opening' and watch['state'] == 'waiting' and time.monotonic() - watch['opened'] > OPEN_SECONDS:
+            watch['stop'].set()
+            watch['error'], watch['state'] = OPEN_FAILED, 'failed'
         if watch['state'] != 'waiting':
             _exports.pop(token, None)
     if watch['state'] == 'review':
         return {**watch['review'], 'state': 'review'}
     if watch['state'] == 'failed':
         return {'state': 'failed', 'error': watch['error']}
+    if watch['state'] == 'waiting':
+        return {'state': 'waiting', 'step': watch['step']}
     return {'state': watch['state']}
 
 

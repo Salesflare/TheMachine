@@ -2,7 +2,7 @@
 them in from a password manager (CSV exports and the op and lpass tools, both mocked: no real vault is ever called);
 and a planted fake password that must never show up in an answer, a log, an error, the database or a prompt.
 Made-up credentials and temporary folders only."""
-import base64, io, json, logging, os, shutil, sqlite3, tempfile, time, unittest
+import base64, io, json, logging, os, shutil, sqlite3, tempfile, threading, time, unittest
 from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 from unittest.mock import patch
@@ -481,7 +481,13 @@ class FakeBrowser:
         return Session()
 
     def folder(self):
-        return Path(next(p['downloadPath'] for m, p in self.calls if m == 'Browser.setDownloadBehavior' and p['behavior'] == 'allow'))
+        """The export's download folder, once its own thread has opened the page (export_open answers before)."""
+        for _ in range(250):
+            found = [p['downloadPath'] for m, p in list(self.calls) if m == 'Browser.setDownloadBehavior' and p['behavior'] == 'allow']
+            if found and self.opened:
+                return Path(found[0])
+            time.sleep(0.02)
+        raise AssertionError('the export page never opened')
 
     def __enter__(self):
         cdp = browser_login.browser_cdp
@@ -512,8 +518,8 @@ class ExportPageTest(Folder):
     def test_the_download_is_read_once_deleted_and_the_browser_put_back(self):
         with FakeBrowser() as browser:
             opened = login_import.export_open('http://127.0.0.1:9', 'bitwarden', self.folder, self.store)
-            self.assertEqual(browser.opened, [login_import.EXPORT_PAGES['bitwarden']])
             folder = browser.folder()
+            self.assertEqual(browser.opened, [login_import.EXPORT_PAGES['bitwarden']])
             self.assertEqual(folder.parent, self.folder)
             self.assertEqual(folder.stat().st_mode & 0o777, 0o700)
             self.assertEqual(login_import.export_check(opened['watch'])['state'], 'waiting')
@@ -556,6 +562,40 @@ class ExportPageTest(Folder):
             with self.assertRaisesRegex(ValueError, 'Which password manager'):
                 login_import.export_open('http://127.0.0.1:9', '1password', self.folder, self.store)
             self.assertEqual(browser.opened, [login_import.EXPORT_PAGES['chrome']])
+
+    def test_the_call_answers_at_once_while_the_browser_takes_its_time_and_a_page_that_never_opens_says_so(self):
+        # The dashboard's call timed out while the Machine's browser started: export_open now answers before it opens.
+        gate = threading.Event()
+
+        def slow(base, timeout=30):
+            gate.wait(5)
+            raise browser_login.browser_cdp.CdpError('browser not reachable')
+        with patch.object(browser_login.browser_cdp.Session, 'browser', slow), patch.object(login_import, 'OPEN_SECONDS', 0.2):
+            began = time.monotonic()
+            opened = login_import.export_open('http://127.0.0.1:9', 'lastpass', self.folder, self.store)
+            self.assertLess(time.monotonic() - began, 1, 'answers without waiting on the browser')
+            self.assertEqual(login_import.export_check(opened['watch']), {'state': 'waiting', 'step': 'opening'})
+            time.sleep(0.3)
+            self.assertEqual(login_import.export_check(opened['watch']),
+                             {'state': 'failed', 'error': 'I couldn’t open the export page in your Machine’s browser'})
+            gate.set()
+        with patch.object(browser_login.browser_cdp.Session, 'browser', slow):
+            opened = login_import.export_open('http://127.0.0.1:9', 'lastpass', self.folder, self.store)
+            got = wait_for(login_import.export_check, opened['watch'])
+            self.assertEqual(got['state'], 'failed', 'a browser that answers with an error fails at once, in a sentence')
+        left = lambda: [p for p in self.folder.iterdir() if p.name.startswith('login-export-')]
+        for _ in range(100):
+            if not left():
+                break
+            time.sleep(0.02)
+        self.assertEqual(left(), [], 'no folder left')
+
+    def test_a_closed_export_tab_says_so_instead_of_waiting(self):
+        with FakeBrowser() as browser, patch.object(browser_login.browser_cdp, 'tab_ids', return_value={'another-tab'}):
+            opened = login_import.export_open('http://127.0.0.1:9', 'bitwarden', self.folder, self.store)
+            browser.folder()
+            got = wait_for(login_import.export_check, opened['watch'])
+            self.assertEqual(got, {'state': 'failed', 'error': 'The export page was closed. Try again.'})
 
 
 class LeakScanTest(unittest.TestCase):

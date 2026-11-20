@@ -1,6 +1,7 @@
 """The dashboard's browser actions (App.action): bringing the browser or a task's page to the front, and signing in to
 sites through the encrypted login store (browser_login.py), where what the owner types never reaches a log, the model
 or an error message. Moved out of assistant.App's action as is. A mixin of assistant.App (APP_MIXINS)."""
+from concurrent.futures import ThreadPoolExecutor
 import json
 from pathlib import Path
 import re
@@ -44,8 +45,9 @@ class BrowserApp:
             raise OwnerError('Only the owner imports sign-ins, from the dashboard')
         logins = browser_login.LoginStore(Path(self.config['database']).expanduser().parent)
         step = args.get('do')
-        if step == 'tools':
-            return {'tools': {m: login_import.tool_state(m) for m in login_import.TOOLS}}
+        if step == 'tools':  # both at once: each check may take its whole timeout, and the call has to answer in time
+            with ThreadPoolExecutor(len(login_import.TOOLS)) as pool:
+                return {'tools': dict(zip(login_import.TOOLS, pool.map(login_import.tool_state, login_import.TOOLS)))}
         if step == 'file':
             kind, rows, skipped = login_import.parse(args.get('text'))
             return login_import.start(kind, rows, skipped, logins)
@@ -58,11 +60,10 @@ class BrowserApp:
             base = (browser_login.endpoints(self.config) or [None])[0]
             if not base:
                 raise OwnerError('Your Machine has no browser. Use an export file instead.')
-            opened = login_import.export_open(base, args.get('manager'), Path(self.config['database']).expanduser().parent, logins)
-            try:
-                browser_viewer.focus(None, base, target=opened['tab'])
-            except (ValueError, OSError):
-                pass
+            # Answers at once: the page opens (the browser may start first) and comes to the front in the export's own
+            # thread, and export_check says how far it got.
+            opened = login_import.export_open(base, args.get('manager'), Path(self.config['database']).expanduser().parent, logins,
+                                              shown=lambda tab: browser_viewer.focus(None, base, target=tab))
             return {'watch': opened['watch'], 'view': browser_link(self.config), 'page': login_import.EXPORT_PAGES[args['manager']]}
         if step == 'export_check':
             return login_import.export_check(args.get('watch'))

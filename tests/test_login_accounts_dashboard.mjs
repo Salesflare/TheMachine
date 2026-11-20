@@ -22,7 +22,7 @@ const review={token:'tok-1',kind:'1password',manager:'1Password',skipped:1,rows:
  {key:'k2',title:'Example',site:'billing.example.net',origin:'https://billing.example.net',username:'finance@example.net',saved:[]},
  {key:'k3',title:'Router',site:'portal.example.com',origin:'https://portal.example.com',username:'admin',saved:[]}]};
 const accounts=logins.slice(0,2).map(({id,account,username})=>({id,account,username}));
-let pick=null,twoStep=false,tools={},exportReady=false,browserLink=null;const calls=[];
+let pick=null,twoStep=false,tools={},exportReady=false,exportStep='signin',browserLink=null;const calls=[];
 const tidewell={id:'0:tab',site:'shop.tidewell.example',host:'shop.tidewell.example',origin:'https://shop.tidewell.example',code:false};
 const server=createServer(async(req,res)=>{
  const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
@@ -39,7 +39,7 @@ const server=createServer(async(req,res)=>{
   if(action==='browser_login_import'){
    if(args.do==='tools'){res.end(JSON.stringify({tools}));return}
    if(args.do==='export'){res.end(JSON.stringify({watch:'w-1',view:null,page:'https://vault.example.invalid/export'}));return}
-   if(args.do==='export_check'){res.end(JSON.stringify(exportReady?{...review,manager:'LastPass',state:'review'}:{state:'waiting'}));return}
+   if(args.do==='export_check'){res.end(JSON.stringify(exportReady?{...review,manager:'LastPass',state:'review'}:{state:'waiting',step:exportStep}));return}
    if(args.do==='file'||args.do==='tool'){res.end(JSON.stringify(review));return}
    if(args.do==='keep'){res.end(JSON.stringify({kept:args.keys.length}));return}
    res.end(JSON.stringify({dropped:true}));return}
@@ -111,23 +111,32 @@ try{
   assert.match(await page.locator('[data-li-go="lastpass"]').innerText(),/Export in your Machine’s browser/);
   assert.ok(!/this computer/.test(await page.locator('#login-import').innerText()),'the Machine, not "this computer"');
   await clean(page,'import');await shot(page,'import-from',width,scheme);
-  // LastPass: its export page opens in the Machine's browser, the steps say what to do there, and the file it
-  // downloads comes back as the review
+  // LastPass: its export page opens in the Machine's browser, one line says what is left for the owner while the
+  // Machine clicks on to the export, and the file it downloads comes back as the review
+  exportStep='signin';
   await page.locator('[data-li-go="lastpass"]').click();
-  await page.locator('#login-import .li-wait').waitFor();
+  await page.locator('#login-import .li-wait.li-you',{hasText:'Sign in to LastPass.'}).waitFor();
   assert.deepEqual(calls.find(([a,x])=>a==='browser_login_import'&&x.do==='export')[1],{do:'export',manager:'lastpass'});
-  assert.match(await page.locator('#login-import').innerText(),/Export from LastPass[\s\S]*Open Advanced Options, then Export\.[\s\S]*Waiting for the export file…/);
+  assert.ok(await page.locator('#login-import .li-manual').isHidden(),'no steps to do by hand while the Machine clicks');
   assert.equal(await page.locator('#login-import [data-li-browser].primary').count(),1,'no live view here: Open the browser leads');
   await clean(page,'export');await shot(page,'import-export',width,scheme);
+  exportStep='working';await page.locator('#login-import .li-wait:not(.li-you)',{hasText:'Going to the export…'}).waitFor();
+  exportStep='password';await page.locator('#login-import .li-wait.li-you',{hasText:'Type your master password to export.'}).waitFor();
+  await clean(page,'export password');await shot(page,'import-export-password',width,scheme);
+  // the page wasn't as expected: the steps by hand, with a note
+  exportStep='manual';await page.locator('#login-import .li-manual:not([hidden])').waitFor();
+  assert.match(await page.locator('#login-import').innerText(),/Waiting for the export file…[\s\S]*I couldn’t find the next step\. Follow these steps:[\s\S]*Open Advanced Options, then Export\./);
+  await clean(page,'export manual');await shot(page,'import-export-manual',width,scheme);
   exportReady=true;
   await page.locator('#login-import [data-li-key]').nth(2).waitFor();
   assert.match(await page.locator('#login-import .li-lead').innerText(),/3 sign-ins found in LastPass\./);
   await page.locator('#login-import [data-li-back]').click();
   // With the live view on this address, the export page shows right in the sheet
-  browserLink='/view/';exportReady=false;await page.evaluate(async()=>{await refresh()});
+  browserLink='/view/';exportReady=false;exportStep='password';await page.evaluate(async()=>{await refresh()});
   await page.locator('[data-li-go="bitwarden"]').click();
   await page.locator('#login-import .li-view iframe').waitFor();
   await page.frameLocator('#login-import .li-view iframe').locator('body').waitFor();
+  await page.locator('#login-import .li-wait.li-you',{hasText:'Type your master password to export.'}).waitFor();
   await clean(page,'export view');await shot(page,'import-export-view',width,scheme);
   // Back sends the stop without waiting on its answer: wait for that call to be answered, not a fixed time
   const stop=await callAfter(page,c=>c.action==='browser_login_import'&&c.args?.do==='export_stop',()=>page.locator('#login-import [data-li-back]').click());

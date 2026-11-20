@@ -127,7 +127,10 @@ invalid receipt or timeout blocks it as well. The token is never included in rel
 - Import from a password manager reads a CSV the owner picks, the export the owner downloads from the manager's own
   page in the Machine's browser, or 1Password's `op` and LastPass's `lpass` only when the owner already signed in to
   them on this computer. The Machine never signs in to a password manager and never asks for or keeps a master
-  password; it keeps a password only for the sign-ins the owner ticks to keep. A download from the export page goes
+  password; it keeps a password only for the sign-ins the owner ticks to keep. On the export page the owner signs
+  in; a fixed script (never the model) then only clicks the way to the export step and focuses the master password
+  field. It never types, reads a field's value or takes a screenshot, and nothing from the page reaches the model, a
+  log or an error. A download from the export page goes
   into a private folder made for it, is read once and deleted from disk right away, and the folder goes with it. Delete
   an export file you picked yourself afterwards: it holds every password in plain text.
 - The browser's own cookies and sign-ins (its profile) belong to the browser: protected by the account and the disk,
