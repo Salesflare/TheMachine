@@ -92,7 +92,7 @@ CARD_TABLES = ('action_jobs', 'agent_jobs', 'calendar_clashes', 'chat_files', 'd
                'events', 'facebook_birthdays', 'facts', 'feedback_prompts', 'fleet_meta', 'fleet_out', 'graph_events', 'graph_identifiers', 'graph_nodes',
                'identity_names', 'mail_cleanup_items', 'person_facts', 'preparation_calls', 'preparation_runs', 'preparations', 'projects',
                'promises', 'recap_items', 'recurring_series', 'reorder_todos', 'routine_changes', 'routines', 'secondhand_todos', 'skill_clusters', 'skill_task_decided', 'skills',
-               'slack_members', 'subs_items', 'suggestions', 'task_pages', 'thread_snoozes', 'whatsapp_photos')
+               'slack_members', 'subs_items', 'suggestions', 'task_pages', 'thread_snoozes', 'todo_moves', 'whatsapp_photos')
 CARD_KEEP_S = 120
 CARDS = stamps.Kept(4)
 # The status is kept between polls by the change counters of every table but these (StatusApp.status_kept): tables it
@@ -750,6 +750,13 @@ class ViewsStore(ConversationStore):
             with_feedback = {r[0] for r in db.execute(
                 "SELECT DISTINCT suggestion_id FROM decisions WHERE suggestion_id IN (SELECT value FROM json_each(?)) AND trim(feedback)<>'' "
                 "AND source IN ('telegram','dashboard') AND id NOT IN (SELECT decision_id FROM decision_annotations)", (json.dumps([c['id'] for c in cards]),))}
+            # A closed to-do a new signal reopened (update_card) says when it came back, not when it first came in weeks
+            # before: the time on the to-do is reopened_at then, else created_at
+            back = dict(db.execute(f"SELECT suggestion_id,max(at) FROM todo_moves WHERE reason='new_signal' AND from_status IN {todo_states.sql(todo_states.CLOSED)} "
+                                   "AND suggestion_id IN (SELECT value FROM json_each(?)) GROUP BY suggestion_id", (json.dumps([c['id'] for c in cards]),)).fetchall())
+            for card in cards:
+                if card['id'] in back:
+                    card['reopened_at'] = back[card['id']]
             projects = {}  # a project's chip, read once per name
             heads = {}
             for c in cards:

@@ -110,6 +110,22 @@ class Matter(unittest.TestCase):
         again = self.suggest(dedupe_key='billing:their-new-ask', event_ids=[6], card_id=first['id'], reopen=True)
         self.assertTrue(again['reopened'])
         self.assertEqual(self.card(first['id'])['status'], 'pending')
+        # The to-do says when it came back, not when it first came in (its time and place in the list)
+        view = self.card(first['id'])
+        with self.store.connect() as db:
+            self.store.card_views(db, [view], jobs=False)
+            moved = db.execute("SELECT at FROM todo_moves WHERE suggestion_id=? AND reason='new_signal'", (first['id'],)).fetchone()[0]
+        self.assertEqual(view['reopened_at'], moved)
+        self.assertGreater(view['reopened_at'], view['created_at'])
+
+    def test_a_card_brought_back_from_waiting_keeps_its_time(self):
+        first = self.suggest(dedupe_key='billing:offer', event_ids=[1])
+        self.wait_for_reply(first['id'])
+        self.suggest(dedupe_key='billing:org-confirmation', event_ids=[2])
+        view = self.card(first['id'])
+        with self.store.connect() as db:
+            self.store.card_views(db, [view], jobs=False)
+        self.assertNotIn('reopened_at', view)
 
     def test_open_card_with_the_same_project_is_asked_about_not_duplicated(self):
         first = self.suggest(dedupe_key='lunch', event_ids=[3], project='Billing')
