@@ -345,8 +345,8 @@ def apply(db, run_id, voice_check, link=None):
                         db.execute('UPDATE facts SET confirmed_at=? WHERE id=?', (now(), said['id']))
                         continue
                     old = said if said and not said['kept_at'] else None
-                if not old:  # full: one not used lately makes room, as for a note's fact, never a lesson dropped
-                    facts.make_room(db, facts.general_count(db))
+                if not old:  # as for a note's fact: only a runaway list drops another AI's, never a lesson
+                    facts.keep_in_bounds(db, facts.general_count(db))
                 fact_id = db.execute('INSERT INTO facts(text,decision_id,suggestion_id,created_at,kind) VALUES(?,?,NULL,?,?)',
                                      (text, 'tune:' + run_id, now(), kind)).lastrowid
                 if old:

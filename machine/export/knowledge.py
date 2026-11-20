@@ -7,7 +7,7 @@ one is for reading: Markdown notes (one file per person, organization and projec
 briefs and a README.md that tells an AI how to use the folder), JSONL records and CSV tables.
 
 What goes in, read by StoreReader: the Graph (people, organizations and projects with how they connect), facts and
-preferences, the owner's rules, their history (ended, set aside, merged or moved; never what the owner forgot), how
+preferences, the owner's rules, their history (ended, merged or moved; never what the owner forgot), how
 they write, their signatures, skills, summary lines, promises, open to-dos, team briefs, the chat's notes, and the source of each (a stable id per message plus its date and kind). Never in:
 credentials (the export never reads a key, token or password; a last pass removes anything that looks like one),
 message text unless Options.messages, and unless Options.private: threads kept private or judged sensitive, Only-you
@@ -62,9 +62,9 @@ REMOVED = '[removed: looked like a key]'
 KIND_FOLDERS = {'person': 'people', 'org': 'organizations', 'project': 'projects'}
 KIND_NAMES = {'person': 'Person', 'org': 'Organization', 'project': 'Project'}
 # A past fact's status by facts.merged_into ('<how>:<target>', machine/store/facts.py): retired past its end day or
-# ended by a newer message, set aside as not used lately, condensed into or replaced by a newer one, or moved into a
+# ended by a newer message, condensed into or replaced by a newer one, or moved into a
 # skill, a channel's writing style or a person's record (contact_facts.MOVED).
-HISTORY = {'expired': 'ended', 'aside': 'set_aside', 'fact': 'merged', 'skill': 'moved', 'voice': 'moved', 'record': 'moved'}
+HISTORY = {'expired': 'ended', 'fact': 'merged', 'skill': 'moved', 'voice': 'moved', 'record': 'moved'}
 MIN_PASSPHRASE = moving.MIN_PASSPHRASE
 
 
@@ -177,7 +177,7 @@ class StoreReader:
 
     def fact_history(self):
         """Facts and rules no longer current, as facts() gives them plus removed_at, merged_into, kept_at and condensed
-        (others were merged into it): ended (past their end day, retired or not yet), set aside, merged into another or
+        (others were merged into it): ended (past their end day, retired or not yet), merged into another or
         moved into a skill, a writing style or a record (HISTORY). One the owner forgot has no merged_into: never here,
         nor are those merged into it (forgetting a condensed fact forgets what it said)."""
         today = timeutil.clock().date().isoformat()
@@ -563,7 +563,6 @@ def _history(past, alias, private, refs_of, leave):
                      'about': about, 'side': f.get('side'), 'said_by': said_by, 'said_at': f.get('confirmed_at') or f['created_at'],
                      'learned_at': f['created_at'], 'valid_until': f.get('valid_until'),
                      'ended_at': (removed or f.get('valid_until')) if status == 'ended' else None,
-                     'set_aside_at': removed if status == 'set_aside' else None,
                      'merged_at': removed if status in ('merged', 'moved') else None, 'into': into, 'sources': refs_of(f['events'])})
     return rows
 
@@ -885,8 +884,7 @@ plain files, so any AI or person can read it without The Machine.
    "<from> <label> <to>": "works at", "works on", "often together with", or the owner's words, like "assistant of".
 4. Facts have a `sort` (fact, preference, commitment, event), a `said_at` date and sometimes `valid_until`. Newer
    ones win, and one past its `valid_until` no longer holds.
-5. `records/fact_history.jsonl` holds facts and rules that no longer hold: `status` is `ended`, `set_aside` (not used
-   lately), `merged` (a newer one took its place) or `moved` (into a skill, a writing style or a person's record), and
+5. `records/fact_history.jsonl` holds facts and rules that no longer hold: `status` is `ended`, `merged` (a newer one took its place) or `moved` (into a skill, a writing style or a person's record), and
    `replaced_by` is the id of what took its place. Use them for what was true before, never as current.
 6. `sources` lists the messages something came from, as ids into `records/sources.jsonl` (kind, date, mailbox,
    thread). {text}

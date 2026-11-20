@@ -932,7 +932,7 @@ nothing, and a log write that fails never fails the prompt.
 - It stays on the Machine: it is in the export (with what was learned) and not in Team Graph sharing or support
   reports. Removing an account takes its to-dos' rows, deleting a person takes their record's.
 - Rows go after 60 days (30 at the Careful level), in the nightly retention pass.
-- A fact counts as used (`facts.used_at`, which setting aside after 21 unused days reads) when a preparation that
+- A fact counts as used (`facts.used_at`, which recency order reads) when a preparation that
   picked it for its to-do was sent, not when it was only picked. A review's facts are never a use.
   `memory_use.last_used` gives the last read of any kind, skills and team learnings among them.
 - A review gets every fact while they fit its cap (3,000 characters). Past it, the same room is shared out
@@ -952,7 +952,7 @@ nothing, and a log write that fails never fails the prompt.
     never larger than the cut list was.
 - Facts outside the current list still count when they bear on the matter (`machine/app/retained_facts.py`, the
   `retained` block of the review, preparation and chat recalls):
-  - A set-aside fact still holds, so it goes in as a fact. A fact that ended (past its end day, or a newer message
+  - A fact that ended (past its end day, or a newer message
     overturned it) or that a newer one replaced in a condense goes in only as history: "Historical, not current", with
     the day it ended and what replaced it. One whose words the newer one all holds is left out: it adds nothing.
   - Never one the owner removed, or one whose replacement they removed; never a connected AI's.
@@ -965,10 +965,10 @@ nothing, and a log write that fails never fails the prompt.
     the words asked). Only those are read and checked. Meaning scans the stored vectors, at most 500,000 comparisons
     per recall: past that, the most lately removed facts go against every signal and the rest against the newest
     signals. A database from before the index gets it once at start, after a copy next to it (`.before-fact-index-…`).
-  - A small fixed slice: at most 3 lines and 600 characters (400 in a to-do's chat turn), set-aside ones first,
+  - A small fixed slice: at most 3 lines and 600 characters (400 in a to-do's chat turn),
     outside the current facts' own cap, and nothing when nothing matches. In a review it comes after the batch's facts,
     so the cached prefix stays the same. A to-do's preparation and its fact area follow `facts_for`'s.
-  - A pick is not a use: a set-aside fact stays set aside until the owner brings it back.
+  - A pick is not a use: `facts.used_at` is neither read nor written.
 - A to-do's chat turn runs in its preparation's session, which read the current list when it started. Each turn
   also gets what changed since (`retained_facts.since_session`, the `new` block of the `todo_chat` recall): a fact or
   rule of the to-do's area learned, edited or brought back after the session's latest preparation read the list, all
@@ -1031,10 +1031,10 @@ top of Learning, What I've learned. It never blocks setup: nothing waits for it.
   most 80 lines of 240 characters. Quote marks around a whole line go (asked to keep the owner's words, an assistant
   quotes them); quotes inside a line stay. Lines imported before that lose them once (`imports_unquoted_once`), only
   ones the owner never edited.
-- **Room.** Imported lines count toward the cap of 80 facts about no one. When the list is past it, another AI's
-  claim (an imported line the owner didn't edit, or a connected AI's fact) is set aside before the owner's own
-  (`set_aside`), so a big import never pushes out what the owner taught it. Prompts don't grow with an import: each
-  keeps its own fact budget and picks by relevance.
+- **Room.** Nothing is removed for not being used. Only at the safety limit of 1,000 facts about no one
+  (`FACTS_LIMIT`), the lowest-weight lines from another AI (an imported line the owner didn't edit, or a connected AI's
+  fact) go (`keep_in_bounds`), never the owner's own, so a big import never pushes out what the owner taught it.
+  Prompts don't grow with an import: each keeps its own fact budget and picks by relevance.
 - **Secrets out first.** Any line that looks like a secret is dropped before it is shown, sent to a model or kept
   (`secret`): the chat's key and token patterns (`chat.CHAT_SECRETS`), token-shaped strings, IBANs (checksum checked),
   card numbers (Luhn checked), social security numbers, and a password, PIN or code with its value. The review says how

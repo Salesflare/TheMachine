@@ -2,7 +2,6 @@
 answers read the same; secrets never reach the screen, the model or the store; what is learned already is skipped and
 a contradiction is shown next to the current fact for the owner to pick; nothing imported can grant a permission; every
 kept line says where it came from, and stays that assistant's claim until the owner edits it. All data here is made up."""
-import datetime as dt
 import json
 from pathlib import Path
 import re
@@ -13,7 +12,7 @@ import machine.actions as machine_actions
 import machine.app.setup_card as machine_app_setup_card
 import machine.main as machine_main
 from machine.owner_error import OwnerError
-from machine.store.facts import AI_FACTS_HEAD, FACTS_GENERAL_HARD, ai_fact_by
+from machine.store.facts import AI_FACTS_HEAD, FACTS_LIMIT, ai_fact_by
 import memory_import
 
 CHATGPT = '''Here's everything I have saved about you:
@@ -295,20 +294,18 @@ class Store(unittest.TestCase):
         self.store.import_fact('“Runs on Sundays.”', 'chatgpt', 'b2')
         self.assertIsNone(self.store.imports_unquoted_once())  # one time
 
-    def test_a_full_list_sets_aside_imported_claims_before_the_owners_own(self):
-        yesterday = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=1)).isoformat()
-        with self.store.connect() as db:  # every one used yesterday, so past the hard cap the one used longest ago goes
+    def test_at_the_safety_limit_imported_claims_go_never_the_owners_own(self):
+        with self.store.connect() as db:  # the owner's own fill the list up to just under the limit
             db.executemany("INSERT INTO facts(text,decision_id,created_at,kind,fact_kind) VALUES(?,'owner:graph','2026-01-01T09:00:00+00:00','fact','fact')",
-                           [(f'Owner fact number {i} about how they work.',) for i in range(FACTS_GENERAL_HARD - 2 - 3)])
-            db.execute('UPDATE facts SET used_at=?', (yesterday,))
+                           [(f'Owner fact number {i} about how they work.',) for i in range(FACTS_LIMIT - 3)])
         claims = [self.store.import_fact(f'Imported line number {i} about a hobby.', 'chatgpt', 'b1')['id'] for i in range(3)]
         own = {f['id'] for f in self.store.facts() if not f['source']}
         self.store.import_fact('One more imported line about a hobby.', 'chatgpt', 'b1')
         self.store.import_fact('Another imported line about a hobby.', 'chatgpt', 'b1')
         current = {f['id'] for f in self.store.facts()}
-        self.assertLessEqual(own, current)  # none of the owner's own went, though each was used before the claims came
+        self.assertLessEqual(own, current)  # none of the owner's own went
         self.assertNotIn(claims[0], current)  # an imported claim made room
-        self.assertEqual(len(current), FACTS_GENERAL_HARD)
+        self.assertEqual(len(current), FACTS_LIMIT)
 
 
 if __name__ == '__main__':

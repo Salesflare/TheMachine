@@ -20,7 +20,7 @@ The picked part is a block of its own that the prompt puts after everything that
 one review to the next, and a cached prompt prefix ends at the first byte that differs (machine/prompts/review.py).
 It is listed in id order, so two batches that pick the same facts give the same bytes.
 
-A review's pick is not a use of the fact: facts.used_at (which setting aside after 21 unused days reads) is neither
+A review's pick is not a use of the fact: facts.used_at (recency order, facts.LAST_USE) is neither
 read nor written here."""
 import embeddings
 import memory_use

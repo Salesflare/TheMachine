@@ -6,7 +6,7 @@ import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import('./browser.mjs');
 
 // Feedback, What I've learned: a fact's sort and end day sit quietly under it ("Temporary · Until Nov 14"), a plain fact
-// shows neither, and facts past their end day are under Ended, each with Bring back. All mocked; FACT_SHOTS=dir saves screenshots.
+// shows neither, and facts past their end day are under Ended, each with Bring back. There is no Set aside section. All mocked; FACT_SHOTS=dir saves screenshots.
 const dashboard=await dashboardPage();
 const year=new Date().getFullYear(),t=d=>`${year}-10-${String(d).padStart(2,'0')}T09:00:00+00:00`;
 const facts=[
@@ -18,13 +18,15 @@ const facts=[
  {id:6,kind:'fact',fact_kind:'fact',text:'Prefers short agendas.',quote:'keep the agendas short please',created_at:t(18),merged:0},
  {id:8,kind:'draft',text:'Put the order number in the subject.',created_at:t(18),merged:0}];
 let ended=[{id:9,fact_kind:'event',valid_until:`${year}-10-20`,text:'Is off on a team trip this week.',removed_at:t(21)}];
+// an older service still sending its set-aside list: nothing is set aside any more, so Learning has no such section
+const aside=[{id:12,kind:'fact',fact_kind:'fact',text:'Keeps the spare keys in the blue drawer.',removed_at:t(20)}];
 const posts=[];
 const server=createServer(async(req,res)=>{
  const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  const asset={'/brand/avatar.png':'brand/app-icon-192.png','/brand/serif.woff2':'brand/fonts/source-serif-4-latin.woff2','/brand/sans.woff2':'brand/fonts/inter-latin.woff2'}[url.pathname];
  if(asset){res.setHeader('Content-Type',asset.endsWith('png')?'image/png':'font/woff2');res.end(await readFile(new URL('../'+asset,import.meta.url)));return}
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
- if(url.pathname==='/api/status'){res.end(JSON.stringify({suggestions:[],moved:[],promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},connectors:[],review_runs:[],voices:[],facts,facts_ended:ended}));return}
+ if(url.pathname==='/api/status'){res.end(JSON.stringify({suggestions:[],moved:[],promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},connectors:[],review_runs:[],voices:[],facts,facts_ended:ended,facts_aside:aside}));return}
  if(url.pathname==='/api/action'){let body='';for await(const c of req)body+=c;const {action,args}=JSON.parse(body);posts.push({action,args});
   if(action==='unmerge_fact'){ended=ended.filter(f=>f.id!==args.expired);res.end(JSON.stringify({restored:1}));return}}
  res.statusCode=404;res.end('{}');
@@ -41,6 +43,7 @@ try{
   await navClick(page.locator('[data-tab="feedback"]').first());
   const learned=page.locator('#facts');await learned.locator('.learn-group').first().waitFor();
   assert.deepEqual(await learned.locator('.learn-group').evaluateAll(g=>g.map(x=>x.dataset.group)),['facts','rules','ended']);
+  assert.equal(await learned.getByText('spare keys').count(),0);  // no Set aside section
   const meta=text=>learned.locator('.fact-row',{hasText:text}).locator('.fact-meta');
   assert.equal(await meta('Lisbon').textContent(),'Temporary · Until Nov 14');
   assert.equal(await meta('Prefers calls').textContent(),'Preference');

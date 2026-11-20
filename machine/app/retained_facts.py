@@ -1,11 +1,10 @@
 """What was learned and is no longer in the current list, brought back into a prompt when it bears on the matter: the
 `retained` block of recall.py's review, preparation and chat purposes.
 
-The current list is what every prompt picks from (Store.facts_for, review_facts.py). Three kinds of fact leave it
-without being wrong or forgotten, and before this nothing but Learning's Bring back could find them:
+The current list is what every prompt picks from (Store.facts_for, review_facts.py). Two kinds of fact leave it
+without being forgotten, and before this nothing but Learning's Bring back could find them (nothing leaves it for not
+being used):
 
-- set aside: not used in 21 days while the list was full (machine/store/facts.py set_aside, 'aside:<id>'). It still
-  holds, so it goes in as the fact it is, like one from the current list.
 - ended: past its end day, or a newer message overturned it ('expired:<id>'). Shown only as history: "Historical, not
   current", with the day it ended and, when a review ended it, what it says now (rule_changes 'Ended: … Updated: …').
 - replaced: a newer fact took its place in a condense ('fact:<id>'). Shown as history with the day and the fact that
@@ -31,8 +30,7 @@ asked, which finds every fact the checks can pass. Meaning: the stored vectors o
 like a message search (embeddings.related), within MEANING_WORK comparisons (_closeness).
 
 The block is a small fixed slice (CHARS, LINES), outside the current facts' own cap, and empty when nothing matches:
-the prompt is then the one it was. Set-aside facts go first, then history. A pick is not a use: facts.used_at is
-neither read nor written, so a set-aside fact stays set aside until the owner brings it back.
+the prompt is then the one it was. A pick is not a use: facts.used_at is neither read nor written.
 
 A to-do's chat answers in its preparation's session, which read the current list when that preparation started.
 since_session is the `new` block of the chat's recall: what changed in the list after the session last read it, as a
@@ -42,7 +40,7 @@ small delta (NEW_CHARS, NEW_LINES), and nothing when nothing changed:
   gets all of it, so all such ones go; else only those that bear on the to-do, by `matches` above. Never one learned
   on this to-do (the session saw that note), never a connected AI's;
 - one the session was given that has since gone: removed by the owner ("no longer use"), or ended (as history). One a
-  newer fact replaced, set aside or moved elsewhere still says nothing wrong, so it gets no line."""
+  newer fact replaced or moved elsewhere still says nothing wrong, so it gets no line."""
 import itertools
 import json
 import math
@@ -53,7 +51,6 @@ import memory_use
 from machine.app.review_facts import waiting
 from machine.config import LOG
 from machine.store.facts import FACTS_ALL_UNDER, MATCH_WORDS, ai_fact_by, fact_line, key_words as words, suggestion_scope, word_match
-from timeutil import now
 
 CHARS = 600           # about 150 tokens, only when something matches
 CHAT_CHARS = 400      # a chat turn's message stays short
@@ -61,8 +58,8 @@ LINES = 3
 MEANING_WORK = 500_000  # vector comparisons per recall at most (_closeness): one to three seconds
 FLOOR = 0.45          # cosine of a fact to a signal: facts unrelated to one mostly score 0.1 to 0.35
 SIGNALS = 120         # the review's waiting signals looked at, the newest
-HEAD = ('Also learned earlier, outside the current list, matching this {what}. A plain line still holds (set aside only for '
-        'room). A line marked "Historical, not current" is history: never use it as how things are now.')
+HEAD = ('Also learned earlier, outside the current list, matching this {what}. Each line marked "Historical, not current" '
+        'is history: never use it as how things are now.')
 REVIEW_HEAD = HEAD.format(what='batch')
 TODO_HEAD = HEAD.format(what='to-do')
 HISTORY = 'Historical, not current'
@@ -71,10 +68,10 @@ NEW_LINES = 3
 NEW_HEAD = ('Changed in what was learned since this session read it. Where a line differs from what you were told earlier '
             'in this session, the line here is current.')
 GONE = 'The owner removed this; no longer use it'
-# A fact outside the current list that may come back: set aside, ended, or replaced in a condense (never one the owner
+# A fact outside the current list that may come back: ended, or replaced in a condense (never one the owner
 # removed: forget_fact leaves merged_into empty). Written out in each query, so every query is fixed text; ids go in as
 # one JSON list (json_each).
-RETAINED = "kind='fact' AND removed_at IS NOT NULL AND (merged_into='aside:'||id OR merged_into='expired:'||id OR merged_into LIKE 'fact:%')"
+RETAINED = "kind='fact' AND removed_at IS NOT NULL AND (merged_into='expired:'||id OR merged_into LIKE 'fact:%')"
 
 
 def _chain(rows, fact_id, depth=10):
@@ -88,8 +85,8 @@ def _chain(rows, fact_id, depth=10):
         if row['removed_at'] is None:
             return row
         into = str(row['merged_into'] or '')
-        if not into.startswith('fact:'):  # set aside after it took the place: it still holds; removed or ended: nothing
-            return row if into == 'aside:' + str(row['id']) else None
+        if not into.startswith('fact:'):  # removed or ended after it took the place: nothing
+            return None
         fact_id, seen = into[5:], seen + 1
     return None
 
@@ -98,13 +95,12 @@ def _ids(items):
     return json.dumps(sorted(items))
 
 
-def candidates(db, ids, today=None):
-    """[fact] of these facts that are outside the current list and may still come back, each with state ('aside' or
-    'history'), day (when it left) and now_says (what replaced it, '' for none), the most lately removed first."""
-    today = today or now()[:10]
+def candidates(db, ids):
+    """[fact] of these facts that are outside the current list and may still come back, each with state ('history'),
+    day (when it left) and now_says (what replaced it, '' for none), the most lately removed first."""
     rows = [dict(r) for r in db.execute(
         'SELECT id,text,kind,fact_kind,valid_until,created_at,confirmed_at,removed_at,merged_into,source,side,suggestion_id FROM facts '
-        "WHERE id IN (SELECT value FROM json_each(?)) AND kind='fact' AND removed_at IS NOT NULL AND (merged_into='aside:'||id OR merged_into='expired:'||id OR merged_into LIKE 'fact:%')", (_ids(ids),))]
+        "WHERE id IN (SELECT value FROM json_each(?)) AND kind='fact' AND removed_at IS NOT NULL AND (merged_into='expired:'||id OR merged_into LIKE 'fact:%')", (_ids(ids),))]
     if not rows:
         return []
     rows.sort(key=lambda r: (r['removed_at'], r['id']), reverse=True)
@@ -119,10 +115,7 @@ def candidates(db, ids, today=None):
         if ai_fact_by(f) or f['text'].casefold() in current:  # a connected AI's, or learned again since
             continue
         into = f['merged_into']
-        if into == 'aside:' + str(f['id']):
-            ended = bool(f['valid_until']) and f['valid_until'] < today
-            f.update(state='history' if ended else 'aside', day=(f['valid_until'] if ended else f['removed_at'][:10]), now_says='')
-        elif into == 'expired:' + str(f['id']):
+        if into == 'expired:' + str(f['id']):
             f.update(state='history', day=(f['valid_until'] or f['removed_at'])[:10], now_says=reasons.get(into, ''))
         else:
             head = _chain(lookup, into[5:])
@@ -134,10 +127,7 @@ def candidates(db, ids, today=None):
 
 
 def line(f):
-    """A retained fact for a prompt: a set-aside one as the fact it is; one from history marked so, with its day and
-    what replaced it."""
-    if f['state'] == 'aside':
-        return fact_line(f)
+    """A retained fact for a prompt: marked as history, with its day and what replaced it."""
     then = f"ended {f['day']}" + (f'; now: {f["now_says"][:160]}' if f['now_says'] else '')
     return f"- {HISTORY} ({then}): {f['text']}"
 
@@ -174,7 +164,7 @@ def _tied(db, nodes):
     """ids of the facts outside the current list about one of these records (fact_about_node)."""
     return {r[0] for r in db.execute(
         'SELECT a.fact_id FROM fact_about a JOIN facts f ON f.id=a.fact_id WHERE a.removed_at IS NULL AND a.node_id IN (SELECT value FROM json_each(?)) '
-        "AND f.kind='fact' AND f.removed_at IS NOT NULL AND (f.merged_into='aside:'||f.id OR f.merged_into='expired:'||f.id OR f.merged_into LIKE 'fact:%')", (_ids(nodes),))}
+        "AND f.kind='fact' AND f.removed_at IS NOT NULL AND (f.merged_into='expired:'||f.id OR f.merged_into LIKE 'fact:%')", (_ids(nodes),))}
 
 
 def _searched(db, term, prefix=False):
@@ -184,7 +174,7 @@ def _searched(db, term, prefix=False):
     if not any(c.isalnum() for c in term):
         return set()
     return {r[0] for r in db.execute(
-        "SELECT id FROM facts WHERE id IN (SELECT rowid FROM fact_search WHERE fact_search MATCH ?) AND kind='fact' AND removed_at IS NOT NULL AND (merged_into='aside:'||id OR merged_into='expired:'||id OR merged_into LIKE 'fact:%')",
+        "SELECT id FROM facts WHERE id IN (SELECT rowid FROM fact_search WHERE fact_search MATCH ?) AND kind='fact' AND removed_at IS NOT NULL AND (merged_into='expired:'||id OR merged_into LIKE 'fact:%')",
         ('"' + term.replace('"', '""') + '"' + ('*' if prefix else ''),))}
 
 
@@ -212,13 +202,13 @@ def _closeness(db, probes, settings):
     if not probes:
         return {}
     key = f"{settings.get('model', '')}:{int(settings.get('dims', 256))}"
-    total = db.execute("SELECT count(*) FROM fact_vectors v JOIN facts f ON f.id=v.fact_id WHERE v.model=? AND f.kind='fact' AND f.removed_at IS NOT NULL AND (f.merged_into='aside:'||f.id OR f.merged_into='expired:'||f.id OR f.merged_into LIKE 'fact:%')",
+    total = db.execute("SELECT count(*) FROM fact_vectors v JOIN facts f ON f.id=v.fact_id WHERE v.model=? AND f.kind='fact' AND f.removed_at IS NOT NULL AND (f.merged_into='expired:'||f.id OR f.merged_into LIKE 'fact:%')",
                        (key,)).fetchone()[0]
     full = total if total * len(probes) <= MEANING_WORK else MEANING_WORK // (2 * len(probes))
     few = probes[:max(1, MEANING_WORK // 2 // max(1, total - full))]
     sizes, out = {len(p) for p in probes}, {}
     for n, (fact_id, blob) in enumerate(db.execute(
-            "SELECT v.fact_id,v.vector FROM fact_vectors v JOIN facts f ON f.id=v.fact_id WHERE v.model=? AND f.kind='fact' AND f.removed_at IS NOT NULL AND (f.merged_into='aside:'||f.id OR f.merged_into='expired:'||f.id OR f.merged_into LIKE 'fact:%') "
+            "SELECT v.fact_id,v.vector FROM fact_vectors v JOIN facts f ON f.id=v.fact_id WHERE v.model=? AND f.kind='fact' AND f.removed_at IS NOT NULL AND (f.merged_into='expired:'||f.id OR f.merged_into LIKE 'fact:%') "
             'ORDER BY f.removed_at DESC,f.id DESC', (key,))):
         vector, against = embeddings.unpack(blob), probes if n < full else few
         if sizes == {len(vector)}:
@@ -257,7 +247,7 @@ def find(db, nodes, text, signals, settings):
 
 
 def matches(db, found, nodes, names, asked, close):
-    """[(how, score, fact)] of the found ones that bear on the matter, best first: set aside before history, then by
+    """[(how, score, fact)] of the found ones that bear on the matter, best first: by
     records, meaning and words. how: about, closeness or match (memory_use.HOWS)."""
     if not found:
         return []
@@ -277,7 +267,7 @@ def matches(db, found, nodes, names, asked, close):
         said = word_match(f['text'], asked)
         if near >= FLOOR or said:
             out.append(('closeness', near, f) if near >= FLOOR else ('match', said, f))
-    return sorted(out, key=lambda m: (m[2]['state'] != 'aside', -m[1]))
+    return sorted(out, key=lambda m: -m[1])
 
 
 def block(found, limit, head):
@@ -389,7 +379,7 @@ def since_session(app, suggestion_id, session, limit=None):
             for r in db.execute('SELECT fact_id,node_id FROM fact_about WHERE removed_at IS NULL'):
                 about.setdefault(r['fact_id'], []).append(r['node_id'])
             for f in current:
-                f['about'], f['state'] = tuple(about.get(f['id'], ())), 'aside'  # current: matched and shown as a fact
+                f['about'] = tuple(about.get(f['id'], ()))
             area = suggestion_scope(card['account_ids'] or '[]', app.config.get('accounts', []), card['area'])
             who = fact_links.records(db, {n for f in current for n in f['about']})
             current = [f for f in current if f.get('side') in (None, area) and fact_links.on_side(f['about'], who, area)]

@@ -324,14 +324,13 @@ remove them.
 - A preparation weighs facts by how fresh they are: half-lives of 7 days for events, 90 for commitments and
   preferences, 365 for other facts, after GBrain's decay. A fact past its end day is left out; the next review retires
   it, and Learning lists it under **Ended** with **Bring back**.
-- Facts about someone in the Graph don't count toward the cap of 80; the cap is for the rest. A save never fails for
-  room. At the cap, the fact or rule not used for longest is set aside when it wasn't used in 21 days (used: a
-  preparation picked it as close to its to-do, or a note said it again); else the list grows, up to 120. Each review
-  also sets aside those not used in 21 days while there are more than 70. Learning lists them under **Set aside** with
-  **Bring back**. One the owner edited or brought back is never set aside, and another AI's claim (a connected AI's
-  fact, or an imported line not edited) goes before the owner's own. A set-aside fact, and an ended or replaced
-  one marked as history, still reaches a review, preparation or to-do chat when it bears on it, in a small slice of
-  its own ([how](intelligence.md)).
+- Nothing learned is removed for not being used. A preparation picks by closeness and decay, so a lasting fact that
+  is rarely needed costs no prompt room and stays. A save never fails for room. Only a runaway list is bounded: at
+  1,000 facts and rules about no one (facts about someone in the Graph don't count), the lowest-weight lines from a
+  connected AI or an import the owner didn't edit go, logged and noted in Learning's changes; never the owner's own
+  or one they edited or brought back. An ended or replaced fact, marked as history, still reaches a review,
+  preparation or to-do chat when it bears on it, in a small slice of its own ([how](intelligence.md)).
+- Facts set aside as not used lately by earlier versions come back once, as current facts (`bring_back_aside`).
 - A review gets the facts used or said most lately first, up to its limit, so a long list leaves out the stalest.
 - A fact or rule about no one saved again is checked against the current ones by their content words. When a current
   one already holds every word, it counts as said again. When the new one holds every word of a current one and more,

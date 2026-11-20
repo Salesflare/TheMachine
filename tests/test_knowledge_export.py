@@ -47,13 +47,13 @@ PRIVATE_BODY = 'PRIVATE-SENTINEL about the quiet merger'
 
 
 # Past facts and rules (text, kind, sort, about, to-do, until, removed days ago, how): merged_into is '<how>:<own id>'
-# for expired and aside, the target for call, skill, voice and record; None with removed is forgotten, without removed
+# for expired, the target for call, skill, voice and record; None with removed is forgotten, without removed
 # a current fact past its end day; forgot: merged into the forgotten one above it.
 NOW = dt.datetime(2026, 11, 9, 12, tzinfo=dt.timezone.utc)  # the tests' moment (pinned)
 PAST_FACTS = (('Was based in the old office.', 'fact', 'fact', AVERY, 'pricing', '2026-01-31', 30, 'expired'),
               ('Had a trial until last spring.', 'fact', 'event', AVERY, 'pricing', '2025-05-01', None, None),
-              ('Liked long reports.', 'fact', 'preference', None, 'done', None, 20, 'aside'),
-              ('Open drafts with the weather.', 'draft', None, None, 'done', None, 20, 'aside'),
+              ('Liked long reports.', 'fact', 'preference', None, 'done', None, 20, 'expired'),
+              ('Open drafts with the weather.', 'draft', None, None, 'done', None, 20, 'expired'),
               ('Prefers calls.', 'fact', 'preference', AVERY, 'pricing', None, 10, 'call'),
               ('Books the onboarding call within a week.', 'fact', 'fact', None, 'done', None, 9, 'skill'),
               ('Signs emails with Cheers.', 'fact', 'preference', None, 'done', None, 8, 'voice'),
@@ -294,7 +294,7 @@ class KnowledgeExport(unittest.TestCase):
         current = {f['text']: f['id'] for f in self.bundle['facts']}
         self.assertEqual({t: (f['status'], f['replaced_by']) for t, f in past.items()}, {
             'Was based in the old office.': ('ended', None), 'Had a trial until last spring.': ('ended', None),
-            'Liked long reports.': ('set_aside', None), 'Open drafts with the weather.': ('set_aside', None),
+            'Liked long reports.': ('ended', None), 'Open drafts with the weather.': ('ended', None),
             'Prefers calls.': ('merged', current['Prefers a call over email.']),
             'Books the onboarding call within a week.': ('moved', 'skill-onboarding-call'),
             'Signs emails with Cheers.': ('moved', 'style-email'), "Cy's number is +32 470 00 00 00.": ('moved', CY)})
@@ -304,7 +304,8 @@ class KnowledgeExport(unittest.TestCase):
         ended = past['Was based in the old office.']
         self.assertEqual((ended['about'], ended['sort'], ended['valid_until'], ended['ended_at'][:10]), ([AVERY], 'fact', '2026-01-31', self.day(30)))
         self.assertEqual(past['Had a trial until last spring.']['ended_at'], '2025-05-01')  # past its end day, not retired yet
-        self.assertEqual(past['Liked long reports.']['set_aside_at'][:10], self.day(20))
+        self.assertEqual(past['Liked long reports.']['ended_at'][:10], self.day(20))
+        self.assertNotIn('set_aside_at', past['Liked long reports.'])
         self.assertEqual(past['Prefers calls.']['merged_at'][:10], self.day(10))
         self.assertEqual(past['Prefers calls.']['learned_at'][:10], self.day(40))  # saved
         self.assertEqual(past['Prefers calls.']['sources'], [knowledge.source_id('gmail.message', 'sam@owner.example', 'gm-pricing')])
