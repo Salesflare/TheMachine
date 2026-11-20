@@ -14,6 +14,9 @@ const dashboard=await dashboardPage();
 const brand={'/brand/avatar.png':'brand/app-icon-192.png','/brand/serif.woff2':'brand/fonts/source-serif-4-latin.woff2','/brand/sans.woff2':'brand/fonts/inter-latin.woff2'};
 const at=(days,h,m=0)=>{const d=new Date();d.setDate(d.getDate()+days);d.setHours(h,m,0,0);return d};
 const day=n=>{const d=at(n,12);return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-')};
+// The page's clock is pinned to noon of the day the fixtures were built: from the real clock, a run in the first minute
+// after midnight saw the 00:00 standup as not over yet, and a run over midnight put every row a day off
+const NOON=at(0,12);
 const soon=at(0,18);  // a fixed hour, so a late run keeps it on today
 const iso=d=>d.toISOString(),now=iso(new Date());
 const meetings=[
@@ -65,7 +68,7 @@ const errors=[];let browser;
 const open=async(width,height,scheme='dark')=>{const mobile=width<600;
  const context=await browser.newContext({viewport:{width,height},isMobile:mobile,hasTouch:mobile,locale:'en-GB',timezoneId:'Europe/Brussels',colorScheme:scheme});
  await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
- const page=await context.newPage();page.on('pageerror',e=>errors.push(width+': '+e.message));
+ const page=await context.newPage();await context.clock.setFixedTime(NOON);page.on('pageerror',e=>errors.push(width+': '+e.message));
  await page.goto(base);await page.locator('#task-'+cards[1].id).waitFor();return {context,page}};
 const showCal=async page=>{await page.evaluate(()=>showTab('calendar'));await page.locator('#calendar-view .cal-item,#calendar-view .cal-chip').first().waitFor();await page.waitForFunction(()=>calMeetings!==null&&![...calWeeks.values()].some(w=>w.loading))};
 const blocks=page=>page.locator('#calendar-view .cal-block').evaluateAll(b=>b.map(x=>({day:x.querySelector('.cal-day span').textContent,rows:[...x.querySelectorAll('.cal-item')].map(r=>r.querySelector('.cal-time').textContent+' | '+r.querySelector('.cal-title').textContent+' | '+(r.querySelector('.cal-sub')?.textContent||''))})));
@@ -137,7 +140,7 @@ try{
   for(const done of ['Answered in the chat already','Its run found it done','Answered before its date passed'])assert.ok(!b.some(x=>x.rows.join().includes(done)),done+': looks done, so not due');
   // No event line starts with "You"
   assert.ok(!b.flatMap(x=>x.rows).some(r=>r.split(' | ').some(p=>/^You\b/.test(p))));
-  // The meeting's card chip; the standup at 00:15 is over and steps back; a meeting without a card opens its details in
+  // The meeting's card chip; the standup at 00:00 is over by noon and steps back; a meeting without a card opens its details in
   // the app, with its own calendar one link away (never a new tab or window by itself)
   assert.equal(await page.locator('#calendar-view a.cal-item[href="#chat='+cards[0].id+'"] .chip').textContent(),'Prep ready');
   assert.ok(await page.locator('.cal-item.past .cal-title',{hasText:'Team standup'}).count());
