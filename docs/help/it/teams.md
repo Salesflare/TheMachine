@@ -1,54 +1,58 @@
 ---
 title: Microsoft Teams
 area: connections
-summary: Chat di Teams, chat delle riunioni e note delle riunioni per un account aziendale o scolastico. Legge soltanto.
+summary: Chat di Teams, chat delle riunioni e note delle riunioni per un account aziendale o scolastico. Le risposte vengono inviate solo dopo la tua approvazione.
 covers: connector:teams
-code: connectors/teams.py, ms_graph.py, onboarding.py
+code: connectors/teams.py, teams_send.py, ms_graph.py, onboarding.py
 site: Connect Microsoft Teams
-translated: 864f9e6e98309439
+translated: 9ca0bb08466b4d58
 ---
 ## Cosa legge
 
-Le tue chat individuali, di gruppo e delle riunioni in Teams: gli ultimi 7 giorni quando lo colleghi, poi i nuovi messaggi ogni pochi minuti. Circa un anno di chat più vecchie, e di thread dei canali con l’ok del tuo admin, arriva dopo come [cronologia](history.md), un po’ alla volta, senza bloccare nulla.
+Le tue chat 1:1, di gruppo e delle riunioni in Teams: gli ultimi 7 giorni al momento della connessione, poi i nuovi messaggi ogni pochi minuti. Circa un anno di chat meno recenti e di thread nei canali, se autorizzati dal tuo amministratore, viene importato in seguito come [cronologia](history.md), poco alla volta e senza rallentare nulla.
 
-Con l’OK del tuo admin legge anche:
+Con l'autorizzazione del tuo amministratore, legge anche:
 
-- I thread dei canali dei tuoi team.
+- I thread nei canali dei tuoi team.
 - Le trascrizioni delle riunioni che hai organizzato.
-- Le note delle riunioni e le azioni di Copilot, se hai una licenza Microsoft 365 Copilot.
+- Le note delle riunioni e le attività di Copilot, se hai una licenza Microsoft 365 Copilot.
 
-Ogni trascrizione o insieme di note finisce sulla sua riunione nel tuo calendario, segnata **Da Teams**. Senza di esse, la chat della riunione resta lì.
+Ogni trascrizione o serie di note viene associata alla relativa riunione nel Calendario, con l'etichetta **Da Teams**. Anche senza trascrizioni o note, la chat della riunione resta disponibile.
 
-Bot, app e messaggi di sistema restano fuori.
+I bot, le app e i messaggi di sistema vengono esclusi.
 
 ## Cosa può fare
 
-Niente in Teams. Legge soltanto. Per rispondere, apri la chat con **Apri in Teams**.
+Rispondere in una chat 1:1, di gruppo o di una riunione da cui proviene un’attività. The Machine prepara una bozza di risposta, che viene inviata a tuo nome e nella chat solo dopo che l’hai controllata e hai premuto **Invia ora**. Non avvia mai una nuova chat.
 
-## Cosa chiede
+Non pubblica nei canali. Per rispondere in un thread di un canale, aprilo con **Apri in Teams**.
 
-Microsoft chiede di lasciare che The Machine legga le tue chat e il tuo profilo. Non serve un admin.
+## Cosa richiede
 
-Canali, trascrizioni e note di Copilot richiedono una volta l’OK dell’admin della tua organizzazione. Fino ad allora, la scheda di Teams dice cosa non può ancora leggere e perché.
+Microsoft chiede di consentire a The Machine di leggere le tue chat e il tuo profilo e di inviare messaggi a tuo nome. Non serve l’autorizzazione dell’amministratore.
 
-Funziona solo con un account Microsoft aziendale o scolastico. Gli account personali non hanno chat di Teams leggibili in questo modo.
+Se hai collegato Teams prima che potesse inviare messaggi, nella scheda compare **Riconnetti per inviare risposte.** Premi **Riconnetti** e autorizza di nuovo. Fino ad allora, la bozza resta disponibile per l’invio da Teams.
+
+Per accedere ai canali, alle trascrizioni e alle note di Copilot, serve l’autorizzazione una tantum dell’amministratore della tua organizzazione. Fino a quel momento, nella scheda di Teams trovi ciò che non può ancora leggere e il motivo.
+
+Funziona solo con un account Microsoft aziendale o scolastico. Con gli account personali non ci sono chat di Teams da leggere in questo modo.
 
 ## Collegalo
 
-Su una Machine in hosting:
+Su una Machine ospitata:
 
-1. Nella dashboard, apri **Connessioni**, **Chat** o **Riunioni** e scegli **Microsoft Teams** (sotto Chat) o **Riunioni Teams** (sotto Riunioni). Sono lo stesso accesso.
-2. Premi **Accedi con Microsoft** e dai l’OK. Torni alla dashboard.
-3. Per canali e note delle riunioni, manda al tuo admin il link che mostra la pagina di accesso. Quando approva, collega di nuovo Teams.
+1. Nella dashboard, apri **Connessioni**, poi **Chat** per **Microsoft Teams** o **Riunioni** per **Riunioni Teams**. In entrambi i casi, l’accesso è lo stesso.
+2. Premi **Accedi con Microsoft** e autorizza l’accesso. Tornerai alla dashboard.
+3. Per i canali e le note delle riunioni, invia al tuo amministratore il link mostrato nella pagina di accesso. Dopo l’autorizzazione, collega di nuovo Teams.
 
-Durante la configurazione, anche la pagina di configurazione ha **Connect Microsoft Teams**.
+Durante la configurazione, puoi anche trovare **Connetti Microsoft Teams** nella pagina di configurazione.
 
-Sul tuo computer, quando è [abbinato al tuo account](friends.md#a-machine-on-your-own-computer): apri **Connessioni**, poi **Chat** o **Riunioni**, scegli **Microsoft Teams** o **Riunioni Teams** e premi **Accedi con Microsoft**. Lì legge le tue chat e le chat delle riunioni. Canali e note delle riunioni non sono ancora disponibili lì.
+Sul tuo computer, dopo averlo [associato al tuo account](friends.md#a-machine-on-your-own-computer): apri **Connessioni**, poi **Chat** o **Riunioni**, scegli **Microsoft Teams** o **Riunioni Teams** e premi **Accedi con Microsoft**. In questo caso legge le tue chat e le chat delle riunioni. I canali e le note delle riunioni non sono ancora disponibili.
 
 ## Rimuovilo
 
-Nella dashboard: **Connessioni**, apri Microsoft Teams, **Dettagli**, poi **Disconnetti**. Quello che ha già portato resta.
+Nella dashboard: apri **Connessioni**, seleziona Microsoft Teams, poi **Dettagli** e **Disconnetti**. I contenuti già importati restano disponibili.
 
-## Revocalo in Microsoft
+## Revoca l’accesso in Microsoft
 
-Apri myapps.microsoft.com e rimuovi The Machine. Se Outlook è collegato con lo stesso indirizzo, viene scollegato anche lui.
+Apri myapps.microsoft.com e rimuovi The Machine. Se Outlook è collegato con lo stesso indirizzo, verrà scollegato anche quello.

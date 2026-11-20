@@ -1,54 +1,58 @@
 ---
 title: Microsoft Teams
 area: connections
-summary: 适用于工作或学校账号的Teams聊天、会议聊天和会议笔记。它只读取内容。
+summary: 适用于工作或学校帐户的 Teams 聊天、会议聊天和会议记录。只有你批准后才会回复。
 covers: connector:teams
-code: connectors/teams.py, ms_graph.py, onboarding.py
+code: connectors/teams.py, teams_send.py, ms_graph.py, onboarding.py
 site: Connect Microsoft Teams
-translated: 864f9e6e98309439
+translated: 9ca0bb08466b4d58
 ---
-## 它会读取什么
+## 读取的内容
 
-Teams中的一对一聊天、群聊和会议聊天：连接时读取最近7天的内容，之后每隔几分钟读取新消息。大约一年的旧聊天记录，以及经管理员批准的频道讨论串，会稍后作为[历史记录](history.md)逐步导入，不会影响其他内容的导入。
+连接时读取 Teams 中你的一对一、群组和会议聊天，范围为最近 7 天；之后每隔几分钟读取新消息。约一年的较早聊天记录，以及经管理员同意后读取的频道帖子，会稍后分批作为[历史记录](history.md)导入，不会影响其他内容的同步。
 
-经管理员批准后，它还会读取：
+经管理员同意后，还会读取：
 
-- 你所在团队中的频道讨论串。
-- 你组织的会议的转录文本。
-- 如果你拥有Microsoft 365 Copilot许可证，还会读取Copilot生成的会议笔记和待办。
+- 你所在团队的频道帖子。
+- 你组织的会议的会议转录。
+- 你拥有 Microsoft 365 Copilot 许可证时，Copilot 生成的会议记录和待办事项。
 
-每份转录文本或笔记都会显示在日历中对应的会议下，并标记为**来自Teams**。即使没有这些内容，会议聊天仍会保留。
+每份转录或会议记录都会显示在 Calendar 中对应的会议下，并标记为**来自Teams**。即使没有这些内容，会议聊天仍会保留。
 
-机器人、应用和系统消息不会导入。
+不会读取机器人、应用和系统消息。
 
-## 它能做什么
+## 可以做什么
 
-它无法在Teams中执行任何操作，只会读取内容。要回复，请点击**在Teams中打开**，打开聊天。
+在待办事项来源的一对一、群组或会议聊天中回复。The Machine 会起草回复；只有你审核并按下**立即发送**后，才会以你的身份在该聊天中发送。它不会发起新聊天。
 
-## 需要什么权限
+它不会在频道中发帖。要回复频道帖子，请使用**在Teams中打开**打开该帖子。
 
-Microsoft会请求允许The Machine读取你的聊天和个人资料。此操作不需要管理员批准。
+## 需要哪些权限
 
-读取频道、转录文本和Copilot笔记，需要你所在组织的管理员批准一次。在管理员批准之前，Teams卡片会说明暂时无法读取的内容及原因。
+Microsoft 会请求允许 The Machine 读取你的聊天和个人资料，并以你的身份发送聊天消息。这不需要管理员批准。
 
-它仅适用于工作或学校Microsoft账号。个人账号没有可通过这种方式读取的Teams聊天。
+如果你在 The Machine 获得发送权限之前就连接了 Teams，Teams 卡片会提示你**重新连接**以发送回复。按下**重新连接**并再次授权。在此之前，草稿会保留，你可以在 Teams 中发送。
+
+频道、会议转录和 Copilot 会议记录需要组织管理员批准一次。获批前，Teams 卡片会说明目前无法读取的内容及原因。
+
+此功能仅适用于工作或学校 Microsoft 帐户。个人帐户没有可通过这种方式读取的 Teams 聊天。
 
 ## 连接
 
-在托管的Machine上：
+在托管版 Machine 上：
 
-1. 在控制面板中，打开**连接**，然后为**Microsoft Teams**选择**聊天**，或为**Teams会议**选择**会议**。两者使用同一个登录方式。
-2. 点击**使用Microsoft登录**并同意授权，然后返回控制面板。
-3. 如需读取频道和会议笔记，请把登录页面上显示的链接发给管理员。管理员批准后，再次连接Teams。
+1. 在控制面板中打开**连接**，然后为 **Microsoft Teams** 选择**聊天**，或为 **Teams会议**选择**会议**。两者使用相同的登录方式。
+2. 按下**使用 Microsoft 登录**并授权。之后会返回控制面板。
+3. 如需启用频道和会议记录，请把登录页面显示的链接发给管理员。管理员批准后，再次连接 Teams。
 
-设置过程中，设置页面上也有**连接Microsoft Teams**。
+设置过程中，设置页面也会显示**连接 Microsoft Teams**。
 
-在自己的电脑上，先[将电脑与你的账号配对](friends.md#a-machine-on-your-own-computer)，然后打开**连接**，再打开**聊天**或**会议**，选择**Microsoft Teams**或**Teams会议**，并点击**使用Microsoft登录**。在这里，它会读取你的聊天和会议聊天。目前无法读取频道和会议笔记。
+在自己的电脑上，先[将 Machine 与你的帐户配对](friends.md#a-machine-on-your-own-computer)，然后打开**连接**，再选择**聊天**或**会议**，选 **Microsoft Teams** 或 **Teams会议**，并按下**使用 Microsoft 登录**。在这里，The Machine 会读取你的聊天和会议聊天。目前无法读取频道和会议记录。
 
-## 移除
+## 移除连接
 
-在控制面板中，打开**连接**，选择Microsoft Teams，再依次点击**详情**和**断开连接**。已导入的内容会保留。
+在控制面板中打开**连接**，选择 Microsoft Teams，再选择**详情**，然后选择**断开连接**。已导入的内容会保留。
 
-## 在Microsoft中撤销权限
+## 在 Microsoft 中撤销权限
 
-打开myapps.microsoft.com并移除The Machine。如果Outlook连接的是同一个地址，也会一并断开。
+打开 myapps.microsoft.com 并移除 The Machine。如果 Outlook 使用同一地址连接，也会一并断开。
