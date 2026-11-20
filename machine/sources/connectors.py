@@ -337,6 +337,13 @@ def intercom_transport(config):
     return next_actions.IntercomTransport(config, plugin, CONNECTOR_HELPERS) if plugin and hasattr(plugin, 'Replier') else None
 
 
+def teams_transport(config):
+    """Teams chat replies, when the connector is here (connectors/teams.py Sender: the one write it allows)."""
+    import teams_send
+    plugin = load_connector('teams')
+    return teams_send.TeamsTransport(config, plugin, CONNECTOR_HELPERS) if plugin and hasattr(plugin, 'Sender') else None
+
+
 def load_connector(service):
     if not isinstance(service, str) or service not in connector_services():
         return None

@@ -1,7 +1,8 @@
 """Microsoft Teams (connectors/teams.py), faked at the Graph boundary: no live Microsoft calls. Every call still goes
 through ms_graph.url_for, so only allowlisted GET methods with their right parameters pass. It reads chats with Chat.Read
 alone, leaves out bots and Teams' own notices, keeps a cursor per chat, falls back from Copilot's notes to the
-transcript to the meeting chat, says what's missing and why, and refuses a personal Microsoft account."""
+transcript to the meeting chat, says what's missing and why, and refuses a personal Microsoft account. Its one write,
+an owner-approved chat reply, goes only to POST /chats/{chat}/messages with ChatMessage.Send (to the fake)."""
 import copy
 import datetime as dt
 import types
@@ -21,7 +22,7 @@ MEETING_CHAT = '19:meeting_abc123@thread.v2'
 JOIN = 'https://teams.microsoft.com/l/meetup-join/19%3ameeting_abc123%40thread.v2/0'
 ACCOUNT = {**teams.SETUP['account'], 'email': OWNER, 'boundary': 'work:Acme'}
 OUTLOOK = {'id': 'acme-outlook', 'service': 'outlook', 'email': OWNER, 'transport': 'broker', 'boundary': 'work:Acme'}
-CHAT_SCOPES = {'User.Read', 'Chat.Read'}
+CHAT_SCOPES = {'User.Read', 'Chat.Read', teams.SEND_SCOPE}
 ALL_SCOPES = CHAT_SCOPES | set(teams.ADMIN_SCOPES)
 
 
@@ -38,7 +39,7 @@ class FakeGraph:
     """Answers the Teams calls the connector makes, after url_for checked each one."""
 
     def __init__(self, granted=CHAT_SCOPES):
-        self.granted, self.calls = set(granted), []
+        self.granted, self.calls, self.sent, self.tokens = set(granted), [], [], []
         self.chats = {
             CHAT_1: {'id': CHAT_1, 'chatType': 'oneOnOne', 'topic': None, 'webUrl': 'https://teams.microsoft.com/l/chat/' + CHAT_1,
                      'lastMessagePreview': {'createdDateTime': '2026-11-05T10:00:00Z'}},
@@ -62,10 +63,21 @@ class FakeGraph:
     def scopes(self, config, credential, signin):
         return sorted(self.granted)
 
+    def token(self, config, credential, signin, scope):
+        self.tokens.append(scope)
+        if scope not in self.granted:
+            raise ms_graph.GraphError('microsoft_scope_not_granted', 403)
+        return 'fixture-token'
+
     def call(self, config, credential, signin, method, params=None, body=None, write=False, raw=False, **kw):
-        assert not write and body is None
-        verb, scope, url = ms_graph.url_for(method, params)  # the real allowlist: a wrong method or parameter fails here
-        assert verb == 'GET', method
+        verb, scope, url = ms_graph.url_for(method, params, write)  # the real allowlist: a wrong method or parameter fails here
+        if write:  # the one write: a reply in a chat, never anything else
+            self.test_send(method, verb, scope, url, body)
+            if method in self.fail:
+                raise ms_graph.GraphError('graph_http', self.fail[method])
+            self.sent.append((params['chat'], body))
+            return {'id': 'sent-%d' % len(self.sent)}
+        assert body is None and verb == 'GET', method
         self.calls.append((method, dict(params or {})))
         one = (method, (params or {}).get('chat') or (params or {}).get('channel'))  # a failure on one chat or channel
         if method in self.fail or one in self.fail:
@@ -118,6 +130,11 @@ class FakeGraph:
             return out
         raise AssertionError('unexpected ' + method)
 
+    def test_send(self, method, verb, scope, url, body):
+        assert (method, verb, scope) == ('teams.chat.send', 'POST', 'ChatMessage.Send'), method
+        assert url.startswith('https://graph.microsoft.com/v1.0/chats/') and url.endswith('/messages'), url
+        assert set(body) == {'body'} and body['body']['contentType'] == 'html', body
+
 
 class Store:
     def __init__(self):
@@ -137,7 +154,7 @@ class TeamsTests(unittest.TestCase):
     def setUp(self):
         self.fake = FakeGraph()
         api = types.SimpleNamespace(READ=ms_graph.READ, GraphError=ms_graph.GraphError, personal=ms_graph.personal,
-                                    identity=ms_graph.identity, call=self.fake.call, scopes=self.fake.scopes,
+                                    identity=ms_graph.identity, call=self.fake.call, scopes=self.fake.scopes, token=self.fake.token,
                                     budget=self.budget, ROUND_SECONDS=ms_graph.ROUND_SECONDS)
         self.rounds = []
         self.patch = mock.patch.dict('sys.modules', {'ms_graph': api})
@@ -164,6 +181,10 @@ class TeamsTests(unittest.TestCase):
             if method.startswith('teams.'):
                 self.assertEqual(verb, 'GET')
                 self.assertNotIn(method, ms_graph.WRITE)
+        # its one write: a reply in a chat with ChatMessage.Send; no channel post (ChannelMessage.Send), no Chat.ReadWrite
+        self.assertEqual({m: w for m, w in ms_graph.WRITE.items() if m.startswith('teams.')},
+                         {'teams.chat.send': ('POST', '/chats/{chat}/messages', 'ChatMessage.Send')})
+        self.assertFalse({'ChannelMessage.Send', 'Chat.ReadWrite'} & {w[2] for w in ms_graph.WRITE.values()})
         # Graph writes a chat id unquoted in its next links; this module quotes it: both are the same path
         link = f'https://graph.microsoft.com/v1.0/chats/{CHAT_1}/messages?$skiptoken=abc'
         self.assertEqual(ms_graph.url_for('teams.chat.messages', {'chat': CHAT_1, '$link': link})[2], link)
@@ -373,6 +394,41 @@ class TeamsTests(unittest.TestCase):
         self.assertEqual(([e['body'] for e in events], done), (['Summer numbers'], False))
         events, done = teams.history_page(self.config, ACCOUNT, self.helpers, state, upper, target)
         self.assertEqual((events, done), ([], True))  # a thread older than the target ends the channel
+
+    def test_a_connection_from_before_send_says_reconnect(self):
+        self.fake.granted = {'User.Read', 'Chat.Read'}  # consent from before ChatMessage.Send
+        self.sync()
+        self.assertEqual(self.store.state['missing'], {'replies': 'reconnect', 'channels': 'admin', 'transcripts': 'admin', 'notes': 'admin'})
+        sender = teams.Sender(self.config, ACCOUNT, self.helpers)
+        with self.assertRaises(CONNECTOR_HELPERS.SourceError) as caught:
+            sender.ready(CHAT_1)
+        self.assertEqual(caught.exception.category, 'teams_send_not_granted')
+        with self.assertRaises(CONNECTOR_HELPERS.SourceError) as caught:
+            sender.post(CHAT_1, 'Yes')  # the token is asked first, so nothing is posted
+        self.assertEqual(caught.exception.category, 'teams_not_granted')
+        self.assertEqual(self.fake.sent, [])
+        self.fake.granted.add(teams.SEND_SCOPE)  # after the Reconnect
+        self.sync()
+        self.assertNotIn('replies', self.store.state['missing'])
+
+    def test_a_reply_goes_into_its_chat_as_html(self):
+        sender = teams.Sender(self.config, ACCOUNT, self.helpers)
+        self.assertEqual(sender.ready(CHAT_1)['id'], CHAT_1)
+        self.assertEqual(sender.post(CHAT_1, 'Sure <b>Sam</b> & co.\nSee [the quote](https://acme.example/q?a=1&b=2)'), {'id': 'sent-1'})
+        self.assertEqual(self.fake.sent, [(CHAT_1, {'body': {'contentType': 'html', 'content':
+            'Sure &lt;b&gt;Sam&lt;/b&gt; &amp; co.<br>See <a href="https://acme.example/q?a=1&amp;b=2">the quote</a>'}})])
+        self.assertEqual(self.fake.tokens, [teams.SEND_SCOPE])
+        with self.assertRaises(CONNECTOR_HELPERS.SourceError):  # a Fleet-shared sign-in only reads
+            teams.Sender(self.config, {**ACCOUNT, 'shared': {'fleet': 'f1'}}, self.helpers)
+
+    def test_an_unclear_reply_is_found_by_its_text(self):
+        sender = teams.Sender(self.config, ACCOUNT, self.helpers)
+        self.fake.messages[CHAT_1].insert(0, message('m9', '2026-11-05T12:01:00Z', user(ME, 'Owner'), '<p>Yes, see <a href="https://x.example">the  quote</a></p>'))
+        self.fake.messages[CHAT_1].insert(0, message('m8', '2026-11-05T12:02:00Z', user(SAM, 'Sam Sender'), 'Yes, see the quote'))
+        since = dt.datetime.fromisoformat('2026-11-05T11:59:00+00:00')
+        self.assertEqual(sender.find(CHAT_1, 'Yes, see [the quote](https://x.example)', since), ['m9'])  # the owner's own only
+        self.assertEqual(sender.find(CHAT_1, 'Something else', since), [])
+        self.assertEqual(self.fake.sent, [])
 
     def test_text(self):
         self.assertEqual(teams.html_text({'contentType': 'html', 'content': '<p>One&nbsp;two</p><p>three</p>'}), 'One two\n\nthree')

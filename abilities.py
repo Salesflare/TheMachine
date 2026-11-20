@@ -16,7 +16,7 @@ from machine.owner_error import OwnerError
 
 SIGNALS, ACTIONS = 'signals', 'actions'
 ABILITIES = (SIGNALS, ACTIONS)
-REPLY_SERVICES = ('slack', 'whatsapp', 'telegram', 'signal', 'linkedin', 'x')
+REPLY_SERVICES = ('slack', 'whatsapp', 'telegram', 'signal', 'linkedin', 'x', 'teams')
 DOC_SERVICES = ('docs', 'notion')  # pages and docs: read for a to-do, a reply to a comment and a write after the owner's OK (doc_writes.py)
 
 

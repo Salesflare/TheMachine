@@ -15,7 +15,7 @@ const sources=[
  S('outlook','Outlook','mail','Your Outlook email, what comes in and what you send.',{signin:'microsoft'}),
  S('calendar','Google Calendar','calendar','Your meetings, so you go in prepared and follow up.',{connected:1,signin:'google'}),
  S('outlook_calendar','Outlook Calendar','calendar','Your Outlook meetings, so you go in prepared and follow up.',{signin:'microsoft'}),
- S('teams','Microsoft Teams','chat','Chats, meeting chats and meeting notes from Teams. Reads only.',{signin:'microsoft_teams'}),
+ S('teams','Microsoft Teams','chat','Chats, meeting chats and meeting notes from Teams. Replies only after you press Send.',{signin:'microsoft_teams'}),
  S('slack','Slack','chat','Your direct messages, mentions and the threads you are in.',{signin:'slack'}),
  S('telegram','Telegram chats','chat','Your Telegram chats and small groups.'),
  S('whatsapp','WhatsApp','chat','Your WhatsApp chats, as a linked device.'),
@@ -63,7 +63,7 @@ try{
   assert.deepEqual(groups.find(g=>g.head==='Meetings').tiles.map(x=>x.name),['Google Meet','Teams meetings','Zoom']);
   // Read-only, as the calendar rows say it; no meeting notes promised: that admin step is only on a hosted Machine
   assert.deepEqual([tile('Chat','Microsoft Teams').what,tile('Meetings','Teams meetings').what],
-   ['Chats and meeting chats from Teams. Read-only.','Meeting chats from Teams. Read-only.'],`${tag}: what the Teams rows bring in`);
+   ['Chats and meeting chats from Teams. Replies only after you press Send.','Meeting chats from Teams. Read-only.'],`${tag}: what the Teams rows bring in`);
   const tabs=await page.evaluate(()=>[...document.querySelectorAll('#health-tabs .conn-cat .ell')].map(b=>b.textContent.trim()));
   assert.ok(!tabs.some(x=>/^Sources/.test(x))&&['Email','Calendar','Chat'].every(n=>tabs.some(x=>x.startsWith(n))),`${tag}: the kinds are the groups (${tabs.join(', ')})`);
   const wide=await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth);
@@ -80,7 +80,7 @@ try{
    admin:document.querySelector('#connect-add .connect-admin a')?.getAttribute('href')||null}));
   // the admin link stays: an organization that lets only approved apps in needs it for this sign-in too (the same
   // Microsoft app, and it approves Chat.Read and the sign-in scopes this one asks: cloud tests/test_device_signin.py)
-  assert.deepEqual(step,{title:'Microsoft Teams',about:'Your chats and meeting chats. Read-only.',go:'Sign in with Microsoft',pair:false,
+  assert.deepEqual(step,{title:'Microsoft Teams',about:'Your chats and meeting chats. Replies only after you press Send.',go:'Sign in with Microsoft',pair:false,
    admin:'https://themachine.computer/m365-admin-consent/teams'},`${tag}: Sign in with Microsoft for Teams, no channels or notes promised`);
   if(shots)await page.screenshot({path:`${shots}/add-teams-signin-${tag}.png`,fullPage:!mobile});
   posted.length=0;

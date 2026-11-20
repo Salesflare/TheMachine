@@ -58,8 +58,9 @@ SCOPES_SEND = ('Mail.ReadWrite', 'Mail.Send')
 ANSWERS = {'User.Read': {'User.Read'}, 'Mail.Read': {'Mail.Read', 'Mail.ReadWrite'}, 'Mail.ReadWrite': {'Mail.ReadWrite'},
            'Mail.Send': {'Mail.Send'}, 'Calendars.Read': {'Calendars.Read', 'Calendars.ReadWrite'},
            'Files.Read.All': {'Files.Read.All', 'Files.ReadWrite.All'}, 'Files.ReadWrite.All': {'Files.ReadWrite.All'},
-           # Teams (connectors/teams.py), read only
+           # Teams (connectors/teams.py): reads, and a chat reply the owner approved (ChatMessage.Send)
            'Chat.Read': {'Chat.Read', 'Chat.ReadWrite'}, 'Team.ReadBasic.All': {'Team.ReadBasic.All'},
+           'ChatMessage.Send': {'ChatMessage.Send'},
            'Channel.ReadBasic.All': {'Channel.ReadBasic.All'}, 'ChannelMessage.Read.All': {'ChannelMessage.Read.All'},
            'OnlineMeetings.Read': {'OnlineMeetings.Read', 'OnlineMeetings.ReadWrite'},
            'OnlineMeetingTranscript.Read.All': {'OnlineMeetingTranscript.Read.All'},
@@ -94,7 +95,7 @@ READ = {
     'drive.root.item': ('GET', '/me/drive/root:/{name}', 'Files.Read.All'),
     'drive.search': ('GET', "/me/drive/root/search(q='{q}')", 'Files.Read.All'),  # Find a doc, for a to-do (Can do things)
     # Microsoft Teams (connectors/teams.py), each scope from its own Connect consent, never Outlook's: chats with Chat.Read;
-    # channels, transcripts and Copilot's meeting notes with the admin's OK. Reads only: Teams has no WRITE entry.
+    # channels, transcripts and Copilot's meeting notes with the admin's OK. Its one write is a chat reply (WRITE).
     'teams.chats': ('GET', '/chats', 'Chat.Read'),
     'teams.chat': ('GET', '/chats/{chat}', 'Chat.Read'),
     'teams.chat.members': ('GET', '/chats/{chat}/members', 'Chat.Read'),
@@ -127,6 +128,9 @@ WRITE = {
     # edits: a Word file's new content with If-Match on the eTag read right before, or a new .docx in the OneDrive root
     'drives.item.content': ('PUT', '/drives/{drive}/items/{id}/content', 'Files.ReadWrite.All'),
     'drive.root.upload': ('PUT', '/me/drive/root:/{name}:/content', 'Files.ReadWrite.All'),
+    # An owner-approved Teams reply (teams_send.TeamsTransport) in the 1:1, group or meeting chat its to-do came from,
+    # with ChatMessage.Send from Teams' own consent. Never a channel post: that would need ChannelMessage.Send.
+    'teams.chat.send': ('POST', '/chats/{chat}/messages', 'ChatMessage.Send'),
 }
 LINK_HOSTS = ('outlook.office.com', 'outlook.office365.com', 'outlook.live.com')
 # Right after connecting, Microsoft can refuse a fresh sign-in for a few minutes while it takes the new permissions:

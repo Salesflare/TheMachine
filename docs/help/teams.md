@@ -1,9 +1,9 @@
 ---
 title: Microsoft Teams
 area: connections
-summary: Teams chats, meeting chats and meeting notes for a work or school account. It only reads.
+summary: Teams chats, meeting chats and meeting notes for a work or school account. Replies only after you approve.
 covers: connector:teams
-code: connectors/teams.py, ms_graph.py, onboarding.py
+code: connectors/teams.py, teams_send.py, ms_graph.py, onboarding.py
 site: Connect Microsoft Teams
 ---
 ## What it reads
@@ -22,11 +22,15 @@ Bots, apps and system messages are left out.
 
 ## What it can do
 
-Nothing in Teams. It only reads. To reply, open the chat with **Open in Teams**.
+Reply in a 1:1, group or meeting chat a to-do came from. The Machine drafts the reply; it goes only after you review it and press **Send now**, as you, in that chat. It never starts a new chat.
+
+It doesn't post in channels. To reply in a channel thread, open it with **Open in Teams**.
 
 ## What it asks for
 
-Microsoft asks to let The Machine read your chats and your profile. That needs no admin.
+Microsoft asks to let The Machine read your chats and your profile, and send chat messages as you. That needs no admin.
+
+If you connected Teams before it could send, its card says **Reconnect to send replies.** Press **Reconnect** and give the OK again. Until then, the draft stays for you to send in Teams.
 
 Channels, transcripts and Copilot notes need your organization's admin to approve them once. Until then, the Teams card says what it can't read yet and why.
 
