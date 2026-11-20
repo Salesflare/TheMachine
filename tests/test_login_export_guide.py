@@ -26,8 +26,14 @@ GOOGLE_CSV = 'name,url,username,password\\nShop,https://shop.example.invalid,sam
 
 PAGES = {
     # LastPass: a sign-in, then the vault with Advanced Options folded, Export under it, and the master password asked
-    '/lp/login': '''<!doctype html><meta charset="utf-8"><title>Log in</title><form onsubmit="event.preventDefault(); location = '/lp/vault/'">
-        <input type="email" id="email"><input type="password" id="pw"><button>Log in</button></form>''',
+    # (a card like the real page's: email, master password and Log in stacked, so the phone's zoom has the whole form)
+    '/lp/login': '''<!doctype html><meta charset="utf-8"><title>Log in</title><style>body{margin:0;font:15px sans-serif;background:#f3f4f6;color:#1f2937}
+        form{width:340px;margin:48px auto;padding:24px;background:#fff;border-radius:8px;box-shadow:0 1px 4px #0002;display:grid;gap:6px}
+        h1{margin:0 0 10px;font-size:22px}label{font-weight:600;margin-top:6px}input{font:inherit;padding:9px 10px;border:1px solid #9ca3af;border-radius:4px}
+        button{margin-top:14px;padding:11px;font:inherit;font-weight:600;color:#fff;background:#d32d27;border:0;border-radius:4px}</style>
+        <form onsubmit="event.preventDefault(); location = '/lp/vault/'"><h1>Log in</h1>
+        <label for="email">Email</label><input type="email" id="email"><label for="pw">Master password</label><input type="password" id="pw">
+        <button>Log in</button></form>''',
     '/lp/vault/': '<!doctype html><meta charset="utf-8"><title>Vault</title>' + SAVE + '''
         <nav><a href="#">All items</a><button type="button" onclick="document.getElementById('more').hidden = false"><svg width="8" height="8"></svg><span>Advanced Options</span></button>
         <ul id="more" hidden><li><button type="button" onclick="document.getElementById('dlg').showModal()">Export</button></li><li><button type="button">Import</button></li></ul></nav>
