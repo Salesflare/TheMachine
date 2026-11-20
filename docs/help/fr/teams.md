@@ -1,54 +1,58 @@
 ---
 title: Microsoft Teams
 area: connections
-summary: Chats Teams, chats de réunion et notes de réunion pour un compte professionnel ou scolaire. Il lit seulement.
+summary: Chats Teams, chats de réunion et notes de réunion avec un compte professionnel ou scolaire. Les réponses sont envoyées uniquement après votre approbation.
 covers: connector:teams
-code: connectors/teams.py, ms_graph.py, onboarding.py
+code: connectors/teams.py, teams_send.py, ms_graph.py, onboarding.py
 site: Connect Microsoft Teams
-translated: 864f9e6e98309439
+translated: 9ca0bb08466b4d58
 ---
-## Ce qu’il lit
+## Ce que l’application lit
 
-Vos chats individuels, de groupe et de réunion dans Teams : les 7 derniers jours à la connexion, puis les nouveaux messages toutes les quelques minutes. Environ un an d’anciens chats, et de fils de canaux avec l’accord de votre admin, arrive plus tard comme [historique](history.md), petit à petit, sans rien bloquer.
+Vos chats individuels, de groupe et de réunion dans Teams : les 7 derniers jours au moment de la connexion, puis les nouveaux messages toutes les quelques minutes. Environ un an d’anciens chats et de fils de discussion de canal, avec l’accord de votre administrateur, est importé plus tard sous forme d’[historique](history.md), petit à petit, sans rien ralentir.
 
-Avec l’accord de votre admin, il lit aussi :
+Avec l’accord de votre administrateur, elle lit aussi :
 
-- Les fils des canaux de vos équipes.
+- Les fils de discussion des canaux de vos équipes.
 - Les transcriptions des réunions que vous avez organisées.
-- Les notes de réunion et actions de Copilot, si vous avez une licence Microsoft 365 Copilot.
+- Les notes de réunion et les tâches de Copilot, si vous avez une licence Microsoft 365 Copilot.
 
-Chaque transcription ou série de notes rejoint sa réunion dans votre agenda, marquée **De Teams**. Sans elles, le chat de la réunion reste là.
+Chaque transcription ou ensemble de notes est associé à la réunion correspondante dans votre calendrier, avec la mention **De Teams**. Sans ces éléments, le chat de la réunion reste disponible.
 
-Les bots, les applis et les messages système sont laissés de côté.
+Les bots, les applications et les messages système sont exclus.
 
-## Ce qu’il peut faire
+## Ce qu’elle peut faire
 
-Rien dans Teams. Il lit seulement. Pour répondre, ouvrez le chat avec **Ouvrir dans Teams**.
+Répondre dans le chat individuel, de groupe ou de réunion à l’origine d’une tâche. The Machine rédige la réponse. Elle est envoyée en votre nom dans ce chat uniquement après que vous l’avez relue et que vous avez appuyé sur **Envoyer maintenant**. Elle ne démarre jamais de nouveau chat.
 
-## Ce qu’il demande
+Elle ne publie pas dans les canaux. Pour répondre dans un fil de discussion de canal, ouvrez-le avec **Ouvrir dans Teams**.
 
-Microsoft demande de laisser The Machine lire vos chats et votre profil. Aucun admin n’est nécessaire pour cela.
+## Ce qu’elle demande
 
-Les canaux, les transcriptions et les notes Copilot ont besoin une fois de l’accord de l’admin de votre organisation. D’ici là, la carte Teams indique ce qu’il ne peut pas encore lire et pourquoi.
+Microsoft demande l’autorisation de laisser The Machine lire vos chats et votre profil, et d’envoyer des messages dans les chats en votre nom. L’accord d’un administrateur n’est pas nécessaire.
 
-Il fonctionne seulement avec un compte Microsoft professionnel ou scolaire. Les comptes personnels n’ont pas de chats Teams lisibles de cette façon.
+Si vous avez connecté Teams avant que l’envoi soit possible, sa fiche indique **Reconnecter pour envoyer des réponses.** Appuyez sur **Reconnecter** et autorisez de nouveau l’accès. En attendant, le brouillon reste disponible pour que vous l’envoyiez dans Teams.
 
-## Le connecter
+L’accès aux canaux, aux transcriptions et aux notes de Copilot doit être autorisé une fois par l’administrateur de votre organisation. En attendant, la fiche Teams indique ce que l’application ne peut pas encore lire et pourquoi.
+
+Cette connexion fonctionne uniquement avec un compte Microsoft professionnel ou scolaire. Les comptes personnels ne contiennent pas de chats Teams accessibles de cette façon.
+
+## Connecter Teams
 
 Sur une Machine hébergée :
 
-1. Dans le tableau de bord, ouvrez **Connexions**, **Chat** ou **Réunions** et choisissez **Microsoft Teams** (sous Chat) ou **Réunions Teams** (sous Réunions). Les deux sont la même connexion.
-2. Appuyez sur **Se connecter avec Microsoft** et donnez votre accord. Vous revenez au tableau de bord.
-3. Pour les canaux et les notes de réunion, envoyez à votre admin le lien affiché sur la page de connexion. Une fois approuvé, connectez Teams à nouveau.
+1. Dans le tableau de bord, ouvrez **Connexions**, puis **Chat** pour **Microsoft Teams** ou **Réunions** pour **Réunions Teams**. Les deux options utilisent la même connexion.
+2. Appuyez sur **Se connecter avec Microsoft** et autorisez l’accès. Vous reviendrez au tableau de bord.
+3. Pour les canaux et les notes de réunion, envoyez à votre administrateur le lien affiché sur la page de connexion. Une fois l’accès autorisé, reconnectez Teams.
 
-Pendant la configuration, la page de configuration propose aussi **Connect Microsoft Teams**.
+Pendant la configuration, la page de configuration propose également **Connecter Microsoft Teams**.
 
-Sur votre propre ordinateur, une fois [associé à votre compte](friends.md#a-machine-on-your-own-computer) : ouvrez **Connexions**, puis **Chat** ou **Réunions**, choisissez **Microsoft Teams** ou **Réunions Teams** et appuyez sur **Se connecter avec Microsoft**. Là, il lit vos chats et chats de réunion. Les canaux et les notes de réunion n'y sont pas encore disponibles.
+Sur votre propre ordinateur, une fois celui-ci [associé à votre compte](friends.md#a-machine-on-your-own-computer) : ouvrez **Connexions**, puis **Chat** ou **Réunions**, choisissez **Microsoft Teams** ou **Réunions Teams**, puis appuyez sur **Se connecter avec Microsoft**. The Machine y lit vos chats et vos chats de réunion. Les canaux et les notes de réunion n’y sont pas encore disponibles.
 
-## Le retirer
+## Supprimer la connexion
 
-Dans le tableau de bord : **Connexions**, ouvrez Microsoft Teams, **Détails**, puis **Déconnecter**. Ce qu’il a déjà récupéré reste.
+Dans le tableau de bord : ouvrez **Connexions**, puis Microsoft Teams, **Détails** et enfin **Déconnecter**. Les éléments déjà importés restent disponibles.
 
-## Le révoquer chez Microsoft
+## Révoquer l’accès dans Microsoft
 
-Ouvrez myapps.microsoft.com et retirez The Machine. Si Outlook est connecté avec la même adresse, il est aussi déconnecté.
+Ouvrez myapps.microsoft.com et supprimez The Machine. Si Outlook est connecté avec la même adresse, il sera également déconnecté.

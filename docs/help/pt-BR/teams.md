@@ -1,54 +1,58 @@
 ---
 title: Microsoft Teams
 area: connections
-summary: Chats do Teams, chats de reuniões e notas de reuniões para uma conta corporativa ou de estudante. Ele só lê.
+summary: Chats do Teams, chats de reuniões e anotações de reuniões em uma conta corporativa ou escolar. As respostas só são enviadas depois da sua aprovação.
 covers: connector:teams
-code: connectors/teams.py, ms_graph.py, onboarding.py
+code: connectors/teams.py, teams_send.py, ms_graph.py, onboarding.py
 site: Connect Microsoft Teams
-translated: 864f9e6e98309439
+translated: 9ca0bb08466b4d58
 ---
-## O que ele lê
+## O que lê
 
-Seus chats individuais, de grupo e de reuniões no Teams: os últimos 7 dias ao conectar, depois as mensagens novas a cada poucos minutos. Cerca de um ano de chats antigos, e de threads de canais com o ok do seu admin, chega depois como [histórico](history.md), aos poucos, sem travar nada.
+Seus chats individuais, em grupo e de reuniões no Teams: as mensagens dos últimos 7 dias quando você conecta, depois novas mensagens a cada poucos minutos. Cerca de um ano de chats antigos e de conversas em canais, com a autorização do administrador, chega depois como [histórico](history.md), aos poucos, sem atrasar nada.
 
-Com o OK do seu admin, ele também lê:
+Com a autorização do administrador, ela também lê:
 
-- As conversas dos canais das suas equipes.
-- As transcrições das reuniões que você organizou.
-- As notas de reunião e tarefas do Copilot, se você tem uma licença do Microsoft 365 Copilot.
+- Conversas nos canais das suas equipes.
+- Transcrições de reuniões que você organizou.
+- Anotações de reunião e itens de ação do Copilot, se você tiver uma licença do Microsoft 365 Copilot.
 
-Cada transcrição ou conjunto de notas vai para a reunião na sua agenda, marcado **Do Teams**. Sem eles, o chat da reunião continua lá.
+Cada transcrição ou conjunto de anotações aparece na reunião correspondente do seu Calendário, marcada como **Do Teams**. Sem isso, o chat da reunião continua disponível.
 
-Bots, apps e mensagens do sistema ficam de fora.
+Bots, aplicativos e mensagens do sistema ficam de fora.
 
-## O que ele pode fazer
+## O que pode fazer
 
-Nada no Teams. Ele só lê. Para responder, abra o chat com **Abrir no Teams**.
+Responder em um chat individual, em grupo ou de reunião de onde veio uma tarefa. The Machine prepara um rascunho da resposta. Ela só é enviada depois que você revisa e toca em **Enviar agora**, em seu nome, naquele chat. Ela nunca inicia um chat novo.
 
-## O que ele pede
+Ela não publica em canais. Para responder em uma conversa de canal, abra-a com **Abrir no Teams**.
 
-A Microsoft pede para deixar a The Machine ler seus chats e seu perfil. Isso não precisa de admin.
+## O que ela pede
 
-Canais, transcrições e notas do Copilot precisam uma vez do OK do admin da sua organização. Até lá, o cartão do Teams diz o que ele ainda não consegue ler e por quê.
+A Microsoft pede autorização para que The Machine leia seus chats e seu perfil, e envie mensagens de chat em seu nome. Não é necessário ter autorização do administrador.
 
-Só funciona com uma conta Microsoft corporativa ou de estudante. Contas pessoais não têm chats do Teams que dê para ler assim.
+Se você conectou o Teams antes de ela poder enviar mensagens, o cartão mostra **Reconectar para enviar respostas.** Toque em **Reconectar** e autorize novamente. Até lá, o rascunho fica disponível para você enviar pelo Teams.
+
+Para acessar canais, transcrições e anotações do Copilot, é preciso que o administrador da sua organização autorize uma vez. Até lá, o cartão do Teams informa o que ela ainda não pode ler e por quê.
+
+Ela só funciona com uma conta Microsoft corporativa ou escolar. Contas pessoais não têm chats do Teams disponíveis para leitura dessa forma.
 
 ## Conectar
 
-Numa Machine hospedada:
+Em uma Machine hospedada:
 
-1. No painel, abra **Conexões**, **Chat** ou **Reuniões** e escolha **Microsoft Teams** (em Chat) ou **Reuniões do Teams** (em Reuniões). Os dois são o mesmo login.
-2. Clique em **Entrar com Microsoft** e dê o OK. Você volta para o painel.
-3. Para canais e notas de reuniões, mande ao seu admin o link que a página de login mostra. Quando ele aprovar, conecte o Teams de novo.
+1. No painel, abra **Conexões** e depois **Chat** para **Microsoft Teams** ou **Reuniões** para **Reuniões do Teams**. As duas opções usam o mesmo login.
+2. Toque em **Entrar com a Microsoft** e autorize o acesso. Você voltará ao painel.
+3. Para acessar canais e anotações de reunião, envie ao administrador o link exibido na página de login. Depois que ele autorizar, conecte o Teams novamente.
 
-Durante a configuração, a página de configuração também tem **Connect Microsoft Teams**.
+Durante a configuração, a página de configuração também tem a opção **Conectar ao Microsoft Teams**.
 
-No seu próprio computador, depois que ele estiver [pareado com sua conta](friends.md#a-machine-on-your-own-computer): abra **Conexões**, depois **Chat** ou **Reuniões**, escolha **Microsoft Teams** ou **Reuniões do Teams** e clique em **Entrar com Microsoft**. Lá, ele lê seus chats e chats de reuniões. Canais e notas de reuniões ainda não estão disponíveis lá.
+No seu próprio computador, depois que ele estiver [conectado à sua conta](friends.md#a-machine-on-your-own-computer): abra **Conexões** e depois **Chat** ou **Reuniões**, escolha **Microsoft Teams** ou **Reuniões do Teams** e toque em **Entrar com a Microsoft**. Nesse caso, ela lê seus chats e chats de reuniões. Canais e anotações de reunião ainda não estão disponíveis.
 
 ## Remover
 
-No painel: **Conexões**, abra o Microsoft Teams, **Detalhes** e depois **Desconectar**. O que ele já trouxe fica.
+No painel: abra **Conexões**, escolha Microsoft Teams, toque em **Detalhes** e depois em **Desconectar**. O conteúdo que ela já trouxe continua disponível.
 
-## Revogar na Microsoft
+## Revogar o acesso na Microsoft
 
-Abra myapps.microsoft.com e remova a The Machine. Se o Outlook estiver conectado com o mesmo endereço, ele também é desconectado.
+Acesse myapps.microsoft.com e remova The Machine. Se o Outlook estiver conectado com o mesmo endereço, ele também será desconectado.

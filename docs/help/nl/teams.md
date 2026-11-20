@@ -1,54 +1,58 @@
 ---
 title: Microsoft Teams
 area: connections
-summary: Teams-chats, meetingchats en meetingnotities voor een werk- of schoolaccount. Het leest alleen.
+summary: Teams-chats, chatgesprekken van vergaderingen en vergadernotities voor een werk- of schoolaccount. Antwoorden worden pas verstuurd nadat je ze hebt goedgekeurd.
 covers: connector:teams
-code: connectors/teams.py, ms_graph.py, onboarding.py
+code: connectors/teams.py, teams_send.py, ms_graph.py, onboarding.py
 site: Connect Microsoft Teams
-translated: 864f9e6e98309439
+translated: 9ca0bb08466b4d58
 ---
-## Wat het leest
+## Wat wordt gelezen
 
-Je 1-op-1-, groeps- en meetingchats in Teams: de laatste 7 dagen bij het koppelen, daarna om de paar minuten nieuwe berichten. Oudere chats tot ongeveer een jaar terug, en met het OK van je admin ook kanaalthreads, komen later beetje bij beetje binnen als [geschiedenis](history.md), zonder iets op te houden.
+Je 1-op-1-chats, groepschats en chatgesprekken van vergaderingen in Teams: de laatste 7 dagen op het moment dat je verbinding maakt, en daarna om de paar minuten nieuwe berichten. Ongeveer een jaar aan oudere chats en, met toestemming van je beheerder, kanaalgesprekken wordt later beetje bij beetje ingelezen als [geschiedenis](history.md), zonder dat dit iets ophoudt.
 
-Met het OK van je beheerder leest het ook:
+Met toestemming van je beheerder leest The Machine ook:
 
-- Kanaalthreads in je teams.
-- Meetingtranscripts van meetings die je organiseerde.
-- De meetingnotities en actiepunten van Copilot, als je een Microsoft 365 Copilot-licentie hebt.
+- Kanaalgesprekken in je teams.
+- Transcripties van vergaderingen die je hebt georganiseerd.
+- Vergadernotities en actiepunten van Copilot, als je een Microsoft 365 Copilot-licentie hebt.
 
-Elk transcript of elke set notities komt bij de meeting in je Agenda, gemarkeerd met **Van Teams**. Zonder die blijft de meetingchat er gewoon.
+Elke transcriptie of set notities wordt bij de betreffende vergadering in je agenda opgeslagen, met de markering **Van Teams**. Zonder die transcripties of notities blijft het chatgesprek van de vergadering wel beschikbaar.
 
-Bots, apps en systeemberichten blijven erbuiten.
+Berichten van bots, apps en het systeem worden overgeslagen.
 
-## Wat het kan doen
+## Wat ermee kan
 
-Niets in Teams. Het leest alleen. Om te antwoorden, open je de chat met **Openen in Teams**.
+Antwoorden in een 1-op-1-chat, groepschat of chatgesprek van een vergadering waar een to-do vandaan komt. The Machine stelt het antwoord op. Het wordt pas verstuurd nadat je het hebt gecontroleerd en op **Nu versturen** hebt gedrukt. Het wordt namens jou in die chat verstuurd. The Machine begint nooit zelf een nieuwe chat.
 
-## Waar het om vraagt
+The Machine plaatst geen berichten in kanalen. Wil je reageren in een kanaalgesprek, open het dan met **Openen in Teams**.
 
-Microsoft vraagt of The Machine je chats en je profiel mag lezen. Daar is geen beheerder voor nodig.
+## Welke machtigingen nodig zijn
 
-Kanalen, transcripts en Copilot-notities hebben één keer het OK van de beheerder van je organisatie nodig. Tot dan zegt de Teams-kaart wat het nog niet kan lezen en waarom.
+Microsoft vraagt toestemming om The Machine je chats en profiel te laten lezen en namens jou chatberichten te laten versturen. Daar is geen toestemming van een beheerder voor nodig.
 
-Het werkt alleen met een Microsoft-werk- of schoolaccount. Persoonlijke accounts hebben geen Teams-chats die het zo kan lezen.
+Als je Teams hebt gekoppeld voordat The Machine berichten kon versturen, staat er op de Teams-kaart **Opnieuw verbinden om antwoorden te versturen.** Druk op **Opnieuw verbinden** en geef opnieuw toestemming. Tot die tijd kun je het concept zelf in Teams versturen.
+
+Voor kanalen, transcripties en Copilot-notities moet de beheerder van je organisatie één keer toestemming geven. Tot die tijd staat op de Teams-kaart wat The Machine nog niet kan lezen en waarom.
+
+Dit werkt alleen met een Microsoft-account voor werk of school. Met persoonlijke accounts zijn er geen Teams-chats die The Machine op deze manier kan lezen.
 
 ## Koppelen
 
 Op een gehoste Machine:
 
-1. Open in het dashboard **Koppelingen**, **Chat** of **Afspraken** en kies **Microsoft Teams** (onder Chat) of **Teams-meetings** (onder Afspraken). Beide zijn dezelfde aanmelding.
-2. Druk op **Inloggen met Microsoft** en geef het OK. Daarna ben je terug in het dashboard.
-3. Voor kanalen en meetingnotities stuur je je beheerder de link die de inlogpagina toont. Zodra die goedkeurt, koppel je Teams opnieuw.
+1. Open in het dashboard **Koppelingen** en vervolgens **Chat** voor **Microsoft Teams** of **Afspraken** voor **Teams-meetings**. Voor beide gebruik je dezelfde aanmelding.
+2. Druk op **Aanmelden met Microsoft** en geef toestemming. Daarna keer je terug naar het dashboard.
+3. Stuur je beheerder de link die op de aanmeldpagina wordt getoond als je kanalen en vergadernotities wilt gebruiken. Koppel Teams opnieuw nadat de beheerder toestemming heeft gegeven.
 
-Tijdens het instellen heeft de instelpagina ook **Connect Microsoft Teams**.
+Tijdens het instellen staat ook **Microsoft Teams koppelen** op de instelpagina.
 
-Op je eigen computer, zodra hij [aan je account gekoppeld is](friends.md#a-machine-on-your-own-computer): open **Koppelingen**, dan **Chat** of **Afspraken**, kies **Microsoft Teams** of **Teams-meetings** en druk op **Inloggen met Microsoft**. Daar leest hij je chats en meetingchats. Kanalen en meetingnotities zijn daar nog niet beschikbaar.
+Op je eigen computer, zodra die [aan je account is gekoppeld](friends.md#a-machine-on-your-own-computer): open **Koppelingen** en vervolgens **Chat** of **Afspraken**, kies **Microsoft Teams** of **Teams-meetings** en druk op **Aanmelden met Microsoft**. The Machine leest daar je chats en chatgesprekken van vergaderingen. Kanalen en vergadernotities zijn daar nog niet beschikbaar.
 
-## Verwijderen
+## Loskoppelen
 
-In het dashboard: **Koppelingen**, open Microsoft Teams, **Details**, dan **Ontkoppelen**. Wat het al binnenhaalde, blijft.
+Open in het dashboard **Koppelingen**, open Microsoft Teams en kies **Details** en daarna **Ontkoppelen**. Wat al is ingelezen, blijft bewaard.
 
-## Intrekken bij Microsoft
+## Toegang intrekken in Microsoft
 
-Open myapps.microsoft.com en verwijder The Machine. Is Outlook met hetzelfde adres gekoppeld, dan wordt dat ook ontkoppeld.
+Open myapps.microsoft.com en verwijder The Machine. Als Outlook met hetzelfde adres is gekoppeld, wordt dat ook losgekoppeld.
