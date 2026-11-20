@@ -82,6 +82,7 @@ if (framed) {
     function frame(all) {  // the browser's window, or the whole screen
         const d = display(), s = screen();
         moved = false;
+        focusKey = '';  // a zoom to where the owner types (followFocus) comes back at its next look
         if (!laidOut()) return;  // hidden: framed once it has a size again (refit)
         rfb._canvas.style.translate = '';
         if (all || !region) {
@@ -115,6 +116,38 @@ if (framed) {
         frame(whole);
         label();
     }
+
+    // A password export waits on the owner (signing in, the master password): /browser/region names where they type,
+    // and a view narrower than the browser's window zooms to it, so a phone shows that form big enough to read and tap.
+    // Not once the owner zoomed or moved around themselves, nor on Whole screen; back to the window when it's done.
+    let focusKey = '';
+    function frameBox(f) {
+        const d = display(), s = screen(), x = f.x * d.width, y = f.y * d.height, w = f.w * d.width, h = f.h * d.height;
+        moved = false;
+        rfb._canvas.style.translate = '';
+        zoom = Math.min(4, Math.max(fitAll(), Math.min((s.w - 16) / w, (s.h - 16) / h)));
+        rfb._updateClip();
+        rfb._updateScale();
+        const vp = d._viewportLoc;
+        d.viewportChangePos(x + w / 2 - vp.w / 2 - vp.x, y + h / 2 - vp.h / 2 - vp.y);
+        placeMask();
+    }
+    async function followFocus() {
+        if (!rfb || moved || wholeByHand || document.hidden || !laidOut()) return;
+        let f = null;
+        try {
+            const r = await fetch('focus', {cache: 'no-store'});
+            f = r.ok ? (await r.json()).focus : null;
+        } catch { return; }
+        const narrow = screen().w < (region ? region.w : 1) * display().width;  // no region: the window fills the screen
+        const key = f && narrow ? [f.x, f.y, f.w, f.h].map((v) => Number(v).toFixed(3)).join() : '';
+        if (key === focusKey || moved || wholeByHand) return;
+        const had = focusKey;
+        focusKey = key;
+        if (key) frameBox(f);
+        else if (had) frame(whole);
+    }
+    setInterval(followFocus, 1500);
 
     function hook(next) {  // noVNC makes a new connection object on every (re)connect
         rfb = next;

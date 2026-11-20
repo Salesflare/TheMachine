@@ -11,6 +11,7 @@ import threading
 import unittest
 from unittest.mock import patch
 import dashboard_parts
+import login_import
 from seams import patch_everywhere  # noqa: E402
 import served  # noqa: E402
 
@@ -134,7 +135,14 @@ class OwnerBoundary(unittest.TestCase):
         self.assertEqual(get('/browser/defaults.json', {'Authorization': 'Bearer ' + TOKEN})[0], 403)
         self.assertEqual(get('/browserx', owner)[0], 404)
         with patch.object(a.browser_viewer, 'window_region', return_value={'x': 0.5, 'y': 0, 'w': 0.5, 'h': 1}):
-            self.assertEqual(json.loads(get('/browser/region', owner)[1]), {'region': {'x': 0.5, 'y': 0, 'w': 0.5, 'h': 1}})
+            self.assertEqual(json.loads(get('/browser/region', owner)[1]), {'region': {'x': 0.5, 'y': 0, 'w': 0.5, 'h': 1}, 'focus': None})
+            # a password export waits on the owner's master password: where it is, on the screen, for a phone to zoom to
+            with patch.object(login_import, 'export_focus', return_value={'x': 0.5, 'y': 0.25, 'w': 0.5, 'h': 0.5}):
+                self.assertEqual(json.loads(get('/browser/region', owner)[1])['focus'], {'x': 0.75, 'y': 0.25, 'w': 0.25, 'h': 0.5})
+                self.assertEqual(json.loads(get('/browser/focus', owner)[1]), {'focus': {'x': 0.75, 'y': 0.25, 'w': 0.25, 'h': 0.5}})
+            self.assertEqual(json.loads(get('/browser/focus', owner)[1]), {'focus': None})
+            self.assertEqual(get('/browser/focus', {'Authorization': 'Bearer ' + TOKEN})[0], 403)
+            self.assertEqual(get('/browser/region', {'Authorization': 'Bearer ' + TOKEN})[0], 403)
         self.assertEqual(get('/browser/vnc.html', {'Host': 'machine.example:8443', 'Tailscale-User-Login': 'other@example.com'})[0], 403)
         self.assertEqual(get('/browser/vnc.html', {'Authorization': 'Bearer ' + TOKEN})[0], 403)
         upgrade = {**owner, 'Upgrade': 'websocket', 'Connection': 'Upgrade', 'Sec-WebSocket-Key': base64.b64encode(b'the sample nonce').decode(), 'Sec-WebSocket-Version': '13'}

@@ -17,10 +17,11 @@ function paint(){const v=d._viewportLoc;canvas.style.width=v.w*d.scale+'px';canv
 const rfb={_display:d,_canvas:canvas,_rfbConnectionState:'connected',scaleViewport:false,clipViewport:true,_screenSize:()=>({w:container.clientWidth,h:container.clientHeight}),
  _fixScrollbars(){paint()},_setClippingViewport(){},_sendMouse(){},_updateClip(){},_updateScale(){}};
 addEventListener('resize',()=>{rfb._updateClip();rfb._updateScale()});  // as noVNC does on its own
+window.stubDisplay=d;  // the test reads its zoom
 export default {rfb};`;
 const page=`<!doctype html><html><head><style>html,body{margin:0;height:100%;overflow:hidden;background:#000}#noVNC_container{position:fixed;inset:0}canvas{position:absolute;left:0;top:0;background:#fff}</style>
 <script type="module" src="machine-view.js"></script></head><body><div id="noVNC_container"><canvas></canvas></div></body></html>`;
-const region={x:.5,y:0,w:.5,h:.5};let lang='en';  // the dashboard's language, from its /api/browser-now  // the browser's window: the screen's top right quarter, 1000x500
+const region={x:.5,y:0,w:.5,h:.5};let lang='en',focus=null,asked=null;  // focus: where a password export waits on the owner's typing  // the dashboard's language, from its /api/browser-now  // the browser's window: the screen's top right quarter, 1000x500
 const server=createServer(async(req,res)=>{for await(const _ of req);const url=new URL(req.url,'http://fixture.invalid');
  const send=(type,body)=>{res.setHeader('Content-Type',type);res.end(body)};
  if(url.pathname==='/browser/')return send('text/html',page);
@@ -28,7 +29,8 @@ const server=createServer(async(req,res)=>{for await(const _ of req);const url=n
  if(url.pathname==='/browser/app/ui.js')return send('text/javascript',ui);
  if(url.pathname==='/api/browser-now')return send('application/json',JSON.stringify({working:[],waiting:[],lang}));
  if(url.pathname==='/i18n/nl.json')return send('application/json',await readFile(new URL('../i18n/nl.json',import.meta.url),'utf8'));
- if(url.pathname==='/browser/region')return send('application/json',JSON.stringify({region}));
+ if(url.pathname==='/browser/region')return send('application/json',JSON.stringify({region,focus}));
+ if(url.pathname==='/browser/focus'){const f=asked;asked=null;send('application/json',JSON.stringify({focus}));return f?.()}
  res.statusCode=404;res.end()});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
 const base='http://127.0.0.1:'+server.address().port+'/browser/?frame=window',errors=[];let browser;
@@ -61,6 +63,23 @@ try{
  const words=await q.evaluate(()=>({whole:document.querySelector('[data-v="whole"]').textContent,in:document.querySelector('[data-v="in"]').getAttribute('aria-label'),
   out:document.querySelector('[data-v="out"]').title,title:document.querySelector('#machine-note strong').textContent,ok:document.querySelector('#machine-note button').textContent}));
  assert.deepEqual(words,{whole:'Hele scherm',in:'Inzoomen',out:'Uitzoomen',title:'De eigen browser van je Machine',ok:'Begrepen'});
+ // A phone: the window shows at its width, too small to type in. While a password export waits on the owner (a
+ // sign-in form, a master password, 200x100 of the screen) the view zooms to it; once that's done, back to the window
+ const phone=await context.newPage();phone.on('pageerror',e=>errors.push(e.message));
+ await phone.setViewportSize({width:390,height:600});await phone.goto(base);
+ const scale=()=>phone.evaluate(()=>window.stubDisplay.scale);
+ const zoomed=z=>phone.waitForFunction(z=>Math.abs(window.stubDisplay?.scale-z)<.01,z,{timeout:6000});
+ const looked=()=>new Promise(r=>{asked=r});  // the viewer's next ask where the owner types
+ await zoomed(.39);
+ assert.ok(Math.abs(await scale()-.39)<.01,'the window at the phone\'s width '+await scale());
+ focus={x:.6,y:.1,w:.1,h:.1};await zoomed(374/200);
+ assert.ok(Math.abs(await scale()-374/200)<.01,'zoomed to where the owner types '+await scale());
+ focus=null;await zoomed(.39);
+ assert.ok(Math.abs(await scale()-.39)<.01,'back to the window '+await scale());
+ // zoomed by hand: the owner's own zoom stays
+ await phone.locator('#machine-view-bar [data-v="in"]').click();const own=await scale();
+ focus={x:.6,y:.1,w:.1,h:.1};await looked();await looked();
+ assert.equal(await scale(),own,'the owner\'s zoom stays');
  assert.deepEqual(errors,[]);
  console.log('machine view ok');
 }finally{await browser?.close();server.close()}

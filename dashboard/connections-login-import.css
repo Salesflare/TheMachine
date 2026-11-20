@@ -31,6 +31,14 @@
 #login-import .li-steps+.li-sources{margin-bottom:12px}
 #login-import .li-wait{display:flex;gap:8px;align-items:center;color:var(--muted);margin:0 0 10px}
 #login-import .li-wait .spin{flex:none;width:14px;height:14px;border:2px solid var(--muted);border-right-color:transparent;border-radius:50%;animation:spin .8s linear infinite}
+#login-import .li-wait.li-you{color:var(--text);font-weight:var(--fw-strong)}
+#login-import .li-you .spin{display:none}
+#login-import .li-miss{margin:0 0 6px;color:var(--muted)}
 #login-import .li-view{margin:0 0 12px}
 #login-import .li-view iframe{display:block;width:100%;height:min(56vh,520px);border:0;border-radius:var(--r-md);background:#111}
 #login-import:has(.li-view){width:min(96vw,980px)}
+/* A phone: the live view takes the room the sheet has (it zooms to where the owner types); with none, the export is a
+   short sheet at the bottom instead of an empty screen */
+@media(max-width:560px){#login-import:not(#_) .li-view{flex:1 1 0;display:flex;min-height:300px}#login-import:not(#_) .li-view iframe{flex:1;height:auto}
+#login-import:not(#_):not(#_):has(.li-wait):not(:has(.li-view)){inset:auto 0 0;height:auto;border-radius:20px 20px 0 0}
+#login-import:not(#_):not(#_):has(.li-wait):not(:has(.li-view))::backdrop{background:#0009}}

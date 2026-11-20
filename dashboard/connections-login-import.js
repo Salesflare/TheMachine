@@ -4,7 +4,7 @@
 // drops it (login_import.py). Nothing here signs in to a password manager.
 // Where from: an export file; LastPass, Bitwarden and Google Password Manager open their own export page in the
 // Machine's browser (shown below when this dashboard has the live view, else Open the browser), where the owner signs in
-// and exports; the service picks up the download, reads it and deletes it from disk. 1Password has no web export: its
+// and the Machine clicks on to the export; the service picks up the download, reads it and deletes it from disk. 1Password has no web export: its
 // app's file, or op when that is signed in on the Machine (LastPass's lpass too).
 const LI_ICON={file:html`<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 1.75h5l3 3v9.5H4z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M8.75 1.75v3.25H12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>`,
  lastpass:html`<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="2.9" cy="8" r="1.25" fill="currentColor"/><circle cx="6.4" cy="8" r="1.25" fill="currentColor"/><circle cx="9.9" cy="8" r="1.25" fill="currentColor"/><path d="M13.4 4.5v7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>`,
@@ -37,18 +37,25 @@ function liApp(){const d=liDialog();
  <div class="li-sources">${liFileRow()}</div><p class="li-error" role="alert"></p><div class="actions"><button type="button" class="ghost" data-li-back>${t('Back')}</button></div>
  <p class="fine">${t('Delete the file from that computer when you’re done.')}</p>`);liOpen(d)}
 const liView=()=>{const link=state.browser_link||liWatch?.view||'';try{return link&&new URL(link,location.href).origin===location.origin?link:''}catch{return ''}};
+// One line for what is left: the Machine clicks on to the export step (login_export_guide.py), the owner signs in and
+// confirms it's them. When the page isn't as expected (step 'manual'), the steps to do by hand.
+const liLine=({k,step:s})=>s==='working'?t('Going to the export…'):s==='password'?(k==='chrome'?t('Confirm it’s you to export.'):t('Type your master password to export.'))
+ :s==='email'?t('Confirm the email {} sent you.',LI_NAMES[k]):s==='manual'?t('Waiting for the export file…'):s==='signin'?liSteps(k)[0]:t('Opening {}…',LI_NAMES[k]);
+function liStep(){const d=$('#login-import'),w=liWatch,p=d?.querySelector('.li-wait');if(!p||!w)return;
+ p.classList.toggle('li-you',['signin','password','email'].includes(w.step));p.lastChild.textContent=liLine(w);d.querySelector('.li-manual').hidden=w.step!=='manual'}
 function liExportShow(){const d=liDialog(),w=liWatch,view=liView();
- setHTML(d,html`${liHead(t('Export from {}',LI_NAMES[w.k]))}<ol class="li-steps">${liSteps(w.k).map(s=>html`<li>${s}</li>`)}</ol>
- <p class="li-wait" role="status"><span class="spin" aria-hidden="true"></span>${t('Waiting for the export file…')}</p><p class="li-error" role="alert"></p>
+ setHTML(d,html`${liHead(t('Export from {}',LI_NAMES[w.k]))}<p class="li-wait" role="status"><span class="spin" aria-hidden="true"></span><span></span></p>
+ <div class="li-manual" hidden><p class="li-miss">${t('I couldn’t find the next step. Follow these steps:')}</p><ol class="li-steps">${liSteps(w.k).map(s=>html`<li>${s}</li>`)}</ol></div><p class="li-error" role="alert"></p>
  <div class="actions"><button type="button" class="${view?'ghost':'primary'}" data-li-browser>${t('Open the browser')}</button><button type="button" class="ghost" data-li-back>${t('Back')}</button></div>
  <p class="fine">${t('The file is read once, then deleted from your Machine.')}</p>`);
- if(view)d.querySelector('.li-wait').after(make('div',{class:'li-view'},make('iframe',{src:view,title:t('The browser')})));liOpen(d)}
+ if(view)d.querySelector('.li-error').before(make('div',{class:'li-view'},make('iframe',{src:view,title:t('The browser')})));liStep();liOpen(d)}
 async function liExport(k){const d=liDialog();liBusy(d,t('Opening {}…',LI_NAMES[k]));
- try{const r=await liPost({do:'export',manager:k});liWatch={token:r.watch,k,view:r.view,page:r.page};liExportShow();liFollow(liWatch)}catch(err){liPick();liFail(err)}}
+ try{const r=await liPost({do:'export',manager:k});liWatch={token:r.watch,k,view:r.view,page:r.page,step:'opening'};liExportShow();liFollow(liWatch)}catch(err){liPick();liFail(err)}}
 // Every two seconds until the file is in (also while the owner is away in the browser pane); then the review, the
 // dialog opened again if it was closed for the browser
 async function liFollow(w){while(liWatch===w){await new Promise(r=>setTimeout(r,2000));if(liWatch!==w)return;let r;
- try{r=await liPost({do:'export_check',watch:w.token})}catch(err){errCaught(err);continue}if(liWatch!==w||r.state==='waiting')continue;
+ try{r=await liPost({do:'export_check',watch:w.token})}catch(err){errCaught(err);continue}if(liWatch!==w)continue;
+ if(r.state==='waiting'){if(r.step&&r.step!==w.step){w.step=r.step;liStep()}continue}
  liWatch=null;const d=liDialog();
  if(r.state==='review'){liReview={...r,account:'Work'};liOpen(d);liShow();return}
  liPick(r.state==='failed'?r.error:t('The export page waited too long. Try again.'));return}}

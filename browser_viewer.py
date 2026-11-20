@@ -188,6 +188,15 @@ def raise_window(cdp_url, title=''):
         hyprctl('dispatch', 'focuswindow', 'address:' + window['address'])
 
 
+def on_screen(box, region):
+    """A box given as fractions of the browser's window, as fractions of its screen: inside `region` (window_region),
+    or the whole screen when the window fills it (no region known). None for no box."""
+    if not box:
+        return None
+    r = region or {'x': 0, 'y': 0, 'w': 1, 'h': 1}
+    return {'x': r['x'] + box['x'] * r['w'], 'y': r['y'] + box['y'] * r['h'], 'w': box['w'] * r['w'], 'h': box['h'] * r['h']}
+
+
 def window_region(cdp_url):
     """Where the browser's front window is on its screen, as fractions of that screen, for the viewer to frame it
     (Hyprland only; None elsewhere or when it isn't on screen)."""

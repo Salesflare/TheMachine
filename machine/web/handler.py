@@ -29,6 +29,7 @@ import fleet
 import graph
 import graph_updates
 import locale_prefs
+import login_import
 from machine.actions import DASHBOARD_ACTIONS, OWNER_ACTIONS, UPLOAD_ACTIONS
 from machine.browser import browser_link, PANE_QUERY
 from machine.config import BRAND_ASSETS, LOG, ROOT
@@ -1006,8 +1007,13 @@ def make_handler(app):
             server. Only the owner, only from the dashboard's own page (a websocket ignores CORS, so another
             site could otherwise use the owner's tailnet identity). /browser and /browser/ are vnc.html itself,
             with noVNC's settings from this dashboard's defaults.json and mandatory.json."""
-            if rest == 'region':  # where the browser's window is, for the viewer to open on it
-                self.output(200, {'region': browser_viewer.window_region(app.config.get('browser_cdp_url') or browser_viewer.CDP_URL)})
+            if rest in ('region', 'focus'):  # region: where the browser's window is, for the viewer to open on it. focus
+                # (asked often): during a password export's sign-in or master password, where the owner types, on the
+                # screen, for a phone's view to zoom to (geometry only); the window is looked up only then
+                focus = login_import.export_focus()
+                region = browser_viewer.window_region(app.config.get('browser_cdp_url') or browser_viewer.CDP_URL) if rest == 'region' or focus else None
+                self.output(200, {'region': region, 'focus': browser_viewer.on_screen(focus, region)} if rest == 'region'
+                            else {'focus': browser_viewer.on_screen(focus, region)})
                 return
             if self.headers.get('Upgrade', '').lower() != 'websocket':
                 web = app.config.get('browser_novnc') or browser_viewer.WEB
