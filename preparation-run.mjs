@@ -89,13 +89,21 @@ async function release(status){
 // later: its turn restores the chat (its history is kept) and starts once more. Before, every start was refused, retried
 // each minute until the deadline, while the to-do said it waited for the AI (2026-11-20). A chat that can't be restored
 // fails this start (error session_archived: the refusal comes before admission, so nothing runs under its key) instead.
+// The Gateway takes a restore (a lifecycle patch) only with the session's current sessionId as expectedSessionId, so a
+// chat reset or replaced in the meantime is never restored by mistake: the runner reads it from the session's row first.
 const OFFLINE=/ECONNREFUSED|closed|socket/i, ARCHIVED=/is archived\. Restore it/i;
 const refusedArchived=error=>error?.name==='GatewayClientRequestError' && ARCHIVED.test(error?.message || '');
+async function restore(){
+  const row=await callGatewayFromCli('sessions.describe',{timeout:'15000'},{key:session+sessionId,agentId:'main'},scope);
+  const current=(row?.session ?? row)?.sessionId;
+  if (typeof current!=='string' || !current) throw new Error('Archived session not found');
+  await callGatewayFromCli('sessions.patch',{timeout:'15000'},{key:session+sessionId,archived:false,expectedSessionId:current},scope);
+}
 async function unarchived(call){
   try { return await call(); }
   catch (error) {
     if (!refusedArchived(error)) throw error;
-    try { await callGatewayFromCli('sessions.patch',{timeout:'15000'},{key:session+sessionId,archived:false},scope); }
+    try { await restore(); }
     catch (failed) { if (!OFFLINE.test(String(failed?.message || ''))) failed.archived=true; throw failed; }
     try { return await call(); }
     catch (again) { if (refusedArchived(again)) again.archived=true; throw again; }  // any other failure: as before

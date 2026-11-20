@@ -5,10 +5,19 @@ const source=(await readFile(new URL('../preparation-run.mjs',import.meta.url),'
 const execute=new (Object.getPrototypeOf(async function(){}).constructor)('callGatewayFromCli','process',source);
 const id='a'.repeat(32);
 async function run(request,replies){
-  const calls=[];let output='';
+  const calls=[];let output='',described;
   await execute(async(method,options,args,scope)=>{
     calls.push({method,options,args,scope});
-    const value=replies.shift();if(value instanceof Error)throw value;return value;
+    // Like the real Gateway (OpenClaw 2026.11.2 sessions-patch-admission): a lifecycle patch (archived) needs the
+    // session's current sessionId as expectedSessionId, the one its row (sessions.describe) shows.
+    if(method==='sessions.patch'&&typeof args.archived==='boolean'&&
+        (args.expectedSessionId===undefined||args.expectedSessionId!==described)){
+      throw Object.assign(new Error(args.expectedSessionId===undefined?`expectedSessionId required for session lifecycle patch: ${args.key}`:
+        `session changed: ${args.key}`),{name:'GatewayClientRequestError',gatewayCode:'INVALID_REQUEST'});
+    }
+    const value=replies.shift();
+    if(method==='sessions.describe'&&!(value instanceof Error))described=(value?.session??value)?.sessionId;
+    if(value instanceof Error)throw value;return value;
   },{stdin:{async *[Symbol.asyncIterator](){yield JSON.stringify(request)}},stdout:{write(value){output+=value}}});
   return {calls,result:JSON.parse(output)};
 }
@@ -171,19 +180,27 @@ for(const other of [new Error('gateway timeout after 15000ms'),refusal]){
 {
   const key='agent:main:assistant-review-preparation-'+id,msg={kind:'preparation',job_id:id,action:'start',message:'Work'};
   const archived=()=>Object.assign(new Error(`Session "${key}" is archived. Restore it before starting new work.`),{name:'GatewayClientRequestError',gatewayCode:'INVALID_REQUEST'});
-  r=await run(msg,[archived(),{ok:true},{runId:id}]);
-  assert.deepEqual(r.calls.map(c=>c.method),['agent','sessions.patch','agent']);
-  assert.deepEqual(r.calls[1].args,{key,archived:false});assert.equal(r.calls[2].args.idempotencyKey,id);
+  // The restore names the session's current sessionId (the Gateway refuses a lifecycle patch without it).
+  const row={session:{key,sessionId:'s-1',archived:true}};
+  r=await run(msg,[archived(),row,{ok:true},{runId:id}]);
+  assert.deepEqual(r.calls.map(c=>c.method),['agent','sessions.describe','sessions.patch','agent']);
+  assert.deepEqual(r.calls[1].args,{key,agentId:'main'});
+  assert.deepEqual(r.calls[2].args,{key,archived:false,expectedSessionId:'s-1'});assert.equal(r.calls[3].args.idempotencyKey,id);
   assert.deepEqual(r.result,{run_id:id,status:'admitted'});
-  r=await run({...msg,fast:false},[archived(),{ok:true},{ok:true},{runId:id}]);  // the speed reset hits it first
-  assert.deepEqual(r.calls.map(c=>c.method),['sessions.patch','sessions.patch','sessions.patch','agent']);assert.equal(r.result.status,'admitted');
-  for(const replies of [[archived(),new Error('not allowed')],[archived(),{ok:true},archived()]]){
+  r=await run({...msg,fast:false},[archived(),row,{ok:true},{ok:true},{runId:id}]);  // the speed reset hits it first
+  assert.deepEqual(r.calls.map(c=>c.method),['sessions.patch','sessions.describe','sessions.patch','sessions.patch','agent']);assert.equal(r.result.status,'admitted');
+  // Not restorable: the patch refused, no row (or no sessionId), or still archived after the restore.
+  for(const replies of [[archived(),row,new Error('not allowed')],[archived(),{session:null}],[archived(),{session:{key}}],
+      [archived(),new Error('not allowed')],[archived(),row,{ok:true},archived()]]){
     r=await run(msg,replies);
     assert.deepEqual(r.result,{run_id:id,status:'error',error:'session_archived',error_phase:'session'});
+    assert.ok(!r.calls.some(c=>c.method==='sessions.patch'&&c.args.archived===false&&c.args.expectedSessionId===undefined));
   }
-  r=await run(msg,[archived(),new Error('connect ECONNREFUSED 127.0.0.1:18789')]);
-  assert.deepEqual(r.result,{run_id:id,status:'unavailable',reason:'offline'});
-  r=await run(msg,[archived(),{ok:true},new Error('gateway timeout after 20000ms')]);  // may have been admitted: keeps its key
+  for(const replies of [[archived(),new Error('connect ECONNREFUSED 127.0.0.1:18789')],[archived(),row,new Error('connect ECONNREFUSED 127.0.0.1:18789')]]){
+    r=await run(msg,replies);
+    assert.deepEqual(r.result,{run_id:id,status:'unavailable',reason:'offline'});
+  }
+  r=await run(msg,[archived(),row,{ok:true},new Error('gateway timeout after 20000ms')]);  // may have been admitted: keeps its key
   assert.deepEqual(r.result,{run_id:id,status:'unavailable'});
   r=await run(msg,[Object.assign(new Error('archived'),{name:'GatewayClientRequestError'})]);  // other text: no restore
   assert.deepEqual(r.calls.map(c=>c.method),['agent']);assert.equal(r.result.status,'unavailable');
