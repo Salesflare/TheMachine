@@ -165,3 +165,26 @@ for(const other of [new Error('gateway timeout after 15000ms'),refusal]){
   r=await run({kind:'preparation',job_id:id,action:'start',message:'Work'},[other,{status:'pending'},new Error('later')]);
   assert.equal(r.result.status,'unavailable');assert.equal(r.result.reason,undefined);
 }
+// A to-do's chat left alone past OpenClaw's retention is archived, and the Gateway refuses new work in it. A new signal
+// reopening the to-do weeks later restores the chat and starts the turn, instead of being refused every minute while the
+// to-do says it waits for the AI (2026-11-20). One that can't be restored fails the start; offline still waits.
+{
+  const key='agent:main:assistant-review-preparation-'+id,msg={kind:'preparation',job_id:id,action:'start',message:'Work'};
+  const archived=()=>Object.assign(new Error(`Session "${key}" is archived. Restore it before starting new work.`),{name:'GatewayClientRequestError',gatewayCode:'INVALID_REQUEST'});
+  r=await run(msg,[archived(),{ok:true},{runId:id}]);
+  assert.deepEqual(r.calls.map(c=>c.method),['agent','sessions.patch','agent']);
+  assert.deepEqual(r.calls[1].args,{key,archived:false});assert.equal(r.calls[2].args.idempotencyKey,id);
+  assert.deepEqual(r.result,{run_id:id,status:'admitted'});
+  r=await run({...msg,fast:false},[archived(),{ok:true},{ok:true},{runId:id}]);  // the speed reset hits it first
+  assert.deepEqual(r.calls.map(c=>c.method),['sessions.patch','sessions.patch','sessions.patch','agent']);assert.equal(r.result.status,'admitted');
+  for(const replies of [[archived(),new Error('not allowed')],[archived(),{ok:true},archived()]]){
+    r=await run(msg,replies);
+    assert.deepEqual(r.result,{run_id:id,status:'error',error:'session_archived',error_phase:'session'});
+  }
+  r=await run(msg,[archived(),new Error('connect ECONNREFUSED 127.0.0.1:18789')]);
+  assert.deepEqual(r.result,{run_id:id,status:'unavailable',reason:'offline'});
+  r=await run(msg,[archived(),{ok:true},new Error('gateway timeout after 20000ms')]);  // may have been admitted: keeps its key
+  assert.deepEqual(r.result,{run_id:id,status:'unavailable'});
+  r=await run(msg,[Object.assign(new Error('archived'),{name:'GatewayClientRequestError'})]);  // other text: no restore
+  assert.deepEqual(r.calls.map(c=>c.method),['agent']);assert.equal(r.result.status,'unavailable');
+}

@@ -84,6 +84,23 @@ async function release(status){
   if (kind==='preparation' || !TERMINAL.includes(status)) return;
   try { await callGatewayFromCli('sessions.abort',{timeout:'15000'},{key:session+sessionId,agentId:'main',clearQueued:true},scope); } catch {}
 }
+// OpenClaw archives a conversation left alone past its retention (session.maintenance.pruneAfter, 30 days by default) and
+// then refuses new work in it until it is restored. A to-do's chat is used again when a new signal reopens the to-do weeks
+// later: its turn restores the chat (its history is kept) and starts once more. Before, every start was refused, retried
+// each minute until the deadline, while the to-do said it waited for the AI (2026-11-20). A chat that can't be restored
+// fails this start (error session_archived: the refusal comes before admission, so nothing runs under its key) instead.
+const OFFLINE=/ECONNREFUSED|closed|socket/i, ARCHIVED=/is archived\. Restore it/i;
+const refusedArchived=error=>error?.name==='GatewayClientRequestError' && ARCHIVED.test(error?.message || '');
+async function unarchived(call){
+  try { return await call(); }
+  catch (error) {
+    if (!refusedArchived(error)) throw error;
+    try { await callGatewayFromCli('sessions.patch',{timeout:'15000'},{key:session+sessionId,archived:false},scope); }
+    catch (failed) { if (!OFFLINE.test(String(failed?.message || ''))) failed.archived=true; throw failed; }
+    try { return await call(); }
+    catch (again) { if (refusedArchived(again)) again.archived=true; throw again; }  // any other failure: as before
+  }
+}
 try {
   let result;
   if (request.action==='start') {
@@ -102,14 +119,14 @@ try {
     let speed;
     if (kind==='preparation' && typeof request.fast==='boolean') {
       try {
-        await callGatewayFromCli('sessions.patch',{timeout:'15000'},{key:session+sessionId,fastMode:request.fast},scope);
+        await unarchived(()=>callGatewayFromCli('sessions.patch',{timeout:'15000'},{key:session+sessionId,fastMode:request.fast},scope));
         speed=request.fast?'fast':'standard';
       } catch (error) {
         if (!request.fast) throw error;
         speed='unavailable';  // this turn runs at standard speed
       }
     }
-    result=await callGatewayFromCli('agent',{timeout:'20000'}, {
+    result=await unarchived(()=>callGatewayFromCli('agent',{timeout:'20000'}, {
       agentId:'main', sessionKey:session+sessionId,
       message:request.message, idempotencyKey:request.job_id, timeout:runSeconds,
       deliver:false, disableMessageTool:true,
@@ -120,7 +137,7 @@ try {
       ...(typeof request.provider==='string' && typeof request.model==='string' &&
           /^[a-z0-9-]{1,40}$/.test(request.provider) && /^[a-z0-9._:/-]{1,120}$/i.test(request.model) ? {provider:request.provider, model:request.model}:{}),
       ...(typeof request.thinking==='string' && /^(off|minimal|low|medium|high|xhigh|adaptive|max|ultra)$/.test(request.thinking) ? {thinking:request.thinking}:{}),
-    },scope);
+    },scope));
     if (result?.runId!==request.job_id) throw new Error('Unconfirmed admission');
     process.stdout.write(JSON.stringify({run_id:request.job_id,status:'admitted',...(speed?{fast:speed}:{})}));
   } else if (request.action==='stop') {
@@ -193,6 +210,8 @@ try {
   }
   // offline: the Gateway itself can't be reached (down after a reboot, mid-restart), the same test as chat-history-run.mjs.
   // A start that gets this waits for it to come back without a deadline (assistant.py preparation_run_step).
-  const offline=/ECONNREFUSED|closed|socket/i.test(String(error?.message || ''));
-  process.stdout.write(JSON.stringify(ended?{run_id:request.job_id,status:'lost',error:'runtime_lost',error_phase:'runtime'}:{run_id:request.job_id,status:'unavailable',...(offline?{reason:'offline'}:{})}));
+  const offline=OFFLINE.test(String(error?.message || ''));
+  process.stdout.write(JSON.stringify(ended?{run_id:request.job_id,status:'lost',error:'runtime_lost',error_phase:'runtime'}:
+    error?.archived?{run_id:request.job_id,status:'error',error:'session_archived',error_phase:'session'}:
+    {run_id:request.job_id,status:'unavailable',...(offline?{reason:'offline'}:{})}));
 }
