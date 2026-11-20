@@ -5,6 +5,7 @@ import assert from 'node:assert/strict';
 import {mkdir} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {dashboardPage} from './dashboard-page.mjs';
+import {waitForAction} from './page-calls.mjs';
 const {chromium}=await import('./browser.mjs');
 
 const dashboard=await dashboardPage();
@@ -50,8 +51,7 @@ try{
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'no sideways scroll at '+width);
   if(shots)await page.locator('#send-dialog').screenshot({path:`${shots}/teams-send-dialog-${width}.png`});
   await page.locator('#send-confirm').click();
-  for(let i=0;i<100&&!calls.some(c=>c.action==='confirm_action');i++)await page.waitForTimeout(20);
-  const confirm=calls.find(c=>c.action==='confirm_action');
+  const confirm=await waitForAction(calls,'confirm_action');
   assert.equal(confirm.args.suggestion_id,sid);assert.equal(confirm.args.revision,revision);
   calls.length=0;
   // A sent one says where it went, without "You"

@@ -56,7 +56,7 @@ ADMIN_SCOPES = CHANNEL_SCOPES + (MEETING_SCOPE, TRANSCRIPT_SCOPE, INSIGHT_SCOPE)
 SETUP = {
     'label': 'Microsoft Teams',
     'account': {'id': 'teams', 'service': 'teams', 'transport': 'broker', 'boundary': 'work', 'poll_seconds': 300},
-    'what': 'Chats, meeting chats and meeting notes from Teams. Replies only after you press Send.',
+    'what': 'Chats, meeting chats and meeting notes. Replies only after you press Send.',
     'note': 'Signs in with Microsoft for your work address. Channels and meeting transcripts need your admin’s OK.',
     'ask': [('email', 'Your Microsoft work address')],
     # a hosted Machine: its account page's Teams part signs in (Connect Microsoft Teams), and + Add starts the same

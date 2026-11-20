@@ -15,7 +15,7 @@ const sources=[
  S('outlook','Outlook','mail','Your Outlook email, what comes in and what you send.',{signin:'microsoft'}),
  S('calendar','Google Calendar','calendar','Your meetings, so you go in prepared and follow up.',{connected:1,signin:'google'}),
  S('outlook_calendar','Outlook Calendar','calendar','Your Outlook meetings, so you go in prepared and follow up.',{signin:'microsoft'}),
- S('teams','Microsoft Teams','chat','Chats, meeting chats and meeting notes from Teams. Replies only after you press Send.',{signin:'microsoft_teams'}),
+ S('teams','Microsoft Teams','chat','Chats, meeting chats and meeting notes. Replies only after you press Send.',{signin:'microsoft_teams'}),
  S('slack','Slack','chat','Your direct messages, mentions and the threads you are in.',{signin:'slack'}),
  S('telegram','Telegram chats','chat','Your Telegram chats and small groups.'),
  S('whatsapp','WhatsApp','chat','Your WhatsApp chats, as a linked device.'),

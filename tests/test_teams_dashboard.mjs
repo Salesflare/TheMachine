@@ -13,7 +13,7 @@ const CP='https://app.example.test';
 const dashboard=await dashboardPage();
 const now=new Date().toISOString();
 const card={id:'teams',display_name:'Microsoft Teams',email:'owner@acme.example',service:'teams',transport:'broker',boundary:'work',events:42,recent_events:12,
- last_success:now,what:'Chats, meeting chats and meeting notes from Teams. Replies only after you press Send.',hosted_signin:'microsoft_teams',
+ last_success:now,what:'Chats, meeting chats and meeting notes. Replies only after you press Send.',hosted_signin:'microsoft_teams',
  teams_missing:{replies:'reconnect',channels:'admin',transcripts:'admin',notes:'admin'}};
 const posted=[];
 const server=createServer(async(req,res)=>{
@@ -24,7 +24,7 @@ const server=createServer(async(req,res)=>{
  if(url.pathname==='/api/action'){let body='';for await(const b of req)body+=b;const {action}=JSON.parse(body);
   if(action==='connect_sources'){res.end(JSON.stringify({saveable:true,manage_url:CP+'/setup',paired:true,sources:[
    {name:'outlook',service:'outlook',label:'Outlook',what:'Your Outlook email.',connected:0,broker:true,hosted_signin:'microsoft'},
-   {name:'teams',service:'teams',group:'chat',label:'Microsoft Teams',what:'Chats, meeting chats and meeting notes from Teams. Replies only after you press Send.',connected:0,broker:true,hosted_signin:'microsoft_teams'}]}));return}
+   {name:'teams',service:'teams',group:'chat',label:'Microsoft Teams',what:'Chats, meeting chats and meeting notes. Replies only after you press Send.',connected:0,broker:true,hosted_signin:'microsoft_teams'}]}));return}
   res.end('{}');return}
  res.end(url.pathname==='/api/events'?'[]':'{}');
 });
@@ -67,7 +67,7 @@ try{
   await page.goto(base+'/#connections=other');  // no group in the fixture: Other
   const conn=page.locator('[data-conn="teams"]');await conn.waitFor();await conn.locator('[data-conn-open]').click();
   const lines=await conn.locator('.conn-what').allInnerTexts();
-  assert.deepEqual(lines,['Chats, meeting chats and meeting notes from Teams. Replies only after you press Send. Channels and meeting notes need your admin’s OK.']);  // the first OK only: all of what the admin's OK adds, in one line
+  assert.deepEqual(lines,['Chats, meeting chats and meeting notes. Replies only after you press Send. Channels and meeting notes need your admin’s OK.']);  // the first OK only: all of what the admin's OK adds, in one line
   // a sign-in from before replies could be sent: one short line with its Reconnect, never a silent failure
   const send=conn.locator('p.note',{hasText:'Reconnect to send replies.'});
   assert.equal(await send.count(),1);
