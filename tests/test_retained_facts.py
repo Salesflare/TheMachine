@@ -1,7 +1,6 @@
-"""Facts outside the current list (set aside, ended, replaced) come back into a review, a preparation and a to-do's
-chat when they bear on it (machine/app/retained_facts.py): a set-aside one as the fact it still is, the others
-marked as history with their day and what replaced them, a forgotten one never. Made-up data, with and without
-embeddings."""
+"""Facts outside the current list (ended, replaced) come back into a review, a preparation and a to-do's chat when
+they bear on it (machine/app/retained_facts.py): marked as history with their day and what replaced them, a forgotten
+one never. Nothing is outside the list for not being used. Made-up data, with and without embeddings."""
 import datetime as dt
 import importlib.util
 import tempfile
@@ -23,10 +22,10 @@ SETTINGS = {'url': 'http://embed.invalid', 'model': 'm', 'dims': 2}
 NEAR, FAR = [1.0, 0.0], [0.0, 1.0]
 ACCOUNTS = [{'id': 'work', 'email': 'sam@acme.example'}]
 
-ASIDE = 'The Lisbon offsite always books the riverside venue with catering.'
-ASIDE_OTHER = 'Quarterly taxes are filed by the bookkeeper in March.'
-ASIDE_MEANING = 'Prefers morning flights for any work travel.'
-ASIDE_NAMED = 'Robin Vale answers fastest on a Tuesday morning.'
+LAPSED = 'The Lisbon offsite always books the riverside venue with catering.'
+LAPSED_OTHER = 'Quarterly taxes are filed by the bookkeeper in March.'
+LAPSED_MEANING = 'Prefers morning flights for any work travel.'
+LAPSED_NAMED = 'Robin Vale answers fastest on a Tuesday morning.'
 ENDED = 'The offsite venue contact is Dana at Riverside Hall.'
 ENDED_REASON = 'Riverside Hall closed, the offsite venue is booked through Harbor Lofts'
 PAST = 'The offsite catering menu is on hold until the headcount is final.'
@@ -37,6 +36,7 @@ REWORDED_NEW = 'Venue invoices go to accounting with the booking number.'
 FORGOTTEN = 'The Lisbon offsite venue needs a deposit by Friday.'
 CHAIN_OLD = 'The offsite venue shortlist lives in the planning sheet.'
 CHAIN_NEW = 'Offsite venue options are tracked by the events team now.'
+LAPSE_DAY = (START + dt.timedelta(days=35)).date().isoformat()  # the LAPSED ones end then
 
 
 def mail(n, at, sender, title, body):
@@ -63,9 +63,9 @@ class RetainedFactsTests(unittest.TestCase):
         note = self.store.suggest('note', 'Plan the team offsite', 'Body', [1])['id']
         self.store.decide(note, 'reject', 'notes on the offsite', 'owner-note', 'dashboard')
         self.ids = {}
-        for text in (ASIDE, ASIDE_OTHER, ASIDE_MEANING, ASIDE_NAMED):  # learned long ago and not used since
-            self.ids[text] = self.learn(text)
-        for i in range(72):  # a full list of facts used lately, so the old ones are set aside to make room
+        for text in (LAPSED, LAPSED_OTHER, LAPSED_MEANING, LAPSED_NAMED):  # learned long ago, each holding until LAPSE_DAY
+            self.ids[text] = self.store.remember_fact(text, 'owner-note', 'event', until=LAPSE_DAY, quote='notes on the offsite')['id']
+        for i in range(72):  # a long list of facts learned since, so picking matters
             self.clock[0] = START + dt.timedelta(days=30, minutes=i)
             self.learn(f'Filler fact number {i} about how the owner keeps their week.')
         self.clock[0] = START + dt.timedelta(days=31)
@@ -82,7 +82,7 @@ class RetainedFactsTests(unittest.TestCase):
                                                  'Riverside Hall closed, we can host the offsite at Harbor Lofts.')])
         self.store.fact_overturned(self.ids[ENDED], ENDED_REASON, [2])
         self.clock[0] = START + dt.timedelta(days=40)
-        self.store.retire_expired()  # past its end day, and the ones not used in 21 days set aside
+        self.store.retire_expired()  # past their end day; nothing leaves for not being used
         with self.store.connect() as db:
             db.isolation_level = None
             a.graph.build(db, self.app.config, self.clock[0].isoformat())
@@ -100,14 +100,16 @@ class RetainedFactsTests(unittest.TestCase):
             db.executemany('INSERT OR REPLACE INTO event_vectors(event_id,version,model,dims,vector) VALUES(?,1,?,?,?)',
                            [(e, SETTINGS['model'], SETTINGS['dims'], a.embeddings.pack(v)) for e, v in events.items()])
 
+    @staticmethod
+    def hist(text):
+        return f'- Historical, not current (ended {LAPSE_DAY}): {text}'
+
     def retained(self, purpose='preparation'):
         memory = recall(self.app, purpose, {'todo': self.todo} if purpose != 'review' else {'run': 'r'}, 60000)
         return memory.text('retained'), memory.rows()
 
     def test_the_data_is_what_the_store_keeps(self):
-        for text in (ASIDE, ASIDE_OTHER, ASIDE_MEANING, ASIDE_NAMED):
-            self.assertEqual(self.state[self.ids[text]], f'aside:{self.ids[text]}')
-        for text in (ENDED, PAST):
+        for text in (LAPSED, LAPSED_OTHER, LAPSED_MEANING, LAPSED_NAMED, ENDED, PAST):
             self.assertEqual(self.state[self.ids[text]], f'expired:{self.ids[text]}')
         self.assertEqual(self.state[self.ids[OLD]], f'fact:{self.ids[NEW]}')
         self.assertIsNone(self.state[self.ids[FORGOTTEN]])
@@ -116,19 +118,20 @@ class RetainedFactsTests(unittest.TestCase):
         text, rows = self.retained()
         lines = text.splitlines()
         self.assertEqual(retained_facts.TODO_HEAD, lines[0])
-        self.assertEqual(['- ' + ASIDE_NAMED, '- ' + ASIDE], lines[1:3])  # set aside: still holds, as the fact it is, first
-        self.assertTrue(lines[3].startswith('- Historical, not current (ended '))  # then history, in the room left
+        self.assertEqual(self.hist(LAPSED_NAMED), lines[1])  # about a record on the to-do: first
+        self.assertTrue(all(line.startswith('- Historical, not current (ended ') for line in lines[1:]))  # all history
         self.assertEqual(len(lines) - 1, retained_facts.LINES)
         self.assertLessEqual(len(text), retained_facts.CHARS)
         self.assertEqual({'fact'}, {r[0] for r in rows})
-        self.assertEqual({0}, {r[5] for r in rows})  # never a use: a set-aside fact stays set aside
+        self.assertEqual({0}, {r[5] for r in rows})  # never a use
         with patch.object(retained_facts, 'LINES', 20), patch.object(retained_facts, 'CHARS', 5000):
             lines = self.retained()[0].splitlines()
         self.assertIn(f'- Historical, not current (ended {(START + dt.timedelta(days=32)).date()}; now: {ENDED_REASON}): {ENDED}', lines)
         self.assertIn(f'- Historical, not current (ended {(START + dt.timedelta(days=31)).date()}; now: {NEW}): {OLD}', lines)
         self.assertIn(f'- Historical, not current (ended {(START + dt.timedelta(days=33)).date()}): {PAST}', lines)  # past its end day
-        self.assertNotIn('- ' + ASIDE_OTHER, lines)  # nothing to do with it
-        self.assertNotIn('- ' + ASIDE_MEANING, lines)  # close only in meaning, and meaning search is off
+        self.assertIn(self.hist(LAPSED), lines)
+        self.assertNotIn(self.hist(LAPSED_OTHER), lines)  # nothing to do with it
+        self.assertNotIn(self.hist(LAPSED_MEANING), lines)  # close only in meaning, and meaning search is off
 
     def test_never_a_forgotten_one_or_one_that_says_nothing_new(self):
         with patch.object(retained_facts, 'LINES', 20), patch.object(retained_facts, 'CHARS', 5000):
@@ -138,23 +141,23 @@ class RetainedFactsTests(unittest.TestCase):
             self.assertNotIn(gone, text + review)
         self.assertIn(ENDED, text)
 
-    def test_a_name_on_the_to_do_brings_a_set_aside_fact_about_them(self):
+    def test_a_name_on_the_to_do_brings_an_ended_fact_about_them(self):
         with patch.object(retained_facts, 'LINES', 20), patch.object(retained_facts, 'CHARS', 5000):
             text, rows = self.retained()
-        self.assertIn('- ' + ASIDE_NAMED, text)  # Robin Vale wrote the to-do's message
-        self.assertIn((str(self.ids[ASIDE_NAMED]), 'about'), [(r[1], r[2]) for r in rows])
+        self.assertIn(self.hist(LAPSED_NAMED), text)  # Robin Vale wrote the to-do's message
+        self.assertIn((str(self.ids[LAPSED_NAMED]), 'about'), [(r[1], r[2]) for r in rows])
 
     def test_with_embeddings_a_fact_close_in_meaning_comes_in_from_stored_vectors(self):
         self.app.config['embeddings'] = SETTINGS
-        self.vectors({ASIDE_MEANING: NEAR, ASIDE_OTHER: FAR}, {2: NEAR})
+        self.vectors({LAPSED_MEANING: NEAR, LAPSED_OTHER: FAR}, {2: NEAR})
         with patch.object(retained_facts, 'LINES', 20), patch.object(retained_facts, 'CHARS', 5000):
             text, rows = self.retained()
-        self.assertIn('- ' + ASIDE_MEANING, text)
-        self.assertNotIn(ASIDE_OTHER, text)
-        self.assertIn((str(self.ids[ASIDE_MEANING]), 'closeness', 1.0), [(r[1], r[2], r[3]) for r in rows])
-        self.vectors({ASIDE_MEANING: FAR}, {2: NEAR})
+        self.assertIn(self.hist(LAPSED_MEANING), text)
+        self.assertNotIn(LAPSED_OTHER, text)
+        self.assertIn((str(self.ids[LAPSED_MEANING]), 'closeness', 1.0), [(r[1], r[2], r[3]) for r in rows])
+        self.vectors({LAPSED_MEANING: FAR}, {2: NEAR})
         with patch.object(retained_facts, 'LINES', 20), patch.object(retained_facts, 'CHARS', 5000):
-            self.assertNotIn(ASIDE_MEANING, self.retained()[0])
+            self.assertNotIn(LAPSED_MEANING, self.retained()[0])
 
     def test_nothing_that_matches_leaves_the_prompt_as_it_was(self):
         other = self.store.suggest('tax', 'Renew the parking permit', 'The city sent a renewal form.', [1])['id']
@@ -163,8 +166,8 @@ class RetainedFactsTests(unittest.TestCase):
     def test_a_review_gets_what_bears_on_the_waiting_signals(self):
         text, _ = self.retained('review')
         self.assertTrue(text.startswith(retained_facts.REVIEW_HEAD))
-        self.assertIn('- ' + ASIDE, text)
-        self.assertNotIn(ASIDE_OTHER, text)
+        self.assertIn(self.hist(LAPSED), text)
+        self.assertNotIn(LAPSED_OTHER, text)
         self.assertNotIn('[', text.split('\n', 1)[1])  # no ids: nothing here is the review's to end or replace
         with self.store.connect() as db:
             db.execute('UPDATE events SET analyzed_version=version')
@@ -178,7 +181,7 @@ class RetainedFactsTests(unittest.TestCase):
         self.app.config['review_worker'] = {'enabled': True}
         self.app.review_step(lambda r: calls.append(dict(r)) or {'status': 'admitted'})
         message = next(c['message'] for c in calls if c.get('message'))
-        self.assertIn('- ' + ASIDE, message[message.index(retained_facts.REVIEW_HEAD):].split('\n\n')[0])
+        self.assertIn(self.hist(LAPSED), message[message.index(retained_facts.REVIEW_HEAD):].split('\n\n')[0])
         self.assertLess(message.index('Facts the owner told you earlier'), message.index(retained_facts.REVIEW_HEAD))
         self.assertLess(message.index(retained_facts.REVIEW_HEAD), message.index('This turn: review run'))
 
@@ -187,7 +190,7 @@ class RetainedFactsTests(unittest.TestCase):
         calls = []
         self.app.preparation_step(lambda r: calls.append(r) or {'status': 'admitted'})
         first = next(c['message'] for c in calls if c.get('message'))
-        self.assertIn('- ' + ASIDE, first[first.index(retained_facts.TODO_HEAD):].split('\n\n')[0])
+        self.assertIn(self.hist(LAPSED), first[first.index(retained_facts.TODO_HEAD):].split('\n\n')[0])
         with self.store.connect() as db:
             db.execute("UPDATE preparation_runs SET status='ok',finished_at=?", (self.clock[0].isoformat(),))
             db.execute("UPDATE preparations SET status='done'")
@@ -198,11 +201,11 @@ class RetainedFactsTests(unittest.TestCase):
         chat = next(c['message'] for c in calls if c.get('message'))
         self.assertIn('wrote to you in the chat', chat)
         block = chat[chat.index(retained_facts.TODO_HEAD):].split('\n\n')[0]
-        self.assertIn('- ' + ASIDE, block)
+        self.assertIn(self.hist(LAPSED), block)
         self.assertLessEqual(len(block), retained_facts.CHAT_CHARS)
         with self.store.connect() as db:
-            logged = {r[0] for r in db.execute("SELECT purpose FROM memory_use WHERE kind='fact' AND row_id=?", (str(self.ids[ASIDE]),))}
-            used = db.execute('SELECT used_at FROM facts WHERE id=?', (self.ids[ASIDE],)).fetchone()[0]
+            logged = {r[0] for r in db.execute("SELECT purpose FROM memory_use WHERE kind='fact' AND row_id=?", (str(self.ids[LAPSED]),))}
+            used = db.execute('SELECT used_at FROM facts WHERE id=?', (self.ids[LAPSED],)).fetchone()[0]
         self.assertEqual({'preparation', 'todo_chat'}, logged)
         self.assertIsNone(used)
 
@@ -226,9 +229,9 @@ class RetainedFactsTests(unittest.TestCase):
 
     def test_a_fact_of_the_other_area_stays_out(self):
         with self.store.connect() as db:
-            db.execute("UPDATE facts SET side='personal' WHERE id=?", (self.ids[ASIDE],))  # as a connected AI's area would say
+            db.execute("UPDATE facts SET side='personal' WHERE id=?", (self.ids[LAPSED],))  # as a connected AI's area would say
         self.app.config['accounts'] = [{**ACCOUNTS[0], 'boundary': 'work:acme'}]
-        self.assertNotIn(ASIDE, self.retained()[0])
+        self.assertNotIn(LAPSED, self.retained()[0])
 
     def test_years_of_facts_outside_the_list_are_all_looked_at_quickly(self):
         self.app.config['embeddings'] = SETTINGS
@@ -238,11 +241,11 @@ class RetainedFactsTests(unittest.TestCase):
             for i in range(3000):  # one shared word each ("offsite"): looked at, and too little to match
                 fact = db.execute("INSERT INTO facts(text,decision_id,created_at,removed_at,kind) VALUES(?,'owner-note',?,?,'fact')",
                                   (f'Archived offsite note {i} on ledger zq{i}x.', START.isoformat(), later)).lastrowid
-                db.execute('UPDATE facts SET merged_into=? WHERE id=?', (f'aside:{fact}', fact))
+                db.execute('UPDATE facts SET merged_into=? WHERE id=?', (f'expired:{fact}', fact))
                 db.execute('INSERT INTO fact_vectors(fact_id,model,vector) VALUES(?,?,?)', (fact, key, a.embeddings.pack(FAR)))
-        self.vectors({ASIDE_MEANING: NEAR}, {2: NEAR})
+        self.vectors({LAPSED_MEANING: NEAR}, {2: NEAR})
         with self.store.connect() as db:
-            newer = db.execute("SELECT count(*) FROM facts WHERE merged_into LIKE 'aside:%' AND removed_at>?",
+            newer = db.execute("SELECT count(*) FROM facts WHERE merged_into LIKE 'expired:%' AND removed_at>?",
                                (self.clock[0].isoformat(),)).fetchone()[0]
         self.assertGreater(newer, 500)  # past the 500 most lately removed that were looked at before
         with patch.object(retained_facts, 'LINES', 20), patch.object(retained_facts, 'CHARS', 5000):
@@ -250,9 +253,9 @@ class RetainedFactsTests(unittest.TestCase):
             text, rows = self.retained()
             review, _ = self.retained('review')
             took = time.monotonic() - started
-        for fact in (ASIDE, ASIDE_NAMED, ASIDE_MEANING):  # by words, by name and by meaning
-            self.assertIn('- ' + fact, text)
-        self.assertIn('- ' + ASIDE, review)
+        for fact in (LAPSED, LAPSED_NAMED, LAPSED_MEANING):  # by words, by name and by meaning
+            self.assertIn(self.hist(fact), text)
+        self.assertIn(self.hist(LAPSED), review)
         self.assertNotIn('Archived offsite note', text + review)
         self.assertNotIn(FORGOTTEN, text + review)
         self.assertLess(took, 10)  # some 0.3 s on a desktop
@@ -268,13 +271,13 @@ class RetainedFactsTests(unittest.TestCase):
         self.assertEqual(1, len(copies))
         self.assertFalse(self.store.index_facts())  # once: the next start only reads the schema
         self.assertEqual(copies, list(self.store.path.parent.glob('events.sqlite.before-fact-index-*')))
-        self.assertIn('- ' + ASIDE, self.retained()[0])  # facts from before the index are in it
+        self.assertIn(self.hist(LAPSED), self.retained()[0])  # facts from before the index are in it
         with self.store.connect() as db:  # kept up to date as facts change
-            db.execute('UPDATE facts SET text=? WHERE id=?', ('Quarterly taxes for the Lisbon offsite venue are filed in March.', self.ids[ASIDE_OTHER]))
-            db.execute('DELETE FROM facts WHERE id=?', (self.ids[ASIDE],))
+            db.execute('UPDATE facts SET text=? WHERE id=?', ('Quarterly taxes for the Lisbon offsite venue are filed in March.', self.ids[LAPSED_OTHER]))
+            db.execute('DELETE FROM facts WHERE id=?', (self.ids[LAPSED],))
             found = {r[0] for r in db.execute("SELECT rowid FROM fact_search WHERE fact_search MATCH 'lisbon'")}
-        self.assertIn(self.ids[ASIDE_OTHER], found)
-        self.assertNotIn(self.ids[ASIDE], found)
+        self.assertIn(self.ids[LAPSED_OTHER], found)
+        self.assertNotIn(self.ids[LAPSED], found)
 
 
 if __name__ == '__main__':

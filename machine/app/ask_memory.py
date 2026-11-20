@@ -577,7 +577,7 @@ def for_chat(app, question, limit=CHAT_CHARS):
     """What was learned that the owner's chat question is about, in at most limit characters ('' when nothing
     matches): their own current facts and draft rules by words (as Talk's learned), then by meaning (their stored
     vectors against one embedding of the question, when the Machine has embeddings), then what was learned earlier and
-    is no longer in the current list (retained_facts.py: set aside, or ended or replaced and marked historical), by
+    is no longer in the current list (retained_facts.py: ended or replaced, marked historical), by
     words or meaning too. Never a connected AI's fact, nor one the owner removed. A fact about a person comes only
     when the question names them. Noted for the use log (purpose chat)."""
     words = _asked(question)
@@ -604,7 +604,7 @@ def for_chat(app, question, limit=CHAT_CHARS):
     named = _people_named(question, who)
     mine = lambda f: not any(who.get(n, {}).get('kind') == 'person' and n not in named for n in f['about'])
     current = [f for f in current if f['kind'] in ('fact', 'draft') and mine(f)][:CHAT_LEARNED]
-    old = sorted((f for f in old if mine(f)), key=lambda f: (f['state'] != 'aside', -_shared(asked, f['text']), -near_old.get(f['id'], 0.0)))[:retained_facts.LINES]
+    old = sorted((f for f in old if mine(f)), key=lambda f: (-_shared(asked, f['text']), -near_old.get(f['id'], 0.0)))[:retained_facts.LINES]
     lines, size = [], len(CHAT_HEAD)
     for f in current + old:
         text = retained_facts.line(f) if 'state' in f else ('- Draft rule: ' + f['text']) if f['kind'] == 'draft' else fact_line(f)

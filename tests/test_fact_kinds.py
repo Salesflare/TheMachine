@@ -1,5 +1,5 @@
-"""What sort a learned fact is (event, commitment, preference, fact), how fast it fades, the day it ends, and the cap that
-only counts facts about no one (assistant.py remember_fact, facts_for, condense_text, retire_expired)."""
+"""What sort a learned fact is (event, commitment, preference, fact), how fast it fades, the day it ends, and that a long
+list never refuses a fact (assistant.py remember_fact, facts_for, condense_text, retire_expired)."""
 import datetime as dt
 import importlib.util
 import sqlite3
@@ -107,13 +107,13 @@ class FactKinds(unittest.TestCase):
         self.assertIn('Vendor number', out)
         self.assertTrue(old_event['id'])
 
-    def test_facts_about_someone_dont_count_toward_the_cap(self):
+    def test_a_long_list_and_facts_about_someone_are_always_saved(self):
         with self.store.connect() as db:
             db.execute("INSERT INTO graph_nodes(id,kind,name,strength,signals,info) VALUES('email:lee@globex.example','person','Lee',1,0,'{}')")
         with self.at(NOW):
-            for n in range(assistant.FACTS_GENERAL_MAX):
+            for n in range(81):
                 self.store.remember_fact(f'General fact number {n} about how the owner works.', 'owner-note', quote='we stopped using them')
-            self.assertIn('id', self.store.remember_fact('One general fact over the cap, never an error.', 'owner-note', quote='we stopped using them'))
+            self.assertIn('id', self.store.remember_fact('One general fact past the old cap, never an error.', 'owner-note', quote='we stopped using them'))
             for n in range(5):  # about someone: still saved
                 self.assertIn('id', self.store.remember_fact(f'Lee prefers email over calls, note {n}.', 'owner-note', 'preference',
                                                              about=['email:lee@globex.example'], quote='we stopped using them'))

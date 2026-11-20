@@ -616,7 +616,7 @@ class PreparationApp:
                 rules=memory.text('rules')
                 try:gaps=self.gap_lines(job['suggestion_id'])  # what isn't known about the people on it (gap_note.py)
                 except Exception as error:LOG.error('gap note error=%s',type(error).__name__);gaps=''
-                facts='\n\n'.join(filter(None,(memory.text('facts'),memory.text('retained'))))  # set aside or history that bears on it (retained_facts.py)
+                facts='\n\n'.join(filter(None,(memory.text('facts'),memory.text('retained'))))  # history that bears on it (retained_facts.py)
                 request['message']=preparation_prompt(job,facts,self.config,'' if style else self.store.draft_edits_text(),
                                                       rules,style,gaps,request.get('model') or openclaw_model(self.config))
                 try:  # how to read the card's own sources (its accounts' notes only)

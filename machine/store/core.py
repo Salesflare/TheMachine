@@ -351,9 +351,9 @@ class StoreCore:
             have_facts = {r[1] for r in db.execute('PRAGMA table_info(facts)')}
             # source: who told it when it wasn't the owner's own note ('ai:<name>': a connected AI, ai_app.py); NULL: the owner.
             # side: a connected AI's fact is in that AI's area (work or personal), so it stays out of the other one's preparations
-            # used_at: when a preparation last picked it as close to its to-do; kept_at: the owner edited it or brought it
-            # back, so it is never set aside for room (facts.py FACTS_GENERAL_ROOM). Facts kept before use was tracked
-            # count as used when tracking starts, so none is set aside before there is a real record of use.
+            # used_at: when a preparation last picked it as close to its to-do (recency order, facts.py LAST_USE); kept_at:
+            # the owner edited it or brought it back, so it is theirs (never dropped at facts.py FACTS_LIMIT). Facts kept
+            # before use was tracked count as used when tracking starts.
             # quote: the owner's own words the fact was found in, from the message it cites (Store.remember_fact checks
             # they are there); NULL on one from before, from a connected AI, from the owner's notes or condensed.
             for column in ('fact_kind', 'valid_until', 'confirmed_at', 'source', 'side', 'used_at', 'kept_at', 'quote'):
@@ -576,6 +576,7 @@ class StoreCore:
         restored = self.restore_ahead_blockers()
         if restored:
             LOG.info('Showed the blocker again on %d prepared-ahead to-do(s)', restored)
+        self.bring_back_set_aside()  # once: nothing is set aside for disuse any more (facts.py bring_back_aside)
         if self.index_facts():
             LOG.info('Indexed the facts for retained-fact recall')
         self.clean_protection_leftovers()

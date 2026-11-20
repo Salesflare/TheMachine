@@ -35,8 +35,8 @@ def recall(app, purpose, about=None, budget=0):
       fit; past the cap the standing ones) and batch_facts (past the cap: the ones picked for this batch,
       review_facts.py), promises (the open ones), sender (who wrote the claimed batch: one line per sender the Graph
       knows something specific about, senders.lines; read when the batch is claimed, with the claim's reply as its
-      budget), retained (set-aside facts and history that bear on the waiting signals, retained_facts.py).
-    - preparation: rules and facts (for this to-do), retained (set-aside facts and history that bear on it), records (the people and projects on it), skills(rules, room),
+      budget), retained (ended and replaced facts, as history, that bear on the waiting signals, retained_facts.py).
+    - preparation: rules and facts (for this to-do), retained (history that bears on it), records (the people and projects on it), skills(rules, room),
       team (the Work Fleet's lines, team learnings among them), related (signals close in meaning).
     - ask: sources (search_ask.ask with its own arguments: the messages that fit the prompt), and what matches the
       question of promises, facts, records (a person's summary, a named project or organization) and meetings
@@ -51,7 +51,7 @@ def recall(app, purpose, about=None, budget=0):
       OpenClaw's memory search.
     - chat (the owner's main chat, {'question': words}): learned(question), read only when the chat asks (the bridge's
       assistant_memory tool): the owner's own facts and draft rules that match by words, then by meaning from their
-      stored vectors when embeddings are on, then the set-aside and historical ones, in ask_memory.CHAT_CHARS (ask_memory.for_chat).
+      stored vectors when embeddings are on, then the historical ones, in ask_memory.CHAT_CHARS (ask_memory.for_chat).
     - todo_chat (a turn of a to-do's chat, {'todo': id, 'session': its session's job id}): new (what changed in
       what was learned since the session last read it, a small delta: retained_facts.since_session) and retained, as
       for its preparation, in a smaller slice; the rest of what was learned is in the session from its preparation."""

@@ -1,7 +1,7 @@
 """One owner preference through its whole life, in order, on the real store and app paths with made-up data (no model,
 no sends; the embedding server is a fake): learned from the owner's own chat, picked for a preparation of a to-do it
-fits, corrected through a note on a to-do (the review saves it with replaces), set aside after weeks unused, brought
-back, and still picked after the embedding model changes. Then the same flow without embeddings.
+fits, corrected through a note on a to-do (the review saves it with replaces), kept through weeks unused while other
+facts are used (nothing is set aside for disuse), and still picked after the embedding model changes. Then the same flow without embeddings.
 
 The preparation's facts are read the way a preparation reads them (machine/app/recall.py, then memory_use.record once
 the run is admitted, which stamps them as used).
@@ -29,7 +29,7 @@ EMBED = {'url': 'http://embed.invalid', 'model': 'model-one', 'dims': 256}
 CONFIG = {'accounts': [{'id': 'work', 'email': 'sam@acme.com'}], 'telegram_owner': '1000001'}
 LEARNED = 'You prefer client calls in the morning, before ten.'
 CORRECTED = 'You prefer client calls in the afternoon, after two.'
-FILLERS = 75  # more than FACTS_GENERAL_ROOM about no one, and longer than a preparation's limit, so picking matters
+FILLERS = 75  # more than the old cap of 70 about no one, and longer than a preparation's limit, so picking matters
 EARLIER = '2026-08-01T09:00:00+00:00'  # what the Machine had learned before
 T0, T1, T2, T3, T4, T5 = ('2026-09-01T09:00:00+00:00', '2026-09-02T09:00:00+00:00', '2026-09-05T09:00:00+00:00',
                           '2026-10-20T09:00:00+00:00', '2026-10-31T09:00:00+00:00', '2026-11-02T09:00:00+00:00')
@@ -96,18 +96,6 @@ class OwnerMemoryScenario(unittest.TestCase):
         if a.embeddings.settings(self.app.config):  # by meaning: not for a to-do it has nothing to do with
             self.assertNotIn(text, self.prepare(other))
 
-    def retrieve_again(self, fact_id, todo, other):
-        """Set aside, it still reaches a preparation of a to-do it fits through the shared retrieval (recall's retained
-        block, machine/app/retained_facts.py), as the fact it still is, and not one it has nothing to do with; then
-        the owner brings it back from Learning."""
-        aside = [f['id'] for f in self.store.snapshot([], lean=True)['facts_aside']]
-        self.assertEqual(aside, [fact_id])
-        text = self.row(fact_id)['text']
-        self.assertIn('- ' + text, recall(self.app, 'preparation', {'todo': todo}, 30000).text('retained'))
-        self.assertNotIn(text, recall(self.app, 'preparation', {'todo': other}, 30000).text('retained'))
-        self.assertEqual(self.row(fact_id)['merged_into'], f'aside:{fact_id}')  # reading it is not a use: still set aside
-        self.assertEqual(self.app.action('unmerge_fact', {'expired': fact_id}, owner_dashboard=True), {'restored': 1})
-
     def flow(self, embed):
         self.app.config = {**CONFIG, **({'embeddings': EMBED} if embed else {})}
         with self.at(EARLIER):
@@ -142,14 +130,13 @@ class OwnerMemoryScenario(unittest.TestCase):
             self.assert_applied(calls, other, CORRECTED)
         self.assertEqual(self.row(first)['merged_into'], f'fact:{corrected}')
 
-        # 4. Set aside after weeks unused (the review's room pass), while other facts were used; then brought back
+        # 4. Weeks unused while other facts were used: the review's pass keeps it, and it is still picked where it fits
         with self.at(T3):
             self.store.mark_used(fillers)  # preparations of other to-dos picked these lately
         with self.at(T4):
             self.store.retire_expired()
-            self.assertEqual(self.row(corrected)['merged_into'], f'aside:{corrected}')
-            self.assertNotIn(CORRECTED, self.prepare(calls))
-            self.retrieve_again(corrected, calls, other)
+            self.assertIsNone(self.row(corrected)['merged_into'])
+            self.assertNotIn('facts_aside', self.store.snapshot([], lean=True))
             self.assert_applied(calls, other, CORRECTED)
 
         # 5. Another embedding model: the vectors are made again, and the right preference is still picked
