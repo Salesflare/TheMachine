@@ -39,7 +39,7 @@ KINDS = {
     'fleet.email': {**_NO, 'service': None, 'name': 'email', 'view': 'email', 'family': MAIL, 'mark': 'mail'},
     # chat
     'slack.message': {**_NO, 'via': 'Slack', 'service': 'slack', 'name': 'Slack', 'view': 'chat', 'family': CHAT, 'timeline': 'chats', 'send': 'slack', 'mark': 'slack', 'markdown': True},
-    'teams.message': {**_NO, 'via': 'Teams', 'service': 'teams', 'name': 'Teams', 'view': 'chat', 'family': CHAT, 'timeline': 'chats', 'mark': 'teams', 'markdown': True, 'messenger': True},
+    'teams.message': {**_NO, 'via': 'Teams', 'service': 'teams', 'name': 'Teams', 'view': 'chat', 'family': CHAT, 'timeline': 'chats', 'send': 'teams', 'mark': 'teams', 'markdown': True, 'messenger': True},
     'whatsapp.message': {**_NO, 'via': 'WhatsApp', 'service': 'whatsapp', 'name': 'WhatsApp', 'view': 'chat', 'family': CHAT, 'timeline': 'chats', 'send': 'whatsapp', 'mark': 'whatsapp', 'markdown': True, 'media': True, 'messenger': True},
     'telegram.message': {**_NO, 'via': 'Telegram', 'service': 'telegram', 'name': 'Telegram', 'view': 'chat', 'family': CHAT, 'timeline': 'chats', 'send': 'telegram', 'mark': 'telegram', 'markdown': True, 'media': True, 'messenger': True},
     'signal.message': {**_NO, 'via': 'Signal', 'service': 'signal', 'name': 'Signal', 'view': 'chat', 'family': CHAT, 'timeline': 'chats', 'send': 'signal', 'mark': 'signal', 'media': True, 'messenger': True},
@@ -117,6 +117,7 @@ SENDS = {
     'telegram': {'name': 'Telegram', 'text_only': True, 'to_person': True, 'send_now': False},
     'signal': {'name': 'Signal', 'text_only': True, 'to_person': True, 'send_now': False},
     'intercom': {'name': 'Intercom', 'text_only': True, 'to_person': True, 'send_now': False},
+    'teams': {'name': 'Teams', 'text_only': True, 'to_person': True, 'send_now': False},
     'doc_reply': {'name': 'Docs', 'text_only': True, 'to_person': False, 'send_now': False},
 }
 SEND = tuple(SENDS)  # every send kind: a draft the owner approves before it goes out

@@ -95,7 +95,7 @@ const CHAT_SENDS=SENDS;
 const chatSends=s=>taskActions(s).filter(a=>CHAT_SENDS.includes(a.kind)).map(a=>({a,st:a.state||s.action_status})).filter(x=>x.st?.status);
 const chatGoing=st=>['queued','sending'].includes(st?.status)||st?.status==='uncertain'&&!st.retry_ok;
 const chatFailed=st=>['failed','blocked'].includes(st?.status)||!!st?.retry_ok;
-const CHAT_BY={email:'Sent to {} by email',email_demo:'Sent to {} by email',slack:'Sent to {} on Slack',linkedin:'Sent to {} on LinkedIn',whatsapp:'Sent to {} on WhatsApp',telegram:'Sent to {} on Telegram',signal:'Sent to {} on Signal',x:'Sent to {} on X',intercom:'Sent to {} in Intercom',doc_reply:'Sent to {} in the doc'};
+const CHAT_BY={email:'Sent to {} by email',email_demo:'Sent to {} by email',slack:'Sent to {} on Slack',linkedin:'Sent to {} on LinkedIn',whatsapp:'Sent to {} on WhatsApp',telegram:'Sent to {} on Telegram',signal:'Sent to {} on Signal',x:'Sent to {} on X',intercom:'Sent to {} in Intercom',teams:'Sent to {} in Teams',doc_reply:'Sent to {} in the doc'};
 function chatSendLine(d,x){const st=x.st,who=d.to.length&&!d.to.some(v=>v.includes('@'))?d.to.join(', '):x.a.to_name?.split(/\s+/)[0]||d.to.join(', ')||t('them');
  if(chatGoing(st))return html`<p class="chat-sendstate" role="status">${t(st.status==='uncertain'?'Checking it went out…':'Sending…')}</p><div class="send-progress" aria-hidden="true"><i></i></div>`;
  if(st.status==='sent')return html`<p class="chat-sendstate ok" role="status">${d.kind==='intercom'?t('Sent as {}',x.a.as_name||t('your Intercom admin')):t(CHAT_BY[d.kind]||'Sent to {}',who)}${st.sent_at?' · '+chatHM(Date.parse(st.sent_at)):''}</p>`;

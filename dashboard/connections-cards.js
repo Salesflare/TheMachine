@@ -141,7 +141,7 @@ function renderConnectAdd(){const box=$('#connect-add');if(connectRun)return ren
  // Teams: one Microsoft sign-in, two tiles. Its chats under Chat, its meeting notes under Meetings as Teams meetings; either
  // one connects both, and both show it connected. Its card on Connections keeps the whole line (connectors/teams.py).
  for(const x of connectList.sources){const teams=x.service==='teams'&&x.group==='chat';
-  add(x.group,x.label,connectTile(teams?{...x,what:t('Chats and meeting chats from Teams. Read-only.')}:x,'',why.has(x.name)),x.last,x);
+  add(x.group,x.label,connectTile(teams?{...x,what:t('Chats and meeting chats from Teams. Replies only after you press Send.')}:x,'',why.has(x.name)),x.last,x);
   // meeting notes and transcripts need the admin's step, which only a hosted Machine's account page adds: on a self-hosted
   // one its Teams sign-in reads the meeting chats
   if(teams)add('meetings',t('Teams meetings'),connectTile({...x,label:t('Teams meetings'),
@@ -261,8 +261,8 @@ const SIGNIN_COPY={intercom:{many:1,label:'Intercom',about:'Reads your conversat
  microsoft_docs_write:{label:'Microsoft',title:'Microsoft OneDrive',about:'Lets The Machine create and edit your Word documents. Each change waits for your OK.'},
  google_meet:{label:'Google',title:'Google Meet',about:'Transcripts and Gemini notes of your meetings. Reads only.'},
  // selfAbout: a self-hosted Machine's sign-in reads chats only (no channels or meeting notes step there yet)
- microsoft_teams:{label:'Microsoft',title:'Microsoft Teams',about:'Your chats and meeting chats. Channels and meeting notes need your admin’s OK. Reads only.',
-  selfAbout:'Your chats and meeting chats. Read-only.'},
+ microsoft_teams:{label:'Microsoft',title:'Microsoft Teams',about:'Your chats and meeting chats. Channels and meeting notes need your admin’s OK. Replies only after you press Send.',
+  selfAbout:'Your chats and meeting chats. Replies only after you press Send.'},
  google_docs:{label:'Google',title:'Google Docs',about:'Reads and edits the docs you point it to, and makes new ones. Edits wait for your OK.'},
  whatsapp:{label:'WhatsApp',about:'Your WhatsApp chats, as a linked device. Replies only when you press Send on a to-do.'},
  android:{about:'The notifications on your Android phone, through the OpenClaw app.'},
@@ -590,7 +590,7 @@ function connWhat(c){const span=s=>s?html`<span>${t(s)}</span>`:'',signals=c.sig
  if(c.service==='docs'){const narrow=c.docs_linked_only,line=!signals?'Finds and reads docs for your to-dos.':!acts?(narrow?'Opens only docs linked in your mail and the docs it makes.':'Reads comments, mentions, suggestions and shares.'):null;
   if(!signals){const w=docsWritesLine(c);return html`<p class="muted conn-what">${span(line)}${w?html` <span>${w}</span>`:''}</p>`}
   return html`<p class="muted conn-what">${line?span(line):c.docs_provider==='microsoft'?html`${span(c.what)} ${span('Replies stay drafts for you to post in Word.')}`:span(narrow?'Opens only docs linked in your mail and the docs it makes.':'Google Docs. Reads comments, mentions, suggestions and shares. Posts a reply only when you OK it.')}</p>${docsWrites(c)}`}
- if(c.service==='teams'){const lines=teamsMissing(c.teams_missing||{});return html`<p class="muted conn-what">${span(c.what)}${lines.map(l=>html` ${span(l)}`)}</p>`}
+ if(c.service==='teams'){const m=c.teams_missing||{};return html`<p class="muted conn-what">${span(c.what)}${teamsMissing(m).map(l=>html` ${span(l)}`)}</p>${m.replies?html`<p class="note">${t('Reconnect to send replies.')} ${reconnectButton(c)}</p>`:''}`}
  const what=signals?span(c.what):'',act=span(CONN_ACTS[c.acts]);
  return what||act?html`<p class="muted conn-what">${what}${what&&act?' ':''}${act}</p>`:''}
 // Brings in signals and Can do things, a switch each under Details, on a connection that has both (assistant.py

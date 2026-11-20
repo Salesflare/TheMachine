@@ -16,7 +16,7 @@ import contextlib
 import hashlib
 import google_api
 import mail_attachments
-import ms_graph, signal_send, smtp_mail
+import ms_graph, signal_send, smtp_mail, teams_send
 from whatsapp_send import WhatsAppTransport  # noqa: F401  (next_actions.WhatsAppTransport, as callers use it)
 import signatures
 import html
@@ -275,7 +275,7 @@ def label(value):
         return doc_writes.label(value)
     if value['kind'] == 'linear':
         return linear_writes.label(value)
-    return value.get('label') or {'email':'Send','email_demo':'Send','linkedin':'Send','slack':'Send','whatsapp':'Send','telegram':'Send','signal':'Send','intercom':'Send reply','doc_reply':'Post reply','merge':'Merge fix','prepare':'Prepare next step','open':'Open original','handoff':'Hand off'}.get(value['kind'],'Continue')
+    return value.get('label') or {'email':'Send','email_demo':'Send','linkedin':'Send','slack':'Send','whatsapp':'Send','telegram':'Send','signal':'Send','intercom':'Send reply','teams':'Send','doc_reply':'Post reply','merge':'Merge fix','prepare':'Prepare next step','open':'Open original','handoff':'Hand off'}.get(value['kind'],'Continue')
 
 
 def preview(value):
@@ -303,6 +303,8 @@ def preview(value):
         return value['kind'].title() + ' message to ' + value['to_name'] + (', as a reply' if value.get('quote') else '') + '\n\n' + value['body']
     if value['kind'] == 'intercom':
         return 'Intercom reply to ' + value['to_name'] + ', as ' + value['as_name'] + '\n\n' + value['body']
+    if value['kind'] == 'teams':
+        return 'Teams message to ' + value['to_name'] + '\n\n' + value['body']
     if value['kind'] == 'doc_reply':
         return 'Reply to ' + value['to_name'] + '’s comment on “' + value['doc_title'] + '”\n\n' + value['body']
     if value['kind'] == 'handoff':
@@ -526,13 +528,13 @@ FOLLOW_UP_VERBS = ('Draft', 'Prepare', 'Investigate', 'Check', 'Compare', 'Resea
 
 def validate(value, config, allowed_accounts, recipient_options=None, linkedin_threads=None, x_threads=None, whatsapp_chats=None,
              intercom_conversations=None, calendar_events=None, doc_comments=None, senders=None, replied=None, telegram_chats=None,
-             doc_write_context=None, reply_spots=None, signal_chats=None, linear_context=None):
+             doc_write_context=None, reply_spots=None, signal_chats=None, linear_context=None, teams_chats=None):
     if value is None or value == []:  # none: a briefing or a finished task may have no buttons (PREPARATION.md)
         return None
     if isinstance(value,list):
         if len(value)>3:raise OwnerError('Offer one to three useful next actions, not a menu of everything')
         if any(not isinstance(item,dict) for item in value):raise OwnerError('Each next action must be one concrete choice')
-        choices=[validate(item,config,allowed_accounts,recipient_options,linkedin_threads,x_threads,whatsapp_chats,intercom_conversations,calendar_events,doc_comments,senders,replied,telegram_chats,doc_write_context,reply_spots,signal_chats,linear_context) for item in value]
+        choices=[validate(item,config,allowed_accounts,recipient_options,linkedin_threads,x_threads,whatsapp_chats,intercom_conversations,calendar_events,doc_comments,senders,replied,telegram_chats,doc_write_context,reply_spots,signal_chats,linear_context,teams_chats) for item in value]
         if len({item['revision'] for item in choices})!=len(choices) or len({label(item).lower() for item in choices})!=len(choices):
             raise OwnerError('Next actions must be distinct concrete choices')
         return {'kind':'menu','actions':choices}
@@ -886,6 +888,8 @@ def validate(value, config, allowed_accounts, recipient_options=None, linkedin_t
         if not isinstance(body, str) or not body.strip() or len(body) > 10000 or '\x00' in body:
             raise OwnerError('Provide the concrete Intercom reply, at most 10000 characters')
         result['body'] = body.strip()
+    elif value.get('kind') == 'teams':  # in the Teams chat it came from, never a channel (teams_send.py)
+        result = teams_send.check(value, config, allowed_accounts, teams_chats)
     elif value.get('kind') == 'doc_reply':
         # A reply to a comment on a Google Doc from this task's own doc events (connectors/docs.py), as the owner, posted
         # only after their Post on this exact text, and only with the separate reply consent. Word comments can't be
@@ -2336,14 +2340,14 @@ class DocReplyTransport:
 
 
 class ActionTransport:
-    """Routes an approved send to Gmail, LinkedIn, Slack, X, WhatsApp, Telegram, Signal or Intercom, a calendar change to Google Calendar,
+    """Routes an approved send to Gmail, LinkedIn, Slack, X, WhatsApp, Telegram, Signal, Intercom or Teams, a calendar change to Google Calendar,
     or a fix to The Machine itself, by its kind."""
 
     def __init__(self, email, linkedin, slack=None, x=None, merge=None, whatsapp=None, intercom=None, calendar=None, docs=None, telegram=None,
-                 doc_writes=None, signal=None, linear=None):
+                 doc_writes=None, signal=None, linear=None, teams=None):
         self.email, self.linkedin, self.slack, self.x, self.merge, self.whatsapp = email, linkedin, slack, x, merge, whatsapp
         self.intercom, self.calendar, self.docs, self.telegram, self.doc_writes, self.signal = intercom, calendar, docs, telegram, doc_writes, signal
-        self.linear = linear
+        self.linear, self.teams = linear, teams
 
     def pick(self, action):
         if action['kind'] == 'linear':
@@ -2378,6 +2382,10 @@ class ActionTransport:
             if not self.intercom:
                 raise OwnerError('Intercom replies aren’t set up. Nothing was sent.')
             return self.intercom
+        if action['kind'] == 'teams':
+            if not self.teams:
+                raise OwnerError('Teams replies aren’t set up. Nothing was sent.')
+            return self.teams
         if action['kind'] == 'doc_reply':
             if not self.docs:
                 raise OwnerError('Doc replies aren’t set up. Nothing was posted.')

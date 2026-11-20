@@ -19,6 +19,7 @@ const SENT={
  telegram:['telegram:42:7','Telegram message sent at {}.'],
  signal:['signal:chat1:1700000000000','Signal message sent.'],
  intercom:['intercom:9:1','Sent as Alex in Intercom.'],
+ teams:['teams:19:a1b2c3@unq.gbl.spaces:m2','Teams message sent.'],
  doc_reply:['doc:c1:r1','Reply posted in the doc.'],
 };
 const sentAt=new Date(Date.now()-20*60e3).toISOString();

@@ -28,7 +28,7 @@ const sources=[
  S('outlook','Outlook','mail','Your Outlook email, what comes in and what you send.',{hosted_signin:'outlook'}),
  S('outlook_calendar','Outlook Calendar','calendar','Your Outlook meetings, so you go in prepared and follow up.',{hosted_signin:'outlook_calendar'}),
  S('salesforce','Salesforce','customers','Deals, tasks and activity.',{hosted_signin:'salesforce'}),
- S('teams','Microsoft Teams','chat','Chats, meeting chats and meeting notes from Teams. Reads only.',{broker:true,connected:1,hosted_signin:'microsoft_teams'}),
+ S('teams','Microsoft Teams','chat','Chats, meeting chats and meeting notes. Replies only after you press Send.',{broker:true,connected:1,hosted_signin:'microsoft_teams'}),
  S('slack','Slack','chat','Your direct messages, mentions and the threads you are in.',{hosted_signin:'slack'}),
  S('telegram','Telegram chats','chat','Your Telegram chats and small groups.'),
  S('whatsapp','WhatsApp','chat','Your WhatsApp chats, as a linked device.'),
@@ -121,7 +121,7 @@ try{
    assert.deepEqual(rest.find(g=>g.head==='Projects and code').tiles.map(x=>x.name),['Codex','GitHub','Shortcut','Trello']);
    // Teams: two tiles, one sign-in, both connected
    const chat=tile('Chat','Microsoft Teams'),meet=tile('Meetings','Teams meetings');
-   assert.deepEqual([chat.what,chat.signin,chat.on,meet.what,meet.signin,meet.on],['Chats and meeting chats from Teams. Read-only.','teams',true,
+   assert.deepEqual([chat.what,chat.signin,chat.on,meet.what,meet.signin,meet.on],['Chats and meeting chats from Teams. Replies only after you press Send.','teams',true,
     'Meeting notes and transcripts from Teams. Read-only.','teams',true],`${tag}: Teams chats and Teams meetings share one sign-in`);
    assert.equal(meet.logo,'brand/logos/teams.svg');
    assert.equal(tile('Customers','Salesforce').logo,'brand/logos/salesforce.svg',`${tag}: Salesforce shows its own logo`);

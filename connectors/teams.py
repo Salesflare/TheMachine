@@ -1,6 +1,7 @@
 """Microsoft Teams: chats (1:1, group and meeting chats), and with an admin's OK channel messages, meeting transcripts and
-Copilot's meeting notes. Read only: GET requests to Microsoft Graph through ms_graph.py, nothing is ever posted. Replies
-happen in Teams: each message carries its "Open in Teams" link (source_url).
+Copilot's meeting notes. Reads are GET requests to Microsoft Graph through ms_graph.py. Its one write is a reply the
+owner approved, in the 1:1, group or meeting chat its to-do came from (Sender, through teams_send.TeamsTransport);
+never a channel post. Each message also carries its "Open in Teams" link (source_url).
 
 The sign-in is the one the Machine has for that work address (like connectors/docs.py): Outlook's, when it is
 connected, else one of its own (`own_grant`), through the same Microsoft app and token broker. Delegated scopes only,
@@ -8,6 +9,8 @@ each asked in its own consent and never by Outlook:
 
 - Chat.Read: the owner's 1:1, group and meeting chats. No admin needed (unless the organization lets no app in
   without one).
+- ChatMessage.Send: a reply in one of those chats, only after the owner's Send. Asked with Chat.Read; no admin needed.
+  A connection from before it says "Reconnect to send replies" (state["missing"]["replies"]) and sends nothing.
 - Admin consent, an optional second step that never holds up the chats: Team.ReadBasic.All, Channel.ReadBasic.All and
   ChannelMessage.Read.All (channel messages of the teams the owner is in); OnlineMeetings.Read,
   OnlineMeetingTranscript.Read.All (a meeting's transcript) and OnlineMeetingAiInsight.Read.All (Copilot's notes and
@@ -46,13 +49,14 @@ KINDS = {'teams.message': 'Teams message', 'teams.notes': 'Teams notes', 'teams.
 VIEWS = {'teams.message': 'chat', 'teams.notes': 'card', 'teams.transcript': 'card'}
 APP = 'Teams'
 CHAT_SCOPE = 'Chat.Read'
+SEND_SCOPE = 'ChatMessage.Send'  # a chat reply after the owner's Send (Sender)
 CHANNEL_SCOPES = ('Team.ReadBasic.All', 'Channel.ReadBasic.All', 'ChannelMessage.Read.All')
 MEETING_SCOPE, TRANSCRIPT_SCOPE, INSIGHT_SCOPE = 'OnlineMeetings.Read', 'OnlineMeetingTranscript.Read.All', 'OnlineMeetingAiInsight.Read.All'
 ADMIN_SCOPES = CHANNEL_SCOPES + (MEETING_SCOPE, TRANSCRIPT_SCOPE, INSIGHT_SCOPE)
 SETUP = {
     'label': 'Microsoft Teams',
     'account': {'id': 'teams', 'service': 'teams', 'transport': 'broker', 'boundary': 'work', 'poll_seconds': 300},
-    'what': 'Chats, meeting chats and meeting notes from Teams. Reads only.',
+    'what': 'Chats, meeting chats and meeting notes. Replies only after you press Send.',
     'note': 'Signs in with Microsoft for your work address. Channels and meeting transcripts need your admin’s OK.',
     'ask': [('email', 'Your Microsoft work address')],
     # a hosted Machine: its account page's Teams part signs in (Connect Microsoft Teams), and + Add starts the same
@@ -78,8 +82,9 @@ TRANSCRIPT_CHARS = 400_000
 MEETING_EVENTS = ('#microsoft.graph.callEndedEventMessageDetail', '#microsoft.graph.callTranscriptEventMessageDetail',
                   '#microsoft.graph.callRecordingEventMessageDetail')
 # What the card says is missing (state["missing"]), by part: 'admin' (the admin's OK isn't there), 'blocked' (the
-# organization turned Graph access off), 'license' (Copilot's notes need a Microsoft 365 Copilot license)
-PARTS = ('channels', 'transcripts', 'notes')
+# organization turned Graph access off), 'license' (Copilot's notes need a Microsoft 365 Copilot license), 'reconnect'
+# (replies: connected before Teams asked for ChatMessage.Send; Reconnect adds it)
+PARTS = ('channels', 'transcripts', 'notes', 'replies')
 
 
 def stamp(value):
@@ -195,18 +200,23 @@ class Source:
         try:
             return self.api.call(self.config, self.helpers.credential, self.signin, method, params, raw=raw)
         except self.api.GraphError as error:
-            if error.category == 'microsoft_scope_not_granted':
-                raise self.helpers.SourceError('teams_not_granted', 403) from None
-            if 'signin_expired' in error.category or 'signin_pending' in error.category:
-                raise self.helpers.SourceError('teams_signin_expired', error.status, retry_after=error.retry_after) from None
-            if error.category in ('microsoft_broker_not_configured', 'microsoft_signin_unreadable') or \
-                    (error.category == 'microsoft_broker' and error.status == 404):
-                raise self.helpers.SourceError('teams_not_connected') from None
-            if error.category in ('timeout', 'microsoft_broker_unreachable', 'microsoft_signin_unreachable'):
-                raise self.helpers.SourceError('teams_network') from None
-            if error.category in ('unexpected_graph_link', 'repeated_graph_page', 'invalid_json', 'response_too_large'):
-                raise self.helpers.SourceError('teams_invalid_page') from None
-            raise self.helpers.SourceError('teams_http', error.status, retry_after=error.retry_after) from None
+            raise self.mapped(error) from None
+
+    def mapped(self, error):
+        """A Graph error as the connection's SourceError: the sign-in, the network, a page, or Graph's HTTP answer."""
+        SourceError = self.helpers.SourceError
+        if error.category == 'microsoft_scope_not_granted':
+            return SourceError('teams_not_granted', 403)
+        if 'signin_expired' in error.category or 'signin_pending' in error.category:
+            return SourceError('teams_signin_expired', error.status, retry_after=error.retry_after)
+        if error.category in ('microsoft_broker_not_configured', 'microsoft_signin_unreadable') or \
+                (error.category == 'microsoft_broker' and error.status == 404):
+            return SourceError('teams_not_connected')
+        if error.category in ('timeout', 'microsoft_broker_unreachable', 'microsoft_signin_unreachable'):
+            return SourceError('teams_network')
+        if error.category in ('unexpected_graph_link', 'repeated_graph_page', 'invalid_json', 'response_too_large'):
+            return SourceError('teams_invalid_page')
+        return SourceError('teams_http', error.status, retry_after=error.retry_after)
 
     def pages(self, method, params, most):
         """Up to `most` pages of a list: (items, whether more were left)."""
@@ -545,9 +555,12 @@ def meeting_events(source, account, item, granted, missing):
 
 # ------------------------------------------------------------------------------------------------ sync
 
-def missing_by_scope(granted, missing):
-    """The parts the admin's OK would add, kept with what Microsoft refused (license, blocked)."""
-    out = {k: v for k, v in missing.items() if k in PARTS and v != 'admin'}
+def missing_by_scope(granted, missing, shared=False):
+    """The parts the admin's OK would add, kept with what Microsoft refused (license, blocked), and replies when the
+    owner's own sign-in can't send (a Reconnect adds it; a Fleet-shared one never sends)."""
+    out = {k: v for k, v in missing.items() if k in PARTS and v not in ('admin', 'reconnect')}
+    if SEND_SCOPE not in granted and not shared:
+        out['replies'] = 'reconnect'
     if not set(CHANNEL_SCOPES) <= granted:
         out['channels'] = 'admin'
     if not {MEETING_SCOPE, TRANSCRIPT_SCOPE} <= granted:
@@ -575,7 +588,7 @@ def _sync(store, config, account, helpers):
     first = not state.get('since')
     floor = (stamp(state['since']) - OVERLAP) if state.get('since') else now - dt.timedelta(days=days)
     cursors = dict(state.get('cursors') or {})
-    missing = missing_by_scope(granted, dict(state.get('missing') or {}))
+    missing = missing_by_scope(granted, dict(state.get('missing') or {}), bool(account.get('shared')))
     meetings = list(state.get('meetings') or [])
     count = 0
     if 'queue' not in state:
@@ -674,6 +687,65 @@ def check(config, account, helpers):
     source.whoami()
     next(source.pages('teams.chats', {'$top': 1}, 1))
     return None
+
+
+# ------------------------------------------------------------------------------------------------ replies
+
+LINK = re.compile(r'\[([^\]\n]+)\]\((https://[^)\s]+)\)')
+
+
+def reply_html(text):
+    """A plain draft as the HTML Teams shows: escaped, its line breaks kept, [text](https://url) as a link."""
+    import html
+    return LINK.sub(lambda m: f'<a href="{m[2]}">{m[1]}</a>', html.escape(text)).replace('\n', '<br>')
+
+
+def said(text):
+    """What a reply reads as, to find it in the chat again: its words, links as their text, spaces folded."""
+    return ' '.join(LINK.sub(r'\1', str(text or '')).split())
+
+
+class Sender:
+    """Posts one reply the owner approved in a Teams chat (1:1, group or meeting) as the owner, through ms_graph's one
+    Teams write (teams.chat.send, ChatMessage.Send). Never a channel post. Graph has no idempotency key: a reply whose
+    outcome was unclear is looked for in the chat afterwards (find), never posted again."""
+
+    def __init__(self, config, account, helpers):
+        if account.get('shared'):
+            raise helpers.SourceError('teams_send_shared')  # a sign-in a Fleet shares only reads
+        self.source = Source(config, account, helpers)
+        self.api, self.config, self.helpers = self.source.api, config, helpers
+
+    def ready(self, chat_id):
+        """Reads only, before the send: the sign-in may send, is the owner's own, and the chat is one they are in."""
+        if SEND_SCOPE not in self.source.granted():
+            raise self.helpers.SourceError('teams_send_not_granted', 403)
+        self.source.whoami()
+        chat = self.source.call('teams.chat', {'chat': chat_id})
+        if not isinstance(chat, dict) or str(chat.get('id') or '') != str(chat_id):
+            raise self.helpers.SourceError('teams_invalid_page')
+        return chat
+
+    def post(self, chat_id, text):
+        """Graph's new message. The token comes first: a SourceError then means nothing went out. A GraphError from the
+        post itself is left to the caller, which tells a refusal (nothing posted) from an unclear outcome."""
+        try:
+            self.api.token(self.config, self.helpers.credential, self.source.signin, SEND_SCOPE)
+        except self.api.GraphError as error:
+            raise self.source.mapped(error) from None
+        return self.api.call(self.config, self.helpers.credential, self.source.signin, 'teams.chat.send', {'chat': chat_id},
+                             body={'body': {'contentType': 'html', 'content': reply_html(text)}}, write=True)
+
+    def find(self, chat_id, text, since):
+        """The owner's own messages in this chat since `since` that read as this reply: their ids."""
+        me, want, found = self.source.whoami(), said(text), []
+        params = {'chat': chat_id, '$top': 50, '$orderby': 'lastModifiedDateTime desc', '$filter': f'lastModifiedDateTime gt {zulu(since)}'}
+        for items in self.source.pages('teams.chat.messages', params, 2):
+            for raw in items:
+                who = sender(raw)
+                if who and who[0] == me and not raw.get('deletedDateTime') and raw.get('id') and said(html_text(raw.get('body'))) == want:
+                    found.append(str(raw['id']))
+        return found
 
 
 # ------------------------------------------------------------------------------------------------ history

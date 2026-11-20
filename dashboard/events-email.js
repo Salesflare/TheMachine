@@ -16,7 +16,7 @@ const svcOf=id=>(state?.connectors||[]).find(c=>c.id===id)?.service||'';
 const VIA_NAME={gmail:'Gmail',mail:'Email',slack:'Slack',whatsapp:'WhatsApp',telegram:'Telegram',signal:'Signal',linkedin:'LinkedIn',x:'X',intercom:'Intercom',gdocs:'Google Docs',file:'Doc',gcal:'Google Calendar',cal:'Calendar',handoff:'Hand off',browser:'Browser',github:'GitHub'};
 // On a button that already says what it does, the logo is only a picture (hidden from screen readers).
 const viaIco=(k,quiet)=>k?quiet?html`<i class="via-ico via-${k}" aria-hidden="true"></i>`:html`<i class="via-ico via-${k}" role="img" aria-label="${t(VIA_NAME[k]||service(k)||'The source')}" title="${t(VIA_NAME[k]||service(k)||'The source')}"></i>`:'';
-const STEP_VIA={slack:'slack',whatsapp:'whatsapp',telegram:'telegram',signal:'signal',linkedin:'linkedin',x:'x',intercom:'intercom',linear:'linear',handoff:'handoff',finish:'browser'};
+const STEP_VIA={finish:'browser'};for(const k of ['slack','whatsapp','telegram','signal','linkedin','x','intercom','teams','linear','handoff'])STEP_VIA[k]=k;
 // A final step on GitHub that runs with gh or a GitHub MCP server (github_route.py) shows GitHub's logo, else the browser.
 // Mail and calendar steps by their account: Gmail or Outlook, Google or Outlook Calendar, else the plain line icon
 const mailVia=svc=>['gmail','outlook'].includes(svc)?svc:'mail',calVia=svc=>svc==='calendar'?'gcal':svc==='outlook_calendar'?svc:'cal';

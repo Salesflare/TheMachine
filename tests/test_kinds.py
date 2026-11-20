@@ -195,13 +195,13 @@ class Registry(unittest.TestCase):
                     self.assertEqual(row['send'], follow_ups.CHANNEL_KINDS[kind], 'send: follow_ups.CHANNEL_KINDS')
         # A reply goes out on these too, though a follow-up doesn't switch to them (follow_ups.CHANNELS)
         self.assertEqual({k for k, row in kinds.KINDS.items() if row['send'] and k not in follow_ups.CHANNEL_KINDS},
-                         {'x.dm', 'x.mention', 'docs.comment', 'docs.mention', 'docs.suggestion', 'notion.comment', 'notion.mention'})
+                         {'x.dm', 'x.mention', 'teams.message', 'docs.comment', 'docs.mention', 'docs.suggestion', 'notion.comment', 'notion.mention'})
         self.assertEqual(tuple(kinds.SENDS), __import__('activity').SEND_KINDS)
         self.assertEqual({k: s['name'] for k, s in kinds.SENDS.items()},
                          {k: v for k, v in __import__('activity_log').MESSAGE_KINDS.items() if k in kinds.SENDS})
         self.assertEqual(tuple(k for k, s in kinds.SENDS.items() if s['text_only']), next_actions.TEXT_KINDS)
         # The send lists that ask the registry now hold what they spelled out before it (PR 2 moved them)
-        every = ('email', 'linkedin', 'slack', 'x', 'whatsapp', 'telegram', 'signal', 'intercom', 'doc_reply')
+        every = ('email', 'linkedin', 'slack', 'x', 'whatsapp', 'telegram', 'signal', 'intercom', 'teams', 'doc_reply')
         self.assertEqual(kinds.SEND, every)
         self.assertEqual(kinds.TEXT_ONLY, every[1:])
         self.assertEqual(kinds.TO_PERSON, every[:-1])
@@ -228,7 +228,7 @@ class Registry(unittest.TestCase):
             'signal.message': 'Signal', 'x.dm': 'X', 'x.mention': 'X', 'intercom.conversation': 'Intercom', 'github.notification': 'GitHub'})
         self.assertEqual(__import__('activity_log').MESSAGE_KINDS, {
             'email': 'Email', 'email_demo': 'Email', 'linkedin': 'LinkedIn', 'slack': 'Slack', 'x': 'X', 'whatsapp': 'WhatsApp',
-            'telegram': 'Telegram', 'signal': 'Signal', 'intercom': 'Intercom', 'doc_reply': 'Docs'})
+            'telegram': 'Telegram', 'signal': 'Signal', 'intercom': 'Intercom', 'teams': 'Teams', 'doc_reply': 'Docs'})
         # The timeline groups that ask the registry now hold what they spelled out before it (PR 4 moved them)
         meetings = {'calendar.event', 'salesflare.meeting', 'zoom.summary', 'meeting.notes', 'meeting.transcript'}
         chats = {'whatsapp.message', 'slack.message', 'teams.message', 'linkedin.message', 'x.dm', 'x.mention', 'telegram.message', 'signal.message'}

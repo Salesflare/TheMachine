@@ -106,7 +106,7 @@ Reply to a post from this task's x.mention evidence with `{kind:x,label:Reply on
 
 ### WhatsApp or Telegram message
 
-`{kind:whatsapp,label:Send reply,account_id:<WhatsApp account>,chat_id:<task's metadata.chat_id>,body}`; Telegram: kind:telegram. If the owner talks to them there, switch: to_name:<name> instead of chat_id finds their chat. Short plain text in that channel's voice. Existing chats only; never send_now. A Machine limit is never a question: with no chat, body:<the text>, needs:<what they can do>. Intercom: reply there `{kind:intercom,account_id,conversation_id,body}`; email only if asked (by_email:true) or refused.
+`{kind:whatsapp,label:Send reply,account_id:<WhatsApp account>,chat_id:<task's metadata.chat_id>,body}`; Telegram: kind:telegram; Teams chat (no channel): kind:teams. If the owner talks to them there, switch: to_name:<name> instead of chat_id finds their chat. Short plain text in that channel's voice. Existing chats only; never send_now. A Machine limit is never a question: with no chat, body:<the text>, needs:<what they can do>. Intercom: reply there `{kind:intercom,account_id,conversation_id,body}`; email only if asked (by_email:true) or refused.
 
 ### Slack message, and handing a task to someone
 
@@ -137,9 +137,9 @@ When a prepared-ahead task ends in a click that commits something (submitting a 
 - `instructions`: the exact step with every value it needs (where to go, what to fill in or pick, which button), so the confirmed run can redo it from the start when the tab or session has expired.
 - `preview`: what goes out, as the owner should check it: amounts, dates, names, the text, the account it comes from.
 - `url`: the page where it happens, when there is one.
-- When the step posts a message (a reply in a support inbox such as Intercom, a chat or DM in a web app: Teams, Messenger, Telegram, a help desk…), also `message`: its exact text, and `to_name`: who gets it. Type it into the page as the draft, but don't submit. The card shows this text like an email draft and the owner can edit it; Confirm then types exactly the confirmed text, replacing what was typed before.
+- When the step posts a message (a reply in a support inbox, a chat or DM in a web app, a help desk…), also `message`: its exact text, and `to_name`: who gets it. Type it into the page as the draft, but don't submit. The card shows this text like an email draft and the owner can edit it; Confirm then types exactly the confirmed text, replacing what was typed before.
 
-The owner reviews the preview and taps Confirm; that runs a Do it turn for only this step, which stops with a blocker if anything differs from the preview. Text the owner edited wins over the instructions and anything typed on the page earlier. `finish_state:completed` closes the card once no other step (a draft, Confirm) waits. Messages keep their own send actions (email, LinkedIn, Slack, X, WhatsApp) and fixes to The Machine `kind:merge`.
+The owner reviews the preview and taps Confirm; that runs a Do it turn for only this step, which stops with a blocker if anything differs from the preview. Text the owner edited wins over the instructions and anything typed on the page earlier. `finish_state:completed` closes the card once no other step (a draft, Confirm) waits. Messages keep their own send actions (email, LinkedIn, Slack, X, WhatsApp, Teams) and fixes to The Machine `kind:merge`.
 
 Retries keep this exact confirmed step and preview. Read preparation_history and check earlier results before repeating any write. Save `finish_state:completed` only with a verified receipt or changed state; `finish_state:not_performed` only after positively confirming nothing was submitted; otherwise `finish_state:uncertain`. An uncertain attempt resumes with source reconciliation first, never a blind new submission. If sign-in is needed, retain the same finish action: after sign-in Confirm resumes it, without creating another action.
 

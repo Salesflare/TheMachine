@@ -33,6 +33,7 @@ from machine import action_basis, todo_kinds
 from models import model_ready
 import next_actions
 from machine.store import outcomes
+from machine.store.core import checkpoint as core_checkpoint
 import own_addresses
 import recurring
 import routine_changes
@@ -227,6 +228,12 @@ class CardActionsApp:
                                                           'contact':str(m.get('contact_email') or '').lower()} for r in db.execute(
                 "SELECT e.account_id,e.metadata,e.kind FROM events e JOIN json_each(?) ids ON ids.value=e.id WHERE e.kind IN ('intercom.conversation','fleet.intercom') ORDER BY e.kind='intercom.conversation',e.occurred_at",(row['event_ids'],))
                 for m in (json.loads(r[1]),) if m.get('conversation_id')}
+            # The task's Teams chats (1:1, group, meeting; never a channel thread), and whether each connection can send
+            # yet: one from before ChatMessage.Send says replies need a Reconnect (connectors/teams.py missing_by_scope)
+            teams_chats={m['chat_id']:{'account_id':r[0],'name':m.get('chat_name') or 'Teams chat',
+                                       'can_send':((core_checkpoint(db,r[0]) or {}).get('missing') or {}).get('replies')!='reconnect'} for r in db.execute(
+                "SELECT e.account_id,e.metadata FROM events e JOIN json_each(?) ids ON ids.value=e.id WHERE e.kind='teams.message' ORDER BY e.occurred_at",(row['event_ids'],))
+                for m in (json.loads(r[1]),) if m.get('chat_id') and m.get('chat_kind')!='channel'}
             docs=doc_comments(self.config,db,row['event_ids'])
             # The owner talks to this person on WhatsApp although the task came in another way: their existing chat.
             whatsapp_chats.update(owner_whatsapp_chats(self.config,db,args.get('next_actions',args.get('next_action')),whatsapp_chats))
@@ -242,7 +249,7 @@ class CardActionsApp:
         # A Linear change: the to-do's own issues, and the team's states, people or teams read now (linear_writes.py)
         linear_context=linear_writes.context(self.config,load_connector('linear'),CONNECTOR_HELPERS,linear_issues,args.get('next_actions',args.get('next_action')),
                                              doc_writes.area(self.config,json.loads(row['account_ids'] or '[]')))
-        action=next_actions.validate(args.get('next_actions',args.get('next_action')),self.config,json.loads(row['account_ids']),options,threads,x_threads,whatsapp_chats,intercom_conversations,calendar_events,docs,senders,replied_to(emails),telegram_chats,doc_context,spots,signal_chats,linear_context)
+        action=next_actions.validate(args.get('next_actions',args.get('next_action')),self.config,json.loads(row['account_ids']),options,threads,x_threads,whatsapp_chats,intercom_conversations,calendar_events,docs,senders,replied_to(emails),telegram_chats,doc_context,spots,signal_chats,linear_context,teams_chats)
         for item in next_actions.actions(action):
             if item['kind']=='handoff' and not (getattr(self,'fleet',None) and self.fleet.teammate(item)):
                 raise OwnerError('Hand off through The Machine only to a teammate in a Work Fleet (their email as listed); use a Slack message or email for anyone else')
