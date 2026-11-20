@@ -1,84 +1,84 @@
 ---
 title: Conexões
 area: connections
-summary: Veja todas as suas fontes em um só lugar: confira como estão, adicione uma nova ou desconecte uma.
+summary: Suas fontes em um só lugar: veja como cada uma está, adicione uma nova ou desconecte uma.
 covers: tab:health, saved-signins
 code: dashboard.html, onboarding.py
 order: 1
-translated: 809547189ccfa026
+translated: 38d682b69cab758d
 ---
 ## Como estão
 
-A guia **Conexões** lista suas fontes por tipo, com **Logins** e **Verificações** abaixo de uma linha divisória. No celular, toque em um tipo para abri-lo e em **Conexões** para voltar. O tipo com uma fonte que precisa de você aparece primeiro. Cada fonte aparece em uma linha: mostra como está (Conectada, Aguardando a primeira sincronização, Reconectando automaticamente ou Precisa da sua ajuda) e o que chegou recentemente. Toque nela para abrir o cartão e ver **Detalhes**.
+A guia **Conexões** lista suas fontes por categoria, com **Logins** e **Verificações** abaixo de uma linha. No celular, toque em uma categoria para abri-la e em **Conexões** para voltar. A categoria com uma fonte que precisa de você aparece primeiro. Cada fonte aparece em uma linha: com o status (Conectada, Aguardando a primeira sincronização, Reconectando automaticamente ou Precisa da sua ajuda) e o que recebeu recentemente. Toque na fonte para ver o cartão e **Detalhes**.
 
-Uma falha de sincronização compensada por uma sincronização posterior aparece em cinza. Só uma falha que ainda seja a mais recente aparece como problema, junto com a data da próxima tentativa.
+Uma sincronização com falha que foi compensada por uma sincronização posterior aparece em cinza. Só uma falha que continua sendo a mais recente aparece como problema, com a data da próxima tentativa.
 
-As contagens mostram tudo o que a fonte trouxe, inclusive o que está no [histórico](history.md), o que chegou nas últimas 24 horas e o que ainda não foi verificado. Para um calendário, a contagem mostra os eventos.
+Os números mostram tudo o que a fonte trouxe, inclusive o [histórico](history.md), o que chegou nas últimas 24 horas e o que ainda não foi verificado. No caso de um calendário, os números mostram os eventos.
 
-Cada fonte tem o nome da conta, como o serviço a identifica: seu endereço, um perfil do X, um espaço de trabalho do Slack ou de quem é a conta do Signal ou do Telegram. Abaixo do nome aparece primeiro **Trabalho** ou **Pessoal**, além do endereço ou nome de usuário quando isso não fica claro pelo nome. Se duas fontes do mesmo tipo tiverem o mesmo nome, elas também mostram o que as diferencia, como Slack ou X, ou o endereço do espaço de trabalho.
+Cada fonte recebe o nome da conta, como o serviço a identifica: seu endereço, um perfil no X, um espaço de trabalho no Slack ou a pessoa responsável pela conta no Signal ou no Telegram. Abaixo do nome, aparece primeiro **Trabalho** ou **Pessoal**, além do endereço ou nome de usuário quando o nome não deixa isso claro. Se duas fontes da mesma categoria tiverem o mesmo nome, também aparece a informação que as diferencia, como Slack ou X, ou o endereço do espaço de trabalho.
 
-Cada fonte também explica em uma linha o que traz e, se puder realizar ações, informa que só faz isso depois que você toca em **Enviar** ou aprova a ação.
+Cada fonte também explica em uma linha o que traz e, se puder realizar ações, informa que só age depois que você pressiona **Enviar** ou aprova a ação.
 
 ## Adicionar uma fonte
 
-Abra um tipo (**E-mail**, **Calendário**, **Chat**, **Reuniões**, **Documentos e arquivos**, **Clientes**, **Projetos e código**, **Outras**) e escolha uma fonte em **Adicionar outro**, ou abaixo da lista quando ainda não houver nenhuma conectada. As opções genéricas aparecem no fim: **Outro e-mail** em E-mail, e **Link de calendário (ICS)** e **Outro calendário** em Calendário. O Exchange Server lê reuniões, por isso fica em Calendário.
+Abra uma categoria (**E-mail**, **Calendário**, **Chat**, **Reuniões**, **Documentos e arquivos**, **Clientes**, **Projetos e código**, **Outras**) e escolha uma fonte em **Adicionar outro** ou abaixo da lista, se ainda não houver nenhuma conectada. As opções gerais aparecem no fim: **Outro e-mail** em E-mail, e **Link de calendário (ICS)** e **Outro calendário** em Calendário. O Exchange Server lê reuniões, por isso fica em Calendário.
 
-**Sugerido para você** aparece no topo de **Conexões** quando sua Machine identifica um motivo para adicionar uma fonte. O motivo é explicado em uma linha: e-mails do Stripe, reuniões do Zoom na sua agenda, mensagens com links para Google Docs ou uma configuração que não foi concluída. A fonte também continua no próprio grupo, marcada como **Sugerido**. Essa contagem é feita na sua Machine, nada sai dela. Uma fonte conectada nunca aparece como sugestão.
+**Sugerido para você** aparece no topo de **Conexões** quando sua Machine identifica um motivo para adicionar uma fonte. O motivo é explicado em uma linha: e-mails do Stripe, reuniões do Zoom no seu calendário, mensagens com links para Google Docs ou uma configuração que não foi concluída. A fonte também continua no grupo correspondente, marcada como **Sugerido**. Essas informações são calculadas na sua Machine, nada sai dela. Uma fonte conectada nunca é sugerida.
 
-O Microsoft Teams aparece duas vezes: em **Chat**, para as conversas, e em **Reuniões**, como **Reuniões do Teams**, para as anotações das reuniões. As duas opções usam o mesmo login da Microsoft, então conectar uma também conecta a outra.
+O Microsoft Teams aparece em dois lugares: em **Chat**, para as conversas, e em **Reuniões** como **Reuniões do Teams**, para as anotações das reuniões. Os dois usam o mesmo login da Microsoft, então, ao conectar um, você conecta o outro também.
 
-Se você já conectou uma fonte, ela aparece na lista com a conta correspondente. Selecione-a para adicionar outra ao lado. O formulário informa isso e inclui um link para a fonte já conectada.
+Se uma fonte já estiver conectada, isso aparece na lista junto com a conta. Selecione-a para adicionar outra ao lado: o formulário informa isso e mostra um link para a fonte que você já tem.
 
-Preencha as informações necessárias, como uma chave ou um endereço, escolha **Trabalho** com o nome da empresa ou **Pessoal** e toque em **Conectar**. Para e-mails e calendários, essa escolha só é solicitada quando o endereço não deixa isso claro. Um site como LinkedIn ou X abre a página de login no navegador da sua Machine e continua automaticamente quando você entra. GitHub, WhatsApp e Codex mostram um código para inserir. Para conversas do Telegram e do Signal, aparece um código QR para escanear.
+Preencha as informações necessárias, como uma chave ou um endereço, selecione **Trabalho** com o nome da empresa ou **Pessoal** e pressione **Conectar**. Nos serviços como LinkedIn ou X, a página de login abre no navegador da sua Machine e o processo continua automaticamente depois que você entra. GitHub, WhatsApp e Codex mostram um código para você inserir. Para conversas do Telegram e do Signal, aparece um QR code para escanear.
 
-Toque em **Cancelar** para interromper a conexão. Saiu antes de terminar? Abra **Conexões** novamente, em qualquer dispositivo, e continue de onde parou. Depois de conectar, sua Machine começa a ler a fonte na hora e mostra o andamento da primeira sincronização.
+**Cancelar** interrompe a adição. Saiu antes de terminar? Abra **Conexões** novamente, em qualquer dispositivo, para continuar de onde parou. Depois de conectada, sua Machine começa a ler a fonte na hora e mostra como está indo a primeira sincronização.
 
-Em uma Machine hospedada, as fontes com login próprio permitem que você entre diretamente aqui: Google, Microsoft (Outlook, OneDrive e Teams), Google Meet, Google Docs, Slack, Zoom, Stripe, Intercom, Salesforce e Trello.
+Em uma Machine hospedada, você faz login aqui mesmo nas fontes que têm login próprio: Google, Microsoft (Outlook, OneDrive e Teams), Google Meet, Google Docs, Slack, Zoom, Stripe, Intercom, Salesforce e Trello.
 
-Escolha **Trabalho** ou **Pessoal** e toque no botão de login, como **Fazer login com Google**. Você volta a este formulário, que mostra o resultado. GitHub, WhatsApp, Codex, conversas do Telegram e seu celular Android também mostram o código aqui.
+Selecione **Trabalho** ou **Pessoal** e pressione o botão de login, como **Entrar com Google**. Você volta a este formulário, que mostra o resultado. GitHub, WhatsApp, Codex, conversas do Telegram e seu celular Android também mostram o código aqui.
 
-No seu próprio computador, você entra nessas mesmas fontes depois de parear sua Machine com sua conta. Na primeira vez, toque em **Parear esta Machine**. Algumas fontes também oferecem outra forma de conexão, como usar seu próprio app ou uma chave.
+No seu próprio computador, essas mesmas fontes permitem fazer login depois que sua Machine é pareada com sua conta. Na primeira vez, pressione **Parear esta Machine**. Algumas fontes também oferecem outro método, como seu próprio app ou uma chave.
 
-Toque em **Reconectar** em uma fonte ou em **Precisa de você** para abrir o mesmo formulário. No seu próprio computador, `assistant connect` faz o mesmo em um terminal.
+**Reconectar**, na fonte ou em **Precisa de você**, abre o mesmo formulário. No seu próprio computador, `assistant connect` faz o mesmo no terminal.
 
 ## Trabalho ou pessoal
 
-Cada fonte é classificada como de trabalho, para uma empresa que você informa, ou pessoal. Altere essa classificação em **Detalhes**. **Adivinhado** significa que sua Machine identificou a categoria pelo endereço. As tarefas de trabalho aguardam seus dias úteis.
+Cada fonte é classificada como de trabalho, para uma empresa que você informa, ou pessoal. Você pode mudar essa classificação em **Detalhes**. **Inferido** significa que sua Machine identificou a categoria pelo endereço. Tarefas de trabalho ficam aguardando seus dias de trabalho.
 
-Para e-mails e calendários do Google e da Microsoft, a categoria é definida pelo endereço quando isso fica claro: um provedor de e-mail como Gmail ou Outlook.com indica uma conta pessoal; o domínio da sua equipe indica uma conta de trabalho. Caso contrário, a pergunta aparece uma vez, logo depois que você entra. **Mudar** permite escolher a categoria. Se mais tarde os e-mails indicarem a outra categoria, a tarefa **Aproveite mais a The Machine** perguntará uma vez se você quer alterá-la.
+Os e-mails e calendários do Google e da Microsoft usam o endereço para definir a categoria quando isso está claro: um provedor de e-mail como Gmail ou Outlook.com indica **Pessoal**; o domínio da sua equipe indica **Trabalho**. Se não estiver claro, a Machine pergunta uma vez, logo depois que você faz login. **Mudar** permite definir a categoria. Se os e-mails indicarem depois que a categoria é outra, a tarefa **Aproveite mais a The Machine** pergunta uma vez se você quer mudar.
 
 ## Recursos
 
-Uma fonte pode trazer sinais, que viram tarefas, realizar ações para suas tarefas, como ler um documento, enviar, responder ou alterar algo depois da sua aprovação, ou fazer as duas coisas. Se fizer as duas coisas, **Detalhes** terá uma opção para cada recurso: **Traz sinais** e **Pode fazer coisas**. Um deles precisa continuar ativado. Para desativar os dois, desconecte a fonte. Uma conversa só tem a opção **Pode fazer coisas**.
+Uma fonte pode trazer sinais, que viram tarefas, realizar ações para suas tarefas, como ler um documento ou enviar, responder ou alterar algo depois que você aprovar, ou fazer as duas coisas. Quando faz as duas coisas, **Detalhes** tem um controle para cada opção: **Traz sinais** e **Pode fazer coisas**. Uma delas precisa ficar ativada. Para desativar as duas, desconecte a fonte. No caso de um chat, só existe **Pode fazer coisas**.
 
-Com **Traz sinais** desativado, a fonte não sincroniza. Com **Pode fazer coisas** desativado, sua Machine nunca lê, cria rascunhos nem altera nada usando essa fonte.
+Com **Traz sinais** desativado, a fonte não sincroniza. Com **Pode fazer coisas** desativado, sua Machine nunca lê, cria rascunhos ou altera nada nessa fonte.
 
 ## Remover uma fonte
 
-Abra a fonte, toque em **Detalhes** e depois em **Desconectar**. Ela para de ser lida, mas o que já trouxe continua disponível. Em uma Machine hospedada, as fontes cujo login é gerenciado pela página de configuração mostram **Desconectar ↗**. Essa opção abre a página de configuração. Isso se aplica ao Google, Microsoft, Google Meet, Slack, Zoom, Stripe e Salesforce.
+Abra a fonte, selecione **Detalhes** e depois **Desconectar**. Ela para de ler os dados. O que já trouxe continua disponível. Em uma Machine hospedada, as fontes cujo login é gerenciado pela página de configuração (Google, Microsoft, Google Meet, Slack, Zoom, Stripe e Salesforce) mostram **Desconectar ↗**, que abre essa página.
 
-**Desconectado recentemente** lista as contas do Google, Microsoft, Zoom, Slack, Stripe e Salesforce que você removeu nos últimos 30 dias, com a data da remoção. Até o serviço confirmar, aparece como Pendente e a tentativa continua. Uma conta do Google aparece uma só vez, mesmo quando o Google Meet ou o Google Docs tinham um login próprio. Cada conta aparece no tipo correspondente: uma conta do Google ou Microsoft em **E-mail**, e uma conta do Slack em **Chat**.
+**Desconectado recentemente** lista as contas do Google, Microsoft, Zoom, Slack, Stripe e Salesforce que você removeu nos últimos 30 dias, além da data. Até o serviço confirmar a remoção, o status aparece como Pendente e a Machine continua tentando. Uma conta do Google aparece uma só vez, inclusive quando o Google Meet ou o Docs tinha um login próprio. Cada conta aparece na categoria correspondente: contas do Google ou da Microsoft em **E-mail**, e contas do Slack em **Chat**.
 
 ## Logins salvos
 
-Para sites como LinkedIn ou X, marque **Salvar para a próxima vez** ao entrar. Depois, a guia **Logins** mostra os sites salvos. Se um site encerrar a sessão da sua Machine, ela poderá entrar novamente com um toque. As senhas ficam criptografadas na sua Machine. Toque em **Esquecer** para remover um login.
+Em sites como LinkedIn ou X, marque **Salvar para a próxima vez** ao fazer login. Depois, **Logins** lista essas contas. Quando um site desconectar sua Machine, ela entra de novo com um toque. As senhas ficam criptografadas na sua Machine. **Esquecer** remove um login.
 
-Um site pode ter várias contas, como **Trabalho** e **Pessoal**. **Salvar como** começa com a categoria da própria tarefa. Em **Outro nome…**, você pode informar um nome. A tarefa usa a conta adequada. Quando não fica claro qual conta usar, uma caixa de diálogo pergunta uma vez e guarda a escolha para aquela tarefa.
+Um site pode ter várias contas, como **Trabalho** e **Pessoal**. **Salvar como** começa com a categoria da própria tarefa, e **Outro nome…** permite dar um nome à conta. A tarefa usa o login da conta correspondente. Se não estiver claro qual é a conta certa, a janela pergunta uma vez e memoriza sua escolha para aquela tarefa.
 
-**Logins** mostra cada site uma vez, com as contas abaixo: o nome de usuário e um menu com a categoria da conta. Você pode alterar a categoria pelo menu quando quiser. Os logins salvos antes da criação das contas mostram **Trabalho ou pessoal?** até você escolher uma opção. Se você alterar a categoria, uma tarefa que usava esse login fará uma nova seleção.
+**Logins** lista cada site uma vez, com as contas abaixo: o nome de usuário e um menu com a categoria de cada conta. Você pode mudar a categoria pelo menu quando quiser. Os logins salvos antes da criação das categorias mostram **Trabalho ou pessoal?** até você escolher uma. Se você mudar a categoria de um login usado por uma tarefa, a tarefa pergunta de novo qual conta usar.
 
 **Importar** adiciona logins de um gerenciador de senhas. Escolha uma opção:
 
-- **LastPass**, **Bitwarden** ou **Gerenciador de senhas do Google**: a página de exportação do serviço abre no navegador da sua Machine. Entre na conta e exporte o arquivo. As instruções aparecem ao lado. Sua Machine encontra o arquivo, lê uma vez e o exclui.
-- **1Password**: exporte um CSV pelo app do 1Password em um computador e selecione o arquivo. Se a `op` do 1Password estiver conectada à sua Machine, ela lê os dados de lá. O mesmo vale para a `lpass` do LastPass.
-- **De um arquivo de exportação**: selecione um CSV do 1Password, LastPass, Bitwarden ou Chrome. Exclua o arquivo quando terminar.
+- **LastPass**, **Bitwarden** ou **Gerenciador de senhas do Google**: a página de exportação abre no navegador da sua Machine. Entre na conta; sua Machine continua até a exportação. Uma linha informa o que falta fazer, como digitar a senha mestra. No celular, a página aumenta o zoom até o campo de digitação. Se a página estiver diferente do esperado, aparecem as instruções para concluir manualmente. Sua Machine encontra o arquivo, lê uma vez e o exclui.
+- **1Password**: exporte um arquivo CSV pelo app do 1Password em um computador e selecione o arquivo. Se `op` do 1Password estiver conectado à sua Machine, os dados vêm de lá (o mesmo vale para `lpass` do LastPass).
+- **De um arquivo de exportação**: use um arquivo CSV do 1Password, LastPass, Bitwarden ou Chrome. Exclua o arquivo quando terminar.
 
-Depois, marque os logins que quer manter. Sua Machine nunca entra no gerenciador de senhas por você nem pede a senha mestra. Você mesmo digita a senha na página.
+Depois, marque quais logins quer manter. Sua Machine nunca entra no gerenciador de senhas por você, nunca digita nem lê a senha mestra e nunca mostra a página para a assistente: você mesma digita a senha na página.
 
-Um login salvo só pode ser usado no endereço web correspondente: no mesmo site, `https` e porta. Ele não será usado em um endereço parecido nem em outro subdomínio.
+Um login salvo só pode ser usado no próprio endereço da web: no mesmo site, com o mesmo `https` e a mesma porta. Ele não é usado em um endereço parecido nem em outro subdomínio.
 
 ## Verificações
 
-**Verificações** mostra como sua Machine lê o que chega: as verificações recentes e o que cada uma encontrou. Consulte [Nenhuma tarefa nova](reviews-paused.md).
+**Verificações** mostra como sua Machine lê o que chega: as verificações recentes e o que cada uma encontrou. Veja [Nenhuma tarefa nova](reviews-paused.md).
 
-Cada conexão tem seu próprio artigo nesta seção, com informações sobre o que ela lê e o que pode enviar.
+Cada conexão tem um artigo próprio nesta seção, com informações sobre o que ela lê e o que pode enviar.
