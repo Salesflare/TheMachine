@@ -5,8 +5,9 @@ the owner started on the dashboard waits there, and only for VERIFY_SECONDS afte
 link() reads the owner's own connected mailboxes (the reads they already have: Gmail, Outlook or IMAP through
 sources.gog_read, nothing new asked) for the newest mail since that click from the manager's own domain, with its
 subject, passing the mailbox's sender checks when the mailbox records them (Authentication-Results), and answers its
-https link on the manager's own hosts. Nothing of a mail is kept, logged or answered but that one link, and
-login_import opens it once per export, in the export's own browser. An export started anywhere else never gets here:
+https link on the manager's own hosts whose path is the manager's verify link (never judged by its words or query).
+Nothing of a mail is kept, logged or answered but that one link, and login_import opens it once per export, in the
+export's own browser. An export started anywhere else never gets here:
 without a running export and its click there is no `since`, so no mail is read and nothing is opened.
 """
 from __future__ import annotations
@@ -15,6 +16,7 @@ import base64
 import email.utils
 import html.parser
 import re
+import urllib.parse
 
 import login_export_guide
 import own_addresses
@@ -108,16 +110,13 @@ def pick(message, manager, since):
             reader.feed(part)
         except (ValueError, AssertionError):
             continue
-        links += [(href.strip(), ' '.join(''.join(words).split()).lower()) for href, words in reader.found]
+        links += [href.strip() for href, _ in reader.found]
     for part in text_parts:
-        links += [(href, '') for href in re.findall(r'https://[^\s<>"\')\]]+', part)]
-    good = [(href, words) for href, words in links if login_export_guide.allowed(manager, href)]
-    # the link whose words say so (Continue export), else one whose address does
-    for href, words in good:
-        if words and re.search(verify['link'], words):
-            return came, href
-    for href, _ in good:
-        if re.search(r'export|verif', href, re.I):
+        links += re.findall(r'https://[^\s<>"\')\]]+', part)
+    # only a link whose path is the manager's verify link (LastPass: /export-tokens/<token>/approve); its words and query
+    # never count (the mail's logo link carries "Verifyexport" in its query). None: the owner confirms by hand.
+    for href in links:
+        if login_export_guide.allowed(manager, href) and re.search(verify['path'], urllib.parse.urlsplit(href).path, re.I):
             return came, href
     return None
 

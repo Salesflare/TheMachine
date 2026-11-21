@@ -40,8 +40,8 @@ STARTED = 3  # seconds after the step that starts the export for the master pass
 # then by its exact words, lowercase), `arm` (the first step after which a password field is the master password asked
 # again rather than the sign-in) and `email` (words that say an email waits to be confirmed). A step with `starts` starts
 # the export (LastPass emails a link to confirm on each click): it is clicked once per export, once more only after the
-# guide opened that email's link (`verify`: its sender's domain, subject and the hosts its link may be on;
-# login_export_mail), and nothing up to it is clicked again while the owner's part waits.
+# guide opened that email's link (`verify`: its sender's domain, subject, the hosts its link may be on and the link's
+# path; login_export_mail), and nothing up to it is clicked again while the owner's part waits.
 _EXPORT = ['export', 'exporteren', 'exportieren', 'exporter', 'exportar', 'esporta']
 RECIPES = {
     'lastpass': {
@@ -67,7 +67,7 @@ RECIPES = {
         'email': r'check your (email|inbox)|verification email|(sent|emailed) you an? (email|link)|verify (this |your )?export|'
                  r'look for an email|finish the export',
         'verify': {'from': r'(^|\.)lastpass\.(com|eu)$', 'subject': r'verify export', 'hosts': r'^([a-z0-9-]+\.)*lastpass\.(com|eu)$',
-                   'link': r'continue export|export'},
+                   'path': r'^/export-tokens/[0-9a-f-]+/approve/?$'},
     },
     'bitwarden': {
         'signin': r'^https://vault\.bitwarden\.(com|eu)/#/(login|2fa|lock|sso|signup|hint|accept|finish|set-password|verify)',

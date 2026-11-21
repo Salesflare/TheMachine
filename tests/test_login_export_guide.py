@@ -462,16 +462,33 @@ class GuideTest(unittest.TestCase):
             time.sleep(0.5)
 
 
+APPROVE = '/export-tokens/00000000-0000-0000-0000-000000000000/approve'  # LastPass's verify link, a fake token
+UTM = '?utm_source=trans_email&utm_medium=LastPassSecurityNotification%3AVerifyexport'
+
+
 def fake_mail(sender='LastPass <no-reply@lastpass.com>', subject='LastPass Security Notification: Verify export',
-              came=None, href='https://lastpass.com/verify-export?k=fake', auth='mx.example.invalid; dkim=pass header.d=lastpass.com',
-              words='Continue export'):
+              came=None, href='https://lastpass.com' + APPROVE + '?k=fake', auth='mx.example.invalid; dkim=pass header.d=lastpass.com',
+              words='Continue export', parts=None):
     body = '<p>Someone asked to export.</p><a href="https://lastpass.com/help">Help</a> <a href="%s">%s</a>' % (href, words)
     headers = [{'name': 'From', 'value': sender}, {'name': 'Subject', 'value': subject}]
     if auth:
         headers.append({'name': 'Authentication-Results', 'value': auth})
     return {'internalDate': str(int((came if came is not None else time.time()) * 1000)),
             'payload': {'mimeType': 'multipart/alternative', 'headers': headers, 'parts': [
-                {'mimeType': 'text/html', 'body': {'data': base64.urlsafe_b64encode(body.encode()).decode().rstrip('=')}}]}}
+                {'mimeType': kind, 'body': {'data': base64.urlsafe_b64encode(text.encode()).decode().rstrip('=')}}
+                for kind, text in (parts or [('text/html', body)])]}}
+
+
+# The shape of LastPass's "Verify export" mail: its logo link carries "Verifyexport" in its query, before the real link
+LASTPASS_TEXT = ('( https://lastpass.com/%s )\nSomeone asked to export your vault.\nContinue export ( https://lastpass.com%s%s )\n'
+                 "No, it wasn't me\nhttp://link.lastpass.com/lastpass-account-has-been-compromised "
+                 '( https://link.lastpass.com/lastpass-account-has-been-compromised%s )\n' % (UTM, APPROVE, UTM, UTM))
+LASTPASS_HTML = ('<a href="https://lastpass.com/%s"><img alt=""></a><p>Someone asked to export your vault.</p>'
+                 '<a href="https://lastpass.com/%s">Verify export</a> '
+                 '<a href="https://link.lastpass.com/lastpass-account-has-been-compromised%s">Continue export</a> '
+                 '<a href="https://lastpass.com%s%s">Continue export</a> '
+                 '<a href="https://link.lastpass.com/lastpass-account-has-been-compromised%s">No, it wasn\'t me</a>'
+                 % (UTM, UTM, UTM, APPROVE, UTM, UTM))
 
 
 class VerifyMailTest(unittest.TestCase):
@@ -479,11 +496,31 @@ class VerifyMailTest(unittest.TestCase):
 
     def test_the_verify_mail_after_the_click_gives_its_link(self):
         since = time.time() - 30
-        self.assertEqual(login_export_mail.pick(fake_mail(), 'lastpass', since)[1], 'https://lastpass.com/verify-export?k=fake')
-        self.assertEqual(login_export_mail.pick(fake_mail(auth=None), 'lastpass', since)[1], 'https://lastpass.com/verify-export?k=fake',
+        link = 'https://lastpass.com' + APPROVE + '?k=fake'
+        self.assertEqual(login_export_mail.pick(fake_mail(), 'lastpass', since)[1], link)
+        self.assertEqual(login_export_mail.pick(fake_mail(auth=None), 'lastpass', since)[1], link,
                          'a mailbox that records no sender checks: the sender alone')
-        self.assertEqual(login_export_mail.pick(fake_mail(sender='no-reply@mail.lastpass.eu', auth=None,
-                                                          href='https://lastpass.eu/v?k=1'), 'lastpass', since)[1], 'https://lastpass.eu/v?k=1')
+        self.assertEqual(login_export_mail.pick(fake_mail(sender='no-reply@mail.lastpass.eu', auth=None, href='https://lastpass.eu' + APPROVE),
+                                                'lastpass', since)[1], 'https://lastpass.eu' + APPROVE)
+
+    def test_lastpass_mail_gives_its_approve_link_never_the_logo_or_the_compromised_link(self):
+        since, approve = time.time() - 30, 'https://lastpass.com' + APPROVE + UTM
+        sender = 'LastPass <do-not-reply@mail.lastpass.com>'
+        for name, parts in (('text only', [('text/plain', LASTPASS_TEXT)]), ('html only', [('text/html', LASTPASS_HTML)])):
+            with self.subTest(name):
+                self.assertEqual(login_export_mail.pick(fake_mail(sender=sender, parts=parts), 'lastpass', since)[1], approve)
+                without = parts[0][1].replace('https://lastpass.com' + APPROVE, 'https://lastpass.com/export-tokens/x/deny')
+                self.assertIsNone(login_export_mail.pick(fake_mail(sender=sender, parts=[(parts[0][0], without)]), 'lastpass', since),
+                                  'no approve link: the owner confirms by hand, never the logo or the compromised link')
+
+    def test_only_the_path_counts_never_the_words_or_the_query(self):
+        since = time.time() - 30
+        for name, href in (('words alone', 'https://lastpass.com/help'),
+                           ('the query alone', 'https://lastpass.com/?next=' + APPROVE),
+                           ('a longer path', 'https://lastpass.com' + APPROVE + '/more'),
+                           ('a path in front', 'https://lastpass.com/x' + APPROVE)):
+            with self.subTest(name):
+                self.assertIsNone(login_export_mail.pick(fake_mail(href=href), 'lastpass', since))
 
     def test_wrong_sender_host_time_or_checks_give_nothing(self):
         since = time.time() - 30
@@ -493,10 +530,10 @@ class VerifyMailTest(unittest.TestCase):
                            ('before the click', fake_mail(came=since - 60)),
                            ('a failed check', fake_mail(auth='mx.example.invalid; dkim=fail header.d=lastpass.com; dmarc=fail')),
                            ('a pass for another domain', fake_mail(auth='mx.example.invalid; dkim=pass header.d=example.invalid')),
-                           ('another host', fake_mail(href='https://lastpass.com.example.invalid/verify-export')),
-                           ('plain http', fake_mail(href='http://lastpass.com/verify-export')),
-                           ('a user in the address', fake_mail(href='https://x@lastpass.com/verify-export')),
-                           ('another port', fake_mail(href='https://lastpass.com:8443/verify-export'))):
+                           ('another host', fake_mail(href='https://lastpass.com.example.invalid' + APPROVE)),
+                           ('plain http', fake_mail(href='http://lastpass.com' + APPROVE)),
+                           ('a user in the address', fake_mail(href='https://x@lastpass.com' + APPROVE)),
+                           ('another port', fake_mail(href='https://lastpass.com:8443' + APPROVE))):
             with self.subTest(name):
                 self.assertIsNone(login_export_mail.pick(mail, 'lastpass', since))
         self.assertIsNone(login_export_mail.pick(fake_mail(), 'bitwarden', since), 'a manager without a verify mail')
@@ -504,10 +541,10 @@ class VerifyMailTest(unittest.TestCase):
 
     def test_the_newest_mail_in_the_owners_mailboxes_each_read_once(self):
         since = time.time() - 60
-        mails = {'old': fake_mail(came=since - 5, href='https://lastpass.com/verify-export?k=old'),
-                 'a': fake_mail(came=since + 10, href='https://lastpass.com/verify-export?k=a'),
-                 'b': fake_mail(came=since + 20, href='https://lastpass.com/verify-export?k=b'),
-                 'spoof': fake_mail(came=since + 30, sender='x@example.invalid', href='https://lastpass.com/verify-export?k=spoof')}
+        mails = {'old': fake_mail(came=since - 5, href='https://lastpass.com' + APPROVE + '?k=old'),
+                 'a': fake_mail(came=since + 10, href='https://lastpass.com' + APPROVE + '?k=a'),
+                 'b': fake_mail(came=since + 20, href='https://lastpass.com' + APPROVE + '?k=b'),
+                 'spoof': fake_mail(came=since + 30, sender='x@example.invalid', href='https://lastpass.com' + APPROVE + '?k=spoof')}
         reads = []
 
         def read(config, account, api, version, method, params, scope):
@@ -522,7 +559,7 @@ class VerifyMailTest(unittest.TestCase):
                                {'id': 'm2', 'service': 'gmail', 'email': 'team@example.invalid', 'shared': True}]}
         seen = set()
         with patch.object(login_export_mail.sources, 'gog_read', read):
-            self.assertEqual(login_export_mail.link(config, 'lastpass', since, seen), 'https://lastpass.com/verify-export?k=b')
+            self.assertEqual(login_export_mail.link(config, 'lastpass', since, seen), 'https://lastpass.com' + APPROVE + '?k=b')
             self.assertIsNone(login_export_mail.link(config, 'lastpass', since, seen), 'each mail is read once')
             self.assertIsNone(login_export_mail.link(config, 'lastpass', None), 'no running export: nothing read')
             self.assertIsNone(login_export_mail.link({'accounts': []}, 'lastpass', since), 'no mailbox: the owner confirms')
@@ -547,14 +584,14 @@ class VerifyTest(unittest.TestCase):
     def test_a_link_is_opened_once_per_export_then_the_export_may_start_once_more(self):
         guide = login_export_guide.start()
         guide.update(started=time.monotonic(), started_at=time.time(), starts=0)
-        watch = self.watch(lambda manager, since, seen: 'https://lastpass.com/verify-export?k=1')
+        watch = self.watch(lambda manager, since, seen: 'https://lastpass.com' + APPROVE + '?k=1')
         with patch.object(login_import, '_open_link', return_value=True) as opened, patch.object(login_import, 'VERIFY_POLL', 0):
             self.assertTrue(login_import._verify(watch, guide))
             self.assertEqual(guide['starts'], 1)
             self.assertIsNone(guide['started'])
             guide.update(started=time.monotonic(), starts=0)  # the guide's second start
             self.assertFalse(login_import._verify(watch, guide))
-        opened.assert_called_once_with('http://127.0.0.1:9', 'https://lastpass.com/verify-export?k=1')
+        opened.assert_called_once_with('http://127.0.0.1:9', 'https://lastpass.com' + APPROVE + '?k=1')
         login_export_guide.verified(guide)
         self.assertEqual(guide['starts'], 0, 'one verification per export')
 
