@@ -121,6 +121,8 @@ try{
   assert.equal(await page.locator('#login-import [data-li-browser].primary').count(),1,'no live view here: Open the browser leads');
   await clean(page,'export');await shot(page,'import-export',width,scheme);
   exportStep='working';await page.locator('#login-import .li-wait:not(.li-you)',{hasText:'Going to the export…'}).waitFor();
+  // the export started and LastPass waits for its email: confirm there, then Export once more
+  exportStep='email';await page.locator('#login-import .li-wait.li-you',{hasText:'If LastPass emails you, confirm there and export again.'}).waitFor();
   exportStep='password';await page.locator('#login-import .li-wait.li-you',{hasText:'Type your master password to export.'}).waitFor();
   await clean(page,'export password');await shot(page,'import-export-password',width,scheme);
   // the page wasn't as expected: the steps by hand, with a note

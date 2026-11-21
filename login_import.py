@@ -284,12 +284,14 @@ _exports = {}
 _exports_lock = threading.Lock()
 
 
-def export_open(base, manager, data_dir, store, shown=None):
+def export_open(base, manager, data_dir, store, shown=None, mail=None):
     """Starts the export and answers at once with {watch}: a thread of its own opens the manager's export page in a new
     tab of the browser at `base` (loopback DevTools), with its downloads going into a private folder made for this
     export only, calls shown(tab) to bring it to the front, and follows the page and that folder. The browser can take
     a while to start, so the dashboard's call never waits on it. export_check(watch) says how far it got: the step
-    the owner is on (login_export_guide) and the review once the file is in. Starting one stops any other."""
+    the owner is on (login_export_guide) and the review once the file is in. Starting one stops any other.
+    mail(manager, since, seen): the verification link mailed since the click that started the export, or None
+    (login_export_mail.link); _verify asks it while this export waits on that email."""
     if manager not in EXPORT_PAGES:
         raise OwnerError('Which password manager?')
     with _exports_lock:
@@ -298,7 +300,7 @@ def export_open(base, manager, data_dir, store, shown=None):
         _exports.clear()
     watch = {'token': secrets.token_urlsafe(18), 'manager': manager, 'state': 'waiting', 'step': 'opening',
              'stop': threading.Event(), 'opened': time.monotonic(), 'until': time.monotonic() + EXPORT_SECONDS,
-             'base': base, 'tab': None}
+             'base': base, 'tab': None, 'mail': mail, 'mails': set(), 'asked': None, 'verify_opened': False}
     with _exports_lock:
         _exports[watch['token']] = watch
     threading.Thread(target=_open_and_follow, args=(watch, Path(data_dir), store, shown), daemon=True, name='login-export').start()
@@ -416,6 +418,7 @@ def _follow(watch, session, folder, store):
                         LOG.info('login export step manager=%s step=%s', watch['manager'], said)
                     if said:
                         watch['step'], watch['focus'] = said, guide['box']
+                    _verify(watch, guide)
                 continue
             try:
                 kind, rows, skipped = parse(_take(path))
@@ -428,6 +431,63 @@ def _follow(watch, session, folder, store):
         LOG.info('login export ended manager=%s state=%s step=%s', watch['manager'], watch['state'], watch['step'])
         _close_tabs(watch)
         _follow_end(session, folder)
+
+
+VERIFY_SECONDS = 600  # how long after the click that started the export its email's link may be opened
+VERIFY_POLL = 10  # seconds between looks in the mailboxes
+VERIFY_LOAD = 15  # seconds the link's page gets to load before its tab is closed
+
+
+def _verify(watch, guide):
+    """While this export waits on the manager's email to confirm it (the guide clicked the step that starts it, at
+    most VERIFY_SECONDS ago): looks for that mail's link (watch['mail'], login_export_mail.link) and opens it once in
+    this export's browser, in a tab of its own closed afterwards; then the guide may start the export once more.
+    Nothing without a running export and its click; at most one link per export. Answers whether it opened one."""
+    started, mail = guide.get('started'), watch.get('mail')
+    if not mail or started is None or guide.get('verified') or watch['verify_opened'] or watch['stop'].is_set():
+        return False
+    now = time.monotonic()
+    if now - started > VERIFY_SECONDS or (watch['asked'] is not None and now - watch['asked'] < VERIFY_POLL):
+        return False
+    watch['asked'] = now
+    try:
+        link = mail(watch['manager'], guide['started_at'], watch['mails'])
+    except Exception:  # a mailbox that can't be read now: the owner confirms by hand, as before
+        LOG.info('login export verify unread manager=%s', watch['manager'])
+        return False
+    if not login_export_guide.allowed(watch['manager'], link):
+        return False
+    watch['verify_opened'] = True  # once per export, whatever happens next
+    opened = _open_link(watch['base'], link)
+    LOG.info('login export verify opened manager=%s ok=%s', watch['manager'], 'yes' if opened else 'no')
+    if opened:
+        login_export_guide.verified(guide)
+    return opened
+
+
+def _open_link(base, link):
+    """Opens the link in a new tab of the export's browser, gives its page time to load and closes the tab."""
+    cdp = browser_login.browser_cdp
+    try:
+        tab = cdp.open_tab(base, link)
+    except (cdp.CdpError, OSError, ValueError, TypeError, KeyError):
+        return False
+    try:
+        end = time.monotonic() + VERIFY_LOAD
+        while time.monotonic() < end:
+            try:
+                if cdp.evaluate(base, tab, '() => document.readyState') == 'complete':
+                    time.sleep(2)  # the page's own script confirms after it loaded
+                    break
+            except (cdp.CdpError, OSError, ValueError, TypeError, KeyError):
+                pass
+            time.sleep(0.5)
+        return True
+    finally:
+        try:
+            cdp.close_tab(base, tab)
+        except (cdp.CdpError, OSError):
+            pass
 
 
 def _follow_end(session, folder):

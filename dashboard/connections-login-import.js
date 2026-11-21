@@ -40,12 +40,12 @@ const liView=()=>{const link=state.browser_embed||state.browser_link;try{return 
 // One line for what is left: the Machine clicks on to the export step (login_export_guide.py), the owner signs in and
 // confirms it's them. When the page isn't as expected (step 'manual'), the steps to do by hand.
 const liLine=({k,step:s})=>s==='working'?t('Going to the export…'):s==='password'?(k==='chrome'?t('Confirm it’s you to export.'):t('Type your master password to export.'))
- :s==='email'?t('Confirm the email {} sent you.',LI_NAMES[k]):s==='manual'?t('Waiting for the export file…'):s==='signin'?liSteps(k)[0]:t('Opening {}…',LI_NAMES[k]);
+ :s==='email'?liSteps(k)[2]||t('Confirm the email {} sent you.',LI_NAMES[k]):s==='manual'?t('Waiting for the export file…'):s==='signin'?liSteps(k)[0]:t('Opening {}…',LI_NAMES[k]);
 // The view comes in once the tab is open; the pane's own frame lets go of the screen meanwhile (one viewer sizes it)
 function liStep(){const d=$('#login-import'),w=liWatch,p=d?.querySelector('.li-wait'),view=liView();if(!p||!w)return;
  if(view&&w.step!=='opening'&&!d.querySelector('.li-view')){const f=$('#bp-frame');if(f?.src)f.dataset.src=f.src='about:blank';
   d.querySelector('.li-error').before(make('div',{class:'li-view'},make('iframe',{src:view,title:t('The browser')})))}
- p.classList.toggle('li-you',['signin','password','email'].includes(w.step));p.lastChild.textContent=liLine(w);d.querySelector('.li-manual').hidden=w.step!=='manual'}
+ p.classList.toggle('li-you',/^(signin|password|email)/.test(w.step));p.lastChild.textContent=liLine(w);d.querySelector('.li-manual').hidden=w.step!=='manual'}
 function liExportShow(){const d=liDialog(),w=liWatch;
  setHTML(d,html`${liHead(t('Export from {}',LI_NAMES[w.k]))}<p class="li-wait" role="status"><span class="spin" aria-hidden="true"></span><span></span></p>
  <div class="li-manual" hidden><p class="li-miss">${t('I couldn’t find the next step. Follow these steps:')}</p><ol class="li-steps">${liSteps(w.k).map(s=>html`<li>${s}</li>`)}</ol></div><p class="li-error" role="alert"></p>

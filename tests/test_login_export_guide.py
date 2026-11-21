@@ -11,6 +11,7 @@ from unittest.mock import patch
 
 import browser_login
 import login_export_guide
+import login_export_mail
 import login_import
 
 ON_PAGE = 'FIXTURE-VAULT-ITEM-Q7xz'  # shown on every fixture page: must never leave it
@@ -94,6 +95,23 @@ PAGES = {
           r.querySelector('[title]').onclick = () => document.getElementById('dlg').showModal(); } });
         customElements.define('lp-app', class extends HTMLElement { connectedCallback() {
           this.attachShadow({mode: 'open'}).innerHTML = '<section style="margin:40px 0 0 60px"><lp-nav></lp-nav></section>'; } });</script>''',
+    # LastPass's vault as it is now: Advanced options opens a list with Export in it (a second click folds it), and
+    # Export starts the export: LastPass emails a link to confirm and the page doesn't change (no dialog, nothing new),
+    # until a click after the link was opened asks the master password
+    '/lp/vault9/': '<!doctype html><meta charset="utf-8"><title>Vault</title>' + SAVE + '''<nav><a href="#">Passwords</a>
+        <button type="button" id="adv">Advanced options</button><ul id="more" hidden><li><button type="button" id="ex">Export</button></li>
+        <li><button type="button">Import</button></li></ul></nav><p>''' + ON_PAGE + '''</p>
+        <dialog id="dlg"><form method="dialog" onsubmit="save('lastpass_vault_export.csv', \'''' + LASTPASS_CSV + '''\')">
+        <p>Enter your master password.</p><input type="password" id="mp"><button>Continue</button></form></dialog><script>
+        window.started = 0; window.verified = false;
+        document.getElementById('adv').onclick = () => { const m = document.getElementById('more'); m.hidden = !m.hidden; };
+        document.getElementById('ex').onclick = () => { if (window.verified) document.getElementById('dlg').showModal(); else window.started++; };</script>''',
+    # a folded navigation whose Advanced options folds it again and shows nothing the recipe knows: a loop
+    '/lp/vault10/': '<!doctype html><meta charset="utf-8"><title>Vault</title><header><button type="button" aria-label="Open menu" id="m">=</button></header>' +
+        '<nav id="nav" hidden><button type="button" id="adv">Advanced options</button></nav><p>' + ON_PAGE + '''</p><script>
+        window.menus = 0; window.advs = 0;
+        document.getElementById('m').onclick = () => { window.menus++; document.getElementById('nav').hidden = false; };
+        document.getElementById('adv').onclick = () => { window.advs++; document.getElementById('nav').hidden = true; };</script>''',
     # the same vault after a redesign: nothing the recipe knows
     '/lp/vault2/': '<!doctype html><meta charset="utf-8"><title>Vault</title><nav><button type="button">More tools</button></nav><p>' + ON_PAGE + '</p>',
     # Bitwarden: one page with hash routes; signed out it goes to #/login, signed in to #/vault (not the export)
@@ -209,7 +227,8 @@ class GuideTest(unittest.TestCase):
         root.setLevel(logging.DEBUG)
         self.addCleanup(lambda: (root.removeHandler(handler), root.setLevel(old)))
         for p in (patch.object(login_export_guide, 'RECIPES', RECIPES), patch.object(login_import, 'EXPORT_POLL', 0.3),
-                  patch.object(login_export_guide, 'AGAIN', 1)):
+                  patch.object(login_export_guide, 'AGAIN', 1), patch.object(login_export_guide, 'SETTLE', 1),
+                  patch.object(login_export_guide, 'STARTED', 1), patch.object(login_import, 'VERIFY_POLL', 0)):
             p.start()
             self.addCleanup(p.stop)
 
@@ -234,10 +253,10 @@ class GuideTest(unittest.TestCase):
         tab = login_import._exports[watch]['tab']
         return browser_login.browser_cdp.evaluate(self.base, tab, script)
 
-    def export(self, manager, page):
+    def export(self, manager, page, mail=None):
         out, err = io.StringIO(), io.StringIO()
         with patch.dict(login_import.EXPORT_PAGES, {manager: self.origin + page}), redirect_stdout(out), redirect_stderr(err):
-            watch = login_import.export_open(self.base, manager, self.folder, self.store)['watch']
+            watch = login_import.export_open(self.base, manager, self.folder, self.store, mail=mail)['watch']
             yield watch
         for where, text in (('log', self.log.getvalue()), ('stdout', out.getvalue()), ('stderr', err.getvalue()),
                             ('answers', json.dumps(self.answers))):
@@ -382,6 +401,194 @@ class GuideTest(unittest.TestCase):
                                                       r'candidates=1 outside=0\n')
                 login_import.export_stop(watch)
                 time.sleep(0.5)
+
+    def test_lastpass_export_is_started_exactly_once_when_the_page_does_not_change(self):
+        # LastPass emails a link to confirm on each click of Export: the guide clicks it once and then waits on the
+        # owner's email, never back through the menu to it
+        for watch in self.export('lastpass', '/lp/vault9/'):
+            self.until(watch, 'email')
+            for _ in range(8):  # more looks at a page that stays the same
+                self.assertEqual(self.check(watch)['step'], 'email')
+                time.sleep(0.5)
+            self.assertEqual(self.owner(watch, '() => window.started'), 1, 'the click that starts the export, exactly once')
+            log = self.log.getvalue()
+            self.assertEqual(log.count('at=click step=2'), 1)
+            self.assertEqual(log.count('at=click step=1'), 1, 'Advanced options not clicked again')
+            self.assertIn('login export guide started manager=lastpass step=2\n', log)
+            # the owner confirmed the email and exports again by hand
+            self.owner(watch, '() => { window.verified = true; document.getElementById("ex").click(); return 1; }')
+            self.until(watch, 'password')
+            self.typed_master(watch)
+            self.review(watch)
+
+    def test_lastpass_verification_link_mailed_after_the_click_is_opened_once_then_export_once_more(self):
+        asked, opened = [], []
+
+        def mail(manager, since, seen):
+            asked.append((manager, since))
+            return 'https://lastpass.com/verify-export?fake=1'
+
+        def open_link(base, link):  # stands in for LastPass's page behind the link: the export is confirmed
+            opened.append(link)
+            browser_login.browser_cdp.evaluate(self.base, login_import._exports[next(iter(login_import._exports))]['tab'],
+                                               '() => { window.verified = true; return 1; }')
+            return True
+
+        clicked = time.time()
+        with patch.object(login_import, '_open_link', open_link):
+            for watch in self.export('lastpass', '/lp/vault9/', mail=mail):
+                self.until(watch, 'password')
+                self.assertEqual(self.owner(watch, '() => window.started'), 1, 'once before the link, once after it')
+                self.typed_master(watch)
+                self.review(watch)
+        self.assertEqual(opened, ['https://lastpass.com/verify-export?fake=1'], 'one link per export')
+        self.assertEqual(len(asked), 1)
+        self.assertEqual(asked[0][0], 'lastpass')
+        self.assertGreaterEqual(asked[0][1], clicked - 1, 'mails since the click only')
+        log = self.log.getvalue()
+        self.assertIn('login export verify opened manager=lastpass ok=yes\n', log)
+        self.assertEqual(log.count('login export guide started manager=lastpass step=2'), 2)
+        self.assertNotIn('fake=1', log, 'no link in the log')
+
+    def test_a_page_that_loops_stops_clicking_and_hands_over_the_steps(self):
+        for watch in self.export('lastpass', '/lp/vault10/'):
+            self.until(watch, 'manual', seconds=30)
+            self.assertEqual(self.owner(watch, '() => [window.menus, window.advs]'), [2, 2], 'one round back, not a second')
+            self.assertIn('login export guide loop manager=lastpass step=0 rounds=2\n', self.log.getvalue())
+            time.sleep(1.5)
+            self.assertEqual(self.owner(watch, '() => [window.menus, window.advs]'), [2, 2], 'no clicks after handing over')
+            self.assertEqual(self.check(watch), {'state': 'waiting', 'step': 'manual'}, 'the live view stays, waiting for the file')
+            login_import.export_stop(watch)
+            time.sleep(0.5)
+
+
+def fake_mail(sender='LastPass <no-reply@lastpass.com>', subject='LastPass Security Notification: Verify export',
+              came=None, href='https://lastpass.com/verify-export?k=fake', auth='mx.example.invalid; dkim=pass header.d=lastpass.com',
+              words='Continue export'):
+    body = '<p>Someone asked to export.</p><a href="https://lastpass.com/help">Help</a> <a href="%s">%s</a>' % (href, words)
+    headers = [{'name': 'From', 'value': sender}, {'name': 'Subject', 'value': subject}]
+    if auth:
+        headers.append({'name': 'Authentication-Results', 'value': auth})
+    return {'internalDate': str(int((came if came is not None else time.time()) * 1000)),
+            'payload': {'mimeType': 'multipart/alternative', 'headers': headers, 'parts': [
+                {'mimeType': 'text/html', 'body': {'data': base64.urlsafe_b64encode(body.encode()).decode().rstrip('=')}}]}}
+
+
+class VerifyMailTest(unittest.TestCase):
+    """login_export_mail: only the manager's own verify mail since the click, its https link on the manager's hosts."""
+
+    def test_the_verify_mail_after_the_click_gives_its_link(self):
+        since = time.time() - 30
+        self.assertEqual(login_export_mail.pick(fake_mail(), 'lastpass', since)[1], 'https://lastpass.com/verify-export?k=fake')
+        self.assertEqual(login_export_mail.pick(fake_mail(auth=None), 'lastpass', since)[1], 'https://lastpass.com/verify-export?k=fake',
+                         'a mailbox that records no sender checks: the sender alone')
+        self.assertEqual(login_export_mail.pick(fake_mail(sender='no-reply@mail.lastpass.eu', auth=None,
+                                                          href='https://lastpass.eu/v?k=1'), 'lastpass', since)[1], 'https://lastpass.eu/v?k=1')
+
+    def test_wrong_sender_host_time_or_checks_give_nothing(self):
+        since = time.time() - 30
+        for name, mail in (('another sender', fake_mail(sender='LastPass <no-reply@lastpass.com.example.invalid>')),
+                           ('a look-alike', fake_mail(sender='no-reply@notlastpass.com')),
+                           ('another subject', fake_mail(subject='Your weekly report')),
+                           ('before the click', fake_mail(came=since - 60)),
+                           ('a failed check', fake_mail(auth='mx.example.invalid; dkim=fail header.d=lastpass.com; dmarc=fail')),
+                           ('a pass for another domain', fake_mail(auth='mx.example.invalid; dkim=pass header.d=example.invalid')),
+                           ('another host', fake_mail(href='https://lastpass.com.example.invalid/verify-export')),
+                           ('plain http', fake_mail(href='http://lastpass.com/verify-export')),
+                           ('a user in the address', fake_mail(href='https://x@lastpass.com/verify-export')),
+                           ('another port', fake_mail(href='https://lastpass.com:8443/verify-export'))):
+            with self.subTest(name):
+                self.assertIsNone(login_export_mail.pick(mail, 'lastpass', since))
+        self.assertIsNone(login_export_mail.pick(fake_mail(), 'bitwarden', since), 'a manager without a verify mail')
+        self.assertIsNone(login_export_mail.pick(fake_mail(), 'lastpass', None), 'no click, no mail')
+
+    def test_the_newest_mail_in_the_owners_mailboxes_each_read_once(self):
+        since = time.time() - 60
+        mails = {'old': fake_mail(came=since - 5, href='https://lastpass.com/verify-export?k=old'),
+                 'a': fake_mail(came=since + 10, href='https://lastpass.com/verify-export?k=a'),
+                 'b': fake_mail(came=since + 20, href='https://lastpass.com/verify-export?k=b'),
+                 'spoof': fake_mail(came=since + 30, sender='x@example.invalid', href='https://lastpass.com/verify-export?k=spoof')}
+        reads = []
+
+        def read(config, account, api, version, method, params, scope):
+            self.assertEqual(scope, login_export_mail.SCOPE, 'the read the mailbox already has')
+            reads.append((method, params.get('id')))
+            if method == 'gmail.users.messages.list':
+                self.assertEqual(params['q'], 'after:%d' % int(since))
+                return {'messages': [{'id': k} for k in mails]}
+            return mails[params['id']]
+
+        config = {'accounts': [{'id': 'm1', 'service': 'gmail', 'email': 'owner@example.invalid'},
+                               {'id': 'm2', 'service': 'gmail', 'email': 'team@example.invalid', 'shared': True}]}
+        seen = set()
+        with patch.object(login_export_mail.sources, 'gog_read', read):
+            self.assertEqual(login_export_mail.link(config, 'lastpass', since, seen), 'https://lastpass.com/verify-export?k=b')
+            self.assertIsNone(login_export_mail.link(config, 'lastpass', since, seen), 'each mail is read once')
+            self.assertIsNone(login_export_mail.link(config, 'lastpass', None), 'no running export: nothing read')
+            self.assertIsNone(login_export_mail.link({'accounts': []}, 'lastpass', since), 'no mailbox: the owner confirms')
+        self.assertEqual(sum(1 for m, _ in reads if m == 'gmail.users.messages.get'), 4, 'only the owner\'s own mailbox, once each')
+
+
+class VerifyTest(unittest.TestCase):
+    """login_import._verify: only for a running export the guide started, once, within the window."""
+
+    def watch(self, mail):
+        return {'manager': 'lastpass', 'base': 'http://127.0.0.1:9', 'mail': mail, 'mails': set(), 'asked': None,
+                'verify_opened': False, 'stop': threading.Event()}
+
+    def test_no_click_no_mail_read(self):
+        asked = []
+        guide = login_export_guide.start()
+        with patch.object(login_import, '_open_link') as opened:
+            self.assertFalse(login_import._verify(self.watch(lambda *a: asked.append(a) or 'https://lastpass.com/v'), guide))
+        self.assertEqual(asked, [], 'no export started on this run: nothing read')
+        opened.assert_not_called()
+
+    def test_a_link_is_opened_once_per_export_then_the_export_may_start_once_more(self):
+        guide = login_export_guide.start()
+        guide.update(started=time.monotonic(), started_at=time.time(), starts=0)
+        watch = self.watch(lambda manager, since, seen: 'https://lastpass.com/verify-export?k=1')
+        with patch.object(login_import, '_open_link', return_value=True) as opened, patch.object(login_import, 'VERIFY_POLL', 0):
+            self.assertTrue(login_import._verify(watch, guide))
+            self.assertEqual(guide['starts'], 1)
+            self.assertIsNone(guide['started'])
+            guide.update(started=time.monotonic(), starts=0)  # the guide's second start
+            self.assertFalse(login_import._verify(watch, guide))
+        opened.assert_called_once_with('http://127.0.0.1:9', 'https://lastpass.com/verify-export?k=1')
+        login_export_guide.verified(guide)
+        self.assertEqual(guide['starts'], 0, 'one verification per export')
+
+    def test_a_link_on_another_host_or_after_the_window_is_never_opened(self):
+        with patch.object(login_import, '_open_link') as opened, patch.object(login_import, 'VERIFY_POLL', 0):
+            guide = login_export_guide.start()
+            guide.update(started=time.monotonic(), started_at=time.time())
+            self.assertFalse(login_import._verify(self.watch(lambda *a: 'https://evil.example.invalid/lastpass.com'), guide))
+            late = login_export_guide.start()
+            late.update(started=time.monotonic() - login_import.VERIFY_SECONDS - 1, started_at=time.time() - 700)
+            asked = []
+            self.assertFalse(login_import._verify(self.watch(lambda *a: asked.append(a)), late))
+            self.assertEqual(asked, [])
+        opened.assert_not_called()
+
+
+class LoopTest(unittest.TestCase):
+    """login_export_guide._may: what may be clicked after the step that starts the export and after a round back."""
+
+    def test_nothing_up_to_the_export_start_is_clicked_again_until_a_verification(self):
+        recipe, state, now = login_export_guide.RECIPES['lastpass'], login_export_guide.start(), time.monotonic()
+        state.update(top=2, top_at=now - 60, started=now - 60, starts=0)
+        self.assertEqual(login_export_guide._may(recipe, state, now), [False, False, False, True])
+        login_export_guide.verified(state)
+        self.assertEqual(login_export_guide._may(recipe, state, now), [True, True, True, True])
+
+    def test_a_second_round_back_is_not_clicked(self):
+        recipe, state, now = login_export_guide.RECIPES['lastpass'], login_export_guide.start(), time.monotonic()
+        state.update(top=1, top_at=now - 1)
+        self.assertEqual(login_export_guide._may(recipe, state, now)[:2], [False, False], 'waits a little for the next step')
+        state['top_at'] = now - 60
+        self.assertEqual(login_export_guide._may(recipe, state, now)[:2], [True, True], 'one round back')
+        state['rounds'] = 1
+        self.assertEqual(login_export_guide._may(recipe, state, now)[:3], [False, False, True], 'not a second, a later step still')
 
 
 class AddressTest(unittest.TestCase):
