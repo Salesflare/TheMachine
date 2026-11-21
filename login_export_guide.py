@@ -20,7 +20,7 @@ import browser_login
 
 browser_cdp = browser_login.browser_cdp  # the one module object, so its CdpError is the one raised
 
-GIVE_UP = 20  # seconds signed in with no step found before the owner is handed the manual steps
+GIVE_UP = 20  # seconds signed in with no step found before the owner is handed the manual steps (signing in never counts)
 CLICKS = 4  # each button at most this often (an email to confirm sends the owner back to the start once or twice)
 AGAIN = 4  # seconds before the same button is clicked again
 GOES = 3  # how often a recipe's export address is opened
@@ -35,15 +35,20 @@ RECIPES = {
     'lastpass': {
         'signin': r'^https://(www\.)?lastpass\.(com|eu)/(\?|.*[?&]ac=1|[^#]*(login|signin|sso|multifactor|mfa))',
         'vault': r'^https://(www\.)?lastpass\.(com|eu)/',
+        # LastPass's help: in the vault's left navigation, Advanced options, then Export; it emails a link to confirm,
+        # then Advanced options > Export again; the master password may be asked. A narrow window folds the left
+        # navigation behind its menu button, so that comes first (only clicked when neither of the others shows).
         'steps': [
+            {'css': [], 'text': ['menu', 'open menu', 'main menu', 'open navigation', 'toggle navigation', 'expand navigation',
+                                 'navigation menu', 'show navigation', 'expand menu']},
             {'css': ['[data-automation-id="advanced-options-menu-item"]', '#advancedOptionsMenuItem'],
              'text': ['advanced options', 'geavanceerde opties', 'erweiterte optionen', 'options avancées', 'opciones avanzadas',
                       'opzioni avanzate', 'opções avançadas']},
             {'css': ['[data-automation-id="export-menu-item"]', '#exportMenuItem'], 'text': _EXPORT},
             {'css': [], 'text': ['lastpass csv file', 'csv file', 'csv']},
         ],
-        'arm': 1,
-        'email': r'check your (email|inbox)|verification email|(sent|emailed) you an? (email|link)',
+        'arm': 2,
+        'email': r'check your (email|inbox)|verification email|(sent|emailed) you an? (email|link)|verify (this |your )?export',
     },
     'bitwarden': {
         'signin': r'^https://vault\.bitwarden\.(com|eu)/#/(login|2fa|lock|sso|signup|hint|accept|finish|set-password|verify)',
@@ -98,7 +103,11 @@ SCRIPT = r'''function (r, s) {
     if (pw && s.focus && document.activeElement !== pw) pw.focus();
     return at('password');
   }
-  if (pw || signin) return at('signin');
+  // A sign-in that asks the email first (LastPass's, on the vault's own address): an email or user name field
+  // before the script found anything to click is the owner's sign-in too, not a page it doesn't know.
+  const ident = !s.stepped && [...document.querySelectorAll('input[type=email],input[autocomplete~=username],' +
+    'input[autocomplete~=email],input[name*=email i],input[id*=email i],input[name*=user i],input[id*=user i]')].find(shows);
+  if (pw || signin || ident) return at('signin');
   if (!test(r.vault)) return at('elsewhere');
   if (s.armed && r.email && document.body && new RegExp(r.email, 'i').test(document.body.innerText || '')) return {at: 'email'};
   if (r.go && !test(r.at)) { if (s.go) location.assign(r.go); return {at: 'going'}; }
@@ -149,7 +158,7 @@ def look(base, tab, recipe, state):
     now = time.monotonic()
     rested = now - state.get('owner', -OWNER_REST) >= OWNER_REST
     may = [rested and state['clicks'].get(i, 0) < CLICKS and now - state['last'].get(i, -AGAIN) >= AGAIN for i in range(len(recipe['steps']))]
-    flags = {'armed': state['armed'], 'focus': not state['focused'], 'go': state['goes'] < GOES, 'may': may}
+    flags = {'armed': state['armed'], 'stepped': bool(state['clicks']), 'focus': not state['focused'], 'go': state['goes'] < GOES, 'may': may}
     try:
         with browser_cdp.Session(base, tab, timeout=5) as session:
             got = session.run(SCRIPT, recipe, flags)
@@ -177,8 +186,8 @@ def step(base, tab, manager, state):
     At sign-in and password, state['box'] is where the owner types in the window (_box), for the live view."""
     recipe = RECIPES[manager]
     seen = look(base, tab, recipe, state)
-    if seen is None:
-        return None
+    if seen is None:  # the page didn't answer (loading, busy): no new word, unless it stays that way long after the last
+        return 'manual' if time.monotonic() - state['progress'] > 3 * GIVE_UP else None
     now, at = time.monotonic(), seen['at']
     said = {'signin': 'signin', 'elsewhere': 'signin', 'password': 'password', 'email': 'email'}.get(at)
     state['box'] = seen['box'] if said in ('signin', 'password') else None

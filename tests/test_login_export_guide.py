@@ -40,6 +40,22 @@ PAGES = {
         <main><h1>All items</h1><p>''' + ON_PAGE + '''</p></main>
         <dialog id="dlg"><form method="dialog" onsubmit="save('lastpass_export.csv', \'''' + LASTPASS_CSV + '''\')">
         <p>Please re-enter your master password.</p><input type="password" id="mp"><button>Submit</button></form></dialog>''',
+    # LastPass's newer vault on its own address: signed out it asks the email first (no password field yet), then the
+    # master password; signed in, a narrow window folds the left navigation behind Menu, with Advanced options in it
+    '/lp/vault3/': '<!doctype html><meta charset="utf-8"><title>Vault</title>' + SAVE + '''<div id="app"></div>
+        <dialog id="dlg"><form method="dialog" onsubmit="save('lastpass_vault_export.csv', \'''' + LASTPASS_CSV + '''\')">
+        <p>Enter your master password to continue.</p><input type="password" id="mp"><button>Continue</button></form></dialog><script>
+        function render() { const app = document.getElementById('app');
+          if (!sessionStorage.email) app.innerHTML = '<form id="f"><label>Email<input type="email" autocomplete="username"></label><button>Continue</button></form>';
+          else if (!sessionStorage.in) app.innerHTML = '<form id="f"><label>Master password<input type="password" id="pw"></label><button>Log in</button></form>';
+          else app.innerHTML = '<header><button type="button" aria-label="Open menu" id="m">=</button></header><nav id="nav" hidden><a href="#">Passwords</a>' +
+            '<button type="button" id="adv">Advanced options</button><ul id="more" hidden><li><button type="button" id="ex">Export</button></li></ul></nav><p>''' + ON_PAGE + '''</p>';
+          const f = document.getElementById('f'), m = document.getElementById('m');
+          if (f) f.onsubmit = (e) => { e.preventDefault(); if (sessionStorage.email) sessionStorage.in = 1; else sessionStorage.email = 1; render(); };
+          if (m) { m.onclick = () => { document.getElementById('nav').hidden = false; };
+            document.getElementById('adv').onclick = () => { document.getElementById('more').hidden = false; };
+            document.getElementById('ex').onclick = () => document.getElementById('dlg').showModal(); } }
+        render();</script>''',
     # the same vault after a redesign: nothing the recipe knows
     '/lp/vault2/': '<!doctype html><meta charset="utf-8"><title>Vault</title><nav><button type="button">More tools</button></nav><p>' + ON_PAGE + '</p>',
     # Bitwarden: one page with hash routes; signed out it goes to #/login, signed in to #/vault (not the export)
@@ -246,6 +262,20 @@ class GuideTest(unittest.TestCase):
             self.typed_master(watch)
             self.review(watch)
 
+    def test_lastpass_asking_the_email_first_waits_on_the_owner_then_opens_the_folded_menu(self):
+        with patch.object(login_export_guide, 'GIVE_UP', 1.5):  # the sign-in never counts toward giving up
+            for watch in self.export('lastpass', '/lp/vault3/'):
+                self.until(watch, 'signin')
+                time.sleep(2.5)
+                self.assertEqual(self.check(watch)['step'], 'signin', 'the email step is the owner\'s sign-in, not a page it doesn\'t know')
+                self.owner(watch, '() => { document.getElementById("f").requestSubmit(); return 1; }')
+                time.sleep(2.5)
+                self.assertEqual(self.check(watch)['step'], 'signin')
+                self.owner(watch, '() => { document.getElementById("pw").form.requestSubmit(); return 1; }')
+                self.until(watch, 'password')
+                self.typed_master(watch)
+                self.review(watch)
+
     def test_a_changed_page_hands_the_owner_the_manual_steps(self):
         with patch.object(login_export_guide, 'GIVE_UP', 1.5):
             for watch in self.export('lastpass', '/lp/vault2/'):
@@ -256,6 +286,13 @@ class GuideTest(unittest.TestCase):
 
 
 class AddressTest(unittest.TestCase):
+    def test_a_page_that_stops_answering_hands_over_the_manual_steps_instead_of_a_spinner_for_good(self):
+        state = login_export_guide.start()
+        with patch.object(login_export_guide, 'look', return_value=None):
+            self.assertIsNone(login_export_guide.step('http://127.0.0.1:9', 't', 'lastpass', state), 'a busy page: no new word yet')
+            state['progress'] -= 3 * login_export_guide.GIVE_UP + 1
+            self.assertEqual(login_export_guide.step('http://127.0.0.1:9', 't', 'lastpass', state), 'manual')
+
     def test_the_recipes_tell_the_sign_in_from_the_signed_in_vault(self):
         import re
         lp, bw, g = (login_export_guide.RECIPES[k] for k in ('lastpass', 'bitwarden', 'chrome'))
