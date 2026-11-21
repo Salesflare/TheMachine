@@ -10,8 +10,8 @@ are capped (MAX_ENTRIES over WINDOW, short timeouts) and the service reads at mo
 Owner decision (October 10, 2026), kept here as for the Gateway source: routine restarts and noise stay silent. Only
 real problems surface (detect): a unit that keeps restarting (LOOP_RESTARTS within an hour), one systemd gave up on
 (start-limit-hit), one that ran out of memory, one that failed REPEAT_FAILURES times in a day and has not run well since
-(a unit whose failed runs were followed by a run that finished well is fine again: recovered), one that stays failed,
-and a program that crashed: all its crash dumps over WINDOW make one finding with their count and time span. A
+(a unit whose failed runs were followed by a run that finished well is fine again: recovered), one that stays failed
+(only when something asks it to run: idle_units), and a program that crashed: all its crash dumps over WINDOW make one finding with their count and time span. A
 browser's helper processes and browsers a program drives (headless, Playwright, Puppeteer, CI, remote debugging with a
 throwaway profile) are not the owner's programs and stay quiet (automated), and so do developer, test and coding-agent
 runs: what an agent's service ran, a test runner, a program run from a temporary or cache folder (dev_run). So does
@@ -101,6 +101,10 @@ OMARCHY_PIECES = {'hyprland': 'hyprland', 'quickshell': 'bar', 'qs': 'bar', 'way
 RESTARTABLE = ('gave_up', 'repeated_failures', 'stays_failed')
 # Findings about a unit being down now: their to-do closes itself once systemd no longer lists the unit as failed
 FAILED_NOW = ('gave_up', 'stays_failed')
+# A failed unit is down only when something asks it to run (idle_units): it is enabled, or another unit wants, needs or
+# triggers it (a static or disabled one a timer, socket or target starts). Other states mean nobody does.
+IDLE_STATES = ('disabled', 'static', 'indirect', 'masked', 'masked-runtime')
+WANTING = ('WantedBy', 'RequiredBy', 'UpheldBy', 'BoundBy', 'TriggeredBy')
 PROTECTED = re.compile(r'(openclaw|personal-assistant|the-machine)', re.I)
 SAFE_UNIT = re.compile(r'[A-Za-z0-9][A-Za-z0-9_.@:-]{0,200}\.service')
 FIX_TIMEOUT = 60
@@ -217,6 +221,23 @@ def failed_units(run=run_quiet, unknown=frozenset()):
     if code != 0:
         return unknown
     return {line.split()[0] for line in out.splitlines() if line.split() and line.split()[0].endswith('.service')}
+
+
+def idle_units(units, run=run_quiet):
+    """Of these failed units, the ones nobody asks to run: not enabled (IDLE_STATES) and no other unit wants, needs or
+    triggers them. One the owner disabled when another took over its job fails on its own and is not down. A unit
+    systemd can't be asked about counts as asked to run."""
+    if not units:
+        return set()
+    code, out = run(['systemctl', '--user', 'show', '--property=Id,UnitFileState,' + ','.join(WANTING), '--no-pager', *sorted(units)])
+    if code != 0:
+        return set()
+    idle = set()
+    for block in out.split('\n\n'):
+        props = dict(line.split('=', 1) for line in block.splitlines() if '=' in line)
+        if props.get('Id') in units and props.get('UnitFileState') in IDLE_STATES and not any(props.get(p, '').strip() for p in WANTING):
+            idle.add(props['Id'])
+    return idle
 
 
 def hyprland_config_errors(run=run_quiet, runtime=None):
@@ -356,9 +377,11 @@ def recovered(failures, started, start_failed):
     return any(at > max(start_failed) for at in started)
 
 
-def detect(rows, failed=(), now=None, on_omarchy=False, config_errors=0, uid=None):
+def detect(rows, failed=(), now=None, on_omarchy=False, config_errors=0, uid=None, idle=()):
     """The real problems in these records, as findings: [{key, kind, name, unit, count, last_at, ...}], clearest first.
-    Pure: everything it reads is passed in."""
+    `idle`: failed units nobody asks to run (idle_units), never reported as down (FAILED_NOW). Pure: everything it
+    reads is passed in."""
+    failed = set(failed) - set(idle)
     now = now or timeutil.clock()
     uid = str(os.getuid() if uid is None else uid)
     units = {}
@@ -417,6 +440,8 @@ def detect(rows, failed=(), now=None, on_omarchy=False, config_errors=0, uid=Non
             last = max(entry['failures'], default=None)
             if unit in failed and last and now - last >= FAILED_FOR:
                 kinds['stays_failed'] = 1
+        if unit in idle:
+            kinds = {k: v for k, v in kinds.items() if k not in FAILED_NOW}
         if kinds:
             kind = next(k for k in RANK if k in kinds)
             found[unit] = {'kind': kind, 'unit': unit, 'name': unit_name(unit), 'count': int(kinds[kind] or 1),
@@ -445,8 +470,8 @@ def detect(rows, failed=(), now=None, on_omarchy=False, config_errors=0, uid=Non
 
 def scan(window=WINDOW, run=run_quiet, now=None, which=shutil.which):
     """{'supported', 'reason', 'omarchy', 'findings', 'failed'} for this computer, read as described above. 'failed':
-    the units systemd lists as failed now (a to-do about one that is no longer there closes itself,
-    Store.settle_system_log_cards), None when that could not be read."""
+    the units systemd lists as failed now that something asks to run (a to-do about one that is no longer there
+    closes itself, Store.settle_system_log_cards), None when that could not be read."""
     ok, why = supported(which=which)
     if not ok:
         return {'supported': False, 'reason': why, 'omarchy': False, 'findings': []}
@@ -458,8 +483,10 @@ def scan(window=WINDOW, run=run_quiet, now=None, which=shutil.which):
     on_omarchy = omarchy(which)
     errors = hyprland_config_errors(run) if on_omarchy and which('hyprctl') else 0
     failed = failed_units(run, unknown=None)
+    idle = idle_units(failed, run)
     return {'supported': True, 'reason': '', 'omarchy': on_omarchy,
-            'findings': detect(rows, failed or set(), now, on_omarchy, errors), 'failed': failed}
+            'findings': detect(rows, failed or set(), now, on_omarchy, errors, idle=idle),
+            'failed': None if failed is None else failed - idle}
 
 
 def _bar_command(which=shutil.which):
@@ -600,7 +627,7 @@ def card(finding, which=shutil.which):
     argv = fix_command(finding, which)
     if argv:
         does = i18n.t('Do it restarts the bar.') if finding.get('fix') == 'restart_bar' else i18n.t('Do it restarts {}.', finding['name'])
-        body = '\n\n'.join((cause, does, i18n.t('Do it runs {}.', ' '.join(argv)) + ' ' + see_why(finding, which)))
+        body = '\n\n'.join((cause, does, see_why(finding, which)))
     else:
         body = '\n\n'.join(filter(None, (cause, next_step(finding),
                                          i18n.t('Ask in this to-do’s chat and The Machine looks into it. Anything it changes on this computer waits for your OK.'),
