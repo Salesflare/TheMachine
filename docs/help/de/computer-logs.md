@@ -1,47 +1,47 @@
 ---
 title: Probleme auf deinem Computer
 area: troubleshooting
-summary: Deine Machine liest ihre Systemprotokolle und weist dich auf echte Probleme hin, inklusive Ursache und Lösung. Eine Lösung wird erst ausgeführt, wenn du auf **Ausführen** tippst.
+summary: Deine Machine liest die eigenen Protokolle des Computers und informiert dich über echte Probleme, ihre Ursache und eine Lösung. Eine Lösung wird nur ausgeführt, wenn du auf **Ausführen** tippst.
 covers: computer-logs
 code: machine/system_logs.py, machine/sources/gateway.py, onboarding.py
 keywords: logs, journal, journalctl, crash, coredump, systemd, Hyprland, Omarchy, bar
 order: 3
-translated: 1a191d8433bfba2a
+translated: b18e5f4989d6baff
 ---
-## Was sie liest
+## Was gelesen wird
 
-Unter Linux mit systemd liest deine Machine das Protokoll deiner eigenen Benutzersitzung: deine eigenen Dienste und die Absturzberichte deiner eigenen Programme. Unter Omarchy prüft sie außerdem Hyprland und die Statusleiste. Sie liest nie das Protokoll des gesamten Systems und fordert nie mehr Zugriff an.
+Unter Linux mit systemd liest deine Machine das Protokoll deiner eigenen Benutzersitzung: deine eigenen Dienste und die Absturzberichte deiner eigenen Programme. Unter Omarchy prüft sie auch Hyprland und die Leiste. Sie liest nie das Protokoll des gesamten Systems und fordert nie zusätzliche Zugriffsrechte an.
 
-Sie liest, welcher Dienst angehalten wurde, wie er beendet wurde und welches Programm abgestürzt ist. Den Inhalt einzelner Protokollzeilen liest sie nie. Es werden also keine Protokolltexte gespeichert oder von deinem Computer übertragen.
+Sie liest, welcher Dienst angehalten wurde, wie er beendet wurde und welches Programm abgestürzt ist. Den Inhalt einzelner Logzeilen liest sie nie. Daher werden keine Protokolltexte gespeichert oder verlassen deinen Computer.
 
 ## Was als Problem gilt
 
-Ein Dienst, der immer wieder neu startet, mehrmals am Tag ausfällt oder nicht mehr läuft, ein Dienst, dem der Arbeitsspeicher ausgeht, und ein Programm, das abstürzt. Unter Omarchy zählen auch Abstürze von Hyprland oder der Statusleiste sowie Fehler in deinen Hyprland-Einstellungen dazu.
+Ein Dienst, der immer wieder neu startet, mehrmals am Tag fehlschlägt oder dauerhaft ausgefallen ist, ein Dienst, dem der Arbeitsspeicher ausgeht, und ein abgestürztes Programm. Unter Omarchy außerdem ein Absturz von Hyprland oder der Leiste sowie Fehler in deinen Hyprland-Einstellungen.
 
-Ein einzelner Neustart oder ein einzelner fehlgeschlagener Lauf ist normal und bleibt unbemerkt. Das gilt auch für einen Dienst, der ein paar Mal ausfällt und danach wieder problemlos läuft.
+Ein einzelner Neustart oder ein einzelner fehlgeschlagener Lauf ist normal und bleibt ohne Meldung. Dasselbe gilt für einen Dienst, der ein paar Mal fehlschlägt und danach wieder normal läuft, und für einen fehlgeschlagenen Dienst, den nichts zu starten versucht: einen, der nicht aktiviert ist und den auch kein anderer Dienst oder Timer startet.
 
-Browser, die von Tests und Agenten gesteuert werden (headless, Playwright, Puppeteer, CI), bleiben unbemerkt. Das gilt auch für ein Programm, das beendet wird, während sein Dienst angehalten oder neu gestartet wird. Entwicklerläufe bleiben ebenfalls unbemerkt: Was ein Coding-Agent ausführt, Tests und Programme aus einem temporären Ordner oder Cache-Ordner. Ein Programm, das immer wieder abstürzt, erstellt eine Aufgabe, in der steht, wie oft und wann es passiert ist.
+Browser, die von Tests und Agenten gesteuert werden (headless, Playwright, Puppeteer, CI), bleiben ohne Meldung. Das gilt auch für ein Programm, das beendet wird, während sein Dienst angehalten oder neu gestartet wird. Dasselbe gilt für Entwicklerläufe: Programme, die ein Coding-Agent startet, Tests und Programme, die aus einem temporären Ordner oder einem Cache-Ordner gestartet werden. Stürzt ein Programm immer wieder ab, wird eine Aufgabe erstellt, die angibt, wie oft und wann das passiert ist.
 
-Ein Skript wird unter seinem eigenen Namen aufgeführt, zum Beispiel backup.py, nicht als python3 oder node.
+Ein Skript wird unter seinem eigenen Namen aufgeführt, etwa backup.py, nicht unter python3 oder node.
 
 ## Was du bekommst
 
-Eine Aufgabe, die in einfachen Worten erklärt, was passiert ist, warum es wichtig ist und was du tun kannst. Unter **Mehr anzeigen** findest du die Befehle, die den Grund zeigen. Frag im zugehörigen Chat nach, und The Machine untersucht das Problem. Alles, was sie ändert, wartet auf deine Zustimmung, auch bei **Ausführen**.
+Eine Aufgabe, die in einfachen Worten erklärt, was passiert ist, warum es wichtig ist und was du tun kannst. Die Befehle, die den Grund zeigen, findest du unter **Mehr anzeigen**. Frag im zugehörigen Chat nach, und The Machine untersucht das Problem. Alles, was sie ändert, wartet auf deine Bestätigung, wie bei **Ausführen**.
 
-Wenn es eine sichere Lösung gibt, enthält die Aufgabe die Schaltfläche **Ausführen**. Bei einem deiner Dienste, der nicht mehr läuft, startet sie ihn neu. Unter Omarchy stellt sie die Statusleiste wieder her. **Ausführen** führt nur diesen Befehl aus. Das Ergebnis erscheint im Chat der Aufgabe. The Machine greift nie in ihre eigenen Dienste oder das OpenClaw Gateway ein.
+Wenn es eine sichere Lösung gibt, enthält die Aufgabe die Schaltfläche **Ausführen**. Bei einem dauerhaft ausgefallenen Dienst von dir startet sie ihn erneut. Unter Omarchy bringt sie außerdem die Leiste zurück. **Ausführen** startet nur diesen Befehl. Das Ergebnis wird im Chat der Aufgabe angezeigt. The Machine greift nie in ihre eigenen Dienste oder das OpenClaw Gateway ein.
 
-Dasselbe Problem führt höchstens alle zwei Wochen zu einer Aufgabe und nie, solange die entsprechende Aufgabe noch offen ist. Pro Tag gibt es höchstens zwei neue Aufgaben. Eine Aufgabe zu einem ausgefallenen Dienst wird automatisch geschlossen, sobald der Dienst wieder läuft oder der Ausfall behoben ist.
+Für dasselbe Problem gibt es höchstens alle zwei Wochen eine Aufgabe und keine, solange die zugehörige Aufgabe noch offen ist. Pro Tag werden höchstens zwei neue Aufgaben erstellt. Eine Aufgabe zu einem ausgefallenen Dienst wird automatisch geschlossen, sobald er wieder läuft oder der Fehler behoben wurde.
 
 ## Im Terminal
 
-`assistant doctor` listet dieselben Probleme aus den letzten 24 Stunden auf.
+`assistant doctor` listet dieselben Probleme der letzten 24 Stunden auf.
 
 ## Andere Computer
 
-Unter macOS und Windows sowie auf Computern ohne systemd liest sie nichts und weist dich in `assistant doctor` darauf hin.
+Unter macOS und Windows sowie auf Computern ohne systemd liest sie nichts und weist in `assistant doctor` darauf hin.
 
-Bei einer gehosteten Machine kümmern wir uns darum, dass der Server läuft. Seine Probleme gehen an das Team von The Machine, nicht als Aufgaben an dich.
+Bei einer gehosteten Machine kümmern wir uns darum, dass der Server läuft. Probleme damit gehen an das Team von The Machine und werden dir nicht als Aufgaben gemeldet.
 
-## Ausschalten
+## Deaktivieren
 
 Setze `"computer_logs": false` in config.json und starte den Dienst neu.
