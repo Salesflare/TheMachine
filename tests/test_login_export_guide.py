@@ -42,6 +42,15 @@ PAGES = {
         <p>Please re-enter your master password.</p><input type="password" id="mp"><button>Submit</button></form></dialog>''',
     # LastPass's newer vault on its own address: signed out it asks the email first (no password field yet), then the
     # master password; signed in, a narrow window folds the left navigation behind Menu, with Advanced options in it
+    # LastPass signing in on one tab and opening the vault in another, whose left navigation is plain divs with click
+    # handlers (no button, no role), their words split over pieces of text
+    '/lp/login5': '''<!doctype html><meta charset="utf-8"><title>LastPass - Sign in</title><form id="f" onsubmit="event.preventDefault()">
+        <input type="email"><input type="password" id="pw"><button>Log in</button></form>''',
+    '/lp/vault4/': '<!doctype html><meta charset="utf-8"><title>My LastPass Vault</title>' + SAVE + '''<style>.it{cursor:pointer;padding:6px}</style>
+        <aside><div class="it">All items</div><div class="it" onclick="document.getElementById('more').hidden = false"><i></i><span>Advanced</span> <span>options</span></div>
+        <div id="more" hidden><h4>Manage your vault</h4><div class="it" onclick="document.getElementById('dlg').showModal()"><span>Export</span></div></div></aside>
+        <main><p>''' + ON_PAGE + '''</p></main><dialog id="dlg"><form method="dialog" onsubmit="save('lastpass_vault_export.csv', \'''' + LASTPASS_CSV + '''\')">
+        <p>Enter your master password.</p><input type="password" id="mp"><button>Continue</button></form></dialog>''',
     '/lp/vault3/': '<!doctype html><meta charset="utf-8"><title>Vault</title>' + SAVE + '''<div id="app"></div>
         <dialog id="dlg"><form method="dialog" onsubmit="save('lastpass_vault_export.csv', \'''' + LASTPASS_CSV + '''\')">
         <p>Enter your master password to continue.</p><input type="password" id="mp"><button>Continue</button></form></dialog><script>
@@ -261,6 +270,35 @@ class GuideTest(unittest.TestCase):
             self.until(watch, 'password')
             self.typed_master(watch)
             self.review(watch)
+
+    def test_lastpass_opening_its_vault_in_another_tab_is_followed_there_and_its_plain_div_menu_clicked(self):
+        cdp = browser_login.browser_cdp
+        for watch in self.export('lastpass', '/lp/login5'):
+            self.until(watch, 'signin')
+            first = login_import._exports[watch]['tab']
+            self.owner(watch, '() => { document.getElementById("f").requestSubmit(); return 1; }')
+            cdp.open_tab(self.base, self.origin + '/lp/vault4/')  # what LastPass does on signing in
+            self.until(watch, 'password')
+            self.assertNotEqual(login_import._exports[watch]['tab'], first, 'follows the vault\'s tab')
+            self.typed_master(watch)
+            self.review(watch)
+        open_now = {tab for tab, _ in cdp.pages(self.base)}
+        self.assertNotIn(first, open_now, 'its tabs close with it')
+        log = self.log.getvalue()
+        self.assertIn('login export follows another tab manager=lastpass', log)
+        self.assertIn('login export step manager=lastpass step=password', log)
+        self.assertIn('login export guide manager=lastpass at=click step=1', log)
+        self.assertNotIn('/lp/', log, 'no address in the log')
+
+    def test_an_earlier_exports_tab_is_closed_when_the_next_starts(self):
+        cdp = browser_login.browser_cdp
+        for watch in self.export('lastpass', '/lp/login'):
+            self.until(watch, 'signin')
+            first = login_import._exports[watch]['tab']
+            for again in self.export('lastpass', '/lp/login'):
+                self.until(again, 'signin')
+                self.assertNotIn(first, {tab for tab, _ in cdp.pages(self.base)}, 'no pile of export tabs')
+                login_import.export_stop(again)
 
     def test_lastpass_asking_the_email_first_waits_on_the_owner_then_opens_the_folded_menu(self):
         with patch.object(login_export_guide, 'GIVE_UP', 1.5):  # the sign-in never counts toward giving up

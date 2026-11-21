@@ -27,6 +27,7 @@ from __future__ import annotations
 import csv
 import io
 import json
+import logging
 import os
 from pathlib import Path
 import secrets
@@ -39,6 +40,7 @@ import browser_login
 import login_export_guide
 from machine.owner_error import OwnerError
 
+LOG = logging.getLogger('personal-assistant')
 MAX_BYTES = 5 * 1024 * 1024
 MAX_ROWS = 5000
 KEEP_SECONDS = 600
@@ -312,7 +314,12 @@ def _open_and_follow(watch, data_dir, store, shown):
         session = cdp.Session.browser(watch['base'], timeout=20)
         # held while the export is followed: the browser keeps this download folder for as long as the session is open
         session.call('Browser.setDownloadBehavior', {'behavior': 'allow', 'downloadPath': str(folder)})
+        _close_old_tabs(watch['base'])
+        watch['before'] = {tab for tab, _ in cdp.pages(watch['base'], timeout=20)}
         watch['tab'] = cdp.open_tab(watch['base'], EXPORT_PAGES[watch['manager']])
+        watch['tabs'] = {watch['tab']}
+        with _exports_lock:
+            _export_tabs.add(watch['tab'])
     except (cdp.CdpError, OSError, ValueError, TypeError, KeyError):
         if session:
             session.ws.close()
@@ -320,7 +327,7 @@ def _open_and_follow(watch, data_dir, store, shown):
         watch['error'], watch['state'] = OPEN_FAILED, 'failed'
         return
     if watch['stop'].is_set():  # Back while it opened
-        _close_tab(watch)
+        _close_tabs(watch)
         _follow_end(session, folder)
         return
     watch['step'] = 'signin'
@@ -332,20 +339,55 @@ def _open_and_follow(watch, data_dir, store, shown):
     _follow(watch, session, folder, store)
 
 
-def _close_tab(watch):
-    try:
-        browser_login.browser_cdp.close_tab(watch['base'], watch['tab'])
-    except (browser_login.browser_cdp.CdpError, OSError):
-        pass
+_export_tabs = set()  # tabs exports opened or followed, closed when their export ends or the next one starts
 
 
-def _tab_gone(watch):
-    """True only when the browser answers and the export's tab isn't among its tabs (the owner closed it, or the
-    browser started over)."""
+def _close_old_tabs(base):
+    """An earlier export's tabs that are still open (each try opened its own, and the manager opens more): closed, so
+    tabs don't pile up and the guide never follows a stale one."""
+    with _exports_lock:
+        old = set(_export_tabs)
+        _export_tabs.clear()
+    for tab in old:
+        try:
+            browser_login.browser_cdp.close_tab(base, tab)
+        except (browser_login.browser_cdp.CdpError, OSError):
+            pass
+
+
+def _close_tabs(watch):
+    for tab in watch.get('tabs') or ():
+        try:
+            browser_login.browser_cdp.close_tab(watch['base'], tab)
+        except (browser_login.browser_cdp.CdpError, OSError):
+            pass
+    with _exports_lock:
+        _export_tabs.difference_update(watch.get('tabs') or ())
+
+
+def _pick_tab(watch):
+    """The tab to follow now: the manager's page the browser used last among the export's own tabs and the tabs opened
+    since it started (the manager may sign in or open the vault in a new tab). Only addresses are compared, inside
+    this process; none is kept or logged. Answers 'gone' when the browser answers and none is left, None when it
+    doesn't answer."""
+    cdp = browser_login.browser_cdp
     try:
-        return watch['tab'] not in browser_login.browser_cdp.tab_ids(watch['base'])
-    except (browser_login.browser_cdp.CdpError, OSError, TypeError, KeyError, AttributeError):
-        return False
+        open_now = cdp.pages(watch['base'])
+    except (cdp.CdpError, OSError, TypeError, KeyError, AttributeError):
+        return None
+    ids = {tab for tab, _ in open_now}
+    watch['tabs'] &= ids
+    ours = [tab for tab, url in open_now if (tab in watch['tabs'] or tab not in watch['before'])
+            and login_export_guide.owns(watch['manager'], url)]
+    if not ours:
+        return watch['tab'] if watch['tab'] in ids else 'gone'
+    if ours[0] != watch['tab']:
+        LOG.info('login export follows another tab manager=%s tabs=%d', watch['manager'], len(ours))
+        watch['tab'] = ours[0]
+        watch['tabs'].add(ours[0])
+        with _exports_lock:
+            _export_tabs.add(ours[0])
+    return watch['tab']
 
 
 def _follow(watch, session, folder, store):
@@ -364,16 +406,16 @@ def _follow(watch, session, folder, store):
                 pass
             path = _whole_file(folder, sizes)
             if not path:
-                if watch['step'] != 'manual':
-                    said = login_export_guide.step(watch['base'], watch['tab'], watch['manager'], guide)
-                    if said:
-                        watch['step'], watch['focus'] = said, guide['box']
-                    elif _tab_gone(watch):
-                        watch['error'], watch['state'] = 'The export page was closed. Try again.', 'failed'
-                        return
-                elif _tab_gone(watch):
+                if _pick_tab(watch) == 'gone':
+                    LOG.info('login export tab closed manager=%s', watch['manager'])
                     watch['error'], watch['state'] = 'The export page was closed. Try again.', 'failed'
                     return
+                if watch['step'] != 'manual':
+                    said = login_export_guide.step(watch['base'], watch['tab'], watch['manager'], guide)
+                    if said and said != watch['step']:
+                        LOG.info('login export step manager=%s step=%s', watch['manager'], said)
+                    if said:
+                        watch['step'], watch['focus'] = said, guide['box']
                 continue
             try:
                 kind, rows, skipped = parse(_take(path))
@@ -381,9 +423,10 @@ def _follow(watch, session, folder, store):
                 watch['state'] = 'review'
             except OwnerError as error:
                 watch['error'], watch['state'] = str(error), 'failed'
-            _close_tab(watch)
             return
     finally:
+        LOG.info('login export ended manager=%s state=%s step=%s', watch['manager'], watch['state'], watch['step'])
+        _close_tabs(watch)
         _follow_end(session, folder)
 
 

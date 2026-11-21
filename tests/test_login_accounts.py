@@ -467,7 +467,7 @@ class FakeBrowser:
     """Stands in for the Machine's browser over DevTools: records the calls and tabs; never a real browser."""
 
     def __init__(self):
-        self.calls, self.opened, self.closed = [], [], []
+        self.calls, self.opened, self.closed, self.tabs = [], [], [], {}
 
     def session(self, base, timeout=30):
         fake = self
@@ -492,8 +492,9 @@ class FakeBrowser:
     def __enter__(self):
         cdp = browser_login.browser_cdp
         self.patches = [patch.object(cdp.Session, 'browser', self.session),
-                        patch.object(cdp, 'open_tab', lambda base, url: self.opened.append(url) or 'tab-1'),
-                        patch.object(cdp, 'close_tab', lambda base, tab: self.closed.append(tab)),
+                        patch.object(cdp, 'open_tab', lambda base, url: self.opened.append(url) or self.tabs.update({'tab-1': url}) or 'tab-1'),
+                        patch.object(cdp, 'close_tab', lambda base, tab: self.closed.append(tab) or self.tabs.pop(tab, None)),
+                        patch.object(cdp, 'pages', lambda base, timeout=10: list(self.tabs.items())),
                         patch.object(login_import, 'EXPORT_POLL', 0.02)]
         for p in self.patches:
             p.start()
@@ -591,7 +592,7 @@ class ExportPageTest(Folder):
         self.assertEqual(left(), [], 'no folder left')
 
     def test_a_closed_export_tab_says_so_instead_of_waiting(self):
-        with FakeBrowser() as browser, patch.object(browser_login.browser_cdp, 'tab_ids', return_value={'another-tab'}):
+        with FakeBrowser() as browser, patch.object(browser_login.browser_cdp, 'pages', return_value=[('another-tab', 'about:blank')]):
             opened = login_import.export_open('http://127.0.0.1:9', 'bitwarden', self.folder, self.store)
             browser.folder()
             got = wait_for(login_import.export_check, opened['watch'])
