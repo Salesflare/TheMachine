@@ -22,7 +22,7 @@ const review={token:'tok-1',kind:'1password',manager:'1Password',skipped:1,rows:
  {key:'k2',title:'Example',site:'billing.example.net',origin:'https://billing.example.net',username:'finance@example.net',saved:[]},
  {key:'k3',title:'Router',site:'portal.example.com',origin:'https://portal.example.com',username:'admin',saved:[]}]};
 const accounts=logins.slice(0,2).map(({id,account,username})=>({id,account,username}));
-let pick=null,twoStep=false,tools={},exportReady=false,exportStep='signin',browserLink=null;const calls=[];
+let pick=null,twoStep=false,tools={},exportReady=false,exportStep='signin',browserLink=null,browserEmbed=null;const calls=[];
 const tidewell={id:'0:tab',site:'shop.tidewell.example',host:'shop.tidewell.example',origin:'https://shop.tidewell.example',code:false};
 const server=createServer(async(req,res)=>{
  const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
@@ -31,7 +31,7 @@ const server=createServer(async(req,res)=>{
  if(asset){res.setHeader('Content-Type',asset.endsWith('.png')?'image/png':'font/woff2');res.end(await readFile(new URL('../'+asset,import.meta.url)));return}
  // the Machine's browser in the live view: a made-up page, never a real password manager's
  if(url.pathname==='/view/'){res.setHeader('Content-Type','text/html');res.end('<body style="margin:0;background:#1f2329;color:#ddd;font:16px sans-serif;display:grid;place-items:center;height:100vh">Example vault: Export</body>');return}
- if(url.pathname==='/api/status'){res.end(JSON.stringify({...(browserLink?{browser_link:browserLink}:{}),suggestions:[],promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},connectors:[],review_runs:[]}));return}
+ if(url.pathname==='/api/status'){res.end(JSON.stringify({...(browserLink?{browser_link:browserLink}:{}),...(browserEmbed?{browser_embed:browserEmbed}:{}),suggestions:[],promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},connectors:[],review_runs:[]}));return}
  if(url.pathname==='/api/progress'){res.end(JSON.stringify({status:'blocked'}));return}
  if(url.pathname==='/api/action'){let body='';for await(const b of req)body+=b;const {action,args}=JSON.parse(body);calls.push([action,args]);
   if(action==='browser_logins'){res.end(JSON.stringify({logins}));return}
@@ -131,17 +131,24 @@ try{
   await page.locator('#login-import [data-li-key]').nth(2).waitFor();
   assert.match(await page.locator('#login-import .li-lead').innerText(),/3 sign-ins found in LastPass\./);
   await page.locator('#login-import [data-li-back]').click();
-  // With the live view on this address, the export page shows right in the sheet
-  browserLink='/view/';exportReady=false;exportStep='password';await page.evaluate(async()=>{await refresh()});
+  // The Browser pane's live view (browser_embed, on the dashboard's own address; the browser link is another site's,
+  // like a hosted Machine's handoff) shows right in the sheet as soon as the export tab is open, and Open the browser
+  // goes. The pane's own frame lets go of the screen meanwhile (one viewer sizes it).
+  browserLink='https://machine.example.invalid/open?to=browser';browserEmbed='/view/';exportReady=false;exportStep='opening';
+  await page.evaluate(async()=>{await refresh();const f=document.getElementById('bp-frame');f.dataset.src=f.src='/view/?pane'});
   await page.locator('[data-li-go="bitwarden"]').click();
-  await page.locator('#login-import .li-view iframe').waitFor();
+  await page.locator('#login-import .li-wait',{hasText:'Opening Bitwarden…'}).waitFor();
+  assert.equal(await page.locator('#login-import .li-view').count(),0,'no view before the tab is open');
+  exportStep='password';await page.locator('#login-import .li-view iframe').waitFor();
+  assert.ok(await page.locator('#login-import [data-li-browser]').isHidden(),'the view is there: no Open the browser');
+  assert.equal(await page.evaluate(()=>document.getElementById('bp-frame').getAttribute('src')),'about:blank','the pane lets go of the screen');
   await page.frameLocator('#login-import .li-view iframe').locator('body').waitFor();
   await page.locator('#login-import .li-wait.li-you',{hasText:'Type your master password to export.'}).waitFor();
   await clean(page,'export view');await shot(page,'import-export-view',width,scheme);
   // Back sends the stop without waiting on its answer: wait for that call to be answered, not a fixed time
   const stop=await callAfter(page,c=>c.action==='browser_login_import'&&c.args?.do==='export_stop',()=>page.locator('#login-import [data-li-back]').click());
   assert.deepEqual(stop.args,{do:'export_stop',watch:'w-1'},'Back stops the export');
-  browserLink=null;await page.evaluate(async()=>{await refresh()});
+  browserLink=browserEmbed=null;await page.evaluate(async()=>{await refresh()});
   // 1Password without op: its app's export file, picked right there
   tools={};await page.locator('[data-li-close]').click();await page.locator('#logins-import').click();
   await page.locator('#login-import [data-li-go="1password"]',{hasText:'Export from the 1Password app'}).waitFor();
