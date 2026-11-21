@@ -8,15 +8,20 @@ takes no screenshot; it only looks for the next button by fixed words and select
 the master password field so the owner can type right away.
 
 Nothing from the page leaves it: the script answers with one of a fixed set of words (`at`) and, for a click, the
-button's position on screen, and step() checks both against that set before using them. Nothing here logs. When the
+button's position on screen, and step() checks both against that set before using them. The log gets what it saw
+from that fixed set only (`at` and the recipe's step number), when it changes: never an address, a word or a value. When the
 page doesn't look the way a recipe expects (the manager changed it), step() says 'manual' once GIVE_UP seconds go by
 without a step, and the dialog shows the owner the manual steps instead.
 """
 from __future__ import annotations
 
+import logging
+import re
 import time
 
 import browser_login
+
+LOG = logging.getLogger('personal-assistant')
 
 browser_cdp = browser_login.browser_cdp  # the one module object, so its CdpError is the one raised
 
@@ -113,13 +118,24 @@ SCRIPT = r'''function (r, s) {
   if (r.go && !test(r.at)) { if (s.go) location.assign(r.go); return {at: 'going'}; }
   const clickable = 'button,a[href],[role=button],[role=menuitem],[role=link],[role=tab],[role=option],[role=radio],' +
     'input[type=submit],input[type=button],input[type=radio],label,li,[jsaction*="click"],[tabindex]:not([tabindex="-1"])';
-  const target = (el) => { const t = el && el.closest(clickable); return t && words(t.textContent).length <= 80 && shows(t) ? t : null; };
+  // What to click for a match: its closest button-like element, else the closest that shows a pointer (a navigation
+  // item that is a plain div with a click handler), else the element itself
+  const target = (el) => { if (!el) return null; let t = el.closest(clickable);
+    for (let a = el; !t && a && a !== document.body; a = a.parentElement) if (getComputedStyle(a).cursor === 'pointer') t = a;
+    t = t || el; return words(t.textContent).length <= 80 && shows(t) ? t : null; };
   const find = (step) => {
     for (const css of step.css) { let el = null; try { el = [...document.querySelectorAll(css)].find(shows); } catch (e) {} if (el) return el; }
     const want = new Set(step.text);
     for (const el of document.querySelectorAll('[aria-label]')) if (want.has(words(el.getAttribute('aria-label'))) && target(el)) return target(el);
     const walk = document.createTreeWalker(document.body || document.documentElement, NodeFilter.SHOW_TEXT);
     for (let n = walk.nextNode(); n; n = walk.nextNode()) if (want.has(words(n.nodeValue)) && target(n.parentElement)) return target(n.parentElement);
+    // words split over several pieces of text (an icon's text, a badge), in navigation, menus and dialogs: the
+    // smallest element there whose words are exactly the step's
+    const parts = 'nav *,aside *,header *,[role=navigation] *,[role=menu] *,[role=menubar] *,[role=dialog] *,dialog *,ul *';
+    for (const el of document.querySelectorAll(parts)) {
+      if (el.title && want.has(words(el.title)) && target(el)) return target(el);
+      if (el.childElementCount && el.childElementCount < 6 && want.has(words(el.textContent)) && target(el)) return target(el);
+    }
     return null;
   };
   for (let i = r.steps.length - 1; i >= 0; i--) {
@@ -133,6 +149,13 @@ SCRIPT = r'''function (r, s) {
   return {at: 'missing'};
 }'''
 AT = {'password', 'signin', 'elsewhere', 'email', 'going', 'held', 'click', 'missing'}
+
+
+def owns(manager, url):
+    """Whether a tab's address is this manager's sign-in, vault or export page (login_import follows the one used
+    last)."""
+    recipe = RECIPES.get(manager) or {}
+    return any(recipe.get(k) and re.search(recipe[k], url or '', re.I) for k in ('signin', 'vault'))
 
 
 def start():
@@ -186,6 +209,10 @@ def step(base, tab, manager, state):
     At sign-in and password, state['box'] is where the owner types in the window (_box), for the live view."""
     recipe = RECIPES[manager]
     seen = look(base, tab, recipe, state)
+    said_now = ('none',) if seen is None else (seen['at'], seen['step'])
+    if said_now != state.get('seen'):
+        state['seen'] = said_now
+        LOG.info('login export guide manager=%s at=%s step=%s', manager, said_now[0], said_now[1] if len(said_now) > 1 else '-')
     if seen is None:  # the page didn't answer (loading, busy): no new word, unless it stays that way long after the last
         return 'manual' if time.monotonic() - state['progress'] > 3 * GIVE_UP else None
     now, at = time.monotonic(), seen['at']

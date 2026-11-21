@@ -33,6 +33,12 @@ def tab_ids(base):
     return {t['id'] for t in _http(base, '/json/list') if t.get('type') == 'page'}
 
 
+def pages(base, timeout=10):
+    """The browser's tabs as [(id, address)], in the browser's own order (the one used last first)."""
+    return [(t['id'], str(t.get('url') or '')) for t in _http(base, '/json/list', timeout=timeout)
+            if t.get('type') == 'page' and t.get('id')]
+
+
 def open_tab(base, url):
     tab = _http(base, '/json/new?' + urllib.parse.quote(url, safe=':/?&=%'), method='PUT')
     if not isinstance(tab, dict) or not tab.get('id'):
