@@ -65,6 +65,35 @@ PAGES = {
             document.getElementById('adv').onclick = () => { document.getElementById('more').hidden = false; };
             document.getElementById('ex').onclick = () => document.getElementById('dlg').showModal(); } }
         render();</script>''',
+    # The vault's left navigation inside a frame: the same origin's (vault6, a frame placed off the corner) or another
+    # origin's (vault8, the frame's address in ?f=: another port is another origin in the tab's own process, localhost
+    # another site in a process of its own), whose Export asks the vault around it for the master password
+    '/lp/vault6/': '<!doctype html><meta charset="utf-8"><title>Vault</title>' + SAVE + '''<p>''' + ON_PAGE + '''</p>
+        <iframe src="/lp/nav6" style="position:absolute;left:140px;top:90px;width:260px;height:200px;border:3px solid #ccc"></iframe>
+        <dialog id="dlg"><form method="dialog" onsubmit="save('lastpass_vault_export.csv', \'''' + LASTPASS_CSV + '''\')">
+        <p>Enter your master password.</p><input type="password" id="mp"><button>Continue</button></form></dialog>''',
+    '/lp/nav6': '''<!doctype html><meta charset="utf-8"><nav><a href="#">Passwords</a><button type="button" onclick="document.getElementById('more').hidden = false">
+        Advanced options</button><ul id="more" hidden><li><button type="button" onclick="parent.document.getElementById('dlg').showModal()">Export</button></li></ul></nav>''',
+    '/lp/vault8/': '<!doctype html><meta charset="utf-8"><title>Vault</title>' + SAVE + '''<p>''' + ON_PAGE + '''</p>
+        <iframe id="nav" style="position:absolute;left:180px;top:120px;width:260px;height:200px;border:0"></iframe>
+        <dialog id="dlg"><form method="dialog" onsubmit="save('lastpass_vault_export.csv', \'''' + LASTPASS_CSV + '''\')">
+        <p>Enter your master password.</p><input type="password" id="mp"><button>Continue</button></form></dialog><script>
+        document.getElementById('nav').src = new URLSearchParams(location.search).get('f');
+        addEventListener('message', (e) => { if (e.data === 'export') document.getElementById('dlg').showModal(); });</script>''',
+    '/lp/nav8': '''<!doctype html><meta charset="utf-8"><div style="height:60px"></div><nav><button type="button" onclick="document.getElementById('more').hidden = false">
+        Advanced options</button><ul id="more" hidden><li><button type="button" onclick="parent.postMessage('export', '*')">Export</button></li></ul></nav>''',
+    # The vault's navigation as web components, one inside the other (open shadow roots): Advanced options drawn by
+    # the style sheet only, Export an icon with a title only
+    '/lp/vault7/': '<!doctype html><meta charset="utf-8"><title>Vault</title>' + SAVE + '''<lp-app></lp-app><p>''' + ON_PAGE + '''</p>
+        <dialog id="dlg"><form method="dialog" onsubmit="save('lastpass_vault_export.csv', \'''' + LASTPASS_CSV + '''\')">
+        <p>Enter your master password.</p><input type="password" id="mp"><button>Continue</button></form></dialog><script>
+        customElements.define('lp-nav', class extends HTMLElement { connectedCallback() { const r = this.attachShadow({mode: 'open'});
+          r.innerHTML = '<style>.adv::before{content:"Advanced options"}.adv{cursor:pointer;padding:6px}</style><div role="navigation">' +
+            '<div class="adv"></div><div id="more" hidden><span title="Export" style="display:inline-block;width:20px;height:20px;cursor:pointer"></span></div></div>';
+          r.querySelector('.adv').onclick = () => { r.getElementById('more').hidden = false; };
+          r.querySelector('[title]').onclick = () => document.getElementById('dlg').showModal(); } });
+        customElements.define('lp-app', class extends HTMLElement { connectedCallback() {
+          this.attachShadow({mode: 'open'}).innerHTML = '<section style="margin:40px 0 0 60px"><lp-nav></lp-nav></section>'; } });</script>''',
     # the same vault after a redesign: nothing the recipe knows
     '/lp/vault2/': '<!doctype html><meta charset="utf-8"><title>Vault</title><nav><button type="button">More tools</button></nav><p>' + ON_PAGE + '</p>',
     # Bitwarden: one page with hash routes; signed out it goes to #/login, signed in to #/vault (not the export)
@@ -140,6 +169,8 @@ class GuideTest(unittest.TestCase):
         cls.site = http.server.ThreadingHTTPServer(('127.0.0.1', 0), Site)
         threading.Thread(target=cls.site.serve_forever, daemon=True).start()
         cls.origin = 'http://127.0.0.1:%d' % cls.site.server_address[1]
+        cls.other = http.server.ThreadingHTTPServer(('127.0.0.1', 0), Site)  # another origin, for frames
+        threading.Thread(target=cls.other.serve_forever, daemon=True).start()
         cls.temp = Path(tempfile.mkdtemp())
         port = free_port()
         cls.chrome = subprocess.Popen([CHROME, '--headless=new', '--no-sandbox', '--disable-gpu', '--remote-debugging-port=%d' % port,
@@ -159,6 +190,7 @@ class GuideTest(unittest.TestCase):
         cls.chrome.terminate()
         cls.chrome.wait()
         cls.site.shutdown()
+        cls.other.shutdown()
         shutil.rmtree(cls.temp, ignore_errors=True)
 
     def setUp(self):
@@ -314,11 +346,40 @@ class GuideTest(unittest.TestCase):
                 self.typed_master(watch)
                 self.review(watch)
 
+    def signed_in_through(self, page):
+        for watch in self.export('lastpass', page):
+            self.until(watch, 'password')
+            self.typed_master(watch)
+            self.review(watch)
+        return self.log.getvalue()
+
+    def test_lastpass_with_its_navigation_in_a_frame_of_the_same_origin(self):
+        log = self.signed_in_through('/lp/vault6/')
+        self.assertIn('login export guide manager=lastpass at=click step=2', log)
+        self.assertNotIn('guide miss', log, 'found without a miss')
+
+    def test_lastpass_with_its_navigation_in_a_frame_of_another_origin_or_site(self):
+        port = self.other.server_address[1]
+        for frame in ('http://127.0.0.1:%d/lp/nav8' % port, 'http://localhost:%d/lp/nav8' % port):
+            with self.subTest(frame=frame.split(':')[1]):
+                self.log.seek(0), self.log.truncate(), self.answers.clear()
+                log = self.signed_in_through('/lp/vault8/?f=' + frame)
+                self.assertIn('login export guide manager=lastpass at=click step=2', log)
+                self.assertNotIn('nav8', log, 'no address in the log')
+
+    def test_lastpass_with_its_navigation_in_web_components_drawn_by_the_style_sheet(self):
+        log = self.signed_in_through('/lp/vault7/')
+        self.assertIn('login export guide manager=lastpass at=click step=1', log)
+        self.assertIn('login export guide manager=lastpass at=click step=2', log)
+
     def test_a_changed_page_hands_the_owner_the_manual_steps(self):
         with patch.object(login_export_guide, 'GIVE_UP', 1.5):
             for watch in self.export('lastpass', '/lp/vault2/'):
                 self.until(watch, 'manual')
                 self.assertEqual(self.check(watch), {'state': 'waiting', 'step': 'manual'}, 'stays manual, still waiting for the file')
+                # what kind of miss, in numbers: how much of the page the guide could look into
+                self.assertRegex(self.log.getvalue(), r'login export guide miss manager=lastpass frames=0 other=0 shadow=0 custom=0 '
+                                                      r'candidates=1 outside=0\n')
                 login_import.export_stop(watch)
                 time.sleep(0.5)
 
