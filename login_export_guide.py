@@ -18,6 +18,7 @@ from __future__ import annotations
 import logging
 import re
 import time
+import urllib.parse
 
 import browser_login
 
@@ -30,30 +31,43 @@ CLICKS = 4  # each button at most this often (an email to confirm sends the owne
 AGAIN = 4  # seconds before the same button is clicked again
 GOES = 3  # how often a recipe's export address is opened
 OWNER_REST = 30  # seconds after the master password showed before anything is clicked again (the download may be on its way)
+SETTLE = 5  # seconds after a click to wait for the next step's button before a step up to it may be clicked again
+ROUNDS = 2  # going back to a step already clicked: the second time, the guide stops clicking and hands over the steps
+STARTED = 3  # seconds after the step that starts the export for the master password to show, before 'email' is said
 
 # Per manager: `signin` (address of its sign-in, 2FA or unlock pages), `vault` (address once signed in), `go`/`at` (an
 # address to open once signed in, and how to tell it's there), `steps` (buttons in order, each by CSS selectors first,
 # then by its exact words, lowercase), `arm` (the first step after which a password field is the master password asked
-# again rather than the sign-in) and `email` (words that say an email waits to be confirmed).
+# again rather than the sign-in) and `email` (words that say an email waits to be confirmed). A step with `starts` starts
+# the export (LastPass emails a link to confirm on each click): it is clicked once per export, once more only after the
+# guide opened that email's link (`verify`: its sender's domain, subject and the hosts its link may be on;
+# login_export_mail), and nothing up to it is clicked again while the owner's part waits.
 _EXPORT = ['export', 'exporteren', 'exportieren', 'exporter', 'exportar', 'esporta']
 RECIPES = {
     'lastpass': {
         'signin': r'^https://(www\.)?lastpass\.(com|eu)/(\?|.*[?&]ac=1|[^#]*(login|signin|sso|multifactor|mfa))',
         'vault': r'^https://(www\.)?lastpass\.(com|eu)/',
-        # LastPass's help: in the vault's left navigation, Advanced options, then Export; it emails a link to confirm,
-        # then Advanced options > Export again; the master password may be asked. A narrow window folds the left
-        # navigation behind its menu button, so that comes first (only clicked when neither of the others shows).
+        # LastPass's help: in the vault's left navigation, Advanced options, then Export in the list it opens. Export
+        # itself starts the export: the page only says to look for an email from LastPass ("Verify export", whose
+        # Continue export link expires in 10 minutes), the menu folds again, and Advanced options > Export once more
+        # asks the master password and downloads the CSV. A narrow window folds the left navigation behind its menu
+        # button, so that comes first (only clicked when neither of the others shows).
         'steps': [
             {'css': [], 'text': ['menu', 'open menu', 'main menu', 'open navigation', 'toggle navigation', 'expand navigation',
                                  'navigation menu', 'show navigation', 'expand menu']},
             {'css': ['[data-automation-id="advanced-options-menu-item"]', '#advancedOptionsMenuItem'],
              'text': ['advanced options', 'geavanceerde opties', 'erweiterte optionen', 'options avancées', 'opciones avanzadas',
                       'opzioni avanzate', 'opções avançadas']},
-            {'css': ['[data-automation-id="export-menu-item"]', '#exportMenuItem'], 'text': _EXPORT},
+            {'css': ['[data-automation-id="export-menu-item"]', '#exportMenuItem'], 'starts': True,
+             'text': _EXPORT + ['export items', 'export vault items', 'items exporteren', 'elemente exportieren', 'exporter les éléments',
+                                'exportar elementos', 'esporta elementi', 'exportar itens']},
             {'css': [], 'text': ['lastpass csv file', 'csv file', 'csv']},
         ],
         'arm': 2,
-        'email': r'check your (email|inbox)|verification email|(sent|emailed) you an? (email|link)|verify (this |your )?export',
+        'email': r'check your (email|inbox)|verification email|(sent|emailed) you an? (email|link)|verify (this |your )?export|'
+                 r'look for an email|finish the export',
+        'verify': {'from': r'(^|\.)lastpass\.(com|eu)$', 'subject': r'verify export', 'hosts': r'^([a-z0-9-]+\.)*lastpass\.(com|eu)$',
+                   'link': r'continue export|export'},
     },
     'bitwarden': {
         'signin': r'^https://vault\.bitwarden\.(com|eu)/#/(login|2fa|lock|sso|signup|hint|accept|finish|set-password|verify)',
@@ -187,9 +201,60 @@ def owns(manager, url):
     return any(recipe.get(k) and re.search(recipe[k], url or '', re.I) for k in ('signin', 'vault'))
 
 
+def allowed(manager, url):
+    """Whether `url` may be opened as this manager's export verification (login_export_mail): https, on one of its own
+    hosts (`verify`), no user name or other port."""
+    verify = (RECIPES.get(manager) or {}).get('verify')
+    if not verify or not isinstance(url, str) or len(url) > 2000:
+        return False
+    try:
+        part = urllib.parse.urlsplit(url.strip())
+        port = part.port
+    except ValueError:
+        return False
+    return (part.scheme == 'https' and not part.username and not part.password and port in (None, 443)
+            and bool(re.search(verify['hosts'], (part.hostname or '').lower())))
+
+
 def start():
     """A guide's state, kept by the export's watch: what was clicked when, and since when nothing happened."""
-    return {'clicks': {}, 'last': {}, 'goes': 0, 'armed': False, 'focused': False, 'progress': time.monotonic(), 'box': None}
+    # top/top_at: the step clicked last and when; rounds: how often a click went back to a step already clicked;
+    # started: when the step that starts the export was clicked (None: not yet, or again allowed after a verification);
+    # starts: how many more times it may be clicked; verified: whether the email's link was opened (at most once)
+    return {'clicks': {}, 'last': {}, 'goes': 0, 'armed': False, 'focused': False, 'progress': time.monotonic(), 'box': None,
+            'top': -1, 'top_at': 0.0, 'rounds': 0, 'started': None, 'starts': 1, 'verified': False}
+
+
+def _starts(recipe):
+    """The recipe's step that starts the export, or None."""
+    return next((i for i, s in enumerate(recipe['steps']) if s.get('starts')), None)
+
+
+def verified(state):
+    """The email's link was opened (login_import): the step that starts the export may be clicked exactly once more,
+    and the steps on the way to it again."""
+    if state['verified']:
+        return
+    state.update(verified=True, started=None, starts=state['starts'] + 1, top=-1, rounds=0, progress=time.monotonic())
+
+
+def _may(recipe, state, now):
+    """Which steps may be clicked now. Nothing up to the step that starts the export once it was clicked (the owner's
+    email, the master password); nothing up to the step clicked last while its next step may still show (SETTLE); and
+    after a round back to an earlier step, no second one (the page loops)."""
+    rested = now - state.get('owner', -OWNER_REST) >= OWNER_REST
+    first = _starts(recipe)
+    settling = now - state['top_at'] < SETTLE
+    spent = state['rounds'] >= ROUNDS - 1
+    out = []
+    for i in range(len(recipe['steps'])):
+        ok = rested and state['clicks'].get(i, 0) < CLICKS and now - state['last'].get(i, -AGAIN) >= AGAIN
+        if i <= state['top'] and (settling or spent):
+            ok = False
+        if first is not None and i <= first and (state['started'] is not None or state['starts'] < 1):
+            ok = False
+        out.append(ok)
+    return out
 
 
 def _box(box):
@@ -277,9 +342,7 @@ def look(base, tab, recipe, state):
     """Runs SCRIPT once in the tab: its checked answer, or None when the page can't be reached right now (loading,
     the browser busy). Nothing found there: runs it again in each frame of another origin (_frames). Clicks the
     button it found, as a mouse click there."""
-    now = time.monotonic()
-    rested = now - state.get('owner', -OWNER_REST) >= OWNER_REST
-    may = [rested and state['clicks'].get(i, 0) < CLICKS and now - state['last'].get(i, -AGAIN) >= AGAIN for i in range(len(recipe['steps']))]
+    may = _may(recipe, state, time.monotonic())
     flags = {'armed': state['armed'], 'stepped': bool(state['clicks']), 'focus': not state['focused'], 'go': state['goes'] < GOES, 'may': may}
     opened = []
     try:
@@ -338,11 +401,25 @@ def step(base, tab, manager, state):
         said = 'working'
     if at == 'click':
         i = seen['step']
+        if i <= state['top']:  # back to a step already clicked: a round
+            state['rounds'] += 1
+        state['top'], state['top_at'] = i, now
         state['clicks'][i] = state['clicks'].get(i, 0) + 1
         state['last'][i] = now
         state['armed'] = state['armed'] or i >= recipe['arm']
+        if recipe['steps'][i].get('starts'):
+            state['started'], state['starts'], state['started_at'] = now, state['starts'] - 1, time.time()
+            LOG.info('login export guide started manager=%s step=%d', manager, i)
         said = 'working'
-    if at == 'held' and state['clicks'].get(seen['step'], 0) < CLICKS:
+    elif state['started'] is not None and at in ('held', 'missing', 'going'):
+        # The export started and no later step shows: the manager waits on the owner (LastPass's email to confirm).
+        # Nothing up to that step is clicked again; it says so once the master password had time to show.
+        said = 'email' if recipe['email'] and now - state['started'] >= STARTED else 'working'
+    elif at == 'held' and seen['step'] <= state['top'] and state['rounds'] >= ROUNDS - 1 and now - state['top_at'] >= SETTLE:
+        # the same steps again and again: stop clicking, the owner gets the steps (and keeps the live view)
+        LOG.info('login export guide loop manager=%s step=%d rounds=%d', manager, seen['step'], state['rounds'] + 1)
+        return 'manual'
+    elif at == 'held' and state['clicks'].get(seen['step'], 0) < CLICKS:
         said = 'working'
     if said:
         state['progress'] = now

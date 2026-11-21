@@ -13,6 +13,7 @@ import urllib.parse
 
 import browser_login
 import browser_viewer
+import login_export_mail
 import login_import
 import todo_areas
 from machine.browser import (browser_lease_script, browser_link, browser_wait, preparation_steps, run_tab,
@@ -63,7 +64,8 @@ class BrowserApp:
             # Answers at once: the page opens (the browser may start first) and comes to the front in the export's own
             # thread, and export_check says how far it got.
             opened = login_import.export_open(base, args.get('manager'), Path(self.config['database']).expanduser().parent, logins,
-                                              shown=lambda tab: browser_viewer.focus(None, base, target=tab))
+                                              shown=lambda tab: browser_viewer.focus(None, base, target=tab),
+                                              mail=lambda manager, since, seen: login_export_mail.link(self.config, manager, since, seen))
             return {'watch': opened['watch'], 'view': browser_link(self.config), 'page': login_import.EXPORT_PAGES[args['manager']]}
         if step == 'export_check':
             return login_import.export_check(args.get('watch'))
