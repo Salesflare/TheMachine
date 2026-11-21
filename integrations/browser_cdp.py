@@ -39,6 +39,13 @@ def pages(base, timeout=10):
             if t.get('type') == 'page' and t.get('id')]
 
 
+def frames(base, timeout=10):
+    """The browser's frames that run apart from their tab (another site's, in a process of their own) as
+    [(id, parent id)]: the parent is the tab or the frame they sit in."""
+    return [(t['id'], str(t.get('parentId') or '')) for t in _http(base, '/json/list', timeout=timeout)
+            if t.get('type') == 'iframe' and t.get('id')]
+
+
 def open_tab(base, url):
     tab = _http(base, '/json/new?' + urllib.parse.quote(url, safe=':/?&=%'), method='PUT')
     if not isinstance(tab, dict) or not tab.get('id'):
@@ -215,11 +222,13 @@ class Session:
         except socket.timeout:
             raise CdpError('the browser did not answer in time') from None
 
-    def run(self, fn, *args):
+    def run(self, fn, *args, context=None):
         """Call a JavaScript function (source text) with JSON arguments, passed as values, not written into the
-        script. Returns its JSON value."""
-        this = self.call('Runtime.evaluate', {'expression': 'globalThis'})['result']['objectId']
-        result = self.call('Runtime.callFunctionOn', {'functionDeclaration': fn, 'objectId': this, 'returnByValue': True,
+        script. Returns its JSON value. context: an execution context's id (a frame's world) instead of the tab's
+        own page."""
+        where = {'executionContextId': context} if context else {
+            'objectId': self.call('Runtime.evaluate', {'expression': 'globalThis'})['result']['objectId']}
+        result = self.call('Runtime.callFunctionOn', {'functionDeclaration': fn, **where, 'returnByValue': True,
                                                       'awaitPromise': True, 'arguments': [{'value': a} for a in args]})
         if result.get('exceptionDetails'):
             raise CdpError('script failed')  # no details: they could quote what the script was given

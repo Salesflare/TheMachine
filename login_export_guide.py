@@ -82,60 +82,89 @@ RECIPES = {
 
 # Runs in the page with the recipe and what may happen now, both as values. Answers {at} with at one of AT, plus the
 # step and its position for a click. It reads the address, whether fields and buttons show and the words on buttons,
-# all inside the page; none of it is in the answer.
+# all inside the page; none of it is in the answer. It looks through the whole page: the document, each open shadow
+# root (a web component's insides) and each frame of the same origin, recursively. Frames of another origin are the
+# guide's (look: it runs this again in each, with s.inner). On no match, it counts what it saw: numbers only.
 SCRIPT = r'''function (r, s) {
   const href = location.href, test = (re) => !!re && new RegExp(re, 'i').test(href);
+  const roots = [], n = {frames: 0, other: 0, shadow: 0, custom: 0};
+  const gather = (root) => { roots.push(root); for (const el of root.querySelectorAll('*')) {
+    if (el.shadowRoot) { n.shadow++; gather(el.shadowRoot); } else if (el.localName.includes('-')) n.custom++;
+    if (/^i?frame$/.test(el.localName)) { let d = null; try { d = el.contentDocument; } catch (e) {}
+      if (d && d.documentElement) { n.frames++; gather(d); } else n.other++; } } };
+  gather(document);
+  const all = (css) => roots.flatMap((root) => { try { return [...root.querySelectorAll(css)]; } catch (e) { return []; } });
+  const style = (el, p) => (el.ownerDocument.defaultView || window).getComputedStyle(el, p);
+  // an element's box in this window: its frame's place added for one in a frame
+  const place = (el) => { const b = el.getBoundingClientRect(); let x = b.left, y = b.top;
+    for (let w = el.ownerDocument.defaultView; w && w.frameElement; w = w.parent) {
+      const f = w.frameElement, o = f.getBoundingClientRect(); x += o.left + f.clientLeft; y += o.top + f.clientTop; }
+    return {x, y, w: b.width, h: b.height}; };
   const shows = (el) => { if (!el || el.disabled) return false; const b = el.getBoundingClientRect();
-    if (b.width < 1 || b.height < 1) return false; const st = getComputedStyle(el);
+    if (b.width < 1 || b.height < 1) return false; const st = style(el);
     return st.visibility !== 'hidden' && st.display !== 'none' && Number(st.opacity) > 0; };
   const words = (t) => String(t || '').replace(/\s+/g, ' ').trim().toLowerCase();
-  const pw = [...document.querySelectorAll('input[type=password]')].find(shows);
+  const active = () => { let a = document.activeElement;
+    for (;;) { let d = null; try { d = a && (a.shadowRoot || a.contentDocument); } catch (e) {}
+      const next = d && d.activeElement; if (!next || next === a) return a; a = next; } };
+  const pw = all('input[type=password]').find(shows);
   const signin = test(r.signin);
   // Where the owner types, for the live view to zoom to on a phone: the field with the focus, else the password or
   // the first text field, with its form or dialog around it when that fits. Its place in the window only.
   const box = () => {
-    const a = document.activeElement, field = a && a.matches && a.matches('input') && shows(a) ? a : pw ||
-      [...document.querySelectorAll('input[type=email],input[type=text],input:not([type])')].find(shows);
+    const a = active(), field = a && a.matches && a.matches('input') && shows(a) ? a : pw ||
+      all('input[type=email],input[type=text],input:not([type])').find(shows);
     if (!field) return null;
-    const area = field.closest('form,dialog,[role=dialog]'), b0 = area && shows(area) && area.getBoundingClientRect();
-    const b = b0 && b0.height < innerHeight * 0.8 && b0.width < innerWidth * 0.9 ? b0 : field.getBoundingClientRect();
+    const area = field.closest('form,dialog,[role=dialog]'), b0 = area && shows(area) && place(area);
+    const b = b0 && b0.h < innerHeight * 0.8 && b0.w < innerWidth * 0.9 ? b0 : place(field);
     const W = outerWidth || innerWidth, H = outerHeight || innerHeight, top = Math.max(0, H - innerHeight), left = Math.max(0, (W - innerWidth) / 2);
-    const x = Math.max(0, b.left), y = Math.max(0, b.top);
-    return {x: (left + x) / W, y: (top + y) / H, w: Math.min(b.right, innerWidth) - x, h: Math.min(b.bottom, innerHeight) - y, W, H};
+    const x = Math.max(0, b.x), y = Math.max(0, b.y);
+    return {x: (left + x) / W, y: (top + y) / H, w: Math.min(b.x + b.w, innerWidth) - x, h: Math.min(b.y + b.h, innerHeight) - y, W, H};
   };
-  const at = (word) => { const b = box(); return b && b.w > 0 && b.h > 0 ? {at: word, box: {x: b.x, y: b.y, w: b.w / b.W, h: b.h / b.H}} : {at: word}; };
-  if (pw && (s.armed || test(r.at)) || s.armed && signin) {
-    if (pw && s.focus && document.activeElement !== pw) pw.focus();
-    return at('password');
+  const at = (word) => { const b = !s.inner && box(); return b && b.w > 0 && b.h > 0 ? {at: word, box: {x: b.x, y: b.y, w: b.w / b.W, h: b.h / b.H}} : {at: word}; };
+  if (s.inner) {  // a frame of another origin: only its buttons and the master password asked again
+    if (pw && s.armed) { if (s.focus && active() !== pw) pw.focus(); return at('password'); }
+  } else {
+    if (pw && (s.armed || test(r.at)) || s.armed && signin) {
+      if (pw && s.focus && active() !== pw) pw.focus();
+      return at('password');
+    }
+    // A sign-in that asks the email first (LastPass's, on the vault's own address): an email or user name field
+    // before the script found anything to click is the owner's sign-in too, not a page it doesn't know.
+    const ident = !s.stepped && all('input[type=email],input[autocomplete~=username],input[autocomplete~=email],' +
+      'input[name*=email i],input[id*=email i],input[name*=user i],input[id*=user i]').find(shows);
+    if (pw || signin || ident) return at('signin');
+    if (!test(r.vault)) return at('elsewhere');
+    if (s.armed && r.email && roots.some((d) => d.body && new RegExp(r.email, 'i').test(d.body.innerText || ''))) return {at: 'email'};
+    if (r.go && !test(r.at)) { if (s.go) location.assign(r.go); return {at: 'going'}; }
   }
-  // A sign-in that asks the email first (LastPass's, on the vault's own address): an email or user name field
-  // before the script found anything to click is the owner's sign-in too, not a page it doesn't know.
-  const ident = !s.stepped && [...document.querySelectorAll('input[type=email],input[autocomplete~=username],' +
-    'input[autocomplete~=email],input[name*=email i],input[id*=email i],input[name*=user i],input[id*=user i]')].find(shows);
-  if (pw || signin || ident) return at('signin');
-  if (!test(r.vault)) return at('elsewhere');
-  if (s.armed && r.email && document.body && new RegExp(r.email, 'i').test(document.body.innerText || '')) return {at: 'email'};
-  if (r.go && !test(r.at)) { if (s.go) location.assign(r.go); return {at: 'going'}; }
   const clickable = 'button,a[href],[role=button],[role=menuitem],[role=link],[role=tab],[role=option],[role=radio],' +
     'input[type=submit],input[type=button],input[type=radio],label,li,[jsaction*="click"],[tabindex]:not([tabindex="-1"])';
+  // up the page, out of a shadow root into its host
+  const up = (a) => a.parentElement || (a.parentNode && a.parentNode.host) || null;
   // What to click for a match: its closest button-like element, else the closest that shows a pointer (a navigation
   // item that is a plain div with a click handler), else the element itself
-  const target = (el) => { if (!el) return null; let t = el.closest(clickable);
-    for (let a = el; !t && a && a !== document.body; a = a.parentElement) if (getComputedStyle(a).cursor === 'pointer') t = a;
+  const target = (el) => { if (!el) return null; let t = null;
+    for (let a = el; !t && a && a !== a.ownerDocument.body; a = up(a)) if (a.matches(clickable)) t = a;
+    for (let a = el; !t && a && a !== a.ownerDocument.body; a = up(a)) if (style(a).cursor === 'pointer') t = a;
     t = t || el; return words(t.textContent).length <= 80 && shows(t) ? t : null; };
+  // words drawn by the style sheet (::before, ::after) count as the element's own
+  const drawn = (el, p) => { const c = style(el, p).content; return /^["']/.test(c) ? c.slice(1, -1) : ''; };
+  const said = (el) => words(drawn(el, '::before') + ' ' + el.textContent + ' ' + drawn(el, '::after'));
   const find = (step) => {
-    for (const css of step.css) { let el = null; try { el = [...document.querySelectorAll(css)].find(shows); } catch (e) {} if (el) return el; }
-    const want = new Set(step.text);
-    for (const el of document.querySelectorAll('[aria-label]')) if (want.has(words(el.getAttribute('aria-label'))) && target(el)) return target(el);
-    const walk = document.createTreeWalker(document.body || document.documentElement, NodeFilter.SHOW_TEXT);
-    for (let n = walk.nextNode(); n; n = walk.nextNode()) if (want.has(words(n.nodeValue)) && target(n.parentElement)) return target(n.parentElement);
-    // words split over several pieces of text (an icon's text, a badge), in navigation, menus and dialogs: the
-    // smallest element there whose words are exactly the step's
-    const parts = 'nav *,aside *,header *,[role=navigation] *,[role=menu] *,[role=menubar] *,[role=dialog] *,dialog *,ul *';
-    for (const el of document.querySelectorAll(parts)) {
-      if (el.title && want.has(words(el.title)) && target(el)) return target(el);
-      if (el.childElementCount && el.childElementCount < 6 && want.has(words(el.textContent)) && target(el)) return target(el);
+    for (const css of step.css) { const el = all(css).find(shows); if (el) return el; }
+    const want = new Set(step.text), hit = (el, t) => want.has(words(t)) && target(el);
+    for (const el of all('[aria-label],[title]')) {
+      for (const t of [el.getAttribute('aria-label'), el.getAttribute('title')]) if (t && hit(el, t)) return target(el); }
+    for (const root of roots) {
+      const walk = (root.ownerDocument || root).createTreeWalker(root.body || root, NodeFilter.SHOW_TEXT);
+      for (let t = walk.nextNode(); t; t = walk.nextNode()) if (hit(t.parentElement, t.nodeValue)) return target(t.parentElement);
     }
+    // words split over several pieces of text (an icon's text, a badge) or drawn by the style sheet, in navigation,
+    // menus and dialogs (anywhere in a frame or a web component): the smallest element whose words are the step's
+    const parts = 'nav *,aside *,header *,[role=navigation] *,[role=menu] *,[role=menubar] *,[role=dialog] *,dialog *,ul *';
+    for (const root of roots) for (const el of root.querySelectorAll(root === document ? parts : '*'))
+      if (el.childElementCount < 6 && el.textContent.length < 200 && hit(el, said(el))) return target(el);
     return null;
   };
   for (let i = r.steps.length - 1; i >= 0; i--) {
@@ -143,10 +172,10 @@ SCRIPT = r'''function (r, s) {
     if (!el) continue;
     if (!s.may[i]) return {at: 'held', step: i};
     el.scrollIntoView({block: 'center', inline: 'center'});
-    const b = el.getBoundingClientRect();
-    return {at: 'click', step: i, x: b.left + b.width / 2, y: b.top + b.height / 2};
+    const b = place(el);
+    return {at: 'click', step: i, x: b.x + b.w / 2, y: b.y + b.h / 2};
   }
-  return {at: 'missing'};
+  return {at: 'missing', frames: n.frames, other: n.other, shadow: n.shadow, custom: n.custom, candidates: all(clickable).filter(shows).length};
 }'''
 AT = {'password', 'signin', 'elsewhere', 'email', 'going', 'held', 'click', 'missing'}
 
@@ -175,31 +204,113 @@ def _box(box):
     return {k: round(float(v), 4) for k, v in values.items()}
 
 
+MISS = ('frames', 'other', 'shadow', 'custom', 'candidates')
+
+
+def _checked(got, recipe):
+    """SCRIPT's answer checked: {at, step, x, y, box, miss}, numbers and fixed words only, or None."""
+    at = got.get('at') if isinstance(got, dict) else None
+    if at not in AT:
+        return None
+    step = got.get('step')
+    if at in ('click', 'held') and not (isinstance(step, int) and 0 <= step < len(recipe['steps'])):
+        return None
+    x, y = got.get('x'), got.get('y')
+    if at == 'click' and not all(isinstance(v, (int, float)) and not isinstance(v, bool) and -20000 < v < 20000 for v in (x, y)):
+        return None
+    miss = {k: got.get(k) if isinstance(got.get(k), int) and not isinstance(got.get(k), bool) and got.get(k) >= 0 else 0
+            for k in MISS} if at == 'missing' else None
+    return {'at': at, 'step': step, 'x': x, 'y': y, 'box': _box(got.get('box')), 'miss': miss}
+
+
+def _frames(base, tab, session, opened):
+    """Where else in the tab to look: its frames of another origin, which SCRIPT in the page can't read, as
+    [(session, context, x, y)]: a frame in the tab's own process in a world of the guide's own (context), one of
+    another site through its own target in the browser (context None). x, y: where its content starts in the tab."""
+    found = []
+
+    def owner(at, frame):  # where the frame's content sits in its parent target's window
+        node = at.call('DOM.getFrameOwner', {'frameId': frame})['backendNodeId']
+        quad = at.call('DOM.getBoxModel', {'backendNodeId': node})['model']['content']
+        return float(quad[0]), float(quad[1])
+
+    def local(at, dx, dy):
+        tree = at.call('Page.getFrameTree')['frameTree']
+        todo = [(f, tree['frame'].get('securityOrigin')) for f in tree.get('childFrames') or []]
+        while todo:
+            f, reach = todo.pop(0)
+            frame = f['frame']['id']
+            same = reach is not None and f['frame'].get('securityOrigin') == reach  # SCRIPT read it from its parent
+            todo += [(c, reach if same else None) for c in f.get('childFrames') or []]
+            if same:
+                continue
+            try:
+                x, y = owner(at, frame)
+                world = at.call('Page.createIsolatedWorld', {'frameId': frame, 'worldName': 'export guide'})['executionContextId']
+            except (browser_cdp.CdpError, KeyError, IndexError, TypeError, ValueError):
+                continue
+            found.append((at, world, dx + x, dy + y))
+
+    local(session, 0.0, 0.0)
+    apart, parents = browser_cdp.frames(base, timeout=5), {tab: (session, 0.0, 0.0)}
+    for _ in range(4):  # a frame of another site in one of another site: a few deep
+        for frame, parent in apart:
+            if frame in parents or parent not in parents:
+                continue
+            at, dx, dy = parents[parent]
+            try:
+                x, y = owner(at, frame)
+                inner = browser_cdp.Session(base, frame, timeout=5)
+            except (browser_cdp.CdpError, OSError, KeyError, IndexError, TypeError, ValueError):
+                continue
+            opened.append(inner)
+            parents[frame] = (inner, dx + x, dy + y)
+            found.append((inner, None, dx + x, dy + y))
+            try:
+                local(inner, dx + x, dy + y)
+            except (browser_cdp.CdpError, KeyError, TypeError):
+                pass
+    return found
+
+
 def look(base, tab, recipe, state):
     """Runs SCRIPT once in the tab: its checked answer, or None when the page can't be reached right now (loading,
-    the browser busy). Clicks the button it found, as a mouse click there."""
+    the browser busy). Nothing found there: runs it again in each frame of another origin (_frames). Clicks the
+    button it found, as a mouse click there."""
     now = time.monotonic()
     rested = now - state.get('owner', -OWNER_REST) >= OWNER_REST
     may = [rested and state['clicks'].get(i, 0) < CLICKS and now - state['last'].get(i, -AGAIN) >= AGAIN for i in range(len(recipe['steps']))]
     flags = {'armed': state['armed'], 'stepped': bool(state['clicks']), 'focus': not state['focused'], 'go': state['goes'] < GOES, 'may': may}
+    opened = []
     try:
         with browser_cdp.Session(base, tab, timeout=5) as session:
-            got = session.run(SCRIPT, recipe, flags)
-            at = got.get('at') if isinstance(got, dict) else None
-            if at not in AT:
-                return None
-            step = got.get('step')
-            if at in ('click', 'held') and not (isinstance(step, int) and 0 <= step < len(recipe['steps'])):
-                return None
-            if at == 'click':
-                x, y = got.get('x'), got.get('y')
-                if not all(isinstance(v, (int, float)) and 0 <= v < 20000 for v in (x, y)):
+            got = _checked(session.run(SCRIPT, recipe, flags), recipe)
+            if got and got['at'] == 'missing':
+                outside = _frames(base, tab, session, opened)
+                got['miss']['outside'] = len(outside)
+                for where, context, dx, dy in outside:
+                    try:
+                        inner = _checked(where.run(SCRIPT, recipe, dict(flags, inner=True), context=context), recipe)
+                    except (browser_cdp.CdpError, OSError, ValueError, TypeError, KeyError):
+                        continue
+                    if inner and inner['at'] in ('click', 'held', 'password'):
+                        got = dict(inner, x=(inner['x'] or 0) + dx, y=(inner['y'] or 0) + dy)
+                        break
+                    if inner and inner['miss']:
+                        for k in ('shadow', 'custom', 'candidates'):
+                            got['miss'][k] += inner['miss'][k]
+            if got and got['at'] == 'click':
+                x, y = got['x'], got['y']
+                if not all(0 <= v < 20000 for v in (x, y)):
                     return None
                 for kind in ('mouseMoved', 'mousePressed', 'mouseReleased'):
                     session.call('Input.dispatchMouseEvent', {'type': kind, 'x': x, 'y': y, 'button': 'left', 'clickCount': 1})
-            return {'at': at, 'step': step, 'box': _box(got.get('box'))}
+            return got and {'at': got['at'], 'step': got['step'], 'box': got['box'], 'miss': got['miss']}
     except (browser_cdp.CdpError, OSError, ValueError, TypeError, KeyError, AttributeError):
         return None
+    finally:
+        for inner in opened:
+            inner.ws.close()
 
 
 def step(base, tab, manager, state):
@@ -213,6 +324,8 @@ def step(base, tab, manager, state):
     if said_now != state.get('seen'):
         state['seen'] = said_now
         LOG.info('login export guide manager=%s at=%s step=%s', manager, said_now[0], said_now[1] if len(said_now) > 1 else '-')
+        if seen and seen['miss']:  # what kind of miss: how much of the page it could look into, counts only
+            LOG.info('login export guide miss manager=%s %s', manager, ' '.join('%s=%d' % (k, seen['miss'][k]) for k in MISS + ('outside',)))
     if seen is None:  # the page didn't answer (loading, busy): no new word, unless it stays that way long after the last
         return 'manual' if time.monotonic() - state['progress'] > 3 * GIVE_UP else None
     now, at = time.monotonic(), seen['at']
