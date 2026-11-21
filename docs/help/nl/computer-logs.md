@@ -1,36 +1,36 @@
 ---
 title: Problemen op je computer
 area: troubleshooting
-summary: Je Machine leest de logboeken van zijn eigen computer en vertelt je over echte problemen, met de oorzaak en een oplossing. Een oplossing wordt pas uitgevoerd als je op **Doe het** tikt.
+summary: Je Machine leest de logboeken van je computer en vertelt je over echte problemen, met de oorzaak en een oplossing. Een oplossing wordt alleen uitgevoerd als je op Doe het tikt.
 covers: computer-logs
 code: machine/system_logs.py, machine/sources/gateway.py, onboarding.py
 keywords: logs, journal, journalctl, crash, coredump, systemd, Hyprland, Omarchy, bar
 order: 3
-translated: 1a191d8433bfba2a
+translated: b18e5f4989d6baff
 ---
 ## Wat hij leest
 
-Op Linux met systemd leest je Machine het logboek van je eigen gebruikerssessie: je eigen services en de crashmeldingen van je eigen programma's. Op Omarchy controleert hij ook Hyprland en de balk. Hij leest nooit het volledige systeemlogboek en vraagt nooit om meer toegang.
+Op Linux met systemd leest je Machine het logboek van je eigen gebruikerssessie: je eigen services en de crashrapporten van je eigen programma's. Op Omarchy controleert hij ook Hyprland en de balk. Hij leest nooit het logboek van het hele systeem en vraagt nooit om extra toegang.
 
-Hij leest welke service is gestopt, hoe dat is gebeurd en welk programma is vastgelopen. Hij leest nooit wat er in een logregel staat. Zo wordt er geen logtekst bewaard of van je computer verstuurd.
+Hij leest welke service is gestopt, hoe dat is gebeurd en welk programma is gecrasht. Hij leest nooit wat er in een logregel staat, zodat er geen logtekst wordt bewaard of van je computer wordt verstuurd.
 
 ## Wat als een probleem telt
 
-Een service die steeds opnieuw start, meerdere keren op een dag is mislukt of uit blijft, een service die geen geheugen meer had en een programma dat is vastgelopen. Op Omarchy gaat het ook om crashes van Hyprland of de balk en fouten in je Hyprland-instellingen.
+Een service die steeds opnieuw start, een service die meerdere keren op een dag is mislukt of uitgevallen blijft, een service die geen geheugen meer had en een programma dat is gecrasht. Op Omarchy gaat het ook om een crash van Hyprland of de balk, en om fouten in je Hyprland-instellingen.
 
-Eén keer opnieuw starten of één mislukte uitvoering is normaal en blijft onopgemerkt. Dat geldt ook voor een service die een paar keer is mislukt en daarna weer gewoon draaide.
+Eén keer opnieuw starten of één mislukte uitvoering is normaal en blijft buiten beeld. Dat geldt ook voor een service die een paar keer is mislukt en daarna weer goed draaide, en voor een mislukte service die niets probeert te starten: hij staat niet ingeschakeld en geen andere service of timer start hem.
 
-Browsers die door tests en agents worden aangestuurd (headless, Playwright, Puppeteer, CI) blijven buiten beeld. Dat geldt ook voor een programma dat stopt terwijl de bijbehorende service wordt gestopt of opnieuw gestart. Ontwikkelaarsactiviteiten blijven eveneens buiten beeld: wat een codeeragent uitvoert, tests en programma's die vanuit een tijdelijke map of cachemap worden gestart. Als een programma steeds opnieuw vastloopt, maakt The Machine één to-do met hoe vaak en wanneer dat gebeurde.
+Browsers die door tests en agents worden aangestuurd (headless, Playwright, Puppeteer, CI) blijven buiten beeld. Dat geldt ook voor een programma dat stopt terwijl de bijbehorende service wordt gestopt of opnieuw gestart. Ontwikkelaarsprocessen blijven ook buiten beeld: wat een codeeragent uitvoert, tests en programma's die vanuit een tijdelijke map of cachemap worden gestart. Een programma dat steeds opnieuw crasht, maakt één to-do met hoe vaak en wanneer dat gebeurde.
 
-Een script wordt genoemd bij zijn eigen naam, zoals backup.py, niet als python3 of node.
+Een script wordt bij de eigen naam genoemd, zoals backup.py, niet als python3 of node.
 
 ## Wat je krijgt
 
-Een to-do die in gewone woorden vertelt wat er is gebeurd, waarom het belangrijk is en wat je kunt doen. De opdrachten die laten zien waarom het gebeurde, staan onder **Meer weergeven**. Stel je vraag in de chat van de to-do en The Machine zoekt het uit. Alles wat hij wijzigt, gebeurt pas nadat je akkoord hebt gegeven, net als bij **Doe het**.
+Een to-do die in gewone taal vertelt wat er is gebeurd, waarom dat belangrijk is en wat je kunt doen. De opdrachten die laten zien waarom, vind je onder **Meer weergeven**. Vraag ernaar in de bijbehorende chat en The Machine onderzoekt het. Alles wat hij verandert, wordt pas aangepast nadat je akkoord hebt gegeven, net als bij **Doe het**.
 
-Als er een veilige oplossing is, staat **Doe het** op de to-do. Als een service van jou uit blijft, start hij die opnieuw. Op Omarchy zet hij de balk weer aan. **Doe het** voert alleen die opdracht uit. Het resultaat verschijnt in de chat van de to-do. Hij komt nooit aan de eigen services van The Machine of de OpenClaw Gateway.
+Als er een veilige oplossing is, staat er **Doe het** bij de to-do. Voor een service van jou die uitgevallen blijft, start hij die opnieuw. Op Omarchy brengt hij ook de balk weer terug. **Doe het** voert alleen die opdracht uit en het resultaat verschijnt in de chat van de to-do. Hij raakt nooit de eigen services van The Machine of de OpenClaw Gateway aan.
 
-Voor hetzelfde probleem krijg je hooguit één to-do per twee weken, en nooit zolang de bijbehorende to-do nog openstaat. Er komen maximaal twee nieuwe to-do's per dag bij. Een to-do over een service die uit staat, wordt vanzelf gesloten zodra de service weer draait of de melding is gewist.
+Voor hetzelfde probleem krijg je hooguit eens per twee weken een to-do, en nooit zolang de bijbehorende to-do nog openstaat. Er komen hooguit twee nieuwe to-do's per dag bij. Een to-do over een uitgevallen service wordt vanzelf gesloten zodra die weer draait of het probleem is opgelost.
 
 ## In een terminal
 
@@ -38,10 +38,10 @@ Voor hetzelfde probleem krijg je hooguit één to-do per twee weken, en nooit zo
 
 ## Andere computers
 
-Op macOS, Windows en computers zonder systemd leest hij niets. Dat staat ook in `assistant doctor`.
+Op macOS, Windows en computers zonder systemd leest hij niets en meldt hij dat in `assistant doctor`.
 
-Op een gehoste Machine zorgen wij ervoor dat de server blijft draaien. Problemen daarmee gaan naar het team van The Machine, niet naar jou als to-do's.
+Bij een gehoste Machine zorgen wij ervoor dat de server blijft draaien. Problemen daarmee gaan naar het team van The Machine, niet naar jou als to-do's.
 
 ## Uitschakelen
 
-Stel `"computer_logs": false` in config.json in en start de service opnieuw.
+Stel `"computer_logs": false` in config.json in en start de service opnieuw op.
