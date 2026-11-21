@@ -81,6 +81,37 @@ class Detection(unittest.TestCase):
         [found] = detect([], failed={'backup.service'})  # failed before the window
         self.assertEqual((found['kind'], found['last_at']), ('stays_failed', None))
 
+    def test_a_failed_unit_nobody_asks_to_run_is_not_down(self):
+        # A disabled unit whose job a newer one took over failed on its own (the newer one holds what it needs). Nothing
+        # wants it, so it is not down and a restart would only fail again.
+        shown = '\n\n'.join((
+            'Id=old-sync.service\nUnitFileState=disabled\nWantedBy=\nRequiredBy=\nUpheldBy=\nBoundBy=\nTriggeredBy=',
+            'Id=nightly.service\nUnitFileState=static\nWantedBy=\nRequiredBy=\nUpheldBy=\nBoundBy=\nTriggeredBy=nightly.timer',
+            'Id=helper.service\nUnitFileState=disabled\nWantedBy=notes-app.service\nRequiredBy=\nTriggeredBy=',
+            'Id=backup.service\nUnitFileState=enabled\nWantedBy=default.target\nTriggeredBy=',
+            'Id=gone.service\nUnitFileState=\nWantedBy=\nTriggeredBy='))
+        calls = []
+        run = lambda args, **kw: calls.append(args) or (0, shown)
+        units = {'old-sync.service', 'nightly.service', 'helper.service', 'backup.service', 'gone.service'}
+        self.assertEqual(s.idle_units(units, run), {'old-sync.service'})
+        self.assertEqual(calls[0][:3], ['systemctl', '--user', 'show'])
+        self.assertEqual(s.idle_units(units, lambda *a, **k: (1, '')), set())  # systemd can't be asked: each counts as wanted
+        self.assertEqual(s.idle_units(set(), lambda *a, **k: 1 / 0), set())
+        idle = {'old-sync.service'}
+        self.assertEqual(detect([], failed={'old-sync.service'}, idle=idle), [])
+        self.assertEqual(detect([result('old-sync.service', 300, 'start-limit-hit')], failed={'old-sync.service'}, idle=idle), [])
+        [found] = detect([result('old-sync.service', m) for m in (600, 300, 60)], failed={'old-sync.service'}, idle=idle)
+        self.assertEqual((found['kind'], found.get('fix')), ('repeated_failures', None))  # something ran it: still a problem
+        # the scan leaves it out of the units failed now, so an open "is down" to-do about it closes by itself
+        def systemctl(args, **kw):
+            if args[:3] == ['systemctl', '--user', 'list-units']:
+                return 0, 'old-sync.service loaded failed failed Old sync\nbackup.service loaded failed failed Backup\n'
+            return (0, shown) if args[:3] == ['systemctl', '--user', 'show'] else (0, '')
+        with mock.patch.object(s, 'supported', return_value=(True, '')), mock.patch.object(s, 'omarchy', return_value=False):
+            result_ = s.scan(run=systemctl, now=NOW, which=lambda name: None)
+        self.assertEqual(result_['failed'], {'backup.service'})
+        self.assertEqual([f['unit'] for f in result_['findings']], ['backup.service'])
+
     def test_one_off_commands_and_app_scopes_that_exit_are_not_problems(self):
         rows = [result('run-u42.service', m) for m in (50, 40, 30)] + [result('app-Hyprland-editor-1a2b3c4d.scope', m) for m in (50, 40, 30)]
         self.assertEqual(detect(rows, failed={'run-u42.service'}), [])
@@ -479,7 +510,8 @@ class DoIt(unittest.TestCase):
                    'pid': '4242', 'signal': 'SIGSEGV', 'piece': 'bar', 'fix': 'restart_bar', 'last_at': NOW.isoformat()}
         title, body, signal = s.card(finding, self.which)
         self.assertIn('Do it restarts the bar.', body)
-        self.assertTrue(body.endswith('Do it runs omarchy-restart-shell. In a terminal, coredumpctl info 4242 shows where it crashed.'), body)
+        self.assertTrue(body.endswith('Do it restarts the bar.\n\nIn a terminal, coredumpctl info 4242 shows where it crashed.'), body)
+        self.assertNotIn('Do it runs', body)  # said once
         self.assertIn('Crashed (SIGSEGV)', signal)
         self.assertNotIn('Signal:', signal)
         _, body, _ = s.card(finding, which=lambda name: None)  # no Omarchy command here: no Do it, the command to run instead
@@ -551,7 +583,7 @@ class DoIt(unittest.TestCase):
             row = db.execute('SELECT status, body FROM suggestions WHERE id=?', (card['id'],)).fetchone()
         self.assertEqual(row['status'], 'prepared')
         self.assertIn('Do it restarts backup.', row['body'])  # the to-do keeps its text
-        self.assertIn('Do it runs systemctl --user restart backup.service.', row['body'])
+        self.assertNotIn('Do it runs', row['body'])  # one sentence says what Do it does, not two
         self.assertNotIn('machine_fix', self.views(dict(self.store_card(card['id']))))  # done: Mark done and Snooze
 
     def store_card(self, sid):
