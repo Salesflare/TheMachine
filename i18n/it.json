@@ -1398,7 +1398,12 @@
  "Disconnected. Restart the service to stop syncing it.": "Disconnesso. Riavvia il servizio per interrompere la sincronizzazione.",
  "Disconnected. Restarting…": "Disconnesso. Riavvio…",
  "Dismiss": "Scarta",
+ "Dismiss all": "Scarta tutto",
  "Dismiss the rest": "Scarta il resto",
+ "Dismiss {} to-dos?": {
+  "one": "Scartare {} attività?",
+  "other": "Scartare {} attività?"
+ },
  "Dismissed.": "Scartato.",
  "Do it": "Fallo",
  "Do it myself": "Lo faccio io",
@@ -2563,6 +2568,7 @@
  "Kept apart.": "Tenuti separati.",
  "Kept both": "Tenute entrambe",
  "Kept both to-dos": "Tenute entrambe le attività",
+ "Kept open for the work the reply promised": "Rimasta aperta per il lavoro promesso nella risposta",
  "Kept private": "Tenuto privato",
  "Kept private, or a personal conversation is on them. New projects go within the hour.": "Tenuti privati, o c’è una conversazione personale. I nuovi progetti partono entro un’ora.",
  "Kept private.": "Tenuto privato.",
@@ -3511,6 +3517,7 @@
  "Nothing new": "Niente di nuovo",
  "Nothing new comes in until you start it.": "Non arriva niente di nuovo finché non lo avvii.",
  "Nothing new goes. What went stays on teammates' Machines, unless you remove it. Someone may have read it already.": "Non viene condiviso nulla di nuovo. Ciò che è stato condiviso resta sulle Machine dei colleghi, a meno che tu non lo rimuova. Qualcuno potrebbe averlo già letto.",
+ "Nothing new on these for a week.": "Nessuna novità su queste da una settimana.",
  "Nothing new passed the filters and checks": "Nessuna novità ha superato filtri e controlli",
  "Nothing new since {}.": "Niente di nuovo dal {}.",
  "Nothing new to add.": "Niente di nuovo da aggiungere.",
@@ -3646,6 +3653,7 @@
  "Okay.": "Ok.",
  "Okay. Turn it on any time in the Fleet tab.": "Ok. Attivalo quando vuoi nella scheda Fleet.",
  "Old job turned off": "Vecchio job disattivato",
+ "Older": "Meno recenti",
  "Oldest contact": "Contatto più vecchio",
  "Omarchy theme": "Tema Omarchy",
  "On": "Attivo",
@@ -4590,6 +4598,7 @@
  "Replaced": "Sostituito",
  "Replaced. Teammates get the new one.": "Sostituito. I colleghi ricevono quello nuovo.",
  "Replaces the saved {} sign-in": "Sostituisce l’accesso {} salvato",
+ "Replied to {} on {}. The work is still to do.": "Ha risposto a {} il {}. Il lavoro è ancora da fare.",
  "Replies are not on for this Intercom account: the owner turns them on by signing in with Intercom themselves (a Fleet-shared token only reads). Give the reply text in the body instead.": "Le risposte non sono attive per questo account Intercom: il proprietario le attiva accedendo lui stesso con Intercom (un token condiviso nella Fleet può solo leggere). Metti invece il testo della risposta nel corpo.",
  "Replies as {}, only after you press Send.": "Risponde come {}, solo dopo che premi Invia.",
  "Replies go as you, after you approve each one.": "Le risposte partono a tuo nome, dopo che le approvi una per una.",
@@ -4995,6 +5004,7 @@
  "Sent, not confirmed": "Inviato, non confermato",
  "Sent, thanks. You’ll see it here when it’s fixed.": "Inviato, grazie. Lo vedrai qui quando sarà risolto.",
  "Sent.": "Inviato.",
+ "Sent. Kept open.": "Inviato. Attività lasciata aperta.",
  "Sent. Moved to Done.": "Inviato. Spostato in Fatto.",
  "Sent. Moved to Later until {}.": "Inviato. Spostato in Più tardi fino a {}.",
  "Sent. Moved to Waiting on others.": "Inviato. Spostato in In attesa di altri.",
@@ -6100,6 +6110,7 @@
  "The tests did not finish on this fix. Nothing was merged.": "I test non sono terminati con questa correzione. Non è stato unito nulla.",
  "The tests fail on this fix. Nothing was merged; tap Change to have it fixed.": "I test falliscono con questa correzione. Non è stato unito nulla; tocca Cambia per farla correggere.",
  "The text needs some words, within the size limit": "Il testo richiede qualche parola, entro il limite di dimensione",
+ "The to-do stays open for the work this promises.": "L’attività resta aperta per il lavoro promesso.",
  "The transcript couldn’t load.": "Non è stato possibile caricare la trascrizione.",
  "The upload didn’t finish. Try again.": "Il caricamento non è terminato. Riprova.",
  "The voice model didn’t download correctly. Try again.": "Il modello vocale non si è scaricato correttamente. Riprova.",
@@ -7722,6 +7733,7 @@
   "other": "{} ({} righe)"
  },
  "{} 5-hour limit reached.": "Limite di 5 ore di {} raggiunto.",
+ "{} 5-hour limit {}% used. Preparing is slowed.": "{} Limite di 5 ore: {}% utilizzato. La preparazione è rallentata.",
  "{} Check recovered and saved.": "{} Controllo recuperato e salvato.",
  "{} Checks run at most every 10 minutes, so notifications cleared in between may be missed.{}": "{} I controlli girano al massimo ogni 10 minuti, quindi le notifiche cancellate nel frattempo potrebbero sfuggire.{}",
  "{} Encrypted for their Machine only.": "{} Cifrato solo per la sua Machine.",
@@ -8319,6 +8331,10 @@
  "{} requires your Work {}. You can still keep any thread private.": "{} richiede il tuo {} di Lavoro. Puoi comunque tenere privato qualsiasi thread.",
  "{} requires your {}.": "{} richiede il tuo {}.",
  "{} requires your {}. They belong to the company. Threads you keep private stay private.": "{} richiede il tuo {}. Appartengono all’azienda. I thread che tieni privati restano privati.",
+ "{} resets left.": {
+  "one": "Ti resta {} ripristino.",
+  "other": "Ti restano {} ripristini."
+ },
  "{} result": "Risultato di {}",
  "{} rows": {
   "one": "{} riga",
@@ -8520,6 +8536,7 @@
  "{} wants your security key": "{} vuole la tua chiave di sicurezza",
  "{} was slow to answer": "{} ha risposto troppo lentamente",
  "{} weekly limit reached.": "Limite settimanale di {} raggiunto.",
+ "{} weekly limit {}% used. Preparing is slowed.": "{} Limite settimanale: {}% utilizzato. La preparazione è rallentata.",
  "{} weeks": {
   "one": "{} settimana",
   "other": "{} settimane"

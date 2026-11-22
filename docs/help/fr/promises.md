@@ -1,45 +1,47 @@
 ---
 title: Promesses
 area: cards
-summary: Ce que vous avez dit que vous feriez et ce que les autres vous ont promis. Le suivi est automatique.
+summary: Ce que vous avez promis de faire et ce que les autres vous ont promis. Tout est suivi automatiquement.
 covers: promises
 code: dashboard.html, assistant.py, refunds.py
 order: 6
-translated: 22b81ed3f7c4801f
+translated: 176831c86d0a382a
 ---
-Gardez une trace de ce que vous avez promis et de ce que les autres vous ont promis. Votre Machine repère automatiquement les promesses dans vos messages.
+Suivez ce que vous avez promis et ce que les autres vous ont promis. Votre Machine repère automatiquement les promesses dans vos messages.
 
 ## Où les trouver
 
-Sur la page des tâches, sous **Promesses** :
+Dans **Promesses**, sur la page Tâches :
 
 - Ce que vous avez dit que vous feriez, et pour qui : **Votre promesse**.
 - Ce que les autres ont dit qu’ils feraient : **Promis à vous**.
 
-Chaque promesse a un menu **⋯** :
+Chaque promesse comporte un menu **⋯** :
 
-- **Faire** sur les vôtres : elles deviennent immédiatement des tâches, et votre Machine les prépare. **Relancer** sur les leurs : votre Machine prépare un court message de relance dans le fil où la promesse a été faite, sans vous faire quitter la liste. Une brève note indique que le message est en préparation, avec **Ouvrir la tâche**, et la promesse affiche « une tâche maintenant ». Rien n’est envoyé tant que vous ne l’envoyez pas. Si la promesse est déjà une tâche, celle-ci s’ouvre.
+- **Faire** pour les vôtres : elles deviennent immédiatement des tâches et votre Machine les prépare. **Relancer** pour les leurs : votre Machine rédige un bref message de relance dans le fil où la promesse a été faite, sans vous faire quitter la liste. Une courte note indique que le message est en préparation, avec **Ouvrir la tâche**, et la promesse affiche « une tâche maintenant ». Rien n’est envoyé tant que vous ne l’envoyez pas. Si la promesse est déjà une tâche, cette tâche s’ouvre.
 - **Marquer comme fait** : la promesse a été tenue.
-- **N’aura pas lieu** : la promesse ne sera pas tenue, votre Machine arrête donc de la suivre, sans créer de tâche.
+- **N’aura pas lieu** : la promesse ne sera pas tenue. Votre Machine arrête alors de la suivre, sans créer de tâche.
 
-Une promesse ouverte devient aussi automatiquement une tâche autour de sa date (la vôtre la veille au matin, pour vous laisser une journée pour vous en occuper ; la leur le lendemain matin, si elle est toujours ouverte) et apparaît à la date correspondante dans le [Calendrier](calendar.md). Une promesse devenue une tâche y renvoie, et **Marquer comme fait** ou **N’aura pas lieu** clôt aussi cette tâche. Quand votre Machine voit que la promesse est tenue, les deux sont clôturées et une ligne l’indique.
+Une promesse ouverte devient aussi automatiquement une tâche à la date prévue, la veille au matin pour les vôtres, pour vous laisser une journée pour la réaliser, et le lendemain matin pour celles des autres, si elles sont toujours ouvertes. Elle apparaît à la date prévue dans le [Calendrier](calendar.md). Si elle devient une tâche, un lien mène à celle-ci, et **Marquer comme fait** ou **N’aura pas lieu** clôt également cette tâche. Quand votre Machine constate que la promesse a été tenue, les deux sont clôturées et une ligne l’indique.
 
-Si la promesse a déjà été tenue, par exemple grâce à une réponse que vous avez envoyée ou à une réunion qui a réglé la question, elle se clôt automatiquement, sans créer de tâche.
+Une réponse qui ne fait que promettre le travail, comme « Je vous enverrai les fichiers d’ici mardi », ne termine pas la tâche. Celle-ci reste ouverte avec cette date, et la promesse y renvoie. L’écran de vérification avant envoi vous le signale.
 
-Si une nouvelle date est communiquée plus tard, par exemple « plutôt la semaine prochaine », la même promesse est déplacée, ainsi que sa tâche, sans en créer une deuxième. Sa page affiche la nouvelle date et le message le plus récent.
+La promesse a déjà été tenue, par exemple dans une réponse que vous avez envoyée ou lors d’une réunion ? Elle est clôturée automatiquement, sans créer de tâche.
 
-Une promesse sans date reçoit une **date de relance** : trois jours après que vous l’avez faite, une semaine après que l’autre personne l’a faite. Si elle est toujours ouverte à ce moment-là, elle devient une tâche.
+Une nouvelle date est donnée plus tard, comme « plutôt la semaine prochaine » ? La même promesse est déplacée, ainsi que sa tâche, sans en créer une deuxième. Sa page affiche la nouvelle date et le message le plus récent.
 
-Les promesses venant de Slack affichent le nom de la personne.
+Une promesse sans date reçoit une date de **relance** : trois jours après que vous l’avez faite, une semaine après que l’autre personne l’a faite. Si elle est toujours ouverte à cette date, elle devient une tâche.
 
-Une promesse reçue par e-mail d’une personne à qui vous n’avez jamais écrit est également enregistrée, avec la mention **expéditeur non vérifié** : elle repose uniquement sur sa parole. La tâche commence par « Non vérifié : vous ne lui avez jamais écrit. »
+Les promesses venant de Slack indiquent le nom de la personne.
+
+Les promesses reçues par e-mail de personnes à qui vous n’avez jamais écrit sont également suivies, avec la mention **expéditeur non vérifié** : elles reposent uniquement sur leur parole. La tâche commence par « Non vérifié : vous ne lui avez jamais écrit auparavant. »
 
 ## Remboursements
 
-Quand un commerçant, une compagnie aérienne, un propriétaire ou un assureur vous promet de vous rembourser, par exemple pour une commande annulée ou un sinistre accepté, votre Machine enregistre le montant, la personne ou l’entreprise qui paie et la date à laquelle le remboursement devrait arriver. La promesse apparaît sous **Promis à vous**. Seulement si le message précise clairement ces trois éléments.
+Quand un commerçant, une compagnie aérienne, un propriétaire ou un assureur vous promet un remboursement, par exemple pour une commande annulée ou une demande d’indemnisation acceptée, votre Machine enregistre le montant, la personne qui doit payer et la date prévue du versement. Le remboursement apparaît dans **Promis à vous**. Seulement si le message indique clairement ces trois éléments.
 
-Si le remboursement arrive avant cette date, par exemple avec un e-mail indiquant que le remboursement a été traité, une notification du service de paiement ou une notification de l’application bancaire sur votre téléphone, la promesse se clôt automatiquement, sans créer de tâche.
+Si l’argent est versé d’abord, par exemple si vous recevez un e-mail indiquant que le « remboursement a été traité », une notification d’un service de paiement ou une notification de votre application bancaire sur votre téléphone, la promesse est clôturée automatiquement, sans créer de tâche.
 
-Le remboursement n’est pas arrivé à cette date ? Une tâche discrète apparaît : « Réclamer le remboursement de 42 € auprès de … », avec un court e-mail à lui envoyer qui mentionne le numéro de commande ou de dossier. Rien n’est envoyé tant que vous ne l’envoyez pas. Si le remboursement arrive finalement, la tâche se clôt automatiquement. **Annuler** la réactive pendant un jour.
+L’argent n’est pas arrivé à cette date ? Une tâche discrète apparaît : « Réclamer le remboursement de 42 € auprès de … », accompagnée d’un bref e-mail qui indique le numéro de commande ou de dossier. Rien n’est envoyé tant que vous ne l’envoyez pas. Si l’argent arrive finalement, la tâche est clôturée automatiquement. **Annuler** la rouvre pendant une journée.
 
-Le [récapitulatif hebdomadaire](weekly-recap.md) compte les promesses tenues et celles encore ouvertes. Sur votre propre ordinateur, `assistant promises` les affiche dans un terminal.
+Le [récapitulatif hebdomadaire](weekly-recap.md) compte les promesses tenues et encore ouvertes. Sur votre propre ordinateur, `assistant promises` les affiche dans un terminal.

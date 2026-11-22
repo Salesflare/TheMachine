@@ -1380,7 +1380,11 @@
  "Disconnected. Restart the service to stop syncing it.": "接続を解除しました。同期を停止するには、サービスを再起動してください。",
  "Disconnected. Restarting…": "接続を解除しました。再起動中…",
  "Dismiss": "却下",
+ "Dismiss all": "すべて却下",
  "Dismiss the rest": "残りを却下",
+ "Dismiss {} to-dos?": {
+  "other": "{}件のToDoを不要にしますか？"
+ },
  "Dismissed.": "却下しました。",
  "Do it": "実行",
  "Do it myself": "自分で実行",
@@ -2527,6 +2531,7 @@
  "Kept apart.": "分けて保持しました。",
  "Kept both": "両方保持しました",
  "Kept both to-dos": "両方のToDoを保持しました",
+ "Kept open for the work the reply promised": "返信で約束された作業のため、未完了のままにしました",
  "Kept private": "非公開にしました",
  "Kept private, or a personal conversation is on them. New projects go within the hour.": "非公開のままか、個人的な会話が含まれています。新しいプロジェクトは1時間以内に送信されます。",
  "Kept private.": "非公開にしました。",
@@ -3460,6 +3465,7 @@
  "Nothing new": "新着情報はありません",
  "Nothing new comes in until you start it.": "開始するまで新しい情報は届きません。",
  "Nothing new goes. What went stays on teammates' Machines, unless you remove it. Someone may have read it already.": "新たに送信されることはありません。送信済みの内容は、削除しない限りチームメンバーのMachineに残ります。すでに誰かが読んでいる可能性があります。",
+ "Nothing new on these for a week.": "これらに関する新しい情報は1週間ありません。",
  "Nothing new passed the filters and checks": "フィルターと確認を通過した新着はありません",
  "Nothing new since {}.": "{}以降、新しい情報はありません。",
  "Nothing new to add.": "追加できる新しいものはありません。",
@@ -3590,6 +3596,7 @@
  "Okay.": "わかりました。",
  "Okay. Turn it on any time in the Fleet tab.": "わかりました。Fleetタブでいつでもオンにできます。",
  "Old job turned off": "古いジョブをオフにしました",
+ "Older": "以前",
  "Oldest contact": "最も古い連絡先",
  "Omarchy theme": "Omarchyテーマ",
  "On": "オン",
@@ -4529,6 +4536,7 @@
  "Replaced": "置き換えました",
  "Replaced. Teammates get the new one.": "置き換えました。チームメンバーには新しいものが表示されます。",
  "Replaces the saved {} sign-in": "保存済みの{}のサインイン情報を置き換えます",
+ "Replied to {} on {}. The work is still to do.": "{}に{}に返信しました。作業はまだ残っています。",
  "Replies are not on for this Intercom account: the owner turns them on by signing in with Intercom themselves (a Fleet-shared token only reads). Give the reply text in the body instead.": "このIntercomアカウントでは返信が有効になっていません。オーナー本人がIntercomにサインインすると有効になります（Fleetで共有されたトークンは読み取り専用です）。代わりに、本文に返信文を入力してください。",
  "Replies as {}, only after you press Send.": "送信を押した後にのみ、{}として返信します。",
  "Replies go as you, after you approve each one.": "1件ずつ承認すると、自分の名前で返信が送信されます。",
@@ -4926,6 +4934,7 @@
  "Sent, not confirmed": "送信済み、未確認",
  "Sent, thanks. You’ll see it here when it’s fixed.": "送信しました。ありがとうございます。修正されるとここに表示されます。",
  "Sent.": "送信しました。",
+ "Sent. Kept open.": "送信しました。未完了のままです。",
  "Sent. Moved to Done.": "送信しました。完了に移動しました。",
  "Sent. Moved to Later until {}.": "送信しました。{}まで「後で」に移動しました。",
  "Sent. Moved to Waiting on others.": "送信しました。他の人の対応待ちに移動しました。",
@@ -6023,6 +6032,7 @@
  "The tests did not finish on this fix. Nothing was merged.": "この修正のテストが完了しませんでした。何もマージされていません。",
  "The tests fail on this fix. Nothing was merged; tap Change to have it fixed.": "この修正ではテストに失敗しました。何もマージされていません。「変更」をタップして修正してください。",
  "The text needs some words, within the size limit": "文字数の上限内で、ある程度の文章を入力してください",
+ "The to-do stays open for the work this promises.": "この約束に含まれる作業があるため、ToDoは未完了のままです。",
  "The transcript couldn’t load.": "文字起こしを読み込めませんでした。",
  "The upload didn’t finish. Try again.": "アップロードが完了しませんでした。もう一度お試しください。",
  "The voice model didn’t download correctly. Try again.": "音声モデルを正しくダウンロードできませんでした。もう一度お試しください。",
@@ -7636,6 +7646,7 @@
   "other": "{}（{}行）"
  },
  "{} 5-hour limit reached.": "{} 5時間の上限に達しました。",
+ "{} 5-hour limit {}% used. Preparing is slowed.": "{}：5時間の上限の{}%を使用しました。準備が遅くなっています。",
  "{} Check recovered and saved.": "{}チェックを復元して保存しました。",
  "{} Checks run at most every 10 minutes, so notifications cleared in between may be missed.{}": "{}チェックは10分に1回までしか実行されないため、その間に消去された通知は見逃すことがあります。{}",
  "{} Encrypted for their Machine only.": "{}所有者のMachine専用に暗号化されています。",
@@ -8144,6 +8155,9 @@
  "{} requires your Work {}. You can still keep any thread private.": "{}には仕事用の{}へのアクセスが必要です。スレッドは引き続き非公開にできます。",
  "{} requires your {}.": "{}には{}へのアクセスが必要です。",
  "{} requires your {}. They belong to the company. Threads you keep private stay private.": "{}には{}へのアクセスが必要です。これらは会社に属します。非公開にしたスレッドは非公開のままです。",
+ "{} resets left.": {
+  "other": "リセットはあと{}回です。"
+ },
  "{} result": "{}件の結果",
  "{} rows": {
   "other": "{}行"
@@ -8309,6 +8323,7 @@
  "{} wants your security key": "{}がセキュリティキーを求めています",
  "{} was slow to answer": "{}からの応答が遅れています",
  "{} weekly limit reached.": "{}の週間上限に達しました。",
+ "{} weekly limit {}% used. Preparing is slowed.": "{}：週間上限の{}%を使用しました。準備が遅くなっています。",
  "{} weeks": {
   "other": "{}週間"
  },

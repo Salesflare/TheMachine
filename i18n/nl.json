@@ -1398,7 +1398,12 @@
  "Disconnected. Restart the service to stop syncing it.": "Ontkoppeld. Herstart de service om het synchroniseren te stoppen.",
  "Disconnected. Restarting…": "Ontkoppeld. Herstarten…",
  "Dismiss": "Afwijzen",
+ "Dismiss all": "Alles als niet nodig markeren",
  "Dismiss the rest": "Rest afwijzen",
+ "Dismiss {} to-dos?": {
+  "one": "{} to-do als niet nodig markeren?",
+  "other": "{} to-do's als niet nodig markeren?"
+ },
  "Dismissed.": "Weggezet.",
  "Do it": "Doe het",
  "Do it myself": "Zelf doen",
@@ -2563,6 +2568,7 @@
  "Kept apart.": "Apart gehouden.",
  "Kept both": "Allebei gehouden",
  "Kept both to-dos": "Beide to-do's behouden",
+ "Kept open for the work the reply promised": "Opengehouden voor het werk dat de reactie beloofde",
  "Kept private": "Privé gehouden",
  "Kept private, or a personal conversation is on them. New projects go within the hour.": "Privé gehouden, of er hoort een privégesprek bij. Nieuwe projecten gaan binnen het uur.",
  "Kept private.": "Privé gehouden.",
@@ -3511,6 +3517,7 @@
  "Nothing new": "Niets nieuws",
  "Nothing new comes in until you start it.": "Er komt niets nieuws binnen tot je het start.",
  "Nothing new goes. What went stays on teammates' Machines, unless you remove it. Someone may have read it already.": "Er gaat niets nieuws. Wat al ging, blijft op de Machines van teamgenoten, tenzij je het verwijdert. Iemand kan het al gelezen hebben.",
+ "Nothing new on these for a week.": "Al een week niets nieuws hierover.",
  "Nothing new passed the filters and checks": "Niets nieuws voldeed aan de filters en controles",
  "Nothing new since {}.": "Niets nieuws sinds {}.",
  "Nothing new to add.": "Niets nieuws om toe te voegen.",
@@ -3646,6 +3653,7 @@
  "Okay.": "Oké.",
  "Okay. Turn it on any time in the Fleet tab.": "Oké. Zet het op elk moment aan in het Fleet-tabblad.",
  "Old job turned off": "Oude taak uitgezet",
+ "Older": "Ouder",
  "Oldest contact": "Oudste contact",
  "Omarchy theme": "Omarchy-thema",
  "On": "Aan",
@@ -4590,6 +4598,7 @@
  "Replaced": "Vervangen",
  "Replaced. Teammates get the new one.": "Vervangen. Teamgenoten krijgen het nieuwe.",
  "Replaces the saved {} sign-in": "Vervangt de opgeslagen inloggegevens voor {}",
+ "Replied to {} on {}. The work is still to do.": "Op {} gereageerd op {}. Het werk moet nog gebeuren.",
  "Replies are not on for this Intercom account: the owner turns them on by signing in with Intercom themselves (a Fleet-shared token only reads). Give the reply text in the body instead.": "Antwoorden staan niet aan voor dit Intercom-account: de eigenaar zet ze aan door zelf in te loggen met Intercom (een token gedeeld via de Fleet kan alleen lezen). Geef de antwoordtekst in plaats daarvan in de tekst.",
  "Replies as {}, only after you press Send.": "Antwoordt als {}, pas nadat je op Versturen drukt.",
  "Replies go as you, after you approve each one.": "Antwoorden gaan uit jouw naam, nadat je elk ervan goedkeurt.",
@@ -4995,6 +5004,7 @@
  "Sent, not confirmed": "Verstuurd, niet bevestigd",
  "Sent, thanks. You’ll see it here when it’s fixed.": "Verstuurd, bedankt. Je ziet het hier zodra het opgelost is.",
  "Sent.": "Verstuurd.",
+ "Sent. Kept open.": "Verzonden. Opengehouden.",
  "Sent. Moved to Done.": "Verstuurd. Verplaatst naar Gedaan.",
  "Sent. Moved to Later until {}.": "Verstuurd. Verplaatst naar Later tot {}.",
  "Sent. Moved to Waiting on others.": "Verstuurd. Verplaatst naar Wacht op anderen.",
@@ -6100,6 +6110,7 @@
  "The tests did not finish on this fix. Nothing was merged.": "De tests zijn niet afgelopen op deze fix. Er is niets gemerged.",
  "The tests fail on this fix. Nothing was merged; tap Change to have it fixed.": "De tests falen op deze fix. Er is niets gemerged; tik op Wijzigen om hem te laten verbeteren.",
  "The text needs some words, within the size limit": "De tekst heeft wat woorden nodig, binnen de groottelimiet",
+ "The to-do stays open for the work this promises.": "De to-do blijft open voor het werk dat hiermee is beloofd.",
  "The transcript couldn’t load.": "Het transcript kon niet laden.",
  "The upload didn’t finish. Try again.": "De upload is niet afgerond. Probeer het opnieuw.",
  "The voice model didn’t download correctly. Try again.": "Het spraakmodel is niet goed gedownload. Probeer het opnieuw.",
@@ -7722,6 +7733,7 @@
   "other": "{} ({} regels)"
  },
  "{} 5-hour limit reached.": "{} 5-uurslimiet bereikt.",
+ "{} 5-hour limit {}% used. Preparing is slowed.": "Limiet van 5 uur voor {}: {}% gebruikt. De voorbereiding gaat trager.",
  "{} Check recovered and saved.": "{} Check hersteld en opgeslagen.",
  "{} Checks run at most every 10 minutes, so notifications cleared in between may be missed.{}": "{} Checks lopen hoogstens elke 10 minuten, dus meldingen die ondertussen gewist zijn, kunnen gemist worden.{}",
  "{} Encrypted for their Machine only.": "{} Alleen versleuteld voor hun Machine.",
@@ -8319,6 +8331,10 @@
  "{} requires your Work {}. You can still keep any thread private.": "{} vereist je Werk-{}. Je kunt elke thread toch privé houden.",
  "{} requires your {}.": "{} vereist je {}.",
  "{} requires your {}. They belong to the company. Threads you keep private stay private.": "{} vereist je {}. Ze zijn van het bedrijf. Threads die je privé houdt, blijven privé.",
+ "{} resets left.": {
+  "one": "Nog {} reset over.",
+  "other": "Nog {} resets over."
+ },
  "{} result": "Resultaat van {}",
  "{} rows": {
   "one": "{} rij",
@@ -8520,6 +8536,7 @@
  "{} wants your security key": "{} vraagt je beveiligingssleutel",
  "{} was slow to answer": "{} antwoordde te traag",
  "{} weekly limit reached.": "{} weeklimiet bereikt.",
+ "{} weekly limit {}% used. Preparing is slowed.": "Weeklimiet voor {}: {}% gebruikt. De voorbereiding gaat trager.",
  "{} weeks": {
   "one": "{} week",
   "other": "{} weken"

@@ -1,26 +1,28 @@
 ---
 title: Adiar
 area: cards
-summary: Traga uma tarefa de volta mais tarde. Em um dia de trabalho, no horário que você escolher.
+summary: Adie uma tarefa para ela voltar mais tarde. Em um dia de trabalho, no horário que você escolher.
 covers: snooze
 code: dashboard.html, assistant.py
 order: 3
-translated: e6681ab225810e81
+translated: 9d34f011c74d8119
 ---
 ## Adiar uma tarefa
 
-Toque em **Adiar** em uma tarefa. O menu oferece alguns horários, como daqui a 2 horas, amanhã ou daqui a uma semana. Para outro horário, escolha **Escolher data** e **Hora**, depois **Salvar horário**. Adiou por engano? Toque em **Desfazer** na mensagem para trazer a tarefa de volta na hora.
+Toque em **Adiar** na tarefa. O menu oferece algumas opções de horário, como daqui a 2 horas, amanhã ou daqui a uma semana. Para escolher outro momento, selecione **Escolher data** e **Hora**, depois toque em **Salvar horário**. Adiou por engano? Toque em **Desfazer** na mensagem para trazer a tarefa de volta na hora.
 
-Adiamentos de um dia ou mais voltam no horário definido em “Os adiamentos voltam às”, e tarefas de trabalho aguardam até um dia útil. Defina essas duas opções em [Horário de trabalho](work-hours.md).
+Adiamentos de um dia ou mais voltam no horário definido em “Os adiamentos voltam às”, e tarefas de trabalho aguardam até um dia de trabalho. Defina os dois em [Horário de trabalho](work-hours.md).
 
 Ou peça isso em **Pedir mudanças**, por exemplo: “me lembre desta tarefa na próxima terça-feira”.
 
-## Quando a tarefa volta
+## Quando ela volta
 
-Ela volta como uma notificação em cada dispositivo com notificações ativadas e no Telegram, se você usar o app, conforme as opções de **Lembretes** em [Notificações](notifications.md). A mensagem de adiamento informa onde ela voltou. Se nenhuma dessas opções estiver disponível, a tarefa volta ao painel, com **Ativar notificações** logo ali. No iPhone e no iPad, baixe o [app para celular](mobile-app.md) para receber notificações.
+Ela volta como uma notificação em cada dispositivo com notificações ativadas e no Telegram, se você usa o app, de acordo com as opções de **Lembretes** em [Notificações](notifications.md). A mensagem de adiamento informa onde ela voltou. Se nenhum desses canais estiver disponível, a tarefa volta ao painel, com **Ativar notificações** logo ali. No iPhone e no iPad, baixe o [app para celular](mobile-app.md) para receber notificações.
 
-## Enquanto a tarefa está adiada
+Uma tarefa que a Machine já concluiu volta como estava. A Machine só volta a trabalhar nela se algo novo chegar enquanto a tarefa estiver adiada.
 
-A tarefa fica em **Volta mais tarde** e aparece no dia correspondente do [Calendário](calendar.md). **Cancelar adiamento** traz a tarefa de volta agora. **Mudar horário** permite escolher outro horário.
+## Enquanto ela está adiada
 
-No Outlook, a conversa de e-mail vai para uma pasta de itens adiados até a tarefa voltar. Veja [Microsoft](microsoft.md).
+A tarefa fica em **Volta mais tarde** e aparece no dia correspondente do [Calendário](calendar.md). **Cancelar adiamento** traz a tarefa de volta agora; **Mudar horário** permite escolher outro horário.
+
+No Outlook, a conversa de e-mail é movida para uma pasta de adiados até a tarefa voltar. Veja [Microsoft](microsoft.md).
