@@ -9,7 +9,7 @@ translated: 568ac451673bc141
 ---
 ## Openen
 
-Klik op een e-mailadres, op de pagina van een persoon in Graph of als link in een to-do of een chat. **Nieuwe e-mail** opent, aan dat adres, met een leeg onderwerp en bericht. Op een telefoon vult het het scherm.
+Klik op een e-mailadres, op de pagina van een persoon in Graph of als link in een to-do of een chat. **Nieuwe e-mail** opent, aan dat adres, met een leeg onderwerp en bericht. Op een telefoon vult het venster het hele scherm.
 
 **Van** staat op de mailbox voor die persoon: je werkmailbox voor een werkcontact, je privémailbox voor familie en vrienden. Klik erop om een andere mailbox te kiezen, of een bevestigde alias.
 
@@ -25,4 +25,4 @@ Escape of **Annuleren** sluit het venster. Wat je typte, wordt niet bewaard.
 
 **Openen in je mail** opent in plaats daarvan je eigen mailapp, met wat je al typte. Een klik op het adres met Ctrl of Cmd ingedrukt doet dat ook.
 
-Alleen mailboxen met **Kan dingen doen** aan kunnen versturen. Zonder zo een opent een klik op een adres je mailapp, zoals vroeger.
+Alleen mailboxen met **Kan dingen doen** aan kunnen versturen. Zonder zo'n mailbox opent een klik op een adres je mailapp, zoals vroeger.

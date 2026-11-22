@@ -17,7 +17,7 @@ Elke e-mail toont alleen wat er nieuw in staat. Eerdere berichten die erin worde
 
 ## Wat er is gedaan
 
-Elke uitvoering verschijnt als één subtiele regel, zoals "12 dingen gecontroleerd". Open de regel om elk soort stap één keer te zien, met het aantal keer dat die is uitgevoerd: "Browser gebruikt op example.com · 7". De regel vermeldt de website, nooit het adres, een opdracht of een bestand.
+Elke uitvoering verschijnt als één subtiele regel, zoals "12 dingen nagekeken". Open de regel om elk soort stap één keer te zien, met het aantal keer dat die is uitgevoerd: "Browser gebruikt op example.com · 7". De regel vermeldt de website, nooit het adres, een opdracht of een bestand.
 
 Als de uitvoering is gestopt om je iets te vragen, verschijnt de vraag ook als een subtiele regel, zoals "Gevraagd: vandaag of maandag versturen?". Je bericht eronder bevat alleen je antwoord.
 
@@ -36,7 +36,7 @@ Op een computer verstuur je een bericht met Enter of Ctrl+Enter (Cmd+Enter op ee
 
 Zeg dat in de chat, bijvoorbeeld: "Die persoon is niet de CEO" of "Die persoon werkt niet meer bij het bedrijf". The Machine corrigeert de informatie bij de bron: een rol, bedrijf, titel, projectfase, het project van de to-do of een regel die hij heeft geleerd. In de chat zie je wat er is gewijzigd, bijvoorbeeld: "Gecorrigeerd: Sam is Head of Sales, op basis van de e-mailhandtekening", met **Ongedaan maken**. Met Ongedaan maken wordt de oude waarde teruggezet, tenzij die intussen is gewijzigd.
 
-Andere concepten die op de onjuiste waarde zijn gebaseerd, worden één voor één opnieuw opgesteld. In de chat daarvan staat **Concept opnieuw opstellen na een correctie**. Concepten die je hebt bewerkt of goedgekeurd, en concepten die worden verstuurd, blijven ongewijzigd. In het antwoord staat hoeveel concepten er van elk soort zijn.
+Andere concepten die op de onjuiste waarde zijn gebaseerd, worden één voor één opnieuw opgesteld. In de chat daarvan staat **Concept wordt opnieuw gemaakt na een correctie**. Concepten die je hebt bewerkt of goedgekeurd, en concepten die worden verstuurd, blijven ongewijzigd. In het antwoord staat hoeveel concepten er van elk soort zijn.
 
 Op een GBrain-pagina wordt alleen de eigen sectie van The Machine aangepast. Wat je daar hebt geschreven, blijft staan. Als niet duidelijk is waar iets vandaan komt, gebruikt The Machine je opmerking om ervan te leren.
 

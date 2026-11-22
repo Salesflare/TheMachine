@@ -10,7 +10,7 @@ translated: acb60a24ef374625
 ## Een to-do overdragen
 
 1. Open bij de to-do **…**, kies **Overdragen…** en selecteer **Een teamgenoot**.
-2. Kies aan wie je de to-do wilt overdragen, controleer wat er meegaat (× laat een onderdeel achterwege) en voeg een notitie toe. Niets uit een Personal-account of van een ander bedrijf wordt meegestuurd.
+2. Kies aan wie je de to-do wilt overdragen, controleer wat er meegaat (× laat een onderdeel achterwege) en voeg een notitie toe. Niets uit een Privé-account of van een ander bedrijf wordt meegestuurd.
 3. Verstuur de overdracht. De Machine van die teamgenoot toont de to-do aan diegene.
 
 De Machine stuurt diegene een melding op de telefoon of via Telegram. Als geen van beide is ingesteld, stuurt de Machine één e-mail met wie de to-do heeft overgedragen, de titel en een link. Bekijk [Meldingen](notifications.md).
@@ -25,7 +25,7 @@ De to-do komt pas weer bovenaan te staan als er iets te beslissen is: Pat heeft 
 
 Wanneer de to-do terugkomt om op te volgen, staat er "Nog steeds bij Pat". **Nu opvolgen** maakt een korte herinnering voor Pat op de plek waar je de to-do hebt aangevraagd (Slack, WhatsApp, Telegram of e-mail), in de to-do. Er wordt niets verstuurd totdat je **Versturen** kiest. Daarna wacht de to-do weer op Pat. Als geen van de gekoppelde apps Pat een bericht kan sturen, wordt de chat geopend en staat daar waarom. **Terugnemen** en **Overdragen aan iemand anders** vind je onder **…** en daarna **Overdragen…**.
 
-In de chat van de to-do staat wanneer de overdracht is verstuurd ("Overgedragen aan de Machine van Pat · 14:02") en wat er is teruggekomen: geaccepteerd, geweigerd (met de notitie van Pat) of afgerond. Als Pat nog niet heeft geantwoord, kun je kiezen uit **Markeer als gedaan**, **Snoozen** en **Niet nodig**. Wil je Pat een herinnering sturen of de to-do terugnemen, zeg dat dan in de chat.
+In de chat van de to-do staat wanneer de overdracht is verstuurd ("Overgedragen aan de Machine van Pat · 14:02") en wat er is teruggekomen: geaccepteerd, geweigerd (met de notitie van Pat) of afgerond. Als Pat nog niet heeft geantwoord, kun je kiezen uit **Als gedaan markeren**, **Snoozen** en **Niet nodig**. Wil je Pat een herinnering sturen of de to-do terugnemen, zeg dat dan in de chat.
 
 Als de overdracht niet is verstuurd, staat dat op de to-do en in de chat, met **Opnieuw proberen**.
 
@@ -41,14 +41,14 @@ Een to-do wordt maar één keer aan elke teamgenoot overgedragen. Als Pat de to-
 
 ## Als ze weigeren
 
-Ze kunnen aangeven waarom: de to-do is niet voor hen, is al gedaan of ze hebben deze week geen tijd. Kies daarna **Zelf doen**, **Overdragen aan iemand anders** of **Markeer als gedaan**. Hetzelfde geldt als ze niet op tijd reageren. Met **Zelf doen** wordt het weer jouw to-do, onder Voor jou.
+Ze kunnen aangeven waarom: de to-do is niet voor hen, is al gedaan of ze hebben deze week geen tijd. Kies daarna **Zelf doen**, **Overdragen aan iemand anders** of **Als gedaan markeren**. Hetzelfde geldt als ze niet op tijd reageren. Met **Zelf doen** wordt het weer jouw to-do, onder Voor jou.
 
-## Iemand buiten de Network
+## Iemand buiten het Network
 
 Kies **Via e-mail**. Je Machine maakt een conceptmail die je zelf kunt versturen. Terwijl je typt, stelt de Machine eerst mensen uit je Fleet voor en daarna mensen van je bedrijf. Voeg een taakpagina toe, zodat ze met één tik kunnen reageren. Bekijk [Taakpagina's](task-pages.md).
 
-Dit werkt alleen voor Work-to-do's. Vink aan wat meegaat: een paar regels over de to-do, het concept, links en bestanden. Inhoud uit Personal en Alleen voor jou wordt niet meegestuurd. Met **E-mail klaarzetten** zet je de e-mail op de to-do. Lees hem door en verstuur hem vanuit je eigen mailbox. Er wordt niets bijgehouden.
+Dit werkt alleen voor Werk-to-do's. Vink aan wat meegaat: een paar regels over de to-do, het concept, links en bestanden. Inhoud uit Privé en Alleen jij wordt niet meegestuurd. Met **E-mail klaarzetten** zet je de e-mail op de to-do. Lees hem door en verstuur hem vanuit je eigen mailbox. Er wordt niets bijgehouden.
 
-Een to-do uit Intercom of Slack heeft geen eigen mailbox. Daarom wordt de e-mail verstuurd vanuit je Work-mailbox.
+Een to-do uit Intercom of Slack heeft geen eigen mailbox. Daarom wordt de e-mail verstuurd vanuit je Werk-mailbox.
 
-Daarna houdt de to-do de belofte bij totdat diegene antwoordt dat de taak is afgerond, of totdat je de to-do als gedaan markeert. De e-mail eindigt met "Neem dit op je in je eigen Machine". Als diegene zich via die link aanmeldt, kan diegene lid worden van je Fleet en wordt de to-do verplaatst naar diens Machine. Je kunt die regel uitschakelen in **Instellingen**, onder Fleet.
+Daarna houdt de to-do de belofte bij totdat diegene antwoordt dat de taak is afgerond, of totdat je de to-do als gedaan markeert. De e-mail eindigt met "Pak dit op in je eigen Machine". Als diegene zich via die link aanmeldt, kan diegene lid worden van je Fleet en wordt de to-do verplaatst naar diens Machine. Je kunt die regel uitschakelen in **Instellingen**, onder Fleet.

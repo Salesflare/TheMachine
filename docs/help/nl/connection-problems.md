@@ -23,10 +23,10 @@ Het getal bij **Koppelingen** telt alleen bronnen die je hulp nodig hebben.
 
 ## Veelvoorkomende oplossingen
 
-- "Meld je opnieuw aan bij Google" (of Microsoft): met één keer **Opnieuw verbinden** herstel je alle bronnen van dat account, zoals Gmail en Agenda.
-- "je moet je opnieuw aanmelden": druk op **Opnieuw verbinden** en meld je aan.
+- "Log opnieuw in bij Google" (of Microsoft): met één keer **Opnieuw koppelen** herstel je alle bronnen van dat account, zoals Gmail en Agenda.
+- "vraagt je om opnieuw in te loggen": druk op **Opnieuw koppelen** en log in.
 - Microsoft is de toegang nog aan het instellen: het probeert het vanzelf opnieuw.
-- Slack: druk op **Opnieuw verbinden**. Gekoppeld met een Maton-sleutel? Controleer de sleutel en de Slack-koppeling in Maton.
+- Slack: druk op **Opnieuw koppelen**. Gekoppeld met een Maton-sleutel? Controleer de sleutel en de Slack-koppeling in Maton.
 - Android: open de OpenClaw-app op je telefoon en geef de app toegang tot meldingen.
 
 Op je eigen computer controleert `assistant doctor` elke bron en vertelt het hoe je elk probleem oplost.

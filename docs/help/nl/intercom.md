@@ -1,47 +1,47 @@
 ---
 title: Intercom
 area: connections
-summary: Klantgesprekken in je Intercom-workspace. Er worden pas antwoorden verstuurd als jij dat doet, namens jou.
+summary: Klantgesprekken in je Intercom-workspace. Het antwoordt alleen nadat jij verstuurt, in jouw naam.
 covers: connector:intercom
 code: connectors/intercom.py, onboarding.py
 site: Sign in with Intercom, More sources, Remove
 translated: 2cbee87e6d24c0a9
 ---
-## Wat hij leest
+## Wat het leest
 
-Klantgesprekken in je Intercom-workspace: de laatste 7 dagen op het moment dat je koppelt, en daarna nieuwe gesprekken zodra ze binnenkomen. Hij leest ook bij welke workspace en teamgenoot de aanmelding hoort.
+Klantgesprekken in je Intercom-workspace: de laatste 7 dagen als je koppelt, daarna nieuwe gesprekken zodra ze binnenkomen. Het leest ook bij welke workspace en welke teamgenoot de login hoort.
 
-## Wat hij kan doen
+## Wat het kan doen
 
-Met je eigen **Inloggen met Intercom** kan hij namens jou antwoorden in een gesprek, maar pas nadat je voor die specifieke tekst op **Versturen** drukt. Hij wijst nooit gesprekken toe, sluit ze niet, voegt geen tags toe en schrijft geen notities. Een Intercom-koppeling die via je Fleet met je is gedeeld, kan alleen lezen.
+Met je eigen **Inloggen met Intercom** kan het in jouw naam antwoorden in een gesprek, alleen nadat je op **Versturen** drukt voor precies die tekst. Het wijst nooit toe, sluit nooit, tagt nooit en schrijft geen notities. Een Intercom die via je Fleet met je gedeeld is, leest alleen.
 
-## To-do's vanuit Intercom
+## To-do's uit Intercom
 
-Een to-do vanuit Intercom toont de klant. Met **Bericht lezen** open je het gesprek en de link ernaartoe in Intercom. Het antwoord wordt in dat gesprek verstuurd, tenzij je om een e-mail vraagt.
+Een to-do uit een Intercom-gesprek toont waar die vandaan komt: **Bericht lezen** opent het gesprek, met een link ernaar in Intercom, en de klant staat op de to-do. Het antwoord is een Intercom-antwoord in dat gesprek, tenzij je om een e-mail vraagt.
 
-Alleen gesprekken die aan jou zijn toegewezen of nog aan niemand zijn toegewezen, worden to-do's. Zodra een teamgenoot een gesprek in Intercom oppakt, wordt de bijbehorende to-do automatisch gesloten. Je kunt dat ongedaan maken met **Ongedaan maken**. Bij een Intercom-koppeling die met je is gedeeld, zijn jouw gesprekken de gesprekken die zijn toegewezen aan de teamgenoot namens wie je schrijft.
+Alleen gesprekken die aan jou of nog aan niemand zijn toegewezen, worden to-do's. Neemt een teamgenoot een gesprek over in Intercom, dan sluit de to-do vanzelf, met **Ongedaan maken**. Bij een Intercom die met je gedeeld is, zijn jouw gesprekken die van de teamgenoot als wie je schrijft.
 
-Een Intercom-to-do wordt ook automatisch gesloten zodra iemand in het team het gesprek in Intercom sluit, of erop antwoordt en de klant daarna niets meer heeft geschreven, als de to-do alleen om een antwoord vroeg. Dat geldt ook als je zelf al antwoordde vlak voordat de to-do binnenkwam, voordat The Machine je antwoord had gelezen. Een notitie, snooze of antwoord van een bot telt niet.
+Een Intercom-to-do sluit ook vanzelf zodra iemand van het team het gesprek in Intercom sluit, of antwoordt en de klant sindsdien niet meer schreef, als de to-do alleen om een antwoord vroeg. Dat telt ook als je net vóór de to-do antwoordde, voor The Machine je antwoord had gelezen. Een notitie, een snooze of het antwoord van een bot telt nooit.
 
-Als je Machine niet kan antwoorden in Intercom (de koppeling is alleen-lezen, antwoorden zijn niet ingeschakeld of Intercom is niet gekoppeld), wordt het concept klaargezet om per e-mail te versturen. In de to-do staat waarom en wordt gevraagd **In plaats daarvan per e-mail versturen?** Tik op de to-do op **Koppel je eigen Intercom** en meld je aan om in Intercom te antwoorden. De to-do wordt dan opnieuw aangemaakt als antwoord in Intercom. Er wordt niets verstuurd voordat je het verstuurt.
+Kan je Machine niet antwoorden in Intercom (alleen-lezen met je gedeeld, antwoorden niet aangezet, of niet gekoppeld), dan gaat het concept per e-mail. De to-do zegt waarom en vraagt **In plaats daarvan per e-mail versturen?** Wil je zelf in Intercom antwoorden, tik dan op **Koppel je eigen Intercom** op de to-do en log in. Daarna wordt de to-do opnieuw geschreven als antwoord in Intercom. Er gaat niets weg voor je het verstuurt.
 
-Je eigen Intercom en een Intercom-koppeling die met je is gedeeld, lezen niet allebei dezelfde workspace: de gedeelde koppeling blijft ongebruikt en de gesprekken worden één keer naar je eigen koppeling verplaatst.
+Je eigen Intercom en een gedeelde voor dezelfde workspace lezen niet allebei: de gedeelde rust, en zijn gesprekken gaan naar de jouwe, elk één keer.
 
 ## Koppelen
 
-1. In het dashboard: **Koppelingen**, **Klanten**, Intercom. Of op de instellingenpagina van een gehoste Machine op app.themachine.computer/setup: **Meer bronnen**, Intercom. Koppel een Machine op je eigen computer eerst aan je account.
+1. In het dashboard: **Koppelingen**, **Klanten**, Intercom. Of op de installatiepagina van een gehoste Machine op app.themachine.computer/setup: **Meer bronnen**, Intercom. Op je eigen computer koppel je hem eerst aan je account.
 2. Druk op **Inloggen met Intercom**.
-3. Geef The Machine (gemaakt door Salesflare) toestemming in Intercom. Je komt terug op de plek waar je begon.
+3. Keur The Machine goed in Intercom. Hij is gemaakt door Salesflare. Daarna ben je terug waar je begon.
 
-Als je je aanmeldt bij een andere workspace, wordt een tweede Intercom-account toegevoegd.
+Inloggen bij een andere workspace voegt een tweede Intercom-account toe.
 
-Intercom telt altijd als werk, voor het bedrijf dat bij de workspace hoort.
+Intercom telt altijd als werk, voor het bedrijf dat de workspace noemt.
 
 ## Verwijderen
 
-- In het dashboard: **Koppelingen**, open Intercom en kies **Details** en daarna **Ontkoppelen**. Intercom wordt dan niet meer gelezen. Wat al is binnengehaald, blijft staan.
-- Op een gehoste Machine kun je ook op de instellingenpagina naast Intercom op **Verwijderen** drukken.
+- In het dashboard: **Koppelingen**, open Intercom, **Details**, dan **Ontkoppelen**. Het stopt met lezen. Wat al binnengehaald is, blijft.
+- Op een gehoste Machine kun je ook op **Verwijderen** ernaast drukken op je installatiepagina.
 
-## Intercom verwijderen
+## Verwijderen op Intercom
 
-Open in Intercom Settings, Apps, Installed apps en verwijder The Machine.
+Open in Intercom Settings, Apps, Installed apps, en verwijder The Machine.

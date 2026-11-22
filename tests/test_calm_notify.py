@@ -199,7 +199,7 @@ class Summary(unittest.TestCase):
                                                      '1 meeting today, at 10:00.'])
         locale_prefs.configure({'language': 'nl'})
         nl = notify.compose(meeting, [], [], 'https://m.example/', **args)
-        self.assertEqual(nl['push']['title'], 'Goeiemorgen Sam, 2 antwoorden staan klaar om te versturen')
+        self.assertEqual(nl['push']['title'], 'Goedemorgen Sam, 2 antwoorden staan klaar om te versturen')
         self.assertEqual(nl['push']['body'].split('\n')[:3], ['Send the reply to Robin', 'Send the reply to Kai', '12 andere kunnen wachten, ongeveer 5 min werk.'])
 
 

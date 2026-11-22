@@ -1,7 +1,7 @@
 ---
 title: Mijlpalen
 area: cards
-summary: Om de zoveel afgeronde to-do's verschijnt er een kleine viering bij **To-do's**, met een afbeelding die je kunt delen als je wilt.
+summary: Om de zoveel afgeronde to-do's verschijnt er een kleine viering bij To-do's, met een afbeelding die je kunt delen als je wilt.
 covers: milestones
 code: machine/store/done_milestones.py, dashboard/todos-milestone.js
 order: 11

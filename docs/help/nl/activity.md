@@ -23,12 +23,12 @@ Je ziet hier berichten en antwoorden, wijzigingen in documenten en agenda's, sta
 
 Bij elk bericht, elke wijziging in een document of agenda, elke stap op internet en elke gemergede fix staat wat die mogelijk maakte, zoals het op dat moment is vastgelegd:
 
-- **Goedgekeurd in de to-do** of **Goedgekeurd in Telegram**: je tikte op **Verzenden**, **Bevestigen** of **Mergen**
+- **Goedgekeurd in de to-do** of **Goedgekeurd in Telegram**: je tikte op **Versturen**, **Bevestigen** of **Mergen**
 - **Goedgekeurd met je stem**: je zei ja in Talk
 - **‘Doe het’ getikt**: je tikte op **Doe het** bij de to-do
 - **Gevraagd in de chat**: je vroeg erom in een bericht. Het begin van je bericht staat tussen aanhalingstekens. Een citaat wordt alleen getoond zolang die woorden nog in je eigen bericht staan.
 - **Opvolging, vanzelf verstuurd**, **Kleine fix, vanzelf gemerged**, **Nieuw privédocument, vanzelf gemaakt** of **Vooraf voorbereid, vanzelf**: een instelling van jou of een van de eigen regels van The Machine
-- **Geen goedkeuring vastgelegd**: er is niets over vastgelegd. Dit komt ook in onze [foutrapporten](error-reports.md), zodat we kunnen achterhalen welke stap is overgeslagen.
+- **Geen goedkeuring vastgelegd**: er is niets over vastgelegd. Dit komt ook in onze [foutrapporten](error-reports.md), zodat we kunnen achterhalen waar het vastleggen is misgegaan.
 
 Bij Stappen op internet zie je ook de uitvoering van een to-do die op een pagina heeft geklikt of getypt, met wat die uitvoering mogelijk maakte. Werk dat na een snooze doorgaat, behoudt de reden die ervoor gold voordat het werd gesnoozed.
 

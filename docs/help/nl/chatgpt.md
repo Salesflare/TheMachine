@@ -1,7 +1,7 @@
 ---
 title: ChatGPT
 area: connections
-summary: Meld je aan met ChatGPT om The Machine op je ChatGPT-abonnement te gebruiken en je ChatGPT-skills te importeren.
+summary: Log in met ChatGPT om je Machine op je ChatGPT-abonnement te gebruiken en je ChatGPT-skills te importeren.
 covers: chatgpt
 code: docs/models.md, docs/skills.md, skills.py
 site: Sign in with ChatGPT, Reconnect ChatGPT
@@ -9,11 +9,11 @@ translated: fc97be60c0b68336
 ---
 ## Waarvoor het bedoeld is
 
-Meld je aan met ChatGPT en The Machine leest en maakt concepten met ChatGPT, op je eigen ChatGPT-abonnement. The Machine heeft geen eigen AI: verzoeken gaan rechtstreeks naar OpenAI, via jouw account en onder hun voorwaarden.
+Log in met ChatGPT en je Machine leest en maakt concepten met ChatGPT, op je eigen ChatGPT-abonnement. The Machine heeft geen eigen AI: verzoeken gaan rechtstreeks naar OpenAI, via jouw account en onder hun voorwaarden.
 
-## Aanmelden
+## Inloggen
 
-Klik op een gehoste Machine op **Aanmelden met ChatGPT** op de installatiepagina en voer de code die daar wordt getoond in bij ChatGPT. Later uitgelogd? Klik op **Opnieuw verbinden met ChatGPT**.
+Klik op een gehoste Machine op **Inloggen met ChatGPT** op je installatiepagina en voer de code die daar wordt getoond in bij ChatGPT. Later uitgelogd? Klik op **ChatGPT opnieuw koppelen**.
 
 Wijst OpenAI de code af? Open je [ChatGPT-beveiligingsinstellingen](https://chatgpt.com/settings/security), scrol naar beneden en zet de schakelaar "Aanmelden met een apparaatcode inschakelen voor Codex, Excel, PowerPoint en Word" aan. Voer de code daarna opnieuw in.
 
@@ -31,4 +31,4 @@ Klik in **Instellingen** op **Skills**, klik op **Importeren**, kies **Van ChatG
 
 ## Verwijderen
 
-Kies een ander model op de installatiepagina (of meld je op je eigen computer op dezelfde manier aan bij een andere provider). Als je de toegang aan de kant van OpenAI wilt intrekken, meld je je af bij de sessie in je ChatGPT-beveiligingsinstellingen.
+Kies een ander model op je installatiepagina (of log op je eigen computer op dezelfde manier in bij een andere provider). Als je de toegang aan de kant van OpenAI wilt intrekken, log je de sessie uit in je ChatGPT-beveiligingsinstellingen.

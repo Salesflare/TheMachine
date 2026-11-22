@@ -22,7 +22,7 @@ Wil je Notion alleen gebruiken om acties uit te voeren, schakel dan **Brengt sig
 
 ## Wat hij kan doen
 
-Als een to-do of afspraak tekst van een pagina nodig heeft, leest je Machine die pagina alleen terwijl hij eraan werkt.
+Als een to-do of meeting tekst van een pagina nodig heeft, leest je Machine die pagina alleen terwijl hij eraan werkt.
 
 Voor elk van deze acties vraagt je Machine eerst om akkoord via de bijbehorende to-do:
 
@@ -35,22 +35,22 @@ Hij verwijdert, deelt of verplaatst nooit een pagina.
 
 ## Koppelen
 
-1. Ga in het dashboard naar **Koppelingen**, **Documenten en bestanden**, Notion. Of ga op de instelpagina van een gehoste Machine op app.themachine.computer/setup naar **Meer bronnen**, Notion. Koppel The Machine op je eigen computer eerst aan je account.
-2. Druk op **Aanmelden met Notion**, kies je werkruimte en de pagina’s die hij mag zien en geef toegang.
-3. Terug in The Machine controleert hij meteen de aanmelding en toont hij de naam van de werkruimte.
+1. Ga in het dashboard naar **Koppelingen**, **Documenten en bestanden**, Notion. Of ga op de installatiepagina van een gehoste Machine op app.themachine.computer/setup naar **Meer bronnen**, Notion. Koppel The Machine op je eigen computer eerst aan je account.
+2. Druk op **Inloggen met Notion**, kies je werkruimte en de pagina’s die hij mag zien en geef toegang.
+3. Terug in The Machine controleert hij meteen de login en toont hij de naam van de werkruimte.
 
 Voeg Notion opnieuw toe voor een andere werkruimte.
 
 ## Plak een token
 
-Druk onder **Of plak een integratietoken** op **Haal je token op**. Notion opent de pagina met integraties. Maak een interne integratie, geef toestemming om inhoud en reacties te lezen en toe te voegen, en om gebruikersinformatie met e-mailadressen te lezen. Kopieer het token, plak het en druk op **Verbinden**.
+Druk onder **Of plak een integratietoken** op **Je token ophalen**. Notion opent de pagina met integraties. Maak een interne integratie, geef toestemming om inhoud en reacties te lezen en toe te voegen, en om gebruikersinformatie met e-mailadressen te lezen. Kopieer het token, plak het en druk op **Koppelen**.
 
 Deel daarna in Notion je pagina’s met de integratie, onder **Koppelingen** op elke pagina. Op je eigen computer vraagt `assistant connect notion` er ook om.
 
 ## Loskoppelen
 
 - Ga in het dashboard naar **Koppelingen**, open Notion, kies **Details** en druk op **Ontkoppelen**. Wat al is binnengehaald, blijft staan.
-- Op een gehoste Machine kun je ook op de instelpagina op **Verwijderen** ernaast drukken.
+- Op een gehoste Machine kun je ook op je installatiepagina op **Verwijderen** ernaast drukken.
 
 ## Toegang intrekken in Notion
 

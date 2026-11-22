@@ -29,6 +29,6 @@ Je kunt dit uitzetten via **Delen wat aan Help gevraagd wordt** in **Instellinge
 
 De assistent beantwoordt vragen. Hij kan je gegevens niet zien en verandert niets. Hij vertelt je waar je moet tikken.
 
-Als je beschrijving klinkt als iets dat kapot is in plaats van een vraag over hoe iets werkt, eindigt het antwoord met **Deze bug melden**. Daarmee open je **Een bug melden**, met een korte beschrijving van wat je hebt gedaan, wat je verwachtte en wat er gebeurde. De ondersteuningsmelding is alvast aangevinkt. Je kunt alles daar aanpassen. Er wordt niets verstuurd totdat je op **Versturen** drukt.
+Als je beschrijving klinkt als iets wat kapot is in plaats van een vraag over hoe iets werkt, eindigt het antwoord met **Deze bug melden**. Daarmee open je **Een bug melden**, met een korte beschrijving van wat je hebt gedaan, wat je verwachtte en wat er gebeurde. De ondersteuningsmelding is alvast aangevinkt. Je kunt alles daar aanpassen. Er wordt niets verstuurd totdat je op **Versturen** drukt.
 
 **Een bug melden** is ook een eigen tabblad in hetzelfde paneel. Zie [Ondersteuning krijgen](get-support.md#report-a-bug).

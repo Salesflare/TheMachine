@@ -6,15 +6,15 @@ covers: connector:web_page
 code: connectors/web_page.py
 translated: d40b156b37cc9bc5
 ---
-## Wat het leest
+## Wat hij leest
 
 De tekst van één openbare webpagina per koppeling, om de paar uur en hooguit één keer per uur. Menu's, footers, cookiemeldingen en advertenties laat hij weg. Als de tekst veranderde, kijkt The Machine wat er veranderde en maakt hij alleen een to-do als het telt, zoals een nieuwe prijs of een gewijzigd beleid. Datums, tellers en kleine herformuleringen geven nooit een to-do. Een ongewijzigde pagina kost niets.
 
 Hij vraagt eerst de robots.txt van de site en laat de pagina met rust als de site nee zegt. Pagina's achter een login of die alleen met JavaScript gebouwd zijn, kun je niet volgen.
 
-## Wat het kan doen
+## Wat hij kan doen
 
-Niets. Het leest alleen de pagina.
+Niets. Hij leest alleen de pagina.
 
 ## Koppelen
 

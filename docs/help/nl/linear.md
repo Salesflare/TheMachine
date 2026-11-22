@@ -33,7 +33,7 @@ De koppeling verwijdert of archiveert nooit een issue en verplaatst het nooit na
 
 ## Koppelen
 
-1. In het dashboard: **Koppelingen**, **+ Toevoegen**, Linear. Of op de configuratiepagina van een gehoste Machine via app.themachine.computer/setup: **Meer bronnen**, Linear. Koppel de Machine op je eigen computer eerst aan je account.
+1. In het dashboard: **Koppelingen**, **+ Toevoegen**, Linear. Of op de installatiepagina van een gehoste Machine via app.themachine.computer/setup: **Meer bronnen**, Linear. Koppel de Machine op je eigen computer eerst aan je account.
 2. Druk op **Inloggen met Linear**, kies je workspace en geef toegang.
 3. Terug in The Machine controleert hij meteen of je bent ingelogd en toont hij de naam van de workspace.
 
@@ -41,13 +41,13 @@ Voeg Linear opnieuw toe voor een andere workspace. Kies **Werk** of **Privé**, 
 
 ## Een API-sleutel plakken
 
-Druk onder **Of plak een API-sleutel** op **Haal je token op**. Linear opent **Instellingen**, **Beveiliging en toegang**. Maak een persoonlijke API-sleutel aan, kopieer en plak die en druk op **Verbinden**. Op je eigen computer vraagt `assistant connect linear` er ook om.
+Druk onder **Of plak een API-sleutel** op **Je token ophalen**. Linear opent **Settings**, **Security & access**. Maak een persoonlijke API-sleutel aan, kopieer en plak die en druk op **Koppelen**. Op je eigen computer vraagt `assistant connect linear` er ook om.
 
 ## De koppeling verwijderen
 
 - In het dashboard: **Koppelingen**, open Linear en kies **Details** en vervolgens **Ontkoppelen**. Wat al is binnengehaald, blijft staan.
-- Op een gehoste Machine kun je ook op de configuratiepagina naast de koppeling op **Verwijderen** drukken.
+- Op een gehoste Machine kun je ook op de installatiepagina naast de koppeling op **Verwijderen** drukken.
 
 ## Toegang intrekken in Linear
 
-Ga in Linear naar **Instellingen**, **Beveiliging en toegang** en trek de toegang van The Machine in bij geautoriseerde apps. Als je een API-sleutel hebt geplakt, trek je de sleutel op dezelfde pagina in.
+Ga in Linear naar **Settings**, **Security & access** en trek de toegang van The Machine in onder authorized applications. Als je een API-sleutel hebt geplakt, trek je de sleutel op dezelfde pagina in.

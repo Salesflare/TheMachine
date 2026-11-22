@@ -11,7 +11,7 @@ translated: 66412d1dc4e965c2
 
 Open **⋯** op de pagina van een persoon en kies **Contact delen…**. Kies naar wie het gaat: een teamgenoot in je Werk-Fleet, een vriend, of iemand in je Familie. Het gaat naar één persoon tegelijk.
 
-Vink aan wat er meegaat: de naam altijd, en verder een van de e-mailadressen en telefoonnummers, de organisatie en de functie. Voeg als je wilt een korte notitie toe bij **Waarom jullie moeten praten**.
+Vink aan wat er meegaat: de naam altijd, en verder naar keuze hun e-mailadressen en telefoonnummers, hun organisatie en hun functie. Voeg als je wilt een korte notitie toe bij **Waarom jullie moeten praten**.
 
 ## Bekijk het voordat het verstuurd wordt
 
@@ -29,7 +29,7 @@ Kies op **Over jou** voor **Mijn contactgegevens delen**. Kies op dezelfde manie
 
 ## Als iemand iets met je deelt
 
-Het wacht onder **Met jou gedeeld** bovenaan Personen, met wie het stuurde en de notitie. Kies **Toevoegen** om het in je Graph te zetten, of **Negeren**.
+Het wacht onder **Met jou gedeeld** bovenaan Personen, met wie het stuurde en de notitie. Kies **Toevoegen** om het in je Graph te zetten, of **Afwijzen**.
 
 - Ken je die persoon al (hetzelfde e-mailadres of nummer), dan voegt Toevoegen alleen toe wat nieuw is. Naam, functie en kant blijven die van jou.
 - Van een teamgenoot komt de persoon binnen als Werk, gemarkeerd als "Gedeeld door" die teamgenoot. Van een vriend of uit je Familie is het een suggestie om toe te voegen, en de kant wordt bepaald zoals voor iedereen.

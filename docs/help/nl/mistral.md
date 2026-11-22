@@ -17,7 +17,7 @@ Mistral heeft geen login voor andere apps, dus het werkt met een API-sleutel. Op
 
 ## Koppelen
 
-Open op een gehoste Machine je setuppagina, ga naar Je AI en open **Andere AI-diensten**. Kies Mistral als provider, plak de sleutel en druk op **Sleutel opslaan**. Je Machine probeert de sleutel eerst met één piepklein verzoek. Klopt de sleutel niet, dan zie je dat meteen, en wordt er niets bewaard.
+Open op een gehoste Machine je installatiepagina, ga naar Je AI en open **Andere AI-diensten**. Kies Mistral als provider, plak de sleutel en druk op **Sleutel opslaan**. Je Machine probeert de sleutel eerst met één piepklein verzoek. Klopt de sleutel niet, dan zie je dat meteen, en wordt er niets bewaard.
 
 Mistral Large wordt het hoofdmodel. Mistral Small staat er ook, als goedkopere keuze voor chats of als terugvaloptie.
 
@@ -29,4 +29,4 @@ Op je eigen computer: zie de [modellengids](https://github.com/Salesflare/TheMac
 
 ## Verwijderen
 
-Druk op je setuppagina, onder Je AI, op **Verwijderen** naast Mistral in **Sleutels**. De sleutel verdwijnt van je Machine, en als Mistral je hoofdmodel was, neemt een ander verbonden model het over. Om de sleutel zelf te schrappen, verwijder je hem in de Mistral-console.
+Druk op je installatiepagina, onder Je AI, op **Verwijderen** naast Mistral in **Sleutels**. De sleutel verdwijnt van je Machine, en als Mistral je hoofdmodel was, neemt een ander gekoppeld model het over. Om de sleutel zelf te schrappen, verwijder je hem in de Mistral-console.

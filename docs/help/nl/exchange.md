@@ -9,7 +9,7 @@ translated: f2b98c9bd4f08dba
 ---
 ## Wat wordt gelezen
 
-Je afspraken, met de gasten, vergaderruimtes en notities: de afgelopen week en de komende maand wanneer je verbinding maakt, en daarna elke wijziging. Ze verschijnen in **Agenda** en bij de voorbereiding van vergaderingen.
+Je afspraken, met de gasten, ruimtes en notities: de afgelopen week en de komende maand wanneer je koppelt, en daarna elke wijziging. Ze verschijnen in **Agenda** en bij de voorbereiding van meetings.
 
 De koppeling is alleen-lezen: er worden nooit afspraken toegevoegd, verplaatst of verwijderd. Mail uit Exchange Server wordt nog niet gelezen.
 
@@ -17,17 +17,17 @@ De koppeling is alleen-lezen: er worden nooit afspraken toegevoegd, verplaatst o
 
 Exchange Server draait bij je bedrijf. Microsoft 365 (Exchange Online) is de cloud van Microsoft. Kies daarvoor **Outlook-agenda**.
 
-Vul eerst je e-mailadres in. Als het om Microsoft 365 gaat, staat dat op het formulier en zie je **Aanmelden met Microsoft** in plaats van het wachtwoordveld. Daarmee open je de aanmeldpagina van Outlook-agenda, zonder wachtwoord. Wordt het adres niet binnen een paar seconden gevonden, of beheert je bedrijf een eigen server? Dan blijft het wachtwoordformulier staan.
+Vul eerst je e-mailadres in. Als het om Microsoft 365 gaat, staat dat op het formulier en zie je **Inloggen met Microsoft** in plaats van het wachtwoordveld. Daarmee open je de inlogpagina van Outlook-agenda, zonder wachtwoord. Wordt het adres niet binnen een paar seconden gevonden, of beheert je bedrijf een eigen server? Dan blijft het wachtwoordformulier staan.
 
 ## Koppelen
 
 1. Open in het dashboard **Koppelingen**, daarna **Agenda**, en kies **Exchange Server**.
 2. Vul je zakelijke e-mailadres en Windows-wachtwoord in.
-3. Klik op **Verbinden**.
+3. Klik op **Koppelen**.
 
-De server wordt gevonden op basis van je e-mailadres (Autodiscover). Wordt de server niet gevonden? Open **Serverinstellingen** en vul de server in die je IT-afdeling voor Outlook opgeeft, bijvoorbeeld `mail.example.com`. Meld je je aan met een andere naam dan je e-mailadres? Vul die dan in bij **Gebruikersnaam**, als `DOMAIN\name`.
+De server wordt gevonden op basis van je e-mailadres (Autodiscover). Wordt de server niet gevonden? Open **Serverinstellingen** en vul de server in die je IT-afdeling voor Outlook opgeeft, bijvoorbeeld `mail.example.com`. Log je in met een andere naam dan je e-mailadres? Vul die dan in bij **Gebruikersnaam**, als `DOMAIN\name`.
 
-Aanmelden gebeurt via NTLM of Basic, alleen via https.
+Inloggen gebeurt via NTLM of Basic, alleen via https.
 
 ## Als de koppeling niet meer werkt
 
@@ -37,4 +37,4 @@ Aanmelden gebeurt via NTLM of Basic, alleen via https.
 
 ## De koppeling verwijderen
 
-Open **Koppelingen**, open de agenda en kies **Details** en daarna **Ontkoppelen**. Wat al is overgezet, blijft staan.
+Open **Koppelingen**, open de agenda en kies **Details** en daarna **Ontkoppelen**. Wat al is binnengehaald, blijft staan.

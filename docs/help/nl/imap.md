@@ -9,19 +9,19 @@ translated: a21e9d52d723f351
 ---
 ## Wat hij leest
 
-Je inbox en de map Verzonden: de laatste 7 dagen wanneer je verbinding maakt, en daarna alle nieuwe e-mail. Ook de e-mail die je verstuurt telt mee, zodat hij leert hoe je schrijft en wat je hebt beloofd. Andere mappen worden niet gelezen.
+Je inbox en de map Verzonden: de laatste 7 dagen wanneer je hem koppelt, en daarna alle nieuwe e-mail. Ook de e-mail die je verstuurt telt mee, zodat hij leert hoe je schrijft en wat je hebt beloofd. Andere mappen worden niet gelezen.
 
 Er wordt niets in je mailbox gewijzigd, behalve dat er een kopie komt van wat The Machine verstuurt in je map Verzonden. E-mail wordt niet als gelezen gemarkeerd.
 
 ## Wat hij kan doen
 
-Hij verstuurt alleen e-mail nadat je op **Verzenden** drukt, via de mailserver van je provider (SMTP) met hetzelfde wachtwoord. Er komt een kopie in je map Verzonden. Antwoorden blijven in dezelfde e-mailthread en je handtekening is die uit **Instellingen**, of anders die onder je verzonden e-mail.
+Hij verstuurt alleen e-mail nadat je op Versturen drukt, via de mailserver van je provider (SMTP) met hetzelfde wachtwoord. Er komt een kopie in je map Verzonden. Antwoorden blijven in dezelfde e-mailthread en je handtekening is die uit Instellingen, of anders die onder je verstuurde e-mail.
 
-## Verbinden
+## Koppelen
 
 1. Open in het dashboard **Koppelingen**, dan **E-mail**, en kies **Andere e-mail**.
 2. Vul je e-mailadres en wachtwoord in.
-3. Druk op **Verbinden**.
+3. Druk op **Koppelen**.
 
 Veel providers vereisen voor e-mailapps een app-wachtwoord in plaats van je gewone wachtwoord. Maak er een aan in de accountinstellingen van je provider:
 
@@ -34,14 +34,14 @@ Veel providers vereisen voor e-mailapps een app-wachtwoord in plaats van je gewo
 
 Voor de meeste providers worden de serverinstellingen ingevuld. Staat die van jou er niet bij? Open **Serverinstellingen** en vul de gegevens in die je provider voor e-mailapps opgeeft: de IMAP- en SMTP-servers, hun poorten en de beveiliging (SSL/TLS of STARTTLS). The Machine maakt nooit verbinding zonder TLS.
 
-Gebruik je Gmail of Microsoft-e-mail, ook op je eigen domein? Kies dan **Gmail** of **Outlook**. Daarvoor meld je je aan zonder wachtwoord. Ook de servers die je invult bij Serverinstellingen worden daar gebruikt: Microsoft accepteert geen wachtwoorden meer van e-mailapps.
+Gebruik je Gmail of Microsoft-e-mail, ook op je eigen domein? Kies dan **Gmail** of **Outlook**. Daarmee log je in zonder wachtwoord. Vul je hun servers in bij Serverinstellingen, dan kom je ook daar terecht: Microsoft accepteert geen wachtwoorden meer van e-mailapps.
 
-Heb je een adres van Microsoft 365 ingevuld? Het formulier herkent dit en toont **Aanmelden met Microsoft** in plaats van het wachtwoordveld. Daarmee open je het aanmeldscherm van Outlook. Wordt het adres niet binnen een paar seconden herkend? Dan blijft het wachtwoordformulier staan.
+Heb je een adres van Microsoft 365 ingevuld? Het formulier herkent dit en toont **Inloggen met Microsoft** in plaats van het wachtwoordveld. Daarmee open je het inlogscherm van Outlook. Wordt het adres niet binnen een paar seconden herkend? Dan blijft het wachtwoordformulier staan.
 
 ## Als de verbinding wegvalt
 
-- **De mailserver weigerde het wachtwoord**: je hebt het gewijzigd of het app-wachtwoord is verwijderd. Maak opnieuw verbinding met het nieuwe wachtwoord.
-- **De mailserver weigerde het wachtwoord voor verzending**: er is niets verstuurd. Maak opnieuw verbinding. Blijft de mailserver het wachtwoord weigeren, controleer dan de SMTP-server bij Serverinstellingen. Tot die tijd leest hij alleen e-mail.
+- **De mailserver weigerde het wachtwoord**: je hebt het gewijzigd of het app-wachtwoord is verwijderd. Koppel hem opnieuw met het nieuwe wachtwoord.
+- **De mailserver weigerde het wachtwoord voor verzending**: er is niets verstuurd. Koppel hem opnieuw. Blijft de mailserver het wachtwoord weigeren, controleer dan de SMTP-server bij Serverinstellingen. Tot die tijd leest hij alleen e-mail.
 - **De mailserver was niet bereikbaar**: hij probeert het vanzelf opnieuw. Blijft dit misgaan, controleer dan de servernaam bij Serverinstellingen.
 - **Het certificaat van de mailserver is voor** een andere naam: bij gedeelde hosting reageert de server vaak met zijn eigen servernaam. Vul de getoonde naam in bij Serverinstellingen. The Machine slaat de certificaatcontrole nooit over.
 

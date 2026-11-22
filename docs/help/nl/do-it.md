@@ -1,7 +1,7 @@
 ---
 title: Doe het en wat er wordt verstuurd
 area: cards
-summary: Doe het bereidt het werk voor. Er wordt niets verstuurd, betaald of gewijzigd totdat je die stap goedkeurt.
+summary: Met Doe het bereidt je Machine het werk voor. Er wordt niets verstuurd, betaald of gewijzigd totdat je die stap goedkeurt.
 covers: do-it
 code: dashboard.html, next_actions.py, assistant.py
 order: 2
@@ -9,48 +9,48 @@ translated: a403aa339eba78aa
 ---
 ## Wat Doe het doet
 
-**Doe het** vraagt je Machine om de to-do voor te bereiden: een antwoord als concept opstellen, dingen opzoeken of een formulier invullen. Hij gebruikt je eigen accounts en zijn eigen browser, net zoals jij dat zou doen.
+Met **Doe het** vraag je je Machine om de to-do voor te bereiden: een antwoord als concept opstellen, iets opzoeken of een formulier invullen. Hij gebruikt je eigen accounts en zijn eigen browser, zoals jij dat zou doen.
 
-Terwijl hij in zijn browser werkt, zie je die pagina live in de to-do en de chat, ook tussen stappen door, totdat hij daar klaar is. Klik op de afbeelding om de browser te openen. In de to-do wordt de afbeelding groter weergegeven, met **Stoppen**: één keer drukken stopt die sessie meteen.
+Terwijl hij in zijn browser werkt, zie je die pagina live bij de to-do en in de chat, ook tussen de stappen door, totdat hij daar klaar is. Klik op de afbeelding om de browser te openen. In de to-do wordt die groter weergegeven, met **Stoppen**: één druk beëindigt die uitvoering meteen.
 
-Voordat hij iets opvolgt of overdraagt, controleert hij op nieuwere antwoorden, ook van een teamgenoot. Als iemand het al heeft afgehandeld, staat dat in de to-do. Als hij een document of pagina heeft gewijzigd, bevat de to-do een link ernaartoe.
+Voor een opvolging of overdracht controleert hij of er nieuwere reacties zijn, ook van een teamgenoot. Als het al is afgehandeld, laat de to-do dat weten. Als hij een document of pagina heeft gewijzigd, bevat de to-do een link ernaartoe.
 
-Als een lastige taak op een site of in een workflow lukt, bewaart je Machine de stappen als skill, zonder persoonlijke gegevens. Latere to-do's op die site krijgen die stappen als leidraad, nooit als toestemming: versturen of betalen wacht nog steeds op jou. Je vindt ze onder **Instellingen > Skills**, met het label **Geleerd van een taak**.
+Als een lastige taak op een site of in een workflow lukt, bewaart je Machine de stappen als skill, zonder gegevens van anderen. Latere to-do's op die site gebruiken die als leidraad, nooit als toestemming: versturen of betalen wacht nog steeds op jou. Je vindt ze onder **Instellingen > Skills**, met het label **Geleerd van een taak**.
 
 ## Er wordt niets verstuurd voordat je akkoord geeft
 
-- Een antwoord komt terug als concept. **Nakijken en versturen** opent het, zodat je het kunt bewerken. Het wordt pas verstuurd als je op **Nu versturen** drukt.
-- Staan er twee of meer e-mails in één to-do? In de chat staat één knop om ze allemaal te controleren. Je ziet ze één voor één met **Volgende**. In de laatste stap verstuur je ze allemaal. Een e-mail wordt pas als verstuurd weergegeven nadat hij is verzonden.
-- Een e-mail wordt weergegeven zoals hij eruitziet, met vetgedrukte tekst, lijsten en links. Een Slack- of chatbericht is platte tekst.
-- Met **Wijzigingen vragen** in hetzelfde venster vertel je wat er anders moet. Je Machine maakt het concept opnieuw.
+- Een antwoord komt terug als concept. Met **Nakijken en versturen** open je het, klaar om te bewerken. Het wordt pas verstuurd als je op **Nu versturen** drukt.
+- Staan er twee of meer e-mails bij één to-do? In de chat van die to-do kun je ze allemaal met één knop nakijken. Ze verschijnen één voor één met **Volgende**. Bij de laatste stap verstuur je ze allemaal. Een e-mail krijgt pas de status verstuurd als hij echt is verstuurd.
+- Een e-mail wordt weergegeven zoals hij eruit zal zien, met vetgedrukte tekst, lijsten en links. Een bericht in Slack of een chatbericht is platte tekst.
+- Met **Wijzigingen vragen** in hetzelfde venster vertel je wat er anders moet. Je Machine maakt dan een nieuw concept.
 - Een antwoord reageert op de nieuwste e-mail in de thread. De bron van de to-do opent die e-mail.
-- Een stap waarmee je iets definitief maakt, zoals indienen, betalen of boeken, wacht op je bevestiging of op een verzoek van jou in de chat. Als je één stap bevestigt, blijven de andere stappen wachten. De to-do wordt pas gesloten als alle stappen zijn afgerond.
-- De to-do en de chat laten zien wat zo'n stap verstuurt voordat je erop tikt. Bij een agenda-uitnodiging zie je de titel, tijd, gasten en of er een vergaderlink wordt toegevoegd.
-- Gekoppelde agenda's tellen mee wanneer hij een tijdstip zoekt: hij leest je afspraken voor die dagen voordat hij tijden voorstelt.
+- Een stap die iets definitief maakt, zoals versturen, betalen of boeken, wacht op jouw bevestiging of op je verzoek in de chat. Als je één stap bevestigt, blijven de andere wachten. De to-do wordt pas afgesloten als elke stap is afgerond.
+- Bij de to-do en in de chat zie je wat zo'n stap verstuurt voordat je erop tikt. Bij een agenda-uitnodiging zie je de titel, tijd, gasten en of er een meetinglink wordt toegevoegd.
+- Gekoppelde agenda's tellen mee als hij een tijdstip zoekt: hij leest je afspraken op die dagen voordat hij tijden voorstelt.
 - Een concept in de chat van een to-do wordt nooit verstuurd in hetzelfde bericht waarin het is opgesteld.
-- Totdat je akkoord geeft, wacht de to-do onder **Voor jou** als **Klaargezet**. In de lijst staat ook dat er niets wordt verstuurd totdat je akkoord geeft. **Klaargezet** betekent dat een concept of resultaat klaarstaat om goed te keuren. Eindigt het werk zonder concept of resultaat omdat hij je nodig heeft, bijvoorbeeld voor een beslissing, een ontbrekend gegeven, aanmelden of een keuze? Dan staat er **Wacht op jou** bij de to-do, met een regel waarin staat wat hij nodig heeft. Hetzelfde geldt voor de melding en het ochtendoverzicht. Er staat pas dat een concept is verstuurd nadat dat ook echt is gebeurd.
-- Van een lang concept worden de eerste 3 regels getoond. Met **Meer tonen** of door op de tekst te tikken, open je de rest. **Nakijken en versturen** toont altijd het hele concept.
+- Totdat je akkoord geeft, wacht de to-do onder **Voor jou** met de status **Klaargezet**. De lijst vermeldt één keer dat er niets wordt verstuurd voordat je akkoord geeft. **Klaargezet** betekent dat er een concept of resultaat klaarstaat om goed te keuren. Eindigt het werk zonder, omdat hij jou nodig heeft (een beslissing, een ontbrekend gegeven, een login of een keuze), dan staat er **Wacht op jou**, met een regel over wat hij nodig heeft. Dat geldt ook voor de melding en het ochtendoverzicht. Pas nadat een concept is verstuurd, laat de to-do dat weten.
+- Van een lang concept zie je de eerste 3 regels. Met **Meer tonen** of door op de tekst te tikken, open je de rest. Met **Nakijken en versturen** zie je altijd het hele concept.
 
-Afhankelijk van de bron kan hij een e-mail, een Slack-dm of een bericht via WhatsApp, Telegram, LinkedIn of X versturen. In het artikel over elke koppeling staat wat je ermee kunt versturen.
+Afhankelijk van de bron kan hij een e-mail, een privébericht in Slack of een bericht via WhatsApp, Telegram, LinkedIn of X versturen. In het artikel over elke koppeling staat wat die kan versturen.
 
 ## Een e-mail bewerken
 
-- Gebruik de knoppen boven de tekst, of `Ctrl B` voor vet, `Ctrl I` voor cursief en `Ctrl K` voor een link (`⌘` op een Mac). Er zijn ook knoppen voor een opsomming en een genummerde lijst.
-- Een link moet beginnen met https://. Tekst die je plakt, wordt platte tekst, zonder kleuren of afbeeldingen.
-- Opmaak die niet kan worden meegenomen in een e-mail, wordt eerst verwijderd. Je ziet dan hoe het bericht wordt verstuurd. Druk nogmaals op **Nu versturen** om het te versturen.
-- De e-mail wordt precies zo verstuurd als je hem ziet, met een kopie in platte tekst voor mailapps die geen opmaak tonen.
+- Gebruik de knoppen boven de tekst, of `Ctrl B` voor vet, `Ctrl I` voor cursief en `Ctrl K` voor een link (`⌘` op een Mac). Er zijn ook knoppen voor een opsomming met en zonder nummers.
+- Een link moet een adres hebben dat begint met https://. Geplakte tekst wordt als platte tekst ingevoegd, zonder kleuren of afbeeldingen.
+- Opmaak die niet meegaat in een e-mail wordt eerst verwijderd. Je ziet dan hoe het bericht wordt verstuurd. Druk nogmaals op **Nu versturen** om het te versturen.
+- De e-mail wordt precies zo verstuurd als je hem ziet, met een versie in platte tekst voor mailapps die geen opmaak weergeven.
 
 ## Als het niet lukt
 
-- ‘Je kunt dit niet vanaf hier versturen.’ betekent dat je het concept met **Concept kopiëren** kopieert en zelf verstuurt.
-- **Heeft je hulp nodig** betekent dat er een vraag is: **Antwoorden**. **Vastgelopen** betekent dat de to-do zonder vraag is gestopt. In de to-do staat waarom.
-- Heb je meer dan één vraag gekregen? Elke vraag heeft eigen keuzes of een kort invoerveld, soms al ingevuld met je vorige antwoord. Met **Antwoorden** verstuur je ze allemaal tegelijk.
-- Ontbreekt er iets dat alleen jij hebt? Dan vraagt hij erom en maakt hij alleen een concept voor wat zonder dat gegeven kan, bijvoorbeeld een antwoord waarin je een datum bevestigt. Hij maakt geen antwoord dat alleen zegt dat je het nog zult toesturen.
-- **Opnieuw proberen** voert de to-do nog een keer uit. Met **Wijzigingen vragen** vraag je om iets anders. Bij een vastgelopen to-do staat **Opnieuw proberen** vooraan. Met **Details** zie je wat hij heeft geprobeerd.
-- Is de to-do vastgelopen doordat de uitvoering zelf mislukte? Nadat je Machine is bijgewerkt, probeert hij die to-do zelf nog een keer.
-- Hij probeert een mislukte uitvoering zelf hooguit twee keer opnieuw. Daarna wacht hij op iets nieuws, zoals een nieuw bericht of een bericht van jou in de chat, of op **Opnieuw proberen**.
-- Tijdens het voorbereiden staat er in de to-do in een eenvoudige regel wat je Machine doet, zoals ‘E-mail lezen’, ‘Pdf lezen’ of ‘Concept schrijven’. De uitgebreide stappen staan in de chat van de to-do.
-- Een to-do met de status **Aan het voorbereiden…** begint binnen enkele seconden. Moet hij wachten, dan staat er waarom en ongeveer hoelang, bijvoorbeeld ‘Begint zodra de huidige klaar is’.
-- Een to-do die je Machine voorbereidt voordat je erom vraagt, kan wachten om verbruik te besparen. **Doe het** blijft wel staan: druk erop om meteen te beginnen, vóór de rest. Er wordt niets verstuurd voordat je akkoord geeft. Als je de gebruikslimiet van je AI-abonnement hebt bereikt, meldt Doe het dat. De to-do begint zodra de limiet wordt gereset.
-- Vraagt een site je om aan te melden? Druk op **Inloggen**, of op **Browser openen** en meld je daar aan. Daarna gaat hij vanzelf verder. Gebeurt dat niet, druk dan op **Doorgaan**.
-- Een code die naar je telefoon is gestuurd, of een ontbrekende toestemming, stopt de to-do. Er staat wat hij nodig heeft, met daarna **Doorgaan** of **Opnieuw proberen**. Is een bron niet gekoppeld, zoals Slack? Dan staat de knop **Slack koppelen** in de to-do. Zodra Slack is gekoppeld, gaat hij vanzelf verder.
+- "Dit kan niet vanaf hier worden verstuurd." betekent dat je het concept met **Concept kopiëren** kopieert en zelf verstuurt.
+- **Heeft je hulp nodig** betekent dat er een vraag is: **Antwoorden**. **Vastgelopen** betekent dat hij zonder vraag is gestopt. De to-do vertelt waarom.
+- Heeft hij meer dan één vraag gesteld? Elke vraag heeft eigen keuzes of een kort invulveld, soms al ingevuld met je vorige antwoord. Met **Antwoorden** verstuur je ze allemaal tegelijk.
+- Ontbreekt er iets dat alleen jij kunt aanleveren? Dan vraagt hij erom en stelt hij alleen een concept op dat zonder die informatie kan worden verstuurd, zoals een antwoord waarin je een datum bevestigt. Hij stelt geen antwoord op dat alleen zegt dat het eraan komt.
+- Met **Opnieuw proberen** voert hij de taak nog een keer uit. Met **Wijzigingen vragen** vraag je iets anders. Bij een vastgelopen to-do staat **Opnieuw proberen** voorop. Met **Details** zie je wat hij heeft geprobeerd.
+- Is de uitvoering zelf mislukt en is de to-do daardoor vastgelopen? Nadat je Machine is bijgewerkt, probeert hij die to-do vanzelf nog een keer.
+- Een mislukte uitvoering probeert hij zelf hooguit twee keer opnieuw. Daarna wacht hij op iets nieuws, zoals een nieuw bericht of jouw woorden in de chat, of op **Opnieuw proberen**.
+- Tijdens de voorbereiding vertelt de to-do in een korte zin wat je Machine doet, zoals "De e-mail lezen", "De pdf lezen" of "Het concept schrijven". De gedetailleerde stappen staan in de chat van de to-do.
+- Een to-do met de status **Aan het voorbereiden…** begint binnen enkele seconden. Moet hij wachten, dan vertelt hij waarom en ongeveer wanneer hij begint, bijvoorbeeld: "Begint nadat de huidige klaar is".
+- Een to-do die je Machine voorbereidt voordat je erom vraagt, kan wachten om verbruik te sparen. **Doe het** staat er wel bij: druk erop om meteen te beginnen, vóór de rest. Er gaat niets weg voor je ja. Is de gebruikslimiet van je AI-abonnement bereikt, dan zegt Doe het dat, en begint hij zodra de limiet wordt gereset.
+- Vraagt een site je om in te loggen? Druk op **Inloggen** of op **Browser openen** en log daar in. Daarna gaat hij vanzelf verder. Gebeurt dat niet, druk dan op **Doorgaan**.
+- Een code die naar je telefoon wordt gestuurd of een ontbrekende toestemming stopt de taak. De to-do vertelt wat hij nodig heeft. Druk daarna op **Doorgaan** of **Opnieuw proberen**. Is een bron niet gekoppeld, zoals Slack? Dan verschijnt **Slack koppelen** in de to-do. Zodra Slack is gekoppeld, gaat hij vanzelf verder.

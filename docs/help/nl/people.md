@@ -6,22 +6,22 @@ code: graph.py, crm.py, bounces.py, enrichment.py, record_log.py, dashboard.html
 order: 2
 translated: 5e808343918f7f47
 ---
-Iedereen met wie je contact hebt, van het nauwste contact tot het minst nauwe, op basis van je berichten en vergaderingen. Nieuwsbrieven, kassabonnen en andere mailings voegen niemand toe totdat je terugschrijft. Ze staan onder Verborgen afzenders, onder de lijst: met **Als persoon weergeven** voeg je iemand toe. Velden, tags en import werken hetzelfde in alle drie de lijsten. Elke lijst heeft eigen filters: zie [The Graph](graph.md).
+Iedereen met wie je contact hebt, de nauwste contacten eerst, op basis van je berichten en meetings. Nieuwsbrieven, ontvangstbewijzen en andere mailings voegen niemand toe totdat je terugschrijft. Ze staan onder Verborgen afzenders, onder de lijst: met Tonen als persoon voeg je iemand toe. Velden, tags en import werken hetzelfde in alle drie de lijsten. Elke lijst heeft eigen filters: zie [The Graph](graph.md).
 
 Een gedeelde inbox (info@, klantenservice, de eigen naam van een winkel) telt mee voor de organisatie, niet als persoon, ook niet nadat je ernaartoe hebt geschreven.
 
 ## Pagina van iemand
 
-Bovenaan staan de foto, naam, functie, organisatie en plaats, plus één regel over jullie contact ("Dagelijks contact · laatst gisteren · volgende vergadering di 27 okt"). Recent contact wordt weergegeven als "zojuist", "3 uur geleden", "gisteren" of "3 dagen geleden". Ouder contact wordt als datum weergegeven. Beweeg de muisaanwijzer erover voor de exacte datum. Daaronder:
+Bovenaan staan de foto, naam, functie, organisatie en plaats, plus één regel over jullie contact ("Dagelijks contact · laatste contact gisteren · volgende afspraak di 27 okt"). Recent contact wordt weergegeven als "zojuist", "3 uur geleden", "gisteren" of "3 dagen geleden". Ouder contact wordt als datum weergegeven. Beweeg de muisaanwijzer erover voor de exacte datum. Daaronder:
 
 - **Contact**: telefoonnummers en e-mailadressen. Klik op een nummer om te bellen of op een adres om te mailen, of klik op **Kopiëren**. Ook de **Verjaardag** staat hier, met de bron erbij (Google Contacten, Google Agenda, Facebook, je notities of jij): zie [The Graph](graph.md#birthday).
 - **Met jou**: wat iemand voor je is, of diegene een werk- of privécontact is en bij je Familie of Fleet hoort, met **Bekijk in Fleet**.
 - **Ook op**: de andere plekken waar je met iemand praat. **Slack** opent die persoon in Slack of opent jullie nieuwste Slack-thread.
-- De **Personen** en **Projecten** waar iemand bij hoort, **Open tussen jullie** (beloftes over en weer, met **Markeer als gedaan** en **Laten vallen**) en hun **Tijdlijn**.
+- De **Personen** en **Projecten** waar iemand bij hoort, **Open tussen jullie** (beloftes over en weer, met **Als gedaan markeren** en **Laten vallen**) en hun **Tijdlijn**.
 
 Adressen en chats van iemand worden vanzelf samengevoegd als duidelijk is dat ze bij dezelfde persoon horen, bijvoorbeeld een werkadres dat in de CC staat met het eigen adres van die persoon.
 
-Als je **Deze pagina kan niet worden geladen.** ziet, klik dan op **Opnieuw proberen**. Blijft de melding staan, klik dan onderaan de pagina op **Klopt er iets niet?**
+Als je **Deze pagina kon niet laden.** ziet, klik dan op **Opnieuw proberen**. Blijft de melding staan, klik dan onderaan de pagina op **Klopt er iets niet?**
 
 ## Samenvatting
 
@@ -31,13 +31,13 @@ Een vage regel wordt weggelaten. Als er niets specifieks te melden is, is er gee
 
 Met **Bewerken** kun je de tekst aanpassen. Bij nieuws toont The Machine een **Voorgestelde update**, met **Gebruiken** en **Mijn versie houden**. Met **Laat The Machine het schrijven** geef je de samenvatting weer terug aan The Machine.
 
-Vergadervoorbereidingen gebruiken de samenvatting, maar alleen de regels van de kant van die to-do (Werk of Privé). De samenvatting blijft op je Machine. Je team kan hem nooit zien.
+Meetingvoorbereidingen gebruiken de samenvatting, maar alleen de regels van de kant van die to-do (Werk of Privé). De samenvatting blijft op je Machine. Je team kan hem nooit zien.
 
 ## Tijdlijn
 
-Elke pagina van een persoon of organisatie heeft een tijdlijn, met het nieuwste bovenaan: e-mail, vergaderingen en hun Zoom-samenvattingen, Intercom-gesprekken (met **Openen in Intercom**), WhatsApp-, Telegram-, Slack- en LinkedIn-chats, X-chats, to-do's, beloftes en projectwijzigingen. Met de chips bovenaan kies je één bron tegelijk. Met **Meer tonen** laad je oudere items.
+Elke pagina van een persoon of organisatie heeft een tijdlijn, met het nieuwste bovenaan: e-mail, meetings en hun Zoom-samenvattingen, Intercom-gesprekken (met **Openen in Intercom**), WhatsApp-, Telegram-, Slack- en LinkedIn-chats, X-chats, to-do's, beloftes en projectwijzigingen. Met de chips bovenaan kies je één bron tegelijk. Met **Meer tonen** laad je oudere items.
 
-Vergaderingen die nog moeten plaatsvinden staan bovenaan onder **Binnenkort**, van eerstvolgende tot latere vergadering. Met **Alles wat eraan komt tonen** zie je de rest. Bij een vergadering staat wie erbij was, met elke persoon één keer. Bij een vergadering met notities of een transcript staat **Notities** of **Transcript**. Klik erop om ze te lezen.
+Meetings die nog moeten plaatsvinden staan bovenaan onder **Binnenkort**, de eerstvolgende eerst. Met **Alles wat eraan komt tonen** zie je de rest. Bij een meeting staat wie erbij was, met elke persoon één keer. Bij een meeting met notities of een transcript staat **Notities** of **Transcript**. Klik erop om ze te lezen.
 
 Je tijdlijnen zijn van jou: de Graph van het team toont alleen wat volgens je deelregels is toegestaan. Met **Team** boven de tijdlijn van een pagina zie je wat teamgenoten hebben gedeeld, met bij elk item wie het heeft gedeeld. Met **Van mij** zie je alleen je eigen items.
 
@@ -73,7 +73,7 @@ Een gedeeld adres, zoals info@ of een mailinglijst, wordt nooit samengevoegd met
 
 Met **Alles samenvoegen** voeg je alle paren in de lijst tegelijk samen, behalve de paren die je als **Niet dezelfde** hebt gemarkeerd. Met **Ongedaan maken** splits je ze direct daarna weer.
 
-Wil je zelf twee personen samenvoegen? Open een van hun pagina's, klik op **⋯**, kies **Zelfde persoon als…** en selecteer de ander. Op de pagina van een samengevoegde persoon staat onder **Samengevoegd vanuit** waarom de personen zijn samengevoegd. Met **Ongedaan maken** splits je ze weer.
+Wil je zelf twee personen samenvoegen? Open een van hun pagina's, klik op **⋯**, kies **Zelfde persoon als…** en selecteer de ander. Op de pagina van een samengevoegde persoon staat onder **Samengevoegd uit** waarom de personen zijn samengevoegd. Met **Ongedaan maken** splits je ze weer.
 
 ## Iemand definitief verwijderen
 
@@ -81,9 +81,9 @@ Open op iemands pagina het menu ⋯ en kies **Definitief verwijderen…**. Klik 
 
 To-do's waarbij die persoon betrokken is blijven staan, maar de naam wordt verwijderd. De persoon wordt niet opnieuw toegevoegd, ook niet via een import of een Facebook-verjaardagsto-do met diens naam of adres. Dit kan niet ongedaan worden gemaakt.
 
-## Niet bezorgd
+## Teruggekomen
 
-Als een e-mail aan iemand wordt teruggestuurd, staat er **Niet bezorgd** bij het adres, met de datum. Een ander adres van die persoon komt dan eerst te staan. Nieuwe concepten worden nooit naar dat adres gestuurd als er een ander adres bekend is. Is dit het enige adres, dan krijg je een waarschuwing op het verzendscherm, maar je kunt de e-mail nog steeds versturen.
+Als een e-mail aan iemand terugkomt, staat er **Teruggekomen** bij het adres, met de datum. Een ander adres van die persoon komt dan eerst te staan. Nieuwe concepten worden nooit naar dat adres gestuurd als er een ander adres bekend is. Is dit het enige adres, dan krijg je een waarschuwing op het verzendscherm, maar je kunt de e-mail nog steeds versturen.
 
 Een teruggestuurde e-mail telt mee als de mailserver meldt dat het adres niet bestaat, of na 3 tijdelijke fouten binnen een week. De melding verdwijnt wanneer die persoon weer vanaf dat adres schrijft of wanneer een e-mail naar dat adres wordt bezorgd.
 
@@ -91,17 +91,17 @@ Een teruggestuurde e-mail telt mee als de mailserver meldt dat het adres niet be
 
 Van mensen met een zakelijk adres worden de functie, foto, LinkedIn en plaats opgezocht, net als [organisatiegegevens](organization-data.md). Op een gehoste Machine worden alleen hun naam en bedrijfsdomein opgezocht. Voor een foto krijgt Gravatar een hash van het zakelijke adres, nooit het adres zelf. Schakel dit uit via **Instellingen**, onder Beveiliging: **Werkcontacten opzoeken**.
 
-Met die instelling wordt ook de korte zoekopdracht op internet vóór een eerste vergadering uitgeschakeld (zie [Klaar voor je vergaderingen](calendar.md#ready-for-your-meetings)).
+Met die instelling wordt ook de korte zoekopdracht op internet vóór een eerste meeting uitgeschakeld (zie [Klaar voor je meetings](calendar.md#ready-for-your-meetings)).
 
-Als de gegevens zijn gevonden, toont hun pagina ook hun beschrijving, sinds wanneer ze hun huidige functie hebben en hun twee vorige functies. Vergadervoorbereidingen lezen die ook, maar alleen de beschrijving als iemand geen eigen bio heeft.
+Als de gegevens zijn gevonden, toont hun pagina ook hun beschrijving, sinds wanneer ze hun huidige functie hebben en hun twee vorige functies. Voorbereidingen lezen die ook, maar alleen de beschrijving als iemand geen eigen bio heeft.
 
-Je contacten worden verder aangevuld met informatie die ze al hebben gedeeld: een functie, telefoonnummer en tijdzone uit Slack, een bio en plaats uit X, een kopregel en foto van LinkedIn, functietitels uit Google Contacten en Salesflare, en een contactfoto uit Salesflare als Salesflare die zelf heeft. Beweeg de muisaanwijzer over de regel onder hun naam om te zien waar de informatie vandaan komt.
+Je koppelingen vullen meer aan met wat ze al lezen: een functie, telefoonnummer en tijdzone uit Slack, een bio en plaats uit X, een kopregel en foto van LinkedIn, functietitels uit Google Contacten en Salesflare, en een contactfoto uit Salesflare als Salesflare die zelf heeft. Beweeg de muisaanwijzer over de regel onder hun naam om te zien waar de informatie vandaan komt.
 
 Outlook voegt foto's toe van collega's bij je organisatie en van je Outlook-contacten, plus de functies en bedrijven van je contacten ([Microsoft](microsoft.md#photos-of-colleagues-and-contacts)).
 
 Foto's van WhatsApp en Telegram worden opgehaald via je WhatsApp-synchronisatie en je Telegram-chatkoppeling: maximaal 50 per dag per dienst, alleen voor mensen die al in je Graph staan. Er wordt niets naar hen verstuurd. Een Facebook-verjaardagenimport voegt de profielfoto toe van iemand zonder foto wanneer je die opslaat ([Routines](routines.md)). Alles blijft op je Machine.
 
-In de [Team Graph](team-graph.md) van een Werk-Fleet wordt een kleine kopie van een werkfoto gedeeld bij iemands gedeelde profiel. Foto's uit Google Contacten, WhatsApp, Telegram of Facebook, en foto's die je hebt gewijzigd of verwijderd, worden nooit gedeeld.
+In de [Team-Graph](team-graph.md) van een Werk-Fleet wordt een kleine kopie van een werkfoto gedeeld bij iemands gedeelde profiel. Foto's uit Google Contacten, WhatsApp, Telegram of Facebook, en foto's die je hebt gewijzigd of verwijderd, worden nooit gedeeld.
 
 ## Over jou
 
@@ -111,9 +111,9 @@ Bij Over jou staan je adressen met de bron van elk adres. Je kunt ze wijzigen vi
 
 ## Wat iemand voor je is
 
-Rollen die je Machine in je berichten herkent, staan op iemands pagina onder **Voor jou**, met alleen de woorden die de rol aangeven, zoals een functietitel. Alleen zeggen dat iemand je boekhouder of klant is, is niet genoeg: er moet ook iets van jouw kant zijn, zoals je eigen berichten of vergaderingen met die persoon. Je hoeft daar niet op te wachten. Klopt het niet? Pas het aan met **Bewerken** op de pagina, of met **⋯** op de regel onder **Recente wijzigingen**. The Machine leert van je aanpassingen.
+Rollen die je Machine in je berichten herkent, staan op iemands pagina onder **Voor jou**, met alleen de woorden die de rol aangeven, zoals een functietitel. Alleen zeggen dat iemand je boekhouder of klant is, is niet genoeg: er moet ook iets van jouw kant zijn, zoals je eigen berichten of meetings met die persoon. Niets wacht op je goedkeuring. Klopt het niet? Pas het aan met **Bewerken** op de pagina, of met **⋯** op de regel onder **Recente wijzigingen**. The Machine leert van je aanpassingen.
 
-## Wat het over iemand weet
+## Wat hij over iemand weet
 
 Feiten over iemand staan op hun pagina onder **Bekend over**. Bij **Leren** staan de algemene feiten. Met **Toevoegen** voeg je er zelf een toe, in je eigen woorden. Elk feit heeft een menu:
 
@@ -127,7 +127,7 @@ Onder **Recente wijzigingen**, ingeklapt direct boven de tijdlijn van een persoo
 
 Klopt een regel niet? Met **⋯** kun je die direct aanpassen: **Bewerken**, **Verwijderen**, **Niet over deze persoon** of **Ongedaan maken** om een project terug te zetten naar de vorige plek. Je ziet drie regels; met **Meer tonen** bekijk je de rest.
 
-Iemand die je Machine vandaag heeft bijgewerkt, heeft een stip naast de naam in de lijst Personen. Bovenaan de lijst staat **Vandaag zijn 4 personen bijgewerkt**, met hun namen erbij. Zie [The Graph](graph.md).
+Iemand die je Machine vandaag heeft bijgewerkt, heeft een stip naast de naam in de lijst Personen. Bovenaan de lijst staat **4 personen vandaag bijgewerkt**, met hun namen erbij. Zie [The Graph](graph.md).
 
 ## Een to-do over iemand
 

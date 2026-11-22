@@ -21,7 +21,7 @@ Op je eigen computer:
 
 Op een gehoste Machine opent **Exporteren** naast Alles je accountpagina. Klik op **Alles exporteren** en daarna op **Downloaden**. Je Machine verwijdert het bestand na 24 uur, of meteen als je op **Nu verwijderen** klikt.
 
-Het bestand is altijd versleuteld. In Instellingen zie je vervolgens wat erin staat en wat niet. Bij Google- en Microsoft-accounts die via onze gehoste aanmelding zijn gekoppeld, moet je je op de andere Machine opnieuw aanmelden.
+Het bestand is altijd versleuteld. In Instellingen zie je vervolgens wat erin staat en wat niet. Bij Google- en Microsoft-accounts die via onze gehoste login zijn gekoppeld, moet je op de andere Machine opnieuw inloggen.
 
 ## Importeren
 
@@ -29,7 +29,7 @@ Het bestand is altijd versleuteld. In Instellingen zie je vervolgens wat erin st
 2. Voer de wachtwoordzin of exportcode in en klik op **Openen**. The Machine controleert eerst het hele bestand.
 3. Gehost: klik op **Nu importeren**. Op je eigen computer: klik op **Vervangen door deze export** en daarna op **Vervangen**. The Machine wordt hiermee binnen een paar minuten opnieuw opgestart en in Instellingen staat **Geïmporteerd**.
 
-De import vervangt wat er nu op die Machine staat, nadat er een kopie is bewaard. Er wordt niets automatisch verstuurd: berichten die klaarstaan om te worden verzonden, wachten op jou.
+De import vervangt wat er nu op die Machine staat, nadat er een kopie is bewaard. Er wordt niets automatisch verstuurd: berichten die klaarstaan om te worden verstuurd, wachten op jou.
 
 Kan Instellingen The Machine op je computer niet opnieuw opstarten, dan zie je welke opdrachten je in plaats daarvan moet uitvoeren.
 

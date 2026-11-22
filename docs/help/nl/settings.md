@@ -9,9 +9,9 @@ translated: 4b0cf1cc99529e64
 ---
 Open **Instellingen** via het tandwiel bovenaan. De tabbladen:
 
-- **Account**: bovenaan vind je **Je adressen** (de adressen die als die van jou tellen) en **Uitloggen**. Op een gehoste Machine vind je hier ook je abonnement, facturen, Fleet, vrienden, inloggegevens en gegevens, met helemaal onderaan **Abonnement opzeggen** en **Account verwijderen**. Op een Machine op je eigen computer die is gekoppeld aan het Network vind je hier je Fleet, gebruikersnaam, vrienden en inloggegevens, elk met een link naar dat deel van je account (waar je je aanmeldt), en onderaan **Account verwijderen**. Nog niet gekoppeld? Bovenaan staat **Word lid van het Network**. Zie [Abonnementen en facturering](plans-and-billing.md).
+- **Account**: bovenaan vind je **Je adressen** (de adressen die als die van jou tellen) en **Uitloggen**. Op een gehoste Machine vind je hier ook je abonnement, facturen, Fleet, vrienden, inloggegevens en gegevens, met helemaal onderaan **Abonnement opzeggen** en **Account verwijderen**. Op een Machine op je eigen computer die is gekoppeld aan het Network vind je hier je Fleet, gebruikersnaam, vrienden en inloggegevens, elk met een link naar dat deel van je account (log daar in), en onderaan **Account verwijderen**. Nog niet gekoppeld? Bovenaan staat **Word lid van het Network**. Zie [Abonnementen en facturering](plans-and-billing.md).
 - **Algemeen**: taal en regio, dit apparaat, spraakinvoer, de browser van je Machine, je Fleet, exporteren en importeren, en de versie die erop draait. Als er geen tabblad Account is, staat **Word lid van het Network** onderaan.
-- **Beveiliging**: Standaard of Zorgvuldig. Zie [Beveiligingsniveaus](security-levels.md). Ook **Toegang voor support**, zolang die is ingeschakeld: zie [Support krijgen](get-support.md#support-access).
+- **Beveiliging**: Standaard of Voorzichtig. Zie [Beveiligingsniveaus](security-levels.md). Ook **Toegang voor support**, zolang die is ingeschakeld: zie [Support krijgen](get-support.md#support-access).
 - **Activiteit**: alles wat The Machine voor je heeft gedaan, met het nieuwste bovenaan. Zie [Activiteit](activity.md).
 - **Meldingen**: welke meldingen je waar ontvangt, en je werkuren. Zie [Meldingen](notifications.md) en [Werkuren](work-hours.md).
 - **Schrijven**: handtekeningen en je schrijfstijl. Zie [Schrijven](writing.md).
@@ -24,9 +24,9 @@ Een tabblad zonder inhoud is verborgen.
 ## Algemeen
 
 - **Taal en regio**: met **Regio** bepaal je hoe datums, tijden en getallen worden weergegeven (24 okt of okt 24). Met **Tijdnotatie** kies je voor 12-uursnotatie (2:05 PM) of 24-uursnotatie (14:05). To-do's, Telegram, het overzicht en Fleet-berichten volgen beide instellingen. Een gehoste Machine gebruikt standaard de tijdzone die je bij het aanmelden hebt gekozen.
-- **Taal**: English, Nederlands, Français, Deutsch, Español, Italiano, Português (Brasil), 简体中文, 日本語, 한국어 of Русский. Standaard wordt de taal van je browser gebruikt. Het dashboard, Help, meldingen, Telegram, het wekelijkse overzicht en de to-do's die je Machine schrijft, veranderen zodra je een taal kiest. Oudere teksten blijven zoals ze waren. Je teamgenoten krijgen vragen over Fleet en Family in hun eigen taal. Concepten voor anderen blijven in de taal van hun gesprek.
-- **Dit apparaat**: **App installeren**, **Meldingen** met **Stuur een test** en **Lichte modus**, alleen voor deze browser of telefoon. Zie [De app installeren en meldingen inschakelen](phone-app.md). Op [Omarchy](omarchy.md) staat ook **Omarchy-thema**.
-- **Spraakinvoer**: hoe je gesproken woorden worden omgezet in tekst, en welke stem Talk live gebruikt. Zie [Spraakinvoer](voice-input.md) en [Live praten](talk-live.md).
+- **Taal**: English, Nederlands, Français, Deutsch, Español, Italiano, Português (Brasil), 简体中文, 日本語, 한국어 of Русский. Standaard wordt de taal van je browser gebruikt. Het dashboard, Help, meldingen, Telegram, het wekelijkse overzicht en de to-do's die je Machine schrijft, veranderen zodra je een taal kiest. Oudere teksten blijven zoals ze waren. Je teamgenoten krijgen vragen uit de Fleet en de Familie in hun eigen taal. Concepten voor anderen blijven in de taal van hun gesprek.
+- **Dit apparaat**: **App installeren**, **Meldingen** met **Test versturen** en **Lichte modus**, alleen voor deze browser of telefoon. Zie [De app installeren en meldingen inschakelen](phone-app.md). Op [Omarchy](omarchy.md) staat ook **Omarchy-thema**.
+- **Spraakinvoer**: hoe je gesproken woorden worden omgezet in tekst, en welke stem Live praten gebruikt. Zie [Spraakinvoer](voice-input.md) en [Live praten](talk-live.md).
 - **De browser van je Machine openen ↗**: de browser die je Machine gebruikt voor sites zoals LinkedIn.
 - **Fleet-regels**: zie [Deelregels](sharing-rules.md).
 - **Exporteren**:
@@ -56,7 +56,7 @@ Als je Machine op je eigen computer draait, doe je een paar dingen daar in een t
 
 ## Je adressen
 
-Alle adressen van jou die The Machine heeft gevonden: je accounts, Gmail- of Outlook-aliassen, je agenda, je Slack- en Intercom-profielen. E-mail en afspraken van al deze adressen tellen als die van jou. **Verwijderen** een adres dat niet van jou is.
+Alle adressen van jou die The Machine heeft gevonden: je accounts, Gmail- of Outlook-aliassen, je agenda, je Slack- en Intercom-profielen. E-mail en meetings van al deze adressen tellen als die van jou. Met **Verwijderen** haal je een adres weg dat niet van jou is.
 
 Een gedeeld adres, zoals info@ of een Google Group, telt nooit vanzelf mee. Een adres waarover The Machine twijfelt, staat onder **Misschien van jou**. Kies een van deze opties:
 
@@ -72,6 +72,6 @@ Met **Wijzigen** op de bijbehorende rij kun je dit later aanpassen. Je eigen inl
 
 De domeinen van je eigen adressen tellen als domeinen van je bedrijf. Gebruik je ook een ander domein, zoals acme.co naast acme.com? Typ het onder **Domeinen van je bedrijf** en klik op **Toevoegen**.
 
-Mensen met die domeinen zijn dan collega's, geen klanten: hun gesprekken komen niet in de Team Graph en er wordt geen organisatie voor aangemaakt. Met **Verwijderen** haal je een domein weer weg. Gratis e-maildomeinen zoals gmail.com kun je niet toevoegen.
+Mensen met die domeinen zijn dan collega's, geen klanten: hun gesprekken komen niet in de Team-Graph en er wordt geen organisatie voor aangemaakt. Met **Verwijderen** haal je een domein weer weg. Gratis e-maildomeinen zoals gmail.com kun je niet toevoegen.
 
-Een Gmail-alias van jou kan ook als **Van**-adres voor een concept worden gebruikt, als Gmail bevestigt dat je namens dat adres kunt verzenden. Zie [Gmail](gmail.md#what-it-can-send).
+Een Gmail-alias van jou kan ook als **Van**-adres voor een concept worden gebruikt, als Gmail bevestigt dat je namens dat adres kunt versturen. Zie [Gmail](gmail.md#what-it-can-send).

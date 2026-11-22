@@ -19,7 +19,7 @@ Niets. De feed wordt alleen gelezen.
 
 ## Koppelen
 
-1. Open in het dashboard **Koppelingen**, dan **Andere**, en kies RSS-feed. Op een gehoste Machine staat deze optie ook op de instelpagina, onder **Meer bronnen**. Op je eigen computer kun je ook `assistant connect rss` uitvoeren.
+1. Open in het dashboard **Koppelingen**, dan **Andere**, en kies RSS-feed. Op een gehoste Machine staat deze optie ook op de installatiepagina, onder **Meer bronnen**. Op je eigen computer kun je ook `assistant connect rss` uitvoeren.
 2. Plak het adres van de feed.
 
 ## Verwijderen

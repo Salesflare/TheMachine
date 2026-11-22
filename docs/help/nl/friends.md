@@ -10,7 +10,7 @@ translated: 637784bf811800bb
 ---
 ## Vrienden
 
-Voeg iemand toe met diens exacte gebruikersnaam via het tabblad **Fleet**, onder Vrienden. Vrienden kunnen vragen wie iemand kent, context over vergaderingen en introducties via gemeenschappelijke contacten krijgen, en zien wanneer je bezet bent (alleen bezette tijden, nooit waarvoor). Je kunt een vriend op elk moment verwijderen of blokkeren.
+Voeg iemand toe met diens exacte gebruikersnaam via het tabblad **Fleet**, onder Vrienden. Vrienden kunnen vragen wie iemand kent, meetingcontext en introducties via gemeenschappelijke contacten krijgen, en zien wanneer je bezet bent (alleen bezette tijden, nooit waarvoor). Je kunt een vriend op elk moment verwijderen of blokkeren.
 
 ## Bekenden vinden
 
@@ -23,7 +23,7 @@ Beide opties staan standaard aan en zijn uitgeschakeld bij het beveiligingsnivea
 
 Zodra je deze optie aanzet, verschijnen bekenden meteen als to-do. Nieuwe bekenden verschijnen zodra ze lid worden. Bij elke persoon kun je kiezen voor **Vriend** en **Familie** (**Verbinden** voor een collega), **Niet nu** of **Nooit voorstellen** in het ⋯-menu. Zodra jullie vrienden zijn, worden ze niet meer voorgesteld. Met **Het Network verlaten** haal je jezelf eruit.
 
-Mensen die het systeem vindt, krijgen de aanduiding **Heeft een Machine** in je lijst met personen. Er wordt gekeken naar de adressen in je berichten en de adressen die je aan een persoon hebt toegevoegd met **Bewerken**. Heeft iemand zich met een ander adres aangemeld, voeg dat dan toe aan die persoon. Op de pagina van iemand die het systeem heeft gevonden, stuurt **Toevoegen als vriend** hetzelfde verzoek als Verbinden. **Toevoegen als familie** staat in het ⋯-menu.
+Mensen die je Machine vindt, krijgen de aanduiding **Heeft een Machine** in je lijst met personen. Er wordt gekeken naar de adressen in je berichten en de adressen die je aan een persoon hebt toegevoegd met **Bewerken**. Heeft iemand zich met een ander adres aangemeld, voeg dat dan toe aan die persoon. Op de pagina van iemand die je Machine heeft gevonden, stuurt **Toevoegen als vriend** hetzelfde verzoek als Verbinden. **Toevoegen als familie** staat in het ⋯-menu.
 
 Bij iemand zonder Machine verschijnt **Uitnodigen voor The Machine**. Daarmee open je de e-mail die diegene krijgt in **Deze e-mail versturen?**. Dit is dezelfde e-mail als bij elke to-do en je kunt die aanpassen. De e-mail wordt pas verstuurd als je op **Nu versturen** drukt. Sluit het venster en de uitnodiging blijft als to-do staan. Heb je geen mailbox waarmee je e-mail kunt versturen? Kies dan **Kopiëren** of **Openen in je mail**.
 
@@ -41,11 +41,11 @@ De link toont alleen beschikbare tijden, volgens dezelfde regels, en verder niet
 
 ## Een Machine op je eigen computer
 
-Zo voeg je een Machine toe die je zelf beheert:
+Zo word je lid van het Network met een Machine die je zelf draait:
 
 1. Open het dashboard van je Machine, ga naar **Instellingen** en druk op **Word lid van het Network**.
 2. Log in op de pagina die wordt geopend (of maak een account aan) en bevestig. Je Machine pikt dit vanzelf op, zonder opnieuw opstarten.
 
 De methode met een code werkt ook: druk op **Een zelf gehoste Machine koppelen** op je accountpagina op app.themachine.computer. Voer daarna `assistant fleet-pair` uit met de code op je computer en start opnieuw op. De code werkt één keer en is 15 minuten geldig.
 
-Je kunt maximaal 5 Machines per account hebben. Je kunt ze daar allemaal loskoppelen.
+Je kunt maximaal 5 Machines per account hebben. Je kunt ze daar allemaal ontkoppelen.

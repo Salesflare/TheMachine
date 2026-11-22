@@ -9,7 +9,7 @@ translated: eee5e084bac6dbd1
 ---
 ## Wat The Machine leest
 
-Nieuwe deals en deals die naar een andere fase gaan of waarvan het bedrag verandert. Je openstaande taken, gesprekken en andere taken die als Gedaan zijn gemarkeerd, met notities, plus vergaderingen met een beschrijving. De gegevens van de afgelopen 7 dagen wanneer je koppelt, daarna elke 15 minuten nieuwe gegevens.
+Nieuwe deals en deals die naar een andere fase gaan of waarvan het bedrag verandert. Je openstaande taken, gesprekken en andere taken die als Gedaan zijn gemarkeerd, met notities, plus meetings met een beschrijving. De gegevens van de afgelopen 7 dagen wanneer je koppelt, daarna elke 15 minuten nieuwe gegevens.
 
 Elke deal wordt een project in je Graph. De contacten op die deal verschijnen bij de bijbehorende personen, als Salesforce-contact bij hun account.
 
@@ -21,7 +21,7 @@ Niets, totdat je **Contactgegevens bijwerken** aanzet. Je Salesforce-inloggegeve
 
 Op een gehoste Machine:
 
-1. Open je instelpagina op app.themachine.computer/setup en ga naar **Meer bronnen**.
+1. Open je installatiepagina op app.themachine.computer/setup en ga naar **Meer bronnen**.
 2. Open Salesforce en klik op **Salesforce koppelen**.
 3. Log in bij Salesforce en geef The Machine (gemaakt door Salesflare) toestemming.
 
@@ -48,8 +48,8 @@ Klik op **Uitzetten** om te stoppen. Een koppeling die je Fleet deelt, leest all
 ## Verwijderen
 
 - In het dashboard: open Salesforce bij **Koppelingen**, klik op **Details** en daarna op **Ontkoppelen**. Gegevens die al zijn opgehaald, blijven staan.
-- Op een gehoste Machine opent **Ontkoppelen ↗** je instelpagina. Klik daar naast Salesforce op **Verwijderen**.
+- Op een gehoste Machine opent **Ontkoppelen ↗** je installatiepagina. Klik daar naast Salesforce op **Verwijderen**.
 
 ## Toegang intrekken in Salesforce
 
-Open in Salesforce je persoonlijke instellingen en ga naar OAuth-gebruik van verbonden apps. Je kunt ook je beheerder vragen om The Machine toegang te ontzeggen. The Machine kan dan niets meer lezen of wijzigen.
+Open in Salesforce je persoonlijke instellingen en ga naar OAuth-gebruik van verbonden apps, of vraag het je beheerder, en trek de toegang van The Machine in. The Machine kan dan niets meer lezen of wijzigen.
