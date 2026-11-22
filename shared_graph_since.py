@@ -13,15 +13,21 @@ megabytes and seconds a round on a big mailbox) to find that little or nothing h
 - Only the records' scores moved (a person's strength fades with time, so some move on every graph build): the records
   of the last round that read, with the new scores, are what reading again would give (rescored). Kept in memory only.
 - Anything else, the daily snapshot, a round that could not send everything, a restart: it reads everything, as before.
+- And it runs every half hour (PUBLISH_EVERY), not every round: sooner only when the round is forced or the owner's
+  choices or a take-back ask for it (publish, choices).
 
 Who gets what is decided by the same collect as before; this only skips reading when its answer can't have changed."""
 import datetime as dt
 import hashlib
+import json
+import sqlite3
+import time
 
 from machine import stamps
 import shared_graph_apart as apart
 import timeutil
 
+PUBLISH_EVERY = 1800  # seconds: the read-and-publish part of a round (publish), unless forced or choices() moved
 READ_AS = {'events': ('events_shared',), 'graph_nodes': ('graph_shared', 'graph_scores'), 'graph_links': ('links_shared',)}
 NOT_COUNTED = frozenset({'sqlite_master', 'sqlite_schema', 'sqlite_temp_master', 'data_stamps', 'json_each', 'json_tree', 'checkpoints'})
 SCORES = 'graph_scores'  # only the records' scores moved: rescored, not read again
@@ -125,6 +131,53 @@ def collect(box, fleet, request, round_, state, due):
             now = None
     # as read, before graph_publish adds the team learnings to the records
     return found, ({'inputs': now, 'steady': steady, 'found': [(dict(r), *rest) for r, *rest in found], 'top': top} if now else None)
+
+
+def choices(box, db, fleet):
+    """What decides whether something that went must come back, read without a single message: the owner's choices (a
+    thread's Team or Only you, Keep private, the sharing rules, who a board or thread is shared with, Only-you boards and
+    projects and their messages, the connections that feed the Fleet), who is the owner's own life (Personal, Family,
+    Friends), the company's and the owner's addresses, and the threads that went and are now kept back (the owner's Only
+    you, or the review's call no longer client). (a digest of all of it, the tags of those threads)."""
+    import graph
+    import shared_graph as sg
+    secret = box.graph_secret()
+    went = {r[0] for r in db.execute("SELECT key FROM share_out WHERE fleet=? AND kind='thread'", (fleet,))}
+    named = {r[0] for r in db.execute("SELECT key FROM share_people WHERE kind='thread' AND fleet=?", (fleet,))}
+    back = sorted(tag for (thread,) in db.execute("SELECT thread FROM share_threads WHERE hand='private' OR verdict='personal' OR "
+                                                  "(hand IS NULL AND verdict IN ('sensitive','internal','unsure','other'))")
+                  if thread not in named and (tag := sg.keyed(secret, 'thread|' + thread)) in went)
+    rows = lambda sql, *args: [list(r) for r in db.execute(sql, args)]
+    state = [sorted(box.graph_accounts(fleet)), sorted(box.internal(fleet)), sorted(box.my_emails()), sorted(box._personal_people(db)),
+             sorted([m, sorted(map(str, p)), sorted(map(str, t))] for m, (p, t) in sg.grants(db, fleet).items()),
+             sorted(graph.hidden_project_ids(db)), sorted(graph.hidden_event_ids(db)),
+             rows('SELECT thread,hand FROM share_threads WHERE hand IS NOT NULL ORDER BY thread'),
+             rows('SELECT node_id FROM share_private ORDER BY node_id'), rows('SELECT key,choice FROM share_rules ORDER BY key'),
+             rows('SELECT kind,key,fleet,member FROM share_people ORDER BY kind,key,fleet,member'),
+             rows("SELECT id FROM graph_nodes WHERE kind='person' AND json_extract(info,'$.side')='personal' "
+                  "AND json_extract(info,'$.side_why') IN (SELECT value FROM json_each(?)) ORDER BY id", json.dumps(graph.OWN_LIFE))]
+    return hashlib.sha256(sg.canon(state)).hexdigest(), back
+
+
+def publish(box, group, me, found, force):
+    """graph_publish, the part of a round that reads every shared thread (most of its work): every PUBLISH_EVERY, as a
+    new client thread waits out HOLD anyway. Every round still when it is forced (a member OK, Share now, an admin's
+    remove) or choices() moved: the owner chose something, or a thread that went is now kept back, so what is taken back
+    goes within a round, as before. The rest of a round (the directory, keys, an admin's remove or pause, take-backs
+    while paused or off, fetching what teammates sent) runs every round. Whether it published."""
+    fleet = group['id']
+    last = box.__dict__.setdefault('_graph_published', {}).get(fleet)
+    try:
+        with box.connect() as db:
+            digest, back = choices(box, db, fleet)
+    except (sqlite3.Error, ValueError, TypeError, KeyError, AttributeError):
+        digest, back = None, ()  # can't tell: publish, as before
+    at = time.monotonic()
+    if not force and digest and last and at - last[0] < PUBLISH_EVERY and digest == last[1] and set(back) <= last[2]:
+        return False
+    box.graph_publish(group, me, found)
+    box._graph_published[fleet] = (at, digest, set(back))  # as before it: a change meanwhile publishes next round
+    return True
 
 
 def blob_list(box, fleet):
