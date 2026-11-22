@@ -23,9 +23,9 @@ Regeln kannst du nur im Dashboard ändern, nicht über eine Nachricht.
 
 ## In einer Work Fleet
 
-In einer Standard Work Fleet gelten für „wer kennt wen“, den Meeting-Kontext und die Zuständigkeit für gemeinsam genutzte E-Mails nur **Immer** und **Nie**. Bei **Immer** antwortet deine Machine nur mit Informationen, die der [Team Graph](team-graph.md) bereits mit deinem Team teilt. Sie nennt nur Personen, deren Namen ebenfalls geteilt werden.
+In einer Work Fleet mit der Stufe „Standard“ gelten für „wer kennt wen“, den Meeting-Kontext und die Zuständigkeit für gemeinsam genutzte E-Mails nur **Immer** und **Nie**. Bei **Immer** antwortet deine Machine nur mit Informationen, die der [Team Graph](team-graph.md) bereits mit deinem Team teilt. Sie nennt nur Personen, deren Namen ebenfalls geteilt werden.
 
-Solange der Team Graph nichts teilt, gibt es für „wer kennt wen“ und den Meeting-Kontext weiterhin **Erst mich fragen**. Das gilt auch für eine Careful Fleet. Weitere Infos findest du unter [Fleets](fleet.md#answered-by-itself-in-a-work-fleet).
+Solange der Team Graph nichts teilt, gibt es für „wer kennt wen“ und den Meeting-Kontext weiterhin **Erst mich fragen**. Das gilt auch für eine Fleet mit der Stufe „Vorsichtig“. Weitere Infos findest du unter [Fleets](fleet.md#answered-by-itself-in-a-work-fleet).
 
 ## Wenn jemand zum ersten Mal fragt
 

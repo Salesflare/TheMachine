@@ -25,7 +25,7 @@ Sie kann eine Antwort auf einen Kommentar entwerfen. Word bietet keine Möglichk
 
 Sie nimmt niemals einen Vorschlag an, löst keinen Kommentar auf, teilt keine Datei und ändert kein Dokument ohne dein OK.
 
-Wenn sie nur Aufgaben erledigen soll, deaktiviere **Bringt Signale** unter **Details**. Dann findet und liest sie nur die Dokumente, die für deine Aufgaben benötigt werden, und erstellt neue.
+Wenn sie nur Aufgaben erledigen soll, deaktiviere **Liefert Signale** unter **Details**. Dann findet und liest sie nur die Dokumente, die für deine Aufgaben benötigt werden, und erstellt neue.
 
 ## Dokumente erstellen und bearbeiten
 

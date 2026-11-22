@@ -12,7 +12,7 @@ translated: f403410953e50582
 - Auf einer gehosteten Machine werden die Organisationsdetails kostenlos für dich abgerufen.
 - Auf deinem eigenen Computer ist die Funktion deaktiviert, bis du einen Schlüssel für einen Dienst zum Nachschlagen hinzufügst, zum Beispiel Apollo, People Data Labs oder Hunter. Lies dazu die [Konfigurationsanleitung](https://github.com/Salesflare/TheMachine/blob/main/docs/configuration.md).
 
-Gesendet wird nur die Webadresse einer Organisation, niemals deine Nachrichten oder wen du dort kennst. Eine gehostete Machine oder eine Machine auf The Machine Network schlägt bis zu 1,000 Adressen pro Tag nach, ansonsten sind es bis zu 50. Jede Adresse wird alle 90 Tage erneut abgerufen. Allgemein genutzte Websites und E-Mail-Anbieter wie gmail.com werden nie nachgeschlagen. Für Personen gibt es einen eigenen Abruf: siehe [Berufsbezeichnung und Foto](people.md#job-title-and-photo).
+Gesendet wird nur die Webadresse einer Organisation, niemals deine Nachrichten oder wen du dort kennst. Eine gehostete Machine oder eine Machine auf The Machine Network schlägt bis zu 1.000 Adressen pro Tag nach, ansonsten sind es bis zu 50. Jede Adresse wird alle 90 Tage erneut abgerufen. Allgemein genutzte Websites und E-Mail-Anbieter wie gmail.com werden nie nachgeschlagen. Für Personen gibt es einen eigenen Abruf: siehe [Berufsbezeichnung und Foto](people.md#job-title-and-photo).
 
 Wenn beim Abruf kein Logo gefunden wird, verwendet The Machine das Symbol von der Website der Organisation und speichert es auf deiner Machine. Kein Logo-Dienst erfährt, mit wem du zu tun hast. Wenn beides vorhanden ist, wird in kleinen Elementen wie der Zeile einer Aufgabe das quadratische Symbol angezeigt.
 

@@ -7,14 +7,14 @@ code: install.sh, install.ps1, docs/getting-started.md
 order: 2
 translated: 73526b82818f009d
 ---
-The Machine ist Open Source (AGPL). Auf deinem eigenen Computer ist sie kostenlos, und deine Daten bleiben dort.
+Betreibe The Machine kostenlos auf deinem eigenen Computer. Sie ist Open Source (AGPL), und deine Daten bleiben bei dir. Für die Installation brauchst du ein Terminal, für das Verbinden deiner Konten nicht.
 
 ## Was sie braucht
 
-- OpenClaw 2026.11.2 oder neuer. Der Installer bietet an, es zu installieren.
+- OpenClaw 2026.11.2 oder neuer, den Open-Source-Agenten, auf dem The Machine läuft. Der Installer bietet an, es zu installieren.
 - Python 3.12 oder neuer und Node.js 24 (24.22.1 oder neuer) oder 26.12.1 oder neuer, nicht 25.
 - Tailscale, um dein Dashboard von deinem Handy aus zu erreichen.
-- Dein eigenes Benutzerkonto, nicht root.
+- Ein normales Benutzerkonto, nicht root.
 
 ## Installieren
 
@@ -29,11 +29,11 @@ Der Installer findet deine Konten, verbindet sie eins nach dem anderen und zeigt
 
 ## Nach der Installation
 
-- Verbinde deine Mail: oben in **Aufgaben** **Gmail** (oder **Outlook**) drücken, dann **Diese Machine verbinden**, um sie mit deinem Konto zu verbinden. Ohne Konto steht **Eigene App nutzen** gleich darunter.
+- Verbinde deine Mail: oben in **Aufgaben** **Gmail** (oder **Outlook**) drücken, dann **Diese Machine koppeln**, um sie mit deinem Konto zu koppeln. Ohne Konto steht **Eigene App nutzen** gleich darunter.
 - Dann **Mit Google anmelden** drücken (oder **Mit Microsoft anmelden** für Outlook). Mail und Kalender verbinden sich zusammen.
 - Andere Quellen: **Verbindungen**, dann die Art der Quelle. Eigener Google-Client oder eigene Entra-App: `assistant connect` im Terminal.
 - Prüfe alles mit `assistant doctor`. Es zeigt für jedes Problem eine Lösung.
 - Der Installer nimmt das neueste signierte Release, und auch Updates kommen als signierte Releases.
-- Mit The Machine Network gekoppelt, teilt deine Machine ihre Tailscale-Adresse mit deinem Konto, damit die App auf deinem Handy sie nach der Anmeldung öffnet. Hebst du die Kopplung auf, wird die Adresse gelöscht.
+- Kopple sie mit deinem Konto, dann öffnet die Handy-App sie nach der Anmeldung. Hebst du die Kopplung auf, wird diese Verknüpfung entfernt.
 
 Die vollständige Anleitung steht im Repository: [Erste Schritte](https://github.com/Salesflare/TheMachine/blob/main/docs/getting-started.md).

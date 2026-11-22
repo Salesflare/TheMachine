@@ -11,9 +11,9 @@ Websites wie LinkedIn und X liest deine Machine in ihrem eigenen Browser. Manchm
 
 ## Wieder anmelden
 
-Unter **Verbindungen** und oben in deinen Aufgaben wird angezeigt, dass du abgemeldet bist. Klicke auf **Hier anmelden** und melde dich in einem kleinen Fenster im Dashboard an.
+Unter **Verbindungen** und oben in deinen Aufgaben wird angezeigt, dass deine Machine dort abgemeldet ist. Klicke auf **Hier anmelden** und melde dich in einem kleinen Fenster im Dashboard an.
 
-Aktiviere **Für nächstes Mal speichern**, damit du dich beim nächsten Mal mit einem Klick wieder anmelden kannst. Das Passwort bleibt verschlüsselt auf deiner Machine und die KI sieht es nie. Wenn du mehrere Konten auf einer Website hast, kannst du mit **Speichern unter** diesem Konto einen Namen geben (Arbeit, privat). Wenn in der Aufgabe nicht steht, welches Konto verwendet werden soll, fragt der Dialog danach.
+Aktiviere **Für nächstes Mal speichern**, damit du dich beim nächsten Mal mit einem Klick wieder anmelden kannst. Das Passwort bleibt verschlüsselt auf deiner Machine und die KI sieht es nie. Wenn du mehrere Konten auf einer Website hast, kannst du mit **Speichern unter** diesem Konto einen Namen geben (Arbeit, Privat). Wenn in der Aufgabe nicht steht, welches Konto verwendet werden soll, fragt der Dialog danach.
 
 ## Passwörter und Codes
 

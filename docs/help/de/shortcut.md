@@ -17,7 +17,7 @@ In Shortcut kann sie nichts ändern. Sie liest nur.
 
 ## Shortcut verbinden
 
-1. Im Dashboard: **Verbindungen**, **Projekte und Code**, Shortcut. Oder auf der Einrichtungsseite einer gehosteten Machine unter app.themachine.computer/setup: **Weitere Quellen**, Shortcut. Auf deinem eigenen Computer musst du Shortcut zuerst mit deinem Konto verbinden.
+1. Im Dashboard: **Verbindungen**, **Projekte und Code**, Shortcut. Oder auf der Einrichtungsseite einer gehosteten Machine unter app.themachine.computer/setup: **Weitere Quellen**, Shortcut. Auf deinem eigenen Computer musst du ihn zuerst mit deinem Konto koppeln.
 2. Klicke auf **Mit Shortcut anmelden** und erlaube den Lesezugriff. Shortcut wird nur um Lesezugriff gebeten.
 3. Zurück in The Machine wird die Anmeldung sofort überprüft. The Machine zeigt dir, mit welchem Konto und in welchem Workspace die Verbindung besteht.
 

@@ -1,7 +1,7 @@
 ---
 title: Stripe
 area: connections
-summary: Fehlgeschlagene Zahlungen, Zahlungsanfechtungen, Kündigungen und große neue Abos. Sie liest nur.
+summary: Fehlgeschlagene Zahlungen, Zahlungsanfechtungen, Kündigungen und große neue Abos. Nur Lesezugriff.
 covers: connector:stripe
 code: connectors/stripe.py, shared_connectors.py
 site: Sign in with Stripe, Connect, More sources, Share Stripe, Connect Stripe, Remove
@@ -33,7 +33,7 @@ Auf deinem eigenen Computer weist dich **Verbindungen** darauf hin, wenn **Mit S
 
 ## Einmal für dein Team verbinden
 
-In einer Fleet für dein Team verbindet ein Owner oder Admin Stripe einmal und teilt die Verbindung mit dem Team:
+In einer Work Fleet verbindet ein Owner oder Admin Stripe einmal und teilt die Verbindung mit dem Team:
 
 1. Verbinde Stripe mit deiner eigenen Machine (siehe oben). Im Feld **Geteilte Verbindungen** auf dem Fleet-Tab findest du auch **Stripe verbinden**.
 2. Öffne auf dem Fleet-Tab **Stripe teilen**. Alle sind ausgewählt. Entferne die Auswahl für alle, die keinen Zugriff erhalten sollen. Klicke auf **Teilen**.

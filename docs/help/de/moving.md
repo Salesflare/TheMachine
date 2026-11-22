@@ -33,4 +33,4 @@ Der Import ersetzt den aktuellen Stand dieser Machine, nachdem eine Kopie erstel
 
 Wenn sich The Machine auf deinem Computer nicht über **Einstellungen** neu starten lässt, werden stattdessen die auszuführenden Befehle angezeigt.
 
-Richte auf einem neuen Computer zuerst [The Machine ein](self-hosted-setup.md). Kündige dann deinen gehosteten Tarif, wenn du ihn nicht mehr brauchst: siehe [Kündigen oder löschen](cancel-and-delete.md).
+Installiere auf einem neuen Computer zuerst [The Machine](self-hosted-setup.md). Kündige dann deinen gehosteten Tarif, wenn du ihn nicht mehr brauchst: siehe [Kündigen oder löschen](cancel-and-delete.md).

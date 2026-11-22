@@ -9,9 +9,9 @@ translated: a2b74e4831832977
 ---
 ## Was es macht
 
-Dieses Telegram ist ein Weg, deine Aufgaben zu bekommen. Soll The Machine deine eigenen Telegram-Chats lesen, siehe [Telegram-Chats](telegram-chats.md). Dein eigener Bot schickt jede Aufgabe innerhalb deiner [Arbeitszeiten](work-hours.md), mit denselben Buttons wie im Dashboard: **Ausführen**, **Zurückstellen**, **Änderungen anfragen**, **Als erledigt markieren**, **Nicht nötig** und **Senden** für eine vorbereitete Nachricht.
+Bekomm deine Aufgaben in Telegram, von einem eigenen Bot, innerhalb deiner [Arbeitszeiten](work-hours.md). Jede kommt mit denselben Buttons wie im Dashboard: **Ausführen**, **Zurückstellen**, **Änderungen anfragen**, **Als erledigt markieren**, **Nicht nötig** und **Senden** für eine vorbereitete Nachricht. Soll The Machine stattdessen deine Telegram-Chats lesen, siehe [Telegram-Chats](telegram-chats.md).
 
-Telegram ist optional. Das Dashboard als App auf dem Handy schickt dieselben Aufgaben als Benachrichtigungen.
+Das ist optional: Die Handy-App schickt dieselben Aufgaben als Benachrichtigungen.
 
 ## Was es senden kann
 
@@ -24,7 +24,7 @@ Auf einer gehosteten Machine:
 1. Schreib in Telegram @BotFather an und sende /newbot. Kopiere das Token, das du bekommst.
 2. Öffne auf deiner Einrichtungsseite unter **Jederzeit mehr hinzufügen** Telegram, füge das Token ein und tippe auf **Meinen Bot hinzufügen**.
 
-Es gehört nicht zur Einrichtung: Füge es hinzu, wann du willst. Dein Dashboard schlägt es vor, sobald eine zurückgestellte Aufgabe sonst nur dort zurückkommen würde.
+Füge es hinzu, wann du willst.
 
 Auf deinem eigenen Computer fragt der Installer danach, oder du führst `assistant telegram on` mit deiner Telegram-Benutzer-ID aus.
 

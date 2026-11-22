@@ -26,12 +26,12 @@ Es liest nur. Es erstellt, ändert oder löscht nie etwas in Zoom und sieht nur 
 Auf einer gehosteten Machine:
 
 1. Öffne deine Einrichtungsseite unter app.themachine.computer/setup und geh zu **Weitere Quellen**.
-2. Öffne Zoom, wähle Arbeit oder privat und tippe auf **Zoom verbinden**.
-3. Melde dich bei Zoom an und erlaube The Machine. Es kommt von Salesflare.
+2. Öffne Zoom, wähle Arbeit oder Privat und tippe auf **Zoom verbinden**.
+3. Melde dich bei Zoom an und erlaube den Zugriff für The Machine (von Salesflare).
 
 Oder im Dashboard: **Verbindungen**, **Meetings**, wähle Zoom und tippe auf **Mit Zoom anmelden**. Danach bist du zurück im Dashboard.
 
-Auf deinem eigenen Computer, sobald er [mit deinem Konto gekoppelt](friends.md#a-machine-on-your-own-computer) ist: Öffne **Verbindungen**, dann **Meetings**, wähle Zoom und tippe auf **Mit Zoom anmelden**.
+Auf deinem eigenen Computer, sobald deine Machine [mit deinem Konto gekoppelt](friends.md#a-machine-on-your-own-computer) ist: Öffne **Verbindungen**, dann **Meetings**, wähle Zoom und tippe auf **Mit Zoom anmelden**.
 
 ## Entfernen
 

@@ -1,5 +1,5 @@
 ---
-title: Machine-Status
+title: Zustand deiner Machine
 area: connections
 summary: Das eigene Protokoll deiner Machine, damit sie Probleme selbst erkennt. Es wird nur gelesen.
 covers: connector:gateway
@@ -9,11 +9,11 @@ translated: 7d66ff6a6a5d5b1d
 ---
 ## Was sie liest
 
-Das eigene Protokoll deiner Machine: fehlgeschlagene Abläufe, abgelehnte Übergaben, Telegram-Nachrichten, die nicht gesendet wurden, und eigene Fehler von The Machine. Eine Aufgabe zeigt dir, wenn etwas repariert werden muss. Auf deinem eigenen Computer gehört dazu **Die letzte Aktualisierung fertig installieren**: Ein Teil eines Updates braucht nachts einen kurzen Neustart, und das hat ein paar Nächte lang nicht geklappt. Frag im Chat deiner Machine, dann schließt The Machine die Installation ab. Die Aufgabe schließt sich selbst, sobald dieser Teil installiert ist.
+Das eigene Protokoll deiner Machine: fehlgeschlagene Abläufe, abgelehnte Übergaben, Telegram-Nachrichten, die nicht gesendet wurden, und eigene Fehler von The Machine. Eine Aufgabe zeigt dir, wenn etwas repariert werden muss. Auf deinem eigenen Computer gehört dazu **Die letzte Aktualisierung fertig installieren**: Ein Teil eines Updates braucht nachts einen kurzen Neustart, und das hat ein paar Nächte lang nicht geklappt. Frag im Chat der Aufgabe, dann schließt The Machine die Installation ab. Die Aufgabe schließt sich selbst, sobald dieser Teil installiert ist.
 
-## Zurückgestellte Korrekturen eines Updates
+## Korrekturen, die ein Update beiseitegelegt hat
 
-Wenn The Machine ein Update ausführt und eine eigene Korrektur nicht mehr zur neuen Version passt, stellt das Update diese Korrektur zurück und läuft weiter. So bleibt deine Machine nie auf einer alten Version. Eine Aufgabe namens **Eine beiseitegelegte Korrektur neu machen** nennt die Korrektur.
+Wenn The Machine ein Update ausführt und eine eigene Korrektur nicht mehr zur neuen Version passt, legt das Update diese Korrektur beiseite und läuft weiter. So bleibt deine Machine nie auf einer alten Version. Eine Aufgabe namens **Eine vom Update beiseitegelegte Korrektur erneut anwenden** nennt die Korrektur.
 
 Mit **Neu machen** lässt du deine Machine die Korrektur in der neuen Version erneut erstellen, wie bei jeder eigenen Korrektur: Du siehst die Änderung und tippst auf **Korrektur zusammenführen**. Sobald sie zusammengeführt ist, wird die alte Kopie gelöscht. Oder schließe die Aufgabe.
 
@@ -27,8 +27,8 @@ Nichts. Sie liest nur das Protokoll auf deiner eigenen Machine.
 
 ## Verbinden
 
-- Auf einer gehosteten Machine findest du sie auf deiner Einrichtungsseite unter **Weitere Quellen** als Machine-Status. Einmal pro Machine.
-- Auf deinem eigenen Computer: **Verbindungen**, **Andere**, Machine-Status. Oder führe `assistant connect gateway` aus.
+- Auf einer gehosteten Machine findest du sie auf deiner Einrichtungsseite unter **Weitere Quellen** als „Zustand deiner Machine“. Einmal pro Machine.
+- Auf deinem eigenen Computer: **Verbindungen**, **Andere**, „Zustand deiner Machine“. Oder führe `assistant connect gateway` aus.
 
 ## Entfernen
 

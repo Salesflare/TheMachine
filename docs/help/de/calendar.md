@@ -13,7 +13,7 @@ Deine Tage ab heute mit:
 
 - Terminen aus den Kalendern, die du verbunden hast,
 - Aufgaben, die an diesem Tag fällig sind, und zurückgestellten Aufgaben an dem Tag, an dem sie wieder anstehen,
-- Rückfragen zu Aufgaben, die du weitergegeben hast,
+- Nachfragen zu Arbeit, die du übergeben hast,
 - Versprechen mit einem Datum,
 - [Reisen und Veranstaltungen](calendar.md#trips-and-events) aus Buchungs- und Ticketmails.
 
@@ -26,8 +26,8 @@ Ein gemeinsam erstellter Plan ist ein Versprechen, gekennzeichnet mit „Mit“ 
 ## Agenda, Woche oder Monat
 
 - **Agenda** zeigt die einzelnen Tage. Scrolle nach unten zu späteren Tagen oder nach oben beziehungsweise tippe auf **Frühere Tage anzeigen**, um frühere Tage aufzurufen. Die Ansicht reicht bis eine Woche vor dem Verbinden deines Kalenders zurück. Oben steht eine Zeile mit dem Startdatum. Sobald dein [Verlauf](history.md) geladen ist, reicht sie ungefähr ein Jahr zurück.
-- **Woche** zeigt eine Übersicht von Montag bis Sonntag. Auf dem Smartphone werden drei Tage angezeigt.
-- **Monat** zeigt den ganzen Monat. Auf dem Computer werden pro Tag bis zu drei Einträge angezeigt. Auf dem Smartphone erscheinen Punkte. Tippe auf einen Tag, um die Einträge dafür aufzurufen.
+- **Woche** zeigt eine Übersicht von Montag bis Sonntag. Auf dem Handy werden drei Tage angezeigt.
+- **Monat** zeigt den ganzen Monat. Auf dem Computer werden pro Tag bis zu drei Einträge angezeigt. Auf dem Handy erscheinen Punkte. Tippe auf einen Tag, um die Einträge dafür aufzurufen.
 
 Mit **Heute**, ‹ und › oben wechselst du zwischen Wochen oder Monaten. Die ausgewählte Ansicht wird auf diesem Gerät gespeichert.
 
@@ -47,7 +47,7 @@ Wenn eine Flug-, Hotel-, Ferienwohnungs-, Zug-, Bus-, Fähr-, Mietwagen-, Taxi- 
 
 Die Reise wird als ein Balken über ihre Tage angezeigt. Öffne sie, um alle Buchungen in zeitlicher Reihenfolge mit Uhrzeit, Adresse, Buchungscode und Sitzplatz zu sehen.
 
-Tickets für ein Konzert, ein Spiel, ein Festival oder eine Konferenz werden jeweils zu einer Veranstaltung zusammengefasst. Angezeigt werden der Veranstaltungsort, der Buchungscode, der Sitzplatz und die Anzahl der Tickets. Eine zweite Bestellung für dieselbe Veranstaltung wird derselben Veranstaltung hinzugefügt. Eine Veranstaltung, die über dein geschäftliches Postfach gebucht wurde, ist „Geschäftlich“, andernfalls „Privat“. Tickets für etwas, das während einer Reise stattfindet, werden stattdessen der Reise hinzugefügt.
+Tickets für ein Konzert, ein Spiel, ein Festival oder eine Konferenz werden jeweils zu einer Veranstaltung zusammengefasst. Angezeigt werden der Veranstaltungsort, der Buchungscode, der Sitzplatz und die Anzahl der Tickets. Eine zweite Bestellung für dieselbe Veranstaltung wird derselben Veranstaltung hinzugefügt. Eine Veranstaltung, die über dein geschäftliches Postfach gebucht wurde, ist „Arbeit“, andernfalls „Privat“. Tickets für etwas, das während einer Reise stattfindet, werden stattdessen der Reise hinzugefügt.
 
 Bei einer bevorstehenden Reise zeigt deine Machine an, was noch fehlt, zum Beispiel **Für 2 Nächte keine Unterkunft gebucht** oder dass keine Fahrt vom Flughafen zum Hotel gebucht wurde. Diese Zeilen sind ausgegraut und mit **Keine Buchung** gekennzeichnet. Bei einer Reise ohne Unterkunft wird nichts zu Übernachtungen angezeigt.
 
@@ -74,15 +74,15 @@ Bei einem Termin mit Transkript, aber ohne Notizen, wird **Notizen erstellen** a
 
 Dabei wird **Notizen werden geschrieben…** angezeigt. The Machine arbeitet weiter, auch wenn du den Termin schließt. Bei einem langen Transkript dauert es mit deinem eigenen Modell ein paar Minuten. Die Notizen sind mit **Von The Machine geschrieben** gekennzeichnet und ersetzen nie Notizen, die du hinzugefügt hast.
 
-The Machine kann Notizen auch hinzufügen. Bitte sie in einem Aufgabeneintrag darum, zum Beispiel „Füge dieses Transkript zum heutigen Board-Meeting hinzu“. Ein Transkript wird unter „Transkript“ abgelegt, eine Zusammenfassung unter „Notizen“. Bei einem Termin mit Notizen oder Transkript wird im Kalender **Notizen** beziehungsweise **Transkript** angezeigt.
+The Machine kann Notizen auch hinzufügen. Bitte sie bei einer Aufgabe darum, zum Beispiel „Füge dieses Transkript zum heutigen Board-Meeting hinzu“. Ein Transkript wird unter „Transkript“ abgelegt, eine Zusammenfassung unter „Notizen“. Bei einem Termin mit Notizen oder Transkript wird im Kalender **Notizen** beziehungsweise **Transkript** angezeigt.
 
-The Machine liest beides aus, um die nächsten Schritte zum Termin zu erfassen. Sie sind wie der Termin als „Geschäftlich“ oder „Privat“ gekennzeichnet und werden nur dann mit deinem Team geteilt, wenn auch der Termin geteilt wird.
+The Machine liest beides aus, um die nächsten Schritte zum Termin zu erfassen. Sie sind wie der Termin als „Arbeit“ oder „Privat“ gekennzeichnet und werden nur dann mit deinem Team geteilt, wenn auch der Termin geteilt wird.
 
 Die Termindetails werden überall angezeigt, wo du den Termin findest: in einer Zeitleiste, in einer Nachrichtensuche oder als Quelle einer Aufgabe. Über **Ursprüngliche Einladung** unten wird die Einladung so angezeigt, wie sie eingegangen ist.
 
 ## Termin hinzufügen oder ändern
 
-Deinen eigenen Google-Kalender kannst du hier ändern. Outlook und andere Kalender sind schreibgeschützt. Über **Neuer Termin** fügst du einen Termin hinzu (auf dem Smartphone unter **+** in der oberen Leiste). Wähle den Kalender, einen Titel und die Uhrzeit aus. Klicke auf einen Termin ohne Gäste in diesem Kalender, um ihn zu ändern oder über **Löschen** zu entfernen (zweimal tippen).
+Deinen eigenen Google-Kalender kannst du hier ändern. Outlook und andere Kalender sind schreibgeschützt. Über **Neuer Termin** fügst du einen Termin hinzu (auf dem Handy unter **+** in der oberen Leiste). Wähle den Kalender, einen Titel und die Uhrzeit aus. Klicke auf einen Termin ohne Gäste in diesem Kalender, um ihn zu ändern oder über **Löschen** zu entfernen (zweimal tippen).
 
 Unter **Wo** werden beim Tippen Orte vorgeschlagen: zuerst Orte, die du schon verwendet hast, und deine Organisationen, danach Adressen aus [OpenStreetMap](https://www.openstreetmap.org), einer kostenlosen Karte. Zur Suche werden nur die Wörter gesendet, die du eingibst. Wähle einen Vorschlag aus oder behalte deinen eigenen Text.
 
@@ -90,7 +90,7 @@ Unter **Wo** werden beim Tippen Orte vorgeschlagen: zuerst Orte, die du schon ve
 
 Eine Aufgabe kann ebenfalls eine Änderung vorschlagen, zum Beispiel einen Abholtermin, den du hinzufügen kannst. Es wird genau angezeigt, was geändert wird. Die Änderung wird nur durch **Hinzufügen**, **Speichern** oder **Löschen** vorgenommen.
 
-Noch keine Termine? Wenn du keinen Kalender verbunden hast, öffnet **Kalender verbinden** die Verbindungen. Verbinde [Google Calendar](google-calendar.md), [Outlook Calendar](microsoft.md) oder [einen anderen Kalender](other-calendars.md).
+Noch keine Termine? Wenn du keinen Kalender verbunden hast, öffnet **Kalender verbinden** die Verbindungen. Verbinde [Google Calendar](google-calendar.md), [Outlook-Kalender](microsoft.md) oder [einen anderen Kalender](other-calendars.md).
 
 ## Überschneidungen mit deinem anderen Kalender
 
@@ -100,7 +100,7 @@ Ganztägige, freie und vorläufige Termine werden nie berücksichtigt. Jede Übe
 
 ## Bereit für deine Termine
 
-Vor einem Termin mit Personen von außerhalb deines Unternehmens erstellt The Machine eine Aufgabe: **Vorbereiten auf** den Termin. Sie enthält eine kurze Übersicht:
+Vor einem Termin mit Personen von außerhalb deines Unternehmens erstellt The Machine eine Aufgabe: **Vorbereiten:** und der Name des Termins. Sie enthält eine kurze Übersicht:
 
 - **Wer:** Wer die Personen sind, basierend auf deinem Graph, mit Informationen zu ihrem Hintergrund, sofern diese bekannt sind.
 - **Organisation:** Was ihr Unternehmen macht und für den Termin wichtig ist.

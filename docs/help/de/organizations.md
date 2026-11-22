@@ -28,7 +28,7 @@ Eine Organisation, die du hinzugefügt hast, lässt sich über ihr Menü **⋯**
 
 ## Zwei Organisationen zusammenlegen
 
-Organisationen, die wie Doppelte aussehen, erscheinen unter **Gleiche Organisation?**: **Zusammenführen** oder **Nicht dieselbe**.
+Organisationen, die doppelt vorhanden zu sein scheinen, erscheinen unter **Gleiche Organisation?**: **Zusammenführen** oder **Nicht dieselbe**.
 
 Selbst geht es so: **⋯**, **Gleiche Organisation wie…** auf der Seite einer Organisation macht sie zu einem Teil einer anderen, mit ihren Personen, Projekten und Notizen.
 

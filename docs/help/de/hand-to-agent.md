@@ -13,22 +13,22 @@ translated: 333d553e80aea529
 1. Öffne bei der Aufgabe **…**, dann **Übergeben…**, und wähle **Codex** oder **Claude Code**. Nur die Tools, die du eingerichtet hast, erscheinen.
 2. Prüfe die Zusammenfassung und was mitgeht, füge auf Wunsch eine Notiz hinzu und tippe auf **Übergeben**. **Ganzen Auftrag ansehen** zeigt das komplette Briefing.
 
-Die Aufgabe zeigt dann, dass daran gearbeitet wird, und das Ergebnis, wenn es fertig ist, mit **Was es getan hat** und **Änderungen zeigen**. **Änderungen anfragen** sagt ihm, was es ändern soll. **Übergeben…** im **…** fängt von vorn an; **Ausblenden** legt das Ergebnis weg. Eine Aufgabe, die **Hängt fest** zeigte, zeigt **Läuft…**, solange der Auftrag läuft.
+Die Aufgabe zeigt dann, dass daran gearbeitet wird, und das Ergebnis, wenn es fertig ist, mit **Was es getan hat** und **Änderungen anzeigen**. **Änderungen anfragen** sagt dem Agenten, was er ändern soll. **Übergeben…** im **…** fängt von vorn an; **Ausblenden** legt das Ergebnis weg. Eine Aufgabe, die festhing und die du übergibst, zeigt **Läuft…** statt **Hängt fest**, solange der Auftrag läuft.
 
 Ein Auftrag sendet nie etwas für dich. Lässt er dir einen Schritt zum Veröffentlichen oder Deployen übrig, führt **Ausführen** auf der Aufgabe diesen Schritt aus. Eine Antwort, die er geschrieben hat, bleibt ein Entwurf, den du selbst sendest.
 
 ## In der Codex-App
 
-- **In Codex öffnen** öffnet den Thread des Jobs in der Codex-App. Solange Codex hier daran arbeitet, kann die App ihn noch nicht öffnen. Er öffnet sich, sobald es fertig ist.
-- **Änderungen anfragen** bei einem Thread, der in der Codex-App offen ist, geht in genau diesem Gespräch dort weiter, und die Aufgabe folgt ihm.
-- Ein Job stoppt nur, wenn Codex 30 Minuten lang nichts tut, oder nach insgesamt 6 Stunden. Ein Neustart von The Machine stoppt ihn nicht.
+- **In Codex öffnen** öffnet den Thread des Auftrags in der Codex-App, sobald der Auftrag fertig ist.
+- **Änderungen anfragen** geht in demselben Codex-Gespräch weiter, und die Aufgabe folgt ihm.
+- Ein Auftrag stoppt nach 30 Minuten ohne Fortschritt oder nach insgesamt 6 Stunden. Ein Neustart stoppt ihn nicht.
 
 ## Einrichten
 
 In **Einstellungen**, **Modell**, unter **Codex und Claude Code**:
 
 - **Codex**: wo es läuft. Auf deiner Machine oder deinem Computer braucht es hier nichts weiter; **Ändern** öffnet deine Einrichtungsseite.
-- **Codex Cloud**: die ID ihrer Umgebung, aus Codex, und optional ein **Branch** als Ausgangspunkt.
+- **Codex Cloud**: die Umgebungs-ID aus Codex und optional ein **Branch** als Ausgangspunkt.
 - **Claude Code**: der Link einer Sitzung in Claude Code.
 
 Claude schickt sein Ergebnis über den Connector von The Machine zurück. Füge ihn einmal in claude.ai hinzu, unter Settings, Connectors, Add custom connector, mit der Adresse, die unter der Sitzung steht.
@@ -38,9 +38,9 @@ Claude schickt sein Ergebnis über den Connector von The Machine zurück. Füge 
 Auf einer gehosteten Machine wählst du es auf deiner Einrichtungsseite, unter **Jederzeit mehr hinzufügen**, **Codex**:
 
 - **Auf deiner Machine** (die Voreinstellung): Tippe auf **Codex verbinden** und gib den angezeigten Code bei OpenAI ein. Es nutzt denselben ChatGPT-Tarif wie dein Modell, und Aufträge laufen auf deiner Machine. Kein Terminal nötig.
-- **Andere Wege**, **Auf meinem Computer**: Der Auftrag läuft auf deinem eigenen Computer, mit dem Codex, das dort angemeldet ist. Nichts von Codex liegt auf deiner gehosteten Machine, und der Auftrag ist nur für diesen Computer verschlüsselt: Das Network gibt ihn weiter, kann ihn aber nicht lesen. Installiere The Machine auf diesem Computer, kopple ihn auf deiner Kontoseite und führe dort `codex login` aus. Lass The Machine darauf laufen. Der Auftrag erscheint als Thread in der Codex-App auf diesem Computer, und das Ergebnis kommt bei der Aufgabe zurück. Ist der Computer aus, warten Aufträge, bis er wieder da ist.
-- **Andere Wege**, **Codex Cloud**: Der Auftrag läuft in der Cloud von OpenAI. Tippe auf **Codex verbinden**. Es nutzt denselben ChatGPT-Tarif wie dein Modell, und OpenAI fragt nach einem weiteren Code, für Codex. Gib dann die Cloud-Umgebung in Codex in den Einstellungen ein.
+- **Andere Wege**, **Auf meinem Computer**: Der Auftrag läuft auf deinem eigenen Computer, mit dem Codex, das dort angemeldet ist. Er wird verschlüsselt übertragen, nur für diesen Computer. Installiere The Machine auf diesem Computer, kopple ihn auf deiner Kontoseite, führe `codex login` aus und lass The Machine laufen. Das Ergebnis kommt bei der Aufgabe zurück. Ist der Computer aus, warten Aufträge.
+- **Andere Wege**, **Codex Cloud**: Der Auftrag läuft in der Cloud von OpenAI. Tippe auf **Codex verbinden**. Es nutzt denselben ChatGPT-Tarif wie dein Modell, und OpenAI fragt nach einem weiteren Code, für Codex. Gib dann die Codex-Cloud-Umgebung in den Einstellungen ein.
 
 Oder melde dich im Dashboard an: **Verbindungen**, **Projekte und Code**, **Codex**, **Code holen**. Eine selbst gehostete Machine führt dieselbe Anmeldung selbst aus.
 
-Auf einer gehosteten Machine erscheint Codex und Claude Code, sobald GitHub oder Codex verbunden ist. Es erscheint auch bei Setups, die Aufträge woanders ausführen. Mehr dazu im [Agents-Leitfaden](https://github.com/Salesflare/TheMachine/blob/main/docs/agents.md).
+Auf einer gehosteten Machine erscheint **Codex und Claude Code** in den Einstellungen, sobald GitHub oder Codex verbunden ist. Für Entwickler: der [Agents-Leitfaden](https://github.com/Salesflare/TheMachine/blob/main/docs/agents.md).

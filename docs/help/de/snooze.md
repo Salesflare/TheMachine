@@ -11,7 +11,7 @@ translated: e6681ab225810e81
 
 Tippe bei einer Aufgabe auf **Zurückstellen**. Im Menü stehen einige Zeitpunkte zur Auswahl, zum Beispiel in 2 Stunden, morgen oder in einer Woche. Für einen anderen Zeitpunkt wähl **Datum wählen** und **Uhrzeit** aus und tippe dann auf **Uhrzeit speichern**. Aus Versehen zurückgestellt? Tippe in der Nachricht auf **Rückgängig**, damit die Aufgabe sofort wieder auftaucht.
 
-Aufgaben, die du mindestens einen Tag zurückstellst, erscheinen zu der Uhrzeit, die du unter „Zurückstellungen erscheinen um“ festgelegt hast. Aufgaben für die Arbeit kommen erst an einem Arbeitstag zurück. Lege beides unter [Arbeitszeiten](work-hours.md) fest.
+Aufgaben, die du mindestens einen Tag zurückstellst, erscheinen zu der Uhrzeit, die du unter „Zurückgestelltes kommt um“ festgelegt hast. Aufgaben für die Arbeit kommen erst an einem Arbeitstag zurück. Lege beides unter [Arbeitszeiten](work-hours.md) fest.
 
 Oder sag es über **Änderungen anfragen**, zum Beispiel: „Erinnere mich nächsten Dienstag daran“.
 

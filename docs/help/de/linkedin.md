@@ -1,7 +1,7 @@
 ---
 title: LinkedIn
 area: connections
-summary: Lies deine LinkedIn-Nachrichten im eigenen Browser deiner Machine, in dem du angemeldet bist. Antworten werden erst nach deiner Freigabe gesendet.
+summary: Deine LinkedIn-Nachrichten, gelesen im eigenen angemeldeten Browser deiner Machine. Antworten werden erst nach deiner Freigabe gesendet.
 covers: connector:linkedin
 code: connectors/linkedin.py, integrations/linkedin_inbox.py, linkedin_connections.py
 site: Connect, More sources, Remove
@@ -9,7 +9,7 @@ translated: bc67fbc21c77a97a
 ---
 ## Was gelesen wird
 
-Deine LinkedIn-Nachrichten. Deine Machine liest sie von Zeit zu Zeit in ihrem eigenen Browser, während du dort angemeldet bist. Sie markiert nichts als gelesen. Auch Antworten in archivierten Unterhaltungen und Nachrichtenanfragen werden gelesen. Spam bleibt außen vor.
+Deine LinkedIn-Nachrichten. Deine Machine liest sie in ihrem eigenen Browser, in dem sie als du angemeldet ist, ab und zu während des Tages. Sie markiert nichts als gelesen. Auch Antworten in archivierten Unterhaltungen und Nachrichtenanfragen werden gelesen. Spam bleibt außen vor.
 
 ## Titel und Unternehmen
 

@@ -38,8 +38,8 @@ Auch ein Versprechen per E-Mail von jemandem, dem du noch nie geschrieben hast, 
 
 Verspricht dir ein Geschäft, eine Fluggesellschaft, ein Vermieter oder ein Versicherer Geld zurück, zum Beispiel eine Rückerstattung für eine stornierte Bestellung oder einen bewilligten Versicherungsfall, erfasst deine Machine den Betrag, den Zahlungspflichtigen und das voraussichtliche Eingangsdatum. Das Versprechen erscheint unter **Dir versprochen**. Nur wenn aus der Nachricht alle drei Angaben hervorgehen.
 
-Geht das Geld zuerst ein, zum Beispiel laut einer E-Mail mit dem Hinweis „Rückerstattung bearbeitet“, einer Benachrichtigung des Zahlungsdienstes oder einer Mitteilung deiner Banking-App auf dem Smartphone, wird das Versprechen automatisch geschlossen. Eine Aufgabe wird nicht erstellt.
+Geht das Geld zuerst ein, zum Beispiel laut einer E-Mail mit dem Hinweis „Rückerstattung bearbeitet“, einer Benachrichtigung des Zahlungsdienstes oder einer Mitteilung deiner Banking-App auf dem Handy, wird das Versprechen automatisch geschlossen. Eine Aufgabe wird nicht erstellt.
 
-Ist das Geld bis zu diesem Tag nicht eingegangen? Dann wird eine unaufdringliche Aufgabe erstellt: „Den Betrag von 42 € bei … nachverfolgen“, zusammen mit einem kurzen E-Mail-Entwurf, in dem die Bestell- oder Fallnummer genannt wird. Gesendet wird nichts, bis du es abschickst. Geht das Geld doch noch ein, wird die Aufgabe automatisch geschlossen. Mit **Rückgängig** kannst du sie einen Tag lang wiederherstellen.
+Ist das Geld bis zu diesem Tag nicht eingegangen? Dann wird eine unaufdringliche Aufgabe erstellt: „Rückerstattung über 42 € von … nachverfolgen“, zusammen mit einem kurzen E-Mail-Entwurf, in dem die Bestell- oder Fallnummer genannt wird. Gesendet wird nichts, bis du es abschickst. Geht das Geld doch noch ein, wird die Aufgabe automatisch geschlossen. Mit **Rückgängig** kannst du sie einen Tag lang wiederherstellen.
 
-Die [Wochenübersicht](weekly-recap.md) zählt erfüllte und offene Versprechen. Auf deinem eigenen Computer listet `assistant promises` sie in einem Terminal auf.
+Die [Wochenrückblick](weekly-recap.md) zählt erfüllte und offene Versprechen. Auf deinem eigenen Computer listet `assistant promises` sie in einem Terminal auf.

@@ -25,11 +25,11 @@ Kam eine Aufgabe per E-Mail rein, aber du schreibst mit der Person über Telegra
 ## Verbinden
 
 1. Öffne im Dashboard **Verbindungen**, dann **Chat**, und wähle Telegram-Chats.
-2. Wähle **QR-Code in Telegram auf deinem Handy scannen**.
+2. Wähle **QR-Code mit Telegram auf einem anderen Gerät scannen**.
 3. Öffne auf deinem Handy in Telegram Einstellungen, Geräte, **Link Desktop Device**, und scanne den Code.
 4. Hat dein Konto ein Cloud-Passwort, gib es ein, wenn danach gefragt wird. Es geht an Telegram und wird nie gespeichert.
 
-Du richtest es auf deinem Handy ein und hast keinen zweiten Bildschirm zum Scannen? Wähle stattdessen **Code in Telegram für deine Telefonnummer anfordern**. Das Formular sagt, wohin Telegram den Code geschickt hat: an deine Telegram-App auf einem anderen Gerät, per SMS oder an deine Login-E-Mail. Kein Code? Drück **Code erneut senden**.
+Auf einem Handy beginnt das Formular mit **Code für deine Telefonnummer anfordern**, weil sich ein QR-Code nicht auf demselben Bildschirm scannen lässt. Es sagt, wohin Telegram den Code geschickt hat: an deine Telegram-App auf einem anderen Gerät, per SMS oder an deine Login-E-Mail. Kein Code? Drück **Code erneut senden**.
 
 Auf deinem eigenen Computer brauchst du außerdem eine eigene Telegram-App-ID. Erstelle eine auf [my.telegram.org](https://my.telegram.org), unter API development tools, und trag ihre api_id und api_hash ins Formular ein.
 
@@ -40,7 +40,7 @@ Oder führe `assistant connect telegram` in einem Terminal aus und scanne den Co
 - **Von Telegram abgemeldet**: Telegram hat die Anmeldung dieses Geräts beendet, oder du hast es auf deinem Handy abgemeldet. Tippe in **Verbindungen** auf **Neu verbinden**.
 - **Telegram akzeptiert die App-ID nicht mehr**: Telegram akzeptiert die App-ID, die diese Machine nutzt, nicht mehr. Nichts wird gelesen oder gesendet, bis du auf **Neu verbinden** tippst und eine eigene App-ID hinzufügst.
 
-The Machine nutzt dafür die API von Telegram. Telegram kann Anmeldungen von Apps wie ihr einschränken oder beenden.
+Telegram kann Anmeldungen von Apps wie ihr einschränken oder beenden.
 
 ## Bilder
 

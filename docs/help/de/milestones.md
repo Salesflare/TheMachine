@@ -1,7 +1,7 @@
 ---
 title: Meilensteine
 area: cards
-summary: Alle paar erledigten Aufgaben erscheint eine kleine Feier in **Aufgaben**. Wenn du möchtest, kannst du ein Bild davon teilen.
+summary: Alle paar erledigten Aufgaben erscheint eine kleine Feier in „Aufgaben“. Wenn du möchtest, kannst du ein Bild davon teilen.
 covers: milestones
 code: machine/store/done_milestones.py, dashboard/todos-milestone.js
 order: 11
@@ -13,6 +13,6 @@ Wenn deine Zahl bei **Erledigt** 10, 50, 100, 250, 500, 1.000, 2.500, 5.000 oder
 
 ## Teilen
 
-Tippe auf **Teilen**, um ein Bild mit der Zahl und dem Maskottchen zu erstellen. Das Bild wird auf deinem Gerät erstellt. Auf einem Smartphone oder in der App öffnet sich das Teilen-Menü deines Geräts. Am Computer kannst du **Quadratisch** oder **Für Links** auswählen und dann **Bild herunterladen** oder **Bild kopieren** wählen. Dazu gibt es den **Text zum Posten**. Wenn sich ein Bild nicht kopieren lässt, zum Beispiel in der App, öffnet **Bild teilen** stattdessen das Teilen-Menü.
+Tippe auf **Teilen**, um ein Bild mit der Zahl und dem Maskottchen zu erstellen. Das Bild wird auf deinem Gerät erstellt. Auf einem Handy oder in der App öffnet sich das Teilen-Menü deines Geräts. Am Computer kannst du **Quadratisch** oder **Für Links** auswählen und dann **Bild herunterladen** oder **Bild kopieren** wählen. Dazu gibt es den **Text zum Posten**. Wenn sich ein Bild nicht kopieren lässt, zum Beispiel in der App, öffnet **Bild teilen** stattdessen das Teilen-Menü.
 
 Das Bild zeigt nur die Zahl. Keine Namen, keine Aufgaben und sonst nichts von deiner Machine. Es wird nichts veröffentlicht, wenn du es nicht selbst postest.

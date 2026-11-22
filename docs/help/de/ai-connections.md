@@ -10,11 +10,11 @@ translated: ac5a894df13907fd
 ---
 ## Was eine andere KI tun kann
 
-Claude, ChatGPT, Cursor, Codex, GBrain und andere KIs können sich mit deiner Machine verbinden. Sie können deine Aufgaben, Versprechen, Team-Briefs sowie die Personen und Unternehmen in deinem Graph lesen.
+Claude, ChatGPT, Cursor, Codex, GBrain und andere KIs können sich mit deiner Machine verbinden. Sie können deine Aufgaben, Versprechen, Team-Briefings sowie die Personen und Unternehmen in deinem Graph lesen.
 
 Mit **Lesen und Bearbeiten** können sie auch eine Aufgabe oder einen E-Mail-Entwurf hinzufügen und deinen Graph aktualisieren: eine Information speichern, Details, Felder und Tags korrigieren oder eine Zeile zur Zusammenfassung einer Person hinzufügen.
 
-Jede Änderung wird unter **Aktivität** angezeigt und lässt sich mit **Rückgängig** zurücknehmen. Sie führen niemals Datensätze zusammen, löschen sie oder teilen sie. Was sie speichern, wird mit **AI:** und ihrem Namen gekennzeichnet. Deine Machine behandelt es als ihre Behauptung, niemals als deine Anweisung.
+Jede Änderung wird unter **Aktivität** angezeigt und lässt sich mit **Rückgängig** zurücknehmen. Sie führen niemals Datensätze zusammen, löschen sie oder teilen sie. Was sie speichern, wird mit **KI:** und ihrem Namen gekennzeichnet. Deine Machine behandelt es als ihre Behauptung, niemals als deine Anweisung.
 
 Ein Entwurf bleibt liegen, bis du ihn selbst liest und auf „Senden“ drückst. Eine verbundene KI sendet niemals etwas und handelt nie in deinem Namen.
 
@@ -42,7 +42,7 @@ KIs auf einem Gerät in deinem privaten Netzwerk (Tailscale), etwa Claude Code o
 
 Deine Machine zeigt dir, welche KI anfragt. Kann sie das nicht feststellen, zeigt sie, woher die Anfrage kommt: Verbinde dich nur, wenn du das gerade selbst veranlasst hast.
 
-Wähle aus, was die KI tun kann: **Lesen** oder **Lesen und Bearbeiten**. Wenn du Work- und Personal-Konten hast, wähle aus, was die KI sehen kann. Wähle dann aus, wie lange der Zugriff gelten soll: **1 Tag**, **7 Tage**, **30 Tage** oder **1 Jahr**. Drück auf **Verbinden** oder auf **Abbrechen**, um die KI ohne Zugriff abzuweisen.
+Wähle aus, was die KI tun kann: **Lesen** oder **Lesen und Bearbeiten**. Wenn du Arbeits- und Privatkonten hast, wähle aus, was die KI sehen kann. Wähle dann aus, wie lange der Zugriff gelten soll: **1 Tag**, **7 Tage**, **30 Tage** oder **1 Jahr**. Drück auf **Verbinden** oder auf **Abbrechen**, um die KI ohne Zugriff abzuweisen.
 
 ## Offizielle App oder private Adresse
 
@@ -54,7 +54,7 @@ In beiden Fällen entscheidet deine Machine. Nur eine KI, die du auf ihrer Seite
 
 ## Was die KI sehen kann
 
-Eine Verbindung sieht nur ihren jeweiligen Bereich. Work umfasst die Aufgaben und Versprechen deiner Arbeitskonten, Personen, Unternehmen und Projekte aus dem Arbeitsbereich sowie den Team-Brief deiner Work Fleet. Personal umfasst alles andere. Nachrichtentexte bleiben auf deiner Machine, sofern du **Nachrichten** nicht aktivierst: Ohne diese Option sieht eine KI bei den Quellen einer Aufgabe nur Absender, Betreff und Datum.
+Eine Verbindung sieht nur ihren jeweiligen Bereich. Arbeit umfasst die Aufgaben und Versprechen deiner Arbeitskonten, Personen, Unternehmen und Projekte aus dem Arbeitsbereich sowie das Team-Briefing deiner Work Fleet. Privat umfasst alles andere. Nachrichtentexte bleiben auf deiner Machine, sofern du **Nachrichten** nicht aktivierst: Ohne diese Option sieht eine KI bei den Quellen einer Aufgabe nur Absender, Betreff und Datum.
 
 Team-Graph-Datensätze von Teammitgliedern werden niemals an eine externe KI weitergegeben.
 
@@ -64,7 +64,7 @@ Mit **Nachrichten** kann eine KI deine E-Mails, Slack-, WhatsApp- und andere Cha
 
 Die KI liest nur Nachrichten in ihrem jeweiligen Bereich. Bestimmte Inhalte werden nie weitergegeben: Einmalcodes und Anmeldelinks, Nachrichten in einem **Nur du**-Board oder -Projekt, Threads, die The Machine als sensibel eingestuft hat (Geschäfte, Personal, Rechtliches, Gesundheit, Geld), Threads, die du privat gehalten hast, und gelöschte Nachrichten.
 
-Jeder Lesezugriff wird unter **Aktivität** mit der Anzahl der Nachrichten und den betreffenden Threads angezeigt, niemals mit dem Nachrichtentext. Deine Machine übergibt den Text als Daten, damit die KI keine Anweisungen befolgt, die in einer Nachricht stehen.
+Jeder Lesezugriff wird unter **Aktivität** mit der Anzahl der Nachrichten und den betreffenden Threads angezeigt, niemals mit dem Nachrichtentext. Deine Machine übergibt den Text als Daten gekennzeichnet. Die KI sollte also keine Anweisungen befolgen, die in einer Nachricht stehen.
 
 Solange **Nachrichten** aktiviert ist, musst du Änderungen am Graph durch eine KI mit **Lesen und Bearbeiten** bestätigen. Drück bei der Änderung unter **Aktivität** auf **Übernehmen** oder **Verwerfen**.
 

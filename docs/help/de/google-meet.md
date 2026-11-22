@@ -37,7 +37,7 @@ Gmail muss dafür nicht verbunden sein. So verbindest du es:
 
 Es prüft, ob die Anmeldung Meet lesen darf. Ohne dieses OK wird es nicht hinzugefügt. Die Anmeldung bleibt gültig: Du musst nichts einfügen oder erneuern.
 
-Ziehst du das OK später zurück, bittet die Karte von Google Meet dich, dich erneut anzumelden.
+Ziehst du das OK später zurück, bittet dich Google Meet unter **Verbindungen**, dich erneut anzumelden.
 
 ## Entfernen
 

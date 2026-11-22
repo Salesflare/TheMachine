@@ -25,7 +25,7 @@ Drücke **Testen**. Die Seite zeigt, wo das Web deinen Browser sieht: deine Stad
 
 ## Wenn dein Computer zu Hause aus ist
 
-Dein Browser geht dann direkt von deiner Machine raus, und wieder über dein Zuhause, sobald der Computer wieder an ist. Bei Tailscale abgemeldet? Drücke **Neu anmelden**. Tailscale meldet Geräte nach 6 Monaten ab, außer key expiry ist aus. Die Einrichtungsseite zeigt das Datum.
+Dein Browser geht dann direkt von deiner Machine raus, und wieder über dein Zuhause, sobald der Computer wieder an ist. Bei Tailscale abgemeldet? Drücke **Erneut anmelden**. Tailscale meldet Geräte nach 6 Monaten ab, außer key expiry ist aus. Die Einrichtungsseite zeigt das Datum.
 
 ## Nicht mehr nutzen
 

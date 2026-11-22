@@ -39,7 +39,7 @@ Bei einer gehosteten Machine:
 
 Oder im Dashboard: **Verbindungen**, **E-Mail**, wähle Outlook und drücke **Mit Microsoft anmelden**. Der Admin-Link steht direkt unter der Schaltfläche.
 
-Auf deinem eigenen Computer: Sobald er [mit deinem Konto verknüpft ist](friends.md#a-machine-on-your-own-computer), öffne **Verbindungen**, dann **E-Mail**, wähle Outlook und drücke **Mit Microsoft anmelden**. E-Mail und Kalender werden zusammen verbunden. Nach der Anmeldung bei Microsoft bist du wieder unter **Verbindungen** in deinem Dashboard.
+Auf deinem eigenen Computer: Sobald deine Machine [mit deinem Konto gekoppelt ist](friends.md#a-machine-on-your-own-computer), öffne **Verbindungen**, dann **E-Mail**, wähle Outlook und drücke **Mit Microsoft anmelden**. E-Mail und Kalender werden zusammen verbunden. Nach der Anmeldung bei Microsoft bist du wieder unter **Verbindungen** in deinem Dashboard.
 
 Für IT-Teams mit einer eigenen Microsoft Entra-App: Öffne dort **Eigene App nutzen** oder führe `assistant connect outlook` aus.
 

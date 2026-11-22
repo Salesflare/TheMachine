@@ -10,7 +10,7 @@ translated: d2ca08e771f23228
 ## Jemanden um ein Review einer Aufgabe bitten
 
 1. Öffne bei der Aufgabe **…**, dann **Übergeben…** und wähle **Um Review bitten** (wenn das die einzige Option ist, findest du sie direkt im Menü **…**). Das geht bei jedem Schritt: vor **Ausführen**, bei einem Entwurf im Status Bereit oder direkt vor dem Senden.
-2. Wähle aus, wen du fragen möchtest. Eine Arbeitsaufgabe kann nur an jemanden in deinem Arbeits-Fleet gehen, eine persönliche Aufgabe nur an jemanden aus deiner Familie.
+2. Wähle aus, wen du fragen möchtest. Eine Aufgabe aus „Arbeit“ kann nur an jemanden in deiner Work Fleet gehen, eine aus „Privat“ nur an jemanden aus deiner Familie.
 3. Prüfe, was mitgeschickt wird: der Entwurf (oder der Aufgabentext) und die Quellen. Mit × kannst du eine Quelle ausschließen. Füge bei Bedarf eine Notiz hinzu und wähle dann **Fragen**.
 
 Nur diese Aufgabe wird übergeben, nichts anderes von deiner Machine. Die Aufgabe zeigt jetzt „Wartet auf Pats Review“ an. Mit **Zurückziehen** kannst du die Anfrage zurücknehmen.

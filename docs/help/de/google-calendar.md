@@ -16,13 +16,13 @@ Deine Termine von 7 Tagen zurück bis 30 Tage voraus, mit allen Serienterminen. 
 
 Nichts von selbst. Es beantwortet nie eine Einladung und lädt nur Personen ein, die du selbst einträgst.
 
-Wenn die Anmeldung in Kalender schreiben darf, kannst du einen Termin ohne Gäste hinzufügen, ändern oder löschen, in deinem eigenen Kalender oder einem geteilten, den du bearbeiten darfst. Jede Änderung ist dein Tippen: im [Kalender](calendar.md) oder bei einer Aufgabe, die sie anbietet. Eine Anmeldung über **Google verbinden** liest nur.
+Wenn die Anmeldung in Kalendern schreiben darf, kannst du einen Termin ohne Gäste hinzufügen, ändern oder löschen, in deinem eigenen Kalender oder einem geteilten, den du bearbeiten darfst. Jede Änderung geschieht erst, wenn du tippst: im [Kalender](calendar.md) oder bei einer Aufgabe, die sie anbietet. Eine Anmeldung über **Google verbinden** liest nur.
 
 In deinem eigenen Kalender kannst du über das Formular im [Kalender](calendar.md) auch Personen einladen. Der Button sagt, wie viele eine Einladung bekommen, und Google verschickt die Einladungen bei diesem Tippen. Eine Aufgabe lädt nie jemanden ein.
 
 ## Verbinden
 
-Auf einer gehosteten Machine wird es zusammen mit Gmail verbunden: Tippe auf deiner Einrichtungsseite unter **Mail und Kalender** auf **Google verbinden**.
+Auf einer gehosteten Machine wird es zusammen mit Gmail verbunden: Tippe auf deiner Einrichtungsseite unter **E-Mail und Kalender** auf **Google verbinden**.
 
 Auf deinem eigenen Computer, sobald er [mit deinem Konto gekoppelt](friends.md#a-machine-on-your-own-computer) ist: Öffne **Verbindungen**, dann **Kalender**, wähle Google Calendar und tippe auf **Mit Google anmelden**. Es wird zusammen mit Gmail verbunden.
 

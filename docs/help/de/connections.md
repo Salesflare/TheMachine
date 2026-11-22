@@ -7,9 +7,9 @@ code: dashboard.html, onboarding.py
 order: 1
 translated: 0896d8f689ca9699
 ---
-## So geht es ihnen
+## Status deiner Quellen
 
-Der Tab **Verbindungen** listet deine Quellen nach Art auf. Darunter findest du **Anmeldungen** und **Prüfungen**, abgetrennt durch eine Linie. Auf dem Smartphone tippst du auf eine Art, um sie zu öffnen, und auf **Verbindungen**, um zurückzugehen. Eine Art mit einer Quelle, die dich braucht, wird zuerst geöffnet. Jede Quelle wird als Zeile angezeigt: mit ihrem Status (Verbunden, wartet auf den ersten Sync, verbindet sich automatisch neu oder braucht deine Hilfe) und den zuletzt eingegangenen Daten. Tippe auf die Quelle, um ihre Karte und **Details** zu öffnen.
+Der Tab **Verbindungen** listet deine Quellen nach Art auf. Darunter findest du **Anmeldungen** und **Prüfungen**, abgetrennt durch eine Linie. Auf dem Handy tippst du auf eine Art, um sie zu öffnen, und auf **Verbindungen**, um zurückzugehen. Eine Art mit einer Quelle, die dich braucht, wird zuerst geöffnet. Jede Quelle wird als Zeile angezeigt: mit ihrem Status (Verbunden, wartet auf den ersten Sync, verbindet sich automatisch neu oder braucht deine Hilfe) und den zuletzt eingegangenen Daten. Tippe auf die Quelle, um ihre Karte und **Details** zu öffnen.
 
 Ein fehlgeschlagener Sync, den ein späterer Sync ausgeglichen hat, wird grau angezeigt. Nur ein Fehler, der weiterhin der neueste ist, wird als Problem angezeigt, zusammen mit dem Zeitpunkt des nächsten Versuchs.
 
@@ -23,7 +23,7 @@ Zu jeder Quelle steht außerdem in einer Zeile, was sie einbringt und, falls sie
 
 Öffne eine Art (**E-Mail**, **Kalender**, **Chat**, **Meetings**, **Dokumente und Dateien**, **Kunden**, **Projekte und Code**, **Andere**) und wähle unter **Weitere hinzufügen** eine Quelle aus. Wenn noch keine Quelle verbunden ist, findest du die Auswahl unter der Liste. Am Ende steht jeweils eine Option für weitere Quellen: **Andere E-Mail** unter E-Mail sowie **Kalenderlink (ICS)** und **Anderer Kalender** unter Kalender. Exchange Server liest Termine und ist deshalb unter Kalender aufgeführt.
 
-Wenn deine Machine einen Grund für eine Quelle erkennt, wird oben in **Verbindungen** der Bereich **Vorgeschlagen für dich** angezeigt. Der Grund steht jeweils in einer Zeile: E-Mails von Stripe, Zoom-Meetings in deinem Kalender, Nachrichten mit Links zu Google Docs oder eine nicht abgeschlossene Einrichtung. Die Quelle bleibt außerdem in ihrer eigenen Gruppe und ist dort als **Vorgeschlagen** markiert. Diese Daten werden auf deiner Machine gezählt und verlassen sie nicht. Eine verbundene Quelle wird nie vorgeschlagen.
+Wenn deine Machine einen Grund für eine Quelle erkennt, wird oben in **Verbindungen** der Bereich **Für dich vorgeschlagen** angezeigt. Der Grund steht jeweils in einer Zeile: E-Mails von Stripe, Zoom-Meetings in deinem Kalender, Nachrichten mit Links zu Google Docs oder eine nicht abgeschlossene Einrichtung. Die Quelle bleibt außerdem in ihrer eigenen Gruppe und ist dort als **Vorgeschlagen** markiert. Diese Daten werden auf deiner Machine gezählt und verlassen sie nicht. Eine verbundene Quelle wird nie vorgeschlagen.
 
 Microsoft Teams wird zweimal angezeigt: unter **Chat** für Chats und unter **Meetings** als **Teams-Meetings** für Meeting-Notizen. Beide verwenden dieselbe Microsoft-Anmeldung. Wenn du eine verbindest, wird also auch die andere verbunden.
 
@@ -35,9 +35,9 @@ Mit **Abbrechen** beendest du das Hinzufügen. Hast du den Vorgang vor dem Absch
 
 Auf einer gehosteten Machine meldest du dich direkt hier bei Quellen an, die eine eigene Anmeldung haben: Google, Microsoft (Outlook, OneDrive und Teams), Google Meet, Google Docs, Slack, Zoom, Stripe, Intercom, Salesforce und Trello.
 
-Wähle **Arbeit** oder **Privat** und tippe auf die Anmeldeschaltfläche, zum Beispiel **Mit Google anmelden**. Danach kehrst du zu diesem Formular zurück, das dir den Status anzeigt. GitHub, WhatsApp, Codex, Telegram-Chats und dein Android-Smartphone zeigen ihren Code ebenfalls hier an.
+Wähle **Arbeit** oder **Privat** und tippe auf die Anmeldeschaltfläche, zum Beispiel **Mit Google anmelden**. Danach kehrst du zu diesem Formular zurück, das dir den Status anzeigt. GitHub, WhatsApp, Codex, Telegram-Chats und dein Android-Handy zeigen ihren Code ebenfalls hier an.
 
-Auf deinem eigenen Computer meldest du dich bei denselben Quellen an, sobald deine Machine mit deinem Konto verbunden ist. Tippe beim ersten Mal auf **Diese Machine verbinden**. Bei einigen Quellen gibt es auch eine andere Möglichkeit, zum Beispiel eine eigene App oder einen Schlüssel.
+Auf deinem eigenen Computer meldest du dich bei denselben Quellen an, sobald deine Machine mit deinem Konto verbunden ist. Tippe beim ersten Mal auf **Diese Machine koppeln**. Bei einigen Quellen gibt es auch eine andere Möglichkeit, zum Beispiel eine eigene App oder einen Schlüssel.
 
 **Neu verbinden** bei einer Quelle oder unter **Braucht dich** öffnet dasselbe Formular. Auf deinem eigenen Computer bewirkt `assistant connect` dasselbe in einem Terminal.
 
@@ -49,9 +49,9 @@ Bei E-Mails und Kalendern von Google und Microsoft ergibt sich die Einstufung au
 
 ## Funktionen
 
-Eine Quelle kann Signale einbringen, aus denen Aufgaben entstehen, Aktionen für deine Aufgaben ausführen (ein Dokument lesen oder nach deiner Bestätigung etwas senden, beantworten oder ändern) oder beides. Wenn beides möglich ist, gibt es unter **Details** jeweils einen Schalter: **Bringt Signale** und **Kann Dinge tun**. Einer der Schalter muss eingeschaltet bleiben. Wenn du beide ausschalten möchtest, trenne die Verbindung. Bei einem Chat gibt es nur **Kann Dinge tun**.
+Eine Quelle kann Signale einbringen, aus denen Aufgaben entstehen, Aktionen für deine Aufgaben ausführen (ein Dokument lesen oder nach deiner Bestätigung etwas senden, beantworten oder ändern) oder beides. Wenn beides möglich ist, gibt es unter **Details** jeweils einen Schalter: **Liefert Signale** und **Kann Dinge tun**. Einer der Schalter muss eingeschaltet bleiben. Wenn du beide ausschalten möchtest, trenne die Verbindung. Bei einem Chat gibt es nur **Kann Dinge tun**.
 
-Wenn **Bringt Signale** ausgeschaltet ist, wird die Quelle nicht synchronisiert. Wenn **Kann Dinge tun** ausgeschaltet ist, liest, entwirft oder ändert deine Machine damit nichts.
+Wenn **Liefert Signale** ausgeschaltet ist, wird die Quelle nicht synchronisiert. Wenn **Kann Dinge tun** ausgeschaltet ist, liest, entwirft oder ändert deine Machine damit nichts.
 
 ## Quelle entfernen
 
@@ -69,7 +69,7 @@ Unter **Anmeldungen** wird jede Website einmal mit den zugehörigen Konten aufge
 
 Mit **Importieren** importierst du Anmeldungen aus einem Passwortmanager. Wähle einen aus:
 
-- **LastPass**, **Bitwarden** oder **Google Passwortmanager**: Die Exportseite des jeweiligen Dienstes wird im Browser deiner Machine geöffnet und direkt im Dialog angezeigt, wie bei **Ausführen** für eine Aufgabe. Melde dich dort an. Deine Machine klickt sich dann bis zum Export durch. In einer Zeile steht, was du noch tun musst, zum Beispiel dein Masterpasswort eingeben. LastPass schickt dir einen Link, um den Export zu bestätigen. Deine Machine startet den Export einmal und öffnet den Link selbst, wenn die E-Mail innerhalb von 10 Minuten in einem verbundenen Postfach ankommt. Andernfalls wirst du aufgefordert, den Export noch einmal zu bestätigen und zu starten. Auf einem Smartphone wird die Ansicht zu der Stelle vergrößert, an der du etwas eingeben musst. Sieht die Seite anders aus als erwartet, werden stattdessen die Schritte zum manuellen Abschluss angezeigt. Deine Machine übernimmt die Datei, liest sie einmal aus und löscht sie.
+- **LastPass**, **Bitwarden** oder **Google Passwortmanager**: Die Exportseite des jeweiligen Dienstes wird im Browser deiner Machine geöffnet und direkt im Dialog angezeigt, wie bei **Ausführen** für eine Aufgabe. Melde dich dort an. Deine Machine klickt sich dann bis zum Export durch. In einer Zeile steht, was du noch tun musst, zum Beispiel dein Masterpasswort eingeben. LastPass schickt dir einen Link, um den Export zu bestätigen. Deine Machine startet den Export einmal und öffnet den Link selbst, wenn die E-Mail innerhalb von 10 Minuten in einem verbundenen Postfach ankommt. Andernfalls wirst du aufgefordert, den Export noch einmal zu bestätigen und zu starten. Auf einem Handy wird die Ansicht zu der Stelle vergrößert, an der du etwas eingeben musst. Sieht die Seite anders aus als erwartet, werden stattdessen die Schritte zum manuellen Abschluss angezeigt. Deine Machine übernimmt die Datei, liest sie einmal aus und löscht sie.
 - **1Password**: Exportiere eine CSV-Datei aus der 1Password-App auf einem Computer und wähle die Datei aus. Wenn `op` von 1Password auf deiner Machine angemeldet ist, wird die Datei stattdessen von dort eingelesen (auch `lpass` von LastPass).
 - **Aus einer Exportdatei**: eine CSV-Datei aus 1Password, LastPass, Bitwarden oder Chrome. Lösche sie, sobald du fertig bist.
 
