@@ -44,10 +44,10 @@ const WORKSPACE = process.env.OPENCLAW_WORKSPACE || `${HOME}/.openclaw/workspace
 // Where this project is installed (AGENTS.md, PREPARATION.md, the service code). Config `app_dir`.
 const APP_DIR = resolve(String(assistantConfig().app_dir || `${WORKSPACE}/tools/personal-assistant`).replace(/^~(?=\/|$)/, HOME));
 // Review turns may only read: the signals tool, memory lookups and read-only file access.
-// Works on any runtime: OpenClaw tool calls pass this hook on the embedded runtime (where file
-// and shell access are OpenClaw tools too) and on Codex app-server (whose own built-in shell
-// does not). A per-turn toolsAllow would also trim the prompt, but Codex rejects it, and a
-// review can run on either runtime, so the guard is applied at call time instead.
+// The guard is applied at call time (before_tool_call), which works on any runtime: OpenClaw tool calls pass it on the
+// embedded runtime (where file and shell access are OpenClaw tools too) and on Codex app-server (whose own built-in
+// shell does not). On the embedded runtime the prompt hook also narrows the turn to these tools (turnTools), so the
+// model never sees, or tries, the rest; Codex refuses a turn whose hook does that, so there the call-time guard alone.
 export const REVIEW_TOOLS = new Set(['assistant_signals', 'memory_search', 'memory_get', 'read', 'file_fetch', 'dir_list', 'dir_fetch', 'ls']);
 // The fixed last line of an isolated review's turn, the same as REVIEW_DONE in assistant.py.
 export const REVIEW_DONE = 'Done.';
@@ -275,12 +275,39 @@ export function routineShellRead(params: any) {
   }
   return !args.slice(1).some(arg => /^graphql$/i.test(arg));
 }
+// The tools besides reviewTools() a routine may call, each read-only by routineRead.
+export const ROUTINE_READ_TOOLS = ['web_search', 'web_fetch', 'browser', ...SHELL_TOOLS];
 export function routineRead(event: any) {
   const name = plainToolName(event.toolName), params = event.params || {};
   if (name === 'web_search' || name === 'web_fetch') return true;
   if (name === 'browser') return routineBrowserRead(params);
   return SHELL_TOOLS.has(name) && routineShellRead(params);
 }
+
+// Only OpenClaw's embedded runtime passes the prompt hook the run's project keys (Codex app-server's context has none),
+// and only it can narrow a turn's tools from the hook: Codex app-server refuses such a turn ("cannot enforce
+// before_prompt_build toolsAllow"), so a review there keeps today's tools and the call-time guard.
+export const embeddedRuntime = (ctx: any) => Array.isArray(ctx?.activeProjectKeys);
+// The tools a read-only Machine run's turn sees on the embedded runtime: the ones before_tool_call lets it call, plus the
+// tool search runners (Code Mode's exec and wait stay by themselves while the catalog has an allowed tool). The rest,
+// skills_read, write tools and other plugins' tools included, leave the turn's tool list and its prompt, so the model
+// stops trying them (they were refused and each refusal cost a step). None for a preparation: it keeps every tool.
+export function turnTools(sessionKey: string): string[] | undefined {
+  const tools = reviewSession(sessionKey) ? reviewTools() : profileSession(sessionKey) ? REVIEW_TOOLS
+    : skillsSession(sessionKey) ? SKILLS_TOOLS : routineSession(sessionKey) ? [...reviewTools(), ...ROUTINE_READ_TOOLS] : undefined;
+  return tools && [...new Set([...tools, ...TOOL_SEARCH_TOOLS])];
+}
+// A read-only run gets none of the workspace's own files (preparation-run.mjs), and on a new install OpenClaw then tells it
+// to read BOOTSTRAP.md (the owner's first-chat setup) before anything else: a sandbox review did, every time, and carried
+// the file on each later step. That setup is for the owner's own chat.
+export const NOT_FIRST_CHAT = 'This is a background run, not the owner\'s first chat: leave BOOTSTRAP.md (the first-chat setup) alone and do not read it.';
+// Each refused call cost a review a step: skills_read (about 60 a day before the workshop rule) and assistant_signals
+// writes through dispatch_action. The tool list says what a run may call; this says what it may skip.
+export const READ_ONLY_RUN = 'This run only reads and needs no skills: do not call skills_read or open a SKILL.md. Tool search\'s dispatch_action allows no more than calling the tool directly.';
+const narrowed = (ctx: any) => {
+  const tools = embeddedRuntime(ctx) ? turnTools(ctx.sessionKey) : undefined;
+  return tools ? {toolsAllow: tools} : {};
+};
 
 // Reviews and preparations never need the service or account credentials.
 const readsSecret = (event: any) => pathParams(event.params || {}).some(secretPath);
@@ -377,7 +404,7 @@ export function registerReviewRecovery(api: any, call: (action: string, args?: a
     .replace('A saved suggestion is delivered by the independent service, not by this reply.', 'A saved suggestion is delivered by the independent service; this reply is never sent to anyone.')
     .replace('When there is no separate genuinely useful alert requiring the owner, end with exactly NO_REPLY, even after saving a new suggestion or completing a review.', `End with exactly the line ${REVIEW_DONE}, even after saving a new suggestion or completing a review.`)
     .replace(' Genuine actionable alerts and authorized preparation results/reminders remain enabled.', '');
-  const reviewInstruction = (quiet: string) => 'This turn reviews the personal-assistant signals inbox. Resume an unfinished review through assistant_signals begin_analysis with the same explicit accounts, then finish_analysis after a real conclusion. Do not switch to unrelated old main-chat tasks after a provider retry. Follow the assistant instructions below; they are the parts of tools/personal-assistant/AGENTS.md for reviews, so do not read that file again. Claim once with begin_analysis limit 120 and read every page with analysis_page; finish within about fifteen minutes. The service balances accounts, oldest backlog and newer signals. For body_clipped=true read the rest with events, event_ids and body_offset. Defer only what you expect to judge better later; pass the rest as finish_analysis reviewed_ids. Publish only genuinely useful distinct suggestions; no quota or duplicate direct Telegram send. Quiet hours limit delivery, not private review. Do not claim a complete review when only a preview was assessed. ' + quiet;
+  const reviewInstruction = (quiet: string) => 'This turn reviews the personal-assistant signals inbox. Resume an unfinished review through assistant_signals begin_analysis with the same explicit accounts, then finish_analysis after a real conclusion. Do not switch to unrelated old main-chat tasks after a provider retry. Follow the assistant instructions below; they are the parts of tools/personal-assistant/AGENTS.md for reviews, so do not read that file again. A review only reads: assistant_signals, memory lookups and read-only file tools. ' + READ_ONLY_RUN + ' ' + NOT_FIRST_CHAT + ' Claim once with begin_analysis limit 120 and read every page with analysis_page; finish within about fifteen minutes. The service balances accounts, oldest backlog and newer signals. For body_clipped=true read the rest with events, event_ids and body_offset. Defer only what you expect to judge better later; pass the rest as finish_analysis reviewed_ids. Publish only genuinely useful distinct suggestions; no quota or duplicate direct Telegram send. Quiet hours limit delivery, not private review. Do not claim a complete review when only a preview was assessed. ' + quiet;
   const instruction = reviewInstruction(quietInstruction);
   const reviewState = (ctx: any): Promise<any> => new Promise(done => {
     const timer = setTimeout(() => done({}), REVIEW_CONTEXT_MS);
@@ -396,9 +423,10 @@ export function registerReviewRecovery(api: any, call: (action: string, args?: a
       const context = ((await ownerContext()) + (await preparationRules())).trim();
       return context ? {prependSystemContext: context} : undefined;
     }
-    if ((profileSession(ctx.sessionKey) || routineSession(ctx.sessionKey)) && privateReviewContext(ctx)) {
-      const context = (await ownerContext()).trim();
-      return context ? {prependContext: context} : undefined;
+    // These get none of the workspace's files (preparation-run.mjs), so USER.md comes from here, as it did for a profile
+    // and a routine already; Find my skills had it only from the workspace.
+    if ((profileSession(ctx.sessionKey) || routineSession(ctx.sessionKey) || skillsSession(ctx.sessionKey)) && privateReviewContext(ctx)) {
+      return {prependContext: (NOT_FIRST_CHAT + ' ' + READ_ONLY_RUN + '\n\n' + (await ownerContext()).trim()).trim(), ...narrowed(ctx)};
     }
     if (!background(ctx)) return;
     if (!runs.has(ctx.runId)) runs.set(ctx.runId, {session: ctx.sessionKey, started: Date.now(), reviewTouched: false});
@@ -420,7 +448,7 @@ export function registerReviewRecovery(api: any, call: (action: string, args?: a
     // per-run lines (the session key, the date) and was never reused. Only this run's own words stay in the message.
     const [owner, agents] = await instructions!;
     const context = reviewInstruction(sessionQuietInstruction) + gbrainHint() + owner + agents;
-    return {prependSystemContext: context, ...(hint ? {prependContext: hint.trim()} : {})};
+    return {prependSystemContext: context, ...(hint ? {prependContext: hint.trim()} : {}), ...narrowed(ctx)};
   }, {timeoutMs: 15000});
 
   // Gate review tools and note which run touched a review. Ownership itself is bound in the

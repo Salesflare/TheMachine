@@ -120,6 +120,14 @@ assert.equal(r.result.status,'pending');assert.equal(r.result.error,undefined);
 r=await run({kind:'review',job_id:id,action:'start',message:'Review'},[{runId:id}]);
 assert.equal(r.result.status,'admitted');assert.equal(r.calls[0].args.idempotencyKey,id);
 assert.equal(r.calls[0].args.deliver,false);assert.equal(r.calls[0].args.disableMessageTool,true);
+// A read-only run gets OpenClaw's smaller prompt and none of the workspace's own files (the plugin adds what it needs);
+// a preparation keeps the full prompt and the owner's workspace files, where his rules on drafts can live.
+for(const kind of ['review','profile','skills','routine']){
+  r=await run({kind,job_id:id,action:'start',message:'Read'},[{runId:id}]);
+  assert.equal(r.calls[0].args.promptMode,'minimal',kind);assert.equal(r.calls[0].args.bootstrapContextMode,'lightweight',kind);
+}
+r=await run({kind:'preparation',job_id:id,action:'start',message:'Work'},[{runId:id}]);
+assert.equal(r.calls[0].args.promptMode,undefined);assert.equal(r.calls[0].args.bootstrapContextMode,undefined);
 // A refused start keeps its key (it may have been admitted) unless the Gateway says the run id's turn is over.
 const refusal=Object.assign(new Error('Pending input ownership ended; submit a new turn to continue'),{name:'GatewayClientRequestError',gatewayCode:'UNAVAILABLE'});
 r=await run({kind:'review',job_id:id,action:'start',message:'Review'},[refusal,{status:'error',endedAt:123}]);
