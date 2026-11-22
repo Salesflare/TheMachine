@@ -101,6 +101,7 @@ English strings the check skips, with why:
 - `Signal message sent` names the Signal app, not a signal.
 - `Signal message sent.` names the Signal app, not a signal.
 - `Signal message sent at {}.` names the Signal app, not a signal.
+- `Signal` names the Signal app (its connection), not a signal.
 - `Signal can’t be read right now, so I can’t find the chat. Put the message in the body and say in one line that they can send it on Signal themselves.` names the Signal app, not a signal.
 - `Your Signal chats, as a linked device.` names the Signal app, not a signal.
 - `Signal needs Java {} or later on this computer` names the Signal app, not a signal.
@@ -139,7 +140,7 @@ never The Machine. The table gives each language's verbs for starting and trying
 | it | Start: Attiva la tua Machine, Inizia. Try: Prova, Scopri. Never Prendi or Ottieni on a button (Chiedi aiuto, Scarica l’app). |
 | pt-BR | Start: Quero minha Machine, Começar. Try: Experimente, Conheça. Never Obter or Pegue on a button (Pedir ajuda, Baixar o app). |
 | zh-CN | Start: 开通你的Machine, 开始使用. Try: 试用, 查看. Never 获取 for an app or a sign-up (获取验证码 for a code is fine; 下载手机应用 for the app). Labels are short: 查看, not 查看它们. |
-| ja | Start: Machineを始める, 始める. Try: 試す, 見る. Never 入手 or 取得 for an app or a sign-up (アプリをダウンロード). No あなた and no それら: 確認する, not それらを見る. |
+| ja | Start: Machineを始める, 始める. Try: 試す, 見る. Never 入手 or 取得 for an app or a sign-up (アプリをダウンロード). No あなた and no それら: 確認する, not それらを見る. An owner's Machine is Machine (自分のMachine when it needs a word), never The Machine. One word each time: ログイン, チームメンバー, 友達, オーナー, 人物 (people), ブラウザー, フォルダー, コンピューター (never パソコン), ホスティング版 / セルフホスト版 Machine, 標準 / 大容量 (Machine sizes), 撤回 (withdrawal), 出口ノード. No space between `{}` and a particle ({}件, {}に). Quote a button or screen name with 「」 (「送信」を押す). |
 | ko | Start: Machine 시작하기, 시작하기. Try: 사용해 보기, 보기. Never 받기 for an app or a sign-up (앱 다운로드). An owner's Machine is 내 Machine, never The Machine. |
 | ru | Start: Создать свою Machine, Начать. Try: Попробовать, Посмотреть. Never Получить for an app or a sign-up (Скачать приложение). Buttons are an infinitive (Начать, Сохранить). |
 
