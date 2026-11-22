@@ -11,7 +11,7 @@ translated: 340b9cfc0e3a424d
 
 En el teléfono, toca el título de la tarea. En el ordenador, haz clic en **Ver en el chat ›** o en el enlace al chat de la tarea. Si haces clic en el título en el ordenador, cambiarás el nombre de la tarea.
 
-## Correos electrónicos en el chat
+## Correos en el chat
 
 Cada correo muestra solo lo nuevo. Los mensajes anteriores que cita están plegados bajo **Mensajes anteriores**. **Leer el hilo** abre los correos completos.
 
@@ -44,7 +44,7 @@ En una página de GBrain, solo cambia la sección de The Machine. Lo que hayas e
 
 Debajo del cuadro de mensaje, el chat muestra el modelo y el nivel de razonamiento, como «GPT-6.2 Sol» y «Razonamiento bajo». Toca cualquiera de los dos para elegir otro solo para este chat. Los chats nuevos usan lo que hayas elegido en **Ajustes**, **Modelo** (consulta [Modelo](model.md)).
 
-**Rápido**, al final del menú de modelos, hace que los chats de tareas respondan más rápido, con un coste aproximadamente doble (o el doble de tu plan). Se aplica a los mensajes que envías y a **Hazlo**, en todos tus chats de tareas, nunca al trabajo en segundo plano. Está desactivado de forma predeterminada y aparece en gris si el modelo no lo admite.
+**Rápido**, al final del menú de modelos, hace que los chats de tareas respondan más rápido, con un coste aproximadamente doble (o el doble de lo que gasta de tu plan). Se aplica a los mensajes que envías y a **Hazlo**, en todos tus chats de tareas, nunca al trabajo en segundo plano. Está desactivado de forma predeterminada y aparece en gris si el modelo no lo admite.
 
 ## Detener una respuesta
 
@@ -58,4 +58,4 @@ Toca el clip, pega una captura de pantalla o arrastra archivos al chat. Cada arc
 - Los PDF, archivos de texto, hojas de cálculo (CSV) y archivos de Office de hasta 10 MB: The Machine los lee y puede adjuntarlos a un borrador.
 - Hasta 5 archivos por mensaje.
 
-Los archivos permanecen en tu Machine, cifrados como tus mensajes. Los archivos que añadas pero nunca envíes se eliminan al cabo de un día. También puedes adjuntar archivos a una tarea nueva desde **Nueva tarea** (consulta [Crear una tú mismo](cards.md#make-one-yourself)).
+Los archivos permanecen en tu Machine, cifrados como tus mensajes. Los archivos que añadas pero nunca envíes se eliminan al cabo de un día. También puedes adjuntar archivos a una tarea nueva desde **Nueva tarea** (consulta [Crear una tarea](cards.md#make-one-yourself)).

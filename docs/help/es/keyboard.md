@@ -19,7 +19,7 @@ Escribe una pregunta, como «¿qué dijo Kim sobre el proyecto piloto?», y apar
 
 Pregunta por alguien y por un periodo, como «¿qué dijo Kim la semana pasada?», y solo leerá los mensajes que esa persona haya enviado o recibido esos días, según tu zona horaria. Si no envió nada en ese periodo, te lo dirá y te mostrará su mensaje más reciente con la fecha.
 
-También consulta lo que la Machine ya tiene sobre el tema: promesas (pendientes o cerradas en los últimos 30 días), lo que ha aprendido, el resumen de la persona, el proyecto o la organización por los que preguntes, y las notas de reuniones. Cada elemento que use la respuesta aparece debajo, con su tipo (por ejemplo, Promesa, Aprendizaje, Resumen o Notas de la reunión), y se abre donde está guardado. Solo consulta lo que coincide con la pregunta, dentro de la sección que estés viendo.
+También consulta lo que tu Machine ya tiene sobre el tema: promesas (pendientes o cerradas en los últimos 30 días), lo que ha aprendido, el resumen de la persona, el proyecto o la organización por los que preguntes, y las notas de reuniones. Cada elemento que use la respuesta aparece debajo, con su tipo (por ejemplo, Promesa, Aprendizaje, Resumen o Notas de la reunión), y se abre donde está guardado. Solo consulta lo que coincide con la pregunta, dentro de la sección que estés viendo.
 
 Si varias personas tienen ese nombre, te dirá a cuál se refiere. Los demás mensajes que haya leído aparecen debajo de Mensajes. La pregunta sugerida cuando la búsqueda está vacía solo será una para la que haya mensajes. La respuesta nunca envía nada ni añade una tarea, y necesita un modelo (**Ajustes**, **Modelo**).
 
@@ -45,4 +45,4 @@ Las teclas no funcionan mientras escribes en un campo.
 
 ## No se envía nada al pulsar una tecla
 
-Ninguna tecla ni opción de la paleta envía, aprueba ni publica nada. Las opciones como «Revisar el correo» solo abren el borrador para que puedas leerlo, cambiarlo y enviarlo con su propio botón. La única excepción es [Revisar](cards.md): allí, al pulsar Enter, se envía el borrador que aparece completo.
+Ninguna tecla ni opción de la paleta envía, aprueba ni publica nada. Las opciones como «Revisar el correo» solo abren el borrador para que puedas leerlo, cambiarlo y enviarlo con su propio botón. La única excepción es [Repasar](cards.md): allí, al pulsar Enter, se envía el borrador que aparece completo.

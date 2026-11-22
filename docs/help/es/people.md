@@ -31,7 +31,7 @@ Si una línea es imprecisa, se omite. Si no hay nada concreto que decir, no apar
 
 **Editar** te permite expresarlo a tu manera. Cuando hay novedades, The Machine muestra una **Actualización sugerida** con las opciones **Usarla** y **Mantener la mía**. **Que lo escriba The Machine** vuelve a dejarlo en sus manos.
 
-La preparación de reuniones también usa el resumen, pero solo las líneas correspondientes al tipo de tarea, Trabajo o Personal. Se queda en tu Machine; tu equipo nunca la ve.
+La preparación de reuniones también usa el resumen, pero solo las líneas correspondientes al tipo de tarea, Trabajo o Personal. Se queda en tu Machine; tu equipo nunca lo ve.
 
 ## Cronología
 
@@ -47,7 +47,7 @@ Las pestañas **Trabajo** y **Personal** muestran a las personas según su tipo,
 
 ## Añadir a alguien
 
-Pulsa **Nueva persona** en la parte superior de Personas, o **+** en la barra superior del teléfono. Añade un nombre y, si los tienes, un correo electrónico y una organización. Si ya hay alguien parecido en tu Graph, el formulario lo muestra primero para que puedas abrir esa ficha. **Añadir** abre la página nueva.
+Pulsa **Nueva persona** en la parte superior de Personas, o **+** en la barra superior del teléfono. Añade un nombre y, si los tienes, un correo y una organización. Si ya hay alguien parecido en tu Graph, el formulario lo muestra primero para que puedas abrir esa ficha. **Añadir** abre la página nueva.
 
 La persona que añadas se queda, aunque todavía no haya mensajes. Su primer mensaje se asociará a su ficha.
 
@@ -73,17 +73,17 @@ Nunca se une una dirección compartida, como info@ o una lista de correo, a las 
 
 **Fusionar todo** une todos los pares de la lista a la vez, excepto los que marcaste como **No es la misma**. Si usas **Deshacer** justo después, los separas de nuevo.
 
-Para unir a dos personas por tu cuenta, abre una de sus páginas y elige **⋯**, **Misma persona que…** y la otra persona. La página de la persona fusionada indica el motivo en **Fusionada a partir de**, con **Deshacer** para volver a separar las fichas.
+Para unir a dos personas por tu cuenta, abre una de sus páginas y elige **⋯**, **Misma persona que…** y la otra persona. La página de la persona fusionada indica el motivo en **Unido a partir de**, con **Deshacer** para volver a separar las fichas.
 
 ## Eliminar a alguien para siempre
 
-En su página, abre el menú ⋯ y elige **Eliminar para siempre…** y, después, **Eliminar**. Se eliminarán la persona y todo lo que tu Machine sabe de ella: su ficha, direcciones, datos encontrados, los mensajes que solo intercambiaron entre ustedes y las notas sobre esa persona.
+En su página, abre el menú ⋯ y elige **Eliminar para siempre…** y, después, **Eliminar**. Se eliminarán la persona y todo lo que tu Machine sabe de ella: su ficha, direcciones, datos encontrados, los mensajes que solo os habéis intercambiado entre vosotros dos y las notas sobre esa persona.
 
 Las tareas que la incluyen se conservan, pero se elimina su nombre. No se volverá a añadir, tampoco mediante una importación o una tarea de cumpleaños de Facebook con su nombre o dirección. Esta acción no se puede deshacer.
 
 ## Correo devuelto
 
-Si un correo que envías a alguien se devuelve, su dirección aparece como **Devuelto**, con la fecha, y se muestra primero otra de sus direcciones. Si se conoce otra dirección, los borradores nuevos no se envían a la que se devolvió. Si es la única que tiene, la pantalla de envío te avisa, pero aún puedes enviar el mensaje.
+Si un correo que envías a alguien se devuelve, su dirección muestra **Rebotó el** y la fecha, y se muestra primero otra de sus direcciones. Si se conoce otra dirección, los borradores nuevos no se envían a la que se devolvió. Si es la única que tiene, la pantalla de envío te avisa, pero aún puedes enviar el mensaje.
 
 Un correo cuenta como devuelto cuando el servidor de correo indica que la dirección no existe, o después de 3 errores temporales en una semana. El aviso desaparece cuando esa persona vuelve a escribir desde esa dirección o cuando se envía correctamente un correo a ella.
 
@@ -91,7 +91,7 @@ Un correo cuenta como devuelto cuando el servidor de correo indica que la direcc
 
 Las personas con una dirección de empresa tienen un cargo, una foto, un perfil de LinkedIn y una ciudad, que se buscan como se explica en [datos de organizaciones](organization-data.md). En una Machine alojada, la búsqueda solo recibe su nombre y el dominio de la empresa. Para obtener una foto, Gravatar recibe un hash de su dirección de trabajo, nunca la dirección en sí. Puedes desactivar esta opción en **Ajustes**, en Seguridad: **Buscar contactos de trabajo**.
 
-Este ajuste también desactiva la búsqueda breve en la web antes de una primera reunión (consulta [Preparada para tus reuniones](calendar.md#ready-for-your-meetings)).
+Este ajuste también desactiva la búsqueda breve en la web antes de una primera reunión (consulta [Prepárate para tus reuniones](calendar.md#ready-for-your-meetings)).
 
 Cuando la búsqueda encuentra información, su página también muestra su descripción, desde cuándo ocupa su cargo actual y sus dos cargos anteriores. La preparación también los consulta, pero solo usa la descripción si la persona no tiene una biografía propia.
 
@@ -101,7 +101,7 @@ Outlook añade las fotos de los compañeros de tu organización y de tus contact
 
 Las fotos de WhatsApp y Telegram llegan a través de la sincronización de WhatsApp y la conexión de chats de Telegram: hasta 50 al día de cada servicio, solo para personas que ya están en tu Graph. No se les envía nada. Una importación de cumpleaños de Facebook añade la foto de perfil de una persona que no tenga foto cuando la guardas ([Rutinas](routines.md)). Todo se queda en tu Machine.
 
-En el [Graph del equipo](team-graph.md) de un Fleet de Trabajo, se incluye una copia pequeña de la foto de trabajo en el registro compartido de una persona. Nunca se incluyen fotos de Contactos de Google, WhatsApp, Telegram o Facebook, ni las fotos que hayas cambiado o quitado.
+En el [Graph del equipo](team-graph.md) de un Fleet de trabajo, se incluye una copia pequeña de la foto de trabajo en el registro compartido de una persona. Nunca se incluyen fotos de Contactos de Google, WhatsApp, Telegram o Facebook, ni las fotos que hayas cambiado o quitado.
 
 ## Sobre ti
 
@@ -115,17 +115,17 @@ Los roles que tu Machine detecta en tus mensajes aparecen en la página de esa p
 
 ## Lo que sabe sobre alguien
 
-Los datos sobre una persona aparecen en su página, en **Información conocida**. Aprendizaje conserva los datos generales. **Añadir** permite guardar otro dato con tus propias palabras. Cada dato tiene un menú:
+Los datos sobre una persona aparecen en su página, en **Lo que se sabe de** esa persona. Aprendizaje conserva los datos generales. **Añadir** permite guardar otro dato con tus propias palabras. Cada dato tiene un menú:
 
 - **Editar** lo cambia ahí mismo.
-- **No es sobre esta persona** lo convierte de nuevo en un dato general, en **Aprendizaje**, **Datos**.
+- **No trata de** esa persona: lo convierte de nuevo en un dato general, en **Aprendizaje**, **Datos**.
 - **Quitar** lo elimina de todas partes.
 
 ## Cambios recientes
 
-**Cambios recientes**, desplegado justo encima de la cronología de una persona, organización o proyecto, muestra lo que tu Machine ha cambiado o aprendido sobre esa persona, organización o proyecto: un rol, dónde trabaja alguien, la relación entre dos personas, un dato o un cambio de proyecto. Cada línea muestra la fecha y la fuente. Toca la fuente para leer el mensaje.
+**Cambios recientes**, plegado justo encima de la cronología de una persona, organización o proyecto, muestra lo que tu Machine ha cambiado o aprendido sobre esa persona, organización o proyecto: un rol, dónde trabaja alguien, la relación entre dos personas, un dato o un cambio de proyecto. Cada línea muestra la fecha y la fuente. Toca la fuente para leer el mensaje.
 
-Si una línea es incorrecta, usa **⋯** para corregirla ahí mismo: **Editar**, **Quitar**, **No es sobre esta persona** o **Deshacer** para devolver un proyecto a su ubicación anterior. Se muestran tres líneas; **Mostrar más** muestra el resto.
+Si una línea es incorrecta, usa **⋯** para corregirla ahí mismo: **Editar**, **Quitar**, **No trata de** esa persona o **Deshacer** para devolver un proyecto a su ubicación anterior. Se muestran tres líneas; **Mostrar más** muestra el resto.
 
 Una persona cuya información haya actualizado tu Machine hoy tiene un punto pequeño en la lista de Personas, y **4 personas actualizadas hoy** aparece en la parte superior de la lista con sus nombres. Consulta [The Graph](graph.md).
 

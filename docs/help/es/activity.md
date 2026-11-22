@@ -27,7 +27,7 @@ Cada mensaje, cambio en un documento o calendario, paso en la web y arreglo fusi
 - **Aprobado por voz**: dijiste que sí en Hablar
 - **Se tocó «Hazlo»**: tocaste Hazlo en la tarea
 - **Pedido en el chat**: lo pediste con palabras. Se muestra el inicio de tu mensaje entre comillas. La cita solo aparece mientras esas palabras sigan en tu mensaje.
-- **Seguimiento que envió por sí sola**, **Arreglo pequeño, fusionado por sí sola**, **Documento privado nuevo, creado por sí sola** o **Preparado con antelación, por sí sola**: lo permitió un ajuste tuyo o una de las reglas de The Machine
+- **Seguimiento que envió por sí sola**, **Arreglo pequeño, lo fusionó ella sola**, **Documento privado nuevo, creado por sí sola** o **Preparado con antelación, por sí sola**: lo permitió un ajuste tuyo o una de las reglas de The Machine
 - **Sin aprobación registrada**: no se registró nada que lo autorizara. También se envía a nuestros [informes de errores](error-reports.md), para que podamos encontrar qué falló en el proceso.
 
 En los pasos en la web también aparece la ejecución de una tarea que hizo clic o escribió en una página, junto con lo que la permitió. Si el trabajo continúa después de posponerlo, mantiene la autorización que tenía antes de posponerlo.
@@ -40,6 +40,6 @@ Elige un tipo en la lista de arriba, como **Mensajes** o **Fleet**. **Rechazado 
 
 ## Otros lugares
 
-El chat de una tarea sigue contando su propia historia; Actividad incluye un enlace. En Fleet, **Actividad** muestra las mismas líneas de tus Fleet y tus aprendizajes, con **Retirar** para quitar un aprendizaje. En Ajustes, **Seguridad** y **Ver cada revisión en Actividad** te llevan a las revisiones de nuestro equipo.
+El chat de una tarea sigue contando su propia historia; Actividad incluye un enlace. En Fleet, **Actividad** muestra las mismas líneas de tus Fleets y tus aprendizajes, con **Retirar** para quitar un aprendizaje. En Ajustes, **Seguridad** y **Ver cada revisión en Actividad** te llevan a las revisiones de nuestro equipo.
 
 Actividad solo muestra lo que pasó. No cambia lo que puede hacer The Machine.

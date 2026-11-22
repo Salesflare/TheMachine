@@ -7,7 +7,7 @@ code: shared_graph.py, fleet_trust.py, dashboard.html
 order: 2
 translated: fc842bc761a3ab17
 ---
-En un Fleet de trabajo, tu Machine puede compartir el trabajo con clientes con las Machine de tus compañeros, como en un CRM compartido. Es **Experimental** y viene desactivado.
+En un Fleet de trabajo, tu Machine puede compartir el trabajo con clientes con las Machines de tus compañeros, como en un CRM compartido. Es **Experimental** y viene desactivado.
 
 ## Activarlo
 
@@ -62,7 +62,7 @@ Los hilos personales y solo entre compañeros no se comparten. Tampoco se compar
 Si tu Machine no está segura, no comparte el contenido. Esos hilos esperan en **¿Compartir esto?**, agrupados por tipo (por ejemplo, «Intercambios con socios y anuncios»), y cada grupo incluye una sugerencia:
 
 - **Compartir con el equipo**: con todos los miembros del Fleet.
-- **Compartir con…**: solo con los compañeros que elijas, como un miembro del tablero para hablar de inversiones.
+- **Compartir con…**: solo con los compañeros que elijas, como un miembro del consejo para hablar de inversiones.
 - **Mantener en privado**: solo tú podrás verlo.
 
 Con un solo toque decides qué hacer con todo un grupo. Abre un grupo para desmarcar los hilos que quieras decidir uno por uno.
@@ -89,7 +89,7 @@ Si mantienes en privado dos hilos de la misma empresa, tu Machine te preguntará
 
 ## Quién puede verlo
 
-Solo las Machine de tus compañeros. El contenido está cifrado de extremo a extremo. The Machine Network lo transmite, pero no puede leerlo.
+Solo las Machines de tus compañeros. El contenido está cifrado de extremo a extremo. The Machine Network lo transmite, pero no puede leerlo.
 
 ## Incorporación y dispositivos nuevos
 
@@ -107,7 +107,7 @@ Desde ese momento, no recibe nada nuevo. Lo que ya compartió permanece con el e
 
 Un administrador desactiva **Compartir el Graph en este Fleet** en **Qué se comparte**. No se comparte nada nuevo.
 
-**Desactivar** conserva lo que los compañeros ya tienen. **Desactivar y quitar los datos compartidos** hace que todas las Machine lo eliminen. Cuando se vuelve a activar el uso compartido, cada persona revisa el contenido de nuevo antes de compartirlo.
+**Desactivar** conserva lo que los compañeros ya tienen. **Desactivar y quitar los datos compartidos** hace que todas las Machines lo eliminen. Cuando se vuelve a activar el uso compartido, cada persona revisa el contenido de nuevo antes de compartirlo.
 
 ## Dejar de compartir tu trabajo
 

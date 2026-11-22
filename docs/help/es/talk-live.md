@@ -10,7 +10,7 @@ translated: 60168384f08de74e
 ---
 ## Empieza una conversación
 
-En el chat de una tarea, toca la onda junto al micro. Permite el micro si tu navegador lo pide. Cuando la barra diga **En vivo**, habla como en una llamada. The Machine responde en voz alta, y puedes hablar encima para interrumpirla.
+En el chat de una tarea, toca la onda junto al micro. Permite el micro si tu navegador lo pide. Cuando la barra diga **En marcha**, habla como en una llamada. The Machine responde en voz alta, y puedes hablar encima para interrumpirla.
 
 Conoce la tarea en la que estás: sus mensajes, su borrador y su chat. También puede consultar tus otras tareas. Di "márcala como hecha", "posponla" o "no hace falta" y lo hace ella misma. Di "no, eso no" justo después para deshacerlo. Pospone para cualquier momento, como "en una hora" o "mañana a las 9", en la zona horaria de [Horario laboral](work-hours.md).
 
@@ -30,7 +30,7 @@ También llega al resto de The Machine. Pregunta por una persona, una organizaci
 
 También recuerda tus conversaciones anteriores con ella. Pregunta "¿qué decidí sobre el offsite?" o "¿qué dije de Acme la semana pasada?" y te lo dice, con cuándo lo dijiste. Solo lo hace Hablar en la barra lateral, no Hablar en el chat de una tarea.
 
-Mientras tanto puedes ir a otra página: la barra queda abajo, y **Hablar** en la barra lateral te trae de vuelta. Esta conversación dura hasta 30 minutos. Sigue en segundo plano en computadoras y Android. En iPhone, se detiene cuando la app sale de la pantalla.
+Mientras tanto puedes ir a otra página: la barra queda abajo, y **Hablar** en la barra lateral te trae de vuelta. Esta conversación dura hasta 30 minutos. Sigue en segundo plano en ordenadores y Android. En iPhone, se detiene cuando la app sale de la pantalla.
 
 ## Pide cosas y envía con un sí
 
@@ -43,9 +43,9 @@ Para enviar un borrador, dilo. The Machine pregunta primero, diciendo a quién y
 - Envía exactamente el borrador que leyó. Si cambia después de la pregunta, lo vuelve a leer y vuelve a preguntar. Una pregunta sin respuesta en 3 minutos caduca.
 - Si tu respuesta no es un sí claro, no se envía nada y vuelve a preguntar. "No" no envía nada.
 - Un borrador que ya viste en pantalla, o que oíste en esta conversación, no se vuelve a leer: solo pregunta, por ejemplo "¿Se lo envío a Pat?".
-- Di "envía los dos" o "envía todos los listos" y nombra a todos en una pregunta. Un sí envía cada uno.
+- Di "envía los dos" o "envía todos los preparados" y nombra a todos en una pregunta. Un sí envía cada uno.
 - Hablar dice cuántos segundos tienes y muestra **Deshacer** con la misma cuenta atrás. Tócalo, o di "deshacer" o "espera".
-- Cuando la Machine lo envía, Hablar dice "Enviado." y la barra y la tarea muestran **Enviado a** esa persona con la hora. Si no salió, Hablar dice por qué. Pregunta "¿se envió?" cuando quieras: lo comprueba, nunca adivina.
+- Cuando The Machine lo envía, Hablar dice "Enviado." y la barra y la tarea muestran **Enviado a** esa persona con la hora. Si no salió, Hablar dice por qué. Pregunta "¿se envió?" cuando quieras: lo comprueba, nunca adivina.
 
 Siempre puedes tocar **Aprobar** en su lugar.
 

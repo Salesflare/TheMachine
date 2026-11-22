@@ -7,10 +7,10 @@ order: 3
 keywords: quiet hours, weekend, evening, night, do not disturb, time zone
 translated: 062ccef1310f228a
 ---
-En **Ajustes**, **Notificaciones**, en **Horario laboral**:
+Elige cuándo puede escribirte tu Machine. En **Ajustes**, **Notificaciones**, en **Horario laboral**:
 
 - **Días laborables**: las tareas de trabajo y el trabajo pospuesto esperan a un día laborable.
-- **Mensajes desde** y **Hasta**: fuera de estas horas no se te envía nada, ni push, ni Telegram, ni correo.
+- **Mensajes desde** y **Hasta**: fuera de estas horas no te llega nada: ni notificaciones, ni Telegram, ni correo.
 - **Lo pospuesto vuelve a las**: cuándo vuelve algo pospuesto un día o más. El resumen matutino llega al menos 5 minutos después, para que esté en él.
 - **Resumen matutino**: cuándo llega el resumen de la mañana. Si lo pospuesto vuelve más tarde, el resumen se mueve con ello.
 - **Resumen de la tarde**: cuándo llega el resumen de la tarde. Empieza 15 minutos antes de **Hasta** y sigue esa hora hasta que elijas una propia.

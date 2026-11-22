@@ -7,13 +7,13 @@ code: follow_ups.py, assistant.py, dashboard.html
 order: 7
 translated: 76bea8f586963be1
 ---
-Cuando alguien deja de responder en un tablero, tu Machine prepara el borrador del seguimiento por ti, con tu tono y en la misma conversación. Está desactivado hasta que lo actives. Si una de tus habilidades encaja con el tablero, los borradores la siguen, incluido el orden de la información en el correo.
+Cuando una persona de un tablero deja de responder, tu Machine prepara el borrador del seguimiento por ti, con tu tono y en la misma conversación. Está desactivado hasta que lo actives. Si una de tus habilidades encaja con el tablero, los borradores la siguen, incluido el orden de la información en el correo.
 
 ## Activarlo
 
 Pulsa **⋯** en un tablero y luego **Seguimientos…**. Marca **Hacer seguimiento si no hay respuesta**. Se aplica a todos los proyectos del tablero. También puedes pulsar **Seguimientos desactivados** debajo del nombre del tablero o **Hacerles seguimiento** en una etapa con proyectos que llevan más de 10 días sin respuesta.
 
-Para un solo proyecto, pulsa **Seguimientos…** en **⋯**, en el tablero o en la página del proyecto. **Para este proyecto** permite elegir **Activado**, **Desactivada** o la configuración del tablero. La configuración del proyecto prevalece sobre la del tablero.
+Para un solo proyecto, pulsa **Seguimientos…** en **⋯**, en el tablero o en la página del proyecto. **Para este proyecto** permite elegir **Activado**, **Desactivado** o la configuración del tablero. La configuración del proyecto prevalece sobre la del tablero.
 
 ## Ajustes
 
@@ -26,7 +26,7 @@ Para un solo proyecto, pulsa **Seguimientos…** en **⋯**, en el tablero o en 
 
 ## Preguntar antes o enviar automáticamente
 
-**Pregúntame antes de enviar** es la opción predeterminada: los borradores esperan en tus tareas. **Enviar sin preguntar** da permiso permanente para ese tablero o proyecto. Cualquier caso inusual o error seguirá esperando tu revisión, y el nivel de cautela siempre pregunta. Un seguimiento nunca se envía dos veces. Los seguimientos no te avisan, ni mediante notificaciones push ni por correo: sus borradores esperan en tu lista y en el resumen de la mañana.
+**Pregúntame antes de enviar** es la opción predeterminada: los borradores esperan en tus tareas. **Enviar sin preguntar** da permiso permanente para ese tablero o proyecto. Cualquier caso inusual o error seguirá esperando tu revisión, y el nivel Prudente siempre pregunta. Un seguimiento nunca se envía dos veces. Los seguimientos no te avisan, ni mediante notificaciones push ni por correo: sus borradores esperan en tu lista y en el resumen de la mañana.
 
 Justo antes de enviar un seguimiento, se vuelve a revisar el hilo. Si alguien escribió desde que se preparó el borrador, no se envía: "No se ha enviado: hay un mensaje nuevo en el hilo". La tarea muestra ese mensaje, quién lo escribió y cuándo, junto con **Leerla** y **Rehacer para este mensaje**, que pide un borrador nuevo que tenga en cuenta el mensaje.
 

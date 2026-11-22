@@ -37,18 +37,18 @@ Mientras la tiene un compañero, la tarea lo indica en una línea («Con Pat · 
 
 Cada tarea se pasa una sola vez a cada compañero: mientras Pat la tenga, si vuelves a elegir a Pat en el formulario de traspaso, se inicia un seguimiento. **Preguntar cómo va** prepara el mismo recordatorio, con una línea tuya si añades una.
 
-**Recuperar de** Pat está activado de forma predeterminada; desactívalo para que ambos tengan la tarea. No se envía nada hasta que elijas **Pasar**. Se avisa a la Machine de Pat y su copia de la tarea desaparece.
+**Recuperarlo de** Pat está activado de forma predeterminada; desactívalo para que ambos tengan la tarea. No se envía nada hasta que elijas **Pasar**. Se avisa a la Machine de Pat y su copia de la tarea desaparece.
 
 ## Si la rechaza
 
 Puede explicar por qué: no le corresponde, ya está hecha o no tiene tiempo esta semana. Después, elige **Lo hago yo**, **Pasar a otra persona** o **Marcar como hecha**. Lo mismo ocurre si no responde a tiempo. **Lo hago yo** hace que la tarea vuelva a ser tuya y aparezca en Para ti.
 
-## Alguien fuera de Network
+## Alguien fuera de la Network
 
-Elige **Por correo**: tu Machine prepara un correo para que lo envíes. Mientras escribes, primero te sugiere personas de tu Fleet y luego de tu empresa. Añade una página de tarea para que puedan responder con un toque: consulta [Páginas de tareas](task-pages.md).
+Elige **Por correo**: tu Machine prepara un correo para que lo envíes. Mientras escribes, primero te sugiere personas de tu Fleet y luego de tu empresa. Añade una página de tarea para que puedan responder con un toque: consulta [Páginas de tarea](task-pages.md).
 
-Solo para tareas de Trabajo. Marca qué quieres incluir: unas líneas sobre la tarea, su borrador, enlaces y archivos. El contenido Personal y Solo tú no se incluye. **Preparar correo** añade el correo a la tarea: léelo y envíalo desde tu propio buzón. No se hace seguimiento.
+Solo para tareas de Trabajo. Marca qué quieres incluir: unas líneas sobre la tarea, su borrador, enlaces y archivos. El contenido Personal y Solo tú no se incluye. **Preparar correo** añade el correo a la tarea: léelo y envíalo desde tu propio buzón. Sin rastreo.
 
 Las tareas de Intercom o Slack no tienen un buzón propio, así que sus correos se envían desde tu buzón de Trabajo.
 
-Luego, la tarea sigue la promesa hasta que respondan que está hecha o la marques como hecha. El correo termina con «Hazte cargo en tu propia Machine»: si se registran desde ese enlace, pueden unirse a tu Fleet y la tarea pasa a su Machine. Desactiva esa frase en **Ajustes**, en Fleet.
+Luego, la tarea lo sigue como una promesa hasta que respondan que está hecha o la marques como hecha. El correo termina con «Hazte cargo en tu propia Machine»: si se registran desde ese enlace, pueden unirse a tu Fleet y la tarea pasa a su Machine. Desactiva esa frase en **Ajustes**, en Fleet.

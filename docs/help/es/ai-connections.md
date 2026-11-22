@@ -14,15 +14,15 @@ Claude, ChatGPT, Cursor, Codex, GBrain y otras IA pueden conectarse a tu Machine
 
 Con **Leer y editar**, también pueden añadir una tarea o un borrador de correo, y actualizar tu Graph: guardar un dato, corregir detalles, campos y etiquetas, o añadir una línea al resumen de una persona.
 
-Cada cambio aparece en **Actividad**, con la opción de **Deshacer**. Nunca combinan, eliminan ni comparten registros. Lo que guardan aparece marcado como **AI:** junto con su nombre, y tu Machine lo considera una afirmación suya, nunca una instrucción tuya.
+Cada cambio aparece en **Actividad**, con la opción de **Deshacer**. Nunca fusionan, eliminan ni comparten registros. Lo que guardan aparece marcado como **AI:** junto con su nombre, y tu Machine lo considera una afirmación suya, nunca una instrucción tuya.
 
 Un borrador espera hasta que lo leas y pulses **Enviar**. Una IA conectada nunca envía nada ni actúa en tu nombre.
 
 ## Conectar una IA
 
-Abre **Ajustes**, **Apps**. Debajo de **Las apps de The Machine** están **Añadir en ChatGPT** y **Añadir en Claude**. En **O añádela con una dirección** encontrarás la dirección de la app oficial, `https://mcp.themachine.computer/mcp`, que sirve para todas las Machine, y **Tu dirección**, `https://<your name>.mcp.themachine.computer/mcp`. Ambas tienen la opción **Copiar**.
+Abre **Ajustes**, **Apps**. Debajo de **Las apps de The Machine** están **Añadir en ChatGPT** y **Añadir en Claude**. En **O añádela con una dirección** encontrarás la dirección de la app oficial, `https://mcp.themachine.computer/mcp`, que sirve para todas las Machines, y **Tu dirección**, `https://<your name>.mcp.themachine.computer/mcp`. Ambas tienen la opción **Copiar**.
 
-Si tienes una Machine en tu propio ordenador, pulsa primero **Configurar**, debajo de **Obtener tu dirección**. Se abrirá una página de tu cuenta: comprueba que aparece el mismo código, confírmalo y elige un nombre. Tu Machine se vinculará automáticamente, sin reiniciarse. Este paso es necesario en ambos casos.
+Si tienes una Machine en tu propio ordenador, pulsa primero **Configurar**, debajo de **Consigue tu dirección**. Se abrirá una página de tu cuenta: comprueba que aparece el mismo código, confírmalo y elige un nombre. Tu Machine se vinculará automáticamente, sin reiniciarse. Este paso es necesario en ambos casos.
 
 Después, tu Machine configurará automáticamente su dirección segura. Tardará unos minutos.
 
@@ -56,7 +56,7 @@ En ambos casos, quien decide es tu Machine. Solo puede entrar una IA que hayas a
 
 Cada conexión solo ve su área. Trabajo incluye las tareas y promesas de tus cuentas de trabajo, las personas, empresas y proyectos del trabajo, y el resumen del equipo de tu Fleet de trabajo. Personal incluye todo lo demás. El texto de los mensajes se queda en tu Machine, a menos que actives **Mensajes**. Si no lo haces, una IA solo verá el remitente, el asunto y la fecha de las fuentes de una tarea.
 
-Los registros de Team Graph de tus compañeros nunca se comparten con una IA externa.
+Los registros del Graph del equipo de tus compañeros nunca se comparten con una IA externa.
 
 ## Mensajes
 

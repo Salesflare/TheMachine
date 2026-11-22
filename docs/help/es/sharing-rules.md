@@ -10,7 +10,7 @@ translated: 1ae445260f88518d
 ---
 ## Configúralas
 
-Decide qué le cuenta tu Machine a tu Fleet. En la pestaña **Fleet**, abre **Compartiendo**. Cada tipo de pregunta tiene una regla:
+Decide qué le cuenta tu Machine a tu Fleet. En la pestaña **Fleet**, abre **Compartir**. Cada tipo de pregunta tiene una regla:
 
 - **Pregúntame primero**: ves cada pregunta y decides.
 - **Siempre**: tu Machine responde por su cuenta.
@@ -21,11 +21,11 @@ Nunca comparte el contenido de tus correos ni de qué tratan tus reuniones. **¿
 
 Las reglas solo se pueden cambiar en el panel, nunca desde un mensaje.
 
-## En una Fleet de trabajo
+## En un Fleet de trabajo
 
-En una Fleet de trabajo estándar, las reglas para quién conoce a alguien, el contexto de las reuniones y quién se encarga de los correos compartidos solo pueden ser **Siempre** o **Nunca**. Con **Siempre**, responde solo con lo que [Graph del equipo](team-graph.md) ya comparte con tu equipo, y solo menciona a las personas que comparte. Una regla guardada como **Pregúntame primero** funciona como **Siempre**.
+En un Fleet de trabajo Estándar, las reglas para quién conoce a alguien, el contexto de las reuniones y quién se encarga de los correos compartidos solo pueden ser **Siempre** o **Nunca**. Con **Siempre**, responde solo con lo que el [Graph del equipo](team-graph.md) ya comparte con tu equipo, y solo menciona a las personas que comparte. Una regla guardada como **Pregúntame primero** funciona como **Siempre**.
 
-Mientras Graph del equipo no esté compartiendo, quién conoce a alguien y el contexto de las reuniones también mantienen la opción **Pregúntame primero**. Lo mismo ocurre en una Fleet cuidadosa. Consulta [Fleets](fleet.md#answered-by-itself-in-a-work-fleet).
+Mientras el Graph del equipo no esté compartiendo, quién conoce a alguien y el contexto de las reuniones también mantienen la opción **Pregúntame primero**. Lo mismo ocurre en un Fleet Prudente. Consulta [Fleets](fleet.md#answered-by-itself-in-a-work-fleet).
 
 ## La primera vez que alguien pregunta
 

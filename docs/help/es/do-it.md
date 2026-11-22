@@ -43,7 +43,7 @@ Puede enviar un correo, un mensaje directo de Slack o un mensaje de WhatsApp, Te
 ## Cuando no puede hacerlo
 
 - «No se puede enviar desde aquí» significa que tienes que copiar el borrador con **Copiar borrador** y enviarlo tú.
-- **Necesita tu ayuda** significa que tiene una pregunta: **Responder**. **Atascada** significa que se detuvo sin hacerte ninguna pregunta; la tarea explica por qué.
+- **Necesita tu ayuda** significa que tiene una pregunta: pulsa **Responder**. **Atascada** significa que se detuvo sin hacerte ninguna pregunta; la tarea explica por qué.
 - ¿Te pregunta más de una cosa? Cada pregunta tiene sus propias opciones o un campo breve, a veces rellenado con tu respuesta anterior. **Responder** las envía todas juntas.
 - ¿Falta algo que solo tú tienes? Te lo pide y redacta solo lo que pueda hacer sin eso, como una respuesta para confirmar una fecha. No redacta una respuesta que se limite a decir que ya llegará.
 - **Reintentar** vuelve a ejecutar la tarea. **Pedir cambios** sirve para pedir otra cosa. Si la tarea está atascada, aparece primero **Reintentar** y **Detalles** muestra lo que intentó hacer.

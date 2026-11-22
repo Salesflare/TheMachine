@@ -18,13 +18,13 @@ La página **Tareas** las organiza así:
 - **Esperando a otros**: tareas plegadas cuyo siguiente paso depende de otra persona (más abajo).
 - **Vuelve más tarde**: tareas pospuestas y tareas sin respuesta a **¿Aún hace falta?** (más abajo).
 - **Promesas**: lo que prometiste y lo que otras personas te prometieron. Consulta [Promesas](promises.md).
-- **Hecho / descartado**: todas las tareas terminadas, de la más reciente a la más antigua, con el momento en que terminaron, como «Hecha hace 5 minutos». Las tareas que parecen terminadas ya llevan la marca **Parece hecho**.
+- **Hecho / descartado**: todas las tareas terminadas, de la más reciente a la más antigua, con el momento en que terminaron, como «Hecha hace 5 minutos». Las tareas que parecen terminadas ya llevan la marca **Parece hecha**.
 
 Después de enviar algo, aparece una nota breve que indica adónde fue la tarea, como «Enviado. Se movió a Hecho» o «Enviado. Se movió a Más tarde hasta el lunes». **Abrir** te lleva a la tarea. La búsqueda encuentra tareas por título o por destinatario, también en Más tarde y Hecho.
 
 **Para ti** muestra primero lo que está vencido o vence mañana como muy tarde, luego las preguntas de tu Fleet, después los seguimientos de un tablero y, por último, el resto. Dentro de cada grupo, muestra primero lo más reciente. Una tarea conserva su posición mientras tu Machine la prepara y cuando termina: solo cambia su estado. En los demás grupos abiertos, primero aparecen las tareas vencidas o que vencen mañana como muy tarde y, después, el resto, de la más reciente a la más antigua. La barra lateral mantiene el mismo orden.
 
-**Parece hecho** significa que tu Machine ve que ya está terminado, como «PR #3451 fusionada», pero aún no se ha cerrado. **Reabrir** la devuelve a tu lista y tu Machine aprende de ello. Estas tareas nunca aparecen como atrasadas. Al cabo de un día, se cierra sola y puedes usar **Deshacer**. Una tarea que ya resolviste por tu cuenta, por ejemplo al responder en Gmail o Slack, también se cierra sola.
+**Parece hecha** significa que tu Machine ve que ya está terminada, como «PR #3451 fusionada», pero aún no se ha cerrado. **Reabrir** la devuelve a tu lista y tu Machine aprende de ello. Estas tareas nunca aparecen como atrasadas. Al cabo de un día, se cierra sola y puedes usar **Deshacer**. Una tarea que ya resolviste por tu cuenta, por ejemplo al responder en Gmail o Slack, también se cierra sola.
 
 Si un mensaje viene de una dirección que se parece a la de alguien que conoces, como sam@acme-corp.example en vez de sam@acmecorp.example, la tarea lo indica claramente: «Esta persona no es Sam Lee». La muestra con su propia dirección, nunca con el nombre que haya usado. Tu Machine comprueba estos mensajes con la persona de la dirección que ya tienes, nunca con quien escribió el mensaje.
 
@@ -56,7 +56,7 @@ Una tarea siempre puede leer los mensajes de los que procede. Si necesita otros 
 
 El trabajo que te llega a una cuenta personal, como un cliente por WhatsApp o un pedido en tu buzón personal, es Trabajo desde el principio. Una tarea que hayas movido o colocado tú se queda donde la pusiste. Trabajo o Personal determina dónde aparece una tarea y con quién se comparte, pero no dónde responde: la respuesta siempre se envía en la conversación correspondiente, también después de moverla, salvo que elijas otra opción.
 
-Una tarea Personal de este tipo sigue respondiendo desde la dirección de trabajo a la que llegó el correo y nunca aparece en una Fleet de Trabajo ni en el Graph del equipo.
+Una tarea Personal de este tipo sigue respondiendo desde la dirección de trabajo a la que llegó el correo y nunca aparece en un Fleet de trabajo ni en el Graph del equipo.
 
 Si tienes dos tareas pendientes o más, **Repasar**, en el encabezado de Para ti, las recorre de una en una y en el orden de la lista. Muestra cada borrador completo, con las opciones **Enviar** o **Hazlo**, **Pedir cambios**, **Posponer** y **Omitir**. En un ordenador, Enter envía lo que aparece en pantalla, `S` pospone, `→` omite y Esc sale. Debajo del título, el encabezado también indica cuánto tardarás a tu ritmo, por ejemplo, «unos 2 min».
 
@@ -104,7 +104,7 @@ Una factura que tienes que pagar tú, de cualquier país, se convierte en una ta
 
 Una tarea que solo era pertinente hasta una hora determinada, como una confirmación antes de una reunión, se cierra sola después de esa hora. Pasa a **Hecho / descartado** con el motivo «Ya no hace falta». Puedes usar **Deshacer** durante un día para recuperarla.
 
-Antes de marcar como preparada un mensaje o un traspaso para alguien, tu Machine comprueba los chats recientes con las personas implicadas, incluidos los chats de grupo, y espera a que Slack los lea. Si un mensaje posterior indica que ya está resuelto, por ejemplo, porque se lo pidieron y dijo que sí, la tarea se cierra sola. Puedes usar **Deshacer** durante un día para recuperarla.
+Antes de marcar como preparado un mensaje o un traspaso para alguien, tu Machine comprueba los chats recientes con las personas implicadas, incluidos los chats de grupo, y espera a que Slack los lea. Si un mensaje posterior indica que ya está resuelto, por ejemplo, porque se lo pidieron y dijo que sí, la tarea se cierra sola. Puedes usar **Deshacer** durante un día para recuperarla.
 
 Si un mensaje nuevo cambia el plan, como cuando una fiesta cambia de lugar o se cancela una reserva, The Machine actualiza sus tareas por su cuenta. Si una tarea sigue siendo necesaria, se adapta al nuevo plan. Si ya no queda nada por hacer, pasa a **Hecho / descartado** con el motivo «No hace falta». En el chat aparece «Actualizado:» seguido del motivo, y puedes usar **Deshacer** durante un día para recuperarla.
 

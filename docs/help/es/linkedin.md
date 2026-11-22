@@ -9,7 +9,7 @@ translated: bc67fbc21c77a97a
 ---
 ## Qué lee
 
-Lee tus mensajes de LinkedIn en el navegador de tu Machine, con tu sesión iniciada, de vez en cuando durante el día. No marca nada como leído. También recibe mensajes de conversaciones que archivaste y solicitudes de mensajes; el spam queda fuera.
+Lee tus mensajes de LinkedIn en el navegador de tu Machine, con tu sesión iniciada, de vez en cuando durante el día. No marca nada como leído. También entran las respuestas en conversaciones que archivaste y las solicitudes de mensajes; el spam queda fuera.
 
 ## Cargos y empresas
 
@@ -33,7 +33,7 @@ LinkedIn no ofrece una forma oficial de hacer esto. Es muy poco probable que lee
 
 En una Machine alojada, también puedes usar tu página de configuración en app.themachine.computer/setup: ve a **Más fuentes**, abre LinkedIn, inicia sesión cuando te lo pida y pulsa **Conectar**. En tu propio ordenador, `assistant connect linkedin` hace lo mismo desde un terminal.
 
-Una segunda cuenta de LinkedIn tendrá su propio navegador. Si LinkedIn cierra la sesión de tu Machine, consulta [Se cerró la sesión de un sitio](signed-out.md).
+Una segunda cuenta de LinkedIn tendrá su propio navegador. Si LinkedIn cierra la sesión de tu Machine, consulta [Se cerró la sesión en un sitio](signed-out.md).
 
 ## Si LinkedIn te pide un código
 

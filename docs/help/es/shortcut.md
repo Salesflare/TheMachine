@@ -25,7 +25,7 @@ Nada en Shortcut. Solo lee.
 
 ## Pegar un token en su lugar
 
-Debajo de **O pega un token de API**, pulsa **Obtén tu token**. Shortcut abre su página API Tokens en una pestaña nueva: crea un token, cópialo, pégalo y pulsa **Conectar**. En tu propio ordenador, `assistant connect shortcut` también te lo pide. Un token tiene acceso completo a tu cuenta, pero The Machine solo lo usa para leer.
+Debajo de **O pega un token de API**, pulsa **Consigue tu token**. Shortcut abre su página API Tokens en una pestaña nueva: crea un token, cópialo, pégalo y pulsa **Conectar**. En tu propio ordenador, `assistant connect shortcut` también te lo pide. Un token tiene acceso completo a tu cuenta, pero The Machine solo lo usa para leer.
 
 ## Quitarla
 

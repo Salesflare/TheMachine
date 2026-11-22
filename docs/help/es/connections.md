@@ -9,7 +9,7 @@ translated: 0896d8f689ca9699
 ---
 ## Cómo va cada una
 
-La pestaña **Conexiones** muestra tus fuentes por tipo, con **Inicios de sesión** y **Revisiones** debajo de una línea. En el móvil, toca un tipo para abrirlo y **Conexiones** para volver. Primero se abre el tipo que tenga una fuente que requiera tu atención. Cada fuente aparece en una fila: muestra su estado (Conectada, Esperando la primera sincronización, Reconectando automáticamente o Necesita tu ayuda) y lo que ha recibido últimamente. Tócala para ver su tarjeta y **Detalles**.
+La pestaña **Conexiones** muestra tus fuentes por tipo, con **Inicios de sesión** y **Revisiones** debajo de una línea. En el móvil, toca un tipo para abrirlo y **Conexiones** para volver. Primero se abre el tipo que tenga una fuente que requiera tu atención. Cada fuente aparece en una fila: muestra su estado (Conectado, Esperando la primera sincronización, Reconectando automáticamente o Necesita tu ayuda) y lo que ha recibido últimamente. Tócala para ver su tarjeta y **Detalles**.
 
 Si una sincronización falla, pero otra posterior lo soluciona, se muestra en gris. Solo se marca como problema el fallo más reciente, junto con la hora a la que volverá a intentarlo.
 
@@ -73,7 +73,7 @@ Un sitio puede tener varias cuentas, como **Trabajo** y **Personal**. **Guardar 
 - **1Password**: exporta un archivo CSV desde la aplicación 1Password en un ordenador y luego selecciona ese archivo. Si `op` de 1Password tiene una sesión iniciada en tu Machine, lo lee desde ahí (también `lpass` de LastPass).
 - **Desde un archivo exportado**: un archivo CSV de 1Password, LastPass, Bitwarden o Chrome. Elimínalo cuando termines.
 
-Después, marca los inicios de sesión que quieras conservar. Tu Machine nunca inicia sesión en tu gestor de contraseñas por ti, ni escribe ni lee tu contraseña maestra, y tampoco muestra la página a la asistente. Escribes tú misma la contraseña en la página.
+Después, marca los inicios de sesión que quieras conservar. Tu Machine nunca inicia sesión en tu gestor de contraseñas por ti, ni escribe ni lee tu contraseña maestra, y tampoco muestra la página al asistente: la contraseña la escribes tú en la página.
 
 Un inicio de sesión guardado solo se usa en su propia dirección web: el mismo sitio, `https` y el mismo puerto. No se usa en una dirección parecida ni en otro subdominio.
 

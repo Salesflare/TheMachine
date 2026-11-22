@@ -9,7 +9,7 @@ translated: 6e7ca235dc502297
 ---
 ## Qué lee
 
-Eventos de tu cuenta de Stripe que pueden requerir tu atención: pagos fallidos, disputas, cancelaciones y suscripciones nuevas de importe elevado, junto con el cliente al que corresponden. El correo electrónico del cliente vincula el evento con esa persona y su organización en [Graph](graph.md).
+Eventos de tu cuenta de Stripe que pueden requerir tu atención: pagos fallidos, disputas, cancelaciones y suscripciones nuevas de importe elevado, junto con el cliente al que corresponden. El correo del cliente vincula el evento con esa persona y su organización en [Graph](graph.md).
 
 ## Qué puede hacer
 
@@ -33,12 +33,12 @@ En tu propio ordenador, si todavía no está disponible la opción para iniciar 
 
 ## Conectarla una vez para todo el equipo
 
-En una Fleet de trabajo, una persona propietaria o administradora conecta Stripe una vez y la comparte con el equipo:
+En un Fleet de trabajo, una persona propietaria o administradora conecta Stripe una vez y la comparte con el equipo:
 
 1. Conecta Stripe en tu propia Machine (arriba). El recuadro **Conexiones compartidas** de la pestaña Fleet también tiene la opción **Conectar Stripe**.
 2. En la pestaña Fleet, abre **Compartir Stripe**. Todos aparecen seleccionados; desmarca a quien no deba tener acceso. Pulsa **Compartir**.
 
-Las Machines de tus compañeros también podrán leer los datos. Conexiones muestra quién la compartió, y solo los administradores de la Fleet pueden cambiarla o detenerla. Tu Machine renueva su acceso cada hora, así que, mientras esté apagada, su acceso a Stripe se pausa. Nadie obtiene tus credenciales de inicio de sesión. Más información: [Fleets](fleet.md).
+Las Machines de tus compañeros también podrán leer los datos. Conexiones muestra quién la compartió, y solo los administradores del Fleet pueden cambiarla o detenerla. Tu Machine renueva su acceso cada hora, así que, mientras esté apagada, su acceso a Stripe se pausa. Nadie recibe tu inicio de sesión. Más información: [Fleets](fleet.md).
 
 Si un compañero también conecta por su cuenta la misma cuenta de Stripe, solo la lee una vez: la conexión compartida queda en pausa.
 
@@ -48,7 +48,7 @@ No se puede compartir una conexión de Stripe configurada mediante un servicio c
 
 - En el panel: **Conexiones**, abre Stripe, **Detalles** y luego **Desconectar**. Los datos que ya haya incorporado se mantienen.
 - En una Machine alojada, Stripe muestra **Desconectar ↗** si iniciaste sesión. Esta opción abre tu página de configuración: pulsa **Quitar** junto a Stripe.
-- Si la compartiste con una Fleet, primero pulsa **Dejar de compartir** en la pestaña Fleet.
+- Si la compartiste con un Fleet, primero pulsa **Dejar de compartir** en la pestaña Fleet.
 
 ## Revocar el acceso en Stripe
 

@@ -11,7 +11,7 @@ Instala The Machine como app en tu móvil o en el ordenador para recibir una not
 
 La tarea **Saca más partido a The Machine**, en la parte superior de Tareas, tiene una fila para cada opción: **Descarga la app para el móvil** (consulta [La app móvil](mobile-app.md)), **Activar notificaciones** e **Instalar en este ordenador**. Solo se muestran las opciones que aún no están disponibles en ese dispositivo. Pulsa la × de una fila para cerrarla. Estos controles también están en **Ajustes**, **General**, **Este dispositivo**.
 
-En la app móvil, aparece **Recibe un aviso cuando algo necesite tu atención.** mientras las notificaciones estén desactivadas. **Activar** se lo pide al móvil o abre sus ajustes. **×** oculta el aviso durante 7 días.
+En la app móvil, aparece **Recibe un aviso cuando algo te necesite.** mientras las notificaciones estén desactivadas. **Activar** se lo pide al móvil o abre sus ajustes. **×** oculta el aviso durante 7 días.
 
 ## En un ordenador (Chrome o Edge)
 
@@ -60,7 +60,7 @@ El panel sigue funcionando en un avión o en un tren. Una barra en la parte supe
 - Lo que escribes en un chat permanece en el dispositivo hasta que lo envías, incluso si vuelves a cargar la página.
 - La app lo sigue intentando automáticamente. **Probar ahora** lo intenta de inmediato.
 - Para acceder a tu propia Machine, se usa Tailscale, que puede desactivarse en segundo plano en un móvil. Si no se puede acceder a tu Machine de esa forma, la barra indica **Puede que Tailscale esté desactivado en este dispositivo**. En un móvil, **Abrir Tailscale** abre la app o su página en la tienda para que puedas volver a activarlo.
-- Una Machine ocupada puede tardar en responder. En ese caso, la app indica **Tu Machine tarda en responder** y conserva lo que ves. Eso no significa que estés sin conexión.
+- Una Machine ocupada puede tardar en responder. En ese caso, la app indica **Tu Machine está tardando en responder** y conserva lo que ves. Eso no significa que estés sin conexión.
 
 ## Más dispositivos
 

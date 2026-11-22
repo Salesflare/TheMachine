@@ -1,7 +1,7 @@
 ---
 title: Salesforce
 area: connections
-summary: Ofertas, tareas y actividad de Salesforce en tus personas y proyectos. Si activas esta opción, puede mantener actualizados allí los datos de contacto.
+summary: Oportunidades, tareas y actividad de Salesforce en tus personas y proyectos. Si activas esta opción, puede mantener actualizados allí los datos de contacto.
 covers: connector:salesforce
 code: connectors/salesforce.py, crm_sync.py, onboarding.py
 site: Connect Salesforce, More sources, Remove, Sign in with Salesforce
@@ -9,9 +9,9 @@ translated: eee5e084bac6dbd1
 ---
 ## Qué lee
 
-Las ofertas nuevas y las que pasan a otra fase o cambian de importe. Tus tareas abiertas, llamadas y otras tareas marcadas como hechas con notas, además de las reuniones con una descripción. Los últimos 7 días al conectarlo y, después, las novedades cada 15 minutos.
+Las oportunidades nuevas y las que pasan a otra fase o cambian de importe. Tus tareas abiertas, llamadas y otras tareas marcadas como hechas con notas, además de las reuniones con una descripción. Los últimos 7 días al conectarlo y, después, las novedades cada 15 minutos.
 
-Cada oferta se convierte en un proyecto en tu Graph. Los contactos asociados aparecen en las fichas de las personas, como contactos de Salesforce en su cuenta.
+Cada oportunidad se convierte en un proyecto en tu Graph. Los contactos asociados aparecen en las fichas de las personas, como contactos de Salesforce en su cuenta.
 
 ## Qué puede cambiar
 
@@ -39,8 +39,8 @@ Cuando tu Machine tenga datos más recientes de alguno de tus contactos de Sales
 Esto es lo que tiene en cuenta:
 
 - Solo datos que la persona haya compartido con sus propias palabras, como los de su perfil de LinkedIn o Slack, o que hayas añadido a su ficha. Nunca hace conjeturas.
-- Solo actualiza los datos más recientes que el último cambio del contacto en Salesforce. Si allí se hace una edición, prevalece.
-- Solo modifica los campos que sean distintos y nunca los deja en blanco. No cambia la dirección de correo electrónico ni la cuenta.
+- Solo cuando el dato es más reciente que el último cambio del contacto en Salesforce. Una edición hecha allí prevalece.
+- Solo modifica los campos que sean distintos y nunca los deja en blanco. No cambia la dirección de correo ni la cuenta.
 - Cada cambio aparece como una línea con fecha en la ficha de la persona.
 
 Pulsa **Desactivar** para detenerlo. Una conexión compartida por tu Fleet solo permite leer datos.

@@ -19,7 +19,7 @@ Se omiten las historias, reacciones, llamadas y Notas personales. No se marca na
 
 Un texto en un chat que ya existe, solo después de que lo apruebes en la tarea. Una respuesta cita el mensaje al que responde cuando ayuda. Los envíos salen de uno en uno, con una pausa entre ellos.
 
-Si una tarea llegó por email pero hablas con esa persona por Signal, dilo en el chat de la tarea. The Machine encuentra tu chat existente con ella y pasa el borrador a Signal, para que lo revises y lo envíes. Nunca empieza un chat nuevo.
+Si una tarea llegó por correo pero hablas con esa persona por Signal, dilo en el chat de la tarea. The Machine encuentra tu chat existente con ella y pasa el borrador a Signal, para que lo revises y lo envíes. Nunca empieza un chat nuevo.
 
 ## Conéctalo
 

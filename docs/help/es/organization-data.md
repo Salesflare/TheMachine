@@ -9,10 +9,10 @@ translated: f403410953e50582
 ---
 ## De dónde salen
 
-- En una Machine alojada, los datos de las organizaciones se consultan por ti, sin costo.
+- En una Machine alojada, los datos de las organizaciones se consultan por ti, sin coste.
 - En tu propio ordenador, esta función está desactivada hasta que añadas una clave de un servicio de consulta, como Apollo, People Data Labs o Hunter. Consulta la [guía de configuración](https://github.com/Salesflare/TheMachine/blob/main/docs/configuration.md).
 
-Solo se envía la dirección web de la organización, nunca tus mensajes ni las personas que conoces allí. Una Machine alojada, o una en The Machine Network, consulta hasta 1,000 organizaciones al día; en los demás casos, hasta 50. Los datos se actualizan cada 90 días. Nunca se consultan sitios compartidos ni proveedores de correo, como gmail.com. Las personas se consultan por separado: consulta [Cargo y foto](people.md#job-title-and-photo).
+Solo se envía la dirección web de la organización, nunca tus mensajes ni las personas que conoces allí. Una Machine alojada, o una en The Machine Network, consulta hasta 1000 organizaciones al día; en los demás casos, hasta 50. Los datos se actualizan cada 90 días. Nunca se consultan sitios compartidos ni proveedores de correo, como gmail.com. Las personas se consultan por separado: consulta [Cargo y foto](people.md#job-title-and-photo).
 
 Si la consulta no devuelve un logotipo, The Machine usa el icono del sitio web de la organización y lo guarda en tu Machine. Ningún servicio de logotipos sabe con quién trabajas. Si hay un logotipo y un icono, en espacios pequeños, como la línea de una tarea, se muestra el icono cuadrado.
 

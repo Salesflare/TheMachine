@@ -15,13 +15,13 @@ Tu Machine crea un mapa de las personas con las que tratas y de lo que ocurre, a
 
 ## Actualizado hoy
 
-Una línea discreta en la parte superior de cada lista indica qué ha actualizado hoy tu Machine, por ejemplo, **Actualizó a 4 personas hoy**. Tócala para ver quién y qué ha cambiado. Al tocar un nombre, se abre su página con **Cambios recientes** desplegado. Un punto pequeño marca cada fila y cada tarjeta del tablero que haya cambiado hoy. Solo cuenta los cambios que ha hecho tu Machine desde medianoche.
+Una línea discreta en la parte superior de cada lista indica qué ha actualizado hoy tu Machine, por ejemplo, **4 personas actualizadas hoy**. Tócala para ver quién y qué ha cambiado. Al tocar un nombre, se abre su página con **Cambios recientes** desplegado. Un punto pequeño marca cada fila y cada tarjeta del tablero que haya cambiado hoy. Solo cuenta los cambios que ha hecho tu Machine desde medianoche.
 
 ## Filtrar y ordenar
 
 **Filtrar**, junto a las pestañas, reduce la lista. Cada lista tiene sus propios filtros. Personas: cercanía, último contacto, organización, propietario, etiqueta y **Tiene un proyecto abierto**. Organizaciones: sector, especialidad, tamaño, país, último contacto, propietario, etiqueta y **Tiene un proyecto abierto**. Proyectos: propietario, tablero, etapa, etiqueta, organización, valor, fecha de cierre prevista y **Sin respuesta en más de 10 días**.
 
-Los filtros que elijas aparecen sobre la lista, junto con **Borrar**. En Proyectos, la lista y el tablero comparten un único filtro. En el móvil, se abre como una hoja.
+Los filtros que elijas aparecen sobre la lista, junto con **Borrar**. En Proyectos, la lista y el tablero comparten un único filtro. En el móvil, se abren como una hoja.
 
 El menú de ordenación permite ordenar la lista. Personas y Organizaciones se ordenan por cercanía, contacto más reciente o más antiguo, y nombre. Organizaciones también se pueden ordenar por tamaño. Proyectos se ordenan por última actividad, nombre, etapa, **Valor** y **Fecha de cierre**. **Descargar CSV**, debajo del menú de ordenación, guarda la pestaña que tienes abierta como una hoja de cálculo.
 
@@ -47,17 +47,17 @@ Si no hay ningún cumpleaños, puedes añadirlo con **Añadir cumpleaños**, en 
 
 1. Revisa las columnas. Tu Machine intenta identificarlas por sus encabezados y contenido. Puedes cambiar cualquiera de ellas. Cuando tu modelo esté listo, también las revisará y te dará una explicación breve cuando no esté segura. Solo verá los encabezados, algunos valores de cada columna y las celdas que las reglas no hayan podido leer.
 2. Revisa las correcciones. **Revisar** las muestra con el antes y el después: espacios de más, nombres en mayúsculas, números de teléfono en formato internacional, errores en direcciones de correo (gmial.com), sitios web convertidos a su dominio, fechas y valores en cualquier formato ("€12k" equivale a 12000), varias etiquetas en una celda, una etapa escrita de otra forma y la misma fila repetida. Desmarca un tipo de corrección o una fila para dejarla como está.
-3. Revisa la vista previa. Cada fila aparece como nueva, coincide con un registro que ya está en tu Graph o se omite, con una explicación. Una persona coincide por correo electrónico (o, si no lo tiene, por nombre y organización), una organización por sitio web o nombre y un proyecto por nombre.
+3. Revisa la vista previa. Cada fila aparece como nueva, coincide con un registro que ya está en tu Graph o se omite, con una explicación. Una persona coincide por correo (o, si no lo tiene, por nombre y organización), una organización por sitio web o nombre y un proyecto por nombre.
 4. **Importar** añade los registros nuevos y completa los que coinciden. Las celdas vacías no cambian nada.
 
 Puedes **Deshacer** justo después de importar o usar **Deshacer la última importación**, en el menú de ordenación, siempre que esos registros no hayan cambiado desde entonces. Si deshacer sobrescribiría una corrección posterior, te explicará el motivo. El archivo se queda en tu Machine.
 
 ## Propietario
 
-En una Fleet de trabajo, cada persona, organización y proyecto tiene un propietario. Lo verás en **Propietario**, dentro de Contigo, en su página. Eres tú, a menos que elijas a alguien de tu Fleet de trabajo. **Propietario**, en Filtrar, muestra solo tus registros. Cada cambio aparece en su cronología.
+En un Fleet de trabajo, cada persona, organización y proyecto tiene un propietario. Lo verás en **Propietario**, dentro de Contigo, en su página. Eres tú, a menos que elijas a alguien de tu Fleet de trabajo. **Propietario**, en Filtrar, muestra solo tus registros. Cada cambio aparece en su cronología.
 
 ## Equipo
 
-**Equipo**, junto a **Mío**, muestra lo que comparten tus compañeros, con las mismas pestañas y el mismo menú de ordenación. **Filtrar** permite reducir la lista por quién lo compartió, organización (Personas) o estado (Proyectos). Lo que añadas ahí será tuyo.
+**Equipo**, junto a Míos, muestra lo que comparten tus compañeros, con las mismas pestañas y el mismo menú de ordenación. **Filtrar** permite reducir la lista por quién lo compartió, organización (Personas) o estado (Proyectos). Lo que añadas ahí será tuyo.
 
-El trabajo con clientes se comparte con las Machine de tus compañeros, junto con su propietario, campos y etiquetas. Lo que ellos compartan aparecerá en la tuya. Cada hilo indica **Equipo** o **Solo tú**. Consulta [Graph del equipo](team-graph.md).
+El trabajo con clientes se comparte con las Machines de tus compañeros, junto con su propietario, campos y etiquetas. Lo que ellos compartan aparecerá en la tuya. Cada hilo indica **Equipo** o **Solo tú**. Consulta [Graph del equipo](team-graph.md).

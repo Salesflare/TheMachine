@@ -18,11 +18,11 @@ translated: e636b2a2fbbc714d
 - Informes de errores, salvo que los desactives: cuando algo falla, se informa del tipo de error y de dónde aparece en el código. Nunca se incluyen tus mensajes, nombres ni direcciones. Consulta [Informes de errores](error-reports.md).
 - Recuento de uso en una Machine alojada: cada día se cuenta lo que hiciste, como las tareas que abriste o los correos que enviaste, nunca su contenido.
 - Llévate tus datos o bórralos: exporta todo desde **Ajustes** › **General** o elimina tu Machine y sus copias de seguridad con un solo botón. Consulta [Cancelar o eliminar](cancel-and-delete.md).
-- Registramos nuestros accesos: cada vez que nuestro equipo lee el informe o los registros de tu Machine alojada. Los propietarios y administradores de Fleet pueden verlo en **Actividad**. Consulta [Fleet](fleet.md).
+- Registramos nuestros accesos: cada vez que nuestro equipo lee el informe o los registros de tu Machine alojada. Los propietarios y administradores de Fleet pueden verlo en **Actividad**. Consulta [Fleets](fleet.md).
 
 ## Niveles de seguridad
 
-**Estándar** mantiene la configuración predeterminada actual. **Prudente** no muestra texto en las notificaciones, no guarda los inicios de sesión y conserva menos datos. El administrador de una Fleet de trabajo puede configurarla como Prudente. Consulta [Niveles de seguridad](security-levels.md).
+**Estándar** mantiene la configuración predeterminada actual. **Prudente** no muestra texto en las notificaciones, no guarda los inicios de sesión y conserva menos datos. El administrador de un Fleet de trabajo puede configurarlo como Prudente. Consulta [Niveles de seguridad](security-levels.md).
 
 ## Inicio de sesión
 
@@ -34,7 +34,7 @@ El artículo de cada conexión explica qué lee y qué puede enviar. Puedes desc
 
 ## Ayuda
 
-La ayuda funciona en tu propia Machine y no puede ver tus datos. Al equipo de The Machine solo le llega el tema de cada pregunta, nunca lo que escribes. Consulta [Pedir ayuda](help-chat.md#what-the-team-sees).
+La ayuda funciona en tu propia Machine y no puede ver tus datos. Al equipo de The Machine solo le llega el tema de cada pregunta, nunca lo que escribes. Consulta [Preguntar a Ayuda](help-chat.md#what-the-team-sees).
 
 ## Más información
 

@@ -13,7 +13,7 @@ Las notas y transcripciones de las reuniones en las que participaste, de los úl
 
 Cada elemento se añade a la reunión correspondiente de tu Calendario, la que indica Granola o, si no, la reunión que coincide en horario. Las notas de Granola aparecen en Notas y la transcripción, en Transcripción, con la marca **De Granola**. Lo que hayas añadido tú se conserva.
 
-Después de la reunión, The Machine lee las notas y transcripciones para identificar lo prometido, lo decidido o lo que aún queda pendiente, como «Enviaré la presentación», y crea tareas solo para los próximos pasos claros. Las personas de la reunión se vinculan a tu [Graph](graph.md) mediante su dirección de correo electrónico.
+Después de la reunión, The Machine lee las notas y transcripciones para identificar lo prometido, lo decidido o lo que aún queda pendiente, como «Enviaré la presentación», y crea tareas solo para los próximos pasos claros. Las personas de la reunión se vinculan a tu [Graph](graph.md) mediante su dirección de correo.
 
 ## Qué puede hacer
 

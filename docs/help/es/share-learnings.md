@@ -37,7 +37,7 @@ Los aprendizajes de tus tareas personales siempre requieren que confirmes antes.
 
 Todos los aprendizajes enviados aparecen exactamente como se compartieron en Ajustes, **Actividad**, y en Fleet, **Actividad**. Pulsa **Retirar** para que el equipo deje de verlos.
 
-Tu correo y los registros de errores nunca se envían automáticamente. El nivel **Prudente**, una Fleet de trabajo Prudente o desactivar **Ofrecer compartir aprendizajes** impide el envío automático. Cuando vuelvas a activarlo, te preguntará cada vez.
+Tu correo y los registros de errores nunca se envían automáticamente. El nivel **Prudente**, un Fleet de trabajo Prudente o desactivar **Ofrecer compartir aprendizajes** impide el envío automático. Cuando vuelvas a activarlo, te preguntará cada vez.
 
 ## Desactivarlo
 
@@ -57,4 +57,4 @@ El equipo ordena los aprendizajes según los votos útiles y elige cuáles incor
 
 - **Activado**, la opción predeterminada: vota automáticamente.
 - **Preguntar antes**: los votos quedan pendientes en **Aprendizaje**, **Compartido**, cada uno con su aprendizaje y su voto. Envíalos o sáltalos de uno en uno o todos a la vez. No se crea ninguna tarea ni se envía ninguna notificación. Los votos que dejes pendientes caducan a los 14 días.
-- **Desactivada**: no se vota y no se envía nada de lo que esté pendiente.
+- **Desactivado**: no se vota y no se envía nada de lo que esté pendiente.

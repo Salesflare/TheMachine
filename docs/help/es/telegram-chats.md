@@ -25,11 +25,11 @@ Si una tarea llegó por correo pero con esa persona hablas por Telegram, dilo en
 ## Conéctalo
 
 1. En el panel, abre **Conexiones**, luego **Chat**, y elige Chats de Telegram.
-2. Elige **Escanear un código QR en Telegram en tu teléfono**.
-3. En tu teléfono, en Telegram, abre Ajustes, Dispositivos, **Link Desktop Device**, y escanea el código.
+2. Elige **Escanear un código QR con Telegram en otro dispositivo**.
+3. En tu teléfono, en Telegram, abre Ajustes, Dispositivos, **Vincular dispositivo de escritorio**, y escanea el código.
 4. Si tu cuenta tiene una contraseña en la nube, escríbela cuando te la pida. Va a Telegram y nunca se guarda.
 
-¿Lo configuras en el teléfono, sin una segunda pantalla desde la que escanear? Elige **Recibir un código en Telegram para tu número de teléfono**. El formulario dice adónde envió Telegram el código: a tu app de Telegram en otro dispositivo, por SMS o a tu correo de inicio de sesión. ¿No llega? Pulsa **Enviar el código otra vez**.
+En un teléfono, el formulario empieza por **Recibir un código para tu número de teléfono**, porque un código QR no se puede escanear desde la misma pantalla. Dice adónde envió Telegram el código: a tu app de Telegram en otro dispositivo, por SMS o a tu correo de inicio de sesión. ¿No llega? Pulsa **Enviar el código otra vez**.
 
 En tu propio ordenador también necesitas un ID de app de Telegram propio. Créalo en [my.telegram.org](https://my.telegram.org), en API development tools, y rellena su api_id y su api_hash en el formulario.
 
@@ -37,7 +37,7 @@ O ejecuta `assistant connect telegram` en un terminal y escanea el código que m
 
 ## Cuando se detiene
 
-- **Sesión de Telegram cerrada**: Telegram terminó la sesión de este dispositivo, o la cerraste en tu teléfono. Pulsa **Reconectar** en su tarjeta.
+- **Sesión de Telegram cerrada**: Telegram terminó la sesión de este dispositivo, o la cerraste en tu teléfono. Pulsa **Reconectar** en **Conexiones**.
 - **Telegram ya no acepta el ID de app**: Telegram ya no acepta el ID de app que usa esta Machine. No se lee ni se envía nada hasta que pulses **Reconectar** y añadas un ID de app propio.
 
 The Machine usa la API de Telegram para esto. Telegram puede limitar o terminar las sesiones de apps como ella.

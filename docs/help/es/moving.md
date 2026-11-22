@@ -12,14 +12,14 @@ Todo lo que aprende tu Machine es tuyo: mensajes, tareas, borradores, Graph, rec
 
 ## Exportar
 
-En tu propio equipo:
+En tu propio ordenador:
 
 1. Ve a **Ajustes** › **General** › **Exportar** y pulsa **Exportar** junto a Todo.
 2. Si quieres, elige una frase de contraseña. Si no, recibirás un código de exportación: apúntalo, porque lo necesitarás para importar.
 3. Si quieres, activa **Incluir claves y tokens** (necesitas una frase de contraseña) para no tener que volver a conectar tus fuentes.
 4. Pulsa **Empezar exportación** y luego **Descargar**. El archivo se elimina al cabo de 24 horas o de inmediato si pulsas **Eliminar**.
 
-En una Machine alojada, **Exportar** junto a Todo abre la página de tu cuenta. Pulsa **Exportar todo** y luego **Descargar**. Tu Machine elimina el archivo al cabo de 24 horas o de inmediato si pulsas **Eliminar ahora**.
+En una Machine alojada, **Exportar** junto a Todo abre la página de tu cuenta. Pulsa **Exportar todo** y luego **Descargar**. Tu Machine elimina el archivo al cabo de 24 horas o de inmediato si pulsas **Eliminarlo ahora**.
 
 El archivo siempre está cifrado. Después, Ajustes muestra qué incluye y qué no. Tendrás que volver a iniciar sesión en las cuentas de Google y Microsoft conectadas mediante nuestro inicio de sesión alojado cuando estés en el otro equipo.
 
@@ -27,9 +27,9 @@ El archivo siempre está cifrado. Después, Ajustes muestra qué incluye y qué 
 
 1. Ve a **Ajustes** › **General** › **Exportar**, pulsa **Elegir archivo** junto a Importar y selecciona el archivo de exportación.
 2. Escribe la frase de contraseña o el código de exportación y pulsa **Abrir**. The Machine comprueba primero todo el archivo.
-3. En una Machine alojada, pulsa **Importar ahora**. En tu propio equipo, pulsa **Reemplazar con esta exportación** y luego **Reemplazar**. En unos minutos, la Machine se reinicia con los datos importados y en Ajustes aparece **Importada**.
+3. En una Machine alojada, pulsa **Importar ahora**. En tu propio ordenador, pulsa **Reemplazar con esta exportación** y luego **Reemplazar**. En unos minutos, la Machine se reinicia con los datos importados y en Ajustes aparece **Importada**.
 
-La importación reemplaza lo que hay ahora en esa Machine, después de guardar una copia. No se envía nada automáticamente: los envíos en cola esperan a que los envíes.
+La importación reemplaza lo que hay ahora en esa Machine, después de guardar una copia. No se envía nada automáticamente: los envíos en cola te esperan.
 
 Si Ajustes no puede reiniciar The Machine en tu equipo, te muestra los comandos que tienes que ejecutar.
 
