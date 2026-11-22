@@ -214,6 +214,41 @@ class Voices(unittest.TestCase):
         self.assertLess(prompt.index(machine_prompts_bias.PLAIN_WRITING), prompt.index('How the owner writes, per channel'))
         self.assertIn('wins where it differs', machine_prompts_bias.PLAIN_WRITING)
 
+    def test_a_chat_draft_gets_a_length_target_from_the_owners_own_replies_there(self):
+        # No history to go by yet (one own message in the chat, a photo doesn't count): the fixed fallback.
+        self.assertIn(f'under {machine_store_voices.CHAT_LENGTH_FALLBACK} characters', self.store.style_text(self.chat_sid))
+        # Short never drops a question they asked: both the fallback and the target say so.
+        self.assertIn('answer every question and request in their message', self.store.style_text(self.chat_sid))
+        self.assertNotIn('Length:', self.store.style_text(self.sid))  # an email keeps its examples, no chat target
+        short = ['ok top', 'ja is goed', 'haha zeker', 'top, tot zo', 'merci!', 'ik check het even']
+        self.store.commit_page('phone', {}, [chat(f'r{i}', f'2026-10-02T0{i}:00:00+00:00', text, mine=True) for i, text in enumerate(short)] +
+                               [chat('r9', '2026-10-02T09:30:00+00:00', 'Sent a photo', mine=True)])
+        size = self.store.reply_length(self.chat_sid)
+        lengths = sorted(len(t) for t in [*short, 'ja tuurlijk, tot straks'])
+        self.assertEqual((size['channel'], size['here'], size['count'], size['high']), ('WhatsApp', True, 7, lengths[-1]))
+        self.assertEqual(size['median'], lengths[3])
+        text = self.store.style_text(self.chat_sid)
+        self.assertTrue(text.startswith('Length: '))  # first, so a long style block never cuts it
+        self.assertIn(f"own WhatsApp messages in this conversation are about {lengths[3]} characters long", text)
+        self.assertIn(f'aims for about {lengths[3]} characters and stays within {lengths[-1]}', text)
+        self.assertIn(machine_store_voices.CHAT_LENGTH_COVERS, text)
+        self.assertIn('(this conversation) ik check het even', text)  # the style samples stay beside it
+        prompt = machine_app_preparation.preparation_prompt({'job_id': 'j' * 16, 'suggestion_id': self.chat_sid}, style=text)
+        self.assertLess(prompt.index(machine_prompts_bias.PLAIN_WRITING), prompt.index('Length: '))  # the owner's own wins
+        # Another chat with too few of its own: the channel's length, not the fallback.
+        self.store.commit_page('phone', {}, [chat('o1', '2026-10-03T08:00:00+00:00', 'Can you send the address?', chat_id='c2')])
+        other = self.store.suggest('address', 'Send the address', 'They ask.', [self.event_id('o1')])['id']
+        self.assertIn(f'own WhatsApp messages on WhatsApp are about {lengths[3]}', self.store.style_text(other))
+        with patch.object(machine_store_voices, 'CHAT_LENGTH_MIN', 20):
+            self.assertIn('under 160 characters', self.store.style_text(other))
+        # A message The Machine sent for the owner isn't their writing and doesn't count.
+        with patch('authorship.MachineSent.wrote', lambda self, row, text=None: True):
+            self.assertIsNone(self.store.reply_length(self.chat_sid)['median'])
+
+    def event_id(self, source_id):
+        with self.store.connect() as db:
+            return db.execute('SELECT id FROM events WHERE source_id=?', (source_id,)).fetchone()['id']
+
     def test_plain_drafts_go_per_model_family_and_never_on_a_confirmed_last_step(self):
         bias = machine_prompts_bias
         self.assertEqual([bias.family(m) for m in ('openai/gpt-6.1-sol', 'salesflare-openai/gpt-6-astra', 'claude-cli/claude-opus-5-5',

@@ -11,11 +11,13 @@ import hashlib
 import json
 from pathlib import Path
 import re
+import statistics
 import uuid
 
 import authorship
 import learning_loop
 from machine.config import LOG
+from machine.kinds import CHAT, KINDS
 from machine.prompts.profile import VOICE_CHARS, VOICE_LINES
 from machine.sources.slack import slack_ids_named
 from machine.store import outcomes
@@ -84,6 +86,18 @@ VOICE_MAX = 10
 
 
 VOICE_EXAMPLES = 6        # the owner's own recent messages a draft gets to match, same conversation first
+
+
+# A chat draft's length target (reply_length): the median of the owner's own recent messages on that channel, in the
+# draft's conversation when it has enough of them. A chat draft longer than the owner's own replies goes unused: they
+# type their own short one instead.
+CHAT_LENGTH_READ = 40     # the owner's own recent messages read for it, per conversation and per channel
+CHAT_LENGTH_MIN = 5       # fewer says too little: then the channel's, then CHAT_LENGTH_FALLBACK
+CHAT_LENGTH_FALLBACK = 160  # characters: a chat draft with none of the owner's own messages to go by
+# Short never means leaving something out: a draft that skips a question they asked is worse, not better.
+CHAT_LENGTH_COVERS = ('Still answer every question and request in their message, each as briefly as the owner would (a few words '
+                      'each is fine) but clear about which one it answers (not a bare "yes, yes"); go over the length only as far as that, or a detail they need (an address, a time, a link), '
+                      'takes, never for greetings, thanks or a recap.')
 
 
 DRAFT_EVENT_KINDS = {'email': 'gmail.message', 'slack': 'slack.message', 'whatsapp': 'whatsapp.message', 'telegram': 'telegram.message', 'signal': 'signal.message', 'linkedin': 'linkedin.message', 'x': 'x.dm'}
@@ -463,29 +477,38 @@ class VoicesStore:
     def card_channels(self, suggestion_id, db):
         return card_channels(db, suggestion_id)
 
-    def own_examples(self, suggestion_id, limit=VOICE_EXAMPLES, scan=200):
-        """The owner's own recent messages on the card's channel: in the same conversation first, then to the same
-        people, then on the same account. Real examples of how they write there, for the draft to match."""
+    def card_own_messages(self, suggestion_id, scan):
+        """The owner's own recent messages (up to scan, newest first) on the card's channel and accounts, with what
+        places them: (kind, the card's conversations, the people on it, its accounts, rows, MachineSent), or None."""
         ids = sorted(self.owner_user_ids)
         with self.connect() as db:
             db.execute('BEGIN')
             kinds, events = self.card_channels(suggestion_id, db)
             if not kinds:
-                return []
+                return None
             kind = kinds[0]
             mine = [e for e in events if e['kind'] == kind]
             meta = lambda e: e['metadata'] if isinstance(e['metadata'], dict) else json.loads(e['metadata'] or '{}')
             conversations = {c for c in (conversation_of(kind, meta(e)) for e in mine) if c}
             people = {a.lower() for e in mine for _, a in email.utils.getaddresses([str(meta(e).get(f) or '') for f in ('from', 'to', 'cc')]) if a}
             people -= {str(a.get('email', '')).lower() for a in self.accounts}
-            accounts = {e.get('account_id') for e in mine}
+            accounts = {e.get('account_id') for e in mine if e.get('account_id')}
             if not accounts:
-                return []
+                return None
             predicate, params = own_predicate(kind, ids)
             rows = db.execute(f'SELECT id,account_id,source_id,occurred_at,title,body,metadata FROM events WHERE deleted=0 AND kind=? AND ({predicate}) '
                               f'AND account_id IN ({",".join("?" for _ in accounts)}) '
                               'ORDER BY occurred_at DESC,id DESC LIMIT ?', (kind, *params, *sorted(accounts), scan)).fetchall()
             sent = authorship.MachineSent.load(db)
+        return kind, conversations, people, accounts, rows, sent
+
+    def own_examples(self, suggestion_id, limit=VOICE_EXAMPLES, scan=200):
+        """The owner's own recent messages on the card's channel: in the same conversation first, then to the same
+        people, then on the same account. Real examples of how they write there, for the draft to match."""
+        found = self.card_own_messages(suggestion_id, scan)
+        if not found:
+            return []
+        kind, conversations, people, accounts, rows, sent = found
         picked = []
         for row in rows:
             text = own_text(row['body'])
@@ -501,14 +524,60 @@ class VoicesStore:
         picked.sort(key=lambda p: (p[0], p[1]))
         return [p[2] for p in picked[:limit]]
 
+    def reply_length(self, suggestion_id, scan=400):
+        """How long the owner's own messages are on a chat to-do's channel, for its draft to match: {'channel',
+        'median', 'high' (9 in 10 are no longer), 'count', 'here' (counted in this conversation)}, from their last
+        CHAT_LENGTH_READ in the to-do's conversation when it has CHAT_LENGTH_MIN, else on the channel; 'median' None
+        when the channel has fewer too. None when the to-do's channel isn't a chat (an email has its examples)."""
+        with self.connect() as db:
+            kinds, _ = self.card_channels(suggestion_id, db)
+        if not kinds or KINDS[kinds[0]]['family'] != CHAT:
+            return None
+        none = {'channel': EVENT_CHANNELS[kinds[0]], 'median': None, 'high': None, 'count': 0, 'here': False}
+        found = self.card_own_messages(suggestion_id, scan)
+        if not found:
+            return none
+        kind, conversations, _, _, rows, sent = found
+        here, there = [], []
+        for row in rows:
+            text = own_text(row['body'])
+            if not text or PROFILE_SKIP.match(text) or sent.wrote(row, text):  # one-word replies count: they are how short it gets
+                continue
+            there.append(len(text))
+            if conversation_of(kind, json.loads(row['metadata'] or '{}')) in conversations:
+                here.append(len(text))
+        sizes = here[:CHAT_LENGTH_READ] if len(here) >= CHAT_LENGTH_MIN else there[:CHAT_LENGTH_READ]
+        if len(sizes) < CHAT_LENGTH_MIN:
+            return none
+        ordered = sorted(sizes)
+        return {'channel': EVENT_CHANNELS[kind], 'median': round(statistics.median(ordered)), 'count': len(ordered),
+                'high': ordered[-(-9 * len(ordered) // 10) - 1], 'here': len(here) >= CHAT_LENGTH_MIN}
+
+    def reply_length_text(self, suggestion_id):
+        """The length line of a chat to-do's draft: its target from the owner's own messages there (reply_length), or
+        the fixed CHAT_LENGTH_FALLBACK without them. '' for a to-do whose channel isn't a chat."""
+        size = self.reply_length(suggestion_id)
+        if not size:
+            return ''
+        channel = size['channel']
+        if size['median'] is None:
+            return (f"Length: a {channel} draft on this to-do stays one or two short lines, under {CHAT_LENGTH_FALLBACK} characters. "
+                    + CHAT_LENGTH_COVERS + ' Never an email in a chat.')
+        where = 'in this conversation' if size['here'] else f'on {channel}'
+        return (f"Length: the owner's own {channel} messages {where} are about {size['median']} characters long (9 in 10 at most "
+                f"{size['high']}; their last {size['count']}). A {channel} draft on this to-do aims for about {size['median']} characters "
+                f"and stays within {size['high']}, like their own replies there: a chat draft longer than theirs goes unused, because they "
+                'type their own instead. ' + CHAT_LENGTH_COVERS)
+
     def style_text(self, suggestion_id, chars=4000):
-        """What a draft for this card gets about how the owner writes: every channel's voice (this card's marked),
-        the owner's own recent messages there, and how they changed earlier drafts on that channel."""
+        """What a draft for this card gets about how the owner writes: a chat draft's length target (reply_length_text,
+        first so a long block never cuts it), every channel's voice (this card's marked), the owner's own recent messages
+        there, and how they changed earlier drafts on that channel."""
         with self.connect() as db:
             kinds, events = self.card_channels(suggestion_id, db)
             voices = self.voices(db)
         here = [EVENT_CHANNELS[k] for k in kinds]
-        parts = []
+        parts = [part for part in (self.reply_length_text(suggestion_id),) if part]
         if voices:
             parts.append('How the owner writes, per channel. A draft follows the block for the channel it goes out on, plus All; these '
                          'come from the owner\'s own messages and notes and win over general tone notes elsewhere. Follow each line as written, '
