@@ -223,8 +223,9 @@ jobs:
             npm install --global --prefer-offline --no-audit --no-fund openclaw@${{ matrix.versions.openclaw }} playwright@1.63.0 \
               || npm install --global --prefer-online --no-audit --no-fund openclaw@${{ matrix.versions.openclaw }} playwright@1.63.0
           fi
-          # our runner has Chromium's system libraries already, and a job there has no sudo
-          playwright install ${{ runner.environment == 'github-hosted' && '--with-deps' || '' }} chromium
+          # our runner has Chromium's system libraries already, and a job there has no sudo. The browser is the one
+          # OpenClaw's own playwright-core launches (Select Chromium): a newer OpenClaw can bring a newer one
+          node "$(npm root -g)/openclaw/node_modules/playwright-core/cli.js" install ${{ runner.environment == 'github-hosted' && '--with-deps' || '' }} chromium
           printf 'OPENCLAW_PACKAGE_DIR=%s/openclaw\n' "$(npm root -g)" >> "$GITHUB_ENV"
       - name: Install the pinned Node packages
         run: npm ci --omit=dev --ignore-scripts --no-audit --no-fund
@@ -427,7 +428,7 @@ jobs:
       - name: Install OpenClaw and browser
         run: |
           npm install --global openclaw@2026.11.2
-          npx --yes --package=playwright@1.63.0 playwright install chromium
+          node "$(npm root -g)/openclaw/node_modules/playwright-core/cli.js" install chromium
           printf 'OPENCLAW_PACKAGE_DIR=%s/openclaw\n' "$(npm root -g)" >> "$GITHUB_ENV"
       - name: Install the pinned Node packages
         run: npm ci --omit=dev --ignore-scripts --no-audit --no-fund

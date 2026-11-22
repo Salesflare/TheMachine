@@ -56,6 +56,9 @@ try{
   await link.scrollIntoViewIfNeeded();await link.tap();
   // landed: in To-dos, the to-do on screen once the page stopped gliding
   await page.waitForFunction(i=>{const c=document.getElementById('task-'+i);return !!c&&c.getClientRects().length>0&&!document.querySelector('#inbox').hidden},TARGET.id,{timeout:8000});
+  // the glide can start a while after the page shows (a slow computer): give it until the to-do is on screen, then let
+  // it settle; the check below says where it ended when it never got there
+  await page.waitForFunction(i=>{const r=document.getElementById('task-'+i).getBoundingClientRect();return r.bottom>0&&r.top<innerHeight},TARGET.id,{timeout:8000}).catch(()=>{});
   let y=-1;for(let i=0;i<40;i++){const now=await page.evaluate(()=>scrollY);if(now===y)break;y=now;await page.waitForTimeout(150)}
   const first=await where(page);assert.ok(first.shown&&first.tab==='inbox',`${node}: lands on the to-do in To-dos ${JSON.stringify(first)}`);
   assert.equal(await page.evaluate(i=>document.getElementById('task-'+i).classList.contains('flash'),TARGET.id),true,`${node}: the to-do is highlighted`);

@@ -363,8 +363,9 @@ try{
  {const long='A mutual NDA from the vendor is ready for review before the call on Thursday';
   await page.evaluate(t=>{const h=document.querySelector('.chat-title');h.firstChild.textContent=t;h.title=t;chatFades()},long);
   for(const width of [390,360]){await page.setViewportSize({width,height:800});await page.waitForTimeout(150);await page.evaluate(()=>chatFades());
-   const m=await page.evaluate(()=>{const q=s=>document.querySelector(s),R=n=>n.getBoundingClientRect(),c=r=>r.top+r.height/2,h=q('.chat-title'),L=parseFloat(getComputedStyle(h).lineHeight);
-    return {lines:Math.round(R(h).height/L),fade:h.classList.contains('fade'),title:h.title,mid:c(R(h)),back:c(R(q('.chat-back'))),menu:c(R(q('.chat-menu>summary')))}});
+   // the chat's redraw (a poll) swaps its header back to the card's own title: the long one goes in again right here
+   const m=await page.evaluate(t=>{const q=s=>document.querySelector(s),R=n=>n.getBoundingClientRect(),c=r=>r.top+r.height/2,h=q('.chat-title');if(h.firstChild.textContent!==t){h.firstChild.textContent=t;h.title=t}chatFades();const L=parseFloat(getComputedStyle(h).lineHeight);
+    return {lines:Math.round(R(h).height/L),fade:h.classList.contains('fade'),title:h.title,mid:c(R(h)),back:c(R(q('.chat-back'))),menu:c(R(q('.chat-menu>summary')))}},long);
    assert.equal(m.lines,1,'one line at '+width);assert.ok(m.fade,'fades out at the right edge at '+width);assert.equal(m.title,long);
    assert.ok(Math.abs(m.mid-m.back)<=2&&Math.abs(m.back-m.menu)<=1,'one row at '+width+': '+JSON.stringify(m))
    const g=await page.evaluate(()=>{const q=s=>document.querySelector(s),R=n=>n.getBoundingClientRect(),h=q('.chat-title'),cs=getComputedStyle(h),cv=document.createElement('canvas').getContext('2d');cv.font=cs.font;

@@ -61,12 +61,13 @@ try{
  // and when that is refused still sends Ctrl+V, so the browser there pastes what it has
  await p.locator('canvas').focus();
  await p.evaluate(modKey=>document.querySelector('canvas').dispatchEvent(new KeyboardEvent('keydown',{key:'v',code:'KeyV',[modKey]:true,bubbles:true,cancelable:true})),modKey);
- await p.waitForTimeout(300);
+ // the clipboard read, then the keys 150 ms on (a slow computer takes longer): wait for them all
+ await p.waitForFunction(n=>window.sent.length>=n,1+ctrlV.length);
  assert.deepEqual(await sent(p),[['read'],...ctrlV],'the fallback');
  // ...and with the clipboard readable, its text goes over first
  await p.evaluate(()=>{navigator.clipboard.readText=()=>Promise.resolve('read text')});
  await p.evaluate(modKey=>document.querySelector('canvas').dispatchEvent(new KeyboardEvent('keydown',{key:'v',code:'KeyV',[modKey]:true,bubbles:true,cancelable:true})),modKey);
- await p.waitForTimeout(300);
+ await p.waitForFunction(n=>window.sent.length>=n,pasted('read text').length);
  assert.deepEqual(await sent(p),pasted('read text'));
 
  // Other Ctrl keys stay noVNC's (Ctrl+C copies there)

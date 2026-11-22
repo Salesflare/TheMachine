@@ -47,7 +47,10 @@ try{
  assert.ok(!await kept(),'a refresh with new data redraws it');
  await mark();
  // A tap within 250 ms of a scroll doesn't open a chat (it stops a fling): the link is scrolled to first, then tapped
- await page.locator('#task-c3c3c3c3c3c3c3c3 .card-foot a.card-chat-link').scrollIntoViewIfNeeded();await page.waitForTimeout(300);
+ // once the page's last scroll is 300 ms ago (a scroll's event comes with the next frame: two frames on, the page knows)
+ await page.locator('#task-c3c3c3c3c3c3c3c3 .card-foot a.card-chat-link').scrollIntoViewIfNeeded();
+ await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));
+ await page.waitForFunction(()=>Date.now()-chatScrolledAt>300);
  await page.locator('#task-c3c3c3c3c3c3c3c3 .card-foot a.card-chat-link').click();
  await page.locator('.chat-layout[data-chat="c3c3c3c3c3c3c3c3"]').waitFor();
  assert.match(await page.locator('.chat-layout').textContent(),/Book the venue/);

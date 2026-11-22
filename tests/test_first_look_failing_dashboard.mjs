@@ -62,6 +62,8 @@ try{
   await page.waitForFunction(k=>document.querySelector('#suggestions .first-look-empty')?.textContent.includes(k),ONCE);
   look={...look,failing:4};await page.evaluate(async()=>{await refresh()});
   await page.waitForFunction(k=>document.querySelector('#suggestions .first-look-empty')?.textContent.includes(k),KEEPS);
+  // the review line is drawn after the to-dos (shell-render.js): wait for it as well
+  await page.waitForFunction(k=>document.querySelector('#review-live')?.innerText.includes(k),KEEPS);
   assert.ok((await page.locator('#review-live').innerText()).includes(KEEPS));
   if(shots)await page.screenshot({path:`${shots}/failing-off-${width}.png`});
   await context.close();
