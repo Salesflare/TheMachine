@@ -52,7 +52,7 @@ function setupRows(all){const s=state?.setup_card;if(!s)return [];const n=s.nudg
  add('install',!onPhone()&&!DEV.phoneApp&&nudgeable&&(appInstalled()||!!installEvt||DEV.macSafari),appInstalled());
  add('account',hosted,s.mail_accounts>=2);
  add('connect',1,s.more);
- for(const h of state.setup_hints||[])if(h?.id&&/^[a-z0-9-]{1,40}$/.test(h.id))add('hint-'+h.id,1,0,h);
+ for(const h of state.setup_hints||[])add('hint-'+h?.id,h?.id&&/^[a-z0-9-]{1,40}$/.test(h.id),0,h);
  if(all)return rows;
  // Open steps first: a done row only fills a slot no open step needs, so the tool hints after the base rows show
  const open=rows.filter(r=>!r.done).slice(0,SETUP_MAX),keep=new Set([...open,...rows.filter(r=>r.done).slice(0,SETUP_MAX-open.length)]);
@@ -107,21 +107,17 @@ function setupRender(){const s=state?.setup_card,el=setupBox(),first=setupMailFi
  if(el.classList.contains('sk-setup')){if(!state?.suggestions||pushOK&&!devicePush.checked&&performance.now()<8000)return;el.classList.remove('sk-setup');el.style.removeProperty('height')}
  // its empty state hides (setup-card.css)el.setAttribute('aria-label',first?t('Connect mail'):'Get more out of The Machine');
  el.classList.toggle('mail-first',first);$('#inbox')?.classList.toggle('mail-first',first);
- if(first){const h=String(setupMailHTML());if(el.dataset.html!==h){setHTML(el,raw(h));el.dataset.html=h}el.hidden=false;el.classList.remove('quiet');setupSettings(false);setupShape(el);return}
+ if(first){const h=String(setupMailHTML());if(el.dataset.html!==h){setHTML(el,raw(h));el.dataset.html=h}el.hidden=false;el.classList.remove('quiet');setupSet(false);setupShape(el);return}
  const off=!s||settingUp()||(DEV.framed&&!s.demo);
  // Only what is left: a done step leaves the card (its label says what to do, so a ticked "Connect WhatsApp" read as not done)
  const closed=new Set(off?[]:s.dismissed||[]),rows=off||s.closed?[]:setupRows(true).filter(r=>!r.done&&!closed.has(r.id)).slice(0,SETUP_MAX),quiet=!off&&setupQuiet(s);
  const show=rows.length>0,h=show?String(setupHTML(rows,quiet)):'';
  if(el.dataset.html!==h){setHTML(el,show?raw(h):html``);el.dataset.html=h}el.hidden=!show;el.classList.toggle('quiet',quiet&&!setupOpen);
- setupSettings(!off&&(s.closed||!show)&&(s.closed||setupHidden()>0));setupShape(el)}
-// Settings, General, Setup to-do: while the to-do is closed, or shows nothing but has closed rows, one row brings it all back
-function setupSettings(on){let sec=$('#settings-setup');
- if(!on){if(sec)sec.hidden=true;return}
- if(!sec){const at=$('#settings-browser');if(!at)return;sec=document.createElement('div');sec.id='settings-setup';
-  setHTML(sec,html`<div class="section-head"><h2>Setup to-do</h2></div><div class="list settings-list"><div><span class="grow"><strong>Get more out of The Machine</strong><small>Bring back the steps you closed, at the top of To-dos.</small></span><button type="button" data-setup-restore="all">Show again</button></div></div>`);
-  at.before(sec);sec.addEventListener('click',setupClick)}
- sec.hidden=false}
-const setupPost=(action,step)=>request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action,args:{step}})});
+ setupSet(!off&&(s.closed||!show)&&(s.closed||setupHidden()>0));setupShape(el)}
+// Settings, General, Setup to-do (setupSettings, settings-general.js): whether it shows, kept for when Settings loads
+let setupOn=false;
+const setupSet=on=>{setupOn=on;self.setupSettings?.(on)};
+const setupPost=(action,step)=>connectPost(action,{step});
 // After a ×: Undo in the toast for a while (the same as other dismissals), and where to find it again once the card is closed
 function setupUndoToast(step){if(step==='card')toastSettings('Hidden. {} can show it again.','settings-setup');else toast('Hidden.');
  $('#toast').append(htmlNodes(html` <button type="button" data-setup-undo="${step}">Undo</button>`));clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').classList.remove('show'),10000)}

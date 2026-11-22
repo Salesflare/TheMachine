@@ -398,3 +398,12 @@ function settingsAccountPlace(s){const blk=$('#settings-account-block'),head=$('
  const after=acct?head:ver;if(!blk.hidden&&blk.previousElementSibling!==after)s.insertBefore(blk,after.nextElementSibling)}
 $('#settings-cloud').addEventListener('click',e=>{if(!e.currentTarget.hasAttribute('data-network-pair')||typeof aiPairGo!=='function')return;
  e.preventDefault();aiPairGo(()=>{notice(t('Paired with your account'));refresh()})});
+// Settings, General, Setup to-do: while the to-do is closed, or shows nothing but has closed rows, one row brings it all
+// back. Shown or hidden as the to-do draws (setupSet, setup-card.js), from when this part loads.
+function setupSettings(on){let sec=$('#settings-setup');
+ if(!on){if(sec)sec.hidden=true;return}
+ if(!sec){const at=$('#settings-browser');if(!at)return;sec=document.createElement('div');sec.id='settings-setup';
+  setHTML(sec,html`<div class="section-head"><h2>Setup to-do</h2></div><div class="list settings-list"><div><span class="grow"><strong>Get more out of The Machine</strong><small>Bring back the steps you closed, at the top of To-dos.</small></span><button type="button" data-setup-restore="all">Show again</button></div></div>`);
+  at.before(sec);sec.addEventListener('click',setupClick)}
+ sec.hidden=false}
+queueMicrotask(()=>setupSettings(setupOn));  // after the page's script, when a test page has this part in it
