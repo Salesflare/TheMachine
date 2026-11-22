@@ -101,7 +101,6 @@ English strings the check skips, with why:
 - `Signal message sent` names the Signal app, not a signal.
 - `Signal message sent.` names the Signal app, not a signal.
 - `Signal message sent at {}.` names the Signal app, not a signal.
-- `Signal` names the Signal app (its connection), not a signal.
 - `Signal can’t be read right now, so I can’t find the chat. Put the message in the body and say in one line that they can send it on Signal themselves.` names the Signal app, not a signal.
 - `Your Signal chats, as a linked device.` names the Signal app, not a signal.
 - `Signal needs Java {} or later on this computer` names the Signal app, not a signal.

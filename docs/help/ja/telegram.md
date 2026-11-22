@@ -19,19 +19,19 @@ translated: a2b74e4831832977
 
 ## 接続する
 
-ホスト型のMachineの場合：
+ホスティング版Machineの場合：
 
 1. Telegramで@BotFatherにメッセージを送り、/newbotを送信します。発行されたトークンをコピーします。
 2. セットアップページの**いつでも追加**からTelegramを開き、トークンを貼り付けて**自分のボットを追加**を押します。
 
 いつでも追加できます。
 
-自分のパソコンで使う場合は、インストーラーで入力するか、TelegramのユーザーIDを指定して`assistant telegram on`を実行します。
+自分のコンピューターで使う場合は、インストーラーで入力するか、TelegramのユーザーIDを指定して`assistant telegram on`を実行します。
 
 ## 削除する
 
-- ホスト型のMachineの場合：セットアップページで**Telegramの接続を解除**を押します。ボットとそのトークンがMachineから削除されます。
-- 自分のパソコンで使う場合：`assistant telegram off`。ボットの情報も削除するには`--remove-bot`を追加します。
+- ホスティング版Machineの場合：セットアップページで**Telegramの接続を解除**を押します。ボットとそのトークンがMachineから削除されます。
+- 自分のコンピューターで使う場合：`assistant telegram off`。ボットの情報も削除するには`--remove-bot`を追加します。
 
 ## Telegramでボットを削除する
 

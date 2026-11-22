@@ -18,7 +18,7 @@ Salesflareのアカウント、連絡先、商談と、各アカウントのフ�
 ## 接続する
 
 1. Salesflareで[設定、APIキー](https://app.salesflare.com/#/settings/apikeys)を開き、キーを作成します。
-2. ホスト型のMachineの場合：app.themachine.computer/setupでセットアップページを開き、**その他のソース**に進み、Salesflare CRMを開いてキーを貼り付け、**接続**を押します。
+2. ホスティング版Machineの場合：app.themachine.computer/setupでセットアップページを開き、**その他のソース**に進み、Salesflare CRMを開いてキーを貼り付け、**接続**を押します。
 3. ダッシュボードで**接続**、**顧客**、Salesflare CRMの順に開き、キーを貼り付けて**接続**を押します。カードに同期の進み具合が表示されます。
 
 ## 同期の詳細
@@ -36,7 +36,7 @@ Salesflareのアカウント、連絡先、商談と、各アカウントのフ�
 ## 接続を解除する
 
 - ダッシュボードで**接続**を開き、Salesflare、**詳細**、**接続を解除**の順に選びます。すでに取り込んだ情報は残ります。
-- ホスト型のMachineでは、セットアップページでSalesflareの横にある**削除**を押して解除することもできます。
+- ホスティング版Machineでは、セットアップページでSalesflareの横にある**削除**を押して解除することもできます。
 
 ## Salesflareでアクセスを取り消す
 

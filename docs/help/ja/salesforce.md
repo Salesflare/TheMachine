@@ -15,7 +15,7 @@ translated: eee5e084bac6dbd1
 
 ## 変更できる情報
 
-**連絡先情報を更新**を有効にするまで、何も変更しません。Salesforceへのサインイン情報はThe Machine上に保存されます。
+**連絡先情報を更新**を有効にするまで、何も変更しません。Salesforceへのログイン情報はThe Machine上に保存されます。
 
 ## 接続する
 
@@ -23,9 +23,9 @@ translated: eee5e084bac6dbd1
 
 1. app.themachine.computer/setupでセットアップページを開き、**その他のソース**に移動します。
 2. Salesforceを開き、**Salesforceに接続**を押します。
-3. Salesforceにサインインし、Salesflare製のThe Machineを許可します。
+3. Salesforceにログインし、Salesflare製のThe Machineを許可します。
 
-または、ダッシュボードで**接続**、**顧客**の順に開き、Salesforceを選んで**Salesforceでサインイン**を押します。自分のコンピューターで使う場合は、先にアカウントとペアリングしてください。
+または、ダッシュボードで**接続**、**顧客**の順に開き、Salesforceを選んで**Salesforceでログイン**を押します。自分のコンピューターで使う場合は、先にアカウントとペアリングしてください。
 
 SalesforceのユーザーにはAPIアクセス権が必要です。ほとんどのエディションに含まれています。
 
