@@ -25,6 +25,7 @@ import sources
 SCOPE = 'https://www.googleapis.com/auth/gmail.readonly'
 LIMIT = 20  # mails since the click looked at per mailbox
 VERIFY_SECONDS = 600  # LastPass's link expires after 10 minutes
+EARLY = 30  # seconds a mail may be stamped before the click: LastPass mails while the click is still being sent
 
 
 class _Links(html.parser.HTMLParser):
@@ -91,7 +92,7 @@ def pick(message, manager, since):
         came = int(message.get('internalDate'))
     except (TypeError, ValueError):
         return None
-    if came < since * 1000:
+    if came < (since - EARLY) * 1000:
         return None
     payload = message.get('payload') or {}
     headers = [(str(h.get('name', '')).lower(), str(h.get('value', ''))) for h in payload.get('headers') or () if isinstance(h, dict)]
@@ -131,7 +132,7 @@ def link(config, manager, since, seen=None):
     for account in own_addresses.mail_accounts(config):
         try:
             listed = sources.gog_read(config, account, 'gmail', 'v1', 'gmail.users.messages.list',
-                                      {'userId': 'me', 'q': 'after:%d' % int(since), 'maxResults': LIMIT}, SCOPE)
+                                      {'userId': 'me', 'q': 'after:%d' % int(since - EARLY), 'maxResults': LIMIT}, SCOPE)
         except (sources.SourceError, OSError, ValueError, KeyError, TypeError):
             continue
         for item in (listed.get('messages') or [])[:LIMIT] if isinstance(listed, dict) else ():

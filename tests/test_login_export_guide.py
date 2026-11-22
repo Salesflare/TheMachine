@@ -539,9 +539,15 @@ class VerifyMailTest(unittest.TestCase):
         self.assertIsNone(login_export_mail.pick(fake_mail(), 'bitwarden', since), 'a manager without a verify mail')
         self.assertIsNone(login_export_mail.pick(fake_mail(), 'lastpass', None), 'no click, no mail')
 
+    def test_a_mail_stamped_just_before_the_click_counts(self):
+        # LastPass's mail can carry a time a fraction of a second before the guide noted its click
+        since = time.time() - 30
+        self.assertIsNotNone(login_export_mail.pick(fake_mail(came=since - 0.2), 'lastpass', since))
+        self.assertIsNone(login_export_mail.pick(fake_mail(came=since - login_export_mail.EARLY - 1), 'lastpass', since))
+
     def test_the_newest_mail_in_the_owners_mailboxes_each_read_once(self):
         since = time.time() - 60
-        mails = {'old': fake_mail(came=since - 5, href='https://lastpass.com' + APPROVE + '?k=old'),
+        mails = {'old': fake_mail(came=since - 45, href='https://lastpass.com' + APPROVE + '?k=old'),
                  'a': fake_mail(came=since + 10, href='https://lastpass.com' + APPROVE + '?k=a'),
                  'b': fake_mail(came=since + 20, href='https://lastpass.com' + APPROVE + '?k=b'),
                  'spoof': fake_mail(came=since + 30, sender='x@example.invalid', href='https://lastpass.com' + APPROVE + '?k=spoof')}
@@ -551,7 +557,7 @@ class VerifyMailTest(unittest.TestCase):
             self.assertEqual(scope, login_export_mail.SCOPE, 'the read the mailbox already has')
             reads.append((method, params.get('id')))
             if method == 'gmail.users.messages.list':
-                self.assertEqual(params['q'], 'after:%d' % int(since))
+                self.assertEqual(params['q'], 'after:%d' % int(since - login_export_mail.EARLY))
                 return {'messages': [{'id': k} for k in mails]}
             return mails[params['id']]
 
