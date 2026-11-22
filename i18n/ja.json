@@ -453,7 +453,7 @@
  "An old sign-in was used again, so all its sign-ins were ended": "古いログインが再度使われたため、それに関連するログインをすべて終了しました",
  "An organization name is up to 100 characters": "組織名は100文字以内で入力してください",
  "An update kept your own files.": "更新後も自分のファイルはそのままです。",
- "An update to a skill you have, from": "お持ちのスキルの更新：",
+ "An update to a skill you have, from {}, version {}. Read it before you install. It can’t change what your Machine may do.": "お持ちのスキルの更新：{}から、バージョン{}。インストールする前にお読みください。Machineにできることは変わりません。",
  "Analysis expired; begin a fresh review": "分析の有効期限が切れました。新しく確認を始めてください",
  "And {} more threads": {
   "other": "ほか{}件のスレッド"
@@ -1855,6 +1855,7 @@
  "Friends add you by your username.": "ユーザー名を使って友達を追加できます。",
  "Friends now": "今すぐ友達に追加",
  "From": "送信元",
+ "From (a date)": "開始日",
  "From ChatGPT": "ChatGPTから",
  "From Claude": "Claudeから",
  "From Facebook": "Facebookから",
@@ -1890,6 +1891,7 @@
  "From {}": "{}から",
  "From {} of your notes": "メモの{}から",
  "From {}, version {}": "{}から、バージョン{}",
+ "From {}, version {}. Read it before you install. It can’t change what your Machine may do.": "{}から、バージョン{}。インストールする前にお読みください。Machineにできることは変わりません。",
  "From {}.": "{}から。",
  "From {}:": "{}から：",
  "From {}: {}": "{}から：{}",
@@ -8414,7 +8416,6 @@
  "{} {} this thread, also if it is sensitive. Personal never goes.": "{}はこのスレッドを{}します。機密情報を含む場合も同様です。個人的な内容は共有されません。",
  "{} {} {}, deals too. Personal and other companies never go.": "{}は{}の{}を共有します。商談も含みます。個人的な内容と他社の情報は共有されません。",
  "{} {}, tap to show or hide": "{} {}、タップして表示／非表示",
- "{} {}, version {}. Read it before you install. It can’t change what your Machine may do.": "{} {}、バージョン{}。インストールする前にお読みください。Machineにできることは変わりません。",
  "{} {}, without asking you: {}.": "{} {}、確認せずに：{}。",
  "{} {}. Your Machine uses {} from now on.": "{} {}。Machineは今後{}を使用します。",
  "{} · {} ready · {} to decide": "{} · {} 準備完了 · {} 判断待ち",
