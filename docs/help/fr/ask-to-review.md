@@ -10,7 +10,7 @@ translated: d2ca08e771f23228
 ## Demander à quelqu’un de relire une tâche
 
 1. Dans la tâche, ouvrez **…**, puis **Transférer…**, et choisissez **Demander une relecture** (si c’est la seule option, elle se trouve directement dans le menu **…**). Vous pouvez le faire à n’importe quelle étape : avant **Faire**, quand un brouillon est prêt ou juste avant de l’envoyer.
-2. Choisissez la personne. Une tâche professionnelle ne peut être envoyée qu’à une personne de votre Fleet professionnelle, et une tâche personnelle, uniquement à un membre de votre famille.
+2. Choisissez la personne. Une tâche professionnelle ne peut être envoyée qu’à une personne de votre Fleet Travail, et une tâche personnelle, uniquement à un membre de votre famille.
 3. Vérifiez ce qui sera envoyé : le brouillon (ou le texte de la tâche) et ses sources. Appuyez sur × pour exclure une source. Ajoutez une note si vous le souhaitez, puis choisissez **Demander**.
 
 Seule cette tâche est envoyée, rien d’autre depuis votre Machine. La tâche indique alors « En attente de la relecture de Pat », avec l’option **Retirer** pour annuler la demande.

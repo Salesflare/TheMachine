@@ -1,5 +1,5 @@
 ---
-title: Santé de Machine
+title: Santé de votre Machine
 area: connections
 summary: Le journal de votre Machine, pour qu’elle repère ses propres problèmes. Elle ne fait que le lire.
 covers: connector:gateway
@@ -27,8 +27,8 @@ Rien. Elle ne fait que lire le journal de votre Machine.
 
 ## La connecter
 
-- Sur une Machine hébergée, elle se trouve sur la page de configuration, sous **Plus de sources**, sous le nom **Santé de Machine**. Une par Machine.
-- Sur votre ordinateur : **Connexions**, **Autres**, **Santé de Machine**. Ou exécutez `assistant connect gateway`.
+- Sur une Machine hébergée, elle se trouve sur la page de configuration, sous **Plus de sources**, sous le nom **Santé de votre Machine**. Une par Machine.
+- Sur votre ordinateur : **Connexions**, **Autres**, **Santé de votre Machine**. Ou exécutez `assistant connect gateway`.
 
 ## La supprimer
 

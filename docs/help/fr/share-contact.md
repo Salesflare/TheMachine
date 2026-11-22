@@ -1,7 +1,7 @@
 ---
 title: Partager un contact
 area: graph
-summary: Envoyez le contact de quelqu’un, ou le vôtre, à un coéquipier, un ami ou un membre de votre Famille. Choisissez ce qui part et vérifiez-le avant l’envoi.
+summary: Envoyez le contact de quelqu’un, ou le vôtre, à un collègue, un ami ou un membre de votre Famille. Choisissez ce qui part et vérifiez-le avant l’envoi.
 covers: share-contact
 code: contact_share.py, fleet.py, dashboard.html
 order: 6
@@ -9,7 +9,7 @@ translated: 66412d1dc4e965c2
 ---
 ## Partager quelqu’un
 
-Sur la page d’une personne, ouvrez **⋯** et choisissez **Partager le contact…**. Choisissez le destinataire : un coéquipier de votre Fleet Travail, un ami ou quelqu’un de votre Famille. Le contact part vers une seule personne à la fois.
+Sur la page d’une personne, ouvrez **⋯** et choisissez **Partager le contact…**. Choisissez le destinataire : un collègue de votre Fleet Travail, un ami ou quelqu’un de votre Famille. Le contact part vers une seule personne à la fois.
 
 Cochez ce qui part : toujours le nom, puis, si vous le souhaitez, ses adresses e-mail et numéros de téléphone, son organisation et son rôle. Ajoutez une courte note dans **Pourquoi vous devriez vous parler** si vous voulez.
 
@@ -29,8 +29,8 @@ Dans **À propos de vous**, choisissez **Partager mes coordonnées**. Choisissez
 
 ## Quand quelqu’un vous partage un contact
 
-Il vous attend sous **Partagés avec vous**, en haut de Personnes, avec la personne qui l’a envoyé et sa note. Choisissez **Ajouter** pour le mettre dans votre Graph, ou **Ignorer**.
+Il vous attend sous **Partagés avec vous**, en haut de Personnes, avec la personne qui l’a envoyé et sa note. Choisissez **Ajouter** pour le mettre dans votre Graph, ou **Écarter**.
 
-- Si vous connaissez déjà cette personne (même e-mail ou même numéro), Ajouter n’ajoute que ce qui est nouveau. Son nom, son rôle et son côté restent les vôtres.
-- Venant d’un coéquipier, la personne arrive en Travail, marquée « Partagé par » avec son nom. Venant d’un ami ou de la Famille, c’est une suggestion à ajouter, et son côté est décidé comme pour n’importe qui.
+- Si vous connaissez déjà cette personne (même e-mail ou même numéro), Ajouter n’ajoute que ce qui est nouveau. Son nom, son rôle et son type Travail ou Perso restent les vôtres.
+- Venant d’un collègue, la personne arrive en Travail, marquée « Partagé par » avec son nom. Venant d’un ami ou de la Famille, c’est une suggestion à ajouter, et son type Travail ou Perso est décidé comme pour n’importe qui.
 - La personne qui l’a envoyé voit si vous l’avez ajouté, mais rien d’autre de votre Graph.

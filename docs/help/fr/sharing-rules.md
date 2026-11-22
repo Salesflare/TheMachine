@@ -21,11 +21,11 @@ Elle ne partage jamais le contenu des e-mails ni le sujet de vos réunions. **Di
 
 Les règles se modifient uniquement dans le tableau de bord, jamais à partir d’un message.
 
-## Dans une Fleet de travail
+## Dans une Fleet Travail
 
-Dans une Fleet de travail standard, les règles pour savoir qui connaît qui, le contexte des réunions et la personne qui traite les e-mails partagés sont **Toujours** ou **Jamais**. Avec **Toujours**, votre Machine répond uniquement à partir des informations que le [Graph de l’équipe](team-graph.md) partage déjà avec votre équipe, et ne nomme que les personnes qu’il partage. Une règle enregistrée sur **Me demander d’abord** fonctionne comme **Toujours**.
+Dans une Fleet Travail standard, les règles pour savoir qui connaît qui, le contexte des réunions et la personne qui traite les e-mails partagés sont **Toujours** ou **Jamais**. Avec **Toujours**, votre Machine répond uniquement à partir des informations que le [Graph d’équipe](team-graph.md) partage déjà avec votre équipe, et ne nomme que les personnes qu’il partage. Une règle enregistrée sur **Me demander d’abord** fonctionne comme **Toujours**.
 
-Tant que le Graph de l’équipe ne partage rien, les options **Me demander d’abord** restent disponibles pour savoir qui connaît qui et pour le contexte des réunions. C’est aussi le cas dans une Fleet prudente. Consultez la page [Fleets](fleet.md#answered-by-itself-in-a-work-fleet).
+Tant que le Graph d’équipe ne partage rien, les options **Me demander d’abord** restent disponibles pour savoir qui connaît qui et pour le contexte des réunions. C’est aussi le cas dans une Fleet prudente. Consultez la page [Fleets](fleet.md#answered-by-itself-in-a-work-fleet).
 
 ## La première fois qu’une personne pose une question
 

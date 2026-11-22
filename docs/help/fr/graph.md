@@ -35,7 +35,7 @@ Sous Champs, sur la page d’une personne, d’une organisation ou d’un projet
 
 ## Anniversaire
 
-L’anniversaire d’une personne s’affiche sous Contact, avec sa provenance : son contact Google, un anniversaire dans Google Calendar (la routine Anniversaires l’enregistre pour les contacts proches), un import Facebook, vos notes ou vous-même. **Modifier** permet de le définir ou de le corriger : indiquez le mois et le jour, et l’année si vous la connaissez (son âge s’affiche alors aussi).
+L’anniversaire d’une personne s’affiche sous Contact, avec sa provenance : son contact Google, un anniversaire dans Google Agenda (la routine Anniversaires l’enregistre pour les contacts proches), un import Facebook, vos notes ou vous-même. **Modifier** permet de le définir ou de le corriger : indiquez le mois et le jour, et l’année si vous la connaissez (son âge s’affiche alors aussi).
 
 La date que vous indiquez est prioritaire sur toutes les sources et reste enregistrée. **Retirer** la supprime. Un contact ou un import ne la rétablira pas.
 
@@ -46,7 +46,7 @@ Si aucune date n’est renseignée, **Ajouter l’anniversaire**, sous Champs, p
 **Importer un CSV…**, sous le menu de tri dans Personnes, Organisations ou Projets, permet d’ajouter un tableur enregistré au format CSV.
 
 1. Vérifiez les colonnes. Votre Machine devine à quoi elles correspondent d’après leurs en-têtes et leur contenu. Vous pouvez les modifier. Lorsque votre modèle peut s’exécuter, il les vérifie aussi et indique brièvement les éléments incertains. Il ne voit que les en-têtes, quelques valeurs par colonne et les cellules que les règles n’ont pas pu lire.
-2. Vérifiez les corrections. **Vérifier** les affiche avant et après : espaces en trop, noms en majuscules, numéros de téléphone au format international, fautes de frappe dans les e-mails (gmial.com), sites web ramenés à leur nom de domaine, dates et valeurs dans n’importe quel format (« €12k » correspond à 12000), plusieurs tags dans une cellule, étape écrite différemment et doublons de lignes. Décochez un type de correction ou une ligne pour ne pas l’appliquer.
+2. Vérifiez les corrections. **Vérifier** les affiche avant et après : espaces en trop, noms en majuscules, numéros de téléphone au format international, fautes de frappe dans les e-mails (gmial.com), sites web ramenés à leur nom de domaine, dates et valeurs dans n’importe quel format (« €12k » correspond à 12 000), plusieurs tags dans une cellule, étape écrite différemment et doublons de lignes. Décochez un type de correction ou une ligne pour ne pas l’appliquer.
 3. Vérifiez l’aperçu. Chaque ligne est nouvelle, correspond à une fiche déjà présente dans votre Graph ou est ignorée, avec une explication. Une personne est identifiée par son e-mail (ou, à défaut, par son nom et son organisation), une organisation par son site web ou son nom, et un projet par son nom.
 4. **Importer** ajoute les nouvelles fiches et complète celles qui correspondent. Une cellule vide ne change rien.
 
@@ -54,10 +54,10 @@ Si aucune date n’est renseignée, **Ajouter l’anniversaire**, sous Champs, p
 
 ## Propriétaire
 
-Dans une Work Fleet, chaque personne, organisation et projet a un propriétaire : **Propriétaire**, sous Avec vous sur sa page. C’est vous, sauf si vous choisissez quelqu’un de votre Work Fleet. **Propriétaire** dans Filtrer affiche uniquement vos fiches. Chaque modification apparaît dans la chronologie.
+Dans une Fleet Travail, chaque personne, organisation et projet a un propriétaire : **Propriétaire**, sous Avec vous sur sa page. C’est vous, sauf si vous choisissez quelqu’un de votre Fleet Travail. **Propriétaire** dans Filtrer affiche uniquement vos fiches. Chaque modification apparaît dans la chronologie.
 
 ## Équipe
 
-**Équipe**, à côté de À moi, affiche ce que vos coéquipiers partagent, avec les mêmes onglets et le même menu de tri. **Filtrer** permet de réduire la liste selon la personne qui a partagé la fiche, une organisation (Personnes) ou un état (Projets). Ce que vous ajoutez ici vous appartient.
+**Équipe**, à côté de À moi, affiche ce que vos collègues partagent, avec les mêmes onglets et le même menu de tri. **Filtrer** permet de réduire la liste selon la personne qui a partagé la fiche, une organisation (Personnes) ou un état (Projets). Ce que vous ajoutez ici vous appartient.
 
-Le travail client est partagé avec les Machines de vos coéquipiers, avec son propriétaire, ses champs et ses tags. Leurs fiches s’affichent dans la vôtre. Chaque fil indique **Équipe** ou **Vous seul**. Consultez [Graph d’équipe](team-graph.md).
+Le travail client est partagé avec les Machines de vos collègues, avec son propriétaire, ses champs et ses tags. Leurs fiches s’affichent dans la vôtre. Chaque fil indique **Équipe** ou **Vous seul**. Consultez [Graph d’équipe](team-graph.md).

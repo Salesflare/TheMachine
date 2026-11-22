@@ -31,7 +31,7 @@ Le contenu de vos messages, tâches, brouillons ou chats. Les noms, adresses e-m
 - les tâches en arrière-plan : vérification des nouveaux messages, préparation des tâches, chat, connexions et synchronisations ;
 - le tableau de bord, dans votre navigateur ou l’app, y compris les erreurs affichées ;
 - les requêtes du tableau de bord qui échouent ou expirent : lesquelles, jamais leur contenu ;
-- les tâches d’agent de codage qui échouent : l’outil et le type d’échec uniquement ;
+- les tâches d’agent de programmation qui échouent : l’outil et le type d’échec uniquement ;
 - le court test de votre IA en cas d’échec : l’erreur de l’IA, expurgée de toute donnée spécifique.
 
 Un connecteur que vous avez ajouté vous-même (votre propre fichier dans `connectors/`) n’envoie que le nom de son service et le libellé de son erreur, comme `notes` et `notes_http: HTTP unauthorized`, pour que nous puissions vous aider à la corriger. Rien d’autre de son code. Sa carte de connexion affiche l’erreur complète.

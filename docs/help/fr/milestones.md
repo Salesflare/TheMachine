@@ -9,7 +9,7 @@ translated: 352a1bbf817dde79
 ---
 ## Quand cela s’affiche
 
-Quand votre compteur **Fait** dépasse 10, 50, 100, 250, 500, 1,000, 2,500, 5,000 ou 10,000, une petite note avec le nombre s’affiche en haut de **Tâches**. Elle ne s’affiche qu’une fois : fermez-la avec × et elle disparaîtra sur tous vos appareils. Si vous avez déjà dépassé plusieurs paliers, seul le plus récent s’affiche.
+Quand votre compteur **Fait** dépasse 10, 50, 100, 250, 500, 1 000, 2 500, 5 000 ou 10 000, une petite note avec le nombre s’affiche en haut de **Tâches**. Elle ne s’affiche qu’une fois : fermez-la avec × et elle disparaîtra sur tous vos appareils. Si vous avez déjà dépassé plusieurs paliers, seul le plus récent s’affiche.
 
 ## Partager
 

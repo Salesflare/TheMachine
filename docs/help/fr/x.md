@@ -22,12 +22,12 @@ Cette connexion ne passe pas par l’API officielle de X. La lecture et l’envo
 Avec une Machine hébergée :
 
 1. Ouvrez votre page de configuration sur app.themachine.computer/setup, puis accédez à **Plus de sources**.
-2. Ouvrez X, saisissez votre nom d’utilisateur sans le @, puis connectez-vous à X dans le navigateur de votre Machine quand vous y êtes invité. Appuyez ensuite sur **Se connecter**.
+2. Ouvrez X, saisissez votre nom d’utilisateur sans le @, puis connectez-vous à X dans le navigateur de votre Machine quand vous y êtes invité. Appuyez ensuite sur **Connecter**.
 
 Sur votre propre ordinateur :
 
 1. Dans le tableau de bord, ouvrez **Connexions**, puis **Chat**, et choisissez X.
-2. Choisissez **Travail** et son entreprise, ou **Perso**, saisissez votre nom d’utilisateur sans le @, puis appuyez sur **Se connecter**.
+2. Choisissez **Travail** et son entreprise, ou **Perso**, saisissez votre nom d’utilisateur sans le @, puis appuyez sur **Connecter**.
 3. Appuyez sur **Se connecter à X** et connectez-vous dans le navigateur de votre Machine. La connexion se fait automatiquement une fois la session ouverte.
 
 Vous pouvez aussi exécuter `assistant connect x` dans un terminal.

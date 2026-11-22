@@ -36,7 +36,7 @@ Tout le reste apparaît discrètement sur le tableau de bord (et sans alerte sur
 L’app vérifie si vous utilisez réellement le tableau de bord, et pas seulement s’il est ouvert :
 
 - En cours d’utilisation (au premier plan, et vous avez cliqué, saisi du texte ou fait défiler la page au cours des 10 dernières minutes) : aucune alerte. Les notifications Telegram arrivent sans alerte. Le simple fait d’ouvrir ou d’actualiser le tableau de bord ne compte pas.
-- Absente (en arrière-plan, fermée ou inactive depuis 10 minutes) : une notification push est envoyée une minute après votre départ, sauf si vous êtes revenue et l’avez vue.
+- Absent (en arrière-plan, fermée ou inactive depuis 10 minutes) : une notification push est envoyée une minute après votre départ, sauf si vous êtes revenu et l’avez vue.
 - Si la notification n’a toujours pas été vue 15 minutes plus tard et que la tâche ne peut pas attendre, un e-mail est envoyé, au maximum un par heure. Les éléments que vous avez déjà traités sont exclus. La plupart du temps, le récap du matin est le seul e-mail envoyé.
 - Si un membre de l’équipe vous confie une tâche et que votre Machine ne peut pas vous joindre par téléphone ou sur Telegram, un e-mail contenant son titre et un lien est envoyé 15 minutes plus tard, si vous ne l’avez toujours pas vue. Désactivez **E-mail** pour **Résultats et questions** pour empêcher l’envoi de cet e-mail.
 - En dehors de vos heures de travail : aucune notification. La tâche apparaît dans le récap du matin.
@@ -81,7 +81,7 @@ La notification push reprend le même contenu sans les liens. Touchez-la, ou le 
 
 ## Le récap du soir
 
-Il arrive une fois par jour travaillé, à l’heure définie dans **Heures de travail**, par défaut 15 minutes avant **Jusqu’à**, selon les moyens choisis dans sa ligne ci-dessus. Il n’est envoyé que les jours où vous avez été active : vous avez utilisé le tableau de bord ou pris une décision sur une tâche, sur Telegram, dans le chat ou à la voix. Vous ne le recevez pas un jour sans tâche terminée ni réunion tenue.
+Il arrive une fois par jour travaillé, à l’heure définie dans **Heures de travail**, par défaut 15 minutes avant **Jusqu’à**, selon les moyens choisis dans sa ligne ci-dessus. Il n’est envoyé que les jours où vous avez été actif : vous avez utilisé le tableau de bord ou pris une décision sur une tâche, sur Telegram, dans le chat ou à la voix. Vous ne le recevez pas un jour sans tâche terminée ni réunion tenue.
 
 Il commence par un bilan de la journée, par exemple « Bonsoir Sam, 4 tâches terminées aujourd’hui », puis comporte une partie **Travail** et une partie **Perso**. Les parties sans contenu sont omises. Chacune contient :
 

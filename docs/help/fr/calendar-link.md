@@ -18,10 +18,10 @@ Un lien ne peut qu’être lu, il ne change donc jamais une réunion. Le lien es
 Proton Calendar n’a pas d’autre accès pour les apps, il passe donc par un lien de partage.
 
 1. Ouvrez Proton Calendar sur le web, sur calendar.proton.me. Les apps mobiles ne permettent pas de créer des liens de partage.
-2. Allez dans "Paramètres", "Tous les paramètres", "Calendriers", et choisissez l’agenda.
-3. Sous "Share with anyone", appuyez sur "Create link" et choisissez "Full view". Limited view montre seulement quand vous êtes occupé.
-4. Appuyez sur "Copy link".
-5. Dans le tableau de bord, ouvrez **Connexions**, puis **Agenda**, choisissez **Proton Calendar**, collez le lien et appuyez sur **Se connecter**.
+2. Allez dans « Paramètres », « Tous les paramètres », « Calendriers », et choisissez l’agenda.
+3. Sous « Share with anyone », appuyez sur « Create link » et choisissez « Full view ». Limited view montre seulement quand vous êtes occupé.
+4. Appuyez sur « Copy link ».
+5. Dans le tableau de bord, ouvrez **Connexions**, puis **Agenda**, choisissez **Proton Calendar**, collez le lien et appuyez sur **Connecter**.
 
 ## Connecter un autre lien d’agenda
 

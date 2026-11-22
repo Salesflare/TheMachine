@@ -17,8 +17,8 @@ Votre forfait d’IA est facturé par votre fournisseur, comme OpenAI. Nous n’
 
 ## Sur le Network
 
-- Amis et famille : gratuit, avec n’importe quelle Machine. Dans une Fleet familiale, les Machines hébergées coûtent {price.family_pair} pour les deux premières ensemble, puis {price.family_seat} chacune, hors TVA.
-- Fleet de travail : {price.seat} par siège et par mois, ou {price.seat_big} pour une Machine plus grande, hors TVA. Un membre de l’équipe qui utilise sa propre Machine coûte {price.network} par mois. Quand un membre de l’équipe qui paie déjà pour une Machine hébergée rejoint la Fleet, il demande à la Fleet de la reprendre comme siège. Une fois que le propriétaire a confirmé, son propre forfait prend fin. D’ici là, ou si le propriétaire refuse, il continue de payer comme avant. Chaque Fleet a sa propre carte et ses propres factures, et le propriétaire confirme chaque montant avant son prélèvement.
+- Amis et famille : gratuit, avec n’importe quelle Machine. Dans une Fleet Famille, les Machines hébergées coûtent {price.family_pair} pour les deux premières ensemble, puis {price.family_seat} chacune, hors TVA.
+- Fleet Travail : {price.seat} par place et par mois, ou {price.seat_big} pour une Machine plus grande, hors TVA. Un membre de l’équipe qui utilise sa propre Machine coûte {price.network} par mois. Quand un membre de l’équipe qui paie déjà pour une Machine hébergée rejoint la Fleet, il demande à la Fleet de la reprendre comme place. Une fois que le propriétaire a confirmé, son propre forfait prend fin. D’ici là, ou si le propriétaire refuse, il continue de payer comme avant. Chaque Fleet a sa propre carte et ses propres factures, et le propriétaire confirme chaque montant avant son prélèvement.
 
 Tous les prix sont mensuels, hors TVA. Consultez [Tarifs](/pricing).
 

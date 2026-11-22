@@ -30,7 +30,7 @@ Avant que vous écriviez, le chat peut proposer jusqu’à trois suggestions à 
 
 Une question reçoit une réponse sans modifier le brouillon. Pour envoyer, utilisez les boutons de la tâche : le chat n’envoie jamais de brouillon dans la même réponse que celle qui l’a rédigé. Une modification demandée qui n’atteint personne d’autre, comme le nettoyage d’un document, est faite immédiatement, sans confirmation supplémentaire. Tout ce qui dépasse votre demande attend votre accord. Une tâche comportant plusieurs étapes reste ouverte jusqu’à ce qu’elles soient toutes terminées.
 
-Sur ordinateur, Enter ou Ctrl+Enter (Cmd+Enter sur Mac) envoie le message. Shift+Enter crée une nouvelle ligne. Sur téléphone, utilisez le bouton d’envoi.
+Sur ordinateur, Entrée ou Ctrl+Entrée (Cmd+Entrée sur Mac) envoie le message. Maj+Entrée crée une nouvelle ligne. Sur téléphone, utilisez le bouton d’envoi.
 
 ## En cas d’erreur
 
@@ -54,8 +54,8 @@ Pendant la rédaction d’une réponse, le bouton d’envoi devient **Arrêter**
 
 Touchez le trombone, collez une capture d’écran ou déposez des fichiers dans le chat. Chaque fichier apparaît au-dessus du champ de message. Touchez × pour le retirer. Un message peut contenir uniquement des fichiers.
 
-- Les images (PNG, JPEG, GIF, WebP) de 5 MB maximum sont envoyées au modèle sous forme d’images.
-- Pour les PDF, les fichiers texte, les feuilles de calcul (CSV) et les fichiers Office de 10 MB maximum, The Machine les lit et peut les joindre à un brouillon.
+- Les images (PNG, JPEG, GIF, WebP) de 5 Mo maximum sont envoyées au modèle sous forme d’images.
+- Pour les PDF, les fichiers texte, les feuilles de calcul (CSV) et les fichiers Office de 10 Mo maximum, The Machine les lit et peut les joindre à un brouillon.
 - Jusqu’à 5 fichiers par message.
 
 Les fichiers restent sur votre Machine, chiffrés comme vos messages. Les fichiers ajoutés mais jamais envoyés sont supprimés après un jour. Une nouvelle tâche peut aussi contenir des fichiers, depuis **Nouvelle tâche** (voir [Créer une tâche](cards.md#make-one-yourself)).

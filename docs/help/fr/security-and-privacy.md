@@ -22,7 +22,7 @@ translated: e636b2a2fbbc714d
 
 ## Niveaux de sécurité
 
-**Standard** conserve les réglages par défaut actuels. **Prudent** n’affiche aucun texte dans les notifications, n’enregistre pas les connexions et conserve moins de données. L’administrateur d’une Work Fleet peut activer le mode **Prudent** pour toute la Fleet. Voir [Niveaux de sécurité](security-levels.md).
+**Standard** conserve les réglages par défaut actuels. **Prudent** n’affiche aucun texte dans les notifications, n’enregistre pas les connexions et conserve moins de données. L’administrateur d’une Fleet Travail peut activer le mode **Prudent** pour toute la Fleet. Voir [Niveaux de sécurité](security-levels.md).
 
 ## Connexion
 

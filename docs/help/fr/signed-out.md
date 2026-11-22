@@ -13,7 +13,7 @@ Les sites comme LinkedIn et X s’ouvrent dans le navigateur de votre Machine. I
 
 Dans **Connexions** et en haut de vos tâches, un message indique que votre Machine est déconnectée. Cliquez sur **Connectez-vous ici** et connectez-vous dans une petite fenêtre du tableau de bord.
 
-Cochez **Enregistrer pour la prochaine fois** pour vous reconnecter en un clic si cela se reproduit. Le mot de passe reste chiffré sur votre Machine et l’IA ne le voit jamais. Si vous avez plusieurs comptes sur un même site, **Enregistrer sous** vous permet de nommer ce compte (Travail, Personnel). Une boîte de dialogue vous demande lequel utiliser si la tâche ne le précise pas.
+Cochez **Enregistrer pour la prochaine fois** pour vous reconnecter en un clic si cela se reproduit. Le mot de passe reste chiffré sur votre Machine et l’IA ne le voit jamais. Si vous avez plusieurs comptes sur un même site, **Enregistrer sous** vous permet de nommer ce compte (Travail, Perso). Une boîte de dialogue vous demande lequel utiliser si la tâche ne le précise pas.
 
 ## Mots de passe et codes
 

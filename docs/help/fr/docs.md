@@ -47,7 +47,7 @@ La modification est disponible dès la connexion. Une ancienne connexion qui per
 
 ## Ce qu’elle vous demande
 
-Microsoft vous demande un seul accord : lire et modifier vos fichiers, y compris ceux qui sont partagés avec vous. Chaque modification attend toujours votre accord dans la tâche correspondante. L’accès à vos e-mails et à votre calendrier ne change pas.
+Microsoft vous demande un seul accord : lire et modifier vos fichiers, y compris ceux qui sont partagés avec vous. Chaque modification attend toujours votre accord dans la tâche correspondante. L’accès à vos e-mails et à votre agenda ne change pas.
 
 Si vous retirez cet accord par la suite, Microsoft OneDrive affiche **En attente de votre accord pour lire les documents** dans **Connexions**.
 

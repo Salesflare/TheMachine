@@ -33,4 +33,4 @@ L’importation remplace le contenu actuel de cette Machine, après en avoir con
 
 Si les **Paramètres** ne parviennent pas à redémarrer The Machine sur votre ordinateur, ils vous indiquent les commandes à exécuter.
 
-Sur un nouvel ordinateur, [installez The Machine](self-hosted-setup.md) d’abord. Ensuite, annulez votre forfait hébergé si vous n’en avez plus besoin : consultez [Annuler ou supprimer](cancel-and-delete.md).
+Sur un nouvel ordinateur, [installez The Machine](self-hosted-setup.md) d’abord. Ensuite, résiliez votre forfait hébergé si vous n’en avez plus besoin : consultez [Résilier ou supprimer](cancel-and-delete.md).

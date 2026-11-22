@@ -17,17 +17,17 @@ Ouvrez **Paramètres**, puis **Activité**. Chaque ligne correspond à une actio
 - un lien vers la tâche correspondante, le cas échéant
 - pour une IA que vous avez connectée, comme ChatGPT ou Claude : son nom suivi de **(IA connectée)**, pour la distinguer de The Machine
 
-La liste inclut les messages et les réponses, les modifications de documents et de calendriers, les actions sur le Web, les correctifs qu’elle a fusionnés, les agents de programmation, les questions et réponses de Fleet, les apprentissages transmis à l’équipe The Machine, les compétences, les importations de Graph, les informations que vous avez demandé à votre chat d’oublier (avec **Annuler**), les connexions ajoutées ou supprimées, ainsi que chaque consultation par notre équipe dans le cadre de [l’accès à l’assistance](get-support.md#support-access), y compris les consultations refusées.
+La liste inclut les messages et les réponses, les modifications de documents et d’agendas, les actions sur le Web, les correctifs qu’elle a fusionnés, les agents de programmation, les questions et réponses de Fleet, les apprentissages transmis à l’équipe The Machine, les compétences, les importations de Graph, les informations que vous avez demandé à votre chat d’oublier (avec **Annuler**), les connexions ajoutées ou supprimées, ainsi que chaque consultation par notre équipe dans le cadre de [l’accès à l’assistance](get-support.md#support-access), y compris les consultations refusées.
 
 ## Ce qui l’a autorisée
 
-Pour chaque message, modification de document ou de calendrier, action sur le Web et correctif fusionné, l’activité indique ce qui l’a autorisée, au moment où cela s’est passé :
+Pour chaque message, modification de document ou d’agenda, action sur le Web et correctif fusionné, l’activité indique ce qui l’a autorisée, au moment où cela s’est passé :
 
 - **Approuvé dans la tâche** ou **Approuvé dans Telegram** : vous avez appuyé sur **Envoyer**, **Confirmer** ou **Fusionner**
 - **Approuvé à la voix** : vous avez répondu oui dans Talk
 - **« Faire » touché** : vous avez appuyé sur **Faire** dans la tâche
 - **Demandé dans le chat** : vous l’avez demandé par écrit. Le début de votre message apparaît entre guillemets. La citation reste affichée uniquement tant que ces mots figurent encore dans votre message.
-- **Relance qu’elle a envoyée d’elle-même**, **Petit correctif, fusionné d’elle-même**, **Nouveau document privé, créé d’elle-même** ou **Préparé à l’avance, d’elle-même** : un de vos réglages ou une règle interne de The Machine
+- **Relance qu’elle a envoyée d’elle-même**, **Petit correctif, fusionné automatiquement**, **Nouveau document privé, créé d’elle-même** ou **Préparé à l’avance, d’elle-même** : un de vos réglages ou une règle interne de The Machine
 - **Aucune approbation enregistrée** : aucune approbation n’a été enregistrée. L’action apparaît aussi dans nos [rapports d’erreur](error-reports.md), pour nous aider à trouver ce qui n’a pas fonctionné.
 
 Les actions sur le Web incluent aussi les exécutions d’une tâche qui a cliqué ou saisi du texte sur une page, avec l’autorisation correspondante. Le travail qui se poursuit après une mise en attente conserve l’autorisation donnée avant celle-ci.

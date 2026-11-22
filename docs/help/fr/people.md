@@ -6,7 +6,7 @@ code: graph.py, crm.py, bounces.py, enrichment.py, record_log.py, dashboard.html
 order: 2
 translated: 5e808343918f7f47
 ---
-Toutes les personnes avec qui vous êtes en contact, des plus proches aux autres, à partir de vos messages et réunions. Les newsletters, reçus et autres envois ne créent pas de personne tant que vous n’avez pas répondu. Ils apparaissent sous Expéditeurs masqués, en bas de la liste : **Afficher comme personne** en ajoute une. Les champs, tags et imports fonctionnent de la même façon dans les trois listes, et chacune a ses propres filtres : voir [The Graph](graph.md).
+Toutes les personnes avec qui vous êtes en contact, des plus proches aux autres, à partir de vos messages et réunions. Les newsletters, reçus et autres envois ne créent pas de personne tant que vous n’avez pas répondu. Ils apparaissent sous Expéditeurs masqués, en bas de la liste : **Afficher comme personne** en ajoute une. Les champs, tags et imports fonctionnent de la même façon dans les trois listes, et chacune a ses propres filtres : voir [Le Graph](graph.md).
 
 Une boîte de réception partagée (info@, service client, nom propre d’un magasin) est associée à son organisation, et non à une personne, même après que vous lui avez écrit.
 
@@ -14,7 +14,7 @@ Une boîte de réception partagée (info@, service client, nom propre d’un mag
 
 La page commence par sa photo, son nom, son titre, son organisation et son lieu, puis une ligne sur vos échanges (« Échanges quotidiens · dernier contact hier · prochaine réunion mar. 27 oct. »). Le contact récent est indiqué par « à l’instant », « il y a 3 heures », « hier » ou « il y a 3 jours ». Pour les contacts plus anciens, une date s’affiche ; passez la souris dessus pour voir la date exacte. En dessous :
 
-- **Contact** : ses numéros de téléphone et adresses e-mail. Touchez l’un d’eux pour appeler ou écrire, ou **Copier** pour le copier. Son **Anniversaire** s’affiche aussi ici, avec sa source (Google Contacts, Google Calendar, Facebook, vos notes ou vous-même) : voir [The Graph](graph.md#birthday).
+- **Contact** : ses numéros de téléphone et adresses e-mail. Touchez l’un d’eux pour appeler ou écrire, ou **Copier** pour le copier. Son **Anniversaire** s’affiche aussi ici, avec sa source (Google Contacts, Google Agenda, Facebook, vos notes ou vous-même) : voir [Le Graph](graph.md#birthday).
 - **Avec vous** : son lien avec vous, contact Travail ou Perso, et votre Famille ou Fleet, avec **Voir dans Fleet**.
 - **Aussi sur** : les autres plateformes où vous échangez avec cette personne. **Slack** ouvre son profil dans Slack ou votre fil Slack le plus récent avec elle.
 - Les **Personnes** et **Projets** auxquels elle est liée, les éléments **En cours entre vous** (promesses dans les deux sens, avec **Marquer comme fait** et **Abandonner**) et sa **Chronologie**.
@@ -39,7 +39,7 @@ Chaque page de personne et d’organisation en a une, de la plus récente à la 
 
 Les réunions à venir s’affichent tout en haut, sous **À venir**, de la plus proche à la plus lointaine ; **Afficher tout ce qui est à venir** affiche les autres. Une réunion indique les personnes qui y ont participé, chacune une seule fois. Si elle comporte des notes ou une transcription, elle affiche **Notes** ou **Transcription** ; cliquez dessus pour les lire.
 
-Vos chronologies vous appartiennent : le Graph de l’équipe n’affiche que les informations autorisées par vos règles de partage. Sur une page, **Équipe**, au-dessus de la Chronologie, ajoute les éléments partagés par vos collègues, en indiquant leur source ; **Les miens** affiche uniquement les vôtres.
+Vos chronologies vous appartiennent : le Graph d’équipe n’affiche que les informations autorisées par vos règles de partage. Sur une page, **Équipe**, au-dessus de la Chronologie, ajoute les éléments partagés par vos collègues, en indiquant leur source ; **Les miens** affiche uniquement les vôtres.
 
 ## Travail et perso
 
@@ -55,7 +55,7 @@ La personne que vous ajoutez reste dans la liste, même sans message. Son premie
 
 **Modifier**, en haut de sa page, permet de changer son nom, son titre, son organisation, son lieu, son profil LinkedIn, ses numéros de téléphone et ses adresses e-mail, son lien avec vous et son type Travail ou Perso. Le champ **Notes** vous permet de noter ce que vous voulez garder en mémoire ; les notes sont conservées lors des fusions. **Enregistrer** conserve les modifications, et **Annuler** les abandonne.
 
-Vos modifications sont conservées, même lorsque ses informations sont recherchées à nouveau, ainsi qu’après une **Fusionner** ou une **Annuler**. Videz un champ pour réutiliser la valeur trouvée automatiquement. Si vous videz le nom, celui qui figure dans ses messages réapparaît.
+Vos modifications sont conservées, même lorsque ses informations sont recherchées à nouveau, ainsi qu’après **Fusionner** ou **Annuler**. Videz un champ pour réutiliser la valeur trouvée automatiquement. Si vous videz le nom, celui qui figure dans ses messages réapparaît.
 
 Pour changer sa photo, cliquez dessus, puis choisissez **Importer une photo**, sélectionnez une photo trouvée pour cette personne ou choisissez **Retirer la photo**. Elle reste sur votre Machine.
 
@@ -91,7 +91,7 @@ Une adresse est considérée comme rejetée lorsque le serveur de messagerie ind
 
 Les personnes ayant une adresse professionnelle reçoivent un titre professionnel, une photo, un profil LinkedIn et une ville, recherchés comme les [informations sur l’organisation](organization-data.md). Sur une Machine hébergée, la recherche n’utilise que leur nom et le domaine de leur entreprise. Pour une photo, Gravatar reçoit le hachage de leur adresse professionnelle, jamais l’adresse elle-même. Désactivez cette option dans **Paramètres**, sous Sécurité : **Rechercher les contacts pro**.
 
-Ce réglage désactive aussi la brève recherche sur le Web effectuée avant une première réunion (voir [Prête pour vos réunions](calendar.md#ready-for-your-meetings)).
+Ce réglage désactive aussi la brève recherche sur le Web effectuée avant une première réunion (voir [Préparez vos réunions](calendar.md#ready-for-your-meetings)).
 
 Lorsque ces informations sont trouvées, la page affiche aussi sa présentation, la date depuis laquelle la personne occupe son poste actuel et ses deux postes précédents. Les préparations les consultent aussi, mais n’utilisent la présentation que si la personne n’a pas de biographie.
 
@@ -101,7 +101,7 @@ Outlook ajoute les photos des collègues de votre organisation et de vos contact
 
 Les photos WhatsApp et Telegram sont importées par la synchronisation WhatsApp et la connexion à vos chats Telegram : jusqu’à 50 par jour pour chaque service, uniquement pour les personnes déjà dans votre Graph. Aucun message ne leur est envoyé. Un import d’anniversaires Facebook ajoute la photo de profil d’une personne qui n’en a pas lorsque vous l’enregistrez ([Routines](routines.md)). Tout reste sur votre Machine.
 
-Dans le [Graph d’équipe](team-graph.md) d’un Fleet Travail, une petite copie de la photo professionnelle est ajoutée à la fiche partagée de la personne. Les photos provenant de Google Contacts, WhatsApp, Telegram ou Facebook, ainsi que celles que vous avez modifiées ou supprimées, ne sont jamais partagées.
+Dans le [Graph d’équipe](team-graph.md) d’une Fleet Travail, une petite copie de la photo professionnelle est ajoutée à la fiche partagée de la personne. Les photos provenant de Google Contacts, WhatsApp, Telegram ou Facebook, ainsi que celles que vous avez modifiées ou supprimées, ne sont jamais partagées.
 
 ## À propos de vous
 
@@ -118,7 +118,7 @@ Les rôles que votre Machine repère dans vos messages s’affichent sur sa page
 Les informations sur cette personne figurent sur sa page, sous **Informations connues** ; les informations générales restent dans **Apprentissage**. **Ajouter** permet d’en ajouter une avec vos propres mots. Chaque information a un menu :
 
 - **Modifier** permet de la changer directement.
-- **Pas à propos de cette personne** la redevient une information générale, sous **Apprentissage**, **Faits**.
+- **Pas à propos de cette personne** en refait une information générale, sous **Apprentissage**, **Faits**.
 - **Retirer** la supprime partout.
 
 ## Modifications récentes
@@ -127,7 +127,7 @@ Les informations sur cette personne figurent sur sa page, sous **Informations co
 
 Si une ligne est erronée, son menu **⋯** permet de la corriger directement : **Modifier**, **Retirer**, **Pas à propos de cette personne** ou **Annuler** pour remettre un projet à sa place. Trois lignes s’affichent ; **Afficher plus** montre les autres.
 
-Une personne dont votre Machine a mis les informations à jour aujourd’hui est signalée par un petit point dans la liste Personnes. Le message **4 personnes mises à jour aujourd’hui** en haut de la liste les indique. Voir [The Graph](graph.md).
+Une personne dont votre Machine a mis les informations à jour aujourd’hui est signalée par un petit point dans la liste Personnes. Le message **4 personnes mises à jour aujourd’hui** en haut de la liste les indique. Voir [Le Graph](graph.md).
 
 ## Une tâche à propos d’une personne
 

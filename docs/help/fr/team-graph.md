@@ -1,13 +1,13 @@
 ---
 title: Graph d’équipe
 area: fleet
-summary: Expérimental. Partagez le travail avec vos clients avec votre Fleet professionnelle, comme dans un CRM. Découvrez ce qui est partagé, ce qui ne l’est jamais et comment garder certains éléments privés.
+summary: Expérimental. Partagez votre travail avec les clients avec votre Fleet Travail, comme dans un CRM. Découvrez ce qui est partagé, ce qui ne l’est jamais et comment garder certains éléments privés.
 covers: team-graph
 code: shared_graph.py, fleet_trust.py, dashboard.html
 order: 2
 translated: fc842bc761a3ab17
 ---
-Dans une Fleet professionnelle, votre Machine peut partager le travail avec vos clients avec les Machines de vos collègues, comme dans un CRM partagé. Cette fonctionnalité est **Expérimental** et désactivée par défaut.
+Dans une Fleet Travail, votre Machine peut partager votre travail avec les clients avec les Machines de vos collègues, comme dans un CRM partagé. Cette fonctionnalité porte la mention **Expérimental** et est désactivée par défaut.
 
 ## L’activer
 
@@ -97,7 +97,7 @@ Un administrateur autorise chaque personne une seule fois. La demande apparaît 
 
 En attendant, le Graph et la Fleet de la nouvelle personne indiquent les administrateurs dont l’approbation est nécessaire. **Les miens** et **Équipe** s’affichent quelques secondes après l’approbation, sans actualiser la page.
 
-La nouvelle Machine d’une personne déjà membre reçoit le Graph de l’équipe au bout de 24 heures. Dans l’intervalle, les administrateurs peuvent appuyer sur **Pas à eux** pour empêcher le partage.
+La nouvelle Machine d’une personne déjà membre reçoit le Graph d’équipe au bout de 24 heures. Dans l’intervalle, les administrateurs peuvent appuyer sur **Pas à eux** pour empêcher le partage.
 
 ## Quand une personne quitte l’équipe
 

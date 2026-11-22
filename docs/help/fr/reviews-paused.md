@@ -19,7 +19,7 @@ Si la première vérification ne trouve rien pour vous, elle indique ce qu’ell
 
 ## Les vérifications sont désactivées
 
-En haut de la page Tâches, le message « Les vérifications sont désactivées, aucune tâche ne vous parvient pour le moment. » s’affiche. Sur une Machine hébergée, appuyez sur **Activer les vérifications**. Sur votre ordinateur, exécutez `./install.sh --activate`.
+En haut de la page Tâches, le message « Les vérifications sont désactivées, donc aucune tâche n’arrive pour l’instant. » s’affiche. Sur une Machine hébergée, appuyez sur **Activer les vérifications**. Sur votre ordinateur, exécutez `./install.sh --activate`.
 
 ## La limite de votre modèle
 
@@ -31,7 +31,7 @@ Rien n’est perdu : les éléments reçus sont vérifiés dès que possible.
 
 ## La nuit
 
-De 00:00 à 06:30, les vérifications sont en pause et les nouveaux messages attendent. Ils sont vérifiés ensemble à 06:30, avant votre résumé du matin. **Vérifications** affiche « En pause pour la nuit, rattrapage à 06:30 ». Utilisez l’application, écrivez dans le chat ou touchez une tâche pour relancer les vérifications. Elles continueront jusqu’à une heure d’inactivité. **Vérifier maintenant** lance une vérification immédiatement.
+De minuit à 6 h 30, les vérifications sont en pause et les nouveaux messages attendent. Ils sont vérifiés ensemble à 6 h 30, avant votre récap du matin. **Vérifications** affiche « En pause pour la nuit, rattrapage à 06:30 ». Utilisez l’application, écrivez dans le chat ou touchez une tâche pour relancer les vérifications. Elles continueront jusqu’à une heure d’inactivité. **Vérifier maintenant** lance une vérification immédiatement.
 
 ## Une exécution a échoué
 

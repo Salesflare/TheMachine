@@ -15,18 +15,18 @@ Les résumés nécessitent un forfait Zoom payant, l’AI Companion activé pend
 
 ## Ce que la connexion en fait
 
-Chaque résumé est associé à la réunion correspondante dans votre calendrier. Il apparaît dans les **Notes** de cette réunion, et la transcription dans sa **Transcription**, avec la mention **De Zoom**, à côté des éléments que vous avez ajoutés. Votre Machine crée des tâches à partir des prochaines étapes qui vous reviennent. Rien n’est envoyé tant que vous ne l’envoyez pas.
+Chaque résumé est associé à la réunion correspondante dans votre agenda. Il apparaît dans les **Notes** de cette réunion, et la transcription dans sa **Transcription**, avec la mention **De Zoom**, à côté des éléments que vous avez ajoutés. Votre Machine crée des tâches à partir des prochaines étapes qui vous reviennent. Rien n’est envoyé tant que vous ne l’envoyez pas.
 
 ## Ce que la connexion peut faire
 
 La connexion ne fait que lire, et uniquement vos réunions. Elle ne crée, ne modifie et ne supprime jamais rien dans Zoom. Vos identifiants Zoom restent sur votre Machine.
 
-## Connecter la connexion
+## La connecter
 
 Sur une Machine hébergée :
 
 1. Ouvrez votre page de configuration sur app.themachine.computer/setup, puis accédez à **Plus de sources**.
-2. Ouvrez Zoom, choisissez « professionnel » ou « personnel », puis appuyez sur **Connecter Zoom**.
+2. Ouvrez Zoom, choisissez Travail ou Perso, puis appuyez sur **Connecter Zoom**.
 3. Connectez-vous à Zoom et autorisez The Machine (créée par Salesflare).
 
 Ou depuis le tableau de bord : **Connexions**, **Réunions**, choisissez Zoom, puis appuyez sur **Se connecter avec Zoom**. Une fois la connexion terminée, vous revenez au tableau de bord.

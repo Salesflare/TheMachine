@@ -9,7 +9,7 @@ translated: 0ff916ed2bb877e1
 ---
 ## Ce qu’il lit
 
-Vos réunions, avec leurs invités, salles et notes : la semaine passée et le mois à venir quand vous connectez, puis chaque changement. Elles apparaissent dans l’Agenda et dans la préparation des réunions, comme les réunions Google ou Outlook. Chaque agenda du compte est lu, ou seulement celui que vous nommez.
+Vos réunions, avec leurs invités, salles et notes : la semaine passée et le mois à venir quand vous le connectez, puis chaque changement. Elles apparaissent dans l’Agenda et dans la préparation des réunions, comme les réunions Google ou Outlook. Chaque agenda du compte est lu, ou seulement celui que vous nommez.
 
 Il est en lecture seule : il n’ajoute, ne déplace et ne supprime jamais de réunion.
 
@@ -17,17 +17,17 @@ Il est en lecture seule : il n’ajoute, ne déplace et ne supprime jamais de r�
 
 1. Créez un mot de passe pour app sur [appleid.apple.com](https://appleid.apple.com), sous **Connexion et sécurité**. Celui créé pour iCloud Mail fonctionne aussi.
 2. Dans le tableau de bord, ouvrez **Connexions**, puis **Agenda**, et choisissez **iCloud Calendar**.
-3. Saisissez votre Apple ID et le mot de passe pour app, puis appuyez sur **Se connecter**.
+3. Saisissez votre Apple ID et le mot de passe pour app, puis appuyez sur **Connecter**.
 
 ## Connecter un autre agenda
 
 1. Ouvrez **Connexions**, puis **Agenda**, et choisissez **Autre agenda**.
 2. Saisissez votre adresse e-mail et votre mot de passe. Beaucoup de fournisseurs demandent ici un mot de passe d’application, créé dans les réglages de votre compte.
-3. Appuyez sur **Se connecter**.
+3. Appuyez sur **Connecter**.
 
 Le serveur est trouvé pour Fastmail, Yahoo, Zoho et les serveurs qui l’annoncent. Le vôtre n’est pas trouvé ? Ouvrez **Réglages du serveur** et saisissez son adresse CalDAV, comme `nextcloud.example.com/remote.php/dav`. **Seulement cet agenda** lit un seul agenda par son nom.
 
-Des agendas Google ou Microsoft ? Choisissez plutôt **Google Calendar** ou **Outlook Calendar**.
+Des agendas Google ou Microsoft ? Choisissez plutôt **Google Agenda** ou **Outlook Calendar**.
 
 ## Quand il s’arrête
 

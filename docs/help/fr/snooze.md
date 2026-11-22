@@ -11,7 +11,7 @@ translated: 9d34f011c74d8119
 
 Appuyez sur **Mettre en attente** sur une tâche. Le menu propose plusieurs délais, par exemple dans 2 heures, demain ou dans une semaine. Pour choisir un autre moment, sélectionnez **Choisir une date** et **Heure**, puis **Enregistrer l’heure**. Vous l’avez mise en attente par erreur ? Appuyez sur **Annuler** dans le message pour la rétablir immédiatement.
 
-Les tâches mises en attente pour une journée ou plus reviennent à l’heure définie dans « Heure de retour des tâches en attente », et les tâches professionnelles attendent un jour de travail. Définissez ces deux options dans [Heures de travail](work-hours.md).
+Les tâches mises en attente pour une journée ou plus reviennent à l’heure définie dans « Les mises en attente reviennent à », et les tâches professionnelles attendent un jour de travail. Définissez ces deux options dans [Heures de travail](work-hours.md).
 
 Vous pouvez aussi le demander dans **Demander des modifications**, par exemple : « rappelle-moi ça mardi prochain ».
 
@@ -23,6 +23,6 @@ Une tâche que The Machine avait déjà terminée revient telle quelle. The Mach
 
 ## Pendant qu’elle est en attente
 
-La tâche apparaît sous **Revient plus tard**, et à la date prévue dans le [Calendrier](calendar.md). **Sortir de l’attente** la fait revenir immédiatement, et **Changer l’heure** permet de choisir un autre moment.
+La tâche apparaît sous **Revient plus tard**, et à la date prévue dans l’[Agenda](calendar.md). **Sortir de l’attente** la fait revenir immédiatement, et **Changer l’heure** permet de choisir un autre moment.
 
 Dans Outlook, la conversation par e-mail est déplacée dans un dossier « En attente » jusqu’au retour de la tâche. Consultez [Microsoft](microsoft.md).

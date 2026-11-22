@@ -25,11 +25,11 @@ Si une tâche est arrivée par e-mail, mais que vous échangez avec cette person
 ## La connecter
 
 1. Dans le tableau de bord, ouvrez **Connexions**, puis **Chat**, et choisissez les chats Telegram.
-2. Choisissez **Scanner un code QR avec Telegram sur un autre appareil**.
+2. Choisissez **Scanner un QR code avec Telegram sur un autre appareil**.
 3. Sur votre téléphone, dans Telegram, ouvrez Paramètres, Appareils, **Associer un appareil de bureau**, puis scannez le code.
 4. Si votre compte utilise un mot de passe cloud, saisissez-le lorsqu’on vous le demande. Il est envoyé à Telegram et n’est jamais enregistré.
 
-Sur un téléphone, le formulaire propose d’abord **Recevoir un code sur votre numéro de téléphone**, car il est impossible de scanner un code QR depuis le même écran. Il indique où Telegram a envoyé le code : dans votre application Telegram sur un autre appareil, par SMS ou à votre adresse e-mail de connexion. Vous n’avez pas reçu de code ? Appuyez sur **Renvoyer le code**.
+Sur un téléphone, le formulaire propose d’abord **Recevoir un code sur votre numéro de téléphone**, car il est impossible de scanner un QR code depuis le même écran. Il indique où Telegram a envoyé le code : dans votre application Telegram sur un autre appareil, par SMS ou à votre adresse e-mail de connexion. Vous n’avez pas reçu de code ? Appuyez sur **Renvoyer le code**.
 
 Sur votre propre ordinateur, vous avez également besoin de votre propre ID d’application Telegram. Créez-en un sur [my.telegram.org](https://my.telegram.org), dans les outils de développement API, puis renseignez son api_id et son api_hash dans le formulaire.
 

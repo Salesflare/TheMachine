@@ -21,7 +21,7 @@ Elle envoie des e-mails uniquement après que vous avez appuyé sur **Envoyer**,
 
 1. Dans le tableau de bord, ouvrez **Connexions**, puis **E-mail**, et choisissez **Autre e-mail**.
 2. Saisissez votre adresse e-mail et votre mot de passe.
-3. Appuyez sur **Se connecter**.
+3. Appuyez sur **Connecter**.
 
 De nombreux fournisseurs exigent un mot de passe d’application pour les applications de messagerie, plutôt que votre mot de passe habituel. Créez-en un dans les paramètres de votre compte chez votre fournisseur :
 

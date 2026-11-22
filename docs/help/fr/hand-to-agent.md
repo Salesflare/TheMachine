@@ -39,7 +39,7 @@ Sur une Machine hébergée, sélectionnez l’option sur votre page de configura
 
 - **Sur votre Machine** (par défaut) : appuyez sur **Connecter Codex** et saisissez le code affiché par OpenAI. Cette option utilise le même forfait ChatGPT que votre modèle, et les tâches s’exécutent sur votre Machine. Aucun terminal n’est nécessaire. Si vous êtes connecté au même compte ChatGPT, votre Machine peut aussi consulter et utiliser les réinitialisations de votre limite d’utilisation.
 - **Autres options**, **Sur mon ordinateur** : la tâche s’exécute sur votre ordinateur, avec le compte Codex connecté sur celui-ci. Les échanges sont chiffrés et réservés à cet ordinateur. Installez The Machine sur cet ordinateur, associez-le sur la page de votre compte, exécutez `codex login` et laissez The Machine en marche. Le résultat s’affiche sur la tâche. Quand l’ordinateur est éteint, les tâches attendent.
-- **Autres options**, **Codex cloud** : la tâche s’exécute dans le cloud d’OpenAI. Appuyez sur **Connecter Codex**. Cette option utilise le même forfait ChatGPT que votre modèle, et OpenAI vous demande un autre code, pour Codex. Saisissez ensuite l’environnement Codex cloud dans Settings.
+- **Autres options**, **Codex cloud** : la tâche s’exécute dans le cloud d’OpenAI. Appuyez sur **Connecter Codex**. Cette option utilise le même forfait ChatGPT que votre modèle, et OpenAI vous demande un autre code, pour Codex. Saisissez ensuite l’environnement Codex cloud dans Paramètres.
 
 Vous pouvez aussi vous connecter depuis votre tableau de bord : **Connexions**, **Projets et code**, **Codex**, **Obtenir un code**. Une Machine auto-hébergée effectue elle-même cette connexion.
 

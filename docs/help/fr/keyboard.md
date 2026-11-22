@@ -27,10 +27,10 @@ Si plusieurs personnes portent ce nom, The Machine précise de qui il s’agit. 
 
 Appuyez sur `?` pour afficher **Raccourcis clavier**, la liste complète des raccourcis pour votre ordinateur.
 
-- Accéder à une page : `G`, puis `T` pour les tâches, `C` pour le calendrier, `R` pour les routines, `P` pour les personnes, `O` pour les organisations, `J` pour les projets, `F` pour Fleet, `L` pour l’apprentissage, `N` pour les connexions, `,` pour les paramètres. `G`, puis `E` ouvre les résultats de recherche de messages.
+- Accéder à une page : `G`, puis `T` pour les tâches, `C` pour l’agenda, `R` pour les routines, `P` pour les personnes, `O` pour les organisations, `J` pour les projets, `F` pour Fleet, `L` pour l’apprentissage, `N` pour les connexions, `,` pour les paramètres. `G`, puis `E` ouvre les résultats de recherche de messages.
 - `N` ajoute une tâche. `T` démarre Talk ou y met fin lorsqu’il est en cours. `J` et `K` (ou `↓` et `↑`) permettent de parcourir une liste. Appuyez sur Entrée pour ouvrir un élément.
 - Sur une tâche : `E` la renomme, `S` la met en attente, `D` la marque comme terminée et `R` ouvre son chat.
-- Dans le calendrier : `T` affiche la journée d’aujourd’hui. `J` et `K` (ou `→` et `←`) passent à la semaine ou au mois suivant ou précédent. `A`, `W` et `M` affichent respectivement l’agenda, la semaine et le mois.
+- Dans l’agenda : `T` affiche la journée d’aujourd’hui. `J` et `K` (ou `→` et `←`) passent à la semaine ou au mois suivant ou précédent. `A`, `W` et `M` affichent respectivement l’agenda, la semaine et le mois.
 - Sur ordinateur, `⌘B` sur Mac ou `Ctrl B` sur Windows et Linux réduit la barre latérale à ses icônes ou la rétablit.
 
 Les raccourcis ne fonctionnent pas pendant la saisie dans un champ.

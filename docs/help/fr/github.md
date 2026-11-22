@@ -13,7 +13,7 @@ Vos notifications GitHub : demandes de revue, mentions, tâches qui vous sont at
 
 ## Ce qu’elle peut faire
 
-La lecture ne modifie rien sur GitHub. Lorsqu’une tâche comporte une étape GitHub, comme la création d’une issue, la tâche vous l’indique. Cette étape ne s’exécute qu’après avoir appuyé sur **Confirmer**, ou si vous l’avez demandée précisément dans le chat. Les captures d’écran passent par le navigateur de votre Machine. Si GitHub n’est pas connecté, la tâche indique qu’elle utilisera le navigateur et affiche **Connecter GitHub**.
+La lecture ne modifie rien sur GitHub. Lorsqu’une tâche comporte une étape GitHub, comme la création d’une issue, la tâche vous l’indique. Cette étape ne s’exécute qu’une fois que vous avez appuyé sur **Confirmer**, ou si vous l’avez demandée précisément dans le chat. Les captures d’écran passent par le navigateur de votre Machine. Si GitHub n’est pas connecté, la tâche indique qu’elle utilisera le navigateur et affiche **Connecter GitHub**.
 
 ## Connecter GitHub
 
@@ -28,7 +28,7 @@ La page de configuration de votre Machine, à l’adresse app.themachine.compute
 Sur votre propre ordinateur :
 
 1. Ouvrez **Connexions**, puis **Projets et code**, et choisissez GitHub.
-2. Choisissez **Travail** avec le nom de votre entreprise, ou **Perso**, puis appuyez sur **Se connecter**.
+2. Choisissez **Travail** avec le nom de votre entreprise, ou **Perso**, puis appuyez sur **Connecter**.
 3. Si vous y êtes invité, appuyez sur **Ouvrir GitHub ↗**, saisissez le code et autorisez la connexion. Elle se fait automatiquement.
 
 Vous pouvez aussi lancer `assistant connect github` et confirmer votre connexion à GitHub.

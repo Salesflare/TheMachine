@@ -33,7 +33,7 @@ Elle ne supprime, n’archive ni ne déplace jamais un ticket vers une autre éq
 
 ## Connecter Linear
 
-1. Dans le tableau de bord : **Connexions**, **+ Ajouter**, Linear. Ou, sur la page de configuration d’une Machine hébergée, à l’adresse app.themachine.computer/setup : **Autres sources**, Linear. Sur votre propre ordinateur, associez d’abord Linear à votre compte.
+1. Dans le tableau de bord : **Connexions**, **+ Ajouter**, Linear. Ou, sur la page de configuration d’une Machine hébergée, à l’adresse app.themachine.computer/setup : **Plus de sources**, Linear. Sur votre propre ordinateur, associez d’abord Linear à votre compte.
 2. Appuyez sur **Se connecter avec Linear**, choisissez votre espace de travail et autorisez l’accès.
 3. De retour dans The Machine, elle vérifie immédiatement la connexion et affiche le nom de l’espace de travail.
 
@@ -41,7 +41,7 @@ Pour ajouter un autre espace de travail, ajoutez Linear à nouveau. Choisissez *
 
 ## Utiliser plutôt une clé API
 
-Sous **Ou collez une clé API**, appuyez sur **Obtenir votre jeton**. Linear ouvre **Paramètres**, **Sécurité et accès** : créez une clé API personnelle, copiez-la, collez-la, puis appuyez sur **Se connecter**. Sur votre propre ordinateur, `assistant connect linear` vous la demande aussi.
+Sous **Ou collez une clé API**, appuyez sur **Obtenir votre jeton**. Linear ouvre **Paramètres**, **Sécurité et accès** : créez une clé API personnelle, copiez-la, collez-la, puis appuyez sur **Connecter**. Sur votre propre ordinateur, `assistant connect linear` vous la demande aussi.
 
 ## Déconnecter Linear
 

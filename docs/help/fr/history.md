@@ -9,13 +9,13 @@ translated: 93575cd78b3085f7
 ---
 ## Ce qu’elle conserve
 
-Votre Machine importe environ un an d’anciens e-mails, de réunions et de messages WhatsApp, Slack et Teams. La recherche les retrouve, y compris par sens, les fils de discussion les affichent et le [Calendrier](calendar.md) montre les réunions passées.
+Votre Machine importe environ un an d’anciens e-mails, de réunions et de messages WhatsApp, Slack et Teams. La recherche les retrouve, y compris par sens, les fils de discussion les affichent et l’[Agenda](calendar.md) montre les réunions passées.
 
 Chaque connexion dans **Connexions** indique jusqu’où elle remonte, par exemple **Historique : depuis** novembre 2025.
 
 ## Ce que cela ajoute à votre Graph
 
-Votre [Graph](graph.md) en tient compte : la proximité de vos relations, la date de votre dernier échange, qui connaît qui, ainsi que les personnes et les organisations elles-mêmes. La chronologie d’une personne ou d’une organisation l’affiche aussi, pour que son dernier contact soit toujours visible. Les réponses de votre Fleet à la question « qui connaît cette personne ? » en tiennent compte pour les comptes professionnels, selon les mêmes [règles de partage](sharing-rules.md) que pour les nouveaux e-mails.
+Votre [Graph](graph.md) en tient compte : la proximité de vos relations, la date de votre dernier échange, qui connaît qui, ainsi que les personnes et les organisations elles-mêmes. La chronologie d’une personne ou d’une organisation l’affiche aussi, pour que son dernier contact soit toujours visible. Les réponses de votre Fleet à la question « qui connaît quelqu’un » en tiennent compte pour les comptes professionnels, selon les mêmes [règles de partage](sharing-rules.md) que pour les nouveaux e-mails.
 
 ## Ce qu’elle ne fait jamais
 

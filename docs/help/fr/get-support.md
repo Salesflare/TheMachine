@@ -29,7 +29,7 @@ Vous pouvez aussi simplement expliquer à votre Machine dans le chat qu’il y a
 
 Une fois le bug que vous avez signalé corrigé et le correctif installé sur votre Machine, nous vous en informons une seule fois : avec un bref message sur votre tableau de bord et un court e-mail. Une Machine auto-hébergée en est informée lorsqu’elle est sur le Network.
 
-Le message vous demande si le problème est bien résolu. Appuyez sur **Ça marche**, ou sur **Toujours pas réglé** pour expliquer ce qui ne va toujours pas, avec une image si cela peut aider. Cela nous est envoyé sous forme d’un nouveau rapport, lié au premier. **×** ferme le message sans réponse.
+Le message vous demande si le problème est bien résolu. Appuyez sur **Ça marche**, ou sur **Toujours pas correct** pour expliquer ce qui ne va toujours pas, avec une image si cela peut aider. Cela nous est envoyé sous forme d’un nouveau rapport, lié au premier. **×** ferme le message sans réponse.
 
 Vous êtes hors ligne ou avez envoyé plusieurs rapports d’affilée ? Votre rapport n’est pas perdu. Votre Machine le conserve et l’envoie automatiquement plus tard. En attendant, il apparaît sous **En attente d’envoi**.
 

@@ -30,24 +30,24 @@ Sur une Machine hébergée :
 
 1. Ouvrez votre page de configuration sur app.themachine.computer/setup.
 2. Sous **E-mail et agenda**, appuyez sur **Connecter Google**, puis connectez-vous. Sur la page de Google, le nom Salesflare apparaît, l’entreprise qui crée The Machine.
-3. Gmail et Google Calendar sont connectés ensemble.
+3. Gmail et Google Agenda sont connectés ensemble.
 
-Vous vous êtes inscrit avec Google et avez autorisé Gmail et Calendar sur cette page ? Ils se connectent automatiquement. Les e-mails ne sont envoyés que lorsque vous appuyez sur Envoyer.
+Vous vous êtes inscrit avec Google et avez autorisé Gmail et Google Agenda sur cette page ? Ils se connectent automatiquement. Les e-mails ne sont envoyés que lorsque vous appuyez sur Envoyer.
 
 Vous pouvez aussi passer par le tableau de bord : **Connexions**, **E-mail**, choisissez Gmail, puis appuyez sur **Se connecter avec Google**. Une fois la connexion terminée, vous revenez au tableau de bord.
 
 Sur votre propre ordinateur, une fois qu’il est [associé à votre compte](friends.md#a-machine-on-your-own-computer) :
 
 1. Dans le tableau de bord, ouvrez **Connexions**, puis **E-mail**, et choisissez Gmail.
-2. Appuyez sur **Se connecter avec Google** et connectez-vous dans l’onglet qui s’ouvre. Gmail et Google Calendar sont connectés ensemble.
+2. Appuyez sur **Se connecter avec Google** et connectez-vous dans l’onglet qui s’ouvre. Gmail et Google Agenda sont connectés ensemble.
 
-Si l’ordinateur n’est pas associé, ou si vous utilisez votre propre client OAuth Google, ouvrez **Utiliser votre propre app** sur cette page ou exécutez `assistant connect gmail`. Appuyez sur **Ouvrir Google**, connectez-vous, puis collez l’adresse vers laquelle Google vous redirige. Google Calendar associé à la même adresse est également connecté.
+Si l’ordinateur n’est pas associé, ou si vous utilisez votre propre client OAuth Google, ouvrez **Utiliser votre propre app** sur cette page ou exécutez `assistant connect gmail`. Appuyez sur **Ouvrir Google**, connectez-vous, puis collez l’adresse vers laquelle Google vous redirige. Google Agenda associé à la même adresse est également connecté.
 
 Un administrateur Google Workspace devra peut-être autoriser l’app dans la console d’administration.
 
 ## Supprimer la connexion
 
-- Sur une Machine hébergée : appuyez sur **Déconnecter** à côté de l’adresse sur votre page de configuration. Gmail et Calendar sont alors déconnectés pour cette adresse, et votre Machine oublie la connexion. Vos autres Machines conservent la leur. Dans le tableau de bord, **Déconnecter ↗** sous Connexions vous mène à cette page. **Reconnecter** permet de vous connecter à nouveau sans quitter le tableau de bord.
+- Sur une Machine hébergée : appuyez sur **Déconnecter** à côté de l’adresse sur votre page de configuration. Gmail et Google Agenda sont alors déconnectés pour cette adresse, et votre Machine oublie la connexion. Vos autres Machines conservent la leur. Dans le tableau de bord, **Déconnecter ↗** sous Connexions vous mène à cette page. **Reconnecter** permet de vous connecter à nouveau sans quitter le tableau de bord.
 - Sur votre propre ordinateur : ouvrez **Connexions**, puis Gmail, **Détails**, et appuyez sur **Déconnecter**. La lecture des e-mails s’arrête. Les données déjà importées restent. Si plus rien n’utilise cette connexion Google, votre Machine l’oublie. Vos autres Machines conservent la leur.
 
 ## Supprimer l’app de Google

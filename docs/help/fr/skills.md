@@ -22,7 +22,7 @@ Chaque tâche préparée par votre Machine reçoit la compétence qui lui convie
 Sélectionnez **Importer** :
 
 - **Depuis Claude** ou **Depuis ChatGPT**, puis **Trouver mes compétences**. La recherche s’effectue dans le compte concerné, depuis le navigateur de votre Machine.
-- Vous pouvez aussi importer une compétence vous-même : **Téléverser un .skill ou .zip**, **Téléverser un dossier** ou **Coller un SKILL.md**.
+- Vous pouvez aussi importer une compétence vous-même : **Importer un .skill ou .zip**, **Importer un dossier** ou **Coller un SKILL.md**.
 
 Choisissez les compétences voulues, puis sélectionnez **Importer la sélection**. Seules les instructions sont importées, jamais les scripts.
 
@@ -41,7 +41,7 @@ Quand plusieurs de vos notes portent sur le même type de tâche, une tâche vou
 
 ## À partir d’une tâche
 
-Demandez une compétence dans une tâche, et votre Machine la rédige à cet endroit. Sélectionnez **Lire la compétence**, puis **Créer la compétence** (ou **Mettre à jour la compétence** si elle existe déjà). Rien n’est installé avant votre confirmation. Si vous l’avez plutôt écartée dans **Paramètres** > **Compétences**, la tâche indique **Compétence ignorée** et reste ouverte jusqu’à ce que vous la fermiez.
+Demandez une compétence dans une tâche, et votre Machine la rédige à cet endroit. Sélectionnez **Lire la compétence**, puis **Créer la compétence** (ou **Mettre à jour la compétence** si elle existe déjà). Rien n’est installé avant votre confirmation. Si vous l’avez plutôt écartée dans **Paramètres** > **Compétences**, la tâche indique **Compétence écartée** et reste ouverte jusqu’à ce que vous la fermiez.
 
 ## Partager une compétence
 

@@ -18,8 +18,8 @@ Rien. (Sur votre ordinateur, le paramètre `join_pipelines` peut l’autoriser �
 ## La connecter
 
 1. Dans Salesflare, ouvrez [Paramètres, clés API](https://app.salesflare.com/#/settings/apikeys) et créez une clé.
-2. Sur une Machine hébergée : ouvrez votre page de configuration à l’adresse app.themachine.computer/setup, allez dans **Plus de sources**, ouvrez Salesflare CRM, collez la clé et cliquez sur **Se connecter**.
-3. Dans le tableau de bord : **Connexions**, **Clients**, Salesflare CRM, collez la clé et cliquez sur **Se connecter**. La carte indique ensuite l’avancement.
+2. Sur une Machine hébergée : ouvrez votre page de configuration à l’adresse app.themachine.computer/setup, allez dans **Plus de sources**, ouvrez Salesflare CRM, collez la clé et cliquez sur **Connecter**.
+3. Dans le tableau de bord : **Connexions**, **Clients**, Salesflare CRM, collez la clé et cliquez sur **Connecter**. La carte indique ensuite l’avancement.
 
 ## Détails de la synchronisation
 

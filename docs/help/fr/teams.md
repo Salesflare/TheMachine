@@ -17,7 +17,7 @@ Avec l’accord de votre administrateur, elle lit aussi :
 - Les transcriptions des réunions que vous avez organisées.
 - Les notes de réunion et les tâches de Copilot, si vous avez une licence Microsoft 365 Copilot.
 
-Chaque transcription ou ensemble de notes est associé à la réunion correspondante dans votre calendrier, avec la mention **De Teams**. Sans ces éléments, le chat de la réunion reste disponible.
+Chaque transcription ou ensemble de notes est associé à la réunion correspondante dans votre agenda, avec la mention **De Teams**. Sans ces éléments, le chat de la réunion reste disponible.
 
 Les bots, les applications et les messages système sont exclus.
 
@@ -31,7 +31,7 @@ Elle ne publie pas dans les canaux. Pour répondre dans un fil de discussion de 
 
 Microsoft demande l’autorisation de laisser The Machine lire vos chats et votre profil, et d’envoyer des messages dans les chats en votre nom. L’accord d’un administrateur n’est pas nécessaire.
 
-Si vous avez connecté Teams avant que l’envoi soit possible, sa fiche indique **Reconnecter pour envoyer des réponses.** Appuyez sur **Reconnecter** et autorisez de nouveau l’accès. En attendant, le brouillon reste disponible pour que vous l’envoyiez dans Teams.
+Si vous avez connecté Teams avant que l’envoi soit possible, sa fiche indique **Reconnectez-vous pour envoyer des réponses.** Appuyez sur **Reconnecter** et autorisez de nouveau l’accès. En attendant, le brouillon reste disponible pour que vous l’envoyiez dans Teams.
 
 L’accès aux canaux, aux transcriptions et aux notes de Copilot doit être autorisé une fois par l’administrateur de votre organisation. En attendant, la fiche Teams indique ce que l’application ne peut pas encore lire et pourquoi.
 

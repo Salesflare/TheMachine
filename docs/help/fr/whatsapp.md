@@ -34,14 +34,14 @@ WhatsApp ne propose pas de méthode officielle pour cela. La lecture et l’envo
 Sur une Machine hébergée :
 
 1. Dans le tableau de bord, ouvrez **Connexions**, puis **Chat**, et choisissez WhatsApp.
-2. Appuyez sur **Afficher le code QR**.
-3. Sur votre téléphone, ouvrez WhatsApp, puis Paramètres, Appareils connectés et Connecter un appareil. Scannez le code QR.
+2. Appuyez sur **Afficher le QR code**.
+3. Sur votre téléphone, ouvrez WhatsApp, puis Paramètres, Appareils connectés et Connecter un appareil. Scannez le QR code.
 4. WhatsApp devrait apparaître comme connecté en moins d’une minute. L’historique de vos discussions continuera ensuite d’arriver. La carte indique le nombre de messages reçus pendant la synchronisation.
    Si la connexion prend trop de temps, un message vous l’indique après quelques minutes. Appuyez sur **Réessayer** pour reprendre là où vous en étiez.
 
-Vous configurez WhatsApp sur votre téléphone, sans deuxième écran pour scanner le code ? Ouvrez **Sur ton téléphone ? Connecte-toi plutôt avec un code**, saisissez votre numéro, puis appuyez sur **Obtenir un code**. WhatsApp vous demandera ensuite de saisir ce code.
+Vous configurez WhatsApp sur votre téléphone, sans deuxième écran pour scanner le code ? Ouvrez **Sur votre téléphone ? Connectez-vous plutôt avec un code**, saisissez votre numéro, puis appuyez sur **Obtenir un code**. WhatsApp vous demandera ensuite de saisir ce code.
 
-Sur votre propre ordinateur : ouvrez **Connexions**, puis **Chat**, choisissez WhatsApp, saisissez votre numéro de téléphone avec l’indicatif du pays et appuyez sur **Se connecter**. Un code s’affiche. Sur votre téléphone, ouvrez WhatsApp, puis Paramètres, Appareils connectés, Connecter un appareil, puis **Connecter avec un numéro de téléphone**. Saisissez le code.
+Sur votre propre ordinateur : ouvrez **Connexions**, puis **Chat**, choisissez WhatsApp, saisissez votre numéro de téléphone avec l’indicatif du pays et appuyez sur **Connecter**. Un code s’affiche. Sur votre téléphone, ouvrez WhatsApp, puis Paramètres, Appareils connectés, Connecter un appareil, puis **Connecter avec un numéro de téléphone**. Saisissez le code.
 
 Vous pouvez aussi exécuter `assistant connect whatsapp` et scanner le code affiché dans le terminal. La première fois, l’installation du connecteur WhatsApp vous est proposée. Il s’agit d’une version épinglée dont la somme de contrôle a été vérifiée ([source](https://github.com/Salesflare/wacli)).
 
