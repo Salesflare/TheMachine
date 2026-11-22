@@ -182,7 +182,8 @@ class ActionRunsApp:
                     activity_log.note_block(db,job['id'],reason,stamp)  # Activity keeps the block as history (activity_log.py)
                 db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=?',(job['suggestion_id'],))
             return 'blocked'
-        # An automated follow-up: the thread read again, right before it goes; anything new since the draft holds it (follow_ups.py)
+        # The thread read again right before it goes: anything new since the draft holds it (follow_ups.py). A follow-up
+        # reads it fresh too; any other reply the owner approved checks what was collected (reply_since)
         recheck=self.follow_up_recheck(job,action)
         with self.store.connect() as db:
             db.execute('BEGIN IMMEDIATE')

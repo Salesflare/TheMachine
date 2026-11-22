@@ -68,6 +68,8 @@ When the thread can't be read (offline, signed out), it isn't sent either: "Coul
 A to-do drafted again later (a new signal reopened it, Ask for changes, Redo for this message) is checked against the
 thread as it was when that preparation started, and its own earlier sent copy never counts (basis_of, without_own_sends).
 The held to-do shows the message that held it (held_message: who, when, a few words), with Read it and Redo for this message.
+Every other reply the owner approved (Send, Telegram, by voice, in chat) is checked the same way right before it goes, from
+the collected messages only (reply_since): someone else wrote in its conversation, synced after the draft was saved.
 
 Change in the review (App.follow_up_change): the owner says what should change, for all checked drafts or one. Each
 goes through the same path as a message in its to-do's chat (a Change note, the preparation's next turn in its own
@@ -113,6 +115,7 @@ import re
 
 import activity_log
 import bounces
+import mail_senders
 from machine import todo_states
 from machine.store import todo_moves
 from machine.owner_error import OwnerError
@@ -1153,6 +1156,100 @@ def held_message(db, job_id):
 def unhold(db, job_id):
     """The thread was checked again before the send and nothing changed: the job is no longer held."""
     db.execute('DELETE FROM follow_up_holds WHERE job_id=?', (job_id,))
+
+
+# ------------------------------------------------------------------ any reply the owner approved: nothing new since its draft
+# The same hold for every reply the owner sends, not only follow-ups: a message from someone else in the conversation
+# it goes into, synced after its draft was saved, holds it before it goes ('changed', the line and held_message above).
+# Collected messages only, no model and no live read. The owner's own messages and automated senders don't count, nor a
+# message the owner wrote after. A Send after the hold goes unless something newer came since. The to-do stays open.
+
+REPLY_MAIL = ('gmail.message', 'ms_graph.message', 'outlook.message')
+REPLY_CHATS = {'whatsapp': 'whatsapp.message', 'telegram': 'telegram.message', 'signal': 'signal.message'}
+REPLY_THREADS = {'linkedin': 'linkedin.message', 'x': 'x.dm', 'intercom': 'intercom.conversation'}
+REPLY_WINDOW = dt.timedelta(days=30)  # a conversation's messages this long before the draft are read for it
+
+
+def reply_basis(db, job):
+    """When the reply's draft was saved (draft_saves), or a Send held it since: what was synced before then was in
+    front of the owner. None when neither is known."""
+    saved = db.execute('SELECT saved_at FROM draft_saves WHERE suggestion_id=? AND revision=?', (job['suggestion_id'], job['revision'])).fetchone()
+    held = db.execute("SELECT at FROM follow_up_holds WHERE job_id=? AND why='changed'", (job['id'],)).fetchone()
+    times = [t for t in (saved[0] if saved else None, held[0] if held else None) if t]
+    return max(times, key=parse) if times else None
+
+
+def _top_level(meta):
+    return str(meta.get('thread_ts') or meta.get('message_ts') or '') == str(meta.get('message_ts') or '')
+
+
+def reply_rows(db, action, since):
+    """The collected messages of the conversation a reply goes into, from REPLY_WINDOW before `since`: an email's
+    thread, a Slack thread (or a direct message's own lines, not its threads), a chat. None when it has none known (a
+    new email, a Slack message by address)."""
+    kind, account = action.get('kind'), action.get('account_id')
+    start = (parse(since) - REPLY_WINDOW).isoformat()
+    head = 'SELECT * FROM events WHERE deleted=0 AND account_id=? AND occurred_at>=? '
+
+    def where(sql, *params):
+        return db.execute(head + sql + ' ORDER BY occurred_at,id', (account, start, *params)).fetchall()
+
+    if kind == 'email' and action.get('thread_id'):
+        thread = str(action['thread_id'])
+        return where(f"AND kind IN ({','.join('?' * len(REPLY_MAIL))}) AND (json_extract(metadata,'$.thread_id')=? "
+                     "OR json_extract(metadata,'$.conversation_id')=?)", *REPLY_MAIL, thread, thread)
+    if kind == 'slack' and (action.get('thread') or {}).get('channel_id'):
+        thread = action['thread']
+        return [r for r in where("AND kind='slack.message' AND json_extract(metadata,'$.channel_id')=?", thread['channel_id'])
+                if str(_meta(r['metadata']).get('thread_ts') or '') == str(thread['ts'])]
+    if kind == 'slack' and action.get('user_id'):  # their direct message: its own lines, a busy DM's threads aside
+        dms = {m.get('channel_id') for r in where("AND kind='slack.message' AND json_extract(metadata,'$.user_id')=?", action['user_id'])
+               for m in [_meta(r['metadata'])] if m.get('conversation_type') == 'dm' and m.get('channel_id')}
+        return [r for channel in sorted(dms) for r in where("AND kind='slack.message' AND json_extract(metadata,'$.channel_id')=?", channel)
+                if _top_level(_meta(r['metadata']))]
+    if kind in REPLY_CHATS and action.get('chat_id'):
+        return where("AND kind=? AND json_extract(metadata,'$.chat_id')=?", REPLY_CHATS[kind], str(action['chat_id']))
+    if kind in REPLY_THREADS and action.get('conversation_id'):
+        return where("AND kind=? AND json_extract(metadata,'$.conversation_id')=?", REPLY_THREADS[kind], str(action['conversation_id']))
+    return None
+
+
+def automated(meta):
+    """A message a program sent: bulk or auto-submitted mail, a no-reply or delivery address, a Slack bot."""
+    address = (ADDRESS.findall(str(meta.get('from') or '')) or [''])[-1]
+    return bool(mail_senders.automated(meta) or (address and (bounces.system_sender(address) or mail_senders.bulk(address)
+                                                              or mail_senders.relay(address)))
+                or meta.get('bot_id') or meta.get('subtype') == 'bot_message')
+
+
+def reply_since(db, job, action, mine=mine_default, own_emails=()):
+    """What holds a reply the owner approved, right before it goes: the messages from someone else in its
+    conversation synced after its basis (reply_basis), unless the owner wrote there after them. [{'id', 'at', 'mine',
+    'from'}], [] when nothing is new or there is nothing to check against."""
+    since = reply_basis(db, job)
+    rows = reply_rows(db, action, since) if since else None
+    if not rows:
+        return []
+    known = db.execute('SELECT event_ids FROM suggestions WHERE id=?', (job['suggestion_id'],)).fetchone()
+    try:
+        known = set(json.loads(known[0] or '[]')) if known else set()
+    except (TypeError, ValueError):
+        known = set()
+    own_emails = {str(e).casefold() for e in own_emails}
+
+    def own(r):
+        address = ADDRESS.findall(str(_meta(r['metadata']).get('from') or ''))
+        return mine(dict(r)) or bool(address and address[-1].casefold() in own_emails)
+
+    after = parse(since)
+    news = [r for r in rows if r['id'] not in known and not dict(r).get('history') and parse(r['ingested_at']) > after
+            and not own(r) and not automated(_meta(r['metadata']))]
+    if not news:
+        return []
+    last = max(parse(r['occurred_at']) for r in news)
+    if any(parse(r['occurred_at']) > last and own(r) for r in rows):
+        return []  # the owner answered it already, from anywhere
+    return [{'id': r['id'], 'at': r['occurred_at'], 'mine': False, 'from': str(_meta(r['metadata']).get('from') or '')[:200]} for r in news]
 
 
 def hold_bounced(db, job, next_action, addresses, now):

@@ -91,6 +91,15 @@ class ReadLess(unittest.TestCase):
         reads.mark('r', [{'id': 1}, {'id': 2, 'body_offset': 400}, {'id': 3, 'body_matched': True}, {'id': 4, 'body_offset': 0, 'body_clipped': True}])
         self.assertEqual(reads.split('r', [{'id': i} for i in (1, 2, 3, 4)]), ([{'id': 2}, {'id': 3}], [1, 4]))
 
+    def test_a_message_edited_in_place_during_the_run_reads_whole_again(self):
+        reads = prep_reads.RunReads()
+        reads.mark('r', [{'id': 1, 'version': 1, 'body': 'Old words'}])
+        self.assertEqual(prep_reads.read_once(reads, {'_prep_run': 'r'}, [{'id': 1, 'version': 1}]), ([], [1]))
+        edited = [{'id': 1, 'version': 2, 'body': 'New words'}]  # re-synced with new content: its version went up
+        self.assertEqual(prep_reads.read_once(reads, {'_prep_run': 'r'}, edited), (edited, []))
+        reads.mark('r', edited)
+        self.assertEqual(prep_reads.read_once(reads, {'_prep_run': 'r'}, edited), ([], [1]))
+
     def test_runs_are_forgotten_after_a_while_and_past_the_limit(self):
         now = [0.0]
         reads = prep_reads.RunReads(runs=2, seconds=60, clock=lambda: now[0])

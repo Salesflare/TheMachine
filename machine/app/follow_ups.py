@@ -28,6 +28,7 @@ import skills
 from sources import MICROSOFT_SERVICES, SourceError
 from timeutil import WORK_HOURS, in_hours, local_tz, now
 from machine import todo_states
+from machine.kinds import TO_PERSON
 from machine.owner_error import OwnerError
 
 LOG = logging.getLogger('personal-assistant')
@@ -324,7 +325,8 @@ class FollowUpsApp:
 
     def follow_up_recheck(self, job, action):
         """Right before a follow-up goes out: is the thread still as it was when the draft was written (follow_ups.basis)?
-        None for a send that isn't a follow-up; else (why, news): why None (nothing new: it goes), 'bounced' (its To
+        Any other reply the owner approved: ('changed', news) when someone else wrote in its conversation since its draft
+        (follow_ups.reply_since), else None. A follow-up: (why, news): why None (nothing new: it goes), 'bounced' (its To
         bounced since: news is the addresses; hold_bounced), 'changed' (a message
         was added since, by anyone: collected here, or in Gmail's thread or Outlook's conversation read fresh, or in the
         WhatsApp chat) or 'unchecked' (the fresh read failed: it doesn't go). LinkedIn and other channels: the collected
@@ -332,7 +334,12 @@ class FollowUpsApp:
         with self.store.connect() as db:
             card, found = follow_ups.basis_of(db, job['suggestion_id'])
             if card is None:
-                return None
+                # Any other reply the owner approved: someone else wrote in its conversation since the draft (collected
+                # messages only). Nothing new keeps an earlier hold as its basis, so a later retry isn't held again for it.
+                if str(job.get('source') or '').startswith('auto') or action.get('kind') not in TO_PERSON:
+                    return None
+                news = follow_ups.reply_since(db, job, action, self.follow_up_mine(), self.follow_up_own(db)['emails'])
+                return ('changed', news) if news else None
             # Its To bounced since the draft (bounces.py): held, and moved to a working address when there is one
             bad = bounces.flags(db, action.get('to') or []) if action.get('kind') == 'email' else {}
             if bad:

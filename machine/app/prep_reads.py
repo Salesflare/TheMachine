@@ -111,20 +111,25 @@ class RunReads:
         self.seen[run] = (now, ids)
         return ids
 
+    @staticmethod
+    def _read(row):
+        """A message as read: its id and version, so one edited in place since (a new version) reads whole again."""
+        return 'event', row['id'], row.get('version') if hasattr(row, 'get') else None
+
     def split(self, run, rows):
-        """(rows not read whole yet in this run, ids of the ones that were)."""
+        """(rows not read whole yet in this run, ids of the ones that were, at the version read)."""
         if not run:
             return rows, []
         with self.lock:
             ids = set(self._ids(run))
-        return [r for r in rows if r['id'] not in ids], [r['id'] for r in rows if r['id'] in ids]
+        return [r for r in rows if self._read(r) not in ids], [r['id'] for r in rows if self._read(r) in ids]
 
     def mark(self, run, views):
         """The events a result showed from the start of their body (not a later part, not a passage a search matched)."""
         if not run:
             return
         with self.lock:
-            self._ids(run).update(v['id'] for v in views if not v.get('body_offset') and not v.get('body_matched'))
+            self._ids(run).update(self._read(v) for v in views if not v.get('body_offset') and not v.get('body_matched'))
 
     def before(self, run, keys):
         """Of these keys (tuples: a history page, a Slack message listed), the ones this run got before; all are marked
