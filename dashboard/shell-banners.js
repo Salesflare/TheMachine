@@ -59,7 +59,8 @@ function renderLimitBanner(){const b=$('#limit-banner');if(!b)return;const p=sta
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-review-now]');if(!b)return;b.disabled=true;
  try{await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'review_now',args:{}})});
   state.review_pause=null;renderLimitBanner();notice(t('A check starts in a moment.'))}catch(err){errCaught(err);b.disabled=false;notice(err.message,true)}});
-function limitNote(m){if(!m?.limit_reached)return '';return html`<p class="limit-note"><strong>${t(m.chatgpt?'ChatGPT limit reached':'Model limit reached')}</strong>${m.limit_resets_at?t(', resets at {}',clockAt(m.limit_resets_at)):''}${resetAction(m)?html` · ${resetAction(m)}`:''}</p>`}
+// `bare`: no reset action (Settings shows it once, in its Usage limit resets row)
+function limitNote(m,bare){if(!m?.limit_reached)return '';const a=bare?'':resetAction(m);return html`<p class="limit-note"><strong>${t(m.chatgpt?'ChatGPT limit reached':'Model limit reached')}</strong>${m.limit_resets_at?t(', resets at {}',clockAt(m.limit_resets_at)):''}${a?html` · ${a}`:''}</p>`}
 // A hosted Machine (it has an account): Report a bug (help-panel.js) and Support access (settings-support.js) go through its account
 const bugHosted=()=>!!state.manage_url;
 // Help before its part is in (dashboard_parts.LAZY): it loads, then opens; help-panel.js sets its own click once there

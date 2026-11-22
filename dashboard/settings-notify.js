@@ -66,4 +66,4 @@ function renderModelPanel(){const m=state.model_status,box=$('#settings-model');
  // A personal plan that trains on chats by default (machine/ai_training.py): one quiet line to the provider's own
  // switch, and Done, which hides it for good. Nothing for any other plan, a key or an unknown plan.
  const tr=state.ai_training,train=tr?.state==='todo'&&safeURL(tr.url)?html`<p class="ai-train"><a href="${safeURL(tr.url)}" target="_blank" rel="noopener">${t('Turn off training with your data')} ↗</a><button type="button" class="link" data-ai-train-done="${tr.provider}">${t('Done')}</button></p>`:'';
- setHTML($('#model-panel'),html`${head}${train}${limitNote(m)}${m.claude_plan||own?(m.windows||[]).length?bars:'':html`${bars}${resets}`}`)}
+ setHTML($('#model-panel'),html`${head}${train}${limitNote(m,!!resets)}${m.claude_plan||own?(m.windows||[]).length?bars:'':html`${bars}${resets}`}`)}
