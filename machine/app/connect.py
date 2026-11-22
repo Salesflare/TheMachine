@@ -323,6 +323,10 @@ class ConnectApp:
 
     def connect_view(self, session):
         view = {**session['ui'].view(), **{k: session.get(k) for k in ('state', 'source', 'label', 'group', 'error', 'fix', 'account', 'restarting', 'live', 'guessed', 'who')}}
+        if view['state'] in ('failed', 'cancelled'):
+            # A setup that ended without its source never keeps the steps that went well above that ("WhatsApp: linked",
+            # "Connected. Reading your chats now."): they read as if it worked. What stopped it and what to do is the view.
+            view['lines'] = []
         if session.get('hosted') and re.search(r'\bterminal\b|\bassistant connect\b', view.get('fix') or ''):
             view['fix'] = 'try again, or get help from your account page'  # a hosted machine has no terminal to run it in
         elif re.fullmatch(r'rerun(?: this when you have it|: assistant connect [\w-]+)', view.get('fix') or ''):

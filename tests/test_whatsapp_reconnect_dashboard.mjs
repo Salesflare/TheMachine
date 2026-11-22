@@ -37,11 +37,11 @@ const shots=process.env.SHOTS;if(shots)await mkdir(shots,{recursive:true});
 const errors=[];let browser;
 try{
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
- for(const [width,height] of [[390,844],[1440,900]]){
-  const phone=width<720,context=await browser.newContext({viewport:{width,height},colorScheme:'dark',...phone?{isMobile:true,hasTouch:true}:{}}),page=await context.newPage();
+ for(const [width,height,scheme] of [[390,844,'dark'],[1440,900,'dark'],...shots?[[390,844,'light'],[1440,900,'light']]:[]]){
+  const phone=width<720,context=await browser.newContext({viewport:{width,height},colorScheme:scheme,...phone?{isMobile:true,hasTouch:true}:{}}),page=await context.newPage();
   await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
   page.on('pageerror',e=>errors.push(e.message));
-  const shot=async name=>{if(shots)await page.screenshot({path:`${shots}/${name}-${width}.png`,fullPage:false})};
+  const shot=async name=>{if(shots)await page.screenshot({path:`${shots}/${name}-${width}-${scheme}.png`,fullPage:false})};
   step=PHONE;actions=[];
   await page.goto(base);
   const banner=page.locator('#needs-you [data-reconnect="whatsapp"]');await banner.waitFor();
@@ -64,6 +64,16 @@ try{
   await new Promise(r=>setTimeout(r,4500));  // the list of sources has come: still Chat
   assert.equal(await page.locator('#conn-title').textContent(),'Chat');
   await shot('wa-reconnect-code');
+  // linked, then the setup failed after all: the Machine sends a failed setup without the steps that went well
+  // (ConnectApp.connect_view), so "linked" never stands above the failure
+  step={...RUN,lines:['WhatsApp: linked']};
+  await pane.locator('.connect-lines li',{hasText:'WhatsApp: linked'}).waitFor({timeout:8000});
+  step={...RUN,state:'failed',lines:[],error:'The setup stopped unexpectedly',fix:'try again'};
+  await pane.locator('.alert').waitFor({timeout:8000});
+  assert.doesNotMatch(await pane.innerText(),/linked/i);
+  await shot('wa-reconnect-failed');
+  step={...RUN,code:{kind:'pair',code:'K7P2-9QX4'}};await pane.locator('[data-connect="whatsapp"]').click();
+  await pane.locator('.connect-code').waitFor({timeout:8000});
   // a step that took too long: what happened and what to do, with Try again for this account
   step={...RUN,state:'failed',error:'It took too long to answer',fix:'try again in a minute'};
   await pane.locator('.alert').waitFor({timeout:8000});
