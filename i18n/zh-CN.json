@@ -453,7 +453,7 @@
  "An old sign-in was used again, so all its sign-ins were ended": "某个旧登录方式被再次使用，因此该方式下的所有登录会话都已结束",
  "An organization name is up to 100 characters": "组织名称最多可包含100个字符",
  "An update kept your own files.": "更新保留了你自己的文件。",
- "An update to a skill you have, from": "对你已有技能的更新，来自",
+ "An update to a skill you have, from {}, version {}. Read it before you install. It can’t change what your Machine may do.": "对你已有技能的更新，来自{}，版本{}。安装前请先阅读。它不会改变你的Machine能做什么。",
  "Analysis expired; begin a fresh review": "分析已过期，请重新开始审核",
  "And {} more threads": {
   "other": "还有{}个邮件会话"
@@ -1855,6 +1855,7 @@
  "Friends add you by your username.": "好友可以通过你的用户名添加你。",
  "Friends now": "已成为好友",
  "From": "来自",
+ "From (a date)": "开始日期",
  "From ChatGPT": "来自ChatGPT",
  "From Claude": "来自Claude",
  "From Facebook": "来自Facebook",
@@ -1890,6 +1891,7 @@
  "From {}": "来自{}",
  "From {} of your notes": "来自你的{}条笔记",
  "From {}, version {}": "来自{}，版本{}",
+ "From {}, version {}. Read it before you install. It can’t change what your Machine may do.": "来自{}，版本{}。安装前请先阅读。它不会改变你的Machine能做什么。",
  "From {}.": "来自{}。",
  "From {}:": "来自{}：",
  "From {}: {}": "来自{}：{}",
@@ -8414,7 +8416,6 @@
  "{} {} this thread, also if it is sensitive. Personal never goes.": "{} {}此对话串，即使内容敏感也一样。个人内容绝不会分享。",
  "{} {} {}, deals too. Personal and other companies never go.": "{} {}{}，商机也包括在内。个人内容和其他公司的内容绝不会分享。",
  "{} {}, tap to show or hide": "{} {}，点击即可显示或隐藏",
- "{} {}, version {}. Read it before you install. It can’t change what your Machine may do.": "{} {}，版本{}。安装前请先阅读。它不会改变你的Machine能做什么。",
  "{} {}, without asking you: {}.": "{} {}，未经你同意：{}。",
  "{} {}. Your Machine uses {} from now on.": "{} {}。你的Machine从现在起会使用{}。",
  "{} · {} ready · {} to decide": "{} · {}项已备好 · {}项待决定",
