@@ -29,7 +29,7 @@ Die Kacheln zeigen, auf wie viele Konten sie zugreifen konnte und wie viele E-Ma
 
 Hat Salesflare den Feed-Zugriff für API-Schlüssel in deinem Team noch nicht aktiviert, wird das auf der Karte angezeigt: Es werden keine E-Mails oder Meetings übernommen, bis der Salesflare-Support den Zugriff aktiviert. Am ersten Tag wird alle 10 Minuten erneut geprüft, danach etwa einmal pro Stunde. Sobald es funktioniert, läuft die Synchronisierung automatisch weiter.
 
-- **Stoppen**: Es werden keine neuen Daten übernommen, bis du auf **Beginn** klickst. Danach wird an der bisherigen Stelle fortgesetzt.
+- **Stoppen**: Es werden keine neuen Daten übernommen, bis du auf **Starten** klickst. Danach wird an der bisherigen Stelle fortgesetzt.
 - **Sync neu starten**: Beginnt von vorn und liest die letzte Woche erneut ein. Bereits übernommene Daten gehen nicht verloren.
 - **API-Schlüssel**: Öffnet die API-Schlüsselseite von Salesflare, auf der du einen neuen Schlüssel erstellen kannst.
 
