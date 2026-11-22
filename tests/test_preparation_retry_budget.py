@@ -188,6 +188,50 @@ class RetryBudget(unittest.TestCase):
         self.assertEqual(json.loads(self.runs()[2]['basis'])['kind'], 'chat')
         self.assertEqual([r for r in self.runs() if r['basis'] is None], [])
 
+    def snooze_and_wake(self, news=False):
+        """The owner snoozes the to-do while it shows as being worked on; with `news` something new comes in for it while
+        it sleeps (kept on it without waking it); then the snooze is over."""
+        self.store.decide(self.sid, 'snooze', '', 'later', 'dashboard', snooze_hours=1)
+        if news:
+            with self.store.connect() as db:
+                db.execute("INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES('update:new',?,'update','A later message was added','assistant',?)",
+                           (self.sid, timeutil.now()))
+        with self.store.connect() as db:
+            db.execute("UPDATE suggestions SET snoozed_until=? WHERE id=?", (ago(minutes=1), self.sid))
+        self.assertEqual(self.store.wake_snoozed(), 1)
+        self.assertEqual(self.card()['status'], 'accepted')
+
+    def prepared_while_accepted(self):
+        """A finished preparation on a to-do that still shows as taken on (Do it, its result saved)."""
+        self.store.decide(self.sid, 'accept', '', 'click', 'dashboard')
+        self.step()
+        self.store.prepare(self.sid, 'Draft ready.', self.prep()['job_id'])
+        self.step('ok')
+        with self.store.connect() as db:
+            db.execute("UPDATE suggestions SET status='accepted' WHERE id=?", (self.sid,))
+        self.assertEqual((self.prep()['status'], len(self.runs())), ('done', 1))
+
+    def test_a_to_do_waking_from_its_snooze_with_nothing_new_keeps_its_preparation(self):
+        self.prepared_while_accepted()
+        self.snooze_and_wake()
+        self.step()
+        self.step()
+        self.assertEqual((self.prep()['status'], len(self.runs()), len(self.starts())), ('done', 1, 1))
+
+    def test_a_to_do_waking_with_something_new_is_prepared_again_with_what_allowed_it(self):
+        self.prepared_while_accepted()
+        self.snooze_and_wake(news=True)
+        self.step()
+        self.assertEqual((len(self.runs()), len(self.starts())), (2, 2))
+        self.assertEqual(json.loads(self.runs()[1]['basis']), {'kind': 'doit', 'approval': 'click', 'resumed': 'snooze'})
+
+    def test_a_to_do_waking_without_a_finished_preparation_is_prepared_as_before(self):
+        self.store.decide(self.sid, 'accept', '', 'click', 'dashboard')
+        self.snooze_and_wake()  # snoozed before its run started: that run was stopped
+        self.step()
+        self.assertEqual((len(self.runs()), len(self.starts())), (1, 1))
+        self.assertEqual(json.loads(self.runs()[0]['basis']), {'kind': 'doit', 'approval': 'click', 'resumed': 'snooze'})
+
 
 if __name__ == '__main__':
     unittest.main()

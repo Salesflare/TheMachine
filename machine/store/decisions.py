@@ -280,6 +280,19 @@ def pause_idle_steps(db, suggestion_id=None, stamp=None):
         (stamp or now(), suggestion_id, suggestion_id)).rowcount
 
 
+def keeps_preparation(db, suggestion_id):
+    """A to-do waking from its snooze (Store.wake_snoozed) keeps its finished preparation instead of being prepared
+    again, unless something new came in for it while it slept (an update or a prepare-ahead after the snooze) or an
+    approved step waits paused for its run."""
+    if not db.execute("SELECT 1 FROM preparations WHERE suggestion_id=? AND status='done'", (suggestion_id,)).fetchone():
+        return False
+    if db.execute("SELECT 1 FROM action_jobs WHERE suggestion_id=? AND status='paused'", (suggestion_id,)).fetchone():
+        return False
+    slept = db.execute("SELECT max(created_at) FROM decisions WHERE suggestion_id=? AND choice='snooze'", (suggestion_id,)).fetchone()[0]
+    return bool(slept) and not db.execute("SELECT 1 FROM decisions WHERE suggestion_id=? AND choice IN ('update','prepare_ahead') AND created_at>?",
+                                          (suggestion_id, slept)).fetchone()
+
+
 def close_by_itself(db, row, decision_id, feedback, source, stamp, undo_hours, lapsed=False):
     """Close an open to-do without the owner: Done with Undo for undo_hours, its unfinished work stopped and its message
     redrawn. lapsed: it reads Not needed (expired_at), not done by them. Store.expire_passed, close_taken_intercom and
@@ -1218,8 +1231,8 @@ class DecisionsStore:
                 status = row['resume_status'] if row['resume_status'] in todo_states.OPEN_NOT_SNOOZED else 'pending'
                 db.execute('UPDATE suggestions SET snoozed_until=NULL,resume_status=NULL WHERE id=?',(row['id'],))
                 todo_moves.transition(db, row['id'], status, 'snooze_over')
-                if status in todo_states.PREPARING:
-                    self.queue_preparation(db,row['id'],'snooze-resumed:'+now(),resume_action=True)
+                if status in todo_states.PREPARING and not keeps_preparation(db, row['id']):
+                    self.queue_preparation(db,row['id'],action_basis.SNOOZE_RESUMED+now(),resume_action=True)
                 # Exactly one new outbox intent per elapsed snooze. An unknown
                 # previous send must be reconciled, not blindly retried.
                 db.execute("UPDATE deliveries SET status='queued',reminder=1,needs_edit=1 WHERE suggestion_id=? AND status IN ('sent','uncertain')",(row['id'],))

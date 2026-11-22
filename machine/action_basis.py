@@ -96,6 +96,12 @@ def from_decision(db, decision_id, action_id=None, suggestion_id=None):
         found = read(row[0]) if row else None
         if found and found['kind'] in KINDS and found['kind'] != 'none':
             return {**found, 'resumed': 'snooze'}
+        # No earlier run says why (it predates recorded bases): the latest ask before the snooze ended that allows work.
+        for (earlier,) in db.execute("SELECT id FROM decisions WHERE suggestion_id=? AND created_at<? AND choice IN ('accept','other','retry','prepare_ahead') "
+                                     'ORDER BY created_at DESC LIMIT 20', (suggestion_id, decision_id[len(SNOOZE_RESUMED):])).fetchall():
+            found = from_decision(db, earlier)
+            if found['kind'] != 'none':
+                return {**found, 'resumed': 'snooze'}
     row = db.execute('SELECT choice,feedback,source FROM decisions WHERE id=?', (decision_id,)).fetchone() if decision_id else None
     if not row:
         return {'kind': 'none', 'source': 'run'}
