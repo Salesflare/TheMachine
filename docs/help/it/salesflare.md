@@ -29,7 +29,7 @@ I riquadri indicano quanti account è riuscita ad aprire e quante email e riunio
 
 Se Salesflare non ha attivato per il tuo team l’accesso al feed tramite chiavi API, la scheda te lo segnala: non riceverai email o riunioni finché il supporto Salesflare non lo attiva. La verifica viene ripetuta ogni 10 minuti il primo giorno, poi circa ogni ora. Quando l’accesso funziona, la sincronizzazione riprende automaticamente.
 
-- **Ferma**: non riceverai nuovi dati finché non premi **Inizio**. La sincronizzazione riprende da dove si era fermata.
+- **Ferma**: non riceverai nuovi dati finché non premi **Avvia**. La sincronizzazione riprende da dove si era fermata.
 - **Riavvia sincronizzazione**: ricomincia da capo e legge di nuovo i dati dell’ultima settimana. I dati già importati non vengono persi.
 - **Chiavi API**: apre la pagina delle chiavi API di Salesflare, dove puoi crearne una nuova.
 
