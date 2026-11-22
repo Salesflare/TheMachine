@@ -6,7 +6,7 @@ covers: hand-to-agent
 code: agent_jobs.py, agent_remote.py, dashboard.html
 site: Connect Codex, Add more any time, On your Machine, Other ways, On my computer
 order: 5
-translated: 333d553e80aea529
+translated: 22e1b9b950988a58
 ---
 ## ToDoを引き継ぐ
 
@@ -37,7 +37,7 @@ ClaudeはThe Machineコネクタを通じて結果を返します。claude.aiの
 
 ホスティング版のMachineでは、セットアップページの**いつでも追加**にある**Codex**で実行場所を選びます。
 
-- **Machine上**（デフォルト）：**Codexに接続**を押し、OpenAIで表示されたコードを入力します。モデルと同じChatGPTプランを使い、ジョブはMachine上で実行されます。ターミナルは不要です。
+- **Machine上**（デフォルト）：**Codexに接続**を押し、OpenAIで表示されたコードを入力します。モデルと同じChatGPTプランを使い、ジョブはMachine上で実行されます。ターミナルは不要です。同じChatGPTアカウントでログインしていれば、Machineから利用上限のリセットを確認して使うこともできます。
 - **その他の方法**の**自分のコンピューター上**：ジョブは、Codexにログイン済みの自分のコンピューター上で実行されます。通信は暗号化され、そのコンピューターだけで使われます。そのコンピューターにThe Machineをインストールし、アカウントページでペアリングして、`codex login`を実行し、The Machineを起動したままにします。結果はToDoに戻ります。コンピューターの電源が切れている間、ジョブは待機します。
 - **その他の方法**の**Codex cloud**：ジョブはOpenAIのクラウドで実行されます。**Codexに接続**を押します。モデルと同じChatGPTプランを使い、Codex用の追加コードをもう1つ入力するようOpenAIから求められます。その後、設定でCodex cloudの環境を入力します。
 

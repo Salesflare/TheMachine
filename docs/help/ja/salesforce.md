@@ -15,11 +15,11 @@ translated: eee5e084bac6dbd1
 
 ## 変更できる情報
 
-**連絡先情報を更新**を有効にするまで、何も変更しません。Salesforceへのログイン情報はThe Machine上に保存されます。
+**連絡先情報を更新**を有効にするまで、何も変更しません。Salesforceへのログイン情報はMachine上に保存されます。
 
 ## 接続する
 
-ホスト版のThe Machineの場合：
+ホスティング版Machineの場合：
 
 1. app.themachine.computer/setupでセットアップページを開き、**その他のソース**に移動します。
 2. Salesforceを開き、**Salesforceに接続**を押します。
@@ -31,7 +31,7 @@ SalesforceのユーザーにはAPIアクセス権が必要です。ほとんど�
 
 ## 連絡先情報を更新する
 
-Salesforceの連絡先について、The Machineがより新しい情報を把握している場合、連絡先の役職、電話番号、LinkedInのリンクをSalesforceで更新できます。LinkedInのリンクを更新するには、Salesforce組織の連絡先にLinkedIn項目が必要です。
+Salesforceの連絡先について、Machineがより新しい情報を把握している場合、連絡先の役職、電話番号、LinkedInのリンクをSalesforceで更新できます。LinkedInのリンクを更新するには、Salesforce組織の連絡先にLinkedIn項目が必要です。
 
 1. **接続**でSalesforceを開き、**変更内容を確認**を押します。
 2. 一覧を確認して、**オンにする**または**今はしない**を押します。
@@ -48,7 +48,7 @@ Salesforceの連絡先について、The Machineがより新しい情報を把�
 ## 接続を解除する
 
 - ダッシュボードで**接続**を開き、Salesforce、**詳細**、**接続を解除**の順に選びます。すでに取り込まれた情報は残ります。
-- ホスト版のThe Machineでは、**接続を解除 ↗**を押すとセットアップページが開きます。Salesforceの横にある**削除**を押します。
+- ホスティング版Machineでは、**接続を解除 ↗**を押すとセットアップページが開きます。Salesforceの横にある**削除**を押します。
 
 ## Salesforceでアクセスを取り消す
 
