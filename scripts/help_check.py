@@ -352,8 +352,8 @@ def trailing_spaces(folder=HELP):
 
 def check_translations(found, folder=HELP):
     """Each language's articles against their English one. Only a current translation is held to it: one made from
-    this English (its `translated:` stamp), or from before stamps, either with the English's headings, paragraphs,
-    list items, link targets and code (translate.help_state). One the English has moved on from, one out of step with it, or an article
+    this English (its `translated:` stamp), with the English's headings, paragraphs, list items, link targets and code
+    (translate.help_state). One without a stamp, one the English has moved on from, one out of step with it, or an article
     English no longer has, is the daily translator's (scripts/translate.py), and scripts/release.py cut refuses a
     release with any of them."""
     sys.path.insert(0, str(ROOT / 'scripts'))
@@ -371,7 +371,7 @@ def check_translations(found, folder=HELP):
             if not en or en[0] is None:
                 continue
             state = translate.help_state(sub.name, folder / path.name, folder)
-            if state not in ('current', 'unstamped'):
+            if state != 'current':
                 continue
             # translated: the hash of the English it was made from (scripts/translate.py)
             other = {k for k in set(fields) | set(en[0]) if k not in ('title', 'summary', 'translated') and fields.get(k) != en[0].get(k)}
