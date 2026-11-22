@@ -172,10 +172,12 @@ assert.equal(calls.length,previousCount);  // a preparation is not a review
  assert.ok(profileTurn.prependContext.includes('## About the owner (USER.md)'));
  assert.deepEqual(new Set(profileTurn.toolsAllow),new Set([...REVIEW_TOOLS,...TOOL_SEARCH_TOOLS]));
  // Without the workspace files, OpenClaw tells a run on a new install to read BOOTSTRAP.md first; a sandbox review did.
- const {NOT_FIRST_CHAT}=await import('../openclaw-plugin/review-recovery.ts');
+ const {NOT_FIRST_CHAT,OWNER_RULES_HERE}=await import('../openclaw-plugin/review-recovery.ts');
  assert.ok(reviewContext.includes(NOT_FIRST_CHAT));assert.ok(profileTurn.prependContext.startsWith(NOT_FIRST_CHAT));
  // A preparation and its to-do chat have no workspace files either (preparation-run.mjs): USER.md comes with its rules.
- assert.ok(prep.prependSystemContext.startsWith(NOT_FIRST_CHAT+'\n\n## About the owner (USER.md)'));
+ assert.ok(prep.prependSystemContext.startsWith(NOT_FIRST_CHAT+' '+OWNER_RULES_HERE+'\n\n## About the owner (USER.md)'));
+ // ...and is told those rules are here, so it does not go read the chat's own AGENTS.md (a sandbox Do it did, 4 in 11).
+ assert.ok(!profileTurn.prependContext.includes(OWNER_RULES_HERE));
  const skillsTurn=await hooks.before_prompt_build({},embedded(skillsCtx));
  assert.ok(skillsTurn.toolsAllow.includes('browser'));assert.ok(!skillsTurn.toolsAllow.includes('exec'));assert.ok(skillsTurn.prependContext.startsWith(NOT_FIRST_CHAT));
  const routineTurn=await hooks.before_prompt_build({},embedded({...ctx,sessionKey:'agent:main:assistant-review-routine-'+'e'.repeat(32),runId:'routine-run'}));

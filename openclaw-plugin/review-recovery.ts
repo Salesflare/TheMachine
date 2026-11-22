@@ -304,7 +304,10 @@ export function turnTools(sessionKey: string): string[] | undefined {
 export const NOT_FIRST_CHAT = 'This is a background run, not the owner\'s first chat: leave BOOTSTRAP.md (the first-chat setup) alone and do not read it.';
 // Each refused call cost a review a step: skills_read (about 60 a day before the workshop rule) and assistant_signals
 // writes through dispatch_action. The tool list says what a run may call; this says what it may skip.
-export const READ_ONLY_RUN = 'This run only reads and needs no skills: do not call skills_read or open a SKILL.md. Tool search\'s dispatch_action allows no more than calling the tool directly.';
+// Without the workspace's files in its prompt, a sandbox Do it listed the workspace and read AGENTS.md in 4 of 11 runs:
+// the owner's chat rules, which can be long, back on every later step. What a Machine run needs is in its context.
+export const OWNER_RULES_HERE = 'The owner\'s rules for this work are below: USER.md and the preparation rules. AGENTS.md, SOUL.md and IDENTITY.md in the workspace are for the owner\'s own chat: do not read them unless the to-do is about those files.';
+export const READ_ONLY_RUN ='This run only reads and needs no skills: do not call skills_read or open a SKILL.md. Tool search\'s dispatch_action allows no more than calling the tool directly.';
 const narrowed = (ctx: any) => {
   const tools = embeddedRuntime(ctx) ? turnTools(ctx.sessionKey) : undefined;
   return tools ? {toolsAllow: tools} : {};
@@ -422,7 +425,7 @@ export function registerReviewRecovery(api: any, call: (action: string, args?: a
       // was saved into the session each turn, so a Do it after a prepare-ahead, or a to-do chat after it, carried two,
       // three or more copies (about 18,000 tokens each) on every step until compaction. It has none of the workspace's
       // own files (preparation-run.mjs), so USER.md, where the owner's rules on how drafts come out live, comes from here.
-      const context = (NOT_FIRST_CHAT + (await ownerContext()) + (await preparationRules())).trim();
+      const context = (NOT_FIRST_CHAT + ' ' + OWNER_RULES_HERE + (await ownerContext()) + (await preparationRules())).trim();
       return context ? {prependSystemContext: context} : undefined;
     }
     // These get none of the workspace's files (preparation-run.mjs), so USER.md comes from here, as it did for a profile
