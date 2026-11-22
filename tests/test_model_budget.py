@@ -11,6 +11,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import model_budget as b
+import models
 from seams import patch_everywhere  # noqa: E402
 
 spec = importlib.util.spec_from_file_location('budget_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
@@ -288,6 +289,32 @@ class Checks(unittest.TestCase):
         self.assertEqual((sent[0]['provider'], sent[0]['model']), ('openai', 'gpt-6.1-sol'))
         self.assertNotIn('model', sent[1])  # a card the owner asked for runs on their own model
         self.assertTrue(self.app.background_pause(owner=True)['limited'])
+
+    def test_background_work_on_the_chatgpt_sign_in_runs_on_gpt_61_sol_while_62_is_uncached(self):
+        path = Path(self.temp.name) / 'openclaw.json'
+        self.app.config['openclaw_config'] = str(path)
+        allowed = {'openai/gpt-6-astra': {}, 'openai/gpt-6.1-sol': {}, 'openai/gpt-6.2-sol': {}}  # as hosted Machines list them
+        path.write_text(json.dumps({'agents': {'defaults': {'model': {'primary': 'openai/gpt-6.2-sol'}, 'models': allowed}}}))
+        sent = []
+
+        def run(command, input=None, **kw):
+            sent.append(json.loads(input))
+            return type('R', (), {'returncode': 0, 'stdout': json.dumps({'status': 'admitted'})})()
+        with patch.object(a.subprocess, 'run', side_effect=run):
+            for i, (kind, extra) in enumerate((('review', {}), ('profile', {}), ('preparation', {'background': True}),
+                                               ('routine', {'background': True}), ('preparation', {}))):
+                self.app.preparation_gateway({'kind': kind, 'action': 'start', 'job_id': str(i) * 32, 'message': 'x', **extra})
+        self.assertEqual([(s.get('provider'), s.get('model')) for s in sent], [('openai', 'gpt-6.1-sol')] * 4 + [(None, None)])
+        self.assertEqual(a.background_model(self.app.config), ('openai', 'gpt-6.1-sol'))
+        path.write_text(json.dumps({'agents': {'defaults': {'model': 'openai/gpt-6-astra', 'models': allowed}}}))
+        self.assertEqual(a.background_model(self.app.config), ('openai', 'gpt-6.1-sol'))
+        path.write_text(json.dumps({'agents': {'defaults': {'model': 'salesflare-openai/gpt-6.2-sol'}}}))
+        self.assertIsNone(a.background_model(self.app.config))  # another route's 6.2 stays
+        with patch.object(models, 'GPT_62_UNCACHED', False):  # what the daily probe's "fixed" asks to change
+            path.write_text(json.dumps({'agents': {'defaults': {'model': 'openai/gpt-6.2-sol', 'models': allowed}}}))
+            self.assertIsNone(a.background_model(self.app.config))
+            path.write_text(json.dumps({'agents': {'defaults': {'model': 'openai/gpt-6-astra', 'models': allowed}}}))
+            self.assertEqual(a.background_model(self.app.config), ('openai', 'gpt-6.2-sol'))
 
 
 class ProviderIsolation(unittest.TestCase):

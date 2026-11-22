@@ -13,6 +13,13 @@ import time
 # first the owner's model allowlist names. With an allowlist that allows any, the last: one every OpenClaw we support
 # knows (OpenClaw 2026.11.2 runs GPT-6.2 Sol only with its own entry in openclaw.json, docs/models.md).
 BACKGROUND_SWAP = {'gpt-6-astra': ('gpt-6.2-sol', 'gpt-6.1-sol')}
+# For now (since 2026-11-22), background work on the ChatGPT sign-in (CHATGPT_PROVIDERS) runs on GPT-6.1 Sol, not
+# GPT-6.2 Sol: on that route (OpenClaw's native Codex responses) GPT-6.2 Sol never takes the system prompt
+# (`instructions`) from the prompt cache, so every call after a session's first pays about 27k fresh input tokens
+# again (fresh input per call tripled). Once a probe shows GPT-6.2 Sol caching it, set this to False: background work
+# then follows BACKGROUND_SWAP and the main model again. The owner's chat model and a model they picked stay as they are.
+GPT_62_UNCACHED = True
+CHATGPT_PROVIDERS = ('openai', 'openai-codex')
 
 
 def openclaw_model(config):
@@ -109,11 +116,14 @@ def _read_model_ready(model, config, run):
 
 def background_model(config):
     """(provider, model) for The Machine's background turns when the main model is one background work never uses
-    (BACKGROUND_SWAP): the first cheaper one the owner's model allowlist (`agents.defaults.models`) names, else the last
-    when it allows any (empty, or `provider/*`). None: the main model."""
+    (BACKGROUND_SWAP, and GPT-6.2 Sol on the ChatGPT sign-in while GPT_62_UNCACHED): the first cheaper one the owner's
+    model allowlist (`agents.defaults.models`) names, else the last when it allows any (empty, or `provider/*`).
+    None: the main model."""
     main = openclaw_model(config) or ''
     provider, _, name = main.partition('/')
     cheaper = BACKGROUND_SWAP.get(name)
+    if GPT_62_UNCACHED and provider in CHATGPT_PROVIDERS:
+        cheaper = ('gpt-6.1-sol',) if name == 'gpt-6.2-sol' else tuple(m for m in cheaper or () if m != 'gpt-6.2-sol')
     if not cheaper:
         return None
     path = Path(config.get('openclaw_config') or Path.home() / '.openclaw' / 'openclaw.json')

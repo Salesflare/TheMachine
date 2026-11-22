@@ -51,11 +51,23 @@ class Models(unittest.TestCase):
         self.assertEqual(models.background_model(self.config), ('openai', 'gpt-6.1-sol'))
         # GPT-6.2 Sol only where the allowlist names it (its OpenClaw entry is written with it); 6.1 where only it is named
         self.openclaw('openai/gpt-6-astra', {'openai/gpt-6-astra': {}, 'openai/gpt-6.2-sol': {}, 'openai/gpt-6.1-sol': {}})
-        self.assertEqual(models.background_model(self.config), ('openai', 'gpt-6.2-sol'))
+        with patch.object(models, 'GPT_62_UNCACHED', False):
+            self.assertEqual(models.background_model(self.config), ('openai', 'gpt-6.2-sol'))
+            self.openclaw('openai/gpt-6.2-sol')
+            self.assertIsNone(models.background_model(self.config))
         self.openclaw('openai/gpt-6-astra', {'openai/gpt-6-astra': {}, 'openai/gpt-6.1-sol': {}})
         self.assertEqual(models.background_model(self.config), ('openai', 'gpt-6.1-sol'))
-        self.openclaw('openai/gpt-6.2-sol')
-        self.assertIsNone(models.background_model(self.config))
+
+    def test_background_model_skips_uncached_gpt_62_sol_on_the_chatgpt_sign_in(self):
+        allowed = {'openai/gpt-6-astra': {}, 'openai/gpt-6.2-sol': {}, 'openai/gpt-6.1-sol': {}}
+        for main in ('openai/gpt-6.2-sol', 'openai/gpt-6-astra', 'openai-codex/gpt-6.2-sol'):
+            self.openclaw(main, {**allowed, 'openai-codex/*': {}})
+            self.assertEqual(models.background_model(self.config)[1], 'gpt-6.1-sol', main)
+        self.openclaw('openai/gpt-6.2-sol', {'openai/gpt-6.2-sol': {}})
+        self.assertIsNone(models.background_model(self.config))  # the allowlist doesn't have 6.1: the main model
+        for main in ('salesflare-openai/gpt-6.2-sol', 'openai/gpt-6.1-sol', 'claude-cli/claude-opus-5-5'):
+            self.openclaw(main)
+            self.assertIsNone(models.background_model(self.config), main)
 
     def test_main_model_reads_openclaw_settings(self):
         self.openclaw({'primary': 'openai/gpt-6-astra'})

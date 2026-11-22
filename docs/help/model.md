@@ -30,7 +30,7 @@ If your plan has usage limits, like a ChatGPT or Claude plan's 5-hour and weekly
 
 Background work leaves room for your own chats. It pauses at about 65% of the 5-hour limit. Checks of new messages go on until about 90% of the weekly limit; other work takes about a seventh of the week a day. A sign-in without limits, like an API key, never pauses.
 
-Background work never runs on GPT-6 Astra. It uses GPT-6.2 Sol instead, or GPT-6.1 Sol where 6.2 isn't set up.
+Background work never runs on GPT-6 Astra. With a ChatGPT sign-in it uses GPT-6.1 Sol for now, also when your main model is GPT-6.2 Sol: on that sign-in 6.2 doesn't reuse its cached instructions yet, so it uses more of your plan. Your chats keep the model you picked.
 
 ## When a limit is reached
 
