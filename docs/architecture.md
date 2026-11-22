@@ -239,14 +239,16 @@ same open promise stored twice from before is kept once. Nothing shows up on Tel
 
 - **When it's checked:** yours the morning before it's due (at `digest_at`, never sooner than three hours after it was
   recorded), theirs the morning after their date. Without a date: yours after 3 days, theirs after a week.
-- **Closing by itself:** someone else's promise made by email closes when that sender replies in the original thread
-  (sender-only fallback if no thread was recorded). Chats run on, so a later chat message is no sign it was kept: those
-  stay open for the review or the check. Their new message is reviewed as usual, so a delay can become a new promise.
-  Every review prompt lists the open promises, and the review closes one (`kept` or `dropped`, with the reason) or
-  moves its date when a later message shows it.
+- **When they reply:** a reply is no sign it was kept (an auto-reply, a "Sure", part of it). When someone else's email
+  promise gets a reply from that sender in the original thread (sender-only fallback if no thread was recorded), it is
+  logged once as `replied` and the promise stays open. Chat promises have no watch at all. Their new message is
+  reviewed as usual: every review prompt lists the open promises, and the review closes one (`kept` or `dropped`, with
+  the reason) or moves its date when a later message shows it. A reply that delivers only part of it keeps nothing. If
+  the review leaves it, the check when it's due reads the reply text and decides.
 - **The to-do:** a promise still open when it's checked becomes a to-do (`promise:<id>`), prepared ahead under the
-  usual limits: for yours the thing you promised, for theirs a short nudge. If they answer while the to-do is on its
-  way, it closes. At most 5 such to-dos a day. With reviews off (a new install, its first look included) a due promise
+  usual limits: for yours the thing you promised, for theirs a short nudge. If they answer while the nudge is queued,
+  the nudge is cancelled and the to-do stays open with a "They wrote again" line: it waits for its done when, and the
+  review closes it (`looks_handled`) when the reply delivers. At most 5 such to-dos a day. With reviews off (a new install, its first look included) a due promise
   waits: no to-do and nothing prepared until reviews are on.
 - **A reply that only promises the work:** the run marks a message draft that only acknowledges the ask or promises
   the owner's real work for later with `still_owed` (`{what, due}`), judged by meaning when it writes the draft. After

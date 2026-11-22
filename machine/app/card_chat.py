@@ -54,7 +54,7 @@ from machine.chat import (
 )
 from machine.config import LOG, ROOT
 from machine.model_usage import node_bin, node_env
-from machine.store.cards import use_line
+from machine.store.cards import WROTE_AGAIN_PREFIX, use_line
 from machine.store.machine_cards import parked_redo
 from machine.text import _address, clamp, encoded, shown_body, split_quoted_history
 from models import background_model, claude_plan_route
@@ -348,7 +348,7 @@ class CardChatApp:
         # A note that answered the to-do's question (decision_asks): the question shows as its own line, the note alone
         answered = {r['decision_id']: json.loads(r['questions']) for r in db.execute('SELECT decision_id,questions FROM decision_asks WHERE suggestion_id=?', (suggestion_id,))}
         loose = []  # notes saved before that: one a quick pick glued to its question comes apart below (chat_unglued)
-        for r in db.execute("SELECT id,choice,feedback,source,created_at FROM decisions WHERE suggestion_id=? AND (source IN ('dashboard','telegram','fleet','expiry','placed','intercom','intercom_replies','notion','linear','handled','plan','correction') OR id LIKE 'outcome-wait:%' OR id LIKE 'still-owed:%') "
+        for r in db.execute("SELECT id,choice,feedback,source,created_at FROM decisions WHERE suggestion_id=? AND (source IN ('dashboard','telegram','fleet','expiry','placed','intercom','intercom_replies','notion','linear','handled','plan','correction') OR id LIKE 'outcome-wait:%' OR id LIKE 'still-owed:%' OR id LIKE 'wrote-again:%') "
                             'ORDER BY rowid', (suggestion_id,)):
             at, via = chat_ms(r['created_at']), (' in Telegram' if r['source'] == 'telegram' else '')
             if r['source'] == 'expiry':  # its moment passed (Store.expire_passed); Undo takes this back like a tap
@@ -363,6 +363,9 @@ class CardChatApp:
                 continue
             if r['id'].startswith(promises.OWED_PREFIX):  # the reply only promised the work: it stays open (promises.keep_owed)
                 owner.append({'kind': 'event', 'text': promises.owed_line(), 'at': at})
+                continue
+            if r['id'].startswith(WROTE_AGAIN_PREFIX):  # they replied on their promise; it stays open (Store.settle_awaiting)
+                owner.append({'kind': 'event', 'text': i18n.t('They wrote again'), 'at': at})
                 continue
             if r['id'].startswith('handoff-checkin:'):  # Check in now (fleet.py handoff_checkin): a tap, not the owner's words
                 owner.append({'kind': 'event', 'text': 'Asked for a check-in', 'choice': 'checkin', 'mine': True, 'at': at})

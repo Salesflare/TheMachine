@@ -1,5 +1,5 @@
-"""Promises tracker: reviews record promises both ways, someone else's close when they write again,
-and an open one becomes a card when it's due. No live calls."""
+"""Promises tracker: reviews record promises both ways, someone else's stays open when they write again
+until a review or check reads it kept, and an open one becomes a card when it's due. No live calls."""
 import io
 import json
 import tempfile
@@ -156,14 +156,80 @@ class Promises(unittest.TestCase):
         self.assertEqual(self.row(self.record(due='2026-10-23')['id'])['check_at'], '2026-10-24T06:30:00+00:00')
         self.assertEqual(self.row(self.record(who='Kim')['id'])['check_at'], '2026-10-26T07:30:00+00:00')  # winter time
 
-    def test_their_promise_closes_itself_when_they_write_again(self):
+    def reply(self, source_id, at, body, title='Re: Contract'):
+        """Their reply in the promise's thread, with its own words; returns its event id."""
+        self.store.commit_page('work', {}, [{**email(source_id, at, title=title), 'body': body}])
+        with self.store.connect() as db:
+            return db.execute('SELECT id FROM events WHERE source_id=?', (source_id,)).fetchone()[0]
+
+    def logged(self, promise, kind):
+        with self.store.connect() as db:
+            return [r[0] for r in db.execute('SELECT detail FROM promise_log WHERE promise_id=? AND kind=?', (promise, kind))]
+
+    def test_their_reply_alone_never_keeps_the_promise(self):
+        """A reply in the thread is no sign it was kept (a "Sure", an auto-reply, part of it): it is noted once and the
+        promise stays open, still listed for the review that reads that reply."""
+        promise = self.record(what='send the signed contract and the invoice', due='2026-10-23')['id']
+        reply = self.reply('part', '2026-10-20T10:00:00+00:00', 'Here is the signed contract. The invoice follows later.')
+        self.at('2026-10-20T10:05:00+00:00')
+        self.app().promise_step()
+        self.app().promise_step()
+        self.assertEqual(self.row(promise)['status'], 'open')
+        self.assertEqual(self.logged(promise, 'replied'), [str(reply)])
+        self.assertIn(f'#{promise} Sam Lee → you: send the signed contract and the invoice', self.store.promises_text())
+        self.assertEqual([h['kind'] for h in self.store.promise_page(promise)['history']], ['said', 'noted', 'replied'])
+        with self.store.connect() as db:
+            self.assertEqual(db.execute('SELECT count(*) FROM suggestions').fetchone()[0], 0)
+
+    def test_past_due_the_check_reads_their_reply_and_a_waiting_to_do_comes(self):
+        promise = self.record(what='send the signed contract and the invoice', due='2026-10-23')['id']
+        self.reply('part', '2026-10-20T10:00:00+00:00', 'Here is the signed contract. The invoice follows later.')
+        pages = []
+        app = self.app()
+        app.promise_check_model = lambda config, text: pages.append(text) or json.dumps([{'promise': promise, 'state': 'open'}])
+        self.at('2026-10-24T07:00:00+00:00')
+        app.promise_step()
+        self.assertEqual(len(pages), 1)
+        self.assertIn('The invoice follows later.', pages[0])
+        self.assertIn('delivers only part of what was promised', pages[0])
+        card = next(s for s in self.store.snapshot([])['suggestions'] if s['dedupe_key'] == f'promise:{promise}')
+        self.assertEqual(card['title'], 'Waiting on Sam Lee: send the signed contract and the invoice')
+        self.assertEqual(self.row(promise)['status'], 'carded')
+
+    def test_a_reply_on_their_promises_to_do_cancels_the_nudge_and_keeps_it_open(self):
         promise = self.record(due='2026-10-23')['id']
-        self.store.commit_page('work', {}, [email('reply', '2026-10-20T10:00:00+00:00', title='Signed contract')])
         self.at('2026-10-24T07:00:00+00:00')
         self.app().promise_step()
-        row = self.row(promise)
-        self.assertEqual(row['status'], 'answered')
-        self.assertIn('Signed contract', row['note'])
+        card = self.row(promise)['suggestion_id']
+        with self.store.connect() as db:
+            # Its nudge, waiting to go out
+            db.execute("INSERT INTO deliveries(suggestion_id,status,updated_at) VALUES(?,'queued',?) "
+                       "ON CONFLICT(suggestion_id) DO UPDATE SET status='queued',message_id=NULL", (card, '2026-10-24T07:00:00+00:00'))
+        self.reply('sure', '2026-10-24T08:00:00+00:00', 'Sure')
+        self.at('2026-10-24T08:05:00+00:00')
+        for _ in range(2):
+            with self.store.connect() as db:
+                self.store.settle_awaiting(db)
+        with self.store.connect() as db:
+            self.assertEqual(db.execute('SELECT status FROM deliveries WHERE suggestion_id=?', (card,)).fetchone()[0], 'cancelled')
+            self.assertEqual(db.execute("SELECT count(*) FROM decisions WHERE suggestion_id=? AND id LIKE 'wrote-again:%'", (card,)).fetchone()[0], 1)
+            chat = json.dumps(self.app().card_chat_service(db, card), ensure_ascii=False)
+        self.assertEqual(chat.count('"They wrote again"'), 1)
+        self.assertIn(self.card_status(card), ('pending', 'accepted', 'prepared'))
+        self.assertEqual(self.store.promise_page(promise)['state'], 'card')
+        self.assertNotIn(promise, [p['id'] for p in self.store.promises() if p['state'] == 'kept'])
+
+    def test_a_reply_that_delivers_it_all_closes_it_when_the_review_says_kept(self):
+        promise = self.record(what='send the signed contract and the invoice', due='2026-10-23')['id']
+        reply = self.reply('all', '2026-10-20T10:00:00+00:00', 'Attached: the signed contract and the invoice.')
+        self.at('2026-10-20T10:05:00+00:00')
+        self.app().promise_step()
+        # The review that reads the reply: kept, with the message that shows it
+        self.app().action('promise', {'id': promise, 'status': 'kept', 'reason': 'Sam sent the contract and the invoice', 'event_ids': [reply]})
+        self.at('2026-10-24T07:00:00+00:00')
+        self.app().promise_step()
+        self.assertEqual(self.row(promise)['status'], 'kept')
+        self.assertEqual(self.store.promise_page(promise)['state'], 'kept')
         with self.store.connect() as db:
             self.assertEqual(db.execute('SELECT count(*) FROM suggestions').fetchone()[0], 0)
 
@@ -202,7 +268,7 @@ class Promises(unittest.TestCase):
         self.app().promise_step()
         waiting = next(s for s in self.store.snapshot([])['suggestions'] if s['dedupe_key'] == f'promise:{theirs}')
         self.assertEqual(waiting['title'], 'Waiting on Sam Lee: send the signed contract')
-        self.assertIsNotNone(waiting['awaiting'])  # a late reply still closes the card
+        self.assertIsNotNone(waiting['awaiting'])  # a late reply still cancels its nudge
         self.app().promise_step()
         with self.store.connect() as db:
             self.assertEqual(db.execute('SELECT count(*) FROM suggestions').fetchone()[0], 2)
@@ -225,7 +291,7 @@ class Promises(unittest.TestCase):
         card = next(s for s in self.store.snapshot([])['suggestions'] if s['dedupe_key'] == f'promise:{theirs}')
         self.assertEqual(json.loads(card['event_ids'])[:2], [last, ask])
         self.assertRegex(card['source_line'], r'^Source: email to Sam Lee · ')
-        self.assertIsNotNone(card['awaiting'])  # their reply still closes it
+        self.assertIsNotNone(card['awaiting'])  # their reply still cancels its nudge
 
     def test_a_promise_joins_the_to_do_its_matter_already_has(self):
         """No second to-do for the same thing: a promise in a message or thread that already has a to-do goes with it.
@@ -355,7 +421,7 @@ class Promises(unittest.TestCase):
         self.assertEqual((self.row(promise)['status'], self.row(promise)['suggestion_id']), ('carded', done['card']))
         card = next(s for s in self.store.snapshot([])['suggestions'] if s['id'] == done['card'])
         self.assertEqual(card['title'], 'Waiting on Sam Lee: send the signed contract')
-        self.assertIsNotNone(card['awaiting'])  # their reply still closes it
+        self.assertIsNotNone(card['awaiting'])  # their reply still cancels its nudge
         self.assertEqual(self.asked(done['card']),
                          ('accepted', ('accept', 'Nudge them: a short follow-up where they promised it.', 'dashboard'), 'queued'))
         with self.store.connect() as db:

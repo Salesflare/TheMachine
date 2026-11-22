@@ -27,6 +27,8 @@ A reply that only promises the work, like "I'll send the files by Tuesday", does
 
 Already kept, like a reply you sent or a meeting that covered it? It closes by itself, with no to-do.
 
+When someone replies to a promise they made, it stays open until the reply shows it kept. A "Sure", an automatic reply or part of it keeps nothing. If a nudge was waiting to go out, it's cancelled and the to-do stays open with "They wrote again".
+
 Given a new date later, like "next week instead"? The same promise moves, its to-do too, with no second one. Its page shows the new date and the newer message.
 
 One without a date gets a **follow-up** day: three days after you made it, a week after they did. Still open by then? It becomes a to-do.

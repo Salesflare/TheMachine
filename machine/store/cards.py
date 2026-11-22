@@ -45,6 +45,7 @@ def active_preview(db):
 
 
 USE_MAIL_KINDS = ('gmail.message', 'ms_graph.message')
+WROTE_AGAIN_PREFIX = 'wrote-again:'  # the decision noting a reply on their promise's to-do, which stays open (settle_awaiting)
 CHAT_ASK_CHARS = 60  # a chat ask is a tap, one short line (set_chat_asks)
 PRESSING_DAYS = 2  # urgent, or due within this many days: prepared ahead first, and on the room held for it (ahead_room)
 AHEAD_HELD = 3  # of the day's prepared-ahead room, the last ones are kept for pressing work
@@ -1199,7 +1200,8 @@ class CardsStore:
 
     def settle_awaiting(self, db):
         """A follow-up on someone else's promise closes itself when they wrote again before it was due.
-        Their new message goes through the normal review, so a delay still gets a card."""
+        Their new message goes through the normal review, so a delay still gets a card. A promise's own to-do
+        (awaiting.promise) stays open instead: its nudge is cancelled, and the review judges whether the reply kept it."""
         for row in db.execute("SELECT s.id,s.awaiting FROM suggestions s JOIN deliveries d ON d.suggestion_id=s.id WHERE s.awaiting IS NOT NULL "
                               f"AND d.message_id IS NULL AND d.status='queued' AND s.status IN {todo_states.sql(todo_states.OPEN_NOT_SNOOZED)}").fetchall():
             watch = json.loads(row['awaiting'])
@@ -1208,6 +1210,14 @@ class CardsStore:
             if not answer:
                 continue
             stamp = now()
+            if watch.get('promise'):
+                # Their promise's to-do: a reply is no sign it was kept. The nudge waits no longer, the to-do stays open
+                # with its done when, and the review that reads the reply closes it (looks_handled) when it delivers.
+                db.execute('UPDATE suggestions SET awaiting=? WHERE id=?', (encoded({**watch, 'since': answer['occurred_at']}), row['id']))
+                db.execute('INSERT OR IGNORE INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)',
+                           (f"{WROTE_AGAIN_PREFIX}{row['id']}:{answer['id']}", row['id'], 'update', '', 'assistant', stamp))
+                db.execute("UPDATE deliveries SET status='cancelled',reminder=0,updated_at=? WHERE suggestion_id=? AND message_id IS NULL AND status='queued'", (stamp, row['id']))
+                continue
             db.execute('UPDATE suggestions SET early=0 WHERE id=?', (row['id'],))
             todo_moves.transition(db, row['id'], todo_states.COMPLETED, 'they_wrote_again', at=stamp)
             db.execute("INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)",
