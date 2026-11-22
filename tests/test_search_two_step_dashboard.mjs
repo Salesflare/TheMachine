@@ -32,7 +32,7 @@ try{
  await page.goto('http://127.0.0.1:'+server.address().port+'/');await page.waitForFunction(()=>typeof palFind==='function'&&typeof msgSearch==='function');
  // The palette: the keyword matches first, See all results still looking; the keyboard on the second one
  gate=new Promise(r=>open=r);
- await page.keyboard.press('Control+k');await page.locator('#palette').waitFor();await page.keyboard.type('contract');
+ await page.keyboard.press('ControlOrMeta+k');await page.locator('#palette').waitFor();await page.keyboard.type('contract');
  const msgs=()=>page.evaluate(()=>[...document.querySelectorAll('#pal-list .pal-item')].map(o=>o.querySelector('.pal-label').textContent).filter(l=>!/See all results/.test(l)));
  const subs=()=>page.evaluate(()=>[...document.querySelectorAll('#pal-list .pal-item small')].map(s=>s.textContent).filter(s=>/Sam/.test(s)));
  const owners=list=>list.every(s=>/ · (Today|Yesterday|[A-Z][a-z]{2} \d{1,2} [A-Z][a-z]{2}) \d\d:\d\d$/.test(s));  // Fri 2 Jan 11:00

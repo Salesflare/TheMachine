@@ -48,7 +48,7 @@ await new Promise(r=>server.listen(0,'127.0.0.1',r));
 const errors=[];let browser;
 const send=async(page,cid,rev)=>{await page.locator(`#task-${cid} [data-smart="${rev}"]`).click();await page.locator('#send-dialog').waitFor({state:'visible'});await page.locator('#send-confirm').click()};
 const toastText=page=>page.locator('#toast.show').textContent();
-const palFind=async(page,q,width)=>{if(width<1024)await page.locator('#find-open').click();else await page.keyboard.press('Control+k');await page.locator('#palette #pal-q').waitFor();
+const palFind=async(page,q,width)=>{if(width<1024)await page.locator('#find-open').click();else await page.keyboard.press('ControlOrMeta+k');await page.locator('#palette #pal-q').waitFor();
  await page.locator('#pal-q').fill(q);await page.waitForFunction(()=>!/Looking…/.test(document.querySelector('#pal-list')?.textContent||''));
  return page.locator('#pal-list').evaluate(l=>{const out=[];let g='';for(const n of l.children){if(n.classList.contains('pal-group'))g=n.textContent;else if(n.classList.contains('pal-item'))out.push([g,n.querySelector('.pal-label').textContent,n.querySelector('small')?.textContent||''])}return out.filter(([g,label])=>g!=='Messages'&&!label.startsWith('See all results'))})};
 try{

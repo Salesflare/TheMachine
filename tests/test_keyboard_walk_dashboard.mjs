@@ -85,7 +85,7 @@ try{
   assert.ok(await page.locator('#keys-sheet h3',{hasText:'General'}).locator('xpath=..').getByText('Talk (not on the Calendar)').isVisible(),'Talk sits in General');
   if(process.env.SHOT_DIR)await page.screenshot({path:process.env.SHOT_DIR+'/keys-sheet.png'});
   await press(page,'Escape');await page.locator('#keys-sheet').waitFor({state:'hidden'});assert.equal(await focus(page),'task-b1b1b1b1b1b1b1b1');
-  await press(page,'Control+k');await page.locator('#palette[open]').waitFor();
+  await press(page,'ControlOrMeta+k');await page.locator('#palette[open]').waitFor();
   await press(page,'Escape');await page.locator('#palette').waitFor({state:'hidden'});assert.equal(await focus(page),'task-b1b1b1b1b1b1b1b1');
   // Another page and back: Suggestions lands on its first to-do again
   await press(page,'g','e');await page.locator('#events').waitFor();

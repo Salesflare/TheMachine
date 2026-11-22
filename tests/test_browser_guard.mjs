@@ -19,7 +19,12 @@ for (const folder of ['tests', 'sandbox']) {
 }
 assert.deepEqual(direct, [], 'these load playwright-core themselves: get chromium from tests/browser.mjs');
 
-// 2. Clicked external links stay inside the fence
+// 2. Clicked external links stay inside the fence. The fence is the desktop's xdg tools, which Chrome asks on Linux;
+// Chrome on macOS asks the system (Launch Services) instead and never runs them, so there is no fence to check there.
+if (process.platform === 'darwin') {
+  console.log('browser guard ok (the xdg fence is Linux-only; nothing loads playwright-core around it)');
+  process.exit(0);
+}
 const browser = await chromium.launch({executablePath: process.env.CHROMIUM_PATH || '/usr/bin/chromium', headless: true, args: ['--no-sandbox', '--disable-dev-shm-usage']});
 try {
   const page = await browser.newPage();

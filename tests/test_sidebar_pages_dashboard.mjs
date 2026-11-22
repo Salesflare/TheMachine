@@ -65,7 +65,7 @@ try{
   await context.close()}
  // The palette's Messages: two letters or more, at most four, who by name only; See all results opens the results page with the words
  {const {context,page}=await open(1440,900);
-  await page.keyboard.press('Control+k');await page.locator('#palette').waitFor();await page.keyboard.type('i');await page.waitForTimeout(400);
+  await page.keyboard.press('ControlOrMeta+k');await page.locator('#palette').waitFor();await page.keyboard.type('i');await page.waitForTimeout(400);
   assert.ok(!(await page.locator('#pal-list .pal-group').allTextContents()).includes('Messages'),'not on one letter');
   await page.keyboard.type('nvoice');await page.locator('#pal-list .pal-item',{hasText:'Invoice 4821 overdue'}).waitFor();
   assert.deepEqual(queries.at(-1),['all','invoice']);
@@ -78,7 +78,7 @@ try{
   assert.equal(await page.locator('#query').inputValue(),'invoice');assert.equal(await page.locator('#page-head .page-title').textContent(),'Messages');
   await page.locator('#events-list,#events').getByText('Invoice copy').first().waitFor();
   // A message from the palette opens in the reader
-  await page.keyboard.press('Control+k');await page.keyboard.type('invoice paid');await page.locator('#pal-list .pal-item',{hasText:'Invoice paid'}).first().waitFor();
+  await page.keyboard.press('ControlOrMeta+k');await page.keyboard.type('invoice paid');await page.locator('#pal-list .pal-item',{hasText:'Invoice paid'}).first().waitFor();
   await page.locator('#pal-list .pal-item',{hasText:'Invoice paid'}).first().click();await page.waitForFunction(()=>!document.querySelector('#palette')?.open);
   await context.close()}
  // On a phone the top bar's search icon opens the same palette, Messages included

@@ -32,6 +32,9 @@ const server=createServer(async(req,res)=>{const url=new URL(req.url,'http://fix
   res.end(JSON.stringify(team?{team:true,held:[],people,orgs,projects:[],boards:teamBoards(),sharing,quiet:[],new:[]}
    :{projects:[{id:'project:1',kind:'project',name:'Keep Productive',strength:1,last_at:day(2),signals:3}],people,quiet:[],new:[],orgs,boards:mineBoards(),sharing,person_names:people.map(p=>({id:p.id,name:p.name})),project_names:[]}));return}
  if(url.pathname==='/api/fleet'){res.end(JSON.stringify({on:true,fleets:[],shared:{prompts:[],shares:[],accounts:[],can_share:[],graph:sharing}}));return}
+ // the brand's fonts, so widths are the ones an owner sees and not this computer's fallback font
+ const FONT={'/brand/serif.woff2':'brand/fonts/source-serif-4-latin.woff2','/brand/sans.woff2':'brand/fonts/inter-latin.woff2'}[url.pathname];
+ if(FONT){res.setHeader('Content-Type','font/woff2');res.end(await readFile(new URL('../'+FONT,import.meta.url)));return}
  res.statusCode=url.pathname.startsWith('/brand/')?404:200;res.end('{}')});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
 const base='http://127.0.0.1:'+server.address().port+'/';
@@ -60,7 +63,7 @@ try{
   await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
   const page=await context.newPage();page.on('pageerror',e=>errors.push(width+': '+e.message));await page.goto(base);
   const shot=async name=>{if(process.env.OVERFLOW_SHOT)await page.screenshot({path:`${process.env.OVERFLOW_SHOT}/${name}-${width}-${scheme}.png`})};
-  const fits=async where=>assert.deepEqual(await page.evaluate(outside),[],`${width} ${scheme} ${where}: runs past the screen or its box`);
+  const fits=async where=>{await page.evaluate(()=>document.fonts.ready.then(()=>{}));assert.deepEqual(await page.evaluate(outside),[],`${width} ${scheme} ${where}: runs past the screen or its box`)};
   const settle=()=>page.waitForTimeout(150);
   // open a menu with a tap, check it, close it again
   const menu=async(sel,where)=>{const s=page.locator(sel).filter({visible:true}).first();await s.scrollIntoViewIfNeeded();await s.click();await settle();

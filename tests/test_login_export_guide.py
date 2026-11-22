@@ -191,7 +191,9 @@ class GuideTest(unittest.TestCase):
         threading.Thread(target=cls.other.serve_forever, daemon=True).start()
         cls.temp = Path(tempfile.mkdtemp())
         port = free_port()
-        cls.chrome = subprocess.Popen([CHROME, '--headless=new', '--no-sandbox', '--disable-gpu', '--remote-debugging-port=%d' % port,
+        # --use-mock-keychain: on macOS Chrome otherwise keeps its cookie key in the login keychain, and a runner with no one
+        # to answer the keychain's prompt leaves it waiting (pages stall, and it never quits); elsewhere it does nothing
+        cls.chrome = subprocess.Popen([CHROME, '--headless=new', '--no-sandbox', '--disable-gpu', '--use-mock-keychain', '--remote-debugging-port=%d' % port,
                                        '--user-data-dir=' + str(cls.temp / 'profile'), 'about:blank'],
                                       env=fenced_env(cls.temp / 'fence'),
                                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)

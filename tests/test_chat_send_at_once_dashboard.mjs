@@ -45,7 +45,7 @@ try{
  // A second message while the first is still being saved: typed into the freed box and sent with the keys, it goes
  // right after the first (nothing typed meanwhile is lost)
  await tab.waitForTimeout(SLOW+500);await send(tab,'First');
- await tab.locator('#chat-input').fill('Second');await tab.locator('#chat-input').press('Control+Enter');
+ await tab.locator('#chat-input').fill('Second');await tab.locator('#chat-input').press('ControlOrMeta+Enter');
  await tab.waitForFunction(()=>[...document.querySelectorAll('#chat-log *')].some(e=>!e.childElementCount&&e.textContent.includes('Second')),null,{timeout:SLOW*3});
  await tab.waitForTimeout(SLOW*2+300);
  assert.deepEqual(said.slice(-2),['First','Second'],'both messages reach the Machine, in order');

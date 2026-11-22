@@ -1,6 +1,7 @@
 """Shortcut tests: all HTTP and credential reads are canned; no live service calls."""
 import copy
 import json
+import os
 from pathlib import Path
 import tempfile
 import types
@@ -347,7 +348,8 @@ class ShortcutTests(unittest.TestCase):
         kept = json.loads(path.read_text())
         self.assertEqual((kept['access_token'], kept['refresh_token'], kept['client_id']), ('fixture-access-2', 'fixture-refresh-2', 'fixture-client'))
         self.assertGreater(kept['expires_at'], 1)
-        self.assertEqual(path.stat().st_mode & 0o777, 0o600)
+        if os.name != 'nt':  # POSIX modes are not Windows ACLs; Windows runs the service inside WSL2
+            self.assertEqual(path.stat().st_mode & 0o777, 0o600)
         self.assertEqual(sorted(p.name for p in path.parent.iterdir() if p.name.startswith('.shortcut')), [])  # no temp file left
 
     def test_shortcuts_opaque_tokens_and_its_own_expiry_field_are_taken(self):

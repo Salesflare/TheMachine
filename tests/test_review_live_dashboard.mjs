@@ -34,7 +34,7 @@ try{
  page.on('pageerror',e=>errors.push(e.message));
  await page.goto('http://127.0.0.1:'+server.address().port);
  const banner=page.locator('#suggestions .first-look-empty');
- await banner.waitFor();
+ await banner.waitFor();await page.waitForFunction(()=>typeof drawnWhole!=='undefined'&&drawnWhole);  // the live rows come with the rest, after the first paint
  assert.match(await banner.textContent(),/Taking a first look at your last 7 days.*Read 12 of 40 messages\. Reading the next 28….*To-dos show up here as they come\.While you wait: import what another AI knows$/);
  assert.equal(await page.locator('#suggestions').textContent().then(t=>t.includes('All clear')),false);
  assert.equal(await page.locator('#first-look').isHidden(),true);

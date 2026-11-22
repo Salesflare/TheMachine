@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {dashboardPage} from './dashboard-page.mjs';
+import {LINE_START,LINE_END,TEXT_END} from './keys.mjs';
 const {chromium}=await import('./browser.mjs');
 
 // The email editor: a draft is edited as it will look (bold, italic, lists, links), never as marks or HTML. The
@@ -55,14 +56,14 @@ try{
  assert.equal(revised().length,0);assert.equal(sent().at(-1).revision,'v1');
  // Formatting from the keyboard and the toolbar: bold, italic, a numbered list, a link; it goes out as the marks
  await open();
- await rich.click();await page.keyboard.press('Control+End');await page.keyboard.press('Enter');
- await page.keyboard.press('Control+b');await page.keyboard.type('Note');await page.keyboard.press('Control+b');await page.keyboard.type(': read it ');
- await page.keyboard.press('Control+i');await page.keyboard.type('today');await page.keyboard.press('Control+i');await page.keyboard.press('Enter');
+ await rich.click();await page.keyboard.press(TEXT_END);await page.keyboard.press('Enter');
+ await page.keyboard.press('ControlOrMeta+b');await page.keyboard.type('Note');await page.keyboard.press('ControlOrMeta+b');await page.keyboard.type(': read it ');
+ await page.keyboard.press('ControlOrMeta+i');await page.keyboard.type('today');await page.keyboard.press('ControlOrMeta+i');await page.keyboard.press('Enter');
  assert.equal(await page.locator('[data-mail-tool="b"]').getAttribute('aria-pressed'),'false');
  await page.locator('[data-mail-tool="ol"]').click();await page.keyboard.type('first');await page.keyboard.press('Enter');await page.keyboard.type('second');
  await page.keyboard.press('Enter');await page.keyboard.press('Enter');
  await page.keyboard.type('Plain * star, a_b and [brackets] stay text. ');
- await page.keyboard.press('Control+k');await page.locator('#send-rich-url').waitFor();
+ await page.keyboard.press('ControlOrMeta+k');await page.locator('#send-rich-url').waitFor();
  // a link is an https address: javascript: is refused, a bare name gets https://
  await page.locator('#send-rich-url').fill('javascript:alert(1)');await page.keyboard.press('Enter');
  assert.ok(await page.locator('#send-rich-link').isVisible(),'refused');assert.equal(await rich.locator('a[href^="javascript"]').count(),0);
@@ -77,7 +78,7 @@ try{
  assert.ok(await page.evaluate(b=>{const d=document.createElement('div');d.innerHTML=mailHtml(b,false);return d.querySelectorAll('ol li').length===2&&d.querySelector('i').textContent==='today'},expected));
  // A paste is plain text: no images, scripts, styles or foreign links come in
  cards=[card()];await page.evaluate(()=>refresh());await open();
- await rich.locator('div',{hasText:/^Alex$/}).click();await page.keyboard.press('Home');
+ await rich.locator('div',{hasText:/^Alex$/}).click();await page.keyboard.press(LINE_START);
  await rich.evaluate(n=>{const dt=new DataTransfer();dt.setData('text/html','<img src=x onerror="window.pwned=1"><b style="color:red">Pasted</b> <a href="javascript:alert(1)">link</a><script>window.pwned=2</script>');dt.setData('text/plain','Pasted link\nsecond line');
   n.dispatchEvent(new ClipboardEvent('paste',{clipboardData:dt,bubbles:true,cancelable:true}))});
  assert.equal(await rich.locator('img,script,a[href^="javascript"],[style*="color"]').count(),0);assert.equal(await page.evaluate(()=>window.pwned),undefined);
@@ -92,8 +93,8 @@ try{
  assert.match(revised().at(-1).body,/\nBig\nunder red$/);
  // A save that tidies the text (a blank line before the name): it shows, and Send sends it on the next tap, unchanged
  cards=[card()];await page.evaluate(()=>refresh());tidy=b=>b.replace(/\nAlex$/,'\n\nAlex');await open();
- await rich.locator('div',{hasText:/^Alex$/}).click();await page.keyboard.press('Home');await page.keyboard.type('Cheers,');await page.keyboard.press('Enter');
- await page.keyboard.press('ArrowUp');await page.keyboard.press('ArrowUp');await page.keyboard.press('End');await page.keyboard.press('Backspace');
+ await rich.locator('div',{hasText:/^Alex$/}).click();await page.keyboard.press(LINE_START);await page.keyboard.type('Cheers,');await page.keyboard.press('Enter');
+ await page.keyboard.press('ArrowUp');await page.keyboard.press('ArrowUp');await page.keyboard.press(LINE_END);await page.keyboard.press('Backspace');
  const n0=revised().length,s0=sent().length;
  await page.locator('#send-confirm').click();await page.waitForFunction(()=>/small change/.test(document.querySelector('#send-error').textContent));
  assert.equal(revised().length,n0+1);assert.equal(sent().length,s0,'not sent yet');

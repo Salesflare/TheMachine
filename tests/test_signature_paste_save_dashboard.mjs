@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
 import {navClick} from './nav-click.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
+import {SELECT_TO_LINE_START} from './keys.mjs';
 const {chromium}=await import('./browser.mjs');
 
 // Settings, Signatures: Save shows for every change, not only for typing. 2026-11-06: an owner pasted the signature
@@ -73,10 +74,10 @@ try{
  // A plain-text paste from the keyboard (the browser's own paste) shows Save too.
  {const {context,page,body,save}=await open(1440,900);
   await page.evaluate(()=>navigator.clipboard.writeText('Robin Example\nExample Inc'));
-  await body.click();await page.keyboard.press('Control+V');
+  await body.click();await page.keyboard.press('ControlOrMeta+V');
   await body.getByText('Example Inc').waitFor();await save.waitFor();
   // Undo takes the paste back: still a change from what was saved, Save stays.
-  await page.keyboard.press('Control+Z');await page.waitForTimeout(200);assert.equal(await save.isVisible(),true);
+  await page.keyboard.press('ControlOrMeta+Z');await page.waitForTimeout(200);assert.equal(await save.isVisible(),true);
   await context.close()}
  // A drop of Outlook's HTML is cleaned the same way and shows Save.
  {const {context,page,body,save}=await open(1440,900);
@@ -104,7 +105,7 @@ try{
   await save.locator('.primary').click();await page.locator('#notice',{hasText:'Signature saved.'}).waitFor({state:'attached'});
   assert.doesNotMatch(posts.filter(p=>p.action==='set_signature').at(-1).args.html,/mso-|class=|-webkit-/i);
   // Typing after it, and bold from the toolbar, stay as they are.
-  await body.click();await page.keyboard.type(' ok');await page.keyboard.press('Shift+Home');
+  await body.click();await page.keyboard.type(' ok');await page.keyboard.press(SELECT_TO_LINE_START);
   await page.locator('#signatures [data-sig-tool="bold"]').click();await page.waitForTimeout(100);
   assert.match(await body.innerHTML(),/font-weight|<b>/);
   await context.close();signatures=fresh()}
@@ -112,7 +113,7 @@ try{
  {const {context,page,form,save}=await open(1440,900);
   await form.locator('[data-sig-tool="html"]').click();
   await page.evaluate(()=>navigator.clipboard.writeText('<b>Robin Example</b>'));
-  await form.locator('.sig-source').click();await page.keyboard.press('Control+V');
+  await form.locator('.sig-source').click();await page.keyboard.press('ControlOrMeta+V');
   await save.waitFor();assert.match(await form.locator('.sig-source').inputValue(),/Robin Example/);
   await context.close()}
  // A form that can't be saved (a mailbox without the right access) stays without Save.

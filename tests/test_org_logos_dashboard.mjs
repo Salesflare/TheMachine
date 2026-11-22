@@ -50,6 +50,8 @@ try{
   if(process.env.SHOT_DIR){await mkdir(process.env.SHOT_DIR,{recursive:true});await page.screenshot({path:`${process.env.SHOT_DIR}/orgs-${width}-${scheme}.png`})}
   await page.locator('#people-view article[data-node="org:globex.example"] button.node').click();
   await page.locator('.graph-detail .org-pic.big img').waitFor();
+  // this logo fills its square: once loaded it drops the tile's padding (todos-cards.js logoReads)
+  await page.waitForFunction(()=>document.querySelector('.graph-detail .org-pic.big img')?.classList.contains('bleed'));
   assert.equal(await page.locator('.graph-detail .org-pic.big img').evaluate(i=>i.width),44);  // as big as a person's photo on their page
   if(process.env.SHOT_DIR)await page.screenshot({path:`${process.env.SHOT_DIR}/org-${width}-${scheme}.png`});
   assert.deepEqual(errors,[]);

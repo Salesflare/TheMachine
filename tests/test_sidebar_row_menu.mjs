@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
 import {dashboardPage} from './dashboard-page.mjs';
+import {menuKey} from './keys.mjs';
 const {chromium}=await import('./browser.mjs');
 
 // The sidebar row's ⋯ menu (hover ⋯, right click, the menu key, a long press on a phone): Rename and Open, then the
@@ -68,7 +69,7 @@ try{
   // A done to-do: Rename and Open only
   await page.locator('[data-side-fold="done"]').click();await row(5).click({button:'right'});assert.deepEqual(await items(page),['Rename','Open']);await page.keyboard.press('Escape');
   // Keyboard: the menu key on a focused row opens it under the row, arrows move, Esc closes and the row keeps focus
-  await row(4).focus();await page.keyboard.press('Shift+F10');await page.locator('.row-menu').waitFor();
+  await row(4).focus();await menuKey(page);await page.locator('.row-menu').waitFor();
   {const m=await page.locator('.row-menu').boundingBox(),r=await row(4).boundingBox();assert.ok(m.y>=r.y+r.height-1,'under the row')}
   assert.equal(await page.evaluate(()=>document.activeElement.dataset.rowRename!=null),true);
   await page.keyboard.press('End');assert.equal(await page.evaluate(()=>document.activeElement.textContent),'Not needed');
@@ -78,7 +79,7 @@ try{
   assert.equal(await page.evaluate(()=>document.activeElement.getAttribute('href')),'#chat='+id(4),'focus back on the row');
   // Enter on Mark done: done, and the keyboard stays in the list (on the row after it, or before)
   // Opened again straight after Esc: the row's late refocus (after the list redraws) doesn't take focus from the menu
-  await page.keyboard.press('Shift+F10');await page.waitForTimeout(300);
+  await menuKey(page);await page.waitForTimeout(300);
   assert.equal(await page.evaluate(()=>document.activeElement.dataset.rowRename!=null),true,'the menu keeps focus');
   await page.keyboard.press('ArrowDown');await page.keyboard.press('ArrowDown');
   assert.equal(await page.evaluate(()=>document.activeElement.textContent),'Mark done');await page.keyboard.press('Enter');

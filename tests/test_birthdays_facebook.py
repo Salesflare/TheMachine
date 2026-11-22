@@ -111,7 +111,9 @@ class Read(unittest.TestCase):
         with socket.socket() as s:
             s.bind(('127.0.0.1', 0))
             port = s.getsockname()[1]
-        cls.chrome = subprocess.Popen([CHROME, '--headless=new', '--no-sandbox', '--disable-gpu', '--remote-debugging-port=%d' % port,
+        # --use-mock-keychain: on macOS Chrome otherwise keeps its cookie key in the login keychain, and a runner with no one
+        # to answer the keychain's prompt leaves it waiting (pages stall, and it never quits); elsewhere it does nothing
+        cls.chrome = subprocess.Popen([CHROME, '--headless=new', '--no-sandbox', '--disable-gpu', '--use-mock-keychain', '--remote-debugging-port=%d' % port,
                                        '--user-data-dir=' + cls.profile, 'about:blank'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         cls.base = 'http://127.0.0.1:%d' % port
         for _ in range(600):

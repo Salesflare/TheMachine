@@ -63,7 +63,7 @@ try{
   assert.equal(await page.evaluate(()=>document.activeElement?.classList.contains('sig-paper')),true,'the editor lost focus');
   // Paste an Outlook signature while progress keeps arriving.
   await page.evaluate(async h=>navigator.clipboard.write([new ClipboardItem({'text/html':new Blob([h],{type:'text/html'}),'text/plain':new Blob(['Robin Example'],{type:'text/plain'})})]),WORD);
-  await page.keyboard.press('Control+V');
+  await page.keyboard.press('ControlOrMeta+V');
   await body.locator('b',{hasText:'Robin Example'}).waitFor();
   await page.evaluate(()=>refresh());await page.waitForTimeout(5500);
   const pasted=await body.innerHTML();
