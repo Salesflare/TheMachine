@@ -1,7 +1,7 @@
 ---
 title: 待办页面
 area: fleet
-summary: 为 Network 外的人提供一个简洁页面，并通过邮件链接分享。对方点一下就能回复，无需账号。
+summary: 为Network外的人提供一个简洁页面，并通过邮件链接分享。对方点一下就能回复，无需账号。
 covers: task-pages
 code: task_pages.py, task_invites.py, dashboard.html
 order: 4

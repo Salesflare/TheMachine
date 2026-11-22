@@ -23,7 +23,7 @@ translated: 73526b82818f009d
 1. `git clone https://github.com/Salesflare/TheMachine.git ~/.openclaw/workspace/tools/personal-assistant`
 2. `cd ~/.openclaw/workspace/tools/personal-assistant && ./install.sh`
 
-在Windows上（Beta版），应用会在WSL2中运行。在PowerShell中运行`irm https://raw.githubusercontent.com/Salesflare/TheMachine/main/install.ps1 | iex`。它会安装配置WSL2和Ubuntu，并准备好应用所需的一切，然后运行`./install.sh`。
+在Windows上（Beta版），应用会在WSL2中运行。在PowerShell中运行`irm https://raw.githubusercontent.com/Salesflare/TheMachine/main/install.ps1 | iex`。它会安装并配置WSL2和Ubuntu，并准备好应用所需的一切，然后运行`./install.sh`。
 
 安装程序会找到你的账号，逐个连接，并在启用任何功能前显示上周的预览。
 

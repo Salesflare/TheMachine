@@ -13,7 +13,7 @@ translated: fc97be60c0b68336
 
 ## 登录
 
-如果使用托管版The Machine，请在设置页面点击**使用ChatGPT登录**，然后在ChatGPT中输入页面显示的代码。之后退出了登录？点击**重新连接ChatGPT**。
+如果使用托管版Machine，请在设置页面点击**使用ChatGPT登录**，然后在ChatGPT中输入页面显示的代码。之后退出了登录？点击**重新连接ChatGPT**。
 
 如果OpenAI拒绝了代码，请打开[ChatGPT安全设置](https://chatgpt.com/settings/security)，滚动到页面底部，然后打开“为Codex、Excel、PowerPoint和Word启用设备代码登录”。接着重新输入代码。
 
