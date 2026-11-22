@@ -808,6 +808,9 @@ class DecisionsStore:
             raise ValueError('Unknown suggestion')
         if source in ('telegram', 'dashboard') and row['early']:
             db.execute('UPDATE suggestions SET early=0 WHERE id=?', (suggestion_id,))  # the owner's own decision from here on
+            if choice == 'accept':  # Do it on one still waiting to be prepared ahead: its queued run is the owner's tap now,
+                # so the ahead pacing no longer holds it (preparation_step) and its run has the tap's approval (action_basis)
+                db.execute("UPDATE preparations SET decision_id=? WHERE suggestion_id=? AND status='queued'", (decision_id, suggestion_id))
         if choice == 'reject' and row['status'] in todo_states.OPEN and owner_reports_handled(feedback):
             # "Not needed — I already did it" is a finished task, not a bad suggestion.
             choice = 'complete'
