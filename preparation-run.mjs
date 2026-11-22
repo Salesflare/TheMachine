@@ -140,6 +140,11 @@ try {
       agentId:'main', sessionKey:session+sessionId,
       message:request.message, idempotencyKey:request.job_id, timeout:runSeconds,
       deliver:false, disableMessageTool:true,
+      // A review, profile, Find my skills or routine run gets OpenClaw's smaller prompt (the one for sub-agents: no memory,
+      // messaging or reply sections) and none of the workspace's own files (AGENTS.md, SOUL.md, IDENTITY.md, USER.md,
+      // BOOTSTRAP.md): the plugin gives it USER.md and its instructions itself (review-recovery.ts), and it reads, never
+      // writes or talks to anyone. A preparation keeps both: the owner's workspace rules on how drafts come out can live there.
+      ...(kind!=='preparation'?{promptMode:'minimal', bootstrapContextMode:'lightweight'}:{}),
       ...(attachments.length?{attachments:attachments.map(a=>({type:'image', mimeType:a.mimeType, fileName:a.fileName, content:a.content}))}:{}),
       // Background work never runs on the costliest model: the service names the one to use instead (assistant.py
       // background_model), only one the owner's model allowlist allows.

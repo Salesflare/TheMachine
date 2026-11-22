@@ -175,6 +175,12 @@ oldest signal from a person has waited `max_wait_minutes` (15), it starts one is
   conversation (`slack_read`, or a save held until Slack has read the people's conversations) waits inside that one
   call, up to 4 minutes, instead of sleeping and asking again. A tool call resends the whole session, so each call
   saved is a large share of a run.
+- **A lean turn.** A review, a profile draft, Find my skills and a routine only read, so they get OpenClaw's smaller
+  prompt (the one for sub-agents) and none of the workspace's own files (`AGENTS.md`, `SOUL.md`, `IDENTITY.md`); the
+  plugin adds `USER.md` and the instructions they need. On OpenClaw's embedded runtime the turn also lists only the
+  tools it may call, so the model never tries the others. Codex app-server can't narrow a turn's tools: there every
+  call is still checked when it's made. A Do it run keeps the full prompt, every tool and skill, and the workspace
+  files, since your own rules on how drafts come out can live there.
 - **One at a time.** One run at a time, with a gap between runs; failed runs back off. Unfinished claims move safely
   to the next run, and the service never restarts the Gateway. A version that was deferred stays searchable; two
   deferrals set a signal aside until it changes.

@@ -71,7 +71,10 @@ assert.notEqual((await hooks.before_tool_call({toolName:'assistant_signals',para
 // Find my skills: the browser (to read the owner's accounts) and assistant_signals (its report); no shell or writes,
 // and no review instructions.
 const skillsCtx={...ctx,sessionKey:'agent:main:assistant-review-skills-'+'c'.repeat(32),runId:'skills-run'};
-assert.equal(await hooks.before_prompt_build({},skillsCtx),undefined);
+{const {NOT_FIRST_CHAT,READ_ONLY_RUN}=await import('../openclaw-plugin/review-recovery.ts');
+ const built=await hooks.before_prompt_build({},skillsCtx);  // USER.md from the plugin: the run gets no workspace files
+ assert.ok(built.prependContext.startsWith(NOT_FIRST_CHAT+' '+READ_ONLY_RUN));assert.ok(built.prependContext.includes('## About the owner (USER.md)'));
+ assert.ok(!built.prependContext.includes('analysis_page'));assert.equal(built.toolsAllow,undefined);}
 assert.notEqual((await hooks.before_tool_call({toolName:'browser',params:{action:'open'}},skillsCtx))?.block,true);
 assert.notEqual((await hooks.before_tool_call({toolName:'assistant_signals',params:{action:'skills_found',args:{}}},skillsCtx))?.block,true);
 for(const toolName of ['exec','write','message'])assert.equal((await hooks.before_tool_call({toolName,params:{command:'ls'}},skillsCtx)).block,true);
@@ -151,6 +154,40 @@ assert.ok(prep.prependSystemContext.startsWith('## About the owner (USER.md)'));
 assert.equal(prep.prependContext,undefined);
 assert.equal((await hooks.before_prompt_build({},prepCtx)).prependSystemContext,prep.prependSystemContext);
 assert.equal(calls.length,previousCount);  // a preparation is not a review
+{ // On OpenClaw's embedded runtime (its hook context has activeProjectKeys) a read-only run's turn sees only the tools it
+  // may call, plus tool search's runners; Code Mode's exec and wait OpenClaw keeps by itself, so they're not named here
+  // (a plain exec would be the shell). Codex app-server refuses a turn whose hook narrows tools: there nothing changes.
+ const {turnTools,TOOL_SEARCH_TOOLS,REVIEW_TOOLS,embeddedRuntime}=await import('../openclaw-plugin/review-recovery.ts');
+ const embedded=c=>({...c,activeProjectKeys:[]});
+ assert.equal(embeddedRuntime(embedded(ctx)),true);assert.equal(embeddedRuntime(ctx),false);
+ const reviewTurn=await hooks.before_prompt_build({},embedded(ctx));
+ assert.deepEqual(new Set(reviewTurn.toolsAllow),new Set([...REVIEW_TOOLS,...TOOL_SEARCH_TOOLS]));
+ for(const name of ['dispatch_action','tool_search','tool_describe','tool_call','assistant_signals'])assert.ok(reviewTurn.toolsAllow.includes(name),name);
+ for(const name of ['skills_read','exec','write','browser','message','wait'])assert.ok(!reviewTurn.toolsAllow.includes(name),name);
+ assert.equal(reviewTurn.prependSystemContext,reviewContext);  // the same instructions, cache prefix and all
+ assert.ok(reviewContext.includes('do not call skills_read'));
+ // Every tool a turn sees is one before_tool_call lets it call: nothing listed only to be refused.
+ for(const name of turnTools(ctx.sessionKey))assert.notEqual((await hooks.before_tool_call({toolName:name,params:{id:'assistant_signals',args:{action:'status'}}},ctx))?.block,true,name);
+ const profileTurn=await hooks.before_prompt_build({},embedded(profileCtx));
+ assert.ok(profileTurn.prependContext.includes('## About the owner (USER.md)'));
+ assert.deepEqual(new Set(profileTurn.toolsAllow),new Set([...REVIEW_TOOLS,...TOOL_SEARCH_TOOLS]));
+ // Without the workspace files, OpenClaw tells a run on a new install to read BOOTSTRAP.md first; a sandbox review did.
+ const {NOT_FIRST_CHAT}=await import('../openclaw-plugin/review-recovery.ts');
+ assert.ok(reviewContext.includes(NOT_FIRST_CHAT));assert.ok(profileTurn.prependContext.startsWith(NOT_FIRST_CHAT));
+ assert.ok(!prep.prependSystemContext.includes('BOOTSTRAP.md'));  // a preparation gets the workspace files as before
+ const skillsTurn=await hooks.before_prompt_build({},embedded(skillsCtx));
+ assert.ok(skillsTurn.toolsAllow.includes('browser'));assert.ok(!skillsTurn.toolsAllow.includes('exec'));assert.ok(skillsTurn.prependContext.startsWith(NOT_FIRST_CHAT));
+ const routineTurn=await hooks.before_prompt_build({},embedded({...ctx,sessionKey:'agent:main:assistant-review-routine-'+'e'.repeat(32),runId:'routine-run'}));
+ for(const name of ['assistant_signals','web_search','web_fetch','browser','exec','dispatch_action'])assert.ok(routineTurn.toolsAllow.includes(name),name);
+ for(const name of ['write','message','skills_read'])assert.ok(!routineTurn.toolsAllow.includes(name),name);
+ // Codex (no activeProjectKeys): no toolsAllow, the rest as before.
+ for(const c of [ctx,profileCtx,skillsCtx])assert.equal((await hooks.before_prompt_build({},c))?.toolsAllow,undefined,c.sessionKey);
+ // A preparation keeps every tool and skill, on either runtime; so does the owner's own chat.
+ assert.equal(turnTools(prepCtx.sessionKey),undefined);
+ const prepTurn=await hooks.before_prompt_build({},embedded(prepCtx));
+ assert.equal(prepTurn.toolsAllow,undefined);assert.equal(prepTurn.prependSystemContext,prep.prependSystemContext);
+ assert.equal(await hooks.before_prompt_build({},embedded(main)),undefined);
+}
 // Preparations read untrusted email. Research, drafting and other changes run;
 // only credentials and self-edits stay blocked (loosened at his request October 12 and 14).
 const prepOutcome=async(toolName,params,extra={})=>{
