@@ -28,6 +28,10 @@ const server=createServer((req,res)=>{
 });
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
 const errors=[];let browser;
+// Save, and wait for this save itself: the last one's "Work hours saved." can still be showing (4.5 s)
+const save=async page=>{const n=saved.length;await page.locator('#hours-save').click();
+ for(const end=Date.now()+15000;saved.length===n;){assert.ok(Date.now()<end,'the save was never sent');await new Promise(r=>setTimeout(r,20))}
+ await page.locator('#notice,#toast',{hasText:'Work hours saved.'}).first().waitFor()};
 try{
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
  const context=await browser.newContext({viewport:{width:390,height:844},timezoneId:'America/New_York'}),page=await context.newPage();
@@ -84,15 +88,13 @@ try{
  // The evening digest's time, like the morning's: while untouched it follows Until, and then saves as none (Until's)
  assert.equal(await page.locator('#hours-evening').inputValue(),'17:15');
  assert.equal(await page.locator('#hours-preview, [data-evening-preview], [data-evening-copy]').count(),0);  // no preview here
- await page.locator('#hours-save').click();
- await page.locator('#notice,#toast',{hasText:'Work hours saved.'}).first().waitFor();
+ await save(page);
  assert.deepEqual(saved.at(-1),{action:'set_work_hours',args:{days:[1,2,3,4,7],start:'09:00',end:'17:30',morning:'08:15',digest_at:'08:30',evening_at:null,timezone:'America/New_York'}});
  // a time of its own stays when Until changes
  await page.locator('#hours-evening').fill('16:30');
  await page.locator('#hours-end').fill('18:00');
  assert.equal(await page.locator('#hours-evening').inputValue(),'16:30');
- await page.locator('#hours-save').click();
- await page.locator('#notice,#toast',{hasText:'Work hours saved.'}).first().waitFor();
+ await save(page);
  assert.equal(saved.at(-1).args.evening_at,'16:30');
  assert.equal(await page.locator('#hours-evening').inputValue(),'16:30');  // kept after the save
  // A refresh keeps what was saved.
@@ -129,8 +131,7 @@ try{
  await page.locator('#hours-digest').fill('08:00');
  assert.equal(await page.locator('#hours-digest').inputValue(),'08:20');
  assert.equal(await page.locator('#hours-digest').getAttribute('min'),'08:20');
- await page.locator('#hours-save').click();
- await page.locator('#notice,#toast',{hasText:'Work hours saved.'}).first().waitFor();
+ await save(page);
  assert.equal(saved.at(-1).args.morning+' '+saved.at(-1).args.digest_at,'08:15 08:20');
  assert.deepEqual(await page.evaluate(()=>[digestFloor('08:30',{morning:'17:58',start:'08:00',end:'18:00'}),digestFloor('08:30',{morning:'23:58',start:'00:00',end:'00:00'}),digestFloor('10:00',{morning:'09:00',start:'08:00',end:'23:00'})]),['08:30','08:30','10:00']);
  // Not saveable here (no config file): shown, read-only, in plain words; the file and its key under Show more.
