@@ -1,6 +1,7 @@
 """A to-do's own actions on the dashboard (App.action): preparing it, deciding on it, revising its draft, confirming an
 approval, refreshing its card, files in its chat, and importing a task link, with the helpers only they use. Moved
 out of assistant.App's action as is. A mixin of assistant.App (APP_MIXINS)."""
+import datetime as dt
 import email.utils
 import json
 import re
@@ -69,6 +70,39 @@ def owner_turn(db, suggestion_id, job_id):
     turn = db.execute("SELECT id,feedback,created_at FROM decisions WHERE id=? AND suggestion_id=? AND source IN ('dashboard','telegram') AND choice='other'",
                       (job['decision_id'], suggestion_id)).fetchone() if job else None
     return turn if turn and str(turn['feedback'] or '').strip() else None
+
+
+# Keys a run may pass to prepare that it never reads (the tool takes any key): the reply said the due date moved.
+NOT_SAVED = {'due': 'the due date', 'due_date': 'the due date', 'due_at': 'the due date', 'deadline': 'the due date',
+             'remind_at': 'a reminder', 'reminder': 'a reminder', 'snoozed_until': 'the snooze'}
+
+
+def what_applied(saved, args):
+    """What a saved result changed, in plain words, so the chat's reply says only that (as title_note for a rename):
+    applied, what took effect; not_applied, what the run asked for that didn't."""
+    applied, missed = [], []
+    status, send, ran, doc = saved.get('status'), saved.get('send'), saved.get('done_now'), saved.get('doc_created')
+    if status == 'snoozed' and saved.get('snoozed_until'):
+        until = dt.datetime.fromisoformat(saved['snoozed_until']).astimezone(local_tz())
+        applied.append('snoozed until ' + until.strftime('%a %Y-%m-%d %H:%M') + ' (their time)')
+    elif status == 'completed':
+        applied.append('the to-do is done and left their list')
+    else:
+        applied.append('result saved; the to-do stays open')
+    if args.get('snooze_until') and status != 'snoozed':
+        missed.append("not snoozed: snooze_until counts only with outcome:'snoozed'")
+    if isinstance(send, dict):
+        (applied if send.get('status') == 'queued' else missed).append('the draft is queued to send' if send.get('status') == 'queued' else 'the draft was not sent')
+    if isinstance(ran, dict):
+        (applied if ran.get('status') == 'queued' else missed).append('the step runs now' if ran.get('status') == 'queued' else 'the step did not run')
+    if doc:
+        (missed if doc.startswith('waits') else applied).append('the new doc ' + doc)
+    if args.get('finish_state') and args['finish_state'] != 'completed' and status != 'completed':
+        missed.append('the final step is not done (' + str(args['finish_state']).replace('_', ' ') + ')')
+    for key, what in NOT_SAVED.items():
+        if args.get(key) not in (None, '') and what + ' did not change' not in missed:
+            missed.append(what + ' did not change')
+    return {'applied': applied, **({'not_applied': missed} if missed else {})}
 
 
 def ask_do_now(turn, steps):
@@ -433,6 +467,8 @@ class CardActionsApp:
             saved['auto_merge']='queued: it merges by itself if the tests pass, the new test fails without the fix and a second check agrees it only fixes a bug' if why is None else 'waits for the owner’s Merge: '+why
         if isinstance(saved, dict) and args.get('skill_hint') and getattr(self, 'skills', None) and not saved.get('replayed'):
             saved['skill_hint'] = self.skills.hint(args['suggestion_id'], args['skill_hint'])  # "There's a skill for this", if it clearly helps
+        if isinstance(saved, dict) and not saved.get('replayed'):
+            saved.update(what_applied(saved, args))
         return saved
 
     def revise_draft_action(self, name, args, owner_dashboard=False):
