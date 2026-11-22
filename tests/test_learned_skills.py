@@ -179,7 +179,7 @@ class LearnedSkills(unittest.TestCase):
         better = {**PROCEDURE, 'steps': ['Open Billing, then Statements; Invoices moved there.', 'Download the PDF.']}
         self.learn(sid, 'job3', better)
         [row] = self.learned()
-        self.assertEqual((row['note'], row['version'], row['status']), (None, 2, 'on'))  # a new version in the skill's history
+        self.assertEqual((row['note'], row['version'], row['status']), (None, 2, 'on'))  # replaced in place: its version goes up, the old body isn't kept
         self.assertIn('Statements', row['body'])
         for _ in range(p.RETIRE):
             self.app.learned_failed(sid)
@@ -188,6 +188,23 @@ class LearnedSkills(unittest.TestCase):
         self.assertFalse((self.workspace / 'skills' / skills.FOLDER / row['slug']).exists())  # no longer picked up
         self.learn(sid, 'job9', better)  # what works now turns it on again
         self.assertEqual(self.learned()[0]['status'], 'on')
+
+    def test_a_sign_in_wait_never_counts_against_it_a_plain_block_does(self):
+        self.learn(self.first, 'job1')
+        sid = self.act('card_new', text='Update the delivery address on our supplier account', scope='work')['id']
+        self.attach(sid, 1, 'Supplier Desk <desk@supplier.example>', 'Your account', 'Sign in at https://portal.supplier.example to change it.')
+
+        def block(job, reason):
+            self.start_run(sid, job)
+            self.act('preparation_blocked', owner=False, suggestion_id=sid, job_id=job, reason=reason)
+
+        for n in range(p.RETIRE):
+            block(f'signin{n}', 'Sign in to portal.supplier.example on the dashboard, then tap Continue.')
+        [row] = self.learned()
+        self.assertEqual((row['note'], row['status']), (None, 'on'))
+        for n in range(p.RETIRE):
+            block(f'stuck{n}', 'The Billing page shows no invoices for this account.')
+        self.assertEqual(self.learned()[0]['status'], 'off')
 
     def test_it_grants_nothing(self):
         # A run prepared ahead, or one that didn't get it done, keeps none

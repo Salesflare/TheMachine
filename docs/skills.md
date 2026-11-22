@@ -113,7 +113,8 @@ follow it. It shows in Settings > Skills with **Learned from a task**.
   or submitting still waits for you.
 - **Your skills stay yours.** Learning never edits a skill of yours. When one of yours already covers that site or
   workflow, nothing is learned. **Edit** a learned skill and it becomes yours: learning stops changing it.
-- **It keeps itself current.** A task on that site that gets stuck counts against it; the next one that gets done
+- **It keeps itself current.** A task on that site that gets stuck counts against it (waiting for you to sign in
+  doesn't); the next one that gets done
   replaces it with what works now, as a new version. Three stuck in a row turn it off; a later good run turns it on
   again. **Turn off** or **Delete** work as for any skill.
 
