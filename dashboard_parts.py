@@ -67,7 +67,7 @@ LAZY = {
                  'settings-activity.js'),
     'learning': ('learning-missed.css', 'learning-bring.js', 'learning-share.js', 'learning-missed.js'),
     'memimport': ('learning-import.css', 'learning-import.js'),
-    'mailcheck': ('todos-mail-check.css', 'todos-mail-check.js'),
+    'mailcheck': ('todos-mail-check.css', 'todos-reset-nudge.css', 'todos-mail-check.js', 'todos-reset-nudge.js'),
     'milestone': ('todos-milestone.css', 'todos-milestone.js'),
     'msshare': ('todos-milestone-share.css', 'todos-milestone-share.js'),
     'recipe': ('todos-recipe.css', 'todos-recipe.js'),

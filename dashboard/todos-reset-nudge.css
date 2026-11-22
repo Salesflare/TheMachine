@@ -1,0 +1,5 @@
+/*@lazy*/
+/* A usage limit reset offered above the to-dos while work is held back (todos-reset-nudge.js): one quiet line */
+.reset-nudge{display:flex;align-items:center;gap:8px;margin:0 0 12px;font-size:var(--fs-sm);color:var(--muted)}
+.reset-nudge>span{flex:1;min-width:0}
+.reset-nudge .ghost{flex:none;min-height:32px;padding:4px 12px}

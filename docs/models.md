@@ -139,6 +139,10 @@ The Machine asks the Codex CLI's own app server (`codex app-server`, no model ca
 signed in to the same ChatGPT account (same email and plan).
 
 - Then Settings shows how many you have and **Use a reset**, after a confirm.
+- To-dos then also offers one before work stops: a quiet line once a window holds background work back (the 5-hour one
+  at 65%, the weekly one at 90%, `model_budget.held_back`) or a limit is reached, with the same **Use a reset** and its
+  confirm. × hides it in that browser until that window resets. Never shown without resets, nor while a working
+  fallback carries the work. It never uses a reset by itself.
 - Otherwise (also on a hosted Machine, where only OpenClaw is signed in) it shows only **See resets in ChatGPT**, which
   opens ChatGPT's Codex usage page. On a Team or Business plan, pick that workspace there.
 - `"codex": false` in config.json never asks the Codex CLI; `"codex": "/path/to/codex"` uses another binary.
