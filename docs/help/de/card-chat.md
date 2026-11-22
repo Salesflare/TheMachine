@@ -9,7 +9,7 @@ translated: 340b9cfc0e3a424d
 ---
 ## Öffnen
 
-Tippe auf dem Smartphone auf den Titel der Aufgabe. Am Computer klickst du auf **Im Chat ansehen ›** oder auf den Chat-Link der Aufgabe. Wenn du am Computer auf den Titel klickst, benennst du die Aufgabe um.
+Tippe auf dem Handy auf den Titel der Aufgabe. Am Computer klickst du auf **Im Chat ansehen ›** oder auf den Chat-Link der Aufgabe. Wenn du am Computer auf den Titel klickst, benennst du die Aufgabe um.
 
 ## E-Mails im Chat
 
@@ -30,7 +30,7 @@ Bevor du etwas schreibst, schlägt der Chat möglicherweise bis zu drei Formulie
 
 Auf eine Frage erhältst du eine Antwort, und der Entwurf bleibt unverändert. Zum Senden verwendest du die Buttons der Aufgabe. Der Chat sendet niemals einen Entwurf in derselben Antwort, in der er ihn erstellt hat. Eine Änderung, die sonst niemanden erreicht, etwa eine Bereinigung in einem Dokument, wird sofort umgesetzt, ohne dass du noch einmal auf Bestätigen klicken musst. Alles, was über deine Bitte hinausgeht, wartet auf dein OK. Eine Aufgabe mit mehreren Schritten bleibt offen, bis alle Schritte erledigt sind.
 
-Am Computer sendet Enter oder Ctrl+Enter (Cmd+Enter auf dem Mac) deine Nachricht. Mit Shift+Enter beginnst du eine neue Zeile. Auf dem Smartphone verwendest du den Senden-Button.
+Am Computer sendet Enter oder Ctrl+Enter (Cmd+Enter auf dem Mac) deine Nachricht. Mit Shift+Enter beginnst du eine neue Zeile. Auf dem Handy verwendest du den Senden-Button.
 
 ## Wenn etwas nicht stimmt
 
@@ -38,7 +38,7 @@ Sag es im Chat, zum Beispiel „Sie ist nicht die CEO“ oder „Sie arbeitet ni
 
 Andere Entwürfe, die auf dem falschen Wert beruhen, werden nacheinander neu erstellt. In ihrem Chat steht **Entwurf wird nach einer Korrektur neu erstellt**. Entwürfe, die du bearbeitet oder freigegeben hast, und solche, die gerade versendet werden, bleiben unverändert. In der Antwort steht, wie viele es jeweils sind.
 
-Auf einer GBrain-Seite ändert sich nur der eigene Abschnitt der Machine. Was du dort geschrieben hast, bleibt erhalten. Wenn sie nicht erkennen kann, woher etwas stammt, berücksichtigt sie stattdessen deine Notiz.
+Auf einer GBrain-Seite ändert sich nur der eigene Abschnitt der Machine. Was du dort geschrieben hast, bleibt erhalten. Wenn sie nicht erkennen kann, woher etwas stammt, lernt sie stattdessen aus deiner Notiz.
 
 ## Modell und Nachdenken
 
@@ -48,7 +48,7 @@ Mit **Schnell** am Ende des Modellmenüs antworten Aufgaben-Chats schneller. Das
 
 ## Antwort anhalten
 
-Während eine Antwort geschrieben wird, wird aus dem Senden-Button **Stopp**. Damit wird die Antwort sofort beendet und das bis dahin Geschriebene bleibt erhalten und wird als **Gestoppt** markiert. Schreib eine neue Nachricht, um fortzufahren, oder tippe auf **Erneut versuchen**.
+Während eine Antwort geschrieben wird, wird aus dem Senden-Button **Stoppen**. Damit wird die Antwort sofort beendet und das bis dahin Geschriebene bleibt erhalten und wird als **Gestoppt** markiert. Schreib eine neue Nachricht, um fortzufahren, oder tippe auf **Erneut versuchen**.
 
 ## Dateien hinzufügen
 

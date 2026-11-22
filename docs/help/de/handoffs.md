@@ -10,7 +10,7 @@ translated: acb60a24ef374625
 ## Eine Aufgabe übergeben
 
 1. Öffne bei der Aufgabe **…**, dann **Übergeben…**, und wähle **Ein Teammitglied**.
-2. Wähle eine Person, prüfe, was mitgegeben wird (× lässt einen Teil weg), und füge eine Notiz hinzu. Nichts aus einem Personal-Konto oder einem anderen Unternehmen wird mitgegeben.
+2. Wähle eine Person, prüfe, was mitgegeben wird (× lässt einen Teil weg), und füge eine Notiz hinzu. Nichts aus einem privaten Konto oder einem anderen Unternehmen wird mitgegeben.
 3. Sende die Aufgabe ab. Ihre Machine zeigt sie der Person als Aufgabe an.
 
 Ihre Machine benachrichtigt sie auf dem Handy oder über Telegram. Wenn beides nicht eingerichtet ist, erhält die Person einmalig eine E-Mail mit dem Namen der Person, die die Aufgabe übergeben hat, dem Titel und einem Link. Weitere Informationen findest du unter [Benachrichtigungen](notifications.md).
@@ -47,7 +47,7 @@ Die Person kann einen Grund nennen: Die Aufgabe gehört nicht zu ihr, ist bereit
 
 Wähle **Per E-Mail**: Deine Machine erstellt einen E-Mail-Entwurf, den du senden kannst. Während du tippst, schlägt sie zuerst deine Fleet und dann Personen aus deinem Unternehmen vor. Füge eine Aufgabenseite hinzu, damit die Person mit einem Fingertipp antworten kann: siehe [Aufgabenseiten](task-pages.md).
 
-Nur für Aufgaben unter „Arbeit“. Wähle aus, was mitgesendet wird: ein paar Zeilen zur Aufgabe, ihr Entwurf, Links und Dateien. Inhalte aus „Persönlich“ und „Nur für dich“ bleiben außen vor. Mit **E-Mail vorbereiten** wird die E-Mail zur Aufgabe hinzugefügt. Lies sie durch und sende sie dann aus deinem eigenen Postfach. Es gibt kein Tracking.
+Nur für Aufgaben unter „Arbeit“. Wähle aus, was mitgesendet wird: ein paar Zeilen zur Aufgabe, ihr Entwurf, Links und Dateien. Inhalte aus „Privat“ und „Nur du“ bleiben außen vor. Mit **E-Mail vorbereiten** wird die E-Mail zur Aufgabe hinzugefügt. Lies sie durch und sende sie dann aus deinem eigenen Postfach. Es gibt kein Tracking.
 
 Eine Aufgabe aus Intercom oder Slack hat kein eigenes Postfach. Ihre E-Mail wird deshalb aus deinem geschäftlichen Postfach gesendet.
 

@@ -22,7 +22,7 @@ Etwa zweimal am Tag macht sie daraus ein paar kleine Änderungen. **Lernen**, **
 - Bearbeite einen Entwurf, bevor du ihn sendest. Sie lernt aus dem, was du geändert hast.
 - Sag im **Chat** der Aufgabe, was du möchtest, oder tippe bei einem Entwurf auf **Änderungen anfragen**.
 - Tippe auf **Nicht nötig** und wähl einen Grund.
-- Sag es ihr im Chat einer Aufgabe: „kürzer, und keine Ausrufezeichen“. Sie zeigt **In Wie du schreibst gespeichert**, wenn sie es übernommen hat.
+- Sag es ihr im Chat einer Aufgabe: „kürzer, und keine Ausrufezeichen“. Sie zeigt **Gespeichert in Wie du schreibst**, wenn sie es übernommen hat.
 
 ## Was du einstellen kannst
 

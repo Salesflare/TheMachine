@@ -11,7 +11,7 @@ translated: ebf5345474689237
 
 Drücke auf dem Mac `⌘K`, unter Windows und Linux `Ctrl K` oder `/`, um **Suche und Befehle** zu öffnen. Gib einen Teil eines Namens ein: eine Aktion, eine Seite, eine Aufgabe, eine Person, eine Organisation, ein Projekt oder eine Nachricht. Navigiere mit den Pfeiltasten und Enter durch die Treffer oder schließe die Palette mit Esc. Zuletzt verwendete Befehle stehen zuerst. **Alle Ergebnisse anzeigen** öffnet alle passenden Nachrichten.
 
-Auf dem Smartphone tippst du oben in der Leiste auf das Suchsymbol.
+Auf dem Handy tippst du oben in der Leiste auf das Suchsymbol.
 
 ## Eine Frage stellen
 
@@ -27,7 +27,7 @@ Wenn mehrere Personen denselben Namen haben, sagt die Machine, welche Person gem
 
 Drücke `?`, um **Tastenkürzel** zu öffnen. Dort findest du die vollständige Liste für deinen Computer.
 
-- Zu einer Seite wechseln: `G`, dann `T` für **Aufgaben**, `C` für **Kalender**, `R` für **Routinen**, `P` für **Personen**, `O` für **Organisationen**, `J` für **Projekte**, `F` für **Fleet**, `L` für **Erkenntnisse**, `N` für **Verbindungen** und `,` für **Einstellungen**. Mit `G` und dann `E` öffnest du die Suchergebnisse für Nachrichten.
+- Zu einer Seite wechseln: `G`, dann `T` für **Aufgaben**, `C` für **Kalender**, `R` für **Routinen**, `P` für **Personen**, `O` für **Organisationen**, `J` für **Projekte**, `F` für **Fleet**, `L` für **Lernen**, `N` für **Verbindungen** und `,` für **Einstellungen**. Mit `G` und dann `E` öffnest du die Suchergebnisse für Nachrichten.
 - Mit `N` erstellst du eine neue Aufgabe. Mit `T` startest du Talk oder beendest es, wenn es gerade läuft. Mit `J` und `K` (oder `↓` und `↑`) bewegst du dich durch eine Liste. Mit Enter öffnest du einen Eintrag.
 - Bei einer Aufgabe: Mit `E` benennst du sie um, mit `S` stellst du sie zurück, mit `D` markierst du sie als erledigt und mit `R` schreibst du in ihren Chat.
 - Im **Kalender**: Mit `T` wechselst du zu heute, mit `J` und `K` (oder `→` und `←`) zur nächsten oder vorherigen Woche oder zum nächsten oder vorherigen Monat. Mit `A`, `W` und `M` wechselst du zu **Agenda**, **Woche** und **Monat**.

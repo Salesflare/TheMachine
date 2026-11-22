@@ -18,7 +18,7 @@ Die Seiten, die deine Notion-Verbindung sehen kann. Sie bringt Folgendes ein:
 
 Der erste Abgleich reicht 7 Tage zurück. Personen werden anhand ihrer E-Mail-Adresse mit deinem [Graph](graph.md) verknüpft. Wenn Notion keine E-Mail-Adresse teilt, erfolgt die Verknüpfung nur anhand des vollständigen Namens, wenn genau eine Person in deinem Graph diesen Namen hat.
 
-Damit sie nur Dinge erledigt, deaktiviere **Bringt Signale** unter **Details**.
+Damit sie nur Dinge erledigt, deaktiviere **Liefert Signale** unter **Details**.
 
 ## Was sie tun kann
 
@@ -28,14 +28,14 @@ Jede dieser Aktionen wartet auf deine Zustimmung bei der jeweiligen Aufgabe:
 
 - Auf einen Kommentar in der zugehörigen Diskussion antworten.
 - Eine neue Seite erstellen. Sie ist privat, bis du sie teilst.
-- Eine Seite bearbeiten. Drücke **Änderungen prüfen**, um jeden Absatz vorher und nachher anzusehen, und dann **Speichern**. Die Änderungen werden nur so in die Seite übernommen, wie du sie gesehen hast. Wenn jemand die Seite zwischenzeitlich geändert hat, wird nichts übernommen und die Aufgabe weist dich darauf hin.
+- Eine Seite bearbeiten. Drücke **Änderungen prüfen**, um jeden Absatz vorher und nachher anzusehen, und dann **Speichern**. Geschrieben wird nur in die Seite, wie du sie gesehen hast. Wenn jemand die Seite zwischenzeitlich geändert hat, wird nichts übernommen und die Aufgabe weist dich darauf hin.
 - Eine dir zugewiesene Aufgabe als erledigt markieren. Dabei ändert sich nur ihr Status.
 
 Sie löscht, teilt oder verschiebt niemals eine Seite.
 
 ## Verbindung herstellen
 
-1. Im Dashboard: **Verbindungen**, **Dokumente und Dateien**, Notion. Oder auf der Einrichtungsseite einer gehosteten Machine unter app.themachine.computer/setup: **Weitere Quellen**, Notion. Auf deinem eigenen Computer musst du sie zuerst mit deinem Konto verbinden.
+1. Im Dashboard: **Verbindungen**, **Dokumente und Dateien**, Notion. Oder auf der Einrichtungsseite einer gehosteten Machine unter app.themachine.computer/setup: **Weitere Quellen**, Notion. Auf deinem eigenen Computer musst du ihn zuerst mit deinem Konto koppeln.
 2. Drücke **Mit Notion anmelden**, wähle deinen Workspace und die Seiten aus, die sie sehen darf, und erteile den Zugriff.
 3. Zurück in The Machine prüft sie sofort die Anmeldung und zeigt den Namen des Workspaces an.
 
@@ -45,7 +45,7 @@ Für einen weiteren Workspace füge Notion erneut hinzu.
 
 Drücke unter **Oder füge ein Integrationstoken ein** auf **Token holen**. Notion öffnet die Integrationsseite: Erstelle eine interne Integration, erlaube das Lesen und Einfügen von Inhalten und Kommentaren sowie das Lesen von Nutzerinformationen mit E-Mail-Adressen. Kopiere das Token, füge es ein und drücke **Verbinden**.
 
-Teile die Seiten anschließend in Notion unter **Verbindungen** auf jeder Seite mit der Integration. Auf deinem eigenen Computer fragt sie auch nach `assistant connect notion`.
+Teile die Seiten anschließend in Notion unter **Verbindungen** auf jeder Seite mit der Integration. Auf deinem eigenen Computer fragt auch `assistant connect notion` danach.
 
 ## Verbindung entfernen
 

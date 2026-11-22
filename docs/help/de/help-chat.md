@@ -23,7 +23,7 @@ Zuerst zeigt sie dir, was The Machine bereits kann. Einen Skill schlägt sie nur
 
 Damit wir die Hilfe verbessern können, zählt deine Machine ein paar Wörter dazu, worum es bei jeder Frage geht, zum Beispiel „Aufgabe zurückstellen“. Niemals deine Frage oder die Antwort und keine Namen, Adressen oder Zahlen, sondern nur Wörter aus diesen Hilfeseiten. Einmal am Tag werden die Zählwerte ohne dein Konto an das **Team von The Machine** gesendet.
 
-Um das zu deaktivieren, schalte unter **Einstellungen** > **Sicherheit** > **Team von The Machine** die Option **Teilen, was die Hilfe gefragt wird** aus oder wähle die Sicherheitsstufe **Vorsichtig** ([Sicherheitsstufen](security-levels.md)). Dafür brauchst du [The Machine Network](/network). Noch nicht gesendete Daten werden gelöscht.
+Um das zu deaktivieren, schalte unter **Einstellungen** > **Sicherheit** > **Team von The Machine** die Option **Fragen an die Hilfe teilen** aus oder wähle die Sicherheitsstufe **Vorsichtig** ([Sicherheitsstufen](security-levels.md)). Dafür brauchst du [The Machine Network](/network). Noch nicht gesendete Daten werden gelöscht.
 
 ## Was die Hilfe nicht kann
 
@@ -31,4 +31,4 @@ Die Hilfe beantwortet Fragen. Sie kann deine Daten nicht sehen und ändert nicht
 
 Wenn deine Beschreibung eher nach einem Fehler als nach einer Frage zur Bedienung klingt, endet die Antwort mit **Diesen Fehler melden**. Damit öffnet sich **Fehler melden** mit einer kurzen Beschreibung davon, was du getan hast, was du erwartet hast und was passiert ist. Die Support-Meldung ist dabei bereits ausgewählt. Du kannst alles ändern. Gesendet wird erst, wenn du auf **Senden** tippst.
 
-**Fehler melden** ist auch ein eigener Tab im selben Fenster. Siehe [Support erhalten](get-support.md#report-a-bug).
+**Fehler melden** ist auch ein eigener Tab im selben Fenster. Siehe [Support kontaktieren](get-support.md#report-a-bug).

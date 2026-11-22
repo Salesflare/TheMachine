@@ -17,7 +17,7 @@ Ein Foto, eine Sprachnachricht oder eine Datei ohne Bildunterschrift wird als da
 
 Die Funktion ist deaktiviert, bis du sie einschaltest. Öffne unter **Verbindungen** WhatsApp und dann **Details**. Aktiviere **Fotos lesen**, damit The Machine Fotos aus deinen Arbeits-Chats liest: einen Beleg, einen Screenshot, ein Foto von einem Brief oder ein Formular. Mit **Auch in privaten Chats** werden auch Fotos aus deinen privaten Chats gelesen. Ob ein Chat beruflich oder privat ist, richtet sich danach, wie er geteilt wird. Ein Chat mit deiner Familie bleibt also privat.
 
-The Machine lädt jedes Foto einmal herunter und speichert es auf deiner Machine wie einen E-Mail-Anhang: Bei aktiviertem Nachrichtenschutz wird es verschlüsselt und gelöscht, sobald die zugehörige Nachricht gelöscht wird. Das eigene Modell von The Machine liest, was auf dem Foto zu sehen ist, und den darin enthaltenen Text. Beides gilt als Teil der Nachricht, niemals als Anweisung. Unterstützt werden JPEG, PNG und WebP bis zu 5 MB. Einmalcodes auf Fotos werden ausgelassen.
+The Machine lädt jedes Foto einmal herunter und speichert es auf deiner Machine wie einen E-Mail-Anhang: verschlüsselt, wenn der Nachrichtenschutz an ist, und gelöscht, sobald die zugehörige Nachricht gelöscht wird. Das eigene Modell von The Machine liest, was auf dem Foto zu sehen ist, und den darin enthaltenen Text. Beides gilt als Teil der Nachricht, niemals als Anweisung. Unterstützt werden JPEG, PNG und WebP bis zu 5 MB. Einmalcodes auf Fotos werden ausgelassen.
 
 Die Aufgabe und die Nachricht zeigen das Foto. Tippe darauf, um es groß anzusehen.
 

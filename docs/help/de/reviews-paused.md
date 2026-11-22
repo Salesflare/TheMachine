@@ -19,7 +19,7 @@ Wenn beim ersten Durchsehen nichts für dich dabei ist, steht dort, was gelesen 
 
 ## Prüfungen sind ausgeschaltet
 
-Oben unter Aufgaben steht: „Prüfungen sind ausgeschaltet. Deshalb kommen noch keine Aufgaben an.“ Auf einer gehosteten Machine drückst du **Prüfung einschalten**. Auf deinem eigenen Computer führst du `./install.sh --activate` aus.
+Oben unter Aufgaben steht: „Prüfungen sind ausgeschaltet. Deshalb kommen noch keine Aufgaben an.“ Auf einer gehosteten Machine drückst du **Prüfungen einschalten**. Auf deinem eigenen Computer führst du `./install.sh --activate` aus.
 
 ## Das Limit deines Modells
 
@@ -37,6 +37,6 @@ Von 00:00 bis 06:30 pausieren Prüfungen, und neue Nachrichten warten. Um 06:30 
 
 Unter **Verbindungen**, **Prüfungen** zeigt **Letzte Durchläufe** jeden Durchlauf an. Ein fehlgeschlagener Durchlauf wird automatisch erneut versucht.
 
-## Zurückgestellt
+## Beiseitegelegt
 
-Wenn eine Prüfung eine Nachricht zweimal zurückstellt, wird sie zurückgestellt abgelegt. Unter **Verbindungen**, **Prüfungen** siehst du, wie viele es sind. Unter **Zurückgestellt** findest du sie. Eine Nachricht von jemandem, der dir schreibt, einer Person, die du kennst, oder einem Kunden wird etwa 3 Tage nach Eingang noch einmal geprüft. Dabei wird eine Aufgabe erstellt oder die Nachricht geschlossen. Was du verworfen oder zurückgestellt hast, bleibt so.
+Wenn eine Prüfung eine Nachricht zweimal aufschiebt, wird sie beiseitegelegt. Unter **Verbindungen**, **Prüfungen** siehst du, wie viele es sind. Unter **Beiseitegelegt** findest du sie. Eine Nachricht von jemandem, der dir schreibt, einer Person, die du kennst, oder einem Kunden wird etwa 3 Tage nach Eingang noch einmal geprüft. Dabei wird eine Aufgabe erstellt oder die Nachricht geschlossen. Was du verworfen oder zurückgestellt hast, bleibt so.

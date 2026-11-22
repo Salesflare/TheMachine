@@ -7,7 +7,7 @@ code: docs/models.md, dashboard/settings-models.js
 site: Other AI services, Save key, Keys, Remove
 translated: 5d782f28fb69efef
 ---
-## Wofür es ist
+## Wofür es gedacht ist
 
 Mistral ist ein europäischer KI-Anbieter. Mit einem API-Schlüssel von Mistral liest deine Machine und schreibt Entwürfe mit den Modellen von Mistral. The Machine hat keine eigene KI: Die Anfragen gehen direkt an Mistral, unter deinem Konto und deren Bedingungen.
 
@@ -19,13 +19,13 @@ Mistral hat keine Anmeldung für andere Apps, deshalb läuft es mit einem API-Sc
 
 Öffne auf einer gehosteten Machine deine Einrichtungsseite, gehe zu Deine KI und öffne **Andere KI-Dienste**. Wähle Mistral als Anbieter, füge den Schlüssel ein und tippe auf **Schlüssel speichern**. Deine Machine probiert den Schlüssel zuerst mit einer winzigen Anfrage. Ein falscher Schlüssel zeigt sich sofort, und nichts wird gespeichert.
 
-Mistral Large wird das Hauptmodell. Mistral Small ist auch da, als günstigere Wahl für Chats oder als Ersatz.
+Mistral Large wird das Hauptmodell. Mistral Small ist auch da, als günstigere Wahl für Chats oder als Fallback.
 
 Auf deinem eigenen Computer: siehe den [Modell-Leitfaden](https://github.com/Salesflare/TheMachine/blob/main/docs/models.md).
 
 ## Nutzung
 
-**Einstellungen**, **Modell** zeigt "Nutzt deinen Mistral-API-Schlüssel". Ein API-Schlüssel hat keine Nutzungslimits, deshalb pausiert Hintergrundarbeit nie dafür. Siehe [Modell](model.md).
+**Einstellungen**, **Modell** zeigt „Nutzt deinen Mistral-API-Schlüssel“. Ein API-Schlüssel hat keine Nutzungslimits, deshalb pausiert Hintergrundarbeit nie dafür. Siehe [Modell](model.md).
 
 ## Entfernen
 

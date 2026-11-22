@@ -31,11 +31,11 @@ In Kanälen werden keine Beiträge veröffentlicht. Um in einem Kanal-Thread zu 
 
 Microsoft bittet darum, The Machine das Lesen deiner Chats und deines Profils sowie das Senden von Chatnachrichten in deinem Namen zu erlauben. Dafür ist keine Adminfreigabe nötig.
 
-Wenn du Teams verbunden hast, bevor The Machine Nachrichten senden konnte, steht auf der Teams-Karte **Erneut verbinden, um Antworten zu senden.** Drücke **Neu verbinden** und erteile die Zustimmung erneut. Bis dahin bleibt der Entwurf für dich bereit, damit du ihn in Teams senden kannst.
+Wenn du Teams verbunden hast, bevor The Machine Nachrichten senden konnte, steht auf der Teams-Karte **Stelle die Verbindung wieder her, um Antworten zu senden.** Drücke **Neu verbinden** und erteile die Zustimmung erneut. Bis dahin bleibt der Entwurf für dich bereit, damit du ihn in Teams senden kannst.
 
 Für Kanäle, Transkripte und Copilot-Notizen müssen die Admins deiner Organisation einmalig ihre Zustimmung geben. Bis dahin steht auf der Teams-Karte, was noch nicht gelesen werden kann und warum.
 
-The Machine funktioniert nur mit einem Microsoft-Geschäfts- oder Schulkonto. Bei persönlichen Konten gibt es keine Teams-Chats, die auf diese Weise gelesen werden können.
+Das funktioniert nur mit einem Microsoft-Geschäfts- oder Schulkonto. Bei persönlichen Konten gibt es keine Teams-Chats, die auf diese Weise gelesen werden können.
 
 ## Verbindung herstellen
 

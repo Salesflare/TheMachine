@@ -8,9 +8,9 @@ translated: d40b156b37cc9bc5
 ---
 ## Was es liest
 
-Den Text einer öffentlichen Webseite pro Verbindung, alle paar Stunden und höchstens einmal pro Stunde. Menüs, Fußzeilen, Cookie-Hinweise und Werbung lässt sie weg. Wenn sich der Text geändert hat, schaut The Machine, was sich geändert hat, und erstellt nur dann eine Aufgabe, wenn es wichtig ist, etwa ein neuer Preis oder eine geänderte Richtlinie. Daten, Zähler und kleine Umformulierungen ergeben nie eine Aufgabe. Eine unveränderte Seite kostet nichts.
+Den Text einer öffentlichen Webseite pro Verbindung, alle paar Stunden und höchstens einmal pro Stunde. Menüs, Fußzeilen, Cookie-Hinweise und Werbung lässt es weg. Wenn sich der Text geändert hat, schaut The Machine, was sich geändert hat, und erstellt nur dann eine Aufgabe, wenn es wichtig ist, etwa ein neuer Preis oder eine geänderte Richtlinie. Daten, Zähler und kleine Umformulierungen ergeben nie eine Aufgabe. Eine unveränderte Seite kostet nichts.
 
-Sie fragt zuerst die robots.txt der Website und lässt die Seite in Ruhe, wenn die Website Nein sagt. Seiten hinter einer Anmeldung oder solche, die nur mit JavaScript gebaut sind, lassen sich nicht beobachten.
+Es fragt zuerst die robots.txt der Website und lässt die Seite in Ruhe, wenn die Website Nein sagt. Seiten hinter einer Anmeldung oder solche, die nur mit JavaScript gebaut sind, lassen sich nicht beobachten.
 
 ## Was es tun kann
 

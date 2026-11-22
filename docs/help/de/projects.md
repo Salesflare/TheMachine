@@ -10,14 +10,14 @@ Deine Machine benennt Projekte danach, worum es in deinen Nachrichten geht. Nach
 
 ## Projekt hinzufügen
 
-**Neues Projekt** oben auf einem Board, **+ Hinzufügen** unter einer Phase, **Neues Projekt** oben in der Liste, **+** in der oberen Leiste auf dem Smartphone oder auf der Seite einer Person oder Organisation.
+**Neues Projekt** oben auf einem Board, **+ Hinzufügen** unter einer Phase, **Neues Projekt** oben in der Liste, **+** in der oberen Leiste auf dem Handy oder auf der Seite einer Person oder Organisation.
 
 Gib einen Namen, ein Board und eine Phase, eine Organisation (durchsuche deinen Graph oder füge mit **Hinzufügen** eine neue hinzu), einen Wert, ein voraussichtliches Abschlussdatum, Personen und Notizen an. Projekte in deinem Graph mit einem ähnlichen Namen werden zuerst angezeigt.
 
 ## Projekt bearbeiten, gewinnen oder verlieren
 
 - **Bearbeiten** auf der Projektseite oder **Bearbeiten** im **⋯** des Projekts auf dem Board (oder drücke E) ändert alle oben genannten Angaben.
-- **Gewonnen** oder **Verloren**, jeweils mit Begründung, für einen Deal: ein Projekt mit einem Wert oder voraussichtlichen Abschlussdatum oder ein Projekt auf einem Board, auf dem es solche Angaben gibt. Gewonnen verschiebt es in die letzte Phase des Boards, Verloren nach „Ins Stocken geraten“ oder „Abgelehnt“. Bei anderen Projekten kannst du **Erledigt** auswählen. Mit **Wieder öffnen** machst du das rückgängig.
+- **Gewonnen** oder **Verloren**, jeweils mit Begründung, für einen Deal: ein Projekt mit einem Wert oder voraussichtlichen Abschlussdatum oder ein Projekt auf einem Board, auf dem es solche Angaben gibt. Gewonnen verschiebt es in die letzte Phase des Boards, Verloren nach „Ins Stocken geraten oder abgelehnt“. Bei anderen Projekten kannst du **Erledigt** auswählen. Mit **Wieder öffnen** machst du das rückgängig.
 - **Archivieren** entfernt das Projekt vom Board und aus den Listen. Eine neue Nachricht dazu bringt es zurück.
 - **Löschen** entfernt das Projekt endgültig. Die Nachrichten und Personen bleiben erhalten.
 
@@ -27,11 +27,11 @@ Ein oder zwei Sätze unter dem Projektnamen: worum es geht und wo es gerade steh
 
 Du kannst die Beschreibung unter **Beschreibung** in **Bearbeiten** beim Projekt ändern. Danach gehört sie dir: „Von dir bearbeitet“, und deine Machine lässt sie unverändert. Mit **Aktuell halten** darunter oder in **Bearbeiten** übergibst du sie wieder deiner Machine. Wenn du sie leer speicherst, wird keine Beschreibung angezeigt.
 
-Bei einem gemeinsam genutzten Work-Projekt sieht dein Team die Beschreibung nur, wenn auch alle Informationen, auf denen sie basiert, mit dem Team geteilt wurden. Deine eigenen Änderungen bleiben für dich sichtbar.
+Bei einem gemeinsam genutzten Work-Projekt sieht dein Team die Beschreibung nur, wenn auch alle Informationen, auf denen sie basiert, mit dem Team geteilt wurden. Deine eigene Änderung bleibt bei dir.
 
 ## Projekt verschieben
 
-Zieh das Projekt in eine andere Phase oder tippe auf dem Smartphone auf **⋯** und dann auf **Verschieben nach**. Deine Änderung bleibt bestehen, bis eine neuere Nachricht das Projekt verschiebt.
+Zieh das Projekt in eine andere Phase oder tippe auf dem Handy auf **⋯** und dann auf **Verschieben nach**. Deine Änderung bleibt bestehen, bis eine neuere Nachricht das Projekt verschiebt.
 
 Unter **Phasen** oben auf einem Board kannst du auswählen, welche Phasen angezeigt werden. Die Auswahl gilt nur für dieses Board. Mit **Entfernen** werden wieder alle Phasen angezeigt.
 
@@ -55,31 +55,31 @@ Einmal pro Woche sucht deine Machine nach Projekten, bei denen es ruhig geworden
 
 Jedes Projekt kann mit einer Organisation verknüpft werden. Die Organisation wird auf der Projektseite, in der Liste und auf dem Board mit einem Link angezeigt.
 
-Wenn niemand eine Organisation ausgewählt hat, ordnet deine Machine dem Projekt anhand der Personen und Nachrichten eine zu. Deine Kolleginnen und Kollegen lässt sie dabei außen vor. Das macht sie nur, wenn klar ist, wer die andere Seite ist: Persönliche E-Mail-Adressen wie Gmail zählen nie, und bei Projekten mit mehreren Unternehmen bleibt die Organisation leer. Im Projektformular steht dann „Aus den Personen“.
+Wenn niemand eine Organisation ausgewählt hat, ordnet deine Machine dem Projekt anhand der Personen und Nachrichten eine zu. Deine Kolleginnen und Kollegen lässt sie dabei außen vor. Das macht sie nur, wenn klar ist, wer die andere Seite ist: Persönliche E-Mail-Adressen wie Gmail zählen nie, und bei Projekten mit mehreren Unternehmen bleibt die Organisation leer. Im Projektformular steht dann „Aus seinen Personen“.
 
 Sie wartet außerdem, bis du jemandem bei dieser Organisation geschrieben oder die Person getroffen hast. So wird einem Projekt nicht die Organisation einer fremden Person zugeordnet, nur weil sie dir eine E-Mail geschickt hat.
 
 Bei einer weiteren Prüfung wird die Organisation mit dem Projektthema abgeglichen. Eine Organisation, bei der lediglich jemand aus dem Projekt arbeitet, etwa der Arbeitgeber eines Freundes bei einem Konzert, wird entfernt.
 
-Deine Auswahl unter **Bearbeiten** bleibt immer bestehen, auch wenn du die Organisation entfernst. Mit **Gleiche Organisation wie…** ordnest du Projekte derselben Organisation zu. Mit **Abtrennen** löst du sie wieder davon.
+Deine Auswahl unter **Bearbeiten** bleibt immer bestehen, auch wenn du die Organisation entfernst. Mit **Gleiche Organisation wie…** ziehen die Projekte einer Organisation mit um, und mit **Abtrennen** kehren sie zurück.
 
 ## Boards
 
-Auf einem Board werden Projekte einer Art in Phasen organisiert, wie in einer Pipeline für die Bewertung von Deals. Über **⋯** auf einem Board kannst du **Board bearbeiten** (Name, Phasen und zugehörige Projekte), **Auf diesem Board öffnen** und **Neues Board** auswählen.
+Auf einem Board werden Projekte einer Art in Phasen organisiert, etwa eine Evaluierungs-Pipeline. Über **⋯** auf einem Board kannst du **Board bearbeiten** (Name, Phasen und zugehörige Projekte), **Auf diesem Board öffnen** und **Neues Board** auswählen.
 
 Prüfungen fügen passende Projekte hinzu und ordnen sie einer Phase zu. Wenn sie unsicher sind, zeigt das Board „2 Projekte könnten hierher gehören“ an: **Hinzufügen** oder **Auslassen**. Wähle einzelne Projekte oder **Alle auswählen**, um mehrere auf einmal zu bearbeiten. Falls du es dir anders überlegst, kannst du direkt danach **Rückgängig** wählen. Wird ein Projekt mit mehreren Gegenparteien hinzugefügt, entsteht für jede Gegenpartei ein eigenes Projekt.
 
-Ein neues Board oder ein gespeichertes Board aus den Vorschlägen durchsucht einmal deinen gesamten Verlauf. Es erstellt für jede passende Organisation ein Projekt und ordnet es einer Phase zu. Währenddessen steht in der Kopfzeile „Dein Verlauf wird durchsucht …“. Anschließend wird angezeigt, wie viele Projekte hinzugefügt wurden und auf wie viele noch deine Rückmeldung wartet. Bei einem Board nur für dich bleiben die gefundenen Projekte für dich sichtbar.
+Ein neues Board oder ein gespeichertes Board aus den Vorschlägen durchsucht einmal deinen gesamten Verlauf. Es erstellt für jede passende Organisation ein Projekt und ordnet es einer Phase zu. Währenddessen steht in der Kopfzeile „Dein Verlauf wird durchsucht…“. Anschließend wird angezeigt, wie viele Projekte hinzugefügt wurden und wie viele noch auf dich warten. Bei einem Board mit „Nur du“ bleibt alles Gefundene bei dir.
 
 Mit **Nachfassen…** im **⋯** eines Boards wird automatisch nachgefasst, wenn jemand nicht antwortet. Mehr dazu unter [Nachfassen](follow-ups.md).
 
 ## Fertig, wenn
 
-Unter **Bearbeiten** eines beliebigen Projekts, auf einem Board oder nicht, kannst du mit **Fertig, wenn** in einfachen Worten festlegen, woran man erkennt, dass es abgeschlossen ist: **Eine Live-Seite** (The Machine öffnet den Link aus der Nachricht und prüft, ob dort auf dich verwiesen wird) oder **Ihre Nachricht**. Bei Einträgen von Partnern schlagen Prüfungen eine passende Option vor.
+Unter **Bearbeiten** eines beliebigen Projekts, auf einem Board oder nicht, kannst du mit **Fertig, wenn** in einfachen Worten festlegen, woran man erkennt, dass es abgeschlossen ist: **Eine Live-Seite** (The Machine öffnet den Link aus der Nachricht und prüft, ob dort auf dich verwiesen wird) oder **Ihre Nachricht**. Für Partner-Listings schlagen Prüfungen eine Option vor.
 
 Eine Prüfung verschiebt ein Projekt nur dann mit dem entsprechenden Nachweis, der auf der Projektseite verlinkt ist, in die letzte Phase. Ist das Projekt keinem Board zugeordnet, wird es stattdessen als erledigt markiert. Im **⋯** unter „Kürzliche Änderungen“ kannst du das mit **Rückgängig** rückgängig machen.
 
-Änderst du später **Fertig, wenn** und ein erledigtes Projekt erfüllt den neuen Nachweis nicht mehr, wird es wieder geöffnet. Die zugehörige Aufgabe wird ebenfalls angepasst. **Erledigt** oder **Gewonnen** kannst du weiterhin manuell auswählen. Auf der Projektseite wird außerdem angezeigt, was noch fehlt, zum Beispiel eine Antwort, die seit mehr als 10 Tagen aussteht, oder ein überfälliges Versprechen. Wenn es noch keine Aufgabe dafür gibt, wird eine hinzugefügt. Die Prüfung findet an jedem Arbeitstag statt, auch wenn keine neuen Nachrichten eingegangen sind. Ohne dich wird nichts verschickt.
+Änderst du später **Fertig, wenn** und ein erledigtes Projekt erfüllt den neuen Nachweis nicht mehr, wird es wieder geöffnet. Die zugehörige Aufgabe wird ebenfalls angepasst. **Erledigt** oder **Gewonnen** kannst du weiterhin manuell auswählen. Auf der Projektseite wird außerdem angezeigt, was es aufhält, zum Beispiel eine Antwort, die seit mehr als 10 Tagen aussteht, oder ein überfälliges Versprechen. Wenn es noch keine Aufgabe dafür gibt, wird eine hinzugefügt. Die Prüfung findet an jedem Arbeitstag statt, auch wenn keine neuen Nachrichten eingegangen sind. Ohne dich wird nichts verschickt.
 
 ## Pipeline
 

@@ -12,7 +12,7 @@ translated: cf3ba86c8c1a23f3
 Öffne **Einstellungen** und dann **Sicherheit**.
 
 - **Standard**: die aktuellen Standardeinstellungen. Es ändert sich nichts.
-- **Vorsichtig**: strengere Einstellungen, wenn du weniger auf deinem Smartphone und kürzere Zeit speichern möchtest.
+- **Vorsichtig**: strengere Einstellungen, wenn weniger auf deinem Handy stehen und weniger gespeichert bleiben soll.
 
 Eine Stufe ist ein Ausgangspunkt. Wenn du danach eine Einstellung änderst, wird **Eigene** angezeigt. Wähle erneut eine Stufe aus, um die Einstellungen zurückzusetzen.
 
@@ -20,15 +20,15 @@ Eine Stufe ist ein Ausgangspunkt. Wenn du danach eine Einstellung änderst, wird
 
 - **Text in Benachrichtigungen** ist aus: In einer Benachrichtigung steht „Neue Aufgabe“ oder „Bereit“, aber nicht, worum es bei der Aufgabe geht.
 - **Speichern von Anmeldungen anbieten** ist aus. Deine gespeicherten Anmeldungen für Websites bleiben bestehen, bis du auf **Alle gespeicherten Anmeldungen vergessen** tippst.
-- **Arbeitskontakte nachschlagen**, **Anbieten, Erkenntnisse zu teilen** und **Teilen, was die Hilfe gefragt wird** sind aus.
+- **Arbeitskontakte nachschlagen**, **Anbieten, Erkenntnisse zu teilen** und **Fragen an die Hilfe teilen** sind aus.
 - **Prüfen, welche meiner Kontakte eine Machine haben** und **Leute, die meine E-Mail-Adresse haben, dürfen mich finden** sind aus.
 - **Ausführen-Details 90 Tage behalten** ist aus: Sie werden 30 Tage lang aufbewahrt.
-- **Was andere Machines meine fragen dürfen** ist auf **Aus** gesetzt: Es ist keine Terminplanung mit anderen Machines möglich. Weitere Informationen findest du unter [Freunde und das Network](friends.md#scheduling-with-other-machines).
+- **Was andere Machines meine Machine fragen dürfen** ist auf **Aus** gesetzt: Es ist keine Terminplanung mit anderen Machines möglich. Weitere Informationen findest du unter [Freunde und das Network](friends.md#scheduling-with-other-machines).
 - In einer Familie musst du der Abfrage deiner Verfügbarkeit erst zustimmen. Bei Freunden wird der Meeting-Kontext abgelehnt.
 
 ## Die Stufe einer Work Fleet
 
-Der Besitzer oder ein Admin der Fleet wählt die Stufe in den Fleet-Einstellungen aus: Öffne **Einstellungen** › **Konto** und tippe auf **Fleet**. Alle Mitglieder der Fleet sehen die Auswahl. Wenn „Vorsichtig“ eingestellt ist:
+Der Inhaber oder ein Admin der Fleet wählt die Stufe in den Fleet-Einstellungen aus: Öffne **Einstellungen** › **Konto** und tippe auf **Fleet**. Alle Mitglieder der Fleet sehen die Auswahl. Wenn „Vorsichtig“ eingestellt ist:
 
 - Antworten an Teammitglieder werden erst nach deiner Zustimmung gesendet, ohne Namen und nur zu Personen aus deinen Arbeitskonten.
 - Auch Vorstellungen und Übergaben warten auf deine Zustimmung.

@@ -11,7 +11,7 @@ Ein Skill sagt deiner Machine, wie sie etwas erledigt, etwa „Fragen zu Preisen
 
 ## Einen schreiben
 
-Tippe in **Einstellungen**, **Skills** auf **Neuer Skill** oder **Mit einem Beispiel starten**. Gib ihm einen **Name**, **Wann er gilt** und die **Anweisungen**, dann **Speichern**.
+Tippe in **Einstellungen**, **Skills** auf **Neuer Skill** oder **Mit einem Beispiel starten**. Fülle **Name**, **Wann er gilt** und **Anweisungen** aus, dann **Speichern**.
 
 ## Wann sie einen nutzt
 
@@ -34,14 +34,14 @@ Skills, die andere veröffentlichen. Sie stammen von Dritten: Lies einen, bevor 
 
 Wenn viele Notizen dieselbe Art von Aufgabe betreffen, schlägt eine Aufgabe einen Skill vor. Sie prüft zuerst deine Skills:
 
-- Einer erledigt das schon: **<skill> aktualisieren** zeigt den Skill, umgeschrieben mit dem, was die Notizen lehren, vorher und nachher, Änderungen hervorgehoben. Nur **Skill aktualisieren** dort ändert ihn, und nur diesen Skill.
+- Einer erledigt das schon: **<skill> aktualisieren** zeigt den Skill mit dem, was die Notizen lehren, Änderungen hervorgehoben. Nur **Skill aktualisieren** ändert ihn.
 - Einer ist verwandt, aber getrennt: Die Aufgabe sagt in einer Zeile, wie, und bietet trotzdem **Skill erstellen** an.
 
 **Nicht jetzt** lässt die Notizen, wie sie sind. Skills, die deine Machine in Einstellungen > Skills vorschlägt, bekommen dieselbe Prüfung.
 
 ## Aus einer Aufgabe
 
-Bitte in einer Aufgabe um einen Skill, und deine Machine schreibt ihn dort. Öffne **Skill lesen** in der Aufgabe und drücke dann **Skill erstellen** (oder **Skill aktualisieren** für einen, den du schon hast). Vorher wird nichts installiert, und danach ist die Aufgabe erledigt. Verwirfst du ihn stattdessen in Einstellungen > Skills, zeigt die Aufgabe **Skill verworfen** und bleibt offen, bis du sie schließt.
+Bitte in einer Aufgabe um einen Skill, und deine Machine schreibt ihn dort. Öffne **Skill lesen** und drücke dann **Skill erstellen** (oder **Skill aktualisieren** für einen, den du schon hast). Vorher wird nichts installiert. Verwirfst du ihn stattdessen in Einstellungen > Skills, zeigt die Aufgabe **Skill verworfen** und bleibt offen, bis du sie schließt.
 
 ## Einen teilen
 

@@ -13,7 +13,7 @@ Deine GitHub-Benachrichtigungen: Review-Anfragen, Erwähnungen, Zuweisungen, Ant
 
 ## Was es tun kann
 
-Lesen ändert nichts auf GitHub. Endet eine Aufgabe mit einem Schritt auf GitHub, etwa einem neuen Issue, sagt die Aufgabe das vorher, und der Schritt läuft erst, wenn du auf **Bestätigen** tippst oder genau darum in ihrem Chat bittest. Screenshots kommen über den Browser deiner Machine hinein. Ist GitHub nicht verbunden, sagt die Aufgabe, dass sie den Browser nutzt, mit **GitHub verbinden**.
+Lesen ändert nichts auf GitHub. Endet eine Aufgabe mit einem Schritt auf GitHub, etwa einem neuen Issue, sagt die Aufgabe das vorher, und der Schritt läuft erst, wenn du auf **Bestätigen** tippst oder genau darum in ihrem Chat bittest. Screenshots kommen über den Browser deiner Machine hinein. Ist GitHub nicht verbunden, sagt die Aufgabe, dass sie den Browser nutzt, und zeigt **GitHub verbinden**.
 
 ## Verbinden
 
@@ -28,10 +28,10 @@ Deine Einrichtungsseite unter app.themachine.computer/setup hat dieselbe Anmeldu
 Auf deinem eigenen Computer:
 
 1. Öffne im Dashboard **Verbindungen**, dann **Projekte und Code**, und wähle GitHub.
-2. Wähle **Arbeit** mit ihrer Firma oder **Privat** und tippe auf **Verbinden**.
+2. Wähle **Arbeit** mit der zugehörigen Firma oder **Privat** und tippe auf **Verbinden**.
 3. Ist deine Machine noch nicht bei GitHub angemeldet, zeigt sie einen Code. Tippe auf **GitHub öffnen ↗**, gib den Code ein und erlaube den Zugriff. Danach geht es von selbst weiter.
 
-Oder führe `assistant connect github` aus und bestätige dein GitHub-Login. The Machine prüft bei jeder Synchronisierung, ob es passt.
+Oder führe `assistant connect github` aus und bestätige dein GitHub-Login.
 
 ## Entfernen
 

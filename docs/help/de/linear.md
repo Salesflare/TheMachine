@@ -18,7 +18,7 @@ Dein Linear-Posteingang und die dir zugewiesenen Issues. Folgendes wird übernom
 
 Etwas wird nur dann zu einer Aufgabe, wenn es deine Aufmerksamkeit erfordert. Das wird anhand des Inhalts entschieden. Deine eigenen Änderungen werden nie übernommen. Der erste Abgleich reicht 7 Tage zurück. Personen werden über die E-Mail-Adresse, die Linear für sie anzeigt, mit deinem [Graph](graph.md) verknüpft.
 
-Wenn du die Verbindung nur zum Erledigen von Aufgaben nutzen möchtest, deaktiviere unter **Details** die Option **Bringt Signale**.
+Wenn du die Verbindung nur zum Erledigen von Aufgaben nutzen möchtest, deaktiviere unter **Details** die Option **Liefert Signale**.
 
 ## Was die Verbindung kann
 
@@ -33,7 +33,7 @@ Issues werden nie gelöscht, archiviert oder in ein anderes Team verschoben.
 
 ## Verbindung herstellen
 
-1. Im Dashboard: **Verbindungen**, **+ Hinzufügen**, Linear. Oder auf der Einrichtungsseite einer gehosteten Machine unter app.themachine.computer/setup: **Weitere Quellen**, Linear. Auf deinem eigenen Computer musst du zuerst dein Konto verknüpfen.
+1. Im Dashboard: **Verbindungen**, **+ Hinzufügen**, Linear. Oder auf der Einrichtungsseite einer gehosteten Machine unter app.themachine.computer/setup: **Weitere Quellen**, Linear. Auf deinem eigenen Computer koppelst du deine Machine zuerst mit deinem Konto.
 2. Klicke auf **Mit Linear anmelden**, wähle deinen Workspace aus und erlaube den Zugriff.
 3. Zurück in The Machine wird die Anmeldung sofort überprüft und der Name des Workspace angezeigt.
 

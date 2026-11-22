@@ -23,7 +23,7 @@ Daraus entsteht nie eine Aufgabe oder ein Versprechen. Die Nachrichten gelten ni
 
 ## Wann der Import läuft
 
-Er beginnt, nachdem deine Nachrichten zum ersten Mal geprüft wurden. Bei jeder Verbindung startet er erst, wenn ihre erste Woche abgeschlossen ist. Das gilt auch für Verbindungen, die du später hinzufügst. Der Import läuft langsam im Hintergrund und pausiert, während eine Prüfung oder Synchronisierung läuft, wenn ein Dienst darum bittet, langsamer zu machen, oder wenn deiner Machine der Speicherplatz ausgeht. Neue Nachrichten haben immer Vorrang.
+Er beginnt nach dem ersten Blick auf deine Nachrichten. Bei jeder Verbindung startet er erst, wenn ihre erste Woche abgeschlossen ist. Das gilt auch für Verbindungen, die du später hinzufügst. Der Import läuft langsam im Hintergrund und pausiert, während eine Prüfung oder Synchronisierung läuft, wenn ein Dienst darum bittet, langsamer zu machen, oder wenn deiner Machine der Speicherplatz ausgeht. Neue Nachrichten haben immer Vorrang.
 
 Sobald der Verlauf eines Postfachs importiert ist, liest deine Machine die gespeicherten E-Mails noch einmal, um Buchungs- und Ticketdetails zu finden. So werden auch ältere Buchungen unter [Reisen und Veranstaltungen](calendar.md#trips-and-events) angezeigt. Der Import läuft genauso langsam und pausiert aus denselben Gründen.
 

@@ -18,7 +18,7 @@ Dein KI-Tarif wird von deinem Anbieter abgerechnet, zum Beispiel OpenAI. Wir ber
 ## Im Network
 
 - Freunde und Familie: kostenlos, mit jeder Machine. In einer Family Fleet kosten gehostete Machines zusammen {price.family_pair} für die ersten beiden und danach jeweils {price.family_seat}, zzgl. MwSt.
-- Work Fleet: {price.seat} pro Sitzplatz und Monat oder {price.seat_big} für eine größere Machine, zzgl. MwSt. Ein Teammitglied, das die eigene Machine nutzt, kostet {price.network} pro Monat. Beim Beitritt bittet ein Teammitglied, das bereits für eine gehostete Machine bezahlt, die Fleet, sie als Sitzplatz zu übernehmen. Sobald die Person, der die Machine gehört, bestätigt, endet der eigene Tarif. Bis dahin oder wenn die Person ablehnt, läuft die Zahlung wie bisher weiter. Jede Fleet hat eine eigene Karte und eigene Rechnungen. Die Person, der die Fleet gehört, bestätigt jeden Betrag, bevor er abgebucht wird.
+- Work Fleet: {price.seat} pro Platz und Monat oder {price.seat_big} für eine größere Machine, zzgl. MwSt. Ein Teammitglied, das die eigene Machine nutzt, kostet {price.network} pro Monat. Beim Beitritt bittet ein Teammitglied, das bereits für eine gehostete Machine bezahlt, die Fleet, sie als Platz zu übernehmen. Sobald die Person, der die Fleet gehört, bestätigt, endet der eigene Tarif des Teammitglieds. Bis dahin oder wenn die Person ablehnt, läuft die Zahlung wie bisher weiter. Jede Fleet hat eine eigene Karte und eigene Rechnungen. Die Person, der die Fleet gehört, bestätigt jeden Betrag, bevor er abgebucht wird.
 
 Alle Preise gelten pro Monat und zzgl. MwSt. Siehe [Preise](/pricing).
 

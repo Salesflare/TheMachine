@@ -13,17 +13,17 @@ Melde dich bei ChatGPT an. Deine Machine nutzt ChatGPT, um damit zu lesen und En
 
 ## Anmelden
 
-Klicke auf einer gehosteten Machine auf deiner Einrichtungsseite auf **Mit ChatGPT anmelden** und gib den Code, den ChatGPT anzeigt, dort ein. Später abgemeldet? Klicke auf **ChatGPT erneut verbinden**.
+Klicke auf einer gehosteten Machine auf deiner Einrichtungsseite auf **Mit ChatGPT anmelden** und gib den Code, den ChatGPT anzeigt, dort ein. Später abgemeldet? Klicke auf **ChatGPT neu verbinden**.
 
 Lehnt OpenAI den Code ab? Öffne deine [ChatGPT-Sicherheitseinstellungen](https://chatgpt.com/settings/security), scrolle ganz nach unten und aktiviere den Schalter „Gerätecode-Anmeldung für Codex, Excel, PowerPoint und Word aktivieren“. Gib den Code anschließend noch einmal ein.
 
-Du siehst den Schalter nicht? Bei einem Arbeitskonto (Business, Enterprise oder Edu) muss dein ChatGPT-Admin ihn unter [Berechtigungen und Rollen](https://chatgpt.com/admin/permissions) unter „Codex and Work Local“ aktivieren.
+Du siehst den Schalter nicht? Bei einem Arbeitskonto (Business, Enterprise oder Edu) muss dein ChatGPT-Admin ihn unter [Berechtigungen und Rollen](https://chatgpt.com/admin/permissions) im Bereich „Codex and Work Local“ aktivieren.
 
 Führe auf deinem eigenen Computer `openclaw models auth login` in einem Terminal aus.
 
 ## Nutzungslimits
 
-Ein ChatGPT-Tarif hat ein 5-Stunden-Limit und ein Wochenlimit. Unter **Einstellungen** > **Modell** siehst du, wie viel von beiden Limits verbraucht ist und wann sie zurückgesetzt werden. Hintergrundaufgaben werden schon lange vor Erreichen eines Limits angehalten, damit genug Spielraum für deine eigenen Chats bleibt. Wenn ein Limit erreicht ist, wird oben im Dashboard angezeigt, wann es zurückgesetzt wird. Weitere Informationen findest du unter [Modell](model.md).
+Ein ChatGPT-Tarif hat ein 5-Stunden-Limit und ein Wochenlimit. Unter **Einstellungen** > **Modell** siehst du, wie viel von beiden Limits verbraucht ist und wann sie zurückgesetzt werden. Hintergrundarbeit pausiert schon lange vor Erreichen eines Limits, damit genug Spielraum für deine eigenen Chats bleibt. Wenn ein Limit erreicht ist, wird oben im Dashboard angezeigt, wann es zurückgesetzt wird. Weitere Informationen findest du unter [Modell](model.md).
 
 ## ChatGPT-Skills importieren
 

@@ -9,7 +9,7 @@ translated: 5cbe43055458daf4
 ---
 ## Was es liest
 
-Deine Erwähnungen, Antworten und Direktnachrichten auf X. Es liest sie im eigenen Browser deiner Machine, mit dir angemeldet. Es nutzt nicht die Entwickler-API von X, markiert nichts als gesehen und kann verschlüsselte X Chat-Nachrichten nicht lesen.
+Deine Erwähnungen, Antworten und Direktnachrichten auf X. Es liest sie im eigenen Browser deiner Machine, als du angemeldet. Es markiert nichts als gesehen und kann verschlüsselte X Chat-Nachrichten nicht lesen.
 
 ## Was es senden kann
 
@@ -27,10 +27,10 @@ Auf einer gehosteten Machine:
 Auf deinem eigenen Computer:
 
 1. Öffne im Dashboard **Verbindungen**, dann **Chat**, und wähle X.
-2. Wähle **Arbeit** mit ihrer Firma oder **Privat**, gib deinen Handle ohne @ ein und tippe auf **Verbinden**.
+2. Wähle **Arbeit** mit der zugehörigen Firma oder **Privat**, gib deinen Handle ohne @ ein und tippe auf **Verbinden**.
 3. Tippe auf **Bei X anmelden** und melde dich im Browser deiner Machine an. Sobald du drin bist, verbindet es sich von selbst.
 
-Oder führe `assistant connect x` aus und gib deinen Handle ein und den Handle, mit dem der Browser normalerweise angemeldet ist.
+Oder führe `assistant connect x` in einem Terminal aus.
 
 Wenn X deine Machine abmeldet, siehe [Von einer Website abgemeldet](signed-out.md).
 

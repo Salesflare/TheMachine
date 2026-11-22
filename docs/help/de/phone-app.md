@@ -11,7 +11,7 @@ Installiere The Machine als App auf deinem Handy oder Computer, damit du innerha
 
 Die Aufgabe **Hol mehr aus The Machine heraus** oben in den Aufgaben enthält jeweils einen Eintrag für **Hol dir die App fürs Handy** (siehe [Die mobile App](mobile-app.md)), **Benachrichtigungen einschalten** und **Auf diesem Computer installieren**. Angezeigt wird nur, was auf dem jeweiligen Gerät noch fehlt. Über × kannst du einen Eintrag schließen. Dieselben Optionen findest du unter **Einstellungen**, **Allgemein**, **Dieses Gerät**.
 
-In der Handy-App wird **Lass dich benachrichtigen, wenn etwas deine Aufmerksamkeit braucht.** angezeigt, solange Benachrichtigungen ausgeschaltet sind. Über **Einschalten** wird die Handy-Einstellung geöffnet oder eine Berechtigungsanfrage angezeigt. Über **×** wird der Hinweis 7 Tage lang ausgeblendet.
+In der Handy-App wird **Lass dich benachrichtigen, wenn dich etwas braucht.** angezeigt, solange Benachrichtigungen ausgeschaltet sind. Über **Einschalten** wird die Handy-Einstellung geöffnet oder eine Berechtigungsanfrage angezeigt. Über **×** wird der Hinweis 7 Tage lang ausgeblendet.
 
 ## Auf einem Computer (Chrome oder Edge)
 

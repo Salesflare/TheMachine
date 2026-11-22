@@ -21,7 +21,7 @@ Oben stehen Foto, Name, Titel, Organisation und Ort sowie eine Zeile dazu, wie i
 
 Adressen und Chats einer Person werden automatisch zusammengeführt, wenn klar ist, dass sie zu derselben Person gehören, zum Beispiel eine geschäftliche E-Mail-Adresse, bei der die private Adresse in CC steht.
 
-Wenn eine Seite die Meldung **Diese Seite konnte nicht geladen werden.** zeigt, tippe auf **Erneut versuchen**. Wenn die Meldung weiterhin erscheint, tippe unten auf der Seite auf **Stimmt etwas nicht?**.
+Wenn eine Seite die Meldung **Die Seite konnte nicht geladen werden.** zeigt, tippe auf **Erneut versuchen**. Wenn die Meldung weiterhin erscheint, tippe unten auf der Seite auf **Stimmt etwas nicht?**.
 
 ## Zusammenfassung
 
@@ -39,7 +39,7 @@ Jede Personen- und Organisationsseite hat einen Verlauf, sortiert vom Neuesten z
 
 Anstehende Meetings stehen ganz oben unter **Demnächst**, beginnend mit dem frühesten. Über **Alle anstehenden zeigen** siehst du auch die übrigen. Bei einem Meeting wird jede teilnehmende Person nur einmal aufgeführt. Für Meetings mit Notizen oder Transkript wird **Notizen** oder **Transkript** angezeigt. Klicke darauf, um sie zu lesen.
 
-Deine Verläufe gehören dir. Im Team-Graph werden nur Inhalte angezeigt, die deine Freigabeeinstellungen erlauben. Über **Team** oberhalb des Verlaufs einer Seite kannst du geteilte Inhalte deiner Teammitglieder anzeigen. Bei jedem Eintrag steht, von wem er stammt. **Meine** zeigt nur deine Inhalte.
+Deine Verläufe gehören dir. Im Team Graph werden nur Inhalte angezeigt, die deine Freigabeeinstellungen erlauben. Über **Team** oberhalb des Verlaufs einer Seite kannst du geteilte Inhalte deiner Teammitglieder anzeigen. Bei jedem Eintrag steht, von wem er stammt. **Meine** zeigt nur deine Inhalte.
 
 ## Arbeit und Privat
 
@@ -93,7 +93,7 @@ Bei Personen mit einer geschäftlichen Adresse werden Jobtitel, Foto, LinkedIn-P
 
 Wenn du diese Funktion deaktivierst, wird auch die kurze Websuche vor dem ersten Meeting ausgeschaltet (siehe [Bereit für deine Meetings](calendar.md#ready-for-your-meetings)).
 
-Wenn die Angaben gefunden wurden, zeigt die Seite der Person auch den Infotext, an, seit wann sie ihre aktuelle Rolle hat und welche zwei Rollen sie davor hatte. Die Meeting-Vorbereitung nutzt diese Angaben ebenfalls. Der Infotext wird nur verwendet, wenn die Person keine eigene Biografie hat.
+Wenn die Angaben gefunden wurden, zeigt die Seite der Person auch ihren Infotext, seit wann sie ihre aktuelle Rolle hat und welche zwei Rollen sie davor hatte. Die Meeting-Vorbereitung nutzt diese Angaben ebenfalls. Der Infotext wird nur verwendet, wenn die Person keine eigene Biografie hat.
 
 Deine Verbindungen werden durch Informationen ergänzt, die bereits verfügbar sind: Jobtitel, Telefonnummer und Zeitzone aus Slack, Biografie und Ort aus X, Überschrift und Foto aus LinkedIn, Jobtitel aus Google-Kontakten und Salesflare sowie das Kontaktfoto aus Salesflare, wenn es dort gespeichert ist. Bewege den Mauszeiger auf die Zeile unter dem Namen, um zu sehen, woher die Information stammt.
 
@@ -101,7 +101,7 @@ Outlook ergänzt Fotos von Kolleginnen und Kollegen in deiner Organisation und d
 
 WhatsApp- und Telegram-Fotos werden über deine WhatsApp-Synchronisierung und deine Telegram-Chats-Verbindung übernommen: pro Dienst bis zu 50 am Tag und nur für Personen, die bereits in deinem Graph sind. Niemand wird darüber benachrichtigt. Ein Import von Facebook-Geburtstagen ergänzt beim Speichern das Profilbild einer Person, wenn noch kein Foto vorhanden ist ([Routinen](routines.md)). Alle Informationen bleiben auf deiner Machine.
 
-Im [Team-Graph](team-graph.md) einer Arbeits-Fleet wird eine kleine Kopie eines geschäftlichen Fotos zusammen mit dem geteilten Personeneintrag angezeigt. Fotos aus Google-Kontakten, WhatsApp, Telegram oder Facebook sowie Fotos, die du geändert oder entfernt hast, werden nie geteilt.
+Im [Team Graph](team-graph.md) einer Work Fleet wird eine kleine Kopie eines geschäftlichen Fotos zusammen mit dem geteilten Personeneintrag angezeigt. Fotos aus Google-Kontakten, WhatsApp, Telegram oder Facebook sowie Fotos, die du geändert oder entfernt hast, werden nie geteilt.
 
 ## Über dich
 
@@ -127,7 +127,7 @@ Unter **Letzte Änderungen**, eingeklappt direkt über dem Verlauf einer Person,
 
 Wenn eine Angabe falsch ist, kannst du sie über **⋯** direkt korrigieren: **Bearbeiten**, **Entfernen**, **Nicht über diese Person** oder **Rückgängig**, um ein Projekt an seinen vorherigen Ort zurückzusetzen. Es werden drei Zeilen angezeigt. Über **Mehr anzeigen** siehst du die übrigen.
 
-Bei Personen, deren Angaben deine Machine heute aktualisiert hat, wird in der Liste „Personen“ ein kleiner Punkt angezeigt. Oben in der Liste steht außerdem **Heute wurden 4 Personen aktualisiert** und nennt die Personen. Siehe [The Graph](graph.md).
+Bei Personen, deren Angaben deine Machine heute aktualisiert hat, wird in der Liste „Personen“ ein kleiner Punkt angezeigt. Die Zeile **4 Personen heute aktualisiert** oben in der Liste nennt sie. Siehe [The Graph](graph.md).
 
 ## Aufgabe zu einer Person
 

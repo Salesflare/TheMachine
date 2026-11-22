@@ -11,9 +11,9 @@ translated: 9351ad3d0f79316b
 
 **Ausführen** bittet deine Machine, die Aufgabe vorzubereiten: eine Antwort zu entwerfen, etwas nachzuschlagen oder ein Formular auszufüllen. Sie verwendet deine eigenen Konten und ihren eigenen Browser, so wie du es tun würdest.
 
-Während deine Machine im eigenen Browser arbeitet, zeigen die Aufgabe und der zugehörige Chat die Seite live an, auch zwischen den einzelnen Schritten, bis sie dort fertig ist. Klick auf das Bild, um den Browser zu öffnen. In der Aufgabe wird die Ansicht größer geöffnet, mit **Stopp**: Einmal tippen beendet diesen Durchlauf sofort.
+Während deine Machine im eigenen Browser arbeitet, zeigen die Aufgabe und der zugehörige Chat die Seite live an, auch zwischen den einzelnen Schritten, bis sie dort fertig ist. Klick auf das Bild, um den Browser zu öffnen. In der Aufgabe wird die Ansicht größer geöffnet, mit **Stoppen**: Einmal tippen beendet diesen Durchlauf sofort.
 
-Vor dem nächsten Schritt oder einer Übergabe prüft sie, ob es neuere Antworten gibt, auch von Teammitgliedern. Wenn die Aufgabe bereits erledigt ist, steht das dort. Wenn sie ein Dokument oder eine Seite geändert hat, enthält die Aufgabe einen Link dorthin.
+Vor einem Follow-up oder einer Übergabe prüft sie, ob es neuere Antworten gibt, auch von Teammitgliedern. Wenn die Aufgabe bereits erledigt ist, steht das dort. Wenn sie ein Dokument oder eine Seite geändert hat, enthält die Aufgabe einen Link dorthin.
 
 Wenn eine schwierige Aufgabe auf einer Website oder in einem Workflow gelingt, speichert deine Machine die Schritte als Skill, ohne persönliche Daten. Spätere Aufgaben auf dieser Website bekommen sie als Anleitung, aber nicht als Freigabe: Senden oder Bezahlen musst du weiterhin selbst freigeben. Du findest diese Skills unter **Einstellungen > Skills** mit dem Hinweis **Aus einer Aufgabe gelernt**.
 
@@ -51,4 +51,4 @@ Je nach Quelle kann sie eine E-Mail, eine Slack-Direktnachricht oder eine Nachri
 - Während der Vorbereitung steht in der Aufgabe in einer einfachen Zeile, was deine Machine gerade tut, etwa „Liest die E-Mail“, „Liest das PDF“ oder „Schreibt den Entwurf“. Die ausführlichen Schritte findest du im Chat der Aufgabe.
 - Eine Aufgabe mit dem Status **Wird vorbereitet…** startet innerhalb weniger Sekunden. Wenn sie warten muss, steht dort warum und ungefähr wie lange, zum Beispiel „Startet nach der aktuellen Aufgabe“.
 - Eine Website verlangt eine Anmeldung: Tippe auf **Anmelden** oder auf **Browser öffnen** und melde dich dort an. Danach macht deine Machine selbstständig weiter. Falls nicht, tippe auf **Weiter**.
-- Ein an dein Telefon gesendeter Code oder eine fehlende Berechtigung hält die Aufgabe an. In der Aufgabe steht, was benötigt wird. Tippe dann auf **Weiter** oder **Erneut versuchen**. Wenn eine Quelle nicht verbunden ist, etwa Slack, führt dich **Slack verbinden** in der Aufgabe durch die Verbindung. Sobald Slack verbunden ist, macht deine Machine selbstständig weiter.
+- Ein an dein Handy gesendeter Code oder eine fehlende Berechtigung hält die Aufgabe an. In der Aufgabe steht, was benötigt wird. Tippe dann auf **Weiter** oder **Erneut versuchen**. Wenn eine Quelle nicht verbunden ist, etwa Slack, führt dich **Slack verbinden** in der Aufgabe durch die Verbindung. Sobald Slack verbunden ist, macht deine Machine selbstständig weiter.

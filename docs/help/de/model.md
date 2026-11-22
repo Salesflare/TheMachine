@@ -29,17 +29,21 @@ Wenn dein Tarif Nutzungslimits hat, zum Beispiel die 5-Stunden- und Wochenlimits
 
 ## Platz für deine eigenen Chats
 
-Hintergrundarbeit lässt Platz für deine eigenen Chats. Sie wird bei etwa 65 % des 5-Stunden-Limits pausiert. Prüfungen neuer Nachrichten laufen bis etwa 90 % des Wochenlimits weiter. Andere Aufgaben nutzen pro Tag etwa ein Siebtel des Wochenlimits. Eine Anmeldung ohne Limits, zum Beispiel mit einem API-Schlüssel, wird nie pausiert.
+Hintergrundarbeit lässt Platz für deine eigenen Chats. Sie wird bei etwa 65 % des 5-Stunden-Limits pausiert. Prüfungen neuer Nachrichten laufen bis etwa 90 % des Wochenlimits weiter. Andere Arbeit nutzt pro Tag etwa ein Siebtel des Wochenlimits. Eine Anmeldung ohne Limits, zum Beispiel mit einem API-Schlüssel, wird nie pausiert.
 
 Hintergrundarbeit läuft nie mit GPT-6 Astra. Bei einer Anmeldung bei ChatGPT wird vorerst GPT-6.1 Sol verwendet, auch wenn dein Hauptmodell GPT-6.2 Sol ist. Bei dieser Anmeldung kann 6.2 die zwischengespeicherten Anweisungen noch nicht wiederverwenden und verbraucht daher mehr von deinem Tarif. Deine Chats behalten das von dir ausgewählte Modell.
 
+## Bevor ein Limit erreicht ist
+
+Wenn dein ChatGPT-Tarif noch Resets übrig hat, zeigt die Seite Aufgaben eine kurze Zeile, sobald die Hintergrundarbeit langsamer wird: bei etwa 65 % des 5-Stunden-Limits oder 90 % des Wochenlimits. Dort steht, wie viel verbraucht ist und wie viele Resets noch übrig sind. **Einen Reset nutzen** setzt die Limits nach deiner Bestätigung zurück. × blendet die Zeile aus, bis dieses Limit zurückgesetzt wird. Ohne Resets wird nichts Neues angezeigt.
+
 ## Wenn ein Limit erreicht ist
 
-Oben im Dashboard steht, welches Limit erreicht wurde und wann es zurückgesetzt wird. Die Arbeit wartet und wird dann an der Stelle fortgesetzt, an der sie unterbrochen wurde. Es geht nichts verloren. Wenn dein ChatGPT-Tarif Resets hat, setzt **Ein Reset nutzen** die Limits zurück. Andernfalls öffnet **Resets in ChatGPT ansehen** die entsprechende Seite in ChatGPT.
+Oben im Dashboard steht, welches Limit erreicht wurde und wann es zurückgesetzt wird. Die Arbeit wartet und wird dann an der Stelle fortgesetzt, an der sie unterbrochen wurde. Es geht nichts verloren. Wenn dein ChatGPT-Tarif Resets hat, setzt **Einen Reset nutzen** die Limits zurück. Andernfalls öffnet **Resets in ChatGPT ansehen** die entsprechende Seite in ChatGPT.
 
-## Mit einem Ausweichmodell
+## Mit einem Ersatzmodell
 
-Wenn für deine Machine ein Ausweichmodell in einem anderen Tarif oder bei einem anderen Anbieter eingerichtet ist, übernimmt es, sobald ein Limit erreicht ist. Es muss nichts warten. Oben im Dashboard steht dann: „ChatGPT-Limit erreicht, Ausweichmodell wird verwendet.“ Wenn das Ausweichmodell nicht mehr funktioniert, werden die Aufgaben wieder pausiert.
+Wenn für deine Machine ein Ersatzmodell in einem anderen Tarif oder bei einem anderen Anbieter eingerichtet ist, übernimmt es, sobald ein Limit erreicht ist. Es muss nichts warten. Oben im Dashboard steht dann: „ChatGPT-Limit erreicht, dein Ersatzmodell übernimmt.“ Wenn das Ersatzmodell nicht mehr funktioniert, gibt es wieder Pausen.
 
 ## Hauptmodell ändern
 

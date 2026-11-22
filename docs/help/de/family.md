@@ -1,7 +1,7 @@
 ---
 title: Familie
 area: fleet
-summary: Eine kostenlose Familien-Fleet für bis zu 6 Personen: Finde heraus, wann alle Zeit haben, und teile Aufgaben und Pläne.
+summary: Eine kostenlose Family Fleet für bis zu 6 Personen: Finde heraus, wann alle Zeit haben, und teile Aufgaben und Pläne.
 covers: family
 code: family.py, dashboard.html
 order: 6
@@ -13,7 +13,7 @@ translated: 2afbe215fa387999
 - Aufgaben: Bitte jemanden aus deiner Familie, etwas zu erledigen. Die Person nimmt die Aufgabe an oder lehnt sie ab.
 - Pläne: Schlage einen Plan vor. Alle antworten **Ich bin dabei** oder **Ich kann nicht**. Mit **Ich bin dabei** wird der Plan in deinen eigenen Google Kalender eingetragen, ohne jemanden einzuladen. Mit **Rückgängig** wird er wieder entfernt. Wenn The Machine deinen Kalender nicht ändern kann, erhältst du einen Link, über den du den Plan selbst hinzufügen kannst.
 
-Über eine Familien-Fleet laufen keine Fragen zur Arbeit.
+Über eine Family Fleet laufen keine Fragen zur Arbeit.
 
 ## Vorschläge zum Einladen
 
@@ -31,10 +31,10 @@ Wenn ihr beide dieselbe E-Mail, Rechnung oder dasselbe Formular erhaltet und ein
 - **Erledigt** schließt deine Aufgabe. **Noch nötig** lässt sie offen und blendet den Hinweis aus.
 - Nichts wird automatisch geschlossen.
 - Eine Erinnerung mit demselben Formularlink gilt als dieselbe Aufgabe.
-- Es wird nur ein Code geteilt, nie die Aufgabe. Deaktiviere das im Bereich **Teilen** unter **Aufgaben, die du bereits erledigt hast**.
+- Es wird nur ein Code geteilt, nie die Aufgabe. Deaktiviere das im Bereich **Teilen** unter **Aufgaben, die du schon erledigt hast**.
 
 ## Regeln
 
 Standardmäßig werden freie und belegte Zeiten geteilt. Bei Aufgaben und Plänen wirst du vorher gefragt. Ändere das im Bereich **Teilen**. Weitere Infos findest du unter [Freigaberegeln](sharing-rules.md).
 
-Eine Familien-Fleet ist kostenlos. Gehostete Machines darin kosten {price.family_pair} pro Monat für die ersten beiden zusammen und danach jeweils {price.family_seat}, zzgl. MwSt. Weitere Infos findest du unter [Tarife und Abrechnung](plans-and-billing.md).
+Eine Family Fleet ist kostenlos. Gehostete Machines darin kosten {price.family_pair} pro Monat für die ersten beiden zusammen und danach jeweils {price.family_seat}, zzgl. MwSt. Weitere Infos findest du unter [Tarife und Abrechnung](plans-and-billing.md).

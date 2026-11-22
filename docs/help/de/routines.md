@@ -42,11 +42,11 @@ Sobald du zu allen Absendern eine Entscheidung getroffen hast, zeigt die Aufgabe
 
 Die Routine lernt, was dich interessiert, anhand dessen, was du öffnest, mit einem Stern markierst oder ungelesen archivierst, sowie über **Mehr davon** und **Weniger davon** bei jeder Auswahl. Die Themen, nach denen sie auswählt, findest du auf der Routinenkarte unter **Mehr zu** und **Weniger zu**. Entferne ein Thema mit × oder füge eigene hinzu. Gestrichelte Themen hat die Routine selbst gelernt. Eine neue Zusammenfassung ersetzt die offene. Sie löst nie eine Benachrichtigung aus.
 
-Die Routine liest nur Absender, Betreff und Anfang jedes neuen Newsletters und stellt deiner KI dazu eine kurze Frage pro Tag, damit die Kosten niedrig bleiben. Mit **Zeitpunkt ändern** legst du die Uhrzeit fest. Sobald du ihre Formulierungen änderst, läuft sie wie jede andere Routine mit deinen Formulierungen.
+Die Routine liest nur Absender, Betreff und Anfang jedes neuen Newsletters und stellt deiner KI dazu eine kurze Frage, mit einem Tageslimit, damit die Kosten niedrig bleiben. Mit **Zeitpunkt ändern** legst du die Uhrzeit fest. Sobald du ihre Formulierungen änderst, läuft sie wie jede andere Routine mit deinen Formulierungen.
 
 **Geburtstage** erstellt für jeden engen Kontakt, der heute Geburtstag hat, eine Aufgabe. Dazu zählen Personen, denen du selbst schreibst, etwa Freunde, Familie und regelmäßige Kontakte. Für jede Person wird eine kurze Glückwunschnachricht in der Sprache der Person entworfen, und zwar dort, wo du normalerweise mit ihr kommunizierst, zum Beispiel in ihrem WhatsApp-Chat oder deinem E-Mail-Thread. Die Nachricht wird erst gesendet, wenn du sie selbst abschickst. An Tagen ohne Geburtstage wird keine Aufgabe erstellt.
 
-Geburtstage stammen aus deinen Kalendern (Geburtstagsereignisse und der Kalender „Geburtstage“ von Google, die jeden Morgen ausgelesen werden, auch wenn sie nicht synchronisiert sind, sowie der Kalender „Geburtstage“ von Outlook), deinen Google-Kontakten auf einer selbst gehosteten Machine und einem Datumsfeld namens Birthday bei einer Person im Graph. Wenn in keiner dieser Quellen ein Geburtstag gespeichert ist, steht im Ergebnis **Noch keine Geburtstagsinfos** sowie eine Erklärung, wie du welche hinzufügst.
+Geburtstage stammen aus deinen Kalendern (Geburtstagsereignisse und der Kalender „Geburtstage“ von Google, die jeden Morgen ausgelesen werden, auch wenn sie nicht synchronisiert sind, sowie der Kalender „Geburtstage“ von Outlook), deinen Google-Kontakten auf einer selbst gehosteten Machine und einem Datumsfeld namens Birthday bei einer Person im Graph. Wenn in keiner dieser Quellen ein Geburtstag gespeichert ist, steht im Ergebnis **Noch keine Geburtstage bekannt** sowie eine Erklärung, wie du welche hinzufügst.
 
 **Geburtstage aus Facebook importieren**: Sobald Geburtstage aktiviert ist, bietet eine Aufgabe an, die Geburtstagsseite von Facebook auszulesen. Tippe auf **Importieren**. The Machine öffnet die Seite in ihrem Browser, scrollt, bis alle Monate geladen sind, und liest den Namen und Geburtstag jedes Freundes aus. Anschließend zeigt sie, wie viele Geburtstage gefunden wurden und wer anhand von Vor- und Nachnamen Personen in deinem Graph zugeordnet werden konnte. Namen, die mehreren Personen zugeordnet werden können, werden übersprungen und aufgelistet.
 
@@ -76,13 +76,13 @@ Jedes neue Angebot, das die Prüfung besteht, wird geöffnet. Deine KI beurteilt
 
 Solange die Aufgabe offen ist, werden neue Fundstücke oben hinzugefügt, der Zähler wird erhöht und du wirst erneut benachrichtigt, denn gute Angebote sind schnell weg. Wenn du die Aufgabe als erledigt markierst, beginnt für das nächste Fundstück eine neue Aufgabe. Ein Durchlauf ohne gute Angebote ändert nichts.
 
-Die Routine geht schonend mit Websites um und hält die Kosten niedrig: pro Durchlauf wird die Suche einmal ausgelesen, höchstens 6 Angebote werden mit einer Pause dazwischen geöffnet und pro Tag werden höchstens 40 Angebote über alle deine Suchen hinweg geprüft. Bei jeder Prüfung wird deiner KI eine kurze Frage mit einem Foto gestellt. Beim ersten Durchlauf werden die neuesten Angebote geprüft, einige wenige auf einmal. Die übrigen gelten danach als gesehen, sodass spätere Durchläufe nur Neues anzeigen.
+Die Routine geht schonend mit Websites um und hält die Kosten niedrig: pro Durchlauf wird die Suche einmal ausgelesen, höchstens 6 Angebote werden mit einer Pause dazwischen geöffnet und pro Tag werden höchstens 40 Angebote über alle deine Suchen hinweg geprüft. Bei jeder Prüfung wird deiner KI eine kurze Frage mit einem Foto gestellt. Beim ersten Durchlauf werden nur die wenigen neuesten Angebote geprüft. Die übrigen gelten danach als gesehen, sodass spätere Durchläufe nur Neues anzeigen.
 
 Wenn die Website dich auffordert, dich anzumelden, eine Roboterprüfung anzeigt oder das Auslesen verhindert, weist dich eine Aufgabe darauf hin. Mit **Öffnen** kannst du die Seite im Browser von The Machine ansehen. Melde dich dort selbst an oder löse die Prüfung. Beim nächsten Durchlauf wird die Seite erneut ausgelesen. The Machine meldet dich nicht an und löst keine Prüfungen für dich. Sie kontaktiert auch keine Verkäufer, gibt keine Gebote ab und kauft nichts.
 
 Mit **Suche ändern** auf der Routinenkarte kannst du eine neue Adresse oder Filter eingeben. Mit **Zeitpunkt ändern** kannst du einen anderen Rhythmus festlegen, zum Beispiel „alle 6 Stunden“.
 
-**Neuordnungen** liest Bestellbestätigungen von Online-Shops in deinen E-Mails und erkennt, was du immer wieder kaufst, zum Beispiel Kaffee, Tierfutter oder Vitamine. Wenn ein weiterer Kauf wahrscheinlich bald ansteht, erstellt die Routine eine Aufgabe mit dem Artikel, dem Geschäft, dem letzten Preis und dem letzten Kaufdatum. Mit **Im Store öffnen** gelangst du zur Produktseite und kannst den Artikel selbst kaufen. Es wird nichts für dich gekauft.
+**Nachbestellungen** liest Bestellbestätigungen von Online-Shops in deinen E-Mails und erkennt, was du immer wieder kaufst, zum Beispiel Kaffee, Tierfutter oder Vitamine. Wenn ein weiterer Kauf wahrscheinlich bald ansteht, erstellt die Routine eine Aufgabe mit dem Artikel, dem Geschäft, dem letzten Preis und dem letzten Kaufdatum. Mit **Im Store öffnen** gelangst du zur Produktseite und kannst den Artikel selbst kaufen. Es wird nichts für dich gekauft.
 
 Mindestens drei Bestellungen desselben Artikels in regelmäßigem Abstand sind nötig. Bei einem Einzelkauf oder ungewöhnlich langen Abständen wird keine Aufgabe erstellt. Derzeit liest die Routine Bestellungen von Shops, die Shopify verwenden. Deine KI liest nur neue Bestell-E-Mails dieser Shops und stellt pro Durchlauf eine kurze Frage dazu. Diese Aufgaben lösen nie eine Benachrichtigung aus. Wenn du den Artikel erneut bestellst, wird die offene Aufgabe geschlossen.
 
@@ -96,11 +96,11 @@ Zur festgelegten Zeit liest deine Machine die benötigten Daten aus, zum Beispie
 
 Routinen lesen nur: deine Nachrichten, Webseiten, GitHub und Websites wie X im Browser. Sie senden nichts, antworten nicht, posten nichts und ändern nichts. Sie öffnen Seiten, die sie in den ausgelesenen Inhalten oder einer Suche gefunden haben, sowie gewöhnliche Webadressen und bekannte Websites. Sie öffnen niemals eine Adresse, die eigens erstellt wurde, um ausgelesene Inhalte zu übermitteln. Nur eine Vorlage kann E-Mails ändern, und auch dann nur, was du in der Aufgabe bestätigst.
 
-Wenn eine Routine mit einem Beitrag oder einer Nachricht enden soll, führt sie alles bis zu diesem Schritt aus und zeigt den Entwurf an, zum Beispiel **Würde auf X posten:**. Nach einem echten Durchlauf erhältst du dafür eine Aufgabe zur Freigabe. Bei einem Probelauf wird der Entwurf nur angezeigt. Der Name der Aufgabe beschreibt, worum es geht und wo der Inhalt veröffentlicht wird. Die Schaltfläche benennt den Schritt, zum Beispiel **Posten**. Unter der Aufgabe öffnet **Aus deiner Routine** die Routine.
+Wenn eine Routine mit einem Beitrag oder einer Nachricht enden soll, führt sie alles bis zu diesem Schritt aus und zeigt den Entwurf an, zum Beispiel **Würde auf X posten:**. Nach einem echten Durchlauf erhältst du dafür eine Aufgabe zur Freigabe. Bei einem Probelauf wird der Entwurf nur angezeigt. Der Name der Aufgabe beschreibt, worum es geht und wo der Inhalt veröffentlicht wird. Die Schaltfläche benennt den Schritt, zum Beispiel **Posten**. Darunter öffnet **Von deiner Routine** die Routine.
 
 Die Aufgabe wird im Bereich des Kontos erstellt, von dem aus sie veröffentlicht werden soll, zum Beispiel unter Arbeit für das X-Konto deines Unternehmens. Du musst sie also nie verschieben.
 
-Ein Durchlauf kann den aktivierten [Skills](skills.md) folgen, die anhand der Aufgabe ausgewählt werden. Dabei werden nur passende Skills vollständig gelesen. Das Ergebnis führt sie unter **Verwendet:** auf. Ein Skill lässt eine Routine niemals etwas senden oder ändern.
+Ein Durchlauf kann den aktivierten [Skills](skills.md) folgen, ausgewählt danach, was die Routine tut. Dabei werden nur passende Skills vollständig gelesen. Das Ergebnis führt sie unter **Verwendet:** auf. Ein Skill lässt eine Routine niemals etwas senden oder ändern.
 
 Deine Routinen findest du unter **Deine Routinen**, unterhalb aller Vorschläge. Ein langes Ergebnis wird auf eine kurze Vorschau eingeklappt. Mit **Mehr anzeigen** oder durch Tippen darauf öffnest du es.
 
@@ -116,11 +116,11 @@ Routinen laufen nacheinander und warten, wenn das Kontingent deines KI-Plans kna
 
 ## Ändern oder beenden
 
-Diese Optionen findest du im Menü ⋯ der Routine. Mit **Bearbeiten** kannst du den Namen und die Aufgabe ändern. Der Ausführungszeitpunkt und die bisherigen Ergebnisse bleiben erhalten. Mit **Zeitpunkt ändern** kannst du in eigenen Worten einen neuen Rhythmus festlegen, zum Beispiel „jeden Werktag um 8 Uhr“. Bei beiden Optionen gibt es **Speichern** und **Abbrechen**. Am Computer kannst du auch mit Esc oder einem Klick außerhalb des Fensters abbrechen.
+Diese Optionen findest du im Menü ⋯ der Routine. Mit **Bearbeiten** kannst du ihren Namen ändern und was sie tut. Der Ausführungszeitpunkt und die bisherigen Ergebnisse bleiben erhalten. Mit **Zeitpunkt ändern** kannst du in eigenen Worten einen neuen Rhythmus festlegen, zum Beispiel „jeden Werktag um 8 Uhr“. Bei beiden Optionen gibt es **Speichern** und **Abbrechen**. Am Computer kannst du auch mit Esc oder einem Klick außerhalb des Fensters abbrechen.
 
 Mit **Ausprobieren** in **Bearbeiten** wird die Routine einmal mit den neuen Formulierungen ausgeführt und das Ergebnis dort angezeigt. Bis du auf **Speichern** tippst, bleibt die Routine unverändert.
 
-Mit **Pausieren** werden die Durchläufe angehalten, bis du auf der Karte **Fortsetzen** wählst. Pausierte Routinen findest du unter **Pausiert** unterhalb deiner Routinen. Während der Pause verpasste Durchläufe werden später nicht ausgeführt. Mit **Stopp** beendest du eine Routine endgültig.
+Mit **Pausieren** werden die Durchläufe angehalten, bis du auf der Karte **Fortsetzen** wählst. Pausierte Routinen findest du unter **Pausiert** unterhalb deiner Routinen. Während der Pause verpasste Durchläufe werden später nicht ausgeführt. Mit **Stoppen** beendest du eine Routine endgültig.
 
 Es können bis zu 20 Routinen angelegt werden, einschließlich pausierter. Beende eine Routine, um eine weitere hinzuzufügen.
 
@@ -148,7 +148,7 @@ Gleichzeitig werden höchstens drei Vorschläge angezeigt. Nach einer Woche erfo
 
 ## Aus deinen Aktivitäten
 
-Deine Machine erkennt auch regelmäßig wiederkehrende Aufgaben und schlägt sie unter **Vorgeschlagen** als Routinen vor, auch ohne OpenClaw. Sie achtet auf Folgendes:
+Deine Machine erkennt auch Arbeit, die du regelmäßig erledigst, und schlägt sie unter **Vorgeschlagen** als Routinen vor, auch ohne OpenClaw. Sie achtet auf Folgendes:
 
 - dieselbe Anfrage mindestens dreimal hintereinander, zum Beispiel „die offenen Support-Tickets zusammenfassen“ jeden Montag;
 - eine E-Mail, die du regelmäßig verschickst, zum Beispiel einen wöchentlichen Bericht an dein Team;
@@ -157,11 +157,11 @@ Deine Machine erkennt auch regelmäßig wiederkehrende Aufgaben und schlägt sie
 - E-Mails, die du einzeln immer an dieselbe Person weiterleitest, zum Beispiel Schul- und Vereins-E-Mails an deine Partnerin oder deinen Partner. Eine wöchentliche Zusammenfassung erspart dir das Weiterleiten;
 - dieselbe Anfrage, die du regelmäßig beantwortest, zum Beispiel eine monatliche Freigabe für dieselbe Person.
 
-Jeder Vorschlag nennt, was die Routine beobachtet hat, zum Beispiel „4-mal hintereinander angefragt“ oder „6 E-Mails in 3 Wochen an Sam weitergeleitet“. Der Vorschlag wurde einmal ausgeführt, damit du ein echtes Ergebnis siehst. Denk zum Beispiel an eine Team-Zusammenfassung, eine kurze Vorbereitung auf einen wöchentlichen Anruf, eine Support- oder Entwicklungsübersicht, einen Überblick über deine Kennzahlen oder eine Zusammenfassung der Newsletter, die du erhältst.
+Jeder Vorschlag nennt, was deine Machine beobachtet hat, zum Beispiel „4-mal hintereinander angefragt“ oder „6 E-Mails in 3 Wochen an Sam weitergeleitet“. Der Vorschlag wurde einmal ausgeführt, damit du ein echtes Ergebnis siehst. Denk zum Beispiel an eine Team-Zusammenfassung, eine kurze Vorbereitung auf einen wöchentlichen Anruf, eine Support- oder Entwicklungsübersicht, einen Überblick über deine Kennzahlen oder eine Zusammenfassung der Newsletter, die du erhältst.
 
 Vorgeschlagen werden nur Routinen, die für dich spezifisch und eindeutig nützlich sind: Eine Nachrichtenübersicht basiert nur auf deinen eigenen Newslettern und ist niemals allgemein gehalten. Wenn nichts Passendes dabei ist, gibt es keinen Vorschlag.
 
-Die Routine prüft höchstens einmal am Tag und bringt höchstens einen neuen Vorschlag pro Woche, ohne Benachrichtigung. Mit **Nein danke** wird der Vorschlag nicht noch einmal angezeigt. Weiterleitungen und Antworten bleiben bei dem Konto, von dem aus sie gesendet wurden. Arbeit und Privat werden also nicht vermischt. Alles bleibt auf deiner Machine. Eine Aufgabe, die du regelmäßig abschließt, wird stattdessen als wiederkehrende Aufgabe angeboten.
+Sie sucht höchstens einmal am Tag und bringt höchstens einen neuen Vorschlag pro Woche, ohne Benachrichtigung. Mit **Nein danke** wird der Vorschlag nicht noch einmal angezeigt. Weiterleitungen und Antworten bleiben bei dem Konto, von dem aus sie gesendet wurden. Arbeit und Privat werden also nicht vermischt. Alles bleibt auf deiner Machine. Eine Aufgabe, die du regelmäßig abschließt, wird stattdessen als wiederkehrende Aufgabe angeboten.
 
 ## Routinen und wiederkehrende Aufgaben
 

@@ -22,7 +22,7 @@ translated: e636b2a2fbbc714d
 
 ## Sicherheitsstufen
 
-**Standard** behält die aktuellen Standardeinstellungen bei. **Vorsichtig** zeigt keinen Text in Benachrichtigungen an, speichert keine Anmeldedaten und speichert weniger Daten. Admins einer Work Fleet können die Fleet auf „Vorsichtig“ einstellen. Siehe [Sicherheitsstufen](security-levels.md).
+**Standard** behält die aktuellen Standardeinstellungen bei. **Vorsichtig** zeigt keinen Text in Benachrichtigungen an, speichert keine Anmeldungen und speichert weniger Daten. Admins einer Work Fleet können die Fleet auf „Vorsichtig“ einstellen. Siehe [Sicherheitsstufen](security-levels.md).
 
 ## Anmeldung
 

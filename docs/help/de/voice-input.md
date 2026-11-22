@@ -28,9 +28,9 @@ Eine Aufnahme wird gelöscht, sobald der Text vorliegt.
 
 ## Vorbereitung
 
-Damit deine Machine Sprache selbst in Text umwandeln kann, lädt sie zuerst im Hintergrund ein Sprachmodell herunter (150 bis 500 MB), wenn gerade wenig los ist. In der Zwischenzeit steht in den Einstellungen **Wird im Hintergrund vorbereitet**. Wenn OpenAI verwendet wird, wird dieser Schritt übersprungen.
+Damit deine Machine Sprache selbst in Text umwandeln kann, lädt sie zuerst im Hintergrund ein Sprachmodell herunter (150 bis 500 MB), wenn gerade wenig los ist. In der Zwischenzeit steht in den Einstellungen **Wird vorbereitet (im Hintergrund)**. Wenn OpenAI verwendet wird, wird dieser Schritt übersprungen.
 
-Bis dahin verwendet **Automatisch** die integrierte Spracherkennung deines Browsers, sofern vorhanden. Das wird unter dem Feld angezeigt. Manche Browser senden die Aufnahme an den jeweiligen Anbieter. Wenn **Auf dieser Machine** ausgewählt ist, wartet deine Aufnahme. Im Feld steht dann „Spracheingabe wird vorbereitet …“ und die verbleibende Zeit.
+Bis dahin verwendet **Automatisch** die integrierte Spracherkennung deines Browsers, sofern vorhanden. Das wird unter dem Feld angezeigt. Manche Browser senden die Aufnahme an den jeweiligen Anbieter. Wenn **Auf dieser Machine** ausgewählt ist, wartet deine Aufnahme. Im Feld steht dann „Sprache wird vorbereitet…“ und die verbleibende Zeit.
 
 ## Einstellungen
 
@@ -42,7 +42,7 @@ Wenn du stattdessen laut mit The Machine sprechen möchtest, sieh dir [Live spre
 
 ## Wenn es nicht funktioniert
 
-- **Das Mikrofon ist gesperrt**: Erlaube den Zugriff auf das Mikrofon für diese Website in den Browsereinstellungen. In der App auf deinem Smartphone findest du die Einstellung unter den App-Berechtigungen.
+- **Das Mikrofon ist blockiert**: Erlaube den Zugriff auf das Mikrofon für diese Website in den Browsereinstellungen. In der Handy-App findest du die Einstellung unter den App-Berechtigungen.
 - **Kein Mikrofon gefunden**: Schließe ein Mikrofon an und versuche es noch einmal.
 - **Deine Machine ist nicht erreichbar**: Deine Aufnahme wird behalten und transkribiert, sobald deine Machine wieder erreichbar ist. Wenn du es früher versuchen möchtest, tippe auf **Jetzt versuchen**.
-- **Es wurde nichts erkannt**: Sprich näher am Mikrofon oder etwas länger.
+- **Ich habe nichts verstanden**: Sprich näher am Mikrofon oder etwas länger.

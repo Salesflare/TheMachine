@@ -9,7 +9,7 @@ translated: 568ac451673bc141
 ---
 ## Öffnen
 
-Klick auf eine E-Mail-Adresse, auf der Seite einer Person in Graph oder als Link in einer Aufgabe oder einem Chat. **Neue E-Mail** öffnet sich an diese Adresse, mit leerem Betreff und leerer Nachricht. Auf dem Handy füllt sie den Bildschirm.
+Klick auf eine E-Mail-Adresse, auf der Seite einer Person im Graph oder als Link in einer Aufgabe oder einem Chat. **Neue E-Mail** öffnet sich an diese Adresse, mit leerem Betreff und leerer Nachricht. Auf dem Handy füllt sie den Bildschirm.
 
 **Von** startet mit dem Postfach für diese Person: dein Arbeitspostfach für einen beruflichen Kontakt, dein privates für Familie und Freunde. Klick darauf, um ein anderes deiner Postfächer oder einen bestätigten Alias zu wählen.
 

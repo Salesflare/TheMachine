@@ -13,7 +13,7 @@ translated: e02f2502bf275cde
 1. Tippe in **Einstellungen** › **Konto** auf **Tarif kündigen** und dann auf **Abo kündigen**.
 2. Bestätige. Das Abo endet mit dem Monat, den du bezahlt hast. Kündigst du in den kostenlosen Tagen, zahlst du nichts.
 
-Doch anders entschieden? **Abo behalten** nimmt die Kündigung zurück. In der EU kannst du auch innerhalb von 14 Tagen mit **Hier vom Vertrag zurücktreten** widerrufen.
+Doch anders entschieden? **Mein Abo behalten** nimmt die Kündigung zurück. In der EU kannst du auch innerhalb von 14 Tagen mit **Vertrag hier widerrufen** widerrufen.
 
 ## Deine Daten nach der Kündigung
 

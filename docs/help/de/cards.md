@@ -13,18 +13,18 @@ Deine Machine liest alles Neue und erstellt nur dann eine Aufgabe, wenn etwas di
 
 Auf der Seite **Aufgaben** sind sie gruppiert:
 
-- **Gerade erledigt**: Ganz oben findest du einen letzten Schritt, den du bestätigt hast, zum Beispiel ein Formular oder ein Problem, das erledigt wurde, während du weg warst. Er bleibt höchstens einen Tag dort, bis du auf **Verstanden** tippst, und wird auch auf deinem Handy angezeigt.
+- **Gerade erledigt**: Ganz oben findest du einen letzten Schritt, den du bestätigt hast, zum Beispiel ein Formular oder ein Issue, der durchgegangen ist, während du weg warst. Er bleibt, bis du auf **Verstanden** tippst, höchstens einen Tag, und auch dein Handy erfährt davon.
 - **Für dich**: Alles, worauf du reagieren musst, nach Dringlichkeit sortiert. Bei jeder Aufgabe steht **Vorbereitet** (die Arbeit ist erledigt, und mit **Ausführen** oder **Senden** wird sie abgeschlossen), **Braucht dich** (zuerst braucht es deine Entscheidung oder Antwort), **Wird vorbereitet…** (deine Machine arbeitet daran) oder **Zum Lesen** (eine Zusammenfassung oder ein Briefing, bei dem nichts entschieden werden muss).
 - **Wartet auf andere**: Aufgaben, bei denen der nächste Schritt bei jemand anderem liegt, sind eingeklappt (siehe unten).
 - **Kommt später zurück**: Zurückgestellte Aufgaben und solche, auf die niemand mit **Noch nötig?** geantwortet hat (siehe unten).
 - **Versprechen**: Was du versprochen hast und was andere dir versprochen haben. Mehr dazu unter [Versprechen](promises.md).
-- **Erledigt / verworfen**: Alle abgeschlossenen Aufgaben, die neuesten zuerst. Dabei steht, wann sie abgeschlossen wurden, zum Beispiel „Erledigt vor 5 Minuten“. Aufgaben, die offenbar schon erledigt sind, sind mit **Scheinbar erledigt** markiert.
+- **Erledigt / verworfen**: Alle abgeschlossenen Aufgaben, die neuesten zuerst. Dabei steht, wann sie abgeschlossen wurden, zum Beispiel „Erledigt vor 5 Minuten“. Aufgaben, die offenbar schon erledigt sind, sind mit **Sieht erledigt aus** markiert.
 
-Nach dem Senden steht in einer kurzen Meldung, wohin die Aufgabe verschoben wurde, zum Beispiel „Gesendet. Nach Erledigt verschoben.“ oder „Gesendet. Bis Mo. auf Später verschoben.“ Mit **Öffnen** gelangst du zur Aufgabe. Über die Suche findest du Aufgaben nach Titel oder Empfänger, auch unter Später und Erledigt.
+Nach dem Senden steht in einer kurzen Meldung, wohin die Aufgabe verschoben wurde, zum Beispiel „Gesendet. Nach ‚Erledigt‘ verschoben.“ oder „Gesendet. Bis Mo. nach ‚Später‘ verschoben.“ Eine Antwort, die die Arbeit nur verspricht, etwa „Ich schicke es bis Dienstag“, lässt die Aufgabe offen: „Gesendet. Bleibt offen.“ Mit **Öffnen** gelangst du zur Aufgabe. Über die Suche findest du Aufgaben nach Titel oder Empfänger, auch unter Später und Erledigt.
 
 Unter **Für dich** stehen zuerst Aufgaben, die überfällig sind oder bis morgen fällig werden, dann Fragen aus deiner Fleet, anschließend Nachfassaktionen zu einem Board und danach der Rest. Innerhalb jeder Gruppe stehen die neuesten zuerst. Eine Aufgabe behält ihren Platz, während deine Machine sie vorbereitet und wenn sie erledigt ist. Nur ihre Markierung ändert sich. In den anderen offenen Gruppen stehen überfällige oder bis morgen fällige Aufgaben zuerst, der Rest ist nach Aktualität sortiert. Die Seitenleiste behält dieselbe Reihenfolge bei.
 
-**Scheinbar erledigt** bedeutet, dass deine Machine sieht, dass die Aufgabe erledigt ist, zum Beispiel „PR #3451 zusammengeführt“, sie aber noch nicht geschlossen wurde. Mit **Wieder öffnen** kommt sie zurück auf deine Liste, und deine Machine lernt daraus. Diese Aufgaben werden nie als verspätet angezeigt. Nach einem Tag wird die Aufgabe automatisch geschlossen. Mit **Rückgängig** kannst du das rückgängig machen. Eine Aufgabe, die du bereits selbst erledigt hast, zum Beispiel mit einer Antwort in Gmail oder Slack, wird ebenfalls automatisch geschlossen.
+**Sieht erledigt aus** bedeutet, dass deine Machine sieht, dass die Aufgabe erledigt ist, zum Beispiel „PR #3451 zusammengeführt“, sie aber noch nicht geschlossen wurde. Mit **Wieder öffnen** kommt sie zurück auf deine Liste, und deine Machine lernt daraus. Diese Aufgaben werden nie als verspätet angezeigt. Nach einem Tag wird die Aufgabe automatisch geschlossen. Mit **Rückgängig** kannst du das rückgängig machen. Eine Aufgabe, die du bereits selbst erledigt hast, zum Beispiel mit einer Antwort in Gmail oder Slack, wird ebenfalls automatisch geschlossen.
 
 Wenn eine Nachricht von einer Adresse kommt, die nur so aussieht, als gehöre sie jemandem, den du kennst, zum Beispiel sam@acme-corp.example statt sam@acmecorp.example, steht in der Aufgabe ausdrücklich: „Das ist nicht Sam Lee.“ Die Person wird unter ihrer tatsächlichen Adresse angezeigt, nie unter dem Namen, den sie verwendet hat. Deine Machine prüft solche Nachrichten bei der Person unter der Adresse, die du bereits gespeichert hast, nie bei der Person, die geschrieben hat.
 
@@ -32,7 +32,7 @@ Bei einer Aufgabe, die noch auf jemand anderen wartet, zum Beispiel auf eine Pr�
 
 Wenn es bei einer Aufgabe um ein Ergebnis geht, das jemand anderes liefern soll, zum Beispiel einen unterschriebenen Vertrag, steht es unter **Details** bei **Fertig, wenn**. Das Senden deines Teils schließt die Aufgabe nicht ab: Sie bleibt unter **Wartet auf andere**, bis eine Nachricht das Ergebnis bestätigt. Dann wird sie automatisch geschlossen. Mit **Rückgängig** kannst du das rückgängig machen. Wenn bis zum Zeitpunkt, an dem du nachfassen solltest, nichts eingeht, kommt die Aufgabe mit **Schreib eine kurze Erinnerung** im Chat zurück. Sag im Chat, was als erledigt gilt, um das zu ändern.
 
-Wenn eine Aufgabe eine Woche lang niemanden beschäftigt hat, wird einmal gefragt: **Noch nötig?** Mit **Nicht nötig** wird sie geschlossen. Mit **Rückgängig** kannst du das rückgängig machen. **Behalten** lässt sie offen, und es wird nicht noch einmal gefragt. Wenn eine weitere Woche lang keine Antwort kommt, wird die Aufgabe unter Kommt später zurück eingeklappt. Sie wird dann nicht mehr auf dem App-Symbol oder in der morgendlichen Zusammenfassung mitgezählt. Wenn du sie öffnest, im Chat schreibst, sie bearbeitest oder zurückstellst oder eine neue Nachricht eingeht, kommt sie wieder zurück.
+Hat eine Woche lang niemand eine Aufgabe angerührt, fragt sie einmal: **Noch nötig?** Mit **Nicht nötig** wird sie geschlossen. Mit **Rückgängig** kannst du das rückgängig machen. **Behalten** lässt sie offen, und es wird nicht noch einmal gefragt. Wenn eine weitere Woche lang keine Antwort kommt, wird die Aufgabe unter Kommt später zurück eingeklappt. Sie wird dann nicht mehr auf dem App-Symbol oder in der morgendlichen Zusammenfassung mitgezählt. Wenn du sie öffnest, im Chat schreibst, sie bearbeitest oder zurückstellst oder eine neue Nachricht eingeht, kommt sie wieder zurück.
 
 Einmal pro Woche kann es für ein ruhiges Projekt ohne offene Aufgaben eine Aufgabe mit einem konkreten nächsten Schritt geben, höchstens drei pro Woche. Mehr dazu unter [Projekte](projects.md).
 
@@ -42,13 +42,13 @@ Mit **Alle**, **Arbeit** und **Privat** oben in der Seitenleiste kannst du alle 
 
 Die Zeile oben in der Liste wechselt außerdem direkt zur anderen Ansicht: Unter **Nur privat** kannst du auf **Arbeit** oder **Alle anzeigen** tippen.
 
-In der Zeile oben in der Liste steht der Name deiner letzten morgendlichen oder abendlichen Zusammenfassung und was sie erfasst hat, zum Beispiel **Zusammenfassung von gestern Abend** · 12 erledigt, 3 offen. Tippe darauf, um die Zusammenfassung erneut zu lesen. Mit **Kopieren** kannst du sie an beliebiger Stelle einfügen. Sobald du sie öffnest oder auf das **×** tippst, bleibt sie auf all deinen Geräten sichtbar, bis die nächste Zusammenfassung kommt.
+In der Zeile oben in der Liste steht der Name deiner letzten morgendlichen oder abendlichen Zusammenfassung und was sie erfasst hat, zum Beispiel **Zusammenfassung von gestern Abend** · 12 erledigt, 3 offen. Tippe darauf, um die Zusammenfassung erneut zu lesen. Mit **Kopieren** kannst du sie an beliebiger Stelle einfügen. Sobald du sie öffnest oder auf das **×** tippst, verschwindet sie auf all deinen Geräten bis zur nächsten Zusammenfassung.
 
 Wenn es keine aktuelle Zusammenfassung gibt, steht dort **Heute bisher**: Was heute erledigt wurde und was noch offen ist, für Arbeit und Privat oder nur für den ausgewählten Bereich.
 
 Bei einer Aufgabe zu einem Projekt steht der Projektname unter dem Titel. Tippe darauf, um das Projekt zu öffnen. Unter **Details** kannst du mit **Projekt** das Projekt ändern oder die Aufgabe daraus entfernen. Siehe [Aufgaben eines Projekts](projects.md#a-project-s-to-dos).
 
-Mit **Bereich** unter **Details** verschiebst du eine Aufgabe in deinen anderen Bereich. Der Zugriff auf Nachrichten, die sie lesen und senden darf, wird mitverschoben. Mit **Rückgängig** in der Meldung kannst du sie zurückverschieben.
+Mit **Bereich** unter **Details** verschiebst du eine Aufgabe in deinen anderen Bereich. Was sie lesen darf und von wo sie senden darf, wandert mit. Mit **Rückgängig** in der Meldung kannst du sie zurückverschieben.
 
 Wenn eine Aufgabe deinen anderen Bereich braucht, um weiterzumachen, und alle Nachrichten, auf denen sie basiert, dort sind, wird sie automatisch dorthin verschoben und fortgesetzt. Andernfalls wird **Nach Arbeit verschieben** angezeigt. Nichts wird verschoben, bis du darauf tippst. Eine Aufgabe, die du hinzugefügt hast, ohne Arbeit oder Privat auszuwählen, wird automatisch verschoben, sobald klar ist, wohin sie gehört. Bis dahin ist sie weder als Arbeit noch als Privat gekennzeichnet und bleibt privat.
 
@@ -60,7 +60,7 @@ Eine solche private Aufgabe antwortet trotzdem über die geschäftliche Adresse,
 
 Wenn mindestens zwei Aufgaben anstehen, kannst du mit **Durchgehen** in der Kopfzeile von Für dich nacheinander alle Aufgaben in der Reihenfolge der Liste durchgehen. Dabei wird jeder Entwurf vollständig angezeigt, zusammen mit **Senden** oder **Ausführen**, **Änderungen anfragen**, **Zurückstellen** und **Überspringen**. Am Computer sendet Enter den angezeigten Inhalt, `S` stellt zurück, `→` überspringt und Esc beendet den Ablauf. Unter dem Titel steht in der Kopfzeile außerdem, wie lange das in deinem eigenen Tempo dauert, zum Beispiel „etwa 2 Min.“.
 
-Eine Aufgabe, die dir eine Frage stellt, wird dabei ausgelassen: Sie braucht deine Antwort, nicht nur einen Tipp.
+Eine Aufgabe, die dir eine Frage stellt, wird dabei ausgelassen: Sie braucht deine Antwort, nicht nur ein Tippen.
 
 ## Jetzt prüfen
 
@@ -68,7 +68,7 @@ Deine Machine liest jede Quelle alle paar Minuten, Tag und Nacht. Sie prüft neu
 
 Nachts, von 00:00 bis 06:30, pausieren die Prüfungen: Neue Nachrichten werden weiterhin gelesen und gespeichert. Um 06:30 werden sie gemeinsam geprüft, damit deine Aufgaben vor der morgendlichen Zusammenfassung bereit sind. Unter Verbindungen steht bei den Prüfungen: „Nachts pausiert, wird um 06:30 nachgeholt“. Wenn du nachts in der App klickst, schreibst oder scrollst, im Chat schreibst oder auf eine Aufgabe tippst, laufen die Prüfungen wie gewohnt weiter, bis du eine Stunde lang nicht aktiv warst. Mit **Jetzt prüfen** wird immer sofort geprüft.
 
-Mit **Jetzt prüfen** werden alle Quellen sofort gelesen. Wenn keine Aufgaben offen sind, tippe auf die Zeile deiner Machine, um sie mit **Details** anzuzeigen. Damit öffnest du Prüfungen unter Verbindungen. Wenn Aufgaben offen sind, findest du die Zeile oben auf dem Computer. Eine kurze Meldung wird nur angezeigt, solange eine Prüfung läuft oder wenn eine fehlgeschlagen oder verspätet ist. Du kannst auch im Chat danach fragen.
+Mit **Jetzt prüfen** werden alle Quellen sofort gelesen. Wenn keine Aufgaben offen sind, tippe auf die Zeile deiner Machine, um die Schaltfläche zu sehen, zusammen mit **Details**, das „Prüfungen“ unter Verbindungen öffnet. Wenn Aufgaben offen sind, steht sie am Computer ganz oben. Eine kurze Meldung wird nur angezeigt, solange eine Prüfung läuft oder wenn eine fehlgeschlagen oder verspätet ist. Du kannst auch im Chat danach fragen.
 
 LinkedIn, X und Salesflare haben ihren eigenen Rhythmus.
 

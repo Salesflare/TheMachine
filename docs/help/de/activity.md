@@ -17,7 +17,7 @@ translated: ebb6a4cf0474a020
 - einen Link zur zugehörigen Aufgabe, falls es eine gibt
 - bei einer KI, die du verbunden hast, wie ChatGPT oder Claude: ihren Namen mit **(verbundene KI)**, damit du sie von The Machine selbst unterscheiden kannst
 
-Aufgeführt werden Nachrichten und Antworten, Änderungen an Dokumenten und Kalendern, Schritte im Web, zusammengeführte Fixes, Coding-Agenten, Fleet-Fragen und -Antworten, Erkenntnisse, die an das Team von The Machine gesendet wurden, Skills, Graph-Importe, Fakten, die du deinen Chat hast vergessen lassen (mit **Rückgängig**), hinzugefügte oder entfernte Verbindungen und jeder Zugriff unseres Teams unter [Supportzugriff](get-support.md#support-access), auch abgelehnte Zugriffe.
+Aufgeführt werden Nachrichten und Antworten, Änderungen an Dokumenten und Kalendern, Schritte im Web, zusammengeführte Fixes, Coding-Agenten, Fleet-Fragen und -Antworten, Erkenntnisse, die an das Team von The Machine gesendet wurden, Skills, Graph-Importe, Fakten, die dein Chat auf deinen Wunsch vergessen hat (mit **Rückgängig**), hinzugefügte oder entfernte Verbindungen und jeder Zugriff unseres Teams unter [Supportzugriff](get-support.md#support-access), auch abgelehnte Zugriffe.
 
 ## Was die Aktion erlaubt hat
 
@@ -40,6 +40,6 @@ Wähle oben in der Liste eine Kategorie aus, zum Beispiel **Nachrichten** oder *
 
 ## Weitere Orte
 
-Der Chat einer Aufgabe zeigt weiterhin den zugehörigen Verlauf. **Aktivität** verlinkt dorthin. In Fleet zeigt **Aktivität** dieselben Einträge für deine Fleets und Erkenntnisse. Bei einer Erkenntnis kannst du **Zurückziehen** wählen. Unter **Einstellungen** und **Sicherheit** öffnet **Jeden Blick in Aktivität ansehen** die Einträge zu Zugriffen unseres Teams.
+Der Chat einer Aufgabe zeigt weiterhin den zugehörigen Verlauf. **Aktivität** verlinkt dorthin. In Fleet zeigt **Aktivität** dieselben Einträge für deine Fleets und Erkenntnisse. Bei einer Erkenntnis kannst du **Zurückziehen** wählen. Unter **Einstellungen** und **Sicherheit** öffnet **Jeden Zugriff unter „Aktivität“ ansehen** die Einträge zu Zugriffen unseres Teams.
 
 Aktivität zeigt nur, was passiert ist. Sie ändert nie, was The Machine tun darf.

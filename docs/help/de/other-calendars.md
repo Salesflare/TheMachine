@@ -31,7 +31,7 @@ Kalender von Google oder Microsoft? Wähle dann **Google Calendar** oder **Outlo
 
 ## Wenn es stoppt
 
-- **Der Kalenderserver hat das Passwort abgelehnt**: Du hast es geändert, oder das App-Passwort wurde entfernt. Verbinde neu mit einem neuen.
+- **Der Kalenderserver hat das Passwort abgelehnt**: Du hast es geändert, oder das App-Passwort wurde entfernt. Verbinde den Kalender erneut mit einem neuen Passwort.
 - **Der Kalenderserver war nicht erreichbar**: Es versucht es selbst noch einmal. Klappt es weiter nicht, prüfe die Adresse in den Servereinstellungen.
 
 ## Entfernen
