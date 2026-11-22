@@ -19,7 +19,7 @@ Rien dans Trello. Elle ne fait que lire.
 
 1. Dans le tableau de bord : **Connexions**, **Projets et code**, Trello. Ou, sur la page de configuration d’une Machine hébergée, à app.themachine.computer/setup : **Plus de sources**, Trello. Sur votre propre ordinateur, associez d’abord votre Machine à votre compte.
 2. Cliquez sur **Se connecter avec Trello** et autorisez l’accès en lecture. Trello indique que l’application est créée par Salesflare.
-3. Choisissez le tableau à suivre, puis cliquez sur **Se connecter**. Pour suivre un autre tableau, ajoutez Trello à nouveau.
+3. Choisissez le tableau à suivre, puis cliquez sur **Connecter**. Pour suivre un autre tableau, ajoutez Trello à nouveau.
 
 ## Supprimer Trello
 

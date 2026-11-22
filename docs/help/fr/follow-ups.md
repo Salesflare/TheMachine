@@ -13,13 +13,13 @@ Quand une personne ne répond plus dans un tableau, votre Machine rédige une re
 
 Dans un tableau, touchez **⋯**, puis **Relances…**, et cochez **Relancer sans réponse**. Cela s’applique à tous les projets du tableau. Vous pouvez aussi toucher **Relances désactivées** sous le nom du tableau, ou **Les relancer** dans une étape contenant des projets sans réponse depuis plus de 10 jours.
 
-Pour un seul projet, touchez **Relances…** dans son menu **⋯**, sur le tableau ou sur sa page. **Pour ce projet** permet de choisir **Activé**, **Désactivée** ou le paramètre du tableau. Le paramètre du projet prime sur celui du tableau.
+Pour un seul projet, touchez **Relances…** dans son menu **⋯**, sur le tableau ou sur sa page. **Pour ce projet** permet de choisir **Activé**, **Désactivé** ou le paramètre du tableau. Le paramètre du projet prime sur celui du tableau.
 
 ## Paramètres
 
-- Par défaut, attendez 3 à 7 jours sans réponse. Une relance est rédigée après le délai le plus court et envoyée au terme du délai le plus long, même si votre utilisation est limitée.
+- Attente : de 3 à 7 jours sans réponse par défaut. Une relance est rédigée après le délai le plus court et envoyée au terme du délai le plus long, même si votre utilisation est limitée.
 - **Seulement les jours de travail** : aucun brouillon n’est rédigé ni envoyé pendant vos jours de congé (selon **Paramètres** > **Notifications** > **Heures de travail**). Les relances prévues ces jours-là attendent le prochain matin ouvré. Activé pour Travail, désactivé pour Personnel.
-- Par défaut, envoyez de 1 à 3 relances. Le nombre minimum est toujours envoyé, et le reste est rédigé sous forme de brouillons. Si votre Machine pense qu’il vaut mieux s’arrêter, le brouillon indique pourquoi (« The Machine s’arrêterait ici : 9 e-mails sans réponse depuis août ») et n’est pas coché. Vous pouvez l’envoyer, l’ignorer ou choisir **Arrêter les relances ici**. Le nombre maximal ne sera jamais dépassé.
+- Nombre de relances : de 1 à 3 par défaut. Le nombre minimum est toujours envoyé, et le reste est rédigé sous forme de brouillons. Si votre Machine pense qu’il vaut mieux s’arrêter, le brouillon indique pourquoi (« The Machine s’arrêterait ici : 9 e-mails sans réponse depuis août ») et n’est pas coché. Vous pouvez l’envoyer, l’ignorer ou choisir **Arrêter les relances ici**. Le nombre maximal ne sera jamais dépassé.
 - **Étapes** : **Toutes les étapes ouvertes**, à l’exception de la dernière étape du tableau et de Au point mort ou refusé. **Personnaliser** permet d’activer ou de désactiver des étapes et de définir un délai propre à chacune.
 - **Canaux** : les canaux connectés qui permettent d’envoyer des messages. Une relance est envoyée sur le même canal que le dernier message. **Changer de canal sans réponse** essaie le prochain canal autorisé.
 - **Déplacer vers « Au point mort ou refusé » après la dernière** : activé si le tableau comporte cette ligne.
@@ -60,7 +60,7 @@ Après la dernière relance sans réponse, le projet indique « Aucune réponse 
 
 Si l’e-mail a été rejeté et que la personne a une autre adresse, la relance y est envoyée (« Adresse rejetée, envoi à <address> »). Si l’adresse d’un brouillon est rejetée avant son envoi, celui-ci est mis en attente : « Non envoyé : <address> a rejeté le message ». Il est associé à l’autre adresse de la personne et attend que vous l’envoyiez.
 
-Si aucune autre adresse n’est disponible, les relances passent à LinkedIn ou WhatsApp lorsque ces canaux sont autorisés et que vous échangez avec la personne dessus. Sinon, elles s’arrêtent avec le message « E-mail rejeté ». Si le projet est important, une tâche vous invite à trouver une nouvelle adresse.
+Si aucune autre adresse n’est disponible, les relances passent à LinkedIn ou WhatsApp lorsque ces canaux sont autorisés et que vous échangez avec la personne dessus. Sinon, elles s’arrêtent avec le message « E-mail non distribué ». Si le projet est important, une tâche vous invite à trouver une nouvelle adresse.
 
 ## Où les retrouver
 

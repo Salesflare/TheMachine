@@ -17,7 +17,7 @@ Donnez-lui un nom, un tableau et une étape, une organisation (cherchez dans vot
 ## Modifier, gagner ou perdre un projet
 
 - **Modifier** sur la page d’un projet, ou **Modifier** dans son menu **⋯** sur le tableau (ou appuyez sur E), permet de modifier tous les éléments ci-dessus.
-- **Gagné** ou **Perdu**, avec la raison, pour une affaire : il s’agit d’un projet avec une valeur ou une date de clôture prévue, ou situé sur un tableau qui en comporte une. Gagné le déplace à la dernière étape du tableau, Perdu le déplace vers En suspens ou Refusé. Les autres projets se terminent avec **Fait**. **Rouvrir** annule cette action.
+- **Gagné** ou **Perdu**, avec la raison, pour une affaire : il s’agit d’un projet avec une valeur ou une date de clôture prévue, ou situé sur un tableau qui en comporte une. Gagné le déplace à la dernière étape du tableau, Perdu le déplace vers Au point mort ou refusé. Les autres projets se terminent avec **Fait**. **Rouvrir** annule cette action.
 - **Archiver** le retire du tableau et des listes. Un nouveau message à son sujet le réactive.
 - **Supprimer** le supprime définitivement. Ses messages et ses personnes restent.
 
@@ -27,7 +27,7 @@ Une ou deux phrases sous le nom du projet indiquent de quoi il s’agit et où i
 
 Modifiez-la dans **Description**, depuis **Modifier** sur le projet. Elle vous appartient alors : « Modifié par vous », et votre Machine n’y touche plus. **La tenir à jour**, sous la description ou dans **Modifier**, la confie de nouveau à votre Machine. Si vous l’enregistrez vide, aucune description ne s’affiche.
 
-Pour un projet Work partagé, votre équipe ne voit la description que si elle voit aussi tout ce sur quoi elle s’appuie. La modification que vous avez faite reste privée.
+Pour un projet Travail partagé, votre équipe ne voit la description que si elle voit aussi tout ce sur quoi elle s’appuie. La modification que vous avez faite reste privée.
 
 ## Déplacer un projet
 
@@ -55,7 +55,7 @@ Une fois par semaine, votre Machine recherche les projets inactifs : aucune nouv
 
 Chaque projet peut être associé à une seule organisation. Celle-ci s’affiche sur sa page, dans la liste et sur le tableau, avec un lien.
 
-Si personne n’en a choisi une, votre Machine l’associe en fonction des personnes du projet et de ses messages, sans tenir compte de vos collègues. Elle ne le fait que si une organisation est clairement l’autre partie : les adresses e-mail personnelles comme Gmail ne comptent jamais, et un projet qui concerne plusieurs entreprises reste sans organisation. Le formulaire du projet indique alors « D’après les personnes ».
+Si personne n’en a choisi une, votre Machine l’associe en fonction des personnes du projet et de ses messages, sans tenir compte de vos collègues. Elle ne le fait que si une organisation est clairement l’autre partie : les adresses e-mail personnelles comme Gmail ne comptent jamais, et un projet qui concerne plusieurs entreprises reste sans organisation. Le formulaire du projet indique alors « D’après ses contacts ».
 
 Elle attend aussi que vous ayez écrit à une personne de cette organisation ou que vous l’ayez rencontrée, pour qu’un e-mail d’un inconnu n’associe jamais son organisation à un projet.
 
@@ -87,15 +87,15 @@ Si vous modifiez **Terminé quand** plus tard et que la preuve d’un projet ter
 
 Les valeurs sont en euros, sauf si votre Machine est configurée dans une autre devise. Avec **Propriétaire** dans Filtrer, seuls vos projets sont comptabilisés.
 
-## Tableau d’un coéquipier
+## Tableau d’un collègue
 
-Dans **Équipe**, les tableaux partagés par vos coéquipiers s’affichent à côté des vôtres. Ceux qui contiennent le plus de vos projets apparaissent en premier. L’en-tête indique à qui appartient le tableau et avec qui il est partagé : toute l’équipe (« Tableau d’Ada, partagé avec l’équipe ») ou uniquement les coéquipiers choisis (« Ada a partagé ce tableau avec vous »).
+Dans **Équipe**, les tableaux partagés par vos collègues s’affichent à côté des vôtres. Ceux qui contiennent le plus de vos projets apparaissent en premier. L’en-tête indique à qui appartient le tableau et avec qui il est partagé : toute l’équipe (« Tableau d’Ada, partagé avec l’équipe ») ou uniquement les collègues choisis (« Ada a partagé ce tableau avec vous »).
 
-Chaque projet indique le dernier événement et sa date : la dernière ligne partagée avec l’équipe, ou le dernier déplacement s’il est plus récent. Sur un tableau contenant les projets de plusieurs coéquipiers, cette ligne précise à qui appartient le projet (« par Ada »).
+Chaque projet indique le dernier événement et sa date : la dernière ligne partagée avec l’équipe, ou le dernier déplacement s’il est plus récent. Sur un tableau contenant les projets de plusieurs collègues, cette ligne précise à qui appartient le projet (« par Ada »).
 
-Un tableau de coéquipier peut contenir moins de projets que ce qu’il voit : un projet qu’il garde privé, ou qui contient une conversation personnelle, ne quitte jamais sa Machine. Une personne classée comme Personnel pour lui n’apparaît pas dans les projets partagés. Sur votre propre tableau, l’en-tête indique « Partagé avec l’équipe » et le nombre de projets qui restent privés. Ces projets affichent un cadenas.
+Un tableau de collègue peut contenir moins de projets que ce qu’il voit : un projet qu’il garde privé, ou qui contient une conversation personnelle, ne quitte jamais sa Machine. Une personne classée comme Personnel pour lui n’apparaît pas dans les projets partagés. Sur votre propre tableau, l’en-tête indique « Partagé avec l’équipe » et le nombre de projets qui restent privés. Ces projets affichent un cadenas.
 
-**Les miens**, **Pour moi** et **Tout** déterminent les projets affichés sur un tableau partagé et dans la liste des projets de l’équipe. Les miens correspond aux projets qui vous concernent : un fil de discussion, un projet dont vous êtes propriétaire ou une tâche à vous liée au projet. Pour moi correspond aux projets qui attendent votre intervention : une tâche ouverte liée au projet ou un fil dont le dernier message vous a été envoyé.
+**Les miens**, **M’attend** et **Tout** déterminent les projets affichés sur un tableau partagé et dans la liste des projets de l’équipe. Les miens correspond aux projets qui vous concernent : un fil de discussion, un projet dont vous êtes propriétaire ou une tâche à vous liée au projet. M’attend correspond aux projets qui attendent votre intervention : une tâche ouverte liée au projet ou un fil dont le dernier message vous a été envoyé.
 
 Chaque projet s’affiche comme sur le tableau de son propriétaire, dans le même ordre : son organisation, le nombre de jours dans l’étape, la prochaine étape et « Sans réponse depuis N jours ». Une prochaine étape ou une raison provenant d’un message qui reste privé ne s’affiche pas. Le reste de l’étape est regroupé sous **Afficher N de plus**. Rien de tout cela ne change ce qui est partagé.
 

@@ -17,7 +17,7 @@ Elle ne modifie rien dans Shortcut. Elle se contente de lire.
 
 ## Connecter Shortcut
 
-1. Dans le tableau de bord : **Connexions**, **Projets et code**, Shortcut. Ou, sur la page de configuration d’une Machine hébergée, à l’adresse app.themachine.computer/setup : **Autres sources**, Shortcut. Sur votre propre ordinateur, associez-la d’abord à votre compte.
+1. Dans le tableau de bord : **Connexions**, **Projets et code**, Shortcut. Ou, sur la page de configuration d’une Machine hébergée, à l’adresse app.themachine.computer/setup : **Plus de sources**, Shortcut. Sur votre propre ordinateur, associez-la d’abord à votre compte.
 2. Appuyez sur **Se connecter avec Shortcut** et autorisez l’accès en lecture. Elle ne demande à Shortcut qu’un accès en lecture.
 3. De retour dans The Machine, elle vérifie immédiatement la connexion et indique sous quelle identité elle s’est connectée et dans quel espace de travail.
 
@@ -25,7 +25,7 @@ Vous avez plusieurs espaces de travail Shortcut ? Sélectionnez d’abord celui 
 
 ## Coller un jeton à la place
 
-Sous **Ou collez un jeton d’API**, appuyez sur **Obtenir votre jeton**. Shortcut ouvre la page des jetons d’API dans un nouvel onglet : créez un jeton, copiez-le, collez-le, puis appuyez sur **Se connecter**. Sur votre propre ordinateur, `assistant connect shortcut` vous le demande aussi. Un jeton donne un accès complet à votre compte, mais The Machine ne fait que lire avec ce jeton.
+Sous **Ou collez un jeton d’API**, appuyez sur **Obtenir votre jeton**. Shortcut ouvre la page des jetons d’API dans un nouvel onglet : créez un jeton, copiez-le, collez-le, puis appuyez sur **Connecter**. Sur votre propre ordinateur, `assistant connect shortcut` vous le demande aussi. Un jeton donne un accès complet à votre compte, mais The Machine ne fait que lire avec ce jeton.
 
 ## Supprimer la connexion
 

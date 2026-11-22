@@ -22,7 +22,7 @@ Un brouillon attend que vous le lisiez et que vous appuyiez vous-même sur Envoy
 
 Ouvrez **Paramètres**, puis **Applis**. Sous **Les applis The Machine**, vous trouverez **Ajouter dans ChatGPT** et **Ajouter dans Claude**. Sous **Ou ajoutez-la avec une adresse**, vous trouverez l’adresse unique de l’application officielle pour chaque Machine, `https://mcp.themachine.computer/mcp`, et **Votre adresse**, `https://<your name>.mcp.themachine.computer/mcp`, avec **Copier** à côté de chacune.
 
-Pour une Machine installée sur votre ordinateur, appuyez d’abord sur **Configurer**, sous **Obtenir votre adresse**. Une page s’ouvre dans votre compte : vérifiez que le même code y apparaît, confirmez, puis choisissez un nom. Votre Machine se jumelle automatiquement, sans redémarrage. Cette étape est nécessaire dans les deux cas.
+Pour une Machine installée sur votre ordinateur, appuyez d’abord sur **Configurer**, sous **Obtenir votre adresse**. Une page s’ouvre dans votre compte : vérifiez que le même code y apparaît, confirmez, puis choisissez un nom. Votre Machine s’associe automatiquement, sans redémarrage. Cette étape est nécessaire dans les deux cas.
 
 Votre Machine configure ensuite elle-même son adresse sécurisée. Cela prend quelques minutes.
 
@@ -42,7 +42,7 @@ Les IA installées sur un appareil de votre réseau privé (Tailscale), comme Cl
 
 Votre Machine indique quelle IA cherche à se connecter. Si elle ne peut pas l’identifier, elle indique l’origine de la demande : ne vous connectez que si vous venez de lancer cette opération.
 
-Choisissez ce qu’elle peut faire : **Lire** ou **Lecture et modification**. Si vous avez des comptes Travail et Personnel, choisissez ce qu’elle peut voir. Choisissez ensuite la durée : **1 jour**, **7 jours**, **30 jours** ou **1 an**. Appuyez sur **Se connecter**, ou sur **Annuler** pour refuser sans rien envoyer.
+Choisissez ce qu’elle peut faire : **Lire** ou **Lecture et modification**. Si vous avez des comptes Travail et Perso, choisissez ce qu’elle peut voir. Choisissez ensuite la durée : **1 jour**, **7 jours**, **30 jours** ou **1 an**. Appuyez sur **Connecter**, ou sur **Annuler** pour refuser sans rien envoyer.
 
 ## Application officielle ou adresse privée
 
@@ -54,7 +54,7 @@ Dans les deux cas, c’est votre Machine qui décide. Seule une IA que vous avez
 
 ## Ce qu’elle peut voir
 
-Une connexion ne voit que son espace. L’espace Travail comprend les tâches et les promesses de vos comptes professionnels, les personnes, les entreprises et les projets professionnels, ainsi que le brief d’équipe de votre Fleet Travail. L’espace Personnel comprend le reste. Le texte des messages reste sur votre Machine, sauf si vous activez **Messages** : sans cette option, une IA ne voit les sources d’une tâche que par l’expéditeur, l’objet et la date.
+Une connexion ne voit que son espace. L’espace Travail comprend les tâches et les promesses de vos comptes professionnels, les personnes, les entreprises et les projets professionnels, ainsi que le brief d’équipe de votre Fleet Travail. L’espace Perso comprend le reste. Le texte des messages reste sur votre Machine, sauf si vous activez **Messages** : sans cette option, une IA ne voit les sources d’une tâche que par l’expéditeur, l’objet et la date.
 
 Les fiches du Graph d’équipe de vos collègues ne sont jamais transmises à une IA externe.
 

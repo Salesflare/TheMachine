@@ -21,7 +21,7 @@ Elle vous indique d’abord ce que The Machine peut déjà faire et ne suggère 
 
 ## Ce que l’équipe voit
 
-Pour améliorer l’aide, votre Machine compte quelques mots qui indiquent le sujet de chaque question, par exemple « mettre une tâche en attente ». Elle ne transmet jamais votre question ni la réponse, et n’envoie aucun nom, adresse ou numéro : uniquement des mots tirés de ces pages d’aide. Une fois par jour, les comptes sont envoyés à L’équipe The Machine, sans être associés à votre compte.
+Pour améliorer l’aide, votre Machine compte quelques mots qui indiquent le sujet de chaque question, par exemple « mettre une tâche en attente ». Elle ne transmet jamais votre question ni la réponse, et n’envoie aucun nom, adresse ou numéro : uniquement des mots tirés de ces pages d’aide. Une fois par jour, les comptes sont envoyés à l’équipe The Machine, sans être associés à votre compte.
 
 Pour désactiver cette option, désactivez **Partager ce qu’on demande à l’aide** dans **Paramètres**, sous **Sécurité**, dans la section **L’équipe The Machine**, ou choisissez le niveau de sécurité **Prudent** ([niveaux de sécurité](security-levels.md)). Cette option nécessite [The Machine Network](/network). Les données qui n’ont pas encore été envoyées sont supprimées.
 

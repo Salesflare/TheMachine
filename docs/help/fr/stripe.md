@@ -27,13 +27,13 @@ Sur votre ordinateur, vous pouvez aussi coller une clé à accès restreint :
 
 1. Dans Stripe, créez une clé à accès restreint avec un accès en lecture aux événements, aux clients et au compte, et aucun accès au reste.
 2. Trouvez l’identifiant de votre compte (acct_...) sous Paramètres, Informations sur l’entreprise.
-3. Ouvrez Stripe comme indiqué ci-dessus (ou exécutez `assistant connect stripe`), ouvrez **Ou collez une clé restreinte**, collez l’identifiant du compte et la clé, puis cliquez sur **Se connecter**.
+3. Ouvrez Stripe comme indiqué ci-dessus (ou exécutez `assistant connect stripe`), ouvrez **Ou collez une clé restreinte**, collez l’identifiant du compte et la clé, puis cliquez sur **Connecter**.
 
 Sur votre ordinateur, si la connexion avec Stripe n’est pas encore disponible, Connexions vous l’indique et ouvre directement ce formulaire.
 
 ## Connecter Stripe une fois pour toute l’équipe
 
-Dans une Fleet de travail, un propriétaire ou un administrateur connecte Stripe une seule fois et partage la connexion avec l’équipe :
+Dans une Fleet Travail, un propriétaire ou un administrateur connecte Stripe une seule fois et partage la connexion avec l’équipe :
 
 1. Connectez Stripe sur votre Machine (voir ci-dessus). La section **Connexions partagées** de l’onglet Fleet contient aussi le bouton **Connecter Stripe**.
 2. Dans l’onglet Fleet, ouvrez **Partager Stripe**. Tout le monde est sélectionné. Désélectionnez les personnes qui ne doivent pas y avoir accès, puis cliquez sur **Partager**.

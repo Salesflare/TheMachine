@@ -25,7 +25,7 @@ Les données qu’elle lit restent sur votre Machine jusqu’à ce que vous les 
 
 ## La connecter
 
-1. Sélectionnez **Connexions**, **Chat**, **Slack**, puis **Sign in with Slack**, et autorisez l’accès dans Slack. Sur votre propre ordinateur, associez d’abord The Machine à votre compte sur themachine.computer.
+1. Sélectionnez **Connexions**, **Chat**, **Slack**, puis **Se connecter avec Slack**, et autorisez l’accès dans Slack. Sur votre propre ordinateur, associez d’abord The Machine à votre compte sur themachine.computer.
 2. Les nouveaux messages et les messages privés sont importés en premier. Slack limite la lecture des applications à environ une conversation par minute. Les anciens messages sont donc importés progressivement sur quelques heures.
 
 Vous pouvez aussi utiliser une clé API Maton : connectez-vous sur maton.ai, connectez Slack depuis ce site et copiez votre clé API Maton depuis Home. Ouvrez ensuite **Ou utilisez une clé API Maton** sous Slack et collez-la, ou exécutez `assistant connect slack` sur votre propre ordinateur. Une connexion Slack via Maton continue de fonctionner comme avant.

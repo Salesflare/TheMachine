@@ -10,7 +10,7 @@ translated: 672364a90f92ef8f
 ---
 L’app mobile ouvre votre tableau de bord, connecté au même compte que sur le web. Téléchargez-la sur l’[App Store](https://apps.apple.com/app/id6829875215) pour iPhone et iPad, ou sur [Google Play](https://play.google.com/store/apps/details?id=computer.themachine.app) pour Android.
 
-La tâche **Tirez le meilleur de The Machine**, en haut de la liste des tâches, vous la recommande. Dans le navigateur d’un téléphone, **Obtenir** ouvre la boutique d’apps. Sur un téléphone configuré pour afficher les sites pour ordinateur, les liens vers les deux boutiques s’affichent. Sur un ordinateur, un code QR à scanner avec votre téléphone apparaît, ainsi que les liens vers les deux boutiques.
+La tâche **Tirez le meilleur de The Machine**, en haut de la liste des tâches, vous la recommande. Dans le navigateur d’un téléphone, **Obtenir** ouvre la boutique d’apps. Sur un téléphone configuré pour afficher les sites pour ordinateur, les liens vers les deux boutiques s’affichent. Sur un ordinateur, un QR code à scanner avec votre téléphone apparaît, ainsi que les liens vers les deux boutiques.
 
 Sur n’importe quel téléphone, [themachine.computer/app](https://themachine.computer/app) ouvre la bonne boutique. Dans **Paramètres**, **Applis**, les deux boutiques s’affichent en haut sur ordinateur, et seule la boutique de votre téléphone s’affiche sur téléphone. Sur ordinateur, **Ordinateur** installe le tableau de bord comme une app : consultez [Installer l’app](phone-app.md).
 
@@ -28,7 +28,7 @@ L’app vous demande l’autorisation d’envoyer des notifications à sa premi�
 
 L’app demande ensuite à votre Machine le titre de la tâche et la prochaine étape, par exemple « Répondre à Sam » et « Envoyer à Sam : mardi à 10 h, ça marche ». Le point du matin affiche ce qui vous attend et l’heure de votre premier rendez-vous, le récapitulatif d’équipe affiche ses premiers éléments, et une mise à jour de Fleet indique ce qui s’est passé. Si l’app n’arrive pas à joindre votre Machine, le message fixe reste affiché. Sur Android, le message indique le nombre de tâches en attente, par exemple « 2 tâches nécessitent votre attention ».
 
-Une notification propose **Mettre en attente** (jusqu’à demain) et **Marquer comme fait**, ainsi que **Faire** pour une tâche qui n’a pas encore commencé. Ces actions fonctionnent après le déverrouillage du téléphone, sans ouvrir l’app. L’envoi et les étapes finales ouvrent toujours l’app. Il n’y a qu’une notification par tâche : « Préparation » devient « Prête », puis la notification disparaît quand la tâche est terminée ou mise en attente, ici ou ailleurs.
+Une notification propose **Mettre en attente** (jusqu’à demain) et **Marquer comme fait**, ainsi que **Faire** pour une tâche qui n’a pas encore commencé. Ces actions fonctionnent après le déverrouillage du téléphone, sans ouvrir l’app. L’envoi et les étapes finales ouvrent toujours l’app. Il n’y a qu’une notification par tâche : « En préparation » devient « Prête », puis la notification disparaît quand la tâche est terminée ou mise en attente, ici ou ailleurs.
 
 Quand une étape que vous avez confirmée est effectuée, sa notification indique **Fait** et précise ce qui s’est passé, jusqu’à ce que vous touchiez **Compris** dans la liste des tâches. Sur iPhone, vous pouvez attendre la prochaine ouverture de l’app.
 

@@ -1,5 +1,5 @@
 ---
-title: Calendrier
+title: Agenda
 area: calendar
 summary: La semaine à venir en un seul endroit : réunions, tâches à échéance, tâches mises en attente et promesses.
 covers: tab:calendar
@@ -35,7 +35,7 @@ Dans la grille de la semaine, les événements qui ont lieu à la même heure s�
 
 ## Ouvrir un élément
 
-Sélectionnez une ligne pour ouvrir le chat de la tâche, la promesse, le voyage ou l’événement, ou la réunion. Pour une réunion que vous ne pouvez pas modifier ici, par exemple celle d’une autre personne ou une réunion avec des invités, les détails s’affichent : date et heure, lieu et participants. Les personnes connues de votre Graph, ainsi que les organisations et projets associés à la réunion, renvoient vers leur page. Sélectionnez **Ouvrir dans Google Calendar** (ou **Ouvrir dans Outlook**) sous leurs noms pour ouvrir la réunion dans le calendrier correspondant. La consultation ne modifie rien.
+Sélectionnez une ligne pour ouvrir le chat de la tâche, la promesse, le voyage ou l’événement, ou la réunion. Pour une réunion que vous ne pouvez pas modifier ici, par exemple celle d’une autre personne ou une réunion avec des invités, les détails s’affichent : date et heure, lieu et participants. Les personnes connues de votre Graph, ainsi que les organisations et projets associés à la réunion, renvoient vers leur page. Sélectionnez **Ouvrir dans Google Agenda** (ou **Ouvrir dans Outlook**) sous leurs noms pour ouvrir la réunion dans l’agenda correspondant. La consultation ne modifie rien.
 
 Une salle réservée pour une réunion s’affiche sous le lieu, jamais comme une personne ou dans votre Graph.
 
@@ -74,7 +74,7 @@ Une réunion avec une transcription mais sans notes propose **Générer les note
 
 Le message **Rédaction des notes…** s’affiche, et la rédaction continue même si vous fermez la réunion. Une réunion longue peut prendre quelques minutes. Cette opération utilise votre propre modèle. Les notes portent la mention **Rédigé par The Machine** et ne remplacent jamais les notes que vous avez ajoutées.
 
-The Machine peut aussi les ajouter. Demandez-le dans une tâche, par exemple : « Ajoute cette transcription à la réunion du conseil d’administration d’aujourd’hui ». Une transcription est ajoutée dans Transcription, un résumé dans Notes. Une réunion avec des notes ou une transcription affiche **Notes** ou **Transcription** dans le Calendrier.
+The Machine peut aussi les ajouter. Demandez-le dans une tâche, par exemple : « Ajoute cette transcription à la réunion du conseil d’administration d’aujourd’hui ». Une transcription est ajoutée dans Transcription, un résumé dans Notes. Une réunion avec des notes ou une transcription affiche **Notes** ou **Transcription** dans l’Agenda.
 
 The Machine lit les deux pour trouver les actions à suivre après la réunion. Elles sont classées dans Travail ou Personnel comme la réunion, et ne sont transmises à votre équipe que si la réunion l’est aussi.
 
@@ -90,7 +90,7 @@ Vous pouvez modifier votre propre agenda Google ici. Outlook et les autres agend
 
 Une tâche peut aussi proposer une modification, par exemple l’ajout d’une prise en charge. Les changements sont indiqués précisément. Ils ne sont effectués que si vous sélectionnez **Ajouter**, **Enregistrer** ou **Supprimer**.
 
-Vous n’avez encore aucune réunion ? Si aucun agenda n’est connecté, **Connecter votre agenda** ouvre Connexions. Vous pouvez y connecter [Google Calendar](google-calendar.md), [Outlook Calendar](microsoft.md) ou [un autre agenda](other-calendars.md).
+Vous n’avez encore aucune réunion ? Si aucun agenda n’est connecté, **Connecter votre agenda** ouvre Connexions. Vous pouvez y connecter [Google Agenda](google-calendar.md), [Outlook Calendar](microsoft.md) ou [un autre agenda](other-calendars.md).
 
 ## Chevauchements avec votre autre agenda
 

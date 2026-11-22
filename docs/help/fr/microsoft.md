@@ -1,5 +1,5 @@
 ---
-title: Microsoft Outlook et Calendar
+title: Microsoft Outlook et Outlook Calendar
 area: connections
 summary: E-mails et réunions Outlook pour Microsoft 365 et Outlook.com. Un e-mail n’est envoyé qu’après votre approbation.
 covers: connector:outlook, connector:outlook_calendar
@@ -21,7 +21,7 @@ Les e-mails dans Autres et les newsletters font d’abord l’objet d’un rapid
 - Une réponse est ajoutée à la conversation Outlook de l’e-mail auquel elle répond.
 - Après l’envoi d’une réponse, les messages du fil de discussion sont déplacés dans un dossier En attente d’Outlook pendant quelques jours (3, sauf indication contraire dans la tâche), puis reviennent dans la boîte de réception, ou plus tôt si quelqu’un répond. La vérification vous l’indique avant l’envoi.
 
-Le calendrier n’est jamais modifié.
+L’agenda n’est jamais modifié.
 
 ## Photos des collègues et des contacts
 
@@ -39,7 +39,7 @@ Sur une Machine hébergée :
 
 Vous pouvez aussi accéder au tableau de bord : **Connexions**, **E-mail**, choisissez Outlook, puis appuyez sur **Se connecter avec Microsoft**. Le lien pour l’administrateur se trouve juste sous le bouton.
 
-Sur votre propre ordinateur, une fois celui-ci [associé à votre compte](friends.md#a-machine-on-your-own-computer) : ouvrez **Connexions**, puis **E-mail**, choisissez Outlook et appuyez sur **Se connecter avec Microsoft**. Les e-mails et le calendrier sont connectés ensemble. Après la connexion à Microsoft, vous revenez à **Connexions** dans votre tableau de bord.
+Sur votre propre ordinateur, une fois celui-ci [associé à votre compte](friends.md#a-machine-on-your-own-computer) : ouvrez **Connexions**, puis **E-mail**, choisissez Outlook et appuyez sur **Se connecter avec Microsoft**. Les e-mails et l’agenda sont connectés ensemble. Après la connexion à Microsoft, vous revenez à **Connexions** dans votre tableau de bord.
 
 Pour les équipes informatiques qui utilisent leur propre application Microsoft Entra : ouvrez **Utiliser votre propre app** à cet endroit ou exécutez `assistant connect outlook`.
 

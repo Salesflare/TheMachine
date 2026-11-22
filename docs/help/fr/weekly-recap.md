@@ -12,14 +12,14 @@ translated: 223b143a6efd5692
 - Vous attend : les promesses qu’on vous a faites et qui sont en retard, ainsi que les vôtres qui sont en retard ou arrivent à échéance dans les deux prochaines semaines.
 - La semaine prochaine : vos réunions (avec un lien quand la préparation est prête), les tâches à échéance et les promesses faites par d’autres pour cette période.
 - Ce qui a changé : le nombre de tâches qui en valaient la peine, par rapport à la semaine précédente, la fréquence à laquelle **Faire** a été juste du premier coup, les ajustements apportés à votre façon d’écrire et à ses filtres, et le nombre de brouillons envoyés tels quels.
-- Pour l’équipe The Machine : les apprentissages à partager, s’il y en a qui vous attendent. Consultez [Partager les apprentissages avec l’équipe](share-learnings.md).
+- Pour l’équipe The Machine : les apprentissages à partager, s’il y en a qui vous attendent. Consultez [Partager des apprentissages avec l’équipe](share-learnings.md).
 - Personnes et projets : les projets qui prennent de l’ampleur ou ralentissent, les nouvelles personnes et celles qui se font discrètes.
 - En coulisses : le nombre de signaux vérifiés cette semaine et le nombre de ceux qui sont encore en attente.
 - Sur [Telegram](telegram.md), vous recevez ensuite des choix, chacun dans son propre message : une source très active sans résultat (**Ne plus vérifier** ou **Continuer à vérifier**) et une tâche mise en attente plusieurs fois (**Pas nécessaire**, **Faire** ou **Garder**). Rien ne change tant que vous n’avez pas appuyé sur un choix.
 
 ## Quand et où
 
-Par défaut, une fois par semaine, le vendredi après 16:00 dans votre fuseau horaire. Vous le recevez sur [Telegram](telegram.md), ou sous forme de notification intitulée « Votre semaine » depuis l’[application mobile](phone-app.md) et l’application de tableau de bord. Vous le recevez aussi par e-mail si les e-mails sont activés pour le **Récap du matin** dans Paramètres › Notifications. Avec le niveau [Prudent](security-levels.md), ou si l’option **Texte dans les notifications** est désactivée, vous ne le recevez pas par e-mail.
+Par défaut, une fois par semaine, le vendredi après 16 h dans votre fuseau horaire. Vous le recevez sur [Telegram](telegram.md), ou sous forme de notification intitulée « Votre semaine » depuis l’[application mobile](phone-app.md) et l’application de tableau de bord. Vous le recevez aussi par e-mail si les e-mails sont activés pour le **Récap du matin** dans Paramètres › Notifications. Avec le niveau [Prudent](security-levels.md), ou si l’option **Texte dans les notifications** est désactivée, vous ne le recevez pas par e-mail.
 
 ## Désactiver
 

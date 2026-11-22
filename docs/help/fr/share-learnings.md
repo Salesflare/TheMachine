@@ -37,13 +37,13 @@ Les apprentissages tirés de vos tâches personnelles nécessitent toujours votr
 
 Chaque apprentissage envoyé figure tel qu’il a été transmis dans Paramètres, **Activité**, et dans Fleet, **Activité**. Sélectionnez **Retirer** pour qu’il ne soit plus visible par l’équipe.
 
-Votre adresse e-mail et les journaux d’erreurs ne sont jamais envoyés automatiquement. Une Fleet de travail en mode **Prudent**, ou la désactivation de **Proposer de partager des apprentissages**, bloque l’envoi automatique. Si vous réactivez cette option, le système vous le demande à chaque fois.
+Votre adresse e-mail et les journaux d’erreurs ne sont jamais envoyés automatiquement. Une Fleet Travail en mode **Prudent**, ou la désactivation de **Proposer de partager des apprentissages**, bloque l’envoi automatique. Si vous réactivez cette option, le système vous le demande à chaque fois.
 
 ## Désactiver le partage
 
 Désactivez **Proposer de partager des apprentissages** dans Paramètres, Sécurité. Consultez [Niveaux de sécurité](security-levels.md). Le partage nécessite [The Machine Network](/network).
 
-Le même réglage désactive les [apprentissages de l’équipe](fleet.md#team-learnings) pour votre Fleet de travail et retire ceux que votre Machine a partagés.
+Le même réglage désactive les [apprentissages de l’équipe](fleet.md#team-learnings) pour votre Fleet Travail et retire ceux que votre Machine a partagés.
 
 ## Votes
 
@@ -57,4 +57,4 @@ L’équipe classe les apprentissages selon le nombre de votes utiles et choisit
 
 - **Activé**, l’option par défaut : les votes sont envoyés automatiquement.
 - **Demander d’abord** : les votes attendent votre réponse sous **Apprentissage**, **Partagé**, chacun avec l’apprentissage et le vote. Envoyez-les ou ignorez-les un par un ou tous à la fois. Aucune tâche ni notification. Les votes auxquels vous ne répondez pas expirent après 14 jours.
-- **Désactivée** : aucun vote n’est envoyé et les votes en attente sont supprimés.
+- **Désactivé** : aucun vote n’est envoyé et les votes en attente sont supprimés.

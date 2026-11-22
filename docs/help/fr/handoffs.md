@@ -1,7 +1,7 @@
 ---
 title: Transferts
 area: fleet
-summary: Transférez une tâche à la Machine d’un coéquipier avec les informations dont il a besoin. Faites le point plus tard ou reprenez-la.
+summary: Transférez une tâche à la Machine d’un collègue avec les informations dont il a besoin. Faites le point plus tard ou reprenez-la.
 covers: handoffs
 code: fleet_requests.py, dashboard.html
 order: 3
@@ -9,7 +9,7 @@ translated: acb60a24ef374625
 ---
 ## Transférer une tâche
 
-1. Dans la tâche, ouvrez **…**, puis **Transférer…**, et choisissez **Un coéquipier**.
+1. Dans la tâche, ouvrez **…**, puis **Transférer…**, et choisissez **Un collègue**.
 2. Choisissez la personne, vérifiez ce qui est inclus (× exclut une partie) et ajoutez une note. Rien provenant d’un compte personnel ou d’une autre entreprise n’est transmis.
 3. Envoyez la tâche. Sa Machine la lui présente comme une tâche.
 
@@ -31,11 +31,11 @@ Si le transfert n’a pas été envoyé, la tâche et son chat l’indiquent, av
 
 ## La transférer à quelqu’un d’autre
 
-Tant qu’un coéquipier s’en occupe, la tâche l’indique sur une ligne (« Avec Pat · en attente »). **Reprendre** et **Transférer à quelqu’un d’autre** se trouvent sous **…**, puis **Transférer…**. **Reprendre** vous rend la tâche : la Machine de Pat en est informée et sa réponse ne la fera plus avancer.
+Tant qu’un collègue s’en occupe, la tâche l’indique sur une ligne (« Avec Pat · en attente »). **Reprendre** et **Transférer à quelqu’un d’autre** se trouvent sous **…**, puis **Transférer…**. **Reprendre** vous rend la tâche : la Machine de Pat en est informée et sa réponse ne la fera plus avancer.
 
 **Transférer à quelqu’un d’autre** ouvre le formulaire de transfert. Vous pouvez aussi le dire dans le chat de la tâche (« cette tâche devrait être confiée à Kim »). La tâche indique alors « Toujours chez Pat jusqu’à ce que vous la transfériez à Kim », avec l’option **Vérifier le transfert à** Kim.
 
-Chaque tâche ne peut être transférée qu’une seule fois à chaque coéquipier : tant que Pat s’en occupe, choisir Pat à nouveau dans le formulaire de transfert permet de faire le point. **Faire le point** prépare le même rappel, avec une ligne de votre part si vous en ajoutez une.
+Chaque tâche ne peut être transférée qu’une seule fois à chaque collègue : tant que Pat s’en occupe, choisir Pat à nouveau dans le formulaire de transfert permet de faire le point. **Faire le point** prépare le même rappel, avec une ligne de votre part si vous en ajoutez une.
 
 L’option **Reprendre** à Pat est activée par défaut. Désactivez-la pour que les deux personnes s’en occupent. Rien n’est envoyé tant que vous n’avez pas choisi **Transférer**. La Machine de Pat en est informée et sa copie de la tâche est retirée.
 
@@ -47,8 +47,8 @@ Ils peuvent expliquer pourquoi : la tâche ne leur revient pas, elle est déjà 
 
 Choisissez **Par e-mail** : votre Machine prépare un e-mail à envoyer. Au fil de votre saisie, elle vous suggère d’abord les membres de votre Fleet, puis les personnes de votre entreprise. Ajoutez une page de tâche pour qu’ils puissent répondre en un seul geste : consultez [Pages de tâche](task-pages.md).
 
-Cette option est disponible uniquement pour les tâches Work. Cochez les éléments à inclure : quelques lignes sur la tâche, son brouillon, des liens et des fichiers. Le contenu Personnel et Vous uniquement reste exclu. **Préparer l’e-mail** ajoute l’e-mail à la tâche. Lisez-le, puis envoyez-le depuis votre propre boîte mail. Aucun suivi n’est effectué.
+Cette option est disponible uniquement pour les tâches Travail. Cochez les éléments à inclure : quelques lignes sur la tâche, son brouillon, des liens et des fichiers. Le contenu Personnel et Vous seul reste exclu. **Préparer l’e-mail** ajoute l’e-mail à la tâche. Lisez-le, puis envoyez-le depuis votre propre boîte mail. Aucun suivi n’est effectué.
 
-Une tâche provenant d’Intercom ou de Slack n’a pas de boîte mail associée. L’e-mail est donc envoyé depuis votre boîte mail Work.
+Une tâche provenant d’Intercom ou de Slack n’a pas de boîte mail associée. L’e-mail est donc envoyé depuis votre boîte mail Travail.
 
-La tâche suit ensuite la promesse jusqu’à ce que la personne réponde qu’elle l’a terminée ou que vous la marquiez comme faite. L’e-mail se termine par « Confiez cette tâche à votre propre Machine » : si la personne s’inscrit avec ce lien, elle peut rejoindre votre Fleet et la tâche est transférée à sa Machine. Désactivez cette ligne dans **Paramètres**, sous Fleet.
+La tâche suit ensuite la promesse jusqu’à ce que la personne réponde qu’elle l’a terminée ou que vous la marquiez comme faite. L’e-mail se termine par « Prenez cette tâche en charge dans votre propre Machine » : si la personne s’inscrit avec ce lien, elle peut rejoindre votre Fleet et la tâche est transférée à sa Machine. Désactivez cette ligne dans **Paramètres**, sous Fleet.

@@ -43,7 +43,7 @@ Pour connecter un autre espace de travail, ajoutez Notion à nouveau.
 
 ## Coller un jeton à la place
 
-Sous **Ou collez un jeton d’intégration**, appuyez sur **Obtenir votre jeton**. Notion ouvre sa page d’intégrations : créez une intégration interne, autorisez la lecture et l’ajout de contenu et de commentaires, ainsi que la lecture des informations utilisateur et des adresses e-mail. Copiez son jeton, collez-le et appuyez sur **Se connecter**.
+Sous **Ou collez un jeton d’intégration**, appuyez sur **Obtenir votre jeton**. Notion ouvre sa page d’intégrations : créez une intégration interne, autorisez la lecture et l’ajout de contenu et de commentaires, ainsi que la lecture des informations utilisateur et des adresses e-mail. Copiez son jeton, collez-le et appuyez sur **Connecter**.
 
 Partagez ensuite vos pages avec cette intégration dans Notion, sous **Connexions** sur chaque page. Sur votre propre ordinateur, `assistant connect notion` vous le demande aussi.
 

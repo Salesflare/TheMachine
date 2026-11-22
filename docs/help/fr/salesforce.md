@@ -21,7 +21,7 @@ Rien, tant que vous n’activez pas **Mettre à jour les coordonnées**. Vos ide
 
 Sur une Machine hébergée :
 
-1. Ouvrez votre page de configuration sur app.themachine.computer/setup et accédez à **Autres sources**.
+1. Ouvrez votre page de configuration sur app.themachine.computer/setup et accédez à **Plus de sources**.
 2. Ouvrez Salesforce et sélectionnez **Connecter Salesforce**.
 3. Connectez-vous à Salesforce et autorisez The Machine (créée par Salesflare).
 

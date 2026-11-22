@@ -30,7 +30,7 @@ L’installateur repère vos comptes, les connecte un par un et affiche un aper�
 ## Après l’installation
 
 - Connectez votre messagerie : en haut de **Tâches**, cliquez sur **Gmail** (ou **Outlook**), puis sur **Associer cette Machine** pour l’associer à votre compte. Si vous n’avez pas de compte, **Utiliser votre propre app** se trouve juste en dessous.
-- Cliquez ensuite sur **Se connecter avec Google** (ou **Se connecter avec Microsoft** pour Outlook). La messagerie et le calendrier se connectent ensemble.
+- Cliquez ensuite sur **Se connecter avec Google** (ou **Se connecter avec Microsoft** pour Outlook). La messagerie et l’agenda se connectent ensemble.
 - Pour les autres sources, cliquez sur **Connexions**, puis sur le type de source. Pour utiliser votre propre client Google ou votre app Entra : exécutez `assistant connect` dans un terminal.
 - Vérifiez que tout fonctionne avec `assistant doctor`. Cette commande affiche une solution pour chaque problème.
 - L’installateur installe la dernière version signée. Les mises à jour sont également publiées sous forme de versions signées.

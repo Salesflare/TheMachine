@@ -13,7 +13,7 @@ Vos messages LinkedIn. Elle les lit de temps à autre, pendant vos heures d’é
 
 ## Intitulés de poste et entreprises
 
-Elle met aussi à jour les intitulés de poste et les entreprises de vos relations LinkedIn qui figurent déjà dans votre Graph, à partir de votre liste **Connexions**. Elle n’ouvre pas leurs profils et n’ajoute personne. Quand l’intitulé de poste ou l’entreprise d’une personne change, sa chronologie l’indique, par exemple : « Maintenant responsable des ventes chez Acme, auparavant responsable commerciale chez Acme ».
+Elle met aussi à jour les intitulés de poste et les entreprises de vos relations LinkedIn qui figurent déjà dans votre Graph, à partir de votre liste **Relations**. Elle n’ouvre pas leurs profils et n’ajoute personne. Quand l’intitulé de poste ou l’entreprise d’une personne change, sa chronologie l’indique, par exemple : « Maintenant responsable des ventes chez Acme, auparavant responsable commerciale chez Acme ».
 
 L’intitulé vient de son titre de profil, par exemple « Responsable des ventes chez Acme » ou « Vice-président des ventes et de la stratégie », jamais d’un slogan. Elle retrouve les personnes grâce au lien vers leur profil, ou à leur nom et à leur entreprise. Si aucune entreprise ne permet de faire la comparaison, un nom complet porté par une seule personne dans votre Graph suffit. Leur page indique aussi depuis quand vous êtes en relation.
 
@@ -28,10 +28,10 @@ LinkedIn ne propose pas de méthode officielle pour cela. La lecture et l’envo
 ## La connecter
 
 1. Dans le tableau de bord, ouvrez **Connexions**, puis **Chat**, et choisissez LinkedIn.
-2. Choisissez **Travail** (avec son entreprise) ou **Perso**, puis appuyez sur **Se connecter**.
+2. Choisissez **Travail** (avec son entreprise) ou **Perso**, puis appuyez sur **Connecter**.
 3. Appuyez sur **Se connecter à LinkedIn** et connectez-vous dans le navigateur de votre Machine. La connexion se fait automatiquement une fois que vous êtes connecté.
 
-Sur une Machine hébergée, vous pouvez aussi utiliser votre page de configuration sur app.themachine.computer/setup : accédez à **Plus de sources**, ouvrez LinkedIn, connectez-vous quand la page vous le demande, puis appuyez sur **Se connecter**. Sur votre propre ordinateur, `assistant connect linkedin` fait la même chose dans un terminal.
+Sur une Machine hébergée, vous pouvez aussi utiliser votre page de configuration sur app.themachine.computer/setup : accédez à **Plus de sources**, ouvrez LinkedIn, connectez-vous quand la page vous le demande, puis appuyez sur **Connecter**. Sur votre propre ordinateur, `assistant connect linkedin` fait la même chose dans un terminal.
 
 Un deuxième compte LinkedIn dispose de son propre navigateur. Si LinkedIn déconnecte votre Machine, consultez [Déconnectée d’un site](signed-out.md).
 

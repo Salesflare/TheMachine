@@ -21,11 +21,11 @@ Sur une Machine hébergée, ouvrez votre page de configuration, allez à Votre I
 
 Mistral Large devient le modèle principal. Mistral Small est là aussi, un choix moins cher pour les chats ou comme modèle de secours.
 
-Sur votre propre ordinateur, voyez le [guide des modèles](https://github.com/Salesflare/TheMachine/blob/main/docs/models.md).
+Sur votre propre ordinateur, consultez le [guide des modèles](https://github.com/Salesflare/TheMachine/blob/main/docs/models.md).
 
 ## Utilisation
 
-**Paramètres**, **Modèle** indique "Utilise votre clé API Mistral". Une clé API n’a pas de limites d’utilisation, donc le travail en arrière-plan ne fait jamais de pause pour elle. Voir [Modèle](model.md).
+**Paramètres**, **Modèle** indique « Utilise votre clé API Mistral ». Une clé API n’a pas de limites d’utilisation, donc le travail en arrière-plan ne fait jamais de pause pour elle. Voir [Modèle](model.md).
 
 ## Le retirer
 

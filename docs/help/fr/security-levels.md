@@ -1,7 +1,7 @@
 ---
 title: Niveaux de sécurité
 area: security
-summary: Un seul commutateur, **Standard** ou **Prudent**, définit vos paramètres de sécurité et de confidentialité. L’admin d’une Fleet professionnelle choisit le niveau pour toute la Fleet.
+summary: Un seul commutateur, **Standard** ou **Prudent**, définit vos paramètres de sécurité et de confidentialité. L’admin d’une Fleet Travail choisit le niveau pour toute la Fleet.
 covers: settings:security
 code: security_levels.py, dashboard.html, fleet.py
 order: 2
@@ -23,16 +23,16 @@ Un niveau sert de point de départ. Modifiez ensuite n’importe quel réglage e
 - **Rechercher les contacts pro**, **Proposer de partager des apprentissages** et **Partager ce qu’on demande à l’aide** désactivés.
 - **Vérifier lesquels de mes contacts ont une Machine** et **Laisser les personnes qui ont mon e-mail me trouver** désactivés.
 - **Garder les détails de Faire 90 jours** désactivé : ils sont conservés pendant 30 jours.
-- **Ce que d’autres Machines peuvent demander à la mienne** réglé sur **Désactivée** : aucune planification avec d’autres Machines. Consultez [Amis et le Network](friends.md#scheduling-with-other-machines).
+- **Ce que d’autres Machines peuvent demander à la mienne** réglé sur **Désactivé** : aucune planification avec d’autres Machines. Consultez [Amis et le Network](friends.md#scheduling-with-other-machines).
 - Dans une famille, le partage de vos disponibilités vous demande d’abord votre accord. Avec des amis, le contexte des réunions est refusé.
 
-## Le niveau d’une Fleet professionnelle
+## Le niveau d’une Fleet Travail
 
 Le propriétaire ou un admin de la Fleet le choisit dans les paramètres de la Fleet : dans **Paramètres** › **Compte**, appuyez sur **Fleet**. Tout le monde dans la Fleet peut le voir. Lorsque le niveau est Prudent :
 
 - Les réponses destinées à vos collègues attendent votre accord, ne contiennent pas de noms et concernent uniquement des personnes issues de vos comptes professionnels.
 - Les mises en relation et les transferts attendent aussi votre accord.
-- Le Graph de l’équipe partage les e-mails des clients sans leurs pièces jointes.
+- Le Graph d’équipe partage les e-mails des clients sans leurs pièces jointes.
 - Les notifications des tâches professionnelles n’affichent aucun texte.
 - Les contacts professionnels ne sont pas recherchés.
 - Votre Machine ne vérifie pas vos contacts sur le Network et ne permet pas qu’on vous trouve avec votre adresse e-mail, sauf si vous avez activé ces options vous-même.

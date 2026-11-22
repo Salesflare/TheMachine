@@ -13,20 +13,20 @@ Les transcriptions et les notes Gemini des réunions Google Meet que vous avez o
 
 Meet ne les crée que si les transcriptions ou les notes Gemini étaient activées pendant la réunion.
 
-Chaque élément est ajouté à la réunion correspondante dans votre Calendar : les notes Gemini sous Notes, la transcription sous Transcript, avec la mention **De Google Meet**. Ce que vous avez ajouté vous-même reste en place.
+Chaque élément est ajouté à la réunion correspondante dans votre agenda : les notes Gemini sous Notes, la transcription sous Transcription, avec la mention **De Google Meet**. Ce que vous avez ajouté vous-même reste en place.
 
 ## Ce que The Machine peut faire
 
 Rien dans Meet, Docs ou Drive. The Machine ne fait que lire et n’active jamais les transcriptions elle-même.
 
-## Ce qu’il vous demande
+## Ce qu’elle vous demande
 
 Une autorisation propre à cette connexion, distincte de celle pour vos e-mails. Google vous demande d’autoriser The Machine à :
 
 - Voir vos réunions Google Meet, leurs transcriptions et leurs notes Gemini.
 - Voir vos Google Docs pour lire le document contenant les notes Gemini.
 
-The Machine ne demande jamais l’accès à votre Drive. Vos accès à Gmail et Calendar restent inchangés.
+The Machine ne demande jamais l’accès à votre Drive. Vos accès à Gmail et Google Agenda restent inchangés.
 
 ## Connecter Google Meet
 
@@ -45,4 +45,4 @@ Dans le tableau de bord, ouvrez **Connexions**, puis Google Meet, **Détails**, 
 
 ## Révoquer l’accès dans Google
 
-Ouvrez myaccount.google.com/permissions et retirez à The Machine l’accès à Google Meet. Gmail et Calendar continueront de fonctionner.
+Ouvrez myaccount.google.com/permissions et retirez à The Machine l’accès à Google Meet. Gmail et Google Agenda continueront de fonctionner.

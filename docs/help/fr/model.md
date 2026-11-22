@@ -7,7 +7,7 @@ code: dashboard.html, docs/models.md, chat_model.py
 order: 5
 translated: ee95ad4fa5323e3a
 ---
-**Paramètres**, **Modèle** indique quel modèle d’IA effectue votre **Travail en arrière-plan** et comment vous êtes connecté·e, par exemple avec ChatGPT.
+**Paramètres**, **Modèle** indique quel modèle d’IA effectue votre **Travail en arrière-plan** et comment vous êtes connecté, par exemple avec ChatGPT.
 
 Sur une Machine hébergée avec une connexion ChatGPT, le modèle principal est GPT-6.2 Sol : il répond plus vite que GPT-6.1 Sol, au même prix.
 

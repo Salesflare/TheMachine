@@ -13,7 +13,7 @@ Tout ce que votre Machine apprend vous appartient. Transmettez-le à une autre I
 
 1. Dans **Paramètres** › **Général** › **Exporter**, appuyez sur **Exporter** à côté de **Connaissances pour une autre IA**.
 2. **Texte des messages** est désactivé par défaut : seuls figurent la source de chaque élément et sa date. Activez cette option pour ajouter le texte.
-3. Activez **Privé et Prudent** uniquement pour inclure les projets réservés à vous, les fils privés et les Careful Fleets.
+3. Activez **Privé et Prudent** uniquement pour inclure les projets réservés à vous, les fils privés et les Fleets prudentes.
 4. Vous pouvez aussi définir une **Phrase secrète** (10 caractères minimum) pour chiffrer le fichier.
 5. Appuyez sur **Télécharger**. Le fichier ne peut être téléchargé qu’une seule fois.
 
