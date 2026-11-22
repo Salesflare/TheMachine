@@ -373,10 +373,13 @@ def kept_steps(db, suggestion_id, job_id, action, do_now=False):
     return next_actions.kept_steps(db.execute('SELECT next_action FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()[0], action, taken)
 
 
-def queue_preparation(db, suggestion_id, decision_id, action_id=None, resume_action=False):
+def queue_preparation(db, suggestion_id, decision_id, action_id=None, resume_action=False, keep_retries=False):
+    """Queue a run for the to-do, which starts its automatic retries over (preparation_state.AUTO_RETRIES): something
+    new for it. `keep_retries`: the owner's bare Try again, which runs once without new automatic retries."""
     old = db.execute('SELECT * FROM preparations WHERE suggestion_id=?',(suggestion_id,)).fetchone()
     if old and old['status'] in ('queued','starting','running'):
         return
+    spent = old['retries_spent'] if old and keep_retries else 0
     session_job_id = old['session_job_id'] if old else None
     if resume_action and old:action_id=old['action_id']
     # New work replaces a confirmed final step that never saved its result. It may have
@@ -388,7 +391,7 @@ def queue_preparation(db, suggestion_id, decision_id, action_id=None, resume_act
         db.execute("UPDATE action_jobs SET status='finish_uncertain',payload=?,updated_at=? WHERE id=?",(encoded(payload),now(),left['id']))
     db.execute("INSERT INTO preparations(suggestion_id,decision_id,job_id,status,created_at,updated_at) VALUES(?,?,?,'queued',?,?) ON CONFLICT(suggestion_id) DO UPDATE SET decision_id=excluded.decision_id,job_id=excluded.job_id,status='queued',created_at=excluded.created_at,updated_at=excluded.updated_at,error=NULL,reason=NULL,details=NULL,questions=NULL,move_to=NULL,use_events=NULL,connect=NULL,started_at=NULL,retry_at=NULL,attempts=0,auto_retries=0",
                (suggestion_id,decision_id,uuid.uuid4().hex,now(),now()))
-    db.execute('UPDATE preparations SET session_job_id=coalesce(?,job_id) WHERE suggestion_id=?',(session_job_id,suggestion_id))
+    db.execute('UPDATE preparations SET session_job_id=coalesce(?,job_id),retries_spent=? WHERE suggestion_id=?',(session_job_id,spent,suggestion_id))
     db.execute('UPDATE preparations SET action_id=? WHERE suggestion_id=?',(action_id,suggestion_id))
     if action_id:  # the same approved step carries on (Try again, the end of a snooze, Undo, Reopen)
         db.execute("UPDATE action_jobs SET status='local_preparation',updated_at=? WHERE id=? AND status='paused'",(now(),action_id))
@@ -631,8 +634,8 @@ class DecisionsStore:
             close_by_itself(db, row, decision_id, reason, 'plan', stamp, undo_hours, lapsed=True)
         return {'closed': True}
 
-    def queue_preparation(self, db, suggestion_id, decision_id, action_id=None, resume_action=False):
-        return queue_preparation(db, suggestion_id, decision_id, action_id, resume_action)
+    def queue_preparation(self, db, suggestion_id, decision_id, action_id=None, resume_action=False, keep_retries=False):
+        return queue_preparation(db, suggestion_id, decision_id, action_id, resume_action, keep_retries)
 
     def routine_change_line(self, db, suggestion_id, name):
         """The to-do's chat line once its routine took the change its note taught (routine_changes.save): "Changed the
@@ -853,7 +856,8 @@ class DecisionsStore:
             if ahead:  # Try again accepts it first: a run works only on an accepted to-do (preparation_state.tool_intent)
                 db.execute('UPDATE suggestions SET undo_until=NULL WHERE id=?',(suggestion_id,))
                 todo_moves.transition(db, suggestion_id, todo_states.ACCEPTED, 'retry')
-            self.queue_preparation(db,suggestion_id,decision_id,resume_action=True)
+            # The owner's own Try again runs, but brings no new automatic retries: those wait for something new
+            self.queue_preparation(db,suggestion_id,decision_id,resume_action=True,keep_retries=source in action_basis.TAPS)
             db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=? AND message_id IS NOT NULL',(suggestion_id,))
             return {'status':'accepted' if ahead else row['status'],'retrying':True}
         if row['status'] == 'completed':

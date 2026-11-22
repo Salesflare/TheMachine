@@ -394,8 +394,10 @@ For developers: a feature adds its own entries with `actionAdd({id, group, label
 **When a run stops**
 
 - A run interrupted by a crash or outage resumes with its history instead of redoing finished steps.
-- A run that doesn't finish within 35 minutes is stopped and tried once more. Then the to-do says **Stuck**, with **Try again**.
-- A to-do stuck because its run failed (not a question, a Stop or a usage limit) gets one fresh try after the Machine updates (a new release or bridge), once per version, in its same session, one at a time, outside quiet hours and within usage. Only those stuck in the last 7 days, never a confirmed step or a snoozed to-do.
+- A run that fails, ends without a result, is cut off by a restart or doesn't finish within 35 minutes (it is stopped) is tried once more by itself, a minute later. Then the to-do says **Stuck**, with **Try again**.
+- A to-do stuck because its run failed (not a question, a Stop or a usage limit) gets one fresh try after the Machine updates (a new release or bridge), once per version, at least 15 minutes after it failed, in its same session, one at a time, outside quiet hours and within usage. Only those stuck in the last 7 days, never a confirmed step or a snoozed to-do.
+- A to-do gets at most 2 automatic retries in all. More come only with something new for it: new messages, your words in its chat, **Do it**, or a sign-in or connection it waited on. **Try again** runs it once, without new automatic retries.
+- A restart or an update never redoes a to-do that finished. Each run records why it started (Activity).
 - A confirmed last step whose run stopped (Stuck, a snooze) waits, paused, and carries on with **Try again** or when the snooze ends. Until then the to-do says in one line that it isn't done, why, and when it carries on, instead of the earlier result. That also holds when new work you asked for replaced that step ("not confirmed yet" when it may have gone through).
 
 <a id="prepared-ahead"></a>

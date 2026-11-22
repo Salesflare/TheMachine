@@ -473,6 +473,9 @@ class StoreCore:
                     db.execute('ALTER TABLE preparations ADD COLUMN ' + column + ' TEXT')
             if 'auto_retries' not in preparation_columns:
                 db.execute('ALTER TABLE preparations ADD COLUMN auto_retries INTEGER NOT NULL DEFAULT 0')
+            # retries_spent: automatic retries the to-do had since something new came in (preparation_state.AUTO_RETRIES)
+            if 'retries_spent' not in preparation_columns:
+                db.execute('ALTER TABLE preparations ADD COLUMN retries_spent INTEGER NOT NULL DEFAULT 0')
             if 'deferrals' not in {r['name'] for r in db.execute('PRAGMA table_info(events)')}:
                 db.execute('ALTER TABLE events ADD COLUMN deferrals INTEGER NOT NULL DEFAULT 0')
                 # Count earlier deferrals of each event's current version.

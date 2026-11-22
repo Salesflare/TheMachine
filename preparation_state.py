@@ -7,6 +7,35 @@ from machine import action_basis, todo_states
 
 TERMINAL = ('ok', 'error', 'aborted', 'timed_out', 'lost')
 
+# Automatic retries of one to-do's runs (a run that failed, timed out, ended without a result, or was lost or cut off
+# by a restart; the one after a new release): at most AUTO_RETRIES in all, the first after AUTO_RETRY_BACKOFF[0]
+# seconds, the next after AUTO_RETRY_BACKOFF[1]. Counted in preparations.retries_spent, which only something new for
+# the to-do starts over (Store.queue_preparation): new evidence, the owner's words, Do it, a sign-in or connection it
+# waited on. A bare Try again runs once, as asked, without new automatic retries. After that the to-do waits, stuck.
+AUTO_RETRIES = 2
+AUTO_RETRY_BACKOFF = (60, 900)
+FAILED_BEFORE = ('ai_run_failed', 'ai_run_timed_out', 'run_ended_without_preparation', 'completion_unconfirmed', 'ai_run_interrupted')
+
+
+def retry_left(job):
+    """Whether this preparation's failed run may be retried by itself in its own session: its first automatic retry
+    since it was asked, while the to-do has automatic retries left."""
+    return not job['auto_retries'] and (job['retries_spent'] or 0) < AUTO_RETRIES
+
+
+def retry_delay(job):
+    """Seconds before the next automatic retry of this to-do."""
+    return AUTO_RETRY_BACKOFF[min(job['retries_spent'] or 0, len(AUTO_RETRY_BACKOFF) - 1)]
+
+
+def run_basis(db, job):
+    """What a run records when it starts (preparation_runs.basis): what allowed it (action_basis.from_decision), marked
+    retry:'auto' when it is an automatic retry of a failed run rather than the ask itself."""
+    basis = action_basis.from_decision(db, job.get('decision_id'), job.get('action_id'), job.get('suggestion_id'))
+    if job.get('error') in FAILED_BEFORE:
+        basis = {**basis, 'retry': 'auto'}
+    return json.dumps(basis, ensure_ascii=False)
+
 
 def initialize(db):
     db.executescript('''
@@ -30,9 +59,11 @@ def initialize(db):
         db.execute('UPDATE preparation_runs SET basis=?', (action_basis.BEFORE,))
     db.execute('UPDATE preparations SET session_job_id=job_id WHERE session_job_id IS NULL')
     # Preserve pre-upgrade runtime custody. Closed historical rows aren't proof of a live run.
-    db.execute('''INSERT OR IGNORE INTO preparation_runs(job_id,suggestion_id,session_job_id,status,started_at)
-                  SELECT job_id,suggestion_id,session_job_id,status,coalesce(started_at,created_at)
-                  FROM preparations WHERE status IN ('starting','running')''')
+    for job in db.execute('''SELECT * FROM preparations p WHERE status IN ('starting','running')
+                             AND NOT EXISTS(SELECT 1 FROM preparation_runs r WHERE r.job_id=p.job_id)''').fetchall():
+        db.execute('INSERT OR IGNORE INTO preparation_runs(job_id,suggestion_id,session_job_id,status,started_at,basis) VALUES(?,?,?,?,?,?)',
+                   (job['job_id'], job['suggestion_id'], job['session_job_id'], job['status'], job['started_at'] or job['created_at'],
+                    run_basis(db, dict(job))))
 
 
 START_KEEP_DAYS = 2

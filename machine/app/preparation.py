@@ -64,9 +64,6 @@ from machine.dashboard_link import dashboard_link
 PROMPT_LIMIT = 60000
 
 
-PREPARATION_INTERRUPTED_TRIES = 4  # starts of one card's preparation that a Gateway restart may cut off before it counts
-
-
 # A run still pending this long after it started is checked against its Gateway session (a crash or restart ends it
 # without a terminal state for its run id); a younger one may still be queued.
 PREPARATION_PROBE_SECONDS = 120
@@ -192,9 +189,11 @@ PREPARATION_DEADLINE_SECONDS = 2100
 
 def preparation_overdue(db, job):
     """A preparation past PREPARATION_DEADLINE_SECONDS without a confirmed completion: blocked, its old run stopped and
-    confirmed ended (stop_stale_runs) before its one automatic retry."""
+    confirmed ended (stop_stale_runs) before its automatic retry, when it has one left (preparation_state.retry_left)."""
     db.execute("UPDATE preparations SET status='blocked',reason=?,details=?,error='completion_unconfirmed',updated_at=? WHERE job_id=?",
-               ('This is taking too long. I’ll stop that run and try once more.' if not job['auto_retries'] else 'This didn’t finish, also on the second try. Tap Try again, or change the request.',
+               ('This is taking too long. I’ll stop that run and try once more.' if preparation_state.retry_left(job) else
+                'This didn’t finish, also on the second try. Tap Try again, or change the request.' if job['auto_retries'] else
+                'This didn’t finish. Tap Try again, or change the request.',
                 'No confirmed completion after 25 minutes plus 10 minutes for connection outages. The old run is stopped and confirmed ended before anything restarts.',now(),job['job_id']))
     pause_idle_steps(db,job['suggestion_id'])
     db.execute("UPDATE deliveries SET status='queued',reminder=1,needs_edit=1,error=NULL WHERE suggestion_id=? AND status IN ('queued','sent','uncertain')",(job['suggestion_id'],))
@@ -222,10 +221,11 @@ def machine_version(config, code=None):
 def retry_after_update(db, version, held=lambda job: False):
     """A stuck run a bug may have caused can work after a new release or bridge: each to-do stuck on RUNTIME_FAILURES
     before this version arrived gets one fresh try for it, in its same session, one to-do at a time. Never twice for
-    one version, so a run that still fails stays stuck until the next one or the owner's Try again. Never a to-do
-    waiting on a confirmed step (its Try again is the owner's), one snoozed or set aside (not PREPARING), or one whose
-    old run hasn't ended. `held(job)`: why it waits now (quiet hours, usage), checked only when one is due. The
-    suggestion id it queued, or None."""
+    one version, and only while the to-do has automatic retries left (preparation_state.AUTO_RETRIES, this one counts),
+    at least the second backoff after it failed. Then it stays stuck until something new for it or the owner's Try
+    again. Never a to-do waiting on a confirmed step (its Try again is the owner's), one snoozed or set aside (not
+    PREPARING), or one whose old run hasn't ended. `held(job)`: why it waits now (quiet hours, usage), checked only when
+    one is due. The suggestion id it queued, or None."""
     if not version:
         return None
     seen = db.execute("SELECT at,detail FROM milestones WHERE name='preparation_version'").fetchone()
@@ -238,18 +238,19 @@ def retry_after_update(db, version, held=lambda job: False):
     if db.execute("SELECT 1 FROM preparations WHERE update_retry=? AND status IN ('queued','starting','running')", (version,)).fetchone():
         return None  # one at a time
     oldest = (dt.datetime.fromisoformat(since) - dt.timedelta(days=UPDATE_RETRY_DAYS)).isoformat()
+    backed_off = (dt.datetime.fromisoformat(now()) - dt.timedelta(seconds=preparation_state.AUTO_RETRY_BACKOFF[-1])).isoformat()
     marks = ','.join('?' * len(RUNTIME_FAILURES))
     job = db.execute(f"""SELECT p.* FROM preparations p JOIN suggestions s ON s.id=p.suggestion_id
         WHERE p.status='blocked' AND p.error IN ({marks}) AND (p.error<>'completion_unconfirmed' OR p.auto_retries>0)
-        AND p.action_id IS NULL AND coalesce(p.update_retry,'')<>? AND p.updated_at<? AND p.updated_at>=?
-        AND s.status IN {todo_states.sql(todo_states.PREPARING)}
+        AND p.action_id IS NULL AND coalesce(p.update_retry,'')<>? AND p.updated_at<? AND p.updated_at>=? AND p.updated_at<=?
+        AND p.retries_spent<? AND s.status IN {todo_states.sql(todo_states.PREPARING)}
         AND NOT EXISTS(SELECT 1 FROM preparation_runs r WHERE r.finished_at IS NULL
                        AND (r.suggestion_id=p.suggestion_id OR r.session_job_id=coalesce(p.session_job_id,p.job_id)))
-        ORDER BY p.updated_at DESC LIMIT 1""", (*RUNTIME_FAILURES, version, since, oldest)).fetchone()
+        ORDER BY p.updated_at DESC LIMIT 1""", (*RUNTIME_FAILURES, version, since, oldest, backed_off, preparation_state.AUTO_RETRIES)).fetchone()
     if not job or held(dict(job)):
         return None
-    db.execute("UPDATE preparations SET job_id=?,status='queued',reason=NULL,details=NULL,retry_at=NULL,started_at=NULL,updated_at=?,update_retry=? "
-               "WHERE job_id=? AND status='blocked'", (uuid.uuid4().hex, now(), version, job['job_id']))
+    db.execute("UPDATE preparations SET job_id=?,status='queued',reason=NULL,details=NULL,retry_at=NULL,started_at=NULL,updated_at=?,update_retry=?,"
+               "retries_spent=retries_spent+1 WHERE job_id=? AND status='blocked'", (uuid.uuid4().hex, now(), version, job['job_id']))
     db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=?', (job['suggestion_id'],))
     LOG.info('preparation retried after update suggestion=%s', job['suggestion_id'])
     return job['suggestion_id']
@@ -532,7 +533,9 @@ class PreparationApp:
                     db.execute("UPDATE preparations SET status='cancelled' WHERE job_id=?",(job['job_id'],));continue
                 if job['status']=='queued':
                     db.execute("UPDATE preparations SET status='starting',updated_at=?,started_at=coalesce(started_at,?),attempts=attempts+1 WHERE job_id=?",(now(),now(),job['job_id']))
-                    db.execute("INSERT OR IGNORE INTO preparation_runs(job_id,suggestion_id,session_job_id,status,started_at) VALUES(?,?,?,'starting',?)",(job['job_id'],job['suggestion_id'],job.get('session_job_id') or job['job_id'],now()))
+                    # Why it starts, kept from its first moment (also for a run that never makes a tool call)
+                    db.execute("INSERT OR IGNORE INTO preparation_runs(job_id,suggestion_id,session_job_id,status,started_at,basis) VALUES(?,?,?,'starting',?,?)",
+                               (job['job_id'],job['suggestion_id'],job.get('session_job_id') or job['job_id'],now(),preparation_state.run_basis(db,job)))
                     if job.get('action_id'):  # its paused confirmed step is worked on again (also after an automatic retry)
                         db.execute("UPDATE action_jobs SET status='local_preparation',updated_at=? WHERE id=? AND status='paused'",(now(),job['action_id']))
                 jobs.append(job)
@@ -714,23 +717,22 @@ class PreparationApp:
                 db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=?',(job['suggestion_id'],))
             elif status in ('ok','error','aborted','timed_out','lost'):  # lost: the Gateway refused this run id for good
                 error={'ok':'run_ended_without_preparation','timed_out':'ai_run_timed_out'}.get(status,'ai_run_failed')
-                if status in ('aborted','lost') and current['attempts']<PREPARATION_INTERRUPTED_TRIES:
-                    # Stopped from outside (a Gateway restart or reload: this app stops only runs no longer
-                    # wanted), not by how it went: try again in the same session without using up the retry.
-                    db.execute("UPDATE preparations SET job_id=?,status='queued',error=?,retry_at=?,updated_at=?,started_at=NULL WHERE job_id=?",
-                               (uuid.uuid4().hex,'ai_run_interrupted',(dt.datetime.fromisoformat(now())+dt.timedelta(seconds=60)).isoformat(),now(),job['job_id']))
+                if preparation_state.retry_left(current):
+                    # Continue the retained session once, after a pause (preparation_state.AUTO_RETRY_BACKOFF). Its durable
+                    # tool history must be read before further writes, including calls whose result was lost. A run cut
+                    # off from outside (a Gateway restart) counts too: a restart never brings more runs than a failure.
+                    db.execute("UPDATE preparations SET job_id=?,status='queued',error=?,retry_at=?,updated_at=?,auto_retries=auto_retries+1,"
+                               "retries_spent=retries_spent+1,started_at=NULL WHERE job_id=?",
+                               (uuid.uuid4().hex,'ai_run_interrupted' if status in ('aborted','lost') else error,
+                                (dt.datetime.fromisoformat(now())+dt.timedelta(seconds=preparation_state.retry_delay(current))).isoformat(),now(),job['job_id']))
                     db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=?',(job['suggestion_id'],))
                     return
-                if not current['auto_retries']:
-                    # Continue the retained session once. Its durable tool history must be read
-                    # before further writes, including calls whose result was lost.
-                    db.execute("UPDATE preparations SET job_id=?,status='queued',error=?,retry_at=?,updated_at=?,auto_retries=auto_retries+1,started_at=NULL WHERE job_id=?",
-                               (uuid.uuid4().hex,error,(dt.datetime.fromisoformat(now())+dt.timedelta(seconds=20)).isoformat(),now(),job['job_id']))
-                    db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=?',(job['suggestion_id'],))
-                    return
-                reason='I tried twice but couldn’t finish this. Tap Try again, or change the request.'
+                # No automatic retry left: stuck, with Try again, until something new comes in
+                reason=('I tried twice but couldn’t finish this. Tap Try again, or change the request.' if current['auto_retries'] else
+                        'This didn’t finish. Tap Try again, or change the request.')
                 details={'run_ended_without_preparation':'The AI run ended without saving a result or a blocker.',
-                         'ai_run_timed_out':'The AI run hit its time limit.'}.get(error,'The AI run failed (often a model timeout or overload).')+' The automatic retry ended the same way.'
+                         'ai_run_timed_out':'The AI run hit its time limit.'}.get(error,'The AI run failed (often a model timeout or overload).')+(
+                         ' The automatic retry ended the same way.' if current['auto_retries'] else ' No more automatic retries until something new comes in.')
                 db.execute("UPDATE preparations SET status='blocked',reason=?,details=?,error=?,updated_at=? WHERE job_id=?",(reason,details,error,now(),job['job_id']))
                 pause_idle_steps(db,job['suggestion_id'])
                 db.execute("UPDATE deliveries SET status='queued',reminder=1,needs_edit=1,error=NULL WHERE suggestion_id=? AND status IN ('queued','sent','uncertain')",(job['suggestion_id'],))

@@ -374,11 +374,13 @@ class ActionRunsApp:
                     db.execute('UPDATE preparation_runs SET retry_at=? WHERE job_id=?',((dt.datetime.fromisoformat(now())+dt.timedelta(minutes=1)).isoformat(),run['job_id']))
                     continue
                 db.execute('UPDATE preparation_runs SET status=?,finished_at=? WHERE job_id=?',(outcome['status'],now(),run['job_id']))
-                # A run that timed out without confirmation gets its one automatic retry once it has really ended. Not on a
-                # to-do waiting for the owner (a prepared-ahead one settle_ahead sent out): their Try again starts it.
-                retried=db.execute(f"""UPDATE preparations SET job_id=?,status='queued',reason=NULL,details=NULL,retry_at=NULL,updated_at=?,
-                    auto_retries=auto_retries+1,started_at=NULL WHERE job_id=? AND status='blocked' AND error='completion_unconfirmed' AND auto_retries=0
-                    AND suggestion_id IN (SELECT id FROM suggestions WHERE status IN {todo_states.sql(todo_states.PREPARING)})""",
-                    (uuid.uuid4().hex,now(),run['job_id'])).rowcount
+                # A run that timed out without confirmation gets its automatic retry once it has really ended, after the
+                # backoff, while the to-do has one left (preparation_state.retry_left). Not on a to-do waiting for the
+                # owner (a prepared-ahead one settle_ahead sent out): their Try again starts it.
+                job=db.execute(f"""SELECT * FROM preparations WHERE job_id=? AND status='blocked' AND error='completion_unconfirmed'
+                    AND suggestion_id IN (SELECT id FROM suggestions WHERE status IN {todo_states.sql(todo_states.PREPARING)})""",(run['job_id'],)).fetchone()
+                retried=job and preparation_state.retry_left(job) and db.execute("""UPDATE preparations SET job_id=?,status='queued',reason=NULL,details=NULL,
+                    retry_at=?,updated_at=?,auto_retries=auto_retries+1,retries_spent=retries_spent+1,started_at=NULL WHERE job_id=? AND status='blocked'""",
+                    (uuid.uuid4().hex,(dt.datetime.fromisoformat(now())+dt.timedelta(seconds=preparation_state.retry_delay(job))).isoformat(),now(),run['job_id'])).rowcount
                 if retried:
                     db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=?',(run['suggestion_id'],))
