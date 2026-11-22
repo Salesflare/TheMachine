@@ -298,7 +298,10 @@ const isOpen=i=>!closed(s)&&(i.kind==='card'||!(i.drafts||[]).length||s.status==
  // A result with files: its links under the last reply
  if(p.links&&!drafts.length&&s?.status==='prepared'&&!p.copy)out.push(html`<div class="chat-links">${p.links}</div>`);
  if(s)out.push(outboxChat(s));
- if(chat.active)out.push(chat.live?.text?html`<div class="chat-msg machine chat-live"><div class="bubble" translate="no">${chatMarkdown(chat.live.text)}</div></div>`:raw('<div class="chat-msg machine chat-live"><div class="bubble typing" role="status" aria-label="Working"><i></i><i></i><i></i></div></div>'));
+ // While the run goes: its latest step, as on its card (api/progress, shell-toast.js), above the dots or the reply
+ // as it streams; once it's done those steps fold into the run's own line above. A step of an earlier run never shows.
+ const run=s&&['starting','running'].includes(chat.status);if(s&&!run)steps.delete(s.id);
+ if(chat.active)out.push(html`<div class="chat-msg machine chat-live">${run?html`<ul class="steps" data-steps="${s.id}">${stepItems(steps.get(s.id))}</ul>`:''}${chat.live?.text?html`<div class="bubble" translate="no">${chatMarkdown(chat.live.text)}</div>`:raw('<div class="bubble typing" role="status" aria-label="Working"><i></i><i></i><i></i></div>')}</div>`);
  // The run's side of the chat couldn't be read (the Gateway was slow or away) and nothing of it was loaded before:
  // said once the run is over, never as an aside under the typing dots; the next ask (a few seconds) tries again.
  if(chat.unavailable&&!chat.active)out.push(html`<p class="chat-note">I couldn’t load my replies just now. Trying again…</p>`);

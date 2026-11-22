@@ -251,7 +251,7 @@ In order, it shows:
 
 1. **What the to-do is about:** who wrote it, how, and its first lines, with **Read the thread**. An email shows only its new text, with the earlier messages it quotes folded under **Earlier messages**. For a support conversation: what the other side asked, then a teammate's internal note.
 2. **The to-do itself**, as the Machine's first message: what is going on and, when it waits on a call, the question in one line ("Your call: …"), with the to-do's choices under it while it is open.
-3. **Each run** as one quiet "Checked 5 things" line you can open, with one row per kind of step and how many times ("Used the browser on example.com · 3"; a site, never an address, command or file), followed by what it said and the draft it left, inline with **Show what changed** against the draft before.
+3. **Each run** while it runs: its latest step above the typing dots ("Reading the mail", the to-do's Preparing line, from the run's own tool calls on every runtime, also Claude Code), and the browser's picture while it uses one. Once it is done, one quiet "Checked 5 things" line you can open, with one row per kind of step and how many times ("Used the browser on example.com · 3"; a site, never an address, command or file), followed by what it said and the draft it left, inline with **Show what changed** against the draft before.
 4. **Work handed to a coding agent:** your messages to it ("To Codex") and each answer, its files as chips.
 
 The one open result (a draft waiting on you, an outcome summary or the to-do's question) is the only raised card. A draft that went out turns quiet with a muted "Sent".

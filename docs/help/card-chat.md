@@ -16,7 +16,9 @@ Each email shows only what is new in it. The earlier messages it quotes are fold
 
 ## What it did
 
-Each run shows as one quiet line, like "Checked 12 things". Open it to see each kind of step once, with how many times: "Used the browser on example.com · 7". It names the site, never the address, a command or a file.
+While it works on your message, its latest step shows above the typing dots, like "Reading the mail", as on the to-do while it prepares. When it uses the browser, a small picture of the page shows too.
+
+Each finished run shows as one quiet line, like "Checked 12 things". Open it to see each kind of step once, with how many times: "Used the browser on example.com · 7". It names the site, never the address, a command or a file.
 
 When it stopped to ask you something, the question shows as a quiet line too, like "Asked: Send it today or Monday?", and your message under it shows only your answer.
 
