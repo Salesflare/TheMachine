@@ -47,7 +47,6 @@ WAITS = {
     'tests/test_chat_finish_dashboard.mjs': 2,
     'tests/test_chat_fixed_notice_dashboard.mjs': 1,
     'tests/test_chat_keys_dashboard.mjs': 4,
-    'tests/test_chat_list_kept_dashboard.mjs': 1,
     'tests/test_chat_menu_states_dashboard.mjs': 1,
     'tests/test_chat_open_redraw_dashboard.mjs': 1,
     'tests/test_chat_peek_dashboard.mjs': 1,
