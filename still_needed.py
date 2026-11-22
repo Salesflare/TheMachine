@@ -27,6 +27,8 @@ KIND = 'still_needed'
 OPEN = todo_states.WAITING_ON_OWNER
 # Decisions that aren't the owner's own touch: the Machine's own, automated follow-ups, a coding agent
 NOT_TOUCHES = ('assistant', 'auto_follow_up', 'agent')
+# Decisions that close a to-do or undo that: on an open one they cancel out, so for its age (older) they're no news
+CLOSE_UNDONE = ('complete', 'reject', 'undo')
 
 def _at(value):
     """An ISO time (with Z, an offset or none: UTC) as an aware datetime, or None."""
@@ -41,13 +43,15 @@ def _tables(db):
     return {r[0] for r in db.execute("SELECT name FROM sqlite_master WHERE type='table'")}
 
 
-def last_touch(db, cards, tz=dt.timezone.utc):
+def last_touch(db, cards, tz=dt.timezone.utc, news=False):
     """{card id: when it was last touched (datetime)}: made, opened, decided on by the owner, its draft edited, or a new
     message on it. cards are rows with id, created_at and event_ids. An open is marked by its local day (tz), so it
-    counts as the end of that day."""
+    counts as the end of that day. news: only what changed it counts (older), so no opens, and a close and its Undo
+    (CLOSE_UNDONE) leave it as old as it was."""
     ids = [c['id'] for c in cards]
     out = {c['id']: _at(c['created_at']) for c in cards}
-    opens = 'activity_seen' in _tables(db)
+    opens = not news and 'activity_seen' in _tables(db)
+    skip = CLOSE_UNDONE if news else ()
 
     def later(sid, value):
         d = _at(value)
@@ -62,7 +66,8 @@ def last_touch(db, cards, tz=dt.timezone.utc):
             except (TypeError, ValueError):
                 pass
         for r in db.execute(f"SELECT suggestion_id,max(created_at) FROM decisions WHERE suggestion_id IN ({marks}) "
-                            f"AND source NOT IN ({','.join('?' * len(NOT_TOUCHES))}) GROUP BY suggestion_id", [*chunk, *NOT_TOUCHES]):
+                            f"AND source NOT IN ({','.join('?' * len(NOT_TOUCHES))}) AND choice NOT IN ({','.join('?' * len(skip))}) "
+                            'GROUP BY suggestion_id', [*chunk, *NOT_TOUCHES, *skip]):
             later(r[0], r[1])
         for r in db.execute(f"SELECT suggestion_id,max(created_at) FROM draft_edits WHERE suggestion_id IN ({marks}) AND source!='agent' "
                             'GROUP BY suggestion_id', chunk):
@@ -102,6 +107,37 @@ def due(db, stamp, skip=lambda row: False, tz=dt.timezone.utc):
             and not (r.get('due') and str(r['due'])[:10] >= today) and not skip(r)]
     touched = last_touch(db, rows, tz)
     return [r for r in rows if touched.get(r['id']) and current - touched[r['id']] >= dt.timedelta(days=DAYS)]
+
+
+def older(db, cards, stamp, tz=dt.timezone.utc):
+    """Older (docs/help/cards.md): each open to-do with nothing new for DAYS gets older: the time of its last news.
+    Its age runs from when it came in, a new message on it, the owner's own decision on it (a snooze too), an edit of
+    its draft, a Keep on its Still needed? and a snooze coming back; looking at it (an open) doesn't count. Left out, as Still needed? leaves
+    them out: urgent ones, ones with a date still ahead, ones that close by themselves at a set time, and repeating
+    ones. The dashboard keeps the rest of its exceptions (due soon, a send on its way) and groups them under Older."""
+    current = _at(stamp)
+    if current is None:
+        return
+    today = current.astimezone(tz).date().isoformat()
+    repeating = _repeating(db)
+    rows = [c for c in cards if c.get('status') in OPEN and c['id'] not in repeating and not c.get('urgent') and not c.get('expires_at')
+            and not (c.get('due') and str(c['due'])[:10] >= today)]
+    if not rows:
+        return
+    news = last_touch(db, rows, tz, news=True)
+    ids = [c['id'] for c in rows]
+    for n in range(0, len(ids), 400):
+        chunk, marks = ids[n:n + 400], ','.join('?' * min(400, len(ids) - n))
+        for r in db.execute(f"SELECT suggestion_id,max(at) FROM todo_moves WHERE reason='snooze_over' AND suggestion_id IN ({marks}) GROUP BY suggestion_id "
+                            f"UNION ALL SELECT ref,max(decided_at) FROM recap_items WHERE kind=? AND status='kept' AND ref IN ({marks}) GROUP BY ref",
+                            [*chunk, KIND, *chunk]):
+            d = _at(r[1])
+            if d and (news.get(r[0]) is None or d > news[r[0]]):
+                news[r[0]] = d
+    for c in rows:
+        since = news.get(c['id'])
+        if since and current - since >= dt.timedelta(days=DAYS):
+            c['older'] = since.isoformat()
 
 
 def annotate(db, cards, stamp, tz=dt.timezone.utc):

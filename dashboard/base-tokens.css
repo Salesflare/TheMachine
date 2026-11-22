@@ -88,8 +88,8 @@ html,body{overflow-anchor:none}
 [data-theme="light"] dialog{box-shadow:0 24px 60px -12px #3d375259}
 [data-theme="light"] dialog::backdrop{background:#3d375240}
 [data-theme="light"] #suggestion-stats .stats{background:#fffffff2}
-[data-theme="light"] #later-list,[data-theme="light"] #promises-list,[data-theme="light"] #waiting-list,[data-theme="light"] #finished-list{background:#ffffffbf}
-[data-theme="light"] #later-list>summary .count,[data-theme="light"] #promises-list>summary .count,[data-theme="light"] #waiting-list>summary .count,[data-theme="light"] #finished-list>summary .count{background:#3d37520f}
+[data-theme="light"] :is(#later-list,#promises-list,#waiting-list,#older-list,#finished-list){background:#ffffffbf}
+[data-theme="light"] :is(#later-list,#promises-list,#waiting-list,#older-list,#finished-list)>summary .count{background:#3d37520f}
 [data-theme="light"] .actions button.ghost,[data-theme="light"] .actions button.quiet{background:#3d375212}
 [data-theme="light"] .toast{background:#3d3752;color:#fff}
 [data-theme="light"] .toast.error{background:#a3401a}

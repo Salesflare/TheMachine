@@ -111,7 +111,7 @@ button.stat[aria-expanded="true"]::after{left:40%;right:40%;height:2px;border-ra
 /* Section heads: the serif, ink, with a quiet count. */
 .section-head{margin:var(--sp-6) 0 var(--sp-3);gap:var(--sp-2)}
 .section-head h2{font:var(--fw-heading) var(--fs-xl)/var(--lh-tight) var(--serif);letter-spacing:0;color:var(--text)}
-#later-list>summary,#promises-list>summary,#waiting-list>summary,#finished-list>summary{font:var(--fw-heading) var(--fs-lg)/var(--lh-tight) var(--serif);letter-spacing:0;color:var(--text)}
+:is(#later-list,#promises-list,#waiting-list,#older-list,#finished-list)>summary{font:var(--fw-heading) var(--fs-lg)/var(--lh-tight) var(--serif);letter-spacing:0;color:var(--text)}
 .section-head .count{font:var(--fw-medium) var(--fs-sm) var(--sans);color:var(--faint)}
 .section-head p{font-size:var(--fs-sm);color:var(--faint)}
 .day-head{font:var(--fw-medium) var(--fs-xs)/1.4 var(--sans);letter-spacing:0;text-transform:none;color:var(--faint)}
@@ -189,8 +189,8 @@ summary:hover{color:var(--text)}
 .hours-days button[aria-pressed="true"]{background:var(--c-accent-tint);border-color:color-mix(in srgb,var(--mint) 45%,transparent);color:var(--text);font-weight:var(--fw-strong)}
 
 /* Collapsed lists at the end: a hairline above, the serif head, no box. */
-#later-list,#promises-list,#waiting-list,#finished-list,[data-theme="light"] #later-list,[data-theme="light"] #promises-list,[data-theme="light"] #waiting-list,[data-theme="light"] #finished-list{background:transparent;box-shadow:none;border:0;border-top:1px solid var(--border);border-radius:0;padding:var(--sp-4) 0 0;margin-top:var(--sp-4)}
-#later-list>summary .count,#promises-list>summary .count,#waiting-list>summary .count,#finished-list>summary .count,[data-theme="light"] #later-list>summary .count,[data-theme="light"] #promises-list>summary .count,[data-theme="light"] #waiting-list>summary .count,[data-theme="light"] #finished-list>summary .count{font:var(--fw-medium) var(--fs-sm) var(--sans);background:transparent;color:var(--faint)}
+:is(#later-list,#promises-list,#waiting-list,#older-list,#finished-list),[data-theme="light"] :is(#later-list,#promises-list,#waiting-list,#older-list,#finished-list){background:transparent;box-shadow:none;border:0;border-top:1px solid var(--border);border-radius:0;padding:var(--sp-4) 0 0;margin-top:var(--sp-4)}
+:is(#later-list,#promises-list,#waiting-list,#older-list,#finished-list)>summary .count,[data-theme="light"] :is(#later-list,#promises-list,#waiting-list,#older-list,#finished-list)>summary .count{font:var(--fw-medium) var(--fs-sm) var(--sans);background:transparent;color:var(--faint)}
 
 /* Empty states: the mascot, a short serif line, a muted sentence; no dashed box. */
 .empty{border:1px solid var(--border);border-style:solid;background:transparent;box-shadow:none;border-radius:var(--r-lg);padding:var(--sp-5);gap:var(--sp-4);color:var(--muted)}
