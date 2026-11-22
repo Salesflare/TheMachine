@@ -38,7 +38,7 @@ const open=async({width=1440,height=900,scheme='light'}={},ready='#setup-card')=
  await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
  await context.addInitScript(()=>{try{sessionStorage.setItem('device-session',String(Date.now()-120000))}catch{}});
  const page=await context.newPage();page.on('pageerror',e=>errors.push(width+': '+e.message));
- await page.goto(base);await page.locator(ready).first().waitFor();await page.waitForTimeout(400);return {context,page}};
+ await page.goto(base);await page.locator(ready).first().waitFor();if(ready==='#setup-card')await page.waitForFunction(()=>document.querySelector('#setup-card [data-setup-open],#setup-card .setup-row'));return {context,page}};
 const look=page=>page.evaluate(()=>{const el=document.querySelector('#setup-card');
  return {quiet:el.classList.contains('quiet'),line:el.querySelector('[data-setup-open]')?.innerText.replace(/\s+/g,' ').trim()||'',
   rows:[...el.querySelectorAll('.setup-row')].map(r=>r.dataset.step),first:el.querySelector('.setup-row .setup-label')?.innerText.trim()||''}});
@@ -81,11 +81,11 @@ try{
 
  // The button goes to that connect; its × closes it for good, and the row it stood for comes back
  {setup={...FRESH,since:hoursAgo(3),nudge:NUDGE};todos=true;ending=null;const {context,page}=await open();
-  const hashes=[];await page.exposeFunction('sawHash',h=>hashes.push(h));await page.evaluate(()=>addEventListener('hashchange',e=>sawHash(new URL(e.newURL).hash)));
-  await page.locator('[data-setup-go="hint-nudge-whatsapp"]').click();await page.waitForTimeout(200);
-  assert.equal(hashes[0],'#connect=whatsapp');await context.close()}
+  await page.evaluate(()=>addEventListener('hashchange',e=>{window.sawIt??=new URL(e.newURL).hash}));
+  await page.locator('[data-setup-go="hint-nudge-whatsapp"]').click();
+  assert.equal(await (await page.waitForFunction(()=>window.sawIt)).jsonValue(),'#connect=whatsapp');await context.close()}
  {const {context,page}=await open();
-  await page.locator('[data-setup-dismiss="hint-nudge-whatsapp"]').click();await page.waitForTimeout(300);
+  await Promise.all([page.waitForResponse(r=>(r.request().postData()||'').includes('setup_dismiss')),page.locator('[data-setup-dismiss="hint-nudge-whatsapp"]').click()]);await page.waitForFunction(()=>!document.querySelector('[data-step="hint-nudge-whatsapp"]'));
   assert.deepEqual(posted.filter(p=>p.action==='setup_dismiss').map(p=>p.args.step),['hint-nudge-whatsapp']);
   const c=await look(page);assert.ok(!c.rows.includes('hint-nudge-whatsapp'));assert.ok(c.rows.includes('whatsapp'),c.rows.join());
   await context.close()}

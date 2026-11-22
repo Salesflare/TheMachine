@@ -26,7 +26,7 @@ import i18n
 import mail_senders
 import own_addresses
 import timeutil
-from machine import services
+from machine import kinds, services
 from machine.sources.mail_senders import HINT_MAILS, sender_domain_in
 from machine.sources.suggest import COUNT_UP_TO, suggestions
 
@@ -34,15 +34,14 @@ DAYS = 14             # the owner's first days, and how far back a failed connec
 QUIET_TODOS = 1       # a day with more new to-dos than this needs no suggestion
 ENOUGH = HINT_MAILS   # emails before WhatsApp counts as a signal: the setup hints' bar
 MAILS_READ = 400      # the latest emails looked through for WhatsApp
-MAIL_KINDS = ('gmail.message', 'ms_graph.message', 'outlook.message', 'imap.message')
+MAIL_KINDS = tuple(k for k in kinds.of(family=kinds.MAIL) if kinds.KINDS[k]['service'] in services.of(group=services.MAIL))
 WHATSAPP = re.compile(r'https?://(?:wa\.me/|chat\.whatsapp\.com/|api\.whatsapp\.com/send)|\bwhatsapp\b', re.I)
 WHATSAPP_SENDERS = ('whatsapp.com', 'whatsapp.net', 'facebookmail.com', 'facebook.com', 'meta.com')
 # The sources a failed connect may be tried again for, and the setup to-do row the suggestion takes the place of
 REPLACES = {'whatsapp': 'whatsapp', 'account': 'account'}
 SOURCE = re.compile(r'[a-z][a-z0-9_]{1,30}')
 # + Add opens these straight in their own sign-in on a hosted Machine (#connect=<sign-in>); anything else: + Add
-SIGNIN_LINK = {'whatsapp': 'whatsapp', 'slack': 'slack', 'teams': 'microsoft_teams', 'zoom': 'zoom', 'github': 'github',
-               'stripe': 'stripe', 'intercom': 'intercom', 'notion': 'notion', 'linear': 'linear', 'trello': 'trello'}
+SIGNIN_LINK = {**services.field('signin'), 'whatsapp': 'whatsapp'}  # WhatsApp links by its QR code
 # Where an own address was found (own_addresses' sources) that says its mail already comes in through a connected mailbox
 COMES_IN = {'alias', 'received', 'sent', 'sendas'}
 

@@ -42,7 +42,9 @@ Rows show only where they make sense. The × on a row closes it on every device.
 
 After your first day, it folds into one quiet line above **For you**, like "2 steps left · Continue". Tap it to open the to-do, and tap the arrow to fold it again.
 
-In your first two weeks, on a day with at most one new to-do, one suggestion with its reason can lead the to-do, like "Connect WhatsApp? 5 emails mention it." or "Try WhatsApp again? The code ran out." The folded line then shows it too. It takes the place of that step's usual row. It comes only from what The Machine already has: links to WhatsApp or mentions of it in mail from people, an address of yours that no connected mailbox brings in, mail from Slack or Teams meetings, and a connect that didn't finish. It says a count at most, never what a message says or who sent it. There is one at a time, at most one new one a day, and never by email or notification. Its × closes it for good.
+In your first two weeks, on a day with at most one new to-do, one suggestion with its reason can lead the to-do, like "Connect WhatsApp? 5 emails mention it." or "Try WhatsApp again? The code ran out." The folded line then shows it too. It takes the place of that step's usual row.
+
+It comes only from what The Machine already has: links to WhatsApp or mentions of it in mail from people, an address of yours that no connected mailbox brings in, mail from Slack or Teams meetings, and a connect that didn't finish. It says a count at most, never what a message says or who sent it. There is one at a time, at most one new one a day, and never by email or notification. Its × closes it for good.
 
 **Undo** or **Show 1 hidden** brings a row back. To bring back the whole to-do, use **Settings**, **General**, **Setup to-do**. **Settings**, **General**, **This device** has the same controls, and **Settings**, **Apps** always has the phone app.
 
