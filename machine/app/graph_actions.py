@@ -34,7 +34,8 @@ from machine.config import LOG, WORKSPACE
 from machine.sources.calendar import calendar_room, calendar_rooms
 from machine.store.cards import source_line, source_text
 from machine.store.facts import FILLER, fact_words, merge_originals, NEGATIONS, replaced_facts
-from machine.store.review import own_message
+from machine.sources.gmail import machine_notice, MAIL_KINDS
+from machine.store.review import bulk_kind, own_message
 from machine.store.views import address_names
 from machine.text import clamp
 from machine.web.handler import event_glance
@@ -56,6 +57,34 @@ GRAPH_RETRY_SECONDS = 5   # a build that met edits on the way: the next try
 GRAPH_LOCK_AFTER = 1800   # this long without a published build: the last try holds the write lock (graph.build lock_last)
 GRAPH_SLOW_MS = 10_000    # a build that takes this long logs its passes' times (slow_build_line)
 GRAPH_KEEP_SECONDS = 3600  # the graph worker skips a build with nothing changed (graph_setup.unchanged) for this long at most
+RELATED_WORDS = 16         # words of a to-do's own title and its evidence's titles a words-based "Possibly related" asks for
+RELATED_TITLES = 3         # evidence titles (newest first) those words come from
+RELATED_SKIP_WORDS = frozenset({'re', 'fw', 'fwd', 'aw', 'wg', 'tr', 'antw'})  # reply and forward prefixes
+
+
+def related_query(title, titles=()):
+    """The words a words-based "Possibly related" searches for: the to-do's title first, then its evidence's titles,
+    each word once, without a question's filler words (embeddings.QUESTION_WORDS) and reply or forward prefixes."""
+    words, seen = [], set()
+    for word in re.findall(r'\w+', ' '.join([title or '', *titles])):
+        key = word.casefold()
+        if len(key) > 2 and not key.isdigit() and key not in seen and key not in embeddings.QUESTION_WORDS and key not in RELATED_SKIP_WORDS:
+            seen.add(key)
+            words.append(word)
+    return ' '.join(words[:RELATED_WORDS])
+
+
+def related_noise(row):
+    """A signal that shares a task's words and is about nothing: bulk mail (bulk_kind), mail a program sent
+    (mail_senders.automated) or The Machine's own notice (machine_notice). Only a words-based list leaves it out."""
+    try:
+        metadata = row['metadata'] if isinstance(row['metadata'], dict) else json.loads(row['metadata'] or '{}')
+    except ValueError:
+        metadata = {}
+    if not isinstance(metadata, dict):
+        return False
+    return bool(bulk_kind(row['kind'], metadata, row['title']) or machine_notice(row['kind'], metadata)
+                or row['kind'] in MAIL_KINDS and mail_senders.automated(metadata))
 
 
 def _plain(value):
@@ -837,17 +866,34 @@ class GraphActionsApp:
     def related_lines(self, suggestion_id, limit=8):
         """A short "Possibly related" list for a preparation: the task's own accounts, not its evidence."""
         with self.store.connect() as db:
-            row=db.execute('SELECT account_ids,event_ids FROM suggestions WHERE id=?',(suggestion_id,)).fetchone()
+            row=db.execute('SELECT title,account_ids,event_ids FROM suggestions WHERE id=?',(suggestion_id,)).fetchone()
+        if not row:return ''
         accounts,ids=json.loads(row['account_ids'] or '[]'),json.loads(row['event_ids'] or '[]')
         if not accounts or not ids:return ''
-        found,_=self.related(accounts,ids,'',limit,signals_only=True)  # a preparation: never history
+        found,semantic=self.related(accounts,ids,'',limit,signals_only=True)  # a preparation: never history
+        if not semantic:found=self.related_by_words(accounts,ids,row['title'],limit)  # meaning off, down or slow
         rows={r['id']:r for r in self.store.events(accounts,event_ids=[i for i,_ in found])} if found else {}
         # source_line skips the owner's own to-dos (owner.card: the card says "Added by you"); here each one names what it is
         where=lambda r:(source_line([r]) or 'Source: '+source_text(r))[8:]
         part=embeddings.starts(found)  # a long one that matched further on: where to read it
         lines=[f"- {i} ({rows[i]['account_id']}) {where(rows[i])} · {clamp(' '.join(rows[i]['title'].split()),100)}"+(f' · matches at body_offset {part[i]}' if i in part else '') for i,_ in found if i in rows]
         for (i,score),line in zip([f for f in found if f[0] in rows],lines):memory_use.note('signal',i,line,'closeness',source='signal',at=rows[i]['occurred_at'],score=score)
-        return ('\n\nPossibly related (found by meaning in this task\'s accounts; read any that matter with events, its account and event_ids):\n'+'\n'.join(lines)) if lines else ''
+        how='by meaning' if semantic else 'by words'
+        return (f'\n\nPossibly related (found {how} in this task\'s accounts; read any that matter with events, its account and event_ids):\n'+'\n'.join(lines)) if lines else ''
+
+    def related_by_words(self, accounts, event_ids, title, limit=8):
+        """[(event_id, None)] for a preparation's "Possibly related" when search by meaning is off, down or slow: keyword
+        matches (embeddings.fts_ids, bm25) on the to-do's title and its evidence's titles, in its own accounts, signals
+        only, never its evidence, and without bulk mail, mail a program sent or The Machine's own notices (related_noise)."""
+        skip={int(i) for i in event_ids}
+        with self.store.connect() as db:
+            titles=[r[0] for r in db.execute('SELECT title FROM events WHERE id IN ('+','.join('?'*len(skip))+') AND deleted=0 '
+                                               'ORDER BY occurred_at DESC LIMIT ?',(*skip,RELATED_TITLES))] if skip else []
+            query=related_query(title,titles)
+            if not query:return []
+            hits=[i for i in embeddings.fts_ids(db,accounts,query,limit*3+len(skip),signals_only=True) if i not in skip]
+            rows={r['id']:r for r in db.execute('SELECT id,kind,title,metadata FROM events WHERE id IN ('+','.join('?'*len(hits))+')',hits)} if hits else {}
+        return [(i,None) for i in hits if i in rows and not related_noise(rows[i])][:limit]
 
     def related(self, accounts, event_ids=(), query='', limit=8, exclude=(), timeout=30, signals_only=False):
         """([(event_id, similarity)], semantic) within the given accounts. With the embedding server

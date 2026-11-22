@@ -15,7 +15,6 @@ import browser_login
 import chat_files
 import chat_model
 import corrections
-import embeddings
 import follow_ups
 import github_route
 import i18n
@@ -674,9 +673,8 @@ class PreparationApp:
                 if getattr(self, 'fleet', None):
                     try:request['message']+=memory.fit('team',len(request['message']),1000)
                     except Exception as error:LOG.error('fleet lines error=%s',type(error).__name__)
-                if embeddings.settings(self.config):
-                    try:request['message']+=memory.fit('related',len(request['message']),500)
-                    except Exception as error:LOG.error('related error=%s at=%s',type(error).__name__,fault_where(error))
+                try:request['message']+=memory.fit('related',len(request['message']),500)  # by meaning, or by words without it
+                except Exception as error:LOG.error('related error=%s at=%s',type(error).__name__,fault_where(error))
                 if getattr(self,'skills',None) and not job.get('finish'):
                     try:  # "There's a skill for this": an installed one that isn't ready, or one on ClawHub (the agent can search it)
                         lines=self.skills.hint_prompt(clawhub=True)

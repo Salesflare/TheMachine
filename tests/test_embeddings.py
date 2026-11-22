@@ -6,6 +6,7 @@ import zlib
 from pathlib import Path
 from unittest.mock import patch
 import embeddings
+import machine.app.graph_actions as gm
 import machine.config as machine_config
 import machine.faults as machine_faults
 import machine.main as machine_main
@@ -358,7 +359,7 @@ class Embeddings(unittest.TestCase):
         self.assertEqual(emb.settings({'embeddings': SETTINGS}), SETTINGS)  # no `enabled` key: on
         self.assertIsNone(emb.settings({'embeddings': {}}))
 
-    def test_preparation_lists_related_signals_only_when_on(self):
+    def test_preparation_lists_related_signals_by_meaning_or_by_words(self):
         one = self.ids('work', '1')
         sid = self.store.suggest('invoice', 'Pay the September invoice', 'I can check it.', [one])['id']
         with self.store.connect() as db:
@@ -366,7 +367,10 @@ class Embeddings(unittest.TestCase):
         self.app.config = {'accounts': [{'id': 'work'}]}
         self.store.decide(sid, 'accept', '', 'click-1', 'telegram')
         calls = []; self.app.preparation_step(lambda r: calls.append(r) or {'status': 'admitted'})
-        self.assertNotIn('Possibly related', next(c['message'] for c in calls if c.get('message')))
+        related = next(c['message'] for c in calls if c.get('message')).split('Possibly related', 1)[1]
+        self.assertIn("(found by words in this task's accounts;", related)  # meaning off: by words, and it says so
+        self.assertIn(f"- {self.ids('work', '2')} (work) email from Ann Example", related)
+        self.assertNotIn(f'- {one} ', related); self.assertNotIn(f"- {self.ids('home', '5')} ", related)
         self.calls.assert_not_called()
         with self.store.connect() as db:
             db.execute('DELETE FROM preparation_runs'); db.execute('DELETE FROM preparations')
@@ -376,9 +380,35 @@ class Embeddings(unittest.TestCase):
         calls = []; self.app.preparation_step(lambda r: calls.append(r) or {'status': 'admitted'})
         message = next(c['message'] for c in calls if c.get('message'))
         related = message.split('Possibly related', 1)[1]
+        self.assertIn("(found by meaning in this task's accounts;", related)
         self.assertIn(f"- {self.ids('work', '2')} (work) email from Ann Example", related)
         self.assertIn('Invoice reminder', related)
         self.assertNotIn(f'- {one} ', related); self.assertNotIn(f"- {self.ids('home', '5')} ", related)
+
+    def test_related_by_words_with_meaning_off_or_down(self):
+        """Search by meaning off (most hosted Machines) or its server down: the list comes from the to-do's own words,
+        labeled as such, in its accounts, without its evidence, history, bulk mail, mail a program sent or The
+        Machine's own notices."""
+        promo = {'from': 'Shop <deals@shop.example>', 'labels': ['INBOX', 'CATEGORY_PROMOTIONS']}
+        notice = {'from': 'The Machine <hello@themachine.computer>', 'machine_notice': True}
+        robot = {'from': 'Billing <billing@vendor.example>', 'precedence': 'bulk'}
+        self.store.commit_page('work', {}, [event('6', 'September invoice sale', 'Invoice templates, 50% off', metadata=promo),
+                                            event('7', 'Still waiting: pay the September invoice', 'From your Machine', metadata=notice),
+                                            event('8', 'Your September invoice', 'Invoice attached', metadata=robot),
+                                            event('9', 'Last September invoice', 'The September invoice from a year ago')])
+        with self.store.connect() as db:
+            db.execute("UPDATE events SET history=1 WHERE account_id='work' AND source_id='9'")
+        one, two = self.ids('work', '1'), self.ids('work', '2')
+        sid = self.store.suggest('invoice', 'Pay the September invoice', 'I can check it.', [one])['id']
+        for config in ({'accounts': [{'id': 'work'}]}, {'accounts': [{'id': 'work'}], 'embeddings': SETTINGS}):
+            self.app.config = config
+            self.llama(up=False)  # with embeddings set up: the server fails, so words answer
+            lines = self.app.related_lines(sid)
+            self.assertIn("Possibly related (found by words in this task's accounts;", lines)
+            listed = re.findall(r'^- (\d+) ', lines, re.M)
+            self.assertEqual(listed, [str(two)])  # not its evidence, history, the other account, or the noise
+        self.assertEqual(gm.related_query('Re: Pay the September invoice', ['Fwd: Invoice overdue', 'Invoice 2026']),
+                         'Pay September invoice overdue')
 
 
     def llama(self, refuse=lambda text: False, up=True):

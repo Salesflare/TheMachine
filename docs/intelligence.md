@@ -571,6 +571,10 @@ differently, the same topic in another source, an answer that already came in.
   names.
 - A Do it job message ends with a short "Possibly related" list from the task's own accounts when there are close
   matches.
+- With search by meaning off, down or slower than its timeout, that list still comes, from a keyword search of the
+  to-do's title and its evidence's titles in the same accounts (signals only, never its own evidence, without bulk
+  mail, mail a program sent or The Machine's own notices). Its heading then says "found by words" instead of "found
+  by meaning", so the run knows how close the matches are.
 - **Nothing leaves your Machine:** signal text goes only to an embedding server you run on `127.0.0.1`, never to a model
   provider.
 
