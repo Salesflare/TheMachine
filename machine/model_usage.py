@@ -241,6 +241,13 @@ def model_resets(config, reply, server_factory=None):
             'allowed': limits.get('ordinaryUsageAllowed') if isinstance(limits.get('ordinaryUsageAllowed'), bool) else None}
 
 
+def reset_setup(config):
+    """Where the owner of a hosted Machine turns the usage limit resets on: its setup page's Codex step, where the
+    Codex CLI on the server gets its own device sign-in (OpenClaw's sign-in can't be handed to it). None elsewhere."""
+    manage = str(config.get('manage_url') or '')
+    return manage.split('#')[0] + '#codex' if manage.startswith('https://') and config.get('codex') is not False else None
+
+
 def model_status(config, reply, usage, resets, checked_at=None, claude_plan=None):
     """What Settings shows about the model: which one, through which sign-in and plan, how much of each limit is
     used, whether a limit is reached and when it lifts, and the resets. No email, no account ids, no tokens.
@@ -265,6 +272,7 @@ def model_status(config, reply, usage, resets, checked_at=None, claude_plan=None
             'windows': windows, 'limit_reached': reached,
             'limit_resets_at': max((w['reset'] for w in full if w['reset']), default=None) if reached else None,
             'resets': resets, 'can_reset': bool(resets and resets['available'] > 0),
+            'reset_setup': reset_setup(config) if entry and entry.get('accountEmail') and resets is None else None,
             'usage_page': CHATGPT_USAGE_PAGE if entry else None, 'checked_at': checked_at or now()}
 
 

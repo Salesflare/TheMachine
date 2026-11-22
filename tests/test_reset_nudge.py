@@ -85,6 +85,20 @@ class Nudge(unittest.TestCase):
         self.app.fallback_covers = lambda: {'model': 'other/model'}
         self.assertIsNone(self.app.reset_nudge())
 
+    def test_a_hosted_machine_without_codex_signed_in_offers_to_turn_resets_on(self):
+        setup = 'https://app.example.com/setup#codex'
+        self.app.model_status = {'can_reset': False, 'resets': None, 'reset_setup': setup, 'limit_reached': False}
+        reset = int(time.time()) + 3 * DAY
+        self.app.model_usage = usage(week=b.WEEK_CAP - 1, week_reset=reset)
+        self.assertIsNone(self.app.reset_nudge())
+        self.app.model_usage = usage(week=92, week_reset=reset)
+        self.assertEqual(self.app.reset_nudge(), {'window': 'week', 'used': 92, 'until': reset, 'name': 'ChatGPT',
+                                                  'resets': None, 'reached': False, 'setup': setup})
+        self.app.model_usage = usage(week=100, week_reset=reset)  # reached: the same way to turn them on
+        self.assertEqual((self.app.reset_nudge()['reached'], self.app.reset_nudge()['setup']), (True, setup))
+        self.app.model_status = {**self.app.model_status, 'reset_setup': None}  # a self-hosted Machine: nothing new
+        self.assertIsNone(self.app.reset_nudge())
+
 
 if __name__ == '__main__':
     unittest.main()

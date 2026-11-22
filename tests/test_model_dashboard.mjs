@@ -43,6 +43,8 @@ try{
  assert.match(panel,/Weekly limit: 40% used · resets in 3d 1h/);
  assert.match(panel,/ChatGPT limit reached, resets at/);
  assert.match(panel,/Resets available: 2/);
+ assert.equal(await page.locator('#model-panel [data-model-reset]').count(),1,'one Use a reset: in the resets row, not after the limit note');
+ assert.doesNotMatch(await page.locator('#model-panel .limit-note').textContent(),/·/,'no dangling separator');
  assert.equal(await page.locator('#model-panel progress').count(),2);
  assert.ok(await page.evaluate(()=>document.querySelector('#model-panel').getBoundingClientRect().right<=innerWidth));
  // Canceling the confirm sends nothing.
@@ -83,6 +85,14 @@ try{
  const runs=await page.locator('#review-runs').textContent();
  assert.match(runs,/ChatGPT limit reached, resets at/);
  assert.equal(await page.locator('#review-runs a',{hasText:'See resets in ChatGPT'}).count(),1);
+ // A hosted Machine whose Codex isn't signed in to the same account: Turn on resets, to its setup page's Codex step.
+ status={...status,reset_setup:'https://app.example.com/setup#codex'};await page.evaluate(()=>refresh());
+ await page.locator('#review-runs a',{hasText:'Turn on resets'}).waitFor({state:'attached'});
+ assert.equal(await page.locator('#review-runs a',{hasText:'See resets in ChatGPT'}).count(),0);
+ await page.evaluate(()=>{for(const x of document.querySelectorAll('main>section'))x.hidden=x.id!=='settings'});
+ await page.locator('#model-panel',{hasText:'Sign in to Codex on your Machine to see and use them here.'}).waitFor();
+ assert.deepEqual(await page.locator('#model-panel a',{hasText:'Turn on resets'}).first().evaluate(a=>[a.getAttribute('href'),a.target]),['https://app.example.com/setup#codex','']);
+ assert.equal(await page.locator('#model-panel a',{hasText:'Turn on resets'}).count(),1,'once, in the resets row');
  // A Claude plan through Claude Code says so, and offers no ChatGPT reset.
  status={model:'anthropic/claude-sonnet-9-1',provider:'anthropic',chatgpt:false,claude_plan:true,windows:[],resets:null,can_reset:false,usage_page:null,checked_at:new Date().toISOString()};
  await page.evaluate(()=>refresh());

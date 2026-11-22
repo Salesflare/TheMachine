@@ -137,16 +137,20 @@ class ModelPacingApp:
         back (model_budget.held_back), or a limit is reached, and the sign-in has resets left (model_status can_reset).
         {'window': '5h'|'week'|None, 'used', 'until', 'name', 'resets', 'reached'}, else None. Only for the plan the
         resets are for (today ChatGPT's, through the Codex CLI), and never while a working fallback carries the work.
-        Never uses a reset itself: its button is Settings' own Use a reset, with its confirm."""
+        Never uses a reset itself: its button is Settings' own Use a reset, with its confirm. On a hosted Machine whose
+        Codex CLI isn't signed in to that account yet, 'resets' is None and 'setup' links to where it gets signed in
+        (model_status reset_setup)."""
         status = getattr(self, 'model_status', None) or {}
-        if not status.get('can_reset') or model_budget.provider_of(openclaw_model(self.config)) != 'openai' or self.fallback_covers():
+        setup = None if status.get('can_reset') else status.get('reset_setup')
+        if not (status.get('can_reset') or setup) or model_budget.provider_of(openclaw_model(self.config)) != 'openai' or self.fallback_covers():
             return None
         found = model_budget.held_back(self.paced_usage())
         reached = bool(self.model_pause())
         if not found and not reached:
             return None
         return {'window': (found or {}).get('window'), 'used': (found or {}).get('used'), 'until': (found or {}).get('until'),
-                'name': self.model_name(), 'resets': status['resets']['available'], 'reached': reached}
+                'name': self.model_name(), 'resets': None if setup else status['resets']['available'], 'reached': reached,
+                **({'setup': setup} if setup else {})}
 
     def model_name(self):
         """The sign-in's name for the owner: Claude, ChatGPT, or None when it is neither."""

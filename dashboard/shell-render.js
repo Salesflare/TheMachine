@@ -119,11 +119,8 @@ $('#review-summary').textContent=t('{}. {}',reviewCounts,reviewNext).trim();
 if(connIn)tabDraw('health','set-aside',()=>renderSetAside(state.review_health||{}));
 const reviewError=v=>({ai_connection_reset:'The AI connection dropped.',ai_connection_closed:'The AI connection closed.',ai_timeout:'The AI request timed out.',ai_request_failed:'The AI request failed.',review_not_finished:'The run ended before saving its check.',run_interrupted:'The run stopped before saving its check.'}[v]||'The check did not save a conclusion.');
 const runFailure=r=>({model_idle_timeout:'The AI stopped responding.',bridge_error:'A tool connection failed.',rate_limited:'The AI service asked us to wait.',usage_limited:'The AI usage limit was reached.',connection_error:'Briefly interrupted.',runtime_timeout:'The run timed out.',runtime_aborted:'The run was stopped.',runtime_lost:'The run could not be found after recovery.',runtime_error:'The runtime reported an error.'}[r.error||r.last_error]||(['error','aborted','lost','timed_out'].includes(r.status)?'The runtime reported a failure; its original explanation was not retained.':''));
-// limitNote and resetAction as nodes, for the runs list
-const resetActionNode=m=>{if(!m)return '';if(m.can_reset)return make('button',{type:'button',class:'ghost','data-model-reset':''},'Use a reset');
- const href=safeURL(m.usage_page);return href?make('a',{class:'head-link',href,target:'_blank',rel:'noopener'},m.resets?'Open ChatGPT':'See resets in ChatGPT'):''};
-const limitNoteNode=m=>{if(!m?.limit_reached)return '';const r=resetActionNode(m);
- return make('p',{class:'limit-note'},make('strong',{},t(m.chatgpt?'ChatGPT limit reached':'Model limit reached')),(m.limit_resets_at?t(', resets at {}',clockAt(m.limit_resets_at)):'')+(r?' · ':''),r)};
+// limitNote as a node, for the runs list
+const limitNoteNode=m=>{const d=make('div');setHTML(d,limitNote(m));return d.firstChild||''};
 tabDraw('health','runs',()=>$('#review-runs').replaceChildren(...clipNodes('review-runs',clipRows((state.review_runs||[]).filter(r=>!REVIEW_ACTIVE.includes(r.status)&&!(r.review_saved&&!runFailure(r))),r=>{
 const active=['starting','running','recovering'].includes(r.status),saved=r.review_saved;
 const label=saved?'Check saved':active?'In progress':r.pending_count?'Retry needed':r.status==='ok'?'Finished':'Run ended';

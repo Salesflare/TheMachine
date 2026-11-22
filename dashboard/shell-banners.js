@@ -5,8 +5,9 @@ const untilText=t=>{let s=Math.max(60,t-Date.now()/1000|0),d=s/86400|0,h=s%86400
 const clockAt=t=>{const r=new Date(t*1000),c=fmtHM(r);return t-Date.now()/1000>86400?`${localeDate(r,DL,{weekday:'short'})} ${c}`:c};
 const windowLabel=l=>['Week','168h','7d'].includes(l)?t('Weekly limit'):['Day','24h'].includes(l)?t('Daily limit'):/^\d+h$/.test(l)?t('{}-hour limit',parseInt(l)):l;
 function resetAction(m){if(!m)return '';if(m.can_reset)return html`<button type="button" class="ghost" data-model-reset>Use a reset</button>`;
- const href=safeURL(m.usage_page);  // only a web address, never javascript:
- return href?html`<a class="head-link" href="${href}" target="_blank" rel="noopener">${m.resets?'Open ChatGPT':'See resets in ChatGPT'}</a>`:''}
+ // reset_setup: a hosted Machine's setup page, where its Codex CLI signs in to read and use them (model_usage.reset_setup)
+ const on=safeURL(m.reset_setup),href=safeURL(m.usage_page);  // only a web address, never javascript:
+ return on?html`<a class="head-link" href="${on}">Turn on resets</a>`:href?html`<a class="head-link" href="${href}" target="_blank" rel="noopener">${m.resets?'Open ChatGPT':'See resets in ChatGPT'}</a>`:''}
 // The banner for a usage limit reached (state.model_pause: window '5h', 'week' or 'limit', until, name); gone when it is null.
 // `fallback`: a working fallback model answers meanwhile (assistant.py fallback_covers), so nothing waits: one short line.
 const pauseWhen=until=>{const r=+until>Date.now()/1000?new Date(until*1000):null;return r?(r.toDateString()===new Date().toDateString()?fmtHM(r):localeDate(r,DL,{weekday:'short'})+' '+fmtHM(r)):''};
@@ -58,7 +59,8 @@ function renderLimitBanner(){const b=$('#limit-banner');if(!b)return;const p=sta
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-review-now]');if(!b)return;b.disabled=true;
  try{await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'review_now',args:{}})});
   state.review_pause=null;renderLimitBanner();notice(t('A check starts in a moment.'))}catch(err){errCaught(err);b.disabled=false;notice(err.message,true)}});
-function limitNote(m){if(!m?.limit_reached)return '';return html`<p class="limit-note"><strong>${t(m.chatgpt?'ChatGPT limit reached':'Model limit reached')}</strong>${m.limit_resets_at?t(', resets at {}',clockAt(m.limit_resets_at)):''}${resetAction(m)?html` · ${resetAction(m)}`:''}</p>`}
+// `bare`: no reset action (Settings shows it once, in its Usage limit resets row)
+function limitNote(m,bare){if(!m?.limit_reached)return '';const a=bare?'':resetAction(m);return html`<p class="limit-note"><strong>${t(m.chatgpt?'ChatGPT limit reached':'Model limit reached')}</strong>${m.limit_resets_at?t(', resets at {}',clockAt(m.limit_resets_at)):''}${a?html` · ${a}`:''}</p>`}
 // A hosted Machine (it has an account): Report a bug (help-panel.js) and Support access (settings-support.js) go through its account
 const bugHosted=()=>!!state.manage_url;
 // Help before its part is in (dashboard_parts.LAZY): it loads, then opens; help-panel.js sets its own click once there

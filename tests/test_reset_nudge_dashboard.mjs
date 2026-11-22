@@ -44,6 +44,16 @@ try{
   assert.equal(r.text,'2 resets left.');
   assert.equal(await show(null),null,'nothing without a nudge');
   assert.equal(await show({...week,resets:0}),null,'nothing new without resets');
+  // a hosted Machine whose Codex isn't signed in yet: no count, Turn on resets to its setup page's Codex step
+  const setup='https://app.example.com/setup#codex';
+  r=await show({...week,resets:null,setup});
+  assert.equal(r.text,'ChatGPT weekly limit 92% used. Preparing is slowed.');
+  assert.ok(!r.wide,`${width}: no sideways scroll`);
+  assert.deepEqual(await line.locator('a').evaluate(a=>[a.textContent,a.getAttribute('href'),a.target]),['Turn on resets',setup,'']);
+  assert.equal(await line.locator('[data-model-reset]').count(),0);
+  assert.equal((await show({...week,resets:null,setup,reached:true})).text,'','reached: the banner above says it, the link stays');
+  assert.equal(await line.locator('a').innerText(),'Turn on resets');
+  assert.equal(await show({...week,resets:null,setup:'javascript:alert(1)'}),null,'only a web address');
   // Use a reset is Settings' own: its confirm first, never a reset on its own
   await show(week);
   const asked=new Promise(r=>page.once('dialog',d=>{r(d.message());d.dismiss()}));
