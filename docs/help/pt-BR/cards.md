@@ -5,7 +5,7 @@ summary: Uma tarefa para cada coisa que precisa de você, pronta para receber se
 covers: tab:inbox
 code: dashboard.html, assistant.py
 order: 1
-translated: c54b334f5764bdf9
+translated: e7e5d78b3291e556
 ---
 Sua Machine lê tudo o que chega e cria uma tarefa só quando algo precisa de você. Uma tarefa por assunto, mesmo que envolva várias mensagens.
 
@@ -13,16 +13,17 @@ Sua Machine lê tudo o que chega e cria uma tarefa só quando algo precisa de vo
 
 A página **Tarefas** organiza tudo:
 
-- **Feito agora**: no topo, aparece uma última etapa que você confirmou, como o envio de um formulário ou a resolução de um problema enquanto você estava ausente. Ela fica lá até você tocar em **Entendi**, por no máximo um dia, e também aparece no seu celular.
-- **Para você**: tudo o que está esperando por você, começando pelo mais urgente. Cada tarefa mostra **Preparada** (o trabalho está pronto, e **Fazer** ou **Enviar** conclui a ação), **Precisa de você** (primeiro, ela precisa da sua decisão ou resposta), **Preparando…** (sua Machine está trabalhando nela) ou **Para ler** (um resumo ou informe, sem nada para decidir).
+- **Feito agora**: no topo, uma última etapa que você confirmou, como um formulário ou uma issue, foi concluída enquanto você estava ausente. Ela fica lá até você tocar em **Entendi**, por no máximo um dia, e também aparece no seu celular.
+- **Para você**: tudo o que está esperando por você, começando pelo mais urgente. Cada tarefa mostra **Preparada** (um rascunho ou resultado está pronto, e **Fazer** ou **Enviar** conclui a ação), **Precisa de você** (primeiro, ela precisa da sua decisão ou resposta; quando o trabalho parou em algo que só você tem, como uma informação, um login ou uma escolha, uma linha abaixo do título diz o quê), **Preparando…** (sua Machine está trabalhando nela) ou **Para ler** (um resumo ou informe, sem nada para decidir).
+- **Mais antigas**: tarefas recolhidas sem nada novo há uma semana (veja abaixo).
 - **Aguardando outras pessoas**: tarefas recolhidas em que a próxima etapa depende de outra pessoa (veja abaixo).
 - **Volta mais tarde**: tarefas adiadas e tarefas sem resposta a **Ainda precisa?** (veja abaixo).
 - **Promessas**: o que você prometeu e o que outras pessoas prometeram a você. Veja [Promessas](promises.md).
 - **Feito / descartado**: todas as tarefas concluídas, começando pela mais recente, com o horário em que foram concluídas, como "Concluída há 5 minutos". Tarefas que parecem já estar concluídas aparecem como **Parece feito**.
 
-Depois que você envia algo, uma nota curta informa para onde a tarefa foi, como "Enviado. Movido para Feito." ou "Enviado. Movido para Mais tarde até seg.". **Abrir** leva você até ela. A pesquisa encontra tarefas pelo título ou por quem as recebeu, inclusive em Mais tarde e Feito.
+Depois que você envia algo, uma nota curta informa para onde a tarefa foi, como "Enviado. Movido para Feito." ou "Enviado. Movido para Depois até seg.". Uma resposta que só promete o trabalho, como "Envio até terça", mantém a tarefa aberta: "Enviado. Mantida aberta." **Abrir** leva você até ela. A pesquisa encontra tarefas pelo título ou por quem as recebeu, inclusive em Depois e Feito.
 
-**Para você** mostra primeiro o que está atrasado ou vence até amanhã, depois as perguntas da sua Fleet, em seguida os acompanhamentos de um quadro e, por fim, o restante. Em cada grupo, as mais recentes aparecem primeiro. A tarefa mantém o lugar enquanto sua Machine a prepara e quando ela é concluída: só o status muda. Nos outros grupos abertos, o que está atrasado ou vence até amanhã aparece primeiro, e o restante vem por ordem de chegada, começando pelo mais recente. A barra lateral mantém a mesma ordem.
+**Para você** mostra primeiro o que está atrasado ou vence até amanhã, depois as perguntas do seu Fleet, em seguida os follow-ups de um quadro e, por fim, o restante. Em cada grupo, as mais recentes aparecem primeiro. A tarefa mantém o lugar enquanto sua Machine a prepara e quando ela é concluída: só o status muda. Nos outros grupos abertos, o que está atrasado ou vence até amanhã aparece primeiro, e o restante vem por ordem de chegada, começando pelo mais recente. A barra lateral mantém a mesma ordem.
 
 **Parece feito** significa que sua Machine percebeu que a tarefa foi concluída, como "PR #3451 merged", mas ela ainda não foi encerrada. **Reabrir** coloca a tarefa de volta na sua lista, e sua Machine aprende com isso. Essas tarefas nunca aparecem como atrasadas. Depois de um dia, ela é encerrada automaticamente, com a opção **Desfazer**. Uma tarefa que você já resolveu por conta própria, como respondendo no Gmail ou no Slack, também é encerrada automaticamente.
 
@@ -31,6 +32,10 @@ Quando uma mensagem vem de um endereço que só parece pertencer a alguém que v
 Uma tarefa que ainda depende de outra pessoa, como uma revisão ou resposta, indica a etapa em **Aguardando:**. Ela fica em **Aguardando outras pessoas**, recolhida acima de Volta mais tarde, até uma nova mensagem trazê-la de volta. O mesmo acontece depois que você envia uma pergunta: a tarefa volta na manhã anterior ao prazo, no próprio prazo se ele for mais tarde hoje, ou na manhã seguinte se o prazo já tiver passado. Ela informa quem ainda está sendo aguardado.
 
 Quando a tarefa depende de algo que outra pessoa vai entregar, como um contrato assinado, **Detalhes** mostra isso em **Concluído quando**. Enviar a sua parte não encerra a tarefa: ela fica em **Aguardando outras pessoas** até uma mensagem indicar que o resultado chegou. Depois, é encerrada automaticamente, com a opção **Desfazer**. Se nada chegar até a hora de cobrar a pessoa, a tarefa volta com **Escreva um lembrete curto** no chat. Diga no chat o que conta como concluído para mudar isso.
+
+Uma tarefa sem nada novo há uma semana sai de Para você e vai para **Mais antigas**, para que as novas apareçam primeiro depois de alguns dias fora. Nada novo significa nenhuma mensagem nova sobre ela e nada que você tenha feito nela, como uma mensagem no chat, uma edição ou um adiamento. Só olhar não conta.
+
+As urgentes, as que vencem em breve e as que têm um envio a caminho ficam em Para você. **Descartar todas** marca todas as tarefas de Mais antigas como desnecessárias depois de uma confirmação, como **Não precisa** faz uma a uma, com **Desfazer**. Qualquer novidade em uma delas a traz de volta para Para você.
 
 Uma tarefa que ninguém mexeu por uma semana pergunta uma vez: **Ainda precisa?** **Não precisa** encerra a tarefa, com a opção **Desfazer**. **Manter** mantém a tarefa, e ela não pergunta de novo. Se não houver resposta por mais uma semana, ela fica recolhida em Volta mais tarde, e deixa de ser contabilizada no ícone do app e no resumo da manhã. Abrir a tarefa, enviar uma mensagem no chat, editar ou adiar a tarefa, ou receber uma nova mensagem, faz com que ela volte.
 
@@ -56,7 +61,7 @@ Uma tarefa sempre pode ler as mensagens de que veio. Quando precisa de outras me
 
 Um assunto de trabalho que chega por uma conta pessoal, como uma mensagem de um cliente no WhatsApp ou um pedido no seu e-mail pessoal, é Trabalho desde o início. Uma tarefa que você moveu ou colocou em uma área sempre fica onde você a deixou. Trabalho ou Pessoal determina onde a tarefa aparece e com quem é compartilhada, nunca de onde ela responde: a resposta sempre vai para onde está a conversa, mesmo depois de uma mudança, a menos que você escolha outra forma.
 
-Mesmo assim, uma tarefa Pessoal responde pelo endereço de trabalho em que o e-mail chegou e nunca aparece em uma Fleet de Trabalho nem no Graph da equipe.
+Mesmo assim, uma tarefa Pessoal responde pelo endereço de trabalho em que o e-mail chegou e nunca aparece em um Fleet de Trabalho nem no Graph da equipe.
 
 Quando há duas ou mais tarefas esperando, **Percorrer** no cabeçalho de Para você mostra uma de cada vez, na ordem da lista, com o rascunho completo e as opções **Enviar** ou **Fazer**, **Pedir mudanças**, **Adiar** e **Pular**. No computador, Enter envia o que está na tela, `S` adia, `→` pula e Esc interrompe. Abaixo do título, o cabeçalho também informa quanto tempo isso leva no seu ritmo, como "cerca de 2 min".
 
@@ -102,7 +107,7 @@ Toque no título ou em **Nome** em **Detalhes** para mudar o nome da tarefa. Voc
 
 Uma conta que você ainda precisa pagar por conta própria, de qualquer país, vira uma tarefa com o valor, o vencimento e os dados de pagamento informados na conta. Contas pagas automaticamente, como as de débito automático ou cartão cadastrado, não viram tarefas. Quando um e-mail posterior informa que ela foi paga, como uma confirmação do remetente, a tarefa é encerrada automaticamente. **Desfazer** traz a tarefa de volta por um dia.
 
-Uma tarefa que só fazia sentido até um horário determinado, como uma confirmação antes de uma reunião, é encerrada automaticamente depois desse horário. Ela vai para **Feito / descartado** com o status "Não é mais necessária". **Desfazer** traz a tarefa de volta por um dia.
+Uma tarefa que só fazia sentido até um horário determinado, como uma confirmação antes de uma reunião, é encerrada automaticamente depois desse horário. Ela vai para **Feito / descartado** com o status "Não precisa mais". **Desfazer** traz a tarefa de volta por um dia.
 
 Antes de uma mensagem ou de um repasse para alguém aparecer como pronto, sua Machine verifica as conversas recentes com as pessoas envolvidas, inclusive chats em grupo, e espera o Slack terminar de lê-las. Se uma mensagem posterior mostrar que a tarefa já foi resolvida, como um pedido seguido de um sim, ela é encerrada automaticamente. **Desfazer** traz a tarefa de volta por um dia.
 

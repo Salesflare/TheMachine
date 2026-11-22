@@ -6,12 +6,12 @@ covers: settings:notify
 code: notify.py, dashboard.html, assistant.py, sw.js
 order: 2
 keywords: alerts, notify, ping, buzz, quiet, too many, push, sound, interrupt
-translated: aab523e3a774400b
+translated: 4a782ad03270e7b0
 ---
 Quer receber menos notificações ou receber outras? Em **Configurações**, **Notificações**, escolha onde receber cada tipo:
 
 - **Novas tarefas**: só o que não pode esperar, como algo que vence hoje ou é urgente.
-- **Resultados e perguntas**: uma resposta pronta para enviar, um acesso que uma tarefa exige ou uma pergunta da Fleet.
+- **Resultados e perguntas**: uma resposta pronta para enviar, um login que uma tarefa exige ou uma pergunta do Fleet.
 - **Lembretes**: tarefas adiadas e respostas que você está aguardando, quando voltarem.
 - **Resumo da manhã**: um resumo curto do seu dia. Veja abaixo.
 - **Resumo do fim do dia**: o que foi feito hoje e o que ficou em aberto para amanhã. Veja abaixo.
@@ -38,7 +38,7 @@ O sistema verifica se você está usando o painel de verdade, não apenas se ele
 - Em uso (na tela e com algum clique, texto digitado ou rolagem nos últimos 10 minutos): nada faz barulho. O Telegram chega sem aviso. Só abrir ou recarregar o painel não conta.
 - Ausente (em segundo plano, fechado ou sem atividade por 10 minutos): a notificação push chega um minuto depois que você sai, a menos que você volte e veja antes.
 - Se ainda não tiver sido vista 15 minutos depois e não puder esperar: chega um e-mail sobre ela, no máximo um por hora. O que você já resolveu fica de fora. Na maioria dos dias, o resumo da manhã é o único e-mail.
-- Se alguém da equipe atribuir uma tarefa a você e sua Machine não tiver um celular ou Telegram para entrar em contato: chega um e-mail com o título e um link, 15 minutos depois, se ainda não tiver sido vista. Desative **E-mail** em **Resultados e perguntas** para não receber esse e-mail.
+- Se alguém da equipe passar uma tarefa para você e sua Machine não tiver um celular ou Telegram para entrar em contato: chega um e-mail com o título e um link, 15 minutos depois, se ainda não tiver sido vista. Desative **E-mail** em **Resultados e perguntas** para não receber esse e-mail.
 - Fora do seu horário de trabalho: nada chega. O resumo da manhã inclui o que ficou pendente.
 - Uma nova tarefa de trabalho em um dia de folga espera até o horário do resumo no seu próximo dia de trabalho. A tarefa mostra quando chegará até você, como Notificação seg., 2 de nov. · 08:30.
 
@@ -48,18 +48,18 @@ Atualizações de progresso e edições nunca geram notificações. Um novo resu
 
 Cada notificação tem botões para a próxima etapa. No app para celular:
 
-- Nova tarefa: **Fazer**, **Adiar**, **Marcar como feito**.
-- Rascunho pronto: **Abrir rascunho**, **Adiar**, **Marcar como feito**.
-- Resultado pronto: **Abrir**, **Marcar como feito**, **Adiar**.
-- Pergunta, problema ou pedido de login: **Responder**, **Abrir** ou **Fazer login**, depois **Adiar** e **Marcar como feito**.
-- Lembrete: **Marcar como feito**, **Adiar**, **Abrir**.
+- Nova tarefa: **Fazer**, **Adiar**, **Marcar como feita**.
+- Rascunho pronto: **Abrir rascunho**, **Adiar**, **Marcar como feita**.
+- Resultado pronto: **Abrir**, **Marcar como feita**, **Adiar**.
+- Pergunta, problema ou pedido de login: **Responder**, **Abrir** ou **Entrar**, depois **Adiar** e **Marcar como feita**.
+- Lembrete: **Marcar como feita**, **Adiar**, **Abrir**.
 - Resumo da manhã: toque para abrir.
 
-No navegador e no Telegram, aparecem dois desses botões. Nas perguntas da Fleet, também há as opções **Responder** e **Recusar**.
+No navegador e no Telegram, aparecem dois desses botões. As perguntas do Fleet mantêm **Responder uma vez** e **Recusar**.
 
-Nenhuma notificação envia, paga ou envia para aprovação. Um rascunho sempre abre primeiro para você conferir antes do envio. **Abrir rascunho** mostra a tarefa na sua lista com o rascunho completo. **Fazer** só inicia o trabalho em uma tarefa nova.
+Nada é enviado, pago ou submetido a partir de uma notificação. Um rascunho sempre abre primeiro para você conferir antes do envio. **Abrir rascunho** mostra a tarefa na sua lista com o rascunho completo. **Fazer** só inicia o trabalho em uma tarefa nova.
 
-No app para celular, **Adiar** e **Marcar como feito** pedem que você desbloqueie o celular primeiro. No navegador, abrem o painel, onde a ação é realizada e aparece **Desfazer**. **Adiar** faz a tarefa voltar em duas horas ou, no caso de um lembrete, na manhã seguinte.
+No app para celular, **Adiar** e **Marcar como feita** pedem que você desbloqueie o celular primeiro. No navegador, abrem o painel, onde a ação é realizada e aparece **Desfazer**. **Adiar** faz a tarefa voltar em duas horas ou, no caso de um lembrete, na manhã seguinte.
 
 Os e-mails têm links para **Abrir** (e para **Adiar** no caso do que está pendente). Eles só abrem o painel.
 
@@ -69,7 +69,7 @@ Ao tocar em uma notificação, ou em **Abrir** no e-mail ou no Telegram, a taref
 
 Ele chega nos dias de trabalho, no horário de **Resumo da manhã**, a menos que não haja nada para informar. Se esse horário for antes de **Itens adiados voltam às**, o resumo espera até 5 minutos depois desse horário para incluir as tarefas que voltam naquela manhã. **Prévia** mostra o resumo sem enviá-lo. Por padrão, ele chega por push e e-mail e é curto o bastante para uma leitura rápida:
 
-- uma saudação com o que importa naquele dia, como “Bom dia, Sam, 2 respostas estão prontas para enviar” ou, para uma tarefa, “Bom dia, Sam, esperando sua aprovação: enviar o formulário do pedido”;
+- uma saudação com o que importa naquele dia, como “Bom dia, Sam, 2 respostas estão prontas para enviar” ou, para uma tarefa, “Bom dia, Sam, esperando sua aprovação: enviar o formulário do pedido”. Só contam como prontas as tarefas com um rascunho ou resultado para aprovar; uma que precisa primeiro da sua resposta não conta;
 - as tarefas mencionadas na saudação, cada uma com um link para abrir, e o que vence hoje; caso contrário, no máximo três tarefas;
 - até cinco tarefas que você mesmo adicionou e que dependem de você, independentemente do que a saudação menciona;
 - quantas outras tarefas podem esperar e quanto tempo levam no seu ritmo, como “Mais 12 podem esperar, cerca de 5 min para resolver”. As tarefas que esperam sua resposta não entram nesse tempo. Uma tarefa que vence hoje, mas foi adiada para mais tarde, ou na qual The Machine ainda está trabalhando, só entra na contagem quando depender de você. A contagem corresponde às tarefas que estão aguardando na sua lista.
