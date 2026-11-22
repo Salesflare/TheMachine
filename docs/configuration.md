@@ -96,7 +96,7 @@
 | `todo_scope` | `all` | The To-dos filter the dashboard opens on: `all`, `work` or `personal` |
 | `chat_model`, `chat_fast` | OpenClaw's own | The default model and thinking level for to-do chats (Settings, Model), only what differs from OpenClaw's; and the Fast choice of a chat's model menu |
 | `codex` | `codex` on `PATH` | The Codex CLI that reads ChatGPT usage limit resets; `false` never asks it |
-| `claude` | `claude` on `PATH`, else `~/.local/bin/claude` | The Claude Code CLI whose plan (`claude auth status`) decides whether The Machine asks you to turn off model training |
+| `claude` | `claude` on `PATH`, else `~/.local/bin/claude` | The Claude Code CLI whose plan (`claude auth status`) decides whether The Machine asks you to turn off model training, and that reports a Claude plan's usage windows; `false` never asks it for usage |
 | `ai_training_off` | `[]` | The providers (`chatgpt`, `claude`) you pressed Done for on the line that asks you to turn off model training in a personal plan; the hosted setup page can set it too |
 | `agents` | none | Coding agents for **Hand off** ([Coding agents](agents.md)) |
 | `gbrain` | off | The [GBrain](gbrain.md) add-on, as **Connect GBrain** saves it |

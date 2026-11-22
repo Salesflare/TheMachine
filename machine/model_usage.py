@@ -1,16 +1,20 @@
 """How much of the owner's model plan is used and when it resets (model_usage, model_status, Codex's app server for
-ChatGPT's limits), and how node scripts run here (node_bin, node_env, the Telegram account they use). Moved out of
+ChatGPT's limits, Claude Code's own usage reading for a Claude plan), and how node scripts run here (node_bin, node_env, the Telegram account they use). Moved out of
 assistant.py as is."""
 import contextlib
+import datetime as dt
 import json
 import os
 from pathlib import Path
 import re
 import shutil
 import subprocess
+import tempfile
 import threading
 import time
 
+import claude_print
+import model_budget
 from models import claude_plan_route, openclaw_model
 import portable
 from timeutil import now
@@ -48,6 +52,98 @@ def model_usage(config, run=subprocess.run, reply=None):
             found.append({'provider': entry['provider'][:40], 'name': str(entry.get('displayName') or entry['provider'])[:40],
                           'windows': windows[:4]})
     return found or None
+
+
+# Claude Code's get_usage windows OpenClaw's usage.status would name for the Claude plan (OpenClaw labels them so too)
+CLAUDE_WINDOWS = (('five_hour', '5h'), ('seven_day', 'Week'))
+
+
+def claude_code_usage(config, timeout=30, popen=subprocess.Popen):
+    """The Claude plan's usage as Claude Code itself reports it: its stream-json control request `get_usage` (the data
+    behind its /usage command, `skip_behaviors` so no transcript is scanned), the way the Agent SDK asks it. No prompt
+    and no model call; Claude Code reads its own sign-in, which is never read here, with the variables cleared that
+    OpenClaw clears too. Started in an empty folder without tools, MCP servers, settings files or a saved session. The
+    reply, or None (no Claude Code, an API key, a Claude Code without it, an error, or the deadline)."""
+    binary = config.get('claude') is not False and claude_print.binary(config)
+    if not binary:
+        return None
+    args = [str(binary), '-p', '--input-format', 'stream-json', '--output-format', 'stream-json', '--verbose', '--tools', '',
+            '--strict-mcp-config', '--disable-slash-commands', '--no-session-persistence', '--setting-sources', '']
+    env = {k: v for k, v in os.environ.items() if k not in claude_print.CLEAR_ENV}
+    with tempfile.TemporaryDirectory(prefix='claude-usage-') as folder:
+        try:
+            proc = popen(args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True,
+                         env=env, cwd=folder, **portable.new_group())
+        except OSError:
+            return None
+        timer = threading.Timer(timeout, portable.end_group, (proc,))
+        timer.daemon = True
+        timer.start()
+        found = None
+        def ask(request_id, request):
+            proc.stdin.write(json.dumps({'type': 'control_request', 'request_id': request_id, 'request': request}) + '\n')
+            proc.stdin.flush()
+        try:
+            ask('init', {'subtype': 'initialize'})
+            for line in proc.stdout:
+                try:
+                    message = json.loads(line)
+                except ValueError:
+                    continue
+                response = message.get('response') if isinstance(message, dict) and message.get('type') == 'control_response' else None
+                if not isinstance(response, dict):
+                    continue
+                if response.get('subtype') != 'success':
+                    break  # an error: an older Claude Code, or none signed in
+                if response.get('request_id') == 'init':
+                    ask('usage', {'subtype': 'get_usage', 'skip_behaviors': True})
+                elif response.get('request_id') == 'usage':
+                    found = response.get('response') if isinstance(response.get('response'), dict) else None
+                    break
+        except (OSError, ValueError, AttributeError):
+            pass
+        finally:
+            timer.cancel()
+            with contextlib.suppress(OSError, ValueError):
+                proc.stdin.close()
+            portable.end_group(proc)
+            with contextlib.suppress(OSError, ValueError):
+                proc.stdout.close()
+    return found
+
+
+def iso_ms(text):
+    """An ISO 8601 time as epoch milliseconds, or None."""
+    try:
+        return int(dt.datetime.fromisoformat(str(text).replace('Z', '+00:00')).timestamp() * 1000) if text else None
+    except ValueError:
+        return None
+
+
+def claude_usage_entry(data):
+    """Claude Code's get_usage reply as a usage.status provider entry (the 5-hour and weekly windows only), or None
+    when it reports no plan limits (an API key, a sign-in without the scope for them)."""
+    limits = data.get('rate_limits') if isinstance(data, dict) and data.get('rate_limits_available') is True else None
+    windows = [{'label': label, 'usedPercent': limits[key]['utilization'], 'resetAt': iso_ms(limits[key].get('resets_at'))}
+               for key, label in CLAUDE_WINDOWS
+               if isinstance(limits, dict) and isinstance(limits.get(key), dict)
+               and isinstance(limits[key].get('utilization'), (int, float))]
+    return {'provider': 'anthropic', 'displayName': 'Claude', 'windows': windows} if windows else None
+
+
+def with_claude_usage(config, reply, read=None):
+    """usage.status's reply with the Claude plan's windows from Claude Code itself, when the main model runs on the
+    Claude plan (OpenClaw's Claude CLI route) and OpenClaw reported none: OpenClaw reads usage only for its own
+    sign-ins, and that route signs in through Claude Code. Otherwise the reply as it was."""
+    if not claude_plan_route(config):
+        return reply
+    providers = [p for p in (reply or {}).get('providers') or [] if isinstance(p, dict)]
+    if any(p.get('provider') == 'anthropic' and p.get('windows') for p in providers):
+        return reply
+    entry = claude_usage_entry((read or claude_code_usage)(config))
+    if not entry:
+        return reply
+    return {**(reply or {}), 'providers': [p for p in providers if p.get('provider') != 'anthropic'] + [entry]}
 
 
 # Where ChatGPT shows the Codex usage limits and the usage limit resets: the way to see or use one by hand.
@@ -148,16 +244,18 @@ def model_resets(config, reply, server_factory=None):
 def model_status(config, reply, usage, resets, checked_at=None, claude_plan=None):
     """What Settings shows about the model: which one, through which sign-in and plan, how much of each limit is
     used, whether a limit is reached and when it lifts, and the resets. No email, no account ids, no tokens.
-    claude_plan: the kind of Claude plan, when the main model runs on it and OpenClaw did not say."""
-    entry = next((p for p in (reply or {}).get('providers') or [] if isinstance(p, dict) and p.get('provider') == 'openai'), None)
+    claude_plan: the kind of Claude plan, when the main model runs on it and OpenClaw did not say. The windows are the
+    main model's provider's (model_budget.for_model): a ChatGPT sign-in OpenClaw also has never shows on a Claude plan."""
     on_claude = claude_plan_route(config)
-    if entry or not on_claude:
+    entry = None if on_claude else next((p for p in (reply or {}).get('providers') or []
+                                         if isinstance(p, dict) and p.get('provider') == 'openai'), None)
+    if not on_claude:
         claude_plan = None
     else:
         claude = next((p for p in (reply or {}).get('providers') or [] if isinstance(p, dict) and p.get('provider') == 'anthropic'), {})
         claude_plan = claude.get('plan') or claude_plan
     model = openclaw_model(config)
-    windows = [w for p in usage or [] for w in p['windows']]
+    windows = [w for p in model_budget.for_model(usage, model) or [] for w in p['windows']]
     now_s = time.time()
     full = [w for w in windows if w['used'] >= 100 and (w['reset'] or now_s + 1) > now_s]
     reached = bool(full) or (resets or {}).get('allowed') is False
