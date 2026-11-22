@@ -125,12 +125,13 @@ def note_first_import(db, account, state):
 def reviews_failing(db):
     """How many reviews in a row ended without going well, the newest back to the last one that did (at most a dozen
     counted). For the dashboard's first look (App.first_look, App.first_dig_live): from the third on, it says the
-    tries keep failing instead of "Reading on"."""
+    tries keep failing instead of "Reading on"; and App.review_step's backoff. A run that met the plan's usage limit
+    is no failure: it waits for the reset (App.note_usage_limit)."""
     failed = 0
-    for (status,) in db.execute('SELECT status FROM review_runs WHERE finished_at IS NOT NULL ORDER BY finished_at DESC LIMIT 12'):
+    for status, error in db.execute('SELECT status,error FROM review_runs WHERE finished_at IS NOT NULL ORDER BY finished_at DESC LIMIT 12'):
         if status == 'ok':
             break
-        failed += 1
+        failed += error != 'usage_limited'
     return failed
 
 

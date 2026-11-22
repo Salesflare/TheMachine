@@ -60,6 +60,18 @@ class ModelPacingApp:
             LOG.error('fallback check error=%s', type(error).__name__)
             return None
 
+    def limit_fallback(self):
+        """The working fallback (a model ref) a background run goes on while the main model's usage limit is reached;
+        None otherwise. OpenClaw moves only the main model to its fallbacks: a run that names a cheaper model on the
+        same sign-in (background_model) has none, hit the limit again, and the next fallback check let the next one go
+        (2026-11-22: reviews ended on the limit every few minutes)."""
+        now_s, model = time.time(), openclaw_model(self.config)
+        limit = getattr(self, 'usage_limit', None)
+        reached = bool(limit and limit['until'] > now_s and limit.get('provider') in (None, model_budget.provider_of(model))) or any(
+            w.get('used', 0) >= 100 and (w.get('reset') or now_s + 1) > now_s
+            for p in model_budget.for_model(getattr(self, 'model_usage', None), model) or [] for w in p.get('windows') or [])
+        return self.fallback_covers() if reached else None
+
     def paced_usage(self):
         """The main model's usage windows the usage rules go by (model_budget.for_model); None (no rules) while a
         working fallback carries work past them."""

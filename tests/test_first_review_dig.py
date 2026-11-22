@@ -380,9 +380,12 @@ class FirstReviewDig(unittest.TestCase):
         reset = int(time.time()) + 2 * 3600
         receipt = {'status': 'error', 'error': 'usage_limited', 'error_phase': 'model', 'retry_at': reset}
         self.app.note_usage_limit(receipt)  # what preparation_gateway does with every receipt
-        with self.assertLogs(a.LOG, 'WARNING'):
+        with self.assertNoLogs(a.LOG, 'WARNING'):  # an expected pause, not an error (2026-11-22: it went to the error reports)
             self.review(2, status='error', save=False, receipt=receipt)
         self.assertEqual(self.runs()[0]['error'], 'usage_limited')
+        with self.store.connect() as db:
+            self.assertEqual(db.execute("SELECT count(*) FROM error_feed WHERE source='review'").fetchone()[0], 0)
+            self.assertEqual(self.store.reviews_failing(db), 0)  # no failure: no backoff, no "keeps failing"
         self.assertIsNone(self.step(Runner(), 40))  # held, not retried every few minutes
         self.assertEqual(self.app.model_pause()['until'], reset)  # the dashboard's banner: limit reached, resets then
         self.app.usage_limit['until'] = time.time() - 1  # the reset came

@@ -143,6 +143,22 @@ class App(unittest.TestCase):
         self.assertTrue(self.app.check_fallback())
         self.assertIsNone(self.app.background_pause(owner=True))
 
+    def test_background_runs_go_on_the_fallback_while_the_limit_is_reached(self):
+        """OpenClaw moves only the main model to its fallbacks: a review on a cheaper model of the same sign-in hit the
+        limit again each time a fallback check passed (2026-11-22)."""
+        self.app.model_usage = usage(40)
+        self.assertIsNone(self.app.limit_fallback())  # room left: the cheaper background model as before
+        self.app.model_usage = usage(100)
+        self.assertIsNone(self.app.limit_fallback())  # no fallback known to work yet
+        self.app.check_fallback()
+        self.assertEqual(self.app.limit_fallback(), 'work-api/gpt-6.1-sol')
+        self.app.model_usage = usage(40)
+        self.app.usage_limit = {'until': time.time() + HOUR, 'at': int(time.time()), 'provider': 'openai'}
+        self.assertEqual(self.app.limit_fallback(), 'work-api/gpt-6.1-sol')
+        self.answer = False
+        self.app._fallback_health.doubt()
+        self.assertIsNone(self.app.limit_fallback())  # no working fallback: the limit holds the run instead
+
     def test_the_fallback_is_only_checked_while_the_limits_would_hold_work(self):
         self.app.model_usage = usage(20)
         self.assertIsNone(self.app.check_fallback())

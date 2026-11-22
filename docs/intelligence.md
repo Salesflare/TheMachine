@@ -1291,7 +1291,8 @@ the error, never what caused it (`error_feed.py`). See also [Error reports](help
 
 - the service's logged errors and dead threads (`FaultLog`);
 - the dashboard's uncaught errors and unhandled rejections (posted as `client_error`, normalized again by the service);
-- failed reviews and coding-agent jobs (their error codes only);
+- failed reviews (their error code and phase) and coding-agent jobs (their error codes only). A review that stopped
+  on the plan's usage limit is not one: it waits for the reset;
 - failed syncs (the source's service and the error type). A transient one (a rate limit, the service's own 500, 502,
   503 or 504, or the network) only after 20 in a row; a 429 or such a 5xx is retried once after 15 seconds, or its
   Retry-After when that is a minute or less. A sign-in or permission error such as 401 or 403 is reported at once.

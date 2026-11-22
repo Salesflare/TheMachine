@@ -486,12 +486,9 @@ class ReviewApp:
                 recovery = active and service_review_ended(db, active)
                 last = db.execute('SELECT status,finished_at,window_hours FROM review_runs WHERE finished_at IS NOT NULL ORDER BY finished_at DESC LIMIT 1').fetchone()
                 # After failed runs, back off: 1, 2, 4… minutes up to 30, so a persistent
-                # model or account failure can't start a new review every minute.
-                failed = 0
-                for (status,) in db.execute('SELECT status FROM review_runs WHERE finished_at IS NOT NULL ORDER BY finished_at DESC LIMIT 6'):
-                    if status == 'ok':
-                        break
-                    failed += 1
+                # model or account failure can't start a new review every minute. A run that met the plan's usage
+                # limit is no failure: the limit holds the next one until its reset (background_pause), then it goes.
+                failed = self.store.reviews_failing(db)
                 retry = min(settings.get('retry_seconds', 60) * 2 ** max(failed - 1, 0), settings.get('max_retry_seconds', 1800))
                 # The first review digs on (first_dig): its next batch right away, after a failure within the backoff above
                 dig = None if recovery else self.first_dig(db, stamp)
@@ -728,6 +725,10 @@ class ReviewApp:
                            (now(), REVIEW_SESSION_PREFIX + run['run_id'], run['run_id']))
                 if resumed:
                     LOG.info('review runtime outcome=lost resumed=ok')
+                elif error == 'usage_limited':
+                    # The plan's usage limit: an expected state, not an error. Its batch goes back (above) and the next
+                    # review waits for the reset (note_usage_limit, background_pause), like the rest of the background work.
+                    LOG.info('review paused for the usage limit')
                 elif error:  # the error reports: its error code and phase, both from fixed lists (error_feed.py)
                     error_feed.record(db, 'review', error, phase or '', 'assistant.py', 'review_step', None, self.store.code_version)
                     saved = db.execute("SELECT count(*) FROM analyses WHERE owner_run=? AND owner_session=? AND status='complete'",
