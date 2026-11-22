@@ -22,15 +22,15 @@ translated: 7ff20ade2206d43f
 
 ## 连接
 
-在托管版The Machine上，它会与Gmail一起连接：前往设置页面，在**邮件和日历**下点按**连接Google**。
+在托管版Machine上，它会与Gmail一起连接：前往设置页面，在**邮件和日历**下点按**连接Google**。
 
-在自己的电脑上，完成[与账号配对](friends.md#a-machine-on-your-own-computer)后，打开**连接**，然后打开**日历**，选择Google日历，再点按**通过Google登录**。它会与Gmail一起连接。
+在自己的电脑上，完成[与账号配对](friends.md#a-machine-on-your-own-computer)后，打开**连接**，然后打开**日历**，选择Google日历，再点按**使用Google登录**。它会与Gmail一起连接。
 
 使用自己的应用时，运行`assistant connect calendar`，或在那里打开**使用自己的应用**。系统会询问要读取哪个日历。
 
 ## 移除连接
 
-- 在托管版The Machine上：前往设置页面，点按地址旁边的**断开连接**。这会移除该地址对应的Gmail和日历连接。
+- 在托管版Machine上：前往设置页面，点按地址旁边的**断开连接**。这会移除该地址对应的Gmail和日历连接。
 - 在自己的电脑上：打开**连接**，选择日历，再点按**详情**，然后点按**断开连接**。
 
 ## 在Google中卸载

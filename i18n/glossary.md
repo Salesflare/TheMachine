@@ -36,7 +36,7 @@ table is in the control plane's glossary (cloud/i18n/glossary.md) for the site a
 | es | feminine | ella, la, su, and feminine agreement (lista, conectada): "tu Machine está lista". Never él. Assistant: una asistente, tu propia asistente. |
 | it | feminine | lei, la, sua, and feminine agreement (pronta, collegata): "la tua Machine è pronta". Never lui. Assistant: un’assistente, la tua assistente. The reader and people of unknown gender get neutral wording: Hai effettuato l’accesso, Ti diamo il benvenuto, Serve il tuo intervento, never Sei entrato, Benvenuto, richiede te. AI is IA, except in product names (Google AI Pro). Work Fleet: Fleet di lavoro; Family Fleet: Fleet di famiglia. |
 | pt-BR | feminine | ela, a, sua, dela, da, na, and feminine agreement (pronta, conectada): "sua Machine está pronta". Never ele, o, do, no. Assistant: uma assistente, sua assistente. The name too: da, na, pela The Machine, never de, em, do, no The Machine. Fleet is masculine (o Fleet, Fleet de Trabalho, Fleet da Família); vaga and Network are feminine (paga por, na Network). Write e-mail with a hyphen; follow-up stays follow-up (Fazer follow-up). |
-| zh-CN | none | No gender: say The Machine again, or 它 when a pronoun can't be left out. Never 他 or 她. Assistant: 助手. |
+| zh-CN | none | No gender: say The Machine again, or 它 when a pronoun can't be left out. Never 他 or 她. Machine stays Machine, never 机器: your Machine is 你的Machine, never 你的The Machine. Assistant: 助手. No space between Chinese and a Latin word or number, “” quotes, one … for an ellipsis, menu paths as “设置”>“通知”. Words: thread or conversation 对话 (never 线程 or 讨论串 outside Slack); plan (ChatGPT, ours) 套餐; deal 商机, won 赢单, lost 丢单; Linear issue and Shortcut story 事项; newsletter 新闻邮件; Activity 动态; For you 待你处理; learning 心得 (never 学习心得); setup code 设置码; payment card 银行卡; Sign out 退出登录; pair 配对. |
 | ja | none | No gender or pronoun: say The Machine again or leave the subject out. Assistant: アシスタント. |
 | ko | none | No gender or pronoun: say The Machine again or leave the subject out. Assistant: 어시스턴트. |
 | ru | feminine | она, её, and feminine agreement (готова, подключена, сама), after машина: "The Machine прочитала почту. Она ...". Never он or его for it. Speaking for itself: "Я застряла". Assistant: ассистентка, ваша ассистентка. |
@@ -56,7 +56,7 @@ ClawHub, Claude, Claude Code, Codex, ChatGPT, Trello, Shortcut, Granola, Tailsca
 
 | English | nl | fr | de | es | it | pt-BR | zh-CN | ja | ko | ru |
 |---|---|---|---|---| --- | --- | --- | --- | --- | --- |
-| to-do | to-do, to-do's | tâche, tâches | Aufgabe, Aufgaben | tarea, tareas | attività | tarefa, tarefas | 待办, 待办事项 | ToDo | 할 일 | задача, задачи, задачу, задач, задаче, задачей, задачам, задачами, задачах |
+| to-do | to-do, to-do's | tâche, tâches | Aufgabe, Aufgaben | tarea, tareas | attività | tarefa, tarefas | 待办 | ToDo | 할 일 | задача, задачи, задачу, задач, задаче, задачей, задачам, задачами, задачах |
 | snooze | snooze, snoozen, gesnoozed | mettre en attente, en attente, attente | zurückstellen, zurückgestellt, Zurückstellen | posponer, pospuesto, pospuesta, pospón | posticipa, posticipare, posticipata, posticipato, posticipate, posticipati, posticipo, posticipi | adiar, adiada, adiado, adiadas, adiados, adie, adia | 稍后处理, 推迟 | スヌーズ | 미루기, 미루, 미뤄, 미룬, 미룸, 미뤘 | отложить, отложено, отложена, отложен, отложены, отложите, отложенные, отложенных, отложенной, откладывать, отложи |
 | hand off | overdragen, overdracht, draag over | transférer, transfert, transférez | übergeben, Übergabe, übergib | pasar, traspaso, pasa | passa, passare, passala, passalo, passaggio | passar, passe, repasse, repassar | 转交 | 引き継ぎ, 引き継ぐ, 引き継い, 引き継が | 넘기기, 넘기, 넘겨, 넘긴, 인계 | передать, передача, передайте, передачи, передачу, передано, передала, передаст, передавайте, передаче, передачей |
 | handoff | overdracht, overdragen | transfert, transférer | Übergabe, übergeben | traspaso, pasar | passaggio, passare, passaggi | repasse, passar | 转交 | 引き継ぎ | 인계, 넘기기 | передача, передачи, передачу, передать, передаче, передачей |
@@ -97,6 +97,8 @@ English strings the check skips, with why:
 - `Signal gives a new linked device no older messages, so this reads from when you linked it.` names the Signal app, not a signal.
 - `Send this Signal message?` names the Signal app, not a signal.
 - `Sent to {} on Signal` names the Signal app, not a signal.
+- `kind is fact (true about the world), draft (how a kind of task is done) or voice (how the owner writes on one channel, with channel)` names a tool's literal values, which stay in English.
+- `when is "now", "digest" or a date/time like 2026-10-12 or 2026-10-12T09:00` names a tool's literal values, which stay in English.
 - `the Signal message` names the Signal app, not a signal.
 - `Signal message sent` names the Signal app, not a signal.
 - `Signal message sent.` names the Signal app, not a signal.
@@ -147,7 +149,7 @@ never The Machine. The table gives each language's verbs for starting and trying
 
 The user-facing name is *to-do* (decided 2026-10-26): Dutch keeps "to-do", the others use their own word, the same one every time.
 
-**For you** is the one list of open to-dos that wait on the owner (it replaced Ready for you and To decide). Each one's chip says **Prepared**, **Needs you** or **Preparing…** (there is no Preparing list any more, so a to-do never moves while it prepares), and the help pages use the same words: For you is Voor jou, Pour vous, Für dich, Para ti, Per te, Para você; Prepared is Klaargezet, Préparée, Vorbereitet, Preparada, Preparata, Preparada; Needs you is Wacht op jou, Vous attend, Braucht dich, Te necesita, Serve il tuo intervento, Precisa de você. In zh-CN, ja, ko, ru: For you is 给你, 確認待ち, 내 확인, Для вас; Prepared is 已备好, 準備済み, 준비됨, Подготовлено; Needs you is 需要你, 対応が必要, 확인 필요, Ждёт вас; Preparing… is 准备中…, 準備中…, 준비 중…, Готовится….
+**For you** is the one list of open to-dos that wait on the owner (it replaced Ready for you and To decide). Each one's chip says **Prepared**, **Needs you** or **Preparing…** (there is no Preparing list any more, so a to-do never moves while it prepares), and the help pages use the same words: For you is Voor jou, Pour vous, Für dich, Para ti, Per te, Para você; Prepared is Klaargezet, Préparée, Vorbereitet, Preparada, Preparata, Preparada; Needs you is Wacht op jou, Vous attend, Braucht dich, Te necesita, Serve il tuo intervento, Precisa de você. In zh-CN, ja, ko, ru: For you is 待你处理, 確認待ち, 내 확인, Для вас; Prepared is 已备好, 準備済み, 준비됨, Подготовлено; Needs you is 需要你, 対応が必要, 확인 필요, Ждёт вас; Preparing… is 准备中…, 準備中…, 준비 중…, Готовится….
 
 The sidebar pages (renamed 2026-11-01): Suggestions is now *To-dos* (the plural of to-do, as above), Feedback is now *Learning* (the page; in nl and de "Leren" and "Lernen", while one learning stays inzicht and Erkenntnis), and the Events search is *Messages*. Learning: Leren, Apprentissage, Lernen, Aprendizaje, Apprendimento, Aprendizado. Messages: Berichten, Messages, Nachrichten, Mensajes, Messaggi, Mensagens. In zh-CN, ja, ko, ru: To-dos is 待办, ToDo, 할 일, Задачи; Learning is 心得, 学び, 배운 점, Обучение; Messages is 消息, メッセージ, 메시지, Сообщения.
 

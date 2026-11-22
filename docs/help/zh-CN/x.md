@@ -32,7 +32,7 @@ translated: 5cbe43055458daf4
 
 或者，在终端中运行`assistant connect x`。
 
-如果X将Machine登出，请参阅[网站已退出登录](signed-out.md)。
+如果X让你的Machine退出登录，请参阅[网站已退出登录](signed-out.md)。
 
 ## 移除连接
 
@@ -41,4 +41,4 @@ translated: 5cbe43055458daf4
 
 ## 在X上退出登录
 
-在X中，打开“设置”、“安全和账号访问权限”、“应用和会话”、“会话”，然后退出Machine浏览器对应的会话。
+在X中，打开“设置”>“安全和账号访问权限”>“应用和会话”>“会话”，然后退出Machine浏览器对应的会话。

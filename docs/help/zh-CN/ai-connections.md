@@ -10,7 +10,7 @@ translated: ac5a894df13907fd
 ---
 ## 其他AI能做什么
 
-Claude、ChatGPT、Cursor、Codex、GBrain和其他AI都可以连接到你的Machine。它们可以查看你的待办、承诺、团队简报，以及Graph中的人物和公司。
+Claude、ChatGPT、Cursor、Codex、GBrain和其他AI都可以连接到你的Machine。它们可以查看你的待办、承诺、团队简报，以及Graph中的人员和公司。
 
 授予**查看和编辑**权限后，它们还可以添加待办或邮件草稿，也可以更新Graph：保存事实、修正详细信息、字段和标签，或为某个人的摘要添加一行内容。
 
@@ -38,7 +38,7 @@ Claude、ChatGPT、Cursor、Codex、GBrain和其他AI都可以连接到你的Mac
 
 使用官方应用时，AI会要求你用The Machine账号登录。如果你有多台Machine，请选择要连接的那台，然后在它自己的页面上批准连接。使用私有地址时，AI会直接连接到你的Machine。
 
-私有网络（Tailscale）中的设备上的AI，例如Claude Code或Cursor，也可以使用你的仪表板地址，再加上`/mcp`。在**设置**、**账号**页面底部按**取消这台Machine的配对**，即可将自己电脑上的Machine从账号中移除。
+私有网络（Tailscale）中的设备上的AI，例如Claude Code或Cursor，也可以使用你的控制面板地址，再加上`/mcp`。在**设置**、**账号**页面底部按**取消这台Machine的配对**，即可将自己电脑上的Machine从账号中移除。
 
 你的Machine会显示发起请求的AI。如果无法识别，它会显示请求的来源：只有在你刚刚亲自发起连接时，才批准请求。
 
@@ -54,7 +54,7 @@ Claude、ChatGPT、Cursor、Codex、GBrain和其他AI都可以连接到你的Mac
 
 ## AI能看到什么
 
-每个连接只能访问自己的范围。工作范围包括你的工作账号中的待办和承诺、工作联系人、公司、项目，以及Work Fleet的团队简报。个人范围包括其他所有内容。除非你开启**消息**，否则消息正文会留在你的Machine上；不开启时，AI只能通过发件人、主题和日期查看待办的来源。
+每个连接只能访问自己的范围。工作范围包括你的工作账号中的待办和承诺、工作联系人、公司、项目，以及工作Fleet的团队简报。个人范围包括其他所有内容。除非你开启**消息**，否则消息正文会留在你的Machine上；不开启时，AI只能通过发件人、主题和日期查看待办的来源。
 
 团队成员的Team Graph记录不会发送给外部AI。
 

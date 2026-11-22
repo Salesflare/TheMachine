@@ -1,7 +1,7 @@
 ---
 title: GitHub
 area: connections
-summary: 查看审核请求、提及、指派和失败的CI运行。只有你确认后才会创建议题。
+summary: 查看审核请求、提及、指派和失败的CI运行。只有你确认后才会创建事项。
 covers: connector:github
 code: connectors/github.py, onboarding.py
 site: Sign in with GitHub, More sources, Remove
@@ -13,7 +13,7 @@ translated: e97127e156e56f7d
 
 ## 可以做什么
 
-读取内容不会更改GitHub上的任何内容。如果待办最后一步需要在GitHub上执行操作，例如创建议题，待办会说明这一点，并且只有在你点击**确认**，或在聊天中明确要求执行完全相同的操作后，才会运行这一步。截图会通过你的Machine中的浏览器上传。如果没有连接GitHub，待办会说明将使用浏览器，并显示**连接GitHub**。
+读取内容不会更改GitHub上的任何内容。如果待办最后一步需要在GitHub上执行操作，例如创建事项，待办会说明这一点，并且只有在你点击**确认**，或在聊天中明确要求执行完全相同的操作后，才会运行这一步。截图会通过你的Machine中的浏览器上传。如果没有连接GitHub，待办会说明将使用浏览器，并显示**连接GitHub**。
 
 ## 连接
 

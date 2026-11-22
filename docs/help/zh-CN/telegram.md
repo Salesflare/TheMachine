@@ -1,7 +1,7 @@
 ---
 title: Telegram
 area: connections
-summary: 通过自己的机器人在Telegram接收待办，按钮与仪表板上的相同。此功能为可选。
+summary: 通过自己的机器人在Telegram接收待办，按钮与控制面板上的相同。此功能为可选。
 covers: telegram
 code: assistant.py, onboarding.py, cli.py
 site: Add my bot, Add more any time, Disconnect Telegram
@@ -9,7 +9,7 @@ translated: a2b74e4831832977
 ---
 ## 功能
 
-在Telegram中通过自己的机器人，在你的[工作时间](work-hours.md)内接收待办。每条待办都附有仪表板上的按钮：**执行**、**稍后处理**、**要求修改**、**标记为已完成**、**不需要**，以及用于发送预先拟好消息的**发送**。如果你想让The Machine读取你的Telegram聊天，请参阅[Telegram聊天](telegram-chats.md)。
+在Telegram中通过自己的机器人，在你的[工作时间](work-hours.md)内接收待办。每条待办都附有控制面板上的按钮：**执行**、**稍后处理**、**要求修改**、**标记为已完成**、**不需要**，以及用于发送预先拟好消息的**发送**。如果你想让The Machine读取你的Telegram聊天，请参阅[Telegram聊天](telegram-chats.md)。
 
 此功能为可选：手机应用也会以通知形式发送相同的待办。
 

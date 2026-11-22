@@ -13,7 +13,7 @@ translated: cea7230915b5a536
 
 只有在会议期间开启了转录或Gemini笔记，Meet才会生成这些内容。
 
-每份内容都会关联到Calendar中的对应会议：Gemini笔记显示在Notes下，转录稿显示在Transcript下，并标记为**来自Google Meet**。你自己添加的内容会保留。
+每份内容都会关联到日历中的对应会议：Gemini笔记显示在“笔记”下，转录稿显示在“文字记录”下，并标记为**来自Google Meet**。你自己添加的内容会保留。
 
 ## 它能做什么
 
@@ -26,14 +26,14 @@ translated: cea7230915b5a536
 - 查看你的Google Meet会议、转录稿和Gemini笔记。
 - 查看你的Google Docs，以读取Gemini笔记文档。
 
-它不会请求访问你的Drive。Gmail和Calendar的访问权限保持不变。
+它不会请求访问你的Drive。Gmail和Google日历的访问权限保持不变。
 
 ## 连接
 
 你不需要连接Gmail。连接方法如下：
 
 - 托管版Machine：在控制面板中打开**连接**、**会议**，选择**Google Meet**，然后点击**使用Google登录**。授予上述权限后，你会返回控制面板。
-- 在自己的电脑上使用已关联账号：步骤相同。登录页面会在新标签页中打开。
+- 在已与账号配对的自己电脑上：步骤相同。登录页面会在新标签页中打开。
 
 如果没有授予Meet权限，就不会添加它。你不需要粘贴任何内容，也不需要续期。
 
@@ -45,4 +45,4 @@ translated: cea7230915b5a536
 
 ## 在Google中撤销权限
 
-打开myaccount.google.com/permissions，移除The Machine对Google Meet的访问权限。Gmail和Calendar仍可正常使用。
+打开myaccount.google.com/permissions，移除The Machine对Google Meet的访问权限。Gmail和Google日历仍可正常使用。
