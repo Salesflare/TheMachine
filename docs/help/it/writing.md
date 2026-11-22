@@ -26,7 +26,7 @@ Impara solo da ciò che hai scritto tu. Una bozza inviata senza modifiche non vi
 
 ### Continua a imparare
 
-Circa due volte al giorno, quando ci sono abbastanza novità, esamina le bozze che hai modificato, le attività che hai ignorato o posticipato e le correzioni nella chat di un'attività. Poi apporta piccoli aggiornamenti al tuo modo di scrivere, alle tue regole e ai tuoi fatti. Questi controlli vengono sospesi quando stai per esaurire i limiti del tuo piano.
+Circa due volte al giorno, quando ci sono abbastanza novità, esamina le bozze che hai modificato, le attività che hai ignorato o posticipato e le correzioni nella chat di un’attività. Poi apporta piccoli aggiornamenti al tuo modo di scrivere, alle tue regole e ai tuoi fatti. Questi controlli vengono sospesi quando stai per esaurire i limiti del tuo piano.
 
 In **Apprendimento**, **Modifiche** mostra ogni aggiornamento e il motivo. **Annulla** lo annulla. Le righe che hai scritto tu restano come le hai scritte.
 
@@ -35,7 +35,7 @@ In **Apprendimento**, **Modifiche** mostra ogni aggiornamento e il motivo. **Ann
 Correggila dove la vedi:
 
 - In **Impostazioni**, **Scrittura**, modifica le parole nel riquadro del canale e premi **Salva**. Da quel momento, le tue parole restano invariate.
-- Oppure scrivilo nella chat di qualsiasi attività, per esempio: "Metto in minuscolo solo l'inizio delle frasi, non i nomi". Nella chat compare **Salvato in Come scrivi**, con **Modifica**.
+- Oppure scrivilo nella chat di qualsiasi attività, per esempio: "Metto in minuscolo solo l’inizio delle frasi, non i nomi". Nella chat compare **Salvato in Come scrivi**, con **Modifica**.
 - **Apprendimento**, **Cosa ho imparato** elenca anche tutte le righe, ognuna con **Modifica**.
 
-Sii precisa: le bozze seguono le indicazioni parola per parola. "In minuscolo" da solo mette in minuscolo anche i nomi; "le frasi iniziano con la minuscola, i nomi mantengono le maiuscole" no. Le abitudini restano nel rispettivo canale, quindi un'abitudine delle chat non si applica alle email.
+Usa parole precise: le bozze seguono le indicazioni parola per parola. "In minuscolo" da solo mette in minuscolo anche i nomi; "le frasi iniziano con la minuscola, i nomi mantengono le maiuscole" no. Le abitudini restano nel rispettivo canale, quindi un’abitudine delle chat non si applica alle email.

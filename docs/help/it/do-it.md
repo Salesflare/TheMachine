@@ -13,9 +13,9 @@ translated: 9351ad3d0f79316b
 
 Mentre lavora nel suo browser, l’attività e la chat mostrano la pagina in tempo reale, anche tra un passaggio e l’altro, finché il lavoro non è terminato. Tocca l’immagine per aprire il browser. Nell’attività si apre più grande e mostra **Ferma**: basta premere una volta per interrompere subito l’esecuzione.
 
-Prima di un follow-up o di un passaggio, controlla se ci sono risposte più recenti, anche da parte di un collega. Se qualcuno ha già gestito la situazione, l’attività te lo dice. Se ha modificato un documento o una pagina, l’attività include un link.
+Prima di un ricontatto o di un passaggio, controlla se ci sono risposte più recenti, anche da parte di un collega. Se qualcuno ha già gestito la situazione, l’attività te lo dice. Se ha modificato un documento o una pagina, l’attività include un link.
 
-Quando riesce a completare un’attività complessa su un sito o in un flusso di lavoro, la tua Machine conserva i passaggi come skill, senza dati personali. Le attività successive su quel sito li usano come guida, mai come autorizzazione: inviare o pagare richiede comunque la tua approvazione. Li trovi in **Impostazioni > Skills** sotto **Appreso da un compito**.
+Quando riesce a completare un’attività complessa su un sito o in un flusso di lavoro, la tua Machine conserva i passaggi come skill, senza dati personali. Le attività successive su quel sito li usano come guida, mai come autorizzazione: inviare o pagare richiede comunque la tua approvazione. Li trovi in **Impostazioni > Skill** sotto **Appreso da un compito**.
 
 ## Nulla viene inviato senza il tuo consenso
 

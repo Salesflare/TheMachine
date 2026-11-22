@@ -21,17 +21,17 @@ La prima sincronizzazione copre gli ultimi 7 giorni. Ogni elemento è collegato 
 
 Quando un’attività richiede il testo di un documento, la tua Machine legge solo quel documento e solo mentre lavora all’attività.
 
-Può preparare una bozza di risposta a un commento. Word non permette di pubblicare risposte dall’esterno, quindi copia la bozza in Word.
+Può preparare una bozza di risposta a un commento. Word non permette di pubblicare risposte dall’esterno, quindi copi tu la bozza in Word.
 
 Non accetta mai un suggerimento, risolve un commento, condivide un file o modifica un documento senza il tuo OK.
 
-Per usarla solo per svolgere attività, disattiva **Porta segnali** in **Dettagli**. In questo modo trova e legge solo i documenti necessari per le tue attività e ne crea di nuovi.
+Per usarlo solo per fare cose, disattiva **Raccoglie segnali** in **Dettagli**. In questo modo trova e legge solo i documenti necessari per le tue attività e ne crea di nuovi.
 
 ## Crea e modifica documenti
 
 La tua Machine può creare un nuovo documento o modificare un documento relativo a un’attività:
 
-- Può creare subito un nuovo documento quando lo richiedono l’attività o una skill. Il documento è privato, nel tuo OneDrive o Google Drive personale. Nell’attività trovi **Apri il documento**. La condivisione del documento o l’invio del relativo link aspettano il tuo OK.
+- Può creare subito un nuovo documento quando lo richiedono l’attività o una skill. Il documento è privato, nel tuo OneDrive o Google Drive. Nell’attività trovi **Apri il documento**. La condivisione del documento o l’invio del relativo link aspettano il tuo OK.
 - Per un documento esistente, prepara le modifiche senza applicarle. Premi **Rivedi le modifiche** per vedere ogni paragrafo prima e dopo, poi **Salva**. Se chiedi una modifica nella chat dell’attività, la applica subito.
 - Scrive solo nel documento così come l’hai visto. Se nel frattempo qualcuno lo ha modificato, non scrive nulla e te lo segnala nell’attività. Chiedi una nuova bozza.
 - In Talk legge ad alta voce tutte le modifiche e aspetta un sì esplicito.
@@ -70,7 +70,7 @@ La tua Machine:
 - Prepara le modifiche a quel documento. Ognuna aspetta il tuo OK, come descritto sopra.
 - Crea nuovi documenti privati nel tuo Google Drive.
 
-Non cerca nel tuo Drive. Vede commenti, condivisioni e suggerimenti solo sui documenti che ha creato. Per vedere altro dovrebbe accedere a tutto il tuo Drive, ma non te lo chiede.
+Non cerca nel tuo Drive. Vede commenti, condivisioni e suggerimenti solo sui documenti che ha creato. Per vedere altro servirebbe l’accesso a tutto il tuo Drive, che non chiede.
 
 Sul tuo computer, la tua Machine può creare un nuovo documento Google in un account Gmail a cui hai già effettuato l’accesso e che dispone già dell’accesso a Drive. Non legge gli altri tuoi documenti Google né i relativi commenti. In **Documenti e file** compare come Google Docs per quell’account. Può anche modificare un documento creato lì per un’attività.
 

@@ -9,7 +9,7 @@ translated: 5d782f28fb69efef
 ---
 ## A cosa serve
 
-Mistral è un fornitore europeo di AI. Con una chiave API di Mistral, la tua Machine legge e prepara le bozze con i modelli di Mistral. The Machine non ha un’AI propria: le richieste vanno direttamente a Mistral, con il tuo account e alle sue condizioni.
+Mistral è un fornitore europeo di IA. Con una chiave API di Mistral, la tua Machine legge e prepara le bozze con i modelli di Mistral. The Machine non ha un’IA propria: le richieste vanno direttamente a Mistral, con il tuo account e alle sue condizioni.
 
 ## Prendi una chiave
 
@@ -25,7 +25,7 @@ Sul tuo computer, vedi la [guida ai modelli](https://github.com/Salesflare/TheMa
 
 ## Uso
 
-**Impostazioni**, **Modello** dice "Usa la tua chiave API di Mistral". Una chiave API non ha limiti di utilizzo, quindi il lavoro in background non si ferma mai per lei. Vedi [Modello](model.md).
+**Impostazioni**, **Modello** dice "Usa la tua chiave API di Mistral". Una chiave API non ha limiti di utilizzo, quindi il lavoro in background non si ferma mai per un limite. Vedi [Modello](model.md).
 
 ## Rimuovilo
 

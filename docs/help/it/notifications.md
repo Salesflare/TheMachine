@@ -36,7 +36,7 @@ Tutto il resto arriva senza avvisi sulla dashboard e in silenzio su Telegram, in
 Il sistema controlla se stai usando davvero la dashboard, non solo se è aperta:
 
 - Se la stai usando, cioè è in primo piano e hai cliccato, digitato o scorso la pagina negli ultimi 10 minuti, non ricevi avvisi. Su Telegram arriva in silenzio. Aprirla o ricaricarla da solo non conta.
-- Se non ci sei, cioè la dashboard è in background, chiusa o inattiva da 10 minuti, ricevi una notifica push un minuto dopo averla lasciata, a meno che tu non sia tornato e non l’abbia già vista.
+- Se non ci sei, cioè la dashboard è in background, chiusa o inattiva da 10 minuti, ricevi una notifica push un minuto dopo averla lasciata, a meno che nel frattempo tu non l’abbia già vista.
 - Se dopo 15 minuti non l’hai ancora vista e non può aspettare, ricevi un’email, al massimo una all’ora. Le cose che hai già gestito vengono escluse. Nella maggior parte dei giorni, l’unica email è il riepilogo del mattino.
 - Se un compagno di squadra ti assegna un’attività e la tua Machine non può raggiungerti tramite telefono o Telegram, ricevi un’email con il titolo e un link, dopo 15 minuti se non l’hai ancora vista. Disattiva **Email** per **Risultati e domande** per non riceverla.
 - Fuori dal tuo orario di lavoro non ricevi notifiche. L’attività sarà nel riepilogo del mattino.
@@ -92,6 +92,6 @@ Termina con il numero di attività che richiedono ancora la tua attenzione. Tocc
 
 ## Privacy
 
-La notifica push viene inviata dalla tua Machine direttamente al dispositivo, in forma crittografata. Le email passano dal server di posta di The Machine e dal tuo provider di posta. Se [Modalità attenta](security-levels.md) nasconde il testo delle attività nelle notifiche, le email mostrano solo i numeri. Disattiva **Email** per un tipo di notifica per escluderlo dalle email.
+La notifica push viene inviata dalla tua Machine direttamente al dispositivo, in forma crittografata. Le email passano dal server di posta di The Machine e dal tuo provider di posta. Se [Prudente](security-levels.md) nasconde il testo delle attività nelle notifiche, le email mostrano solo i numeri. Disattiva **Email** per un tipo di notifica per escluderlo dalle email.
 
 Attiva le notifiche push per un dispositivo in **Questo dispositivo** oppure consulta [Installare l’app](phone-app.md). L’[app mobile](mobile-app.md) invia una semplice notifica tramite Apple o Google, poi chiede alla tua Machine il titolo e il passaggio successivo.

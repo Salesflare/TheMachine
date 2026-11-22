@@ -56,7 +56,7 @@ Per un viaggio futuro, la tua Machine indica cosa manca, per esempio **Nessun al
 - Se una prenotazione cambia, la relativa riga viene aggiornata; se viene annullata, viene rimossa. Quando tutte le prenotazioni sono annullate, viene rimosso anche il viaggio o l’evento.
 - Una prenotazione per qualcun altro, per esempio il volo di un collega che ti è stato inoltrato, non compare tra i tuoi viaggi.
 
-La maggior parte delle conferme contiene i dettagli in un formato che la tua Machine può leggere senza AI. Se non è così, per esempio per un’email inoltrata o un piccolo sito di prenotazioni, il tuo [modello](model.md) legge l’email in background, poche alla volta, e aspetta se ti stai avvicinando al limite di utilizzo. Le email di prenotazione dell’anno di [cronologia](history.md) conservato dalla tua Machine vengono lette in background una volta caricata la cronologia.
+La maggior parte delle conferme contiene i dettagli in un formato che la tua Machine può leggere senza IA. Se non è così, per esempio per un’email inoltrata o un piccolo sito di prenotazioni, il tuo [modello](model.md) legge l’email in background, poche alla volta, e aspetta se ti stai avvicinando al limite di utilizzo. Le email di prenotazione dell’anno di [cronologia](history.md) conservato dalla tua Machine vengono lette in background una volta caricata la cronologia.
 
 ## Note e trascrizione della riunione
 

@@ -9,7 +9,7 @@ translated: 223b143a6efd5692
 ---
 ## Cosa include
 
-- Richiede la tua attenzione: promesse scadute fatte a te e promesse che hai fatto tu, scadute o in scadenza nelle prossime due settimane.
+- Serve il tuo intervento: promesse scadute fatte a te e promesse che hai fatto tu, scadute o in scadenza nelle prossime due settimane.
 - La prossima settimana: le tue riunioni (con un link quando la preparazione è pronta), le attività in scadenza e le promesse fatte da altri per quel periodo.
 - Cosa è cambiato: quante attività sono state utili rispetto alla settimana precedente, quante volte **Fallo** ha funzionato al primo tentativo, cosa ha modificato nel modo in cui scrivi e nei suoi filtri, e quante bozze sono state inviate così come erano.
 - Per il team di The Machine: apprendimenti da condividere, se ce ne sono in attesa. Vedi [Condividere gli apprendimenti con il team](share-learnings.md).

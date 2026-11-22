@@ -14,7 +14,7 @@ Claude, ChatGPT, Cursor, Codex, GBrain e altre IA possono collegarsi alla tua Ma
 
 Con **Lettura e modifica** possono anche aggiungere un’attività o una bozza di email e aggiornare il tuo Graph: salvare un fatto, correggere dettagli, campi e tag oppure aggiungere una riga al riepilogo di una persona.
 
-Ogni modifica compare in **Movimenti** con **Annulla**. Non uniscono, eliminano né condividono mai i record. Quello che salvano è contrassegnato con **AI:** e il loro nome, e la tua Machine lo considera una loro affermazione, mai un’istruzione per te.
+Ogni modifica compare in **Movimenti** con **Annulla**. Non uniscono, eliminano né condividono mai i record. Quello che salvano è contrassegnato con **IA:** e il loro nome, e la tua Machine lo considera una loro affermazione, mai un’istruzione per te.
 
 Una bozza resta in attesa finché non la leggi e premi Invia tu. Un’IA collegata non invia mai nulla e non agisce mai per conto tuo.
 
@@ -22,7 +22,7 @@ Una bozza resta in attesa finché non la leggi e premi Invia tu. Un’IA collega
 
 Apri **Impostazioni**, **App**. Sotto **Le app di The Machine** trovi **Aggiungi in ChatGPT** e **Aggiungi in Claude**. Sotto **Oppure aggiungila con un indirizzo** trovi l’indirizzo unico dell’app ufficiale per ogni Machine, `https://mcp.themachine.computer/mcp`, e **Il tuo indirizzo**, `https://<your name>.mcp.themachine.computer/mcp`, entrambi con **Copia**.
 
-Se hai una Machine sul tuo computer, premi prima **Configura** sotto **Ottieni il tuo indirizzo**. Si apre una pagina del tuo account: controlla che mostri lo stesso codice, conferma e scegli un nome. La tua Machine si abbina da sola, senza riavviarsi. Serve per entrambi i metodi.
+Se hai una Machine sul tuo computer, premi prima **Configura** sotto **Richiedi il tuo indirizzo**. Si apre una pagina del tuo account: controlla che mostri lo stesso codice, conferma e scegli un nome. La tua Machine si abbina da sola, senza riavviarsi. Serve per entrambi i metodi.
 
 Poi la tua Machine configura da sola il suo indirizzo sicuro. Ci vogliono alcuni minuti.
 

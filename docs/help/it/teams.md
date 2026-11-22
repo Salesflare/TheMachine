@@ -9,15 +9,15 @@ translated: 9ca0bb08466b4d58
 ---
 ## Cosa legge
 
-Le tue chat 1:1, di gruppo e delle riunioni in Teams: gli ultimi 7 giorni al momento della connessione, poi i nuovi messaggi ogni pochi minuti. Circa un anno di chat meno recenti e di thread nei canali, se autorizzati dal tuo amministratore, viene importato in seguito come [cronologia](history.md), poco alla volta e senza rallentare nulla.
+Le tue chat 1:1, di gruppo e delle riunioni in Teams: gli ultimi 7 giorni al momento della connessione, poi i nuovi messaggi ogni qualche minuto. Circa un anno di chat meno recenti e di thread nei canali, se autorizzati dal tuo amministratore, viene importato in seguito come [cronologia](history.md), poco alla volta e senza rallentare nulla.
 
-Con l'autorizzazione del tuo amministratore, legge anche:
+Con l’autorizzazione del tuo amministratore, legge anche:
 
 - I thread nei canali dei tuoi team.
 - Le trascrizioni delle riunioni che hai organizzato.
 - Le note delle riunioni e le attività di Copilot, se hai una licenza Microsoft 365 Copilot.
 
-Ogni trascrizione o serie di note viene associata alla relativa riunione nel Calendario, con l'etichetta **Da Teams**. Anche senza trascrizioni o note, la chat della riunione resta disponibile.
+Ogni trascrizione o serie di note viene associata alla relativa riunione nel Calendario, con l’etichetta **Da Teams**. Anche senza trascrizioni o note, la chat della riunione resta disponibile.
 
 I bot, le app e i messaggi di sistema vengono esclusi.
 
@@ -31,7 +31,7 @@ Non pubblica nei canali. Per rispondere in un thread di un canale, aprilo con **
 
 Microsoft chiede di consentire a The Machine di leggere le tue chat e il tuo profilo e di inviare messaggi a tuo nome. Non serve l’autorizzazione dell’amministratore.
 
-Se hai collegato Teams prima che potesse inviare messaggi, nella scheda compare **Riconnetti per inviare risposte.** Premi **Riconnetti** e autorizza di nuovo. Fino ad allora, la bozza resta disponibile per l’invio da Teams.
+Se hai collegato Teams prima che potesse inviare messaggi, nella scheda compare **Riconnettiti per inviare le risposte.** Premi **Riconnetti** e autorizza di nuovo. Fino ad allora, la bozza resta disponibile per l’invio da Teams.
 
 Per accedere ai canali, alle trascrizioni e alle note di Copilot, serve l’autorizzazione una tantum dell’amministratore della tua organizzazione. Fino a quel momento, nella scheda di Teams trovi ciò che non può ancora leggere e il motivo.
 
@@ -45,7 +45,7 @@ Su una Machine ospitata:
 2. Premi **Accedi con Microsoft** e autorizza l’accesso. Tornerai alla dashboard.
 3. Per i canali e le note delle riunioni, invia al tuo amministratore il link mostrato nella pagina di accesso. Dopo l’autorizzazione, collega di nuovo Teams.
 
-Durante la configurazione, puoi anche trovare **Connetti Microsoft Teams** nella pagina di configurazione.
+Durante la configurazione, puoi anche trovare **Collega Microsoft Teams** nella pagina di configurazione.
 
 Sul tuo computer, dopo averlo [associato al tuo account](friends.md#a-machine-on-your-own-computer): apri **Connessioni**, poi **Chat** o **Riunioni**, scegli **Microsoft Teams** o **Riunioni Teams** e premi **Accedi con Microsoft**. In questo caso legge le tue chat e le chat delle riunioni. I canali e le note delle riunioni non sono ancora disponibili.
 

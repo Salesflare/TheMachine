@@ -10,7 +10,7 @@ translated: 672364a90f92ef8f
 ---
 L’app mobile apre la tua dashboard personale, con l’accesso effettuato come sul web. **Scarica** l’app dall’[App Store](https://apps.apple.com/app/id6829875215) per iPhone e iPad o da [Google Play](https://play.google.com/store/apps/details?id=computer.themachine.app) per Android.
 
-L’attività **Ottieni di più da The Machine** in cima alla sezione Attività te la suggerisce. Nel browser del telefono, **Scarica** apre lo store. Se il telefono è impostato per mostrare i siti desktop, compaiono i link a entrambi gli store. Su un computer compare un codice QR da scansionare con il telefono e i link a entrambi gli store.
+L’attività **Sfrutta al meglio The Machine** in cima alla sezione Attività te la suggerisce. Nel browser del telefono, **Scarica** apre lo store. Se il telefono è impostato per mostrare i siti desktop, compaiono i link a entrambi gli store. Su un computer compare un codice QR da scansionare con il telefono e i link a entrambi gli store.
 
 Su qualsiasi telefono, [themachine.computer/app](https://themachine.computer/app) apre lo store giusto. In **Impostazioni**, **App** trovi entrambi gli store in cima, oppure solo quello del tuo telefono se stai usando un telefono. Su un computer, **Computer** installa la dashboard come app: vedi [Installare l’app](phone-app.md).
 
@@ -30,7 +30,7 @@ Poi l’app chiede alla tua Machine il titolo dell’attività e il passaggio su
 
 Una notifica include **Posticipa** (fino a domani) e **Segna come fatto**, oltre a **Fallo** per un’attività non ancora iniziata. Le azioni sono disponibili dopo aver sbloccato il telefono, senza aprire l’app. L’invio e i passaggi finali aprono sempre l’app. C’è una notifica per ogni attività: «In preparazione» diventa «Pronta» e la notifica scompare quando l’attività è completata o posticipata, qui o altrove.
 
-Quando un passaggio che hai confermato va a buon fine, la notifica mostra **Fatto** e cosa è successo, finché non tocchi **Ho capito** in Attività. Su iPhone puoi farlo anche la prossima volta che apri l’app.
+Quando un passaggio che hai confermato va a buon fine, la notifica mostra **Fatto** e cosa è successo, finché non tocchi **Ho capito** in Attività. Su iPhone la notifica può aggiornarsi solo la prossima volta che apri l’app.
 
 Se disattivi **Testo nelle notifiche** in **Impostazioni**, **Sicurezza**, resta visibile la frase fissa. Lo stesso succede se la schermata di blocco nasconde il contenuto delle notifiche. Quando non può mostrare altro, la notifica dice «Tocca per aprire». Se il telefono non riesce a raggiungere la tua Machine quando arriva una notifica, ne mostra i dettagli appena torna online.
 

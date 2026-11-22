@@ -56,7 +56,7 @@ Un’attività può sempre leggere i messaggi da cui proviene. Se ha bisogno di 
 
 Le questioni di lavoro che ti arrivano su un account personale, come un cliente su WhatsApp o un ordine nella tua casella personale, sono Lavoro fin dall’inizio. Un’attività che hai spostato o assegnato tu resta sempre dove l’hai messa. Lavoro o Personale determina dove compare un’attività e con chi è condivisa, mai dove risponde: la risposta va sempre nella conversazione da cui proviene, anche dopo uno spostamento, a meno che tu non scelga un altro modo.
 
-Un’attività Personale di questo tipo risponde comunque dall’indirizzo di lavoro a cui è arrivata l’email e non compare mai in una Fleet di Lavoro né nel Team Graph.
+Un’attività Personale di questo tipo risponde comunque dall’indirizzo di lavoro a cui è arrivata l’email e non compare mai in una Fleet di lavoro né nel Team Graph.
 
 Se hai almeno due attività in attesa, **Scorri** nell’intestazione di Per te le mostra una alla volta, nell’ordine dell’elenco, con la bozza completa e le opzioni **Invia** o **Fallo**, **Chiedi modifiche**, **Posticipa** e **Salta**. Sul computer, Invio invia ciò che è sullo schermo, `S` posticipa, `→` salta e Esc interrompe. Sotto il titolo, l’intestazione indica anche quanto tempo ci vuole al tuo ritmo, per esempio «circa 2 min».
 
@@ -64,7 +64,7 @@ Un’attività che ti fa una domanda non viene inclusa in nessuno dei due gruppi
 
 ## Controlla ora
 
-La tua Machine legge ogni fonte ogni pochi minuti, giorno e notte. Controlla i nuovi messaggi quando ce ne sono 40 in attesa oppure quando il messaggio più vecchio di una persona è in attesa da 15 minuti. Newsletter, notifiche e ricevute vengono incluse nel controllo successivo, entro un’ora.
+La tua Machine legge ogni fonte ogni qualche minuto, giorno e notte. Controlla i nuovi messaggi quando ce ne sono 40 in attesa oppure quando il messaggio più vecchio di una persona è in attesa da 15 minuti. Newsletter, notifiche e ricevute vengono incluse nel controllo successivo, entro un’ora.
 
 Di notte, da 00:00 a 06:30, i controlli si fermano: i nuovi messaggi vengono comunque letti e conservati, poi controllati insieme alle 06:30, così le tue attività sono pronte prima del riepilogo del mattino. La sezione Controlli in Connessioni mostra «Controlli in pausa per la notte, ripresa alle 06:30». Se di notte fai clic, scrivi o scorri nell’app, scrivi in chat oppure tocchi un’attività, i controlli riprendono normalmente finché non rimani inattivo per un’ora. **Controlla ora** avvia sempre un controllo immediato.
 

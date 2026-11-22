@@ -15,13 +15,13 @@ Spunta cosa inviare: il nome sempre, poi uno qualsiasi dei suoi indirizzi email 
 
 ## Vedilo prima che parta
 
-**Anteprima** mostra esattamente cosa riceve l'altra persona. Non parte niente finché non premi **Invia**. Se cambi qualcosa, ti chiede di ricontrollare.
+**Anteprima** mostra esattamente cosa riceve l’altra persona. Non parte niente finché non premi **Invia**. Se cambi qualcosa, ti chiede di ricontrollare.
 
-Niente viene mai condiviso da solo. È sigillato end-to-end per la Machine dell'altra persona, come tutto su [The Machine Network](fleet.md).
+Niente viene mai condiviso da solo. È sigillato end-to-end per la Machine dell’altra persona, come tutto su [The Machine Network](fleet.md).
 
 ## Contatti personali
 
-Una persona segnata come Personale, o che tieni privata dal tuo team, richiede un'altra spunta prima di **Anteprima**: "Condividi comunque". Se non la spunti, non parte niente.
+Una persona segnata come Personale, o che tieni privata dal tuo team, richiede un’altra spunta prima di **Anteprima**: "Condividi comunque". Se non la spunti, non parte niente.
 
 ## Condividi il tuo contatto
 
@@ -29,8 +29,8 @@ In **Su di te**, scegli **Condividi il mio contatto**. Scegli quali indirizzi e 
 
 ## Quando qualcuno condivide con te
 
-Il contatto aspetta in **Condivisi con te** in cima a Persone, con chi l'ha inviato e la sua nota. Scegli **Aggiungi** per metterlo nel tuo Graph, oppure **Ignora**.
+Il contatto aspetta in **Condivisi con te** in cima a Persone, con chi l’ha inviato e la sua nota. Scegli **Aggiungi** per metterlo nel tuo Graph, oppure **Ignora**.
 
 - Se conosci già quella persona (stessa email o stesso numero), Aggiungi aggiunge solo ciò che è nuovo. Il nome, il ruolo e il lato restano i tuoi.
 - Da un collega, la persona arriva come Lavoro, segnata "Condiviso da" lui o lei. Da un amico o dalla Famiglia, è un suggerimento da aggiungere, e il lato si decide come per chiunque altro.
-- Chi l'ha inviato vede se l'hai aggiunto, ma nient'altro del tuo Graph.
+- Chi l’ha inviato vede se l’hai aggiunto, ma nient’altro del tuo Graph.

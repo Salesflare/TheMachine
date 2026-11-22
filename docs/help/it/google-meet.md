@@ -33,11 +33,11 @@ Non chiede mai il tuo Drive. L’accesso a Gmail e Calendar resta com’è.
 Non serve avere Gmail collegato. Per collegarlo:
 
 - Machine in hosting: nella dashboard, apri **Connessioni**, **Riunioni**, scegli **Google Meet** e premi **Accedi con Google**. Google chiede l’OK qui sopra, poi torni alla dashboard.
-- Il tuo computer, abbinato al tuo account: gli stessi passaggi. L’accesso si apre in una nuova scheda.
+- Il tuo computer, associato al tuo account: gli stessi passaggi. L’accesso si apre in una nuova scheda.
 
-Verifica che l’accesso possa leggere Meet. Senza quell’OK non viene aggiunto. L’accesso continua a funzionare: non c’è niente da incollare o rinnovare.
+Senza l’OK per Meet non viene aggiunto. Non c’è niente da incollare o rinnovare.
 
-Se più avanti revochi l’OK, la scheda di Google Meet ti chiede di accedere di nuovo.
+Se più avanti revochi l’OK, Google Meet in **Connessioni** ti chiede di accedere di nuovo.
 
 ## Rimuovilo
 

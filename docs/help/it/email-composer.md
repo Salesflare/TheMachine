@@ -11,15 +11,15 @@ translated: 568ac451673bc141
 
 Fai clic su un indirizzo email, nella pagina di una persona in Graph o come link in un’attività o in una chat. **Nuova email** si apre verso quell’indirizzo, con oggetto e messaggio vuoti. Sul telefono occupa tutto lo schermo.
 
-**Da** parte dalla casella per quella persona: quella di lavoro per un contatto di lavoro, quella personale per famiglia e amici. Fai clic per scegliere un’altra delle tue caselle, o un alias confermato.
+**Da** propone la casella adatta a quella persona: quella di lavoro per un contatto di lavoro, quella personale per famiglia e amici. Fai clic per scegliere un’altra delle tue caselle, o un alias confermato.
 
 ## Inviarla
 
 Scrivi l’oggetto e il messaggio, con grassetto, elenchi e link se vuoi. Non parte nulla finché non premi **Invia ora**.
 
-L’email parte poi come ogni bozza che approvi: compare come inviata in un’attività sua, nella pagina della persona e nella tua casella. Se non può partire, l’attività la tiene, pronta da inviare da lì.
+L’email parte poi come ogni bozza che approvi: compare come inviata in una sua attività, nella pagina della persona e nella tua casella. Se non può partire, l’attività la tiene, pronta da inviare da lì.
 
-Esc o **Annulla** la chiude. Quello che hai scritto non viene tenuto.
+Esc o **Annulla** la chiude. Quello che hai scritto non viene conservato.
 
 ## La tua app di posta
 

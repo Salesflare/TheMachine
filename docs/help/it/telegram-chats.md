@@ -18,9 +18,9 @@ Non tocca il tuo stato di lettura e online: niente viene segnato come letto, e i
 
 ## Cosa può inviare
 
-Un testo in una chat che esiste già, solo dopo che l'hai approvato nell'attività. Gli invii partono uno alla volta, con una pausa in mezzo.
+Un testo in una chat che esiste già, solo dopo che l’hai approvato nell’attività. Gli invii partono uno alla volta, con una pausa in mezzo.
 
-Se un'attività è arrivata via email ma con quella persona parli su Telegram, dillo nella chat dell'attività. The Machine trova la chat che hai già con lei e sposta la bozza su Telegram, da rivedere e inviare. Non apre mai una nuova chat.
+Se un’attività è arrivata via email ma con quella persona parli su Telegram, dillo nella chat dell’attività. The Machine trova la chat che hai già con lei e sposta la bozza su Telegram, da rivedere e inviare. Non apre mai una nuova chat.
 
 ## Collegala
 
@@ -37,14 +37,14 @@ Oppure esegui `assistant connect telegram` in un terminale e scansiona il codice
 
 ## Quando si ferma
 
-- **Disconnessa da Telegram**: Telegram ha chiuso l'accesso di questo dispositivo, o l'hai disconnesso dal telefono. Premi **Riconnetti** sulla sua scheda.
-- **Telegram non accetta più l'ID app**: Telegram non accetta più l'ID app che usa questa Machine. Niente viene letto o inviato finché non premi **Riconnetti** e aggiungi un tuo ID app.
+- **Disconnessa da Telegram**: Telegram ha chiuso l’accesso di questo dispositivo, o l’hai disconnesso dal telefono. Premi **Riconnetti** sulla sua scheda.
+- **Telegram non accetta più l’ID app**: Telegram non accetta più l’ID app che usa questa Machine. Niente viene letto o inviato finché non premi **Riconnetti** e aggiungi un tuo ID app.
 
-The Machine usa l'API di Telegram per farlo. Telegram può limitare o chiudere gli accessi da app come lei.
+The Machine usa l’API di Telegram per farlo. Telegram può limitare o chiudere gli accessi da app come lei.
 
 ## Foto
 
-The Machine chiede a Telegram le foto profilo delle persone nel tuo graph che non ne hanno una, al massimo 50 al giorno, con lo stesso accesso che legge le tue chat, e solo per persone delle chat che legge. Non viene inviato nulla a loro. Chi ti nasconde la propria foto resta senza.
+The Machine chiede a Telegram le foto profilo delle persone nel tuo Graph che non ne hanno una, al massimo 50 al giorno, con lo stesso accesso che legge le tue chat, e solo per persone delle chat che legge. Non viene inviato nulla a loro. Chi ti nasconde la propria foto resta senza.
 
 ## Rimuovila
 

@@ -13,7 +13,7 @@ Le notifiche di GitHub: richieste di revisione, menzioni, assegnazioni, risposte
 
 ## Cosa può fare
 
-La sola lettura non modifica nulla su GitHub. Quando un'attività include un passaggio GitHub, come la creazione di un issue, l'attività lo indica e il passaggio viene eseguito solo dopo che premi **Conferma** o quando lo hai richiesto esplicitamente nella chat. Gli screenshot vengono acquisiti tramite il browser della tua Machine. Se GitHub non è collegato, l'attività indica che userà il browser e mostra **Collega GitHub**.
+La sola lettura non modifica nulla su GitHub. Quando un’attività include un passaggio GitHub, come la creazione di un issue, l’attività lo indica e il passaggio viene eseguito solo dopo che premi **Conferma** o quando lo hai richiesto esplicitamente nella chat. Gli screenshot vengono acquisiti tramite il browser della tua Machine. Se GitHub non è collegato, l’attività indica che userà il browser e mostra **Collega GitHub**.
 
 ## Collega GitHub
 
@@ -21,7 +21,7 @@ Su una Machine ospitata:
 
 1. Apri **Connessioni**, poi **Progetti e codice**, e seleziona GitHub.
 2. Seleziona **Lavoro** o **Personale** e premi **Accedi con GitHub**.
-3. Premi **Apri GitHub ↗**, inserisci il codice mostrato e autorizza l'accesso. La connessione viene stabilita automaticamente.
+3. Premi **Apri GitHub ↗**, inserisci il codice mostrato e autorizza l’accesso. La connessione viene stabilita automaticamente.
 
 La pagina di configurazione su app.themachine.computer/setup offre lo stesso accesso nella sezione **Altre fonti**.
 
@@ -29,7 +29,7 @@ Sul tuo computer:
 
 1. Apri **Connessioni**, poi **Progetti e codice**, e seleziona GitHub.
 2. Seleziona **Lavoro** con la tua azienda, oppure **Personale**, e premi **Collegati**.
-3. Se richiesto, premi **Apri GitHub ↗**, inserisci il codice e autorizza l'accesso. La connessione viene stabilita automaticamente.
+3. Se richiesto, premi **Apri GitHub ↗**, inserisci il codice e autorizza l’accesso. La connessione viene stabilita automaticamente.
 
 Oppure esegui `assistant connect github` e conferma il tuo accesso a GitHub.
 
@@ -40,4 +40,4 @@ Oppure esegui `assistant connect github` e conferma il tuo accesso a GitHub.
 
 ## Disinstalla da GitHub
 
-Su GitHub, apri **Impostazioni**, **Applicazioni**, **Applicazioni OAuth autorizzate** e revoca GitHub CLI. Sul tuo computer, anche `gh auth logout` disconnette l'account.
+Su GitHub, apri **Impostazioni**, **Applicazioni**, **Applicazioni OAuth autorizzate** e revoca GitHub CLI. Sul tuo computer, anche `gh auth logout` disconnette l’account.

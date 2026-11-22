@@ -7,22 +7,22 @@ code: learning_loop.py, authorship.py, dashboard.html
 order: 5
 translated: 05455d7e4b5fc29a
 ---
-Quasi tutto succede da sé. La tua Machine impara da quello che fai, quindi c'è poco da configurare e niente da costruire.
+Quasi tutto succede da sé. La tua Machine impara da quello che fai, quindi c’è poco da configurare e niente da costruire.
 
 ## Impara da sola
 
-- **Come scrivi**: dai messaggi che invii tu, per canale, così un'email suona come le tue email e una chat come le tue chat. Le bozze lo seguono.
+- **Come scrivi**: dai messaggi che invii tu, per canale, così un’email suona come le tue email e una chat come le tue chat. Le bozze lo seguono.
 - Cosa vuoi: dalle attività che concludi, ignori o posticipi, e dal perché.
-- Fatti e abitudini: da quello che dici nella chat di un'attività o al tuo bot Telegram, come "il venerdì non prendo mai chiamate".
+- Fatti e abitudini: da quello che dici nella chat di un’attività o al tuo bot Telegram, come "il venerdì non prendo mai chiamate".
 
 Circa due volte al giorno fa qualche piccola modifica in base a questo. **Apprendimento**, **Modifiche** le mostra una per una, con **Annulla**. Vedi [Scrittura](writing.md#it-keeps-learning).
 
 ## Insegnale più in fretta
 
 - Modifica una bozza prima di inviarla. Impara da quello che hai cambiato.
-- Di' cosa vorresti nella **Chat** dell'attività, o tocca **Chiedi modifiche** su una bozza.
+- Di' cosa vorresti nella **Chat** dell’attività, o tocca **Chiedi modifiche** su una bozza.
 - Tocca **Non serve** e scegli il motivo.
-- Diglielo nella chat di un'attività: "più breve, e niente punti esclamativi". Mostra **Salvato in Come scrivi** quando l'ha recepito.
+- Diglielo nella chat di un’attività: "più breve, e niente punti esclamativi". Mostra **Salvato in Come scrivi** quando l’ha recepito.
 
 ## Cosa puoi impostare
 

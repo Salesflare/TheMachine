@@ -34,4 +34,4 @@ Chiunque abbia il link può leggere il calendario. The Machine lo custodisce com
 ## Se si ferma
 
 - **Il link del calendario non funziona più**: il link è stato eliminato o cambiato. Creane uno nuovo e ricollegalo.
-- **Il server del calendario non è raggiungibile**: riprova da solo.
+- **Il server del calendario non è raggiungibile**: The Machine ci riprova da sola.

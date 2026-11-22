@@ -32,7 +32,7 @@ Su una Machine ospitata:
 2. In **Posta e calendario**, premi **Collega Google** e accedi. Nella schermata di Google compare Salesflare, l’azienda che crea The Machine.
 3. Gmail e Google Calendar si collegano insieme.
 
-Se ti sei registrato con Google e in quella schermata hai autorizzato Gmail e Calendar, si collegano automaticamente. Le email vengono inviate solo quando premi Invia.
+Se hai creato l’account con Google e in quella schermata hai autorizzato Gmail e Calendar, si collegano automaticamente. Le email vengono inviate solo quando premi Invia.
 
 Oppure, nella dashboard: **Connessioni**, **Email**, scegli Gmail e premi **Accedi con Google**. Al termine tornerai alla dashboard.
 

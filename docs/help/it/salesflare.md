@@ -13,7 +13,7 @@ I tuoi account, contatti e trattative in Salesflare, e il feed di ogni account: 
 
 ## Cosa può modificare
 
-Niente. (Sul tuo computer, l'impostazione `join_pipelines` può aggiungerti agli account nelle pipeline che scegli. Per impostazione predefinita è disattivata.)
+Niente. (Sul tuo computer, l’impostazione `join_pipelines` può aggiungerti agli account nelle pipeline che scegli. Per impostazione predefinita è disattivata.)
 
 ## Collegalo
 
@@ -23,14 +23,14 @@ Niente. (Sul tuo computer, l'impostazione `join_pipelines` può aggiungerti agli
 
 ## Dettagli della sincronizzazione
 
-In **Connessioni**, **Clienti**, Salesflare mostra l'avanzamento: gli account letti in questo ciclo e quelli eventualmente saltati perché Salesflare era troppo lenta. Se un ciclo dura ore, viene indicato che potrebbe essersi bloccato.
+In **Connessioni**, **Clienti**, Salesflare mostra l’avanzamento: gli account letti in questo ciclo e quelli eventualmente saltati perché Salesflare era troppo lenta. Se un ciclo dura ore, viene indicato che potrebbe essersi bloccato.
 
 I riquadri indicano quanti account è riuscita ad aprire e quante email e riunioni ha importato. Se la tua chiave API non consente a Salesflare di aprire nessun account, la scheda mostra **Serve il tuo aiuto**: usa la chiave di un utente che può visualizzarli. Se Salesflare va spesso in timeout, ma riesce a completare ogni nuovo tentativo, indica che è **a volte lenta**.
 
-Se Salesflare non ha attivato per il tuo team l'accesso al feed tramite chiavi API, la scheda te lo segnala: non riceverai email o riunioni finché il supporto Salesflare non lo attiva. La verifica viene ripetuta ogni 10 minuti il primo giorno, poi circa ogni ora. Quando l'accesso funziona, la sincronizzazione riprende automaticamente.
+Se Salesflare non ha attivato per il tuo team l’accesso al feed tramite chiavi API, la scheda te lo segnala: non riceverai email o riunioni finché il supporto Salesflare non lo attiva. La verifica viene ripetuta ogni 10 minuti il primo giorno, poi circa ogni ora. Quando l’accesso funziona, la sincronizzazione riprende automaticamente.
 
 - **Ferma**: non riceverai nuovi dati finché non premi **Inizio**. La sincronizzazione riprende da dove si era fermata.
-- **Riavvia sincronizzazione**: ricomincia da capo e legge di nuovo i dati dell'ultima settimana. I dati già importati non vengono persi.
+- **Riavvia sincronizzazione**: ricomincia da capo e legge di nuovo i dati dell’ultima settimana. I dati già importati non vengono persi.
 - **Chiavi API**: apre la pagina delle chiavi API di Salesflare, dove puoi crearne una nuova.
 
 ## Rimuovila
@@ -38,6 +38,6 @@ Se Salesflare non ha attivato per il tuo team l'accesso al feed tramite chiavi A
 - Nella dashboard: **Connessioni**, apri Salesflare, **Dettagli**, poi **Disconnetti**. I dati già importati restano.
 - Su una Machine ospitata puoi anche premere **Rimuovi** accanto a Salesflare nella pagina di configurazione.
 
-## Revoca l'accesso in Salesflare
+## Revoca l’accesso in Salesflare
 
 Elimina la chiave API in Salesflare, in Impostazioni, chiavi API.

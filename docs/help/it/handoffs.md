@@ -19,7 +19,7 @@ Viene inclusa anche una conversazione di Intercom. Se la sua Machine accede allo
 
 Mentre aspetti, l’attività indica cosa hai chiesto e quando ("Chiesto a Pat mar 3 nov: …"), ma solo se questo aggiunge informazioni al titolo. È nella sezione **Torna più tardi**, con la dicitura "Con Pat · in attesa" e una data per chiedere un aggiornamento. **Ricontatta ora** prepara un breve sollecito per Pat da inviare; **Cambia orario** sposta la data del promemoria.
 
-Se la Machine di Pat non può inviargli notifiche, l’attività indica "Pat non riceverà una notifica. Avvisalo." Avvisa Pat tu. La dicitura scompare quando attiva le notifiche.
+Se la Machine di Pat non può inviargli notifiche, l’attività indica "Pat non riceverà una notifica. Diglielo tu." Avvisa Pat tu. La dicitura scompare quando attiva le notifiche.
 
 L’attività torna in cima solo quando c’è qualcosa da decidere: Pat ha risposto, ha rifiutato o ha completato l’attività, il passaggio non è riuscito oppure è arrivata una scadenza. Il promemoria dipende dalla scadenza: dopo qualche ora se è oggi, il giorno lavorativo precedente se è imminente, la mattina successiva se è urgente, altrimenti dopo 3 giorni lavorativi.
 
@@ -45,7 +45,7 @@ Può spiegare il motivo: l’attività non è sua, è già stata completata o no
 
 ## Qualcuno fuori dal Network
 
-Scegli **Per email**: la tua Machine prepara un’email da inviare. Mentre scrivi, ti suggerisce prima le persone nella tua Fleet, poi quelle della tua azienda. Aggiungi una pagina attività per permettere loro di rispondere con un solo tocco: vedi [Pagine attività](task-pages.md).
+Scegli **Per email**: la tua Machine prepara un’email da inviare. Mentre scrivi, ti suggerisce prima le persone nella tua Fleet, poi quelle della tua azienda. Aggiungi una pagina dell’attività per permettere loro di rispondere con un solo tocco: vedi [Pagine delle attività](task-pages.md).
 
 Disponibile solo per le attività di Lavoro. Seleziona cosa includere: qualche riga sull’attività, la sua bozza, link e file. I contenuti Personali e Solo tu restano esclusi. **Prepara email** aggiunge l’email all’attività: leggila e poi inviala dalla tua casella di posta. Non viene tracciata.
 

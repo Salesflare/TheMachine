@@ -1,7 +1,7 @@
 ---
 title: Problemi sul tuo computer
 area: troubleshooting
-summary: La tua Machine legge i log del computer e ti segnala i problemi reali, spiegandone la causa e come risolverli. Una soluzione viene applicata solo quando tocchi **Fallo**.
+summary: La tua Machine legge i log del computer e ti segnala i problemi reali, spiegandone la causa e come risolverli. Una soluzione viene applicata solo quando tocchi Fallo.
 covers: computer-logs
 code: machine/system_logs.py, machine/sources/gateway.py, onboarding.py
 keywords: logs, journal, journalctl, crash, coredump, systemd, Hyprland, Omarchy, bar
@@ -28,7 +28,7 @@ Uno script viene indicato con il suo nome, per esempio backup.py, non con python
 
 Un’attività che spiega in parole semplici cosa è successo, perché è importante e cosa puoi fare. I comandi che mostrano il motivo si trovano sotto **Mostra altro**. Chiedi nella sua chat e The Machine indagherà. Ogni modifica che apporta resta in sospeso finché non dai il tuo OK, come quando tocchi **Fallo**.
 
-Quando c’è una soluzione sicura, l’attività include **Fallo**. Se un tuo servizio resta inattivo, lo riavvia; su Omarchy, riavvia anche la barra. **Fallo** esegue solo quel comando e il risultato appare nella chat dell’attività. Non interviene mai sui servizi della stessa The Machine né sull’OpenClaw Gateway.
+Quando c’è una soluzione sicura, l’attività include **Fallo**. Se un tuo servizio resta inattivo, lo riavvia; su Omarchy, riavvia anche la barra. **Fallo** esegue solo quel comando e il risultato appare nella chat dell’attività. Non interviene mai sui servizi di The Machine stessa né sull’OpenClaw Gateway.
 
 Per lo stesso problema viene creata al massimo un’attività ogni due settimane, e mai se la relativa attività è ancora aperta. Al massimo due nuove attività al giorno. Un’attività relativa a un servizio inattivo si chiude da sola quando il servizio riparte o il problema viene risolto.
 

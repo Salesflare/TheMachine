@@ -15,7 +15,7 @@ Apri **Impostazioni**, **Movimenti**. Ogni riga mostra un’attività svolta da 
 - cosa ha fatto e com’è andata: inviata, rifiutata, non riuscita o annullata
 - quando, quale account o app ha usato e [cosa l’ha autorizzata](activity.md#what-allowed-it)
 - un link alla relativa attività, se presente
-- per un’IA che hai collegato, come ChatGPT o Claude: il suo nome con **(connected AI)**, così puoi distinguerla da The Machine
+- per un’IA che hai collegato, come ChatGPT o Claude: il suo nome con **(IA collegata)**, così puoi distinguerla da The Machine
 
 L’elenco include messaggi e risposte, modifiche a documenti e calendari, azioni sul web, correzioni unite, agenti di coding, domande e risposte di Fleet, apprendimenti inviati al team di The Machine, skill, importazioni di Graph, informazioni che hai chiesto alla tua chat di dimenticare (con **Annulla**), connessioni aggiunte o rimosse e ogni accesso del nostro team indicato in [Accesso dell’assistenza](get-support.md#support-access), compresi quelli rifiutati.
 
@@ -27,7 +27,7 @@ Per ogni messaggio, modifica a documenti o calendari, azione sul web e correzion
 - **Approvato a voce**: hai detto sì in Talk
 - **Toccato «Fallo»**: hai toccato **Fallo** nell’attività
 - **Chiesto in chat**: l’hai chiesto a parole, con l’inizio del tuo messaggio tra virgolette. La citazione resta visibile solo finché quelle parole sono ancora nel tuo messaggio.
-- **Ricontatto che ha inviato da sola**, **Piccola correzione, unita da sola**, **Nuovo documento privato, creato da sola** o **Preparata in anticipo, da sola**: una tua impostazione o una regola di The Machine
+- **Ricontatto inviato da sola**, **Piccola correzione, unita da sola**, **Nuovo documento privato, creato da sola** o **Preparata in anticipo, da sola**: una tua impostazione o una regola di The Machine
 - **Nessuna approvazione registrata**: non è stata registrata alcuna approvazione. L’attività compare anche nelle nostre [segnalazioni di errore](error-reports.md), così possiamo trovare il passaggio che l’ha saltata.
 
 Le azioni sul web mostrano anche l’esecuzione di un’attività che ha fatto clic o digitato su una pagina, insieme a cosa l’ha autorizzata. Il lavoro che prosegue dopo un posticipo mantiene l’autorizzazione che aveva prima.

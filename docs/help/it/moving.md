@@ -26,8 +26,8 @@ Il file è sempre crittografato. In Impostazioni puoi vedere cosa contiene e cos
 ## Importazione
 
 1. Vai in **Impostazioni** › **Generale** › **Esporta**, premi **Scegli file** accanto a Importa e seleziona l’esportazione.
-2. Inserisci la passphrase o il codice di esportazione e premi **Apri**. La Machine controlla prima tutto il file.
-3. Su una Machine ospitata, premi **Importa ora**. Sul tuo computer, premi **Sostituisci con questa esportazione**, poi **Sostituisci**. La Machine si riavvia con i dati importati entro pochi minuti e in Impostazioni compare **Importata**.
+2. Inserisci la passphrase o il codice di esportazione e premi **Apri**. The Machine controlla prima tutto il file.
+3. Su una Machine ospitata, premi **Importa ora**. Sul tuo computer, premi **Sostituisci con questa esportazione**, poi **Sostituisci**. The Machine si riavvia con i dati importati entro pochi minuti e in Impostazioni compare **Importata**.
 
 L’importazione sostituisce i dati presenti sulla Machine, dopo averne conservato una copia. Non viene inviato nulla automaticamente: gli invii in coda aspettano una tua conferma.
 

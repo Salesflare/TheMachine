@@ -83,7 +83,7 @@ Le attività che la riguardano restano, ma il suo nome viene rimosso. Non verrà
 
 ## Email non recapitata
 
-Quando un’email inviata a qualcuno non viene recapitata, il suo indirizzo mostra lo stato **Non recapitata** con la data, e un suo altro indirizzo viene messo in cima. Le nuove bozze non vengono mai inviate a quell’indirizzo se ne è noto un altro. Se è l’unico, la schermata di invio ti avvisa, ma puoi comunque inviare.
+Quando un’email inviata a qualcuno non viene recapitata, il suo indirizzo mostra **Respinto** con la data, e un suo altro indirizzo viene messo in cima. Le nuove bozze non vengono mai inviate a quell’indirizzo se ne è noto un altro. Se è l’unico, la schermata di invio ti avvisa, ma puoi comunque inviare.
 
 Un mancato recapito viene registrato quando il server di posta segnala che l’indirizzo non esiste oppure dopo 3 errori temporanei nell’arco di una settimana. Lo stato viene rimosso quando la persona scrive di nuovo da quell’indirizzo o quando un’email inviata a quell’indirizzo viene recapitata.
 
@@ -95,7 +95,7 @@ Questa opzione disattiva anche la breve ricerca sul web prima di una prima riuni
 
 Quando la ricerca trova queste informazioni, la pagina mostra anche il testo Informazioni, da quando la persona ricopre il ruolo attuale e i due ruoli precedenti. Le preparazioni delle riunioni includono anche queste informazioni, ma usano il testo Informazioni solo se la persona non ha una biografia propria.
 
-Le tue connessioni si arricchiscono anche con le informazioni che hanno già letto: titolo, telefono e fuso orario da Slack; biografia e località da X; descrizione e foto da LinkedIn; titoli professionali da Contatti Google e Salesflare; e la foto di un contatto da Salesflare, se il servizio ne conserva una. Passa il puntatore sulla riga sotto il nome per vedere da dove proviene l’informazione.
+Le tue connessioni aggiungono altri dettagli con ciò che hanno già letto: titolo, telefono e fuso orario da Slack; biografia e località da X; descrizione e foto da LinkedIn; titoli professionali da Contatti Google e Salesflare; e la foto di un contatto da Salesflare, se il servizio ne conserva una. Passa il puntatore sulla riga sotto il nome per vedere da dove proviene l’informazione.
 
 Outlook aggiunge le foto dei colleghi della tua organizzazione e dei tuoi contatti Outlook, oltre ai titoli professionali e alle aziende dei tuoi contatti ([Microsoft](microsoft.md#photos-of-colleagues-and-contacts)).
 
@@ -105,20 +105,20 @@ Nel [Graph del team](team-graph.md) di una Fleet di lavoro, una piccola copia de
 
 ## Su di te
 
-I tuoi indirizzi e numeri, compresi gli alias, appartengono sempre a te e mai a qualcuno nel tuo Graph. Se cerchi te stesso o aggiungi una persona con uno dei tuoi indirizzi, si apre **Su di te**; durante un’importazione, la tua riga viene ignorata.
+I tuoi indirizzi e numeri, compresi gli alias, appartengono sempre a te e mai a qualcuno nel tuo Graph. Se cerchi il tuo nome o aggiungi una persona con uno dei tuoi indirizzi, si apre **Su di te**; durante un’importazione, la tua riga viene ignorata.
 
-La pagina Su di te elenca i tuoi indirizzi e la relativa fonte; puoi modificarli in **Impostazioni**, alla voce Account. Per inviare i tuoi contatti a un collega o a un amico, scegli **Condividi il mio contatto**. Vedi [Condividere un contatto](share-contact.md).
+La pagina Su di te elenca i tuoi indirizzi e la relativa fonte; puoi modificarli in **Impostazioni**, alla voce Account. Per inviare il tuo contatto a un collega o a un amico, scegli **Condividi il mio contatto**. Vedi [Condividere un contatto](share-contact.md).
 
 ## Il suo ruolo per te
 
-I ruoli che la tua Machine rileva nei messaggi compaiono sulla pagina della persona, sotto **Per te**, con solo le parole che indicano il ruolo, come un titolo. Non basta che qualcuno dica di essere il tuo commercialista o cliente: deve risultare anche da parte tua, per esempio dai tuoi messaggi o dalle riunioni con quella persona. Non serve che tu lo confermi. Se è sbagliato, **Modifica** nella pagina della persona lo corregge; puoi anche usare **⋯** sulla relativa riga in **Modifiche recenti**. La Machine impara dalle tue modifiche.
+I ruoli che la tua Machine rileva nei messaggi compaiono sulla pagina della persona, sotto **Per te**, con solo le parole che indicano il ruolo, come un titolo. Non basta che qualcuno dica di essere il tuo commercialista o cliente: deve risultare anche da parte tua, per esempio dai tuoi messaggi o dalle riunioni con quella persona. Non serve che tu lo confermi. Se è sbagliato, **Modifica** nella pagina della persona lo corregge; puoi anche usare **⋯** sulla relativa riga in **Modifiche recenti**. La tua Machine impara dalle tue modifiche.
 
 ## Cosa sa di una persona
 
-Le informazioni su una persona si trovano sulla sua pagina, sotto **Informazioni note**; in Apprendimento trovi quelle generali. **Aggiungi** salva un’altra informazione con parole tue. Ogni informazione ha un menu:
+Le informazioni su una persona si trovano sulla sua pagina, sotto **Cosa si sa su** e il suo nome; in Apprendimento trovi quelle generali. **Aggiungi** salva un’altra informazione con parole tue. Ogni informazione ha un menu:
 
-- **Modifica** la modifica direttamente.
-- **Non riguarda** quella persona e la rende di nuovo un’informazione generale, in **Apprendimento**, **Fatti**.
+- **Modifica** la cambia direttamente.
+- **Non riguarda** quella persona la rende di nuovo un’informazione generale, in **Apprendimento**, **Fatti**.
 - **Rimuovi** la elimina ovunque.
 
 ## Modifiche recenti

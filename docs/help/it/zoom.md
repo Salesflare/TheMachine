@@ -40,4 +40,4 @@ Sul tuo computer, quando è [abbinato al tuo account](friends.md#a-machine-on-yo
 
 ## Disinstallalo su Zoom
 
-Accedi su marketplace.zoom.us, apri Manage, poi Added Apps, e rimuovi The Machine. Non può più leggere nulla. Ciò che ha già portato dentro resta sulla tua Machine finché non lo elimini: vedi [Annulla ed elimina](cancel-and-delete.md).
+Accedi su marketplace.zoom.us, apri Manage, poi Added Apps, e rimuovi The Machine. Non può più leggere nulla. Ciò che ha già portato dentro resta sulla tua Machine finché non lo elimini: vedi [Disdici o elimina](cancel-and-delete.md).

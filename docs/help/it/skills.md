@@ -45,4 +45,4 @@ Chiedi una skill in un’attività e la tua Machine la scrive lì. Apri **Leggi 
 
 ## Condividerne una
 
-Condividi una skill con un amico o un collega. Potrà leggerla e decidere se installarla. Le modifiche successive gli arriveranno solo se la condividi di nuovo.
+Condividi una skill con un amico o un collega. Potrà leggerla e decidere se installarla. Le modifiche successive arriveranno solo se la condividi di nuovo.

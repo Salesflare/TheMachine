@@ -9,7 +9,7 @@ translated: 23f9e98f4680d23c
 ---
 ## Cosa legge
 
-Le conversazioni di cui fai parte: canali, canali privati, messaggi diretti e messaggi di gruppo. Quando ti connetti, legge gli ultimi 7 giorni, poi tutti i nuovi messaggi. Non entra mai in un canale né apre una conversazione da sola. Legge un canale poco attivo circa una volta al giorno; se un’attività ha bisogno dei messaggi più recenti, The Machine li legge subito.
+Le conversazioni di cui fai parte: canali, canali privati, messaggi diretti e messaggi di gruppo. Quando lo colleghi, legge gli ultimi 7 giorni, poi tutti i nuovi messaggi. Non entra mai in un canale né apre una conversazione da sola. Legge un canale poco attivo circa una volta al giorno; se un’attività ha bisogno dei messaggi più recenti, The Machine li legge subito.
 
 Circa un anno di messaggi più vecchi arriva in seguito, poco alla volta, come [cronologia](history.md).
 
@@ -23,9 +23,9 @@ Un messaggio diretto a una persona, a nome tuo, e solo dopo che lo approvi nell�
 
 Quello che legge resta sulla tua Machine finché non lo elimini o non elimini la Machine. Il servizio di hosting non conserva copie dei tuoi messaggi né i dati di accesso a Slack, e nessun modello di IA viene addestrato sui tuoi messaggi Slack. The Machine usa l’IA, che può sbagliare, quindi puoi vedere ogni messaggio prima che venga inviato.
 
-## Connetti Slack
+## Collega Slack
 
-1. Apri **Connessioni**, **Chat**, **Slack**, poi **Accedi con Slack** e autorizza l’accesso in Slack. Se usi il tuo computer, prima abbinalo al tuo account su themachine.computer.
+1. Apri **Connessioni**, **Chat**, **Slack**, poi **Accedi con Slack** e autorizza l’accesso in Slack. Se usi il tuo computer, prima associalo al tuo account su themachine.computer.
 2. Prima arrivano i nuovi messaggi e i messaggi diretti. Slack consente alle app di leggere circa una conversazione al minuto, quindi i messaggi più vecchi vengono caricati nell’arco di alcune ore.
 
 Oppure usa una chiave API di Maton: accedi su maton.ai, connetti Slack lì e copia la tua chiave API di Maton da Home. Poi apri **Oppure usa una chiave API di Maton** sotto Slack e incollala, oppure esegui `assistant connect slack` sul tuo computer. Una connessione Slack tramite Maton continua a funzionare come prima.

@@ -11,7 +11,7 @@ Apri **Impostazioni** con l’icona a forma di ingranaggio in alto. Le schede so
 
 - **Account**: **I tuoi indirizzi** (quelli che la Machine considera tuoi) e **Esci**, in alto. Se hai una Machine ospitata, trovi anche il piano, le fatture, Fleet, gli amici, l’accesso e i dati, con **Annulla il piano** e **Elimina l’account** in fondo. Se hai una Machine sul tuo computer collegata al Network, trovi Fleet, il nome utente, gli amici e l’accesso, ognuno con un link che apre la sezione corrispondente del tuo account (da cui puoi accedere), e **Elimina l’account** in fondo. Se non è ancora collegata: **Unisciti al Network**, in alto. Vedi [Piani e fatturazione](plans-and-billing.md).
 - **Generale**: lingua e area geografica, questo dispositivo, input vocale, il browser della tua Machine, Fleet, esportazione e importazione, e la versione in uso. Se non c’è la scheda Account, **Unisciti al Network** è in fondo.
-- **Sicurezza**: Standard o Attenta. Vedi [Livelli di sicurezza](security-levels.md). C’è anche **Accesso per l’assistenza**, quando è attivo: vedi [Ricevere assistenza](get-support.md#support-access).
+- **Sicurezza**: Standard o Prudente. Vedi [Livelli di sicurezza](security-levels.md). C’è anche **Accesso per l’assistenza**, quando è attivo: vedi [Ricevere assistenza](get-support.md#support-access).
 - **Movimenti**: tutto quello che The Machine ha fatto per te, dal più recente. Vedi [Movimenti](activity.md).
 - **Notifiche**: cosa ti arriva e dove, e il tuo orario di lavoro. Vedi [Notifiche](notifications.md) e [Orario di lavoro](work-hours.md).
 - **Scrittura**: firme e il tuo modo di scrivere. Vedi [Scrittura](writing.md).
@@ -24,7 +24,7 @@ Le schede senza contenuti da mostrare sono nascoste.
 ## Generale
 
 - **Lingua e area geografica**: **Area geografica** imposta il formato di date, ore e numeri (24 ott o ott 24). **Formato dell’ora** sceglie tra 12 ore (2:05 PM) e 24 ore (14:05). Le attività, Telegram, il riepilogo e i messaggi Fleet seguono entrambe le impostazioni. Una Machine ospitata usa il fuso orario che hai scelto al momento della registrazione.
-- **Lingua**: inglese, olandese, francese, tedesco, spagnolo, italiano, portoghese (Brasile), cinese semplificato, giapponese, coreano o russo. La lingua iniziale dipende da quella del browser. La dashboard, la Guida, le notifiche, Telegram, il riepilogo settimanale e le attività scritte dalla tua Machine cambiano lingua da quando fai la scelta. I testi più vecchi restano invariati. I compagni di squadra ricevono le domande di Fleet e Family nella propria lingua, mentre le bozze per gli altri restano nella lingua della conversazione.
+- **Lingua**: inglese, olandese, francese, tedesco, spagnolo, italiano, portoghese (Brasile), cinese semplificato, giapponese, coreano o russo. La lingua iniziale dipende da quella del browser. La dashboard, la Guida, le notifiche, Telegram, il riepilogo settimanale e le attività scritte dalla tua Machine cambiano lingua da quando fai la scelta. I testi più vecchi restano invariati. I compagni di squadra ricevono le domande di Fleet e Famiglia nella propria lingua, mentre le bozze per gli altri restano nella lingua della conversazione.
 - **Questo dispositivo**: **Installa l’app**, **Notifiche** con **Invia una prova** e **Modalità chiara**, solo per questo browser o telefono. Vedi [Installare l’app e attivare le notifiche](phone-app.md). Su [Omarchy](omarchy.md) trovi anche **Tema Omarchy**.
 - **Input vocale**: come le tue parole diventano testo e quale voce usa Talk live. Vedi [Input vocale](voice-input.md) e [Talk live](talk-live.md).
 - **Apri il browser della Machine ↗**: il browser che la tua Machine usa per siti come LinkedIn.
@@ -72,6 +72,6 @@ Scegli in base a chi risponde oggi. Una casella del team come support@ appartien
 
 I domini dei tuoi indirizzi appartengono alla tua azienda. Ne usi anche un altro, come acme.co oltre ad acme.com? Inseriscilo in **I domini della tua azienda** e premi **Aggiungi**.
 
-A quel punto, le persone con questi domini sono considerate colleghe, mai clienti: le loro conversazioni restano fuori dal Team Graph e non viene creata un’organizzazione per loro. **Rimuovi** elimina di nuovo il dominio. Non puoi aggiungere domini di email gratuite come gmail.com.
+A quel punto, le persone con questi domini sono considerate colleghe, mai clienti: le loro conversazioni restano fuori dal Graph del team e non viene creata un’organizzazione per loro. **Rimuovi** elimina di nuovo il dominio. Non puoi aggiungere domini di email gratuite come gmail.com.
 
 Un alias Gmail tuo può anche essere indicato come **Da** in una bozza, se Gmail conferma che puoi inviare email da quell’indirizzo. Vedi [Gmail](gmail.md#what-it-can-send).

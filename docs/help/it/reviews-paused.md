@@ -9,9 +9,9 @@ translated: c3456770809873dd
 ---
 Le attività arrivano dai controlli: la tua Machine controlla cosa è arrivato negli ultimi 15 minuti circa.
 
-## Ti sei appena registrato
+## Subito dopo l’iscrizione
 
-Su una nuova Machine ospitata, i controlli si avviano da soli una volta collegate l’AI e la posta. Mentre la tua Machine legge la posta, Attività mostra «Lettura della posta in corso, le prime attività arriveranno tra qualche minuto». Una volta capito quanto c’è da leggere, indica all’incirca quanto ci vorrà: «Le prime attività arriveranno tra circa 10 min». Se manca un passaggio, **Serve il tuo intervento** lo indica, per esempio con **Collega la posta**, e include un link a quel passaggio.
+Su una nuova Machine ospitata, i controlli si avviano da soli una volta collegate l’IA e la posta. Mentre la tua Machine legge la posta, Attività mostra «Lettura della posta in corso, le prime attività arriveranno tra qualche minuto». Una volta capito quanto c’è da leggere, indica all’incirca quanto ci vorrà: «Le prime attività arriveranno tra circa 10 min». Se manca un passaggio, **Serve il tuo intervento** lo indica, per esempio con **Collega la posta**, e include un link a quel passaggio.
 
 Durante la lettura, Attività mostra i progressi («Letti 20 messaggi su 132. Lettura dei prossimi 40…»), alcune delle persone e organizzazioni che ha trovato e la tua prima attività non appena è pronta. Il numero indica quanti messaggi ha finito di leggere; la barra avanza mentre legge i successivi. I nomi provengono dalla tua posta e li vedi solo tu.
 
@@ -23,7 +23,7 @@ In cima ad Attività compare «I controlli sono disattivati, quindi non arrivano
 
 ## Il limite del tuo modello
 
-Per lasciare spazio alle tue chat, i controlli si mettono in pausa quando raggiungono circa il 65% del limite di 5 ore del tuo piano AI e il 90% del limite settimanale. Se hai un modello di riserva con un altro piano, i controlli non aspettano. Vedi [Modello](model.md).
+Per lasciare spazio alle tue chat, i controlli si mettono in pausa quando raggiungono circa il 65% del limite di 5 ore del tuo piano IA e il 90% del limite settimanale. Se hai un modello di riserva con un altro piano, i controlli non aspettano. Vedi [Modello](model.md).
 
 Mentre i controlli sono in attesa, in cima alla dashboard compare fino a quando, per esempio «I controlli sono in attesa fino alle 07:15 per salvaguardare la tua quota settimanale di ChatGPT». **Controlla ora** ne avvia comunque uno. In **Impostazioni**, **Modello** trovi i tuoi limiti.
 
@@ -31,7 +31,7 @@ Non perdi nulla: i contenuti arrivati vengono controllati appena possibile.
 
 ## Di notte
 
-Dalle 00:00 alle 06:30, i controlli si mettono in pausa e i nuovi messaggi restano in attesa. Alle 06:30 vengono controllati tutti insieme, prima del riepilogo del mattino. **Controlli** mostra «In pausa per la notte, recupero alle 06:30». Usa l’app, scrivi in chat o tocca un’attività: i controlli ripartono e continuano finché non resti inattivo per un’ora. **Controlla ora** avvia subito un controllo.
+Dalle 00:00 alle 06:30, i controlli si mettono in pausa e i nuovi messaggi restano in attesa. Alle 06:30 vengono controllati tutti insieme, prima del riepilogo del mattino. **Controlli** mostra «In pausa per la notte, recupero alle 06:30». Usa l’app, scrivi in chat o tocca un’attività: i controlli ripartono e continuano finché non passi un’ora senza usarla. **Controlla ora** avvia subito un controllo.
 
 ## Un’esecuzione non è riuscita
 
