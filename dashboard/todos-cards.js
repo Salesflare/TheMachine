@@ -145,8 +145,8 @@ const expiredLine=s=>{const at=new Date(s.expires_at||'');if(!s.expired_at||isNa
 // A to-do that looks done already: its run found it done, or a later message suggests it's handled (LOOKS_DONE_SQL in
 // assistant.py). It waits in one quiet group above Done (lookDoneList), is never late and never counts as waiting for
 // you. Only you close it.
-// The state its run's outcome says (already_done, waiting, answered, snoozed…), or undefined
-const outState=s=>{try{return JSON.parse(s.outcome||'{}')?.state}catch{}};
+// Its run's saved outcome ({} when none or unreadable), and the state it says (already_done, waiting, answered…)
+const outOf=s=>{try{return JSON.parse(s.outcome||'{}')||{}}catch{return {}}},outState=s=>outOf(s).state;
 const looksDone=s=>!closed(s)&&s.status!=='snoozed'&&(!!s.handled_hint||s.status==='prepared'&&outState(s)==='already_done');
 // Waiting on others: its run found a step still open on someone else's side (outcome waiting: a review, merge, deploy, a
 // reply). Nothing is ready for you there, so it sits in its own folded group above Coming back later and never counts.
@@ -156,7 +156,7 @@ const waitsOnOthers=s=>!closed(s)&&s.status==='prepared'&&!looksDone(s)&&outStat
 // made it, so there is no result to read, and its chat has no result that says what it waits on.
 const waitsAfterOwner=s=>waitsOnOthers(s)&&!!JSON.parse(s.outcome).until;
 // Brought back when the wait was over with nothing new (Store.return_waiting): what it still waits on, or ''
-const stillWaiting=s=>{if(s.status!=='pending')return '';try{const w=JSON.parse(s.outcome||'null');return w?.state==='still_waiting'&&w.waiting_on?t('Still waiting on: {}',sentence(w.waiting_on)):''}catch{return ''}};
+const stillWaiting=s=>{if(s.status!=='pending')return '';const w=outOf(s);return w.state==='still_waiting'&&w.waiting_on?t('Still waiting on: {}',sentence(w.waiting_on)):''};
 // Its one line of evidence: the hint's reason, else the result's first sentence (what shows it)
 function doneWhy(s){try{const h=JSON.parse(s.handled_hint||'null');if(h?.reason)return h.reason}catch{}
  const plain=String(s.body||'').replace(/\[([^\]]*)\]\([^)]*\)/g,'$1').replace(/[*_`]/g,'').replace(/\s+/g,' ').trim();
@@ -531,7 +531,7 @@ const sentence=t=>{t=String(t).trim();return /[.?!…]$/.test(t)?t:t+'.'};
 // Hand off step back. Either a result whose needs_you is a question, with nothing to send, or a run that stopped to
 // ask the owner: a blocker it wrote itself (no error of the service's own), not a sign-in and not waiting in the browser.
 // A result that left the final click (submit, pay, book) to the owner: what that click is, or ''. Same rule as card() in assistant.py.
-const finalStep=s=>{if(s.status!=='prepared'||s.handled_hint)return '';try{const o=JSON.parse(s.outcome||'{}');return o.state==='your_step'&&o.step||''}catch{return ''}};
+const finalStep=s=>{if(s.status!=='prepared'||s.handled_hint)return '';const o=outOf(s);return o.state==='your_step'&&o.step||''};
 // One that names its questions counts even after a browser step. Same rules as ask_blocked(), ask_text() and
 // retry_pointless() in assistant.py.
 // A run that named no questions asks nothing (it says what stopped it): Stuck and Try again, never Answer.
@@ -548,7 +548,7 @@ const askQuestion=(s,smart,hint)=>{if(closed(s)||s.status==='snoozed'||hint)retu
  if(s.status!=='prepared'||s.preparation_status==='blocked'||smart.some(a=>a.kind!=='open'))return '';
  return needsAsk(s)};
 // A result that needs the owner and says so with a question ("What is the new link?"): it waits on their answer, not on a tap
-const needsAsk=s=>{try{const o=JSON.parse(s.outcome||'{}'),q=String(o.needs||'').trim();return o.state==='needs_you'&&/\?$/.test(q)?q:''}catch{return ''}};
+const needsAsk=s=>{const o=outOf(s),q=String(o.needs||'').trim();return o.state==='needs_you'&&/\?$/.test(q)?q:''};
 // A draft's Send opens the preview first: the button says so.
 const sendLabel=a=>a.kind==='linear'?(a.label||LIN_LABEL[a.op]):a.kind==='calendar'?CAL_LABEL[a.op]:a.kind==='doc_write'?DOC_LABEL[a.op]:a.kind==='doc_reply'?'Review and post':[...PERSON_SENDS,'email_demo'].includes(a.kind)&&/^Send\b/.test(a.label||'')?reviewSend(a.label):a.label;
 // "Send reply" reads "Review and send reply": a known label whole, "to Sam" by its pattern, else the start translated
@@ -681,7 +681,8 @@ const statusLine=(()=>{const line=(text,cls='')=>html`<p class="note status-line
  if(smart.some(a=>sendBusy(a.state||s.action_status)&&!['local_preparation','paused'].includes((a.state||s.action_status)?.status)))return '';
  // With a teammate (and nothing new to send them): their line says where it is, not an older "Needs you".
  if(withTeammate(s)||['asked','waiting for them'].includes(s.fleet_handoff?.stage)&&!redirect(s)&&['needs_you','your_step'].includes(o?.state))return '';
- if(o?.state==='needs_you'&&!skillDecided(s))return line('Needs you: '+sentence(o.needs),' outcome');
+ // What the run left for the owner: amber only on a Needs you one (its chip says so); beside a ready draft, plain
+ if(o?.state==='needs_you'&&!skillDecided(s))return line(cap(sentence(o.needs)),s.needs_owner?' outcome':'');
  // Waiting on a step still open elsewhere (a review, a merge, their reply): an open to-do, never "Looks done"
  if(o?.state==='waiting')return line(t('Waiting on: {}',sentence(o.waiting_on||'')),' outcome');
  // For you's header says it once (sectionNote)

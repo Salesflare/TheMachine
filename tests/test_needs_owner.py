@@ -99,6 +99,8 @@ class Everywhere(unittest.TestCase):
         self.save(next_actions=[DRAFT], outcome='needs_you', needs='check the draft and send it')
         view = self.row()
         self.assertNotIn('needs_owner', view)
+        self.assertIn('Check the draft and send it.', machine_cards.card(view))  # Telegram's card: the need, plain
+        self.assertNotIn('Needs you', machine_cards.card(view))
         self.assertEqual(machine_cards.todo_state(view), 'prepared')
         self.assertEqual(self.lead(), ('Ready', 'Ready'))
         self.assertIn('1 reply is ready to send', self.digest()['text'].split('\n')[0])

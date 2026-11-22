@@ -54,7 +54,8 @@ class HonestStatus(unittest.TestCase):
             self.save(next_actions=[self.DRAFT], outcome='done')
         self.assertNotEqual(self.row()['status'], 'prepared')
         self.save(next_actions=[self.DRAFT], outcome='needs_you', needs='check the draft and send it')
-        self.assertIn('Needs you: check the draft and send it.', machine_cards.card(self.row()))
+        self.assertIn('Check the draft and send it.', machine_cards.card(self.row()))  # Prepared: no "Needs you" beside a draft
+        self.assertNotIn('Needs you', machine_cards.card(self.row()))
         # Nothing waiting: done is done.
         self.decide('accept')
         self.save(body='Looked it up: paid on Monday.', outcome='done')

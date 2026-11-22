@@ -316,7 +316,8 @@ def card(row):
                       'answered': t('Answered. Nothing done yet.'),
                       'snoozed': t('Back, as you asked.'),
                       'already_done': t('Looks done already. Mark it done if that’s right.'),
-                      'waiting': t('Waiting on: {}', sentence(outcome.get('waiting_on') or ''))}.get(outcome['state']) or t('Needs you: {}', sentence(outcome['needs']))
+                      'waiting': t('Waiting on: {}', sentence(outcome.get('waiting_on') or ''))}.get(outcome['state']) or (
+                t('Needs you: {}', sentence(outcome['needs'])) if needs_owner(row) else sentence(outcome['needs'])[:1].upper() + sentence(outcome['needs'])[1:])  # beside a ready draft: plain
         except (ValueError, KeyError, TypeError, AttributeError):
             outcome = {}
     if row.get('early') and row['status'] == 'prepared' and not outcome.get('needs') and outcome.get('state') != 'already_done' and any(

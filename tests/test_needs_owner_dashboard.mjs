@@ -6,7 +6,8 @@ const {chromium}=await import('./browser.mjs');
 
 // Prepared or Needs you: a to-do says Prepared only with a draft or result to approve. One whose run ended needing the
 // owner, with nothing ready (needs_owner in its view, machine/cards.py), says Needs you in amber, with what it needs on
-// its status line, and the list's "Nothing goes out until you approve it." note leaves it out. Made-up data.
+// its status line (no "Needs you:" again), and the list's "Nothing goes out until you approve it." note leaves it out.
+// A Prepared one's line beside its draft is plain: amber and "Needs you" belong to Needs you ones. Made-up data.
 // SHOTS=<folder> saves the list at 1440x900 and 390x844, light and dark.
 const dashboard=await dashboardPage(process.env.PAGE);
 const NOW=Date.UTC(2026,10,5,10,0,0),h=n=>new Date(NOW-n*3600e3).toISOString();
@@ -39,12 +40,15 @@ try{
   // Needs you: the chip, its amber tone, and the reason from the run's own outcome
   assert.equal(await chip(page,'q').textContent(),'Needs you');
   assert.match(await page.locator(sel('q')).getAttribute('class'),/\bt-amber\b/);
-  assert.match(await page.locator(sel('q')).textContent(),/Needs you: Which of the two quotes should it accept\?/);
+  assert.equal(await page.locator(sel('q')+' .status-line.outcome').textContent(),NEED);
   // Prepared: a ready draft keeps its label and tone
   assert.equal(await chip(page,'r').textContent(),'Prepared');
   assert.doesNotMatch(await page.locator(sel('r')).getAttribute('class'),/\bt-amber\b/);
+  assert.equal(await page.locator(sel('r')+' .status-line').textContent(),'Check the draft and send it.');
+  assert.equal(await page.locator(sel('r')+' .status-line.outcome').count(),0,'a plain line, not amber');
+  assert.doesNotMatch(await page.locator(sel('r')).textContent(),/Needs you/);
   assert.equal(await page.locator('#section-foryou .section-note').count(),1,'one ready draft: the approve note shows');
-  if(shots)for(const scheme of ['light','dark']){await page.emulateMedia({colorScheme:scheme});await page.evaluate(()=>Promise.all(document.getAnimations().map(x=>x.finished)));await page.screenshot({path:`${shots}/needs-you-${width}-${scheme}.png`})}
+  if(shots)for(const scheme of ['light','dark']){await page.emulateMedia({colorScheme:scheme});await page.evaluate(async()=>{for(let i=0;i<2;i++)await new Promise(r=>requestAnimationFrame(r));await Promise.all(document.getAnimations().map(x=>x.finished))});await page.screenshot({path:`${shots}/needs-you-${width}-${scheme}.png`})}
   await page.emulateMedia({colorScheme:'light'});
   // Only a Needs you one left: nothing to approve, so no approve note
   ready=false;await page.evaluate(()=>refresh());await page.locator(sel('r')).waitFor({state:'detached'});
