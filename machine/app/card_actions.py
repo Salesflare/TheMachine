@@ -26,6 +26,7 @@ from machine.delivery.push import (NOTICE_DECISION, notice_decision_refused, nud
 from machine.sources.calendar import calendar_write_events, calendar_write_ids
 from machine.sources.connectors import CONNECTOR_HELPERS, doc_comments, doc_write_files, load_connector
 from machine.sources.signal_chats import owner_signal_chats
+from machine.sources.slack import call_wait
 from machine.sources.telegram import owner_telegram_chats
 from machine.sources.whatsapp import owner_whatsapp_chats, reply_spots
 import meeting_prep
@@ -374,7 +375,7 @@ class CardActionsApp:
         if not turn and args.get('send_now') is not True and args.get('do_now') is not True and (outcome or {}).get('state')!='already_done':
             # A message or handoff for someone, not asked for in the owner's own message now: their conversations are read
             # first, and what came after is named once (handled_check.py)
-            why=self.handled_gate(args['suggestion_id'],args.get('job_id'),next_actions.actions(action))
+            why=self.handled_gate(args['suggestion_id'],args.get('job_id'),next_actions.actions(action),call_wait(args))
             if why:raise ValueError(why)
         done_when=outcomes.clean(args['done_when']) if args.get('done_when') is not None else None  # checked before anything is saved
         saved=self.store.prepare(args['suggestion_id'], args['body'],args.get('job_id'),action,outcome,args.get('note_kind'),require_note=True,finish_state=args.get('finish_state'),title=args.get('title'),send_now=args.get('send_now') is True,rename=args.get('rename') is True)

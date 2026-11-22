@@ -195,10 +195,26 @@ const handled=await beforeDispatch({content:'I fixed it already',timestamp:17916
  const saved=globalThis.fixtureCall,calls=[];const run='d'.repeat(32),key='agent:main:assistant-review-preparation-'+run;
  globalThis.fixtureRuns={[key]:run};globalThis.fixtureCall=async(action,args)=>{calls.push([action,args]);return {status:'reading'};};
  await toolFactory({agentId:'main',sessionKey:key}).execute('t',{action:'slack_read',args:{channel:'#proj-halvorsen',job_id:'e'.repeat(32)}});
- assert.deepEqual(calls,[['slack_read',{channel:'#proj-halvorsen',job_id:run}]]);  // its own run's job, never one the model gives
+ // its own run's job, never one the model gives; it waits on the Machine for the read (_wait) instead of sleeping
+ assert.deepEqual(calls,[['slack_read',{channel:'#proj-halvorsen',job_id:run,_wait:240}]]);
  for(const c of [{agentId:'main',sessionKey:'agent:main:main',messageChannel:'telegram',nativeChannelId:'1000001'},{agentId:'main',sessionKey:'agent:main:assistant-review-preparation-'+'c'.repeat(32)}])
   await assert.rejects(toolFactory(c).execute('t',{action:'slack_read',args:{channel:'general'}}),/to-do’s own run/);
  assert.equal(calls.length,1);globalThis.fixtureCall=saved;delete globalThis.fixtureRuns;
+}
+// Only a to-do's own run waits on the Machine (prepare, preparation_blocked); a model-supplied _wait is dropped. Arguments
+// written beside action (status {suggestion_id}) count as args instead of failing the call.
+{
+ const saved=globalThis.fixtureCall,calls=[];const run='b'.repeat(32),key='agent:main:assistant-review-preparation-'+run;
+ globalThis.fixtureRuns={[key]:run};globalThis.fixtureCall=async(action,args)=>{calls.push([action,args]);return {};};
+ const todo=toolFactory({agentId:'main',sessionKey:key}),own=toolFactory({agentId:'main',sessionKey:'agent:main:main',messageChannel:'telegram',nativeChannelId:'1000001'});
+ assert.equal(todo.parameters.additionalProperties,true);
+ await todo.execute('t',{action:'status',suggestion_id:'s1'});
+ await todo.execute('t',{action:'prepare',args:{suggestion_id:'s1',body:'Ready.',_wait:999}});
+ await todo.execute('t',{action:'preparation_blocked',suggestion_id:'s0',args:{suggestion_id:'s1',reason:'Waiting.'}});
+ await own.execute('t',{action:'prepare',args:{suggestion_id:'s1',body:'Ready.',_wait:999}});
+ assert.deepEqual(calls,[['status',{suggestion_id:'s1'}],['prepare',{suggestion_id:'s1',body:'Ready.',_wait:240}],
+                         ['preparation_blocked',{suggestion_id:'s1',reason:'Waiting.',_wait:240}],['prepare',{suggestion_id:'s1',body:'Ready.'}]]);
+ globalThis.fixtureCall=saved;delete globalThis.fixtureRuns;
 }
 // A to-do's run reads each message once (prep_reads.py): its events and related carry its own run, never one the model
 // gives; other chats' reads carry none.

@@ -6,6 +6,7 @@ nothing collected and reached for the browser. Now the run asks the Slack connec
 (slack_read), and a source that isn't connected is one plain tap on the to-do (Connect Slack). Offline: nothing sent."""
 import json
 import tempfile
+import threading
 import time
 import unittest
 from pathlib import Path
@@ -86,6 +87,31 @@ class ReadNow(Base):
         self.assertIn('events', found['note'])
         machine_app_sync.sync_slack(self.store, {}, SLACK, self.slack)
         self.assertEqual(len(self.slack.calls), 1)  # once read, it rests as before
+
+    def test_with_the_plugin_s_wait_one_call_waits_for_the_read_and_a_repeat_lists_only_what_is_new(self):
+        """A run slept with exec, polled that process and asked again, each turn resending its whole session (most
+        of its slack_read calls were such repeats): with _wait the call waits for the read itself."""
+        self.addCleanup(setattr, slack_source, 'WAIT_STEP', slack_source.WAIT_STEP)
+        slack_source.WAIT_STEP = 0.02
+        late = self.read(job_id='run1', _wait=0.1)  # Slack's turn doesn't come in time: ask again, no sleep first
+        self.assertEqual(late['status'], 'reading')
+        self.assertIn('This call waited for it already: call slack_read again', late['note'])
+        self.assertNotIn('Sleep', late['note'])
+
+        def read_while_waiting():
+            reader = threading.Timer(0.1, machine_app_sync.sync_slack, (self.store, {}, SLACK, self.slack))
+            reader.start()
+            try:
+                return self.read(job_id='run1', _wait=5)
+            finally:
+                reader.join()
+        found = read_while_waiting()
+        self.assertEqual(found['status'], 'read')
+        self.assertEqual(len(found['event_ids']), 1)
+        again = read_while_waiting()  # read anew, nothing new in it since
+        self.assertEqual((again['status'], again['event_ids'], again['listed_before']), ('read', [], 1))
+        self.assertIn('Nothing new since your last read', again['note'])
+        self.assertEqual(self.read(job_id='run2')['status'], 'reading')  # another run starts its own
 
     def test_by_id_too_and_a_conversation_they_are_not_in_is_named_plainly(self):
         self.assertEqual(self.read(channel='slack:C0HALVORS1')['status'], 'reading')

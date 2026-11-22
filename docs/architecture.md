@@ -168,7 +168,11 @@ oldest signal from a person has waited `max_wait_minutes` (15), it starts one is
   and each message it came from with who wrote it, to whom, the subject, the thread and the time (never the text), and
   asks the run to look up only what is still missing. Within one run, a message it already read whole comes back from
   `events` or `related` as its id under `already_read` with a short note, instead of the whole text again;
-  `again: true` reads it anew. A tool call resends the whole session, so each read saved is a large share of a call.
+  `again: true` reads it anew. A `preparation_history` page it already got comes back as `unchanged`, and `slack_read`
+  lists only the messages new since the run's last read of that conversation. A run that waits for Slack to read a
+  conversation (`slack_read`, or a save held until Slack has read the people's conversations) waits inside that one
+  call, up to 4 minutes, instead of sleeping and asking again. A tool call resends the whole session, so each call
+  saved is a large share of a run.
 - **One at a time.** One run at a time, with a gap between runs; failed runs back off. Unfinished claims move safely
   to the next run, and the service never restarts the Gateway. A version that was deferred stays searchable; two
   deferrals set a signal aside until it changes.

@@ -100,6 +100,20 @@ class ReadLess(unittest.TestCase):
         now[0] = 120
         self.assertEqual(reads.split('c', [{'id': 1}])[1], [])  # a restart or a long pause: read in full again
 
+    def test_a_history_page_read_before_in_the_run_comes_back_unchanged(self):
+        """Runs re-read preparation_history again and again; its pages only list earlier runs, so they don't change."""
+        reads, page = prep_reads.RunReads(), {'history': '[{"tool":"browser"}]', 'next_offset': None, 'instruction': 'Earlier calls.'}
+        self.assertEqual(prep_reads.history_once(reads, 'r1', {'offset': 0}, page), page)
+        again = prep_reads.history_once(reads, 'r1', {'offset': 0}, page)
+        self.assertEqual((again['unchanged'], again['next_offset']), (True, None))
+        self.assertNotIn('history', again)
+        self.assertEqual(prep_reads.history_once(reads, 'r1', {'offset': 0, 'again': True}, page), page)  # asked anew
+        self.assertEqual(prep_reads.history_once(reads, 'r2', {'offset': 0}, page), page)  # another run
+        self.assertEqual(prep_reads.history_once(reads, 'r1', {'offset': 24000}, page), page)  # another page
+        changed = {**page, 'history': '[{"tool":"exec"}]'}
+        self.assertEqual(prep_reads.history_once(reads, 'r1', {'offset': 0}, changed), changed)  # a new page reads whole
+        self.assertEqual(prep_reads.history_once(reads, None, {'offset': 0}, page), page)
+
 
 if __name__ == '__main__':
     unittest.main()

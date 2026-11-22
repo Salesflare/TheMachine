@@ -23,7 +23,7 @@ from machine.sources.salesflare import salesflare_progress, sync_salesflare
 from machine.sources.slack import (Slack, slack_error, slack_event, slack_first_import_plan,
                                    slack_interval, slack_next_due, slack_order, slack_page_names, slack_prune,
                                    slack_read_asked, slack_limits, slack_read_drop, slack_read_now, slack_read_wait, slack_refused,
-                                   slack_set_aside, slack_turn_done, slack_hiccup, READ_NOW_MAX)
+                                   slack_set_aside, slack_turn_done, slack_hiccup, READ_NOW_MAX, call_wait, wait_until)
 from machine.sources.signal_chats import sync_signal
 from machine.sources.telegram import sync_telegram
 from machine.sources.whatsapp import sync_whatsapp, WhatsApp
@@ -463,9 +463,11 @@ class SyncApp:
         if waiting and time.time() - first < RUN_READ_WAIT:
             account = next((a for a in self.config.get('accounts') or () if a.get('service') == 'slack'), {})
             wait = slack_read_wait(self.config, account, len(waiting))
+            how = ('call slack_read again for each (it waits for the read, no sleep first)' if call_wait(args) else
+                   f'sleep {wait} with exec, call slack_read again for each')
             raise ValueError(f"Not recorded: Slack is still reading {', '.join(waiting)} for this run. It reads one "
                              'conversation every few minutes, asked ones first. That is a wait, not a blocker, and never a '
-                             f"question for the owner: sleep {wait} with exec, call slack_read again for each, and carry on "
+                             f"question for the owner: {how}, and carry on "
                              'once they are read. Only a conversation that comes back cannot_read is a blocker: then say '
                              'plainly which one you could not read.')
         return waiting
@@ -498,11 +500,44 @@ class SyncApp:
     def slack_read_action(self, name, args, owner_dashboard=False):
         """A to-do's run asks for a Slack conversation's newest messages (assistant_signals slack_read {channel}): through
         the Slack connection, never the browser. Slack allows about one read a minute, so the read happens in the
-        collector's next turn, ahead of every other conversation, and the run asks again until it is in. status: 'read'
-        with the conversation's newest collected messages (event_ids, read with events), 'reading' (ask again in about
-        a minute), 'cannot_read' (the owner isn't in it, or Slack refused), 'not_found' with the conversations there
-        are, or 'not_connected': the run then records its blocker with connect:'slack', so the to-do offers Connect Slack.
+        collector's next turn, ahead of every other conversation. status: 'read' with the conversation's newest
+        collected messages (event_ids, read with events), 'reading' (still to come: ask again), 'cannot_read' (the
+        owner isn't in it, or Slack refused), 'not_found' with the conversations there are, or 'not_connected': the run
+        then records its blocker with connect:'slack', so the to-do offers Connect Slack. When the plugin lets the call
+        wait (_wait), it waits here for the read (call_wait) instead of the run sleeping and asking again. A run that
+        read the conversation before gets only the messages new since then (slack_new_only).
         Read-only: nothing is joined, opened or marked read."""
+        wait = call_wait(args)
+        if not wait:
+            return self.slack_new_only(args, self.slack_read_once(args))
+        answers = []
+
+        def landed():
+            answers.append(self.slack_read_once(args, waits=True))
+            return answers[-1]['status'] != 'reading'
+        wait_until(landed, wait, getattr(self, 'stop', None))
+        return self.slack_new_only(args, answers[-1])
+
+    def slack_new_only(self, args, result):
+        """A 'read' for a run that read this conversation before: only the messages new since then (again:true lists
+        them all). Its earlier answer is in the session already, and resending it costs the whole context again."""
+        run = args.get('job_id')
+        if result.get('status') != 'read' or not run:
+            return result
+        ids = result.get('event_ids') or []
+        listed = self.run_reads.before(run, [('slack', result['account_id'], result['channel'])]
+                                     + [('slack', result['account_id'], i) for i in ids])
+        if ('slack', result['account_id'], result['channel']) not in listed or args.get('again') is True:
+            return result
+        new = [i for i in ids if ('slack', result['account_id'], i) not in listed]
+        return {**result, 'event_ids': new, 'listed_before': len(ids) - len(new),
+                'note': ('Nothing new since your last read of it in this run.' if not new else
+                         'Only the messages new since your last read of it in this run; read them with events {account_ids:['
+                         + json.dumps(result['account_id']) + '], event_ids}.') + ' again:true lists them all.'}
+
+    def slack_read_once(self, args, waits=False):
+        """One look at the conversation slack_read asks for (slack_read_action); waits: the call waits for the read
+        itself, so a 'reading' says ask again, never sleep first."""
         wanted = str(args.get('channel') or '').strip()
         wanted = re.sub(r'^(?:slack:)?#?', '', wanted)
         if not wanted:
@@ -545,14 +580,17 @@ class SyncApp:
                 self.run_slack_reads().setdefault(str(args['job_id']), {}).setdefault((account['id'], channel['id']), asked)
             waiting = sum(slack_read_asked(account['id'], c) is not None and not c.get('error') for c in channels)
             wait = slack_read_wait(self.config, account, waiting)
+            how = ('This call waited for it already: call slack_read again (it waits again, no sleep first) for each '
+                   'conversation still reading' if waits else
+                   f'Sleep {wait} with exec, then call slack_read again for each conversation still reading')
             return {'status': 'reading', 'account_id': account['id'], 'channel': channel['name'], 'wait_seconds': wait,
                     'note': f'Slack reads one conversation every few minutes, asked ones first: {waiting} asked, this one '
-                            f'among them. Sleep {wait} with exec, then call slack_read again for each conversation still '
-                            'reading, until it is read. A read still to come is a wait, never a blocker: keep waiting, '
-                            "and don't ask the owner for what is in it."}
+                            f'among them. {how}, until it is read. A read still to come is a wait, never a blocker: keep '
+                            "waiting, and don't ask the owner for what is in it."}
         if not names:
             return {'status': 'reading', 'wait_seconds': 120,
-                    'note': 'Slack is still bringing in its first conversations. Call slack_read again in a few minutes.'}
+                    'note': 'Slack is still bringing in its first conversations. Call slack_read again'
+                            + (' (it waits again).' if waits else ' in a few minutes.')}
         return {'status': 'not_found', 'conversations': sorted(set(names))[:50],
                 'note': 'No conversation by that name or id in their Slack. Pick one of these, or say plainly what you '
                         'could not find.'}
