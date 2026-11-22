@@ -25,7 +25,7 @@ Exchange Server는 회사에서 운영하는 서버예요. Microsoft 365(Exchang
 2. 회사 이메일 주소와 Windows 비밀번호를 입력하세요.
 3. **연결**을 누르세요.
 
-주소를 바탕으로 서버를 찾아요(Autodiscover). 찾지 못했다면 **서버 설정**을 열고 IT 팀이 알려 준 Outlook 서버를 입력하세요. 예: `mail.example.com`. 주소와 다른 이름으로 로그인한다면 **사용자 이름**에 `DOMAIN\name`를 입력하세요.
+주소를 바탕으로 서버를 찾아요(Autodiscover). 찾지 못했다면 **서버 설정**을 열고 IT 팀이 알려 준 Outlook 서버를 입력하세요. 예: `mail.example.com`. 주소와 다른 이름으로 로그인한다면 **사용자 이름**에 `DOMAIN\name`을 입력하세요.
 
 NTLM 또는 Basic을 사용해 로그인하며, https로만 연결해요.
 

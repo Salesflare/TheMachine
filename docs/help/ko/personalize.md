@@ -1,13 +1,13 @@
 ---
 title: 나답게 만들기
 area: getting-started
-summary: 글 쓰는 방식과 원하는 것을 스스로 배워요. 직접 설정할 수 있는 항목과 더 빠르게 학습시키는 방법을 알아보세요.
+summary: 글 쓰는 방식과 원하는 것을 스스로 배워요. 직접 설정할 수 있는 항목과 더 빠르게 가르치는 방법을 알아보세요.
 keywords: personalize, customize, tailor, adapt, preferences, style, tone, voice, sound like me, write like me, my way, learn, train, teach
 code: learning_loop.py, authorship.py, dashboard.html
 order: 5
 translated: 05455d7e4b5fc29a
 ---
-대부분은 자동으로 이뤄져요. The Machine은 하는 일을 바탕으로 배워서, 설정할 것이 많지 않고 따로 만들 것도 없어요.
+대부분은 자동으로 이뤄져요. 내 Machine은 하는 일을 바탕으로 배워서, 설정할 것이 많지 않고 따로 만들 것도 없어요.
 
 ## 스스로 배워요
 
@@ -15,7 +15,7 @@ translated: 05455d7e4b5fc29a
 - 원하는 것: 완료하거나 필요 없음으로 처리하거나 미룬 할 일과 그 이유를 바탕으로 배워요.
 - 사실과 습관: 할 일의 채팅이나 개인 Telegram 봇에게 말한 내용을 바탕으로 배워요. 예를 들면 "금요일에는 전화를 받지 않아요" 같은 내용이에요.
 
-하루 두 번 정도 이를 바탕으로 조금씩 바꿔요. **학습**의 **변경사항**에서 하나씩 확인하고 **실행 취소**할 수 있어요. [작성](writing.md#it-keeps-learning)을 참고하세요.
+하루 두 번 정도 이를 바탕으로 조금씩 바꿔요. **배운 점**의 **변경사항**에서 하나씩 확인하고 **실행 취소**할 수 있어요. [글쓰기](writing.md#it-keeps-learning)을 참고하세요.
 
 ## 더 빠르게 가르치기
 
@@ -28,7 +28,7 @@ translated: 05455d7e4b5fc29a
 
 **설정**에서 다음을 설정할 수 있어요.
 
-- **작성 중**: 서명과 채널별 글 쓰는 방식에 관한 문구예요. 각 문구를 원하는 표현으로 바꿀 수 있어요. [작성](writing.md)을 참고하세요.
+- **글쓰기**: 서명과 채널별 글 쓰는 방식에 관한 문구예요. 각 문구를 원하는 표현으로 바꿀 수 있어요. [글쓰기](writing.md)을 참고하세요.
 - **알림**: 어떤 알림을 어디로 받을지, **근무 시간**을 설정할 수 있어요. [알림](notifications.md)과 [근무 시간](work-hours.md)을 참고하세요.
 - **보안**: 휴대폰에 표시되는 정보의 양과 정보 보관 기간을 표준 또는 신중 모드로 설정할 수 있어요. [보안 수준](security-levels.md)을 참고하세요.
 - **언어 및 지역**: 사용할 언어와 날짜 표시 방식을 설정할 수 있어요. [설정](settings.md#general)을 참고하세요.

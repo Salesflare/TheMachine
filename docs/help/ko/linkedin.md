@@ -1,7 +1,7 @@
 ---
 title: LinkedIn
 area: connections
-summary: The Machine의 로그인된 브라우저에서 LinkedIn 메시지를 읽어요. 답장은 승인한 후에만 보내요.
+summary: 내 Machine의 로그인된 브라우저에서 LinkedIn 메시지를 읽어요. 답장은 승인한 후에만 보내요.
 covers: connector:linkedin
 code: connectors/linkedin.py, integrations/linkedin_inbox.py, linkedin_connections.py
 site: Connect, More sources, Remove
@@ -9,7 +9,7 @@ translated: bc67fbc21c77a97a
 ---
 ## 읽는 내용
 
-LinkedIn 메시지를 읽어요. The Machine의 브라우저에서 로그인된 상태로, 깨어 있는 시간대에 가끔 메시지를 읽어요. 읽음 표시를 하지 않아요. 보관한 대화의 답장과 메시지 요청도 들어오지만, 스팸은 제외돼요.
+LinkedIn 메시지를 읽어요. 내 Machine의 브라우저에서 로그인된 상태로, 깨어 있는 시간대에 가끔 메시지를 읽어요. 읽음 표시를 하지 않아요. 보관한 대화의 답장과 메시지 요청도 들어오지만, 스팸은 제외돼요.
 
 ## 직함과 회사
 
@@ -29,23 +29,23 @@ LinkedIn은 이 작업을 공식적으로 지원하는 방법을 제공하지 �
 
 1. 대시보드에서 **연결**을 연 다음 **채팅**을 열고 LinkedIn을 선택해요.
 2. **업무**(회사 정보 포함) 또는 **개인**을 선택한 다음 **연결**을 눌러요.
-3. LinkedIn에 **로그인**을 누르고 The Machine의 브라우저에서 로그인해요. 로그인하면 자동으로 연결돼요.
+3. LinkedIn에 **로그인**을 누르고 내 Machine의 브라우저에서 로그인해요. 로그인하면 자동으로 연결돼요.
 
-호스팅된 The Machine을 사용하는 경우 app.themachine.computer/setup의 설정 페이지에서도 연결할 수 있어요. **더 많은 소스**로 이동해 LinkedIn을 열고, 안내가 나오면 로그인한 다음 **연결**을 눌러요. 개인 컴퓨터에서는 터미널에서 `assistant connect linkedin`을 실행해도 똑같이 연결돼요.
+내 호스팅 Machine을 사용하는 경우 app.themachine.computer/setup의 설정 페이지에서도 연결할 수 있어요. **소스 더 보기**로 이동해 LinkedIn을 열고, 안내가 나오면 로그인한 다음 **연결**을 눌러요. 내 컴퓨터에서는 터미널에서 `assistant connect linkedin` 명령을 실행해도 똑같이 연결돼요.
 
-두 번째 LinkedIn 계정에는 별도의 브라우저가 제공돼요. LinkedIn에서 The Machine의 로그아웃을 처리했다면 [사이트에서 로그아웃됨](signed-out.md)을 참고하세요.
+두 번째 LinkedIn 계정에는 별도의 브라우저가 제공돼요. LinkedIn에서 내 Machine이 로그아웃되었다면 [사이트에서 로그아웃됨](signed-out.md)을 참고하세요.
 
 ## LinkedIn에서 코드를 요청하는 경우
 
-The Machine이 처음 로그인할 때 LinkedIn에서 이메일로 코드를 보내는 경우가 많아요. 로그인 대화상자에서 **코드** 아래에 코드를 입력하고 **로그인**을 눌러요. 입력하는 동안 페이지는 그대로 유지돼요.
+내 Machine이 처음 로그인할 때 LinkedIn에서 이메일로 코드를 보내는 경우가 많아요. 로그인 대화상자에서 **코드** 아래에 코드를 입력하고 **로그인**을 눌러요. 입력하는 동안 페이지는 그대로 유지돼요.
 
-LinkedIn이 처음 화면으로 돌아가거나 2분 동안 아무 일도 일어나지 않으면 1분 기다린 다음 **다시 시도**를 눌러요. LinkedIn에서 로봇 확인을 표시하면 The Machine의 브라우저에서 완료해요.
+LinkedIn이 처음 화면으로 돌아가거나 2분 동안 아무 일도 일어나지 않으면 1분 기다린 다음 **다시 시도**를 눌러요. LinkedIn에서 로봇 확인을 표시하면 내 Machine의 브라우저에서 완료해요.
 
 ## 연결 해제하기
 
 - 대시보드에서 **연결**을 열고 LinkedIn을 선택한 다음 **세부 정보**, **연결 해제**를 차례로 눌러요. 메시지 읽기가 중단돼요. 이미 가져온 내용은 그대로 남아요.
-- 호스팅된 The Machine을 사용하는 경우 설정 페이지에서 LinkedIn 옆의 **삭제**를 눌러도 돼요.
+- 내 호스팅 Machine을 사용하는 경우 설정 페이지에서 LinkedIn 옆의 **삭제**를 눌러도 돼요.
 
 ## LinkedIn에서 로그아웃하기
 
-LinkedIn에서 설정, 로그인 및 보안, 로그인한 위치를 차례로 열고 The Machine 브라우저의 세션을 로그아웃하세요.
+LinkedIn에서 설정, 로그인 및 보안, 로그인한 위치를 차례로 열고 내 Machine 브라우저의 세션을 로그아웃하세요.

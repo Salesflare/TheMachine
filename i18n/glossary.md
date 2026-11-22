@@ -83,6 +83,8 @@ ClawHub, Claude, Claude Code, Codex, ChatGPT, Trello, Shortcut, Granola, Tailsca
 English strings the check skips, with why:
 
 - `Claude sends its result back through The Machine connector. Add it once in claude.ai, Settings, Connectors, Add custom connector:` names claude.ai's own menus, which read in English.
+- `kind is fact (true about the world), draft (how a kind of task is done) or voice (how the owner writes on one channel, with channel)` is read by the model, which takes draft as a literal value.
+- `when is "now", "digest" or a date/time like 2026-10-12 or 2026-10-12T09:00` is read by the model, which takes digest as a literal value.
 - `Zoom in` is the browser viewer's zoom button, not the Zoom app.
 - `Zoom out` is the browser viewer's zoom button, not the Zoom app.
 - `Signal chats` names the Signal app, not a signal.
@@ -143,7 +145,7 @@ never The Machine. The table gives each language's verbs for starting and trying
 | pt-BR | Start: Quero minha Machine, Começar. Try: Experimente, Conheça. Never Obter or Pegue on a button (Pedir ajuda, Baixar o app). |
 | zh-CN | Start: 开通你的Machine, 开始使用. Try: 试用, 查看. Never 获取 for an app or a sign-up (获取验证码 for a code is fine; 下载手机应用 for the app). Labels are short: 查看, not 查看它们. |
 | ja | Start: Machineを始める, 始める. Try: 試す, 見る. Never 入手 or 取得 for an app or a sign-up (アプリをダウンロード). No あなた and no それら: 確認する, not それらを見る. An owner's Machine is Machine (自分のMachine when it needs a word), never The Machine. One word each time: ログイン, チームメンバー, 友達, オーナー, 人物 (people), ブラウザー, フォルダー, コンピューター (never パソコン), ホスティング版 / セルフホスト版 Machine, 標準 / 大容量 (Machine sizes), 撤回 (withdrawal), 出口ノード. No space between `{}` and a particle ({}件, {}に). Quote a button or screen name with 「」 (「送信」を押す). |
-| ko | Start: Machine 시작하기, 시작하기. Try: 사용해 보기, 보기. Never 받기 for an app or a sign-up (앱 다운로드). An owner's Machine is 내 Machine, never The Machine. |
+| ko | Start: Machine 시작하기, 시작하기. Try: 사용해 보기, 보기. Never 받기 for an app or a sign-up (앱 다운로드). An owner's Machine is 내 Machine, never The Machine; "you(r)" is 나/내, never 본인, 사용자 or 당신; "we" is 저희, never 우리. Always 해요체, never 합니다. Words: Learning 배운 점, note 메모 (never 노트), meeting 회의, transcript 녹취록, calendar 캘린더, workspace 워크스페이스, teammate 팀원, pause 일시 중지, paste 붙여 넣어요, seat 시트, Work/Family Fleet 업무/가족 Fleet, Standard 표준, Signal (the app) Signal. Particles follow the sound: Fleet을, Signal을, `S`를. |
 | ru | Start: Создать свою Machine, Начать. Try: Попробовать, Посмотреть. Never Получить for an app or a sign-up (Скачать приложение). Buttons are an infinitive (Начать, Сохранить). |
 
 ## Not checked, but use these

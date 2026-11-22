@@ -9,10 +9,10 @@ translated: f403410953e50582
 ---
 ## 정보 출처
 
-- 호스팅된 The Machine에서는 조직 세부 정보를 무료로 조회해 드려요.
+- 내 호스팅 Machine에서는 조직 세부 정보를 무료로 조회해 드려요.
 - 내 컴퓨터에서는 Apollo, People Data Labs, Hunter 같은 조회 서비스의 키를 추가하기 전까지 조회 기능이 꺼져 있어요. [설정 가이드](https://github.com/Salesflare/TheMachine/blob/main/docs/configuration.md)를 참고하세요.
 
-조직의 웹 주소만 전송하며, 메시지나 그곳에서 아는 사람에 관한 정보는 전송하지 않아요. 호스팅된 The Machine이나 The Machine Network에서 실행되는 The Machine은 하루 최대 1,000건을 조회하고, 그 외에는 최대 50건을 조회해요. 각 정보는 90일마다 새로 조회해요. gmail.com 같은 공유 사이트와 메일 서비스 제공업체는 조회하지 않아요. 사람 정보는 별도로 조회해요. [직책 및 사진](people.md#job-title-and-photo)을 참고하세요.
+조직의 웹 주소만 전송하며, 메시지나 그곳에서 아는 사람에 관한 정보는 전송하지 않아요. 내 호스팅 Machine이나 The Machine Network에서 실행되는 내 Machine은 하루 최대 1,000건을 조회하고, 그 외에는 최대 50건을 조회해요. 각 정보는 90일마다 새로 조회해요. gmail.com 같은 공유 사이트와 메일 서비스 제공업체는 조회하지 않아요. 사람 정보는 별도로 조회해요. [직책 및 사진](people.md#job-title-and-photo)을 참고하세요.
 
 조회 결과에 로고가 없으면 The Machine은 조직의 웹사이트에서 아이콘을 가져와 내 Machine에 저장해요. 로고 서비스는 누구와 연락하는지 알 수 없어요. 로고와 아이콘이 모두 있으면 할 일 항목의 줄처럼 작은 공간에는 사각형 아이콘이 표시돼요.
 

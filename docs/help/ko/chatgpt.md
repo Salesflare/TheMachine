@@ -9,7 +9,7 @@ translated: fc97be60c0b68336
 ---
 ## 용도
 
-ChatGPT로 로그인하면 Machine이 ChatGPT를 사용해 읽고 초안을 작성해요. 개인 ChatGPT 요금제가 적용돼요. The Machine에는 자체 AI가 없어요. 요청은 계정과 OpenAI 이용 약관에 따라 OpenAI로 직접 전송돼요.
+ChatGPT로 로그인하면 내 Machine이 ChatGPT를 사용해 읽고 초안을 작성해요. 개인 ChatGPT 요금제가 적용돼요. The Machine에는 자체 AI가 없어요. 요청은 계정과 OpenAI 이용 약관에 따라 OpenAI로 직접 전송돼요.
 
 ## 로그인
 
@@ -19,7 +19,7 @@ OpenAI에서 코드를 거부하면 [ChatGPT 보안 설정](https://chatgpt.com/
 
 이 스위치가 보이지 않나요? 업무용 계정(Business, Enterprise 또는 Edu)을 사용한다면 ChatGPT 관리자가 [권한 및 역할](https://chatgpt.com/admin/permissions)의 "Codex 및 Work Local"에서 스위치를 켜야 해요.
 
-개인 컴퓨터에서는 터미널에서 `openclaw models auth login`을 실행해요.
+내 컴퓨터에서는 터미널에서 `openclaw models auth login` 명령을 실행해요.
 
 ## 사용량 한도
 
@@ -31,4 +31,4 @@ ChatGPT 요금제에는 5시간 한도와 주간 한도가 있어요. **설정**
 
 ## 연결 해제
 
-설정 페이지에서 다른 모델을 선택해요. 개인 컴퓨터에서는 같은 방법으로 다른 제공업체에 로그인하면 돼요. OpenAI 쪽의 접근 권한을 차단하려면 ChatGPT 보안 설정에서 세션을 로그아웃해요.
+설정 페이지에서 다른 모델을 선택해요. 내 컴퓨터에서는 같은 방법으로 다른 제공업체에 로그인하면 돼요. OpenAI 쪽의 접근 권한을 차단하려면 ChatGPT 보안 설정에서 세션을 로그아웃해요.

@@ -1,19 +1,19 @@
 ---
 title: 다른 AI를 위한 지식
 area: settings
-summary: 내 Machine이 학습한 내용을 어떤 AI든 읽을 수 있는 일반 파일로 내보내 다른 AI에서 사용하세요.
+summary: 내 Machine이 배운 내용을 어떤 AI든 읽을 수 있는 일반 파일로 내보내 다른 AI에서 사용하세요.
 covers: knowledge-export
 code: machine/export/knowledge.py, machine/app/knowledge_export.py, cli.py
 order: 6
 translated: db1c7f4768a71630
 ---
-내 Machine이 학습한 내용은 모두 내 것이에요. ChatGPT나 Claude 같은 다른 AI에 전달하거나 그대로 보관할 수 있어요.
+내 Machine이 배운 내용은 모두 내 것이에요. ChatGPT나 Claude 같은 다른 AI에 전달하거나 그대로 보관할 수 있어요.
 
 ## 내보내기
 
 1. **설정** › **일반** › **내보내기**에서 **다른 AI를 위한 지식** 옆의 **내보내기**를 누르세요.
 2. **메시지 내용**은 기본적으로 꺼져 있어요. 각 항목의 출처와 시점만 포함돼요. 메시지 내용도 추가하려면 켜세요.
-3. 나만 볼 수 있는 프로젝트, 비공개 스레드, 신중한 Fleet를 추가하려는 경우에만 **비공개 및 신중함**을 켜세요.
+3. 나만 볼 수 있는 프로젝트, 비공개 스레드, 신중한 Fleet을 추가하려는 경우에만 **비공개 및 신중**을 켜세요.
 4. 원한다면 파일을 암호화하도록 **암호 문구**를 설정하세요. 10자 이상이어야 해요.
 5. **다운로드**를 누르세요. 파일은 한 번만 다운로드할 수 있어요.
 

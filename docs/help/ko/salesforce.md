@@ -15,23 +15,23 @@ translated: eee5e084bac6dbd1
 
 ## 변경할 수 있는 정보
 
-**연락처 정보 업데이트**를 켜기 전까지는 아무것도 변경하지 않아요. Salesforce 로그인 정보는 The Machine에 저장돼요.
+**연락처 정보 업데이트**를 켜기 전까지는 아무것도 변경하지 않아요. Salesforce 로그인 정보는 내 Machine에 저장돼요.
 
 ## 연결하기
 
-호스팅 버전의 The Machine에서:
+호스팅 버전의 내 Machine에서:
 
-1. app.themachine.computer/setup에서 설정 페이지를 열고 **추가 소스**로 이동해요.
+1. app.themachine.computer/setup에서 설정 페이지를 열고 **소스 더 보기**로 이동해요.
 2. Salesforce를 열고 **Salesforce 연결**을 눌러요.
 3. Salesforce에 로그인하고 The Machine(Salesflare 제작)을 허용해요.
 
-대시보드에서도 연결할 수 있어요. **연결**, **고객**을 차례로 열고 Salesforce를 선택한 다음 **Salesforce로 로그인**을 눌러요. 개인 컴퓨터에서 사용하는 경우 먼저 계정과 페어링해요.
+대시보드에서도 연결할 수 있어요. **연결**, **고객**을 차례로 열고 Salesforce를 선택한 다음 **Salesforce로 로그인**을 눌러요. 내 컴퓨터에서 사용하는 경우 먼저 계정과 페어링해요.
 
 Salesforce 사용자에게는 API 액세스 권한이 필요해요. 대부분의 에디션에 이 권한이 포함돼 있어요.
 
 ## 연락처 정보 업데이트
 
-The Machine이 Salesforce 연락처의 정보보다 최신 정보를 알고 있으면 Salesforce의 연락처 정보를 업데이트할 수 있어요. 업데이트할 수 있는 정보는 직함, 전화번호, 그리고 조직에서 연락처에 LinkedIn 필드를 설정한 경우 LinkedIn 링크예요.
+내 Machine이 Salesforce 연락처의 정보보다 최신 정보를 알고 있으면 Salesforce의 연락처 정보를 업데이트할 수 있어요. 업데이트할 수 있는 정보는 직함, 전화번호, 그리고 조직에서 연락처에 LinkedIn 필드를 설정한 경우 LinkedIn 링크예요.
 
 1. **연결**에서 Salesforce를 열고 **변경될 내용 보기**를 눌러요.
 2. 목록을 확인한 다음 **켜기** 또는 **나중에**를 눌러요.
@@ -48,7 +48,7 @@ The Machine이 Salesforce 연락처의 정보보다 최신 정보를 알고 있�
 ## 연결 삭제
 
 - 대시보드에서 **연결**을 열고 Salesforce를 선택한 다음 **세부 정보**, **연결 해제**를 눌러요. 이미 가져온 정보는 그대로 남아요.
-- 호스팅 버전의 The Machine에서 **연결 해제 ↗**를 누르면 설정 페이지가 열려요. 그 옆에 있는 **삭제**를 눌러요.
+- 호스팅 버전의 내 Machine에서 **연결 해제 ↗**를 누르면 설정 페이지가 열려요. 그 옆에 있는 **삭제**를 눌러요.
 
 ## Salesforce에서 액세스 권한 취소하기
 

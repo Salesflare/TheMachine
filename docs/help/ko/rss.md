@@ -1,7 +1,7 @@
 ---
 title: RSS 피드
 area: connections
-summary: 팔로우하는 RSS 또는 Atom 피드의 게시물입니다.
+summary: 팔로우하는 RSS 또는 Atom 피드의 게시물이에요.
 covers: connector:rss
 code: connectors/rss.py
 site: More sources
@@ -19,7 +19,7 @@ translated: efeb27dadc6163e9
 
 ## 연결하기
 
-1. 대시보드에서 **연결**을 연 다음 **기타**를 선택하고 RSS 피드를 선택하세요. 호스팅된 Machine에서는 설정 페이지의 **더 많은 소스**에서도 찾을 수 있어요. 직접 사용하는 컴퓨터에서는 `assistant connect rss`을 실행해도 돼요.
+1. 대시보드에서 **연결**을 연 다음 **기타**를 선택하고 RSS 피드를 선택하세요. 호스팅된 Machine에서는 설정 페이지의 **소스 더 보기**에서도 찾을 수 있어요. 내 컴퓨터에서는 `assistant connect rss` 명령을 실행해도 돼요.
 2. 피드 주소를 붙여 넣으세요.
 
 ## 삭제하기

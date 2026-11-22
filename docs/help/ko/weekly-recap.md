@@ -1,7 +1,7 @@
 ---
 title: 주간 요약
 area: weekly
-summary: 일주일에 한 번, The Machine이 처리한 할 일과 약속, 사람과 프로젝트, 그리고 알아챈 점을 확인할 수 있어요. 기본으로 켜져 있어요.
+summary: 일주일에 한 번, 내 Machine이 처리한 할 일과 약속, 사람과 프로젝트, 그리고 알아챈 점을 확인할 수 있어요. 기본으로 켜져 있어요.
 covers: weekly-recap
 code: assistant.py, machine/app/recap_settings.py, config.example.json
 order: 1
@@ -19,8 +19,8 @@ translated: 223b143a6efd5692
 
 ## 언제 어디서 받나요?
 
-기본 설정에서는 시간대 기준 매주 금요일 16:00 이후에 받아요. [Telegram](telegram.md)으로 받거나, [휴대폰 앱](phone-app.md)과 대시보드 앱에서 "한 주 요약"이라는 제목의 알림으로 받을 수 있어요. 설정 › 알림에서 **아침 요약**이 켜져 있으면 이메일로도 받아요. [慎重模式](security-levels.md)를 사용하거나 **알림 텍스트**를 끄면 이메일로는 받지 않아요.
+기본 설정에서는 시간대 기준 매주 금요일 16:00 이후에 받아요. [Telegram](telegram.md)으로 받거나, [휴대폰 앱](phone-app.md)과 대시보드 앱에서 "한 주 요약"이라는 제목의 알림으로 받을 수 있어요. 설정 › 알림에서 **아침 요약**이 켜져 있으면 이메일로도 받아요. [신중](security-levels.md)를 사용하거나 **알림 텍스트**를 끄면 이메일로는 받지 않아요.
 
 ## 끄기
 
-기본으로 켜져 있어요. 설정 › 알림에서 **주간 요약** 스위치를 끄면 돼요. 직접 끄면 계속 꺼진 상태로 유지돼요. 개인 컴퓨터에서는 config.json에서 `weekly_recap`을 설정할 수도 있어요. `enabled`를 false로, `chosen`을 true로 설정하고, 선택 사항으로 `weekday`(1~7, 금요일은 5)와 `at`("16:00")도 설정할 수 있어요. [구성 가이드](https://github.com/Salesflare/TheMachine/blob/main/docs/configuration.md)를 참고하세요.
+기본으로 켜져 있어요. 설정 › 알림에서 **주간 요약** 스위치를 끄면 돼요. 직접 끄면 계속 꺼진 상태로 유지돼요. 내 컴퓨터에서는 config.json에서 `weekly_recap`을 설정할 수도 있어요. `enabled`를 false로, `chosen`을 true로 설정하고, 선택 사항으로 `weekday`(1~7, 금요일은 5)와 `at`("16:00")도 설정할 수 있어요. [구성 가이드](https://github.com/Salesflare/TheMachine/blob/main/docs/configuration.md)를 참고하세요.
