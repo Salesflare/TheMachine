@@ -9,7 +9,7 @@ translated: fc97be60c0b68336
 ---
 ## 用途
 
-使用ChatGPT登录后，The Machine会使用你的ChatGPT套餐来读取和撰写内容。The Machine本身没有AI：请求会直接发送给OpenAI，并遵循你的账户条款和OpenAI的条款。
+使用ChatGPT登录后，The Machine会使用你的ChatGPT套餐来读取和撰写内容。The Machine本身没有AI：请求会直接发送给OpenAI，并遵循你的账号条款和OpenAI的条款。
 
 ## 登录
 
@@ -17,7 +17,7 @@ translated: fc97be60c0b68336
 
 如果OpenAI拒绝了代码，请打开[ChatGPT安全设置](https://chatgpt.com/settings/security)，滚动到页面底部，然后打开“为Codex、Excel、PowerPoint和Word启用设备代码登录”。接着重新输入代码。
 
-没有看到这个开关？如果你使用的是工作账户（Business、Enterprise或Edu），请让ChatGPT管理员在[权限和角色](https://chatgpt.com/admin/permissions)下的“Codex和本地工作”中启用它。
+没有看到这个开关？如果你使用的是工作账号（Business、Enterprise或Edu），请让ChatGPT管理员在[权限和角色](https://chatgpt.com/admin/permissions)下的“Codex和本地工作”中启用它。
 
 在自己的电脑上，在终端中运行`openclaw models auth login`。
 

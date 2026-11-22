@@ -44,8 +44,8 @@ translated: 637784bf811800bb
 要从自己运行的Machine加入Network：
 
 1. 在Machine的控制面板中打开**设置**，然后点击**加入Network**。
-2. 在打开的页面登录（或创建账户）并确认。Machine会自动完成连接，无需重启。
+2. 在打开的页面登录（或创建账号）并确认。Machine会自动完成连接，无需重启。
 
-也可以继续使用代码配对：在app.themachine.computer的账户页面点击**配对自托管的Machine**，然后在电脑上运行`assistant fleet-pair`并输入代码，再重启。代码只能使用一次，有效期为15分钟。
+也可以继续使用代码配对：在app.themachine.computer的账号页面点击**配对自托管的Machine**，然后在电脑上运行`assistant fleet-pair`并输入代码，再重启。代码只能使用一次，有效期为15分钟。
 
-每个账户最多可添加5台Machine。你可以在该页面断开任意一台Machine的连接。
+每个账号最多可添加5台Machine。你可以在该页面断开任意一台Machine的连接。

@@ -35,7 +35,7 @@ translated: 8544baf8c60cc40b
 
 ## 连接
 
-1. 在控制面板中依次选择**连接**、**文档和文件**、Notion。或者，在托管版Machine的设置页面app.themachine.computer/setup中选择**更多来源**、Notion。在自己的电脑上使用时，请先将它与账户配对。
+1. 在控制面板中依次选择**连接**、**文档和文件**、Notion。或者，在托管版Machine的设置页面app.themachine.computer/setup中选择**更多来源**、Notion。在自己的电脑上使用时，请先将它与账号配对。
 2. 按**使用Notion登录**，选择工作区和允许它查看的页面，然后授权访问。
 3. 返回The Machine后，系统会立即检查登录状态，并显示工作区名称。
 

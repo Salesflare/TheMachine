@@ -28,7 +28,7 @@ translated: 4b0cf1cc99529e64
 - **此设备**：仅对当前浏览器或手机生效的**安装应用**、**通知**（可**发送测试**）和**浅色模式**。参阅[安装应用并开启通知](phone-app.md)。使用[Omarchy](omarchy.md)时，还可以设置**Omarchy主题**。
 - **语音输入**：设置语音转文字的方式，以及实时通话的声音。参阅[语音输入](voice-input.md)和[实时通话](talk-live.md)。
 - **打开The Machine的浏览器 ↗**：The Machine用于访问LinkedIn等网站的浏览器。
-- **Fleet规则**：参阅[共享规则](sharing-rules.md)。
+- **Fleet规则**：参阅[分享规则](sharing-rules.md)。
 - **导出**：
   - **全部**：将The Machine掌握的所有内容放进一个加密文件，方便迁移或保存；也可以用**导入**导入文件。参阅[迁移到另一台电脑](moving.md)。
   - **给另一个AI的知识**：将The Machine学到的内容导出为任何AI都能读取的文件。参阅[给另一个AI的知识](knowledge-export.md)。

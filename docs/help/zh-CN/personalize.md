@@ -33,7 +33,7 @@ translated: 05455d7e4b5fc29a
 - **安全**：选择标准或谨慎模式，设置手机上显示的信息量，以及内容的保留时间。请参阅[安全级别](security-levels.md)。
 - **语言和地区**：它与你交流时使用的语言，以及日期的显示方式。请参阅[设置](settings.md#general)。
 
-团队可见的内容，请参阅[共享规则](sharing-rules.md)和[安全与隐私](security-and-privacy.md)。
+团队可见的内容，请参阅[分享规则](sharing-rules.md)和[安全与隐私](security-and-privacy.md)。
 
 ## 技能，用于自定义步骤
 
