@@ -1,7 +1,7 @@
 ---
 title: Stato della Machine
 area: connections
-summary: Il registro personale della tua Machine, per aiutarla a rilevare i problemi. È di sola lettura.
+summary: Il registro della tua Machine stessa, per aiutarla a rilevare i problemi. È di sola lettura.
 covers: connector:gateway
 code: onboarding.py
 site: More sources, Remove
@@ -9,7 +9,7 @@ translated: 7d66ff6a6a5d5b1d
 ---
 ## Cosa legge
 
-Il registro personale della tua Machine: esecuzioni non riuscite, passaggi rifiutati, messaggi Telegram non inviati ed errori della Machine. Un’attività ti avvisa quando c’è qualcosa da correggere. Sul tuo computer, include **Completa l’installazione dell’ultimo aggiornamento**: una parte dell’aggiornamento richiede un breve riavvio notturno, ma per alcune notti non è stato possibile. Chiedilo nella chat della Machine e la Machine completerà l’aggiornamento. L’attività si chiude da sola una volta installata quella parte.
+Il registro della tua Machine stessa: esecuzioni non riuscite, passaggi rifiutati, messaggi Telegram non inviati ed errori di The Machine stessa. Un’attività ti avvisa quando c’è qualcosa da correggere. Sul tuo computer, include **Completa l’installazione dell’ultimo aggiornamento**: una parte dell’aggiornamento richiede un breve riavvio notturno, ma per alcune notti non è stato possibile. Chiedi nella chat dell’attività e The Machine completa l’aggiornamento. L’attività si chiude da sola una volta installata quella parte.
 
 ## Correzioni messe da parte da un aggiornamento
 
@@ -27,8 +27,8 @@ Niente. Legge soltanto il registro della tua Machine.
 
 ## Collegarla
 
-- Su una Machine ospitata, la trovi nella pagina di configurazione, sotto **Altre fonti**, come Machine health. Una per Machine.
-- Sul tuo computer: **Connessioni**, **Altro**, Machine health. Oppure esegui `assistant connect gateway`.
+- Su una Machine ospitata, la trovi nella pagina di configurazione, sotto **Altre fonti**, come Salute della tua Machine. Una per Machine.
+- Sul tuo computer: **Connessioni**, **Altro**, Salute della tua Machine. Oppure esegui `assistant connect gateway`.
 
 ## Rimuoverla
 

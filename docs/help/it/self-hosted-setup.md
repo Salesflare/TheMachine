@@ -1,7 +1,7 @@
 ---
 title: Usala sul tuo computer
 area: getting-started
-summary: Installa l'app open source su Linux, macOS o Windows. Gratis, con il tuo modello e i tuoi dati.
+summary: Installa l’app open source su Linux, macOS o Windows. Gratis, con il tuo modello e i tuoi dati.
 covers: self-hosted
 code: install.sh, install.ps1, docs/getting-started.md
 order: 2
@@ -23,17 +23,17 @@ Su Linux o macOS (macOS è in beta):
 1. `git clone https://github.com/Salesflare/TheMachine.git ~/.openclaw/workspace/tools/personal-assistant`
 2. `cd ~/.openclaw/workspace/tools/personal-assistant && ./install.sh`
 
-Su Windows (beta), funziona dentro WSL2. In PowerShell, esegui `irm https://raw.githubusercontent.com/Salesflare/TheMachine/main/install.ps1 | iex`. Configura WSL2 con Ubuntu e tutto ciò che serve all'app, poi esegue `./install.sh`.
+Su Windows (beta), funziona dentro WSL2. In PowerShell, esegui `irm https://raw.githubusercontent.com/Salesflare/TheMachine/main/install.ps1 | iex`. Configura WSL2 con Ubuntu e tutto ciò che serve all’app, poi esegue `./install.sh`.
 
-Il programma di installazione trova i tuoi account, li collega uno alla volta e mostra un'anteprima della settimana scorsa prima di attivare qualsiasi cosa.
+Il programma di installazione trova i tuoi account, li collega uno alla volta e mostra un’anteprima della settimana scorsa prima di attivare qualsiasi cosa.
 
-## Dopo l'installazione
+## Dopo l’installazione
 
 - Collega la tua posta: in cima ad **Attività**, premi **Gmail** (o **Outlook**), poi **Abbina questa Machine** per abbinarla al tuo account. Senza account, **Usa la tua app** è subito sotto.
 - Poi premi **Accedi con Google** (o **Accedi con Microsoft** per Outlook). Posta e calendario si collegano insieme.
 - Altre fonti: **Connessioni**, poi il tipo della fonte. Il tuo client Google o la tua app Entra: `assistant connect` in un terminale.
 - Controlla tutto con `assistant doctor`. Mostra una soluzione per ogni problema.
 - Il programma di installazione prende la release firmata più recente, e anche gli aggiornamenti arrivano come release firmate.
-- Collegata a The Machine Network, la tua Machine condivide il suo indirizzo Tailscale con il tuo account, così l’app sul telefono la apre dopo l’accesso. Scollegandola, l’indirizzo viene eliminato.
+- Associala al tuo account e l’app sul telefono la apre dopo l’accesso. Se la dissoci, quel collegamento viene rimosso.
 
 La guida completa è nel repository: [Getting started](https://github.com/Salesflare/TheMachine/blob/main/docs/getting-started.md).

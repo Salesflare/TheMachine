@@ -10,7 +10,7 @@ translated: 15a6a5dafcfa807b
 ---
 ## Cosa intercetta
 
-Alcune truffe arrivano da un indirizzo che sembra quello di una persona che conosci: `examp1e.com` invece di `example.com`, `example-billing.com`, una lettera diversa o due lettere invertite. La Machine confronta il dominio di ogni mittente con quelli delle persone con cui hai già a che fare.
+Alcune truffe arrivano da un indirizzo che sembra quello di una persona che conosci: `examp1e.com` invece di `example.com`, `example-billing.com`, una lettera diversa o due lettere invertite. The Machine confronta il dominio di ogni mittente con quelli delle persone con cui hai già a che fare.
 
 Se due indirizzi si somigliano, quello a cui hai scritto, che hai incontrato o che hai configurato tu è quello vero, anche se l’altro ti ha scritto per primo. Se nessuno dei due ha queste caratteristiche, quello più recente viene considerato il mittente che imita l’altro.
 

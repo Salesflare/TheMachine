@@ -34,7 +34,7 @@ table is in the control plane's glossary (cloud/i18n/glossary.md) for the site a
 | fr | feminine | elle, la, sa, and feminine agreement (prête, connectée): "The Machine lit vos e-mails. Elle ..." Never il. Assistant: une assistante, votre assistante. |
 | de | feminine | sie, ihr, die, deine Machine: "The Machine liest deine Mails. Sie ..." Never er or sein. Assistant: Assistentin, KI-Assistentin. |
 | es | feminine | ella, la, su, and feminine agreement (lista, conectada): "tu Machine está lista". Never él. Assistant: una asistente, tu propia asistente. |
-| it | feminine | lei, la, sua, and feminine agreement (pronta, collegata): "la tua Machine è pronta". Never lui. Assistant: un’assistente, la tua assistente. |
+| it | feminine | lei, la, sua, and feminine agreement (pronta, collegata): "la tua Machine è pronta". Never lui. Assistant: un’assistente, la tua assistente. The reader and people of unknown gender get neutral wording: Hai effettuato l’accesso, Ti diamo il benvenuto, Serve il tuo intervento, never Sei entrato, Benvenuto, richiede te. AI is IA, except in product names (Google AI Pro). Work Fleet: Fleet di lavoro; Family Fleet: Fleet di famiglia. |
 | pt-BR | feminine | ela, a, sua, dela, da, na, and feminine agreement (pronta, conectada): "sua Machine está pronta". Never ele, o, do, no. Assistant: uma assistente, sua assistente. |
 | zh-CN | none | No gender: say The Machine again, or 它 when a pronoun can't be left out. Never 他 or 她. Assistant: 助手. |
 | ja | none | No gender or pronoun: say The Machine again or leave the subject out. Assistant: アシスタント. |
@@ -59,7 +59,7 @@ ClawHub, Claude, Claude Code, Codex, ChatGPT, Trello, Shortcut, Granola, Tailsca
 | to-do | to-do, to-do's | tâche, tâches | Aufgabe, Aufgaben | tarea, tareas | attività | tarefa, tarefas | 待办, 待办事项 | ToDo | 할 일 | задача, задачи, задачу, задач, задаче, задачей, задачам, задачами, задачах |
 | snooze | snooze, snoozen, gesnoozed | mettre en attente, en attente, attente | zurückstellen, zurückgestellt, Zurückstellen | posponer, pospuesto, pospuesta, pospón | posticipa, posticipare, posticipata, posticipato, posticipate, posticipati, posticipo, posticipi | adiar, adiada, adiado, adiadas, adiados, adie, adia | 稍后处理, 推迟 | スヌーズ | 미루기, 미루, 미뤄, 미룬, 미룸, 미뤘 | отложить, отложено, отложена, отложен, отложены, отложите, отложенные, отложенных, отложенной, откладывать, отложи |
 | hand off | overdragen, overdracht, draag over | transférer, transfert, transférez | übergeben, Übergabe, übergib | pasar, traspaso, pasa | passa, passare, passala, passalo, passaggio | passar, passe, repasse, repassar | 转交 | 引き継ぎ, 引き継ぐ, 引き継い, 引き継が | 넘기기, 넘기, 넘겨, 넘긴, 인계 | передать, передача, передайте, передачи, передачу, передано, передала, передаст, передавайте, передаче, передачей |
-| handoff | overdracht, overdragen | transfert, transférer | Übergabe, übergeben | traspaso, pasar | passaggio, passare | repasse, passar | 转交 | 引き継ぎ | 인계, 넘기기 | передача, передачи, передачу, передать, передаче, передачей |
+| handoff | overdracht, overdragen | transfert, transférer | Übergabe, übergeben | traspaso, pasar | passaggio, passare, passaggi | repasse, passar | 转交 | 引き継ぎ | 인계, 넘기기 | передача, передачи, передачу, передать, передаче, передачей |
 | Ready | Klaargezet, klaar | Prêt, Prête, Prêts | Bereit | Para revisar, Listo, Lista, Listos | Pronto, Pronta, Pronti, Pronte | Para revisar, Pronto, Pronta, Prontos, Prontas | 已备好, 备好 | 準備完了, 準備済み, 準備でき | 준비됨, 준비 완료, 준비되 | Подготовлено, Подготовлена, Подготовлен, Подготовлены, Готово к, Готова к, Готовы к |
 | To decide | Te beslissen | À décider | Zu entscheiden | Por decidir | Da decidere | A decidir | 待决定 | 判断待ち | 결정 필요 | Решить |
 | Not needed | Niet nodig | Pas nécessaire | Nicht nötig | No hace falta | Non serve | Não precisa | 不需要 | 不要 | 필요 없음 | Не нужно |
@@ -86,6 +86,9 @@ English strings the check skips, with why:
 - `Zoom in` is the browser viewer's zoom button, not the Zoom app.
 - `Zoom out` is the browser viewer's zoom button, not the Zoom app.
 - `Signal chats` names the Signal app, not a signal.
+- `Signal` names the Signal app, not a signal.
+- `Signal message sent.` names the Signal app, not a signal.
+- `Signal message sent at {}.` names the Signal app, not a signal.
 - `Signal unlinked this Machine` names the Signal app, not a signal.
 - `Update The Machine for Signal` names the Signal app, not a signal.
 - `In Signal on your phone: Settings, Linked devices, Link new device. Then scan this code:` names the Signal app, not a signal.

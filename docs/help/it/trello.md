@@ -18,8 +18,8 @@ Niente in Trello. Legge soltanto.
 ## Collegala
 
 1. Nella dashboard: **Connessioni**, **Progetti e codice**, Trello. Oppure nella pagina di configurazione di una Machine in hosting, su app.themachine.computer/setup: **Altre fonti**, Trello. Sul tuo computer, abbinalo prima al tuo account.
-2. Premi **Accedi con Trello** e consenti l'accesso in lettura in Trello. The Machine è fatta da Salesflare.
-3. Scegli la bacheca da seguire e premi **Collegati**. Per un'altra bacheca, aggiungi di nuovo Trello.
+2. Premi **Accedi con Trello** e consenti l’accesso in lettura in Trello. The Machine è fatta da Salesflare.
+3. Scegli la bacheca da seguire e premi **Collegati**. Per un’altra bacheca, aggiungi di nuovo Trello.
 
 ## Rimuovila
 

@@ -11,9 +11,9 @@ I siti come LinkedIn e X vengono consultati nel browser della tua Machine. A vol
 
 ## Accedi di nuovo
 
-**Connessioni** e l’inizio delle tue attività indicano che hai effettuato la disconnessione. Premi **Accedi qui** e accedi nella piccola finestra che si apre nella dashboard.
+**Connessioni** e l’inizio delle tue attività indicano che la tua Machine è stata disconnessa. Premi **Accedi qui** e accedi nella piccola finestra che si apre nella dashboard.
 
-Seleziona **Salva per la prossima volta** per accedere di nuovo con un tocco la prossima volta che succede. La password resta crittografata sulla tua Machine e l’AI non la vede mai. Se hai più account sullo stesso sito, **Salva come** assegna un nome a questo account (Lavoro, Personale) e, se l’attività non specifica quale usare, la finestra di dialogo ti chiede di scegliere.
+Seleziona **Salva per la prossima volta** per accedere di nuovo con un tocco la prossima volta che succede. La password resta crittografata sulla tua Machine e l’IA non la vede mai. Se hai più account sullo stesso sito, **Salva come** assegna un nome a questo account (Lavoro, Personale) e, se l’attività non specifica quale usare, la finestra di dialogo ti chiede di scegliere.
 
 ## Password e codici
 

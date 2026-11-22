@@ -10,10 +10,10 @@ translated: e636b2a2fbbc714d
 ---
 ## In breve
 
-- La tua Machine: se ospitata, è nel cloud dell'UE, solo per te e mai condivisa. Oppure puoi eseguirla sul tuo computer.
+- La tua Machine: se ospitata, è nel cloud dell’UE, solo per te e mai condivisa. Oppure puoi eseguirla sul tuo computer.
 - Non leggiamo le tue email: i messaggi sono salvati in forma crittografata e i nostri strumenti di assistenza non possono aprirli.
 - Niente viene inviato senza il tuo OK: la tua assistente legge e prepara bozze, ma decidi tu cosa inviare. Vedi [Fallo](do-it.md).
-- I tuoi dati non vengono usati per addestrare l'IA: non abbiamo una nostra IA. Il tuo fornitore opera con il tuo account e secondo i suoi termini.
+- I tuoi dati non vengono usati per addestrare l’IA: non abbiamo una nostra IA. Il tuo fornitore opera con il tuo account e secondo i suoi termini.
 - Apprendimenti per il team, a meno che tu non li disattivi: ogni tanto condividiamo alcuni consigli generali, niente di personale, e li controlliamo prima di inviarli. Vedi [Condividi gli apprendimenti](share-learnings.md).
 - Segnalazioni di errore, a meno che tu non le disattivi: quando qualcosa si rompe, includono il tipo di errore e il punto del codice in cui si è verificato. Mai i tuoi messaggi, nomi o indirizzi. Vedi [Segnalazioni di errore](error-reports.md).
 - Conteggi di utilizzo su una Machine ospitata: conteggi giornalieri delle tue attività, come le attività aperte o le email inviate, mai il loro contenuto.
@@ -22,19 +22,19 @@ translated: e636b2a2fbbc714d
 
 ## Livelli di sicurezza
 
-**Standard** mantiene le impostazioni predefinite attuali. **Prudente** non mostra testo nelle notifiche, non salva gli accessi e conserva meno dati. L'amministratore di una Work Fleet può impostare la Fleet come Prudente. Vedi [Livelli di sicurezza](security-levels.md).
+**Standard** mantiene le impostazioni predefinite attuali. **Prudente** non mostra testo nelle notifiche, non salva gli accessi e conserva meno dati. L’amministratore di una Fleet di lavoro può impostare la Fleet come Prudente. Vedi [Livelli di sicurezza](security-levels.md).
 
 ## Accesso
 
-Per accedere a una dashboard ospitata serve una passkey oppure l'accesso con Google o Microsoft e un codice di autenticazione.
+Per accedere a una dashboard ospitata serve una passkey oppure l’accesso con Google o Microsoft e un codice di autenticazione.
 
 ## Connessioni
 
-L'articolo di ogni connessione spiega cosa legge e cosa può inviare. Puoi disconnetterla in qualsiasi momento: vedi [Connessioni](connections.md).
+L’articolo di ogni connessione spiega cosa legge e cosa può inviare. Puoi disconnetterla in qualsiasi momento: vedi [Connessioni](connections.md).
 
 ## Assistenza
 
-L'assistenza funziona sulla tua Machine e non può vedere i tuoi dati. Al team di The Machine viene inviato solo l'argomento di ogni domanda, mai le tue parole. Vedi [Chiedi all'assistenza](help-chat.md#what-the-team-sees).
+L’assistenza funziona sulla tua Machine e non può vedere i tuoi dati. Al team di The Machine viene inviato solo l’argomento di ogni domanda, mai le tue parole. Vedi [Chiedi all’assistenza](help-chat.md#what-the-team-sees).
 
 ## Altro
 

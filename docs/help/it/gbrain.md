@@ -15,7 +15,7 @@ La tua Machine decide cosa inserire: persone e progetti del tuo Graph con un lin
 
 ## Cosa fa
 
-I controlli possono consultare la tua memoria (cercare e leggere pagine, mai modificarle) per creare attività migliori. La tua Machine scrive la propria parte in ogni pagina, racchiusa tra marcatori chiari. Se modifichi o rimuovi quella parte, la lascia così come l'hai impostata. Le note che scrivi su una persona in GBrain vengono riportate sulla tua Machine, così i controlli e la chat le vedono associate a quella persona. Restano sulla tua Machine.
+I controlli possono consultare la tua memoria (cercare e leggere pagine, mai modificarle) per creare attività migliori. La tua Machine scrive la propria parte in ogni pagina, racchiusa tra marcatori chiari. Se modifichi o rimuovi quella parte, la lascia così come l’hai impostata. Le note che scrivi su una persona in GBrain vengono riportate sulla tua Machine, così i controlli e la chat le vedono associate a quella persona. Restano sulla tua Machine.
 
 Le persone e le aziende di Lavoro vengono incluse solo se selezioni **Includi persone e aziende di Lavoro**. I dati del Graph del Team dei tuoi colleghi non vengono mai inclusi.
 

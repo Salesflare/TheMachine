@@ -15,7 +15,7 @@ Telegram è facoltativo. La dashboard come app per il telefono invia le stesse a
 
 ## Cosa può inviare
 
-Solo messaggi a te, dal tuo bot. Un messaggio a chiunque altro richiede comunque la tua approvazione sull'attività.
+Solo messaggi a te, dal tuo bot. Un messaggio a chiunque altro richiede comunque la tua approvazione sull’attività.
 
 ## Collegalo
 
@@ -24,7 +24,7 @@ Su una Machine in hosting:
 1. In Telegram, scrivi a @BotFather e invia /newbot. Copia il token che ti dà.
 2. Nella tua pagina di configurazione, in **Aggiungi altro quando vuoi**, apri Telegram, incolla il token e premi **Aggiungi il mio bot**.
 
-Non fa parte della configurazione: aggiungilo quando vuoi. La dashboard te lo suggerisce quando un'attività posticipata tornerebbe solo lì.
+Non fa parte della configurazione: aggiungilo quando vuoi. La dashboard te lo suggerisce quando un’attività posticipata tornerebbe solo lì.
 
 Sul tuo computer, te lo chiede il programma di installazione, oppure esegui `assistant telegram on` con il tuo ID utente di Telegram.
 

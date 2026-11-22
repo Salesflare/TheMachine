@@ -9,7 +9,7 @@ translated: 1e16b6abdf4fefad
 ---
 ## Cosa legge
 
-La tua casella di posta di Linear e i ticket assegnati a te. Importa:
+La tua inbox di Linear e i ticket assegnati a te. Importa:
 
 - I ticket assegnati a te: quelli nuovi e quelli con stato, data di scadenza o titolo modificati. Quando un ticket viene completato o annullato in Linear, la relativa attività si chiude automaticamente. **Annulla** la riapre.
 - Le menzioni che ti riguardano e i commenti e le risposte sui ticket che segui.
@@ -18,7 +18,7 @@ La tua casella di posta di Linear e i ticket assegnati a te. Importa:
 
 Ogni elemento diventa un’attività solo quando richiede il tuo intervento, in base al suo contenuto. Le modifiche che apporti tu non vengono importate. La prima sincronizzazione include gli ultimi 7 giorni. Le persone vengono collegate al tuo [Graph](graph.md) tramite l’indirizzo email che Linear mostra per loro.
 
-Per usarla solo per le attività da svolgere, disattiva **Porta segnali** in **Dettagli**.
+Per usarlo solo per fare cose, disattiva **Raccoglie segnali** in **Dettagli**.
 
 ## Cosa può fare
 
@@ -41,7 +41,7 @@ Per aggiungere un’altra area di lavoro, aggiungi di nuovo Linear. Scegli **Lav
 
 ## Incolla invece una chiave API
 
-In **Oppure incolla una chiave API**, premi **Ottieni il tuo token**. Linear apre **Impostazioni**, **Sicurezza e accesso**: crea una chiave API personale, copiala, incollala e premi **Collegati**. Anche sul tuo computer, `assistant connect linear` te la chiede.
+In **Oppure incolla una chiave API**, premi **Recupera il tuo token**. Linear apre **Impostazioni**, **Sicurezza e accesso**: crea una chiave API personale, copiala, incollala e premi **Collegati**. Anche sul tuo computer, `assistant connect linear` te la chiede.
 
 ## Rimuovilo
 

@@ -10,10 +10,10 @@ translated: e02f2502bf275cde
 ---
 ## Disdici
 
-1. In **Impostazioni** › **Account**, premi **Annulla il piano** e poi **Disdici l'abbonamento**.
+1. In **Impostazioni** › **Account**, premi **Annulla il piano** e poi **Disdici l’abbonamento**.
 2. Conferma. Termina alla fine del mese già pagato. Se disdici nei giorni gratuiti non paghi nulla.
 
-Hai cambiato idea? **Mantieni il mio abbonamento** lo riattiva. Nell'UE puoi anche recedere entro 14 giorni con **Recedi dal contratto qui**.
+Hai cambiato idea? **Mantieni il mio abbonamento** lo riattiva. Nell’UE puoi anche recedere entro 14 giorni con **Recedi dal contratto qui**.
 
 ## I tuoi dati dopo la disdetta
 
@@ -21,6 +21,6 @@ Vengono conservati per {grace_days} giorni così puoi esportarli, poi vengono el
 
 ## Elimina tutto subito
 
-In **Impostazioni** › **Account**, premi **Elimina l’account**, scrivi DELETE o la tua email e premi **Cancella tutto ora**. Termina l'abbonamento, fa dimenticare alla tua Machine gli accessi Google e Microsoft ed elimina la tua Machine, i suoi backup e tutti i suoi dati. Non si può annullare.
+In **Impostazioni** › **Account**, premi **Elimina l’account**, scrivi DELETE o la tua email e premi **Cancella tutto ora**. Termina l’abbonamento, fa dimenticare alla tua Machine gli accessi Google e Microsoft ed elimina la tua Machine, i suoi backup e tutti i suoi dati. Non si può annullare.
 
-Senza una Machine ospitata, il pulsante è **Elimina il mio account**. Una Machine sul tuo computer resta com'è.
+Senza una Machine ospitata, il pulsante è **Elimina il mio account**. Una Machine sul tuo computer resta com’è.

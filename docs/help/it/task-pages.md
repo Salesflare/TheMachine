@@ -1,5 +1,5 @@
 ---
-title: Pagine attività
+title: Pagine delle attività
 area: fleet
 summary: Una pagina semplice per chi è fuori dal Network, collegata dalla tua email. Risponde con un tocco, senza bisogno di un account.
 covers: task-pages
@@ -9,7 +9,7 @@ translated: f5a3d79bc2168432
 ---
 ## Aggiungine una
 
-Quando passi un’attività **Via email**, premi **Aggiungi una pagina attività** (oppure **No, grazie**).
+Quando passi un’attività **Per email**, premi **Aggiungi una pagina dell’attività** (oppure **No, grazie**).
 
 1. Controlla l’anteprima. **Escludi** le parti che l’altra persona non deve vedere; **Rimetti** le riporta.
 2. Scegli per quanto tempo funziona il link: 7, 14 o 30 giorni.
@@ -17,7 +17,7 @@ Quando passi un’attività **Via email**, premi **Aggiungi una pagina attività
 
 ## Cosa vede l’altra persona
 
-L’attività e quello che hai scelto di mostrare, con tre risposte: Ci penso io, Fatto, o Non posso farlo. La risposta torna sulla tua attività.
+L’attività e quello che hai scelto di mostrare, con tre risposte: Me ne occupo io, Fatto o Non posso farlo. La risposta torna sulla tua attività.
 
 Premi **Pagina dell’attività** sull’attività per aprirla nel browser così come la vede l’altra persona.
 

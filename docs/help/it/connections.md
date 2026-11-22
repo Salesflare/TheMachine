@@ -31,7 +31,7 @@ Se hai già collegato una fonte, nell’elenco viene indicato il suo account. Se
 
 Inserisci le informazioni richieste, come una chiave o un indirizzo, scegli **Lavoro** con il nome dell’azienda o **Personale** (per email e calendari ti viene chiesto solo se l’indirizzo non è sufficiente a stabilirlo), poi premi **Collegati**. Se si tratta di un sito come LinkedIn o X, si apre la pagina di accesso nel browser della tua Machine e la procedura prosegue automaticamente quando accedi. GitHub, WhatsApp e Codex mostrano un codice da inserire; per le chat Telegram e Signal mostrano un codice QR da scansionare.
 
-Premi **Annulla** per interrompere l’aggiunta. Se sei uscito prima di finire, riapri **Connessioni** da qualsiasi dispositivo e riprenderai dal punto in cui eri arrivato. Una volta connessa, la tua Machine inizia subito a leggerla e mostra come procede la prima sincronizzazione.
+Premi **Annulla** per interrompere l’aggiunta. Se esci prima di finire, riapri **Connessioni** da qualsiasi dispositivo e riprendi da dove avevi lasciato. Una volta connessa, la tua Machine inizia subito a leggerla e mostra come procede la prima sincronizzazione.
 
 Su una Machine ospitata, le fonti con una procedura di accesso dedicata si collegano da qui: Google, Microsoft (Outlook, OneDrive e Teams), Google Meet, Google Docs, Slack, Zoom, Stripe, Intercom, Salesforce e Trello.
 
@@ -45,13 +45,13 @@ Sul tuo computer, le stesse fonti effettuano l’accesso dopo che hai abbinato l
 
 Ogni fonte è classificata come lavoro, per un’azienda che indichi, o personale. Puoi modificarla in **Dettagli**. **Ipotizzato** indica che la tua Machine ha dedotto la categoria dall’indirizzo. Le attività di lavoro attendono i tuoi giorni lavorativi.
 
-Per le email e i calendari Google e Microsoft, la categoria viene dedotta dall’indirizzo, se è chiaro: un provider di posta come Gmail o Outlook.com indica Personale, il dominio della tua azienda indica Lavoro. Se non è chiaro, ti viene chiesto una volta, subito dopo l’accesso. **Cambia** ti permette di impostarla manualmente. Se in seguito le email indicano l’altra categoria, l’attività **Ottieni di più da The Machine** ti chiederà una volta se vuoi cambiarla.
+Per le email e i calendari Google e Microsoft, la categoria viene dedotta dall’indirizzo, se è chiaro: un provider di posta come Gmail o Outlook.com indica Personale, il dominio della tua azienda indica Lavoro. Se non è chiaro, ti viene chiesto una volta, subito dopo l’accesso. **Cambia** ti permette di impostarla manualmente. Se in seguito le email indicano l’altra categoria, l’attività **Sfrutta al meglio The Machine** ti chiederà una volta se vuoi cambiarla.
 
 ## Funzioni
 
-Una fonte può importare segnali (quello che arriva diventa un’attività), eseguire azioni per le tue attività (leggere un documento, inviare, rispondere o modificare qualcosa dopo la tua conferma) oppure fare entrambe le cose. Se fa entrambe, in **Dettagli** trovi un interruttore per ciascuna funzione: **Porta segnali** e **Può fare cose**. Una delle due resta sempre attiva. Per disattivarle entrambe, disconnetti la fonte. Una chat ha solo **Può fare cose**.
+Una fonte può importare segnali (quello che arriva diventa un’attività), eseguire azioni per le tue attività (leggere un documento, inviare, rispondere o modificare qualcosa dopo la tua conferma) oppure fare entrambe le cose. Se fa entrambe, in **Dettagli** trovi un interruttore per ciascuna funzione: **Raccoglie segnali** e **Può fare cose**. Una delle due resta sempre attiva. Per disattivarle entrambe, disconnetti la fonte. Una chat ha solo **Può fare cose**.
 
-Se disattivi **Porta segnali**, la fonte non si sincronizza. Se disattivi **Può fare cose**, la tua Machine non legge, prepara bozze o modifica mai nulla tramite quella fonte.
+Se disattivi **Raccoglie segnali**, la fonte non si sincronizza. Se disattivi **Può fare cose**, la tua Machine non legge, prepara bozze o modifica mai nulla tramite quella fonte.
 
 ## Rimuovere una fonte
 

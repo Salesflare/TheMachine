@@ -18,7 +18,7 @@ Le pagine che la tua connessione a Notion può vedere. Importa:
 
 La prima sincronizzazione include gli ultimi 7 giorni. Le persone vengono collegate al tuo [Graph](graph.md) tramite il loro indirizzo email. Se Notion non ne fornisce uno, vengono collegate solo se nel tuo Graph c’è una sola persona con lo stesso nome completo.
 
-Per usarla solo per eseguire azioni, disattiva **Porta segnali** in **Dettagli**.
+Per usarla solo per eseguire azioni, disattiva **Raccoglie segnali** in **Dettagli**.
 
 ## Cosa può fare
 
@@ -37,13 +37,13 @@ Non elimina, condivide o sposta mai una pagina.
 
 1. Nella dashboard: **Connessioni**, **Documenti e file**, Notion. Oppure, nella pagina di configurazione di una Machine ospitata su app.themachine.computer/setup: **Altre fonti**, Notion. Sul tuo computer, prima devi associarla al tuo account.
 2. Premi **Accedi con Notion**, scegli l’area di lavoro e le pagine che può vedere, poi autorizza l’accesso.
-3. Tornato in The Machine, il sistema controlla subito l’accesso e mostra il nome dell’area di lavoro.
+3. Quando torni in The Machine, l’accesso viene controllato subito e compare il nome dell’area di lavoro.
 
 Per aggiungere un’altra area di lavoro, collega di nuovo Notion.
 
 ## Incollare un token
 
-In **Oppure incolla un token di integrazione**, premi **Ottieni il tuo token**. Notion apre la pagina delle integrazioni: crea un’integrazione interna, consenti la lettura e l’inserimento di contenuti e commenti, e la lettura delle informazioni utente, compresi gli indirizzi email. Copia il token, incollalo e premi **Collegati**.
+In **Oppure incolla un token di integrazione**, premi **Recupera il tuo token**. Notion apre la pagina delle integrazioni: crea un’integrazione interna, consenti la lettura e l’inserimento di contenuti e commenti, e la lettura delle informazioni utente, compresi gli indirizzi email. Copia il token, incollalo e premi **Collegati**.
 
 Poi, in Notion, condividi le tue pagine con l’integrazione, selezionando **Connessioni** su ogni pagina. Sul tuo computer, anche `assistant connect notion` te lo chiede.
 

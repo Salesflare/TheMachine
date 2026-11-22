@@ -9,9 +9,9 @@ translated: 3c10a121b1cfb06d
 ---
 Installa The Machine come app sul telefono o sul computer per ricevere una notifica per ogni attività, risultato e promemoria, durante il tuo [orario di lavoro](work-hours.md). Scegli cosa ricevere in **Notifiche** ([scopri di più](notifications.md)).
 
-L’attività **Ottieni di più da The Machine**, in cima alle attività, ha una riga per ogni opzione: **Scarica l’app per il telefono** (vedi [L’app per dispositivi mobili](mobile-app.md)), **Attiva le notifiche** e **Installa su questo computer**. Vengono mostrate solo le opzioni che non hai ancora configurato su quel dispositivo. Tocca × per chiudere una riga. Trovi gli stessi controlli in **Impostazioni**, **Generale**, **Questo dispositivo**.
+L’attività **Sfrutta al meglio The Machine**, in cima alle attività, ha una riga per ogni opzione: **Scarica l’app per il telefono** (vedi [L’app per dispositivi mobili](mobile-app.md)), **Attiva le notifiche** e **Installa su questo computer**. Vengono mostrate solo le opzioni che non hai ancora configurato su quel dispositivo. Tocca × per chiudere una riga. Trovi gli stessi controlli in **Impostazioni**, **Generale**, **Questo dispositivo**.
 
-Nell’app per il telefono, quando le notifiche sono disattivate, compare **Ricevi una notifica quando c’è qualcosa che richiede il tuo intervento.** Tocca **Attiva** per richiederle al telefono o aprire le sue impostazioni. Tocca **×** per nascondere il messaggio per 7 giorni.
+Nell’app per il telefono, quando le notifiche sono disattivate, compare **Ricevi un avviso quando qualcosa ha bisogno di te.** Tocca **Attiva** per richiederle al telefono o aprire le sue impostazioni. Tocca **×** per nascondere il messaggio per 7 giorni.
 
 ## Su un computer (Chrome o Edge)
 

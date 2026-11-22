@@ -18,7 +18,7 @@ Nella pagina Attività, sotto **Promesse**:
 
 Ognuna ha un menu **⋯**:
 
-- **Fallo** sulle tue: diventano subito un’attività e la tua Machine la prepara. **Sollecita** sulle loro: la tua Machine prepara una breve bozza di follow-up nel canale in cui te l’hanno promesso, mentre tu resti nell’elenco. Compare una breve nota che dice che è in arrivo, con **Apri attività**, e la promessa mostra «ora è un’attività». Non viene inviato nulla finché non lo invii tu. Se è già un’attività, si apre quell’attività.
+- **Fallo** sulle tue: diventa subito un’attività e la tua Machine la prepara. **Sollecita** sulle loro: la tua Machine prepara una breve bozza di sollecito nel canale in cui te l’hanno promesso, mentre tu resti nell’elenco. Compare una breve nota che dice che è in arrivo, con **Apri attività**, e la promessa mostra «ora è un’attività». Non viene inviato nulla finché non lo invii tu. Se è già un’attività, si apre quell’attività.
 - **Segna come fatto**: la promessa è stata mantenuta.
 - **Non succederà**: non accadrà, quindi la tua Machine smette di tenerne traccia, senza creare un’attività.
 
@@ -28,11 +28,11 @@ Una promessa già mantenuta, per esempio con una risposta che hai inviato o una 
 
 Se in seguito viene indicata una nuova data, per esempio «la settimana prossima invece», la stessa promessa viene spostata, insieme alla sua attività, senza crearne una seconda. La sua pagina mostra la nuova data e il messaggio più recente.
 
-Una promessa senza data riceve un giorno di **follow-up**: tre giorni dopo averla fatta tu, una settimana dopo che l’ha fatta l’altra persona. Se a quel punto è ancora aperta, diventa un’attività.
+Una promessa senza data riceve un giorno di **ricontatto**: tre giorni dopo averla fatta tu, una settimana dopo che l’ha fatta l’altra persona. Se a quel punto è ancora aperta, diventa un’attività.
 
 Le promesse da Slack mostrano il nome della persona.
 
-Viene registrata anche una promessa via email di qualcuno a cui non hai mai scritto, contrassegnata come **mittente non verificato**: è solo una sua parola. L’attività inizia con «Non verificato: non gli hai mai scritto prima».
+Viene registrata anche una promessa via email di qualcuno a cui non hai mai scritto, contrassegnata come **mittente non verificato**: è solo una sua parola. L’attività inizia con «Non verificato: non hai mai scritto a …».
 
 ## Rimborsi
 

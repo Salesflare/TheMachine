@@ -42,7 +42,7 @@ Quando hai deciso per tutti i mittenti, l’attività risulta completata e mostr
 
 La routine impara cosa ti interessa da ciò che apri, aggiungi ai preferiti o archivi senza leggere, e dalle opzioni **Altri così** e **Meno così** per ogni suggerimento. Gli argomenti che seleziona sono indicati nella scheda della routine, sotto **Più su** e **Meno su**. Tocca × per rimuovere un argomento o aggiungine uno tu. Gli argomenti tratteggiati sono stati individuati dalla routine. Un nuovo riepilogo sostituisce quello aperto e non invia mai notifiche.
 
-La routine legge solo il mittente, l’oggetto e l’inizio di ogni nuova newsletter, poi pone all’AI una breve domanda al giorno, con un limite giornaliero, per contenere i costi. **Cambia quando** permette di modificarne l’orario. Dopo che cambi le parole, la routine viene eseguita come qualsiasi altra, seguendo le tue indicazioni.
+La routine legge solo il mittente, l’oggetto e l’inizio di ogni nuova newsletter, poi pone all’IA una breve domanda al giorno, con un limite giornaliero, per contenere i costi. **Cambia quando** permette di modificarne l’orario. Dopo che cambi le parole, la routine viene eseguita come qualsiasi altra, seguendo le tue indicazioni.
 
 **Compleanni** crea un’attività per ogni persona a te vicina che compie gli anni oggi e a cui scrivi personalmente, come amici, familiari e contatti abituali. Per ciascuna prepara una breve bozza di auguri nel canale che usi di solito con quella persona, per esempio nella chat di WhatsApp o nella conversazione email, nella sua lingua. Il messaggio parte solo quando lo invii tu. Se nessuno compie gli anni, non viene creata alcuna attività.
 
@@ -72,11 +72,11 @@ La routine invia al massimo due promemoria a settimana, uno al mese per persona,
 
 Ogni 3 ore, la tua Machine apre la ricerca nel proprio browser e cerca annunci che non ha ancora visto. Prezzo, distanza e parole da escludere vengono controllati prima, con semplice codice.
 
-Ogni nuovo annuncio che supera questi controlli viene aperto e la tua AI ne valuta le condizioni in base alla foto e alla descrizione, e il venditore in base alle recensioni, alla valutazione e all’età dell’account. Quelli più interessanti vengono raccolti in un’unica attività, ciascuno con foto, titolo, prezzo e un breve giudizio. Tocca un annuncio per aprirlo nel browser della tua Machine.
+Ogni nuovo annuncio che supera questi controlli viene aperto e la tua IA ne valuta le condizioni in base alla foto e alla descrizione, e il venditore in base alle recensioni, alla valutazione e all’età dell’account. Quelli più interessanti vengono raccolti in un’unica attività, ciascuno con foto, titolo, prezzo e un breve giudizio. Tocca un annuncio per aprirlo nel browser della tua Machine.
 
 Finché l’attività è aperta, i nuovi annunci vengono aggiunti in cima, il conteggio aumenta e ricevi un’altra notifica, perché le occasioni migliori finiscono in fretta. Quando la contrassegni come completata, il prossimo annuncio trovato avvia una nuova attività. Se una ricerca non trova nulla di interessante, non cambia niente.
 
-La routine limita l’impatto sul sito e sui costi: legge la ricerca una sola volta per esecuzione, apre al massimo 6 annunci con una pausa tra uno e l’altro e controlla al massimo 40 annunci al giorno in tutte le tue ricerche. Per ogni controllo, la tua AI riceve una breve domanda e una foto. La prima esecuzione controlla gli annunci più recenti e segna gli altri come già visti, così quelle successive mostrano solo le novità.
+La routine limita l’impatto sul sito e sui costi: legge la ricerca una sola volta per esecuzione, apre al massimo 6 annunci con una pausa tra uno e l’altro e controlla al massimo 40 annunci al giorno in tutte le tue ricerche. Per ogni controllo, la tua IA riceve una breve domanda e una foto. La prima esecuzione controlla gli annunci più recenti e segna gli altri come già visti, così quelle successive mostrano solo le novità.
 
 Se il sito ti chiede di accedere, mostra un controllo anti-robot o impedisce la lettura, un’attività te lo segnala e mostra **Apri** per vedere la pagina nel browser della tua Machine. Accedi o supera il controllo da lì: alla prossima esecuzione la routine riproverà a leggere la pagina. La tua Machine non accede e non supera i controlli al posto tuo, e non contatta mai i venditori, non fa offerte e non compra nulla.
 
@@ -84,9 +84,9 @@ Se il sito ti chiede di accedere, mostra un controllo anti-robot o impedisce la 
 
 **Riordini** legge le conferme degli ordini dei negozi online nella tua posta e individua ciò che compri più volte, come caffè, cibo per animali o vitamine. Quando pensa che sia arrivato il momento di ricomprarlo, crea un’attività con il prodotto, il negozio, l’ultimo prezzo e la data dell’ultimo acquisto. **Apri nel negozio** apre la pagina del prodotto, dove puoi comprarlo tu. La routine non acquista nulla al posto tuo.
 
-La routine ha bisogno di almeno tre ordini dello stesso prodotto, effettuati a intervalli regolari. Un acquisto isolato o un intervallo insolito non genera un’attività. Per ora controlla i negozi basati su Shopify. La tua AI legge solo le nuove email di conferma d’ordine provenienti da quei negozi, con una breve domanda per esecuzione. Queste attività non inviano mai notifiche e un nuovo ordine dello stesso prodotto chiude quella aperta.
+La routine ha bisogno di almeno tre ordini dello stesso prodotto, effettuati a intervalli regolari. Un acquisto isolato o un intervallo insolito non genera un’attività. Per ora controlla i negozi basati su Shopify. La tua IA legge solo le nuove email di conferma d’ordine provenienti da quei negozi, con una breve domanda per esecuzione. Queste attività non inviano mai notifiche e un nuovo ordine dello stesso prodotto chiude quella aperta.
 
-Finché una routine di un modello mantiene le parole originali del modello, viene eseguita con il proprio codice, senza usare il piano AI. Per esempio, Pulizia spam elenca prima con il codice le nuove email di mittenti sconosciuti e pone all’AI una breve domanda solo se ne trova. Restare in contatto chiede informazioni solo su una o due persone selezionate. Se cambi il nome, le impostazioni restano. Dopo che cambi le parole, la routine viene eseguita come qualsiasi altra, seguendo le tue indicazioni.
+Finché una routine di un modello mantiene le parole originali del modello, viene eseguita con il proprio codice, senza usare il piano IA. Per esempio, Pulizia spam elenca prima con il codice le nuove email di mittenti sconosciuti e pone all’IA una breve domanda solo se ne trova. Restare in contatto chiede informazioni solo su una o due persone selezionate. Se cambi il nome, le impostazioni restano. Dopo che cambi le parole, la routine viene eseguita come qualsiasi altra, seguendo le tue indicazioni.
 
 Pulizia newsletter e Pulizia spam continuano a creare un’unica attività con una scelta per ogni email. Se modifichi Compleanni, la routine mostra il risultato e al massimo una bozza, non un’attività per ogni persona. In **Modifica**, **Torna al modello** ripristina le parole originali.
 
@@ -106,13 +106,13 @@ Le tue routine sono raccolte sotto **Le tue routine**, dopo eventuali suggerimen
 
 Ogni esecuzione conosce il risultato precedente e può indicare cosa è cambiato da allora.
 
-Dopo un’esecuzione riuscita, la tua Machine può scrivere da sola una procedura per le operazioni di lettura che si ripetono ogni volta, per esempio quali email o modifiche a GitHub controllare. Le esecuzioni successive controllano prima questi elementi con semplice codice. Poi l’AI seleziona ciò che conta e lo scrive, usando meno token. La procedura si limita a leggere. Se smette di funzionare, la routine legge da sola e la corregge. La trovi sotto **Avanzate: passaggi di script** nel menu ⋯.
+Dopo un’esecuzione riuscita, la tua Machine può scrivere da sola una procedura per le operazioni di lettura che si ripetono ogni volta, per esempio quali email o modifiche a GitHub controllare. Le esecuzioni successive controllano prima questi elementi con semplice codice. Poi l’IA seleziona ciò che conta e lo scrive, usando meno token. La procedura si limita a leggere. Se smette di funzionare, la routine legge da sola e la corregge. La trovi sotto **Avanzate: passaggi di script** nel menu ⋯.
 
 ## Giorni saltati
 
 Se la tua Machine era spenta o occupata, le esecuzioni saltate non si accumulano: viene eseguita una sola volta la più recente. Ogni data viene eseguita una volta sola, anche dopo un riavvio.
 
-Le routine vengono eseguite una alla volta e attendono quando l’utilizzo del tuo piano AI è basso, come per tutte le attività in background. **Esegui ora** avvia subito la routine. Quando il risultato è pronto, viene mostrato sulla scheda.
+Le routine vengono eseguite una alla volta e attendono quando l’utilizzo del tuo piano IA è basso, come per tutte le attività in background. **Esegui ora** avvia subito la routine. Quando il risultato è pronto, viene mostrato sulla scheda.
 
 ## Modificala o interrompila
 
@@ -134,7 +134,7 @@ Per chi ha più esperienza, una routine può anche eseguire comandi personalizza
 
 **Verifica** riceve il risultato come input al termine dell’esecuzione. Se il comando termina con un errore, l’esecuzione mostra **Non è andato** e il messaggio restituito dal controllo. Anche un comando di Recupera dati non riuscito viene segnalato allo stesso modo.
 
-I comandi devono stare su una riga e vengono eseguiti senza una shell: non puoi usare pipe o variabili. I passaggi di script sono tuoi e si impostano solo dal dashboard. Anche un’esecuzione di prova e **Provalo** eseguono Recupera dati e lo indicano. Non inviano né conservano comunque nulla. Una routine non invia mai nulla, quindi un passaggio di script deve limitarsi a leggere.
+I comandi devono stare su una riga e vengono eseguiti senza una shell: non puoi usare pipe o variabili. I passaggi di script sono tuoi e si impostano solo dalla dashboard. Anche un’esecuzione di prova e **Provalo** eseguono Recupera dati e lo indicano. Non inviano né conservano comunque nulla. Una routine non invia mai nulla, quindi un passaggio di script deve limitarsi a leggere.
 
 ## Dai tuoi job di OpenClaw
 
@@ -165,4 +165,4 @@ Controlla al massimo una volta al giorno e aggiunge al massimo un nuovo suggerim
 
 ## Routine e attività ricorrenti
 
-Un’[attività ricorrente](recurring.md) ti ricorda di fare qualcosa. Una routine è un’attività che la tua Machine svolge da sola e ti mostra. Usa un’attività ricorrente per «pagare l’affitto il primo del mese» e una routine per «ogni venerdì, dimmi quali trattative si sono bloccate».
+Un’[attività ricorrente](recurring.md) ti ricorda di fare qualcosa. Una routine è un lavoro che la tua Machine svolge da sola e ti mostra. Usa un’attività ricorrente per «pagare l’affitto il primo del mese» e una routine per «ogni venerdì, dimmi quali trattative si sono bloccate».

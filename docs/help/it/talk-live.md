@@ -12,7 +12,7 @@ translated: 60168384f08de74e
 
 Nella chat di un’attività, tocca l’onda accanto al microfono. Consenti il microfono se il browser lo chiede. Quando la barra dice **Dal vivo**, parla come in una chiamata. The Machine risponde ad alta voce, e puoi parlarle sopra per interromperla.
 
-Conosce l’attività in cui sei: i suoi messaggi, la sua bozza e la sua chat. Può anche consultare le tue altre attività. Di' "segnala come fatta", "rimandala" o "non serve" e lo fa da sola. Di' "no, non quello" subito dopo per tornare indietro. Rimanda a qualsiasi ora, come "tra un’ora" o "domani alle 9", nel fuso orario di [Orario di lavoro](work-hours.md).
+Conosce l’attività in cui sei: i suoi messaggi, la sua bozza e la sua chat. Può anche consultare le tue altre attività. Di' "segna come fatta", "rimandala" o "non serve" e lo fa da sola. Di' "no, non quello" subito dopo per tornare indietro. Rimanda a qualsiasi ora, come "tra un’ora" o "domani alle 9", nel fuso orario di [Orario di lavoro](work-hours.md).
 
 Ascolta nelle tue lingue: quella dell’app e quelle indicate dal browser. Un rumore, un colpo di tosse o un suono in un’altra lingua non riceve risposta e resta fuori dalla trascrizione.
 
@@ -22,15 +22,15 @@ La barra ha **Silenzia** e **Fine**. Saluta, o di' che hai finito, e si chiude d
 
 Tocca **Parla** nella barra laterale (nel menu sul telefono) per ripassare a voce tutto ciò che ti aspetta. The Machine dice quante sono e prende quelle in **Per te** una alla volta, prima la più urgente. Vede anche le altre attività, come quelle segnate **In preparazione…**, e ti avvisa quando una è pronta.
 
-Parla ha una pagina sua: una conversazione dall'inizio alla fine, con in alto l'attività di cui si parla, la sua bozza e **Apri la chat**. Non ti sposta da una chat all'altra.
+Parla ha una pagina sua: una conversazione dall’inizio alla fine, con in alto l’attività di cui si parla, la sua bozza e **Apri la chat**. Non ti sposta da una chat all’altra.
 
-Chiedile di leggere una bozza, cambiarla, rimandarla, segnarla come fatta o passare alla prossima. L'invio funziona come nella chat di un'attività: una bozza per domanda, dopo un sì chiaro. Quello che dici su un'attività finisce nella chat di quell'attività. Quando arriva una nuova attività, te lo dice in una pausa. Di' "aggiungi un'attività per..." e ne crea una nuova, senza lasciare quella su cui sei.
+Chiedile di leggere una bozza, cambiarla, rimandarla, segnarla come fatta o passare alla prossima. L’invio funziona come nella chat di un’attività: una bozza per domanda, dopo un sì chiaro. Quello che dici su un’attività finisce nella chat di quell’attività. Quando arriva una nuova attività, te lo dice in una pausa. Di' "aggiungi un’attività per..." e ne crea una nuova, senza lasciare quella su cui sei.
 
-Arriva anche al resto di The Machine. Chiedi di una persona, un'organizzazione, un progetto, una riunione o una promessa, e la cerca e te la mostra. Può rimandare un'attività, segnarla come fatta, ignorarla, rinominarla o riaprirla, anche una in **Fatte / ignorate**. Per tutto il resto crea un'attività, lascia che se ne occupi la sua chat e ti dice la risposta.
+Arriva anche al resto di The Machine. Chiedi di una persona, un’organizzazione, un progetto, una riunione o una promessa, e la cerca e te la mostra. Può rimandare un’attività, segnarla come fatta, scartarla, rinominarla o riaprirla, anche una in **Fatte / scartate**. Per tutto il resto crea un’attività, lascia che se ne occupi la sua chat e ti dice la risposta.
 
-Ricorda anche le vostre conversazioni precedenti. Chiedi "cosa avevo deciso per l'offsite?" o "cosa ho detto di Acme la settimana scorsa?" e te lo dice, con quando l'hai detto. Lo fa solo Parla nella barra laterale, non Parla nella chat di un'attività.
+Ricorda anche le vostre conversazioni precedenti. Chiedi "cosa avevo deciso per l’offsite?" o "cosa ho detto di Acme la settimana scorsa?" e te lo dice, con quando l’hai detto. Lo fa solo Parla nella barra laterale, non Parla nella chat di un’attività.
 
-Intanto puoi andare su un'altra pagina: la barra resta in basso, e **Parla** nella barra laterale ti riporta indietro. Questa conversazione dura al massimo 30 minuti. Continua in background su computer e Android. Su iPhone si ferma quando l'app lascia lo schermo.
+Intanto puoi andare su un’altra pagina: la barra resta in basso, e **Parla** nella barra laterale ti riporta indietro. Questa conversazione dura al massimo 30 minuti. Continua in background su computer e Android. Su iPhone si ferma quando l’app lascia lo schermo.
 
 ## Chiedi le cose, e invia con un sì
 
@@ -38,18 +38,18 @@ Quando chiedi qualcosa, come "scrivi una risposta dicendo che giovedì va bene" 
 
 La chat può anche cercare informazioni, come gli orari di un negozio sul web. Nel frattempo mostra **Ci sto lavorando…**, e puoi continuare a parlare. Quando la risposta è pronta, The Machine te la dice, e dove l’ha trovata. Se nel frattempo chiedi altro, aspetta il suo turno.
 
-Per inviare una bozza, dillo. The Machine chiede prima, dicendo a chi e come, per esempio "Invio questa risposta a Sam per email?". Prima legge ad alta voce tutta la bozza: a chi va, l'oggetto e il testo. Così funziona anche con il telefono in tasca. Rispondi con un sì chiaro, come "sì, invia", e quella bozza parte.
+Per inviare una bozza, dillo. The Machine chiede prima, dicendo a chi e come, per esempio "Invio questa risposta a Sam per email?". Prima legge ad alta voce tutta la bozza: a chi va, l’oggetto e il testo. Così funziona anche con il telefono in tasca. Rispondi con un sì chiaro, come "sì, invia", e quella bozza parte.
 
 - Invia esattamente la bozza che ha letto. Se cambia dopo la domanda, la rilegge e chiede di nuovo. Una domanda senza risposta entro 3 minuti scade.
 - Se la risposta non è un sì chiaro, non parte niente e chiede di nuovo. "No" non invia niente.
 - Una bozza che hai già visto sullo schermo, o sentito in questa conversazione, non viene riletta: chiede solo, per esempio "La invio a Pat?".
 - Di' "invia entrambe" o "invia tutte quelle pronte" e nomina tutti in una domanda. Un sì le invia tutte.
 - Parla dice quanti secondi hai e mostra **Annulla** con lo stesso conto alla rovescia. Toccalo, o di' "annulla" o "aspetta".
-- Quando la Machine l’ha inviato, Parla dice "Inviato." e la barra e il to-do mostrano **Inviato a** quella persona con l’orario. Se non è partito, Parla dice perché. Chiedi "è partito?" quando vuoi: controlla, non tira mai a indovinare.
+- Quando la Machine l’ha inviato, Parla dice "Inviato." e la barra e l’attività mostrano **Inviato a** quella persona con l’orario. Se non è partito, Parla dice perché. Chiedi "è partito?" quando vuoi: controlla, non tira mai a indovinare.
 
 Puoi sempre toccare **Approva** invece.
 
-"Fallo" fa partire The Machine sull’attività, come **Fallo**, anche nel browser. "Segnala come fatta" la chiude. Di' "segnala un bug" e invia una segnalazione, come **Segnala un bug** nell’Aiuto, chiedendo prima se può aggiungere altro.
+"Fallo" fa partire The Machine sull’attività, come **Fallo**, anche nel browser. "Segna come fatta" la chiude. Di' "segnala un bug" e invia una segnalazione, come **Segnala un bug** nell’Aiuto, chiedendo prima se può aggiungere altro.
 
 ## Scegli una voce
 

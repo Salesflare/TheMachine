@@ -20,8 +20,8 @@ Niente. Si limita a leggere il feed.
 ## Connettilo
 
 1. Nella dashboard, apri **Connessioni**, poi **Altro** e scegli Feed RSS. Su una Machine ospitata, trovi la configurazione anche nella pagina di setup, sotto **Altre fonti**. Sul tuo computer puoi anche eseguire `assistant connect rss`.
-2. Incolla l'indirizzo del feed.
+2. Incolla l’indirizzo del feed.
 
 ## Rimuovilo
 
-Nella dashboard: apri **Connessioni**, seleziona il feed, poi **Dettagli** e **Disconnetti**. Non c'è niente da disinstallare altrove.
+Nella dashboard: apri **Connessioni**, seleziona il feed, poi **Dettagli** e **Disconnetti**. Non c’è niente da disinstallare altrove.

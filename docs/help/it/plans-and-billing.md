@@ -15,14 +15,14 @@ translated: b9c28b75591c7f62
 
 Il tuo piano IA viene fatturato dal tuo provider, per esempio OpenAI. Noi non aggiungiamo nulla.
 
-## Su Network
+## Sul Network
 
-- Amici e famiglia: gratis, con qualsiasi Machine. In una Fleet per la famiglia, le Machine con hosting costano {price.family_pair} in totale per le prime due, poi {price.family_seat} ciascuna, IVA esclusa.
+- Amici e famiglia: gratis, con qualsiasi Machine. In una Fleet di famiglia, le Machine con hosting costano {price.family_pair} in totale per le prime due, poi {price.family_seat} ciascuna, IVA esclusa.
 - Fleet di lavoro: {price.seat} al mese per ogni posto, oppure {price.seat_big} per una Machine più grande, IVA esclusa. Un collega che usa la propria Machine costa {price.network} al mese. Quando entra, un collega che paga già una Machine con hosting chiede alla Fleet di prenderla in carico come posto. Quando il proprietario conferma, il suo piano personale si interrompe. Fino ad allora, o se il proprietario rifiuta, continua a pagare come prima. Ogni Fleet ha una propria carta e le proprie fatture, e il proprietario conferma ogni importo prima che venga addebitato.
 
 Tutti i prezzi sono mensili, IVA esclusa. Vedi [Prezzi](/pricing).
 
-Hai attivato Network per gli amici prima che Network diventasse gratis? L'abbonamento compare in **Impostazioni** › **Account** finché non lo annulli. **Gestisci** lo apre nel tuo account, dove puoi annullarlo o cambiare la carta. Il tuo nome utente e i tuoi amici restano.
+Hai attivato Network per gli amici prima che Network diventasse gratis? L’abbonamento compare in **Impostazioni** › **Account** finché non lo annulli. **Gestisci** lo apre nel tuo account, dove puoi annullarlo o cambiare la carta. Il tuo nome utente e i tuoi amici restano.
 
 ## Carta e fatture
 
