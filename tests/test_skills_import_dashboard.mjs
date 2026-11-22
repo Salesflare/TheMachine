@@ -117,6 +117,12 @@ try{
   await page.locator('#import-search').fill('vendor-skill-42');
   assert.deepEqual(await page.locator('#import-list [data-import] strong').allTextContents(),['vendor-skill-42']);
   await page.locator('#import-search').fill('');
+  // Scrolling inside the panel moves only the panel: the next change on the page leaves the page where it is. The page
+  // once took a row inside the panel for its own place and scrolled away from under the pointer, so a tap missed Read.
+  const pageY=await page.evaluate(()=>scrollY);
+  await page.locator('#import-body').evaluate(b=>{b.scrollTop=b.scrollHeight;document.body.classList.add('place-probe');document.body.classList.remove('place-probe')});
+  assert.equal(await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>r(scrollY)))),pageY,'the page stays put at '+width);
+  await page.locator('#import-body').evaluate(b=>{b.scrollTop=0});
   if(shots)await page.locator('#skill-import').screenshot({path:`${shots}/skills-import-${width}-${theme}.png`});
   // Read: what would come in, shown as text; a skill that needs its scripts offers OpenClaw's install instead.
   await page.locator('[data-import-read="chatgpt:~/.codex/skills/report"]').click();
