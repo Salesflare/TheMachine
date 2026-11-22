@@ -116,7 +116,7 @@ import re
 import activity_log
 import bounces
 import mail_senders
-from machine import todo_states
+from machine import kinds, todo_states
 from machine.store import todo_moves
 from machine.owner_error import OwnerError
 
@@ -1164,9 +1164,8 @@ def unhold(db, job_id):
 # Collected messages only, no model and no live read. The owner's own messages and automated senders don't count, nor a
 # message the owner wrote after. A Send after the hold goes unless something newer came since. The to-do stays open.
 
-REPLY_MAIL = ('gmail.message', 'ms_graph.message', 'outlook.message')
-REPLY_CHATS = {'whatsapp': 'whatsapp.message', 'telegram': 'telegram.message', 'signal': 'signal.message'}
-REPLY_THREADS = {'linkedin': 'linkedin.message', 'x': 'x.dm', 'intercom': 'intercom.conversation'}
+REPLY_CHATS = ('whatsapp', 'telegram', 'signal')        # a reply goes into its chat (chat_id)
+REPLY_THREADS = ('linkedin', 'x', 'intercom')            # a reply goes into its conversation (conversation_id)
 REPLY_WINDOW = dt.timedelta(days=30)  # a conversation's messages this long before the draft are read for it
 
 
@@ -1191,26 +1190,30 @@ def reply_rows(db, action, since):
     start = (parse(since) - REPLY_WINDOW).isoformat()
     head = 'SELECT * FROM events WHERE deleted=0 AND account_id=? AND occurred_at>=? '
 
+    sources = kinds.of(send=kind) if kind else ()  # the event kinds a reply of this kind answers (machine/kinds.py)
+    if not sources:
+        return None
+    marks = ','.join('?' * len(sources))
+
     def where(sql, *params):
-        return db.execute(head + sql + ' ORDER BY occurred_at,id', (account, start, *params)).fetchall()
+        return db.execute(head + f'AND kind IN ({marks}) ' + sql + ' ORDER BY occurred_at,id', (account, start, *sources, *params)).fetchall()
 
     if kind == 'email' and action.get('thread_id'):
         thread = str(action['thread_id'])
-        return where(f"AND kind IN ({','.join('?' * len(REPLY_MAIL))}) AND (json_extract(metadata,'$.thread_id')=? "
-                     "OR json_extract(metadata,'$.conversation_id')=?)", *REPLY_MAIL, thread, thread)
+        return where("AND (json_extract(metadata,'$.thread_id')=? OR json_extract(metadata,'$.conversation_id')=?)", thread, thread)
     if kind == 'slack' and (action.get('thread') or {}).get('channel_id'):
         thread = action['thread']
-        return [r for r in where("AND kind='slack.message' AND json_extract(metadata,'$.channel_id')=?", thread['channel_id'])
+        return [r for r in where("AND json_extract(metadata,'$.channel_id')=?", thread['channel_id'])
                 if str(_meta(r['metadata']).get('thread_ts') or '') == str(thread['ts'])]
     if kind == 'slack' and action.get('user_id'):  # their direct message: its own lines, a busy DM's threads aside
-        dms = {m.get('channel_id') for r in where("AND kind='slack.message' AND json_extract(metadata,'$.user_id')=?", action['user_id'])
+        dms = {m.get('channel_id') for r in where("AND json_extract(metadata,'$.user_id')=?", action['user_id'])
                for m in [_meta(r['metadata'])] if m.get('conversation_type') == 'dm' and m.get('channel_id')}
-        return [r for channel in sorted(dms) for r in where("AND kind='slack.message' AND json_extract(metadata,'$.channel_id')=?", channel)
+        return [r for channel in sorted(dms) for r in where("AND json_extract(metadata,'$.channel_id')=?", channel)
                 if _top_level(_meta(r['metadata']))]
     if kind in REPLY_CHATS and action.get('chat_id'):
-        return where("AND kind=? AND json_extract(metadata,'$.chat_id')=?", REPLY_CHATS[kind], str(action['chat_id']))
+        return where("AND json_extract(metadata,'$.chat_id')=?", str(action['chat_id']))
     if kind in REPLY_THREADS and action.get('conversation_id'):
-        return where("AND kind=? AND json_extract(metadata,'$.conversation_id')=?", REPLY_THREADS[kind], str(action['conversation_id']))
+        return where("AND json_extract(metadata,'$.conversation_id')=?", str(action['conversation_id']))
     return None
 
 
