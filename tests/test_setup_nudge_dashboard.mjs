@@ -5,8 +5,8 @@ import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import('./browser.mjs');
 
 // The setup to-do's one suggestion with its reason (setup_card.nudge, machine/app/setup_nudge.py): it leads the card in
-// the place of the row it is about (a WhatsApp suggestion: no plain Connect WhatsApp row), the folded line says it
-// instead of "2 steps left · Continue", its button goes to that connect, and its × closes it like any row. Without one,
+// the place of the row it is about (a WhatsApp suggestion: no plain Connect WhatsApp row), folded it is that one row
+// (its Connect and ×) instead of "2 steps left · Continue", its button goes to that connect, and its × closes it. Without one,
 // the rows stay as they were. And the first look's ending with its connect offers shows after one to-do too, once the
 // list is empty. Fake data only. SHOTS=<folder> saves screenshots at 1440 and 390, light and dark.
 const dashboard=await dashboardPage();
@@ -59,19 +59,24 @@ try{
    const fits=await page.evaluate(()=>{const r=document.querySelector('#setup-card .setup-row').getBoundingClientRect();return r.right<=innerWidth&&document.documentElement.scrollWidth<=innerWidth});
    assert.ok(fits,'no sideways scroll');
    await shot(page,`nudge-card-${width}-${scheme}`);await context.close()}
-  // Folded: the line is the suggestion, a tap opens the card with it first
-  {setup={...FRESH,since:hoursAgo(72),nudge:NUDGE};const {context,page}=await open({width,height,scheme});
-   let c=await look(page);assert.equal(c.quiet,true);assert.equal(c.line,NUDGE.title);
-   const h=await page.evaluate(()=>Math.round(document.querySelector('#setup-card').getBoundingClientRect().height));assert.ok(h<=(width<600?56:40),'short: '+h);
+  // Folded: the suggestion alone, as its row with Connect and ×; closed, the steps-left line comes back
+  {setup={...FRESH,since:hoursAgo(72),nudge:NUDGE};todos=true;ending=null;const {context,page}=await open({width,height,scheme});
+   let c=await look(page);assert.equal(c.quiet,true);assert.deepEqual(c.rows,['hint-nudge-whatsapp']);assert.equal(c.first,NUDGE.title);
+   const go=page.locator('#setup-card [data-setup-go="hint-nudge-whatsapp"]'),x=page.locator('#setup-card [data-setup-dismiss="hint-nudge-whatsapp"]');
+   assert.equal((await go.innerText()).trim(),'Connect');assert.ok(await go.isVisible()&&await x.isVisible());
+   const fits=await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth);assert.ok(fits,'no sideways scroll');
    await shot(page,`nudge-folded-${width}-${scheme}`);
-   await page.locator('[data-setup-open]').click();c=await look(page);assert.equal(c.rows[0],'hint-nudge-whatsapp');
+   await x.click();await page.waitForFunction(()=>document.querySelector('#setup-card [data-setup-open]'));
+   c=await look(page);assert.match(c.line,/^\d steps? left · Continue$/);
    await context.close()}
-  // The first look found one to-do, since done: its ending with its connect offers, not All clear
-  {setup={...FRESH,since:hoursAgo(30),nudge:NUDGE};todos=false;
+  // The first look found one to-do, since done: its ending with its connect offers, not All clear; the Machine leaves out
+  // the suggestion meanwhile (status.py), so the folded line says the steps left, not a third offer
+  {setup={...FRESH,since:hoursAgo(30)};todos=false;
    ending={at:hoursAgo(2),days:7,kinds:{email:42},read:{people:12,newsletters:22,notifications:8},todos:1,acted:true,next:['calendar'],connect:[{service:'slack',label:'Slack'}]};
    const {context,page}=await open({width,height,scheme},'.first-look-end');
    const e=await page.evaluate(()=>({line:document.querySelector('.first-look-end .fl-read')?.innerText,next:[...document.querySelectorAll('.first-look-end .fl-next button')].map(b=>b.innerText)}));
    assert.match(e.line,/^Read 42\semails from the past week/);assert.deepEqual(e.next,['Connect Slack','Connect your calendar']);
+   assert.equal(await page.locator('#setup-card [data-setup-go^="hint-nudge"]').count(),0);
    await shot(page,`first-look-one-todo-${width}-${scheme}`);await context.close()}
  }
 
@@ -84,7 +89,7 @@ try{
   await page.evaluate(()=>addEventListener('hashchange',e=>{window.sawIt??=new URL(e.newURL).hash}));
   await page.locator('[data-setup-go="hint-nudge-whatsapp"]').click();
   assert.equal(await (await page.waitForFunction(()=>window.sawIt)).jsonValue(),'#connect=whatsapp');await context.close()}
- {const {context,page}=await open();
+ {posted.length=0;const {context,page}=await open();
   await Promise.all([page.waitForResponse(r=>(r.request().postData()||'').includes('setup_dismiss')),page.locator('[data-setup-dismiss="hint-nudge-whatsapp"]').click()]);await page.waitForFunction(()=>!document.querySelector('[data-step="hint-nudge-whatsapp"]'));
   assert.deepEqual(posted.filter(p=>p.action==='setup_dismiss').map(p=>p.args.step),['hint-nudge-whatsapp']);
   const c=await look(page);assert.ok(!c.rows.includes('hint-nudge-whatsapp'));assert.ok(c.rows.includes('whatsapp'),c.rows.join());

@@ -153,6 +153,20 @@ class SetupNudge(unittest.TestCase):
         # never without the card
         self.assertIsNone(app.setup_nudge_view(dict(setup_card.setup_card(self.store, app.config), closed=True)))
 
+    def test_none_while_the_first_looks_ending_offers_its_own_next_steps(self):
+        import machine.main as machine_main
+        import timeutil
+        from unittest import mock
+        self.failed_note('whatsapp', at=timeutil.clock())
+        for found, offered in ((None, True), ({'todos': 2}, True), ({'todos': 1}, False), ({'todos': 0}, False)):
+            app = object.__new__(machine_main.App)  # a status of its own (status_kept keeps one)
+            app.store, app.config_path = self.store, None
+            app.config = dict(self.config, started_at=(timeutil.clock() - dt.timedelta(days=2)).date().isoformat(),
+                              accounts=[dict(self.config['accounts'][0], boundary='personal')])
+            with mock.patch.object(machine_main.App, 'first_look_done', return_value=found):
+                out = app.action('status', {'full': True})
+            self.assertEqual(bool(out['setup_card']['nudge']), offered, found)
+
 
 if __name__ == '__main__':
     unittest.main()
