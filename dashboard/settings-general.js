@@ -129,10 +129,14 @@ $('#settings-locale').addEventListener('change',async e=>{const el=e.target;if(!
 // Settings, General, Voice input (voice_input.py): where speech becomes text (this Machine, or OpenAI with the owner's
 // key when OpenClaw has one), how accurate the Machine's own model is, and the language (Detect picks among the app's).
 const MIC_LANGS=SOURCE_KINDS.mic||[];  // [code, name, BCP-47 tag]: locale_prefs.mic_languages(), as the page carries it
-let dictation={at:0,busy:false,timer:null};
-async function loadDictation(force){if(dictation.busy||(!force&&Date.now()-dictation.at<30000))return;dictation.busy=true;if(!state.dictation)renderDictation();
- try{state.dictation=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'voice_status',args:{settings:true}})});dictation.at=Date.now()}catch{}
- finally{dictation.busy=false}renderDictation()}
+// Read once when General opens (settingsSync calls dictationShown on every change under Settings, this list's own
+// render among them, so only the opening reads). Then every 2 s while it gets ready, for 30 s while OpenAI's answer is
+// still out, and 30 s after a failed read, only while General stays open.
+var dictation={busy:false,timer:null,open:false,checks:0};  // var: settingsSync may run before this line
+function dictationShown(on){if(!dictation)return;if(on&&!dictation.open){dictation.checks=0;loadDictation()}dictation.open=on;if(!on)clearTimeout(dictation.timer)}
+async function loadDictation(){if(dictation.busy)return;dictation.busy=true;if(!state.dictation)renderDictation();let failed=true;
+ try{state.dictation=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'voice_status',args:{settings:true}})});failed=false}catch{}
+ finally{dictation.busy=false}renderDictation(failed)}
 // One short line: which engine is in use, and how this Machine's own is getting on
 function dictationNote(d){const l=d.local||{};
  if(d.openai===false&&d.engine==='openai')return t('OpenAI needs an API key, or a ChatGPT sign-in that allows audio.');
@@ -141,17 +145,17 @@ function dictationNote(d){const l=d.local||{};
  if(l.state==='failed')return l.error||t('Getting voice ready failed. Try again later.');
  if(l.state==='preparing')return t('Getting ready (in the background).');
  return t('Gets ready when the Machine is quiet.')}
-function renderDictation(){const d=state.dictation,box=$('#settings-dictation'),list=$('#dictation-list');box.hidden=false;
+function renderDictation(failed){const d=state.dictation,box=$('#settings-dictation'),list=$('#dictation-list'),l=d?.local||{};box.hidden=false;
+ clearTimeout(dictation.timer);const wait=failed?30000:!d||d.demo?0:l.state==='preparing'||(d.openai==null||d.talk&&d.talk.ready==null)&&dictation.checks++<15?2000:0;
+ if(wait&&dictation.open)dictation.timer=setTimeout(loadDictation,wait);
  if(!d||d.demo){list.innerHTML=`<div><span class="grow"><small>${esc(t(d?MIC_DEMO:'Loading…'))}</small></span></div>`;return}
- const opt=(v,label,on,off)=>`<option value="${v}"${on?' selected':''}${off?' disabled':''}>${esc(t(label))}</option>`,l=d.local||{};
+ const opt=(v,label,on,off)=>`<option value="${v}"${on?' selected':''}${off?' disabled':''}>${esc(t(label))}</option>`;
  list.innerHTML=`<div><span class="grow"><strong>${esc(t('Turned into text'))}</strong><small id="dictation-note">${esc(dictationNote(d))}${l.state==='failed'&&d.in_use==='local'?` <button type="button" class="quiet" data-dictation-retry>${esc(t('Try again'))}</button>`:''}</small></span><select id="dictation-engine" aria-label="${esc(t('Turned into text'))}">${opt('auto','Automatic',d.engine==='auto')}${opt('local','On this Machine',d.engine==='local')}${opt('openai',d.openai===null?'With OpenAI (checking…)':'With OpenAI',d.engine==='openai',!d.openai&&d.engine!=='openai')}</select></div>`
   +(d.in_use==='local'?`<div><span class="grow"><strong>${esc(t('Accuracy'))}</strong><small>${esc(t(d.model==='base'?'Quicker, but it gets more words wrong.':'Best for most languages. Slower on a small Machine.'))}</small></span><select id="dictation-model" aria-label="${esc(t('Accuracy'))}">${opt('small','More accurate',d.model==='small')}${opt('base','Faster',d.model==='base')}</select></div>`:'')
   +`<div><span class="grow"><strong>${esc(t('Language'))}</strong><small>${esc(t('Detect works for every app language. Picking yours is a little faster.'))}</small></span><select id="dictation-language" aria-label="${esc(t('Voice input language'))}"><option value=""${d.language?'':' selected'}>${esc(t('Detect'))}</option>${MIC_LANGS.map(([c,n])=>`<option value="${c}" translate="no"${d.language===c?' selected':''}>${n}</option>`).join('')}</select></div>`
   // Talk live: a row with its voice when it's ready, else a hint under the list (none while still checking)
   +(d.talk?.ready&&d.talk_voice?`<div><span class="grow"><strong>${esc(t('Talk live'))}</strong><small id="talk-note">${esc(t('Ready. Tap Talk in the menu, or the wave in a to-do’s chat.'))}</small></span><button type="button" class="quiet talk-sample" data-talk-sample aria-label="${esc(t('Play a sample'))}" title="${esc(t('Play a sample'))}">${PLAY}</button><select id="talk-voice" aria-label="${esc(t('Voice'))}">${TALK_VOICES.map(n=>`<option value="${n}" translate="no"${d.talk_voice===n?' selected':''}>${n[0].toUpperCase()+n.slice(1)}</option>`).join('')}</select></div>`:'');
- let hint=$('#talk-hint');if(!hint){hint=document.createElement('p');hint.className='footnote';hint.id='talk-hint';list.after(hint)}hint.textContent=d.talk?.ready===false?t('Talk live needs OpenAI: a ChatGPT sign-in, or an API key.'):'';hint.hidden=!hint.textContent;
- // Still preparing, or the Machine still asking OpenClaw what OpenAI can do here (it answers at once, and fills that in later)
- clearTimeout(dictation.timer);if((l.state==='preparing'||d.openai==null||d.talk&&d.talk.ready==null)&&!$('#settings').hidden)dictation.timer=setTimeout(()=>loadDictation(true),2000)}
+ let hint=$('#talk-hint');if(!hint){hint=document.createElement('p');hint.className='footnote';hint.id='talk-hint';list.after(hint)}hint.textContent=d.talk?.ready===false?t('Talk live needs OpenAI: a ChatGPT sign-in, or an API key.'):'';hint.hidden=!hint.textContent}
 $('#settings-dictation').addEventListener('change',async e=>{const el=e.target;if(!el.matches('select'))return;const key={'dictation-engine':'engine','dictation-model':'model','dictation-language':'language','talk-voice':'talk_voice'}[el.id];if(!key)return;el.disabled=true;
  try{state.dictation=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'voice_prefs',args:{[key]:el.value}})}).then(r=>({talk:state.dictation?.talk,...r}));micPrepped=false;notice(t('Saved.'))}catch(err){errCaught(err);notice(err.message)}renderDictation()});
 // Talk live's voices (voice_input.TALK_VOICES): a few seconds of each, from the Machine itself (brand/voices)
