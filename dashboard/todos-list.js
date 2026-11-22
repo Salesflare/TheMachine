@@ -69,7 +69,7 @@ function sentWhere(){for(const [id,w] of sentWatch){const s=(state?.suggestions|
  if(s.status==='prepared'&&!['sent','done'].includes(st)){if(['failed','blocked','uncertain','undone'].includes(st))sentWatch.delete(id);continue}  // still going, or it didn't go (the to-do says why)
  if(chatId&&chatId!==id)continue;  // another to-do is open: said once that one closes, never over it
  sentWatch.delete(id);const sent=w.kind!=='finish';
- const text=closed(s)||looksDone(s)?t(sent?'Sent. Moved to Done.':'Finished. Moved to Done.'):s.status==='snoozed'&&s.snoozed_until?t('Sent. Moved to Later until {}.',sentDay(s.snoozed_until)):waitsOnOthers(s)?t('Sent. Moved to Waiting on others.'):sent?t('Sent.'):'';
+ const text=closed(s)||looksDone(s)?t(sent?'Sent. Moved to Done.':'Finished. Moved to Done.'):s.status==='snoozed'&&s.snoozed_until?t('Sent. Moved to Later until {}.',sentDay(s.snoozed_until)):waitsOnOthers(s)?t('Sent. Moved to Waiting on others.'):sent&&s.status==='pending'?t('Sent. Kept open for the work you promised.'):sent?t('Sent.'):'';
  if(text){toastOpen(text,s.status==='prepared'&&!waitsOnOthers(s)?'':id);$('#toast').dataset.about=id}}}
 function toastOpen(text,id){toast(text);if(!id)return;const b=make('button',{type:'button','data-toast-open':id},t('Open'));$('#toast').append(' ',b);clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').classList.remove('show'),8000)}
 $('#toast').addEventListener('click',e=>{const b=e.target.closest('[data-toast-open]');if(!b)return;$('#toast').classList.remove('show');location.hash='#card='+b.dataset.toastOpen});

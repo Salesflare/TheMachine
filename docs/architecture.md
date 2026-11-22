@@ -218,6 +218,11 @@ same open promise stored twice from before is kept once. Nothing shows up on Tel
   usual limits: for yours the thing you promised, for theirs a short nudge. If they answer while the to-do is on its
   way, it closes. At most 5 such to-dos a day. With reviews off (a new install, its first look included) a due promise
   waits: no to-do and nothing prepared until reviews are on.
+- **A reply that only promises the work:** the run marks a message draft that only acknowledges the ask or promises
+  the owner's real work for later with `still_owed` (`{what, due}`), judged by meaning when it writes the draft. After
+  the send, `settle_sent` keeps that to-do open (`promises.keep_owed`) instead of Done: due the promised day, nothing
+  drafted left on it, and a promise of yours recorded as already carded on it, so the review that reads the sent reply
+  finds it. A reply that does the work closes the to-do as before.
 - **Where you see them:** the To-dos page has a **Promises** list (You promised, Promised to you) with Done and Drop
   for open ones. Every promise link (that list, the Calendar, Open between you on a person, organization or project
   page) opens the promise's own page (`#promise/<id>`, read from `GET /api/promise?id=`): its state, the message it

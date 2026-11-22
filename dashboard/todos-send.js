@@ -61,7 +61,7 @@ const header=(subject=true)=>{const to=options.length?sendRecipients():draft.to;
  if(froms.length>1){cmLists.from={label:'Send from',choices:()=>froms.map(a=>({value:a,label:a,name:true})),value:()=>sendFrom,pick:v=>{sendFrom=v;const s=$('#send-from>span');if(s)s.textContent=v}};
   setHTML($('#send-head dd'),cmTrigger('from','from',sendFrom,'from-pick',html` id="send-from" translate="no"`))}};
 sendHeader=header;$('#send-recipients').onchange=()=>header($('#send-editor').hidden);
-header();sendBody(draft.body,draft.signature);sendFine([INTERCOM_WHY[draft.intercom_fallback]||'',replyElsewhere(draft),draft.snooze_days?t(['Leaves your inbox for {} day after sending, or until a reply.','Leaves your inbox for {} days after sending, or until a reply.'],draft.snooze_days):'',waits].filter(Boolean).join(' '));
+header();sendBody(draft.body,draft.signature);sendFine([INTERCOM_WHY[draft.intercom_fallback]||'',replyElsewhere(draft),draft.snooze_days?t(['Leaves your inbox for {} day after sending, or until a reply.','Leaves your inbox for {} days after sending, or until a reply.'],draft.snooze_days):'',draft.still_owed?t('The to-do stays open for the work this promises.'):'',waits].filter(Boolean).join(' '));
 const files=draft.attachments||[];$('#send-files').hidden=!files.length;
 setHTML($('#send-files'),draftFileLinks(id,files));
 $('#send-error').textContent=demo?'Demo only. Nothing will be sent.':'';$('#send-confirm').disabled=options.length&&!sendRecipients().length;sendShow();

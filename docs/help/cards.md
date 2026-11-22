@@ -19,7 +19,7 @@ The **To-dos** page groups them:
 - **Promises**: what you promised and what others promised you. See [Promises](promises.md).
 - **Done / dismissed**: every finished to-do, newest first, with when it finished, like "Done 5 minutes ago". To-dos that seem finished already are marked **Looks done**.
 
-After you send, a short note says where the to-do went, like "Sent. Moved to Done." or "Sent. Moved to Later until Mon." **Open** takes you to it. Search finds a to-do by its title or by who it went to, also in Later and Done.
+After you send, a short note says where the to-do went, like "Sent. Moved to Done." or "Sent. Moved to Later until Mon." A reply that only promises the work, like "I'll send it by Tuesday", keeps the to-do open: "Sent. Kept open for the work you promised." **Open** takes you to it. Search finds a to-do by its title or by who it went to, also in Later and Done.
 
 **For you** puts first what's overdue or due by tomorrow, then questions from your Fleet, then a board's follow-ups, then the rest. Within each, newest first. A to-do keeps its place while your Machine prepares it and when it's done: only its mark changes. The other open groups put overdue or due by tomorrow first, the rest newest first. The sidebar keeps the same order.
 

@@ -35,7 +35,7 @@ import timeutil
 import unicodedata
 from urllib.parse import urlsplit
 from machine.owner_error import OwnerError
-from machine.kinds import SEND, TEXT_ONLY
+from machine.kinds import SEND, TEXT_ONLY, TO_PERSON
 
 SEND_SCOPES = {'https://www.googleapis.com/auth/gmail.send',
                'https://www.googleapis.com/auth/gmail.compose',
@@ -406,6 +406,29 @@ def delegate_note(action):
     return f"\n\nAfter sending, the to-do waits {action['wait_days']} day{'s' if action['wait_days'] > 1 else ''} for {action['to_name'] + '’s' if action.get('to_name') else 'a'} reply; it closes when they answer."
 
 
+def still_owed(value):
+    """A message that only answers for the owner's real work (a yes, a promise to send it by Tuesday): the run says so
+    with still_owed {what: the work it promises, due: the promised day}, judged by meaning. After the send the to-do
+    stays open for that work (decisions.settle_sent), never Done. None when the message does the work itself."""
+    owed = value.get('still_owed')
+    if owed is None:
+        return None
+    if value.get('kind') not in TO_PERSON or value.get('delegate'):
+        raise ValueError('still_owed goes with a message to someone that promises the owner’s own work, not a handoff')
+    if not isinstance(owed, dict) or set(owed) - {'what', 'due'}:
+        raise ValueError('still_owed is {what, due}: the work the message promises and the promised day')
+    what = ' '.join(str(owed.get('what') or '').split())
+    if not 3 <= len(what) <= 80:
+        raise ValueError('still_owed.what is the promised work alone, starting with a verb, as it follows "I’ll" (3-80 characters)')
+    result = {'what': what}
+    if owed.get('due') is not None:
+        try:
+            result['due'] = datetime.date.fromisoformat(str(owed['due'])).isoformat()
+        except ValueError:
+            raise ValueError('still_owed.due is the promised day as YYYY-MM-DD, or left out when none was said') from None
+    return result
+
+
 def delegation(value, result, name=None):
     """Hand the task to someone: after the send, the card waits for their reply and closes when
     they answer; without one it comes back after wait_days."""
@@ -549,6 +572,8 @@ def validate(value, config, allowed_accounts, recipient_options=None, linkedin_t
             value = {**value, field: paragraphs(value[field])}
     if value.get('kind') in PLAIN_LINKS and isinstance(value.get('body'), str):
         value = {**value, 'body': body_text(value['body'])}  # they arrive as plain text: a Markdown link would show raw
+    owed = still_owed(value)
+    value = {k: v for k, v in value.items() if k != 'still_owed'}
     if value.get('kind') == 'calendar':
         # An event added, changed or deleted on a calendar the owner can write: shown on the card, done on their tap.
         result = calendar_writes.validate(value, config, calendar_events)
@@ -945,6 +970,8 @@ def validate(value, config, allowed_accounts, recipient_options=None, linkedin_t
     off = abilities.refuse(config, result.get('account_id'))  # its Can do things is off: no draft through it
     if off:
         raise ValueError(off)
+    if owed:
+        result['still_owed'] = owed
     result['revision'] = hashlib.sha256(canonical(result).encode()).hexdigest()[:12]
     return result
 
@@ -1207,7 +1234,12 @@ def email_preview(action):
     return ('\n'.join(lines) + '\nSubject: ' + action['subject'] + '\n\n' + mail_text(action['body'])
             + ('\n\n+ your signature' if action.get('signature') else '')
             + ('\n\nAttachments: ' + attachment_list(action) if action.get('attachments') else '')
-            + ('\n' + snooze_note(action) if action.get('snooze_days') else '') + delegate_note(action))
+            + ('\n' + snooze_note(action) if action.get('snooze_days') else '') + delegate_note(action)
+            + ('\n' + OWED_NOTE if action.get('still_owed') else ''))
+
+
+# Beside "Leaves your inbox ...": the thread leaves the mailbox either way, the to-do stays for the work promised
+OWED_NOTE = 'The to-do stays open for the work this promises.'
 
 
 def snooze_note(action):

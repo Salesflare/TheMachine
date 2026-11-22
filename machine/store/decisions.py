@@ -69,14 +69,20 @@ def settle_sent(store, db, suggestion_id, job_id, label='', note=None):
         return False
     body = NOTHING_SENT.sub('', row['body'] or '').strip() or row['body']
     db.execute('UPDATE suggestions SET body=?,outcome=NULL WHERE id=?', (body, suggestion_id))
+    job = db.execute('SELECT payload FROM action_jobs WHERE id=?', (job_id,)).fetchone()
+    try:
+        sent = json.loads(job['payload']) if job else {}
+    except (TypeError, ValueError):
+        sent = {}
+    sent = sent if isinstance(sent, dict) else {}
+    if sent.get('still_owed'):
+        # The reply only promised the work (still_owed, judged when it was drafted): the to-do stays open for it
+        from machine.store.promises import keep_owed
+        keep_owed(db, {**dict(row), 'body': body}, sent, job_id, now())
+        return True
     if 'done_when' in row.keys() and row['done_when']:
         # The owner's part went out, the result it is for hasn't come yet (outcomes.py): it waits for that, not done
-        job = db.execute('SELECT payload FROM action_jobs WHERE id=?', (job_id,)).fetchone()
-        try:
-            sent = json.loads(job['payload']) if job else {}
-        except (TypeError, ValueError):
-            sent = {}
-        outcomes.wait_for_result(db, row, str(sent.get('to_name') or '') if isinstance(sent, dict) else '', now())
+        outcomes.wait_for_result(db, row, str(sent.get('to_name') or ''), now())
         return True
     if checking_in(db, dict(row)):
         # The owner's check-in nudge went out while the teammate still has it: it waits on them again, under Later

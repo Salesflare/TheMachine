@@ -386,6 +386,7 @@ For developers: a feature adds its own entries with `actionAdd({id, group, label
 **After a send**
 
 - Sends go through the account's Gmail. The to-do then says who it went to and when, and moves to done (Undo or Reopen bring it back).
+- A reply that only promises the work for later ("I'll send the files by Tuesday") keeps the to-do open instead, due that day, with the promise linked to it. The run marks such a draft (`still_owed`), judged by what it means, and the send review says the to-do stays open.
 - A handoff instead waits for the reply.
 - A to-do with another send still waiting stays in For you.
 
