@@ -38,7 +38,11 @@ It fails when:
     python3 scripts/help_check.py          # prints what is wrong, exit code 1 if anything is
     git diff --name-only main | python3 scripts/help_check.py --changed
         # a warning for each article whose code: files changed without it (CI shows it on pull requests; exit 0)
+    python3 scripts/help_check.py --stamps BASE
+        # fails on a translation whose translated: stamp changed since BASE while its body did not (CI, pull requests
+        # not from the translator bot): the stamp says which English the body was made from, so only a new body moves it
 """
+import subprocess
 import ast
 import functools
 import re
@@ -406,9 +410,46 @@ def note_changed(lines):
     return 0
 
 
+STAMP = re.compile(r'^translated:[ \t]*(\S*)', re.M)
+
+
+def stamp_of(text):
+    """(stamp, body) of a translation; stamp '' when it has none."""
+    fields = re.match(r'---\n(.*?)\n---\n', text, re.S)
+    found = STAMP.search(fields[1]) if fields else None
+    return (found[1] if found else ''), front(text)[1]
+
+
+def restamped(before, after):
+    """True when the stamp changed to a new one while the body stayed the same (a removed stamp only marks it stale)."""
+    (old, old_body), (new, new_body) = stamp_of(before), stamp_of(after)
+    return bool(new) and new != old and new_body == old_body
+
+
+def stamp_problems(base):
+    """Each translation under docs/help/<language>/ whose stamp moved since the commit base without a new body."""
+    def git(*args):
+        return subprocess.run(['git', *args], cwd=ROOT, capture_output=True, text=True)
+    changed = git('diff', '--name-only', '--diff-filter=M', base, 'HEAD', '--', 'docs/help/*/*.md')
+    if changed.returncode:
+        raise SystemExit(f'git diff {base} failed: {changed.stderr.strip()}')
+    out = []
+    for path in changed.stdout.split():
+        before = git('show', f'{base}:{path}')
+        if not before.returncode and restamped(before.stdout, (ROOT / path).read_text(encoding='utf-8')):
+            out.append(f'{path}: its translated: stamp changed but its text did not. Only the translator '
+                       f'(scripts/translate.py) moves a stamp, when it writes a new translation; undo the stamp change.')
+    return out
+
+
 def main():
     if sys.argv[1:2] == ['--changed']:  # the changed paths, one per line, on stdin
         return note_changed(sys.stdin)
+    if sys.argv[1:2] == ['--stamps'] and len(sys.argv) == 3:
+        problems = stamp_problems(sys.argv[2])
+        for p in problems:
+            print(f'::error file={p.split(":")[0]},title=Help stamp changed by hand::{p}')
+        return 1 if problems else 0
     problems = check()
     for p in problems:
         print(p)
