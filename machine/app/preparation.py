@@ -816,7 +816,10 @@ class PreparationApp:
         if request.get('action')=='start':
             # a first look already on a fallback (App.first_look_model) keeps it
             if (request.get('kind') in ('review','profile') or request.get('background')) and not request.get('model'):
-                swap=background_model(self.config)  # never the costliest model for background work
+                # the main model's limit reached and a fallback carries the work: on that fallback, not a cheaper model
+                # on the same limited sign-in (model_pacing.limit_fallback)
+                over=self.limit_fallback()
+                swap=tuple(over.split('/',1)) if over else background_model(self.config)  # never the costliest model for background work
                 if swap:sent={**request,'provider':swap[0],'model':swap[1]}
             with self.store.connect() as db:sent=preparation_state.same_start(db,sent,now())
             if sent is not request:

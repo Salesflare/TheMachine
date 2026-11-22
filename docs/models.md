@@ -127,7 +127,9 @@ when it resets.
   `"claude": false` in config.json never asks it.
 - Only the main model's provider counts: a ChatGPT sign-in OpenClaw also has doesn't show while a Claude plan is the
   main model.
-- When a review run stops on the limit, Connections says so next to the run, with when it lifts.
+- When a review run stops on the limit, Connections says so next to the run, with when it lifts. That is a pause, not
+  a failure: its signals go back to wait, the next review starts at the reset the provider named (its clock time when
+  it gives one), and nothing goes to the error reports.
 
 **Pacing.** Background work paces itself on those windows (`model_budget.py`). With a fallback in
 `agents.defaults.model.fallbacks` on another provider (a custom provider, an API key, another plan), OpenClaw moves to
@@ -138,6 +140,8 @@ it once the main model's limit is reached, so The Machine sets the pacing aside 
   Claude Code model), made only while the limits would
   hold work back and at most every 15 minutes, counts for an hour.
 - A failed check, or a run that still ended on the usage limit, brings the pacing back.
+- While the main model's limit is reached, background work (reviews and such) runs on that working fallback itself,
+  not on the cheaper model of the same sign-in it otherwise uses: OpenClaw moves only the main model to its fallbacks.
 
 **Usage limit resets.** ChatGPT plans can come with resets, which start the limits over. OpenClaw doesn't report them, so
 The Machine asks the Codex CLI's own app server (`codex app-server`, no model call) when the Codex CLI on this computer is

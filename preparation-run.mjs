@@ -17,10 +17,13 @@ const runSeconds={preparation:1200, review:1200, profile:900, skills:900, routin
 const scope={scopes:['operator.admin','operator.read','operator.write']};
 const USAGE_LIMIT=/usage limit|(?:reached|hit) (?:your|the) [a-z0-9 -]*limit|limit (?:reached|exceeded)|insufficient_quota|quota exceeded|in cooldown|out of (?:credits|usage)/i;
 // When a usage limit lifts, from the provider's own words: an epoch (Claude: "limit reached|1761500000"), "in 2h 5m" or
-// "try again in 30 minutes", or a clock time "11:12 PM UTC" (the next one). Only the time is kept, never the text.
+// "try again in 30 minutes", or a clock time "11:12 PM UTC" (the next one). A clock time wins over a rounded span next
+// to it ("Next reset in 3 days, Nov 25 at 8:33 AM UTC": 3 days from now was 7 hours late). Only the time is kept, never the text.
 function resetAt(text, now=Date.now()){
   const epoch=text.match(/\|(\d{10})\b/);
   if(epoch)return Number(epoch[1]);
+  const clock=text.match(/reset(?:[^0-9|]|\d+\s*(?:days?|hours?|hrs?|minutes?|mins?)\b){0,40}?(?:([A-Z][a-z]{2,8}\.? \d{1,2}),?\s+(?:at\s+)?)?(\d{1,2}):(\d{2})\s*(AM|PM)?\s*(UTC|GMT)?/i);
+  if(clock)return clockAt(clock, now);
   const span=text.match(/\b(?:in|after)\s+((?:\d+\s*(?:days?|d|hours?|hrs?|h|minutes?|mins?|m|seconds?|secs?|s)\b[\s,]*(?:and\s+)?)+)/i);
   if(span){
     let seconds=0;
@@ -30,17 +33,16 @@ function resetAt(text, now=Date.now()){
     }
     if(seconds>0)return Math.round(now/1000)+seconds;
   }
-  const clock=text.match(/reset[^0-9]{0,40}?(?:([A-Z][a-z]{2,8}\.? \d{1,2}),? )?(\d{1,2}):(\d{2})\s*(AM|PM)?\s*(UTC|GMT)?/i);
-  if(clock){
-    let hours=Number(clock[2])%12+(/pm/i.test(clock[4]||'')?12:0);
-    if(!clock[4])hours=Number(clock[2]);
-    const at=new Date(now);at.setUTCHours(hours,Number(clock[3]),0,0);
-    if(clock[1]){const day=new Date(`${clock[1]} ${new Date(now).getUTCFullYear()} 00:00 UTC`);
-      if(!Number.isNaN(day.getTime()))at.setUTCFullYear(day.getUTCFullYear(),day.getUTCMonth(),day.getUTCDate());}
-    while(at.getTime()<=now)at.setUTCDate(at.getUTCDate()+1);
-    return Math.round(at.getTime()/1000);
-  }
   return null;
+}
+function clockAt(clock, now){
+  let hours=Number(clock[2])%12+(/pm/i.test(clock[4]||'')?12:0);
+  if(!clock[4])hours=Number(clock[2]);
+  const at=new Date(now);at.setUTCHours(hours,Number(clock[3]),0,0);
+  if(clock[1]){const day=new Date(`${clock[1]} ${new Date(now).getUTCFullYear()} 00:00 UTC`);
+    if(!Number.isNaN(day.getTime()))at.setUTCFullYear(day.getUTCFullYear(),day.getUTCMonth(),day.getUTCDate());}
+  while(at.getTime()<=now)at.setUTCDate(at.getUTCDate()+1);
+  return Math.round(at.getTime()/1000);
 }
 // Retain useful failure categories, never raw provider text, endpoints or parameters.
 function failure(result,status){

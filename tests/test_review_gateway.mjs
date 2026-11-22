@@ -96,6 +96,11 @@ assert.equal(r.result.silent_end,undefined);
   const t0=Math.round(Date.now()/1000);
   for(const [text,check] of [
     ["You've reached your Codex subscription usage limit. Next reset Oct 25, 11:12 PM UTC. private",v=>v>t0&&new Date(v*1000).getUTCHours()===23&&new Date(v*1000).getUTCMinutes()===12],
+    // A clock time wins over the rounded span next to it (2026-11-22: "in 3 days" held the work 7 hours past the reset)
+    ["You've reached your Codex subscription usage limit. Next reset in 3 days, Nov 25 at 8:33 AM UTC. Wait until the reset time. private",
+      v=>v>t0&&new Date(v*1000).getUTCHours()===8&&new Date(v*1000).getUTCMinutes()===33],
+    ["You've reached your Codex subscription usage limit. Next reset in 17 hours, Nov 23 at 8:16 PM UTC. private",
+      v=>v>t0&&new Date(v*1000).getUTCHours()===20&&new Date(v*1000).getUTCMinutes()===16],
     ['Claude AI usage limit reached|'+(t0+3600),v=>v===t0+3600],
     ['You have hit your limit, try again in 2h 30m',v=>Math.abs(v-(t0+9000))<5],
     ['Provider openai is in cooldown',v=>v===undefined],

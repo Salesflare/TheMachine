@@ -495,6 +495,13 @@ class Sources(Base):
             row = db.execute('SELECT source,kind,message,location FROM error_feed').fetchone()
         self.assertEqual(tuple(row), ('job', 'auth', '', 'agent_jobs.py:claude'))
 
+    def test_a_failed_reviews_phase_is_kept_as_it_is(self):
+        """A failed review's message is its phase, from a fixed list: each one is a word the feed keeps ("model" arrived
+        as "<word>")."""
+        from machine.app.review import REVIEW_FAILURE_PHASES
+        for phase in REVIEW_FAILURE_PHASES:
+            self.assertEqual(ef.normalize(phase), phase)
+
 
 if __name__ == '__main__':
     logging.disable(logging.CRITICAL)
