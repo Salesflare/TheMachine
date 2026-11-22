@@ -30,7 +30,9 @@ Where a browser doesn't have it (Firefox) the clip waits for the Machine instead
 ## Engines
 
 Settings, General, Voice input, **Turned into text** (`voice_input.ENGINES`), with one short line saying which one is in use
-(`voice_status`'s `in_use`):
+(`voice_status`'s `in_use`). Settings reads `voice_status` once each time General opens, then every 2 s while this
+Machine's engine gets ready, for up to 30 s while OpenAI's answer is still out, and 30 s after a failed read. Nothing
+else makes it read again.
 
 - **Automatic** (the default): OpenAI when the Machine has OpenAI access that can transcribe, else this Machine.
   `voice_input.engine_for` decides. OpenAI access is checked at start and every 5 minutes (kept 10 minutes), so OpenAI
