@@ -85,7 +85,7 @@ async function acceptAtOnce(id,feedback){const s=state.suggestions.find(x=>x.id=
  let saved;try{saved=await decidePost(id,{choice:'accept',feedback,decision_id:crypto.randomUUID()})}
  catch(err){s.status=before;localEdits++;focusKept(render);refresh().catch(()=>{});throw err}
  if(/^(pe|ac|pr|in|sn)/.test(saved?.status))s.status=saved.status;localEdits++;focusKept(render);refresh().catch(()=>{});
- if(saved?.already)toast({done:'Already done. See the to-do.',closed:'Nothing is waiting to try again here.'}[saved.already]||'Already carrying on with it.')}
+ if(saved?.already)toast({done:'Already done. See the to-do.',closed:'Nothing is waiting to try again here.'}[saved.already]||'Already carrying on with it.');else if(saved?.held)toast(holdNote(saved.held))}
 async function saveDecision(id,choice,feedback='',answer=false,prefix=''){
 if(choice==='undo'&&atOnceSaving.has(id)&&!await atOnceSaving.get(id))return;  // the change it undoes never landed: nothing to undo
 if(['complete','reject'].includes(choice)&&atOnceOK(id)){await decideAtOnce(id,{choice,feedback},choice==='complete'?'Marked done':'Marked not needed');return}
@@ -100,7 +100,7 @@ localEdits++;focusKept(render);refresh().catch(()=>{});
 // Try again on a to-do that already carried on: say so.
 if(saved?.already){toast({done:'Already done. See the to-do.',closed:'Nothing is waiting to try again here.'}[saved.already]||'Already carrying on with it.');return}
 // A Change stays on the card (its "You asked" note has See in chat ›); the chat never opens by itself.
-if(['complete','reject'].includes(choice))toast(saved?.status==='completed'?'Marked done':'Marked not needed',false,id);else toast(answer?'Thanks. I’ll carry on.':({accept:'I’ll prepare it.',other:'Changes saved.',retry:'Trying again.',undo:'Reopened.',reopen:'Reopened.'})[choice]||'Saved.');
+if(['complete','reject'].includes(choice))toast(saved?.status==='completed'?'Marked done':'Marked not needed',false,id);else toast(answer?'Thanks. I’ll carry on.':saved?.held?holdNote(saved.held):({accept:'I’ll prepare it.',other:'Changes saved.',retry:'Trying again.',undo:'Reopened.',reopen:'Reopened.'})[choice]||'Saved.');
 }
 document.addEventListener('click',e=>{for(const m of document.querySelectorAll('.more-actions[open]'))if(!m.contains(e.target)||e.target.closest('.more-menu button:not([data-mm-open],[data-mm-back])'))m.open=false});
 $('#suggestions').onclick=async e=>{const b=e.target.closest('button');if(!b||b.dataset.browserFocus)return;const id=b.dataset.id;

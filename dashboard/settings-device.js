@@ -37,7 +37,6 @@ async function appInstall(){const e=installEvt;if(!e){toast(DEV.ios?iosHint:'Fin
 // Notifications: the browser's permission and this device's subscription. Off in Settings stays off: no nudge after it.
 const devicePush={perm:pushOK?Notification.permission:'unsupported',sub:null,checked:false};
 const pushOn=()=>devicePush.perm==='granted'&&!!devicePush.sub;
-const pushWanted=()=>pushOK&&devicePush.checked&&devStore.get('push-off')!=='1'&&(devicePush.perm==='default'||(devicePush.perm==='granted'&&!devicePush.sub));
 async function pushCheck(sync=false){if(!pushOK)return deviceRender();try{const reg=await navigator.serviceWorker.register('sw.js');devicePush.sub=await reg.pushManager.getSubscription();devicePush.perm=Notification.permission;
  if(pushOn()&&sync)await pushPost('push_subscribe',devicePush.sub)}catch{}devicePush.checked=true;deviceRender()}
 const blockedHint=()=>DEV.ios?'In the Settings app: Notifications, The Machine.':DEV.macSafari?'In Safari: Settings, Websites, Notifications.':DEV.mobile?'Tap the icon left of the address, then Permissions, Notifications.':'Click the icon left of the address, then allow Notifications.';

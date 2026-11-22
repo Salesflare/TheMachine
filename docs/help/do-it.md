@@ -49,5 +49,6 @@ It can send an email, a Slack direct message, or a WhatsApp, Telegram, LinkedIn 
 - Stuck because the run itself failed? After your Machine updates, it tries that to-do once more by itself.
 - While it prepares, the to-do says what your Machine is doing in a plain line, like "Reading the mail", "Reading the PDF" or "Writing the draft". The detailed steps stay in the to-do's chat.
 - A to-do marked **Preparing…** starts within seconds. When it has to wait, it says why and roughly when, like "Starts after the current one".
+- A to-do your Machine prepares before you ask can wait while it saves usage. It still shows **Do it**: press it to start now, ahead of the rest. Nothing goes out before your yes. If your AI plan's usage limit is reached, Do it says so, and it starts once the limit resets.
 - A site wants you to sign in: press **Sign in**, or **Open the browser** and sign in there. It then carries on by itself. If it doesn't, press **Continue**.
 - A code sent to your phone, or a missing permission, stops it. The to-do says what it needs, then **Continue** or **Try again**. A source that isn't connected, like Slack: **Connect Slack** leads on the to-do, and it carries on by itself once Slack is connected.

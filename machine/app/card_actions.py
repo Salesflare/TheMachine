@@ -516,6 +516,9 @@ class CardActionsApp:
         if args['choice'] == 'accept':
             try:self.apply_skill_clusters()
             except Exception as error:LOG.error('skill from notes error=%s',type(error).__name__)
+            # A usage limit holds every run until it resets (background_pause): Do it says so at once, not a spinner
+            paused=self.background_pause(owner=True) if result.get('status')=='accepted' and hasattr(self,'background_pause') else None
+            if paused and paused.get('limited'):result['held']={'why':'limit','until':paused.get('until')}
         if args.get('source')=='telegram':
             # Compatibility fence: the old handler interprets duplicate
             # as "skip extra chat acknowledgment", after editing buttons.

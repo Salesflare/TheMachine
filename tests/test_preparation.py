@@ -67,6 +67,45 @@ class Preparation(unittest.TestCase):
         calls.clear();self.app.preparation_step(lambda r:calls.append(r) or {'status':'admitted'})
         self.assertIn('the owner tapped Do it',next(c['message'] for c in calls if c.get('message')))
 
+    def paced(self,limited=False):
+        """background_pause as the usage budget holds drafts prepared ahead (most of a day on a plan that saves usage),
+        or, `limited`, as a usage limit holds every run."""
+        hold={'window':'limit','until':4102444800,'limited':True} if limited else None
+        self.app.background_pause=lambda first=False,owner=False,job=None,db=None,signals=False:hold or (None if owner else {'window':'week','until':None,'limited':False})
+
+    def tap(self,sid,key):
+        return self.app.action('decide',{'suggestion_id':sid,'choice':'accept','feedback':'','decision_id':key},owner_dashboard=True)
+
+    def test_do_it_on_a_to_do_waiting_to_be_prepared_ahead_starts_it_now_ahead_of_the_queue(self):
+        # Paused for usage, a to-do prepared ahead waits hours with nothing to press; Do it is the owner asking: it
+        # starts now, before the older ones still waiting (also past the batch the dispatcher reads), outside the pacing
+        self.app.config={'accounts':[],'prepare_ahead_per_day':40,'preparation_concurrency':1}
+        ids=[self.app.action('suggest',{'dedupe_key':f'wait-{n}','title':f'Reply to sender {n}','body':'I can draft the reply.','event_ids':[1],'when':'now','prepare_ahead':True})['id'] for n in range(24)]
+        last=ids[-1];self.assertEqual(self.q('SELECT status,early FROM suggestions WHERE id=?',last),{'status':'accepted','early':1})
+        self.paced();calls=[]
+        self.app.preparation_step(lambda r:calls.append(r) or {'status':'admitted'})
+        self.assertEqual([c for c in calls if c['action']=='start'],[])  # the budget holds them all
+        self.assertEqual(self.tap(last,'tap-last')['status'],'accepted')
+        self.app.preparation_step(lambda r:calls.append(r) or {'status':'admitted'})
+        started=[c for c in calls if c['action']=='start']
+        self.assertEqual([c['job_id'] for c in started],[self.q('SELECT job_id FROM preparations WHERE suggestion_id=?',last)['job_id']])
+        self.assertNotIn('background',started[0]);self.assertIn('the owner tapped Do it',started[0]['message'])
+        self.assertEqual(self.q('SELECT early,p.decision_id FROM suggestions s JOIN preparations p ON p.suggestion_id=s.id WHERE s.id=?',last),{'early':0,'decision_id':'tap-last'})
+        self.assertEqual(self.q("SELECT count(*) n FROM preparations WHERE status='queued'")['n'],23)  # the rest still wait their turn
+        self.assertEqual(self.q("SELECT count(*) n FROM action_jobs WHERE suggestion_id=?",last)['n'],0)  # nothing goes out on the tap
+
+    def test_do_it_while_a_usage_limit_holds_every_run_says_so_and_starts_once_it_resets(self):
+        sid=self.ahead()['id'];self.paced(limited=True);calls=[]
+        result=self.tap(sid,'tap-locked')
+        self.assertEqual(result['held'],{'why':'limit','until':4102444800})
+        self.app.preparation_step(lambda r:calls.append(r) or {'status':'admitted'})
+        self.assertEqual(calls,[]);self.assertEqual(self.app.store.preparation_holds[sid]['why'],'limit')
+        self.assertEqual(self.q('SELECT s.status,early,p.status prep FROM suggestions s JOIN preparations p ON p.suggestion_id=s.id WHERE s.id=?',sid),{'status':'accepted','early':0,'prep':'queued'})
+        self.paced()  # the limit reset: the budget still holds work prepared ahead, not the owner's
+        self.app.preparation_step(lambda r:calls.append(r) or {'status':'admitted'})
+        self.assertEqual([c['action'] for c in calls],['start'])
+        self.paced();self.assertNotIn('held',self.tap(self.ahead('other')['id'],'tap-free'))
+
     def test_a_start_the_gateway_declares_over_is_retried_once_under_a_new_run_id(self):
         sid=self.ahead()['id']
         first=self.q('SELECT job_id FROM preparations WHERE suggestion_id=?',sid)['job_id']
