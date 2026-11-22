@@ -882,6 +882,7 @@ class PreparationApp:
                                                 args.get('move_to'),args.get('use_event_ids'),args.get('connect'))
         if reading and result.get('status') == 'blocked':
             self.__dict__.setdefault('_slack_read_resumes', {})[str(args['job_id'])] = args['suggestion_id']
-        if result.get('status') == 'blocked' and not any(args.get(k) for k in ('questions', 'move_to', 'use_event_ids', 'connect')):
+        if (result.get('status') == 'blocked' and not any(args.get(k) for k in ('questions', 'move_to', 'use_event_ids', 'connect'))
+                and not signin_handoff(args['reason'])):  # waiting on the owner's sign-in is not the skill's failure
             self.learned_failed(args['suggestion_id'])  # stuck, not a question or a missing connection: a failure (learned_skills.py)
         return result
