@@ -1,7 +1,7 @@
 """The first look: on a new install with reviews off, one preview of the last week starts by itself once a model and a
 source are there and the first import settled. Read-only like any preview; never twice, never after the owner's own
-preview or after reviews were on. Also what the dashboard shows while reviews run, and the graph picking up new
-organization profiles. No Gateway, no Telegram: the runner is a fake and nothing is sent."""
+preview or after reviews were on. Also what the dashboard shows while reviews run, and when the graph picks up new
+signals and organization profiles. No Gateway, no Telegram: the runner is a fake and nothing is sent."""
 import datetime as dt, importlib.util, json, sqlite3, tempfile, unittest
 from pathlib import Path
 from contextlib import ExitStack
@@ -201,11 +201,17 @@ class FirstLook(unittest.TestCase):
         start = dt.datetime.fromisoformat(queue['starts_at']) - dt.datetime.now(dt.timezone.utc)
         self.assertTrue(dt.timedelta(minutes=13) < start <= dt.timedelta(minutes=16))
 
-    def test_the_graph_rebuilds_soon_after_new_organisation_profiles(self):
+    def test_new_profiles_wait_for_the_timed_rebuild_and_a_first_import_does_not(self):
+        before = self.app.graph_freshness()
+        self.store.commit_page('work', {}, [signal('m1')])
+        self.assertNotEqual(self.app.graph_freshness(), before)  # no organizations yet (the first import): within a minute
+        with self.store.connect() as db:
+            db.execute("INSERT INTO graph_nodes(id,kind,name,strength,signals,info) VALUES('org:initech.example','org','Initech',1,1,'{}')")
         before = self.app.graph_freshness()
         with self.store.connect() as db:
             a.enrichment.save(db, 'globex.example', 'found', {'name': 'Globex', 'industry': 'Software'}, a.now())
-        self.assertNotEqual(self.app.graph_freshness(), before)
+        self.store.commit_page('work', {}, [signal('m2')])
+        self.assertEqual(self.app.graph_freshness(), before)  # a profile, a message: the next timed rebuild (GRAPH_EVERY_SECONDS)
 
 
 class MainModelMustRun(unittest.TestCase):

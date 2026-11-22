@@ -1,5 +1,5 @@
 """The graph worker's rebuild (graph.build), in a process of its own. A build takes ten to thirty seconds on a big
-mailbox, every ten minutes and after edits, and ran in the server's own process: all that time each page request
+mailbox, every half hour and after edits, and ran in the server's own process: all that time each page request
 waited its turn for Python, and an api/status that takes a tenth of a second took several. Here a child process opens
 the same database (its own connection, the same message key), runs the same build, and hands its summary back; the
 server only waits on the pipe, which leaves Python to the requests.

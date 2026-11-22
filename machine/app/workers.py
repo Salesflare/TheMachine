@@ -286,8 +286,9 @@ class WorkersApp:
         wait = 120
         while not self.stop.wait(wait):
             try:
-                if enrichment.step(self.store.connect, self.config, now(), paired=bool(getattr(self, 'fleet', None))):
-                    self.graph_dirty.set()  # show the new profiles
+                # new profiles and photos show with the graph worker's next timed rebuild (GRAPH_EVERY_SECONDS): one
+                # build for all a half hour finds, not one straight after another
+                enrichment.step(self.store.connect, self.config, now(), paired=bool(getattr(self, 'fleet', None)))
                 found = enrichment.people_step(self.store.connect, self.config, now(), paired=bool(getattr(self, 'fleet', None)), stop=self.stop.is_set)
                 photos = enrichment.photos_step(self.store.connect, now())  # straight after the lookups (hosted ones too, through the agent)
                 photos += enrichment.site_logos_step(self.store.connect, now())  # organizations that show no logo: their own site's
@@ -315,7 +316,6 @@ class WorkersApp:
                 found += enrichment.facts_from_signals(self.store.connect, now())  # once: facts already in stored signals
                 if found or photos:
                     LOG.info('enrichment people found=%s photos=%s', found, photos)
-                    self.graph_dirty.set()
                 wait = 600
             except enrichment.EnrichmentError as error:
                 LOG.error('enrichment error=%s', error)
@@ -338,8 +338,7 @@ class WorkersApp:
                     continue
                 if found.get('error') or found.get('seen') is not None:
                     LOG.info('linkedin connections account=%s %s', account['id'], json.dumps(found, sort_keys=True))
-                if found.get('changed') or found.get('noted'):
-                    self.graph_dirty.set()
+                # a changed title or company shows with the graph worker's next timed rebuild (GRAPH_EVERY_SECONDS)
 
     def background_spaced(self):
         """At most one background turn beyond the first look per BACKGROUND_GAP_SECONDS."""

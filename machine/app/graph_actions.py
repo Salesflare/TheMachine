@@ -50,7 +50,8 @@ import work_removal
 from machine.owner_error import OwnerError
 
 
-GRAPH_CHECK_SECONDS = 60  # how often the graph worker looks for new organization profiles
+GRAPH_CHECK_SECONDS = 60  # how often the graph worker looks for a change to the owner's Fleets or a first import's signals
+GRAPH_EVERY_SECONDS = 1800  # the timed rebuild; new profiles and messages wait for it, edits never do (graph_dirty)
 GRAPH_RETRY_SECONDS = 5   # a build that met edits on the way: the next try
 GRAPH_LOCK_AFTER = 1800   # this long without a published build: the last try holds the write lock (graph.build lock_last)
 GRAPH_SLOW_MS = 10_000    # a build that takes this long logs its passes' times (slow_build_line)
@@ -739,22 +740,21 @@ class GraphActionsApp:
         return found
 
     def graph_freshness(self):
-        """What makes a rebuild worth it before the ten minutes are up: new organization or people profiles (looked up by the
-        enrichment worker, or by a hosting agent writing straight into the database), who is in the owner's Family,
+        """What makes a rebuild worth it before the timed one (GRAPH_EVERY_SECONDS): who is in the owner's Family,
         Friends and Work Fleets (a Personal contact follows within a minute), and, while the graph has no organizations
-        yet (the first import), new signals."""
+        yet (the first import), new signals. New organization and people profiles and photos (the enrichment worker, a
+        hosting agent writing straight into the database) wait for the timed rebuild, so a burst of them is one build,
+        not one after each other."""
         circles = tuple(sorted((e, tuple(sorted(k))) for e, k in self.fleet_circles().items()))
         with self.store.connect() as db:
-            profiles = tuple(db.execute("SELECT count(*),max(fetched_at) FROM org_profiles WHERE status!='error'").fetchone()) \
-                + tuple(db.execute("SELECT count(*),max(fetched_at) FROM person_profiles WHERE status!='error'").fetchone()) \
-                + tuple(db.execute('SELECT count(*),max(saved_at) FROM person_photos').fetchone())
             empty = not db.execute("SELECT 1 FROM graph_nodes WHERE kind='org' LIMIT 1").fetchone()
             signals = tuple(db.execute('SELECT count(*),max(ingested_at) FROM events WHERE history=0').fetchone()) if empty else None
-        return profiles, signals, circles
+        return signals, circles
 
     def graph_worker(self):
-        """Rebuilds the people and projects graph every ten minutes, soon after a label or merge, and within a minute
-        of new organization profiles or, on a new install, of new signals: so enriched details show right away."""
+        """Rebuilds the people and projects graph every half hour (GRAPH_EVERY_SECONDS), at once after an owner's edit
+        (graph_dirty), within a minute of a change to their Fleets or, on a new install, of new signals, and every minute
+        while history comes in."""
         wait, built, seen, published = 30, 0.0, None, time.monotonic()
         self.graph_worker_on = True  # graph_later hands its rebuilds here
         while not self.stop.is_set():
@@ -787,7 +787,7 @@ class GraphActionsApp:
                     gbrain = False
                     with contextlib.suppress(Exception):  # GBrain is optional; the fix stands without it
                         self.gbrain_start()
-                published, seen, wait = time.monotonic(), self.graph_freshness(), 600
+                published, seen, wait = time.monotonic(), self.graph_freshness(), GRAPH_EVERY_SECONDS
                 if self.history_graph_step():  # a slice of history taken in: the next build counts it, in a minute
                     wait = 60
             except graph.Outdated:
