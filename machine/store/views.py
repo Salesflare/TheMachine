@@ -40,6 +40,7 @@ from machine.cards import (
     group_sender,
     looks_done,
     looks_done_at,
+    needs_owner,
     SOURCE_DM,
     source_line_shown,
     SOURCE_RAW,
@@ -632,6 +633,9 @@ class ViewsStore(ConversationStore):
         still=handoff_wait(db,suggestion,awake=True,**handoffs)
         if still:extra['handoff_still']=still  # back on the list, still with them: the card says so, not "Needs you"
         if still and checking_in(db,suggestion):extra['handoff_checkin']=True  # Check in now: its nudge is drafted like any Do it
+        # Prepared with nothing ready, only a need of the owner's: Needs you, and why, wherever its state shows (needs_owner)
+        needs=needs_owner({'preparation_status':job['status'] if job else None,**suggestion,**extra})
+        if needs:extra['needs_owner']=needs
         return extra
 
     def browser_view(self, db, suggestion, extra):

@@ -7945,7 +7945,7 @@
   {
    "key": "open12",
    "title": "Tell Sam if you are in for climbing on Saturday",
-   "body": "Sam asked on Telegram and offers to bring the rope.",
+   "body": "Sam asked on Telegram and offers to bring the rope. Your Saturday is free.",
    "status": "prepared",
    "events": [
     "story:climb:0",
@@ -7959,14 +7959,9 @@
    "project": null,
    "urgent": false,
    "snooze_hours": null,
-   "next_action": {
-    "kind": "telegram",
-    "account_id": "home-telegram",
-    "to_name": "Sam Whitlock",
-    "chat_id": "7001",
-    "body": "Yes, I am in for 10. Bring the rope, I will bring the coffee.",
-    "label": "Send to Sam",
-    "revision": "rev0012"
+   "outcome": {
+    "state": "needs_you",
+    "needs": "Are you in for climbing with Sam on Saturday at 10?"
    }
   },
   {

@@ -12,7 +12,7 @@ import urllib.parse
 import agent_jobs
 import fleet
 import i18n
-from machine.cards import NOT_FOR_OWNER_SQL, plain
+from machine.cards import NOT_FOR_OWNER_SQL, needs_owner, plain
 from machine.config import LOG, ROOT, WORKSPACE
 from machine.model_usage import node_bin, node_env, telegram_on
 from machine.sources.connectors import HOSTED_SIGNINS
@@ -86,13 +86,16 @@ def result_lead(db, row):
     """How a prepared to-do's notification starts, by what the to-do is: 'Ready' only when The Machine prepared
     something for the owner to review (a draft, a handoff, a result). A to-do that tracks what someone else promised
     the owner ("Waiting on Sam: the quote") or waits on someone else says so in its title, and one back from a snooze
-    is a reminder: no "Ready" in front of those. Returns 'Ready', 'Reminder' or None (the title alone)."""
+    is a reminder: no "Ready" in front of those. One whose run ended with nothing ready, only a need of the owner's
+    (needs_owner), says 'Needs you'. Returns 'Ready', 'Needs you', 'Reminder' or None (the title alone)."""
     try:
         state = (json.loads(row.get('outcome') or '{}') or {}).get('state')
     except (TypeError, ValueError, AttributeError):
         state = None
     if state == 'snoozed':
         return 'Reminder'
+    if row.get('needs_owner') if 'needs_owner' in row else needs_owner(row, db):
+        return 'Needs you'
     if state in ('waiting', 'already_done'):
         return None
     key = str(row.get('dedupe_key') or '')
@@ -168,13 +171,14 @@ def push_notify(store, config, row, sender=None):
         signin = not ready and (row.get('preparation_browser') or {}).get('signin_url')
         # A run the service stopped (a timeout, two failures) asks nothing: Stuck, as on the card
         lead = row.get('_lead', 'Ready') if ready else 'Needs you to sign in' if signin else 'Stuck' if row.get('preparation_error') else 'Needs your help'
+        needs = ready and row.get('needs_owner')  # nothing ready, only a need of the owner's: that is the body
         # one key per lead, so the dashboard never reads a bare "{}: {}" into other text; no lead: the title alone
         payload = {'title': (i18n.t(lead + ': {}', row['title']) if lead else row['title']) if text else i18n.t(lead or 'To-do'),
-                   'body': plain(strip_result_links(row['body']) if ready else row.get('preparation_reason') or '') if text else '',
+                   'body': plain(needs or strip_result_links(row['body']) if ready else row.get('preparation_reason') or '') if text else '',
                    'url': signin or notify.todo_link(root, row['id'])}  # the to-do in the list, not its chat
         # The mobile app's own line, short (it asks this Machine for it: notify.app_line), and ready or needs-you
         payload['_line'] = (notify.app_line_text(lead + ': {}', row['title']) if lead else notify.clip(row['title'], notify.APP_LINE)) if text else i18n.t(lead or 'To-do')
-        payload['_state'] = 'ready' if ready else 'needs'
+        payload['_state'] = 'ready' if ready and not needs else 'needs'
     else:
         reminder = shown_as_reminder(row)
         payload = {'title': (i18n.t('Reminder: {}', row['title']) if reminder else row['title']) if text else i18n.t('Reminder') if reminder else i18n.t('New to-do'),
@@ -182,7 +186,7 @@ def push_notify(store, config, row, sender=None):
         payload['_line'] = (notify.app_line_text('Reminder: {}' if reminder else 'New to-do: {}', row['title']) if text
                             else i18n.t('Reminder') if reminder else i18n.t('New to-do'))
         if notify.kind_of(row) == 'result':  # a reminder for a prepared or stuck to-do: ready or needs-you, as a result says
-            payload['_state'] = 'ready' if row.get('status') == 'prepared' else 'needs'
+            payload['_state'] = 'ready' if row.get('status') == 'prepared' and not row.get('needs_owner') else 'needs'
     payload['tag'] = row['id']  # a newer notification for the same card replaces the older one
     blocked = bool(row.get('_result_notice')) and row['status'] != 'prepared' or row.get('preparation_status') == 'blocked'
     payload['actions'] = quick_web(quick_kind(row, notify.kind_of(row), blocked, (row.get('preparation_browser') or {}).get('signin_url')))
@@ -461,7 +465,7 @@ def app_notice(store, config, tag, kind=None, version=1):
         lead, buttons = 'New to-do', ['prepare', 'snooze', 'done']
     t = i18n.t
     # one key per lead, as push_notify, written out so the catalogs carry each
-    leads = {'Ready': ('Ready: {}', t('Ready')), 'Preparing': ('Preparing: {}', t('Preparing')),
+    leads = {'Ready': ('Ready: {}', t('Ready')), 'Needs you': ('Needs you: {}', t('Needs you')), 'Preparing': ('Preparing: {}', t('Preparing')),
              'New to-do': ('New to-do: {}', t('New to-do')), 'Stuck': ('Stuck: {}', t('Stuck')),
              'Needs your help': ('Needs your help: {}', t('Needs your help')),
              'Needs you to sign in': ('Needs you to sign in: {}', t('Needs you to sign in')),

@@ -65,8 +65,8 @@ try{
   // a refresh while it's open keeps it on its to-do (it used to drop it, and a click on Cancel found nothing)
   await page.evaluate(()=>render('view'));assert.equal(await open.locator('.project-picker select').count(),1);
   await page.locator('.project-picker [data-pp="cancel"]').click();await open.locator('.details-toggle').click();
-  // Open and needing you: the status line, the source, the draft and the first button stay in sight
-  assert.match(await open.locator('.status-line').innerText(),/^Needs you: check the reply/);
+  // Open with a draft to approve: the status line (plain, beside its Prepared chip), the source, the draft and the first button stay in sight
+  assert.match(await open.locator('.status-line').innerText(),/^Check the reply/i);
   assert.ok(await open.locator('.draft').isVisible());assert.ok(await open.locator('.actions button.primary').first().isVisible());
   assert.ok(await open.locator(':scope>.card-source .read-original').isVisible());assert.equal(await open.locator('.card-details .read-original').count(),0);
   await open.locator('.card-foot [data-details]').click();

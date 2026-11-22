@@ -38,9 +38,9 @@ try{
  assert.ok(!body.includes('](')&&!body.includes('[Google'),body);
  assert.ok(body.includes('See example.com. Ask Sam.'),body);
  assert.equal(await page.locator('#task-l1 .body strong').textContent(),'3 listings');
- // Needs you line and the Asked note
+ // What it needs (the chip says Needs you or Prepared, the line no prefix) and the Asked note
  assert.deepEqual(await anchors('#task-l1 .status-line'),[['listing page','https://example.com/listing','_blank',ext]]);
- assert.equal(await page.locator('#task-l1 .status-line').innerText(),'Needs you: Check the listing page.');
+ assert.equal(await page.locator('#task-l1 .status-line').innerText(),'Check the listing page.');
  assert.deepEqual(await anchors('#task-l1 .saved-feedback blockquote'),[['https://example.org/x','https://example.org/x','_blank',ext]]);
  // A blocker and its details
  assert.deepEqual(await anchors('#task-b1 p.note'),[['booking page','https://example.com/book','_blank',ext]]);

@@ -6,6 +6,7 @@ import json, tempfile, unittest, uuid
 from pathlib import Path
 from unittest.mock import patch
 import assistant as a
+import next_actions
 import notify
 from seams import patch_everywhere  # noqa: E402
 
@@ -43,7 +44,10 @@ class Repeats(unittest.TestCase):
             db.execute('DELETE FROM preparations WHERE suggestion_id=?', (self.sid,))
             db.execute("INSERT INTO preparations(suggestion_id,decision_id,job_id,status,created_at,updated_at) VALUES(?,?,?,'running',?,?)",
                        (self.sid, 'ahead:' + job, job, a.now(), a.now()))
-        self.store.prepare(self.sid, body, job_id=job, outcome={'state': 'needs_you', 'needs': 'check the reply'})
+        # the reply as its draft step: a prepared result with something to approve (not Needs you: machine/cards.py needs_owner)
+        draft = next_actions.validate({'kind': 'email', 'label': 'Send reply', 'account_id': 'work', 'to': ['orders@bakery.example'], 'subject': 'Quote', 'body': body},
+                                      {'accounts': [{'id': 'work', 'service': 'gmail', 'transport': 'gog', 'email': 'owner@example.com', 'boundary': 'work:Example'}]}, ['work'])
+        self.store.prepare(self.sid, body, job_id=job, next_action=draft, outcome={'state': 'needs_you', 'needs': 'check the reply'})
 
     def deliver(self):
         def push_send(store, config, subs, payload, label, sender=None, kind=None, **extra):

@@ -168,10 +168,11 @@ STORIES = [
                 (8700, True, 'Re: Webinar together?', 'Hi Yara,\n\nLove it. Proposal attached: 45 minutes on the 19th, you host, we bring the case study.\n\nAlex')],
      'draft': ('email', 'Hi Yara,\n\nChecking in on the webinar proposal. Does the 19th still work for you? If November is too tight, December is fine too.\n\nAlex')},
     {'key': 'climb', 'telegram': True, 'family': True, 'status': 'prepared', 'minutes': 610,
-     'title': 'Tell Sam if you are in for climbing on Saturday', 'body': 'Sam asked on Telegram and offers to bring the rope.',
+     'title': 'Tell Sam if you are in for climbing on Saturday', 'body': 'Sam asked on Telegram and offers to bring the rope. Your Saturday is free.',
      'chat': ('Sam Whitlock', [(660, False, 'Still on for climbing Saturday at 10?'),
                                (655, False, 'I can bring the long rope if you bring coffee.')]),
-     'draft': ('telegram', 'Yes, I am in for 10. Bring the rope, I will bring the coffee.')},
+     # Prepared with nothing ready, only a call of the owner's: Needs you, with that question (machine/cards.py needs_owner)
+     'outcome': {'state': 'needs_you', 'needs': 'Are you in for climbing with Sam on Saturday at 10?'}},
     # A photo Read photos read (whatsapp_images.py): the bill as a picture, what it says in the to-do
     {'key': 'bill', 'family': True, 'status': 'pending', 'minutes': 470,
      'title': 'Pay the boiler repair by November 14', 'body': 'Robin sent a photo of the Hollis Heating invoice: €240 for the boiler repair, due November 14.',
@@ -585,6 +586,7 @@ def build(profile):
                 'minutes_ago': story['minutes'], 'source': source, 'project': story.get('project'), 'urgent': bool(story.get('urgent')),
                 'snooze_hours': story.get('snooze_hours'), **({'based_on': based_on} if based_on else {}),
                 **({'asks': story['asks']} if story.get('asks') else {}),  # its chat's taps, as the review writes them (chat_asks)
+                **({'outcome': story['outcome']} if story.get('outcome') else {}),  # what its run said is left (Store.prepare)
                 **({'done_by': {'name': story['done_by'][0], 'minutes_ago': story['done_by'][1]}} if story.get('done_by') else {})}
         kind, body = story.get('draft') or (None, None)
         if kind == 'email':

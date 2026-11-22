@@ -705,6 +705,8 @@ def load_cards(db, fixture, ids, base):
                     created, snoozed, 'pending' if snoozed else None, json.dumps(card['next_action']) if card.get('next_action') else None,
                     int(bool(card.get('urgent'))), f"Source: {card['source']} · {(base - dt.timedelta(minutes=card['minutes_ago'])).strftime('%a, %b %-d')}",
                     card.get('project')))
+        if card.get('outcome'):  # what its run said is left (Store.prepare): needs_you with nothing ready reads Needs you
+            db.execute('UPDATE suggestions SET outcome=? WHERE id=?', (json.dumps(card['outcome']), card_id))
         if card.get('asks'):  # its chat's taps (Store.set_chat_asks)
             db.execute('UPDATE suggestions SET chat_asks=? WHERE id=?', (json.dumps(card['asks']), card_id))
         if card.get('done_by'):  # Already did this: a Family member closed the same to-do as done (Fleet.mark_done_elsewhere)

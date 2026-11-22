@@ -12,9 +12,9 @@ const dashboard=await dashboardPage();
 const now=new Date().toISOString();
 const cards=[
  {id:'q1',title:'Get the quarterly report ready',body:'Filled in every field except the cash-out date.',status:'prepared',scope:'work',created_at:now,event_ids:[1],
-  outcome:JSON.stringify({state:'needs_you',needs:'How should infinite runway go in the date-only cash-out field?'})},
+  outcome:JSON.stringify({state:'needs_you',needs:'How should infinite runway go in the date-only cash-out field?'}),needs_owner:'How should infinite runway go in the date-only cash-out field?'},
  {id:'t1',title:'Renew the parking permit',body:'Filled in the form.',status:'prepared',scope:'personal',created_at:now,event_ids:[2],
-  outcome:JSON.stringify({state:'needs_you',needs:'Pay in the bank app.'})},
+  outcome:JSON.stringify({state:'needs_you',needs:'Pay in the bank app.'}),needs_owner:'Pay in the bank app.'},
  {id:'d1',title:'Reply to Noor about the contract',body:'Drafted a reply for the likelier answer.',status:'prepared',scope:'work',created_at:now,event_ids:[3],
   outcome:JSON.stringify({state:'needs_you',needs:'Hold firm on the price?'}),
   next_actions:[{kind:'email',revision:'v1',label:'Send to Noor',to:['noor@example.com'],to_name:'Noor',subject:'Contract',body:'Hi Noor'}]},
@@ -58,8 +58,8 @@ try{
   const line=id=>page.locator(`#task-${id} .status-line`).textContent();
   const primary=id=>page.locator(`#task-${id} .actions button.primary`).allTextContents();
   // The question keeps its own mark; a plain line gets one full stop
-  assert.equal(await line('q1'),'Needs you: How should infinite runway go in the date-only cash-out field?');
-  assert.equal(await line('t1'),'Needs you: Pay in the bank app.');
+  assert.equal(await line('q1'),'How should infinite runway go in the date-only cash-out field?');
+  assert.equal(await line('t1'),'Pay in the bank app.');
   // Answer leads; Mark done is there but not primary; no separate Change (Answer is that path)
   assert.deepEqual(await primary('q1'),['Answer']);
   assert.equal(await page.locator('#task-q1 [data-choice="complete"]').getAttribute('class'),'ghost');
