@@ -71,26 +71,27 @@ class Preparation(unittest.TestCase):
         sid=self.ahead()['id']
         first=self.q('SELECT job_id FROM preparations WHERE suggestion_id=?',sid)['job_id']
         self.app.preparation_step(lambda r:{'status':'lost'})
-        row=self.q('SELECT job_id,status,error,auto_retries FROM preparations WHERE suggestion_id=?',sid)
-        self.assertEqual((row['status'],row['error'],row['auto_retries']),('queued','ai_run_interrupted',0))  # lost to a restart: not a try
+        row=self.q('SELECT job_id,status,error,auto_retries,retries_spent FROM preparations WHERE suggestion_id=?',sid)
+        self.assertEqual((row['status'],row['error'],row['auto_retries'],row['retries_spent']),('queued','ai_run_interrupted',1,1))  # its automatic retry
         self.assertNotEqual(row['job_id'],first)
 
-    def test_a_run_a_gateway_restart_cuts_off_is_started_again_without_using_up_the_retry(self):
+    def test_a_run_a_gateway_restart_cuts_off_is_started_again_once_as_its_automatic_retry(self):
+        # 2026-11-22: runs cut off from outside were retried up to four times without counting, on top of the retry
         sid=self.ahead()['id']
         session=self.q('SELECT session_job_id FROM preparations WHERE suggestion_id=?',sid)['session_job_id']
-        later=lambda:patch_everywhere(timeutil,'now',return_value=(dt.datetime.now(dt.timezone.utc)+dt.timedelta(minutes=2+len(seen))).isoformat())
+        later=lambda:patch_everywhere(timeutil,'now',return_value=(dt.datetime.now(dt.timezone.utc)+dt.timedelta(minutes=2*(1+len(seen)))).isoformat())
         seen=[]
-        for n in range(machine_app_preparation.PREPARATION_INTERRUPTED_TRIES-1):
-            with later():self.app.preparation_step(lambda r:seen.append(r) or {'status':'admitted' if r['action']=='start' else 'pending'})
-            with later():self.app.preparation_step(lambda r:seen.append(r) or {'status':'aborted'})
-            with self.store.connect() as db:db.execute("UPDATE preparation_runs SET finished_at=? WHERE finished_at IS NULL",(timeutil.now(),))
-            row=self.q('SELECT status,error,auto_retries FROM preparations WHERE suggestion_id=?',sid)
-            self.assertEqual((row['status'],row['error'],row['auto_retries']),('queued','ai_run_interrupted',0))
-        self.assertEqual({r['session_job_id'] for r in seen},{session})  # always the same session, with its earlier work
-        with later():self.app.preparation_step(lambda r:{'status':'admitted' if r['action']=='start' else 'pending'})
-        with later():self.app.preparation_step(lambda r:{'status':'aborted'})
+        with later():self.app.preparation_step(lambda r:seen.append(r) or {'status':'admitted' if r['action']=='start' else 'pending'})
+        with later():self.app.preparation_step(lambda r:seen.append(r) or {'status':'aborted'})
+        row=self.q('SELECT status,error,auto_retries,retry_at FROM preparations WHERE suggestion_id=?',sid)
+        self.assertEqual((row['status'],row['error'],row['auto_retries']),('queued','ai_run_interrupted',1))
+        self.assertIsNotNone(row['retry_at'])  # after a pause
+        with self.store.connect() as db:db.execute("UPDATE preparation_runs SET finished_at=? WHERE finished_at IS NULL",(timeutil.now(),))
+        with later():self.app.preparation_step(lambda r:seen.append(r) or {'status':'admitted' if r['action']=='start' else 'pending'})
+        with later():self.app.preparation_step(lambda r:seen.append(r) or {'status':'aborted'})
+        self.assertEqual({r['session_job_id'] for r in seen},{session})  # the same session, with its earlier work
         row=self.q('SELECT status,error,auto_retries FROM preparations WHERE suggestion_id=?',sid)
-        self.assertEqual((row['status'],row['error'],row['auto_retries']),('queued','ai_run_failed',1))  # then the usual one retry
+        self.assertEqual((row['status'],row['error'],row['auto_retries']),('blocked','ai_run_failed',1))  # then it waits, stuck
 
     def test_prepared_ahead_task_stops_at_the_last_step_and_confirm_runs_only_that_step(self):
         sid=self.ahead()['id']
@@ -792,7 +793,7 @@ class Preparation(unittest.TestCase):
         calls=[];self.app.preparation_step(lambda r:calls.append(r) or {'status':'lost','error':'runtime_lost'})
         self.assertTrue(calls[0]['probe'])
         row=self.job()
-        self.assertEqual((row['status'],row['error'],row['auto_retries']),('queued','ai_run_interrupted',0))
+        self.assertEqual((row['status'],row['error'],row['auto_retries']),('queued','ai_run_interrupted',1))
         self.assertNotEqual(row['job_id'],first)
 
     def test_timed_out_run_retries_once_by_itself_after_it_really_stopped(self):
@@ -805,7 +806,10 @@ class Preparation(unittest.TestCase):
         self.assertEqual([c['action'] for c in calls],['stop']);self.assertEqual(self.job()['status'],'blocked')  # not confirmed yet
         with self.store.connect() as db:db.execute('UPDATE preparation_runs SET retry_at=NULL')
         calls=[];self.app.preparation_step(lambda r:calls.append(r) or {'status':'lost' if r['action']=='stop' else 'admitted'})
-        self.assertEqual([c['action'] for c in calls],['stop','start']);self.assertNotEqual(self.job()['job_id'],first)
+        self.assertEqual([c['action'] for c in calls],['stop']);self.assertEqual(self.job()['status'],'queued')  # after a pause
+        with self.store.connect() as db:db.execute('UPDATE preparations SET retry_at=NULL')
+        calls=[];self.app.preparation_step(lambda r:calls.append(r) or {'status':'admitted'})
+        self.assertEqual([c['action'] for c in calls],['start']);self.assertNotEqual(self.job()['job_id'],first)
         self.assertEqual((self.job()['status'],self.job()['auto_retries']),('running',1))
         with self.store.connect() as db:db.execute("UPDATE preparations SET started_at='2000-01-01T00:00:00+00:00'")
         self.app.preparation_step(lambda _: {'status':'pending'})

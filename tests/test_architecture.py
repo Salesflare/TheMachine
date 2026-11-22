@@ -109,7 +109,7 @@ LOADERS = {'spec_from_file_location', 'import_module', '__import__', 'load_sourc
 # through it. No new code goes in (a def, a class or an assignment beyond ASSISTANT_OWN), and the names it binds may only
 # go down: ASSISTANT_NAMES is today's count, a new import fails, and one taken out fails until the count comes down to
 # match. Import a name from its own module instead (tests too).
-ASSISTANT_NAMES = 1036
+ASSISTANT_NAMES = 1035
 ASSISTANT_OWN = {'main'}
 
 

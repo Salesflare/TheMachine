@@ -18,6 +18,8 @@ Or say it in **Ask for changes**, like "remind me about this next Tuesday".
 
 It comes back as a notification on each device where notifications are on, and on Telegram if you use it, as **Reminders** in [Notifications](notifications.md) allow. The snooze message says where. With neither, it's back on the dashboard, with **Turn on notifications** right there. On iPhone and iPad, get the [phone app](mobile-app.md) for notifications.
 
+A to-do The Machine already finished comes back as it was. It works on it again only when something new came in while it was snoozed.
+
 ## While it's snoozed
 
 The to-do sits under **Coming back later**, and on its day in the [Calendar](calendar.md). **Unsnooze** brings it back now, **Change time** picks another time.

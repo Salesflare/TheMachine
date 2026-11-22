@@ -43,9 +43,11 @@ class UpdateRetry(unittest.TestCase):
     def starts(self):
         return [c for c in self.calls if c['action'] == 'start']
 
-    def fail_again(self, sid):
+    def fail_again(self, sid, minutes=20):
+        """Its retry failed too, `minutes` ago."""
+        stamp = (dt.datetime.fromisoformat(timeutil.now()) - dt.timedelta(minutes=minutes)).isoformat()
         with self.store.connect() as db:
-            db.execute("UPDATE preparations SET status='blocked',error='ai_run_failed',updated_at=? WHERE suggestion_id=?", (timeutil.now(), sid))
+            db.execute("UPDATE preparations SET status='blocked',error='ai_run_failed',updated_at=? WHERE suggestion_id=?", (stamp, sid))
             db.execute('UPDATE preparation_runs SET status=?,finished_at=? WHERE finished_at IS NULL', ('error', timeutil.now()))
         self.calls.clear()
 
@@ -67,11 +69,28 @@ class UpdateRetry(unittest.TestCase):
         self.store.code_version = 'release-b'
         self.step()
         self.assertEqual((self.prep(sid)['status'], len(self.starts())), ('running', 1))
+        self.fail_again(sid)
+        self.store.code_version = 'release-c'
+        self.step()  # its automatic retries are used up (preparation_state.AUTO_RETRIES): Try again or something new
+        self.assertEqual((self.prep(sid)['status'], self.prep(sid)['retries_spent'], self.starts()), ('blocked', 2, []))
+
+    def test_a_release_right_after_the_failure_waits_for_the_backoff(self):
+        sid = self.stuck(hours=0)
+        self.store.code_version = 'release-a'
+        self.step()
+        self.assertEqual((self.prep(sid)['status'], self.starts()), ('blocked', []))
+        with self.store.connect() as db:
+            db.execute('UPDATE preparations SET updated_at=? WHERE suggestion_id=?', ((dt.datetime.fromisoformat(timeutil.now()) - dt.timedelta(minutes=16)).isoformat(), sid))
+        self.step()
+        self.assertEqual((self.prep(sid)['status'], len(self.starts())), ('running', 1))
 
     def test_a_new_bridge_counts_as_a_new_version(self):
         self.store.code_version = 'release-a'
         self.step()  # this version seen before the to-do got stuck
         sid = self.stuck(hours=0)
+        with self.store.connect() as db:  # seen half an hour ago, stuck 20 minutes ago
+            db.execute("UPDATE milestones SET at=? WHERE name='preparation_version'", ((dt.datetime.fromisoformat(timeutil.now()) - dt.timedelta(minutes=30)).isoformat(),))
+            db.execute('UPDATE preparations SET updated_at=? WHERE suggestion_id=?', ((dt.datetime.fromisoformat(timeutil.now()) - dt.timedelta(minutes=20)).isoformat(), sid))
         self.step()
         self.assertEqual(self.prep(sid)['status'], 'blocked')  # stuck on this same version: no retry
         (self.data / 'plugin-installed').write_text('abcdef0123456789ffff\n{}\n')
