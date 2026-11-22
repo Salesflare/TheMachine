@@ -1,53 +1,53 @@
 ---
 title: Chats de Telegram
 area: connections
-summary: Tus chats y grupos pequeños de Telegram, leídos como un dispositivo de tu propia cuenta. Responde solo después de que lo apruebes.
+summary: Tus chats y grupos pequeños de Telegram, leídos como si fueran un dispositivo de tu propia cuenta. Solo se envían respuestas cuando las apruebas.
 covers: connector:telegram
 code: onboarding.py, telegram_mirror.py, telegram_store.py, next_actions.py
 translated: da17aef29a380002
 ---
 ## Qué lee
 
-Tus chats privados y grupos de hasta 50 personas, como un dispositivo con sesión iniciada en tu propia cuenta de Telegram, igual que Telegram Desktop. Al conectarlo lee los últimos 7 días y luego lo que va llegando.
+Tus chats privados y grupos de hasta 50 personas, como si fuera un dispositivo con la sesión iniciada en tu propia cuenta de Telegram, igual que Telegram Desktop. Al conectarlo, lee los últimos 7 días y, a partir de ahí, los mensajes nuevos.
 
-Nunca lee canales, bots, Mensajes guardados ni los mensajes de servicio del propio Telegram. Los chats silenciados y archivados también se omiten.
+Nunca lee canales, bots, Mensajes guardados ni mensajes de servicio de Telegram. También omite los chats silenciados y archivados.
 
-No toca tu estado de leído ni de en línea: nada se marca como leído y tu teléfono sigue mostrando los mensajes nuevos como nuevos.
+No modifica tu estado de lectura ni tu estado en línea: no marca nada como leído y tu móvil sigue mostrando los mensajes nuevos como nuevos.
 
-Esto es aparte de [Telegram](telegram.md), donde tu propio bot te envía tus tareas.
+Esto es independiente de [Telegram](telegram.md), donde tu propio bot te envía tus tareas.
 
 ## Qué puede enviar
 
-Un texto en un chat que ya existe, solo después de que lo apruebes en la tarea. Los envíos salen de uno en uno, con una pausa entre ellos.
+Un mensaje de texto en un chat que ya existe, solo después de que lo apruebes en la tarea. Los mensajes se envían de uno en uno, con una pausa entre ellos.
 
-Si una tarea llegó por correo pero con esa persona hablas por Telegram, dilo en el chat de la tarea. The Machine encuentra tu chat con ella y pasa el borrador a Telegram, para que lo revises y lo envíes. Nunca empieza un chat nuevo.
+Si recibes una tarea por correo, pero hablas con esa persona por Telegram, dilo en el chat de la tarea. The Machine encuentra el chat que ya tienes con esa persona y cambia el borrador a Telegram para que lo revises y lo envíes. Nunca inicia un chat nuevo.
 
-## Conéctalo
+## Conectarlo
 
-1. En el panel, abre **Conexiones**, luego **Chat**, y elige Chats de Telegram.
+1. En el panel, abre **Conexiones** y luego **Chat**. Después, elige los chats de Telegram.
 2. Elige **Escanear un código QR con Telegram en otro dispositivo**.
-3. En tu teléfono, en Telegram, abre Ajustes, Dispositivos, **Vincular dispositivo de escritorio**, y escanea el código.
-4. Si tu cuenta tiene una contraseña en la nube, escríbela cuando te la pida. Va a Telegram y nunca se guarda.
+3. En tu móvil, abre Ajustes y Dispositivos en Telegram. Toca **Vincular dispositivo de escritorio** y escanea el código.
+4. Si tu cuenta tiene una contraseña en la nube, escríbela cuando te la pidan. Se envía a Telegram y nunca se guarda.
 
-En un teléfono, el formulario empieza por **Recibir un código para tu número de teléfono**, porque un código QR no se puede escanear desde la misma pantalla. Dice adónde envió Telegram el código: a tu app de Telegram en otro dispositivo, por SMS o a tu correo de inicio de sesión. ¿No llega? Pulsa **Enviar el código otra vez**.
+En un móvil, el formulario muestra primero **Consigue un código para tu número de teléfono**, ya que no puedes escanear un código QR desde la misma pantalla. Indica dónde envió Telegram el código: a tu app de Telegram en otro dispositivo, por SMS o a tu correo de inicio de sesión. ¿No tienes el código? Pulsa **Enviar el código otra vez**.
 
-En tu propio ordenador también necesitas un ID de app de Telegram propio. Créalo en [my.telegram.org](https://my.telegram.org), en API development tools, y rellena su api_id y su api_hash en el formulario.
+En tu propio ordenador también necesitas un ID de app de Telegram propio. Créalo en [my.telegram.org](https://my.telegram.org), en API development tools, y escribe su api_id y api_hash en el formulario.
 
-O ejecuta `assistant connect telegram` en un terminal y escanea el código que muestra ahí.
+También puedes ejecutar `assistant connect telegram` en un terminal y escanear el código que aparece.
 
-## Cuando se detiene
+## Si deja de funcionar
 
-- **Sesión de Telegram cerrada**: Telegram terminó la sesión de este dispositivo, o la cerraste en tu teléfono. Pulsa **Reconectar** en **Conexiones**.
+- **Sesión de Telegram cerrada**: Telegram cerró la sesión de este dispositivo o la cerraste desde tu móvil. Pulsa **Reconectar** en **Conexiones**.
 - **Telegram ya no acepta el ID de app**: Telegram ya no acepta el ID de app que usa esta Machine. No se lee ni se envía nada hasta que pulses **Reconectar** y añadas un ID de app propio.
 
-The Machine usa la API de Telegram para esto. Telegram puede limitar o terminar las sesiones de apps como ella.
+Telegram puede limitar o cerrar las sesiones de apps como The Machine.
 
 ## Fotos
 
-The Machine pide a Telegram las fotos de perfil de las personas de tu Graph que no tienen, como mucho 50 al día, con el mismo inicio de sesión que lee tus chats, y solo de personas de chats que lee. No se les envía nada. Alguien que te oculta su foto se queda sin ella.
+The Machine pide a Telegram las fotos de perfil de las personas de tu Graph que no tienen una, como máximo 50 al día. Lo hace con la misma sesión que usa para leer tus chats y solo para las personas de los chats que lee. No les envía nada. Si alguien oculta su foto para ti, seguirá sin tenerla.
 
-## Quítalo
+## Desconectarlo
 
-**Conexiones**, abre Chats de Telegram, **Detalles** y luego **Desconectar**. Tu Machine cierra su sesión en Telegram y elimina lo que guardaba para Telegram.
+Abre los chats de Telegram en **Conexiones**, toca **Detalles** y luego **Desconectar**. Tu Machine cierra su sesión en Telegram y elimina los datos de Telegram que había guardado.
 
-O termínalo en tu teléfono: en Telegram, abre Ajustes, Dispositivos, toca The Machine y termina la sesión.
+También puedes cerrarla desde tu móvil: abre Ajustes y Dispositivos en Telegram, toca The Machine y cierra la sesión.

@@ -1,116 +1,116 @@
 ---
 title: Graph del equipo
 area: fleet
-summary: Experimental. Comparte el trabajo con clientes con tu Fleet de trabajo, como en un CRM. Descubre qué se comparte, qué nunca se comparte y cómo mantener algo en privado.
+summary: Experimental. Comparte el trabajo con clientes con tu Fleet de trabajo, como si fuera un CRM. Qué se comparte, qué no y cómo mantener algo en privado.
 covers: team-graph
 code: shared_graph.py, fleet_trust.py, dashboard.html
 order: 2
 translated: fc842bc761a3ab17
 ---
-En un Fleet de trabajo, tu Machine puede compartir el trabajo con clientes con las Machines de tus compañeros, como en un CRM compartido. Es **Experimental** y viene desactivado.
+En un Fleet de trabajo, tu Machine puede compartir el trabajo con clientes con las Machines de tus compañeros, como si fuera un CRM compartido. Es **Experimental** y está desactivado de forma predeterminada.
 
 ## Activarlo
 
-Un administrador activa **Compartir el Graph en este Fleet** en **Qué se comparte** y confirma que la empresa puede compartir este correo y que se lo ha comunicado a sus empleados. Todo el mundo puede ver si está activado.
+Un administrador activa **Compartir el Graph en este Fleet** en **Qué se comparte** y confirma que la empresa puede compartir este correo y que ha informado a su personal. Todo el mundo puede ver si está activado.
 
-Si se exige el correo o el calendario de trabajo de todos, también se activa. Después, cada persona elige qué más comparte en **Tus conexiones**. El primer contenido compartido de un nuevo compañero espera una hora, para que pueda mantenerlo en privado antes.
+Si se requiere el correo o el calendario de trabajo de todo el mundo, también se activa. Después, cada persona elige qué más compartir en **Tus conexiones**. La primera vez que un nuevo compañero comparte algo, se espera una hora para que pueda decidir qué mantener en privado.
 
 ## Tus conexiones
 
-**Tus conexiones** en **Qué se comparte** muestra cada conexión con un interruptor. Las de trabajo con el dominio de tu Fleet se activan de forma predeterminada. Las de dominios de otras empresas se desactivan de forma predeterminada y muestran «Otra empresa, no compartido». Las personales nunca se comparten. Si desactivas una conexión, se retira lo que se compartió desde ella.
+**Tus conexiones** en **Qué se comparte** muestra cada conexión con un interruptor. Las conexiones de trabajo del dominio de tu Fleet están activadas de forma predeterminada. Las de dominios de otras empresas están desactivadas y muestran «Otra empresa, no compartida». Las personales nunca se comparten. Si desactivas una conexión, se retira lo que se había compartido.
 
-El calendario de otra persona que consultas con tu propio inicio de sesión aparece con su propio nombre, como personal.
+Los calendarios de otras personas que consultas con tu propia cuenta aparecen con su nombre, como personales.
 
-Dentro de una conexión activada, cada hilo se clasifica por separado. El Slack de tu empresa solo cuenta como comunicación entre compañeros. Un chat de Slack Connect con otra empresa sí puede ser trabajo con clientes. Los hilos personales, entre compañeros, sensibles y automatizados no se comparten, a menos que compartas uno por tu cuenta.
+Dentro de una conexión activada, cada hilo se clasifica por separado. El Slack de tu empresa solo cuenta como conversaciones con compañeros. Solo un chat de Slack Connect con otra empresa puede ser trabajo con clientes. Los hilos personales, solo con compañeros, sensibles y automatizados no se comparten, a menos que compartas uno tú.
 
 ## Obligatorio en el Fleet
 
-Un administrador puede exigir el **Correo de trabajo** y el **Calendario de trabajo** de todos en el dominio del Fleet, en **Obligatorio en el Fleet**, tras confirmar que la empresa se lo ha comunicado a sus empleados. El correo de trabajo pertenece a la empresa, como en cualquier CRM. Las conexiones obligatorias muestran «Obligatorio en» y el nombre de tu Fleet, y no se pueden desactivar. Los hilos que mantienes en privado siguen siendo privados.
+Un administrador puede exigir el **Correo de trabajo** y el **Calendario de trabajo** de todas las personas del dominio del Fleet en **Obligatorio en el Fleet**, después de confirmar que la empresa ha informado a su personal. El correo de trabajo pertenece a la empresa, como en cualquier CRM. Las conexiones obligatorias indican «Obligatorio en» tu Fleet y no se pueden desactivar. Los hilos que mantengas en privado seguirán siendo privados.
 
 ## Qué se comparte con el equipo
 
-- Hilos con clientes: correo de trabajo con personas ajenas a tu empresa, incluidos los archivos adjuntos.
-- Personas, organizaciones y proyectos de trabajo, con una cronología breve. En la **Cronología** de una página, **Equipo** muestra cada evento una sola vez, en el idioma en que lo escribió la Machine de un compañero, junto con las personas de las que procede: «vía Sam, Kim y Lee».
-- Una copia pequeña del logotipo de una organización y de la foto de trabajo de una persona, obtenida de una búsqueda, Slack, LinkedIn, X, Salesflare o Microsoft. Nunca se comparte una imagen de contactos de Google, WhatsApp, Telegram o Facebook, ni una imagen que hayas cambiado o quitado.
-- En un tablero de Equipo, las reuniones de un proyecto, las notas de Zoom, las conversaciones de Intercom y los chats. Los elementos sensibles, como los tratos, y los chats solo entre compañeros no se comparten.
-- Recuentos y fechas del [resumen de equipo](fleet.md#brief-requests) de un compañero.
-- Respuestas cuando un compañero pregunta quién conoce a alguien o quiere contexto sobre una reunión. Consulta [Fleets](fleet.md#answered-by-itself-in-a-work-fleet).
+- Hilos con clientes: correos de trabajo con personas ajenas a tu empresa, incluidos los archivos adjuntos.
+- Personas, organizaciones y proyectos de trabajo, con una breve cronología. En la **Cronología** de una página, **Equipo** muestra cada evento una sola vez y en tu idioma, si así lo escribió la Machine de un compañero, junto con quién lo compartió: «a través de Sam, Kim y Lee».
+- Una copia pequeña del logotipo de una organización y de la foto de trabajo de una persona, obtenida de una búsqueda, Slack, LinkedIn, X, Salesflare o Microsoft. Nunca se comparten imágenes de contactos de Google, WhatsApp, Telegram o Facebook, ni imágenes que hayas cambiado o eliminado.
+- En un tablero de **Equipo**, las reuniones, notas de Zoom, conversaciones de Intercom y chats de un proyecto. Los temas sensibles, como las negociaciones, y los chats solo con compañeros no se comparten.
+- Recuentos y fechas del [resumen del equipo](fleet.md#brief-requests) de un compañero.
+- Respuestas cuando un compañero pregunta quién conoce a alguien o quiere contexto para una reunión. Consulta [Fleets](fleet.md#answered-by-itself-in-a-work-fleet).
 - [Aprendizajes del equipo](fleet.md#team-learnings): cómo trabaja el equipo, sin nombres ni datos de clientes.
 
-## Lo que no se comparte automáticamente
+## Qué no se comparte automáticamente
 
-- Hilos sensibles: compra o venta de empresas, inversiones, negociaciones de tratos, RR. HH. y contratación, temas legales, salud, dinero y seguridad. Ni siquiera se comparte que existen.
-- Correo automatizado: recibos, facturas, alertas, boletines y facturas de proveedores.
-- Hilos solo entre compañeros, correo personal y cualquier contenido de una cuenta personal. El contenido personal nunca se comparte, ni siquiera si tocas **Equipo**.
-- Todo lo que marcaste como **Mantener en privado**, y los tableros y proyectos configurados como **Solo tú**.
-- Personas que son personales para ti, como tu familia o tus amigos, y su correo. Un proyecto en el que participen se comparte con su tablero, pero sin incluirlos.
+- Hilos sensibles: compra o venta de empresas, inversiones, negociaciones, Recursos Humanos y contratación, temas legales, salud, dinero y seguridad. Ni siquiera se comparte que existan.
+- Correos automatizados: recibos, facturas, alertas, boletines y facturas de proveedores.
+- Hilos solo con compañeros, correos personales y cualquier contenido de una cuenta personal. El contenido personal nunca se comparte, ni siquiera al tocar Equipo.
+- Todo lo que hayas marcado como **Mantener en privado**, así como los tableros y proyectos configurados como «Solo tú».
+- Personas que sean personales para ti, como tu familia o tus amigos, y sus correos. Si forman parte de un proyecto, este se comparte con su tablero, pero sin incluirlos.
 
-Cada hilo se clasifica según su contenido, y la clasificación puede ser incorrecta. Revisa qué se compartiría y usa «Mantener en privado» para corregirlo. Si compartes un hilo por tu cuenta con el equipo o con personas específicas, se anula la etiqueta de contenido sensible. Revisa quién podrá verlo.
+Cada hilo se clasifica según su contenido, y puede que la clasificación no sea correcta. Comprueba qué se compartiría y usa Mantener en privado para corregirlo. Si compartes un hilo tú misma con el equipo o con personas concretas, se ignora la etiqueta de sensible. Comprueba quién podrá verlo.
 
-## Compartir un tablero con las personas que elijas
+## Compartir un tablero con personas concretas
 
-En el menú **⋯** de un tablero, toca **Compartir tablero…** y elige a tus compañeros. Solo ellos reciben sus proyectos con las cronologías completas: correo, reuniones y notas de Zoom, conversaciones de Intercom, chats, tareas y cambios. También se comparten los elementos sensibles, como los tratos.
+En el menú **⋯** de un tablero, toca **Compartir tablero…** y elige compañeros. Solo ellos recibirán sus proyectos con la cronología completa: correos, reuniones y notas de Zoom, conversaciones de Intercom, chats, tareas y movimientos. También se compartirán los temas sensibles, como las negociaciones.
 
-Los hilos personales y solo entre compañeros no se comparten. Tampoco se comparten tu familia y tus amigos, el correo automatizado ni las conexiones que no seleccionaste.
+Los hilos personales y los que solo son con compañeros no se comparten. Tampoco se comparten tu familia y tus amigos, los correos automatizados ni las conexiones que no hayas seleccionado.
 
-- También se comparte cualquier proyecto que se añada al tablero más adelante. Si se quita del tablero, se retira.
+- También se comparte cualquier proyecto que se añada al tablero más adelante. Si se quita un proyecto, se retira lo que se había compartido.
 - Si quitas a alguien o no eliges a nadie, el contenido se retira de su Machine.
-- Para compartir un hilo con personas específicas, toca su etiqueta y luego **Compartir con…**. Puede incluir correo de trabajo sensible o automatizado, pero nunca hilos personales ni solo entre compañeros.
+- Para compartir un solo hilo con personas concretas, toca su etiqueta y luego **Compartir con…**. Puedes incluir correos de trabajo sensibles o automatizados, pero nunca hilos personales o solo con compañeros.
 
-## ¿No estás seguro? Espera
+## ¿No lo tienes claro? Espera
 
-Si tu Machine no está segura, no comparte el contenido. Esos hilos esperan en **¿Compartir esto?**, agrupados por tipo (por ejemplo, «Intercambios con socios y anuncios»), y cada grupo incluye una sugerencia:
+Si tu Machine no está segura, no comparte el contenido. Esos hilos esperan en **¿Compartir esto?**, agrupados por tipo, por ejemplo, «Intercambios con socios y anuncios», y cada grupo incluye una sugerencia:
 
-- **Compartir con el equipo**: con todos los miembros del Fleet.
-- **Compartir con…**: solo con los compañeros que elijas, como un miembro del consejo para hablar de inversiones.
+- **Compartir con el equipo**: todo el mundo en el Fleet.
+- **Compartir con…**: solo los compañeros que elijas, por ejemplo, un miembro del tablero para hablar de inversiones.
 - **Mantener en privado**: solo tú podrás verlo.
 
-Con un solo toque decides qué hacer con todo un grupo. Abre un grupo para desmarcar los hilos que quieras decidir uno por uno.
+Con un toque decides qué hacer con todo un grupo. Abre un grupo para desmarcar los hilos que quieras decidir por separado.
 
-Las conversaciones sobre comprar, vender o invertir en una empresa, y los asuntos de juntas directivas, son sensibles, así que no esperan aquí. El trabajo habitual con una empresa asociada cuenta como trabajo con clientes.
+Las conversaciones sobre la compra, venta o inversión en una empresa y los asuntos del consejo son sensibles, así que no aparecen aquí. El trabajo cotidiano con una empresa asociada sí cuenta como trabajo con clientes.
 
 ## Antes de compartir por primera vez
 
-Tu primer contenido se comparte automáticamente una hora después de que tu Machine te avise. Durante esa hora, abre **Fleet** y luego **Qué se comparte** para ver, por organización, los hilos con clientes que se compartirían. Toca **Mantener en privado** en los que quieras excluir o **Compartir ahora** para compartirlos de inmediato. Los administradores pueden ver quién aún no ha compartido.
+La primera vez, tu Machine comparte el contenido automáticamente una hora después de avisarte. Durante esa hora, abre **Fleet** y luego **Qué se comparte** para ver los hilos con clientes que se compartirían, organizados por empresa. Toca **Mantener en privado** en los que quieras excluir o **Compartir ahora** para enviarlos al momento. Los administradores pueden ver quién aún no ha compartido nada.
 
 ## Qué se comparte
 
-**Fleet** › **Qué se comparte** muestra todo: recuentos por tipo, cada hilo compartido y el motivo, los que están en **¿Compartir esto?** y lo que mantienes en privado. Toca un asunto para leerlo. **Ajustes** y la etiqueta de cada hilo también llevan aquí.
+**Fleet** › **Qué se comparte** lo muestra todo: el recuento por tipo, cada hilo compartido y el motivo, los que aparecen en **¿Compartir esto?** y lo que mantienes en privado. Toca un asunto para leerlo. También puedes acceder desde **Ajustes** y desde la etiqueta de cada hilo.
 
 Los hilos nuevos con clientes esperan una hora antes de compartirse, para que tengas tiempo de cambiar de opinión.
 
 ## Dejar de compartir
 
-Toca la etiqueta **Equipo** de un hilo y luego **Dejar de compartir**. La Machine de cada compañero elimina el hilo, sus archivos adjuntos y las entradas de su cronología, o lo hace cuando vuelve a estar conectada. Es posible que alguien ya lo haya leído.
+Toca la etiqueta **Equipo** de un hilo y luego **Dejar de compartir**. La Machine de cada compañero elimina el hilo, sus archivos adjuntos y las líneas correspondientes de la cronología, o lo hace cuando vuelve a conectarse. Es posible que alguien ya lo haya leído.
 
-Si tocas **Mantener en privado** en una persona, organización o proyecto, dejas de compartir todo su contenido.
+Si marcas como **Mantener en privado** a una persona, organización o proyecto, dejarás de compartir todo su contenido.
 
-Si mantienes en privado dos hilos de la misma empresa, tu Machine te preguntará una vez si quieres mantener siempre en privado el contenido de esa empresa.
+Si mantienes en privado dos hilos de la misma empresa, tu Machine te preguntará una sola vez si quieres mantener siempre en privado todo lo relacionado con esa empresa.
 
 ## Quién puede verlo
 
 Solo las Machines de tus compañeros. El contenido está cifrado de extremo a extremo. The Machine Network lo transmite, pero no puede leerlo.
 
-## Incorporación y dispositivos nuevos
+## Incorporar a alguien y añadir dispositivos
 
-Un administrador da acceso a cada persona una sola vez. La solicitud aparece en **Tareas** para todos los administradores, y cuenta la primera respuesta. Después, ya no hace falta aprobación para compartir.
+Un administrador da acceso a cada persona una sola vez. La solicitud aparece en **Tareas** para todos los administradores, y cuenta la primera respuesta. Después, no hace falta más visto bueno para compartir.
 
-Hasta entonces, el Graph y el Fleet de la persona nueva indican qué administradores deben aprobar su acceso. **Míos** y **Equipo** aparecen unos segundos después de la aprobación, sin tener que volver a cargar la página.
+Hasta entonces, el Graph y el Fleet de la persona nueva indican qué administradores deben responder. **Míos** y **Equipo** aparecen unos segundos después del visto bueno, sin tener que volver a cargar la página.
 
-Una nueva Machine de alguien que ya tiene acceso recibe el Graph del equipo al cabo de 24 horas. Mientras tanto, los administradores pueden tocar **No es suyo** para excluirlo.
+Si alguien que ya tiene acceso añade una Machine nueva, recibirá el Graph del equipo al cabo de 24 horas. Mientras tanto, los administradores pueden tocar **No es suyo** para excluirla.
 
 ## Cuando alguien se va
 
-Desde ese momento, no recibe nada nuevo. Lo que ya compartió permanece con el equipo. Un administrador también puede **Sacar** a alguien y **Volver a compartir** más adelante.
+Desde ese momento, no recibe nada nuevo. Lo que haya compartido permanece con el equipo. Además, un administrador puede **Sacar** a alguien y **Volver a compartir** el contenido más adelante.
 
-## Desactivarlo para todos
+## Desactivar para todo el mundo
 
-Un administrador desactiva **Compartir el Graph en este Fleet** en **Qué se comparte**. No se comparte nada nuevo.
+Un administrador desactiva **Compartir el Graph en este Fleet** en **Qué se comparte**. No se compartirá nada nuevo.
 
-**Desactivar** conserva lo que los compañeros ya tienen. **Desactivar y quitar los datos compartidos** hace que todas las Machines lo eliminen. Cuando se vuelve a activar el uso compartido, cada persona revisa el contenido de nuevo antes de compartirlo.
+**Desactivar** conserva lo que ya tienen los compañeros. **Desactivar y quitar los datos compartidos** hace que todas las Machines lo eliminen. Si se vuelve a activar la opción de compartir, cada persona revisará el contenido antes de compartirlo de nuevo.
 
-## Dejar de compartir tu trabajo
+## Dejar de compartir tu propio trabajo
 
-Desactiva tus conexiones en **Tus conexiones**, a menos que el Fleet las exija. Se retira lo que se compartió desde ellas.
+Desactiva tus conexiones en **Tus conexiones**, a menos que el Fleet las exija. Se retirará lo que se había compartido.
 
 Consulta también [Fleets](fleet.md) y [Seguridad y privacidad](security-and-privacy.md).

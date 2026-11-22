@@ -1,39 +1,39 @@
 ---
-title: L’installer sur votre propre ordinateur
+title: Lancer The Machine sur votre propre ordinateur
 area: getting-started
-summary: Installez l’app open source sur Linux, macOS ou Windows. Gratuite, avec votre propre modèle et vos propres données.
+summary: Installez l’app open source sur Linux, macOS ou Windows. C’est gratuit, et vous utilisez votre propre modèle et vos propres données.
 covers: self-hosted
 code: install.sh, install.ps1, docs/getting-started.md
 order: 2
 translated: 73526b82818f009d
 ---
-The Machine est open source (AGPL). Sur votre propre ordinateur, elle est gratuite, et vos données y restent.
+Lancez The Machine gratuitement sur votre ordinateur. Le code est open source (AGPL) et vos données restent chez vous. Il vous faut un terminal pour l’installer, mais pas pour connecter vos comptes.
 
-## Ce qu’il faut
+## Configuration requise
 
-- OpenClaw 2026.11.2 ou plus récent. L’installateur propose de l’installer.
-- Python 3.12 ou plus récent, et Node.js 24 (24.22.1 ou plus récent) ou 26.12.1 ou plus récent, pas 25.
+- OpenClaw 2026.11.2 ou version ultérieure, l’agent open source sur lequel The Machine s’appuie. L’installateur vous propose de l’installer.
+- Python 3.12 ou version ultérieure, et Node.js 24 (24.22.1 ou version ultérieure) ou 26.12.1 ou version ultérieure, mais pas la version 25.
 - Tailscale, pour accéder à votre tableau de bord depuis votre téléphone.
-- Votre propre compte utilisateur, pas root.
+- Un compte utilisateur standard, pas root.
 
-## L’installer
+## Installation
 
-Sur Linux ou macOS (macOS est en bêta) :
+Sous Linux ou macOS (macOS est en version bêta) :
 
 1. `git clone https://github.com/Salesflare/TheMachine.git ~/.openclaw/workspace/tools/personal-assistant`
 2. `cd ~/.openclaw/workspace/tools/personal-assistant && ./install.sh`
 
-Sur Windows (bêta), elle tourne dans WSL2. Dans PowerShell, lancez `irm https://raw.githubusercontent.com/Salesflare/TheMachine/main/install.ps1 | iex`. Cela installe WSL2 avec Ubuntu et tout ce dont l’app a besoin, puis lance `./install.sh`.
+Sous Windows (version bêta), l’application s’exécute dans WSL2. Dans PowerShell, exécutez `irm https://raw.githubusercontent.com/Salesflare/TheMachine/main/install.ps1 | iex`. Cette commande configure WSL2 avec Ubuntu et tous les éléments nécessaires à l’application, puis exécute `./install.sh`.
 
-L’installateur trouve vos comptes, les connecte un par un et montre un aperçu de la semaine passée avant que quoi que ce soit ne s’active.
+L’installateur repère vos comptes, les connecte un par un et affiche un aperçu de la semaine dernière avant toute activation.
 
 ## Après l’installation
 
-- Connectez vos e-mails : en haut de **Tâches**, appuyez sur **Gmail** (ou **Outlook**), puis sur **Associer cette Machine** pour l’associer à votre compte. Sans compte, **Utiliser votre propre app** est juste en dessous.
-- Puis appuyez sur **Se connecter avec Google** (ou **Se connecter avec Microsoft** pour Outlook). Les e-mails et l’agenda se connectent ensemble.
-- Autres sources : **Connexions**, puis le type de la source. Votre propre client Google ou app Entra : `assistant connect` dans un terminal.
-- Vérifiez tout avec `assistant doctor`. Il affiche une solution pour chaque problème.
-- L’installateur prend la dernière version signée, et les mises à jour arrivent aussi sous forme de versions signées.
-- Associée à The Machine Network, votre Machine partage son adresse Tailscale avec votre compte, pour que l’app sur votre téléphone l’ouvre après votre connexion. La dissocier efface cette adresse.
+- Connectez votre messagerie : en haut de **Tâches**, cliquez sur **Gmail** (ou **Outlook**), puis sur **Associer cette Machine** pour l’associer à votre compte. Si vous n’avez pas de compte, **Utiliser votre propre app** se trouve juste en dessous.
+- Cliquez ensuite sur **Se connecter avec Google** (ou **Se connecter avec Microsoft** pour Outlook). La messagerie et le calendrier se connectent ensemble.
+- Pour les autres sources, cliquez sur **Connexions**, puis sur le type de source. Pour utiliser votre propre client Google ou votre app Entra : exécutez `assistant connect` dans un terminal.
+- Vérifiez que tout fonctionne avec `assistant doctor`. Cette commande affiche une solution pour chaque problème.
+- L’installateur installe la dernière version signée. Les mises à jour sont également publiées sous forme de versions signées.
+- Associez-la à votre compte : l’app mobile l’ouvrira après votre connexion. La dissociation supprime ce lien.
 
-Le guide complet est dans le dépôt : [Getting started](https://github.com/Salesflare/TheMachine/blob/main/docs/getting-started.md).
+Le guide complet se trouve dans le dépôt : [Premiers pas](https://github.com/Salesflare/TheMachine/blob/main/docs/getting-started.md).

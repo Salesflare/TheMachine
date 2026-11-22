@@ -1,31 +1,31 @@
 ---
 title: Trello
 area: connections
-summary: Wijzigingen aan kaarten, reacties en activiteit op één Trello-bord. Het leest alleen.
+summary: Wijzigingen aan kaarten, reacties en activiteit op één Trello-bord. The Machine leest alleen.
 covers: connector:trello
 code: connectors/trello.py
 site: Sign in with Trello, Connect, More sources, Remove
 translated: 7fc2a596ef58bd93
 ---
-## Wat het leest
+## Wat The Machine leest
 
-Wijzigingen aan kaarten, reacties en activiteit op één Trello-bord per koppeling. Het markeert een bord nooit als bekeken.
+Wijzigingen aan kaarten, reacties en activiteit op één Trello-bord per koppeling. Hij markeert een bord nooit als bekeken.
 
-## Wat het kan doen
+## Wat The Machine kan doen
 
-Niets in Trello. Het leest alleen.
+Niets in Trello. Hij leest alleen.
 
 ## Koppelen
 
-1. In het dashboard: **Koppelingen**, **Projecten en code**, Trello. Of op de setuppagina van een gehoste Machine op app.themachine.computer/setup: **Meer bronnen**, Trello. Op je eigen computer koppel je hem eerst aan je account.
-2. Druk op **Inloggen met Trello** en sta leestoegang toe in Trello. The Machine is gemaakt door Salesflare.
-3. Kies het bord om te volgen en druk op **Verbinden**. Voor een ander bord voeg je Trello opnieuw toe.
+1. In het dashboard: **Koppelingen**, **Projecten en code**, Trello. Of op de configuratiepagina van een gehoste Machine op app.themachine.computer/setup: **Meer bronnen**, Trello. Op je eigen computer koppel je hem eerst aan je account.
+2. Klik op **Inloggen met Trello** en geef leestoegang. Trello toont dat de app is gemaakt door Salesflare.
+3. Selecteer het bord dat je wilt volgen en klik op **Verbinden**. Voeg Trello opnieuw toe voor een ander bord.
 
 ## Verwijderen
 
-- In het dashboard: **Koppelingen**, open het bord, **Details**, dan **Ontkoppelen**. Wat al binnengehaald is, blijft.
-- Op een gehoste Machine kun je ook op **Verwijderen** ernaast drukken op je setuppagina.
+- In het dashboard: **Koppelingen**, open het bord en kies **Details** en daarna **Ontkoppelen**. Wat The Machine al heeft binnengehaald, blijft staan.
+- Op een gehoste Machine kun je ook op **Verwijderen** naast de koppeling klikken op de configuratiepagina.
 
-## Intrekken in Trello
+## Toegang intrekken in Trello
 
-Trek The Machine in bij de accountinstellingen van Trello, onder Applications.
+Trek in de accountinstellingen van Trello, onder Applications, de toegang van The Machine in.

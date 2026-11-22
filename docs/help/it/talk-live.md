@@ -1,76 +1,76 @@
 ---
 title: Parla dal vivo
 area: cards
-summary: Una conversazione a voce con The Machine su un’attività, con la voce di OpenAI. Lavora nella chat dell’attività e invia una bozza solo dopo il tuo sì.
+summary: Una conversazione vocale con The Machine su un’attività, con la voce di OpenAI. Funziona nella chat dell’attività e invia una bozza solo dopo che hai detto sì.
 covers: talk-live
 code: talk_live.py, talk-live-run.mjs, dashboard.html
 order: 8
 keywords: talk live, voice, conversation, speak, call, realtime, openai, chatgpt, gpt live
 translated: 60168384f08de74e
 ---
-## Inizia una conversazione
+## Avvia una conversazione
 
-Nella chat di un’attività, tocca l’onda accanto al microfono. Consenti il microfono se il browser lo chiede. Quando la barra dice **Dal vivo**, parla come in una chiamata. The Machine risponde ad alta voce, e puoi parlarle sopra per interromperla.
+Nella chat di un’attività, tocca l’onda accanto al microfono e consenti l’accesso al microfono, se richiesto. Quando la barra mostra **Dal vivo**, parla come durante una chiamata. La Machine ti risponde a voce. Parlale sopra per interromperla.
 
-Conosce l’attività in cui sei: i suoi messaggi, la sua bozza e la sua chat. Può anche consultare le tue altre attività. Di' "segna come fatta", "rimandala" o "non serve" e lo fa da sola. Di' "no, non quello" subito dopo per tornare indietro. Rimanda a qualsiasi ora, come "tra un’ora" o "domani alle 9", nel fuso orario di [Orario di lavoro](work-hours.md).
+Conosce questa attività: i suoi messaggi, la bozza e la chat. Può anche cercare informazioni sulle altre tue attività. Di’ «segnala come fatta», «posticipala a domani alle 9» o «non serve» e lo farà. Per annullare, di’ «no, non così» subito dopo. Gli orari seguono il fuso orario del tuo [Orario di lavoro](work-hours.md).
 
-Ascolta nelle tue lingue: quella dell’app e quelle indicate dal browser. Un rumore, un colpo di tosse o un suono in un’altra lingua non riceve risposta e resta fuori dalla trascrizione.
+Ascolta nella lingua dell’app e nelle lingue indicate dal browser. Tosse, rumori e altre lingue non ricevono risposta e non compaiono nella trascrizione.
 
-La barra ha **Silenzia** e **Fine**. Saluta, o di' che hai finito, e si chiude da sola. Una conversazione dura al massimo 10 minuti. Un minuto prima della fine, il timer mostra quanto manca. Riavviala per continuare.
+La barra include **Silenzia** e **Fine**. Se saluti, la conversazione termina da sola. Dura fino a 10 minuti, con un conto alla rovescia nell’ultimo minuto. Riavviala per continuare.
 
-## Ripassa tutte le attività a voce
+## Parla di tutte le tue attività
 
-Tocca **Parla** nella barra laterale (nel menu sul telefono) per ripassare a voce tutto ciò che ti aspetta. The Machine dice quante sono e prende quelle in **Per te** una alla volta, prima la più urgente. Vede anche le altre attività, come quelle segnate **In preparazione…**, e ti avvisa quando una è pronta.
+Tocca **Parla** nella barra laterale, oppure nel menu su telefono. La Machine ti dice quante attività sono in attesa e prende una alla volta quelle in **Per te**, partendo dalla più urgente. Ti avvisa quando un’attività contrassegnata **In preparazione…** è pronta.
 
-Parla ha una pagina sua: una conversazione dall’inizio alla fine, con in alto l’attività di cui si parla, la sua bozza e **Apri la chat**. Non ti sposta da una chat all’altra.
+Parla ha una pagina dedicata: l’attività su cui sta lavorando è in alto, con la sua bozza e **Apri la chat**.
 
-Chiedile di leggere una bozza, cambiarla, rimandarla, segnarla come fatta o passare alla prossima. L’invio funziona come nella chat di un’attività: una bozza per domanda, dopo un sì chiaro. Quello che dici su un’attività finisce nella chat di quell’attività. Quando arriva una nuova attività, te lo dice in una pausa. Di' "aggiungi un’attività per..." e ne crea una nuova, senza lasciare quella su cui sei.
+Chiedile di leggere una bozza, modificarla, posticiparla, segnarla come fatta o passare alla successiva. Quello che dici su un’attività viene aggiunto alla sua chat. Ti segnala le nuove attività quando c’è una pausa. Di’ «aggiungi un’attività per...» per aggiungerne una senza perdere il segno.
 
-Arriva anche al resto di The Machine. Chiedi di una persona, un’organizzazione, un progetto, una riunione o una promessa, e la cerca e te la mostra. Può rimandare un’attività, segnarla come fatta, scartarla, rinominarla o riaprirla, anche una in **Fatte / scartate**. Per tutto il resto crea un’attività, lascia che se ne occupi la sua chat e ti dice la risposta.
+Chiedile informazioni su una persona, un’organizzazione, un progetto, una riunione o una promessa: le cercherà e te le mostrerà. Può anche scartare, rinominare o riaprire attività, comprese quelle in **Fatte / scartate**. Per qualsiasi altra cosa, invia la domanda alla chat di una nuova attività e poi ti dà la risposta.
 
-Ricorda anche le vostre conversazioni precedenti. Chiedi "cosa avevo deciso per l’offsite?" o "cosa ho detto di Acme la settimana scorsa?" e te lo dice, con quando l’hai detto. Lo fa solo Parla nella barra laterale, non Parla nella chat di un’attività.
+Ricorda le conversazioni precedenti. Chiedile «cosa avevo deciso per il ritiro aziendale?» e ti risponderà, dicendoti anche quando ne avevi parlato. Solo Parla nella barra laterale può farlo.
 
-Intanto puoi andare su un’altra pagina: la barra resta in basso, e **Parla** nella barra laterale ti riporta indietro. Questa conversazione dura al massimo 30 minuti. Continua in background su computer e Android. Su iPhone si ferma quando l’app lascia lo schermo.
+Nel frattempo puoi usare le altre pagine: la barra resta in basso e **Parla** ti riporta alla conversazione. Questa conversazione dura fino a 30 minuti. Continua in background su computer e Android. Su iPhone si interrompe quando l’app esce dallo schermo.
 
-## Chiedi le cose, e invia con un sì
+## Chiedi quello che ti serve e invia con un sì
 
-Quando chiedi qualcosa, come "scrivi una risposta dicendo che giovedì va bene" o "posticipa questa a lunedì", The Machine la passa alla chat dell’attività, come se l’avessi scritta tu. La chat segue le solite regole: può cambiare la bozza o posticipare l’attività.
+Chiedi qualcosa, per esempio «scrivi una risposta per dire che giovedì va bene», e The Machine lo invierà alla chat dell’attività come se l’avessi scritto tu. La chat segue le sue solite regole.
 
-La chat può anche cercare informazioni, come gli orari di un negozio sul web. Nel frattempo mostra **Ci sto lavorando…**, e puoi continuare a parlare. Quando la risposta è pronta, The Machine te la dice, e dove l’ha trovata. Se nel frattempo chiedi altro, aspetta il suo turno.
+La chat può anche cercare informazioni, come gli orari di apertura di un negozio. Mostra **Ci sto lavorando…** e puoi continuare a parlare. Quando la risposta è pronta, The Machine te la comunica e ti dice dove l’ha trovata.
 
-Per inviare una bozza, dillo. The Machine chiede prima, dicendo a chi e come, per esempio "Invio questa risposta a Sam per email?". Prima legge ad alta voce tutta la bozza: a chi va, l’oggetto e il testo. Così funziona anche con il telefono in tasca. Rispondi con un sì chiaro, come "sì, invia", e quella bozza parte.
+Per inviare una bozza, chiediglielo. The Machine la legge ad alta voce, indicando a chi è indirizzata, l’oggetto e il testo, poi ti chiede, per esempio: «Invio questa risposta via email a Sam?». Puoi farlo anche con il telefono in tasca. Di’ chiaramente di sì, per esempio «sì, inviala», e la bozza verrà inviata.
 
-- Invia esattamente la bozza che ha letto. Se cambia dopo la domanda, la rilegge e chiede di nuovo. Una domanda senza risposta entro 3 minuti scade.
-- Se la risposta non è un sì chiaro, non parte niente e chiede di nuovo. "No" non invia niente.
-- Una bozza che hai già visto sullo schermo, o sentito in questa conversazione, non viene riletta: chiede solo, per esempio "La invio a Pat?".
-- Di' "invia entrambe" o "invia tutte quelle pronte" e nomina tutti in una domanda. Un sì le invia tutte.
-- Parla dice quanti secondi hai e mostra **Annulla** con lo stesso conto alla rovescia. Toccalo, o di' "annulla" o "aspetta".
-- Quando la Machine l’ha inviato, Parla dice "Inviato." e la barra e l’attività mostrano **Inviato a** quella persona con l’orario. Se non è partito, Parla dice perché. Chiedi "è partito?" quando vuoi: controlla, non tira mai a indovinare.
+- Invia esattamente la bozza che ha letto. Se la bozza cambia, la legge e te lo chiede di nuovo. Se non rispondi entro 3 minuti, la richiesta scade.
+- Se non dai un sì chiaro, non viene inviato nulla.
+- Una bozza che hai già visto o sentito non viene riletta. Ti chiede solo, per esempio: «La invio a Pat?».
+- Di’ «invia tutte quelle pronte» e indicherà tutti i destinatari in un’unica domanda. Basta un sì per inviarle tutte.
+- Dopo che hai detto sì, Parla mostra **Annulla** con un conto alla rovescia. Toccalo oppure di’ «annulla» o «aspetta».
+- Una volta inviata la bozza, Parla dice «Inviata» e l’attività mostra **Inviato a** quella persona, con l’ora. Se l’invio non riesce, Parla ti dice perché. Puoi chiedere «è stata inviata?» in qualsiasi momento: controlla, non tira a indovinare.
 
-Puoi sempre toccare **Approva** invece.
+Puoi anche toccare **Approva**.
 
-"Fallo" fa partire The Machine sull’attività, come **Fallo**, anche nel browser. "Segna come fatta" la chiude. Di' "segnala un bug" e invia una segnalazione, come **Segnala un bug** nell’Aiuto, chiedendo prima se può aggiungere altro.
+Di’ «fallo» per avviare The Machine sull’attività, come con **Fallo**. Di’ «segnala un bug» per inviare una segnalazione, come con **Segnala un bug** nella sezione Aiuto.
 
 ## Scegli una voce
 
-In **Impostazioni**, **Generale**, sotto **Input vocale**, scegli in **Voce** come suona The Machine. Tocca riproduci per sentire un esempio. **Cedar** è la voce predefinita. La voce Cove di ChatGPT non è disponibile per parlare dal vivo.
+In **Impostazioni**, **Generale**, alla voce **Input vocale**, scegli una **Voce** e tocca Riproduci per ascoltarla. **Cedar** è la voce predefinita. La voce Cove di ChatGPT non è disponibile.
 
-## Una traccia nella chat
+## Una registrazione nella chat
 
-Quello che dite tutti e due viene scritto nella chat dell’attività, sotto una riga **Conversazione dal vivo**. Puoi rileggerlo più tardi.
+Tutto quello che viene detto viene aggiunto alla chat dell’attività, sotto la voce **Conversazione dal vivo**, così puoi rileggerlo in seguito.
 
-## Cosa ti serve
+## Cosa serve
 
-Parla dal vivo usa la voce in tempo reale di OpenAI, quindi la tua Machine ha bisogno di OpenAI:
+Parla dal vivo usa la voce di OpenAI, quindi la tua Machine deve avere una di queste opzioni:
 
-- Un accesso ChatGPT: incluso nel tuo piano, se il tuo piano ha accesso.
-- Una chiave API OpenAI: OpenAI addebita alla tua chiave ogni minuto di conversazione, e la barra lo dice. Se sono configurati tutti e due, la tua Machine usa la chiave.
+- Accesso a ChatGPT: incluso nei piani che lo prevedono.
+- Una chiave API OpenAI: OpenAI la addebita al minuto e la barra te lo segnala. Se hai entrambe le opzioni, la tua Machine usa la chiave.
 
-**Impostazioni**, **Generale**, **Input vocale** mostra se Parla dal vivo è pronto. Senza OpenAI, l’onda non compare. Il tuo audio va dal browser direttamente a OpenAI. La tua chiave non arriva mai al browser.
+In **Impostazioni**, **Generale**, **Input vocale** puoi vedere se Parla dal vivo è pronto. Senza OpenAI, l’onda non viene mostrata. L’audio passa direttamente dal browser a OpenAI.
 
 ## Se non funziona
 
-- **Il microfono è bloccato**: consenti il microfono per questo sito nelle impostazioni del browser.
-- **Parla dal vivo non è partito**: controlla l’accesso ChatGPT o la chiave OpenAI, poi riprova.
-- **Parla dal vivo ha perso la connessione**: riavvialo. Quello che è stato detto finora resta nella chat.
-- Se dice che non capisce le tue parole, quello che hai detto non è arrivato due volte di fila. Controlla il microfono, o scrivi nella chat. Lo dice una volta, poi aspetta di sentirti.
+- **Il microfono è bloccato**: consenti l’accesso al microfono per questo sito nelle impostazioni del browser.
+- **Parla dal vivo non si è avviato**: controlla l’accesso a ChatGPT o la chiave OpenAI, poi riprova.
+- **Parla dal vivo ha perso la connessione**: riavvialo. Quello che è stato detto resta nella chat.
+- Dice che non riesce a capire le tue parole: controlla il microfono oppure scrivi nella chat.

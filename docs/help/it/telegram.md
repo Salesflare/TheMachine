@@ -1,38 +1,38 @@
 ---
 title: Telegram
 area: connections
-summary: Ricevi le tue attività su Telegram, con gli stessi pulsanti della dashboard, tramite un tuo bot. Facoltativo.
+summary: Ricevi le tue attività su Telegram, con gli stessi pulsanti della dashboard, tramite un bot che crei tu. Facoltativo.
 covers: telegram
 code: assistant.py, onboarding.py, cli.py
 site: Add my bot, Add more any time, Disconnect Telegram
 translated: a2b74e4831832977
 ---
-## Cosa fa
+## A cosa serve
 
-Questo Telegram è un modo per ricevere le tue attività. Per far leggere a The Machine le tue chat di Telegram, vedi [Chat di Telegram](telegram-chats.md). Il tuo bot invia ogni attività entro il tuo [orario di lavoro](work-hours.md), con gli stessi pulsanti della dashboard: **Fallo**, **Posticipa**, **Chiedi modifiche**, **Segna come fatto**, **Non serve** e **Invia** per un messaggio preparato.
+Ricevi le tue attività su Telegram, tramite un bot che crei tu, durante il tuo [Orario di lavoro](work-hours.md). Ognuna include i pulsanti della dashboard: **Fallo**, **Posticipa**, **Chiedi modifiche**, **Segna come fatto**, **Non serve** e **Invia** per un messaggio precompilato. Se invece vuoi che The Machine legga le tue chat di Telegram, consulta [Chat di Telegram](telegram-chats.md).
 
-Telegram è facoltativo. La dashboard come app per il telefono invia le stesse attività come notifiche.
+È facoltativo: l’app per telefono invia le stesse attività come notifiche.
 
 ## Cosa può inviare
 
-Solo messaggi a te, dal tuo bot. Un messaggio a chiunque altro richiede comunque la tua approvazione sull’attività.
+Solo messaggi a te, dal tuo bot. Per inviare un messaggio a chiunque altro, serve comunque la tua approvazione nell’attività.
 
-## Collegalo
+## Connetti Telegram
 
-Su una Machine in hosting:
+Su una Machine ospitata:
 
-1. In Telegram, scrivi a @BotFather e invia /newbot. Copia il token che ti dà.
-2. Nella tua pagina di configurazione, in **Aggiungi altro quando vuoi**, apri Telegram, incolla il token e premi **Aggiungi il mio bot**.
+1. Su Telegram, scrivi a @BotFather e invia /newbot. Copia il token che ti fornisce.
+2. Nella pagina di configurazione, apri Telegram sotto **Aggiungi altro quando vuoi**, incolla il token e premi **Aggiungi il mio bot**.
 
-Non fa parte della configurazione: aggiungilo quando vuoi. La dashboard te lo suggerisce quando un’attività posticipata tornerebbe solo lì.
+Puoi aggiungerlo quando vuoi.
 
-Sul tuo computer, te lo chiede il programma di installazione, oppure esegui `assistant telegram on` con il tuo ID utente di Telegram.
+Sul tuo computer, te lo chiederà il programma di installazione. In alternativa, esegui `assistant telegram on` con il tuo ID utente Telegram.
 
-## Rimuovilo
+## Rimuovi Telegram
 
-- Su una Machine in hosting: premi **Disconnetti Telegram** nella tua pagina di configurazione. Il tuo bot e il suo token vengono rimossi dalla tua Machine.
-- Sul tuo computer: `assistant telegram off`. Aggiungi `--remove-bot` per dimenticare anche il bot.
+- Su una Machine ospitata: premi **Disconnetti Telegram** nella pagina di configurazione. Il bot e il relativo token vengono rimossi dalla tua Machine.
+- Sul tuo computer: `assistant telegram off`. Aggiungi `--remove-bot` per eliminare anche il bot.
 
-## Elimina il bot in Telegram
+## Elimina il bot su Telegram
 
-Scrivi a @BotFather, invia /deletebot e scegli il tuo bot.
+Scrivi a @BotFather, invia /deletebot e seleziona il tuo bot.

@@ -1,46 +1,46 @@
 ---
 title: Transférer à Claude Code ou Codex
 area: cards
-summary: Envoyez une tâche de code à Claude Code ou Codex. Le résultat revient sur la tâche.
+summary: Envoyez une tâche de programmation à Claude Code ou Codex. Le résultat s’affiche sur la tâche.
 covers: hand-to-agent
 code: agent_jobs.py, agent_remote.py, dashboard.html
 site: Connect Codex, Add more any time, On your Machine, Other ways, On my computer
 order: 5
-translated: 333d553e80aea529
+translated: 22e1b9b950988a58
 ---
 ## Transférer une tâche
 
-1. Sur la tâche, ouvrez **…**, puis **Transférer…**, et choisissez **Codex** ou **Claude Code**. Seuls les outils que vous avez configurés apparaissent.
-2. Vérifiez le résumé et ce qui lui est transmis, ajoutez une note si vous voulez, et appuyez sur **Transférer**. **Voir la mission complète** affiche tout le brief.
+1. Sur la tâche, ouvrez **…**, puis **Transférer…**, et choisissez **Codex** ou **Claude Code**. Seuls les outils que vous avez configurés s’affichent.
+2. Vérifiez le résumé et ce à quoi l’outil aura accès, ajoutez une note si vous le souhaitez, puis appuyez sur **Transférer**. **Voir le travail complet** affiche la demande complète.
 
-La tâche indique ensuite qu’elle est en cours, puis le résultat une fois terminé, avec **Ce qu’il a fait** et **Afficher les modifications**. **Demander des modifications** lui dit quoi changer. **Transférer…** dans **…** recommence de zéro. **Masquer** range le résultat. Une tâche **Bloqué** que vous transférez affiche **En cours…** pendant la mission.
+La tâche indique qu’elle est en cours, puis affiche le résultat avec **Ce qu’il a fait** et **Voir les modifications**. **Demander des modifications** lui indique ce qu’il faut changer. **Transférer…** dans **…** permet de recommencer. **Masquer** masque le résultat. Une tâche bloquée que vous transférez affiche **En cours…** au lieu de **Bloqué** pendant le traitement.
 
-Une mission n’envoie jamais rien à votre place. Quand elle vous laisse une étape de publication ou de déploiement, **Faire** sur la tâche exécute cette étape. Une réponse qu’elle a rédigée reste un brouillon que vous envoyez vous-même.
+Une tâche n’envoie jamais rien à votre place. Si une étape de publication ou de déploiement vous est laissée, **Faire** sur la tâche lance cette étape. Une réponse rédigée reste un brouillon que vous envoyez vous-même.
 
 ## Dans l’app Codex
 
-- **Ouvrir dans Codex** ouvre le fil de la tâche dans l’app Codex. Tant que Codex y travaille ici, l’app ne peut pas encore l’ouvrir. Il s’ouvre une fois terminé.
-- **Demander des modifications** sur un fil ouvert dans l’app Codex continue dans cette même conversation là-bas, et la tâche la suit.
-- Un travail ne s’arrête que si Codex ne fait rien pendant 30 minutes, ou après 6 heures au total. Un redémarrage de The Machine ne l’arrête pas.
+- **Ouvrir dans Codex** ouvre le fil de la tâche dans l’app Codex, une fois le travail terminé.
+- **Demander des modifications** poursuit dans la même conversation Codex, et la tâche la suit.
+- Le traitement s’arrête après 30 minutes sans progression, ou après 6 heures au total. Un redémarrage ne l’interrompt pas.
 
-## La configurer
+## Configuration
 
 Dans **Paramètres**, **Modèle**, sous **Codex et Claude Code** :
 
-- **Codex** : où il tourne. Sur votre Machine ou votre ordinateur, il n’a besoin de rien de plus ici ; **Modifier** ouvre votre page de configuration.
-- **Codex cloud** : son identifiant d’environnement, depuis Codex, et éventuellement une **Branche** de départ.
+- **Codex** : où il s’exécute. Sur votre Machine ou sur votre ordinateur, aucune autre configuration n’est nécessaire ici. **Modifier** ouvre votre page de configuration.
+- **Codex cloud** : son ID d’environnement, fourni par Codex, et éventuellement une **Branche** à utiliser comme point de départ.
 - **Claude Code** : le lien d’une session Claude Code.
 
-Claude renvoie son résultat via le connecteur The Machine. Ajoutez-le une fois dans claude.ai, Settings, Connectors, Add custom connector, avec l’adresse affichée sous la session.
+Claude renvoie son résultat par le connecteur The Machine. Ajoutez-le une seule fois dans claude.ai, dans Settings, Connectors, Add custom connector, avec l’adresse indiquée sous la session.
 
-## Où Codex tourne
+## Où Codex s’exécute
 
-Sur une Machine hébergée, choisissez-le sur votre page de configuration, sous **Ajoutez-en d’autres à tout moment**, **Codex** :
+Sur une Machine hébergée, sélectionnez l’option sur votre page de configuration, sous **Ajouter à tout moment**, **Codex** :
 
-- **Sur votre Machine** (par défaut) : appuyez sur **Connecter Codex** et saisissez chez OpenAI le code affiché. Il utilise le même abonnement ChatGPT que votre modèle, et les missions tournent sur votre Machine. Aucun terminal requis.
-- **Autres options**, **Sur mon ordinateur** : la mission tourne sur votre propre ordinateur, avec le Codex connecté là-bas. Rien de Codex n’est sur votre Machine hébergée, et la mission est chiffrée pour cet ordinateur uniquement : le Network la transmet mais ne peut pas la lire. Installez The Machine sur cet ordinateur, associez-le sur la page de votre compte et lancez `codex login` dessus. Laissez The Machine tourner dessus. La mission apparaît comme un fil dans l’app Codex sur cet ordinateur, et le résultat revient sur la tâche. Quand l’ordinateur est éteint, les missions attendent son retour.
-- **Autres options**, **Codex cloud** : la mission tourne dans le cloud d’OpenAI. Appuyez sur **Connecter Codex**. Il utilise le même abonnement ChatGPT que votre modèle, et OpenAI demande un code de plus, pour Codex. Saisissez ensuite l’environnement cloud Codex dans les Paramètres.
+- **Sur votre Machine** (par défaut) : appuyez sur **Connecter Codex** et saisissez le code affiché par OpenAI. Cette option utilise le même forfait ChatGPT que votre modèle, et les tâches s’exécutent sur votre Machine. Aucun terminal n’est nécessaire. Si vous êtes connecté au même compte ChatGPT, votre Machine peut aussi consulter et utiliser les réinitialisations de votre limite d’utilisation.
+- **Autres options**, **Sur mon ordinateur** : la tâche s’exécute sur votre ordinateur, avec le compte Codex connecté sur celui-ci. Les échanges sont chiffrés et réservés à cet ordinateur. Installez The Machine sur cet ordinateur, associez-le sur la page de votre compte, exécutez `codex login` et laissez The Machine en marche. Le résultat s’affiche sur la tâche. Quand l’ordinateur est éteint, les tâches attendent.
+- **Autres options**, **Codex cloud** : la tâche s’exécute dans le cloud d’OpenAI. Appuyez sur **Connecter Codex**. Cette option utilise le même forfait ChatGPT que votre modèle, et OpenAI vous demande un autre code, pour Codex. Saisissez ensuite l’environnement Codex cloud dans Settings.
 
-Ou connectez-vous depuis votre tableau de bord : **Connexions**, **Projets et code**, **Codex**, **Obtenir un code**. Une Machine auto-hébergée fait cette même connexion elle-même.
+Vous pouvez aussi vous connecter depuis votre tableau de bord : **Connexions**, **Projets et code**, **Codex**, **Obtenir un code**. Une Machine auto-hébergée effectue elle-même cette connexion.
 
-Sur une Machine hébergée, Codex et Claude Code apparaît dès que GitHub ou Codex est connecté. La section apparaît aussi sur les configurations qui exécutent les missions ailleurs. Plus d’infos dans le [guide des agents](https://github.com/Salesflare/TheMachine/blob/main/docs/agents.md).
+Sur une Machine hébergée, **Codex et Claude Code** apparaît dans **Paramètres** une fois GitHub ou Codex connecté. Pour les développeurs : le [guide des agents](https://github.com/Salesflare/TheMachine/blob/main/docs/agents.md).

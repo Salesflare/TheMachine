@@ -1,7 +1,7 @@
 ---
 title: Trello
 area: connections
-summary: Cambios en tarjetas, comentarios y actividad en un tablero de Trello. Solo lee.
+summary: Cambios en las tarjetas, comentarios y actividad de un tablero de Trello. Solo lectura.
 covers: connector:trello
 code: connectors/trello.py
 site: Sign in with Trello, Connect, More sources, Remove
@@ -9,23 +9,23 @@ translated: 7fc2a596ef58bd93
 ---
 ## Qué lee
 
-Cambios en tarjetas, comentarios y actividad en un tablero de Trello por conexión. Nunca marca un tablero como visto.
+Cambios en las tarjetas, comentarios y actividad de un tablero de Trello por conexión. Nunca marca un tablero como visto.
 
 ## Qué puede hacer
 
 Nada en Trello. Solo lee.
 
-## Conéctalo
+## Conectarlo
 
-1. En el panel: **Conexiones**, **Proyectos y código**, Trello. O en la página de configuración de una Machine alojada, en app.themachine.computer/setup: **Más fuentes**, Trello. En tu propio ordenador, vincúlalo primero a tu cuenta.
-2. Pulsa **Iniciar sesión con Trello** y permite el acceso de lectura. Trello muestra que la app es de Salesflare.
-3. Elige el tablero que seguir y pulsa **Conectar**. Para otro tablero, añade Trello de nuevo.
+1. En el panel: **Conexiones**, **Proyectos y código**, Trello. O, en la página de configuración de una Machine alojada, en app.themachine.computer/setup: **Más fuentes**, Trello. Si usas tu propio ordenador, primero vincula la Machine con tu cuenta.
+2. Pulsa **Iniciar sesión con Trello** y autoriza el acceso de solo lectura. Trello muestra que Salesflare creó la app.
+3. Elige el tablero que quieres seguir y pulsa **Conectar**. Para añadir otro tablero, vuelve a añadir Trello.
 
-## Quítalo
+## Quitarla
 
-- En el panel: **Conexiones**, abre el tablero, **Detalles** y luego **Desconectar**. Lo que ya trajo se queda.
-- En una Machine alojada también puedes pulsar **Quitar** junto a él en tu página de configuración.
+- En el panel: **Conexiones**, abre el tablero y selecciona **Detalles** y luego **Desconectar**. Lo que ya haya importado se conserva.
+- En una Machine alojada, también puedes pulsar **Quitar** junto a Trello en la página de configuración.
 
-## Revócalo en Trello
+## Revocar el acceso en Trello
 
-Revoca The Machine en los ajustes de tu cuenta de Trello, en Applications.
+Revoca el acceso de The Machine en los ajustes de tu cuenta de Trello, en Aplicaciones.

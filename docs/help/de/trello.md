@@ -1,31 +1,31 @@
 ---
 title: Trello
 area: connections
-summary: Kartenänderungen, Kommentare und Aktivität auf einem Trello-Board. Es liest nur.
+summary: Kartenänderungen, Kommentare und Aktivitäten auf einem Trello-Board. Die Verbindung liest nur.
 covers: connector:trello
 code: connectors/trello.py
 site: Sign in with Trello, Connect, More sources, Remove
 translated: 7fc2a596ef58bd93
 ---
-## Was es liest
+## Was gelesen wird
 
-Kartenänderungen, Kommentare und Aktivität auf einem Trello-Board pro Verbindung. Es markiert ein Board nie als angesehen.
+Kartenänderungen, Kommentare und Aktivitäten auf einem Trello-Board pro Verbindung. Ein Board wird nie als angesehen markiert.
 
-## Was es tun kann
+## Was möglich ist
 
-Nichts in Trello. Es liest nur.
+In Trello kann die Verbindung nichts tun. Sie liest nur.
 
 ## Verbinden
 
-1. Im Dashboard: **Verbindungen**, **Projekte und Code**, Trello. Oder auf der Einrichtungsseite einer gehosteten Machine unter app.themachine.computer/setup: **Weitere Quellen**, Trello. Auf deinem eigenen Computer koppelst du deine Machine zuerst mit deinem Konto.
-2. Tippe auf **Mit Trello anmelden** und erlaube in Trello den Lesezugriff. Trello zeigt Salesflare als Hersteller der App an.
-3. Wähle das Board, dem gefolgt werden soll, und tippe auf **Verbinden**. Für ein weiteres Board füge Trello noch einmal hinzu.
+1. Im Dashboard: **Verbindungen**, **Projekte und Code**, Trello. Oder auf der Einrichtungsseite einer gehosteten Machine unter app.themachine.computer/setup: **Weitere Quellen**, Trello. Auf deinem eigenen Computer musst du Trello zuerst mit deinem Konto verknüpfen.
+2. Klicke auf **Bei Trello anmelden** und erlaube den Lesezugriff. Trello zeigt die App als von Salesflare erstellt an.
+3. Wähle das Board aus, dem du folgen möchtest, und klicke auf **Verbinden**. Für ein weiteres Board musst du Trello erneut hinzufügen.
 
-## Entfernen
+## Verbindung entfernen
 
-- Im Dashboard: **Verbindungen**, das Board öffnen, **Details**, dann **Trennen**. Was es schon reingebracht hat, bleibt.
-- Auf einer gehosteten Machine kannst du auch auf deiner Einrichtungsseite daneben auf **Entfernen** tippen.
+- Im Dashboard: **Verbindungen**, öffne das Board, **Details** und dann **Trennen**. Bereits importierte Inhalte bleiben erhalten.
+- Auf einer gehosteten Machine kannst du es auch über **Entfernen** daneben auf der Einrichtungsseite entfernen.
 
-## In Trello widerrufen
+## Zugriff in Trello widerrufen
 
-Widerrufe The Machine in den Einstellungen deines Trello-Kontos unter Applications.
+Widerrufe den Zugriff von The Machine in deinen Trello-Kontoeinstellungen unter „Anwendungen“.

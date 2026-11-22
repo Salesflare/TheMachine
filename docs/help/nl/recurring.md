@@ -1,43 +1,43 @@
 ---
 title: Terugkerende to-do's
 area: cards
-summary: To-do's die op een ritme terugkomen, zoals de loonlijst op de eerste maandag. Er staat er altijd maar één open.
+summary: To-do's die volgens een vast ritme terugkomen, zoals de salarisadministratie op de eerste maandag. Er staat steeds maar één open.
 covers: recurring
 code: recurring.py, recurring_app.py, dashboard/todos-repeat.js
 order: 9
 keywords: repeat, recurring, every week, every month, workday, business day, routine
-translated: 06752aedb0bd152d
+translated: e85f6a4499f49b50
 ---
-## Er een maken
+## Een terugkerende to-do maken
 
-In **Nieuwe to-do** kies je **Herhaalt** en een ritme: **Dagelijks**, **Werkdagen**, wekelijks, maandelijks op een datum of op een weekdag zoals de eerste maandag, of jaarlijks. **Aangepast…** neemt je eigen woorden, zoals every 2 weeks of every last Friday.
+Kies bij **Nieuwe to-do** **Herhaalt** en een ritme: **Dagelijks**, **Werkdagen**, wekelijks, maandelijks op een datum of een weekdag zoals de eerste maandag, of jaarlijks. Met **Aangepast…** kun je je eigen woorden gebruiken, in je eigen taal, zoals elke 2 weken of elke laatste vrijdag.
 
-Werkdagen kan ook: "facturen sturen elke tweede werkdag van de maand" of "de boekhouding afsluiten op de laatste werkdag van de maand". Een werkdag is maandag tot vrijdag, zonder de feestdagen van je land.
+Je kunt het ook gewoon zeggen: met "elke eerste maandag van de maand de salarisadministratie doen" in Nieuwe to-do of in Chat maak je een terugkerende to-do.
 
-Zijn de woorden niet duidelijk, zoals "every 2nd business day" (de 2e van de maand, of om de dag?), dan houdt de to-do al je woorden en herhaalt ze niet. Kies **Herhaalt** om het in te stellen.
+Werkdagen tellen ook mee: "facturen versturen op elke tweede werkdag van de maand" of "de boeken sluiten op de laatste werkdag van de maand". Een werkdag is maandag tot en met vrijdag, behalve officiële feestdagen in je land.
 
-Of zeg het gewoon: "elke maand de loonlijst doen" in Nieuwe to-do of in Praten maakt een to-do die herhaalt.
+Zijn de woorden niet duidelijk, zoals bij "elke 2e werkdag" (de 2e van de maand, of om de dag?), dan behoudt de to-do al je woorden en wordt hij niet herhaald. Kies **Herhaalt** om dit in te stellen.
 
-Voor een to-do die je al hebt: **Herhalen…** onder **…**, of zeg "repeat this every week" in de chat ervan.
+Voor een bestaande to-do kies je **Herhalen…** onder **…**, of zeg je "herhaal dit elke week" in de chat.
 
-## Hoe het herhaalt
+## Hoe herhalen werkt
 
-De to-do toont één korte regel, zoals "Herhaalt wekelijks op maandag". Er staat er altijd maar één open: de volgende komt op haar datum, in jouw tijdzone, zodra deze klaar of niet nodig is.
+De to-do toont een korte regel, zoals "Wordt elke maandag herhaald". Er staat steeds maar één open: de volgende verschijnt op de bijbehorende datum zodra deze op **Gedaan** of **Niet nodig** staat.
 
-Een gemiste wordt niet opgestapeld. Ze blijft open en toont hoeveel datums ze miste, en als je ze afrondt, komt de volgende op de eerstvolgende datum vanaf vandaag.
+Een gemiste to-do wordt niet opgestapeld. Hij blijft open en laat zien hoeveel datums hij heeft gemist. Als je hem afrondt, verschijnt de volgende op de eerstvolgende datum vanaf vandaag.
 
-Snoozen verplaatst alleen deze. Het ritme blijft hetzelfde.
+Als je deze uitstelt, verschuift alleen deze to-do. Het ritme blijft hetzelfde.
 
-Gedaan vóór de datum? Ze telt voor wat nu moet, en die datum komt toch voor de periode erna.
+Rond je de to-do af voordat de datum is aangebroken? Dan telt hij voor wat nu moet gebeuren, en de volgende datum blijft staan voor de periode daarna.
 
-Elke to-do wordt voorbereid zoals elke andere, en de voorbereiding ziet hoe de vorige liep en wat er in haar chat gezegd werd.
+Elke to-do wordt net als elke andere voorbereid, met kennis van hoe de vorige is gegaan.
 
-Hij onthoudt ook hoe het moet: de stappen die hij uitzocht en wat jij verbeterde, zodat de volgende ze niet opnieuw nodig heeft. In de chat staat **Opgeslagen hoe dit de volgende keer moet**, met **Bewerken** en **Ongedaan maken**. Hij verstuurt nooit iets uit zichzelf.
+Ook onthoudt hij hoe je de to-do uitvoert: de stappen die hij heeft bedacht en wat je hebt aangepast, zodat die voor de volgende keer niet opnieuw nodig zijn. In de chat staat **Opgeslagen hoe dit de volgende keer moet**, met **Bewerken** en **Ongedaan maken**. Hij verstuurt nooit zelf iets.
 
-## Wijzigen of stoppen
+## Aanpassen of stoppen
 
-Tik op de regel "Herhaalt" op de to-do: kies een ander ritme, **Deze overslaan** (die sluit deze en brengt de volgende op haar datum) of **Stop met herhalen**. "Stop repeating" in de chat werkt ook. Stoppen houdt de open to-do; alleen de volgende komen niet meer.
+Tik op de regel **Herhaalt** van de to-do om een ander ritme te kiezen, **Deze overslaan** (deze wordt gesloten en de volgende verschijnt op de bijbehorende datum) of **Stop met herhalen**. Je kunt ook **Stop met herhalen** zeggen in de chat. Als je stopt, blijft de openstaande to-do staan; alleen de volgende komen niet meer.
 
-## Voorstellen
+## Suggesties
 
-Als je Machine iets leert dat je op een ritme doet, of dezelfde to-do op een vast ritme afgerond ziet, vraagt hij het één keer: **Een terugkerende to-do van maken?** **Maak het terugkerend** of **Nee, bedankt**. Hij maakt er nooit zelf een, en niets wordt vanzelf verstuurd.
+Als je Machine merkt dat je iets volgens een vast ritme doet, of ziet dat dezelfde to-do regelmatig volgens een schema wordt afgerond, vraagt hij het één keer: **Een terugkerende to-do van maken?** Kies **Maak het terugkerend** of **Nee, bedankt**. Hij maakt nooit zelf een terugkerende to-do en verstuurt nooit zelf iets.

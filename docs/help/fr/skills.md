@@ -11,38 +11,38 @@ Une compétence apprend à votre Machine à effectuer un type de tâche, comme �
 
 ## En créer une
 
-Dans **Paramètres**, ouvrez **Compétences**, puis appuyez sur **Nouvelle compétence** ou **Partir d’un exemple**. Indiquez son **Nom**, **Quand l’utiliser** et ses **Instructions**, puis appuyez sur **Enregistrer**.
+Dans **Paramètres**, **Compétences**, sélectionnez **Nouvelle compétence** ou **Partir d’un exemple**. Indiquez un **Nom**, **Quand l’utiliser** et les **Instructions**, puis sélectionnez **Enregistrer**.
 
-## Quand elle est utilisée
+## Utilisation
 
-Chaque tâche que votre Machine prépare reçoit la compétence qui lui convient, sans que vous ayez à le demander : une compétence dont le nom reprend en entier celui de son tableau, de son projet ou de son titre. Vos autres compétences sont également associées. Ainsi, une compétence adaptée à ce type de travail, comme répondre dans un type de fil de discussion connu ou mettre à jour un CRM, est aussi suivie.
+Chaque tâche préparée par votre Machine reçoit la compétence qui lui convient, sans que vous le demandiez : celle qui porte exactement le nom de son tableau, de son projet ou de son titre. Vos autres compétences sont également prises en compte, notamment celles qui concernent ce type de travail, comme répondre dans un type de fil connu ou mettre à jour un CRM.
 
 ## Importer
 
-Appuyez sur **Importer** :
+Sélectionnez **Importer** :
 
 - **Depuis Claude** ou **Depuis ChatGPT**, puis **Trouver mes compétences**. La recherche s’effectue dans le compte concerné, depuis le navigateur de votre Machine.
-- Vous pouvez aussi en ajouter une vous-même : **Téléverser un .skill ou .zip**, **Téléverser un dossier** ou **Coller un SKILL.md**.
+- Vous pouvez aussi importer une compétence vous-même : **Téléverser un .skill ou .zip**, **Téléverser un dossier** ou **Coller un SKILL.md**.
 
-Sélectionnez les compétences voulues, puis appuyez sur **Importer la sélection**. Seules les instructions sont importées, jamais les scripts.
+Choisissez les compétences voulues, puis sélectionnez **Importer la sélection**. Seules les instructions sont importées, jamais les scripts.
 
 ## Rechercher sur ClawHub
 
-Trouvez des compétences publiées par d’autres personnes. Lisez-en une avant de l’installer : elles sont créées par d’autres, pas par The Machine.
+Trouvez des compétences publiées par d’autres personnes. Lisez-en une avant de l’installer : elles sont créées par d’autres personnes, pas par The Machine.
 
 ## À partir de vos notes
 
-Quand plusieurs de vos notes portent sur un même type de tâche, une tâche vous suggère une compétence. Elle vérifie d’abord vos compétences :
+Quand plusieurs de vos notes portent sur le même type de tâche, une tâche vous propose une compétence. Elle vérifie d’abord vos compétences :
 
-- Une compétence fait déjà l’affaire : **Mettre à jour <skill>** affiche cette compétence et ce que les notes lui apportent, avec les modifications mises en évidence. Seule l’action **Mettre à jour la compétence** la modifie.
-- Une compétence est liée, mais différente : la tâche explique en une ligne en quoi elle est liée, mais distincte, et propose quand même **Créer la compétence**.
+- Si l’une d’elles fait déjà ce travail, **Mettre à jour <skill>** affiche cette compétence avec ce que les notes lui apprennent et met en évidence les changements. Seule l’action **Mettre à jour la compétence** la modifie.
+- Si l’une d’elles est liée au sujet, mais reste distincte, la tâche l’explique en une ligne et propose quand même **Créer la compétence**.
 
-**Pas maintenant** conserve vos notes telles quelles. Les compétences proposées par votre Machine dans Paramètres > Compétences font l’objet de la même vérification.
+**Pas maintenant** conserve les notes en l’état. Les compétences proposées par votre Machine dans **Paramètres** > **Compétences** sont vérifiées de la même façon.
 
 ## À partir d’une tâche
 
-Demandez une compétence dans une tâche, et votre Machine la rédige directement. Ouvrez **Lire la compétence**, puis appuyez sur **Créer la compétence** (ou sur **Mettre à jour la compétence** si vous en avez déjà une). Rien n’est installé avant cela. Vous l’avez plutôt écartée dans Paramètres > Compétences ? La tâche affiche **Compétence ignorée** et reste ouverte jusqu’à ce que vous la fermiez.
+Demandez une compétence dans une tâche, et votre Machine la rédige à cet endroit. Sélectionnez **Lire la compétence**, puis **Créer la compétence** (ou **Mettre à jour la compétence** si elle existe déjà). Rien n’est installé avant votre confirmation. Si vous l’avez plutôt écartée dans **Paramètres** > **Compétences**, la tâche indique **Compétence ignorée** et reste ouverte jusqu’à ce que vous la fermiez.
 
 ## Partager une compétence
 
-Partagez une compétence avec un ami ou un collègue. Cette personne la lit et choisit si elle veut l’installer. Les modifications ultérieures ne lui parviennent que si vous la partagez à nouveau.
+Partagez une compétence avec un ami ou un collègue. La personne pourra la lire et choisir si elle veut l’installer. Les modifications ultérieures ne lui seront transmises que si vous la partagez à nouveau.

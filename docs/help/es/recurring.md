@@ -1,43 +1,43 @@
 ---
 title: Tareas recurrentes
 area: cards
-summary: Tareas que vuelven con un ritmo, como las nóminas el primer lunes. Solo una abierta a la vez.
+summary: Tareas que vuelven con cierta frecuencia, como pagar las nóminas el primer lunes. Solo hay una abierta cada vez.
 covers: recurring
 code: recurring.py, recurring_app.py, dashboard/todos-repeat.js
 order: 9
 keywords: repeat, recurring, every week, every month, workday, business day, routine
-translated: 06752aedb0bd152d
+translated: e85f6a4499f49b50
 ---
-## Crear una
+## Crear una tarea recurrente
 
-En **Nueva tarea**, elige **Se repite** y un ritmo: **Diario**, **Entre semana**, cada semana, cada mes en una fecha o en un día como el primer lunes, o cada año. **Personalizado…** acepta tus propias palabras, como cada 2 semanas o cada último viernes.
+En **Nueva tarea**, elige **Se repite** y una frecuencia: **Diario**, **Entre semana**, semanal, mensual en una fecha o un día de la semana, como el primer lunes, o anual. **Personalizado…** te permite escribirlo con tus propias palabras, como cada 2 semanas o el último viernes de cada mes.
 
-O simplemente dilo: "el primer lunes de cada mes hacer las nóminas" en Nueva tarea o en Hablar crea una tarea que se repite.
+También puedes decirlo directamente: «paga las nóminas el primer lunes de cada mes» en Nueva tarea o en Talk para crear una tarea recurrente.
 
-También cuentan los días hábiles: "enviar facturas el segundo día hábil del mes" o "cerrar las cuentas el último día hábil del mes". Un día hábil es de lunes a viernes, sin los festivos de tu país.
+También puedes usar días laborables: «envía las facturas el segundo día laborable del mes» o «cierra las cuentas el último día laborable del mes». Un día laborable es de lunes a viernes, sin contar los festivos nacionales de tu país.
 
-Si las palabras no están claras, como "cada 2.º día hábil" (¿el 2 del mes, o un día sí y otro no?), la tarea conserva todas tus palabras y no se repite. Elige **Se repite** para fijarlo.
+Si la frecuencia no está clara, como «cada segundo día hábil» (¿el día 2 del mes o un día sí y otro no?), la tarea conserva todas tus palabras y no se repite. Elige **Se repite** para configurarla.
 
-Para una tarea que ya tienes, **Repetir…** en **…**, o di "repite esto cada semana" en su chat.
+Para una tarea que ya tengas, elige **Repetir…** en **…** o di «repite esto cada semana» en su chat.
 
 ## Cómo se repite
 
-La tarea muestra una línea corta, como "Se repite cada semana el lunes". Solo hay una abierta a la vez: la siguiente llega en su fecha cuando esta está hecha o no hace falta.
+La tarea muestra una línea breve, como «Se repite cada lunes». Solo hay una abierta cada vez: la siguiente aparece en la fecha que le corresponde cuando terminas esta o indicas que no hace falta.
 
-Una perdida no se acumula. Sigue abierta y muestra cuántas fechas se perdió, y cuando la terminas, la siguiente llega en la próxima fecha a partir de hoy.
+Las tareas pendientes no se acumulan. La tarea sigue abierta e indica cuántas fechas se ha saltado. Cuando la terminas, la siguiente aparece en la próxima fecha a partir de hoy.
 
-Posponer mueve solo esta. El ritmo sigue igual.
+Si pospones una tarea, solo cambia la fecha de esta. La frecuencia no cambia.
 
-¿Hecha antes de su fecha? Cuenta para lo que toca ahora, y esa fecha sigue llegando para el periodo siguiente.
+¿La terminas antes de la fecha prevista? Cuenta para lo que vence ahora, y esa fecha sigue correspondiendo al periodo siguiente.
 
-Cada una se prepara como cualquier tarea, sabiendo cómo fue la anterior.
+Cada tarea se prepara como cualquier otra, teniendo en cuenta cómo fue la anterior.
 
-También guarda cómo se hace: los pasos que encontró y lo que corregiste, para que la siguiente no los necesite otra vez. Su chat dice **Guardado cómo hacerlo la próxima vez**, con **Editar** y **Deshacer**. Nunca envía nada por sí sola.
+También recuerda cómo se hace: los pasos que encontró y lo que corregiste, para que no haga falta repetirlos la próxima vez. En su chat aparece **Guardado cómo hacerlo la próxima vez**, con las opciones **Editar** y **Deshacer**. Nunca envía nada por su cuenta.
 
-## Cambiarla o pararla
+## Cambiar la frecuencia o detenerla
 
-Toca la línea "Se repite" de la tarea: elige otro ritmo, **Saltar esta** (cierra esta y trae la siguiente en su fecha) o **Dejar de repetir**. Decir "deja de repetir" en su chat también funciona. Parar mantiene la tarea abierta; solo dejan de llegar las siguientes.
+Toca la línea «Se repite» de la tarea y elige otra frecuencia, **Saltar esta** (la cierra y la siguiente aparece en la fecha que le corresponde) o **Dejar de repetir**. También puedes decir «Dejar de repetir» en su chat. Al detener la repetición, la tarea abierta se conserva; las siguientes no aparecen.
 
 ## Sugerencias
 
-Cuando tu Machine aprende algo que haces con un ritmo, o ve la misma tarea hecha con regularidad, pregunta una vez: **¿Hacer de esto una tarea recurrente?** **Hacerla recurrente** o **No, gracias**. Nunca crea una por sí sola, y nada se envía solo.
+Cuando tu Machine aprende que haces algo con cierta frecuencia o detecta que completas la misma tarea siguiendo un horario habitual, te pregunta una vez: **¿Hacer de esto una tarea recurrente?** Puedes elegir **Hacerla recurrente** o **No, gracias**. Nunca crea una tarea por su cuenta ni envía nada por su cuenta.
