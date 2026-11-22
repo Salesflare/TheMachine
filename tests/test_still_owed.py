@@ -68,8 +68,7 @@ class StillOwed(unittest.TestCase):
         self.send(self.draft(still_owed=OWED))
         row = self.suggestion()
         self.assertEqual((row['status'], row['due'], row['next_action'], row['outcome']), ('pending', '2026-10-20', None, None))
-        self.assertIn('Promised Ash Moore on', row['body'])  # what is left, not the draft's "Nothing has been sent."
-        self.assertIn('Nothing shows it done yet.', row['body'])
+        self.assertRegex(row['body'], r'^Replied to Ash Moore on .+\. The work is still to do\.$')  # not the draft's line
         self.assertNotIn('Nothing has been sent', row['body'])
         with self.store.connect() as db:
             self.assertEqual(db.execute("SELECT status FROM action_jobs").fetchone()[0], 'sent')
