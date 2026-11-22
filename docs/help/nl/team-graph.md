@@ -1,116 +1,116 @@
 ---
 title: Team-Graph
 area: fleet
-summary: Experimenteel. Deel klantwerk met je Werk-Fleet, zoals in een CRM. Wat wordt gedeeld, wat nooit en hoe je iets privé houdt.
+summary: Experimenteel. Deel klantwerk met je Werk-Fleet, bijvoorbeeld als CRM. Wat er wordt gedeeld, wat privé blijft en hoe je iets privé houdt.
 covers: team-graph
 code: shared_graph.py, fleet_trust.py, dashboard.html
 order: 2
-translated: fc842bc761a3ab17
+translated: 9788be6d2d5e3fa6
 ---
-In een Werk-Fleet kan je Machine klantwerk delen met de Machines van je teamgenoten, zoals in een gedeeld CRM. Dit is **Experimenteel** en staat standaard uit.
+In een Werk-Fleet kan je Machine klantwerk delen met de Machines van je teamgenoten, bijvoorbeeld als gedeeld CRM. Dit is **Experimenteel** en staat standaard uit.
 
 ## Inschakelen
 
-Een beheerder schakelt **De Graph delen in deze Fleet** in bij **Wat gedeeld wordt** en bevestigt dat het bedrijf deze mail mag delen en de medewerkers hierover heeft geïnformeerd. Iedereen kan zien of delen aanstaat.
+Een beheerder schakelt **De Graph delen in deze Fleet** in bij **Wat gedeeld wordt** en bevestigt dat het bedrijf deze e-mail mag delen en de medewerkers hierover heeft geïnformeerd. Iedereen ziet of delen aanstaat.
 
-Als je verplicht stelt dat iedereen zijn werkmail of agenda deelt, wordt delen ook ingeschakeld. Daarna kiest iedereen bij **Je koppelingen** wat er nog meer wordt gedeeld. De eerste keer dat een nieuwe teamgenoot iets deelt, gebeurt dat pas na een uur. Zo kan diegene het eerst privé houden.
+Als iedereen verplicht een werkmail of werkagenda moet koppelen, wordt delen ook ingeschakeld. Daarna kiest iedereen bij **Je koppelingen** wat er nog meer wordt gedeeld. De eerste keer dat een nieuwe teamgenoot iets deelt, gebeurt dat pas na een uur. Zo heeft diegene eerst de tijd om iets privé te houden.
 
 ## Je koppelingen
 
-Bij **Wat gedeeld wordt** toont **Je koppelingen** elke koppeling met een schakelaar. Werkaccounts op het domein van je Fleet staan standaard aan. Accounts op het domein van een ander bedrijf staan standaard uit en hebben de melding ‘Ander bedrijf, niet gedeeld’. Privéaccounts worden nooit gedeeld. Als je een koppeling uitzet, wordt wat die heeft gedeeld weer ingetrokken.
+Bij **Wat gedeeld wordt** toont **Je koppelingen** elke koppeling met een schakelaar. Werkgerelateerde koppelingen met het domein van je Fleet staan standaard aan. Koppelingen met het domein van een ander bedrijf staan uit en hebben de melding ‘Ander bedrijf, niet gedeeld’. Persoonlijke koppelingen worden nooit gedeeld. Als je een koppeling uitzet, wordt ingetrokken wat ermee is gedeeld.
 
-Een agenda van iemand anders die je via je eigen account bekijkt, wordt onder de eigen naam als privé weergegeven.
+Een agenda van iemand anders die je via je eigen login leest, wordt onder de eigen naam als persoonlijk weergegeven.
 
-Ook binnen een ingeschakelde koppeling worden gesprekken afzonderlijk beoordeeld. De Slack van je eigen bedrijf telt alleen als communicatie met collega's. Alleen een Slack Connect-chat met een ander bedrijf kan klantwerk zijn. Privégesprekken, gesprekken met alleen collega's, gevoelige gesprekken en geautomatiseerde gesprekken worden niet gedeeld, tenzij je er zelf een deelt.
+Ook binnen een ingeschakelde koppeling worden threads afzonderlijk beoordeeld. Slack van je eigen bedrijf geldt alleen als communicatie met collega's. Alleen een Slack Connect-chat met een ander bedrijf kan klantwerk zijn. Persoonlijke, alleen voor collega's bedoelde, gevoelige en geautomatiseerde threads worden niet gedeeld, tenzij je er zelf een deelt.
 
 ## Vereist door de Fleet
 
-Een beheerder kan bij **Vereist door de Fleet** instellen dat iedereen zijn **Werkmail** en **Werkagenda** op het domein van de Fleet deelt, nadat die heeft bevestigd dat het bedrijf de medewerkers hierover heeft geïnformeerd. Werkmail is eigendom van het bedrijf, net als in elk CRM. Bij verplichte koppelingen staat ‘Vereist door’ met de naam van je Fleet. Je kunt ze niet uitzetten. Gesprekken die je privé houdt, blijven privé.
+Een beheerder kan bij **Vereist door de Fleet** verplicht stellen dat iedereen **Werkmail** en **Werkagenda** van het domein van de Fleet koppelt, nadat die heeft bevestigd dat het bedrijf de medewerkers hierover heeft geïnformeerd. Werkmail is eigendom van het bedrijf, net als bij elk CRM. Bij verplichte koppelingen staat ‘Vereist door je Fleet’. Je kunt ze niet uitzetten. Threads die je privé houdt, blijven privé.
 
-## Wat het team te zien krijgt
+## Wat met het team wordt gedeeld
 
-- Gesprekken met klanten: werkmail met mensen buiten je bedrijf, inclusief bijlagen.
-- Werkcontacten, organisaties en projecten, met een korte tijdlijn. Op de **Tijdlijn** van een pagina toont **Team** elke gebeurtenis één keer, in jouw taal als de Machine van een teamgenoot die zo heeft opgesteld, en met iedereen van wie de gebeurtenis afkomstig is: ‘via Sam, Kim en Lee’.
-- Een kleine kopie van het logo van een organisatie en de werkfoto van iemand. Die kan afkomstig zijn uit een zoekopdracht, Slack, LinkedIn, X, Salesflare of Microsoft. Nooit uit Google-contacten, WhatsApp, Telegram of een Facebook-foto, en ook nooit een foto die je hebt aangepast of verwijderd.
-- Op een Teambord: de meetings, Zoom-notities, Intercom-gesprekken en chats van een project. Gevoelige gesprekken, zoals deals, en chats met alleen collega's worden niet gedeeld.
-- Aantallen en datums uit de [teambrief](fleet.md#brief-requests) van een teamgenoot.
-- Antwoorden op vragen van een teamgenoot over wie iemand kent of voor meetingcontext. Zie [Fleets](fleet.md#answered-by-itself-in-a-work-fleet).
-- [Teaminzichten](fleet.md#team-learnings): hoe het team werkt, zonder namen of klantgegevens.
+- Threads met klanten: werkmail met mensen buiten je bedrijf, inclusief bijlagen.
+- Werkgerelateerde mensen, organisaties en projecten, met een korte tijdlijn. Bij **Tijdlijn** op een pagina toont **Team** elke gebeurtenis één keer, in jouw taal als de Machine van een teamgenoot die heeft gebruikt, met iedereen van wie de gebeurtenis afkomstig is: ‘via Sam, Kim en Lee’.
+- Een kleine kopie van het logo van een organisatie en de werkfoto van iemand: afkomstig uit een zoekopdracht, Slack, LinkedIn, X, Salesflare of Microsoft. Nooit een afbeelding uit Google Contacten, WhatsApp, Telegram of Facebook, of een afbeelding die je hebt gewijzigd of verwijderd.
+- Op een Team-bord: de meetings van een project, Zoom-notities, Intercom-gesprekken en chats. Gevoelige zaken, zoals deals, en chats die alleen voor collega's bedoeld zijn, worden niet gedeeld.
+- Aantallen en datums voor de [teambrief van een teamgenoot](fleet.md#brief-requests).
+- Antwoorden wanneer een teamgenoot vraagt wie iemand kent of context bij een meeting wil. Zie [Fleets](fleet.md#answered-by-itself-in-a-work-fleet).
+- [Inzichten voor het team](fleet.md#team-learnings): hoe het team werkt, zonder namen of klantgegevens.
 
 ## Wordt niet automatisch gedeeld
 
-- Gevoelige gesprekken: over het kopen of verkopen van een bedrijf, investeringen, onderhandelingen over deals, HR en werving, juridische zaken, gezondheid, geld en beveiliging. Zelfs niet dat ze bestaan.
-- Geautomatiseerde mail: ontvangstbewijzen, facturen, meldingen, nieuwsbrieven en leveranciersfacturen.
-- Gesprekken met alleen collega's, privémail en alles van een privéaccount. Privé wordt nooit gedeeld, ook niet als je op Team tikt.
-- Alles wat je hebt gemarkeerd met **Privé houden**, en borden en projecten die zijn ingesteld op ‘Alleen jij’.
-- Iemand die voor jou Privé is, zoals je Familie of Vrienden, en hun mail. Een project waar diegene aan werkt, wordt wel met het bord gedeeld, maar zonder die persoon.
+- Gevoelige threads: over het kopen of verkopen van een bedrijf, investeringen, dealbesprekingen, HR en werving, juridische zaken, gezondheid, geld en beveiliging. Zelfs niet dat ze bestaan.
+- Geautomatiseerde e-mail: ontvangstbewijzen, facturen, meldingen, nieuwsbrieven en leveranciersfacturen.
+- Threads die alleen voor collega's bedoeld zijn, persoonlijke e-mail en alles van een persoonlijk account. Persoonlijke informatie wordt nooit gedeeld, ook niet als je op Team tikt.
+- Alles wat je hebt gemarkeerd als **Privé houden**, en borden en projecten die op ‘Alleen jij’ staan.
+- Iemand die voor jou Persoonlijk is, zoals je Familie of Vrienden, en diens e-mail. Een project waaraan die persoon werkt, wordt wel met het bord gedeeld, maar zonder die persoon.
 
-Elk gesprek wordt beoordeeld op basis van de inhoud. Dat kan misgaan. Controleer wat er gedeeld zou worden en gebruik **Privé houden** om dit aan te passen. Als je zelf een gesprek deelt met het team of met specifieke personen, wordt een gevoelig label genegeerd. Controleer dus wie het te zien krijgt.
+Elke thread wordt beoordeeld op de inhoud. Dat kan fout gaan. Controleer wat er wordt gedeeld en gebruik **Privé houden** om dit aan te passen. Als je zelf een thread deelt met het team of met specifieke mensen, wordt een label ‘gevoelig’ genegeerd. Controleer dus met wie je de thread deelt.
 
 ## Een bord delen met specifieke mensen
 
-Tik in het menu **⋯** van een bord op **Bord delen…** en kies teamgenoten. Alleen zij krijgen de projecten op het bord, met de volledige tijdlijn: mail, meetings en Zoom-notities, Intercom-gesprekken, chats, to-do's en verplaatsingen. Ook gevoelige gesprekken, zoals deals, worden gedeeld.
+Tik op een bord op het menu **⋯**, tik op **Bord delen…** en kies teamgenoten. Alleen zij krijgen de projecten op het bord, met de volledige tijdlijnen: e-mail, meetings en Zoom-notities, Intercom-gesprekken, chats, to-do's en wijzigingen. Gevoelige zaken, zoals deals, worden ook gedeeld.
 
-Privégesprekken en gesprekken met alleen collega's worden niet gedeeld. Hetzelfde geldt voor je Familie en Vrienden, geautomatiseerde mail en koppelingen die je niet hebt geselecteerd.
+Persoonlijke threads en threads die alleen voor collega's bedoeld zijn, worden niet gedeeld. Dat geldt ook voor je Familie en Vrienden, geautomatiseerde e-mail en koppelingen die je niet hebt geselecteerd.
 
-- Een project dat later aan het bord wordt toegevoegd, wordt ook gedeeld. Wordt het van het bord verwijderd, dan wordt de toegang ingetrokken.
-- Als je iemand verwijdert of niemand selecteert, wordt het project verwijderd van de Machine van die persoon.
-- Wil je één gesprek delen met specifieke mensen? Tik op het label en daarna op **Delen met…**. Dit kan ook gevoelige of geautomatiseerde werkmail zijn, maar nooit privégesprekken of gesprekken met alleen collega's.
+- Een project dat later aan het bord wordt toegevoegd, wordt ook gedeeld. Als een project van het bord wordt verwijderd, wordt de toegang ingetrokken.
+- Verwijder iemand uit de selectie of kies niemand. Het project wordt dan verwijderd van hun Machine.
+- Tik op het label van een thread en daarna op **Delen met…** om die met specifieke mensen te delen. Dit kan ook gevoelige of geautomatiseerde werkmail zijn, maar nooit persoonlijke threads of threads die alleen voor collega's bedoeld zijn.
 
-## Twijfel? Dan wacht het
+## Niet zeker? Dan wacht het
 
-Als je Machine twijfelt, deelt hij niets. Die gesprekken verschijnen bij **Deze delen?**, gegroepeerd op soort, bijvoorbeeld ‘Uitwisselingen met partners en over plaatsingen’. Bij elke groep staat een suggestie:
+Als je Machine twijfelt, deelt hij niets. De threads wachten dan bij **Deze delen?**, gegroepeerd op soort, bijvoorbeeld ‘Partner- en advertentie-uitwisselingen’. Bij elke groep staat een suggestie:
 
 - **Delen met team**: iedereen in de Fleet.
-- **Delen met…**: alleen de teamgenoten die je kiest, bijvoorbeeld een bestuurslid voor gesprekken met investeerders.
-- **Privé houden**: het blijft alleen voor jou zichtbaar.
+- **Delen met…**: alleen de teamgenoten die je kiest, bijvoorbeeld een lid van het bord voor gesprekken over investeerders.
+- **Privé houden**: de thread blijft van jou.
 
-Met één tik beslis je voor een hele groep. Open een groep om gesprekken uit te vinken waarover je afzonderlijk wilt beslissen.
+Met één tik bepaal je wat er met een hele groep gebeurt. Open een groep om het vinkje weg te halen bij threads waarover je apart wilt beslissen.
 
-Gesprekken over het kopen, verkopen of financieren van een bedrijf en bestuurszaken zijn gevoelig. Ze verschijnen daarom niet hier. Gewoon werk met een partnerbedrijf geldt als klantwerk.
+Gesprekken over het kopen of verkopen van een bedrijf, investeren in een bedrijf en zaken van de raad van bestuur zijn gevoelig. Ze wachten daarom hier niet. Gewoon werk met een partnerbedrijf geldt als klantwerk.
 
-## Voordat je voor het eerst deelt
+## Voor het eerst delen
 
-Een uur nadat je Machine je dit heeft laten weten, deelt hij automatisch je eerste gegevens. Open in dat uur **Fleet** en daarna **Wat gedeeld wordt** om per organisatie te zien welke klantgesprekken worden gedeeld. Tik bij gesprekken die je niet wilt delen op **Privé houden**, of tik op **Nu delen** om meteen te delen. Beheerders kunnen zien wie nog niets heeft gedeeld.
+Je Machine deelt voor het eerst automatisch een uur nadat hij je hierover heeft geïnformeerd. Open binnen dat uur **Fleet** en daarna **Wat gedeeld wordt** om per organisatie te zien welke klantthreads worden gedeeld. Tik bij een thread op **Privé houden**, of tik op **Nu delen** om meteen te delen. Beheerders zien wie nog niets heeft gedeeld.
 
 ## Wat gedeeld wordt
 
-Bij **Fleet** › **Wat gedeeld wordt** zie je alles: aantallen per soort, elk gedeeld gesprek met de reden waarom het is gedeeld, de gesprekken onder **Deze delen?** en wat je privé houdt. Tik op een onderwerp om het te lezen. Ook **Instellingen** en het label van elk gesprek linken hierheen.
+Bij **Fleet** › **Wat gedeeld wordt** zie je alles: aantallen per soort, elke gedeelde thread en waarom die is gedeeld, de threads bij **Deze delen?** en wat je privé houdt. Tik op een onderwerp om het te lezen. **Instellingen** en het label van elke thread linken hier ook naartoe.
 
-Nieuwe gesprekken met klanten worden pas na een uur gedeeld. Zo heb je tijd om van gedachten te veranderen.
+Een nieuwe klantthread wordt pas na een uur gedeeld, zodat je nog van gedachten kunt veranderen. Daarna wordt hij binnen een halfuur gedeeld. Het intrekken van een thread en **Privé houden** worden binnen 5 minuten bij je team doorgevoerd.
 
 ## Delen ongedaan maken
 
-Tik op het label **Team** van een gesprek en daarna op **Niet meer delen**. De Machine van elke teamgenoot verwijdert het gesprek, de bijlagen en de regels op de tijdlijn. Is een Machine offline, dan gebeurt dit zodra hij weer online is. Iemand kan het gesprek al gelezen hebben.
+Tik op het label **Team** van een thread en daarna op **Niet meer delen**. De Machine van elke teamgenoot verwijdert de thread, de bijlagen en de regels in de tijdlijn. Als de Machine offline is, gebeurt dat zodra hij weer online is. Iemand kan de thread al hebben gelezen.
 
-Als je bij een persoon, organisatie of project op **Privé houden** tikt, wordt alles daarvan niet meer gedeeld.
+Als je bij een persoon, organisatie of project **Privé houden** kiest, wordt alles daarvan niet meer gedeeld.
 
-Houd twee gesprekken met hetzelfde bedrijf privé en je Machine vraagt één keer of je dat bedrijf voortaan altijd privé wilt houden.
+Houd je twee threads met hetzelfde bedrijf privé, dan vraagt je Machine één keer of je dat bedrijf altijd privé wilt houden.
 
 ## Wie kan het zien?
 
-Alleen de Machines van je teamgenoten. De gegevens zijn end-to-end versleuteld. The Machine Network geeft ze door, maar kan ze niet lezen.
+Alleen de Machines van je teamgenoten. De gegevens zijn end-to-end versleuteld. Het The Machine Network geeft ze door, maar kan ze niet lezen.
 
-## Lid worden en nieuwe apparaten
+## Deelnemen en nieuwe apparaten
 
-Een beheerder geeft iedereen één keer toegang. Het verzoek staat bij **To-do's** van alle beheerders. Het eerste antwoord telt. Daarna zijn geen nieuwe toestemmingen nodig om te delen.
+Een beheerder laat iedereen één keer toe. Het verzoek staat bij **To-do's** voor elke beheerder. De eerste die antwoordt, bepaalt wat er gebeurt. Daarna is voor delen geen toestemming meer nodig.
 
-Tot die tijd zie je in de Graph en Fleet van de nieuwe persoon op welke beheerders diegene wacht. **Van mij** en **Team** verschijnen een paar seconden na de toestemming, zonder dat je de pagina opnieuw hoeft te laden.
+Tot die tijd staat in de Graph en Fleet van de nieuwe persoon op welke beheerders die wacht. **Van mij** en **Team** worden een paar seconden na de toestemming weergegeven, zonder opnieuw te laden.
 
-Een nieuwe Machine van iemand die al lid is, krijgt de Graph van het team na 24 uur. In de tussentijd kunnen beheerders op **Niet van hen** tikken om te zorgen dat die niet wordt toegevoegd.
+Een nieuwe Machine van iemand die al deelneemt, krijgt na 24 uur de Graph van het team. Ondertussen kunnen beheerders op **Niet van hen** tikken om die Machine buiten de Graph te houden.
 
 ## Als iemand vertrekt
 
-Vanaf dat moment krijgt diegene niets nieuws. Wat diegene heeft gedeeld, blijft bij het team. Een beheerder kan iemand ook **Eruit halen** en diegene later **Opnieuw delen**.
+Vanaf dat moment krijgt diegene niets nieuws meer. Wat diegene heeft gedeeld, blijft bij het team. Een beheerder kan iemand ook **Eruit halen** en later weer **Opnieuw delen**.
 
 ## Delen voor iedereen uitzetten
 
-Een beheerder zet **De Graph delen in deze Fleet** uit bij **Wat gedeeld wordt**. Er wordt niets nieuws meer gedeeld.
+Een beheerder zet **De Graph delen in deze Fleet** uit bij **Wat gedeeld wordt**. Er wordt dan niets nieuws meer gedeeld.
 
-Met **Uitzetten** behoud je wat teamgenoten al hebben. Met **Uitzetten en gedeelde gegevens verwijderen** verwijdert elke Machine die gegevens. Als delen weer wordt ingeschakeld, bekijkt iedereen eerst opnieuw wat er wordt gedeeld.
+**Uitzetten** laat staan wat teamgenoten al hebben. Met **Uitzetten en gedeelde gegevens verwijderen** verwijdert elke Machine de gedeelde gegevens. Als delen weer wordt ingeschakeld, bekijkt iedereen alles eerst opnieuw.
 
-## Stoppen met je eigen werk delen
+## Je eigen werk niet meer delen
 
-Zet je koppelingen uit bij **Je koppelingen**, tenzij de Fleet ze verplicht stelt. Wat ze hebben gedeeld, wordt ingetrokken.
+Zet je koppelingen uit bij **Je koppelingen**, tenzij de Fleet ze verplicht stelt. Alles wat ermee is gedeeld, wordt ingetrokken.
 
 Zie ook [Fleets](fleet.md) en [Beveiliging en privacy](security-and-privacy.md).

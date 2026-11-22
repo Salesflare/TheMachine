@@ -3,13 +3,13 @@ title: Relatórios de erro
 area: security
 summary: Quando algo dá errado, sua Machine conta à equipe da The Machine o que falhou e onde no código. Nunca envia suas mensagens, nomes ou endereços.
 covers: error-reports
-code: error_feed.py, pacing.py, dashboard.html, sw.js
+code: error_feed.py, error_words.py, pacing.py, dashboard.html, sw.js
 order: 4
-translated: 2253a0d695fe898c
+translated: e1d4d602255cde39
 ---
 ## O que é
 
-Quando algo dá errado na The Machine, sua Machine envia à nossa equipe uma nota curta e anônima sobre o erro, para que possamos corrigi-lo antes que alguém relate o problema. O envio fica ativado por padrão e precisa da [The Machine Network](/network).
+Quando algo dá errado na The Machine, sua Machine envia à nossa equipe uma nota curta e anônima sobre o erro, para podermos corrigir antes que alguém o relate. O recurso vem ativado por padrão e precisa da [The Machine Network](/network).
 
 ## O que é enviado
 
@@ -17,8 +17,8 @@ Somente estas informações, para cada tipo de erro:
 
 - o tipo de erro, como `KeyError`;
 - a mensagem, sem informações específicas: números, IDs, trechos entre aspas, endereços de e-mail, links, caminhos de arquivos, chaves e qualquer palavra que possa ser um nome;
-- onde o erro aconteceu no próprio código da The Machine, nunca em uma pasta do seu computador;
-- a versão do app, quantas vezes aconteceu e quando aconteceu pela primeira e pela última vez.
+- onde o erro ocorreu no próprio código da The Machine, nunca em uma pasta do seu computador;
+- a versão do app, quantas vezes aconteceu e quando ocorreu pela primeira e pela última vez.
 
 Por exemplo: `IndexError`, `list index out of range`, em `machine/faults.py:fault_event:246`, versão `05b17ee6ac79`, 1 vez.
 
@@ -28,24 +28,26 @@ O conteúdo das suas mensagens, tarefas, rascunhos ou chats. Nomes, endereços d
 
 ## De onde vêm os erros
 
-- tarefas em segundo plano: verificação de novas mensagens, preparação de tarefas, chats, conexões e sincronizações;
-- o painel, no navegador ou no app, incluindo os erros exibidos;
-- solicitações do painel que falham ou atingem o tempo limite: qual solicitação falhou, nunca o que ela enviou;
+- tarefas em segundo plano: verificações de novas mensagens, preparação de tarefas, chat, conexões e sincronizações;
+- o painel, no navegador ou no app, incluindo erros exibidos para você;
+- solicitações do painel que falham ou excedem o tempo limite: qual solicitação foi feita, nunca o que ela enviou;
 - tarefas de agentes de programação que falham: somente a ferramenta e o tipo de falha;
-- o teste rápido da sua IA quando falha: o erro da IA, sem informações específicas.
+- o teste rápido da sua IA quando ele falha: o erro da IA, sem informações específicas.
 
-Um conector que você adicionou por conta própria (um arquivo seu em `connectors/`) envia somente o nome do serviço e o rótulo do erro, como `notes` e `notes_http: HTTP unauthorized`, para que possamos ajudar a corrigi-lo. Nada mais do código é enviado. A própria conexão, em Conexões, mostra o erro completo.
+Uma verificação interrompida porque atingiu o limite de uso do seu plano de IA não é um erro e não é enviada. Ela aguarda a renovação do limite.
 
-Erros repetidos são contabilizados, mas não são enviados novamente. É enviado no máximo um lote a cada 10 minutos. Guardamos esses dados por 30 dias.
+Um conector que você adicionou, ou seja, seu próprio arquivo em `connectors/`, envia somente o nome do serviço e o rótulo do erro, como `notes` e `notes_http: HTTP unauthorized`, para podermos ajudar a corrigir o problema. Nenhuma outra informação do código é enviada. O cartão da conexão mostra o erro completo.
 
-## Ritmo de uso
+Erros repetidos são contabilizados, mas não enviados de novo. No máximo um lote é enviado a cada 10 minutos. Guardamos os relatórios por 30 dias.
 
-As tarefas em segundo plano ficam em espera quando os limites do seu plano de IA estão quase no fim, para deixar espaço para seus próprios chats (veja [Seu modelo de IA](model.md)).
+## Controle de ritmo
 
-Com o envio de relatórios de erro ativado, sua Machine também nos informa uma vez por dia quantas vezes isso aconteceu: para cada pausa, a hora, qual limite foi atingido, quanto tempo durou e quantas tarefas ficaram em espera. Nada sobre o conteúdo das tarefas é enviado.
+As tarefas em segundo plano aguardam quando os limites do seu plano de IA estão perto de acabar, para deixar espaço para seus próprios chats (consulte [Seu modelo de IA](model.md)).
+
+Com os relatórios de erro ativados, sua Machine também nos informa uma vez por dia com que frequência isso aconteceu: para cada pausa, a hora, o limite atingido, a duração e quantas tarefas aguardaram. Nada sobre o que as tarefas faziam.
 
 ## Desativar
 
-Em **Configurações**, **Segurança**, desative **Enviar relatórios de erro**. Nada mais será registrado ou enviado, e os dados que estavam aguardando serão excluídos. Os erros ainda aparecem na sua Machine, que pode sugerir uma solução.
+Em **Configurações**, **Segurança**, desative **Enviar relatórios de erro**. Nada mais será registrado ou enviado, e o que estava na fila será excluído. Os erros ainda aparecem na sua Machine, que pode sugerir uma solução.
 
-Veja [Segurança e privacidade](security-and-privacy.md).
+Consulte [Segurança e privacidade](security-and-privacy.md).

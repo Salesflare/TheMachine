@@ -16,7 +16,7 @@ translated: 4b0cf1cc99529e64
 - **通知**：通知を受け取る場所と勤務時間を設定できます。[通知](notifications.md)と[勤務時間](work-hours.md)をご覧ください。
 - **文章**：署名や文章の書き方を設定できます。[文章](writing.md)をご覧ください。
 - **スキル**：Machineが従う手順を設定できます。[スキル](skills.md)をご覧ください。
-- **アプリ**：スマートフォンやコンピューター向けのThe Machineのアプリ、接続したClaude、ChatGPTなどのAI、各アプリで許可する操作を確認できます。[モバイルアプリ](mobile-app.md)と[ほかのAIを接続する](ai-connections.md)をご覧ください。
+- **アプリ**：スマートフォンやコンピューター向けのThe Machineのアプリ、接続したClaude、ChatGPTなどのAI、各アプリで許可する操作を確認できます。[モバイルアプリ](mobile-app.md)と[他のAIを接続する](ai-connections.md)をご覧ください。
 - **モデル**：読み取りや下書きに使うAIと、その制限を設定できます。[モデル](model.md)をご覧ください。また、**CodexとClaude Code**については、[Claude CodeまたはCodexに引き継ぐ](hand-to-agent.md)をご覧ください。下の**意味で検索**もご覧ください。
 
 表示する項目がないタブは非表示になります。
