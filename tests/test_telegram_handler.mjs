@@ -200,6 +200,18 @@ const handled=await beforeDispatch({content:'I fixed it already',timestamp:17916
   await assert.rejects(toolFactory(c).execute('t',{action:'slack_read',args:{channel:'general'}}),/to-do’s own run/);
  assert.equal(calls.length,1);globalThis.fixtureCall=saved;delete globalThis.fixtureRuns;
 }
+// A to-do's run reads each message once (prep_reads.py): its events and related carry its own run, never one the model
+// gives; other chats' reads carry none.
+{
+ const saved=globalThis.fixtureCall,calls=[];const run='f'.repeat(32),key='agent:main:assistant-review-preparation-'+run;
+ globalThis.fixtureRuns={[key]:run};globalThis.fixtureCall=async(action,args)=>{calls.push([action,args]);return {events:[]};};
+ await toolFactory({agentId:'main',sessionKey:key}).execute('t',{action:'events',args:{account_ids:['work'],event_ids:[5],_prep_run:'spoof'}});
+ await toolFactory({agentId:'main',sessionKey:key}).execute('t',{action:'related',args:{account_ids:['work'],event_ids:[5]}});
+ await toolFactory({agentId:'main',sessionKey:'agent:main:main',messageChannel:'telegram',nativeChannelId:'1000001'}).execute('t',{action:'events',args:{account_ids:['work'],event_ids:[5],_prep_run:'spoof'}});
+ assert.deepEqual(calls,[['events',{account_ids:['work'],event_ids:[5],_prep_run:run}],['related',{account_ids:['work'],event_ids:[5],_prep_run:run}],
+                         ['events',{account_ids:['work'],event_ids:[5]}]]);
+ globalThis.fixtureCall=saved;delete globalThis.fixtureRuns;
+}
 // What the owner states in their own private chat is saved as a fact: only that chat is told so and only its
 // remember_fact carries the bridge's mark (never a model-supplied one), which the service ties to their last message.
 {

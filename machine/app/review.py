@@ -35,6 +35,7 @@ from machine.app.first_look import (
 )
 from machine.app.graph_actions import account_services
 from machine.app.preparation import PROMPT_LIMIT
+from machine.app.prep_reads import ALREADY_READ, RunReads, read_once
 from machine.app.recall import recall
 from machine.app.senders import REPLY_CUT, REPLY_RESERVE
 from machine.browser import STEP_NAMES, transcript_tool_calls
@@ -993,6 +994,18 @@ class ReviewApp:
             raise OwnerError('This Machine is not on the Network')
         return self.fleet.handoff_on_it(str(args.get('ask_id') or ''), args.get('event_id'))
 
+    @property
+    def run_reads(self):
+        """What each to-do's run read whole already (prep_reads.RunReads), for this service's life."""
+        return self.__dict__.setdefault('_run_reads', RunReads())
+
+    def read_marked(self, args, result, known):
+        """An events or related result in a to-do's run: what it shows now is read, what it left out says so."""
+        self.run_reads.mark(args.get('_prep_run'), result.get('events') or ())
+        if known:
+            result = {**result, 'already_read': known, 'note': ALREADY_READ}
+        return result
+
     def events_action(self, name, args, owner_dashboard=False):
         # reading signals (events, related) and starting a review (begin_analysis), on explicit accounts only
         accounts = [a['id'] for a in self.config['accounts']]
@@ -1012,10 +1025,11 @@ class ReviewApp:
                                            min(int(args.get('limit') or 8), embeddings.MAX_LIMIT), args.get('exclude_event_ids') or ())
             score = dict(found)
             rows = sorted(self.store.events(selected, event_ids=list(score)), key=lambda r: list(score).index(r['id']))
+            rows, known = read_once(self.run_reads, args, rows)  # a to-do's run: what it read whole already is a note
             result = event_page(rows, int(args.get('body_offset') or 0), int(args.get('row_offset') or 0), starts=embeddings.starts(found))
             for view in result['events']:
                 view['similarity'] = score.get(view['id'])
-            return {**result, 'semantic': semantic}
+            return {**self.read_marked(args, result, known), 'semantic': semantic}
         if name == 'events' and args.get('mailbox') is True:
             # Older than what is collected: the mailboxes' own search, live and read-only; what it finds is kept to link
             ids, failed = self.mailbox_lookup(selected, args.get('query'), args.get('limit') or 5)
@@ -1056,12 +1070,13 @@ class ReviewApp:
                 if len(args.get('event_ids') or []) != 1 or len(rows) != 1:
                     raise ValueError('Read metadata with one explicit, available event_id')
                 return metadata_page(rows[0], int(args['metadata_offset']))
-            result = event_page(rows, int(args.get('body_offset') or 0), int(args.get('row_offset') or 0), starts=starts)
+            shown, known = read_once(self.run_reads, args, rows)  # a to-do's run: what it read whole already is a note
+            result = event_page(shown, int(args.get('body_offset') or 0), int(args.get('row_offset') or 0), starts=starts)
             if args.get('event_ids') is not None:
                 result['unavailable_event_ids'] = sorted(set(args['event_ids']) - {r['id'] for r in rows})
             if len(encoded(result)) > REVIEW_PAGE_CHARS:
                 raise ValueError('Request a smaller list of event_ids')
-            return result
+            return self.read_marked(args, result, known)
         if name == 'begin_analysis':
             result = self.store.begin_analysis(selected, args.get('limit', 40), args.get('_review_session'), args.get('_review_run'))
             if isinstance(result, dict) and result.get('analysis_id'):

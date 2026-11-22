@@ -220,7 +220,7 @@ export default definePluginEntry({
         const args = {...(params.args || {})};
         delete args.full;  // whole rows and full status are for the local CLI and dashboard, not size-limited tool results
         // Session and run identity are host-owned; never trust model-supplied labels.
-        delete args._review_session; delete args._review_run; delete args._profile_session; delete args._skills_session; delete args._notes_session; delete args._routine_session; delete args._owner_chat;
+        delete args._review_session; delete args._review_run; delete args._profile_session; delete args._skills_session; delete args._notes_session; delete args._routine_session; delete args._owner_chat; delete args._prep_run;
         if (params.action === 'remember_fact' && privateMain) args._owner_chat = true;  // host-owned: this is the owner's own private chat
         if (params.action==='preparation_history') {
           const run=currentReviewRun(key);
@@ -235,6 +235,10 @@ export default definePluginEntry({
           if (!/^agent:main:assistant-review-preparation-/.test(key) || !run) throw new Error('Attachments are read for a to-do’s own run');
           delete args._folder;
           args.job_id=run;
+        }
+        if (['events', 'related'].includes(params.action) && /^agent:main:assistant-review-preparation-/.test(key) && currentReviewRun(key)) {
+          // A to-do's own run reads each message once: a repeat comes back as a short note (machine/app/prep_reads.py).
+          args._prep_run=currentReviewRun(key);  // host-bound, like the run of slack_read below
         }
         if (params.action==='slack_read') {
           // A to-do's own run reads a Slack conversation through the Slack connection (read-only, SyncApp.slack_read_action).

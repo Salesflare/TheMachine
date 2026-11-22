@@ -20,6 +20,7 @@ import follow_ups
 import github_route
 import i18n
 from machine.app.graph_actions import account_services
+from machine.app.prep_reads import review_brief
 from machine.app.recall import recall
 from machine.browser import (
     browser_lease_script,
@@ -631,6 +632,11 @@ class PreparationApp:
                     lines=evidence_line(self.config,row['account_ids'] if row else '[]',sources)
                     if lines and len(request['message'])+len(lines)<PROMPT_LIMIT-1000:request['message']+=lines
                 except Exception as error:LOG.error('source notes error=%s',type(error).__name__)
+                if not job.get('finish'):
+                    try:  # what its review found (its messages, who and which thread), so the run looks up only what is missing
+                        with self.store.connect() as db:lines=review_brief(db,job['suggestion_id'])
+                        if lines and len(request['message'])+len(lines)<PROMPT_LIMIT-1000:request['message']+=lines
+                    except Exception as error:LOG.error('review brief error=%s',type(error).__name__)
                 request['message']+=self.routine_change_lines(job,request['message'])
                 try:request['message']+=memory.fit('records',len(request['message']),1000)
                 except Exception as error:LOG.error('graph lines error=%s',type(error).__name__)
