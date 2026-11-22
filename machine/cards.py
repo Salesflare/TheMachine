@@ -722,8 +722,9 @@ def controls(row, root=''):
 
 
 # A to-do that looks done already: a later signal suggests it's handled (looks_handled), or its run found it done
-# (outcome already_done). It shows at the top of Done / dismissed, still open for a day (Reopen there puts it back on the
-# list), then closes by itself (Store.close_looks_done); it never counts as waiting for them (badge, reminders, nudges)
+# (outcome already_done). It shows at the top of Done / dismissed, still open (Reopen there puts it back on the list).
+# One with a record behind it (handled_hint) closes by itself after a day (Store.close_looks_done); a run's own
+# judgment never does: that one waits for the owner's Mark done. It never counts as waiting for them (badge, reminders, nudges)
 # and is never late. Same rule as looksDone() in dashboard.html. A to-do without an outcome (most ready drafts) has no state: ifnull
 # keeps NOT (...) true for it, where a bare NULL left every such ready to-do out of the badge and the digest.
 LOOKS_DONE_SQL = "(handled_hint IS NOT NULL OR (status='prepared' AND ifnull(json_extract(outcome,'$.state'),'')='already_done'))"

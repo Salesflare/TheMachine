@@ -152,18 +152,21 @@ class LookDone(unittest.TestCase):
         self.assertEqual(self.close_at('2026-11-11T10:00:00+00:00'), [])
         self.assertEqual(self.row()['status'], 'pending')
 
-    def test_a_run_found_done_closes_too_and_undo_brings_it_back_to_decide(self):
+    def test_a_run_found_done_never_closes_by_itself(self):
+        # The run's "already done" is its own judgment, with no message behind it: the to-do looks done, for the
+        # owner's Mark done, and stays open however long it stands
         with patch_everywhere(timeutil, 'now', return_value='2026-11-09T10:00:00+00:00'):
             self.already_done()
-        self.assertEqual(self.close_at('2026-11-10T10:30:00+00:00'), [self.sid])
+        self.assertTrue(machine_cards.looks_done(self.row()))
+        self.assertEqual(self.close_at('2026-11-10T10:30:00+00:00'), [])
+        self.assertEqual(self.close_at('2026-11-20T10:30:00+00:00'), [])
+        self.assertEqual(self.row()['status'], 'prepared')
         with self.store.connect() as db:
-            feedback = db.execute("SELECT feedback FROM decisions WHERE choice='complete'").fetchone()[0]
-        self.assertEqual(feedback, 'PR #3451 merged, deployed Oct 27.')  # what showed it: the run's first sentence
-        with patch_everywhere(timeutil, 'now', return_value='2026-11-10T11:00:00+00:00'):
-            self.store.decide(self.sid, 'undo', '', 'undo1', 'dashboard')
-        row = self.row()
-        self.assertEqual((row['status'], row.get('outcome')), ('pending', None))
-        self.assertEqual(self.close_at('2026-11-12T10:00:00+00:00'), [])
+            self.assertIsNone(db.execute("SELECT 1 FROM decisions WHERE choice='complete'").fetchone())
+        # a later message that shows it (a record) does close it after its day
+        self.hinted(at='2026-11-20T11:00:00+00:00')
+        self.assertEqual(self.close_at('2026-11-21T11:30:00+00:00'), [self.sid])
+        self.assertEqual(self.row()['status'], 'completed')
 
     def test_never_while_a_send_is_under_way(self):
         self.hinted()

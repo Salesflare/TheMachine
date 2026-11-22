@@ -109,20 +109,15 @@ def promise_open_card(db, row):
 
 
 def card_looks_done(card):
-    """The Machine's word that a promise's open to-do is done (a later message showed it, or its run found it done):
-    its reason, else None."""
-    if not card or card['status'] in todo_states.CLOSED_OR_SNOOZED:
+    """The Machine's word, with a record behind it, that a promise's open to-do is done (a later message showed it, or a
+    teammate's Machine closed theirs: handled_hint): its reason, else None. A run that only judged it done already
+    (outcome already_done) has no record: that to-do looks done for the owner's Mark done, and closes nothing here."""
+    if not card or card['status'] in todo_states.CLOSED_OR_SNOOZED or not card['handled_hint']:
         return None
     try:
         hint = json.loads(card['handled_hint'] or 'null')
     except (TypeError, ValueError):
         hint = None
-    try:
-        outcome = json.loads(card['outcome'] or '{}')
-    except (TypeError, ValueError):
-        outcome = {}
-    if not card['handled_hint'] and not (card['status'] == 'prepared' and isinstance(outcome, dict) and outcome.get('state') == 'already_done'):
-        return None
     why = ' '.join(str(hint.get('reason') or '').split())[:160] if isinstance(hint, dict) else ''
     return i18n.t('The Machine saw it done: {}.', why.rstrip('.')) if why else i18n.t('The Machine saw it done.')
 
@@ -540,7 +535,7 @@ class PromisesStore:
         return {'id': row['id'], 'status': status, **({'card': card['id']} if card else {})}
 
     def close_seen_done(self, db):
-        """A promise whose to-do The Machine saw done (looks_handled, or its run found it done): the to-do goes to Done
+        """A promise whose to-do The Machine saw done (looks_handled: a later message shows it): the to-do goes to Done
         and the promise closes as kept, with a short line saying so. The owner can reopen the to-do from Done."""
         for row in db.execute("SELECT id,suggestion_id FROM promises WHERE status='carded' AND suggestion_id IS NOT NULL").fetchall():
             card = promise_card(db, row['suggestion_id'])
