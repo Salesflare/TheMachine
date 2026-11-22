@@ -24,7 +24,7 @@ After you send, a short note says where the to-do went, like "Sent. Moved to Don
 
 **For you** puts first what's overdue or due by tomorrow, then questions from your Fleet, then a board's follow-ups, then the rest. Within each, newest first. A to-do keeps its place while your Machine prepares it and when it's done: only its mark changes. The other open groups put overdue or due by tomorrow first, the rest newest first. The sidebar keeps the same order.
 
-**Looks done** means your Machine sees it's done, like "PR #3451 merged", but it isn't closed yet. **Reopen** puts it back on your list, and your Machine learns from it. These never show as late. After a day, it closes by itself, with **Undo**. A to-do you already handled yourself, like with a reply in Gmail or Slack, closes by itself too.
+**Looks done** means your Machine sees it's done, like "PR #3451 merged", but it isn't closed yet. **Reopen** puts it back on your list, and your Machine learns from it. These never show as late. When a message shows it, it closes by itself after a day, with **Undo**. Otherwise it waits for your **Mark done**. A to-do you already handled yourself, like with a reply in Gmail or Slack, closes by itself too.
 
 When a message comes from an address that only looks like someone you know, like sam@acme-corp.example for sam@acmecorp.example, its to-do says so plainly: "This isn’t Sam Lee." It shows them by their own address, never by the name they used. Your Machine checks such a message with the person at the address you already have, never with the one that wrote.
 

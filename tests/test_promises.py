@@ -460,6 +460,18 @@ class Promises(unittest.TestCase):
         self.assertNotEqual(self.card_status(card), 'completed')
         self.assertEqual(self.store.promises()[0]['state'], 'card')
 
+    def test_a_run_that_only_judged_it_done_closes_neither(self):
+        """A promise's to-do whose run saved "already done" with no message behind it: the to-do looks done for the
+        owner, and neither it nor the promise closes on that judgment alone."""
+        promise, card = self.carded()
+        with self.store.connect() as db:
+            db.execute("UPDATE suggestions SET status='prepared',outcome=? WHERE id=?", (json.dumps({'state': 'already_done'}), card))
+        self.app().promise_step()
+        self.assertEqual(self.card_status(card), 'prepared')
+        self.assertEqual(self.store.promises()[0]['state'], 'card')
+        with self.store.connect() as db:
+            self.assertIsNone(db.execute("SELECT 1 FROM decisions WHERE suggestion_id=? AND choice='complete'", (card,)).fetchone())
+
     def test_reviews_see_the_open_promises_and_how_to_record_them(self):
         self.record(due='2026-10-23')
         self.app().action('promise', {'direction': 'mine', 'event_id': self.mine, 'who': 'Alex', 'what': 'send the Q3 deck'})

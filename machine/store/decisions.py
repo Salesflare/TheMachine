@@ -1157,11 +1157,13 @@ class DecisionsStore:
         return wanted[:limit]
 
     def close_looks_done(self, hours=LOOKS_DONE_HOURS, undo_hours=24):
-        """A to-do that has looked done (looks_done: a later signal showed it handled, or its run found it done) for
-        `hours` without the owner taking it back closes by itself: Done, "Closed by itself: <what showed it>", with
-        Undo for a day. So the list only holds what is really open, also on a Machine whose owner never goes through
-        Looks done. Once per sign: after an Undo, Reopen or Not done that same sign never closes it again. Not while a
-        send of it is under way. The first run after an update closes the ones that stood long enough already.
+        """A to-do that has looked done for `hours`, with a record behind it (handled_hint: a later message showed it
+        handled, or a teammate's Machine closed theirs), without the owner taking it back closes by itself: Done,
+        "Closed by itself: <what showed it>", with Undo for a day. So the list only holds what is really open, also on a
+        Machine whose owner never goes through Looks done. A run that only judged it done already (outcome
+        already_done, no message behind it) never closes it: it keeps looking done until the owner's Mark done or Not
+        done. Once per sign: after an Undo, Reopen or Not done that same sign never closes it again. Not while a send
+        of it is under way. The first run after an update closes the ones that stood long enough already.
         Returns the closed ids."""
         stamp, closed = now(), []
         cutoff = (dt.datetime.fromisoformat(stamp) - dt.timedelta(hours=hours)).isoformat()
@@ -1173,8 +1175,8 @@ class DecisionsStore:
             rows = db.execute(f"SELECT * FROM suggestions WHERE status IN {todo_states.sql(todo_states.OPEN_NOT_SNOOZED)} AND " + LOOKS_DONE_SQL).fetchall()
             for row in rows:
                 row = dict(row)
-                if not looks_done(row):
-                    continue
+                if not looks_done(row) or not row.get('handled_hint'):
+                    continue  # a run's own "already done" is not a record: the owner closes it
                 since = looks_done_at(db, row) or ''
                 if not since or since > cutoff:
                     continue  # still fresh: the owner gets a day to say Not done
