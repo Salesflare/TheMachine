@@ -1,7 +1,7 @@
 ---
 title: ChatGPT
 area: connections
-summary: ChatGPTのプランでThe Machineを動かし、ChatGPTのスキルをインポートできます。
+summary: ChatGPTでログインしてChatGPTのプランでMachineを動かし、ChatGPTのスキルをインポートできます。
 covers: chatgpt
 code: docs/models.md, docs/skills.md, skills.py
 site: Sign in with ChatGPT, Reconnect ChatGPT
@@ -9,13 +9,13 @@ translated: fc97be60c0b68336
 ---
 ## 目的
 
-ChatGPTでサインインすると、ご自身のChatGPTプランを使ってThe Machineが読み取りや下書きを行います。The Machine自体にAIはありません。リクエストはお使いのアカウントとOpenAIの利用規約に基づいて、直接OpenAIに送信されます。
+ChatGPTでログインすると、ご自身のChatGPTプランを使ってMachineが読み取りや下書きを行います。The Machine自体にAIはありません。リクエストはお使いのアカウントとOpenAIの利用規約に基づいて、直接OpenAIに送信されます。
 
-## サインイン
+## ログイン
 
-ホスト環境のThe Machineでは、セットアップページで**ChatGPTでサインイン**を押し、ChatGPTに表示されたコードを入力します。後でサインアウトした場合は、**ChatGPTに再接続**を押してください。
+ホスティング版のMachineでは、セットアップページで**ChatGPTでログイン**を押し、ChatGPTに表示されたコードを入力します。後でログアウトした場合は、**ChatGPTに再接続**を押してください。
 
-OpenAIでコードが拒否される場合は、[ChatGPTのセキュリティ設定](https://chatgpt.com/settings/security)を開いて一番下までスクロールし、「Codex、Excel、PowerPoint、Wordのデバイスコードサインインを有効にする」をオンにしてください。その後、もう一度コードを入力します。
+OpenAIでコードが拒否される場合は、[ChatGPTのセキュリティ設定](https://chatgpt.com/settings/security)を開いて一番下までスクロールし、「Codex、Excel、PowerPoint、Wordのデバイスコードログインを有効にする」をオンにしてください。その後、もう一度コードを入力します。
 
 このスイッチが表示されない場合、仕事用アカウント（Business、Enterprise、Edu）では、ChatGPTの管理者が[権限とロール](https://chatgpt.com/admin/permissions)の「CodexとWork Local」で有効にします。
 
@@ -31,4 +31,4 @@ ChatGPTのプランには、5時間単位と週単位の利用上限がありま
 
 ## 連携を解除する
 
-セットアップページで別のモデルを選びます（ご自身のコンピューターでは、同じ方法で別のプロバイダーにサインインします）。OpenAI側でアクセスを取り消すには、ChatGPTのセキュリティ設定でセッションからサインアウトしてください。
+セットアップページで別のモデルを選びます（ご自身のコンピューターでは、同じ方法で別のプロバイダーにログインします）。OpenAI側でアクセスを取り消すには、ChatGPTのセキュリティ設定でセッションからログアウトしてください。
